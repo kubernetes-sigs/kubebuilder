@@ -16,9 +16,9 @@ New API workflow:
 ## Download the latest release
 
 Make sure you downloaded and installed the latest release:
-[here](https://github.com/pwittrock/kubebuilder/blob/master/docs/installing.md)
+[here](https://github.com/kubernetes-sigs/kubebuilder/blob/master/docs/installing.md)
 
-- Download the latest [release](https://github.com/pwittrock/kubebuilder/releases/)
+- Download the latest [release](https://github.com/kubernetes-sigs/kubebuilder/releases/)
 - Extract the tar and move the kubebuilder/ directory to `/usr/local` (or somewhere else on your path)
 - Add `/usr/local/kubebuilder/bin` to your path - `export PATH=$PATH:/usr/local/kubebuilder/bin`
 - Set environment variables for starting test control planes

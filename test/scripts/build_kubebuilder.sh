@@ -8,6 +8,7 @@ go install github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder-gen
 go install github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder
 
 export VENDOR_KB=/tmp/vendorbin/vendor/github.com/kubernetes-sigs/kubebuilder
+
 # Build vendor tar
 mkdir -p $VENDOR_KB/pkg/ || echo ""
 cp -r vendor/* /tmp/vendorbin/vendor/

@@ -73,7 +73,7 @@ func (apis *APIs) GetRules() []rbacv1.PolicyRule {
 }
 
 type APIGroup struct {
-	// Package is the name of the go package the api group is under - e.g. github.com/pwittrock/apiserver-helloworld/apis
+	// Package is the name of the go package the api group is under - e.g. github.com/me/apiserver-helloworld/apis
 	Package string
 	// Domain is the domain portion of the group - e.g. k8s.io
 	Domain string

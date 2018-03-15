@@ -2,7 +2,10 @@
 
 cp -r /workspace/_output/kubebuilder /tmp/kubebuilder/
 
-export GOPATH=/tmp/go
+# Tests won't work on darwin
+if [ $GOOS = "linux" ]; then
+
+export GOPATH=/go
 mkdir -p $GOPATH/src/github.com/kubernetes-sigs/kubebuilder-test/
 cd $GOPATH/src/github.com/kubernetes-sigs/kubebuilder-test/
 
@@ -18,8 +21,9 @@ kubebuilder create resource --group insect --version v1beta1 --kind Bee
 kubebuilder create resource --group insect --version v1beta1 --kind Wasp
 
 # Verify the controller-manager builds and the tests pass
-go install github.com/kubernetes-sigs/kubebuilder-test/cmd/controller-manager
 go build ./cmd/...
 go build ./pkg/...
 go test ./cmd/...
 go test ./pkg/...
+
+fi
