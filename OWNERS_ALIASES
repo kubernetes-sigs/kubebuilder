@@ -1,0 +1,7 @@
+# See the OWNERS docs: https://git.k8s.io/community/contributors/devel/owners.md
+
+aliases:
+  kubebuilder-admins:
+    - pwittrock
+  kubebuilder-maintainers:
+    - pwittrock

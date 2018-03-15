@@ -1,0 +1,84 @@
+#  Copyright 2018 The Kubernetes Authors.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+# Uncomment to update deps with dep tool
+# ignored = ["github.com/kubernetes-sigs/kubebuilder","github.com/kubernetes-sigs/kubebuilder/cmd"]
+
+# Packages required by users
+required = ["github.com/kubernetes-sig-testing/frameworks/integration",
+            "k8s.io/client-go/plugin/pkg/client/auth"]
+
+[prune]
+  go-tests = true
+
+# Comment to update deps with dep tool
+[[constraint]]
+  version = "v1.9-alpha.25"
+  name = "github.com/kubernetes-sigs/kubebuilder"
+
+[[constraint]]
+  name = "github.com/golang/glog"
+  revision = "44145f04b68cf362d9c4df2182967c2275eaefed"
+
+[[constraint]]
+  name = "github.com/onsi/ginkgo"
+  version = "1.4.0"
+
+[[constraint]]
+  name = "github.com/onsi/gomega"
+  version = "1.2.0"
+
+[[constraint]]
+  name = "github.com/pkg/errors"
+  revision = "a22138067af1c4942683050411a841ade67fe1eb"
+
+[[constraint]]
+  name = "github.com/spf13/cobra"
+  revision = "f62e98d28ab7ad31d707ba837a966378465c7b57"
+
+[[constraint]]
+  name = "github.com/spf13/pflag"
+  revision = "9ff6c6923cfffbcd502984b8e0c80539a94968b7"
+
+[[constraint]]
+  branch = "release-1.9"
+  name = "k8s.io/api"
+
+[[constraint]]
+  branch = "release-1.9"
+  name = "k8s.io/apiextensions-apiserver"
+
+[[constraint]]
+  branch = "release-1.9"
+  name = "k8s.io/apimachinery"
+
+[[constraint]]
+  branch = "release-1.9"
+  name = "k8s.io/apiserver"
+
+[[constraint]]
+  branch = "release-6.0"
+  name = "k8s.io/client-go"
+
+[[constraint]]
+  branch = "release-1.9"
+  name = "k8s.io/kube-aggregator"
+
+[[override]]
+  name = "github.com/Azure/go-autorest"
+  version = "v9.1.0"
+
+[[override]]
+  name = "github.com/emicklei/go-restful"
+  revision = "ff4f55a206334ef123e4f79bbf348980da81ca46"

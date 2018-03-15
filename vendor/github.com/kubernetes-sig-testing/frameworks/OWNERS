@@ -1,0 +1,5 @@
+# See the OWNERS docs: https://git.k8s.io/community/contributors/devel/owners.md
+
+approvers:
+  - sig-testing-leads
+  - frameworks-admins

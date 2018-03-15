@@ -1,0 +1,50 @@
+# Uncomment to update deps with dep tool
+# ignored = ["github.com/kubernetes-sigs/kubebuilder","github.com/kubernetes-sigs/kubebuilder/cmd"]
+
+[prune]
+  non-go = true
+  go-tests = true
+
+[[constraint]]
+  branch = "release-v1.9-alpha.15"
+  name = "github.com/kubernetes-sigs/kubebuilder"
+
+[[constraint]]
+  name = "github.com/emicklei/go-restful"
+  revision = "ff4f55a206334ef123e4f79bbf348980da81ca46"
+
+[[constraint]]
+  name = "github.com/golang/glog"
+  revision = "44145f04b68cf362d9c4df2182967c2275eaefed"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/markbates/inflect"
+
+[[constraint]]
+  name = "github.com/pkg/errors"
+  revision = "a22138067af1c4942683050411a841ade67fe1eb"
+
+[[constraint]]
+  name = "github.com/spf13/cobra"
+  revision = "f62e98d28ab7ad31d707ba837a966378465c7b57"
+
+[[constraint]]
+  branch = "release-1.9"
+  name = "k8s.io/api"
+
+[[constraint]]
+  branch = "release-1.9"
+  name = "k8s.io/apiextensions-apiserver"
+
+[[constraint]]
+  branch = "release-1.9"
+  name = "k8s.io/apimachinery"
+
+[[constraint]]
+  branch = "release-1.9"
+  name = "k8s.io/apiserver"
+
+[[constraint]]
+  branch = "release-6.0"
+  name = "k8s.io/client-go"
