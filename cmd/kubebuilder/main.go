@@ -100,6 +100,9 @@ More options:
 
 - run tests
   kubebuilder build generated
+  export TEST_ASSET_KUBECTL=/usr/local/kubebuilder/bin/kubectl
+  export TEST_ASSET_KUBE_APISERVER=/usr/local/kubebuilder/bin/kube-apiserver
+  export TEST_ASSET_ETCD=/usr/local/kubebuilder/bin/etcd
   go test ./pkg/...
 `,
 	Example: `# Initialize your project
