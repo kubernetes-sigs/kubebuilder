@@ -34,6 +34,12 @@ steps:
   - 'GOOS=${_GOOS}'
   - 'GOARCH=${_GOARCH}'
   - 'VERSION=${TAG_NAME}'
+- name: "ubuntu"
+  args: ["bash", "build/test.sh"]
+  env:
+  - 'GOOS=${_GOOS}'
+  - 'GOARCH=${_GOARCH}'
+  - 'VERSION=${TAG_NAME}'
 - name: 'gcr.io/cloud-builders/gsutil'
   args: ['-h', 'Content-Type:application/gzip', 'cp', 'kubebuilder-${TAG_NAME}-${_GOOS}-${_GOARCH}.tar.gz', 'gs://kubebuilder-release/kubebuilder-${TAG_NAME}-${_GOOS}-${_GOARCH}.tar.gz']
   env:
