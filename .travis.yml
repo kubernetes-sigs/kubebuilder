@@ -1,0 +1,22 @@
+language: go
+
+go:
+- 1.10
+
+go_import_path: github.com/kubernetes-sigs/kubebuilder
+
+cache:
+  directories:
+  - /tmp/kubebuilder/bin
+
+git:
+  depth: 3
+
+env:
+  - TEST=example
+
+install:
+  - test/scripts/install_tools.sh
+
+script:
+  ./test/travis.sh
