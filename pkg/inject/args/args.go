@@ -17,13 +17,17 @@ limitations under the License.
 package args
 
 import (
-    "time"
+	"time"
 
 	"github.com/kubernetes-sigs/kubebuilder/pkg/admission"
 	"github.com/kubernetes-sigs/kubebuilder/pkg/controller"
+	"github.com/kubernetes-sigs/kubebuilder/pkg/inject/run"
+	rbacv1 "k8s.io/api/rbac/v1"
+	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-    "k8s.io/client-go/informers"
 )
 
 // InjectArgs are the common arguments for initializing controllers and admission hooks
@@ -46,12 +50,37 @@ type InjectArgs struct {
 
 // CreateInjectArgs returns new arguments for initializing objects
 func CreateInjectArgs(config *rest.Config) InjectArgs {
-    cs := kubernetes.NewForConfigOrDie(config)
+	cs := kubernetes.NewForConfigOrDie(config)
 	return InjectArgs{
 		Config:              config,
 		KubernetesClientSet: cs,
-        KubernetesInformers: informers.NewSharedInformerFactory(cs, 2 * time.Minute),
+		KubernetesInformers: informers.NewSharedInformerFactory(cs, 2*time.Minute),
 		ControllerManager:   &controller.ControllerManager{},
 		AdmissionHandler:    &admission.AdmissionManager{},
 	}
+}
+
+type Injector struct {
+	CRDs              []*apiextensionsv1beta1.CustomResourceDefinition
+	PolicyRules       []rbacv1.PolicyRule
+	GroupVersions     []schema.GroupVersion
+	Runnables         []Runnable
+	RunFns            []RunFn
+	ControllerManager *controller.ControllerManager
+}
+
+func (i Injector) Run(a run.RunArguments) error {
+	for _, r := range i.Runnables {
+		go r.Run(a)
+	}
+	for _, r := range i.RunFns {
+		go r(a)
+	}
+	return nil
+}
+
+type RunFn func(arguments run.RunArguments) error
+
+type Runnable interface {
+	Run(arguments run.RunArguments) error
 }

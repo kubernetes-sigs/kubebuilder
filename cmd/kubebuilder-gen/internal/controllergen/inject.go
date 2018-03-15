@@ -46,7 +46,6 @@ func (d *injectGenerator) Imports(c *generator.Context) []string {
 		"time",
 		"github.com/kubernetes-sigs/kubebuilder/pkg/controller",
 		"k8s.io/client-go/rest",
-		"github.com/kubernetes-sigs/kubebuilder/pkg/controller",
 		repo + "/pkg/controller/sharedinformers",
 		repo + "/pkg/client/informers_generated/externalversions",
 		repo + "/pkg/inject/args",
@@ -65,12 +64,12 @@ func (d *injectGenerator) Imports(c *generator.Context) []string {
 
 	libs := map[string]string{}
 	for i := range d.APIS.Informers {
-	    libs[i.Group + i.Version] = "k8s.io/api/" +i.Group + "/" + i.Version
-    }
+		libs[i.Group+i.Version] = "k8s.io/api/" + i.Group + "/" + i.Version
+	}
 
-    for i, d := range libs {
-        im = append(im, fmt.Sprintf("%s \"%s\"", i, d))
-    }
+	for i, d := range libs {
+		im = append(im, fmt.Sprintf("%s \"%s\"", i, d))
+	}
 
 	// Import package for each API groupversion
 	gvk := map[string]string{}
@@ -101,42 +100,50 @@ func (d *injectGenerator) Finalize(context *generator.Context, w io.Writer) erro
 var injectAPITemplate = `
 func init() {
     // Inject Informers
-    SetInformers = func(arguments args.InjectArgs) {
+    Inject = append(Inject, func(arguments args.InjectArgs) error {
+	    Injector.ControllerManager = arguments.ControllerManager
+
         {{ range $group := .APIS.Groups }}{{ range $version := $group.Versions }}{{ range $res := $version.Resources -}}
-        arguments.ControllerManager.AddInformerProvider(&{{.Group}}{{.Version}}.{{.Kind}}{}, arguments.Informers.{{title .Group}}().{{title .Version}}().{{plural .Kind}}())
+        if err := arguments.ControllerManager.AddInformerProvider(&{{.Group}}{{.Version}}.{{.Kind}}{}, arguments.Informers.{{title .Group}}().{{title .Version}}().{{plural .Kind}}()); err != nil {
+            return err
+        }
         {{ end }}{{ end }}{{ end }}
 
         // Add Kubernetes informers
         {{ range $informer, $found := .APIS.Informers -}}
-        arguments.ControllerManager.AddInformerProvider(&{{$informer.Group}}{{$informer.Version}}.{{$informer.Kind}}{}, arguments.KubernetesInformers.{{title $informer.Group}}().{{title $informer.Version}}().{{plural $informer.Kind}}())
+        if err := arguments.ControllerManager.AddInformerProvider(&{{$informer.Group}}{{$informer.Version}}.{{$informer.Kind}}{}, arguments.KubernetesInformers.{{title $informer.Group}}().{{title $informer.Version}}().{{plural $informer.Kind}}()); err != nil {
+            return err
+        }
         {{ end }}
-    }
 
-
-    // Inject Controllers
-    {{ range $c := .Controllers -}}
-    Controllers = append(Controllers, {{ $c.Pkg.Name }}.ProvideController)
-    {{ end -}}
-
+        {{ range $c := .Controllers -}}
+        if c, err := {{ $c.Pkg.Name }}.ProvideController(arguments); err != nil {
+            return err
+        } else {
+            arguments.ControllerManager.AddController(c)
+        }
+        {{ end -}}
+        return nil
+    })
 
     // Inject CRDs
     {{ range $group := .APIS.Groups -}}
     {{ range $version := $group.Versions -}}
     {{ range $res := $version.Resources -}}
-    CRDs = append(CRDs, &{{ $group.Group }}{{ $version.Version }}.{{$res.Kind}}CRD)
+    Injector.CRDs = append(Injector.CRDs, &{{ $group.Group }}{{ $version.Version }}.{{$res.Kind}}CRD)
     {{ end }}{{ end }}{{ end -}}
 
 
     // Inject PolicyRules
     {{ range $group := .APIS.Groups -}}
-    PolicyRules = append(PolicyRules, rbacv1.PolicyRule{
+    Injector.PolicyRules = append(Injector.PolicyRules, rbacv1.PolicyRule{
         APIGroups: []string{"{{ $group.Group }}.{{ $group.Domain }}"},
         Resources: []string{"*"},
         Verbs: []string{"*"},
     })
     {{ end -}}
     {{ range $rule := .APIS.GetRules -}}
-    PolicyRules = append(PolicyRules, rbacv1.PolicyRule{
+    Injector.PolicyRules = append(Injector.PolicyRules, rbacv1.PolicyRule{
         APIGroups: []string{
             {{ range $group := $rule.APIGroups -}}"{{ $group }}",{{ end }}
         },
@@ -153,10 +160,15 @@ func init() {
     // Inject GroupVersions
     {{ range $group := .APIS.Groups -}}
     {{ range $version := $group.Versions -}}
-    GroupVersions = append(GroupVersions, schema.GroupVersion{
+    Injector.GroupVersions = append(Injector.GroupVersions, schema.GroupVersion{
         Group: "{{ $group.Group }}.{{ $group.Domain }}",
         Version: "{{ $version.Version }}",
     })
     {{ end }}{{ end -}}
+
+	Injector.RunFns = append(Injector.RunFns, func(arguments run.RunArguments) error {
+	    Injector.ControllerManager.RunInformersAndControllers(arguments)
+	    return nil
+    })
 }
 `

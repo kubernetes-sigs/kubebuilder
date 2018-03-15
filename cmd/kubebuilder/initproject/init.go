@@ -67,7 +67,6 @@ func runInitRepo(cmd *cobra.Command, args []string) {
 		filepath.Join("hack"),
 		filepath.Join("pkg"),
 		filepath.Join("pkg", "controller"),
-		filepath.Join("pkg", "controller", "args"),
 		filepath.Join("pkg", "inject"),
 		//filepath.Join("pkg", "openapi"),
 	}

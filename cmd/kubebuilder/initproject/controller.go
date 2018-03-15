@@ -70,7 +70,7 @@ func main() {
     config := configlib.GetConfigOrDie()
 
     if *installCRDs {
-        if err := install.NewInstaller(config).Install(&InstallStrategy{crds: inject.CRDs}); err != nil {
+        if err := install.NewInstaller(config).Install(&InstallStrategy{crds: inject.Injector.CRDs}); err != nil {
             log.Fatalf("Could not create CRDs: %v", err)
         }
     }

@@ -65,7 +65,7 @@ func Test{{title .Version}}(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
-    testenv = &test.TestEnvironment{CRDs: inject.CRDs}
+    testenv = &test.TestEnvironment{CRDs: inject.Injector.CRDs}
 
     var err error
     config, err = testenv.Start()
