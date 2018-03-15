@@ -26,6 +26,7 @@ import (
 	"k8s.io/gengo/args"
 	"k8s.io/gengo/generator"
 	"k8s.io/gengo/types"
+    "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type APIs struct {
@@ -46,6 +47,7 @@ type APIs struct {
 	SubByGroupVersionKind map[string]map[string]map[string]*types.Type
 	Groups                map[string]types.Package
 	Rules                 []rbacv1.PolicyRule
+	Informers             map[v1.GroupVersionKind]bool
 }
 
 func NewAPIs(context *generator.Context, arguments *args.GeneratorArgs) *APIs {
@@ -59,6 +61,7 @@ func NewAPIs(context *generator.Context, arguments *args.GeneratorArgs) *APIs {
 	b.parseIndex()
 	b.parseControllers()
 	b.parseRBAC()
+	b.parseInformers()
 	b.parseAPIs()
 	b.parseJSONSchemaProps()
 	return b

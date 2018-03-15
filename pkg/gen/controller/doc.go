@@ -24,3 +24,6 @@ const Controller = "// +controller:group=,version=,kind=,resource="
 
 // RBAC annotates a controller struct as needing an RBAC rule to run
 const RBAC = "// +rbac:groups=<group1;group2>,resources=<resource1;resource2>,verbs=<verb1;verb2>"
+
+// Informers indicates that an informer must be started for this controller
+const Informers = "// +informers:group=core,version=v1,kind=Pod"

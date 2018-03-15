@@ -19,6 +19,8 @@ package controller_test
 func Example() {}
 
 // +controller:group=foo,version=v1beta1,kind=Bar,resource=bars
-// +rbac:groups=extensions;apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
+// +rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
+// +informers:group=apps,version=v1,kind=Deployment
 // +rbac:groups="",resources=pods,verbs=get;watch;list
+// +informers:group=core,version=v1,kind=Pod
 type FooController struct{}

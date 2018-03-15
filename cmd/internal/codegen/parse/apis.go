@@ -38,6 +38,7 @@ func (b *APIs) parseAPIs() {
 		Package: b.APIsPkg,
 		Groups:  map[string]*codegen.APIGroup{},
 		Rules:   b.Rules,
+		Informers: b.Informers,
 	}
 
 	for group, versionMap := range b.ByGroupVersionKind {

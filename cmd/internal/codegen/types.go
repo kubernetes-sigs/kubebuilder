@@ -40,6 +40,8 @@ type APIs struct {
 	Groups map[string]*APIGroup
 
 	Rules []rbacv1.PolicyRule
+
+	Informers map[v1.GroupVersionKind]bool
 }
 
 func (apis *APIs) GetRules() []rbacv1.PolicyRule {

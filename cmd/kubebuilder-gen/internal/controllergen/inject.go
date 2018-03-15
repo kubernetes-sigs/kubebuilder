@@ -50,7 +50,7 @@ func (d *injectGenerator) Imports(c *generator.Context) []string {
 		repo + "/pkg/controller/sharedinformers",
 		repo + "/pkg/client/informers_generated/externalversions",
 		repo + "/pkg/inject/args",
-		" rbacv1 \"k8s.io/api/rbac/v1\"",
+		"rbacv1 \"k8s.io/api/rbac/v1\"",
 		"k8s.io/apimachinery/pkg/runtime/schema",
 	}
 
@@ -62,6 +62,15 @@ func (d *injectGenerator) Imports(c *generator.Context) []string {
 	for k, _ := range repos {
 		im = append(im, k)
 	}
+
+	libs := map[string]string{}
+	for i := range d.APIS.Informers {
+	    libs[i.Group + i.Version] = "k8s.io/api/" +i.Group + "/" + i.Version
+    }
+
+    for i, d := range libs {
+        im = append(im, fmt.Sprintf("%s \"%s\"", i, d))
+    }
 
 	// Import package for each API groupversion
 	gvk := map[string]string{}
@@ -92,10 +101,15 @@ func (d *injectGenerator) Finalize(context *generator.Context, w io.Writer) erro
 var injectAPITemplate = `
 func init() {
     // Inject Informers
-    SetInformers = func(arguments args.InjectArgs, factory externalversions.SharedInformerFactory) {
+    SetInformers = func(arguments args.InjectArgs) {
         {{ range $group := .APIS.Groups }}{{ range $version := $group.Versions }}{{ range $res := $version.Resources -}}
-        arguments.ControllerManager.AddInformerProvider(&{{.Group}}{{.Version}}.{{.Kind}}{}, factory.{{title .Group}}().{{title .Version}}().{{plural .Kind}}())
-        {{ end }}{{ end }}{{ end -}}
+        arguments.ControllerManager.AddInformerProvider(&{{.Group}}{{.Version}}.{{.Kind}}{}, arguments.Informers.{{title .Group}}().{{title .Version}}().{{plural .Kind}}())
+        {{ end }}{{ end }}{{ end }}
+
+        // Add Kubernetes informers
+        {{ range $informer, $found := .APIS.Informers -}}
+        arguments.ControllerManager.AddInformerProvider(&{{$informer.Group}}{{$informer.Version}}.{{$informer.Kind}}{}, arguments.KubernetesInformers.{{title $informer.Group}}().{{title $informer.Version}}().{{plural $informer.Kind}}())
+        {{ end }}
     }
 
 

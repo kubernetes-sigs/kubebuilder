@@ -39,8 +39,6 @@ var injectControllerTemplate = `{{.BoilerPlate}}
 package inject
 
 import (
-    "time"
-
     "github.com/kubernetes-sigs/kubebuilder/pkg/controller"
     "github.com/kubernetes-sigs/kubebuilder/pkg/inject/run"
     apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
@@ -48,8 +46,6 @@ import (
     "k8s.io/apimachinery/pkg/runtime/schema"
 
     "{{.Repo}}/pkg/inject/args"
-    "{{.Repo}}/pkg/client/informers_generated/externalversions"
-
 )
 
 var (
@@ -68,7 +64,7 @@ var (
 
     // SetInformers adds the informers for the apis defined in this project.
     // Should be set by code generation in this package.
-    SetInformers func(args.InjectArgs, externalversions.SharedInformerFactory)
+    SetInformers func(args.InjectArgs)
 
     // Inject may be set by generated code 
     Inject func(args.InjectArgs) error
@@ -85,8 +81,7 @@ func RunAll(options run.RunArguments, arguments args.InjectArgs) error {
         }
     }
     if SetInformers != nil {
-        factory := externalversions.NewSharedInformerFactory(arguments.Clientset, time.Minute * 5)
-        SetInformers(arguments, factory)
+        SetInformers(arguments)
     }
     for _, fn := range Controllers {
         if c, err := fn(arguments); err != nil {
@@ -129,10 +124,13 @@ var argsControllerTemplate = `{{.BoilerPlate}}
 package args
 
 import (
+    "time"
+
 	"github.com/kubernetes-sigs/kubebuilder/pkg/inject/args"
     "k8s.io/client-go/rest"
 
     "{{.Repo}}/pkg/client/clientset_generated/clientset"
+    "{{.Repo}}/pkg/client/informers_generated/externalversions"
 )
 
 // InjectArgs are the arguments need to initialize controllers
@@ -140,14 +138,17 @@ type InjectArgs struct {
     args.InjectArgs
 
     Clientset *clientset.Clientset
+    Informers externalversions.SharedInformerFactory
 }
 
 
 // CreateInjectArgs returns new controller args
 func CreateInjectArgs(config *rest.Config) InjectArgs {
+    cs := clientset.NewForConfigOrDie(config)
     return InjectArgs{
         InjectArgs: args.CreateInjectArgs(config),
-        Clientset: clientset.NewForConfigOrDie(config),
+        Clientset: cs,
+        Informers: externalversions.NewSharedInformerFactory(cs, 2 * time.Minute),
     }
 }
 `
