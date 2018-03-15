@@ -42,11 +42,5 @@ steps:
   - 'GOOS=${_GOOS}'
   - 'GOARCH=${_GOARCH}'
   - 'VERSION=${TAG_NAME}'
-- name: "golang:1.10-stretch"
-  args: ["bash", "build/test.sh"]
-  env:
-  - 'GOOS=${_GOOS}'
-  - 'GOARCH=${_GOARCH}'
-  - 'VERSION=${TAG_NAME}'
 - name: "ubuntu"
   args: ["bash", "-c", "ls | grep -v tar.gz | xargs rm -rf"]
