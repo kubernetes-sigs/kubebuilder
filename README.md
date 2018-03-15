@@ -32,6 +32,21 @@ bin/controller-manager --kubeconfig ~/.kube/config
 
 See the [user guide](docs/tools_user_guide.md) for more details
 
+## Godocs
+
+Many of the kubebuilder libraries can be used on their own without the kubebuilder code generation and scaffolding.
+
+See examples of using the libraries directly below:
+
+- [controller libraries](https://godoc.org/github.com/kubernetes-sigs/kubebuilder/pkg/controller)
+- [config libraries](https://godoc.org/github.com/kubernetes-sigs/kubebuilder/pkg/config)
+- [signals libraries](https://godoc.org/github.com/kubernetes-sigs/kubebuilder/pkg/signals)
+
+Kubebuilder code generation tags can be found here:
+
+- [resource code generation tags](https://godoc.org/github.com/kubernetes-sigs/kubebuilder/pkg/gen/apis)
+- [controllers code generation tags](https://godoc.org/github.com/kubernetes-sigs/kubebuilder/pkg/gen/controller)
+
 ## Motivation
 
 Building Kubernetes tools and APIs involves making a lot of decisions and writing a lot of boilerplate.
