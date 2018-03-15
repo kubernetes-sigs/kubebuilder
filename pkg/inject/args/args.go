@@ -17,10 +17,13 @@ limitations under the License.
 package args
 
 import (
+    "time"
+
 	"github.com/kubernetes-sigs/kubebuilder/pkg/admission"
 	"github.com/kubernetes-sigs/kubebuilder/pkg/controller"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+    "k8s.io/client-go/informers"
 )
 
 // InjectArgs are the common arguments for initializing controllers and admission hooks
@@ -31,6 +34,9 @@ type InjectArgs struct {
 	// KubernetesClientSet is a clientset to talk to Kuberntes apis
 	KubernetesClientSet *kubernetes.Clientset
 
+	// KubernetesInformers contains a Kubernetes informers factory
+	KubernetesInformers informers.SharedInformerFactory
+
 	// ControllerManager is the controller manager
 	ControllerManager *controller.ControllerManager
 
@@ -40,9 +46,11 @@ type InjectArgs struct {
 
 // CreateInjectArgs returns new arguments for initializing objects
 func CreateInjectArgs(config *rest.Config) InjectArgs {
+    cs := kubernetes.NewForConfigOrDie(config)
 	return InjectArgs{
 		Config:              config,
-		KubernetesClientSet: kubernetes.NewForConfigOrDie(config),
+		KubernetesClientSet: cs,
+        KubernetesInformers: informers.NewSharedInformerFactory(cs, 2 * time.Minute),
 		ControllerManager:   &controller.ControllerManager{},
 		AdmissionHandler:    &admission.AdmissionManager{},
 	}

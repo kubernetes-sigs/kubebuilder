@@ -99,7 +99,7 @@ func RunAll(options run.RunArguments, arguments args.InjectArgs) error {
     
     if Run != nil {
         if err := Run(options); err != nil {
-            return error
+            return err
         }
     }
     <-options.Stop
