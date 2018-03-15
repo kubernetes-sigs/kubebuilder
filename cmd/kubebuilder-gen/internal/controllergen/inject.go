@@ -96,6 +96,8 @@ func init() {
         {{ range $group := .APIS.Groups }}{{ range $version := $group.Versions }}{{ range $res := $version.Resources -}}
         arguments.ControllerManager.AddInformerProvider(&{{.Group}}{{.Version}}.{{.Kind}}{}, factory.{{title .Group}}().{{title .Version}}().{{plural .Kind}}())
         {{ end }}{{ end }}{{ end -}}
+    
+        
     }
 
 

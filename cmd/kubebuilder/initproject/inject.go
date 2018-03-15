@@ -69,10 +69,21 @@ var (
     // SetInformers adds the informers for the apis defined in this project.
     // Should be set by code generation in this package.
     SetInformers func(args.InjectArgs, externalversions.SharedInformerFactory)
+
+    // Inject may be set by generated code 
+    Inject func(args.InjectArgs) error
+
+    // Run may be set by generated code
+    Run func(run.RunArguments) error
 )
 
 // RunAll starts all of the informers and Controllers
 func RunAll(options run.RunArguments, arguments args.InjectArgs) error {
+    if Inject != nil {
+        if err := Inject(arguments); err != nil {
+            return err
+        }
+    }
     if SetInformers != nil {
         factory := externalversions.NewSharedInformerFactory(arguments.Clientset, time.Minute * 5)
         SetInformers(arguments, factory)
@@ -85,6 +96,12 @@ func RunAll(options run.RunArguments, arguments args.InjectArgs) error {
         }
     }
     arguments.ControllerManager.RunInformersAndControllers(options)
+    
+    if Run != nil {
+        if err := Run(options); err != nil {
+            return error
+        }
+    }
     <-options.Stop
     return nil
 }
