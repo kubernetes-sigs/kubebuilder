@@ -213,14 +213,14 @@ func RunGenerate(cmd *cobra.Command, args []string) {
 	if doGen("client-gen") {
 		// Builder the versioned apis client
 		clientPkg := filepath.Join(util.Repo, "pkg", "client")
-		clientset := filepath.Join(clientPkg, "clientset_generated")
+		clientset := filepath.Join(clientPkg, "clientset")
 		c := exec.Command(filepath.Join(root, "client-gen"),
 			"-o", util.GoSrc,
 			"--go-header-file", copyright,
 			"--input-base", filepath.Join(util.Repo, "pkg", "apis"),
 			"--input", strings.Join(versionedAPIs, ","),
 			"--clientset-path", clientset,
-			"--clientset-name", "clientset",
+			"--clientset-name", "versioned",
 		)
 		glog.V(4).Infof("%s\n", strings.Join(c.Args, " "))
 		out, err := c.CombinedOutput()
@@ -228,7 +228,7 @@ func RunGenerate(cmd *cobra.Command, args []string) {
 			glog.Fatalf("failed to run client-gen %s %v", out, err)
 		}
 
-		listerPkg := filepath.Join(clientPkg, "listers_generated")
+		listerPkg := filepath.Join(clientPkg, "listers")
 		c = exec.Command(filepath.Join(root, "lister-gen"),
 			append(versioned,
 				"-o", util.GoSrc,
@@ -241,15 +241,14 @@ func RunGenerate(cmd *cobra.Command, args []string) {
 			glog.Fatalf("failed to run lister-gen %s %v", out, err)
 		}
 
-		informerPkg := filepath.Join(clientPkg, "informers_generated")
+		informerPkg := filepath.Join(clientPkg, "informers")
 		c = exec.Command(filepath.Join(root, "informer-gen"),
 			append(versioned,
 				"-o", util.GoSrc,
 				"--go-header-file", copyright,
 				"--output-package", informerPkg,
 				"--listers-package", listerPkg,
-				"--versioned-clientset-package", filepath.Join(clientset, "clientset"),
-				"--internal-clientset-package", filepath.Join(clientset, "internalclientset"))...,
+				"--versioned-clientset-package", filepath.Join(clientset, "versioned"))...,
 		)
 		glog.V(4).Infof("%s\n", strings.Join(c.Args, " "))
 		out, err = c.CombinedOutput()
