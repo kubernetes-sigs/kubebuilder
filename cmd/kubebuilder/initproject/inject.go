@@ -88,8 +88,8 @@ import (
 	"github.com/kubernetes-sigs/kubebuilder/pkg/inject/args"
     "k8s.io/client-go/rest"
 
-    "{{.Repo}}/pkg/client/clientset_generated/clientset"
-    "{{.Repo}}/pkg/client/informers_generated/externalversions"
+    "{{.Repo}}/pkg/client/clientset"
+    "{{.Repo}}/pkg/client/informers/externalversions"
 )
 
 // InjectArgs are the arguments need to initialize controllers

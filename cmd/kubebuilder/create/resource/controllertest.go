@@ -53,7 +53,7 @@ import (
     "k8s.io/client-go/kubernetes"
     "k8s.io/client-go/rest"
 
-    "{{ .Repo }}/pkg/client/clientset_generated/clientset"
+    "{{ .Repo }}/pkg/client/clientset"
     "{{ .Repo }}/pkg/inject"
     "{{ .Repo }}/pkg/inject/args"
 )
@@ -114,7 +114,7 @@ import (
     metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
     . "{{ .Repo }}/pkg/apis/{{ .Group }}/{{ .Version }}"
-    . "{{ .Repo }}/pkg/client/clientset_generated/clientset/typed/{{ .Group }}/{{ .Version }}"
+    . "{{ .Repo }}/pkg/client/clientset/typed/{{ .Group }}/{{ .Version }}"
 )
 
 // EDIT THIS FILE!

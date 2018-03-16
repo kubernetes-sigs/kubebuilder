@@ -47,11 +47,11 @@ func (d *injectGenerator) Imports(c *generator.Context) []string {
 		"github.com/kubernetes-sigs/kubebuilder/pkg/controller",
 		"k8s.io/client-go/rest",
 		repo + "/pkg/controller/sharedinformers",
-		repo + "/pkg/client/informers_generated/externalversions",
+		repo + "/pkg/client/informers/externalversions",
 		repo + "/pkg/inject/args",
 		"rbacv1 \"k8s.io/api/rbac/v1\"",
 		"k8s.io/client-go/kubernetes/scheme",
-		"rscheme " + "\"" + repo + "/pkg/client/clientset_generated/clientset/scheme\"",
+		"rscheme " + "\"" + repo + "/pkg/client/clientset/scheme\"",
 	}
 
 	// Import package for each controller
