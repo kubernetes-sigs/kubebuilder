@@ -50,7 +50,8 @@ func (d *injectGenerator) Imports(c *generator.Context) []string {
 		repo + "/pkg/client/informers_generated/externalversions",
 		repo + "/pkg/inject/args",
 		"rbacv1 \"k8s.io/api/rbac/v1\"",
-		"k8s.io/apimachinery/pkg/runtime/schema",
+		"k8s.io/client-go/kubernetes/scheme",
+		"rscheme " + "\"" + repo + "/pkg/client/clientset_generated/clientset/scheme\"",
 	}
 
 	// Import package for each controller
@@ -99,6 +100,8 @@ func (d *injectGenerator) Finalize(context *generator.Context, w io.Writer) erro
 
 var injectAPITemplate = `
 func init() {
+    rscheme.AddToScheme(scheme.Scheme)
+
     // Inject Informers
     Inject = append(Inject, func(arguments args.InjectArgs) error {
 	    Injector.ControllerManager = arguments.ControllerManager

@@ -19,15 +19,20 @@ package args
 import (
 	"time"
 
+	"github.com/golang/glog"
 	"github.com/kubernetes-sigs/kubebuilder/pkg/admission"
 	"github.com/kubernetes-sigs/kubebuilder/pkg/controller"
 	"github.com/kubernetes-sigs/kubebuilder/pkg/inject/run"
+	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
+	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/record"
 )
 
 // InjectArgs are the common arguments for initializing controllers and admission hooks
@@ -46,17 +51,29 @@ type InjectArgs struct {
 
 	// AdmissionManager is the admission webhook manager
 	AdmissionHandler *admission.AdmissionManager
+
+	// EventBroadcaster
+	EventBroadcaster record.EventBroadcaster
+}
+
+// CreateRecorder returns a new recorder
+func (iargs InjectArgs) CreateRecorder(name string) record.EventRecorder {
+	return iargs.EventBroadcaster.NewRecorder(scheme.Scheme, corev1.EventSource{Component: name})
 }
 
 // CreateInjectArgs returns new arguments for initializing objects
 func CreateInjectArgs(config *rest.Config) InjectArgs {
 	cs := kubernetes.NewForConfigOrDie(config)
+	eventBroadcaster := record.NewBroadcaster()
+	eventBroadcaster.StartLogging(glog.Infof)
+	eventBroadcaster.StartRecordingToSink(&typedcorev1.EventSinkImpl{Interface: cs.CoreV1().Events("")})
 	return InjectArgs{
 		Config:              config,
 		KubernetesClientSet: cs,
 		KubernetesInformers: informers.NewSharedInformerFactory(cs, 2*time.Minute),
 		ControllerManager:   &controller.ControllerManager{},
 		AdmissionHandler:    &admission.AdmissionManager{},
+		EventBroadcaster:    eventBroadcaster,
 	}
 }
 
