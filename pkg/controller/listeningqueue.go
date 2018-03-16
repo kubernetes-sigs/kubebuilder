@@ -43,13 +43,22 @@ type listeningQueue struct {
 
 // watchFor watches objects matching obj's type and enqueues their keys.
 func (q *listeningQueue) watchFor(obj metav1.Object) error {
-	return q.addEventHandler(obj, handlefunctions.MappingEnqueuingFnProvider{handlefunctions.MapToSelf})
+	return q.addEventHandler(obj, handlefunctions.MappingEnqueuingFnProvider{Map: handlefunctions.MapToSelf})
 }
 
 // watchForAndMapToController watches objects matching obj's type and enqueues the keys of their controllers.
 func (q *listeningQueue) watchForAndMapToController(obj metav1.Object, gvks ...metav1.GroupVersionKind) error {
 	return q.addEventHandler(obj, handlefunctions.MappingEnqueuingFnProvider{
-		handlefunctions.MapToController{GVK: gvks}.Map,
+		Map: handlefunctions.MapToController{GVK: gvks}.Map,
+	})
+}
+
+// watchForAndMapToControllerIf watches objects matching obj's type and enqueues the keys of their controllers.
+func (q *listeningQueue) watchForAndMapToControllerIf(obj metav1.Object, predicate handlefunctions.Predicate,
+	gvks ...metav1.GroupVersionKind) error {
+	return q.addEventHandler(obj, handlefunctions.MappingEnqueuingFnProvider{
+		Map:       handlefunctions.MapToController{GVK: gvks}.Map,
+		Predicate: predicate,
 	})
 }
 
@@ -57,7 +66,7 @@ func (q *listeningQueue) watchForAndMapToController(obj metav1.Object, gvks ...m
 func (q *listeningQueue) watchForAndMapToNewObjectKey(
 	obj metav1.Object, mappingFn handlefunctions.ObjToKey) error {
 
-	return q.addEventHandler(obj, handlefunctions.MappingEnqueuingFnProvider{mappingFn})
+	return q.addEventHandler(obj, handlefunctions.MappingEnqueuingFnProvider{Map: mappingFn})
 }
 
 // watchForAndHandleEvent watches objects matching obj's type and uses the functions from provider to handle events.

@@ -26,8 +26,13 @@ import (
 	"k8s.io/client-go/util/workqueue"
 )
 
+var (
+	ResourceVersionChanged = ResourceVersionChangedPredicate{}
+)
+
 // MappingEnqueuingFnProvider provides Fns to map objects to name/namespace keys and enqueue them as messages
 type MappingEnqueuingFnProvider struct {
+	Predicate Predicate
 	// Map maps an object to a key that can be enqueued
 	Map func(interface{}) string
 }
@@ -109,3 +114,64 @@ func MapToSelf(obj interface{}) string {
 
 // ObjToKey returns a string namespace/name key for an object
 type ObjToKey func(interface{}) string
+
+type Predicate interface {
+	HandleUpdate(old, new interface{}) bool
+	HandleDelete(obj interface{}) bool
+	HandleCreate(obj interface{}) bool
+}
+
+type TrueMixin struct{}
+
+func (TrueMixin) HandleUpdate(old, new interface{}) bool {
+	return true
+}
+
+func (TrueMixin) HandleDelete(obj interface{}) bool {
+	return true
+}
+
+func (TrueMixin) HandleCreate(obj interface{}) bool {
+	return true
+}
+
+type FalseMixin struct{}
+
+func (FalseMixin) HandleUpdate(old, new interface{}) bool {
+	return false
+}
+
+func (FalseMixin) HandleDelete(obj interface{}) bool {
+	return false
+}
+
+func (FalseMixin) HandleCreate(obj interface{}) bool {
+	return false
+}
+
+type ConditionalMappingHandler struct {
+	MappingEnqueuingFnProvider
+}
+
+type ResourceVersionChangedPredicate struct {
+	TrueMixin
+}
+
+func (ResourceVersionChangedPredicate) HandleUpdate(old, new interface{}) bool {
+	oldObject, ok := old.(metav1.Object)
+	if !ok {
+		fmt.Errorf("Cannot handle %T because old is not an Object: %v\n", oldObject, oldObject)
+		return false
+	}
+	newObject, ok := new.(metav1.Object)
+	if !ok {
+		fmt.Errorf("Cannot handle %T because new is not an Object: %v\n", newObject, newObject)
+		return false
+	}
+
+	if oldObject.GetResourceVersion() == newObject.GetResourceVersion() {
+		// Periodic resync will send update events for all resources Deployments.
+		return false
+	}
+	return true
+}

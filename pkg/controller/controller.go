@@ -99,6 +99,12 @@ func (gc *GenericController) WatchAndMapToController(obj metav1.Object, gvks ...
 	return gc.queue.watchForAndMapToController(obj, gvks...)
 }
 
+func (gc *GenericController) WatchAndMapToControllerIf(obj metav1.Object,
+	p handlefunctions.Predicate, gvks ...metav1.GroupVersionKind) error {
+	gc.once.Do(gc.init)
+	return gc.queue.watchForAndMapToControllerIf(obj, p, gvks...)
+}
+
 // WatchAndMap watches objects matching obj's type and enqueues the key returned by mapFn.
 func (gc *GenericController) WatchAndMap(obj metav1.Object, mapFn handlefunctions.ObjToKey) error {
 	gc.once.Do(gc.init)
