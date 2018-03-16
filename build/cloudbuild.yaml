@@ -41,7 +41,7 @@ steps:
   - 'GOARCH=${_GOARCH}'
   - 'VERSION=${TAG_NAME}'
 - name: 'gcr.io/cloud-builders/gsutil'
-  args: ['-h', 'Content-Type:application/gzip', 'cp', 'kubebuilder-${TAG_NAME}-${_GOOS}-${_GOARCH}.tar.gz', 'gs://kubebuilder-release/kubebuilder-${TAG_NAME}-${_GOOS}-${_GOARCH}.tar.gz']
+  args: ['-h', 'Content-Type:application/gzip', 'cp', '-a', 'public-read', 'kubebuilder-${TAG_NAME}-${_GOOS}-${_GOARCH}.tar.gz', 'gs://kubebuilder-release/kubebuilder-${TAG_NAME}-${_GOOS}-${_GOARCH}.tar.gz']
   env:
   - 'GOOS=${_GOOS}'
   - 'GOARCH=${_GOARCH}'
