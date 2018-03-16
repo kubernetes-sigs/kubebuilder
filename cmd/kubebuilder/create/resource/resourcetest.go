@@ -52,12 +52,12 @@ import (
     "k8s.io/client-go/rest"
 
     "{{ .Repo }}/pkg/inject"
-    "{{ .Repo }}/pkg/client/clientset"
+    "{{ .Repo }}/pkg/client/clientset/versioned"
 )
 
 var testenv *test.TestEnvironment
 var config *rest.Config
-var cs *clientset.Clientset
+var cs *versioned.Clientset
 
 func Test{{title .Version}}(t *testing.T) {
     RegisterFailHandler(Fail)
@@ -71,7 +71,7 @@ var _ = BeforeSuite(func() {
     config, err = testenv.Start()
     Expect(err).NotTo(HaveOccurred())
 
-    cs = clientset.NewForConfigOrDie(config)
+    cs = versioned.NewForConfigOrDie(config)
 })
 
 var _ = AfterSuite(func() {
@@ -91,7 +91,7 @@ import (
     metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
     . "{{.Repo}}/pkg/apis/{{.Group}}/{{.Version}}"
-    . "{{.Repo}}/pkg/client/clientset/typed/{{.Group}}/{{.Version}}"
+    . "{{.Repo}}/pkg/client/clientset/versioned/typed/{{.Group}}/{{.Version}}"
 )
 
 // EDIT THIS FILE!

@@ -88,7 +88,7 @@ import (
 	"github.com/kubernetes-sigs/kubebuilder/pkg/inject/args"
     "k8s.io/client-go/rest"
 
-    "{{.Repo}}/pkg/client/clientset"
+    "{{.Repo}}/pkg/client/clientset/versioned"
     "{{.Repo}}/pkg/client/informers/externalversions"
 )
 
@@ -96,14 +96,14 @@ import (
 type InjectArgs struct {
     args.InjectArgs
 
-    Clientset *clientset.Clientset
+    Clientset *versioned.Clientset
     Informers externalversions.SharedInformerFactory
 }
 
 
 // CreateInjectArgs returns new controller args
 func CreateInjectArgs(config *rest.Config) InjectArgs {
-    cs := clientset.NewForConfigOrDie(config)
+    cs := versioned.NewForConfigOrDie(config)
     return InjectArgs{
         InjectArgs: args.CreateInjectArgs(config),
         Clientset: cs,

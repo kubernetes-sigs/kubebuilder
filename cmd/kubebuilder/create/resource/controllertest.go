@@ -53,7 +53,7 @@ import (
     "k8s.io/client-go/kubernetes"
     "k8s.io/client-go/rest"
 
-    "{{ .Repo }}/pkg/client/clientset"
+    "{{ .Repo }}/pkg/client/clientset/versioned"
     "{{ .Repo }}/pkg/inject"
     "{{ .Repo }}/pkg/inject/args"
 )
@@ -61,7 +61,7 @@ import (
 var (
     testenv *test.TestEnvironment
     config *rest.Config
-    cs *clientset.Clientset
+    cs *versioned.Clientset
     ks *kubernetes.Clientset
     shutdown chan struct{}
     ctrl *controller.GenericController
@@ -77,7 +77,7 @@ var _ = BeforeSuite(func() {
     var err error
     config, err = testenv.Start()
     Expect(err).NotTo(HaveOccurred())
-    cs = clientset.NewForConfigOrDie(config)
+    cs = versioned.NewForConfigOrDie(config)
     ks = kubernetes.NewForConfigOrDie(config)
 
     shutdown = make(chan struct{})
@@ -114,7 +114,7 @@ import (
     metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
     . "{{ .Repo }}/pkg/apis/{{ .Group }}/{{ .Version }}"
-    . "{{ .Repo }}/pkg/client/clientset/typed/{{ .Group }}/{{ .Version }}"
+    . "{{ .Repo }}/pkg/client/clientset/versioned/typed/{{ .Group }}/{{ .Version }}"
 )
 
 // EDIT THIS FILE!

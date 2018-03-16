@@ -51,7 +51,7 @@ func (d *injectGenerator) Imports(c *generator.Context) []string {
 		repo + "/pkg/inject/args",
 		"rbacv1 \"k8s.io/api/rbac/v1\"",
 		"k8s.io/client-go/kubernetes/scheme",
-		"rscheme " + "\"" + repo + "/pkg/client/clientset/scheme\"",
+		"rscheme " + "\"" + repo + "/pkg/client/clientset/versioned/scheme\"",
 	}
 
 	// Import package for each controller

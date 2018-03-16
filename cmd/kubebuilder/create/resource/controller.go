@@ -42,7 +42,7 @@ import (
     "github.com/kubernetes-sigs/kubebuilder/pkg/controller"
     "github.com/kubernetes-sigs/kubebuilder/pkg/controller/types"
 
-    {{.Group}}{{.Version}}client "{{.Repo}}/pkg/client/clientset/typed/{{.Group}}/{{.Version}}"
+    {{.Group}}{{.Version}}client "{{.Repo}}/pkg/client/clientset/versioned/typed/{{.Group}}/{{.Version}}"
     {{.Group}}{{.Version}}lister "{{.Repo}}/pkg/client/listers/{{.Group}}/{{.Version}}"
     {{.Group}}{{.Version}} "{{.Repo}}/pkg/apis/{{.Group}}/{{.Version}}"
     {{.Group}}{{.Version}}informer "{{.Repo}}/pkg/client/informers/externalversions/{{.Group}}/{{.Version}}"
