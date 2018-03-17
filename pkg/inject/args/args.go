@@ -77,15 +77,28 @@ func CreateInjectArgs(config *rest.Config) InjectArgs {
 	}
 }
 
+// Injector is used by code generators to register code generated objects
 type Injector struct {
-	CRDs              []*apiextensionsv1beta1.CustomResourceDefinition
-	PolicyRules       []rbacv1.PolicyRule
-	GroupVersions     []schema.GroupVersion
-	Runnables         []Runnable
-	RunFns            []RunFn
+	// CRDs are CRDs that may be created / updated at startup
+	CRDs []*apiextensionsv1beta1.CustomResourceDefinition
+
+	// PolicyRules are RBAC policy rules that may be installed with the controller
+	PolicyRules []rbacv1.PolicyRule
+
+	// GroupVersions are the api group versions in the CRDs
+	GroupVersions []schema.GroupVersion
+
+	// Runnables objects run with RunArguments
+	Runnables []Runnable
+
+	// RunFns are functions run with RunArguments
+	RunFns []RunFn
+
+	// ControllerManager is used to register Informers and Controllers
 	ControllerManager *controller.ControllerManager
 }
 
+// Run will run all of the registered RunFns and Runnables
 func (i Injector) Run(a run.RunArguments) error {
 	for _, r := range i.Runnables {
 		go r.Run(a)
@@ -96,8 +109,10 @@ func (i Injector) Run(a run.RunArguments) error {
 	return nil
 }
 
+// RunFn can be registered with an Injector and run
 type RunFn func(arguments run.RunArguments) error
 
+// Runnable can be registered with an Injector and run
 type Runnable interface {
 	Run(arguments run.RunArguments) error
 }
