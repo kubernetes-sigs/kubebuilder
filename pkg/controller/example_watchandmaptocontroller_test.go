@@ -29,7 +29,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func ExampleGenericController_WatchAndMapToController() {
+func ExampleGenericController_WatchControllerOf() {
 	// One time setup for program
 	flag.Parse()
 	informerFactory := config.GetKubernetesInformersOrDie()

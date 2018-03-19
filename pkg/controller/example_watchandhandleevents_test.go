@@ -31,7 +31,7 @@ import (
 	"k8s.io/client-go/util/workqueue"
 )
 
-func ExampleGenericController_WatchAndHandleEvents() {
+func ExampleGenericController_WatchEvents() {
 	// One time setup for program
 	flag.Parse()
 	informerFactory := config.GetKubernetesInformersOrDie()
