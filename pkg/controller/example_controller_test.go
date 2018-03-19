@@ -23,6 +23,7 @@ import (
 
 	"github.com/kubernetes-sigs/kubebuilder/pkg/config"
 	"github.com/kubernetes-sigs/kubebuilder/pkg/controller"
+	"github.com/kubernetes-sigs/kubebuilder/pkg/controller/eventhandlers"
 	"github.com/kubernetes-sigs/kubebuilder/pkg/controller/types"
 	"github.com/kubernetes-sigs/kubebuilder/pkg/inject/run"
 	appsv1 "k8s.io/api/apps/v1"
@@ -59,7 +60,11 @@ func ExampleGenericController() {
 			return nil
 		},
 	}
-	if err := rsController.WatchAndMapToController(&corev1.Pod{}); err != nil {
+
+	fn := func(k types.ReconcileKey) (interface{}, error) {
+		return informerFactory.Apps().V1().ReplicaSets().Lister().ReplicaSets(k.Namespace).Get(k.Name)
+	}
+	if err := rsController.WatchControllerOf(&corev1.Pod{}, eventhandlers.Path{fn}); err != nil {
 		log.Fatalf("%v", err)
 	}
 	if err := rsController.Watch(&appsv1.ReplicaSet{}); err != nil {

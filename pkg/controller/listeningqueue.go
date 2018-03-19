@@ -19,7 +19,7 @@ package controller
 import (
 	"fmt"
 
-	"github.com/kubernetes-sigs/kubebuilder/pkg/controller/handlefunctions"
+	"github.com/kubernetes-sigs/kubebuilder/pkg/controller/eventhandlers"
 	"github.com/kubernetes-sigs/kubebuilder/pkg/controller/informers"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/cache"
@@ -41,40 +41,6 @@ type listeningQueue struct {
 	synced []cache.InformerSynced
 }
 
-// watchFor watches objects matching obj's type and enqueues their keys.
-func (q *listeningQueue) watchFor(obj metav1.Object) error {
-	return q.addEventHandler(obj, handlefunctions.MappingEnqueuingFnProvider{Map: handlefunctions.MapToSelf})
-}
-
-// watchForAndMapToController watches objects matching obj's type and enqueues the keys of their controllers.
-func (q *listeningQueue) watchForAndMapToController(obj metav1.Object, gvks ...metav1.GroupVersionKind) error {
-	return q.addEventHandler(obj, handlefunctions.MappingEnqueuingFnProvider{
-		Map: handlefunctions.MapToController{GVK: gvks}.Map,
-	})
-}
-
-// watchForAndMapToControllerIf watches objects matching obj's type and enqueues the keys of their controllers.
-func (q *listeningQueue) watchForAndMapToControllerIf(obj metav1.Object, predicate handlefunctions.Predicate,
-	gvks ...metav1.GroupVersionKind) error {
-	return q.addEventHandler(obj, handlefunctions.MappingEnqueuingFnProvider{
-		Map:       handlefunctions.MapToController{GVK: gvks}.Map,
-		Predicate: predicate,
-	})
-}
-
-// WatchAndMap watches objects matching obj's type and maps them to keys that it then enqueues.
-func (q *listeningQueue) watchForAndMapToNewObjectKey(
-	obj metav1.Object, mappingFn handlefunctions.ObjToKey) error {
-
-	return q.addEventHandler(obj, handlefunctions.MappingEnqueuingFnProvider{Map: mappingFn})
-}
-
-// watchForAndHandleEvent watches objects matching obj's type and uses the functions from provider to handle events.
-func (q *listeningQueue) watchForAndHandleEvent(
-	obj metav1.Object, provider handlefunctions.HandlingFnsForQueue) error {
-	return q.addEventHandler(obj, provider)
-}
-
 // watchChannel enqueues message from a channel
 func (q *listeningQueue) watchChannel(source <-chan string) error {
 	go func() {
@@ -86,14 +52,13 @@ func (q *listeningQueue) watchChannel(source <-chan string) error {
 }
 
 // addEventHandler uses the provider functions to add an event handler for events to objects matching obj's type
-func (q *listeningQueue) addEventHandler(
-	obj metav1.Object, provider handlefunctions.HandlingFnsForQueue) error {
+func (q *listeningQueue) addEventHandler(obj metav1.Object, eh eventhandlers.EventHandler) error {
 
 	i, err := q.lookupInformer(obj)
 	if err != nil {
 		return err
 	}
-	fns := provider.Get(q.RateLimitingInterface)
+	fns := eh.Get(q.RateLimitingInterface)
 	q.synced = append(q.synced, i.HasSynced)
 	i.AddEventHandler(fns)
 	return nil

@@ -52,7 +52,7 @@ func ExampleGenericController_WatchAndMap() {
 	if err != nil {
 		log.Fatalf("%v", err)
 	}
-	err = c.WatchAndMap(&corev1.Pod{},
+	err = c.WatchTransformationOf(&corev1.Pod{},
 		func(i interface{}) string {
 			p, ok := i.(*corev1.Pod)
 			if !ok {

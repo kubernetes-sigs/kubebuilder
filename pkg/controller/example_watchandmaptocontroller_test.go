@@ -23,10 +23,10 @@ import (
 
 	"github.com/kubernetes-sigs/kubebuilder/pkg/config"
 	"github.com/kubernetes-sigs/kubebuilder/pkg/controller"
+	"github.com/kubernetes-sigs/kubebuilder/pkg/controller/eventhandlers"
 	"github.com/kubernetes-sigs/kubebuilder/pkg/controller/types"
 	"github.com/kubernetes-sigs/kubebuilder/pkg/inject/run"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func ExampleGenericController_WatchAndMapToController() {
@@ -44,9 +44,10 @@ func ExampleGenericController_WatchAndMapToController() {
 			return nil
 		},
 	}
-	err := c.WatchAndMapToController(&corev1.Pod{},
-		metav1.GroupVersionKind{Group: "apps", Version: "v1", Kind: "ReplicaSet"},
-	)
+	fn := func(k types.ReconcileKey) (interface{}, error) {
+		return informerFactory.Apps().V1().ReplicaSets().Lister().ReplicaSets(k.Namespace).Get(k.Name)
+	}
+	err := c.WatchControllerOf(&corev1.Pod{}, eventhandlers.Path{fn})
 	if err != nil {
 		log.Fatalf("%v", err)
 	}

@@ -25,9 +25,10 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	"github.com/kubernetes-sigs/kubebuilder/pkg/controller/handlefunctions"
+	"github.com/kubernetes-sigs/kubebuilder/pkg/controller/eventhandlers"
 	"github.com/kubernetes-sigs/kubebuilder/pkg/controller/informers"
 	"github.com/kubernetes-sigs/kubebuilder/pkg/controller/metrics"
+	"github.com/kubernetes-sigs/kubebuilder/pkg/controller/predicates"
 	"github.com/kubernetes-sigs/kubebuilder/pkg/controller/types"
 	"github.com/kubernetes-sigs/kubebuilder/pkg/inject/run"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -41,7 +42,7 @@ import (
 var (
 	// DefaultReconcileFn is used by GenericController if Reconcile is not set
 	DefaultReconcileFn = func(k types.ReconcileKey) error {
-		log.Printf("No ReconcileFn definded - skipping %+v", k)
+		log.Printf("No ReconcileFn defined - skipping %+v", k)
 		return nil
 	}
 
@@ -87,34 +88,38 @@ func (gc *GenericController) GetMetrics() metrics.Metrics {
 	}
 }
 
-// Watch watches objects matching obj's type and enqueues their keys.
-func (gc *GenericController) Watch(obj metav1.Object) error {
+// Watch watches objects matching obj's type and enqueues their keys to be reconcild.
+func (gc *GenericController) Watch(obj metav1.Object, p ...predicates.Predicate) error {
 	gc.once.Do(gc.init)
-	return gc.queue.watchFor(obj)
+	return gc.queue.addEventHandler(obj,
+		eventhandlers.MapAndEnqueue{Map: eventhandlers.MapToSelf, Predicates: p})
 }
 
-// WatchAndMapToController watches objects matching obj's type and enqueues the keys of their controllers.
-func (gc *GenericController) WatchAndMapToController(obj metav1.Object, gvks ...metav1.GroupVersionKind) error {
+// WatchControllerOf watches for events for objects matching obj's type and enqueues events for the
+// controller of the object if the controller UID matches the ownerref UID.
+// Will walk the owners references looking up the controller using the path function and comparing the UID of
+// the object to the ownersref UID.
+// e.g. if obj was a Pod and the path contained lookup functions for ReplicaSet, Deployment, Foo it would walk
+// Pod -> (controller) ReplicaSet -> (controller) Deployment -> (controller) Foo and reconcile Foo only.
+func (gc *GenericController) WatchControllerOf(obj metav1.Object, path eventhandlers.Path,
+	p ...predicates.Predicate) error {
 	gc.once.Do(gc.init)
-	return gc.queue.watchForAndMapToController(obj, gvks...)
+	return gc.queue.addEventHandler(obj,
+		eventhandlers.MapAndEnqueue{Map: eventhandlers.MapToController{Path: path}.Map, Predicates: p})
 }
 
-func (gc *GenericController) WatchAndMapToControllerIf(obj metav1.Object,
-	p handlefunctions.Predicate, gvks ...metav1.GroupVersionKind) error {
+// WatchTransformationOf watches objects matching obj's type and enqueues the key returned by mapFn.
+func (gc *GenericController) WatchTransformationOf(obj metav1.Object, mapFn eventhandlers.ObjToKey,
+	p ...predicates.Predicate) error {
 	gc.once.Do(gc.init)
-	return gc.queue.watchForAndMapToControllerIf(obj, p, gvks...)
+	return gc.queue.addEventHandler(obj,
+		eventhandlers.MapAndEnqueue{Map: mapFn, Predicates: p})
 }
 
-// WatchAndMap watches objects matching obj's type and enqueues the key returned by mapFn.
-func (gc *GenericController) WatchAndMap(obj metav1.Object, mapFn handlefunctions.ObjToKey) error {
+// WatchEvents watches objects matching obj's type and uses the functions from provider to handle events.
+func (gc *GenericController) WatchEvents(obj metav1.Object, provider types.HandleFnProvider) error {
 	gc.once.Do(gc.init)
-	return gc.queue.watchForAndMapToNewObjectKey(obj, mapFn)
-}
-
-// WatchAndHandleEvents watches objects matching obj's type and uses the functions from provider to handle events.
-func (gc *GenericController) WatchAndHandleEvents(obj metav1.Object, provider types.HandleFnProvider) error {
-	gc.once.Do(gc.init)
-	return gc.queue.watchForAndHandleEvent(obj, fnToInterfaceAdapter{provider})
+	return gc.queue.addEventHandler(obj, fnToInterfaceAdapter{provider})
 }
 
 // WatchChannel enqueues object keys read from the channel.
