@@ -23,7 +23,7 @@ import (
 
 	"github.com/kubernetes-sigs/kubebuilder/pkg/config"
 	"github.com/kubernetes-sigs/kubebuilder/pkg/controller"
-	"github.com/kubernetes-sigs/kubebuilder/pkg/controller/handlefunctions"
+	"github.com/kubernetes-sigs/kubebuilder/pkg/controller/eventhandlers"
 	"github.com/kubernetes-sigs/kubebuilder/pkg/controller/types"
 	"github.com/kubernetes-sigs/kubebuilder/pkg/inject/run"
 	corev1 "k8s.io/api/core/v1"
@@ -47,14 +47,14 @@ func ExampleGenericController_WatchAndHandleEvents() {
 			return nil
 		},
 	}
-	err := c.WatchAndHandleEvents(&corev1.Pod{},
+	err := c.WatchEvents(&corev1.Pod{},
 		// This function returns the callbacks that will be invoked for events
 		func(q workqueue.RateLimitingInterface) cache.ResourceEventHandlerFuncs {
 			// This function implements the same functionality as GenericController.Watch
 			return cache.ResourceEventHandlerFuncs{
-				AddFunc:    func(obj interface{}) { q.AddRateLimited(handlefunctions.MapToSelf(obj)) },
-				UpdateFunc: func(old, obj interface{}) { q.AddRateLimited(handlefunctions.MapToSelf(obj)) },
-				DeleteFunc: func(obj interface{}) { q.AddRateLimited(handlefunctions.MapToSelf(obj)) },
+				AddFunc:    func(obj interface{}) { q.AddRateLimited(eventhandlers.MapToSelf(obj)) },
+				UpdateFunc: func(old, obj interface{}) { q.AddRateLimited(eventhandlers.MapToSelf(obj)) },
+				DeleteFunc: func(obj interface{}) { q.AddRateLimited(eventhandlers.MapToSelf(obj)) },
 			}
 		})
 	if err != nil {

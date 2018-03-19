@@ -14,13 +14,5 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package handlefunctions
-
-import (
-	. "github.com/onsi/ginkgo"
-	//. "github.com/onsi/gomega"
-)
-
-var _ = Describe("Handlerfuncs", func() {
-
-})
+// The handlefunctions defines mapping and event handling functions for controllers
+package eventhandlers
