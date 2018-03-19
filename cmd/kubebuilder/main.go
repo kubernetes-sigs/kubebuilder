@@ -81,10 +81,14 @@ Typical project lifecycle:
 
   kubebuilder create resource --group <group> --version <version> --kind <Kind>
 
-- run the controller locally, installing APIs into the cluster if they are missing:
+- run the controller as a local process (e.g. not in a container), installing APIs into the cluster if they are missing:
 
   GOBIN=$(pwd)/bin go install <your-project-go-package>/cmd/controller-manager
   bin/controller-manager --kubeconfig ~/.kube/config
+
+  # In another terminal create a new instance of your resource and watch the controller-manager output
+  kubectl apply -f hack/sample/<resource>.yaml
+
 
 - build a docker container to install the API and controller into a namespace with RBAC configured:
 
