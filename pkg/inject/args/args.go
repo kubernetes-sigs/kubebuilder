@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	"github.com/kubernetes-sigs/kubebuilder/pkg/admission"
 	"github.com/kubernetes-sigs/kubebuilder/pkg/controller"
 	"github.com/kubernetes-sigs/kubebuilder/pkg/inject/run"
 	corev1 "k8s.io/api/core/v1"
@@ -49,9 +48,6 @@ type InjectArgs struct {
 	// ControllerManager is the controller manager
 	ControllerManager *controller.ControllerManager
 
-	// AdmissionManager is the admission webhook manager
-	AdmissionHandler *admission.AdmissionManager
-
 	// EventBroadcaster
 	EventBroadcaster record.EventBroadcaster
 }
@@ -72,7 +68,6 @@ func CreateInjectArgs(config *rest.Config) InjectArgs {
 		KubernetesClientSet: cs,
 		KubernetesInformers: informers.NewSharedInformerFactory(cs, 2*time.Minute),
 		ControllerManager:   &controller.ControllerManager{},
-		AdmissionHandler:    &admission.AdmissionManager{},
 		EventBroadcaster:    eventBroadcaster,
 	}
 }
