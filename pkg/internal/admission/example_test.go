@@ -19,16 +19,16 @@ package admission_test
 import (
 	"fmt"
 
-	"github.com/kubernetes-sigs/kubebuilder/pkg/admission"
+	"github.com/kubernetes-sigs/kubebuilder/pkg/internal/admission"
 	"k8s.io/api/admission/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func ExampleAdmissionFunc() {
-	var _ admission.AdmissionFunc = func(review v1beta1.AdmissionReview) *v1beta1.AdmissionResponse {
+func Example() {
+	resourceType := metav1.GroupVersionResource{Group: "", Version: "v1", Resource: "pods"}
+	admission.HandleFunc("/pod", resourceType, func(review v1beta1.AdmissionReview) *v1beta1.AdmissionResponse {
 		pod := corev1.Pod{}
-		resourceType := metav1.GroupVersionResource{Group: "", Version: "v1", Resource: "pods"}
 		if errResp := admission.Decode(review, &pod, resourceType); errResp != nil {
 			return errResp
 		}
@@ -38,5 +38,6 @@ func ExampleAdmissionFunc() {
 				"pod %s/%s may only have 1 container.", pod.Namespace, pod.Name))
 		}
 		return admission.AllowResponse()
-	}
+	})
+	admission.ListenAndServeTLS("")
 }

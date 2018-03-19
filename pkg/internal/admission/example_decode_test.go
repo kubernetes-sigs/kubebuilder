@@ -18,26 +18,29 @@ package admission_test
 
 import (
 	"fmt"
-
-	"github.com/kubernetes-sigs/kubebuilder/pkg/admission"
+	"github.com/kubernetes-sigs/kubebuilder/pkg/internal/admission"
 	"k8s.io/api/admission/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func Example() {
+func ExampleDecode() {
+	var review v1beta1.AdmissionReview
 	resourceType := metav1.GroupVersionResource{Group: "", Version: "v1", Resource: "pods"}
-	admission.HandleFunc("/pod", resourceType, func(review v1beta1.AdmissionReview) *v1beta1.AdmissionResponse {
-		pod := corev1.Pod{}
-		if errResp := admission.Decode(review, &pod, resourceType); errResp != nil {
-			return errResp
-		}
-		// Business logic for admission decision
-		if len(pod.Spec.Containers) != 1 {
-			return admission.DenyResponse(fmt.Sprintf(
-				"pod %s/%s may only have 1 container.", pod.Namespace, pod.Name))
-		}
-		return admission.AllowResponse()
-	})
-	admission.ListenAndServeTLS("")
+	pod := corev1.Pod{}
+	if errResp := admission.Decode(review, &pod, resourceType); errResp != nil {
+		// Send error resp
+	}
+}
+
+func ExampleErrorResponse() {
+	admission.ErrorResponse(fmt.Errorf("some error explanation"))
+}
+
+func ExampleDenyResponse() {
+	admission.DenyResponse(fmt.Sprintf("some deny explanation"))
+}
+
+func ExampleAllowResponse() {
+	admission.AllowResponse()
 }
