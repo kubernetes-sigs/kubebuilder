@@ -95,12 +95,20 @@ func (gc *GenericController) Watch(obj metav1.Object, p ...predicates.Predicate)
 		eventhandlers.MapAndEnqueue{Map: eventhandlers.MapToSelf, Predicates: p})
 }
 
-// WatchControllerOf watches for events for objects matching obj's type and enqueues events for the
-// controller of the object if the controller UID matches the ownerref UID.
-// Will walk the owners references looking up the controller using the path function and comparing the UID of
-// the object to the ownersref UID.
-// e.g. if obj was a Pod and the path contained lookup functions for ReplicaSet, Deployment, Foo it would walk
-// Pod -> (controller) ReplicaSet -> (controller) Deployment -> (controller) Foo and reconcile Foo only.
+// WatchControllerOf reconciles the controller of the object type being watched.  e.g. If the
+// controller created a Pod, watch the Pod for events and invoke the controller reconcile function.
+// Uses path to lookup the ancestors.  Will lookup each ancestor in the path until it gets to the
+// root and then reconcile this key.
+//
+// Example: Deployment controller creates a ReplicaSet.  ReplicaSet controller creates a Pod.  Deployment
+// controller wants to have its reconcile method called for Pod events for any Pods it created (transitively).
+// - Pod event occurs - find owners references
+// - Lookup the Pod parent ReplicaSet by using the first path element (compare UID to ref)
+// - Lookup the ReplicaSet parent Deployment by using the second path element (compare UID to ref)
+// - Enqueue reconcile for Deployment namespace/name
+//
+// This could be implemented as:
+// WatchControllerOf(&corev1.Pod, eventhandlers.Path{FnToLookupReplicaSetByNamespaceName, FnToLookupDeploymentByNamespaceName })
 func (gc *GenericController) WatchControllerOf(obj metav1.Object, path eventhandlers.Path,
 	p ...predicates.Predicate) error {
 	gc.once.Do(gc.init)
