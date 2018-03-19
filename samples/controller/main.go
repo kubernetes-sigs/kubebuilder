@@ -18,60 +18,33 @@ package main
 
 import (
 	"flag"
-	"time"
 
-	"github.com/golang/glog"
-	kubeinformers "k8s.io/client-go/informers"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
 	// Uncomment the following line to load the gcp plugin (only required to authenticate against GKE clusters).
-	// _ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 
-	clientset "github.com/kubernetes-sigs/kubebuilder/samples/controller/pkg/client/clientset/versioned"
-	informers "github.com/kubernetes-sigs/kubebuilder/samples/controller/pkg/client/informers/externalversions"
-	"github.com/kubernetes-sigs/kubebuilder/samples/controller/pkg/signals"
-)
-
-var (
-	masterURL  string
-	kubeconfig string
+	"github.com/kubernetes-sigs/kubebuilder/pkg/config"
+	"github.com/kubernetes-sigs/kubebuilder/pkg/inject/run"
+	"github.com/kubernetes-sigs/kubebuilder/pkg/signals"
+	"github.com/kubernetes-sigs/kubebuilder/samples/controller/pkg/apis/samplecontroller/v1alpha1"
+	"github.com/kubernetes-sigs/kubebuilder/samples/controller/pkg/inject/args"
+	"k8s.io/api/apps/v1"
 )
 
 func main() {
+	// Setup clients, informers, channels for injection
 	flag.Parse()
+	config := config.GetConfigOrDie()
+	rargs := run.RunArguments{Stop: signals.SetupSignalHandler()}
+	iargs := args.CreateInjectArgs(config)
 
-	// set up signals so we handle the first shutdown signal gracefully
-	stopCh := signals.SetupSignalHandler()
+	// Start informers
+	iargs.ControllerManager.AddInformerProvider(&v1.Deployment{}, iargs.KubernetesInformers.Apps().V1().Deployments())
+	iargs.ControllerManager.AddInformerProvider(&v1alpha1.Foo{}, iargs.Informers.Samplecontroller().V1alpha1().Foos())
 
-	cfg, err := clientcmd.BuildConfigFromFlags(masterURL, kubeconfig)
-	if err != nil {
-		glog.Fatalf("Error building kubeconfig: %s", err.Error())
-	}
+	// Add the Foo controller
+	iargs.ControllerManager.AddController(NewController(iargs))
 
-	kubeClient, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		glog.Fatalf("Error building kubernetes clientset: %s", err.Error())
-	}
-
-	exampleClient, err := clientset.NewForConfig(cfg)
-	if err != nil {
-		glog.Fatalf("Error building example clientset: %s", err.Error())
-	}
-
-	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(kubeClient, time.Second*30)
-	exampleInformerFactory := informers.NewSharedInformerFactory(exampleClient, time.Second*30)
-
-	controller := NewController(kubeClient, exampleClient, kubeInformerFactory, exampleInformerFactory)
-
-	go kubeInformerFactory.Start(stopCh)
-	go exampleInformerFactory.Start(stopCh)
-
-	if err = controller.Run(2, stopCh); err != nil {
-		glog.Fatalf("Error running controller: %s", err.Error())
-	}
-}
-
-func init() {
-	flag.StringVar(&kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
-	flag.StringVar(&masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
+	// Run the Informers and Controllers
+	iargs.ControllerManager.RunInformersAndControllers(rargs)
+	<-rargs.Stop
 }
