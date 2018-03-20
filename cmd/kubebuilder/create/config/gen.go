@@ -71,7 +71,12 @@ func (g CodeGenerator) Execute() error {
 		getClusterRoleBinding(p),
 	)
 	result = append(result, getCrds(p)...)
-	result = append(result, getDeployment(p))
+	if controllerType == "deployment" {
+		result = append(result, getDeployment(p))
+	} else {
+		result = append(result, getStatefuleSetService(p))
+		result = append(result, getStatefuleSet(p))
+	}
 
 	util.WriteString(output, strings.Join(result, "---\n"))
 	return nil
@@ -141,7 +146,10 @@ func getClusterRoleBinding(p *parse.APIs) string {
 }
 
 func getDeployment(p *parse.APIs) string {
-	labels := addLabels(map[string]string{})
+	var replicas int32 = 1
+	labels := addLabels(map[string]string{
+		"control-plane": "controller-manager",
+	})
 	dep := appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
@@ -153,34 +161,11 @@ func getDeployment(p *parse.APIs) string {
 			Labels:    labels,
 		},
 		Spec: appsv1.DeploymentSpec{
+			Replicas: &replicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
 			},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: labels,
-				},
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Name:    "controller-manager",
-							Image:   controllerImage,
-							Command: []string{"/root/controller-manager"},
-							Args:    []string{"--install-crds=false"},
-							Resources: corev1.ResourceRequirements{
-								Requests: map[corev1.ResourceName]resource.Quantity{
-									"cpu":    resource.MustParse("100m"),
-									"memory": resource.MustParse("20Mi"),
-								},
-								Limits: map[corev1.ResourceName]resource.Quantity{
-									"cpu":    resource.MustParse("100m"),
-									"memory": resource.MustParse("30Mi"),
-								},
-							},
-						},
-					},
-				},
-			},
+			Template: getPodTemplate(labels),
 		},
 	}
 
@@ -189,6 +174,97 @@ func getDeployment(p *parse.APIs) string {
 		glog.Fatalf("Error: %v", err)
 	}
 	return string(s)
+}
+
+func getStatefuleSet(p *parse.APIs) string {
+	var replicas int32 = 1
+	labels := addLabels(map[string]string{
+		"control-plane": "controller-manager",
+	})
+	statefulset := appsv1.StatefulSet{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "apps/v1",
+			Kind:       "StatefulSet",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("%v-controller-manager", name),
+			Namespace: fmt.Sprintf("%v-system", name),
+			Labels:    labels,
+		},
+		Spec: appsv1.StatefulSetSpec{
+			ServiceName: fmt.Sprintf("%v-controller-manager-service", name),
+			Replicas:    &replicas,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: labels,
+			},
+			Template: getPodTemplate(labels),
+		},
+	}
+
+	s, err := yaml.Marshal(statefulset)
+	if err != nil {
+		glog.Fatalf("Error: %v", err)
+	}
+	return string(s)
+
+}
+
+func getStatefuleSetService(p *parse.APIs) string {
+	labels := addLabels(map[string]string{
+		"control-plane": "controller-manager",
+	})
+	statefulsetservice := corev1.Service{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Service",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("%v-controller-manager-service", name),
+			Namespace: fmt.Sprintf("%v-system", name),
+			Labels:    labels,
+		},
+		Spec: corev1.ServiceSpec{
+			Selector:  labels,
+			ClusterIP: "None",
+		},
+	}
+
+	s, err := yaml.Marshal(statefulsetservice)
+	if err != nil {
+		glog.Fatalf("Error: %v", err)
+	}
+	return string(s)
+
+}
+
+func getPodTemplate(labels map[string]string) corev1.PodTemplateSpec {
+	var terminationPeriod int64 = 10
+	return corev1.PodTemplateSpec{
+		ObjectMeta: metav1.ObjectMeta{
+			Labels: labels,
+		},
+		Spec: corev1.PodSpec{
+			TerminationGracePeriodSeconds: &terminationPeriod,
+			Containers: []corev1.Container{
+				{
+					Name:    "controller-manager",
+					Image:   controllerImage,
+					Command: []string{"/root/controller-manager"},
+					Args:    []string{"--install-crds=false"},
+					Resources: corev1.ResourceRequirements{
+						Requests: map[corev1.ResourceName]resource.Quantity{
+							"cpu":    resource.MustParse("100m"),
+							"memory": resource.MustParse("20Mi"),
+						},
+						Limits: map[corev1.ResourceName]resource.Quantity{
+							"cpu":    resource.MustParse("100m"),
+							"memory": resource.MustParse("30Mi"),
+						},
+					},
+				},
+			},
+		},
+	}
 }
 
 func getCrds(p *parse.APIs) []string {
