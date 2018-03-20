@@ -35,6 +35,18 @@ import (
 // CodeGenerator generates code for Kubernetes resources and controllers
 type CodeGenerator struct{}
 
+var kblabels = map[string]string{
+	"platform": "kubernetes_sigs_kubebuilder",
+}
+
+func addLabels(m map[string]string) map[string]string {
+	for k, v := range kblabels {
+		m[k] = v
+	}
+	m["api"] = name
+	return m
+}
+
 // Execute parses packages and executes the code generators against the resource and controller packages
 func (g CodeGenerator) Execute() error {
 	arguments := args.Default()
@@ -84,10 +96,8 @@ func getClusterRole(p *parse.APIs) string {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name + "-role",
-			Labels: map[string]string{
-				"api": name,
-			},
+			Name:   name + "-role",
+			Labels: addLabels(map[string]string{}),
 		},
 		Rules: rules,
 	}
@@ -107,9 +117,7 @@ func getClusterRoleBinding(p *parse.APIs) string {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-rolebinding", name),
 			Namespace: fmt.Sprintf("%s-system", name),
-			Labels: map[string]string{
-				"api": name,
-			},
+			Labels:    addLabels(map[string]string{}),
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -133,9 +141,7 @@ func getClusterRoleBinding(p *parse.APIs) string {
 }
 
 func getDeployment(p *parse.APIs) string {
-	labels := map[string]string{
-		"api": name,
-	}
+	labels := addLabels(map[string]string{})
 	dep := appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
@@ -191,9 +197,7 @@ func getCrds(p *parse.APIs) []string {
 		for _, v := range g.Versions {
 			for _, r := range v.Resources {
 				crd := r.CRD
-				crd.Labels = map[string]string{
-					"api": name,
-				}
+				crd.Labels = addLabels(map[string]string{})
 				s, err := yaml.Marshal(crd)
 				if err != nil {
 					glog.Fatalf("Error: %v", err)
@@ -208,10 +212,8 @@ func getCrds(p *parse.APIs) []string {
 func getNamespace(p *parse.APIs) string {
 	ns := corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: fmt.Sprintf("%v-system", name),
-			Labels: map[string]string{
-				"api": name,
-			},
+			Name:   fmt.Sprintf("%v-system", name),
+			Labels: addLabels(map[string]string{}),
 		},
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
