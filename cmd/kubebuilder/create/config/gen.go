@@ -35,6 +35,18 @@ import (
 // CodeGenerator generates code for Kubernetes resources and controllers
 type CodeGenerator struct{}
 
+var kblabels = map[string]string{
+	"platform": "kubernetes_sigs_kubebuilder",
+}
+
+func addLabels(m map[string]string) map[string]string {
+	for k, v := range kblabels {
+		m[k] = v
+	}
+	m["api"] = name
+	return m
+}
+
 // Execute parses packages and executes the code generators against the resource and controller packages
 func (g CodeGenerator) Execute() error {
 	arguments := args.Default()
@@ -59,7 +71,12 @@ func (g CodeGenerator) Execute() error {
 		getClusterRoleBinding(p),
 	)
 	result = append(result, getCrds(p)...)
-	result = append(result, getDeployment(p))
+	if controllerType == "deployment" {
+		result = append(result, getDeployment(p))
+	} else {
+		result = append(result, getStatefuleSetService(p))
+		result = append(result, getStatefuleSet(p))
+	}
 
 	util.WriteString(output, strings.Join(result, "---\n"))
 	return nil
@@ -84,10 +101,8 @@ func getClusterRole(p *parse.APIs) string {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name + "-role",
-			Labels: map[string]string{
-				"api": name,
-			},
+			Name:   name + "-role",
+			Labels: addLabels(map[string]string{}),
 		},
 		Rules: rules,
 	}
@@ -107,9 +122,7 @@ func getClusterRoleBinding(p *parse.APIs) string {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-rolebinding", name),
 			Namespace: fmt.Sprintf("%s-system", name),
-			Labels: map[string]string{
-				"api": name,
-			},
+			Labels:    addLabels(map[string]string{}),
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -133,9 +146,10 @@ func getClusterRoleBinding(p *parse.APIs) string {
 }
 
 func getDeployment(p *parse.APIs) string {
-	labels := map[string]string{
-		"api": name,
-	}
+	var replicas int32 = 1
+	labels := addLabels(map[string]string{
+		"control-plane": "controller-manager",
+	})
 	dep := appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps/v1",
@@ -147,34 +161,11 @@ func getDeployment(p *parse.APIs) string {
 			Labels:    labels,
 		},
 		Spec: appsv1.DeploymentSpec{
+			Replicas: &replicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
 			},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: labels,
-				},
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Name:    "controller-manager",
-							Image:   controllerImage,
-							Command: []string{"/root/controller-manager"},
-							Args:    []string{"--install-crds=false"},
-							Resources: corev1.ResourceRequirements{
-								Requests: map[corev1.ResourceName]resource.Quantity{
-									"cpu":    resource.MustParse("100m"),
-									"memory": resource.MustParse("20Mi"),
-								},
-								Limits: map[corev1.ResourceName]resource.Quantity{
-									"cpu":    resource.MustParse("100m"),
-									"memory": resource.MustParse("30Mi"),
-								},
-							},
-						},
-					},
-				},
-			},
+			Template: getPodTemplate(labels),
 		},
 	}
 
@@ -185,15 +176,104 @@ func getDeployment(p *parse.APIs) string {
 	return string(s)
 }
 
+func getStatefuleSet(p *parse.APIs) string {
+	var replicas int32 = 1
+	labels := addLabels(map[string]string{
+		"control-plane": "controller-manager",
+	})
+	statefulset := appsv1.StatefulSet{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "apps/v1",
+			Kind:       "StatefulSet",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("%v-controller-manager", name),
+			Namespace: fmt.Sprintf("%v-system", name),
+			Labels:    labels,
+		},
+		Spec: appsv1.StatefulSetSpec{
+			ServiceName: fmt.Sprintf("%v-controller-manager-service", name),
+			Replicas:    &replicas,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: labels,
+			},
+			Template: getPodTemplate(labels),
+		},
+	}
+
+	s, err := yaml.Marshal(statefulset)
+	if err != nil {
+		glog.Fatalf("Error: %v", err)
+	}
+	return string(s)
+
+}
+
+func getStatefuleSetService(p *parse.APIs) string {
+	labels := addLabels(map[string]string{
+		"control-plane": "controller-manager",
+	})
+	statefulsetservice := corev1.Service{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Service",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("%v-controller-manager-service", name),
+			Namespace: fmt.Sprintf("%v-system", name),
+			Labels:    labels,
+		},
+		Spec: corev1.ServiceSpec{
+			Selector:  labels,
+			ClusterIP: "None",
+		},
+	}
+
+	s, err := yaml.Marshal(statefulsetservice)
+	if err != nil {
+		glog.Fatalf("Error: %v", err)
+	}
+	return string(s)
+
+}
+
+func getPodTemplate(labels map[string]string) corev1.PodTemplateSpec {
+	var terminationPeriod int64 = 10
+	return corev1.PodTemplateSpec{
+		ObjectMeta: metav1.ObjectMeta{
+			Labels: labels,
+		},
+		Spec: corev1.PodSpec{
+			TerminationGracePeriodSeconds: &terminationPeriod,
+			Containers: []corev1.Container{
+				{
+					Name:    "controller-manager",
+					Image:   controllerImage,
+					Command: []string{"/root/controller-manager"},
+					Args:    []string{"--install-crds=false"},
+					Resources: corev1.ResourceRequirements{
+						Requests: map[corev1.ResourceName]resource.Quantity{
+							"cpu":    resource.MustParse("100m"),
+							"memory": resource.MustParse("20Mi"),
+						},
+						Limits: map[corev1.ResourceName]resource.Quantity{
+							"cpu":    resource.MustParse("100m"),
+							"memory": resource.MustParse("30Mi"),
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
 func getCrds(p *parse.APIs) []string {
 	result := []string{}
 	for _, g := range p.APIs.Groups {
 		for _, v := range g.Versions {
 			for _, r := range v.Resources {
 				crd := r.CRD
-				crd.Labels = map[string]string{
-					"api": name,
-				}
+				crd.Labels = addLabels(map[string]string{})
 				s, err := yaml.Marshal(crd)
 				if err != nil {
 					glog.Fatalf("Error: %v", err)
@@ -208,10 +288,8 @@ func getCrds(p *parse.APIs) []string {
 func getNamespace(p *parse.APIs) string {
 	ns := corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: fmt.Sprintf("%v-system", name),
-			Labels: map[string]string{
-				"api": name,
-			},
+			Name:   fmt.Sprintf("%v-system", name),
+			Labels: addLabels(map[string]string{}),
 		},
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",

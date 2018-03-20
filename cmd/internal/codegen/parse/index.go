@@ -19,7 +19,6 @@ package parse
 import (
 	"fmt"
 	"log"
-	"path/filepath"
 	"strings"
 
 	"github.com/kubernetes-sigs/kubebuilder/cmd/internal/codegen"
@@ -71,8 +70,9 @@ func (b *APIs) parseIndex() {
 
 		rt := parseResourceTag(b.getResourceTag(c))
 		r.Resource = rt.Resource
-		r.REST = rt.REST
-		r.Strategy = rt.Strategy
+		r.ShortName = rt.ShortName
+		//r.REST = rt.REST
+		//r.Strategy = rt.Strategy
 
 		// Copy the Status strategy to mirror the non-status strategy
 		r.StatusStrategy = strings.TrimSuffix(r.Strategy, "Strategy")
@@ -96,85 +96,86 @@ func (b *APIs) parseIndex() {
 		b.ByGroupKindVersion[r.Group][r.Kind][r.Version] = r
 		b.ByGroupVersionKind[r.Group][r.Version][r.Kind] = r
 
-		if !HasSubresource(c) {
-			continue
-		}
+		//if !HasSubresource(c) {
+		//	continue
+		//}
 		r.Type = c
-		r.Subresources = b.getSubresources(r)
+		//r.Subresources = b.getSubresources(r)
 	}
 }
 
-func (b *APIs) getSubresources(c *codegen.APIResource) map[string]*codegen.APISubresource {
-	r := map[string]*codegen.APISubresource{}
-	subresources := b.getSubresourceTags(c.Type)
-
-	if len(subresources) == 0 {
-		// Not a subresource
-		return r
-	}
-	for _, subresource := range subresources {
-		// Parse the values for each subresource
-		tags := parseSubresourceTag(c, subresource)
-		sr := &codegen.APISubresource{
-			Kind:     tags.Kind,
-			Request:  tags.RequestKind,
-			Path:     tags.Path,
-			REST:     tags.REST,
-			Domain:   b.Domain,
-			Version:  c.Version,
-			Resource: c.Resource,
-			Group:    c.Group,
-		}
-		if !b.isInPackage(tags) {
-			// Out of package Request types require an import and are prefixed with the
-			// package name - e.g. v1.Scale
-			sr.Request, sr.ImportPackage = b.getNameAndImport(tags)
-		}
-		if v, found := r[sr.Path]; found {
-			log.Fatalf("Multiple subresources registered for path %s: %v %v",
-				sr.Path, v, subresource)
-		}
-		r[sr.Path] = sr
-	}
-	return r
-}
+//func (b *APIs) getSubresources(c *codegen.APIResource) map[string]*codegen.APISubresource {
+//	r := map[string]*codegen.APISubresource{}
+//	subresources := b.getSubresourceTags(c.Type)
+//
+//	if len(subresources) == 0 {
+//		// Not a subresource
+//		return r
+//	}
+//for _, subresource := range subresources {
+//	// Parse the values for each subresource
+//	tags := parseSubresourceTag(c, subresource)
+//	sr := &codegen.APISubresource{
+//		Kind:     tags.Kind,
+//		Request:  tags.RequestKind,
+//		Path:     tags.Path,
+//		REST:     tags.REST,
+//		Domain:   b.Domain,
+//		Version:  c.Version,
+//		Resource: c.Resource,
+//		Group:    c.Group,
+//	}
+//	if !b.isInPackage(tags) {
+//		// Out of package Request types require an import and are prefixed with the
+//		// package name - e.g. v1.Scale
+//		sr.Request, sr.ImportPackage = b.getNameAndImport(tags)
+//	}
+//	if v, found := r[sr.Path]; found {
+//		log.Fatalf("Multiple subresources registered for path %s: %v %v",
+//			sr.Path, v, subresource)
+//	}
+//	r[sr.Path] = sr
+//}
+//	return r
+//}
 
 // subresourceTags contains the tags present in a "+subresource=" comment
-type subresourceTags struct {
-	Path        string
-	Kind        string
-	RequestKind string
-	REST        string
-}
-
-func (b *APIs) getSubresourceTags(c *types.Type) []string {
-	comments := Comments(c.CommentLines)
-	return comments.getTags("subresource", ":")
-}
+//type subresourceTags struct {
+//	Path        string
+//	Kind        string
+//	RequestKind string
+//	REST        string
+//}
+//
+//func (b *APIs) getSubresourceTags(c *types.Type) []string {
+//	comments := Comments(c.CommentLines)
+//	return comments.getTags("subresource", ":")
+//}
 
 // Returns true if the subresource Request type is in the same package as the resource type
-func (b *APIs) isInPackage(tags subresourceTags) bool {
-	return !strings.Contains(tags.RequestKind, ".")
-}
-
-// GetNameAndImport converts
-func (b *APIs) getNameAndImport(tags subresourceTags) (string, string) {
-	last := strings.LastIndex(tags.RequestKind, ".")
-	importPackage := tags.RequestKind[:last]
-
-	// Set the request kind to the struct name
-	tags.RequestKind = tags.RequestKind[last+1:]
-	// Find the package
-	pkg := filepath.Base(importPackage)
-	// Prefix the struct name with the package it is in
-	return strings.Join([]string{pkg, tags.RequestKind}, "."), importPackage
-}
+//func (b *APIs) isInPackage(tags subresourceTags) bool {
+//	return !strings.Contains(tags.RequestKind, ".")
+//}
+//
+//// GetNameAndImport converts
+//func (b *APIs) getNameAndImport(tags subresourceTags) (string, string) {
+//	last := strings.LastIndex(tags.RequestKind, ".")
+//	importPackage := tags.RequestKind[:last]
+//
+//	// Set the request kind to the struct name
+//	tags.RequestKind = tags.RequestKind[last+1:]
+//	// Find the package
+//	pkg := filepath.Base(importPackage)
+//	// Prefix the struct name with the package it is in
+//	return strings.Join([]string{pkg, tags.RequestKind}, "."), importPackage
+//}
 
 // resourceTags contains the tags present in a "+resource=" comment
 type resourceTags struct {
-	Resource string
-	REST     string
-	Strategy string
+	Resource  string
+	REST      string
+	Strategy  string
+	ShortName string
 }
 
 // ParseResourceTag parses the tags in a "+resource=" comment into a resourceTags struct
@@ -189,40 +190,42 @@ func parseResourceTag(tag string) resourceTags {
 		}
 		value := kv[1]
 		switch kv[0] {
-		case "rest":
-			result.REST = value
+		//case "rest":
+		//	result.REST = value
 		case "path":
 			result.Resource = value
-		case "strategy":
-			result.Strategy = value
+		//case "strategy":
+		//	result.Strategy = value
+		case "shortName":
+			result.ShortName = value
 		}
 	}
 	return result
 }
 
 // ParseSubresourceTag parses the tags in a "+subresource=" comment into a subresourceTags struct
-func parseSubresourceTag(c *codegen.APIResource, tag string) subresourceTags {
-	result := subresourceTags{}
-	for _, elem := range strings.Split(tag, ",") {
-		kv := strings.Split(elem, "=")
-		if len(kv) != 2 {
-			log.Fatalf("// +subresource: tags must be key value pairs.  Expected "+
-				"keys [request=<requestType>,rest=<restImplType>,path=<subresourcepath>] "+
-				"Got string: [%s]", tag)
-		}
-		value := kv[1]
-		switch kv[0] {
-		case "request":
-			result.RequestKind = value
-		case "rest":
-			result.REST = value
-		case "path":
-			// Strip the parent resource
-			result.Path = strings.Replace(value, c.Resource+"/", "", -1)
-		}
-	}
-	return result
-}
+//func parseSubresourceTag(c *codegen.APIResource, tag string) subresourceTags {
+//	result := subresourceTags{}
+//	for _, elem := range strings.Split(tag, ",") {
+//		kv := strings.Split(elem, "=")
+//		if len(kv) != 2 {
+//			log.Fatalf("// +subresource: tags must be key value pairs.  Expected "+
+//				"keys [request=<requestType>,rest=<restImplType>,path=<subresourcepath>] "+
+//				"Got string: [%s]", tag)
+//		}
+//		value := kv[1]
+//		switch kv[0] {
+//		case "request":
+//			result.RequestKind = value
+//		case "rest":
+//			result.REST = value
+//		case "path":
+//			// Strip the parent resource
+//			result.Path = strings.Replace(value, c.Resource+"/", "", -1)
+//		}
+//	}
+//	return result
+//}
 
 // getResourceTag returns the value of the "+resource=" comment tag
 func (b *APIs) getResourceTag(c *types.Type) string {

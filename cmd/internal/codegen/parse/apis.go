@@ -34,10 +34,10 @@ type genUnversionedType struct {
 
 func (b *APIs) parseAPIs() {
 	apis := &codegen.APIs{
-		Domain:  b.Domain,
-		Package: b.APIsPkg,
-		Groups:  map[string]*codegen.APIGroup{},
-		Rules:   b.Rules,
+		Domain:    b.Domain,
+		Package:   b.APIsPkg,
+		Groups:    map[string]*codegen.APIGroup{},
+		Rules:     b.Rules,
 		Informers: b.Informers,
 	}
 
@@ -70,6 +70,7 @@ func (b *APIs) parseAPIs() {
 					StatusStrategy: resource.StatusStrategy,
 					Strategy:       resource.Strategy,
 					NonNamespaced:  resource.NonNamespaced,
+					ShortName:      resource.ShortName,
 				}
 				apiVersion.Resources[kind] = apiResource
 				// Set the package for the api version

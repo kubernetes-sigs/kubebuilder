@@ -26,6 +26,7 @@ import (
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/util"
 	"github.com/markbates/inflect"
 	"github.com/spf13/cobra"
+	"strings"
 )
 
 var nonNamespacedKind bool
@@ -82,9 +83,10 @@ func RunCreateResource(cmd *cobra.Command, args []string) {
 			"Regenerate after editing resources files by running `kubebuilder build generated`.\n")
 		build.RunGenerate(cmd, args)
 	}
-	fmt.Printf("Next: Install API and run controller with " +
-		"`GOBIN=$(pwd)/bin go install <your-project-go-package>/cmd/controller-manager`.\n" +
-		"bin/controller-manager --kubeconfig ~/.kube/config\n")
+	fmt.Printf("Next: Install the API, run the controller and create an instance with:\n" +
+		"$ GOBIN=$(pwd)/bin go install <your-project-go-package>/cmd/controller-manager\n" +
+		"$ bin/controller-manager --kubeconfig ~/.kube/config\n" +
+		"$ kubectl apply -f hack/sample/" + strings.ToLower(createutil.KindName) + ".yaml\n")
 }
 
 func createResource(boilerplate string) {

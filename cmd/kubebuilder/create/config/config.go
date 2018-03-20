@@ -17,6 +17,7 @@ package config
 import (
 	"fmt"
 	"github.com/spf13/cobra"
+	"log"
 	"path/filepath"
 )
 
@@ -32,6 +33,11 @@ var configCmd = &cobra.Command{
 - Controller Deployment
 `,
 	Run: func(cmd *cobra.Command, args []string) {
+		if controllerType != "statefulset" && controllerType != "deployment" {
+			fmt.Printf(
+				"Invalid value %s for --controller-type, must be statefulset or deployment\n", controllerType)
+			return
+		}
 		if controllerImage == "" {
 			fmt.Printf("Must specify --controller-image\n")
 			return
@@ -41,15 +47,17 @@ var configCmd = &cobra.Command{
 			return
 		}
 		CodeGenerator{}.Execute()
+		log.Printf("Config written to hack/install.yaml")
 	},
 }
 
-var controllerImage string
-var name string
-var output string
+var (
+	controllerType, controllerImage, name, output string
+)
 
 func AddCreateConfig(cmd *cobra.Command) {
 	cmd.AddCommand(configCmd)
+	configCmd.Flags().StringVar(&controllerType, "controller-type", "statefulset", "either statefulset or deployment.")
 	configCmd.Flags().StringVar(&controllerImage, "controller-image", "", "name of the controller container to run.")
 	configCmd.Flags().StringVar(&name, "name", "", "name of the installation.")
 	configCmd.Flags().StringVar(&output, "output", filepath.Join("hack", "install.yaml"), "location to write yaml to")
