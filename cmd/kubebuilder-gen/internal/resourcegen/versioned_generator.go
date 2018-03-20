@@ -32,14 +32,14 @@ type versionedGenerator struct {
 
 var _ generator.Generator = &versionedGenerator{}
 
-func hasSubresources(version *codegen.APIVersion) bool {
-	for _, v := range version.Resources {
-		if len(v.Subresources) != 0 {
-			return true
-		}
-	}
-	return false
-}
+//func hasSubresources(version *codegen.APIVersion) bool {
+//	for _, v := range version.Resources {
+//		if len(v.Subresources) != 0 {
+//			return true
+//		}
+//	}
+//	return false
+//}
 
 func (d *versionedGenerator) Imports(c *generator.Context) []string {
 	imports := []string{
@@ -49,9 +49,9 @@ func (d *versionedGenerator) Imports(c *generator.Context) []string {
 		"k8s.io/apimachinery/pkg/runtime/schema",
 		d.apigroup.Pkg.Path,
 	}
-	if hasSubresources(d.apiversion) {
-		imports = append(imports, "k8s.io/apiserver/pkg/registry/rest")
-	}
+	//if hasSubresources(d.apiversion) {
+	//	imports = append(imports, "k8s.io/apiserver/pkg/registry/rest")
+	//}
 
 	return imports
 }
@@ -120,6 +120,9 @@ var (
             Names: v1beta1.CustomResourceDefinitionNames{
                 Kind: "{{.Kind}}",
                 Plural: "{{.Resource}}",
+                {{ if .ShortName -}}
+                ShortNames: []string{"{{.ShortName}}"},
+                {{ end -}}
             },
             {{ if .NonNamespaced -}}
             Scope: "Cluster",

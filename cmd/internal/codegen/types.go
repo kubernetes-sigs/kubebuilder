@@ -155,6 +155,8 @@ type APIResource struct {
 	// NonNamespaced indicates that the resource kind is non namespaced
 	NonNamespaced bool
 
+	ShortName string
+
 	JSONSchemaProps    v1beta1.JSONSchemaProps
 	CRD                v1beta1.CustomResourceDefinition
 	Validation         string

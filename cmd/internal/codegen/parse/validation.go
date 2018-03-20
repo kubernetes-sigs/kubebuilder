@@ -71,6 +71,10 @@ func (b *APIs) parseJSONSchemaProps() {
 					} else {
 						resource.CRD.Spec.Scope = "Namespaced"
 					}
+
+					if len(resource.ShortName) > 0 {
+						resource.CRD.Spec.Names.ShortNames = []string{resource.ShortName}
+					}
 				}
 			}
 		}

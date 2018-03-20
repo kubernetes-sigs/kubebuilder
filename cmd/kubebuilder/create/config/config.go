@@ -17,6 +17,7 @@ package config
 import (
 	"fmt"
 	"github.com/spf13/cobra"
+	"log"
 	"path/filepath"
 )
 
@@ -41,6 +42,7 @@ var configCmd = &cobra.Command{
 			return
 		}
 		CodeGenerator{}.Execute()
+		log.Printf("Config written to hack/install.yaml")
 	},
 }
 
