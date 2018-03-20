@@ -81,7 +81,8 @@ func runInitRepo(cmd *cobra.Command, args []string) {
 	//os.MkdirAll("bin", 0700)
 
 	createBoilerplate()
-	fmt.Printf("Next: Create a resource using `kubebuilder create resource`.\n")
+	fmt.Printf("Next: Define a resource with:\n" +
+		"$ kubebuilder create resource\n")
 }
 
 func execute(path, templateName, templateValue string, data interface{}) {
