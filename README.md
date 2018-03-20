@@ -4,11 +4,11 @@
 *Don't use `go get` / `go install`, instead you MUST download a tar binary release or create your own release using
 the release program.*  To build your own release see [CONTRIBUTING.md](CONTRIBUTING.md)
 
-Releases:
-- [darwin HEAD](https://storage.googleapis.com/kubebuilder-release/kubebuilder-release-master-head-darwin-amd64.tar.gz)
-- [linux HEAD](https://storage.googleapis.com/kubebuilder-release/kubebuilder-release-master-head-linux-amd64.tar.gz)
-- [darwin 0.30](https://storage.googleapis.com/kubebuilder-release/kubebuilder-release-v1.9-alpha.30-darwin-amd64.tar.gz)
-- [linux 0.30](https://storage.googleapis.com/kubebuilder-release/kubebuilder-release-v1.9-alpha.30-linux-amd64.tar.gz)
+## Releases
+
+### 1.9 Kubernetes
+
+- [v1alpha1.0](https://github.com/kubernetes-sigs/kubebuilder/releases/tag/v1alpha1.0)
 
 ## `kubebuilder`
 
