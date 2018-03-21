@@ -57,11 +57,12 @@ kubebuilder docs
 }
 
 var generateConfig bool
-var cleanup bool
+var cleanup, verbose bool
 var outputDir string
 
 func AddDocs(cmd *cobra.Command) {
 	docsCmd.Flags().BoolVar(&cleanup, "cleanup", true, "If true, cleanup intermediary files")
+	docsCmd.Flags().BoolVar(&verbose, "verbose", true, "If true, use verbose output")
 	docsCmd.Flags().BoolVar(&generateConfig, "generate-config", true, "If true, generate the docs/reference/config.yaml.")
 	docsCmd.Flags().StringVar(&outputDir, "output-dir", filepath.Join("docs", "reference"), "Build docs into this directory")
 	cmd.AddCommand(docsCmd)
@@ -109,9 +110,11 @@ func RunDocs(cmd *cobra.Command, args []string) {
 		"-e", "OUTPUT="+outputDir,
 		"gcr.io/kubebuilder/gendocs",
 	)
-	log.Println(strings.Join(c.Args, " "))
-	c.Stderr = os.Stderr
-	c.Stdout = os.Stdout
+	if verbose {
+		log.Println(strings.Join(c.Args, " "))
+		c.Stderr = os.Stderr
+		c.Stdout = os.Stdout
+	}
 	err = c.Run()
 	if err != nil {
 		log.Fatalf("error: %v\n", err)
@@ -125,9 +128,11 @@ func RunDocs(cmd *cobra.Command, args []string) {
 		"-v", fmt.Sprintf("%s:%s", filepath.Join(wd, outputDir), "/manifest"),
 		"gcr.io/kubebuilder/brodocs",
 	)
-	log.Println(strings.Join(c.Args, " "))
-	c.Stderr = os.Stderr
-	c.Stdout = os.Stdout
+	if verbose {
+		log.Println(strings.Join(c.Args, " "))
+		c.Stderr = os.Stderr
+		c.Stdout = os.Stdout
+	}
 	err = c.Run()
 	if err != nil {
 		log.Fatalf("error: %v\n", err)
@@ -143,4 +148,6 @@ func RunDocs(cmd *cobra.Command, args []string) {
 		os.RemoveAll(filepath.Join(wd, outputDir, "build", "runbrodocs.sh"))
 		os.RemoveAll(filepath.Join(wd, outputDir, "build", "node_modules", "marked", "Makefile"))
 	}
+
+	fmt.Printf("Reference docs written to %s\n", filepath.Join(outputDir, "build", "index.html"))
 }
