@@ -8,7 +8,15 @@ the release program.*  To build your own release see [CONTRIBUTING.md](CONTRIBUT
 
 ### 1.9 Kubernetes
 
-- [v1alpha1.0](https://github.com/kubernetes-sigs/kubebuilder/releases/tag/v1alpha1.0)
+Release:
+
+- [v1beta1.1](https://github.com/kubernetes-sigs/kubebuilder/releases/tag/v1beta1.1)
+
+Latest:
+
+- [darwin master HEAD](https://storage.googleapis.com/kubebuilder-release/kubebuilder--darwin-amd64.tar.gz)
+- [linux master HEAD](https://storage.googleapis.com/kubebuilder-release/kubebuilder--linux-amd64.tar.gz)
+
 
 ## `kubebuilder`
 
