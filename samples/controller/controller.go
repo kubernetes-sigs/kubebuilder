@@ -69,6 +69,7 @@ func NewController(iargs args.InjectArgs) *controller.GenericController {
 	samplescheme.AddToScheme(scheme.Scheme)
 
 	c := &Controller{
+		InjectArgs: iargs,
 		recorder: iargs.CreateRecorder(controllerAgentName),
 	}
 
