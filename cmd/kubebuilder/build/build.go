@@ -18,6 +18,8 @@ package build
 
 import (
 	"github.com/spf13/cobra"
+	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/docs"
+	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/generate"
 )
 
 var buildCmd = &cobra.Command{
@@ -25,21 +27,20 @@ var buildCmd = &cobra.Command{
 	Short: "Command group for building source into artifacts.",
 	Long:  `Command group for building source into artifacts.`,
 	Example: `# Generate code and build the apiserver and controller-manager binaries into bin/
-kubebuilder build executables
+kubebuilder build docs
 
 # Rebuild generated code
 kubebuilder build generated
 `,
 	Run: RunBuild,
+	Deprecated: "`build generated` and `build docs` have been moved to `generate` and `docs`",
 }
 
 func AddBuild(cmd *cobra.Command) {
 	cmd.AddCommand(buildCmd)
 
-	AddBuildExecutables(buildCmd)
-	//	AddBuildContainer(buildCmd)
-	AddDocs(buildCmd)
-	AddGenerate(buildCmd)
+	buildCmd.AddCommand(docs.GetDocs())
+	buildCmd.AddCommand(generate.GetGenerate())
 }
 
 func RunBuild(cmd *cobra.Command, args []string) {
