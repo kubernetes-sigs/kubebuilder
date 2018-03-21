@@ -18,6 +18,7 @@ package create
 
 import (
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/create/config"
+	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/create/example"
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/create/resource"
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/create/util"
 	"github.com/spf13/cobra"
@@ -39,6 +40,7 @@ func AddCreate(cmd *cobra.Command) {
 	util.RegisterCopyrightFlag(cmd)
 	resource.AddCreateResource(createCmd)
 	config.AddCreateConfig(createCmd)
+	example.AddCreateExample(createCmd)
 }
 
 func RunCreate(cmd *cobra.Command, args []string) {

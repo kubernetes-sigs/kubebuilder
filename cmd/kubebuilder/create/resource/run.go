@@ -21,7 +21,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/build"
+	generatecmd "github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/generate"
 	createutil "github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/create/util"
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/util"
 	"github.com/markbates/inflect"
@@ -81,7 +81,7 @@ func RunCreateResource(cmd *cobra.Command, args []string) {
 	if generate {
 		fmt.Printf("Generating code for new resource...  " +
 			"Regenerate after editing resources files by running `kubebuilder build generated`.\n")
-		build.RunGenerate(cmd, args)
+		generatecmd.RunGenerate(cmd, args)
 	}
 	fmt.Printf("Next: Install the API, run the controller and create an instance with:\n" +
 		"$ GOBIN=$(pwd)/bin go install <your-project-go-package>/cmd/controller-manager\n" +

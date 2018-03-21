@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package build
+package generate
 
 import (
 	"io/ioutil"
@@ -39,11 +39,12 @@ var generators = sets.String{}
 var vendorDir string
 
 var generateCmd = &cobra.Command{
-	Use:   "generated",
-	Short: "RunInformersAndControllers code generators against repo.",
-	Long:  `Automatically run by most build commands.  Writes generated source code for a repo.`,
-	Example: `# RunInformersAndControllers code generators.
-kubebuilder build generated`,
+	Use:   "generate",
+	Aliases: []string{"generated"},
+	Short: "Run code generators.",
+	Long:  `Run code generators`,
+	Example: `# Run code generators.
+kubebuilder generate`,
 	Run: RunGenerate,
 }
 
@@ -59,6 +60,10 @@ func AddGenerate(cmd *cobra.Command) {
 	generateCmd.Flags().StringArrayVar(&versionedAPIs, "api-versions", []string{}, "API version to generate code for.  Can be specified multiple times.  e.g. --api-versions foo/v1beta1 --api-versions bar/v1  defaults to all versions found under directories pkg/apis/<group>/<version>")
 	generateCmd.Flags().StringArrayVar(&codegenerators, "generator", []string{}, "list of generators to run.  e.g. --generator kubebuilder --generator conversion Valid values: [kubebuilder,client]")
 	generateCmd.AddCommand(generateCleanCmd)
+}
+
+func GetGenerate() *cobra.Command {
+	return generateCmd
 }
 
 var generateCleanCmd = &cobra.Command{

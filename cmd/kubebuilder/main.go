@@ -26,6 +26,8 @@ import (
 
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/build"
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/create"
+	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/docs"
+	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/generate"
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/initproject"
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/update"
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/util"
@@ -51,10 +53,11 @@ func main() {
 	}
 	util.Repo = strings.Replace(wd, util.GoSrc+string(filepath.Separator), "", 1)
 
-	initproject.AddInit(cmd)
-	create.AddCreate(cmd)
 	build.AddBuild(cmd)
-	// run.AddRun(cmd)
+	create.AddCreate(cmd)
+	docs.AddDocs(cmd)
+	generate.AddGenerate(cmd)
+	initproject.AddInit(cmd)
 	update.AddUpdate(cmd)
 	version.AddVersion(cmd)
 
@@ -103,11 +106,14 @@ Typical project lifecycle:
 More options:
 
 - run tests
-  kubebuilder build generated
+  kubebuilder generate
   export TEST_ASSET_KUBECTL=/usr/local/kubebuilder/bin/kubectl
   export TEST_ASSET_KUBE_APISERVER=/usr/local/kubebuilder/bin/kube-apiserver
   export TEST_ASSET_ETCD=/usr/local/kubebuilder/bin/etcd
   go test ./pkg/...
+
+- build reference documentation to docs/reference/build/index.html
+  kubebuilder docs
 `,
 	Example: `# Initialize your project
 kubebuilder init --domain example.com
