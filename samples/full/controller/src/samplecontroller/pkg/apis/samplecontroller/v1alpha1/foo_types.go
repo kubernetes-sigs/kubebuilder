@@ -1,4 +1,3 @@
-
 /*
 Copyright 2017 The Kubernetes Authors.
 
@@ -15,32 +14,27 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-
 package v1alpha1
 
 import (
     metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!
-// Created by "kubebuilder create resource" for you to implement the Foo resource schema definition
-// as a go struct.
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // FooSpec defines the desired state of Foo
 type FooSpec struct {
-    // INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+  DeploymentName string `json:"deploymentName"`
+  Replicas       *int32 `json:"replicas"`
 }
 
 // FooStatus defines the observed state of Foo
 type FooStatus struct {
-    // INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
+  AvailableReplicas int32 `json:"availableReplicas"`
 }
 
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// Foo
+// Foo is a specification for a Foo resource
 // +k8s:openapi-gen=true
 // +resource:path=foos
 type Foo struct {
