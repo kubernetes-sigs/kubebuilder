@@ -2,8 +2,12 @@
 
 ## Build reference documentation
 
-You may build Kubernetes style reference documentation for your APIs to `docs/reference/build/index.html` by
-running `kubebuilder docs`.
+You may build Kubernetes style reference documentation for your APIs to `docs/reference/build/index.html`
+
+
+```go
+kubebuilder docs
+```
 
 **Note:** There is currently an issue where building docs does not work if multiple versions of APIs for the
 same group are defined.
