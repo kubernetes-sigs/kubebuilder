@@ -21,8 +21,8 @@ import (
 	"log"
 	"os"
 
-	generatecmd "github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/generate"
 	createutil "github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/create/util"
+	generatecmd "github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/generate"
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/util"
 	"github.com/markbates/inflect"
 	"github.com/spf13/cobra"
@@ -84,7 +84,7 @@ func RunCreateResource(cmd *cobra.Command, args []string) {
 		generatecmd.RunGenerate(cmd, args)
 	}
 	fmt.Printf("Next: Install the API, run the controller and create an instance with:\n" +
-		"$ GOBIN=$(pwd)/bin go install <your-project-go-package>/cmd/controller-manager\n" +
+		"$ GOBIN=${PWD}/bin go install ${PWD#$GOPATH/src/}/cmd/controller-manager\n" +
 		"$ bin/controller-manager --kubeconfig ~/.kube/config\n" +
 		"$ kubectl apply -f hack/sample/" + strings.ToLower(createutil.KindName) + ".yaml\n")
 }

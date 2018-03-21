@@ -86,7 +86,7 @@ Typical project lifecycle:
 
 - run the controller as a local process (e.g. not in a container), installing APIs into the cluster if they are missing:
 
-  GOBIN=$(pwd)/bin go install <your-project-go-package>/cmd/controller-manager
+  GOBIN=${PWD}/bin go install ${PWD#$GOPATH/src/}/cmd/controller-manager
   bin/controller-manager --kubeconfig ~/.kube/config
 
   # In another terminal create a new instance of your resource and watch the controller-manager output
