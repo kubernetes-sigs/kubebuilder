@@ -41,7 +41,7 @@ func ExampleGenericController() {
 		log.Fatalf("Could not set informer %v", err)
 	}
 
-	// Step 3.1: Create a new Pod controller to reconcile Pods changes
+	// Step 2.1: Create a new Pod controller to reconcile Pods changes
 	podController := &controller.GenericController{
 		Reconcile: func(key types.ReconcileKey) error {
 			fmt.Printf("Reconciling Pod %v\n", key)
@@ -53,7 +53,7 @@ func ExampleGenericController() {
 	}
 	controller.AddController(podController)
 
-	// Step 3.2: Create a new ReplicaSet controller to reconcile ReplicaSet changes
+	// Step 2.2: Create a new ReplicaSet controller to reconcile ReplicaSet changes
 	rsController := &controller.GenericController{
 		Reconcile: func(key types.ReconcileKey) error {
 			fmt.Printf("Reconciling ReplicaSet %v\n", key)
@@ -72,6 +72,6 @@ func ExampleGenericController() {
 	}
 	controller.AddController(rsController)
 
-	// Step 4: RunInformersAndControllers all informers and controllers
+	// Step 3: RunInformersAndControllers all informers and controllers
 	controller.RunInformersAndControllers(run.CreateRunArguments())
 }

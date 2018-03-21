@@ -32,22 +32,20 @@ var (
 )
 
 func init() {
-	// Check if flag is already set so that the library may be double vendored without crashing the program
-	if f := flag.Lookup("kubeconfig"); f == nil {
-		flag.StringVar(&kubeconfig, "kubeconfig", "",
-			"Path to a kubeconfig. Only required if out-of-cluster.")
-	}
+	// TODO: Fix this to allow double vendoring this library but still register flags on behalf of users
+	flag.StringVar(&kubeconfig, "kubeconfig", "",
+		"Path to a kubeconfig. Only required if out-of-cluster.")
 
-	// Check if flag is already set so that the library may be double vendored without crashing the program
-	if f := flag.Lookup("master"); f == nil {
-		flag.StringVar(&masterURL, "master", "",
-			"The address of the Kubernetes API server. Overrides any value in kubeconfig. "+
-				"Only required if out-of-cluster.")
-	}
+	flag.StringVar(&masterURL, "master", "",
+		"The address of the Kubernetes API server. Overrides any value in kubeconfig. "+
+			"Only required if out-of-cluster.")
 }
 
-// GetConfig uses the kubeconfig file at kubeconfig to create a rest.Config for talking to a Kubernetes
-// apiserver.  If kubeconfig is empty it will look for kubeconfig in the default locations.
+// GetConfig creates a *rest.Config for talking to a Kubernetes apiserver.
+// If --kubeconfig is set, will use the kubeconfig file at that location.  Otherwise will assume running
+// in cluster and use the cluster provided kubeconfig.
+//
+// Will log.Fatal if KubernetesInformers cannot be created
 func GetConfig() (*rest.Config, error) {
 	if len(kubeconfig) > 0 {
 		return clientcmd.BuildConfigFromFlags(masterURL, kubeconfig)
@@ -56,8 +54,9 @@ func GetConfig() (*rest.Config, error) {
 	}
 }
 
-// GetConfigOrDie uses the kubeconfig file at kubeconfig to create a rest.Config for talking to a Kubernetes
-// apiserver.  If kubeconfig is empty it will look for kubeconfig in the default locations.
+// GetConfig creates a *rest.Config for talking to a Kubernetes apiserver.
+// If --kubeconfig is set, will use the kubeconfig file at that location.  Otherwise will assume running
+// in cluster and use the cluster provided kubeconfig.
 func GetConfigOrDie() *rest.Config {
 	config, err := GetConfig()
 	if err != nil {
@@ -66,9 +65,54 @@ func GetConfigOrDie() *rest.Config {
 	return config
 }
 
-// GetKubernetesInformersOrDie uses the kubeconfig file at kubeconfig to create a informers.SharedInformerFactory
-// for talking to a Kubernetes apiserver.  If kubeconfig is empty it will look for kubeconfig in the
-// default locations.
+// GetKubernetesClientSet creates a *kubernetes.ClientSet for talking to a Kubernetes apiserver.
+// If --kubeconfig is set, will use the kubeconfig file at that location.  Otherwise will assume running
+// in cluster and use the cluster provided kubeconfig.
+func GetKubernetesClientSet() (*kubernetes.Clientset, error) {
+	config, err := GetConfig()
+	if err != nil {
+		return nil, err
+	}
+	return kubernetes.NewForConfig(config)
+}
+
+// GetKubernetesClientSetOrDie creates a *kubernetes.ClientSet for talking to a Kubernetes apiserver.
+// If --kubeconfig is set, will use the kubeconfig file at that location.  Otherwise will assume running
+// in cluster and use the cluster provided kubeconfig.
+//
+// Will log.Fatal if KubernetesInformers cannot be created
+func GetKubernetesClientSetOrDie() (*kubernetes.Clientset, error) {
+	cs, err := GetKubernetesClientSet()
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+	return cs, nil
+}
+
+// GetKubernetesInformers creates a informers.SharedInformerFactory for talking to a Kubernetes apiserver.
+// If --kubeconfig is set, will use the kubeconfig file at that location.  Otherwise will assume running
+// in cluster and use the cluster provided kubeconfig.
+func GetKubernetesInformers() (informers.SharedInformerFactory, error) {
+	config, err := GetConfig()
+	if err != nil {
+		return nil, err
+	}
+	i, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+	return informers.NewSharedInformerFactory(i, time.Minute*5), nil
+}
+
+// GetKubernetesInformers creates a informers.SharedInformerFactory for talking to a Kubernetes apiserver.
+// If --kubeconfig is set, will use the kubeconfig file at that location.  Otherwise will assume running
+// in cluster and use the cluster provided kubeconfig.
+//
+// Will log.Fatal if KubernetesInformers cannot be created
 func GetKubernetesInformersOrDie() informers.SharedInformerFactory {
-	return informers.NewSharedInformerFactory(kubernetes.NewForConfigOrDie(GetConfigOrDie()), time.Minute*5)
+	i, err := GetKubernetesInformers()
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+	return i
 }
