@@ -166,3 +166,18 @@ export CONTROLLER_IMAGE=<controller-image>
 kubectl run $NAME --serviceaccount=installer --image=$INSTALL_IMAGE --restart=OnFailure -- ./installer \
   --controller-image=$CONTROLLER_IMAGE --name=$NAME
 ```
+
+## Build docs for your APIs
+
+It will be helpful for your users to have API documentation.  You can generate Kubernetes style APIs using
+kubebuilder:
+
+```sh
+# Create and edit an example for each API
+kubebuilder create example --group group --version version --kind kind
+
+# Generate the docs to docs/reference/build/index.html
+kubebuilder docs
+```
+
+For more information see [creating reference documentation](creating_reference_documentation.md)

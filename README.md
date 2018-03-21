@@ -30,10 +30,16 @@ kubebuilder init --domain example.com
 
 # Create a new API and controller
 kubebuilder create resource --group bar --version v1alpha1  --kind Foo
+kubectl apply -f hack/sample/foo.yaml
 
 # Install and run your API into the cluster for your current kubeconfig context
 GOBIN=$(pwd)/bin go install <PROJECT_PACKAGE>/cmd/controller-manager
 bin/controller-manager --kubeconfig ~/.kube/config
+kubectl apply -f hack/sample/foo.yaml
+
+# Build your documentation
+kubebuilder create example --group bar --version v1alpha1 --kind Foo
+kubebuilder docs
 ```
 
 See the [user guide](docs/tools_user_guide.md) for more details
