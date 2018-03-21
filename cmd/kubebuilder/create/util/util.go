@@ -25,6 +25,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/util"
+	"path/filepath"
 )
 
 var (
@@ -71,5 +72,5 @@ func RegisterResourceFlags(cmd *cobra.Command) {
 }
 
 func RegisterCopyrightFlag(cmd *cobra.Command) {
-	cmd.Flags().StringVar(&Copyright, "copyright", "boilerplate.go.txt", "Location of copyright boilerplate file.")
+	cmd.Flags().StringVar(&Copyright, "copyright", filepath.Join("hack", "boilerplate.go.txt"), "Location of copyright boilerplate file.")
 }

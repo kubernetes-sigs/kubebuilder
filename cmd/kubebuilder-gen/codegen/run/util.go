@@ -44,7 +44,7 @@ func generatorToPackage(pkg string, gen generator.Generator) generator.Package {
 
 // generatedGoHeader returns the header to preprend to generated go files
 func generatedGoHeader() []byte {
-	cr, err := ioutil.ReadFile("boilerplate.go.txt")
+	cr, err := ioutil.ReadFile(filepath.Join("hack", "boilerplate.go.txt"))
 	if err != nil {
 		return []byte{}
 	}

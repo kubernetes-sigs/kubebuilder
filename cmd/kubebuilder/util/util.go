@@ -97,7 +97,7 @@ func WriteString(path, value string) {
 // if the file cannot be read, will return the empty string.
 func GetCopyright(file string) string {
 	if len(file) == 0 {
-		file = "boilerplate.go.txt"
+		file = filepath.Join("hack", "boilerplate.go.txt")
 	}
 	cr, err := ioutil.ReadFile(file)
 	if err != nil {

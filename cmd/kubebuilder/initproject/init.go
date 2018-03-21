@@ -43,7 +43,7 @@ var bazel bool
 func AddInit(cmd *cobra.Command) {
 	cmd.AddCommand(repoCmd)
 	repoCmd.Flags().StringVar(&domain, "domain", "", "domain for the API groups")
-	repoCmd.Flags().StringVar(&copyright, "copyright", "boilerplate.go.txt", "Location of copyright boilerplate file.")
+	repoCmd.Flags().StringVar(&copyright, "copyright", filepath.Join("hack", "boilerplate.go.txt"), "Location of copyright boilerplate file.")
 	repoCmd.Flags().BoolVar(&bazel, "bazel", false, "if true, setup Bazel workspace artifacts")
 }
 
