@@ -24,6 +24,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/kubernetes-sigs/kubebuilder/cmd/internal/codegen/parse"
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/util"
+	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/version"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -36,7 +37,7 @@ import (
 type CodeGenerator struct{}
 
 var kblabels = map[string]string{
-	"platform": "kubernetes_sigs_kubebuilder",
+	"kubebuilder.k8s.io": version.GetVersion().KubeBuilderVersion,
 }
 
 func addLabels(m map[string]string) map[string]string {
