@@ -141,7 +141,7 @@ go test ./pkg/...
 
 ## Build and run an image for your CRD and Controller
 
-`A Dockerfile for the controller-manager was created at the project root.
+A Dockerfile for the controller-manager was created at the project root.
 The controller-manager Dockerfile will build the controller-manager from source and also run the tests under
 `./pkg/...` and `./cmd/...`.
 
