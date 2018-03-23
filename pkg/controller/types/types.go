@@ -35,3 +35,7 @@ type ReconcileKey struct {
 	// Name is the name of the object.
 	Name string
 }
+
+func (r ReconcileKey) String() string {
+	return r.Namespace + "/" + r.Name
+}
