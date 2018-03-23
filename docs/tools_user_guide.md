@@ -70,7 +70,7 @@ This will setup the initial structure for your project with:
 
 - An empty boilerplate.go.txt (if one doesn't already exist)
 - Base `vendor/` go libraries and Gopkg.toml / Gopkg.lock (extracted from the kubebuilder installation directory)
-- Dockerfiles for creating your project's container images
+- Dockerfile for creating your project's container image
 - Optionally: A Bazel workspace and BUILD.bazel
   - use the `--bazel` flag to enable this
 
@@ -141,30 +141,32 @@ go test ./pkg/...
 
 ## Build and run an image for your CRD and Controller
 
-`Dockerfile`s for the controller-manager and installer containers were created at the project root.
+`A Dockerfile for the controller-manager was created at the project root.
 The controller-manager Dockerfile will build the controller-manager from source and also run the tests under
 `./pkg/...` and `./cmd/...`.
 
 ```sh
-docker build . -f Dockerfile.install -t <install-image>:<version> && docker push <install-image>:<version>
 docker build . -f Dockerfile.controller -t <controller-image>:<version> && docker push <controller-image>:<version>
 ```
 
-### Install using the container images
-
-To install the controller-manager into a cluster using the installer container - create an installer serviceaccount
-and run the installer container.
+### Generate and apply the configuration to install the CRD and run the controller manager
 
 ```sh
-kubectl create serviceaccount installer
-kubectl create clusterrolebinding installer-cluster-admin-binding --clusterrole=cluster-admin \
-  --serviceaccount=default:installer
+OUTPUT_YAML_FILE=hack/install.yaml
+kubebuilder create config --name=<my-project-name> --controller-image=<controller-image> --output=$OUTPUT_YAML_FILE
+```
 
-export NAME=my-project-name
-export INSTALL_IMAGE=<install-image>
-export CONTROLLER_IMAGE=<controller-image>
-kubectl run $NAME --serviceaccount=installer --image=$INSTALL_IMAGE --restart=OnFailure -- ./installer \
-  --controller-image=$CONTROLLER_IMAGE --name=$NAME
+This generates the YAML config to create the following resources:
+
+* Namespace
+* ClusterRole
+* ClusterRoleBinding
+* CustomResourceDefinition
+* Service
+* StatefulSet (or Deployment)
+
+```sh
+kubectl apply -f $OUTPUT_YAML_FILE
 ```
 
 ## Build docs for your APIs
