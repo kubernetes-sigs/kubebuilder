@@ -27,10 +27,9 @@ to simplify building and publishing Kubernetes APIs from scratch.
 
 ## TL;DR
 
-**First:** Download the latest release and extract the tar.gz into /usr/local/ and update your PATH to
-include /usr/local/kubebuilder/bin.
+**First:** Download the latest `kubebuilder-release-<version>-<operating-system>-amd64.tar.gz` release. Extract it into /usr/local/ and update your PATH to include /usr/local/kubebuilder/bin.
 
-Create a project under a new GOPATH.
+Create an _empty_ project under a new GOPATH.
 
 ```sh
 # Initialize your project
