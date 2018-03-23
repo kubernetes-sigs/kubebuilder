@@ -156,6 +156,13 @@ OUTPUT_YAML_FILE=hack/install.yaml
 kubebuilder create config --name=<my-project-name> --controller-image=<controller-image> --output=$OUTPUT_YAML_FILE
 ```
 
+The default controller type is a StatefulSet. If you want the controller manager to be
+a Deployment, use the following command:
+
+```sh
+kubebuilder create config --name=<my-project-name> --controller-image=<controller-image> --controller-type=deployment --output=$OUTPUT_YAML_FILE
+```
+
 This generates the YAML config to create the following resources:
 
 * Namespace
