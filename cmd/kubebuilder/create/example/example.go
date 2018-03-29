@@ -22,9 +22,10 @@ import (
 	"os"
 	"path/filepath"
 
+	"strings"
+
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/util"
 	"github.com/spf13/cobra"
-	"strings"
 )
 
 // configCmd represents the config command
@@ -35,13 +36,16 @@ var configCmd = &cobra.Command{
 
 Example is written to docs/reference/examples/<lower kind>/<lower kind>.yaml
 `,
+	Example: `# Create a new documentation example under docs/reference/examples/mykind/mykind.yaml
+kubebuilder create example --kind MyKind --version v1beta1 --group mygroup.my.domain
+`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if kind == "" {
 			fmt.Printf("Must specify --kind\n")
 			return
 		}
 		if version == "" {
-			fmt.Printf("Must specify --name\n")
+			fmt.Printf("Must specify --version\n")
 			return
 		}
 		if group == "" {
