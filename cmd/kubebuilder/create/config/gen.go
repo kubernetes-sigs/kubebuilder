@@ -66,6 +66,11 @@ func (g CodeGenerator) Execute() error {
 	}
 
 	p := parse.NewAPIs(c, arguments)
+	if crds {
+		util.WriteString(output, strings.Join(getCrds(p), "---\n"))
+		return nil
+	}
+
 	result := append([]string{},
 		getNamespace(p),
 		getClusterRole(p),
@@ -274,6 +279,9 @@ func getCrds(p *parse.APIs) []string {
 		for _, v := range g.Versions {
 			for _, r := range v.Resources {
 				crd := r.CRD
+				if len(crdNamespace) > 0 {
+					crd.Namespace = crdNamespace
+				}
 				crd.Labels = addLabels(map[string]string{})
 				s, err := yaml.Marshal(crd)
 				if err != nil {
