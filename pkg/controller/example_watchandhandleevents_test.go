@@ -49,7 +49,7 @@ func ExampleGenericController_WatchEvents() {
 	}
 	err := c.WatchEvents(&corev1.Pod{},
 		// This function returns the callbacks that will be invoked for events
-		func(q workqueue.RateLimitingInterface) cache.ResourceEventHandlerFuncs {
+		func(q workqueue.RateLimitingInterface) cache.ResourceEventHandler {
 			// This function implements the same functionality as GenericController.Watch
 			return cache.ResourceEventHandlerFuncs{
 				AddFunc:    func(obj interface{}) { q.AddRateLimited(eventhandlers.MapToSelf(obj)) },

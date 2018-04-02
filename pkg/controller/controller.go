@@ -138,10 +138,10 @@ func (gc *GenericController) WatchChannel(source <-chan string) error {
 
 // fnToInterfaceAdapter adapts a function to an interface
 type fnToInterfaceAdapter struct {
-	val func(workqueue.RateLimitingInterface) cache.ResourceEventHandlerFuncs
+	val func(workqueue.RateLimitingInterface) cache.ResourceEventHandler
 }
 
-func (f fnToInterfaceAdapter) Get(q workqueue.RateLimitingInterface) cache.ResourceEventHandlerFuncs {
+func (f fnToInterfaceAdapter) Get(q workqueue.RateLimitingInterface) cache.ResourceEventHandler {
 	return f.val(q)
 }
 

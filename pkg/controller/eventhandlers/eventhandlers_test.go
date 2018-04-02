@@ -52,21 +52,21 @@ var _ = Describe("Eventhandlers", func() {
 		Context("Where there are no Predicates", func() {
 			It("should set the Add function", func() {
 				fns := mae.Get(q)
-				fns.AddFunc("add")
+				fns.OnAdd("add")
 				Eventually(q.Len).Should(Equal(1))
 				Expect(q.Get()).Should(Equal("p-add"))
 			})
 
 			It("should set the Delete function", func() {
 				fns := mae.Get(q)
-				fns.DeleteFunc("delete")
+				fns.OnDelete("delete")
 				Eventually(q.Len()).Should(Equal(1))
 				Expect(q.Get()).Should(Equal("p-delete"))
 			})
 
 			It("should set the Update function", func() {
 				fns := mae.Get(q)
-				fns.UpdateFunc("old", "update")
+				fns.OnUpdate("old", "update")
 				Eventually(q.Len()).Should(Equal(1))
 				Expect(q.Get()).Should(Equal("p-update"))
 			})
@@ -76,36 +76,36 @@ var _ = Describe("Eventhandlers", func() {
 			It("should set the Add function", func() {
 				mae.Predicates = []predicates.Predicate{FakePredicates{create: true}}
 				fns := mae.Get(q)
-				fns.AddFunc("add")
+				fns.OnAdd("add")
 				Eventually(q.Len()).Should(Equal(1))
 				Expect(q.Get()).Should(Equal("p-add"))
 
-				fns.DeleteFunc("delete")
-				fns.UpdateFunc("old", "update")
+				fns.OnDelete("delete")
+				fns.OnUpdate("old", "update")
 				Consistently(q.Len).Should(Equal(0))
 			})
 
 			It("should set the Delete function", func() {
 				mae.Predicates = []predicates.Predicate{FakePredicates{delete: true}}
 				fns := mae.Get(q)
-				fns.DeleteFunc("delete")
+				fns.OnDelete("delete")
 				Eventually(q.Len()).Should(Equal(1))
 				Expect(q.Get()).Should(Equal("p-delete"))
 
-				fns.AddFunc("add")
-				fns.UpdateFunc("old", "add")
+				fns.OnAdd("add")
+				fns.OnUpdate("old", "add")
 				Consistently(q.Len).Should(Equal(0))
 			})
 
 			It("should set the Update function", func() {
 				mae.Predicates = []predicates.Predicate{FakePredicates{update: true}}
 				fns := mae.Get(q)
-				fns.UpdateFunc("old", "update")
+				fns.OnUpdate("old", "update")
 				Eventually(q.Len()).Should(Equal(1))
 				Expect(q.Get()).Should(Equal("p-update"))
 
-				fns.AddFunc("add")
-				fns.DeleteFunc("delete")
+				fns.OnAdd("add")
+				fns.OnDelete("delete")
 				Consistently(q.Len).Should(Equal(0))
 			})
 		})
@@ -115,42 +115,42 @@ var _ = Describe("Eventhandlers", func() {
 				It("should not Add", func() {
 					mae.Predicates = []predicates.Predicate{FakePredicates{create: true}, FakePredicates{}}
 					fns := mae.Get(q)
-					fns.AddFunc("add")
+					fns.OnAdd("add")
 					Consistently(q.Len).Should(Equal(0))
 				})
 
 				It("should not Delete", func() {
 					mae.Predicates = []predicates.Predicate{FakePredicates{delete: true}, FakePredicates{}}
 					fns := mae.Get(q)
-					fns.DeleteFunc("delete")
+					fns.OnDelete("delete")
 					Consistently(q.Len).Should(Equal(0))
 				})
 
 				It("should not Update", func() {
 					mae.Predicates = []predicates.Predicate{FakePredicates{update: true}, FakePredicates{}}
 					fns := mae.Get(q)
-					fns.UpdateFunc("old", "update")
+					fns.OnUpdate("old", "update")
 					Consistently(q.Len).Should(Equal(0))
 				})
 
 				It("should not Add", func() {
 					mae.Predicates = []predicates.Predicate{FakePredicates{}, FakePredicates{create: true}}
 					fns := mae.Get(q)
-					fns.AddFunc("add")
+					fns.OnAdd("add")
 					Consistently(q.Len).Should(Equal(0))
 				})
 
 				It("should not Delete", func() {
 					mae.Predicates = []predicates.Predicate{FakePredicates{}, FakePredicates{delete: true}}
 					fns := mae.Get(q)
-					fns.DeleteFunc("delete")
+					fns.OnDelete("delete")
 					Consistently(q.Len).Should(Equal(0))
 				})
 
 				It("should not Update", func() {
 					mae.Predicates = []predicates.Predicate{FakePredicates{}, FakePredicates{update: true}}
 					fns := mae.Get(q)
-					fns.UpdateFunc("old", "update")
+					fns.OnUpdate("old", "update")
 					Consistently(q.Len).Should(Equal(0))
 				})
 			})

@@ -25,7 +25,7 @@ import (
 type ReconcileFn func(ReconcileKey) error
 
 // HandleFnProvider returns cache.ResourceEventHandlerFuncs that may enqueue messages
-type HandleFnProvider func(workqueue.RateLimitingInterface) cache.ResourceEventHandlerFuncs
+type HandleFnProvider func(workqueue.RateLimitingInterface) cache.ResourceEventHandler
 
 // ReconcileKey provides a lookup key for a Kubernetes object.
 type ReconcileKey struct {

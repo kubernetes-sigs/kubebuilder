@@ -20,6 +20,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"time"
+
 	"github.com/kubernetes-sigs/kubebuilder/pkg/controller/eventhandlers"
 	"github.com/kubernetes-sigs/kubebuilder/pkg/controller/test"
 	"github.com/kubernetes-sigs/kubebuilder/pkg/controller/types"
@@ -29,7 +31,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
-	"time"
 )
 
 var _ = Describe("GenericController", func() {
@@ -236,7 +237,7 @@ var _ = Describe("GenericController", func() {
 			It("should call the event handling add function", func() {
 				// Listen for Pod changes
 				Expect(instance.WatchEvents(&corev1.Pod{},
-					func(w workqueue.RateLimitingInterface) cache.ResourceEventHandlerFuncs {
+					func(w workqueue.RateLimitingInterface) cache.ResourceEventHandler {
 						return cache.ResourceEventHandlerFuncs{
 							AddFunc:    func(obj interface{}) { w.AddRateLimited("key/value") },
 							DeleteFunc: func(obj interface{}) { Fail("Delete function called") },
@@ -257,7 +258,7 @@ var _ = Describe("GenericController", func() {
 			It("should call the event handling update function", func() {
 				// Listen for Pod changes
 				Expect(instance.WatchEvents(&corev1.Pod{},
-					func(w workqueue.RateLimitingInterface) cache.ResourceEventHandlerFuncs {
+					func(w workqueue.RateLimitingInterface) cache.ResourceEventHandler {
 						return cache.ResourceEventHandlerFuncs{
 							AddFunc:    func(obj interface{}) { Fail("Add function called") },
 							DeleteFunc: func(obj interface{}) { Fail("Delete function called") },
@@ -288,7 +289,7 @@ var _ = Describe("GenericController", func() {
 			It("should call the event handling delete function", func() {
 				// Listen for Pod changes
 				Expect(instance.WatchEvents(&corev1.Pod{},
-					func(w workqueue.RateLimitingInterface) cache.ResourceEventHandlerFuncs {
+					func(w workqueue.RateLimitingInterface) cache.ResourceEventHandler {
 						return cache.ResourceEventHandlerFuncs{
 							AddFunc:    func(obj interface{}) { Fail("Add function called") },
 							DeleteFunc: func(obj interface{}) { w.AddRateLimited("key/value") },

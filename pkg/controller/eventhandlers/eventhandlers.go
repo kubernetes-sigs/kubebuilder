@@ -31,7 +31,7 @@ import (
 // EventHandler accepts a workqueue and returns ResourceEventHandlerFuncs that enqueue messages to it
 // for add / update / delete events
 type EventHandler interface {
-	Get(r workqueue.RateLimitingInterface) cache.ResourceEventHandlerFuncs
+	Get(r workqueue.RateLimitingInterface) cache.ResourceEventHandler
 }
 
 // MapAndEnqueue provides Fns to map objects to name/namespace keys and enqueue them as messages
@@ -42,7 +42,7 @@ type MapAndEnqueue struct {
 }
 
 // Get returns ResourceEventHandlerFuncs that Map an object to a Key and enqueue the key if it is non-empty
-func (mp MapAndEnqueue) Get(r workqueue.RateLimitingInterface) cache.ResourceEventHandlerFuncs {
+func (mp MapAndEnqueue) Get(r workqueue.RateLimitingInterface) cache.ResourceEventHandler {
 	// Enqueue the mapped key for updates to the object
 	return cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
