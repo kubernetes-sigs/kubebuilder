@@ -28,7 +28,7 @@ import (
 	"k8s.io/client-go/util/workqueue"
 )
 
-// EventHandler accepts a workqueue and returns ResourceEventHandlerFuncs that enqueue messages to it
+// EventHandler accepts a workqueue and returns ResourceEventHandler that enqueue messages to it
 // for add / update / delete events
 type EventHandler interface {
 	Get(r workqueue.RateLimitingInterface) cache.ResourceEventHandler
@@ -41,7 +41,7 @@ type MapAndEnqueue struct {
 	Map func(interface{}) string
 }
 
-// Get returns ResourceEventHandlerFuncs that Map an object to a Key and enqueue the key if it is non-empty
+// Get returns ResourceEventHandler that Map an object to a Key and enqueue the key if it is non-empty
 func (mp MapAndEnqueue) Get(r workqueue.RateLimitingInterface) cache.ResourceEventHandler {
 	// Enqueue the mapped key for updates to the object
 	return cache.ResourceEventHandlerFuncs{

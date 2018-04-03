@@ -24,7 +24,7 @@ import (
 // ReconcileFn takes the key of an object and reconciles its desired and observed state.
 type ReconcileFn func(ReconcileKey) error
 
-// HandleFnProvider returns cache.ResourceEventHandlerFuncs that may enqueue messages
+// HandleFnProvider returns cache.ResourceEventHandler that may enqueue messages
 type HandleFnProvider func(workqueue.RateLimitingInterface) cache.ResourceEventHandler
 
 // ReconcileKey provides a lookup key for a Kubernetes object.
