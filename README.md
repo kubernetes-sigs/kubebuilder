@@ -59,10 +59,21 @@ See examples of using the libraries directly below:
 - [config libraries](https://godoc.org/github.com/kubernetes-sigs/kubebuilder/pkg/config)
 - [signals libraries](https://godoc.org/github.com/kubernetes-sigs/kubebuilder/pkg/signals)
 
-Kubebuilder code generation tags can be found here:
+Kubebuilder generates codes for custom resource fields, and controller components such as watchers and informers. You have to add code generation tags in form of comment directives to initiate the code generation:
 
 - [resource code generation tags](https://godoc.org/github.com/kubernetes-sigs/kubebuilder/pkg/gen/apis)
-- [controllers code generation tags](https://godoc.org/github.com/kubernetes-sigs/kubebuilder/pkg/gen/controller)
+- [controller code generation tags](https://godoc.org/github.com/kubernetes-sigs/kubebuilder/pkg/gen/controller)
+
+
+For example, you have to add controller code generation tags such as `+rbac` and `+informers` in `pkg/controller/foo/controller.go` file:
+```
+// +controller:group=foo,version=v1beta1,kind=Bar,resource=bars
+// +rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
+// +informers:group=apps,version=v1,kind=Deployment
+// +rbac:groups="",resources=pods,verbs=get;watch;list
+// +informers:group=core,version=v1,kind=Pod
+type FooController struct{}
+```
 
 ## Motivation
 
