@@ -23,4 +23,5 @@ cp /workspace/LICENSE /workspace/vendor/github.com/kubernetes-sigs/kubebuilder/L
 
 export DEST=/workspace/_output/kubebuilder/bin/
 mkdir -p $DEST || echo ""
+sed -i "s/KUBEBUILDER_VERSION/"${VERSION-master}"/" Gopkg.toml
 tar -czvf $DEST/vendor.tar.gz vendor/ Gopkg.lock  Gopkg.toml
