@@ -40,7 +40,7 @@ type MapAndEnqueue struct {
 	// Map maps an object to a key that can be enqueued
 	Map func(interface{}) string
 
-	MultiMap func(interface{}) []string
+	MultiMap func(interface{}) []types.ReconcileKey
 }
 
 // Get returns ResourceEventHandlerFuncs that Map an object to a Key and enqueue the key if it is non-empty
@@ -83,7 +83,7 @@ func (mp MapAndEnqueue) addRateLimited(r workqueue.RateLimitingInterface, obj in
 	}
 	if mp.MultiMap != nil {
 		for _, k := range mp.MultiMap(obj) {
-			r.AddRateLimited(k)
+			r.AddRateLimited(k.Namespace + "/" + k.Name)
 		}
 	}
 }
@@ -150,6 +150,10 @@ func (m MapToController) Map(obj interface{}) string {
 type ObjToKey func(interface{}) string
 
 type ObjToKeys func(interface{}) []string
+
+type ObjToReconcileKey func(interface{}) types.ReconcileKey
+
+type ObjToReconcileKeys func(interface{}) []types.ReconcileKey
 
 // MapToSelf returns the namespace/name key of obj
 func MapToSelf(obj interface{}) string {

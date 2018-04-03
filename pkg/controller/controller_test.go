@@ -219,7 +219,7 @@ var _ = Describe("GenericController", func() {
 				Expect(instance.GetMetrics().QueueLength).Should(Equal(0))
 			})
 
-			It("should use the map function to reconcile a different key", func() {
+			It("should use the transformation function to reconcile a different key", func() {
 				// Listen for Pod changes
 				Expect(instance.WatchTransformationOf(&corev1.Pod{}, func(obj interface{}) string {
 					p := obj.(*corev1.Pod)
@@ -234,13 +234,48 @@ var _ = Describe("GenericController", func() {
 				Expect(instance.GetMetrics().QueueLength).Should(Equal(0))
 			})
 
-			It("should use the map function to reconcile multiple different keys", func() {
+			It("should use the transformationkey function to reconcile a different key", func() {
+				// Listen for Pod changes
+				Expect(instance.WatchTransformationKeyOf(&corev1.Pod{}, func(obj interface{}) types.ReconcileKey {
+					p := obj.(*corev1.Pod)
+					return types.ReconcileKey{p.Namespace + "-namespace", p.Name + "-name"}
+				})).Should(Succeed())
+
+				fakePodInformer.Add(&corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "test-pod", Namespace: "default"}})
+
+				val := ChannelResult{}
+				Eventually(result).Should(Receive(&val.result))
+				Expect(val.result).Should(Equal("default-namespace/test-pod-name"))
+				Expect(instance.GetMetrics().QueueLength).Should(Equal(0))
+			})
+
+			It("should use the transformationsof function to reconcile multiple different keys", func() {
 				// Listen for Pod changes
 				Expect(instance.WatchTransformationsOf(&corev1.Pod{}, func(obj interface{}) []string {
 					p := obj.(*corev1.Pod)
 					return []string{
 						p.Namespace + "-namespace/" + p.Name + "-name-1",
 						p.Namespace + "-namespace/" + p.Name + "-name-2"}
+				})).Should(Succeed())
+
+				fakePodInformer.Add(&corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "test-pod", Namespace: "default"}})
+
+				val := ChannelResult{}
+				Eventually(result).Should(Receive(&val.result))
+				Expect(val.result).Should(Equal("default-namespace/test-pod-name-1"))
+				Eventually(result).Should(Receive(&val.result))
+				Expect(val.result).Should(Equal("default-namespace/test-pod-name-2"))
+				Expect(instance.GetMetrics().QueueLength).Should(Equal(0))
+			})
+
+			It("should use the transformationkeysof function to reconcile multiple different keys", func() {
+				// Listen for Pod changes
+				Expect(instance.WatchTransformationKeysOf(&corev1.Pod{}, func(obj interface{}) []types.ReconcileKey {
+					p := obj.(*corev1.Pod)
+					return []types.ReconcileKey{
+						{p.Namespace + "-namespace", p.Name + "-name-1"},
+						{p.Namespace + "-namespace", p.Name + "-name-2"},
+					}
 				})).Should(Succeed())
 
 				fakePodInformer.Add(&corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "test-pod", Namespace: "default"}})

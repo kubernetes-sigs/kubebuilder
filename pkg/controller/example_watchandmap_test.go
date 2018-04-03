@@ -116,3 +116,90 @@ func ExampleGenericController_WatchTransformationsOf() {
 	// One time for program
 	controller.RunInformersAndControllers(run.CreateRunArguments())
 }
+
+func ExampleGenericController_WatchTransformationKeyOf() {
+	// One time setup for program
+	flag.Parse()
+	informerFactory := config.GetKubernetesInformersOrDie()
+	if err := controller.AddInformerProvider(&corev1.Pod{}, informerFactory.Core().V1().Pods()); err != nil {
+		log.Fatalf("Could not set informer %v", err)
+	}
+	if err := controller.AddInformerProvider(&appsv1.ReplicaSet{}, informerFactory.Apps().V1().ReplicaSets()); err != nil {
+		log.Fatalf("Could not set informer %v", err)
+	}
+
+	// Per-controller setup
+	c := &controller.GenericController{
+		Reconcile: func(key types.ReconcileKey) error {
+			fmt.Printf("Reconciling Pod %s\n", key)
+			return nil
+		},
+	}
+	err := c.Watch(&appsv1.ReplicaSet{})
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+	err = c.WatchTransformationKeyOf(&corev1.Pod{},
+		func(i interface{}) types.ReconcileKey {
+			p, ok := i.(*corev1.Pod)
+			if !ok {
+				return types.ReconcileKey{}
+			}
+
+			// Find multiple parents based off the name
+			return types.ReconcileKey{p.Namespace, strings.Split(p.Name, "-")[0]}
+		},
+	)
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+	controller.AddController(c)
+
+	// One time for program
+	controller.RunInformersAndControllers(run.CreateRunArguments())
+}
+
+func ExampleGenericController_WatchTransformationKeysOf() {
+	// One time setup for program
+	flag.Parse()
+	informerFactory := config.GetKubernetesInformersOrDie()
+	if err := controller.AddInformerProvider(&corev1.Pod{}, informerFactory.Core().V1().Pods()); err != nil {
+		log.Fatalf("Could not set informer %v", err)
+	}
+	if err := controller.AddInformerProvider(&appsv1.ReplicaSet{}, informerFactory.Apps().V1().ReplicaSets()); err != nil {
+		log.Fatalf("Could not set informer %v", err)
+	}
+
+	// Per-controller setup
+	c := &controller.GenericController{
+		Reconcile: func(key types.ReconcileKey) error {
+			fmt.Printf("Reconciling Pod %s\n", key)
+			return nil
+		},
+	}
+	err := c.Watch(&appsv1.ReplicaSet{})
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+	err = c.WatchTransformationKeysOf(&corev1.Pod{},
+		func(i interface{}) []types.ReconcileKey {
+			p, ok := i.(*corev1.Pod)
+			if !ok {
+				return []types.ReconcileKey{}
+			}
+
+			// Find multiple parents based off the name
+			return []types.ReconcileKey{
+				{p.Namespace, strings.Split(p.Name, "-")[0] + "-parent-1"},
+				{p.Namespace, strings.Split(p.Name, "-")[0] + "-parent-2"},
+			}
+		},
+	)
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+	controller.AddController(c)
+
+	// One time for program
+	controller.RunInformersAndControllers(run.CreateRunArguments())
+}
