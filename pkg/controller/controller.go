@@ -124,6 +124,14 @@ func (gc *GenericController) WatchTransformationOf(obj metav1.Object, mapFn even
 		eventhandlers.MapAndEnqueue{Map: mapFn, Predicates: p})
 }
 
+// WatchTransformationsOf watches objects matching obj's type and enqueues the keys returned by mapFn.
+func (gc *GenericController) WatchTransformationsOf(obj metav1.Object, mapFn eventhandlers.ObjToKeys,
+	p ...predicates.Predicate) error {
+	gc.once.Do(gc.init)
+	return gc.queue.addEventHandler(obj,
+		eventhandlers.MapAndEnqueue{MultiMap: mapFn, Predicates: p})
+}
+
 // WatchEvents watches objects matching obj's type and uses the functions from provider to handle events.
 func (gc *GenericController) WatchEvents(obj metav1.Object, provider types.HandleFnProvider) error {
 	gc.once.Do(gc.init)
