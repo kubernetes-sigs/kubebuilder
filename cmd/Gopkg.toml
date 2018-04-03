@@ -1,13 +1,8 @@
 # Uncomment to update deps with dep tool
-# ignored = ["github.com/kubernetes-sigs/kubebuilder","github.com/kubernetes-sigs/kubebuilder/cmd"]
 
 [prune]
   non-go = true
   go-tests = true
-
-[[constraint]]
-  branch = "release-v1.9-alpha.15"
-  name = "github.com/kubernetes-sigs/kubebuilder"
 
 [[constraint]]
   name = "github.com/emicklei/go-restful"
