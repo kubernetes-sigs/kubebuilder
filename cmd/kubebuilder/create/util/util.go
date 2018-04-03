@@ -18,6 +18,7 @@ package util
 
 import (
 	"log"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -25,7 +26,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/util"
-	"path/filepath"
 )
 
 var (
@@ -44,6 +44,9 @@ func ValidateResourceFlags() {
 		log.Fatal("Must specify --kind")
 	}
 	if len(ResourceName) == 0 {
+		if inflect.NewDefaultRuleset().Pluralize(KindName) == KindName {
+			log.Fatal("Client code generation expects singular --kind.")
+		}
 		ResourceName = inflect.NewDefaultRuleset().Pluralize(strings.ToLower(KindName))
 	}
 
