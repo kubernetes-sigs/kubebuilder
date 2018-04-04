@@ -291,7 +291,7 @@ var _ = Describe("GenericController", func() {
 			It("should call the event handling add function", func() {
 				// Listen for Pod changes
 				Expect(instance.WatchEvents(&corev1.Pod{},
-					func(w workqueue.RateLimitingInterface) cache.ResourceEventHandlerFuncs {
+					func(w workqueue.RateLimitingInterface) cache.ResourceEventHandler {
 						return cache.ResourceEventHandlerFuncs{
 							AddFunc:    func(obj interface{}) { w.AddRateLimited("key/value") },
 							DeleteFunc: func(obj interface{}) { Fail("Delete function called") },
@@ -312,7 +312,7 @@ var _ = Describe("GenericController", func() {
 			It("should call the event handling update function", func() {
 				// Listen for Pod changes
 				Expect(instance.WatchEvents(&corev1.Pod{},
-					func(w workqueue.RateLimitingInterface) cache.ResourceEventHandlerFuncs {
+					func(w workqueue.RateLimitingInterface) cache.ResourceEventHandler {
 						return cache.ResourceEventHandlerFuncs{
 							AddFunc:    func(obj interface{}) { Fail("Add function called") },
 							DeleteFunc: func(obj interface{}) { Fail("Delete function called") },
@@ -343,7 +343,7 @@ var _ = Describe("GenericController", func() {
 			It("should call the event handling delete function", func() {
 				// Listen for Pod changes
 				Expect(instance.WatchEvents(&corev1.Pod{},
-					func(w workqueue.RateLimitingInterface) cache.ResourceEventHandlerFuncs {
+					func(w workqueue.RateLimitingInterface) cache.ResourceEventHandler {
 						return cache.ResourceEventHandlerFuncs{
 							AddFunc:    func(obj interface{}) { Fail("Add function called") },
 							DeleteFunc: func(obj interface{}) { w.AddRateLimited("key/value") },
