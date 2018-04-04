@@ -39,6 +39,8 @@ type MapAndEnqueue struct {
 	Predicates []predicates.Predicate
 	// Map maps an object to a key that can be enqueued
 	Map func(interface{}) string
+
+	MultiMap func(interface{}) []types.ReconcileKey
 }
 
 // Get returns ResourceEventHandlerFuncs that Map an object to a Key and enqueue the key if it is non-empty
@@ -74,9 +76,15 @@ func (mp MapAndEnqueue) Get(r workqueue.RateLimitingInterface) cache.ResourceEve
 
 // addRateLimited maps the obj to a string.  If the string is non-empty, it is enqueued.
 func (mp MapAndEnqueue) addRateLimited(r workqueue.RateLimitingInterface, obj interface{}) {
-	k := mp.Map(obj)
-	if len(k) > 0 {
-		r.AddRateLimited(k)
+	if mp.Map != nil {
+		if k := mp.Map(obj); len(k) > 0 {
+			r.AddRateLimited(k)
+		}
+	}
+	if mp.MultiMap != nil {
+		for _, k := range mp.MultiMap(obj) {
+			r.AddRateLimited(k.Namespace + "/" + k.Name)
+		}
 	}
 }
 
@@ -140,6 +148,12 @@ func (m MapToController) Map(obj interface{}) string {
 
 // ObjToKey returns a string namespace/name key for an object
 type ObjToKey func(interface{}) string
+
+type ObjToKeys func(interface{}) []string
+
+type ObjToReconcileKey func(interface{}) types.ReconcileKey
+
+type ObjToReconcileKeys func(interface{}) []types.ReconcileKey
 
 // MapToSelf returns the namespace/name key of obj
 func MapToSelf(obj interface{}) string {
