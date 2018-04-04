@@ -37,5 +37,17 @@ type ReconcileKey struct {
 }
 
 func (r ReconcileKey) String() string {
+	if r.Namespace == "" {
+		return r.Name
+	}
 	return r.Namespace + "/" + r.Name
+}
+
+// ParseReconcileKey returns the ReconcileKey that has been encoded into a string.
+func ParseReconcileKey(key string) (ReconcileKey, error) {
+	namespace, name, err := cache.SplitMetaNamespaceKey(key)
+	if err != nil {
+		return ReconcileKey{}, err
+	}
+	return ReconcileKey{Name: name, Namespace: namespace}, nil
 }
