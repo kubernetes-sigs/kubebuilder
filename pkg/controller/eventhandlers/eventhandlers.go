@@ -88,8 +88,17 @@ func (mp MapAndEnqueue) addRateLimited(r workqueue.RateLimitingInterface, obj in
 	}
 }
 
+// ControllerLookup takes a ReconcileKey and returns the matching resource
 type ControllerLookup func(types.ReconcileKey) (interface{}, error)
 
+// Path is list of functions that allow an instance of a resource to be traced back to an owning ancestor.  This
+// is done by following the chain of owners references and comparing the UID in the owners reference against
+// the UID of the instance returned by ControllerLookup.
+// e.g. if resource Foo creates Deployments, and wanted to trigger reconciles in response to Pod events created by
+// the Deployment, then Path would contain the following [function to lookup a ReplicaSet by namespace/name,
+// function to lookup a Deployment by namespace/name, function to lookup a Foo by namespace/name].  When
+// a Pod event is observed, this Path could then walk the owners references back to the Foo to get its namespace/name
+// and then reconcile this Foo.
 type Path []ControllerLookup
 
 type MapToController struct {
