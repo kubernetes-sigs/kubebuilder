@@ -85,15 +85,15 @@ COPY cmd/    cmd/
 COPY vendor/ vendor/
 
 # Build and test the API code
-RUN go build -a -o controller-manager ./cmd/controller-manager/main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o controller-manager ./cmd/controller-manager/main.go
 RUN go test ./pkg/... ./cmd/...
 
 # Copy the controller-manager into a thin image
-FROM ubuntu:latest  
+FROM scratch
 # RUN apk --no-cache add ca-certificates
 WORKDIR /root/
 COPY --from=builder /go/src/{{ .Repo }}/controller-manager .
-CMD ["./controller-manager", "--install-crds=false"]  
+CMD ["./controller-manager", "--install-crds=false"]
 `
 
 //var apiserverDockerfileTemplate = `# Instructions to install API using the installer
