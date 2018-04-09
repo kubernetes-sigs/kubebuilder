@@ -21,6 +21,9 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
+	"strconv"
+	"strings"
 
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/util"
 	"github.com/spf13/cobra"
@@ -48,6 +51,11 @@ func AddInit(cmd *cobra.Command) {
 }
 
 func runInitRepo(cmd *cobra.Command, args []string) {
+	version := runtime.Version()
+	if versionCmp(version, "go1.10") < 0 {
+		log.Fatalf("The go version is %v, must be 1.10+", version)
+	}
+
 	if len(domain) == 0 {
 		log.Fatal("Must specify --domain")
 	}
@@ -96,4 +104,30 @@ func execute(path, templateName, templateValue string, data interface{}) {
 type templateArgs struct {
 	BoilerPlate string
 	Repo        string
+}
+
+func versionCmp(v1 string, v2 string) int {
+	v1s := strings.Split(strings.Replace(v1, "go", "", 1), ".")
+	v2s := strings.Split(strings.Replace(v2, "go", "", 1), ".")
+	for i := 0; i < len(v1s) && i < len(v2s); i++ {
+		mv1, err1 := strconv.Atoi(v1s[i])
+		mv2, err2 := strconv.Atoi(v2s[i])
+		if err1 == nil && err2 == nil {
+			cmp := mv1 - mv2
+			if cmp > 0 {
+				return 1
+			} else if cmp < 0 {
+				return -1
+			}
+		} else {
+			log.Fatalf("Unexpected error comparing %v with %v", v1, v2)
+		}
+	}
+	if len(v1s) == len(v2s) {
+		return 0
+	} else if len(v1s) > len(v2s) {
+		return 1
+	} else {
+		return -1
+	}
 }
