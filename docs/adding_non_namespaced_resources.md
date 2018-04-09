@@ -30,7 +30,7 @@ Example:
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +nonNamespaced=true
 
-// +resource:path=foos
+// +kubebuilder:resource:path=foos
 // +k8s:openapi-gen=true
 // Foo defines some thing
 type Foo struct {

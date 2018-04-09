@@ -59,7 +59,7 @@ func (bc *{{.Kind}}Controller) Reconcile(k types.ReconcileKey) error {
     return nil
 }
 
-// +controller:group={{ .Group }},version={{ .Version }},kind={{ .Kind}},resource={{ .Resource }}
+// +kubebuilder:controller:group={{ .Group }},version={{ .Version }},kind={{ .Kind}},resource={{ .Resource }}
 type {{.Kind}}Controller struct {
     // INSERT ADDITIONAL FIELDS HERE
     {{lower .Kind}}Lister {{.Group}}{{.Version}}lister.{{.Kind}}Lister

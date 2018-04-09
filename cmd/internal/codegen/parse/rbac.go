@@ -39,8 +39,9 @@ func (b *APIs) parseRBAC() {
 func (b *APIs) getRBACTag(c *types.Type) []string {
     comments := Comments(c.CommentLines)
     resource := comments.getTags("rbac", ":")
+    resource = append(resource, comments.getTags("kubebuilder:rbac", ":")...)
     if len(resource) == 0 {
-        panic(fmt.Errorf("Must specify +rbac comment for type %v", c.Name))
+        panic(fmt.Errorf("Must specify +kubebuilder:rbac comment for type %v", c.Name))
     }
     return resource
 }
@@ -50,7 +51,7 @@ func parseRBACTag(tag string) rbacv1.PolicyRule {
     for _, elem := range strings.Split(tag, ",") {
         kv := strings.Split(elem, "=")
         if len(kv) != 2 {
-            log.Fatalf("// +rbac: tags must be key value pairs.  Expected "+
+            log.Fatalf("// +kubebuilder:rbac: tags must be key value pairs.  Expected "+
                 "keys [groups=<group1;group2>,resources=<resource1;resource2>,verbs=<verb1;verb2>] "+
                 "Got string: [%s]", tag)
         }
@@ -90,8 +91,9 @@ func (b *APIs) parseInformers() {
 func (b *APIs) getInformerTag(c *types.Type) []string {
     comments := Comments(c.CommentLines)
     resource := comments.getTags("informers", ":")
+    resource = append(resource, comments.getTags("kubebuilder:informers", ":")...)
     if len(resource) == 0 {
-        panic(fmt.Errorf("Must specify +informers comment for type %v", c.Name))
+        panic(fmt.Errorf("Must specify +kubebuilder:informers comment for type %v", c.Name))
     }
     return resource
 }
@@ -101,7 +103,7 @@ func parseInformerTag(tag string) v1.GroupVersionKind {
     for _, elem := range strings.Split(tag, ",") {
         kv := strings.Split(elem, "=")
         if len(kv) != 2 {
-            log.Fatalf("// +informers: tags must be key value pairs.  Expected "+
+            log.Fatalf("// +kubebuilder:informers: tags must be key value pairs.  Expected "+
                 "keys [group=core,version=v1,kind=Pod] "+
                 "Got string: [%s]", tag)
         }

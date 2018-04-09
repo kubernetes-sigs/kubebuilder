@@ -18,9 +18,9 @@ package controller_test
 
 func Example() {}
 
-// +controller:group=foo,version=v1beta1,kind=Bar,resource=bars
-// +rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
-// +informers:group=apps,version=v1,kind=Deployment
-// +rbac:groups="",resources=pods,verbs=get;watch;list
-// +informers:group=core,version=v1,kind=Pod
+// +kubebuilder:controller:group=foo,version=v1beta1,kind=Bar,resource=bars
+// +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:informers:group=apps,version=v1,kind=Deployment
+// +kubebuilder:rbac:groups="",resources=pods,verbs=get;watch;list
+// +kubebuilder:informers:group=core,version=v1,kind=Pod
 type FooController struct{}

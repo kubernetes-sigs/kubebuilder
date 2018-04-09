@@ -46,9 +46,9 @@ func (b *APIs) parseControllers() {
 
 func (b *APIs) getControllerTag(c *types.Type) string {
 	comments := Comments(c.CommentLines)
-	resource := comments.getTag("controller", ":")
+	resource := comments.getTag("controller", ":") + comments.getTag("kubebuilder:controller", ":")
 	if len(resource) == 0 {
-		panic(errors.Errorf("Must specify +controller comment for type %v", c.Name))
+		panic(errors.Errorf("Must specify +kubebuilder:controller comment for type %v", c.Name))
 	}
 	return resource
 }
@@ -59,7 +59,7 @@ func parseControllerTag(tag string) controllerTags {
 	for _, elem := range strings.Split(tag, ",") {
 		kv := strings.Split(elem, "=")
 		if len(kv) != 2 {
-			log.Fatalf("// +controller: tags must be key value pairs.  Expected "+
+			log.Fatalf("// +kubebuilder:controller: tags must be key value pairs.  Expected "+
 				"keys [group=<group>,version=<version>,kind=<kind>,resource=<resource>] "+
 				"Got string: [%s]", tag)
 		}

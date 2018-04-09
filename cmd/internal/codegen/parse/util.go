@@ -26,10 +26,10 @@ import (
 	"k8s.io/gengo/types"
 )
 
-// IsAPIResource returns true if t has a +resource comment tag
+// IsAPIResource returns true if t has a +resource/+kubebuilder:resource comment tag
 func IsAPIResource(t *types.Type) bool {
 	for _, c := range t.CommentLines {
-		if strings.Contains(c, "+resource") {
+		if strings.Contains(c, "+resource") || strings.Contains(c, "+kubebuilder:resource"){
 			return true
 		}
 	}
@@ -59,7 +59,7 @@ func IsNonNamespaced(t *types.Type) bool {
 
 func IsController(t *types.Type) bool {
 	for _, c := range t.CommentLines {
-		if strings.Contains(c, "+controller") {
+		if strings.Contains(c, "+controller") || strings.Contains(c, "+kubebuilder:controller") {
 			return true
 		}
 	}
@@ -68,7 +68,7 @@ func IsController(t *types.Type) bool {
 
 func IsRBAC(t *types.Type) bool {
 	for _, c := range t.CommentLines {
-		if strings.Contains(c, "+rbac") {
+		if strings.Contains(c, "+rbac") || strings.Contains(c, "+kubebuilder:rbac") {
 			return true
 		}
 	}
@@ -77,7 +77,7 @@ func IsRBAC(t *types.Type) bool {
 
 func IsInformer(t *types.Type) bool {
     for _, c := range t.CommentLines {
-        if strings.Contains(c, "+informers") {
+        if strings.Contains(c, "+informers") || strings.Contains(c, "+kubebuilder:informers") {
             return true
         }
     }
