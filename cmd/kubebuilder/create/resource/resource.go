@@ -77,7 +77,7 @@ type {{.Kind}}Status struct {
 
 // {{.Kind}}
 // +k8s:openapi-gen=true
-// +resource:path={{.Resource}}
+// +kubebuilder:resource:path={{.Resource}}
 type {{.Kind}} struct {
     metav1.TypeMeta   ` + "`" + `json:",inline"` + "`" + `
     metav1.ObjectMeta ` + "`" + `json:"metadata,omitempty"` + "`" + `

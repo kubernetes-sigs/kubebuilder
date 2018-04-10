@@ -37,7 +37,7 @@ type FooStatus struct{}
 
 // Foo
 // +k8s:openapi-gen=true
-// +resource:path=foos
+// +kubebuilder:resource:path=foos
 type Foo struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

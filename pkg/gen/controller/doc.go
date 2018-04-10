@@ -20,10 +20,10 @@ The controller package describes comment directives that may be applied to contr
 package controller
 
 // Controller annotates a type as being a controller for a specific resource
-const Controller = "// +controller:group=,version=,kind=,resource="
+const Controller = "// +kubebuilder:controller:group=,version=,kind=,resource="
 
 // RBAC annotates a controller struct as needing an RBAC rule to run
-const RBAC = "// +rbac:groups=<group1;group2>,resources=<resource1;resource2>,verbs=<verb1;verb2>"
+const RBAC = "// +kubebuilder:rbac:groups=<group1;group2>,resources=<resource1;resource2>,verbs=<verb1;verb2>"
 
 // Informers indicates that an informer must be started for this controller
-const Informers = "// +informers:group=core,version=v1,kind=Pod"
+const Informers = "// +kubebuilder:informers:group=core,version=v1,kind=Pod"

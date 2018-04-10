@@ -267,7 +267,7 @@ func parseType(t *types.Type) (*codegen.Struct, []*types.Type) {
 
 func (b *APIs) genClient(c *types.Type) bool {
 	comments := Comments(c.CommentLines)
-	resource := comments.getTag("resource", ":")
+	resource := comments.getTag("resource", ":") + comments.getTag("kubebuilder:resource", ":")
 	return len(resource) > 0
 }
 

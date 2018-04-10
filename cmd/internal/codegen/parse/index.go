@@ -184,7 +184,7 @@ func parseResourceTag(tag string) resourceTags {
 	for _, elem := range strings.Split(tag, ",") {
 		kv := strings.Split(elem, "=")
 		if len(kv) != 2 {
-			log.Fatalf("// +resource: tags must be key value pairs.  Expected "+
+			log.Fatalf("// +kubebuilder:resource: tags must be key value pairs.  Expected "+
 				"keys [path=<subresourcepath>] "+
 				"Got string: [%s]", tag)
 		}
@@ -230,9 +230,9 @@ func parseResourceTag(tag string) resourceTags {
 // getResourceTag returns the value of the "+resource=" comment tag
 func (b *APIs) getResourceTag(c *types.Type) string {
 	comments := Comments(c.CommentLines)
-	resource := comments.getTag("resource", ":")
+	resource := comments.getTag("resource", ":") + comments.getTag("kubebuilder:resource", ":")
 	if len(resource) == 0 {
-		panic(errors.Errorf("Must specify +resource comment for type %v", c.Name))
+		panic(errors.Errorf("Must specify +kubebuilder:resource comment for type %v", c.Name))
 	}
 	return resource
 }

@@ -20,7 +20,7 @@ The apis package describes the comment directives that may be applied to apis / 
 package apis
 
 // Resource annotates a type as a resource
-const Resource = "// +resource:path="
+const Resource = "// +kubebuilder:resource:path="
 
 // Maximum annotates a go struct field for CRD validation
 const Maximum = "// +kubebuilder:validation:Maximum="
