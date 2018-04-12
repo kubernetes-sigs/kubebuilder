@@ -378,6 +378,8 @@ func getValidation(comment string, props *v1beta1.JSONSchemaProps) {
 		for i := range enums {
 			props.Enum = append(props.Enum, v1beta1.JSON{[]byte(enums[i])})
 		}
+	case "Format":
+		props.Format = parts[1]
 	default:
 		log.Fatalf("Unsupport validation: %s", comment)
 	}
