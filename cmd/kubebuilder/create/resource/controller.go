@@ -41,6 +41,7 @@ import (
 
     "github.com/kubernetes-sigs/kubebuilder/pkg/controller"
     "github.com/kubernetes-sigs/kubebuilder/pkg/controller/types"
+    "k8s.io/client-go/tools/record"
 
     {{.Group}}{{.Version}}client "{{.Repo}}/pkg/client/clientset/versioned/typed/{{.Group}}/{{.Version}}"
     {{.Group}}{{.Version}}lister "{{.Repo}}/pkg/client/listers/{{.Group}}/{{.Version}}"
@@ -64,6 +65,9 @@ type {{.Kind}}Controller struct {
     // INSERT ADDITIONAL FIELDS HERE
     {{lower .Kind}}Lister {{.Group}}{{.Version}}lister.{{.Kind}}Lister
     {{lower .Kind}}client {{.Group}}{{.Version}}client.{{title .Group}}{{title .Version}}Interface
+    // recorder is an event recorder for recording Event resources to the
+    // Kubernetes API.
+    {{lower .Kind}}recorder record.EventRecorder
 }
 
 // ProvideController provides a controller that will be run at startup.  Kubebuilder will use codegeneration
@@ -73,6 +77,7 @@ func ProvideController(arguments args.InjectArgs) (*controller.GenericController
     bc := &{{.Kind}}Controller{
         {{lower .Kind}}Lister: arguments.ControllerManager.GetInformerProvider(&{{.Group}}{{.Version}}.{{.Kind}}{}).({{.Group}}{{.Version}}informer.{{.Kind}}Informer).Lister(),
         {{lower .Kind}}client: arguments.Clientset.{{title .Group}}{{title .Version}}(),
+        {{lower .Kind}}recorder: arguments.CreateRecorder("{{.Kind}}Controller"),
     }
 
     // Create a new controller that will call {{.Kind}}Controller.Reconcile on changes to {{.Kind}}s
