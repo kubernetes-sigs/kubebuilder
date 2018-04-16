@@ -184,7 +184,7 @@ func (b *APIs) parsePrimitiveValidation(t *types.Type, found sets.String, commen
 		f = "int32"
 	case "float", "float32":
 		n = "number"
-		f = "loat"
+		f = "float"
 	case "float64":
 		n = "number"
 		f = "double"
@@ -427,5 +427,7 @@ func (b *APIs) getMembers(t *types.Type, found sets.String) (map[string]v1beta1.
 			result[name] = r
 		}
 	}
+
+	defer found.Delete(t.Name.String())
 	return members, result
 }
