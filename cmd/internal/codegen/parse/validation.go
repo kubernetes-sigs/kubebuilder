@@ -265,20 +265,27 @@ var objectTemplate = template.Must(template.New("object-template").Parse(
 }`))
 
 func (b *APIs) parseObjectValidation(t *types.Type, found sets.String, comments []string) (v1beta1.JSONSchemaProps, string) {
-	m, result := b.getMembers(t, found)
-	props := v1beta1.JSONSchemaProps{
-		Type:       "object",
-		Properties: m,
-	}
-
-	// Only add field validation for non-inlined fields
-	for _, l := range comments {
-		getValidation(l, &props)
-	}
-
 	buff := &bytes.Buffer{}
-	if err := objectTemplate.Execute(buff, objectTemplateArgs{props, result}); err != nil {
-		log.Fatalf("%v", err)
+	props := v1beta1.JSONSchemaProps{
+		Type: "object",
+	}
+
+	if strings.HasPrefix(t.Name.String(), "k8s.io/api") {
+		if err := objectTemplate.Execute(buff, objectTemplateArgs{props, nil}); err != nil {
+			log.Fatalf("%v", err)
+		}
+	} else {
+		m, result := b.getMembers(t, found)
+		props.Properties = m
+
+		// Only add field validation for non-inlined fields
+		for _, l := range comments {
+			getValidation(l, &props)
+		}
+
+		if err := objectTemplate.Execute(buff, objectTemplateArgs{props, result}); err != nil {
+			log.Fatalf("%v", err)
+		}
 	}
 	return props, buff.String()
 }
