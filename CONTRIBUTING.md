@@ -17,7 +17,7 @@ Please see https://git.k8s.io/community/CLA.md for more info
 
 Setup:
 
-- Download [google container builder]
+- Download [google container builder](https://cloud.google.com/container-builder/docs/build-debug-locally)
 - Export `GOOS` (darwin/linux) and `GOARCH` (amd64) vars to match the system to build
 - Export `OUTPUT` to a location to write the directory containing the final build artifacts
 
