@@ -1,0 +1,41 @@
+# This is a GoReleaser configuration file for Kubebuilder release.
+# Make sure to check the documentation at http://goreleaser.com
+builds:
+- main: ./cmd/kubebuilder
+  binary: kubebuilder
+  ldflags: -s -X github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/version.kubebuilderVersion={{.Version}} -X github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/version.gitCommit={{.Commit}} -X github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/version.buildDate={{.Date}} -X github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/version.kubernetesVendorVersion={{.Env.KUBERNETES_VERSION}}
+  goos:
+   - darwin
+   - linux
+  goarch:
+   - amd64
+  env:
+   - CGO_ENABLED=0
+- main: ./cmd/kubebuilder-gen
+  binary: kubebuilder-gen
+  goos:
+   - darwin
+   - linux
+  goarch:
+   - amd64
+  env:
+   - CGO_ENABLED=0
+archive:
+  files:
+    - "/workspace/_output/kubebuilder/bin/vendor.tar.gz"
+    - "/workspace/_output/{{ .Os }}_{{ .Arch }}/kubebuilder/bin/*"
+  wrap_in_directory: true
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "master"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+     - '^docs:'
+     - '^test:'
+release:
+  github:
+    owner: kubernetes-sigs
+    name: kubebuilder

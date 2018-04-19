@@ -13,12 +13,12 @@
 #  limitations under the License.
 
 # Instructions to run locally:
-# Download google container builder: https://github.com/GoogleCloudPlatform/container-builder-local
+# Download google container builder: https://github.com/kubernetes-sigs/container-builder-local
 # Set you GOOS and GOARCH vars to match your system
 # Set OUTPUT to the location to write the directory containing the tar.gz
-# $ container-builder-local --config=build/cloudbuild_local.yaml --dryrun=false \
-# --write-workspace=/tmp/w .
-# Release tar will be in /tmp/w/workspace/dist
+# $ container-builder-local --config=build/cloudbuild_snapshot.yaml --dryrun=false \
+#   --write-workspace=$OUTPUT .
+# Release tar will be in $OUTPUT
 
 steps:
 - name: "ubuntu"
@@ -37,3 +37,7 @@ steps:
   args: ["bash", "build/build_kubebuilder.sh", "--snapshot"]
   env:
    - 'KUBERNETES_VERSION=1.9'
+- name: 'gcr.io/cloud-builders/gsutil'
+  args: ['-h', 'Content-Type:application/gzip', 'cp', '-a', 'public-read', 'kubebuilder_master_linux_amd64.tar.gz', 'gs://kubebuilder-release/kubebuilder_master_linux_amd64.tar.gz']
+- name: 'gcr.io/cloud-builders/gsutil'
+  args: ['-h', 'Content-Type:application/gzip', 'cp', '-a', 'public-read', 'kubebuilder_master_darwin_amd64.tar.gz', 'gs://kubebuilder-release/kubebuilder_master_darwin_amd64.tar.gz']
