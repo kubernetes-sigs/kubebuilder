@@ -89,7 +89,7 @@ kubebuilder create resource --group mygroup --version v1beta1 --kind MyKind
 
 ### pkg/controllers
 
-**Users must packages under this package**
+**Users must edit packages under this package**
 
 The `controllers` package contains the controllers to implement the resource APIs.  Controllers are defined under
 `pkg/controllers/<kind>/controller.go`.  Controllers may be annotated with comments to wire the controller into the
