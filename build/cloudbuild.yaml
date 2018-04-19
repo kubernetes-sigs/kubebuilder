@@ -12,37 +12,33 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+# Instructions to run locally:
+# Download google container builder: https://github.com/kubernetes-sigs/container-builder-local
+# Set you GOOS and GOARCH vars to match your system
+# Set OUTPUT to the location to write the directory containing the tar.gz
+# $ container-builder-local --config=build/cloudbuild_with_goreleaser.yaml --dryrun=false \
+#   --write-workspace=$OUTPUT .
+# Release tar will be in $OUTPUT
+
 steps:
 - name: "ubuntu"
-  args: ["mkdir", "-p", "/workspace/_output"]
-- name: "gcr.io/kubebuilder/thirdparty-${_GOOS}:1.9"
-  args: ["tar", "-xzvf", "/kubebuilder_${_GOOS}_${_GOARCH}.tar.gz"]
-  dir: "_output"
-- name: "golang:1.10-stretch"
-  args: ["bash", "build/build_kubebuilder.sh"]
-  env:
-  - 'GOOS=${_GOOS}'
-  - 'GOARCH=${_GOARCH}'
-  - 'CGO=0'
-  - 'VERSION=${TAG_NAME}'
-  - 'KUBERNETES_VERSION=v1.9'
+  args: ["mkdir", "-p", "/workspace/_output/linux_amd64"]
+- name: "gcr.io/kubebuilder/thirdparty-linux:1.9"
+  args: ["tar", "-xzvf", "/kubebuilder_linux_amd64.tar.gz"]
+  dir: "_output/linux_amd64"
+- name: "ubuntu"
+  args: ["mkdir", "-p", "/workspace/_output/darwin_amd64"]
+- name: "gcr.io/kubebuilder/thirdparty-darwin:1.9"
+  args: ["tar", "-xzvf", "/kubebuilder_darwin_amd64.tar.gz"]
+  dir: "_output/darwin_amd64"
 - name: "ubuntu"
   args: ["bash", "build/build_vendor.sh"]
-- name: "ubuntu"
-  args: ["bash", "build/package.sh"]
+- name: "gcr.io/kubebuilder/goreleaser_with_go_1.10:0.0.1"
+  args: ["bash", "build/build_kubebuilder.sh"]
   env:
-  - 'GOOS=${_GOOS}'
-  - 'GOARCH=${_GOARCH}'
-  - 'VERSION=${TAG_NAME}'
-- name: "golang:1.10-stretch"
-  args: ["bash", "build/test.sh"]
-  env:
-  - 'GOOS=${_GOOS}'
-  - 'GOARCH=${_GOARCH}'
-  - 'VERSION=${TAG_NAME}'
-- name: 'gcr.io/cloud-builders/gsutil'
-  args: ['-h', 'Content-Type:application/gzip', 'cp', '-a', 'public-read', 'kubebuilder-${TAG_NAME}-${_GOOS}-${_GOARCH}.tar.gz', 'gs://kubebuilder-release/kubebuilder-${TAG_NAME}-${_GOOS}-${_GOARCH}.tar.gz']
-  env:
-  - 'GOOS=${_GOOS}'
-  - 'GOARCH=${_GOARCH}'
-  - 'VERSION=${TAG_NAME}'
+   - 'KUBERNETES_VERSION=1.9'
+  secretEnv: ['GITHUB_TOKEN']
+secrets:
+- kmsKeyName: projects/kubebuilder/locations/global/keyRings/kubebuilder-gh-tokens/cryptoKeys/gh-release-token
+  secretEnv:
+   GITHUB_TOKEN: CiQAChsKTruEiSo6yBI+xg75jyr4f8yM93R2e9QbpeRX3jF3VAwSUQDQuYkCiUd+6e/1wKQAyHnf6BYv0GNGMghyNzYbXT0owBzQqmIQJeu/VDGZcEVabIWErNXjbPqPiysIu0uAiKAAUTUK0VYMr9E6GdTJ0+hVmg==

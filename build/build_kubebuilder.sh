@@ -22,21 +22,38 @@ set -x
 # - Create the directory to host the code that matches the expected GOPATH package locations
 # - Use /go as the default GOPATH because this is what the image uses
 # - Link our current directory (containing the source code) to the package location in the GOPATH
-mkdir -p /go/src/github.com/kubernetes-sigs
-ln -s $(pwd) /go/src/github.com/kubernetes-sigs/kubebuilder
 
-# Create the output directory for the binaries we will build
-# Make sure CGO is 0 so the binaries are statically compiled and linux which is necessary for cross compiling go
-export CGO=0
-export DEST=/workspace/_output/kubebuilder/bin/
-mkdir -p $DEST || echo ""
+OWNER="kubernetes-sigs"
+REPO="kubebuilder"
 
-# Explicitly set the values of the variables in package "X" using ldflag so that they are statically compiled into
-# the "version" command
-export X=github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/version
-go build -o $DEST/kubebuilder \
- -ldflags "-X $X.kubeBuilderVersion=$VERSION -X $X.goos=$GOOS -X $X.goarch=$GOARCH -X $X.kubernetesVendorVersion=$KUBERNETES_VERSION" \
- github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder
+GO_PKG_OWNER=$GOPATH/src/github.com/$OWNER
+GO_PKG_PATH=$GO_PKG_OWNER/$REPO
 
-# Also build the kubebuilder-gen command
-go build -o $DEST/kubebuilder-gen github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder-gen
+mkdir -p $GO_PKG_OWNER
+ln -sf $(pwd) $GO_PKG_PATH
+
+# When invoked in container builder, this script runs under /workspace which is
+# not under $GOPATH, so we need to `cd` to repo under GOPATH for it to build
+cd $GO_PKG_PATH
+
+
+# NOTE: if snapshot is enabled, release is not published to GitHub and the build
+# is available under workspace/dist directory.
+SNAPSHOT=""
+
+# parse commandline args copied from the link below
+# https://stackoverflow.com/questions/192249/how-do-i-parse-command-line-arguments-in-bash?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
+
+while [[ $# -gt 0 ]]
+do
+key="$1"
+
+case $key in
+    --snapshot)
+    SNAPSHOT="--snapshot"
+    shift # past argument
+    ;;
+esac
+done
+
+/goreleaser release --config=build/.goreleaser.yml --debug --rm-dist ${SNAPSHOT}
