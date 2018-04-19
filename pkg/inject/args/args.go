@@ -40,7 +40,7 @@ type InjectArgs struct {
 	Config *rest.Config
 
 	// KubernetesClientSet is a clientset to talk to Kuberntes apis
-	KubernetesClientSet *kubernetes.Clientset
+	KubernetesClientSet kubernetes.Interface
 
 	// KubernetesInformers contains a Kubernetes informers factory
 	KubernetesInformers informers.SharedInformerFactory
