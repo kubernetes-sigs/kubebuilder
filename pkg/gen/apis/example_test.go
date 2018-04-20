@@ -20,28 +20,28 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func Example() {}
+func Example() {
+	// FooSpec defines the desired state of Foo
+	type FooSpec struct {
+		// +kubebuilder:validation:Maximum=10
+		// +kubebuilder:validation:ExclusiveMinimum=3
+		Count int `json:"count"`
+	}
 
-// FooSpec defines the desired state of Foo
-type FooSpec struct {
-	// +kubebuilder:validation:Maximum=10
-	// +kubebuilder:validation:ExclusiveMinimum=3
-	Count int `json:"count"`
-}
+	// FooStatus defines the observed state of Foo
+	type FooStatus struct{}
 
-// FooStatus defines the observed state of Foo
-type FooStatus struct{}
+	// +genclient
+	// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// +genclient
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+	// Foo
+	// +k8s:openapi-gen=true
+	// +kubebuilder:resource:path=foos
+	type Foo struct {
+		metav1.TypeMeta   `json:",inline"`
+		metav1.ObjectMeta `json:"metadata,omitempty"`
 
-// Foo
-// +k8s:openapi-gen=true
-// +kubebuilder:resource:path=foos
-type Foo struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	Spec   FooSpec   `json:"spec,omitempty"`
-	Status FooStatus `json:"status,omitempty"`
+		Spec   FooSpec   `json:"spec,omitempty"`
+		Status FooStatus `json:"status,omitempty"`
+	}
 }
