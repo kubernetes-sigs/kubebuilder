@@ -12,8 +12,8 @@ Release:
 
 Latest:
 
-- [darwin master HEAD](https://storage.googleapis.com/kubebuilder-release/kubebuilder_master_darwin_amd64.tar.gz)
-- [linux master HEAD](https://storage.googleapis.com/kubebuilder-release/kubebuilder_master_linux_amd64.tar.gz)
+- [darwin master HEAD](https://storage.googleapis.com/kubebuilder-release/kubebuilder--darwin-amd64.tar.gz)
+- [linux master HEAD](https://storage.googleapis.com/kubebuilder-release/kubebuilder--linux-amd64.tar.gz)
 
 
 ## `kubebuilder`
@@ -25,22 +25,7 @@ to simplify building and publishing Kubernetes APIs from scratch.
 
 ## TL;DR
 
-**First:** Download the latest `kubebuilder_<version>_<operating-system>_amd64.tar.gz` release. Extracting the archive will give `kubebuilder_<version>_<os>_amd64` directory. Move the extracted directory to /usr/local/kubebuilder and update your PATH to include /usr/local/kubebuilder/bin. Given below are the steps:
-
-```shell
-
-# download the release
-wget /path/to/kubebuilder_<version>_<operating-system>_amd64.tar.gz
-
-# extract the archive
-tar -zxvf kubebuilder_<version>_<operating-system>_amd64.tar.gz
-
-sudo mv kubebuilder_<version>_<operating-system>_amd64 /usr/local/kubebuilder
-
-#update your PATH to include /usr/local/kubebuilder/bin
-export PATH=$PATH:/usr/local/kubebuilder/bin
-
-```
+**First:** Download the latest `kubebuilder-release-<version>-<operating-system>-amd64.tar.gz` release. Extract it into /usr/local/ and update your PATH to include /usr/local/kubebuilder/bin.
 
 Create an _empty_ project under a new GOPATH.
 
