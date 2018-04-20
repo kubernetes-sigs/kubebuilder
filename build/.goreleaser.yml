@@ -25,6 +25,8 @@ archive:
     - "/workspace/_output/kubebuilder/bin/vendor.tar.gz"
     - "/workspace/_output/{{ .Os }}_{{ .Arch }}/kubebuilder/bin/*"
   wrap_in_directory: true
+# wrap all the binaries under 'bin/' dir
+  wrap_in_directory_path: "bin"
 checksum:
   name_template: 'checksums.txt'
 snapshot:
