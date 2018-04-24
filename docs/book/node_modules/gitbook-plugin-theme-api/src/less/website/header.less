@@ -1,0 +1,24 @@
+.book-header {
+    padding: 0;
+
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+
+    background-color: #FFF;
+    border-bottom: 1px solid @header-border;
+    .transition(left @sidebar-transition-duration ease);
+}
+
+.book {
+    &.with-summary {
+        .book-header {
+            left: @sidebar-width;
+
+            @media (max-width: @sidebar-breakpoint) {
+                left: 0;
+            }
+        }
+    }
+}
