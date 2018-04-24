@@ -210,7 +210,7 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/kubernetes-sig-testing/frameworks"
+  name = "sigs.k8s.io/testing_frameworks"
   packages = [
     "integration",
     "integration/internal"

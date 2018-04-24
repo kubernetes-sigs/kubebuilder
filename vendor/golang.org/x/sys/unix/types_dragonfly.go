@@ -35,7 +35,6 @@ package unix
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/un.h>
-#include <sys/utsname.h>
 #include <sys/wait.h>
 #include <net/bpf.h>
 #include <net/if.h>
@@ -126,12 +125,6 @@ type Flock_t C.struct_flock
 type Dirent C.struct_dirent
 
 type Fsid C.struct_fsid
-
-// File system limits
-
-const (
-	PathMax = C.PATH_MAX
-)
 
 // Sockets
 
@@ -249,8 +242,6 @@ type BpfHdr C.struct_bpf_hdr
 
 type Termios C.struct_termios
 
-type Winsize C.struct_winsize
-
 // fchmodat-like syscalls.
 
 const (
@@ -274,7 +265,3 @@ const (
 	POLLWRBAND = C.POLLWRBAND
 	POLLWRNORM = C.POLLWRNORM
 )
-
-// Uname
-
-type Utsname C.struct_utsname
