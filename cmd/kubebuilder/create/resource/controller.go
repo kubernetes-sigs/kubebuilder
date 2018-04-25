@@ -90,8 +90,18 @@ func ProvideController(arguments args.InjectArgs) (*controller.GenericController
         return gc, err
     }
 
-    // INSERT ADDITIONAL WATCHES HERE BY CALLING gc.Watch.*() FUNCTIONS
-    // NOTE: Informers for Kubernetes resources *MUST* be registered in the pkg/inject package so that they are started.
+	// IMPORTANT:
+	// To watch additional resource types - such as those created by your controller - add gc.Watch* function calls here
+	// Watch function calls will transform each object event into a {{.Kind}} Key to be reconciled by the controller.
+	//
+	// **********
+	// For any new Watched types, you MUST add the appropriate // +kubebuilder:informer and // +kubebuilder:rbac
+	// annotations to the {{.Kind}}Controller and run "kubebuilder generate.
+	// This will generate the code to start the informers and create the RBAC rules needed for running in a cluster.
+	// See:
+	// https://godoc.org/github.com/kubernetes-sigs/kubebuilder/pkg/gen/controller#example-package
+	// **********
+
     return gc, nil
 }
 `

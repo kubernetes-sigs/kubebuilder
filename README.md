@@ -102,6 +102,10 @@ Subpackages of apis are created when running the following command to create a n
 kubebuilder create resource --group mygroup --version v1beta1 --kind MyKind
 ```
 
+**Note:** While `create resource` automatically runs the code generators for the user, when
+the user changes the resource file or adds `// +kubebuilder` annotations to the controller,
+they will need to run `kubebuilder generate` to rerun the code generators.
+
 ### pkg/controllers
 
 **Users must edit packages under this package**
@@ -118,6 +122,10 @@ kubebuilder create resource --group mygroup --version v1beta1 --kind MyKind
 
 See documentation and examples of annotations in godoc format here:
 - [gen/controller](https://godoc.org/github.com/kubernetes-sigs/kubebuilder/pkg/gen/controller#example-package)
+
+**Note:** While `create resource` automatically runs the code generators for the user, when
+the user changes the resource file or adds `// +kubebuilder` annotations to the controller,
+they will need to run `kubebuilder generate` to rerun the code generators.
 
 ### pkg/inject
 
@@ -201,19 +209,25 @@ this example:
 
 [GenericController](https://godoc.org/github.com/kubernetes-sigs/kubebuilder/pkg/controller#example-GenericController)
 
-Use the following annotation to start additional informers for any resources you are watching in your controller.
+
+To Watch additional resources from your controller do the following in your controller.go:
+
+1. Add a `gc.Watch*` call to the `ProvideController`.  e.g. Call gc.[WatchTransformationKeyOf](https://godoc.org/github.com/kubernetes-sigs/kubebuilder/pkg/controller#example-GenericController-WatchTransformationKeyOf)
+  - This will trigger Reconcile calls for events
+2. Add an [// +informers:](https://godoc.org/github.com/kubernetes-sigs/kubebuilder/pkg/gen/controller#example-package) annotation
+   to the `type <Kind>Controller struct` with the type of the resource you are watching
+  - This will make sure the informers that watch for events are started
+3. Add an [// +rbac:](https://godoc.org/github.com/kubernetes-sigs/kubebuilder/pkg/gen/controller#example-package)
+  annotation to the `type <Kind>Controller struct` with the type of the resource you are watching
+  - This will make sure the RBAC rules that allow the controller to watch events in a cluster are generated
+
+Example:
 
 ```go
-// +informers:group=apps,version=v1,kind=Deployment
+// +kubebuilder:rbac:groups="",resources=pods,verbs=get;watch;list
+// +kubebuilder:informers:group=core,version=v1,kind=Pod
+type FooController struct{}
 ```
-
-Use the following annotation to generate RBAC rules to allow your controller to read and write resources when
-running in a container in a Kubernetes cluster.
-
-```go
-// +rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
-```
-
 
 ### Watching resources
 
