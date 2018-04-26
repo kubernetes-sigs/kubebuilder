@@ -1,22 +1,23 @@
 language: go
 
 go:
-- 1.10
-
-go_import_path: github.com/kubernetes-sigs/kubebuilder
-
-cache:
-  directories:
-  - /tmp/kubebuilder/bin
+- "1.10"
 
 git:
   depth: 3
 
-env:
-  - TEST=example
 
+go_import_path: github.com/kubernetes-sigs/kubebuilder
+
+# Install must be set to prevent default `go get` to run.
+# The dependencies have already been vendored by `dep` so
+# we don't need to fetch them.
 install:
-  - test/scripts/install_tools.sh
+  -
 
 script:
-  ./test/travis.sh
+  ./test.sh
+
+# TBD. Suppressing for now.
+notifications:
+  email: false
