@@ -23,12 +23,12 @@
 steps:
 - name: "ubuntu"
   args: ["mkdir", "-p", "/workspace/_output/linux_amd64"]
-- name: "gcr.io/kubebuilder/thirdparty-linux:1.9"
+- name: "gcr.io/kubebuilder/thirdparty-linux:1.10"
   args: ["tar", "-xzvf", "/kubebuilder_linux_amd64.tar.gz"]
   dir: "_output/linux_amd64"
 - name: "ubuntu"
   args: ["mkdir", "-p", "/workspace/_output/darwin_amd64"]
-- name: "gcr.io/kubebuilder/thirdparty-darwin:1.9"
+- name: "gcr.io/kubebuilder/thirdparty-darwin:1.10"
   args: ["tar", "-xzvf", "/kubebuilder_darwin_amd64.tar.gz"]
   dir: "_output/darwin_amd64"
 - name: "ubuntu"
@@ -36,7 +36,7 @@ steps:
 - name: "gcr.io/kubebuilder/goreleaser_with_go_1.10:0.0.1"
   args: ["bash", "build/build_kubebuilder.sh", "--snapshot"]
   env:
-   - 'KUBERNETES_VERSION=1.9'
+   - 'KUBERNETES_VERSION=1.10'
 - name: 'gcr.io/cloud-builders/gsutil'
   args: ['-h', 'Content-Type:application/gzip', 'cp', '-a', 'public-read', 'dist/kubebuilder_master_linux_amd64.tar.gz', 'gs://kubebuilder-release/kubebuilder_master_linux_amd64.tar.gz']
 - name: 'gcr.io/cloud-builders/gsutil'

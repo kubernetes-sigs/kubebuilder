@@ -21,7 +21,7 @@
 # - reference-docs
 
 # Build k8s.io/kubernetes binaries
-FROM golang:1.9-stretch as kubernetes-darwin
+FROM golang:1.10-stretch as kubernetes-darwin
 # Install tools
 RUN apt update
 RUN apt install rsync -y
@@ -29,7 +29,7 @@ RUN go get github.com/jteeuwen/go-bindata/go-bindata
 ENV CGO 0
 ENV DEST /usr/local/kubebuilder/bin/
 RUN mkdir -p $DEST || echo ""
-RUN git clone https://github.com/kubernetes/kubernetes $GOPATH/src/k8s.io/kubernetes --depth=1 -b release-1.9
+RUN git clone https://github.com/kubernetes/kubernetes $GOPATH/src/k8s.io/kubernetes --depth=1 -b release-1.10
 WORKDIR /go/src/k8s.io/kubernetes
 
 # Build for linux first otherwise it won't work for darwin - :(
@@ -68,7 +68,7 @@ ENV GOOS darwin
 ENV GOARCH amd64
 ENV DEST /usr/local/kubebuilder/bin/
 RUN mkdir -p $DEST || echo ""
-RUN git clone https://github.com/kubernetes/code-generator $GOPATH/src/k8s.io/code-generator --depth=1 -b release-1.9
+RUN git clone https://github.com/kubernetes/code-generator $GOPATH/src/k8s.io/code-generator --depth=1 -b release-1.10
 RUN go build -o $DEST/client-gen k8s.io/code-generator/cmd/client-gen
 RUN go build -o $DEST/conversion-gen k8s.io/code-generator/cmd/conversion-gen
 RUN go build -o $DEST/deepcopy-gen k8s.io/code-generator/cmd/deepcopy-gen
