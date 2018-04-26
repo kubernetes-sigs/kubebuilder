@@ -7,6 +7,15 @@
     recheck-mitaka:
       jobs:
         - gophercloud-acceptance-test-mitaka
+    recheck-newton:
+      jobs:
+        - gophercloud-acceptance-test-newton
+    recheck-ocata:
+      jobs:
+        - gophercloud-acceptance-test-ocata
     recheck-pike:
       jobs:
         - gophercloud-acceptance-test-pike
+    recheck-queens:
+      jobs:
+        - gophercloud-acceptance-test-queens

@@ -522,17 +522,6 @@ func (tm *TextMarshaler) writeAny(w *textWriter, v reflect.Value, props *Propert
 				}
 				return nil
 			}
-		} else if len(props.CastType) > 0 {
-			if _, ok := v.Interface().(interface {
-				String() string
-			}); ok {
-				switch v.Kind() {
-				case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
-					reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-					_, err := fmt.Fprintf(w, "%d", v.Interface())
-					return err
-				}
-			}
 		} else if props.StdTime {
 			t, ok := v.Interface().(time.Time)
 			if !ok {
@@ -542,9 +531,9 @@ func (tm *TextMarshaler) writeAny(w *textWriter, v reflect.Value, props *Propert
 			if err != nil {
 				return err
 			}
-			propsCopy := *props // Make a copy so that this is goroutine-safe
-			propsCopy.StdTime = false
-			err = tm.writeAny(w, reflect.ValueOf(tproto), &propsCopy)
+			props.StdTime = false
+			err = tm.writeAny(w, reflect.ValueOf(tproto), props)
+			props.StdTime = true
 			return err
 		} else if props.StdDuration {
 			d, ok := v.Interface().(time.Duration)
@@ -552,9 +541,9 @@ func (tm *TextMarshaler) writeAny(w *textWriter, v reflect.Value, props *Propert
 				return fmt.Errorf("stdtime is not time.Duration, but %T", v.Interface())
 			}
 			dproto := durationProto(d)
-			propsCopy := *props // Make a copy so that this is goroutine-safe
-			propsCopy.StdDuration = false
-			err := tm.writeAny(w, reflect.ValueOf(dproto), &propsCopy)
+			props.StdDuration = false
+			err := tm.writeAny(w, reflect.ValueOf(dproto), props)
+			props.StdDuration = true
 			return err
 		}
 	}

@@ -1,25 +1,10 @@
-## 1.4.0 7/16/2017
-
-- `ginkgo` now provides a hint if you accidentally forget to run `ginkgo bootstrap` to generate a `*_suite_test.go` file that actually invokes the Ginkgo test runner. [#345](https://github.com/onsi/ginkgo/pull/345)
-- thanks to improvements in `go test -c` `ginkgo` no longer needs to fix Go's compilation output to ensure compilation errors are expressed relative to the CWD. [#357]
-- `ginkgo watch -watchRegExp=...` allows you to specify a custom regular expression to watch.  Only files matching the regular expression are watched for changes (the default is `\.go$`) [#356]
-- `ginkgo` now always emits compilation output.  Previously, only failed compilation output was printed out. [#277]
-- `ginkgo -requireSuite` now fails the test run if there are `*_test.go` files but `go test` fails to detect any tests.  Typically this means you forgot to run `ginkgo bootstrap` to generate a suite file. [#344]
-- `ginkgo -timeout=DURATION` allows you to adjust the timeout for the entire test suite (default is 24 hours) [#248]
-
-## 1.3.0 3/28/2017
+## HEAD
 
 Improvements:
 
-- Significantly improved parallel test distribution.  Now instead of pre-sharding test cases across workers (which can result in idle workers and poor test performance) Ginkgo uses a shared queue to keep all workers busy until all tests are complete.  This improves test-time performance and consistency.
 - `Skip(message)` can be used to skip the current test.
 - Added `extensions/table` - a Ginkgo DSL for [Table Driven Tests](http://onsi.github.io/ginkgo/#table-driven-tests)
 - Add `GinkgoRandomSeed()` - shorthand for `config.GinkgoConfig.RandomSeed`
-- Support for retrying flaky tests with `--flakeAttempts`
-- `ginkgo ./...` now recurses as you'd expect
-- Added `Specify` a synonym for `It`
-- Support colorise on Windows
-- Broader support for various go compilation flags in the `ginkgo` CLI
 
 Bug Fixes:
 

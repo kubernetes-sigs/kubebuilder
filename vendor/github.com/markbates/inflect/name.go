@@ -77,7 +77,7 @@ func (n Name) Resource() string {
 
 // ModelPlural version of a name. ie. "user" => "Users"
 func (n Name) ModelPlural() string {
-	return Pluralize(n.Model())
+	return Camelize(Pluralize(n.Model()))
 }
 
 // File version of a name
@@ -135,6 +135,7 @@ func (n Name) ParamID() string {
 	return fmt.Sprintf("%s_id", strings.Replace(n.UnderSingular(), "/", "_", -1))
 }
 
+// Package returns go package
 func (n Name) Package() string {
 	key := string(n)
 
@@ -148,6 +149,11 @@ func (n Name) Package() string {
 	return key
 }
 
+// Char returns first character in lower case, this is useful for methods inside a struct.
 func (n Name) Char() string {
 	return strings.ToLower(string(n[0]))
+}
+
+func (n Name) String() string {
+	return string(n)
 }
