@@ -1,0 +1,462 @@
+
+<!DOCTYPE HTML>
+<html lang="" >
+    <head>
+        <meta charset="UTF-8">
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <title>Project Creation and Structure · The Kubebuilder Book</title>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="description" content="">
+        <meta name="generator" content="GitBook 3.2.3">
+        <meta name="author" content="Phillip Wittrock">
+        
+        
+    
+    <link rel="stylesheet" href="../gitbook/style.css">
+
+    
+            
+                
+                <link rel="stylesheet" href="../gitbook/gitbook-plugin-panel/icons.css">
+                
+            
+                
+                <link rel="stylesheet" href="../gitbook/gitbook-plugin-panel/panel.css">
+                
+            
+                
+                <link rel="stylesheet" href="../gitbook/gitbook-plugin-highlight/website.css">
+                
+            
+                
+                <link rel="stylesheet" href="../gitbook/gitbook-plugin-search/search.css">
+                
+            
+                
+                <link rel="stylesheet" href="../gitbook/gitbook-plugin-fontsettings/website.css">
+                
+            
+                
+                <link rel="stylesheet" href="../gitbook/gitbook-plugin-theme-api/theme-api.css">
+                
+            
+        
+
+    
+
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+
+        
+    
+    
+    <meta name="HandheldFriendly" content="true"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="../gitbook/images/apple-touch-icon-precomposed-152.png">
+    <link rel="shortcut icon" href="../gitbook/images/favicon.ico" type="image/x-icon">
+
+    
+    
+    <link rel="prev" href="../getting_started/hello_world.html" />
+    
+
+    </head>
+    <body>
+        
+<div class="book">
+    <div class="book-summary">
+        
+            
+<div id="book-search-input" role="search">
+    <input type="text" placeholder="Type to search" />
+</div>
+
+            
+                <nav role="navigation">
+                
+
+
+<ul class="summary">
+    
+    
+
+    
+
+    
+        
+        
+    
+        <li class="chapter " data-level="1.1" data-path="../">
+            
+                <a href="../">
+            
+                    
+                    Introduction
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+    
+        
+        <li class="header">Getting Started</li>
+        
+        
+    
+        <li class="chapter " data-level="2.1" data-path="../getting_started/why_kubernetes.html">
+            
+                <a href="../getting_started/why_kubernetes.html">
+            
+                    
+                    Why Kubernetes APIs
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="2.2" data-path="../getting_started/what_is_kubebuilder.html">
+            
+                <a href="../getting_started/what_is_kubebuilder.html">
+            
+                    
+                    What is Kubebuilder
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="2.3" data-path="../getting_started/installation_and_setup.html">
+            
+                <a href="../getting_started/installation_and_setup.html">
+            
+                    
+                    Installation and Setup
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="2.4" data-path="../getting_started/hello_world.html">
+            
+                <a href="../getting_started/hello_world.html">
+            
+                    
+                    Hello World
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+    
+        
+        <li class="header">Basics</li>
+        
+        
+    
+        <li class="chapter active" data-level="3.1" data-path="project_creation_and_structure.html">
+            
+                <a href="project_creation_and_structure.html">
+            
+                    
+                    Project Creation and Structure
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="3.2" >
+            
+                <span>
+            
+                    
+                    Resource Fundamentals
+            
+                </span>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="3.2.1" data-path="what_is_a_resource.html">
+            
+                <a href="what_is_a_resource.html">
+            
+                    
+                    What is a Resource
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="3.2.2" data-path="simple_resource.html">
+            
+                <a href="simple_resource.html">
+            
+                    
+                    Simple Resource Example
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="3.3" >
+            
+                <span>
+            
+                    
+                    Controller Fundamentals
+            
+                </span>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="3.3.1" data-path="what_is_a_controller.html">
+            
+                <a href="what_is_a_controller.html">
+            
+                    
+                    What is a Contoller
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="3.3.2" data-path="simple_controller.html">
+            
+                <a href="simple_controller.html">
+            
+                    
+                    Simple Controller Example
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+
+    
+
+    <li class="divider"></li>
+
+    <li>
+        <a href="https://www.gitbook.com" target="blank" class="gitbook-link">
+            Published with GitBook
+        </a>
+    </li>
+</ul>
+
+
+                </nav>
+            
+        
+    </div>
+
+    <div class="book-body">
+        
+            <div class="body-inner">
+                
+                    
+
+<div class="book-header" role="navigation">
+    
+
+    <!-- Title -->
+    <h1>
+        <i class="fa fa-circle-o-notch fa-spin"></i>
+        <a href=".." >Project Creation and Structure</a>
+    </h1>
+</div>
+
+
+
+
+                    <div class="page-wrapper" tabindex="-1" role="main">
+                        <div class="page-inner">
+                            
+<div id="book-search-results">
+    <div class="search-noresults">
+    
+                                <section class="normal markdown-section">
+                                
+                                <p><div class="panel panel-danger"><div class="panel-heading"><div class="panel-icon"><i class="icon-danger"></i></div><div class="panel-title">STAGING</div></div><div class="panel-content"><p>Staging Environment - Not Official Documentation!</p>
+<p>This book contains APIs, libraries and tools that are proposals only and have not been ratified!</p>
+</div></div></p>
+<h1 id="project-creation-and-structure">Project Creation and Structure </h1>
+<h2 id="go-package-structure">Go package Structure</h2>
+<p>Kubebuilder projects closely mirror the core Kubernetes project structure, and have 3 important
+packages.  These packages and are automatically created and populated by kubebuilder commands.</p>
+<h5 id="cmd">cmd/...</h5>
+<p>The <code>cmd</code> package contains the controller-manager main program with will run your controllers
+and may install the APIs.  Users typically will not need to modify this package unless they
+are doing something special.</p>
+<h5 id="pkgapis">pkg/apis/...</h5>
+<p>The <code>pkg/apis/...</code> packages contain the <em>go</em> structs the define the resource API schemas.  This
+is where users modify <code>*_types.go</code> files to add fields to APIs.</p>
+<p>Each API lives in <code>pkg/apis/&lt;api-group-name&gt;/&lt;api-version-name&gt;/&lt;api-kind-name&gt;_types.go</code>.</p>
+<p>More information on API Group, Version and Kinds in the <em>What is a Resource</em> chapter.</p>
+<p><div class="panel panel-info"><div class="panel-heading"><div class="panel-icon"><i class="icon-info"></i></div><div class="panel-title">Generated code</div></div><div class="panel-content"><p>Kubebuilder generates boilerplate code to add required types and register APIs in this package.
+Boilerplate code is written to <code>zz_generated.*</code> files, and should only be written to
+by kubebuilder.  More on this in <em>Generated Code</em>.</p>
+</div></div></p>
+<h5 id="pkgcontroller">pkg/controller/...</h5>
+<p>The <code>pkg/controller/...</code> packages contain the <em>go</em> types and functions that implement the
+APIs as <em>controllers</em>.</p>
+<p>More information on Controllers in the <em>What is a Controller</em> chapter.</p>
+<h2 id="additional-directories">Additional directories</h2>
+<p>Kubebuilder manages other directories users may interact with</p>
+<h5 id="hack">hack/...</h5>
+<p>Kubebuilder puts various files into the hack directory, such as a Dockerfile for building the
+controller-manager binary, installation yaml files, and samples configs to create resources.</p>
+<h5 id="docs">docs/...</h5>
+<p>Kubebuilder stores generated API reference documentation, and user authored samples and
+conceptual documentation under the docs directory.</p>
+<div class="api-method"><div class="api-method-definition"><h2 id="create-a-new-project">Create a new project</h2>
+<p>Initialize a kubebuilder project from your go project directory.  This will automatically create the
+vendored go libaries needed to build your controller-manager.</p>
+</div><div class="api-method-code"><div class="api-method-sample" data-lang="bash" data-name="Bash"><pre><code class="lang-bash">$ kubebuilder init --domain k8s.io
+</code></pre>
+</div></div></div>
+
+<div class="api-method"><div class="api-method-definition"><h2 id="create-a-new-api">Create a new API</h2>
+<p>Create the *_types.go file and controller.go files for a new API and register them with
+the main program.</p>
+</div><div class="api-method-code"><div class="api-method-sample" data-lang="bash" data-name="Bash"><pre><code class="lang-bash">$ kubebuilder create resource --group mygroup --version v1beta1 --kind MyKind
+</code></pre>
+</div></div></div>
+
+<div class="api-method"><div class="api-method-definition"><h2 id="run-your-controller-manager-localy-against-a-kubernetes-cluster">Run your controller-manager localy against a Kubernetes cluster</h2>
+<p>Users may run the controller-manager locally against a Kubernetes cluster.  This will
+install the APIs and being the controller-manager watching resources and reconciling events.</p>
+</div><div class="api-method-code"><div class="api-method-sample" data-lang="bash" data-name="Bash"><pre><code class="lang-bash">$ GOBIN=<span class="hljs-variable">${PWD}</span>/bin go install <span class="hljs-variable">${PWD#$GOPATH/src/}</span>/cmd/controller-manager
+$ bin/controller-manager --kubeconfig ~/.kube/config
+</code></pre>
+</div></div></div>
+
+<div class="api-method"><div class="api-method-definition"><h2 id="create-a-resource">Create a resource</h2>
+<p>Kubebuilder creates the scaffolding object for new resources.  Create a new instance
+of your API.</p>
+</div><div class="api-method-code"><div class="api-method-sample" data-lang="bash" data-name="Bash"><pre><code class="lang-bash">$ kubectl apply <span class="hljs-_">-f</span> hack/sample/&lt;resource&gt;.yaml
+</code></pre>
+</div></div></div>
+
+                                
+                                </section>
+                            
+    </div>
+    <div class="search-results">
+        <div class="has-results">
+            
+            <h1 class="search-results-title"><span class='search-results-count'></span> results matching "<span class='search-query'></span>"</h1>
+            <ul class="search-results-list"></ul>
+            
+        </div>
+        <div class="no-results">
+            
+            <h1 class="search-results-title">No results matching "<span class='search-query'></span>"</h1>
+            
+        </div>
+    </div>
+</div>
+
+                        </div>
+                    </div>
+                
+            </div>
+
+            
+
+        
+    </div>
+
+    <script>
+        var gitbook = gitbook || [];
+        gitbook.push(function() {
+            gitbook.page.hasChanged({"page":{"title":"Project Creation and Structure","level":"3.1","depth":1,"next":{"title":"Resource Fundamentals","level":"3.2","depth":1,"ref":"","articles":[{"title":"What is a Resource","level":"3.2.1","depth":2,"path":"basics/what_is_a_resource.md","ref":"basics/what_is_a_resource.md","articles":[]},{"title":"Simple Resource Example","level":"3.2.2","depth":2,"path":"basics/simple_resource.md","ref":"basics/simple_resource.md","articles":[]}]},"previous":{"title":"Hello World","level":"2.4","depth":1,"path":"getting_started/hello_world.md","ref":"getting_started/hello_world.md","articles":[]},"dir":"ltr"},"config":{"plugins":["theme-api","panel","sequence-diagrams"],"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"panel":{},"search":{},"sequence-diagrams":{"theme":"simple"},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"highlight":{},"theme-api":{"languages":[],"split":true,"theme":"light"},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","author":"Phillip Wittrock","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"The Kubebuilder Book","gitbook":">= 3.0.0"},"file":{"path":"basics/project_creation_and_structure.md","mtime":"2018-04-25T00:06:27.553Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-04-25T00:38:21.030Z"},"basePath":"..","book":{"language":""}});
+        });
+    </script>
+</div>
+
+        
+    <script src="../gitbook/gitbook.js"></script>
+    <script src="../gitbook/theme.js"></script>
+    
+        
+        <script src="../gitbook/gitbook-plugin-search/search-engine.js"></script>
+        
+    
+        
+        <script src="../gitbook/gitbook-plugin-search/search.js"></script>
+        
+    
+        
+        <script src="../gitbook/gitbook-plugin-lunr/lunr.min.js"></script>
+        
+    
+        
+        <script src="../gitbook/gitbook-plugin-lunr/search-lunr.js"></script>
+        
+    
+        
+        <script src="../gitbook/gitbook-plugin-sharing/buttons.js"></script>
+        
+    
+        
+        <script src="../gitbook/gitbook-plugin-fontsettings/fontsettings.js"></script>
+        
+    
+        
+        <script src="../gitbook/gitbook-plugin-theme-api/theme-api.js"></script>
+        
+    
+
+    </body>
+</html>
+

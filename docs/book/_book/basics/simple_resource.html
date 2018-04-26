@@ -1,0 +1,504 @@
+
+<!DOCTYPE HTML>
+<html lang="" >
+    <head>
+        <meta charset="UTF-8">
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <title>Simple Resource Example · The Kubebuilder Book</title>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="description" content="">
+        <meta name="generator" content="GitBook 3.2.3">
+        <meta name="author" content="Phillip Wittrock">
+        
+        
+    
+    <link rel="stylesheet" href="../gitbook/style.css">
+
+    
+            
+                
+                <link rel="stylesheet" href="../gitbook/gitbook-plugin-panel/icons.css">
+                
+            
+                
+                <link rel="stylesheet" href="../gitbook/gitbook-plugin-panel/panel.css">
+                
+            
+                
+                <link rel="stylesheet" href="../gitbook/gitbook-plugin-highlight/website.css">
+                
+            
+                
+                <link rel="stylesheet" href="../gitbook/gitbook-plugin-search/search.css">
+                
+            
+                
+                <link rel="stylesheet" href="../gitbook/gitbook-plugin-fontsettings/website.css">
+                
+            
+                
+                <link rel="stylesheet" href="../gitbook/gitbook-plugin-theme-api/theme-api.css">
+                
+            
+        
+
+    
+
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+
+        
+    
+    
+    <meta name="HandheldFriendly" content="true"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="../gitbook/images/apple-touch-icon-precomposed-152.png">
+    <link rel="shortcut icon" href="../gitbook/images/favicon.ico" type="image/x-icon">
+
+    
+    
+    <link rel="prev" href="what_is_a_resource.html" />
+    
+
+    </head>
+    <body>
+        
+<div class="book">
+    <div class="book-summary">
+        
+            
+<div id="book-search-input" role="search">
+    <input type="text" placeholder="Type to search" />
+</div>
+
+            
+                <nav role="navigation">
+                
+
+
+<ul class="summary">
+    
+    
+
+    
+
+    
+        
+        
+    
+        <li class="chapter " data-level="1.1" data-path="../">
+            
+                <a href="../">
+            
+                    
+                    Introduction
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+    
+        
+        <li class="header">Getting Started</li>
+        
+        
+    
+        <li class="chapter " data-level="2.1" data-path="../getting_started/why_kubernetes.html">
+            
+                <a href="../getting_started/why_kubernetes.html">
+            
+                    
+                    Why Kubernetes APIs
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="2.2" data-path="../getting_started/what_is_kubebuilder.html">
+            
+                <a href="../getting_started/what_is_kubebuilder.html">
+            
+                    
+                    What is Kubebuilder
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="2.3" data-path="../getting_started/installation_and_setup.html">
+            
+                <a href="../getting_started/installation_and_setup.html">
+            
+                    
+                    Installation and Setup
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="2.4" data-path="../getting_started/hello_world.html">
+            
+                <a href="../getting_started/hello_world.html">
+            
+                    
+                    Hello World
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+    
+        
+        <li class="header">Basics</li>
+        
+        
+    
+        <li class="chapter " data-level="3.1" data-path="project_creation_and_structure.html">
+            
+                <a href="project_creation_and_structure.html">
+            
+                    
+                    Project Creation and Structure
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="3.2" >
+            
+                <span>
+            
+                    
+                    Resource Fundamentals
+            
+                </span>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="3.2.1" data-path="what_is_a_resource.html">
+            
+                <a href="what_is_a_resource.html">
+            
+                    
+                    What is a Resource
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter active" data-level="3.2.2" data-path="simple_resource.html">
+            
+                <a href="simple_resource.html">
+            
+                    
+                    Simple Resource Example
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="3.3" >
+            
+                <span>
+            
+                    
+                    Controller Fundamentals
+            
+                </span>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="3.3.1" data-path="what_is_a_controller.html">
+            
+                <a href="what_is_a_controller.html">
+            
+                    
+                    What is a Contoller
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="3.3.2" data-path="simple_controller.html">
+            
+                <a href="simple_controller.html">
+            
+                    
+                    Simple Controller Example
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+
+    
+
+    <li class="divider"></li>
+
+    <li>
+        <a href="https://www.gitbook.com" target="blank" class="gitbook-link">
+            Published with GitBook
+        </a>
+    </li>
+</ul>
+
+
+                </nav>
+            
+        
+    </div>
+
+    <div class="book-body">
+        
+            <div class="body-inner">
+                
+                    
+
+<div class="book-header" role="navigation">
+    
+
+    <!-- Title -->
+    <h1>
+        <i class="fa fa-circle-o-notch fa-spin"></i>
+        <a href=".." >Simple Resource Example</a>
+    </h1>
+</div>
+
+
+
+
+                    <div class="page-wrapper" tabindex="-1" role="main">
+                        <div class="page-inner">
+                            
+<div id="book-search-results">
+    <div class="search-noresults">
+    
+                                <section class="normal markdown-section">
+                                
+                                <p><div class="panel panel-danger"><div class="panel-heading"><div class="panel-icon"><i class="icon-danger"></i></div><div class="panel-title">STAGING</div></div><div class="panel-content"><p>Staging Environment - Not Official Documentation!</p>
+<p>This book contains APIs, libraries and tools that are proposals only and have not been ratified!</p>
+</div></div></p>
+<h1 id="simple-resource-example">Simple Resource Example</h1>
+<p>This chapter walks through a simple resource declaration.</p>
+<blockquote>
+<p>$ kubebuilder create resource --group workloads --version v1beta1 --kind ContainerSet
+pkg/apis/workloads/v1beta1/containerset_types.go</p>
+</blockquote>
+<div class="api-method"><div class="api-method-definition"><h2 id="type-definition">Type Definition</h2>
+<p>This is a simple API resource definition example for an API that wraps and simplifies the Deployment API.</p>
+<p>ContainerSet has a Spec, Status, TypeMeta and ObjectMeta fields.</p>
+<ul>
+<li>TypeMeta contains metadata about the API itself - such as Group, Version, Kind.</li>
+<li>ObjectMeta contains metadata about the specific object instance - such as the name, namespace, labels and annotations.</li>
+</ul>
+</div><div class="api-method-code"><div class="api-method-sample" data-lang="go" data-name="Go"><pre><code class="lang-go"><span class="hljs-comment">// +genclient</span>
+<span class="hljs-comment">// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object</span>
+
+<span class="hljs-comment">// ContainerSet creates a new Deployment running multiple replicas of a single container with the given</span>
+<span class="hljs-comment">// image.</span>
+<span class="hljs-comment">// +k8s:openapi-gen=true</span>
+<span class="hljs-comment">// +resource:path=containersets</span>
+<span class="hljs-keyword">type</span> ContainerSet <span class="hljs-keyword">struct</span> {
+    metav1.TypeMeta   <span class="hljs-string">`json:&quot;,inline&quot;`</span>
+    metav1.ObjectMeta <span class="hljs-string">`json:&quot;metadata,omitempty&quot;`</span>
+
+    <span class="hljs-comment">// spec contains the desired behavior of the ContainerSet</span>
+    Spec   ContainerSetSpec   <span class="hljs-string">`json:&quot;spec,omitempty&quot;`</span>
+
+    <span class="hljs-comment">// status contains the last observed state of the ContainerSet</span>
+    Status ContainerSetStatus <span class="hljs-string">`json:&quot;status,omitempty&quot;`</span>
+}
+</code></pre>
+</div></div></div>
+
+<p><div class="panel panel-info"><div class="panel-heading"><div class="panel-icon"><i class="icon-info"></i></div><div class="panel-title">Comment annotation directives</div></div><div class="panel-content"><p>The definition contains several comment annotations of the form <code>// +something</code>.  These are
+used to configure code generators to create boilerplate code based on the go struct definition.  For
+now we will ignore these.  To learn more on configuring code generation see the <em>Code Generation</em> chapter.</p>
+</div></div></p>
+<div class="api-method"><div class="api-method-definition"><h2 id="containersetspec">ContainerSetSpec</h2>
+<p>The ContainerSetSpec contains the container image and replica count, which should be read by
+the controller and used to create and manage a new Deployment.</p>
+</div><div class="api-method-code"><div class="api-method-sample" data-lang="go" data-name="Go"><pre><code class="lang-go"><span class="hljs-comment">// ContainerSetSpec defines the desired state of ContainerSet</span>
+<span class="hljs-keyword">type</span> ContainerSetSpec <span class="hljs-keyword">struct</span> {
+    <span class="hljs-comment">// replics is the number of replicas to maintain</span>
+    Replicas <span class="hljs-keyword">int32</span> <span class="hljs-string">`json:&quot;replicas,omitempty&quot;`</span>
+
+    <span class="hljs-comment">// image is the container image to run</span>
+    Image <span class="hljs-keyword">string</span> <span class="hljs-string">`json:&quot;image,omitempty&quot;`</span>
+}
+</code></pre>
+</div></div></div>
+
+<div class="api-method"><div class="api-method-definition"><h2 id="containersetstatus">ContainerSetStatus</h2>
+<p>The ContainerSetStatus contains the number of healthy replicas, which should be updated
+by the controller each time a new Pod becomes healthy.</p>
+<p>In order for the controller to keep this field current, it will need to listen for Pod events and map them
+back to the owning ContainerSet resource.</p>
+</div><div class="api-method-code"><div class="api-method-sample" data-lang="go" data-name="Go"><pre><code class="lang-go"><span class="hljs-comment">// ContainerSetStatus defines the observed state of ContainerSet</span>
+<span class="hljs-keyword">type</span> ContainerSetStatus <span class="hljs-keyword">struct</span> {
+    HealthyReplicas <span class="hljs-string">`json:&quot;healthyReplicas,omitempty&quot;`</span>
+}
+</code></pre>
+</div></div></div>
+
+<p><div class="panel panel-default"><div class="panel-heading"><div class="panel-title">Rerunning Code Generators</div></div><div class="panel-content"><p>While users don&apos;t directly modify generated code, users must rerun <code>kubebuilder generate</code>
+after adding or modifying resources to update the generated code with the changes.</p>
+</div></div></p>
+<div class="api-method"><div class="api-method-definition"><h2 id="generated-boilerplate">Generated Boilerplate</h2>
+<p>Kubebuilder generates boilerplate code required for registering the type with the apimachinery libraries,
+implementing required interfaces such as <em>deep copying</em> objects, and providing CRD representations of
+the resources.</p>
+<p>Code generation may be configured by comment annotations of the form <code>// +something</code>.</p>
+<blockquote>
+<p>$ kubebuilder generate</p>
+</blockquote>
+</div><div class="api-method-code"><div class="api-method-sample" data-lang="go" data-name="Go"><p><em>This code snippet has been truncated for display purposes.</em></p>
+<blockquote>
+<p>pkg/apis/workloads/v1beta1/zz_generated.kubebuilder.go</p>
+</blockquote>
+<pre><code class="lang-go"><span class="hljs-comment">// SchemeGroupVersion is group version used to register these objects</span>
+<span class="hljs-keyword">var</span> SchemeGroupVersion = schema.GroupVersion{Group: <span class="hljs-string">&quot;workloads.k8s.io&quot;</span>, Version: <span class="hljs-string">&quot;v1beta1&quot;</span>}
+
+<span class="hljs-comment">// Kind takes an unqualified kind and returns back a Group qualified GroupKind</span>
+<span class="hljs-keyword">func</span> Kind(kind <span class="hljs-keyword">string</span>) schema.GroupKind {
+    <span class="hljs-keyword">return</span> SchemeGroupVersion.WithKind(kind).GroupKind()
+}
+
+<span class="hljs-comment">// Resource takes an unqualified resource and returns a Group qualified GroupResource</span>
+<span class="hljs-keyword">func</span> Resource(resource <span class="hljs-keyword">string</span>) schema.GroupResource {
+    <span class="hljs-keyword">return</span> SchemeGroupVersion.WithResource(resource).GroupResource()
+}
+
+<span class="hljs-keyword">var</span> (
+    SchemeBuilder = runtime.NewSchemeBuilder(addKnownTypes)
+    AddToScheme   = SchemeBuilder.AddToScheme
+)
+...
+</code></pre>
+</div></div></div>
+
+
+                                
+                                </section>
+                            
+    </div>
+    <div class="search-results">
+        <div class="has-results">
+            
+            <h1 class="search-results-title"><span class='search-results-count'></span> results matching "<span class='search-query'></span>"</h1>
+            <ul class="search-results-list"></ul>
+            
+        </div>
+        <div class="no-results">
+            
+            <h1 class="search-results-title">No results matching "<span class='search-query'></span>"</h1>
+            
+        </div>
+    </div>
+</div>
+
+                        </div>
+                    </div>
+                
+            </div>
+
+            
+
+        
+    </div>
+
+    <script>
+        var gitbook = gitbook || [];
+        gitbook.push(function() {
+            gitbook.page.hasChanged({"page":{"title":"Simple Resource Example","level":"3.2.2","depth":2,"next":{"title":"Controller Fundamentals","level":"3.3","depth":1,"ref":"","articles":[{"title":"What is a Contoller","level":"3.3.1","depth":2,"path":"basics/what_is_a_controller.md","ref":"basics/what_is_a_controller.md","articles":[]},{"title":"Simple Controller Example","level":"3.3.2","depth":2,"path":"basics/simple_controller.md","ref":"basics/simple_controller.md","articles":[]}]},"previous":{"title":"What is a Resource","level":"3.2.1","depth":2,"path":"basics/what_is_a_resource.md","ref":"basics/what_is_a_resource.md","articles":[]},"dir":"ltr"},"config":{"plugins":["theme-api","panel","sequence-diagrams"],"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"panel":{},"search":{},"sequence-diagrams":{"theme":"simple"},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"highlight":{},"theme-api":{"languages":[],"split":true,"theme":"light"},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","author":"Phillip Wittrock","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"The Kubebuilder Book","gitbook":">= 3.0.0"},"file":{"path":"basics/simple_resource.md","mtime":"2018-04-25T00:06:27.564Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-04-25T00:38:21.030Z"},"basePath":"..","book":{"language":""}});
+        });
+    </script>
+</div>
+
+        
+    <script src="../gitbook/gitbook.js"></script>
+    <script src="../gitbook/theme.js"></script>
+    
+        
+        <script src="../gitbook/gitbook-plugin-search/search-engine.js"></script>
+        
+    
+        
+        <script src="../gitbook/gitbook-plugin-search/search.js"></script>
+        
+    
+        
+        <script src="../gitbook/gitbook-plugin-lunr/lunr.min.js"></script>
+        
+    
+        
+        <script src="../gitbook/gitbook-plugin-lunr/search-lunr.js"></script>
+        
+    
+        
+        <script src="../gitbook/gitbook-plugin-sharing/buttons.js"></script>
+        
+    
+        
+        <script src="../gitbook/gitbook-plugin-fontsettings/fontsettings.js"></script>
+        
+    
+        
+        <script src="../gitbook/gitbook-plugin-theme-api/theme-api.js"></script>
+        
+    
+
+    </body>
+</html>
+

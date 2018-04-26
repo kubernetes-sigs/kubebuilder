@@ -22,15 +22,16 @@ The term *level-based* comes from interrupts hardware, where interrupts may be e
 This book does not go into the details of the hardware definitions of these terms.
 
 Kubernetes defines a level-based API as implemented by reading the observed state of the system,
-comparing it to the desired state declared in the object *Spec*, and *moving directly toward the
-current desired state*.
+comparing it to the desired state declared in the object *Spec*, and moving directly toward the
+current desired state.
  
 This has a number of notable properties:
 
-- reconciliation works directly towards the current desired state without having to completely pass through
+- reconciliation works directly towards the current desired state without having to complete
   obsolete desired states
-- when many events quickly occur that trigger a reconciliation for the same object, reconciliation will only be
-  performed once or twice as only the observed and desired states are compared, not the events themselves.
+- when many events quickly occur that trigger a reconciliation for the same object, reconciliation will
+  process many of the events at once by comparing observed and desired states,
+  not handling the individual events.
 - the system may trigger reconciliation periodically for objects without a specific event occurring.
 
 Consider the following examples of level based API implementations.
