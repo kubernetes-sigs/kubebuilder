@@ -31,15 +31,15 @@ to simplify building and publishing Kubernetes APIs from scratch.
 
 ```shell
 
-# download the release
+# Download the release
 wget /path/to/kubebuilder_<version>_<operating-system>_amd64.tar.gz
 
-# extract the archive
+# Extract the archive
 tar -zxvf kubebuilder_<version>_<operating-system>_amd64.tar.gz
 
 sudo mv kubebuilder_<version>_<operating-system>_amd64 /usr/local/kubebuilder
 
-#update your PATH to include /usr/local/kubebuilder/bin
+# Update your PATH to include /usr/local/kubebuilder/bin
 export PATH=$PATH:/usr/local/kubebuilder/bin
 
 ```
