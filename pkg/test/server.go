@@ -17,13 +17,21 @@ limitations under the License.
 package test
 
 import (
+	"os"
 	"time"
 
+	"github.com/kubernetes-sigs/kubebuilder/pkg/install"
 	extensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/client-go/rest"
-
 	"sigs.k8s.io/testing_frameworks/integration"
-	"github.com/kubernetes-sigs/kubebuilder/pkg/install"
+)
+
+// Default binary path for test framework
+const (
+	envKubeAPIServerBin     = "TEST_ASSET_KUBE_APISERVER"
+	envEtcdBin              = "TEST_ASSET_ETCD"
+	defaultKubeAPIServerBin = "/usr/local/kubebuilder/bin/kube-apiserver"
+	defaultEtcdBin          = "/usr/local/kubebuilder/bin/etcd"
 )
 
 // TestEnvironment creates a Kubernetes test environment that will start / stop the Kubernetes control plane and
@@ -41,6 +49,14 @@ func (te *TestEnvironment) Stop() {
 
 // Start starts a local Kubernetes server and updates te.ApiserverPort with the port it is listening on
 func (te *TestEnvironment) Start() (*rest.Config, error) {
+	te.ControlPlane = integration.ControlPlane{}
+	if os.Getenv(envKubeAPIServerBin) == "" {
+		te.ControlPlane.APIServer = &integration.APIServer{Path: defaultKubeAPIServerBin}
+	}
+	if os.Getenv(envEtcdBin) == "" {
+		te.ControlPlane.Etcd = &integration.Etcd{Path: defaultEtcdBin}
+	}
+
 	// Start the control plane - retry if it fails
 	var err error
 	for i := 0; i < 5; i++ {
@@ -48,7 +64,6 @@ func (te *TestEnvironment) Start() (*rest.Config, error) {
 		if err == nil {
 			break
 		}
-		te.ControlPlane = integration.ControlPlane{}
 	}
 	// Give up trying to start the control plane
 	if err != nil {
