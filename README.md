@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/kubernetes-sigs/kubebuilder.svg?branch=master)](https://travis-ci.org/kubernetes-sigs/kubebuilder "Travis")
+[![Go Report Card](https://goreportcard.com/badge/github.com/kubernetes-sigs/kubebuilder)](https://goreportcard.com/report/github.com/kubernetes-sigs/kubebuilder)
 
 *Don't use `go get` / `go install`, instead you MUST download a tar binary release or create your own release using
 the release program.*  To build your own release see [CONTRIBUTING.md](CONTRIBUTING.md)
