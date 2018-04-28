@@ -1,0 +1,66 @@
+/*
+ * Theme Dark
+ */
+
+.book {
+    &.color-theme-3 {
+        .book-body {
+            section {
+                .api-method-code {
+                    color: @api-method-code-color-3;
+                    background-color: @api-method-code-background-3;
+
+                    h1,
+                    h2,
+                    h3,
+                    h4,
+                    h5,
+                    h6 {
+                        color: @api-method-code-heading-color-3;
+                    }
+
+                    h6 {
+                        color: @api-method-code-h6-color-3;
+                    }
+
+                    hr {
+                        background-color: @theme-3-border-color;
+                    }
+
+                    blockquote {
+                        border-color: @theme-3-border-color;
+                    }
+
+                    pre, code {
+                        color: @api-method-code-pre-color-3;
+                        background-color: @api-method-code-pre-background-3;
+                        border-radius: @theme-3-border-radius;
+                    }
+
+                    table {
+                        border-collapse: separate;
+                        border: 1px solid @theme-3-border-color;
+                        border-radius: @theme-3-border-radius;
+
+                        th, td {
+                            border: none;
+                        }
+
+                        th {
+                            border-bottom: 1px solid @theme-3-border-color;
+                        }
+
+                        tr {
+                            color: @api-method-code-color-3;
+                            background-color: transparent;
+                        }
+
+                        tr:nth-child(2n) {
+                            background-color: @api-method-code-pre-background-3;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

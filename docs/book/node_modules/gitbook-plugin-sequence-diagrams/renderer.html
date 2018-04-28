@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <script src="assets/raphael-min.js"></script>
+    <script src="assets/underscore-min.js"></script>
+    <script src="assets/sequence-diagram-min.js"></script>
+    <script>
+      function render(code, options, width) {
+        var canvas = document.getElementsByClassName('sequence')[0];
+        Diagram.parse(code).drawSVG(canvas, options);
+        if (width) {
+          var svg = canvas.childNodes[0];
+          var viewbox_width  = Number(svg.getAttribute('width'));
+          var viewbox_height = Number(svg.getAttribute('height'));
+          var svg_width      = Number(width);
+          var svg_height     = viewbox_height * (svg_width / viewbox_width);
+          svg.setAttribute('viewBox', '0 0 ' + viewbox_width + ' ' + viewbox_height);
+          svg.setAttribute('width', svg_width + 'px');
+          svg.setAttribute('height', svg_height + 'px');
+        }
+        return new XMLSerializer().serializeToString(canvas);
+      }
+    </script>
+  </head>
+
+  <body>
+    <div class="sequence"></div>
+  </body>
+</html>

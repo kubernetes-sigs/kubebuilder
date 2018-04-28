@@ -1,0 +1,20 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    run: gitbook
+  name: gitbook
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      run: gitbook
+  template:
+    metadata:
+      labels:
+        run: gitbook
+    spec:
+      containers:
+      - image: gcr.io/kubebuilder/book
+        imagePullPolicy: Always
+        name: gitbook
