@@ -22,7 +22,7 @@ The controller reads the
 The controller is setup in the package `init` function.  Any errors during setup should be
 be returned when starting the controller manager, not in the init function.
 
-- Create a new `ControllerMux` with the Reconcile function specified.
+- Create a new `Controller` with a Reconciler.
 - Watch for ContainerSet events and reconcile the corresponding ContainerSet object
 - Watch for Deployment events and reconcile the Owner object if the reference has "controller: true",
   and the Owner type is a ContainerSet
@@ -30,22 +30,22 @@ be returned when starting the controller manager, not in the init function.
 {% sample lang="go" %}
 ```go
 func init() {
-	NewController(kb.Default, kb.Default)
+	NewController(kb.DefaultBuilder)
 }
 
-func NewController(cb kb.ControllerBuilder, c kb.Client) {
-  c := &kb.ControllerMux{Reconcile: &Controller{c}.Reconcile}
+func NewController(b kb.Builder) {
+  c := kb.Controller{Reconciler: &Reconciler{b}}
 
-  kb.Handle(&v1beta1.ContainerSet{}, c)
+  b.Watch(&v1beta1.ContainerSet{}, c)
 
-  kb.Handle(watch.ToOwner{
-  	Generated: &v1.Deployment{},
-  	Owner: &v1beta1.ContainerSet{},
+  b.Watch(reconcile.OwnerKey{
+  	GeneratedType: &v1.Deployment{},
+  	OwnerType: &v1beta1.ContainerSet{},
   	Controller: true}}, c)
 }
 
-type Controller struct {
-	client kb.Client
+type Reconciler struct {
+	kb.Client
 }
 ```
 {% endmethod %}
@@ -67,11 +67,12 @@ will receive and event and recreate / update the Deployment.
 {% sample lang="go" %}
 
 ```go
-func (c *Controller) Reconcile(k sdk.ReconcileKey) error {
-  s := &v1beta1.ContainerSet{ObjectMeta: v1.ObjectMeta{
-  	Name: k.Name, Namespace: k.Namespace,
-  }}
-  if err := c.client.Get(s); err != nil {
+func (c *Reconciler) Reconcile(k sdk.ReconcileKey) error {
+  s := &v1beta1.ContainerSet{}
+  s.Name = k.Name, 
+  s.Namespace = k.Namespace
+
+  if err := c.Get(s); err != nil {
     if apierrors.IsNotFound(err) {
       return nil
     }
@@ -79,30 +80,30 @@ func (c *Controller) Reconcile(k sdk.ReconcileKey) error {
   }
   
   d := &v1.Deployment{
-  	ObjectMeta: v1.ObjectMeta{
-      	Name: k.Name, Namespace: k.Namespace,
-    },
     Spec: v1.DeploymentSpec{...},
   }
+  d.Name = k.Name
+  d.Namespace = k.Namespace
   kb.SetOwnerReference(d, s)
-  err := c.client.Get(d)
+
+  err := c.Get(d)
   if err != nil && !apierrors.IsNotFound(err) {
     return err
   }
+
   if apierrors.IsNotFound(err) {
-      if err := c.client.Create(d); err != nil {
+      if err := c.Create(d); err != nil {
         return err
       }  	
   } else {
       d.Spec = v1.DeploymentSpec{...}
-      kb.SetOwnerReference(d, s)
-      if c.client.Update(d); err != nil {
+      if c.Update(d); err != nil {
         return err
       }  
   }
   
-  s.Status.HealthyReplicas = d.Status.ReadyReplicas
-  if err := c.client.Update(s); err != nil {
+  s.Status.ReadyReplicas = d.Status.ReadyReplicas
+  if err := c.Update(s); err != nil {
       return err
   }
   return nil

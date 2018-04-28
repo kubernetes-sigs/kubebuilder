@@ -81,7 +81,7 @@ back to the owning ContainerSet resource.
 ```go
 // ContainerSetStatus defines the observed state of ContainerSet
 type ContainerSetStatus struct {
-	HealthyReplicas `json:"healthyReplicas,omitempty"`
+	ReadyReplicas `json:"readyReplicas,omitempty"`
 }
 ```
 {% endmethod %}

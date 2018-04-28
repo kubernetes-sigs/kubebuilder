@@ -64,8 +64,8 @@ func init() {
 }
 
 func NewController(cb kb.ControllerBuilder, kb.Client) {
-  c := &kb.ControllerMux{Reconcile: &Controller{c}.Reconcile}
-  cb.Handle(&v1beta1.Simple{}, c)	
+  c := &kb.Controller{Reconcile: &Controller{c}.Reconcile}
+  cb.Watch(&v1beta1.Simple{}, c)	
 }
 
 type Controller struct {
