@@ -82,7 +82,7 @@ func (c *Reconciler) Reconcile(k sdk.ReconcileKey) error {
   d := &v1.Deployment{
     Spec: v1.DeploymentSpec{...},
   }
-  d.Name = k.Name
+  d.Name = kb.GenerateName(k.Name)
   d.Namespace = k.Namespace
   kb.SetOwnerReference(d, s)
 
