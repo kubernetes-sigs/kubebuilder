@@ -29,17 +29,17 @@ import (
 // parseIndex indexes all types with the comment "// +resource=RESOURCE" by GroupVersionKind and
 // GroupKindVersion
 func (b *APIs) parseIndex() {
-	// Index resource by group version kind
+	// Index resource by group, version, kind
 	b.ByGroupVersionKind = map[string]map[string]map[string]*codegen.APIResource{}
 
 	// Index resources by group, kind, version
 	b.ByGroupKindVersion = map[string]map[string]map[string]*codegen.APIResource{}
 
-	// Index subresources
+	// Index subresources by group, version, kind
 	b.SubByGroupVersionKind = map[string]map[string]map[string]*types.Type{}
 
 	for _, c := range b.context.Order {
-		// The type is a subresource, add it to the
+		// The type is a subresource, add it to the subresource index
 		if IsAPISubresource(c) {
 			group := GetGroup(c)
 			version := GetVersion(c, group)
