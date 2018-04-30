@@ -29,7 +29,7 @@ import (
 // IsAPIResource returns true if t has a +resource/+kubebuilder:resource comment tag
 func IsAPIResource(t *types.Type) bool {
 	for _, c := range t.CommentLines {
-		if strings.Contains(c, "+resource") || strings.Contains(c, "+kubebuilder:resource"){
+		if strings.Contains(c, "+resource") || strings.Contains(c, "+kubebuilder:resource") {
 			return true
 		}
 	}
@@ -57,6 +57,7 @@ func IsNonNamespaced(t *types.Type) bool {
 	return false
 }
 
+// IsController returns true if t has a +controller or +kubebuilder:controller tag
 func IsController(t *types.Type) bool {
 	for _, c := range t.CommentLines {
 		if strings.Contains(c, "+controller") || strings.Contains(c, "+kubebuilder:controller") {
@@ -66,6 +67,7 @@ func IsController(t *types.Type) bool {
 	return false
 }
 
+// IsRBAC returns true if t has a +rbac or +kubebuilder:rbac tag
 func IsRBAC(t *types.Type) bool {
 	for _, c := range t.CommentLines {
 		if strings.Contains(c, "+rbac") || strings.Contains(c, "+kubebuilder:rbac") {
@@ -75,15 +77,15 @@ func IsRBAC(t *types.Type) bool {
 	return false
 }
 
+// IsInformer returns true if t has a +informers or +kubebuilder:informers tag
 func IsInformer(t *types.Type) bool {
-    for _, c := range t.CommentLines {
-        if strings.Contains(c, "+informers") || strings.Contains(c, "+kubebuilder:informers") {
-            return true
-        }
-    }
-    return false
+	for _, c := range t.CommentLines {
+		if strings.Contains(c, "+informers") || strings.Contains(c, "+kubebuilder:informers") {
+			return true
+		}
+	}
+	return false
 }
-
 
 // IsAPISubresource returns true if t has a +subresource-request comment tag
 func IsAPISubresource(t *types.Type) bool {
@@ -162,6 +164,7 @@ func (c Comments) getTag(name, sep string) string {
 	return ""
 }
 
+// hasTag returns true if the Comments has a tag with the given name
 func (c Comments) hasTag(name string) bool {
 	for _, c := range c {
 		prefix := fmt.Sprintf("+%s", name)
