@@ -1,5 +1,6 @@
 package inflect
 
+//Helpers is a map of the helper names with its corresponding inflect function
 var Helpers = map[string]interface{}{
 	"asciffy":             Asciify,
 	"camelize":            Camelize,

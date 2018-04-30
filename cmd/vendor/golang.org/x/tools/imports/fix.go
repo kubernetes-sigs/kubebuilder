@@ -22,6 +22,7 @@ import (
 	"sync"
 
 	"golang.org/x/tools/go/ast/astutil"
+	"golang.org/x/tools/internal/fastwalk"
 )
 
 // Debug controls verbose logging.
@@ -32,16 +33,26 @@ var (
 	testMu  sync.RWMutex // guards globals reset by tests; used only if inTests
 )
 
-// LocalPrefix, if set, instructs Process to sort import paths with the given
-// prefix into another group after 3rd-party packages.
+// LocalPrefix is a comma-separated string of import path prefixes, which, if
+// set, instructs Process to sort the import paths with the given prefixes
+// into another group after 3rd-party packages.
 var LocalPrefix string
+
+func localPrefixes() []string {
+	if LocalPrefix != "" {
+		return strings.Split(LocalPrefix, ",")
+	}
+	return nil
+}
 
 // importToGroup is a list of functions which map from an import path to
 // a group number.
 var importToGroup = []func(importPath string) (num int, ok bool){
 	func(importPath string) (num int, ok bool) {
-		if LocalPrefix != "" && strings.HasPrefix(importPath, LocalPrefix) {
-			return 3, true
+		for _, p := range localPrefixes() {
+			if strings.HasPrefix(importPath, p) || strings.TrimSuffix(p, "/") == importPath {
+				return 3, true
+			}
 		}
 		return
 	},
@@ -535,16 +546,13 @@ func skipDir(fi os.FileInfo) bool {
 	return false
 }
 
-// shouldTraverse reports whether the symlink fi should, found in dir,
+// shouldTraverse reports whether the symlink fi, found in dir,
 // should be followed.  It makes sure symlinks were never visited
 // before to avoid symlink loops.
 func shouldTraverse(dir string, fi os.FileInfo) bool {
 	path := filepath.Join(dir, fi.Name())
 	target, err := filepath.EvalSymlinks(path)
 	if err != nil {
-		if !os.IsNotExist(err) {
-			fmt.Fprintln(os.Stderr, err)
-		}
 		return false
 	}
 	ts, err := os.Stat(target)
@@ -630,7 +638,7 @@ func scanGoDirs(goRoot bool) {
 					importpath := filepath.ToSlash(dir[len(srcDir)+len("/"):])
 					dirScan[dir] = &pkg{
 						importPath:      importpath,
-						importPathShort: vendorlessImportPath(importpath),
+						importPathShort: VendorlessPath(importpath),
 						dir:             dir,
 					}
 				}
@@ -664,20 +672,20 @@ func scanGoDirs(goRoot bool) {
 					return nil
 				}
 				if shouldTraverse(dir, fi) {
-					return traverseLink
+					return fastwalk.TraverseLink
 				}
 			}
 			return nil
 		}
-		if err := fastWalk(srcDir, walkFn); err != nil {
+		if err := fastwalk.Walk(srcDir, walkFn); err != nil {
 			log.Printf("goimports: scanning directory %v: %v", srcDir, err)
 		}
 	}
 }
 
-// vendorlessImportPath returns the devendorized version of the provided import path.
-// e.g. "foo/bar/vendor/a/b" => "a/b"
-func vendorlessImportPath(ipath string) string {
+// VendorlessPath returns the devendorized version of the import path ipath.
+// For example, VendorlessPath("foo/bar/vendor/a/b") returns "a/b".
+func VendorlessPath(ipath string) string {
 	// Devendorize for use in import statement.
 	if i := strings.LastIndex(ipath, "/vendor/"); i >= 0 {
 		return ipath[i+len("/vendor/"):]
