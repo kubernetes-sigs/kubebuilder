@@ -32,6 +32,8 @@ import (
 	"text/template"
 )
 
+// parseJSONSchemaProps populates the CRD field of each Group.Version.Resource,
+// creating validations using the annotations on type fields.
 func (b *APIs) parseJSONSchemaProps() {
 	for _, group := range b.APIs.Groups {
 		for _, version := range group.Versions {
@@ -94,6 +96,8 @@ func (b *APIs) getMeta() string {
 }`
 }
 
+// typeToJSONSchemaProps returns a JSONSchemaProps object and its serialization
+// in Go that describe the JSONSchema validations for the given type.
 func (b *APIs) typeToJSONSchemaProps(t *types.Type, found sets.String, comments []string) (v1beta1.JSONSchemaProps, string) {
 	// Special cases
 	time := types.Name{Name: "Time", Package: "k8s.io/apimachinery/pkg/apis/meta/v1"}
@@ -165,6 +169,9 @@ var primitiveTemplate = template.Must(template.New("map-template").Parse(
     {{ end -}}
 }`))
 
+// parsePrimitiveValidation returns a JSONSchemaProps object and its
+// serialization in Go that describe the validations for the given primitive
+// type.
 func (b *APIs) parsePrimitiveValidation(t *types.Type, found sets.String, comments []string) (v1beta1.JSONSchemaProps, string) {
 	props := v1beta1.JSONSchemaProps{Type: string(t.Name.Name)}
 
@@ -211,6 +218,8 @@ var mapTemplate = template.Must(template.New("map-template").Parse(
     },
 }`))
 
+// parseMapValidation returns a JSONSchemaProps object and its serialization in
+// Go that describe the validations for the given map type.
 func (b *APIs) parseMapValidation(t *types.Type, found sets.String, comments []string) (v1beta1.JSONSchemaProps, string) {
 	additionalProps, _ := b.typeToJSONSchemaProps(t.Elem, found, comments)
 	props := v1beta1.JSONSchemaProps{
@@ -235,6 +244,8 @@ var arrayTemplate = template.Must(template.New("array-template").Parse(
     },
 }`))
 
+// parseArrayValidation returns a JSONSchemaProps object and its serialization in
+// Go that describe the validations for the given array type.
 func (b *APIs) parseArrayValidation(t *types.Type, found sets.String, comments []string) (v1beta1.JSONSchemaProps, string) {
 	items, result := b.typeToJSONSchemaProps(t.Elem, found, comments)
 	props := v1beta1.JSONSchemaProps{
@@ -264,6 +275,8 @@ var objectTemplate = template.Must(template.New("object-template").Parse(
     },
 }`))
 
+// parseObjectValidation returns a JSONSchemaProps object and its serialization in
+// Go that describe the validations for the given object type.
 func (b *APIs) parseObjectValidation(t *types.Type, found sets.String, comments []string) (v1beta1.JSONSchemaProps, string) {
 	buff := &bytes.Buffer{}
 	props := v1beta1.JSONSchemaProps{
@@ -290,6 +303,8 @@ func (b *APIs) parseObjectValidation(t *types.Type, found sets.String, comments 
 	return props, buff.String()
 }
 
+// getValidation parses the validation tags from the comment and sets the
+// validation rules on the given JSONSchemaProps.
 func getValidation(comment string, props *v1beta1.JSONSchemaProps) {
 	comment = strings.TrimLeft(comment, " ")
 	if !strings.HasPrefix(comment, "+kubebuilder:validation:") {
@@ -392,6 +407,8 @@ func getValidation(comment string, props *v1beta1.JSONSchemaProps) {
 	}
 }
 
+// getMembers builds maps by field name of the JSONSchemaProps and their Go
+// serializations.
 func (b *APIs) getMembers(t *types.Type, found sets.String) (map[string]v1beta1.JSONSchemaProps, map[string]string) {
 	members := map[string]v1beta1.JSONSchemaProps{}
 	result := map[string]string{}
