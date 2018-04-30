@@ -32,6 +32,8 @@ type controllerTags struct {
 	resource string
 }
 
+// parseControllers populates the list of controllers to generate code from the
+// list of annotated types.
 func (b *APIs) parseControllers() {
 	for _, c := range b.context.Order {
 		if IsController(c) {
