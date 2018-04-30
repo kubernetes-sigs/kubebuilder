@@ -1,0 +1,17 @@
+@comments-icon-margin: 20px;
+
+.book .book-body .page-wrapper {
+    .page-inner {
+        .comments-section {
+            max-width: calc(~"100% -" 2*@comments-icon-margin);
+
+            .comments-area {
+                z-index: 1;
+            }
+        }
+    }
+
+    &.comments-open-from-definition .page-inner {
+        left: 0px!important;
+    }
+}

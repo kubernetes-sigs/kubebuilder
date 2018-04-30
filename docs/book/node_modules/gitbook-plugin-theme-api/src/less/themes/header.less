@@ -1,0 +1,31 @@
+/*
+ * Theme Dark
+ */
+
+.book {
+    &.color-theme-3 {
+        .book-header{
+            color: @header-color-3;
+            background: @header-background-3;
+
+            .btn {
+                color: @header-button-color-3;
+                &:hover {
+                    color: @header-button-hover-color-3;
+                    background: @header-button-hover-background-3;
+                }
+
+                &.lang-switcher.active {
+                    background-color: @lang-switcher-active-color-3;
+                    &:hover {
+                        background-color: @lang-switcher-active-color-3;
+                    }
+                }
+            }
+
+            h1 {
+                color: @header-title-color-3;
+            }
+        }
+    }
+}

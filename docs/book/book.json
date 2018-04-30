@@ -1,0 +1,16 @@
+{
+
+  "plugins": ["theme-api", "panel", "sequence-diagrams"],
+  "pluginsConfig": {
+    "theme-api": {
+      "split": true
+    },
+    "sequence-diagrams": {
+      "theme": "simple"
+
+    }
+  },
+  "gitbook": ">= 3.0.0",
+  "author": "Phillip Wittrock",
+  "title": "The Kubebuilder Book"
+}
