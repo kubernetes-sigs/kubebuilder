@@ -27,17 +27,22 @@ to simplify building and publishing Kubernetes APIs from scratch.
 
 ## TL;DR
 
-**First:** Download the latest `kubebuilder_<version>_<operating-system>_amd64.tar.gz` release. Extracting the archive will give `kubebuilder_<version>_<os>_amd64` directory. Move the extracted directory to /usr/local/kubebuilder and update your PATH to include /usr/local/kubebuilder/bin. Given below are the steps:
+**First:** Download the latest
+`kubebuilder_<version>_<operating-system>_amd64.tar.gz` release. Versions
+correspond to kubernetes versions (example: `1.10`). Extracting the archive will
+give `kubebuilder_<version>_<os>_amd64` directory. Move the extracted directory
+to /usr/local/kubebuilder and update your PATH to include
+/usr/local/kubebuilder/bin. Given below are the steps:
 
 ```shell
-
 # download the release
-wget /path/to/kubebuilder_<version>_<operating-system>_amd64.tar.gz
+wget https://storage.googleapis.com/kubebuilder-tools/kubebuilder-tools-<version>-<operating-system>-amd64.tar.gz
 
 # extract the archive
-tar -zxvf kubebuilder_<version>_<operating-system>_amd64.tar.gz
+tar -zxvf kubebuilder-tools-<version>-<operating-system>-amd64.tar.gz
 
-sudo mv kubebuilder_<version>_<operating-system>_amd64 /usr/local/kubebuilder
+# move extracted directory to /usr/local/kubebuilder
+sudo mv kubebuilder /usr/local/kubebuilder
 
 #update your PATH to include /usr/local/kubebuilder/bin
 export PATH=$PATH:/usr/local/kubebuilder/bin
