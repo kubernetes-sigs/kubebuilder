@@ -32,9 +32,9 @@ import (
 	"text/template"
 )
 
-// parseJSONSchemaProps populates the CRD field of each Group.Version.Resource,
+// parseCRDs populates the CRD field of each Group.Version.Resource,
 // creating validations using the annotations on type fields.
-func (b *APIs) parseJSONSchemaProps() {
+func (b *APIs) parseCRDs() {
 	for _, group := range b.APIs.Groups {
 		for _, version := range group.Versions {
 			for _, resource := range version.Resources {

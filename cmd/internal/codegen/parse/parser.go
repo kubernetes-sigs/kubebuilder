@@ -22,11 +22,11 @@ import (
 	"github.com/kubernetes-sigs/kubebuilder/cmd/internal/codegen"
 	"github.com/pkg/errors"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/gengo/args"
 	"k8s.io/gengo/generator"
 	"k8s.io/gengo/types"
-    "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type APIs struct {
@@ -63,7 +63,7 @@ func NewAPIs(context *generator.Context, arguments *args.GeneratorArgs) *APIs {
 	b.parseRBAC()
 	b.parseInformers()
 	b.parseAPIs()
-	b.parseJSONSchemaProps()
+	b.parseCRDs()
 	return b
 }
 
