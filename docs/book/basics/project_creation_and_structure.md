@@ -1,7 +1,3 @@
-{% panel style="danger", title="Staging" %}
-Staging documentation under review.
-{% endpanel %}
-
 # Project Creation and Structure {#project-creation-and-structure}
 
 ## Go package Structure

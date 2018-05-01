@@ -1,7 +1,3 @@
-{% panel style="danger", title="Staging" %}
-Staging documentation under review.
-{% endpanel %}
-
 # What is the Controller-Manager
 
 The Controller-Manager is an executable that wraps one or more Controllers.  It may

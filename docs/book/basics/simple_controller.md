@@ -1,7 +1,3 @@
-{% panel style="danger", title="Staging" %}
-Staging documentation under review.
-{% endpanel %}
-
 # Simple Controller Example
 
 This chapter walks through a simple Controller implementation.

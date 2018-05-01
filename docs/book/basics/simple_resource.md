@@ -1,7 +1,3 @@
-{% panel style="danger", title="Staging" %}
-Staging documentation under review.
-{% endpanel %}
-
 # Simple Resource Example
 
 This chapter walks through the definition of a new Resource call *ContainerSet*.  ContainerSet

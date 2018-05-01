@@ -1,7 +1,3 @@
-{% panel style="danger", title="Staging" %}
-Staging documentation under review.
-{% endpanel %}
-
 # What is a Resource
 
 A Kubernetes resource is a declarative API with a well defined Schema structure
