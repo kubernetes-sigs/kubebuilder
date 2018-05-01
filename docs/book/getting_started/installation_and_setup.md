@@ -1,7 +1,3 @@
-{% panel style="danger", title="Staging" %}
-Staging documentation under review.
-{% endpanel %}
-
 # Installation and Setup
 
 {% panel style="warning", title="Important" %}

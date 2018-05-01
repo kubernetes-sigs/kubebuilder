@@ -1,7 +1,3 @@
-{% panel style="danger", title="Staging" %}
-Staging documentation under review.
-{% endpanel %}
-
 ## Simple Main {#simple-world-main}
 
 {% method %}

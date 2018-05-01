@@ -1,7 +1,3 @@
-{% panel style="danger", title="Staging" %}
-Staging documentation under review.
-{% endpanel %}
-
 # What is a Controller
 
 Controllers implement APIs defined by *Resources*.  Controllers are

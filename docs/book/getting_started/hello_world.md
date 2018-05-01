@@ -1,7 +1,3 @@
-{% panel style="danger", title="Staging" %}
-Staging documentation under review.
-{% endpanel %}
-
 # Hello World
 
 {% panel style="warning", title="Note on project structure" %}

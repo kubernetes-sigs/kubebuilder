@@ -1,7 +1,3 @@
-{% panel style="danger", title="Staging" %}
-Staging documentation under review.
-{% endpanel %}
-
 # Why Kubernetes APIs
 
 Kubenernetes APIs allow users to specify the desired state of a Kubernetes cluster in an

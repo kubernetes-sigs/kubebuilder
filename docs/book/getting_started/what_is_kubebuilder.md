@@ -1,7 +1,3 @@
-{% panel style="danger", title="Staging" %}
-Staging documentation under review.
-{% endpanel %}
-
 # What is Kubebuilder
 
 Kubebuilder is an SDK for rapidly building and publishing Kubernetes APIs in go.
