@@ -27,12 +27,17 @@ to simplify building and publishing Kubernetes APIs from scratch.
 
 ## TL;DR
 
-**First:** Download the latest `kubebuilder_<version>_<operating-system>_amd64.tar.gz` release. Extracting the archive will give `kubebuilder_<version>_<os>_amd64` directory. Move the extracted directory to /usr/local/kubebuilder and update your PATH to include /usr/local/kubebuilder/bin. Given below are the steps:
+**First:** Download the latest
+`kubebuilder_<version>_<operating-system>_amd64.tar.gz` release, where `version`
+is the kubebuilder version. Extracting the archive will give
+`kubebuilder_<version>_<os>_amd64` directory. Move the extracted directory to
+/usr/local/kubebuilder and update your PATH to include
+/usr/local/kubebuilder/bin. Given below are the steps:
 
 ```shell
 
 # download the release
-wget /path/to/kubebuilder_<version>_<operating-system>_amd64.tar.gz
+wget https://github.com/kubernetes-sigs/kubebuilder/releases/download/<version>/kubebuilder_<version>_<operating-system>_amd64.tar.gz
 
 # extract the archive
 tar -zxvf kubebuilder_<version>_<operating-system>_amd64.tar.gz
