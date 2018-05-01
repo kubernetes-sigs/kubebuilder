@@ -25,21 +25,21 @@
   revision = "f62e98d28ab7ad31d707ba837a966378465c7b57"
 
 [[constraint]]
-  branch = "release-1.9"
+  version = "kubernetes-1.10.1"
   name = "k8s.io/api"
 
 [[constraint]]
-  branch = "release-1.9"
+  version = "kubernetes-1.10.1"
   name = "k8s.io/apiextensions-apiserver"
 
 [[constraint]]
-  branch = "release-1.9"
+  version = "kubernetes-1.10.1"
   name = "k8s.io/apimachinery"
 
 [[constraint]]
-  branch = "release-1.9"
+  version = "kubernetes-1.10.1"
   name = "k8s.io/apiserver"
 
 [[constraint]]
-  branch = "release-6.0"
+  version = "kubernetes-1.10.1"
   name = "k8s.io/client-go"

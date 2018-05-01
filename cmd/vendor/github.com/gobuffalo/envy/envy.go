@@ -1,35 +1,58 @@
 package envy
 
 import (
+	"flag"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 
 	"github.com/joho/godotenv"
-	homedir "github.com/mitchellh/go-homedir"
 )
 
 var gil = &sync.Mutex{}
 var env = map[string]string{}
 
 func init() {
+	Load()
 	loadEnv()
 }
 
 // Load the ENV variables to the env map
 func loadEnv() {
-	v := runtime.Version()
+	// Detect the Go version on the user system, not the one that was used to compile the binary
+	v := ""
+	out, err := exec.Command("go", "version").Output()
+	if err == nil {
+		// This will break when Go 2 lands
+		v = strings.Split(string(out), " ")[2][4:]
+	} else {
+		v = runtime.Version()[4:]
+	}
+
+	goRuntimeVersion, _ := strconv.ParseFloat(runtime.Version()[4:], 64)
+
+	goVersion, err := strconv.ParseFloat(v, 64)
+	if err != nil {
+		goVersion = goRuntimeVersion
+	}
+
+	if os.Getenv("GO_ENV") == "" {
+		if flag.Lookup("test.v") != nil {
+			Set("GO_ENV", "test")
+		}
+	}
+
 	// set the GOPATH if using >= 1.8 and the GOPATH isn't set
-	if v >= "go1.8" && os.Getenv("GOPATH") == "" {
-		home, err := homedir.Dir()
+	if goVersion >= 8 && os.Getenv("GOPATH") == "" {
+		out, err := exec.Command("go", "env", "GOPATH").Output()
 		if err == nil {
-			home, err := homedir.Expand(home)
-			if err == nil {
-				os.Setenv("GOPATH", filepath.Join(home, "go"))
-			}
+			gp := strings.TrimSpace(string(out))
+			os.Setenv("GOPATH", gp)
 		}
 	}
 
@@ -149,18 +172,7 @@ func Temp(f func()) {
 }
 
 func GoPath() string {
-	root, _ := os.Getwd()
-	paths := GoPaths()
-
-	for i := 0; i < len(paths); i++ {
-		if strings.HasPrefix(root, filepath.Join(paths[i], "src")) {
-			return paths[i]
-		}
-	}
-	if len(paths) > 0 {
-		return paths[0]
-	}
-	return ""
+	return Get("GOPATH", "")
 }
 
 // GoPaths returns all possible GOPATHS that are set.
@@ -172,19 +184,30 @@ func GoPaths() []string {
 	return strings.Split(gp, ":")
 }
 
+func importPath(path string) string {
+	for _, gopath := range GoPaths() {
+		srcpath := filepath.Join(gopath, "src")
+		rel, err := filepath.Rel(srcpath, path)
+		if err == nil {
+			return filepath.ToSlash(rel)
+		}
+	}
+
+	// fallback to trim
+	rel := strings.TrimPrefix(path, filepath.Join(GoPath(), "src"))
+	rel = strings.TrimPrefix(rel, string(filepath.Separator))
+	return filepath.ToSlash(rel)
+}
+
 func CurrentPackage() string {
 	pwd, _ := os.Getwd()
-	for _, gp := range GoPaths() {
-		pwd = strings.TrimPrefix(pwd, filepath.Join(gp, "src"))
-	}
-	pwd = strings.TrimPrefix(pwd, string(os.PathSeparator))
-	return filepath.ToSlash(pwd)
+	return importPath(pwd)
 }
 
 func Environ() []string {
 	gil.Lock()
 	defer gil.Unlock()
-	e := []string{}
+	var e []string
 	for k, v := range env {
 		e = append(e, fmt.Sprintf("%s=%s", k, v))
 	}

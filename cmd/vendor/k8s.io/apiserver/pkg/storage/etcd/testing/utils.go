@@ -35,6 +35,7 @@ import (
 	etcd "github.com/coreos/etcd/client"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/etcdserver"
+	"github.com/coreos/etcd/etcdserver/api/etcdhttp"
 	"github.com/coreos/etcd/etcdserver/api/v2http"
 	"github.com/coreos/etcd/integration"
 	"github.com/coreos/etcd/pkg/testutil"
@@ -163,6 +164,7 @@ func configureTestCluster(t *testing.T, name string, https bool) *EtcdTestServer
 		}
 	}
 
+	m.AuthToken = "simple"
 	m.Name = name
 	m.DataDir, err = ioutil.TempDir(baseDir, "etcd")
 	if err != nil {
@@ -189,9 +191,9 @@ func (m *EtcdTestServer) launch(t *testing.T) error {
 	if m.s, err = etcdserver.NewServer(&m.ServerConfig); err != nil {
 		return fmt.Errorf("failed to initialize the etcd server: %v", err)
 	}
-	m.s.SyncTicker = time.Tick(500 * time.Millisecond)
+	m.s.SyncTicker = time.NewTicker(500 * time.Millisecond)
 	m.s.Start()
-	m.raftHandler = &testutil.PauseableHandler{Next: v2http.NewPeerHandler(m.s)}
+	m.raftHandler = &testutil.PauseableHandler{Next: etcdhttp.NewPeerHandler(m.s)}
 	for _, ln := range m.PeerListeners {
 		hs := &httptest.Server{
 			Listener: ln,
@@ -278,32 +280,6 @@ func NewEtcdTestClientServer(t *testing.T) *EtcdTestServer {
 	if err := server.waitUntilUp(); err != nil {
 		server.Terminate(t)
 		t.Fatalf("Unexpected error in waitUntilUp (%v)", err)
-		return nil
-	}
-	return server
-}
-
-// NewUnsecuredEtcdTestClientServer DEPRECATED creates a new client and server for testing
-func NewUnsecuredEtcdTestClientServer(t *testing.T) *EtcdTestServer {
-	server := configureTestCluster(t, "foo", false)
-	err := server.launch(t)
-	if err != nil {
-		t.Fatalf("Failed to start etcd server error=%v", err)
-		return nil
-	}
-	cfg := etcd.Config{
-		Endpoints: server.ClientURLs.StringSlice(),
-		Transport: newHttpTransport(t, server.CertFile, server.KeyFile, server.CAFile),
-	}
-	server.Client, err = etcd.New(cfg)
-	if err != nil {
-		t.Errorf("Unexpected error in NewUnsecuredEtcdTestClientServer (%v)", err)
-		server.Terminate(t)
-		return nil
-	}
-	if err := server.waitUntilUp(); err != nil {
-		t.Errorf("Unexpected error in waitUntilUp (%v)", err)
-		server.Terminate(t)
 		return nil
 	}
 	return server
