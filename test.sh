@@ -40,6 +40,21 @@ if [[ "$goos" == "unknown" ]]; then
   exit 1
 fi
 
+# Turn colors in this script off by setting the NO_COLOR variable in your
+# environment to any value:
+#
+# $ NO_COLOR=1 test.sh
+NO_COLOR=${NO_COLOR:""}
+header=$'\e[1;33m'
+reset=$'\e[0m'
+function header_text {
+  if [ -z "$NO_COLOR" ]; then
+    echo "$header${@}$reset"
+  else
+    echo ${@}
+  fi
+}
+
 rc=0
 tmp_root=/tmp
 
@@ -47,11 +62,13 @@ kb_root_dir=$tmp_root/kubebuilder
 kb_vendor_dir=$tmp_root/vendor
 
 function prepare_staging_dir {
+  header_text "preparing staging dir"
   rm -rf $kb_root_dir
 }
 
 # fetch k8s API gen tools and make it available under kb_root_dir/bin.
 function fetch_tools {
+  header_text "fetching tools"
   kb_tools_archive_name=kubebuilder-tools-$k8s_version-$goos-$goarch.tar.gz
   kb_tools_download_url="https://storage.googleapis.com/kubebuilder-tools/$kb_tools_archive_name"
 
@@ -63,11 +80,13 @@ function fetch_tools {
 }
 
 function build_kb {
+  header_text "building kubebuilder"
   go build -o $tmp_root/kubebuilder/bin/kubebuilder ./cmd/kubebuilder
   go build -o $tmp_root/kubebuilder/bin/kubebuilder-gen ./cmd/kubebuilder-gen
 }
 
 function prepare_vendor_deps {
+  header_text "preparing vendor dependencies"
   # TODO(droot): clean up this function
   rm -rf $kb_vendor_dir && rm -f $tmp_root/Gopkg.toml && rm -f $tmp_root/Gopkg.lock
   mkdir -p $kb_vendor_dir/github.com/kubernetes-sigs/kubebuilder/pkg/ || echo ""
@@ -82,11 +101,15 @@ function prepare_vendor_deps {
 
 function prepare_testdir_under_gopath {
   kb_test_dir=$GOPATH/src/github.com/kubernetes-sigs/kubebuilder-test
+  header_text "preparing test directory $kb_test_dir"
   rm -rf $kb_test_dir && mkdir -p $kb_test_dir && cd $kb_test_dir
+  header_text "running kubebuilder commands in test directory $kb_test_dir"
 }
 
 function generate_crd_resources {
-# Setup env vars
+  header_text "generating CRD resources and code"
+  
+  # Setup env vars
   export PATH=/tmp/kubebuilder/bin/:$PATH
   export TEST_ASSET_KUBECTL=/tmp/kubebuilder/bin/kubectl
   export TEST_ASSET_KUBE_APISERVER=/tmp/kubebuilder/bin/kube-apiserver
@@ -99,9 +122,12 @@ function generate_crd_resources {
 }
 
 function test_generated_controller {
- # Verify the controller-manager builds and the tests pass
+  header_text "building generated code"
+  # Verify the controller-manager builds and the tests pass
   go build ./cmd/...
   go build ./pkg/...
+
+  header_text "testing generated code"
   go test -v ./cmd/...
   go test -v ./pkg/...
 }
