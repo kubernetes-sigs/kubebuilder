@@ -15,7 +15,15 @@
 #  limitations under the License.
 
 set -e
-set -x
+
+# Enable tracing in this script off by setting the TRACE variable in your
+# environment to any value:
+#
+# $ TRACE=1 test.sh
+TRACE=${TRACE:""}
+if [ -n "$TRACE" ]; then
+  set -x
+fi
 
 # Make sure, we run in the root of the repo and
 # therefore run the tests on all packages
