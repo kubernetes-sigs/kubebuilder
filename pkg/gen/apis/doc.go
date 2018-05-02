@@ -22,6 +22,10 @@ package apis
 // Resource annotates a type as a resource
 const Resource = "// +kubebuilder:resource:path="
 
+// Categories annotates a type as belonging to a comma-delimited list of
+// categories
+const Categories = "// +kubebuilder:categories="
+
 // Maximum annotates a go struct field for CRD validation
 const Maximum = "// +kubebuilder:validation:Maximum="
 

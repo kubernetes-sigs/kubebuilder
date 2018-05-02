@@ -147,7 +147,10 @@ function generate_crd_resources {
   kubebuilder init repo --domain sample.kubernetes.io
   kubebuilder create resource --group insect --version v1beta1 --kind Bee
 
-  header_text "generating CRD definition"
+  header_text "editing generated files to simulate a user"
+  sed -i pkg/apis/insect/v1beta1/bee_types.go -e "s|type Bee struct|// +kubebuilder:categories=foo,bar\ntype Bee struct|"
+
+  header_text "generating and testing CRD definition"
   kubebuilder create config --crds --output crd.yaml
 
   # Test for the expected generated CRD definition
@@ -167,6 +170,9 @@ metadata:
 spec:
   group: insect.sample.kubernetes.io
   names:
+    categories:
+    - foo
+    - bar
     kind: Bee
     plural: bees
   scope: Namespaced

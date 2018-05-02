@@ -17,19 +17,20 @@ limitations under the License.
 package parse
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"log"
 	"regexp"
+	"strconv"
 	"strings"
+	"text/template"
 
-	"bytes"
-	"encoding/json"
+	"github.com/pkg/errors"
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/gengo/types"
-	"strconv"
-	"text/template"
 )
 
 // parseCRDs populates the CRD field of each Group.Version.Resource,
@@ -72,6 +73,11 @@ func (b *APIs) parseCRDs() {
 						resource.CRD.Spec.Scope = "Cluster"
 					} else {
 						resource.CRD.Spec.Scope = "Namespaced"
+					}
+
+					if HasCategories(resource.Type) {
+						categoriesTag := getCategoriesTag(resource.Type)
+						resource.CRD.Spec.Names.Categories = strings.Split(categoriesTag, ",")
 					}
 
 					if len(resource.ShortName) > 0 {
@@ -456,4 +462,14 @@ func (b *APIs) getMembers(t *types.Type, found sets.String) (map[string]v1beta1.
 
 	defer found.Delete(t.Name.String())
 	return members, result
+}
+
+// getCategoriesTag returns the value of the +kubebuilder:categories tags
+func getCategoriesTag(c *types.Type) string {
+	comments := Comments(c.CommentLines)
+	resource := comments.getTag("kubebuilder:categories", "=")
+	if len(resource) == 0 {
+		panic(errors.Errorf("Must specify +kubebuilder:categories comment for type %v", c.Name))
+	}
+	return resource
 }
