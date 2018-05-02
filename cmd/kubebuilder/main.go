@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	gobuild "go/build"
 	"log"
 	"os"
 	"path/filepath"
@@ -38,7 +39,7 @@ func main() {
 	util.CheckInstall()
 	gopath := os.Getenv("GOPATH")
 	if len(gopath) == 0 {
-		log.Fatal("GOPATH not defined")
+		gopath = gobuild.Default.GOPATH
 	}
 	util.GoSrc = filepath.Join(gopath, "src")
 
