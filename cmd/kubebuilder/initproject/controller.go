@@ -23,19 +23,20 @@ import (
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/util"
 )
 
-func createControllerManager(boilerplate string) {
+func createControllerManager(boilerplate string, coreControllerOnly bool) {
 	fmt.Printf("\t%s/\n", filepath.Join("cmd", "controller-manager"))
 	execute(
 		filepath.Join("cmd", "controller-manager", "main.go"),
 		"main-template",
 		controllerManagerTemplate,
-		controllerManagerTemplateArguments{boilerplate, util.Repo},
+		controllerManagerTemplateArguments{boilerplate, util.Repo, coreControllerOnly},
 	)
 }
 
 type controllerManagerTemplateArguments struct {
 	BoilerPlate string
 	Repo        string
+	CoreControllerOnly bool
 }
 
 var controllerManagerTemplate = `{{.BoilerPlate}}
@@ -59,7 +60,7 @@ import (
     "{{.Repo}}/pkg/inject/args"
 )
 
-var installCRDs = flag.Bool("install-crds", true, "install the CRDs used by the controller as part of startup")
+{{if not .CoreControllerOnly}}var installCRDs = flag.Bool("install-crds", true, "install the CRDs used by the controller as part of startup"){{end}}
 
 // Controller-manager main.
 func main() {
@@ -68,13 +69,13 @@ func main() {
     stopCh := signals.SetupSignalHandler()
 	
     config := configlib.GetConfigOrDie()
-
+    {{if not .CoreControllerOnly}}
     if *installCRDs {
         if err := install.NewInstaller(config).Install(&InstallStrategy{crds: inject.Injector.CRDs}); err != nil {
             log.Fatalf("Could not create CRDs: %v", err)
         }
     }
-
+    {{end}}
     // Start the controllers
     if err := inject.RunAll(run.RunArguments{Stop: stopCh}, args.CreateInjectArgs(config)); err != nil {
         log.Fatalf("%v", err)
@@ -85,8 +86,8 @@ type InstallStrategy struct {
 	install.EmptyInstallStrategy
 	crds []*extensionsv1beta1.CustomResourceDefinition
 }
-
+{{if not .CoreControllerOnly}}
 func (s *InstallStrategy) GetCRDs() []*extensionsv1beta1.CustomResourceDefinition {
 	return s.crds
-}
+}{{end}}
 `
