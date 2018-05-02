@@ -20,7 +20,7 @@ Latest:
 
 ## `kubebuilder`
 
-Kubebuilder is a framework for building Kubernetes APIs.
+Kubebuilder is a framework for building Kubernetes APIs using [custom resource definitions (CRDs)](https://kubernetes.io/docs/tasks/access-kubernetes-api/extend-api-custom-resource-definitions).
 
 **Note:** kubebuilder does not exist as an example to *copy-paste*, but instead provides powerful libraries and tools
 to simplify building and publishing Kubernetes APIs from scratch.
