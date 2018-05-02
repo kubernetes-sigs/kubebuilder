@@ -118,6 +118,53 @@ function generate_crd_resources {
   # Run the commands
   kubebuilder init repo --domain sample.kubernetes.io
   kubebuilder create resource --group insect --version v1beta1 --kind Bee
+
+  header_text "generating CRD definition"
+  kubebuilder create config --crds --output crd.yaml
+
+  # Test for the expected generated CRD definition
+  #
+  # TODO: this is awkwardly inserted after the first resource created in this
+  # test because the output order seems nondeterministic and it's preferable to
+  # avoid introducing a new dependency like yq or complex parsing logic
+  cat << EOF > expected.yaml
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  labels:
+    api: ""
+    kubebuilder.k8s.io: unknown
+  name: bees.insect.sample.kubernetes.io
+spec:
+  group: insect.sample.kubernetes.io
+  names:
+    kind: Bee
+    plural: bees
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          type: string
+        kind:
+          type: string
+        metadata:
+          type: object
+        spec:
+          type: object
+        status:
+          type: object
+      type: object
+  version: v1beta1
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: null
+EOF
+  diff crd.yaml expected.yaml
+
   kubebuilder create resource --group insect --version v1beta1 --kind Wasp
 }
 
@@ -137,7 +184,7 @@ fetch_tools
 build_kb
 prepare_vendor_deps
 prepare_testdir_under_gopath
+
 generate_crd_resources
 test_generated_controller
-
 exit $rc
