@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package resource
+package controller
 
 import (
 	"fmt"
@@ -25,7 +25,7 @@ import (
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/util"
 )
 
-func doControllerTest(dir string, args resourceTemplateArgs) bool {
+func doControllerTest(dir string, args controllerTemplateArgs) bool {
 	path := filepath.Join(dir, "pkg", "controller", strings.ToLower(createutil.KindName),
 		fmt.Sprintf("%s_suite_test.go",
 			strings.ToLower(createutil.KindName)))
@@ -52,16 +52,22 @@ import (
     "github.com/kubernetes-sigs/kubebuilder/pkg/test"
     "k8s.io/client-go/kubernetes"
     "k8s.io/client-go/rest"
-
+    {{if .CoreType}}
+    "{{ .Repo }}/pkg/inject"
+    "{{ .Repo }}/pkg/inject/args"
+    {{else}}
     "{{ .Repo }}/pkg/client/clientset/versioned"
     "{{ .Repo }}/pkg/inject"
     "{{ .Repo }}/pkg/inject/args"
+    {{end}}
 )
 
 var (
     testenv *test.TestEnvironment
     config *rest.Config
+    {{if not .CoreType}}
     cs *versioned.Clientset
+    {{end}}
     ks *kubernetes.Clientset
     shutdown chan struct{}
     ctrl *controller.GenericController
@@ -77,7 +83,9 @@ var _ = BeforeSuite(func() {
     var err error
     config, err = testenv.Start()
     Expect(err).NotTo(HaveOccurred())
+    {{if not .CoreType}}
     cs = versioned.NewForConfigOrDie(config)
+    {{end}}
     ks = kubernetes.NewForConfigOrDie(config)
 
     shutdown = make(chan struct{})
@@ -112,9 +120,13 @@ import (
 
 	"github.com/kubernetes-sigs/kubebuilder/pkg/controller/types"
     metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
+    {{if .CoreType}}
+    . "k8s.io/api/{{.Group}}/{{.Version}}"
+    . "k8s.io/client-go/kubernetes/typed/{{.Group}}/{{.Version}}"
+    {{else}}
     . "{{ .Repo }}/pkg/apis/{{ .Group }}/{{ .Version }}"
     . "{{ .Repo }}/pkg/client/clientset/versioned/typed/{{ .Group }}/{{ .Version }}"
+    {{end}}
 )
 
 // EDIT THIS FILE!
@@ -153,7 +165,11 @@ var _ = Describe("{{ .Kind }} controller", func() {
             }
 
             // Create the instance
+            {{if .CoreType}}
+            client = ks.{{title .Group}}{{title .Version}}().{{ plural .Kind }}({{ if not .NonNamespacedKind }}"default"{{ end }})
+            {{else}}
             client = cs.{{title .Group}}{{title .Version}}().{{ plural .Kind }}({{ if not .NonNamespacedKind }}"default"{{ end }})
+            {{end}}
             _, err := client.Create(&instance)
             Expect(err).ShouldNot(HaveOccurred())
 

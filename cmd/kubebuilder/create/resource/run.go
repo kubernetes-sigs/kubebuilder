@@ -20,9 +20,9 @@ import (
 	"fmt"
 	"log"
 	"os"
-
 	"strings"
 
+	controllerct "github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/create/controller"
 	createutil "github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/create/util"
 	generatecmd "github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/generate"
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/util"
@@ -75,6 +75,7 @@ func RunCreateResource(cmd *cobra.Command, args []string) {
 
 	cr := util.GetCopyright(createutil.Copyright)
 
+
 	fmt.Printf("Creating API files for you to edit...\n")
 	createGroup(cr)
 	createVersion(cr)
@@ -113,13 +114,11 @@ func createResource(boilerplate string) {
 	doResourceTest(dir, args)
 
 	if controller {
-		fmt.Printf("Edit your controller function...\n")
-		doController(dir, args)
-		doControllerTest(dir, args)
+		fmt.Printf("Creating controller ...\n")
+		controllerct.CoreType = false
+		controllerct.CreateController(boilerplate)
 	}
 
-	//doDockerfile(filepath.Join(dir, "build"), args)
-	//doExample(dir, args)
 	fmt.Printf("Edit your sample resource instance...\n")
 	doSample(dir, args)
 }

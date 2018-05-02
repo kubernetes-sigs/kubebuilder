@@ -33,6 +33,7 @@ export TEST_ASSET_ETCD=/tmp/kubebuilder/bin/etcd
 kubebuilder init repo --domain sample.kubernetes.io
 kubebuilder create resource --group insect --version v1beta1 --kind Bee
 kubebuilder create resource --group insect --version v1beta1 --kind Wasp
+kubebuilder create controller --group apps --version v1beta2 --kind Deployment --core-type
 
 # Verify the controller-manager builds and the tests pass
 go build ./cmd/...

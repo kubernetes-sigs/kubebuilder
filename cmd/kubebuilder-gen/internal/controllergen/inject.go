@@ -43,17 +43,21 @@ func (d *injectGenerator) Imports(c *generator.Context) []string {
 
 	repo := d.Controllers[0].Repo
 	im := []string{
-		"time",
 		"github.com/kubernetes-sigs/kubebuilder/pkg/controller",
 		"k8s.io/client-go/rest",
 		repo + "/pkg/controller/sharedinformers",
 		repo + "/pkg/client/informers/externalversions",
 		repo + "/pkg/inject/args",
 		"rbacv1 \"k8s.io/api/rbac/v1\"",
-		"k8s.io/client-go/kubernetes/scheme",
-		"rscheme " + "\"" + repo + "/pkg/client/clientset/versioned/scheme\"",
 	}
 
+	if len(d.APIS.Groups) > 0 {
+	    im = append(im, []string{
+	    	"time",
+	    	"k8s.io/client-go/kubernetes/scheme",
+	    	"rscheme " + "\"" + repo + "/pkg/client/clientset/versioned/scheme\""}...
+	    )
+    }
 	// Import package for each controller
 	repos := map[string]string{}
 	for _, c := range d.Controllers {
@@ -100,7 +104,7 @@ func (d *injectGenerator) Finalize(context *generator.Context, w io.Writer) erro
 
 var injectAPITemplate = `
 func init() {
-    rscheme.AddToScheme(scheme.Scheme)
+    {{ $length := len .APIS.Groups }}{{if ne $length 0 }}rscheme.AddToScheme(scheme.Scheme){{ end }}
 
     // Inject Informers
     Inject = append(Inject, func(arguments args.InjectArgs) error {
