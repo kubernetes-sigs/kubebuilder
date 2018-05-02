@@ -61,13 +61,33 @@ tmp_root=/tmp
 kb_root_dir=$tmp_root/kubebuilder
 kb_vendor_dir=$tmp_root/vendor
 
+# Skip fetching and untaring the tools by setting the SKIP_FETCH_TOOLS variable
+# in your environment to any value:
+#
+# $ SKIP_FETCH_TOOLS=1 ./test.sh
+#
+# If you skip fetching tools, this script will use the tools already on your
+# machine, but rebuild the kubebuilder and kubebuilder-bin binaries.
+SKIP_FETCH_TOOLS=${SKIP_FETCH_TOOLS:""}
+
 function prepare_staging_dir {
   header_text "preparing staging dir"
-  rm -rf $kb_root_dir
+
+  if [ -z "$SKIP_FETCH_TOOLS" ]; then
+    rm -rf $kb_root_dir
+  else
+    rm -f $kb_root_dir/kubebuilder/bin/kubebuilder
+    rm -f $kb_root_dir/kubebuilder/bin/kubebuilder-gen
+    rm -f $kb_root_dir/kubebuilder/bin/vendor.tar.gz
+  fi
 }
 
 # fetch k8s API gen tools and make it available under kb_root_dir/bin.
 function fetch_tools {
+  if [ -n "$SKIP_FETCH_TOOLS" ]; then
+    return 0
+  fi
+
   header_text "fetching tools"
   kb_tools_archive_name=kubebuilder-tools-$k8s_version-$goos-$goarch.tar.gz
   kb_tools_download_url="https://storage.googleapis.com/kubebuilder-tools/$kb_tools_archive_name"
@@ -76,7 +96,7 @@ function fetch_tools {
   if [ ! -f $kb_tools_archive_path ]; then
     curl -sL ${kb_tools_download_url} -o $kb_tools_archive_path
   fi
-  tar -zxf $kb_tools_archive_path -C $tmp_root/
+  tar -zvxf $kb_tools_archive_path -C $tmp_root/
 }
 
 function build_kb {
