@@ -18,10 +18,6 @@ required = ["sigs.k8s.io/testing_frameworks/integration",
             "github.com/spf13/pflag"]
 
 [[constraint]]
-  version = "KUBEBUILDER_VERSION"
-  name = "github.com/kubernetes-sigs/kubebuilder"
-
-[[constraint]]
   name = "sigs.k8s.io/testing_frameworks"
   revision = "f53464b8b84b4507805a0b033a8377b225163fea"
 

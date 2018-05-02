@@ -19,13 +19,15 @@ package initproject
 import (
 	"archive/tar"
 	"compress/gzip"
-    "fmt"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
+
+	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/version"
 )
 
 var vendorInstallCmd = &cobra.Command{
@@ -95,7 +97,7 @@ func RunVendorInstall(cmd *cobra.Command, args []string) {
 		deleteOld()
 	}
 
-    // Get the executable directory
+	// Get the executable directory
 	e, err := os.Executable()
 	if err != nil {
 		log.Fatal("unable to get directory of kubebuilder tools")
@@ -121,10 +123,10 @@ func RunVendorInstall(cmd *cobra.Command, args []string) {
 	tr := tar.NewReader(gr)
 
 	for file, err := tr.Next(); err == nil; file, err = tr.Next() {
-        if file.FileInfo().IsDir() {
-            continue
-        }
-        p := filepath.Join(".", file.Name)
+		if file.FileInfo().IsDir() {
+			continue
+		}
+		p := filepath.Join(".", file.Name)
 		if Update && filepath.Dir(p) == "." {
 			continue
 		}
@@ -142,4 +144,45 @@ func RunVendorInstall(cmd *cobra.Command, args []string) {
 			log.Fatalf("Could not write file %s: %v", p, err)
 		}
 	}
+
+	err = updateDepConfig()
+	if err != nil {
+		log.Fatalf("Could not update Gopkg.toml file: %v", err)
+	}
+}
+
+// updateDepConfig updates the Dep config Gopkg.toml to include Kubebuilder
+// project dependency. It uses the Kubebuilder version to determine whether
+// to include branch or version in the contraint stanza.
+func updateDepConfig() error {
+	var depConstraint string
+
+	kbVersion := version.GetVersion().KubeBuilderVersion
+	if kbVersion == "unknown" {
+		// KB is built from master branch
+		depConstraint = `
+[[constraint]]
+  branch = "master"
+  name = "github.com/kubernetes-sigs/kubebuilder"
+`
+	} else {
+		depConstraint = fmt.Sprintf(`
+[[constraint]]
+  version = "%s"
+  name = "github.com/kubernetes-sigs/kubebuilder"
+`, kbVersion)
+	}
+
+	f, err := os.OpenFile("Gopkg.toml", os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+
+	defer f.Close()
+
+	if _, err = f.WriteString(depConstraint); err != nil {
+		return err
+	}
+
+	return nil
 }

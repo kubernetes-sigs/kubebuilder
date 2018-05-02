@@ -25,6 +25,13 @@ if [ -n "$TRACE" ]; then
   set -x
 fi
 
+# By setting INJECT_KB_VERSION variable in your environment, KB will be compiled
+# with this version. This is to assist testing functionality which depends on
+# version .e.g gopkg.toml generation.
+#
+# $ INJECT_KB_VERSION=0.1.7 test.sh
+INJECT_KB_VERSION=${INJECT_KB_VERSION:-unknown}
+
 # Make sure, we run in the root of the repo and
 # therefore run the tests on all packages
 base_dir="$( cd "$(dirname "$0")/" && pwd )"
@@ -109,7 +116,13 @@ function fetch_tools {
 
 function build_kb {
   header_text "building kubebuilder"
-  go build -o $tmp_root/kubebuilder/bin/kubebuilder ./cmd/kubebuilder
+
+  if [ "$INJECT_KB_VERSION" = "unknown" ]; then
+   go build -o $tmp_root/kubebuilder/bin/kubebuilder ./cmd/kubebuilder
+  else
+   go build -ldflags "-X github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/version.kubeBuilderVersion=$INJECT_KB_VERSION" -o $tmp_root/kubebuilder/bin/kubebuilder ./cmd/kubebuilder
+  fi
+
   go build -o $tmp_root/kubebuilder/bin/kubebuilder-gen ./cmd/kubebuilder-gen
 }
 
@@ -123,7 +136,6 @@ function prepare_vendor_deps {
   cp Gopkg.toml Gopkg.lock $tmp_root/
   cp -a vendor/* $kb_vendor_dir/
   cd $tmp_root 
-  sed -i "s/KUBEBUILDER_VERSION/"${VERSION-master}"/" Gopkg.toml
   tar -czf $kb_root_dir/bin/vendor.tar.gz vendor/ Gopkg.lock  Gopkg.toml
 }
 
@@ -165,7 +177,7 @@ metadata:
   creationTimestamp: null
   labels:
     api: ""
-    kubebuilder.k8s.io: unknown
+    kubebuilder.k8s.io: $INJECT_KB_VERSION
   name: bees.insect.sample.kubernetes.io
 spec:
   group: insect.sample.kubernetes.io
@@ -213,6 +225,11 @@ function test_generated_controller {
   go test -v ./pkg/...
 }
 
+function run_dep_ensure {
+ header_text "running dep ensure"
+ dep ensure
+}
+
 prepare_staging_dir
 fetch_tools
 build_kb
@@ -220,5 +237,9 @@ prepare_vendor_deps
 prepare_testdir_under_gopath
 
 generate_crd_resources
+test_generated_controller
+run_dep_ensure
+# Run controller tests after running dep ensure because we want ensure code
+# compiles and tests pass after user ran dep ensure on the generated project.
 test_generated_controller
 exit $rc
