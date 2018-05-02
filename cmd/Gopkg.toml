@@ -41,5 +41,5 @@
   name = "k8s.io/apiserver"
 
 [[constraint]]
-  version = "kubernetes-1.10.1"
+  branch = "release-7.0"
   name = "k8s.io/client-go"

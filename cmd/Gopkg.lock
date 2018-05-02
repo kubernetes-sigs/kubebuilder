@@ -181,10 +181,10 @@
   version = "kubernetes-1.10.1"
 
 [[projects]]
+  branch = "release-7.0"
   name = "k8s.io/client-go"
   packages = ["util/homedir"]
-  revision = "989be4278f353e42f26c416c53757d16fcff77db"
-  version = "kubernetes-1.10.1"
+  revision = "33f2870a2b83179c823ddc90e5513f9e5fe43b38"
 
 [[projects]]
   branch = "master"
@@ -201,6 +201,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "53c0546d5938231df9b5bf3a3e878723d37026c0048dd7238a5e57dcc5e47992"
+  inputs-digest = "c8f4482837cf8edad943fea608dc2729d91a36f9050758952f31bbdea7dfc4f7"
   solver-name = "gps-cdcl"
   solver-version = 1
