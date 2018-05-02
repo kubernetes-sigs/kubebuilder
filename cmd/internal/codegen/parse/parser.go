@@ -67,6 +67,16 @@ func NewAPIs(context *generator.Context, arguments *args.GeneratorArgs) *APIs {
 	return b
 }
 
+func NewControllers(context *generator.Context, arguments *args.GeneratorArgs) *APIs {
+	b := &APIs{
+		context: context,
+		arguments: arguments,
+	}
+	b.parseControllers()
+	b.parseRBAC()
+	return b
+}
+
 // parseGroupNames initializes b.GroupNames with the set of all groups
 func (b *APIs) parseGroupNames() {
 	b.GroupNames = sets.String{}

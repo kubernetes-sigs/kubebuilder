@@ -79,6 +79,10 @@ func RunCreateResource(cmd *cobra.Command, args []string) {
 	if coreControllerOnly {
 		fmt.Printf("Creating controller for kubernetes core types ...\n")
 		createCoreController(cr)
+		if generate {
+			args = append(args, "core-controller-only")
+			generatecmd.RunGenerate(cmd, args)
+		}
 	} else {
 		fmt.Printf("Creating API files for you to edit...\n")
 		createGroup(cr)

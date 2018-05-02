@@ -92,6 +92,28 @@ func doGen(g string) bool {
 }
 
 func RunGenerate(cmd *cobra.Command, args []string) {
+	root, err := os.Executable()
+	if err != nil {
+		glog.Fatalf("error: %v", err)
+	}
+	root = filepath.Dir(root)
+
+	if len(args) > 0 && args[len(args)-1] == "core-controller-only" {
+		if doGen("controller-gen") {
+			c := exec.Command(filepath.Join(root, "controller-gen"),
+				"--go-header-file", copyright,
+				"--input-dirs", filepath.Join(util.Repo, "pkg", "controller", "..."),
+				"--input-dirs", filepath.Join(util.Repo, "pkg", "inject", "..."),
+			)
+			glog.V(4).Infof("%s\n", strings.Join(c.Args, " "))
+			out, err := c.CombinedOutput()
+			if err != nil {
+				glog.Fatalf("failed to run controller-gen %s %v", out, err)
+			}
+		}
+		return
+	}
+
 	initApis()
 
 	for _, g := range codegenerators {
@@ -99,12 +121,6 @@ func RunGenerate(cmd *cobra.Command, args []string) {
 	}
 
 	util.GetCopyright(copyright)
-
-	root, err := os.Executable()
-	if err != nil {
-		glog.Fatalf("error: %v", err)
-	}
-	root = filepath.Dir(root)
 
 	all := []string{}
 	versioned := []string{}
