@@ -419,7 +419,6 @@
   revision = "06e4be4fafa2c9356e02424aac4e714e2ebeff60"
 
 [[projects]]
-  branch = "master"
   name = "k8s.io/client-go"
   packages = [
     "discovery",
@@ -551,7 +550,8 @@
     "util/retry",
     "util/workqueue"
   ]
-  revision = "989be4278f353e42f26c416c53757d16fcff77db"
+  revision = "23781f4d6632d88e869066eaebb743857aa1ef9b"
+  version = "v7.0.0"
 
 [[projects]]
   name = "k8s.io/gengo"
@@ -582,7 +582,6 @@
   revision = "50ae88d24ede7b8bad68e23c805b5d3da5c8abaf"
 
 [[projects]]
-  branch = "master"
   name = "sigs.k8s.io/testing_frameworks"
   packages = [
     "integration",
@@ -593,6 +592,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "bdd3cd6805a7da6f0c03dfdc7b6daa9a96c0d563ee7c6fb36a5d7bb26481c6fc"
+  inputs-digest = "eda0eae9aea833a95a7ed83ac99b34df1ba6d014b5bcb1ce8469e7d6c735ef8a"
   solver-name = "gps-cdcl"
   solver-version = 1
