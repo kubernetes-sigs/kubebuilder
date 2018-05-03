@@ -1,3 +1,7 @@
+{% panel style="info", title="Under Development" %}
+This book is being actively developed.
+{% endpanel %}
+
 # What is the Controller-Manager
 
 The Controller-Manager is an executable that wraps one or more Controllers.  It may

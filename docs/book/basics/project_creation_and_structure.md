@@ -1,3 +1,7 @@
+{% panel style="info", title="Under Development" %}
+This book is being actively developed.
+{% endpanel %}
+
 # Project Creation and Structure {#project-creation-and-structure}
 
 ## Go package Structure
@@ -20,9 +24,8 @@ file.
 For more information on API Group, Version and Kinds, see the *What is a Resource* chapter.
 
 {% panel style="info", title="Generated code" %}
-Kubebuilder generates boilerplate code to add required types and register APIs in this package.
-Boilerplate code is written to `zz_generated.*` files, and should only be written
-by kubebuilder.
+Kubebuilder will generate boilerplate code required for Resources by running
+`kubebuilder generate`.  The generated files are named `zz_generated.*`.
 {% endpanel %}
 
 ##### pkg/controller/...
@@ -45,12 +48,20 @@ In addition to the packages above, a Kubebuilder project has several other direc
 
 ##### hack/...
 
-Kubebuilder puts misc files into the hack directory, such as API installation yaml files
-and samples resource configs.
+Kubebuilder puts miscellaneous files into the hack directory.
+
+- API installation yaml
+- Samples resource configs
+- Headers for generated files: `boilerplate.go.txt`
 
 ##### docs/...
 
 API reference documentation, user defined API samples and API conceptual documentation go here.
+
+{% panel style="success", title="Providing boilerplate headers" %}
+To prepend boilerplate comments at the top of generated and bootstrapped files,
+add the boilerplate to a `hack/boilerplate.go.txt` file before creating a project.
+{% endpanel %}
 
 {% method %}
 ## Create a new project

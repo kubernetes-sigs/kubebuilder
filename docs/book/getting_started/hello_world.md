@@ -1,3 +1,7 @@
+{% panel style="info", title="Under Development" %}
+This book is being actively developed.
+{% endpanel %}
+
 # Hello World
 
 {% panel style="warning", title="Note on project structure" %}
@@ -18,10 +22,10 @@ Kubernetes APIs have 3 components.  These components live in separate go package
 {% method %}
 ## Pancake API Resource Definition {#hello-world-api}
 
-This is a Resource definition.  It is a go struct containing the API schema and it
-implicitly defines CRUD endpoints the Resource.
+This is a Resource definition.  It is a go struct containing the API schema that
+implicitly defines CRUD endpoints for the Resource.
 
-While it is not shown here, most Resources will split their fields in into Spec and Status fields.
+While it is not shown here, most Resources will split their fields in into a Spec and a Status field.
 
 {% sample lang="go" %}
 ```go
@@ -37,18 +41,18 @@ type Pancake struct {
 {% method %}
 ## Pancake Controller {#hello-world-controller}
 
-This is a Controller implementation.  It is a Reconcile function which takes the key of an object
-and reconciles the observed state of the cluster with the desired state of the cluster.
+This is a Controller implementation.  It contains a Reconcile function which takes an object
+key as an argument and reconciles the observed state of the cluster with the desired state of the cluster.
 
 Reconcile should be trigger by watch events for the Pancake Resource type, but may also be triggered
-by watch events for related resource types, such as for objects created by Reconcile. 
+by watch events for related resource types, such as for any objects created by Reconcile. 
 
 When Reconcile is triggered by watch events for other resource types, each event is
 mapped to the key of a Pancake object.  This will trigger a full reconcile of
-the Pancake object, which will in turn read related objects, including the object the
+the Pancake object, which will in turn read related cluster state, including the object the
 original event was for.
 
-The code shown here has been abridged; for a more complete example see *Simple Controller*.
+The code shown here has been abridged; for a more complete example see *Simple Controller Example*.
 
 {% sample lang="go" %}
 ```go

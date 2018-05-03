@@ -1,3 +1,7 @@
+{% panel style="info", title="Under Development" %}
+This book is being actively developed.
+{% endpanel %}
+
 # What is Kubebuilder
 
 Kubebuilder is an SDK for rapidly building and publishing Kubernetes APIs in go.

@@ -1,3 +1,7 @@
+{% panel style="info", title="Under Development" %}
+This book is being actively developed.
+{% endpanel %}
+
 # Simple Resource Example
 
 This chapter walks through the definition of a new Resource call *ContainerSet*.  ContainerSet
@@ -24,6 +28,11 @@ ContainerSet has 4 fields:
 - TypeMeta contains metadata about the API itself - such as Group, Version, Kind.
 - ObjectMeta contains metadata about the specific object instance - such as the name, namespace,
   labels and annotations.  ObjectMeta contains data common to most objects.
+
+#### Reference
+
+- See the [resource code generation tags](https://godoc.org/github.com/kubernetes-sigs/kubebuilder/pkg/gen/apis)
+godocs for reference documentation on resource annotations.
 
 {% sample lang="go" %}
 ```go

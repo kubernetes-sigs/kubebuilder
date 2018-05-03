@@ -1,3 +1,8 @@
+{% panel style="info", title="Under Development" %}
+This book is being actively developed.
+{% endpanel %}
+
+
 # Why Kubernetes APIs
 
 Kubenernetes APIs allow users to specify the desired state of a Kubernetes cluster in an

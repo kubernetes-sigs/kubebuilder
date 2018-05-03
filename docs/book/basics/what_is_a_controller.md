@@ -1,3 +1,7 @@
+{% panel style="info", title="Under Development" %}
+This book is being actively developed.
+{% endpanel %}
+
 # What is a Controller
 
 Controllers implement APIs defined by *Resources*.  Controllers are
