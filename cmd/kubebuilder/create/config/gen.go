@@ -18,6 +18,7 @@ package config
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/ghodss/yaml"
@@ -28,6 +29,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	extensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/gengo/args"
@@ -274,7 +276,7 @@ func getPodTemplate(labels map[string]string) corev1.PodTemplateSpec {
 }
 
 func getCrds(p *parse.APIs) []string {
-	result := []string{}
+	crds := []extensionsv1beta1.CustomResourceDefinition{}
 	for _, g := range p.APIs.Groups {
 		for _, v := range g.Versions {
 			for _, r := range v.Resources {
@@ -283,14 +285,34 @@ func getCrds(p *parse.APIs) []string {
 					crd.Namespace = crdNamespace
 				}
 				crd.Labels = addLabels(map[string]string{})
-				s, err := yaml.Marshal(crd)
-				if err != nil {
-					glog.Fatalf("Error: %v", err)
-				}
-				result = append(result, string(s))
+				crds = append(crds, crd)
 			}
 		}
 	}
+
+	sort.Slice(crds, func(i, j int) bool {
+		iGroup := crds[i].Spec.Group
+		jGroup := crds[j].Spec.Group
+
+		if iGroup != jGroup {
+			return iGroup < jGroup
+		}
+
+		iKind := crds[i].Spec.Names.Kind
+		jKind := crds[j].Spec.Names.Kind
+
+		return iKind < jKind
+	})
+
+	result := []string{}
+	for i := range crds {
+		s, err := yaml.Marshal(crds[i])
+		if err != nil {
+			glog.Fatalf("Error: %v", err)
+		}
+		result = append(result, string(s))
+	}
+
 	return result
 }
 
