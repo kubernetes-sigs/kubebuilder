@@ -1,3 +1,7 @@
+{% panel style="info", title="Under Development" %}
+This book is being actively developed.
+{% endpanel %}
+
 # Introduction
 
 ## Who is this for

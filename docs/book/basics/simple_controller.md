@@ -1,3 +1,7 @@
+{% panel style="info", title="Under Development" %}
+This book is being actively developed.
+{% endpanel %}
+
 # Simple Controller Example
 
 This chapter walks through a simple Controller implementation.
@@ -47,6 +51,14 @@ ProvideController will be called from `pkg/inject/zz_generated.kubebuilder.go` a
 **Note:** when watching the Deployment, a Predicate is used to filter events where the
 ResourceVersion of the Deployment have not changed.  This is an optimization to filter
 out Deployment events that don't require a reconcile.
+
+#### Reference
+
+- See the [controller libraries](https://godoc.org/github.com/kubernetes-sigs/kubebuilder/pkg/controller) godocs
+for reference documentation on watches.
+- See the [controller code generation tags](https://godoc.org/github.com/kubernetes-sigs/kubebuilder/pkg/gen/controller)
+godocs for reference documentation on controller annotations.
+
 
 {% sample lang="go" %}
 ```go

@@ -1,3 +1,7 @@
+{% panel style="info", title="Under Development" %}
+This book is being actively developed.
+{% endpanel %}
+
 # Installation and Setup
 
 {% panel style="warning", title="Important" %}
@@ -19,11 +23,11 @@ Kubebuilder can then setup a project in the user's `GOPATH`.
 {% sample lang="mac" %}
 ```bash
 # download the release
-curl -L -O https://github.com/kubernetes-sigs/kubebuilder/releases/download/1beta1.5/kubebuilder_1beta1.5_darwin_amd64.tar.gz
+curl -L -O https://github.com/kubernetes-sigs/kubebuilder/releases/download/v0.1.7/kubebuilder_0.1.7_darwin_amd64.tar.gz
 
 # extract the archive
-tar -zxvf kubebuilder_1beta1.5_darwin_amd64.tar.gz
-sudo mv kubebuilder_1beta1.5_darwin_amd64 /usr/local/kubebuilder
+tar -zxvf kubebuilder_0.1.7_darwin_amd64.tar.gz
+sudo mv kubebuilder_0.1.7_darwin_amd64 /usr/local/kubebuilder
 
 # update your PATH to include /usr/local/kubebuilder/bin
 export PATH=$PATH:/usr/local/kubebuilder/bin
@@ -32,11 +36,11 @@ export PATH=$PATH:/usr/local/kubebuilder/bin
 {% sample lang="linux" %}
 ```bash
 # download the release
-wget https://github.com/kubernetes-sigs/kubebuilder/releases/download/v1beta1.5/kubebuilder_1beta1.5_darwin_amd64.tar.gz
+wget https://github.com/kubernetes-sigs/kubebuilder/releases/download/v0.1.7/kubebuilder_0.1.7_linux_amd64.tar.gz
 
 # extract the archive
-tar -zxvf kubebuilder_v1beta1.5_linux_amd64.tar.gz
-sudo mv kubebuilder_v1beta1.5_linux_amd64 /usr/local/kubebuilder
+tar -zxvf kubebuilder_0.1.7_linux_amd64.tar.gz
+sudo mv kubebuilder_0.1.7_linux_amd64 /usr/local/kubebuilder
 
 # update your PATH to include /usr/local/kubebuilder/bin
 export PATH=$PATH:/usr/local/kubebuilder/bin

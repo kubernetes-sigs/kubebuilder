@@ -1,8 +1,12 @@
+{% panel style="info", title="Under Development" %}
+This book is being actively developed.
+{% endpanel %}
+
 # What is a Resource
 
 A Kubernetes resource is a declarative API with a well defined Schema structure
-and Endpoints.  Because the structure of the Schema and Endpoints are both well
-understood, many Kubernetes tools work with all Kubernetes resources.
+and endpoints.  Because the structure of the Schema and Endpoints are both well
+understood, many Kubernetes tools support all APIs written as Kubernetes resources.
 
 {% method %}
 
@@ -14,14 +18,10 @@ Example: `$ replicas 3`
 
 An imperative API expresses an operation that may change state, but does not
 define an absolute state that must be maintained.  Imperative APIs express the
-*how*, but not *what*.  Example: `$ add-replicas 2`.
+*how*, but not *what*.  Example: `$ add-pods 2`.
 
 In the declarative case if replica is lost the cluster has a clear directive
 to create another one, whereas in the latter case this is not necessarily true.
-
-Constraints on the declarative *how* may be defined,
-such as ensuring new replicas are healthy before scaling down
-old ones when performing a rollout.
 
 {% sample lang="yaml" %}
 *Declarative API usage example by invoking `apply`.*
@@ -31,6 +31,11 @@ old ones when performing a rollout.
 $ kubectl apply -f object.yaml
 ```
 {% endmethod %}
+
+{% panel style="info", title="Declarative How" %}
+Constraints on the *how* may be defined within declarative APIs, such as performing a rolling update
+versus deleting and recreating all Pods immediately.
+{% endpanel %}
 
 #### Resource Schema
 
@@ -43,7 +48,7 @@ Every Kubernetes resource has a *Group*, *Version* and *Kind* that uniquely iden
 * The resource *Kind* is the name of the API - such as Deployment or Service.
 * The resource *Version* defines the stability of the API and backward compatibility guarantees -
   such as v1beta1 or v1.
-* The resource *Group* is similar to package in a language.  It disambiguate logically different APIs
+* The resource *Group* is similar to package in a language.  It disambiguates different APIs
   that may happen to have identically named *Kind*s.  Groups often contain a domain name, such as k8s.io.
 
 {% sample lang="yaml" %}
@@ -61,17 +66,17 @@ Resources with different *Version*s but the same *Group* and *Kind* differ in th
 * Unspecified fields may have different defaults
 * The same logical fields may have different names or representations
 
-However resources with different versions share the same features and controller.
+However resources with different versions frequently share the same features and controller.
 
-**Alpha** APIs may break backwards compatibility by changing field names, defaults or behavior.  They may
-also be removed without being deprecated.
+**Alpha** APIs may break backwards compatibility by changing field names, defaults or behavior.  They
+also may not be supported in the future.
 
 **Beta** APIs maintain backwards compatibility on field names, defaults and behavior.  They may be
-missing features required for GA.  However once the API goes GA, the features will be available
+missing features required for GA.  However once the API goes GA, the features should be available
 in the Beta version.
 
 **GA** APIs have been available and running in production for sufficient time to have developed
-a stable set of field names and defaults as well as complete feature set.
+a stable set of field names and defaults, as well as a complete feature set.
 
 {% endpanel %}
 
@@ -83,9 +88,9 @@ Most Kubernetes resources Schema contain 3 components: Spec, Status and Metadata
 
 **Spec**: the resource Spec defines the desired state of the cluster as specified by the user.
 
-**Status**: the resource Status publishes the observed state of the cluster as observed by the controller.
+**Status**: the resource Status publishes the state of the cluster as observed by the controller.
 
-**Metadata**: the resource Metadata contains metadata common to most resources about the object
+**Metadata**: the resource Metadata contains information common to most resources about the object
 including as the object name, annotations, labels and more.
 
 {% sample lang="yaml" %}
@@ -115,10 +120,9 @@ status:
 {% endmethod %}
 
 {% panel style="warning", title="Spec vs Status" %}
-The resource *Status* should not contain the source of truth for any information and should be
-able to be generated from controllers by looking at the cluster state.  Values assigned by
-controllers, such as the Service `spec.clusterIp`, should still be set on the *Spec*, even if they are
-never intended to be set by end users.
+The resource *Status* should not contain the source of truth for any information, and should be
+possible for controllers to recreate by looking at the cluster state.  Other values assigned by
+controllers, such as the Service `spec.clusterIp`, should be set on the *Spec* not the *Status*.
 {% endpanel %}
 {% method %}
 #### Resource Endpoints
@@ -155,6 +159,14 @@ verbs:
 ```
 
 {% endmethod %}
+
+{% panel style="success", title="API versions" %}
+When reading objects, the same objects should be returned regardless of which version of the API endpoint is
+read from (though the structure may differ between versions).
+
+When writing objects, the default values applied to fields may change between API versions, but
+the written object should be visible when read from any version.
+{% endpanel %}
 
 {% panel style="warning", title="Warning on Updates" %}
 The update API should only be used to read-then-write an object, and never used to
@@ -204,18 +216,18 @@ verbs:
 
 #### Labels, Selectors and Annotations
 
-Labels in ObjectMeta data are key-value pairs that may be queried to find objects matching a query.
-Labels are used to form logical connections between objects in a Kubernetes cluster.  For instance
+Labels in ObjectMeta data are key-value pairs that may be queried to find matching objects.
+Labels are used to connect objects together in a Kubernetes cluster.  For instance
 Services use labels to determine which Pods to direct traffic to, and Deployments use labels
-(along with OwnersReferences) to identify Pods they own.
+(along with OwnersReferences) to identify Pods they created.
 
 Annotations allow arbitrary data to be written to resources that may not fit within the
-Schema of the resource.
+Schema of the resource, but may be needed by end users or tools.
 
 {% panel style="info", title="Extending Built In Types" %}
 Annotations may be used to define new extension fields on resources without modifying the
-Schema of the object.  This allows users to define their own controller extensions for
-existing core Kubernetes resources without modifying upstream Kubernetes.
+Schema of the object.  This allows users to define their own private schema extensions for
+existing core Kubernetes resources.
 {% endpanel %}
 
 #### Namespaces

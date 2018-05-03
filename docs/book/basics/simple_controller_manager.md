@@ -1,3 +1,7 @@
+{% panel style="info", title="Under Development" %}
+This book is being actively developed.
+{% endpanel %}
+
 ## Simple Main {#simple-world-main}
 
 {% method %}
