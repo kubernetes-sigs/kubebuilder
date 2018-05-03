@@ -26,14 +26,17 @@ const Resource = "// +kubebuilder:resource:path="
 // categories
 const Categories = "// +kubebuilder:categories="
 
-// Maximum annotates a go struct field for CRD validation
+// Maximum annotates a numeric go struct field for CRD validation
 const Maximum = "// +kubebuilder:validation:Maximum="
 
-// ExclusiveMaximum annotates a go struct field for CRD validation
+// ExclusiveMaximum annotates a numeric go struct field for CRD validation
 const ExclusiveMaximum = "// +kubebuilder:validation:ExclusiveMaximum="
 
-// Minimum annotates a go struct field for CRD validation
+// Minimum annotates a numeric go struct field for CRD validation
 const Minimum = "// +kubebuilder:validation:Minimum="
 
-// ExclusiveMinimum annotates a go struct field for CRD validation
+// ExclusiveMinimum annotates a numeric go struct field for CRD validation
 const ExclusiveMinimum = "// +kubebuilder:validation:ExclusiveMinimum="
+
+// Pattern annotates a string go struct field for CRD validation with a regular expression it must match
+const Pattern = "// +kubebuilder:validation:Pattern="
