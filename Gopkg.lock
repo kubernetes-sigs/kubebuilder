@@ -582,7 +582,6 @@
   revision = "50ae88d24ede7b8bad68e23c805b5d3da5c8abaf"
 
 [[projects]]
-  branch = "master"
   name = "sigs.k8s.io/testing_frameworks"
   packages = [
     "integration",
@@ -593,6 +592,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "bdd3cd6805a7da6f0c03dfdc7b6daa9a96c0d563ee7c6fb36a5d7bb26481c6fc"
+  inputs-digest = "23dd99960429731773b751527608685fdd29b212b9ed7cedcd502b0f27d43c6c"
   solver-name = "gps-cdcl"
   solver-version = 1

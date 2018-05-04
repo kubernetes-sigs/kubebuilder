@@ -6,8 +6,10 @@ go:
 git:
   depth: 3
 
-
 go_import_path: github.com/kubernetes-sigs/kubebuilder
+
+before_install:
+- go get -u github.com/golang/dep/cmd/dep
 
 # Install must be set to prevent default `go get` to run.
 # The dependencies have already been vendored by `dep` so
