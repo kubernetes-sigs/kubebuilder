@@ -108,7 +108,7 @@ func RunDocs(cmd *cobra.Command, args []string) {
 		"-e", "DOMAIN="+util.GetDomain(),
 		"-e", "DIR="+filepath.Join("src", util.Repo),
 		"-e", "OUTPUT="+outputDir,
-		"gcr.io/kubebuilder/gendocs",
+		"gcr.io/kubebuilder/gendocs:alpha4",
 	)
 	if verbose {
 		log.Println(strings.Join(c.Args, " "))

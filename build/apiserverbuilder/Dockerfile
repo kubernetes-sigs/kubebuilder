@@ -16,18 +16,18 @@
 
 FROM golang:1.10-stretch
 
-ENV URL https://github.com/kubernetes-incubator/apiserver-builder/releases/download/v1.9-alpha.2
-ENV BIN apiserver-builder-v1.9-alpha.2-linux-amd64.tar.gz
+RUN apt-get update
+RUN apt-get install less -y
+RUN apt-get install nano -y
+
+ENV URL https://github.com/kubernetes-incubator/apiserver-builder/releases/download/v1.9-alpha.4
+ENV BIN apiserver-builder-v1.9-alpha.4-linux-amd64.tar.gz
 ENV DEST /usr/local/apiserver-builder/bin/
 RUN curl -L $URL/$BIN -o /tmp/$BIN
 RUN mkdir -p /usr/local/apiserver-builder
 RUN tar -xzvf /tmp/$BIN -C /usr/local/apiserver-builder/
 
 ENV PATH /usr/local/apiserver-builder/bin/:$PATH
-
-RUN apt-get update
-RUN apt-get install less -y
-RUN apt-get install nano -yu
 
 COPY docs.sh /usr/local/bin/docs.sh
 
