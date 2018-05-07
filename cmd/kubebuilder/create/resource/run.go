@@ -32,6 +32,7 @@ import (
 var nonNamespacedKind bool
 var controller bool
 var generate bool
+var coreControllerOnly bool
 
 var createResourceCmd = &cobra.Command{
 	Use:   "resource",
@@ -61,6 +62,7 @@ func AddCreateResource(cmd *cobra.Command) {
 	createResourceCmd.Flags().BoolVar(&nonNamespacedKind, "non-namespaced", false, "if set, the API kind will be non namespaced")
 	createResourceCmd.Flags().BoolVar(&controller, "controller", true, "if true, generate the controller code for the resource")
 	createResourceCmd.Flags().BoolVar(&generate, "generate", true, "generate source code")
+	createResourceCmd.Flags().BoolVar(&coreControllerOnly, "core-controller-only", false, "skip resources, generate controller only")
 	cmd.AddCommand(createResourceCmd)
 }
 
@@ -74,14 +76,23 @@ func RunCreateResource(cmd *cobra.Command, args []string) {
 
 	cr := util.GetCopyright(createutil.Copyright)
 
-	fmt.Printf("Creating API files for you to edit...\n")
-	createGroup(cr)
-	createVersion(cr)
-	createResource(cr)
-	if generate {
-		fmt.Printf("Generating code for new resource...  " +
-			"Regenerate after editing resources files by running `kubebuilder build generated`.\n")
-		generatecmd.RunGenerate(cmd, args)
+	if coreControllerOnly {
+		fmt.Printf("Creating controller for kubernetes core types ...\n")
+		createCoreController(cr)
+		if generate {
+			args = append(args, "core-controller-only")
+			generatecmd.RunGenerate(cmd, args)
+		}
+	} else {
+		fmt.Printf("Creating API files for you to edit...\n")
+		createGroup(cr)
+		createVersion(cr)
+		createResource(cr)
+		if generate {
+			fmt.Printf("Generating code for new resource...  " +
+				"Regenerate after editing resources files by running `kubebuilder build generated`.\n")
+			generatecmd.RunGenerate(cmd, args)
+		}
 	}
 	fmt.Printf("Next: Install the API, run the controller and create an instance with:\n" +
 		"$ GOBIN=${PWD}/bin go install ${PWD#$GOPATH/src/}/cmd/controller-manager\n" +
@@ -100,6 +111,7 @@ func createResource(boilerplate string) {
 		util.Repo,
 		inflect.NewDefaultRuleset().Pluralize(createutil.KindName),
 		nonNamespacedKind,
+		false,
 	}
 
 	dir, err := os.Getwd()
@@ -119,6 +131,32 @@ func createResource(boilerplate string) {
 
 	//doDockerfile(filepath.Join(dir, "build"), args)
 	//doExample(dir, args)
+	fmt.Printf("Edit your sample resource instance...\n")
+	doSample(dir, args)
+}
+
+func createCoreController(boilerplate string) {
+	args := resourceTemplateArgs{
+		boilerplate,
+		util.Domain,
+		createutil.GroupName,
+		createutil.VersionName,
+		createutil.KindName,
+		createutil.ResourceName,
+		util.Repo,
+		inflect.NewDefaultRuleset().Pluralize(createutil.KindName),
+		nonNamespacedKind,
+		true,
+	}
+
+	dir, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Edit your controller function...\n")
+	doController(dir, args)
+	doControllerTest(dir, args)
+
 	fmt.Printf("Edit your sample resource instance...\n")
 	doSample(dir, args)
 }

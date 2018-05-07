@@ -35,6 +35,7 @@ type resourceTemplateArgs struct {
 	Repo              string
 	PluralizedKind    string
 	NonNamespacedKind bool
+	CoreType bool
 }
 
 func doResource(dir string, args resourceTemplateArgs) bool {

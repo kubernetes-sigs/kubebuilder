@@ -42,11 +42,17 @@ import (
     "github.com/kubernetes-sigs/kubebuilder/pkg/controller"
     "github.com/kubernetes-sigs/kubebuilder/pkg/controller/types"
     "k8s.io/client-go/tools/record"
-
+    {{if .CoreType}}
+    {{.Group}}{{.Version}}client "k8s.io/client-go/kubernetes/typed/{{.Group}}/{{.Version}}"
+    {{.Group}}{{.Version}}lister "k8s.io/client-go/listers/{{.Group}}/{{.Version}}"
+    {{.Group}}{{.Version}} "k8s.io/api/{{.Group}}/{{.Version}}"
+    {{.Group}}{{.Version}}informer "k8s.io/client-go/informers/{{.Group}}/{{.Version}}"    
+    {{else}}
     {{.Group}}{{.Version}}client "{{.Repo}}/pkg/client/clientset/versioned/typed/{{.Group}}/{{.Version}}"
     {{.Group}}{{.Version}}lister "{{.Repo}}/pkg/client/listers/{{.Group}}/{{.Version}}"
     {{.Group}}{{.Version}} "{{.Repo}}/pkg/apis/{{.Group}}/{{.Version}}"
     {{.Group}}{{.Version}}informer "{{.Repo}}/pkg/client/informers/externalversions/{{.Group}}/{{.Version}}"
+    {{end}}
     "{{.Repo}}/pkg/inject/args"
 )
 

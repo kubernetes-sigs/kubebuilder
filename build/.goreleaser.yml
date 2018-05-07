@@ -20,6 +20,15 @@ builds:
    - amd64
   env:
    - CGO_ENABLED=0
+- main: ./cmd/controller-gen
+  binary: controller-gen
+  goos:
+   - darwin
+   - linux
+  goarch:
+   - amd64
+  env:
+   - CGO_ENABLED=0
 archive:
   files:
     - "/workspace/_output/kubebuilder/bin/vendor.tar.gz"
