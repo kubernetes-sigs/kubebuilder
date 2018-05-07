@@ -68,7 +68,7 @@ ENV GOOS linux
 ENV GOARCH amd64
 ENV DEST /usr/local/kubebuilder/bin/
 RUN mkdir -p $DEST || echo ""
-RUN git clone https://github.com/kubernetes-incubator/reference-docs $GOPATH/src/github.com/kubernetes-incubator/reference-docs --depth=1
+RUN git clone https://github.com/kubernetes-incubator/reference-docs $GOPATH/src/github.com/kubernetes-incubator/reference-docs --branch kubebuilder --depth=1
 RUN go build -o $DEST/gen-apidocs github.com/kubernetes-incubator/reference-docs/gen-apidocs
 
 FROM golang:1.10-stretch as linux
