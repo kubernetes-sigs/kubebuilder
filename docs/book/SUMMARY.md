@@ -14,6 +14,7 @@
 * Development Workflow
   * [Project Creation and Structure](basics/project_creation_and_structure.md)
   * [Running Tests](basics/running_tests.md)
+  * [Generating API Documentation](basics/generating_documentation.md)
 * Resource Fundamentals
   * [What is a Resource](basics/what_is_a_resource.md)
   * [Simple Resource Example](basics/simple_resource.md)
