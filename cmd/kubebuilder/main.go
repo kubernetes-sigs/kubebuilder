@@ -108,12 +108,10 @@ More options:
 
 - run tests
   kubebuilder generate
-  export TEST_ASSET_KUBECTL=/usr/local/kubebuilder/bin/kubectl
-  export TEST_ASSET_KUBE_APISERVER=/usr/local/kubebuilder/bin/kube-apiserver
-  export TEST_ASSET_ETCD=/usr/local/kubebuilder/bin/etcd
   go test ./pkg/...
 
 - build reference documentation to docs/reference/build/index.html
+  kubebuilder create example --group <group> --version <version> --kind <Kind>
   kubebuilder docs
 `,
 	Example: `# Initialize your project
