@@ -4,16 +4,45 @@ This book is being actively developed.
 
 # Running tests
 
-Kubebuilder `kubebuilder create resource` will create scaffolding tests for controllers and resources
-along side the controller and resource code.  When run, these tests will start a local control plane
-as part of the integration test.  Developers may talk to the local control plane using the provided
-config.
+Kubebuilder will create scaffolding tests for controllers and resources.  When run, these tests will start
+a local control plane as part of the integration test.  Developers may talk to the local control plane
+using the provided config.
+
+#### Resource Tests
+
+The resource tests are created under `pkg/apis/<group>/<version>/<kind>_types_test.go`.  When a resource
+is created with `kubebuilder create resource`, a test file will be created to store and read back the object.
+
+Update the test to include validation you add to your resource.
+
+#### Controller Tests
+
+The controller tests are created under `pkg/controller/<kind>/controller_test.go`.  When a resource
+is created with `kubebuilder create resource`, a test file will be created to start the controller
+and reconcile objects.  The default test will create a new object and verify that the controller
+Reconcile function is called.
+
+Update the test to verify the business logic of your controller.
 
 {% method %}
-## Setup Environment Variables
+## Run the tests
 
-First export the environment variables so the test harness can locate the control plane binaries.
-The control plane binaries are included with kubebuilder.
+Run the tests using `go test`.
+
+{% sample lang="shell" %}
+```bash
+go test ./pkg/...
+```
+{% endmethod %}
+
+
+{% method %}
+## Optional: Change Control Plane Test Binaries
+
+To override the test binaries used to start the control plane, set the `TEST_ASSET_` environment variables.
+This can be useful for performing testing against multiple Kubernetes cluster versions.
+
+If these environment variables are unset, kubebuiler will default to the binaries packaged with kubebuilder.
 
 {% sample lang="shell" %}
 ```bash
@@ -23,14 +52,4 @@ export TEST_ASSET_ETCD=/usr/local/kubebuilder/bin/etcd
 ```
 {% endmethod %}
 
-{% method %}
-## Run the tests
-
-Next run the tests as normal.
-
-{% sample lang="shell" %}
-```bash
-go test ./pkg/...
-```
-{% endmethod %}
 
