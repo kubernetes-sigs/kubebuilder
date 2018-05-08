@@ -23,12 +23,12 @@
 steps:
 - name: "ubuntu"
   args: ["mkdir", "-p", "/workspace/_output/linux_amd64"]
-- name: "gcr.io/kubebuilder/thirdparty-linux:1.10"
+- name: "gcr.io/kubebuilder/thirdparty-linux:1.10.1"
   args: ["tar", "-xzvf", "/kubebuilder_linux_amd64.tar.gz"]
   dir: "_output/linux_amd64"
 - name: "ubuntu"
   args: ["mkdir", "-p", "/workspace/_output/darwin_amd64"]
-- name: "gcr.io/kubebuilder/thirdparty-darwin:1.10"
+- name: "gcr.io/kubebuilder/thirdparty-darwin:1.10.1"
   args: ["tar", "-xzvf", "/kubebuilder_darwin_amd64.tar.gz"]
   dir: "_output/darwin_amd64"
 - name: "ubuntu"

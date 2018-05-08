@@ -15,7 +15,11 @@
 # Packages required by users
 required = ["sigs.k8s.io/testing_frameworks/integration",
             "k8s.io/client-go/plugin/pkg/client/auth",
-            "github.com/spf13/pflag"]
+            "github.com/spf13/pflag",
+            "github.com/emicklei/go-restful",
+            "github.com/go-openapi/spec",
+            "k8s.io/kube-openapi/pkg/common",
+            ]
 
 [[constraint]]
   name = "sigs.k8s.io/testing_frameworks"

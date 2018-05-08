@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	generatecmd "github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/generate"
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/util"
 	"github.com/spf13/cobra"
 )
@@ -59,12 +60,16 @@ kubebuilder docs
 var generateConfig bool
 var cleanup, verbose bool
 var outputDir string
+var copyright string
 
 func AddDocs(cmd *cobra.Command) {
 	docsCmd.Flags().BoolVar(&cleanup, "cleanup", true, "If true, cleanup intermediary files")
 	docsCmd.Flags().BoolVar(&verbose, "verbose", true, "If true, use verbose output")
 	docsCmd.Flags().BoolVar(&generateConfig, "generate-config", true, "If true, generate the docs/reference/config.yaml.")
 	docsCmd.Flags().StringVar(&outputDir, "output-dir", filepath.Join("docs", "reference"), "Build docs into this directory")
+	docsCmd.Flags().StringVar(&copyright, "copyright", filepath.Join("hack", "boilerplate.go.txt"), "Location of copyright boilerplate file.")
+	docsCmd.Flags().StringVar(&generatecmd.Docscopyright, "docs-copyright", "<a href=\"https://github.com/kubernetes/kubernetes\">Copyright 2018 The Kubernetes Authors.</a>", "html for the copyright text on the docs")
+	docsCmd.Flags().StringVar(&generatecmd.Docstitle, "title", "API Reference", "title of the docs page")
 	cmd.AddCommand(docsCmd)
 	docsCmd.AddCommand(docsCleanCmd)
 }
@@ -87,8 +92,14 @@ func RunCleanDocs(cmd *cobra.Command, args []string) {
 	os.Remove(filepath.Join(outputDir, "manifest.json"))
 }
 
+var openapipkg = filepath.Join("pkg", "generated", "openapi")
+
 func RunDocs(cmd *cobra.Command, args []string) {
+	// Delete old build artifacts
 	os.RemoveAll(filepath.Join(outputDir, "includes"))
+	os.RemoveAll(filepath.Join(outputDir, "build"))
+	os.Remove(filepath.Join(outputDir, "manifest.json"))
+
 	os.MkdirAll(filepath.Join(outputDir, "openapi-spec"), 0700)
 	os.MkdirAll(filepath.Join(outputDir, "static_includes"), 0700)
 	os.MkdirAll(filepath.Join(outputDir, "examples"), 0700)
@@ -99,17 +110,35 @@ func RunDocs(cmd *cobra.Command, args []string) {
 	}
 
 	if generateConfig {
+		// Regenerate the config.yaml with the table of contents
+		os.Remove(filepath.Join(outputDir, "config.yaml"))
 		CodeGenerator{}.Execute(wd)
 	}
 
-	// Run the docker command to build the docs
-	c := exec.Command("docker", "run",
-		"-v", fmt.Sprintf("%s:%s", filepath.Join(wd), "/host/repo"),
-		"-e", "DOMAIN="+util.GetDomain(),
-		"-e", "DIR="+filepath.Join("src", util.Repo),
-		"-e", "OUTPUT="+outputDir,
-		"gcr.io/kubebuilder/gendocs:alpha4",
-	)
+	// Make sure to generate the openapi
+	generatecmd.Codegenerators = []string{"openapi"}
+	generatecmd.RunGenerate(cmd, args)
+
+	// Create the go program to create the swagger.json by serializing the openapi go struct
+	cr := util.GetCopyright(copyright)
+	doSwaggerGen(wd, swaggerGenTemplateArgs{
+		cr,
+		util.Repo,
+	})
+	defer func() {
+		if cleanup {
+			os.RemoveAll(filepath.Join(wd, filepath.Join("pkg", "generated")))
+			os.RemoveAll(filepath.Join(wd, outputDir, "includes"))
+			os.RemoveAll(filepath.Join(wd, outputDir, "manifest.json"))
+			os.RemoveAll(filepath.Join(wd, outputDir, "build", "documents"))
+			os.RemoveAll(filepath.Join(wd, outputDir, "build", "documents"))
+			os.RemoveAll(filepath.Join(wd, outputDir, "build", "runbrodocs.sh"))
+			os.RemoveAll(filepath.Join(wd, outputDir, "build", "node_modules", "marked", "Makefile"))
+		}
+	}()
+
+	// Run the go program to write the swagger.json output to a file
+	c := exec.Command("go", "run", filepath.Join(openapipkg, "cmd", "main.go"))
 	if verbose {
 		log.Println(strings.Join(c.Args, " "))
 		c.Stderr = os.Stderr
@@ -119,6 +148,11 @@ func RunDocs(cmd *cobra.Command, args []string) {
 	if err != nil {
 		log.Fatalf("error: %v\n", err)
 	}
+
+	// Call the apidocs code generator to create the markdown files that will be converted into
+	// html
+	generatecmd.Codegenerators = []string{"apidocs"}
+	generatecmd.RunGenerate(cmd, args)
 
 	// Run the docker command to build the docs
 	c = exec.Command("docker", "run",
@@ -138,16 +172,32 @@ func RunDocs(cmd *cobra.Command, args []string) {
 		log.Fatalf("error: %v\n", err)
 	}
 
-	// Cleanup intermediate files
-	if cleanup {
-		os.RemoveAll(filepath.Join(wd, outputDir, "includes"))
-		os.RemoveAll(filepath.Join(wd, outputDir, "manifest.json"))
-		os.RemoveAll(filepath.Join(wd, outputDir, "openapi-spec"))
-		os.RemoveAll(filepath.Join(wd, outputDir, "build", "documents"))
-		os.RemoveAll(filepath.Join(wd, outputDir, "build", "documents"))
-		os.RemoveAll(filepath.Join(wd, outputDir, "build", "runbrodocs.sh"))
-		os.RemoveAll(filepath.Join(wd, outputDir, "build", "node_modules", "marked", "Makefile"))
-	}
-
 	fmt.Printf("Reference docs written to %s\n", filepath.Join(outputDir, "build", "index.html"))
 }
+
+// Scaffolding file for writing the openapi generated structs to a swagger.json file
+type swaggerGenTemplateArgs struct {
+	BoilerPlate string
+	Repo        string
+}
+
+// Create a go file that will take the generated openapi.go file and serialize the go structs into a swagger.json.
+func doSwaggerGen(dir string, args swaggerGenTemplateArgs) bool {
+	path := filepath.Join(dir, openapipkg, "cmd", "main.go")
+	return util.WriteIfNotFound(path, "swagger-template", swaggerGenTemplate, args)
+}
+
+var swaggerGenTemplate = `
+{{.BoilerPlate}}
+
+package main
+
+import (
+	"github.com/kubernetes-sigs/kubebuilder/pkg/docs"
+	"{{ .Repo }}/pkg/generated/openapi"
+)
+
+func main() {
+	docs.WriteOpenAPI(openapi.GetOpenAPIDefinitions)
+}
+`

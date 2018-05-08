@@ -33,16 +33,18 @@ import (
 
 var versionedAPIs []string
 var unversionedAPIs []string
-var codegenerators []string
+var Codegenerators []string
 var copyright string
 var generators = sets.String{}
 var vendorDir string
+var Docscopyright string
+var Docstitle string
 
 var generateCmd = &cobra.Command{
-	Use:   "generate",
+	Use:     "generate",
 	Aliases: []string{"generated"},
-	Short: "Run code generators.",
-	Long:  `Run code generators`,
+	Short:   "Run code generators.",
+	Long:    `Run code generators`,
 	Example: `# Run code generators.
 kubebuilder generate`,
 	Run: RunGenerate,
@@ -58,7 +60,9 @@ func AddGenerate(cmd *cobra.Command) {
 	generateCmd.Flags().StringVar(&copyright, "copyright", filepath.Join("hack", "boilerplate.go.txt"), "Location of copyright boilerplate file.")
 	generateCmd.Flags().StringVar(&vendorDir, "vendor-dir", "", "Location of directory containing vendor files.")
 	generateCmd.Flags().StringArrayVar(&versionedAPIs, "api-versions", []string{}, "API version to generate code for.  Can be specified multiple times.  e.g. --api-versions foo/v1beta1 --api-versions bar/v1  defaults to all versions found under directories pkg/apis/<group>/<version>")
-	generateCmd.Flags().StringArrayVar(&codegenerators, "generator", []string{}, "list of generators to run.  e.g. --generator kubebuilder --generator conversion Valid values: [kubebuilder,client]")
+	generateCmd.Flags().StringArrayVar(&Codegenerators, "generator", []string{}, "list of generators to run.  e.g. --generator kubebuilder --generator conversion Valid values: [kubebuilder,client,openapi]")
+	generateCmd.Flags().StringVar(&Docscopyright, "docs-copyright", "<a href=\"https://github.com/kubernetes/kubernetes\">Copyright 2018 The Kubernetes Authors.</a>", "html for the copyright text on the docs")
+	generateCmd.Flags().StringVar(&Docstitle, "docs-title", "API Reference", "title of the docs page")
 	generateCmd.AddCommand(generateCleanCmd)
 }
 
@@ -94,7 +98,7 @@ func doGen(g string) bool {
 func RunGenerate(cmd *cobra.Command, args []string) {
 	initApis()
 
-	for _, g := range codegenerators {
+	for _, g := range Codegenerators {
 		generators.Insert(strings.Replace(g, "-gen", "", -1))
 	}
 
@@ -164,7 +168,7 @@ func RunGenerate(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	if generators.Has("openapi-gen") {
+	if generators.Has("openapi") {
 		apis := []string{
 			"k8s.io/apimachinery/pkg/apis/meta/v1",
 			"k8s.io/apimachinery/pkg/api/resource",
@@ -191,12 +195,26 @@ func RunGenerate(cmd *cobra.Command, args []string) {
 				"-o", util.GoSrc,
 				"--go-header-file", copyright,
 				"-i", strings.Join(apis, ","),
-				"--output-package", filepath.Join(util.Repo, "pkg", "openapi"))...,
+				"--output-package", filepath.Join(util.Repo, "pkg", "generated", "openapi"))...,
 		)
 		glog.V(4).Infof("%s\n", strings.Join(c.Args, " "))
 		out, err := c.CombinedOutput()
 		if err != nil {
 			glog.Fatalf("failed to run openapi-gen %s %v", out, err)
+		}
+	}
+
+	// Generate reference documentation
+	if generators.Has("apidocs") {
+		c := exec.Command(filepath.Join(root, "gen-apidocs"),
+			"--copyright", Docscopyright,
+			"--title", Docstitle,
+			"--config-dir", "docs/reference/",
+		)
+		glog.V(4).Infof("%s\n", strings.Join(c.Args, " "))
+		out, err := c.CombinedOutput()
+		if err != nil {
+			glog.Fatalf("failed to run gen-apidocs %s %v", out, err)
 		}
 	}
 
