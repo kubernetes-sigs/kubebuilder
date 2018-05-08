@@ -74,7 +74,6 @@ rc=0
 tmp_root=/tmp
 
 kb_root_dir=$tmp_root/kubebuilder
-kb_vendor_dir=$tmp_root/vendor
 kb_orig=$(pwd)
 
 # Skip fetching and untaring the tools by setting the SKIP_FETCH_TOOLS variable
@@ -125,19 +124,6 @@ function build_kb {
   fi
 
   go build -o $tmp_root/kubebuilder/bin/kubebuilder-gen ./cmd/kubebuilder-gen
-}
-
-function prepare_vendor_deps {
-  header_text "preparing vendor dependencies"
-  # TODO(droot): clean up this function
-  rm -rf $kb_vendor_dir && rm -f $tmp_root/Gopkg.toml && rm -f $tmp_root/Gopkg.lock
-  mkdir -p $kb_vendor_dir/github.com/kubernetes-sigs/kubebuilder/pkg/ || echo ""
-  cp -r pkg/* $kb_vendor_dir/github.com/kubernetes-sigs/kubebuilder/pkg/
-  cp LICENSE $kb_vendor_dir/github.com/kubernetes-sigs/kubebuilder/LICENSE
-  cp Gopkg.toml Gopkg.lock $tmp_root/
-  cp -a vendor/* $kb_vendor_dir/
-  cd $tmp_root 
-  tar -czf $kb_root_dir/bin/vendor.tar.gz vendor/ Gopkg.lock  Gopkg.toml
 }
 
 function prepare_testdir_under_gopath {
@@ -387,7 +373,7 @@ metadata:
   creationTimestamp: null
   labels:
     api: ""
-    kubebuilder.k8s.io: unknown
+    kubebuilder.k8s.io: $INJECT_KB_VERSION
   name: ants.ant.sample.kubernetes.io
 spec:
   group: ant.sample.kubernetes.io
@@ -422,7 +408,7 @@ metadata:
   creationTimestamp: null
   labels:
     api: ""
-    kubebuilder.k8s.io: unknown
+    kubebuilder.k8s.io: $INJECT_KB_VERSION
   name: bees.insect.sample.kubernetes.io
 spec:
   group: insect.sample.kubernetes.io
@@ -460,7 +446,7 @@ metadata:
   creationTimestamp: null
   labels:
     api: ""
-    kubebuilder.k8s.io: unknown
+    kubebuilder.k8s.io: $INJECT_KB_VERSION
   name: wasps.insect.sample.kubernetes.io
 spec:
   group: insect.sample.kubernetes.io
@@ -519,14 +505,9 @@ function test_docs {
 prepare_staging_dir
 fetch_tools
 build_kb
-prepare_vendor_deps
 prepare_testdir_under_gopath
 
 generate_crd_resources
 test_docs
-test_generated_controller
-run_dep_ensure
-# Run controller tests after running dep ensure because we want ensure code
-# compiles and tests pass after user ran dep ensure on the generated project.
 test_generated_controller
 exit $rc
