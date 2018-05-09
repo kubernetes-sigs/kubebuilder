@@ -8,7 +8,8 @@ This book is being actively developed.
 Kubernete APIs require boilerplate code that is not shown here and is managed by kubebuilder.
 
 Project structure may be created by running `kubebuilder init` and then creating a
-new API with `kubebuilder create resource`. More on this topic in *Project Creation and Structure*
+new API with `kubebuilder create resource`. More on this topic in
+[Project Creation and Structure](../basics/project_creation_and_structure.md) 
 {% endpanel %}
 
 This chapter shows an abridged Kubebuilder project for a simple API.
@@ -25,7 +26,11 @@ Kubernetes APIs have 3 components.  These components live in separate go package
 This is a Resource definition.  It is a go struct containing the API schema that
 implicitly defines CRUD endpoints for the Resource.
 
+For a more information on Resources see [What is a Resource](../basics/what_is_a_resource.md).
+
 While it is not shown here, most Resources will split their fields in into a Spec and a Status field.
+
+For a more complete example see [Simple Resource Example](../basics/simple_resource.md) 
 
 {% sample lang="go" %}
 ```go
@@ -52,7 +57,10 @@ mapped to the key of a Pancake object.  This will trigger a full reconcile of
 the Pancake object, which will in turn read related cluster state, including the object the
 original event was for.
 
-The code shown here has been abridged; for a more complete example see *Simple Controller Example*.
+For a more information on Controllers see [What is a Controller](../basics/what_is_a_controller.md).
+
+The code shown here has been abridged; for a more complete example see
+[Simple Controller Example](../basics/simple_controller.md)
 
 {% sample lang="go" %}
 ```go

@@ -80,6 +80,9 @@ $ kubebuilder init --domain k8s.io
 
 Create the *_types.go file and controller.go files.
 
+For more on resources and controllers see [What Is A Resource](../basics/what_is_a_resource.md) 
+and [What Is A Controller](../basics/what_is_a_controller.md) 
+
 {% sample lang="bash" %}
 ```bash
 $ kubebuilder create resource --group mygroup --version v1beta1 --kind MyKind

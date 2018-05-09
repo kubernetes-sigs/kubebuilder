@@ -15,6 +15,9 @@ is created with `kubebuilder create resource`, a test file will be created to st
 
 Update the test to include validation you add to your resource.
 
+For more on Resources see [What Is A Resource](../basics/what_is_a_resource.md) 
+
+
 #### Controller Tests
 
 The controller tests are created under `pkg/controller/<kind>/controller_test.go`.  When a resource
@@ -23,6 +26,8 @@ and reconcile objects.  The default test will create a new object and verify tha
 Reconcile function is called.
 
 Update the test to verify the business logic of your controller.
+
+For more on Controllers see [What Is A Controller](../basics/what_is_a_controller.md) 
 
 {% method %}
 ## Run the tests
