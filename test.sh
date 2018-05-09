@@ -212,6 +212,121 @@ EOF
   diff crd.yaml expected.yaml
 
   kubebuilder create resource --group insect --version v1beta1 --kind Wasp
+  kubebuilder create resource --group ant --version v1beta1 --kind Ant
+  kubebuilder create config --crds --output crd.yaml
+
+  # Check for ordering of generated YAML
+  # TODO: make this a more concise test in a follow-up
+  cat << EOF > expected.yaml
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  labels:
+    api: ""
+    kubebuilder.k8s.io: unknown
+  name: ants.ant.sample.kubernetes.io
+spec:
+  group: ant.sample.kubernetes.io
+  names:
+    kind: Ant
+    plural: ants
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          type: string
+        kind:
+          type: string
+        metadata:
+          type: object
+        spec:
+          type: object
+        status:
+          type: object
+      type: object
+  version: v1beta1
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: null
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  labels:
+    api: ""
+    kubebuilder.k8s.io: unknown
+  name: bees.insect.sample.kubernetes.io
+spec:
+  group: insect.sample.kubernetes.io
+  names:
+    categories:
+    - foo
+    - bar
+    kind: Bee
+    plural: bees
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          type: string
+        kind:
+          type: string
+        metadata:
+          type: object
+        spec:
+          type: object
+        status:
+          type: object
+      type: object
+  version: v1beta1
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: null
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  labels:
+    api: ""
+    kubebuilder.k8s.io: unknown
+  name: wasps.insect.sample.kubernetes.io
+spec:
+  group: insect.sample.kubernetes.io
+  names:
+    kind: Wasp
+    plural: wasps
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          type: string
+        kind:
+          type: string
+        metadata:
+          type: object
+        spec:
+          type: object
+        status:
+          type: object
+      type: object
+  version: v1beta1
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: null
+EOF
+  diff crd.yaml expected.yaml
 }
 
 function test_generated_controller {
