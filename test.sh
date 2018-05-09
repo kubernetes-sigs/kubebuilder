@@ -40,7 +40,7 @@ cd "$base_dir" || {
   exit 1
 }
 
-k8s_version=1.10
+k8s_version=1.10.1
 goarch=amd64
 goos="unknown"
 
@@ -75,6 +75,7 @@ tmp_root=/tmp
 
 kb_root_dir=$tmp_root/kubebuilder
 kb_vendor_dir=$tmp_root/vendor
+kb_orig=$(pwd)
 
 # Skip fetching and untaring the tools by setting the SKIP_FETCH_TOOLS variable
 # in your environment to any value:
@@ -160,10 +161,12 @@ function generate_crd_resources {
   kubebuilder create resource --group insect --version v1beta1 --kind Bee
 
   header_text "editing generated files to simulate a user"
-  sed -i pkg/apis/insect/v1beta1/bee_types.go -e "s|type Bee struct|// +kubebuilder:categories=foo,bar\ntype Bee struct|"
+  sed -i -e "s|type Bee struct|// +kubebuilder:categories=foo,bar\ntype Bee struct|" pkg/apis/insect/v1beta1/bee_types.go
+  sed -i -e "s|type BeeController struct {|// +kubebuilder:rbac:groups="",resources=pods,verbs=get;watch;list\ntype BeeController struct {|" pkg/controller/bee/controller.go
 
   header_text "generating and testing CRD definition"
   kubebuilder create config --crds --output crd.yaml
+  kubebuilder create config --controller-image myimage:v1 --name myextensionname --output install.yaml
 
   # Test for the expected generated CRD definition
   #
@@ -210,6 +213,166 @@ status:
   conditions: null
 EOF
   diff crd.yaml expected.yaml
+
+    cat << EOF > expected.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  creationTimestamp: null
+  labels:
+    api: myextensionname
+    kubebuilder.k8s.io: $INJECT_KB_VERSION
+  name: myextensionname-system
+spec: {}
+status: {}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  labels:
+    api: myextensionname
+    kubebuilder.k8s.io: $INJECT_KB_VERSION
+  name: myextensionname-role
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+  - watch
+  - list
+- apiGroups:
+  - insect.sample.kubernetes.io
+  resources:
+  - '*'
+  verbs:
+  - '*'
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  creationTimestamp: null
+  labels:
+    api: myextensionname
+    kubebuilder.k8s.io: $INJECT_KB_VERSION
+  name: myextensionname-rolebinding
+  namespace: myextensionname-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: myextensionname-role
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: myextensionname-system
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  labels:
+    api: myextensionname
+    kubebuilder.k8s.io: $INJECT_KB_VERSION
+  name: bees.insect.sample.kubernetes.io
+spec:
+  group: insect.sample.kubernetes.io
+  names:
+    categories:
+    - foo
+    - bar
+    kind: Bee
+    plural: bees
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          type: string
+        kind:
+          type: string
+        metadata:
+          type: object
+        spec:
+          type: object
+        status:
+          type: object
+      type: object
+  version: v1beta1
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: null
+---
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    api: myextensionname
+    control-plane: controller-manager
+    kubebuilder.k8s.io: $INJECT_KB_VERSION
+  name: myextensionname-controller-manager-service
+  namespace: myextensionname-system
+spec:
+  clusterIP: None
+  selector:
+    api: myextensionname
+    control-plane: controller-manager
+    kubebuilder.k8s.io: $INJECT_KB_VERSION
+status:
+  loadBalancer: {}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  creationTimestamp: null
+  labels:
+    api: myextensionname
+    control-plane: controller-manager
+    kubebuilder.k8s.io: $INJECT_KB_VERSION
+  name: myextensionname-controller-manager
+  namespace: myextensionname-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      api: myextensionname
+      control-plane: controller-manager
+      kubebuilder.k8s.io: $INJECT_KB_VERSION
+  serviceName: myextensionname-controller-manager-service
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        api: myextensionname
+        control-plane: controller-manager
+        kubebuilder.k8s.io: $INJECT_KB_VERSION
+    spec:
+      containers:
+      - args:
+        - --install-crds=false
+        command:
+        - /root/controller-manager
+        image: myimage:v1
+        name: controller-manager
+        resources:
+          limits:
+            cpu: 100m
+            memory: 30Mi
+          requests:
+            cpu: 100m
+            memory: 20Mi
+      terminationGracePeriodSeconds: 10
+  updateStrategy: {}
+status:
+  replicas: 0
+
+EOF
+  diff -B install.yaml expected.yaml
+
 
   kubebuilder create resource --group insect --version v1beta1 --kind Wasp
   kubebuilder create resource --group ant --version v1beta1 --kind Ant
@@ -345,6 +508,14 @@ function run_dep_ensure {
  dep ensure
 }
 
+function test_docs {
+  header_text "building docs"
+  kubebuilder docs --docs-copyright "Hello" --title "World" --cleanup=false --brodocs=false
+  diff docs/reference/includes $kb_orig/test/docs/expected/includes
+  diff docs/reference/manifest.json $kb_orig/test/docs/expected/manifest.json
+  diff docs/reference/config.yaml $kb_orig/test/docs/expected/config.yaml
+}
+
 prepare_staging_dir
 fetch_tools
 build_kb
@@ -352,6 +523,7 @@ prepare_vendor_deps
 prepare_testdir_under_gopath
 
 generate_crd_resources
+test_docs
 test_generated_controller
 run_dep_ensure
 # Run controller tests after running dep ensure because we want ensure code

@@ -61,6 +61,7 @@ var generateConfig bool
 var cleanup, verbose bool
 var outputDir string
 var copyright string
+var brodocs bool
 
 func AddDocs(cmd *cobra.Command) {
 	docsCmd.Flags().BoolVar(&cleanup, "cleanup", true, "If true, cleanup intermediary files")
@@ -68,6 +69,7 @@ func AddDocs(cmd *cobra.Command) {
 	docsCmd.Flags().BoolVar(&generateConfig, "generate-config", true, "If true, generate the docs/reference/config.yaml.")
 	docsCmd.Flags().StringVar(&outputDir, "output-dir", filepath.Join("docs", "reference"), "Build docs into this directory")
 	docsCmd.Flags().StringVar(&copyright, "copyright", filepath.Join("hack", "boilerplate.go.txt"), "Location of copyright boilerplate file.")
+	docsCmd.Flags().BoolVar(&brodocs, "brodocs", true, "Run brodocs to generate html.")
 	docsCmd.Flags().StringVar(&generatecmd.Docscopyright, "docs-copyright", "<a href=\"https://github.com/kubernetes/kubernetes\">Copyright 2018 The Kubernetes Authors.</a>", "html for the copyright text on the docs")
 	docsCmd.Flags().StringVar(&generatecmd.Docstitle, "title", "API Reference", "title of the docs page")
 	cmd.AddCommand(docsCmd)
@@ -154,25 +156,26 @@ func RunDocs(cmd *cobra.Command, args []string) {
 	generatecmd.Codegenerators = []string{"apidocs"}
 	generatecmd.RunGenerate(cmd, args)
 
-	// Run the docker command to build the docs
-	c = exec.Command("docker", "run",
-		"-v", fmt.Sprintf("%s:%s", filepath.Join(wd, outputDir, "includes"), "/source"),
-		"-v", fmt.Sprintf("%s:%s", filepath.Join(wd, outputDir, "build"), "/build"),
-		"-v", fmt.Sprintf("%s:%s", filepath.Join(wd, outputDir, "build"), "/build"),
-		"-v", fmt.Sprintf("%s:%s", filepath.Join(wd, outputDir), "/manifest"),
-		"gcr.io/kubebuilder/brodocs",
-	)
-	if verbose {
-		log.Println(strings.Join(c.Args, " "))
-		c.Stderr = os.Stderr
-		c.Stdout = os.Stdout
+	if brodocs {
+		// Run the docker command to build the docs
+		c = exec.Command("docker", "run",
+			"-v", fmt.Sprintf("%s:%s", filepath.Join(wd, outputDir, "includes"), "/source"),
+			"-v", fmt.Sprintf("%s:%s", filepath.Join(wd, outputDir, "build"), "/build"),
+			"-v", fmt.Sprintf("%s:%s", filepath.Join(wd, outputDir, "build"), "/build"),
+			"-v", fmt.Sprintf("%s:%s", filepath.Join(wd, outputDir), "/manifest"),
+			"gcr.io/kubebuilder/brodocs",
+		)
+		if verbose {
+			log.Println(strings.Join(c.Args, " "))
+			c.Stderr = os.Stderr
+			c.Stdout = os.Stdout
+		}
+		err = c.Run()
+		if err != nil {
+			log.Fatalf("error: %v\n", err)
+		}
+		fmt.Printf("Reference docs written to %s\n", filepath.Join(outputDir, "build", "index.html"))
 	}
-	err = c.Run()
-	if err != nil {
-		log.Fatalf("error: %v\n", err)
-	}
-
-	fmt.Printf("Reference docs written to %s\n", filepath.Join(outputDir, "build", "index.html"))
 }
 
 // Scaffolding file for writing the openapi generated structs to a swagger.json file
