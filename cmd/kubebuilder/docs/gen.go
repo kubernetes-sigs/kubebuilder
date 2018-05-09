@@ -2,6 +2,7 @@ package docs
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -9,7 +10,6 @@ import (
 	"github.com/kubernetes-sigs/kubebuilder/cmd/internal/codegen/parse"
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/util"
 	"k8s.io/gengo/args"
-	"os"
 )
 
 // CodeGenerator generates code for Kubernetes resources and controllers
@@ -36,7 +36,13 @@ func (g CodeGenerator) Execute(dir string) error {
 	path := filepath.Join(dir, outputDir, "config.yaml")
 
 	args := ConfigArgs{}
-	for group, kindversion := range p.ByGroupKindVersion {
+	groups := []string{}
+	for group, _ := range p.ByGroupKindVersion {
+		groups = append(groups, group)
+	}
+	sort.Strings(groups)
+	for _, group := range groups {
+		kindversion := p.ByGroupKindVersion[group]
 		args.Groups = append(args.Groups, strings.Title(group))
 		c := Category{
 			Name:    strings.Title(group),

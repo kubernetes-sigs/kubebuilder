@@ -12,6 +12,7 @@ ObjectMeta is metadata that all persisted resources must have, which includes al
 Appears In:
 
 <ul> 
+<li><a href="#ant-v1beta1">Ant v1beta1</a></li>
 <li><a href="#bee-v1beta1">Bee v1beta1</a></li>
 <li><a href="#wasp-v1beta1">Wasp v1beta1</a></li>
 </ul></aside>
