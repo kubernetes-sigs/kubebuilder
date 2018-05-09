@@ -1,0 +1,13 @@
+example_location: "examples"
+api_groups: 
+  - "Insect"
+resource_categories: 
+- name: "Insect"
+  include: "insect"
+  resources: 
+  - name: "Bee"
+    version: "v1beta1"
+    group: "insect"
+  - name: "Wasp"
+    version: "v1beta1"
+    group: "insect"

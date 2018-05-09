@@ -40,7 +40,7 @@ cd "$base_dir" || {
   exit 1
 }
 
-k8s_version=1.10
+k8s_version=1.10.1
 goarch=amd64
 goos="unknown"
 
@@ -75,6 +75,7 @@ tmp_root=/tmp
 
 kb_root_dir=$tmp_root/kubebuilder
 kb_vendor_dir=$tmp_root/vendor
+kb_orig=$(pwd)
 
 # Skip fetching and untaring the tools by setting the SKIP_FETCH_TOOLS variable
 # in your environment to any value:
@@ -160,7 +161,7 @@ function generate_crd_resources {
   kubebuilder create resource --group insect --version v1beta1 --kind Bee
 
   header_text "editing generated files to simulate a user"
-  sed -i pkg/apis/insect/v1beta1/bee_types.go -e "s|type Bee struct|// +kubebuilder:categories=foo,bar\ntype Bee struct|"
+  sed -i -e "s|type Bee struct|// +kubebuilder:categories=foo,bar\ntype Bee struct|" pkg/apis/insect/v1beta1/bee_types.go
 
   header_text "generating and testing CRD definition"
   kubebuilder create config --crds --output crd.yaml
@@ -345,6 +346,14 @@ function run_dep_ensure {
  dep ensure
 }
 
+function test_docs {
+  header_text "building docs"
+  kubebuilder docs --docs-copyright "Hello" --title "World" --cleanup=false --brodocs=false
+  diff docs/reference/includes $kb_orig/test/docs/expected/includes
+  diff docs/reference/manifest.json $kb_orig/test/docs/expected/manifest.json
+  diff docs/reference/config.yaml $kb_orig/test/docs/expected/config.yaml
+}
+
 prepare_staging_dir
 fetch_tools
 build_kb
@@ -352,6 +361,7 @@ prepare_vendor_deps
 prepare_testdir_under_gopath
 
 generate_crd_resources
+test_docs
 test_generated_controller
 run_dep_ensure
 # Run controller tests after running dep ensure because we want ensure code
