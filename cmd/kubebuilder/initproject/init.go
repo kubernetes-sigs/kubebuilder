@@ -94,6 +94,7 @@ func runInitRepo(cmd *cobra.Command, args []string) {
 	RunVendorInstall(nil, nil)
 
 	createBoilerplate()
+	RunVendorInstall(nil, nil)
 	fmt.Printf("Next: Define a resource with:\n" +
 		"$ kubebuilder create resource\n")
 }
@@ -107,8 +108,8 @@ func execute(path, templateName, templateValue string, data interface{}) {
 }
 
 type templateArgs struct {
-	BoilerPlate string
-	Repo        string
+	BoilerPlate    string
+	Repo           string
 	ControllerOnly bool
 }
 
