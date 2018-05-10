@@ -17,15 +17,16 @@ limitations under the License.
 package parse
 
 import (
+	"bufio"
 	"go/build"
+	"log"
+	"os"
 	"path/filepath"
 	"strings"
-	"os"
-	"bufio"
 
 	"github.com/golang/glog"
-
 	"github.com/kubernetes-sigs/kubebuilder/cmd/internal/codegen"
+	"github.com/markbates/inflect"
 	"github.com/pkg/errors"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -68,9 +69,75 @@ func NewAPIs(context *generator.Context, arguments *args.GeneratorArgs) *APIs {
 	b.parseControllers()
 	b.parseRBAC()
 	b.parseInformers()
+	b.verifyRBACAnnotations()
 	b.parseAPIs()
 	b.parseCRDs()
 	return b
+}
+
+// verifyRBACAnnotations verifies that there are corresponding RBAC annotations for
+// each informer annotation.
+// e.g. if there is an // +kubebuilder:informer annotation for Pods, then there
+// should also be a // +kubebuilder:rbac annotation for Pods
+func (b *APIs) verifyRBACAnnotations() {
+	rs := inflect.NewDefaultRuleset()
+
+	// For each informer, look for the RBAC annotation
+	for gvk := range b.Informers {
+		found := false
+
+		// Search all RBAC rules for one that matches the informer group and resource
+		for _, rule := range b.Rules {
+
+			// Check if the group matches the informer group
+			groupFound := false
+			for _, g := range rule.APIGroups {
+				// RBAC has the full group with domain, whereas informers do not.  Strip the domain
+				// from the group before comparing.
+				parts := strings.Split(g, ".")
+				group := parts[len(parts)-1]
+
+				// If the RBAC group is wildcard or matches, it is a match
+				if g == "*" || group == gvk.Group {
+					groupFound = true
+					break
+				}
+				// Edge case where "core" and "" are equivalent
+				if (group == "core" || group == "") && (gvk.Group == "core" || gvk.Group == "") {
+					groupFound = true
+					break
+				}
+			}
+			if !groupFound {
+				continue
+			}
+
+			// Check if the resource matches the informer resource
+			resourceFound := false
+			for _, k := range rule.Resources {
+				// The resource name is the lower-plural of the Kind
+				resource := rs.Pluralize(strings.ToLower(gvk.Kind))
+
+				// If the RBAC resource is a wildcard or matches the informer resource, it is a match
+				if k == "*" || k == resource {
+					resourceFound = true
+					break
+				}
+			}
+			if !resourceFound {
+				continue
+			}
+
+			// Found a matching RBAC rule
+			found = true
+			break
+		}
+		if !found {
+			log.Fatalf("Missing rbac rule for %s.%s.  Add with // +kubebuilder:rbac:groups=%s,"+
+				"resources=%s,verbs=get;list;watch", gvk.Group, gvk.Kind, gvk.Group,
+				inflect.NewDefaultRuleset().Pluralize(strings.ToLower(gvk.Kind)))
+		}
+	}
 }
 
 // parseGroupNames initializes b.GroupNames with the set of all groups
@@ -129,10 +196,10 @@ func (b *APIs) parseDomain() {
 
 func parseDomainFromFiles(paths []string) string {
 	var domain string
-    for _, path := range paths {
-    	if strings.HasSuffix(path, "pkg/apis") {
-    		filePath := strings.Join([]string{build.Default.GOPATH, "src", path, "doc.go"}, "/")
-            lines := []string{}
+	for _, path := range paths {
+		if strings.HasSuffix(path, "pkg/apis") {
+			filePath := strings.Join([]string{build.Default.GOPATH, "src", path, "doc.go"}, "/")
+			lines := []string{}
 
 			file, err := os.Open(filePath)
 			if err != nil {

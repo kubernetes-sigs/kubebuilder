@@ -72,7 +72,7 @@ func parseRBACTag(tag string) rbacv1.PolicyRule {
 					normalized = append(normalized, v)
 				}
 			}
-			result.APIGroups = values
+			result.APIGroups = normalized
 		case "resources":
 			result.Resources = values
 		case "verbs":
