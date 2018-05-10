@@ -489,9 +489,9 @@ function test_generated_controller {
   go test -v ./pkg/...
 }
 
-function run_dep_ensure {
- header_text "running dep ensure"
- dep ensure
+function test_vendor_update {
+ header_text "performing vendor update"
+ kubebuilder update vendor
 }
 
 function test_docs {
@@ -509,5 +509,8 @@ prepare_testdir_under_gopath
 
 generate_crd_resources
 test_docs
+test_generated_controller
+test_vendor_update
+# re-running controller tests post vendor update
 test_generated_controller
 exit $rc
