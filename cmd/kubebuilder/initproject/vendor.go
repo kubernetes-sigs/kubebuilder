@@ -17,25 +17,27 @@ limitations under the License.
 package initproject
 
 import (
-	"archive/tar"
-	"compress/gzip"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
-	"path/filepath"
+	"os/exec"
 
 	"github.com/spf13/cobra"
 
+	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/util"
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/version"
+)
+
+const (
+	depManifestFile = "Gopkg.toml"
 )
 
 var vendorInstallCmd = &cobra.Command{
 	Use:   "dep",
-	Short: "Install Gopkg.toml, Gopkg.lock and vendor/.",
-	Long:  `Install Gopkg.toml, Gopkg.lock and vendor/.`,
-	Example: `# Bootstrap vendor/ from the src packaged with kubebuilder
-kubebuilder init dep
+	Short: "Install Gopkg.toml and update vendor dependencies.",
+	Long:  `Install Gopkg.toml and update vendor dependencies.`,
+	Example: `Update the vendor dependencies:
+kubebuilder update vendor
 `,
 	Run: RunVendorInstall,
 }
@@ -43,146 +45,63 @@ kubebuilder init dep
 var builderCommit string
 var Update bool
 
-// deleteOld delete all the versions for all packages it is going to untar
-func deleteOld() {
-	// Move up two directories from the location of the `kubebuilder`
-	// executable to find the `vendor` directory we package with our
-	// releases.
-	e, err := os.Executable()
-	if err != nil {
-		log.Fatal("unable to get directory of kubebuilder tools")
-	}
-
-	e = filepath.Dir(filepath.Dir(e))
-
-	// read the file
-	f := filepath.Join(e, "bin", "vendor.tar.gz")
-	fr, err := os.Open(f)
-	if err != nil {
-		log.Fatalf("failed to read vendor tar file %s %v", f, err)
-	}
-	defer fr.Close()
-
-	// setup gzip of tar
-	gr, err := gzip.NewReader(fr)
-	if err != nil {
-		log.Fatalf("failed to read vendor tar file %s %v", f, err)
-	}
-	defer gr.Close()
-
-	// setup tar reader
-	tr := tar.NewReader(gr)
-
-	for file, err := tr.Next(); err == nil; file, err = tr.Next() {
-		p := filepath.Join(".", file.Name)
-		// Delete existing directory first if upgrading
-		if filepath.Dir(p) != "." {
-			dir := filepath.Base(filepath.Dir(p))
-			parent := filepath.Base(filepath.Dir(filepath.Dir(p)))
-			gparent := filepath.Base(filepath.Dir(filepath.Dir(filepath.Dir(p))))
-
-			// Delete the directory if it is a repo or package in a repo
-			if dir != "vendor" && parent != "vendor" && !(gparent == "vendor" && parent == "github.com") {
-				os.RemoveAll(filepath.Dir(p))
-			}
-		}
-	}
-}
-
 func RunVendorInstall(cmd *cobra.Command, args []string) {
-	fmt.Printf("\t%s/\n", filepath.Join("vendor"))
-
-	// Delete old versions of the packages we manage before installing the new ones
+	if !depExists() {
+		log.Fatalf("Dep is not installed. Follow steps at: https://golang.github.io/dep/docs/installation.html")
+	}
+	var backupFilename string
 	if Update {
-		deleteOld()
-	}
-
-	// Get the executable directory
-	e, err := os.Executable()
-	if err != nil {
-		log.Fatal("unable to get directory of kubebuilder tools")
-	}
-	e = filepath.Dir(e)
-
-	// read the file
-	f := filepath.Join(e, "vendor.tar.gz")
-	fr, err := os.Open(f)
-	if err != nil {
-		log.Fatalf("failed to read vendor tar file %s %v", f, err)
-	}
-	defer fr.Close()
-
-	// setup gzip of tar
-	gr, err := gzip.NewReader(fr)
-	if err != nil {
-		log.Fatalf("failed to read vendor tar file %s %v", f, err)
-	}
-	defer gr.Close()
-
-	// setup tar reader
-	tr := tar.NewReader(gr)
-
-	for file, err := tr.Next(); err == nil; file, err = tr.Next() {
-		if file.FileInfo().IsDir() {
-			continue
+		backupFilename = fmt.Sprintf("%s.bkp", depManifestFile)
+		if err := os.Rename(depManifestFile, backupFilename); err != nil {
+			fmt.Printf("Error renaming existing Gopkg.toml file: %v \n", err)
+			return
 		}
-		p := filepath.Join(".", file.Name)
-		if Update && filepath.Dir(p) == "." {
-			continue
-		}
-
-		err := os.MkdirAll(filepath.Dir(p), 0700)
+	}
+	depTmplArgs := map[string]string{
+		"Version": version.GetVersion().KubeBuilderVersion,
+	}
+	util.Write(depManifestFile, "dep-manifest-file", depManifestTmpl, depTmplArgs)
+	if err := runDepEnsure(); err != nil {
+		fmt.Printf("Error running 'dep ensure': %v\n", err)
+		fmt.Printf("Previous Gopkg.toml file has been saved at '%s'\n", backupFilename)
+		return
+	}
+	if Update && backupFilename != "" {
+		err := os.Remove(backupFilename)
 		if err != nil {
-			log.Fatalf("Could not create directory %s: %v", filepath.Dir(p), err)
-		}
-		b, err := ioutil.ReadAll(tr)
-		if err != nil {
-			log.Fatalf("Could not read file %s: %v", file.Name, err)
-		}
-		err = ioutil.WriteFile(p, b, os.FileMode(file.Mode))
-		if err != nil {
-			log.Fatalf("Could not write file %s: %v", p, err)
+			fmt.Printf("Warning: failed to remove backup file: %s", backupFilename)
 		}
 	}
-
-	err = updateDepConfig()
-	if err != nil {
-		log.Fatalf("Could not update Gopkg.toml file: %v", err)
-	}
+	return
 }
 
-// updateDepConfig updates the Dep config Gopkg.toml to include Kubebuilder
-// project dependency. It uses the Kubebuilder version to determine whether
-// to include branch or version in the contraint stanza.
-func updateDepConfig() error {
-	var depConstraint string
-
-	kbVersion := version.GetVersion().KubeBuilderVersion
-	if kbVersion == "unknown" {
-		// KB is built from master branch
-		depConstraint = `
-[[constraint]]
-  branch = "master"
-  name = "github.com/kubernetes-sigs/kubebuilder"
-`
-	} else {
-		depConstraint = fmt.Sprintf(`
-[[constraint]]
-  version = "%s"
-  name = "github.com/kubernetes-sigs/kubebuilder"
-`, kbVersion)
-	}
-
-	f, err := os.OpenFile("Gopkg.toml", os.O_APPEND|os.O_WRONLY, 0644)
+func runDepEnsure() error {
+	fmt.Printf("Updating vendor dependencies. Running 'dep ensure'....\n")
+	cmd := exec.Command("dep", "ensure")
+	o, err := cmd.CombinedOutput()
 	if err != nil {
+		fmt.Printf("Failed to run 'dep ensure': %s\n", string(o))
 		return err
 	}
-
-	defer f.Close()
-
-	if _, err = f.WriteString(depConstraint); err != nil {
-		return err
-	}
-
+	fmt.Printf("Updated vendor dependencies successfully.\n")
 	return nil
 }
+
+func depExists() bool {
+	_, err := exec.LookPath("dep")
+	return err == nil
+}
+
+var depManifestTmpl = fmt.Sprintf("%s\n%s", depManifestHeader, depManifestOverride)
+
+const depManifestHeader = `
+# Users add deps lines here
+
+[prune]
+  go-tests = true
+  #unused-packages = true
+
+# Note: Stanzas below are generated by Kubebuilder and may be rewritten when
+# upgrading kubebuilder versions.
+# DO NOT MODIFY BELOW THIS LINE.
+`

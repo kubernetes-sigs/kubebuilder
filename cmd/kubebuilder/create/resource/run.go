@@ -21,12 +21,13 @@ import (
 	"log"
 	"os"
 
+	"strings"
+
 	createutil "github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/create/util"
 	generatecmd "github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/generate"
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/util"
 	"github.com/markbates/inflect"
 	"github.com/spf13/cobra"
-	"strings"
 )
 
 var nonNamespacedKind bool

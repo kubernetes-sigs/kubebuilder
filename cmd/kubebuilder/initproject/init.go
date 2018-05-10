@@ -55,6 +55,9 @@ func runInitRepo(cmd *cobra.Command, args []string) {
 	if versionCmp(version, "go1.10") < 0 {
 		log.Fatalf("The go version is %v, must be 1.10+", version)
 	}
+	if !depExists() {
+		log.Fatalf("Dep is not installed. Follow steps at: https://golang.github.io/dep/docs/installation.html")
+	}
 
 	if len(domain) == 0 {
 		log.Fatal("Must specify --domain")
@@ -62,7 +65,6 @@ func runInitRepo(cmd *cobra.Command, args []string) {
 	cr := util.GetCopyright(copyright)
 
 	fmt.Printf("Initializing project structure...\n")
-	RunVendorInstall(nil, nil)
 	if bazel {
 		createBazelWorkspace()
 	}
@@ -87,6 +89,7 @@ func runInitRepo(cmd *cobra.Command, args []string) {
 	doInject(cr)
 	doArgs(cr)
 	//os.MkdirAll("bin", 0700)
+	RunVendorInstall(nil, nil)
 
 	createBoilerplate()
 	fmt.Printf("Next: Define a resource with:\n" +
