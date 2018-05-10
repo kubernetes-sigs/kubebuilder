@@ -82,7 +82,11 @@ func (m *ControllerManager) GetInformer(object metav1.Object) cache.SharedInform
 // GetInformerProvider returns the InformerProvider for the object type
 func (m *ControllerManager) GetInformerProvider(object metav1.Object) informers.InformerProvider {
 	m.once.Do(m.init)
-	return m.sharedInformersByResource.GetInformerProvider(object)
+	si := m.sharedInformersByResource.GetInformerProvider(object)
+	if si == nil {
+		warningMissingInformer(object)
+	}
+	return si
 }
 
 // GetInformerProvider returns the InformerProvider for the object type.
@@ -152,8 +156,8 @@ func warningMissingInformer(obj interface{}) {
 
 	// Create a helpful error message
 	msg := fmt.Sprintf("\nWARNING: %s\nWARNING: Informer for %s.%s.%s not registered!  "+
-		"Must register informer with a // +kubebuilder:informers:group=%s,version=%s,kind=%s annotation on the"+
-		"Controller struct.\n",
+		"Must register informer with a // +kubebuilder:informers:group=%s,version=%s,kind=%s annotation on the "+
+		"Controller struct and then run `kubebuilder generate`.\n",
 		provideControllerLine(), group, version, kind, group, version, kind)
 	fmt.Fprint(os.Stderr, msg)
 }
