@@ -13,7 +13,11 @@ directly in a web browser.
 
 {% panel style="info", title="Non-Kubebuilder Projects" %}
 Kubebuilder can also be used to generate API reference documentation for non-kubebuilder projects, as long as the
-resources are annotated with `// +kubebuilder:resource` the same as they are in kubebuilder projects.
+resources are annotated with `// +kubebuilder:resource:path=<resource-name>` the same as they are in kubebuilder
+projects.
+
+**Important**: The `// +kubebuilder:resource` annotation *must* appear directly above the go struct
+defining the resource.  No blank lines may appear between the annotation and the go struct.
 {% endpanel %}
 
 ## Creating Examples
