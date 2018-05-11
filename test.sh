@@ -522,7 +522,7 @@ function generate_coretype_controller {
     kubebuilder init repo --domain sample.kubernetes.io --controller-only
     kubebuilder create controller --group apps --version v1beta2 --kind Deployment --core-type
 
-    # Update the controller test
+  # Fill the required fileds of Deployment object so that the Deployment instance can be successfully created
     update_controller_test
 }
 
@@ -534,7 +534,7 @@ function generate_resource_with_coretype_controller {
   kubebuilder create resource --group ant --version v1beta1 --kind Ant
   kubebuilder create controller --group apps --version v1beta2 --kind Deployment --core-type
 
-  # Update the controller test
+  # Fill the required fileds of Deployment object so that the Deployment instance can be successfully created
   update_controller_test
 }
 

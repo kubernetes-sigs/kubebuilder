@@ -75,7 +75,6 @@ func RunCreateResource(cmd *cobra.Command, args []string) {
 
 	cr := util.GetCopyright(createutil.Copyright)
 
-
 	fmt.Printf("Creating API files for you to edit...\n")
 	createGroup(cr)
 	createVersion(cr)
@@ -115,8 +114,8 @@ func createResource(boilerplate string) {
 
 	if controller {
 		fmt.Printf("Creating controller ...\n")
-		controllerct.CoreType = false
-		controllerct.CreateController(boilerplate)
+		c := controllerct.ControllerArguments{CoreType: false}
+		c.CreateController(boilerplate)
 	}
 
 	fmt.Printf("Edit your sample resource instance...\n")

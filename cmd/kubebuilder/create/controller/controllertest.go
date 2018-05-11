@@ -52,14 +52,9 @@ import (
     "github.com/kubernetes-sigs/kubebuilder/pkg/test"
     "k8s.io/client-go/kubernetes"
     "k8s.io/client-go/rest"
-    {{if .CoreType}}
+    {{if not .CoreType}}"{{ .Repo }}/pkg/client/clientset/versioned"{{end}}
     "{{ .Repo }}/pkg/inject"
     "{{ .Repo }}/pkg/inject/args"
-    {{else}}
-    "{{ .Repo }}/pkg/client/clientset/versioned"
-    "{{ .Repo }}/pkg/inject"
-    "{{ .Repo }}/pkg/inject/args"
-    {{end}}
 )
 
 var (

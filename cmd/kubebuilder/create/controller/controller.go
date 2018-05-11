@@ -35,7 +35,7 @@ type controllerTemplateArgs struct {
 	Repo              string
 	PluralizedKind    string
 	NonNamespacedKind bool
-	CoreType bool
+	CoreType          bool
 }
 
 func doController(dir string, args controllerTemplateArgs) bool {

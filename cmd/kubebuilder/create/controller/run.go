@@ -29,51 +29,54 @@ import (
 	"strings"
 )
 
-var nonNamespacedKind bool
-var generate bool
-var CoreType bool
+type ControllerArguments struct {
+	nonNamespacedKind bool
+	generate          bool
+	CoreType          bool
+}
 
-var createControllerCmd = &cobra.Command{
-	Use:   "controller",
-	Short: "Creates a controller for an API group, version and resource",
-	Long: `Creates a controller for an API group, version and resource.
+func AddCreateController(cmd *cobra.Command) {
+	var c ControllerArguments
+
+	createControllerCmd := &cobra.Command{
+		Use:   "controller",
+		Short: "Creates a controller for an API group, version and resource",
+		Long: `Creates a controller for an API group, version and resource.
 
 Also creates:
 - controller reconcile function
 - tests for the controller
 `,
-	Example: `# Create a controller for resource "Bee" in the "insect" group with version "v1beta"
+		Example: `# Create a controller for resource "Bee" in the "insect" group with version "v1beta"
 kubebuilder create controller --group insect --version v1beta1 --kind Bee
 
 # Create a controller for k8s core type "Deployment" in the "apps" group with version "v1beta2"
 kubebuilder create controller --group apps --version v1beta2 --kind Deployment --core-type
 `,
-	Run: RunCreateController,
-}
-
-func AddCreateController(cmd *cobra.Command) {
+		Run: c.RunCreateController,
+	}
 	createutil.RegisterResourceFlags(createControllerCmd)
-	createControllerCmd.Flags().BoolVar(&nonNamespacedKind, "non-namespaced", false, "if set, the API kind will be non namespaced")
-	createControllerCmd.Flags().BoolVar(&generate, "generate", true, "generate controller code")
-	createControllerCmd.Flags().BoolVar(&CoreType, "core-type", false, "generate controller for core type")
+	createControllerCmd.Flags().BoolVar(&c.nonNamespacedKind, "non-namespaced", false, "if set, the API kind will be non namespaced")
+	createControllerCmd.Flags().BoolVar(&c.generate, "generate", true, "generate controller code")
+	createControllerCmd.Flags().BoolVar(&c.CoreType, "core-type", false, "generate controller for core type")
 	cmd.AddCommand(createControllerCmd)
 }
 
-func RunCreateController(cmd *cobra.Command, args []string) {
+func (c *ControllerArguments) RunCreateController(cmd *cobra.Command, args []string) {
 	if _, err := os.Stat("pkg"); err != nil {
 		log.Fatalf("could not find 'pkg' directory.  must run kubebuilder init before creating controller")
 	}
 
 	util.GetDomain()
-	createutil.ValidateResourceFlags()
+	c.Validate()
 
 	cr := util.GetCopyright(createutil.Copyright)
 
 	fmt.Printf("Creating controller ...\n")
-	CreateController(cr)
-	if generate {
+	c.CreateController(cr)
+	if c.generate {
 		fmt.Printf("Generating code for new controller... " +
-				"Regenerate after editing controller files by running `kubebuilder generate clean; kubebuilder generate`.\n")
+			"Regenerate after editing controller files by running `kubebuilder generate clean; kubebuilder generate`.\n")
 		generatecmd.RunGenerate(cmd, args)
 	}
 	fmt.Printf("Next: Run the controller and create an instance with:\n" +
@@ -82,7 +85,11 @@ func RunCreateController(cmd *cobra.Command, args []string) {
 		"$ kubectl apply -f hack/sample/" + strings.ToLower(createutil.KindName) + ".yaml\n")
 }
 
-func CreateController(boilerplate string) {
+func (c *ControllerArguments) Validate() {
+	createutil.ValidateResourceFlags()
+}
+
+func (c *ControllerArguments) CreateController(boilerplate string) {
 	args := controllerTemplateArgs{
 		boilerplate,
 		util.Domain,
@@ -92,8 +99,8 @@ func CreateController(boilerplate string) {
 		createutil.ResourceName,
 		util.Repo,
 		inflect.NewDefaultRuleset().Pluralize(createutil.KindName),
-		nonNamespacedKind,
-		CoreType,
+		c.nonNamespacedKind,
+		c.CoreType,
 	}
 
 	dir, err := os.Getwd()
