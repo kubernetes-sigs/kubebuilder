@@ -1,6 +1,7 @@
 # Building Kubernetes APIs with Kubebuilder
 
 * [Introduction](README.md)
+* [Quick Start](quick_start.md)
 
 ### Getting Started
 
@@ -25,3 +26,6 @@
 * Controller-Manager Fundamentals
   * [What is the Controller-Manager](basics/what_is_the_controller_manager.md)
   * [Simple Controller-Manager](basics/simple_controller_manager.md)
+
+### Reference Docs
+* [GoDoc Links](go_docs.md)
