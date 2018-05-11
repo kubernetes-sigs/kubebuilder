@@ -65,7 +65,7 @@ func Write(path, templateName, templateValue string, data interface{}) bool {
 		log.Fatalf("Failed to render template %s: %v", templateName, err)
 	}
 
-	trimmed := strings.TrimSpace(tmp.String())
+	trimmed := strings.TrimSpace(tmp.String()) + "\n"
 	WriteString(path, trimmed)
 
 	return true
