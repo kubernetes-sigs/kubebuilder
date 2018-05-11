@@ -17,6 +17,7 @@ limitations under the License.
 package util
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -50,10 +51,6 @@ func WriteIfNotFound(path, templateName, templateValue string, data interface{})
 }
 
 func Write(path, templateName, templateValue string, data interface{}) bool {
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		create(path)
-	}
-
 	t := template.Must(template.New(templateName).Funcs(
 		template.FuncMap{
 			"title":  strings.Title,
@@ -62,16 +59,14 @@ func Write(path, templateName, templateValue string, data interface{}) bool {
 		},
 	).Parse(templateValue))
 
-	f, err := os.OpenFile(path, os.O_WRONLY, 0)
+	var tmp bytes.Buffer
+	err := t.Execute(&tmp, data)
 	if err != nil {
-		log.Fatalf("Failed to create %s: %v", path, err)
+		log.Fatalf("Failed to render template %s: %v", templateName, err)
 	}
-	defer f.Close()
 
-	err = t.Execute(f, data)
-	if err != nil {
-		log.Fatalf("Failed to create %s: %v", path, err)
-	}
+	trimmed := strings.TrimSpace(tmp.String()) + "\n"
+	WriteString(path, trimmed)
 
 	return true
 }
