@@ -17,7 +17,9 @@ limitations under the License.
 package util
 
 import (
+	"bytes"
 	"fmt"
+	"go/format"
 	"io/ioutil"
 	"log"
 	"os"
@@ -50,10 +52,6 @@ func WriteIfNotFound(path, templateName, templateValue string, data interface{})
 }
 
 func Write(path, templateName, templateValue string, data interface{}) bool {
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		create(path)
-	}
-
 	t := template.Must(template.New(templateName).Funcs(
 		template.FuncMap{
 			"title":  strings.Title,
@@ -62,16 +60,21 @@ func Write(path, templateName, templateValue string, data interface{}) bool {
 		},
 	).Parse(templateValue))
 
-	f, err := os.OpenFile(path, os.O_WRONLY, 0)
+	var tmp bytes.Buffer
+	err := t.Execute(&tmp, data)
 	if err != nil {
-		log.Fatalf("Failed to create %s: %v", path, err)
+		log.Fatalf("Failed to render template %s: %v", templateName, err)
 	}
-	defer f.Close()
 
-	err = t.Execute(f, data)
-	if err != nil {
-		log.Fatalf("Failed to create %s: %v", path, err)
+	content := tmp.Bytes()
+	if filepath.Ext(path) == ".go" {
+		content, err = format.Source(content)
+		if err != nil {
+			log.Fatalf("Failed to format template %s: %v", templateName, err)
+		}
 	}
+
+	WriteString(path, string(content))
 
 	return true
 }
