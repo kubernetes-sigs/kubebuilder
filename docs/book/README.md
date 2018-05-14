@@ -2,7 +2,7 @@
 This book is being actively developed.
 {% endpanel %}
 
-# Introduction
+**Note:** Impatient readers head straight to [Quick Start](quick_start.md).
 
 ## Who is this for
 
@@ -58,12 +58,3 @@ The table of contents may be hidden using the hamburger icon at the left side of
 Some chapters have code snippets for multiple OS or Languages.  These chapters will display OS
 or Language selections at the right side of the top nav, which may be used to change the
 OS or Language of the examples shown.
-
-## About the Author
-
-Phillip Wittrock is a Senior Engineer at Google working on GKE and Kubernetes.
-Phillip is a member of the Kubernetes Steering Committee, and has lead the following
-Kubernetes Special Interest Groups: SIG cli, SIG release and SIG docs.
-
-Phillip’s hobbies include debating how kubectl is pronounced, talking about Kubernetes APIs
-at social events, and treating code like it is art.

@@ -12,8 +12,9 @@ This is a simple example of the Controller for the ContainerSet API shown in *Si
 
 > pkg/controller/containerset/controller.go
 
-{% method %}
 ## Setup
+
+{% method %}
 
 Code generation requires the following to be defined in controller.go:
  
@@ -110,6 +111,18 @@ func ProvideController(arguments args.InjectArgs) (
 ```
 {% endmethod %}
 
+{% panel style="warning", title="Adding Annotations For Watches And CRUD Operations" %}
+It is critical to add the `// +kubebuilder:informers` and `// +kubebuilder:rbac` annotations when
+adding watches or CRUD operations to your controller through either `GenericController.Watch*`
+or CRUD (e.g. `.Update`) operations.
+
+After updating the annotations, `kubebuilder generate` must be rerun to regenerated code, and
+`kubebuilder create config` must be run to regenerated installation yaml with the rbac rules.
+{% endpanel %}
+
+
+## Reconcile
+
 {% panel style="success", title="Level vs Edge" %}
 The Reconcile function does not differentiate between create, update or deletion events.
 Instead it simply reads the desired state defined in ContainerSet.Spec and compares it
@@ -117,7 +130,6 @@ to the observed state.
 {% endpanel %}
 
 {% method %}
-## Reconcile
 
 The business logic of the controller is implemented in the `Reconcile` function.  This function takes the *key* of a
 ContainerSet, allowing multiple Events to be batched together into a single Reconcile call.
