@@ -67,10 +67,11 @@ func RunAll(rargs run.RunArguments, iargs args.InjectArgs) error {
 }
 `
 
-func doArgs(boilerplate string) bool {
+func doArgs(boilerplate string, controllerOnly bool) bool {
 	args := templateArgs{
 		Repo:        util.Repo,
 		BoilerPlate: boilerplate,
+		ControllerOnly: controllerOnly,
 	}
 	path := filepath.Join("pkg", "inject", "args", "args.go")
 	fmt.Printf("\t%s\n", filepath.Join(
@@ -83,31 +84,34 @@ var argsControllerTemplate = `{{.BoilerPlate}}
 package args
 
 import (
-    "time"
+    {{ if not .ControllerOnly }}"time"{{ end }}
 
 	"github.com/kubernetes-sigs/kubebuilder/pkg/inject/args"
     "k8s.io/client-go/rest"
-
-    "{{.Repo}}/pkg/client/clientset/versioned"
-    "{{.Repo}}/pkg/client/informers/externalversions"
+    {{ if not .ControllerOnly }}
+    clientset "{{.Repo}}/pkg/client/clientset/versioned"
+    informer "{{.Repo}}/pkg/client/informers/externalversions"
+    {{ end }}
 )
 
 // InjectArgs are the arguments need to initialize controllers
 type InjectArgs struct {
     args.InjectArgs
-
-    Clientset *versioned.Clientset
-    Informers externalversions.SharedInformerFactory
+    {{ if not .ControllerOnly }}
+    Clientset *clientset.Clientset
+    Informers informer.SharedInformerFactory
+    {{ end }}
 }
 
 
 // CreateInjectArgs returns new controller args
 func CreateInjectArgs(config *rest.Config) InjectArgs {
-    cs := versioned.NewForConfigOrDie(config)
+    {{ if not .ControllerOnly }}cs := clientset.NewForConfigOrDie(config){{ end }}
     return InjectArgs{
         InjectArgs: args.CreateInjectArgs(config),
+        {{ if not .ControllerOnly }}
         Clientset: cs,
-        Informers: externalversions.NewSharedInformerFactory(cs, 2 * time.Minute),
+        Informers: informer.NewSharedInformerFactory(cs, 2 * time.Minute), {{ end }}
     }
 }
 `

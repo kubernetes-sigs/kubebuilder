@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package resource
+package controller
 
 import (
 	"fmt"
@@ -25,7 +25,20 @@ import (
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/util"
 )
 
-func doController(dir string, args resourceTemplateArgs) bool {
+type controllerTemplateArgs struct {
+	BoilerPlate       string
+	Domain            string
+	Group             string
+	Version           string
+	Kind              string
+	Resource          string
+	Repo              string
+	PluralizedKind    string
+	NonNamespacedKind bool
+	CoreType          bool
+}
+
+func doController(dir string, args controllerTemplateArgs) bool {
 	path := filepath.Join(dir, "pkg", "controller", strings.ToLower(createutil.KindName), "controller.go")
 	fmt.Printf("\t%s\n", filepath.Join(
 		"pkg", "controller", strings.ToLower(createutil.KindName), "controller.go"))
@@ -42,11 +55,17 @@ import (
     "github.com/kubernetes-sigs/kubebuilder/pkg/controller"
     "github.com/kubernetes-sigs/kubebuilder/pkg/controller/types"
     "k8s.io/client-go/tools/record"
-
+    {{if .CoreType}}
+    {{.Group}}{{.Version}}client "k8s.io/client-go/kubernetes/typed/{{.Group}}/{{.Version}}"
+    {{.Group}}{{.Version}}lister "k8s.io/client-go/listers/{{.Group}}/{{.Version}}"
+    {{.Group}}{{.Version}} "k8s.io/api/{{.Group}}/{{.Version}}"
+    {{.Group}}{{.Version}}informer "k8s.io/client-go/informers/{{.Group}}/{{.Version}}"
+    {{else}}
     {{.Group}}{{.Version}}client "{{.Repo}}/pkg/client/clientset/versioned/typed/{{.Group}}/{{.Version}}"
     {{.Group}}{{.Version}}lister "{{.Repo}}/pkg/client/listers/{{.Group}}/{{.Version}}"
     {{.Group}}{{.Version}} "{{.Repo}}/pkg/apis/{{.Group}}/{{.Version}}"
     {{.Group}}{{.Version}}informer "{{.Repo}}/pkg/client/informers/externalversions/{{.Group}}/{{.Version}}"
+    {{end}}
     "{{.Repo}}/pkg/inject/args"
 )
 
@@ -59,7 +78,7 @@ func (bc *{{.Kind}}Controller) Reconcile(k types.ReconcileKey) error {
     log.Printf("Implement the Reconcile function on {{lower .Kind}}.{{.Kind}}Controller to reconcile %s\n", k.Name)
     return nil
 }
-
+{{if .CoreType}}// +kubebuilder:informers:group={{ .Group }},version={{ .Version }},kind={{ .Kind }}{{end}}
 // +kubebuilder:controller:group={{ .Group }},version={{ .Version }},kind={{ .Kind}},resource={{ .Resource }}
 type {{.Kind}}Controller struct {
     // INSERT ADDITIONAL FIELDS HERE
@@ -76,7 +95,8 @@ func ProvideController(arguments args.InjectArgs) (*controller.GenericController
     // INSERT INITIALIZATIONS FOR ADDITIONAL FIELDS HERE
     bc := &{{.Kind}}Controller{
         {{lower .Kind}}Lister: arguments.ControllerManager.GetInformerProvider(&{{.Group}}{{.Version}}.{{.Kind}}{}).({{.Group}}{{.Version}}informer.{{.Kind}}Informer).Lister(),
-        {{lower .Kind}}client: arguments.Clientset.{{title .Group}}{{title .Version}}(),
+        {{if .CoreType}}{{lower .Kind}}client: arguments.KubernetesClientSet.{{title .Group}}{{title .Version}}(),{{else}}
+        {{lower .Kind}}client: arguments.Clientset.{{title .Group}}{{title .Version}}(),{{end}}
         {{lower .Kind}}recorder: arguments.CreateRecorder("{{.Kind}}Controller"),
     }
 

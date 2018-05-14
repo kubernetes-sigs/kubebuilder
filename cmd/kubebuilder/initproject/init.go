@@ -42,12 +42,14 @@ kubebuilder init repo --domain mydomain
 var domain string
 var copyright string
 var bazel bool
+var controllerOnly bool
 
 func AddInit(cmd *cobra.Command) {
 	cmd.AddCommand(repoCmd)
 	repoCmd.Flags().StringVar(&domain, "domain", "", "domain for the API groups")
 	repoCmd.Flags().StringVar(&copyright, "copyright", filepath.Join("hack", "boilerplate.go.txt"), "Location of copyright boilerplate file.")
 	repoCmd.Flags().BoolVar(&bazel, "bazel", false, "if true, setup Bazel workspace artifacts")
+	repoCmd.Flags().BoolVar(&controllerOnly, "controller-only", false, "if true, setup controller only")
 }
 
 func runInitRepo(cmd *cobra.Command, args []string) {
@@ -87,7 +89,7 @@ func runInitRepo(cmd *cobra.Command, args []string) {
 	}
 	doDockerfile()
 	doInject(cr)
-	doArgs(cr)
+	doArgs(cr, controllerOnly)
 	//os.MkdirAll("bin", 0700)
 	RunVendorInstall(nil, nil)
 
@@ -107,6 +109,7 @@ func execute(path, templateName, templateValue string, data interface{}) {
 type templateArgs struct {
 	BoilerPlate string
 	Repo        string
+	ControllerOnly bool
 }
 
 func versionCmp(v1 string, v2 string) int {

@@ -17,7 +17,13 @@ limitations under the License.
 package parse
 
 import (
+	"go/build"
 	"path/filepath"
+	"strings"
+	"os"
+	"bufio"
+
+	"github.com/golang/glog"
 
 	"github.com/kubernetes-sigs/kubebuilder/cmd/internal/codegen"
 	"github.com/pkg/errors"
@@ -114,6 +120,39 @@ func (b *APIs) parseDomain() {
 	comments := Comments(pkg.Comments)
 	b.Domain = comments.getTag("domain", "=")
 	if len(b.Domain) == 0 {
-		panic("Could not find string matching // +domain=.+ in apis/doc.go")
+		b.Domain = parseDomainFromFiles(b.context.Inputs)
+		if len(b.Domain) == 0 {
+			panic("Could not find string matching // +domain=.+ in apis/doc.go")
+		}
 	}
+}
+
+func parseDomainFromFiles(paths []string) string {
+	var domain string
+    for _, path := range paths {
+    	if strings.HasSuffix(path, "pkg/apis") {
+    		filePath := strings.Join([]string{build.Default.GOPATH, "src", path, "doc.go"}, "/")
+            lines := []string{}
+
+			file, err := os.Open(filePath)
+			if err != nil {
+				glog.Fatal(err)
+			}
+			defer file.Close()
+			scanner := bufio.NewScanner(file)
+			for scanner.Scan() {
+				if strings.HasPrefix(scanner.Text(), "//") {
+					lines = append(lines, strings.Replace(scanner.Text(), "// ", "", 1))
+				}
+			}
+			if err := scanner.Err(); err != nil {
+				glog.Fatal(err)
+			}
+
+			comments := Comments(lines)
+			domain = comments.getTag("domain", "=")
+			break
+		}
+	}
+	return domain
 }

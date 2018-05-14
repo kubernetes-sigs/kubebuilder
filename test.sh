@@ -361,7 +361,7 @@ EOF
 
 
   kubebuilder create resource --group insect --version v1beta1 --kind Wasp
-  kubebuilder create resource --group ant --version v1beta1 --kind Ant
+  kubebuilder create resource --group ant --version v1beta1 --kind Ant --controller=false
   kubebuilder create config --crds --output crd.yaml
 
   # Check for ordering of generated YAML
@@ -502,15 +502,61 @@ function test_docs {
   diff docs/reference/config.yaml $kb_orig/test/docs/expected/config.yaml
 }
 
+function generate_controller {
+  header_text "creating controller"
+    kubebuilder create controller --group ant --version v1beta1 --kind Ant
+}
+
+function update_controller_test {
+  # Update import
+  sed -i 's!"k8s.io/client-go/kubernetes/typed/apps/v1beta2"!&\n    "k8s.io/api/core/v1"!' ./pkg/controller/deployment/controller_test.go
+
+  # Fill deployment instance
+  sed -i 's!instance.Name = "instance-1"!&\n    instance.Spec.Template.Spec.Containers = []v1.Container{{Name: "name", Image: "someimage"}}\n    labels := map[string]string{"foo": "bar"}\n    instance.Spec.Template.ObjectMeta.Labels = labels\n    instance.Spec.Selector = \&metav1.LabelSelector{MatchLabels: labels}!' ./pkg/controller/deployment/controller_test.go
+}
+
+function generate_coretype_controller {
+    header_text "generating controller for coretype Deployment"
+
+    # Run the commands
+    kubebuilder init repo --domain sample.kubernetes.io --controller-only
+    kubebuilder create controller --group apps --version v1beta2 --kind Deployment --core-type
+
+  # Fill the required fileds of Deployment object so that the Deployment instance can be successfully created
+    update_controller_test
+}
+
+function generate_resource_with_coretype_controller {
+  header_text "generating CRD resource as well as controller for coretype Deployment"
+
+  # Run the commands
+  kubebuilder init repo --domain sample.kubernetes.io
+  kubebuilder create resource --group ant --version v1beta1 --kind Ant
+  kubebuilder create controller --group apps --version v1beta2 --kind Deployment --core-type
+
+  # Fill the required fileds of Deployment object so that the Deployment instance can be successfully created
+  update_controller_test
+}
+
 prepare_staging_dir
 fetch_tools
 build_kb
-prepare_testdir_under_gopath
 
+prepare_testdir_under_gopath
 generate_crd_resources
+generate_controller
 test_docs
 test_generated_controller
 test_vendor_update
 # re-running controller tests post vendor update
 test_generated_controller
+
+prepare_testdir_under_gopath
+generate_resource_with_coretype_controller
+test_generated_controller
+
+prepare_testdir_under_gopath
+generate_coretype_controller
+test_generated_controller
+
 exit $rc
