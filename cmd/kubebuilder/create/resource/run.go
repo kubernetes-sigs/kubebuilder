@@ -62,6 +62,7 @@ func AddCreateResource(cmd *cobra.Command) {
 	createResourceCmd.Flags().BoolVar(&nonNamespacedKind, "non-namespaced", false, "if set, the API kind will be non namespaced")
 	createResourceCmd.Flags().BoolVar(&controller, "controller", true, "if true, generate the controller code for the resource")
 	createResourceCmd.Flags().BoolVar(&generate, "generate", true, "generate source code")
+	createResourceCmd.Flags().BoolVar(&createutil.AllowPluralKind, "plural-kind", false, "allow the kind to be plural")
 	cmd.AddCommand(createResourceCmd)
 }
 
