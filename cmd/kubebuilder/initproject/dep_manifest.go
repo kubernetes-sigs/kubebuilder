@@ -191,6 +191,8 @@ revision="f53464b8b84b4507805a0b033a8377b225163fea"
 name = "github.com/kubernetes-sigs/kubebuilder"
 {{ if eq .Version "unknown" -}}
 branch="master"
+{{ else if eq .Version "master" -}}
+branch="master"
 {{ else -}}
 version="{{.Version}}"
 {{ end }}
