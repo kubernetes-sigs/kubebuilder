@@ -61,6 +61,11 @@ func (g CodeGenerator) Execute(dir string) error {
 			}
 			sort.Strings(vs)
 			r.Version = vs[0]
+			if version[vs[0]] != nil {
+				annotations := version[vs[0]].DocAnnotation
+				r.Warning = annotations["warning"]
+				r.Note = annotations["note"]
+			}
 			m[r.Kind] = r
 			s = append(s, r.Kind)
 		}
@@ -90,7 +95,7 @@ type Category struct {
 }
 
 type Resource struct {
-	Kind, Version, Group string
+	Kind, Version, Group, Warning, Note string
 }
 
 var docsConfigTemplate = `example_location: "examples"
@@ -103,5 +108,8 @@ resource_categories: {{ range $category := .Categories }}
   resources: {{ range $resource := $category.Resources }}
   - name: "{{ $resource.Kind }}"
     version: "{{ $resource.Version }}"
-    group: "{{ $resource.Group }}"{{ end }}
+    group: "{{ $resource.Group }}"{{ if $resource.Warning }}
+    description_warning: "{{ $resource.Warning }}"{{ end -}}{{ if $resource.Note }}
+    description_note: "{{ $resource.Note }}"{{ end -}}
+    {{ end }}
 {{ end }}`

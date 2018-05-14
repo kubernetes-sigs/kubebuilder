@@ -500,6 +500,11 @@ function test_docs {
   diff docs/reference/includes $kb_orig/test/docs/expected/includes
   diff docs/reference/manifest.json $kb_orig/test/docs/expected/manifest.json
   diff docs/reference/config.yaml $kb_orig/test/docs/expected/config.yaml
+
+  header_text "testing doc annotations"
+  sed -i -e "s|// +kubebuilder:categories=foo,bar|// +kubebuilder:categories=foo,bar\n// +kubebuilder:doc:note=test notes message annotations\n// +kubebuilder:doc:warning=test warnings message annotations|" pkg/apis/insect/v1beta1/bee_types.go
+  kubebuilder docs --brodocs=false --cleanup=false
+  diff docs/reference/config.yaml $kb_orig/test/docs/expected/config-annotated.yaml
 }
 
 function generate_controller {

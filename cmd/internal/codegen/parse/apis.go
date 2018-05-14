@@ -72,6 +72,7 @@ func (b *APIs) parseAPIs() {
 					NonNamespaced:  resource.NonNamespaced,
 					ShortName:      resource.ShortName,
 				}
+				parseDoc(resource, apiResource)
 				apiVersion.Resources[kind] = apiResource
 				// Set the package for the api version
 				apiVersion.Pkg = b.context.Universe[resource.Type.Name.Package]
@@ -274,4 +275,11 @@ func (b *APIs) genClient(c *types.Type) bool {
 func (b *APIs) genDeepCopy(c *types.Type) bool {
 	comments := Comments(c.CommentLines)
 	return comments.hasTag("subresource-request")
+}
+
+func parseDoc(resource, apiResource *codegen.APIResource) {
+	if HasDocAnnotation(resource.Type) {
+		resource.DocAnnotation = getDocAnnotation(resource.Type, "warning", "note")
+		apiResource.DocAnnotation = resource.DocAnnotation
+	}
 }

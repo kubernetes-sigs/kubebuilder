@@ -125,6 +125,20 @@ func HasCategories(t *types.Type) bool {
 	return false
 }
 
+// HasDocAnnotation returns true if t is an APIResource with doc annotation
+// +kubebuilder:doc
+func HasDocAnnotation(t *types.Type) bool {
+	if !IsAPIResource(t) {
+		return false
+	}
+	for _, c := range t.CommentLines {
+		if strings.Contains(c, "+kubebuilder:doc") {
+			return true
+		}
+	}
+	return false
+}
+
 func IsUnversioned(t *types.Type, group string) bool {
 	return IsApisDir(filepath.Base(filepath.Dir(t.Name.Package))) && GetGroup(t) == group
 }
@@ -201,4 +215,19 @@ func (c Comments) getTags(name, sep string) []string {
 		}
 	}
 	return tags
+}
+
+// getDocAnnotation parse annotations of "+kubebuilder:doc:" with tags of "warning" or "doc" for control generating doc config.
+// E.g. +kubebuilder:doc:warning=foo  +kubebuilder:doc:note=bar
+func getDocAnnotation(t *types.Type, tags ...string) map[string]string {
+	annotation := make(map[string]string)
+	for _, tag := range tags {
+		for _, c := range t.CommentLines {
+			prefix := fmt.Sprintf("+kubebuilder:doc:%s=", tag)
+			if strings.HasPrefix(c, prefix) {
+				annotation[tag] = strings.Replace(c, prefix, "", 1)
+			}
+		}
+	}
+	return annotation
 }
