@@ -19,9 +19,10 @@ package update
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/emicklei/go-restful/log"
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/initproject"
 )
+
+var overwriteDepManifest bool
 
 var vendorCmd = &cobra.Command{
 	Use:   "vendor",
@@ -35,10 +36,14 @@ kubebuilder update vendor
 
 func AddUpdateVendorCmd(cmd *cobra.Command) {
 	cmd.AddCommand(vendorCmd)
+	vendorCmd.Flags().BoolVar(&overwriteDepManifest, "overwrite-dep-manifest", false, "if true, overwrites the dep manifest file (Gopkg.toml)")
 }
 
 func RunUpdateVendor(cmd *cobra.Command, args []string) {
 	initproject.Update = true
-	log.Printf("Replacing vendored libraries managed by kubebuilder with the current version.")
+	if overwriteDepManifest {
+		// suppress the update behavior
+		initproject.Update = false
+	}
 	initproject.RunVendorInstall(cmd, args)
 }
