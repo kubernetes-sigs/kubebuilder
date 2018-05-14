@@ -23,6 +23,7 @@
   * [What is a Contoller](basics/what_is_a_controller.md)
   * [Simple Controller Example](basics/simple_controller.md)
   * [Controller Watch Functions](basics/controller_watches.md)
+  * [Creating Events](basics/creating_events.md)
 * Controller-Manager Fundamentals
   * [What is the Controller-Manager](basics/what_is_the_controller_manager.md)
   * [Simple Controller-Manager](basics/simple_controller_manager.md)
