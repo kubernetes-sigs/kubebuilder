@@ -107,6 +107,10 @@ func getFloat(f float64) *float64 {
     return &f
 }
 
+func getInt(i int64) *int64 {
+    return &i
+}
+
 var (
     {{ range $api := .Resources -}}
     // Define CRDs for resources

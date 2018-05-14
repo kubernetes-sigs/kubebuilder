@@ -501,6 +501,54 @@ status:
 EOF
 }
 
+function test_crd_validation {
+  header_text "testing crd validation"
+
+  # Setup env vars
+  export PATH=/tmp/kubebuilder/bin/:$PATH
+  export TEST_ASSET_KUBECTL=/tmp/kubebuilder/bin/kubectl
+  export TEST_ASSET_KUBE_APISERVER=/tmp/kubebuilder/bin/kube-apiserver
+  export TEST_ASSET_ETCD=/tmp/kubebuilder/bin/etcd
+
+  kubebuilder init repo --domain sample.kubernetes.io
+  kubebuilder create resource --group got --version v1beta1 --kind House
+
+  # Update crd
+  sed -i -e '/type HouseSpec struct/ a \
+    // +kubebuilder:validation:Maximum=100\
+    // +kubebuilder:validation:ExclusiveMinimum=true\
+    Power float32 \`json:"power"\`\
+    // +kubebuilder:validation:MaxLength=15\
+    // +kubebuilder:validation:MinLength=1\
+    Name string \`json:"name"\`\
+    // +kubebuilder:validation:MaxItems=500\
+    // +kubebuilder:validation:MinItems=1\
+    // +kubebuilder:validation:UniqueItems=false\
+    Knights []string \`json:"knights"\`\
+    Winner bool \`json:"winner"\`\
+    // +kubebuilder:validation:Enum=Lion,Wolf,Dragon\
+    Alias string \`json:"alias"\`\
+    // +kubebuilder:validation:Enum=1,2,3\
+    Rank int \`json:"rank"\`\
+  ' pkg/apis/got/v1beta1/house_types.go
+
+  kubebuilder generate
+  header_text "generating and testing CRD..."
+  kubebuilder create config --crds --output crd-validation.yaml
+  diff crd-validation.yaml $kb_orig/test/resource/expected/crd-expected.yaml
+
+  kubebuilder create config --controller-image myimage:v1 --name myextensionname --output install.yaml
+  kubebuilder create controller --group got --version v1beta1 --kind House
+
+  header_text "update controller"
+  sed -i -e '/instance.Name = "instance-1"/ a \
+        instance.Spec=HouseSpec{Power:89.5,Knights:[]string{"Jaime","Bronn","Gregor Clegane"}, Alias:"Lion", Name:"Lannister", Rank:1}
+  ' ./pkg/apis/got/v1beta1/house_types_test.go
+  sed -i -e '/instance.Name = "instance-1"/ a \
+        instance.Spec=HouseSpec{Power:89.5,Knights:[]string{"Jaime","Bronn","Gregor Clegane"}, Alias:"Lion", Name:"Lannister", Rank:1}
+  ' pkg/controller/house/controller_test.go
+}
+
 function test_generated_controller {
   header_text "building generated code"
   # Verify the controller-manager builds and the tests pass
@@ -589,6 +637,10 @@ fetch_tools
 build_kb
 
 setup_envs
+
+prepare_testdir_under_gopath
+test_crd_validation
+test_generated_controller
 
 prepare_testdir_under_gopath
 generate_crd_resources

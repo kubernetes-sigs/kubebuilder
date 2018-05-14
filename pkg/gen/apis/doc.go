@@ -19,24 +19,47 @@ The apis package describes the comment directives that may be applied to apis / 
 */
 package apis
 
-// Resource annotates a type as a resource
-const Resource = "// +kubebuilder:resource:path="
+const (
+	// Resource annotates a type as a resource
+	Resource = "// +kubebuilder:resource:path="
 
-// Categories annotates a type as belonging to a comma-delimited list of
-// categories
-const Categories = "// +kubebuilder:categories="
+	// Categories annotates a type as belonging to a comma-delimited list of
+	// categories
+	Categories = "// +kubebuilder:categories="
 
-// Maximum annotates a numeric go struct field for CRD validation
-const Maximum = "// +kubebuilder:validation:Maximum="
+	// Maximum annotates a numeric go struct field for CRD validation
+	Maximum = "// +kubebuilder:validation:Maximum="
 
-// ExclusiveMaximum annotates a numeric go struct field for CRD validation
-const ExclusiveMaximum = "// +kubebuilder:validation:ExclusiveMaximum="
+	// ExclusiveMaximum annotates a numeric go struct field for CRD validation
+	ExclusiveMaximum = "// +kubebuilder:validation:ExclusiveMaximum="
 
-// Minimum annotates a numeric go struct field for CRD validation
-const Minimum = "// +kubebuilder:validation:Minimum="
+	// Minimum annotates a numeric go struct field for CRD validation
+	Minimum = "// +kubebuilder:validation:Minimum="
 
-// ExclusiveMinimum annotates a numeric go struct field for CRD validation
-const ExclusiveMinimum = "// +kubebuilder:validation:ExclusiveMinimum="
+	// ExclusiveMinimum annotates a numeric go struct field for CRD validation
+	ExclusiveMinimum = "// +kubebuilder:validation:ExclusiveMinimum="
 
-// Pattern annotates a string go struct field for CRD validation with a regular expression it must match
-const Pattern = "// +kubebuilder:validation:Pattern="
+	// Pattern annotates a string go struct field for CRD validation with a regular expression it must match
+	Pattern = "// +kubebuilder:validation:Pattern="
+
+	// Enum specifies the valid values for a field
+	Enum = "// +kubebuilder:validation:Enum="
+
+	// MaxLength specifies the maximum length of a string field
+	MaxLength = "// +kubebuilder:validation:MaxLength="
+
+	// MinLength specifies the minimum length of a string field
+	MinLength = "// +kubebuilder:validation:MinLength="
+
+	// MaxItems specifies the maximum number of items an array or slice field may contain
+	MaxItems = "// +kubebuilder:validation:MaxItems="
+
+	// MinItems specifies the minimum number of items an array or slice field may contain
+	MinItems = "// +kubebuilder:validation:MinItems="
+
+	// UniqueItems specifies that all values in an array or slice must be unique
+	UniqueItems = "// +kubebuilder:validation:UniqueItems="
+
+	// Format annotates a string go struct field for CRD validation with a specific format
+	Format = "// +kubebuilder:validation:Format="
+)

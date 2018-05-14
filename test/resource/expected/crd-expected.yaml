@@ -1,0 +1,63 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  labels:
+    api: ""
+    kubebuilder.k8s.io: unknown
+  name: houses.got.sample.kubernetes.io
+spec:
+  group: got.sample.kubernetes.io
+  names:
+    kind: House
+    plural: houses
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          type: string
+        kind:
+          type: string
+        metadata:
+          type: object
+        spec:
+          properties:
+            alias:
+              enum:
+              - Lion
+              - Wolf
+              - Dragon
+              type: string
+            knights:
+              items:
+                type: string
+              maxItems: 500
+              minItems: 1
+              type: array
+            name:
+              maxLength: 15
+              minLength: 1
+              type: string
+            power:
+              exclusiveMinimum: true
+              maximum: 100
+              type: float32
+            rank:
+              enum:
+              - 1
+              - 2
+              - 3
+              type: int
+            winner:
+              type: bool
+          type: object
+        status:
+          type: object
+      type: object
+  version: v1beta1
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: null
