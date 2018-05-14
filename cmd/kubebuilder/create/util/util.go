@@ -30,6 +30,7 @@ import (
 
 var (
 	GroupName, KindName, VersionName, ResourceName, Copyright string
+	AllowPluralKind                                           bool
 )
 
 func ValidateResourceFlags() {
@@ -43,11 +44,14 @@ func ValidateResourceFlags() {
 	if len(KindName) == 0 {
 		log.Fatal("Must specify --kind")
 	}
+
+	rs := inflect.NewDefaultRuleset()
 	if len(ResourceName) == 0 {
-		if inflect.NewDefaultRuleset().Pluralize(KindName) == KindName {
-			log.Fatal("Client code generation expects singular --kind.")
+		if !AllowPluralKind && rs.Pluralize(KindName) == KindName && rs.Singularize(KindName) != KindName {
+			log.Fatalf("Client code generation expects singular --kind (e.g. %s)."+
+				"Or to be run with --pural-kind=true.", rs.Singularize(KindName))
 		}
-		ResourceName = inflect.NewDefaultRuleset().Pluralize(strings.ToLower(KindName))
+		ResourceName = rs.Pluralize(strings.ToLower(KindName))
 	}
 
 	groupMatch := regexp.MustCompile("^[a-z]+$")

@@ -538,6 +538,13 @@ function generate_resource_with_coretype_controller {
   update_controller_test
 }
 
+function test_plural_resource {
+  header_text "generating CRD for plural resource"
+
+  kubebuilder create resource --plural-kind=true --group testing --version v1beta1 --kind Metadata
+  kubebuilder create resource --group testing --version v1beta1 --kind Postgress
+}
+
 prepare_staging_dir
 fetch_tools
 build_kb
@@ -558,5 +565,7 @@ test_generated_controller
 prepare_testdir_under_gopath
 generate_coretype_controller
 test_generated_controller
+
+test_plural_resource
 
 exit $rc
