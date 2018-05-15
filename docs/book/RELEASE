@@ -1,0 +1,6 @@
+To push the docs run:
+
+- gitbook build
+- docker build . -t gcr.io/kubebuilder/book
+- docker push  gcr.io/kubebuilder/book
+- kubectl delete pods -l run=gitbook-prod

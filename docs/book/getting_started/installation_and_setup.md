@@ -23,11 +23,11 @@ Kubebuilder can then setup a project in the user's `GOPATH`.
 {% sample lang="mac" %}
 ```bash
 # download the release
-curl -L -O https://github.com/kubernetes-sigs/kubebuilder/releases/download/v0.1.8/kubebuilder_0.1.8_darwin_amd64.tar.gz
+curl -L -O https://github.com/kubernetes-sigs/kubebuilder/releases/download/v0.1.9/kubebuilder_0.1.9_darwin_amd64.tar.gz
 
 # extract the archive
-tar -zxvf kubebuilder_0.1.8_darwin_amd64.tar.gz
-sudo mv kubebuilder_0.1.8_darwin_amd64 /usr/local/kubebuilder
+tar -zxvf kubebuilder_0.1.9_darwin_amd64.tar.gz
+sudo mv kubebuilder_0.1.9_darwin_amd64 /usr/local/kubebuilder
 
 # update your PATH to include /usr/local/kubebuilder/bin
 export PATH=$PATH:/usr/local/kubebuilder/bin
@@ -36,11 +36,11 @@ export PATH=$PATH:/usr/local/kubebuilder/bin
 {% sample lang="linux" %}
 ```bash
 # download the release
-wget https://github.com/kubernetes-sigs/kubebuilder/releases/download/v0.1.8/kubebuilder_0.1.8_linux_amd64.tar.gz
+wget https://github.com/kubernetes-sigs/kubebuilder/releases/download/v0.1.9/kubebuilder_0.1.9_linux_amd64.tar.gz
 
 # extract the archive
-tar -zxvf kubebuilder_0.1.8_linux_amd64.tar.gz
-sudo mv kubebuilder_0.1.8_linux_amd64 /usr/local/kubebuilder
+tar -zxvf kubebuilder_0.1.9_linux_amd64.tar.gz
+sudo mv kubebuilder_0.1.9_linux_amd64 /usr/local/kubebuilder
 
 # update your PATH to include /usr/local/kubebuilder/bin
 export PATH=$PATH:/usr/local/kubebuilder/bin

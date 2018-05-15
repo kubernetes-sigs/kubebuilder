@@ -14,8 +14,6 @@
 
 * Development Workflow
   * [Project Creation and Structure](basics/project_creation_and_structure.md)
-  * [Running Tests](basics/running_tests.md)
-  * [Generating API Documentation](basics/generating_documentation.md)
 * Resource Fundamentals
   * [What is a Resource](basics/what_is_a_resource.md)
   * [Simple Resource Example](basics/simple_resource.md)
@@ -27,6 +25,16 @@
 * Controller-Manager Fundamentals
   * [What is the Controller-Manager](basics/what_is_the_controller_manager.md)
   * [Simple Controller-Manager](basics/simple_controller_manager.md)
+
+### Beyond the Basics
+
+* Development Workflow
+  * [Running Tests](beyond_basics/running_tests.md)
+  * [Generating API Documentation](beyond_basics/generating_documentation.md)
+  * [Updating Kubebuilder](beyond_basics/upgrading_kubebuilder.md)
+* Controllers
+  * [Controllers For Core Resources](beyond_basics/controllers_for_core_resources.md)
+
 
 ### Reference Docs
 * [GoDoc Links](go_docs.md)
