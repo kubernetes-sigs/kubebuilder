@@ -28,5 +28,13 @@
   * [What is the Controller-Manager](basics/what_is_the_controller_manager.md)
   * [Simple Controller-Manager](basics/simple_controller_manager.md)
 
+### Beyond the Basics
+
+* Development Workflow
+  * [Updating Kubebuilder](beyond_basics/upgrading_kubebuilder.md)
+* Controllers
+  * [Controllers For Core Resources](beyond_basics/controllers_for_core_resources.md)
+
+
 ### Reference Docs
 * [GoDoc Links](go_docs.md)
