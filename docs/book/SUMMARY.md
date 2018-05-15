@@ -29,6 +29,7 @@
 ### Beyond the Basics
 
 * Development Workflow
+  * [Defining Boilerplate License Headers](beyond_basics/boilerplate.md)
   * [Running Tests](beyond_basics/running_tests.md)
   * [Generating API Documentation](beyond_basics/generating_documentation.md)
   * [Updating Kubebuilder](beyond_basics/upgrading_kubebuilder.md)
