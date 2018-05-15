@@ -22,7 +22,7 @@
 
 steps:
 - name: "gcr.io/cloud-builders/git"
-  args: [fetch, --depth=100]
+  args: [fetch, --tags, --depth=100]
 - name: "ubuntu"
   args: ["mkdir", "-p", "/workspace/_output/linux_amd64"]
 - name: "gcr.io/kubebuilder/thirdparty-linux:1.10.1"
