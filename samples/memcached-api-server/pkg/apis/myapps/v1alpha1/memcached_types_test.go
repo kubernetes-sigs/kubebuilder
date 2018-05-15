@@ -21,6 +21,7 @@ var _ = Describe("Memcached", func() {
 	BeforeEach(func() {
 		instance = Memcached{}
 		instance.Name = "instance-1"
+		instance.Spec.Size = 50
 
 		expected = instance
 	})

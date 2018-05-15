@@ -12,6 +12,8 @@ import (
 // MemcachedSpec defines the desired state of Memcached
 type MemcachedSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+	// +kubebuilder:validation:Maximum=100
+	// +kubebuilder:validation:Minimum=5
 	Size int32 `json:"size"`
 }
 

@@ -48,7 +48,19 @@ var _ = Describe("Memcached controller", func() {
 
 			// Create the instance
 			client = cs.MyappsV1alpha1().Memcacheds("default")
+
+			instance.Spec.Size = 1
 			_, err := client.Create(&instance)
+			Expect(err).Should(HaveOccurred())
+			Expect(err.Error()).Should(MatchRegexp(".*spec.size in body should be greater than or equal to 5.*"))
+
+			instance.Spec.Size = 101
+			_, err = client.Create(&instance)
+			Expect(err).Should(HaveOccurred())
+			Expect(err.Error()).Should(MatchRegexp(".*spec.size in body should be less than or equal to 100.*"))
+
+			instance.Spec.Size = 50
+			_, err = client.Create(&instance)
 			Expect(err).ShouldNot(HaveOccurred())
 
 			// Wait for reconcile to happen
