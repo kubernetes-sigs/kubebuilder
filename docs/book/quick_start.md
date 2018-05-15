@@ -37,6 +37,9 @@ export PATH=$PATH:/usr/local/kubebuilder/bin
 
 Initialize the project directory with the canonical project structure and go dependencies.
 
+**Note:** To add a boilerplate header to generated files, create `hack/boilerplate.go.txt`
+and add your boilerplate before running `kubebuilder init`.
+
 {% sample lang="bash" %}
 ```bash
 kubebuilder init --domain k8s.io
