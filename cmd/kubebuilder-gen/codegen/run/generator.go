@@ -22,6 +22,7 @@ import (
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder-gen/codegen"
 	"k8s.io/gengo/args"
 	"k8s.io/gengo/generator"
+	"github.com/spf13/pflag"
 )
 
 // CodeGenerator generates code for Kubernetes resources and controllers
@@ -45,12 +46,16 @@ func (g *CodeGenerator) AddResourceGenerator(generator codegen.ResourceGenerator
 	return g
 }
 
-type customArgs struct{}
-
 // Execute parses packages and executes the code generators against the resource and controller packages
 func (g *CodeGenerator) Execute() error {
 	arguments := args.Default()
-	arguments.CustomArgs = &customArgs{}
+
+	// Custom args.
+	customArgs := &parse.ParseOptions{}
+	pflag.CommandLine.BoolVar(&customArgs.SkipMap, "skip-map", true,
+		"If set true, skip map types.")
+	arguments.CustomArgs = customArgs
+
 	arguments.OutputFileBaseName = g.OutputFileBaseName
 
 	err := arguments.Execute(parse.NameSystems(), parse.DefaultNameSystem(), g.packages)

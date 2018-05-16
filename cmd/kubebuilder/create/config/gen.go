@@ -67,6 +67,8 @@ func (g CodeGenerator) Execute() error {
 		return fmt.Errorf("Failed making a context: %v", err)
 	}
 
+	arguments.CustomArgs = &parse.ParseOptions{SkipMap: true}
+
 	p := parse.NewAPIs(c, arguments)
 	if crds {
 		util.WriteString(output, strings.Join(getCrds(p), "---\n"))
