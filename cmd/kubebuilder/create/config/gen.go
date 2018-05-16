@@ -36,7 +36,9 @@ import (
 )
 
 // CodeGenerator generates code for Kubernetes resources and controllers
-type CodeGenerator struct{}
+type CodeGenerator struct{
+	SkipMap bool
+}
 
 var kblabels = map[string]string{
 	"kubebuilder.k8s.io": version.GetVersion().KubeBuilderVersion,
@@ -67,7 +69,7 @@ func (g CodeGenerator) Execute() error {
 		return fmt.Errorf("Failed making a context: %v", err)
 	}
 
-	arguments.CustomArgs = &parse.ParseOptions{SkipMap: true}
+	arguments.CustomArgs = &parse.ParseOptions{SkipMap: g.SkipMap}
 
 	p := parse.NewAPIs(c, arguments)
 	if crds {
