@@ -1,0 +1,44 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  labels:
+    api: ""
+    kubebuilder.k8s.io: master
+  name: memcacheds.myapps.memcached.example.com
+spec:
+  group: myapps.memcached.example.com
+  names:
+    kind: Memcached
+    plural: memcacheds
+  scope: Namespaced
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          type: string
+        kind:
+          type: string
+        metadata:
+          type: object
+        spec:
+          properties:
+            size:
+              maximum: 100
+              minimum: 5
+              type: int32
+          type: object
+        status:
+          properties:
+            nodes:
+              items:
+                type: string
+              type: array
+          type: object
+      type: object
+  version: v1alpha1
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: null
