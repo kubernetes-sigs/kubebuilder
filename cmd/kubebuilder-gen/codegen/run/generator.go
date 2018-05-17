@@ -52,8 +52,8 @@ func (g *CodeGenerator) Execute() error {
 
 	// Custom args.
 	customArgs := &parse.ParseOptions{}
-	pflag.CommandLine.BoolVar(&customArgs.SkipMap, "skip-map", true,
-		"If set true, skip map types.")
+	pflag.CommandLine.BoolVar(&customArgs.SkipMapValidation, "skip-map-validation", true,
+		"if set to true, skip generating validation schema for map type in CRD.")
 	arguments.CustomArgs = customArgs
 
 	arguments.OutputFileBaseName = g.OutputFileBaseName

@@ -27,7 +27,7 @@ import (
 )
 
 type ParseOptions struct {
-    SkipMap bool
+    SkipMapValidation bool
 }
 
 // IsAPIResource returns true if t has a +resource/+kubebuilder:resource comment tag

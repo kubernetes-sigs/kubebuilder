@@ -37,7 +37,7 @@ import (
 
 // CodeGenerator generates code for Kubernetes resources and controllers
 type CodeGenerator struct{
-	SkipMap bool
+	SkipMapValidation bool
 }
 
 var kblabels = map[string]string{
@@ -69,7 +69,7 @@ func (g CodeGenerator) Execute() error {
 		return fmt.Errorf("Failed making a context: %v", err)
 	}
 
-	arguments.CustomArgs = &parse.ParseOptions{SkipMap: g.SkipMap}
+	arguments.CustomArgs = &parse.ParseOptions{SkipMapValidation: g.SkipMapValidation}
 
 	p := parse.NewAPIs(c, arguments)
 	if crds {

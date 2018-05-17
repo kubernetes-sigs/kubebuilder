@@ -150,6 +150,9 @@ function generate_crd_resources {
   sed -i -e "s|type Bee struct|// +kubebuilder:categories=foo,bar\ntype Bee struct|" pkg/apis/insect/v1beta1/bee_types.go
   sed -i -e "s|type BeeController struct {|// +kubebuilder:rbac:groups="",resources=pods,verbs=get;watch;list\ntype BeeController struct {|" pkg/controller/bee/controller.go
 
+  header_text "adding a map type to resource"
+  sed -i -e "s|type BeeSpec struct {|type BeeSpec struct {\n	Request map[string]string \`json:\"request,omitempty\"\`|" pkg/apis/insect/v1beta1/bee_types.go
+
   header_text "generating and testing CRD definition"
   kubebuilder create config --crds --output crd.yaml
   kubebuilder create config --controller-image myimage:v1 --name myextensionname --output install.yaml
@@ -187,6 +190,9 @@ spec:
         metadata:
           type: object
         spec:
+          properties:
+            request:
+              type: object
           type: object
         status:
           type: object
@@ -281,6 +287,9 @@ spec:
         metadata:
           type: object
         spec:
+          properties:
+            request:
+              type: object
           type: object
         status:
           type: object
@@ -429,6 +438,9 @@ spec:
         metadata:
           type: object
         spec:
+          properties:
+            request:
+              type: object
           type: object
         status:
           type: object

@@ -57,14 +57,14 @@ kubebuilder create config --crds --output myextensionname.yaml
 			fmt.Printf("Must either specify the name of the extension with --name or set --crds.\n")
 			return
 		}
-		CodeGenerator{SkipMap: skipmap}.Execute()
+		CodeGenerator{SkipMapValidation: skipMapValidation}.Execute()
 		log.Printf("Config written to %s", output)
 	},
 }
 
 var (
 	controllerType, controllerImage, name, output, crdNamespace string
-	crds, skipmap                                               bool
+	crds, skipMapValidation                                     bool
 )
 
 func AddCreateConfig(cmd *cobra.Command) {
@@ -75,5 +75,5 @@ func AddCreateConfig(cmd *cobra.Command) {
 	configCmd.Flags().StringVar(&controllerImage, "controller-image", "", "name of the controller container to run.")
 	configCmd.Flags().StringVar(&name, "name", "", "name of the installation.  used to generate the namespace and resource names.")
 	configCmd.Flags().StringVar(&output, "output", filepath.Join("hack", "install.yaml"), "location to write yaml to")
-	configCmd.Flags().BoolVar(&skipmap, "skip-map", true, "if set to true, skip validation of map in CRD")
+	configCmd.Flags().BoolVar(&skipMapValidation, "skip-map-validation", true, "if set to true, skip generating validation schema for map type in CRD.")
 }

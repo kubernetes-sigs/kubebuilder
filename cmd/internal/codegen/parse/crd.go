@@ -217,13 +217,13 @@ func (b *APIs) parsePrimitiveValidation(t *types.Type, found sets.String, commen
 
 type mapTempateArgs struct {
 	Result string
-	SkipMap bool
+	SkipMapValidation bool
 }
 
 var mapTemplate = template.Must(template.New("map-template").Parse(
 	`v1beta1.JSONSchemaProps{
     Type:                 "object",
-    {{if not .SkipMap}}AdditionalProperties: &v1beta1.JSONSchemaPropsOrBool{
+    {{if not .SkipMapValidation}}AdditionalProperties: &v1beta1.JSONSchemaPropsOrBool{
         Allows: true,
         Schema: &{{.Result}},
     },{{end}}
@@ -237,14 +237,14 @@ func (b *APIs) parseMapValidation(t *types.Type, found sets.String, comments []s
 		Type: "object",
 	}
     parseOption := b.arguments.CustomArgs.(*ParseOptions)
-	if !parseOption.SkipMap {
+	if !parseOption.SkipMapValidation {
 		props.AdditionalProperties = &v1beta1.JSONSchemaPropsOrBool{
 			Allows: true,
 			Schema: &additionalProps}
 	}
 
 	buff := &bytes.Buffer{}
-	if err := mapTemplate.Execute(buff, mapTempateArgs{result, parseOption.SkipMap}); err != nil {
+	if err := mapTemplate.Execute(buff, mapTempateArgs{Result: result, SkipMapValidation: parseOption.SkipMapValidation}); err != nil {
 		log.Fatalf("%v", err)
 	}
 	return props, buff.String()
