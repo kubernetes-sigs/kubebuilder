@@ -17,13 +17,14 @@ limitations under the License.
 package codegen
 
 import (
+	"sort"
+
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/gengo/types"
-	"sort"
 )
 
 type APIs struct {
@@ -161,6 +162,8 @@ type APIResource struct {
 	CRD                v1beta1.CustomResourceDefinition
 	Validation         string
 	ValidationComments string
+	// DocAnnotation is a map of annotations by name for doc. e.g. warning, notes message
+	DocAnnotation map[string]string
 }
 
 type APISubresource struct {
