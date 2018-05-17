@@ -67,3 +67,12 @@ Provide clean library abstractions with clear and well exampled godocs.
 - Provide code generators to maintain common boilerplate that can't be addressed by interfaces
   - Driven off of `//+` comments
 - Provide bootstrapping commands to initialize new packages
+
+### Troubleshooting
+
+- #### Bugs and Feature Requests:
+  If you have what looks like a bug, or you would like to make a feature request, please use the [Github issue tracking system.](https://github.com/kubernetes-sigs/kubebuilder/issues)
+Before you file an issue, please search existing issues to see if your issue is already covered.
+
+- #### Slack
+  For realtime discussion,  you can join the [#kubebuilder](https://slack.k8s.io/#kubebuilder) slack channel. Slack requires registration, but the Kubernetes team is open invitation to anyone to register here. Feel free to come and ask any questions.
