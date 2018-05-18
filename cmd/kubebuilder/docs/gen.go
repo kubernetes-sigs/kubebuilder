@@ -32,6 +32,8 @@ func (g CodeGenerator) Execute(dir string) error {
 		return fmt.Errorf("Failed making a context: %v", err)
 	}
 
+	arguments.CustomArgs = &parse.ParseOptions{SkipMapValidation: true}
+
 	p := parse.NewAPIs(c, arguments)
 	path := filepath.Join(dir, outputDir, "config.yaml")
 

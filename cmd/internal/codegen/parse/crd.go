@@ -215,28 +215,36 @@ func (b *APIs) parsePrimitiveValidation(t *types.Type, found sets.String, commen
 	return props, buff.String()
 }
 
+type mapTempateArgs struct {
+	Result string
+	SkipMapValidation bool
+}
+
 var mapTemplate = template.Must(template.New("map-template").Parse(
 	`v1beta1.JSONSchemaProps{
     Type:                 "object",
-    AdditionalProperties: &v1beta1.JSONSchemaPropsOrBool{
+    {{if not .SkipMapValidation}}AdditionalProperties: &v1beta1.JSONSchemaPropsOrBool{
         Allows: true,
-        //Schema: &{{.}},
-    },
+        Schema: &{{.Result}},
+    },{{end}}
 }`))
 
 // parseMapValidation returns a JSONSchemaProps object and its serialization in
 // Go that describe the validations for the given map type.
 func (b *APIs) parseMapValidation(t *types.Type, found sets.String, comments []string) (v1beta1.JSONSchemaProps, string) {
-	additionalProps, _ := b.typeToJSONSchemaProps(t.Elem, found, comments)
+	additionalProps, result := b.typeToJSONSchemaProps(t.Elem, found, comments)
 	props := v1beta1.JSONSchemaProps{
 		Type: "object",
-		AdditionalProperties: &v1beta1.JSONSchemaPropsOrBool{
+	}
+    parseOption := b.arguments.CustomArgs.(*ParseOptions)
+	if !parseOption.SkipMapValidation {
+		props.AdditionalProperties = &v1beta1.JSONSchemaPropsOrBool{
 			Allows: true,
-			Schema: &additionalProps},
+			Schema: &additionalProps}
 	}
 
 	buff := &bytes.Buffer{}
-	if err := mapTemplate.Execute(buff, ""); err != nil {
+	if err := mapTemplate.Execute(buff, mapTempateArgs{Result: result, SkipMapValidation: parseOption.SkipMapValidation}); err != nil {
 		log.Fatalf("%v", err)
 	}
 	return props, buff.String()

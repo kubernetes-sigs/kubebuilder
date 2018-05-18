@@ -26,6 +26,10 @@ import (
 	"k8s.io/gengo/types"
 )
 
+type ParseOptions struct {
+    SkipMapValidation bool
+}
+
 // IsAPIResource returns true if t has a +resource/+kubebuilder:resource comment tag
 func IsAPIResource(t *types.Type) bool {
 	for _, c := range t.CommentLines {

@@ -39,6 +39,7 @@ Appears In:
 
 Field        | Description
 ------------ | -----------
+`request`<br /> *object*    | 
 
 ### BeeStatus v1beta1
 
