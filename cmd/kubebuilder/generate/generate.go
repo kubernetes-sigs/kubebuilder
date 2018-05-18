@@ -31,14 +31,17 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-var versionedAPIs []string
-var unversionedAPIs []string
-var Codegenerators []string
-var copyright string
-var generators = sets.String{}
-var vendorDir string
-var Docscopyright string
-var Docstitle string
+var (
+	versionedAPIs      []string
+	unversionedAPIs    []string
+	Codegenerators     []string
+	copyright          string
+	generators         = sets.String{}
+	vendorDir          string
+	Docscopyright      string
+	Docstitle          string
+	skipRBACValidation bool
+)
 
 var generateCmd = &cobra.Command{
 	Use:     "generate",
@@ -59,6 +62,7 @@ func AddGenerate(cmd *cobra.Command) {
 	cmd.AddCommand(generateCmd)
 	generateCmd.Flags().StringVar(&copyright, "copyright", filepath.Join("hack", "boilerplate.go.txt"), "Location of copyright boilerplate file.")
 	generateCmd.Flags().StringVar(&vendorDir, "vendor-dir", "", "Location of directory containing vendor files.")
+	generateCmd.Flags().BoolVar(&skipRBACValidation, "skip-rbac-validation", false, "if set to true, skip validation for RBAC annotations for the controller.")
 	generateCmd.Flags().StringArrayVar(&versionedAPIs, "api-versions", []string{}, "API version to generate code for.  Can be specified multiple times.  e.g. --api-versions foo/v1beta1 --api-versions bar/v1  defaults to all versions found under directories pkg/apis/<group>/<version>")
 	generateCmd.Flags().StringArrayVar(&Codegenerators, "generator", []string{}, "list of generators to run.  e.g. --generator kubebuilder --generator conversion Valid values: [kubebuilder,client,openapi]")
 	generateCmd.Flags().StringVar(&Docscopyright, "docs-copyright", "<a href=\"https://github.com/kubernetes/kubernetes\">Copyright 2018 The Kubernetes Authors.</a>", "html for the copyright text on the docs")
@@ -126,12 +130,16 @@ func RunGenerate(cmd *cobra.Command, args []string) {
 	}
 
 	if doGen("kubebuilder-gen") {
-		c := exec.Command(filepath.Join(root, "kubebuilder-gen"),
+		genArgs := []string{
 			"--go-header-file", copyright,
 			"--input-dirs", filepath.Join(util.Repo, "pkg", "apis", "..."),
 			"--input-dirs", filepath.Join(util.Repo, "pkg", "controller", "..."),
 			"--input-dirs", filepath.Join(util.Repo, "pkg", "inject", "..."),
-		)
+		}
+		if skipRBACValidation {
+			genArgs = append(genArgs, "--skip-rbac-validation")
+		}
+		c := exec.Command(filepath.Join(root, "kubebuilder-gen"), genArgs...)
 		glog.V(4).Infof("%s\n", strings.Join(c.Args, " "))
 		out, err := c.CombinedOutput()
 		if err != nil {

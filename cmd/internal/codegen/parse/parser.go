@@ -81,6 +81,11 @@ func NewAPIs(context *generator.Context, arguments *args.GeneratorArgs) *APIs {
 // e.g. if there is an // +kubebuilder:informer annotation for Pods, then there
 // should also be a // +kubebuilder:rbac annotation for Pods
 func (b *APIs) verifyRBACAnnotations() {
+	parseOption := b.arguments.CustomArgs.(*ParseOptions)
+	if parseOption.SkipRBACValidation {
+		log.Println("skipping RBAC validations")
+		return
+	}
 	err := rbacMatchesInformers(b.Informers, b.Rules)
 	if err != nil {
 		log.Fatal(err)
@@ -141,7 +146,8 @@ func rbacMatchesInformers(informers map[v1.GroupVersionKind]bool, rbacRules []rb
 		}
 		if !found {
 			return fmt.Errorf("Missing rbac rule for %s.%s.  Add with // +kubebuilder:rbac:groups=%s,"+
-				"resources=%s,verbs=get;list;watch", gvk.Group, gvk.Kind, gvk.Group,
+				"resources=%s,verbs=get;list;watch comment on controller struct "+
+				"or run the command with '--skip-rbac-validation' arg", gvk.Group, gvk.Kind, gvk.Group,
 				inflect.NewDefaultRuleset().Pluralize(strings.ToLower(gvk.Kind)))
 		}
 	}

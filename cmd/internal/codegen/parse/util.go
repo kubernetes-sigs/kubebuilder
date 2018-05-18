@@ -27,7 +27,11 @@ import (
 )
 
 type ParseOptions struct {
-    SkipMapValidation bool
+	SkipMapValidation bool
+
+	// SkipRBACValidation flag determines whether to check RBAC annotations
+	// for the controller or not at parse stage.
+	SkipRBACValidation bool
 }
 
 // IsAPIResource returns true if t has a +resource/+kubebuilder:resource comment tag
