@@ -18,6 +18,7 @@ package parse
 
 import (
 	"bufio"
+	"fmt"
 	"go/build"
 	"log"
 	"os"
@@ -80,14 +81,21 @@ func NewAPIs(context *generator.Context, arguments *args.GeneratorArgs) *APIs {
 // e.g. if there is an // +kubebuilder:informer annotation for Pods, then there
 // should also be a // +kubebuilder:rbac annotation for Pods
 func (b *APIs) verifyRBACAnnotations() {
+	err := rbacMatchesInformers(b.Informers, b.Rules)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func rbacMatchesInformers(informers map[v1.GroupVersionKind]bool, rbacRules []rbacv1.PolicyRule) error {
 	rs := inflect.NewDefaultRuleset()
 
 	// For each informer, look for the RBAC annotation
-	for gvk := range b.Informers {
+	for gvk := range informers {
 		found := false
 
 		// Search all RBAC rules for one that matches the informer group and resource
-		for _, rule := range b.Rules {
+		for _, rule := range rbacRules {
 
 			// Check if the group matches the informer group
 			groupFound := false
@@ -112,12 +120,11 @@ func (b *APIs) verifyRBACAnnotations() {
 				continue
 			}
 
+			// The resource name is the lower-plural of the Kind
+			resource := rs.Pluralize(strings.ToLower(gvk.Kind))
 			// Check if the resource matches the informer resource
 			resourceFound := false
 			for _, k := range rule.Resources {
-				// The resource name is the lower-plural of the Kind
-				resource := rs.Pluralize(strings.ToLower(gvk.Kind))
-
 				// If the RBAC resource is a wildcard or matches the informer resource, it is a match
 				if k == "*" || k == resource {
 					resourceFound = true
@@ -133,11 +140,12 @@ func (b *APIs) verifyRBACAnnotations() {
 			break
 		}
 		if !found {
-			log.Fatalf("Missing rbac rule for %s.%s.  Add with // +kubebuilder:rbac:groups=%s,"+
+			return fmt.Errorf("Missing rbac rule for %s.%s.  Add with // +kubebuilder:rbac:groups=%s,"+
 				"resources=%s,verbs=get;list;watch", gvk.Group, gvk.Kind, gvk.Group,
 				inflect.NewDefaultRuleset().Pluralize(strings.ToLower(gvk.Kind)))
 		}
 	}
+	return nil
 }
 
 // parseGroupNames initializes b.GroupNames with the set of all groups
