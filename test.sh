@@ -20,7 +20,7 @@ set -e
 # environment to any value:
 #
 # $ TRACE=1 test.sh
-TRACE=${TRACE:""}
+TRACE=${TRACE:-""}
 if [ -n "$TRACE" ]; then
   set -x
 fi
@@ -59,15 +59,17 @@ fi
 # environment to any value:
 #
 # $ NO_COLOR=1 test.sh
-NO_COLOR=${NO_COLOR:""}
-header=$'\e[1;33m'
-reset=$'\e[0m'
+NO_COLOR=${NO_COLOR:-""}
+if [ -z "$NO_COLOR" ]; then
+  header=$'\e[1;33m'
+  reset=$'\e[0m'
+else
+  header=''
+  reset=''
+fi
+
 function header_text {
-  if [ -z "$NO_COLOR" ]; then
-    echo "$header${@}$reset"
-  else
-    echo ${@}
-  fi
+  echo "$header$*$reset"
 }
 
 rc=0
@@ -83,17 +85,17 @@ kb_orig=$(pwd)
 #
 # If you skip fetching tools, this script will use the tools already on your
 # machine, but rebuild the kubebuilder and kubebuilder-bin binaries.
-SKIP_FETCH_TOOLS=${SKIP_FETCH_TOOLS:""}
+SKIP_FETCH_TOOLS=${SKIP_FETCH_TOOLS:-""}
 
 function prepare_staging_dir {
   header_text "preparing staging dir"
 
   if [ -z "$SKIP_FETCH_TOOLS" ]; then
-    rm -rf $kb_root_dir
+    rm -rf "$kb_root_dir"
   else
-    rm -f $kb_root_dir/kubebuilder/bin/kubebuilder
-    rm -f $kb_root_dir/kubebuilder/bin/kubebuilder-gen
-    rm -f $kb_root_dir/kubebuilder/bin/vendor.tar.gz
+    rm -f "$kb_root_dir/kubebuilder/bin/kubebuilder"
+    rm -f "$kb_root_dir/kubebuilder/bin/kubebuilder-gen"
+    rm -f "$kb_root_dir/kubebuilder/bin/vendor.tar.gz"
   fi
 }
 
@@ -104,38 +106,39 @@ function fetch_tools {
   fi
 
   header_text "fetching tools"
-  kb_tools_archive_name=kubebuilder-tools-$k8s_version-$goos-$goarch.tar.gz
+  kb_tools_archive_name="kubebuilder-tools-$k8s_version-$goos-$goarch.tar.gz"
   kb_tools_download_url="https://storage.googleapis.com/kubebuilder-tools/$kb_tools_archive_name"
 
-  kb_tools_archive_path=$tmp_root/$kb_tools_archive_name
+  kb_tools_archive_path="$tmp_root/$kb_tools_archive_name"
   if [ ! -f $kb_tools_archive_path ]; then
-    curl -sL ${kb_tools_download_url} -o $kb_tools_archive_path
+    curl -sL ${kb_tools_download_url} -o "$kb_tools_archive_path"
   fi
-  tar -zvxf $kb_tools_archive_path -C $tmp_root/
+  tar -zvxf "$kb_tools_archive_path" -C "$tmp_root/"
 }
 
 function build_kb {
   header_text "building kubebuilder"
 
   if [ "$INJECT_KB_VERSION" = "unknown" ]; then
-   go build -o $tmp_root/kubebuilder/bin/kubebuilder ./cmd/kubebuilder
+    opts=""
   else
-   go build -ldflags "-X github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/version.kubeBuilderVersion=$INJECT_KB_VERSION" -o $tmp_root/kubebuilder/bin/kubebuilder ./cmd/kubebuilder
+    opts=-ldflags "-X github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/version.kubeBuilderVersion=$INJECT_KB_VERSION"
   fi
 
+  go build $opts -o $tmp_root/kubebuilder/bin/kubebuilder ./cmd/kubebuilder
   go build -o $tmp_root/kubebuilder/bin/kubebuilder-gen ./cmd/kubebuilder-gen
 }
 
 function prepare_testdir_under_gopath {
   kb_test_dir=$GOPATH/src/github.com/kubernetes-sigs/kubebuilder-test
   header_text "preparing test directory $kb_test_dir"
-  rm -rf $kb_test_dir && mkdir -p $kb_test_dir && cd $kb_test_dir
+  rm -rf "$kb_test_dir" && mkdir -p "$kb_test_dir" && cd "$kb_test_dir"
   header_text "running kubebuilder commands in test directory $kb_test_dir"
 }
 
 function generate_crd_resources {
   header_text "generating CRD resources and code"
-  
+
   # Setup env vars
   export PATH=/tmp/kubebuilder/bin/:$PATH
   export TEST_ASSET_KUBECTL=/tmp/kubebuilder/bin/kubectl
@@ -147,8 +150,13 @@ function generate_crd_resources {
   kubebuilder create resource --group insect --version v1beta1 --kind Bee
 
   header_text "editing generated files to simulate a user"
-  sed -i -e "s|type Bee struct|// +kubebuilder:categories=foo,bar\ntype Bee struct|" pkg/apis/insect/v1beta1/bee_types.go
-  sed -i -e "s|type BeeController struct {|// +kubebuilder:rbac:groups="",resources=pods,verbs=get;watch;list\ntype BeeController struct {|" pkg/controller/bee/controller.go
+  sed -i -e '/type Bee struct/ i \
+  // +kubebuilder:categories=foo,bar
+  ' pkg/apis/insect/v1beta1/bee_types.go
+
+  sed -i -e '/type BeeController struct {/ i \
+  // +kubebuilder:rbac:groups="",resources=pods,verbs=get;watch;list
+  ' pkg/controller/bee/controller.go
 
   header_text "adding a map type to resource"
   sed -i -e "s|type BeeSpec struct {|type BeeSpec struct {\n	Request map[string]string \`json:\"request,omitempty\"\`|" pkg/apis/insect/v1beta1/bee_types.go
@@ -162,7 +170,7 @@ function generate_crd_resources {
   # TODO: this is awkwardly inserted after the first resource created in this
   # test because the output order seems nondeterministic and it's preferable to
   # avoid introducing a new dependency like yq or complex parsing logic
-  cat << EOF > expected.yaml
+  cat << EOF | diff crd.yaml -
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
@@ -204,9 +212,8 @@ status:
     plural: ""
   conditions: null
 EOF
-  diff crd.yaml expected.yaml
 
-    cat << EOF > expected.yaml
+    cat << EOF | diff -B install.yaml -
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -366,7 +373,6 @@ status:
   replicas: 0
 
 EOF
-  diff -B install.yaml expected.yaml
 
 
   kubebuilder create resource --group insect --version v1beta1 --kind Wasp
@@ -375,7 +381,7 @@ EOF
 
   # Check for ordering of generated YAML
   # TODO: make this a more concise test in a follow-up
-  cat << EOF > expected.yaml
+  cat << EOF | diff crd.yaml -
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
@@ -487,7 +493,6 @@ status:
     plural: ""
   conditions: null
 EOF
-  diff crd.yaml expected.yaml
 }
 
 function test_generated_controller {
@@ -502,45 +507,56 @@ function test_generated_controller {
 }
 
 function test_vendor_update {
- header_text "performing vendor update"
- kubebuilder update vendor
+  header_text "performing vendor update"
+  kubebuilder update vendor
 }
 
 function test_docs {
   header_text "building docs"
   kubebuilder docs --docs-copyright "Hello" --title "World" --cleanup=false --brodocs=false
-  diff docs/reference/includes $kb_orig/test/docs/expected/includes
-  diff docs/reference/manifest.json $kb_orig/test/docs/expected/manifest.json
-  diff docs/reference/config.yaml $kb_orig/test/docs/expected/config.yaml
+  diff docs/reference/includes "$kb_orig/test/docs/expected/includes"
+  diff docs/reference/manifest.json "$kb_orig/test/docs/expected/manifest.json"
+  diff docs/reference/config.yaml "$kb_orig/test/docs/expected/config.yaml"
 
   header_text "testing doc annotations"
-  sed -i -e "s|// +kubebuilder:categories=foo,bar|// +kubebuilder:categories=foo,bar\n// +kubebuilder:doc:note=test notes message annotations\n// +kubebuilder:doc:warning=test warnings message annotations|" pkg/apis/insect/v1beta1/bee_types.go
+  sed -i -e '/type Bee struct/ i \
+  // +kubebuilder:doc:note=test notes message annotations\
+  // +kubebuilder:doc:warning=test warnings message annotations
+  ' pkg/apis/insect/v1beta1/bee_types.go
+
   kubebuilder docs --brodocs=false --cleanup=false
-  diff docs/reference/config.yaml $kb_orig/test/docs/expected/config-annotated.yaml
+  diff docs/reference/config.yaml "$kb_orig/test/docs/expected/config-annotated.yaml"
 }
 
 function generate_controller {
   header_text "creating controller"
-    kubebuilder create controller --group ant --version v1beta1 --kind Ant
+  kubebuilder create controller --group ant --version v1beta1 --kind Ant
 }
 
 function update_controller_test {
   # Update import
-  sed -i 's!"k8s.io/client-go/kubernetes/typed/apps/v1beta2"!&\n    "k8s.io/api/core/v1"!' ./pkg/controller/deployment/controller_test.go
+  sed -i -e '/"k8s.io\/client-go\/kubernetes\/typed\/apps\/v1beta2"/ a \
+  "k8s.io/api/core/v1"
+  ' ./pkg/controller/deployment/controller_test.go
 
   # Fill deployment instance
-  sed -i 's!instance.Name = "instance-1"!&\n    instance.Spec.Template.Spec.Containers = []v1.Container{{Name: "name", Image: "someimage"}}\n    labels := map[string]string{"foo": "bar"}\n    instance.Spec.Template.ObjectMeta.Labels = labels\n    instance.Spec.Selector = \&metav1.LabelSelector{MatchLabels: labels}!' ./pkg/controller/deployment/controller_test.go
+  sed -i -e '/instance.Name = "instance-1"/ a \
+  instance.Spec.Template.Spec.Containers = []v1.Container{{Name: "name", Image: "someimage"}}\
+  labels := map[string]string{"foo": "bar"}\
+  instance.Spec.Template.ObjectMeta.Labels = labels\
+  instance.Spec.Selector = \&metav1.LabelSelector{MatchLabels: labels}
+  ' ./pkg/controller/deployment/controller_test.go
 }
 
 function generate_coretype_controller {
-    header_text "generating controller for coretype Deployment"
+  header_text "generating controller for coretype Deployment"
 
-    # Run the commands
-    kubebuilder init repo --domain sample.kubernetes.io --controller-only
-    kubebuilder create controller --group apps --version v1beta2 --kind Deployment --core-type
+  # Run the commands
+  kubebuilder init repo --domain sample.kubernetes.io --controller-only
+  kubebuilder create controller --group apps --version v1beta2 --kind Deployment --core-type
 
   # Fill the required fileds of Deployment object so that the Deployment instance can be successfully created
-    update_controller_test
+  update_controller_test
 }
 
 function generate_resource_with_coretype_controller {
@@ -551,7 +567,7 @@ function generate_resource_with_coretype_controller {
   kubebuilder create resource --group ant --version v1beta1 --kind Ant
   kubebuilder create controller --group apps --version v1beta2 --kind Deployment --core-type
 
-  # Fill the required fileds of Deployment object so that the Deployment instance can be successfully created
+  # Fill the required fields of Deployment object so that the Deployment instance can be successfully created
   update_controller_test
 }
 
