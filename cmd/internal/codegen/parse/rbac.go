@@ -64,7 +64,15 @@ func parseRBACTag(tag string) rbacv1.PolicyRule {
 		values = strings.Split(value, ";")
 		switch kv[0] {
 		case "groups":
-			result.APIGroups = values
+			normalized := []string{}
+			for _, v := range values {
+				if v == "core" {
+					normalized = append(normalized, "")
+				} else {
+					normalized = append(normalized, v)
+				}
+			}
+			result.APIGroups = normalized
 		case "resources":
 			result.Resources = values
 		case "verbs":
@@ -112,6 +120,9 @@ func parseInformerTag(tag string) v1.GroupVersionKind {
 		value := kv[1]
 		switch kv[0] {
 		case "group":
+			if value == "" {
+				value = "core"
+			}
 			result.Group = value
 		case "version":
 			result.Version = value
