@@ -1,5 +1,14 @@
 language: go
 
+os:
+  - linux
+  - osx
+
+matrix:
+  # allow failures until OSX tests have been tested for a while
+  allow_failures:
+    - os: osx
+
 go:
 - "1.10"
 
