@@ -136,14 +136,18 @@ function prepare_testdir_under_gopath {
   header_text "running kubebuilder commands in test directory $kb_test_dir"
 }
 
-function generate_crd_resources {
-  header_text "generating CRD resources and code"
+function setup_envs {
+  header_text "setting up env vars"
 
   # Setup env vars
   export PATH=/tmp/kubebuilder/bin/:$PATH
   export TEST_ASSET_KUBECTL=/tmp/kubebuilder/bin/kubectl
   export TEST_ASSET_KUBE_APISERVER=/tmp/kubebuilder/bin/kube-apiserver
   export TEST_ASSET_ETCD=/tmp/kubebuilder/bin/etcd
+}
+
+function generate_crd_resources {
+  header_text "generating CRD resources and code"
 
   # Run the commands
   kubebuilder init repo --domain sample.kubernetes.io
@@ -581,6 +585,8 @@ function test_plural_resource {
 prepare_staging_dir
 fetch_tools
 build_kb
+
+setup_envs
 
 prepare_testdir_under_gopath
 generate_crd_resources

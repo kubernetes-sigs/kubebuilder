@@ -21,18 +21,20 @@ import (
 	"log"
 	"os"
 
+	"strings"
+
 	createutil "github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/create/util"
 	generatecmd "github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/generate"
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/util"
 	"github.com/markbates/inflect"
 	"github.com/spf13/cobra"
-	"strings"
 )
 
 type ControllerArguments struct {
-	nonNamespacedKind bool
-	generate          bool
-	CoreType          bool
+	nonNamespacedKind  bool
+	generate           bool
+	CoreType           bool
+	SkipRBACValidation bool
 }
 
 func AddCreateController(cmd *cobra.Command) {
@@ -59,6 +61,7 @@ kubebuilder create controller --group apps --version v1beta2 --kind Deployment -
 	createControllerCmd.Flags().BoolVar(&c.nonNamespacedKind, "non-namespaced", false, "if set, the API kind will be non namespaced")
 	createControllerCmd.Flags().BoolVar(&c.generate, "generate", true, "generate controller code")
 	createControllerCmd.Flags().BoolVar(&c.CoreType, "core-type", false, "generate controller for core type")
+	createControllerCmd.Flags().BoolVar(&c.SkipRBACValidation, "skip-rbac-validation", false, "if set to true, skip validation for RBAC annotations for the controller.")
 	cmd.AddCommand(createControllerCmd)
 }
 
@@ -77,6 +80,9 @@ func (c *ControllerArguments) RunCreateController(cmd *cobra.Command, args []str
 	if c.generate {
 		fmt.Printf("Generating code for new controller... " +
 			"Regenerate after editing controller files by running `kubebuilder generate clean; kubebuilder generate`.\n")
+		if c.SkipRBACValidation {
+			args = append(args, "--skip-rbac-validation")
+		}
 		generatecmd.RunGenerate(cmd, args)
 	}
 	fmt.Printf("Next: Run the controller and create an instance with:\n" +

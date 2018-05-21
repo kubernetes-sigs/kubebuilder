@@ -68,7 +68,8 @@ func (q *listeningQueue) addEventHandler(obj metav1.Object, eh eventhandlers.Eve
 func (q *listeningQueue) lookupInformer(obj metav1.Object) (cache.SharedInformer, error) {
 	i := q.informerProvider.GetInformer(obj)
 	if i == nil {
-		return i, fmt.Errorf("Could not find SharedInformer for %T in %s", obj, q.informerProvider)
+		return i, fmt.Errorf("Could not find SharedInformer for %T in %s.  Must register with "+
+			"// +kubebuilder:informer:", obj, q.informerProvider)
 	}
 	return i, nil
 }

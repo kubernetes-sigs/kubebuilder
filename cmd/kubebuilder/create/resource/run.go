@@ -30,9 +30,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var nonNamespacedKind bool
-var controller bool
-var generate bool
+var (
+	nonNamespacedKind  bool
+	controller         bool
+	generate           bool
+	skipRBACValidation bool
+)
 
 var createResourceCmd = &cobra.Command{
 	Use:   "resource",
@@ -63,6 +66,7 @@ func AddCreateResource(cmd *cobra.Command) {
 	createResourceCmd.Flags().BoolVar(&controller, "controller", true, "if true, generate the controller code for the resource")
 	createResourceCmd.Flags().BoolVar(&generate, "generate", true, "generate source code")
 	createResourceCmd.Flags().BoolVar(&createutil.AllowPluralKind, "plural-kind", false, "allow the kind to be plural")
+	createResourceCmd.Flags().BoolVar(&skipRBACValidation, "skip-rbac-validation", false, "if set to true, skip validation for RBAC annotations")
 	cmd.AddCommand(createResourceCmd)
 }
 
@@ -83,6 +87,9 @@ func RunCreateResource(cmd *cobra.Command, args []string) {
 	if generate {
 		fmt.Printf("Generating code for new resource...  " +
 			"Regenerate after editing resources files by running `kubebuilder build generated`.\n")
+		if skipRBACValidation {
+			args = append(args, "--skip-rbac-validation")
+		}
 		generatecmd.RunGenerate(cmd, args)
 	}
 	fmt.Printf("Next: Install the API, run the controller and create an instance with:\n" +
@@ -115,7 +122,10 @@ func createResource(boilerplate string) {
 
 	if controller {
 		fmt.Printf("Creating controller ...\n")
-		c := controllerct.ControllerArguments{CoreType: false}
+		c := controllerct.ControllerArguments{
+			CoreType:           false,
+			SkipRBACValidation: skipRBACValidation,
+		}
 		c.CreateController(boilerplate)
 	}
 

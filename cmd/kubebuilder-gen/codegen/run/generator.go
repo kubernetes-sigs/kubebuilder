@@ -20,9 +20,9 @@ import (
 	"github.com/golang/glog"
 	"github.com/kubernetes-sigs/kubebuilder/cmd/internal/codegen/parse"
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder-gen/codegen"
+	"github.com/spf13/pflag"
 	"k8s.io/gengo/args"
 	"k8s.io/gengo/generator"
-	"github.com/spf13/pflag"
 )
 
 // CodeGenerator generates code for Kubernetes resources and controllers
@@ -54,6 +54,8 @@ func (g *CodeGenerator) Execute() error {
 	customArgs := &parse.ParseOptions{}
 	pflag.CommandLine.BoolVar(&customArgs.SkipMapValidation, "skip-map-validation", true,
 		"if set to true, skip generating validation schema for map type in CRD.")
+	pflag.CommandLine.BoolVar(&customArgs.SkipRBACValidation, "skip-rbac-validation", false,
+		"if set to true, skip validation for RBAC annotations for the controller.")
 	arguments.CustomArgs = customArgs
 
 	arguments.OutputFileBaseName = g.OutputFileBaseName
