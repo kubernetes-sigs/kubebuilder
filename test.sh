@@ -163,7 +163,9 @@ function generate_crd_resources {
   ' pkg/controller/bee/controller.go
 
   header_text "adding a map type to resource"
-  sed -i -e "s|type BeeSpec struct {|type BeeSpec struct {\n	Request map[string]string \`json:\"request,omitempty\"\`|" pkg/apis/insect/v1beta1/bee_types.go
+  sed -i -e '/type BeeSpec struct {/ a \
+  Request map[string]string \`json:\"request,omitempty\"\`
+  ' pkg/apis/insect/v1beta1/bee_types.go
 
   header_text "generating and testing CRD definition"
   kubebuilder create config --crds --output crd.yaml
