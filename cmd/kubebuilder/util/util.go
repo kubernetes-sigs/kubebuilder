@@ -84,7 +84,7 @@ func WriteString(path, value string) {
 		create(path)
 	}
 
-	f, err := os.OpenFile(path, os.O_WRONLY, 0)
+	f, err := os.OpenFile(path, os.O_WRONLY|os.O_TRUNC, 0)
 	if err != nil {
 		log.Fatalf("Failed to create %s: %v", path, err)
 	}
