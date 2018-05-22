@@ -4,7 +4,7 @@ metadata:
   creationTimestamp: null
   labels:
     api: ""
-    kubebuilder.k8s.io: master
+    kubebuilder.k8s.io: unknown
   name: memcacheds.myapps.memcached.example.com
 spec:
   group: myapps.memcached.example.com
