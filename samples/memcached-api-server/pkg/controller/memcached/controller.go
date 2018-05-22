@@ -93,11 +93,11 @@ func (bc *MemcachedController) updateMemcachedStatus(mc *myappsv1alpha1.Memcache
 
 // +controller:group=myapps,version=v1alpha1,kind=Memcached,resource=memcacheds
 // +informers:group=apps,version=v1,kind=Deployment
-// +rbac:rbac:groups=apps,resources=Deployment,verbs=get;list;watch;create;update;patch;delete
+// +rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +informers:group=apps,version=v1,kind=ReplicaSet
-// +rbac:rbac:groups=apps,resources=ReplicaSet,verbs=get;list;watch
+// +rbac:groups=apps,resources=replicasets,verbs=get;list;watch
 // +informers:group=core,version=v1,kind=Pod
-// +rbac:rbac:groups="",resources=Pod,verbs=get;list;watch
+// +rbac:groups=core,resources=pods,verbs=get;list;watch
 type MemcachedController struct {
 	args.InjectArgs
 

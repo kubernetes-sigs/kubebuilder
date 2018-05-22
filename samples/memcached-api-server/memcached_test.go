@@ -49,8 +49,8 @@ func TestDocs(t *testing.T) {
 	if err != nil {
 		t.Errorf(err.Error())
 	}
-	docsDir := filepath.Join(kubebuilderTest.Dir, "docs")
-	expectedDocsDir := filepath.Join(kubebuilderTest.Dir, "test", "docs")
+	docsDir := filepath.Join(kubebuilderTest.Dir, "docs", "reference")
+	expectedDocsDir := filepath.Join(kubebuilderTest.Dir, "test", "docs", "reference")
 	err = kubebuilderTest.DiffAll(docsDir, expectedDocsDir)
 	if err != nil {
 		t.Errorf(err.Error())
