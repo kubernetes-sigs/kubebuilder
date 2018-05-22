@@ -15,13 +15,16 @@ func setup() {
 	projectDir := filepath.Dir(filename)
 	kubebuilderBin := "/tmp/kubebuilder/bin"
 	kubebuilderTest = e2e.NewKubebuilderTest(projectDir, kubebuilderBin)
-	kubebuilderTest.CleanUp()
 }
 
+func teardown() {
+	kubebuilderTest.CleanUp()
+}
 
 func TestMain(m *testing.M) {
 	setup()
 	code := m.Run()
+	teardown()
 	os.Exit(code)
 }
 
