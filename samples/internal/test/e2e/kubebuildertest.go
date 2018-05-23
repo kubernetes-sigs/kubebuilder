@@ -19,6 +19,10 @@ func NewKubebuilderTest(dir, binDir string) *KubebuilderTest {
 	os.Setenv("TEST_ASSET_KUBECTL", strings.Join([]string{binDir, "kubectl"}, "/"))
 	os.Setenv("TEST_ASSET_KUBE_APISERVER", strings.Join([]string{binDir, "kube-apiserver"}, "/"))
 	os.Setenv("TEST_ASSET_ETCD", strings.Join([]string{binDir, "etcd"}, "/"))
+	cmd := exec.Command("command", "-v", "kubebuilder")
+	if err := kt.runCommand(cmd); err != nil {
+		os.Setenv("PATH",strings.Join([]string{binDir, os.Getenv("PATH")}, ":"))
+	}
 	return &kt
 }
 
