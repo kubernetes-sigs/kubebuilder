@@ -148,8 +148,9 @@ var jsonRegex = regexp.MustCompile("json:\"([a-zA-Z,]+)\"")
 
 type primitiveTemplateArgs struct {
 	v1beta1.JSONSchemaProps
-	Value  string
-	Format string
+	Value     string
+	Format    string
+	EnumValue string // TODO check type of enum value to match the type of field
 }
 
 var primitiveTemplate = template.Must(template.New("map-template").Parse(
@@ -173,6 +174,15 @@ var primitiveTemplate = template.Must(template.New("map-template").Parse(
     {{ if .Format -}}
     Format: "{{ .Format }}",
     {{ end -}}
+    {{ if .EnumValue -}}
+    Enum: {{ .EnumValue }},
+    {{ end -}}
+    {{ if .MaxLength -}}
+    MaxLength: getInt({{ .MaxLength }}),
+    {{ end -}}
+    {{ if .MinLength -}}
+    MinLength: getInt({{ .MinLength }}),
+    {{ end -}}
 }`))
 
 // parsePrimitiveValidation returns a JSONSchemaProps object and its
@@ -187,7 +197,7 @@ func (b *APIs) parsePrimitiveValidation(t *types.Type, found sets.String, commen
 
 	buff := &bytes.Buffer{}
 
-	var n, f string
+	var n, f, s string
 	switch t.Name.Name {
 	case "int", "int64", "uint64":
 		n = "integer"
@@ -208,15 +218,17 @@ func (b *APIs) parsePrimitiveValidation(t *types.Type, found sets.String, commen
 	default:
 		n = t.Name.Name
 	}
-	if err := primitiveTemplate.Execute(buff, primitiveTemplateArgs{props, n, f}); err != nil {
+	if props.Enum != nil {
+		s = parseEnumToString(props.Enum)
+	}
+	if err := primitiveTemplate.Execute(buff, primitiveTemplateArgs{props, n, f, s}); err != nil {
 		log.Fatalf("%v", err)
 	}
-
 	return props, buff.String()
 }
 
 type mapTempateArgs struct {
-	Result string
+	Result            string
 	SkipMapValidation bool
 }
 
@@ -236,7 +248,7 @@ func (b *APIs) parseMapValidation(t *types.Type, found sets.String, comments []s
 	props := v1beta1.JSONSchemaProps{
 		Type: "object",
 	}
-    parseOption := b.arguments.CustomArgs.(*ParseOptions)
+	parseOption := b.arguments.CustomArgs.(*ParseOptions)
 	if !parseOption.SkipMapValidation {
 		props.AdditionalProperties = &v1beta1.JSONSchemaPropsOrBool{
 			Allows: true,
@@ -253,10 +265,24 @@ func (b *APIs) parseMapValidation(t *types.Type, found sets.String, comments []s
 var arrayTemplate = template.Must(template.New("array-template").Parse(
 	`v1beta1.JSONSchemaProps{
     Type:                 "array",
+    {{ if .MaxItems -}}
+    MaxItems: getInt({{ .MaxItems }}),
+    {{ end -}}
+    {{ if .MinItems -}}
+    MinItems: getInt({{ .MinItems }}),
+    {{ end -}}
+    {{ if .UniqueItems -}}
+    UniqueItems: {{ .UniqueItems }},
+    {{ end -}}
     Items: &v1beta1.JSONSchemaPropsOrArray{
-        Schema: &{{.}},
+        Schema: &{{.ItemsSchema}},
     },
 }`))
+
+type arrayTemplateArgs struct {
+	v1beta1.JSONSchemaProps
+	ItemsSchema string
+}
 
 // parseArrayValidation returns a JSONSchemaProps object and its serialization in
 // Go that describe the validations for the given array type.
@@ -266,9 +292,11 @@ func (b *APIs) parseArrayValidation(t *types.Type, found sets.String, comments [
 		Type:  "array",
 		Items: &v1beta1.JSONSchemaPropsOrArray{Schema: &items},
 	}
-
+	for _, l := range comments {
+		getValidation(l, &props)
+	}
 	buff := &bytes.Buffer{}
-	if err := arrayTemplate.Execute(buff, result); err != nil {
+	if err := arrayTemplate.Execute(buff, arrayTemplateArgs{props, result}); err != nil {
 		log.Fatalf("%v", err)
 	}
 	return props, buff.String()
@@ -380,28 +408,34 @@ func getValidation(comment string, props *v1beta1.JSONSchemaProps) {
 	case "Pattern":
 		props.Pattern = parts[1]
 	case "MaxItems":
-		i, err := strconv.Atoi(parts[1])
-		v := int64(i)
-		if err != nil {
-			log.Fatalf("Could not parse int from %s: %v", comment, err)
-			return
+		if props.Type == "array" {
+			i, err := strconv.Atoi(parts[1])
+			v := int64(i)
+			if err != nil {
+				log.Fatalf("Could not parse int from %s: %v", comment, err)
+				return
+			}
+			props.MaxItems = &v
 		}
-		props.MaxItems = &v
 	case "MinItems":
-		i, err := strconv.Atoi(parts[1])
-		v := int64(i)
-		if err != nil {
-			log.Fatalf("Could not parse int from %s: %v", comment, err)
-			return
+		if props.Type == "array" {
+			i, err := strconv.Atoi(parts[1])
+			v := int64(i)
+			if err != nil {
+				log.Fatalf("Could not parse int from %s: %v", comment, err)
+				return
+			}
+			props.MinItems = &v
 		}
-		props.MinItems = &v
 	case "UniqueItems":
-		b, err := strconv.ParseBool(parts[1])
-		if err != nil {
-			log.Fatalf("Could not parse bool from %s: %v", comment, err)
-			return
+		if props.Type == "array" {
+			b, err := strconv.ParseBool(parts[1])
+			if err != nil {
+				log.Fatalf("Could not parse bool from %s: %v", comment, err)
+				return
+			}
+			props.UniqueItems = b
 		}
-		props.ExclusiveMinimum = b
 	case "MultipleOf":
 		f, err := strconv.ParseFloat(parts[1], 64)
 		if err != nil {
@@ -410,9 +444,13 @@ func getValidation(comment string, props *v1beta1.JSONSchemaProps) {
 		}
 		props.MultipleOf = &f
 	case "Enum":
-		enums := strings.Split(parts[1], ",")
-		for i := range enums {
-			props.Enum = append(props.Enum, v1beta1.JSON{[]byte(enums[i])})
+		if props.Type != "array" {
+			value := strings.Split(parts[1], ",")
+			enums := []v1beta1.JSON{}
+			for _, s := range value {
+				checkType(props, s, &enums)
+			}
+			props.Enum = enums
 		}
 	case "Format":
 		props.Format = parts[1]

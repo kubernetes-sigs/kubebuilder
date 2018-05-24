@@ -18,11 +18,14 @@ package parse
 
 import (
 	"fmt"
+	"log"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
 
+	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/gengo/types"
 )
 
@@ -238,4 +241,52 @@ func getDocAnnotation(t *types.Type, tags ...string) map[string]string {
 		}
 	}
 	return annotation
+}
+
+// parseByteValue returns the literal digital number values from a byte array
+func parseByteValue(b []byte) string {
+	elem := strings.Join(strings.Fields(fmt.Sprintln(b)), ",")
+	elem = strings.TrimPrefix(elem, "[")
+	elem = strings.TrimSuffix(elem, "]")
+	return elem
+}
+
+// parseEnumToString returns a representive validated go format string from JSONSchemaProps schema
+func parseEnumToString(value []v1beta1.JSON) string {
+	res := "[]v1beta1.JSON{"
+	prefix := "v1beta1.JSON{[]byte{"
+	for _, v := range value {
+		res = res + prefix + parseByteValue(v.Raw) + "}},"
+	}
+	return strings.TrimSuffix(res, ",") + "}"
+}
+
+// check type of enum element value to match type of field
+func checkType(props *v1beta1.JSONSchemaProps, s string, enums *[]v1beta1.JSON) {
+
+	// TODO support more types check
+	switch props.Type {
+	case "int", "int64", "uint64":
+		if _, err := strconv.ParseInt(s, 0, 64); err != nil {
+			log.Fatalf("Invalid integer value [%v] for a field of integer type", s)
+		}
+		*enums = append(*enums, v1beta1.JSON{[]byte(fmt.Sprintf("%v", s))})
+	case "int32", "unit32":
+		if _, err := strconv.ParseInt(s, 0, 32); err != nil {
+			log.Fatalf("Invalid integer value [%v] for a field of integer32 type", s)
+		}
+		*enums = append(*enums, v1beta1.JSON{[]byte(fmt.Sprintf("%v", s))})
+	case "float", "float32":
+		if _, err := strconv.ParseFloat(s, 32); err != nil {
+			log.Fatalf("Invalid float value [%v] for a field of float32 type", s)
+		}
+		*enums = append(*enums, v1beta1.JSON{[]byte(fmt.Sprintf("%v", s))})
+	case "float64":
+		if _, err := strconv.ParseFloat(s, 64); err != nil {
+			log.Fatalf("Invalid float value [%v] for a field of float type", s)
+		}
+		*enums = append(*enums, v1beta1.JSON{[]byte(fmt.Sprintf("%v", s))})
+	case "string":
+		*enums = append(*enums, v1beta1.JSON{[]byte(`"` + s + `"`)})
+	}
 }
