@@ -1,6 +1,5 @@
 {
-
-  "plugins": ["theme-api", "panel", "sequence-diagrams"],
+  "plugins": ["theme-api", "panel", "sequence-diagrams", "ga"],
   "pluginsConfig": {
     "theme-api": {
       "split": true
@@ -8,7 +7,10 @@
     "sequence-diagrams": {
       "theme": "simple"
 
-    }
+    },
+    "ga": {
+            "token": "UA-119864590-1"
+        }
   },
   "gitbook": ">= 3.0.0",
   "author": "Phillip Wittrock",
