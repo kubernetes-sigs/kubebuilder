@@ -55,7 +55,7 @@ func RunVendorInstall(cmd *cobra.Command, args []string) {
 	if !depExists() {
 		log.Fatalf("Dep is not installed. Follow steps at: https://golang.github.io/dep/docs/installation.html")
 	}
-	if Update {
+	if Update && depManifestExists() {
 		if err := updateDepManifest(); err != nil {
 			log.Fatalf("error upgrading the dep manifest (Gopkg.toml): %v", err)
 		}
@@ -83,6 +83,11 @@ func runDepEnsure() error {
 func depExists() bool {
 	_, err := exec.LookPath("dep")
 	return err == nil
+}
+
+func depManifestExists() bool {
+	_, err := os.Stat(depManifestFile)
+	return os.IsExist(err)
 }
 
 func createNewDepManifest() {
