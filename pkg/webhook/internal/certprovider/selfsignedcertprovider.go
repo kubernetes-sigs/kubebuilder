@@ -16,55 +16,31 @@ limitations under the License.
 
 package certprovider
 
-import (
-	"crypto/tls"
-)
+// SelfSignedCertProvider implements the CertProvider interface.
+// It generates self-signed certificates.
+type SelfSignedCertProvider struct {
+	// Configuration for certificate generat
+	DNSNames     []string
+	Organization string
+	ValidDays    int // Number of days the certificate will be valid for.
 
-type selfSignedCertProvider struct {
-	cAKey      []byte
-	cACert     []byte
-	serverKey  []byte
-	serverCert []byte
-
-	genConfig *genCertConfig
-
-	secretConfig *secretConfig
+	// Configuration of how to persist the certificates in a k8s secret.
+	SecretConfig *SecretConfig
 }
 
-var _ CertProvider = &selfSignedCertProvider{}
+var _ CertProvider = &SelfSignedCertProvider{}
 
-type genCertConfig struct {
-	dnsNames     []string
-	organization string
+type SecretConfig struct {
+	Name           string
+	Namespace      string
+	CAKeyName      string
+	CACertName     string
+	ServerKeyName  string
+	ServerCertName string
 }
 
-type secretConfig struct {
-	name           string
-	namespace      string
-	caKeyName      string
-	caCertName     string
-	serverKeyName  string
-	serverCertName string
+// GetServerCert generates and persists the CA and server cert if it doesn't exist in the secret.
+// If they exist in the secret, GetServerCert gets the secret and returns the server key, server cert and CA cert.
+func (cp *SelfSignedCertProvider) GetServerCert() (key []byte, cert []byte, caCert []byte, err error) {
+	return nil, nil, nil, nil
 }
-
-func NewSelfSignedCertProvider() CertProvider { return nil }
-
-func (cp *selfSignedCertProvider) GenerateCA() error { return nil }
-
-func (cp *selfSignedCertProvider) GetCACert() ([]byte, error) { return nil, nil }
-
-func (cp *selfSignedCertProvider) GenerateServerCert(org string, dnsNames []string, days int) error {
-	return nil
-}
-
-func (cp *selfSignedCertProvider) GetServerCert() ([]byte, []byte, error) { return nil, nil, nil }
-
-func (cp *selfSignedCertProvider) PersistCA(namespace, name, keyName, certName string) error {
-	return nil
-}
-
-func (cp *selfSignedCertProvider) PersistServerCert(namespace, name, keyName, certName string) error {
-	return nil
-}
-
-func (cp *selfSignedCertProvider) GetTLSConfig() (*tls.Config, error) { return nil, nil }

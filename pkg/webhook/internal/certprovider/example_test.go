@@ -16,33 +16,24 @@ limitations under the License.
 
 package certprovider
 
-import (
-	"net/http"
-)
+func ExampleSelfSignedCertProvider() {
+	cp := SelfSignedCertProvider{
+		Organization: "k8s.io",
+		DNSNames:     []string{"myDNSName"},
+		ValidDays:    365,
 
-func ExampleNewSelfSignedCertProvider() {
-	cp := NewSelfSignedCertProvider()
+		SecretConfig: &SecretConfig{
+			Name:           "mySecret",
+			Namespace:      "myNamespace",
+			ServerCertName: "server-cert.pem",
+			ServerKeyName:  "server-key.pem",
+			CACertName:     "ca-cert.pem",
+			CAKeyName:      "ca-key.pem",
+		},
+	}
 
-	err := cp.GenerateCA()
+	key, cert, caCert, err := cp.GetServerCert()
 	if err != nil {
 		// handle error
 	}
-	err = cp.PersistCA("myNamespace", "mySecret", "ca-key.pem", "ca-cert.pem")
-	if err != nil {
-		// handle error
-	}
-
-	err = cp.GenerateServerCert("k8s.io", []string{"myDNSName"}, 365)
-	if err != nil {
-		// handle error
-	}
-	err = cp.PersistServerCert("myNamespace", "mySecret", "server-key.pem", "server-cert.pem")
-	if err != nil {
-		// handle error
-	}
-
-	svr := &http.Server{
-		// server configuration
-	}
-	svr.ListenAndServeTLS("path/to/server-cert.pem", "path/to/server-key.pem")
 }

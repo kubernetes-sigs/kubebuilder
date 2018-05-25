@@ -16,29 +16,8 @@ limitations under the License.
 
 package certprovider
 
-import (
-	"crypto/tls"
-)
-
 // CertProvider is an interface to provide CA and server certificate.
 type CertProvider interface {
-	// GenerateCA generates a pair of CA key and certificate for signing the server certificate.
-	GenerateCA() error
-	// PersistCA persists the CA into a k8s secret named with name in namespace ns.
-	// The keyName and certName are the keys in the k8s secret.
-	PersistCA(ns, name, keyName, certName string) error
-	// GetCACert returns the CA certificate.
-	GetCACert() (cert []byte, err error)
-
-	// GenerateServerCert generates a pair of server key and certificate.
-	GenerateServerCert(org string, dnsNames []string, days int) error
-	// PersistServerCert persists the server key and certificate into a k8s
-	// secret named with name in namespace ns. The keyName and certName are the
-	// keys in the k8s secret.
-	PersistServerCert(ns, name, keyName, certName string) error
 	// GetServerCert returns the server key and certificate.
-	GetServerCert() (key []byte, cert []byte, err error)
-
-	// GetTLSConfig returns a tls config that can be used to config the http.Server.
-	GetTLSConfig() (*tls.Config, error)
+	GetServerCert() (key []byte, cert []byte, caCert []byte, err error)
 }

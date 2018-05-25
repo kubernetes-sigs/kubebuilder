@@ -20,64 +20,24 @@ certificates.
 
 Create a certprovider instance. For example:
 
-	cp := NewSelfSignedCertProvider()
+	cp := SelfSignedCertProvider{
+		// your configuration
+	}
 
-Generate and persist the CA if you want.
+Generate and consume the certificates.
 
-	err := cp.GenerateCA()
+The certificates are stored in a secret, you can consume it by mounting the secret in a pod:
+https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-files-from-a-pod
+You then can pass the file names to method ListenAndServeTLS.
+
+	_, _, err := cp.GetServerCert()
 	if err != nil {
 		// handle error
 	}
-	err = cp.PersistCA(namespace, name, keyName, certName)
-	if err != nil {
-		// handle error
-	}
-
-Get the CA certificate.
-
-	caCert, err := cp.GetCACert()
-	if err != nil {
-		// handle error
-	}
-
-Generate and persist the server certificate.
-
-	err := cp.GenerateServerCert(org, dnsNames, days)
-	if err != nil {
-		// handle error
-	}
-	err = cp.PersistServerCert(namespace, name, keyName, certName)
-	if err != nil {
-		// handle error
-	}
-
-Consume the generated cert.
-You can consume the certificate in raw byte slice format. This approach is
-useful if you want to consume the certificate by mounting the secret as a volume
-in a pod.
-
-	key, cert, err := cp.GetServerCert()
-	if err != nil {
-		// handle error
-	}
-	// Store key and cert in keyFile and certFile respectively.
+	// key and cert are mounted as keyFile and certFile respectively.
 	svr := &http.Server{
 		// configure your server
 	}
 	svr.ListenAndServeTLS(certFile, keyFile)
-
-You can also consume the certificate in the tls.Config format.
-
-	tls, err := cp.GetTLSConfig()
-	if err != nil {
-		// handle error
-	}
-
-	svr := &http.Server{
-		TLSConfig: tls,
-		// other server configuration
-	}
-	svr.ListenAndServeTLS("", "")
-
 */
 package certprovider
