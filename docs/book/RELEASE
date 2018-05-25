@@ -1,6 +1,9 @@
 To push the docs run:
 
+Configure kubectl to talk to the kubebuilder "docs" GKE cluster.
+
+- export IMAGE=gcr.io/kubebuilder/book:v<number>
 - gitbook build
-- docker build . -t gcr.io/kubebuilder/book
-- docker push  gcr.io/kubebuilder/book
-- kubectl delete pods -l run=gitbook-prod
+- docker build . -t $IMAGE
+- docker push  $IMAGE
+- kubectl set image deployment gitbook-prod *=$IMAGE
