@@ -1,6 +1,3 @@
-
-
-
 //
 // +domain=memcached.example.com
 

@@ -4,7 +4,7 @@ import (
 	injectargs "github.com/kubernetes-sigs/kubebuilder/pkg/inject/args"
 	"github.com/kubernetes-sigs/kubebuilder/pkg/inject/run"
 
-	"github.com/kubernetes-sigs/kubebuilder/samples/memcached-api-server/pkg/inject/args"
+	"github.com/kubernetes-sigs/kubebuilder/test/projects/memcached-api-server/pkg/inject/args"
 )
 
 var (

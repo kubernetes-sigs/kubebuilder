@@ -11,9 +11,9 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
-	"github.com/kubernetes-sigs/kubebuilder/samples/memcached-api-server/pkg/client/clientset/versioned"
-	"github.com/kubernetes-sigs/kubebuilder/samples/memcached-api-server/pkg/inject"
-	"github.com/kubernetes-sigs/kubebuilder/samples/memcached-api-server/pkg/inject/args"
+	"github.com/kubernetes-sigs/kubebuilder/test/projects/memcached-api-server/pkg/client/clientset/versioned"
+	"github.com/kubernetes-sigs/kubebuilder/test/projects/memcached-api-server/pkg/inject"
+	"github.com/kubernetes-sigs/kubebuilder/test/projects/memcached-api-server/pkg/inject/args"
 )
 
 var (

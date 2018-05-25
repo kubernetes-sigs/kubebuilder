@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"testing"
-	"github.com/kubernetes-sigs/kubebuilder/samples/internal/test/e2e"
+	"github.com/kubernetes-sigs/kubebuilder/test/internal/e2e"
 )
 
 var kubebuilderTest *e2e.KubebuilderTest
