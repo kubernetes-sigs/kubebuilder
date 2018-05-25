@@ -18,12 +18,9 @@ Please see https://git.k8s.io/community/CLA.md for more info
 Setup:
 
 - Download [google container builder](https://cloud.google.com/container-builder/docs/build-debug-locally)
-- Export `GOOS` (darwin/linux) and `GOARCH` (amd64) vars to match the system to build
 - Export `OUTPUT` to a location to write the directory containing the final build artifacts
 
 ```sh
-export GOOS=darwin
-export GOARCH=amd64
 export OUTPUT=/tmp/kubebuilder
 ```
 
@@ -31,7 +28,7 @@ Run container-builder:
 
 ```sh
 container-builder-local --config=build/cloudbuild_local.yaml --dryrun=false \
-  --substitutions=_GOOS=$GOOS,_GOARCH=$GOARCH --write-workspace=$OUTPUT .
+  --write-workspace=$OUTPUT .
 ```
 
 Extract `tar.gz` from $OUTPUT to /usr/local
