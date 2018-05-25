@@ -6,8 +6,8 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	. "github.com/kubernetes-sigs/kubebuilder/samples/memcached-api-server/pkg/apis/myapps/v1alpha1"
-	. "github.com/kubernetes-sigs/kubebuilder/samples/memcached-api-server/pkg/client/clientset/versioned/typed/myapps/v1alpha1"
+	. "github.com/kubernetes-sigs/kubebuilder/test/projects/memcached-api-server/pkg/apis/myapps/v1alpha1"
+	. "github.com/kubernetes-sigs/kubebuilder/test/projects/memcached-api-server/pkg/client/clientset/versioned/typed/myapps/v1alpha1"
 )
 
 // EDIT THIS FILE!

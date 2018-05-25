@@ -535,7 +535,7 @@ function test_crd_validation {
   kubebuilder generate
   header_text "generating and testing CRD..."
   kubebuilder create config --crds --output crd-validation.yaml
-  diff crd-validation.yaml $kb_orig/test/resource/expected/crd-expected.yaml
+  diff crd-validation.yaml $kb_orig/test/data/resource/expected/crd-expected.yaml
 
   kubebuilder create config --controller-image myimage:v1 --name myextensionname --output install.yaml
   kubebuilder create controller --group got --version v1beta1 --kind House
@@ -568,9 +568,9 @@ function test_vendor_update {
 function test_docs {
   header_text "building docs"
   kubebuilder docs --docs-copyright "Hello" --title "World" --cleanup=false --brodocs=false
-  diff docs/reference/includes "$kb_orig/test/docs/expected/includes"
-  diff docs/reference/manifest.json "$kb_orig/test/docs/expected/manifest.json"
-  diff docs/reference/config.yaml "$kb_orig/test/docs/expected/config.yaml"
+  diff docs/reference/includes "$kb_orig/test/data/docs/expected/includes"
+  diff docs/reference/manifest.json "$kb_orig/test/data/docs/expected/manifest.json"
+  diff docs/reference/config.yaml "$kb_orig/test/data/docs/expected/config.yaml"
 
   header_text "testing doc annotations"
   sed -i -e '/type Bee struct/ i \
@@ -579,7 +579,7 @@ function test_docs {
   ' pkg/apis/insect/v1beta1/bee_types.go
 
   kubebuilder docs --brodocs=false --cleanup=false
-  diff docs/reference/config.yaml "$kb_orig/test/docs/expected/config-annotated.yaml"
+  diff docs/reference/config.yaml "$kb_orig/test/data/docs/expected/config-annotated.yaml"
 }
 
 function generate_controller {

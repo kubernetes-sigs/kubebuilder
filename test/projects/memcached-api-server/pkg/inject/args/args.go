@@ -6,8 +6,8 @@ import (
 	"github.com/kubernetes-sigs/kubebuilder/pkg/inject/args"
 	"k8s.io/client-go/rest"
 
-	"github.com/kubernetes-sigs/kubebuilder/samples/memcached-api-server/pkg/client/clientset/versioned"
-	"github.com/kubernetes-sigs/kubebuilder/samples/memcached-api-server/pkg/client/informers/externalversions"
+	"github.com/kubernetes-sigs/kubebuilder/test/projects/memcached-api-server/pkg/client/clientset/versioned"
+	"github.com/kubernetes-sigs/kubebuilder/test/projects/memcached-api-server/pkg/client/informers/externalversions"
 )
 
 // InjectArgs are the arguments need to initialize controllers

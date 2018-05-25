@@ -17,7 +17,7 @@ RUN chmod +x $TEST_ASSET_KUBE_APISERVER
 RUN chmod +x $TEST_ASSET_KUBECTL
 
 # Copy in the go src
-WORKDIR /go/src/github.com/kubernetes-sigs/kubebuilder/samples/memcached-api-server
+WORKDIR /go/src/github.com/kubernetes-sigs/kubebuilder/test/projects/memcached-api-server
 COPY pkg/    pkg/
 COPY cmd/    cmd/
 COPY vendor/ vendor/
@@ -30,6 +30,6 @@ RUN go test ./pkg/... ./cmd/...
 FROM ubuntu:latest
 # RUN apk --no-cache add ca-certificates
 WORKDIR /root/
-COPY --from=builder /go/src/github.com/kubernetes-sigs/kubebuilder/samples/memcached-api-server/controller-manager .
+COPY --from=builder /go/src/github.com/kubernetes-sigs/kubebuilder/test/projects/memcached-api-server/controller-manager .
 ENTRYPOINT ["./controller-manager"]
 CMD ["--install-crds=false"]

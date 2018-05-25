@@ -8,8 +8,8 @@ import (
 	. "github.com/onsi/gomega"
 	"k8s.io/client-go/rest"
 
-	"github.com/kubernetes-sigs/kubebuilder/samples/memcached-api-server/pkg/client/clientset/versioned"
-	"github.com/kubernetes-sigs/kubebuilder/samples/memcached-api-server/pkg/inject"
+	"github.com/kubernetes-sigs/kubebuilder/test/projects/memcached-api-server/pkg/client/clientset/versioned"
+	"github.com/kubernetes-sigs/kubebuilder/test/projects/memcached-api-server/pkg/inject"
 )
 
 var testenv *test.TestEnvironment
