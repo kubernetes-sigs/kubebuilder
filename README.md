@@ -29,6 +29,14 @@ See the [Getting Started](http://book.kubebuilder.io/quick_start.html) documenta
 
 ![Quick Start](docs/gif/quickstart.gif)
 
+## Resources
+
+GitBook: [book.kubebuilder.com](http://book.kubebuilder.com)
+GitHub Repo: [kubernetes-sigs/kubebuilder](https://github.com/kubernetes-sigs/kubebuilder)
+Slack channel: [#kubeuilder](http://slack.k8s.io/#kubebuilder)
+Google Group: [kubebuilder@googlegroups.com](https://groups.google.com/forum/#!forum/kubebuilder)
+Planned Work: [Sprint Dashboard](https://github.com/kubernetes-sigs/kubebuilder/projects/1)
+
 ## Motivation
 
 Building Kubernetes tools and APIs involves making a lot of decisions and writing a lot of boilerplate.
