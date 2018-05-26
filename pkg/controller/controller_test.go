@@ -17,6 +17,9 @@ limitations under the License.
 package controller
 
 import (
+	"fmt"
+	"sync/atomic"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -473,6 +476,34 @@ var _ = Describe("GenericController", func() {
 			instance.queue.AddRateLimited("1/2/3")
 			val := ChannelResult{}
 			Consistently(result).Should(Not(Receive(&val.result)))
+		})
+	})
+
+	Describe("Re-queue an item when reconcile returns error", func() {
+		BeforeEach(func() {
+			var counter uint64
+			instance = &GenericController{
+				Name:             "TestInstance",
+				InformerRegistry: mgr,
+				Reconcile: func(k types.ReconcileKey) error {
+					result <- fmt.Sprintf("retry-%d", counter)
+					atomic.AddUint64(&counter, 1)
+					return fmt.Errorf("error")
+				},
+			}
+			mgr.AddController(instance)
+			mgr.RunInformersAndControllers(run.RunArguments{Stop: stop})
+		})
+
+		It("should add the item back to the queue", func() {
+			instance.Watch(&corev1.Pod{})
+			// Create a Pod event
+			fakePodInformer.Add(&corev1.Pod{ObjectMeta: metav1.ObjectMeta{Name: "failed-pod", Namespace: "default"}})
+			val := ChannelResult{}
+			Eventually(result).Should(Receive(&val.result))
+			Expect(val.result).Should(Equal("retry-0"))
+			Eventually(result).Should(Receive(&val.result))
+			Expect(val.result).Should(Equal("retry-1"))
 		})
 	})
 
