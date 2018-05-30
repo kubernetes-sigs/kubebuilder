@@ -315,6 +315,7 @@ func (gc *GenericController) processNextWorkItem() bool {
 			if gc.AfterReconcile != nil {
 				gc.AfterReconcile(rk, err)
 			}
+			gc.queue.AddRateLimited(key)
 			return fmt.Errorf("error syncing %s queue '%s': %s", gc.Name, key, err.Error())
 		}
 		if gc.AfterReconcile != nil {
