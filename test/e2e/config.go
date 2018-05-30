@@ -48,7 +48,7 @@ func initConfig(testSuffix string) *config {
 		kind:                "Foo" + testSuffix,
 		installName:         installName,
 		namespace:           testNamespace,
-		controllerImageName: "gcr.io/kubeships/controller-manager:" + testSuffix,
+		controllerImageName: "e2e-test/controller-manager:" + testSuffix,
 		workDir:             filepath.Join(framework.TestContext.ProjectDir, "e2e-"+testSuffix),
 	}
 }

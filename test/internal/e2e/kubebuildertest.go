@@ -191,7 +191,7 @@ func (kt *KubebuilderTest) runCommand(cmd *exec.Cmd) ([]byte, error) {
 	command := strings.Join(cmd.Args, " ")
 	output, err := cmd.Output()
 	if err != nil {
-		return output, fmt.Errorf("%s failed with error: %v", command, err)
+		return output, fmt.Errorf("%s failed with error: %s", command, string(output))
 	}
 	log.Printf("%s finished successfully", command)
 	return output, nil
