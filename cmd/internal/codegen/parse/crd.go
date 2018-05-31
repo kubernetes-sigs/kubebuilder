@@ -264,7 +264,10 @@ func (b *APIs) parseMapValidation(t *types.Type, found sets.String, comments []s
 
 var arrayTemplate = template.Must(template.New("array-template").Parse(
 	`v1beta1.JSONSchemaProps{
-    Type:                 "array",
+    Type:                 "{{.Type}}",
+    {{ if .Format -}}
+    Format: "{{.Format}}",
+    {{ end -}}
     {{ if .MaxItems -}}
     MaxItems: getInt({{ .MaxItems }}),
     {{ end -}}
@@ -274,9 +277,11 @@ var arrayTemplate = template.Must(template.New("array-template").Parse(
     {{ if .UniqueItems -}}
     UniqueItems: {{ .UniqueItems }},
     {{ end -}}
+    {{ if .Items -}}
     Items: &v1beta1.JSONSchemaPropsOrArray{
         Schema: &{{.ItemsSchema}},
     },
+    {{ end -}}
 }`))
 
 type arrayTemplateArgs struct {
@@ -291,6 +296,11 @@ func (b *APIs) parseArrayValidation(t *types.Type, found sets.String, comments [
 	props := v1beta1.JSONSchemaProps{
 		Type:  "array",
 		Items: &v1beta1.JSONSchemaPropsOrArray{Schema: &items},
+	}
+	if t.Name.Name == "[]byte" {
+		props.Type = "string"
+		props.Format = "byte"
+		props.Items = nil
 	}
 	for _, l := range comments {
 		getValidation(l, &props)
