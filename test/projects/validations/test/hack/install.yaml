@@ -5,12 +5,12 @@ metadata:
   labels:
     api: ""
     kubebuilder.k8s.io: unknown
-  name: memcacheds.myapps.memcached.example.com
+  name: testkinds.apps.validation.com
 spec:
-  group: myapps.memcached.example.com
+  group: apps.validation.com
   names:
-    kind: Memcached
-    plural: memcacheds
+    kind: TestKind
+    plural: testkinds
   scope: Namespaced
   validation:
     openAPIV3Schema:
@@ -23,23 +23,16 @@ spec:
           type: object
         spec:
           properties:
-            size:
-              format: int32
-              maximum: 100
-              minimum: 5
+            count:
+              format: int64
               type: integer
           required:
-          - size
+          - count
           type: object
         status:
-          properties:
-            nodes:
-              items:
-                type: string
-              type: array
           type: object
       type: object
-  version: v1alpha1
+  version: v1
 status:
   acceptedNames:
     kind: ""

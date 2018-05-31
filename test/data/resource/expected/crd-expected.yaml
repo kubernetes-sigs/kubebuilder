@@ -59,6 +59,8 @@ spec:
               type: integer
             winner:
               type: boolean
+          required:
+          - rank
           type: object
         status:
           type: object

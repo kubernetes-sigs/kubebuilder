@@ -15,3 +15,4 @@
 #  limitations under the License.
 
 go test -v ./test/projects/memcached-api-server
+go test -v ./test/projects/validations
