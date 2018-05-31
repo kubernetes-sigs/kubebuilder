@@ -31,8 +31,6 @@ import (
 	e2einternal "github.com/kubernetes-sigs/kubebuilder/test/internal/e2e"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
-	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 // RunE2ETests checks configuration parameters (specified through flags) and then runs
@@ -53,7 +51,6 @@ var _ = Describe("main workflow", func() {
 		defer cleanup(kubebuilderTest, c.workDir, c.controllerImageName)
 
 		var controllerPodName string
-		var e error
 
 		By("init project")
 		initOptions := []string{"--domain", c.domain}
@@ -71,10 +68,12 @@ var _ = Describe("main workflow", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		By("building image")
-		// The scaffold test cases generated for core types cannot work without manually modification.
+		// The scaffold test cases generated for core types controller cannot work
+		// without manually modification.
 		// See https://github.com/kubernetes-sigs/kubebuilder/pull/193 for more details
-		// Skip the test part in build process as we don't care about it here.
-		err = framework.ReplaceFileConent(`RUN go test(.*)\n`, "", filepath.Join(c.workDir, "Dockerfile.controller"))
+		// Skip the test for core types controller in build process.
+		testCmdWithoutCoreType := "RUN find ./ -not -path './pkg/controller/deployment/*' -name '*_test.go' -print0 | xargs -0n1 dirname | xargs go test\n"
+		err = framework.ReplaceFileConent(`RUN go test(.*)\n`, testCmdWithoutCoreType, filepath.Join(c.workDir, "Dockerfile.controller"))
 		Expect(err).NotTo(HaveOccurred())
 
 		imageOptions := []string{"-t", c.controllerImageName}
@@ -93,35 +92,31 @@ var _ = Describe("main workflow", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		By("validate the controller-manager pod running as expected")
-		verifyContollerUp := func() (bool, error) {
-			e = nil
+		verifyContollerUp := func() error {
 			// Get pod name
-			getOptions := []string{"get", "pods", "-n", c.namespace, "-o", "go-template={{ range .items }}{{ if not .metadata.deletionTimestamp }}{{ .metadata.name }}{{ \"\\n\" }}{{ end }}{{ end }}"}
+			// TODO: Use kubectl to format the output with a go-template
+			getOptions := []string{"get", "pods", "-n", c.namespace, "-l", "control-plane=controller-manager", "-o", "go-template={{ range .items }}{{ if not .metadata.deletionTimestamp }}{{ .metadata.name }}{{ \"\\n\" }}{{ end }}{{ end }}"}
 			podOutput, err := kubebuilderTest.RunKubectlCommand(framework.GetKubectlArgs(getOptions))
 			Expect(err).NotTo(HaveOccurred())
 			// TODO: validate pod replicas if not default to 1
 			podNames := framework.ParseCmdOutput(podOutput)
 			if len(podNames) != 1 {
-				e = fmt.Errorf("expect 1 controller pods running, but got %d", len(podNames))
-				return false, nil
+				return fmt.Errorf("expect 1 controller pods running, but got %d", len(podNames))
 			}
 			controllerPodName = podNames[0]
+			Expect(controllerPodName).Should(HavePrefix(c.installName+"-controller-manager"))
 
 			// Validate pod status
 			getOptions = []string{"get", "pods", controllerPodName, "-n", c.namespace, "-o", "jsonpath={.status.phase}"}
 			status, err := kubebuilderTest.RunKubectlCommand(framework.GetKubectlArgs(getOptions))
 			Expect(err).NotTo(HaveOccurred())
 			if status != "Running" {
-				e = fmt.Errorf("controller pod in %s status", status)
-				return false, nil
+				return fmt.Errorf("controller pod in %s status", status)
 			}
 
-			return true, nil
+			return nil
 		}
-		varifyErr := wait.PollImmediate(500*time.Millisecond, 1*time.Minute, verifyContollerUp)
-		if varifyErr != nil {
-			framework.Failf(e.Error())
-		}
+		Eventually(verifyContollerUp, 1*time.Minute, 500*time.Millisecond).Should(BeNil())
 
 		By("creating resource object")
 		inputFile = filepath.Join(kubebuilderTest.Dir, "hack", "sample", strings.ToLower(c.kind)+".yaml")
@@ -130,22 +125,15 @@ var _ = Describe("main workflow", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		By("validate the created resource object gets reconciled in controller")
-		verifyResourceReconciled := func() (bool, error) {
+		controllerContainerLogs := func() string {
 			// Check container log to validate that the created resource object gets reconciled in controller
 			logOptions := []string{"logs", controllerPodName, "-n", c.namespace}
 			logOutput, err := kubebuilderTest.RunKubectlCommand(framework.GetKubectlArgs(logOptions))
 			Expect(err).NotTo(HaveOccurred())
 
-			if !strings.Contains(logOutput, fmt.Sprintf("to reconcile %s-example", strings.ToLower(c.kind))) {
-				e = fmt.Errorf("created resource object %s-example not reconciled yet", strings.ToLower(c.kind))
-				return false, nil
-			}
-			return true, nil
+			return logOutput
 		}
-		varifyErr = wait.PollImmediate(500*time.Millisecond, 1*time.Minute, verifyResourceReconciled)
-		if varifyErr != nil {
-			framework.Failf(e.Error())
-		}
+		Eventually(controllerContainerLogs, 1*time.Minute, 500*time.Millisecond).Should(ContainSubstring(fmt.Sprintf("to reconcile %s-example", strings.ToLower(c.kind))))
 
 		By("creating other kind of resource object")
 		inputFile = filepath.Join(kubebuilderTest.Dir, "hack", "sample", "deployment.yaml")
@@ -159,22 +147,7 @@ var _ = Describe("main workflow", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		By("validate other kind of object gets reconciled in controller")
-		verifyResourceReconciled = func() (bool, error) {
-			// Check container log to validate that the created resource object gets reconciled in controller
-			logOptions := []string{"logs", controllerPodName, "-n", c.namespace}
-			logOutput, err := kubebuilderTest.RunKubectlCommand(framework.GetKubectlArgs(logOptions))
-			Expect(err).NotTo(HaveOccurred())
-
-			if !strings.Contains(logOutput, "to reconcile deployment-example") {
-				e = fmt.Errorf("created resource object deployment-example not reconciled yet")
-				return false, nil
-			}
-			return true, nil
-		}
-		varifyErr = wait.PollImmediate(500*time.Millisecond, 1*time.Minute, verifyResourceReconciled)
-		if varifyErr != nil {
-			framework.Failf(e.Error())
-		}
+		Eventually(controllerContainerLogs, 1*time.Minute, 500*time.Millisecond).Should(ContainSubstring("to reconcile deployment-example"))
 	})
 })
 

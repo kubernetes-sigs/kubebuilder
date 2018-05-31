@@ -38,7 +38,7 @@ type config struct {
 // to avoid conflict when running tests synchronously.
 func initConfig(testSuffix string) *config {
 	testGroup := "bar" + testSuffix
-	installName := "kube" + testGroup + testSuffix
+	installName := "kube" + testGroup
 	testNamespace := installName + "-system"
 
 	return &config{
