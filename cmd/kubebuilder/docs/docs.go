@@ -21,6 +21,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
 	"strings"
 
@@ -157,13 +158,21 @@ func RunDocs(cmd *cobra.Command, args []string) {
 	generatecmd.RunGenerate(cmd, args)
 
 	if brodocs {
+		user, err := user.Current()
+		if err != nil {
+			log.Fatalf("error: %v\n", err)
+		}
+
 		// Run the docker command to build the docs
 		c = exec.Command("docker", "run",
+			"-u", fmt.Sprintf("%s:%s", user.Uid, user.Gid),
+			"-v", "/etc/group:/etc/group:ro",
+			"-v", "/etc/passwd:/etc/passwd:ro",
 			"-v", fmt.Sprintf("%s:%s", filepath.Join(wd, outputDir, "includes"), "/source"),
 			"-v", fmt.Sprintf("%s:%s", filepath.Join(wd, outputDir, "build"), "/build"),
 			"-v", fmt.Sprintf("%s:%s", filepath.Join(wd, outputDir, "build"), "/build"),
 			"-v", fmt.Sprintf("%s:%s", filepath.Join(wd, outputDir), "/manifest"),
-			"gcr.io/kubebuilder/brodocs",
+			"gcr.io/kubebuilder/brodocs:v0.1.11",
 		)
 		if verbose {
 			log.Println(strings.Join(c.Args, " "))
