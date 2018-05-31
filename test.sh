@@ -530,7 +530,7 @@ function test_crd_validation {
     Alias string \`json:"alias"\`\
     // +kubebuilder:validation:Enum=1,2,3\
     Rank int \`json:"rank"\`\
-    Comment []byte \`json:"comment"\`\
+    Comment []byte \`json:"comment,omitempty"\`\
   ' pkg/apis/got/v1beta1/house_types.go
 
   kubebuilder generate

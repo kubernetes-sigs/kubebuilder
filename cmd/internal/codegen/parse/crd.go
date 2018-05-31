@@ -297,6 +297,8 @@ func (b *APIs) parseArrayValidation(t *types.Type, found sets.String, comments [
 		Type:  "array",
 		Items: &v1beta1.JSONSchemaPropsOrArray{Schema: &items},
 	}
+	// To represent byte arrays in the generated code, the property of the OpenAPI definition
+	// should have string as its type and byte as its format.
 	if t.Name.Name == "[]byte" {
 		props.Type = "string"
 		props.Format = "byte"
