@@ -33,9 +33,9 @@ import (
     "k8s.io/client-go/kubernetes/scheme"
     "k8s.io/client-go/tools/record"
 
-    samplecontrollerv1alpha1 "samplecontroller/pkg/apis/samplecontroller/v1alpha1"
-    samplescheme "samplecontroller/pkg/client/clientset/versioned/scheme"
-    "samplecontroller/pkg/inject/args"
+    samplecontrollerv1alpha1 "github.com/kubernetes-sigs/kubebuilder/samples/full/controller/src/samplecontroller/pkg/apis/samplecontroller/v1alpha1"
+    samplescheme "github.com/kubernetes-sigs/kubebuilder/samples/full/controller/src/samplecontroller/pkg/client/clientset/versioned/scheme"
+    "github.com/kubernetes-sigs/kubebuilder/samples/full/controller/src/samplecontroller/pkg/inject/args"
 )
 
 const controllerAgentName = "sample-controller"

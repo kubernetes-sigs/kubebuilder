@@ -21,7 +21,7 @@ import (
     "github.com/kubernetes-sigs/kubebuilder/pkg/inject/run"
     injectargs "github.com/kubernetes-sigs/kubebuilder/pkg/inject/args"
 
-    "samplecontroller/pkg/inject/args"
+    "github.com/kubernetes-sigs/kubebuilder/samples/full/controller/src/samplecontroller/pkg/inject/args"
 )
 
 var (

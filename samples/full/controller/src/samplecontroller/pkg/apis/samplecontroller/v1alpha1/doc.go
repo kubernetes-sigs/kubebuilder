@@ -25,4 +25,4 @@ limitations under the License.
 // +k8s:conversion-gen=samplecontroller/pkg/apis/samplecontroller
 // +k8s:defaulter-gen=TypeMeta
 // +groupName=samplecontroller.k8s.io
-package v1alpha1 // import "samplecontroller/pkg/apis/samplecontroller/v1alpha1"
+package v1alpha1 // import "github.com/kubernetes-sigs/kubebuilder/samples/full/controller/src/samplecontroller/pkg/apis/samplecontroller/v1alpha1"
