@@ -14,5 +14,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-go test -v ./test/projects/memcached-api-server
-go test -v ./test/projects/validations
+for p in ./test/projects/*
+do
+    if [[ -d "$p" ]]; then
+        go test -v "$p"
+    fi
+done

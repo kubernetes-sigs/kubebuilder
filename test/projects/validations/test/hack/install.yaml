@@ -23,11 +23,49 @@ spec:
           type: object
         spec:
           properties:
+            alias:
+              enum:
+              - Lion
+              - Wolf
+              - Dragon
+              type: string
+            bricks:
+              format: int32
+              type: integer
+            comment:
+              format: byte
+              type: string
             count:
               format: int64
               type: integer
+            knights:
+              items:
+                type: string
+              maxItems: 500
+              minItems: 1
+              type: array
+            name:
+              maxLength: 15
+              minLength: 1
+              type: string
+            power:
+              exclusiveMinimum: true
+              format: float
+              maximum: 100
+              minimum: 1
+              type: number
+            rank:
+              enum:
+              - 1
+              - 2
+              - 3
+              format: int64
+              type: integer
+            winner:
+              type: boolean
           required:
           - count
+          - rank
           type: object
         status:
           type: object
