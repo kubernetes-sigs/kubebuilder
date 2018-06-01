@@ -32,6 +32,9 @@ spec:
             bricks:
               format: int32
               type: integer
+            comment:
+              format: byte
+              type: string
             knights:
               items:
                 type: string
