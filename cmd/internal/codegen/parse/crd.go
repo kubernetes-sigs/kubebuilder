@@ -319,6 +319,7 @@ func (b *APIs) parseArrayValidation(t *types.Type, found sets.String, comments [
 type objectTemplateArgs struct {
 	v1beta1.JSONSchemaProps
 	Fields map[string]string
+	Required []string
 }
 
 var objectTemplate = template.Must(template.New("object-template").Parse(
@@ -329,6 +330,11 @@ var objectTemplate = template.Must(template.New("object-template").Parse(
         "{{ $k }}": {{ $v }},
         {{ end -}}
     },
+    {{if .Required}}Required: []string{
+        {{ range $k, $v := .Required -}}
+        "{{ $v }}", 
+        {{ end -}}
+    },{{ end -}}
 }`))
 
 // parseObjectValidation returns a JSONSchemaProps object and its serialization in
@@ -340,19 +346,20 @@ func (b *APIs) parseObjectValidation(t *types.Type, found sets.String, comments 
 	}
 
 	if strings.HasPrefix(t.Name.String(), "k8s.io/api") {
-		if err := objectTemplate.Execute(buff, objectTemplateArgs{props, nil}); err != nil {
+		if err := objectTemplate.Execute(buff, objectTemplateArgs{props, nil, nil}); err != nil {
 			log.Fatalf("%v", err)
 		}
 	} else {
-		m, result := b.getMembers(t, found)
+		m, result, required := b.getMembers(t, found)
 		props.Properties = m
+		props.Required = required
 
 		// Only add field validation for non-inlined fields
 		for _, l := range comments {
 			getValidation(l, &props)
 		}
 
-		if err := objectTemplate.Execute(buff, objectTemplateArgs{props, result}); err != nil {
+		if err := objectTemplate.Execute(buff, objectTemplateArgs{props, result, required}); err != nil {
 			log.Fatalf("%v", err)
 		}
 	}
@@ -475,15 +482,16 @@ func getValidation(comment string, props *v1beta1.JSONSchemaProps) {
 
 // getMembers builds maps by field name of the JSONSchemaProps and their Go
 // serializations.
-func (b *APIs) getMembers(t *types.Type, found sets.String) (map[string]v1beta1.JSONSchemaProps, map[string]string) {
+func (b *APIs) getMembers(t *types.Type, found sets.String) (map[string]v1beta1.JSONSchemaProps, map[string]string, []string) {
 	members := map[string]v1beta1.JSONSchemaProps{}
 	result := map[string]string{}
+	required := []string{}
 
 	// Don't allow recursion until we support it through refs
 	// TODO: Support recursion
 	if found.Has(t.Name.String()) {
 		fmt.Printf("Breaking recursion for type %s", t.Name.String())
-		return members, result
+		return members, result, required
 	}
 	found.Insert(t.Name.String())
 
@@ -506,22 +514,26 @@ func (b *APIs) getMembers(t *types.Type, found sets.String) (map[string]v1beta1.
 
 		// Inline "inline" structs
 		if strat == "inline" {
-			m, r := b.getMembers(member.Type, found)
+			m, r, re:= b.getMembers(member.Type, found)
 			for n, v := range m {
 				members[n] = v
 			}
 			for n, v := range r {
 				result[n] = v
 			}
+			required = append(required, re...)
 		} else {
 			m, r := b.typeToJSONSchemaProps(member.Type, found, member.CommentLines)
 			members[name] = m
 			result[name] = r
+			if !strings.HasSuffix(strat, "omitempty") {
+				required = append(required, name)
+			}
 		}
 	}
 
 	defer found.Delete(t.Name.String())
-	return members, result
+	return members, result, required
 }
 
 // getCategoriesTag returns the value of the +kubebuilder:categories tags

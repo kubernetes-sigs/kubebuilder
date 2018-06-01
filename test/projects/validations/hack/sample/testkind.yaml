@@ -1,0 +1,6 @@
+apiVersion: apps.validation.com/v1
+kind: TestKind
+metadata:
+  name: testkind-example
+spec:
+  foo: bar

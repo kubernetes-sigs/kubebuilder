@@ -4,6 +4,7 @@ Sample project is a project that created by kubebuilder and moved into `samples`
 
 ## Current Sample Projects
 - memcached-api-apiserver
+- validations
 
 ## Test Sample Project
 Run following command to test a sample project such as memcached-api-apiserver

@@ -517,18 +517,18 @@ function test_crd_validation {
   sed -i -e '/type HouseSpec struct/ a \
     // +kubebuilder:validation:Maximum=100\
     // +kubebuilder:validation:ExclusiveMinimum=true\
-    Power float32 \`json:"power"\`\
-    Bricks int32 \`json:"bricks"\`\
+    Power float32 \`json:"power,omitempty"\`\
+    Bricks int32 \`json:"bricks,omitempty"\`\
     // +kubebuilder:validation:MaxLength=15\
     // +kubebuilder:validation:MinLength=1\
-    Name string \`json:"name"\`\
+    Name string \`json:"name,omitempty"\`\
     // +kubebuilder:validation:MaxItems=500\
     // +kubebuilder:validation:MinItems=1\
     // +kubebuilder:validation:UniqueItems=false\
-    Knights []string \`json:"knights"\`\
-    Winner bool \`json:"winner"\`\
+    Knights []string \`json:"knights,omitempty"\`\
+    Winner bool \`json:"winner,omitempty"\`\
     // +kubebuilder:validation:Enum=Lion,Wolf,Dragon\
-    Alias string \`json:"alias"\`\
+    Alias string \`json:"alias,omitempty"\`\
     // +kubebuilder:validation:Enum=1,2,3\
     Rank int \`json:"rank"\`\
     Comment []byte \`json:"comment,omitempty"\`\
