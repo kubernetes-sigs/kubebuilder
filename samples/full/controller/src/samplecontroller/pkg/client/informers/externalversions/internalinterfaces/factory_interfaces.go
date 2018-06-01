@@ -22,7 +22,7 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	cache "k8s.io/client-go/tools/cache"
-	versioned "samplecontroller/pkg/client/clientset/versioned"
+	versioned "github.com/kubernetes-sigs/kubebuilder/samples/full/controller/src/samplecontroller/pkg/client/clientset/versioned"
 	time "time"
 )
 

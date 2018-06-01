@@ -20,7 +20,7 @@ import (
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"
-	samplecontrollerv1alpha1 "samplecontroller/pkg/client/clientset/versioned/typed/samplecontroller/v1alpha1"
+	samplecontrollerv1alpha1 "github.com/kubernetes-sigs/kubebuilder/samples/full/controller/src/samplecontroller/pkg/client/clientset/versioned/typed/samplecontroller/v1alpha1"
 )
 
 type Interface interface {

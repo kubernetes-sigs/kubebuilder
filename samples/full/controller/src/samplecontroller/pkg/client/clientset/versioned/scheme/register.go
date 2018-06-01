@@ -20,7 +20,7 @@ import (
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer"
-	samplecontrollerv1alpha1 "samplecontroller/pkg/apis/samplecontroller/v1alpha1"
+	samplecontrollerv1alpha1 "github.com/kubernetes-sigs/kubebuilder/samples/full/controller/src/samplecontroller/pkg/apis/samplecontroller/v1alpha1"
 )
 
 var Scheme = runtime.NewScheme()

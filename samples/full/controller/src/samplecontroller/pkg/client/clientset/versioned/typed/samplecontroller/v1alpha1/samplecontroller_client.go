@@ -18,8 +18,8 @@ package v1alpha1
 import (
 	serializer "k8s.io/apimachinery/pkg/runtime/serializer"
 	rest "k8s.io/client-go/rest"
-	v1alpha1 "samplecontroller/pkg/apis/samplecontroller/v1alpha1"
-	"samplecontroller/pkg/client/clientset/versioned/scheme"
+	v1alpha1 "github.com/kubernetes-sigs/kubebuilder/samples/full/controller/src/samplecontroller/pkg/apis/samplecontroller/v1alpha1"
+	"github.com/kubernetes-sigs/kubebuilder/samples/full/controller/src/samplecontroller/pkg/client/clientset/versioned/scheme"
 )
 
 type SamplecontrollerV1alpha1Interface interface {

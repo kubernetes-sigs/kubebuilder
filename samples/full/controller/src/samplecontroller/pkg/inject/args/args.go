@@ -23,8 +23,8 @@ import (
 	"github.com/kubernetes-sigs/kubebuilder/pkg/inject/args"
     "k8s.io/client-go/rest"
 
-    "samplecontroller/pkg/client/clientset/versioned"
-    "samplecontroller/pkg/client/informers/externalversions"
+    "github.com/kubernetes-sigs/kubebuilder/samples/full/controller/src/samplecontroller/pkg/client/clientset/versioned"
+    "github.com/kubernetes-sigs/kubebuilder/samples/full/controller/src/samplecontroller/pkg/client/informers/externalversions"
 )
 
 // InjectArgs are the arguments need to initialize controllers

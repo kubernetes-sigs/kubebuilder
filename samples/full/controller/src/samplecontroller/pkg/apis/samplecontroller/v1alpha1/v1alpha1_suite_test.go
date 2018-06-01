@@ -26,8 +26,8 @@ import (
     "github.com/kubernetes-sigs/kubebuilder/pkg/test"
     "k8s.io/client-go/rest"
 
-    "samplecontroller/pkg/inject"
-    "samplecontroller/pkg/client/clientset/versioned"
+    "github.com/kubernetes-sigs/kubebuilder/samples/full/controller/src/samplecontroller/pkg/inject"
+    "github.com/kubernetes-sigs/kubebuilder/samples/full/controller/src/samplecontroller/pkg/client/clientset/versioned"
 )
 
 var testenv *test.TestEnvironment

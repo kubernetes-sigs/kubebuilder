@@ -22,7 +22,7 @@ import (
 	"fmt"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
-	v1alpha1 "samplecontroller/pkg/apis/samplecontroller/v1alpha1"
+	v1alpha1 "github.com/kubernetes-sigs/kubebuilder/samples/full/controller/src/samplecontroller/pkg/apis/samplecontroller/v1alpha1"
 )
 
 // GenericInformer is type of SharedIndexInformer which will locate and delegate to other

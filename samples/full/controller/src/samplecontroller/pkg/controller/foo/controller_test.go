@@ -25,8 +25,8 @@ import (
 	"github.com/kubernetes-sigs/kubebuilder/pkg/controller/types"
     metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-    . "samplecontroller/pkg/apis/samplecontroller/v1alpha1"
-    . "samplecontroller/pkg/client/clientset/versioned/typed/samplecontroller/v1alpha1"
+    . "github.com/kubernetes-sigs/kubebuilder/samples/full/controller/src/samplecontroller/pkg/apis/samplecontroller/v1alpha1"
+    . "github.com/kubernetes-sigs/kubebuilder/samples/full/controller/src/samplecontroller/pkg/client/clientset/versioned/typed/samplecontroller/v1alpha1"
 )
 
 // EDIT THIS FILE!

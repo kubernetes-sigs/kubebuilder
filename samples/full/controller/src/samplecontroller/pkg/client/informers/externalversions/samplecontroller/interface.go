@@ -19,8 +19,8 @@ limitations under the License.
 package samplecontroller
 
 import (
-	internalinterfaces "samplecontroller/pkg/client/informers/externalversions/internalinterfaces"
-	v1alpha1 "samplecontroller/pkg/client/informers/externalversions/samplecontroller/v1alpha1"
+	internalinterfaces "github.com/kubernetes-sigs/kubebuilder/samples/full/controller/src/samplecontroller/pkg/client/informers/externalversions/internalinterfaces"
+	v1alpha1 "github.com/kubernetes-sigs/kubebuilder/samples/full/controller/src/samplecontroller/pkg/client/informers/externalversions/samplecontroller/v1alpha1"
 )
 
 // Interface provides access to each of this group's versions.

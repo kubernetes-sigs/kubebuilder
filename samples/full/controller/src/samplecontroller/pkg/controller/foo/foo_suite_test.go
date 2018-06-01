@@ -29,9 +29,9 @@ import (
     "k8s.io/client-go/kubernetes"
     "k8s.io/client-go/rest"
 
-    "samplecontroller/pkg/client/clientset/versioned"
-    "samplecontroller/pkg/inject"
-    "samplecontroller/pkg/inject/args"
+    "github.com/kubernetes-sigs/kubebuilder/samples/full/controller/src/samplecontroller/pkg/client/clientset/versioned"
+    "github.com/kubernetes-sigs/kubebuilder/samples/full/controller/src/samplecontroller/pkg/inject"
+    "github.com/kubernetes-sigs/kubebuilder/samples/full/controller/src/samplecontroller/pkg/inject/args"
 )
 
 var (

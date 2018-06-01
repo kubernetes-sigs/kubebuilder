@@ -24,9 +24,9 @@ import (
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
 	reflect "reflect"
-	versioned "samplecontroller/pkg/client/clientset/versioned"
-	internalinterfaces "samplecontroller/pkg/client/informers/externalversions/internalinterfaces"
-	samplecontroller "samplecontroller/pkg/client/informers/externalversions/samplecontroller"
+	versioned "github.com/kubernetes-sigs/kubebuilder/samples/full/controller/src/samplecontroller/pkg/client/clientset/versioned"
+	internalinterfaces "github.com/kubernetes-sigs/kubebuilder/samples/full/controller/src/samplecontroller/pkg/client/informers/externalversions/internalinterfaces"
+	samplecontroller "github.com/kubernetes-sigs/kubebuilder/samples/full/controller/src/samplecontroller/pkg/client/informers/externalversions/samplecontroller"
 	sync "sync"
 	time "time"
 )

@@ -1,10 +1,10 @@
 package inject
 
 import (
-	samplecontrollerv1alpha1 "samplecontroller/pkg/apis/samplecontroller/v1alpha1"
-	rscheme "samplecontroller/pkg/client/clientset/versioned/scheme"
-	"samplecontroller/pkg/controller/foo"
-	"samplecontroller/pkg/inject/args"
+	samplecontrollerv1alpha1 "github.com/kubernetes-sigs/kubebuilder/samples/full/controller/src/samplecontroller/pkg/apis/samplecontroller/v1alpha1"
+	rscheme "github.com/kubernetes-sigs/kubebuilder/samples/full/controller/src/samplecontroller/pkg/client/clientset/versioned/scheme"
+	"github.com/kubernetes-sigs/kubebuilder/samples/full/controller/src/samplecontroller/pkg/controller/foo"
+	"github.com/kubernetes-sigs/kubebuilder/samples/full/controller/src/samplecontroller/pkg/inject/args"
 
 	"github.com/kubernetes-sigs/kubebuilder/pkg/inject/run"
 	appsv1 "k8s.io/api/apps/v1"
