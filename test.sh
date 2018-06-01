@@ -518,6 +518,7 @@ function test_crd_validation {
     // +kubebuilder:validation:Maximum=100\
     // +kubebuilder:validation:ExclusiveMinimum=true\
     Power float32 \`json:"power"\`\
+    Bricks int32 \`json:"bricks"\`\
     // +kubebuilder:validation:MaxLength=15\
     // +kubebuilder:validation:MinLength=1\
     Name string \`json:"name"\`\

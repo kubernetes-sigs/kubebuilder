@@ -29,6 +29,9 @@ spec:
               - Wolf
               - Dragon
               type: string
+            bricks:
+              format: int32
+              type: integer
             knights:
               items:
                 type: string
