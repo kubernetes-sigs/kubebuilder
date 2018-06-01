@@ -19,6 +19,11 @@ required = ["sigs.k8s.io/testing_frameworks/integration",
             "github.com/emicklei/go-restful",
             "github.com/go-openapi/spec",
             "k8s.io/kube-openapi/pkg/common",
+            "k8s.io/code-generator/cmd/deepcopy-gen",
+            "k8s.io/code-generator/cmd/defaulter-gen",
+            "k8s.io/code-generator/cmd/client-gen",
+            "k8s.io/code-generator/cmd/lister-gen",
+            "k8s.io/code-generator/cmd/informer-gen"
             ]
 
 [[constraint]]
@@ -58,9 +63,17 @@ required = ["sigs.k8s.io/testing_frameworks/integration",
   version = "kubernetes-1.10.1"
 
 [[constraint]]
+  name = "k8s.io/code-generator"
+  version = "kubernetes-1.10.1"
+
+[[constraint]]
   name = "k8s.io/kube-aggregator"
   version = "kubernetes-1.10.1"
 
 [prune]
   go-tests = true
   unused-packages = true
+
+[[prune.project]]
+    name = "k8s.io/code-generator"
+    unused-packages = false
