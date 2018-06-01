@@ -224,6 +224,8 @@ func (b *APIs) parsePrimitiveValidation(t *types.Type, found sets.String, commen
 	if err := primitiveTemplate.Execute(buff, primitiveTemplateArgs{props, n, f, s}); err != nil {
 		log.Fatalf("%v", err)
 	}
+	props.Type = n
+	props.Format = f
 	return props, buff.String()
 }
 

@@ -29,6 +29,9 @@ spec:
               - Wolf
               - Dragon
               type: string
+            bricks:
+              format: int32
+              type: integer
             comment:
               format: byte
               type: string
@@ -44,16 +47,18 @@ spec:
               type: string
             power:
               exclusiveMinimum: true
+              format: float
               maximum: 100
-              type: float32
+              type: number
             rank:
               enum:
               - 1
               - 2
               - 3
-              type: int
+              format: int64
+              type: integer
             winner:
-              type: bool
+              type: boolean
           type: object
         status:
           type: object

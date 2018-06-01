@@ -24,9 +24,10 @@ spec:
         spec:
           properties:
             size:
+              format: int32
               maximum: 100
               minimum: 5
-              type: int32
+              type: integer
           type: object
         status:
           properties:
