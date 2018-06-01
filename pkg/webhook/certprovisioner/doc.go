@@ -14,17 +14,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package certprovisioner
+/*
+Package certprovisioner provides an interface and implementation to provision certificates.
 
-func ExampleSelfSignedCertProvisioner() {
+Create a implementation instance of certprovisioner.
+
 	cp := SelfSignedCertProvisioner{
-		Organization: "k8s.io",
-		DNSNames:     []string{"myDNSName"},
-		ValidDays:    365,
+		CommonName: "foo.bar.com"
 	}
 
+Provision the certificates.
 	key, cert, caCert, err := cp.ProvisionServingCert()
 	if err != nil {
 		// handle error
 	}
-}
+*/
+package certprovisioner
