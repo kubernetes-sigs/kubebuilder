@@ -90,11 +90,8 @@ func runInitRepo(cmd *cobra.Command, args []string) {
 	doDockerfile()
 	doInject(cr)
 	doArgs(cr, controllerOnly)
-	//os.MkdirAll("bin", 0700)
 	RunVendorInstall(nil, nil)
-
 	createBoilerplate()
-	RunVendorInstall(nil, nil)
 	fmt.Printf("Next: Define a resource with:\n" +
 		"$ kubebuilder create resource\n")
 }
