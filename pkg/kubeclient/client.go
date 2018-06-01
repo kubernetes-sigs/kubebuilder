@@ -10,24 +10,36 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 )
 
+type ObjectKey struct {
+	metav1.GroupVersionKind
+	metav1.ObjectMeta
+}
+
 // Interface defines capability of the Kubernetes Client.
 type Interface interface {
-	// Create creates given object in Kubernetes cluster
+	// Create saves the object obj in to the Kubernetes cluster. obj must have
+	// TypeMeta and ObjectMeta field populated. obj must be a struct pointer
+	// because obj is updated with the content returned by the server.
 	Create(ctx context.Context, obj runtime.Object) error
 
-	// Get retrieves given object from Kubernetes cluster
-	Get(ctx context.Context, obj runtime.Object) error
+	// Get retrieves the obj from the Kubernetes Cluster. obj must have TypeMeta and
+	// ObjectMeta field populated. obj must be a struct pointer so that obj can be
+	// updated with the content returned by the API Server.
+	Get(ctx context.Context, key ObjectKey, obj runtime.Object) error
 
-	// Update updates given object in Kubernetes cluster
+	// Update updates the given obj in the Kubernetes cluster. obj must have TypeMeta and
+	// ObjectMeta field populated.
 	Update(ctx context.Context, obj runtime.Object) error
 
-	// Delete deletes given object from Kubernetes cluster
-	Delete(ctx context.Context, obj runtime.Object, opts *metav1.DeleteOptions) error
+	// Delete deletes the given obj from Kubernetes cluster. obj must have TypeMeta and
+	// ObjectMeta field populated.
+	Delete(ctx context.Context, key ObjectKey) error
 
-	// List retrieves list of object
+	// List retrieves list of objects for a given namespace, TypeMeta info
+	// in the obj and list options. obj must have populated TypeMeta field. On a
+	// successful call, Items field in the obj will be populated with the returned
+	// contained.
 	List(ctx context.Context, obj runtime.Object, opts *metav1.ListOptions) error
-
-	// TODO: define capabilities for ListDeletion, Patch and Watch ?
 }
 
 // NewFromConfigOrCluster returns a Kubernetes client. If configPath is
@@ -51,39 +63,25 @@ func InCluster() (Interface, error) {
 }
 
 // Client is a concrete implementation of Kubernetes Çlient interface.
-type Client struct {
+type client struct {
 }
 
-// Create saves the object obj in to the Kubernetes cluster. obj must have
-// TypeMeta and ObjectMeta field populated. obj must be a struct pointer
-// because obj is updated with the content returned by the server.
 func (c *Client) Create(ctx context.Context, obj runtime.Object) error {
 	return nil
 }
 
-// Get retrieves the obj from the Kubernetes Cluster. obj must have TypeMeta and
-// ObjectMeta field populated. obj must be a struct pointer so that obj can be
-// updated with the content returned by the API Server.
 func (c *Client) Get(ctx context.Context, obj runtime.Object) error {
 	return nil
 }
 
-// Update updates the given obj in the Kubernetes cluster. obj must have TypeMeta and
-// ObjectMeta field populated.
 func (c *Client) Update(ctx context.Context, obj runtime.Object) error {
 	return nil
 }
 
-// Delete deletes the given obj from Kubernetes cluster. obj must have TypeMeta and
-// ObjectMeta field populated.
 func (c *Client) Delete(ctx context.Context, obj runtime.Object) error {
 	return nil
 }
 
-// List retrieves list of objects for a given namespace, TypeMeta info
-// in the obj and list options. obj must have populated TypeMeta field. On a
-// successful call, Items field in the obj will be populated with the returned
-// contained.
 func (c *Client) List(ctx context.Context, namespace string, obj runtime.Object, opts *metav1.ListOptions) error {
 	return nil
 }
