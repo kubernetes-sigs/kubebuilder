@@ -1,5 +1,16 @@
 ## HEAD
 
+### Features
+- Make string pretty diff user configurable (#273) [eb112ce, 649b44d]
+
+### Fixes
+- Use httputil.DumpRequest to pretty-print unhandled requests (#278) [a4ff0fc, b7d1a52]
+- fix typo floa32 > float32 (#272) [041ae3b, 6e33911]
+- Fix link to documentation on adding your own matchers (#270) [bb2c830, fcebc62]
+- Use setters and getters to avoid race condition (#262) [13057c3, a9c79f1]
+- Avoid sending a signal if the process is not alive (#259) [b8043e5, 4fc1762]
+- Improve message from AssignableToTypeOf when expected value is nil (#281) [9c1fb20]
+
 ## 1.3.0
 
 Improvements:

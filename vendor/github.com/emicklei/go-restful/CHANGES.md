@@ -1,5 +1,16 @@
 Change history of go-restful
 =
+v2.6.1
+- add JSONNewDecoderFunc to allow custom JSON Decoder usage (go 1.10+)
+
+v2.6.0
+- Make JSR 311 routing and path param processing consistent
+- Adding description to RouteBuilder.Reads()
+- Update example for Swagger12 and OpenAPI
+
+2017-09-13
+- added route condition functions using `.If(func)` in route building.
+
 2017-02-16
 - solved issue #304, make operation names unique
 

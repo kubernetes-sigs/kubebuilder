@@ -15,6 +15,7 @@ package adal
 //  limitations under the License.
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha1"
@@ -23,6 +24,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math"
+	"net"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -75,6 +78,13 @@ type Refresher interface {
 	Refresh() error
 	RefreshExchange(resource string) error
 	EnsureFresh() error
+}
+
+// RefresherWithContext is an interface for token refresh functionality
+type RefresherWithContext interface {
+	RefreshWithContext(ctx context.Context) error
+	RefreshExchangeWithContext(ctx context.Context, resource string) error
+	EnsureFreshWithContext(ctx context.Context) error
 }
 
 // TokenRefreshCallback is the type representing callbacks that will be called after
@@ -528,12 +538,18 @@ func newTokenRefreshError(message string, resp *http.Response) TokenRefreshError
 // EnsureFresh will refresh the token if it will expire within the refresh window (as set by
 // RefreshWithin) and autoRefresh flag is on.  This method is safe for concurrent use.
 func (spt *ServicePrincipalToken) EnsureFresh() error {
+	return spt.EnsureFreshWithContext(context.Background())
+}
+
+// EnsureFreshWithContext will refresh the token if it will expire within the refresh window (as set by
+// RefreshWithin) and autoRefresh flag is on.  This method is safe for concurrent use.
+func (spt *ServicePrincipalToken) EnsureFreshWithContext(ctx context.Context) error {
 	if spt.autoRefresh && spt.token.WillExpireIn(spt.refreshWithin) {
 		// take the write lock then check to see if the token was already refreshed
 		spt.refreshLock.Lock()
 		defer spt.refreshLock.Unlock()
 		if spt.token.WillExpireIn(spt.refreshWithin) {
-			return spt.refreshInternal(spt.resource)
+			return spt.refreshInternal(ctx, spt.resource)
 		}
 	}
 	return nil
@@ -555,17 +571,29 @@ func (spt *ServicePrincipalToken) InvokeRefreshCallbacks(token Token) error {
 // Refresh obtains a fresh token for the Service Principal.
 // This method is not safe for concurrent use and should be syncrhonized.
 func (spt *ServicePrincipalToken) Refresh() error {
+	return spt.RefreshWithContext(context.Background())
+}
+
+// RefreshWithContext obtains a fresh token for the Service Principal.
+// This method is not safe for concurrent use and should be syncrhonized.
+func (spt *ServicePrincipalToken) RefreshWithContext(ctx context.Context) error {
 	spt.refreshLock.Lock()
 	defer spt.refreshLock.Unlock()
-	return spt.refreshInternal(spt.resource)
+	return spt.refreshInternal(ctx, spt.resource)
 }
 
 // RefreshExchange refreshes the token, but for a different resource.
 // This method is not safe for concurrent use and should be syncrhonized.
 func (spt *ServicePrincipalToken) RefreshExchange(resource string) error {
+	return spt.RefreshExchangeWithContext(context.Background(), resource)
+}
+
+// RefreshExchangeWithContext refreshes the token, but for a different resource.
+// This method is not safe for concurrent use and should be syncrhonized.
+func (spt *ServicePrincipalToken) RefreshExchangeWithContext(ctx context.Context, resource string) error {
 	spt.refreshLock.Lock()
 	defer spt.refreshLock.Unlock()
-	return spt.refreshInternal(resource)
+	return spt.refreshInternal(ctx, resource)
 }
 
 func (spt *ServicePrincipalToken) getGrantType() string {
@@ -587,12 +615,12 @@ func isIMDS(u url.URL) bool {
 	return u.Host == imds.Host && u.Path == imds.Path
 }
 
-func (spt *ServicePrincipalToken) refreshInternal(resource string) error {
+func (spt *ServicePrincipalToken) refreshInternal(ctx context.Context, resource string) error {
 	req, err := http.NewRequest(http.MethodPost, spt.oauthConfig.TokenEndpoint.String(), nil)
 	if err != nil {
 		return fmt.Errorf("adal: Failed to build the refresh request. Error = '%v'", err)
 	}
-
+	req = req.WithContext(ctx)
 	if !isIMDS(spt.oauthConfig.TokenEndpoint) {
 		v := url.Values{}
 		v.Set("client_id", spt.clientID)
@@ -601,6 +629,14 @@ func (spt *ServicePrincipalToken) refreshInternal(resource string) error {
 		if spt.token.RefreshToken != "" {
 			v.Set("grant_type", OAuthGrantTypeRefreshToken)
 			v.Set("refresh_token", spt.token.RefreshToken)
+			// web apps must specify client_secret when refreshing tokens
+			// see https://docs.microsoft.com/en-us/azure/active-directory/develop/active-directory-protocols-oauth-code#refreshing-the-access-tokens
+			if spt.getGrantType() == OAuthGrantTypeAuthorizationCode {
+				err := spt.secret.SetAuthenticationValues(spt, &v)
+				if err != nil {
+					return err
+				}
+			}
 		} else {
 			v.Set("grant_type", spt.getGrantType())
 			err := spt.secret.SetAuthenticationValues(spt, &v)
@@ -628,7 +664,7 @@ func (spt *ServicePrincipalToken) refreshInternal(resource string) error {
 		resp, err = spt.sender.Do(req)
 	}
 	if err != nil {
-		return fmt.Errorf("adal: Failed to execute the refresh request. Error = '%v'", err)
+		return newTokenRefreshError(fmt.Sprintf("adal: Failed to execute the refresh request. Error = '%v'", err), nil)
 	}
 
 	defer resp.Body.Close()
@@ -636,10 +672,14 @@ func (spt *ServicePrincipalToken) refreshInternal(resource string) error {
 
 	if resp.StatusCode != http.StatusOK {
 		if err != nil {
-			return newTokenRefreshError(fmt.Sprintf("adal: Refresh request failed. Status Code = '%d'. Failed reading response body", resp.StatusCode), resp)
+			return newTokenRefreshError(fmt.Sprintf("adal: Refresh request failed. Status Code = '%d'. Failed reading response body: %v", resp.StatusCode, err), resp)
 		}
 		return newTokenRefreshError(fmt.Sprintf("adal: Refresh request failed. Status Code = '%d'. Response body: %s", resp.StatusCode, string(rb)), resp)
 	}
+
+	// for the following error cases don't return a TokenRefreshError.  the operation succeeded
+	// but some transient failure happened during deserialization.  by returning a generic error
+	// the retry logic will kick in (we don't retry on TokenRefreshError).
 
 	if err != nil {
 		return fmt.Errorf("adal: Failed to read a new service principal token during refresh. Error = '%v'", err)
@@ -659,6 +699,7 @@ func (spt *ServicePrincipalToken) refreshInternal(resource string) error {
 }
 
 func retry(sender Sender, req *http.Request) (resp *http.Response, err error) {
+	// copied from client.go due to circular dependency
 	retries := []int{
 		http.StatusRequestTimeout,      // 408
 		http.StatusTooManyRequests,     // 429
@@ -667,8 +708,10 @@ func retry(sender Sender, req *http.Request) (resp *http.Response, err error) {
 		http.StatusServiceUnavailable,  // 503
 		http.StatusGatewayTimeout,      // 504
 	}
-	// Extra retry status codes requered
-	retries = append(retries, http.StatusNotFound,
+	// extra retry status codes specific to IMDS
+	retries = append(retries,
+		http.StatusNotFound,
+		http.StatusGone,
 		// all remaining 5xx
 		http.StatusNotImplemented,
 		http.StatusHTTPVersionNotSupported,
@@ -678,54 +721,55 @@ func retry(sender Sender, req *http.Request) (resp *http.Response, err error) {
 		http.StatusNotExtended,
 		http.StatusNetworkAuthenticationRequired)
 
+	// see https://docs.microsoft.com/en-us/azure/active-directory/managed-service-identity/how-to-use-vm-token#retry-guidance
+
+	const maxAttempts int = 5
+	const maxDelay time.Duration = 60 * time.Second
+
 	attempt := 0
-	maxAttempts := 5
+	delay := time.Duration(0)
 
 	for attempt < maxAttempts {
 		resp, err = sender.Do(req)
-		if err != nil {
+		// retry on temporary network errors, e.g. transient network failures.
+		if (err != nil && !isTemporaryNetworkError(err)) || resp.StatusCode == http.StatusOK || !containsInt(retries, resp.StatusCode) {
 			return
 		}
 
-		if resp.StatusCode == http.StatusOK {
-			return
+		// perform exponential backoff with a cap.
+		// must increment attempt before calculating delay.
+		attempt++
+		// the base value of 2 is the "delta backoff" as specified in the guidance doc
+		delay += (time.Duration(math.Pow(2, float64(attempt))) * time.Second)
+		if delay > maxDelay {
+			delay = maxDelay
 		}
-		if containsInt(retries, resp.StatusCode) {
-			delayed := false
-			if resp.StatusCode == http.StatusTooManyRequests {
-				delayed = delay(resp, req.Cancel)
-			}
-			if !delayed {
-				time.Sleep(time.Second)
-				attempt++
-			}
-		} else {
+
+		select {
+		case <-time.After(delay):
+			// intentionally left blank
+		case <-req.Context().Done():
+			err = req.Context().Err()
 			return
 		}
 	}
 	return
 }
 
-func containsInt(ints []int, n int) bool {
-	for _, i := range ints {
-		if i == n {
-			return true
-		}
+// returns true if the specified error is a temporary network error or false if it's not.
+// if the error doesn't implement the net.Error interface the return value is true.
+func isTemporaryNetworkError(err error) bool {
+	if netErr, ok := err.(net.Error); !ok || (ok && netErr.Temporary()) {
+		return true
 	}
 	return false
 }
 
-func delay(resp *http.Response, cancel <-chan struct{}) bool {
-	if resp == nil {
-		return false
-	}
-	retryAfter, _ := strconv.Atoi(resp.Header.Get("Retry-After"))
-	if resp.StatusCode == http.StatusTooManyRequests && retryAfter > 0 {
-		select {
-		case <-time.After(time.Duration(retryAfter) * time.Second):
+// returns true if slice ints contains the value n
+func containsInt(ints []int, n int) bool {
+	for _, i := range ints {
+		if i == n {
 			return true
-		case <-cancel:
-			return false
 		}
 	}
 	return false
