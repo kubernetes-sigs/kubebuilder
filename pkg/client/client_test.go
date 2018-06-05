@@ -2,6 +2,10 @@ package client_test
 
 import (
 	"context"
+	"fmt"
+	"os"
+	"path/filepath"
+	"testing"
 
 	"github.com/kubernetes-sigs/kubebuilder/pkg/client"
 	"k8s.io/api/core/v1"
@@ -19,7 +23,7 @@ func ExampleClient() {
 	}
 
 	// create a Kubernetes client using the config.
-	kc := client.NewForConfig(conf)
+	kc, err := client.NewForConfig(conf)
 	if err != nil {
 		// handle err
 	}
@@ -54,7 +58,7 @@ func ExampleClient() {
 
 	// List pods in a namespace with labels foo=bar
 	podList := &v1.PodList{}
-	opts := &metav1.ListOptions{
+	opts := metav1.ListOptions{
 		LabelSelector: labels.SelectorFromSet(map[string]string{"foo": "bar"}).String(),
 	}
 	err = kc.List(ctx, "ns-1", opts, podList)
@@ -64,6 +68,92 @@ func ExampleClient() {
 	// podList.Items, which is []v1.Pod type, will be populated at this point.
 	for _, p := range podList.Items {
 		// print p
+		fmt.Println(p)
+	}
+}
+
+func TestClientCRUD(t *testing.T) {
+	// get the base config ?
+	conf, err := clientcmd.BuildConfigFromFlags("", filepath.Join(os.Getenv("HOME"), ".kube", "config"))
+	if err != nil {
+		t.Fatalf("failed to create config: %v", err)
 	}
 
+	kc, err := client.NewForConfig(conf)
+	if err != nil {
+		t.Fatalf("error creating k8s client: %v", err)
+	}
+
+	pod := &v1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "mypod",
+			Namespace: "default",
+		},
+		Spec: v1.PodSpec{
+			Containers: []v1.Container{{
+				Image: "image-that-does-not-exist",
+				Name:  "ttyd",
+			}},
+		},
+	}
+	err = kc.Create(context.Background(), pod)
+	if err != nil {
+		t.Fatalf("error in creating pod with name: %v", err)
+	}
+	t.Logf("created pod 'mypod' successfully")
+
+	podKey := client.ObjectKey{Namespace: "default", Name: "mypod"}
+	err = kc.Get(context.Background(), podKey, pod)
+	if err != nil {
+		t.Fatalf("error in retrieving pod with name: %v", err)
+	}
+	t.Logf("found pod '%s' \n", pod.Name)
+
+	pod.Spec.Containers[0].Image = "image-2"
+	err = kc.Update(context.Background(), pod)
+	if err != nil {
+		t.Fatalf("error in updating the pod '%s'", pod.Name)
+	}
+
+	updatedPod := &v1.Pod{}
+	err = kc.Get(context.Background(), podKey, updatedPod)
+	if err != nil {
+		t.Fatalf("error in retrieving pod with name: %v", err)
+	}
+	if updatedPod.Spec.Containers[0].Image != "image-2" {
+		t.Errorf("expected pod to have updated image")
+	}
+
+	podList := &v1.PodList{}
+	opts := metav1.ListOptions{}
+	err = kc.List(context.Background(), "default", opts, podList)
+	if err != nil {
+		t.Fatalf("error in fetching pods: %v", err)
+	}
+	for i, p := range podList.Items {
+		t.Logf("[%d]: %s \n", i, p.Name)
+	}
+
+	err = kc.Delete(context.Background(), pod)
+	if err != nil {
+		t.Fatalf("error in deleting the pod: %v", err)
+	}
+	t.Logf("deleted pod '%s' successfully", pod.Name)
+}
+
+func TestMain(m *testing.M) {
+	setup()
+	rc := m.Run()
+	teardown()
+	os.Exit(rc)
+}
+
+func setup() error {
+	fmt.Println("setting up...")
+	return nil
+}
+
+func teardown() error {
+	fmt.Println("tearing down...")
+	return nil
 }

@@ -59,4 +59,4 @@ Create, Get, Update, Delete and List Kubernetes Objects:
 		// print p
 	}
 */
-package kubeclient
+package client
