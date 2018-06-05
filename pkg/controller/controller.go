@@ -82,10 +82,12 @@ func (gc *GenericController) GetMetrics() metrics.Metrics {
 	// Get the current timestamps and sort them
 	ts := gc.syncTs.List()
 	sort.Slice(ts, func(i, j int) bool { return ts[i] < ts[j] })
-	return metrics.Metrics{
+	m := metrics.Metrics{
 		UncompletedReconcileTs: ts,
 		QueueLength:            gc.queue.Len(),
 	}
+	metrics.RecordMetrics(gc.Name, &m)
+	return m
 }
 
 // Watch watches objects matching obj's type and enqueues their keys to be reconcild.
@@ -249,6 +251,8 @@ func (gc *GenericController) init() {
 
 	// Set the InformerRegistry on the queue
 	gc.queue.informerProvider = gc.InformerRegistry
+
+	metrics.Register()
 }
 
 // runWorker is a long-running function that will continually call the
@@ -299,6 +303,7 @@ func (gc *GenericController) processNextWorkItem() bool {
 		namespace, name, err := cache.SplitMetaNamespaceKey(key)
 		if err != nil {
 			runtime.HandleError(fmt.Errorf("invalid resource key in %s queue: %s", gc.Name, key))
+			metrics.ObserveReconcileErrors(gc.Name, err)
 			return nil
 		}
 
@@ -319,6 +324,7 @@ func (gc *GenericController) processNextWorkItem() bool {
 			return fmt.Errorf("error syncing %s queue '%s': %s", gc.Name, key, err.Error())
 		}
 		if gc.AfterReconcile != nil {
+			metrics.ObserveReconcileErrors(gc.Name, err)
 			gc.AfterReconcile(rk, err)
 		}
 
@@ -330,6 +336,7 @@ func (gc *GenericController) processNextWorkItem() bool {
 	}(obj)
 
 	if err != nil {
+		metrics.ObserveReconcileErrors(gc.Name, err)
 		runtime.HandleError(err)
 		return true
 	}
