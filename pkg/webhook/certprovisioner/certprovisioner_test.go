@@ -16,8 +16,9 @@ limitations under the License.
 
 package certprovisioner
 
-// CertProvisioner is an interface to provision the serving certificate.
-type CertProvisioner interface {
-	// ProvisionServingCert returns the key, serving certificate and the CA certificate.
-	ProvisionServingCert() (key []byte, cert []byte, caCert []byte, err error)
+import "fmt"
+
+func ExampleServiceToCommonName() {
+	fmt.Println(ServiceToCommonName("myservicenamespace", "myservicename"))
+	// Output: myservicename.myservicenamespace.svc
 }

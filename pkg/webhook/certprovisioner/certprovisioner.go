@@ -16,15 +16,16 @@ limitations under the License.
 
 package certprovisioner
 
-func ExampleSelfSignedCertProvisioner() {
-	cp := SelfSignedCertProvisioner{
-		Organization: "k8s.io",
-		DNSNames:     []string{"myDNSName"},
-		ValidDays:    365,
-	}
+// Certs hosts a private key, its corresponding serving certificate and
+// the CA certificate that signs the serving certificate.
+type Certs struct {
+	Key    []byte
+	Cert   []byte
+	CACert []byte
+}
 
-	key, cert, caCert, err := cp.ProvisionServingCert()
-	if err != nil {
-		// handle error
-	}
+// CertProvisioner is an interface to provision the serving certificate.
+type CertProvisioner interface {
+	// ProvisionServingCert returns a Certs struct.
+	ProvisionServingCert() (*Certs, error)
 }

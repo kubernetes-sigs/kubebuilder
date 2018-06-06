@@ -20,11 +20,11 @@ Package certprovisioner provides an interface and implementation to provision ce
 Create a implementation instance of certprovisioner.
 
 	cp := SelfSignedCertProvisioner{
-		// your configuration
+		CommonName: "foo.bar.com"
 	}
 
 Provision the certificates.
-	key, cert, caCert, err := cp.ProvisionServingCert()
+	certs, err := cp.ProvisionServingCert()
 	if err != nil {
 		// handle error
 	}
