@@ -24,7 +24,7 @@ Create a implementation instance of certprovisioner.
 	}
 
 Provision the certificates.
-	key, cert, caCert, err := cp.ProvisionServingCert()
+	certs, err := cp.ProvisionServingCert()
 	if err != nil {
 		// handle error
 	}

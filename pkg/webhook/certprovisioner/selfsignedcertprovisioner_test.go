@@ -23,22 +23,22 @@ import (
 )
 
 func TestProvisionServingCert(t *testing.T) {
-	CN := "mysvc.myns.svc"
-	cp := SelfSignedCertProvisioner{CommonName: CN}
-	_, certPEM, caPEM, err := cp.ProvisionServingCert()
+	cn := "mysvc.myns.svc"
+	cp := SelfSignedCertProvisioner{CommonName: cn}
+	certs, err := cp.ProvisionServingCert()
 
 	// First, create the set of root certificates. For this example we only
 	// have one. It's also possible to omit this in order to use the
 	// default root set of the current operating system.
 	roots := x509.NewCertPool()
-	ok := roots.AppendCertsFromPEM([]byte(caPEM))
+	ok := roots.AppendCertsFromPEM(certs.CACert)
 	if !ok {
-		t.Fatalf("failed to parse root certificate: %s", caPEM)
+		t.Fatalf("failed to parse root certificate: %s", certs.CACert)
 	}
 
-	block, _ := pem.Decode(certPEM)
+	block, _ := pem.Decode(certs.Cert)
 	if block == nil {
-		t.Fatalf("failed to parse certificate PEM: %s", certPEM)
+		t.Fatalf("failed to parse certificate PEM: %s", certs.Cert)
 	}
 	cert, err := x509.ParseCertificate(block.Bytes)
 	if err != nil {
@@ -46,7 +46,7 @@ func TestProvisionServingCert(t *testing.T) {
 	}
 
 	opts := x509.VerifyOptions{
-		DNSName: CN,
+		DNSName: cn,
 		Roots:   roots,
 	}
 

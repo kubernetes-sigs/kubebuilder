@@ -23,6 +23,11 @@ import (
 	"k8s.io/client-go/util/cert"
 )
 
+// ServiceToCommonName generates the CommonName for the certificate when using a k8s service.
+func ServiceToCommonName(serviceNamespace, serviceName string) string {
+	return fmt.Sprintf("%s.%s.svc", serviceName, serviceNamespace)
+}
+
 // SelfSignedCertProvisioner implements the CertProvisioner interface.
 // It provisions self-signed certificates.
 type SelfSignedCertProvisioner struct {
@@ -32,26 +37,23 @@ type SelfSignedCertProvisioner struct {
 
 var _ CertProvisioner = &SelfSignedCertProvisioner{}
 
-// ProvisionServingCert creates and returns a CA certificate and certificate and
+// ProvisionServingCert creates and returns a CA certificate, certificate and
 // key for the server. serverKey and serverCert are used by the server
 // to establish trust for clients, CA certificate is used by the
 // client to verify the server authentication chain.
 // The cert will be valid for 365 days.
-func (cp *SelfSignedCertProvisioner) ProvisionServingCert() (serverKey, serverCert, caCert []byte, err error) {
+func (cp *SelfSignedCertProvisioner) ProvisionServingCert() (*Certs, error) {
 	signingKey, err := cert.NewPrivateKey()
 	if err != nil {
-		return nil, nil, nil,
-			fmt.Errorf("failed to create the CA private key: %v", err)
+		return nil, fmt.Errorf("failed to create the CA private key: %v", err)
 	}
 	signingCert, err := cert.NewSelfSignedCACert(cert.Config{CommonName: "webhook-cert-ca"}, signingKey)
 	if err != nil {
-		return nil, nil, nil,
-			fmt.Errorf("failed to create the CA cert: %v", err)
+		return nil, fmt.Errorf("failed to create the CA cert: %v", err)
 	}
 	key, err := cert.NewPrivateKey()
 	if err != nil {
-		return nil, nil, nil,
-			fmt.Errorf("failed to create the private key: %v", err)
+		return nil, fmt.Errorf("failed to create the private key: %v", err)
 	}
 	signedCert, err := cert.NewSignedCert(
 		cert.Config{
@@ -61,8 +63,11 @@ func (cp *SelfSignedCertProvisioner) ProvisionServingCert() (serverKey, serverCe
 		key, signingCert, signingKey,
 	)
 	if err != nil {
-		return nil, nil, nil,
-			fmt.Errorf("failed to create the cert: %v", err)
+		return nil, fmt.Errorf("failed to create the cert: %v", err)
 	}
-	return cert.EncodePrivateKeyPEM(key), cert.EncodeCertPEM(signedCert), cert.EncodeCertPEM(signingCert), nil
+	return &Certs{
+		Key:    cert.EncodePrivateKeyPEM(key),
+		Cert:   cert.EncodeCertPEM(signedCert),
+		CACert: cert.EncodeCertPEM(signingCert),
+	}, nil
 }

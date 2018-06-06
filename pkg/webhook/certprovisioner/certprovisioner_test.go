@@ -16,16 +16,9 @@ limitations under the License.
 
 package certprovisioner
 
-// Certs hosts a private key, its corresponding serving certificate and
-// the CA certificate that signs the serving certificate.
-type Certs struct {
-	Key    []byte
-	Cert   []byte
-	CACert []byte
-}
+import "fmt"
 
-// CertProvisioner is an interface to provision the serving certificate.
-type CertProvisioner interface {
-	// ProvisionServingCert returns a Certs struct.
-	ProvisionServingCert() (*Certs, error)
+func ExampleServiceToCommonName() {
+	fmt.Println(ServiceToCommonName("myservicenamespace", "myservicename"))
+	// Output: myservicename.myservicenamespace.svc
 }
