@@ -1,5 +1,10 @@
 # See the OWNERS docs: https://git.k8s.io/community/contributors/devel/owners.md
-
+owners:
+  - droot
+  - pwittrock
 approvers:
+  - kubebuilder-admins
+  - kubebuilder-maintainers
+reviewers:
   - kubebuilder-admins
   - kubebuilder-maintainers
