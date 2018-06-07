@@ -118,7 +118,7 @@ func (w *WebService) QueryParameter(name, description string) *Parameter {
 // QueryParameter creates a new Parameter of kind Query for documentation purposes.
 // It is initialized as not required with string as its DataType.
 func QueryParameter(name, description string) *Parameter {
-	p := &Parameter{&ParameterData{Name: name, Description: description, Required: false, DataType: "string"}}
+	p := &Parameter{&ParameterData{Name: name, Description: description, Required: false, DataType: "string", CollectionFormat: CollectionFormatCSV.String()}}
 	p.beQuery()
 	return p
 }
@@ -233,7 +233,7 @@ func (w *WebService) RootPath() string {
 	return w.rootPath
 }
 
-// PathParameters return the path parameter names for (shared amoung its Routes)
+// PathParameters return the path parameter names for (shared among its Routes)
 func (w *WebService) PathParameters() []*Parameter {
 	return w.pathParameters
 }

@@ -2,10 +2,7 @@ package openstack
 
 import (
 	"fmt"
-	"net/url"
 	"reflect"
-	"regexp"
-	"strings"
 
 	"github.com/gophercloud/gophercloud"
 	tokens2 "github.com/gophercloud/gophercloud/openstack/identity/v2/tokens"
@@ -38,19 +35,9 @@ A basic example of using this would be:
 	client, err := openstack.NewIdentityV3(provider, gophercloud.EndpointOpts{})
 */
 func NewClient(endpoint string) (*gophercloud.ProviderClient, error) {
-	u, err := url.Parse(endpoint)
+	base, err := utils.BaseEndpoint(endpoint)
 	if err != nil {
 		return nil, err
-	}
-
-	u.RawQuery, u.Fragment = "", ""
-
-	var base string
-	versionRe := regexp.MustCompile("v[0-9.]+/?")
-	if version := versionRe.FindString(u.Path); version != "" {
-		base = strings.Replace(u.String(), version, "", -1)
-	} else {
-		base = u.String()
 	}
 
 	endpoint = gophercloud.NormalizeURL(endpoint)
@@ -287,10 +274,16 @@ func NewIdentityV3(client *gophercloud.ProviderClient, eo gophercloud.EndpointOp
 
 	// Ensure endpoint still has a suffix of v3.
 	// This is because EndpointLocator might have found a versionless
-	// endpoint and requests will fail unless targeted at /v3.
-	if !strings.HasSuffix(endpoint, "v3/") {
-		endpoint = endpoint + "v3/"
+	// endpoint or the published endpoint is still /v2.0. In both
+	// cases, we need to fix the endpoint to point to /v3.
+	base, err := utils.BaseEndpoint(endpoint)
+	if err != nil {
+		return nil, err
 	}
+
+	base = gophercloud.NormalizeURL(base)
+
+	endpoint = base + "v3/"
 
 	return &gophercloud.ServiceClient{
 		ProviderClient: client,
