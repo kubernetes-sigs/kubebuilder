@@ -2,6 +2,10 @@
 
 aliases:
   kubebuilder-admins:
+    - directxman12
+    - droot
     - pwittrock
   kubebuilder-maintainers:
-    - pwittrock
+    - liujingfang1
+    - mengqiy
+    - pmorie
