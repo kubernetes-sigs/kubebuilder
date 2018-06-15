@@ -22,7 +22,7 @@ func (g CodeGenerator) Execute(dir string) error {
 	if err != nil {
 		return fmt.Errorf("Failed making a parser: %v", err)
 	}
-	for _, d := range []string{"./pkg/apis", "./pkg/controller", "./pkg/inject"} {
+	for _, d := range []string{"./pkg/apis", "./pkg/inject"} {
 		if err := b.AddDirRecursive(d); err != nil {
 			return fmt.Errorf("Failed making a parser: %v", err)
 		}
