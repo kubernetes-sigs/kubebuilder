@@ -86,7 +86,7 @@ func RunCreateResource(cmd *cobra.Command, args []string) {
 	createResource(cr)
 	if generate {
 		fmt.Printf("Generating code for new resource...  " +
-			"Regenerate after editing resources files by running `kubebuilder build generated`.\n")
+			"Regenerate after editing resources files by running `kubebuilder generate clean; kubebuilder generate`.\n")
 		if skipRBACValidation {
 			args = append(args, "--skip-rbac-validation")
 		}
