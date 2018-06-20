@@ -23,6 +23,9 @@ const (
 	// Resource annotates a type as a resource
 	Resource = "// +kubebuilder:resource:path="
 
+	// StatusSubresource annotates a type as having a status subresource
+	StatusSubresource = "// +kubebuilder:subresource:status"
+
 	// Categories annotates a type as belonging to a comma-delimited list of
 	// categories
 	Categories = "// +kubebuilder:categories="
