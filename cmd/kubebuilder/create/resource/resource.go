@@ -36,6 +36,7 @@ type resourceTemplateArgs struct {
 	PluralizedKind       string
 	NonNamespacedKind    bool
 	HasStatusSubresource bool
+	Categories           []string
 }
 
 func doResource(dir string, args resourceTemplateArgs) bool {

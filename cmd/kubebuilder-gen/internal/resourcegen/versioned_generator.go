@@ -127,6 +127,13 @@ var (
                 {{ if .ShortName -}}
                 ShortNames: []string{"{{.ShortName}}"},
                 {{ end -}}
+                {{ if .Categories -}}
+                Categories: []string{
+                {{ range .Categories -}}
+                    "{{ . }}",
+                {{ end -}}
+                },
+                {{ end -}}
             },
             {{ if .NonNamespaced -}}
             Scope: "Cluster",
