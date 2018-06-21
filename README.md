@@ -4,8 +4,6 @@
 *Don't use `go get` / `go install`, instead you MUST download a tar binary release or create your own release using
 the release program.*  To build your own release see [CONTRIBUTING.md](CONTRIBUTING.md)
 
-## Releases
-
 ## `kubebuilder`
 
 Kubebuilder is a framework for building Kubernetes APIs using [custom resource definitions (CRDs)](https://kubernetes.io/docs/tasks/access-kubernetes-api/extend-api-custom-resource-definitions).
@@ -15,27 +13,25 @@ to simplify building and publishing Kubernetes APIs from scratch.
 
 ### Download and Install
 
-[Releases](https://github.com/kubernetes-sigs/kubebuilder/releases):
+[Releases](https://github.com/kubernetes-sigs/kubebuilder/releases) are here
 
 ## Getting Started
 
 See the [Getting Started](http://book.kubebuilder.io/quick_start.html) documentation.
 
+![Quick Start](docs/gif/quickstart.gif)
+
 ## Documentation
 
-[book.kubebuilder.io](http://book.kubebuilder.io)
-
-#### Quick Start Demo
-
-![Quick Start](docs/gif/quickstart.gif)
+Check out the Kubebuilder [book](http://book.kubebuilder.io).
 
 ## Resources
 
-GitBook: [book.kubebuilder.com](http://book.kubebuilder.com)
-GitHub Repo: [kubernetes-sigs/kubebuilder](https://github.com/kubernetes-sigs/kubebuilder)
-Slack channel: [#kubeuilder](http://slack.k8s.io/#kubebuilder)
-Google Group: [kubebuilder@googlegroups.com](https://groups.google.com/forum/#!forum/kubebuilder)
-Planned Work: [Sprint Dashboard](https://github.com/kubernetes-sigs/kubebuilder/projects/1)
+- GitBook: [book.kubebuilder.com](http://book.kubebuilder.io)
+- GitHub Repo: [kubernetes-sigs/kubebuilder](https://github.com/kubernetes-sigs/kubebuilder)
+- Slack channel: [#kubebuilder](http://slack.k8s.io/#kubebuilder)
+- Google Group: [kubebuilder@googlegroups.com](https://groups.google.com/forum/#!forum/kubebuilder)
+- Planned Work: [Sprint Dashboard](https://github.com/kubernetes-sigs/kubebuilder/projects/1)
 
 ## Motivation
 
@@ -53,11 +49,11 @@ Kubebuilder attempts to facilitate the following developer workflow for building
 5. Update bootstrapped integration tests to test new fields and business logic
 6. Build and publish a container from the provided Dockerfile
 
-### Scope
+## Scope
 
 Building APIs using CRDs, Controllers and Admission Webhooks.
 
-### Philosophy
+## Philosophy
 
 Provide clean library abstractions with clear and well exampled godocs.
 
@@ -66,7 +62,7 @@ Provide clean library abstractions with clear and well exampled godocs.
 - Prefer *1 time init* of stubs over forked and modified boilerplate
 - Never fork and modify boilerplate
 
-### Techniques
+## Techniques
 
 - Provide higher level libraries on top of low level client libraries
   - Protect developers from breaking changes in low level libraries
@@ -76,11 +72,11 @@ Provide clean library abstractions with clear and well exampled godocs.
   - Driven off of `//+` comments
 - Provide bootstrapping commands to initialize new packages
 
-### Troubleshooting
+## Troubleshooting
 
-- #### Bugs and Feature Requests:
+- ### Bugs and Feature Requests:
   If you have what looks like a bug, or you would like to make a feature request, please use the [Github issue tracking system.](https://github.com/kubernetes-sigs/kubebuilder/issues)
 Before you file an issue, please search existing issues to see if your issue is already covered.
 
-- #### Slack
+- ### Slack
   For realtime discussion,  you can join the [#kubebuilder](https://slack.k8s.io/#kubebuilder) slack channel. Slack requires registration, but the Kubernetes team is open invitation to anyone to register here. Feel free to come and ask any questions.
