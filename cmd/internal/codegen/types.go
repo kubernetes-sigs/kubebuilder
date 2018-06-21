@@ -166,6 +166,8 @@ type APIResource struct {
 	DocAnnotation map[string]string
 	// HasStatusSubresource indicates that the resource has a status subresource
 	HasStatusSubresource bool
+	// Categories is a list of categories the resource is part of.
+	Categories []string
 }
 
 type APISubresource struct {

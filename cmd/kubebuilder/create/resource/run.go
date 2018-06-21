@@ -110,6 +110,7 @@ func createResource(boilerplate string) {
 		inflect.NewDefaultRuleset().Pluralize(createutil.KindName),
 		nonNamespacedKind,
 		false,
+		nil,
 	}
 
 	dir, err := os.Getwd()

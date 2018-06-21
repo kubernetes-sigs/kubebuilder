@@ -77,7 +77,9 @@ func (b *APIs) parseCRDs() {
 
 					if HasCategories(resource.Type) {
 						categoriesTag := getCategoriesTag(resource.Type)
-						resource.CRD.Spec.Names.Categories = strings.Split(categoriesTag, ",")
+						categories := strings.Split(categoriesTag, ",")
+						resource.CRD.Spec.Names.Categories = categories
+						resource.Categories = categories
 					}
 
 					if HasStatusSubresource(resource.Type) {
