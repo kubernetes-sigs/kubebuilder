@@ -155,7 +155,8 @@ function generate_crd_resources {
 
   header_text "editing generated files to simulate a user"
   sed -i -e '/type Bee struct/ i \
-  // +kubebuilder:categories=foo,bar
+  // +kubebuilder:categories=foo,bar\
+  // +kubebuilder:subresource:status
   ' pkg/apis/insect/v1beta1/bee_types.go
 
   sed -i -e '/type BeeController struct {/ i \
@@ -194,6 +195,8 @@ spec:
     kind: Bee
     plural: bees
   scope: Namespaced
+  subresources:
+    status: {}
   validation:
     openAPIV3Schema:
       properties:
@@ -290,6 +293,8 @@ spec:
     kind: Bee
     plural: bees
   scope: Namespaced
+  subresources:
+    status: {}
   validation:
     openAPIV3Schema:
       properties:
@@ -440,6 +445,8 @@ spec:
     kind: Bee
     plural: bees
   scope: Namespaced
+  subresources:
+    status: {}
   validation:
     openAPIV3Schema:
       properties:
@@ -534,6 +541,7 @@ function test_crd_validation {
     Comment []byte \`json:"comment,omitempty"\`\
   ' pkg/apis/got/v1beta1/house_types.go
 
+  header_text "calling kubebuilder generate"
   kubebuilder generate
   header_text "generating and testing CRD..."
   kubebuilder create config --crds --output crd-validation.yaml
