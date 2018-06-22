@@ -53,19 +53,41 @@ kubebuilder create config --crds --output myextensionname.yaml
 			fmt.Printf("Must either specify --controller-image or set --crds.\n")
 			return
 		}
-		if name == "" && !crds {
+		if createConfigOptions.Name == "" && !crds {
 			fmt.Printf("Must either specify the name of the extension with --name or set --crds.\n")
 			return
 		}
-		CodeGenerator{SkipMapValidation: skipMapValidation}.Execute()
+
+		createConfigOptions.ExpandOptions()
+		g := CodeGenerator{
+			SkipMapValidation: skipMapValidation,
+			Namespace:         createConfigOptions.Namespace,
+			Name:              createConfigOptions.Name,
+		}
+		g.Execute()
 		log.Printf("Config written to %s", output)
 	},
 }
 
 var (
-	controllerType, controllerImage, name, output, crdNamespace string
-	crds, skipMapValidation                                     bool
+	controllerType, controllerImage, output, crdNamespace string
+	crds, skipMapValidation                               bool
 )
+
+type CreateConfigOptions struct {
+	Namespace string
+	Name      string
+}
+
+// InferOptions sets options that default based on other options, if not set.
+// For example, the Namespace is derived from the Name.
+func (o *CreateConfigOptions) ExpandOptions() {
+	if o.Namespace == "" {
+		o.Namespace = o.Name + "-system"
+	}
+}
+
+var createConfigOptions CreateConfigOptions
 
 func AddCreateConfig(cmd *cobra.Command) {
 	cmd.AddCommand(configCmd)
@@ -73,7 +95,8 @@ func AddCreateConfig(cmd *cobra.Command) {
 	configCmd.Flags().BoolVar(&crds, "crds", false, "if set to true, only generate crd definitions")
 	configCmd.Flags().StringVar(&crdNamespace, "crd-namespace", "", "if set, install CRDs to this namespace.")
 	configCmd.Flags().StringVar(&controllerImage, "controller-image", "", "name of the controller container to run.")
-	configCmd.Flags().StringVar(&name, "name", "", "name of the installation.  used to generate the namespace and resource names.")
+	configCmd.Flags().StringVar(&createConfigOptions.Name, "name", "", "name of the installation.  used to generate the namespace and resource names.")
+	configCmd.Flags().StringVar(&createConfigOptions.Namespace, "namespace", "", "namespace for the installation; defaults to <name>-system.")
 	configCmd.Flags().StringVar(&output, "output", filepath.Join("hack", "install.yaml"), "location to write yaml to")
 	configCmd.Flags().BoolVar(&skipMapValidation, "skip-map-validation", true, "if set to true, skip generating validation schema for map type in CRD.")
 }

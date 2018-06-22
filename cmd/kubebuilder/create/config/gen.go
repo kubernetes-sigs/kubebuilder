@@ -36,24 +36,30 @@ import (
 )
 
 // CodeGenerator generates code for Kubernetes resources and controllers
-type CodeGenerator struct{
+type CodeGenerator struct {
 	SkipMapValidation bool
+
+	// Namespace is the namespace we target for generated resources
+	Namespace string
+
+	// Name is the base name for resources we create (Deployments, Services etc)
+	Name string
 }
 
 var kblabels = map[string]string{
 	"kubebuilder.k8s.io": version.GetVersion().KubeBuilderVersion,
 }
 
-func addLabels(m map[string]string) map[string]string {
+func (g *CodeGenerator) addLabels(m map[string]string) map[string]string {
 	for k, v := range kblabels {
 		m[k] = v
 	}
-	m["api"] = name
+	m["api"] = g.Name
 	return m
 }
 
 // Execute parses packages and executes the code generators against the resource and controller packages
-func (g CodeGenerator) Execute() error {
+func (g *CodeGenerator) Execute() error {
 	arguments := args.Default()
 	b, err := arguments.NewBuilder()
 	if err != nil {
@@ -73,28 +79,28 @@ func (g CodeGenerator) Execute() error {
 
 	p := parse.NewAPIs(c, arguments)
 	if crds {
-		util.WriteString(output, strings.Join(getCrds(p), "---\n"))
+		util.WriteString(output, strings.Join(g.getCrds(p), "---\n"))
 		return nil
 	}
 
 	result := append([]string{},
-		getNamespace(p),
-		getClusterRole(p),
-		getClusterRoleBinding(p),
+		g.getNamespace(p),
+		g.getClusterRole(p),
+		g.getClusterRoleBinding(p),
 	)
-	result = append(result, getCrds(p)...)
+	result = append(result, g.getCrds(p)...)
 	if controllerType == "deployment" {
-		result = append(result, getDeployment(p))
+		result = append(result, g.getDeployment(p))
 	} else {
-		result = append(result, getStatefuleSetService(p))
-		result = append(result, getStatefuleSet(p))
+		result = append(result, g.getStatefulSetService(p))
+		result = append(result, g.getStatefulSet(p))
 	}
 
 	util.WriteString(output, strings.Join(result, "---\n"))
 	return nil
 }
 
-func getClusterRole(p *parse.APIs) string {
+func (g *CodeGenerator) getClusterRole(p *parse.APIs) string {
 	rules := []rbacv1.PolicyRule{}
 	for _, rule := range p.Rules {
 		rules = append(rules, rule)
@@ -113,8 +119,8 @@ func getClusterRole(p *parse.APIs) string {
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   name + "-role",
-			Labels: addLabels(map[string]string{}),
+			Name:   g.Name + "-role",
+			Labels: g.addLabels(map[string]string{}),
 		},
 		Rules: rules,
 	}
@@ -125,26 +131,26 @@ func getClusterRole(p *parse.APIs) string {
 	return string(s)
 }
 
-func getClusterRoleBinding(p *parse.APIs) string {
+func (g *CodeGenerator) getClusterRoleBinding(p *parse.APIs) string {
 	rolebinding := &rbacv1.ClusterRoleBinding{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "rbac.authorization.k8s.io/v1",
 			Kind:       "ClusterRoleBinding",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-rolebinding", name),
-			Namespace: fmt.Sprintf("%s-system", name),
-			Labels:    addLabels(map[string]string{}),
+			Name:      g.Name + "-rolebinding",
+			Namespace: g.Namespace,
+			Labels:    g.addLabels(map[string]string{}),
 		},
 		Subjects: []rbacv1.Subject{
 			{
 				Name:      "default",
-				Namespace: fmt.Sprintf("%v-system", name),
+				Namespace: g.Namespace,
 				Kind:      "ServiceAccount",
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
-			Name:     fmt.Sprintf("%v-role", name),
+			Name:     g.Name + "-role",
 			Kind:     "ClusterRole",
 			APIGroup: "rbac.authorization.k8s.io",
 		},
@@ -157,9 +163,9 @@ func getClusterRoleBinding(p *parse.APIs) string {
 	return string(s)
 }
 
-func getDeployment(p *parse.APIs) string {
+func (g *CodeGenerator) getDeployment(p *parse.APIs) string {
 	var replicas int32 = 1
-	labels := addLabels(map[string]string{
+	labels := g.addLabels(map[string]string{
 		"control-plane": "controller-manager",
 	})
 	dep := appsv1.Deployment{
@@ -168,8 +174,8 @@ func getDeployment(p *parse.APIs) string {
 			Kind:       "Deployment",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%v-controller-manager", name),
-			Namespace: fmt.Sprintf("%v-system", name),
+			Name:      g.Name + "-controller-manager",
+			Namespace: g.Namespace,
 			Labels:    labels,
 		},
 		Spec: appsv1.DeploymentSpec{
@@ -188,9 +194,9 @@ func getDeployment(p *parse.APIs) string {
 	return string(s)
 }
 
-func getStatefuleSet(p *parse.APIs) string {
+func (g *CodeGenerator) getStatefulSet(p *parse.APIs) string {
 	var replicas int32 = 1
-	labels := addLabels(map[string]string{
+	labels := g.addLabels(map[string]string{
 		"control-plane": "controller-manager",
 	})
 	statefulset := appsv1.StatefulSet{
@@ -199,12 +205,12 @@ func getStatefuleSet(p *parse.APIs) string {
 			Kind:       "StatefulSet",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%v-controller-manager", name),
-			Namespace: fmt.Sprintf("%v-system", name),
+			Name:      g.Name + "-controller-manager",
+			Namespace: g.Namespace,
 			Labels:    labels,
 		},
 		Spec: appsv1.StatefulSetSpec{
-			ServiceName: fmt.Sprintf("%v-controller-manager-service", name),
+			ServiceName: g.Name + "-controller-manager-service",
 			Replicas:    &replicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: labels,
@@ -221,8 +227,8 @@ func getStatefuleSet(p *parse.APIs) string {
 
 }
 
-func getStatefuleSetService(p *parse.APIs) string {
-	labels := addLabels(map[string]string{
+func (g *CodeGenerator) getStatefulSetService(p *parse.APIs) string {
+	labels := g.addLabels(map[string]string{
 		"control-plane": "controller-manager",
 	})
 	statefulsetservice := corev1.Service{
@@ -231,8 +237,8 @@ func getStatefuleSetService(p *parse.APIs) string {
 			Kind:       "Service",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%v-controller-manager-service", name),
-			Namespace: fmt.Sprintf("%v-system", name),
+			Name:      g.Name + "-controller-manager-service",
+			Namespace: g.Namespace,
 			Labels:    labels,
 		},
 		Spec: corev1.ServiceSpec{
@@ -279,16 +285,16 @@ func getPodTemplate(labels map[string]string) corev1.PodTemplateSpec {
 	}
 }
 
-func getCrds(p *parse.APIs) []string {
+func (g *CodeGenerator) getCrds(p *parse.APIs) []string {
 	crds := []extensionsv1beta1.CustomResourceDefinition{}
-	for _, g := range p.APIs.Groups {
-		for _, v := range g.Versions {
+	for _, group := range p.APIs.Groups {
+		for _, v := range group.Versions {
 			for _, r := range v.Resources {
 				crd := r.CRD
 				if len(crdNamespace) > 0 {
 					crd.Namespace = crdNamespace
 				}
-				crd.Labels = addLabels(map[string]string{})
+				crd.Labels = g.addLabels(map[string]string{})
 				crds = append(crds, crd)
 			}
 		}
@@ -320,11 +326,11 @@ func getCrds(p *parse.APIs) []string {
 	return result
 }
 
-func getNamespace(p *parse.APIs) string {
+func (g *CodeGenerator) getNamespace(p *parse.APIs) string {
 	ns := corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   fmt.Sprintf("%v-system", name),
-			Labels: addLabels(map[string]string{}),
+			Name:   g.Namespace,
+			Labels: g.addLabels(map[string]string{}),
 		},
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
