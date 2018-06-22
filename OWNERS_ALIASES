@@ -6,6 +6,6 @@ aliases:
     - droot
     - pwittrock
   kubebuilder-maintainers:
-    - liujingfang1
+    - Liujingfang1
     - mengqiy
     - pmorie
