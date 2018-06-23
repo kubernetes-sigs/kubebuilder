@@ -19,7 +19,13 @@ required = ["sigs.k8s.io/testing_frameworks/integration",
             "github.com/emicklei/go-restful",
             "github.com/go-openapi/spec",
             "k8s.io/kube-openapi/pkg/common",
-            ]
+            # Workaround for https://github.com/golang/dep/issues/1306
+            "github.com/kubernetes/repo-infra/verify/boilerplate/test",
+           ]
+
+[[constraint]]
+  name = "github.com/kubernetes/repo-infra"
+  revision = "3c350a455362b622fe786e63f8f07b2a87f54f7b"
 
 [[constraint]]
   name = "sigs.k8s.io/testing_frameworks"
@@ -64,3 +70,7 @@ required = ["sigs.k8s.io/testing_frameworks/integration",
 [prune]
   go-tests = true
   unused-packages = true
+
+  [[prune.project]]
+  name = "github.com/kubernetes/repo-infra"
+  unused-packages = false

@@ -1,0 +1,30 @@
+required = [
+  "github.com/bazelbuild/bazel-gazelle/cmd/gazelle",
+]
+
+[prune]
+  unused-packages = true
+  go-tests = true
+  non-go = true
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/golang/glog"
+
+[[constraint]]
+  branch = "master"
+  name = "golang.org/x/build"
+
+
+# BEGIN gazelle dependencies
+# Based on https://github.com/bazelbuild/bazel-gazelle/blob/0.10.1/deps.bzl
+
+[[constraint]]
+  name = "github.com/bazelbuild/bazel-gazelle"
+  version = "0.12.0"
+
+[[constraint]]
+  name = "github.com/bazelbuild/buildtools"
+  revision = "80c7f0d45d7e40fa1f7362852697d4a03df557b3"
+
+# END gazelle dependencies

@@ -1,0 +1,5 @@
+# gazelle:prefix k8s.io/repo-infra
+
+package(default_visibility = ["//visibility:public"])
+
+licenses(["notice"])
