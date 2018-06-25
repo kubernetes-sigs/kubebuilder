@@ -24,7 +24,6 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/golang/glog"
 	"github.com/kubernetes-sigs/kubebuilder/cmd/internal/codegen/parse"
-	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/util"
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/version"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -36,7 +35,7 @@ import (
 )
 
 // CodeGenerator generates code for Kubernetes resources and controllers
-type CodeGenerator struct{
+type CodeGenerator struct {
 	SkipMapValidation bool
 }
 
@@ -53,28 +52,27 @@ func addLabels(m map[string]string) map[string]string {
 }
 
 // Execute parses packages and executes the code generators against the resource and controller packages
-func (g CodeGenerator) Execute() error {
+func (g CodeGenerator) Execute() (string, error) {
 	arguments := args.Default()
 	b, err := arguments.NewBuilder()
 	if err != nil {
-		return fmt.Errorf("Failed making a parser: %v", err)
+		return "", fmt.Errorf("Failed making a parser: %v", err)
 	}
 	for _, d := range []string{"./pkg/apis", "./pkg/controller", "./pkg/inject"} {
 		if err := b.AddDirRecursive(d); err != nil {
-			return fmt.Errorf("Failed making a parser: %v", err)
+			return "", fmt.Errorf("Failed making a parser: %v", err)
 		}
 	}
 	c, err := parse.NewContext(b)
 	if err != nil {
-		return fmt.Errorf("Failed making a context: %v", err)
+		return "", fmt.Errorf("Failed making a context: %v", err)
 	}
 
 	arguments.CustomArgs = &parse.ParseOptions{SkipMapValidation: g.SkipMapValidation}
 
 	p := parse.NewAPIs(c, arguments)
 	if crds {
-		util.WriteString(output, strings.Join(getCrds(p), "---\n"))
-		return nil
+		return strings.Join(getCrds(p), "---\n"), nil
 	}
 
 	result := append([]string{},
@@ -90,8 +88,7 @@ func (g CodeGenerator) Execute() error {
 		result = append(result, getStatefuleSet(p))
 	}
 
-	util.WriteString(output, strings.Join(result, "---\n"))
-	return nil
+	return strings.Join(result, "---\n"), nil
 }
 
 func getClusterRole(p *parse.APIs) string {

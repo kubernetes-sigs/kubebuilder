@@ -21,6 +21,7 @@ import (
 	"log"
 	"path/filepath"
 
+	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/util"
 	"github.com/spf13/cobra"
 )
 
@@ -59,8 +60,13 @@ kubebuilder create config --crds --output myextensionname.yaml
 			fmt.Printf("Must either specify the name of the extension with --name or set --crds.\n")
 			return
 		}
-		CodeGenerator{SkipMapValidation: skipMapValidation}.Execute()
-		log.Printf("Config written to %s", output)
+		generated, err := CodeGenerator{SkipMapValidation: skipMapValidation}.Execute()
+		if err != nil {
+			fmt.Printf("%v\n", err)
+		} else {
+			util.WriteString(output, generated)
+			log.Printf("Config written to %s", output)
+		}
 	},
 }
 
