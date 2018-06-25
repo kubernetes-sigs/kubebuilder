@@ -13,7 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -e
+set -o errexit
+set -o nounset
+set -o pipefail
 
 # Enable tracing in this script off by setting the TRACE variable in your
 # environment to any value:
