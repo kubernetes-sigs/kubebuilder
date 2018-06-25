@@ -23,23 +23,30 @@ may sometimes run multiple instances even with replicas set to 1).
 
 Build and run locally against the cluster defined in ~/.kube/config.
 
-> GOBIN=${PWD}/bin go install ${PWD#$GOPATH/src/}/cmd/controller-manager
-> ./bin/controller-manager --kubeconfig ~/.kube/config
+```bash
+# Build It.
+GOBIN=${PWD}/bin go install ${PWD#$GOPATH/src/}/cmd/controller-manager
+
+# Run It.
+./bin/controller-manager --kubeconfig ~/.kube/config
+```
 
 In another terminal, create the sample resource.
 
-> kubectl apply -f hack/sample/containerset.yaml
+`kubectl apply -f hack/sample/containerset.yaml`
 
 {% panel style="info", title="Building and Running a Controller-Manager Container" %}
 The image for the Controller-Manager maybe built using the `Dockerfile.controller` Dockerfile.
 
-> docker build . -t gcr.io/containerset/controller -f Dockerfile.controller
-> docker push gcr.io/containerset/controller
+```bash
+docker build . -t gcr.io/containerset/controller -f Dockerfile.controller
+docker push gcr.io/containerset/controller
+```
 
 The yaml configuration for the Controller-Manager maybe created with
 `kubebuilder create config --image gcr.io/containerset/controller --name containerset`
 This will create the `hack/install.yaml` file to install the Controller-Manager.
 
-> kubectl apply -f hack/install.yaml
+`kubectl apply -f hack/install.yaml`
 
 {% endpanel %}
