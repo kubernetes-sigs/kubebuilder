@@ -36,6 +36,7 @@ type resourceTemplateArgs struct {
 	PluralizedKind       string
 	NonNamespacedKind    bool
 	HasStatusSubresource bool
+	HasScaleSubresource  bool
 	Categories           []string
 }
 
