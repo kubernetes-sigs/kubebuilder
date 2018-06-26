@@ -53,7 +53,7 @@ func (mp MapAndEnqueue) Get(r workqueue.RateLimitingInterface) cache.ResourceEve
 					return
 				}
 			}
-			mp.addRateLimited(r, obj)
+			mp.add(r, obj)
 		},
 		UpdateFunc: func(old, obj interface{}) {
 			for _, p := range mp.Predicates {
@@ -61,7 +61,7 @@ func (mp MapAndEnqueue) Get(r workqueue.RateLimitingInterface) cache.ResourceEve
 					return
 				}
 			}
-			mp.addRateLimited(r, obj)
+			mp.add(r, obj)
 		},
 		DeleteFunc: func(obj interface{}) {
 			for _, p := range mp.Predicates {
@@ -69,21 +69,21 @@ func (mp MapAndEnqueue) Get(r workqueue.RateLimitingInterface) cache.ResourceEve
 					return
 				}
 			}
-			mp.addRateLimited(r, obj)
+			mp.add(r, obj)
 		},
 	}
 }
 
-// addRateLimited maps the obj to a string.  If the string is non-empty, it is enqueued.
-func (mp MapAndEnqueue) addRateLimited(r workqueue.RateLimitingInterface, obj interface{}) {
+// add maps the obj to a string.  If the string is non-empty, it is enqueued.
+func (mp MapAndEnqueue) add(r workqueue.RateLimitingInterface, obj interface{}) {
 	if mp.Map != nil {
 		if k := mp.Map(obj); len(k) > 0 {
-			r.AddRateLimited(k)
+			r.Add(k)
 		}
 	}
 	if mp.MultiMap != nil {
 		for _, k := range mp.MultiMap(obj) {
-			r.AddRateLimited(k.Namespace + "/" + k.Name)
+			r.Add(k.Namespace + "/" + k.Name)
 		}
 	}
 }
