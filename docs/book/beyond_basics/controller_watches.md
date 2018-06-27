@@ -1,7 +1,3 @@
-{% panel style="info", title="Under Development" %}
-This book is being actively developed.
-{% endpanel %}
-
 # Controller Watch Functions
 
 This chapter describes how to use the controller package functions to configure Controllers to watch
@@ -23,8 +19,17 @@ If Pod *default/foo* is created, updated or deleted, then Reconcile will be call
 
 {% sample lang="go" %}
 ```go
-if err := c.Watch(&v1.Pod{}); err != nil {
-    log.Fatalf("%v", err)
+// Annotation for generating RBAC role to Watch Pods
+// +kubebuilder:rbac:groups="",resources=pods,verbs=get;watch;list
+```
+
+```go
+// Watch for Pod events, and enqueue a reconcile.Request to trigger a Reconcile
+err := c.Watch(
+	&source.Kind{Type: &v1.Pod{}},
+	&handler.EnqueueRequestForObject{})
+if err != nil {
+    return err
 }
 ```
 {% endmethod %}
@@ -50,23 +55,20 @@ If Pod *default/foo-pod* was created by ReplicaSet *default/foo-rs*, and the Pod
 correct RBAC rules are in place and informers have been started.
 
 ```go
-// +kubebuilder:rbac:groups="",resources=pods,verbs=get;watch;list
-// +kubebuilder:informers:group=core,version=v1,kind=Pod
+// Annotation to generate RBAC roles to watch and update Pods
+// +kubebuilder:rbac:groups="",resources=pods,verbs=get;watch;list,create,update,delete
 ```
 
 {% sample lang="go" %}
 ```go
-fn := func(k types.ReconcileKey) (interface{}, error) {
-    return informerFactory.
-    	Apps().V1().
-    	ReplicaSets().
-    	Lister().
-    	ReplicaSets(k.Namespace).Get(k.Name)
-}
-if err := c.WatchControllerOf(
-	&corev1.Pod{}, eventhandlers.Path{fn}
-); err != nil {
-    log.Fatalf("%v", err)
+// Watch for Pod events, and enqueue a reconcile.Request for the ReplicaSet in the OwnerReferences
+err := c.Watch(
+	&source.Kind{Type: &corev1.Pod{}},
+    &handler.EnqueueRequestForOwner{
+        IsController: true,
+        OwnerType:    &appsv1.ReplicaSet{}})
+if err != nil {
+    return err
 }
 ```
 {% endmethod %}
@@ -93,28 +95,34 @@ correct RBAC rules are in place and informers have been started.
 
 ```go
 // +kubebuilder:rbac:groups="",resources=pods,verbs=get;watch;list
-// +kubebuilder:informers:group=core,version=v1,kind=Pod
 ```
 
 {% sample lang="go" %}
 ```go
-if err := c.WatchTransformationKeysOf(&corev1.Pod{},
-    func(i interface{}) []types.ReconcileKey {
-        p, ok := i.(*corev1.Pod)
-        if !ok {
-            return []types.ReconcileKey{}
+// Define a mapping from the object in the event to one or more
+// objects to Reconcile
+mapFn := handler.ToRequestsFunc(
+	func(a handler.MapObject) []reconcile.Request {
+        return []reconcile.Request{
+            {NamespacedName: types.NamespacedName{
+                Name:      a.Meta.GetName() + "-1",
+                Namespace: a.Meta.GetNamespace(),
+            }},
+            {NamespacedName: types.NamespacedName{
+                Name:      a.Meta.GetName() + "-2",
+                Namespace: a.Meta.GetNamespace(),
+            }},
         }
-
-        // Find multiple parents based off the name
-        n := strings.Split(p.Name, "-")[0]
-        return []types.ReconcileKey{
-            {p.Namespace, n + "-mapto-1"},
-            {p.Namespace, n + "-mapto-2"},
-        }
-    },
-); err != nil {
-    log.Fatalf("%v", err)
-	
+    })
+// Watch Deployments and trigger Reconciles for objects
+// mapped from the Deployment in the event
+err := c.Watch(
+		&source.Kind{Type: &appsv1.Deployment{}},
+		&handler.EnqueueRequestsFromMapFunc{
+			ToRequests: mapFn,
+		})
+if err != nil {
+    return err
 }
 ```
 {% endmethod %}
@@ -123,19 +131,20 @@ if err := c.WatchTransformationKeysOf(&corev1.Pod{},
 {% method %}
 ## Watching Channels
 
-Controllers may watch channels for events to trigger Reconciles.  This is useful if the Controller
-manages some external state that it is either polled or calls back via a WebHook.
-
-This simple example configures a Controller to read `namespace/name` keys from a channel and
-trigger Reconciles.
-
-If podkeys has *default/foo* inserted, then Reconcile will be called for *namespace: default, name: foo*.
+Controllers may trigger Reconcile for events written to Channels.  This is useful if the Controller
+needs to trigger a Reconcile in response to something other than a create / update / delete event
+to a Kubernetes object.  Note: in most situations this case is better handled by updating a Kubernetes
+object with the external state that would trigger the Reconcile.
 
 {% sample lang="go" %}
 ```go
-podkeys := make(chan string)
-if err := c.WatchChannel(podkeys); err != nil {
-    log.Fatalf("%v", err)
+events := make(chan event.GenericEvent)
+err := ctrl.Watch(
+    &source.Channel{Source: events},
+    &handler.EnqueueRequestForObject{},
+)
+if err != nil {
+    return err
 }
 ```
 {% endmethod %}

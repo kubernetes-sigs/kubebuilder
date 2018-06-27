@@ -1,92 +1,140 @@
-{% panel style="info", title="Under Development" %}
-This book is being actively developed.
-{% endpanel %}
-
 # Hello World
 
-{% panel style="warning", title="Note on project structure" %}
-Kubernete APIs require boilerplate code that is not shown here and is managed by kubebuilder.
-
-Project structure may be created by running `kubebuilder init` and then creating a
-new API with `kubebuilder create resource`. More on this topic in
+A new project may be scaffolded for a user by running `kubebuilder init` and then scaffolding a
+new API with `kubebuilder create api`. More on this topic in
 [Project Creation and Structure](../basics/project_creation_and_structure.md) 
-{% endpanel %}
 
-This chapter shows an abridged Kubebuilder project for a simple API.
+This chapter shows a kubebuilder project for a simple API.
 
-Kubernetes APIs have 3 components.  These components live in separate go packages:
+Kubernetes APIs have 3 components.  Typically these components live in separate go packages:
 
-* The API schema definition, or *Resource*, as a go struct.  This implicitly defines endpoints.
-* The API implementation, or *Controller*, as a go function.
-* The executable, or controller-manager, as a go main.
+* The API schema definition, or *Resource*, as a go struct containing ObjectMeta and TypeMeta.
+* The API implementation, or *Controller*, as an implementation of the reconcile.Reconciler interface.
+* The executable, or *Manager*, as a go main.
 
 {% method %}
-## Pancake API Resource Definition {#hello-world-api}
+## FirstMate API Resource Definition {#hello-world-api}
 
-This is a Resource definition.  It is a go struct containing the API schema that
-implicitly defines CRUD endpoints for the Resource.
+FirstMate is a simple Resource (API) definition.  Resources are implemented as go structs containing:
 
-For a more information on Resources see [What is a Resource](../basics/what_is_a_resource.md).
+- metav1.TypeMeta
+- metav1.ObjectMeta
+- API schema Spec - e.g. the user specified state
+- API schema Status - e.g. the cluster reported state
 
-While it is not shown here, most Resources will split their fields in into a Spec and a Status field.
-
-For a more complete example see [Simple Resource Example](../basics/simple_resource.md) 
+Not shown here: Resources also have boilerplate for managing a runtime.Scheme which is scaffolded by
+kubebuilder for users.
 
 {% sample lang="go" %}
 ```go
-type Pancake struct {
+// FirstMate is the API schema definition
+type FirstMate struct {
     metav1.TypeMeta   `json:",inline"`
     metav1.ObjectMeta `json:"metadata,omitempty"`
 
-    Message string `json:"message"`
+    Spec Spec `json:"spec"`
+    Status Status `json:"status"`
+}
+
+// Spec is set by users and may also be defaulted or set by the cluster if left unspecified.
+type Spec struct {
+    Responsibilities []string `json:"responsibilities"`
+}
+
+// Status is set by the cluster to communicate the status of an object.
+type Status struct {
+	CompletedResponsibilities []string `json:"completedResponsibilities"`
 }
 ```
 {% endmethod %}
 
 {% method %}
-## Pancake Controller {#hello-world-controller}
+## FirstMate Controller {#hello-world-controller}
 
-This is a Controller implementation.  It contains a Reconcile function which takes an object
-key as an argument and reconciles the observed state of the cluster with the desired state of the cluster.
+FirstMateController is a Controller Reconcile implementation.  Reconcilen takes an object
+Namespace and Name as an argument and makes the state of the cluster match what is specified in the object
+at the time Reconcile is called.
 
-Reconcile should be trigger by watch events for the Pancake Resource type, but may also be triggered
-by watch events for related resource types, such as for any objects created by Reconcile. 
-
-When Reconcile is triggered by watch events for other resource types, each event is
-mapped to the key of a Pancake object.  This will trigger a full reconcile of
-the Pancake object, which will in turn read related cluster state, including the object the
-original event was for.
-
-For a more information on Controllers see [What is a Controller](../basics/what_is_a_controller.md).
-
-The code shown here has been abridged; for a more complete example see
-[Simple Controller Example](../basics/simple_controller.md)
+Reconcile will be trigger in response to events (create / update / delete) for FirstMate objects (and for any
+objects owned by a FirstMate object through additional Watch calls).
 
 {% sample lang="go" %}
 ```go
-// Note: This code lives under
-// pkg/controller/pancake/controller.go
-
-func (bc *PancakeController) Reconcile(k types.ReconcileKey) error {
-    p, err := bc.pancakeclient.
-    	Pancakes(k.Namespace).
-    	Get(k.Name, v1.GetOptions{})
-    if err != nil {
-        return err
-    }
-    fmt.Println(p.Spec.Message)
-    return nil
+// FirstMateController implements the FirstMate API
+type FirstMateController struct {
+	client.Client
 }
 
-func ProvideController(arguments args.InjectArgs) (
-	*controller.GenericController, error) {
-    ...
-    
-    if err := gc.Watch(&breakfastv1alpha1.Pancake{}); err != nil {
-        return gc, err
-    }
-    ...
+// Add creates a new Controller and adds it to the Manager
+func func (c *FirstMateController) Reconcile(req reconcile.Request) (reconcile.Result, error) {
+    fm := &v1beta1.FirstMate{}
+	err := c.Get(context.TODO(), req.NamespacedName, fm)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	
+	// Implement your Controller logic here to read and write additional
+	// objects using FirstMateController.Client
+	
+	// Return the result
+	return reconcile.Result{}, nil
+}
+
+// Add is called by the main function to add a Controller to the Manager
+func Add(mrg manager.Manager) error {
+	// Read the FirstMate object
+	c, err := controller.New("firstmate-controller", mrg,
+		controller.Options{Reconcile: &FirstMateController{Client: mrg.GetClient()}})
+	if err != nil {
+		return err
+	}
+
+	// Trigger FirstMateController.Reconcile in response to FirstMate create/update/delete events
+	err = c.Watch(&source.Kind{Type: &v1beta1.FirstMate{}}, &handler.EnqueueRequestForObject{})
+	if err != nil {
+		return err
+	}
+	
+	// Additional Watches for created objects go here.
+
+	return nil
 }
 ```
 {% endmethod %}
 
+{% method %}
+## Manager {#hello-world-manager}
+
+Manager is responsible for starting and providing dependencies to Controllers.  The main function creates
+a new manager and adds Controllers to it.
+
+{% sample lang="go" %}
+```go
+func main() {
+	// Get a config to talk to the apiserver
+	cfg, err := config.GetConfig()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Create a new Cmd to provide shared dependencies and start components
+	mrg, err := manager.New(cfg, manager.Options{})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Setup Scheme for all resources
+	if err := crewv1beta1.AddToScheme(mrg.GetScheme()); err != nil {
+		log.Fatal(err)
+	}
+
+	// Setup all Controllers
+	if err := v1beta1.Add(mrg); err != nil {
+		log.Fatal(err)
+	}
+
+	// Start the Cmd
+	log.Fatal(mrg.Start(signals.SetupSignalHandler()))
+}
+```
+{% endmethod %}

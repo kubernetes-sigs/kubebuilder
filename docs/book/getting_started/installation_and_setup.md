@@ -1,50 +1,16 @@
-{% panel style="info", title="Under Development" %}
-This book is being actively developed.
-{% endpanel %}
-
 # Installation and Setup
-
-{% panel style="warning", title="Important" %}
-Kubebuilder requires multiple binaries to be installed and cannot be installed with `go get`.
-
-Kubebuilder may be built from source by running *Google Container Builder* locally.  See the
-[CONTRIBUTING](https://github.com/kubernetes-sigs/kubebuilder/blob/master/CONTRIBUTING.md) docs for guidance.
-{% endpanel %}
 
 {% method %}
 
 Install kubebuilder by downloading the latest stable release from the
-[github repo](https://github.com/kubernetes-sigs/kubebuilder/releases).
+[github repo](https://github.com/kubernetes-sigs/kubebuilder/releases)
+or by running `go get` to get the latest code.
 
-Kubebuilder can then setup a project in the user's `GOPATH`.
+Note: Kubebuilder requires that it is run from a user's `GOPATH`.
 
-`kubebuilder init --domain desiredapisdomain.com`.
-
-{% sample lang="mac" %}
+{% sample lang="bash" %}
 ```bash
-# download the release
-curl -L -O https://github.com/kubernetes-sigs/kubebuilder/releases/download/v0.1.9/kubebuilder_0.1.9_darwin_amd64.tar.gz
-
-# extract the archive
-tar -zxvf kubebuilder_0.1.9_darwin_amd64.tar.gz
-sudo mv kubebuilder_0.1.9_darwin_amd64 /usr/local/kubebuilder
-
-# update your PATH to include /usr/local/kubebuilder/bin
-export PATH=$PATH:/usr/local/kubebuilder/bin
+go get github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder
 ```
-
-{% sample lang="linux" %}
-```bash
-# download the release
-wget https://github.com/kubernetes-sigs/kubebuilder/releases/download/v0.1.9/kubebuilder_0.1.9_linux_amd64.tar.gz
-
-# extract the archive
-tar -zxvf kubebuilder_0.1.9_linux_amd64.tar.gz
-sudo mv kubebuilder_0.1.9_linux_amd64 /usr/local/kubebuilder
-
-# update your PATH to include /usr/local/kubebuilder/bin
-export PATH=$PATH:/usr/local/kubebuilder/bin
-```
-
 {% endmethod %}
 

@@ -1,7 +1,3 @@
-{% panel style="info", title="Under Development" %}
-This book is being actively developed.
-{% endpanel %}
-
 # Defining Boilerplate License Headers
 
 {% method %}
@@ -9,8 +5,8 @@ This book is being actively developed.
 It is possible to add boilerplate license headers to all generated code by
 modifying `hack/boilerplate.go.txt`.
 
-If you don't create `boilerplate.go.txt` an empty version will be created for you by
-`kubebuilder init`.  Modifying this file will only impact files created afterward.
+If you don't create `boilerplate.go.txt` an apache2 boilerplate header will be created for you.
+Modifying this file will only impact files created afterward.
 
 {% sample lang="bash" %}
 
