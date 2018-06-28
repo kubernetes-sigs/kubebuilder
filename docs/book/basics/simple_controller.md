@@ -6,6 +6,10 @@ This example is for the Controller for the ContainerSet API shown in *Simple Res
 It uses the [controller-runtime](https://godoc.org/sigs.k8s.io/controller-runtime/pkg) libraries
 to implement the Controller and Manager.
 
+Unlike the Hello World example, here we use the underlying Controller libraries directly instead
+of the higher-level `application` pattern libraries.  This gives greater control over
+the Controller is configured.
+
 > $ kubebuilder create api --group workloads --version v1beta1 --kind ContainerSet
 
 > pkg/controller/containerset/containerset_controller.go

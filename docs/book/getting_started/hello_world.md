@@ -4,139 +4,114 @@ A new project may be scaffolded for a user by running `kubebuilder init` and the
 new API with `kubebuilder create api`. More on this topic in
 [Project Creation and Structure](../basics/project_creation_and_structure.md) 
 
-This chapter shows a kubebuilder project for a simple API using the
-[controller-runtime](https://godoc.org/sigs.k8s.io/controller-runtime/pkg) libraries
-to implement the Controller and Manager.
+This chapter shows a simple Controller implementation using the
+[controller-runtime application pattern](https://godoc.org/sigs.k8s.io/controller-runtime/pkg/patterns)
+libraries.  The controller-runtime pattern libraries are high-level abstractions
+targeted at simplifying common Controller patterns.
 
-Kubernetes APIs have 3 components.  Typically these components live in separate go packages:
+While Kubernetes APIs have typically have 3 components, (Resource, Controller, Manager), this
+example uses an existing Resource (ReplicaSet) and an application.Builder to hide many of the
+Controller and Manager setup details.
 
-* The API schema definition, or *Resource*, as a go struct containing ObjectMeta and TypeMeta.
-* The API implementation, or *Controller*, as an implementation of the reconcile.Reconciler interface.
-* The executable, or *Manager*, as a go main.
-
-{% method %}
-## FirstMate API Resource Definition {#hello-world-api}
-
-FirstMate is a simple Resource (API) definition.  Resources are implemented as go structs containing:
-
-- metav1.TypeMeta
-- metav1.ObjectMeta
-- API schema Spec - e.g. the user specified state
-- API schema Status - e.g. the cluster reported state
-
-Not shown here: Resources also have boilerplate for managing a runtime.Scheme which is scaffolded by
-kubebuilder for users.
-
-{% sample lang="go" %}
-```go
-// FirstMate is the API schema definition
-type FirstMate struct {
-    metav1.TypeMeta   `json:",inline"`
-    metav1.ObjectMeta `json:"metadata,omitempty"`
-
-    Spec Spec `json:"spec"`
-    Status Status `json:"status"`
-}
-
-// Spec is set by users and may also be defaulted or set by the cluster if left unspecified.
-type Spec struct {
-    Responsibilities []string `json:"responsibilities"`
-}
-
-// Status is set by the cluster to communicate the status of an object.
-type Status struct {
-	CompletedResponsibilities []string `json:"completedResponsibilities"`
-}
-```
-{% endmethod %}
+For a more detailed look at creating APIs and Controllers that may not fit this pattern,
+see the [Simple Resource](../basics/simple_resource.md),
+[Simple Controller](../basics/simple_controller.md) and
+[Simple Manager](../basics/simple_controller_manager.md) sections.
 
 {% method %}
-## FirstMate Controller {#hello-world-controller}
+## ReplicaSet Controller Setup {#hello-world-controller}
 
-FirstMateController is a Reconciler implementation.  Reconcile takes an object
-Namespace and Name as an argument and makes the state of the cluster match what is specified in the object
-at the time Reconcile is called.
+The example main program configures a new ReplicaSetController to watch for
+create/update/delete events for ReplicaSets and Pods.
 
-Reconcile will be trigger in response to events (create / update / delete) for FirstMate objects (and for any
-objects owned by a FirstMate object through additional Watch calls).
-
-{% sample lang="go" %}
-```go
-// FirstMateController implements the FirstMate API
-type FirstMateController struct {
-	client.Client
-}
-
-// Add creates a new Controller and adds it to the Manager
-func func (c *FirstMateController) Reconcile(req reconcile.Request) (reconcile.Result, error) {
-    fm := &v1beta1.FirstMate{}
-	err := c.Get(context.TODO(), req.NamespacedName, fm)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-	
-	// Implement your Controller logic here to read and write additional
-	// objects using FirstMateController.Client
-	
-	// Return the result
-	return reconcile.Result{}, nil
-}
-
-// Add is called by the main function to add a Controller to the Manager
-func Add(mrg manager.Manager) error {
-	// Read the FirstMate object
-	c, err := controller.New("firstmate-controller", mrg,
-		controller.Options{Reconcile: &FirstMateController{Client: mrg.GetClient()}})
-	if err != nil {
-		return err
-	}
-
-	// Trigger FirstMateController.Reconcile in response to FirstMate create/update/delete events
-	err = c.Watch(&source.Kind{Type: &v1beta1.FirstMate{}}, &handler.EnqueueRequestForObject{})
-	if err != nil {
-		return err
-	}
-	
-	// Additional Watches for created objects go here.
-
-	return nil
-}
-```
-{% endmethod %}
-
-{% method %}
-## Manager {#hello-world-manager}
-
-Manager is responsible for starting and providing dependencies to Controllers.  The main function creates
-a new manager and adds Controllers to it.
+- On ReplicaSet create/update/delete events - Reconcile the *ReplicaSet*
+- On Pod create/update/delete events - Reconcile the *ReplicaSet* that created the Pod
+- Reconcile by calling `ReplicaSetController.Reconcile` with the Namespace and Name of
+  ReplicaSet
 
 {% sample lang="go" %}
 ```go
 func main() {
-	// Get a config to talk to the apiserver
-	cfg, err := config.GetConfig()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Create a new Cmd to provide shared dependencies and start components
-	mrg, err := manager.New(cfg, manager.Options{})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Setup Scheme for all resources
-	if err := crewv1beta1.AddToScheme(mrg.GetScheme()); err != nil {
-		log.Fatal(err)
-	}
-
-	// Setup all Controllers
-	if err := v1beta1.Add(mrg); err != nil {
-		log.Fatal(err)
-	}
-
-	// Start the Cmd
+    a, err := application.
+    	// ReplicaSet is the Application type that
+    	// is Reconciled Respond to ReplicaSet events.
+        BuilderFor(&appsv1.ReplicaSet{}).
+        // ReplicaSet creates Pods. Trigger
+        // ReplicaSet Reconciles for Pod events.
+        Owns(&corev1.Pod{}).
+        // Call ReplicaSetController with the
+        // Namespace / Name of the ReplicaSet
+        WithReconciler(&ReplicaSetController{}).
+        Build()
+    if err != nil {
+        log.Fatal(err)
+    }
 	log.Fatal(mrg.Start(signals.SetupSignalHandler()))
+}
+
+// ReplicaSetController is a simple Controller example implementation.
+type ReplicaSetController struct {
+	client.Client
+}
+```
+{% endmethod %}
+
+{% method %}
+## ReplicaSet Implementation {#hello-world-controller}
+
+ReplicaSetController implements reconcile.Reconciler.  It takes the Namespace and Name for
+a ReplicaSet object and makes the state of the cluster match what is specified in the ReplicaSet
+at the time Reconcile is called.  This typically means using a `client.Client` to read
+the same of multiple objects, and perform create / update / delete as needed.
+
+- Implement `InjectClient` to get a `client.Client` from the `application.Builder`
+- Read the ReplicaSet object using the provided Namespace and Name
+- List the Pods matching the ReplicaSet selector
+- Set a Label on the ReplicaSet with the matching Pod count
+
+Because the Controller watches for Pod events, the count will be updated any time
+a Pod is created or deleted.
+
+{% sample lang="go" %}
+```go
+// InjectClient is called by the application.Builder
+// to provide a client.Client
+func (a *ReplicaSetController) InjectClient(
+	c client.Client) error {
+	a.Client = c
+	return nil
+}
+
+// Reconcile reads the Pods for a ReplicaSet and writes
+// the count back as an annotation
+func (a *ReplicaSetController) Reconcile(
+	req reconcile.Request) (reconcile.Result, error) {
+	// Read the ReplicaSet
+	rs := &appsv1.ReplicaSet{}
+	err := a.Get(context.TODO(), req.NamespacedName, rs)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// List the Pods matching the PodTemplate Labels
+	pods := &corev1.PodList{}
+	err = a.List(context.TODO(), 
+		client.InNamespace(req.Namespace).
+		    MatchingLabels(rs.Spec.Template.Labels),
+		pods)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	// Update the ReplicaSet
+	rs.Labels["selector-pod-count"] = 
+		fmt.Sprintf("%v", len(pods.Items))
+	err = a.Update(context.TODO(), rs)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	return reconcile.Result{}, nil
 }
 ```
 {% endmethod %}
