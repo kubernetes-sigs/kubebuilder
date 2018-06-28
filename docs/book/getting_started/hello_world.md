@@ -4,7 +4,9 @@ A new project may be scaffolded for a user by running `kubebuilder init` and the
 new API with `kubebuilder create api`. More on this topic in
 [Project Creation and Structure](../basics/project_creation_and_structure.md) 
 
-This chapter shows a kubebuilder project for a simple API.
+This chapter shows a kubebuilder project for a simple API using the
+[controller-runtime](https://godoc.org/sigs.k8s.io/controller-runtime/pkg) libraries
+to implement the Controller and Manager.
 
 Kubernetes APIs have 3 components.  Typically these components live in separate go packages:
 
@@ -51,7 +53,7 @@ type Status struct {
 {% method %}
 ## FirstMate Controller {#hello-world-controller}
 
-FirstMateController is a Controller Reconcile implementation.  Reconcilen takes an object
+FirstMateController is a Reconciler implementation.  Reconcile takes an object
 Namespace and Name as an argument and makes the state of the cluster match what is specified in the object
 at the time Reconcile is called.
 

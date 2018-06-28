@@ -3,10 +3,12 @@
 This chapter walks through a simple Controller implementation.
 
 This example is for the Controller for the ContainerSet API shown in *Simple Resource Example*.
+It uses the [controller-runtime](https://godoc.org/sigs.k8s.io/controller-runtime/pkg) libraries
+to implement the Controller and Manager.
 
 > $ kubebuilder create api --group workloads --version v1beta1 --kind ContainerSet
 
-> pkg/controller/containerset/controller.go
+> pkg/controller/containerset/containerset_controller.go
 
 ## Setup
 

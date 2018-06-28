@@ -1,31 +1,22 @@
-{% panel style="info", title="Under Development" %}
-This book is being actively developed.
-{% endpanel %}
-
 # Quick Start
 
-This Quick Start guide will cover.
+This Quick Start guide will cover:
 
 - Create a project
 - Create an API
-- Run the API
+- Run locally
+- Run in-cluster
+- Build documentation
 
 ## Installation
 {% method %}
 
 - Install [dep](https://github.com/golang/dep)
-- Download the latest release from the [releases page](https://github.com/kubernetes-sigs/kubebuilder/releases)
-- Extract the tar and move+rename the extracted directory to `/usr/local/kubebuilder`
-- Add `/usr/local/kubebuilder/bin` to your `PATH`
+- Install [kubebuilder](https://github.com/kubernetes-sigs/kubebuilder)
 
 {% sample lang="bash" %}
 ```bash
-curl -L -O https://github.com/kubernetes-sigs/kubebuilder/releases/download/v0.1.X/kubebuilder_0.1.X_<darwin|linux>_amd64.tar.gz
-
-tar -zxvf kubebuilder_0.1.X_<darwin|linux>_amd64.tar.gz
-sudo mv kubebuilder_0.1.X_<darwin|linux>_amd64 /usr/local/kubebuilder
-
-export PATH=$PATH:/usr/local/kubebuilder/bin
+go get github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder
 ```
 {% endmethod %}
 
@@ -35,14 +26,11 @@ export PATH=$PATH:/usr/local/kubebuilder/bin
 
 #### Project Creation
 
-Initialize the project directory with the canonical project structure and go dependencies.
-
-**Note:** To add a boilerplate header to generated files, create `hack/boilerplate.go.txt`
-and add your boilerplate before running `kubebuilder init`.
+Initialize the project directory.
 
 {% sample lang="bash" %}
 ```bash
-kubebuilder init --domain k8s.io
+kubebuilder init --domain k8s.io --license apache2 --owners "The Kubernetes Authors"
 ```
 {% endmethod %}
 
@@ -53,13 +41,13 @@ kubebuilder init --domain k8s.io
 Create a new API called *Sloop*.  The will create files for you to edit under `pkg/apis/<group>/<version>` and under
 `pkg/controller/<kind>`.
 
-**Optional:** Edit the schema or reconcile business logic in the `pkg/apis` and `pkg/controller` respectively,
-**then run** `kubebuilder generate`.  For more on this see [What is a Controller](basics/what_is_a_controller.md)
+**Optional:** Edit the schema or reconcile business logic in the `pkg/apis` and `pkg/controller` respectively.
+For more on this see [What is a Controller](basics/what_is_a_controller.md)
 and [What is a Resource](basics/what_is_a_resource.md)
 
 {% sample lang="bash" %}
 ```bash
-kubebuilder create resource --group ships --version v1beta1 --kind Sloop
+kubebuilder create api --group ships --version v1beta1 --kind Sloop
 ```
 {% endmethod %}
 
@@ -72,18 +60,26 @@ kubebuilder create resource --group ships --version v1beta1 --kind Sloop
 Build and run your API by installing the CRD into the cluster and starting the controller as a local
 process on your dev machine.
 
-Create a new instance of your API and look at the controller-manager output.
+Create a new instance of your API and look at the command output.
 
 {% sample lang="bash" %}
+
+> Install the CRDs into the cluster
+
 ```bash
-GOBIN=${PWD}/bin go install ${PWD#$GOPATH/src/}/cmd/controller-manager
-bin/controller-manager --kubeconfig ~/.kube/config
+make install
 ```
 
-> In a new terminal create an instance of your API
+> Run the command locally against the remote cluster.
 
 ```bash
-kubectl apply -f hack/sample/sloop.yaml
+make run
+```
+
+> In a new terminal - create an instance and expect the Controller to pick it up
+
+```bash
+kubectl apply -f sample/sloop.yaml
 ```
 {% endmethod %}
 
@@ -91,13 +87,13 @@ kubectl apply -f hack/sample/sloop.yaml
 
 #### Adding Schema and Business Logic
 
-Further your API schema and resource, then run `kubebuilder generate`.
+Edit your API Schema and Controller, then re-run `make`.
 
 {% sample lang="bash" %}
 ```bash
 nano -w pkg/apis/ship/v1beta1/sloop_types.go
 ...
-nano -w pkg/controller/sloop/controller.go
+nano -w pkg/controller/sloop/sloop_controller.go
 ...
 kubebuilder generate
 ```
@@ -107,38 +103,26 @@ kubebuilder generate
 
 {% method %}
 
-#### Integration Testing
-
-Run the generated integration tests for your APIS.
-
-{% sample lang="bash" %}
-```bash
-go test ./pkg/...
-```
-{% endmethod %}
-
-{% method %}
-
 #### Controller-Manager Container and Installation YAML
 
-- Build and push a container image.
 - Create installation config for your API
-- Install with kubectl apply
+- Build and push a container image.
+- Run in-cluster with kubectl apply
 
 {% sample lang="bash" %}
 
 ```bash
-docker build . -f Dockerfile.controller -t gcr.io/kubeships/controller-manager:v1
-kubebuilder create config --controller-image gcr.io/kubeships/controller-manager:v1 --name kubeships
+make
 ```
 
 ```bash
 gcloud auth configure-docker
-docker push gcr.io/kubeships/controller-manager:v1
+docker build . -t gcr.io/kubeships/manager:v1
+docker push gcr.io/kubeships/manager:v1
 ```
 
 ```bash
-kubectl apply -f hack/install.yaml
+kubectl apply -f config/crds -f config/rbac -f config/manager
 ```
 {% endmethod %}
 

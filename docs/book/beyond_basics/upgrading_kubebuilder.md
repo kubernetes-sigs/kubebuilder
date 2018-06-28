@@ -3,7 +3,7 @@
 ## Update the Kubebuilder install
 
 Install the latest version of kubebuilder from [releases page](https://github.com/kubernetes-sigs/kubebuilder/releases)
-or using `go get`.
+or using `go get github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder`.
 
 ## Update Existing Project's Dependencies
 

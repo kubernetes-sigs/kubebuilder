@@ -1,7 +1,3 @@
-{% panel style="info", title="Under Development" %}
-This book is being actively developed.
-{% endpanel %}
-
 **Note:** Impatient readers head straight to [Quick Start](quick_start.md).
 
 *To share this book use the icons in the top-right of the menu.*

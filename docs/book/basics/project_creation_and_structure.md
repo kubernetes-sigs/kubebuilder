@@ -66,7 +66,7 @@ that will be required to build your project.
 
 {% sample lang="bash" %}
 ```bash
-$ kubebuilder init --domain k8s.io
+$ kubebuilder init --domain k8s.io --license apache2 --owners "The Kubernetes Authors"
 ```
 {% endmethod %}
 
