@@ -27,7 +27,7 @@ The `pkg/apis` package is scaffolded automatically by `kubebuilder create api` w
 The `pkg/controller/...` packages contain the Controller implementations.
 Users edit the `*_controller.go` files under this directory to implement their Controllers.
 
-The `pkg/apis` package is scaffolded automatically by `kubebuilder create api` when creating a Controller.
+The `pkg/controller` package is scaffolded automatically by `kubebuilder create api` when creating a Controller.
 
 ## Additional directories and files
 

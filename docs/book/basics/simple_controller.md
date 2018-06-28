@@ -46,7 +46,7 @@ Sources
 Handlers
 
 - To enqueue a Reconcile for the object in the event use a `handler.EnqueueRequestForObject`
-- To enqueue a Reconcile for the object that created the object in the event use a `handler.EnqueueRequestForOwner`
+- To enqueue a Reconcile for the owner object that created the object in the event use a `handler.EnqueueRequestForOwner`
   with the type of the owner e.g. `&handler.EnqueueRequestForOwner{OwnerType: &appsv1.Deployment{}, IsController: true}`
 - To enqueue Reconcile requests for an arbitrary collection of objects in response to the event, use a
   `handler.EnqueueRequestsFromMapFunc`.
@@ -84,7 +84,9 @@ func Add(mgr manager.Manager) error (
 	}
 
 	// Watch for changes to ContainerSet
-	err = c.Watch(&source.Kind{Type: &crewv1.FirstMate{}}, &handler.EnqueueRequestForObject{})
+	err = c.Watch(
+		&source.Kind{Type:&workloadsv1beta1.ContainerSet{}},
+	    &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
@@ -94,7 +96,7 @@ func Add(mgr manager.Manager) error (
 		&source.Kind{Type: &appsv1.Deployment{}},
 	    &handler.EnqueueRequestForOwner{
 		    IsController: true,
-		    OwnerType:    &crewv1.FirstMate{},
+		    OwnerType:    &workloadsv1beta1.ContainerSet{},
 	    })
 	if err != nil {
 		return err
@@ -148,7 +150,7 @@ var _ reconcile.Reconciler = &ContainerSetController{}
 func (r *ContainerSetController) Reconcile(request reconcile.Request) (
 	reconcile.Result, error) {
     // Read the ContainerSet
-	cs := &v1alpha1.ContainerSet{}
+	cs := &workloadv1beta1.ContainerSet{}
 	err := r.client.Get(context.TODO(), request.NamespacedName, cs)
     
     // Handle deleted or error case
