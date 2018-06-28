@@ -2,11 +2,6 @@
 
 
 [[projects]]
-  name = "github.com/emicklei/go-restful"
-  packages = ["log"]
-  revision = "ff4f55a206334ef123e4f79bbf348980da81ca46"
-
-[[projects]]
   name = "github.com/ghodss/yaml"
   packages = ["."]
   revision = "0ca9ea5df5451ffdf184b4428c902747c2c11cd7"
@@ -198,9 +193,22 @@
   ]
   revision = "01a732e01d00cb9a81bb0ca050d3e6d2b947927b"
 
+[[projects]]
+  branch = "master"
+  name = "sigs.k8s.io/controller-tools"
+  packages = [
+    "pkg/scaffold",
+    "pkg/scaffold/controller",
+    "pkg/scaffold/input",
+    "pkg/scaffold/manager",
+    "pkg/scaffold/project",
+    "pkg/scaffold/resource"
+  ]
+  revision = "ebc6b604ffe8679ebc52cb1e67b76139ad7a7599"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "53c0546d5938231df9b5bf3a3e878723d37026c0048dd7238a5e57dcc5e47992"
+  inputs-digest = "5f2f7c7d77ad09b2125ce55c6718ca5871a9fb30afa58a0bb1728a6185dd51b2"
   solver-name = "gps-cdcl"
   solver-version = 1

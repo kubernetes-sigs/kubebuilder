@@ -43,3 +43,7 @@
 [[constraint]]
   version = "kubernetes-1.10.1"
   name = "k8s.io/client-go"
+
+[[constraint]]
+  branch = "master"
+  name = "sigs.k8s.io/controller-tools"

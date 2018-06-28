@@ -23,16 +23,12 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/spf13/cobra"
-
-	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/build"
-	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/create"
-	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/docs"
-	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/generate"
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/initproject"
-	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/update"
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/util"
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/version"
+	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/v0"
+	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/v1"
+	"github.com/spf13/cobra"
 )
 
 func main() {
@@ -53,14 +49,14 @@ func main() {
 			"\nCurrent GOPATH=%s.  \nCurrent directory=%s", gopath, wd)
 	}
 	util.Repo = strings.Replace(wd, util.GoSrc+string(filepath.Separator), "", 1)
-
-	build.AddBuild(cmd)
-	create.AddCreate(cmd)
-	docs.AddDocs(cmd)
-	generate.AddGenerate(cmd)
 	initproject.AddInit(cmd)
-	update.AddUpdate(cmd)
 	version.AddVersion(cmd)
+
+	if util.IsNewVersion() {
+		v1.AddCmds(cmd)
+	} else {
+		v0.AddCmds(cmd)
+	}
 
 	if err := cmd.Execute(); err != nil {
 		log.Fatal(err)
@@ -70,57 +66,7 @@ func main() {
 var cmd = &cobra.Command{
 	Use:   "kubebuilder",
 	Short: "Development kit for building Kubernetes extensions and tools.",
-	Long: `Development kit for building Kubernetes extensions and tools.
-
-Provides libraries and tools to create new projects, APIs and controllers.
-Includes tools for packaging artifacts into an installer container.
-
-Typical project lifecycle:
-
-- initialize a project:
-
-  kubebuilder init --domain example.com
-
-- create one or more a new resource APIs and add your code to them:
-
-  kubebuilder create resource --group <group> --version <version> --kind <Kind>
-
-- run the controller as a local process (e.g. not in a container), installing APIs into the cluster if they are missing:
-
-  GOBIN=${PWD}/bin go install ${PWD#$GOPATH/src/}/cmd/controller-manager
-  bin/controller-manager --kubeconfig ~/.kube/config
-
-  # In another terminal create a new instance of your resource and watch the controller-manager output
-  kubectl apply -f hack/sample/<resource>.yaml
-
-
-- build a docker container to install the API and controller into a namespace with RBAC configured:
-
-  Note: You may need to give yourself admin privs in order to install the RBAC rules
-  kubectl create clusterrolebinding <your-binding-name> --clusterrole=cluster-admin --user=<your-user>
-
-  docker build -f Dockerfile.controller . -t <image:tag>
-  docker push <image:tag>
-  kubebuilder create config --controller-image <image:tag> --name <project-name>
-  kubectl apply -f hack/install.yaml
-
-More options:
-
-- run tests
-  kubebuilder generate
-  go test ./pkg/...
-
-- build reference documentation to docs/reference/build/index.html
-  kubebuilder create example --group <group> --version <version> --kind <Kind>
-  kubebuilder docs
-`,
-	Example: `# Initialize your project
-kubebuilder init --domain example.com
-
-# Initialize your project adding a go-header file to all generated files
-touch hack/boilerplate.go.txt
-kubebuilder init --domain example.com`,
-	Run: RunMain,
+	Run:   RunMain,
 }
 
 func RunMain(cmd *cobra.Command, args []string) {

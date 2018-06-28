@@ -52,8 +52,10 @@ var builderCommit string
 var Update bool
 
 func RunVendorInstall(cmd *cobra.Command, args []string) {
-	cr := util.GetCopyright(copyright)
-	doImports(cr)
+	if len(args) > 0 {
+		cr := util.GetCopyright(args[0])
+		doImports(cr)
+	}
 	if !depExists() {
 		log.Fatalf("Dep is not installed. Follow steps at: https://golang.github.io/dep/docs/installation.html")
 	}
