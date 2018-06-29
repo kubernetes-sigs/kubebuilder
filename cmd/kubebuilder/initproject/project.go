@@ -17,6 +17,7 @@ limitations under the License.
 package initproject
 
 import (
+	"bufio"
 	"fmt"
 	"log"
 	"os"
@@ -71,8 +72,9 @@ func (o *projectOptions) RunInit() {
 	}
 
 	if !o.depFlag.Changed {
+		reader := bufio.NewReader(os.Stdin)
 		fmt.Println("Run `dep ensure` to fetch dependencies (Recommended) [y/n]?")
-		o.dep = util.Yesno()
+		o.dep = util.Yesno(reader)
 	}
 	if o.dep {
 		c := exec.Command("dep", "ensure") // #nosec
