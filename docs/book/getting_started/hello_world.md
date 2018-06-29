@@ -5,18 +5,16 @@ new API with `kubebuilder create api`. More on this topic in
 [Project Creation and Structure](../basics/project_creation_and_structure.md) 
 
 This chapter shows a simple Controller implementation using the
-[controller-runtime application pattern](https://godoc.org/sigs.k8s.io/controller-runtime/pkg/patterns)
-libraries.  The controller-runtime pattern libraries are high-level abstractions
-targeted at simplifying common Controller patterns.
+[controller-runtime builder](https://godoc.org/sigs.k8s.io/controller-runtime/pkg/builder)
+libraries to do most of the Controller configuration.
 
 While Kubernetes APIs have typically have 3 components, (Resource, Controller, Manager), this
-example uses an existing Resource (ReplicaSet) and an application.Builder to hide many of the
-Controller and Manager setup details.
+example uses an existing Resource (ReplicaSet) and the `builder` package to hide many of the
+ setup details.
 
-For a more detailed look at creating APIs and Controllers that may not fit this pattern,
-see the [Simple Resource](../basics/simple_resource.md),
-[Simple Controller](../basics/simple_controller.md) and
-[Simple Manager](../basics/simple_controller_manager.md) sections.
+For a more detailed look at creating Resources and Controllers that may be more complex,
+see the [Resource](../basics/simple_resource.md), [Controller](../basics/simple_controller.md) and
+[Manager](../basics/simple_controller_manager.md) examples.
 
 {% method %}
 ## ReplicaSet Controller Setup {#hello-world-controller}
@@ -32,26 +30,25 @@ create/update/delete events for ReplicaSets and Pods.
 {% sample lang="go" %}
 ```go
 func main() {
-    a, err := application.
-    	// ReplicaSet is the Application type that
-    	// is Reconciled Respond to ReplicaSet events.
-        BuilderFor(&appsv1.ReplicaSet{}).
-        // ReplicaSet creates Pods. Trigger
-        // ReplicaSet Reconciles for Pod events.
-        Owns(&corev1.Pod{}).
-        // Call ReplicaSetController with the
-        // Namespace / Name of the ReplicaSet
-        WithReconciler(&ReplicaSetController{}).
-        Build()
-    if err != nil {
-        log.Fatal(err)
-    }
-	log.Fatal(mrg.Start(signals.SetupSignalHandler()))
+  a, err := builder.SimpleController()
+    // ReplicaSet is the Application type that
+    // is Reconciled Respond to ReplicaSet events.
+    ForType(&appsv1.ReplicaSet{}).
+    // ReplicaSet creates Pods. Trigger
+    // ReplicaSet Reconciles for Pod events.
+    Owns(&corev1.Pod{}).
+    // Call ReplicaSetController with the
+    // Namespace / Name of the ReplicaSet
+    Build(&ReplicaSetController{})
+  if err != nil {
+    log.Fatal(err)
+  }
+  log.Fatal(mrg.Start(signals.SetupSignalHandler()))
 }
 
 // ReplicaSetController is a simple Controller example implementation.
 type ReplicaSetController struct {
-	client.Client
+  client.Client
 }
 ```
 {% endmethod %}
@@ -77,41 +74,41 @@ a Pod is created or deleted.
 // InjectClient is called by the application.Builder
 // to provide a client.Client
 func (a *ReplicaSetController) InjectClient(
-	c client.Client) error {
-	a.Client = c
-	return nil
+  c client.Client) error {
+  a.Client = c
+  return nil
 }
 
 // Reconcile reads the Pods for a ReplicaSet and writes
 // the count back as an annotation
 func (a *ReplicaSetController) Reconcile(
-	req reconcile.Request) (reconcile.Result, error) {
-	// Read the ReplicaSet
-	rs := &appsv1.ReplicaSet{}
-	err := a.Get(context.TODO(), req.NamespacedName, rs)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
+  req reconcile.Request) (reconcile.Result, error) {
+  // Read the ReplicaSet
+  rs := &appsv1.ReplicaSet{}
+  err := a.Get(context.TODO(), req.NamespacedName, rs)
+  if err != nil {
+    return reconcile.Result{}, err
+  }
 
-	// List the Pods matching the PodTemplate Labels
-	pods := &corev1.PodList{}
-	err = a.List(context.TODO(), 
-		client.InNamespace(req.Namespace).
-		    MatchingLabels(rs.Spec.Template.Labels),
-		pods)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
+  // List the Pods matching the PodTemplate Labels
+  pods := &corev1.PodList{}
+  err = a.List(context.TODO(), 
+    client.InNamespace(req.Namespace).
+        MatchingLabels(rs.Spec.Template.Labels),
+    pods)
+  if err != nil {
+    return reconcile.Result{}, err
+  }
 
-	// Update the ReplicaSet
-	rs.Labels["selector-pod-count"] = 
-		fmt.Sprintf("%v", len(pods.Items))
-	err = a.Update(context.TODO(), rs)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
+  // Update the ReplicaSet
+  rs.Labels["selector-pod-count"] = 
+    fmt.Sprintf("%v", len(pods.Items))
+  err = a.Update(context.TODO(), rs)
+  if err != nil {
+    return reconcile.Result{}, err
+  }
 
-	return reconcile.Result{}, nil
+  return reconcile.Result{}, nil
 }
 ```
 {% endmethod %}

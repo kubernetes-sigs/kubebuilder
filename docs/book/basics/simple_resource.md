@@ -1,4 +1,4 @@
-# Simple Resource Example
+# Resource Example
 
 This chapter walks through the definition of a new Resource call *ContainerSet*.  ContainerSet
 contains the image and replicas fields, and ensures a Deployment with matching image and replicas
@@ -75,12 +75,12 @@ field, which may be set by autoscalers.
 ```go
 // ContainerSetSpec defines the desired state of ContainerSet
 type ContainerSetSpec struct {
-    // replics is the number of replicas to maintain
-    Replicas int32 `json:"replicas,omitempty"`
+  // replics is the number of replicas to maintain
+  Replicas int32 `json:"replicas,omitempty"`
 
-    // image is the container image to run.  Image must have a tag.
-    // +kubebuilder:validation:Pattern=.+:.+
-    Image string `json:"image,omitempty"`
+  // image is the container image to run.  Image must have a tag.
+  // +kubebuilder:validation:Pattern=.+:.+
+  Image string `json:"image,omitempty"`
 }
 ```
 {% endmethod %}
@@ -98,7 +98,7 @@ events to update the field.
 ```go
 // ContainerSetStatus defines the observed state of ContainerSet
 type ContainerSetStatus struct {
-	HealthyReplicas `json:"healthyReplicas,omitempty"`
+  HealthyReplicas `json:"healthyReplicas,omitempty"`
 }
 ```
 {% endmethod %}
@@ -124,17 +124,17 @@ map go structs to GroupVersionKinds.
 
 ```go
 var (	
-	// SchemeGroupVersion is group version used to register these objects
-	SchemeGroupVersion = schema.GroupVersion{Group: "workloads.k8s.io", Version: "v1beta1"}
+  // SchemeGroupVersion is group version used to register these objects
+  SchemeGroupVersion = schema.GroupVersion{Group: "workloads.k8s.io", Version: "v1beta1"}
 
-	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
-	SchemeBuilder = &scheme.Builder{GroupVersion: SchemeGroupVersion})
+  // SchemeBuilder is used to add go types to the GroupVersionKind scheme
+  SchemeBuilder = &scheme.Builder{GroupVersion: SchemeGroupVersion})
 ```
 
 ```go
 func init() {
-	// Register the types with the SchemeBuilder
-	SchemeBuilder.Register(&v1.ContainerSet{}, &v1.ContainerSetList{})
+  // Register the types with the SchemeBuilder
+  SchemeBuilder.Register(&v1.ContainerSet{}, &v1.ContainerSetList{})
 }
 ```
 {% endmethod %}

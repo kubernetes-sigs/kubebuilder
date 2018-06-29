@@ -16,7 +16,7 @@ This Quick Start guide will cover:
 
 {% sample lang="bash" %}
 ```bash
-go get github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder
+go get -u github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder
 ```
 {% endmethod %}
 

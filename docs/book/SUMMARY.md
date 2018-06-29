@@ -14,15 +14,15 @@
 
 * Development Workflow
   * [Project Creation and Structure](basics/project_creation_and_structure.md)
-* Resource Fundamentals
+* Resources
   * [What is a Resource](basics/what_is_a_resource.md)
-  * [Simple Resource Example](basics/simple_resource.md)
-* Controller Fundamentals
+  * [Resource Example](basics/simple_resource.md)
+* Controllers
   * [What is a Contoller](basics/what_is_a_controller.md)
-  * [Simple Controller Example](basics/simple_controller.md)
-* Manager Fundamentals
+  * [Controller Example](basics/simple_controller.md)
+* Managers
   * [What is the Manager](basics/what_is_the_controller_manager.md)
-  * [Simple Manager Example](basics/simple_controller_manager.md)
+  * [Manager Example](basics/simple_controller_manager.md)
 
 ### Beyond the Basics
 
