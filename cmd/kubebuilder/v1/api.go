@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	"bufio"
 	"fmt"
 	"log"
 	"os"
@@ -44,13 +45,14 @@ type apiOptions struct {
 func (o *apiOptions) RunAddAPI() {
 	dieIfNoProject()
 
+	reader := bufio.NewReader(os.Stdin)
 	if !o.resourceFlag.Changed {
 		fmt.Println("Create Resource under pkg/apis [y/n]?")
-		o.doResource = util.Yesno()
+		o.doResource = util.Yesno(reader)
 	}
 	if !o.controllerFlag.Changed {
 		fmt.Println("Create Controller under pkg/controller [y/n]?")
-		o.doController = util.Yesno()
+		o.doController = util.Yesno(reader)
 	}
 
 	fmt.Println("Writing scaffold for you to edit...")
