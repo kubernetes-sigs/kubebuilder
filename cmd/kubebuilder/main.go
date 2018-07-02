@@ -25,9 +25,9 @@ import (
 
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/initproject"
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/util"
-	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/version"
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/v0"
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/v1"
+	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/version"
 	"github.com/spf13/cobra"
 )
 

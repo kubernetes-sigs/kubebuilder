@@ -35,8 +35,8 @@ import (
 )
 
 type apiOptions struct {
-	r *resource.Resource
-	resourceFlag, controllerFlag *flag.Flag
+	r                                *resource.Resource
+	resourceFlag, controllerFlag     *flag.Flag
 	doResource, doController, doMake bool
 }
 
@@ -84,7 +84,7 @@ func (o *apiOptions) RunAddAPI() {
 	if o.doController {
 		fmt.Println(filepath.Join("pkg", "controller", strings.ToLower(r.Kind),
 			fmt.Sprintf("%s_controller.go", strings.ToLower(r.Kind))))
-		fmt.Println(filepath.Join("pkg", "apis", strings.ToLower(r.Kind),
+		fmt.Println(filepath.Join("pkg", "controller", strings.ToLower(r.Kind),
 			fmt.Sprintf("%s_controller_test.go", strings.ToLower(r.Kind))))
 
 		err := (&scaffold.Scaffold{}).Execute(input.Options{},
@@ -142,7 +142,7 @@ After the scaffold is written, api will run make on the project.
 	make run
 `,
 		Run: func(cmd *cobra.Command, args []string) {
-            o.RunAddAPI()
+			o.RunAddAPI()
 		},
 	}
 
@@ -165,7 +165,6 @@ func dieIfNoProject() {
 		log.Fatalf("Command must be run from a diretory containing %s", "PROJECT")
 	}
 }
-
 
 // ResourceForFlags registers flags for Resource fields and returns the Resource
 func ResourceForFlags(f *flag.FlagSet) *resource.Resource {
