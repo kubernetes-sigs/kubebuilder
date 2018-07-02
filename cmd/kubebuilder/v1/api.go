@@ -159,10 +159,10 @@ After the scaffold is written, api will run make on the project.
 	cmd.AddCommand(apiCmd)
 }
 
-// DieIfNoProject checks to make sure the command is run from a directory containing a project file.
+// dieIfNoProject checks to make sure the command is run from a directory containing a project file.
 func dieIfNoProject() {
 	if _, err := os.Stat("PROJECT"); os.IsNotExist(err) {
-		log.Fatalf("Command must be run from a diretory containing %s", "PROJECT")
+		log.Fatalf("Command must be run from a directory containing %s", "PROJECT")
 	}
 }
 

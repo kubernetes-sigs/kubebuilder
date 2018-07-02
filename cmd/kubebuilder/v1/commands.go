@@ -22,8 +22,7 @@ import (
 
 func AddCmds(cmd *cobra.Command) {
 	AddAPICommand(cmd)
-	// TODO: User update commands from controller-tools once it is available
-	//update.AddUpdate(cmd)
+	cmd.AddCommand(vendorUpdateCmd())
 
 	cmd.Example = `# Initialize your project
     kubebuilder init --domain example.com --license apache2 --owner "The Kubernetes authors"

@@ -522,6 +522,7 @@ build_kb
 setup_envs
 
 prepare_testdir_under_gopath
+
 test_crd_validation
 test_generated_controller
 
