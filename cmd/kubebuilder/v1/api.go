@@ -172,5 +172,6 @@ func ResourceForFlags(f *flag.FlagSet) *resource.Resource {
 	f.StringVar(&r.Kind, "kind", "", "resource Kind")
 	f.StringVar(&r.Group, "group", "", "resource Group")
 	f.StringVar(&r.Version, "version", "", "resource Version")
+	f.BoolVar(&r.Namespaced, "namespaced", true, "resource is namespaced")
 	return r
 }
