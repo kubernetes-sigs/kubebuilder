@@ -34,7 +34,15 @@ function test_init_project_manual_dep_ensure {
 
 function test_create_api_controller {
   header_text "performing creating api and controller"
-  kubebuilder create api --group insect --version v1beta1 --kind Bee <<EOF
+  kubebuilder create api --group insect --version v1beta1 --kind Bee --namespaced false <<EOF
+y
+y
+EOF
+}
+
+function test_create_namespaced_api_controller {
+  header_text "performing creating namespaced api and controller"
+  kubebuilder create api --group insect --version v1beta1 --kind Bee --namespaced true <<EOF
 y
 y
 EOF
@@ -42,7 +50,15 @@ EOF
 
 function test_create_api_only {
   header_text "performing creating api only"
-  kubebuilder create api --group insect --version v1beta1 --kind Bee <<EOF
+  kubebuilder create api --group insect --version v1beta1 --kind Bee --namespaced false <<EOF
+y
+n
+EOF
+}
+
+function test_create_namespaced_api_only {
+  header_text "performing creating api only"
+  kubebuilder create api --group insect --version v1beta1 --kind Bee --namespaced true <<EOF
 y
 n
 EOF
@@ -58,7 +74,15 @@ EOF
 
 function test_create_coretype_controller {
   header_text "performing creating coretype controller"
-  kubebuilder create api --group apps --version v1 --kind Deployment <<EOF
+  kubebuilder create api --group apps --version v1 --kind Deployment --namespaced false <<EOF
+n
+y
+EOF
+}
+
+function test_create_namespaced_coretype_controller {
+  header_text "performing creating coretype controller"
+  kubebuilder create api --group apps --version v1 --kind Deployment --namespaced true <<EOF
 n
 y
 EOF
@@ -82,11 +106,22 @@ test_create_api_controller
 
 prepare_testdir_under_gopath
 test_init_project
+test_create_namespaced_api_controller
+
+prepare_testdir_under_gopath
+test_init_project
 test_create_api_only
 
-# enable this test case after fixing it
-#prepare_testdir_under_gopath
-#test_init_project
-#test_create_coretype_controller
+prepare_testdir_under_gopath
+test_init_project
+test_create_namespaced_api_only
+
+prepare_testdir_under_gopath
+test_init_project
+test_create_coretype_controller
+
+prepare_testdir_under_gopath
+test_init_project
+test_create_namespaced_coretype_controller
 
 exit $rc
