@@ -83,6 +83,7 @@ import (
 	{{ if .Resource.CreateExampleReconcileBody -}}
 	appsv1 "k8s.io/api/apps/v1"
 	{{ end -}}
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -113,7 +114,14 @@ func TestReconcile(t *testing.T) {
 	defer close(StartTestManager(mgr, g))
 
 	// Create the {{ .Resource.Kind }} object and expect the Reconcile{{ if .Resource.CreateExampleReconcileBody }} and Deployment to be created{{ end }}
-	g.Expect(c.Create(context.TODO(), instance)).To(gomega.Succeed())
+	err = c.Create(context.TODO(), instance)
+	// The instance object may not be a valid object because it might be missing some required fields.
+	// Please modify the instance object by adding required fields and then remove the following if statement.
+	if apierrors.IsInvalid(err) {
+		t.Logf("failed to create object, got an invalid object error: %v", err)
+		return
+	}
+	g.Expect(err).NotTo(gomega.HaveOccurred())
 	defer c.Delete(context.TODO(), instance)
 	g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(expectedRequest)))
 {{ if .Resource.CreateExampleReconcileBody }}
