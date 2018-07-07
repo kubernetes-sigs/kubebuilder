@@ -1,58 +1,53 @@
-{% panel style="info", title="Under Development" %}
-This book is being actively developed.
-{% endpanel %}
-
 # Project Creation and Structure {#project-creation-and-structure}
 
 ## Go package Structure
 
-Kubebuilder projects contain 4 important packages.
+Kubebuilder projects contain 3 important packages.
 
 ##### cmd/...
 
-The `cmd` package contains the controller-manager main program which runs controllers.  Users typically
-will not need to modify this package unless they are doing something special.
+The `cmd` package contains the manager main program.  Manager is responsible for initializing
+shared dependencies and starting / stopping Controllers.  Users typically
+will not need to edit this package and can rely on the scaffolding.
+
+The `cmd` package is scaffolded automatically by `kubebuilder init`.
 
 ##### pkg/apis/...
 
-The `pkg/apis/...` packages contains the *go* structs that define the resource schemas.
-Users edit `*_types.go` files under this director to implement their API definitions.
+The `pkg/apis/...` packages contains the API resource definitions.
+Users edit the `*_types.go` files under this director to implement their API definitions.
 
 Each resource lives in a `pkg/apis/<api-group-name>/<api-version-name>/<api-kind-name>_types.go`
 file.
 
-For more information on API Group, Version and Kinds, see the *What is a Resource* chapter.
-
-{% panel style="info", title="Generated code" %}
-Kubebuilder will generate boilerplate code required for Resources by running
-`kubebuilder generate`.  The generated files are named `zz_generated.*`.
-{% endpanel %}
+The `pkg/apis` package is scaffolded automatically by `kubebuilder create api` when creating a Resource.
 
 ##### pkg/controller/...
 
-The `pkg/controller/...` packages contain the *go* types and functions that implement the
-business logic for APIs in *controllers*.
+The `pkg/controller/...` packages contain the Controller implementations.
+Users edit the `*_controller.go` files under this directory to implement their Controllers.
 
-More information on Controllers in the *What is a Controller* chapter.
+The `pkg/controller` package is scaffolded automatically by `kubebuilder create api` when creating a Controller.
 
-##### pkg/inject/...
+## Additional directories and files
 
-The `pkg/inject/...` packages contain the generated code that registers annotated
-Controllers and Resources.
+In addition to the packages above, a Kubebuilder project has several other directories and files.
 
-*Note*: This package is unique to kubebuilder.
+##### Makefile
 
-## Additional directories
+A Makefile is created with targets to build, test, run and deploy the controller artifacts
+for development as well as production workflows
 
-In addition to the packages above, a Kubebuilder project has several other directories.
+##### Dockerfile
 
-##### hack/...
+A Dockerfile is scaffolded to build a container image for your Manager.
 
-Kubebuilder puts miscellaneous files into the hack directory.
+##### config/...
 
-- API installation yaml
-- Samples resource configs
-- Headers for generated files: `boilerplate.go.txt`
+Kubebuilder creates yaml config for installing the CRDs and related objects under config/.
+
+- config/crds
+- config/manager
 
 ##### docs/...
 
@@ -71,7 +66,7 @@ that will be required to build your project.
 
 {% sample lang="bash" %}
 ```bash
-$ kubebuilder init --domain k8s.io
+$ kubebuilder init --domain k8s.io --license apache2 --owners "The Kubernetes Authors"
 ```
 {% endmethod %}
 
@@ -85,12 +80,12 @@ and [What Is A Controller](../basics/what_is_a_controller.md)
 
 {% sample lang="bash" %}
 ```bash
-$ kubebuilder create resource --group mygroup --version v1beta1 --kind MyKind
+$ kubebuilder create api --group mygroup --version v1beta1 --kind MyKind
 ```
 {% endmethod %}
 
 {% method %}
-## Run your controller-manager locally against a Kubernetes cluster
+## Run your manager locally against a Kubernetes cluster
 
 Users may run the controller-manager binary locally against a Kubernetes cluster.  This will
 install the APIs into the cluster and begin watching and reconciling the resources.
@@ -100,19 +95,21 @@ install the APIs into the cluster and begin watching and reconciling the resourc
 # Create a minikube cluster
 $ minikube start
 
-# Install the APIs into the minikube cluster and begin watching it
-$ GOBIN=${PWD}/bin go install ${PWD#$GOPATH/src/}/cmd/controller-manager
-$ bin/controller-manager --kubeconfig ~/.kube/config
+# Install the CRDs into the cluster
+$ make install
+
+# Build and run the manager
+$ make run
 ```
 {% endmethod %}
 
 {% method %}
-## Create an object
+## Create an instance
 
-Create a new instance of your Resource.  Observe the controller-manager logs after creating the object.
+Create a new instance of your Resource.  Observe the manager logs printed to the console after creating the object.
 
 {% sample lang="bash" %}
 ```bash
-$ kubectl apply -f hack/sample/<resource>.yaml
+$ kubectl apply -f sample/<resource>.yaml
 ```
 {% endmethod %}

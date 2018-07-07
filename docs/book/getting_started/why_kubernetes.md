@@ -1,19 +1,23 @@
-{% panel style="info", title="Under Development" %}
-This book is being actively developed.
-{% endpanel %}
-
-
 # Why Kubernetes APIs
 
-Kubenernetes APIs allow users to specify the desired state of a Kubernetes cluster in an
-object by writing declarative *yaml* or *json* config for a Resource.  This
-approach provides a number of advantages including:
+Kubenernetes APIs provide consistent and well defined endpoints for
+objects adhering to a consistent and rich structure.
 
-* Facilitating self-healing APIs that continuously watch the state of the system.
-* Leveraging tools that work with any Kubernetes config such as `kubectl` and `kustomize`.
-* Integrating with Kubernetes Authz and Authn.
-* API versioning.
-* Providing a native Kubernetes experience.
+This approach has fostered a rich ecosystem of tools and libraries for working
+with Kubernetes APIs.
 
-Developers can build and publish their own Kubernetes APIs which may be installed
-into running clusters by cluster admins.
+Users work with the APIs through declaring objects as *yaml* or *json* config, and using
+common tooling to manage the objects.
+
+Building services as Kubernetes APIs provides many advantages to plain old REST, including:
+
+* Hosted API endpoints, storage, and validation.
+* Rich tooling and clis such as `kubectl` and `kustomize`.
+* Support for Authn and granular Authz.
+* Support for API evolution through API versioning and conversion.
+* Facilitation of adaptive / self-healing APIs that continuously respond to changes
+  in the system state without user intervention.
+* Kubernetes as a hosting environment
+
+Developers may build and publish their own Kubernetes APIs for installation into
+running Kubernetes clusters.

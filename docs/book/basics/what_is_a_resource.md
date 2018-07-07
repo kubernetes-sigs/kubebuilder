@@ -1,12 +1,9 @@
-{% panel style="info", title="Under Development" %}
-This book is being actively developed.
-{% endpanel %}
-
 # What is a Resource
 
-A Kubernetes resource is a declarative API with a well defined Schema structure
-and endpoints.  Because the structure of the Schema and Endpoints are both well
-understood, many Kubernetes tools support all APIs written as Kubernetes resources.
+A Kubernetes Resource is a declarative API with a well defined Schema structure
+and endpoints.  Because the structure of the Schema and Endpoints are predictable
+and structured, most Kubernetes tools work with any Kubernetes API even if they
+are not part of the core (e.g. extensions through CRDs).
 
 {% method %}
 
@@ -20,7 +17,7 @@ An imperative API expresses an operation that may change state, but does not
 define an absolute state that must be maintained.  Imperative APIs express the
 *how*, but not *what*.  Example: `$ add-pods 2`.
 
-In the declarative case if replica is lost the cluster has a clear directive
+In the declarative case, if a replica is lost the cluster has a clear directive
 to create another one, whereas in the latter case this is not necessarily true.
 
 {% sample lang="yaml" %}
@@ -84,18 +81,18 @@ a stable set of field names and defaults, as well as a complete feature set.
 
 ##### Spec, Status, Metadata
 
-Most Kubernetes resources Schema contain 3 components: Spec, Status and Metadata
+Most Kubernetes Resource Schemas contain 3 components: Spec, Status and Metadata
 
-**Spec**: the resource Spec defines the desired state of the cluster as specified by the user.
+**Spec**: the Resource Spec defines the desired state of the cluster as specified by the user.
 
-**Status**: the resource Status publishes the state of the cluster as observed by the controller.
+**Status**: the Resource Status publishes the state of the cluster as observed by the controller.
 
-**Metadata**: the resource Metadata contains information common to most resources about the object
+**Metadata**: the Resource Metadata contains information common to most resources about the object
 including as the object name, annotations, labels and more.
 
 {% sample lang="yaml" %}
 
-**Note**: this config have been abbreviated for the purposes of display
+**Note**: this config has been abbreviated for the purposes of display
 
 *Deployment yaml config with Spec Status and Metadata*
 
@@ -121,13 +118,13 @@ status:
 
 {% panel style="warning", title="Spec vs Status" %}
 The resource *Status* should not contain the source of truth for any information, and should be
-possible for controllers to recreate by looking at the cluster state.  Other values assigned by
-controllers, such as the Service `spec.clusterIp`, should be set on the *Spec* not the *Status*.
+possible for Controllers to recreate by looking at the cluster state.  Other values assigned by
+Controllers, such as the Service `spec.clusterIp`, should be set on the *Spec* not the *Status*.
 {% endpanel %}
 {% method %}
 #### Resource Endpoints
 
-Kubernetes resources have well defined endpoints as described below.
+Kubernetes Resources have well defined endpoints as described below.
 
 ##### Create, Update, Patch, Delete
 
@@ -171,9 +168,10 @@ the written object should be visible when read from any version.
 {% panel style="warning", title="Warning on Updates" %}
 The update API should only be used to read-then-write an object, and never used to
 update an object directly from declarative config.  This is because the object state
-may be partially managed by controllers running in the cluster and this state would
+may be partially managed by Controllers running in the cluster and this state would
 be lost when the update replaces the current object with the declarative config.
-For example updating a Service from declarative config rather than a read-then-write
+
+**Illustrative example:** updating a Service from declarative config rather than a read-then-write
 would clear the Service `spec.clusterIp` field set by the controller.
 {% endpanel %}
 

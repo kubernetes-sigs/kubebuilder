@@ -1,68 +1,80 @@
-{% panel style="info", title="Under Development" %}
-This book is being actively developed.
-{% endpanel %}
-
 # What is a Controller
 
-Controllers implement APIs defined by *Resources*.  Controllers are
-routines running in a Kubernetes cluster that watch both the resource API they implement as well
-as related resource APIs to form a whole view of the cluster state.  Controllers reconcile each object's
-(resource instance) desired state as declared in the Spec (e.g. 10 replicas of Pod running nginx)
-with the state observed read from the APIs (e.g. 0 replicas of Pods running nginx).  Reconciliation is
-done both in response to changes in cluster state, and periodically for each observed object.
+Controllers implement APIs defined by *Resources*.  Unlike Controllers in the ModelViewController
+pattern, Kubernetes Controllers are run *asynchronously* after the Resources (Models) have
+been written to storage.  This model is highly flexible and allows new Controllers to be
+added for Models through extension instead of modification.
+  
+A Kubernetes Controller is a routine running in a Kubernetes cluster that watches for create /
+update / delete events on Resources, and triggers a Reconcile function in response.  Reconcile
+is a function that may be called at any time with the Namespace and Name of an object (Resource
+instance), and it will make the cluster state match the state declared in the object Spec.
+Upon completion, Reconcile updates the object Status the new actual state.
 
-**Kubernetes APIs and controllers have *level* based implementations to facilitate self-
-healing and periodic reconciliation.**
+It is common for Controllers to watch for changes to the Resource type that they Reconcile
+*and* Resource types of objects they create.  e.g. a ReplicaSet Controller watches for
+changes to ReplicaSets *and* Pods.  The Controller will trigger a Reconcile for a ReplicaSet
+in response to either an event for that ReplicaSet *or* in response to an event for a
+Pod created by that ReplicaSet.
+
+In some cases Reconcile may only update the Status without updating any cluster state.  
+
+Illustrative example:
+
+- A ReplicaSet object is created with 10 replicas specified in the Spec
+- ReplicaSetController Reconcile reads the Spec and lists the Pods owned by the ReplicaSet
+- No Pods are found, ReplicaSetController creates 10 Pods and updates the Status with 0/10 Pods running
+- ReplicaSetController Reconcile is triggered as the Pods start running, and updates Status in the
+  ReplicaSet object.
+
+
+**Kubernetes APIs and Controllers have *level* based implementations to facilitate self-
+healing and periodic reconciliation.  This means no state is provided to the Reconcile
+when it is called.**
 
 ## What is a Level Based API
 
 The term *level-based* comes from interrupts hardware, where interrupts may be either *level-based* or *edge-based*.
-This book does not go into the details of the hardware definitions of these terms.
 
-Kubernetes defines a level-based API as implemented by reading the observed state of the system,
-comparing it to the desired state declared in the object *Spec*, and moving directly toward the
-current desired state.
+Kubernetes defines a level-based API as implemented by reading the observed (actual) state of the system,
+comparing it to what is declared in the object *Spec*, and making changes to the system state so
+it matches the state of the Spec **at the time Reconcile is called**.
  
 This has a number of notable properties:
 
-- reconciliation works directly towards the current desired state without having to complete
-  obsolete desired states
-- when many events quickly occur that trigger a reconciliation for the same object, reconciliation will
-  process many of the events at once by comparing observed and desired states,
-  not handling the individual events.
-- the system may trigger reconciliation periodically for objects without a specific event occurring.
+- Reconcile skips intermediate or obsolete values declared in the Spec and
+  works directly toward the *current* Spec.
+- Reconcile may batch multiple events together before processing them instead
+  of handling each individually
 
 Consider the following examples of level based API implementations.
 
 **Example 1**: Batching Events
 
-A user creates a Deployment with 1000 replicas.  The Deployment creates 1000 Pods and maintains a
-Status field with the number of healthy Pods.  In a level based system, the controller doesn't
-update the Status for each Pod (1000 writes), but instead batches updates together with
-the number of observed healthy Pods during reconciliation.  In an edge based system, the
-controller would respond to each individual Pod event with a Status update.
+A user creates a ReplicaSet with 1000 replicas.  The ReplicaSet creates 1000 Pods and maintains a
+Status field with the number of healthy Pods.  In a level based system, the Controller batches
+the Pod updates together (the Reconcile only gets the ReplicaSet Namespace and Name) before triggering
+the Reconcile.  In an edge based system, the Controller responds to each individual Pod event, potentially
+performing 1000 sequential updates to the Status instead of 1.
 
 **Example 2**: Skipping Obsolete States
 
-A user creates a rollout for a new container image.  Shortly after starting the rollout, the user realizes
-the containers are crash looping because they need to increase memory thresholds for the new image to
-run.  The user updates the PodTemplate with the new memory limit and a new rollout is started.  In a
-level based system, cluster will immediately start working towards the new target instead of trying
-to complete the old rollout, whereas in an edge based system it might finish responding to the first
-event and rollingout the old image before starting the correct one.
+A user creates a rollout for a Deployment containing a new container image.  Shortly after
+starting the rollout, the user realizes the containers are crash looping because they need
+to increase memory thresholds when running the new image.
+The user updates the Deployment with the new memory limit to start a new rollout.  In a
+level based system, the Controller will immediately stop rolling out the old values and start
+the rollout for the new values.  In an edge based system the Controller may complete the first
+rollout before starting the next.
 
-## Watching Events and Periodic Reconcile
+## Watching Events
 
-The controller reconciliation between the declared desired state in the object and
-the observed state of the cluster is triggered both by cluster events and periodically
-for each object.
+The Controller Reconcile is triggered both by cluster events.
 
-##### Watching Resource Events
+##### Watching Resources
 
-Controllers must watch for events on the resource whose API they implement.  The ReplicaSet-controller
-watches for changes to ReplicaSets.  If a ReplicaSet is created, modified or deleted then the
-controller calls the Reconcile method with the key of the ReplicaSet.  Reconcile will read the ReplicaSet
-state and the state of all of its Pods.
+Controllers must watch for events for the Resource they Reconcile.  The ReplicaSetController
+watches for changes to ReplicaSets and triggers a Reconcile in response.
  
 ###### ReplicaSet Creation
 
@@ -77,11 +89,11 @@ A-->C: ReplicaSet Create Event
 Note right of C: Reconcile ReplicaSet
 {% endsequence %}
 
-##### Watching Generated Resource Events
+##### Watching Created Resources
 
-Controllers should watch for events on the resources they generate.  The ReplicaSet-controller watches
-for changes to Pods.  If a Pod is deleted (e.g. machine fails), the ReplicaSet-controller will
-see the Pod event and Reconcile the owning ReplicaSet.
+Controllers should watch for events on the Resources they create.  The ReplicaSetController watches
+for Pod events.  If a Pod is deleted, the ReplicaSetController will see the Pod event and
+Reconcile the ReplicaSet that created the Pod so it can create a new one.
 
 ###### ReplicaSet Creation And Self-Healing
 
@@ -117,105 +129,32 @@ C->>A: Create Pod 4
 C->A: Update ReplicaSet Status
 {% endsequence %}
 
-<!---
-##### Watching Transitively Generated Resource Events
-
-Controllers may watch for events on resources generated by resources they generated.  The Deployment-controller
-watches for changes to Pods even though it generates ReplicaSets.  During a rolling update, a Deployment
-will gradually scale up a new ReplicaSet and gradually scale down an old ReplicaSet as Pods in the new
-ReplicaSet become healthy.  In order to perform the rollout, the Deployment must respond to Pod events
-to continue with the rollout.
-
-###### Deployment Creation And Rolling Updates
-
-The following diagram shows a series of events after creating a new
-Deployment and then updating the ContainerImage to trigger a rolling update.
-
-{% sequence %}
-participant API as A
-participant DeploymentController as C
-
-Note right of C: User creates Deployment
-A-->C: Deployment Create Event
-Note right of C: Reconcile Deployment
-C->A: Read Deployment
-C->A: List ReplicaSets
-C->>A: Create ReplicaSet 1 with 3 replicas
-Note right of C: User Updates Deployment ContainerImage
-A-->C: Deployment Update Event
-Note right of C: Reconcile Deployment
-C->A: Read Deployment
-C->A: List ReplicaSets
-C->A: ListPods ReplicaSet
-C->>A: Create ReplicaSet 2 with 1 replica
-Note right of C: End Reconcile
-A-->C: Pod 1 Running Event
-Note right of C: Reconcile Deployment
-C->A: Read Deployment
-C->A: List ReplicaSets
-C->A: ListPods ReplicaSet
-C->>A: Scale down ReplicaSet 1 by 1
-C->>A: Scale up ReplicaSet 2 by 1
-Note right of C: End Reconcile
-A-->C: Pod 1 Running Event
-Note right of C: Reconcile Deployment
-C->A: Read Deployment
-C->A: List ReplicaSets
-C->A: ListPods ReplicaSet
-C->>A: Scale down ReplicaSet 1 by 1
-C->>A: Scale up ReplicaSet 2 by 1
-Note right of C: End Reconcile
-A-->C: Pod 1 Running Event
-Note right of C: Reconcile Deployment
-C->A: Read Deployment
-C->A: List ReplicaSets
-C->A: ListPods ReplicaSet
-C->>A: Scale down ReplicaSet 1 by 1
-Note right of C: End Reconcile
-{% endsequence %}
--->
-
 ##### Watching Related Resource Events
 
-Controllers may watch for events on resources that are related, but they do not own.  The
-DaemonSet-controller watches for changes to Nodes.  If a new Node is created, the controller
-will create a new Pod scheduled that that Node.  In this case, *all* DaemonSet objects are reconciled
+Controllers may watch for events on Resources that are related, but they did not create.  The
+DaemonSetController watches for changes to Nodes.  If a new Node is created, the Controller
+will create a new Pod scheduled on that Node.  In this case, *all* DaemonSet objects are reconciled
 each time a Node is created.
 
-Example workflow:
+## Create Objects During Reconciliation
 
-1. Node is added
-2. Controller gets Node create event and lists all DaemonSets
-3. For each DaemonSet, controller calls Reconcile
-...
+Many Controllers create new Kubernetes objects as part of a reconcile.  These objects
+are *owned* by the object responsible for their creation.
+This relationship is recorded both in an *OwnersReference* in the ObjectMeta of the created
+objects and through labels (on the created object) + selectors (on the created object).
 
-##### Handling Non-Resource Events
-
-Controllers may handle non-resoure events using user defined mechanisms such as Webhooks or polling.
-This is necessary if the controller manages things outside the cluster, such as cloud provider
-resources (e.g. NetworkStorage).
-
-##### Periodic Reconcile
-
-Each object is periodically reconciled even if no events are observed.
-
-## Generating Objects During Reconciliation
-
-Many controllers generated new Kubernetes objects as part of a reconcile.  For example the
-Deployment controller generates ReplicaSets, and the ReplicaSet controller generates Pods.
-The controller ownership relationship between the generating and generated objects is
-recorded both in an *OwnersReference* in the ObjectMeta of the generated objects and through
-labels (on the generated object) + selectors (on the generating object).  The labels + selectors
-allow the generating controller to find all of the objects it has generated, by looking them up
-based on their label and the *OwnersReference* confirms the relationship to address cases where
-labels have been modified or overlap.
+The labels + selectors allow the creating controller to find all of the objects it has created,
+by listing them using their label.  The *OwnersReference* maps the created object to its
+owner when there is an event for the created object.
 
 ## Writing Status Back to Objects
 
-Controllers are run asynchronously, meaning that the user will not get a status update
-in response to `kubectl applying` (or creating, updating, patching) an object, since the controller
-will not have reconciled the state.  In order to communicate status back to the user,
-controllers write to the object *Status* field and the user must read this field with `kubectl get`.
+Controllers are run asynchronously, meaning that the user operation will return a success to
+the user before the Controller is run.  If there are issues when the Controller is run,
+such as the container image being invalid, the user will not be notified.
+
+Instead the Controller must write back the Status of the object at each Reconcile and
+users must check the object Status.
 
 {% panel style="info", title="Status" %}
 The controller will keep Status up-to-date both in response to user initiated events, but also
@@ -283,5 +222,5 @@ DC->A: Update Deployment Status
 
 ## Controllers vs Operators
 
-Some controllers are referred to as *Operators*.  Operators are a specific type of controller
-that manage running a specific application such as Redis or Cassandra.
+Controllers that implement an API for a specific application, such as Etcd, Spark or Cassandra are
+often referred to as *Operators*.

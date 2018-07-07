@@ -1,8 +1,4 @@
-{% panel style="info", title="Under Development" %}
-This book is being actively developed.
-{% endpanel %}
-
-# Simple Resource Example
+# Resource Example
 
 This chapter walks through the definition of a new Resource call *ContainerSet*.  ContainerSet
 contains the image and replicas fields, and ensures a Deployment with matching image and replicas
@@ -10,7 +6,7 @@ it running in the cluster.
 
 Create the scaffolding for a new resource using the kubebuilder cli:
 
-> $ kubebuilder create resource --group workloads --version v1beta1 --kind ContainerSet
+> $ kubebuilder create api --group workloads --version v1beta1 --kind ContainerSet
 
 This creates several files, including the Resource schema definition in:
 
@@ -21,10 +17,10 @@ This creates several files, including the Resource schema definition in:
 
 ContainerSet has 4 fields:
 
-- Spec contains the desired cluster state as collectively defined by users, controllers and other sources.
-  Examples of controllers that write to the Spec include Autoscalers which write the replicas field.
-- Status contains only *observed cluster state* and is written only by controllers
-  All information in Status may be derived from other sources.
+- Spec contains the desired cluster state specified by the object.  While much of the Spec is
+  defined by users, unspecified parts may be filled in with defaults or by Controllers such as autoscalers.
+- Status contains only *observed cluster state* and is only written by controllers
+  Status is not the source of truth for any information, but instead aggregates and publishes observed state.
 - TypeMeta contains metadata about the API itself - such as Group, Version, Kind.
 - ObjectMeta contains metadata about the specific object instance - such as the name, namespace,
   labels and annotations.  ObjectMeta contains data common to most objects.
@@ -71,18 +67,20 @@ requiring that the `Image` field match the regular expression `.+:.+`
 
 The ContainerSetSpec contains the container image and replica count, which should be read by
 the controller and used to create and manage a new Deployment.  The Spec field contains desired
-state defined by either the user or set by controllers (such as autoscalers).
+state defined by the user or, if unspecified, field defaults defaults or Controllers set values.
+An example of an unspecified field that could be owned by a Controller would be the `replicas`
+field, which may be set by autoscalers.
 
 {% sample lang="go" %}
 ```go
 // ContainerSetSpec defines the desired state of ContainerSet
 type ContainerSetSpec struct {
-    // replics is the number of replicas to maintain
-    Replicas int32 `json:"replicas,omitempty"`
+  // replics is the number of replicas to maintain
+  Replicas int32 `json:"replicas,omitempty"`
 
-    // image is the container image to run.  Image must have a tag.
-    // +kubebuilder:validation:Pattern=.+:.+
-    Image string `json:"image,omitempty"`
+  // image is the container image to run.  Image must have a tag.
+  // +kubebuilder:validation:Pattern=.+:.+
+  Image string `json:"image,omitempty"`
 }
 ```
 {% endmethod %}
@@ -100,54 +98,44 @@ events to update the field.
 ```go
 // ContainerSetStatus defines the observed state of ContainerSet
 type ContainerSetStatus struct {
-	HealthyReplicas `json:"healthyReplicas,omitempty"`
+  HealthyReplicas `json:"healthyReplicas,omitempty"`
 }
 ```
 {% endmethod %}
 
-{% panel style="info", title="When to rerun code generators" %}
-While users don't directly modify generated code, users must rerun `kubebuilder generate`
-after modifying resources or `// +something` annotations.
+{% panel style="info", title="Runing Code Generators" %}
+While users don't directly modify generated code, the code must be regenerated after resources are
+modified by adding or removing fields.  This is automatically done when running `make`.
+
+Code generation may be configured for resources using annotations of the form `// +something`.
+See the [pkg/gen](https://godoc.org/github.com/kubernetes-sigs/kubebuilder/pkg/gen/) reference documentation.
 {% endpanel %}
 
 {% method %}
-## Generated Boilerplate
+## Scaffolded Boilerplate
 
-Kubebuilder generates boilerplate code necessary for using the apimachinery libraries and
-implementing wiring.  For simple cases, users should not need to know much more than
-that this code exists and is managed by kubebuilder.  This code snippet shows an
-example of some of the generated code.
+Kubebuilder scaffolds boilerplate code to register resources with the runtime.Scheme used to
+map go structs to GroupVersionKinds.
 
-Code generation may be configured by comment annotations of the form `// +something`
-on resource and controller structs.  See the [pkg/gen](https://godoc.org/github.com/kubernetes-sigs/kubebuilder/pkg/gen/)
-reference documentation for more details.
-
-> $ kubebuilder generate
+- SchemeGroupVersion is the GroupVersion for the APIs in this package
+- SchemeBuilder should have every API in the package type added to it
 
 {% sample lang="go" %}
-*This code snippet has been truncated for display purposes.*
-
-> pkg/apis/workloads/v1beta1/zz_generated.kubebuilder.go
 
 ```go
-// SchemeGroupVersion is group version used to register these objects
-var SchemeGroupVersion = schema.GroupVersion{Group: "workloads.k8s.io", Version: "v1beta1"}
+var (	
+  // SchemeGroupVersion is group version used to register these objects
+  SchemeGroupVersion = schema.GroupVersion{Group: "workloads.k8s.io", Version: "v1beta1"}
 
-// Kind takes an unqualified kind and returns back a Group qualified GroupKind
-func Kind(kind string) schema.GroupKind {
-	return SchemeGroupVersion.WithKind(kind).GroupKind()
+  // SchemeBuilder is used to add go types to the GroupVersionKind scheme
+  SchemeBuilder = &scheme.Builder{GroupVersion: SchemeGroupVersion})
+```
+
+```go
+func init() {
+  // Register the types with the SchemeBuilder
+  SchemeBuilder.Register(&v1.ContainerSet{}, &v1.ContainerSetList{})
 }
-
-// Resource takes an unqualified resource and returns a Group qualified GroupResource
-func Resource(resource string) schema.GroupResource {
-	return SchemeGroupVersion.WithResource(resource).GroupResource()
-}
-
-var (
-	SchemeBuilder = runtime.NewSchemeBuilder(addKnownTypes)
-	AddToScheme   = SchemeBuilder.AddToScheme
-)
-...
 ```
 {% endmethod %}
 

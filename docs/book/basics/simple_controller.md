@@ -1,144 +1,141 @@
-{% panel style="info", title="Under Development" %}
-This book is being actively developed.
-{% endpanel %}
-
-# Simple Controller Example
+# Controller Example
 
 This chapter walks through a simple Controller implementation.
 
-This is a simple example of the Controller for the ContainerSet API shown in *Simple Resource Example*.
+This example is for the Controller for the ContainerSet API shown in the[Resource Example](simple_resource.md).
+It uses the [controller-runtime](https://godoc.org/sigs.k8s.io/controller-runtime/pkg) libraries
+to implement the Controller and Manager.
 
-> $ kubebuilder create resource --group workloads --version v1beta1 --kind ContainerSet
+Unlike the Hello World example, here we use the underlying Controller libraries directly instead
+of the higher-level `application` pattern libraries.  This gives greater control over
+the Controller is configured.
 
-> pkg/controller/containerset/controller.go
+> $ kubebuilder create api --group workloads --version v1beta1 --kind ContainerSet
+
+> pkg/controller/containerset/containerset_controller.go
 
 ## Setup
 
 {% method %}
-
-Code generation requires the following to be defined in controller.go:
- 
-- a `ProvideController` function returning an initialized `controller.GenericController`.  This
-  will be called from the controller-manager at runtime.
-- a go struct annotated with `// +kubebuilder:controller`.  This wires the controller in the `inject` package.
-
 #### ContainerSetController
 
-ContainerSetController has 3 annotations:
+ContainerSetController has a single annotation:
 
-- `// +kubebuilder:controller` registers the controller in the generated `pkg/inject` code ensuring it will be
-  started by the controller-manager main at runtime.
-- `// +kubebuilder:rbac` creates RBAC rules in the `hack/install.yaml` file created by `kubebuilder create config`.
+- `// +kubebuilder:rbac` creates RBAC rules in the `config/rbac/group_kind.yaml` files when `make` is run.
   This will ensure the Kubernetes ServiceAccount running the controller can read / write to the Deployment API
-- `// +kubebuilder:informers` starts the informer for listening to Deployment events
 
 ContainerSetController has 2 variables:
 
-- `InjectArgs` contains the clients provided to *ProvideController*
-- `containersetrecorder` contains a recorder to publish information displayed by `kubectl describe`.
+- `client.Client` is a client for reading / writing Kubernetes APIs.
+- `scheme *runtime.Scheme` is a runtime.Scheme used by the library to set OwnerReferences.
 
-#### ProvideController
+#### Adding a Controller to the Manager
 
-ProviderController configures a new controller to watch for changes and call Reconcile.
+Add creates a new Controller that will be started by the Manager.  When adding a Controller it is important to setup
+Watch functions to trigger Reconciles.
 
-ProvideController will be called from `pkg/inject/zz_generated.kubebuilder.go` after running `kubebuider generate`.
+Watch is a function that takes an event `source.Source` and a `handler.EventHandler`.  The Source provides events
+for some type, and the EventHandler responds to events by enqueuing `reconcile.Request`s for objects.
+Watch optionally takes a list of Predicates that may be used to filter events.
 
-- Create a new `ContainerSetController` struct
-- Create a new `GenericController` with the `ContainerSetController` Reconcile function
-- Watch for events on *ContainerSet*s and call Reconcile for the key
-- Watch for events on *Deployment*s and call Reconcile for the key of the Owning ContainerSet
-- Return the `GenericController` from the function
+Sources
 
-**Note:** when watching the Deployment, a Predicate is used to filter events where the
-ResourceVersion of the Deployment have not changed.  This is an optimization to filter
-out Deployment events that don't require a reconcile.
+- To watch for create / update / delete events for an object use a `source.KindSource` e.g.
+`source.KindSource{Type: &v1.Pod}`
+
+Handlers
+
+- To enqueue a Reconcile for the object in the event use a `handler.EnqueueRequestForObject`
+- To enqueue a Reconcile for the owner object that created the object in the event use a `handler.EnqueueRequestForOwner`
+  with the type of the owner e.g. `&handler.EnqueueRequestForOwner{OwnerType: &appsv1.Deployment{}, IsController: true}`
+- To enqueue Reconcile requests for an arbitrary collection of objects in response to the event, use a
+  `handler.EnqueueRequestsFromMapFunc`.
+
+Example:
+
+- Create a new `ContainerSetController` struct that will.
+  - Invoke Reconcile with the Name and Namespace of a *ContainerSet* for *ContainerSet* create / update / delete events
+  - Invoke Reconcile with the Name and Namespace of a *ContainerSet* for *Deployment* create / update / delete events
 
 #### Reference
 
-- See the [controller libraries](https://godoc.org/github.com/kubernetes-sigs/kubebuilder/pkg/controller) godocs
-for reference documentation on watches.
+- See the [controller libraries](https://godoc.org/sigs.k8s.io/controller-runtime/pkg) godocs for reference
+documentation on the controller libraries.
 - See the [controller code generation tags](https://godoc.org/github.com/kubernetes-sigs/kubebuilder/pkg/gen/controller)
 godocs for reference documentation on controller annotations.
 
 
 {% sample lang="go" %}
 ```go
-// +kubebuilder:controller:group=workloads,version=v1alpha1,kind=ContainerSet,resource=containersets
-// +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:informers:group=apps,version=v1,kind=Deployment
 type ContainerSetController struct {
-	args.InjectArgs
-    containersetrecorder record.EventRecorder
+  client.Client
+  scheme *runtime.Scheme
 }
 
-func ProvideController(arguments args.InjectArgs) (
-	    *controller.GenericController, error) {
-    bc := &ContainerSetController{
-		InjectArgs: arguments,
-        containersetrecorder: arguments.CreateRecorder(
-        	"ContainerSetController"),
-    }
+func Add(mgr manager.Manager) error (
+  // Create a new Controller
+  c, err := controller.New("containerset-controller", mgr,
+    controller.Options{Reconciler: &ContainerSetController{
+      Client: mgr.GetClient(),
+      scheme: mgr.GetScheme(),
+  }})
+  if err != nil {
+    return err
+  }
 
-    gc := &controller.GenericController{
-        Name: "ContainerSetController",
-        Reconcile: bc.Reconcile,
-        InformerRegistry: arguments.ControllerManager,
-    }
+  // Watch for changes to ContainerSet
+  err = c.Watch(
+    &source.Kind{Type:&workloadsv1beta1.ContainerSet{}},
+      &handler.EnqueueRequestForObject{})
+  if err != nil {
+    return err
+  }
 
-    // Watch ContainerSet
-    if err := gc.Watch(&workloadsv1alpha1.ContainerSet{});
-        err != nil {
-        return gc, err
-    }
+    // Watch for changes to Deployments created by a ContainerSet and trigger a Reconcile for the owner
+  err = c.Watch(
+    &source.Kind{Type: &appsv1.Deployment{}},
+      &handler.EnqueueRequestForOwner{
+        IsController: true,
+        OwnerType:    &workloadsv1beta1.ContainerSet{},
+      })
+  if err != nil {
+    return err
+  }
 
-    // Watch Deployments
-    containerSetLookup := func(k types.ReconcileKey) (
-    	interface{}, error) {
-        d, err := bc.Clientset.
-        	WorkloadsV1alpha1().
-        	ContainerSets(k.Namespace).
-        	Get(k.Name, metav1.GetOptions{})
-        return d, err
-    }
-    if err := gc.WatchControllerOf(
-    	&appsv1.Deployment{}, 
-    	eventhandlers.Path{containerSetLookup},
-        predicates.ResourceVersionChanged); err != nil {
-            return gc, err
-    }
-    return gc, nil
+  return nil
 }
 ```
 {% endmethod %}
 
 {% panel style="warning", title="Adding Annotations For Watches And CRUD Operations" %}
-It is critical to add the `// +kubebuilder:informers` and `// +kubebuilder:rbac` annotations when
-adding watches or CRUD operations to your controller through either `GenericController.Watch*`
-or CRUD (e.g. `.Update`) operations.
+It is important`// +kubebuilder:rbac` annotations when adding Watches or CRUD operations
+so that when the Controller is deployed it will have the correct permissions.
 
-After updating the annotations, `kubebuilder generate` must be rerun to regenerated code, and
-`kubebuilder create config` must be run to regenerated installation yaml with the rbac rules.
+`make` must be run anytime annotations are changed to regenerated code and configs.
 {% endpanel %}
 
 
-## Reconcile
+## Implementing Controller Reconcile
 
 {% panel style="success", title="Level vs Edge" %}
 The Reconcile function does not differentiate between create, update or deletion events.
-Instead it simply reads the desired state defined in ContainerSet.Spec and compares it
-to the observed state.
+Instead it simply reads the state of the cluster at the time it is called.
 {% endpanel %}
+
+Reconcile uses a `client.Client` to read and write objects.  The Client is able to
+read or write any type of runtime.Object (e.g. Kubernetes object), so users don't need
+to generate separate clients for each collection of APIs.
 
 {% method %}
 
-The business logic of the controller is implemented in the `Reconcile` function.  This function takes the *key* of a
-ContainerSet, allowing multiple Events to be batched together into a single Reconcile call.
+The business logic of the Controller is implemented in the `Reconcile` function.  This function takes the Namespace
+ and Name of a ContainerSet, allowing multiple Events to be batched together into a single Reconcile call.
 
 The function shown here creates or updates a Deployment using the replicas and image specified in
-ContainerSet.Spec.  Note that it creates an OwnerReference for the Deployment to enable garbage collection
-once the ContainerSet is deleted.
+ContainerSet.Spec.  Note that it sets an OwnerReference for the Deployment to enable garbage collection
+on the Deployment once the ContainerSet is deleted.
 
-1. Read the ContainerSet using the ReconcileKey
+1. Read the ContainerSet using the NamespacedName
 2. If there is an error or it has been deleted, return
 3. Create the new desired DeploymentSpec from the ContainerSetSpec
 4. Read the Deployment and compare the Deployment.Spec to the ContainerSet.Spec
@@ -148,85 +145,82 @@ once the ContainerSet is deleted.
 
 {% sample lang="go" %}
 ```go
-func (bc *ContainerSetController) Reconcile(
-	k types.ReconcileKey) error {
+var _ reconcile.Reconciler = &ContainerSetController{}
+
+func (r *ContainerSetController) Reconcile(request reconcile.Request) (
+  reconcile.Result, error) {
+    // Read the ContainerSet
+  cs := &workloadv1beta1.ContainerSet{}
+  err := r.client.Get(context.TODO(), request.NamespacedName, cs)
     
-    // Read the ContainerSet state
-    cs, err := bc.Clientset.
-    	WorkloadsV1alpha1().
-    	ContainerSets(k.Namespace).
-    	Get(k.Name, metav1.GetOptions{})
-    if err != nil{
-        if errors.IsNotFound(err) {
-            return nil
-        }
-        return err
-    }
-
-    // Create the canonical DeploymentSpec
-	spec := appsv1.DeploymentSpec{
-		Selector: &metav1.LabelSelector{
-			MatchLabels: map[string]string{
-				"container-set": k.Name},
-		},
-		Replicas: &cs.Spec.Replicas,
-		Template: corev1.PodTemplateSpec{
-			ObjectMeta: metav1.ObjectMeta{
-				Labels: map[string]string{
-					"container-set": k.Name},
-			},
-			Spec: corev1.PodSpec{
-				Containers: []corev1.Container{
-					{
-						Name: k.Name,
-						Image: cs.Spec.Image,
-					},
-				},
-			},
-		},
-	}
-
-	// Read the DeploymentState
-    dep, err := bc.KubernetesClientSet.
-    	AppsV1().
-    	Deployments(k.Namespace).
-    	Get(k.Name, metav1.GetOptions{})
+    // Handle deleted or error case
+  if err != nil {
     if errors.IsNotFound(err) {
-    	// Create the Deployment
-        dep = &appsv1.Deployment{
-        	Spec: spec,
-		}
-		// Set OwnerReferences so the Deployment is GCed
-		dep.OwnerReferences = []metav1.OwnerReference{
-			*metav1.NewControllerRef(cs, schema.GroupVersionKind{
-				Group:   "workloads.k8s.io",
-				Version: "v1alpha1",
-				Kind:    "ContainerSet",
-			}),
-		}
-		dep.Name = k.Name
-		dep.Namespace = k.Namespace
-		_, err = bc.KubernetesClientSet.AppsV1().
-			Deployments(k.Namespace).Create(dep)
-	} else {
-		// Update the Deployment iff its observed Spec does
-		// not matched the desired Spec
-		image := dep.Spec.Template.Spec.Containers[0].Image
-		replicas := *dep.Spec.Replicas
-		if replicas == cs.Spec.Replicas &&
-			image == cs.Spec.Image {
-			return nil
-		}
-		dep.Name = k.Name
-		dep.Namespace = k.Namespace
-		dep.Spec = spec
-		_, err = bc.KubernetesClientSet.AppsV1().
-			Deployments(k.Namespace).Update(dep)
-	}
-    if err != nil {
-        return err
+      // Not found.  Don't worry about cleaning up Deployments,
+      // GC will handle it.
+      return reconcile.Result{}, nil
     }
-    return nil
+    // Error reading the object - requeue the request.
+    return reconcile.Result{}, err
+  }
+
+    // Calculate the expected Deployment Spec
+  spec := getDeploymentSpec(request)
+
+    // Read the Deployment
+  dep := &appsv1.Deployment{}
+  err := r.client.Get(context.TODO(), request.NamespacedName, dep)
+
+    // If not found, create it 
+  if errors.IsNotFound(err) {
+    dep = &appsv1.Deployment{Spec: spec}
+    dep.Name = request.Name
+    dep.Namespace = request.Namespace
+    if err := controllerutil.SetControllerReference(cs, deploy, r.scheme); err != nil {
+      return reconcile.Result{}, err
+    }
+    if err := r.Create(context.TODO(), dep); err != nil {
+      return reconcile.Result{}, err
+    }
+    return reconcile.Result{}, nil
+  }
+
+    // If found, update it
+    image := dep.Spec.Template.Spec.Containers[0].Image
+    replicas := *dep.Spec.Replicas
+    if replicas == cs.Spec.Replicas && image == cs.Spec.Image {
+      return reconcile.Result{}, nil
+    }
+    dep.Spec.Replicas = &cs.Spec.Replicas
+    dep.Spec.Template.Spec.Containers[0].Image = cs.Spec.Image
+    if err := r.Update(context.TODO(), dep); err != nil {
+      return reconcile.Result{}, err
+    }
+    
+    return reconcile.Result{}, nil
+}
+
+func getDeploymentSpec(request reconcile.Request) *appsv1.DeploymentSpec {
+  return &appsv1.DeploymentSpec{
+    Selector: &metav1.LabelSelector{
+      MatchLabels: map[string]string{
+        "container-set": request.Name},
+      },
+      Replicas: &cs.Spec.Replicas,
+      Template: corev1.PodTemplateSpec{
+        ObjectMeta: metav1.ObjectMeta{
+          Labels: map[string]string{
+            "container-set": request.Name,
+          },
+        },
+        Spec: corev1.PodSpec{
+          Containers: []corev1.Container{
+            {Name: request.Name,
+             Image: cs.Spec.Image},
+          },
+        },
+      },
+    }
 }
 ```
 {% endmethod %}

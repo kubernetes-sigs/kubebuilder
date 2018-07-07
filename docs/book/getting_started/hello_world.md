@@ -1,92 +1,114 @@
-{% panel style="info", title="Under Development" %}
-This book is being actively developed.
-{% endpanel %}
-
 # Hello World
 
-{% panel style="warning", title="Note on project structure" %}
-Kubernete APIs require boilerplate code that is not shown here and is managed by kubebuilder.
-
-Project structure may be created by running `kubebuilder init` and then creating a
-new API with `kubebuilder create resource`. More on this topic in
+A new project may be scaffolded for a user by running `kubebuilder init` and then scaffolding a
+new API with `kubebuilder create api`. More on this topic in
 [Project Creation and Structure](../basics/project_creation_and_structure.md) 
-{% endpanel %}
 
-This chapter shows an abridged Kubebuilder project for a simple API.
+This chapter shows a simple Controller implementation using the
+[controller-runtime builder](https://godoc.org/sigs.k8s.io/controller-runtime/pkg/builder)
+libraries to do most of the Controller configuration.
 
-Kubernetes APIs have 3 components.  These components live in separate go packages:
+While Kubernetes APIs have typically have 3 components, (Resource, Controller, Manager), this
+example uses an existing Resource (ReplicaSet) and the `builder` package to hide many of the
+ setup details.
 
-* The API schema definition, or *Resource*, as a go struct.  This implicitly defines endpoints.
-* The API implementation, or *Controller*, as a go function.
-* The executable, or controller-manager, as a go main.
+For a more detailed look at creating Resources and Controllers that may be more complex,
+see the [Resource](../basics/simple_resource.md), [Controller](../basics/simple_controller.md) and
+[Manager](../basics/simple_controller_manager.md) examples.
 
 {% method %}
-## Pancake API Resource Definition {#hello-world-api}
+## ReplicaSet Controller Setup {#hello-world-controller}
 
-This is a Resource definition.  It is a go struct containing the API schema that
-implicitly defines CRUD endpoints for the Resource.
+The example main program configures a new ReplicaSetController to watch for
+create/update/delete events for ReplicaSets and Pods.
 
-For a more information on Resources see [What is a Resource](../basics/what_is_a_resource.md).
-
-While it is not shown here, most Resources will split their fields in into a Spec and a Status field.
-
-For a more complete example see [Simple Resource Example](../basics/simple_resource.md) 
+- On ReplicaSet create/update/delete events - Reconcile the *ReplicaSet*
+- On Pod create/update/delete events - Reconcile the *ReplicaSet* that created the Pod
+- Reconcile by calling `ReplicaSetController.Reconcile` with the Namespace and Name of
+  ReplicaSet
 
 {% sample lang="go" %}
 ```go
-type Pancake struct {
-    metav1.TypeMeta   `json:",inline"`
-    metav1.ObjectMeta `json:"metadata,omitempty"`
+func main() {
+  a, err := builder.SimpleController()
+    // ReplicaSet is the Application type that
+    // is Reconciled Respond to ReplicaSet events.
+    ForType(&appsv1.ReplicaSet{}).
+    // ReplicaSet creates Pods. Trigger
+    // ReplicaSet Reconciles for Pod events.
+    Owns(&corev1.Pod{}).
+    // Call ReplicaSetController with the
+    // Namespace / Name of the ReplicaSet
+    Build(&ReplicaSetController{})
+  if err != nil {
+    log.Fatal(err)
+  }
+  log.Fatal(mrg.Start(signals.SetupSignalHandler()))
+}
 
-    Message string `json:"message"`
+// ReplicaSetController is a simple Controller example implementation.
+type ReplicaSetController struct {
+  client.Client
 }
 ```
 {% endmethod %}
 
 {% method %}
-## Pancake Controller {#hello-world-controller}
+## ReplicaSet Implementation {#hello-world-controller}
 
-This is a Controller implementation.  It contains a Reconcile function which takes an object
-key as an argument and reconciles the observed state of the cluster with the desired state of the cluster.
+ReplicaSetController implements reconcile.Reconciler.  It takes the Namespace and Name for
+a ReplicaSet object and makes the state of the cluster match what is specified in the ReplicaSet
+at the time Reconcile is called.  This typically means using a `client.Client` to read
+the same of multiple objects, and perform create / update / delete as needed.
 
-Reconcile should be trigger by watch events for the Pancake Resource type, but may also be triggered
-by watch events for related resource types, such as for any objects created by Reconcile. 
+- Implement `InjectClient` to get a `client.Client` from the `application.Builder`
+- Read the ReplicaSet object using the provided Namespace and Name
+- List the Pods matching the ReplicaSet selector
+- Set a Label on the ReplicaSet with the matching Pod count
 
-When Reconcile is triggered by watch events for other resource types, each event is
-mapped to the key of a Pancake object.  This will trigger a full reconcile of
-the Pancake object, which will in turn read related cluster state, including the object the
-original event was for.
-
-For a more information on Controllers see [What is a Controller](../basics/what_is_a_controller.md).
-
-The code shown here has been abridged; for a more complete example see
-[Simple Controller Example](../basics/simple_controller.md)
+Because the Controller watches for Pod events, the count will be updated any time
+a Pod is created or deleted.
 
 {% sample lang="go" %}
 ```go
-// Note: This code lives under
-// pkg/controller/pancake/controller.go
-
-func (bc *PancakeController) Reconcile(k types.ReconcileKey) error {
-    p, err := bc.pancakeclient.
-    	Pancakes(k.Namespace).
-    	Get(k.Name, v1.GetOptions{})
-    if err != nil {
-        return err
-    }
-    fmt.Println(p.Spec.Message)
-    return nil
+// InjectClient is called by the application.Builder
+// to provide a client.Client
+func (a *ReplicaSetController) InjectClient(
+  c client.Client) error {
+  a.Client = c
+  return nil
 }
 
-func ProvideController(arguments args.InjectArgs) (
-	*controller.GenericController, error) {
-    ...
-    
-    if err := gc.Watch(&breakfastv1alpha1.Pancake{}); err != nil {
-        return gc, err
-    }
-    ...
+// Reconcile reads the Pods for a ReplicaSet and writes
+// the count back as an annotation
+func (a *ReplicaSetController) Reconcile(
+  req reconcile.Request) (reconcile.Result, error) {
+  // Read the ReplicaSet
+  rs := &appsv1.ReplicaSet{}
+  err := a.Get(context.TODO(), req.NamespacedName, rs)
+  if err != nil {
+    return reconcile.Result{}, err
+  }
+
+  // List the Pods matching the PodTemplate Labels
+  pods := &corev1.PodList{}
+  err = a.List(context.TODO(), 
+    client.InNamespace(req.Namespace).
+        MatchingLabels(rs.Spec.Template.Labels),
+    pods)
+  if err != nil {
+    return reconcile.Result{}, err
+  }
+
+  // Update the ReplicaSet
+  rs.Labels["selector-pod-count"] = 
+    fmt.Sprintf("%v", len(pods.Items))
+  err = a.Update(context.TODO(), rs)
+  if err != nil {
+    return reconcile.Result{}, err
+  }
+
+  return reconcile.Result{}, nil
 }
 ```
 {% endmethod %}
-
