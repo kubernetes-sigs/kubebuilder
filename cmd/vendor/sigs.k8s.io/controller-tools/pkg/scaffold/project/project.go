@@ -23,7 +23,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 	"sigs.k8s.io/controller-tools/pkg/scaffold/input"
 )
 

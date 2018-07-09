@@ -17,22 +17,18 @@ limitations under the License.
 package scaffold
 
 import (
+	"bytes"
+	"fmt"
 	"io"
+	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"text/template"
 
-	"fmt"
-
-	"log"
-
-	"io/ioutil"
-
-	"bytes"
-
 	"golang.org/x/tools/imports"
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 	"sigs.k8s.io/controller-tools/pkg/scaffold/input"
 )
 
