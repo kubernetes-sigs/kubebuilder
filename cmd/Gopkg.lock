@@ -10,8 +10,8 @@
 [[projects]]
   name = "github.com/gobuffalo/envy"
   packages = ["."]
-  revision = "ef60bfc50c8f92d1ee64674d8ce7a48f1f67625e"
-  version = "v1.6.2"
+  revision = "2d0f467653f3d961ce9ada4d32a230bdcb3bfe11"
+  version = "v1.6.3"
 
 [[projects]]
   name = "github.com/gogo/protobuf"
@@ -49,7 +49,7 @@
   branch = "master"
   name = "github.com/markbates/inflect"
   packages = ["."]
-  revision = "fbc6b23ce49e2578f572d2e72bb72fa03c7145de"
+  revision = "84854b5b4c0dbb0c107480d480a71f7db1fc7dae"
 
 [[projects]]
   name = "github.com/pkg/errors"
@@ -74,10 +74,9 @@
     "http/httpguts",
     "http2",
     "http2/hpack",
-    "idna",
-    "lex/httplex"
+    "idna"
   ]
-  revision = "5f9ae10d9af5b1c89ae6904293b14b064d4ada23"
+  revision = "cffdcf672aee934982473246bc7e9a8ba446aa9b"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -108,7 +107,7 @@
     "imports",
     "internal/fastwalk"
   ]
-  revision = "8e070db38e5c55da6a85c81878ab769bf5667848"
+  revision = "2087f8c10712366cfc2f4fcb1bf99eeef61ab21e"
 
 [[projects]]
   name = "gopkg.in/inf.v0"
@@ -191,7 +190,7 @@
     "parser",
     "types"
   ]
-  revision = "01a732e01d00cb9a81bb0ca050d3e6d2b947927b"
+  revision = "fdcf9f9480fdd5bf2b3c3df9bf4ecd22b25b87e2"
 
 [[projects]]
   branch = "master"
@@ -202,9 +201,10 @@
     "pkg/scaffold/input",
     "pkg/scaffold/manager",
     "pkg/scaffold/project",
-    "pkg/scaffold/resource"
+    "pkg/scaffold/resource",
+    "pkg/util"
   ]
-  revision = "cb143201f2da9c699f57199215495c63d9ff5c22"
+  revision = "4afcfd4788979315a47190014addc8813488e79a"
 
 [solve-meta]
   analyzer-name = "dep"

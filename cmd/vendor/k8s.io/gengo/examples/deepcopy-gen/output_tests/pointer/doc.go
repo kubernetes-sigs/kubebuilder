@@ -20,5 +20,12 @@ limitations under the License.
 package pointer
 
 type Ttest struct {
-	Types map[string]*Ttest
+	Builtin   *string
+	Ptr       **string
+	Map       *map[string]string
+	Slice     *[]string
+	MapPtr    **map[string]string
+	SlicePtr  **[]string
+	Struct    *Ttest
+	StructPtr **Ttest
 }

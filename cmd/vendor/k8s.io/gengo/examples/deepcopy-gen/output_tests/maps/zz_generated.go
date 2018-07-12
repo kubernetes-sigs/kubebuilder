@@ -100,6 +100,134 @@ func (in *Ttest) DeepCopyInto(out *Ttest) {
 			(*out)[key] = val
 		}
 	}
+	if in.StringPtr != nil {
+		in, out := &in.StringPtr, &out.StringPtr
+		*out = make(map[string]*string, len(*in))
+		for key, val := range *in {
+			var outVal *string
+			if val == nil {
+				(*out)[key] = nil
+			} else {
+				in, out := &val, &outVal
+				*out = new(string)
+				**out = **in
+			}
+			(*out)[key] = outVal
+		}
+	}
+	if in.StringPtrPtr != nil {
+		in, out := &in.StringPtrPtr, &out.StringPtrPtr
+		*out = make(map[string]**string, len(*in))
+		for key, val := range *in {
+			var outVal **string
+			if val == nil {
+				(*out)[key] = nil
+			} else {
+				in, out := &val, &outVal
+				*out = new(*string)
+				if **in != nil {
+					in, out := *in, *out
+					*out = new(string)
+					**out = **in
+				}
+			}
+			(*out)[key] = outVal
+		}
+	}
+	if in.Map != nil {
+		in, out := &in.Map, &out.Map
+		*out = make(map[string]map[string]string, len(*in))
+		for key, val := range *in {
+			var outVal map[string]string
+			if val == nil {
+				(*out)[key] = nil
+			} else {
+				in, out := &val, &outVal
+				*out = make(map[string]string, len(*in))
+				for key, val := range *in {
+					(*out)[key] = val
+				}
+			}
+			(*out)[key] = outVal
+		}
+	}
+	if in.MapPtr != nil {
+		in, out := &in.MapPtr, &out.MapPtr
+		*out = make(map[string]*map[string]string, len(*in))
+		for key, val := range *in {
+			var outVal *map[string]string
+			if val == nil {
+				(*out)[key] = nil
+			} else {
+				in, out := &val, &outVal
+				*out = new(map[string]string)
+				if **in != nil {
+					in, out := *in, *out
+					*out = make(map[string]string, len(*in))
+					for key, val := range *in {
+						(*out)[key] = val
+					}
+				}
+			}
+			(*out)[key] = outVal
+		}
+	}
+	if in.Slice != nil {
+		in, out := &in.Slice, &out.Slice
+		*out = make(map[string][]string, len(*in))
+		for key, val := range *in {
+			var outVal []string
+			if val == nil {
+				(*out)[key] = nil
+			} else {
+				in, out := &val, &outVal
+				*out = make([]string, len(*in))
+				copy(*out, *in)
+			}
+			(*out)[key] = outVal
+		}
+	}
+	if in.SlicePtr != nil {
+		in, out := &in.SlicePtr, &out.SlicePtr
+		*out = make(map[string]*[]string, len(*in))
+		for key, val := range *in {
+			var outVal *[]string
+			if val == nil {
+				(*out)[key] = nil
+			} else {
+				in, out := &val, &outVal
+				*out = new([]string)
+				if **in != nil {
+					in, out := *in, *out
+					*out = make([]string, len(*in))
+					copy(*out, *in)
+				}
+			}
+			(*out)[key] = outVal
+		}
+	}
+	if in.Struct != nil {
+		in, out := &in.Struct, &out.Struct
+		*out = make(map[string]Ttest, len(*in))
+		for key, val := range *in {
+			(*out)[key] = *val.DeepCopy()
+		}
+	}
+	if in.StructPtr != nil {
+		in, out := &in.StructPtr, &out.StructPtr
+		*out = make(map[string]*Ttest, len(*in))
+		for key, val := range *in {
+			var outVal *Ttest
+			if val == nil {
+				(*out)[key] = nil
+			} else {
+				in, out := &val, &outVal
+				*out = new(Ttest)
+				(*in).DeepCopyInto(*out)
+			}
+			(*out)[key] = outVal
+		}
+	}
 	return
 }
 

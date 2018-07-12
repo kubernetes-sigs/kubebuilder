@@ -42,7 +42,7 @@ import (
 * business logic.  Delete these comments after modifying this file.*
  */
 
-// Add creates a new FirstMate Controller and adds it to the Manager.  The Manager will set fields on the Controller
+// Add creates a new FirstMate Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 // USER ACTION REQUIRED: update cmd/manager/main.go to call this crew.Add(mgr) to install this Controller
 func Add(mgr manager.Manager) error {
@@ -95,6 +95,7 @@ type ReconcileFirstMate struct {
 // a Deployment as an example
 // Automatically generate RBAC rules to allow the Controller to read and write Deployments
 // +rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=crew,resources=firstmates,verbs=get;list;watch;create;update;patch;delete
 func (r *ReconcileFirstMate) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	// Fetch the FirstMate instance
 	instance := &crewv1.FirstMate{}

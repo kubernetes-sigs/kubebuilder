@@ -36,7 +36,7 @@ import (
 * business logic.  Delete these comments after modifying this file.*
  */
 
-// Add creates a new Kraken Controller and adds it to the Manager.  The Manager will set fields on the Controller
+// Add creates a new Kraken Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 // USER ACTION REQUIRED: update cmd/manager/main.go to call this creatures.Add(mgr) to install this Controller
 func Add(mgr manager.Manager) error {
@@ -87,6 +87,7 @@ type ReconcileKraken struct {
 // and what is in the Kraken.Spec
 // TODO(user): Modify this Reconcile function to implement your Controller logic.  The scaffolding writes
 // a Deployment as an example
+// +kubebuilder:rbac:groups=creatures,resources=krakens,verbs=get;list;watch;create;update;patch;delete
 func (r *ReconcileKraken) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	// Fetch the Kraken instance
 	instance := &creaturesv2alpha1.Kraken{}

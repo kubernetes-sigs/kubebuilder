@@ -37,6 +37,9 @@ var dkr *manager.Dockerfile
 var dep bool
 var depFlag *flag.Flag
 
+// default controller manager image name
+var imgName = "controller:latest"
+
 // ProjectCmd represents the project command
 var ProjectCmd = &cobra.Command{
 	Use:   "project",
@@ -71,7 +74,7 @@ controller-scaffold project --domain k8s.io --license apache2 --owner "The Kuber
 
 		s = &scaffold.Scaffold{}
 		err = s.Execute(input.Options{ProjectPath: p.Path, BoilerplatePath: b.Path},
-			gopkg, mrg, &project.Makefile{}, dkr, &manager.APIs{}, &manager.Controller{}, &manager.Config{},
+			gopkg, mrg, &project.Makefile{Image: imgName}, dkr, &manager.APIs{}, &manager.Controller{}, &manager.Config{Image: imgName},
 			&project.GitIgnore{})
 		if err != nil {
 			log.Fatal(err)
@@ -110,7 +113,6 @@ func init() {
 	ProjectCmd.Flags().BoolVar(
 		&dep, "dep", true, "if specified, determines whether dep will be used.")
 	depFlag = ProjectCmd.Flag("dep")
-
 	prj = ProjectForFlags(ProjectCmd.Flags())
 	bp = BoilerplateForFlags(ProjectCmd.Flags())
 	gopkg = &project.GopkgToml{}
