@@ -23,7 +23,10 @@ function test_init_project {
   header_text "performing init project"
   kubebuilder init --project-version=v1 --domain example.com <<< "y"
   make
+  cache_dep
 }
+
+
 
 function test_init_project_manual_dep_ensure {
   header_text "performing init project w/o dep ensure"
@@ -101,27 +104,27 @@ prepare_testdir_under_gopath
 test_init_project_manual_dep_ensure
 
 prepare_testdir_under_gopath
-test_init_project
+dump_cache
 test_create_api_controller
 
 prepare_testdir_under_gopath
-test_init_project
+dump_cache
 test_create_namespaced_api_controller
 
 prepare_testdir_under_gopath
-test_init_project
+dump_cache
 test_create_api_only
 
 prepare_testdir_under_gopath
-test_init_project
+dump_cache
 test_create_namespaced_api_only
 
 prepare_testdir_under_gopath
-test_init_project
+dump_cache
 test_create_coretype_controller
 
 prepare_testdir_under_gopath
-test_init_project
+dump_cache
 test_create_namespaced_coretype_controller
 
 exit $rc
