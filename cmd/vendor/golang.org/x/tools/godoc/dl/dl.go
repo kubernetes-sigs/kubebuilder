@@ -27,7 +27,6 @@ import (
 	"time"
 
 	"golang.org/x/net/context"
-
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
@@ -47,11 +46,13 @@ func RegisterHandlers(mux *http.ServeMux) {
 	mux.HandleFunc("/dl/init", initHandler)
 }
 
+// File represents a file on the golang.org downloads page.
+// It should be kept in sync with the upload code in x/build/cmd/release.
 type File struct {
 	Filename       string    `json:"filename"`
 	OS             string    `json:"os"`
 	Arch           string    `json:"arch"`
-	Version        string    `json:"-"`
+	Version        string    `json:"version"`
 	Checksum       string    `json:"-" datastore:",noindex"` // SHA1; deprecated
 	ChecksumSHA256 string    `json:"sha256" datastore:",noindex"`
 	Size           int64     `json:"size" datastore:",noindex"`
@@ -440,7 +441,7 @@ func getHandler(w http.ResponseWriter, r *http.Request) {
 
 func validUser(user string) bool {
 	switch user {
-	case "adg", "bradfitz", "cbro", "andybons":
+	case "adg", "bradfitz", "cbro", "andybons", "valsorda":
 		return true
 	}
 	return false

@@ -30,6 +30,7 @@ import (
 	"golang.org/x/tools/imports"
 	yaml "gopkg.in/yaml.v2"
 	"sigs.k8s.io/controller-tools/pkg/scaffold/input"
+	"sigs.k8s.io/controller-tools/pkg/util"
 )
 
 // Scaffold writes Templates to scaffold new files
@@ -132,7 +133,7 @@ func (s *Scaffold) defaultOptions(options *input.Options) error {
 // Execute executes scaffolding the Files
 func (s *Scaffold) Execute(options input.Options, files ...input.File) error {
 	if s.GetWriter == nil {
-		s.GetWriter = newWriteCloser
+		s.GetWriter = util.NewWriteCloser
 	}
 
 	if err := s.defaultOptions(&options); err != nil {
@@ -213,22 +214,6 @@ func (s *Scaffold) doTemplate(i input.Input, e input.File) error {
 
 	_, err = f.Write(b)
 	return err
-}
-
-// newWriteCloser returns a WriteCloser to write scaffold to
-func newWriteCloser(path string) (io.Writer, error) {
-	dir := filepath.Dir(path)
-	err := os.MkdirAll(dir, 0700)
-	if err != nil {
-		return nil, err
-	}
-
-	fi, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
-	if err != nil {
-		return nil, err
-	}
-
-	return fi, nil
 }
 
 // newTemplate a new template with common functions

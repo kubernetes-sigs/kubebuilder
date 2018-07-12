@@ -121,7 +121,7 @@ import (
 * business logic.  Delete these comments after modifying this file.*
  */
 
-// Add creates a new {{ .Resource.Kind }} Controller and adds it to the Manager.  The Manager will set fields on the Controller
+// Add creates a new {{ .Resource.Kind }} Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 // USER ACTION REQUIRED: update cmd/manager/main.go to call this {{ .Resource.Group}}.Add(mgr) to install this Controller
 func Add(mgr manager.Manager) error {
@@ -176,6 +176,7 @@ type Reconcile{{ .Resource.Kind }} struct {
 // Automatically generate RBAC rules to allow the Controller to read and write Deployments
 // +rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 {{ end -}}
+// +kubebuilder:rbac:groups={{.Resource.Group}},resources={{ lower .Resource.Kind }}s,verbs=get;list;watch;create;update;patch;delete
 func (r *Reconcile{{ .Resource.Kind }}) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	// Fetch the {{ .Resource.Kind }} instance
 	instance := &{{ .Resource.Group}}{{ .Resource.Version }}.{{ .Resource.Kind }}{}

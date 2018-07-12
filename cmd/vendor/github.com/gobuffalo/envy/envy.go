@@ -14,7 +14,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-var gil = &sync.Mutex{}
+var gil = &sync.RWMutex{}
 var env = map[string]string{}
 
 func init() {
@@ -24,6 +24,8 @@ func init() {
 
 // Load the ENV variables to the env map
 func loadEnv() {
+	gil.Lock()
+	defer gil.Unlock()
 	// Detect the Go version on the user system, not the one that was used to compile the binary
 	v := ""
 	out, err := exec.Command("go", "version").Output()
@@ -42,8 +44,8 @@ func loadEnv() {
 	}
 
 	if os.Getenv("GO_ENV") == "" {
-		if flag.Lookup("test.v") != nil {
-			Set("GO_ENV", "test")
+		if v := flag.Lookup("test.v"); v != nil && v.Value.String() == "true" {
+			env["GO_ENV"] = "test"
 		}
 	}
 
@@ -109,8 +111,8 @@ func Load(files ...string) error {
 // Get a value from the ENV. If it doesn't exist the
 // default value will be returned.
 func Get(key string, value string) string {
-	gil.Lock()
-	defer gil.Unlock()
+	gil.RLock()
+	defer gil.RUnlock()
 	if v, ok := env[key]; ok {
 		return v
 	}
@@ -120,8 +122,8 @@ func Get(key string, value string) string {
 // Get a value from the ENV. If it doesn't exist
 // an error will be returned
 func MustGet(key string) (string, error) {
-	gil.Lock()
-	defer gil.Unlock()
+	gil.RLock()
+	defer gil.RUnlock()
 	if v, ok := env[key]; ok {
 		return v, nil
 	}
@@ -152,8 +154,12 @@ func MustSet(key string, value string) error {
 
 // Map all of the keys/values set in envy.
 func Map() map[string]string {
-	gil.Lock()
-	defer gil.Unlock()
+	gil.RLock()
+	defer gil.RUnlock()
+	cp := map[string]string{}
+	for k, v := range env {
+		cp[k] = v
+	}
 	return env
 }
 
@@ -161,6 +167,8 @@ func Map() map[string]string {
 // those values temporarily during the run of the function.
 // At the end of the function run the copy is discarded and
 // the original values are replaced. This is useful for testing.
+// Warning: This function is NOT safe to use from a goroutine or
+// from code which may access any Get or Set function from a goroutine
 func Temp(f func()) {
 	oenv := env
 	env = map[string]string{}
@@ -205,8 +213,8 @@ func CurrentPackage() string {
 }
 
 func Environ() []string {
-	gil.Lock()
-	defer gil.Unlock()
+	gil.RLock()
+	defer gil.RUnlock()
 	var e []string
 	for k, v := range env {
 		e = append(e, fmt.Sprintf("%s=%s", k, v))

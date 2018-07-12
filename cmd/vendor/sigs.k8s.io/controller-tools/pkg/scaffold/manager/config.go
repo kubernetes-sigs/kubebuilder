@@ -27,6 +27,8 @@ var _ input.File = &Config{}
 // Config scaffolds yaml config for the manager.
 type Config struct {
 	input.Input
+	// Image is controller manager image name
+	Image string
 }
 
 // GetInput implements input.File
@@ -42,13 +44,14 @@ var configTemplate = `apiVersion: v1
 kind: Namespace
 metadata:
   labels:
-      controller-tools.k8s.io: "1.0"
+    controller-tools.k8s.io: "1.0"
   name: system
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: controller-manager-service
+  namespace: system
   labels:
     control-plane: controller-manager
     controller-tools.k8s.io: "1.0"
@@ -56,14 +59,17 @@ spec:
   selector:
     control-plane: controller-manager
     controller-tools.k8s.io: "1.0"
+  ports:
+  - port: 443
 ---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: controller-manager
+  namespace: system
   labels:
-      control-plane: controller-manager
-      controller-tools.k8s.io: "1.0"
+    control-plane: controller-manager
+    controller-tools.k8s.io: "1.0"
 spec:
   selector:
     matchLabels:
@@ -77,8 +83,9 @@ spec:
         controller-tools.k8s.io: "1.0"
     spec:
       containers:
-        command:
+      - command:
         - /root/manager
+        image: {{ .Image }}
         name: manager
         resources:
           limits:
@@ -102,4 +109,5 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: default
+  namespace: system
 `

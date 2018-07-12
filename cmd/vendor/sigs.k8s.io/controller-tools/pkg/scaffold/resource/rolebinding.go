@@ -56,4 +56,5 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: default
+  namespace: system
 `
