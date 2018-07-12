@@ -1,6 +1,5 @@
 # Migration guide from v0 project to v1 project
 
-
 This document describes how to migrate a project created by kubebuilder v0 to a project created by kubebuilder v1. Before jumping into the detailed instructions, please take a look at the list of [major differences between kubebuilder v0 and kubebuilder v1](kubebuilder_v0_v1_difference.md).
 
 The recommended way of migrating a v0 project to a v1 project is to create a new v1 project and copy/modify the code from v0 project to it.
@@ -18,7 +17,7 @@ Create api in the new project with
 If there are several resources in the old project, repeat the `kubebuilder create api` command to create all of them.
 
 ## Copy types.go
-Copy the content of <type>_types.go from the old project into the file <type>_types.go in the new project.
+Copy the content of `<type>_types.go` from the old project into the file `<type>_types.go` in the new project.
 Note that in the v1 project, there is a section containing `<type>List` and `init` function. Please keep this section.
 ```
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -48,7 +47,8 @@ functions have different arguments and return types.
 
 Remove the original body of `Reconcile` function inside the v1 project and copy the body of the `Reconcile` function from the v0 project to the v1 project. Then apply following changes:
 - add `reconcile.Result{}` as the first value in every `return` statement
-- change the call of client functions such as `Get`, `Create`, `Update`. In v0 projects, the call of client functions has the format like `bc.<kind>Lister.<kind>().Get()` or `bc.KubernetesClientSet.<group>.<version>.<Kind>.Get()`. They can be replaced by `r.Client` functions. Here are several examples of updating the client function from v0 project to v1 project.
+- change the call of client functions such as `Get`, `Create`, `Update`. In v0 projects, the call of client functions has the format like `bc.<kind>Lister.<kind>().Get()` or `bc.KubernetesClientSet.<group>.<version>.<Kind>.Get()`. They can be replaced by `r.Client` functions. Here are several examples of updating the client function from v0 project to v1 project:
+
 ```
 # in v0 project
 mc, err := bc.memcachedLister.Memcacheds(k.Namespace).Get(k.Name)
@@ -89,16 +89,19 @@ err = r.Client.List(context.TODO(), &client.ListOptions{LabelSelector: labelSele
 
 
 ### update add function
-In v0 project controller file, there is a `ProvideController` function creating a controller and adding some watches. In v1 project, the corresponding function is `add`. For this part, you don't need to copy any code from v0 project to v1 project. You need to add some watchers in v1 project's `add` function based on what `watch` functions are called in v0 project's `ProvideController` function.
 
-Here are several examples
+In a v0 project controller file, there is a `ProvideController` function creating a controller and adding some watches. In v1 projects, the corresponding function is `add`. For this part, you don't need to copy any code from v0 project to v1 project. You need to add some watchers in v1 project's `add` function based on what `watch` functions are called in v0 project's `ProvideController` function.
+
+Here are several examples:
 
 ```
 gc := &controller.GenericController{...}
 gc.Watch(&myappsv1alpha1.Memcached{})
 gc.WatchControllerOf(&v1.Pod{}, eventhandlers.Path{bc.LookupRS, bc.LookupDeployment, bc.LookupMemcached})
 ```
-need to be changed to
+
+need to be changed to:
+
 ```
 c, err := controller.New{...}
 c.Watch(&source.Kind{Type: &myappsv1alpha1.Memcached{}}, &handler.EnqueueRequestForObject{})
@@ -109,13 +112,15 @@ c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwne
 ```
 
 ### copy other functions
-If `reconcile` function depends on some other user defined functions, copy those function as well into the v1 project
+If `reconcile` function depends on some other user defined functions, copy those function as well into the v1 project.
 
 ## Copy user libraries
 If there are some user defined libraries in the old project, make sure to copy them as well into the new project.
 
 ## Update dependency
-Open the Gopkg.toml file in the old project and find if there is user defined dependency in this block
+
+Open the Gopkg.toml file in the old project and find if there is user defined dependency in this block:
+
 ```
 # Users add deps lines here
 
