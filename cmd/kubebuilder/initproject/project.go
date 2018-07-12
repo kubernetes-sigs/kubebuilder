@@ -34,12 +34,12 @@ import (
 )
 
 type projectOptions struct {
-	prj *project.Project
-	bp *project.Boilerplate
-	gopkg *project.GopkgToml
-	mgr *manager.Cmd
-	dkr *manager.Dockerfile
-	dep bool
+	prj     *project.Project
+	bp      *project.Boilerplate
+	gopkg   *project.GopkgToml
+	mgr     *manager.Cmd
+	dkr     *manager.Dockerfile
+	dep     bool
 	depFlag *flag.Flag
 }
 
@@ -65,7 +65,13 @@ func (o *projectOptions) RunInit() {
 
 	s = &scaffold.Scaffold{}
 	err = s.Execute(input.Options{ProjectPath: p.Path, BoilerplatePath: b.Path},
-		o.gopkg, o.mgr, &project.Makefile{}, o.dkr, &manager.APIs{}, &manager.Controller{}, &manager.Config{},
+		o.gopkg,
+		o.mgr,
+		&project.Makefile{},
+		o.dkr,
+		&manager.APIs{},
+		&manager.Controller{},
+		&manager.Config{},
 		&project.GitIgnore{})
 	if err != nil {
 		log.Fatal(err)
@@ -141,7 +147,7 @@ kubebuilder init --domain k8s.io --license apache2 --owner "The Kubernetes autho
 // projectForFlags registers flags for Project fields and returns the Project
 func projectForFlags(f *flag.FlagSet) *project.Project {
 	p := &project.Project{}
-	f.StringVar(&p.Repo, "repo", "", v1comment + "name of the github repo.  "+
+	f.StringVar(&p.Repo, "repo", "", v1comment+"name of the github repo.  "+
 		"defaults to the go package of the current working directory.")
 	p.Version = "2"
 	p.Domain = "k8s.io"
@@ -151,10 +157,10 @@ func projectForFlags(f *flag.FlagSet) *project.Project {
 // boilerplateForFlags registers flags for Boilerplate fields and returns the Boilerplate
 func boilerplateForFlags(f *flag.FlagSet) *project.Boilerplate {
 	b := &project.Boilerplate{}
-	f.StringVar(&b.Path, "path", "", v1comment + "path for boilerplate")
+	f.StringVar(&b.Path, "path", "", v1comment+"path for boilerplate")
 	f.StringVar(&b.License, "license", "apache2",
-		v1comment + "license to use to boilerplate.  Maybe one of apache2,none")
+		v1comment+"license to use to boilerplate.  Maybe one of apache2,none")
 	f.StringVar(&b.Owner, "owner", "",
-		v1comment + "Owner to add to the copyright")
+		v1comment+"Owner to add to the copyright")
 	return b
 }
