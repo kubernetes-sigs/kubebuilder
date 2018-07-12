@@ -146,4 +146,21 @@ function setup_envs {
   export TEST_ASSET_KUBECTL=/tmp/kubebuilder/bin/kubectl
   export TEST_ASSET_KUBE_APISERVER=/tmp/kubebuilder/bin/kube-apiserver
   export TEST_ASSET_ETCD=/tmp/kubebuilder/bin/etcd
+  export TEST_DEP=/tmp/kubebuilder/init_project
+}
+
+function cache_dep {
+  header_text "caching inited projects"
+  if [ -d "$TEST_DEP" ]; then
+    rm -rf "$TEST_DEP"
+  fi
+  mkdir -p "$TEST_DEP"
+  cp -r $PWD/* $TEST_DEP
+}
+
+function dump_cache {
+  header_text "dump cached project and deps"
+  if [ -d "$TEST_DEP" ]; then
+    cp -r $TEST_DEP/* .
+  fi
 }
