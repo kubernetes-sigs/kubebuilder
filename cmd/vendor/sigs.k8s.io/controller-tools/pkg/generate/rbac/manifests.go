@@ -42,6 +42,22 @@ func (o *ManifestOptions) SetDefaults() {
 	o.OutputDir = filepath.Join(".", "config", "rbac")
 }
 
+// RoleName returns the RBAC role name to be used in the manifests.
+func (o *ManifestOptions) RoleName() string {
+	return o.Name + "-role"
+}
+
+// RoleBindingName returns the RBAC role binding name to be used in the manifests.
+func (o *ManifestOptions) RoleBindingName() string {
+	return o.Name + "-rolebinding"
+}
+
+// Namespace returns the namespace to be used in the RBAC manifests.
+func (o *ManifestOptions) Namespace() string {
+	// TODO(droot): define this as a constant and share it with scaffold pkg.
+	return "system"
+}
+
 // Validate validates the input options.
 func (o *ManifestOptions) Validate() error {
 	if _, err := os.Stat(o.InputDir); err != nil {
@@ -97,7 +113,7 @@ func getClusterRoleManifest(rules []rbacv1.PolicyRule, o *ManifestOptions) ([]by
 			APIVersion: "rbac.authorization.k8s.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   o.Name + "-role",
+			Name:   o.RoleName(),
 			Labels: o.Labels,
 		},
 		Rules: rules,
@@ -112,18 +128,18 @@ func getClusterRoleBindingManifest(o *ManifestOptions) ([]byte, error) {
 			Kind:       "ClusterRoleBinding",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   fmt.Sprintf("%s-rolebinding", o.Name),
+			Name:   o.RoleBindingName(),
 			Labels: o.Labels,
 		},
 		Subjects: []rbacv1.Subject{
 			{
 				Name:      "default",
-				Namespace: fmt.Sprintf("%v-system", o.Name),
+				Namespace: o.Namespace(),
 				Kind:      "ServiceAccount",
 			},
 		},
 		RoleRef: rbacv1.RoleRef{
-			Name:     fmt.Sprintf("%v-role", o.Name),
+			Name:     o.RoleName(),
 			Kind:     "ClusterRole",
 			APIGroup: "rbac.authorization.k8s.io",
 		},

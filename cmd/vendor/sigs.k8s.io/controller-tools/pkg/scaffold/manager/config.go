@@ -95,19 +95,4 @@ spec:
             cpu: 100m
             memory: 20Mi
       terminationGracePeriodSeconds: 10
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  labels:
-    controller-tools.k8s.io: "1.0"
-  name: rolebinding
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: role
-subjects:
-- kind: ServiceAccount
-  name: default
-  namespace: system
 `
