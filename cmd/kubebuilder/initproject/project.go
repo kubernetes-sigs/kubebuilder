@@ -63,16 +63,21 @@ func (o *projectOptions) RunInit() {
 		log.Fatal(err)
 	}
 
+	// default controller manager image name
+	imgName := "controller:latest"
+
 	s = &scaffold.Scaffold{}
 	err = s.Execute(input.Options{ProjectPath: p.Path, BoilerplatePath: b.Path},
 		o.gopkg,
 		o.mgr,
-		&project.Makefile{},
+		&project.Makefile{Image: imgName},
 		o.dkr,
 		&manager.APIs{},
 		&manager.Controller{},
-		&manager.Config{},
-		&project.GitIgnore{})
+		&manager.Config{Image: imgName},
+		&project.GitIgnore{},
+		&project.Kustomize{},
+		&project.KustomizeImagePatch{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -119,6 +124,8 @@ Writes the following files:
 - a PROJECT file with the domain and repo
 - a Makefile to build the project
 - a Gopkg.toml with project dependencies
+- a Kustomization.yaml for customizating manifests
+- a Patch file for customizing image for manager manifests
 - a cmd/manager/main.go to run
 
 project will prompt the user to run 'dep ensure' after writing the project files.
