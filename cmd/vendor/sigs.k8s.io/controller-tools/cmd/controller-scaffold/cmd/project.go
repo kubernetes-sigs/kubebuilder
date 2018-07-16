@@ -51,6 +51,8 @@ Writes the following files:
 - a PROJECT file with the domain and repo
 - a Makefile to build the project
 - a Gopkg.toml with project dependencies
+- a Kustomization.yaml for customizating manifests
+- a Patch file for customizing image for manager manifests
 - a cmd/manager/main.go to run
 
 project will prompt the user to run 'dep ensure' after writing the project files.
@@ -65,17 +67,33 @@ controller-scaffold project --domain k8s.io --license apache2 --owner "The Kuber
 			ProjectOptional:     true,
 		}
 
-		p, _ := prj.GetInput()
-		b, _ := bp.GetInput()
-		err := s.Execute(input.Options{ProjectPath: p.Path, BoilerplatePath: b.Path}, prj, bp)
+		p, err := prj.GetInput()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		b, err := bp.GetInput()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		err = s.Execute(input.Options{ProjectPath: p.Path, BoilerplatePath: b.Path}, prj, bp)
 		if err != nil {
 			log.Fatal(err)
 		}
 
 		s = &scaffold.Scaffold{}
 		err = s.Execute(input.Options{ProjectPath: p.Path, BoilerplatePath: b.Path},
-			gopkg, mrg, &project.Makefile{Image: imgName}, dkr, &manager.APIs{}, &manager.Controller{}, &manager.Config{Image: imgName},
-			&project.GitIgnore{})
+			gopkg,
+			mrg,
+			&project.Makefile{Image: imgName},
+			dkr,
+			&manager.APIs{},
+			&manager.Controller{},
+			&manager.Config{Image: imgName},
+			&project.GitIgnore{},
+			&project.Kustomize{},
+			&project.KustomizeImagePatch{})
 		if err != nil {
 			log.Fatal(err)
 		}

@@ -92,9 +92,7 @@ After the scaffold is written, api will run make on the project.
 				&resource.Doc{Resource: r},
 				&resource.Group{Resource: r},
 				&resource.AddToScheme{Resource: r},
-				&resource.CRD{Resource: r},
-				&resource.Role{Resource: r},
-				&resource.RoleBinding{Resource: r},
+				&resource.CRDSample{Resource: r},
 			)
 			if err != nil {
 				log.Fatal(err)
