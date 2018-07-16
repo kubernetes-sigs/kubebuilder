@@ -21,6 +21,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/markbates/inflect"
 	"sigs.k8s.io/controller-tools/pkg/scaffold/input"
 	"sigs.k8s.io/controller-tools/pkg/scaffold/resource"
 )
@@ -34,6 +35,9 @@ type Controller struct {
 
 	// ResourcePackage is the package of the Resource
 	ResourcePackage string
+
+	// Plural is the plural lowercase of kind
+	Plural string
 
 	// Is the Group + "." + Domain for the Resource
 	GroupDomain string
@@ -66,6 +70,11 @@ func (a *Controller) GetInput() (input.Input, error) {
 	} else {
 		a.ResourcePackage = path.Join(a.Repo, "pkg", "apis")
 		a.GroupDomain = a.Resource.Group + "." + a.Domain
+	}
+
+	if a.Plural == "" {
+		rs := inflect.NewDefaultRuleset()
+		a.Plural = rs.Pluralize(strings.ToLower(a.Resource.Kind))
 	}
 
 	if a.Path == "" {
@@ -174,9 +183,9 @@ type Reconcile{{ .Resource.Kind }} struct {
 // a Deployment as an example
 {{ if .Resource.CreateExampleReconcileBody -}}
 // Automatically generate RBAC rules to allow the Controller to read and write Deployments
-// +rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 {{ end -}}
-// +kubebuilder:rbac:groups={{.Resource.Group}},resources={{ lower .Resource.Kind }}s,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups={{.GroupDomain}},resources={{ .Plural }},verbs=get;list;watch;create;update;patch;delete
 func (r *Reconcile{{ .Resource.Kind }}) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	// Fetch the {{ .Resource.Kind }} instance
 	instance := &{{ .Resource.Group}}{{ .Resource.Version }}.{{ .Resource.Kind }}{}

@@ -36,6 +36,7 @@ var mrg *manager.Cmd
 var dkr *manager.Dockerfile
 var dep bool
 var depFlag *flag.Flag
+var mkFile *project.Makefile
 
 // default controller manager image name
 var imgName = "controller:latest"
@@ -86,7 +87,7 @@ controller-scaffold project --domain k8s.io --license apache2 --owner "The Kuber
 		err = s.Execute(input.Options{ProjectPath: p.Path, BoilerplatePath: b.Path},
 			gopkg,
 			mrg,
-			&project.Makefile{Image: imgName},
+			mkFile,
 			dkr,
 			&manager.APIs{},
 			&manager.Controller{},
@@ -136,6 +137,7 @@ func init() {
 	gopkg = &project.GopkgToml{}
 	mrg = &manager.Cmd{}
 	dkr = &manager.Dockerfile{}
+	mkFile = MakefileForFlags(ProjectCmd.Flags())
 }
 
 // ProjectForFlags registers flags for Project fields and returns the Project
@@ -157,4 +159,11 @@ func BoilerplateForFlags(f *flag.FlagSet) *project.Boilerplate {
 	f.StringVar(&b.Owner, "owner", "",
 		"Owner to add to the copyright")
 	return b
+}
+
+// MakefileForFlags registers flags for Makefile fields and returns the Makefile
+func MakefileForFlags(f *flag.FlagSet) *project.Makefile {
+	m := &project.Makefile{Image: imgName}
+	f.StringVar(&m.ControllerToolsPath, "controller-tools-path", "", "path to controller tools repo")
+	return m
 }

@@ -27,6 +27,9 @@ type Makefile struct {
 	input.Input
 	// Image is controller manager image name
 	Image string
+
+	// path for controller-tools pkg
+	ControllerToolsPath string
 }
 
 // GetInput implements input.File
@@ -34,12 +37,18 @@ func (c *Makefile) GetInput() (input.Input, error) {
 	if c.Path == "" {
 		c.Path = "Makefile"
 	}
+	if c.ControllerToolsPath == "" {
+		c.ControllerToolsPath = "vendor/sigs.k8s.io/controller-tools"
+	}
 	c.TemplateBody = makefileTemplate
 	c.Input.IfExistsAction = input.Error
 	return c.Input, nil
 }
 
 var makefileTemplate = `
+# Image URL to use all building/pushing image targets
+IMG ?= controller:latest
+
 all: test manager
 
 # Run tests
@@ -60,13 +69,12 @@ install: manifests
 
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 deploy: manifests
-	kubectl apply -f config/rbac
 	kubectl apply -f config/crds
-	kubectl apply -f config/manager
+	kustomize build config/default | kubectl apply -f -
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests:
-	go build -o /tmp/controller-gen sigs.k8s.io/controller-tools/cmd/controller-gen && /tmp/controller-gen all
+	go run {{ .ControllerToolsPath }}/cmd/controller-gen/main.go all
 
 # Run go fmt against code
 fmt:
@@ -82,9 +90,11 @@ generate:
 
 # Build the docker image
 docker-build: test
-	docker build . -t {{ .Image }}
+	docker build . -t ${IMG}
+	@echo "updating kustomize image patch file for manager resource"
+	sed -i 's@image: .*@image: '"${IMG}"'@' ./config/default/manager_image_patch.yaml
 
 # Push the docker image
 docker-push:
-	docker push {{ .Image }}
+	docker push ${IMG}
 `

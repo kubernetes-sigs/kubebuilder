@@ -75,5 +75,5 @@ resources:
 - ../manager/*.yaml
 
 patches:
-#- manager_image_patch.yaml
+- manager_image_patch.yaml
 `

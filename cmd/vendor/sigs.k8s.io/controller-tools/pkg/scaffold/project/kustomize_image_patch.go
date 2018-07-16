@@ -55,7 +55,7 @@ spec:
   template:
     spec:
       containers:
-	  # Change the value of image field below to your controller image URL
+      # Change the value of image field below to your controller image URL
       - image: {{ .ImageURL }}
         name: manager
 `
