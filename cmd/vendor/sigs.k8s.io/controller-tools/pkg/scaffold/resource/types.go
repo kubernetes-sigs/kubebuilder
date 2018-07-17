@@ -64,13 +64,13 @@ import (
 // {{.Resource.Kind}}Spec defines the desired state of {{.Resource.Kind}}
 type {{.Resource.Kind}}Spec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "kubebuilder generate" to regenerate code after modifying this file
+	// Important: Run "make" to regenerate code after modifying this file
 }
 
 // {{.Resource.Kind}}Status defines the observed state of {{.Resource.Kind}}
 type {{.Resource.Kind}}Status struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "kubebuilder generate" to regenerate code after modifying this file
+	// Important: Run "make" to regenerate code after modifying this file
 }
 
 // +genclient

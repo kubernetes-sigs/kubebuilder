@@ -315,4 +315,9 @@ revision="f53464b8b84b4507805a0b033a8377b225163fea"
 name = "github.com/thockin/logr"
 source = "https://github.com/directxman12/logr.git"
 branch = "features/structed"
+
+# For dependency below: Refer to issue https://github.com/golang/dep/issues/1799
+[[override]]
+name = "gopkg.in/fsnotify.v1"
+source = "https://github.com/fsnotify/fsnotify.git"
 `

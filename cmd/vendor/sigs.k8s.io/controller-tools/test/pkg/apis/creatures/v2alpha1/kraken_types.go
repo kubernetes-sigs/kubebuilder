@@ -26,13 +26,13 @@ import (
 // KrakenSpec defines the desired state of Kraken
 type KrakenSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "kubebuilder generate" to regenerate code after modifying this file
+	// Important: Run "make" to regenerate code after modifying this file
 }
 
 // KrakenStatus defines the observed state of Kraken
 type KrakenStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "kubebuilder generate" to regenerate code after modifying this file
+	// Important: Run "make" to regenerate code after modifying this file
 }
 
 // +genclient
