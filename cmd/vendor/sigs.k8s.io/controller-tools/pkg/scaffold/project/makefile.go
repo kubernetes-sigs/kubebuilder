@@ -37,6 +37,9 @@ func (c *Makefile) GetInput() (input.Input, error) {
 	if c.Path == "" {
 		c.Path = "Makefile"
 	}
+	if c.Image == "" {
+		c.Image = "controller:latest"
+	}
 	if c.ControllerToolsPath == "" {
 		c.ControllerToolsPath = "vendor/sigs.k8s.io/controller-tools"
 	}
@@ -47,7 +50,7 @@ func (c *Makefile) GetInput() (input.Input, error) {
 
 var makefileTemplate = `
 # Image URL to use all building/pushing image targets
-IMG ?= controller:latest
+IMG ?= {{ .Image }}
 
 all: test manager
 
