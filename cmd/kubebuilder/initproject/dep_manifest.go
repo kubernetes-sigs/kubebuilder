@@ -204,6 +204,11 @@ revision="f08db293d3ef80052d6513ece19792642a289fea"
 name="sigs.k8s.io/testing_frameworks"
 revision="f53464b8b84b4507805a0b033a8377b225163fea"
 
+# For dependency below: Refer to issue https://github.com/golang/dep/issues/1799
+[[override]]
+name = "gopkg.in/fsnotify.v1"
+source = "https://github.com/fsnotify/fsnotify.git"
+
 [[override]]
 name = "github.com/kubernetes-sigs/kubebuilder"
 {{ if eq .Version "unknown" -}}

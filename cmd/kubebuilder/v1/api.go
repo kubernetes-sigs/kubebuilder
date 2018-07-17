@@ -171,5 +171,7 @@ func ResourceForFlags(f *flag.FlagSet) *resource.Resource {
 	f.StringVar(&r.Group, "group", "", "resource Group")
 	f.StringVar(&r.Version, "version", "", "resource Version")
 	f.BoolVar(&r.Namespaced, "namespaced", true, "resource is namespaced")
+	f.BoolVar(&r.CreateExampleReconcileBody, "example", true,
+		"true if an example reconcile body should be written")
 	return r
 }

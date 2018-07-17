@@ -26,13 +26,13 @@ import (
 // FirstMateSpec defines the desired state of FirstMate
 type FirstMateSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "kubebuilder generate" to regenerate code after modifying this file
+	// Important: Run "make" to regenerate code after modifying this file
 }
 
 // FirstMateStatus defines the observed state of FirstMate
 type FirstMateStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "kubebuilder generate" to regenerate code after modifying this file
+	// Important: Run "make" to regenerate code after modifying this file
 }
 
 // +genclient
