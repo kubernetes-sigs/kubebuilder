@@ -43,8 +43,6 @@ type projectOptions struct {
 	depFlag *flag.Flag
 }
 
-var v1comment = "Works only with --project-version v1. "
-
 func (o *projectOptions) RunInit() {
 	if util.ProjectExist() {
 		fmt.Println("Failed to initialize project bacause project is already initialized")
@@ -154,9 +152,9 @@ kubebuilder init --domain k8s.io --license apache2 --owner "The Kubernetes autho
 // projectForFlags registers flags for Project fields and returns the Project
 func projectForFlags(f *flag.FlagSet) *project.Project {
 	p := &project.Project{}
-	f.StringVar(&p.Repo, "repo", "", v1comment+"name of the github repo.  "+
+	f.StringVar(&p.Repo, "repo", "","name of the github repo.  "+
 		"defaults to the go package of the current working directory.")
-	p.Version = "2"
+	p.Version = "1"
 	p.Domain = "k8s.io"
 	return p
 }
@@ -164,10 +162,8 @@ func projectForFlags(f *flag.FlagSet) *project.Project {
 // boilerplateForFlags registers flags for Boilerplate fields and returns the Boilerplate
 func boilerplateForFlags(f *flag.FlagSet) *project.Boilerplate {
 	b := &project.Boilerplate{}
-	f.StringVar(&b.Path, "path", "", v1comment+"path for boilerplate")
-	f.StringVar(&b.License, "license", "apache2",
-		v1comment+"license to use to boilerplate.  Maybe one of apache2,none")
-	f.StringVar(&b.Owner, "owner", "",
-		v1comment+"Owner to add to the copyright")
+	f.StringVar(&b.Path, "path", "", "path for boilerplate")
+	f.StringVar(&b.License, "license", "apache2","license to use to boilerplate.  Maybe one of apache2,none")
+	f.StringVar(&b.Owner, "owner", "","Owner to add to the copyright")
 	return b
 }

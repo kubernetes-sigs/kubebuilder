@@ -180,3 +180,18 @@ func IsNewVersion() bool {
 func ProjectExist() bool {
 	return IsNewVersion()
 }
+
+func IsProjectNotInitialized() bool {
+	dirs := []string{
+		"cmd",
+		"hack",
+		"pkg",
+		"vendor",
+	}
+	for _, dir := range dirs {
+		if _, err := os.Stat(dir); err == nil {
+			return false
+		}
+	}
+	return true
+}

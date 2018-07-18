@@ -52,7 +52,7 @@ func main() {
 	initproject.AddInit(cmd)
 	version.AddVersion(cmd)
 
-	if util.IsNewVersion() {
+	if util.IsNewVersion() || util.IsProjectNotInitialized() {
 		v1.AddCmds(cmd)
 	} else {
 		v0.AddCmds(cmd)

@@ -56,15 +56,16 @@ kubebuilder init repo --domain mydomain
 		},
 	}
 
+	v0comment := "Works only with project-version v0, "
 	initCmd.Flags().StringVar(&o.domain, "domain", "", "domain for the API groups")
-	initCmd.Flags().StringVar(&o.copyright, "copyright", filepath.Join("hack", "boilerplate.go.txt"), "Location of copyright boilerplate file.")
-	initCmd.Flags().BoolVar(&o.bazel, "bazel", false, "if true, setup Bazel workspace artifacts")
-	initCmd.Flags().BoolVar(&o.controllerOnly, "controller-only", false, "if true, setup controller only")
-	initCmd.Flags().StringVar(&o.projectVersion, "project-version", "v0", "if set to v1, init project with kubebuilder 1.0")
+	initCmd.Flags().StringVar(&o.copyright, "copyright", filepath.Join("hack", "boilerplate.go.txt"), v0comment + "Location of copyright boilerplate file.")
+	initCmd.Flags().BoolVar(&o.bazel, "bazel", false, v0comment + "if true, setup Bazel workspace artifacts")
+	initCmd.Flags().BoolVar(&o.controllerOnly, "controller-only", false, v0comment + "if true, setup controller only")
+	initCmd.Flags().StringVar(&o.projectVersion, "project-version", "v1", "if set to v0, init project with kubebuilder legacy version")
 
 
 	initCmd.Flags().BoolVar(
-		&o.dep, "dep", true, v1comment + "if specified, determines whether dep will be used.")
+		&o.dep, "dep", true,"if specified, determines whether dep will be used.")
 	o.depFlag = initCmd.Flag("dep")
 
 	o.prj = projectForFlags(initCmd.Flags())

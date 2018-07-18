@@ -21,7 +21,7 @@ source common.sh
 
 function test_init_project {
   header_text "performing init project"
-  kubebuilder init --project-version=v1 --domain example.com <<< "y"
+  kubebuilder init --domain example.com <<< "y"
   make
   cache_dep
 }
@@ -30,7 +30,7 @@ function test_init_project {
 
 function test_init_project_manual_dep_ensure {
   header_text "performing init project w/o dep ensure"
-  kubebuilder init --project-version=v1 --domain example.com <<< "n"
+  kubebuilder init --domain example.com <<< "n"
   dep ensure
   make
 }
