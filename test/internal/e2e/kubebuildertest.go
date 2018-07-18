@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -33,8 +34,17 @@ func (kt *KubebuilderTest) Init(initOptions []string) error {
 	return err
 }
 
+// CreateResource is for kubebuilder v0 only.
 func (kt *KubebuilderTest) CreateResource(resourceOptions []string) error {
 	resourceOptions = append([]string{"create", "resource"}, resourceOptions...)
+	cmd := exec.Command("kubebuilder", resourceOptions...)
+	_, err := kt.runCommand(cmd)
+	return err
+}
+
+// CreateAPI is for kubebuilder v1 only.
+func (kt *KubebuilderTest) CreateAPI(resourceOptions []string) error {
+	resourceOptions = append([]string{"create", "api"}, resourceOptions...)
 	cmd := exec.Command("kubebuilder", resourceOptions...)
 	_, err := kt.runCommand(cmd)
 	return err
@@ -112,6 +122,12 @@ func (kt *KubebuilderTest) BuildImage(imageOptions []string) error {
 	return err
 }
 
+func (kt *KubebuilderTest) Make(makeOptions []string) error {
+	cmd := exec.Command("make", makeOptions...)
+	_, err := kt.runCommand(cmd)
+	return err
+}
+
 func (kt *KubebuilderTest) CleanupImage(imageOptions []string) error {
 	imageOptions = append([]string{"rmi", "-f"}, imageOptions...)
 	cmd := exec.Command("docker", imageOptions...)
@@ -185,11 +201,33 @@ func (kt *KubebuilderTest) RunKubectlCommand(cmdOptions []string) (string, error
 	return string(output), err
 }
 
+// RunKubectlCommand is a general func to run kubectl commands
+func (kt *KubebuilderTest) RunKubectlCommandWithInput(cmdOptions []string, stdinInput string) (string, error) {
+	cmd := exec.Command("kubectl", cmdOptions...)
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		return "", err
+	}
+	go func() {
+		defer stdin.Close()
+		io.WriteString(stdin, stdinInput)
+	}()
+	output, err := kt.runCommand(cmd)
+	return string(output), err
+}
+
+// RunKustomizeCommand is a general func to run kubectl commands
+func (kt *KubebuilderTest) RunKustomizeCommand(cmdOptions []string) (string, error) {
+	cmd := exec.Command("kustomize", cmdOptions...)
+	output, err := kt.runCommand(cmd)
+	return string(output), err
+}
+
 func (kt *KubebuilderTest) runCommand(cmd *exec.Cmd) ([]byte, error) {
 	cmd.Dir = kt.Dir
 	cmd.Env = os.Environ()
 	command := strings.Join(cmd.Args, " ")
-	output, err := cmd.Output()
+	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return output, fmt.Errorf("%s failed with error: %s", command, string(output))
 	}
