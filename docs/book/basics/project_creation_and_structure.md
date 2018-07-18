@@ -47,7 +47,9 @@ A Dockerfile is scaffolded to build a container image for your Manager.
 Kubebuilder creates yaml config for installing the CRDs and related objects under config/.
 
 - config/crds
+- config/rbac
 - config/manager
+- config/samples
 
 ##### docs/...
 
@@ -111,5 +113,23 @@ Create a new instance of your Resource.  Observe the manager logs printed to the
 {% sample lang="bash" %}
 ```bash
 $ kubectl apply -f sample/<resource>.yaml
+```
+{% endmethod %}
+
+{% method %}
+## Deploying your manager in a Kubernetes cluster
+
+Users can run the controller-manager in a Kubernetes cluster.
+
+{% sample lang="bash" %}
+```bash
+# Create a docker image
+$ make docker-build IMG=<img-name>
+
+# Push the docker image to a configured container registry
+$ make docker-push IMG=<img-name>
+
+# Deploy the controller manager manifests to the cluster.
+$ make deploy
 ```
 {% endmethod %}

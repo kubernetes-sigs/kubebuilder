@@ -25,7 +25,6 @@
   * [Manager Example](basics/simple_controller_manager.md)
 
 ### Beyond the Basics
-
 * Development Workflow
   * [Defining Boilerplate License Headers](beyond_basics/boilerplate.md)
   * [Running Tests](beyond_basics/running_tests.md)
@@ -35,7 +34,8 @@
   * [Controllers For Core Resources](beyond_basics/controllers_for_core_resources.md)
   * [Controller Watch Functions](beyond_basics/controller_watches.md)
   * [Creating Events](beyond_basics/creating_events.md)
-
+* Deployment Workflow
+  * [Deploying the manager in Cluster](beyond_basics/deploying_controller.md)
 
 ### Reference Docs
 * [GoDoc Links](go_docs.md)

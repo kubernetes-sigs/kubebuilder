@@ -24,16 +24,6 @@ make run
 
 In another terminal, create an instance of your resource.
 
-`kubectl apply -f yourinstance.yaml`
-
-{% panel style="info", title="Building and Running a Manager Container" %}
-The image for the Manager maybe built using the `Dockerfile`.
-
 ```bash
-docker build . -t gcr.io/containerset/manager
-docker push gcr.io/containerset/manager
+kubectl apply -f config/samples/yourinstance.yaml
 ```
-
-The yaml configuration for the Manager is automatically created under
-`config/manager`.
-{% endpanel %}

@@ -2,7 +2,7 @@
 
 This chapter walks through a simple Controller implementation.
 
-This example is for the Controller for the ContainerSet API shown in the[Resource Example](simple_resource.md).
+This example is for the Controller for the ContainerSet API shown in the [Resource Example](simple_resource.md).
 It uses the [controller-runtime](https://godoc.org/sigs.k8s.io/controller-runtime/pkg) libraries
 to implement the Controller and Manager.
 
@@ -21,8 +21,8 @@ the Controller is configured.
 
 ContainerSetController has a single annotation:
 
-- `// +kubebuilder:rbac` creates RBAC rules in the `config/rbac/group_kind.yaml` files when `make` is run.
-  This will ensure the Kubernetes ServiceAccount running the controller can read / write to the Deployment API
+- `// +kubebuilder:rbac` creates RBAC rules in the `config/rbac/rbac_role.yaml` file when `make` is run.
+  This will ensure the Kubernetes ServiceAccount running the controller can read / write to the Deployment API.
 
 ContainerSetController has 2 variables:
 
