@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+  http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,42 +18,30 @@ package e2e
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
-	"testing"
 	"time"
 
-	"github.com/golang/glog"
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/util"
 	"github.com/kubernetes-sigs/kubebuilder/test/e2e/framework"
-	"github.com/kubernetes-sigs/kubebuilder/test/e2e/framework/ginkgowrapper"
 	e2einternal "github.com/kubernetes-sigs/kubebuilder/test/internal/e2e"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-// RunE2ETests checks configuration parameters (specified through flags) and then runs
-// E2E tests using the Ginkgo runner.
-func RunE2ETests(t *testing.T) {
-	RegisterFailHandler(ginkgowrapper.Fail)
-	glog.Infof("Starting kubebuilder suite")
-	RunSpecs(t, "Kubebuilder e2e suite")
-}
-
-var _ = Describe("main workflow", func() {
+var _ = Describe("v0 main workflow", func() {
 	It("should perform main kubebuilder workflow successfully", func() {
 		testSuffix := framework.RandomSuffix()
 		c := initConfig(testSuffix)
 		kubebuilderTest := e2einternal.NewKubebuilderTest(c.workDir, framework.TestContext.BinariesDir)
 
 		prepare(c.workDir)
-		defer cleanup(kubebuilderTest, c.workDir, c.controllerImageName)
+		defer cleanupv0(kubebuilderTest, c.workDir, c.controllerImageName)
 
 		var controllerPodName string
 
 		By("init project")
-		initOptions := []string{"--domain", c.domain}
+		initOptions := []string{"--domain", c.domain, "--project-version", "v0"}
 		err := kubebuilderTest.Init(initOptions)
 		Expect(err).NotTo(HaveOccurred())
 
@@ -86,7 +74,7 @@ var _ = Describe("main workflow", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		By("installing controller-manager in cluster")
-		inputFile := filepath.Join(kubebuilderTest.Dir, "hack", "install.yaml")
+		inputFile := filepath.Join("hack", "install.yaml")
 		installOptions := []string{"apply", "-f", inputFile}
 		_, err = kubebuilderTest.RunKubectlCommand(framework.GetKubectlArgs(installOptions))
 		Expect(err).NotTo(HaveOccurred())
@@ -104,7 +92,7 @@ var _ = Describe("main workflow", func() {
 				return fmt.Errorf("expect 1 controller pods running, but got %d", len(podNames))
 			}
 			controllerPodName = podNames[0]
-			Expect(controllerPodName).Should(HavePrefix(c.installName+"-controller-manager"))
+			Expect(controllerPodName).Should(HavePrefix(c.installName + "-controller-manager"))
 
 			// Validate pod status
 			getOptions = []string{"get", "pods", controllerPodName, "-n", c.namespace, "-o", "jsonpath={.status.phase}"}
@@ -150,22 +138,3 @@ var _ = Describe("main workflow", func() {
 		Eventually(controllerContainerLogs, 1*time.Minute, 500*time.Millisecond).Should(ContainSubstring("to reconcile deployment-example"))
 	})
 })
-
-func prepare(workDir string) {
-	By("create a path under given project dir, as the test work dir")
-	err := os.MkdirAll(workDir, 0755)
-	Expect(err).NotTo(HaveOccurred())
-}
-
-func cleanup(builderTest *e2einternal.KubebuilderTest, workDir string, imageName string) {
-	By("clean up created API objects during test process")
-	inputFile := filepath.Join(workDir, "hack", "install.yaml")
-	createOptions := []string{"delete", "-f", inputFile}
-	builderTest.RunKubectlCommand(framework.GetKubectlArgs(createOptions))
-
-	By("remove container image created during test")
-	builderTest.CleanupImage([]string{imageName})
-
-	By("remove test work dir")
-	os.RemoveAll(workDir)
-}

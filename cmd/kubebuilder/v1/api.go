@@ -77,6 +77,12 @@ func (o *apiOptions) RunAddAPI() {
 		if err != nil {
 			log.Fatal(err)
 		}
+	} else {
+		// disable generation of example reconcile body if not scaffolding resource
+		// because this could result in a fork-bomb of k8s resources where watching a
+		// deployment, replicaset etc. results in generating deployment which
+		// end up genrating replicaset, pod etc recursively.
+		r.CreateExampleReconcileBody = false
 	}
 
 	if o.doController {
@@ -172,6 +178,6 @@ func ResourceForFlags(f *flag.FlagSet) *resource.Resource {
 	f.StringVar(&r.Version, "version", "", "resource Version")
 	f.BoolVar(&r.Namespaced, "namespaced", true, "resource is namespaced")
 	f.BoolVar(&r.CreateExampleReconcileBody, "example", true,
-		"true if an example reconcile body should be written")
+		"if true an example reconcile body should be written while scaffolding a resource.")
 	return r
 }
