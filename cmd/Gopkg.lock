@@ -204,7 +204,7 @@
     "pkg/scaffold/resource",
     "pkg/util"
   ]
-  revision = "f7ab8f819da68f38678754419e4745abfedca6d8"
+  revision = "baf783301797f950d03f5e13933d1c8dbab7c090"
 
 [solve-meta]
   analyzer-name = "dep"

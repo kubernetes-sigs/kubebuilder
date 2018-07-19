@@ -154,7 +154,7 @@ Usage:
 			if err := rbac.Generate(rbacOptions); err != nil {
 				log.Fatal(err)
 			}
-			fmt.Printf("RBAC manifests generated under '%s' directory\n", rbacOptions.OutputDir)
+			fmt.Printf("RBAC manifests generated under '%s' \n", rbacOptions.OutputDir)
 		},
 	}
 	f := cmd.Flags()

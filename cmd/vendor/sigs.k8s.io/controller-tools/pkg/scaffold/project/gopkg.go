@@ -148,44 +148,32 @@ name="cloud.google.com/go"
 version="v0.21.0"
 
 [[override]]
-name="github.com/PuerkitoBio/purell"
-version="v1.1.0"
-
-[[override]]
-name="github.com/PuerkitoBio/urlesc"
-revision="de5bf2ad457846296e2031421a34e2568e304e35"
-
-[[override]]
 name="github.com/davecgh/go-spew"
 version="v1.1.0"
 
 [[override]]
 name="github.com/emicklei/go-restful"
-version="v2.7.0"
+version="v2.8.0"
 
 [[override]]
 name="github.com/ghodss/yaml"
 version="v1.0.0"
 
 [[override]]
-name="github.com/go-openapi/jsonpointer"
-revision="3a0015ad55fa9873f41605d3e8f28cd279c32ab2"
+name="github.com/go-logr/logr"
+revision="9fb12b3b21c5415d16ac18dc5cd42c1cfdd40c4e"
 
 [[override]]
-name="github.com/go-openapi/jsonreference"
-revision="3fb327e6747da3043567ee86abd02bb6376b6be2"
+name="github.com/go-logr/zapr"
+revision="7536572e8d55209135cd5e7ccf7fce43dca217ab"
 
 [[override]]
-name="github.com/go-openapi/spec"
-revision="bcff419492eeeb01f76e77d2ebc714dc97b607f5"
-
-[[override]]
-name="github.com/go-openapi/swag"
-revision="811b1089cde9dad18d4d0c2d09fbdbf28dbd27a5"
+name="github.com/gobuffalo/envy"
+version="v1.6.3"
 
 [[override]]
 name="github.com/gogo/protobuf"
-version="v1.0.0"
+version="v1.1.1"
 
 [[override]]
 name="github.com/golang/glog"
@@ -216,16 +204,28 @@ name="github.com/howeyc/gopass"
 revision="bf9dde6d0d2c004a008c27aaee91170c786f6db8"
 
 [[override]]
+name="github.com/hpcloud/tail"
+version="v1.0.0"
+
+[[override]]
 name="github.com/imdario/mergo"
-version="v0.3.4"
+version="v0.3.5"
+
+[[override]]
+name="github.com/inconshreveable/mousetrap"
+version="v1.0"
+
+[[override]]
+name="github.com/joho/godotenv"
+version="v1.2.0"
 
 [[override]]
 name="github.com/json-iterator/go"
-version="1.1.3"
+version="1.1.4"
 
 [[override]]
-name="github.com/mailru/easyjson"
-revision="8b799c424f57fa123fc63a99d6383bc6e4c02578"
+name="github.com/markbates/inflect"
+version="v1.0.0"
 
 [[override]]
 name="github.com/modern-go/concurrent"
@@ -233,19 +233,39 @@ version="1.0.3"
 
 [[override]]
 name="github.com/modern-go/reflect2"
-version="1.0.0"
+version="1.0.1"
 
 [[override]]
 name="github.com/onsi/ginkgo"
-version="v1.4.0"
+version="v1.6.0"
 
 [[override]]
 name="github.com/onsi/gomega"
-version="v1.3.0"
+version="v1.4.1"
+
+[[override]]
+name="github.com/pkg/errors"
+version="v0.8.0"
+
+[[override]]
+name="github.com/spf13/cobra"
+version="v0.0.3"
 
 [[override]]
 name="github.com/spf13/pflag"
 version="v1.0.1"
+
+[[override]]
+name="go.uber.org/atomic"
+version="v1.3.2"
+
+[[override]]
+name="go.uber.org/multierr"
+version="v1.1.0"
+
+[[override]]
+name="go.uber.org/zap"
+version="v1.8.0"
 
 [[override]]
 name="golang.org/x/crypto"
@@ -272,12 +292,20 @@ name="golang.org/x/time"
 revision="fbb02b2291d28baffd63558aa44b4b56f178d650"
 
 [[override]]
+name="golang.org/x/tools"
+revision="32950ab3be12acf6d472893021373669979907ab"
+
+[[override]]
 name="google.golang.org/appengine"
-version="v1.0.0"
+version="v1.1.0"
 
 [[override]]
 name="gopkg.in/inf.v0"
 version="v0.9.1"
+
+[[override]]
+name="gopkg.in/tomb.v1"
+revision = "dd632973f1e7218eb1089048e0798ec9ae7dceb8"
 
 [[override]]
 name="gopkg.in/yaml.v2"
@@ -300,24 +328,32 @@ name="k8s.io/client-go"
 version="kubernetes-1.10.1"
 
 [[override]]
-name="k8s.io/kube-aggregator"
-version="kubernetes-1.10.1"
+name="k8s.io/code-generator"
+revision="7b3961072db196a1068e97f76c74ca6bc6b65350"
+
+[[override]]
+name="k8s.io/gengo"
+revision="906d99f89cd644eecf75ab547b29bf9f876f0b59"
 
 [[override]]
 name="k8s.io/kube-openapi"
 revision="f08db293d3ef80052d6513ece19792642a289fea"
 
 [[override]]
-name="sigs.k8s.io/testing_frameworks"
-revision="f53464b8b84b4507805a0b033a8377b225163fea"
+name="sigs.k8s.io/controller-runtime"
+branch="master"
 
 [[override]]
-name = "github.com/thockin/logr"
-source = "https://github.com/directxman12/logr.git"
-branch = "features/structed"
+name="sigs.k8s.io/controller-tools"
+branch="master"
+
+[[override]]
+name="sigs.k8s.io/testing_frameworks"
+revision="f53464b8b84b4507805a0b033a8377b225163fea"
 
 # For dependency below: Refer to issue https://github.com/golang/dep/issues/1799
 [[override]]
 name = "gopkg.in/fsnotify.v1"
 source = "https://github.com/fsnotify/fsnotify.git"
+version="v1.4.7"
 `
