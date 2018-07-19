@@ -23,6 +23,7 @@ import (
 func AddCmds(cmd *cobra.Command) {
 	AddAPICommand(cmd)
 	cmd.AddCommand(vendorUpdateCmd())
+	cmd.AddCommand(docsCmd())
 
 	cmd.Example = `# Initialize your project
     kubebuilder init --domain example.com --license apache2 --owner "The Kubernetes authors"

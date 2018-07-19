@@ -23,7 +23,7 @@ function generate_crd_resources {
   header_text "generating CRD resources and code"
 
   # Run the commands
-  kubebuilder init repo --domain sample.kubernetes.io
+  kubebuilder init repo --domain sample.kubernetes.io --project-version v0
   kubebuilder create resource --group insect --version v1beta1 --kind Bee
 
   header_text "editing generated files to simulate a user"
@@ -390,7 +390,7 @@ function test_crd_validation {
   export TEST_ASSET_KUBE_APISERVER=/tmp/kubebuilder/bin/kube-apiserver
   export TEST_ASSET_ETCD=/tmp/kubebuilder/bin/etcd
 
-  kubebuilder init repo --domain sample.kubernetes.io
+  kubebuilder init repo --domain sample.kubernetes.io --project-version v0
   kubebuilder create resource --group got --version v1beta1 --kind House
 
   # Update crd
@@ -489,7 +489,7 @@ function generate_coretype_controller {
   header_text "generating controller for coretype Deployment"
 
   # Run the commands
-  kubebuilder init repo --domain sample.kubernetes.io --controller-only
+  kubebuilder init repo --domain sample.kubernetes.io --controller-only --project-version v0
   kubebuilder create controller --group apps --version v1beta2 --kind Deployment --core-type
 
   # Fill the required fileds of Deployment object so that the Deployment instance can be successfully created
@@ -500,7 +500,7 @@ function generate_resource_with_coretype_controller {
   header_text "generating CRD resource as well as controller for coretype Deployment"
 
   # Run the commands
-  kubebuilder init repo --domain sample.kubernetes.io
+  kubebuilder init repo --domain sample.kubernetes.io --project-version v0
   kubebuilder create resource --group ant --version v1beta1 --kind Ant
   kubebuilder create controller --group apps --version v1beta2 --kind Deployment --core-type
 
