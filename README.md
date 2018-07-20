@@ -1,25 +1,24 @@
 [![Build Status](https://travis-ci.org/kubernetes-sigs/kubebuilder.svg?branch=master)](https://travis-ci.org/kubernetes-sigs/kubebuilder "Travis")
 [![Go Report Card](https://goreportcard.com/badge/github.com/kubernetes-sigs/kubebuilder)](https://goreportcard.com/report/github.com/kubernetes-sigs/kubebuilder)
 
-*Don't use `go get` / `go install`, instead you MUST download a tar binary release or create your own release using
-the release program.*  To build your own release see [CONTRIBUTING.md](CONTRIBUTING.md)
-
-## `kubebuilder`
+## Kubebuilder
 
 Kubebuilder is a framework for building Kubernetes APIs using [custom resource definitions (CRDs)](https://kubernetes.io/docs/tasks/access-kubernetes-api/extend-api-custom-resource-definitions).
 
 **Note:** kubebuilder does not exist as an example to *copy-paste*, but instead provides powerful libraries and tools
 to simplify building and publishing Kubernetes APIs from scratch.
 
-### Download and Install
+### Installalation 
 
-[Releases](https://github.com/kubernetes-sigs/kubebuilder/releases) are here
+It is strongly recommended that you use a released version. Release binaries are available on the [releases](https://github.com/kubernetes-sigs/kubebuilder/releases) page.
+Follow the [instructions](http://book.kubebuilder.io/getting_started/installation_and_setup.html) to install Kubebuilder.
+
 
 ## Getting Started
 
 See the [Getting Started](http://book.kubebuilder.io/quick_start.html) documentation.
 
-![Quick Start](docs/gif/quickstart.gif)
+![Quick Start](docs/gif/quickstart-1.0.0.gif)
 
 ## Documentation
 
@@ -80,3 +79,8 @@ Before you file an issue, please search existing issues to see if your issue is 
 
 - ### Slack
   For realtime discussion,  you can join the [#kubebuilder](https://slack.k8s.io/#kubebuilder) slack channel. Slack requires registration, but the Kubernetes team is open invitation to anyone to register here. Feel free to come and ask any questions.
+
+## Contributing
+Contributions are greatly appreciated. The maintainers actively manage the issues list, and try to highlight issues suitable for newcomers.
+The project follows the typical GitHub pull request model. See [CONTRIBUTING.md](CONTRIBUTING.md) for more details.
+Before starting any work, please either comment on an existing issue, or file a new one.
