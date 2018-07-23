@@ -89,9 +89,20 @@ func depExists() bool {
 	return err == nil
 }
 
+// depManifestExists checks if DepManifestFile exists or not. It will panic
+// if it encounters unknown errors.
 func depManifestExists() bool {
 	_, err := os.Stat(depManifestFile)
-	return os.IsExist(err)
+	if err == nil {
+		// file exists
+		return true
+	}
+	if os.IsNotExist(err) {
+		return false
+	}
+	// some other error, panic
+	log.Fatalf("error looking up dep manifest file : %v", err)
+	return false
 }
 
 func createNewDepManifest() {
