@@ -1,0 +1,58 @@
+.panel {
+  border: 1px solid #e5e5e5;
+  border-radius: 3px;
+}
+
+.panel-content {
+  background: white;
+  padding: 1em 1em 0;
+}
+
+.panel-heading {
+  border-bottom: 1px solid #e5e5e5;
+  padding: 0.5em 1em;
+}
+
+.panel-heading .panel-icon {
+  position: absolute;
+}
+
+.panel-heading .panel-icon i {
+  font-size: 1.5em;
+}
+
+.panel-heading .panel-icon + .panel-title {
+  padding-left: 40px;
+}
+
+.panel-danger .panel-heading {
+  background: #fdf7f7;
+}
+
+.panel-danger i {
+  color: #d9534f;
+}
+
+.panel-info .panel-heading {
+  background: #eff5ff;
+}
+
+.panel-info i {
+  color: #42acf3;
+}
+
+.panel-success .panel-heading {
+  background: #f3f8f3;
+}
+
+.panel-success i {
+  color: #50af51;
+}
+
+.panel-warning .panel-heading {
+  background: #fcf8f2;
+}
+
+.panel-warning i {
+  color: #f0ad4e;
+}

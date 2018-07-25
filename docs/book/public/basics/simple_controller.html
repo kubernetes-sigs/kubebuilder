@@ -1,0 +1,875 @@
+
+<!DOCTYPE HTML>
+<html lang="" >
+    <head>
+        <meta charset="UTF-8">
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <title>Controller Example · The Kubebuilder Book</title>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="description" content="">
+        <meta name="generator" content="GitBook 3.2.3">
+        <meta name="author" content="Phillip Wittrock">
+        
+        
+    
+    <link rel="stylesheet" href="../gitbook/style.css">
+
+    
+            
+                
+                <link rel="stylesheet" href="../gitbook/gitbook-plugin-panel/icons.css">
+                
+            
+                
+                <link rel="stylesheet" href="../gitbook/gitbook-plugin-panel/panel.css">
+                
+            
+                
+                <link rel="stylesheet" href="../gitbook/gitbook-plugin-highlight/website.css">
+                
+            
+                
+                <link rel="stylesheet" href="../gitbook/gitbook-plugin-search/search.css">
+                
+            
+                
+                <link rel="stylesheet" href="../gitbook/gitbook-plugin-fontsettings/website.css">
+                
+            
+                
+                <link rel="stylesheet" href="../gitbook/gitbook-plugin-theme-api/theme-api.css">
+                
+            
+        
+
+    
+
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+
+        
+    
+    
+    <meta name="HandheldFriendly" content="true"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="../gitbook/images/apple-touch-icon-precomposed-152.png">
+    <link rel="shortcut icon" href="../gitbook/images/favicon.ico" type="image/x-icon">
+
+    
+    
+    <link rel="prev" href="what_is_a_controller.html" />
+    
+
+    </head>
+    <body>
+        
+<div class="book">
+    <div class="book-summary">
+        
+            
+<div id="book-search-input" role="search">
+    <input type="text" placeholder="Type to search" />
+</div>
+
+            
+                <nav role="navigation">
+                
+
+
+<ul class="summary">
+    
+    
+
+    
+
+    
+        
+        
+    
+        <li class="chapter " data-level="1.1" data-path="../">
+            
+                <a href="../">
+            
+                    
+                    Introduction
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2" data-path="../quick_start.html">
+            
+                <a href="../quick_start.html">
+            
+                    
+                    Quick Start
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+    
+        
+        <li class="header">Getting Started</li>
+        
+        
+    
+        <li class="chapter " data-level="2.1" data-path="../getting_started/why_kubernetes.html">
+            
+                <a href="../getting_started/why_kubernetes.html">
+            
+                    
+                    Why Kubernetes APIs
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="2.2" data-path="../getting_started/what_is_kubebuilder.html">
+            
+                <a href="../getting_started/what_is_kubebuilder.html">
+            
+                    
+                    What is Kubebuilder
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="2.3" data-path="../getting_started/installation_and_setup.html">
+            
+                <a href="../getting_started/installation_and_setup.html">
+            
+                    
+                    Installation and Setup
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="2.4" data-path="../getting_started/hello_world.html">
+            
+                <a href="../getting_started/hello_world.html">
+            
+                    
+                    Hello World
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+    
+        
+        <li class="header">Basics</li>
+        
+        
+    
+        <li class="chapter " data-level="3.1" >
+            
+                <span>
+            
+                    
+                    Development Workflow
+            
+                </span>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="3.1.1" data-path="project_creation_and_structure.html">
+            
+                <a href="project_creation_and_structure.html">
+            
+                    
+                    Project Creation and Structure
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="3.2" >
+            
+                <span>
+            
+                    
+                    Resources
+            
+                </span>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="3.2.1" data-path="what_is_a_resource.html">
+            
+                <a href="what_is_a_resource.html">
+            
+                    
+                    What is a Resource
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="3.2.2" data-path="simple_resource.html">
+            
+                <a href="simple_resource.html">
+            
+                    
+                    Resource Example
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="3.3" >
+            
+                <span>
+            
+                    
+                    Controllers
+            
+                </span>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="3.3.1" data-path="what_is_a_controller.html">
+            
+                <a href="what_is_a_controller.html">
+            
+                    
+                    What is a Contoller
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter active" data-level="3.3.2" data-path="simple_controller.html">
+            
+                <a href="simple_controller.html">
+            
+                    
+                    Controller Example
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="3.4" >
+            
+                <span>
+            
+                    
+                    Managers
+            
+                </span>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="3.4.1" data-path="what_is_the_controller_manager.html">
+            
+                <a href="what_is_the_controller_manager.html">
+            
+                    
+                    What is the Manager
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="3.4.2" data-path="simple_controller_manager.html">
+            
+                <a href="simple_controller_manager.html">
+            
+                    
+                    Manager Example
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+
+    
+        
+        <li class="header">Beyond the Basics</li>
+        
+        
+    
+        <li class="chapter " data-level="4.1" >
+            
+                <span>
+            
+                    
+                    Development Workflow
+            
+                </span>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="4.1.1" data-path="../beyond_basics/boilerplate.html">
+            
+                <a href="../beyond_basics/boilerplate.html">
+            
+                    
+                    Defining Boilerplate License Headers
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="4.1.2" data-path="../beyond_basics/running_tests.html">
+            
+                <a href="../beyond_basics/running_tests.html">
+            
+                    
+                    Running Tests
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="4.1.3" data-path="../beyond_basics/generating_documentation.html">
+            
+                <a href="../beyond_basics/generating_documentation.html">
+            
+                    
+                    Generating API Documentation
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="4.1.4" data-path="../beyond_basics/upgrading_kubebuilder.html">
+            
+                <a href="../beyond_basics/upgrading_kubebuilder.html">
+            
+                    
+                    Updating Kubebuilder
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="4.2" >
+            
+                <span>
+            
+                    
+                    Controllers
+            
+                </span>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="4.2.1" data-path="../beyond_basics/controllers_for_core_resources.html">
+            
+                <a href="../beyond_basics/controllers_for_core_resources.html">
+            
+                    
+                    Controllers For Core Resources
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="4.2.2" data-path="../beyond_basics/controller_watches.html">
+            
+                <a href="../beyond_basics/controller_watches.html">
+            
+                    
+                    Controller Watch Functions
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="4.2.3" data-path="../beyond_basics/creating_events.html">
+            
+                <a href="../beyond_basics/creating_events.html">
+            
+                    
+                    Creating Events
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="4.3" >
+            
+                <span>
+            
+                    
+                    Deployment Workflow
+            
+                </span>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="4.3.1" data-path="../beyond_basics/deploying_controller.html">
+            
+                <a href="../beyond_basics/deploying_controller.html">
+            
+                    
+                    Deploying the manager in Cluster
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+
+    
+        
+        <li class="header">Reference Docs</li>
+        
+        
+    
+        <li class="chapter " data-level="5.1" data-path="../go_docs.html">
+            
+                <a href="../go_docs.html">
+            
+                    
+                    GoDoc Links
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+    
+
+    <li class="divider"></li>
+
+    <li>
+        <a href="https://www.gitbook.com" target="blank" class="gitbook-link">
+            Published with GitBook
+        </a>
+    </li>
+</ul>
+
+
+                </nav>
+            
+        
+    </div>
+
+    <div class="book-body">
+        
+            <div class="body-inner">
+                
+                    
+
+<div class="book-header" role="navigation">
+    
+
+    <!-- Title -->
+    <h1>
+        <i class="fa fa-circle-o-notch fa-spin"></i>
+        <a href=".." >Controller Example</a>
+    </h1>
+</div>
+
+
+
+
+                    <div class="page-wrapper" tabindex="-1" role="main">
+                        <div class="page-inner">
+                            
+<div id="book-search-results">
+    <div class="search-noresults">
+    
+                                <section class="normal markdown-section">
+                                
+                                <h1 id="controller-example">Controller Example</h1>
+<p>This chapter walks through a simple Controller implementation.</p>
+<p>This example is for the Controller for the ContainerSet API shown in the <a href="simple_resource.html">Resource Example</a>.
+It uses the <a href="https://godoc.org/sigs.k8s.io/controller-runtime/pkg" target="_blank">controller-runtime</a> libraries
+to implement the Controller and Manager.</p>
+<p>Unlike the Hello World example, here we use the underlying Controller libraries directly instead
+of the higher-level <code>application</code> pattern libraries.  This gives greater control over
+the Controller is configured.</p>
+<blockquote>
+<p>$ kubebuilder create api --group workloads --version v1beta1 --kind ContainerSet</p>
+<p>pkg/controller/containerset/containerset_controller.go</p>
+</blockquote>
+<h2 id="setup">Setup</h2>
+<div class="api-method"><div class="api-method-definition"><h4 id="containersetcontroller">ContainerSetController</h4>
+<p>ContainerSetController has a single annotation:</p>
+<ul>
+<li><code>// +kubebuilder:rbac</code> creates RBAC rules in the <code>config/rbac/rbac_role.yaml</code> file when <code>make</code> is run.
+This will ensure the Kubernetes ServiceAccount running the controller can read / write to the Deployment API.</li>
+</ul>
+<p>ContainerSetController has 2 variables:</p>
+<ul>
+<li><code>client.Client</code> is a client for reading / writing Kubernetes APIs.</li>
+<li><code>scheme *runtime.Scheme</code> is a runtime.Scheme used by the library to set OwnerReferences.</li>
+</ul>
+<h4 id="adding-a-controller-to-the-manager">Adding a Controller to the Manager</h4>
+<p>Add creates a new Controller that will be started by the Manager.  When adding a Controller it is important to setup
+Watch functions to trigger Reconciles.</p>
+<p>Watch is a function that takes an event <code>source.Source</code> and a <code>handler.EventHandler</code>.  The Source provides events
+for some type, and the EventHandler responds to events by enqueuing <code>reconcile.Request</code>s for objects.
+Watch optionally takes a list of Predicates that may be used to filter events.</p>
+<p>Sources</p>
+<ul>
+<li>To watch for create / update / delete events for an object use a <code>source.KindSource</code> e.g.
+<code>source.KindSource{Type: &amp;v1.Pod}</code></li>
+</ul>
+<p>Handlers</p>
+<ul>
+<li>To enqueue a Reconcile for the object in the event use a <code>handler.EnqueueRequestForObject</code></li>
+<li>To enqueue a Reconcile for the owner object that created the object in the event use a <code>handler.EnqueueRequestForOwner</code>
+with the type of the owner e.g. <code>&amp;handler.EnqueueRequestForOwner{OwnerType: &amp;appsv1.Deployment{}, IsController: true}</code></li>
+<li>To enqueue Reconcile requests for an arbitrary collection of objects in response to the event, use a
+<code>handler.EnqueueRequestsFromMapFunc</code>.</li>
+</ul>
+<p>Example:</p>
+<ul>
+<li>Create a new <code>ContainerSetController</code> struct that will.<ul>
+<li>Invoke Reconcile with the Name and Namespace of a <em>ContainerSet</em> for <em>ContainerSet</em> create / update / delete events</li>
+<li>Invoke Reconcile with the Name and Namespace of a <em>ContainerSet</em> for <em>Deployment</em> create / update / delete events</li>
+</ul>
+</li>
+</ul>
+<h4 id="reference">Reference</h4>
+<ul>
+<li>See the <a href="https://godoc.org/sigs.k8s.io/controller-runtime/pkg" target="_blank">controller libraries</a> godocs for reference
+documentation on the controller libraries.</li>
+<li>See the <a href="https://godoc.org/github.com/kubernetes-sigs/kubebuilder/pkg/gen/controller" target="_blank">controller code generation tags</a>
+godocs for reference documentation on controller annotations.</li>
+</ul>
+</div><div class="api-method-code"><div class="api-method-sample" data-lang="go" data-name="Go"><pre><code class="lang-go"><span class="hljs-keyword">type</span> ContainerSetController <span class="hljs-keyword">struct</span> {
+  client.Client
+  scheme *runtime.Scheme
+}
+
+<span class="hljs-keyword">func</span> Add(mgr manager.Manager) error (
+  <span class="hljs-comment">// Create a new Controller</span>
+  c, err := controller.New(<span class="hljs-string">&quot;containerset-controller&quot;</span>, mgr,
+    controller.Options{Reconciler: &amp;ContainerSetController{
+      Client: mgr.GetClient(),
+      scheme: mgr.GetScheme(),
+  }})
+  <span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> {
+    <span class="hljs-keyword">return</span> err
+  }
+
+  <span class="hljs-comment">// Watch for changes to ContainerSet</span>
+  err = c.Watch(
+    &amp;source.Kind{Type:&amp;workloadsv1beta1.ContainerSet{}},
+      &amp;handler.EnqueueRequestForObject{})
+  <span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> {
+    <span class="hljs-keyword">return</span> err
+  }
+
+    <span class="hljs-comment">// Watch for changes to Deployments created by a ContainerSet and trigger a Reconcile for the owner</span>
+  err = c.Watch(
+    &amp;source.Kind{Type: &amp;appsv1.Deployment{}},
+      &amp;handler.EnqueueRequestForOwner{
+        IsController: <span class="hljs-literal">true</span>,
+        OwnerType:    &amp;workloadsv1beta1.ContainerSet{},
+      })
+  <span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> {
+    <span class="hljs-keyword">return</span> err
+  }
+
+  <span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span>
+}
+</code></pre>
+</div></div></div>
+
+<p><div class="panel panel-warning"><div class="panel-heading"><div class="panel-icon"><i class="icon-warning"></i></div><div class="panel-title">Adding Annotations For Watches And CRUD Operations</div></div><div class="panel-content"><p>It is important<code>// +kubebuilder:rbac</code> annotations when adding Watches or CRUD operations
+so that when the Controller is deployed it will have the correct permissions.</p>
+<p><code>make</code> must be run anytime annotations are changed to regenerated code and configs.</p>
+</div></div></p>
+<h2 id="implementing-controller-reconcile">Implementing Controller Reconcile</h2>
+<p><div class="panel panel-success"><div class="panel-heading"><div class="panel-icon"><i class="icon-success"></i></div><div class="panel-title">Level vs Edge</div></div><div class="panel-content"><p>The Reconcile function does not differentiate between create, update or deletion events.
+Instead it simply reads the state of the cluster at the time it is called.</p>
+</div></div></p>
+<p>Reconcile uses a <code>client.Client</code> to read and write objects.  The Client is able to
+read or write any type of runtime.Object (e.g. Kubernetes object), so users don&apos;t need
+to generate separate clients for each collection of APIs.</p>
+<div class="api-method"><div class="api-method-definition"><p>The business logic of the Controller is implemented in the <code>Reconcile</code> function.  This function takes the Namespace
+ and Name of a ContainerSet, allowing multiple Events to be batched together into a single Reconcile call.</p>
+<p>The function shown here creates or updates a Deployment using the replicas and image specified in
+ContainerSet.Spec.  Note that it sets an OwnerReference for the Deployment to enable garbage collection
+on the Deployment once the ContainerSet is deleted.</p>
+<ol>
+<li>Read the ContainerSet using the NamespacedName</li>
+<li>If there is an error or it has been deleted, return</li>
+<li>Create the new desired DeploymentSpec from the ContainerSetSpec</li>
+<li>Read the Deployment and compare the Deployment.Spec to the ContainerSet.Spec</li>
+<li>If the observed Deployment.Spec does not match the desired spec<ul>
+<li>Deployment was not found: create a new Deployment</li>
+<li>Deployment was found and changes are needed: update the Deployment</li>
+</ul>
+</li>
+</ol>
+</div><div class="api-method-code"><div class="api-method-sample" data-lang="go" data-name="Go"><pre><code class="lang-go"><span class="hljs-keyword">var</span> _ reconcile.Reconciler = &amp;ContainerSetController{}
+
+<span class="hljs-keyword">func</span> (r *ContainerSetController) Reconcile(request reconcile.Request) (
+  reconcile.Result, error) {
+    <span class="hljs-comment">// Read the ContainerSet</span>
+  cs := &amp;workloadv1beta1.ContainerSet{}
+  err := r.client.Get(context.TODO(), request.NamespacedName, cs)
+
+    <span class="hljs-comment">// Handle deleted or error case</span>
+  <span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> {
+    <span class="hljs-keyword">if</span> errors.IsNotFound(err) {
+      <span class="hljs-comment">// Not found.  Don&apos;t worry about cleaning up Deployments,</span>
+      <span class="hljs-comment">// GC will handle it.</span>
+      <span class="hljs-keyword">return</span> reconcile.Result{}, <span class="hljs-literal">nil</span>
+    }
+    <span class="hljs-comment">// Error reading the object - requeue the request.</span>
+    <span class="hljs-keyword">return</span> reconcile.Result{}, err
+  }
+
+    <span class="hljs-comment">// Calculate the expected Deployment Spec</span>
+  spec := getDeploymentSpec(request)
+
+    <span class="hljs-comment">// Read the Deployment</span>
+  dep := &amp;appsv1.Deployment{}
+  err := r.client.Get(context.TODO(), request.NamespacedName, dep)
+
+    <span class="hljs-comment">// If not found, create it </span>
+  <span class="hljs-keyword">if</span> errors.IsNotFound(err) {
+    dep = &amp;appsv1.Deployment{Spec: spec}
+    dep.Name = request.Name
+    dep.Namespace = request.Namespace
+    <span class="hljs-keyword">if</span> err := controllerutil.SetControllerReference(cs, deploy, r.scheme); err != <span class="hljs-literal">nil</span> {
+      <span class="hljs-keyword">return</span> reconcile.Result{}, err
+    }
+    <span class="hljs-keyword">if</span> err := r.Create(context.TODO(), dep); err != <span class="hljs-literal">nil</span> {
+      <span class="hljs-keyword">return</span> reconcile.Result{}, err
+    }
+    <span class="hljs-keyword">return</span> reconcile.Result{}, <span class="hljs-literal">nil</span>
+  }
+
+    <span class="hljs-comment">// If found, update it</span>
+    image := dep.Spec.Template.Spec.Containers[<span class="hljs-number">0</span>].Image
+    replicas := *dep.Spec.Replicas
+    <span class="hljs-keyword">if</span> replicas == cs.Spec.Replicas &amp;&amp; image == cs.Spec.Image {
+      <span class="hljs-keyword">return</span> reconcile.Result{}, <span class="hljs-literal">nil</span>
+    }
+    dep.Spec.Replicas = &amp;cs.Spec.Replicas
+    dep.Spec.Template.Spec.Containers[<span class="hljs-number">0</span>].Image = cs.Spec.Image
+    <span class="hljs-keyword">if</span> err := r.Update(context.TODO(), dep); err != <span class="hljs-literal">nil</span> {
+      <span class="hljs-keyword">return</span> reconcile.Result{}, err
+    }
+
+    <span class="hljs-keyword">return</span> reconcile.Result{}, <span class="hljs-literal">nil</span>
+}
+
+<span class="hljs-keyword">func</span> getDeploymentSpec(request reconcile.Request) *appsv1.DeploymentSpec {
+  <span class="hljs-keyword">return</span> &amp;appsv1.DeploymentSpec{
+    Selector: &amp;metav1.LabelSelector{
+      MatchLabels: <span class="hljs-keyword">map</span>[<span class="hljs-keyword">string</span>]<span class="hljs-keyword">string</span>{
+        <span class="hljs-string">&quot;container-set&quot;</span>: request.Name},
+      },
+      Replicas: &amp;cs.Spec.Replicas,
+      Template: corev1.PodTemplateSpec{
+        ObjectMeta: metav1.ObjectMeta{
+          Labels: <span class="hljs-keyword">map</span>[<span class="hljs-keyword">string</span>]<span class="hljs-keyword">string</span>{
+            <span class="hljs-string">&quot;container-set&quot;</span>: request.Name,
+          },
+        },
+        Spec: corev1.PodSpec{
+          Containers: []corev1.Container{
+            {Name: request.Name,
+             Image: cs.Spec.Image},
+          },
+        },
+      },
+    }
+}
+</code></pre>
+</div></div></div>
+
+                                
+                                </section>
+                            
+    </div>
+    <div class="search-results">
+        <div class="has-results">
+            
+            <h1 class="search-results-title"><span class='search-results-count'></span> results matching "<span class='search-query'></span>"</h1>
+            <ul class="search-results-list"></ul>
+            
+        </div>
+        <div class="no-results">
+            
+            <h1 class="search-results-title">No results matching "<span class='search-query'></span>"</h1>
+            
+        </div>
+    </div>
+</div>
+
+                        </div>
+                    </div>
+                
+            </div>
+
+            
+
+        
+    </div>
+
+    <script>
+        var gitbook = gitbook || [];
+        gitbook.push(function() {
+            gitbook.page.hasChanged({"page":{"title":"Controller Example","level":"3.3.2","depth":2,"next":{"title":"Managers","level":"3.4","depth":1,"ref":"","articles":[{"title":"What is the Manager","level":"3.4.1","depth":2,"path":"basics/what_is_the_controller_manager.md","ref":"basics/what_is_the_controller_manager.md","articles":[]},{"title":"Manager Example","level":"3.4.2","depth":2,"path":"basics/simple_controller_manager.md","ref":"basics/simple_controller_manager.md","articles":[]}]},"previous":{"title":"What is a Contoller","level":"3.3.1","depth":2,"path":"basics/what_is_a_controller.md","ref":"basics/what_is_a_controller.md","articles":[]},"dir":"ltr"},"config":{"plugins":["theme-api","panel","sequence-diagrams","ga"],"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"panel":{},"search":{},"sequence-diagrams":{"theme":"simple"},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"highlight":{},"theme-api":{"languages":[],"split":true,"theme":"light"},"ga":{"configuration":"auto","token":"UA-119864590-1"},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","author":"Phillip Wittrock","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"The Kubebuilder Book","gitbook":">= 3.0.0"},"file":{"path":"basics/simple_controller.md","mtime":"2018-07-25T00:55:02.979Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-07-25T16:34:48.577Z"},"basePath":"..","book":{"language":""}});
+        });
+    </script>
+</div>
+
+        
+    <script src="../gitbook/gitbook.js"></script>
+    <script src="../gitbook/theme.js"></script>
+    
+        
+        <script src="../gitbook/gitbook-plugin-ga/plugin.js"></script>
+        
+    
+        
+        <script src="../gitbook/gitbook-plugin-search/search-engine.js"></script>
+        
+    
+        
+        <script src="../gitbook/gitbook-plugin-search/search.js"></script>
+        
+    
+        
+        <script src="../gitbook/gitbook-plugin-lunr/lunr.min.js"></script>
+        
+    
+        
+        <script src="../gitbook/gitbook-plugin-lunr/search-lunr.js"></script>
+        
+    
+        
+        <script src="../gitbook/gitbook-plugin-sharing/buttons.js"></script>
+        
+    
+        
+        <script src="../gitbook/gitbook-plugin-fontsettings/fontsettings.js"></script>
+        
+    
+        
+        <script src="../gitbook/gitbook-plugin-theme-api/theme-api.js"></script>
+        
+    
+
+    </body>
+</html>
+
