@@ -80,7 +80,7 @@ var _ = Describe("v0 main workflow", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		By("validate the controller-manager pod running as expected")
-		verifyContollerUp := func() error {
+		verifyControllerUp := func() error {
 			// Get pod name
 			// TODO: Use kubectl to format the output with a go-template
 			getOptions := []string{"get", "pods", "-n", c.namespace, "-l", "control-plane=controller-manager", "-o", "go-template={{ range .items }}{{ if not .metadata.deletionTimestamp }}{{ .metadata.name }}{{ \"\\n\" }}{{ end }}{{ end }}"}
@@ -104,7 +104,7 @@ var _ = Describe("v0 main workflow", func() {
 
 			return nil
 		}
-		Eventually(verifyContollerUp, 1*time.Minute, 500*time.Millisecond).Should(BeNil())
+		Eventually(verifyControllerUp, 1*time.Minute, 500*time.Millisecond).Should(BeNil())
 
 		By("creating resource object")
 		inputFile = filepath.Join(kubebuilderTest.Dir, "hack", "sample", strings.ToLower(c.kind)+".yaml")

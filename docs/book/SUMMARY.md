@@ -18,7 +18,7 @@
   * [What is a Resource](basics/what_is_a_resource.md)
   * [Resource Example](basics/simple_resource.md)
 * Controllers
-  * [What is a Contoller](basics/what_is_a_controller.md)
+  * [What is a Controller](basics/what_is_a_controller.md)
   * [Controller Example](basics/simple_controller.md)
 * Managers
   * [What is the Manager](basics/what_is_the_controller_manager.md)
