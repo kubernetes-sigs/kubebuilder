@@ -21,7 +21,7 @@ limitations under the License.
 // +k8s:deepcopy-gen=package,register
 // +k8s:conversion-gen=sigs.k8s.io/controller-tools/test/pkg/apis/ship
 // +k8s:defaulter-gen=TypeMeta
-// +groupName=ship.k8s.io
+// +groupName=ship.testproject.org
 package v1beta1
 
 import (
@@ -31,7 +31,7 @@ import (
 
 var (
 	// SchemeGroupVersion is group version used to register these objects
-	SchemeGroupVersion = schema.GroupVersion{Group: "ship.k8s.io", Version: "v1beta1"}
+	SchemeGroupVersion = schema.GroupVersion{Group: "ship.testproject.org", Version: "v1beta1"}
 
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
 	SchemeBuilder = &scheme.Builder{GroupVersion: SchemeGroupVersion}

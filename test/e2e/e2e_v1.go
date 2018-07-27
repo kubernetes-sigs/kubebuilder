@@ -97,7 +97,7 @@ var _ = Describe("v1 main workflow", func() {
 		err = kubebuilderTest.Make(makeDeployOptions)
 
 		By("validate the controller-manager pod running as expected")
-		verifyContollerUp := func() error {
+		verifyControllerUp := func() error {
 			// Get pod name
 			getOptions := []string{"get", "pods", "-l", "control-plane=controller-manager", "-n", fmt.Sprintf("e2e-%s-system", testSuffix), "-o", "go-template={{ range .items }}{{ if not .metadata.deletionTimestamp }}{{ .metadata.name }}{{ \"\\n\" }}{{ end }}{{ end }}"}
 			podOutput, err := kubebuilderTest.RunKubectlCommand(framework.GetKubectlArgs(getOptions))
@@ -119,7 +119,7 @@ var _ = Describe("v1 main workflow", func() {
 
 			return nil
 		}
-		Eventually(verifyContollerUp, 5*time.Minute, time.Second).Should(BeNil())
+		Eventually(verifyControllerUp, 5*time.Minute, time.Second).Should(BeNil())
 
 		By("creating an instance of CR")
 		inputFile := filepath.Join("config", "samples", fmt.Sprintf("%s_%s_%s.yaml", c.group, c.version, strings.ToLower(c.kind)))

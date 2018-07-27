@@ -17,6 +17,8 @@ limitations under the License.
 package controller
 
 import (
+	"fmt"
+	"os"
 	"path"
 	"path/filepath"
 	"strings"
@@ -61,16 +63,8 @@ func (a *Controller) GetInput() (input.Input, error) {
 		"rbac.authorization":    "k8s.io",
 		"storage":               "k8s.io",
 	}
-	if domain, found := coreGroups[a.Resource.Group]; found {
-		a.ResourcePackage = path.Join("k8s.io", "api")
-		a.GroupDomain = a.Resource.Group
-		if domain != "" {
-			a.GroupDomain = a.Resource.Group + "." + domain
-		}
-	} else {
-		a.ResourcePackage = path.Join(a.Repo, "pkg", "apis")
-		a.GroupDomain = a.Resource.Group + "." + a.Domain
-	}
+
+	a.ResourcePackage, a.GroupDomain = getResourceInfo(coreGroups, a.Resource, a.Input)
 
 	if a.Plural == "" {
 		rs := inflect.NewDefaultRuleset()
@@ -85,6 +79,23 @@ func (a *Controller) GetInput() (input.Input, error) {
 	a.TemplateBody = controllerTemplate
 	a.Input.IfExistsAction = input.Error
 	return a.Input, nil
+}
+
+func getResourceInfo(coreGroups map[string]string, r *resource.Resource, in input.Input) (resourcePackage, groupDomain string) {
+	resourcePath := filepath.Join("pkg", "apis", r.Group, r.Version,
+		fmt.Sprintf("%s_types.go", strings.ToLower(r.Kind)))
+	if _, err := os.Stat(resourcePath); os.IsNotExist(err) {
+		if domain, found := coreGroups[r.Group]; found {
+			resourcePackage := path.Join("k8s.io", "api")
+			groupDomain = r.Group
+			if domain != "" {
+				groupDomain = r.Group + "." + domain
+			}
+			return resourcePackage, groupDomain
+		}
+		// TODO: need to support '--resource-pkg-path' flag for specifying resourcePath
+	}
+	return path.Join(in.Repo, "pkg", "apis"), r.Group + "." + in.Domain
 }
 
 var controllerTemplate = `{{ .Boilerplate }}

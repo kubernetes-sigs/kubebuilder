@@ -47,3 +47,7 @@
 [[constraint]]
   branch = "master"
   name = "sigs.k8s.io/controller-tools"
+
+[[constraint]]
+  name = "github.com/Masterminds/semver"
+  version = "1.4.2"

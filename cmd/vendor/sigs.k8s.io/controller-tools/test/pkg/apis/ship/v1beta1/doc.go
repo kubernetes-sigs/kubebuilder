@@ -19,5 +19,5 @@ limitations under the License.
 // +k8s:deepcopy-gen=package,register
 // +k8s:conversion-gen=sigs.k8s.io/controller-tools/test/pkg/apis/ship
 // +k8s:defaulter-gen=TypeMeta
-// +groupName=ship.k8s.io
+// +groupName=ship.testproject.org
 package v1beta1
