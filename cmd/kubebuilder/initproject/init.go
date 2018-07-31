@@ -34,7 +34,7 @@ var repoCmd = &cobra.Command{
 	Short: "Initialize a new project",
 	Long:  `Initialize a new project including vendor/ directory and go package directories.`,
 	Example: `# Initialize project structure
-kubebuilder init repo --domain mydomain
+kubebuilder init --domain mydomain
 `,
 	Run: runInitRepo,
 }
