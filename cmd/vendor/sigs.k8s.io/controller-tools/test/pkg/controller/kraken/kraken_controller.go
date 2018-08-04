@@ -87,7 +87,7 @@ type ReconcileKraken struct {
 // and what is in the Kraken.Spec
 // TODO(user): Modify this Reconcile function to implement your Controller logic.  The scaffolding writes
 // a Deployment as an example
-// +kubebuilder:rbac:groups=creatures.k8s.io,resources=krakens,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=creatures.testproject.org,resources=krakens,verbs=get;list;watch;create;update;patch;delete
 func (r *ReconcileKraken) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	// Fetch the Kraken instance
 	instance := &creaturesv2alpha1.Kraken{}

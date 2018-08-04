@@ -16,13 +16,13 @@ limitations under the License.
 
 // NOTE: Boilerplate only.  Ignore this file.
 
-// Package v2alpha1 contains API Schema definitions for the creatures v2alpha1 API group
+// Package v1beta1 contains API Schema definitions for the policy v1beta1 API group
 // +k8s:openapi-gen=true
 // +k8s:deepcopy-gen=package,register
-// +k8s:conversion-gen=sigs.k8s.io/controller-tools/test/pkg/apis/creatures
+// +k8s:conversion-gen=sigs.k8s.io/controller-tools/test/pkg/apis/policy
 // +k8s:defaulter-gen=TypeMeta
-// +groupName=creatures.testproject.org
-package v2alpha1
+// +groupName=policy.testproject.org
+package v1beta1
 
 import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -31,7 +31,7 @@ import (
 
 var (
 	// SchemeGroupVersion is group version used to register these objects
-	SchemeGroupVersion = schema.GroupVersion{Group: "creatures.testproject.org", Version: "v2alpha1"}
+	SchemeGroupVersion = schema.GroupVersion{Group: "policy.testproject.org", Version: "v1beta1"}
 
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
 	SchemeBuilder = &scheme.Builder{GroupVersion: SchemeGroupVersion}

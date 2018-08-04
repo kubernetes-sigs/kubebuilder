@@ -14,10 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package v1 contains API Schema definitions for the crew v1 API group
-// +k8s:openapi-gen=true
-// +k8s:deepcopy-gen=package,register
-// +k8s:conversion-gen=sigs.k8s.io/controller-tools/test/pkg/apis/crew
-// +k8s:defaulter-gen=TypeMeta
-// +groupName=crew.testproject.org
-package v1
+package controller
+
+import (
+	"sigs.k8s.io/controller-tools/test/pkg/controller/healthcheckpolicy"
+)
+
+func init() {
+	// AddToManagerFuncs is a list of functions to create controllers and add them to a manager.
+	AddToManagerFuncs = append(AddToManagerFuncs, healthcheckpolicy.Add)
+}

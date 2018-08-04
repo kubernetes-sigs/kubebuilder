@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package frigate
+package healthcheckpolicy
 
 import (
 	"context"
@@ -28,7 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	shipv1beta1 "sigs.k8s.io/controller-tools/test/pkg/apis/ship/v1beta1"
+	policyv1beta1 "sigs.k8s.io/controller-tools/test/pkg/apis/policy/v1beta1"
 )
 
 /**
@@ -36,37 +36,37 @@ import (
 * business logic.  Delete these comments after modifying this file.*
  */
 
-// Add creates a new Frigate Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
+// Add creates a new HealthCheckPolicy Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
-// USER ACTION REQUIRED: update cmd/manager/main.go to call this ship.Add(mgr) to install this Controller
+// USER ACTION REQUIRED: update cmd/manager/main.go to call this policy.Add(mgr) to install this Controller
 func Add(mgr manager.Manager) error {
 	return add(mgr, newReconciler(mgr))
 }
 
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileFrigate{Client: mgr.GetClient(), scheme: mgr.GetScheme()}
+	return &ReconcileHealthCheckPolicy{Client: mgr.GetClient(), scheme: mgr.GetScheme()}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Create a new controller
-	c, err := controller.New("frigate-controller", mgr, controller.Options{Reconciler: r})
+	c, err := controller.New("healthcheckpolicy-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
 		return err
 	}
 
-	// Watch for changes to Frigate
-	err = c.Watch(&source.Kind{Type: &shipv1beta1.Frigate{}}, &handler.EnqueueRequestForObject{})
+	// Watch for changes to HealthCheckPolicy
+	err = c.Watch(&source.Kind{Type: &policyv1beta1.HealthCheckPolicy{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
 
 	// TODO(user): Modify this to be the types you create
-	// Uncomment watch a Deployment created by Frigate - change this for objects you create
+	// Uncomment watch a Deployment created by HealthCheckPolicy - change this for objects you create
 	err = c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
-		OwnerType:    &shipv1beta1.Frigate{},
+		OwnerType:    &policyv1beta1.HealthCheckPolicy{},
 	})
 	if err != nil {
 		return err
@@ -75,22 +75,22 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	return nil
 }
 
-var _ reconcile.Reconciler = &ReconcileFrigate{}
+var _ reconcile.Reconciler = &ReconcileHealthCheckPolicy{}
 
-// ReconcileFrigate reconciles a Frigate object
-type ReconcileFrigate struct {
+// ReconcileHealthCheckPolicy reconciles a HealthCheckPolicy object
+type ReconcileHealthCheckPolicy struct {
 	client.Client
 	scheme *runtime.Scheme
 }
 
-// Reconcile reads that state of the cluster for a Frigate object and makes changes based on the state read
-// and what is in the Frigate.Spec
+// Reconcile reads that state of the cluster for a HealthCheckPolicy object and makes changes based on the state read
+// and what is in the HealthCheckPolicy.Spec
 // TODO(user): Modify this Reconcile function to implement your Controller logic.  The scaffolding writes
 // a Deployment as an example
-// +kubebuilder:rbac:groups=ship.testproject.org,resources=frigates,verbs=get;list;watch;create;update;patch;delete
-func (r *ReconcileFrigate) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	// Fetch the Frigate instance
-	instance := &shipv1beta1.Frigate{}
+// +kubebuilder:rbac:groups=policy.testproject.org,resources=healthcheckpolicies,verbs=get;list;watch;create;update;patch;delete
+func (r *ReconcileHealthCheckPolicy) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+	// Fetch the HealthCheckPolicy instance
+	instance := &policyv1beta1.HealthCheckPolicy{}
 	err := r.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {

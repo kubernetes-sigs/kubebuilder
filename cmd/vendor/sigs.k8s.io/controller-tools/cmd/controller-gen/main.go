@@ -133,9 +133,10 @@ Usage:
 				projectDir = currDir
 			}
 			crdGen := &crdgenerator.Generator{
-				RootPath:  projectDir,
-				OutputDir: filepath.Join(projectDir, "config", "crds"),
-				Namespace: namespace,
+				RootPath:          projectDir,
+				OutputDir:         filepath.Join(projectDir, "config", "crds"),
+				Namespace:         namespace,
+				SkipMapValidation: true,
 			}
 			if err := crdGen.ValidateAndInitFields(); err != nil {
 				log.Fatal(err)
