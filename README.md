@@ -26,7 +26,7 @@ Check out the Kubebuilder [book](http://book.kubebuilder.io).
 
 ## Resources
 
-- GitBook: [book.kubebuilder.com](http://book.kubebuilder.io)
+- GitBook: [book.kubebuilder.io](http://book.kubebuilder.io)
 - GitHub Repo: [kubernetes-sigs/kubebuilder](https://github.com/kubernetes-sigs/kubebuilder)
 - Slack channel: [#kubebuilder](http://slack.k8s.io/#kubebuilder)
 - Google Group: [kubebuilder@googlegroups.com](https://groups.google.com/forum/#!forum/kubebuilder)
