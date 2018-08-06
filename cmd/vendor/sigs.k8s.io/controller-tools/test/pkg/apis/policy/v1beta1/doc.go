@@ -14,10 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package v1 contains API Schema definitions for the crew v1 API group
+// Package v1beta1 contains API Schema definitions for the policy v1beta1 API group
 // +k8s:openapi-gen=true
 // +k8s:deepcopy-gen=package,register
-// +k8s:conversion-gen=sigs.k8s.io/controller-tools/test/pkg/apis/crew
+// +k8s:conversion-gen=sigs.k8s.io/controller-tools/test/pkg/apis/policy
 // +k8s:defaulter-gen=TypeMeta
-// +groupName=crew.testproject.org
-package v1
+// +groupName=policy.testproject.org
+package v1beta1
