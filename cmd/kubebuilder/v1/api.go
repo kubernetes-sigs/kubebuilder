@@ -50,9 +50,20 @@ func (o *apiOptions) RunAddAPI() {
 		fmt.Println("Create Resource under pkg/apis [y/n]?")
 		o.doResource = util.Yesno(reader)
 	}
+
 	if !o.controllerFlag.Changed {
 		fmt.Println("Create Controller under pkg/controller [y/n]?")
 		o.doController = util.Yesno(reader)
+	}
+
+	if o.r.Group == "" {
+		log.Fatalf("Must specify --group")
+	}
+	if o.r.Version == "" {
+		log.Fatalf("Must specify --version")
+	}
+	if o.r.Kind == "" {
+		log.Fatalf("Must specify --kind")
 	}
 
 	fmt.Println("Writing scaffold for you to edit...")
