@@ -39,7 +39,7 @@ Including:
 
 ## Resources
 
-GitBook: [book.kubebuilder.com](http://book.kubebuilder.com)
+GitBook: [book.kubebuilder.io](http://book.kubebuilder.io)
 GitHub Repo: [kubernetes-sigs/kubebuilder](https://github.com/kubernetes-sigs/kubebuilder)
 Slack channel: [#kubeuilder](http://slack.k8s.io/#kubebuilder)
 Google Group: [kubebuilder@googlegroups.com](https://groups.google.com/forum/#!forum/kubebuilder)
