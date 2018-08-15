@@ -20,22 +20,22 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 
+	"github.com/Masterminds/semver"
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/util"
 	"github.com/spf13/cobra"
 	"sigs.k8s.io/controller-tools/pkg/scaffold/manager"
 	"sigs.k8s.io/controller-tools/pkg/scaffold/project"
 )
 
-
 type initOptions struct {
-	domain string
-	copyright string
-	bazel bool
+	domain         string
+	copyright      string
+	bazel          bool
 	controllerOnly bool
 	projectVersion string
 	projectOptions
@@ -52,20 +52,19 @@ func AddInit(cmd *cobra.Command) {
 kubebuilder init repo --domain mydomain
 `,
 		Run: func(cmd *cobra.Command, args []string) {
-            o.runInitRepo()
+			o.runInitRepo()
 		},
 	}
 
 	v0comment := "Works only with project-version v0, "
 	initCmd.Flags().StringVar(&o.domain, "domain", "", "domain for the API groups")
-	initCmd.Flags().StringVar(&o.copyright, "copyright", filepath.Join("hack", "boilerplate.go.txt"), v0comment + "Location of copyright boilerplate file.")
-	initCmd.Flags().BoolVar(&o.bazel, "bazel", false, v0comment + "if true, setup Bazel workspace artifacts")
-	initCmd.Flags().BoolVar(&o.controllerOnly, "controller-only", false, v0comment + "if true, setup controller only")
+	initCmd.Flags().StringVar(&o.copyright, "copyright", filepath.Join("hack", "boilerplate.go.txt"), v0comment+"Location of copyright boilerplate file.")
+	initCmd.Flags().BoolVar(&o.bazel, "bazel", false, v0comment+"if true, setup Bazel workspace artifacts")
+	initCmd.Flags().BoolVar(&o.controllerOnly, "controller-only", false, v0comment+"if true, setup controller only")
 	initCmd.Flags().StringVar(&o.projectVersion, "project-version", "v1", "if set to v0, init project with kubebuilder legacy version")
 
-
 	initCmd.Flags().BoolVar(
-		&o.dep, "dep", true,"if specified, determines whether dep will be used.")
+		&o.dep, "dep", true, "if specified, determines whether dep will be used.")
 	o.depFlag = initCmd.Flag("dep")
 
 	o.prj = projectForFlags(initCmd.Flags())
@@ -78,10 +77,8 @@ kubebuilder init repo --domain mydomain
 }
 
 func (o *initOptions) runInitRepo() {
-	version := runtime.Version()
-	if versionCmp(version, "go1.10") < 0 {
-		log.Fatalf("The go version is %v, must be 1.10+", version)
-	}
+	checkGoVersion()
+
 	if !depExists() {
 		log.Fatalf("Dep is not installed. Follow steps at: https://golang.github.io/dep/docs/installation.html")
 	}
@@ -127,6 +124,32 @@ func (o *initOptions) runInitRepo() {
 	createBoilerplate()
 	fmt.Printf("Next: Define a resource with:\n" +
 		"$ kubebuilder create resource\n")
+}
+
+func checkGoVersion() {
+	cmd := exec.Command("go", "version")
+	out, err := cmd.Output()
+	if err != nil {
+		log.Fatalf("Could not execute 'go version': %v", err)
+	}
+
+	split := strings.Split(string(out), " ")
+	if len(split) < 3 {
+		log.Fatalf("Invalid go version: %q", string(out))
+	}
+	goVersion := strings.TrimPrefix(split[2], "go")
+	if ver, err := semver.NewVersion(goVersion); err != nil {
+		if err != nil {
+			log.Fatalf("Invalid go version %q: %v", goVersion, err)
+		}
+		c, err := semver.NewConstraint(">= 1.10")
+		if err != nil {
+			log.Fatal("Invalid constraint: %v", err)
+		}
+		if !c.Check(ver) {
+			log.Fatalf("The go version is %v, must be 1.10+", goVersion)
+		}
+	}
 }
 
 func execute(path, templateName, templateValue string, data interface{}) {
