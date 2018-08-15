@@ -20,7 +20,7 @@
 # - *-gen code generators
 # - reference-docs
 
-FROM golang:1.10-stretch as kubernetes-linux
+FROM golang:1.10.2-stretch as kubernetes-linux
 # Install tools
 RUN apt update
 RUN apt install rsync -y
@@ -28,7 +28,7 @@ RUN go get github.com/jteeuwen/go-bindata/go-bindata
 ENV CGO 0
 ENV DEST /usr/local/kubebuilder/bin/
 RUN mkdir -p $DEST || echo ""
-RUN git clone https://github.com/kubernetes/kubernetes $GOPATH/src/k8s.io/kubernetes --depth=1 -b release-1.10
+RUN git clone https://github.com/kubernetes/kubernetes $GOPATH/src/k8s.io/kubernetes --depth=1 -b release-1.11
 WORKDIR /go/src/k8s.io/kubernetes
 ENV KUBE_BUILD_PLATFORMS linux/amd64
 RUN make WHAT=cmd/kube-apiserver
@@ -38,7 +38,7 @@ RUN cp _output/local/bin/$KUBE_BUILD_PLATFORMS/kube-apiserver $DEST
 RUN cp _output/local/bin/$KUBE_BUILD_PLATFORMS/kube-controller-manager $DEST
 RUN cp _output/local/bin/$KUBE_BUILD_PLATFORMS/kubectl $DEST
 
-FROM golang:1.10-stretch as etcd-linux
+FROM golang:1.10.2-stretch as etcd-linux
 ENV CGO 0
 ENV GOOS linux
 ENV GOARCH amd64
@@ -47,13 +47,13 @@ RUN mkdir -p $DEST || echo ""
 RUN git clone https://github.com/coreos/etcd $GOPATH/src/github.com/coreos/etcd --depth=1
 RUN go build -o $DEST/etcd github.com/coreos/etcd
 
-FROM golang:1.10-stretch as code-generator-linux
+FROM golang:1.10.2-stretch as code-generator-linux
 ENV CGO 0
 ENV GOOS linux
 ENV GOARCH amd64
 ENV DEST /usr/local/kubebuilder/bin/
 RUN mkdir -p $DEST || echo ""
-RUN git clone https://github.com/kubernetes/code-generator $GOPATH/src/k8s.io/code-generator --depth=1 -b release-1.10
+RUN git clone https://github.com/kubernetes/code-generator $GOPATH/src/k8s.io/code-generator --depth=1 -b release-1.11
 RUN go build -o $DEST/client-gen k8s.io/code-generator/cmd/client-gen
 RUN go build -o $DEST/conversion-gen k8s.io/code-generator/cmd/conversion-gen
 RUN go build -o $DEST/deepcopy-gen k8s.io/code-generator/cmd/deepcopy-gen
@@ -62,7 +62,7 @@ RUN go build -o $DEST/informer-gen k8s.io/code-generator/cmd/informer-gen
 RUN go build -o $DEST/lister-gen k8s.io/code-generator/cmd/lister-gen
 RUN go build -o $DEST/openapi-gen k8s.io/code-generator/cmd/openapi-gen
 
-FROM golang:1.10-stretch as reference-docs-linux
+FROM golang:1.10.2-stretch as reference-docs-linux
 ENV CGO 0
 ENV GOOS linux
 ENV GOARCH amd64
@@ -71,7 +71,7 @@ RUN mkdir -p $DEST || echo ""
 RUN git clone https://github.com/kubernetes-incubator/reference-docs $GOPATH/src/github.com/kubernetes-incubator/reference-docs --branch kubebuilder --depth=1
 RUN go build -o $DEST/gen-apidocs github.com/kubernetes-incubator/reference-docs/gen-apidocs
 
-FROM golang:1.10-stretch as linux
+FROM golang:1.10.2-stretch as linux
 RUN mkdir -p /usr/local/kubebuilder/bin/
 COPY --from=etcd-linux /usr/local/kubebuilder/bin/* /usr/local/kubebuilder/bin/
 COPY --from=kubernetes-linux /usr/local/kubebuilder/bin/* /usr/local/kubebuilder/bin/
