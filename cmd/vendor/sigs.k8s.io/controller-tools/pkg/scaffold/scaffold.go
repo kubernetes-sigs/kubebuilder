@@ -133,7 +133,7 @@ func (s *Scaffold) defaultOptions(options *input.Options) error {
 // Execute executes scaffolding the Files
 func (s *Scaffold) Execute(options input.Options, files ...input.File) error {
 	if s.GetWriter == nil {
-		s.GetWriter = util.NewWriteCloser
+		s.GetWriter = (&util.FileWriter{}).WriteCloser
 	}
 
 	if err := s.defaultOptions(&options); err != nil {

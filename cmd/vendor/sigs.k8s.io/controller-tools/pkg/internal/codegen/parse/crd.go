@@ -384,14 +384,12 @@ func getValidation(comment string, props *v1beta1.JSONSchemaProps) {
 	if !strings.HasPrefix(comment, "+kubebuilder:validation:") {
 		return
 	}
-	log.Printf("Doing %s\n", comment)
 	c := strings.Replace(comment, "+kubebuilder:validation:", "", -1)
 	parts := strings.Split(c, "=")
 	if len(parts) != 2 {
 		log.Fatalf("Expected +kubebuilder:validation:<key>=<value> actual: %s", comment)
 		return
 	}
-	log.Printf("Switch %v\n", parts)
 	switch parts[0] {
 	case "Maximum":
 		f, err := strconv.ParseFloat(parts[1], 64)
