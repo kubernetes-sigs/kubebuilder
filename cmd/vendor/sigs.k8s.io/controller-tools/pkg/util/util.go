@@ -22,17 +22,27 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+
+	"github.com/spf13/afero"
 )
 
-// NewWriteCloser returns a WriteCloser to write to given path
-func NewWriteCloser(path string) (io.Writer, error) {
+// FileWriter is a io wrapper to write files
+type FileWriter struct {
+	Fs afero.Fs
+}
+
+// WriteCloser returns a WriteCloser to write to given path
+func (fw *FileWriter) WriteCloser(path string) (io.Writer, error) {
+	if fw.Fs == nil {
+		fw.Fs = afero.NewOsFs()
+	}
 	dir := filepath.Dir(path)
-	err := os.MkdirAll(dir, 0700)
+	err := fw.Fs.MkdirAll(dir, 0700)
 	if err != nil {
 		return nil, err
 	}
 
-	fi, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+	fi, err := fw.Fs.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
 		return nil, err
 	}
@@ -41,8 +51,11 @@ func NewWriteCloser(path string) (io.Writer, error) {
 }
 
 // WriteFile write given content to the file path
-func WriteFile(filePath, content string) error {
-	f, err := NewWriteCloser(filePath)
+func (fw *FileWriter) WriteFile(filePath string, content []byte) error {
+	if fw.Fs == nil {
+		fw.Fs = afero.NewOsFs()
+	}
+	f, err := fw.WriteCloser(filePath)
 	if err != nil {
 		return fmt.Errorf("failed to create %s: %v", filePath, err)
 	}
@@ -55,7 +68,7 @@ func WriteFile(filePath, content string) error {
 		}()
 	}
 
-	_, err = f.Write([]byte(content))
+	_, err = f.Write(content)
 	if err != nil {
 		return fmt.Errorf("failed to write %s: %v", filePath, err)
 	}
