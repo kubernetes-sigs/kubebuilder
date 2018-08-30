@@ -86,7 +86,6 @@ spec:
           type: object
         status:
           type: object
-      type: object
   version: v1beta1
 status:
   acceptedNames:
@@ -184,7 +183,6 @@ spec:
           type: object
         status:
           type: object
-      type: object
   version: v1beta1
 status:
   acceptedNames:
@@ -293,7 +291,6 @@ spec:
           type: object
         status:
           type: object
-      type: object
   version: v1beta1
 status:
   acceptedNames:
@@ -336,7 +333,6 @@ spec:
           type: object
         status:
           type: object
-      type: object
   version: v1beta1
 status:
   acceptedNames:
@@ -371,7 +367,6 @@ spec:
           type: object
         status:
           type: object
-      type: object
   version: v1beta1
 status:
   acceptedNames:

@@ -20,6 +20,6 @@ set -o pipefail
 for p in ./test/projects/*
 do
     if [[ -d "$p" ]]; then
-        go test -v "$p"
+        go test -v -count=1 "$p"
     fi
 done
