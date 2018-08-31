@@ -29,7 +29,8 @@ function generate_crd_resources {
   header_text "editing generated files to simulate a user"
   sed -i -e '/type Bee struct/ i \
   // +kubebuilder:categories=foo,bar\
-  // +kubebuilder:subresource:status
+  // +kubebuilder:subresource:status\
+  // +kubebuilder:subresource:scale
   ' pkg/apis/insect/v1beta1/bee_types.go
 
   sed -i -e '/type BeeController struct {/ i \
@@ -69,6 +70,9 @@ spec:
     plural: bees
   scope: Namespaced
   subresources:
+    scale:
+      specReplicasPath: ""
+      statusReplicasPath: ""
     status: {}
   validation:
     openAPIV3Schema:
@@ -166,6 +170,9 @@ spec:
     plural: bees
   scope: Namespaced
   subresources:
+    scale:
+      specReplicasPath: ""
+      statusReplicasPath: ""
     status: {}
   validation:
     openAPIV3Schema:
@@ -316,6 +323,9 @@ spec:
     plural: bees
   scope: Namespaced
   subresources:
+    scale:
+      specReplicasPath: ""
+      statusReplicasPath: ""
     status: {}
   validation:
     openAPIV3Schema:

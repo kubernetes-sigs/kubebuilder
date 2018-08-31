@@ -26,6 +26,9 @@ const (
 	// StatusSubresource annotates a type as having a status subresource
 	StatusSubresource = "// +kubebuilder:subresource:status"
 
+	// ScaleSubresource annotates a type as having a scale subresource
+	ScaleSubresource = "// +kubebuilder:subresource:scale"
+
 	// Categories annotates a type as belonging to a comma-delimited list of
 	// categories
 	Categories = "// +kubebuilder:categories="

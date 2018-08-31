@@ -135,6 +135,20 @@ func HasStatusSubresource(t *types.Type) bool {
 	return false
 }
 
+// HasScaleSubresource returns true if t is an APIResource annotated with
+// +kubebuilder:subresource:scale.
+func HasScaleSubresource(t *types.Type) bool {
+	if !IsAPIResource(t) {
+		return false
+	}
+	for _, c := range t.CommentLines {
+		if strings.Contains(c, "+kubebuilder:subresource:scale") {
+			return true
+		}
+	}
+	return false
+}
+
 // HasCategories returns true if t is an APIResource annotated with
 // +kubebuilder:categories.
 func HasCategories(t *types.Type) bool {

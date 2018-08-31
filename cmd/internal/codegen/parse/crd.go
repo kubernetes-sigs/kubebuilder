@@ -93,6 +93,13 @@ func (b *APIs) parseCRDs() {
 						resource.HasStatusSubresource = true
 					}
 
+					if HasScaleSubresource(resource.Type) {
+						subresources := &v1beta1.CustomResourceSubresourceScale{}
+
+						resource.CRD.Spec.Subresources.Scale = subresources
+						resource.HasScaleSubresource = true
+					}
+
 					if len(resource.ShortName) > 0 {
 						resource.CRD.Spec.Names.ShortNames = []string{resource.ShortName}
 					}
@@ -351,7 +358,7 @@ var objectTemplate = template.Must(template.New("object-template").Parse(
     },
     {{if .Required}}Required: []string{
         {{ range $k, $v := .Required -}}
-        "{{ $v }}", 
+        "{{ $v }}",
         {{ end -}}
     },{{ end -}}
 }`))
