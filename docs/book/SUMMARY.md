@@ -30,6 +30,7 @@
   * [Running Tests](beyond_basics/running_tests.md)
   * [Generating API Documentation](beyond_basics/generating_documentation.md)
   * [Updating Kubebuilder](beyond_basics/upgrading_kubebuilder.md)
+  * [Dependency Management](beyond_basics/dependencies.md)
 * Controllers
   * [Controllers For Core Resources](beyond_basics/controllers_for_core_resources.md)
   * [Controller Watch Functions](beyond_basics/controller_watches.md)
