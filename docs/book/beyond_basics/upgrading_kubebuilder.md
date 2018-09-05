@@ -35,6 +35,7 @@ Gopkg.toml's without the `# DO NOT MODIFY BELOW THIS LINE.` will be ignored.
 {% sample lang="bash" %}
 ```bash
 kubebuilder update vendor
+dep ensure -v -update sigs.k8s.io/controller-runtime sigs.k8s.io/controller-tools
 ```
 {% endmethod %}
 
