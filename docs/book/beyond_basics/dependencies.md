@@ -49,7 +49,7 @@ Update dependencies for your project to the latest minor and patch versions.
 
 {% sample lang="bash" %}
 ```bash
-dep ensure -update
+dep ensure -update sigs.k8s.io/controller-runtime sigs.k8s.io/controller-tools
 ```
 {% endmethod %}
 
@@ -91,7 +91,7 @@ As of Kubebuilder 1.0.2:
   set of dependencies on Kubernetes libraries and related libraries.
 
 * Once you've updated your dependencies with `kubebuilder update vendor`,
-  you'll be able to run `dep ensure` and `dep ensure --update` to safely
+  you'll be able to run `dep ensure` and `dep ensure --update sigs.k8s.io/controller-runtime sigs.k8s.io/controller-tools` to safely
   update all your dependencies in the future.
 
 * You can depend on controller-runtime to follow [semantic versioning
