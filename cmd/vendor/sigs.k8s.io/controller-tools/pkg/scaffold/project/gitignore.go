@@ -43,6 +43,7 @@ var gitignoreTemplate = `
 *.dll
 *.so
 *.dylib
+bin
 
 # Test binary, build with ` + "`go test -c`" + `
 *.test

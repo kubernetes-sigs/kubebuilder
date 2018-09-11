@@ -29,6 +29,13 @@ import (
 	"k8s.io/gengo/types"
 )
 
+const (
+	specReplicasPath   = "specpath"
+	statusReplicasPath = "statuspath"
+	labelSelectorPath  = "selectorpath"
+	jsonPathError      = "invalid scale path. specpath, statuspath key-value pairs are required, only selectorpath key-value is optinal. For example: // +kubebuilder:subresource:scale:specpath=.spec.replica,statuspath=.status.replica,selectorpath=.spec.Label"
+)
+
 // Options contains the parser options
 type Options struct {
 	SkipMapValidation bool
@@ -130,16 +137,16 @@ func HasSubresource(t *types.Type) bool {
 		return false
 	}
 	for _, c := range t.CommentLines {
-		if strings.Contains(c, "+subresource") {
+		if strings.Contains(c, "subresource") {
 			return true
 		}
 	}
 	return false
 }
 
-// HasStatusSubresource returns true if t is an APIResource annotated with
-// +kubebuilder:subresource:status.
-func HasStatusSubresource(t *types.Type) bool {
+// hasStatusSubresource returns true if t is an APIResource annotated with
+// +kubebuilder:subresource:status
+func hasStatusSubresource(t *types.Type) bool {
 	if !IsAPIResource(t) {
 		return false
 	}
@@ -151,9 +158,23 @@ func HasStatusSubresource(t *types.Type) bool {
 	return false
 }
 
-// HasCategories returns true if t is an APIResource annotated with
-// +kubebuilder:categories.
-func HasCategories(t *types.Type) bool {
+// hasScaleSubresource returns true if t is an APIResource annotated with
+// +kubebuilder:subresource:scale
+func hasScaleSubresource(t *types.Type) bool {
+	if !IsAPIResource(t) {
+		return false
+	}
+	for _, c := range t.CommentLines {
+		if strings.Contains(c, "+kubebuilder:subresource:scale") {
+			return true
+		}
+	}
+	return false
+}
+
+// hasCategories returns true if t is an APIResource annotated with
+// +kubebuilder:categories
+func hasCategories(t *types.Type) bool {
 	if !IsAPIResource(t) {
 		return false
 	}
@@ -264,6 +285,16 @@ func (c Comments) getTags(name, sep string) []string {
 	return tags
 }
 
+// getCategoriesTag returns the value of the +kubebuilder:categories tags
+func getCategoriesTag(c *types.Type) string {
+	comments := Comments(c.CommentLines)
+	resource := comments.getTag("kubebuilder:categories", "=")
+	if len(resource) == 0 {
+		panic(errors.Errorf("Must specify +kubebuilder:categories comment for type %v", c.Name))
+	}
+	return resource
+}
+
 // getDocAnnotation parse annotations of "+kubebuilder:doc:" with tags of "warning" or "doc" for control generating doc config.
 // E.g. +kubebuilder:doc:warning=foo  +kubebuilder:doc:note=bar
 func getDocAnnotation(t *types.Type, tags ...string) map[string]string {
@@ -325,4 +356,42 @@ func checkType(props *v1beta1.JSONSchemaProps, s string, enums *[]v1beta1.JSON) 
 	case "string":
 		*enums = append(*enums, v1beta1.JSON{Raw: []byte(`"` + s + `"`)})
 	}
+}
+
+// Scale subresource requires specpath, statuspath, selectorpath key values, represents for JSONPath of
+// SpecReplicasPath, StatusReplicasPath, LabelSelectorPath separately. e.g.
+// +kubebuilder:subresource:scale:specpath=.spec.replica,statuspath=.status.replica,selectorpath=
+func parseScaleParams(t *types.Type) (map[string]string, error) {
+	jsonPath := make(map[string]string)
+	for _, c := range t.CommentLines {
+		if strings.Contains(c, "+kubebuilder:subresource:scale") {
+			paths := strings.Replace(c, "+kubebuilder:subresource:scale:", "", -1)
+			path := strings.Split(paths, ",")
+			if len(path) < 2 {
+				return nil, fmt.Errorf(jsonPathError)
+			}
+			for _, s := range path {
+				fmt.Printf("\n[debug] %s", s)
+			}
+			for _, s := range path {
+				kv := strings.Split(s, "=")
+				if kv[0] == specReplicasPath || kv[0] == statusReplicasPath || kv[0] == labelSelectorPath {
+					jsonPath[kv[0]] = kv[1]
+				} else {
+					return nil, fmt.Errorf(jsonPathError)
+				}
+			}
+			var ok bool
+			_, ok = jsonPath[specReplicasPath]
+			if !ok {
+				return nil, fmt.Errorf(jsonPathError)
+			}
+			_, ok = jsonPath[statusReplicasPath]
+			if !ok {
+				return nil, fmt.Errorf(jsonPathError)
+			}
+			return jsonPath, nil
+		}
+	}
+	return nil, fmt.Errorf(jsonPathError)
 }

@@ -171,8 +171,6 @@ type APIResource struct {
 	ValidationComments string
 	// DocAnnotation is a map of annotations by name for doc. e.g. warning, notes message
 	DocAnnotation map[string]string
-	// HasStatusSubresource indicates that the resource has a status subresource
-	HasStatusSubresource bool
 	// Categories is a list of categories the resource is part of.
 	Categories []string
 }

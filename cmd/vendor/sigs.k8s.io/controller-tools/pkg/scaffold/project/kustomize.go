@@ -71,8 +71,9 @@ namePrefix: {{.Prefix}}-
 # YAML string, with resources separated by document
 # markers ("---").
 resources:
-- ../rbac/*.yaml
-- ../manager/*.yaml
+- ../rbac/rbac_role.yaml
+- ../rbac/rbac_role_binding.yaml
+- ../manager/manager.yaml
 
 patches:
 - manager_image_patch.yaml
