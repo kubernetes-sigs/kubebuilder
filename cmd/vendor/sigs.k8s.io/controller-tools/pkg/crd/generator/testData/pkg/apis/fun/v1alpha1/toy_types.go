@@ -49,12 +49,15 @@ type ToySpec struct {
 
 	Template v1.PodTemplateSpec       `json:"template"`
 	Claim    v1.PersistentVolumeClaim `json:"claim,omitempty"`
+
+	Replicas *int32 `json:"replicas"`
 }
 
 // ToyStatus defines the observed state of Toy
 type ToyStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	Replicas int32 `json:"replicas"`
 }
 
 // +genclient
@@ -62,6 +65,8 @@ type ToyStatus struct {
 
 // Toy is the Schema for the toys API
 // +k8s:openapi-gen=true
+// +kubebuilder:subresource:status
+// +kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.replicas,selectorpath=
 type Toy struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

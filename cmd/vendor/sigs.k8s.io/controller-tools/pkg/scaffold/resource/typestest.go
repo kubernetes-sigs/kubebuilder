@@ -64,8 +64,19 @@ import (
 )
 
 func TestStorage{{ .Resource.Kind }}(t *testing.T) {
-	key := types.NamespacedName{Name: "foo", Namespace: "default"}
-	created := &{{ .Resource.Kind }}{ObjectMeta: metav1.ObjectMeta{Name: "foo", Namespace: "default"}}
+     key := types.NamespacedName{
+             Name: "foo",
+             {{ if .Resource.Namespaced -}}
+             Namespace: "default",
+             {{ end -}}
+     }
+     created := &{{ .Resource.Kind }}{
+             ObjectMeta: metav1.ObjectMeta{
+                     Name: "foo",
+                     {{ if .Resource.Namespaced -}}
+                     Namespace: "default",
+                     {{ end -}}
+             }}
 	g := gomega.NewGomegaWithT(t)
 
 	// Test Create
