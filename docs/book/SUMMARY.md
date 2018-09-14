@@ -35,6 +35,9 @@
   * [Controllers For Core Resources](beyond_basics/controllers_for_core_resources.md)
   * [Controller Watch Functions](beyond_basics/controller_watches.md)
   * [Creating Events](beyond_basics/creating_events.md)
+* Webhooks
+  * [What is a Webhook](beyond_basics/what_is_a_webhook.md)
+  * [Webhook Example](beyond_basics/sample_webhook.md)
 * Deployment Workflow
   * [Deploying the manager in Cluster](beyond_basics/deploying_controller.md)
 
