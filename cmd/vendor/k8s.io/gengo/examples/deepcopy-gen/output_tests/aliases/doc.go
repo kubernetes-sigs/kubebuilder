@@ -58,7 +58,7 @@ type AliasMap Map
 type AliasInterface Interface
 type AliasAliasInterface AliasInterface
 type AliasInterfaceMap map[string]AliasInterface
-type AliasInterfaceSlice map[string]AliasInterface
+type AliasInterfaceSlice []AliasInterface
 
 // Aliases
 type Ttest struct {

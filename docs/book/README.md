@@ -1,7 +1,3 @@
-{% panel style="info", title="Under Development" %}
-This book is being actively developed.
-{% endpanel %}
-
 **Note:** Impatient readers head straight to [Quick Start](quick_start.md).
 
 *To share this book use the icons in the top-right of the menu.*
@@ -10,7 +6,7 @@ This book is being actively developed.
 
 #### Users of Kubernetes
 
-Users of Kubernetes will develop a deeper understanding Kubernetes through learning
+Users of Kubernetes will develop a deeper understanding of Kubernetes through learning
 the fundamental concepts behind how APIs are designed and implemented.  This book
 will teach readers how to develop their own Kubernetes APIs and the
 principals from which the core Kubernetes APIs are designed.
@@ -43,7 +39,7 @@ Including:
 
 ## Resources
 
-GitBook: [book.kubebuilder.com](http://book.kubebuilder.com)
+GitBook: [book.kubebuilder.io](http://book.kubebuilder.io)
 GitHub Repo: [kubernetes-sigs/kubebuilder](https://github.com/kubernetes-sigs/kubebuilder)
 Slack channel: [#kubeuilder](http://slack.k8s.io/#kubebuilder)
 Google Group: [kubebuilder@googlegroups.com](https://groups.google.com/forum/#!forum/kubebuilder)

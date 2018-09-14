@@ -93,9 +93,10 @@
   revision = "c0656edd0d9eab7c66d1eb0c568f9039345796f7"
 
 [[projects]]
+  branch = "master"
   name = "github.com/golang/glog"
   packages = ["."]
-  revision = "44145f04b68cf362d9c4df2182967c2275eaefed"
+  revision = "23def4e6c14b4da8ac2ed8007337bc5eb5007998"
 
 [[projects]]
   branch = "master"
@@ -176,6 +177,11 @@
   name = "github.com/json-iterator/go"
   packages = ["."]
   revision = "13f86432b882000a51c6e610c620974462691a97"
+
+[[projects]]
+  name = "github.com/kubernetes/repo-infra"
+  packages = ["verify/boilerplate/test"]
+  revision = "3c350a455362b622fe786e63f8f07b2a87f54f7b"
 
 [[projects]]
   branch = "master"
@@ -645,6 +651,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "9c7ea8f6441e0dd5f1368a18de8a19d2b62b23127038b4ad7d9ffdb70639ba80"
+  inputs-digest = "524af08cf1c0a5425c47e202bed17e8788dbf8342454090dd3b60eaf7cd6b047"
   solver-name = "gps-cdcl"
   solver-version = 1

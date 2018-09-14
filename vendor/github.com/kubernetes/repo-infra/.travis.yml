@@ -1,0 +1,28 @@
+dist: trusty
+sudo: required
+
+# Install latest Go and Bazel and set up GOPATH.
+before_install:
+# gimme on travis is too old for .x version resolution, and gimme stable seems broken, too
+- LATEST_GO=$(gimme --known | sort -V | tail -1)
+- eval "$(gimme ${LATEST_GO})"
+- mkdir -p $GOPATH/src/k8s.io
+- mv $TRAVIS_BUILD_DIR $GOPATH/src/k8s.io
+- cd $GOPATH/src/k8s.io/repo-infra
+- echo "deb [arch=amd64] https://storage.googleapis.com/bazel-apt stable jdk1.8" | sudo tee /etc/apt/sources.list.d/bazel.list
+- curl https://bazel.build/bazel-release.pub.gpg | sudo apt-key add -
+- sudo apt-get update
+
+install:
+  - sudo apt-get install bazel
+  - go get -u github.com/alecthomas/gometalinter
+  - go get -u github.com/bazelbuild/buildtools/buildifier
+  - gometalinter --install
+  - go install ./...
+
+script:
+  - verify/verify-boilerplate.sh --rootdir="$GOPATH/src/k8s.io/repo-infra" -v
+  - verify/verify-go-src.sh --rootdir "$GOPATH/src/k8s.io/repo-infra" -v
+  - buildifier -mode=check $(find . -name BUILD -o -name '*.bzl' -type f -not -wholename '*/vendor/*')
+  - kazel --print-diff --validate
+  - bazel build //...

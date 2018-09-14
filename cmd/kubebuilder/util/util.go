@@ -167,3 +167,31 @@ func CheckInstall() {
 			strings.Join(missing, ","))
 	}
 }
+
+func IsNewVersion() bool {
+	_, err := os.Stat("PROJECT")
+	if err != nil {
+		return false
+	}
+
+	return true
+}
+
+func ProjectExist() bool {
+	return IsNewVersion()
+}
+
+func IsProjectNotInitialized() bool {
+	dirs := []string{
+		"cmd",
+		"hack",
+		"pkg",
+		"vendor",
+	}
+	for _, dir := range dirs {
+		if _, err := os.Stat(dir); err == nil {
+			return false
+		}
+	}
+	return true
+}

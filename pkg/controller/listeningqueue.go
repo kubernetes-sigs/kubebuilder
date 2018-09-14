@@ -45,7 +45,7 @@ type listeningQueue struct {
 func (q *listeningQueue) watchChannel(source <-chan string) error {
 	go func() {
 		for msg := range source {
-			q.AddRateLimited(msg)
+			q.Add(msg)
 		}
 	}()
 	return nil

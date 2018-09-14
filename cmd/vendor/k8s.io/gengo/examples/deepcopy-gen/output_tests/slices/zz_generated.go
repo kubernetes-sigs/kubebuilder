@@ -78,6 +78,106 @@ func (in *Ttest) DeepCopyInto(out *Ttest) {
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
+	if in.StringPtr != nil {
+		in, out := &in.StringPtr, &out.StringPtr
+		*out = make([]*string, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(string)
+				**out = **in
+			}
+		}
+	}
+	if in.StringPtrPtr != nil {
+		in, out := &in.StringPtrPtr, &out.StringPtrPtr
+		*out = make([]**string, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(*string)
+				if **in != nil {
+					in, out := *in, *out
+					*out = new(string)
+					**out = **in
+				}
+			}
+		}
+	}
+	if in.Map != nil {
+		in, out := &in.Map, &out.Map
+		*out = make([]map[string]string, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = make(map[string]string, len(*in))
+				for key, val := range *in {
+					(*out)[key] = val
+				}
+			}
+		}
+	}
+	if in.MapPtr != nil {
+		in, out := &in.MapPtr, &out.MapPtr
+		*out = make([]*map[string]string, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(map[string]string)
+				if **in != nil {
+					in, out := *in, *out
+					*out = make(map[string]string, len(*in))
+					for key, val := range *in {
+						(*out)[key] = val
+					}
+				}
+			}
+		}
+	}
+	if in.Slice != nil {
+		in, out := &in.Slice, &out.Slice
+		*out = make([][]string, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = make([]string, len(*in))
+				copy(*out, *in)
+			}
+		}
+	}
+	if in.SlicePtr != nil {
+		in, out := &in.SlicePtr, &out.SlicePtr
+		*out = make([]*[]string, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new([]string)
+				if **in != nil {
+					in, out := *in, *out
+					*out = make([]string, len(*in))
+					copy(*out, *in)
+				}
+			}
+		}
+	}
+	if in.Struct != nil {
+		in, out := &in.Struct, &out.Struct
+		*out = make([]Ttest, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
+	if in.StructPtr != nil {
+		in, out := &in.StructPtr, &out.StructPtr
+		*out = make([]*Ttest, len(*in))
+		for i := range *in {
+			if (*in)[i] != nil {
+				in, out := &(*in)[i], &(*out)[i]
+				*out = new(Ttest)
+				(*in).DeepCopyInto(*out)
+			}
+		}
+	}
 	return
 }
 

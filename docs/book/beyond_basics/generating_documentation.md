@@ -1,7 +1,3 @@
-{% panel style="info", title="Under Development" %}
-This book is being actively developed.
-{% endpanel %}
-
 # Generating API Documentation
 
 Kubebuilder will generate API reference documentation for your APIs with `kubebuilder docs`.  The
