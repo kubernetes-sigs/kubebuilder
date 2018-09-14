@@ -31,6 +31,7 @@ import (
 	"sigs.k8s.io/controller-tools/pkg/scaffold/manager"
 	"sigs.k8s.io/controller-tools/pkg/scaffold/project"
 )
+
 type initOptions struct {
 	domain         string
 	copyright      string
