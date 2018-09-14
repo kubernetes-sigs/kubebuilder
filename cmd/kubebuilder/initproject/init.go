@@ -49,7 +49,7 @@ func AddInit(cmd *cobra.Command) {
 		Short: "Initialize a new project",
 		Long:  `Initialize a new project including vendor/ directory and Go package directories.`,
 		Example: `# Initialize project structure
-kubebuilder init repo --domain mydomain
+kubebuilder init --domain mydomain
 `,
 		Run: func(cmd *cobra.Command, args []string) {
 			o.runInitRepo()
