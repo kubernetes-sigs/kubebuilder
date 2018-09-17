@@ -10,7 +10,7 @@ to simplify building and publishing Kubernetes APIs from scratch.
 
 ### Installalation 
 
-It is strongly recommended that you use a released version. Release binaries are available on the [releases](https://github.com/kubernetes-sigs/kubebuilder/releases) page.
+It is strongly recommended that you use a released v1 version, since v0 release is deprecated and not supported. v1 has different design and implements, which is not compatible with v0. Release binaries are available on the [releases](https://github.com/kubernetes-sigs/kubebuilder/releases) page.
 Follow the [instructions](http://book.kubebuilder.io/getting_started/installation_and_setup.html) to install Kubebuilder.
 
 
