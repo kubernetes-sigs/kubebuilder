@@ -4,7 +4,7 @@
     <head>
         <meta charset="UTF-8">
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
-        <title>Controller Watch Functions · The Kubebuilder Book</title>
+        <title>Webhook Example · The Kubebuilder Book</title>
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta name="description" content="">
         <meta name="generator" content="GitBook 3.2.3">
@@ -69,10 +69,8 @@
     <link rel="shortcut icon" href="../gitbook/images/favicon.ico" type="image/x-icon">
 
     
-    <link rel="next" href="creating_events.html" />
     
-    
-    <link rel="prev" href="controllers_for_core_resources.html" />
+    <link rel="prev" href="what_is_a_webhook.html" />
     
 
     </head>
@@ -478,7 +476,7 @@
             
         </li>
     
-        <li class="chapter active" data-level="4.2.2" data-path="controller_watches.html">
+        <li class="chapter " data-level="4.2.2" data-path="controller_watches.html">
             
                 <a href="controller_watches.html">
             
@@ -536,7 +534,7 @@
             
         </li>
     
-        <li class="chapter " data-level="4.3.2" data-path="sample_webhook.html">
+        <li class="chapter active" data-level="4.3.2" data-path="sample_webhook.html">
             
                 <a href="sample_webhook.html">
             
@@ -636,7 +634,7 @@
     <!-- Title -->
     <h1>
         <i class="fa fa-circle-o-notch fa-spin"></i>
-        <a href=".." >Controller Watch Functions</a>
+        <a href=".." >Webhook Example</a>
     </h1>
 </div>
 
@@ -651,116 +649,189 @@
     
                                 <section class="normal markdown-section">
                                 
-                                <h1 id="controller-watch-functions">Controller Watch Functions</h1>
-<p>This chapter describes how to use the controller package functions to configure Controllers to watch
-Resources.</p>
-<p><a href="https://godoc.org/github.com/kubernetes-sigs/kubebuilder/pkg/controller" target="_blank">Link to reference documentation</a></p>
-<div class="api-method"><div class="api-method-definition"><h2 id="watching-controller-resource">Watching Controller Resource</h2>
-<p>Controllers may watch Resources and trigger Reconcile calls with the key of the
-object from the watch event. </p>
-<p>This example configures a controller to watch for Pod events, and call Reconcile with
-the Pod key.</p>
-<p>If Pod <em>default/foo</em> is created, updated or deleted, then Reconcile will be called with
-<em>namespace: default, name: foo</em></p>
-</div><div class="api-method-code"><div class="api-method-sample" data-lang="go" data-name="Go"><pre><code class="lang-go"><span class="hljs-comment">// Annotation for generating RBAC role to Watch Pods</span>
-<span class="hljs-comment">// +kubebuilder:rbac:groups=&quot;&quot;,resources=pods,verbs=get;watch;list</span>
-</code></pre>
-<pre><code class="lang-go"><span class="hljs-comment">// Watch for Pod events, and enqueue a reconcile.Request to trigger a Reconcile</span>
-err := c.Watch(
-    &amp;source.Kind{Type: &amp;v1.Pod{}},
-    &amp;handler.EnqueueRequestForObject{})
-<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> {
-    <span class="hljs-keyword">return</span> err
+                                <h1 id="webhook-example">Webhook Example</h1>
+<p>This chapter walks through a simple webhook implementation.</p>
+<p>It uses the <a href="https://godoc.org/sigs.k8s.io/controller-runtime/pkg/webhook" target="_blank">controller-runtime</a> libraries to implement
+a Webhook Server and Manager.</p>
+<p>Same as controllers, a Webhook Server is a
+<a href="https://godoc.org/sigs.k8s.io/controller-runtime/pkg/manager#Runnable" target="_blank"><code>Runable</code></a> which needs to be registered to a manager.
+Arbitrary number of <code>Runable</code>s can be registered to a manager,
+so a webhook server can run with other controllers in the same manager.
+They will share the same dependencies provided by the manager. For example, shared cache, client, scheme, etc.</p>
+<h2 id="setup">Setup</h2>
+<h4 id="way-to-deploy-your-webhook-server">Way to Deploy your Webhook Server</h4>
+<p>There are various ways to deploy the webhook server in terms of</p>
+<ol>
+<li>Where the serving certificates live.</li>
+<li>In what environment the webhook server runs, in a pod or directly on a VM, etc.</li>
+<li>If in a pod, on what type of node, worker nodes or master node.</li>
+</ol>
+<p>The recommended way to deploy the webhook server is</p>
+<ol>
+<li>Run the webhook server as a regular pod on worker nodes through a workload API, e.g. Deployment or StatefulSet.</li>
+<li>Put the certificate in a k8s secret in the same namespace as the webhook server</li>
+<li>Mount the secret as a volume in the pod</li>
+<li>Create a k8s service to front the webhook server.</li>
+</ol>
+<h4 id="creating-a-handler">Creating a Handler</h4>
+<div class="api-method"><div class="api-method-definition"><p>The business logic for a Webhook exists in a Handler.
+A Handler implements the <code>admission.Handler</code> interface, which contains a single <code>Handle</code> method.</p>
+<p>If a Handler implements <code>inject.Client</code> and <code>inject.Decoder</code> interfaces,
+the manager will automatically inject the client and the decoder into the Handler.</p>
+<p>Note: The <code>client.Client</code> provided by the manager reads from a cache which is lazily initialized.
+To eagerly initialize the cache, perform a read operation with the client before starting the server.</p>
+<p><code>podAnnotator</code> is a Handler, which implements the <code>admission.Handler</code>, <code>inject.Client</code> and <code>inject.Decoder</code> interfaces.</p>
+<p>Details about how to implement an admission webhook podAnnotator is covered in a later section.</p>
+</div><div class="api-method-code"><div class="api-method-sample" data-lang="go" data-name="Go"><pre><code class="lang-go"><span class="hljs-keyword">type</span> podAnnotator <span class="hljs-keyword">struct</span> {
+    client  client.Client
+    decoder types.Decoder
+}
+
+<span class="hljs-comment">// podAnnotator implements admission.Handler.</span>
+<span class="hljs-keyword">var</span> _ admission.Handler = &amp;podAnnotator{}
+
+<span class="hljs-keyword">func</span> (a *podAnnotator) Handle(ctx context.Context, req types.Request) types.Response {
+    ...
+}
+
+<span class="hljs-comment">// podAnnotator implements inject.Client.</span>
+<span class="hljs-keyword">var</span> _ inject.Client = &amp;podAnnotator{}
+
+<span class="hljs-comment">// InjectClient injects the client into the podAnnotator</span>
+<span class="hljs-keyword">func</span> (a *podAnnotator) InjectClient(c client.Client) error {
+    a.client = c
+    <span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span>
+}
+
+<span class="hljs-comment">// podAnnotator implements inject.Decoder.</span>
+<span class="hljs-keyword">var</span> _ inject.Decoder = &amp;podAnnotator{}
+
+<span class="hljs-comment">// InjectDecoder injects the decoder into the podAnnotator</span>
+<span class="hljs-keyword">func</span> (a *podAnnotator) InjectDecoder(d types.Decoder) error {
+    a.decoder = d
+    <span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span>
 }
 </code></pre>
 </div></div></div>
 
 
-<div class="api-method"><div class="api-method-definition"><h2 id="watching-created-resources">Watching Created Resources</h2>
-<p>Controllers may watch Resources of types they create and trigger Reconcile calls with the key of
-the Owner of the object.</p>
-<p>This example configures a Controller to watch for Pod events, and call Reconcile with
-the Owner ReplicaSet key.  This is done by looking up the object referred to by the Owner reference
-from the watch event object.</p>
+<h4 id="configuring-a-webhook-and-registering-the-handler">Configuring a Webhook and Registering the Handler</h4>
+<div class="api-method"><div class="api-method-definition"><p>A Webhook configures what type of requests the Handler should accept from the apiserver. Options include:</p>
 <ul>
-<li>Define a function to lookup the Owner from the key</li>
-<li>Call <code>WatchControllerOf</code> with the Owned object and the function to lookup the owner</li>
+<li>The type of the Operations (CRUD)</li>
+<li>The type of the Targets (Deployment, Pod, etc)</li>
+<li>The type of the Handler (Mutating, Validating)</li>
 </ul>
-<p>If Pod <em>default/foo-pod</em> was created by ReplicaSet <em>default/foo-rs</em>, and the Pod is
-(re)created, updated or deleted, then Reconcile will be called with <em>namespace: default, name: foo-rs</em></p>
-<p><strong>Note:</strong> This requires adding the following annotations to your Controller struct to ensure the
-correct RBAC rules are in place and informers have been started.</p>
-<pre><code class="lang-go"><span class="hljs-comment">// Annotation to generate RBAC roles to watch and update Pods</span>
-<span class="hljs-comment">// +kubebuilder:rbac:groups=&quot;&quot;,resources=pods,verbs=get;watch;list,create,update,delete</span>
-</code></pre>
-</div><div class="api-method-code"><div class="api-method-sample" data-lang="go" data-name="Go"><pre><code class="lang-go"><span class="hljs-comment">// Watch for Pod events, and enqueue a reconcile.Request for the ReplicaSet in the OwnerReferences</span>
-err := c.Watch(
-    &amp;source.Kind{Type: &amp;corev1.Pod{}},
-    &amp;handler.EnqueueRequestForOwner{
-        IsController: <span class="hljs-literal">true</span>,
-        OwnerType:    &amp;appsv1.ReplicaSet{}})
+<p>When the Server starts, it will register all Webhook Configurations with the apiserver to start accepting and
+routing requests to the Handlers.</p>
+<p><a href="https://godoc.org/sigs.k8s.io/controller-runtime/pkg/webhook/admission/builder" target="_blank">controller-runtime</a> provides a useful package for
+building a webhook.
+You can incrementally set the configuration of a webhook and then invoke <code>Build</code> to complete building a webhook.</p>
+<p>If you want to specify the name and(or) path for your webhook instead of using the default, you can invoke
+<code>Name(&quot;yourname&quot;)</code> and <code>Path(&quot;/yourpath&quot;)</code> respectively.</p>
+</div><div class="api-method-code"><div class="api-method-sample" data-lang="go" data-name="Go"><pre><code class="lang-go">wh, err := builder.NewWebhookBuilder().
+    Mutating().
+    Operations(admissionregistrationv1beta1.Create).
+    ForType(&amp;corev1.Pod{}).
+    Handlers(&amp;podAnnotator{}).
+    WithManager(mgr).
+    Build()
 <span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> {
-    <span class="hljs-keyword">return</span> err
-}
-</code></pre>
-</div></div></div>
-
-<div class="api-method"><div class="api-method-definition"><h2 id="watching-arbitrary-resources">Watching Arbitrary Resources</h2>
-<p>Controllers may watch arbitrary Resources and map them to a key of the Resource managed by the
-controller.  Controllers may even map an event to multiple keys, triggering Reconciles for
-each key.</p>
-<p>Example: To respond to cluster scaling events (e.g. the deletion or addition of Nodes),
-a Controller would watch Nodes and map the watch events to keys of objects managed by
-the controller.</p>
-<p>This simple example configures a Controller to watch for Pod events, and then reconciles objects with
-names derived from the Pod&apos;s name.</p>
-<p>If Pod <em>default/foo</em> is created, updated or deleted, then Reconcile will be called for
-<em>namespace: default, name: foo-parent-1</em> and for <em>namespace: default, name: foo-parent-2</em>.</p>
-<p><strong>Note:</strong> This requires adding the following annotations to your Controller struct to ensure the
-correct RBAC rules are in place and informers have been started.</p>
-<pre><code class="lang-go"><span class="hljs-comment">// +kubebuilder:rbac:groups=&quot;&quot;,resources=pods,verbs=get;watch;list</span>
-</code></pre>
-</div><div class="api-method-code"><div class="api-method-sample" data-lang="go" data-name="Go"><pre><code class="lang-go"><span class="hljs-comment">// Define a mapping from the object in the event to one or more</span>
-<span class="hljs-comment">// objects to Reconcile</span>
-mapFn := handler.ToRequestsFunc(
-    <span class="hljs-keyword">func</span>(a handler.MapObject) []reconcile.Request {
-        <span class="hljs-keyword">return</span> []reconcile.Request{
-            {NamespacedName: types.NamespacedName{
-                Name:      a.Meta.GetName() + <span class="hljs-string">&quot;-1&quot;</span>,
-                Namespace: a.Meta.GetNamespace(),
-            }},
-            {NamespacedName: types.NamespacedName{
-                Name:      a.Meta.GetName() + <span class="hljs-string">&quot;-2&quot;</span>,
-                Namespace: a.Meta.GetNamespace(),
-            }},
-        }
-    })
-<span class="hljs-comment">// Watch Deployments and trigger Reconciles for objects</span>
-<span class="hljs-comment">// mapped from the Deployment in the event</span>
-err := c.Watch(
-        &amp;source.Kind{Type: &amp;appsv1.Deployment{}},
-        &amp;handler.EnqueueRequestsFromMapFunc{
-            ToRequests: mapFn,
-        })
-<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> {
-    <span class="hljs-keyword">return</span> err
+    <span class="hljs-comment">// handle error</span>
 }
 </code></pre>
 </div></div></div>
 
 
-<div class="api-method"><div class="api-method-definition"><h2 id="watching-channels">Watching Channels</h2>
-<p>Controllers may trigger Reconcile for events written to Channels.  This is useful if the Controller
-needs to trigger a Reconcile in response to something other than a create / update / delete event
-to a Kubernetes object.  Note: in most situations this case is better handled by updating a Kubernetes
-object with the external state that would trigger the Reconcile.</p>
-</div><div class="api-method-code"><div class="api-method-sample" data-lang="go" data-name="Go"><pre><code class="lang-go">events := <span class="hljs-built_in">make</span>(<span class="hljs-keyword">chan</span> event.GenericEvent)
-err := ctrl.Watch(
-    &amp;source.Channel{Source: events},
-    &amp;handler.EnqueueRequestForObject{},
-)
+<h4 id="creating-a-server">Creating a Server</h4>
+<div class="api-method"><div class="api-method-definition"><p>A Server registers Webhook Configuration with the apiserver and creates an HTTP server to route requests to the handlers.</p>
+<p>The server is behind a Kubernetes Service and provides a certificate to the apiserver when serving requests.</p>
+<p>The Server depends on a Kubernetes Secret containing this certificate to be mounted under <code>CertDir</code>.</p>
+<p>If the Secret is empty, during bootstrapping the Server will generate a certificate and write it into the Secret.</p>
+<p>A new webhook server can be created by invoking <code>webhook.NewServer</code>.
+The Server will be registered to the provided manager.
+You can specify <code>Port</code>, <code>CertDir</code> and various <code>BootstrapOptions</code>.
+For the full list of Server options, please see <a href="https://godoc.org/sigs.k8s.io/controller-runtime/pkg/webhook" target="_blank">GoDoc</a>.</p>
+</div><div class="api-method-code"><div class="api-method-sample" data-lang="go" data-name="Go"><pre><code class="lang-go">svr, err := webhook.NewServer(<span class="hljs-string">&quot;foo-admission-server&quot;</span>, mgr, webhook.ServerOptions{
+    CertDir: <span class="hljs-string">&quot;/tmp/cert&quot;</span>,
+    BootstrapOptions: &amp;webhook.BootstrapOptions{
+        Secret: &amp;types.NamespacedName{
+            Namespace: <span class="hljs-string">&quot;default&quot;</span>,
+            Name:      <span class="hljs-string">&quot;foo-admission-server-secret&quot;</span>,
+        },
+
+        Service: &amp;webhook.Service{
+            Namespace: <span class="hljs-string">&quot;default&quot;</span>,
+            Name:      <span class="hljs-string">&quot;foo-admission-server-service&quot;</span>,
+            <span class="hljs-comment">// Selectors should select the pods that runs this webhook server.</span>
+            Selectors: <span class="hljs-keyword">map</span>[<span class="hljs-keyword">string</span>]<span class="hljs-keyword">string</span>{
+                <span class="hljs-string">&quot;app&quot;</span>: <span class="hljs-string">&quot;foo-admission-server&quot;</span>,
+            },
+        },
+    },
+})
 <span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> {
-    <span class="hljs-keyword">return</span> err
+    <span class="hljs-comment">// handle error</span>
+}
+</code></pre>
+</div></div></div>
+
+<h4 id="registering-a-webhook-with-the-server">Registering a Webhook with the Server</h4>
+<p>You can register webhook(s) in the webhook server by invoking <code>svr.Register(wh)</code>.</p>
+<h2 id="implementing-webhook-handler">Implementing Webhook Handler</h2>
+<h4 id="implementing-the-handler-business-logic">Implementing the Handler Business Logic</h4>
+<div class="api-method"><div class="api-method-definition"><p><code>decoder types.Decoder</code> is a decoder that knows how the decode all core type and your CRD types.</p>
+<p><code>client client.Client</code> is a client that knows how to talk to the API server.</p>
+<p>The guideline of returning HTTP status code is that:</p>
+<ul>
+<li>If the server decides to admit the request, it should return 200 and set
+<a href="https://github.com/kubernetes/api/blob/f456898a08e4bbc5891694118f3819f324de12ff/admission/v1beta1/types.go#L86-L87" target="_blank"><code>Allowed</code></a>
+to <code>true</code>.</li>
+<li>If the server rejects the request due to an admission policy reason, it should return 200, set
+<a href="https://github.com/kubernetes/api/blob/f456898a08e4bbc5891694118f3819f324de12ff/admission/v1beta1/types.go#L86-L87" target="_blank"><code>Allowed</code></a>
+to <code>false</code> and provide an informational message as reason.</li>
+<li>If the request is not well formatted, the server should reject it with 400 (Bad Request) and an error message.</li>
+<li>If the server encounters an unexpected error during processing, it should reject the request with 500 (Internal Error).</li>
+</ul>
+<p><code>controller-runtime</code> provides various helper methods for constructing Response.</p>
+<ul>
+<li><code>ErrorResponse</code> for rejecting a request due to an error.</li>
+<li><code>PatchResponse</code> for mutating webook to admit a request with patches.</li>
+<li><code>ValidationResponse</code> for admitting or rejecting a request with a reason message.</li>
+</ul>
+</div><div class="api-method-code"><div class="api-method-sample" data-lang="go" data-name="Go"><pre><code class="lang-go"><span class="hljs-keyword">type</span> podAnnotator <span class="hljs-keyword">struct</span> {
+    client  client.Client
+    decoder types.Decoder
+}
+
+<span class="hljs-comment">// podAnnotator Iimplements admission.Handler.</span>
+<span class="hljs-keyword">var</span> _ admission.Handler = &amp;podAnnotator{}
+
+<span class="hljs-comment">// podAnnotator adds an annotation to every incoming pods.</span>
+<span class="hljs-keyword">func</span> (a *podAnnotator) Handle(ctx context.Context, req types.Request) types.Response {
+    pod := &amp;corev1.Pod{}
+
+    err := a.decoder.Decode(req, pod)
+    <span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> {
+        <span class="hljs-keyword">return</span> admission.ErrorResponse(http.StatusBadRequest, err)
+    }
+    <span class="hljs-built_in">copy</span> := pod.DeepCopy()
+
+    err = a.mutatePodsFn(ctx, <span class="hljs-built_in">copy</span>)
+    <span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> {
+        <span class="hljs-keyword">return</span> admission.ErrorResponse(http.StatusInternalServerError, err)
+    }
+    <span class="hljs-comment">// admission.PatchResponse generates a Response containing patches.</span>
+    <span class="hljs-keyword">return</span> admission.PatchResponse(pod, <span class="hljs-built_in">copy</span>)
+}
+
+<span class="hljs-comment">// mutatePodsFn add an annotation to the given pod</span>
+<span class="hljs-keyword">func</span> (a *podAnnotator) mutatePodsFn(ctx context.Context, pod *corev1.Pod) error {
+    <span class="hljs-keyword">if</span> pod.Annotations == <span class="hljs-literal">nil</span> {
+        pod.Annotations = <span class="hljs-keyword">map</span>[<span class="hljs-keyword">string</span>]<span class="hljs-keyword">string</span>{}
+    }
+    pod.Annotations[<span class="hljs-string">&quot;example-mutating-admission-webhook&quot;</span>] = <span class="hljs-string">&quot;foo&quot;</span>
+    <span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span>
 }
 </code></pre>
 </div></div></div>
@@ -797,7 +868,7 @@ err := ctrl.Watch(
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"Controller Watch Functions","level":"4.2.2","depth":2,"next":{"title":"Creating Events","level":"4.2.3","depth":2,"path":"beyond_basics/creating_events.md","ref":"beyond_basics/creating_events.md","articles":[]},"previous":{"title":"Controllers For Core Resources","level":"4.2.1","depth":2,"path":"beyond_basics/controllers_for_core_resources.md","ref":"beyond_basics/controllers_for_core_resources.md","articles":[]},"dir":"ltr"},"config":{"plugins":["theme-api","panel","sequence-diagrams","ga"],"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"panel":{},"search":{},"sequence-diagrams":{"theme":"simple"},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"highlight":{},"theme-api":{"languages":[],"split":true,"theme":"light"},"ga":{"configuration":"auto","token":"UA-119864590-1"},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","author":"Phillip Wittrock","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"The Kubebuilder Book","gitbook":">= 3.0.0"},"file":{"path":"beyond_basics/controller_watches.md","mtime":"2018-09-07T23:59:20.162Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-09-18T16:40:16.564Z"},"basePath":"..","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"Webhook Example","level":"4.3.2","depth":2,"next":{"title":"Deployment Workflow","level":"4.4","depth":1,"ref":"","articles":[{"title":"Deploying the manager in Cluster","level":"4.4.1","depth":2,"path":"beyond_basics/deploying_controller.md","ref":"beyond_basics/deploying_controller.md","articles":[]}]},"previous":{"title":"What is a Webhook","level":"4.3.1","depth":2,"path":"beyond_basics/what_is_a_webhook.md","ref":"beyond_basics/what_is_a_webhook.md","articles":[]},"dir":"ltr"},"config":{"plugins":["theme-api","panel","sequence-diagrams","ga"],"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"panel":{},"search":{},"sequence-diagrams":{"theme":"simple"},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"highlight":{},"theme-api":{"languages":[],"split":true,"theme":"light"},"ga":{"configuration":"auto","token":"UA-119864590-1"},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","author":"Phillip Wittrock","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"The Kubebuilder Book","gitbook":">= 3.0.0"},"file":{"path":"beyond_basics/sample_webhook.md","mtime":"2018-09-18T16:39:48.124Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-09-18T16:40:16.564Z"},"basePath":"..","book":{"language":""}});
         });
     </script>
 </div>
