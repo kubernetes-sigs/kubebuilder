@@ -4,7 +4,7 @@
     <head>
         <meta charset="UTF-8">
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
-        <title>Controller Watch Functions · The Kubebuilder Book</title>
+        <title>Dependency Management · The Kubebuilder Book</title>
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta name="description" content="">
         <meta name="generator" content="GitBook 3.2.3">
@@ -69,10 +69,8 @@
     <link rel="shortcut icon" href="../gitbook/images/favicon.ico" type="image/x-icon">
 
     
-    <link rel="next" href="creating_events.html" />
     
-    
-    <link rel="prev" href="controllers_for_core_resources.html" />
+    <link rel="prev" href="upgrading_kubebuilder.html" />
     
 
     </head>
@@ -433,7 +431,7 @@
             
         </li>
     
-        <li class="chapter " data-level="4.1.5" data-path="dependencies.html">
+        <li class="chapter active" data-level="4.1.5" data-path="dependencies.html">
             
                 <a href="dependencies.html">
             
@@ -478,7 +476,7 @@
             
         </li>
     
-        <li class="chapter active" data-level="4.2.2" data-path="controller_watches.html">
+        <li class="chapter " data-level="4.2.2" data-path="controller_watches.html">
             
                 <a href="controller_watches.html">
             
@@ -636,7 +634,7 @@
     <!-- Title -->
     <h1>
         <i class="fa fa-circle-o-notch fa-spin"></i>
-        <a href=".." >Controller Watch Functions</a>
+        <a href=".." >Dependency Management</a>
     </h1>
 </div>
 
@@ -651,119 +649,138 @@
     
                                 <section class="normal markdown-section">
                                 
-                                <h1 id="controller-watch-functions">Controller Watch Functions</h1>
-<p>This chapter describes how to use the controller package functions to configure Controllers to watch
-Resources.</p>
-<p><a href="https://godoc.org/github.com/kubernetes-sigs/kubebuilder/pkg/controller" target="_blank">Link to reference documentation</a></p>
-<div class="api-method"><div class="api-method-definition"><h2 id="watching-controller-resource">Watching Controller Resource</h2>
-<p>Controllers may watch Resources and trigger Reconcile calls with the key of the
-object from the watch event. </p>
-<p>This example configures a controller to watch for Pod events, and call Reconcile with
-the Pod key.</p>
-<p>If Pod <em>default/foo</em> is created, updated or deleted, then Reconcile will be called with
-<em>namespace: default, name: foo</em></p>
-</div><div class="api-method-code"><div class="api-method-sample" data-lang="go" data-name="Go"><pre><code class="lang-go"><span class="hljs-comment">// Annotation for generating RBAC role to Watch Pods</span>
-<span class="hljs-comment">// +kubebuilder:rbac:groups=&quot;&quot;,resources=pods,verbs=get;watch;list</span>
-</code></pre>
-<pre><code class="lang-go"><span class="hljs-comment">// Watch for Pod events, and enqueue a reconcile.Request to trigger a Reconcile</span>
-err := c.Watch(
-    &amp;source.Kind{Type: &amp;v1.Pod{}},
-    &amp;handler.EnqueueRequestForObject{})
-<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> {
-    <span class="hljs-keyword">return</span> err
-}
+                                <h1 id="dependency-management">Dependency Management</h1>
+<p>Kubebuilder uses <a href="https://golang.github.io/dep" target="_blank">dep</a> to manage dependencies.
+Different dependency management tasks can be done using the <code>dep ensure</code>
+command.</p>
+<h2 id="adding-new-dependencies">Adding new dependencies</h2>
+<p><div class="panel panel-warning"><div class="panel-heading"><div class="panel-icon"><i class="icon-warning"></i></div><div class="panel-title">Kubernetes Dependencies</div></div><div class="panel-content"><p>Kubebuilder-generated projects depends on a number of Kubernetes
+dependencies internally. Kubebuilder (using the controller-runtime
+library) makes sure that the parts of these dependencies that are exposed
+in the Kubebuilder API remain stable.</p>
+<p>It&apos;s recommended not to make use of most of these libraries directly, since
+they change frequently in incompatible ways.  The <code>k8s.io/api</code> repository is
+the exception to this, and it&apos;s reccomended that you rely on the version that
+<code>kubebuilder</code> requires, instead of listing it as a direct dependency in
+<code>Gopkg.toml</code>.</p>
+<p>However, if you do add direct dependencies on any of these libraries yourself,
+be aware that you may encounter dependency conflicts. See <a href="#the-problem-with-kubernetes-libraries">the problem with
+kubernetes libraries</a> below for more
+information.</p>
+</div></div></p>
+<div class="api-method"><div class="api-method-definition"><p>Dep manages dependency constraints using the <code>Gopkg.toml</code> file.  You can add
+new dependencies by adding new <code>[[constraint]]</code> stanzas to that file.
+Alternatively, if you&apos;re <a href="upgrading_kubebuilder.html#by-hand">not using <code>kubebuilder
+update</code></a>, you can use the <code>dep ensure -add</code>
+command to add new dependencies to your <code>Gopkg.toml</code>.</p>
+</div><div class="api-method-code"><div class="api-method-sample" data-lang="bash" data-name="Bash"><pre><code class="lang-bash"><span class="hljs-comment"># edit Gopkg.toml OR perform the following:</span>
+dep ensure -add github.com/pkg/errors
 </code></pre>
 </div></div></div>
 
+<h2 id="updating-existing-dependencies">Updating existing dependencies</h2>
+<div class="api-method"><div class="api-method-definition"><p>Update dependencies for your project to the latest minor and patch versions.</p>
+</div><div class="api-method-code"><div class="api-method-sample" data-lang="bash" data-name="Bash"><pre><code class="lang-bash">dep ensure -update sigs.k8s.io/controller-runtime sigs.k8s.io/controller-tools
+</code></pre>
+</div></div></div>
 
-<div class="api-method"><div class="api-method-definition"><h2 id="watching-created-resources">Watching Created Resources</h2>
-<p>Controllers may watch Resources of types they create and trigger Reconcile calls with the key of
-the Owner of the object.</p>
-<p>This example configures a Controller to watch for Pod events, and call Reconcile with
-the Owner ReplicaSet key.  This is done by looking up the object referred to by the Owner reference
-from the watch event object.</p>
+<h2 id="repopulating-your-vendor-directory">Repopulating your vendor directory</h2>
+<div class="api-method"><div class="api-method-definition"><p>Dependency source code is stored in the vendor directory.  If it ever gets
+deleted, you can repopulate it using the exact dependency versions stored in
+<code>Gopkg.lock</code>.</p>
+</div><div class="api-method-code"><div class="api-method-sample" data-lang="bash" data-name="Bash"><pre><code class="lang-bash">dep ensure
+</code></pre>
+</div></div></div>
+
+<h2 id="how-kubebuilders-dependencies-work">How Kubebuilder&apos;s Dependencies Work</h2>
+<p><div class="panel panel-warning"><div class="panel-heading"><div class="panel-icon"><i class="icon-warning"></i></div><div class="panel-title">Under the Hood</div></div><div class="panel-content"><p>The information in this section details how Kubebuilder&apos;s dependency graph
+works.  It&apos;s not necessary for day-to-day use of Kubebuilder, but can be useful
+if you want to understand how a particular version of Kubebuilder relates to
+a particular version of Kubernetes.</p>
+</div></div></p>
+<h3 id="tldr">TL;DR</h3>
+<p>As of Kubebuilder 1.0.2:</p>
 <ul>
-<li>Define a function to lookup the Owner from the key</li>
-<li>Call <code>WatchControllerOf</code> with the Owned object and the function to lookup the owner</li>
+<li><p>Projects generated with Kubebuilder list a semantic version of
+controller-runtime and controller-tools as their only direct
+dependencies. All other Kubernetes-related libraries are transative
+dependencies.</p>
+</li>
+<li><p>controller-runtime and controller-tools each list a specific, identical
+set of dependencies on Kubernetes libraries and related libraries.</p>
+</li>
+<li><p>Once you&apos;ve updated your dependencies with <code>kubebuilder update vendor</code>,
+you&apos;ll be able to run <code>dep ensure</code> and <code>dep ensure --update sigs.k8s.io/controller-runtime sigs.k8s.io/controller-tools</code> to safely
+update all your dependencies in the future.</p>
+</li>
+<li><p>You can depend on controller-runtime to follow <a href="https://semver.org" target="_blank">semantic versioning
+guarantees</a> -- we won&apos;t break your code without
+introducing a new major version, for both the interfaces in
+controller-runtime, and the bits of the kubernetes libraries that
+controller-runtime actually exposes.</p>
+</li>
 </ul>
-<p>If Pod <em>default/foo-pod</em> was created by ReplicaSet <em>default/foo-rs</em>, and the Pod is
-(re)created, updated or deleted, then Reconcile will be called with <em>namespace: default, name: foo-rs</em></p>
-<p><strong>Note:</strong> This requires adding the following annotations to your Controller struct to ensure the
-correct RBAC rules are in place and informers have been started.</p>
-<pre><code class="lang-go"><span class="hljs-comment">// Annotation to generate RBAC roles to watch and update Pods</span>
-<span class="hljs-comment">// +kubebuilder:rbac:groups=&quot;&quot;,resources=pods,verbs=get;watch;list,create,update,delete</span>
-</code></pre>
-</div><div class="api-method-code"><div class="api-method-sample" data-lang="go" data-name="Go"><pre><code class="lang-go"><span class="hljs-comment">// Watch for Pod events, and enqueue a reconcile.Request for the ReplicaSet in the OwnerReferences</span>
-err := c.Watch(
-    &amp;source.Kind{Type: &amp;corev1.Pod{}},
-    &amp;handler.EnqueueRequestForOwner{
-        IsController: <span class="hljs-literal">true</span>,
-        OwnerType:    &amp;appsv1.ReplicaSet{}})
-<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> {
-    <span class="hljs-keyword">return</span> err
-}
-</code></pre>
-</div></div></div>
-
-<div class="api-method"><div class="api-method-definition"><h2 id="watching-arbitrary-resources">Watching Arbitrary Resources</h2>
-<p>Controllers may watch arbitrary Resources and map them to a key of the Resource managed by the
-controller.  Controllers may even map an event to multiple keys, triggering Reconciles for
-each key.</p>
-<p>Example: To respond to cluster scaling events (e.g. the deletion or addition of Nodes),
-a Controller would watch Nodes and map the watch events to keys of objects managed by
-the controller.</p>
-<p>This simple example configures a Controller to watch for Pod events, and then reconciles objects with
-names derived from the Pod&apos;s name.</p>
-<p>If Pod <em>default/foo</em> is created, updated or deleted, then Reconcile will be called for
-<em>namespace: default, name: foo-parent-1</em> and for <em>namespace: default, name: foo-parent-2</em>.</p>
-<p><strong>Note:</strong> This requires adding the following annotations to your Controller struct to ensure the
-correct RBAC rules are in place and informers have been started.</p>
-<pre><code class="lang-go"><span class="hljs-comment">// +kubebuilder:rbac:groups=&quot;&quot;,resources=pods,verbs=get;watch;list</span>
-</code></pre>
-</div><div class="api-method-code"><div class="api-method-sample" data-lang="go" data-name="Go"><pre><code class="lang-go"><span class="hljs-comment">// Define a mapping from the object in the event to one or more</span>
-<span class="hljs-comment">// objects to Reconcile</span>
-mapFn := handler.ToRequestsFunc(
-    <span class="hljs-keyword">func</span>(a handler.MapObject) []reconcile.Request {
-        <span class="hljs-keyword">return</span> []reconcile.Request{
-            {NamespacedName: types.NamespacedName{
-                Name:      a.Meta.GetName() + <span class="hljs-string">&quot;-1&quot;</span>,
-                Namespace: a.Meta.GetNamespace(),
-            }},
-            {NamespacedName: types.NamespacedName{
-                Name:      a.Meta.GetName() + <span class="hljs-string">&quot;-2&quot;</span>,
-                Namespace: a.Meta.GetNamespace(),
-            }},
-        }
-    })
-<span class="hljs-comment">// Watch Deployments and trigger Reconciles for objects</span>
-<span class="hljs-comment">// mapped from the Deployment in the event</span>
-err := c.Watch(
-        &amp;source.Kind{Type: &amp;appsv1.Deployment{}},
-        &amp;handler.EnqueueRequestsFromMapFunc{
-            ToRequests: mapFn,
-        })
-<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> {
-    <span class="hljs-keyword">return</span> err
-}
-</code></pre>
-</div></div></div>
-
-
-<div class="api-method"><div class="api-method-definition"><h2 id="watching-channels">Watching Channels</h2>
-<p>Controllers may trigger Reconcile for events written to Channels.  This is useful if the Controller
-needs to trigger a Reconcile in response to something other than a create / update / delete event
-to a Kubernetes object.  Note: in most situations this case is better handled by updating a Kubernetes
-object with the external state that would trigger the Reconcile.</p>
-</div><div class="api-method-code"><div class="api-method-sample" data-lang="go" data-name="Go"><pre><code class="lang-go">events := <span class="hljs-built_in">make</span>(<span class="hljs-keyword">chan</span> event.GenericEvent)
-err := ctrl.Watch(
-    &amp;source.Channel{Source: events},
-    &amp;handler.EnqueueRequestForObject{},
-)
-<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> {
-    <span class="hljs-keyword">return</span> err
-}
-</code></pre>
-</div></div></div>
+<h3 id="the-problem-with-kubernetes-libraries">The Problem with Kubernetes libraries</h3>
+<p>The kubernetes project exports a collection of libraries (which we&apos;ll call
+the <strong>k8s-deps</strong> from now on) that expose common functionality used when
+building applications that consume Kubernetes APIs (e.g. clients,
+informers, etc).  Due to the way Kubrenetes is versioned
+(non-semantically), all of these dependencies must closely match --
+differing versions can cause strange compilation or runtime errors.</p>
+<p>Beyond this, these libraries have their own set of dependencies which are
+not always the latest versions, or are occaisionally in-between versions.</p>
+<p>Collecting the correct set of dependencies for any given Kubernetes
+project can thus be tricky.</p>
+<h3 id="using-prebaked-manifests-kubebuilder-pre-102">Using Prebaked Manifests (Kubebuilder pre-1.0.2)</h3>
+<p>Before version 1.0.2, Kubebuilder shipped a pre-baked manifest of the
+correct dependencies.  When scaffolding out at new project using
+<code>kubebuilder init</code> (a <strong>kb-project</strong>), it would copy over a <code>Gopkg.toml</code>
+file containing the exact dependency versions required for the project
+(which could then be used by <code>dep</code> dependency management tool to actually
+fetch the dependencies).</p>
+<p>In addition to the Kubernetes dependencies required, this also specified
+that all kb-projects use the master branch of the <strong>controller-runtime</strong>
+library, which provides the abstractions that Kubebuilder is built upon.
+Because controller-runtime wraps and consumes Kubernetes, it <em>also</em> needs
+specific versions of the k8s-deps, and those version <em>must</em> match the ones
+listed in the kb-project&apos;s Gopkg.toml, otherwise we&apos;d have conflicting
+dependencies.</p>
+<h4 id="the-problem-with-prebaked-manifests">The Problem with Prebaked Manifests</h4>
+<p>Using the master branch as the target version of controller-runtime made
+it impossible to make breaking changes to controller-runtime.  However,
+even when using a specific version of controller-runtime, it&apos;s still
+difficult to make changes.</p>
+<p>Since kb-projects must use an identical set of dependencies to
+controller-runtime, any update to the controller-runtime dependencies
+(say, to pull in a new feature) would have caused immediate dependency
+version conflicts.  Effectively, any update to the dependencies had to be
+treated as a major version revision, and there would have been no way to
+tell the difference between &quot;this release includes breaking API changes&quot;
+and &quot;this release simply switches to a newer version of the k8s-deps&quot;.</p>
+<h3 id="transitive-dependencies-kubebuilder-102">Transitive Dependencies (Kubebuilder 1.0.2+)</h3>
+<p>As noted above, any dependency version in kb-projects must match
+dependency versions listed in controller-runtime, exactly. Furthermore, it
+turns out, by design, the set of k8s-deps used in controller-runtime is
+a superset of the set of dependencies actually imported by kb-projects.</p>
+<p>Therefore, in kb-projects generated with Kubebuilder 1.0.2+, no
+dependencies are listed besides controller-runtime (and controller-tools).
+All of the k8s-deps become transitive dependencies, whose versions are
+determined when <code>dep</code> (the dependency management tool) looks at the
+versions required by controller-runtime.</p>
+<p>controller-runtime is semantically versioned, so any changes to either the
+interfaces in controller-runtime, or the pieces of the k8s-deps that are
+exposed as part of those interfaces, means a new major version of
+controller-runtime will be released.  Any other changes (new features, bug
+fixes, updates to k8s-deps which don&apos;t break interfaces) yield minor or
+patch versions (as per <a href="https://semver.org" target="_blank">semver</a>), which can easily and
+safely be updated to by kb-projects.</p>
+<h4 id="controller-tools-dependencies">controller-tools Dependencies</h4>
+<p>controller-tools is the library used to generate CRD and RBAC manifests
+for kb-projects. With Kubebuilder 1.0.2+, it does not directly depend on
+controller-runtime, but shares the same set of dependencies.  It therefore
+must be updated in lockstep with controller-runtime.  This is mostly
+a concern of the controller-tools/controller-runtime maintainers, and will
+not affect users.  Like controller-runtime, controller-tools uses semver.</p>
 
                                 
                                 </section>
@@ -797,7 +814,7 @@ err := ctrl.Watch(
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"Controller Watch Functions","level":"4.2.2","depth":2,"next":{"title":"Creating Events","level":"4.2.3","depth":2,"path":"beyond_basics/creating_events.md","ref":"beyond_basics/creating_events.md","articles":[]},"previous":{"title":"Controllers For Core Resources","level":"4.2.1","depth":2,"path":"beyond_basics/controllers_for_core_resources.md","ref":"beyond_basics/controllers_for_core_resources.md","articles":[]},"dir":"ltr"},"config":{"plugins":["theme-api","panel","sequence-diagrams","ga"],"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"panel":{},"search":{},"sequence-diagrams":{"theme":"simple"},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"highlight":{},"theme-api":{"languages":[],"split":true,"theme":"light"},"ga":{"configuration":"auto","token":"UA-119864590-1"},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","author":"Phillip Wittrock","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"The Kubebuilder Book","gitbook":">= 3.0.0"},"file":{"path":"beyond_basics/controller_watches.md","mtime":"2018-09-07T23:59:20.162Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-09-18T16:40:16.564Z"},"basePath":"..","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"Dependency Management","level":"4.1.5","depth":2,"next":{"title":"Controllers","level":"4.2","depth":1,"ref":"","articles":[{"title":"Controllers For Core Resources","level":"4.2.1","depth":2,"path":"beyond_basics/controllers_for_core_resources.md","ref":"beyond_basics/controllers_for_core_resources.md","articles":[]},{"title":"Controller Watch Functions","level":"4.2.2","depth":2,"path":"beyond_basics/controller_watches.md","ref":"beyond_basics/controller_watches.md","articles":[]},{"title":"Creating Events","level":"4.2.3","depth":2,"path":"beyond_basics/creating_events.md","ref":"beyond_basics/creating_events.md","articles":[]}]},"previous":{"title":"Updating Kubebuilder","level":"4.1.4","depth":2,"path":"beyond_basics/upgrading_kubebuilder.md","ref":"beyond_basics/upgrading_kubebuilder.md","articles":[]},"dir":"ltr"},"config":{"plugins":["theme-api","panel","sequence-diagrams","ga"],"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"panel":{},"search":{},"sequence-diagrams":{"theme":"simple"},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"highlight":{},"theme-api":{"languages":[],"split":true,"theme":"light"},"ga":{"configuration":"auto","token":"UA-119864590-1"},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","author":"Phillip Wittrock","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"The Kubebuilder Book","gitbook":">= 3.0.0"},"file":{"path":"beyond_basics/dependencies.md","mtime":"2018-09-07T23:59:20.162Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-09-18T16:40:16.564Z"},"basePath":"..","book":{"language":""}});
         });
     </script>
 </div>

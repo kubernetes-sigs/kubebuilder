@@ -4,7 +4,7 @@
     <head>
         <meta charset="UTF-8">
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
-        <title>Controller Watch Functions · The Kubebuilder Book</title>
+        <title>What is a Webhook · The Kubebuilder Book</title>
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta name="description" content="">
         <meta name="generator" content="GitBook 3.2.3">
@@ -69,10 +69,8 @@
     <link rel="shortcut icon" href="../gitbook/images/favicon.ico" type="image/x-icon">
 
     
-    <link rel="next" href="creating_events.html" />
+    <link rel="next" href="sample_webhook.html" />
     
-    
-    <link rel="prev" href="controllers_for_core_resources.html" />
     
 
     </head>
@@ -478,7 +476,7 @@
             
         </li>
     
-        <li class="chapter active" data-level="4.2.2" data-path="controller_watches.html">
+        <li class="chapter " data-level="4.2.2" data-path="controller_watches.html">
             
                 <a href="controller_watches.html">
             
@@ -523,7 +521,7 @@
             <ul class="articles">
                 
     
-        <li class="chapter " data-level="4.3.1" data-path="what_is_a_webhook.html">
+        <li class="chapter active" data-level="4.3.1" data-path="what_is_a_webhook.html">
             
                 <a href="what_is_a_webhook.html">
             
@@ -636,7 +634,7 @@
     <!-- Title -->
     <h1>
         <i class="fa fa-circle-o-notch fa-spin"></i>
-        <a href=".." >Controller Watch Functions</a>
+        <a href=".." >What is a Webhook</a>
     </h1>
 </div>
 
@@ -651,119 +649,73 @@
     
                                 <section class="normal markdown-section">
                                 
-                                <h1 id="controller-watch-functions">Controller Watch Functions</h1>
-<p>This chapter describes how to use the controller package functions to configure Controllers to watch
-Resources.</p>
-<p><a href="https://godoc.org/github.com/kubernetes-sigs/kubebuilder/pkg/controller" target="_blank">Link to reference documentation</a></p>
-<div class="api-method"><div class="api-method-definition"><h2 id="watching-controller-resource">Watching Controller Resource</h2>
-<p>Controllers may watch Resources and trigger Reconcile calls with the key of the
-object from the watch event. </p>
-<p>This example configures a controller to watch for Pod events, and call Reconcile with
-the Pod key.</p>
-<p>If Pod <em>default/foo</em> is created, updated or deleted, then Reconcile will be called with
-<em>namespace: default, name: foo</em></p>
-</div><div class="api-method-code"><div class="api-method-sample" data-lang="go" data-name="Go"><pre><code class="lang-go"><span class="hljs-comment">// Annotation for generating RBAC role to Watch Pods</span>
-<span class="hljs-comment">// +kubebuilder:rbac:groups=&quot;&quot;,resources=pods,verbs=get;watch;list</span>
-</code></pre>
-<pre><code class="lang-go"><span class="hljs-comment">// Watch for Pod events, and enqueue a reconcile.Request to trigger a Reconcile</span>
-err := c.Watch(
-    &amp;source.Kind{Type: &amp;v1.Pod{}},
-    &amp;handler.EnqueueRequestForObject{})
-<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> {
-    <span class="hljs-keyword">return</span> err
-}
-</code></pre>
-</div></div></div>
-
-
-<div class="api-method"><div class="api-method-definition"><h2 id="watching-created-resources">Watching Created Resources</h2>
-<p>Controllers may watch Resources of types they create and trigger Reconcile calls with the key of
-the Owner of the object.</p>
-<p>This example configures a Controller to watch for Pod events, and call Reconcile with
-the Owner ReplicaSet key.  This is done by looking up the object referred to by the Owner reference
-from the watch event object.</p>
+                                <h1 id="webhook">Webhook</h1>
+<p>Webhooks are HTTP callbacks, providing a way for notifications to be delivered to an external web server.
+A web application implementing webhooks will send an HTTP request (typically POST) to other application when certain event happens.
+In the kubernetes world, there are 3 kinds of webhooks:
+<a href="https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#admission-webhooks" target="_blank">admission webhook</a>,
+<a href="https://kubernetes.io/docs/reference/access-authn-authz/webhook/" target="_blank">authorization webhook</a> and CRD conversion webhook.</p>
+<p>In <a href="https://godoc.org/sigs.k8s.io/controller-runtime/pkg/webhook" target="_blank">controller-runtime</a> libraries,
+currently we only support admission webhooks.
+CRD conversion webhooks will be supported after it is released in kubernetes 1.12.</p>
+<h2 id="admission-webhook">Admission Webhook</h2>
+<p>Admission webhooks are HTTP callbacks that receive admission requests, process them and return admission responses.
+There are two types of admission webhooks: mutating admission webhook and validating admission webhook.
+With mutating admission webhooks, you may change the request object before it is stored (e.g. for implementing defaulting of fields)
+With validating admission webhooks, you may not change the request, but you can reject it (e.g. for implementing validation of the request).</p>
+<h4 id="why-admission-webhooks-are-important">Why Admission Webhooks are Important</h4>
+<p>Admission webhooks are the mechanism to enable kubernetes extensibility through CRD.</p>
 <ul>
-<li>Define a function to lookup the Owner from the key</li>
-<li>Call <code>WatchControllerOf</code> with the Owned object and the function to lookup the owner</li>
+<li>Mutating admission webhook is the only way to do defaulting for CRDs.</li>
+<li>Validating admission webhook allows for more complex validation than pure schema-based validation.
+e.g. cross-field validation or cross-object validation.</li>
 </ul>
-<p>If Pod <em>default/foo-pod</em> was created by ReplicaSet <em>default/foo-rs</em>, and the Pod is
-(re)created, updated or deleted, then Reconcile will be called with <em>namespace: default, name: foo-rs</em></p>
-<p><strong>Note:</strong> This requires adding the following annotations to your Controller struct to ensure the
-correct RBAC rules are in place and informers have been started.</p>
-<pre><code class="lang-go"><span class="hljs-comment">// Annotation to generate RBAC roles to watch and update Pods</span>
-<span class="hljs-comment">// +kubebuilder:rbac:groups=&quot;&quot;,resources=pods,verbs=get;watch;list,create,update,delete</span>
-</code></pre>
-</div><div class="api-method-code"><div class="api-method-sample" data-lang="go" data-name="Go"><pre><code class="lang-go"><span class="hljs-comment">// Watch for Pod events, and enqueue a reconcile.Request for the ReplicaSet in the OwnerReferences</span>
-err := c.Watch(
-    &amp;source.Kind{Type: &amp;corev1.Pod{}},
-    &amp;handler.EnqueueRequestForOwner{
-        IsController: <span class="hljs-literal">true</span>,
-        OwnerType:    &amp;appsv1.ReplicaSet{}})
-<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> {
-    <span class="hljs-keyword">return</span> err
-}
-</code></pre>
+<p>It can also be used to add custom logic in the core kubernetes API.</p>
+<h4 id="mutating-admission-webhook">Mutating Admission Webhook</h4>
+<p>A mutating admission webhook receives an admission request which contains an object.
+The webhook can either decline the request directly or returning JSON patches for modifying the original object.</p>
+<ul>
+<li>If admitting the request, the webhook is responsible for generating JSON patches and send them back in the
+admission response.</li>
+<li>If declining the request, a reason message should be returned in the admission response.</li>
+</ul>
+<h4 id="validating-admission-webhook">Validating Admission Webhook</h4>
+<p>A validating admission webhook receives an admission request which contains an object.
+The webhook can either admit or decline the request.
+A reason message should be returned in the admission response if declining the request.</p>
+<h4 id="authentication">Authentication</h4>
+<p>The apiserver by default doesn&apos;t authenticate itself to the webhooks.
+That means the webhooks don&apos;t authenticate the identities of the clients.</p>
+<p>But if you want to authenticate the clients, you need to configure the apiserver to use basic auth, bearer token,
+or a cert to authenticate itself to the webhooks. You can find detailed steps
+<a href="https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#authenticate-apiservers" target="_blank">here</a>.</p>
+<h4 id="configure-admission-webhooks-dynamically">Configure Admission Webhooks Dynamically</h4>
+<div class="api-method"><div class="api-method-definition"><p>Admission webhooks can be configured dynamically via the <code>admissionregistration.k8s.io/v1beta1</code> API.
+So your cluster must be 1.9 or later and has enabled the API.</p>
+<p>You can do CRUD operations on WebhookConfiguration objects as on other k8s objects.</p>
+</div><div class="api-method-code"><div class="api-method-sample" data-lang="yaml" data-name="YAML"><pre><code class="lang-yaml"><span class="hljs-attr">apiVersion:</span> admissionregistration.k8s.io/v1beta1
+<span class="hljs-attr">kind:</span> ValidatingWebhookConfiguration
+<span class="hljs-attr">metadata:</span>
+<span class="hljs-attr">  name:</span> &lt;name of itself<span class="hljs-string">&gt;
+</span><span class="hljs-attr">webhooks:</span>
+<span class="hljs-attr">- name:</span> &lt;webhook name, e.g. validate-deployment.example.com<span class="hljs-string">&gt;
+</span><span class="hljs-attr">  rules:</span>
+<span class="hljs-attr">  - apiGroups:</span>
+<span class="hljs-bullet">    -</span> apps
+<span class="hljs-attr">    apiVersions:</span>
+<span class="hljs-bullet">    -</span> v1
+<span class="hljs-attr">    operations:</span>
+<span class="hljs-bullet">    -</span> CREATE
+<span class="hljs-attr">    resources:</span>
+<span class="hljs-bullet">    -</span> deployments
+<span class="hljs-attr">  clientConfig:</span>
+<span class="hljs-attr">    service:</span>
+<span class="hljs-attr">      namespace:</span> &lt;namespace of the service<span class="hljs-string">&gt;
+</span><span class="hljs-attr">      name:</span> &lt;name of the service<span class="hljs-string">&gt;
+</span><span class="hljs-attr">    caBundle:</span> &lt;pem encoded ca cert that signs the server cert used by the webhook<span class="hljs-string">&gt;
+</span></code></pre>
 </div></div></div>
 
-<div class="api-method"><div class="api-method-definition"><h2 id="watching-arbitrary-resources">Watching Arbitrary Resources</h2>
-<p>Controllers may watch arbitrary Resources and map them to a key of the Resource managed by the
-controller.  Controllers may even map an event to multiple keys, triggering Reconciles for
-each key.</p>
-<p>Example: To respond to cluster scaling events (e.g. the deletion or addition of Nodes),
-a Controller would watch Nodes and map the watch events to keys of objects managed by
-the controller.</p>
-<p>This simple example configures a Controller to watch for Pod events, and then reconciles objects with
-names derived from the Pod&apos;s name.</p>
-<p>If Pod <em>default/foo</em> is created, updated or deleted, then Reconcile will be called for
-<em>namespace: default, name: foo-parent-1</em> and for <em>namespace: default, name: foo-parent-2</em>.</p>
-<p><strong>Note:</strong> This requires adding the following annotations to your Controller struct to ensure the
-correct RBAC rules are in place and informers have been started.</p>
-<pre><code class="lang-go"><span class="hljs-comment">// +kubebuilder:rbac:groups=&quot;&quot;,resources=pods,verbs=get;watch;list</span>
-</code></pre>
-</div><div class="api-method-code"><div class="api-method-sample" data-lang="go" data-name="Go"><pre><code class="lang-go"><span class="hljs-comment">// Define a mapping from the object in the event to one or more</span>
-<span class="hljs-comment">// objects to Reconcile</span>
-mapFn := handler.ToRequestsFunc(
-    <span class="hljs-keyword">func</span>(a handler.MapObject) []reconcile.Request {
-        <span class="hljs-keyword">return</span> []reconcile.Request{
-            {NamespacedName: types.NamespacedName{
-                Name:      a.Meta.GetName() + <span class="hljs-string">&quot;-1&quot;</span>,
-                Namespace: a.Meta.GetNamespace(),
-            }},
-            {NamespacedName: types.NamespacedName{
-                Name:      a.Meta.GetName() + <span class="hljs-string">&quot;-2&quot;</span>,
-                Namespace: a.Meta.GetNamespace(),
-            }},
-        }
-    })
-<span class="hljs-comment">// Watch Deployments and trigger Reconciles for objects</span>
-<span class="hljs-comment">// mapped from the Deployment in the event</span>
-err := c.Watch(
-        &amp;source.Kind{Type: &amp;appsv1.Deployment{}},
-        &amp;handler.EnqueueRequestsFromMapFunc{
-            ToRequests: mapFn,
-        })
-<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> {
-    <span class="hljs-keyword">return</span> err
-}
-</code></pre>
-</div></div></div>
-
-
-<div class="api-method"><div class="api-method-definition"><h2 id="watching-channels">Watching Channels</h2>
-<p>Controllers may trigger Reconcile for events written to Channels.  This is useful if the Controller
-needs to trigger a Reconcile in response to something other than a create / update / delete event
-to a Kubernetes object.  Note: in most situations this case is better handled by updating a Kubernetes
-object with the external state that would trigger the Reconcile.</p>
-</div><div class="api-method-code"><div class="api-method-sample" data-lang="go" data-name="Go"><pre><code class="lang-go">events := <span class="hljs-built_in">make</span>(<span class="hljs-keyword">chan</span> event.GenericEvent)
-err := ctrl.Watch(
-    &amp;source.Channel{Source: events},
-    &amp;handler.EnqueueRequestForObject{},
-)
-<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> {
-    <span class="hljs-keyword">return</span> err
-}
-</code></pre>
-</div></div></div>
 
                                 
                                 </section>
@@ -797,7 +749,7 @@ err := ctrl.Watch(
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"Controller Watch Functions","level":"4.2.2","depth":2,"next":{"title":"Creating Events","level":"4.2.3","depth":2,"path":"beyond_basics/creating_events.md","ref":"beyond_basics/creating_events.md","articles":[]},"previous":{"title":"Controllers For Core Resources","level":"4.2.1","depth":2,"path":"beyond_basics/controllers_for_core_resources.md","ref":"beyond_basics/controllers_for_core_resources.md","articles":[]},"dir":"ltr"},"config":{"plugins":["theme-api","panel","sequence-diagrams","ga"],"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"panel":{},"search":{},"sequence-diagrams":{"theme":"simple"},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"highlight":{},"theme-api":{"languages":[],"split":true,"theme":"light"},"ga":{"configuration":"auto","token":"UA-119864590-1"},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","author":"Phillip Wittrock","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"The Kubebuilder Book","gitbook":">= 3.0.0"},"file":{"path":"beyond_basics/controller_watches.md","mtime":"2018-09-07T23:59:20.162Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-09-18T16:40:16.564Z"},"basePath":"..","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"What is a Webhook","level":"4.3.1","depth":2,"next":{"title":"Webhook Example","level":"4.3.2","depth":2,"path":"beyond_basics/sample_webhook.md","ref":"beyond_basics/sample_webhook.md","articles":[]},"previous":{"title":"Webhooks","level":"4.3","depth":1,"ref":"","articles":[{"title":"What is a Webhook","level":"4.3.1","depth":2,"path":"beyond_basics/what_is_a_webhook.md","ref":"beyond_basics/what_is_a_webhook.md","articles":[]},{"title":"Webhook Example","level":"4.3.2","depth":2,"path":"beyond_basics/sample_webhook.md","ref":"beyond_basics/sample_webhook.md","articles":[]}]},"dir":"ltr"},"config":{"plugins":["theme-api","panel","sequence-diagrams","ga"],"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"panel":{},"search":{},"sequence-diagrams":{"theme":"simple"},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"highlight":{},"theme-api":{"languages":[],"split":true,"theme":"light"},"ga":{"configuration":"auto","token":"UA-119864590-1"},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","author":"Phillip Wittrock","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"The Kubebuilder Book","gitbook":">= 3.0.0"},"file":{"path":"beyond_basics/what_is_a_webhook.md","mtime":"2018-09-18T16:39:48.124Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-09-18T16:40:16.564Z"},"basePath":"..","book":{"language":""}});
         });
     </script>
 </div>
