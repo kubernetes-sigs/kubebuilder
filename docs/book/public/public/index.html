@@ -1,65 +1,723 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Welcome to Firebase Hosting</title>
 
-    <!-- update the version number as needed -->
-    <script defer src="/__/firebase/5.3.0/firebase-app.js"></script>
-    <!-- include only the Firebase features as you need -->
-    <script defer src="/__/firebase/5.3.0/firebase-auth.js"></script>
-    <script defer src="/__/firebase/5.3.0/firebase-database.js"></script>
-    <script defer src="/__/firebase/5.3.0/firebase-messaging.js"></script>
-    <script defer src="/__/firebase/5.3.0/firebase-storage.js"></script>
-    <!-- initialize the SDK after all desired features are loaded -->
-    <script defer src="/__/firebase/init.js"></script>
+<!DOCTYPE HTML>
+<html lang="" >
+    <head>
+        <meta charset="UTF-8">
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <title>Introduction · The Kubebuilder Book</title>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="description" content="">
+        <meta name="generator" content="GitBook 3.2.3">
+        <meta name="author" content="Phillip Wittrock">
+        
+        
+    
+    <link rel="stylesheet" href="gitbook/style.css">
 
-    <style media="screen">
-      body { background: #ECEFF1; color: rgba(0,0,0,0.87); font-family: Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }
-      #message { background: white; max-width: 360px; margin: 100px auto 16px; padding: 32px 24px; border-radius: 3px; }
-      #message h2 { color: #ffa100; font-weight: bold; font-size: 16px; margin: 0 0 8px; }
-      #message h1 { font-size: 22px; font-weight: 300; color: rgba(0,0,0,0.6); margin: 0 0 16px;}
-      #message p { line-height: 140%; margin: 16px 0 24px; font-size: 14px; }
-      #message a { display: block; text-align: center; background: #039be5; text-transform: uppercase; text-decoration: none; color: white; padding: 16px; border-radius: 4px; }
-      #message, #message a { box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24); }
-      #load { color: rgba(0,0,0,0.4); text-align: center; font-size: 13px; }
-      @media (max-width: 600px) {
-        body, #message { margin-top: 0; background: white; box-shadow: none; }
-        body { border-top: 16px solid #ffa100; }
-      }
-    </style>
-  </head>
-  <body>
-    <div id="message">
-      <h2>Welcome</h2>
-      <h1>Firebase Hosting Setup Complete</h1>
-      <p>You're seeing this because you've successfully setup Firebase Hosting. Now it's time to go build something extraordinary!</p>
-      <a target="_blank" href="https://firebase.google.com/docs/hosting/">Open Hosting Documentation</a>
+    
+            
+                
+                <link rel="stylesheet" href="gitbook/gitbook-plugin-panel/icons.css">
+                
+            
+                
+                <link rel="stylesheet" href="gitbook/gitbook-plugin-panel/panel.css">
+                
+            
+                
+                <link rel="stylesheet" href="gitbook/gitbook-plugin-highlight/website.css">
+                
+            
+                
+                <link rel="stylesheet" href="gitbook/gitbook-plugin-search/search.css">
+                
+            
+                
+                <link rel="stylesheet" href="gitbook/gitbook-plugin-fontsettings/website.css">
+                
+            
+                
+                <link rel="stylesheet" href="gitbook/gitbook-plugin-theme-api/theme-api.css">
+                
+            
+        
+
+    
+
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+
+        
+    
+    
+    <meta name="HandheldFriendly" content="true"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="gitbook/images/apple-touch-icon-precomposed-152.png">
+    <link rel="shortcut icon" href="gitbook/images/favicon.ico" type="image/x-icon">
+
+    
+    <link rel="next" href="quick_start.html" />
+    
+    
+
+    </head>
+    <body>
+        
+<div class="book">
+    <div class="book-summary">
+        
+            
+<div id="book-search-input" role="search">
+    <input type="text" placeholder="Type to search" />
+</div>
+
+            
+                <nav role="navigation">
+                
+
+
+<ul class="summary">
+    
+    
+
+    
+
+    
+        
+        
+    
+        <li class="chapter active" data-level="1.1" data-path="./">
+            
+                <a href="./">
+            
+                    
+                    Introduction
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2" data-path="quick_start.html">
+            
+                <a href="quick_start.html">
+            
+                    
+                    Quick Start
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+    
+        
+        <li class="header">Getting Started</li>
+        
+        
+    
+        <li class="chapter " data-level="2.1" data-path="getting_started/why_kubernetes.html">
+            
+                <a href="getting_started/why_kubernetes.html">
+            
+                    
+                    Why Kubernetes APIs
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="2.2" data-path="getting_started/what_is_kubebuilder.html">
+            
+                <a href="getting_started/what_is_kubebuilder.html">
+            
+                    
+                    What is Kubebuilder
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="2.3" data-path="getting_started/installation_and_setup.html">
+            
+                <a href="getting_started/installation_and_setup.html">
+            
+                    
+                    Installation and Setup
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="2.4" data-path="getting_started/hello_world.html">
+            
+                <a href="getting_started/hello_world.html">
+            
+                    
+                    Hello World
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+    
+        
+        <li class="header">Basics</li>
+        
+        
+    
+        <li class="chapter " data-level="3.1" >
+            
+                <span>
+            
+                    
+                    Development Workflow
+            
+                </span>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="3.1.1" data-path="basics/project_creation_and_structure.html">
+            
+                <a href="basics/project_creation_and_structure.html">
+            
+                    
+                    Project Creation and Structure
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="3.2" >
+            
+                <span>
+            
+                    
+                    Resources
+            
+                </span>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="3.2.1" data-path="basics/what_is_a_resource.html">
+            
+                <a href="basics/what_is_a_resource.html">
+            
+                    
+                    What is a Resource
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="3.2.2" data-path="basics/simple_resource.html">
+            
+                <a href="basics/simple_resource.html">
+            
+                    
+                    Resource Example
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="3.3" >
+            
+                <span>
+            
+                    
+                    Controllers
+            
+                </span>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="3.3.1" data-path="basics/what_is_a_controller.html">
+            
+                <a href="basics/what_is_a_controller.html">
+            
+                    
+                    What is a Contoller
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="3.3.2" data-path="basics/simple_controller.html">
+            
+                <a href="basics/simple_controller.html">
+            
+                    
+                    Controller Example
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="3.4" >
+            
+                <span>
+            
+                    
+                    Managers
+            
+                </span>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="3.4.1" data-path="basics/what_is_the_controller_manager.html">
+            
+                <a href="basics/what_is_the_controller_manager.html">
+            
+                    
+                    What is the Manager
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="3.4.2" data-path="basics/simple_controller_manager.html">
+            
+                <a href="basics/simple_controller_manager.html">
+            
+                    
+                    Manager Example
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+
+    
+        
+        <li class="header">Beyond the Basics</li>
+        
+        
+    
+        <li class="chapter " data-level="4.1" >
+            
+                <span>
+            
+                    
+                    Development Workflow
+            
+                </span>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="4.1.1" data-path="beyond_basics/boilerplate.html">
+            
+                <a href="beyond_basics/boilerplate.html">
+            
+                    
+                    Defining Boilerplate License Headers
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="4.1.2" data-path="beyond_basics/running_tests.html">
+            
+                <a href="beyond_basics/running_tests.html">
+            
+                    
+                    Running Tests
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="4.1.3" data-path="beyond_basics/generating_documentation.html">
+            
+                <a href="beyond_basics/generating_documentation.html">
+            
+                    
+                    Generating API Documentation
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="4.1.4" data-path="beyond_basics/upgrading_kubebuilder.html">
+            
+                <a href="beyond_basics/upgrading_kubebuilder.html">
+            
+                    
+                    Updating Kubebuilder
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="4.2" >
+            
+                <span>
+            
+                    
+                    Controllers
+            
+                </span>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="4.2.1" data-path="beyond_basics/controllers_for_core_resources.html">
+            
+                <a href="beyond_basics/controllers_for_core_resources.html">
+            
+                    
+                    Controllers For Core Resources
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="4.2.2" data-path="beyond_basics/controller_watches.html">
+            
+                <a href="beyond_basics/controller_watches.html">
+            
+                    
+                    Controller Watch Functions
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="4.2.3" data-path="beyond_basics/creating_events.html">
+            
+                <a href="beyond_basics/creating_events.html">
+            
+                    
+                    Creating Events
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="4.3" >
+            
+                <span>
+            
+                    
+                    Deployment Workflow
+            
+                </span>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="4.3.1" data-path="beyond_basics/deploying_controller.html">
+            
+                <a href="beyond_basics/deploying_controller.html">
+            
+                    
+                    Deploying the manager in Cluster
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+
+    
+        
+        <li class="header">Reference Docs</li>
+        
+        
+    
+        <li class="chapter " data-level="5.1" data-path="go_docs.html">
+            
+                <a href="go_docs.html">
+            
+                    
+                    GoDoc Links
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+    
+
+    <li class="divider"></li>
+
+    <li>
+        <a href="https://www.gitbook.com" target="blank" class="gitbook-link">
+            Published with GitBook
+        </a>
+    </li>
+</ul>
+
+
+                </nav>
+            
+        
     </div>
-    <p id="load">Firebase SDK Loading&hellip;</p>
+
+    <div class="book-body">
+        
+            <div class="body-inner">
+                
+                    
+
+<div class="book-header" role="navigation">
+    
+
+    <!-- Title -->
+    <h1>
+        <i class="fa fa-circle-o-notch fa-spin"></i>
+        <a href="." >Introduction</a>
+    </h1>
+</div>
+
+
+
+
+                    <div class="page-wrapper" tabindex="-1" role="main">
+                        <div class="page-inner">
+                            
+<div id="book-search-results">
+    <div class="search-noresults">
+    
+                                <section class="normal markdown-section">
+                                
+                                <p><strong>Note:</strong> Impatient readers head straight to <a href="quick_start.html">Quick Start</a>.</p>
+<p><em>To share this book use the icons in the top-right of the menu.</em></p>
+<h2 id="who-is-this-for">Who is this for</h2>
+<h4 id="users-of-kubernetes">Users of Kubernetes</h4>
+<p>Users of Kubernetes will develop a deeper understanding Kubernetes through learning
+the fundamental concepts behind how APIs are designed and implemented.  This book
+will teach readers how to develop their own Kubernetes APIs and the
+principals from which the core Kubernetes APIs are designed.</p>
+<p>Including:</p>
+<ul>
+<li>The structure of Kubernetes APIs and Resources</li>
+<li>API versioning semantics</li>
+<li>Self-healing</li>
+<li>Garbage Collection and Finalizers</li>
+<li>Declarative vs Imperative APIs</li>
+<li>Level-Based vs Edge-Base APIs</li>
+<li>Resources vs Subresources</li>
+</ul>
+<h4 id="kubernetes-api-extension-developers">Kubernetes API extension developers</h4>
+<p>API extension developers will learn the principals and concepts behind implementing canonical
+Kubernetes APIs, as well as simple tools and libraries for rapid execution.  This
+book covers pitfalls and miss-conceptions that extension developers commonly encounter.</p>
+<p>Including:</p>
+<ul>
+<li>How to batch multiple events into a single reconciliation call</li>
+<li>How to configure periodic reconciliation</li>
+<li><em>Forthcoming</em><ul>
+<li>When to use the lister cache vs live lookups</li>
+<li>Garbage Collection vs Finalizers</li>
+<li>How to use Declarative vs Webhook Validation</li>
+<li>How to implement API versioning</li>
+</ul>
+</li>
+</ul>
+<h2 id="resources">Resources</h2>
+<p>GitBook: <a href="http://book.kubebuilder.com" target="_blank">book.kubebuilder.com</a>
+GitHub Repo: <a href="https://github.com/kubernetes-sigs/kubebuilder" target="_blank">kubernetes-sigs/kubebuilder</a>
+Slack channel: <a href="http://slack.k8s.io/#kubebuilder" target="_blank">#kubeuilder</a>
+Google Group: <a href="https://groups.google.com/forum/#!forum/kubebuilder" target="_blank">kubebuilder@googlegroups.com</a>
+Planned Work: <a href="https://github.com/kubernetes-sigs/kubebuilder/projects/1" target="_blank">Sprint Dashboard</a></p>
+<h2 id="navigating-this-book">Navigating this book</h2>
+<p>This section describes how to use the navigation elements of this book</p>
+<h5 id="code-navigation">Code Navigation</h5>
+<p>Code samples may be either displayed to the side of the corresponding documentation, or inlined
+immediately afterward.  This setting may be toggled using the split-screen icon at the left side
+of the top nav.</p>
+<h5 id="table-of-contents">Table of Contents</h5>
+<p>The table of contents may be hidden using the hamburger icon at the left side of the top nav.</p>
+<h5 id="os--language-navigation">OS / Language Navigation</h5>
+<p>Some chapters have code snippets for multiple OS or Languages.  These chapters will display OS
+or Language selections at the right side of the top nav, which may be used to change the
+OS or Language of the examples shown.</p>
+
+                                
+                                </section>
+                            
+    </div>
+    <div class="search-results">
+        <div class="has-results">
+            
+            <h1 class="search-results-title"><span class='search-results-count'></span> results matching "<span class='search-query'></span>"</h1>
+            <ul class="search-results-list"></ul>
+            
+        </div>
+        <div class="no-results">
+            
+            <h1 class="search-results-title">No results matching "<span class='search-query'></span>"</h1>
+            
+        </div>
+    </div>
+</div>
+
+                        </div>
+                    </div>
+                
+            </div>
+
+            
+
+        
+    </div>
 
     <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
-        // // The Firebase SDK is initialized and available here!
-        //
-        // firebase.auth().onAuthStateChanged(user => { });
-        // firebase.database().ref('/path/to/ref').on('value', snapshot => { });
-        // firebase.messaging().requestPermission().then(() => { });
-        // firebase.storage().ref('/path/to/ref').getDownloadURL().then(() => { });
-        //
-        // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
-
-        try {
-          let app = firebase.app();
-          let features = ['auth', 'database', 'messaging', 'storage'].filter(feature => typeof app[feature] === 'function');
-          document.getElementById('load').innerHTML = `Firebase SDK loaded with ${features.join(', ')}`;
-        } catch (e) {
-          console.error(e);
-          document.getElementById('load').innerHTML = 'Error loading the Firebase SDK, check the console.';
-        }
-      });
+        var gitbook = gitbook || [];
+        gitbook.push(function() {
+            gitbook.page.hasChanged({"page":{"title":"Introduction","level":"1.1","depth":1,"next":{"title":"Quick Start","level":"1.2","depth":1,"path":"quick_start.md","ref":"quick_start.md","articles":[]},"dir":"ltr"},"config":{"plugins":["theme-api","panel","sequence-diagrams","ga"],"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"panel":{},"search":{},"sequence-diagrams":{"theme":"simple"},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"highlight":{},"theme-api":{"languages":[],"split":true,"theme":"light"},"ga":{"configuration":"auto","token":"UA-119864590-1"},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","author":"Phillip Wittrock","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"The Kubebuilder Book","gitbook":">= 3.0.0"},"file":{"path":"README.md","mtime":"2018-07-25T00:55:02.978Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-07-25T16:34:48.577Z"},"basePath":".","book":{"language":""}});
+        });
     </script>
-  </body>
+</div>
+
+        
+    <script src="gitbook/gitbook.js"></script>
+    <script src="gitbook/theme.js"></script>
+    
+        
+        <script src="gitbook/gitbook-plugin-ga/plugin.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-search/search-engine.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-search/search.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-lunr/lunr.min.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-lunr/search-lunr.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-sharing/buttons.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-fontsettings/fontsettings.js"></script>
+        
+    
+        
+        <script src="gitbook/gitbook-plugin-theme-api/theme-api.js"></script>
+        
+    
+
+    </body>
 </html>
+

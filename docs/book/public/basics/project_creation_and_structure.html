@@ -285,7 +285,7 @@
                 <a href="what_is_a_controller.html">
             
                     
-                    What is a Contoller
+                    What is a Controller
             
                 </a>
             
@@ -429,6 +429,19 @@
             
         </li>
     
+        <li class="chapter " data-level="4.1.5" data-path="../beyond_basics/dependencies.html">
+            
+                <a href="../beyond_basics/dependencies.html">
+            
+                    
+                    Dependency Management
+            
+                </a>
+            
+
+            
+        </li>
+    
 
             </ul>
             
@@ -497,6 +510,51 @@
                 <span>
             
                     
+                    Webhooks
+            
+                </span>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="4.3.1" data-path="../beyond_basics/what_is_a_webhook.html">
+            
+                <a href="../beyond_basics/what_is_a_webhook.html">
+            
+                    
+                    What is a Webhook
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="4.3.2" data-path="../beyond_basics/sample_webhook.html">
+            
+                <a href="../beyond_basics/sample_webhook.html">
+            
+                    
+                    Webhook Example
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="4.4" >
+            
+                <span>
+            
+                    
                     Deployment Workflow
             
                 </span>
@@ -506,7 +564,7 @@
             <ul class="articles">
                 
     
-        <li class="chapter " data-level="4.3.1" data-path="../beyond_basics/deploying_controller.html">
+        <li class="chapter " data-level="4.4.1" data-path="../beyond_basics/deploying_controller.html">
             
                 <a href="../beyond_basics/deploying_controller.html">
             
@@ -630,7 +688,7 @@ add the boilerplate to a <code>hack/boilerplate.go.txt</code> file before creati
 <div class="api-method"><div class="api-method-definition"><h2 id="create-a-new-project">Create a new project</h2>
 <p>Create a new kubebuilder project.  This will automatically initialize the vendored go libraries
 that will be required to build your project.</p>
-</div><div class="api-method-code"><div class="api-method-sample" data-lang="bash" data-name="Bash"><pre><code class="lang-bash">$ kubebuilder init --domain k8s.io --license apache2 --owners <span class="hljs-string">&quot;The Kubernetes Authors&quot;</span>
+</div><div class="api-method-code"><div class="api-method-sample" data-lang="bash" data-name="Bash"><pre><code class="lang-bash">$ kubebuilder init --domain k8s.io --license apache2 --owner <span class="hljs-string">&quot;The Kubernetes Authors&quot;</span>
 </code></pre>
 </div></div></div>
 
@@ -707,7 +765,7 @@ $ make deploy
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"Project Creation and Structure","level":"3.1.1","depth":2,"next":{"title":"Resources","level":"3.2","depth":1,"ref":"","articles":[{"title":"What is a Resource","level":"3.2.1","depth":2,"path":"basics/what_is_a_resource.md","ref":"basics/what_is_a_resource.md","articles":[]},{"title":"Resource Example","level":"3.2.2","depth":2,"path":"basics/simple_resource.md","ref":"basics/simple_resource.md","articles":[]}]},"previous":{"title":"Development Workflow","level":"3.1","depth":1,"ref":"","articles":[{"title":"Project Creation and Structure","level":"3.1.1","depth":2,"path":"basics/project_creation_and_structure.md","ref":"basics/project_creation_and_structure.md","articles":[]}]},"dir":"ltr"},"config":{"plugins":["theme-api","panel","sequence-diagrams","ga"],"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"panel":{},"search":{},"sequence-diagrams":{"theme":"simple"},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"highlight":{},"theme-api":{"languages":[],"split":true,"theme":"light"},"ga":{"configuration":"auto","token":"UA-119864590-1"},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","author":"Phillip Wittrock","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"The Kubebuilder Book","gitbook":">= 3.0.0"},"file":{"path":"basics/project_creation_and_structure.md","mtime":"2018-07-25T00:55:02.979Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-07-25T16:34:48.577Z"},"basePath":"..","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"Project Creation and Structure","level":"3.1.1","depth":2,"next":{"title":"Resources","level":"3.2","depth":1,"ref":"","articles":[{"title":"What is a Resource","level":"3.2.1","depth":2,"path":"basics/what_is_a_resource.md","ref":"basics/what_is_a_resource.md","articles":[]},{"title":"Resource Example","level":"3.2.2","depth":2,"path":"basics/simple_resource.md","ref":"basics/simple_resource.md","articles":[]}]},"previous":{"title":"Development Workflow","level":"3.1","depth":1,"ref":"","articles":[{"title":"Project Creation and Structure","level":"3.1.1","depth":2,"path":"basics/project_creation_and_structure.md","ref":"basics/project_creation_and_structure.md","articles":[]}]},"dir":"ltr"},"config":{"plugins":["theme-api","panel","sequence-diagrams","ga"],"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"panel":{},"search":{},"sequence-diagrams":{"theme":"simple"},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"highlight":{},"theme-api":{"languages":[],"split":true,"theme":"light"},"ga":{"configuration":"auto","token":"UA-119864590-1"},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","author":"Phillip Wittrock","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"The Kubebuilder Book","gitbook":">= 3.0.0"},"file":{"path":"basics/project_creation_and_structure.md","mtime":"2018-09-14T23:33:05.165Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-09-18T16:32:20.891Z"},"basePath":"..","book":{"language":""}});
         });
     </script>
 </div>
