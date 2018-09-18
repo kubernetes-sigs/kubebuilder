@@ -1,9 +1,6 @@
 To push the docs run:
 
-Configure kubectl to talk to the kubebuilder "docs" GKE cluster.
-
-- export IMAGE=gcr.io/kubebuilder/book:v<number>
-- gitbook build
-- docker build . -t $IMAGE
-- docker push  $IMAGE
-- kubectl set image deployment gitbook-prod *=$IMAGE
+- gitbook install # optional
+- gitbook build # build the html files
+- copy files from _book/ to public/ # copy the files to the deploy dir
+- firebase deploy # deploy files to firebase
