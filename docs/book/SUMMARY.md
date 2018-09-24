@@ -35,6 +35,7 @@
   * [Controllers For Core Resources](beyond_basics/controllers_for_core_resources.md)
   * [Controller Watch Functions](beyond_basics/controller_watches.md)
   * [Creating Events](beyond_basics/creating_events.md)
+  * [Using Finalizers](beyond_basics/using_finalizers.md)
 * Webhooks
   * [What is a Webhook](beyond_basics/what_is_a_webhook.md)
   * [Webhook Example](beyond_basics/sample_webhook.md)
