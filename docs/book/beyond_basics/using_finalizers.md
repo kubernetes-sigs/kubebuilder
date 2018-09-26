@@ -21,7 +21,7 @@ Highlights:
 - You should implement the pre-delete logic in such a way that it is safe to 
  invoke it multiple times for the same object.
 
-
+{% sample lang="go" %}
 ```go
 
 func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
