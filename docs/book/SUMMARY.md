@@ -28,6 +28,7 @@
 * Development Workflow
   * [Defining Boilerplate License Headers](beyond_basics/boilerplate.md)
   * [Running Tests](beyond_basics/running_tests.md)
+  * [Using Annotation](beyond_basics/annotations.md)
   * [Generating API Documentation](beyond_basics/generating_documentation.md)
   * [Updating Kubebuilder](beyond_basics/upgrading_kubebuilder.md)
   * [Dependency Management](beyond_basics/dependencies.md)

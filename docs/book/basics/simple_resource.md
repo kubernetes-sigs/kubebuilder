@@ -58,8 +58,7 @@ used to configure code generators to run against this code.  The code generators
 generate boilerplate functions and types to complete the Resource definition.
 To learn more on configuring code generation see the *Code Generation* chapter.
 
-Note: The `// +kubebuilder:validation:Pattern=.+:.+` annotation declares Pattern validation
-requiring that the `Image` field match the regular expression `.+:.+`
+To learn more about how to use annotations in kubebuilder, refer to [Using Annotation](../beyond_basics/annotations.md)
 {% endpanel %}
 
 {% method %}
