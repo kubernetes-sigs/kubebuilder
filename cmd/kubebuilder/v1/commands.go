@@ -24,6 +24,7 @@ func AddCmds(cmd *cobra.Command) {
 	AddAPICommand(cmd)
 	cmd.AddCommand(vendorUpdateCmd())
 	cmd.AddCommand(docsCmd())
+	cmd.AddCommand(newAlphaCommand())
 
 	cmd.Example = `# Initialize your project
     kubebuilder init --domain example.com --license apache2 --owner "The Kubernetes authors"
@@ -68,4 +69,23 @@ the schema for a Resource without writing a Controller, select "n" for Controlle
 
 After the scaffold is written, api will run make on the project.
 	`
+}
+
+// newAlphaCommand returns alpha subcommand which will be mounted
+// at the root command by the caller.
+func newAlphaCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "alpha",
+		Short: "Exposes commands which are in experimental or early stages of development",
+		Long:  `Command group for commands which are either experimental or in early stages of development`,
+		Example: `
+# scaffolds webhook server
+kubebuilder alpha webhook <params>
+`,
+	}
+
+	cmd.AddCommand(
+		newWebhookCmd(),
+	)
+	return cmd
 }
