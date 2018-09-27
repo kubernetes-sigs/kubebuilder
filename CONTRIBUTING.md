@@ -20,7 +20,7 @@ Please see https://git.k8s.io/community/CLA.md for more info.
     1. Download and setup [gcloud](https://cloud.google.com/sdk/docs/downloads-interactive) 
     1. Install `cloud-build-local` via `gcloud` 
         ```bash
-        $ gcloud install cloud-build-local
+        $ gcloud components install cloud-build-local
         ```
 1. Build
     1. Export `OUTPUT` to a location to write the directory containing the final build artifacts
