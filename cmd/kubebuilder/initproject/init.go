@@ -209,6 +209,11 @@ func checkGoVersion() {
 	}
 }
 
+func depExists() bool {
+	_, err := exec.LookPath("dep")
+	return err == nil
+}
+
 func execute(path, templateName, templateValue string, data interface{}) {
 	dir, err := os.Getwd()
 	if err != nil {
