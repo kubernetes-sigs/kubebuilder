@@ -14,14 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1
+package main
 
 import (
 	"fmt"
 	"github.com/spf13/cobra"
 )
 
-func docsCmd() *cobra.Command {
+func newDocsCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "docs",
 		Short: "Generate API reference docs. Coming soon.",

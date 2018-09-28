@@ -24,7 +24,6 @@ import (
 	"strings"
 
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/util"
-	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/v1"
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/version"
 	"github.com/spf13/cobra"
 )
@@ -48,26 +47,72 @@ func main() {
 	}
 	util.Repo = strings.Replace(wd, util.GoSrc+string(filepath.Separator), "", 1)
 
-	// add init command
-	addInit(cmd)
+	rootCmd := defaultCommand()
 
-	// add version command
-	version.AddVersion(cmd)
+	rootCmd.AddCommand(
+		newInitProjectCmd(),
+		newAPICommand(),
+		version.NewVersionCmd(),
+		newDocsCmd(),
+		newVendorUpdateCmd(),
+	)
 
-	// add all commands corresponding to v1 project
-	v1.AddCmds(cmd)
-
-	if err := cmd.Execute(); err != nil {
+	if err := rootCmd.Execute(); err != nil {
 		log.Fatal(err)
 	}
 }
 
-var cmd = &cobra.Command{
-	Use:   "kubebuilder",
-	Short: "Development kit for building Kubernetes extensions and tools.",
-	Run:   RunMain,
-}
+func defaultCommand() *cobra.Command {
+	return &cobra.Command{
+		Use:   "kubebuilder",
+		Short: "Development kit for building Kubernetes extensions and tools.",
+		Long: `
+Development kit for building Kubernetes extensions and tools.
 
-func RunMain(cmd *cobra.Command, args []string) {
-	cmd.Help()
+Provides libraries and tools to create new projects, APIs and controllers.
+Includes tools for packaging artifacts into an installer container.
+
+Typical project lifecycle:
+
+- initialize a project:
+
+  kubebuilder init --domain k8s.io --license apache2 --owner "The Kubernetes authors
+
+- create one or more a new resource APIs and add your code to them:
+
+  kubebuilder create api --group <group> --version <version> --kind <Kind>
+
+create resource will prompt the user for if it should scaffold the Resource and / or Controller.  To only
+scaffold a Controller for an existing Resource, select "n" for Resource.  To only define
+the schema for a Resource without writing a Controller, select "n" for Controller.
+
+After the scaffold is written, api will run make on the project.
+`,
+		Example: `
+	# Initialize your project
+    kubebuilder init --domain example.com --license apache2 --owner "The Kubernetes authors"
+
+    # Create a frigates API with Group: ship, Version: v1beta1 and Kind: Frigate
+	kubebuilder create api --group ship --version v1beta1 --kind Frigate
+
+	# Edit the API Scheme
+	nano pkg/apis/ship/v1beta1/frigate_types.go
+
+	# Edit the Controller
+	nano pkg/controller/frigate/frigate_controller.go
+
+	# Edit the Controller Test
+	nano pkg/controller/frigate/frigate_controller_test.go
+
+	# Install CRDs into the Kubernetes cluster using kubectl apply
+	make install
+
+	# Regenerate code and run against the Kubernetes cluster configured by ~/.kube/config
+	make run
+`,
+
+		Run: func(cmd *cobra.Command, args []string) {
+			cmd.Help()
+		},
+	}
 }
