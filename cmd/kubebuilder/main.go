@@ -23,7 +23,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/initproject"
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/util"
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/v1"
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/version"
@@ -50,7 +49,7 @@ func main() {
 	util.Repo = strings.Replace(wd, util.GoSrc+string(filepath.Separator), "", 1)
 
 	// add init command
-	initproject.AddInit(cmd)
+	addInit(cmd)
 
 	// add version command
 	version.AddVersion(cmd)
