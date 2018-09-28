@@ -25,7 +25,6 @@ import (
 
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/initproject"
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/util"
-	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/v0"
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/v1"
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/version"
 	"github.com/spf13/cobra"
@@ -49,14 +48,15 @@ func main() {
 			"\nCurrent GOPATH=%s.  \nCurrent directory=%s", gopath, wd)
 	}
 	util.Repo = strings.Replace(wd, util.GoSrc+string(filepath.Separator), "", 1)
+
+	// add init command
 	initproject.AddInit(cmd)
+
+	// add version command
 	version.AddVersion(cmd)
 
-	if util.IsNewVersion() || util.IsProjectNotInitialized() {
-		v1.AddCmds(cmd)
-	} else {
-		v0.AddCmds(cmd)
-	}
+	// add all commands corresponding to v1 project
+	v1.AddCmds(cmd)
 
 	if err := cmd.Execute(); err != nil {
 		log.Fatal(err)
