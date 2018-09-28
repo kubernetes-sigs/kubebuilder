@@ -91,6 +91,7 @@ controller-scaffold project --domain k8s.io --license apache2 --owner "The Kuber
 			dkr,
 			&manager.APIs{},
 			&manager.Controller{},
+			&manager.Webhook{},
 			&manager.Config{Image: imgName},
 			&project.GitIgnore{},
 			&project.Kustomize{},
