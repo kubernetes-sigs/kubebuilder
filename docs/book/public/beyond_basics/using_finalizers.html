@@ -4,7 +4,7 @@
     <head>
         <meta charset="UTF-8">
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
-        <title>Generating API Documentation · The Kubebuilder Book</title>
+        <title>Using Finalizers · The Kubebuilder Book</title>
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta name="description" content="">
         <meta name="generator" content="GitBook 3.2.3">
@@ -69,10 +69,8 @@
     <link rel="shortcut icon" href="../gitbook/images/favicon.ico" type="image/x-icon">
 
     
-    <link rel="next" href="upgrading_kubebuilder.html" />
     
-    
-    <link rel="prev" href="running_tests.html" />
+    <link rel="prev" href="creating_events.html" />
     
 
     </head>
@@ -407,7 +405,7 @@
             
         </li>
     
-        <li class="chapter active" data-level="4.1.3" data-path="generating_documentation.html">
+        <li class="chapter " data-level="4.1.3" data-path="generating_documentation.html">
             
                 <a href="generating_documentation.html">
             
@@ -504,7 +502,7 @@
             
         </li>
     
-        <li class="chapter " data-level="4.2.4" data-path="using_finalizers.html">
+        <li class="chapter active" data-level="4.2.4" data-path="using_finalizers.html">
             
                 <a href="using_finalizers.html">
             
@@ -649,7 +647,7 @@
     <!-- Title -->
     <h1>
         <i class="fa fa-circle-o-notch fa-spin"></i>
-        <a href=".." >Generating API Documentation</a>
+        <a href=".." >Using Finalizers</a>
     </h1>
 </div>
 
@@ -664,103 +662,98 @@
     
                                 <section class="normal markdown-section">
                                 
-                                <h1 id="generating-api-documentation">Generating API Documentation</h1>
-<p>Kubebuilder will generate API reference documentation for your APIs with <code>kubebuilder docs</code>.  The
-reference documentation will be built under <code>docs/reference/build/index.html</code> and can be opened
-directly in a web browser.</p>
+                                <h1 id="using-finalizers">Using Finalizers</h1>
+<p><code>Finalizers</code> allow controllers to implement asynchronous pre-delete hooks. Let
+say you create an external resource such as a storage bucket for each object of
+the API type you are implementing and you would like to clean up the external resource
+when the corresponding object is deleted from Kubernetes, you can use a
+finalizer to delete the external resource.</p>
+<p>You can read more about the finalizers in the <a href="https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#finalizers" target="_blank">kubernetes reference docs</a>. Section below
+demonstrates how to register and trigger pre-delete hooks in the <code>Reconcile</code>
+method of a controller.</p>
+<div class="api-method"><div class="api-method-definition"><p>Highlights:</p>
 <ul>
-<li>Use <code>--docs-copyright</code> to set the copyright footer</li>
-<li>Use <code>--title</code> to set the title</li>
+<li>If object is not being deleted and does not have the finalizer registered,
+then add the finalizer and update the object in kubernetes.</li>
+<li>If object is being deleted and the finalizer is still present in finalizers list,
+then execute the pre-delete logic and remove the finalizer and update the
+object.</li>
+<li>You should implement the pre-delete logic in such a way that it is safe to 
+invoke it multiple times for the same object.</li>
 </ul>
-<p><div class="panel panel-info"><div class="panel-heading"><div class="panel-icon"><i class="icon-info"></i></div><div class="panel-title">Non-Kubebuilder Projects</div></div><div class="panel-content"><p>Kubebuilder can also be used to generate API reference documentation for non-kubebuilder projects, as long as the
-resources are annotated with <code>// +kubebuilder:resource:path=&lt;resource-name&gt;</code> the same as they are in kubebuilder
-projects.</p>
-<p><strong>Important</strong>: The <code>// +kubebuilder:resource</code> annotation <em>must</em> appear directly above the go struct
-defining the resource.  No blank lines may appear between the annotation and the go struct.</p>
-</div></div></p>
-<h2 id="creating-examples">Creating Examples</h2>
-<div class="api-method"><div class="api-method-definition"><p>Users can provide resource examples by running
-<code>kubebuilder create example --kind &lt;kind&gt; --group &lt;group&gt; --version &lt;version&gt;</code>.  This will create an example
-file under <code>docs/reference/examples/&lt;kind&gt;/&lt;kind&gt;.yaml</code> for the user to edit.  The contents of this file will appear
-next to the API reference documentation after rerunning <code>kubebuilder docs</code>.</p>
-<ul>
-<li><code>note:</code> description that will appear directly above the example</li>
-<li><code>sample:</code> example yaml that will be displayed</li>
-</ul>
-</div><div class="api-method-code"><div class="api-method-sample" data-lang="code" data-name="CODE"><blockquote>
-<p>$ kubebuilder create example --kind Frigate --version v1beta1 --group ships</p>
-</blockquote>
-<pre><code class="lang-yaml"><span class="hljs-comment"># docs/reference/examples/frigate/frigate.yaml</span>
-<span class="hljs-attr">note:</span> frigate example
-<span class="hljs-attr">sample:</span> <span class="hljs-string">|
-</span><span class="hljs-attr">  apiVersion:</span> v1beta1
-<span class="hljs-attr">  kind:</span> frigate
-<span class="hljs-attr">  metadata:</span>
-<span class="hljs-attr">    name:</span> frigate
-<span class="hljs-attr">  spec:</span>
-<span class="hljs-attr">    todo:</span> <span class="hljs-string">&quot;write me&quot;</span>
-</code></pre>
-</div></div></div>
+</div><div class="api-method-code"><div class="api-method-sample" data-lang="go" data-name="Go"><pre><code class="lang-go">
+<span class="hljs-keyword">func</span> (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+    err := r.Get(context.TODO(), request.NamespacedName, instance)
+    <span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> {
+        <span class="hljs-comment">// handle error</span>
+    }
 
+    <span class="hljs-comment">// name of your custom finalizer</span>
+    myFinalizerName := <span class="hljs-string">&quot;storage.finalizers.example.com&quot;</span>
 
-<h2 id="editing-overview-and-api-group-documentation">Editing Overview and API Group Documentation</h2>
-<p>Users can modify documentation of the overview and API <em>groups</em> by editing the files under
-<code>docs/reference/static_includes</code>.</p>
-<ul>
-<li>Edit <code>_overview.md</code> to provide documentation for the full set of APIs.</li>
-<li>Edit <code>_&lt;group&gt;.md</code> to provide documentation for a specific API group.</li>
-</ul>
-<h2 id="adding-notes-and-warnings-for-apis">Adding Notes and Warnings for APIs</h2>
-<div class="api-method"><div class="api-method-definition"><p>It is possible to add <em>notes</em> and <em>warnings</em> to APIs in the reference documentation by annotating
-the go struct with <code>// +kubebuilder:doc:note=</code> or <code>// +kubebuilder:doc:warning=</code>.  These will
-show up in <em>blue</em> and <em>orange</em> boxes.</p>
-</div><div class="api-method-code"><div class="api-method-sample" data-lang="code" data-name="CODE"><pre><code class="lang-go"><span class="hljs-comment">// Frigate API documentation goes here.</span>
-<span class="hljs-comment">// +kubebuilder:doc:note=this is a note</span>
-<span class="hljs-comment">// +kubebuilder:doc:warning=this is a warning</span>
-<span class="hljs-comment">// +k8s:openapi-gen=true</span>
-<span class="hljs-comment">// +kubebuilder:resource:path=frigates</span>
-<span class="hljs-keyword">type</span> Frigate <span class="hljs-keyword">struct</span> {
-    metav1.TypeMeta   <span class="hljs-string">`json:&quot;,inline&quot;`</span>
-    metav1.ObjectMeta <span class="hljs-string">`json:&quot;metadata,omitempty&quot;`</span>
+    <span class="hljs-keyword">if</span> instance.ObjectMeta.DeletionTimestamp.IsZero() {
+        <span class="hljs-comment">// The object is not being deleted, so if it does not have our finalizer,</span>
+        <span class="hljs-comment">// then lets add the finalizer and update the object.</span>
+        <span class="hljs-keyword">if</span> !containsString(instance.ObjectMeta.Finalizers, myFinalizerName) {
+            instance.ObjectMeta.Finalizers = <span class="hljs-built_in">append</span>(instance.ObjectMeta.Finalizers, myFinalizerName)
+            <span class="hljs-keyword">if</span> err := r.Update(context.Background(), instance); err != <span class="hljs-literal">nil</span> {
+                <span class="hljs-keyword">return</span> reconcile.Result{Requeue: <span class="hljs-literal">true</span>}, <span class="hljs-literal">nil</span>
+            }
+        }
+    } <span class="hljs-keyword">else</span> {
+        <span class="hljs-comment">// The object is being deleted</span>
+        <span class="hljs-keyword">if</span> containsString(instance.ObjectMeta.Finalizers, myFinalizerName) {
+            <span class="hljs-comment">// our finalizer is present, so lets handle our external dependency</span>
+            err := r.deleteExternalDependency(instance)
+            <span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> {
+                <span class="hljs-comment">// if fail to delete the external dependency here, return with error</span>
+                <span class="hljs-comment">// so that it can be retried</span>
+                <span class="hljs-keyword">return</span> reconcile.Result{}, err
+            }
 
-    <span class="hljs-comment">// Spec field documentation goes here.</span>
-    Spec   FrigateSpec   <span class="hljs-string">`json:&quot;spec,omitempty&quot;`</span>
+            <span class="hljs-comment">// remove our finalizer from the list and update it.</span>
+            instance.ObjectMeta.Finalizers = removeString(instance.ObjectMeta.Finalizers, myFinalizerName)
+            <span class="hljs-keyword">if</span> err := r.Update(context.Background(), instance); err != <span class="hljs-literal">nil</span> {
+                <span class="hljs-keyword">return</span> reconcile.Result{Requeue: <span class="hljs-literal">true</span>}, <span class="hljs-literal">nil</span>
+            }
+        }
+    }
+    ....
+    ....
+}
 
-    <span class="hljs-comment">// Status field documentation goes here.</span>
-    Status FrigateStatus <span class="hljs-string">`json:&quot;status,omitempty&quot;`</span>
+<span class="hljs-keyword">func</span> (r *Reconciler) deleteExternalDependency(instance *MyType) error {
+    log.Printf(<span class="hljs-string">&quot;deleting the external dependencies&quot;</span>)
+    <span class="hljs-comment">//</span>
+    <span class="hljs-comment">// delete the external dependency here</span>
+    <span class="hljs-comment">//</span>
+    <span class="hljs-comment">// Ensure that delete implementation is idempotent and safe to invoke</span>
+    <span class="hljs-comment">// multiple types for same object.</span>
+}
+
+<span class="hljs-comment">//</span>
+<span class="hljs-comment">// Helper functions to check and remove string from a slice of strings.</span>
+<span class="hljs-comment">//</span>
+<span class="hljs-keyword">func</span> containsString(slice []<span class="hljs-keyword">string</span>, s <span class="hljs-keyword">string</span>) <span class="hljs-keyword">bool</span> {
+    <span class="hljs-keyword">for</span> _, item := <span class="hljs-keyword">range</span> slice {
+        <span class="hljs-keyword">if</span> item == s {
+            <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>
+        }
+    }
+    <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>
+}
+
+<span class="hljs-keyword">func</span> removeString(slice []<span class="hljs-keyword">string</span>, s <span class="hljs-keyword">string</span>) (result []<span class="hljs-keyword">string</span>) {
+    <span class="hljs-keyword">for</span> _, item := <span class="hljs-keyword">range</span> slice {
+        <span class="hljs-keyword">if</span> item == s {
+            <span class="hljs-keyword">continue</span>
+        }
+        result = <span class="hljs-built_in">append</span>(result, item)
+    }
+    <span class="hljs-keyword">return</span>
 }
 </code></pre>
 </div></div></div>
-
-<h2 id="customizing-the-api-documentation">Customizing the API documentation</h2>
-<p>The generated documentation is controller by the <code>docs/reference/config.yaml</code> file generated by kubebuilder.  This
-file may be manually changed by users to customize the appearance of the documentation, however this is
-discouraged as the user will need to manually managed the config going forward.</p>
-<p><div class="panel panel-warning"><div class="panel-heading"><div class="panel-icon"><i class="icon-warning"></i></div><div class="panel-title">Modifying config.yaml</div></div><div class="panel-content"><p>When manually modifying config.yaml, users must run <code>kubebuilder docs</code> with <code>--generate-config=false</code> to
-prevent the file from being rewritten.</p>
-</div></div></p>
-<h4 id="table-of-contents">Table of Contents</h4>
-<div class="api-method"><div class="api-method-definition"><p><code>docs/reference/config.yaml</code> is automatically generated to create a section for each API group including
-the APIs in the group, and to show the most mature versions of each API.  Both the API sections and
-displayed API versions may be manually controlled if needed.</p>
-</div><div class="api-method-code"><div class="api-method-sample" data-lang="code" data-name="CODE"><blockquote>
-<p>generated config.yaml for <code>kubebuilder create resource --kind Bee --group insect --version v1beta1</code></p>
-</blockquote>
-<pre><code class="lang-yaml"><span class="hljs-attr">example_location:</span> <span class="hljs-string">&quot;examples&quot;</span>
-<span class="hljs-attr">api_groups:</span> 
-<span class="hljs-bullet">  -</span> <span class="hljs-string">&quot;Ship&quot;</span>
-<span class="hljs-attr">resource_categories:</span> 
-<span class="hljs-attr">- name:</span> <span class="hljs-string">&quot;Ship&quot;</span>
-<span class="hljs-attr">  include:</span> <span class="hljs-string">&quot;ship&quot;</span>
-<span class="hljs-attr">  resources:</span> 
-<span class="hljs-attr">  - name:</span> <span class="hljs-string">&quot;Frigate&quot;</span>
-<span class="hljs-attr">    version:</span> <span class="hljs-string">&quot;v1beta1&quot;</span>
-<span class="hljs-attr">    group:</span> <span class="hljs-string">&quot;ship&quot;</span>
-<span class="hljs-attr">    description_warning:</span> <span class="hljs-string">&quot;test warnings message annotations&quot;</span>
-<span class="hljs-attr">    description_note:</span> <span class="hljs-string">&quot;test notes message annotations&quot;</span>
-</code></pre>
-</div></div></div>
-
 
                                 
                                 </section>
@@ -794,7 +787,7 @@ displayed API versions may be manually controlled if needed.</p>
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"Generating API Documentation","level":"4.1.3","depth":2,"next":{"title":"Updating Kubebuilder","level":"4.1.4","depth":2,"path":"beyond_basics/upgrading_kubebuilder.md","ref":"beyond_basics/upgrading_kubebuilder.md","articles":[]},"previous":{"title":"Running Tests","level":"4.1.2","depth":2,"path":"beyond_basics/running_tests.md","ref":"beyond_basics/running_tests.md","articles":[]},"dir":"ltr"},"config":{"plugins":["theme-api","panel","sequence-diagrams","ga"],"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"panel":{},"search":{},"sequence-diagrams":{"theme":"simple"},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"highlight":{},"theme-api":{"languages":[],"split":true,"theme":"light"},"ga":{"configuration":"auto","token":"UA-119864590-1"},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","author":"Phillip Wittrock","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"The Kubebuilder Book","gitbook":">= 3.0.0"},"file":{"path":"beyond_basics/generating_documentation.md","mtime":"2018-07-25T00:55:03.037Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-09-26T16:10:07.169Z"},"basePath":"..","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"Using Finalizers","level":"4.2.4","depth":2,"next":{"title":"Webhooks","level":"4.3","depth":1,"ref":"","articles":[{"title":"What is a Webhook","level":"4.3.1","depth":2,"path":"beyond_basics/what_is_a_webhook.md","ref":"beyond_basics/what_is_a_webhook.md","articles":[]},{"title":"Webhook Example","level":"4.3.2","depth":2,"path":"beyond_basics/sample_webhook.md","ref":"beyond_basics/sample_webhook.md","articles":[]}]},"previous":{"title":"Creating Events","level":"4.2.3","depth":2,"path":"beyond_basics/creating_events.md","ref":"beyond_basics/creating_events.md","articles":[]},"dir":"ltr"},"config":{"plugins":["theme-api","panel","sequence-diagrams","ga"],"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"panel":{},"search":{},"sequence-diagrams":{"theme":"simple"},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"highlight":{},"theme-api":{"languages":[],"split":true,"theme":"light"},"ga":{"configuration":"auto","token":"UA-119864590-1"},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","author":"Phillip Wittrock","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"The Kubebuilder Book","gitbook":">= 3.0.0"},"file":{"path":"beyond_basics/using_finalizers.md","mtime":"2018-09-26T16:09:26.224Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-09-26T16:10:07.169Z"},"basePath":"..","book":{"language":""}});
         });
     </script>
 </div>

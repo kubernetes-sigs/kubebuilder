@@ -4,7 +4,7 @@
     <head>
         <meta charset="UTF-8">
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
-        <title>Generating API Documentation · The Kubebuilder Book</title>
+        <title>What is a Webhook · The Kubebuilder Book</title>
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta name="description" content="">
         <meta name="generator" content="GitBook 3.2.3">
@@ -69,10 +69,8 @@
     <link rel="shortcut icon" href="../gitbook/images/favicon.ico" type="image/x-icon">
 
     
-    <link rel="next" href="upgrading_kubebuilder.html" />
+    <link rel="next" href="sample_webhook.html" />
     
-    
-    <link rel="prev" href="running_tests.html" />
     
 
     </head>
@@ -407,7 +405,7 @@
             
         </li>
     
-        <li class="chapter active" data-level="4.1.3" data-path="generating_documentation.html">
+        <li class="chapter " data-level="4.1.3" data-path="generating_documentation.html">
             
                 <a href="generating_documentation.html">
             
@@ -536,7 +534,7 @@
             <ul class="articles">
                 
     
-        <li class="chapter " data-level="4.3.1" data-path="what_is_a_webhook.html">
+        <li class="chapter active" data-level="4.3.1" data-path="what_is_a_webhook.html">
             
                 <a href="what_is_a_webhook.html">
             
@@ -649,7 +647,7 @@
     <!-- Title -->
     <h1>
         <i class="fa fa-circle-o-notch fa-spin"></i>
-        <a href=".." >Generating API Documentation</a>
+        <a href=".." >What is a Webhook</a>
     </h1>
 </div>
 
@@ -664,101 +662,71 @@
     
                                 <section class="normal markdown-section">
                                 
-                                <h1 id="generating-api-documentation">Generating API Documentation</h1>
-<p>Kubebuilder will generate API reference documentation for your APIs with <code>kubebuilder docs</code>.  The
-reference documentation will be built under <code>docs/reference/build/index.html</code> and can be opened
-directly in a web browser.</p>
+                                <h1 id="webhook">Webhook</h1>
+<p>Webhooks are HTTP callbacks, providing a way for notifications to be delivered to an external web server.
+A web application implementing webhooks will send an HTTP request (typically POST) to other application when certain event happens.
+In the kubernetes world, there are 3 kinds of webhooks:
+<a href="https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#admission-webhooks" target="_blank">admission webhook</a>,
+<a href="https://kubernetes.io/docs/reference/access-authn-authz/webhook/" target="_blank">authorization webhook</a> and CRD conversion webhook.</p>
+<p>In <a href="https://godoc.org/sigs.k8s.io/controller-runtime/pkg/webhook" target="_blank">controller-runtime</a> libraries,
+currently we only support admission webhooks.
+CRD conversion webhooks will be supported after it is released in kubernetes 1.12.</p>
+<h2 id="admission-webhook">Admission Webhook</h2>
+<p>Admission webhooks are HTTP callbacks that receive admission requests, process them and return admission responses.
+There are two types of admission webhooks: mutating admission webhook and validating admission webhook.
+With mutating admission webhooks, you may change the request object before it is stored (e.g. for implementing defaulting of fields)
+With validating admission webhooks, you may not change the request, but you can reject it (e.g. for implementing validation of the request).</p>
+<h4 id="why-admission-webhooks-are-important">Why Admission Webhooks are Important</h4>
+<p>Admission webhooks are the mechanism to enable kubernetes extensibility through CRD.</p>
 <ul>
-<li>Use <code>--docs-copyright</code> to set the copyright footer</li>
-<li>Use <code>--title</code> to set the title</li>
+<li>Mutating admission webhook is the only way to do defaulting for CRDs.</li>
+<li>Validating admission webhook allows for more complex validation than pure schema-based validation.
+e.g. cross-field validation or cross-object validation.</li>
 </ul>
-<p><div class="panel panel-info"><div class="panel-heading"><div class="panel-icon"><i class="icon-info"></i></div><div class="panel-title">Non-Kubebuilder Projects</div></div><div class="panel-content"><p>Kubebuilder can also be used to generate API reference documentation for non-kubebuilder projects, as long as the
-resources are annotated with <code>// +kubebuilder:resource:path=&lt;resource-name&gt;</code> the same as they are in kubebuilder
-projects.</p>
-<p><strong>Important</strong>: The <code>// +kubebuilder:resource</code> annotation <em>must</em> appear directly above the go struct
-defining the resource.  No blank lines may appear between the annotation and the go struct.</p>
-</div></div></p>
-<h2 id="creating-examples">Creating Examples</h2>
-<div class="api-method"><div class="api-method-definition"><p>Users can provide resource examples by running
-<code>kubebuilder create example --kind &lt;kind&gt; --group &lt;group&gt; --version &lt;version&gt;</code>.  This will create an example
-file under <code>docs/reference/examples/&lt;kind&gt;/&lt;kind&gt;.yaml</code> for the user to edit.  The contents of this file will appear
-next to the API reference documentation after rerunning <code>kubebuilder docs</code>.</p>
+<p>It can also be used to add custom logic in the core kubernetes API.</p>
+<h4 id="mutating-admission-webhook">Mutating Admission Webhook</h4>
+<p>A mutating admission webhook receives an admission request which contains an object.
+The webhook can either decline the request directly or returning JSON patches for modifying the original object.</p>
 <ul>
-<li><code>note:</code> description that will appear directly above the example</li>
-<li><code>sample:</code> example yaml that will be displayed</li>
+<li>If admitting the request, the webhook is responsible for generating JSON patches and send them back in the
+admission response.</li>
+<li>If declining the request, a reason message should be returned in the admission response.</li>
 </ul>
-</div><div class="api-method-code"><div class="api-method-sample" data-lang="code" data-name="CODE"><blockquote>
-<p>$ kubebuilder create example --kind Frigate --version v1beta1 --group ships</p>
-</blockquote>
-<pre><code class="lang-yaml"><span class="hljs-comment"># docs/reference/examples/frigate/frigate.yaml</span>
-<span class="hljs-attr">note:</span> frigate example
-<span class="hljs-attr">sample:</span> <span class="hljs-string">|
-</span><span class="hljs-attr">  apiVersion:</span> v1beta1
-<span class="hljs-attr">  kind:</span> frigate
-<span class="hljs-attr">  metadata:</span>
-<span class="hljs-attr">    name:</span> frigate
-<span class="hljs-attr">  spec:</span>
-<span class="hljs-attr">    todo:</span> <span class="hljs-string">&quot;write me&quot;</span>
-</code></pre>
-</div></div></div>
-
-
-<h2 id="editing-overview-and-api-group-documentation">Editing Overview and API Group Documentation</h2>
-<p>Users can modify documentation of the overview and API <em>groups</em> by editing the files under
-<code>docs/reference/static_includes</code>.</p>
-<ul>
-<li>Edit <code>_overview.md</code> to provide documentation for the full set of APIs.</li>
-<li>Edit <code>_&lt;group&gt;.md</code> to provide documentation for a specific API group.</li>
-</ul>
-<h2 id="adding-notes-and-warnings-for-apis">Adding Notes and Warnings for APIs</h2>
-<div class="api-method"><div class="api-method-definition"><p>It is possible to add <em>notes</em> and <em>warnings</em> to APIs in the reference documentation by annotating
-the go struct with <code>// +kubebuilder:doc:note=</code> or <code>// +kubebuilder:doc:warning=</code>.  These will
-show up in <em>blue</em> and <em>orange</em> boxes.</p>
-</div><div class="api-method-code"><div class="api-method-sample" data-lang="code" data-name="CODE"><pre><code class="lang-go"><span class="hljs-comment">// Frigate API documentation goes here.</span>
-<span class="hljs-comment">// +kubebuilder:doc:note=this is a note</span>
-<span class="hljs-comment">// +kubebuilder:doc:warning=this is a warning</span>
-<span class="hljs-comment">// +k8s:openapi-gen=true</span>
-<span class="hljs-comment">// +kubebuilder:resource:path=frigates</span>
-<span class="hljs-keyword">type</span> Frigate <span class="hljs-keyword">struct</span> {
-    metav1.TypeMeta   <span class="hljs-string">`json:&quot;,inline&quot;`</span>
-    metav1.ObjectMeta <span class="hljs-string">`json:&quot;metadata,omitempty&quot;`</span>
-
-    <span class="hljs-comment">// Spec field documentation goes here.</span>
-    Spec   FrigateSpec   <span class="hljs-string">`json:&quot;spec,omitempty&quot;`</span>
-
-    <span class="hljs-comment">// Status field documentation goes here.</span>
-    Status FrigateStatus <span class="hljs-string">`json:&quot;status,omitempty&quot;`</span>
-}
-</code></pre>
-</div></div></div>
-
-<h2 id="customizing-the-api-documentation">Customizing the API documentation</h2>
-<p>The generated documentation is controller by the <code>docs/reference/config.yaml</code> file generated by kubebuilder.  This
-file may be manually changed by users to customize the appearance of the documentation, however this is
-discouraged as the user will need to manually managed the config going forward.</p>
-<p><div class="panel panel-warning"><div class="panel-heading"><div class="panel-icon"><i class="icon-warning"></i></div><div class="panel-title">Modifying config.yaml</div></div><div class="panel-content"><p>When manually modifying config.yaml, users must run <code>kubebuilder docs</code> with <code>--generate-config=false</code> to
-prevent the file from being rewritten.</p>
-</div></div></p>
-<h4 id="table-of-contents">Table of Contents</h4>
-<div class="api-method"><div class="api-method-definition"><p><code>docs/reference/config.yaml</code> is automatically generated to create a section for each API group including
-the APIs in the group, and to show the most mature versions of each API.  Both the API sections and
-displayed API versions may be manually controlled if needed.</p>
-</div><div class="api-method-code"><div class="api-method-sample" data-lang="code" data-name="CODE"><blockquote>
-<p>generated config.yaml for <code>kubebuilder create resource --kind Bee --group insect --version v1beta1</code></p>
-</blockquote>
-<pre><code class="lang-yaml"><span class="hljs-attr">example_location:</span> <span class="hljs-string">&quot;examples&quot;</span>
-<span class="hljs-attr">api_groups:</span> 
-<span class="hljs-bullet">  -</span> <span class="hljs-string">&quot;Ship&quot;</span>
-<span class="hljs-attr">resource_categories:</span> 
-<span class="hljs-attr">- name:</span> <span class="hljs-string">&quot;Ship&quot;</span>
-<span class="hljs-attr">  include:</span> <span class="hljs-string">&quot;ship&quot;</span>
-<span class="hljs-attr">  resources:</span> 
-<span class="hljs-attr">  - name:</span> <span class="hljs-string">&quot;Frigate&quot;</span>
-<span class="hljs-attr">    version:</span> <span class="hljs-string">&quot;v1beta1&quot;</span>
-<span class="hljs-attr">    group:</span> <span class="hljs-string">&quot;ship&quot;</span>
-<span class="hljs-attr">    description_warning:</span> <span class="hljs-string">&quot;test warnings message annotations&quot;</span>
-<span class="hljs-attr">    description_note:</span> <span class="hljs-string">&quot;test notes message annotations&quot;</span>
-</code></pre>
+<h4 id="validating-admission-webhook">Validating Admission Webhook</h4>
+<p>A validating admission webhook receives an admission request which contains an object.
+The webhook can either admit or decline the request.
+A reason message should be returned in the admission response if declining the request.</p>
+<h4 id="authentication">Authentication</h4>
+<p>The apiserver by default doesn&apos;t authenticate itself to the webhooks.
+That means the webhooks don&apos;t authenticate the identities of the clients.</p>
+<p>But if you want to authenticate the clients, you need to configure the apiserver to use basic auth, bearer token,
+or a cert to authenticate itself to the webhooks. You can find detailed steps
+<a href="https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#authenticate-apiservers" target="_blank">here</a>.</p>
+<h4 id="configure-admission-webhooks-dynamically">Configure Admission Webhooks Dynamically</h4>
+<div class="api-method"><div class="api-method-definition"><p>Admission webhooks can be configured dynamically via the <code>admissionregistration.k8s.io/v1beta1</code> API.
+So your cluster must be 1.9 or later and has enabled the API.</p>
+<p>You can do CRUD operations on WebhookConfiguration objects as on other k8s objects.</p>
+</div><div class="api-method-code"><div class="api-method-sample" data-lang="yaml" data-name="YAML"><pre><code class="lang-yaml"><span class="hljs-attr">apiVersion:</span> admissionregistration.k8s.io/v1beta1
+<span class="hljs-attr">kind:</span> ValidatingWebhookConfiguration
+<span class="hljs-attr">metadata:</span>
+<span class="hljs-attr">  name:</span> &lt;name of itself<span class="hljs-string">&gt;
+</span><span class="hljs-attr">webhooks:</span>
+<span class="hljs-attr">- name:</span> &lt;webhook name, e.g. validate-deployment.example.com<span class="hljs-string">&gt;
+</span><span class="hljs-attr">  rules:</span>
+<span class="hljs-attr">  - apiGroups:</span>
+<span class="hljs-bullet">    -</span> apps
+<span class="hljs-attr">    apiVersions:</span>
+<span class="hljs-bullet">    -</span> v1
+<span class="hljs-attr">    operations:</span>
+<span class="hljs-bullet">    -</span> CREATE
+<span class="hljs-attr">    resources:</span>
+<span class="hljs-bullet">    -</span> deployments
+<span class="hljs-attr">  clientConfig:</span>
+<span class="hljs-attr">    service:</span>
+<span class="hljs-attr">      namespace:</span> &lt;namespace of the service<span class="hljs-string">&gt;
+</span><span class="hljs-attr">      name:</span> &lt;name of the service<span class="hljs-string">&gt;
+</span><span class="hljs-attr">    caBundle:</span> &lt;pem encoded ca cert that signs the server cert used by the webhook<span class="hljs-string">&gt;
+</span></code></pre>
 </div></div></div>
 
 
@@ -794,7 +762,7 @@ displayed API versions may be manually controlled if needed.</p>
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"Generating API Documentation","level":"4.1.3","depth":2,"next":{"title":"Updating Kubebuilder","level":"4.1.4","depth":2,"path":"beyond_basics/upgrading_kubebuilder.md","ref":"beyond_basics/upgrading_kubebuilder.md","articles":[]},"previous":{"title":"Running Tests","level":"4.1.2","depth":2,"path":"beyond_basics/running_tests.md","ref":"beyond_basics/running_tests.md","articles":[]},"dir":"ltr"},"config":{"plugins":["theme-api","panel","sequence-diagrams","ga"],"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"panel":{},"search":{},"sequence-diagrams":{"theme":"simple"},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"highlight":{},"theme-api":{"languages":[],"split":true,"theme":"light"},"ga":{"configuration":"auto","token":"UA-119864590-1"},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","author":"Phillip Wittrock","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"The Kubebuilder Book","gitbook":">= 3.0.0"},"file":{"path":"beyond_basics/generating_documentation.md","mtime":"2018-07-25T00:55:03.037Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-09-26T16:10:07.169Z"},"basePath":"..","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"What is a Webhook","level":"4.3.1","depth":2,"next":{"title":"Webhook Example","level":"4.3.2","depth":2,"path":"beyond_basics/sample_webhook.md","ref":"beyond_basics/sample_webhook.md","articles":[]},"previous":{"title":"Webhooks","level":"4.3","depth":1,"ref":"","articles":[{"title":"What is a Webhook","level":"4.3.1","depth":2,"path":"beyond_basics/what_is_a_webhook.md","ref":"beyond_basics/what_is_a_webhook.md","articles":[]},{"title":"Webhook Example","level":"4.3.2","depth":2,"path":"beyond_basics/sample_webhook.md","ref":"beyond_basics/sample_webhook.md","articles":[]}]},"dir":"ltr"},"config":{"plugins":["theme-api","panel","sequence-diagrams","ga"],"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"panel":{},"search":{},"sequence-diagrams":{"theme":"simple"},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"highlight":{},"theme-api":{"languages":[],"split":true,"theme":"light"},"ga":{"configuration":"auto","token":"UA-119864590-1"},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","author":"Phillip Wittrock","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"The Kubebuilder Book","gitbook":">= 3.0.0"},"file":{"path":"beyond_basics/what_is_a_webhook.md","mtime":"2018-09-14T23:33:05.166Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-09-26T16:10:07.169Z"},"basePath":"..","book":{"language":""}});
         });
     </script>
 </div>

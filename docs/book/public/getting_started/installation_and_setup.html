@@ -289,7 +289,7 @@
                 <a href="../basics/what_is_a_controller.html">
             
                     
-                    What is a Contoller
+                    What is a Controller
             
                 </a>
             
@@ -433,6 +433,19 @@
             
         </li>
     
+        <li class="chapter " data-level="4.1.5" data-path="../beyond_basics/dependencies.html">
+            
+                <a href="../beyond_basics/dependencies.html">
+            
+                    
+                    Dependency Management
+            
+                </a>
+            
+
+            
+        </li>
+    
 
             </ul>
             
@@ -491,12 +504,70 @@
             
         </li>
     
+        <li class="chapter " data-level="4.2.4" data-path="../beyond_basics/using_finalizers.html">
+            
+                <a href="../beyond_basics/using_finalizers.html">
+            
+                    
+                    Using Finalizers
+            
+                </a>
+            
+
+            
+        </li>
+    
 
             </ul>
             
         </li>
     
         <li class="chapter " data-level="4.3" >
+            
+                <span>
+            
+                    
+                    Webhooks
+            
+                </span>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="4.3.1" data-path="../beyond_basics/what_is_a_webhook.html">
+            
+                <a href="../beyond_basics/what_is_a_webhook.html">
+            
+                    
+                    What is a Webhook
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="4.3.2" data-path="../beyond_basics/sample_webhook.html">
+            
+                <a href="../beyond_basics/sample_webhook.html">
+            
+                    
+                    Webhook Example
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="4.4" >
             
                 <span>
             
@@ -510,7 +581,7 @@
             <ul class="articles">
                 
     
-        <li class="chapter " data-level="4.3.1" data-path="../beyond_basics/deploying_controller.html">
+        <li class="chapter " data-level="4.4.1" data-path="../beyond_basics/deploying_controller.html">
             
                 <a href="../beyond_basics/deploying_controller.html">
             
@@ -598,28 +669,28 @@
 <div class="api-method"><div class="api-method-definition"><h2 id="installing-a-stable-release">Installing a stable release</h2>
 <p>Install kubebuilder by downloading the latest stable release from the
 <a href="https://github.com/kubernetes-sigs/kubebuilder/releases" target="_blank">github repo</a>.</p>
-</div><div class="api-method-code"><div class="api-method-sample" data-lang="mac" data-name="MAC"><pre><code class="lang-bash">version=1.0.0 <span class="hljs-comment"># latest stable version</span>
+</div><div class="api-method-code"><div class="api-method-sample" data-lang="mac" data-name="MAC"><pre><code class="lang-bash">version=1.0.1 <span class="hljs-comment"># latest stable version</span>
 arch=amd64
 
 <span class="hljs-comment"># download the release</span>
-curl -L -O https://github.com/kubernetes-sigs/kubebuilder/releases/download/v<span class="hljs-variable">$version</span>/kubebuilder_<span class="hljs-variable">$version_darwin_</span><span class="hljs-variable">$arch</span>.tar.gz
+curl -L -O https://github.com/kubernetes-sigs/kubebuilder/releases/download/v<span class="hljs-variable">${version}</span>/kubebuilder_<span class="hljs-variable">${version}</span>_darwin_<span class="hljs-variable">${arch}</span>.tar.gz
 
 <span class="hljs-comment"># extract the archive</span>
-tar -zxvf kubebuilder_<span class="hljs-variable">$version_darwin_</span><span class="hljs-variable">$arch</span>.tar.gz
-sudo mv kubebuilder_<span class="hljs-variable">$version_darwin_</span><span class="hljs-variable">$arch</span> /usr/<span class="hljs-built_in">local</span>/kubebuilder
+tar -zxvf kubebuilder_<span class="hljs-variable">${version}</span>_darwin_<span class="hljs-variable">${arch}</span>.tar.gz
+sudo mv kubebuilder_<span class="hljs-variable">${version}</span>_darwin_<span class="hljs-variable">${arch}</span> /usr/<span class="hljs-built_in">local</span>/kubebuilder
 
 <span class="hljs-comment"># update your PATH to include /usr/local/kubebuilder/bin</span>
 <span class="hljs-built_in">export</span> PATH=<span class="hljs-variable">$PATH</span>:/usr/<span class="hljs-built_in">local</span>/kubebuilder/bin
 </code></pre>
-</div><div class="api-method-sample" data-lang="linux" data-name="LINUX"><pre><code class="lang-bash">version=1.0.0 <span class="hljs-comment"># latest stable version</span>
+</div><div class="api-method-sample" data-lang="linux" data-name="LINUX"><pre><code class="lang-bash">version=1.0.1 <span class="hljs-comment"># latest stable version</span>
 arch=amd64
 
 <span class="hljs-comment"># download the release</span>
-curl -L -O https://github.com/kubernetes-sigs/kubebuilder/releases/download/v<span class="hljs-variable">$version</span>/kubebuilder_<span class="hljs-variable">$version_linux_</span><span class="hljs-variable">$arch</span>.tar.gz
+curl -L -O https://github.com/kubernetes-sigs/kubebuilder/releases/download/v<span class="hljs-variable">${version}</span>/kubebuilder_<span class="hljs-variable">${version}</span>_linux_<span class="hljs-variable">${arch}</span>.tar.gz
 
 <span class="hljs-comment"># extract the archive</span>
-tar -zxvf kubebuilder_<span class="hljs-variable">$version_linux_</span><span class="hljs-variable">$arch</span>.tar.gz
-sudo mv kubebuilder_<span class="hljs-variable">$version_linux_</span><span class="hljs-variable">$arch</span> /usr/<span class="hljs-built_in">local</span>/kubebuilder
+tar -zxvf kubebuilder_<span class="hljs-variable">${version}</span>_linux_<span class="hljs-variable">${arch}</span>.tar.gz
+sudo mv kubebuilder_<span class="hljs-variable">${version}</span>_linux_<span class="hljs-variable">${arch}</span> /usr/<span class="hljs-built_in">local</span>/kubebuilder
 
 <span class="hljs-comment"># update your PATH to include /usr/local/kubebuilder/bin</span>
 <span class="hljs-built_in">export</span> PATH=<span class="hljs-variable">$PATH</span>:/usr/<span class="hljs-built_in">local</span>/kubebuilder/bin
@@ -632,11 +703,11 @@ this release is not well tested, so you might encounter some bugs.</p>
 </div><div class="api-method-code"><div class="api-method-sample" data-lang="mac" data-name="MAC"><pre><code class="lang-bash">arch=amd64
 
 <span class="hljs-comment"># download the release</span>
-curl -L -O https://storage.googleapis.com/kubebuilder-release/kubebuilder_master_darwin_<span class="hljs-variable">$arch</span>.tar.gz
+curl -L -O https://storage.googleapis.com/kubebuilder-release/kubebuilder_master_darwin_<span class="hljs-variable">${arch}</span>.tar.gz
 
 <span class="hljs-comment"># extract the archive</span>
-tar -zxvf kubebuilder_master_darwin_<span class="hljs-variable">$arch</span>.tar.gz
-sudo mv kubebuilder_master_darwin_<span class="hljs-variable">$arch</span> /usr/<span class="hljs-built_in">local</span>/kubebuilder
+tar -zxvf kubebuilder_master_darwin_<span class="hljs-variable">${arch}</span>.tar.gz
+sudo mv kubebuilder_master_darwin_<span class="hljs-variable">${arch}</span> /usr/<span class="hljs-built_in">local</span>/kubebuilder
 
 <span class="hljs-comment"># update your PATH to include /usr/local/kubebuilder/bin</span>
 <span class="hljs-built_in">export</span> PATH=<span class="hljs-variable">$PATH</span>:/usr/<span class="hljs-built_in">local</span>/kubebuilder/bin
@@ -644,11 +715,11 @@ sudo mv kubebuilder_master_darwin_<span class="hljs-variable">$arch</span> /usr/
 </div><div class="api-method-sample" data-lang="linux" data-name="LINUX"><pre><code class="lang-bash">arch=amd64
 
 <span class="hljs-comment"># download the release</span>
-curl -L -O https://storage.googleapis.com/kubebuilder-release/kubebuilder_master_linux_<span class="hljs-variable">$arch</span>.tar.gz
+curl -L -O https://storage.googleapis.com/kubebuilder-release/kubebuilder_master_linux_<span class="hljs-variable">${arch}</span>.tar.gz
 
 <span class="hljs-comment"># extract the archive</span>
-tar -zxvf kubebuilder_master_linux_<span class="hljs-variable">$arch</span>.tar.gz
-sudo mv kubebuilder_master_linux_<span class="hljs-variable">$arch</span> /usr/<span class="hljs-built_in">local</span>/kubebuilder
+tar -zxvf kubebuilder_master_linux_<span class="hljs-variable">${arch}</span>.tar.gz
+sudo mv kubebuilder_master_linux_<span class="hljs-variable">${arch}</span> /usr/<span class="hljs-built_in">local</span>/kubebuilder
 
 <span class="hljs-comment"># update your PATH to include /usr/local/kubebuilder/bin</span>
 <span class="hljs-built_in">export</span> PATH=<span class="hljs-variable">$PATH</span>:/usr/<span class="hljs-built_in">local</span>/kubebuilder/bin
@@ -687,7 +758,7 @@ sudo mv kubebuilder_master_linux_<span class="hljs-variable">$arch</span> /usr/<
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"Installation and Setup","level":"2.3","depth":1,"next":{"title":"Hello World","level":"2.4","depth":1,"path":"getting_started/hello_world.md","ref":"getting_started/hello_world.md","articles":[]},"previous":{"title":"What is Kubebuilder","level":"2.2","depth":1,"path":"getting_started/what_is_kubebuilder.md","ref":"getting_started/what_is_kubebuilder.md","articles":[]},"dir":"ltr"},"config":{"plugins":["theme-api","panel","sequence-diagrams","ga"],"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"panel":{},"search":{},"sequence-diagrams":{"theme":"simple"},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"highlight":{},"theme-api":{"languages":[],"split":true,"theme":"light"},"ga":{"configuration":"auto","token":"UA-119864590-1"},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","author":"Phillip Wittrock","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"The Kubebuilder Book","gitbook":">= 3.0.0"},"file":{"path":"getting_started/installation_and_setup.md","mtime":"2018-07-25T00:55:03.061Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-07-25T16:34:48.577Z"},"basePath":"..","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"Installation and Setup","level":"2.3","depth":1,"next":{"title":"Hello World","level":"2.4","depth":1,"path":"getting_started/hello_world.md","ref":"getting_started/hello_world.md","articles":[]},"previous":{"title":"What is Kubebuilder","level":"2.2","depth":1,"path":"getting_started/what_is_kubebuilder.md","ref":"getting_started/what_is_kubebuilder.md","articles":[]},"dir":"ltr"},"config":{"plugins":["theme-api","panel","sequence-diagrams","ga"],"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"panel":{},"search":{},"sequence-diagrams":{"theme":"simple"},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"highlight":{},"theme-api":{"languages":[],"split":true,"theme":"light"},"ga":{"configuration":"auto","token":"UA-119864590-1"},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","author":"Phillip Wittrock","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"The Kubebuilder Book","gitbook":">= 3.0.0"},"file":{"path":"getting_started/installation_and_setup.md","mtime":"2018-09-14T23:33:05.167Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-09-26T16:10:07.169Z"},"basePath":"..","book":{"language":""}});
         });
     </script>
 </div>

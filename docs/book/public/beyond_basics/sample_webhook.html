@@ -4,7 +4,7 @@
     <head>
         <meta charset="UTF-8">
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
-        <title>Generating API Documentation · The Kubebuilder Book</title>
+        <title>Webhook Example · The Kubebuilder Book</title>
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta name="description" content="">
         <meta name="generator" content="GitBook 3.2.3">
@@ -69,10 +69,8 @@
     <link rel="shortcut icon" href="../gitbook/images/favicon.ico" type="image/x-icon">
 
     
-    <link rel="next" href="upgrading_kubebuilder.html" />
     
-    
-    <link rel="prev" href="running_tests.html" />
+    <link rel="prev" href="what_is_a_webhook.html" />
     
 
     </head>
@@ -407,7 +405,7 @@
             
         </li>
     
-        <li class="chapter active" data-level="4.1.3" data-path="generating_documentation.html">
+        <li class="chapter " data-level="4.1.3" data-path="generating_documentation.html">
             
                 <a href="generating_documentation.html">
             
@@ -549,7 +547,7 @@
             
         </li>
     
-        <li class="chapter " data-level="4.3.2" data-path="sample_webhook.html">
+        <li class="chapter active" data-level="4.3.2" data-path="sample_webhook.html">
             
                 <a href="sample_webhook.html">
             
@@ -649,7 +647,7 @@
     <!-- Title -->
     <h1>
         <i class="fa fa-circle-o-notch fa-spin"></i>
-        <a href=".." >Generating API Documentation</a>
+        <a href=".." >Webhook Example</a>
     </h1>
 </div>
 
@@ -664,103 +662,192 @@
     
                                 <section class="normal markdown-section">
                                 
-                                <h1 id="generating-api-documentation">Generating API Documentation</h1>
-<p>Kubebuilder will generate API reference documentation for your APIs with <code>kubebuilder docs</code>.  The
-reference documentation will be built under <code>docs/reference/build/index.html</code> and can be opened
-directly in a web browser.</p>
-<ul>
-<li>Use <code>--docs-copyright</code> to set the copyright footer</li>
-<li>Use <code>--title</code> to set the title</li>
-</ul>
-<p><div class="panel panel-info"><div class="panel-heading"><div class="panel-icon"><i class="icon-info"></i></div><div class="panel-title">Non-Kubebuilder Projects</div></div><div class="panel-content"><p>Kubebuilder can also be used to generate API reference documentation for non-kubebuilder projects, as long as the
-resources are annotated with <code>// +kubebuilder:resource:path=&lt;resource-name&gt;</code> the same as they are in kubebuilder
-projects.</p>
-<p><strong>Important</strong>: The <code>// +kubebuilder:resource</code> annotation <em>must</em> appear directly above the go struct
-defining the resource.  No blank lines may appear between the annotation and the go struct.</p>
-</div></div></p>
-<h2 id="creating-examples">Creating Examples</h2>
-<div class="api-method"><div class="api-method-definition"><p>Users can provide resource examples by running
-<code>kubebuilder create example --kind &lt;kind&gt; --group &lt;group&gt; --version &lt;version&gt;</code>.  This will create an example
-file under <code>docs/reference/examples/&lt;kind&gt;/&lt;kind&gt;.yaml</code> for the user to edit.  The contents of this file will appear
-next to the API reference documentation after rerunning <code>kubebuilder docs</code>.</p>
-<ul>
-<li><code>note:</code> description that will appear directly above the example</li>
-<li><code>sample:</code> example yaml that will be displayed</li>
-</ul>
-</div><div class="api-method-code"><div class="api-method-sample" data-lang="code" data-name="CODE"><blockquote>
-<p>$ kubebuilder create example --kind Frigate --version v1beta1 --group ships</p>
-</blockquote>
-<pre><code class="lang-yaml"><span class="hljs-comment"># docs/reference/examples/frigate/frigate.yaml</span>
-<span class="hljs-attr">note:</span> frigate example
-<span class="hljs-attr">sample:</span> <span class="hljs-string">|
-</span><span class="hljs-attr">  apiVersion:</span> v1beta1
-<span class="hljs-attr">  kind:</span> frigate
-<span class="hljs-attr">  metadata:</span>
-<span class="hljs-attr">    name:</span> frigate
-<span class="hljs-attr">  spec:</span>
-<span class="hljs-attr">    todo:</span> <span class="hljs-string">&quot;write me&quot;</span>
-</code></pre>
-</div></div></div>
+                                <h1 id="webhook-example">Webhook Example</h1>
+<p>This chapter walks through a simple webhook implementation.</p>
+<p>It uses the <a href="https://godoc.org/sigs.k8s.io/controller-runtime/pkg/webhook" target="_blank">controller-runtime</a> libraries to implement
+a Webhook Server and Manager.</p>
+<p>Same as controllers, a Webhook Server is a
+<a href="https://godoc.org/sigs.k8s.io/controller-runtime/pkg/manager#Runnable" target="_blank"><code>Runable</code></a> which needs to be registered to a manager.
+Arbitrary number of <code>Runable</code>s can be registered to a manager,
+so a webhook server can run with other controllers in the same manager.
+They will share the same dependencies provided by the manager. For example, shared cache, client, scheme, etc.</p>
+<h2 id="setup">Setup</h2>
+<h4 id="way-to-deploy-your-webhook-server">Way to Deploy your Webhook Server</h4>
+<p>There are various ways to deploy the webhook server in terms of</p>
+<ol>
+<li>Where the serving certificates live.</li>
+<li>In what environment the webhook server runs, in a pod or directly on a VM, etc.</li>
+<li>If in a pod, on what type of node, worker nodes or master node.</li>
+</ol>
+<p>The recommended way to deploy the webhook server is</p>
+<ol>
+<li>Run the webhook server as a regular pod on worker nodes through a workload API, e.g. Deployment or StatefulSet.</li>
+<li>Put the certificate in a k8s secret in the same namespace as the webhook server</li>
+<li>Mount the secret as a volume in the pod</li>
+<li>Create a k8s service to front the webhook server.</li>
+</ol>
+<h4 id="creating-a-handler">Creating a Handler</h4>
+<div class="api-method"><div class="api-method-definition"><p>The business logic for a Webhook exists in a Handler.
+A Handler implements the <code>admission.Handler</code> interface, which contains a single <code>Handle</code> method.</p>
+<p>If a Handler implements <code>inject.Client</code> and <code>inject.Decoder</code> interfaces,
+the manager will automatically inject the client and the decoder into the Handler.</p>
+<p>Note: The <code>client.Client</code> provided by the manager reads from a cache which is lazily initialized.
+To eagerly initialize the cache, perform a read operation with the client before starting the server.</p>
+<p><code>podAnnotator</code> is a Handler, which implements the <code>admission.Handler</code>, <code>inject.Client</code> and <code>inject.Decoder</code> interfaces.</p>
+<p>Details about how to implement an admission webhook podAnnotator is covered in a later section.</p>
+</div><div class="api-method-code"><div class="api-method-sample" data-lang="go" data-name="Go"><pre><code class="lang-go"><span class="hljs-keyword">type</span> podAnnotator <span class="hljs-keyword">struct</span> {
+    client  client.Client
+    decoder types.Decoder
+}
 
+<span class="hljs-comment">// podAnnotator implements admission.Handler.</span>
+<span class="hljs-keyword">var</span> _ admission.Handler = &amp;podAnnotator{}
 
-<h2 id="editing-overview-and-api-group-documentation">Editing Overview and API Group Documentation</h2>
-<p>Users can modify documentation of the overview and API <em>groups</em> by editing the files under
-<code>docs/reference/static_includes</code>.</p>
-<ul>
-<li>Edit <code>_overview.md</code> to provide documentation for the full set of APIs.</li>
-<li>Edit <code>_&lt;group&gt;.md</code> to provide documentation for a specific API group.</li>
-</ul>
-<h2 id="adding-notes-and-warnings-for-apis">Adding Notes and Warnings for APIs</h2>
-<div class="api-method"><div class="api-method-definition"><p>It is possible to add <em>notes</em> and <em>warnings</em> to APIs in the reference documentation by annotating
-the go struct with <code>// +kubebuilder:doc:note=</code> or <code>// +kubebuilder:doc:warning=</code>.  These will
-show up in <em>blue</em> and <em>orange</em> boxes.</p>
-</div><div class="api-method-code"><div class="api-method-sample" data-lang="code" data-name="CODE"><pre><code class="lang-go"><span class="hljs-comment">// Frigate API documentation goes here.</span>
-<span class="hljs-comment">// +kubebuilder:doc:note=this is a note</span>
-<span class="hljs-comment">// +kubebuilder:doc:warning=this is a warning</span>
-<span class="hljs-comment">// +k8s:openapi-gen=true</span>
-<span class="hljs-comment">// +kubebuilder:resource:path=frigates</span>
-<span class="hljs-keyword">type</span> Frigate <span class="hljs-keyword">struct</span> {
-    metav1.TypeMeta   <span class="hljs-string">`json:&quot;,inline&quot;`</span>
-    metav1.ObjectMeta <span class="hljs-string">`json:&quot;metadata,omitempty&quot;`</span>
+<span class="hljs-keyword">func</span> (a *podAnnotator) Handle(ctx context.Context, req types.Request) types.Response {
+    ...
+}
 
-    <span class="hljs-comment">// Spec field documentation goes here.</span>
-    Spec   FrigateSpec   <span class="hljs-string">`json:&quot;spec,omitempty&quot;`</span>
+<span class="hljs-comment">// podAnnotator implements inject.Client.</span>
+<span class="hljs-keyword">var</span> _ inject.Client = &amp;podAnnotator{}
 
-    <span class="hljs-comment">// Status field documentation goes here.</span>
-    Status FrigateStatus <span class="hljs-string">`json:&quot;status,omitempty&quot;`</span>
+<span class="hljs-comment">// InjectClient injects the client into the podAnnotator</span>
+<span class="hljs-keyword">func</span> (a *podAnnotator) InjectClient(c client.Client) error {
+    a.client = c
+    <span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span>
+}
+
+<span class="hljs-comment">// podAnnotator implements inject.Decoder.</span>
+<span class="hljs-keyword">var</span> _ inject.Decoder = &amp;podAnnotator{}
+
+<span class="hljs-comment">// InjectDecoder injects the decoder into the podAnnotator</span>
+<span class="hljs-keyword">func</span> (a *podAnnotator) InjectDecoder(d types.Decoder) error {
+    a.decoder = d
+    <span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span>
 }
 </code></pre>
 </div></div></div>
 
-<h2 id="customizing-the-api-documentation">Customizing the API documentation</h2>
-<p>The generated documentation is controller by the <code>docs/reference/config.yaml</code> file generated by kubebuilder.  This
-file may be manually changed by users to customize the appearance of the documentation, however this is
-discouraged as the user will need to manually managed the config going forward.</p>
-<p><div class="panel panel-warning"><div class="panel-heading"><div class="panel-icon"><i class="icon-warning"></i></div><div class="panel-title">Modifying config.yaml</div></div><div class="panel-content"><p>When manually modifying config.yaml, users must run <code>kubebuilder docs</code> with <code>--generate-config=false</code> to
-prevent the file from being rewritten.</p>
-</div></div></p>
-<h4 id="table-of-contents">Table of Contents</h4>
-<div class="api-method"><div class="api-method-definition"><p><code>docs/reference/config.yaml</code> is automatically generated to create a section for each API group including
-the APIs in the group, and to show the most mature versions of each API.  Both the API sections and
-displayed API versions may be manually controlled if needed.</p>
-</div><div class="api-method-code"><div class="api-method-sample" data-lang="code" data-name="CODE"><blockquote>
-<p>generated config.yaml for <code>kubebuilder create resource --kind Bee --group insect --version v1beta1</code></p>
-</blockquote>
-<pre><code class="lang-yaml"><span class="hljs-attr">example_location:</span> <span class="hljs-string">&quot;examples&quot;</span>
-<span class="hljs-attr">api_groups:</span> 
-<span class="hljs-bullet">  -</span> <span class="hljs-string">&quot;Ship&quot;</span>
-<span class="hljs-attr">resource_categories:</span> 
-<span class="hljs-attr">- name:</span> <span class="hljs-string">&quot;Ship&quot;</span>
-<span class="hljs-attr">  include:</span> <span class="hljs-string">&quot;ship&quot;</span>
-<span class="hljs-attr">  resources:</span> 
-<span class="hljs-attr">  - name:</span> <span class="hljs-string">&quot;Frigate&quot;</span>
-<span class="hljs-attr">    version:</span> <span class="hljs-string">&quot;v1beta1&quot;</span>
-<span class="hljs-attr">    group:</span> <span class="hljs-string">&quot;ship&quot;</span>
-<span class="hljs-attr">    description_warning:</span> <span class="hljs-string">&quot;test warnings message annotations&quot;</span>
-<span class="hljs-attr">    description_note:</span> <span class="hljs-string">&quot;test notes message annotations&quot;</span>
+
+<h4 id="configuring-a-webhook-and-registering-the-handler">Configuring a Webhook and Registering the Handler</h4>
+<div class="api-method"><div class="api-method-definition"><p>A Webhook configures what type of requests the Handler should accept from the apiserver. Options include:</p>
+<ul>
+<li>The type of the Operations (CRUD)</li>
+<li>The type of the Targets (Deployment, Pod, etc)</li>
+<li>The type of the Handler (Mutating, Validating)</li>
+</ul>
+<p>When the Server starts, it will register all Webhook Configurations with the apiserver to start accepting and
+routing requests to the Handlers.</p>
+<p><a href="https://godoc.org/sigs.k8s.io/controller-runtime/pkg/webhook/admission/builder" target="_blank">controller-runtime</a> provides a useful package for
+building a webhook.
+You can incrementally set the configuration of a webhook and then invoke <code>Build</code> to complete building a webhook.</p>
+<p>If you want to specify the name and(or) path for your webhook instead of using the default, you can invoke
+<code>Name(&quot;yourname&quot;)</code> and <code>Path(&quot;/yourpath&quot;)</code> respectively.</p>
+</div><div class="api-method-code"><div class="api-method-sample" data-lang="go" data-name="Go"><pre><code class="lang-go">wh, err := builder.NewWebhookBuilder().
+    Mutating().
+    Operations(admissionregistrationv1beta1.Create).
+    ForType(&amp;corev1.Pod{}).
+    Handlers(&amp;podAnnotator{}).
+    WithManager(mgr).
+    Build()
+<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> {
+    <span class="hljs-comment">// handle error</span>
+}
 </code></pre>
 </div></div></div>
 
+
+<h4 id="creating-a-server">Creating a Server</h4>
+<div class="api-method"><div class="api-method-definition"><p>A Server registers Webhook Configuration with the apiserver and creates an HTTP server to route requests to the handlers.</p>
+<p>The server is behind a Kubernetes Service and provides a certificate to the apiserver when serving requests.</p>
+<p>The Server depends on a Kubernetes Secret containing this certificate to be mounted under <code>CertDir</code>.</p>
+<p>If the Secret is empty, during bootstrapping the Server will generate a certificate and write it into the Secret.</p>
+<p>A new webhook server can be created by invoking <code>webhook.NewServer</code>.
+The Server will be registered to the provided manager.
+You can specify <code>Port</code>, <code>CertDir</code> and various <code>BootstrapOptions</code>.
+For the full list of Server options, please see <a href="https://godoc.org/sigs.k8s.io/controller-runtime/pkg/webhook" target="_blank">GoDoc</a>.</p>
+</div><div class="api-method-code"><div class="api-method-sample" data-lang="go" data-name="Go"><pre><code class="lang-go">svr, err := webhook.NewServer(<span class="hljs-string">&quot;foo-admission-server&quot;</span>, mgr, webhook.ServerOptions{
+    CertDir: <span class="hljs-string">&quot;/tmp/cert&quot;</span>,
+    BootstrapOptions: &amp;webhook.BootstrapOptions{
+        Secret: &amp;types.NamespacedName{
+            Namespace: <span class="hljs-string">&quot;default&quot;</span>,
+            Name:      <span class="hljs-string">&quot;foo-admission-server-secret&quot;</span>,
+        },
+
+        Service: &amp;webhook.Service{
+            Namespace: <span class="hljs-string">&quot;default&quot;</span>,
+            Name:      <span class="hljs-string">&quot;foo-admission-server-service&quot;</span>,
+            <span class="hljs-comment">// Selectors should select the pods that runs this webhook server.</span>
+            Selectors: <span class="hljs-keyword">map</span>[<span class="hljs-keyword">string</span>]<span class="hljs-keyword">string</span>{
+                <span class="hljs-string">&quot;app&quot;</span>: <span class="hljs-string">&quot;foo-admission-server&quot;</span>,
+            },
+        },
+    },
+})
+<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> {
+    <span class="hljs-comment">// handle error</span>
+}
+</code></pre>
+</div></div></div>
+
+<h4 id="registering-a-webhook-with-the-server">Registering a Webhook with the Server</h4>
+<p>You can register webhook(s) in the webhook server by invoking <code>svr.Register(wh)</code>.</p>
+<h2 id="implementing-webhook-handler">Implementing Webhook Handler</h2>
+<h4 id="implementing-the-handler-business-logic">Implementing the Handler Business Logic</h4>
+<div class="api-method"><div class="api-method-definition"><p><code>decoder types.Decoder</code> is a decoder that knows how the decode all core type and your CRD types.</p>
+<p><code>client client.Client</code> is a client that knows how to talk to the API server.</p>
+<p>The guideline of returning HTTP status code is that:</p>
+<ul>
+<li>If the server decides to admit the request, it should return 200 and set
+<a href="https://github.com/kubernetes/api/blob/f456898a08e4bbc5891694118f3819f324de12ff/admission/v1beta1/types.go#L86-L87" target="_blank"><code>Allowed</code></a>
+to <code>true</code>.</li>
+<li>If the server rejects the request due to an admission policy reason, it should return 200, set
+<a href="https://github.com/kubernetes/api/blob/f456898a08e4bbc5891694118f3819f324de12ff/admission/v1beta1/types.go#L86-L87" target="_blank"><code>Allowed</code></a>
+to <code>false</code> and provide an informational message as reason.</li>
+<li>If the request is not well formatted, the server should reject it with 400 (Bad Request) and an error message.</li>
+<li>If the server encounters an unexpected error during processing, it should reject the request with 500 (Internal Error).</li>
+</ul>
+<p><code>controller-runtime</code> provides various helper methods for constructing Response.</p>
+<ul>
+<li><code>ErrorResponse</code> for rejecting a request due to an error.</li>
+<li><code>PatchResponse</code> for mutating webook to admit a request with patches.</li>
+<li><code>ValidationResponse</code> for admitting or rejecting a request with a reason message.</li>
+</ul>
+</div><div class="api-method-code"><div class="api-method-sample" data-lang="go" data-name="Go"><pre><code class="lang-go"><span class="hljs-keyword">type</span> podAnnotator <span class="hljs-keyword">struct</span> {
+    client  client.Client
+    decoder types.Decoder
+}
+
+<span class="hljs-comment">// podAnnotator Iimplements admission.Handler.</span>
+<span class="hljs-keyword">var</span> _ admission.Handler = &amp;podAnnotator{}
+
+<span class="hljs-comment">// podAnnotator adds an annotation to every incoming pods.</span>
+<span class="hljs-keyword">func</span> (a *podAnnotator) Handle(ctx context.Context, req types.Request) types.Response {
+    pod := &amp;corev1.Pod{}
+
+    err := a.decoder.Decode(req, pod)
+    <span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> {
+        <span class="hljs-keyword">return</span> admission.ErrorResponse(http.StatusBadRequest, err)
+    }
+    <span class="hljs-built_in">copy</span> := pod.DeepCopy()
+
+    err = a.mutatePodsFn(ctx, <span class="hljs-built_in">copy</span>)
+    <span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> {
+        <span class="hljs-keyword">return</span> admission.ErrorResponse(http.StatusInternalServerError, err)
+    }
+    <span class="hljs-comment">// admission.PatchResponse generates a Response containing patches.</span>
+    <span class="hljs-keyword">return</span> admission.PatchResponse(pod, <span class="hljs-built_in">copy</span>)
+}
+
+<span class="hljs-comment">// mutatePodsFn add an annotation to the given pod</span>
+<span class="hljs-keyword">func</span> (a *podAnnotator) mutatePodsFn(ctx context.Context, pod *corev1.Pod) error {
+    <span class="hljs-keyword">if</span> pod.Annotations == <span class="hljs-literal">nil</span> {
+        pod.Annotations = <span class="hljs-keyword">map</span>[<span class="hljs-keyword">string</span>]<span class="hljs-keyword">string</span>{}
+    }
+    pod.Annotations[<span class="hljs-string">&quot;example-mutating-admission-webhook&quot;</span>] = <span class="hljs-string">&quot;foo&quot;</span>
+    <span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span>
+}
+</code></pre>
+</div></div></div>
 
                                 
                                 </section>
@@ -794,7 +881,7 @@ displayed API versions may be manually controlled if needed.</p>
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"Generating API Documentation","level":"4.1.3","depth":2,"next":{"title":"Updating Kubebuilder","level":"4.1.4","depth":2,"path":"beyond_basics/upgrading_kubebuilder.md","ref":"beyond_basics/upgrading_kubebuilder.md","articles":[]},"previous":{"title":"Running Tests","level":"4.1.2","depth":2,"path":"beyond_basics/running_tests.md","ref":"beyond_basics/running_tests.md","articles":[]},"dir":"ltr"},"config":{"plugins":["theme-api","panel","sequence-diagrams","ga"],"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"panel":{},"search":{},"sequence-diagrams":{"theme":"simple"},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"highlight":{},"theme-api":{"languages":[],"split":true,"theme":"light"},"ga":{"configuration":"auto","token":"UA-119864590-1"},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","author":"Phillip Wittrock","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"The Kubebuilder Book","gitbook":">= 3.0.0"},"file":{"path":"beyond_basics/generating_documentation.md","mtime":"2018-07-25T00:55:03.037Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-09-26T16:10:07.169Z"},"basePath":"..","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"Webhook Example","level":"4.3.2","depth":2,"next":{"title":"Deployment Workflow","level":"4.4","depth":1,"ref":"","articles":[{"title":"Deploying the manager in Cluster","level":"4.4.1","depth":2,"path":"beyond_basics/deploying_controller.md","ref":"beyond_basics/deploying_controller.md","articles":[]}]},"previous":{"title":"What is a Webhook","level":"4.3.1","depth":2,"path":"beyond_basics/what_is_a_webhook.md","ref":"beyond_basics/what_is_a_webhook.md","articles":[]},"dir":"ltr"},"config":{"plugins":["theme-api","panel","sequence-diagrams","ga"],"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"panel":{},"search":{},"sequence-diagrams":{"theme":"simple"},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"highlight":{},"theme-api":{"languages":[],"split":true,"theme":"light"},"ga":{"configuration":"auto","token":"UA-119864590-1"},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","author":"Phillip Wittrock","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"The Kubebuilder Book","gitbook":">= 3.0.0"},"file":{"path":"beyond_basics/sample_webhook.md","mtime":"2018-09-14T23:33:05.166Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-09-26T16:10:07.169Z"},"basePath":"..","book":{"language":""}});
         });
     </script>
 </div>

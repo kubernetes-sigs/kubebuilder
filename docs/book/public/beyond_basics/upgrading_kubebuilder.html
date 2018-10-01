@@ -69,6 +69,8 @@
     <link rel="shortcut icon" href="../gitbook/images/favicon.ico" type="image/x-icon">
 
     
+    <link rel="next" href="dependencies.html" />
+    
     
     <link rel="prev" href="generating_documentation.html" />
     
@@ -287,7 +289,7 @@
                 <a href="../basics/what_is_a_controller.html">
             
                     
-                    What is a Contoller
+                    What is a Controller
             
                 </a>
             
@@ -431,6 +433,19 @@
             
         </li>
     
+        <li class="chapter " data-level="4.1.5" data-path="dependencies.html">
+            
+                <a href="dependencies.html">
+            
+                    
+                    Dependency Management
+            
+                </a>
+            
+
+            
+        </li>
+    
 
             </ul>
             
@@ -489,12 +504,70 @@
             
         </li>
     
+        <li class="chapter " data-level="4.2.4" data-path="using_finalizers.html">
+            
+                <a href="using_finalizers.html">
+            
+                    
+                    Using Finalizers
+            
+                </a>
+            
+
+            
+        </li>
+    
 
             </ul>
             
         </li>
     
         <li class="chapter " data-level="4.3" >
+            
+                <span>
+            
+                    
+                    Webhooks
+            
+                </span>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="4.3.1" data-path="what_is_a_webhook.html">
+            
+                <a href="what_is_a_webhook.html">
+            
+                    
+                    What is a Webhook
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="4.3.2" data-path="sample_webhook.html">
+            
+                <a href="sample_webhook.html">
+            
+                    
+                    Webhook Example
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="4.4" >
             
                 <span>
             
@@ -508,7 +581,7 @@
             <ul class="articles">
                 
     
-        <li class="chapter " data-level="4.3.1" data-path="deploying_controller.html">
+        <li class="chapter " data-level="4.4.1" data-path="deploying_controller.html">
             
                 <a href="deploying_controller.html">
             
@@ -595,6 +668,18 @@
 <h2 id="update-the-kubebuilder-install">Update the Kubebuilder install</h2>
 <p>Install the latest version of kubebuilder from <a href="https://github.com/kubernetes-sigs/kubebuilder/releases" target="_blank">releases page</a>.</p>
 <h2 id="update-existing-projects-dependencies">Update Existing Project&apos;s Dependencies</h2>
+<p><div class="panel panel-warning"><div class="panel-heading"><div class="panel-icon"><i class="icon-warning"></i></div><div class="panel-title">Kubebuilder 1.0.1 and earlier</div></div><div class="panel-content"><p>Before following the instructions below, make sure to update Kubebuilder
+to 1.0.2+, update your dependency file to the latest version by using
+<code>kubebuilder update vendor</code> (see
+<a href="#updating-to-new-major-versions">below</a>). See the <a href="dependencies.html">dependencies
+guide</a> for more information on why this is necessary.</p>
+</div></div></p>
+<p>You can update dependencies to minor and patch versions using
+<a href="https://golang.github.io/dep/" target="_blank">dep</a>, as you would any other dependency in
+your project.  See <a href="dependencies.html#updating-existing-dependencies">the dependencies
+guide</a> for more
+information.</p>
+<h3 id="updating-to-new-major-versions">Updating to New Major Versions</h3>
 <div class="api-method"><div class="api-method-definition"><p>Update your project&apos;s dependencies to the latest version of the libraries used by kubebuilder.  This
 will modify <em>Gopkg.toml</em> by rewriting the <code>[[override]]</code> elements beneath the
 <code># DO NOT MODIFY BELOW THIS LINE.</code> line.  Rules added by the user above this line will be retained.</p>
@@ -603,7 +688,14 @@ will modify <em>Gopkg.toml</em> by rewriting the <code>[[override]]</code> eleme
 </code></pre>
 </div></div></div>
 
-
+<h4 id="by-hand">By Hand</h4>
+<p>You can also update your project by hand.  Simply edit <code>Gopkg.toml</code> to
+point to a new version of the dependencies listed under the <code># DO NOT
+MODIFY BELOW THIS LINE.</code> line, making sure that
+<code>sigs.k8s.io/controller-tools</code> and <code>sigs.k8s.io/controller-runtime</code> always
+have the same version listed.  You should then remove the marker line to
+indicate that you&apos;ve updated dependencies by hand, and don&apos;t want them
+overridden.</p>
 
                                 
                                 </section>
@@ -637,7 +729,7 @@ will modify <em>Gopkg.toml</em> by rewriting the <code>[[override]]</code> eleme
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"Updating Kubebuilder","level":"4.1.4","depth":2,"next":{"title":"Controllers","level":"4.2","depth":1,"ref":"","articles":[{"title":"Controllers For Core Resources","level":"4.2.1","depth":2,"path":"beyond_basics/controllers_for_core_resources.md","ref":"beyond_basics/controllers_for_core_resources.md","articles":[]},{"title":"Controller Watch Functions","level":"4.2.2","depth":2,"path":"beyond_basics/controller_watches.md","ref":"beyond_basics/controller_watches.md","articles":[]},{"title":"Creating Events","level":"4.2.3","depth":2,"path":"beyond_basics/creating_events.md","ref":"beyond_basics/creating_events.md","articles":[]}]},"previous":{"title":"Generating API Documentation","level":"4.1.3","depth":2,"path":"beyond_basics/generating_documentation.md","ref":"beyond_basics/generating_documentation.md","articles":[]},"dir":"ltr"},"config":{"plugins":["theme-api","panel","sequence-diagrams","ga"],"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"panel":{},"search":{},"sequence-diagrams":{"theme":"simple"},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"highlight":{},"theme-api":{"languages":[],"split":true,"theme":"light"},"ga":{"configuration":"auto","token":"UA-119864590-1"},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","author":"Phillip Wittrock","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"The Kubebuilder Book","gitbook":">= 3.0.0"},"file":{"path":"beyond_basics/upgrading_kubebuilder.md","mtime":"2018-07-25T00:55:03.050Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-07-25T16:34:48.577Z"},"basePath":"..","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"Updating Kubebuilder","level":"4.1.4","depth":2,"next":{"title":"Dependency Management","level":"4.1.5","depth":2,"path":"beyond_basics/dependencies.md","ref":"beyond_basics/dependencies.md","articles":[]},"previous":{"title":"Generating API Documentation","level":"4.1.3","depth":2,"path":"beyond_basics/generating_documentation.md","ref":"beyond_basics/generating_documentation.md","articles":[]},"dir":"ltr"},"config":{"plugins":["theme-api","panel","sequence-diagrams","ga"],"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"panel":{},"search":{},"sequence-diagrams":{"theme":"simple"},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"highlight":{},"theme-api":{"languages":[],"split":true,"theme":"light"},"ga":{"configuration":"auto","token":"UA-119864590-1"},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","author":"Phillip Wittrock","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"The Kubebuilder Book","gitbook":">= 3.0.0"},"file":{"path":"beyond_basics/upgrading_kubebuilder.md","mtime":"2018-09-14T23:33:05.166Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-09-26T16:10:07.169Z"},"basePath":"..","book":{"language":""}});
         });
     </script>
 </div>

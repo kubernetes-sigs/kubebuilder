@@ -4,7 +4,7 @@
     <head>
         <meta charset="UTF-8">
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
-        <title>Generating API Documentation · The Kubebuilder Book</title>
+        <title>Dependency Management · The Kubebuilder Book</title>
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta name="description" content="">
         <meta name="generator" content="GitBook 3.2.3">
@@ -69,10 +69,8 @@
     <link rel="shortcut icon" href="../gitbook/images/favicon.ico" type="image/x-icon">
 
     
-    <link rel="next" href="upgrading_kubebuilder.html" />
     
-    
-    <link rel="prev" href="running_tests.html" />
+    <link rel="prev" href="upgrading_kubebuilder.html" />
     
 
     </head>
@@ -407,7 +405,7 @@
             
         </li>
     
-        <li class="chapter active" data-level="4.1.3" data-path="generating_documentation.html">
+        <li class="chapter " data-level="4.1.3" data-path="generating_documentation.html">
             
                 <a href="generating_documentation.html">
             
@@ -433,7 +431,7 @@
             
         </li>
     
-        <li class="chapter " data-level="4.1.5" data-path="dependencies.html">
+        <li class="chapter active" data-level="4.1.5" data-path="dependencies.html">
             
                 <a href="dependencies.html">
             
@@ -649,7 +647,7 @@
     <!-- Title -->
     <h1>
         <i class="fa fa-circle-o-notch fa-spin"></i>
-        <a href=".." >Generating API Documentation</a>
+        <a href=".." >Dependency Management</a>
     </h1>
 </div>
 
@@ -664,103 +662,138 @@
     
                                 <section class="normal markdown-section">
                                 
-                                <h1 id="generating-api-documentation">Generating API Documentation</h1>
-<p>Kubebuilder will generate API reference documentation for your APIs with <code>kubebuilder docs</code>.  The
-reference documentation will be built under <code>docs/reference/build/index.html</code> and can be opened
-directly in a web browser.</p>
-<ul>
-<li>Use <code>--docs-copyright</code> to set the copyright footer</li>
-<li>Use <code>--title</code> to set the title</li>
-</ul>
-<p><div class="panel panel-info"><div class="panel-heading"><div class="panel-icon"><i class="icon-info"></i></div><div class="panel-title">Non-Kubebuilder Projects</div></div><div class="panel-content"><p>Kubebuilder can also be used to generate API reference documentation for non-kubebuilder projects, as long as the
-resources are annotated with <code>// +kubebuilder:resource:path=&lt;resource-name&gt;</code> the same as they are in kubebuilder
-projects.</p>
-<p><strong>Important</strong>: The <code>// +kubebuilder:resource</code> annotation <em>must</em> appear directly above the go struct
-defining the resource.  No blank lines may appear between the annotation and the go struct.</p>
+                                <h1 id="dependency-management">Dependency Management</h1>
+<p>Kubebuilder uses <a href="https://golang.github.io/dep" target="_blank">dep</a> to manage dependencies.
+Different dependency management tasks can be done using the <code>dep ensure</code>
+command.</p>
+<h2 id="adding-new-dependencies">Adding new dependencies</h2>
+<p><div class="panel panel-warning"><div class="panel-heading"><div class="panel-icon"><i class="icon-warning"></i></div><div class="panel-title">Kubernetes Dependencies</div></div><div class="panel-content"><p>Kubebuilder-generated projects depends on a number of Kubernetes
+dependencies internally. Kubebuilder (using the controller-runtime
+library) makes sure that the parts of these dependencies that are exposed
+in the Kubebuilder API remain stable.</p>
+<p>It&apos;s recommended not to make use of most of these libraries directly, since
+they change frequently in incompatible ways.  The <code>k8s.io/api</code> repository is
+the exception to this, and it&apos;s reccomended that you rely on the version that
+<code>kubebuilder</code> requires, instead of listing it as a direct dependency in
+<code>Gopkg.toml</code>.</p>
+<p>However, if you do add direct dependencies on any of these libraries yourself,
+be aware that you may encounter dependency conflicts. See <a href="#the-problem-with-kubernetes-libraries">the problem with
+kubernetes libraries</a> below for more
+information.</p>
 </div></div></p>
-<h2 id="creating-examples">Creating Examples</h2>
-<div class="api-method"><div class="api-method-definition"><p>Users can provide resource examples by running
-<code>kubebuilder create example --kind &lt;kind&gt; --group &lt;group&gt; --version &lt;version&gt;</code>.  This will create an example
-file under <code>docs/reference/examples/&lt;kind&gt;/&lt;kind&gt;.yaml</code> for the user to edit.  The contents of this file will appear
-next to the API reference documentation after rerunning <code>kubebuilder docs</code>.</p>
-<ul>
-<li><code>note:</code> description that will appear directly above the example</li>
-<li><code>sample:</code> example yaml that will be displayed</li>
-</ul>
-</div><div class="api-method-code"><div class="api-method-sample" data-lang="code" data-name="CODE"><blockquote>
-<p>$ kubebuilder create example --kind Frigate --version v1beta1 --group ships</p>
-</blockquote>
-<pre><code class="lang-yaml"><span class="hljs-comment"># docs/reference/examples/frigate/frigate.yaml</span>
-<span class="hljs-attr">note:</span> frigate example
-<span class="hljs-attr">sample:</span> <span class="hljs-string">|
-</span><span class="hljs-attr">  apiVersion:</span> v1beta1
-<span class="hljs-attr">  kind:</span> frigate
-<span class="hljs-attr">  metadata:</span>
-<span class="hljs-attr">    name:</span> frigate
-<span class="hljs-attr">  spec:</span>
-<span class="hljs-attr">    todo:</span> <span class="hljs-string">&quot;write me&quot;</span>
+<div class="api-method"><div class="api-method-definition"><p>Dep manages dependency constraints using the <code>Gopkg.toml</code> file.  You can add
+new dependencies by adding new <code>[[constraint]]</code> stanzas to that file.
+Alternatively, if you&apos;re <a href="upgrading_kubebuilder.html#by-hand">not using <code>kubebuilder
+update</code></a>, you can use the <code>dep ensure -add</code>
+command to add new dependencies to your <code>Gopkg.toml</code>.</p>
+</div><div class="api-method-code"><div class="api-method-sample" data-lang="bash" data-name="Bash"><pre><code class="lang-bash"><span class="hljs-comment"># edit Gopkg.toml OR perform the following:</span>
+dep ensure -add github.com/pkg/errors
 </code></pre>
 </div></div></div>
 
-
-<h2 id="editing-overview-and-api-group-documentation">Editing Overview and API Group Documentation</h2>
-<p>Users can modify documentation of the overview and API <em>groups</em> by editing the files under
-<code>docs/reference/static_includes</code>.</p>
-<ul>
-<li>Edit <code>_overview.md</code> to provide documentation for the full set of APIs.</li>
-<li>Edit <code>_&lt;group&gt;.md</code> to provide documentation for a specific API group.</li>
-</ul>
-<h2 id="adding-notes-and-warnings-for-apis">Adding Notes and Warnings for APIs</h2>
-<div class="api-method"><div class="api-method-definition"><p>It is possible to add <em>notes</em> and <em>warnings</em> to APIs in the reference documentation by annotating
-the go struct with <code>// +kubebuilder:doc:note=</code> or <code>// +kubebuilder:doc:warning=</code>.  These will
-show up in <em>blue</em> and <em>orange</em> boxes.</p>
-</div><div class="api-method-code"><div class="api-method-sample" data-lang="code" data-name="CODE"><pre><code class="lang-go"><span class="hljs-comment">// Frigate API documentation goes here.</span>
-<span class="hljs-comment">// +kubebuilder:doc:note=this is a note</span>
-<span class="hljs-comment">// +kubebuilder:doc:warning=this is a warning</span>
-<span class="hljs-comment">// +k8s:openapi-gen=true</span>
-<span class="hljs-comment">// +kubebuilder:resource:path=frigates</span>
-<span class="hljs-keyword">type</span> Frigate <span class="hljs-keyword">struct</span> {
-    metav1.TypeMeta   <span class="hljs-string">`json:&quot;,inline&quot;`</span>
-    metav1.ObjectMeta <span class="hljs-string">`json:&quot;metadata,omitempty&quot;`</span>
-
-    <span class="hljs-comment">// Spec field documentation goes here.</span>
-    Spec   FrigateSpec   <span class="hljs-string">`json:&quot;spec,omitempty&quot;`</span>
-
-    <span class="hljs-comment">// Status field documentation goes here.</span>
-    Status FrigateStatus <span class="hljs-string">`json:&quot;status,omitempty&quot;`</span>
-}
+<h2 id="updating-existing-dependencies">Updating existing dependencies</h2>
+<div class="api-method"><div class="api-method-definition"><p>Update dependencies for your project to the latest minor and patch versions.</p>
+</div><div class="api-method-code"><div class="api-method-sample" data-lang="bash" data-name="Bash"><pre><code class="lang-bash">dep ensure -update sigs.k8s.io/controller-runtime sigs.k8s.io/controller-tools
 </code></pre>
 </div></div></div>
 
-<h2 id="customizing-the-api-documentation">Customizing the API documentation</h2>
-<p>The generated documentation is controller by the <code>docs/reference/config.yaml</code> file generated by kubebuilder.  This
-file may be manually changed by users to customize the appearance of the documentation, however this is
-discouraged as the user will need to manually managed the config going forward.</p>
-<p><div class="panel panel-warning"><div class="panel-heading"><div class="panel-icon"><i class="icon-warning"></i></div><div class="panel-title">Modifying config.yaml</div></div><div class="panel-content"><p>When manually modifying config.yaml, users must run <code>kubebuilder docs</code> with <code>--generate-config=false</code> to
-prevent the file from being rewritten.</p>
+<h2 id="repopulating-your-vendor-directory">Repopulating your vendor directory</h2>
+<div class="api-method"><div class="api-method-definition"><p>Dependency source code is stored in the vendor directory.  If it ever gets
+deleted, you can repopulate it using the exact dependency versions stored in
+<code>Gopkg.lock</code>.</p>
+</div><div class="api-method-code"><div class="api-method-sample" data-lang="bash" data-name="Bash"><pre><code class="lang-bash">dep ensure
+</code></pre>
+</div></div></div>
+
+<h2 id="how-kubebuilders-dependencies-work">How Kubebuilder&apos;s Dependencies Work</h2>
+<p><div class="panel panel-warning"><div class="panel-heading"><div class="panel-icon"><i class="icon-warning"></i></div><div class="panel-title">Under the Hood</div></div><div class="panel-content"><p>The information in this section details how Kubebuilder&apos;s dependency graph
+works.  It&apos;s not necessary for day-to-day use of Kubebuilder, but can be useful
+if you want to understand how a particular version of Kubebuilder relates to
+a particular version of Kubernetes.</p>
 </div></div></p>
-<h4 id="table-of-contents">Table of Contents</h4>
-<div class="api-method"><div class="api-method-definition"><p><code>docs/reference/config.yaml</code> is automatically generated to create a section for each API group including
-the APIs in the group, and to show the most mature versions of each API.  Both the API sections and
-displayed API versions may be manually controlled if needed.</p>
-</div><div class="api-method-code"><div class="api-method-sample" data-lang="code" data-name="CODE"><blockquote>
-<p>generated config.yaml for <code>kubebuilder create resource --kind Bee --group insect --version v1beta1</code></p>
-</blockquote>
-<pre><code class="lang-yaml"><span class="hljs-attr">example_location:</span> <span class="hljs-string">&quot;examples&quot;</span>
-<span class="hljs-attr">api_groups:</span> 
-<span class="hljs-bullet">  -</span> <span class="hljs-string">&quot;Ship&quot;</span>
-<span class="hljs-attr">resource_categories:</span> 
-<span class="hljs-attr">- name:</span> <span class="hljs-string">&quot;Ship&quot;</span>
-<span class="hljs-attr">  include:</span> <span class="hljs-string">&quot;ship&quot;</span>
-<span class="hljs-attr">  resources:</span> 
-<span class="hljs-attr">  - name:</span> <span class="hljs-string">&quot;Frigate&quot;</span>
-<span class="hljs-attr">    version:</span> <span class="hljs-string">&quot;v1beta1&quot;</span>
-<span class="hljs-attr">    group:</span> <span class="hljs-string">&quot;ship&quot;</span>
-<span class="hljs-attr">    description_warning:</span> <span class="hljs-string">&quot;test warnings message annotations&quot;</span>
-<span class="hljs-attr">    description_note:</span> <span class="hljs-string">&quot;test notes message annotations&quot;</span>
-</code></pre>
-</div></div></div>
-
+<h3 id="tldr">TL;DR</h3>
+<p>As of Kubebuilder 1.0.2:</p>
+<ul>
+<li><p>Projects generated with Kubebuilder list a semantic version of
+controller-runtime and controller-tools as their only direct
+dependencies. All other Kubernetes-related libraries are transative
+dependencies.</p>
+</li>
+<li><p>controller-runtime and controller-tools each list a specific, identical
+set of dependencies on Kubernetes libraries and related libraries.</p>
+</li>
+<li><p>Once you&apos;ve updated your dependencies with <code>kubebuilder update vendor</code>,
+you&apos;ll be able to run <code>dep ensure</code> and <code>dep ensure --update sigs.k8s.io/controller-runtime sigs.k8s.io/controller-tools</code> to safely
+update all your dependencies in the future.</p>
+</li>
+<li><p>You can depend on controller-runtime to follow <a href="https://semver.org" target="_blank">semantic versioning
+guarantees</a> -- we won&apos;t break your code without
+introducing a new major version, for both the interfaces in
+controller-runtime, and the bits of the kubernetes libraries that
+controller-runtime actually exposes.</p>
+</li>
+</ul>
+<h3 id="the-problem-with-kubernetes-libraries">The Problem with Kubernetes libraries</h3>
+<p>The kubernetes project exports a collection of libraries (which we&apos;ll call
+the <strong>k8s-deps</strong> from now on) that expose common functionality used when
+building applications that consume Kubernetes APIs (e.g. clients,
+informers, etc).  Due to the way Kubrenetes is versioned
+(non-semantically), all of these dependencies must closely match --
+differing versions can cause strange compilation or runtime errors.</p>
+<p>Beyond this, these libraries have their own set of dependencies which are
+not always the latest versions, or are occaisionally in-between versions.</p>
+<p>Collecting the correct set of dependencies for any given Kubernetes
+project can thus be tricky.</p>
+<h3 id="using-prebaked-manifests-kubebuilder-pre-102">Using Prebaked Manifests (Kubebuilder pre-1.0.2)</h3>
+<p>Before version 1.0.2, Kubebuilder shipped a pre-baked manifest of the
+correct dependencies.  When scaffolding out at new project using
+<code>kubebuilder init</code> (a <strong>kb-project</strong>), it would copy over a <code>Gopkg.toml</code>
+file containing the exact dependency versions required for the project
+(which could then be used by <code>dep</code> dependency management tool to actually
+fetch the dependencies).</p>
+<p>In addition to the Kubernetes dependencies required, this also specified
+that all kb-projects use the master branch of the <strong>controller-runtime</strong>
+library, which provides the abstractions that Kubebuilder is built upon.
+Because controller-runtime wraps and consumes Kubernetes, it <em>also</em> needs
+specific versions of the k8s-deps, and those version <em>must</em> match the ones
+listed in the kb-project&apos;s Gopkg.toml, otherwise we&apos;d have conflicting
+dependencies.</p>
+<h4 id="the-problem-with-prebaked-manifests">The Problem with Prebaked Manifests</h4>
+<p>Using the master branch as the target version of controller-runtime made
+it impossible to make breaking changes to controller-runtime.  However,
+even when using a specific version of controller-runtime, it&apos;s still
+difficult to make changes.</p>
+<p>Since kb-projects must use an identical set of dependencies to
+controller-runtime, any update to the controller-runtime dependencies
+(say, to pull in a new feature) would have caused immediate dependency
+version conflicts.  Effectively, any update to the dependencies had to be
+treated as a major version revision, and there would have been no way to
+tell the difference between &quot;this release includes breaking API changes&quot;
+and &quot;this release simply switches to a newer version of the k8s-deps&quot;.</p>
+<h3 id="transitive-dependencies-kubebuilder-102">Transitive Dependencies (Kubebuilder 1.0.2+)</h3>
+<p>As noted above, any dependency version in kb-projects must match
+dependency versions listed in controller-runtime, exactly. Furthermore, it
+turns out, by design, the set of k8s-deps used in controller-runtime is
+a superset of the set of dependencies actually imported by kb-projects.</p>
+<p>Therefore, in kb-projects generated with Kubebuilder 1.0.2+, no
+dependencies are listed besides controller-runtime (and controller-tools).
+All of the k8s-deps become transitive dependencies, whose versions are
+determined when <code>dep</code> (the dependency management tool) looks at the
+versions required by controller-runtime.</p>
+<p>controller-runtime is semantically versioned, so any changes to either the
+interfaces in controller-runtime, or the pieces of the k8s-deps that are
+exposed as part of those interfaces, means a new major version of
+controller-runtime will be released.  Any other changes (new features, bug
+fixes, updates to k8s-deps which don&apos;t break interfaces) yield minor or
+patch versions (as per <a href="https://semver.org" target="_blank">semver</a>), which can easily and
+safely be updated to by kb-projects.</p>
+<h4 id="controller-tools-dependencies">controller-tools Dependencies</h4>
+<p>controller-tools is the library used to generate CRD and RBAC manifests
+for kb-projects. With Kubebuilder 1.0.2+, it does not directly depend on
+controller-runtime, but shares the same set of dependencies.  It therefore
+must be updated in lockstep with controller-runtime.  This is mostly
+a concern of the controller-tools/controller-runtime maintainers, and will
+not affect users.  Like controller-runtime, controller-tools uses semver.</p>
 
                                 
                                 </section>
@@ -794,7 +827,7 @@ displayed API versions may be manually controlled if needed.</p>
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"Generating API Documentation","level":"4.1.3","depth":2,"next":{"title":"Updating Kubebuilder","level":"4.1.4","depth":2,"path":"beyond_basics/upgrading_kubebuilder.md","ref":"beyond_basics/upgrading_kubebuilder.md","articles":[]},"previous":{"title":"Running Tests","level":"4.1.2","depth":2,"path":"beyond_basics/running_tests.md","ref":"beyond_basics/running_tests.md","articles":[]},"dir":"ltr"},"config":{"plugins":["theme-api","panel","sequence-diagrams","ga"],"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"panel":{},"search":{},"sequence-diagrams":{"theme":"simple"},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"highlight":{},"theme-api":{"languages":[],"split":true,"theme":"light"},"ga":{"configuration":"auto","token":"UA-119864590-1"},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","author":"Phillip Wittrock","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"The Kubebuilder Book","gitbook":">= 3.0.0"},"file":{"path":"beyond_basics/generating_documentation.md","mtime":"2018-07-25T00:55:03.037Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-09-26T16:10:07.169Z"},"basePath":"..","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"Dependency Management","level":"4.1.5","depth":2,"next":{"title":"Controllers","level":"4.2","depth":1,"ref":"","articles":[{"title":"Controllers For Core Resources","level":"4.2.1","depth":2,"path":"beyond_basics/controllers_for_core_resources.md","ref":"beyond_basics/controllers_for_core_resources.md","articles":[]},{"title":"Controller Watch Functions","level":"4.2.2","depth":2,"path":"beyond_basics/controller_watches.md","ref":"beyond_basics/controller_watches.md","articles":[]},{"title":"Creating Events","level":"4.2.3","depth":2,"path":"beyond_basics/creating_events.md","ref":"beyond_basics/creating_events.md","articles":[]},{"title":"Using Finalizers","level":"4.2.4","depth":2,"path":"beyond_basics/using_finalizers.md","ref":"beyond_basics/using_finalizers.md","articles":[]}]},"previous":{"title":"Updating Kubebuilder","level":"4.1.4","depth":2,"path":"beyond_basics/upgrading_kubebuilder.md","ref":"beyond_basics/upgrading_kubebuilder.md","articles":[]},"dir":"ltr"},"config":{"plugins":["theme-api","panel","sequence-diagrams","ga"],"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"panel":{},"search":{},"sequence-diagrams":{"theme":"simple"},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"highlight":{},"theme-api":{"languages":[],"split":true,"theme":"light"},"ga":{"configuration":"auto","token":"UA-119864590-1"},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","author":"Phillip Wittrock","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"The Kubebuilder Book","gitbook":">= 3.0.0"},"file":{"path":"beyond_basics/dependencies.md","mtime":"2018-09-14T23:33:05.166Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-09-26T16:10:07.169Z"},"basePath":"..","book":{"language":""}});
         });
     </script>
 </div>
