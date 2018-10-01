@@ -56,18 +56,16 @@ func (v Version) Print() {
 	fmt.Printf("Version: %#v\n", v)
 }
 
-var versionCmd = &cobra.Command{
-	Use:     "version",
-	Short:   "Print the kubebuilder version.",
-	Long:    `Print the kubebuilder version.`,
-	Example: `kubebuilder version`,
-	Run:     RunVersion,
+func NewVersionCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:     "version",
+		Short:   "Print the kubebuilder version.",
+		Long:    `Print the kubebuilder version.`,
+		Example: `kubebuilder version`,
+		Run:     runVersion,
+	}
 }
 
-func AddVersion(cmd *cobra.Command) {
-	cmd.AddCommand(versionCmd)
-}
-
-func RunVersion(cmd *cobra.Command, args []string) {
+func runVersion(cmd *cobra.Command, args []string) {
 	GetVersion().Print()
 }

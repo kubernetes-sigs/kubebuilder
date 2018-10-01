@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package initproject
+package main
 
 import (
 	"bufio"
@@ -35,7 +35,7 @@ import (
 	"sigs.k8s.io/controller-tools/pkg/scaffold/project"
 )
 
-func AddInit(cmd *cobra.Command) {
+func newInitProjectCmd() *cobra.Command {
 	o := projectOptions{}
 
 	initCmd := &cobra.Command{
@@ -58,7 +58,7 @@ project will prompt the user to run 'dep ensure' after writing the project files
 kubebuilder init --domain example.org --license apache2 --owner "The Kubernetes authors"
 `,
 		Run: func(cmd *cobra.Command, args []string) {
-			o.RunInit()
+			o.runInit()
 		},
 	}
 
@@ -72,7 +72,7 @@ kubebuilder init --domain example.org --license apache2 --owner "The Kubernetes 
 	o.mgr = &manager.Cmd{}
 	o.dkr = &manager.Dockerfile{}
 
-	cmd.AddCommand(initCmd)
+	return initCmd
 }
 
 type projectOptions struct {
@@ -85,7 +85,7 @@ type projectOptions struct {
 	depFlag *flag.Flag
 }
 
-func (o *projectOptions) RunInit() {
+func (o *projectOptions) runInit() {
 	checkGoVersion()
 
 	if !depExists() {
@@ -207,6 +207,11 @@ func checkGoVersion() {
 			log.Fatalf("The go version is %v, must be 1.10+", goVersion)
 		}
 	}
+}
+
+func depExists() bool {
+	_, err := exec.LookPath("dep")
+	return err == nil
 }
 
 func execute(path, templateName, templateValue string, data interface{}) {

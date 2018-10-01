@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1
+package main
 
 import (
 	"bufio"
@@ -42,7 +42,7 @@ type apiOptions struct {
 
 // APICmd represents the resource command
 
-func (o *apiOptions) RunAddAPI() {
+func (o *apiOptions) runAddAPI() {
 	dieIfNoProject()
 
 	reader := bufio.NewReader(os.Stdin)
@@ -124,7 +124,7 @@ func (o *apiOptions) RunAddAPI() {
 	}
 }
 
-func AddAPICommand(cmd *cobra.Command) {
+func newAPICommand() *cobra.Command {
 	o := apiOptions{}
 
 	apiCmd := &cobra.Command{
@@ -157,7 +157,7 @@ After the scaffold is written, api will run make on the project.
 	make run
 `,
 		Run: func(cmd *cobra.Command, args []string) {
-			o.RunAddAPI()
+			o.runAddAPI()
 		},
 	}
 
@@ -171,7 +171,7 @@ After the scaffold is written, api will run make on the project.
 	o.controllerFlag = apiCmd.Flag("controller")
 	o.r = ResourceForFlags(apiCmd.Flags())
 
-	cmd.AddCommand(apiCmd)
+	return apiCmd
 }
 
 // dieIfNoProject checks to make sure the command is run from a directory containing a project file.

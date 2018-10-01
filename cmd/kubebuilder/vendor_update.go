@@ -1,5 +1,5 @@
 /*
-Copyright 2018 The Kubernetes Authors.
+Copyright 2017 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,20 +14,32 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1
+package main
 
 import (
-	"fmt"
+	"log"
+
 	"github.com/spf13/cobra"
+	"sigs.k8s.io/controller-tools/pkg/scaffold"
+	"sigs.k8s.io/controller-tools/pkg/scaffold/input"
+	"sigs.k8s.io/controller-tools/pkg/scaffold/project"
 )
 
-func docsCmd() *cobra.Command {
+func newVendorUpdateCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "docs",
-		Short: "Generate API reference docs. Coming soon.",
-		Long:  `updates vendor dependencies. Coming soon.`,
+		Use:   "update",
+		Short: "updates vendor dependencies.",
+		Long:  `updates vendor dependencies.`,
+		Example: `Update the vendor dependencies:
+kubebuilder update vendor
+`,
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("Coming soon.")
+			dieIfNoProject()
+			err := (&scaffold.Scaffold{}).Execute(input.Options{},
+				&project.GopkgToml{})
+			if err != nil {
+				log.Fatalf("error updating vendor dependecies %v", err)
+			}
 		},
 	}
 }

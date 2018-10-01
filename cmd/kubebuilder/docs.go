@@ -1,5 +1,5 @@
 /*
-Copyright 2017 The Kubernetes Authors.
+Copyright 2018 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,28 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package update
+package main
 
 import (
+	"fmt"
 	"github.com/spf13/cobra"
 )
 
-var updateCmd = &cobra.Command{
-	Use:   "update",
-	Short: "Command group for updating the kubebuilder version.",
-	Long:  `Command group for updating the kubebuilder version.`,
-	Example: `
-# Update the vendored dependencies under vendor/
-kubebuilder update vendor
-`,
-	Run: RunUpdate,
-}
-
-func AddUpdate(cmd *cobra.Command) {
-	cmd.AddCommand(updateCmd)
-	AddUpdateVendorCmd(updateCmd)
-}
-
-func RunUpdate(cmd *cobra.Command, args []string) {
-	cmd.Help()
+func newDocsCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "docs",
+		Short: "Generate API reference docs. Coming soon.",
+		Long:  `updates vendor dependencies. Coming soon.`,
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Println("Coming soon.")
+		},
+	}
 }
