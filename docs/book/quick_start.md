@@ -17,7 +17,7 @@ This Quick Start guide will cover:
 
 {% sample lang="mac" %}
 ```bash
-version=1.0.0 # latest stable version
+version=1.0.4 # latest stable version
 arch=amd64
 
 # download the release
@@ -33,7 +33,7 @@ export PATH=$PATH:/usr/local/kubebuilder/bin
 
 {% sample lang="linux" %}
 ```bash
-version=1.0.0 # latest stable version
+version=1.0.4 # latest stable version
 arch=amd64
 
 # download the release
