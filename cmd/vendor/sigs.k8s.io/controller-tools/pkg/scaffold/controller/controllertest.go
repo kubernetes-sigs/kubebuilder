@@ -107,7 +107,13 @@ func TestReconcile(t *testing.T) {
 
 	recFn, requests := SetupTestReconcile(newReconciler(mgr))
 	g.Expect(add(mgr, recFn)).NotTo(gomega.HaveOccurred())
-	defer close(StartTestManager(mgr, g))
+
+	stopMgr, mgrStopped := StartTestManager(mgr, g)
+
+	defer func() {
+		close(stopMgr)
+		mgrStopped.Wait()
+	}()
 
 	// Create the {{ .Resource.Kind }} object and expect the Reconcile{{ if .Resource.CreateExampleReconcileBody }} and Deployment to be created{{ end }}
 	err = c.Create(context.TODO(), instance)

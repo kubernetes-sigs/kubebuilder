@@ -50,6 +50,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 
 	"github.com/onsi/gomega"
@@ -92,11 +93,14 @@ func SetupTestReconcile(inner reconcile.Reconciler) (reconcile.Reconciler, chan 
 }
 
 // StartTestManager adds recFn
-func StartTestManager(mgr manager.Manager, g *gomega.GomegaWithT) chan struct{} {
+func StartTestManager(mgr manager.Manager, g *gomega.GomegaWithT) (chan struct{}, *sync.WaitGroup) {
 	stop := make(chan struct{})
+	wg := &sync.WaitGroup{}
 	go func() {
+		wg.Add(1)
 		g.Expect(mgr.Start(stop)).NotTo(gomega.HaveOccurred())
+		wg.Done()
 	}()
-	return stop
+	return stop, wg
 }
 `

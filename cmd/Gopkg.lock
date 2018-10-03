@@ -10,14 +10,6 @@
   version = "v1.4.2"
 
 [[projects]]
-  digest = "1:81466b4218bf6adddac2572a30ac733a9255919bc2f470b4827a317bd4ee1756"
-  name = "github.com/ghodss/yaml"
-  packages = ["."]
-  pruneopts = "NT"
-  revision = "0ca9ea5df5451ffdf184b4428c902747c2c11cd7"
-  version = "v1.0.0"
-
-[[projects]]
   digest = "1:bdd9f217558ee887966977cbcb507347f47c595f63797b938c002bc9e26e8d16"
   name = "github.com/gobuffalo/envy"
   packages = ["."]
@@ -175,11 +167,7 @@
 [[projects]]
   digest = "1:6b4ae148679d49dda5e1f7026701662758701b6cbd144cc8db1769710a01c4d2"
   name = "k8s.io/api"
-  packages = [
-    "apps/v1",
-    "core/v1",
-    "rbac/v1",
-  ]
+  packages = ["rbac/v1"]
   pruneopts = "NT"
   revision = "73d903622b7391f3312dcbac6483fed484e185f8"
   version = "kubernetes-1.10.0"
@@ -234,14 +222,6 @@
   version = "kubernetes-1.10.1"
 
 [[projects]]
-  digest = "1:65486e65828b157536291fe8d3c4c06dd60ea8c053543680a8f06c3754fe92a6"
-  name = "k8s.io/client-go"
-  packages = ["util/homedir"]
-  pruneopts = "NT"
-  revision = "989be4278f353e42f26c416c53757d16fcff77db"
-  version = "kubernetes-1.10.1"
-
-[[projects]]
   branch = "master"
   digest = "1:2701cf2b017bde402587b0e38ed3d2193e058a42eb49cd03a0f72480f8a67096"
   name = "k8s.io/gengo"
@@ -256,7 +236,8 @@
   revision = "fdcf9f9480fdd5bf2b3c3df9bf4ecd22b25b87e2"
 
 [[projects]]
-  digest = "1:384789cb768e13fec37c3a15613e21cde8d32ff945d8d4ec4bcef87a2ee41ff4"
+  branch = "master"
+  digest = "1:0a82cfc0bf342ecd49a144916c21594444ba760d5572ae8476ab21ddbc42d11f"
   name = "sigs.k8s.io/controller-tools"
   packages = [
     "pkg/scaffold",
@@ -268,30 +249,24 @@
     "pkg/util",
   ]
   pruneopts = "NT"
-  revision = "bfd3eefb7f22ed714b2acd38730c36992ee6af70"
-  version = "v0.1.5"
+  revision = "7bc39115ce8a6509b8055daf72c339f73dc4df86"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
     "github.com/Masterminds/semver",
-    "github.com/ghodss/yaml",
     "github.com/golang/glog",
     "github.com/markbates/inflect",
     "github.com/pkg/errors",
     "github.com/spf13/cobra",
     "github.com/spf13/pflag",
-    "k8s.io/api/apps/v1",
-    "k8s.io/api/core/v1",
     "k8s.io/api/rbac/v1",
     "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1",
-    "k8s.io/apimachinery/pkg/api/resource",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
     "k8s.io/apimachinery/pkg/runtime/schema",
     "k8s.io/apimachinery/pkg/util/sets",
     "k8s.io/apiserver/pkg/util/logs",
-    "k8s.io/client-go/util/homedir",
     "k8s.io/gengo/args",
     "k8s.io/gengo/generator",
     "k8s.io/gengo/namer",
