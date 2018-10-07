@@ -27,6 +27,7 @@ import (
 
 	"github.com/Masterminds/semver"
 	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/util"
+	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/version"
 	"github.com/spf13/cobra"
 	flag "github.com/spf13/pflag"
 	"sigs.k8s.io/controller-tools/pkg/scaffold"
@@ -68,7 +69,8 @@ kubebuilder init --domain example.org --license apache2 --owner "The Kubernetes 
 
 	o.prj = projectForFlags(initCmd.Flags())
 	o.bp = boilerplateForFlags(initCmd.Flags())
-	o.gopkg = &project.GopkgToml{}
+	version := version.GetVersion()
+	o.gopkg = &project.GopkgToml{KubebuilderVersion: version.KubeBuilderVersion}
 	o.mgr = &manager.Cmd{}
 	o.dkr = &manager.Dockerfile{}
 
