@@ -1,6 +1,0 @@
-apiVersion: myapps.memcached.example.com/v1alpha1
-kind: Memcached
-metadata:
-  name: memcached-example
-spec:
-  size: 1

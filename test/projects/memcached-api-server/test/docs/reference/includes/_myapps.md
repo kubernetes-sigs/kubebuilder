@@ -1,5 +1,0 @@
-
-# <strong>Myapps</strong>
-
-------------
-

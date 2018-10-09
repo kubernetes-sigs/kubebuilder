@@ -31,7 +31,7 @@ function test_init_project {
 function test_init_project_manual_dep_ensure {
   header_text "performing init project w/o dep ensure"
   kubebuilder init --domain example.com <<< "n"
-  dep ensure
+  dep ensure -v
   make
 }
 
