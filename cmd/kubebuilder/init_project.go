@@ -128,6 +128,7 @@ func (o *projectOptions) runInit() {
 		o.dkr,
 		&manager.APIs{},
 		&manager.Controller{},
+		&manager.Webhook{},
 		&manager.Config{Image: imgName},
 		&project.GitIgnore{},
 		&project.Kustomize{},
