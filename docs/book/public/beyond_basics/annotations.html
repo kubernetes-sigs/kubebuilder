@@ -4,7 +4,7 @@
     <head>
         <meta charset="UTF-8">
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
-        <title>Controllers For Core Resources · The Kubebuilder Book</title>
+        <title>Using Annotation · The Kubebuilder Book</title>
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta name="description" content="">
         <meta name="generator" content="GitBook 3.2.3">
@@ -69,8 +69,10 @@
     <link rel="shortcut icon" href="../gitbook/images/favicon.ico" type="image/x-icon">
 
     
-    <link rel="next" href="controller_watches.html" />
+    <link rel="next" href="generating_documentation.html" />
     
+    
+    <link rel="prev" href="running_tests.html" />
     
 
     </head>
@@ -405,7 +407,7 @@
             
         </li>
     
-        <li class="chapter " data-level="4.1.3" data-path="annotations.html">
+        <li class="chapter active" data-level="4.1.3" data-path="annotations.html">
             
                 <a href="annotations.html">
             
@@ -476,7 +478,7 @@
             <ul class="articles">
                 
     
-        <li class="chapter active" data-level="4.2.1" data-path="controllers_for_core_resources.html">
+        <li class="chapter " data-level="4.2.1" data-path="controllers_for_core_resources.html">
             
                 <a href="controllers_for_core_resources.html">
             
@@ -660,7 +662,7 @@
     <!-- Title -->
     <h1>
         <i class="fa fa-circle-o-notch fa-spin"></i>
-        <a href=".." >Controllers For Core Resources</a>
+        <a href=".." >Using Annotation</a>
     </h1>
 </div>
 
@@ -675,16 +677,88 @@
     
                                 <section class="normal markdown-section">
                                 
-                                <h2 id="controllers-for-core-resources">Controllers for Core Resources</h2>
-<div class="api-method"><div class="api-method-definition"><p>It is possible to create Controllers for Core Resources, or for Resources defined outside your project.</p>
-</div><div class="api-method-code"><div class="api-method-sample" data-lang="bash" data-name="Bash"><pre><code class="lang-bash">kubebuilder create api --group apps --version v1 --kind Deployment
-</code></pre>
-</div></div></div>
+                                <h1 id="annotation">Annotation</h1>
+<p>The definition contains several comment annotations of the form <code>// +something</code>.  These are used to configure code generators to run against this code.  The code generators will generate boilerplate functions and types to complete the Resource definition.
+To learn more on configuring code generation see the <em>Code Generation</em> chapter.</p>
+<h2 id="validation">Validation</h2>
+<p>Format: <code>// +kubebuilder:validation:&lt;key=value&gt;</code>
+The validation annotation supports CRD validation (<a href="https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.0.md#schemaObject" target="_blank">OpenAPI v3 schema</a>).
+The last <code>key-value</code> part should be a sigle key-value pair. If you have multiple validation key-value pairs, should put them into separte annotation comments.
+Currently, supporting keys are <code>Maximum</code>, <code>Minimum</code>, <code>MaxLength</code>, <code>MinLength</code>, <code>MaxItems</code>, <code>MinItems</code>, <code>UniqueItems</code>, <code>Enum</code>, <code>Pattern</code>, <code>ExclusiveMaximum</code>,
+ <code>ExclusiveMinimum</code>, <code>MultipleOf</code>, <code>Format</code>
+The <code>// +kubebuilder:validation:Pattern=.+:.+</code> annotation declares Pattern validation requiring that the <code>Image</code> field match the regular expression <code>.+:.+</code></p>
+<p><strong>Example:</strong></p>
+<pre><code class="lang-go"><span class="hljs-comment">// ToySpec defines the desired state of Toy</span>
+<span class="hljs-keyword">type</span> ToySpec <span class="hljs-keyword">struct</span> {
+    <span class="hljs-comment">// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster</span>
+    <span class="hljs-comment">// Important: Run &quot;make&quot; to regenerate code after modifying this file</span>
 
-<p><div class="panel panel-warning"><div class="panel-heading"><div class="panel-icon"><i class="icon-warning"></i></div><div class="panel-title">Failing Scaffold Tests</div></div><div class="panel-content"><p>When creating controllers for core and existing types, it may be necessary to modify
-the scaffold tests before they pass.</p>
-<p>This is because the empty object may not be valid as required fields are not set by the scaffolding.</p>
-</div></div></p>
+    <span class="hljs-comment">// +kubebuilder:validation:Maximum=100</span>
+    <span class="hljs-comment">// +kubebuilder:validation:Minimum=1</span>
+    <span class="hljs-comment">// +kubebuilder:validation:ExclusiveMinimum=true</span>
+    Power  <span class="hljs-keyword">float32</span> <span class="hljs-string">`json:&quot;power,omitempty&quot;`</span>
+    Bricks <span class="hljs-keyword">int32</span>   <span class="hljs-string">`json:&quot;bricks,omitempty&quot;`</span>
+    <span class="hljs-comment">// +kubebuilder:validation:MaxLength=15</span>
+    <span class="hljs-comment">// +kubebuilder:validation:MinLength=1</span>
+    Name <span class="hljs-keyword">string</span> <span class="hljs-string">`json:&quot;name,omitempty&quot;`</span>
+    <span class="hljs-comment">// +kubebuilder:validation:MaxItems=500</span>
+    <span class="hljs-comment">// +kubebuilder:validation:MinItems=1</span>
+    <span class="hljs-comment">// +kubebuilder:validation:UniqueItems=false</span>
+    Knights []<span class="hljs-keyword">string</span> <span class="hljs-string">`json:&quot;knights,omitempty&quot;`</span>
+    Winner  <span class="hljs-keyword">bool</span>     <span class="hljs-string">`json:&quot;winner,omitempty&quot;`</span>
+    <span class="hljs-comment">// +kubebuilder:validation:Enum=Lion,Wolf,Dragon</span>
+    Alias <span class="hljs-keyword">string</span> <span class="hljs-string">`json:&quot;alias,omitempty&quot;`</span>
+    <span class="hljs-comment">// +kubebuilder:validation:Enum=1,2,3</span>
+    Rank    <span class="hljs-keyword">int</span>    <span class="hljs-string">`json:&quot;rank&quot;`</span>
+    Comment []<span class="hljs-keyword">byte</span> <span class="hljs-string">`json:&quot;comment,omitempty&quot;`</span>
+
+    Template v1.PodTemplateSpec       <span class="hljs-string">`json:&quot;template&quot;`</span>
+    Claim    v1.PersistentVolumeClaim <span class="hljs-string">`json:&quot;claim,omitempty&quot;`</span>
+
+    Replicas *<span class="hljs-keyword">int32</span> <span class="hljs-string">`json:&quot;replicas&quot;`</span>
+}
+</code></pre>
+<h2 id="subresource">Subresource</h2>
+<h3 id="1-status">1. Status</h3>
+<p>Format: <code>// +kubebuilder:subresource:status</code>,</p>
+<h3 id="2-scale">2. Scale</h3>
+<p>Format: <code>// +kubebuilder:subresource:scale:specpath=&lt;jsonpath&gt;,statuspath=&lt;jsonpath&gt;,selectorpath=&lt;jsonpath&gt;</code></p>
+<p>Scale subresource annotation contains three fields: <code>specpath</code>, <code>statuspath</code> and <code>selectorpath</code>.
+1) <code>specpath</code> refers to <code>specReplicasPath</code> attribute of Scale object, and value <code>jsonpath</code> defines the JSONPath inside of a custom resource that corresponds to <code>Scale.Spec.Replicas</code>. This filed is required and not empty
+2) <code>statuspath</code> refers to <code>statusReplicasPath</code> attribute of Scale object. and the <code>jsonpath</code> value of it defines the JSONPath inside of a custom resource that corresponds to <code>Scale.Status.Replicas</code>. This filed is required and not empty
+3) <code>selectorpath</code>refers to <code>labelSelectorPath</code> attribute of Scale object, and the value <code>jsonpath</code> defines the JSONPath inside of a custom resource that corresponds to Scale.Status.Selector. This filed is optional, which can be omitted or with empty value</p>
+<p><strong>Example:</strong></p>
+<pre><code class="lang-go">
+<span class="hljs-comment">// ToySpec defines the desired state of Toy</span>
+<span class="hljs-keyword">type</span> ToySpec <span class="hljs-keyword">struct</span> {
+
+    <span class="hljs-comment">// Other Fields of ToySpec</span>
+
+    Replicas *<span class="hljs-keyword">int32</span> <span class="hljs-string">`json:&quot;replicas&quot;`</span> <span class="hljs-comment">// Add this field in Toy Spec, so the jsonpath to this field is `.spec.replicas`</span>
+}
+
+
+<span class="hljs-comment">// ToyStatus defines the observed state of Toy</span>
+<span class="hljs-keyword">type</span> ToyStatus <span class="hljs-keyword">struct</span> {
+
+    Replicas <span class="hljs-keyword">int32</span> <span class="hljs-string">`json:&quot;replicas&quot;`</span> <span class="hljs-comment">// Add this field in Toy Status, so the jsonpath to this field is `.status.replicas`</span>
+}
+
+
+<span class="hljs-comment">// Toy is the Schema for the toys API</span>
+<span class="hljs-comment">// +k8s:openapi-gen=true</span>
+<span class="hljs-comment">// +kubebuilder:subresource:status</span>
+<span class="hljs-comment">// +kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.replicas</span>
+<span class="hljs-keyword">type</span> Toy <span class="hljs-keyword">struct</span> {
+    metav1.TypeMeta   <span class="hljs-string">`json:&quot;,inline&quot;`</span>
+    metav1.ObjectMeta <span class="hljs-string">`json:&quot;metadata,omitempty&quot;`</span>
+
+    Spec   ToySpec   <span class="hljs-string">`json:&quot;spec,omitempty&quot;`</span>
+    Status ToyStatus <span class="hljs-string">`json:&quot;status,omitempty&quot;`</span>
+}
+</code></pre>
+<p>In order to enable scale subresource in type definition file, you have to apply the scale subresource right before the kind struct definition, with correct jsonpath values according to the spec and status. And then make sure the jsonpaths are already defined in the Spec and Status struct. Finally, update the <code>&lt;kind&gt;_types_test.go</code> files according to the types Spec and Status changes.
+In the example of <code>Toy</code>, we can add <code>// +kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.replicas</code> right a comment line before <code>Toy</code> struct definition. <code>.spec.replicas</code> referes the josnpath to Spec struct field (<code>ToySpec.Replicas</code>). And jsonpath <code>.status.healthyReplicas</code> refers to Status struct field (<code>ToyStatus.Replicas</code>). We don&apos;t have specific lableSelector deifined, so skip the <code>selectorpath</code> parts.</p>
 
                                 
                                 </section>
@@ -718,7 +792,7 @@ the scaffold tests before they pass.</p>
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"Controllers For Core Resources","level":"4.2.1","depth":2,"next":{"title":"Controller Watch Functions","level":"4.2.2","depth":2,"path":"beyond_basics/controller_watches.md","ref":"beyond_basics/controller_watches.md","articles":[]},"previous":{"title":"Controllers","level":"4.2","depth":1,"ref":"","articles":[{"title":"Controllers For Core Resources","level":"4.2.1","depth":2,"path":"beyond_basics/controllers_for_core_resources.md","ref":"beyond_basics/controllers_for_core_resources.md","articles":[]},{"title":"Controller Watch Functions","level":"4.2.2","depth":2,"path":"beyond_basics/controller_watches.md","ref":"beyond_basics/controller_watches.md","articles":[]},{"title":"Creating Events","level":"4.2.3","depth":2,"path":"beyond_basics/creating_events.md","ref":"beyond_basics/creating_events.md","articles":[]},{"title":"Using Finalizers","level":"4.2.4","depth":2,"path":"beyond_basics/using_finalizers.md","ref":"beyond_basics/using_finalizers.md","articles":[]}]},"dir":"ltr"},"config":{"plugins":["theme-api","panel","sequence-diagrams","ga"],"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"panel":{},"search":{},"sequence-diagrams":{"theme":"simple"},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"highlight":{},"theme-api":{"languages":[],"split":true,"theme":"light"},"ga":{"configuration":"auto","token":"UA-119864590-1"},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","author":"Phillip Wittrock","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"The Kubebuilder Book","gitbook":">= 3.0.0"},"file":{"path":"beyond_basics/controllers_for_core_resources.md","mtime":"2018-07-18T17:30:29.372Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-10-05T23:14:50.796Z"},"basePath":"..","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"Using Annotation","level":"4.1.3","depth":2,"next":{"title":"Generating API Documentation","level":"4.1.4","depth":2,"path":"beyond_basics/generating_documentation.md","ref":"beyond_basics/generating_documentation.md","articles":[]},"previous":{"title":"Running Tests","level":"4.1.2","depth":2,"path":"beyond_basics/running_tests.md","ref":"beyond_basics/running_tests.md","articles":[]},"dir":"ltr"},"config":{"plugins":["theme-api","panel","sequence-diagrams","ga"],"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"panel":{},"search":{},"sequence-diagrams":{"theme":"simple"},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"highlight":{},"theme-api":{"languages":[],"split":true,"theme":"light"},"ga":{"configuration":"auto","token":"UA-119864590-1"},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","author":"Phillip Wittrock","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"The Kubebuilder Book","gitbook":">= 3.0.0"},"file":{"path":"beyond_basics/annotations.md","mtime":"2018-10-05T18:51:47.845Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-10-05T23:14:50.796Z"},"basePath":"..","book":{"language":""}});
         });
     </script>
 </div>
