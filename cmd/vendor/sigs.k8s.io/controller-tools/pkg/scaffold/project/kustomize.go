@@ -77,4 +77,11 @@ resources:
 
 patches:
 - manager_image_patch.yaml
+
+vars:
+- name: WEBHOOK_SECRET_NAME
+  objref:
+    kind: Secret
+    name: webhook-server-secret
+    apiVersion: v1
 `

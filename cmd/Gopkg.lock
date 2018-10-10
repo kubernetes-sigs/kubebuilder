@@ -237,7 +237,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:0a82cfc0bf342ecd49a144916c21594444ba760d5572ae8476ab21ddbc42d11f"
+  digest = "1:cce1afa95a2013f95e9b56d372a9e770f3cd260b2263c6b67a9633e4b50773ae"
   name = "sigs.k8s.io/controller-tools"
   packages = [
     "pkg/scaffold",
@@ -249,7 +249,7 @@
     "pkg/util",
   ]
   pruneopts = "NT"
-  revision = "7bc39115ce8a6509b8055daf72c339f73dc4df86"
+  revision = "0c39d470e9d1f9699afe240a85373b86620d32ba"
 
 [solve-meta]
   analyzer-name = "dep"
