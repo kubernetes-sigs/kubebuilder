@@ -31,8 +31,6 @@ steps:
 - name: "gcr.io/kubebuilder/thirdparty-darwin:1.11.0"
   args: ["tar", "-xzvf", "/kubebuilder_darwin_amd64.tar.gz"]
   dir: "_output/darwin_amd64"
-- name: "ubuntu"
-  args: ["bash", "build/build_vendor.sh"]
 - name: "gcr.io/kubebuilder/goreleaser_with_go_1.10:0.0.1"
   args: ["bash", "build/build_kubebuilder.sh", "--snapshot"]
   env:
