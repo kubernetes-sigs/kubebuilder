@@ -1,0 +1,15 @@
+# Uncomment to update deps with dep tool
+
+[prune]
+  non-go = true
+  go-tests = true
+
+[[constraint]]
+  name = "sigs.k8s.io/controller-tools"
+  branch = "master"
+
+# For dependency below: Refer to issue https://github.com/golang/dep/issues/1799
+[[override]]
+  name = "gopkg.in/fsnotify.v1"
+  source = "https://github.com/fsnotify/fsnotify.git"
+  version="v1.4.7"

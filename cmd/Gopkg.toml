@@ -1,9 +1,0 @@
-# Uncomment to update deps with dep tool
-
-[prune]
-  non-go = true
-  go-tests = true
-
-[[constraint]]
-  name = "sigs.k8s.io/controller-tools"
-  branch = "master"
