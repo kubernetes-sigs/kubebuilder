@@ -19,8 +19,8 @@ cp -r /workspace/_output/kubebuilder /tmp/kubebuilder/
 if [ $GOOS = "linux" ]; then
 
 export GOPATH=/go
-mkdir -p $GOPATH/src/github.com/kubernetes-sigs/kubebuilder-test/
-cd $GOPATH/src/github.com/kubernetes-sigs/kubebuilder-test/
+mkdir -p $GOPATH/src/sigs.k8s.io/kubebuilder-test/
+cd $GOPATH/src/sigs.k8s.io/kubebuilder-test/
 
 # Setup env vars
 export PATH=$PATH:/tmp/kubebuilder/bin/

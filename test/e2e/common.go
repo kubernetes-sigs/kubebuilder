@@ -21,10 +21,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/kubernetes-sigs/kubebuilder/test/e2e/framework"
-	e2einternal "github.com/kubernetes-sigs/kubebuilder/test/internal/e2e"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	"sigs.k8s.io/kubebuilder/test/e2e/framework"
+	e2einternal "sigs.k8s.io/kubebuilder/test/internal/e2e"
 )
 
 func prepare(workDir string) {

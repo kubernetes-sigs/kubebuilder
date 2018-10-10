@@ -20,10 +20,11 @@ import (
 	"log"
 	"strings"
 
-	"github.com/kubernetes-sigs/kubebuilder/cmd/internal/codegen"
 	"github.com/pkg/errors"
+
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/gengo/types"
+	"sigs.k8s.io/kubebuilder/cmd/internal/codegen"
 )
 
 // resourceTags contains the tags present in a "+resource=" comment

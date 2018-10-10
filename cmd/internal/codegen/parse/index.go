@@ -21,9 +21,10 @@ import (
 	"log"
 	"strings"
 
-	"github.com/kubernetes-sigs/kubebuilder/cmd/internal/codegen"
 	"github.com/pkg/errors"
+
 	"k8s.io/gengo/types"
+	"sigs.k8s.io/kubebuilder/cmd/internal/codegen"
 )
 
 // parseIndex indexes all types with the comment "// +resource=RESOURCE" by GroupVersionKind and

@@ -18,10 +18,10 @@ package main
 
 import (
 	"github.com/golang/glog"
-	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder-gen/codegen/run"
-	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder-gen/internal/controllergen"
-	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder-gen/internal/resourcegen"
 	"k8s.io/apiserver/pkg/util/logs"
+	"sigs.k8s.io/kubebuilder/cmd/kubebuilder-gen/codegen/run"
+	"sigs.k8s.io/kubebuilder/cmd/kubebuilder-gen/internal/controllergen"
+	"sigs.k8s.io/kubebuilder/cmd/kubebuilder-gen/internal/resourcegen"
 )
 
 func main() {

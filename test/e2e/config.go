@@ -19,7 +19,7 @@ package e2e
 import (
 	"path/filepath"
 
-	"github.com/kubernetes-sigs/kubebuilder/test/e2e/framework"
+	"sigs.k8s.io/kubebuilder/test/e2e/framework"
 )
 
 // runtime config specified to run e2e tests

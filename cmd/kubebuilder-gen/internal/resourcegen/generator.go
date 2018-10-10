@@ -17,8 +17,8 @@ limitations under the License.
 package resourcegen
 
 import (
-	"github.com/kubernetes-sigs/kubebuilder/cmd/internal/codegen"
 	"k8s.io/gengo/generator"
+	"sigs.k8s.io/kubebuilder/cmd/internal/codegen"
 )
 
 type Generator struct{}

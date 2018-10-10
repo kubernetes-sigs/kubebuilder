@@ -27,7 +27,7 @@ ContainerSet has 4 fields:
 
 #### Reference
 
-- See the [resource code generation tags](https://godoc.org/github.com/kubernetes-sigs/kubebuilder/pkg/gen/apis)
+- See the [resource code generation tags](https://godoc.org/sigs.k8s.io/kubebuilder/pkg/gen/apis)
 godocs for reference documentation on resource annotations.
 
 {% sample lang="go" %}
@@ -107,7 +107,7 @@ While users don't directly modify generated code, the code must be regenerated a
 modified by adding or removing fields.  This is automatically done when running `make`.
 
 Code generation may be configured for resources using annotations of the form `// +something`.
-See the [pkg/gen](https://godoc.org/github.com/kubernetes-sigs/kubebuilder/pkg/gen/) reference documentation.
+See the [pkg/gen](https://godoc.org/sigs.k8s.io/kubebuilder/pkg/gen/) reference documentation.
 {% endpanel %}
 
 {% method %}

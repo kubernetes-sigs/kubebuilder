@@ -17,15 +17,16 @@ limitations under the License.
 package controllergen
 
 import (
+	"fmt"
 	"io"
+	"path"
 	"strings"
 	"text/template"
 
-	"fmt"
-	"github.com/kubernetes-sigs/kubebuilder/cmd/internal/codegen"
 	"github.com/markbates/inflect"
+
 	"k8s.io/gengo/generator"
-	"path"
+	"sigs.k8s.io/kubebuilder/cmd/internal/codegen"
 )
 
 type injectGenerator struct {
@@ -43,7 +44,7 @@ func (d *injectGenerator) Imports(c *generator.Context) []string {
 
 	repo := d.Controllers[0].Repo
 	im := []string{
-		"github.com/kubernetes-sigs/kubebuilder/pkg/controller",
+		"sigs.k8s.io/kubebuilder/pkg/controller",
 		"k8s.io/client-go/rest",
 		repo + "/pkg/controller/sharedinformers",
 		repo + "/pkg/client/informers/externalversions",
@@ -52,12 +53,12 @@ func (d *injectGenerator) Imports(c *generator.Context) []string {
 	}
 
 	if len(d.APIS.Groups) > 0 {
-	    im = append(im, []string{
-	    	"time",
-	    	"k8s.io/client-go/kubernetes/scheme",
-	    	"rscheme " + "\"" + repo + "/pkg/client/clientset/versioned/scheme\""}...
-	    )
-    }
+		im = append(im, []string{
+			"time",
+			"k8s.io/client-go/kubernetes/scheme",
+			"rscheme " + "\"" + repo + "/pkg/client/clientset/versioned/scheme\""}...,
+		)
+	}
 	// Import package for each controller
 	repos := map[string]string{}
 	for _, c := range d.Controllers {

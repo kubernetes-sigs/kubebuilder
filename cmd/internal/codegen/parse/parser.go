@@ -26,15 +26,16 @@ import (
 	"strings"
 
 	"github.com/golang/glog"
-	"github.com/kubernetes-sigs/kubebuilder/cmd/internal/codegen"
 	"github.com/markbates/inflect"
 	"github.com/pkg/errors"
+
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/gengo/args"
 	"k8s.io/gengo/generator"
 	"k8s.io/gengo/types"
+	"sigs.k8s.io/kubebuilder/cmd/internal/codegen"
 )
 
 type APIs struct {

@@ -22,8 +22,8 @@ import (
 
 	"fmt"
 
-	"github.com/kubernetes-sigs/kubebuilder/cmd/internal/codegen"
 	"k8s.io/gengo/generator"
+	"sigs.k8s.io/kubebuilder/cmd/internal/codegen"
 )
 
 type apiGenerator struct {
@@ -37,7 +37,7 @@ func (d *apiGenerator) Imports(c *generator.Context) []string {
 	imports := []string{
 		"k8s.io/apimachinery/pkg/runtime/schema",
 		"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1",
-		"github.com/kubernetes-sigs/kubebuilder/pkg/builders",
+		"sigs.k8s.io/kubebuilder/pkg/builders",
 		"rbacv1 \"k8s.io/api/rbac/v1\"",
 	}
 	for _, group := range d.apis.Groups {

@@ -18,11 +18,12 @@ package run
 
 import (
 	"github.com/golang/glog"
-	"github.com/kubernetes-sigs/kubebuilder/cmd/internal/codegen/parse"
-	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder-gen/codegen"
 	"github.com/spf13/pflag"
+
 	"k8s.io/gengo/args"
 	"k8s.io/gengo/generator"
+	"sigs.k8s.io/kubebuilder/cmd/internal/codegen/parse"
+	"sigs.k8s.io/kubebuilder/cmd/kubebuilder-gen/codegen"
 )
 
 // CodeGenerator generates code for Kubernetes resources and controllers

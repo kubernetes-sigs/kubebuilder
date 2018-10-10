@@ -25,11 +25,12 @@ import (
 	"testing"
 
 	"github.com/golang/glog"
-	"github.com/kubernetes-sigs/kubebuilder/test/e2e/framework"
-	"github.com/kubernetes-sigs/kubebuilder/test/e2e/framework/ginkgowrapper"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/pflag"
+
+	"sigs.k8s.io/kubebuilder/test/e2e/framework"
+	"sigs.k8s.io/kubebuilder/test/e2e/framework/ginkgowrapper"
 )
 
 func init() {
@@ -57,7 +58,7 @@ var _ = BeforeSuite(func(done Done) {
 	targets := []string{"kubebuilder", "kubebuilder-gen"}
 	for _, target := range targets {
 		buildOptions := []string{
-			"build", "-o", path.Join(framework.TestContext.BinariesDir, target), path.Join("github.com/kubernetes-sigs/kubebuilder/cmd", target)}
+			"build", "-o", path.Join(framework.TestContext.BinariesDir, target), path.Join("sigs.k8s.io/kubebuilder/cmd", target)}
 		cmd := exec.Command("go", buildOptions...)
 		cmd.Env = os.Environ()
 		command := strings.Join(cmd.Args, " ")
