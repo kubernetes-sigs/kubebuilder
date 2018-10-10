@@ -97,7 +97,7 @@ events to update the field.
 ```go
 // ContainerSetStatus defines the observed state of ContainerSet
 type ContainerSetStatus struct {
-  HealthyReplicas `json:"healthyReplicas,omitempty"`
+  HealthyReplicas int32 `json:"healthyReplicas,omitempty"`
 }
 ```
 {% endmethod %}
