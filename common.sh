@@ -97,7 +97,6 @@ function prepare_staging_dir {
   else
     rm -f "$kb_root_dir/kubebuilder/bin/kubebuilder"
     rm -f "$kb_root_dir/kubebuilder/bin/kubebuilder-gen"
-    rm -f "$kb_root_dir/kubebuilder/bin/vendor.tar.gz"
   fi
 }
 

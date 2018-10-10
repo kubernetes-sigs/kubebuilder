@@ -22,7 +22,6 @@ builds:
    - CGO_ENABLED=0
 archive:
   files:
-    - "/workspace/_output/kubebuilder/bin/vendor.tar.gz"
     - "/workspace/_output/{{ .Os }}_{{ .Arch }}/kubebuilder/bin/*"
   wrap_in_directory: true
 # wrap all the binaries under 'bin/' dir
