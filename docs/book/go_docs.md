@@ -3,11 +3,9 @@
 
 ## Controller libraries
 
-- [controller libraries](https://godoc.org/github.com/kubernetes-sigs/kubebuilder/pkg/controller)
-- [config libraries](https://godoc.org/github.com/kubernetes-sigs/kubebuilder/pkg/config)
-- [signals libraries](https://godoc.org/github.com/kubernetes-sigs/kubebuilder/pkg/signals)
+- [controller libraries](https://godoc.org/sigs.k8s.io/controller-runtime/pkg)
 
 ## Code generation tags
 
-- [resource code generation tags](https://godoc.org/github.com/kubernetes-sigs/kubebuilder/pkg/gen/apis)
-- [controller code generation tags](https://godoc.org/github.com/kubernetes-sigs/kubebuilder/pkg/gen/controller)
+- [resource code generation tags](https://godoc.org/sigs.k8s.io/kubebuilder/pkg/gen/apis)
+- [controller code generation tags](https://godoc.org/sigs.k8s.io/kubebuilder/pkg/gen/controller)

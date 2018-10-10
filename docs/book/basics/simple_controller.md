@@ -61,7 +61,7 @@ Example:
 
 - See the [controller libraries](https://godoc.org/sigs.k8s.io/controller-runtime/pkg) godocs for reference
 documentation on the controller libraries.
-- See the [controller code generation tags](https://godoc.org/github.com/kubernetes-sigs/kubebuilder/pkg/gen/controller)
+- See the [controller code generation tags](https://godoc.org/sigs.k8s.io/kubebuilder/pkg/gen/controller)
 godocs for reference documentation on controller annotations.
 
 

@@ -26,8 +26,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kubernetes-sigs/kubebuilder/test/e2e/framework/ginkgowrapper"
 	. "github.com/onsi/ginkgo"
+	"sigs.k8s.io/kubebuilder/test/e2e/framework/ginkgowrapper"
 
 	"k8s.io/client-go/tools/clientcmd"
 )

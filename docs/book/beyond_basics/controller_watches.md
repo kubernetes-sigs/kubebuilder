@@ -3,7 +3,7 @@
 This chapter describes how to use the controller package functions to configure Controllers to watch
 Resources.
 
-[Link to reference documentation](https://godoc.org/github.com/kubernetes-sigs/kubebuilder/pkg/controller)
+[Link to reference documentation](https://godoc.org/sigs.k8s.io/controller-runtime)
 
 {% method %}
 ## Watching Controller Resource

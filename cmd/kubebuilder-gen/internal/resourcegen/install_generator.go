@@ -21,8 +21,8 @@ import (
 	"path"
 	"text/template"
 
-	"github.com/kubernetes-sigs/kubebuilder/cmd/internal/codegen"
 	"k8s.io/gengo/generator"
+	"sigs.k8s.io/kubebuilder/cmd/internal/codegen"
 )
 
 type installGenerator struct {

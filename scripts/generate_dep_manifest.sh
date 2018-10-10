@@ -21,7 +21,7 @@ while read name ; do
 	# strip quotes
 	myver=$(echo "$version" | tr -d '"')
 	myname=$(echo "$name"|tr -d '"')
-	if [ "$myname" = "github.com/kubernetes-sigs/kubebuilder" ]; then
+	if [ "$myname" = "sigs.k8s.io/kubebuilder" ]; then
 		continue
 	fi
 	if [ "$myver" = "branch master" ] || [ -z "$myver" ]; then
@@ -34,7 +34,7 @@ done < $tmp_file
 cat << EOF
 
 [[override]]
-name = "github.com/kubernetes-sigs/kubebuilder"
+name = "sigs.k8s.io/kubebuilder"
 {{ if eq .Version "unknown" -}}
 branch = "master"
 {{ else -}}

@@ -23,9 +23,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/util"
-	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/version"
 	"github.com/spf13/cobra"
+
+	"sigs.k8s.io/kubebuilder/cmd/kubebuilder/util"
+	"sigs.k8s.io/kubebuilder/cmd/kubebuilder/version"
 )
 
 func main() {

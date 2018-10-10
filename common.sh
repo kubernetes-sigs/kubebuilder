@@ -124,7 +124,7 @@ function build_kb {
     opts=""
   else
     # TODO: what does this thing do.
-    opts=-ldflags "-X github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/version.kubeBuilderVersion=$INJECT_KB_VERSION"
+    opts=-ldflags "-X sigs.k8s.io/kubebuilder/cmd/kubebuilder/version.kubeBuilderVersion=$INJECT_KB_VERSION"
   fi
 
   go build $opts -o $tmp_root/kubebuilder/bin/kubebuilder ./cmd/kubebuilder
@@ -132,7 +132,7 @@ function build_kb {
 }
 
 function prepare_testdir_under_gopath {
-  kb_test_dir=$GOPATH/src/github.com/kubernetes-sigs/kubebuilder-test
+  kb_test_dir=$GOPATH/src/sigs.k8s.io/kubebuilder-test
   header_text "preparing test directory $kb_test_dir"
   rm -rf "$kb_test_dir" && mkdir -p "$kb_test_dir" && cd "$kb_test_dir"
   header_text "running kubebuilder commands in test directory $kb_test_dir"

@@ -26,13 +26,14 @@ import (
 	"strings"
 
 	"github.com/Masterminds/semver"
-	"github.com/kubernetes-sigs/kubebuilder/cmd/kubebuilder/util"
 	"github.com/spf13/cobra"
 	flag "github.com/spf13/pflag"
+
 	"sigs.k8s.io/controller-tools/pkg/scaffold"
 	"sigs.k8s.io/controller-tools/pkg/scaffold/input"
 	"sigs.k8s.io/controller-tools/pkg/scaffold/manager"
 	"sigs.k8s.io/controller-tools/pkg/scaffold/project"
+	"sigs.k8s.io/kubebuilder/cmd/kubebuilder/util"
 )
 
 func newInitProjectCmd() *cobra.Command {
