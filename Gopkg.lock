@@ -869,11 +869,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:cce1afa95a2013f95e9b56d372a9e770f3cd260b2263c6b67a9633e4b50773ae"
+  digest = "1:fa38af46af19dfd11819b4a44592030df5e9dc448072fba80c572e560707fc9a"
   name = "sigs.k8s.io/controller-tools"
   packages = ["pkg/util"]
   pruneopts = "NT"
-  revision = "0c39d470e9d1f9699afe240a85373b86620d32ba"
+  revision = "6dce81405f4641fbd437806fb7f5f5e6d353edaa"
 
 [[projects]]
   branch = "master"
