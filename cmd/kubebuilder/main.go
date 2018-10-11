@@ -56,6 +56,7 @@ func main() {
 		version.NewVersionCmd(),
 		newDocsCmd(),
 		newVendorUpdateCmd(),
+		newAlphaCommand(),
 	)
 
 	if err := rootCmd.Execute(); err != nil {
@@ -91,9 +92,9 @@ After the scaffold is written, api will run make on the project.
 `,
 		Example: `
 	# Initialize your project
-    kubebuilder init --domain example.com --license apache2 --owner "The Kubernetes authors"
+	kubebuilder init --domain example.com --license apache2 --owner "The Kubernetes authors"
 
-    # Create a frigates API with Group: ship, Version: v1beta1 and Kind: Frigate
+	# Create a frigates API with Group: ship, Version: v1beta1 and Kind: Frigate
 	kubebuilder create api --group ship --version v1beta1 --kind Frigate
 
 	# Edit the API Scheme
