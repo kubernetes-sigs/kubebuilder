@@ -1,8 +1,14 @@
 # Uncomment to update deps with dep tool
 
-[prune]
-  non-go = true
-  go-tests = true
+required = [
+    "github.com/emicklei/go-restful",
+    "github.com/go-openapi/spec",
+    "github.com/onsi/ginkgo", # for integration testing
+    "github.com/spf13/pflag",
+    "k8s.io/client-go/plugin/pkg/client/auth/gcp", # for development against gcp
+    "k8s.io/code-generator/cmd/deepcopy-gen", # for go generate
+    "sigs.k8s.io/testing_frameworks/integration", # for integration testing
+    ]
 
 [[constraint]]
   name = "sigs.k8s.io/controller-tools"
@@ -13,3 +19,7 @@
   name = "gopkg.in/fsnotify.v1"
   source = "https://github.com/fsnotify/fsnotify.git"
   version="v1.4.7"
+
+[prune]
+  non-go = true
+  go-tests = true

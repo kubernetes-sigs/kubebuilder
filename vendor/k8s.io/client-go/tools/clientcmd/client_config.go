@@ -175,6 +175,10 @@ func (config *DirectClientConfig) ClientConfig() (*restclient.Config, error) {
 	// only try to read the auth information if we are secure
 	if restclient.IsConfigTransportTLS(*clientConfig) {
 		var err error
+
+		// mergo is a first write wins for map value and a last writing wins for interface values
+		// NOTE: This behavior changed with https://github.com/imdario/mergo/commit/d304790b2ed594794496464fadd89d2bb266600a.
+		//       Our mergo.Merge version is older than this change.
 		var persister restclient.AuthProviderConfigPersister
 		if config.configAccess != nil {
 			authInfoName, _ := config.getAuthInfoName()
@@ -184,13 +188,13 @@ func (config *DirectClientConfig) ClientConfig() (*restclient.Config, error) {
 		if err != nil {
 			return nil, err
 		}
-		mergo.MergeWithOverwrite(clientConfig, userAuthPartialConfig)
+		mergo.Merge(clientConfig, userAuthPartialConfig)
 
 		serverAuthPartialConfig, err := getServerIdentificationPartialConfig(configAuthInfo, configClusterInfo)
 		if err != nil {
 			return nil, err
 		}
-		mergo.MergeWithOverwrite(clientConfig, serverAuthPartialConfig)
+		mergo.Merge(clientConfig, serverAuthPartialConfig)
 	}
 
 	return clientConfig, nil
@@ -210,7 +214,7 @@ func getServerIdentificationPartialConfig(configAuthInfo clientcmdapi.AuthInfo, 
 	configClientConfig.CAFile = configClusterInfo.CertificateAuthority
 	configClientConfig.CAData = configClusterInfo.CertificateAuthorityData
 	configClientConfig.Insecure = configClusterInfo.InsecureSkipTLSVerify
-	mergo.MergeWithOverwrite(mergedConfig, configClientConfig)
+	mergo.Merge(mergedConfig, configClientConfig)
 
 	return mergedConfig, nil
 }
@@ -275,8 +279,8 @@ func (config *DirectClientConfig) getUserIdentificationPartialConfig(configAuthI
 		promptedConfig := makeUserIdentificationConfig(*promptedAuthInfo)
 		previouslyMergedConfig := mergedConfig
 		mergedConfig = &restclient.Config{}
-		mergo.MergeWithOverwrite(mergedConfig, promptedConfig)
-		mergo.MergeWithOverwrite(mergedConfig, previouslyMergedConfig)
+		mergo.Merge(mergedConfig, promptedConfig)
+		mergo.Merge(mergedConfig, previouslyMergedConfig)
 		config.promptedCredentials.username = mergedConfig.Username
 		config.promptedCredentials.password = mergedConfig.Password
 	}
@@ -419,11 +423,11 @@ func (config *DirectClientConfig) getContext() (clientcmdapi.Context, error) {
 
 	mergedContext := clientcmdapi.NewContext()
 	if configContext, exists := contexts[contextName]; exists {
-		mergo.MergeWithOverwrite(mergedContext, configContext)
+		mergo.Merge(mergedContext, configContext)
 	} else if required {
 		return clientcmdapi.Context{}, fmt.Errorf("context %q does not exist", contextName)
 	}
-	mergo.MergeWithOverwrite(mergedContext, config.overrides.Context)
+	mergo.Merge(mergedContext, config.overrides.Context)
 
 	return *mergedContext, nil
 }
@@ -435,11 +439,11 @@ func (config *DirectClientConfig) getAuthInfo() (clientcmdapi.AuthInfo, error) {
 
 	mergedAuthInfo := clientcmdapi.NewAuthInfo()
 	if configAuthInfo, exists := authInfos[authInfoName]; exists {
-		mergo.MergeWithOverwrite(mergedAuthInfo, configAuthInfo)
+		mergo.Merge(mergedAuthInfo, configAuthInfo)
 	} else if required {
 		return clientcmdapi.AuthInfo{}, fmt.Errorf("auth info %q does not exist", authInfoName)
 	}
-	mergo.MergeWithOverwrite(mergedAuthInfo, config.overrides.AuthInfo)
+	mergo.Merge(mergedAuthInfo, config.overrides.AuthInfo)
 
 	return *mergedAuthInfo, nil
 }
@@ -450,13 +454,13 @@ func (config *DirectClientConfig) getCluster() (clientcmdapi.Cluster, error) {
 	clusterInfoName, required := config.getClusterName()
 
 	mergedClusterInfo := clientcmdapi.NewCluster()
-	mergo.MergeWithOverwrite(mergedClusterInfo, config.overrides.ClusterDefaults)
+	mergo.Merge(mergedClusterInfo, config.overrides.ClusterDefaults)
 	if configClusterInfo, exists := clusterInfos[clusterInfoName]; exists {
-		mergo.MergeWithOverwrite(mergedClusterInfo, configClusterInfo)
+		mergo.Merge(mergedClusterInfo, configClusterInfo)
 	} else if required {
 		return clientcmdapi.Cluster{}, fmt.Errorf("cluster %q does not exist", clusterInfoName)
 	}
-	mergo.MergeWithOverwrite(mergedClusterInfo, config.overrides.ClusterInfo)
+	mergo.Merge(mergedClusterInfo, config.overrides.ClusterInfo)
 	// An override of --insecure-skip-tls-verify=true and no accompanying CA/CA data should clear already-set CA/CA data
 	// otherwise, a kubeconfig containing a CA reference would return an error that "CA and insecure-skip-tls-verify couldn't both be set"
 	caLen := len(config.overrides.ClusterInfo.CertificateAuthority)
