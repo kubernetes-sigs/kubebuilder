@@ -220,9 +220,6 @@ func ModifyConfig(configAccess ConfigAccess, newConfig clientcmdapi.Config, rela
 		}
 	}
 
-	// seenConfigs stores a map of config source filenames to computed config objects
-	seenConfigs := map[string]*clientcmdapi.Config{}
-
 	for key, context := range newConfig.Contexts {
 		startingContext, exists := startingConfig.Contexts[key]
 		if !reflect.DeepEqual(context, startingContext) || !exists {
@@ -231,28 +228,15 @@ func ModifyConfig(configAccess ConfigAccess, newConfig clientcmdapi.Config, rela
 				destinationFile = configAccess.GetDefaultFilename()
 			}
 
-			// we only obtain a fresh config object from its source file
-			// if we have not seen it already - this prevents us from
-			// reading and writing to the same number of files repeatedly
-			// when multiple / all contexts share the same destination file.
-			configToWrite, seen := seenConfigs[destinationFile]
-			if !seen {
-				var err error
-				configToWrite, err = getConfigFromFile(destinationFile)
-				if err != nil {
-					return err
-				}
-				seenConfigs[destinationFile] = configToWrite
+			configToWrite, err := getConfigFromFile(destinationFile)
+			if err != nil {
+				return err
 			}
-
 			configToWrite.Contexts[key] = context
-		}
-	}
 
-	// actually persist config object changes
-	for destinationFile, configToWrite := range seenConfigs {
-		if err := WriteToFile(*configToWrite, destinationFile); err != nil {
-			return err
+			if err := WriteToFile(*configToWrite, destinationFile); err != nil {
+				return err
+			}
 		}
 	}
 

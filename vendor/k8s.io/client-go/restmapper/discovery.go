@@ -99,20 +99,18 @@ func NewDiscoveryRESTMapper(groupResources []*APIGroupResources) meta.RESTMapper
 					scope = meta.RESTScopeRoot
 				}
 
-				// if we have a slash, then this is a subresource and we shouldn't create mappings for those.
-				if strings.Contains(resource.Name, "/") {
+				// this is for legacy resources and servers which don't list singular forms.  For those we must still guess.
+				if len(resource.SingularName) == 0 {
+					versionMapper.Add(gv.WithKind(resource.Kind), scope)
+					// TODO this is producing unsafe guesses that don't actually work, but it matches previous behavior
+					versionMapper.Add(gv.WithKind(resource.Kind+"List"), scope)
 					continue
 				}
 
 				plural := gv.WithResource(resource.Name)
 				singular := gv.WithResource(resource.SingularName)
-				// this is for legacy resources and servers which don't list singular forms.  For those we must still guess.
-				if len(resource.SingularName) == 0 {
-					_, singular = meta.UnsafeGuessKindToResource(gv.WithKind(resource.Kind))
-				}
-
-				versionMapper.AddSpecific(gv.WithKind(strings.ToLower(resource.Kind)), plural, singular, scope)
 				versionMapper.AddSpecific(gv.WithKind(resource.Kind), plural, singular, scope)
+				versionMapper.AddSpecific(gv.WithKind(strings.ToLower(resource.Kind)), plural, singular, scope)
 				// TODO this is producing unsafe guesses that don't actually work, but it matches previous behavior
 				versionMapper.Add(gv.WithKind(resource.Kind+"List"), scope)
 			}

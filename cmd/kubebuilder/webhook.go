@@ -27,10 +27,10 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"sigs.k8s.io/controller-tools/pkg/scaffold"
-	"sigs.k8s.io/controller-tools/pkg/scaffold/input"
-	"sigs.k8s.io/controller-tools/pkg/scaffold/resource"
-	"sigs.k8s.io/controller-tools/pkg/scaffold/webhook"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/webhook"
 )
 
 func newWebhookCmd() *cobra.Command {

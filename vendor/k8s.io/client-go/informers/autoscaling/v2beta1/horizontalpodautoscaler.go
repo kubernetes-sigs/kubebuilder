@@ -21,7 +21,7 @@ package v2beta1
 import (
 	time "time"
 
-	autoscalingv2beta1 "k8s.io/api/autoscaling/v2beta1"
+	autoscaling_v2beta1 "k8s.io/api/autoscaling/v2beta1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -70,7 +70,7 @@ func NewFilteredHorizontalPodAutoscalerInformer(client kubernetes.Interface, nam
 				return client.AutoscalingV2beta1().HorizontalPodAutoscalers(namespace).Watch(options)
 			},
 		},
-		&autoscalingv2beta1.HorizontalPodAutoscaler{},
+		&autoscaling_v2beta1.HorizontalPodAutoscaler{},
 		resyncPeriod,
 		indexers,
 	)
@@ -81,7 +81,7 @@ func (f *horizontalPodAutoscalerInformer) defaultInformer(client kubernetes.Inte
 }
 
 func (f *horizontalPodAutoscalerInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&autoscalingv2beta1.HorizontalPodAutoscaler{}, f.defaultInformer)
+	return f.factory.InformerFor(&autoscaling_v2beta1.HorizontalPodAutoscaler{}, f.defaultInformer)
 }
 
 func (f *horizontalPodAutoscalerInformer) Lister() v2beta1.HorizontalPodAutoscalerLister {

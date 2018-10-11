@@ -37,7 +37,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/pkg/apis/clientauthentication"
 	"k8s.io/client-go/pkg/apis/clientauthentication/v1alpha1"
 	"k8s.io/client-go/pkg/apis/clientauthentication/v1beta1"
@@ -53,9 +52,9 @@ var codecs = serializer.NewCodecFactory(scheme)
 
 func init() {
 	v1.AddToGroupVersion(scheme, schema.GroupVersion{Version: "v1"})
-	utilruntime.Must(v1alpha1.AddToScheme(scheme))
-	utilruntime.Must(v1beta1.AddToScheme(scheme))
-	utilruntime.Must(clientauthentication.AddToScheme(scheme))
+	v1alpha1.AddToScheme(scheme)
+	v1beta1.AddToScheme(scheme)
+	clientauthentication.AddToScheme(scheme)
 }
 
 var (
