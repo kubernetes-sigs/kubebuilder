@@ -28,11 +28,11 @@ import (
 	"github.com/spf13/cobra"
 	flag "github.com/spf13/pflag"
 
-	"sigs.k8s.io/controller-tools/pkg/scaffold"
-	"sigs.k8s.io/controller-tools/pkg/scaffold/controller"
-	"sigs.k8s.io/controller-tools/pkg/scaffold/input"
-	"sigs.k8s.io/controller-tools/pkg/scaffold/resource"
 	"sigs.k8s.io/kubebuilder/cmd/kubebuilder/util"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/controller"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 )
 
 type apiOptions struct {
