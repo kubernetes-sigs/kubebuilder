@@ -16,7 +16,7 @@
 
 set -e
 
-go build -o ./bin/kubebuilder sigs.k8s.io/kubebuilder/cmd/kubebuilder
+go build -o ./bin/kubebuilder sigs.k8s.io/kubebuilder/cmd
 rm -rf ./test/project/*
 cd test/project
 ln -s ../../vendor vendor

@@ -143,31 +143,6 @@ func DoCmd(cmd string, args ...string) {
 	}
 }
 
-func CheckInstall() {
-	bins := []string{"kubebuilder-gen", "client-gen", "deepcopy-gen", "gen-apidocs", "informer-gen",
-		"openapi-gen", "kubebuilder", "conversion-gen", "defaulter-gen", "lister-gen"}
-	missing := []string{}
-
-	e, err := os.Executable()
-	if err != nil {
-		log.Fatal("unable to get directory of kubebuilder tools")
-	}
-
-	dir := filepath.Dir(e)
-	for _, b := range bins {
-		_, err = os.Stat(filepath.Join(dir, b))
-		if err != nil {
-			missing = append(missing, b)
-		}
-	}
-	if len(missing) > 0 {
-		log.Fatalf("Error running kubebuilder."+
-			"\nThe following files are missing [%s]"+
-			"\nkubebuilder must be installed using a release tar.gz downloaded from the git repo.",
-			strings.Join(missing, ","))
-	}
-}
-
 func IsNewVersion() bool {
 	_, err := os.Stat("PROJECT")
 	if err != nil {

@@ -96,7 +96,6 @@ function prepare_staging_dir {
     rm -rf "$kb_root_dir"
   else
     rm -f "$kb_root_dir/kubebuilder/bin/kubebuilder"
-    rm -f "$kb_root_dir/kubebuilder/bin/kubebuilder-gen"
   fi
 }
 
@@ -124,11 +123,10 @@ function build_kb {
     opts=""
   else
     # TODO: what does this thing do.
-    opts=-ldflags "-X sigs.k8s.io/kubebuilder/cmd/kubebuilder/version.kubeBuilderVersion=$INJECT_KB_VERSION"
+    opts=-ldflags "-X sigs.k8s.io/kubebuilder/cmd/version.kubeBuilderVersion=$INJECT_KB_VERSION"
   fi
 
-  go build $opts -o $tmp_root/kubebuilder/bin/kubebuilder ./cmd/kubebuilder
-  go build $opts -o $tmp_root/kubebuilder/bin/kubebuilder-gen ./cmd/kubebuilder-gen
+  go build $opts -o $tmp_root/kubebuilder/bin/kubebuilder ./cmd
 }
 
 function prepare_testdir_under_gopath {

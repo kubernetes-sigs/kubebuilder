@@ -55,18 +55,15 @@ var _ = BeforeSuite(func(done Done) {
 	// $ kubectl create clusterrolebinding myname-cluster-admin-binding --clusterrole=cluster-admin --user=myname@mycompany.com
 	framework.TestContext.BinariesDir = "/tmp/kubebuilder/bin/"
 	// build a kubebuilder
-	targets := []string{"kubebuilder", "kubebuilder-gen"}
-	for _, target := range targets {
-		buildOptions := []string{
-			"build", "-o", path.Join(framework.TestContext.BinariesDir, target), path.Join("sigs.k8s.io/kubebuilder/cmd", target)}
-		cmd := exec.Command("go", buildOptions...)
-		cmd.Env = os.Environ()
-		command := strings.Join(cmd.Args, " ")
-		log.Printf("running %v", command)
-		output, err := cmd.CombinedOutput()
-		log.Printf("output when running:\n%s", output)
-		Expect(err).NotTo(HaveOccurred())
-	}
+	buildOptions := []string{
+		"build", "-o", path.Join(framework.TestContext.BinariesDir, "kubebuilder"), "sigs.k8s.io/kubebuilder/cmd"}
+	cmd := exec.Command("go", buildOptions...)
+	cmd.Env = os.Environ()
+	command := strings.Join(cmd.Args, " ")
+	log.Printf("running %v", command)
+	output, err := cmd.CombinedOutput()
+	log.Printf("output when running:\n%s", output)
+	Expect(err).NotTo(HaveOccurred())
 
 	close(done)
 }, 60)

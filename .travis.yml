@@ -22,7 +22,7 @@ install:
   -
 
 script:
-- TRACE=1 ./testv1.sh
+- TRACE=1 ./test.sh
 
 # TBD. Suppressing for now.
 notifications:
