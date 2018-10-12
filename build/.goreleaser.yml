@@ -1,18 +1,9 @@
 # This is a GoReleaser configuration file for Kubebuilder release.
 # Make sure to check the documentation at http://goreleaser.com
 builds:
-- main: ./cmd/kubebuilder
+- main: ./cmd
   binary: kubebuilder
-  ldflags: -s -X sigs.k8s.io/kubebuilder/cmd/kubebuilder/version.kubeBuilderVersion={{.Version}} -X sigs.k8s.io/kubebuilder/cmd/kubebuilder/version.gitCommit={{.Commit}} -X sigs.k8s.io/kubebuilder/cmd/kubebuilder/version.buildDate={{.Date}} -X sigs.k8s.io/kubebuilder/cmd/kubebuilder/version.kubernetesVendorVersion={{.Env.KUBERNETES_VERSION}}
-  goos:
-   - darwin
-   - linux
-  goarch:
-   - amd64
-  env:
-   - CGO_ENABLED=0
-- main: ./cmd/kubebuilder-gen
-  binary: kubebuilder-gen
+  ldflags: -s -X sigs.k8s.io/kubebuilder/cmd/version.kubeBuilderVersion={{.Version}} -X sigs.k8s.io/kubebuilder/cmd/version.gitCommit={{.Commit}} -X sigs.k8s.io/kubebuilder/cmd/version.buildDate={{.Date}} -X sigs.k8s.io/kubebuilder/cmd/version.kubernetesVendorVersion={{.Env.KUBERNETES_VERSION}}
   goos:
    - darwin
    - linux

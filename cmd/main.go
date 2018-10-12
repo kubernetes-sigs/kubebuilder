@@ -25,12 +25,11 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"sigs.k8s.io/kubebuilder/cmd/kubebuilder/util"
-	"sigs.k8s.io/kubebuilder/cmd/kubebuilder/version"
+	"sigs.k8s.io/kubebuilder/cmd/util"
+	"sigs.k8s.io/kubebuilder/cmd/version"
 )
 
 func main() {
-	util.CheckInstall()
 	gopath := os.Getenv("GOPATH")
 	if len(gopath) == 0 {
 		gopath = gobuild.Default.GOPATH
