@@ -66,6 +66,7 @@ kubebuilder init --domain example.org --license apache2 --owner "The Kubernetes 
 	initCmd.Flags().BoolVar(
 		&o.dep, "dep", true, "if specified, determines whether dep will be used.")
 	o.depFlag = initCmd.Flag("dep")
+	initCmd.Flags().StringArrayVar(&o.depArgs, "depArgs", nil, "Additional arguments for dep")
 
 	o.prj = projectForFlags(initCmd.Flags())
 	o.bp = boilerplateForFlags(initCmd.Flags())
@@ -84,6 +85,7 @@ type projectOptions struct {
 	dkr     *manager.Dockerfile
 	dep     bool
 	depFlag *flag.Flag
+	depArgs []string
 }
 
 func (o *projectOptions) runInit() {
@@ -145,6 +147,9 @@ func (o *projectOptions) runInit() {
 	}
 	if o.dep {
 		c := exec.Command("dep", "ensure") // #nosec
+		if len(o.depArgs) > 0 {
+			c.Args = append(c.Args, o.depArgs...)
+		}
 		c.Stderr = os.Stderr
 		c.Stdout = os.Stdout
 		fmt.Println(strings.Join(c.Args, " "))
