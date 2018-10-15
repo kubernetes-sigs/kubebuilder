@@ -23,9 +23,10 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
+	"strconv"
 	"strings"
 
-	"github.com/Masterminds/semver"
 	"github.com/spf13/cobra"
 	flag "github.com/spf13/pflag"
 
@@ -64,6 +65,8 @@ kubebuilder init --domain example.org --license apache2 --owner "The Kubernetes 
 	}
 
 	initCmd.Flags().BoolVar(
+		&o.skipGoVersionCheck, "skip-go-version-check", false, "if specified, skip checking the Go version")
+	initCmd.Flags().BoolVar(
 		&o.dep, "dep", true, "if specified, determines whether dep will be used.")
 	o.depFlag = initCmd.Flag("dep")
 	initCmd.Flags().StringArrayVar(&o.depArgs, "depArgs", nil, "Additional arguments for dep")
@@ -78,18 +81,21 @@ kubebuilder init --domain example.org --license apache2 --owner "The Kubernetes 
 }
 
 type projectOptions struct {
-	prj     *project.Project
-	bp      *project.Boilerplate
-	gopkg   *project.GopkgToml
-	mgr     *manager.Cmd
-	dkr     *manager.Dockerfile
-	dep     bool
-	depFlag *flag.Flag
-	depArgs []string
+	prj                *project.Project
+	bp                 *project.Boilerplate
+	gopkg              *project.GopkgToml
+	mgr                *manager.Cmd
+	dkr                *manager.Dockerfile
+	dep                bool
+	depFlag            *flag.Flag
+	depArgs            []string
+	skipGoVersionCheck bool
 }
 
 func (o *projectOptions) runInit() {
-	checkGoVersion()
+	if !o.skipGoVersionCheck {
+		ensureGoVersionIsCompatible()
+	}
 
 	if !depExists() {
 		log.Fatalf("Dep is not installed. Follow steps at: https://golang.github.io/dep/docs/installation.html")
@@ -190,30 +196,54 @@ func boilerplateForFlags(f *flag.FlagSet) *project.Boilerplate {
 	f.StringVar(&b.Owner, "owner", "", "Owner to add to the copyright")
 	return b
 }
-func checkGoVersion() {
+
+func ensureGoVersionIsCompatible() {
+	err := fetchAndCheckGoVersion()
+	if err != nil {
+		log.Fatalf("%s. You can skip this check using the --skip-go-version-check flag", err)
+	}
+}
+
+func fetchAndCheckGoVersion() error {
 	cmd := exec.Command("go", "version")
 	out, err := cmd.Output()
 	if err != nil {
-		log.Fatalf("Could not execute 'go version': %v", err)
+		return fmt.Errorf("Failed to retrieve 'go version': %v", string(out))
 	}
 
 	split := strings.Split(string(out), " ")
 	if len(split) < 3 {
-		log.Fatalf("Invalid go version: %q", string(out))
+		return fmt.Errorf("Found invalid Go version: %q", string(out))
 	}
-	goVersion := strings.TrimPrefix(split[2], "go")
-	if ver, err := semver.NewVersion(goVersion); err != nil {
-		if err != nil {
-			log.Fatalf("Invalid go version %q: %v", goVersion, err)
-		}
-		c, err := semver.NewConstraint(">= 1.10")
-		if err != nil {
-			log.Fatal("Invalid constraint: %v", err)
-		}
-		if !c.Check(ver) {
-			log.Fatalf("The go version is %v, must be 1.10+", goVersion)
-		}
+	goVer := split[2]
+	if err := checkGoVersion(goVer); err != nil {
+		return fmt.Errorf("Go version '%s' is incompatible because '%s'", goVer, err)
 	}
+	return nil
+}
+
+func checkGoVersion(verStr string) error {
+	goVerRegex := `^go?([0-9]+)\.([0-9]+)([\.0-9A-Za-z\-]+)?$`
+	m := regexp.MustCompile(goVerRegex).FindStringSubmatch(verStr)
+	if m == nil {
+		return fmt.Errorf("invalid version string")
+	}
+
+	major, err := strconv.Atoi(m[1])
+	if err != nil {
+		return fmt.Errorf("error parsing major version '%s': %s", m[1], err)
+	}
+
+	minor, err := strconv.Atoi(m[2])
+	if err != nil {
+		return fmt.Errorf("error parsing minor version '%s': %s", m[2], err)
+	}
+
+	if major < 1 || minor < 10 {
+		return fmt.Errorf("requires version >= 1.10")
+	}
+
+	return nil
 }
 
 func depExists() bool {
