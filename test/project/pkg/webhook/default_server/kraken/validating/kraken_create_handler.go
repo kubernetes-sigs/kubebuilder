@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package mutating
+package validating
 
 import (
 	"context"
@@ -23,61 +23,60 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission/types"
-	crewv1 "sigs.k8s.io/kubebuilder/test/project/pkg/apis/crew/v1"
+	creaturesv2alpha1 "sigs.k8s.io/kubebuilder/test/project/pkg/apis/creatures/v2alpha1"
 )
 
 func init() {
-	webhookName := "mutating-create-update-firstmates"
+	webhookName := "validating-create-kraken"
 	if HandlerMap[webhookName] == nil {
 		HandlerMap[webhookName] = []admission.Handler{}
 	}
-	HandlerMap[webhookName] = append(HandlerMap[webhookName], &FirstMateCreateUpdateHandler{})
+	HandlerMap[webhookName] = append(HandlerMap[webhookName], &KrakenCreateHandler{})
 }
 
-// FirstMateCreateUpdateHandler handles FirstMate
-type FirstMateCreateUpdateHandler struct {
+// KrakenCreateHandler handles Kraken
+type KrakenCreateHandler struct {
 	// Client  client.Client
 
 	// Decoder decodes objects
 	Decoder types.Decoder
 }
 
-func (h *FirstMateCreateUpdateHandler) mutatingFirstMateFn(ctx context.Context, obj *crewv1.FirstMate) error {
+func (h *KrakenCreateHandler) validatingKrakenFn(ctx context.Context, obj *creaturesv2alpha1.Kraken) (bool, string, error) {
 	// TODO(user): implement your admission logic
-	return nil
+	return true, "allowed to be admitted", nil
 }
 
-var _ admission.Handler = &FirstMateCreateUpdateHandler{}
+var _ admission.Handler = &KrakenCreateHandler{}
 
 // Handle handles admission requests.
-func (h *FirstMateCreateUpdateHandler) Handle(ctx context.Context, req types.Request) types.Response {
-	obj := &crewv1.FirstMate{}
+func (h *KrakenCreateHandler) Handle(ctx context.Context, req types.Request) types.Response {
+	obj := &creaturesv2alpha1.Kraken{}
 
 	err := h.Decoder.Decode(req, obj)
 	if err != nil {
 		return admission.ErrorResponse(http.StatusBadRequest, err)
 	}
-	copy := obj.DeepCopy()
 
-	err = h.mutatingFirstMateFn(ctx, copy)
+	allowed, reason, err := h.validatingKrakenFn(ctx, obj)
 	if err != nil {
 		return admission.ErrorResponse(http.StatusInternalServerError, err)
 	}
-	return admission.PatchResponse(obj, copy)
+	return admission.ValidationResponse(allowed, reason)
 }
 
-//var _ inject.Client = &FirstMateCreateUpdateHandler{}
+//var _ inject.Client = &KrakenCreateHandler{}
 //
-//// InjectClient injects the client into the FirstMateCreateUpdateHandler
-//func (h *FirstMateCreateUpdateHandler) InjectClient(c client.Client) error {
+//// InjectClient injects the client into the KrakenCreateHandler
+//func (h *KrakenCreateHandler) InjectClient(c client.Client) error {
 //	h.Client = c
 //	return nil
 //}
 
-var _ inject.Decoder = &FirstMateCreateUpdateHandler{}
+var _ inject.Decoder = &KrakenCreateHandler{}
 
-// InjectDecoder injects the decoder into the FirstMateCreateUpdateHandler
-func (h *FirstMateCreateUpdateHandler) InjectDecoder(d types.Decoder) error {
+// InjectDecoder injects the decoder into the KrakenCreateHandler
+func (h *KrakenCreateHandler) InjectDecoder(d types.Decoder) error {
 	h.Decoder = d
 	return nil
 }

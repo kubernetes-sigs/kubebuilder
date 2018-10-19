@@ -18,18 +18,18 @@ package mutating
 
 import (
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission/builder"
-	crewv1 "sigs.k8s.io/kubebuilder/test/project/pkg/apis/crew/v1"
 )
 
 func init() {
-	builderName := "mutating-delete-firstmates"
+	builderName := "mutating-update-namespace"
 	Builders[builderName] = builder.
 		NewWebhookBuilder().
 		Name(builderName + ".testproject.org").
 		Path("/" + builderName).
 		Mutating().
-		Operations(admissionregistrationv1beta1.Delete).
+		Operations(admissionregistrationv1beta1.Update).
 		FailurePolicy(admissionregistrationv1beta1.Fail).
-		ForType(&crewv1.FirstMate{})
+		ForType(&corev1.Namespace{})
 }

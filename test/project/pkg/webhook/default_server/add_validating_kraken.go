@@ -19,7 +19,7 @@ package defaultserver
 import (
 	"fmt"
 
-	"sigs.k8s.io/kubebuilder/test/project/pkg/webhook/default_server/krakens/validating"
+	"sigs.k8s.io/kubebuilder/test/project/pkg/webhook/default_server/kraken/validating"
 )
 
 func init() {

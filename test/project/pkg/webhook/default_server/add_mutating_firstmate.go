@@ -19,7 +19,7 @@ package defaultserver
 import (
 	"fmt"
 
-	"sigs.k8s.io/kubebuilder/test/project/pkg/webhook/default_server/firstmates/mutating"
+	"sigs.k8s.io/kubebuilder/test/project/pkg/webhook/default_server/firstmate/mutating"
 )
 
 func init() {
