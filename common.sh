@@ -140,11 +140,11 @@ function setup_envs {
   header_text "setting up env vars"
 
   # Setup env vars
-  export PATH=/tmp/kubebuilder/bin:$PATH
-  export TEST_ASSET_KUBECTL=/tmp/kubebuilder/bin/kubectl
-  export TEST_ASSET_KUBE_APISERVER=/tmp/kubebuilder/bin/kube-apiserver
-  export TEST_ASSET_ETCD=/tmp/kubebuilder/bin/etcd
-  export TEST_DEP=/tmp/kubebuilder/init_project
+  export PATH=$tmp_root/kubebuilder/bin:$PATH
+  export TEST_ASSET_KUBECTL=$tmp_root/kubebuilder/bin/kubectl
+  export TEST_ASSET_KUBE_APISERVER=$tmp_root/kubebuilder/bin/kube-apiserver
+  export TEST_ASSET_ETCD=$tmp_root/kubebuilder/bin/etcd
+  export TEST_DEP=$tmp_root/kubebuilder/init_project
 }
 
 function cache_dep {

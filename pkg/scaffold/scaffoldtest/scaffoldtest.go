@@ -20,13 +20,15 @@ import (
 	"bytes"
 	"io"
 	"io/ioutil"
+	"os"
+	"path"
 	"path/filepath"
 
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
+
 	"sigs.k8s.io/kubebuilder/pkg/scaffold"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/project/projectutil"
 )
 
 // TestResult is the result of running the scaffolding.
@@ -38,18 +40,19 @@ type TestResult struct {
 	Golden string
 }
 
+func getProjectRoot() string {
+	gopath := os.Getenv("GOPATH")
+	return path.Join(gopath, "src", "sigs.k8s.io", "kubebuilder")
+}
+
 // ProjectPath is the path to the controller-tools/test project file
 func ProjectPath() string {
-	root, err := projectutil.GetProjectDir()
-	gomega.Expect(err).NotTo(gomega.HaveOccurred())
-	return filepath.Join(root, "test", "PROJECT")
+	return filepath.Join(getProjectRoot(), "test", "project", "PROJECT")
 }
 
 // BoilerplatePath is the path to the controller-tools/test boilerplate file
 func BoilerplatePath() string {
-	root, err := projectutil.GetProjectDir()
-	gomega.Expect(err).NotTo(gomega.HaveOccurred())
-	return filepath.Join(root, "test", "hack", "boilerplate.go.txt")
+	return filepath.Join(getProjectRoot(), "test", "project", "hack", "boilerplate.go.txt")
 }
 
 // Options are the options for scaffolding in the controller-tools/test directory
@@ -63,10 +66,6 @@ func Options() input.Options {
 // NewTestScaffold returns a new Scaffold and TestResult instance for testing
 func NewTestScaffold(writeToPath, goldenPath string) (*scaffold.Scaffold, *TestResult) {
 	r := &TestResult{}
-
-	root, err := projectutil.GetProjectDir()
-	gomega.Expect(err).NotTo(gomega.HaveOccurred())
-
 	// Setup scaffold
 	s := &scaffold.Scaffold{
 		GetWriter: func(path string) (io.Writer, error) {
@@ -74,11 +73,11 @@ func NewTestScaffold(writeToPath, goldenPath string) (*scaffold.Scaffold, *TestR
 			gomega.Expect(path).To(gomega.Equal(writeToPath))
 			return &r.Actual, nil
 		},
-		ProjectPath: filepath.Join(root, "test"),
+		ProjectPath: filepath.Join(getProjectRoot(), "test", "project"),
 	}
 
 	if len(goldenPath) > 0 {
-		b, err := ioutil.ReadFile(filepath.Join(root, "test", goldenPath))
+		b, err := ioutil.ReadFile(filepath.Join(getProjectRoot(), "test", "project", goldenPath))
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 		r.Golden = string(b)
 	}

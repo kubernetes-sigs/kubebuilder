@@ -56,7 +56,7 @@ func (a *AdmissionHandler) GetInput() (input.Input, error) {
 	if a.Type == "mutating" {
 		a.Mutate = true
 	}
-	a.BuilderName = builderName(a.Config, a.Resource.Resource)
+	a.BuilderName = builderName(a.Config, strings.ToLower(a.Resource.Kind))
 	ops := make([]string, len(a.Operations))
 	for i, op := range a.Operations {
 		ops[i] = strings.Title(op)
@@ -66,9 +66,9 @@ func (a *AdmissionHandler) GetInput() (input.Input, error) {
 	if a.Path == "" {
 		a.Path = filepath.Join("pkg", "webhook",
 			fmt.Sprintf("%s_server", a.Server),
-			a.Resource.Resource,
+			strings.ToLower(a.Resource.Kind),
 			a.Type,
-			fmt.Sprintf("%s_%s_handler.go", a.Resource.Resource, strings.Join(a.Operations, "_")))
+			fmt.Sprintf("%s_%s_handler.go", strings.ToLower(a.Resource.Kind), strings.Join(a.Operations, "_")))
 	}
 	a.TemplateBody = addAdmissionHandlerTemplate
 	return a.Input, nil
