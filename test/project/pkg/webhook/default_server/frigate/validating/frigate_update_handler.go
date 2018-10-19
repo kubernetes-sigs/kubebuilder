@@ -23,60 +23,60 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission/types"
-	creaturesv2alpha1 "sigs.k8s.io/kubebuilder/test/project/pkg/apis/creatures/v2alpha1"
+	shipv1beta1 "sigs.k8s.io/kubebuilder/test/project/pkg/apis/ship/v1beta1"
 )
 
 func init() {
-	webhookName := "validating-create-krakens"
+	webhookName := "validating-update-frigate"
 	if HandlerMap[webhookName] == nil {
 		HandlerMap[webhookName] = []admission.Handler{}
 	}
-	HandlerMap[webhookName] = append(HandlerMap[webhookName], &KrakenCreateHandler{})
+	HandlerMap[webhookName] = append(HandlerMap[webhookName], &FrigateUpdateHandler{})
 }
 
-// KrakenCreateHandler handles Kraken
-type KrakenCreateHandler struct {
+// FrigateUpdateHandler handles Frigate
+type FrigateUpdateHandler struct {
 	// Client  client.Client
 
 	// Decoder decodes objects
 	Decoder types.Decoder
 }
 
-func (h *KrakenCreateHandler) validatingKrakenFn(ctx context.Context, obj *creaturesv2alpha1.Kraken) (bool, string, error) {
+func (h *FrigateUpdateHandler) validatingFrigateFn(ctx context.Context, obj *shipv1beta1.Frigate) (bool, string, error) {
 	// TODO(user): implement your admission logic
 	return true, "allowed to be admitted", nil
 }
 
-var _ admission.Handler = &KrakenCreateHandler{}
+var _ admission.Handler = &FrigateUpdateHandler{}
 
 // Handle handles admission requests.
-func (h *KrakenCreateHandler) Handle(ctx context.Context, req types.Request) types.Response {
-	obj := &creaturesv2alpha1.Kraken{}
+func (h *FrigateUpdateHandler) Handle(ctx context.Context, req types.Request) types.Response {
+	obj := &shipv1beta1.Frigate{}
 
 	err := h.Decoder.Decode(req, obj)
 	if err != nil {
 		return admission.ErrorResponse(http.StatusBadRequest, err)
 	}
 
-	allowed, reason, err := h.validatingKrakenFn(ctx, obj)
+	allowed, reason, err := h.validatingFrigateFn(ctx, obj)
 	if err != nil {
 		return admission.ErrorResponse(http.StatusInternalServerError, err)
 	}
 	return admission.ValidationResponse(allowed, reason)
 }
 
-//var _ inject.Client = &KrakenCreateHandler{}
+//var _ inject.Client = &FrigateUpdateHandler{}
 //
-//// InjectClient injects the client into the KrakenCreateHandler
-//func (h *KrakenCreateHandler) InjectClient(c client.Client) error {
+//// InjectClient injects the client into the FrigateUpdateHandler
+//func (h *FrigateUpdateHandler) InjectClient(c client.Client) error {
 //	h.Client = c
 //	return nil
 //}
 
-var _ inject.Decoder = &KrakenCreateHandler{}
+var _ inject.Decoder = &FrigateUpdateHandler{}
 
-// InjectDecoder injects the decoder into the KrakenCreateHandler
-func (h *KrakenCreateHandler) InjectDecoder(d types.Decoder) error {
+// InjectDecoder injects the decoder into the FrigateUpdateHandler
+func (h *FrigateUpdateHandler) InjectDecoder(d types.Decoder) error {
 	h.Decoder = d
 	return nil
 }

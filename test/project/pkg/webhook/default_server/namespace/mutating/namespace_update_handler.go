@@ -27,7 +27,7 @@ import (
 )
 
 func init() {
-	webhookName := "mutating-update-namespaces"
+	webhookName := "mutating-update-namespace"
 	if HandlerMap[webhookName] == nil {
 		HandlerMap[webhookName] = []admission.Handler{}
 	}

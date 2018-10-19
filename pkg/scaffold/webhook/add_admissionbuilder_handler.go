@@ -56,7 +56,7 @@ package {{ .Server }}server
 import (
 	"fmt"
 
-	"{{ .Repo }}/pkg/webhook/{{ .Server }}_server/{{ .Resource.Resource }}/{{ .Type }}"
+	"{{ .Repo }}/pkg/webhook/{{ .Server }}_server/{{ lower .Resource.Kind }}/{{ .Type }}"
 )
 
 func init() {

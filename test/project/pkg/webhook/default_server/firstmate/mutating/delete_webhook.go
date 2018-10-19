@@ -14,22 +14,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package validating
+package mutating
 
 import (
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission/builder"
-	creaturesv2alpha1 "sigs.k8s.io/kubebuilder/test/project/pkg/apis/creatures/v2alpha1"
+	crewv1 "sigs.k8s.io/kubebuilder/test/project/pkg/apis/crew/v1"
 )
 
 func init() {
-	builderName := "validating-create-krakens"
+	builderName := "mutating-delete-firstmate"
 	Builders[builderName] = builder.
 		NewWebhookBuilder().
 		Name(builderName + ".testproject.org").
 		Path("/" + builderName).
-		Validating().
-		Operations(admissionregistrationv1beta1.Create).
+		Mutating().
+		Operations(admissionregistrationv1beta1.Delete).
 		FailurePolicy(admissionregistrationv1beta1.Fail).
-		ForType(&creaturesv2alpha1.Kraken{})
+		ForType(&crewv1.FirstMate{})
 }

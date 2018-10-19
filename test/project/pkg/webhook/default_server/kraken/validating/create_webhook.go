@@ -19,17 +19,17 @@ package validating
 import (
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission/builder"
-	shipv1beta1 "sigs.k8s.io/kubebuilder/test/project/pkg/apis/ship/v1beta1"
+	creaturesv2alpha1 "sigs.k8s.io/kubebuilder/test/project/pkg/apis/creatures/v2alpha1"
 )
 
 func init() {
-	builderName := "validating-update-frigates"
+	builderName := "validating-create-kraken"
 	Builders[builderName] = builder.
 		NewWebhookBuilder().
 		Name(builderName + ".testproject.org").
 		Path("/" + builderName).
 		Validating().
-		Operations(admissionregistrationv1beta1.Update).
+		Operations(admissionregistrationv1beta1.Create).
 		FailurePolicy(admissionregistrationv1beta1.Fail).
-		ForType(&shipv1beta1.Frigate{})
+		ForType(&creaturesv2alpha1.Kraken{})
 }

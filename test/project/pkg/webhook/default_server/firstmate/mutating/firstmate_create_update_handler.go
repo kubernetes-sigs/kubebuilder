@@ -27,30 +27,30 @@ import (
 )
 
 func init() {
-	webhookName := "mutating-delete-firstmates"
+	webhookName := "mutating-create-update-firstmate"
 	if HandlerMap[webhookName] == nil {
 		HandlerMap[webhookName] = []admission.Handler{}
 	}
-	HandlerMap[webhookName] = append(HandlerMap[webhookName], &FirstMateDeleteHandler{})
+	HandlerMap[webhookName] = append(HandlerMap[webhookName], &FirstMateCreateUpdateHandler{})
 }
 
-// FirstMateDeleteHandler handles FirstMate
-type FirstMateDeleteHandler struct {
+// FirstMateCreateUpdateHandler handles FirstMate
+type FirstMateCreateUpdateHandler struct {
 	// Client  client.Client
 
 	// Decoder decodes objects
 	Decoder types.Decoder
 }
 
-func (h *FirstMateDeleteHandler) mutatingFirstMateFn(ctx context.Context, obj *crewv1.FirstMate) error {
+func (h *FirstMateCreateUpdateHandler) mutatingFirstMateFn(ctx context.Context, obj *crewv1.FirstMate) error {
 	// TODO(user): implement your admission logic
 	return nil
 }
 
-var _ admission.Handler = &FirstMateDeleteHandler{}
+var _ admission.Handler = &FirstMateCreateUpdateHandler{}
 
 // Handle handles admission requests.
-func (h *FirstMateDeleteHandler) Handle(ctx context.Context, req types.Request) types.Response {
+func (h *FirstMateCreateUpdateHandler) Handle(ctx context.Context, req types.Request) types.Response {
 	obj := &crewv1.FirstMate{}
 
 	err := h.Decoder.Decode(req, obj)
@@ -66,18 +66,18 @@ func (h *FirstMateDeleteHandler) Handle(ctx context.Context, req types.Request) 
 	return admission.PatchResponse(obj, copy)
 }
 
-//var _ inject.Client = &FirstMateDeleteHandler{}
+//var _ inject.Client = &FirstMateCreateUpdateHandler{}
 //
-//// InjectClient injects the client into the FirstMateDeleteHandler
-//func (h *FirstMateDeleteHandler) InjectClient(c client.Client) error {
+//// InjectClient injects the client into the FirstMateCreateUpdateHandler
+//func (h *FirstMateCreateUpdateHandler) InjectClient(c client.Client) error {
 //	h.Client = c
 //	return nil
 //}
 
-var _ inject.Decoder = &FirstMateDeleteHandler{}
+var _ inject.Decoder = &FirstMateCreateUpdateHandler{}
 
-// InjectDecoder injects the decoder into the FirstMateDeleteHandler
-func (h *FirstMateDeleteHandler) InjectDecoder(d types.Decoder) error {
+// InjectDecoder injects the decoder into the FirstMateCreateUpdateHandler
+func (h *FirstMateCreateUpdateHandler) InjectDecoder(d types.Decoder) error {
 	h.Decoder = d
 	return nil
 }

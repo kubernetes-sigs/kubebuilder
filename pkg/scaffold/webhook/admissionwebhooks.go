@@ -44,7 +44,7 @@ func (a *AdmissionWebhooks) GetInput() (input.Input, error) {
 	if a.Path == "" {
 		a.Path = filepath.Join("pkg", "webhook",
 			fmt.Sprintf("%s_server", a.Server),
-			strings.ToLower(a.Resource.Resource),
+			strings.ToLower(a.Resource.Kind),
 			a.Type, "webhooks.go")
 	}
 	a.TemplateBody = webhooksTemplate

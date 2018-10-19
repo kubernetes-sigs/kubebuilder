@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package validating
+package mutating
 
 import (
 	"context"
@@ -23,60 +23,61 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission/types"
-	shipv1beta1 "sigs.k8s.io/kubebuilder/test/project/pkg/apis/ship/v1beta1"
+	crewv1 "sigs.k8s.io/kubebuilder/test/project/pkg/apis/crew/v1"
 )
 
 func init() {
-	webhookName := "validating-update-frigates"
+	webhookName := "mutating-delete-firstmate"
 	if HandlerMap[webhookName] == nil {
 		HandlerMap[webhookName] = []admission.Handler{}
 	}
-	HandlerMap[webhookName] = append(HandlerMap[webhookName], &FrigateUpdateHandler{})
+	HandlerMap[webhookName] = append(HandlerMap[webhookName], &FirstMateDeleteHandler{})
 }
 
-// FrigateUpdateHandler handles Frigate
-type FrigateUpdateHandler struct {
+// FirstMateDeleteHandler handles FirstMate
+type FirstMateDeleteHandler struct {
 	// Client  client.Client
 
 	// Decoder decodes objects
 	Decoder types.Decoder
 }
 
-func (h *FrigateUpdateHandler) validatingFrigateFn(ctx context.Context, obj *shipv1beta1.Frigate) (bool, string, error) {
+func (h *FirstMateDeleteHandler) mutatingFirstMateFn(ctx context.Context, obj *crewv1.FirstMate) error {
 	// TODO(user): implement your admission logic
-	return true, "allowed to be admitted", nil
+	return nil
 }
 
-var _ admission.Handler = &FrigateUpdateHandler{}
+var _ admission.Handler = &FirstMateDeleteHandler{}
 
 // Handle handles admission requests.
-func (h *FrigateUpdateHandler) Handle(ctx context.Context, req types.Request) types.Response {
-	obj := &shipv1beta1.Frigate{}
+func (h *FirstMateDeleteHandler) Handle(ctx context.Context, req types.Request) types.Response {
+	obj := &crewv1.FirstMate{}
 
 	err := h.Decoder.Decode(req, obj)
 	if err != nil {
 		return admission.ErrorResponse(http.StatusBadRequest, err)
 	}
+	copy := obj.DeepCopy()
 
-	allowed, reason, err := h.validatingFrigateFn(ctx, obj)
+	err = h.mutatingFirstMateFn(ctx, copy)
 	if err != nil {
 		return admission.ErrorResponse(http.StatusInternalServerError, err)
 	}
-	return admission.ValidationResponse(allowed, reason)
+	return admission.PatchResponse(obj, copy)
 }
 
-//var _ inject.Client = &FrigateUpdateHandler{}
+//var _ inject.Client = &FirstMateDeleteHandler{}
 //
-//// InjectClient injects the client into the FrigateUpdateHandler
-//func (h *FrigateUpdateHandler) InjectClient(c client.Client) error {
+//// InjectClient injects the client into the FirstMateDeleteHandler
+//func (h *FirstMateDeleteHandler) InjectClient(c client.Client) error {
 //	h.Client = c
 //	return nil
 //}
 
-var _ inject.Decoder = &FrigateUpdateHandler{}
+var _ inject.Decoder = &FirstMateDeleteHandler{}
 
-// InjectDecoder injects the decoder into the FrigateUpdateHandler
-func (h *FrigateUpdateHandler) InjectDecoder(d types.Decoder) error {
+// InjectDecoder injects the decoder into the FirstMateDeleteHandler
+func (h *FirstMateDeleteHandler) InjectDecoder(d types.Decoder) error {
 	h.Decoder = d
 	return nil
 }

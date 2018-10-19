@@ -33,6 +33,10 @@ var _ = Describe("Manager", func() {
 				instance: &Controller{},
 			},
 			{
+				file:     filepath.Join("pkg", "webhook", "webhook.go"),
+				instance: &Webhook{},
+			},
+			{
 				file:     filepath.Join("Dockerfile"),
 				instance: &Dockerfile{},
 			},

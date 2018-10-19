@@ -57,7 +57,7 @@ func (a *AdmissionWebhookBuilder) GetInput() (input.Input, error) {
 		a.Mutating = true
 	}
 	a.Type = strings.ToLower(a.Type)
-	a.BuilderName = builderName(a.Config, a.Resource.Resource)
+	a.BuilderName = builderName(a.Config, strings.ToLower(a.Resource.Kind))
 	ops := make([]string, len(a.Operations))
 	for i, op := range a.Operations {
 		ops[i] = "admissionregistrationv1beta1." + strings.Title(op)
@@ -67,7 +67,7 @@ func (a *AdmissionWebhookBuilder) GetInput() (input.Input, error) {
 	if a.Path == "" {
 		a.Path = filepath.Join("pkg", "webhook",
 			fmt.Sprintf("%s_server", a.Server),
-			a.Resource.Resource,
+			strings.ToLower(a.Resource.Kind),
 			a.Type,
 			fmt.Sprintf("%s_webhook.go", strings.Join(a.Operations, "_")))
 	}
