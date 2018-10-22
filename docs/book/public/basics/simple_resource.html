@@ -700,7 +700,7 @@ labels and annotations.  ObjectMeta contains data common to most objects.</li>
 </ul>
 <h4 id="reference">Reference</h4>
 <ul>
-<li>See the <a href="https://godoc.org/github.com/kubernetes-sigs/kubebuilder/pkg/gen/apis" target="_blank">resource code generation tags</a>
+<li>See the <a href="https://godoc.org/sigs.k8s.io/kubebuilder/pkg/gen/apis" target="_blank">resource code generation tags</a>
 godocs for reference documentation on resource annotations.</li>
 </ul>
 </div><div class="api-method-code"><div class="api-method-sample" data-lang="go" data-name="Go"><pre><code class="lang-go"><span class="hljs-comment">// +genclient</span>
@@ -754,7 +754,7 @@ each time the ContainerSet is reconciled.</p>
 events to update the field.</p>
 </div><div class="api-method-code"><div class="api-method-sample" data-lang="go" data-name="Go"><pre><code class="lang-go"><span class="hljs-comment">// ContainerSetStatus defines the observed state of ContainerSet</span>
 <span class="hljs-keyword">type</span> ContainerSetStatus <span class="hljs-keyword">struct</span> {
-  HealthyReplicas <span class="hljs-string">`json:&quot;healthyReplicas,omitempty&quot;`</span>
+  HealthyReplicas <span class="hljs-keyword">int32</span> <span class="hljs-string">`json:&quot;healthyReplicas,omitempty&quot;`</span>
 }
 </code></pre>
 </div></div></div>
@@ -762,7 +762,7 @@ events to update the field.</p>
 <p><div class="panel panel-info"><div class="panel-heading"><div class="panel-icon"><i class="icon-info"></i></div><div class="panel-title">Runing Code Generators</div></div><div class="panel-content"><p>While users don&apos;t directly modify generated code, the code must be regenerated after resources are
 modified by adding or removing fields.  This is automatically done when running <code>make</code>.</p>
 <p>Code generation may be configured for resources using annotations of the form <code>// +something</code>.
-See the <a href="https://godoc.org/github.com/kubernetes-sigs/kubebuilder/pkg/gen/" target="_blank">pkg/gen</a> reference documentation.</p>
+See the <a href="https://godoc.org/sigs.k8s.io/kubebuilder/pkg/gen/" target="_blank">pkg/gen</a> reference documentation.</p>
 </div></div></p>
 <div class="api-method"><div class="api-method-definition"><h2 id="scaffolded-boilerplate">Scaffolded Boilerplate</h2>
 <p>Kubebuilder scaffolds boilerplate code to register resources with the runtime.Scheme used to
@@ -818,7 +818,7 @@ map go structs to GroupVersionKinds.</p>
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"Resource Example","level":"3.2.2","depth":2,"next":{"title":"Controllers","level":"3.3","depth":1,"ref":"","articles":[{"title":"What is a Controller","level":"3.3.1","depth":2,"path":"basics/what_is_a_controller.md","ref":"basics/what_is_a_controller.md","articles":[]},{"title":"Controller Example","level":"3.3.2","depth":2,"path":"basics/simple_controller.md","ref":"basics/simple_controller.md","articles":[]}]},"previous":{"title":"What is a Resource","level":"3.2.1","depth":2,"path":"basics/what_is_a_resource.md","ref":"basics/what_is_a_resource.md","articles":[]},"dir":"ltr"},"config":{"plugins":["theme-api","panel","sequence-diagrams","ga"],"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"panel":{},"search":{},"sequence-diagrams":{"theme":"simple"},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"highlight":{},"theme-api":{"languages":[],"split":true,"theme":"light"},"ga":{"configuration":"auto","token":"UA-119864590-1"},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","author":"Phillip Wittrock","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"The Kubebuilder Book","gitbook":">= 3.0.0"},"file":{"path":"basics/simple_resource.md","mtime":"2018-10-05T18:51:47.845Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-10-05T23:14:50.796Z"},"basePath":"..","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"Resource Example","level":"3.2.2","depth":2,"next":{"title":"Controllers","level":"3.3","depth":1,"ref":"","articles":[{"title":"What is a Controller","level":"3.3.1","depth":2,"path":"basics/what_is_a_controller.md","ref":"basics/what_is_a_controller.md","articles":[]},{"title":"Controller Example","level":"3.3.2","depth":2,"path":"basics/simple_controller.md","ref":"basics/simple_controller.md","articles":[]}]},"previous":{"title":"What is a Resource","level":"3.2.1","depth":2,"path":"basics/what_is_a_resource.md","ref":"basics/what_is_a_resource.md","articles":[]},"dir":"ltr"},"config":{"plugins":["theme-api","panel","sequence-diagrams","ga"],"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"panel":{},"search":{},"sequence-diagrams":{"theme":"simple"},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"highlight":{},"theme-api":{"languages":[],"split":true,"theme":"light"},"ga":{"configuration":"auto","token":"UA-119864590-1"},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","author":"Phillip Wittrock","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"The Kubebuilder Book","gitbook":">= 3.0.0"},"file":{"path":"basics/simple_resource.md","mtime":"2018-10-22T21:01:15.609Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-10-22T21:02:37.732Z"},"basePath":"..","book":{"language":""}});
         });
     </script>
 </div>
