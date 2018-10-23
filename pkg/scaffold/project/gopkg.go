@@ -157,4 +157,9 @@ name="{{ .Name }}"
 name = "gopkg.in/fsnotify.v1"
 source = "https://github.com/fsnotify/fsnotify.git"
 version="v1.4.7"
+
+# Override required for importing azure auth provider
+[[override]]
+name = "github.com/Azure/go-autorest"
+version="v10.15.5"
 `
