@@ -5,7 +5,7 @@ required = [
     "github.com/go-openapi/spec",
     "github.com/onsi/ginkgo", # for integration testing
     "github.com/spf13/pflag",
-    "k8s.io/client-go/plugin/pkg/client/auth/gcp", # for development against gcp
+    "k8s.io/client-go/plugin/pkg/client/auth", # for development against real Kubernetes clusters
     "k8s.io/code-generator/cmd/deepcopy-gen", # for go generate
     "sigs.k8s.io/testing_frameworks/integration", # for integration testing
     ]
