@@ -8,6 +8,7 @@ required = [
     "k8s.io/client-go/plugin/pkg/client/auth", # for development against real Kubernetes clusters
     "k8s.io/code-generator/cmd/deepcopy-gen", # for go generate
     "sigs.k8s.io/testing_frameworks/integration", # for integration testing
+    "github.com/pkg/errors", # for go generate
     ]
 
 [[constraint]]
