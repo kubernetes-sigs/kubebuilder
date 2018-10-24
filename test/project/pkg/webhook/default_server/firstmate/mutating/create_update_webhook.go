@@ -22,6 +22,8 @@ import (
 	crewv1 "sigs.k8s.io/kubebuilder/test/project/pkg/apis/crew/v1"
 )
 
+// +kubebuilder:webhook:groups=crew,versions=v1,resources=firstmates,verbs=CREATE;UPDATE
+// +kubebuilder:webhook:name=mutating-create-update-firstmate.testproject.org,path=/mutating-create-update-firstmate,type=mutating,failure-policy=Fail
 func init() {
 	builderName := "mutating-create-update-firstmate"
 	Builders[builderName] = builder.

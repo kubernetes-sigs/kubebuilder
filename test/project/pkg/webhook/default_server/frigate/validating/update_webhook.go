@@ -22,6 +22,8 @@ import (
 	shipv1beta1 "sigs.k8s.io/kubebuilder/test/project/pkg/apis/ship/v1beta1"
 )
 
+// +kubebuilder:webhook:groups=ship,versions=v1beta1,resources=frigates,verbs=UPDATE
+// +kubebuilder:webhook:name=validating-update-frigate.testproject.org,path=/validating-update-frigate,type=mutating,failure-policy=Fail
 func init() {
 	builderName := "validating-update-frigate"
 	Builders[builderName] = builder.

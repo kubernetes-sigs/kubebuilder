@@ -46,6 +46,9 @@ func Add(mgr manager.Manager) error {
 		secretName = "webhook-server-secret"
 	}
 
+	// +kubebuilder:webhook:port=7890,cert-dir=/tmp/test-cert,service=test-system:webhook-service,selector=app:webhook-server
+	// +kubebuilder:webhook:secret=test-system:webhook-secret
+	// +kubebuilder:webhook:mutating-webhook-config-name=test-mutating-webhook-cfg,validating-webhook-config-name=test-validating-webhook-cfg
 	svr, err := webhook.NewServer("foo-admission-server", mgr, webhook.ServerOptions{
 		// TODO(user): change the configuration of ServerOptions based on your need.
 		Port:    9876,

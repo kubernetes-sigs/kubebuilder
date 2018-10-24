@@ -1,0 +1,9 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: controller-manager
+spec:
+  template:
+    metadata:
+      labels:
+        app: webhook-server
