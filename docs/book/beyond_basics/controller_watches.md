@@ -29,7 +29,7 @@ err := c.Watch(
 	&source.Kind{Type: &v1.Pod{}},
 	&handler.EnqueueRequestForObject{})
 if err != nil {
-    return err
+	return err
 }
 ```
 {% endmethod %}
@@ -64,11 +64,11 @@ correct RBAC rules are in place and informers have been started.
 // Watch for Pod events, and enqueue a reconcile.Request for the ReplicaSet in the OwnerReferences
 err := c.Watch(
 	&source.Kind{Type: &corev1.Pod{}},
-    &handler.EnqueueRequestForOwner{
-        IsController: true,
-        OwnerType:    &appsv1.ReplicaSet{}})
+	&handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:	&appsv1.ReplicaSet{}})
 if err != nil {
-    return err
+	return err
 }
 ```
 {% endmethod %}
@@ -103,26 +103,49 @@ correct RBAC rules are in place and informers have been started.
 // objects to Reconcile
 mapFn := handler.ToRequestsFunc(
 	func(a handler.MapObject) []reconcile.Request {
-        return []reconcile.Request{
-            {NamespacedName: types.NamespacedName{
-                Name:      a.Meta.GetName() + "-1",
-                Namespace: a.Meta.GetNamespace(),
-            }},
-            {NamespacedName: types.NamespacedName{
-                Name:      a.Meta.GetName() + "-2",
-                Namespace: a.Meta.GetNamespace(),
-            }},
-        }
-    })
+		return []reconcile.Request{
+			{NamespacedName: types.NamespacedName{
+				Name:	  a.Meta.GetName() + "-1",
+				Namespace: a.Meta.GetNamespace(),
+			}},
+			{NamespacedName: types.NamespacedName{
+				Name:	  a.Meta.GetName() + "-2",
+				Namespace: a.Meta.GetNamespace(),
+			}},
+		}
+	})
+
+
+// 'UpdateFunc' and 'CreateFunc' used to judge if a event about the object is
+// what we want. If that is true, the event will be processed by the reconciler.
+p := predicate.Funcs{
+	UpdateFunc: func(e event.UpdateEvent) bool {
+		// The object doesn't contain label "foo", so the event will be
+		// ignored.
+		if _, ok := e.MetaOld.GetLabels()["foo"]; !ok {
+			return false
+		}
+		return e.ObjectOld != e.ObjectNew
+	},
+	CreateFunc: func(e event.CreateEvent) bool {
+		if _, ok := e.Meta.GetLabels()["foo"]; !ok {
+			return false
+		}
+		return true
+	},
+}
+
 // Watch Deployments and trigger Reconciles for objects
 // mapped from the Deployment in the event
 err := c.Watch(
-		&source.Kind{Type: &appsv1.Deployment{}},
-		&handler.EnqueueRequestsFromMapFunc{
-			ToRequests: mapFn,
-		})
+	&source.Kind{Type: &appsv1.Deployment{}},
+	&handler.EnqueueRequestsFromMapFunc{
+		ToRequests: mapFn,
+	},
+	// Comment it if default predicate fun is used.
+	p)
 if err != nil {
-    return err
+	return err
 }
 ```
 {% endmethod %}
@@ -140,11 +163,11 @@ object with the external state that would trigger the Reconcile.
 ```go
 events := make(chan event.GenericEvent)
 err := ctrl.Watch(
-    &source.Channel{Source: events},
-    &handler.EnqueueRequestForObject{},
+	&source.Channel{Source: events},
+	&handler.EnqueueRequestForObject{},
 )
 if err != nil {
-    return err
+	return err
 }
 ```
 {% endmethod %}

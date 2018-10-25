@@ -46,8 +46,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		// The object is being deleted
 		if containsString(instance.ObjectMeta.Finalizers, myFinalizerName) {
 			// our finalizer is present, so lets handle our external dependency
-			err := r.deleteExternalDependency(instance)
-		    if err != nil {
+			if err := r.deleteExternalDependency(instance); err != nil {
 				// if fail to delete the external dependency here, return with error
 				// so that it can be retried
 				return reconcile.Result{}, err
@@ -59,6 +58,9 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 				return reconcile.Result{Requeue: true}, nil
 			}
 		}
+
+        // Our finalizer has finished, so the reconciler can do nothing.
+        return reconcile.Result{}, nil
 	}
 	....
 	....
