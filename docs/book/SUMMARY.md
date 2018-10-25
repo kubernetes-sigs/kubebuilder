@@ -40,6 +40,8 @@
 * Webhooks
   * [What is a Webhook](beyond_basics/what_is_a_webhook.md)
   * [Webhook Example](beyond_basics/sample_webhook.md)
+* Client-Go
+  * [Generated Informers](beyond_basics/using_client_go_informers.md)
 * Deployment Workflow
   * [Deploying the manager in Cluster](beyond_basics/deploying_controller.md)
 
