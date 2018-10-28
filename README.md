@@ -73,6 +73,12 @@ Provide clean library abstractions with clear and well exampled godocs.
 
 ## Troubleshooting
 
+- ### `kubebuilder init` fails with compile errors in vendored packages e.g. [Issue 461](https://github.com/kubernetes-sigs/kubebuilder/issues/461)
+  This maybe cause by conflicting libraries present under your `$GOPATH`.
+  
+  #### Resolution:
+  Find and remove the conflicting libraries that usually exist in `$GOPATH/pkg/darwin_amd64/` or `$GOPATH/src/`. Re-running `kubebuilder init` should now be successful.
+
 - ### Bugs and Feature Requests:
   If you have what looks like a bug, or you would like to make a feature request, please use the [Github issue tracking system.](https://github.com/kubernetes-sigs/kubebuilder/issues)
 Before you file an issue, please search existing issues to see if your issue is already covered.
