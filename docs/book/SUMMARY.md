@@ -17,6 +17,7 @@
 * Resources
   * [What is a Resource](basics/what_is_a_resource.md)
   * [Resource Example](basics/simple_resource.md)
+  * [Status Subresource](basics/status_subresource.md)
 * Controllers
   * [What is a Controller](basics/what_is_a_controller.md)
   * [Controller Example](basics/simple_controller.md)
