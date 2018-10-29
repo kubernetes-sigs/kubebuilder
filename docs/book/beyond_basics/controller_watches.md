@@ -6,7 +6,7 @@ Resources.
 [Link to reference documentation](https://godoc.org/sigs.k8s.io/controller-runtime)
 
 {% method %}
-## Watching Controller Resource
+## Watching the Controller Resource
 
 Controllers may watch Resources and trigger Reconcile calls with the key of the
 object from the watch event. 
