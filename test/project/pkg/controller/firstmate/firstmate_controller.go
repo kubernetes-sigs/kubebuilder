@@ -18,7 +18,6 @@ package firstmate
 
 import (
 	"context"
-	"log"
 	"reflect"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -33,9 +32,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 	crewv1 "sigs.k8s.io/kubebuilder/test/project/pkg/apis/crew/v1"
 )
+
+var log = logf.Log.WithName("controller")
 
 /**
 * USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
@@ -143,7 +145,7 @@ func (r *ReconcileFirstMate) Reconcile(request reconcile.Request) (reconcile.Res
 	found := &appsv1.Deployment{}
 	err = r.Get(context.TODO(), types.NamespacedName{Name: deploy.Name, Namespace: deploy.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
-		log.Printf("Creating Deployment %s/%s\n", deploy.Namespace, deploy.Name)
+		log.Info("Creating Deployment %s/%s\n", deploy.Namespace, deploy.Name)
 		err = r.Create(context.TODO(), deploy)
 		if err != nil {
 			return reconcile.Result{}, err
@@ -156,7 +158,7 @@ func (r *ReconcileFirstMate) Reconcile(request reconcile.Request) (reconcile.Res
 	// Update the found object and write the result back if there are any changes
 	if !reflect.DeepEqual(deploy.Spec, found.Spec) {
 		found.Spec = deploy.Spec
-		log.Printf("Updating Deployment %s/%s\n", deploy.Namespace, deploy.Name)
+		log.Info("Updating Deployment %s/%s\n", deploy.Namespace, deploy.Name)
 		err = r.Update(context.TODO(), found)
 		if err != nil {
 			return reconcile.Result{}, err
