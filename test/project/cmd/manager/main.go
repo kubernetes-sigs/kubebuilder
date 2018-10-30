@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"flag"
 	"os"
 
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
@@ -30,6 +31,7 @@ import (
 )
 
 func main() {
+	flag.Parse()
 	logf.SetLogger(logf.ZapLogger(false))
 	log := logf.Log.WithName("entrypoint")
 

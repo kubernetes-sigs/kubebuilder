@@ -57,6 +57,7 @@ import (
 )
 
 func main() {
+	flag.Parse()
 	logf.SetLogger(logf.ZapLogger(false))
 	log := logf.Log.WithName("entrypoint")
 
