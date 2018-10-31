@@ -41,6 +41,7 @@
 * Webhooks
   * [What is a Webhook](beyond_basics/what_is_a_webhook.md)
   * [Webhook Example](beyond_basics/sample_webhook.md)
+  * [Webhook Configuration Installation](beyond_basics/webhook_installer_generator.md)
 * Client-Go
   * [Generated Informers](beyond_basics/using_client_go_informers.md)
 * Deployment Workflow
