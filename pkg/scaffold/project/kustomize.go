@@ -77,6 +77,7 @@ resources:
 
 patches:
 - manager_image_patch.yaml
+- manager_prometheus_metrics_patch.yaml
 
 vars:
 - name: WEBHOOK_SECRET_NAME
