@@ -25,7 +25,7 @@ import (
 func newAlphaCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "alpha",
-		Short: "Exposes commands which are in experimental or early stages of development",
+		Short: "Expose commands which are in experimental or early stages of development",
 		Long:  `Command group for commands which are either experimental or in early stages of development`,
 		Example: `
 # scaffolds webhook server

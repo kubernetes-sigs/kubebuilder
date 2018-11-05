@@ -28,8 +28,8 @@ import (
 func newVendorUpdateCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "update",
-		Short: "updates vendor dependencies.",
-		Long:  `updates vendor dependencies.`,
+		Short: "Update vendor dependencies",
+		Long:  `Update vendor dependencies`,
 		Example: `Update the vendor dependencies:
 kubebuilder update vendor
 `,
