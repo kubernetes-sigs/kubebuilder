@@ -218,6 +218,23 @@ Copyright 2019 Example Owners.
 		})
 	})
 
+	Describe("scaffolding a Kustomize prometheus metrics patch", func() {
+		BeforeEach(func() {
+			goldenPath = filepath.Join("config", "default", "manager_prometheus_metrics_patch.yaml")
+			writeToPath = goldenPath
+		})
+		Context("with defaults ", func() {
+			It("should match the golden file", func() {
+				instance := &KustomizePrometheusMetricsPatch{}
+				instance.Repo = "sigs.k8s.io/kubebuilder/test/project"
+				Expect(s.Execute(input.Options{}, instance)).NotTo(HaveOccurred())
+
+				// Verify the contents matches the golden file.
+				Expect(result.Actual.String()).To(BeEquivalentTo(result.Golden))
+			})
+		})
+	})
+
 	Describe("scaffolding a .gitignore", func() {
 		BeforeEach(func() {
 			goldenPath = filepath.Join(".gitignore")

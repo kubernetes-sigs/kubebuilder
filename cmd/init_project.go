@@ -52,6 +52,7 @@ Writes the following files:
 - a Gopkg.toml with project dependencies
 - a Kustomization.yaml for customizating manifests
 - a Patch file for customizing image for manager manifests
+- a Patch file for enabling prometheus metrics
 - a cmd/manager/main.go to run
 
 project will prompt the user to run 'dep ensure' after writing the project files.
@@ -141,7 +142,8 @@ func (o *projectOptions) runInit() {
 		&manager.Config{Image: imgName},
 		&project.GitIgnore{},
 		&project.Kustomize{},
-		&project.KustomizeImagePatch{})
+		&project.KustomizeImagePatch{},
+		&project.KustomizePrometheusMetricsPatch{})
 	if err != nil {
 		log.Fatal(err)
 	}
