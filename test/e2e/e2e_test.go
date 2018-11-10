@@ -49,7 +49,7 @@ it will build the new kubebuilder.
 */
 // TODO: ensure the required binaries are installed when integrate with Prow.
 var _ = BeforeSuite(func(done Done) {
-	// Uncomment the following line to set the image name before runing the e2e test
+	// Uncomment the following line to set the image name before running the e2e test
 	//os.Setenv("IMG", "gcr.io/<my-project-name>/<iamge-name:tag>")
 	// If you want to run the test against a GKE cluster, run the following command first
 	// $ kubectl create clusterrolebinding myname-cluster-admin-binding --clusterrole=cluster-admin --user=myname@mycompany.com

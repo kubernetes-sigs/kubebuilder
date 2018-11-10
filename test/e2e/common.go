@@ -53,13 +53,13 @@ func cleanupv1(builderTest *e2einternal.KubebuilderTest, workDir string, imageNa
 	kustomizeOptions := []string{"build", filepath.Join("config", "default")}
 	resources, err := builderTest.RunKustomizeCommand(kustomizeOptions)
 	if err != nil {
-		log.Printf("error when runing kustomize build during cleaning up: %v", err)
+		log.Printf("error when running kustomize build during cleaning up: %v", err)
 	}
 
 	deleteOptions := []string{"delete", "--recursive", "-f", "-"}
 	_, err = builderTest.RunKubectlCommandWithInput(framework.GetKubectlArgs(deleteOptions), resources)
 	if err != nil {
-		log.Printf("error when runing kubectl delete during cleaning up: %v", err)
+		log.Printf("error when running kubectl delete during cleaning up: %v", err)
 	}
 
 	deleteOptions = []string{"delete", "--recursive", "-f", filepath.Join("config", "crds")}
