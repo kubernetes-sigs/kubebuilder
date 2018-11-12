@@ -102,7 +102,7 @@ type ContainerSetStatus struct {
 ```
 {% endmethod %}
 
-{% panel style="info", title="Runing Code Generators" %}
+{% panel style="info", title="Running Code Generators" %}
 While users don't directly modify generated code, the code must be regenerated after resources are
 modified by adding or removing fields.  This is automatically done when running `make`.
 

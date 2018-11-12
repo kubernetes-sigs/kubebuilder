@@ -93,7 +93,7 @@ func (o *apiOptions) runAddAPI() {
 		// disable generation of example reconcile body if not scaffolding resource
 		// because this could result in a fork-bomb of k8s resources where watching a
 		// deployment, replicaset etc. results in generating deployment which
-		// end up genrating replicaset, pod etc recursively.
+		// end up generating replicaset, pod etc recursively.
 		r.CreateExampleReconcileBody = false
 	}
 
