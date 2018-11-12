@@ -732,7 +732,7 @@ To learn more on configuring code generation see the <em>Code Generation</em> ch
 <div class="api-method"><div class="api-method-definition"><h2 id="containersetspec">ContainerSetSpec</h2>
 <p>The ContainerSetSpec contains the container image and replica count, which should be read by
 the controller and used to create and manage a new Deployment.  The Spec field contains desired
-state defined by the user or, if unspecified, field defaults defaults or Controllers set values.
+state defined by the user or, if unspecified, field defaults or Controllers set values.
 An example of an unspecified field that could be owned by a Controller would be the <code>replicas</code>
 field, which may be set by autoscalers.</p>
 </div><div class="api-method-code"><div class="api-method-sample" data-lang="go" data-name="Go"><pre><code class="lang-go"><span class="hljs-comment">// ContainerSetSpec defines the desired state of ContainerSet</span>

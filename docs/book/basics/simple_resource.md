@@ -66,7 +66,7 @@ To learn more about how to use annotations in kubebuilder, refer to [Using Annot
 
 The ContainerSetSpec contains the container image and replica count, which should be read by
 the controller and used to create and manage a new Deployment.  The Spec field contains desired
-state defined by the user or, if unspecified, field defaults defaults or Controllers set values.
+state defined by the user or, if unspecified, field defaults or Controllers set values.
 An example of an unspecified field that could be owned by a Controller would be the `replicas`
 field, which may be set by autoscalers.
 
