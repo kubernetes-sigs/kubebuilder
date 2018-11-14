@@ -59,8 +59,8 @@ func (v Version) Print() {
 func NewVersionCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:     "version",
-		Short:   "Print the kubebuilder version.",
-		Long:    `Print the kubebuilder version.`,
+		Short:   "Print the kubebuilder version",
+		Long:    `Print the kubebuilder version`,
 		Example: `kubebuilder version`,
 		Run:     runVersion,
 	}

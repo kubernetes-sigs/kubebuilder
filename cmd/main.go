@@ -83,8 +83,8 @@ Typical project lifecycle:
 
   kubebuilder create api --group <group> --version <version> --kind <Kind>
 
-create resource will prompt the user for if it should scaffold the Resource and / or Controller.  To only
-scaffold a Controller for an existing Resource, select "n" for Resource.  To only define
+Create resource will prompt the user for if it should scaffold the Resource and / or Controller. To only
+scaffold a Controller for an existing Resource, select "n" for Resource. To only define
 the schema for a Resource without writing a Controller, select "n" for Controller.
 
 After the scaffold is written, api will run make on the project.

@@ -24,8 +24,8 @@ import (
 func newDocsCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "docs",
-		Short: "Generate API reference docs. Coming soon.",
-		Long:  `updates vendor dependencies. Coming soon.`,
+		Short: "Generate API reference docs. Coming soon",
+		Long:  `Update vendor dependencies. Coming soon`,
 		Run: func(cmd *cobra.Command, args []string) {
 			fmt.Println("Coming soon.")
 		},
