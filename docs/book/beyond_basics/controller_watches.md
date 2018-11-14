@@ -9,7 +9,7 @@ Resources.
 ## Watching the Controller Resource
 
 Controllers may watch Resources and trigger Reconcile calls with the key of the
-object from the watch event. 
+object from the watch event.
 
 This example configures a controller to watch for Pod events, and call Reconcile with
 the Pod key.
@@ -31,6 +31,18 @@ err := c.Watch(
 if err != nil {
 	return err
 }
+```
+
+```go
+// You can also watch unstructured objects
+u := &unstructured.Unstructured{}
+u.SetGroupVersionKind(schema.GroupVersionKind{
+	Kind:    "Pod",
+	Group:   "",
+	Version: "v1",
+})
+
+err = c.Watch(&source.Kind{Type: u}, &handler.EnqueueRequestForObject{})
 ```
 {% endmethod %}
 
