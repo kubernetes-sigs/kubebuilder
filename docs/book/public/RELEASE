@@ -1,6 +1,0 @@
-To push the docs run:
-
-- gitbook install # optional
-- gitbook build # build the html files
-- copy files from _book/ to public/ # copy the files to the deploy dir
-- firebase deploy # deploy files to firebase
