@@ -1,0 +1,845 @@
+
+<!DOCTYPE HTML>
+<html lang="" >
+    <head>
+        <meta charset="UTF-8">
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <title>Generated Informers · The Kubebuilder Book</title>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="description" content="">
+        <meta name="generator" content="GitBook 3.2.3">
+        <meta name="author" content="Phillip Wittrock">
+        
+        
+    
+    <link rel="stylesheet" href="../gitbook/style.css">
+
+    
+            
+                
+                <link rel="stylesheet" href="../gitbook/gitbook-plugin-panel/icons.css">
+                
+            
+                
+                <link rel="stylesheet" href="../gitbook/gitbook-plugin-panel/panel.css">
+                
+            
+                
+                <link rel="stylesheet" href="../gitbook/gitbook-plugin-highlight/website.css">
+                
+            
+                
+                <link rel="stylesheet" href="../gitbook/gitbook-plugin-search/search.css">
+                
+            
+                
+                <link rel="stylesheet" href="../gitbook/gitbook-plugin-fontsettings/website.css">
+                
+            
+                
+                <link rel="stylesheet" href="../gitbook/gitbook-plugin-theme-api/theme-api.css">
+                
+            
+        
+
+    
+
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+        
+    
+
+        
+    
+    
+    <meta name="HandheldFriendly" content="true"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="../gitbook/images/apple-touch-icon-precomposed-152.png">
+    <link rel="shortcut icon" href="../gitbook/images/favicon.ico" type="image/x-icon">
+
+    
+    
+
+    </head>
+    <body>
+        
+<div class="book">
+    <div class="book-summary">
+        
+            
+<div id="book-search-input" role="search">
+    <input type="text" placeholder="Type to search" />
+</div>
+
+            
+                <nav role="navigation">
+                
+
+
+<ul class="summary">
+    
+    
+
+    
+
+    
+        
+        
+    
+        <li class="chapter " data-level="1.1" data-path="../">
+            
+                <a href="../">
+            
+                    
+                    Introduction
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.2" data-path="../quick_start.html">
+            
+                <a href="../quick_start.html">
+            
+                    
+                    Quick Start
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+    
+        
+        <li class="header">Getting Started</li>
+        
+        
+    
+        <li class="chapter " data-level="2.1" data-path="../getting_started/why_kubernetes.html">
+            
+                <a href="../getting_started/why_kubernetes.html">
+            
+                    
+                    Why Kubernetes APIs
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="2.2" data-path="../getting_started/what_is_kubebuilder.html">
+            
+                <a href="../getting_started/what_is_kubebuilder.html">
+            
+                    
+                    What is Kubebuilder
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="2.3" data-path="../getting_started/installation_and_setup.html">
+            
+                <a href="../getting_started/installation_and_setup.html">
+            
+                    
+                    Installation and Setup
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="2.4" data-path="../getting_started/hello_world.html">
+            
+                <a href="../getting_started/hello_world.html">
+            
+                    
+                    Hello World
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+    
+        
+        <li class="header">Basics</li>
+        
+        
+    
+        <li class="chapter " data-level="3.1" >
+            
+                <span>
+            
+                    
+                    Development Workflow
+            
+                </span>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="3.1.1" data-path="../basics/project_creation_and_structure.html">
+            
+                <a href="../basics/project_creation_and_structure.html">
+            
+                    
+                    Project Creation and Structure
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="3.2" >
+            
+                <span>
+            
+                    
+                    Resources
+            
+                </span>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="3.2.1" data-path="../basics/what_is_a_resource.html">
+            
+                <a href="../basics/what_is_a_resource.html">
+            
+                    
+                    What is a Resource
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="3.2.2" data-path="../basics/simple_resource.html">
+            
+                <a href="../basics/simple_resource.html">
+            
+                    
+                    Resource Example
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="3.2.3" data-path="../basics/status_subresource.html">
+            
+                <a href="../basics/status_subresource.html">
+            
+                    
+                    Status Subresource
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="3.3" >
+            
+                <span>
+            
+                    
+                    Controllers
+            
+                </span>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="3.3.1" data-path="../basics/what_is_a_controller.html">
+            
+                <a href="../basics/what_is_a_controller.html">
+            
+                    
+                    What is a Controller
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="3.3.2" data-path="../basics/simple_controller.html">
+            
+                <a href="../basics/simple_controller.html">
+            
+                    
+                    Controller Example
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="3.4" >
+            
+                <span>
+            
+                    
+                    Managers
+            
+                </span>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="3.4.1" data-path="../basics/what_is_the_controller_manager.html">
+            
+                <a href="../basics/what_is_the_controller_manager.html">
+            
+                    
+                    What is the Manager
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="3.4.2" data-path="../basics/simple_controller_manager.html">
+            
+                <a href="../basics/simple_controller_manager.html">
+            
+                    
+                    Manager Example
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+
+    
+        
+        <li class="header">Beyond the Basics</li>
+        
+        
+    
+        <li class="chapter " data-level="4.1" >
+            
+                <span>
+            
+                    
+                    Development Workflow
+            
+                </span>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="4.1.1" data-path="boilerplate.html">
+            
+                <a href="boilerplate.html">
+            
+                    
+                    Defining Boilerplate License Headers
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="4.1.2" data-path="running_tests.html">
+            
+                <a href="running_tests.html">
+            
+                    
+                    Running Tests
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="4.1.3" data-path="annotations.html">
+            
+                <a href="annotations.html">
+            
+                    
+                    Using Annotation
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="4.1.4" data-path="generating_documentation.html">
+            
+                <a href="generating_documentation.html">
+            
+                    
+                    Generating API Documentation
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="4.1.5" data-path="upgrading_kubebuilder.html">
+            
+                <a href="upgrading_kubebuilder.html">
+            
+                    
+                    Updating Kubebuilder
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="4.1.6" data-path="dependencies.html">
+            
+                <a href="dependencies.html">
+            
+                    
+                    Dependency Management
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="4.2" >
+            
+                <span>
+            
+                    
+                    Controllers
+            
+                </span>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="4.2.1" data-path="controllers_for_core_resources.html">
+            
+                <a href="controllers_for_core_resources.html">
+            
+                    
+                    Controllers For Core Resources
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="4.2.2" data-path="controller_watches.html">
+            
+                <a href="controller_watches.html">
+            
+                    
+                    Controller Watch Functions
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="4.2.3" data-path="creating_events.html">
+            
+                <a href="creating_events.html">
+            
+                    
+                    Creating Events
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="4.2.4" data-path="using_finalizers.html">
+            
+                <a href="using_finalizers.html">
+            
+                    
+                    Using Finalizers
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="4.3" >
+            
+                <span>
+            
+                    
+                    Webhooks
+            
+                </span>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="4.3.1" data-path="what_is_a_webhook.html">
+            
+                <a href="what_is_a_webhook.html">
+            
+                    
+                    What is a Webhook
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="4.3.2" data-path="sample_webhook.html">
+            
+                <a href="sample_webhook.html">
+            
+                    
+                    Webhook Example
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="4.4" >
+            
+                <span>
+            
+                    
+                    Client-Go
+            
+                </span>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter active" data-level="4.4.1" data-path="using_client_go_informers.html">
+            
+                <a href="using_client_go_informers.html">
+            
+                    
+                    Generated Informers
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+        <li class="chapter " data-level="4.5" >
+            
+                <span>
+            
+                    
+                    Deployment Workflow
+            
+                </span>
+            
+
+            
+            <ul class="articles">
+                
+    
+        <li class="chapter " data-level="4.5.1" data-path="deploying_controller.html">
+            
+                <a href="deploying_controller.html">
+            
+                    
+                    Deploying the manager in Cluster
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+            </ul>
+            
+        </li>
+    
+
+    
+        
+        <li class="header">Reference Docs</li>
+        
+        
+    
+        <li class="chapter " data-level="5.1" data-path="../go_docs.html">
+            
+                <a href="../go_docs.html">
+            
+                    
+                    GoDoc Links
+            
+                </a>
+            
+
+            
+        </li>
+    
+
+    
+
+    <li class="divider"></li>
+
+    <li>
+        <a href="https://www.gitbook.com" target="blank" class="gitbook-link">
+            Published with GitBook
+        </a>
+    </li>
+</ul>
+
+
+                </nav>
+            
+        
+    </div>
+
+    <div class="book-body">
+        
+            <div class="body-inner">
+                
+                    
+
+<div class="book-header" role="navigation">
+    
+
+    <!-- Title -->
+    <h1>
+        <i class="fa fa-circle-o-notch fa-spin"></i>
+        <a href=".." >Generated Informers</a>
+    </h1>
+</div>
+
+
+
+
+                    <div class="page-wrapper" tabindex="-1" role="main">
+                        <div class="page-inner">
+                            
+<div id="book-search-results">
+    <div class="search-noresults">
+    
+                                <section class="normal markdown-section">
+                                
+                                <h1 id="using-generated-informers">Using Generated Informers</h1>
+<p>This chapter describes how to use the client-go generated Informers with controller-runtime Watches.</p>
+<p><a href="https://godoc.org/sigs.k8s.io/controller-runtime/pkg/source#Informer" target="_blank">Link to reference documentation</a></p>
+<p><strong>Note:</strong> The <code>source.Informers</code> and <code>source.Kind</code> sources create different caches.  Using both
+<code>source.Informers</code> and <code>source.Kind</code> sources in the same project will result in duplicate caches.
+This will not impact correctness, but will double the cache memory.</p>
+<div class="api-method"><div class="api-method-definition"><h2 id="creating-client-go-generated-informers-and-adding-them-to-the-manager">Creating client-go generated Informers and Adding them to the Manager</h2>
+<p>Instantiate the generated InformerFactory and add it to the Manager so it is started automatically.</p>
+<p><strong>Note:</strong> The generated Informer should be used with the generated client.</p>
+</div><div class="api-method-code"><div class="api-method-sample" data-lang="go" data-name="Go"><pre><code class="lang-go"><span class="hljs-comment">// Create the InformerFactory</span>
+generatedClient := kubernetes.NewForConfigOrDie(mgr.GetConfig())
+generatedInformers := kubeinformers.NewSharedInformerFactory(generatedClient, time.Minute*<span class="hljs-number">30</span>)
+
+err := mgr.Add(manager.RunnableFunc(<span class="hljs-keyword">func</span>(s &lt;-<span class="hljs-keyword">chan</span> <span class="hljs-keyword">struct</span>{}) error {
+    generatedInformers.Start(s)
+    <span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span>
+}))
+<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> {
+    glog.Fatalf(<span class="hljs-string">&quot;error Adding InformerFactory to the Manager: %v&quot;</span>, err)
+}
+</code></pre>
+</div></div></div>
+
+
+<div class="api-method"><div class="api-method-definition"><h2 id="watching-resources-using-the-client-go-generated-informer">Watching Resources using the client-go generated Informer</h2>
+<p>Controllers may watch Resources using client-go generated Informers though the<code>source.Informers</code> struct.</p>
+<p>This example configures a Controller to watch for Services events, and to call Reconcile with
+the Service key.</p>
+<p>If Service <em>default/foo</em> is created, updated or deleted, then Reconcile will be called with
+<em>namespace: default, name: foo</em>.</p>
+<p>The generated InformerFactory must be manually wired into the Controller creation code.</p>
+</div><div class="api-method-code"><div class="api-method-sample" data-lang="go" data-name="Go"><pre><code class="lang-go"><span class="hljs-comment">// Setup Watch using the client-go generated Informer</span>
+err := ctrl.Watch(
+    &amp;source.Informer{InformerProvider: generatedInformers.Core().V1().Services()},
+    &amp;handler.EnqueueRequestForObject{},
+)
+<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> {
+    glog.Fatalf(<span class="hljs-string">&quot;error Watching Services: %v&quot;</span>, err)
+}
+</code></pre>
+</div></div></div>
+
+<div class="api-method"><div class="api-method-definition"><h2 id="starting-the-manager">Starting the Manager</h2>
+<p>The InformerFactory will be started through the Manager.</p>
+</div><div class="api-method-code"><div class="api-method-sample" data-lang="go" data-name="Go"><pre><code class="lang-go">mgr.Start(signals.SetupSignalHandler())
+</code></pre>
+</div></div></div>
+
+                                
+                                </section>
+                            
+    </div>
+    <div class="search-results">
+        <div class="has-results">
+            
+            <h1 class="search-results-title"><span class='search-results-count'></span> results matching "<span class='search-query'></span>"</h1>
+            <ul class="search-results-list"></ul>
+            
+        </div>
+        <div class="no-results">
+            
+            <h1 class="search-results-title">No results matching "<span class='search-query'></span>"</h1>
+            
+        </div>
+    </div>
+</div>
+
+                        </div>
+                    </div>
+                
+            </div>
+
+            
+
+        
+    </div>
+
+    <script>
+        var gitbook = gitbook || [];
+        gitbook.push(function() {
+            gitbook.page.hasChanged({"page":{"title":"Generated Informers","level":"4.4.1","depth":2,"next":{"title":"Deployment Workflow","level":"4.5","depth":1,"ref":"","articles":[{"title":"Deploying the manager in Cluster","level":"4.5.1","depth":2,"path":"beyond_basics/deploying_controller.md","ref":"beyond_basics/deploying_controller.md","articles":[]}]},"previous":{"title":"Client-Go","level":"4.4","depth":1,"ref":"","articles":[{"title":"Generated Informers","level":"4.4.1","depth":2,"path":"beyond_basics/using_client_go_informers.md","ref":"beyond_basics/using_client_go_informers.md","articles":[]}]},"dir":"ltr"},"config":{"plugins":["theme-api","panel","sequence-diagrams","ga"],"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"panel":{},"search":{},"sequence-diagrams":{"theme":"simple"},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"highlight":{},"theme-api":{"languages":[],"split":true,"theme":"light"},"ga":{"configuration":"auto","token":"UA-119864590-1"},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","author":"Phillip Wittrock","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"The Kubebuilder Book","gitbook":">= 3.0.0"},"file":{"path":"beyond_basics/using_client_go_informers.md","mtime":"2018-11-14T19:29:10.535Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-11-14T20:39:52.933Z"},"basePath":"..","book":{"language":""}});
+        });
+    </script>
+</div>
+
+        
+    <script src="../gitbook/gitbook.js"></script>
+    <script src="../gitbook/theme.js"></script>
+    
+        
+        <script src="../gitbook/gitbook-plugin-ga/plugin.js"></script>
+        
+    
+        
+        <script src="../gitbook/gitbook-plugin-search/search-engine.js"></script>
+        
+    
+        
+        <script src="../gitbook/gitbook-plugin-search/search.js"></script>
+        
+    
+        
+        <script src="../gitbook/gitbook-plugin-lunr/lunr.min.js"></script>
+        
+    
+        
+        <script src="../gitbook/gitbook-plugin-lunr/search-lunr.js"></script>
+        
+    
+        
+        <script src="../gitbook/gitbook-plugin-sharing/buttons.js"></script>
+        
+    
+        
+        <script src="../gitbook/gitbook-plugin-fontsettings/fontsettings.js"></script>
+        
+    
+        
+        <script src="../gitbook/gitbook-plugin-theme-api/theme-api.js"></script>
+        
+    
+
+    </body>
+</html>
+
