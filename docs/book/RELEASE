@@ -1,6 +1,32 @@
 To push the docs run:
 
-- gitbook install # optional
-- gitbook build # build the html files
-- copy files from _book/ to public/ # copy the files to the deploy dir
-- firebase deploy # deploy files to firebase
+## Install phantomJs
+
+Install phantomJs which is required to build some images
+
+- `$ npm install phantomjs-prebuilt`
+
+## Install node_modules
+
+Install these as they aren't checked into the repo.
+
+- `$ npm ci`
+
+## Run locally
+
+Check that everything looks good
+
+- `$ gitbook serve`
+
+## Build the book
+
+Build the index.html & friends
+
+- `$ gitbook build`
+
+## Push the book
+
+Push the changes to firebase
+
+- `$ firebase deploy`
+
