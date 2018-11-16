@@ -47,7 +47,7 @@ var controllerSuiteTestTemplate = `{{ .Boilerplate }}
 package {{ lower .Resource.Kind }}
 
 import (
-	"log"
+	stdlog "log"
 	"os"
 	"path/filepath"
 	"sync"
@@ -72,7 +72,7 @@ func TestMain(m *testing.M) {
 
 	var err error
 	if cfg, err = t.Start(); err != nil {
-		log.Fatal(err)
+		stdlog.Fatal(err)
 	}
 
 	code := m.Run()
