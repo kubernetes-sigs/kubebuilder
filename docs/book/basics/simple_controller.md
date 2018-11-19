@@ -147,80 +147,73 @@ on the Deployment once the ContainerSet is deleted.
 ```go
 var _ reconcile.Reconciler = &ContainerSetController{}
 
-func (r *ContainerSetController) Reconcile(request reconcile.Request) (
-  reconcile.Result, error) {
-    // Read the ContainerSet
-  cs := &workloadv1beta1.ContainerSet{}
-  err := r.client.Get(context.TODO(), request.NamespacedName, cs)
-    
-    // Handle deleted or error case
+func (r *ReconcileContainerSet) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+  instance := &workloadsv1beta1.ContainerSet{}
+  err := r.Get(context.TODO(), request.NamespacedName, instance)
   if err != nil {
     if errors.IsNotFound(err) {
-      // Not found.  Don't worry about cleaning up Deployments,
-      // GC will handle it.
+      // Object not found, return.  Created objects are automatically garbage collected.
+      // For additional cleanup logic use finalizers.
       return reconcile.Result{}, nil
     }
     // Error reading the object - requeue the request.
     return reconcile.Result{}, err
   }
 
-    // Calculate the expected Deployment Spec
-  spec := getDeploymentSpec(request)
-
-    // Read the Deployment
-  dep := &appsv1.Deployment{}
-  err := r.client.Get(context.TODO(), request.NamespacedName, dep)
-
-    // If not found, create it 
-  if errors.IsNotFound(err) {
-    dep = &appsv1.Deployment{Spec: spec}
-    dep.Name = request.Name
-    dep.Namespace = request.Namespace
-    if err := controllerutil.SetControllerReference(cs, deploy, r.scheme); err != nil {
-      return reconcile.Result{}, err
-    }
-    if err := r.Create(context.TODO(), dep); err != nil {
-      return reconcile.Result{}, err
-    }
-    return reconcile.Result{}, nil
+  // TODO(user): Change this to be the object type created by your controller
+  // Define the desired Deployment object
+  deploy := &appsv1.Deployment{
+    ObjectMeta: metav1.ObjectMeta{
+      Name:      instance.Name + "-deployment",
+      Namespace: instance.Namespace,
+    },
+    Spec: appsv1.DeploymentSpec{
+      Selector: &metav1.LabelSelector{
+        MatchLabels: map[string]string{"deployment": instance.Name + "-deployment"},
+      },
+      Replicas: &instance.Spec.Replicas,
+      Template: corev1.PodTemplateSpec{
+        ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"deployment": instance.Name + "-deployment"}},
+	Spec: corev1.PodSpec{
+	  Containers: []corev1.Container{
+            {
+                Name:  instance.Name,
+		Image: instance.Spec.Image,
+	    },
+          },
+        },
+      },
+    },
+  }
+  if err := controllerutil.SetControllerReference(instance, deploy, r.scheme); err != nil {
+    return reconcile.Result{}, err
   }
 
-    // If found, update it
-    image := dep.Spec.Template.Spec.Containers[0].Image
-    replicas := *dep.Spec.Replicas
-    if replicas == cs.Spec.Replicas && image == cs.Spec.Image {
-      return reconcile.Result{}, nil
-    }
-    dep.Spec.Replicas = &cs.Spec.Replicas
-    dep.Spec.Template.Spec.Containers[0].Image = cs.Spec.Image
-    if err := r.Update(context.TODO(), dep); err != nil {
+  // TODO(user): Change this for the object type created by your controller
+  // Check if the Deployment already exists
+  found := &appsv1.Deployment{}
+  err = r.Get(context.TODO(), types.NamespacedName{Name: deploy.Name, Namespace: deploy.Namespace}, found)
+  if err != nil && errors.IsNotFound(err) {
+    log.Printf("Creating Deployment %s/%s\n", deploy.Namespace, deploy.Name)
+    err = r.Create(context.TODO(), deploy)
+    if err != nil {
       return reconcile.Result{}, err
     }
-    
-    return reconcile.Result{}, nil
-}
+  } else if err != nil {
+    return reconcile.Result{}, err
+  }
 
-func getDeploymentSpec(request reconcile.Request) *appsv1.DeploymentSpec {
-  return &appsv1.DeploymentSpec{
-    Selector: &metav1.LabelSelector{
-      MatchLabels: map[string]string{
-        "container-set": request.Name},
-      },
-      Replicas: &cs.Spec.Replicas,
-      Template: corev1.PodTemplateSpec{
-        ObjectMeta: metav1.ObjectMeta{
-          Labels: map[string]string{
-            "container-set": request.Name,
-          },
-        },
-        Spec: corev1.PodSpec{
-          Containers: []corev1.Container{
-            {Name: request.Name,
-             Image: cs.Spec.Image},
-          },
-        },
-      },
+  // TODO(user): Change this for the object type created by your controller
+  // Update the found object and write the result back if there are any changes
+  if !reflect.DeepEqual(deploy.Spec, found.Spec) {
+    found.Spec = deploy.Spec
+    log.Printf("Updating Deployment %s/%s\n", deploy.Namespace, deploy.Name)
+    err = r.Update(context.TODO(), found)
+    if err != nil {
+      return reconcile.Result{}, err
     }
+  }
+  return reconcile.Result{}, nil
 }
 ```
 {% endmethod %}
