@@ -12,3 +12,7 @@ While Kubebuilder provides an abstraction around the plumbing for building opera
 
 * Make it easy to deploy stateful operators on Kubernetes using a standard data format
 * Enable re-use between DC/OS and Kubernetes SDK packages
+
+## Development
+
+Development will be located at [https://github.com/kubernetes-sigs/maestro](https://github.com/kubernetes-sigs/maestro).
