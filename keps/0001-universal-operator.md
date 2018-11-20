@@ -15,7 +15,7 @@ While Kubebuilder provides an abstraction around the plumbing for building opera
 
 ## Development
 
-Development will be located at [https://github.com/kubernetes-sigs/maestro](https://github.com/kubernetes-sigs/maestro).
+Development will be located at [https://github.com/kubernetes-sigs/kubebuilder-maestro](https://github.com/kubernetes-sigs/kubebuilder-maestro).
 
 ## Design
 
