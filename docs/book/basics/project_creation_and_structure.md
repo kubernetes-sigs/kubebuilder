@@ -15,7 +15,7 @@ The `cmd` package is scaffolded automatically by `kubebuilder init`.
 ##### pkg/apis/...
 
 The `pkg/apis/...` packages contains the API resource definitions.
-Users edit the `*_types.go` files under this director to implement their API definitions.
+Users edit the `*_types.go` files under this directory to implement their API definitions.
 
 Each resource lives in a `pkg/apis/<api-group-name>/<api-version-name>/<api-kind-name>_types.go`
 file.
