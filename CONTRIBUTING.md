@@ -16,27 +16,15 @@ Please see https://git.k8s.io/community/CLA.md for more info.
 
 ## How to build kubebuilder locally
 
-1. Setup tools
-    1. Download and setup [gcloud](https://cloud.google.com/sdk/docs/downloads-interactive) 
-    1. Install `cloud-build-local` via `gcloud` 
-        ```bash
-        $ gcloud components install cloud-build-local
-        ```
 1. Build
-    1. Export `OUTPUT` to a location to write the directory containing the final build artifacts
-        ```sh
-        $ export OUTPUT=/tmp/kubebuilder
-        ```
-    2. Run container-builder:
-        ```sh
-        $ cloud-build-local --config=build/cloudbuild_local.yaml --dryrun=false \
-          --write-workspace=$OUTPUT .
-        ```
-    1. Extract `tar.gz` from $OUTPUT to /usr/local
+```sh
+$ go build -o /output/path/kubebuilder ./cmd
+```
+
 1. Test
-    ```sh
-    go test ./pkg/...
-    ```
+```sh
+$ ./test.sh
+```
 
 ## Community, discussion and support
 
