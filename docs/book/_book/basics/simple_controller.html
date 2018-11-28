@@ -773,10 +773,10 @@ with the type of the owner e.g. <code>&amp;handler.EnqueueRequestForOwner{OwnerT
 </ul>
 <h4 id="reference">Reference</h4>
 <ul>
-<li>See the <a href="https://godoc.org/sigs.k8s.io/controller-runtime/pkg" target="_blank">controller libraries</a> godocs for reference
-documentation on the controller libraries.</li>
-<li>See the <a href="https://godoc.org/sigs.k8s.io/kubebuilder/pkg/gen/controller" target="_blank">controller code generation tags</a>
-godocs for reference documentation on controller annotations.</li>
+<li>See the <a href="https://godoc.org/sigs.k8s.io/controller-runtime/pkg" target="_blank">controller libraries</a>
+godocs for reference documentation on the controller libraries.</li>
+<li>See the <a href="../beyond_basics/annotations.html">Using Annotations</a> to learn more
+about hot use annotations in kubebuilder.</li>
 </ul>
 </div><div class="api-method-code"><div class="api-method-sample" data-lang="go" data-name="Go"><pre><code class="lang-go"><span class="hljs-keyword">type</span> ContainerSetController <span class="hljs-keyword">struct</span> {
   client.Client
@@ -847,80 +847,73 @@ on the Deployment once the ContainerSet is deleted.</p>
 </ol>
 </div><div class="api-method-code"><div class="api-method-sample" data-lang="go" data-name="Go"><pre><code class="lang-go"><span class="hljs-keyword">var</span> _ reconcile.Reconciler = &amp;ContainerSetController{}
 
-<span class="hljs-keyword">func</span> (r *ContainerSetController) Reconcile(request reconcile.Request) (
-  reconcile.Result, error) {
-    <span class="hljs-comment">// Read the ContainerSet</span>
-  cs := &amp;workloadv1beta1.ContainerSet{}
-  err := r.client.Get(context.TODO(), request.NamespacedName, cs)
-
-    <span class="hljs-comment">// Handle deleted or error case</span>
+<span class="hljs-keyword">func</span> (r *ReconcileContainerSet) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+  instance := &amp;workloadsv1beta1.ContainerSet{}
+  err := r.Get(context.TODO(), request.NamespacedName, instance)
   <span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> {
     <span class="hljs-keyword">if</span> errors.IsNotFound(err) {
-      <span class="hljs-comment">// Not found.  Don&apos;t worry about cleaning up Deployments,</span>
-      <span class="hljs-comment">// GC will handle it.</span>
+      <span class="hljs-comment">// Object not found, return.  Created objects are automatically garbage collected.</span>
+      <span class="hljs-comment">// For additional cleanup logic use finalizers.</span>
       <span class="hljs-keyword">return</span> reconcile.Result{}, <span class="hljs-literal">nil</span>
     }
     <span class="hljs-comment">// Error reading the object - requeue the request.</span>
     <span class="hljs-keyword">return</span> reconcile.Result{}, err
   }
 
-    <span class="hljs-comment">// Calculate the expected Deployment Spec</span>
-  spec := getDeploymentSpec(request)
-
-    <span class="hljs-comment">// Read the Deployment</span>
-  dep := &amp;appsv1.Deployment{}
-  err := r.client.Get(context.TODO(), request.NamespacedName, dep)
-
-    <span class="hljs-comment">// If not found, create it </span>
-  <span class="hljs-keyword">if</span> errors.IsNotFound(err) {
-    dep = &amp;appsv1.Deployment{Spec: spec}
-    dep.Name = request.Name
-    dep.Namespace = request.Namespace
-    <span class="hljs-keyword">if</span> err := controllerutil.SetControllerReference(cs, deploy, r.scheme); err != <span class="hljs-literal">nil</span> {
-      <span class="hljs-keyword">return</span> reconcile.Result{}, err
-    }
-    <span class="hljs-keyword">if</span> err := r.Create(context.TODO(), dep); err != <span class="hljs-literal">nil</span> {
-      <span class="hljs-keyword">return</span> reconcile.Result{}, err
-    }
-    <span class="hljs-keyword">return</span> reconcile.Result{}, <span class="hljs-literal">nil</span>
+  <span class="hljs-comment">// TODO(user): Change this to be the object type created by your controller</span>
+  <span class="hljs-comment">// Define the desired Deployment object</span>
+  deploy := &amp;appsv1.Deployment{
+    ObjectMeta: metav1.ObjectMeta{
+      Name:      instance.Name + <span class="hljs-string">&quot;-deployment&quot;</span>,
+      Namespace: instance.Namespace,
+    },
+    Spec: appsv1.DeploymentSpec{
+      Selector: &amp;metav1.LabelSelector{
+        MatchLabels: <span class="hljs-keyword">map</span>[<span class="hljs-keyword">string</span>]<span class="hljs-keyword">string</span>{<span class="hljs-string">&quot;deployment&quot;</span>: instance.Name + <span class="hljs-string">&quot;-deployment&quot;</span>},
+      },
+      Replicas: &amp;instance.Spec.Replicas,
+      Template: corev1.PodTemplateSpec{
+        ObjectMeta: metav1.ObjectMeta{Labels: <span class="hljs-keyword">map</span>[<span class="hljs-keyword">string</span>]<span class="hljs-keyword">string</span>{<span class="hljs-string">&quot;deployment&quot;</span>: instance.Name + <span class="hljs-string">&quot;-deployment&quot;</span>}},
+    Spec: corev1.PodSpec{
+      Containers: []corev1.Container{
+            {
+                Name:  instance.Name,
+        Image: instance.Spec.Image,
+        },
+          },
+        },
+      },
+    },
+  }
+  <span class="hljs-keyword">if</span> err := controllerutil.SetControllerReference(instance, deploy, r.scheme); err != <span class="hljs-literal">nil</span> {
+    <span class="hljs-keyword">return</span> reconcile.Result{}, err
   }
 
-    <span class="hljs-comment">// If found, update it</span>
-    image := dep.Spec.Template.Spec.Containers[<span class="hljs-number">0</span>].Image
-    replicas := *dep.Spec.Replicas
-    <span class="hljs-keyword">if</span> replicas == cs.Spec.Replicas &amp;&amp; image == cs.Spec.Image {
-      <span class="hljs-keyword">return</span> reconcile.Result{}, <span class="hljs-literal">nil</span>
-    }
-    dep.Spec.Replicas = &amp;cs.Spec.Replicas
-    dep.Spec.Template.Spec.Containers[<span class="hljs-number">0</span>].Image = cs.Spec.Image
-    <span class="hljs-keyword">if</span> err := r.Update(context.TODO(), dep); err != <span class="hljs-literal">nil</span> {
+  <span class="hljs-comment">// TODO(user): Change this for the object type created by your controller</span>
+  <span class="hljs-comment">// Check if the Deployment already exists</span>
+  found := &amp;appsv1.Deployment{}
+  err = r.Get(context.TODO(), types.NamespacedName{Name: deploy.Name, Namespace: deploy.Namespace}, found)
+  <span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> &amp;&amp; errors.IsNotFound(err) {
+    log.Printf(<span class="hljs-string">&quot;Creating Deployment %s/%s\n&quot;</span>, deploy.Namespace, deploy.Name)
+    err = r.Create(context.TODO(), deploy)
+    <span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> {
       <span class="hljs-keyword">return</span> reconcile.Result{}, err
     }
+  } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> {
+    <span class="hljs-keyword">return</span> reconcile.Result{}, err
+  }
 
-    <span class="hljs-keyword">return</span> reconcile.Result{}, <span class="hljs-literal">nil</span>
-}
-
-<span class="hljs-keyword">func</span> getDeploymentSpec(request reconcile.Request) *appsv1.DeploymentSpec {
-  <span class="hljs-keyword">return</span> &amp;appsv1.DeploymentSpec{
-    Selector: &amp;metav1.LabelSelector{
-      MatchLabels: <span class="hljs-keyword">map</span>[<span class="hljs-keyword">string</span>]<span class="hljs-keyword">string</span>{
-        <span class="hljs-string">&quot;container-set&quot;</span>: request.Name},
-      },
-      Replicas: &amp;cs.Spec.Replicas,
-      Template: corev1.PodTemplateSpec{
-        ObjectMeta: metav1.ObjectMeta{
-          Labels: <span class="hljs-keyword">map</span>[<span class="hljs-keyword">string</span>]<span class="hljs-keyword">string</span>{
-            <span class="hljs-string">&quot;container-set&quot;</span>: request.Name,
-          },
-        },
-        Spec: corev1.PodSpec{
-          Containers: []corev1.Container{
-            {Name: request.Name,
-             Image: cs.Spec.Image},
-          },
-        },
-      },
+  <span class="hljs-comment">// TODO(user): Change this for the object type created by your controller</span>
+  <span class="hljs-comment">// Update the found object and write the result back if there are any changes</span>
+  <span class="hljs-keyword">if</span> !reflect.DeepEqual(deploy.Spec, found.Spec) {
+    found.Spec = deploy.Spec
+    log.Printf(<span class="hljs-string">&quot;Updating Deployment %s/%s\n&quot;</span>, deploy.Namespace, deploy.Name)
+    err = r.Update(context.TODO(), found)
+    <span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> {
+      <span class="hljs-keyword">return</span> reconcile.Result{}, err
     }
+  }
+  <span class="hljs-keyword">return</span> reconcile.Result{}, <span class="hljs-literal">nil</span>
 }
 </code></pre>
 </div></div></div>
@@ -957,7 +950,7 @@ on the Deployment once the ContainerSet is deleted.</p>
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"Controller Example","level":"3.3.2","depth":2,"next":{"title":"Managers","level":"3.4","depth":1,"ref":"","articles":[{"title":"What is the Manager","level":"3.4.1","depth":2,"path":"basics/what_is_the_controller_manager.md","ref":"basics/what_is_the_controller_manager.md","articles":[]},{"title":"Manager Example","level":"3.4.2","depth":2,"path":"basics/simple_controller_manager.md","ref":"basics/simple_controller_manager.md","articles":[]}]},"previous":{"title":"What is a Controller","level":"3.3.1","depth":2,"path":"basics/what_is_a_controller.md","ref":"basics/what_is_a_controller.md","articles":[]},"dir":"ltr"},"config":{"plugins":["theme-api","panel","sequence-diagrams","ga"],"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"panel":{},"search":{},"sequence-diagrams":{"theme":"simple"},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"highlight":{},"theme-api":{"languages":[],"split":true,"theme":"light"},"ga":{"configuration":"auto","token":"UA-119864590-1"},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","author":"Phillip Wittrock","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"The Kubebuilder Book","gitbook":">= 3.0.0"},"file":{"path":"basics/simple_controller.md","mtime":"2018-11-14T19:29:10.531Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-11-14T20:39:52.933Z"},"basePath":"..","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"Controller Example","level":"3.3.2","depth":2,"next":{"title":"Managers","level":"3.4","depth":1,"ref":"","articles":[{"title":"What is the Manager","level":"3.4.1","depth":2,"path":"basics/what_is_the_controller_manager.md","ref":"basics/what_is_the_controller_manager.md","articles":[]},{"title":"Manager Example","level":"3.4.2","depth":2,"path":"basics/simple_controller_manager.md","ref":"basics/simple_controller_manager.md","articles":[]}]},"previous":{"title":"What is a Controller","level":"3.3.1","depth":2,"path":"basics/what_is_a_controller.md","ref":"basics/what_is_a_controller.md","articles":[]},"dir":"ltr"},"config":{"plugins":["theme-api","panel","sequence-diagrams","ga"],"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"panel":{},"search":{},"sequence-diagrams":{"theme":"simple"},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"highlight":{},"theme-api":{"languages":[],"split":true,"theme":"light"},"ga":{"configuration":"auto","token":"UA-119864590-1"},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","author":"Phillip Wittrock","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"The Kubebuilder Book","gitbook":">= 3.0.0"},"file":{"path":"basics/simple_controller.md","mtime":"2018-11-28T18:47:33.651Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-11-28T18:56:52.338Z"},"basePath":"..","book":{"language":""}});
         });
     </script>
 </div>
