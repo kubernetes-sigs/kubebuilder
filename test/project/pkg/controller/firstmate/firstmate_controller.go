@@ -94,7 +94,9 @@ type ReconcileFirstMate struct {
 // a Deployment as an example
 // Automatically generate RBAC rules to allow the Controller to read and write Deployments
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=apps,resources=deployments/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=crew.testproject.org,resources=firstmates,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=crew.testproject.org,resources=firstmates/status,verbs=get;update;patch
 func (r *ReconcileFirstMate) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	// Fetch the FirstMate instance
 	instance := &crewv1.FirstMate{}
