@@ -16,27 +16,6 @@ function command_exists () {
   fi
 }
 
-if [ "x${KUBEBUILDER_VERSION}" = "x" ] ; then
-  KUBEBUILDER_VERSION=$(curl -L -s https://api.github.com/repos/kubernetes-sigs/kubebuilder/releases/latest | \
-                  grep tag_name | sed "s/ *\"tag_name\": *\"\\(.*\\)\",*/\\1/")
-fi
-
-KUBEBUILDER_VERSION=${KUBEBUILDER_VERSION#"v"}
-KUBEBUILDER_VERSION_NAME="kubebuilder_${KUBEBUILDER_VERSION}"
-KUBEBUILDER_DIR=/usr/local/kubebuilder
-
-# Check if folder containing kubebuilder executable exists and is not empty
-if [ -d "$KUBEBUILDER_DIR" ]; then
-  if [ "$(ls -A $KUBEBUILDER_DIR)" ]; then
-    echo "\n/usr/local/kubebuilder folder is not empty. Please delete or backup it before to install ${KUBEBUILDER_VERSION_NAME}"
-    exit 1
-  fi
-fi
-
-# Check if curl, tar commands/programs exist
-command_exists curl
-command_exists tar
-
 # Determine OS
 OS="$(uname)"
 case $OS in
@@ -62,7 +41,29 @@ case $HW in
       ;;
 esac
 
+# Check if curl, tar commands/programs exist
+command_exists curl
+command_exists tar
+
+if [ "x${KUBEBUILDER_VERSION}" = "x" ] ; then
+  KUBEBUILDER_VERSION=$(curl -L -s https://api.github.com/repos/kubernetes-sigs/kubebuilder/releases/latest | \
+                  grep tag_name | sed "s/ *\"tag_name\": *\"\\(.*\\)\",*/\\1/")
+fi
+
+KUBEBUILDER_VERSION=${KUBEBUILDER_VERSION#"v"}
+KUBEBUILDER_VERSION_NAME="kubebuilder_${KUBEBUILDER_VERSION}"
+KUBEBUILDER_DIR=/usr/local/kubebuilder
+
+# Check if folder containing kubebuilder executable exists and is not empty
+if [ -d "$KUBEBUILDER_DIR" ]; then
+  if [ "$(ls -A $KUBEBUILDER_DIR)" ]; then
+    echo "\n/usr/local/kubebuilder folder is not empty. Please delete or backup it before to install ${KUBEBUILDER_VERSION_NAME}"
+    exit 1
+  fi
+fi
+
 TMP_DIR=$(mktemp -d)
+pushd $TMP_DIR
 
 # Downloading Kuberbuilder compressed file using curl program
 URL="https://github.com/kubernetes-sigs/kubebuilder/releases/download/v${KUBEBUILDER_VERSION}/${KUBEBUILDER_VERSION_NAME}_${OSEXT}_${ARCH}.tar.gz"
@@ -70,9 +71,12 @@ echo "Downloading ${KUBEBUILDER_VERSION_NAME}\nfrom $URL\n"
 curl -L "$URL"| tar xz -C $TMP_DIR
 
 echo "Downloaded executable files"
-ls "$TMP_DIR/${KUBEBUILDER_VERSION_NAME}_${OSEXT}_${ARCH}/bin"
+ls "${KUBEBUILDER_VERSION_NAME}_${OSEXT}_${ARCH}/bin"
 
 echo "Moving files to $KUBEBUILDER_DIR folder\n"
-mv $TMP_DIR/${KUBEBUILDER_VERSION_NAME}_${OSEXT}_${ARCH} $TMP_DIR/kubebuilder && sudo mv -f $TMP_DIR/kubebuilder /usr/local/
+mv ${KUBEBUILDER_VERSION_NAME}_${OSEXT}_${ARCH} kubebuilder && sudo mv -f kubebuilder /usr/local/
 
+echo "Add kubebuilder to your path; e.g copy paste in your shell and/or edit your ~/.profile file"
+echo "export PATH=\$PATH:/usr/local/kubebuilder/bin"
+popd
 rm -rf $TMP_DIR
