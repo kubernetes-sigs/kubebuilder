@@ -87,6 +87,7 @@ type ReconcileFrigate struct {
 // TODO(user): Modify this Reconcile function to implement your Controller logic.  The scaffolding writes
 // a Deployment as an example
 // +kubebuilder:rbac:groups=ship.testproject.org,resources=frigates,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=ship.testproject.org,resources=frigates/status,verbs=get;update;patch
 func (r *ReconcileFrigate) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	// Fetch the Frigate instance
 	instance := &shipv1beta1.Frigate{}

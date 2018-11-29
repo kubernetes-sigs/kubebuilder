@@ -17,6 +17,14 @@ rules:
   - patch
   - delete
 - apiGroups:
+  - apps
+  resources:
+  - deployments/status
+  verbs:
+  - get
+  - update
+  - patch
+- apiGroups:
   - crew.testproject.org
   resources:
   - firstmates
@@ -28,6 +36,14 @@ rules:
   - update
   - patch
   - delete
+- apiGroups:
+  - crew.testproject.org
+  resources:
+  - firstmates/status
+  verbs:
+  - get
+  - update
+  - patch
 - apiGroups:
   - ship.testproject.org
   resources:
@@ -41,6 +57,14 @@ rules:
   - patch
   - delete
 - apiGroups:
+  - ship.testproject.org
+  resources:
+  - frigates/status
+  verbs:
+  - get
+  - update
+  - patch
+- apiGroups:
   - policy.testproject.org
   resources:
   - healthcheckpolicies
@@ -52,6 +76,14 @@ rules:
   - update
   - patch
   - delete
+- apiGroups:
+  - policy.testproject.org
+  resources:
+  - healthcheckpolicies/status
+  verbs:
+  - get
+  - update
+  - patch
 - apiGroups:
   - creatures.testproject.org
   resources:
@@ -65,6 +97,14 @@ rules:
   - patch
   - delete
 - apiGroups:
+  - creatures.testproject.org
+  resources:
+  - krakens/status
+  verbs:
+  - get
+  - update
+  - patch
+- apiGroups:
   - ""
   resources:
   - namespaces
@@ -76,6 +116,14 @@ rules:
   - update
   - patch
   - delete
+- apiGroups:
+  - ""
+  resources:
+  - namespaces/status
+  verbs:
+  - get
+  - update
+  - patch
 - apiGroups:
   - admissionregistration.k8s.io
   resources:

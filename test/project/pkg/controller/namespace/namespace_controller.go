@@ -87,6 +87,7 @@ type ReconcileNamespace struct {
 // TODO(user): Modify this Reconcile function to implement your Controller logic.  The scaffolding writes
 // a Deployment as an example
 // +kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=core,resources=namespaces/status,verbs=get;update;patch
 func (r *ReconcileNamespace) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	// Fetch the Namespace instance
 	instance := &corev1.Namespace{}

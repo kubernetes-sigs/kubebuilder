@@ -87,6 +87,7 @@ type ReconcileHealthCheckPolicy struct {
 // TODO(user): Modify this Reconcile function to implement your Controller logic.  The scaffolding writes
 // a Deployment as an example
 // +kubebuilder:rbac:groups=policy.testproject.org,resources=healthcheckpolicies,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=policy.testproject.org,resources=healthcheckpolicies/status,verbs=get;update;patch
 func (r *ReconcileHealthCheckPolicy) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	// Fetch the HealthCheckPolicy instance
 	instance := &policyv1beta1.HealthCheckPolicy{}
