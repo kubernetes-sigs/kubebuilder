@@ -61,8 +61,8 @@ Example:
 
 - See the [controller libraries](https://godoc.org/sigs.k8s.io/controller-runtime/pkg)
 godocs for reference documentation on the controller libraries.
-- See the [Using Annotations](../beyond_basics/annotations.md) to learn more
-about hot use annotations in kubebuilder.
+- See the [Generating CRD](../beyond_basics/generating_crd.md) to learn more
+about how use annotations in kubebuilder.
 
 {% sample lang="go" %}
 ```go
