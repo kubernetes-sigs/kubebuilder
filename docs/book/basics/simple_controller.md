@@ -59,11 +59,10 @@ Example:
 
 #### Reference
 
-- See the [controller libraries](https://godoc.org/sigs.k8s.io/controller-runtime/pkg) godocs for reference
-documentation on the controller libraries.
-- See the [controller code generation tags](https://godoc.org/sigs.k8s.io/kubebuilder/pkg/gen/controller)
-godocs for reference documentation on controller annotations.
-
+- See the [controller libraries](https://godoc.org/sigs.k8s.io/controller-runtime/pkg)
+godocs for reference documentation on the controller libraries.
+- See the [Using Annotations](../beyond_basics/annotations.md) to learn more
+about hot use annotations in kubebuilder.
 
 {% sample lang="go" %}
 ```go

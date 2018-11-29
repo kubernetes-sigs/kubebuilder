@@ -25,11 +25,6 @@ ContainerSet has 4 fields:
 - ObjectMeta contains metadata about the specific object instance - such as the name, namespace,
   labels and annotations.  ObjectMeta contains data common to most objects.
 
-#### Reference
-
-- See the [resource code generation tags](https://godoc.org/sigs.k8s.io/kubebuilder/pkg/gen/apis)
-godocs for reference documentation on resource annotations.
-
 {% sample lang="go" %}
 ```go
 // +genclient
@@ -56,9 +51,8 @@ type ContainerSet struct {
 The definition contains several comment annotations of the form `// +something`.  These are
 used to configure code generators to run against this code.  The code generators will 
 generate boilerplate functions and types to complete the Resource definition.
-To learn more on configuring code generation see the *Code Generation* chapter.
 
-To learn more about how to use annotations in kubebuilder, refer to [Using Annotation](../beyond_basics/annotations.md)
+To learn more about how to use annotations in kubebuilder, refer to [Using Annotations](../beyond_basics/annotations.md).
 {% endpanel %}
 
 {% method %}
@@ -106,8 +100,6 @@ type ContainerSetStatus struct {
 While users don't directly modify generated code, the code must be regenerated after resources are
 modified by adding or removing fields.  This is automatically done when running `make`.
 
-Code generation may be configured for resources using annotations of the form `// +something`.
-See the [pkg/gen](https://godoc.org/sigs.k8s.io/kubebuilder/pkg/gen/) reference documentation.
 {% endpanel %}
 
 {% method %}

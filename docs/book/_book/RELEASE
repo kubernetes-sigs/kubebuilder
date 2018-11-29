@@ -20,7 +20,7 @@ Check that everything looks good
 
 ## Build the book
 
-Book the index.html & friends
+Build the index.html & friends
 
 - `$ gitbook build`
 
