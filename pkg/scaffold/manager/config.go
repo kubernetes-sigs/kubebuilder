@@ -84,7 +84,7 @@ spec:
     spec:
       containers:
       - command:
-        - /root/manager
+        - /manager
         image: {{ .Image }}
         imagePullPolicy: Always
         name: manager

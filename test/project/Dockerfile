@@ -12,6 +12,6 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o manager sigs.k8s.io/kub
 
 # Copy the controller-manager into a thin image
 FROM ubuntu:latest
-WORKDIR /root/
+WORKDIR /
 COPY --from=builder /go/src/sigs.k8s.io/kubebuilder/test/project/manager .
-ENTRYPOINT ["./manager"]
+ENTRYPOINT ["/manager"]
