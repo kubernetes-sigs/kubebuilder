@@ -42,7 +42,7 @@ spec:
     spec:
       containers:
       - command:
-        - /root/manager
+        - /manager
         image: controller:latest
         imagePullPolicy: Always
         name: manager
