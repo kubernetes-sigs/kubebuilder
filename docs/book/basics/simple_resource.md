@@ -52,7 +52,7 @@ The definition contains several comment annotations of the form `// +something`.
 used to configure code generators to run against this code.  The code generators will 
 generate boilerplate functions and types to complete the Resource definition.
 
-To learn more about how to use annotations in kubebuilder, refer to [Using Annotations](../beyond_basics/annotations.md).
+To learn more about how to use annotations in kubebuilder, refer to [Generating CRD](../beyond_basics/generating_crd.md).
 {% endpanel %}
 
 {% method %}
