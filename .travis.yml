@@ -23,6 +23,7 @@ install:
 
 script:
 - TRACE=1 ./test.sh
+- ./scripts/install_test.sh
 
 # TBD. Suppressing for now.
 notifications:
