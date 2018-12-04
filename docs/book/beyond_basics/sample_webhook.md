@@ -124,6 +124,7 @@ A Server registers Webhook Configuration with the apiserver and creates an HTTP 
 The server is behind a Kubernetes Service and provides a certificate to the apiserver when serving requests.
 
 The Server depends on a Kubernetes Secret containing this certificate to be mounted under `CertDir`.
+The Secret needs to present but not have to be prepopulated before the manager pod starts. 
 
 If the Secret is empty, during bootstrapping the Server will generate a certificate and write it into the Secret.
 
