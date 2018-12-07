@@ -20,7 +20,7 @@ package log
 
 import (
 	"io"
-	"log"
+	"os"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -34,18 +34,7 @@ import (
 // (stacktraces on warnings, no sampling), otherwise a Zap production
 // config will be used (stacktraces on errors, sampling).
 func ZapLogger(development bool) logr.Logger {
-	var zapLog *zap.Logger
-	var err error
-	if development {
-		zapLogCfg := zap.NewDevelopmentConfig()
-		zapLog, err = zapLogCfg.Build(zap.AddCallerSkip(1))
-	} else {
-		zapLogCfg := zap.NewProductionConfig()
-		zapLog, err = zapLogCfg.Build(zap.AddCallerSkip(1))
-	}
-	// who watches the watchmen?
-	fatalIfErr(err, log.Fatalf)
-	return zapr.NewLogger(zapLog)
+	return ZapLoggerTo(os.Stderr, development)
 }
 
 // ZapLoggerTo returns a new Logger implementation using Zap which logs
@@ -73,15 +62,9 @@ func ZapLoggerTo(destWriter io.Writer, development bool) logr.Logger {
 			}))
 	}
 	opts = append(opts, zap.AddCallerSkip(1), zap.ErrorOutput(sink))
-	log := zap.New(zapcore.NewCore(enc, sink, lvl))
+	log := zap.New(zapcore.NewCore(&KubeAwareEncoder{Encoder: enc, Verbose: development}, sink, lvl))
 	log = log.WithOptions(opts...)
 	return zapr.NewLogger(log)
-}
-
-func fatalIfErr(err error, f func(format string, v ...interface{})) {
-	if err != nil {
-		f("unable to construct the logger: %v", err)
-	}
 }
 
 // SetLogger sets a concrete logging implementation for all deferred Loggers.

@@ -42,7 +42,7 @@ func (h httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// verify the content type is accurate
 	contentType := r.Header.Get("Content-Type")
 	if contentType != "application/json" {
-		log.Error(nil, "invalid content type, expected application/json", "context type", contentType)
+		log.Error(nil, "invalid content type, expected application/json", "content type", contentType)
 		return
 	}
 

@@ -18,10 +18,6 @@ package writer
 
 import (
 	"errors"
-	"io"
-	"os"
-
-	"github.com/ghodss/yaml"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -38,8 +34,6 @@ type secretCertWriter struct {
 
 	// dnsName is the DNS name that the certificate is for.
 	dnsName string
-	// dryrun indicates sending the create/update request to the server or output to the writer in yaml format.
-	dryrun bool
 }
 
 // SecretCertWriterOptions is options for constructing a secretCertWriter.
@@ -50,8 +44,6 @@ type SecretCertWriterOptions struct {
 	CertGenerator generator.CertGenerator
 	// secret points the secret that contains certificates that written by the CertWriter.
 	Secret *types.NamespacedName
-	// Writer is used in dryrun mode for writing the objects in yaml format.
-	Writer io.Writer
 }
 
 var _ CertWriter = &secretCertWriter{}
@@ -59,9 +51,6 @@ var _ CertWriter = &secretCertWriter{}
 func (ops *SecretCertWriterOptions) setDefaults() {
 	if ops.CertGenerator == nil {
 		ops.CertGenerator = &generator.SelfSignedCertGenerator{}
-	}
-	if ops.Writer == nil {
-		ops.Writer = os.Stdout
 	}
 }
 
@@ -88,9 +77,8 @@ func NewSecretCertWriter(ops SecretCertWriterOptions) (CertWriter, error) {
 }
 
 // EnsureCert provisions certificates for a webhookClientConfig by writing the certificates to a k8s secret.
-func (s *secretCertWriter) EnsureCert(dnsName string, dryrun bool) (*generator.Artifacts, bool, error) {
+func (s *secretCertWriter) EnsureCert(dnsName string) (*generator.Artifacts, bool, error) {
 	// Create or refresh the certs based on clientConfig
-	s.dryrun = dryrun
 	s.dnsName = dnsName
 	return handleCommon(s.dnsName, s)
 }
@@ -111,9 +99,6 @@ func (s *secretCertWriter) write() (*generator.Artifacts, error) {
 	if err != nil {
 		return nil, err
 	}
-	if s.dryrun {
-		return certs, s.dryrunWrite(secret)
-	}
 	err = s.Client.Create(nil, secret)
 	if apierrors.IsAlreadyExists(err) {
 		return nil, alreadyExistError{err}
@@ -127,32 +112,27 @@ func (s *secretCertWriter) overwrite() (
 	if err != nil {
 		return nil, err
 	}
-	if s.dryrun {
-		return certs, s.dryrunWrite(secret)
-	}
 	err = s.Client.Update(nil, secret)
 	return certs, err
 }
 
-func (s *secretCertWriter) dryrunWrite(secret *corev1.Secret) error {
-	sec, err := yaml.Marshal(secret)
-	if err != nil {
-		return err
-	}
-	_, err = s.Writer.Write(sec)
-	return err
-}
-
 func (s *secretCertWriter) read() (*generator.Artifacts, error) {
-	if s.dryrun {
-		return nil, notFoundError{}
+	secret := &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Secret",
+		},
 	}
-	secret := &corev1.Secret{}
 	err := s.Client.Get(nil, *s.Secret, secret)
 	if apierrors.IsNotFound(err) {
 		return nil, notFoundError{err}
 	}
-	return secretToCerts(secret), err
+	certs := secretToCerts(secret)
+	if certs != nil {
+		// Store the CA for next usage.
+		s.CertGenerator.SetCA(certs.CAKey, certs.CACert)
+	}
+	return certs, nil
 }
 
 func secretToCerts(secret *corev1.Secret) *generator.Artifacts {
@@ -160,6 +140,7 @@ func secretToCerts(secret *corev1.Secret) *generator.Artifacts {
 		return nil
 	}
 	return &generator.Artifacts{
+		CAKey:  secret.Data[CAKeyName],
 		CACert: secret.Data[CACertName],
 		Cert:   secret.Data[ServerCertName],
 		Key:    secret.Data[ServerKeyName],
@@ -168,11 +149,16 @@ func secretToCerts(secret *corev1.Secret) *generator.Artifacts {
 
 func certsToSecret(certs *generator.Artifacts, sec types.NamespacedName) *corev1.Secret {
 	return &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Secret",
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: sec.Namespace,
 			Name:      sec.Name,
 		},
 		Data: map[string][]byte{
+			CAKeyName:      certs.CAKey,
 			CACertName:     certs.CACert,
 			ServerKeyName:  certs.Key,
 			ServerCertName: certs.Cert,

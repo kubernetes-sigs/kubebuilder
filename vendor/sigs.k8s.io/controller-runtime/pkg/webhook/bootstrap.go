@@ -22,11 +22,9 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"os"
 	"path"
+	"sort"
 	"strconv"
-
-	"github.com/ghodss/yaml"
 
 	"k8s.io/api/admissionregistration/v1beta1"
 	admissionregistration "k8s.io/api/admissionregistration/v1beta1"
@@ -65,6 +63,10 @@ func (s *Server) setServerDefault() {
 	if len(s.CertDir) == 0 {
 		s.CertDir = path.Join("k8s-webhook-server", "cert")
 	}
+	if s.DisableWebhookConfigInstaller == nil {
+		diwc := false
+		s.DisableWebhookConfigInstaller = &diwc
+	}
 
 	if s.Client == nil {
 		cfg, err := config.GetConfig()
@@ -82,6 +84,9 @@ func (s *Server) setServerDefault() {
 
 // setBootstrappingDefault does defaulting for the Server bootstrapping.
 func (s *Server) setBootstrappingDefault() {
+	if s.BootstrapOptions == nil {
+		s.BootstrapOptions = &BootstrapOptions{}
+	}
 	if len(s.MutatingWebhookConfigName) == 0 {
 		s.MutatingWebhookConfigName = "mutating-webhook-configuration"
 	}
@@ -114,15 +119,11 @@ func (s *Server) setBootstrappingDefault() {
 	s.certProvisioner = &cert.Provisioner{
 		CertWriter: certWriter,
 	}
-	if s.Writer == nil {
-		s.Writer = os.Stdout
-	}
 }
 
-// installWebhookConfig writes the configuration of admissionWebhookConfiguration in yaml format if dryrun is true.
-// Otherwise, it creates the the admissionWebhookConfiguration objects and service if any.
+// InstallWebhookManifests creates the admissionWebhookConfiguration objects and service if any.
 // It also provisions the certificate for the admission server.
-func (s *Server) installWebhookConfig() error {
+func (s *Server) InstallWebhookManifests() error {
 	// do defaulting if necessary
 	s.once.Do(s.setDefault)
 	if s.err != nil {
@@ -145,38 +146,12 @@ func (s *Server) installWebhookConfig() error {
 	_, err = s.certProvisioner.Provision(cert.Options{
 		ClientConfig: cc,
 		Objects:      s.webhookConfigurations,
-		Dryrun:       s.Dryrun,
 	})
 	if err != nil {
 		return err
 	}
 
-	if s.Dryrun {
-		// TODO: print here
-		// if dryrun, return the AdmissionWebhookConfiguration in yaml format.
-		return s.genYamlConfig(objects)
-	}
-
 	return batchCreateOrReplace(s.Client, objects...)
-}
-
-// genYamlConfig generates yaml config for admissionWebhookConfiguration
-func (s *Server) genYamlConfig(objs []runtime.Object) error {
-	for _, obj := range objs {
-		_, err := s.Writer.Write([]byte("---"))
-		if err != nil {
-			return err
-		}
-		b, err := yaml.Marshal(obj)
-		if err != nil {
-			return err
-		}
-		_, err = s.Writer.Write(b)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func (s *Server) getClientConfig() (*admissionregistration.WebhookClientConfig, error) {
@@ -267,6 +242,10 @@ func (s *Server) mutatingWHConfigs() (runtime.Object, error) {
 		mutatingWebhooks = append(mutatingWebhooks, *wh)
 	}
 
+	sort.Slice(mutatingWebhooks, func(i, j int) bool {
+		return mutatingWebhooks[i].Name < mutatingWebhooks[j].Name
+	})
+
 	if len(mutatingWebhooks) > 0 {
 		return &admissionregistration.MutatingWebhookConfiguration{
 			TypeMeta: metav1.TypeMeta{
@@ -297,6 +276,10 @@ func (s *Server) validatingWHConfigs() (runtime.Object, error) {
 		}
 		validatingWebhooks = append(validatingWebhooks, *wh)
 	}
+
+	sort.Slice(validatingWebhooks, func(i, j int) bool {
+		return validatingWebhooks[i].Name < validatingWebhooks[j].Name
+	})
 
 	if len(validatingWebhooks) > 0 {
 		return &admissionregistration.ValidatingWebhookConfiguration{

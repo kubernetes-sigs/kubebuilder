@@ -72,8 +72,7 @@ func NewFSCertWriter(ops FSCertWriterOptions) (CertWriter, error) {
 }
 
 // EnsureCert provisions certificates for a webhookClientConfig by writing the certificates in the filesystem.
-// fsCertWriter doesn't support dryrun.
-func (f *fsCertWriter) EnsureCert(dnsName string, _ bool) (*generator.Artifacts, bool, error) {
+func (f *fsCertWriter) EnsureCert(dnsName string) (*generator.Artifacts, bool, error) {
 	// create or refresh cert and write it to fs
 	f.dnsName = dnsName
 	return handleCommon(f.dnsName, f)
@@ -115,7 +114,7 @@ func prepareToWrite(dir string) error {
 	_, err := os.Stat(dir)
 	switch {
 	case os.IsNotExist(err):
-		log.Info(fmt.Sprintf("cert directory %v doesn't exist, creating", dir))
+		log.Info("cert directory doesn't exist, creating", "directory", dir)
 		// TODO: figure out if we can reduce the permission. (Now it's 0777)
 		err = os.MkdirAll(dir, 0777)
 		if err != nil {
@@ -125,7 +124,7 @@ func prepareToWrite(dir string) error {
 		return err
 	}
 
-	filenames := []string{CACertName, ServerCertName, ServerKeyName}
+	filenames := []string{CAKeyName, CACertName, ServerCertName, ServerKeyName}
 	for _, f := range filenames {
 		abspath := path.Join(dir, f)
 		_, err := os.Stat(abspath)
@@ -150,7 +149,11 @@ func (f *fsCertWriter) read() (*generator.Artifacts, error) {
 	if err := ensureExist(f.Path); err != nil {
 		return nil, err
 	}
-	caBytes, err := ioutil.ReadFile(path.Join(f.Path, CACertName))
+	caKeyBytes, err := ioutil.ReadFile(path.Join(f.Path, CAKeyName))
+	if err != nil {
+		return nil, err
+	}
+	caCertBytes, err := ioutil.ReadFile(path.Join(f.Path, CACertName))
 	if err != nil {
 		return nil, err
 	}
@@ -163,14 +166,15 @@ func (f *fsCertWriter) read() (*generator.Artifacts, error) {
 		return nil, err
 	}
 	return &generator.Artifacts{
-		CACert: caBytes,
+		CAKey:  caKeyBytes,
+		CACert: caCertBytes,
 		Cert:   certBytes,
 		Key:    keyBytes,
 	}, nil
 }
 
 func ensureExist(dir string) error {
-	filenames := []string{CACertName, ServerCertName, ServerKeyName}
+	filenames := []string{CAKeyName, CACertName, ServerCertName, ServerKeyName}
 	for _, filename := range filenames {
 		_, err := os.Stat(path.Join(dir, filename))
 		switch {
@@ -188,6 +192,10 @@ func ensureExist(dir string) error {
 func certToProjectionMap(cert *generator.Artifacts) map[string]atomic.FileProjection {
 	// TODO: figure out if we can reduce the permission. (Now it's 0666)
 	return map[string]atomic.FileProjection{
+		CAKeyName: {
+			Data: cert.CAKey,
+			Mode: 0666,
+		},
 		CACertName: {
 			Data: cert.CACert,
 			Mode: 0666,

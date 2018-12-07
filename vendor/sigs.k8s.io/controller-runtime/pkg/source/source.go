@@ -20,16 +20,21 @@ import (
 	"fmt"
 	"sync"
 
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/util/workqueue"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source/internal"
 
+	toolscache "k8s.io/client-go/tools/cache"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
+
+var log = logf.KBLog.WithName("source")
 
 const (
 	// defaultBufferSize is the default number of event notifications that can be buffered.
@@ -39,7 +44,7 @@ const (
 // Source is a source of events (eh.g. Create, Update, Delete operations on Kubernetes Objects, Webhook callbacks, etc)
 // which should be processed by event.EventHandlers to enqueue reconcile.Requests.
 //
-// * Use Kind for events originating in the cluster (eh.g. Pod Create, Pod Update, Deployment Update).
+// * Use Kind for events originating in the cluster (e.g. Pod Create, Pod Update, Deployment Update).
 //
 // * Use Channel for events originating outside the cluster (eh.g. GitHub Webhook callback, Polling external urls).
 //
@@ -51,7 +56,7 @@ type Source interface {
 	Start(handler.EventHandler, workqueue.RateLimitingInterface, ...predicate.Predicate) error
 }
 
-// Kind is used to provide a source of events originating inside the cluster from Watches (eh.g. Pod Create)
+// Kind is used to provide a source of events originating inside the cluster from Watches (e.g. Pod Create)
 type Kind struct {
 	// Type is the type of object to watch.  e.g. &v1.Pod{}
 	Type runtime.Object
@@ -80,10 +85,21 @@ func (ks *Kind) Start(handler handler.EventHandler, queue workqueue.RateLimiting
 	// Lookup the Informer from the Cache and add an EventHandler which populates the Queue
 	i, err := ks.cache.GetInformer(ks.Type)
 	if err != nil {
+		if kindMatchErr, ok := err.(*meta.NoKindMatchError); ok {
+			log.Error(err, "if kind is a CRD, it should be installed before calling Start",
+				"kind", kindMatchErr.GroupKind)
+		}
 		return err
 	}
 	i.AddEventHandler(internal.EventHandler{Queue: queue, EventHandler: handler, Predicates: prct})
 	return nil
+}
+
+func (ks *Kind) String() string {
+	if ks.Type != nil && ks.Type.GetObjectKind() != nil {
+		return fmt.Sprintf("kind source: %v", ks.Type.GetObjectKind().GroupVersionKind().String())
+	}
+	return fmt.Sprintf("kind source: unknown GVK")
 }
 
 var _ inject.Cache = &Kind{}
@@ -100,7 +116,7 @@ func (ks *Kind) InjectCache(c cache.Cache) error {
 var _ Source = &Channel{}
 
 // Channel is used to provide a source of events originating outside the cluster
-// (eh.g. GitHub Webhook callback).  Channel requires the user to wire the external
+// (e.g. GitHub Webhook callback).  Channel requires the user to wire the external
 // source (eh.g. http handler) to write GenericEvents to the underlying channel.
 type Channel struct {
 	// once ensures the event distribution goroutine will be performed only once
@@ -121,6 +137,10 @@ type Channel struct {
 
 	// destLock is to ensure the destination channels are safely added/removed
 	destLock sync.Mutex
+}
+
+func (cs *Channel) String() string {
+	return fmt.Sprintf("channel source: %p", cs)
 }
 
 var _ inject.Stoppable = &Channel{}
@@ -221,6 +241,32 @@ func (cs *Channel) syncLoop() {
 	}
 }
 
+// Informer is used to provide a source of events originating inside the cluster from Watches (e.g. Pod Create)
+type Informer struct {
+	// Informer is the generated client-go Informer
+	Informer toolscache.SharedIndexInformer
+}
+
+var _ Source = &Informer{}
+
+// Start is internal and should be called only by the Controller to register an EventHandler with the Informer
+// to enqueue reconcile.Requests.
+func (is *Informer) Start(handler handler.EventHandler, queue workqueue.RateLimitingInterface,
+	prct ...predicate.Predicate) error {
+
+	// Informer should have been specified by the user.
+	if is.Informer == nil {
+		return fmt.Errorf("must specify Informer.Informer")
+	}
+
+	is.Informer.AddEventHandler(internal.EventHandler{Queue: queue, EventHandler: handler, Predicates: prct})
+	return nil
+}
+
+func (is *Informer) String() string {
+	return fmt.Sprintf("informer source: %p", is.Informer)
+}
+
 // Func is a function that implements Source
 type Func func(handler.EventHandler, workqueue.RateLimitingInterface, ...predicate.Predicate) error
 
@@ -228,4 +274,8 @@ type Func func(handler.EventHandler, workqueue.RateLimitingInterface, ...predica
 func (f Func) Start(evt handler.EventHandler, queue workqueue.RateLimitingInterface,
 	pr ...predicate.Predicate) error {
 	return f(evt, queue, pr...)
+}
+
+func (f Func) String() string {
+	return fmt.Sprintf("func source: %p", f)
 }

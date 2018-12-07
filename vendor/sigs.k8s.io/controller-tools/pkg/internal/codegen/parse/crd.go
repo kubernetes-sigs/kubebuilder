@@ -113,7 +113,13 @@ func (b *APIs) parseCRDs() {
 							resource.CRD.Spec.Subresources.Scale.LabelSelectorPath = &labelSelctor
 						}
 					}
-
+					if hasPrintColumn(resource.Type) {
+						result, err := parsePrintColumnParams(resource.Type)
+						if err != nil {
+							log.Fatalf("failed to parse printcolumn annotations, error: %v", err.Error())
+						}
+						resource.CRD.Spec.AdditionalPrinterColumns = result
+					}
 					if len(resource.ShortName) > 0 {
 						resource.CRD.Spec.Names.ShortNames = []string{resource.ShortName}
 					}
@@ -130,7 +136,7 @@ func (b *APIs) getTime() string {
 }`
 }
 
-func (b *APIs) getMeta() string {
+func (b *APIs) objSchema() string {
 	return `v1beta1.JSONSchemaProps{
     Type:   "object",
 }`
@@ -142,6 +148,8 @@ func (b *APIs) typeToJSONSchemaProps(t *types.Type, found sets.String, comments 
 	// Special cases
 	time := types.Name{Name: "Time", Package: "k8s.io/apimachinery/pkg/apis/meta/v1"}
 	meta := types.Name{Name: "ObjectMeta", Package: "k8s.io/apimachinery/pkg/apis/meta/v1"}
+	unstructured := types.Name{Name: "Unstructured", Package: "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"}
+	intOrString := types.Name{Name: "IntOrString", Package: "k8s.io/apimachinery/pkg/util/intstr"}
 	switch t.Name {
 	case time:
 		return v1beta1.JSONSchemaProps{
@@ -151,7 +159,22 @@ func (b *APIs) typeToJSONSchemaProps(t *types.Type, found sets.String, comments 
 	case meta:
 		return v1beta1.JSONSchemaProps{
 			Type: "object",
-		}, b.getMeta()
+		}, b.objSchema()
+	case unstructured:
+		return v1beta1.JSONSchemaProps{
+			Type: "object",
+		}, b.objSchema()
+	case intOrString:
+		return v1beta1.JSONSchemaProps{
+			OneOf: []v1beta1.JSONSchemaProps{
+				{
+					Type: "string",
+				},
+				{
+					Type: "integer",
+				},
+			},
+		}, b.objSchema()
 	}
 
 	var v v1beta1.JSONSchemaProps

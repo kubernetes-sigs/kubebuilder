@@ -90,13 +90,13 @@ func (e *EnqueueRequestForOwner) parseOwnerTypeGroupKind(scheme *runtime.Scheme)
 	// Get the kinds of the type
 	kinds, _, err := scheme.ObjectKinds(e.OwnerType)
 	if err != nil {
-		log.Error(err, "Could not get ObjectKinds for OwnerType", "OwnerType", e.OwnerType)
+		log.Error(err, "Could not get ObjectKinds for OwnerType", "owner type", fmt.Sprintf("%T", e.OwnerType))
 		return err
 	}
 	// Expect only 1 kind.  If there is more than one kind this is probably an edge case such as ListOptions.
 	if len(kinds) != 1 {
 		err := fmt.Errorf("Expected exactly 1 kind for OwnerType %T, but found %s kinds", e.OwnerType, kinds)
-		log.Error(err, "", "OwnerType", e.OwnerType, "Kinds", kinds)
+		log.Error(nil, "Expected exactly 1 kind for OwnerType", "owner type", fmt.Sprintf("%T", e.OwnerType), "kinds", kinds)
 		return err
 
 	}
@@ -115,8 +115,8 @@ func (e *EnqueueRequestForOwner) getOwnerReconcileRequest(object metav1.Object) 
 		// Parse the Group out of the OwnerReference to compare it to what was parsed out of the requested OwnerType
 		refGV, err := schema.ParseGroupVersion(ref.APIVersion)
 		if err != nil {
-			log.Error(err, "Could not parse OwnerReference GroupVersion",
-				"OwnerReference", ref.APIVersion)
+			log.Error(err, "Could not parse OwnerReference APIVersion",
+				"api version", ref.APIVersion)
 			return nil
 		}
 

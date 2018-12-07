@@ -18,7 +18,6 @@ package webhook
 
 import (
 	"context"
-	"fmt"
 
 	admissionregistration "k8s.io/api/admissionregistration/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -27,26 +26,31 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type mutateFn func(current, desired runtime.Object) error
+type mutateFn func(current, desired *runtime.Object) error
 
-var serviceFn = func(current, desired runtime.Object) error {
-	typedC := current.(*corev1.Service)
-	typedD := desired.(*corev1.Service)
+var serviceFn = func(current, desired *runtime.Object) error {
+	typedC := (*current).(*corev1.Service)
+	typedD := (*desired).(*corev1.Service)
 	typedC.Spec.Selector = typedD.Spec.Selector
 	return nil
 }
 
-var mutatingWebhookConfigFn = func(current, desired runtime.Object) error {
-	typedC := current.(*admissionregistration.MutatingWebhookConfiguration)
-	typedD := desired.(*admissionregistration.MutatingWebhookConfiguration)
+var mutatingWebhookConfigFn = func(current, desired *runtime.Object) error {
+	typedC := (*current).(*admissionregistration.MutatingWebhookConfiguration)
+	typedD := (*desired).(*admissionregistration.MutatingWebhookConfiguration)
 	typedC.Webhooks = typedD.Webhooks
 	return nil
 }
 
-var validatingWebhookConfigFn = func(current, desired runtime.Object) error {
-	typedC := current.(*admissionregistration.ValidatingWebhookConfiguration)
-	typedD := desired.(*admissionregistration.ValidatingWebhookConfiguration)
+var validatingWebhookConfigFn = func(current, desired *runtime.Object) error {
+	typedC := (*current).(*admissionregistration.ValidatingWebhookConfiguration)
+	typedD := (*desired).(*admissionregistration.ValidatingWebhookConfiguration)
 	typedC.Webhooks = typedD.Webhooks
+	return nil
+}
+
+var genericFn = func(current, desired *runtime.Object) error {
+	*current = *desired
 	return nil
 }
 
@@ -70,7 +74,7 @@ func createOrReplaceHelper(c client.Client, obj runtime.Object, fn mutateFn) err
 		if err != nil {
 			return err
 		}
-		err = fn(existing, obj)
+		err = fn(&existing, &obj)
 		if err != nil {
 			return err
 		}
@@ -83,6 +87,7 @@ func createOrReplaceHelper(c client.Client, obj runtime.Object, fn mutateFn) err
 // otherwise, it will replace it.
 // When replacing, it knows how to preserve existing fields in the object GET from the APIServer.
 // It currently only support MutatingWebhookConfiguration, ValidatingWebhookConfiguration and Service.
+// For other kinds, it uses genericFn to replace the whole object.
 func createOrReplace(c client.Client, obj runtime.Object) error {
 	if obj == nil {
 		return nil
@@ -95,7 +100,7 @@ func createOrReplace(c client.Client, obj runtime.Object) error {
 	case *corev1.Service:
 		return createOrReplaceHelper(c, obj, serviceFn)
 	default:
-		return fmt.Errorf("unsupported GroupVersionKind: %#v", obj.GetObjectKind().GroupVersionKind())
+		return createOrReplaceHelper(c, obj, genericFn)
 	}
 }
 
