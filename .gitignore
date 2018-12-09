@@ -6,3 +6,6 @@ docs/book/node_modules/
 # Editor temp files
 *~
 \#*#
+
+# Skip bazel dirs
+/bazel-*
