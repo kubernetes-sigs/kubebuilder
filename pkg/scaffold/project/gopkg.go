@@ -131,6 +131,7 @@ const DefaultGopkgUserContent = `required = [
 
 [prune]
   go-tests = true
+  unused-packages = true
 
 `
 
