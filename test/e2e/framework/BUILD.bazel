@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "test_context.go",
+        "util.go",
+    ],
+    importpath = "sigs.k8s.io/kubebuilder/test/e2e/framework",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//test/e2e/framework/ginkgowrapper:go_default_library",
+        "//vendor/github.com/onsi/ginkgo:go_default_library",
+        "//vendor/github.com/onsi/ginkgo/config:go_default_library",
+        "//vendor/k8s.io/client-go/tools/clientcmd:go_default_library",
+    ],
+)

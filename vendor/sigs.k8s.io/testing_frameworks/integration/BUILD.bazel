@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "apiserver.go",
+        "control_plane.go",
+        "doc.go",
+        "etcd.go",
+        "kubectl.go",
+    ],
+    importmap = "sigs.k8s.io/kubebuilder/vendor/sigs.k8s.io/testing_frameworks/integration",
+    importpath = "sigs.k8s.io/testing_frameworks/integration",
+    visibility = ["//visibility:public"],
+    deps = ["//vendor/sigs.k8s.io/testing_frameworks/integration/internal:go_default_library"],
+)

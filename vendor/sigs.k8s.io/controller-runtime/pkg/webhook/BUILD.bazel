@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "bootstrap.go",
+        "doc.go",
+        "server.go",
+        "util.go",
+    ],
+    importmap = "sigs.k8s.io/kubebuilder/vendor/sigs.k8s.io/controller-runtime/pkg/webhook",
+    importpath = "sigs.k8s.io/controller-runtime/pkg/webhook",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/ghodss/yaml:go_default_library",
+        "//vendor/k8s.io/api/admissionregistration/v1beta1:go_default_library",
+        "//vendor/k8s.io/api/core/v1:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/api/errors:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/runtime:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/types:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/util/intstr:go_default_library",
+        "//vendor/sigs.k8s.io/controller-runtime/pkg/client:go_default_library",
+        "//vendor/sigs.k8s.io/controller-runtime/pkg/client/config:go_default_library",
+        "//vendor/sigs.k8s.io/controller-runtime/pkg/manager:go_default_library",
+        "//vendor/sigs.k8s.io/controller-runtime/pkg/runtime/inject:go_default_library",
+        "//vendor/sigs.k8s.io/controller-runtime/pkg/runtime/log:go_default_library",
+        "//vendor/sigs.k8s.io/controller-runtime/pkg/webhook/admission:go_default_library",
+        "//vendor/sigs.k8s.io/controller-runtime/pkg/webhook/admission/types:go_default_library",
+        "//vendor/sigs.k8s.io/controller-runtime/pkg/webhook/internal/cert:go_default_library",
+        "//vendor/sigs.k8s.io/controller-runtime/pkg/webhook/internal/cert/writer:go_default_library",
+        "//vendor/sigs.k8s.io/controller-runtime/pkg/webhook/types:go_default_library",
+    ],
+)

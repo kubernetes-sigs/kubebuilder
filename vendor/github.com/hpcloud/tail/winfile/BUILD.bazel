@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["winfile.go"],
+    importmap = "sigs.k8s.io/kubebuilder/vendor/github.com/hpcloud/tail/winfile",
+    importpath = "github.com/hpcloud/tail/winfile",
+    visibility = ["//visibility:public"],
+)

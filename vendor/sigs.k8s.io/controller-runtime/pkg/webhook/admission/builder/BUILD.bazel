@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "builder.go",
+        "doc.go",
+    ],
+    importmap = "sigs.k8s.io/kubebuilder/vendor/sigs.k8s.io/controller-runtime/pkg/webhook/admission/builder",
+    importpath = "sigs.k8s.io/controller-runtime/pkg/webhook/admission/builder",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/k8s.io/api/admissionregistration/v1beta1:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/apis/meta/v1:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/runtime:go_default_library",
+        "//vendor/sigs.k8s.io/controller-runtime/pkg/client/apiutil:go_default_library",
+        "//vendor/sigs.k8s.io/controller-runtime/pkg/manager:go_default_library",
+        "//vendor/sigs.k8s.io/controller-runtime/pkg/webhook/admission:go_default_library",
+        "//vendor/sigs.k8s.io/controller-runtime/pkg/webhook/types:go_default_library",
+    ],
+)

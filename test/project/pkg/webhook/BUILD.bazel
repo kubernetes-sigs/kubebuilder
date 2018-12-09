@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "add_default_server.go",
+        "webhook.go",
+    ],
+    importpath = "sigs.k8s.io/kubebuilder/test/project/pkg/webhook",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//test/project/pkg/webhook/default_server:go_default_library",
+        "//vendor/sigs.k8s.io/controller-runtime/pkg/manager:go_default_library",
+    ],
+)

@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "certgenerator.go",
+        "doc.go",
+        "selfsigned.go",
+    ],
+    importmap = "sigs.k8s.io/kubebuilder/vendor/sigs.k8s.io/controller-runtime/pkg/webhook/internal/cert/generator",
+    importpath = "sigs.k8s.io/controller-runtime/pkg/webhook/internal/cert/generator",
+    visibility = ["//vendor/sigs.k8s.io/controller-runtime/pkg/webhook:__subpackages__"],
+    deps = ["//vendor/k8s.io/client-go/util/cert:go_default_library"],
+)

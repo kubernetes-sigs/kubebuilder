@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "build.go",
+        "exit_matcher.go",
+        "prefixed_writer.go",
+        "session.go",
+    ],
+    importmap = "sigs.k8s.io/kubebuilder/vendor/github.com/onsi/gomega/gexec",
+    importpath = "github.com/onsi/gomega/gexec",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//vendor/github.com/onsi/gomega:go_default_library",
+        "//vendor/github.com/onsi/gomega/format:go_default_library",
+        "//vendor/github.com/onsi/gomega/gbytes:go_default_library",
+    ],
+)

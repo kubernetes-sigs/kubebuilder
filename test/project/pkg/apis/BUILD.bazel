@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "addtoscheme_creatures_v2alpha1.go",
+        "addtoscheme_crew_v1.go",
+        "addtoscheme_policy_v1beta1.go",
+        "addtoscheme_ship_v1beta1.go",
+        "apis.go",
+    ],
+    importpath = "sigs.k8s.io/kubebuilder/test/project/pkg/apis",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//test/project/pkg/apis/creatures/v2alpha1:go_default_library",
+        "//test/project/pkg/apis/crew/v1:go_default_library",
+        "//test/project/pkg/apis/policy/v1beta1:go_default_library",
+        "//test/project/pkg/apis/ship/v1beta1:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/runtime:go_default_library",
+    ],
+)

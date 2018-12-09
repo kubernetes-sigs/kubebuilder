@@ -1,0 +1,43 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "alpha.go",
+        "api.go",
+        "docs.go",
+        "init_project.go",
+        "main.go",
+        "vendor_update.go",
+        "webhook.go",
+    ],
+    importpath = "sigs.k8s.io/kubebuilder/cmd",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//cmd/util:go_default_library",
+        "//cmd/version:go_default_library",
+        "//pkg/scaffold:go_default_library",
+        "//pkg/scaffold/controller:go_default_library",
+        "//pkg/scaffold/input:go_default_library",
+        "//pkg/scaffold/manager:go_default_library",
+        "//pkg/scaffold/project:go_default_library",
+        "//pkg/scaffold/resource:go_default_library",
+        "//pkg/scaffold/webhook:go_default_library",
+        "//vendor/github.com/spf13/cobra:go_default_library",
+        "//vendor/github.com/spf13/pflag:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/api/meta:go_default_library",
+        "//vendor/k8s.io/apimachinery/pkg/runtime/schema:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "cmd",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["go_version_test.go"],
+    embed = [":go_default_library"],
+)

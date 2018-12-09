@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["jsonpatch.go"],
+    importmap = "sigs.k8s.io/kubebuilder/vendor/github.com/mattbaird/jsonpatch",
+    importpath = "github.com/mattbaird/jsonpatch",
+    visibility = ["//visibility:public"],
+)

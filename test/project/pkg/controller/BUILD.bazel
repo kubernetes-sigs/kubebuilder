@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "add_firstmate.go",
+        "add_frigate.go",
+        "add_healthcheckpolicy.go",
+        "add_kraken.go",
+        "add_namespace.go",
+        "controller.go",
+    ],
+    importpath = "sigs.k8s.io/kubebuilder/test/project/pkg/controller",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//test/project/pkg/controller/firstmate:go_default_library",
+        "//test/project/pkg/controller/frigate:go_default_library",
+        "//test/project/pkg/controller/healthcheckpolicy:go_default_library",
+        "//test/project/pkg/controller/kraken:go_default_library",
+        "//test/project/pkg/controller/namespace:go_default_library",
+        "//vendor/sigs.k8s.io/controller-runtime/pkg/manager:go_default_library",
+    ],
+)

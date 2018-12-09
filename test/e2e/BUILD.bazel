@@ -1,0 +1,33 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "common.go",
+        "config.go",
+        "doc.go",
+        "e2e.go",
+    ],
+    importpath = "sigs.k8s.io/kubebuilder/test/e2e",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//test/e2e/framework:go_default_library",
+        "//test/internal/e2e:go_default_library",
+        "//vendor/github.com/onsi/ginkgo:go_default_library",
+        "//vendor/github.com/onsi/gomega:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["e2e_test.go"],
+    embed = [":go_default_library"],
+    deps = [
+        "//test/e2e/framework:go_default_library",
+        "//test/e2e/framework/ginkgowrapper:go_default_library",
+        "//vendor/github.com/golang/glog:go_default_library",
+        "//vendor/github.com/onsi/ginkgo:go_default_library",
+        "//vendor/github.com/onsi/gomega:go_default_library",
+        "//vendor/github.com/spf13/pflag:go_default_library",
+    ],
+)

@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "apis.go",
+        "cmd.go",
+        "config.go",
+        "controller.go",
+        "dockerfile.go",
+        "webhook.go",
+    ],
+    importpath = "sigs.k8s.io/kubebuilder/pkg/scaffold/manager",
+    visibility = ["//visibility:public"],
+    deps = ["//pkg/scaffold/input:go_default_library"],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "manager_suite_test.go",
+        "manager_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//pkg/scaffold/input:go_default_library",
+        "//pkg/scaffold/scaffoldtest:go_default_library",
+        "//vendor/github.com/onsi/ginkgo:go_default_library",
+        "//vendor/github.com/onsi/gomega:go_default_library",
+    ],
+)

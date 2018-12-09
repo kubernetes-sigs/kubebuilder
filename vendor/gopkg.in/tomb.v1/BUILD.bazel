@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["tomb.go"],
+    importmap = "sigs.k8s.io/kubebuilder/vendor/gopkg.in/tomb.v1",
+    importpath = "gopkg.in/tomb.v1",
+    visibility = ["//visibility:public"],
+)

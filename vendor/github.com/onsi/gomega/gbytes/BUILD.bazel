@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "buffer.go",
+        "io_wrappers.go",
+        "say_matcher.go",
+    ],
+    importmap = "sigs.k8s.io/kubebuilder/vendor/github.com/onsi/gomega/gbytes",
+    importpath = "github.com/onsi/gomega/gbytes",
+    visibility = ["//visibility:public"],
+    deps = ["//vendor/github.com/onsi/gomega/format:go_default_library"],
+)

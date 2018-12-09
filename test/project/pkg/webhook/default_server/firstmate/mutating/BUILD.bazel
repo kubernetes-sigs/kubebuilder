@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "create_update_webhook.go",
+        "delete_webhook.go",
+        "firstmate_create_update_handler.go",
+        "firstmate_delete_handler.go",
+        "webhooks.go",
+    ],
+    importpath = "sigs.k8s.io/kubebuilder/test/project/pkg/webhook/default_server/firstmate/mutating",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//test/project/pkg/apis/crew/v1:go_default_library",
+        "//vendor/k8s.io/api/admissionregistration/v1beta1:go_default_library",
+        "//vendor/sigs.k8s.io/controller-runtime/pkg/runtime/inject:go_default_library",
+        "//vendor/sigs.k8s.io/controller-runtime/pkg/webhook/admission:go_default_library",
+        "//vendor/sigs.k8s.io/controller-runtime/pkg/webhook/admission/builder:go_default_library",
+        "//vendor/sigs.k8s.io/controller-runtime/pkg/webhook/admission/types:go_default_library",
+    ],
+)

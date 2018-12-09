@@ -1,0 +1,37 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "add_admissionbuilder_handler.go",
+        "add_server.go",
+        "admissionbuilder.go",
+        "admissionhandler.go",
+        "admissionwebhooks.go",
+        "config.go",
+        "server.go",
+        "util.go",
+    ],
+    importpath = "sigs.k8s.io/kubebuilder/pkg/scaffold/webhook",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//pkg/scaffold/input:go_default_library",
+        "//pkg/scaffold/resource:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = [
+        "webhook_suite_test.go",
+        "webhook_test.go",
+    ],
+    embed = [":go_default_library"],
+    deps = [
+        "//pkg/scaffold/input:go_default_library",
+        "//pkg/scaffold/resource:go_default_library",
+        "//pkg/scaffold/scaffoldtest:go_default_library",
+        "//vendor/github.com/onsi/ginkgo:go_default_library",
+        "//vendor/github.com/onsi/gomega:go_default_library",
+    ],
+)
