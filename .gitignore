@@ -2,3 +2,10 @@
 
 # Not check in node_modules to a specific arch and os.
 docs/book/node_modules/
+
+# Skip bazel dirs
+bazel-bin
+bazel-genfiles
+bazel-kubebuilder
+bazel-out
+bazel-testlogs
