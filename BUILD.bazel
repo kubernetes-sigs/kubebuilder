@@ -20,8 +20,4 @@ gazelle(
     name = "gazelle",
     command = "fix",
     external = "vendored",
-    args = [
-        "-build_file_name",
-        "BUILD,BUILD.bazel",
-    ],
 )
