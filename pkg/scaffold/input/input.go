@@ -30,7 +30,7 @@ const (
 	Overwrite
 )
 
-// Input is the input for scaffoldig a file
+// Input is the input for scaffolding a file
 type Input struct {
 	// Path is the file to write
 	Path string
@@ -125,8 +125,8 @@ func (i *Input) SetVersion(v string) {
 	}
 }
 
-// ProjecPath allows the project path to be set on an object
-type ProjecPath interface {
+// ProjectPath allows the project path to be set on an object
+type ProjectPath interface {
 	// SetProjectPath sets the project file location
 	SetProjectPath(string)
 }

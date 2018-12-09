@@ -71,7 +71,7 @@ func (s *Scaffold) setFieldsAndValidate(t input.File) error {
 	if b, ok := t.(input.Repo); ok {
 		b.SetRepo(s.Project.Repo)
 	}
-	if b, ok := t.(input.ProjecPath); ok {
+	if b, ok := t.(input.ProjectPath); ok {
 		b.SetProjectPath(s.ProjectPath)
 	}
 
