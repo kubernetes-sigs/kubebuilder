@@ -191,5 +191,6 @@ func ResourceForFlags(f *flag.FlagSet) *resource.Resource {
 	f.BoolVar(&r.Namespaced, "namespaced", true, "resource is namespaced")
 	f.BoolVar(&r.CreateExampleReconcileBody, "example", true,
 		"if true an example reconcile body should be written while scaffolding a resource.")
+	f.Var(&r.Pattern, "pattern", "if set generates a particular pattern of resource (e.g. an addon)")
 	return r
 }

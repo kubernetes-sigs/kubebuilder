@@ -56,6 +56,9 @@ package {{ .Resource.Version }}
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+{{- if .Resource.PatternAddon }}
+        "sigs.k8s.io/controller-runtime/alpha/patterns/addon"
+{{- end }}
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -63,15 +66,41 @@ import (
 
 // {{.Resource.Kind}}Spec defines the desired state of {{.Resource.Kind}}
 type {{.Resource.Kind}}Spec struct {
+{{- if .Resource.PatternAddon }}
+        addon.CommonSpec
+{{- end }}
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
 // {{.Resource.Kind}}Status defines the observed state of {{.Resource.Kind}}
 type {{.Resource.Kind}}Status struct {
+{{- if .Resource.PatternAddon }}
+        addon.CommonStatus
+{{- end }}
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 }
+
+{{- if .Resource.PatternAddon }}
+var _ addon.CommonObject = &{{.Resource.Kind}}{}
+
+func (o *{{.Resource.Kind}}) ComponentName() string {
+	return "{{.Resource.Kind | lower}}"
+}
+
+func (o *{{.Resource.Kind}}) CommonSpec() addon.CommonSpec {
+	return o.Spec.CommonSpec
+}
+
+func (o *{{.Resource.Kind}}) GetCommonStatus() addon.CommonStatus {
+	return o.Status.CommonStatus
+}
+
+func (o *{{.Resource.Kind}}) SetCommonStatus(s addon.CommonStatus) {
+	o.Status.CommonStatus = s
+}
+{{- end }}
 
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

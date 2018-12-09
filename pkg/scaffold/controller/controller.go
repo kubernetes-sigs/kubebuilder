@@ -114,6 +114,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+{{- if .Resource.PatternAddon }}
+        //"sigs.k8s.io/controller-runtime/alpha/patterns/addon"
+        "sigs.k8s.io/controller-runtime/alpha/patterns/declarative"
+{{- end }}
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -153,7 +157,17 @@ func Add(mgr manager.Manager) error {
 
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
+{{- if .Resource.PatternAddon }}
+	r := &Reconcile{{.Resource.Kind}}{}
+
+	r.Reconciler.Init(mgr, &{{.Resource.Group}}{{.Resource.Version}}.{{.Resource.Kind}}{}, "{{lower .Resource.Kind}}",
+		//addon.WithGroupVersionKind({{.Resource.Group}}{{.Resource.Version}}.SchemeGroupVersion.WithKind("{{lower .Resource.Kind}}")),
+	)
+
+	return r
+{{- else }}
 	return &Reconcile{{ .Resource.Kind }}{Client: mgr.GetClient(), scheme: mgr.GetScheme()}
+{{- end }}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
@@ -170,6 +184,8 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
+{{- if .Resource.PatternAddon }}
+{{- else }}
 	// TODO(user): Modify this to be the types you create
 	// Uncomment watch a Deployment created by {{ .Resource.Kind }} - change this for objects you create
 	err = c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
@@ -179,6 +195,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	if err != nil {
 		return err
 	}
+{{- end }}
 
 	return nil
 }
@@ -187,10 +204,15 @@ var _ reconcile.Reconciler = &Reconcile{{ .Resource.Kind }}{}
 
 // Reconcile{{ .Resource.Kind }} reconciles a {{ .Resource.Kind }} object
 type Reconcile{{ .Resource.Kind }} struct {
+{{- if .Resource.PatternAddon }}
+        declarative.Reconciler
+{{- end }}
 	client.Client
 	scheme *runtime.Scheme
 }
 
+{{- if .Resource.PatternAddon }}
+{{- else }}
 // Reconcile reads that state of the cluster for a {{ .Resource.Kind }} object and makes changes based on the state read
 // and what is in the {{ .Resource.Kind }}.Spec
 // TODO(user): Modify this Reconcile function to implement your Controller logic.  The scaffolding writes
@@ -273,4 +295,5 @@ func (r *Reconcile{{ .Resource.Kind }}) Reconcile(request reconcile.Request) (re
 
 	return reconcile.Result{}, nil
 }
+{{- end }}
 `
