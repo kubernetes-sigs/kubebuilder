@@ -12,17 +12,16 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# gazelle:proto disable
-load("@io_bazel_rules_go//go:def.bzl", "gazelle")
+load("@bazel_gazelle//:def.bzl", "gazelle")
 
+# gazelle:prefix sigs.k8s.io/kubebuilder
+# gazelle:proto disable
 gazelle(
     name = "gazelle",
     command = "fix",
-    prefix = "sigs.k8s.io/kubebuilder",
     external = "vendored",
     args = [
         "-build_file_name",
         "BUILD,BUILD.bazel",
     ],
 )
-
