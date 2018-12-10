@@ -2,3 +2,7 @@
 
 # Not check in node_modules to a specific arch and os.
 docs/book/node_modules/
+
+# Editor temp files
+*~
+\#*#
