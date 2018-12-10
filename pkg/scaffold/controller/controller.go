@@ -107,8 +107,8 @@ import (
 	"log"
 	"reflect"
 
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
+	kubeappsv1 "k8s.io/api/apps/v1"
+	kubecorev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -128,7 +128,7 @@ import (
 var log = logf.Log.WithName("controller")
 {{ else }}	"context"
 
-	appsv1 "k8s.io/api/apps/v1"
+	kubeappsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -172,7 +172,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 
 	// TODO(user): Modify this to be the types you create
 	// Uncomment watch a Deployment created by {{ .Resource.Kind }} - change this for objects you create
-	err = c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
+	err = c.Watch(&source.Kind{Type: &kubeappsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
 		OwnerType:    &{{ .Resource.Group}}{{ .Resource.Version }}.{{ .Resource.Kind }}{},
 	})
@@ -219,19 +219,19 @@ func (r *Reconcile{{ .Resource.Kind }}) Reconcile(request reconcile.Request) (re
 	{{ if .Resource.CreateExampleReconcileBody -}}
 	// TODO(user): Change this to be the object type created by your controller
 	// Define the desired Deployment object
-	deploy := &appsv1.Deployment{
+	deploy := &kubeappsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      instance.Name + "-deployment",
 			Namespace: {{ if .Resource.Namespaced}}instance.Namespace{{ else }}"default"{{ end }},
 		},
-		Spec: appsv1.DeploymentSpec{
+		Spec: kubeappsv1.DeploymentSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{"deployment": instance.Name + "-deployment"},
 			},
-			Template: corev1.PodTemplateSpec{
+			Template: kubecorev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"deployment": instance.Name + "-deployment"}},
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
+				Spec: kubecorev1.PodSpec{
+					Containers: []kubecorev1.Container{
 						{
 							Name:  "nginx",
 							Image: "nginx",
@@ -247,7 +247,7 @@ func (r *Reconcile{{ .Resource.Kind }}) Reconcile(request reconcile.Request) (re
 
 	// TODO(user): Change this for the object type created by your controller
 	// Check if the Deployment already exists
-	found := &appsv1.Deployment{}
+	found := &kubeappsv1.Deployment{}
 	err = r.Get(context.TODO(), types.NamespacedName{Name: deploy.Name, Namespace: deploy.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
 		log.Info("Creating Deployment", "namespace", deploy.Namespace, "name", deploy.Name)

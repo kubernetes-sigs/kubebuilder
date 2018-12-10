@@ -77,7 +77,7 @@ import (
 	"github.com/onsi/gomega"
 	"golang.org/x/net/context"
 	{{ if .Resource.CreateExampleReconcileBody -}}
-	appsv1 "k8s.io/api/apps/v1"
+	kubeappsv1 "k8s.io/api/apps/v1"
 	{{ end -}}
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -127,7 +127,7 @@ func TestReconcile(t *testing.T) {
 	defer c.Delete(context.TODO(), instance)
 	g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(expectedRequest)))
 {{ if .Resource.CreateExampleReconcileBody }}
-	deploy := &appsv1.Deployment{}
+	deploy := &kubeappsv1.Deployment{}
 	g.Eventually(func() error { return c.Get(context.TODO(), depKey, deploy) }, timeout).
 		Should(gomega.Succeed())
 
