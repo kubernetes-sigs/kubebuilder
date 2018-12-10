@@ -143,7 +143,8 @@ func (o *projectOptions) runInit() {
 		&project.GitIgnore{},
 		&project.Kustomize{},
 		&project.KustomizeImagePatch{},
-		&project.KustomizePrometheusMetricsPatch{})
+		&project.KustomizePrometheusMetricsPatch{},
+		&project.KustomizeResourcesPatch{})
 	if err != nil {
 		log.Fatal(err)
 	}

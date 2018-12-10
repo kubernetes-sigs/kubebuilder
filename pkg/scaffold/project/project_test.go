@@ -235,6 +235,23 @@ Copyright 2019 Example Owners.
 		})
 	})
 
+	Describe("scaffolding a Kustomize resources patch", func() {
+		BeforeEach(func() {
+			goldenPath = filepath.Join("config", "default", "manager_resources_patch.yaml")
+			writeToPath = goldenPath
+		})
+		Context("with defaults ", func() {
+			It("should match the golden file", func() {
+				instance := &KustomizeResourcesPatch{}
+				instance.Repo = "sigs.k8s.io/kubebuilder/test/project"
+				Expect(s.Execute(input.Options{}, instance)).NotTo(HaveOccurred())
+
+				// Verify the contents matches the golden file.
+				Expect(result.Actual.String()).To(BeEquivalentTo(result.Golden))
+			})
+		})
+	})
+
 	Describe("scaffolding a .gitignore", func() {
 		BeforeEach(func() {
 			goldenPath = filepath.Join(".gitignore")

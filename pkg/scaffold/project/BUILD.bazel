@@ -9,6 +9,7 @@ go_library(
         "kustomize.go",
         "kustomize_image_patch.go",
         "kustomize_metrics_patch.go",
+        "kustomize_resources_patch.go",
         "makefile.go",
         "project.go",
     ],
