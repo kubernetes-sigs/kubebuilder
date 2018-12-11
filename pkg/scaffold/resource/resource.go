@@ -22,6 +22,8 @@ import (
 	"strings"
 
 	"github.com/markbates/inflect"
+
+	"sigs.k8s.io/kubebuilder/pkg/scaffold"
 )
 
 // Resource contains the information required to scaffold files for a resource.
@@ -48,47 +50,12 @@ type Resource struct {
 	CreateExampleReconcileBody bool
 
 	// Pattern is set if we are generating a extended pattern of resource (e.g. addon)
-	Pattern Pattern
-}
-
-// Pattern is the enumerated type for patterns
-type Pattern string
-
-const (
-	// PatternNone is the pattern constant for standard generation
-	PatternNone = ""
-
-	// PatternAddon is the pattern constant for addons
-	PatternAddon = "addon"
-)
-
-// PatternAllValues is the list of valid pattern values
-var PatternAllValues = []Pattern{PatternNone, PatternAddon}
-
-// Get is part of the implementation of flag.Getter
-func (p *Pattern) Get() interface{} {
-	return *p
-}
-
-// String is part of the implementation of flag.Value
-func (p *Pattern) String() string {
-	return string(*p)
-}
-
-// Set is part of the implentation of flag.Value
-func (p *Pattern) Set(s string) error {
-	*p = Pattern(s)
-	return nil
-}
-
-// Type is part of the implentation of pflag.Value
-func (p *Pattern) Type() string {
-	return "pattern"
+	Pattern scaffold.Pattern
 }
 
 // PatternAddon is true if the resource is using the addon pattern
 func (r *Resource) PatternAddon() bool {
-	return r.Pattern == PatternAddon
+	return r.Pattern == scaffold.PatternAddon
 }
 
 // Validate checks the Resource values to make sure they are valid.
@@ -123,21 +90,8 @@ func (r *Resource) Validate() error {
 		return fmt.Errorf("Kind must be camelcase (expected %s was %s)", inflect.Camelize(r.Kind), r.Kind)
 	}
 
-	{
-		found := false
-		for _, f := range PatternAllValues {
-			if f == r.Pattern {
-				found = true
-				continue
-			}
-		}
-		if !found {
-			var patternStrings []string
-			for _, f := range PatternAllValues {
-				patternStrings = append(patternStrings, string(f))
-			}
-			return fmt.Errorf("Pattern %q is not recognized, must be one of %s", strings.Join(patternStrings, ","))
-		}
+	if err := r.Pattern.Validate(); err != nil {
+		return err
 	}
 
 	return nil

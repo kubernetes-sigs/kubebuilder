@@ -4,6 +4,7 @@ go_library(
     name = "go_default_library",
     srcs = [
         "doc.go",
+        "pattern.go",
         "scaffold.go",
     ],
     importpath = "sigs.k8s.io/kubebuilder/pkg/scaffold",

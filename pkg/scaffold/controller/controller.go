@@ -43,6 +43,9 @@ type Controller struct {
 
 	// Is the Group + "." + Domain for the Resource
 	GroupDomain string
+
+	// RBACRules is a list of RBAC tags for the type
+	RBACRules []string
 }
 
 // GetInput implements input.File
@@ -71,6 +74,18 @@ func (a *Controller) GetInput() (input.Input, error) {
 		a.Plural = rs.Pluralize(strings.ToLower(a.Resource.Kind))
 	}
 
+	if a.Resource.PatternAddon() && a.RBACRules == nil {
+		var r []string
+		r = append(r, "// +kubebuilder:rbac:groups=addons.sigs.k8s.io,resources=corednss,verbs=get;list;watch;update;patch")
+		r = append(r, "// +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete")
+		r = append(r, "// +kubebuilder:rbac:groups=,resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete")
+		r = append(r, "// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles,verbs=get;list;watch;create;update;patch;delete")
+		r = append(r, "// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterrolebindings,verbs=get;list;watch;create;update;patch;delete")
+		r = append(r, "// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles,verbs=get;list;watch;create;update;patch;delete")
+		r = append(r, "// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;list;watch;create;update;patch;delete")
+		a.RBACRules = r
+	}
+
 	if a.Path == "" {
 		a.Path = filepath.Join("pkg", "controller",
 			strings.ToLower(a.Resource.Kind),
@@ -96,6 +111,13 @@ func getResourceInfo(coreGroups map[string]string, r *resource.Resource, in inpu
 		// TODO: need to support '--resource-pkg-path' flag for specifying resourcePath
 	}
 	return path.Join(in.Repo, "pkg", "apis"), r.Group + "." + in.Domain
+}
+
+func (a *Controller) RBACRulesString() string {
+	if len(a.RBACRules) == 0 {
+		return ""
+	}
+	return strings.Join(a.RBACRules, "\n") + "\n"
 }
 
 var controllerTemplate = `{{ .Boilerplate }}
@@ -202,6 +224,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 
 var _ reconcile.Reconciler = &Reconcile{{ .Resource.Kind }}{}
 
+{{ .RBACRulesString -}}
 // Reconcile{{ .Resource.Kind }} reconciles a {{ .Resource.Kind }} object
 type Reconcile{{ .Resource.Kind }} struct {
 {{- if .Resource.PatternAddon }}

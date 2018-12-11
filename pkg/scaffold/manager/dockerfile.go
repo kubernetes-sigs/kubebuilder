@@ -17,6 +17,9 @@ limitations under the License.
 package manager
 
 import (
+	"strings"
+
+	"sigs.k8s.io/kubebuilder/pkg/scaffold"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 )
 
@@ -25,6 +28,12 @@ var _ input.File = &Dockerfile{}
 // Dockerfile scaffolds a Dockerfile for building a main
 type Dockerfile struct {
 	input.Input
+
+	// Pattern activates additional behaviours for specialized use cases
+	Pattern scaffold.Pattern
+
+	// BuildCommands is the list of second-stage build commands
+	BuildCommands []string
 }
 
 // GetInput implements input.File
@@ -32,8 +41,27 @@ func (c *Dockerfile) GetInput() (input.Input, error) {
 	if c.Path == "" {
 		c.Path = "Dockerfile"
 	}
+
+	if c.Pattern == scaffold.PatternAddon {
+		c.BuildCommands = append(c.BuildCommands, "ADD https://storage.googleapis.com/kubernetes-release/release/v1.12.0/bin/linux/amd64/kubectl /bin/kubectl")
+		c.BuildCommands = append(c.BuildCommands, "RUN chmod a+x /bin/kubectl")
+	}
+
+	c.BuildCommands = append(c.BuildCommands, "COPY --from=builder /go/src/{{ .Repo }}/manager .")
+
+	if c.Pattern == scaffold.PatternAddon {
+		c.BuildCommands = append(c.BuildCommands, "COPY channels/ /channels/")
+	}
+
 	c.TemplateBody = dockerfileTemplate
 	return c.Input, nil
+}
+
+func (c *Dockerfile) BuildCommandsString() string {
+	if len(c.BuildCommands) == 0 {
+		return ""
+	}
+	return strings.Join(c.BuildCommands, "\n") + "\n"
 }
 
 var dockerfileTemplate = `# Build the manager binary
@@ -51,6 +79,6 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o manager {{ .Repo }}/cmd
 # Copy the controller-manager into a thin image
 FROM ubuntu:latest
 WORKDIR /
-COPY --from=builder /go/src/{{ .Repo }}/manager .
+{{ .BuildCommandsString -}}
 ENTRYPOINT ["/manager"]
 `

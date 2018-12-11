@@ -19,6 +19,7 @@ go_library(
     importpath = "sigs.k8s.io/kubebuilder/pkg/scaffold/resource",
     visibility = ["//visibility:public"],
     deps = [
+        "//pkg/scaffold:go_default_library",
         "//pkg/scaffold/input:go_default_library",
         "//vendor/github.com/markbates/inflect:go_default_library",
     ],

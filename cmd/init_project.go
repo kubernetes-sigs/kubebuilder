@@ -72,11 +72,12 @@ kubebuilder init --domain example.org --license apache2 --owner "The Kubernetes 
 	o.depFlag = initCmd.Flag("dep")
 	initCmd.Flags().StringArrayVar(&o.depArgs, "depArgs", nil, "Additional arguments for dep")
 
+	initCmd.Flags().Var(&o.pattern, "pattern", "activates behaviour for a particular pattern of controller (e.g. an addon)")
+
 	o.prj = projectForFlags(initCmd.Flags())
 	o.bp = boilerplateForFlags(initCmd.Flags())
 	o.gopkg = &project.GopkgToml{}
 	o.mgr = &manager.Cmd{}
-	o.dkr = &manager.Dockerfile{}
 
 	return initCmd
 }
@@ -86,14 +87,19 @@ type projectOptions struct {
 	bp                 *project.Boilerplate
 	gopkg              *project.GopkgToml
 	mgr                *manager.Cmd
-	dkr                *manager.Dockerfile
 	dep                bool
 	depFlag            *flag.Flag
 	depArgs            []string
 	skipGoVersionCheck bool
+	pattern            scaffold.Pattern
 }
 
 func (o *projectOptions) runInit() {
+	if err := o.pattern.Validate(); err != nil {
+		fmt.Printf("validation error: %v\n", err)
+		return
+	}
+
 	if !o.skipGoVersionCheck {
 		ensureGoVersionIsCompatible()
 	}
@@ -135,7 +141,7 @@ func (o *projectOptions) runInit() {
 		o.gopkg,
 		o.mgr,
 		&project.Makefile{Image: imgName},
-		o.dkr,
+		&manager.Dockerfile{Pattern: o.pattern},
 		&manager.APIs{},
 		&manager.Controller{},
 		&manager.Webhook{},
