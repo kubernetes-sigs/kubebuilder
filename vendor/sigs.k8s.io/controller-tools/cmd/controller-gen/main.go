@@ -24,6 +24,7 @@ import (
 	"github.com/spf13/cobra"
 	crdgenerator "sigs.k8s.io/controller-tools/pkg/crd/generator"
 	"sigs.k8s.io/controller-tools/pkg/generate/rbac"
+	"sigs.k8s.io/controller-tools/pkg/generate/webhook"
 )
 
 func main() {
@@ -45,6 +46,7 @@ func main() {
 	rootCmd.AddCommand(
 		newRBACCmd(),
 		newCRDCmd(),
+		newWebhookCmd(),
 		newAllSubCmd(),
 	)
 
@@ -161,5 +163,32 @@ Usage:
 	f := cmd.Flags()
 	f.StringVar(&projectDir, "project-dir", "", "project directory, it must have PROJECT file")
 	f.StringVar(&namespace, "namespace", "", "CRD namespace, treat it as cluster scoped if not set")
+	return cmd
+}
+
+func newWebhookCmd() *cobra.Command {
+	o := &webhook.ManifestOptions{}
+	o.SetDefaults()
+
+	cmd := &cobra.Command{
+		Use:   "webhook",
+		Short: "Generates webhook related manifests",
+		Long: `Generate webhook related manifests from the webhook annotations in Go source files.
+Usage:
+# controller-gen webhook [--input-dir input_dir] [--output-dir output_dir] [--patch-output-dir patch-output_dir]
+`,
+		Run: func(cmd *cobra.Command, args []string) {
+			if err := webhook.Generate(o); err != nil {
+				log.Fatal(err)
+			}
+			fmt.Printf("webhook manifests generated under '%s' directory\n", o.OutputDir)
+		},
+	}
+
+	f := cmd.Flags()
+	f.StringVar(&o.InputDir, "input-dir", o.InputDir, "input directory pointing to Go source files")
+	f.StringVar(&o.OutputDir, "output-dir", o.OutputDir, "output directory where generated manifests will be saved.")
+	f.StringVar(&o.PatchOutputDir, "patch-output-dir", o.PatchOutputDir, "output directory where generated kustomize patch will be saved.")
+
 	return cmd
 }

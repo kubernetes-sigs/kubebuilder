@@ -18,6 +18,7 @@ package v1alpha1
 import (
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -51,6 +52,8 @@ type ToySpec struct {
 	Claim    v1.PersistentVolumeClaim `json:"claim,omitempty"`
 
 	Replicas *int32 `json:"replicas"`
+
+	Rook *intstr.IntOrString `json:"rook"`
 }
 
 // ToyStatus defines the observed state of Toy
@@ -67,6 +70,10 @@ type ToyStatus struct {
 // +k8s:openapi-gen=true
 // +kubebuilder:subresource:status
 // +kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.replicas,selectorpath=
+// +kubebuilder:printcolumn:name="toy",type="string",JSONPath=".status.conditions[?(@.type==\"Ready\")].status",description="descr1",format="date",priority=3
+// +kubebuilder:printcolumn:name="abc",type="integer",JSONPath="status",description="descr2",format="int32",priority=1
+// +kubebuilder:printcolumn:name="service",type="string",JSONPath=".status.conditions.ready",description="descr3",format="byte",priority=2
+// +kubebuilder:resource:path=services,shortName=ty
 type Toy struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

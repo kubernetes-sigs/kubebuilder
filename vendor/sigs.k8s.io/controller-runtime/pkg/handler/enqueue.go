@@ -36,7 +36,7 @@ type EnqueueRequestForObject struct{}
 // Create implements EventHandler
 func (e *EnqueueRequestForObject) Create(evt event.CreateEvent, q workqueue.RateLimitingInterface) {
 	if evt.Meta == nil {
-		enqueueLog.Error(nil, "CreateEvent received with no metadata", "CreateEvent", evt)
+		enqueueLog.Error(nil, "CreateEvent received with no metadata", "event", evt)
 		return
 	}
 	q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
@@ -53,7 +53,7 @@ func (e *EnqueueRequestForObject) Update(evt event.UpdateEvent, q workqueue.Rate
 			Namespace: evt.MetaOld.GetNamespace(),
 		}})
 	} else {
-		enqueueLog.Error(nil, "UpdateEvent received with no old metadata", "UpdateEvent", evt)
+		enqueueLog.Error(nil, "UpdateEvent received with no old metadata", "event", evt)
 	}
 
 	if evt.MetaNew != nil {
@@ -62,14 +62,14 @@ func (e *EnqueueRequestForObject) Update(evt event.UpdateEvent, q workqueue.Rate
 			Namespace: evt.MetaNew.GetNamespace(),
 		}})
 	} else {
-		enqueueLog.Error(nil, "UpdateEvent received with no new metadata", "UpdateEvent", evt)
+		enqueueLog.Error(nil, "UpdateEvent received with no new metadata", "event", evt)
 	}
 }
 
 // Delete implements EventHandler
 func (e *EnqueueRequestForObject) Delete(evt event.DeleteEvent, q workqueue.RateLimitingInterface) {
 	if evt.Meta == nil {
-		enqueueLog.Error(nil, "DeleteEvent received with no metadata", "DeleteEvent", evt)
+		enqueueLog.Error(nil, "DeleteEvent received with no metadata", "event", evt)
 		return
 	}
 	q.Add(reconcile.Request{NamespacedName: types.NamespacedName{
@@ -81,7 +81,7 @@ func (e *EnqueueRequestForObject) Delete(evt event.DeleteEvent, q workqueue.Rate
 // Generic implements EventHandler
 func (e *EnqueueRequestForObject) Generic(evt event.GenericEvent, q workqueue.RateLimitingInterface) {
 	if evt.Meta == nil {
-		enqueueLog.Error(nil, "GenericEvent received with no metadata", "GenericEvent", evt)
+		enqueueLog.Error(nil, "GenericEvent received with no metadata", "event", evt)
 		return
 	}
 	q.Add(reconcile.Request{NamespacedName: types.NamespacedName{

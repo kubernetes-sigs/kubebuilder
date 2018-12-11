@@ -51,7 +51,7 @@ func (e EventHandler) OnAdd(obj interface{}) {
 		c.Meta = o
 	} else {
 		log.Error(err, "OnAdd missing Meta",
-			"Object", obj, "Type", fmt.Sprintf("%T", obj))
+			"object", obj, "type", fmt.Sprintf("%T", obj))
 		return
 	}
 
@@ -60,7 +60,7 @@ func (e EventHandler) OnAdd(obj interface{}) {
 		c.Object = o
 	} else {
 		log.Error(nil, "OnAdd missing runtime.Object",
-			"Object", obj, "Type", fmt.Sprintf("%T", obj))
+			"object", obj, "type", fmt.Sprintf("%T", obj))
 		return
 	}
 
@@ -83,7 +83,7 @@ func (e EventHandler) OnUpdate(oldObj, newObj interface{}) {
 		u.MetaOld = o
 	} else {
 		log.Error(err, "OnUpdate missing MetaOld",
-			"Object", oldObj, "Type", fmt.Sprintf("%T", oldObj))
+			"object", oldObj, "type", fmt.Sprintf("%T", oldObj))
 		return
 	}
 
@@ -92,7 +92,7 @@ func (e EventHandler) OnUpdate(oldObj, newObj interface{}) {
 		u.ObjectOld = o
 	} else {
 		log.Error(nil, "OnUpdate missing ObjectOld",
-			"Object", oldObj, "Type", fmt.Sprintf("%T", oldObj))
+			"object", oldObj, "type", fmt.Sprintf("%T", oldObj))
 		return
 	}
 
@@ -101,7 +101,7 @@ func (e EventHandler) OnUpdate(oldObj, newObj interface{}) {
 		u.MetaNew = o
 	} else {
 		log.Error(err, "OnUpdate missing MetaNew",
-			"Object", newObj, "Type", fmt.Sprintf("%T", newObj))
+			"object", newObj, "type", fmt.Sprintf("%T", newObj))
 		return
 	}
 
@@ -110,7 +110,7 @@ func (e EventHandler) OnUpdate(oldObj, newObj interface{}) {
 		u.ObjectNew = o
 	} else {
 		log.Error(nil, "OnUpdate missing ObjectNew",
-			"Object", oldObj, "Type", fmt.Sprintf("%T", oldObj))
+			"object", oldObj, "type", fmt.Sprintf("%T", oldObj))
 		return
 	}
 
@@ -139,8 +139,8 @@ func (e EventHandler) OnDelete(obj interface{}) {
 		tombstone, ok := obj.(cache.DeletedFinalStateUnknown)
 		if !ok {
 			log.Error(nil, "Error decoding objects.  Expected cache.DeletedFinalStateUnknown",
-				"Type", fmt.Sprintf("%T", obj),
-				"Object", obj)
+				"type", fmt.Sprintf("%T", obj),
+				"object", obj)
 			return
 		}
 
@@ -153,7 +153,7 @@ func (e EventHandler) OnDelete(obj interface{}) {
 		d.Meta = o
 	} else {
 		log.Error(err, "OnDelete missing Meta",
-			"Object", obj, "Type", fmt.Sprintf("%T", obj))
+			"object", obj, "type", fmt.Sprintf("%T", obj))
 		return
 	}
 
@@ -162,7 +162,7 @@ func (e EventHandler) OnDelete(obj interface{}) {
 		d.Object = o
 	} else {
 		log.Error(nil, "OnDelete missing runtime.Object",
-			"Object", obj, "Type", fmt.Sprintf("%T", obj))
+			"object", obj, "type", fmt.Sprintf("%T", obj))
 		return
 	}
 

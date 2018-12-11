@@ -18,6 +18,7 @@ package manager
 
 import (
 	"fmt"
+	"net"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -33,6 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	internalrecorder "sigs.k8s.io/controller-runtime/pkg/internal/recorder"
 	"sigs.k8s.io/controller-runtime/pkg/leaderelection"
+	"sigs.k8s.io/controller-runtime/pkg/metrics"
 	"sigs.k8s.io/controller-runtime/pkg/recorder"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission/types"
@@ -112,12 +114,17 @@ type Options struct {
 	// For namespaced resources the cache will only hold objects from the desired namespace.
 	Namespace string
 
+	// MetricsBindAddress is the TCP address that the controller should bind to
+	// for serving prometheus metrics
+	MetricsBindAddress string
+
 	// Dependency injection for testing
 	newCache            func(config *rest.Config, opts cache.Options) (cache.Cache, error)
 	newClient           func(config *rest.Config, options client.Options) (client.Client, error)
 	newRecorderProvider func(config *rest.Config, scheme *runtime.Scheme, logger logr.Logger) (recorder.Provider, error)
 	newResourceLock     func(config *rest.Config, recorderProvider recorder.Provider, options leaderelection.Options) (resourcelock.Interface, error)
 	newAdmissionDecoder func(scheme *runtime.Scheme) (types.Decoder, error)
+	newMetricsListener  func(addr string) (net.Listener, error)
 }
 
 // Runnable allows a component to be started.
@@ -186,6 +193,15 @@ func New(config *rest.Config, options Options) (Manager, error) {
 		return nil, err
 	}
 
+	// Create the mertics listener. This will throw an error if the metrics bind
+	// address is invalid or already in use.
+	metricsListener, err := options.newMetricsListener(options.MetricsBindAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	stop := make(chan struct{})
+
 	return &controllerManager{
 		config:           config,
 		scheme:           options.Scheme,
@@ -204,6 +220,9 @@ func New(config *rest.Config, options Options) (Manager, error) {
 		recorderProvider: recorderProvider,
 		resourceLock:     resourceLock,
 		mapper:           mapper,
+		metricsListener:  metricsListener,
+		internalStop:     stop,
+		internalStopper:  stop,
 	}, nil
 }
 
@@ -240,6 +259,10 @@ func setOptionsDefaults(options Options) Options {
 
 	if options.newAdmissionDecoder == nil {
 		options.newAdmissionDecoder = admission.NewDecoder
+	}
+
+	if options.newMetricsListener == nil {
+		options.newMetricsListener = metrics.NewListener
 	}
 
 	return options

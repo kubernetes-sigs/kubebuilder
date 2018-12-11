@@ -24,7 +24,6 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/gengo/types"
 )
@@ -34,6 +33,13 @@ const (
 	statusReplicasPath = "statuspath"
 	labelSelectorPath  = "selectorpath"
 	jsonPathError      = "invalid scale path. specpath, statuspath key-value pairs are required, only selectorpath key-value is optinal. For example: // +kubebuilder:subresource:scale:specpath=.spec.replica,statuspath=.status.replica,selectorpath=.spec.Label"
+	printColumnName    = "name"
+	printColumnType    = "type"
+	printColumnDescr   = "description"
+	printColumnPath    = "JSONPath"
+	printColumnFormat  = "format"
+	printColumnPri     = "priority"
+	printColumnError   = "invalid printcolumn path. name,type, and JSONPath are required kye-value pairs and rest of the fields are optinal. For example: // +kubebuilder:printcolumn:name=abc,type=string,JSONPath=status"
 )
 
 // Options contains the parser options
@@ -45,7 +51,7 @@ type Options struct {
 	SkipRBACValidation bool
 }
 
-// IsAPIResource returns true if:
+// IsAPIResource returns true if either of the two conditions become true:
 // 1. t has a +resource/+kubebuilder:resource comment tag
 // 2. t has TypeMeta and ObjectMeta in its member list.
 func IsAPIResource(t *types.Type) bool {
@@ -105,6 +111,16 @@ func IsController(t *types.Type) bool {
 func IsRBAC(t *types.Type) bool {
 	for _, c := range t.CommentLines {
 		if strings.Contains(c, "+rbac") || strings.Contains(c, "+kubebuilder:rbac") {
+			return true
+		}
+	}
+	return false
+}
+
+// hasPrintColumn returns true if t has a +printcolumn or +kubebuilder:printcolumn annotation.
+func hasPrintColumn(t *types.Type) bool {
+	for _, c := range t.CommentLines {
+		if strings.Contains(c, "+printcolumn") || strings.Contains(c, "+kubebuilder:printcolumn") {
 			return true
 		}
 	}
@@ -394,4 +410,98 @@ func parseScaleParams(t *types.Type) (map[string]string, error) {
 		}
 	}
 	return nil, fmt.Errorf(jsonPathError)
+}
+
+// printColumnKV parses key-value string formatted as "foo=bar" and returns key and value.
+func printColumnKV(s string) (key, value string, err error) {
+	kv := strings.SplitN(s, "=", 2)
+	if len(kv) != 2 {
+		err = fmt.Errorf("invalid key value pair")
+		return key, value, err
+	}
+	key, value = kv[0], kv[1]
+	if strings.HasPrefix(value, "\"") && strings.HasSuffix(value, "\"") {
+		value = value[1 : len(value)-1]
+	}
+	return key, value, err
+}
+
+// helperPrintColumn is a helper function for the parsePrintColumnParams to compute printer columns.
+func helperPrintColumn(parts string, comment string) (v1beta1.CustomResourceColumnDefinition, error) {
+	config := v1beta1.CustomResourceColumnDefinition{}
+	var count int
+	part := strings.Split(parts, ",")
+	if len(part) < 3 {
+		return v1beta1.CustomResourceColumnDefinition{}, fmt.Errorf(printColumnError)
+	}
+
+	for _, s := range part {
+		fmt.Printf("\n[debug] %s", s)
+	}
+	for _, elem := range strings.Split(parts, ",") {
+		key, value, err := printColumnKV(elem)
+		if err != nil {
+			return v1beta1.CustomResourceColumnDefinition{},
+				fmt.Errorf("//+kubebuilder:printcolumn: tags must be key value pairs.Expected "+
+					"keys [name=<name>,type=<type>,description=<descr>,format=<format>] "+
+					"Got string: [%s]", parts)
+		}
+		if key == printColumnName || key == printColumnType || key == printColumnPath {
+			count++
+		}
+		switch key {
+		case printColumnName:
+			config.Name = value
+		case printColumnType:
+			if value == "integer" || value == "number" || value == "string" || value == "boolean" || value == "date" {
+				config.Type = value
+			} else {
+				return v1beta1.CustomResourceColumnDefinition{}, fmt.Errorf("invalid value for %s printcolumn", printColumnType)
+			}
+		case printColumnFormat:
+			if config.Type == "integer" && (value == "int32" || value == "int64") {
+				config.Format = value
+			} else if config.Type == "number" && (value == "float" || value == "double") {
+				config.Format = value
+			} else if config.Type == "string" && (value == "byte" || value == "date" || value == "date-time" || value == "password") {
+				config.Format = value
+			} else {
+				return v1beta1.CustomResourceColumnDefinition{}, fmt.Errorf("invalid value for %s printcolumn", printColumnFormat)
+			}
+		case printColumnPath:
+			config.JSONPath = value
+		case printColumnPri:
+			i, err := strconv.Atoi(value)
+			v := int32(i)
+			if err != nil {
+				return v1beta1.CustomResourceColumnDefinition{}, fmt.Errorf("invalid value for %s printcolumn", printColumnPri)
+			}
+			config.Priority = v
+		case printColumnDescr:
+			config.Description = value
+		default:
+			return v1beta1.CustomResourceColumnDefinition{}, fmt.Errorf(printColumnError)
+		}
+	}
+	if count != 3 {
+		return v1beta1.CustomResourceColumnDefinition{}, fmt.Errorf(printColumnError)
+	}
+	return config, nil
+}
+
+// printcolumn requires name,type,JSONPath fields and rest of the field are optional
+// +kubebuilder:printcolumn:name=<name>,type=<type>,description=<desc>,JSONPath:<.spec.Name>,priority=<int32>,format=<format>
+func parsePrintColumnParams(t *types.Type) ([]v1beta1.CustomResourceColumnDefinition, error) {
+	result := []v1beta1.CustomResourceColumnDefinition{}
+	for _, comment := range t.CommentLines {
+		if strings.Contains(comment, "+kubebuilder:printcolumn") {
+			parts := strings.Replace(comment, "+kubebuilder:printcolumn:", "", -1)
+			res, err := helperPrintColumn(parts, comment)
+			if err != nil {
+				return []v1beta1.CustomResourceColumnDefinition{}, err
+			}
+			result = append(result, res)
+		}
+	}
+	return result, nil
 }

@@ -25,6 +25,7 @@ import (
 	"github.com/ghodss/yaml"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-tools/pkg/internal/general"
 )
 
 // ManifestOptions represent options for generating the RBAC manifests.
@@ -73,14 +74,17 @@ func Generate(o *ManifestOptions) error {
 		return err
 	}
 
-	rules, err := ParseDir(o.InputDir)
+	ops := parserOptions{
+		rules: []rbacv1.PolicyRule{},
+	}
+	err := general.ParseDir(o.InputDir, ops.parseAnnotation)
 	if err != nil {
 		return fmt.Errorf("failed to parse the input dir %v", err)
 	}
-	if len(rules) == 0 {
+	if len(ops.rules) == 0 {
 		return nil
 	}
-	roleManifest, err := getClusterRoleManifest(rules, o)
+	roleManifest, err := getClusterRoleManifest(ops.rules, o)
 	if err != nil {
 		return fmt.Errorf("failed to generate role manifest %v", err)
 	}

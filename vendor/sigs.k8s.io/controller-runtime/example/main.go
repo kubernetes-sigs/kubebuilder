@@ -39,11 +39,16 @@ import (
 var log = logf.Log.WithName("example-controller")
 
 func main() {
+	var disableWebhookConfigInstaller bool
+	flag.BoolVar(&disableWebhookConfigInstaller, "disable-webhook-config-installer", false,
+		"disable the installer in the webhook server, so it won't install webhook configuration resources during bootstrapping")
+
 	flag.Parse()
 	logf.SetLogger(logf.ZapLogger(false))
 	entryLog := log.WithName("entrypoint")
 
 	// Setup a Manager
+	entryLog.Info("setting up manager")
 	mgr, err := manager.New(config.GetConfigOrDie(), manager.Options{})
 	if err != nil {
 		entryLog.Error(err, "unable to set up overall controller manager")
@@ -51,6 +56,7 @@ func main() {
 	}
 
 	// Setup a new controller to Reconciler ReplicaSets
+	entryLog.Info("Setting up controller")
 	c, err := controller.New("foo-controller", mgr, controller.Options{
 		Reconciler: &reconcileReplicaSet{client: mgr.GetClient(), log: log.WithName("reconciler")},
 	})
@@ -73,6 +79,7 @@ func main() {
 	}
 
 	// Setup webhooks
+	entryLog.Info("setting up webhooks")
 	mutatingWebhook, err := builder.NewWebhookBuilder().
 		Name("mutating.k8s.io").
 		Mutating().
@@ -99,9 +106,11 @@ func main() {
 		os.Exit(1)
 	}
 
+	entryLog.Info("setting up webhook server")
 	as, err := webhook.NewServer("foo-admission-server", mgr, webhook.ServerOptions{
 		Port:    9876,
 		CertDir: "/tmp/cert",
+		DisableWebhookConfigInstaller: &disableWebhookConfigInstaller,
 		BootstrapOptions: &webhook.BootstrapOptions{
 			Secret: &apitypes.NamespacedName{
 				Namespace: "default",
@@ -122,12 +131,15 @@ func main() {
 		entryLog.Error(err, "unable to create a new webhook server")
 		os.Exit(1)
 	}
+
+	entryLog.Info("registering webhooks to the webhook server")
 	err = as.Register(mutatingWebhook, validatingWebhook)
 	if err != nil {
 		entryLog.Error(err, "unable to register webhooks in the admission server")
 		os.Exit(1)
 	}
 
+	entryLog.Info("starting manager")
 	if err := mgr.Start(signals.SetupSignalHandler()); err != nil {
 		entryLog.Error(err, "unable to run manager")
 		os.Exit(1)

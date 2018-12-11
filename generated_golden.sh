@@ -22,15 +22,15 @@ cd test/project
 ln -s ../../vendor vendor
 ../../bin/kubebuilder init --domain testproject.org --license apache2 --owner "The Kubernetes authors" --dep=false
 ../../bin/kubebuilder create api --group crew --version v1 --kind FirstMate --controller=true --resource=true --make=false
-../../bin/kubebuilder alpha webhook --group crew --version v1 --kind FirstMate --type=mutating --operations=create,update
-../../bin/kubebuilder alpha webhook --group crew --version v1 --kind FirstMate --type=mutating --operations=delete
+../../bin/kubebuilder alpha webhook --group crew --version v1 --kind FirstMate --type=mutating --operations=create,update --make=false
+../../bin/kubebuilder alpha webhook --group crew --version v1 --kind FirstMate --type=mutating --operations=delete --make=false
 ../../bin/kubebuilder create api --group ship --version v1beta1 --kind Frigate --example=false --controller=true --resource=true --make=false
-../../bin/kubebuilder alpha webhook --group ship --version v1beta1 --kind Frigate --type=validating --operations=update
+../../bin/kubebuilder alpha webhook --group ship --version v1beta1 --kind Frigate --type=validating --operations=update --make=false
 ../../bin/kubebuilder create api --group creatures --version v2alpha1 --kind Kraken --namespaced=false --example=false --controller=true --resource=true --make=false
-../../bin/kubebuilder alpha webhook --group creatures --version v2alpha1 --kind Kraken --type=validating --operations=create
-../../bin/kubebuilder create api --group core --version v1 --kind Namespace --example=false --controller=true --resource=false --namespaced=false
-../../bin/kubebuilder alpha webhook --group core --version v1 --kind Namespace --type=mutating --operations=update
-../../bin/kubebuilder create api --group policy --version v1beta1 --kind HealthCheckPolicy --example=false --controller=true --resource=true --namespaced=false
+../../bin/kubebuilder alpha webhook --group creatures --version v2alpha1 --kind Kraken --type=validating --operations=create --make=false
+../../bin/kubebuilder create api --group core --version v1 --kind Namespace --example=false --controller=true --resource=false --namespaced=false --make=false
+../../bin/kubebuilder alpha webhook --group core --version v1 --kind Namespace --type=mutating --operations=update --make=false
+../../bin/kubebuilder create api --group policy --version v1beta1 --kind HealthCheckPolicy --example=false --controller=true --resource=true --namespaced=false --make=false
 make
 rm -rf ./bin/
 cd -
