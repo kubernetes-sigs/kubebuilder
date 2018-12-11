@@ -62,6 +62,12 @@ spec:
   ports:
   - port: 443
 ---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: controller-manager
+  namespace: system
+---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -110,6 +116,7 @@ spec:
         - mountPath: /tmp/cert
           name: cert
           readOnly: true
+      serviceAccountName: controller-manager
       terminationGracePeriodSeconds: 10
       volumes:
       - name: cert

@@ -147,7 +147,7 @@ func (o *projectOptions) runInit() {
 		&manager.Webhook{},
 		&manager.Config{Image: imgName},
 		&project.GitIgnore{},
-		&project.Kustomize{},
+		&project.Kustomize{Pattern: o.pattern},
 		&project.KustomizeImagePatch{},
 		&project.KustomizePrometheusMetricsPatch{},
 		&project.KustomizeResourcesPatch{})

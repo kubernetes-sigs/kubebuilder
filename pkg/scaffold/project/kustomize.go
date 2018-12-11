@@ -20,6 +20,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"sigs.k8s.io/kubebuilder/pkg/scaffold"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 )
 
@@ -31,6 +32,9 @@ type Kustomize struct {
 
 	// Prefix to use for name prefix customization
 	Prefix string
+
+	// Pattern is the style of controller we're building
+	Pattern scaffold.Pattern
 }
 
 // GetInput implements input.File
@@ -51,8 +55,16 @@ func (c *Kustomize) GetInput() (input.Input, error) {
 	return c.Input, nil
 }
 
+// Namespace returns the namespace to use
+func (c *Kustomize) Namespace() string {
+	if c.Pattern == scaffold.PatternAddon {
+		return "kube-system"
+	}
+	return c.Prefix + "-system"
+}
+
 var kustomizeTemplate = `# Adds namespace to all resources.
-namespace: {{.Prefix}}-system
+namespace: {{.Namespace}}
 
 # Value of this field is prepended to the
 # names of all resources, e.g. a deployment named
