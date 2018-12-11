@@ -12,24 +12,21 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# Build the following into binaries for darwin and then host them in a tar.gz file in an alpine image
-# - apiserver
-# - kubectl
-# - kube-controller-manager
-# - etcd
-# - *-gen code generators
-# - reference-docs
+# Build or fetch the following binaries for darwin and then host them in a tar.gz file in an alpine image
+# - apiserver (build)
+# - kubectl (fetch)
+# - etcd (fetch)
 
-# Build k8s.io/kubernetes binaries
-FROM golang:1.10.2-stretch as kubernetes-darwin
+FROM golang:1.11.2-stretch as darwin
 # Install tools
 RUN apt update
 RUN apt install rsync -y
+RUN apt-get install unzip
 RUN go get github.com/jteeuwen/go-bindata/go-bindata
 ENV CGO 0
 ENV DEST /usr/local/kubebuilder/bin/
 RUN mkdir -p $DEST || echo ""
-RUN git clone https://github.com/kubernetes/kubernetes $GOPATH/src/k8s.io/kubernetes --depth=1 -b release-1.11
+RUN git clone https://github.com/kubernetes/kubernetes $GOPATH/src/k8s.io/kubernetes --depth=1 -b v1.12.3
 WORKDIR /go/src/k8s.io/kubernetes
 
 # Build for linux first otherwise it won't work for darwin - :(
@@ -39,62 +36,16 @@ ENV KUBE_BUILD_PLATFORMS darwin/amd64
 RUN make WHAT=cmd/kube-apiserver
 RUN cp _output/local/bin/$KUBE_BUILD_PLATFORMS/kube-apiserver $DEST
 
-ENV KUBE_BUILD_PLATFORMS linux/amd64
-RUN make WHAT=cmd/kube-controller-manager
-ENV KUBE_BUILD_PLATFORMS darwin/amd64
-RUN make WHAT=cmd/kube-controller-manager
-RUN cp _output/local/bin/$KUBE_BUILD_PLATFORMS/kube-controller-manager $DEST
+RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.12.3/bin/darwin/amd64/kubectl
+RUN chmod +x kubectl
+RUN cp kubectl $DEST
 
-ENV KUBE_BUILD_PLATFORMS linux/amd64
-RUN make WHAT=cmd/kubectl
-ENV KUBE_BUILD_PLATFORMS darwin/amd64
-RUN make WHAT=cmd/kubectl
-RUN cp _output/local/bin/$KUBE_BUILD_PLATFORMS/kubectl $DEST
+ENV ETCD_VERSION="3.3.10"
+ENV ETCD_DOWNLOAD_FILE="etcd-v${ETCD_VERSION}-darwin-amd64.zip"
+RUN curl -LO https://github.com/coreos/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-darwin-amd64.zip -o ${ETCD_DOWNLOAD_FILE}
+RUN unzip -o ${ETCD_DOWNLOAD_FILE}
+RUN cp etcd-v${ETCD_VERSION}-darwin-amd64/etcd $DEST
 
-# Build coreos/etcd binaries
-FROM golang:1.10.2-stretch as etcd-darwin
-ENV CGO 0
-ENV GOOS darwin
-ENV GOARCH amd64
-ENV DEST=/usr/local/kubebuilder/bin/
-RUN mkdir -p $DEST || echo ""
-RUN git clone https://github.com/coreos/etcd $GOPATH/src/github.com/coreos/etcd --depth=1
-RUN go build -o $DEST/etcd github.com/coreos/etcd
-
-# Build k8s.io/code-generator binaries
-FROM golang:1.10.2-stretch as code-generator-darwin
-ENV CGO 0
-ENV GOOS darwin
-ENV GOARCH amd64
-ENV DEST /usr/local/kubebuilder/bin/
-RUN mkdir -p $DEST || echo ""
-RUN git clone https://github.com/kubernetes/code-generator $GOPATH/src/k8s.io/code-generator --depth=1 -b release-1.11
-RUN go build -o $DEST/client-gen k8s.io/code-generator/cmd/client-gen
-RUN go build -o $DEST/conversion-gen k8s.io/code-generator/cmd/conversion-gen
-RUN go build -o $DEST/deepcopy-gen k8s.io/code-generator/cmd/deepcopy-gen
-RUN go build -o $DEST/defaulter-gen k8s.io/code-generator/cmd/defaulter-gen
-RUN go build -o $DEST/informer-gen k8s.io/code-generator/cmd/informer-gen
-RUN go build -o $DEST/lister-gen k8s.io/code-generator/cmd/lister-gen
-RUN go build -o $DEST/openapi-gen k8s.io/code-generator/cmd/openapi-gen
-
-# Build kubernetes-incubator/reference-docs binaries
-
-FROM golang:1.10.2-stretch as reference-docs-darwin
-ENV CGO 0
-ENV GOOS darwin
-ENV GOARCH amd64
-ENV DEST /usr/local/kubebuilder/bin/
-RUN mkdir -p $DEST || echo ""
-RUN git clone https://github.com/kubernetes-incubator/reference-docs $GOPATH/src/github.com/kubernetes-incubator/reference-docs --branch kubebuilder  --depth=1
-RUN go build -o $DEST/gen-apidocs github.com/kubernetes-incubator/reference-docs/gen-apidocs
-
-# Copy all binaries into a single tar.gz file
-FROM golang:1.10.2-stretch as darwin
-RUN mkdir -p /usr/local/kubebuilder/bin/
-COPY --from=etcd-darwin /usr/local/kubebuilder/bin/* /usr/local/kubebuilder/bin/
-COPY --from=kubernetes-darwin /usr/local/kubebuilder/bin/* /usr/local/kubebuilder/bin/
-COPY --from=code-generator-darwin /usr/local/kubebuilder/bin/* /usr/local/kubebuilder/bin/
-COPY --from=reference-docs-darwin /usr/local/kubebuilder/bin/* /usr/local/kubebuilder/bin/
 WORKDIR /usr/local
 RUN tar -czvf /kubebuilder_darwin_amd64.tar.gz kubebuilder/
 
