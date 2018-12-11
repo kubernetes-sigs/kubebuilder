@@ -246,8 +246,8 @@ func checkGoVersion(verStr string) error {
 		return fmt.Errorf("error parsing minor version '%s': %s", m[2], err)
 	}
 
-	if major < 1 || minor < 10 {
-		return fmt.Errorf("requires version >= 1.10")
+	if major < 1 || minor < 11 {
+		return fmt.Errorf("requires version >= 1.11")
 	}
 
 	return nil
