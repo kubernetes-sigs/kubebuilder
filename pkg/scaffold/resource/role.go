@@ -23,7 +23,7 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 )
 
-var _ input.File = &RoleBinding{}
+var _ input.File = &Role{}
 
 // Role scaffolds the config/manager/group_role_rbac.yaml file
 type Role struct {
