@@ -26,10 +26,11 @@ func TestCheckGoVersion(t *testing.T) {
 	}{
 		{"go1.8", true},
 		{"go1.9", true},
-		{"go1.10", false},
-		{"go1.10rc", false},
-		{"go1.10.1", false},
-		{"go1.11rc2", false},
+		{"go1.10", true},
+		{"go1.11", false},
+		{"go1.11rc", false},
+		{"go1.11.1", false},
+		{"go1.12rc2", false},
 	}
 
 	for _, test := range tests {
