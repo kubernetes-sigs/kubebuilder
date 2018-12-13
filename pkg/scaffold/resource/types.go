@@ -57,7 +57,7 @@ package {{ .Resource.Version }}
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 {{- if .Resource.PatternAddon }}
-        "sigs.k8s.io/controller-runtime/alpha/patterns/addon"
+        addon "sigs.k8s.io/controller-runtime/alpha/patterns/addon/pkg/apis/v1alpha1"
 {{- end }}
 )
 
