@@ -44,6 +44,7 @@ var configTemplate = `apiVersion: v1
 kind: Namespace
 metadata:
   labels:
+    control-plane: controller-manager
     controller-tools.k8s.io: "1.0"
   name: system
 ---
