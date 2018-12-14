@@ -36,6 +36,10 @@ func init() {
 
 // FrigateUpdateHandler handles Frigate
 type FrigateUpdateHandler struct {
+	// To use the client, you need to do the following:
+	// - uncomment it
+	// - import sigs.k8s.io/controller-runtime/pkg/client
+	// - uncomment the InjectClient method at the bottom of this file.
 	// Client  client.Client
 
 	// Decoder decodes objects
