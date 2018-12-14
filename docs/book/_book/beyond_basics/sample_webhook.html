@@ -69,6 +69,8 @@
     <link rel="shortcut icon" href="../gitbook/images/favicon.ico" type="image/x-icon">
 
     
+    <link rel="next" href="webhook_installer_generator.html" />
+    
     
     <link rel="prev" href="what_is_a_webhook.html" />
     
@@ -586,6 +588,19 @@
             
         </li>
     
+        <li class="chapter " data-level="4.3.3" data-path="webhook_installer_generator.html">
+            
+                <a href="webhook_installer_generator.html">
+            
+                    
+                    Webhook Configuration Installation
+            
+                </a>
+            
+
+            
+        </li>
+    
 
             </ul>
             
@@ -817,7 +832,8 @@ You can incrementally set the configuration of a webhook and then invoke <code>B
 <h4 id="creating-a-server">Creating a Server</h4>
 <div class="api-method"><div class="api-method-definition"><p>A Server registers Webhook Configuration with the apiserver and creates an HTTP server to route requests to the handlers.</p>
 <p>The server is behind a Kubernetes Service and provides a certificate to the apiserver when serving requests.</p>
-<p>The Server depends on a Kubernetes Secret containing this certificate to be mounted under <code>CertDir</code>.</p>
+<p>The Server depends on a Kubernetes Secret containing this certificate to be mounted under <code>CertDir</code>.
+The Secret needs to present but not have to be prepopulated before the manager pod starts. </p>
 <p>If the Secret is empty, during bootstrapping the Server will generate a certificate and write it into the Secret.</p>
 <p>A new webhook server can be created by invoking <code>webhook.NewServer</code>.
 The Server will be registered to the provided manager.
@@ -939,7 +955,7 @@ to <code>false</code> and provide an informational message as reason.</li>
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"Webhook Example","level":"4.3.2","depth":2,"next":{"title":"Client-Go","level":"4.4","depth":1,"ref":"","articles":[{"title":"Generated Informers","level":"4.4.1","depth":2,"path":"beyond_basics/using_client_go_informers.md","ref":"beyond_basics/using_client_go_informers.md","articles":[]}]},"previous":{"title":"What is a Webhook","level":"4.3.1","depth":2,"path":"beyond_basics/what_is_a_webhook.md","ref":"beyond_basics/what_is_a_webhook.md","articles":[]},"dir":"ltr"},"config":{"plugins":["theme-api","panel","sequence-diagrams","ga"],"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"panel":{},"search":{},"sequence-diagrams":{"theme":"simple"},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"highlight":{},"theme-api":{"languages":[],"split":true,"theme":"light"},"ga":{"configuration":"auto","token":"UA-119864590-1"},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","author":"Phillip Wittrock","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"The Kubebuilder Book","gitbook":">= 3.0.0"},"file":{"path":"beyond_basics/sample_webhook.md","mtime":"2018-09-24T20:41:43.162Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-11-30T18:51:45.140Z"},"basePath":"..","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"Webhook Example","level":"4.3.2","depth":2,"next":{"title":"Webhook Configuration Installation","level":"4.3.3","depth":2,"path":"beyond_basics/webhook_installer_generator.md","ref":"beyond_basics/webhook_installer_generator.md","articles":[]},"previous":{"title":"What is a Webhook","level":"4.3.1","depth":2,"path":"beyond_basics/what_is_a_webhook.md","ref":"beyond_basics/what_is_a_webhook.md","articles":[]},"dir":"ltr"},"config":{"plugins":["theme-api","panel","sequence-diagrams","ga"],"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"panel":{},"search":{},"sequence-diagrams":{"theme":"simple"},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"highlight":{},"theme-api":{"languages":[],"split":true,"theme":"light"},"ga":{"configuration":"auto","token":"UA-119864590-1"},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","author":"Phillip Wittrock","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"The Kubebuilder Book","gitbook":">= 3.0.0"},"file":{"path":"beyond_basics/sample_webhook.md","mtime":"2018-12-05T22:32:59.586Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-12-14T22:32:12.457Z"},"basePath":"..","book":{"language":""}});
         });
     </script>
 </div>

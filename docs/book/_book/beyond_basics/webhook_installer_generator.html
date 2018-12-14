@@ -4,7 +4,7 @@
     <head>
         <meta charset="UTF-8">
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
-        <title>Generating CRD · The Kubebuilder Book</title>
+        <title>Webhook Configuration Installation · The Kubebuilder Book</title>
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta name="description" content="">
         <meta name="generator" content="GitBook 3.2.3">
@@ -69,10 +69,8 @@
     <link rel="shortcut icon" href="../gitbook/images/favicon.ico" type="image/x-icon">
 
     
-    <link rel="next" href="generating_documentation.html" />
     
-    
-    <link rel="prev" href="running_tests.html" />
+    <link rel="prev" href="sample_webhook.html" />
     
 
     </head>
@@ -420,7 +418,7 @@
             
         </li>
     
-        <li class="chapter active" data-level="4.1.3" data-path="generating_crd.html">
+        <li class="chapter " data-level="4.1.3" data-path="generating_crd.html">
             
                 <a href="generating_crd.html">
             
@@ -588,7 +586,7 @@
             
         </li>
     
-        <li class="chapter " data-level="4.3.3" data-path="webhook_installer_generator.html">
+        <li class="chapter active" data-level="4.3.3" data-path="webhook_installer_generator.html">
             
                 <a href="webhook_installer_generator.html">
             
@@ -720,7 +718,7 @@
     <!-- Title -->
     <h1>
         <i class="fa fa-circle-o-notch fa-spin"></i>
-        <a href=".." >Generating CRD</a>
+        <a href=".." >Webhook Configuration Installation</a>
     </h1>
 </div>
 
@@ -735,109 +733,117 @@
     
                                 <section class="normal markdown-section">
                                 
-                                <h1 id="generating-crd">Generating CRD</h1>
-<p>Kubebuilder provides a tool named <code>controller-gen</code> to generate manifests for CustomResourceDefinitions. The tool resides in the <a href="http://sigs.k8s.io/controller-tools" target="_blank">controller-tools</a> repository which is vendored in every project. If you examine the <code>Makefile</code> in the project, you will see a target named <code>manifests</code> as shown below. <code>manifests</code> target is also listed as prerequisite for other targets like <code>run</code>, <code>tests</code>, <code>deploy</code> etc to ensure CRD manifests are regenerated when needed.</p>
-<pre><code class="lang-sh"><span class="hljs-comment"># Generate manifests e.g. CRD, RBAC etc.</span>
-manifests:
-    go run vendor/sigs.k8s.io/controller-tools/cmd/controller-gen/main.go all
-</code></pre>
-<p>When you run <code>make manifests</code>, you should see an output like below. CRDs are generated under <code>configs/crds</code> directory.</p>
-<pre><code class="lang-sh">$ make manifests
-go run vendor/sigs.k8s.io/controller-tools/cmd/controller-gen/main.go all
-CRD manifests generated under <span class="hljs-string">&apos;&lt;curr_dir&gt;/config/crds&apos;</span>
-RBAC manifests generated under <span class="hljs-string">&apos;&lt;curr_dir&gt;/config/rbac&apos;</span>
-</code></pre>
-<p>Though <code>controller-gen</code> generates manifests for RBAC as well, but this section describes the generation of CRD manifest. </p>
-<p><code>controller-gen</code> reads kubebuilder annotations of the form <code>// +kubebuilder:something...</code> defined as Go comments in the <code>&lt;your-api-kind&gt;_types.go</code> file under <code>pkg/apis/...</code> to produce the CRD manifests. Sections below describe various supported annotations.</p>
-<h2 id="validation">Validation</h2>
-<p>CRDs support <a href="https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#validation" target="_blank">validation</a> by definining (<a href="https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.0.md#schemaObject" target="_blank">OpenAPI v3 schema</a>) in the validation section. To learn more about the validation feature, refer to the original docs <a href="https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#validation" target="_blank">here</a>. One can specify validation for a field by annotating the field with kubebuilder annotation which is of the form<code>// +kubebuilder:validation:&lt;key=value&gt;</code>. If you want to specify multiple validations for a field, you can add multiple such annotation as demonstrated in the example below.</p>
-<p>Currently, supporting keys are <code>Maximum</code>, <code>Minimum</code>, <code>MaxLength</code>, <code>MinLength</code>, <code>MaxItems</code>, <code>MinItems</code>, <code>UniqueItems</code>, <code>Enum</code>, <code>Pattern</code>, <code>ExclusiveMaximum</code>,
- <code>ExclusiveMinimum</code>, <code>MultipleOf</code>, <code>Format</code>.  The <code>// +kubebuilder:validation:Pattern=.+:.+</code> annotation specifies the Pattern validation requiring that the <code>Image</code> field match the regular expression <code>.+:.+</code></p>
-<p><strong>Example:</strong></p>
-<pre><code class="lang-go"><span class="hljs-keyword">type</span> ToySpec <span class="hljs-keyword">struct</span> {
-
-    <span class="hljs-comment">// +kubebuilder:validation:Maximum=100</span>
-    <span class="hljs-comment">// +kubebuilder:validation:Minimum=1</span>
-    <span class="hljs-comment">// +kubebuilder:validation:ExclusiveMinimum=true</span>
-    Power  <span class="hljs-keyword">float32</span> <span class="hljs-string">`json:&quot;power,omitempty&quot;`</span>
-
-    Bricks <span class="hljs-keyword">int32</span>   <span class="hljs-string">`json:&quot;bricks,omitempty&quot;`</span>
-    <span class="hljs-comment">// +kubebuilder:validation:MaxLength=15</span>
-    <span class="hljs-comment">// +kubebuilder:validation:MinLength=1</span>
-    Name <span class="hljs-keyword">string</span> <span class="hljs-string">`json:&quot;name,omitempty&quot;`</span>
-
-    <span class="hljs-comment">// +kubebuilder:validation:MaxItems=500</span>
-    <span class="hljs-comment">// +kubebuilder:validation:MinItems=1</span>
-    <span class="hljs-comment">// +kubebuilder:validation:UniqueItems=false</span>
-    Knights []<span class="hljs-keyword">string</span> <span class="hljs-string">`json:&quot;knights,omitempty&quot;`</span>
-
-    <span class="hljs-comment">// +kubebuilder:validation:Enum=Lion,Wolf,Dragon</span>
-    Alias <span class="hljs-keyword">string</span> <span class="hljs-string">`json:&quot;alias,omitempty&quot;`</span>
-
-    <span class="hljs-comment">// +kubebuilder:validation:Enum=1,2,3</span>
-    Rank    <span class="hljs-keyword">int</span>    <span class="hljs-string">`json:&quot;rank&quot;`</span>
-}
-</code></pre>
-<h2 id="additional-printer-columns">Additional printer columns</h2>
-<p>Starting with Kubernetes 1.11, kubectl uses server-side printing. The server
-decides which columns are shown by the kubectl get command. You can 
-<a href="https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#additional-printer-columns" target="_blank">customize these columns using a CustomResourceDefinition</a>.
-To add an additional column, add a comment with the following annotation format
-just above the struct definition of the Kind.</p>
-<p>Format: <code>// +kubebuilder:printcolumn:name=&quot;Name&quot;,type=&quot;type&quot;,JSONPath=&quot;json-path&quot;,description=&quot;desc&quot;,priority=&quot;priority&quot;,format=&quot;format&quot;</code></p>
-<p>Note that <code>description</code>, <code>priority</code> and <code>format</code> are optional. Refer to the
-<a href="https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#additional-printer-columns" target="_blank">additonal printer columns docs</a>
-to learn more about the values of <code>name</code>, <code>type</code>, <code>JsonPath</code>, <code>description</code>, <code>priority</code> and <code>format</code>.</p>
-<p>The following example adds the <code>Spec</code>, <code>Replicas</code>, and <code>Age</code> columns.</p>
-<pre><code class="lang-Go"><span class="hljs-comment">// +kubebuilder:printcolumn:name=&quot;Spec&quot;,type=&quot;integer&quot;,JSONPath=&quot;.spec.cronSpec&quot;,description=&quot;status of the kind&quot;</span>
-<span class="hljs-comment">// +kubebuilder:printcolumn:name=&quot;Replicas&quot;,type=&quot;integer&quot;,JSONPath=&quot;.spec.Replicas&quot;,description=&quot;The number of jobs launched by the CronJob&quot;</span>
-<span class="hljs-comment">// +kubebuilder:printcolumn:name=&quot;Age&quot;,type=&quot;date&quot;,JSONPath=&quot;.metadata.creationTimestamp&quot;</span>
-<span class="hljs-keyword">type</span> CronTab <span class="hljs-keyword">struct</span> {
-    metav1.TypeMeta   <span class="hljs-string">`json:&quot;,inline&quot;`</span>
-    metav1.ObjectMeta <span class="hljs-string">`json:&quot;metadata,omitempty&quot;`</span>
-
-    Spec   CronTabSpec   <span class="hljs-string">`json:&quot;spec,omitempty&quot;`</span>
-    Status CronTabStatus <span class="hljs-string">`json:&quot;status,omitempty&quot;`</span>
-}
-</code></pre>
-<h2 id="subresource">Subresource</h2>
-<p>Custom resources support <code>/status</code> and <code>/scale</code> subresources as of kubernetes
-1.13 release. You can learn more about the subresources <a href="https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#status-subresource" target="_blank">here</a>.</p>
-<h3 id="1-status">1. Status</h3>
-<p>To enable <code>/status</code> subresource, annotate the kind with <code>// +kubebuilder:subresource:status</code> format.</p>
-<h3 id="2-scale">2. Scale</h3>
-<p>To enable <code>/scale</code> subresource, annotate the kind with <code>// +kubebuilder:subresource:scale:specpath=&lt;jsonpath&gt;,statuspath=&lt;jsonpath&gt;,selectorpath=&lt;jsonpath&gt;</code> format.</p>
-<p>Scale subresource annotation contains three fields: <code>specpath</code>, <code>statuspath</code> and <code>selectorpath</code>.</p>
+                                <h1 id="webhook-configuration-installation">Webhook Configuration Installation</h1>
+<p>Installing webhook configurations requires higher privileges which manager&apos;s service account might not have.
+In that case, a separate process with higher privileges would like to install the webhook configurations.</p>
+<p>There are 2 options to install webhook configurations into a cluster:</p>
 <ul>
-<li><code>specpath</code> refers to <code>specReplicasPath</code> attribute of Scale object, and value <code>jsonpath</code> defines the JSONPath inside of a custom resource that corresponds to <code>Scale.Spec.Replicas</code>. This is a required field.</li>
-<li><code>statuspath</code> refers to <code>statusReplicasPath</code> attribute of Scale object. and the <code>jsonpath</code> value of it defines the JSONPath inside of a custom resource that corresponds to <code>Scale.Status.Replicas</code>. This is a required field.</li>
-<li><code>selectorpath</code> refers to <code>labelSelectorPath</code> attribute of Scale object, and the value <code>jsonpath</code> defines the JSONPath inside of a custom resource that corresponds to <code>Scale.Status.Selector</code>. This is an optional field.</li>
+<li>Configure the Webhook Server to automatically install the webhook configurations when it starts.</li>
+<li>Use the webhook manifests generator to generate webhook configurations.
+Then install the webhook configurations and deploy the webhook servers.</li>
 </ul>
-<p><strong>Example:</strong></p>
-<pre><code class="lang-go"><span class="hljs-keyword">type</span> ToySpec <span class="hljs-keyword">struct</span> {
-    Replicas *<span class="hljs-keyword">int32</span> <span class="hljs-string">`json:&quot;replicas&quot;`</span> <span class="hljs-comment">// Add this field in Toy Spec, so the jsonpath to this field is `.spec.replicas`</span>
-}
+<h2 id="webhook-installer">Webhook Installer</h2>
+<p>Webhook installer is a feature provided by the <a href="https://godoc.org/sigs.k8s.io/controller-runtime/pkg/webhook" target="_blank">controller-runtime</a> library.
+For a <a href="https://godoc.org/sigs.k8s.io/controller-runtime/pkg/webhook#Server" target="_blank">Webhook Server</a>,
+you can choose to enable the webhook installer.
+Depending on your <a href="https://godoc.org/sigs.k8s.io/controller-runtime/pkg/webhook#ServerOptions" target="_blank">ServerOptions</a>,
+the installer may install <a href="https://github.com/kubernetes/api/blob/9fcf73cc980bd64f38a4f721a7371b0ebb72e1ff/admissionregistration/v1beta1/types.go#L113-L124" target="_blank">mutatingWebhookConfigurations</a>,
+<a href="https://github.com/kubernetes/api/blob/9fcf73cc980bd64f38a4f721a7371b0ebb72e1ff/admissionregistration/v1beta1/types.go#L83-L94" target="_blank">validatingWebhookConfigurations</a>
+and service; it may also update the secret if needed.</p>
+<p>To make the webhook installer work correctly, please ensure the manager&apos;s service account has
+the right permissions. For example. it may need permissions:</p>
+<ul>
+<li>create and update MutatingWebhookConfigurations and ValidatingWebhookConfigurations</li>
+<li>create and update the Service in the same namespace of the manager</li>
+<li>update the Secret in the same namespace of the manager</li>
+</ul>
+<p>The service fronts the webhook server.
+So please ensure the service&apos;s selectors select your webhook server pods.</p>
+<p>The secret contains</p>
+<ul>
+<li>the serving certificate and its corresponding private key</li>
+<li>the signing CA certificate and its corresponding private key</li>
+</ul>
+<p>Webhook installer can be very helpful for</p>
+<ul>
+<li>faster iteration during development</li>
+<li>easier deployment in production if policy allows</li>
+</ul>
+<p>Webhook installer is on by default. Set
+<a href="https://github.com/kubernetes-sigs/controller-runtime/blob/a8ea2056444a5d74d7408e4b8798cbe63b14066b/pkg/webhook/server.go#L57-L60" target="_blank"><code>DisableWebhookConfigInstaller</code></a>
+to true to turn it off.</p>
+<h2 id="webhook-manifests-generator">Webhook Manifests Generator</h2>
+<p>From cluster administrators perspective, they may want to have the webhook configurations
+installation to be a separate process from running the webhook server,
+since permissions to create and update webhook configurations are considered as high privileges.</p>
+<p>Similar to other generators in <a href="https://github.com/kubernetes-sigs/controller-tools" target="_blank">controller-tools</a>,
+webhook manifest generator is annotation-driven.</p>
+<p>How the webhook manifest generator works
+1) It parses the annotations to configure
+<a href="https://godoc.org/sigs.k8s.io/controller-runtime/pkg/webhook/admission#Webhook" target="_blank">Webhook</a>.
+1) It parses the annotations to configure
+<a href="https://godoc.org/sigs.k8s.io/controller-runtime/pkg/webhook#ServerOptions" target="_blank">ServerOptions</a>.
+1) It uses the library in controller-runtime, which is the same machinery as
+the installer, to generate the webhook configuration manifests.</p>
+<h4 id="comment-group">Comment Group</h4>
+<p>A comment group represents a sequence of comments with no empty lines between.
+Comment group is a concept that is important for writing and parsing annotations correctly.</p>
+<p>For example, the following comments are in one comment group</p>
+<pre><code>// +kubebuilder:webhook:groups=apps
+// +kubebuilder:webhook:resources=deployments
+</code></pre><p>The following comments are in 2 comments groups</p>
+<pre><code>// +kubebuilder:webhook:groups=apps
 
-<span class="hljs-comment">// ToyStatus defines the observed state of Toy</span>
-<span class="hljs-keyword">type</span> ToyStatus <span class="hljs-keyword">struct</span> {
-    Replicas <span class="hljs-keyword">int32</span> <span class="hljs-string">`json:&quot;replicas&quot;`</span> <span class="hljs-comment">// Add this field in Toy Status, so the jsonpath to this field is `.status.replicas`</span>
-}
-
-
-<span class="hljs-comment">// Toy is the Schema for the toys API</span>
-<span class="hljs-comment">// +k8s:openapi-gen=true</span>
-<span class="hljs-comment">// +kubebuilder:subresource:status</span>
-<span class="hljs-comment">// +kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.replicas</span>
-<span class="hljs-keyword">type</span> Toy <span class="hljs-keyword">struct</span> {
-    metav1.TypeMeta   <span class="hljs-string">`json:&quot;,inline&quot;`</span>
-    metav1.ObjectMeta <span class="hljs-string">`json:&quot;metadata,omitempty&quot;`</span>
-
-    Spec   ToySpec   <span class="hljs-string">`json:&quot;spec,omitempty&quot;`</span>
-    Status ToyStatus <span class="hljs-string">`json:&quot;status,omitempty&quot;`</span>
-}
-</code></pre>
-<p>In order to enable scale subresource in type definition file, you have to apply the scale subresource right before the kind struct definition, with correct jsonpath values according to the spec and status. And then make sure the jsonpaths are already defined in the Spec and Status struct. Finally, update the <code>&lt;kind&gt;_types_test.go</code> files according to the types Spec and Status changes.</p>
-<p>In the above example for the type <code>Toy</code>, we added <code>// +kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.replicas</code> comment before <code>Toy</code> struct definition. <code>.spec.replicas</code> refers to the josnpath of Spec struct field (<code>ToySpec.Replicas</code>). And jsonpath <code>.status.healthyReplicas</code> refers to Status struct field (<code>ToyStatus.Replicas</code>).</p>
+// +kubebuilder:webhook:resources=deployments
+</code></pre><h4 id="annotations">Annotations</h4>
+<p>Each comment line that starts with <code>+kubebuilder:webhook:</code> will be processed to extract annotations.</p>
+<p>The annotations can be grouped in 2 categories based on what struct they configure.</p>
+<p>The <em>first</em> category is for each individual webhook.
+They are used to set the fields in <a href="https://github.com/kubernetes-sigs/controller-runtime/blob/a8ea2056444a5d74d7408e4b8798cbe63b14066b/pkg/webhook/admission/webhook.go#L55-L80" target="_blank"><code>Webhook</code></a> struct.
+The annotations for the same webhook are allowed to span across multiple lines as long as they are prefixed with
+<code>+kubebuilder:webhook:</code> and in the <strong>same</strong> comment group.
+It is suggested to put this category of annotations in the same file as its corresponding webhook.</p>
+<p>For example, the following is for one single webhook</p>
+<pre><code>// +kubebuilder:webhook:groups=apps,versions=v1,resources=deployments,verbs=create,update
+// +kubebuilder:webhook:name=mutating-create-update-deployment.testproject.org
+// +kubebuilder:webhook:path=/mutating-create-update-deployment
+// +kubebuilder:webhook:type=mutating,failure-policy=fail
+</code></pre><p><code>groups</code>, <code>versions</code> and <code>resources</code> have the same semantic as the ones used for generating RBAC manifests.
+They can reference a core type or a CRD type.</p>
+<p><code>verbs</code> are used to set <a href="https://github.com/kubernetes/api/blob/9fcf73cc980bd64f38a4f721a7371b0ebb72e1ff/admissionregistration/v1beta1/types.go#L234-L243" target="_blank"><code>Operations</code></a>.
+It supports <code>create</code>, <code>update</code>, <code>delete</code>, <code>connect</code> and <code>*</code> case-insensitively.</p>
+<p><code>name</code> is the name of the webhook and
+is used to set <a href="https://github.com/kubernetes/api/blob/9fcf73cc980bd64f38a4f721a7371b0ebb72e1ff/admissionregistration/v1beta1/types.go#L146" target="_blank"><code>Name</code></a>.
+<code>path</code> is the endpoint that this webhook serves and
+is used to set <a href="https://github.com/kubernetes-sigs/controller-runtime/blob/a8ea2056444a5d74d7408e4b8798cbe63b14066b/pkg/webhook/admission/webhook.go#L61-L62" target="_blank"><code>Path</code></a>.
+Both <code>name</code> and <code>path</code> do NOT allow <code>,</code> and <code>;</code>.</p>
+<p><code>type</code> indicates the webhook type which can be either <code>mutating</code> or <code>validating</code>.</p>
+<p><code>failure-policy</code> is used to set <a href="https://github.com/kubernetes/api/blob/9fcf73cc980bd64f38a4f721a7371b0ebb72e1ff/admissionregistration/v1beta1/types.go#L54-L61" target="_blank"><code>FailurePolicy</code></a>.
+It supports <code>fail</code> and <code>ignore</code> case-insensitively.</p>
+<p>The <em>second</em> category is for the webhook server.
+All of them are used to configuration <a href="https://github.com/kubernetes-sigs/controller-runtime/blob/a8ea2056444a5d74d7408e4b8798cbe63b14066b/pkg/webhook/server.go#L39-L98" target="_blank"><code>ServerOptions</code></a> struct.
+Each annotation should only be used once.
+They don&apos;t have to be in the same comment group.
+It is suggested to put this category of annotations in the same file as the webhook server.</p>
+<p>The following is an example using webhook server annotations.</p>
+<pre><code>// +kubebuilder:webhook:port=7890,cert-dir=/path/to/cert
+// +kubebuilder:webhook:service=test-system:webhook-service,selector=app:webhook-server
+// +kubebuilder:webhook:secret=test-system:webhook-secret
+// +kubebuilder:webhook:mutating-webhook-config-name=test-mutating-webhook-cfg
+// +kubebuilder:webhook:validating-webhook-config-name=test-validating-webhook-cfg
+</code></pre><p><code>port</code> is the port that the webhook server serves. It is used to set <a href="https://github.com/kubernetes-sigs/controller-runtime/blob/a8ea2056444a5d74d7408e4b8798cbe63b14066b/pkg/webhook/server.go#L43" target="_blank"><code>Port</code></a>.</p>
+<p><code>service</code> should be formatted as <code>&lt;namespace&gt;:&lt;name&gt;</code>. It is used to set
+<a href="https://github.com/kubernetes-sigs/controller-runtime/blob/a8ea2056444a5d74d7408e4b8798cbe63b14066b/pkg/webhook/server.go#L102-L105" target="_blank">the name and namespace of the service</a>.</p>
+<p><code>selector</code> should be formatted as <code>key1:value1;key2:value2</code> and it has 2 usages:</p>
+<ul>
+<li>use as <a href="https://github.com/kubernetes-sigs/controller-runtime/blob/a8ea2056444a5d74d7408e4b8798cbe63b14066b/pkg/webhook/server.go#L106-L108" target="_blank">selectors in the service</a></li>
+<li>use as additional labels that will be added to field <code>.spec.template.metadata.labels</code> of
+the StatefulSet through <a href="https://github.com/kubernetes-sigs/kustomize" target="_blank"><code>kustomize</code></a>.</li>
+</ul>
+<p><code>host</code> is used to set <a href="https://github.com/kubernetes-sigs/controller-runtime/blob/a8ea2056444a5d74d7408e4b8798cbe63b14066b/pkg/webhook/server.go#L87-L91" target="_blank"><code>Host</code></a>.</p>
+<p><code>secret</code> should be formatted as <code>&lt;namespace&gt;:&lt;name&gt;</code>. It is used to set <a href="https://github.com/kubernetes-sigs/controller-runtime/blob/a8ea2056444a5d74d7408e4b8798cbe63b14066b/pkg/webhook/server.go#L73-L77" target="_blank"><code>Secret</code></a></p>
+<p><code>mutating-webhook-config-name</code> is used to set <a href="https://github.com/kubernetes-sigs/controller-runtime/blob/a8ea2056444a5d74d7408e4b8798cbe63b14066b/pkg/webhook/server.go#L68-L69" target="_blank"><code>MutatingWebhookConfigName</code></a>.</p>
+<p><code>validating-webhook-config-name</code> is used to set <a href="https://github.com/kubernetes-sigs/controller-runtime/blob/a8ea2056444a5d74d7408e4b8798cbe63b14066b/pkg/webhook/server.go#L70-L71" target="_blank"><code>ValidatingWebhookConfigName</code></a>.</p>
 
                                 
                                 </section>
@@ -871,7 +877,7 @@ to learn more about the values of <code>name</code>, <code>type</code>, <code>Js
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"Generating CRD","level":"4.1.3","depth":2,"next":{"title":"Generating API Documentation","level":"4.1.4","depth":2,"path":"beyond_basics/generating_documentation.md","ref":"beyond_basics/generating_documentation.md","articles":[]},"previous":{"title":"Running Tests","level":"4.1.2","depth":2,"path":"beyond_basics/running_tests.md","ref":"beyond_basics/running_tests.md","articles":[]},"dir":"ltr"},"config":{"plugins":["theme-api","panel","sequence-diagrams","ga"],"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"panel":{},"search":{},"sequence-diagrams":{"theme":"simple"},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"highlight":{},"theme-api":{"languages":[],"split":true,"theme":"light"},"ga":{"configuration":"auto","token":"UA-119864590-1"},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","author":"Phillip Wittrock","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"The Kubebuilder Book","gitbook":">= 3.0.0"},"file":{"path":"beyond_basics/generating_crd.md","mtime":"2018-12-05T22:32:59.585Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-12-14T22:32:12.457Z"},"basePath":"..","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"Webhook Configuration Installation","level":"4.3.3","depth":2,"next":{"title":"Client-Go","level":"4.4","depth":1,"ref":"","articles":[{"title":"Generated Informers","level":"4.4.1","depth":2,"path":"beyond_basics/using_client_go_informers.md","ref":"beyond_basics/using_client_go_informers.md","articles":[]}]},"previous":{"title":"Webhook Example","level":"4.3.2","depth":2,"path":"beyond_basics/sample_webhook.md","ref":"beyond_basics/sample_webhook.md","articles":[]},"dir":"ltr"},"config":{"plugins":["theme-api","panel","sequence-diagrams","ga"],"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"panel":{},"search":{},"sequence-diagrams":{"theme":"simple"},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"highlight":{},"theme-api":{"languages":[],"split":true,"theme":"light"},"ga":{"configuration":"auto","token":"UA-119864590-1"},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","author":"Phillip Wittrock","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"The Kubebuilder Book","gitbook":">= 3.0.0"},"file":{"path":"beyond_basics/webhook_installer_generator.md","mtime":"2018-12-05T22:32:59.588Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-12-14T22:32:12.457Z"},"basePath":"..","book":{"language":""}});
         });
     </script>
 </div>
