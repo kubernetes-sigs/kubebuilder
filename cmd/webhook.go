@@ -29,6 +29,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/manager"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/webhook"
 )
@@ -58,6 +59,7 @@ Scaffolds webhook handlers based on group, version, kind and other user inputs.
 			}
 
 			err := (&scaffold.Scaffold{}).Execute(input.Options{},
+				&manager.Webhook{},
 				&webhook.AdmissionHandler{Resource: o.res, Config: webhook.Config{Server: o.server, Type: o.webhookType, Operations: o.operations}},
 				&webhook.AdmissionWebhookBuilder{Resource: o.res, Config: webhook.Config{Server: o.server, Type: o.webhookType, Operations: o.operations}},
 				&webhook.AdmissionWebhooks{Resource: o.res, Config: webhook.Config{Server: o.server, Type: o.webhookType, Operations: o.operations}},
