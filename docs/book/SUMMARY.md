@@ -46,6 +46,8 @@
   * [Generated Informers](beyond_basics/using_client_go_informers.md)
 * Deployment Workflow
   * [Deploying the manager in Cluster](beyond_basics/deploying_controller.md)
+* Monitoring
+  * [Controller Metrics](beyond_basics/controller_metrics.md)
 
 ### Reference Docs
 * [GoDoc Links](go_docs.md)
