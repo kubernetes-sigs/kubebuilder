@@ -25,7 +25,6 @@ To quickly examine metrics in your development environment, you can run the
 following:
 
 ```sh
-
 # launch manager
 $ make run
 
@@ -79,19 +78,27 @@ auth proxy based approach [here](https://brancz.com/2018/02/27/using-kube-rbac-p
 If you want to disable the auth proxy, which is not recommended, you can follow
 the instructions in the Kustomization file located in `config/default/kustomization.yaml`
 
+If your project was created using `1.0.5 or older` kubebuilder, you need to modify
+the following files as show in [PR #513](https://github.com/kubernetes-sigs/kubebuilder/pull/513/commits/a227e6457b581d4f1f1d79f16ca9b7baad8f38c0#diff-8e690fe6cdd7ce6beeb28f97e7423964).
+- cmd/manager/main.go
+- config/default/kustomization.yaml
+- config/default/manager_auth_proxy_patch.yaml
+- config/rbac/auth_proxy_role.yaml
+- config/rbac/auth_proxy_role_binding.yaml
+- config/rbac/auth_proxy_service.yaml
+
 How do I configure Prometheus Server to access the metrics?
 -----------------------------------------------------------
 
 Kubebuilder generated manifests for manager have annotations such as
 `prometheus.io/scrape`, `prometheus.io/path` on the metrics service so
 that it can be easily discovered by the prometheus server deployed in your
-kubernetes cluster. 
+kubernetes cluster.
 
 Assuming auth is enabled, which is by default, you will have to add the
 following to the job which is configured to scrap kubernetes service endpoints.
-        
-```yaml
 
+```yaml
 tls_config:
     insecure_skip_verify: true
 
