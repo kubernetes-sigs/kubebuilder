@@ -13,6 +13,8 @@ import (
 
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
+
+	"sigs.k8s.io/testing_frameworks/integration/addr"
 )
 
 type ProcessState struct {
@@ -63,8 +65,7 @@ func DoDefaulting(
 	}
 
 	if listenUrl == nil {
-		am := &AddressManager{}
-		port, host, err := am.Initialize()
+		port, host, err := addr.Suggest()
 		if err != nil {
 			return DefaultedProcessInput{}, err
 		}

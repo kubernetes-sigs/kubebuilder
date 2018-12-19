@@ -32,34 +32,54 @@ type ToySpec struct {
 	// +kubebuilder:validation:Maximum=100
 	// +kubebuilder:validation:Minimum=1
 	// +kubebuilder:validation:ExclusiveMinimum=true
-	Power  float32 `json:"power,omitempty"`
-	Bricks int32   `json:"bricks,omitempty"`
+	Power float32 `json:"power,omitempty"`
+
+	Bricks int32 `json:"bricks,omitempty"`
+
 	// +kubebuilder:validation:MaxLength=15
 	// +kubebuilder:validation:MinLength=1
 	Name string `json:"name,omitempty"`
+
+	// This is a comment on an array field.
 	// +kubebuilder:validation:MaxItems=500
 	// +kubebuilder:validation:MinItems=1
 	// +kubebuilder:validation:UniqueItems=false
 	Knights []string `json:"knights,omitempty"`
-	Winner  bool     `json:"winner,omitempty"`
+
+	// This is a comment on a boolean field.
+	Winner bool `json:"winner,omitempty"`
+
 	// +kubebuilder:validation:Enum=Lion,Wolf,Dragon
 	Alias string `json:"alias,omitempty"`
+
 	// +kubebuilder:validation:Enum=1,2,3
-	Rank    int    `json:"rank"`
+	Rank int `json:"rank"`
+
 	Comment []byte `json:"comment,omitempty"`
 
-	Template v1.PodTemplateSpec       `json:"template"`
-	Claim    v1.PersistentVolumeClaim `json:"claim,omitempty"`
+	// This is a comment on an object field.
+	Template v1.PodTemplateSpec `json:"template"`
 
+	Claim v1.PersistentVolumeClaim `json:"claim,omitempty"`
+
+	//This is a dummy comment.
+	// Just checking if the multi-line comments are working or not.
 	Replicas *int32 `json:"replicas"`
 
+	// This is a newly added field.
+	// Using this for testing purpose.
 	Rook *intstr.IntOrString `json:"rook"`
+
+	// This is a comment on a map field.
+	Location map[string]string `json:"location"`
 }
 
 // ToyStatus defines the observed state of Toy
 type ToyStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+
+	// It tracks the number of replicas.
 	Replicas int32 `json:"replicas"`
 }
 

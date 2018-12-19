@@ -334,6 +334,20 @@ func parseByteValue(b []byte) string {
 	return elem
 }
 
+// parseDescription parse comments above each field in the type definition.
+func parseDescription(res []string) string {
+	var temp strings.Builder
+	var desc string
+	for _, comment := range res {
+		if !(strings.Contains(comment, "+kubebuilder") || strings.Contains(comment, "+optional")) {
+			temp.WriteString(comment)
+			temp.WriteString(" ")
+			desc = strings.TrimRight(temp.String(), " ")
+		}
+	}
+	return desc
+}
+
 // parseEnumToString returns a representive validated go format string from JSONSchemaProps schema
 func parseEnumToString(value []v1beta1.JSON) string {
 	res := "[]v1beta1.JSON{"

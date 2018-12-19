@@ -59,7 +59,7 @@ var DefaultKubeAPIServerFlags = []string{
 	"--cert-dir={{ .CertDir }}",
 	"--insecure-port={{ if .URL }}{{ .URL.Port }}{{ end }}",
 	"--insecure-bind-address={{ if .URL }}{{ .URL.Hostname }}{{ end }}",
-	"--secure-port=0",
+	"--secure-port={{ if .SecurePort }}{{ .SecurePort }}{{ end }}",
 	"--admission-control=AlwaysAdmit",
 }
 
