@@ -25,7 +25,7 @@ curl -L -O https://github.com/kubernetes-sigs/kubebuilder/releases/download/v${v
 
 # extract the archive
 tar -zxvf kubebuilder_${version}_darwin_${arch}.tar.gz
-sudo mv kubebuilder_${version}_darwin_${arch} /usr/local/kubebuilder
+mv kubebuilder_${version}_darwin_${arch} kubebuilder && sudo mv kubebuilder /usr/local/
 
 # update your PATH to include /usr/local/kubebuilder/bin
 export PATH=$PATH:/usr/local/kubebuilder/bin
@@ -42,6 +42,7 @@ curl -L -O https://github.com/kubernetes-sigs/kubebuilder/releases/download/v${v
 # extract the archive
 tar -zxvf kubebuilder_${version}_linux_${arch}.tar.gz
 sudo mv kubebuilder_${version}_linux_${arch} /usr/local/kubebuilder
+mv kubebuilder_${version}_linux_${arch} kubebuilder && sudo mv kubebuilder /usr/local/
 
 # update your PATH to include /usr/local/kubebuilder/bin
 export PATH=$PATH:/usr/local/kubebuilder/bin
