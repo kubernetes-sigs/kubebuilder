@@ -5,6 +5,7 @@
   "description": "**Note:** Impatient readers head straight to [Quick Start](quick_start.md).",
   "main": "index.js",
   "dependencies": {
+    "gitbook-cli": "^2.3.2",
     "cryptiles": "^4.1.2",
     "gitbook-plugin-ga": "^1.0.1",
     "gitbook-plugin-panel": "^0.0.1",
