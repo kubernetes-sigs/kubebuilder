@@ -144,12 +144,15 @@ func (r *ReconcileFirstMate) Reconcile(request reconcile.Request) (reconcile.Res
 	// TODO(user): Change this for the object type created by your controller
 	// Check if the Deployment already exists
 	found := &appsv1.Deployment{}
+	created := false
 	err = r.Get(context.TODO(), types.NamespacedName{Name: deploy.Name, Namespace: deploy.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
 		log.Info("Creating Deployment", "namespace", deploy.Namespace, "name", deploy.Name)
 		err = r.Create(context.TODO(), deploy)
 		if err != nil {
 			return reconcile.Result{}, err
+		} else {
+			created = true
 		}
 	} else if err != nil {
 		return reconcile.Result{}, err
@@ -157,7 +160,7 @@ func (r *ReconcileFirstMate) Reconcile(request reconcile.Request) (reconcile.Res
 
 	// TODO(user): Change this for the object type created by your controller
 	// Update the found object and write the result back if there are any changes
-	if !reflect.DeepEqual(deploy.Spec, found.Spec) {
+	if !created && !reflect.DeepEqual(deploy.Spec, found.Spec) {
 		found.Spec = deploy.Spec
 		log.Info("Updating Deployment", "namespace", deploy.Namespace, "name", deploy.Name)
 		err = r.Update(context.TODO(), found)
