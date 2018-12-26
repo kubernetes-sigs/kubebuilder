@@ -82,6 +82,7 @@ func TestReconcile(t *testing.T) {
 		Should(gomega.Succeed())
 
 	// Manually delete Deployment since GC isn't enabled in the test control plane
-	g.Expect(c.Delete(context.TODO(), deploy)).To(gomega.Succeed())
+	g.Eventually(func() error { return c.Delete(context.TODO(), deploy) }, timeout).
+		Should(gomega.MatchError("deployments.apps \"foo-deployment\" not found"))
 
 }
