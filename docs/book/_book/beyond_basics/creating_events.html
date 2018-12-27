@@ -768,23 +768,124 @@
                                 <section class="normal markdown-section">
                                 
                                 <h1 id="creating-events">Creating Events</h1>
-<p>It is often useful to publish <em>Event</em> objects from the controller Reconcile function.  Events
-allow users to see what is going on with a particular object, and allow automated processes
-to see and respond to them.</p>
-<p><div class="panel panel-success"><div class="panel-heading"><div class="panel-icon"><i class="icon-success"></i></div><div class="panel-title">Getting Events</div></div><div class="panel-content"><p>Recent Events for an object may be viewed by running <code>kubectl describe</code></p>
+<p>It is often useful to publish <em>Event</em> objects from the controller Reconcile function. </p>
+<p>Events allow users to see what is going on with a particular object, and allow automated processes to see and respond to them.</p>
+<p><div class="panel panel-success"><div class="panel-heading"><div class="panel-icon"><i class="icon-success"></i></div><div class="panel-title">Getting Events</div></div><div class="panel-content"><p>Recent Events for an object can be viewed by running <code>kubectl describe</code></p>
 </div></div></p>
 <div class="api-method"><div class="api-method-definition"><p>Events are published from a Controller using an <a href="https://github.com/kubernetes/client-go/blob/master/tools/record/event.go#L56" target="_blank">EventRecorder</a>,
 which can be created for a Controller by calling <code>GetRecorder(name string)</code> on a Manager.</p>
+<p><code>Name</code> should be identifiable and descriptive as it will appear in the <code>From</code> column of <code>kubectl describe</code> command.</p>
+</div><div class="api-method-code"><div class="api-method-sample" data-lang="go" data-name="Go"><pre><code class="lang-go"><span class="hljs-comment">// Annotation for generating RBAC role for writing Events</span>
+<span class="hljs-comment">// +kubebuilder:rbac:groups=&quot;&quot;,resources=events,verbs=create;patch</span>
+</code></pre>
+<pre><code class="lang-go"><span class="hljs-comment">// ReconcileContainerSet reconciles a ContainerSet object</span>
+<span class="hljs-keyword">type</span> ReconcileContainerSet <span class="hljs-keyword">struct</span> {
+  client.Client
+  scheme *runtime.Scheme
+  recorder record.EventRecorder
+}
+</code></pre>
+<pre><code class="lang-go"><span class="hljs-comment">// newReconciler returns a new reconcile.Reconciler</span>
+<span class="hljs-keyword">func</span> newReconciler(mgr manager.Manager) reconcile.Reconciler {
+  <span class="hljs-keyword">return</span> &amp;ReconcileContainerSet{
+    Client:   mgr.GetClient(),
+    scheme:   mgr.GetScheme(),
+    recorder: mgr.GetRecorder(<span class="hljs-string">&quot;containerset-controller&quot;</span>),
+  }
+}
+</code></pre>
+</div></div></div>
+
+<div class="api-method"><div class="api-method-definition"><h2 id="writing-events">Writing Events</h2>
+<p>Anatomy of an Event:</p>
 <pre><code class="lang-go">Event(object runtime.Object, eventtype, reason, message <span class="hljs-keyword">string</span>)
 </code></pre>
 <ul>
 <li><code>object</code> is the object this event is about.</li>
 <li><code>eventtype</code> is the type of this event, and is either <em>Normal</em> or <em>Warning</em>.</li>
-<li><code>reason</code> is the reason this event is generated.  It should be short and unique with
-<code>UpperCamelCase</code> format.   The value could appear in <em>switch</em> statements by automation.</li>
+<li><code>reason</code> is the reason this event is generated. It should be short and unique with <code>UpperCamelCase</code> format. The value could appear in <em>switch</em> statements by automation.</li>
 <li><code>message</code> is intended to be consumed by humans.</li>
 </ul>
-</div><div class="api-method-code"></div></div>
+<p>Building on the example introduced in <a href="../basics/simple_controller.html">Controller Example</a>, we can add Events to our reconcile logic using <code>recorder</code> as our <code>EventRecorder</code></p>
+</div><div class="api-method-code"><div class="api-method-sample" data-lang="go" data-name="Go"><pre><code class="lang-go"><span class="hljs-keyword">var</span> _ reconcile.Reconciler = &amp;ContainerSetController{}
+
+<span class="hljs-keyword">func</span> (r *ReconcileContainerSet) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+  instance := &amp;workloadsv1beta1.ContainerSet{}
+  err := r.Get(context.TODO(), request.NamespacedName, instance)
+  <span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> {
+    <span class="hljs-keyword">if</span> errors.IsNotFound(err) {
+      <span class="hljs-comment">// Object not found, return. Created objects are automatically garbage collected.</span>
+      <span class="hljs-comment">// For additional cleanup logic use finalizers.</span>
+      <span class="hljs-keyword">return</span> reconcile.Result{}, <span class="hljs-literal">nil</span>
+    }
+    <span class="hljs-comment">// Error reading the object - requeue the request.</span>
+    <span class="hljs-keyword">return</span> reconcile.Result{}, err
+  }
+
+  <span class="hljs-comment">// TODO(user): Change this to be the object type created by your controller</span>
+  <span class="hljs-comment">// Define the desired Deployment object</span>
+  deploy := &amp;appsv1.Deployment{
+    ObjectMeta: metav1.ObjectMeta{
+      Name:      instance.Name + <span class="hljs-string">&quot;-deployment&quot;</span>,
+      Namespace: instance.Namespace,
+    },
+    Spec: appsv1.DeploymentSpec{
+      Selector: &amp;metav1.LabelSelector{
+        MatchLabels: <span class="hljs-keyword">map</span>[<span class="hljs-keyword">string</span>]<span class="hljs-keyword">string</span>{<span class="hljs-string">&quot;deployment&quot;</span>: instance.Name + <span class="hljs-string">&quot;-deployment&quot;</span>},
+      },
+      Replicas: &amp;instance.Spec.Replicas,
+      Template: corev1.PodTemplateSpec{
+        ObjectMeta: metav1.ObjectMeta{Labels: <span class="hljs-keyword">map</span>[<span class="hljs-keyword">string</span>]<span class="hljs-keyword">string</span>{<span class="hljs-string">&quot;deployment&quot;</span>: instance.Name + <span class="hljs-string">&quot;-deployment&quot;</span>}},
+        Spec: corev1.PodSpec{
+          Containers: []corev1.Container{
+            {
+                Name:  instance.Name,
+                Image: instance.Spec.Image,
+            },
+          },
+        },
+      },
+    },
+  }
+
+  <span class="hljs-keyword">if</span> err := controllerutil.SetControllerReference(instance, deploy, r.scheme); err != <span class="hljs-literal">nil</span> {
+    <span class="hljs-keyword">return</span> reconcile.Result{}, err
+  }
+
+  <span class="hljs-comment">// TODO(user): Change this for the object type created by your controller</span>
+  <span class="hljs-comment">// Check if the Deployment already exists</span>
+  found := &amp;appsv1.Deployment{}
+  err = r.Get(context.TODO(), types.NamespacedName{Name: deploy.Name, Namespace: deploy.Namespace}, found)
+  <span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> &amp;&amp; errors.IsNotFound(err) {
+    log.Printf(<span class="hljs-string">&quot;Creating Deployment %s/%s\n&quot;</span>, deploy.Namespace, deploy.Name)
+    err = r.Create(context.TODO(), deploy)
+    <span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> {
+      <span class="hljs-keyword">return</span> reconcile.Result{}, err
+    }
+    <span class="hljs-comment">// Write an event to the ContainerSet instance with the namespace and name of the </span>
+    <span class="hljs-comment">// created deployment</span>
+    r.recorder.Event(instance, <span class="hljs-string">&quot;Normal&quot;</span>, <span class="hljs-string">&quot;Created&quot;</span>, fmt.Sprintf(<span class="hljs-string">&quot;Created deployment %s/%s&quot;</span>, deploy.Namespace, deploy.Name))
+  } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> {
+    <span class="hljs-keyword">return</span> reconcile.Result{}, err
+  }
+
+  <span class="hljs-comment">// TODO(user): Change this for the object type created by your controller</span>
+  <span class="hljs-comment">// Update the found object and write the result back if there are any changes</span>
+  <span class="hljs-keyword">if</span> !reflect.DeepEqual(deploy.Spec, found.Spec) {
+    found.Spec = deploy.Spec
+    log.Printf(<span class="hljs-string">&quot;Updating Deployment %s/%s\n&quot;</span>, deploy.Namespace, deploy.Name)
+    err = r.Update(context.TODO(), found)
+    <span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> {
+      <span class="hljs-keyword">return</span> reconcile.Result{}, err
+    }
+    <span class="hljs-comment">// Write an event to the ContainerSet instance with the namespace and name of the </span>
+    <span class="hljs-comment">// updated deployment</span>
+    r.recorder.Event(instance, <span class="hljs-string">&quot;Normal&quot;</span>, <span class="hljs-string">&quot;Updated&quot;</span>, fmt.Sprintf(<span class="hljs-string">&quot;Updated deployment %s/%s&quot;</span>, deploy.Namespace, deploy.Name))
+  }
+  <span class="hljs-keyword">return</span> reconcile.Result{}, <span class="hljs-literal">nil</span>
+}
+</code></pre>
+</div></div></div>
 
                                 
                                 </section>
@@ -818,7 +919,7 @@ which can be created for a Controller by calling <code>GetRecorder(name string)<
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"Creating Events","level":"4.2.3","depth":2,"next":{"title":"Using Finalizers","level":"4.2.4","depth":2,"path":"beyond_basics/using_finalizers.md","ref":"beyond_basics/using_finalizers.md","articles":[]},"previous":{"title":"Controller Watch Functions","level":"4.2.2","depth":2,"path":"beyond_basics/controller_watches.md","ref":"beyond_basics/controller_watches.md","articles":[]},"dir":"ltr"},"config":{"plugins":["theme-api","panel","sequence-diagrams","ga","livereload"],"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"panel":{},"livereload":{},"search":{},"sequence-diagrams":{"theme":"simple"},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"highlight":{},"theme-api":{"languages":[],"split":true,"theme":"light"},"ga":{"configuration":"auto","token":"UA-119864590-1"},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","author":"Phillip Wittrock","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"The Kubebuilder Book","gitbook":">= 3.0.0"},"file":{"path":"beyond_basics/creating_events.md","mtime":"2018-12-17T19:16:36.289Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-12-17T20:46:57.023Z"},"basePath":"..","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"Creating Events","level":"4.2.3","depth":2,"next":{"title":"Using Finalizers","level":"4.2.4","depth":2,"path":"beyond_basics/using_finalizers.md","ref":"beyond_basics/using_finalizers.md","articles":[]},"previous":{"title":"Controller Watch Functions","level":"4.2.2","depth":2,"path":"beyond_basics/controller_watches.md","ref":"beyond_basics/controller_watches.md","articles":[]},"dir":"ltr"},"config":{"plugins":["theme-api","panel","sequence-diagrams","ga","livereload"],"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"panel":{},"livereload":{},"search":{},"sequence-diagrams":{"theme":"simple"},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"highlight":{},"theme-api":{"languages":[],"split":true,"theme":"light"},"ga":{"configuration":"auto","token":"UA-119864590-1"},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","author":"Phillip Wittrock","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"The Kubebuilder Book","gitbook":">= 3.0.0"},"file":{"path":"beyond_basics/creating_events.md","mtime":"2018-12-24T10:58:20.439Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-12-24T10:43:14.515Z"},"basePath":"..","book":{"language":""}});
         });
     </script>
 </div>
