@@ -6,9 +6,9 @@
 1. Run `gitbook install`
 1. Run `gitbook build`
 1. Run `gitbook serve`
-1. Visit `localhost:4000`
+1. Visit `http://localhost:4000`
 
-# Steps to deploy 
+# Steps to deploy
 
 - cd into 'docs/book' directory
 - Copy content from '_book' directory into 'public' directory
