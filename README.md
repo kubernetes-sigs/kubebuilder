@@ -8,7 +8,7 @@ Kubebuilder is a framework for building Kubernetes APIs using [custom resource d
 **Note:** kubebuilder does not exist as an example to *copy-paste*, but instead provides powerful libraries and tools
 to simplify building and publishing Kubernetes APIs from scratch.
 
-### Installalation 
+### Installation
 
 It is strongly recommended that you use a released version. Release binaries are available on the [releases](https://github.com/kubernetes-sigs/kubebuilder/releases) page.
 Follow the [instructions](http://book.kubebuilder.io/getting_started/installation_and_setup.html) to install Kubebuilder.

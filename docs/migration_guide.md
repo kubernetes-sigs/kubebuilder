@@ -139,7 +139,7 @@ Copy those dependencies into the new project's Gopkg.toml file **before** the li
 ```
 
 ## Copy other user files
-If there are other user created files in the old project, such as any build scripts, REAMDE.md files. Copy those files into the new project.
+If there are other user created files in the old project, such as any build scripts, README.md files. Copy those files into the new project.
 
 ## Confirmation
 Run `make` to make sure the new project can build and pass all the tests.

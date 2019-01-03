@@ -55,7 +55,7 @@ type Stanza struct {
 	// Version will appear after 'version=' and does not include quotes
 	Version string
 
-	// Revision will appear after 'revsion=' and does not include quotes
+	// Revision will appear after 'revision=' and does not include quotes
 	Revision string
 }
 
