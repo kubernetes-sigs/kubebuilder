@@ -25,7 +25,7 @@ Including:
 
 API extension developers will learn the principals and concepts behind implementing canonical
 Kubernetes APIs, as well as simple tools and libraries for rapid execution.  This
-book covers pitfalls and miss-conceptions that extension developers commonly encounter.
+book covers pitfalls and misconceptions that extension developers commonly encounter.
 
 Including:
 
@@ -39,11 +39,12 @@ Including:
 
 ## Resources
 
-GitBook: [book.kubebuilder.io](http://book.kubebuilder.io)
-GitHub Repo: [kubernetes-sigs/kubebuilder](https://github.com/kubernetes-sigs/kubebuilder)
-Slack channel: [#kubeuilder](http://slack.k8s.io/#kubebuilder)
-Google Group: [kubebuilder@googlegroups.com](https://groups.google.com/forum/#!forum/kubebuilder)
-Planned Work: [Sprint Dashboard](https://github.com/kubernetes-sigs/kubebuilder/projects/1)
+GitBook: [book.kubebuilder.io](http://book.kubebuilder.io)<br/>
+GitHub Repo: [kubernetes-sigs/kubebuilder](https://github.com/kubernetes-sigs/kubebuilder)<br/>
+Slack channel: [#kubeuilder](http://slack.k8s.io/#kubebuilder)<br/>
+Google Group: [kubebuilder@googlegroups.com](https://groups.google.com/forum/#!forum/kubebuilder)<br/>
+Planned Work: [Sprint Dashboard](https://github.com/kubernetes-sigs/kubebuilder/projects/1)<br/>
+
 
 ## Navigating this book
 
