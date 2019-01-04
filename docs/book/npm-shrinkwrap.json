@@ -114,7 +114,7 @@
         "entities": "~1.1.1",
         "htmlparser2": "~3.8.1",
         "jsdom": "^7.0.2",
-        "lodash": "^4.1.0"
+        "lodash": "^4.17.11"
       }
     },
     "colors": {
@@ -400,7 +400,7 @@
         "bash-color": "0.0.4",
         "commander": "2.11.0",
         "fs-extra": "3.0.1",
-        "lodash": "4.17.4",
+        "lodash": "4.17.11",
         "npm": "5.1.0",
         "npmi": "1.0.1",
         "optimist": "0.6.1",
@@ -408,6 +408,13 @@
         "semver": "5.3.0",
         "tmp": "0.0.31",
         "user-home": "2.0.0"
+      },
+      "dependencies": {
+        "lodash": {
+          "version": "4.17.11",
+          "resolved": "https://registry.npmjs.org/lodash/-/lodash-4.17.11.tgz",
+          "integrity": "sha512-cQKh8igo5QUhZ7lg38DYWAxMvjSAKG0A8wGSVimP07SIUEK2UO+arSRKbRZWtelMtN5V0Hkwh5ryOto/SshYIg=="
+        }
       }
     },
     "gitbook-plugin-ga": {
@@ -441,15 +448,15 @@
       "requires": {
         "cheerio": "0.20.0",
         "gitbook-plugin-search": ">=2.0.0",
-        "lodash": "4.12.0",
+        "lodash": "4.17.11",
         "q": "1.4.1",
         "q-plus": "0.0.8"
       },
       "dependencies": {
         "lodash": {
-          "version": "4.12.0",
-          "resolved": "http://registry.npmjs.org/lodash/-/lodash-4.12.0.tgz",
-          "integrity": "sha1-K9bcRqBA9Z5obJcu0h2T3FkFMlg="
+          "version": "4.17.11",
+          "resolved": "https://registry.npmjs.org/lodash/-/lodash-4.17.11.tgz",
+          "integrity": "sha512-cQKh8igo5QUhZ7lg38DYWAxMvjSAKG0A8wGSVimP07SIUEK2UO+arSRKbRZWtelMtN5V0Hkwh5ryOto/SshYIg=="
         },
         "q": {
           "version": "1.4.1",
@@ -662,9 +669,9 @@
       "integrity": "sha1-Xee/afqisPnYXoMyCZtw5BmoRdU="
     },
     "lodash": {
-      "version": "4.17.4",
-      "resolved": "http://registry.npmjs.org/lodash/-/lodash-4.17.4.tgz",
-      "integrity": "sha1-eCA6TRwyiuHYbcpkYONptX9AVa4="
+      "version": "4.17.11",
+      "resolved": "https://registry.npmjs.org/lodash/-/lodash-4.17.11.tgz",
+      "integrity": "sha512-cQKh8igo5QUhZ7lg38DYWAxMvjSAKG0A8wGSVimP07SIUEK2UO+arSRKbRZWtelMtN5V0Hkwh5ryOto/SshYIg=="
     },
     "mime-db": {
       "version": "1.37.0",
@@ -4824,7 +4831,7 @@
       "dependencies": {
         "fs-extra": {
           "version": "1.0.0",
-          "resolved": "http://registry.npmjs.org/fs-extra/-/fs-extra-1.0.0.tgz",
+          "resolved": "https://registry.npmjs.org/fs-extra/-/fs-extra-1.0.0.tgz",
           "integrity": "sha1-zTzl9+fLYUWIP8rjGR6Yd/hYeVA=",
           "requires": {
             "graceful-fs": "^4.1.2",
