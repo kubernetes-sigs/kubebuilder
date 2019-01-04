@@ -69,7 +69,7 @@ fi
 TMP_DIR=$(mktemp -d)
 pushd $TMP_DIR
 
-# Downloading Kuberbuilder compressed file using curl program
+# Downloading Kubebuilder compressed file using curl program
 URL="https://github.com/kubernetes-sigs/kubebuilder/releases/download/v${KUBEBUILDER_VERSION}/${KUBEBUILDER_VERSION_NAME}_${OSEXT}_${ARCH}.tar.gz"
 echo "Downloading ${KUBEBUILDER_VERSION_NAME}\nfrom $URL\n"
 curl -L "$URL"| tar xz -C $TMP_DIR

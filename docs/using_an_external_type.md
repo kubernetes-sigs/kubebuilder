@@ -9,7 +9,7 @@ There are several different external types that may be referenced when writing a
 * A CRD that is created and installed in another project.
 * A CR defined via an API Aggregation (AA). Aggregated APIs are subordinate APIServers that sit behind the primary API server, which acts as a proxy.
 
-Currrently Kubebuilder handles the first two, CRDs and Core Resources, seamlessly.  External CRDs and CRs created via Aggregation must be scaffolded manually.
+Currently Kubebuilder handles the first two, CRDs and Core Resources, seamlessly.  External CRDs and CRs created via Aggregation must be scaffolded manually.
 
 In order to use a Kubernetes Custom Resource that has been defined in another project
 you will need to have several items of information.
