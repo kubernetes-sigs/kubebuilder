@@ -5,12 +5,13 @@
   "description": "**Note:** Impatient readers head straight to [Quick Start](quick_start.md).",
   "main": "index.js",
   "dependencies": {
-    "gitbook-cli": "^2.3.2",
     "cryptiles": "^4.1.2",
+    "gitbook-cli": "^2.3.2",
     "gitbook-plugin-ga": "^1.0.1",
     "gitbook-plugin-panel": "^0.0.1",
     "gitbook-plugin-sequence-diagrams": "^1.1.0",
     "gitbook-plugin-theme-api": "^1.1.2",
+    "lodash": "^4.17.11",
     "phantomjs-prebuilt": "^2.1.16"
   },
   "devDependencies": {},
