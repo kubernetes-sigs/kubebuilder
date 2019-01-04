@@ -4,6 +4,8 @@
 
 ## Who is this for
 
+Author: kubebuilder team
+
 #### Users of Kubernetes
 
 Users of Kubernetes will develop a deeper understanding of Kubernetes through learning
