@@ -61,53 +61,9 @@ Building on the example introduced in [Controller Example](../basics/simple_cont
 
 {% sample lang="go" %}
 ```go
-var _ reconcile.Reconciler = &ContainerSetController{}
+  //Reconcile logic up here...
 
-func (r *ReconcileContainerSet) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-  instance := &workloadsv1beta1.ContainerSet{}
-  err := r.Get(context.TODO(), request.NamespacedName, instance)
-  if err != nil {
-    if errors.IsNotFound(err) {
-      // Object not found, return. Created objects are automatically garbage collected.
-      // For additional cleanup logic use finalizers.
-      return reconcile.Result{}, nil
-    }
-    // Error reading the object - requeue the request.
-    return reconcile.Result{}, err
-  }
-
-  // TODO(user): Change this to be the object type created by your controller
-  // Define the desired Deployment object
-  deploy := &appsv1.Deployment{
-    ObjectMeta: metav1.ObjectMeta{
-      Name:      instance.Name + "-deployment",
-      Namespace: instance.Namespace,
-    },
-    Spec: appsv1.DeploymentSpec{
-      Selector: &metav1.LabelSelector{
-        MatchLabels: map[string]string{"deployment": instance.Name + "-deployment"},
-      },
-      Replicas: &instance.Spec.Replicas,
-      Template: corev1.PodTemplateSpec{
-        ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"deployment": instance.Name + "-deployment"}},
-        Spec: corev1.PodSpec{
-          Containers: []corev1.Container{
-            {
-                Name:  instance.Name,
-                Image: instance.Spec.Image,
-            },
-          },
-        },
-      },
-    },
-  }
-  
-  if err := controllerutil.SetControllerReference(instance, deploy, r.scheme); err != nil {
-    return reconcile.Result{}, err
-  }
-
-  // TODO(user): Change this for the object type created by your controller
-  // Check if the Deployment already exists
+  // Create the resource
   found := &appsv1.Deployment{}
   err = r.Get(context.TODO(), types.NamespacedName{Name: deploy.Name, Namespace: deploy.Namespace}, found)
   if err != nil && errors.IsNotFound(err) {
@@ -116,15 +72,16 @@ func (r *ReconcileContainerSet) Reconcile(request reconcile.Request) (reconcile.
     if err != nil {
       return reconcile.Result{}, err
     }
+    
     // Write an event to the ContainerSet instance with the namespace and name of the 
     // created deployment
     r.recorder.Event(instance, "Normal", "Created", fmt.Sprintf("Created deployment %s/%s", deploy.Namespace, deploy.Name))
+  
   } else if err != nil {
     return reconcile.Result{}, err
   }
 
-  // TODO(user): Change this for the object type created by your controller
-  // Update the found object and write the result back if there are any changes
+  // Preform update
   if !reflect.DeepEqual(deploy.Spec, found.Spec) {
     found.Spec = deploy.Spec
     log.Printf("Updating Deployment %s/%s\n", deploy.Namespace, deploy.Name)
@@ -132,9 +89,11 @@ func (r *ReconcileContainerSet) Reconcile(request reconcile.Request) (reconcile.
     if err != nil {
       return reconcile.Result{}, err
     }
+
     // Write an event to the ContainerSet instance with the namespace and name of the 
     // updated deployment
     r.recorder.Event(instance, "Normal", "Updated", fmt.Sprintf("Updated deployment %s/%s", deploy.Namespace, deploy.Name))
+  
   }
   return reconcile.Result{}, nil
 }
