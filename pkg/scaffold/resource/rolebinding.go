@@ -43,6 +43,11 @@ func (r *RoleBinding) GetInput() (input.Input, error) {
 	return r.Input, nil
 }
 
+// Validate validates the values
+func (r *RoleBinding) Validate() error {
+	return r.Resource.Validate()
+}
+
 var roleBindingTemplate = `apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:

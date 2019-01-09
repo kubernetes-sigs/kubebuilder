@@ -41,6 +41,11 @@ func (g *Group) GetInput() (input.Input, error) {
 	return g.Input, nil
 }
 
+// Validate validates the values
+func (g *Group) Validate() error {
+	return g.Resource.Validate()
+}
+
 var groupTemplate = `{{ .Boilerplate }}
 
 // Package {{ .Resource.Group }} contains {{ .Resource.Group }} API versions

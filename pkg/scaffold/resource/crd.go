@@ -61,6 +61,11 @@ func (c *CRD) GetInput() (input.Input, error) {
 	return c.Input, nil
 }
 
+// Validate validates the values
+func (c *CRD) Validate() error {
+	return c.Resource.Validate()
+}
+
 var crdTemplate = `apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:

@@ -43,6 +43,11 @@ func (v *VersionSuiteTest) GetInput() (input.Input, error) {
 	return v.Input, nil
 }
 
+// Validate validates the values
+func (v *VersionSuiteTest) Validate() error {
+	return v.Resource.Validate()
+}
+
 var versionSuiteTestTemplate = `{{ .Boilerplate }}
 
 package {{ .Resource.Version }}

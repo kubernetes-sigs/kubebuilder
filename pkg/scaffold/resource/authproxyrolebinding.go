@@ -41,6 +41,11 @@ func (r *AuthProxyRoleBinding) GetInput() (input.Input, error) {
 	return r.Input, nil
 }
 
+// Validate validates the values
+func (r *AuthProxyRoleBinding) Validate() error {
+	return r.Resource.Validate()
+}
+
 var proxyRoleBindinggTemplate = `apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
