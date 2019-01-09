@@ -146,9 +146,9 @@ func (o *projectOptions) runInit() {
 		&project.KustomizeImagePatch{},
 		&project.KustomizePrometheusMetricsPatch{},
 		&project.KustomizeAuthProxyPatch{},
-		&resource.AuthProxyService{},
-		&resource.AuthProxyRole{},
-		&resource.AuthProxyRoleBinding{})
+		&project.AuthProxyService{},
+		&project.AuthProxyRole{},
+		&project.AuthProxyRoleBinding{})
 	if err != nil {
 		log.Fatal(err)
 	}

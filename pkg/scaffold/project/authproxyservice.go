@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package resource
+package project
 
 import (
 	"path/filepath"
@@ -27,9 +27,6 @@ var _ input.File = &AuthProxyService{}
 // AuthProxyService scaffolds the config/rbac/auth_proxy_role.yaml file
 type AuthProxyService struct {
 	input.Input
-
-	// Resource is a resource in the API group
-	Resource *Resource
 }
 
 // GetInput implements input.File
@@ -40,7 +37,6 @@ func (r *AuthProxyService) GetInput() (input.Input, error) {
 	r.TemplateBody = AuthProxyServiceTemplate
 	return r.Input, nil
 }
-
 
 var AuthProxyServiceTemplate = `apiVersion: v1
 kind: Service

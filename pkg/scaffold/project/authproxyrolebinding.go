@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package resource
+package project
 
 import (
 	"path/filepath"
@@ -27,9 +27,6 @@ var _ input.File = &AuthProxyRoleBinding{}
 // AuthProxyRoleBinding scaffolds the config/rbac/auth_proxy_role_binding_rbac.yaml file
 type AuthProxyRoleBinding struct {
 	input.Input
-
-	// Resource is a resource in the API group
-	Resource *Resource
 }
 
 // GetInput implements input.File
@@ -40,7 +37,6 @@ func (r *AuthProxyRoleBinding) GetInput() (input.Input, error) {
 	r.TemplateBody = proxyRoleBindinggTemplate
 	return r.Input, nil
 }
-
 
 var proxyRoleBindinggTemplate = `apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
