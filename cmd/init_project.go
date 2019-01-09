@@ -35,7 +35,6 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/manager"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 )
 
 func newInitProjectCmd() *cobra.Command {
