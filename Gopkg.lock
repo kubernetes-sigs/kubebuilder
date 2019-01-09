@@ -876,7 +876,7 @@
   revision = "9dfdf9be683f61f82cda12362c44c784e0778b56"
 
 [[projects]]
-  digest = "1:e03ddaf9f31bccbbb8c33eabad2c85025a95ca98905649fd744e0a54c630a064"
+  digest = "1:576aa0abec4807e7a87b3d235c6e1b4a8dde240c7dcaa0f5a14429c59afd71a8"
   name = "sigs.k8s.io/controller-runtime"
   packages = [
     "pkg/cache",
@@ -914,30 +914,32 @@
     "pkg/webhook/internal/cert/generator",
     "pkg/webhook/internal/cert/writer",
     "pkg/webhook/internal/cert/writer/atomic",
+    "pkg/webhook/internal/metrics",
     "pkg/webhook/types",
   ]
   pruneopts = "NT"
-  revision = "c63ebda0bf4be5f0a8abd4003e4ea546032545ba"
-  version = "v0.1.8"
+  revision = "f6f0bc9611363b43664d08fb097ab13243ef621d"
+  version = "v0.1.9"
 
 [[projects]]
   branch = "master"
-  digest = "1:c7f15878bf35af16f41aa37df0d13e3d7a162499506e48a3822b569d7e68bc18"
+  digest = "1:0a14ea9a2647d064bb9d48b2de78306e74b196681efd7b654eb0b518d90c2e8d"
   name = "sigs.k8s.io/controller-tools"
   packages = ["pkg/util"]
   pruneopts = "NT"
-  revision = "b072ef59824b16023b0e12c94d0040d99059a961"
+  revision = "950a0e88e4effb864253b3c7504b326cc83b9d11"
 
 [[projects]]
-  branch = "master"
-  digest = "1:0c967d0a07a1320a079e56154a912528728446295136ed8fc7595d8548445965"
+  digest = "1:1b357310eaf2f448295aa077aaf077b56170bda56d2425f1d5d097ee4ff1c1ac"
   name = "sigs.k8s.io/testing_frameworks"
   packages = [
     "integration",
+    "integration/addr",
     "integration/internal",
   ]
   pruneopts = "NT"
-  revision = "5818a3a284a11812aaed11d5ca0bcadec2c50e83"
+  revision = "d348cb12705b516376e0c323bacca72b00a78425"
+  version = "v0.1.1"
 
 [solve-meta]
   analyzer-name = "dep"

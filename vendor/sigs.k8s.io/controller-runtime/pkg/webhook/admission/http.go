@@ -24,6 +24,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"time"
 
 	"k8s.io/api/admission/v1beta1"
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
@@ -31,6 +32,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission/types"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/internal/metrics"
 )
 
 var admissionv1beta1scheme = runtime.NewScheme()
@@ -47,6 +49,9 @@ func addToScheme(scheme *runtime.Scheme) {
 var _ http.Handler = &Webhook{}
 
 func (wh *Webhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	startTS := time.Now()
+	defer metrics.RequestLatency.WithLabelValues(wh.Name).Observe(time.Now().Sub(startTS).Seconds())
+
 	var body []byte
 	var err error
 
@@ -55,14 +60,14 @@ func (wh *Webhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if body, err = ioutil.ReadAll(r.Body); err != nil {
 			log.Error(err, "unable to read the body from the incoming request")
 			reviewResponse = ErrorResponse(http.StatusBadRequest, err)
-			writeResponse(w, reviewResponse)
+			wh.writeResponse(w, reviewResponse)
 			return
 		}
 	} else {
 		err = errors.New("request body is empty")
 		log.Error(err, "bad request")
 		reviewResponse = ErrorResponse(http.StatusBadRequest, err)
-		writeResponse(w, reviewResponse)
+		wh.writeResponse(w, reviewResponse)
 		return
 	}
 
@@ -72,7 +77,7 @@ func (wh *Webhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		err = fmt.Errorf("contentType=%s, expect application/json", contentType)
 		log.Error(err, "unable to process a request with an unknown content type", "content type", contentType)
 		reviewResponse = ErrorResponse(http.StatusBadRequest, err)
-		writeResponse(w, reviewResponse)
+		wh.writeResponse(w, reviewResponse)
 		return
 	}
 
@@ -80,16 +85,24 @@ func (wh *Webhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if _, _, err := admissionv1beta1schemecodecs.UniversalDeserializer().Decode(body, nil, &ar); err != nil {
 		log.Error(err, "unable to decode the request")
 		reviewResponse = ErrorResponse(http.StatusBadRequest, err)
-		writeResponse(w, reviewResponse)
+		wh.writeResponse(w, reviewResponse)
 		return
 	}
 
 	// TODO: add panic-recovery for Handle
 	reviewResponse = wh.Handle(context.Background(), types.Request{AdmissionRequest: ar.Request})
-	writeResponse(w, reviewResponse)
+	wh.writeResponse(w, reviewResponse)
 }
 
-func writeResponse(w io.Writer, response types.Response) {
+func (wh *Webhook) writeResponse(w io.Writer, response types.Response) {
+	if response.Response.Result.Code != 0 {
+		if response.Response.Result.Code == http.StatusOK {
+			metrics.TotalRequests.WithLabelValues(wh.Name, "true").Inc()
+		} else {
+			metrics.TotalRequests.WithLabelValues(wh.Name, "false").Inc()
+		}
+	}
+
 	encoder := json.NewEncoder(w)
 	responseAdmissionReview := v1beta1.AdmissionReview{
 		Response: response.Response,
@@ -97,6 +110,6 @@ func writeResponse(w io.Writer, response types.Response) {
 	err := encoder.Encode(responseAdmissionReview)
 	if err != nil {
 		log.Error(err, "unable to encode the response")
-		writeResponse(w, ErrorResponse(http.StatusInternalServerError, err))
+		wh.writeResponse(w, ErrorResponse(http.StatusInternalServerError, err))
 	}
 }

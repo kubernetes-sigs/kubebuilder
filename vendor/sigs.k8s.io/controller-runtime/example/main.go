@@ -108,8 +108,8 @@ func main() {
 
 	entryLog.Info("setting up webhook server")
 	as, err := webhook.NewServer("foo-admission-server", mgr, webhook.ServerOptions{
-		Port:    9876,
-		CertDir: "/tmp/cert",
+		Port:                          9876,
+		CertDir:                       "/tmp/cert",
 		DisableWebhookConfigInstaller: &disableWebhookConfigInstaller,
 		BootstrapOptions: &webhook.BootstrapOptions{
 			Secret: &apitypes.NamespacedName{

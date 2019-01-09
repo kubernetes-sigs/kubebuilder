@@ -23,8 +23,8 @@ import (
 
 	"github.com/spf13/cobra"
 	crdgenerator "sigs.k8s.io/controller-tools/pkg/crd/generator"
-	"sigs.k8s.io/controller-tools/pkg/generate/rbac"
-	"sigs.k8s.io/controller-tools/pkg/generate/webhook"
+	"sigs.k8s.io/controller-tools/pkg/rbac"
+	"sigs.k8s.io/controller-tools/pkg/webhook"
 )
 
 func main() {
