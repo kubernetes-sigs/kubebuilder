@@ -41,10 +41,6 @@ func (r *AuthProxyService) GetInput() (input.Input, error) {
 	return r.Input, nil
 }
 
-// Validate validates the values
-func (r *AuthProxyService) Validate() error {
-	return r.Resource.Validate()
-}
 
 var AuthProxyServiceTemplate = `apiVersion: v1
 kind: Service
