@@ -252,9 +252,7 @@ func (r *Reconcile{{ .Resource.Kind }}) Reconcile(request reconcile.Request) (re
 	if err != nil && errors.IsNotFound(err) {
 		log.Info("Creating Deployment", "namespace", deploy.Namespace, "name", deploy.Name)
 		err = r.Create(context.TODO(), deploy)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
+		return reconcile.Result{}, err
 	} else if err != nil {
 		return reconcile.Result{}, err
 	}
