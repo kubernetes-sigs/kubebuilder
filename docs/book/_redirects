@@ -1,2 +1,3 @@
+https://kubebuilder.netlify.com/* https://book.kubebuilder.io/:splat 301!
 http://kubebuilder.netlify.com/* http://book.kubebuilder.io/:splat 301!
 
