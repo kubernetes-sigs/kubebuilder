@@ -41,6 +41,11 @@ func (r *Register) GetInput() (input.Input, error) {
 	return r.Input, nil
 }
 
+// Validate validates the values
+func (r *Register) Validate() error {
+	return r.Resource.Validate()
+}
+
 var registerTemplate = `{{ .Boilerplate }}
 
 // NOTE: Boilerplate only.  Ignore this file.

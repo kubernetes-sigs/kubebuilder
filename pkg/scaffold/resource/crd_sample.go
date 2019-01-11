@@ -46,6 +46,11 @@ func (c *CRDSample) GetInput() (input.Input, error) {
 	return c.Input, nil
 }
 
+// Validate validates the values
+func (c *CRDSample) Validate() error {
+	return c.Resource.Validate()
+}
+
 var crdSampleTemplate = `apiVersion: {{ .Resource.Group }}.{{ .Domain }}/{{ .Resource.Version }}
 kind: {{ .Resource.Kind }}
 metadata:

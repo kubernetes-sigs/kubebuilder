@@ -43,6 +43,11 @@ func (a *AddToScheme) GetInput() (input.Input, error) {
 	return a.Input, nil
 }
 
+// Validate validates the values
+func (a *AddToScheme) Validate() error {
+	return a.Resource.Validate()
+}
+
 var addResourceTemplate = `{{ .Boilerplate }}
 
 package apis

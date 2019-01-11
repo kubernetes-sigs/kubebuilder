@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package resource
+package project
 
 import (
 	"path/filepath"
@@ -22,35 +22,33 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 )
 
-var _ input.File = &AuthProxyRoleBinding{}
+var _ input.File = &AuthProxyRole{}
 
-// AuthProxyRoleBinding scaffolds the config/rbac/auth_proxy_role_binding_rbac.yaml file
-type AuthProxyRoleBinding struct {
+// AuthProxyRole scaffolds the config/rbac/auth_proxy_role.yaml file
+type AuthProxyRole struct {
 	input.Input
-
-	// Resource is a resource in the API group
-	Resource *Resource
 }
 
 // GetInput implements input.File
-func (r *AuthProxyRoleBinding) GetInput() (input.Input, error) {
+func (r *AuthProxyRole) GetInput() (input.Input, error) {
 	if r.Path == "" {
-		r.Path = filepath.Join("config", "rbac", "auth_proxy_role_binding.yaml")
+		r.Path = filepath.Join("config", "rbac", "auth_proxy_role.yaml")
 	}
-	r.TemplateBody = proxyRoleBindinggTemplate
+	r.TemplateBody = proxyRoleTemplate
 	return r.Input, nil
 }
 
-var proxyRoleBindinggTemplate = `apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
+var proxyRoleTemplate = `apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
 metadata:
-  name: proxy-rolebinding
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
   name: proxy-role
-subjects:
-- kind: ServiceAccount
-  name: default
-  namespace: system
+rules:
+- apiGroups: ["authentication.k8s.io"]
+  resources:
+  - tokenreviews
+  verbs: ["create"]
+- apiGroups: ["authorization.k8s.io"]
+  resources:
+  - subjectaccessreviews
+  verbs: ["create"]
 `

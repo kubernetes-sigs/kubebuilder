@@ -35,7 +35,6 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/manager"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 )
 
 func newInitProjectCmd() *cobra.Command {
@@ -146,9 +145,9 @@ func (o *projectOptions) runInit() {
 		&project.KustomizeImagePatch{},
 		&project.KustomizePrometheusMetricsPatch{},
 		&project.KustomizeAuthProxyPatch{},
-		&resource.AuthProxyService{},
-		&resource.AuthProxyRole{},
-		&resource.AuthProxyRoleBinding{})
+		&project.AuthProxyService{},
+		&project.AuthProxyRole{},
+		&project.AuthProxyRoleBinding{})
 	if err != nil {
 		log.Fatal(err)
 	}
