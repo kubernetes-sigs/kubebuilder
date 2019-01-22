@@ -10,6 +10,8 @@
 
 # Steps to deploy
 
-- cd into 'docs/book' directory
-- Copy content from '_book' directory into 'public' directory
-- Run `firebase deploy --project kubebuilder`
+There are no manual steps needed to deploy the website.
+
+Kubebuilder book website is deployed on Netlify.
+There is a preview of the website for each PR.
+As soon as the PR is merged, the website will be built and deployed on Netlify.
