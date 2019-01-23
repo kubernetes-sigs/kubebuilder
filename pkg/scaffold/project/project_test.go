@@ -32,7 +32,7 @@ var _ = Describe("Project", func() {
 		})
 
 		It("should match the golden file", func() {
-			instance := &Boilerplate{Year: "2018", License: "apache2", Owner: "The Kubernetes authors"}
+			instance := &Boilerplate{Year: "2019", License: "apache2", Owner: "The Kubernetes authors"}
 			Expect(s.Execute(input.Options{}, instance)).NotTo(HaveOccurred())
 			Expect(result.Actual.String()).To(BeEquivalentTo(result.Golden))
 		})
@@ -45,7 +45,7 @@ var _ = Describe("Project", func() {
 
 		Context("for apache2", func() {
 			It("should write the apache2 boilerplate with specified owners", func() {
-				instance := &Boilerplate{Year: "2018", Owner: "Example Owners"}
+				instance := &Boilerplate{Year: "2019", Owner: "Example Owners"}
 				Expect(s.Execute(input.Options{}, instance)).NotTo(HaveOccurred())
 				e := strings.Replace(
 					result.Golden, "The Kubernetes authors", "Example Owners", -1)
@@ -53,7 +53,7 @@ var _ = Describe("Project", func() {
 			})
 
 			It("should use apache2 as the default", func() {
-				instance := &Boilerplate{Year: "2018", Owner: "The Kubernetes authors"}
+				instance := &Boilerplate{Year: "2019", Owner: "The Kubernetes authors"}
 				Expect(s.Execute(input.Options{}, instance)).NotTo(HaveOccurred())
 				Expect(result.Actual.String()).To(BeEquivalentTo(result.Golden))
 			})
