@@ -26,15 +26,15 @@ ENV CGO 0
 ENV DEST /usr/local/kubebuilder/bin/
 RUN mkdir -p $DEST || echo ""
 
-RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.12.3/bin/linux/amd64/kubectl
+RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.13.1/bin/linux/amd64/kubectl
 RUN chmod +x kubectl
 RUN cp kubectl $DEST
 
-RUN curl -LO https://dl.k8s.io/v1.12.3/kubernetes-server-linux-amd64.tar.gz
+RUN curl -LO https://dl.k8s.io/v1.13.1/kubernetes-server-linux-amd64.tar.gz
 RUN tar xzf kubernetes-server-linux-amd64.tar.gz
 RUN cp kubernetes/server/bin/kube-apiserver $DEST
 
-ENV ETCD_VERSION="3.3.10"
+ENV ETCD_VERSION="3.3.11"
 ENV ETCD_DOWNLOAD_FILE="etcd-v${ETCD_VERSION}-linux-amd64.tar.gz"
 RUN curl -LO https://github.com/coreos/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-amd64.tar.gz -o ${ETCD_DOWNLOAD_FILE}
 RUN tar xzf ${ETCD_DOWNLOAD_FILE}

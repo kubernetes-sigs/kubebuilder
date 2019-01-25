@@ -26,7 +26,7 @@ RUN go get github.com/jteeuwen/go-bindata/go-bindata
 ENV CGO 0
 ENV DEST /usr/local/kubebuilder/bin/
 RUN mkdir -p $DEST || echo ""
-RUN git clone https://github.com/kubernetes/kubernetes $GOPATH/src/k8s.io/kubernetes --depth=1 -b v1.12.3
+RUN git clone https://github.com/kubernetes/kubernetes $GOPATH/src/k8s.io/kubernetes --depth=1 -b v1.13.1
 WORKDIR /go/src/k8s.io/kubernetes
 
 # Build for linux first otherwise it won't work for darwin - :(
@@ -36,11 +36,11 @@ ENV KUBE_BUILD_PLATFORMS darwin/amd64
 RUN make WHAT=cmd/kube-apiserver
 RUN cp _output/local/bin/$KUBE_BUILD_PLATFORMS/kube-apiserver $DEST
 
-RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.12.3/bin/darwin/amd64/kubectl
+RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.13.1/bin/darwin/amd64/kubectl
 RUN chmod +x kubectl
 RUN cp kubectl $DEST
 
-ENV ETCD_VERSION="3.3.10"
+ENV ETCD_VERSION="3.3.11"
 ENV ETCD_DOWNLOAD_FILE="etcd-v${ETCD_VERSION}-darwin-amd64.zip"
 RUN curl -LO https://github.com/coreos/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-darwin-amd64.zip -o ${ETCD_DOWNLOAD_FILE}
 RUN unzip -o ${ETCD_DOWNLOAD_FILE}
