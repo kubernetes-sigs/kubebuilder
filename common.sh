@@ -42,7 +42,7 @@ cd "$base_dir" || {
 }
 
 # k8s_version=1.11.0
-k8s_version=1.12.3
+k8s_version=1.13.1
 goarch=amd64
 goos="unknown"
 
