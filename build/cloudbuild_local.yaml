@@ -23,15 +23,15 @@
 steps:
 - name: "ubuntu"
   args: ["mkdir", "-p", "/workspace/_output/linux_amd64"]
-- name: "gcr.io/kubebuilder/thirdparty-linux:1.12.3"
+- name: "gcr.io/kubebuilder/thirdparty-linux:1.13.1"
   args: ["tar", "-xzvf", "/kubebuilder_linux_amd64.tar.gz"]
   dir: "_output/linux_amd64"
 - name: "ubuntu"
   args: ["mkdir", "-p", "/workspace/_output/darwin_amd64"]
-- name: "gcr.io/kubebuilder/thirdparty-darwin:1.12.3"
+- name: "gcr.io/kubebuilder/thirdparty-darwin:1.13.1"
   args: ["tar", "-xzvf", "/kubebuilder_darwin_amd64.tar.gz"]
   dir: "_output/darwin_amd64"
 - name: "gcr.io/kubebuilder/goreleaser_with_go_1.11:0.0.1"
   args: ["bash", "build/build_kubebuilder.sh", "--snapshot"]
   env:
-   - 'KUBERNETES_VERSION=1.12.3'
+   - 'KUBERNETES_VERSION=1.13.1'
