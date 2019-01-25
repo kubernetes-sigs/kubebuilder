@@ -85,6 +85,7 @@ func (o *apiOptions) runAddAPI() {
 			&resource.Group{Resource: r},
 			&resource.AddToScheme{Resource: r},
 			&resource.CRDSample{Resource: r},
+			&resource.CRDStatus{Resource: r},
 		)
 		if err != nil {
 			log.Fatal(err)
