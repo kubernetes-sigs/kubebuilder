@@ -5,7 +5,9 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -18,11 +20,13 @@ var _ = Describe("Project", func() {
 	var result *scaffoldtest.TestResult
 	var writeToPath, goldenPath string
 	var s *scaffold.Scaffold
+	var year string
 
 	JustBeforeEach(func() {
 		s, result = scaffoldtest.NewTestScaffold(writeToPath, goldenPath)
 		s.BoilerplateOptional = true
 		s.ProjectOptional = true
+		year = strconv.Itoa(time.Now().Year())
 	})
 
 	Describe("scaffolding a boilerplate file", func() {
@@ -32,7 +36,7 @@ var _ = Describe("Project", func() {
 		})
 
 		It("should match the golden file", func() {
-			instance := &Boilerplate{Year: "2019", License: "apache2", Owner: "The Kubernetes authors"}
+			instance := &Boilerplate{Year: year, License: "apache2", Owner: "The Kubernetes authors"}
 			Expect(s.Execute(input.Options{}, instance)).NotTo(HaveOccurred())
 			Expect(result.Actual.String()).To(BeEquivalentTo(result.Golden))
 		})
@@ -45,7 +49,7 @@ var _ = Describe("Project", func() {
 
 		Context("for apache2", func() {
 			It("should write the apache2 boilerplate with specified owners", func() {
-				instance := &Boilerplate{Year: "2019", Owner: "Example Owners"}
+				instance := &Boilerplate{Year: year, Owner: "Example Owners"}
 				Expect(s.Execute(input.Options{}, instance)).NotTo(HaveOccurred())
 				e := strings.Replace(
 					result.Golden, "The Kubernetes authors", "Example Owners", -1)
@@ -53,7 +57,7 @@ var _ = Describe("Project", func() {
 			})
 
 			It("should use apache2 as the default", func() {
-				instance := &Boilerplate{Year: "2019", Owner: "The Kubernetes authors"}
+				instance := &Boilerplate{Year: year, Owner: "The Kubernetes authors"}
 				Expect(s.Execute(input.Options{}, instance)).NotTo(HaveOccurred())
 				Expect(result.Actual.String()).To(BeEquivalentTo(result.Golden))
 			})
@@ -62,11 +66,11 @@ var _ = Describe("Project", func() {
 		Context("for none", func() {
 			It("should write the empty boilerplate", func() {
 				// Scaffold a boilerplate file
-				instance := &Boilerplate{Year: "2019", License: "none", Owner: "Example Owners"}
+				instance := &Boilerplate{Year: year, License: "none", Owner: "Example Owners"}
 				Expect(s.Execute(input.Options{}, instance)).NotTo(HaveOccurred())
-				Expect(result.Actual.String()).To(BeEquivalentTo(`/*
-Copyright 2019 Example Owners.
-*/`))
+				Expect(result.Actual.String()).To(BeEquivalentTo(fmt.Sprintf(`/*
+Copyright %s Example Owners.
+*/`, year)))
 			})
 		})
 
