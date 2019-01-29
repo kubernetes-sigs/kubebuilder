@@ -41,6 +41,18 @@ cd "$base_dir" || {
   exit 1
 }
 
+go_workspace=''
+for p in ${GOPATH//:/ }; do
+  if [[ $PWD/ = $p/* ]]; then
+    go_workspace=$p
+  fi
+done
+
+if [ -z $go_workspace ]; then
+  echo 'Current directory is not in $GOPATH' >&2
+  exit 1
+fi
+
 # k8s_version=1.11.0
 k8s_version=1.13.1
 goarch=amd64
@@ -130,7 +142,7 @@ function build_kb {
 }
 
 function prepare_testdir_under_gopath {
-  kb_test_dir=$GOPATH/src/sigs.k8s.io/kubebuilder-test
+  kb_test_dir=${go_workspace}/src/sigs.k8s.io/kubebuilder-test
   header_text "preparing test directory $kb_test_dir"
   rm -rf "$kb_test_dir" && mkdir -p "$kb_test_dir" && cd "$kb_test_dir"
   header_text "running kubebuilder commands in test directory $kb_test_dir"

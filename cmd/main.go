@@ -20,11 +20,11 @@ import (
 	gobuild "go/build"
 	"log"
 	"os"
-	"path/filepath"
-	"strings"
+	"regexp"
 
 	"github.com/spf13/cobra"
 
+	toolsutil "sigs.k8s.io/controller-tools/pkg/crd/util"
 	"sigs.k8s.io/kubebuilder/cmd/util"
 	"sigs.k8s.io/kubebuilder/cmd/version"
 )
@@ -34,18 +34,23 @@ func main() {
 	if len(gopath) == 0 {
 		gopath = gobuild.Default.GOPATH
 	}
-	util.GoSrc = filepath.Join(gopath, "src")
 
 	wd, err := os.Getwd()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if !strings.HasPrefix(filepath.Dir(wd), util.GoSrc) {
+	if !toolsutil.IsUnderGoSrcPath(wd) {
 		log.Fatalf("kubebuilder must be run from the project root under $GOPATH/src/<package>. "+
 			"\nCurrent GOPATH=%s.  \nCurrent directory=%s", gopath, wd)
 	}
-	util.Repo = strings.Replace(wd, util.GoSrc+string(filepath.Separator), "", 1)
+	util.Repo, err = toolsutil.DirToGoPkg(wd)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	re := regexp.MustCompile(`(^.*\/src)(\/.*$)`)
+	util.GoSrc = re.ReplaceAllString(wd, "$1")
 
 	rootCmd := defaultCommand()
 

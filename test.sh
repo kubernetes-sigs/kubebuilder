@@ -127,7 +127,7 @@ prepare_testdir_under_gopath
 dump_cache
 test_create_namespaced_coretype_controller
 
-cd $GOPATH/src/sigs.k8s.io/kubebuilder
+cd ${go_workspace}/src/sigs.k8s.io/kubebuilder
 
 go test ./cmd/... ./pkg/...
 
