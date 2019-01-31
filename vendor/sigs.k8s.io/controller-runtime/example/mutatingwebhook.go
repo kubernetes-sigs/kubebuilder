@@ -62,9 +62,9 @@ func (a *podAnnotator) mutatePodsFn(ctx context.Context, pod *corev1.Pod) error 
 	return nil
 }
 
-// podValidator implements inject.Client.
+// podAnnotator implements inject.Client.
 // A client will be automatically injected.
-var _ inject.Client = &podValidator{}
+var _ inject.Client = &podAnnotator{}
 
 // InjectClient injects the client.
 func (v *podAnnotator) InjectClient(c client.Client) error {
@@ -72,9 +72,9 @@ func (v *podAnnotator) InjectClient(c client.Client) error {
 	return nil
 }
 
-// podValidator implements inject.Decoder.
+// podAnnotator implements inject.Decoder.
 // A decoder will be automatically injected.
-var _ inject.Decoder = &podValidator{}
+var _ inject.Decoder = &podAnnotator{}
 
 // InjectDecoder injects the decoder.
 func (v *podAnnotator) InjectDecoder(d types.Decoder) error {

@@ -32,133 +32,173 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-// application is a simple Controller for a single API type.  It will create a Manager for itself
-// if one is not provided.
-type application struct {
-	mgr  manager.Manager
-	ctrl controller.Controller
-}
-
 // Supporting mocking out functions for testing
 var getConfig = config.GetConfig
 var newController = controller.New
 var newManager = manager.New
 var getGvk = apiutil.GVKForObject
 
-// Builder builds an Application Controller (e.g. Operator) and returns a manager.Manager to start it.
+// Builder builds a Controller.
 type Builder struct {
 	apiType        runtime.Object
 	mgr            manager.Manager
 	predicates     []predicate.Predicate
 	managedObjects []runtime.Object
+	watchRequest   []watchRequest
 	config         *rest.Config
 	ctrl           controller.Controller
 }
 
-// SimpleController returns a new Builder
+// SimpleController returns a new Builder.
+// Deprecated: Use ControllerManagedBy(Manager) instead.
 func SimpleController() *Builder {
 	return &Builder{}
 }
 
-// ForType sets the ForType that generates other types
-func (b *Builder) ForType(apiType runtime.Object) *Builder {
-	b.apiType = apiType
-	return b
+// ControllerManagedBy returns a new controller builder that will be started by the provided Manager
+func ControllerManagedBy(m manager.Manager) *Builder {
+	return SimpleController().WithManager(m)
 }
 
-// Owns configures the Application Controller to respond to create / delete / update events for objects it managedObjects
-// - e.g. creates.  apiType is an empty instance of an object matching the managed object type.
-func (b *Builder) Owns(apiType runtime.Object) *Builder {
-	b.managedObjects = append(b.managedObjects, apiType)
-	return b
+// ForType defines the type of Object being *reconciled*, and configures the ControllerManagedBy to respond to create / delete /
+// update events by *reconciling the object*.
+// This is the equivalent of calling
+// Watches(&source.Kind{Type: apiType}, &handler.EnqueueRequestForObject{})
+// Deprecated: Use For
+func (blder *Builder) ForType(apiType runtime.Object) *Builder {
+	return blder.For(apiType)
+}
+
+// For defines the type of Object being *reconciled*, and configures the ControllerManagedBy to respond to create / delete /
+// update events by *reconciling the object*.
+// This is the equivalent of calling
+// Watches(&source.Kind{Type: apiType}, &handler.EnqueueRequestForObject{})
+func (blder *Builder) For(apiType runtime.Object) *Builder {
+	blder.apiType = apiType
+	return blder
+}
+
+// Owns defines types of Objects being *generated* by the ControllerManagedBy, and configures the ControllerManagedBy to respond to
+// create / delete / update events by *reconciling the owner object*.  This is the equivalent of calling
+// Watches(&handler.EnqueueRequestForOwner{&source.Kind{Type: <ForType-apiType>}, &handler.EnqueueRequestForOwner{OwnerType: apiType, IsController: true})
+func (blder *Builder) Owns(apiType runtime.Object) *Builder {
+	blder.managedObjects = append(blder.managedObjects, apiType)
+	return blder
+}
+
+type watchRequest struct {
+	src          source.Source
+	eventhandler handler.EventHandler
+}
+
+// Watches exposes the lower-level ControllerManagedBy Watches functions through the builder.  Consider using
+// Owns or For instead of Watches directly.
+func (blder *Builder) Watches(src source.Source, eventhandler handler.EventHandler) *Builder {
+	blder.watchRequest = append(blder.watchRequest, watchRequest{src: src, eventhandler: eventhandler})
+	return blder
 }
 
 // WithConfig sets the Config to use for configuring clients.  Defaults to the in-cluster config or to ~/.kube/config.
-func (b *Builder) WithConfig(config *rest.Config) *Builder {
-	b.config = config
-	return b
+// Deprecated: Use ControllerManagedBy(Manager) and this isn't needed.
+func (blder *Builder) WithConfig(config *rest.Config) *Builder {
+	blder.config = config
+	return blder
 }
 
-// WithManager sets the Manager to use for registering the Controller.  Defaults to a new manager.Manager.
-func (b *Builder) WithManager(m manager.Manager) *Builder {
-	b.mgr = m
-	return b
+// WithManager sets the Manager to use for registering the ControllerManagedBy.  Defaults to a new manager.Manager.
+// Deprecated: Use ControllerManagedBy(Manager) and this isn't needed.
+func (blder *Builder) WithManager(m manager.Manager) *Builder {
+	blder.mgr = m
+	return blder
 }
 
 // WithEventFilter sets the event filters, to filter which create/update/delete/generic events eventually
 // trigger reconciliations.  For example, filtering on whether the resource version has changed.
 // Defaults to the empty list.
-func (b *Builder) WithEventFilter(p predicate.Predicate) *Builder {
-	b.predicates = append(b.predicates, p)
-	return b
+func (blder *Builder) WithEventFilter(p predicate.Predicate) *Builder {
+	blder.predicates = append(blder.predicates, p)
+	return blder
 }
 
-// Build builds the Application Controller and returns the Manager used to start it.
-func (b *Builder) Build(r reconcile.Reconciler) (manager.Manager, error) {
+// Complete builds the Application ControllerManagedBy and returns the Manager used to start it.
+func (blder *Builder) Complete(r reconcile.Reconciler) error {
+	_, err := blder.Build(r)
+	return err
+}
+
+// Build builds the Application ControllerManagedBy and returns the Manager used to start it.
+// Deprecated: Use Complete
+func (blder *Builder) Build(r reconcile.Reconciler) (manager.Manager, error) {
 	if r == nil {
 		return nil, fmt.Errorf("must call WithReconciler to set Reconciler")
 	}
 
 	// Set the Config
-	if err := b.doConfig(); err != nil {
+	if err := blder.doConfig(); err != nil {
 		return nil, err
 	}
 
 	// Set the Manager
-	if err := b.doManager(); err != nil {
+	if err := blder.doManager(); err != nil {
 		return nil, err
 	}
 
-	// Set the Controller
-	if err := b.doController(r); err != nil {
+	// Set the ControllerManagedBy
+	if err := blder.doController(r); err != nil {
 		return nil, err
 	}
-
-	a := &application{mgr: b.mgr, ctrl: b.ctrl}
 
 	// Reconcile type
-	s := &source.Kind{Type: b.apiType}
-	h := &handler.EnqueueRequestForObject{}
-	err := a.ctrl.Watch(s, h, b.predicates...)
+	src := &source.Kind{Type: blder.apiType}
+	hdler := &handler.EnqueueRequestForObject{}
+	err := blder.ctrl.Watch(src, hdler, blder.predicates...)
 	if err != nil {
 		return nil, err
 	}
 
-	// Watch the managed types
-	for _, t := range b.managedObjects {
-		s := &source.Kind{Type: t}
-		h := &handler.EnqueueRequestForOwner{
-			OwnerType:    b.apiType,
+	// Watches the managed types
+	for _, obj := range blder.managedObjects {
+		src := &source.Kind{Type: obj}
+		hdler := &handler.EnqueueRequestForOwner{
+			OwnerType:    blder.apiType,
 			IsController: true,
 		}
-		if err := a.ctrl.Watch(s, h, b.predicates...); err != nil {
+		if err := blder.ctrl.Watch(src, hdler, blder.predicates...); err != nil {
 			return nil, err
 		}
 	}
 
-	return a.mgr, nil
+	// Do the watch requests
+	for _, w := range blder.watchRequest {
+		if err := blder.ctrl.Watch(w.src, w.eventhandler, blder.predicates...); err != nil {
+			return nil, err
+		}
+
+	}
+
+	return blder.mgr, nil
 }
 
-func (b *Builder) doConfig() error {
-	if b.config != nil {
+func (blder *Builder) doConfig() error {
+	if blder.config != nil {
 		return nil
 	}
 	var err error
-	b.config, err = getConfig()
+	blder.config, err = getConfig()
 	return err
 }
 
-func (b *Builder) doManager() error {
-	if b.mgr != nil {
+func (blder *Builder) doManager() error {
+	if blder.mgr != nil {
 		return nil
 	}
 	var err error
-	b.mgr, err = newManager(b.config, manager.Options{})
+	blder.mgr, err = newManager(blder.config, manager.Options{})
 	return err
 }
 
-func (b *Builder) getControllerName() (string, error) {
-	gvk, err := getGvk(b.apiType, b.mgr.GetScheme())
+func (blder *Builder) getControllerName() (string, error) {
+	gvk, err := getGvk(blder.apiType, blder.mgr.GetScheme())
 	if err != nil {
 		return "", err
 	}
@@ -166,11 +206,11 @@ func (b *Builder) getControllerName() (string, error) {
 	return name, nil
 }
 
-func (b *Builder) doController(r reconcile.Reconciler) error {
-	name, err := b.getControllerName()
+func (blder *Builder) doController(r reconcile.Reconciler) error {
+	name, err := blder.getControllerName()
 	if err != nil {
 		return err
 	}
-	b.ctrl, err = newController(name, b.mgr, controller.Options{Reconciler: r})
+	blder.ctrl, err = newController(name, blder.mgr, controller.Options{Reconciler: r})
 	return err
 }

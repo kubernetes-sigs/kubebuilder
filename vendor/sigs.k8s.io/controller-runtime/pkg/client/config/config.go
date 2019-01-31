@@ -89,6 +89,7 @@ func GetConfigOrDie() *rest.Config {
 	config, err := GetConfig()
 	if err != nil {
 		log.Error(err, "unable to get kubeconfig")
+		os.Exit(1)
 	}
 	return config
 }

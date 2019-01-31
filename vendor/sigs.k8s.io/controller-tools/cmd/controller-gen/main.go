@@ -67,7 +67,7 @@ func newRBACCmd() *cobra.Command {
 Usage:
 # controller-gen rbac [--name manager] [--input-dir input_dir] [--output-dir output_dir]
 `,
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, _ []string) {
 			if err := rbac.Generate(o); err != nil {
 				log.Fatal(err)
 			}
@@ -93,7 +93,7 @@ func newCRDCmd() *cobra.Command {
 Usage:
 # controller-gen crd [--domain k8s.io] [--root-path input_dir] [--output-dir output_dir]
 `,
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, _ []string) {
 			if err := g.ValidateAndInitFields(); err != nil {
 				log.Fatal(err)
 			}
@@ -126,7 +126,7 @@ func newAllSubCmd() *cobra.Command {
 Usage:
 # controller-gen all
 `,
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, _ []string) {
 			if projectDir == "" {
 				currDir, err := os.Getwd()
 				if err != nil {
@@ -177,7 +177,7 @@ func newWebhookCmd() *cobra.Command {
 Usage:
 # controller-gen webhook [--input-dir input_dir] [--output-dir output_dir] [--patch-output-dir patch-output_dir]
 `,
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, _ []string) {
 			if err := webhook.Generate(o); err != nil {
 				log.Fatal(err)
 			}

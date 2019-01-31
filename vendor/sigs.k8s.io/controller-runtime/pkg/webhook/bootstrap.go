@@ -297,7 +297,7 @@ func (s *Server) validatingWHConfigs() (runtime.Object, error) {
 }
 
 func (s *Server) admissionWebhook(path string, wh *admission.Webhook) (*admissionregistration.Webhook, error) {
-	if wh.NamespaceSelector == nil && len(s.Service.Namespace) > 0 {
+	if wh.NamespaceSelector == nil && s.Service != nil && len(s.Service.Namespace) > 0 {
 		wh.NamespaceSelector = &metav1.LabelSelector{
 			MatchExpressions: []metav1.LabelSelectorRequirement{
 				{

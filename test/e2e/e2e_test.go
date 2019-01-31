@@ -24,11 +24,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/golang/glog"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/pflag"
 
+	"k8s.io/klog"
 	"sigs.k8s.io/kubebuilder/test/e2e/framework"
 	"sigs.k8s.io/kubebuilder/test/e2e/framework/ginkgowrapper"
 )
@@ -76,7 +76,7 @@ var _ = AfterSuite(func() {
 // E2E tests using the Ginkgo runner.
 func RunE2ETests(t *testing.T) {
 	RegisterFailHandler(ginkgowrapper.Fail)
-	glog.Infof("Starting kubebuilder suite")
+	klog.Infof("Starting kubebuilder suite")
 	RunSpecs(t, "Kubebuilder e2e suite")
 }
 

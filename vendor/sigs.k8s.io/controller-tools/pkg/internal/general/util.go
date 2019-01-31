@@ -67,7 +67,7 @@ func ParseDir(dir string, parseFn func(string) error) error {
 	fset := token.NewFileSet()
 
 	err := filepath.Walk(dir,
-		func(path string, info os.FileInfo, err error) error {
+		func(path string, info os.FileInfo, _ error) error {
 			if !isGoFile(info) {
 				// TODO(droot): enable this output based on verbose flag
 				// fmt.Println("skipping non-go file", path)
