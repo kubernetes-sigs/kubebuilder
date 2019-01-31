@@ -121,7 +121,7 @@ func (b *APIs) parseCRDs() {
 						resource.CRD.Spec.AdditionalPrinterColumns = result
 					}
 					if len(resource.ShortName) > 0 {
-						resource.CRD.Spec.Names.ShortNames = []string{resource.ShortName}
+						resource.CRD.Spec.Names.ShortNames = strings.Split(resource.ShortName, ";")
 					}
 				}
 			}

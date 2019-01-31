@@ -27,6 +27,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime"
 	apitypes "k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
@@ -35,6 +36,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/internal/cert/writer"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/types"
 )
+
+// default interval for checking cert is 90 days (~3 months)
+var defaultCertRefreshInterval = 3 * 30 * 24 * time.Hour
 
 // ServerOptions are options for configuring an admission webhook server.
 type ServerOptions struct {
@@ -128,6 +132,9 @@ type Server struct {
 	// manager is the manager that this webhook server will be registered.
 	manager manager.Manager
 
+	// httpServer is the actual server that serves the traffic.
+	httpServer *http.Server
+
 	once sync.Once
 }
 
@@ -209,21 +216,21 @@ func (s *Server) Start(stop <-chan struct{}) error {
 	return s.run(stop)
 }
 
-func (s *Server) run(stop <-chan struct{}) error {
-	srv := &http.Server{
-		Addr:    fmt.Sprintf(":%v", s.Port),
-		Handler: s.sMux,
-	}
+func (s *Server) run(stop <-chan struct{}) error { // nolint: gocyclo
 	errCh := make(chan error)
 	serveFn := func() {
-		errCh <- srv.ListenAndServeTLS(path.Join(s.CertDir, writer.ServerCertName), path.Join(s.CertDir, writer.ServerKeyName))
+		s.httpServer = &http.Server{
+			Addr:    fmt.Sprintf(":%v", s.Port),
+			Handler: s.sMux,
+		}
+		log.Info("starting the webhook server.")
+		errCh <- s.httpServer.ListenAndServeTLS(path.Join(s.CertDir, writer.ServerCertName), path.Join(s.CertDir, writer.ServerKeyName))
 	}
 
+	shutdownHappend := false
+	timer := time.Tick(wait.Jitter(defaultCertRefreshInterval, 0.1))
 	go serveFn()
 	for {
-		// TODO(mengqiy): add jitter to the timer
-		// Could use https://godoc.org/k8s.io/apimachinery/pkg/util/wait#Jitter
-		timer := time.Tick(6 * 30 * 24 * time.Hour)
 		select {
 		case <-timer:
 			changed, err := s.RefreshCert()
@@ -232,19 +239,28 @@ func (s *Server) run(stop <-chan struct{}) error {
 				return err
 			}
 			if !changed {
+				log.Info("no need to reload the certificates.")
 				continue
 			}
 			log.Info("server is shutting down to reload the certificates.")
-			err = srv.Shutdown(context.Background())
+			shutdownHappend = true
+			err = s.httpServer.Shutdown(context.Background())
 			if err != nil {
 				log.Error(err, "encountering error when shutting down")
 				return err
 			}
+			timer = time.Tick(wait.Jitter(defaultCertRefreshInterval, 0.1))
 			go serveFn()
 		case <-stop:
-			return nil
+			return s.httpServer.Shutdown(context.Background())
 		case e := <-errCh:
-			return e
+			// Don't exit when getting an http.ErrServerClosed error due to restarting the server.
+			if shutdownHappend && e == http.ErrServerClosed {
+				shutdownHappend = false
+			} else if e != nil {
+				log.Error(e, "server returns an unexpected error")
+				return e
+			}
 		}
 	}
 }

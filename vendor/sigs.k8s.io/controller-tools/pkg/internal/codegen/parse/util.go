@@ -401,9 +401,6 @@ func parseScaleParams(t *types.Type) (map[string]string, error) {
 				return nil, fmt.Errorf(jsonPathError)
 			}
 			for _, s := range path {
-				fmt.Printf("\n[debug] %s", s)
-			}
-			for _, s := range path {
 				kv := strings.Split(s, "=")
 				if kv[0] == specReplicasPath || kv[0] == statusReplicasPath || kv[0] == labelSelectorPath {
 					jsonPath[kv[0]] = kv[1]
@@ -449,9 +446,6 @@ func helperPrintColumn(parts string, comment string) (v1beta1.CustomResourceColu
 		return v1beta1.CustomResourceColumnDefinition{}, fmt.Errorf(printColumnError)
 	}
 
-	for _, s := range part {
-		fmt.Printf("\n[debug] %s", s)
-	}
 	for _, elem := range strings.Split(parts, ",") {
 		key, value, err := printColumnKV(elem)
 		if err != nil {

@@ -56,10 +56,6 @@ func (cp *Provisioner) Provision(options Options) (bool, error) {
 	if cp.CertWriter == nil {
 		return false, errors.New("CertWriter need to be set")
 	}
-	// If the objects need to be updated, just be lazy and return.
-	if len(options.Objects) == 0 {
-		return false, nil
-	}
 
 	dnsName, err := dnsNameFromClientConfig(options.ClientConfig)
 	if err != nil {

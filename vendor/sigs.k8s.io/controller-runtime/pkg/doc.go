@@ -47,7 +47,7 @@ system must be read for each Reconciler.
 
 * Controllers require a Reconciler to be provided to perform the work pulled from the work queue.
 
-* Controller require Watches to be configured to enqueue reconcile.Requests in response to events.
+* Controllers require Watches to be configured to enqueue reconcile.Requests in response to events.
 
 Webhook
 
