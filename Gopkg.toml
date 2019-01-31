@@ -12,8 +12,14 @@ required = [
     ]
 
 [[constraint]]
+  name = "sigs.k8s.io/controller-runtime"
+  branch = "decouple"
+  source = "github.com/mengqiy/controller-runtime"
+
+[[constraint]]
   name = "sigs.k8s.io/controller-tools"
-  branch = "master"
+  branch = "webhookgenerator"
+  source = "github.com/mengqiy/controller-tools"
 
 [[constraint]]
   name="k8s.io/code-generator"

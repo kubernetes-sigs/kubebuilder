@@ -25,13 +25,13 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/internal/log"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
-var log = logf.KBLog.WithName("source").WithName("EventHandler")
+var log = logf.RuntimeLog.WithName("source").WithName("EventHandler")
 
 var _ cache.ResourceEventHandler = EventHandler{}
 

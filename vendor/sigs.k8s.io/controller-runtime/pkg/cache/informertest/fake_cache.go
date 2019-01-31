@@ -136,6 +136,6 @@ func (c *FakeInformers) Get(ctx context.Context, key client.ObjectKey, obj runti
 }
 
 // List implements Cache
-func (c *FakeInformers) List(ctx context.Context, opts *client.ListOptions, list runtime.Object) error {
+func (c *FakeInformers) List(ctx context.Context, list runtime.Object, opts ...client.ListOptionFunc) error {
 	return nil
 }

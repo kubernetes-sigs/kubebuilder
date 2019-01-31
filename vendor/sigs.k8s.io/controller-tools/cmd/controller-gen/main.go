@@ -158,6 +158,19 @@ Usage:
 				log.Fatal(err)
 			}
 			fmt.Printf("RBAC manifests generated under '%s' \n", rbacOptions.OutputDir)
+
+			o := &webhook.Options{
+				WriterOptions: webhook.WriterOptions{
+					InputDir:       filepath.Join(projectDir, "pkg"),
+					OutputDir:      filepath.Join(projectDir, "config", "webhook"),
+					PatchOutputDir: filepath.Join(projectDir, "config", "default"),
+				},
+			}
+			o.SetDefaults()
+			if err := webhook.Generate(o); err != nil {
+				log.Fatal(err)
+			}
+			fmt.Printf("webhook manifests generated under '%s' directory\n", o.OutputDir)
 		},
 	}
 	f := cmd.Flags()
@@ -167,7 +180,7 @@ Usage:
 }
 
 func newWebhookCmd() *cobra.Command {
-	o := &webhook.ManifestOptions{}
+	o := &webhook.Options{}
 	o.SetDefaults()
 
 	cmd := &cobra.Command{

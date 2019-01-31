@@ -58,7 +58,7 @@ func (ip *informerCache) Get(ctx context.Context, key client.ObjectKey, out runt
 }
 
 // List implements Reader
-func (ip *informerCache) List(ctx context.Context, opts *client.ListOptions, out runtime.Object) error {
+func (ip *informerCache) List(ctx context.Context, out runtime.Object, opts ...client.ListOptionFunc) error {
 	gvk, err := apiutil.GVKForObject(out, ip.Scheme)
 	if err != nil {
 		return err
@@ -95,7 +95,7 @@ func (ip *informerCache) List(ctx context.Context, opts *client.ListOptions, out
 		return err
 	}
 
-	return cache.Reader.List(ctx, opts, out)
+	return cache.Reader.List(ctx, out, opts...)
 }
 
 // GetInformerForKind returns the informer for the GroupVersionKind

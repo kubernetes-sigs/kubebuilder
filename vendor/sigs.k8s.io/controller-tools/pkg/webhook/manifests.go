@@ -19,90 +19,50 @@ package webhook
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
-	"os"
 	"path"
-	"path/filepath"
 	"strings"
 	"text/template"
 
 	"github.com/ghodss/yaml"
+	"github.com/spf13/afero"
 
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	generateinteral "sigs.k8s.io/controller-tools/pkg/internal/general"
-	"sigs.k8s.io/controller-tools/pkg/webhook/internal"
 )
 
-// ManifestOptions represent options for generating the webhook manifests.
-type ManifestOptions struct {
-	InputDir       string
-	OutputDir      string
-	PatchOutputDir string
+// Options represent options for generating the webhook manifests.
+type Options struct {
+	// WriterOptions specifies the input and output
+	WriterOptions
 
-	webhooks []webhook.Webhook
-	svrOps   *webhook.ServerOptions
-	svr      *webhook.Server
-}
-
-// SetDefaults sets up the default options for RBAC Manifest generator.
-func (o *ManifestOptions) SetDefaults() {
-	o.InputDir = filepath.Join(".", "pkg", "webhook")
-	o.OutputDir = filepath.Join(".", "config", "webhook")
-	o.PatchOutputDir = filepath.Join(".", "config", "default")
-}
-
-// Validate validates the input options.
-func (o *ManifestOptions) Validate() error {
-	if _, err := os.Stat(o.InputDir); err != nil {
-		return fmt.Errorf("invalid input directory '%s' %v", o.InputDir, err)
-	}
-	return nil
+	generatorOptions
 }
 
 // Generate generates RBAC manifests by parsing the RBAC annotations in Go source
 // files specified in the input directory.
-func Generate(o *ManifestOptions) error {
-	if err := o.Validate(); err != nil {
+func Generate(o *Options) error {
+	if err := o.WriterOptions.Validate(); err != nil {
 		return err
 	}
 
-	_, err := os.Stat(o.OutputDir)
-	if os.IsNotExist(err) {
-		err = os.MkdirAll(o.OutputDir, 0766)
-		if err != nil {
-			return err
-		}
-	} else if err != nil {
-		return err
-	}
-
-	o.webhooks = []webhook.Webhook{}
-	o.svrOps = &webhook.ServerOptions{
-		Client: internal.NewManifestClient(path.Join(o.OutputDir, "webhook.yaml")),
-	}
-	err = generateinteral.ParseDir(o.InputDir, o.parseAnnotation)
+	err := generateinteral.ParseDir(o.InputDir, o.parseAnnotation)
 	if err != nil {
 		return fmt.Errorf("failed to parse the input dir: %v", err)
 	}
 
-	o.svr, err = webhook.NewServer("generator", &internal.Manager{}, *o.svrOps)
-	if err != nil {
-		return err
-	}
-	err = o.svr.Register(o.webhooks...)
-	if err != nil {
-		return fmt.Errorf("failed to process the input before generating: %v", err)
-	}
-
-	err = o.svr.InstallWebhookManifests()
+	objs, err := o.Generate()
 	if err != nil {
 		return err
 	}
 
-	return o.labelPatch()
+	err = o.writeObjectsToDisk(objs...)
+	if err != nil {
+		return err
+	}
+
+	return o.controllerManagerPatch()
 }
 
-func (o *ManifestOptions) labelPatch() error {
+func (o *Options) controllerManagerPatch() error {
 	var kustomizeLabelPatch = `apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -114,13 +74,37 @@ spec:
       labels:
 {{ toYaml . | indent 8 }}
 {{- end }}
+    spec:
+      containers:
+      - name: manager
+        ports:
+        - containerPort: {{ .Port }}
+          name: webhook-server
+          protocol: TCP
+        volumeMounts:
+        - mountPath: {{ .CertDir }}
+          name: cert
+          readOnly: true
+      volumes:
+      - name: cert
+        secret:
+          defaultMode: 420
+          secretName: {{ .SecretName }}
 `
 
 	type KustomizeLabelPatch struct {
-		Labels map[string]string
+		Labels     map[string]string
+		SecretName string
+		Port       int32
+		CertDir    string
 	}
 
-	p := KustomizeLabelPatch{Labels: o.svrOps.Service.Selectors}
+	p := KustomizeLabelPatch{
+		Labels:     o.service.selectors,
+		SecretName: o.secret.Name,
+		Port:       o.port,
+		CertDir:    o.certDir,
+	}
 	funcMap := template.FuncMap{
 		"toYaml": toYAML,
 		"indent": indent,
@@ -133,7 +117,7 @@ spec:
 	if err := temp.Execute(buf, p); err != nil {
 		return err
 	}
-	return ioutil.WriteFile(path.Join(o.PatchOutputDir, "manager_label_patch.yaml"), buf.Bytes(), 0644)
+	return afero.WriteFile(o.outFs, path.Join(o.PatchOutputDir, "manager_patch.yaml"), buf.Bytes(), 0644)
 }
 
 func toYAML(m map[string]string) (string, error) {

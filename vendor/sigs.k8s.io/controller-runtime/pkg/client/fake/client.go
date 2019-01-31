@@ -31,11 +31,11 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/internal/log"
 )
 
 var (
-	log = logf.KBLog.WithName("fake-client")
+	log = logf.RuntimeLog.WithName("fake-client")
 )
 
 type fakeClient struct {
@@ -88,19 +88,23 @@ func (c *fakeClient) Get(ctx context.Context, key client.ObjectKey, obj runtime.
 	return err
 }
 
-func (c *fakeClient) List(ctx context.Context, opts *client.ListOptions, list runtime.Object) error {
-	gvk, err := getGVKFromList(list, c.scheme)
+func (c *fakeClient) List(ctx context.Context, obj runtime.Object, opts ...client.ListOptionFunc) error {
+	gvk, err := apiutil.GVKForObject(obj, scheme.Scheme)
 	if err != nil {
-		// The old fake client required GVK info in Raw.TypeMeta, so check there
-		// before giving up
-		if opts.Raw == nil || opts.Raw.TypeMeta.APIVersion == "" || opts.Raw.TypeMeta.Kind == "" {
-			return err
-		}
-		gvk = opts.Raw.TypeMeta.GroupVersionKind()
+		return err
 	}
 
+	if !strings.HasSuffix(gvk.Kind, "List") {
+		return fmt.Errorf("non-list type %T (kind %q) passed as output", obj, gvk)
+	}
+	// we need the non-list GVK, so chop off the "List" from the end of the kind
+	gvk.Kind = gvk.Kind[:len(gvk.Kind)-4]
+
+	listOpts := client.ListOptions{}
+	listOpts.ApplyOptions(opts)
+
 	gvr, _ := meta.UnsafeGuessKindToResource(gvk)
-	o, err := c.tracker.List(gvr, gvk, opts.Namespace)
+	o, err := c.tracker.List(gvr, gvk, listOpts.Namespace)
 	if err != nil {
 		return err
 	}
@@ -109,7 +113,7 @@ func (c *fakeClient) List(ctx context.Context, opts *client.ListOptions, list ru
 		return err
 	}
 	decoder := scheme.Codecs.UniversalDecoder()
-	_, _, err = decoder.Decode(j, nil, list)
+	_, _, err = decoder.Decode(j, nil, obj)
 	return err
 }
 
@@ -161,24 +165,6 @@ func getGVRFromObject(obj runtime.Object, scheme *runtime.Scheme) (schema.GroupV
 	}
 	gvr, _ := meta.UnsafeGuessKindToResource(gvk)
 	return gvr, nil
-}
-
-func getGVKFromList(list runtime.Object, scheme *runtime.Scheme) (schema.GroupVersionKind, error) {
-	gvk, err := apiutil.GVKForObject(list, scheme)
-	if err != nil {
-		return schema.GroupVersionKind{}, err
-	}
-
-	if gvk.Kind == "List" {
-		return schema.GroupVersionKind{}, fmt.Errorf("cannot derive GVK for generic List type %T (kind %q)", list, gvk)
-	}
-
-	if !strings.HasSuffix(gvk.Kind, "List") {
-		return schema.GroupVersionKind{}, fmt.Errorf("non-list type %T (kind %q) passed as output", list, gvk)
-	}
-	// we need the non-list GVK, so chop off the "List" from the end of the kind
-	gvk.Kind = gvk.Kind[:len(gvk.Kind)-4]
-	return gvk, nil
 }
 
 type fakeStatusWriter struct {

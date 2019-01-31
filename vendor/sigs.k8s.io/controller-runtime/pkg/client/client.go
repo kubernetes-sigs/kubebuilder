@@ -131,12 +131,12 @@ func (c *client) Get(ctx context.Context, key ObjectKey, obj runtime.Object) err
 }
 
 // List implements client.Client
-func (c *client) List(ctx context.Context, opts *ListOptions, obj runtime.Object) error {
+func (c *client) List(ctx context.Context, obj runtime.Object, opts ...ListOptionFunc) error {
 	_, ok := obj.(*unstructured.UnstructuredList)
 	if ok {
-		return c.unstructuredClient.List(ctx, opts, obj)
+		return c.unstructuredClient.List(ctx, obj, opts...)
 	}
-	return c.typedClient.List(ctx, opts, obj)
+	return c.typedClient.List(ctx, obj, opts...)
 }
 
 // Status implements client.StatusClient

@@ -26,7 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/internal/log"
 	"sigs.k8s.io/controller-runtime/pkg/source/internal"
 
 	toolscache "k8s.io/client-go/tools/cache"
@@ -34,7 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
-var log = logf.KBLog.WithName("source")
+var log = logf.RuntimeLog.WithName("source")
 
 const (
 	// defaultBufferSize is the default number of event notifications that can be buffered.

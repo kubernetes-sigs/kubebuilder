@@ -1,5 +1,5 @@
 /*
-Copyright 2018 The Kubernetes Authors.
+Copyright 2019 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,9 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package log contains utilities for fetching a new logger
-// when one is not already available.
-package log
+package zap
 
 import (
 	"fmt"
@@ -127,3 +125,4 @@ func (k *KubeAwareEncoder) EncodeEntry(entry zapcore.Entry, fields []zapcore.Fie
 
 	return k.Encoder.EncodeEntry(entry, fields)
 }
+

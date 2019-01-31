@@ -106,7 +106,7 @@ func (uc *unstructuredClient) Get(_ context.Context, key ObjectKey, obj runtime.
 }
 
 // List implements client.Client
-func (uc *unstructuredClient) List(_ context.Context, opts *ListOptions, obj runtime.Object) error {
+func (uc *unstructuredClient) List(_ context.Context, obj runtime.Object, opts ...ListOptionFunc) error {
 	u, ok := obj.(*unstructured.UnstructuredList)
 	if !ok {
 		return fmt.Errorf("unstructured client did not understand object: %T", obj)
@@ -115,16 +115,14 @@ func (uc *unstructuredClient) List(_ context.Context, opts *ListOptions, obj run
 	if strings.HasSuffix(gvk.Kind, "List") {
 		gvk.Kind = gvk.Kind[:len(gvk.Kind)-4]
 	}
-	namespace := ""
-	if opts != nil {
-		namespace = opts.Namespace
-	}
-	r, err := uc.getResourceInterface(gvk, namespace)
+	listOpts := ListOptions{}
+	listOpts.ApplyOptions(opts)
+	r, err := uc.getResourceInterface(gvk, listOpts.Namespace)
 	if err != nil {
 		return err
 	}
 
-	i, err := r.List(*opts.AsListOptions())
+	i, err := r.List(*listOpts.AsListOptions())
 	if err != nil {
 		return err
 	}

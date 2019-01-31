@@ -18,6 +18,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 
 	corev1 "k8s.io/api/core/v1"
@@ -44,13 +45,18 @@ func (a *podAnnotator) Handle(ctx context.Context, req types.Request) types.Resp
 	if err != nil {
 		return admission.ErrorResponse(http.StatusBadRequest, err)
 	}
-	copy := pod.DeepCopy()
 
-	err = a.mutatePodsFn(ctx, copy)
+	err = a.mutatePodsFn(ctx, pod)
 	if err != nil {
 		return admission.ErrorResponse(http.StatusInternalServerError, err)
 	}
-	return admission.PatchResponse(pod, copy)
+
+	marshaledPod, err := json.Marshal(pod)
+	if err != nil {
+		return admission.ErrorResponse(http.StatusInternalServerError, err)
+	}
+
+	return admission.PatchResponseFromRaw(req.AdmissionRequest.Object.Raw, marshaledPod)
 }
 
 // mutatePodsFn add an annotation to the given pod

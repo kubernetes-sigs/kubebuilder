@@ -14,20 +14,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-/*
-Package patch provides method to calculate JSON patch between 2 k8s objects.
+// Package log contains utilities for fetching a new logger
+// when one is not already available.
+// Deprecated: use pkg/log
+package log
 
-Calculate JSON patch
+import (
+	"github.com/go-logr/logr"
+)
 
-	oldDeployment := appsv1.Deployment{
-		// some fields
-	}
-	newDeployment := appsv1.Deployment{
-		// some different fields
-	}
-	patch, err := NewJSONPatch(oldDeployment, newDeployment)
-	if err != nil {
-		// handle error
-	}
-*/
-package patch
+// SetLogger sets a concrete logging implementation for all deferred Loggers.
+func SetLogger(l logr.Logger) {
+	Log.Fulfill(l)
+}
+
+// Log is the base logger used by kubebuilder.  It delegates
+// to another logr.Logger.  You *must* call SetLogger to
+// get any actual logging.
+var Log = NewDelegatingLogger(NullLogger{})

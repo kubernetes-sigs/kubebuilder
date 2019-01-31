@@ -26,9 +26,6 @@ Build webhooks
 		Name("foo.k8s.io").
 		Mutating().
 		Path("/mutating-pods").
-		Operations(admissionregistrationv1beta1.Create).
-		ForType(&corev1.Pod{}).
-		WithManager(mgr).
 		Handlers(mutatingHandler1, mutatingHandler2).
 		Build()
 	if err != nil {
@@ -39,9 +36,6 @@ Build webhooks
 		Name("bar.k8s.io").
 		Validating().
 		Path("/validating-deployment").
-		Operations(admissionregistrationv1beta1.Create, admissionregistrationv1beta1.Update).
-		ForType(&appsv1.Deployment{}).
-		WithManager(mgr).
 		Handlers(validatingHandler1).
 		Build()
 	if err != nil {
@@ -52,20 +46,6 @@ Create a webhook server.
 
 	as, err := NewServer("baz-admission-server", mgr, ServerOptions{
 		CertDir: "/tmp/cert",
-		BootstrapOptions: &BootstrapOptions{
-			Secret: &apitypes.NamespacedName{
-				Namespace: "default",
-				Name:      "foo-admission-server-secret",
-			},
-			Service: &Service{
-				Namespace: "default",
-				Name:      "foo-admission-server-service",
-				// Selectors should select the pods that runs this webhook server.
-				Selectors: map[string]string{
-					"app": "foo-admission-server",
-				},
-			},
-		},
 	})
 	if err != nil {
 		// handle error
@@ -88,7 +68,7 @@ Start the server by starting the manager
 package webhook
 
 import (
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/internal/log"
 )
 
-var log = logf.KBLog.WithName("webhook")
+var log = logf.RuntimeLog.WithName("webhook")

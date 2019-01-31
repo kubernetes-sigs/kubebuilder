@@ -879,7 +879,8 @@
   revision = "9dfdf9be683f61f82cda12362c44c784e0778b56"
 
 [[projects]]
-  digest = "1:06035489efbd51ccface65fc878ceeb849aba05b2f9443c8993f363fc96e80ac"
+  branch = "decouple"
+  digest = "1:355c849759043ad3af0928afdaa4cb4a2ea589770547b9182107a695e0f6ccaa"
   name = "sigs.k8s.io/controller-runtime"
   packages = [
     "pkg/cache",
@@ -895,11 +896,13 @@
     "pkg/handler",
     "pkg/internal/controller",
     "pkg/internal/controller/metrics",
+    "pkg/internal/log",
     "pkg/internal/recorder",
     "pkg/leaderelection",
+    "pkg/log",
+    "pkg/log/zap",
     "pkg/manager",
     "pkg/metrics",
-    "pkg/patch",
     "pkg/predicate",
     "pkg/reconcile",
     "pkg/recorder",
@@ -913,24 +916,24 @@
     "pkg/webhook/admission",
     "pkg/webhook/admission/builder",
     "pkg/webhook/admission/types",
-    "pkg/webhook/internal/cert",
-    "pkg/webhook/internal/cert/generator",
-    "pkg/webhook/internal/cert/writer",
-    "pkg/webhook/internal/cert/writer/atomic",
     "pkg/webhook/internal/metrics",
     "pkg/webhook/types",
   ]
   pruneopts = "NT"
-  revision = "12d98582e72927b6cd0123e2b4e819f9341ce62c"
-  version = "v0.1.10"
+  revision = "2ddd02d6cb1911a5936ca1a438a22f62f8df3c94"
+  source = "github.com/mengqiy/controller-runtime"
 
 [[projects]]
-  branch = "master"
-  digest = "1:6ec12115cadb745fd20adac2c179cf415bcfe00854b775edc55ad51b60de7148"
+  branch = "webhookgenerator"
+  digest = "1:a5152754d1ca226294174c89a4ba29547f1f5512b6bfe73765136610e1c2bbfd"
   name = "sigs.k8s.io/controller-tools"
-  packages = ["pkg/util"]
+  packages = [
+    "pkg/crd/util",
+    "pkg/util",
+  ]
   pruneopts = "NT"
-  revision = "c9a113d11919b74cd84dac62f28ad92d83471d59"
+  revision = "6a27543d44a3352dddb9e4ca23cdea647553b4d8"
+  source = "github.com/mengqiy/controller-tools"
 
 [[projects]]
   digest = "1:1b357310eaf2f448295aa077aaf077b56170bda56d2425f1d5d097ee4ff1c1ac"
@@ -968,7 +971,6 @@
     "golang.org/x/net/context",
     "golang.org/x/tools/imports",
     "gopkg.in/yaml.v2",
-    "k8s.io/api/admissionregistration/v1beta1",
     "k8s.io/api/apps/v1",
     "k8s.io/api/core/v1",
     "k8s.io/apimachinery/pkg/api/errors",
@@ -1000,6 +1002,7 @@
     "sigs.k8s.io/controller-runtime/pkg/webhook/admission",
     "sigs.k8s.io/controller-runtime/pkg/webhook/admission/builder",
     "sigs.k8s.io/controller-runtime/pkg/webhook/admission/types",
+    "sigs.k8s.io/controller-tools/pkg/crd/util",
     "sigs.k8s.io/controller-tools/pkg/util",
     "sigs.k8s.io/testing_frameworks/integration",
   ]

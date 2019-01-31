@@ -50,10 +50,10 @@ func (d *DelegatingReader) Get(ctx context.Context, key ObjectKey, obj runtime.O
 }
 
 // List retrieves list of objects for a given namespace and list options.
-func (d *DelegatingReader) List(ctx context.Context, opts *ListOptions, list runtime.Object) error {
+func (d *DelegatingReader) List(ctx context.Context, list runtime.Object, opts ...ListOptionFunc) error {
 	_, isUnstructured := list.(*unstructured.UnstructuredList)
 	if isUnstructured {
-		return d.ClientReader.List(ctx, opts, list)
+		return d.ClientReader.List(ctx, list, opts...)
 	}
-	return d.CacheReader.List(ctx, opts, list)
+	return d.CacheReader.List(ctx, list, opts...)
 }

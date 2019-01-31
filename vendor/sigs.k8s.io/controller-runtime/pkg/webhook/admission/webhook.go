@@ -29,7 +29,6 @@ import (
 	"github.com/appscode/jsonpatch"
 
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
-	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
@@ -60,15 +59,6 @@ type Webhook struct {
 	Type types.WebhookType
 	// Path is the path this webhook will serve.
 	Path string
-	// Rules maps to the Rules field in admissionregistrationv1beta1.Webhook
-	Rules []admissionregistrationv1beta1.RuleWithOperations
-	// FailurePolicy maps to the FailurePolicy field in admissionregistrationv1beta1.Webhook
-	// This optional. If not set, will be defaulted to Ignore (fail-open) by the server.
-	// More details: https://github.com/kubernetes/api/blob/f5c295feaba2cbc946f0bbb8b535fc5f6a0345ee/admissionregistration/v1beta1/types.go#L144-L147
-	FailurePolicy *admissionregistrationv1beta1.FailurePolicyType
-	// NamespaceSelector maps to the NamespaceSelector field in admissionregistrationv1beta1.Webhook
-	// This optional.
-	NamespaceSelector *metav1.LabelSelector
 	// Handlers contains a list of handlers. Each handler may only contains the business logic for its own feature.
 	// For example, feature foo and bar can be in the same webhook if all the other configurations are the same.
 	// The handler will be invoked sequentially as the order in the list.
@@ -80,17 +70,6 @@ type Webhook struct {
 }
 
 func (w *Webhook) setDefaults() {
-	if len(w.Path) == 0 {
-		if len(w.Rules) == 0 || len(w.Rules[0].Resources) == 0 {
-			// can't do defaulting, skip it.
-			return
-		}
-		if w.Type == types.WebhookTypeMutating {
-			w.Path = "/mutate-" + w.Rules[0].Resources[0]
-		} else if w.Type == types.WebhookTypeValidating {
-			w.Path = "/validate-" + w.Rules[0].Resources[0]
-		}
-	}
 	if len(w.Name) == 0 {
 		reg := regexp.MustCompile("[^a-zA-Z0-9]+")
 		processedPath := strings.ToLower(reg.ReplaceAllString(w.Path, ""))
@@ -216,9 +195,6 @@ func (w *Webhook) Handler() http.Handler {
 // Validate validates if the webhook is valid.
 func (w *Webhook) Validate() error {
 	w.once.Do(w.setDefaults)
-	if len(w.Rules) == 0 {
-		return errors.New("field Rules should not be empty")
-	}
 	if len(w.Name) == 0 {
 		return errors.New("field Name should not be empty")
 	}

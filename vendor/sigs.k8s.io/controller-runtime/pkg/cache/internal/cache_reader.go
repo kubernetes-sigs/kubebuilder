@@ -87,23 +87,26 @@ func (c *CacheReader) Get(_ context.Context, key client.ObjectKey, out runtime.O
 }
 
 // List lists items out of the indexer and writes them to out
-func (c *CacheReader) List(_ context.Context, opts *client.ListOptions, out runtime.Object) error {
+func (c *CacheReader) List(_ context.Context, out runtime.Object, opts ...client.ListOptionFunc) error {
 	var objs []interface{}
 	var err error
 
-	if opts != nil && opts.FieldSelector != nil {
+	listOpts := client.ListOptions{}
+	listOpts.ApplyOptions(opts)
+
+	if listOpts.FieldSelector != nil {
 		// TODO(directxman12): support more complicated field selectors by
 		// combining multiple indicies, GetIndexers, etc
-		field, val, requiresExact := requiresExactMatch(opts.FieldSelector)
+		field, val, requiresExact := requiresExactMatch(listOpts.FieldSelector)
 		if !requiresExact {
 			return fmt.Errorf("non-exact field matches are not supported by the cache")
 		}
 		// list all objects by the field selector.  If this is namespaced and we have one, ask for the
 		// namespaced index key.  Otherwise, ask for the non-namespaced variant by using the fake "all namespaces"
 		// namespace.
-		objs, err = c.indexer.ByIndex(FieldIndexName(field), KeyToNamespacedKey(opts.Namespace, val))
-	} else if opts != nil && opts.Namespace != "" {
-		objs, err = c.indexer.ByIndex(cache.NamespaceIndex, opts.Namespace)
+		objs, err = c.indexer.ByIndex(FieldIndexName(field), KeyToNamespacedKey(listOpts.Namespace, val))
+	} else if listOpts.Namespace != "" {
+		objs, err = c.indexer.ByIndex(cache.NamespaceIndex, listOpts.Namespace)
 	} else {
 		objs = c.indexer.List()
 	}
@@ -111,8 +114,8 @@ func (c *CacheReader) List(_ context.Context, opts *client.ListOptions, out runt
 		return err
 	}
 	var labelSel labels.Selector
-	if opts != nil && opts.LabelSelector != nil {
-		labelSel = opts.LabelSelector
+	if listOpts.LabelSelector != nil {
+		labelSel = listOpts.LabelSelector
 	}
 
 	outItems, err := c.getListItems(objs, labelSel)

@@ -92,20 +92,18 @@ func (c *typedClient) Get(ctx context.Context, key ObjectKey, obj runtime.Object
 }
 
 // List implements client.Client
-func (c *typedClient) List(ctx context.Context, opts *ListOptions, obj runtime.Object) error {
+func (c *typedClient) List(ctx context.Context, obj runtime.Object, opts ...ListOptionFunc) error {
 	r, err := c.cache.getResource(obj)
 	if err != nil {
 		return err
 	}
-	namespace := ""
-	if opts != nil {
-		namespace = opts.Namespace
-	}
+	listOpts := ListOptions{}
+	listOpts.ApplyOptions(opts)
 	return r.Get().
-		NamespaceIfScoped(namespace, r.isNamespaced()).
+		NamespaceIfScoped(listOpts.Namespace, r.isNamespaced()).
 		Resource(r.resource()).
 		Body(obj).
-		VersionedParams(opts.AsListOptions(), c.paramCodec).
+		VersionedParams(listOpts.AsListOptions(), c.paramCodec).
 		Context(ctx).
 		Do().
 		Into(obj)

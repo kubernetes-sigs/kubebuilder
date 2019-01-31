@@ -95,7 +95,7 @@ The following snippet is an example implementation of validating handler.
 package admission
 
 import (
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/internal/log"
 )
 
-var log = logf.KBLog.WithName("admission")
+var log = logf.RuntimeLog.WithName("admission")
