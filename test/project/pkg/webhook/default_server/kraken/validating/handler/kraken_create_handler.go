@@ -18,6 +18,7 @@ package validating
 
 import (
 	"context"
+
 	"net/http"
 
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
@@ -26,12 +27,10 @@ import (
 	creaturesv2alpha1 "sigs.k8s.io/kubebuilder/test/project/pkg/apis/creatures/v2alpha1"
 )
 
+var CreateHandlers []admission.Handler
+
 func init() {
-	webhookName := "validating-create-kraken"
-	if HandlerMap[webhookName] == nil {
-		HandlerMap[webhookName] = []admission.Handler{}
-	}
-	HandlerMap[webhookName] = append(HandlerMap[webhookName], &KrakenCreateHandler{})
+	CreateHandlers = append(CreateHandlers, &KrakenCreateHandler{})
 }
 
 // KrakenCreateHandler handles Kraken

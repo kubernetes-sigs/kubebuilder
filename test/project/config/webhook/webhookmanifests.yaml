@@ -1,0 +1,140 @@
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: MutatingWebhookConfiguration
+metadata:
+  annotations:
+    alpha.admissionwebhook.kubebuilder.io/ca-secret-name: system/webhook-secret
+  creationTimestamp: null
+  name: mutating-webhook-config
+webhooks:
+- clientConfig:
+    caBundle: XG4=
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutating-create-update-firstmate
+  failurePolicy: Fail
+  name: mutating-create-update-firstmate.testproject.org
+  namespaceSelector:
+    matchExpressions:
+    - key: control-plane
+      operator: DoesNotExist
+  rules:
+  - apiGroups:
+    - crew
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - firstmates
+- clientConfig:
+    caBundle: XG4=
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutating-delete-firstmate
+  failurePolicy: Fail
+  name: mutating-delete-firstmate.testproject.org
+  namespaceSelector:
+    matchExpressions:
+    - key: control-plane
+      operator: DoesNotExist
+  rules:
+  - apiGroups:
+    - crew
+    apiVersions:
+    - v1
+    operations:
+    - DELETE
+    resources:
+    - firstmates
+- clientConfig:
+    caBundle: XG4=
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutating-update-namespace
+  failurePolicy: Fail
+  name: mutating-update-namespace.testproject.org
+  namespaceSelector:
+    matchExpressions:
+    - key: control-plane
+      operator: DoesNotExist
+  rules:
+  - apiGroups:
+    - core
+    apiVersions:
+    - v1
+    operations:
+    - UPDATE
+    resources:
+    - namespaces
+---
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    alpha.admissionwebhook.kubebuilder.io/ca-secret-name: system/webhook-secret
+  creationTimestamp: null
+  name: validating-webhook-config
+webhooks:
+- clientConfig:
+    caBundle: XG4=
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validating-create-kraken
+  failurePolicy: Fail
+  name: validating-create-kraken.testproject.org
+  namespaceSelector:
+    matchExpressions:
+    - key: control-plane
+      operator: DoesNotExist
+  rules:
+  - apiGroups:
+    - creatures
+    apiVersions:
+    - v2alpha1
+    operations:
+    - CREATE
+    resources:
+    - krakens
+- clientConfig:
+    caBundle: XG4=
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validating-update-frigate
+  failurePolicy: Fail
+  name: validating-update-frigate.testproject.org
+  namespaceSelector:
+    matchExpressions:
+    - key: control-plane
+      operator: DoesNotExist
+  rules:
+  - apiGroups:
+    - ship
+    apiVersions:
+    - v1beta1
+    operations:
+    - UPDATE
+    resources:
+    - frigates
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    alpha.service.kubebuilder.io/serving-cert-secret-name: webhook-secret
+  creationTimestamp: null
+  name: webhook-service
+  namespace: system
+spec:
+  ports:
+  - port: 443
+    targetPort: 9876
+  selector:
+    app: webhook-server
+status:
+  loadBalancer: {}

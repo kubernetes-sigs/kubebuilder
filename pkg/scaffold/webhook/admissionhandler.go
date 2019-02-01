@@ -68,6 +68,7 @@ func (a *AdmissionHandler) GetInput() (input.Input, error) {
 			fmt.Sprintf("%s_server", a.Server),
 			strings.ToLower(a.Resource.Kind),
 			a.Type,
+			"handler",
 			fmt.Sprintf("%s_%s_handler.go", strings.ToLower(a.Resource.Kind), strings.Join(a.Operations, "_")))
 	}
 	a.TemplateBody = addAdmissionHandlerTemplate
@@ -80,21 +81,20 @@ package {{ .Type }}
 
 import (
 	"context"
+	{{ if .Mutate }}"encoding/json"
+{{ end }}
 	"net/http"
 
-	{{ .Resource.Group}}{{ .Resource.Version }} "{{ .ResourcePackage }}/{{ .Resource.Group}}/{{ .Resource.Version }}"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission/types"
+	{{ .Resource.Group}}{{ .Resource.Version }} "{{ .ResourcePackage }}/{{ .Resource.Group}}/{{ .Resource.Version }}"
 )
 
+var {{ .OperationsString }}Handlers []admission.Handler
+
 func init() {
-	webhookName := "{{ .BuilderName }}"
-	if HandlerMap[webhookName] == nil {
-		HandlerMap[webhookName] = []admission.Handler{}
-	}
-	HandlerMap[webhookName] = append(HandlerMap[webhookName], &{{ .Resource.Kind }}{{ .OperationsString }}Handler{})
+	{{ .OperationsString }}Handlers = append({{ .OperationsString }}Handlers, &{{ .Resource.Kind }}{{ .OperationsString }}Handler{})
 }
 
 // {{ .Resource.Kind }}{{ .OperationsString }}Handler handles {{ .Resource.Kind }}
@@ -129,13 +129,16 @@ func (h *{{ .Resource.Kind }}{{ .OperationsString }}Handler) Handle(ctx context.
 	if err != nil {
 		return admission.ErrorResponse(http.StatusBadRequest, err)
 	}
-	copy := obj.DeepCopy()
 
-	err = h.{{ .Type }}{{ .Resource.Kind }}Fn(ctx, copy)
+	err = h.{{ .Type }}{{ .Resource.Kind }}Fn(ctx, obj)
 	if err != nil {
 		return admission.ErrorResponse(http.StatusInternalServerError, err)
 	}
-	return admission.PatchResponse(obj, copy)
+	marshalled, err := json.Marshal(obj)
+	if err != nil {
+		return admission.ErrorResponse(http.StatusInternalServerError, err)
+	}
+	return admission.PatchResponseFromRaw(req.AdmissionRequest.Object.Raw, marshalled)
 }
 {{ else }}
 // Handle handles admission requests.

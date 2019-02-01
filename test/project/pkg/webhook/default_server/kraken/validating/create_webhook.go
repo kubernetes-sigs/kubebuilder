@@ -17,19 +17,26 @@ limitations under the License.
 package validating
 
 import (
-	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission/builder"
-	creaturesv2alpha1 "sigs.k8s.io/kubebuilder/test/project/pkg/apis/creatures/v2alpha1"
+	handler "sigs.k8s.io/kubebuilder/test/project/pkg/webhook/default_server/kraken/validating/handler"
 )
 
+// +kubebuilder:webhook:groups=creatures,resources=krakens
+// +kubebuilder:webhook:versions=v2alpha1
+// +kubebuilder:webhook:verbs=Create
+// +kubebuilder:webhook:name=validating-create-kraken.testproject.org,path=/validating-create-kraken
+// +kubebuilder:webhook:type=validating
+// +kubebuilder:webhook:failure-policy=Fail
 func init() {
+	var wh webhook.Webhook
 	builderName := "validating-create-kraken"
-	Builders[builderName] = builder.
+	wh = builder.
 		NewWebhookBuilder().
 		Name(builderName + ".testproject.org").
 		Path("/" + builderName).
 		Validating().
-		Operations(admissionregistrationv1beta1.Create).
-		FailurePolicy(admissionregistrationv1beta1.Fail).
-		ForType(&creaturesv2alpha1.Kraken{})
+		Handlers(handler.CreateHandlers...).
+		Build()
+	KrakenWebhooks = append(KrakenWebhooks, wh)
 }

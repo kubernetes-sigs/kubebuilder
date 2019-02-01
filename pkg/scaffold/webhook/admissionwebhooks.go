@@ -56,14 +56,8 @@ var webhooksTemplate = `{{ .Boilerplate }}
 package {{ .Type }}
 
 import (
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission/builder"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
-var (
-	// Builders contain admission webhook builders
-	Builders = map[string]*builder.WebhookBuilder{}
-	// HandlerMap contains admission webhook handlers
-	HandlerMap = map[string][]admission.Handler{}
-)
+var {{ .Resource.Kind }}Webhooks []webhook.Webhook
 `

@@ -17,32 +17,9 @@ limitations under the License.
 package defaultserver
 
 import (
-	"fmt"
-
 	"sigs.k8s.io/kubebuilder/test/project/pkg/webhook/default_server/kraken/validating"
 )
 
 func init() {
-	for k, v := range validating.Builders {
-		_, found := builderMap[k]
-		if found {
-			log.V(1).Info(fmt.Sprintf(
-				"conflicting webhook builder names in builder map: %v", k))
-		}
-		builderMap[k] = v
-	}
-	for k, v := range validating.HandlerMap {
-		_, found := HandlerMap[k]
-		if found {
-			log.V(1).Info(fmt.Sprintf(
-				"conflicting webhook builder names in handler map: %v", k))
-		}
-		_, found = builderMap[k]
-		if !found {
-			log.V(1).Info(fmt.Sprintf(
-				"can't find webhook builder name %q in builder map", k))
-			continue
-		}
-		HandlerMap[k] = v
-	}
+	webhooks = append(webhooks, validating.KrakenWebhooks...)
 }

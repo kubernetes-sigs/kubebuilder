@@ -22,7 +22,7 @@ var _ = Describe("Webhook", func() {
 	domainName := "testproject.org"
 	inputs := []*webhookTestcase{
 		{
-			Resource: resource.Resource{Group: "crew", Version: "v1", Kind: "FirstMate", Namespaced: true, CreateExampleReconcileBody: true},
+			Resource: resource.Resource{Group: "crew", Version: "v1", Kind: "FirstMate", Resource: "firstmates", Namespaced: true, CreateExampleReconcileBody: true},
 			Config: Config{
 				Type:       "mutating",
 				Operations: []string{"create", "update"},
@@ -30,7 +30,7 @@ var _ = Describe("Webhook", func() {
 			},
 		},
 		{
-			Resource: resource.Resource{Group: "crew", Version: "v1", Kind: "FirstMate", Namespaced: true, CreateExampleReconcileBody: true},
+			Resource: resource.Resource{Group: "crew", Version: "v1", Kind: "FirstMate", Resource: "firstmates", Namespaced: true, CreateExampleReconcileBody: true},
 			Config: Config{
 				Type:       "mutating",
 				Operations: []string{"delete"},
@@ -38,7 +38,7 @@ var _ = Describe("Webhook", func() {
 			},
 		},
 		{
-			Resource: resource.Resource{Group: "ship", Version: "v1beta1", Kind: "Frigate", Namespaced: true, CreateExampleReconcileBody: false},
+			Resource: resource.Resource{Group: "ship", Version: "v1beta1", Kind: "Frigate", Resource: "frigates", Namespaced: true, CreateExampleReconcileBody: false},
 			Config: Config{
 				Type:       "validating",
 				Operations: []string{"update"},
@@ -46,7 +46,7 @@ var _ = Describe("Webhook", func() {
 			},
 		},
 		{
-			Resource: resource.Resource{Group: "creatures", Version: "v2alpha1", Kind: "Kraken", Namespaced: false, CreateExampleReconcileBody: false},
+			Resource: resource.Resource{Group: "creatures", Version: "v2alpha1", Kind: "Kraken", Resource: "krakens", Namespaced: false, CreateExampleReconcileBody: false},
 			Config: Config{
 				Type:       "validating",
 				Operations: []string{"create"},
@@ -54,7 +54,7 @@ var _ = Describe("Webhook", func() {
 			},
 		},
 		{
-			Resource: resource.Resource{Group: "core", Version: "v1", Kind: "Namespace", Namespaced: false, CreateExampleReconcileBody: false},
+			Resource: resource.Resource{Group: "core", Version: "v1", Kind: "Namespace", Resource: "namespaces", Namespaced: false, CreateExampleReconcileBody: false},
 			Config: Config{
 				Type:       "mutating",
 				Operations: []string{"update"},
@@ -121,7 +121,7 @@ var _ = Describe("Webhook", func() {
 				},
 				{
 					file: filepath.Join("pkg", "webhook", "default_server",
-						strings.ToLower(in.Kind), strings.ToLower(in.Type),
+						strings.ToLower(in.Kind), strings.ToLower(in.Type), "handler",
 						fmt.Sprintf("%s_%s_handler.go", strings.ToLower(in.Kind), strings.Join(in.Operations, "_"))),
 					instance: &AdmissionHandler{
 						Resource:    &in.Resource,

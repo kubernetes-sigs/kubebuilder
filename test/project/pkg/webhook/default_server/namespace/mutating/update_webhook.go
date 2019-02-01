@@ -17,19 +17,26 @@ limitations under the License.
 package mutating
 
 import (
-	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
-	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission/builder"
+	handler "sigs.k8s.io/kubebuilder/test/project/pkg/webhook/default_server/namespace/mutating/handler"
 )
 
+// +kubebuilder:webhook:groups=core,resources=namespaces
+// +kubebuilder:webhook:versions=v1
+// +kubebuilder:webhook:verbs=Update
+// +kubebuilder:webhook:name=mutating-update-namespace.testproject.org,path=/mutating-update-namespace
+// +kubebuilder:webhook:type=mutating
+// +kubebuilder:webhook:failure-policy=Fail
 func init() {
+	var wh webhook.Webhook
 	builderName := "mutating-update-namespace"
-	Builders[builderName] = builder.
+	wh = builder.
 		NewWebhookBuilder().
 		Name(builderName + ".testproject.org").
 		Path("/" + builderName).
 		Mutating().
-		Operations(admissionregistrationv1beta1.Update).
-		FailurePolicy(admissionregistrationv1beta1.Fail).
-		ForType(&corev1.Namespace{})
+		Handlers(handler.UpdateHandlers...).
+		Build()
+	NamespaceWebhooks = append(NamespaceWebhooks, wh)
 }

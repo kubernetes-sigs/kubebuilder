@@ -18,24 +18,24 @@ package mutating
 
 import (
 	"context"
+	"encoding/json"
+
 	"net/http"
 
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission/types"
-	crewv1 "sigs.k8s.io/kubebuilder/test/project/pkg/apis/crew/v1"
 )
 
+var UpdateHandlers []admission.Handler
+
 func init() {
-	webhookName := "mutating-create-update-firstmate"
-	if HandlerMap[webhookName] == nil {
-		HandlerMap[webhookName] = []admission.Handler{}
-	}
-	HandlerMap[webhookName] = append(HandlerMap[webhookName], &FirstMateCreateUpdateHandler{})
+	UpdateHandlers = append(UpdateHandlers, &NamespaceUpdateHandler{})
 }
 
-// FirstMateCreateUpdateHandler handles FirstMate
-type FirstMateCreateUpdateHandler struct {
+// NamespaceUpdateHandler handles Namespace
+type NamespaceUpdateHandler struct {
 	// To use the client, you need to do the following:
 	// - uncomment it
 	// - import sigs.k8s.io/controller-runtime/pkg/client
@@ -46,42 +46,45 @@ type FirstMateCreateUpdateHandler struct {
 	Decoder types.Decoder
 }
 
-func (h *FirstMateCreateUpdateHandler) mutatingFirstMateFn(ctx context.Context, obj *crewv1.FirstMate) error {
+func (h *NamespaceUpdateHandler) mutatingNamespaceFn(ctx context.Context, obj *corev1.Namespace) error {
 	// TODO(user): implement your admission logic
 	return nil
 }
 
-var _ admission.Handler = &FirstMateCreateUpdateHandler{}
+var _ admission.Handler = &NamespaceUpdateHandler{}
 
 // Handle handles admission requests.
-func (h *FirstMateCreateUpdateHandler) Handle(ctx context.Context, req types.Request) types.Response {
-	obj := &crewv1.FirstMate{}
+func (h *NamespaceUpdateHandler) Handle(ctx context.Context, req types.Request) types.Response {
+	obj := &corev1.Namespace{}
 
 	err := h.Decoder.Decode(req, obj)
 	if err != nil {
 		return admission.ErrorResponse(http.StatusBadRequest, err)
 	}
-	copy := obj.DeepCopy()
 
-	err = h.mutatingFirstMateFn(ctx, copy)
+	err = h.mutatingNamespaceFn(ctx, obj)
 	if err != nil {
 		return admission.ErrorResponse(http.StatusInternalServerError, err)
 	}
-	return admission.PatchResponse(obj, copy)
+	marshalled, err := json.Marshal(obj)
+	if err != nil {
+		return admission.ErrorResponse(http.StatusInternalServerError, err)
+	}
+	return admission.PatchResponseFromRaw(req.AdmissionRequest.Object.Raw, marshalled)
 }
 
-//var _ inject.Client = &FirstMateCreateUpdateHandler{}
+//var _ inject.Client = &NamespaceUpdateHandler{}
 //
-//// InjectClient injects the client into the FirstMateCreateUpdateHandler
-//func (h *FirstMateCreateUpdateHandler) InjectClient(c client.Client) error {
+//// InjectClient injects the client into the NamespaceUpdateHandler
+//func (h *NamespaceUpdateHandler) InjectClient(c client.Client) error {
 //	h.Client = c
 //	return nil
 //}
 
-var _ inject.Decoder = &FirstMateCreateUpdateHandler{}
+var _ inject.Decoder = &NamespaceUpdateHandler{}
 
-// InjectDecoder injects the decoder into the FirstMateCreateUpdateHandler
-func (h *FirstMateCreateUpdateHandler) InjectDecoder(d types.Decoder) error {
+// InjectDecoder injects the decoder into the NamespaceUpdateHandler
+func (h *NamespaceUpdateHandler) InjectDecoder(d types.Decoder) error {
 	h.Decoder = d
 	return nil
 }

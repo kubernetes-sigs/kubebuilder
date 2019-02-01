@@ -17,19 +17,26 @@ limitations under the License.
 package mutating
 
 import (
-	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission/builder"
-	crewv1 "sigs.k8s.io/kubebuilder/test/project/pkg/apis/crew/v1"
+	handler "sigs.k8s.io/kubebuilder/test/project/pkg/webhook/default_server/firstmate/mutating/handler"
 )
 
+// +kubebuilder:webhook:groups=crew,resources=firstmates
+// +kubebuilder:webhook:versions=v1
+// +kubebuilder:webhook:verbs=Delete
+// +kubebuilder:webhook:name=mutating-delete-firstmate.testproject.org,path=/mutating-delete-firstmate
+// +kubebuilder:webhook:type=mutating
+// +kubebuilder:webhook:failure-policy=Fail
 func init() {
+	var wh webhook.Webhook
 	builderName := "mutating-delete-firstmate"
-	Builders[builderName] = builder.
+	wh = builder.
 		NewWebhookBuilder().
 		Name(builderName + ".testproject.org").
 		Path("/" + builderName).
 		Mutating().
-		Operations(admissionregistrationv1beta1.Delete).
-		FailurePolicy(admissionregistrationv1beta1.Fail).
-		ForType(&crewv1.FirstMate{})
+		Handlers(handler.DeleteHandlers...).
+		Build()
+	FirstMateWebhooks = append(FirstMateWebhooks, wh)
 }

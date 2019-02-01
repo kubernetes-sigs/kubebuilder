@@ -17,19 +17,26 @@ limitations under the License.
 package validating
 
 import (
-	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission/builder"
-	shipv1beta1 "sigs.k8s.io/kubebuilder/test/project/pkg/apis/ship/v1beta1"
+	handler "sigs.k8s.io/kubebuilder/test/project/pkg/webhook/default_server/frigate/validating/handler"
 )
 
+// +kubebuilder:webhook:groups=ship,resources=frigates
+// +kubebuilder:webhook:versions=v1beta1
+// +kubebuilder:webhook:verbs=Update
+// +kubebuilder:webhook:name=validating-update-frigate.testproject.org,path=/validating-update-frigate
+// +kubebuilder:webhook:type=validating
+// +kubebuilder:webhook:failure-policy=Fail
 func init() {
+	var wh webhook.Webhook
 	builderName := "validating-update-frigate"
-	Builders[builderName] = builder.
+	wh = builder.
 		NewWebhookBuilder().
 		Name(builderName + ".testproject.org").
 		Path("/" + builderName).
 		Validating().
-		Operations(admissionregistrationv1beta1.Update).
-		FailurePolicy(admissionregistrationv1beta1.Fail).
-		ForType(&shipv1beta1.Frigate{})
+		Handlers(handler.UpdateHandlers...).
+		Build()
+	FrigateWebhooks = append(FrigateWebhooks, wh)
 }

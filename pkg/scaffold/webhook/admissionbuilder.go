@@ -44,7 +44,11 @@ type AdmissionWebhookBuilder struct {
 
 	BuilderName string
 
-	OperationsParameterString string
+	OperationsString string
+
+	OperationsUpperString string
+
+	OperationsUpperStringWSemicolon string
 
 	Mutating bool
 }
@@ -60,9 +64,11 @@ func (a *AdmissionWebhookBuilder) GetInput() (input.Input, error) {
 	a.BuilderName = builderName(a.Config, strings.ToLower(a.Resource.Kind))
 	ops := make([]string, len(a.Operations))
 	for i, op := range a.Operations {
-		ops[i] = "admissionregistrationv1beta1." + strings.Title(op)
+		ops[i] = strings.Title(op)
 	}
-	a.OperationsParameterString = strings.Join(ops, ", ")
+	a.OperationsUpperString = strings.Join(ops, "")
+	a.OperationsUpperStringWSemicolon = strings.Join(ops, ";")
+	a.OperationsString = strings.Join(a.Operations, "")
 
 	if a.Path == "" {
 		a.Path = filepath.Join("pkg", "webhook",
@@ -80,22 +86,31 @@ var admissionWebhookBuilderTemplate = `{{ .Boilerplate }}
 package {{ .Type }}
 
 import (
-	{{ .Resource.Group}}{{ .Resource.Version }} "{{ .ResourcePackage }}/{{ .Resource.Group}}/{{ .Resource.Version }}"
-	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission/builder"
+	handler {{ if .Mutating }}"{{ .Repo }}/pkg/webhook/{{ .Server }}_server/{{ lower .Resource.Kind }}/mutating/handler"
+{{ else }}"{{ .Repo }}/pkg/webhook/{{ .Server }}_server/{{ lower .Resource.Kind }}/validating/handler"
+{{ end }}
 )
 
+// +kubebuilder:webhook:groups={{ .Resource.Group }},resources={{ .Resource.Resource }}
+// +kubebuilder:webhook:versions={{ .Resource.Version }}
+// +kubebuilder:webhook:verbs={{ .OperationsUpperStringWSemicolon }}
+// +kubebuilder:webhook:name={{ .BuilderName }}.{{ .Domain }},path=/{{ .BuilderName }}
+// +kubebuilder:webhook:type={{ if .Mutating }}mutating{{ else }}validating{{ end }}
+// +kubebuilder:webhook:failure-policy=Fail
 func init() {
+	var wh webhook.Webhook
 	builderName := "{{ .BuilderName }}"
-	Builders[builderName] = builder.
+	wh = builder.
 		NewWebhookBuilder().
 		Name(builderName + ".{{ .Domain }}").
 		Path("/" + builderName).
 {{ if .Mutating }}	Mutating().
 {{ else }}	Validating().
 {{ end }}
-		Operations({{ .OperationsParameterString }}).
-		FailurePolicy(admissionregistrationv1beta1.Fail).
-		ForType(&{{ .Resource.Group}}{{ .Resource.Version }}.{{ .Resource.Kind }}{})
+		Handlers(handler.{{ .OperationsUpperString }}Handlers...).
+		Build()
+	{{ .Resource.Kind }}Webhooks = append({{ .Resource.Kind }}Webhooks, wh)
 }
 `

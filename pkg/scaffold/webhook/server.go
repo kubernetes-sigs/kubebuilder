@@ -50,10 +50,6 @@ var serverTemplate = `{{ .Boilerplate }}
 package {{ .Server }}server
 
 import (
-	"fmt"
-	"os"
-
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -63,61 +59,22 @@ import (
 
 var (
 	log        = logf.Log.WithName("{{ .Server }}_server")
-	builderMap = map[string]*builder.WebhookBuilder{}
-	// HandlerMap contains all admission webhook handlers.
-	HandlerMap = map[string][]admission.Handler{}
+	webhooks []webhook.Webhook
 )
 
 // Add adds itself to the manager
+// +kubebuilder:webhook:port=9876,cert-dir=/tmp/cert
+// +kubebuilder:webhook:service=system:webhook-service,selector=app:webhook-server
+// +kubebuilder:webhook:secret=system:webhook-secret
+// +kubebuilder:webhook:mutating-webhook-config-name=mutating-webhook-config,validating-webhook-config-name=validating-webhook-config
 func Add(mgr manager.Manager) error {
-	ns := os.Getenv("POD_NAMESPACE")
-	if len(ns) == 0 {
-		ns = "default"
-	}
-	secretName := os.Getenv("SECRET_NAME")
-	if len(secretName) == 0 {
-		secretName = "webhook-server-secret"
-	}
-
 	svr, err := webhook.NewServer("foo-admission-server", mgr, webhook.ServerOptions{
-		// TODO(user): change the configuration of ServerOptions based on your need.
+		// TODO(user): change ServerOptions and the annotations starting with +kubebuilder:webhook at the same time.
 		Port:    9876,
 		CertDir: "/tmp/cert",
-		BootstrapOptions: &webhook.BootstrapOptions{
-			Secret: &types.NamespacedName{
-				Namespace: ns,
-				Name:      secretName,
-			},
-
-			Service: &webhook.Service{
-				Namespace: ns,
-				Name:      "webhook-server-service",
-				// Selectors should select the pods that runs this webhook server.
-				Selectors: map[string]string{
-					"control-plane": "controller-manager",
-				},
-			},
-		},
 	})
 	if err != nil {
 		return err
-	}
-
-	var webhooks []webhook.Webhook
-	for k, builder := range builderMap {
-		handlers, ok := HandlerMap[k]
-		if !ok {
-			log.V(1).Info(fmt.Sprintf("can't find handlers for builder: %v", k))
-			handlers = []admission.Handler{}
-		}
-		wh, err := builder.
-			Handlers(handlers...).
-			WithManager(mgr).
-			Build()
-		if err != nil {
-			return err
-		}
-		webhooks = append(webhooks, wh)
 	}
 
 	return svr.Register(webhooks...)
