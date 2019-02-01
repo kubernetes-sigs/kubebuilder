@@ -1,6 +1,6 @@
 # Why Kubernetes APIs
 
-Kubenernetes APIs provide consistent and well defined endpoints for
+Kubernetes APIs provide consistent and well defined endpoints for
 objects adhering to a consistent and rich structure.
 
 This approach has fostered a rich ecosystem of tools and libraries for working
