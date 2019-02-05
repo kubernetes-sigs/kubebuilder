@@ -39,7 +39,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		if !containsString(instance.ObjectMeta.Finalizers, myFinalizerName) {
 			instance.ObjectMeta.Finalizers = append(instance.ObjectMeta.Finalizers, myFinalizerName)
 			if err := r.Update(context.Background(), instance); err != nil {
-				return reconcile.Result{Requeue: true}, nil
+				return reconcile.Result{}, err
 			}
 		}
 	} else {
@@ -55,7 +55,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 			// remove our finalizer from the list and update it.
 			instance.ObjectMeta.Finalizers = removeString(instance.ObjectMeta.Finalizers, myFinalizerName)
 			if err := r.Update(context.Background(), instance); err != nil {
-				return reconcile.Result{Requeue: true}, nil
+				return reconcile.Result{}, err
 			}
 		}
 
