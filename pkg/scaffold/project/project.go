@@ -76,20 +76,24 @@ func (Project) repoFromGopathAndWd(gopath string, getwd func() (string, error)) 
 	if len(gopath) == 0 {
 		gopath = build.Default.GOPATH
 	}
-	goSrc := filepath.Join(gopath, "src")
 
-	// Make sure the GOPATH is set and the working dir is under the GOPATH
-	if !strings.HasPrefix(filepath.Dir(wd), goSrc) {
-		return "", fmt.Errorf("working directory must be a project directory under "+
-			"$GOPATH/src/<project-package>\n- GOPATH=%s\n- WD=%s", gopath, wd)
+	for _, workspace := range filepath.SplitList(gopath) {
+		goSrc := filepath.Join(workspace, "src")
+
+		// Make sure the GOPATH is set and the working dir is under the GOPATH
+		if strings.HasPrefix(filepath.Dir(wd), goSrc) {
+
+			// Figure out the repo name by removing $GOPATH/src from the working directory - e.g.
+			// '$GOPATH/src/kubernetes-sigs/controller-tools' becomes 'kubernetes-sigs/controller-tools'
+			repo := ""
+			for wd != goSrc {
+				repo = filepath.Join(filepath.Base(wd), repo)
+				wd = filepath.Dir(wd)
+			}
+			return repo, nil
+		}
 	}
 
-	// Figure out the repo name by removing $GOPATH/src from the working directory - e.g.
-	// '$GOPATH/src/kubernetes-sigs/controller-tools' becomes 'kubernetes-sigs/controller-tools'
-	repo := ""
-	for wd != goSrc {
-		repo = filepath.Join(filepath.Base(wd), repo)
-		wd = filepath.Dir(wd)
-	}
-	return repo, nil
+	return "", fmt.Errorf("working directory must be a project directory under "+
+		"$GOPATH/src/<project-package>\n- GOPATH=%s\n- WD=%s", gopath, wd)
 }

@@ -25,7 +25,7 @@ set -x
 OWNER="sigs.k8s.io"
 REPO="kubebuilder"
 
-GO_PKG_OWNER=$GOPATH/src/$OWNER
+GO_PKG_OWNER=${GOPATH/:*}/src/$OWNER
 GO_PKG_PATH=$GO_PKG_OWNER/$REPO
 
 mkdir -p $GO_PKG_OWNER
