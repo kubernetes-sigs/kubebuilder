@@ -103,7 +103,7 @@ func (o *projectOptions) runInit() {
 	}
 
 	if util.ProjectExist() {
-		fmt.Println("Failed to initialize project bacause project is already initialized")
+		fmt.Println("Failed to initialize project because project is already initialized")
 		return
 	}
 	// project and boilerplate must come before main so the boilerplate exists
