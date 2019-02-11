@@ -50,7 +50,7 @@ func TestReconcile(t *testing.T) {
 	c = mgr.GetClient()
 
 	recFn, requests := SetupTestReconcile(newReconciler(mgr))
-	g.Expect(add(mgr, recFn)).NotTo(gomega.HaveOccurred())
+	g.Expect(add(mgr, recFn)).To(gomega.Succeed())
 
 	stopMgr, mgrStopped := StartTestManager(mgr, g)
 
@@ -76,7 +76,7 @@ func TestReconcile(t *testing.T) {
 		Should(gomega.Succeed())
 
 	// Delete the Deployment and expect Reconcile to be called for Deployment deletion
-	g.Expect(c.Delete(context.TODO(), deploy)).NotTo(gomega.HaveOccurred())
+	g.Expect(c.Delete(context.TODO(), deploy)).To(gomega.Succeed())
 	g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(expectedRequest)))
 	g.Eventually(func() error { return c.Get(context.TODO(), depKey, deploy) }, timeout).
 		Should(gomega.Succeed())
