@@ -105,6 +105,7 @@ package {{ lower .Resource.Kind }}
 import (
 {{ if .Resource.CreateExampleReconcileBody }}	"context"
 	"log"
+	"fmt"
 	"reflect"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -114,6 +115,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -158,24 +160,11 @@ func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
-	// Create a new controller
-	c, err := controller.New("{{ lower .Resource.Kind }}-controller", mgr, controller.Options{Reconciler: r})
-	if err != nil {
-		return err
-	}
-
-	// Watch for changes to {{ .Resource.Kind }}
-	err = c.Watch(&source.Kind{Type: &{{ .Resource.Group}}{{ .Resource.Version }}.{{ .Resource.Kind }}{}}, &handler.EnqueueRequestForObject{})
-	if err != nil {
-		return err
-	}
-
-	// TODO(user): Modify this to be the types you create
-	// Uncomment watch a Deployment created by {{ .Resource.Kind }} - change this for objects you create
-	err = c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
-		IsController: true,
-		OwnerType:    &{{ .Resource.Group}}{{ .Resource.Version }}.{{ .Resource.Kind }}{},
-	})
+	err := builder.ControllerManagedBy(mgr).
+		For(&{{ .Resource.Group }}{{ .Resource.Version }}.{{ .Resource.Kind }}{}).
+		// TODO(user): Modify this to be the types you create
+		Owns(&appsv1.Deployment{}).
+		Complete(r)
 	if err != nil {
 		return err
 	}

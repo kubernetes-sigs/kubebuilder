@@ -22,12 +22,10 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 	creaturesv2alpha1 "sigs.k8s.io/kubebuilder/test/project/pkg/apis/creatures/v2alpha1"
 )
 
@@ -49,24 +47,11 @@ func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
-	// Create a new controller
-	c, err := controller.New("kraken-controller", mgr, controller.Options{Reconciler: r})
-	if err != nil {
-		return err
-	}
-
-	// Watch for changes to Kraken
-	err = c.Watch(&source.Kind{Type: &creaturesv2alpha1.Kraken{}}, &handler.EnqueueRequestForObject{})
-	if err != nil {
-		return err
-	}
-
-	// TODO(user): Modify this to be the types you create
-	// Uncomment watch a Deployment created by Kraken - change this for objects you create
-	err = c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
-		IsController: true,
-		OwnerType:    &creaturesv2alpha1.Kraken{},
-	})
+	err := builder.ControllerManagedBy(mgr).
+		For(&creaturesv2alpha1.Kraken{}).
+		// TODO(user): Modify this to be the types you create
+		Owns(&appsv1.Deployment{}).
+		Complete(r)
 	if err != nil {
 		return err
 	}
