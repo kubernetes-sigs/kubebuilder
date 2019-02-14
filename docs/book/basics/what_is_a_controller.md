@@ -9,7 +9,7 @@ A Kubernetes Controller is a routine running in a Kubernetes cluster that watche
 update / delete events on Resources, and triggers a Reconcile function in response.  Reconcile
 is a function that may be called at any time with the Namespace and Name of an object (Resource
 instance), and it will make the cluster state match the state declared in the object Spec.
-Upon completion, Reconcile updates the object Status the new actual state.
+Upon completion, Reconcile updates the object Status to the new actual state.
 
 It is common for Controllers to watch for changes to the Resource type that they Reconcile
 *and* Resource types of objects they create.  e.g. a ReplicaSet Controller watches for
@@ -69,11 +69,11 @@ rollout before starting the next.
 
 ## Watching Events
 
-The Controller Reconcile is triggered both by cluster events.
+The Controller Reconcile is triggered by cluster events.
 
 ##### Watching Resources
 
-Controllers must watch for events for the Resource they Reconcile.  The ReplicaSetController
+Controllers must watch for events for the Resource they Reconcile. The ReplicaSetController
 watches for changes to ReplicaSets and triggers a Reconcile in response.
  
 ###### ReplicaSet Creation
@@ -157,7 +157,7 @@ Instead the Controller must write back the Status of the object at each Reconcil
 users must check the object Status.
 
 {% panel style="info", title="Status" %}
-The controller will keep Status up-to-date both in response to user initiated events, but also
+The controller will keep Status up-to-date not only in response to user initiated events, but also
 in response to non-user initiated events, such as Node failures.
 {% endpanel %}
 
