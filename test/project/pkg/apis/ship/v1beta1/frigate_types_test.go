@@ -39,20 +39,20 @@ func TestStorageFrigate(t *testing.T) {
 
 	// Test Create
 	fetched := &Frigate{}
-	g.Expect(c.Create(context.TODO(), created)).NotTo(gomega.HaveOccurred())
+	g.Expect(c.Create(context.TODO(), created)).To(gomega.Succeed())
 
-	g.Expect(c.Get(context.TODO(), key, fetched)).NotTo(gomega.HaveOccurred())
+	g.Expect(c.Get(context.TODO(), key, fetched)).To(gomega.Succeed())
 	g.Expect(fetched).To(gomega.Equal(created))
 
 	// Test Updating the Labels
 	updated := fetched.DeepCopy()
 	updated.Labels = map[string]string{"hello": "world"}
-	g.Expect(c.Update(context.TODO(), updated)).NotTo(gomega.HaveOccurred())
+	g.Expect(c.Update(context.TODO(), updated)).To(gomega.Succeed())
 
-	g.Expect(c.Get(context.TODO(), key, fetched)).NotTo(gomega.HaveOccurred())
+	g.Expect(c.Get(context.TODO(), key, fetched)).To(gomega.Succeed())
 	g.Expect(fetched).To(gomega.Equal(updated))
 
 	// Test Delete
-	g.Expect(c.Delete(context.TODO(), fetched)).NotTo(gomega.HaveOccurred())
-	g.Expect(c.Get(context.TODO(), key, fetched)).To(gomega.HaveOccurred())
+	g.Expect(c.Delete(context.TODO(), fetched)).To(gomega.Succeed())
+	g.Expect(c.Get(context.TODO(), key, fetched)).ToNot(gomega.Succeed())
 }
