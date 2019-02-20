@@ -71,8 +71,8 @@ namePrefix: {{.Prefix}}-
 # YAML string, with resources separated by document
 # markers ("---").
 resources:
-- ../rbac/rbac_role.yaml
-- ../rbac/rbac_role_binding.yaml
+- ../rbac/manager_role.yaml
+- ../rbac/manager_role_binding.yaml
 - ../manager/manager.yaml
   # Comment the following 3 lines if you want to disable
   # the auth proxy (https://github.com/brancz/kube-rbac-proxy)
