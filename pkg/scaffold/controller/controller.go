@@ -125,7 +125,7 @@ import (
 	{{ .Resource.Group}}{{ .Resource.Version }} "{{ .ResourcePackage }}/{{ .Resource.Group}}/{{ .Resource.Version }}"
 )
 
-var log = logf.Log.WithName("controller")
+var log = logf.Log.WithName("{{ lower .Resource.Kind }}-controller")
 {{ else }}	"context"
 
 	appsv1 "k8s.io/api/apps/v1"
