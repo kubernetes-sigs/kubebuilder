@@ -26,16 +26,15 @@ var _ = Describe("Resource", func() {
 			Expect(instance.Validate().Error()).To(ContainSubstring("group cannot be empty"))
 		})
 
+		It("should succeed if the Group is valid DNS subdomain", func() {
+			instance := &Resource{Group: "crew-1.k8s.example.com", Version: "v1", Kind: "FirstMate"}
+			Expect(instance.Validate()).To(Succeed())
+		})
+
 		It("should fail if the Group is not all lowercase", func() {
 			instance := &Resource{Group: "Crew", Version: "v1", Kind: "FirstMate"}
 			Expect(instance.Validate()).NotTo(Succeed())
-			Expect(instance.Validate().Error()).To(ContainSubstring("group must match ^[a-z]+$ (was Crew)"))
-		})
-
-		It("should fail if the Group contains non-alpha characters", func() {
-			instance := &Resource{Group: "crew1", Version: "v1", Kind: "FirstMate"}
-			Expect(instance.Validate()).NotTo(Succeed())
-			Expect(instance.Validate().Error()).To(ContainSubstring("group must match ^[a-z]+$ (was crew1)"))
+			Expect(instance.Validate().Error()).To(ContainSubstring("group must match ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$ (was Crew)"))
 		})
 
 		It("should fail if the Version is not specified", func() {

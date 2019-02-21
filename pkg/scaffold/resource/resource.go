@@ -65,9 +65,9 @@ func (r *Resource) Validate() error {
 		r.Resource = rs.Pluralize(strings.ToLower(r.Kind))
 	}
 
-	groupMatch := regexp.MustCompile("^[a-z]+$")
+	groupMatch := regexp.MustCompile("^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$")
 	if !groupMatch.MatchString(r.Group) {
-		return fmt.Errorf("group must match ^[a-z]+$ (was %s)", r.Group)
+		return fmt.Errorf("group must match ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$ (was %s)", r.Group)
 	}
 
 	versionMatch := regexp.MustCompile("^v\\d+(alpha\\d+|beta\\d+)?$")
