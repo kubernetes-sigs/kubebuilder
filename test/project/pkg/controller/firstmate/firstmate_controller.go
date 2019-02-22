@@ -37,7 +37,7 @@ import (
 	crewv1 "sigs.k8s.io/kubebuilder/test/project/pkg/apis/crew/v1"
 )
 
-var log = logf.Log.WithName("controller")
+var log = logf.Log.WithName("firstmate-controller")
 
 /**
 * USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
