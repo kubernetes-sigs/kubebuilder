@@ -54,6 +54,10 @@ Building APIs using CRDs, Controllers and Admission Webhooks.
 
 ## Philosophy
 
+See [DESIGN.md](DESIGN.md) for the guiding principals of the various KubeBuilder projects.
+
+TL;DR:
+
 Provide clean library abstractions with clear and well exampled godocs.
 
 - Prefer using go *interfaces* and *libraries* over relying on *code generation*
