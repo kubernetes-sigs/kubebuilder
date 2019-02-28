@@ -31,6 +31,7 @@ Check out the Kubebuilder [book](http://book.kubebuilder.io).
 - Slack channel: [#kubebuilder](http://slack.k8s.io/#kubebuilder)
 - Google Group: [kubebuilder@googlegroups.com](https://groups.google.com/forum/#!forum/kubebuilder)
 - Planned Work: [Sprint Dashboard](https://github.com/kubernetes-sigs/kubebuilder/projects/1)
+- Design Documents: [design](design/).
 
 ## Motivation
 
