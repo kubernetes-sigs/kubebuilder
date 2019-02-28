@@ -205,6 +205,40 @@ Copyright %s Example Owners.
 		})
 	})
 
+	Describe("scaffolding a RBAC Kustomization", func() {
+		BeforeEach(func() {
+			goldenPath = filepath.Join("config", "rbac", "kustomization.yaml")
+			writeToPath = goldenPath
+		})
+		Context("with rbac", func() {
+			It("should match the golden file", func() {
+				instance := &KustomizeRBAC{}
+				instance.Repo = "sigs.k8s.io/kubebuilder/test/project"
+				Expect(s.Execute(input.Options{}, instance)).NotTo(HaveOccurred())
+
+				// Verify the contents matches the golden file.
+				Expect(result.Actual.String()).To(BeEquivalentTo(result.Golden))
+			})
+		})
+	})
+
+	Describe("scaffolding a manager Kustomization", func() {
+		BeforeEach(func() {
+			goldenPath = filepath.Join("config", "manager", "kustomization.yaml")
+			writeToPath = goldenPath
+		})
+		Context("with manager", func() {
+			It("should match the golden file", func() {
+				instance := &KustomizeManager{}
+				instance.Repo = "sigs.k8s.io/kubebuilder/test/project"
+				Expect(s.Execute(input.Options{}, instance)).NotTo(HaveOccurred())
+
+				// Verify the contents matches the golden file.
+				Expect(result.Actual.String()).To(BeEquivalentTo(result.Golden))
+			})
+		})
+	})
+
 	Describe("scaffolding a Kustomize image patch", func() {
 		BeforeEach(func() {
 			goldenPath = filepath.Join("config", "default", "manager_image_patch.yaml")

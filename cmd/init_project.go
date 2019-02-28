@@ -142,6 +142,8 @@ func (o *projectOptions) runInit() {
 		&manager.Config{Image: imgName},
 		&project.GitIgnore{},
 		&project.Kustomize{},
+		&project.KustomizeRBAC{},
+		&project.KustomizeManager{},
 		&project.KustomizeImagePatch{},
 		&project.KustomizePrometheusMetricsPatch{},
 		&project.KustomizeAuthProxyPatch{},
