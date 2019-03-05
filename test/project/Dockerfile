@@ -3,9 +3,9 @@ FROM golang:1.10.3 as builder
 
 # Copy in the go src
 WORKDIR /go/src/sigs.k8s.io/kubebuilder/test/project
-COPY pkg/    pkg/
 COPY cmd/    cmd/
 COPY vendor/ vendor/
+COPY pkg/    pkg/
 
 # Build
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o manager sigs.k8s.io/kubebuilder/test/project/cmd/manager
