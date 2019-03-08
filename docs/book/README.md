@@ -9,7 +9,7 @@
 Users of Kubernetes will develop a deeper understanding of Kubernetes through learning
 the fundamental concepts behind how APIs are designed and implemented.  This book
 will teach readers how to develop their own Kubernetes APIs and the
-principals from which the core Kubernetes APIs are designed.
+principles from which the core Kubernetes APIs are designed.
 
 Including:
 
