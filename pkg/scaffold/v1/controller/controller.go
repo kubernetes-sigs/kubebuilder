@@ -25,7 +25,7 @@ import (
 
 	"github.com/markbates/inflect"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/resource"
 )
 
 // Controller scaffolds a Controller for a Resource

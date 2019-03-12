@@ -29,9 +29,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/manager"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/webhook"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/manager"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/resource"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/webhook"
 )
 
 func newWebhookCmd() *cobra.Command {
@@ -50,6 +51,16 @@ Scaffolds webhook handlers based on group, version, kind and other user inputs.
 		Run: func(cmd *cobra.Command, args []string) {
 			dieIfNoProject()
 
+			projectInfo, err := scaffold.LoadProjectFile("PROJECT")
+			if err != nil {
+				log.Fatal("failed to read the PROJECT file: %v", err)
+			}
+
+			if projectInfo.Version != project.Version1 {
+				fmt.Println("webhook scaffolding is not supported for this project version: %s", projectInfo.Version)
+				os.Exit(0)
+			}
+
 			fmt.Println("Writing scaffold for you to edit...")
 
 			if len(o.res.Resource) == 0 {
@@ -58,7 +69,7 @@ Scaffolds webhook handlers based on group, version, kind and other user inputs.
 				o.res.Resource = gvr.Resource
 			}
 
-			err := (&scaffold.Scaffold{}).Execute(input.Options{},
+			err = (&scaffold.Scaffold{}).Execute(input.Options{},
 				&manager.Webhook{},
 				&webhook.AdmissionHandler{Resource: o.res, Config: webhook.Config{Server: o.server, Type: o.webhookType, Operations: o.operations}},
 				&webhook.AdmissionWebhookBuilder{Resource: o.res, Config: webhook.Config{Server: o.server, Type: o.webhookType, Operations: o.operations}},
