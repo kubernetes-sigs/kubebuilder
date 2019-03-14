@@ -201,7 +201,7 @@ func (kt *KubebuilderTest) RunKubectlCommand(cmdOptions []string) (string, error
 	return string(output), err
 }
 
-// RunKubectlCommand is a general func to run kubectl commands
+// RunKubectlCommandWithInput is a general func to run kubectl commands
 func (kt *KubebuilderTest) RunKubectlCommandWithInput(cmdOptions []string, stdinInput string) (string, error) {
 	cmd := exec.Command("kubectl", cmdOptions...)
 	stdin, err := cmd.StdinPipe()
