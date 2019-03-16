@@ -77,6 +77,8 @@ spec:
       control-plane: controller-manager
       controller-tools.k8s.io: "1.0"
   serviceName: controller-manager-service
+  replicas: 1
+  podManagementPolicy: Parallel
   template:
     metadata:
       labels:
