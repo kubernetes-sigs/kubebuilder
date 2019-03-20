@@ -24,6 +24,7 @@ generatedInformers := kubeinformers.NewSharedInformerFactory(generatedClient, ti
 
 err := mgr.Add(manager.RunnableFunc(func(s <-chan struct{}) error {
     generatedInformers.Start(s)
+    <- s
     return nil
 }))
 if err != nil {
@@ -50,7 +51,7 @@ The generated InformerFactory must be manually wired into the Controller creatio
 ```go
 // Setup Watch using the client-go generated Informer
 err := ctrl.Watch(
-    &source.Informer{InformerProvider: generatedInformers.Core().V1().Services()},
+    &source.Informer{Informer: generatedInformers.Core().V1().Services()},
     &handler.EnqueueRequestForObject{},
 )
 if err != nil {
