@@ -1,0 +1,9 @@
+apiVersion: ziltodia.testproject.org/v1
+kind: Ziltoid
+metadata:
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: ziltoid-sample
+spec:
+  # Add fields here
+  foo: bar

@@ -928,7 +928,10 @@
   branch = "master"
   digest = "1:6ec12115cadb745fd20adac2c179cf415bcfe00854b775edc55ad51b60de7148"
   name = "sigs.k8s.io/controller-tools"
-  packages = ["pkg/util"]
+  packages = [
+    "pkg/crd/util",
+    "pkg/util",
+  ]
   pruneopts = "NT"
   revision = "c9a113d11919b74cd84dac62f28ad92d83471d59"
 
@@ -1000,6 +1003,7 @@
     "sigs.k8s.io/controller-runtime/pkg/webhook/admission",
     "sigs.k8s.io/controller-runtime/pkg/webhook/admission/builder",
     "sigs.k8s.io/controller-runtime/pkg/webhook/admission/types",
+    "sigs.k8s.io/controller-tools/pkg/crd/util",
     "sigs.k8s.io/controller-tools/pkg/util",
     "sigs.k8s.io/testing_frameworks/integration",
   ]

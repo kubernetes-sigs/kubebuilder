@@ -46,7 +46,7 @@ var _ = Describe("Webhook", func() {
 			},
 		},
 		{
-			Resource: resource.Resource{Group: "creatures", Version: "v2alpha1", Kind: "Kraken", Namespaced: false, CreateExampleReconcileBody: false},
+			Resource: resource.Resource{Group: "creatures", Version: "v2alpha1", Kind: "Kraken", Namespaced: false, CreateExampleReconcileBody: true},
 			Config: Config{
 				Type:       "validating",
 				Operations: []string{"create"},
@@ -54,7 +54,7 @@ var _ = Describe("Webhook", func() {
 			},
 		},
 		{
-			Resource: resource.Resource{Group: "core", Version: "v1", Kind: "Namespace", Namespaced: false, CreateExampleReconcileBody: false},
+			Resource: resource.Resource{Group: "ziltodia", Version: "v1", Kind: "Ziltoid", Namespaced: false, CreateExampleReconcileBody: false},
 			Config: Config{
 				Type:       "mutating",
 				Operations: []string{"update"},

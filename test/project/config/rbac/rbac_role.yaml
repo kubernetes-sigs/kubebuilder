@@ -65,9 +65,9 @@ rules:
   - update
   - patch
 - apiGroups:
-  - policy.testproject.org
+  - apps
   resources:
-  - healthcheckpolicies
+  - deployments
   verbs:
   - get
   - list
@@ -77,9 +77,9 @@ rules:
   - patch
   - delete
 - apiGroups:
-  - policy.testproject.org
+  - apps
   resources:
-  - healthcheckpolicies/status
+  - deployments/status
   verbs:
   - get
   - update
@@ -105,9 +105,9 @@ rules:
   - update
   - patch
 - apiGroups:
-  - ""
+  - ziltodia.testproject.org
   resources:
-  - namespaces
+  - ziltoids
   verbs:
   - get
   - list
@@ -117,9 +117,9 @@ rules:
   - patch
   - delete
 - apiGroups:
-  - ""
+  - ziltodia.testproject.org
   resources:
-  - namespaces/status
+  - ziltoids/status
   verbs:
   - get
   - update
