@@ -207,7 +207,7 @@ func (r *Reconcile{{ .Resource.Kind }}) Reconcile(request reconcile.Request) (re
 	instance := &{{ .Resource.Group}}{{ .Resource.Version }}.{{ .Resource.Kind }}{}
 {{- if not .Resource.Namespaced }}
 	// in case of cluster scoped CRD, we enforce the namespace to empty string
-	// since a the owner reconcile request func adds the namespace of the controlled
+	// since the owner reconcile request func adds the namespace of the controlled
 	// resource as the namespace of the generated request
 	request.NamespacedName.Namespace = ""
 {{- end }}

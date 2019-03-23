@@ -103,7 +103,7 @@ func (r *ReconcileKraken) Reconcile(request reconcile.Request) (reconcile.Result
 	// Fetch the Kraken instance
 	instance := &creaturesv2alpha1.Kraken{}
 	// in case of cluster scoped CRD, we enforce the namespace to empty string
-	// since a the owner reconcile request func adds the namespace of the controlled
+	// since the owner reconcile request func adds the namespace of the controlled
 	// resource as the namespace of the generated request
 	request.NamespacedName.Namespace = ""
 	err := r.Get(context.TODO(), request.NamespacedName, instance)
