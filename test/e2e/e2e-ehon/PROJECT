@@ -1,3 +1,0 @@
-version: v1
-domain: example.comehon
-repo: sigs.k8s.io/kubebuilder/test/e2e/e2e-ehon
