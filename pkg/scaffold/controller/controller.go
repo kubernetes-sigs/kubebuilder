@@ -206,9 +206,7 @@ func (r *Reconcile{{ .Resource.Kind }}) Reconcile(request reconcile.Request) (re
 	// Fetch the {{ .Resource.Kind }} instance
 	instance := &{{ .Resource.Group}}{{ .Resource.Version }}.{{ .Resource.Kind }}{}
 {{- if not .Resource.Namespaced }}
-	// in case of cluster scoped CRD, we enforce the namespace to empty string
-	// since the owner reconcile request func adds the namespace of the controlled
-	// resource as the namespace of the generated request
+	// For cluster-scoped CRDs, we force the namespace to be empty.
 	request.NamespacedName.Namespace = ""
 {{- end }}
 	err := r.Get(context.TODO(), request.NamespacedName, instance)
