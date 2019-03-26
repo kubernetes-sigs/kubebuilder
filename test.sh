@@ -21,17 +21,14 @@ source common.sh
 
 function test_init_project {
   header_text "performing init project"
-  kubebuilder init --domain example.com <<< "y"
-  make
-  cache_dep
+  kubebuilder init --domain example.com <<< "n"
+  # make
 }
 
-
-
-function test_init_project_manual_dep_ensure {
-  header_text "performing init project w/o dep ensure"
-  kubebuilder init --domain example.com <<< "n"
-  dep ensure -v
+function test_make_project {
+  header_text "running make in project"
+  # kubebuilder init --domain example.com <<< "n"
+  # dep ensure -v
   make
 }
 
@@ -99,40 +96,40 @@ setup_envs
 
 prepare_testdir_under_gopath
 test_init_project
+cache_project
 
 prepare_testdir_under_gopath
-test_init_project_manual_dep_ensure
+dump_project
+test_make_project
 
 prepare_testdir_under_gopath
-dump_cache
+dump_project
 test_create_api_controller
 
 prepare_testdir_under_gopath
-dump_cache
+dump_project
 test_create_namespaced_api_controller
 
 prepare_testdir_under_gopath
-dump_cache
+dump_project
 test_create_api_only
 
 prepare_testdir_under_gopath
-dump_cache
+dump_project
 test_create_namespaced_api_only
 
 prepare_testdir_under_gopath
-dump_cache
+dump_project
 test_create_coretype_controller
 
 prepare_testdir_under_gopath
-dump_cache
+dump_project
 test_create_namespaced_coretype_controller
 
 cd ${go_workspace}/src/sigs.k8s.io/kubebuilder
 
 go test ./cmd/... ./pkg/...
 
-cd test/project
-make
-cd -
+./generated_golden.sh 
 
 exit $rc

@@ -159,8 +159,13 @@ function setup_envs {
   export TEST_DEP=$tmp_root/kubebuilder/init_project
 }
 
-function cache_dep {
-  header_text "caching inited projects"
+function restore_go_deps {
+  header_text "restoring Go dependencies"
+  tar -zxf ${go_workspace}/src/sigs.k8s.io/kubebuilder/test/vendor.v1.tgz
+}
+
+function cache_project {
+  header_text "caching initialized projects"
   if [ -d "$TEST_DEP" ]; then
     rm -rf "$TEST_DEP"
   fi
@@ -168,9 +173,10 @@ function cache_dep {
   cp -r $PWD/* $TEST_DEP
 }
 
-function dump_cache {
-  header_text "dump cached project and deps"
+function dump_project {
+  header_text "restoring cached project"
   if [ -d "$TEST_DEP" ]; then
     cp -r $TEST_DEP/* .
+    restore_go_deps
   fi
 }

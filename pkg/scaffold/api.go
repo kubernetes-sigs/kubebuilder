@@ -192,12 +192,18 @@ func (api *API) scaffoldV2() error {
 	if api.DoController {
 		fmt.Println(filepath.Join("controllers", fmt.Sprintf("%s_controller.go", strings.ToLower(r.Kind))))
 
+		ctrlScaffolder := &resourcev2.Controller{Resource: r}
 		err := (&Scaffold{}).Execute(
 			input.Options{},
-			&resourcev2.Controller{Resource: r},
+			ctrlScaffolder,
 		)
 		if err != nil {
 			return fmt.Errorf("error scaffolding controller: %v", err)
+		}
+
+		err = ctrlScaffolder.UpdateMain("main.go")
+		if err != nil {
+			return fmt.Errorf("error updating main.go with reconciler code: %v", err)
 		}
 	}
 	//

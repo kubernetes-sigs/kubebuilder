@@ -52,7 +52,7 @@ func (c *Project) GetInput() (input.Input, error) {
 		c.Version = Version1
 	}
 	if c.Repo == "" {
-		r, err := c.repoFromGopathAndWd(os.Getenv("GOPATH"), os.Getwd)
+		r, err := c.RepoFromGopathAndWd(os.Getenv("GOPATH"), os.Getwd)
 		if err != nil {
 			return input.Input{}, err
 		}
@@ -74,7 +74,7 @@ func (c *Project) GetInput() (input.Input, error) {
 	}, nil
 }
 
-func (Project) repoFromGopathAndWd(gopath string, getwd func() (string, error)) (string, error) {
+func (Project) RepoFromGopathAndWd(gopath string, getwd func() (string, error)) (string, error) {
 	// Assume the working dir is the root of the repo
 	wd, err := getwd()
 	if err != nil {

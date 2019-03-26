@@ -68,7 +68,6 @@ func (p *Project) Scaffold() error {
 		input.Options{ProjectPath: projectInput.Path, BoilerplatePath: bpInput.Path},
 		&manager.Config{Image: imgName},
 		&project.GitIgnore{},
-		&project.GopkgToml{},
 		&project.Kustomize{},
 		&project.KustomizeRBAC{},
 		&project.KustomizeManager{},
@@ -107,6 +106,7 @@ func (p *Project) scaffoldV1() error {
 	return (&Scaffold{}).Execute(
 		input.Options{ProjectPath: p.Info.Path, BoilerplatePath: p.Boilerplate.Path},
 		&project.Makefile{Image: imgName},
+		&project.GopkgToml{},
 		&manager.Dockerfile{},
 		&manager.APIs{},
 		&manager.Controller{},
@@ -121,6 +121,7 @@ func (p *Project) scaffoldV2() error {
 	return (&Scaffold{}).Execute(
 		input.Options{ProjectPath: p.Info.Path, BoilerplatePath: p.Boilerplate.Path},
 		&scaffoldv2.Main{},
+		&scaffoldv2.GopkgToml{},
 		&scaffoldv2.Doc{},
 		&scaffoldv2.Makefile{Image: imgName},
 		&scaffoldv2.Dockerfile{},

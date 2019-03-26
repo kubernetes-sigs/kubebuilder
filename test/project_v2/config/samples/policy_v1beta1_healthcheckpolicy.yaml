@@ -1,0 +1,9 @@
+apiVersion: policy.testproject.org/v1beta1
+kind: HealthCheckPolicy
+metadata:
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: healthcheckpolicy-sample
+spec:
+  # Add fields here
+  foo: bar

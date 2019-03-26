@@ -47,6 +47,62 @@ type Controller struct {
 
 // GetInput implements input.File
 func (a *Controller) GetInput() (input.Input, error) {
+
+	a.ResourcePackage, a.GroupDomain = getResourceInfo(a.Resource, a.Input)
+
+	if a.Plural == "" {
+		rs := inflect.NewDefaultRuleset()
+		a.Plural = rs.Pluralize(strings.ToLower(a.Resource.Kind))
+	}
+
+	if a.Path == "" {
+		a.Path = filepath.Join("controllers",
+			strings.ToLower(a.Resource.Kind)+"_controller.go")
+	}
+	a.TemplateBody = controllerTemplate
+	a.Input.IfExistsAction = input.Error
+	return a.Input, nil
+}
+
+// UpdateMain updates given file (main.go) with code fragments required for
+// setting up a new reconciler.
+func (a *Controller) UpdateMain(path string) error {
+
+	a.ResourcePackage, a.GroupDomain = getResourceInfo(a.Resource, a.Input)
+	if a.Plural == "" {
+		rs := inflect.NewDefaultRuleset()
+		a.Plural = rs.Pluralize(strings.ToLower(a.Resource.Kind))
+	}
+
+	apiImportCodeFragment := fmt.Sprintf(`"%s/controllers"
+%s%s "%s/%s"
+`, a.Repo, a.Resource.Group, a.Resource.Version, a.ResourcePackage, a.Resource.Version)
+
+	addschemeCodeFragment := fmt.Sprintf(`%s%s.AddToScheme(scheme)
+`, a.Resource.Group, a.Resource.Version)
+
+	reconcilerSetupCodeFragment := fmt.Sprintf(`err = (&controllers.%sReconciler{
+	 	Client: mgr.GetClient(),
+        Log: ctrl.Log.WithName("%s-controller"),
+	 }).SetupWithManager(mgr)
+	 if err != nil {
+	 	setupLog.Error(err, "unable to create controller", "controller", "%s")
+	 	os.Exit(1)
+	 }
+`, a.Resource.Kind, a.Resource.Kind, a.Resource.Kind)
+
+	err := insertStringsInFile(path,
+		apiPkgImportScaffoldMarker, apiImportCodeFragment,
+		apiSchemeScaffoldMarker, addschemeCodeFragment,
+		reconcilerSetupScaffoldMarker, reconcilerSetupCodeFragment)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func getResourceInfo(r *resource.Resource, in input.Input) (resourcePackage, groupDomain string) {
 	// Use the k8s.io/api package for core resources
 	coreGroups := map[string]string{
 		"apps":                  "",
@@ -63,24 +119,6 @@ func (a *Controller) GetInput() (input.Input, error) {
 		"rbac.authorization":    "k8s.io",
 		"storage":               "k8s.io",
 	}
-
-	a.ResourcePackage, a.GroupDomain = getResourceInfo(coreGroups, a.Resource, a.Input)
-
-	if a.Plural == "" {
-		rs := inflect.NewDefaultRuleset()
-		a.Plural = rs.Pluralize(strings.ToLower(a.Resource.Kind))
-	}
-
-	if a.Path == "" {
-		a.Path = filepath.Join("controllers",
-			strings.ToLower(a.Resource.Kind)+"_controller.go")
-	}
-	a.TemplateBody = controllerTemplate
-	a.Input.IfExistsAction = input.Error
-	return a.Input, nil
-}
-
-func getResourceInfo(coreGroups map[string]string, r *resource.Resource, in input.Input) (resourcePackage, groupDomain string) {
 	resourcePath := filepath.Join("api", r.Version, fmt.Sprintf("%s_types.go", strings.ToLower(r.Kind)))
 	if _, err := os.Stat(resourcePath); os.IsNotExist(err) {
 		if domain, found := coreGroups[r.Group]; found {
@@ -113,14 +151,14 @@ import (
 // {{ .Resource.Kind }}Reconciler reconciles a {{ .Resource.Kind }} object
 type {{ .Resource.Kind }}Reconciler struct {
 	client.Client
-	log logr.Logger
+	Log logr.Logger
 }
 
 // +kubebuilder:rbac:groups={{.GroupDomain}},resources={{ .Plural }},verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups={{.GroupDomain}},resources={{ .Plural }}/status,verbs=get;update;patch
 func (r *{{ .Resource.Kind }}Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()
-	_ = r.log.WithValues("{{ .Resource.Kind }}", req.NamespacedName)
+	_ = r.Log.WithValues("{{ .Resource.Kind }}", req.NamespacedName)
 
 	// your logic here
 

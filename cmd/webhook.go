@@ -53,11 +53,11 @@ Scaffolds webhook handlers based on group, version, kind and other user inputs.
 
 			projectInfo, err := scaffold.LoadProjectFile("PROJECT")
 			if err != nil {
-				log.Fatal("failed to read the PROJECT file: %v", err)
+				log.Fatalf("failed to read the PROJECT file: %v", err)
 			}
 
 			if projectInfo.Version != project.Version1 {
-				fmt.Println("webhook scaffolding is not supported for this project version: %s", projectInfo.Version)
+				fmt.Printf("webhook scaffolding is not supported for this project version: %s \n", projectInfo.Version)
 				os.Exit(0)
 			}
 

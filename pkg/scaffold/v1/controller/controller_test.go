@@ -1,4 +1,4 @@
-package controller
+package controller_test
 
 import (
 	"fmt"
@@ -8,8 +8,9 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/scaffoldtest"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/controller"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/resource"
 )
 
 var _ = Describe("Controller", func() {
@@ -30,22 +31,22 @@ var _ = Describe("Controller", func() {
 				{
 					file: filepath.Join("pkg", "controller",
 						fmt.Sprintf("add_%s.go", strings.ToLower(r.Kind))),
-					instance: &AddController{Resource: r},
+					instance: &controller.AddController{Resource: r},
 				},
 				{
 					file: filepath.Join("pkg", "controller", strings.ToLower(r.Kind),
 						strings.ToLower(r.Kind)+"_controller.go"),
-					instance: &Controller{Resource: r},
+					instance: &controller.Controller{Resource: r},
 				},
 				{
 					file: filepath.Join("pkg", "controller",
 						strings.ToLower(r.Kind), strings.ToLower(r.Kind)+"_controller_suite_test.go"),
-					instance: &SuiteTest{Resource: r},
+					instance: &controller.SuiteTest{Resource: r},
 				},
 				{
 					file: filepath.Join("pkg", "controller",
 						strings.ToLower(r.Kind), strings.ToLower(r.Kind)+"_controller_test.go"),
-					instance: &Test{Resource: r},
+					instance: &controller.Test{Resource: r},
 				},
 			}
 

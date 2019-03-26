@@ -1,4 +1,4 @@
-package manager
+package manager_test
 
 import (
 	"fmt"
@@ -8,6 +8,7 @@ import (
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/scaffoldtest"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/manager"
 )
 
 var _ = Describe("Manager", func() {
@@ -18,27 +19,27 @@ var _ = Describe("Manager", func() {
 		}{
 			{
 				file:     filepath.Join("pkg", "apis", "apis.go"),
-				instance: &APIs{},
+				instance: &manager.APIs{},
 			},
 			{
 				file:     filepath.Join("cmd", "manager", "main.go"),
-				instance: &Cmd{},
+				instance: &manager.Cmd{},
 			},
 			{
 				file:     filepath.Join("config", "manager", "manager.yaml"),
-				instance: &Config{Image: "controller:latest"},
+				instance: &manager.Config{Image: "controller:latest"},
 			},
 			{
 				file:     filepath.Join("pkg", "controller", "controller.go"),
-				instance: &Controller{},
+				instance: &manager.Controller{},
 			},
 			{
 				file:     filepath.Join("pkg", "webhook", "webhook.go"),
-				instance: &Webhook{},
+				instance: &manager.Webhook{},
 			},
 			{
 				file:     filepath.Join("Dockerfile"),
-				instance: &Dockerfile{},
+				instance: &manager.Dockerfile{},
 			},
 		}
 
@@ -57,7 +58,7 @@ var _ = Describe("Manager", func() {
 	Describe(fmt.Sprintf("scaffolding Manager"), func() {
 		Context("APIs", func() {
 			It("should return an error if the relative path cannot be calculated", func() {
-				instance := &APIs{}
+				instance := &manager.APIs{}
 				s, _ := scaffoldtest.NewTestScaffold(filepath.Join("pkg", "apis", "apis.go"), "")
 				s.ProjectPath = "."
 				err := s.Execute(scaffoldtest.Options(), instance)

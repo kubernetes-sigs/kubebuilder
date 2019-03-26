@@ -33,7 +33,8 @@ scaffold_test_project() {
 	rm -rf ./test/$project/*
 	pushd . 
 	cd test/$project
-	ln -s ../../vendor vendor
+	# untar Gopkg.lock and vendor directory for appropriate project version
+	tar -zxf ../vendor.v$version.tgz
 	../../bin/kubebuilder init --project-version $version --domain testproject.org --license apache2 --owner "The Kubernetes authors" --dep=false
 	../../bin/kubebuilder create api --group crew --version v1 --kind FirstMate --controller=true --resource=true --make=false
 	../../bin/kubebuilder alpha webhook --group crew --version v1 --kind FirstMate --type=mutating --operations=create,update --make=false
@@ -46,9 +47,12 @@ scaffold_test_project() {
 	../../bin/kubebuilder alpha webhook --group core --version v1 --kind Namespace --type=mutating --operations=update --make=false
 	../../bin/kubebuilder create api --group policy --version v1beta1 --kind HealthCheckPolicy --example=false --controller=true --resource=true --namespaced=false --make=false
 	make
+	rm -f Gopkg.lock
+	rm -rf ./vendor
+	rm -rf ./bin
 	popd
 }
 
 build_kb && \
-scaffold_test_project project 1
-# scaffold_test_project project_v2 2
+scaffold_test_project project 1 && \
+scaffold_test_project project_v2 2

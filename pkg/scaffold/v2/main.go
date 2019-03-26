@@ -17,9 +17,16 @@ limitations under the License.
 package v2
 
 import (
+	"fmt"
 	"path/filepath"
 
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+)
+
+const (
+	apiPkgImportScaffoldMarker    = "+kubebuilder:scaffold:imports"
+	apiSchemeScaffoldMarker       = "+kubebuilder:scaffold:scheme"
+	reconcilerSetupScaffoldMarker = "+kubebuilder:scaffold:builder"
 )
 
 var _ input.File = &Main{}
@@ -38,7 +45,7 @@ func (m *Main) GetInput() (input.Input, error) {
 	return m.Input, nil
 }
 
-var mainTemplate = `{{ .Boilerplate }}
+var mainTemplate = fmt.Sprintf(`{{ .Boilerplate }}
 
 package main
 
@@ -50,24 +57,19 @@ import (
     ctrl "sigs.k8s.io/controller-runtime"
     "sigs.k8s.io/controller-runtime/pkg/log/zap"
     "k8s.io/apimachinery/pkg/runtime"
+
+
+	// %s
 )
-
-
-// +kubebuilder:scaffold:import-api
-// import (
-// 	"{{ .Repo }}/pkg/apis"
-// )
-	
 
 var (
     scheme = runtime.NewScheme()
     setupLog = ctrl.Log.WithName("setup")
 )
 
-// +kubebuilder:scaffold:scheme
 func init() {
-    // v1beta1.AddToScheme(scheme)
-    // v1.AddToScheme(scheme)
+
+	// %s
 }
 
 func main() {
@@ -83,16 +85,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	// err = controllers.MyKindReconciler{
-	// 	Client: mgr.GetClient(),
-    //     log: ctrl.Log.WithName("mykind-controller"),
-	// }.SetupWithManager(mgr)
-	// if err != nil {
-	// 	setupLog.Error(err, "unable to create controller", "controller", "mykind")
-	// 	os.Exit(1)
-	// }
 
-    // +kubebuilder:scaffold:builder
+    // %s
 
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
@@ -100,4 +94,4 @@ func main() {
 		os.Exit(1)
 	}
 }
-`
+`, apiPkgImportScaffoldMarker, apiSchemeScaffoldMarker, reconcilerSetupScaffoldMarker)
