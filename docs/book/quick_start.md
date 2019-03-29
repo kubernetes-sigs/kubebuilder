@@ -126,9 +126,9 @@ make
 
 {% method %}
 
-#### Controller-Manager Container and Manifests installtion
+#### Controller-Manager Container and Manifests installation
 
-- Build and push a container image.
+- Build and push a container image
 - Create installation manifests for your API
 - Run in-cluster with kubectl apply
 
