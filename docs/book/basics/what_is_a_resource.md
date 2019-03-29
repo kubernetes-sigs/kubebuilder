@@ -231,5 +231,5 @@ existing core Kubernetes resources.
 #### Namespaces
 
 While most resources are Namespaced, that is the objects are scoped to a Namespace, some resources
-are non-namespaces and scoped to the cluster.  Examples of non-namespaced resources include
+are non-namespaced and scoped to the cluster.  Examples of non-namespaced resources include
 Nodes, Namespaces and ClusterRole.
