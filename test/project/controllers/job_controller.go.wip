@@ -1,0 +1,40 @@
+package controllers
+
+import (
+	"context"
+
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"github.com/go-logr/logr"
+	apierrs "k8s.io/apimachinery/pkg/api/errors"
+
+	"sigs.k8s.io/kubebuilder/test/project/api/v1"
+)
+
+type JobReconciler struct {
+	client.Client
+	log logr.Logger
+}
+
+func (r *JobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
+	ctx := context.Background()
+	log := r.log.WithValues("job", req.NamespacedName)
+
+	var job v1.Job
+	if err := r.Get(ctx, req, &job); err != nil {
+		log.Error(err, "unable to fetch job")
+		return ctrl.Result{}, ignoreNotFound(err)
+	}
+
+	// TODO(directxman12): expectations :-/
+
+	// your logic here
+
+	return ctrl.Result{}, nil
+}
+
+func (r *JobReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	return ctrl.NewControllerManagedBy(mgr).
+		For(v1.Job{}).
+		Complete(r)
+}

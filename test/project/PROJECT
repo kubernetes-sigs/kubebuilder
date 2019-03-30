@@ -1,4 +1,4 @@
 version: "1"
-domain: testproject.org
+domain: tutorial.kubebuilder.io
 repo: sigs.k8s.io/kubebuilder/test/project
 scaffold-version: "2.alpha1"

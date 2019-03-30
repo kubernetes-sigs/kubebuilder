@@ -2,6 +2,7 @@
 
 * [Introduction](README.md)
 * [Quick Start](quick_start.md)
+* [Tutorial (Building CronJob)](tutorial/page-0.md)
 
 ### Getting Started
 
