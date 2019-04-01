@@ -146,11 +146,11 @@ name="{{ .Name }}"
 
 [[constraint]]
   name="sigs.k8s.io/controller-runtime"
-  version="v0.1.1"
+  version="v0.1.10"
 
 [[constraint]]
   name="sigs.k8s.io/controller-tools"
-  version="v0.1.1"
+  version="v0.1.10"
 
 # For dependency below: Refer to issue https://github.com/golang/dep/issues/1799
 [[override]]
