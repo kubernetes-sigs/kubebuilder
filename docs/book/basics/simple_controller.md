@@ -1,4 +1,4 @@
-# Controller Example
+# Controller Simple Example
 
 This chapter walks through a simple Controller implementation.
 
