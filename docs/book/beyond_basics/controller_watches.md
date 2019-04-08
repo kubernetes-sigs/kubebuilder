@@ -68,7 +68,7 @@ correct RBAC rules are in place and informers have been started.
 
 ```go
 // Annotation to generate RBAC roles to watch and update Pods
-// +kubebuilder:rbac:groups="",resources=pods,verbs=get;watch;list,create,update,delete
+// +kubebuilder:rbac:groups="",resources=pods,verbs=get;watch;list;create;update;delete
 ```
 
 {% sample lang="go" %}
