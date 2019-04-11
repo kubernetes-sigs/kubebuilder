@@ -1,9 +1,0 @@
-apiVersion: ship.testproject.org/v1beta1
-kind: Frigate
-metadata:
-  labels:
-    controller-tools.k8s.io: "1.0"
-  name: frigate-sample
-spec:
-  # Add fields here
-  foo: bar

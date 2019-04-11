@@ -17,7 +17,7 @@ limitations under the License.
 // Package v1 contains API Schema definitions for the crew v1 API group
 // +k8s:openapi-gen=true
 // +k8s:deepcopy-gen=package,register
-// +k8s:conversion-gen=sigs.k8s.io/kubebuilder/test/project_v2/pkg/apis/crew
+// +k8s:conversion-gen=sigs.k8s.io/kubebuilder/test/project_v2/api/v1
 // +k8s:defaulter-gen=TypeMeta
 // +groupName=crew.testproject.org
 package v1

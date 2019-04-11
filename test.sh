@@ -22,13 +22,10 @@ source common.sh
 function test_init_project {
   header_text "performing init project"
   kubebuilder init --domain example.com <<< "n"
-  # make
 }
 
 function test_make_project {
   header_text "running make in project"
-  # kubebuilder init --domain example.com <<< "n"
-  # dep ensure -v
   make
 }
 
@@ -88,6 +85,17 @@ y
 EOF
 }
 
+function test_project {
+  project_dir=$1
+  version=$2
+  header_text "performing tests in dir $project_dir for project version v$version"
+  cd test/$project_dir
+  tar -zxf ../vendor.v$version.tgz
+  make
+  rm -rf ./vendor && rm -f Gopkg.lock
+  cd -
+}
+
 prepare_staging_dir
 fetch_tools
 build_kb
@@ -130,6 +138,10 @@ cd ${go_workspace}/src/sigs.k8s.io/kubebuilder
 
 go test ./cmd/... ./pkg/...
 
-./generated_golden.sh 
+# test project v1
+test_project project 1
+
+# test project v2
+test_project project_v2 2
 
 exit $rc

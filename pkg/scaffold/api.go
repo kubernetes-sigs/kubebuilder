@@ -18,8 +18,6 @@ package scaffold
 
 import (
 	"fmt"
-	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -44,9 +42,6 @@ type API struct {
 
 	// DoController indicates whether to scaffold controller files or not
 	DoController bool
-
-	// RunMake indicates whether to run make or not after scaffolding APIs
-	RunMake bool
 }
 
 // Validate validates whether API scaffold has correct bits to generate
@@ -140,16 +135,6 @@ func (api *API) scaffoldV1() error {
 		}
 	}
 
-	if api.RunMake {
-		fmt.Println("Running make...")
-		cm := exec.Command("make") // #nosec
-		cm.Stderr = os.Stderr
-		cm.Stdout = os.Stdout
-		if err := cm.Run(); err != nil {
-			return fmt.Errorf("error running make: %v", err)
-		}
-	}
-
 	return nil
 }
 
@@ -159,13 +144,10 @@ func (api *API) scaffoldV2() error {
 	if api.DoResource {
 		fmt.Println(filepath.Join("api", r.Version,
 			fmt.Sprintf("%s_types.go", strings.ToLower(r.Kind))))
-		// fmt.Println(filepath.Join("pkg", "apis", r.Group, r.Version,
-		// 	fmt.Sprintf("%s_types_test.go", strings.ToLower(r.Kind))))
 
 		err := (&Scaffold{}).Execute(
 			input.Options{},
-			// &resourcev1.Register{Resource: r},
-			&resourcev1.Doc{
+			&resourcev2.ResourceDoc{
 				Input: input.Input{
 					Path: filepath.Join("api", r.Version, "doc.go"),
 				},
@@ -206,15 +188,6 @@ func (api *API) scaffoldV2() error {
 			return fmt.Errorf("error updating main.go with reconciler code: %v", err)
 		}
 	}
-	//
-	// if api.RunMake {
-	// 	fmt.Println("Running make...")
-	// 	cm := exec.Command("make") // #nosec
-	// 	cm.Stderr = os.Stderr
-	// 	cm.Stdout = os.Stdout
-	// 	if err := cm.Run(); err != nil {
-	// 		return fmt.Errorf("error running make: %v", err)
-	// 	}
-	// }
+
 	return nil
 }

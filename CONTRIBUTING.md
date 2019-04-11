@@ -7,7 +7,7 @@ Kubernetes projects require that you sign a Contributor License Agreement (CLA) 
 Please see https://git.k8s.io/community/CLA.md for more info.
 
 ## Contributing steps
-
+1. Setup [Git LFS plugin](https://git-lfs.github.com/)
 1. Submit an issue describing your proposed change to the repo in question.
 1. The [repo owners](OWNERS) will respond to your issue promptly.
 1. If your proposed change is accepted, and you haven't already done so, sign a Contributor License Agreement (see details above).
@@ -15,6 +15,10 @@ Please see https://git.k8s.io/community/CLA.md for more info.
 1. Submit a pull request.
 
 ## How to build kubebuilder locally
+
+1. Setup Git LFS
+Install the git-lfs plugin using the instructions from [git-lfs](https://git-lfs.github.com/) page.
+Once installed, run `git lfs install` in your repo to setup git lfs hooks.
 
 1. Build
 ```sh

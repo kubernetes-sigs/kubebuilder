@@ -26,9 +26,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	crewv1 "sigs.k8s.io/kubebuilder/test/project_v2/api/v1"
-	policyv1beta1 "sigs.k8s.io/kubebuilder/test/project_v2/api/v1beta1"
-	shipv1beta1 "sigs.k8s.io/kubebuilder/test/project_v2/api/v1beta1"
-	creaturesv2alpha1 "sigs.k8s.io/kubebuilder/test/project_v2/api/v2alpha1"
 	"sigs.k8s.io/kubebuilder/test/project_v2/controllers"
 	// +kubebuilder:scaffold:imports
 )
@@ -41,10 +38,7 @@ var (
 func init() {
 
 	crewv1.AddToScheme(scheme)
-	shipv1beta1.AddToScheme(scheme)
-	creaturesv2alpha1.AddToScheme(scheme)
 	corev1.AddToScheme(scheme)
-	policyv1beta1.AddToScheme(scheme)
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -69,36 +63,12 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "FirstMate")
 		os.Exit(1)
 	}
-	err = (&controllers.FrigateReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("Frigate-controller"),
-	}).SetupWithManager(mgr)
-	if err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Frigate")
-		os.Exit(1)
-	}
-	err = (&controllers.KrakenReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("Kraken-controller"),
-	}).SetupWithManager(mgr)
-	if err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Kraken")
-		os.Exit(1)
-	}
 	err = (&controllers.NamespaceReconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("Namespace-controller"),
 	}).SetupWithManager(mgr)
 	if err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Namespace")
-		os.Exit(1)
-	}
-	err = (&controllers.HealthCheckPolicyReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("HealthCheckPolicy-controller"),
-	}).SetupWithManager(mgr)
-	if err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "HealthCheckPolicy")
 		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder

@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 
 	"github.com/spf13/cobra"
 	flag "github.com/spf13/pflag"
@@ -33,10 +34,13 @@ import (
 type apiOptions struct {
 	apiScaffolder                scaffold.API
 	resourceFlag, controllerFlag *flag.Flag
+
+	// runMake indicates whether to run make or not after scaffolding APIs
+	runMake bool
 }
 
 func (o *apiOptions) bindCmdFlags(cmd *cobra.Command) {
-	cmd.Flags().BoolVar(&o.apiScaffolder.RunMake, "make", true,
+	cmd.Flags().BoolVar(&o.runMake, "make", true,
 		"if true, run make after generating files")
 	cmd.Flags().BoolVar(&o.apiScaffolder.DoResource, "resource", true,
 		"if set, generate the resource without prompting the user")
@@ -83,6 +87,23 @@ func (o *apiOptions) runAddAPI() {
 	if err := o.apiScaffolder.Scaffold(); err != nil {
 		log.Fatal(err)
 	}
+
+	if err := o.postScaffold(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func (o *apiOptions) postScaffold() error {
+	if o.runMake {
+		fmt.Println("Running make...")
+		cm := exec.Command("make") // #nosec
+		cm.Stderr = os.Stderr
+		cm.Stdout = os.Stdout
+		if err := cm.Run(); err != nil {
+			return fmt.Errorf("error running make: %v", err)
+		}
+	}
+	return nil
 }
 
 func newAPICommand() *cobra.Command {
