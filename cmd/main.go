@@ -82,7 +82,7 @@ Typical project lifecycle:
 
 - initialize a project:
 
-  kubebuilder init --domain k8s.io --license apache2 --owner "The Kubernetes authors
+  kubebuilder init --domain k8s.io --license apache2 --owner "The Kubernetes authors"
 
 - create one or more a new resource APIs and add your code to them:
 
