@@ -205,10 +205,6 @@ type Reconcile{{ .Resource.Kind }} struct {
 func (r *Reconcile{{ .Resource.Kind }}) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	// Fetch the {{ .Resource.Kind }} instance
 	instance := &{{ .Resource.Group}}{{ .Resource.Version }}.{{ .Resource.Kind }}{}
-{{- if not .Resource.Namespaced }}
-	// For cluster-scoped CRDs, we force the namespace to be empty.
-	request.NamespacedName.Namespace = ""
-{{- end }}
 	err := r.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {

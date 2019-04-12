@@ -91,8 +91,6 @@ type ReconcileZiltoid struct {
 func (r *ReconcileZiltoid) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	// Fetch the Ziltoid instance
 	instance := &ziltodiav1.Ziltoid{}
-	// For cluster-scoped CRDs, we force the namespace to be empty.
-	request.NamespacedName.Namespace = ""
 	err := r.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
