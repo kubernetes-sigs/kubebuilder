@@ -26,7 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
 )
@@ -126,10 +126,4 @@ var (
 
 	// SetLogger sets a concrete logging implementation for all deferred Loggers.
 	SetLogger = log.SetLogger
-
-	// ZapLogger is a Logger implementation.
-	// If development is true, a Zap development config will be used
-	// (stacktraces on warnings, no sampling), otherwise a Zap production
-	// config will be used (stacktraces on errors, sampling).
-	ZapLogger = log.ZapLogger
 )

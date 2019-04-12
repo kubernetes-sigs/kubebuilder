@@ -31,11 +31,11 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/internal/log"
 )
 
 var (
-	log = logf.KBLog.WithName("fake-client")
+	log = logf.RuntimeLog.WithName("fake-client")
 )
 
 type fakeClient struct {

@@ -879,7 +879,7 @@
   revision = "9dfdf9be683f61f82cda12362c44c784e0778b56"
 
 [[projects]]
-  digest = "1:06035489efbd51ccface65fc878ceeb849aba05b2f9443c8993f363fc96e80ac"
+  digest = "1:3e9674b707a30a135cac63f34524a1030630ea83cb7bea794225383516054f54"
   name = "sigs.k8s.io/controller-runtime"
   packages = [
     "pkg/cache",
@@ -895,8 +895,11 @@
     "pkg/handler",
     "pkg/internal/controller",
     "pkg/internal/controller/metrics",
+    "pkg/internal/log",
     "pkg/internal/recorder",
     "pkg/leaderelection",
+    "pkg/log",
+    "pkg/log/zap",
     "pkg/manager",
     "pkg/metrics",
     "pkg/patch",
@@ -921,8 +924,7 @@
     "pkg/webhook/types",
   ]
   pruneopts = "NT"
-  revision = "12d98582e72927b6cd0123e2b4e819f9341ce62c"
-  version = "v0.1.10"
+  revision = "6cfbed364aece9fa862ff37c382386630df70bca"
 
 [[projects]]
   branch = "master"

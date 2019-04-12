@@ -17,6 +17,7 @@ limitations under the License.
 package inject
 
 import (
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -109,6 +110,20 @@ type Stoppable interface {
 func StopChannelInto(stop <-chan struct{}, i interface{}) (bool, error) {
 	if s, ok := i.(Stoppable); ok {
 		return true, s.InjectStopChannel(stop)
+	}
+	return false, nil
+}
+
+// Mapper is used to inject the rest mapper to components that may need it
+type Mapper interface {
+	InjectMapper(meta.RESTMapper) error
+}
+
+// MapperInto will set the rest mapper on i and return the result if it implements Mapper.
+// Returns false if i does not implement Mapper.
+func MapperInto(mapper meta.RESTMapper, i interface{}) (bool, error) {
+	if m, ok := i.(Mapper); ok {
+		return true, m.InjectMapper(mapper)
 	}
 	return false, nil
 }

@@ -58,7 +58,7 @@ Inject necessary information given the objects.
 package writer
 
 import (
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/internal/log"
 )
 
-var log = logf.KBLog.WithName("admission").WithName("cert").WithName("writer")
+var log = logf.RuntimeLog.WithName("admission").WithName("cert").WithName("writer")

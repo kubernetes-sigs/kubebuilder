@@ -25,12 +25,12 @@ import (
 
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/internal/log"
 )
 
 var (
 	kubeconfig, masterURL string
-	log                   = logf.KBLog.WithName("client").WithName("config")
+	log                   = logf.RuntimeLog.WithName("client").WithName("config")
 )
 
 func init() {

@@ -36,11 +36,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
 	"sigs.k8s.io/controller-runtime/pkg/recorder"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/internal/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission/types"
 )
 
-var log = logf.KBLog.WithName("manager")
+var log = logf.RuntimeLog.WithName("manager")
 
 type controllerManager struct {
 	// config is the rest.config used to talk to the apiserver.  Required.
@@ -137,6 +137,9 @@ func (cm *controllerManager) SetFields(i interface{}) error {
 		return err
 	}
 	if _, err := inject.DecoderInto(cm.admissionDecoder, i); err != nil {
+		return err
+	}
+	if _, err := inject.MapperInto(cm.mapper, i); err != nil {
 		return err
 	}
 	return nil

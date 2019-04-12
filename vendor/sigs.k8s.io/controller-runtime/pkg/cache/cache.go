@@ -29,10 +29,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/cache/internal"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/internal/log"
 )
 
-var log = logf.KBLog.WithName("object-cache")
+var log = logf.RuntimeLog.WithName("object-cache")
 
 // Cache implements CacheReader by reading objects from a cache populated by InformersMap
 type Cache interface {

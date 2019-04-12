@@ -29,7 +29,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -44,7 +45,7 @@ func main() {
 		"disable the installer in the webhook server, so it won't install webhook configuration resources during bootstrapping")
 
 	flag.Parse()
-	logf.SetLogger(logf.ZapLogger(false))
+	logf.SetLogger(zap.Logger(false))
 	entryLog := log.WithName("entrypoint")
 
 	// Setup a Manager

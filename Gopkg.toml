@@ -19,6 +19,10 @@ required = [
   name="k8s.io/code-generator"
   version="kubernetes-1.13.1"
 
+[[constraint]]
+  name="sigs.k8s.io/controller-runtime"
+  revision="6cfbed364aece9fa862ff37c382386630df70bca"
+
 # For dependency below: Refer to issue https://github.com/golang/dep/issues/1799
 [[override]]
   name = "gopkg.in/fsnotify.v1"

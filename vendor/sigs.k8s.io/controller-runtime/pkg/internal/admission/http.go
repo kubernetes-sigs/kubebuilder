@@ -23,12 +23,12 @@ import (
 
 	"k8s.io/api/admission/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/internal/log"
 )
 
 var (
 	// TODO(directxman12): this shouldn't be a global log
-	log = logf.KBLog.WithName("admission").WithName("http-handler")
+	log = logf.RuntimeLog.WithName("admission").WithName("http-handler")
 )
 
 func (h httpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
