@@ -35,7 +35,6 @@ import (
 var c client.Client
 
 var expectedRequest = reconcile.Request{NamespacedName: types.NamespacedName{Name: "foo"}}
-var objRequest = reconcile.Request{NamespacedName: types.NamespacedName{Name: "foo", Namespace: "default"}}
 var depKey = types.NamespacedName{Name: "foo-deployment", Namespace: "default"}
 
 const timeout = time.Second * 5
@@ -78,7 +77,7 @@ func TestReconcile(t *testing.T) {
 
 	// Delete the Deployment and expect Reconcile to be called for Deployment deletion
 	g.Expect(c.Delete(context.TODO(), deploy)).To(gomega.Succeed())
-	g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(objRequest)))
+	g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(expectedRequest)))
 	g.Eventually(func() error { return c.Get(context.TODO(), depKey, deploy) }, timeout).
 		Should(gomega.Succeed())
 
