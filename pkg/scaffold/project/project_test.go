@@ -1,4 +1,4 @@
-package project
+package project_test
 
 import (
 	"fmt"
@@ -13,6 +13,7 @@ import (
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/scaffoldtest"
 )
 
@@ -36,20 +37,20 @@ var _ = Describe("Project", func() {
 		})
 
 		It("should match the golden file", func() {
-			instance := &Boilerplate{Year: year, License: "apache2", Owner: "The Kubernetes authors"}
+			instance := &project.Boilerplate{Year: year, License: "apache2", Owner: "The Kubernetes authors"}
 			Expect(s.Execute(input.Options{}, instance)).NotTo(HaveOccurred())
 			Expect(result.Actual.String()).To(BeEquivalentTo(result.Golden))
 		})
 
 		It("should skip writing boilerplate if the file exists", func() {
-			i, err := (&Boilerplate{}).GetInput()
+			i, err := (&project.Boilerplate{}).GetInput()
 			Expect(err).NotTo(HaveOccurred())
 			Expect(i.IfExistsAction).To(Equal(input.Skip))
 		})
 
 		Context("for apache2", func() {
 			It("should write the apache2 boilerplate with specified owners", func() {
-				instance := &Boilerplate{Year: year, Owner: "Example Owners"}
+				instance := &project.Boilerplate{Year: year, Owner: "Example Owners"}
 				Expect(s.Execute(input.Options{}, instance)).NotTo(HaveOccurred())
 				e := strings.Replace(
 					result.Golden, "The Kubernetes authors", "Example Owners", -1)
@@ -57,7 +58,7 @@ var _ = Describe("Project", func() {
 			})
 
 			It("should use apache2 as the default", func() {
-				instance := &Boilerplate{Year: year, Owner: "The Kubernetes authors"}
+				instance := &project.Boilerplate{Year: year, Owner: "The Kubernetes authors"}
 				Expect(s.Execute(input.Options{}, instance)).NotTo(HaveOccurred())
 				Expect(result.Actual.String()).To(BeEquivalentTo(result.Golden))
 			})
@@ -66,7 +67,7 @@ var _ = Describe("Project", func() {
 		Context("for none", func() {
 			It("should write the empty boilerplate", func() {
 				// Scaffold a boilerplate file
-				instance := &Boilerplate{Year: year, License: "none", Owner: "Example Owners"}
+				instance := &project.Boilerplate{Year: year, License: "none", Owner: "Example Owners"}
 				Expect(s.Execute(input.Options{}, instance)).NotTo(HaveOccurred())
 				Expect(result.Actual.String()).To(BeEquivalentTo(fmt.Sprintf(`/*
 Copyright %s Example Owners.
@@ -76,7 +77,7 @@ Copyright %s Example Owners.
 
 		Context("if the boilerplate is given", func() {
 			It("should skip writing Gopkg.toml", func() {
-				instance := &Boilerplate{}
+				instance := &project.Boilerplate{}
 				instance.Boilerplate = `/* Hello World */`
 
 				Expect(s.Execute(input.Options{}, instance)).NotTo(HaveOccurred())
@@ -92,7 +93,7 @@ Copyright %s Example Owners.
 		})
 		Context("with defaults ", func() {
 			It("should match the golden file", func() {
-				instance := &GopkgToml{}
+				instance := &project.GopkgToml{}
 				Expect(s.Execute(input.Options{}, instance)).NotTo(HaveOccurred())
 
 				// Verify the contents matches the golden file.
@@ -110,12 +111,12 @@ Copyright %s Example Owners.
 			})
 
 			It("should skip writing Gopkg.toml", func() {
-				e := strings.Replace(string(result.Golden), DefaultGopkgHeader, "", -1)
+				e := strings.Replace(string(result.Golden), project.DefaultGopkgHeader, "", -1)
 				_, err = f.Write([]byte(e))
 				Expect(err).NotTo(HaveOccurred())
 				Expect(f.Close()).NotTo(HaveOccurred())
 
-				instance := &GopkgToml{}
+				instance := &project.GopkgToml{}
 				instance.Input.Path = f.Name()
 
 				err = s.Execute(input.Options{}, instance)
@@ -136,13 +137,13 @@ Copyright %s Example Owners.
 
 			It("should keep the user content", func() {
 				e := strings.Replace(string(result.Golden),
-					DefaultGopkgUserContent, "Hello World", -1)
+					project.DefaultGopkgUserContent, "Hello World", -1)
 				_, err = f.Write([]byte(e))
 				Expect(err).NotTo(HaveOccurred())
 				Expect(f.Close()).NotTo(HaveOccurred())
 
 				fmt.Printf("Write\n\n")
-				instance := &GopkgToml{}
+				instance := &project.GopkgToml{}
 				instance.Input.Path = f.Name()
 
 				Expect(s.Execute(input.Options{}, instance)).NotTo(HaveOccurred())
@@ -161,7 +162,7 @@ Copyright %s Example Owners.
 			})
 
 			It("should use the default user content", func() {
-				instance := &GopkgToml{}
+				instance := &project.GopkgToml{}
 				instance.Input.Path = writeToPath
 
 				err = s.Execute(input.Options{}, instance)
@@ -178,7 +179,7 @@ Copyright %s Example Owners.
 		})
 		Context("with defaults ", func() {
 			It("should match the golden file", func() {
-				instance := &Makefile{Image: "controller:latest"}
+				instance := &project.Makefile{Image: "controller:latest"}
 				instance.Repo = "sigs.k8s.io/kubebuilder/test/project"
 				Expect(s.Execute(input.Options{}, instance)).NotTo(HaveOccurred())
 
@@ -195,7 +196,7 @@ Copyright %s Example Owners.
 		})
 		Context("with defaults ", func() {
 			It("should match the golden file", func() {
-				instance := &Kustomize{Prefix: "project"}
+				instance := &project.Kustomize{Prefix: "project"}
 				instance.Repo = "sigs.k8s.io/kubebuilder/test/project"
 				Expect(s.Execute(input.Options{}, instance)).NotTo(HaveOccurred())
 
@@ -212,7 +213,7 @@ Copyright %s Example Owners.
 		})
 		Context("with rbac", func() {
 			It("should match the golden file", func() {
-				instance := &KustomizeRBAC{}
+				instance := &project.KustomizeRBAC{}
 				instance.Repo = "sigs.k8s.io/kubebuilder/test/project"
 				Expect(s.Execute(input.Options{}, instance)).NotTo(HaveOccurred())
 
@@ -229,7 +230,7 @@ Copyright %s Example Owners.
 		})
 		Context("with manager", func() {
 			It("should match the golden file", func() {
-				instance := &KustomizeManager{}
+				instance := &project.KustomizeManager{}
 				instance.Repo = "sigs.k8s.io/kubebuilder/test/project"
 				Expect(s.Execute(input.Options{}, instance)).NotTo(HaveOccurred())
 
@@ -246,7 +247,7 @@ Copyright %s Example Owners.
 		})
 		Context("with defaults ", func() {
 			It("should match the golden file", func() {
-				instance := &KustomizeImagePatch{}
+				instance := &project.KustomizeImagePatch{}
 				instance.Repo = "sigs.k8s.io/kubebuilder/test/project"
 				Expect(s.Execute(input.Options{}, instance)).NotTo(HaveOccurred())
 
@@ -263,7 +264,7 @@ Copyright %s Example Owners.
 		})
 		Context("with defaults ", func() {
 			It("should match the golden file", func() {
-				instance := &KustomizePrometheusMetricsPatch{}
+				instance := &project.KustomizePrometheusMetricsPatch{}
 				instance.Repo = "sigs.k8s.io/kubebuilder/test/project"
 				Expect(s.Execute(input.Options{}, instance)).NotTo(HaveOccurred())
 
@@ -280,7 +281,7 @@ Copyright %s Example Owners.
 		})
 		Context("with defaults ", func() {
 			It("should match the golden file", func() {
-				instance := &GitIgnore{}
+				instance := &project.GitIgnore{}
 				Expect(s.Execute(input.Options{}, instance)).NotTo(HaveOccurred())
 
 				// Verify the contents matches the golden file.
@@ -296,7 +297,7 @@ Copyright %s Example Owners.
 		})
 		Context("with defaults", func() {
 			It("should match the golden file", func() {
-				instance := &Project{}
+				instance := &project.Project{}
 				instance.Version = "1"
 				instance.Domain = "testproject.org"
 				instance.Repo = "sigs.k8s.io/kubebuilder/test/project"
@@ -309,8 +310,8 @@ Copyright %s Example Owners.
 
 		Context("by calling repoFromGopathAndWd", func() {
 			It("should return the directory if it is under the gopath", func() {
-				instance := &Project{}
-				repo, err := instance.repoFromGopathAndWd("/home/fake/go", func() (string, error) {
+				instance := &project.Project{}
+				repo, err := instance.RepoFromGopathAndWd("/home/fake/go", func() (string, error) {
 					return "/home/fake/go/src/kubernetes-sigs/kubebuilder", nil
 				})
 				Expect(err).NotTo(HaveOccurred())
@@ -318,8 +319,8 @@ Copyright %s Example Owners.
 			})
 
 			It("should return an error if the wd is not under GOPATH", func() {
-				instance := &Project{}
-				_, err := instance.repoFromGopathAndWd("/home/fake/go/src", func() (string, error) {
+				instance := &project.Project{}
+				_, err := instance.RepoFromGopathAndWd("/home/fake/go/src", func() (string, error) {
 					return "/home/fake", nil
 				})
 				Expect(err).To(HaveOccurred())
@@ -327,8 +328,8 @@ Copyright %s Example Owners.
 			})
 
 			It("should return an error if the wd is not under GOPATH", func() {
-				instance := &Project{}
-				_, err := instance.repoFromGopathAndWd("/home/fake/go/src", func() (string, error) {
+				instance := &project.Project{}
+				_, err := instance.RepoFromGopathAndWd("/home/fake/go/src", func() (string, error) {
 					return "/home/fake/go", nil
 				})
 				Expect(err).To(HaveOccurred())
@@ -336,9 +337,9 @@ Copyright %s Example Owners.
 			})
 
 			It("should return an error if it cannot get the WD", func() {
-				instance := &Project{}
+				instance := &project.Project{}
 				e := fmt.Errorf("expected error")
-				_, err := instance.repoFromGopathAndWd("/home/fake/go/src", func() (string, error) {
+				_, err := instance.RepoFromGopathAndWd("/home/fake/go/src", func() (string, error) {
 					return "", e
 				})
 				Expect(err).To(HaveOccurred())
@@ -346,8 +347,8 @@ Copyright %s Example Owners.
 			})
 
 			It("should use the build.Default GOPATH if none is defined", func() {
-				instance := &Project{}
-				instance.repoFromGopathAndWd("", func() (string, error) {
+				instance := &project.Project{}
+				instance.RepoFromGopathAndWd("", func() (string, error) {
 					return "/home/fake/go/src/project", nil
 				})
 			})
@@ -355,7 +356,7 @@ Copyright %s Example Owners.
 
 		Context("by calling GetInput", func() {
 			It("should return the Repo from GetInput", func() {
-				instance := &Project{}
+				instance := &project.Project{}
 				i, err := instance.GetInput()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(i.Path).To(Equal("PROJECT"))

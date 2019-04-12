@@ -22,7 +22,6 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -32,13 +31,13 @@ import (
 
 	"sigs.k8s.io/kubebuilder/cmd/util"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/manager"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
 )
 
 func newInitProjectCmd() *cobra.Command {
-	o := projectOptions{}
+	o := projectOptions{
+		projectScaffolder: &scaffold.Project{},
+	}
 
 	initCmd := &cobra.Command{
 		Use:   "init",
@@ -61,155 +60,95 @@ project will prompt the user to run 'dep ensure' after writing the project files
 kubebuilder init --domain example.org --license apache2 --owner "The Kubernetes authors"
 `,
 		Run: func(cmd *cobra.Command, args []string) {
-			o.runInit()
+			o.initializeProject()
 		},
 	}
 
-	initCmd.Flags().BoolVar(
-		&o.skipGoVersionCheck, "skip-go-version-check", false, "if specified, skip checking the Go version")
-	initCmd.Flags().BoolVar(
-		&o.dep, "dep", true, "if specified, determines whether dep will be used.")
-	o.depFlag = initCmd.Flag("dep")
-	initCmd.Flags().StringArrayVar(&o.depArgs, "depArgs", nil, "Additional arguments for dep")
-
-	o.prj = projectForFlags(initCmd.Flags())
-	o.bp = boilerplateForFlags(initCmd.Flags())
-	o.gopkg = &project.GopkgToml{}
-	o.mgr = &manager.Cmd{}
-	o.dkr = &manager.Dockerfile{}
+	o.bindCmdlineFlags(initCmd)
 
 	return initCmd
 }
 
 type projectOptions struct {
-	prj                *project.Project
-	bp                 *project.Boilerplate
-	gopkg              *project.GopkgToml
-	mgr                *manager.Cmd
-	dkr                *manager.Dockerfile
+	projectScaffolder *scaffold.Project
+
 	dep                bool
 	depFlag            *flag.Flag
 	depArgs            []string
 	skipGoVersionCheck bool
 }
 
-func (o *projectOptions) runInit() {
-	if !o.skipGoVersionCheck {
-		ensureGoVersionIsCompatible()
-	}
+func (o *projectOptions) bindCmdlineFlags(cmd *cobra.Command) {
+	cmd.Flags().BoolVar(
+		&o.skipGoVersionCheck, "skip-go-version-check", false, "if specified, skip checking the Go version")
+	cmd.Flags().BoolVar(
+		&o.dep, "dep", true, "if specified, determines whether dep will be used.")
+	o.depFlag = cmd.Flag("dep")
+	cmd.Flags().StringArrayVar(&o.depArgs, "depArgs", nil, "Additional arguments for dep")
 
-	if !depExists() {
-		log.Fatalf("Dep is not installed. Follow steps at: https://golang.github.io/dep/docs/installation.html")
-	}
+	o.bindBoilerplateFlags(cmd)
+	o.bindProjectFlags(cmd)
+}
 
-	if util.ProjectExist() {
-		fmt.Println("Failed to initialize project because project is already initialized")
-		return
-	}
-	// project and boilerplate must come before main so the boilerplate exists
-	s := &scaffold.Scaffold{
-		BoilerplateOptional: true,
-		ProjectOptional:     true,
-	}
+// projectForFlags registers flags for Project fields and returns the Project
+func (o *projectOptions) bindProjectFlags(cmd *cobra.Command) {
+	p := &o.projectScaffolder.Info
+	cmd.Flags().StringVar(&p.Repo, "repo", "", "name of the github repo.  "+
+		"defaults to the go package of the current working directory.")
+	cmd.Flags().StringVar(&p.Domain, "domain", "k8s.io", "domain for groups")
+	cmd.Flags().StringVar(&p.Version, "project-version", project.Version1, "project version")
+}
 
-	p, err := o.prj.GetInput()
-	if err != nil {
+// bindBoilerplateFlags registers flags for Boilerplate fields and returns the Boilerplate
+func (o *projectOptions) bindBoilerplateFlags(cmd *cobra.Command) {
+	bp := &o.projectScaffolder.Boilerplate
+	cmd.Flags().StringVar(&bp.Path, "path", "", "path for boilerplate")
+	cmd.Flags().StringVar(&bp.License, "license", "apache2", "license to use to boilerplate.  Maybe one of apache2,none")
+	cmd.Flags().StringVar(&bp.Owner, "owner", "", "Owner to add to the copyright")
+}
+
+func (o *projectOptions) initializeProject() {
+
+	if err := o.validate(); err != nil {
 		log.Fatal(err)
 	}
 
-	b, err := o.bp.GetInput()
-	if err != nil {
+	if err := o.projectScaffolder.Scaffold(); err != nil {
+		log.Fatalf("error scaffolding project: %v", err)
+	}
+
+	if err := o.postScaffold(); err != nil {
 		log.Fatal(err)
 	}
 
-	err = s.Execute(input.Options{ProjectPath: p.Path, BoilerplatePath: b.Path}, o.prj, o.bp)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// default controller manager image name
-	imgName := "controller:latest"
-
-	s = &scaffold.Scaffold{}
-	err = s.Execute(input.Options{ProjectPath: p.Path, BoilerplatePath: b.Path},
-		o.gopkg,
-		o.mgr,
-		&project.Makefile{Image: imgName},
-		o.dkr,
-		&manager.APIs{},
-		&manager.Controller{},
-		&manager.Webhook{},
-		&manager.Config{Image: imgName},
-		&project.GitIgnore{},
-		&project.Kustomize{},
-		&project.KustomizeRBAC{},
-		&project.KustomizeManager{},
-		&project.KustomizeImagePatch{},
-		&project.KustomizePrometheusMetricsPatch{},
-		&project.KustomizeAuthProxyPatch{},
-		&project.AuthProxyService{},
-		&project.AuthProxyRole{},
-		&project.AuthProxyRoleBinding{})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if !o.depFlag.Changed {
-		reader := bufio.NewReader(os.Stdin)
-		fmt.Println("Run `dep ensure` to fetch dependencies (Recommended) [y/n]?")
-		o.dep = util.Yesno(reader)
-	}
-	if o.dep {
-		c := exec.Command("dep", "ensure") // #nosec
-		if len(o.depArgs) > 0 {
-			c.Args = append(c.Args, o.depArgs...)
-		}
-		c.Stderr = os.Stderr
-		c.Stdout = os.Stdout
-		fmt.Println(strings.Join(c.Args, " "))
-		if err := c.Run(); err != nil {
-			log.Fatal(err)
-		}
-
-		fmt.Println("Running make...")
-		c = exec.Command("make") // #nosec
-		c.Stderr = os.Stderr
-		c.Stdout = os.Stdout
-		fmt.Println(strings.Join(c.Args, " "))
-		if err := c.Run(); err != nil {
-			log.Fatal(err)
-		}
-	} else {
-		fmt.Println("Skipping `dep ensure`.  Dependencies will not be fetched.")
-	}
 	fmt.Printf("Next: Define a resource with:\n" +
 		"$ kubebuilder create api\n")
 }
 
-// projectForFlags registers flags for Project fields and returns the Project
-func projectForFlags(f *flag.FlagSet) *project.Project {
-	p := &project.Project{}
-	f.StringVar(&p.Repo, "repo", "", "name of the github repo.  "+
-		"defaults to the go package of the current working directory.")
-	f.StringVar(&p.Domain, "domain", "k8s.io", "domain for groups")
-	f.StringVar(&p.Version, "project-version", "1", "project version")
-	return p
+func (o *projectOptions) validate() error {
+	if !o.skipGoVersionCheck {
+		if err := validateGoVersion(); err != nil {
+			return err
+		}
+	}
+
+	if !depExists() {
+		return fmt.Errorf("Dep is not installed. Follow steps at: https://golang.github.io/dep/docs/installation.html")
+	}
+
+	if util.ProjectExist() {
+		return fmt.Errorf("Failed to initialize project because project is already initialized")
+	}
+
+	return nil
 }
 
-// boilerplateForFlags registers flags for Boilerplate fields and returns the Boilerplate
-func boilerplateForFlags(f *flag.FlagSet) *project.Boilerplate {
-	b := &project.Boilerplate{}
-	f.StringVar(&b.Path, "path", "", "path for boilerplate")
-	f.StringVar(&b.License, "license", "apache2", "license to use to boilerplate.  Maybe one of apache2,none")
-	f.StringVar(&b.Owner, "owner", "", "Owner to add to the copyright")
-	return b
-}
-
-func ensureGoVersionIsCompatible() {
+func validateGoVersion() error {
 	err := fetchAndCheckGoVersion()
 	if err != nil {
-		log.Fatalf("%s. You can skip this check using the --skip-go-version-check flag", err)
+		return fmt.Errorf("%s. You can skip this check using the --skip-go-version-check flag", err)
 	}
+	return nil
 }
 
 func fetchAndCheckGoVersion() error {
@@ -259,16 +198,34 @@ func depExists() bool {
 	return err == nil
 }
 
-func execute(path, templateName, templateValue string, data interface{}) {
-	dir, err := os.Getwd()
-	if err != nil {
-		log.Fatal(err)
+func (o *projectOptions) postScaffold() error {
+	if !o.depFlag.Changed {
+		reader := bufio.NewReader(os.Stdin)
+		fmt.Println("Run `dep ensure` to fetch dependencies (Recommended) [y/n]?")
+		o.dep = util.Yesno(reader)
 	}
-	util.WriteIfNotFound(filepath.Join(dir, path), templateName, templateValue, data)
-}
+	if o.dep {
+		c := exec.Command("dep", "ensure") // #nosec
+		if len(o.depArgs) > 0 {
+			c.Args = append(c.Args, o.depArgs...)
+		}
+		c.Stderr = os.Stderr
+		c.Stdout = os.Stdout
+		fmt.Println(strings.Join(c.Args, " "))
+		if err := c.Run(); err != nil {
+			return err
+		}
 
-type templateArgs struct {
-	BoilerPlate    string
-	Repo           string
-	ControllerOnly bool
+		fmt.Println("Running make...")
+		c = exec.Command("make") // #nosec
+		c.Stderr = os.Stderr
+		c.Stdout = os.Stdout
+		fmt.Println(strings.Join(c.Args, " "))
+		if err := c.Run(); err != nil {
+			return err
+		}
+	} else {
+		fmt.Println("Skipping `dep ensure`.  Dependencies will not be fetched.")
+	}
+	return nil
 }

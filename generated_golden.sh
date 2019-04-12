@@ -16,21 +16,58 @@
 
 set -e
 
-go build -o ./bin/kubebuilder sigs.k8s.io/kubebuilder/cmd
-rm -rf ./test/project/*
-cd test/project
-ln -s ../../vendor vendor
-../../bin/kubebuilder init --domain testproject.org --license apache2 --owner "The Kubernetes authors" --dep=false
-../../bin/kubebuilder create api --group crew --version v1 --kind FirstMate --controller=true --resource=true --make=false
-../../bin/kubebuilder alpha webhook --group crew --version v1 --kind FirstMate --type=mutating --operations=create,update --make=false
-../../bin/kubebuilder alpha webhook --group crew --version v1 --kind FirstMate --type=mutating --operations=delete --make=false
-../../bin/kubebuilder create api --group ship --version v1beta1 --kind Frigate --example=false --controller=true --resource=true --make=false
-../../bin/kubebuilder alpha webhook --group ship --version v1beta1 --kind Frigate --type=validating --operations=update --make=false
-../../bin/kubebuilder create api --group creatures --version v2alpha1 --kind Kraken --namespaced=false --example=false --controller=true --resource=true --make=false
-../../bin/kubebuilder alpha webhook --group creatures --version v2alpha1 --kind Kraken --type=validating --operations=create --make=false
-../../bin/kubebuilder create api --group core --version v1 --kind Namespace --example=false --controller=true --resource=false --namespaced=false --make=false
-../../bin/kubebuilder alpha webhook --group core --version v1 --kind Namespace --type=mutating --operations=update --make=false
-../../bin/kubebuilder create api --group policy --version v1beta1 --kind HealthCheckPolicy --example=false --controller=true --resource=true --namespaced=false --make=false
-make
-rm -rf ./bin/
-cd -
+
+build_kb() {
+	go build -o ./bin/kubebuilder sigs.k8s.io/kubebuilder/cmd
+}
+
+
+#
+# This function scaffolds test projects given a project name and
+# project-version.
+#
+scaffold_test_project() {
+	project=$1
+	version=$2
+	mkdir -p ./test/$project
+	rm -rf ./test/$project/*
+	pushd . 
+	cd test/$project
+	# untar Gopkg.lock and vendor directory for appropriate project version
+	tar -zxf ../vendor.v$version.tgz
+
+	kb=../../bin/kubebuilder
+
+	$kb init --project-version $version --domain testproject.org --license apache2 --owner "The Kubernetes authors" --dep=false
+	if [ $version == "1" ]; then
+		$kb create api --group crew --version v1 --kind FirstMate --controller=true --resource=true --make=false
+		$kb alpha webhook --group crew --version v1 --kind FirstMate --type=mutating --operations=create,update --make=false
+		$kb alpha webhook --group crew --version v1 --kind FirstMate --type=mutating --operations=delete --make=false
+		$kb create api --group ship --version v1beta1 --kind Frigate --example=false --controller=true --resource=true --make=false
+		$kb alpha webhook --group ship --version v1beta1 --kind Frigate --type=validating --operations=update --make=false
+		$kb create api --group creatures --version v2alpha1 --kind Kraken --namespaced=false --example=false --controller=true --resource=true --make=false
+		$kb alpha webhook --group creatures --version v2alpha1 --kind Kraken --type=validating --operations=create --make=false
+		$kb create api --group core --version v1 --kind Namespace --example=false --controller=true --resource=false --namespaced=false --make=false
+		$kb alpha webhook --group core --version v1 --kind Namespace --type=mutating --operations=update --make=false
+		$kb create api --group policy --version v1beta1 --kind HealthCheckPolicy --example=false --controller=true --resource=true --namespaced=false --make=false
+	elif [ $version == "2" ]; then
+		$kb create api --group crew --version v1 --kind FirstMate --controller=true --resource=true --make=false
+		$kb alpha webhook --group crew --version v1 --kind FirstMate --type=mutating --operations=create,update --make=false
+		$kb alpha webhook --group crew --version v1 --kind FirstMate --type=mutating --operations=delete --make=false
+		# TODO(droot): Adding a second group is a valid test case and kubebuilder is expected to report an error in this case. It
+		# doesn't do that currently so leaving it commented so that we can enable it later.
+		# $kb create api --group ship --version v1beta1 --kind Frigate --example=false --controller=true --resource=true --make=false
+		$kb create api --group core --version v1 --kind Namespace --example=false --controller=true --resource=false --namespaced=false --make=false
+		$kb alpha webhook --group core --version v1 --kind Namespace --type=mutating --operations=update --make=false
+		# $kb create api --group policy --version v1beta1 --kind HealthCheckPolicy --example=false --controller=true --resource=true --namespaced=false --make=false
+	fi
+	make
+	rm -f Gopkg.lock
+	rm -rf ./vendor
+	rm -rf ./bin
+	popd
+}
+
+build_kb && \
+scaffold_test_project project 1 && \
+scaffold_test_project project_v2 2

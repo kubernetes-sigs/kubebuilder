@@ -161,7 +161,7 @@ type Options struct {
 
 // ProjectFile is deserialized into a PROJECT file
 type ProjectFile struct {
-	// Version is the project version - defaults to "2"
+	// Version is the project version - defaults to "1"
 	Version string `yaml:"version,omitempty"`
 
 	// Domain is the domain associated with the project and used for API groups

@@ -27,6 +27,12 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 )
 
+// constants for scaffolding version
+const (
+	Version1 = "1"
+	Version2 = "2"
+)
+
 var _ input.File = &Project{}
 
 // Project scaffolds the PROJECT file with project metadata
@@ -42,8 +48,11 @@ func (c *Project) GetInput() (input.Input, error) {
 	if c.Path == "" {
 		c.Path = "PROJECT"
 	}
+	if c.Version == "" {
+		c.Version = Version1
+	}
 	if c.Repo == "" {
-		r, err := c.repoFromGopathAndWd(os.Getenv("GOPATH"), os.Getwd)
+		r, err := c.RepoFromGopathAndWd(os.Getenv("GOPATH"), os.Getwd)
 		if err != nil {
 			return input.Input{}, err
 		}
@@ -65,7 +74,7 @@ func (c *Project) GetInput() (input.Input, error) {
 	}, nil
 }
 
-func (Project) repoFromGopathAndWd(gopath string, getwd func() (string, error)) (string, error) {
+func (Project) RepoFromGopathAndWd(gopath string, getwd func() (string, error)) (string, error) {
 	// Assume the working dir is the root of the repo
 	wd, err := getwd()
 	if err != nil {
