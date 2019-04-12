@@ -68,7 +68,7 @@ field, which may be set by autoscalers.
 ```go
 // ContainerSetSpec defines the desired state of ContainerSet
 type ContainerSetSpec struct {
-  // replics is the number of replicas to maintain
+  // replicas is the number of replicas to maintain
   Replicas int32 `json:"replicas,omitempty"`
 
   // image is the container image to run.  Image must have a tag.
