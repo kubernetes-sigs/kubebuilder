@@ -9,3 +9,6 @@ docs/book/node_modules/
 
 # Skip bazel dirs
 /bazel-*
+
+# skip bin
+bin/*
