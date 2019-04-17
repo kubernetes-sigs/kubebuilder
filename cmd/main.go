@@ -30,10 +30,7 @@ import (
 )
 
 func main() {
-	gopath := os.Getenv("GOPATH")
-	if len(gopath) == 0 {
-		gopath = gobuild.Default.GOPATH
-	}
+	gopath := gobuild.Default.GOPATH
 
 	wd, err := os.Getwd()
 	if err != nil {
