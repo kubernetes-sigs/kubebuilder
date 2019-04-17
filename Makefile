@@ -25,6 +25,9 @@ all: build test
 build:
 	go build -o bin/kubebuilder ./cmd
 
+install: build
+	cp ./bin/kubebuilder $(shell go env GOPATH)/bin/kubebuilder
+
 generate:
 	./generated_golden.sh
 
