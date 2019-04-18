@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package v2
+package internal
 
 import (
 	"bufio"
@@ -22,6 +22,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"golang.org/x/tools/imports"
@@ -68,7 +69,12 @@ func insertStrings(r io.Reader, markerAndValues ...string) (io.Reader, error) {
 	return buf, nil
 }
 
-func insertStringsInFile(path string, markerAndValues ...string) error {
+func InsertStringsInFile(path string, markerAndValues ...string) error {
+	isGoFile := false
+	if ext := filepath.Ext(path); ext == ".go" {
+		isGoFile = true
+	}
+
 	f, err := os.Open(path)
 	if err != nil {
 		return err
@@ -89,9 +95,12 @@ func insertStringsInFile(path string, markerAndValues ...string) error {
 		return err
 	}
 
-	formattedContent, err := imports.Process(path, content, nil)
-	if err != nil {
-		return err
+	formattedContent := content
+	if isGoFile {
+		formattedContent, err = imports.Process(path, content, nil)
+		if err != nil {
+			return err
+		}
 	}
 
 	// use Go import process to format the content

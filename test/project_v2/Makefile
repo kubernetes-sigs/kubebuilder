@@ -18,18 +18,18 @@ run: generate fmt vet
 
 # Install CRDs into a cluster
 install: manifests
-	kubectl apply -f config/crds
+	kubectl apply -f config/crds/bases
 
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 deploy: manifests
-	kubectl apply -f config/crds
+	kubectl apply -f config/crds/bases
 	kustomize build config/default | kubectl apply -f -
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests:
 # TODO(droot): controller-gen will require fix to take new api-path as input, so disabling this for now
 # 
-#	go run vendor/sigs.k8s.io/controller-tools/cmd/controller-gen/main.go all
+#	go run vendor/sigs.k8s.io/controller-tools/cmd/controller-gen/main.go all --output-dir=config/crds/bases/
 
 # Run go fmt against code
 fmt:

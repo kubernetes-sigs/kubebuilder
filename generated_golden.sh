@@ -51,6 +51,7 @@ scaffold_test_project() {
 		$kb alpha webhook --group core --version v1 --kind Namespace --type=mutating --operations=update --make=false
 		$kb create api --group policy --version v1beta1 --kind HealthCheckPolicy --example=false --controller=true --resource=true --namespaced=false --make=false
 	elif [ $version == "2" ]; then
+		$kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false
 		$kb create api --group crew --version v1 --kind FirstMate --controller=true --resource=true --make=false
 		$kb alpha webhook --group crew --version v1 --kind FirstMate --type=mutating --operations=create,update --make=false
 		$kb alpha webhook --group crew --version v1 --kind FirstMate --type=mutating --operations=delete --make=false

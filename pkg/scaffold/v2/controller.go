@@ -24,8 +24,10 @@ import (
 	"strings"
 
 	"github.com/markbates/inflect"
+
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/resource"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/v2/internal"
 )
 
 // Controller scaffolds a Controller for a Resource
@@ -91,7 +93,7 @@ func (a *Controller) UpdateMain(path string) error {
 	 }
 `, a.Resource.Kind, a.Resource.Kind, a.Resource.Kind)
 
-	err := insertStringsInFile(path,
+	err := internal.InsertStringsInFile(path,
 		apiPkgImportScaffoldMarker, apiImportCodeFragment,
 		apiSchemeScaffoldMarker, addschemeCodeFragment,
 		reconcilerSetupScaffoldMarker, reconcilerSetupCodeFragment)
