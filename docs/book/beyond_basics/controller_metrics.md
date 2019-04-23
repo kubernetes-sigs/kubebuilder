@@ -9,10 +9,10 @@ and makes them available via HTTP endpoint in [prometheus metric format](https:/
 Following metrics are instrumented by default:
 
  - Total number of reconcilation errors per controller
- - Length of reconcile queue per controller 
+ - Length of reconcile queue per controller
  - Reconcilation latency
  - Usual resource metrics such as CPU, memory usage, file descriptor usage
- - Go runtime metrics such as number of Go routines, GC duration 
+ - Go runtime metrics such as number of Go routines, GC duration
 
 {% panel style="info", title="Metrics support" %}
 Please note that metrics support has been added in controller-runtime `0.1.8+`
@@ -69,19 +69,19 @@ go_info{version="go1.9.4"} 1
 
 Is the metrics endpoint protected ?
 -----------------------------------
-Yes. By default, kubebuilder generated YAML manifests (under `config/` dir) 
+Yes. By default, kubebuilder generated YAML manifests (under `config/` dir)
 ensures that the access to metrics endpoint is authenticated and authorized using
-an [auth proxy](https://github.com/brancz/kube-rbac-proxy) which is deployed as 
-sidecar container in the manager pod. You can read more details about the 
+an [auth proxy](https://github.com/brancz/kube-rbac-proxy) which is deployed as
+sidecar container in the manager pod. You can read more details about the
 auth proxy based approach [here](https://brancz.com/2018/02/27/using-kube-rbac-proxy-to-secure-kubernetes-workloads/).
 
 If you want to disable the auth proxy, which is not recommended, you can follow
-the instructions in the Kustomization file located in `config/default/kustomization.yaml`
+the instructions in the Kustomization file located in `config/kustomization.yaml`
 
 If your project was created using `1.0.5 or older` kubebuilder, you need to modify
 the following files as show in [PR #513](https://github.com/kubernetes-sigs/kubebuilder/pull/513/commits/a227e6457b581d4f1f1d79f16ca9b7baad8f38c0#diff-8e690fe6cdd7ce6beeb28f97e7423964).
 - cmd/manager/main.go
-- config/default/kustomization.yaml
+- config/kustomization.yaml
 - config/default/manager_auth_proxy_patch.yaml
 - config/rbac/auth_proxy_role.yaml
 - config/rbac/auth_proxy_role_binding.yaml

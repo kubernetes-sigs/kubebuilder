@@ -191,10 +191,10 @@ Copyright %s Example Owners.
 
 	Describe("scaffolding a Kustomization", func() {
 		BeforeEach(func() {
-			goldenPath = filepath.Join("config", "default", "kustomization.yaml")
+			goldenPath = filepath.Join("config", "kustomization.yaml")
 			writeToPath = goldenPath
 		})
-		Context("with defaults ", func() {
+		Context("with config ", func() {
 			It("should match the golden file", func() {
 				instance := &project.Kustomize{Prefix: "project"}
 				instance.Repo = "sigs.k8s.io/kubebuilder/test/project"

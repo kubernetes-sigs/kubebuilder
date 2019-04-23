@@ -38,16 +38,16 @@ Both target support `IMG` variable. If IMG argument is not provided, it is
 picked from the environment variable.
 
 ```bash
-# build the docker image 
+# build the docker image
 make docker-build IMG=<image-name>
 
-# build the docker image 
+# build the docker image
 make docker-push IMG=<image-name>
 ```
 
 #### Customizing the controller manager manifests using Kustomize
 
-Kubebuilder scaffolds a basic `kustomization.yaml` under `config/default` directory. Current customization:
+Kubebuilder scaffolds a basic `kustomization.yaml` under `config/` directory. Current customization:
  - Specifies all controller manager resources to be created under specified `namespace`
  - Adds a prefix (directory name of the project) for controller manager resources
  - Adds a patch `config/default/manager_image_patch.yaml` for override the image.

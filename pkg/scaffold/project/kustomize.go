@@ -36,7 +36,7 @@ type Kustomize struct {
 // GetInput implements input.File
 func (c *Kustomize) GetInput() (input.Input, error) {
 	if c.Path == "" {
-		c.Path = filepath.Join("config", "default", "kustomization.yaml")
+		c.Path = filepath.Join("config", "kustomization.yaml")
 	}
 	if c.Prefix == "" {
 		// use directory name as prefix
