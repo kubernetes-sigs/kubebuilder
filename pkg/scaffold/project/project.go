@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"go/build"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -96,7 +97,7 @@ func (Project) RepoFromGopathAndWd(gopath string, getwd func() (string, error)) 
 			// '$GOPATH/src/kubernetes-sigs/controller-tools' becomes 'kubernetes-sigs/controller-tools'
 			repo := ""
 			for wd != goSrc {
-				repo = filepath.Join(filepath.Base(wd), repo)
+				repo = path.Join(filepath.Base(wd), repo)
 				wd = filepath.Dir(wd)
 			}
 			return repo, nil

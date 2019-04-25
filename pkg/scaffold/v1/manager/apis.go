@@ -52,7 +52,7 @@ func (a *APIs) GetInput() (input.Input, error) {
 	}
 	if len(a.Comments) == 0 {
 		a.Comments = append(a.Comments,
-			"// Generate deepcopy for apis", fmt.Sprintf("%s -h %s", deepCopy, b))
+			"// Generate deepcopy for apis", fmt.Sprintf("%s -h %s", deepCopy, filepath.ToSlash(b)))
 	}
 	a.TemplateBody = apisTemplate
 	return a.Input, nil
