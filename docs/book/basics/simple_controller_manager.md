@@ -46,3 +46,34 @@ func main() {
   log.Fatal(mgr.Start(signals.SetupSignalHandler()))}
 ```
 {% endmethod %}
+
+{% method %}
+## Leader Election
+
+Controllers are usually designed to only have one active instance at any time, otherwise unexpected issues might occur. For example:
+
+* kubernetes scheduler will have duplicated resource allocation with multiple instance active
+* deployment controller will have unexpected number of pods running with multiple instances active
+
+In practice, it is suggested to run controller in active-backup mode to achieve high availability. Leader Election is how we do this.
+
+If three replicas of a certain controller pod is running, only the one wins leader election will run, and the other two pods is idle.
+When leader pod is unavailable for some reason(network disconnectivity, server failure etc), the other two pods will start another
+leader election round, and whoever becomes leader can continue running.
+
+This example enables leader election, with two other parameters:
+
+* LeaderElectionNamespace: leaderelection need to create configmap underhood, this field indicates which namespace should be used to create the configmap. If not provided, namespace the controller pod is running in will be used
+* LeaderElectionID: a unique id for leaderelection. The default value is a constant, so it's better provided with a unique value.
+
+{% sample lang="go" %}
+```go
+mgr, err := manager.New(cfg, manager.Options{
+	MetricsBindAddress:      metricsAddr,
+	LeaderElection:          true,
+	LeaderElectionNamespace: "my-namespace",
+	LeaderElectionID:        "awesome-controller-leader-election",
+})
+```
+
+{% endmethod %}
