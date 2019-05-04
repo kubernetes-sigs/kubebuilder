@@ -1,0 +1,3 @@
+version: "1"
+domain: testproject.org
+repo: project

@@ -1,9 +1,0 @@
-apiVersion: crew.testproject.org/v1
-kind: FirstMate
-metadata:
-  labels:
-    controller-tools.k8s.io: "1.0"
-  name: firstmate-sample
-spec:
-  # Add fields here
-  foo: bar
