@@ -89,10 +89,12 @@ function test_project {
   project_dir=$1
   version=$2
   header_text "performing tests in dir $project_dir for project version v$version"
-  cd test/$project_dir
-  tar -zxf ../vendor.v$version.tgz
+  vendor_tarball=$(pwd)/testdata/vendor.v$version.tgz
+  cd testdata/$project_dir
+  # v2 uses modules, and thus doesn't have a vendor directory
+  [[ -e ${vendor_tarball} ]] && tar -zxf $vendor_tarball 
   make
-  rm -rf ./vendor && rm -f Gopkg.lock
+  [[ -e ${vendor_tarball} ]] && rm -rf ./vendor && rm -f Gopkg.lock
   cd -
 }
 
@@ -139,7 +141,9 @@ cd ${go_workspace}/src/sigs.k8s.io/kubebuilder
 go test ./cmd/... ./pkg/...
 
 # test project v1
-test_project project 1
+# auto is roughly equivalent to off in our case, 
+# since we'll be in a gopath (basically, reset to default)
+GO111MODULE=auto test_project gopath/src/project 1
 
 # test project v2
 test_project project_v2 2

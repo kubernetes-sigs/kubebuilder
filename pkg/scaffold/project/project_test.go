@@ -180,7 +180,7 @@ Copyright %s Example Owners.
 		Context("with defaults ", func() {
 			It("should match the golden file", func() {
 				instance := &project.Makefile{Image: "controller:latest"}
-				instance.Repo = "sigs.k8s.io/kubebuilder/test/project"
+				instance.Repo = "project"
 				Expect(s.Execute(input.Options{}, instance)).NotTo(HaveOccurred())
 
 				// Verify the contents matches the golden file.
@@ -197,7 +197,7 @@ Copyright %s Example Owners.
 		Context("with defaults ", func() {
 			It("should match the golden file", func() {
 				instance := &project.Kustomize{Prefix: "project"}
-				instance.Repo = "sigs.k8s.io/kubebuilder/test/project"
+				instance.Repo = "project"
 				Expect(s.Execute(input.Options{}, instance)).NotTo(HaveOccurred())
 
 				// Verify the contents matches the golden file.
@@ -214,7 +214,7 @@ Copyright %s Example Owners.
 		Context("with rbac", func() {
 			It("should match the golden file", func() {
 				instance := &project.KustomizeRBAC{}
-				instance.Repo = "sigs.k8s.io/kubebuilder/test/project"
+				instance.Repo = "project"
 				Expect(s.Execute(input.Options{}, instance)).NotTo(HaveOccurred())
 
 				// Verify the contents matches the golden file.
@@ -231,7 +231,7 @@ Copyright %s Example Owners.
 		Context("with manager", func() {
 			It("should match the golden file", func() {
 				instance := &project.KustomizeManager{}
-				instance.Repo = "sigs.k8s.io/kubebuilder/test/project"
+				instance.Repo = "project"
 				Expect(s.Execute(input.Options{}, instance)).NotTo(HaveOccurred())
 
 				// Verify the contents matches the golden file.
@@ -248,7 +248,7 @@ Copyright %s Example Owners.
 		Context("with defaults ", func() {
 			It("should match the golden file", func() {
 				instance := &project.KustomizeImagePatch{}
-				instance.Repo = "sigs.k8s.io/kubebuilder/test/project"
+				instance.Repo = "project"
 				Expect(s.Execute(input.Options{}, instance)).NotTo(HaveOccurred())
 
 				// Verify the contents matches the golden file.
@@ -265,7 +265,7 @@ Copyright %s Example Owners.
 		Context("with defaults ", func() {
 			It("should match the golden file", func() {
 				instance := &project.KustomizePrometheusMetricsPatch{}
-				instance.Repo = "sigs.k8s.io/kubebuilder/test/project"
+				instance.Repo = "project"
 				Expect(s.Execute(input.Options{}, instance)).NotTo(HaveOccurred())
 
 				// Verify the contents matches the golden file.
@@ -300,7 +300,7 @@ Copyright %s Example Owners.
 				instance := &project.Project{}
 				instance.Version = "1"
 				instance.Domain = "testproject.org"
-				instance.Repo = "sigs.k8s.io/kubebuilder/test/project"
+				instance.Repo = "project"
 				Expect(s.Execute(input.Options{}, instance)).NotTo(HaveOccurred())
 
 				// Verify the contents matches the golden file.
@@ -360,7 +360,7 @@ Copyright %s Example Owners.
 				i, err := instance.GetInput()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(i.Path).To(Equal("PROJECT"))
-				Expect(i.Repo).To(Equal("sigs.k8s.io/kubebuilder/pkg/scaffold/project"))
+				Expect(i.Repo).To(Equal("project"))
 			})
 		})
 	})

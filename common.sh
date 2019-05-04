@@ -161,7 +161,7 @@ function setup_envs {
 
 function restore_go_deps {
   header_text "restoring Go dependencies"
-  tar -zxf ${go_workspace}/src/sigs.k8s.io/kubebuilder/test/vendor.v1.tgz
+  tar -zxf ${go_workspace}/src/sigs.k8s.io/kubebuilder/testdata/vendor.v1.tgz
 }
 
 function cache_project {

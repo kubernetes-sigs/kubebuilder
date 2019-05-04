@@ -29,17 +29,20 @@ build_kb() {
 scaffold_test_project() {
 	project=$1
 	version=$2
-	mkdir -p ./test/$project
-	rm -rf ./test/$project/*
+    testdata_dir=$(pwd)/testdata
+	mkdir -p ./testdata/$project
+	rm -rf ./testdata/$project/*
 	pushd . 
-	cd test/$project
+	cd testdata/$project
 	# untar Gopkg.lock and vendor directory for appropriate project version
 	tar -zxf ../vendor.v$version.tgz
 
-	kb=../../bin/kubebuilder
+	kb=$testdata_dir/../bin/kubebuilder
 
-	$kb init --project-version $version --domain testproject.org --license apache2 --owner "The Kubernetes authors" --dep=false
+    oldgopath=$GOPATH
 	if [ $version == "1" ]; then
+        export GOPATH=$(pwd)/../.. # go ignores vendor under testdata, so fake out a gopath
+        $kb init --project-version $version --domain testproject.org --license apache2 --owner "The Kubernetes authors" --dep=false
 		$kb create api --group crew --version v1 --kind FirstMate --controller=true --resource=true --make=false
 		$kb alpha webhook --group crew --version v1 --kind FirstMate --type=mutating --operations=create,update --make=false
 		$kb alpha webhook --group crew --version v1 --kind FirstMate --type=mutating --operations=delete --make=false
@@ -51,6 +54,7 @@ scaffold_test_project() {
 		$kb alpha webhook --group core --version v1 --kind Namespace --type=mutating --operations=update --make=false
 		$kb create api --group policy --version v1beta1 --kind HealthCheckPolicy --example=false --controller=true --resource=true --namespaced=false --make=false
 	elif [ $version == "2" ]; then
+        $kb init --project-version $version --domain testproject.org --license apache2 --owner "The Kubernetes authors"
 		$kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false
 		$kb create api --group crew --version v1 --kind FirstMate --controller=true --resource=true --make=false
 		$kb alpha webhook --group crew --version v1 --kind FirstMate --type=mutating --operations=create,update --make=false
@@ -66,9 +70,11 @@ scaffold_test_project() {
 	rm -f Gopkg.lock
 	rm -rf ./vendor
 	rm -rf ./bin
+    export GOPATH=$oldgopath
 	popd
 }
 
-build_kb && \
-scaffold_test_project project 1 && \
+set -e
+build_kb
+scaffold_test_project gopath/src/project 1
 scaffold_test_project project_v2 2
