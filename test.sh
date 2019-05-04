@@ -90,12 +90,17 @@ function test_project {
   version=$2
   header_text "performing tests in dir $project_dir for project version v$version"
   vendor_tarball=$(pwd)/testdata/vendor.v$version.tgz
+  old_gopath=$GOPATH
+  if [[ $version == "1" ]]; then
+      export GOPATH=$(pwd)/testdata/gopath
+  fi
   cd testdata/$project_dir
   # v2 uses modules, and thus doesn't have a vendor directory
   [[ -e ${vendor_tarball} ]] && tar -zxf $vendor_tarball 
   make all test # v2 doesn't test on all by default
   [[ -e ${vendor_tarball} ]] && rm -rf ./vendor && rm -f Gopkg.lock
   cd -
+  export GOPATH=$old_gopath
 }
 
 prepare_staging_dir
@@ -137,8 +142,10 @@ prepare_testdir_under_gopath
 dump_project
 test_create_namespaced_coretype_controller
 
+header_text "running kubebuilder unit tests"
 cd ${go_workspace}/src/sigs.k8s.io/kubebuilder
 
+export GO111MODULE=on
 go test ./cmd/... ./pkg/...
 
 # test project v1

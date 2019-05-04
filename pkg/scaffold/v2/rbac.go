@@ -22,35 +22,31 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 )
 
-var _ input.File = &KustomizeConfig{}
+var _ input.File = &KustomizeRBAC{}
 
-// KustomizeConfig scaffolds the kustomizeconfig file in crd folder.
-type KustomizeConfig struct {
+// KustomizeRBAC scaffolds the Kustomization file in rbac folder.
+type KustomizeRBAC struct {
 	input.Input
 }
 
 // GetInput implements input.File
-func (c *KustomizeConfig) GetInput() (input.Input, error) {
+func (c *KustomizeRBAC) GetInput() (input.Input, error) {
 	if c.Path == "" {
-		c.Path = filepath.Join("config", "crd", "kustomizeconfig.yaml")
+		c.Path = filepath.Join("config", "rbac", "kustomization.yaml")
 	}
-	c.TemplateBody = kustomizeConfigTemplate
+	c.TemplateBody = kustomizeRBACTemplate
 	c.Input.IfExistsAction = input.Error
 	return c.Input, nil
 }
 
-var kustomizeConfigTemplate = `# This file is for teaching kustomize how to substitute name and namespace reference in CRD
-nameReference:
-- kind: Service
-  version: v1
-  fieldSpecs:
-  - kind: CustomResourceDefinition
-    group: apiextensions.k8s.io
-    path: spec/conversion/webhookClientConfig/service/name
-
-varReference:
-- path: metadata/annotations
-- kind: CustomResourceDefinition
-  group: apiextensions.k8s.io
-  path: spec/conversion/webhookClientConfig/service/namespace
+var kustomizeRBACTemplate = `resources:
+- role.yaml
+- role_binding.yaml
+# Comment the following 3 lines if you want to disable
+# the auth proxy (https://github.com/brancz/kube-rbac-proxy)
+# which protects your /metrics endpoint.
+- auth_proxy_service.yaml
+- auth_proxy_role.yaml
+- auth_proxy_role_binding.yaml
 `
+

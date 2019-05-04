@@ -22,35 +22,33 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 )
 
-var _ input.File = &Doc{}
+var _ input.File = &ManagerRoleBinding{}
 
-// Doc scaffolds the api/doc.go directory so that deep-copy gen can discover all
-// the api version pkgs. Once we fix deepcopy-gen, we can remove scaffolding for
-// this.
-type Doc struct {
+// ManagerRoleBinding scaffolds the config/rbac/role_binding.yaml file
+type ManagerRoleBinding struct {
 	input.Input
-
-	// Comments are additional lines to write to the doc.go file
-	Comments []string
 }
 
 // GetInput implements input.File
-func (a *Doc) GetInput() (input.Input, error) {
-	if a.Path == "" {
-		a.Path = filepath.Join("api", "doc.go")
+func (r *ManagerRoleBinding) GetInput() (input.Input, error) {
+	if r.Path == "" {
+		r.Path = filepath.Join("config", "rbac", "role_binding.yaml")
 	}
-	a.TemplateBody = docGoTemplate
-	return a.Input, nil
+	r.TemplateBody = managerBindingTemplate
+	return r.Input, nil
 }
 
-// Validate validates the values
-func (a *Doc) Validate() error {
-	return nil
-}
-
-var docGoTemplate = `{{ .Boilerplate }}
-
-// +k8s:openapi-gen=true
-// +k8s:deepcopy-gen=package,register
-package api
+var managerBindingTemplate = `apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: manager-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: manager-role
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: system
 `
+

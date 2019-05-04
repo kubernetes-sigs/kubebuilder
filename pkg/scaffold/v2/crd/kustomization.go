@@ -21,6 +21,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/markbates/inflect"
+
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v2/internal"
@@ -44,7 +46,7 @@ type Kustomization struct {
 // GetInput implements input.File
 func (c *Kustomization) GetInput() (input.Input, error) {
 	if c.Path == "" {
-		c.Path = filepath.Join("config", "crds", "kustomization.yaml")
+		c.Path = filepath.Join("config", "crd", "kustomization.yaml")
 	}
 	c.TemplateBody = kustomizationTemplate
 	c.Input.IfExistsAction = input.Error
@@ -53,13 +55,16 @@ func (c *Kustomization) GetInput() (input.Input, error) {
 
 func (c *Kustomization) Update() error {
 	if c.Path == "" {
-		c.Path = filepath.Join("config", "crds", "kustomization.yaml")
+		c.Path = filepath.Join("config", "crd", "kustomization.yaml")
 	}
 
-	kustomizeResourceCodeFragment := fmt.Sprintf(`- bases/%s_%s.yaml
-`, c.Resource.Group, strings.ToLower(c.Resource.Kind))
-	kustomizePatchCodeFragment := fmt.Sprintf(`#- patches/webhook_in_%s.yaml
-`, strings.ToLower(c.Resource.Kind))
+	// TODO(directxman12): not technically valid if something changes from the default
+	// (we'd need to parse the markers)
+	rs := inflect.NewDefaultRuleset()
+	plural := rs.Pluralize(strings.ToLower(c.Resource.Kind))
+
+	kustomizeResourceCodeFragment := fmt.Sprintf("- bases/%s.%s_%s.yaml\n", c.Resource.Group, c.Domain, plural)
+	kustomizePatchCodeFragment := fmt.Sprintf("#- patches/webhook_in_%s.yaml\n", plural)
 
 	return internal.InsertStringsInFile(c.Path,
 		kustomizeResourceScaffoldMarker, kustomizeResourceCodeFragment,

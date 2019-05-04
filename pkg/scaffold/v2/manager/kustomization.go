@@ -43,17 +43,17 @@ var kustomizeManagerTemplate = `resources:
 - manager.yaml
 
 # the following config is for teaching kustomize how to do var substitution 
-vars:
-- name: NAMESPACE
-  objref:
-    kind: Service
-    version: v1
-    name: webhook-service
-  fieldref:
-    fieldpath: metadata.namespace
-- name: SERVICENAME
-  objref:
-    kind: Service
-    version: v1
-    name: webhook-service
+# vars:
+# - name: NAMESPACE
+#   objref:
+#     kind: Service
+#     version: v1
+#     name: webhook-service
+#   fieldref:
+#     fieldpath: metadata.namespace
+# - name: SERVICENAME
+#   objref:
+#     kind: Service
+#     version: v1
+#     name: webhook-service
 `

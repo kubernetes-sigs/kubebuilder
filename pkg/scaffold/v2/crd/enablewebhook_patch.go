@@ -36,7 +36,7 @@ type EnableWebhookPatch struct {
 // GetInput implements input.File
 func (p *EnableWebhookPatch) GetInput() (input.Input, error) {
 	if p.Path == "" {
-		p.Path = filepath.Join("config", "crds", "patches",
+		p.Path = filepath.Join("config", "crd", "patches",
 			fmt.Sprintf("webhook_in_%s.yaml", strings.ToLower(p.Resource.Kind)))
 	}
 	p.TemplateBody = enableWebhookPatchTemplate

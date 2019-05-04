@@ -58,7 +58,6 @@ scaffold_test_project() {
 		$kb create api --group policy --version v1beta1 --kind HealthCheckPolicy --example=false --controller=true --resource=true --namespaced=false --make=false
 	elif [ $version == "2" ]; then
         export GO111MODULE=on
-        go get sigs.k8s.io/controller-tools/cmd/controller-gen@crdgeneratortmp
         export PATH=$PATH:$(go env GOPATH)/bin
         go mod init sigs.k8s.io/kubebuilder/testdata/project_v2  # our repo autodetection will traverse up to the kb module if we don't do this
 

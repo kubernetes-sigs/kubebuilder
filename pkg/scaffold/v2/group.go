@@ -25,7 +25,7 @@ import (
 
 var _ input.File = &Group{}
 
-// Group scaffolds the pkg/apis/group/group.go
+// Group scaffolds the api/<version>/groupversion_info.go
 type Group struct {
 	input.Input
 
@@ -50,10 +50,7 @@ func (g *Group) Validate() error {
 var groupTemplate = `{{ .Boilerplate }}
 
 // Package {{.Resource.Version}} contains API Schema definitions for the {{ .Resource.Group }} {{.Resource.Version}} API group
-// +k8s:openapi-gen=true
-// +k8s:deepcopy-gen=package,register
-// +k8s:conversion-gen={{ .Repo }}/pkg/apis/{{ .Resource.Group }}
-// +k8s:defaulter-gen=TypeMeta
+// +kubebuilder:object:generate=true
 // +groupName={{ .Resource.Group }}.{{ .Domain }}
 package {{ .Resource.Version }}
 

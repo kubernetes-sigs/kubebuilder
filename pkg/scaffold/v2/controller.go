@@ -85,7 +85,7 @@ func (a *Controller) UpdateMain(path string) error {
 
 	reconcilerSetupCodeFragment := fmt.Sprintf(`err = (&controllers.%sReconciler{
 	 	Client: mgr.GetClient(),
-        Log: ctrl.Log.WithName("%s-controller"),
+        Log: ctrl.Log.WithName("controllers").WithName("%s"),
 	 }).SetupWithManager(mgr)
 	 if err != nil {
 	 	setupLog.Error(err, "unable to create controller", "controller", "%s")
@@ -158,9 +158,10 @@ type {{ .Resource.Kind }}Reconciler struct {
 
 // +kubebuilder:rbac:groups={{.GroupDomain}},resources={{ .Plural }},verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups={{.GroupDomain}},resources={{ .Plural }}/status,verbs=get;update;patch
+
 func (r *{{ .Resource.Kind }}Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()
-	_ = r.Log.WithValues("{{ .Resource.Kind }}", req.NamespacedName)
+	_ = r.Log.WithValues("{{ .Resource.Kind | lower }}", req.NamespacedName)
 
 	// your logic here
 

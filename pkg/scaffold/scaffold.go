@@ -29,7 +29,6 @@ import (
 
 	"golang.org/x/tools/imports"
 	yaml "gopkg.in/yaml.v2"
-	"sigs.k8s.io/controller-tools/pkg/util"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
 )
