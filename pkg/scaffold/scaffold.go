@@ -52,6 +52,8 @@ type Scaffold struct {
 	ProjectPath string
 
 	GetWriter func(path string) (io.Writer, error)
+
+	FileExists func(path string) bool
 }
 
 func (s *Scaffold) setFieldsAndValidate(t input.File) error {
@@ -141,6 +143,12 @@ func (s *Scaffold) Execute(options input.Options, files ...input.File) error {
 	if s.GetWriter == nil {
 		s.GetWriter = (&FileWriter{}).WriteCloser
 	}
+	if s.FileExists == nil {
+		s.FileExists = func(path string) bool {
+			_, err := os.Stat(path)
+			return err == nil
+		}
+	}
 
 	if err := s.defaultOptions(&options); err != nil {
 		return err
@@ -181,7 +189,7 @@ func (s *Scaffold) doFile(e input.File) error {
 	}
 
 	// Check if the file to write already exists
-	if _, err := os.Stat(i.Path); err == nil {
+	if s.FileExists(i.Path) {
 		switch i.IfExistsAction {
 		case input.Overwrite:
 		case input.Skip:

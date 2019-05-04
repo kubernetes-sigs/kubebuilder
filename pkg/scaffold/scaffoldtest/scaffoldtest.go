@@ -42,8 +42,7 @@ type TestResult struct {
 }
 
 func getProjectRoot() string {
-	gopath := os.Getenv("GOPATH")
-	return path.Join(gopath, "src", "sigs.k8s.io", "kubebuilder")
+	return path.Join(build.Default.GOPATH, "src", "sigs.k8s.io", "kubebuilder")
 }
 
 // ProjectPath is the path to the controller-tools/testdata project file
@@ -66,6 +65,7 @@ func Options() input.Options {
 
 // NewTestScaffold returns a new Scaffold and TestResult instance for testing
 func NewTestScaffold(writeToPath, goldenPath string) (*scaffold.Scaffold, *TestResult) {
+	projRoot := getProjectRoot()
 	r := &TestResult{}
 	// Setup scaffold
 	s := &scaffold.Scaffold{
@@ -74,12 +74,20 @@ func NewTestScaffold(writeToPath, goldenPath string) (*scaffold.Scaffold, *TestR
 			gomega.Expect(path).To(gomega.Equal(writeToPath))
 			return &r.Actual, nil
 		},
-		ProjectPath: filepath.Join(getProjectRoot(), "testdata", "gopath", "src", "project"),
+		FileExists: func(path string) bool {
+			return path != writeToPath
+		},
+		ProjectPath: filepath.Join(projRoot, "testdata", "gopath", "src", "project"),
 	}
-	build.Default.GOPATH = filepath.Join(getProjectRoot(), "testdata", "gopath")
+	oldGoPath := build.Default.GOPATH
+	build.Default.GOPATH = filepath.Join(projRoot, "testdata", "gopath")
+	defer func() { build.Default.GOPATH = oldGoPath }()
+	if _, err := os.Stat(build.Default.GOPATH); err != nil {
+		panic(err)
+	}
 
 	if len(goldenPath) > 0 {
-		b, err := ioutil.ReadFile(filepath.Join(getProjectRoot(), "testdata", "gopath", "src", "project", goldenPath))
+		b, err := ioutil.ReadFile(filepath.Join(projRoot, "testdata", "gopath", "src", "project", goldenPath))
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 		r.Golden = string(b)
 	}
