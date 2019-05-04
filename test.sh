@@ -93,7 +93,7 @@ function test_project {
   cd testdata/$project_dir
   # v2 uses modules, and thus doesn't have a vendor directory
   [[ -e ${vendor_tarball} ]] && tar -zxf $vendor_tarball 
-  make
+  make all test # v2 doesn't test on all by default
   [[ -e ${vendor_tarball} ]] && rm -rf ./vendor && rm -f Gopkg.lock
   cd -
 }
@@ -104,6 +104,7 @@ build_kb
 
 setup_envs
 
+export GO111MODULE=auto
 prepare_testdir_under_gopath
 test_init_project
 cache_project
@@ -146,6 +147,6 @@ go test ./cmd/... ./pkg/...
 GO111MODULE=auto test_project gopath/src/project 1
 
 # test project v2
-test_project project_v2 2
+GO111MODULE=on test_project project_v2 2
 
 exit $rc

@@ -17,7 +17,11 @@ limitations under the License.
 package scaffold
 
 import (
+	"os"
+	"os/exec"
 	"fmt"
+	"strings"
+	"bufio"
 
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
@@ -27,24 +31,59 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v2/certmanager"
 	managerv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2/manager"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v2/webhook"
+	"sigs.k8s.io/kubebuilder/cmd/util"
 )
 
-// Project contains configuration for generating project scaffolding.
-type Project struct {
-	scaffold *Scaffold
-
-	Info        project.Project
-	Boilerplate project.Boilerplate
+type ProjectScaffolder interface {
+	EnsureDependencies() (bool, error)
+	Scaffold() error
+	Validate() error
 }
 
-func (p *Project) Scaffold() error {
-	// project and boilerplate must come before main so the boilerplate exists
+type V1Project struct {
+	Project project.Project
+	Boilerplate project.Boilerplate
+
+	DepArgs []string
+	DefinitelyEnsure *bool
+}
+
+func (p *V1Project) Validate() error {
+	_, err := exec.LookPath("dep")
+	if err != nil {
+		return fmt.Errorf("dep is not installed (%v). Follow steps at: https://golang.github.io/dep/docs/installation.html", err)
+	}
+	return nil
+}
+
+func (p *V1Project) EnsureDependencies() (bool, error) {
+	if p.DefinitelyEnsure == nil {
+		reader := bufio.NewReader(os.Stdin)
+		fmt.Println("Run `dep ensure` to fetch dependencies (Recommended) [y/n]?")
+		if !util.Yesno(reader) {
+			return false, nil
+		}
+	} else if !*p.DefinitelyEnsure {
+		return false, nil
+	}
+
+	c := exec.Command("dep", "ensure") // #nosec
+	c.Args = append(c.Args, p.DepArgs...)
+	c.Stderr = os.Stderr
+	c.Stdout = os.Stdout
+	fmt.Println(strings.Join(c.Args, " "))
+	return true, c.Run()
+}
+
+func (p *V1Project) Scaffold() error {
+	p.Project.Version = project.Version1
+
 	s := &Scaffold{
 		BoilerplateOptional: true,
 		ProjectOptional:     true,
 	}
 
-	projectInput, err := p.Info.GetInput()
+	projectInput, err := p.Project.GetInput()
 	if err != nil {
 		return err
 	}
@@ -56,15 +95,18 @@ func (p *Project) Scaffold() error {
 
 	err = s.Execute(
 		input.Options{ProjectPath: projectInput.Path, BoilerplatePath: bpInput.Path},
-		&p.Info,
+		&p.Project,
 		&p.Boilerplate,
 	)
 	if err != nil {
 		return err
 	}
 
+	// default controller manager image name
+	imgName := "controller:latest"
+
 	s = &Scaffold{}
-	err = s.Execute(
+	return s.Execute(
 		input.Options{ProjectPath: projectInput.Path, BoilerplatePath: bpInput.Path},
 		&project.GitIgnore{},
 		&project.KustomizeRBAC{},
@@ -73,35 +115,7 @@ func (p *Project) Scaffold() error {
 		&project.KustomizeAuthProxyPatch{},
 		&project.AuthProxyService{},
 		&project.AuthProxyRole{},
-		&project.AuthProxyRoleBinding{})
-	if err != nil {
-		return err
-	}
-
-	switch ver := projectInput.Version; ver {
-	case project.Version1:
-		return p.scaffoldV1()
-	case project.Version2:
-		return p.scaffoldV2()
-	default:
-		return fmt.Errorf("unknown project version '%v'", ver)
-	}
-	return nil
-}
-
-func (p *Project) setDefaults() error {
-	return nil
-}
-
-func (p *Project) Validate() error {
-	return nil
-}
-
-func (p *Project) scaffoldV1() error {
-	// default controller manager image name
-	imgName := "controller:latest"
-	return (&Scaffold{}).Execute(
-		input.Options{ProjectPath: p.Info.Path, BoilerplatePath: p.Boilerplate.Path},
+		&project.AuthProxyRoleBinding{},
 		&manager.Config{Image: imgName},
 		&project.Makefile{Image: imgName},
 		&project.GopkgToml{},
@@ -111,18 +125,69 @@ func (p *Project) scaffoldV1() error {
 		&manager.APIs{},
 		&manager.Controller{},
 		&manager.Webhook{},
-		&manager.Cmd{},
-	)
+		&manager.Cmd{})
 }
 
-func (p *Project) scaffoldV2() error {
+type V2Project struct {
+	Project project.Project
+	Boilerplate project.Boilerplate
+}
+
+func (p *V2Project) Validate() error {
+	return nil
+}
+
+func (p *V2Project) EnsureDependencies() (bool, error) {
+	c := exec.Command("go", "mod", "tidy") // #nosec
+	c.Stderr = os.Stderr
+	c.Stdout = os.Stdout
+	fmt.Println(strings.Join(c.Args, " "))
+	return true, c.Run()
+}
+
+func (p *V2Project) Scaffold() error {
+	p.Project.Version = project.Version2
+
+	s := &Scaffold{
+		BoilerplateOptional: true,
+		ProjectOptional:     true,
+	}
+
+	projectInput, err := p.Project.GetInput()
+	if err != nil {
+		return err
+	}
+
+	bpInput, err := p.Boilerplate.GetInput()
+	if err != nil {
+		return err
+	}
+
+	err = s.Execute(
+		input.Options{ProjectPath: projectInput.Path, BoilerplatePath: bpInput.Path},
+		&p.Project,
+		&p.Boilerplate,
+	)
+	if err != nil {
+		return err
+	}
+
 	// default controller manager image name
 	imgName := "controller:latest"
-	return (&Scaffold{}).Execute(
-		input.Options{ProjectPath: p.Info.Path, BoilerplatePath: p.Boilerplate.Path},
+
+	s = &Scaffold{}
+	return s.Execute(
+		input.Options{ProjectPath: projectInput.Path, BoilerplatePath: bpInput.Path},
+		&project.GitIgnore{},
+		&project.KustomizeImagePatch{},
+		&project.KustomizePrometheusMetricsPatch{},
+		&project.KustomizeAuthProxyPatch{},
+		&project.AuthProxyService{},
+		&project.AuthProxyRole{},
+		&project.AuthProxyRoleBinding{},
 		&managerv2.Config{Image: imgName},
 		&scaffoldv2.Main{},
-		&scaffoldv2.GopkgToml{},
+		&scaffoldv2.GoMod{},
 		&scaffoldv2.Doc{},
 		&scaffoldv2.Makefile{Image: imgName},
 		&scaffoldv2.Dockerfile{},
@@ -134,6 +199,5 @@ func (p *Project) scaffoldV2() error {
 		&webhook.InjectCAPatch{},
 		&certmanager.CertManager{},
 		&certmanager.Kustomization{},
-		&certmanager.KustomizeConfig{},
-	)
+		&certmanager.KustomizeConfig{})
 }

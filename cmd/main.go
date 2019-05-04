@@ -17,37 +17,95 @@ limitations under the License.
 package main
 
 import (
-	gobuild "go/build"
-	"log"
+	"fmt"
 	"os"
-	"regexp"
+	"os/exec"
+	"log"
+	"encoding/json"
 
 	"github.com/spf13/cobra"
+	"golang.org/x/tools/go/packages"
 
-	toolsutil "sigs.k8s.io/controller-tools/pkg/crd/util"
 	"sigs.k8s.io/kubebuilder/cmd/util"
 	"sigs.k8s.io/kubebuilder/cmd/version"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold"
 )
 
+// module and goMod arg just enough of the output of `go mod edit -json` for our purposes
+type goMod struct {
+	Module module
+}
+type module struct {
+	Path string
+}
+
+// findGoModulePath finds the path of the current module, if present.
+func findGoModulePath(forceModules bool) (string, error) {
+	cmd := exec.Command("go", "mod", "edit", "-json")
+	cmd.Env = append(cmd.Env, os.Environ()...)
+	if forceModules {
+		cmd.Env = append(cmd.Env, "GO111MODULE=on" /* turn on modules just for these commands */)
+	}
+	out, err := cmd.Output()
+	if err != nil {
+		if exitErr, isExitErr := err.(*exec.ExitError); isExitErr {
+			err = fmt.Errorf("%s", string(exitErr.Stderr))
+		}
+		return "", err
+	}
+	mod := goMod{}
+	if err := json.Unmarshal(out, &mod); err != nil {
+		return "", err
+	}
+	return mod.Module.Path, nil
+}
+
+// findCurrentRepo attempts to determine the current repository
+// though a combination of go/packages and `go mod` commands/tricks.
+func findCurrentRepo() (string, error) {
+	// easiest case: project file already exists
+	projFile, err := scaffold.LoadProjectFile("PROJECT")
+	if err == nil {
+		return projFile.Repo, nil
+	}
+
+	// next easy case: existing go module
+	path, err := findGoModulePath(false)
+	if err == nil {
+		return path, nil
+	}
+
+	// next, check if we've got a package in the current directory
+	pkgCfg := &packages.Config{
+		Mode: packages.NeedName,  // name gives us path as well
+	}
+	pkgs, err := packages.Load(pkgCfg, ".")
+	if err == nil && len(pkgs) > 0 {
+		return pkgs[0].PkgPath, nil
+	}
+
+	// otherwise, try to get `go mod init` to guess for us -- it's pretty good
+	cmd := exec.Command("go", "mod", "init")
+	cmd.Env = append(cmd.Env, os.Environ()...)
+	cmd.Env = append(cmd.Env, "GO111MODULE=on" /* turn on modules just for these commands */)
+	if _, err := cmd.Output(); err != nil {
+		if exitErr, isExitErr := err.(*exec.ExitError); isExitErr {
+			err = fmt.Errorf("%s", string(exitErr.Stderr))
+		}
+		// give up, let the user figure it out
+		return "", fmt.Errorf("could not determine repository path from module data, package data, or by initializing a module: %v", err)
+	}
+	defer os.Remove("go.mod") // clean up after ourselves
+	return findGoModulePath(true)
+}
+
 func main() {
-	gopath := gobuild.Default.GOPATH
-
-	wd, err := os.Getwd()
+	repoPath, err := findCurrentRepo()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(fmt.Errorf("error finding current repository: %v", err))
 	}
 
-	if !toolsutil.IsUnderGoSrcPath(wd) {
-		log.Fatalf("kubebuilder must be run from the project root under $GOPATH/src/<package>. "+
-			"\nCurrent GOPATH=%s.  \nCurrent directory=%s", gopath, wd)
-	}
-	util.Repo, err = toolsutil.DirToGoPkg(wd)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	re := regexp.MustCompile(`(^.*\/src)(\/.*$)`)
-	util.GoSrc = re.ReplaceAllString(wd, "$1")
+	util.Repo = repoPath
 
 	rootCmd := defaultCommand()
 

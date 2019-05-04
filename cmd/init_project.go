@@ -17,7 +17,6 @@ limitations under the License.
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"log"
 	"os"
@@ -35,9 +34,7 @@ import (
 )
 
 func newInitProjectCmd() *cobra.Command {
-	o := projectOptions{
-		projectScaffolder: &scaffold.Project{},
-	}
+	o := projectOptions{}
 
 	initCmd := &cobra.Command{
 		Use:   "init",
@@ -70,50 +67,54 @@ kubebuilder init --domain example.org --license apache2 --owner "The Kubernetes 
 }
 
 type projectOptions struct {
-	projectScaffolder *scaffold.Project
 
+	// flags
+	fetchDeps          bool
+	skipGoVersionCheck bool
+
+	boilerplate project.Boilerplate
+	project project.Project
+
+	// deprecated flags
 	dep                bool
 	depFlag            *flag.Flag
 	depArgs            []string
-	skipGoVersionCheck bool
+
+	// final result
+	scaffolder scaffold.ProjectScaffolder
 }
 
 func (o *projectOptions) bindCmdlineFlags(cmd *cobra.Command) {
-	cmd.Flags().BoolVar(
-		&o.skipGoVersionCheck, "skip-go-version-check", false, "if specified, skip checking the Go version")
-	cmd.Flags().BoolVar(
-		&o.dep, "dep", true, "if specified, determines whether dep will be used.")
+	cmd.Flags().BoolVar(&o.skipGoVersionCheck, "skip-go-version-check", false, "if specified, skip checking the Go version")
+
+	// dependency args
+	cmd.Flags().BoolVar(&o.fetchDeps, "fetch-deps", true, "ensure dependencies are downloaded")
+
+	// deprecated dependency args
+	cmd.Flags().BoolVar(&o.dep, "dep", true, "if specified, determines whether dep will be used.")
 	o.depFlag = cmd.Flag("dep")
 	cmd.Flags().StringArrayVar(&o.depArgs, "depArgs", nil, "Additional arguments for dep")
+	cmd.Flags().MarkDeprecated("dep", "use the fetch-deps flag instead")
+	cmd.Flags().MarkDeprecated("depArgs", "will be removed with version 1 scaffolding")
 
-	o.bindBoilerplateFlags(cmd)
-	o.bindProjectFlags(cmd)
-}
+	// boilerplate args
+	cmd.Flags().StringVar(&o.boilerplate.Path, "path", "", "path for boilerplate")
+	cmd.Flags().StringVar(&o.boilerplate.License, "license", "apache2", "license to use to boilerplate.  May be one of apache2,none")
+	cmd.Flags().StringVar(&o.boilerplate.Owner, "owner", "", "Owner to add to the copyright")
 
-// projectForFlags registers flags for Project fields and returns the Project
-func (o *projectOptions) bindProjectFlags(cmd *cobra.Command) {
-	p := &o.projectScaffolder.Info
-	cmd.Flags().StringVar(&p.Repo, "repo", "", "name of the github repo.  "+
+	// project args
+	cmd.Flags().StringVar(&o.project.Repo, "repo", util.Repo, "name of the github repo.  "+
 		"defaults to the go package of the current working directory.")
-	cmd.Flags().StringVar(&p.Domain, "domain", "k8s.io", "domain for groups")
-	cmd.Flags().StringVar(&p.Version, "project-version", project.Version1, "project version")
-}
-
-// bindBoilerplateFlags registers flags for Boilerplate fields and returns the Boilerplate
-func (o *projectOptions) bindBoilerplateFlags(cmd *cobra.Command) {
-	bp := &o.projectScaffolder.Boilerplate
-	cmd.Flags().StringVar(&bp.Path, "path", "", "path for boilerplate")
-	cmd.Flags().StringVar(&bp.License, "license", "apache2", "license to use to boilerplate.  Maybe one of apache2,none")
-	cmd.Flags().StringVar(&bp.Owner, "owner", "", "Owner to add to the copyright")
+	cmd.Flags().StringVar(&o.project.Domain, "domain", "k8s.io", "domain for groups")
+	cmd.Flags().StringVar(&o.project.Version, "project-version", project.Version1, "project version")
 }
 
 func (o *projectOptions) initializeProject() {
-
 	if err := o.validate(); err != nil {
 		log.Fatal(err)
 	}
 
-	if err := o.projectScaffolder.Scaffold(); err != nil {
+	if err := o.scaffolder.Scaffold(); err != nil {
 		log.Fatalf("error scaffolding project: %v", err)
 	}
 
@@ -132,8 +133,30 @@ func (o *projectOptions) validate() error {
 		}
 	}
 
-	if !depExists() {
-		return fmt.Errorf("Dep is not installed. Follow steps at: https://golang.github.io/dep/docs/installation.html")
+	switch o.project.Version {
+	case project.Version1:
+		var defEnsure *bool
+		if o.depFlag.Changed {
+			defEnsure = &o.dep
+		}
+		o.scaffolder = &scaffold.V1Project{
+			Project: o.project,
+			Boilerplate: o.boilerplate,
+
+			DepArgs: o.depArgs,
+			DefinitelyEnsure: defEnsure,
+		}
+	case project.Version2:
+		o.scaffolder = &scaffold.V2Project{
+			Project: o.project,
+			Boilerplate: o.boilerplate,
+		}
+	default:
+		return fmt.Errorf("unknown project version %v", o.project.Version)
+	}
+
+	if err := o.scaffolder.Validate(); err != nil {
+		return err
 	}
 
 	if util.ProjectExist() {
@@ -193,39 +216,27 @@ func checkGoVersion(verStr string) error {
 	return nil
 }
 
-func depExists() bool {
-	_, err := exec.LookPath("dep")
-	return err == nil
-}
-
 func (o *projectOptions) postScaffold() error {
-	if !o.depFlag.Changed {
-		reader := bufio.NewReader(os.Stdin)
-		fmt.Println("Run `dep ensure` to fetch dependencies (Recommended) [y/n]?")
-		o.dep = util.Yesno(reader)
+	// preserve old "ask if not explicitly set" behavior for the `--dep` flag
+	// (asking is handled by the v1 scaffolder)
+	if (o.depFlag.Changed && !o.dep) || !o.fetchDeps {
+		fmt.Println("Skipping fetching dependencies.")
+		return nil
 	}
-	if o.dep {
-		c := exec.Command("dep", "ensure") // #nosec
-		if len(o.depArgs) > 0 {
-			c.Args = append(c.Args, o.depArgs...)
-		}
-		c.Stderr = os.Stderr
-		c.Stdout = os.Stdout
-		fmt.Println(strings.Join(c.Args, " "))
-		if err := c.Run(); err != nil {
-			return err
-		}
 
-		fmt.Println("Running make...")
-		c = exec.Command("make") // #nosec
-		c.Stderr = os.Stderr
-		c.Stdout = os.Stdout
-		fmt.Println(strings.Join(c.Args, " "))
-		if err := c.Run(); err != nil {
-			return err
-		}
-	} else {
-		fmt.Println("Skipping `dep ensure`.  Dependencies will not be fetched.")
+	ensured, err := o.scaffolder.EnsureDependencies()
+	if err != nil {
+		return err
 	}
-	return nil
+
+	if !ensured {
+		return nil
+	}
+
+	fmt.Println("Running make...")
+	c := exec.Command("make") // #nosec
+	c.Stderr = os.Stderr
+	c.Stdout = os.Stdout
+	fmt.Println(strings.Join(c.Args, " "))
+	return c.Run()
 }

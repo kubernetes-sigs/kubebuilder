@@ -126,6 +126,9 @@ function fetch_tools {
     curl -sL ${kb_tools_download_url} -o "$kb_tools_archive_path"
   fi
   tar -zvxf "$kb_tools_archive_path" -C "$tmp_root/"
+
+  header_text "fetching controller-gen from source (till it's packaged)"
+  GO111MODULE=on go get sigs.k8s.io/controller-tools/cmd/controller-gen@crdgeneratortmp
 }
 
 function build_kb {

@@ -18,11 +18,6 @@ package project
 
 import (
 	"fmt"
-	"go/build"
-	"os"
-	"path"
-	"path/filepath"
-	"strings"
 
 	yaml "gopkg.in/yaml.v2"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
@@ -53,11 +48,7 @@ func (c *Project) GetInput() (input.Input, error) {
 		c.Version = Version1
 	}
 	if c.Repo == "" {
-		r, err := c.RepoFromGopathAndWd(os.Getenv("GOPATH"), os.Getwd)
-		if err != nil {
-			return input.Input{}, err
-		}
-		c.Repo = r
+		return input.Input{}, fmt.Errorf("must specify repository")
 	}
 
 	out, err := yaml.Marshal(c.ProjectFile)
@@ -73,37 +64,4 @@ func (c *Project) GetInput() (input.Input, error) {
 		Domain:         c.Domain,
 		IfExistsAction: input.Error,
 	}, nil
-}
-
-func (Project) RepoFromGopathAndWd(gopath string, getwd func() (string, error)) (string, error) {
-	// Assume the working dir is the root of the repo
-	wd, err := getwd()
-	if err != nil {
-		return "", err
-	}
-
-	// Strip the GOPATH from the working dir to get the go package of the repo
-	if len(gopath) == 0 {
-		gopath = build.Default.GOPATH
-	}
-
-	for _, workspace := range filepath.SplitList(gopath) {
-		goSrc := filepath.Join(workspace, "src")
-
-		// Make sure the GOPATH is set and the working dir is under the GOPATH
-		if strings.HasPrefix(filepath.Dir(wd), goSrc) {
-
-			// Figure out the repo name by removing $GOPATH/src from the working directory - e.g.
-			// '$GOPATH/src/kubernetes-sigs/controller-tools' becomes 'kubernetes-sigs/controller-tools'
-			repo := ""
-			for wd != goSrc {
-				repo = path.Join(filepath.Base(wd), repo)
-				wd = filepath.Dir(wd)
-			}
-			return repo, nil
-		}
-	}
-
-	return "", fmt.Errorf("working directory must be a project directory under "+
-		"$GOPATH/src/<project-package>\n- GOPATH=%s\n- WD=%s", gopath, wd)
 }
