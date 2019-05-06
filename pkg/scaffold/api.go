@@ -26,6 +26,7 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/controller"
 	resourcev1 "sigs.k8s.io/kubebuilder/pkg/scaffold/v1/resource"
 	resourcev2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2"
+	crdv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2/crd"
 )
 
 // API contains configuration for generating scaffolding for Go type
@@ -159,9 +160,25 @@ func (api *API) scaffoldV2() error {
 				Resource: r},
 			&resourcev2.Group{Resource: r},
 			&resourcev1.CRDSample{Resource: r},
+			&crdv2.EnableWebhookPatch{Resource: r},
 		)
 		if err != nil {
 			return fmt.Errorf("error scaffolding APIs: %v", err)
+		}
+
+		crdKustomization := &crdv2.Kustomization{Resource: r}
+		err = (&Scaffold{}).Execute(
+			input.Options{},
+			crdKustomization,
+			&crdv2.KustomizeConfig{},
+		)
+		if err != nil && !isAlreadyExistsError(err) {
+			return fmt.Errorf("error scaffolding kustomization: %v", err)
+		}
+
+		err = crdKustomization.Update()
+		if err != nil {
+			return fmt.Errorf("error updating kustomization.yaml: %v", err)
 		}
 	} else {
 		// disable generation of example reconcile body if not scaffolding resource

@@ -24,6 +24,9 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/manager"
 
 	scaffoldv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/v2/certmanager"
+	managerv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2/manager"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/v2/webhook"
 )
 
 // Project contains configuration for generating project scaffolding.
@@ -60,17 +63,11 @@ func (p *Project) Scaffold() error {
 		return err
 	}
 
-	// default controller manager image name
-	imgName := "controller:latest"
-
 	s = &Scaffold{}
 	err = s.Execute(
 		input.Options{ProjectPath: projectInput.Path, BoilerplatePath: bpInput.Path},
-		&manager.Config{Image: imgName},
 		&project.GitIgnore{},
-		&project.Kustomize{},
 		&project.KustomizeRBAC{},
-		&project.KustomizeManager{},
 		&project.KustomizeImagePatch{},
 		&project.KustomizePrometheusMetricsPatch{},
 		&project.KustomizeAuthProxyPatch{},
@@ -105,9 +102,12 @@ func (p *Project) scaffoldV1() error {
 	imgName := "controller:latest"
 	return (&Scaffold{}).Execute(
 		input.Options{ProjectPath: p.Info.Path, BoilerplatePath: p.Boilerplate.Path},
+		&manager.Config{Image: imgName},
 		&project.Makefile{Image: imgName},
 		&project.GopkgToml{},
 		&manager.Dockerfile{},
+		&project.Kustomize{},
+		&project.KustomizeManager{},
 		&manager.APIs{},
 		&manager.Controller{},
 		&manager.Webhook{},
@@ -120,10 +120,20 @@ func (p *Project) scaffoldV2() error {
 	imgName := "controller:latest"
 	return (&Scaffold{}).Execute(
 		input.Options{ProjectPath: p.Info.Path, BoilerplatePath: p.Boilerplate.Path},
+		&managerv2.Config{Image: imgName},
 		&scaffoldv2.Main{},
 		&scaffoldv2.GopkgToml{},
 		&scaffoldv2.Doc{},
 		&scaffoldv2.Makefile{Image: imgName},
 		&scaffoldv2.Dockerfile{},
+		&scaffoldv2.Kustomize{},
+		&scaffoldv2.ManagerWebhookPatch{},
+		&managerv2.Kustomization{},
+		&webhook.Kustomization{},
+		&webhook.KustomizeConfigWebhook{},
+		&webhook.InjectCAPatch{},
+		&certmanager.CertManager{},
+		&certmanager.Kustomization{},
+		&certmanager.KustomizeConfig{},
 	)
 }

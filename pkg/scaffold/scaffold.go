@@ -154,6 +154,19 @@ func (s *Scaffold) Execute(options input.Options, files ...input.File) error {
 	return nil
 }
 
+type errorAlreadyExists struct {
+	path string
+}
+
+func (e *errorAlreadyExists) Error() string {
+	return fmt.Sprintf("%s already exists", e.path)
+}
+
+func isAlreadyExistsError(e error) bool {
+	_, ok := e.(*errorAlreadyExists)
+	return ok
+}
+
 // doFile scaffolds a single file
 func (s *Scaffold) doFile(e input.File) error {
 	// Set common fields
@@ -175,7 +188,7 @@ func (s *Scaffold) doFile(e input.File) error {
 		case input.Skip:
 			return nil
 		case input.Error:
-			return fmt.Errorf("%s already exists", i.Path)
+			return &errorAlreadyExists{path: i.Path}
 		}
 	}
 

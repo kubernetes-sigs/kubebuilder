@@ -38,6 +38,7 @@ var (
 func init() {
 
 	crewv1.AddToScheme(scheme)
+	crewv1.AddToScheme(scheme)
 	corev1.AddToScheme(scheme)
 	// +kubebuilder:scaffold:scheme
 }
@@ -55,6 +56,14 @@ func main() {
 		os.Exit(1)
 	}
 
+	err = (&controllers.CaptainReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("Captain-controller"),
+	}).SetupWithManager(mgr)
+	if err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Captain")
+		os.Exit(1)
+	}
 	err = (&controllers.FirstMateReconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("FirstMate-controller"),

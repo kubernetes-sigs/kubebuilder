@@ -24,7 +24,7 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 )
 
-var _ input.File = &CRD{}
+var _ input.File = &CRDSample{}
 
 // CRDSample scaffolds a manifest for CRD sample.
 type CRDSample struct {

@@ -1,4 +1,46 @@
-apiVersion: v1
+/*
+Copyright 2018 The Kubernetes Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package manager
+
+import (
+	"path/filepath"
+
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+)
+
+var _ input.File = &Config{}
+
+// Config scaffolds yaml config for the manager.
+type Config struct {
+	input.Input
+	// Image is controller manager image name
+	Image string
+}
+
+// GetInput implements input.File
+func (c *Config) GetInput() (input.Input, error) {
+	if c.Path == "" {
+		c.Path = filepath.Join("config", "manager", "manager.yaml")
+	}
+	c.TemplateBody = configTemplate
+	return c.Input, nil
+}
+
+var configTemplate = `apiVersion: v1
 kind: Namespace
 metadata:
   labels:
@@ -46,7 +88,7 @@ spec:
       containers:
       - command:
         - /manager
-        image: controller:latest
+        image: {{ .Image }}
         imagePullPolicy: Always
         name: manager
         resources:
@@ -70,3 +112,4 @@ spec:
         secret:
           defaultMode: 420
           secretName: webhook-server-secret
+`
