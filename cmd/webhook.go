@@ -21,12 +21,12 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"strings"
 
+	"github.com/markbates/inflect"
 	"github.com/spf13/cobra"
 	flag "github.com/spf13/pflag"
 
-	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
@@ -64,9 +64,7 @@ Scaffolds webhook handlers based on group, version, kind and other user inputs.
 			fmt.Println("Writing scaffold for you to edit...")
 
 			if len(o.res.Resource) == 0 {
-				gvr, _ := meta.UnsafeGuessKindToResource(schema.GroupVersionKind{
-					Group: o.res.Group, Version: o.res.Version, Kind: o.res.Kind})
-				o.res.Resource = gvr.Resource
+				o.res.Resource = inflect.NewDefaultRuleset().Pluralize(strings.ToLower(o.res.Kind))
 			}
 
 			err = (&scaffold.Scaffold{}).Execute(input.Options{},
