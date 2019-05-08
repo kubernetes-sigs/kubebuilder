@@ -1,3 +1,4 @@
 https://kubebuilder.netlify.com/* https://book.kubebuilder.io/:splat 301!
 http://kubebuilder.netlify.com/* http://book.kubebuilder.io/:splat 301!
-
+https://go.kubebuilder.io/releases/* https://github.com/kubernetes-sigs/kubebuilder/releases/:splat 302!
+http://go.kubebuilder.io/releases/* https://github.com/kubernetes-sigs/kubebuilder/releases/:splat 302!
