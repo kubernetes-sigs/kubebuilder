@@ -1,4 +1,11 @@
 https://kubebuilder.netlify.com/* https://book.kubebuilder.io/:splat 301!
 http://kubebuilder.netlify.com/* http://book.kubebuilder.io/:splat 301!
-https://go.kubebuilder.io/releases/* https://github.com/kubernetes-sigs/kubebuilder/releases/:splat 302!
-http://go.kubebuilder.io/releases/* https://github.com/kubernetes-sigs/kubebuilder/releases/:splat 302!
+
+http://go.kubebuilder.io/* https://go.kubebuilder.io/:splat 301!
+
+https://go.kubebuilder.io/dl/* https://go.kubebuilder.io/releases/:splat 301!
+
+https://go.kubebuilder.io/releases https://github.com/kubernetes-sigs/kubebuilder/releases 302!
+https://go.kubebuilder.io/releases/:version https://github.com/kubernetes-sigs/kubebuilder/releases/v:version 302!
+https://go.kubebuilder.io/releases/:version/:os https://go.kubebuilder.io/releases/:version/:os/amd64 302!
+https://go.kubebuilder.io/releases/:version/:os/:arch https://github.com/kubernetes-sigs/kubebuilder/releases/download/v:version/kubebuilder_:version_:os_:arch.tar.gz 302!
