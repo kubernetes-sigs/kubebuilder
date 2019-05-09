@@ -116,7 +116,11 @@ function fetch_tools {
   if [ -n "$SKIP_FETCH_TOOLS" ]; then
     return 0
   fi
+  fetch_go_tools
+  fetch_kb_tools
+}
 
+function fetch_kb_tools {
   header_text "fetching tools"
   kb_tools_archive_name="kubebuilder-tools-$k8s_version-$goos-$goarch.tar.gz"
   kb_tools_download_url="https://storage.googleapis.com/kubebuilder-tools/$kb_tools_archive_name"
@@ -138,7 +142,32 @@ function build_kb {
     opts=-ldflags "-X sigs.k8s.io/kubebuilder/cmd/version.kubeBuilderVersion=$INJECT_KB_VERSION"
   fi
 
-  go build $opts -o $tmp_root/kubebuilder/bin/kubebuilder ./cmd
+  GO111MODULE=on go build $opts -o $tmp_root/kubebuilder/bin/kubebuilder ./cmd
+}
+
+function fetch_go_tools {
+  header_text "Checking for dep"
+  export PATH=$(go env GOPATH)/src/github.com/golang/dep/bin:$PATH
+  if ! is_installed dep ; then
+    header_text "Installing dep"
+    DEP_DIR=$(go env GOPATH)/src/github.com/golang/dep
+    mkdir -p $DEP_DIR
+    pushd $DEP_DIR
+    git clone https://github.com/golang/dep.git .
+    DEP_LATEST=$(git describe --abbrev=0 --tags)
+    git checkout $DEP_LATEST
+    mkdir bin
+    go build -ldflags="-X main.version=$DEP_LATEST" -o bin/dep ./cmd/dep
+    popd
+  fi
+
+}
+
+function is_installed {
+  if command -v $1 &>/dev/null; then
+    return 0
+  fi
+  return 1
 }
 
 function prepare_testdir_under_gopath {

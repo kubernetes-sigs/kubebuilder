@@ -77,6 +77,12 @@ curl -L "$URL"| tar xz -C $TMP_DIR
 echo "Downloaded executable files"
 ls "${KUBEBUILDER_VERSION_NAME}_${OSEXT}_${ARCH}/bin"
 
+if [[ -z "${PROW}" ]]; then 
+  MOVE="sudo mv"
+else
+  MOVE="mv"
+fi
+
 echo "Moving files to $KUBEBUILDER_DIR folder\n"
 mv ${KUBEBUILDER_VERSION_NAME}_${OSEXT}_${ARCH} kubebuilder && sudo mv -f kubebuilder /usr/local/
 
