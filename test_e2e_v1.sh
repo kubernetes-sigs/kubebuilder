@@ -19,6 +19,8 @@ set -o pipefail
 
 source common.sh
 
+export E2E="true"
+
 fetch_tools
 build_kb
 

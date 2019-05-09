@@ -117,6 +117,10 @@ function fetch_tools {
   fi
   fetch_go_tools
   fetch_kb_tools
+  IS_E2E=${E2E:-""}
+  if [ -n "$IS_E2E" ]; then
+    fetch_kind
+  fi
 }
 
 function fetch_kb_tools {
@@ -144,6 +148,14 @@ function build_kb {
   GO111MODULE=on go build $opts -o $tmp_root/kubebuilder/bin/kubebuilder ./cmd
 }
 
+function fetch_kind {
+  header_text "Checking for kind"
+  if ! is_installed kind ; then
+    header_text "Installing kind"
+    GO111MODULE=on go get sigs.k8s.io/kind@v0.5.1
+  fi
+}
+
 function fetch_go_tools {
   header_text "Checking for dep"
   export PATH=$(go env GOPATH)/src/github.com/golang/dep/bin:$PATH
@@ -159,7 +171,6 @@ function fetch_go_tools {
     go build -ldflags="-X main.version=$DEP_LATEST" -o bin/dep ./cmd/dep
     popd
   fi
-
 }
 
 function is_installed {
