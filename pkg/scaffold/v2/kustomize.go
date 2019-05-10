@@ -66,12 +66,12 @@ namePrefix: {{.Prefix}}-
 #  someName: someValue
 
 bases:
-- ../crds
+- ../crd
 - ../rbac
 - ../manager
-- ../webhook
+# - ../webhook
 # Comment the next line if you want to disable cert-manager
-- ../certmanager
+# - ../certmanager
 
 patches:
 - manager_image_patch.yaml

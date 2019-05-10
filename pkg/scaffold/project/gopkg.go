@@ -146,7 +146,7 @@ name="{{ .Name }}"
 
 [[constraint]]
   name="sigs.k8s.io/controller-runtime"
-  version="v0.1.1"
+  version="v0.1.8"
 
 [[constraint]]
   name="sigs.k8s.io/controller-tools"

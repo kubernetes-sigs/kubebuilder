@@ -5,7 +5,7 @@ os:
   - osx
 
 go:
-- "1.11"
+- "1.12"
 
 git:
   depth: 3
@@ -28,7 +28,7 @@ install:
   -
 
 script:
-- TRACE=1 ./test.sh
+- GO111MODULE=on TRACE=1 ./test.sh
 - ./scripts/install_test.sh
 
 # TBD. Suppressing for now.

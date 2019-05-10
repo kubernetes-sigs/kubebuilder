@@ -29,7 +29,6 @@ import (
 
 	"golang.org/x/tools/imports"
 	yaml "gopkg.in/yaml.v2"
-	"sigs.k8s.io/controller-tools/pkg/util"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
 )
@@ -53,6 +52,8 @@ type Scaffold struct {
 	ProjectPath string
 
 	GetWriter func(path string) (io.Writer, error)
+
+	FileExists func(path string) bool
 }
 
 func (s *Scaffold) setFieldsAndValidate(t input.File) error {
@@ -140,7 +141,13 @@ func (s *Scaffold) defaultOptions(options *input.Options) error {
 // Execute executes scaffolding the Files
 func (s *Scaffold) Execute(options input.Options, files ...input.File) error {
 	if s.GetWriter == nil {
-		s.GetWriter = (&util.FileWriter{}).WriteCloser
+		s.GetWriter = (&FileWriter{}).WriteCloser
+	}
+	if s.FileExists == nil {
+		s.FileExists = func(path string) bool {
+			_, err := os.Stat(path)
+			return err == nil
+		}
 	}
 
 	if err := s.defaultOptions(&options); err != nil {
@@ -182,7 +189,7 @@ func (s *Scaffold) doFile(e input.File) error {
 	}
 
 	// Check if the file to write already exists
-	if _, err := os.Stat(i.Path); err == nil {
+	if s.FileExists(i.Path) {
 		switch i.IfExistsAction {
 		case input.Overwrite:
 		case input.Skip:

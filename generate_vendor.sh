@@ -34,7 +34,7 @@ fi
 
 build_kb() {
 	rm -f /tmp/kb && \
-	go build -o /tmp/kb sigs.k8s.io/kubebuilder/cmd
+	GO111MODULE=on go build -o /tmp/kb sigs.k8s.io/kubebuilder/cmd
 }
 
 

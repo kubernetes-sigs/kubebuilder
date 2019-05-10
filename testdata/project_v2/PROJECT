@@ -1,0 +1,3 @@
+version: "2"
+domain: testproject.org
+repo: sigs.k8s.io/kubebuilder/testdata/project_v2

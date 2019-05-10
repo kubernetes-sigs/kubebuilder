@@ -48,16 +48,19 @@ func (a *AddToScheme) Validate() error {
 	return a.Resource.Validate()
 }
 
+// NB(directxman12): we need that package alias on the API import otherwise imports.Process
+// gets wicked (or hella, if you're feeling west-coasty) confused.
+
 var addResourceTemplate = `{{ .Boilerplate }}
 
 package apis
 
 import (
-	"{{ .Repo }}/pkg/apis/{{ .Resource.Group }}/{{ .Resource.Version }}"
+	api "{{ .Repo }}/pkg/apis/{{ .Resource.Group }}/{{ .Resource.Version }}"
 )
 
 func init() {
 	// Register the types with the Scheme so the components can map objects to GroupVersionKinds and back
-	AddToSchemes = append(AddToSchemes, {{ .Resource.Version }}.SchemeBuilder.AddToScheme)
+	AddToSchemes = append(AddToSchemes, api.SchemeBuilder.AddToScheme)
 }
 `

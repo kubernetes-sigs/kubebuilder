@@ -23,6 +23,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"go/build"
 
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
@@ -36,26 +37,25 @@ type TestResult struct {
 	// Actual is the bytes written to a scaffolded file.
 	Actual bytes.Buffer
 
-	// Golden is the golden file contents read from the controller-tools/test package
+	// Golden is the golden file contents read from the controller-tools/testdata package
 	Golden string
 }
 
 func getProjectRoot() string {
-	gopath := os.Getenv("GOPATH")
-	return path.Join(gopath, "src", "sigs.k8s.io", "kubebuilder")
+	return path.Join(build.Default.GOPATH, "src", "sigs.k8s.io", "kubebuilder")
 }
 
-// ProjectPath is the path to the controller-tools/test project file
+// ProjectPath is the path to the controller-tools/testdata project file
 func ProjectPath() string {
-	return filepath.Join(getProjectRoot(), "test", "project", "PROJECT")
+	return filepath.Join(getProjectRoot(), "testdata", "gopath", "src", "project", "PROJECT")
 }
 
-// BoilerplatePath is the path to the controller-tools/test boilerplate file
+// BoilerplatePath is the path to the controller-tools/testdata boilerplate file
 func BoilerplatePath() string {
-	return filepath.Join(getProjectRoot(), "test", "project", "hack", "boilerplate.go.txt")
+	return filepath.Join(getProjectRoot(), "testdata", "gopath", "src", "project", "hack", "boilerplate.go.txt")
 }
 
-// Options are the options for scaffolding in the controller-tools/test directory
+// Options are the options for scaffolding in the controller-tools/testdata directory
 func Options() input.Options {
 	return input.Options{
 		BoilerplatePath: BoilerplatePath(),
@@ -65,6 +65,7 @@ func Options() input.Options {
 
 // NewTestScaffold returns a new Scaffold and TestResult instance for testing
 func NewTestScaffold(writeToPath, goldenPath string) (*scaffold.Scaffold, *TestResult) {
+	projRoot := getProjectRoot()
 	r := &TestResult{}
 	// Setup scaffold
 	s := &scaffold.Scaffold{
@@ -73,11 +74,20 @@ func NewTestScaffold(writeToPath, goldenPath string) (*scaffold.Scaffold, *TestR
 			gomega.Expect(path).To(gomega.Equal(writeToPath))
 			return &r.Actual, nil
 		},
-		ProjectPath: filepath.Join(getProjectRoot(), "test", "project"),
+		FileExists: func(path string) bool {
+			return path != writeToPath
+		},
+		ProjectPath: filepath.Join(projRoot, "testdata", "gopath", "src", "project"),
+	}
+	oldGoPath := build.Default.GOPATH
+	build.Default.GOPATH = filepath.Join(projRoot, "testdata", "gopath")
+	defer func() { build.Default.GOPATH = oldGoPath }()
+	if _, err := os.Stat(build.Default.GOPATH); err != nil {
+		panic(err)
 	}
 
 	if len(goldenPath) > 0 {
-		b, err := ioutil.ReadFile(filepath.Join(getProjectRoot(), "test", "project", goldenPath))
+		b, err := ioutil.ReadFile(filepath.Join(projRoot, "testdata", "gopath", "src", "project", goldenPath))
 		gomega.Expect(err).NotTo(gomega.HaveOccurred())
 		r.Golden = string(b)
 	}

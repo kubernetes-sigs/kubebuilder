@@ -34,7 +34,6 @@ import (
 
 var Domain string
 var Repo string
-var GoSrc string
 
 // writeIfNotFound returns true if the file was created and false if it already exists
 func WriteIfNotFound(path, templateName, templateValue string, data interface{}) bool {

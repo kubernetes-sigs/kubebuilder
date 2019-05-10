@@ -27,9 +27,6 @@ type Makefile struct {
 	input.Input
 	// Image is controller manager image name
 	Image string
-
-	// path for controller-tools pkg
-	ControllerToolsPath string
 }
 
 // GetInput implements input.File
@@ -40,9 +37,6 @@ func (c *Makefile) GetInput() (input.Input, error) {
 	if c.Image == "" {
 		c.Image = "controller:latest"
 	}
-	if c.ControllerToolsPath == "" {
-		c.ControllerToolsPath = "vendor/sigs.k8s.io/controller-tools"
-	}
 	c.TemplateBody = makefileTemplate
 	c.Input.IfExistsAction = input.Error
 	return c.Input, nil
@@ -51,8 +45,10 @@ func (c *Makefile) GetInput() (input.Input, error) {
 var makefileTemplate = `
 # Image URL to use all building/pushing image targets
 IMG ?= {{ .Image }}
+# Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
+CRD_OPTIONS ?= "crd:trivialVersions=true"
 
-all: test manager
+all: manager
 
 # Run tests
 test: generate fmt vet manifests
@@ -68,34 +64,28 @@ run: generate fmt vet
 
 # Install CRDs into a cluster
 install: manifests
-	kubectl apply -f config/crds/bases
+	kubectl apply -f config/crd/bases
 
 # Deploy controller in the configured Kubernetes cluster in ~/.kube/config
 deploy: manifests
-	kubectl apply -f config/crds/bases
+	kubectl apply -f config/crd/bases
 	kustomize build config/default | kubectl apply -f -
 
 # Generate manifests e.g. CRD, RBAC etc.
-manifests:
-# TODO(droot): controller-gen will require fix to take new api-path as input, so disabling this for now
-# 
-#	go run {{ .ControllerToolsPath }}/cmd/controller-gen/main.go all --output-dir=config/crds/bases/
+manifests: controller-gen
+	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./api/...;./controllers/..." output:crd:artifacts:config=config/crd/bases
 
 # Run go fmt against code
 fmt:
-	go fmt ./api/... ./controllers/...
+	go fmt ./...
 
 # Run go vet against code
 vet:
-	go vet ./api/... ./controllers/...
+	go vet ./...
 
 # Generate code
-generate:
-ifndef GOPATH
-	$(error GOPATH not defined, please define GOPATH. Run "go help gopath" to learn more about GOPATH)
-endif
-	go run ./vendor/k8s.io/code-generator/cmd/deepcopy-gen/main.go -O zz_generated.deepcopy --go-header-file ./hack/boilerplate.go.txt -i ./api/...
-	
+generate: controller-gen
+	$(CONTROLLER_GEN) object:headerFile=./hack/boilerplate.go.txt paths=./api/...
 
 # Build the docker image
 docker-build: test
@@ -106,4 +96,14 @@ docker-build: test
 # Push the docker image
 docker-push:
 	docker push ${IMG}
+
+# find or download controller-gen
+# download controller-gen if necessary
+controller-gen:
+ifeq (, $(shell which controller-gen))
+	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.2.0-alpha.1
+CONTROLLER_GEN=$(shell go env GOPATH)/bin/controller-gen
+else
+CONTROLLER_GEN=$(shell which controller-gen)
+endif
 `

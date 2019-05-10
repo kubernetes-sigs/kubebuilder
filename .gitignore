@@ -12,3 +12,7 @@ docs/book/node_modules/
 
 # skip bin
 bin/*
+
+# skip testdata gopath non-src
+/testdata/gopath/bin
+/testdata/gopath/pkg

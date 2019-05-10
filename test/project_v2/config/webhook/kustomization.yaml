@@ -1,5 +1,0 @@
-resources:
-- webhookmanifests.yaml
-
-configurations:
-- kustomizeconfig.yaml

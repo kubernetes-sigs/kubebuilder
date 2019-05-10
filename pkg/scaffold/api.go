@@ -148,18 +148,13 @@ func (api *API) scaffoldV2() error {
 
 		err := (&Scaffold{}).Execute(
 			input.Options{},
-			&resourcev2.ResourceDoc{
-				Input: input.Input{
-					Path: filepath.Join("api", r.Version, "doc.go"),
-				},
-				Resource: r},
-			&resourcev1.Types{
+			&resourcev2.Types{
 				Input: input.Input{
 					Path: filepath.Join("api", r.Version, fmt.Sprintf("%s_types.go", strings.ToLower(r.Kind))),
 				},
 				Resource: r},
 			&resourcev2.Group{Resource: r},
-			&resourcev1.CRDSample{Resource: r},
+			&resourcev2.CRDSample{Resource: r},
 			&crdv2.EnableWebhookPatch{Resource: r},
 		)
 		if err != nil {

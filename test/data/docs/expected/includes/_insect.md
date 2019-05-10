@@ -1,5 +1,0 @@
-
-# <strong>Insect</strong>
-
-------------
-
