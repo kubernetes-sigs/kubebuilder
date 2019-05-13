@@ -23,7 +23,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	crewv1 "sigs.k8s.io/kubebuilder/testdata/project_v2/api/v1"
+	crewv1 "sigs.k8s.io/kubebuilder/testdata/project-v2/api/v1"
 )
 
 // CaptainReconciler reconciles a Captain object

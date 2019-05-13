@@ -1,12 +1,12 @@
 # Adds namespace to all resources.
-namespace: project_v2-system
+namespace: project-v2-system
 
 # Value of this field is prepended to the
 # names of all resources, e.g. a deployment named
 # "wordpress" becomes "alices-wordpress".
 # Note that it should also match with the prefix (text before '-') of the namespace
 # field above.
-namePrefix: project_v2-
+namePrefix: project-v2-
 
 # Labels to add to all resources and selectors.
 #commonLabels:
