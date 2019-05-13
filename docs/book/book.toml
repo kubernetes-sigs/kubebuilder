@@ -1,0 +1,12 @@
+[book]
+authors = ["The Kubebuilder Maintainers"]
+multilingual = false
+src = "src"
+title = "The Kubebuilder Book"
+
+[output.html]
+google-analytics = "UA-119864590-1"
+curly-quotes = true
+
+[preprocessor.literatego]
+command = "./litgo.sh"
