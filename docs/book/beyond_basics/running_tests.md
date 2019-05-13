@@ -42,7 +42,7 @@ make test
 To override the test binaries used to start the control plane, set the `TEST_ASSET_` environment variables.
 This can be useful for performing testing against multiple Kubernetes cluster versions.
 
-If these environment variables are unset, kubebuiler will default to the binaries packaged with kubebuilder.
+If these environment variables are unset, kubebuilder will default to the binaries packaged with kubebuilder.
 
 {% sample lang="shell" %}
 ```bash
