@@ -102,14 +102,5 @@ spec:
         - containerPort: 9876
           name: webhook-server
           protocol: TCP
-        volumeMounts:
-        - mountPath: /tmp/cert
-          name: cert
-          readOnly: true
       terminationGracePeriodSeconds: 10
-      volumes:
-      - name: cert
-        secret:
-          defaultMode: 420
-          secretName: webhook-server-secret
 `
