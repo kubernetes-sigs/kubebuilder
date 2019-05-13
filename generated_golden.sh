@@ -30,7 +30,7 @@ build_kb() {
 scaffold_test_project() {
 	project=$1
 	version=$2
-    testdata_dir=$(pwd)/testdata
+	testdata_dir=$(pwd)/testdata
 	mkdir -p ./testdata/$project
 	rm -rf ./testdata/$project/*
 	pushd . 
@@ -38,14 +38,14 @@ scaffold_test_project() {
 
 	kb=$testdata_dir/../bin/kubebuilder
 
-    oldgopath=$GOPATH
+	oldgopath=$GOPATH
 	if [ $version == "1" ]; then
-        export GO111MODULE=auto
-        export GOPATH=$(pwd)/../.. # go ignores vendor under testdata, so fake out a gopath
-        # untar Gopkg.lock and vendor directory for appropriate project version
-        tar -zxf $testdata_dir/vendor.v$version.tgz
+		export GO111MODULE=auto
+		export GOPATH=$(pwd)/../.. # go ignores vendor under testdata, so fake out a gopath
+		# untar Gopkg.lock and vendor directory for appropriate project version
+		tar -zxf $testdata_dir/vendor.v$version.tgz
 
-        $kb init --project-version $version --domain testproject.org --license apache2 --owner "The Kubernetes authors" --dep=false
+		$kb init --project-version $version --domain testproject.org --license apache2 --owner "The Kubernetes authors" --dep=false
 		$kb create api --group crew --version v1 --kind FirstMate --controller=true --resource=true --make=false
 		$kb alpha webhook --group crew --version v1 --kind FirstMate --type=mutating --operations=create,update --make=false
 		$kb alpha webhook --group crew --version v1 --kind FirstMate --type=mutating --operations=delete --make=false
@@ -57,11 +57,11 @@ scaffold_test_project() {
 		$kb alpha webhook --group core --version v1 --kind Namespace --type=mutating --operations=update --make=false
 		$kb create api --group policy --version v1beta1 --kind HealthCheckPolicy --example=false --controller=true --resource=true --namespaced=false --make=false
 	elif [ $version == "2" ]; then
-        export GO111MODULE=on
-        export PATH=$PATH:$(go env GOPATH)/bin
-        go mod init sigs.k8s.io/kubebuilder/testdata/project_v2  # our repo autodetection will traverse up to the kb module if we don't do this
+		export GO111MODULE=on
+		export PATH=$PATH:$(go env GOPATH)/bin
+		go mod init sigs.k8s.io/kubebuilder/testdata/project-v2  # our repo autodetection will traverse up to the kb module if we don't do this
 
-        $kb init --project-version $version --domain testproject.org --license apache2 --owner "The Kubernetes authors"
+		$kb init --project-version $version --domain testproject.org --license apache2 --owner "The Kubernetes authors"
 		$kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false
 		$kb create api --group crew --version v1 --kind FirstMate --controller=true --resource=true --make=false
 		$kb alpha webhook --group crew --version v1 --kind FirstMate --type=mutating --operations=create,update --make=false
@@ -77,11 +77,11 @@ scaffold_test_project() {
 	rm -f Gopkg.lock
 	rm -rf ./vendor
 	rm -rf ./bin
-    export GOPATH=$oldgopath
+	export GOPATH=$oldgopath
 	popd
 }
 
 set -e
 build_kb
 scaffold_test_project gopath/src/project 1
-scaffold_test_project project_v2 2
+scaffold_test_project project-v2 2

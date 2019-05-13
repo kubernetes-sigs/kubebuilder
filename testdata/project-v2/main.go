@@ -25,8 +25,8 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	crewv1 "sigs.k8s.io/kubebuilder/testdata/project_v2/api/v1"
-	"sigs.k8s.io/kubebuilder/testdata/project_v2/controllers"
+	crewv1 "sigs.k8s.io/kubebuilder/testdata/project-v2/api/v1"
+	"sigs.k8s.io/kubebuilder/testdata/project-v2/controllers"
 	// +kubebuilder:scaffold:imports
 )
 

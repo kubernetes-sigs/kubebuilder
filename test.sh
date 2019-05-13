@@ -154,6 +154,6 @@ go test ./cmd/... ./pkg/...
 GO111MODULE=auto test_project gopath/src/project 1
 
 # test project v2
-GO111MODULE=on test_project project_v2 2
+GO111MODULE=on test_project project-v2 2
 
 exit $rc

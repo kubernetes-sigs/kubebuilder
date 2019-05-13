@@ -12,6 +12,15 @@ spec:
         - containerPort: 443
           name: webhook-server
           protocol: TCP
+        volumeMounts:
+        - mountPath: /tmp/cert
+          name: cert
+          readOnly: true
+      volumes:
+      - name: cert
+        secret:
+          defaultMode: 420
+          secretName: webhook-server-secret
 ---
 apiVersion: v1
 kind: Service
