@@ -20,7 +20,7 @@ go_import_path: sigs.k8s.io/kubebuilder
 
 before_install:
 - go get -u github.com/golang/dep/cmd/dep
-- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install git-lfs ; fi
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then curl -sL https://github.com/git-lfs/git-lfs/releases/download/v2.7.2/git-lfs-darwin-amd64-v2.7.2.tar.gz | tar -xz git-lfs; fi
 
 before_script:
  - git lfs install
