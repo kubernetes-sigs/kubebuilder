@@ -1,0 +1,5 @@
+[build]
+    base = "docs/book"
+    command = "gitbook install && gitbook build"
+    publish = "docs/book/_book"
+
