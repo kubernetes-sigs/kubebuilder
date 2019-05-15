@@ -39,13 +39,13 @@ ENV KUBE_BUILD_PLATFORMS darwin/amd64
 RUN make WHAT=cmd/kube-apiserver && \
     cp _output/local/bin/$KUBE_BUILD_PLATFORMS/kube-apiserver $DEST
 
-RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.14.1/bin/darwin/amd64/kubectl && \
+RUN curl -sLO https://storage.googleapis.com/kubernetes-release/release/v1.14.1/bin/darwin/amd64/kubectl && \
     chmod +x kubectl && \
     cp kubectl $DEST
 
 ENV ETCD_VERSION="3.3.11"
 ENV ETCD_DOWNLOAD_FILE="etcd-v${ETCD_VERSION}-darwin-amd64.zip"
-RUN curl -LO https://github.com/coreos/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-darwin-amd64.zip -o ${ETCD_DOWNLOAD_FILE} && \
+RUN curl -sLO https://github.com/coreos/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-darwin-amd64.zip -o ${ETCD_DOWNLOAD_FILE} && \
     unzip -o ${ETCD_DOWNLOAD_FILE} && \
     cp etcd-v${ETCD_VERSION}-darwin-amd64/etcd $DEST
 
