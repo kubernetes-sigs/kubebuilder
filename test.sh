@@ -21,7 +21,7 @@ source common.sh
 
 function test_init_project {
   header_text "performing init project"
-  kubebuilder init --domain example.com <<< "n"
+  kubebuilder init --project-version 1 --domain example.com <<< "n"
 }
 
 function test_make_project {
