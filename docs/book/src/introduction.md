@@ -1,7 +1,8 @@
 **Note:** Impatient readers may head straight to [Quick
 Start](quick-start.md).
 
-**Using Kubebuilder v1? Check the [legacy documentation](https://v1.book.kubebuilder.io)**
+**Using Kubebuilder v1? Check the [legacy
+documentation](https://book-v1.book.kubebuilder.io)**
 
 ## Who is this for
 
