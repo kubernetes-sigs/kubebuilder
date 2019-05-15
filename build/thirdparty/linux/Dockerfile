@@ -18,7 +18,7 @@
 # - etcd (fetch)
 
 # no need for anything fancy
-FROM alpine:3.8
+FROM alpine:3.8 as linux
 # Install tools
 ENV DEST /usr/local/kubebuilder/bin/
 
