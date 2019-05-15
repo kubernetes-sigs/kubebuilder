@@ -15,6 +15,8 @@
 steps:
 - name: "gcr.io/cloud-builders/docker"
   args: ["build", "-t", "gcr.io/kubebuilder/thirdparty-${_GOOS}:1.14.1", "./build/thirdparty/${_GOOS}"]
+  # darwin takes forever
+  timeout: 30m
 
 - name: "gcr.io/kubebuilder/thirdparty-${_GOOS}:1.14.1"
   args: ["cp", "/kubebuilder_${_GOOS}_${_GOARCH}.tar.gz", "/workspace/kubebuilder-1.14.1-${_GOOS}-${_GOARCH}.tar.gz"]
@@ -27,3 +29,5 @@ steps:
   - 'GOOS=${_GOOS}'
   - 'GOARCH=${_GOARCH}'
 images: ["gcr.io/kubebuilder/thirdparty-${_GOOS}:1.14.1"]
+# darwin takes forever
+timeout: 30m
