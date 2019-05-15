@@ -64,13 +64,10 @@ scaffold_test_project() {
 		$kb init --project-version $version --domain testproject.org --license apache2 --owner "The Kubernetes authors"
 		$kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false
 		$kb create api --group crew --version v1 --kind FirstMate --controller=true --resource=true --make=false
-		$kb alpha webhook --group crew --version v1 --kind FirstMate --type=mutating --operations=create,update --make=false
-		$kb alpha webhook --group crew --version v1 --kind FirstMate --type=mutating --operations=delete --make=false
 		# TODO(droot): Adding a second group is a valid test case and kubebuilder is expected to report an error in this case. It
 		# doesn't do that currently so leaving it commented so that we can enable it later.
 		# $kb create api --group ship --version v1beta1 --kind Frigate --example=false --controller=true --resource=true --make=false
 		$kb create api --group core --version v1 --kind Namespace --example=false --controller=true --resource=false --namespaced=false --make=false
-		$kb alpha webhook --group core --version v1 --kind Namespace --type=mutating --operations=update --make=false
 		# $kb create api --group policy --version v1beta1 --kind HealthCheckPolicy --example=false --controller=true --resource=true --namespaced=false --make=false
 	fi
 	make all test # v2 doesn't test by default

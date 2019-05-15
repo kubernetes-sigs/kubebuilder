@@ -39,6 +39,7 @@ func (p *Kustomization) GetInput() (input.Input, error) {
 var kustomizationTemplate = `resources:
 - certificate.yaml
 
+# the following config is for teaching kustomize how to do var substitution
 vars:
 - name: CERTIFICATENAME
   objref:
@@ -46,6 +47,14 @@ vars:
     group: certmanager.k8s.io
     version: v1alpha1
     name: serving-cert # this name should match the one in certificate.yaml
+- name: CERTIFICATENAMESPACE
+  objref:
+    kind: Certificate
+    group: certmanager.k8s.io
+    version: v1alpha1
+    name: serving-cert # this name should match the one in certificate.yaml
+  fieldref:
+    fieldpath: metadata.namespace
 
 configurations:
 - kustomizeconfig.yaml

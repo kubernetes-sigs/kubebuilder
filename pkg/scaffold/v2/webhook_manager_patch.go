@@ -18,6 +18,7 @@ package v2
 
 import (
 	"path/filepath"
+
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 )
 
@@ -50,22 +51,12 @@ spec:
           name: webhook-server
           protocol: TCP
         volumeMounts:
-        - mountPath: /tmp/cert
+        - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
           readOnly: true
       volumes:
       - name: cert
         secret:
           defaultMode: 420
-          secretName: webhook-server-secret
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: webhook-service
-  namespace: system
-spec:
-  ports:
-  - port: 443
-    targetPort: 443
+          secretName: webhook-server-cert
 `

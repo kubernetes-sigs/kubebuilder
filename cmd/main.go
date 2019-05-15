@@ -17,11 +17,11 @@ limitations under the License.
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
-	"log"
-	"encoding/json"
 
 	"github.com/spf13/cobra"
 	"golang.org/x/tools/go/packages"
@@ -77,7 +77,7 @@ func findCurrentRepo() (string, error) {
 
 	// next, check if we've got a package in the current directory
 	pkgCfg := &packages.Config{
-		Mode: packages.NeedName,  // name gives us path as well
+		Mode: packages.NeedName, // name gives us path as well
 	}
 	pkgs, err := packages.Load(pkgCfg, ".")
 	if err == nil && len(pkgs) > 0 {

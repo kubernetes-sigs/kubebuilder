@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package manager
+package webhook
 
 import (
 	"path/filepath"
@@ -22,23 +22,31 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 )
 
-var _ input.File = &Kustomization{}
+var _ input.File = &Service{}
 
-// Kustomization scaffolds the Kustomization file in manager folder.
-type Kustomization struct {
+// Service scaffolds the Service file in manager folder.
+type Service struct {
 	input.Input
 }
 
 // GetInput implements input.File
-func (c *Kustomization) GetInput() (input.Input, error) {
+func (c *Service) GetInput() (input.Input, error) {
 	if c.Path == "" {
-		c.Path = filepath.Join("config", "manager", "kustomization.yaml")
+		c.Path = filepath.Join("config", "webhook", "service.yaml")
 	}
-	c.TemplateBody = kustomizeManagerTemplate
+	c.TemplateBody = ServiceTemplate
 	c.Input.IfExistsAction = input.Error
 	return c.Input, nil
 }
 
-var kustomizeManagerTemplate = `resources:
-- manager.yaml
+var ServiceTemplate = `
+apiVersion: v1
+kind: Service
+metadata:
+  name: webhook-service
+  namespace: system
+spec:
+  ports:
+    - port: 443
+      targetPort: 443
 `

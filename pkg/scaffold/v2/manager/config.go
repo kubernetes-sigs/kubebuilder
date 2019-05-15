@@ -98,9 +98,5 @@ spec:
           requests:
             cpu: 100m
             memory: 20Mi
-        ports:
-        - containerPort: 9876
-          name: webhook-server
-          protocol: TCP
       terminationGracePeriodSeconds: 10
 `

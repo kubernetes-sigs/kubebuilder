@@ -17,21 +17,21 @@ limitations under the License.
 package scaffold
 
 import (
+	"bufio"
+	"fmt"
 	"os"
 	"os/exec"
-	"fmt"
 	"strings"
-	"bufio"
 
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/manager"
 
+	"sigs.k8s.io/kubebuilder/cmd/util"
 	scaffoldv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v2/certmanager"
 	managerv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2/manager"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v2/webhook"
-	"sigs.k8s.io/kubebuilder/cmd/util"
 )
 
 type ProjectScaffolder interface {
@@ -41,10 +41,10 @@ type ProjectScaffolder interface {
 }
 
 type V1Project struct {
-	Project project.Project
+	Project     project.Project
 	Boilerplate project.Boilerplate
 
-	DepArgs []string
+	DepArgs          []string
 	DefinitelyEnsure *bool
 }
 
@@ -129,7 +129,7 @@ func (p *V1Project) Scaffold() error {
 }
 
 type V2Project struct {
-	Project project.Project
+	Project     project.Project
 	Boilerplate project.Boilerplate
 }
 
