@@ -17,38 +17,41 @@
 # - kubectl (fetch)
 # - etcd (fetch)
 
-FROM golang:1.11.2-stretch as darwin
+FROM golang:1.12.5-stretch as darwin
 # Install tools
-RUN apt update
-RUN apt install rsync -y
-RUN apt-get install unzip
-RUN go get github.com/jteeuwen/go-bindata/go-bindata
 ENV CGO 0
 ENV DEST /usr/local/kubebuilder/bin/
-RUN mkdir -p $DEST || echo ""
+
+RUN apt update && \
+    apt install rsync -y && \
+    apt-get install unzip && \
+    go get github.com/jteeuwen/go-bindata/go-bindata && \
+    ( mkdir -p $DEST || echo "" )
+
 RUN git clone https://github.com/kubernetes/kubernetes $GOPATH/src/k8s.io/kubernetes --depth=1 -b v1.14.1
+
 WORKDIR /go/src/k8s.io/kubernetes
 
 # Build for linux first otherwise it won't work for darwin - :(
 ENV KUBE_BUILD_PLATFORMS linux/amd64
 RUN make WHAT=cmd/kube-apiserver
 ENV KUBE_BUILD_PLATFORMS darwin/amd64
-RUN make WHAT=cmd/kube-apiserver
-RUN cp _output/local/bin/$KUBE_BUILD_PLATFORMS/kube-apiserver $DEST
+RUN make WHAT=cmd/kube-apiserver && \
+    cp _output/local/bin/$KUBE_BUILD_PLATFORMS/kube-apiserver $DEST
 
-RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.14.1/bin/darwin/amd64/kubectl
-RUN chmod +x kubectl
-RUN cp kubectl $DEST
+RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.14.1/bin/darwin/amd64/kubectl && \
+    chmod +x kubectl && \
+    cp kubectl $DEST
 
 ENV ETCD_VERSION="3.3.11"
 ENV ETCD_DOWNLOAD_FILE="etcd-v${ETCD_VERSION}-darwin-amd64.zip"
-RUN curl -LO https://github.com/coreos/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-darwin-amd64.zip -o ${ETCD_DOWNLOAD_FILE}
-RUN unzip -o ${ETCD_DOWNLOAD_FILE}
-RUN cp etcd-v${ETCD_VERSION}-darwin-amd64/etcd $DEST
+RUN curl -LO https://github.com/coreos/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-darwin-amd64.zip -o ${ETCD_DOWNLOAD_FILE} && \
+    unzip -o ${ETCD_DOWNLOAD_FILE} && \
+    cp etcd-v${ETCD_VERSION}-darwin-amd64/etcd $DEST
 
 WORKDIR /usr/local
 RUN tar -czvf /kubebuilder_darwin_amd64.tar.gz kubebuilder/
 
 # Host the tar.gz file in a thin image
-FROM alpine:3.7
+FROM scratch
 COPY --from=darwin /kubebuilder_darwin_amd64.tar.gz /kubebuilder_darwin_amd64.tar.gz
