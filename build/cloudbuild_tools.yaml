@@ -15,7 +15,6 @@
 steps:
 - name: "gcr.io/cloud-builders/docker"
   args: ["build", "-t", "gcr.io/kubebuilder/thirdparty-${_GOOS}:1.14.1", "./build/thirdparty/${_GOOS}"]
-  images: ["gcr.io/kubebuilder/thirdparty-${_GOOS}:1.14.1"]
 
 - name: "gcr.io/kubebuilder/thirdparty-${_GOOS}:1.14.1"
   args: ["cp", "/kubebuilder_${_GOOS}_${_GOARCH}.tar.gz", "/workspace/kubebuilder-${TAG_NAME}-${_GOOS}-${_GOARCH}.tar.gz"]
@@ -27,3 +26,4 @@ steps:
   env:
   - 'GOOS=${_GOOS}'
   - 'GOARCH=${_GOARCH}'
+images: ["gcr.io/kubebuilder/thirdparty-${_GOOS}:1.14.1"]
