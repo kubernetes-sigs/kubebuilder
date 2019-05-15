@@ -42,5 +42,5 @@ RUN curl -sLO https://github.com/coreos/etcd/releases/download/v${ETCD_VERSION}/
 WORKDIR /usr/local
 RUN tar -czvf /kubebuilder_linux_amd64.tar.gz kubebuilder/
 
-FROM scratch
+FROM alpine:3.8
 COPY --from=linux /kubebuilder_linux_amd64.tar.gz /kubebuilder_linux_amd64.tar.gz
