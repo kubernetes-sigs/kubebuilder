@@ -3,3 +3,16 @@
     command = "gitbook install && gitbook build"
     publish = "docs/book/_book"
 
+# HTTP-to-HTTPS rules
+[[redirects]]
+    from = "http://v1.book.kubebuilder.io/*"
+    to = "https://v1.book.kubebuilder.io/:splat"
+    status = 301
+    force = true
+
+# Book v1
+[[redirects]]
+    from = "https://v1.book.kubebuilder.io/*"
+    to = "https://book-v1.book.kubebuilder.io/:splat"
+    status = 301
+    force = true
