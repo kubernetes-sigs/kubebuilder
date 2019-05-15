@@ -1,6 +1,9 @@
 https://kubebuilder.netlify.com/* https://book.kubebuilder.io/:splat 301!
 http://kubebuilder.netlify.com/* http://book.kubebuilder.io/:splat 301!
 
+http://v1.book.kubebuilder.io/* https://book-v1.book.kubebuilder.io/:splat 301!
+https://v1.book.kubebuilder.io/* https://book-v1.book.kubebuilder.io/:splat 301!
+
 http://go.kubebuilder.io/* https://go.kubebuilder.io/:splat 301!
 
 https://go.kubebuilder.io/dl/* https://go.kubebuilder.io/releases/:splat 301!
