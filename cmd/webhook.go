@@ -43,10 +43,11 @@ func newWebhookCmd() *cobra.Command {
 		Short: "Scaffold a webhook server",
 		Long: `Scaffold a webhook server if there is no existing server.
 Scaffolds webhook handlers based on group, version, kind and other user inputs.
+This command is only available for v1 scaffolding project.
 `,
 		Example: `	# Create webhook for CRD of group crew, version v1 and kind FirstMate.
 	# Set type to be mutating and operations to be create and update.
-	kubebuilder webhook --group crew --version v1 --kind FirstMate --type=mutating --operations=create,update
+	kubebuilder alpha webhook --group crew --version v1 --kind FirstMate --type=mutating --operations=create,update
 `,
 		Run: func(cmd *cobra.Command, args []string) {
 			dieIfNoProject()

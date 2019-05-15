@@ -69,9 +69,10 @@ bases:
 - ../crd
 - ../rbac
 - ../manager
-# - ../webhook
-# Comment the next line if you want to disable cert-manager
-# - ../certmanager
+# [WEBHOOK] Uncomment all the sections with [WEBHOOK] prefix to enable webhook.
+#- ../webhook
+# [CERTMANAGER] Uncomment next line to enable cert-manager
+#- ../certmanager
 
 patches:
 - manager_image_patch.yaml
@@ -86,9 +87,10 @@ patches:
   # manager_prometheus_metrics_patch.yaml should be enabled.
 #- manager_prometheus_metrics_patch.yaml
 
-# Uncomment the following patch to enable the CA injection in the admission webhooks.
-#- webhookcainjection_patch.yaml
-
-# Uncomment the following patch to enable the webhook for the manager.
+# [WEBHOOK] Uncomment all the sections with [WEBHOOK] prefix to enable webhook.
 #- manager_webhook_patch.yaml
+
+# [CAINJECTION] Uncomment next line to enable the CA injection in the admission webhooks. [CERTMANAGER] needs to be
+# enabled to use ca injection
+#- webhookcainjection_patch.yaml
 `

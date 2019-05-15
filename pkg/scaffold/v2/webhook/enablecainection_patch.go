@@ -46,12 +46,12 @@ kind: MutatingWebhookConfiguration
 metadata:
   name: mutating-webhook-configuration
   annotations:
-    certmanager.k8s.io/inject-ca-from: $(NAMESPACE)/$(CERTIFICATENAME)
+    certmanager.k8s.io/inject-ca-from: $(CERTIFICATENAMESPACE)/$(CERTIFICATENAME)
 ---
 apiVersion: admissionregistration.k8s.io/v1beta1
 kind: ValidatingWebhookConfiguration
 metadata:
   name: validating-webhook-configuration
   annotations:
-    certmanager.k8s.io/inject-ca-from: $(NAMESPACE)/$(CERTIFICATENAME)
+    certmanager.k8s.io/inject-ca-from: $(CERTIFICATENAMESPACE)/$(CERTIFICATENAME)
 `
