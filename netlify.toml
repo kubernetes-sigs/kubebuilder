@@ -1,0 +1,4 @@
+[build]
+    base = "docs/book"
+    command = "./install-and-build.sh"
+    publish = "docs/book/book"

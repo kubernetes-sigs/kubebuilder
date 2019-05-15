@@ -1,0 +1,40 @@
+# Adds namespace to all resources.
+namespace: project-system
+
+# Value of this field is prepended to the
+# names of all resources, e.g. a deployment named
+# "wordpress" becomes "alices-wordpress".
+# Note that it should also match with the prefix (text before '-') of the namespace
+# field above.
+namePrefix: project-
+
+# Labels to add to all resources and selectors.
+#commonLabels:
+#  someName: someValue
+
+bases:
+- ../crd
+- ../rbac
+- ../manager
+# - ../webhook
+# Comment the next line if you want to disable cert-manager
+# - ../certmanager
+
+patches:
+- manager_image_patch.yaml
+  # Protect the /metrics endpoint by putting it behind auth.
+  # Only one of manager_auth_proxy_patch.yaml and
+  # manager_prometheus_metrics_patch.yaml should be enabled.
+- manager_auth_proxy_patch.yaml
+  # If you want your controller-manager to expose the /metrics
+  # endpoint w/o any authn/z, uncomment the following line and
+  # comment manager_auth_proxy_patch.yaml.
+  # Only one of manager_auth_proxy_patch.yaml and
+  # manager_prometheus_metrics_patch.yaml should be enabled.
+#- manager_prometheus_metrics_patch.yaml
+
+# Uncomment the following patch to enable the CA injection in the admission webhooks.
+#- webhookcainjection_patch.yaml
+
+# Uncomment the following patch to enable the webhook for the manager.
+#- manager_webhook_patch.yaml

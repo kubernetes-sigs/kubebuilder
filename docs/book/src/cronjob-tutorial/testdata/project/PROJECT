@@ -1,0 +1,3 @@
+version: "2"
+domain: tutorial.kubebuilder.io
+repo: tutorial.kubebuilder.io/project
