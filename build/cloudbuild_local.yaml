@@ -34,4 +34,4 @@ steps:
 - name: "gcr.io/kubebuilder/goreleaser_with_go_1.12.5:0.0.1"
   args: ["bash", "build/build_kubebuilder.sh", "--snapshot"]
   env:
-   - 'KUBERNETES_VERSION=1.13.1'
+   - 'KUBERNETES_VERSION=1.14.1'
