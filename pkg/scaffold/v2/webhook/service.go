@@ -49,4 +49,7 @@ spec:
   ports:
     - port: 443
       targetPort: 443
+  selector:
+    control-plane: controller-manager
+    controller-tools.k8s.io: "1.0"
 `
