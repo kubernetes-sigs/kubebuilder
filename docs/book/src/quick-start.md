@@ -9,9 +9,6 @@ This Quick Start guide will cover:
 
 ## Installation
 
-Install [kustomize](https://sigs.k8s.io/kustomize).
-
-
 Install [kubebuilder](https://sigs.k8s.io/kubebuilder):
 
 ```bash
@@ -25,6 +22,16 @@ curl -sL https://go.kubebuilder.io/dl/2.0.0/${os}/${arch} | tar -xz -C /tmp/kube
 # (you'll need to set the KUBEBUILDER_ASSETS env var if you put it somewhere else)
 sudo mv /tmp/kubebuilder/kubebuilder_2.0.0_${os}_${arch} /user/local/kubebuilder
 export PATH=$PATH:/usr/local/kubebuilder/bin
+```
+
+Install [kustomize](https://sigs.k8s.io/kustomize):
+
+```bash
+os=$(go env GOOS)
+arch=$(go env GOARCH)
+
+# download kustomize to the kubebuilder assets folder
+curl -o /usr/local/kubebuilder/bin/kustomize -sL https://go.kubebuilder.io/dl/latest/${os}/${arch}
 ```
 
 ## Create a Project
