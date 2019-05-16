@@ -11,6 +11,7 @@ builds:
    - amd64
   env:
    - CGO_ENABLED=0
+   - GO111MODULE=on
 archive:
   files:
     - "/workspace/_output/{{ .Os }}_{{ .Arch }}/kubebuilder/bin/*"
