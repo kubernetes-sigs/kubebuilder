@@ -44,13 +44,32 @@
     force = true
 
 [[redirects]]
+    from = "https://go.kubebuilder.io/releases/latest/:os"
+    to = "https://go.kubebuilder.io/releases/latest/:os/amd64"
+    status = 302
+    force = true
+
+[[redirects]]
     from = "https://go.kubebuilder.io/releases/:version/:os"
     to = "https://go.kubebuilder.io/releases/:version/:os/amd64"
     status = 302
     force = true
 
 [[redirects]]
+    from = "https://go.kubebuilder.io/releases/latest/:os/:arch"
+    to = "https://storage.googleapis.com/kubebuilder-release/kubebuilder_master_:os_:arch.tar.gz"
+    status = 302
+    force = true
+
+[[redirects]]
     from = "https://go.kubebuilder.io/releases/:version/:os/:arch"
     to = "https://github.com/kubernetes-sigs/kubebuilder/releases/download/v:version/kubebuilder_:version_:os_:arch.tar.gz"
+    status = 302
+    force = true
+
+# TODO(directxman12): change this to standard kustomize when the next version is released (2.1.0) 
+[[redirects]]
+    from = "https://go.kubebuilder.io/kustomize/:os/:arch"
+    to = "https://storage.googleapis.com/kubebuilder-kustomize/kustomize_:os_:arch"
     status = 302
     force = true
