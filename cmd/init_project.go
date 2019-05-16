@@ -106,7 +106,7 @@ func (o *projectOptions) bindCmdlineFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&o.project.Repo, "repo", util.Repo, "name of the github repo.  "+
 		"defaults to the go package of the current working directory.")
 	cmd.Flags().StringVar(&o.project.Domain, "domain", "k8s.io", "domain for groups")
-	cmd.Flags().StringVar(&o.project.Version, "project-version", project.Version1, "project version")
+	cmd.Flags().StringVar(&o.project.Version, "project-version", project.Version2, "project version")
 }
 
 func (o *projectOptions) initializeProject() {
