@@ -24,6 +24,9 @@ sudo mv /tmp/kubebuilder/kubebuilder_2.0.0_${os}_${arch} /user/local/kubebuilder
 export PATH=$PATH:/usr/local/kubebuilder/bin
 ```
 
+You can also install a KubeBuilder master snapshot from
+`https://go.kubebuilder.io/dl/latest/${os}/${arch}`.
+
 Install [kustomize](https://sigs.k8s.io/kustomize):
 
 ```bash
