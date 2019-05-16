@@ -43,7 +43,7 @@ Including:
 
 * Repository: [sigs.k8s.io/kubebuilder](https://sigs.k8s.io/kubebuilder)
 
-* Slack channel: [#kubeuilder](http://slack.k8s.io/#kubebuilder)
+* Slack channel: [#kubebuilder](http://slack.k8s.io/#kubebuilder)
 
 * Google Group:
   [kubebuilder@googlegroups.com](https://groups.google.com/forum/#!forum/kubebuilder)
