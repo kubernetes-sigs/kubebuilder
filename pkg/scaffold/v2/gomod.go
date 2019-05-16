@@ -43,6 +43,6 @@ module {{ .Repo }}
 go 1.12
 
 require (
-	sigs.k8s.io/controller-runtime feature/modules
+	sigs.k8s.io/controller-runtime v0.2.0-alpha.1
 )
 `

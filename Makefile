@@ -29,7 +29,7 @@ install: build
 	cp ./bin/kubebuilder $(shell go env GOPATH)/bin/kubebuilder
 
 generate:
-	./generated_golden.sh
+	GO111MODULE=on ./generated_golden.sh
 
 test:
 	go test -v ./cmd/... ./pkg/...

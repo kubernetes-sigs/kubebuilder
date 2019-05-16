@@ -153,6 +153,8 @@ func (api *API) scaffoldV2() error {
 					Path: filepath.Join("api", r.Version, fmt.Sprintf("%s_types.go", strings.ToLower(r.Kind))),
 				},
 				Resource: r},
+			&resourcev2.VersionSuiteTest{Resource: r},
+			&resourcev2.TypesTest{Resource: r},
 			&resourcev2.Group{Resource: r},
 			&resourcev2.CRDSample{Resource: r},
 			&crdv2.EnableWebhookPatch{Resource: r},
@@ -187,8 +189,10 @@ func (api *API) scaffoldV2() error {
 		fmt.Println(filepath.Join("controllers", fmt.Sprintf("%s_controller.go", strings.ToLower(r.Kind))))
 
 		ctrlScaffolder := &resourcev2.Controller{Resource: r}
+		testsuiteScaffolder := &resourcev2.ControllerSuiteTest{Resource: r}
 		err := (&Scaffold{}).Execute(
 			input.Options{},
+			testsuiteScaffolder,
 			ctrlScaffolder,
 		)
 		if err != nil {
@@ -198,6 +202,11 @@ func (api *API) scaffoldV2() error {
 		err = ctrlScaffolder.UpdateMain("main.go")
 		if err != nil {
 			return fmt.Errorf("error updating main.go with reconciler code: %v", err)
+		}
+
+		err = testsuiteScaffolder.UpdateTestSuite()
+		if err != nil {
+			return fmt.Errorf("error updating suite_test.go under controllers pkg: %v", err)
 		}
 	}
 
