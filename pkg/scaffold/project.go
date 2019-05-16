@@ -197,6 +197,7 @@ func (p *V2Project) Scaffold() error {
 		&managerv2.Kustomization{},
 		&webhook.Kustomization{},
 		&webhook.KustomizeConfigWebhook{},
+		&webhook.Service{},
 		&webhook.InjectCAPatch{},
 		&certmanager.CertManager{},
 		&certmanager.Kustomization{},
