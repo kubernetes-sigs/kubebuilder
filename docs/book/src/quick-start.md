@@ -34,7 +34,7 @@ os=$(go env GOOS)
 arch=$(go env GOARCH)
 
 # download kustomize to the kubebuilder assets folder
-curl -o /usr/local/kubebuilder/bin/kustomize -sL https://go.kubebuilder.io/dl/latest/${os}/${arch}
+curl -o /usr/local/kubebuilder/bin/kustomize -sL https://go.kubebuilder.io/kustomize/${os}/${arch}
 ```
 
 ## Create a Project
