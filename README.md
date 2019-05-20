@@ -11,24 +11,24 @@ to simplify building and publishing Kubernetes APIs from scratch.
 ### Installation
 
 It is strongly recommended that you use a released version. Release binaries are available on the [releases](https://github.com/kubernetes-sigs/kubebuilder/releases) page.
-Follow the [instructions](http://book.kubebuilder.io/getting_started/installation_and_setup.html) to install Kubebuilder.
+Follow the [instructions](https://book.kubebuilder.io/quick-start.html#installation) to install Kubebuilder.
 
 
 ## Getting Started
 
-See the [Getting Started](http://book.kubebuilder.io/quick_start.html) documentation.
+See the [Getting Started](https://book.kubebuilder.io/quick-start.html) documentation.
 
 ![Quick Start](docs/gif/quickstart-1.0.0.gif)
 
 ## Documentation
 
-Check out the Kubebuilder [book](http://book.kubebuilder.io).
+Check out the Kubebuilder [book](https://book.kubebuilder.io).
 
 ## Resources
 
-- GitBook: [book.kubebuilder.com](http://book.kubebuilder.io)
+- GitBook: [book.kubebuilder.com](https://book.kubebuilder.io)
 - GitHub Repo: [kubernetes-sigs/kubebuilder](https://github.com/kubernetes-sigs/kubebuilder)
-- Slack channel: [#kubebuilder](http://slack.k8s.io/#kubebuilder)
+- Slack channel: [#kubebuilder](https://slack.k8s.io/#kubebuilder)
 - Google Group: [kubebuilder@googlegroups.com](https://groups.google.com/forum/#!forum/kubebuilder)
 - Planned Work: [Sprint Dashboard](https://github.com/kubernetes-sigs/kubebuilder/projects/1)
 - Design Documents: [designs](designs/).
