@@ -503,8 +503,8 @@ import (
 var (
 	GroupVersion = schema.GroupVersion{Group: "mygroup.test.k8s.io", Version: "v1"}
 
-	// schemeBuilder is used to add go types to the GroupVersionKind scheme
-	schemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}
+	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
+	SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}
 
 	// AddToScheme adds the types in this group-version to the given scheme.
 	AddToScheme = SchemeBuilder.AddToScheme
