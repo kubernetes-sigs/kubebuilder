@@ -69,12 +69,12 @@ func (o *apiOptions) runAddAPI() {
 
 	reader := bufio.NewReader(os.Stdin)
 	if !o.resourceFlag.Changed {
-		fmt.Println("Create Resource under pkg/apis [y/n]?")
+		fmt.Println("Create Resource under api [y/n]?")
 		o.apiScaffolder.DoResource = util.Yesno(reader)
 	}
 
 	if !o.controllerFlag.Changed {
-		fmt.Println("Create Controller under pkg/controller [y/n]?")
+		fmt.Println("Create Controller under controllers [y/n]?")
 		o.apiScaffolder.DoController = util.Yesno(reader)
 	}
 
@@ -126,13 +126,13 @@ After the scaffold is written, api will run make on the project.
 	kubebuilder create api --group ship --version v1beta1 --kind Frigate
 
 	# Edit the API Scheme
-	nano pkg/apis/ship/v1beta1/frigate_types.go
+	nano api/ship/v1beta1/frigate_types.go
 
 	# Edit the Controller
-	nano pkg/controller/frigate/frigate_controller.go
+	nano controllers/frigate/frigate_controller.go
 
 	# Edit the Controller Test
-	nano pkg/controller/frigate/frigate_controller_test.go
+	nano controllers/frigate/frigate_controller_test.go
 
 	# Install CRDs into the Kubernetes cluster using kubectl apply
 	make install
