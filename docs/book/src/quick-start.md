@@ -58,7 +58,7 @@ kubebuilder create api --group webapp --version v1 --kind Guestbook
 ```
 
 The will create the files `api/v1/guestbook_types.go` and
-`pkg/controller/guestbook_controller.go` for you to edit.
+`controller/guestbook_controller.go` for you to edit.
 
 **Optional:** Edit the API definition or the reconcilation business logic.
 For more on this see [What is
