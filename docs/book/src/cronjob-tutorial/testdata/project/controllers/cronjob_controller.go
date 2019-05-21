@@ -78,9 +78,9 @@ and requeuing in the mean time won't help.
 */
 func ignoreNotFound(err error) error {
 	if apierrs.IsNotFound(err) {
-		return err
+		return nil
 	}
-	return nil
+	return err
 }
 
 // +kubebuilder:docs-gen:collapse=ignoreNotFound
