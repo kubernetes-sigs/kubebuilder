@@ -21,6 +21,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/markbates/inflect"
+
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/resource"
 )
@@ -36,8 +38,10 @@ type EnableWebhookPatch struct {
 // GetInput implements input.File
 func (p *EnableWebhookPatch) GetInput() (input.Input, error) {
 	if p.Path == "" {
+		rs := inflect.NewDefaultRuleset()
+		plural := rs.Pluralize(strings.ToLower(p.Resource.Kind))
 		p.Path = filepath.Join("config", "crd", "patches",
-			fmt.Sprintf("webhook_in_%s.yaml", strings.ToLower(p.Resource.Kind)))
+			fmt.Sprintf("webhook_in_%s.yaml", plural))
 	}
 	p.TemplateBody = enableWebhookPatchTemplate
 	return p.Input, nil
