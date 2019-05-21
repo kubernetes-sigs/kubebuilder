@@ -48,23 +48,8 @@ metadata:
     controller-tools.k8s.io: "1.0"
   name: system
 ---
-apiVersion: v1
-kind: Service
-metadata:
-  name: controller-manager-service
-  namespace: system
-  labels:
-    control-plane: controller-manager
-    controller-tools.k8s.io: "1.0"
-spec:
-  selector:
-    control-plane: controller-manager
-    controller-tools.k8s.io: "1.0"
-  ports:
-  - port: 443
----
 apiVersion: apps/v1
-kind: StatefulSet
+kind: Deployment
 metadata:
   name: controller-manager
   namespace: system
@@ -76,9 +61,7 @@ spec:
     matchLabels:
       control-plane: controller-manager
       controller-tools.k8s.io: "1.0"
-  serviceName: controller-manager-service
   replicas: 1
-  podManagementPolicy: Parallel
   template:
     metadata:
       labels:

@@ -42,6 +42,8 @@ func (c *KustomizeRBAC) GetInput() (input.Input, error) {
 var kustomizeRBACTemplate = `resources:
 - role.yaml
 - role_binding.yaml
+- leader_election_role.yaml
+- leader_election_role_binding.yaml
 # Comment the following 3 lines if you want to disable
 # the auth proxy (https://github.com/brancz/kube-rbac-proxy)
 # which protects your /metrics endpoint.
@@ -49,4 +51,3 @@ var kustomizeRBACTemplate = `resources:
 - auth_proxy_role.yaml
 - auth_proxy_role_binding.yaml
 `
-

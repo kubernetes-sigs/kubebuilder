@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package project
+package metricsauth
 
 import (
 	"path/filepath"
@@ -43,7 +43,7 @@ func (c *KustomizeAuthProxyPatch) GetInput() (input.Input, error) {
 var kustomizeAuthProxyPatchTemplate = `# This patch inject a sidecar container which is a HTTP proxy for the controller manager,
 # it performs RBAC authorization against the Kubernetes API using SubjectAccessReviews.
 apiVersion: apps/v1
-kind: StatefulSet
+kind: Deployment
 metadata:
   name: controller-manager
   namespace: system

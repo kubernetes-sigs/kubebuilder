@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package project
+package metricsauth
 
 import (
 	"path/filepath"
@@ -22,25 +22,26 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 )
 
-var _ input.File = &KustomizePrometheusMetricsPatch{}
+var _ input.File = &KustomizeAuthProxyPatch{}
 
-// KustomizePrometheusMetricsPatch scaffolds the patch file for enabling
+// KustomizeAuthProxyPatch scaffolds the patch file for enabling
 // prometheus metrics for manager Pod.
-type KustomizePrometheusMetricsPatch struct {
+type KustomizeAuthProxyPatch struct {
 	input.Input
 }
 
 // GetInput implements input.File
-func (c *KustomizePrometheusMetricsPatch) GetInput() (input.Input, error) {
+func (c *KustomizeAuthProxyPatch) GetInput() (input.Input, error) {
 	if c.Path == "" {
-		c.Path = filepath.Join("config", "default", "manager_prometheus_metrics_patch.yaml")
+		c.Path = filepath.Join("config", "default", "manager_auth_proxy_patch.yaml")
 	}
-	c.TemplateBody = kustomizePrometheusMetricsPatchTemplate
+	c.TemplateBody = kustomizeAuthProxyPatchTemplate
 	c.Input.IfExistsAction = input.Error
 	return c.Input, nil
 }
 
-var kustomizePrometheusMetricsPatchTemplate = `# This patch enables Prometheus scraping for the manager pod.
+var kustomizeAuthProxyPatchTemplate = `# This patch inject a sidecar container which is a HTTP proxy for the controller manager,
+# it performs RBAC authorization against the Kubernetes API using SubjectAccessReviews.
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -48,15 +49,19 @@ metadata:
   namespace: system
 spec:
   template:
-    metadata:
-      annotations:
-        prometheus.io/scrape: 'true'
     spec:
       containers:
-      # Expose the prometheus metrics on default port
-      - name: manager
+      - name: kube-rbac-proxy
+        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.4.0
+        args:
+        - "--secure-listen-address=0.0.0.0:8443"
+        - "--upstream=http://127.0.0.1:8080/"
+        - "--logtostderr=true"
+        - "--v=10"
         ports:
-        - containerPort: 8080
-          name: metrics
-          protocol: TCP
+        - containerPort: 8443
+          name: https
+      - name: manager
+        args:
+        - "--metrics-addr=127.0.0.1:8080"
 `

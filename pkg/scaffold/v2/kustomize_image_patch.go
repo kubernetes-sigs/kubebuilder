@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package project
+package v2
 
 import (
 	"path/filepath"
@@ -47,7 +47,7 @@ func (c *KustomizeImagePatch) GetInput() (input.Input, error) {
 }
 
 var kustomizeImagePatchTemplate = `apiVersion: apps/v1
-kind: StatefulSet
+kind: Deployment
 metadata:
   name: controller-manager
   namespace: system

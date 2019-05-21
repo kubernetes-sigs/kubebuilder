@@ -29,8 +29,9 @@ import (
 )
 
 const (
-	kustomizeResourceScaffoldMarker = "# +kubebuilder:scaffold:kustomizeresource"
-	kustomizePatchScaffoldMarker    = "# +kubebuilder:scaffold:kustomizepatch"
+	kustomizeResourceScaffoldMarker         = "# +kubebuilder:scaffold:crdkustomizeresource"
+	kustomizeWebhookPatchScaffoldMarker     = "# +kubebuilder:scaffold:crdkustomizewebhookpatch"
+	kustomizeCAInjectionPatchScaffoldMarker = "# +kubebuilder:scaffold:crdkustomizecainjectionpatch"
 )
 
 var _ input.File = &Kustomization{}
@@ -64,12 +65,14 @@ func (c *Kustomization) Update() error {
 	plural := rs.Pluralize(strings.ToLower(c.Resource.Kind))
 
 	kustomizeResourceCodeFragment := fmt.Sprintf("- bases/%s.%s_%s.yaml\n", c.Resource.Group, c.Domain, plural)
-	kustomizePatchCodeFragment := fmt.Sprintf("#- patches/webhook_in_%s.yaml\n", plural)
+	kustomizeWebhookPatchCodeFragment := fmt.Sprintf("#- patches/webhook_in_%s.yaml\n", plural)
+	kustomizeCAInjectionPatchCodeFragment := fmt.Sprintf("#- patches/cainjection_in_%s.yaml\n", plural)
 
 	return internal.InsertStringsInFile(c.Path,
 		map[string][]string{
-			kustomizeResourceScaffoldMarker: []string{kustomizeResourceCodeFragment},
-			kustomizePatchScaffoldMarker:    []string{kustomizePatchCodeFragment},
+			kustomizeResourceScaffoldMarker:         {kustomizeResourceCodeFragment},
+			kustomizeWebhookPatchScaffoldMarker:     {kustomizeWebhookPatchCodeFragment},
+			kustomizeCAInjectionPatchScaffoldMarker: {kustomizeCAInjectionPatchCodeFragment},
 		})
 }
 
@@ -80,10 +83,13 @@ resources:
 %s
 
 patches:
-# patches here are for enabling the conversion webhook for each CRD
+# [WEBHOOK] patches here are for enabling the conversion webhook for each CRD
+%s
+
+# [CAINJECTION] patches here are for enabling the CA injection for each CRD
 %s
 
 # the following config is for teaching kustomize how to do kustomization for CRDs.
 configurations:
 - kustomizeconfig.yaml
-`, kustomizeResourceScaffoldMarker, kustomizePatchScaffoldMarker)
+`, kustomizeResourceScaffoldMarker, kustomizeWebhookPatchScaffoldMarker, kustomizeCAInjectionPatchScaffoldMarker)
