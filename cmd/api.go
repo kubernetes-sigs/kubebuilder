@@ -69,12 +69,12 @@ func (o *apiOptions) runAddAPI() {
 
 	reader := bufio.NewReader(os.Stdin)
 	if !o.resourceFlag.Changed {
-		fmt.Println("Create Resource under api [y/n]?")
+		fmt.Println("Create Resource [y/n]")
 		o.apiScaffolder.DoResource = util.Yesno(reader)
 	}
 
 	if !o.controllerFlag.Changed {
-		fmt.Println("Create Controller under controllers [y/n]?")
+		fmt.Println("Create Controller [y/n]")
 		o.apiScaffolder.DoController = util.Yesno(reader)
 	}
 
@@ -124,7 +124,7 @@ After the scaffold is written, api will run make on the project.
 `,
 		Example: `	# Create a frigates API with Group: ship, Version: v1beta1 and Kind: Frigate
 	kubebuilder create api --group ship --version v1beta1 --kind Frigate
-
+	
 	# Edit the API Scheme
 	nano api/ship/v1beta1/frigate_types.go
 
