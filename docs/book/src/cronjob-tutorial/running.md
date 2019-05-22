@@ -25,7 +25,9 @@ anything just yet.
 At this point, we need a CronJob to test with.  Let's write a sample to
 `config/samples/batch_v1_cronjob.yaml`, and use that:
 
+```yaml
 {{#include ./testdata/project/config/samples/batch_v1_cronjob.yaml}}
+```
 
 ```bash
 kubectl create -f config/samples/batch_v1_cronjob.yaml
