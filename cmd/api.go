@@ -28,6 +28,7 @@ import (
 
 	"sigs.k8s.io/kubebuilder/cmd/util"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/resource"
 )
 
@@ -66,15 +67,28 @@ func resourceForFlags(f *flag.FlagSet) *resource.Resource {
 // APICmd represents the resource command
 func (o *apiOptions) runAddAPI() {
 	dieIfNoProject()
-
+	projectInfo, err := scaffold.LoadProjectFile("PROJECT")
+	if err != nil {
+		log.Fatalf("failed to read the PROJECT file: %v", err)
+	}
 	reader := bufio.NewReader(os.Stdin)
 	if !o.resourceFlag.Changed {
-		fmt.Println("Create Resource under api [y/n]?")
+		if projectInfo.Version == project.Version1 {
+			fmt.Println("Create Resource under pkg/apis [y/n]")
+		}
+		if projectInfo.Version == project.Version2 {
+			fmt.Println("Create Resource under api [y/n]")
+		}
 		o.apiScaffolder.DoResource = util.Yesno(reader)
 	}
 
 	if !o.controllerFlag.Changed {
-		fmt.Println("Create Controller under controllers [y/n]?")
+		if projectInfo.Version == project.Version1 {
+			fmt.Println("Create Controller under pkg/controller [y/n]")
+		}
+		if projectInfo.Version == project.Version2 {
+			fmt.Println("Create Controller under controllers [y/n]")
+		}
 		o.apiScaffolder.DoController = util.Yesno(reader)
 	}
 
@@ -124,7 +138,8 @@ After the scaffold is written, api will run make on the project.
 `,
 		Example: `	# Create a frigates API with Group: ship, Version: v1beta1 and Kind: Frigate
 	kubebuilder create api --group ship --version v1beta1 --kind Frigate
-
+	
+	# Project Version 2
 	# Edit the API Scheme
 	nano api/ship/v1beta1/frigate_types.go
 
