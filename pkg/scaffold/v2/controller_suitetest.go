@@ -135,9 +135,10 @@ func (a *ControllerSuiteTest) UpdateTestSuite() error {
 		a.Plural = rs.Pluralize(strings.ToLower(a.Resource.Kind))
 	}
 
-	apiImportCodeFragment := fmt.Sprintf(`"%s/controllers"
-%s%s "%s/%s"
-`, a.Repo, a.Resource.Group, a.Resource.Version, a.ResourcePackage, a.Resource.Version)
+	ctrlImportCodeFragment := fmt.Sprintf(`"%s/controllers"
+`, a.Repo)
+	apiImportCodeFragment := fmt.Sprintf(`%s%s "%s/%s"
+`, a.Resource.Group, a.Resource.Version, a.ResourcePackage, a.Resource.Version)
 
 	addschemeCodeFragment := fmt.Sprintf(`err = %s%s.AddToScheme(scheme.Scheme)
 Expect(err).NotTo(HaveOccurred())
@@ -145,6 +146,7 @@ Expect(err).NotTo(HaveOccurred())
 `, a.Resource.Group, a.Resource.Version)
 
 	err := internal.InsertStringsInFile(a.Path,
+		apiPkgImportScaffoldMarker, ctrlImportCodeFragment,
 		apiPkgImportScaffoldMarker, apiImportCodeFragment,
 		apiSchemeScaffoldMarker, addschemeCodeFragment)
 	if err != nil {

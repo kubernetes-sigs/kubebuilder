@@ -76,9 +76,10 @@ func (a *Controller) UpdateMain(path string) error {
 		a.Plural = rs.Pluralize(strings.ToLower(a.Resource.Kind))
 	}
 
-	apiImportCodeFragment := fmt.Sprintf(`"%s/controllers"
-%s%s "%s/%s"
-`, a.Repo, a.Resource.Group, a.Resource.Version, a.ResourcePackage, a.Resource.Version)
+	ctrlImportCodeFragment := fmt.Sprintf(`"%s/controllers"
+`, a.Repo)
+	apiImportCodeFragment := fmt.Sprintf(`%s%s "%s/%s"
+`, a.Resource.Group, a.Resource.Version, a.ResourcePackage, a.Resource.Version)
 
 	addschemeCodeFragment := fmt.Sprintf(`%s%s.AddToScheme(scheme)
 `, a.Resource.Group, a.Resource.Version)
@@ -94,6 +95,7 @@ func (a *Controller) UpdateMain(path string) error {
 `, a.Resource.Kind, a.Resource.Kind, a.Resource.Kind)
 
 	err := internal.InsertStringsInFile(path,
+		apiPkgImportScaffoldMarker, ctrlImportCodeFragment,
 		apiPkgImportScaffoldMarker, apiImportCodeFragment,
 		apiSchemeScaffoldMarker, addschemeCodeFragment,
 		reconcilerSetupScaffoldMarker, reconcilerSetupCodeFragment)
