@@ -51,6 +51,10 @@ func insertStrings(r io.Reader, markerAndValues ...string) (io.Reader, error) {
 		line := scanner.Text()
 
 		for m, v := range mvPairs {
+			if strings.TrimSpace(line) == strings.TrimSpace(v) {
+				// since value already exist, so avoid duplication
+				delete(mvPairs, m)
+			}
 			if strings.Contains(line, m) {
 				_, err := buf.WriteString(v)
 				if err != nil {

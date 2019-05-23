@@ -45,6 +45,18 @@ v1.AddToScheme(scheme)
 // +kubebuilder:scaffold:apis-add-scheme
 `,
 		},
+		{ // avoid duplicates
+			input: `
+v1beta1.AddToScheme(scheme)
+// +kubebuilder:scaffold:apis-add-scheme
+`,
+			marker: "+kubebuilder:scaffold:apis-add-scheme",
+			str:    "v1beta1.AddToScheme(scheme)\n",
+			expected: `
+v1beta1.AddToScheme(scheme)
+// +kubebuilder:scaffold:apis-add-scheme
+`,
+		},
 		{
 			// string with literal format
 			input: `
