@@ -12,10 +12,6 @@ required = [
     ]
 
 [[constraint]]
-  name = "sigs.k8s.io/controller-tools"
-  branch = "master"
-
-[[constraint]]
   name="k8s.io/code-generator"
   version="kubernetes-1.13.1"
 
