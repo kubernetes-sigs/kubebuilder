@@ -21,12 +21,14 @@ import (
 	"path/filepath"
 
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/resource"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/v2/internal"
 )
 
 const (
-	apiPkgImportScaffoldMarker    = "+kubebuilder:scaffold:imports"
-	apiSchemeScaffoldMarker       = "+kubebuilder:scaffold:scheme"
-	reconcilerSetupScaffoldMarker = "+kubebuilder:scaffold:builder"
+	apiPkgImportScaffoldMarker    = "// +kubebuilder:scaffold:imports"
+	apiSchemeScaffoldMarker       = "// +kubebuilder:scaffold:scheme"
+	reconcilerSetupScaffoldMarker = "// +kubebuilder:scaffold:builder"
 )
 
 var _ input.File = &Main{}
@@ -45,6 +47,70 @@ func (m *Main) GetInput() (input.Input, error) {
 	return m.Input, nil
 }
 
+// Update updates main.go with code fragments required to wire a new
+// resource/controller.
+func (m *Main) Update(opts *MainUpdateOptions) error {
+	path := "main.go"
+
+	resPkg, _ := getResourceInfo(opts.Resource, input.Input{
+		Domain: opts.Project.Domain,
+		Repo:   opts.Project.Repo,
+	})
+
+	// generate all the code fragments
+	apiImportCodeFragment := fmt.Sprintf(`%s%s "%s/%s"
+`, opts.Resource.Group, opts.Resource.Version, resPkg, opts.Resource.Version)
+	ctrlImportCodeFragment := fmt.Sprintf(`"%s/controllers"
+`, opts.Project.Repo)
+	addschemeCodeFragment := fmt.Sprintf(`%s%s.AddToScheme(scheme)
+`, opts.Resource.Group, opts.Resource.Version)
+	reconcilerSetupCodeFragment := fmt.Sprintf(`err = (&controllers.%sReconciler{
+	 	Client: mgr.GetClient(),
+        Log: ctrl.Log.WithName("controllers").WithName("%s"),
+	 }).SetupWithManager(mgr)
+	 if err != nil {
+	 	setupLog.Error(err, "unable to create controller", "controller", "%s")
+	 	os.Exit(1)
+	 }
+`, opts.Resource.Kind, opts.Resource.Kind, opts.Resource.Kind)
+
+	if opts.WireResource {
+		err := internal.InsertStringsInFile(path,
+			map[string][]string{
+				apiPkgImportScaffoldMarker: []string{apiImportCodeFragment},
+				apiSchemeScaffoldMarker:    []string{addschemeCodeFragment},
+			})
+		if err != nil {
+			return err
+		}
+	}
+
+	if opts.WireController {
+		return internal.InsertStringsInFile(path,
+			map[string][]string{
+				apiPkgImportScaffoldMarker:    []string{apiImportCodeFragment, ctrlImportCodeFragment},
+				apiSchemeScaffoldMarker:       []string{addschemeCodeFragment},
+				reconcilerSetupScaffoldMarker: []string{reconcilerSetupCodeFragment},
+			})
+	}
+
+	return nil
+}
+
+// MainUpdateOptions contains info required for wiring an API/Controller in
+// main.go.
+type MainUpdateOptions struct {
+	// Project contains info about the project
+	Project *input.ProjectFile
+
+	// Resource is the resource being added
+	Resource *resource.Resource
+
+	// Flags to indicate if resource/controller is being scaffolded or not
+	WireResource   bool
+	WireController bool
+}
+
 var mainTemplate = fmt.Sprintf(`{{ .Boilerplate }}
 
 package main
@@ -59,7 +125,7 @@ import (
     "k8s.io/apimachinery/pkg/runtime"
 
 
-	// %s
+	%s
 )
 
 var (
@@ -69,7 +135,7 @@ var (
 
 func init() {
 
-	// %s
+	%s
 }
 
 func main() {
@@ -86,7 +152,7 @@ func main() {
 	}
 
 
-    // %s
+    %s
 
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {

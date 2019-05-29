@@ -27,7 +27,6 @@ import (
 
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/resource"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/v2/internal"
 )
 
 // Controller scaffolds a Controller for a Resource
@@ -64,46 +63,6 @@ func (a *Controller) GetInput() (input.Input, error) {
 	a.TemplateBody = controllerTemplate
 	a.Input.IfExistsAction = input.Error
 	return a.Input, nil
-}
-
-// UpdateMain updates given file (main.go) with code fragments required for
-// setting up a new reconciler.
-func (a *Controller) UpdateMain(path string) error {
-
-	a.ResourcePackage, a.GroupDomain = getResourceInfo(a.Resource, a.Input)
-	if a.Plural == "" {
-		rs := inflect.NewDefaultRuleset()
-		a.Plural = rs.Pluralize(strings.ToLower(a.Resource.Kind))
-	}
-
-	ctrlImportCodeFragment := fmt.Sprintf(`"%s/controllers"
-`, a.Repo)
-	apiImportCodeFragment := fmt.Sprintf(`%s%s "%s/%s"
-`, a.Resource.Group, a.Resource.Version, a.ResourcePackage, a.Resource.Version)
-
-	addschemeCodeFragment := fmt.Sprintf(`%s%s.AddToScheme(scheme)
-`, a.Resource.Group, a.Resource.Version)
-
-	reconcilerSetupCodeFragment := fmt.Sprintf(`err = (&controllers.%sReconciler{
-	 	Client: mgr.GetClient(),
-        Log: ctrl.Log.WithName("controllers").WithName("%s"),
-	 }).SetupWithManager(mgr)
-	 if err != nil {
-	 	setupLog.Error(err, "unable to create controller", "controller", "%s")
-	 	os.Exit(1)
-	 }
-`, a.Resource.Kind, a.Resource.Kind, a.Resource.Kind)
-
-	err := internal.InsertStringsInFile(path,
-		apiPkgImportScaffoldMarker, ctrlImportCodeFragment,
-		apiPkgImportScaffoldMarker, apiImportCodeFragment,
-		apiSchemeScaffoldMarker, addschemeCodeFragment,
-		reconcilerSetupScaffoldMarker, reconcilerSetupCodeFragment)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func getResourceInfo(r *resource.Resource, in input.Input) (resourcePackage, groupDomain string) {

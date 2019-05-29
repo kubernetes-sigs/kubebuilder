@@ -212,15 +212,21 @@ func (api *API) scaffoldV2() error {
 			return fmt.Errorf("error scaffolding controller: %v", err)
 		}
 
-		err = ctrlScaffolder.UpdateMain("main.go")
-		if err != nil {
-			return fmt.Errorf("error updating main.go with reconciler code: %v", err)
-		}
-
-		err = testsuiteScaffolder.UpdateTestSuite()
+		err = testsuiteScaffolder.Update()
 		if err != nil {
 			return fmt.Errorf("error updating suite_test.go under controllers pkg: %v", err)
 		}
+	}
+
+	err := (&resourcev2.Main{}).Update(
+		&resourcev2.MainUpdateOptions{
+			Project:        api.project,
+			WireResource:   api.DoResource,
+			WireController: api.DoController,
+			Resource:       r,
+		})
+	if err != nil {
+		return fmt.Errorf("error updating main.go: %v", err)
 	}
 
 	return nil

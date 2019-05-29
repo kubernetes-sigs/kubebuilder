@@ -22,11 +22,10 @@ import (
 )
 
 type insertStrTest struct {
-	input    string
-	marker   string
-	str      string
-	expected string
-	got      string
+	input         string
+	markerNValues map[string][]string
+	expected      string
+	got           string
 }
 
 func TestInsertStrBelowMarker(t *testing.T) {
@@ -37,11 +36,14 @@ func TestInsertStrBelowMarker(t *testing.T) {
 v1beta1.AddToScheme(scheme)
 // +kubebuilder:scaffold:apis-add-scheme
 `,
-			marker: "+kubebuilder:scaffold:apis-add-scheme",
-			str:    "v1.AddToScheme(scheme)\n",
+			markerNValues: map[string][]string{
+				"// +kubebuilder:scaffold:apis-add-scheme": []string{
+					"v1.AddToScheme(scheme)\n", "somefunc()\n"},
+			},
 			expected: `
 v1beta1.AddToScheme(scheme)
 v1.AddToScheme(scheme)
+somefunc()
 // +kubebuilder:scaffold:apis-add-scheme
 `,
 		},
@@ -50,10 +52,13 @@ v1.AddToScheme(scheme)
 v1beta1.AddToScheme(scheme)
 // +kubebuilder:scaffold:apis-add-scheme
 `,
-			marker: "+kubebuilder:scaffold:apis-add-scheme",
-			str:    "v1beta1.AddToScheme(scheme)\n",
+			markerNValues: map[string][]string{
+				"// +kubebuilder:scaffold:apis-add-scheme": []string{
+					"v1beta1.AddToScheme(scheme)\n", "v1.AddToScheme(scheme)\n"},
+			},
 			expected: `
 v1beta1.AddToScheme(scheme)
+v1.AddToScheme(scheme)
 // +kubebuilder:scaffold:apis-add-scheme
 `,
 		},
@@ -63,9 +68,9 @@ v1beta1.AddToScheme(scheme)
 v1beta1.AddToScheme(scheme)
 // +kubebuilder:scaffold:apis-add-scheme
 `,
-			marker: "+kubebuilder:scaffold:apis-add-scheme",
-			str: `v1.AddToScheme(scheme)
-`,
+			markerNValues: map[string][]string{
+				"// +kubebuilder:scaffold:apis-add-scheme": []string{`v1.AddToScheme(scheme)
+`}},
 			expected: `
 v1beta1.AddToScheme(scheme)
 v1.AddToScheme(scheme)
@@ -75,7 +80,7 @@ v1.AddToScheme(scheme)
 	}
 
 	for _, test := range tests {
-		result, err := insertStrings(bytes.NewBufferString(test.input), test.marker, test.str)
+		result, err := insertStrings(bytes.NewBufferString(test.input), test.markerNValues)
 		if err != nil {
 			t.Errorf("error %v", err)
 		}
@@ -89,5 +94,4 @@ v1.AddToScheme(scheme)
 			t.Errorf("got: %s and wanted: %s", string(b), test.expected)
 		}
 	}
-
 }
