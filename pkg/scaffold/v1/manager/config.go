@@ -89,7 +89,6 @@ spec:
       - command:
         - /manager
         image: {{ .Image }}
-        imagePullPolicy: Always
         name: manager
         env:
           - name: POD_NAMESPACE

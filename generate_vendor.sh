@@ -58,4 +58,4 @@ generate_vendor() {
 }
 
 build_kb && \
-generate_vendor $1
+generate_vendor 1
