@@ -21,7 +21,7 @@ the data in fields, or in annotations).  This means that using an older
 API version won't cause newer data to be lost or corrupted.  See the
 [Kubernetes API guidelines](../TODO.md) for more information.
 
-You'll also hear mention of *resources* on occaison.  A resource is simply
+You'll also hear mention of *resources* on occasion.  A resource is simply
 a use of a Kind in the API.  Often, there's a one-to-one mapping between
 Kinds and resources.  For instance, the `pods` resource corresponds to the
 `Pod` Kind.  However, sometimes, the same Kind may be returned by multiple
