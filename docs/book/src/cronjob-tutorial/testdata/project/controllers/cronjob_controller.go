@@ -16,7 +16,7 @@ limitations under the License.
 
 /*
 We'll start out with some imports.  You'll see below that we'll need a few more imports
-than those scaffolded for us.  We'll take about each one when we use it.
+than those scaffolded for us.  We'll talk about each one when we use it.
 */
 package controllers
 
@@ -56,8 +56,8 @@ type CronJobReconciler struct {
 }
 
 /*
-We'll mock out the clock to make it easier to jump around in time while testing
-The "real" clock just calls time.Now.
+We'll mock out the clock to make it easier to jump around in time while testing,
+the "real" clock just calls `time.Now`.
 */
 type realClock struct{}
 
@@ -72,9 +72,9 @@ type Clock interface {
 // +kubebuilder:docs-gen:collapse=Clock
 
 /*
-We generally want to ignore (not requeue) on NotFound errors,
-since we'll get a reconcile request once the object becomes found,
-and requeuing in the mean time won't help.
+We generally want to ignore (not requeue) NotFound errors, since we'll get a
+reconciliation request once the object exists, and requeuing in the meantime
+won't help.
 */
 func ignoreNotFound(err error) error {
 	if apierrs.IsNotFound(err) {
@@ -107,7 +107,7 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("cronjob", req.NamespacedName)
 
 	/*
-	### 1: Load the named CronJob
+	### 1: Load the CronJob by name
 
 	We'll fetch the CronJob using our client.  All client methods take a context
 	(to allow for cancellation) as their first argument, and the object in question
@@ -146,7 +146,7 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	root object.  Instead, you should reconstruct it every run.  That's what we'll
 	do here.
 
-	We can check if a job is "finished" and whether is succeeded or failed using status
+	We can check if a job is "finished" and whether it succeeded or failed using status
 	conditions.  We'll put that logic in a helper to make our code cleaner.
 	*/
 
@@ -243,7 +243,7 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	/*
 	Using the date we've gathered, we'll update the status of our CRD.
 	Just like before, we use our client.  To specifically update the status
-	subresource, we'll use the the `Status` part of the client, with the `Update`
+	subresource, we'll use the `Status` part of the client, with the `Update`
 	method.
 
 	The status subresource ignores changes to spec, so it's less likely to conflict
@@ -302,7 +302,7 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	/* ### 4: Check if we're suspended
 
-	If this object is supsended, we don't want to run any jobs, so we'll stop now.
+	If this object is suspended, we don't want to run any jobs, so we'll stop now.
 	This is useful if something's broken with the job we're running and we want to
 	pause runs to investigate or putz with the cluster, without deleting the object.
 	*/
@@ -315,7 +315,7 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	/*
 	### 5: Get the next scheduled run
 
-	If we're not pause, we'll need to calculate the next scheduled run, and whether
+	If we're not paused, we'll need to calculate the next scheduled run, and whether
 	or not we've got a run that we haven't processed yet.
 	*/
 
@@ -328,7 +328,7 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	bail so that we don't cause issues on controller restarts or wedges.
 
 	Otherwise, we'll just return the missed runs (of which we'll just use the latest),
-	and the next run, so that we can know the latest time to reconcile again.
+	and the next run, so that we can know when it's time to reconcile again.
 	*/
 	getNextSchedule := func(cronJob *batch.CronJob, now time.Time) (lastMissed *time.Time, next time.Time, err error) {
 		sched, err := cron.ParseStandard(cronJob.Spec.Schedule)
@@ -337,7 +337,7 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		}
 
 		// for optimization purposes, cheat a bit and start from our last observed run time
-		// we could reconsitute this here, but there's not much point, since we've
+		// we could reconstitute this here, but there's not much point, since we've
 		// just updated it.
 		var earliestTime time.Time
 		if cronJob.Status.LastScheduleTime != nil {
@@ -361,8 +361,8 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		for t := sched.Next(earliestTime); !t.After(now); t = sched.Next(t) {
 			lastMissed = &t
 			// An object might miss several starts. For example, if
-			// controller gets wedged on friday at 5:01pm when everyone has
-			// gone home, and someone comes in on tuesday AM and discovers
+			// controller gets wedged on Friday at 5:01pm when everyone has
+			// gone home, and someone comes in on Tuesday AM and discovers
 			// the problem and restarts the controller, then all the hourly
 			// jobs, more than 80 of them for one hourly scheduledJob, should
 			// all start running with no further intervention (if the scheduledJob
@@ -377,7 +377,7 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			starts++
 			if starts > 100 {
 				// We can't get the most recent times so just return an empty slice
-				return nil, time.Time{}, fmt.Errorf("Too many missed start time (> 100). Set or decrease .spec.startingDeadlineSeconds or check clock skew.")
+				return nil, time.Time{}, fmt.Errorf("Too many missed start times (> 100). Set or decrease .spec.startingDeadlineSeconds or check clock skew.")
 			}
 		}
 		return lastMissed, sched.Next(now), nil
@@ -522,7 +522,7 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 Finally, we'll update our setup.  In order to allow our reconciler to quickly
 look up Jobs by their owner, we'll need an index.  We declare an index key that
-we can later use with the client as a pseudo-field name, and then descibe how to
+we can later use with the client as a pseudo-field name, and then describe how to
 extract the indexed value from the Job object.  The indexer will automatically take
 care of namespaces for us, so we just have to extract the owner name if the Job has
 a CronJob owner.
