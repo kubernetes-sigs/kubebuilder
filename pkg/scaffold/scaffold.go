@@ -105,6 +105,19 @@ func LoadProjectFile(path string) (input.ProjectFile, error) {
 	return p, nil
 }
 
+// saveProjectFile saves the given ProjectFile at the given path.
+func saveProjectFile(path string, project *input.ProjectFile) error {
+	content, err := yaml.Marshal(project)
+	if err != nil {
+		return fmt.Errorf("error marshalling project info %v", err)
+	}
+	err = ioutil.WriteFile(path, content, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("failed to save project file at %s %v", path, err)
+	}
+	return nil
+}
+
 // GetBoilerplate reads the boilerplate file
 func getBoilerplate(path string) (string, error) {
 	b, err := ioutil.ReadFile(path) // nolint: gosec

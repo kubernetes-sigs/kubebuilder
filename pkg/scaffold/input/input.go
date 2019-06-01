@@ -169,4 +169,29 @@ type ProjectFile struct {
 
 	// Repo is the go package name of the project root
 	Repo string `yaml:"repo,omitempty"`
+
+	// Resources tracks scaffolded resources in the project. This info is
+	// tracked only in project with version 2.
+	Resources []Resource `yaml:"resources,omitempty"`
+}
+
+// ResourceGroups returns unique groups of scaffolded resources in the project.
+func (pf *ProjectFile) ResourceGroups() []string {
+	groupSet := map[string]struct{}{}
+	for _, r := range pf.Resources {
+		groupSet[r.Group] = struct{}{}
+	}
+
+	groups := []string{}
+	for g, _ := range groupSet {
+		groups = append(groups, g)
+	}
+	return groups
+}
+
+// Resource contains information about scaffolded resources.
+type Resource struct {
+	Group   string `yaml:"group,omitempty"`
+	Version string `yaml:"version,omitempty"`
+	Kind    string `yaml:"kind,omitempty"`
 }

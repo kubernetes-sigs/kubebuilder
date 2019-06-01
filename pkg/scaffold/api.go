@@ -143,6 +143,10 @@ func (api *API) scaffoldV2() error {
 	r := api.Resource
 
 	if api.DoResource {
+		if err := api.validateResourceGroup(r); err != nil {
+			return err
+		}
+
 		fmt.Println(filepath.Join("api", r.Version,
 			fmt.Sprintf("%s_types.go", strings.ToLower(r.Kind))))
 
@@ -177,6 +181,15 @@ func (api *API) scaffoldV2() error {
 		if err != nil {
 			return fmt.Errorf("error updating kustomization.yaml: %v", err)
 		}
+
+		// update scaffolded resource in project file
+		api.project.Resources = append(api.project.Resources,
+			input.Resource{Group: r.Group, Version: r.Version, Kind: r.Kind})
+		err = saveProjectFile("PROJECT", api.project)
+		if err != nil {
+			fmt.Printf("error updating project file with resource information : %v \n", err)
+		}
+
 	} else {
 		// disable generation of example reconcile body if not scaffolding resource
 		// because this could result in a fork-bomb of k8s resources where watching a
@@ -210,5 +223,16 @@ func (api *API) scaffoldV2() error {
 		}
 	}
 
+	return nil
+}
+
+// Since we support single group only in v2 scaffolding, validate if resource
+// being created belongs to existing group.
+func (api *API) validateResourceGroup(resource *resourcev1.Resource) error {
+	for _, existingGroup := range api.project.ResourceGroups() {
+		if strings.ToLower(resource.Group) != strings.ToLower(existingGroup) {
+			return fmt.Errorf("Group '%s' is not same as existing group '%s'. Multiple groups are not supported yet.", resource.Group, existingGroup)
+		}
+	}
 	return nil
 }
