@@ -34,9 +34,9 @@ import (
 
 /*
 Then, we have the commonly useful variables that help us set up our Scheme.
-Since need to use all the types in this package in our controller, it's helpful
-(and the convention) to have a convinient method to add all the types to some
-other `Scheme`.  SchemeBuilder makes this easy for us
+Since we need to use all the types in this package in our controller, it's
+helpful (and the convention) to have a convenient method to add all the types to
+some other `Scheme`. SchemeBuilder makes this easy for us.
 */
 var (
 	// GroupVersion is group version used to register these objects

@@ -45,7 +45,7 @@ type CronJobReconciler struct {
 
 /*
 Most controllers eventually end up running on the cluster, so they need RBAC permissions.
-These are the bare minimum permissions need to run.  As we add more functionality, we'll
+These are the bare minimum permissions needed to run.  As we add more functionality, we'll
 need to revisit these.
 */
 
@@ -65,11 +65,11 @@ Most controllers need a logging handle and a context, so we set them up here.
 
 The [context](../TODO.md) is used to allow cancelation of requests, and potentially
 things like tracing.  It's the first argument to all client methods.  The `Background`
-context is just an basic context without any extra data or timing restrictions.
+context is just a basic context without any extra data or timing restrictions.
 
-The logging handles lets us log.  controller-runtime uses structured logging through a
+The logging handle lets us log.  controller-runtime uses structured logging through a
 library called [logr](https://github.com/go-logr/logr).  As we'll see shortly,
-logger works by attaching key-value pairs to a static message.  We can pre-assign
+logging works by attaching key-value pairs to a static message.  We can pre-assign
 some pairs at the top of our reconcile method to have those attached to all log
 lines in this reconciler.
 */
@@ -83,7 +83,7 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 }
 
 /*
-Finally, we add this Reconciler to the manager, so that it gets started
+Finally, we add this reconciler to the manager, so that it gets started
 when the manager is started.
 
 For now, we just note that this reconciler operates on `CronJob`s.  Later,
