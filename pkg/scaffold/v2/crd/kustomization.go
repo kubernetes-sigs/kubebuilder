@@ -29,8 +29,8 @@ import (
 )
 
 const (
-	kustomizeResourceScaffoldMarker = "+kubebuilder:scaffold:kustomizeresource"
-	kustomizePatchScaffoldMarker    = "+kubebuilder:scaffold:kustomizepatch"
+	kustomizeResourceScaffoldMarker = "# +kubebuilder:scaffold:kustomizeresource"
+	kustomizePatchScaffoldMarker    = "# +kubebuilder:scaffold:kustomizepatch"
 )
 
 var _ input.File = &Kustomization{}
@@ -67,19 +67,21 @@ func (c *Kustomization) Update() error {
 	kustomizePatchCodeFragment := fmt.Sprintf("#- patches/webhook_in_%s.yaml\n", plural)
 
 	return internal.InsertStringsInFile(c.Path,
-		kustomizeResourceScaffoldMarker, kustomizeResourceCodeFragment,
-		kustomizePatchScaffoldMarker, kustomizePatchCodeFragment)
+		map[string][]string{
+			kustomizeResourceScaffoldMarker: []string{kustomizeResourceCodeFragment},
+			kustomizePatchScaffoldMarker:    []string{kustomizePatchCodeFragment},
+		})
 }
 
 var kustomizationTemplate = fmt.Sprintf(`# This kustomization.yaml is not intended to be run by itself,
 # since it depends on service name and namespace that are out of this kustomize package.
 # It should be run by config/default
 resources:
-# %s
+%s
 
 patches:
 # patches here are for enabling the conversion webhook for each CRD
-# %s
+%s
 
 # the following config is for teaching kustomize how to do kustomization for CRDs.
 configurations:

@@ -125,9 +125,9 @@ var _ = AfterSuite(func() {
 })
 `
 
-// UpdateTestSuite updates given file (suite_test.go) with code fragments required for
+// Update updates given file (suite_test.go) with code fragments required for
 // adding import paths and code setup for new types.
-func (a *ControllerSuiteTest) UpdateTestSuite() error {
+func (a *ControllerSuiteTest) Update() error {
 
 	a.ResourcePackage, a.GroupDomain = getResourceInfo(a.Resource, a.Input)
 	if a.Plural == "" {
@@ -146,9 +146,10 @@ Expect(err).NotTo(HaveOccurred())
 `, a.Resource.Group, a.Resource.Version)
 
 	err := internal.InsertStringsInFile(a.Path,
-		apiPkgImportScaffoldMarker, ctrlImportCodeFragment,
-		apiPkgImportScaffoldMarker, apiImportCodeFragment,
-		apiSchemeScaffoldMarker, addschemeCodeFragment)
+		map[string][]string{
+			apiPkgImportScaffoldMarker: []string{ctrlImportCodeFragment, apiImportCodeFragment},
+			apiSchemeScaffoldMarker:    []string{addschemeCodeFragment},
+		})
 	if err != nil {
 		return err
 	}

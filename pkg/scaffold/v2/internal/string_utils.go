@@ -18,7 +18,6 @@ package internal
 import (
 	"bufio"
 	"bytes"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -29,40 +28,37 @@ import (
 )
 
 // insertStrings reads content from given reader and insert string below the
-// line line containing marker string. So for ex. in insertStrings(r, m1, v1, m2, v2)
+// line containing marker string. So for ex. in insertStrings(r, {'m1':
+// [v1], 'm2': [v2]})
 // v1 will be inserted below the lines containing m1 string and v2 will be inserted
 // below line containing m2 string.
-func insertStrings(r io.Reader, markerAndValues ...string) (io.Reader, error) {
-	if len(markerAndValues)%2 != 0 {
-		return nil, fmt.Errorf("invalid marker and value pairs")
-	}
-
-	mvPairs := map[string]string{}
-	for i, s := range markerAndValues {
-		if i%2 == 0 {
-			mvPairs[s] = markerAndValues[i+1]
-		}
-	}
-
+func insertStrings(r io.Reader, markerAndValues map[string][]string) (io.Reader, error) {
+	// reader clone is needed since we will be reading twice from the given reader
 	buf := new(bytes.Buffer)
+	rClone := io.TeeReader(r, buf)
 
-	scanner := bufio.NewScanner(r)
+	err := filterExistingValues(rClone, markerAndValues)
+	if err != nil {
+		return nil, err
+	}
+
+	out := new(bytes.Buffer)
+
+	scanner := bufio.NewScanner(buf)
 	for scanner.Scan() {
 		line := scanner.Text()
 
-		for m, v := range mvPairs {
-			if strings.TrimSpace(line) == strings.TrimSpace(v) {
-				// since value already exist, so avoid duplication
-				delete(mvPairs, m)
-			}
-			if strings.Contains(line, m) {
-				_, err := buf.WriteString(v)
-				if err != nil {
-					return nil, err
+		for marker, vals := range markerAndValues {
+			if strings.TrimSpace(line) == strings.TrimSpace(marker) {
+				for _, val := range vals {
+					_, err := out.WriteString(val)
+					if err != nil {
+						return nil, err
+					}
 				}
 			}
 		}
-		_, err := buf.WriteString(line + "\n")
+		_, err := out.WriteString(line + "\n")
 		if err != nil {
 			return nil, err
 		}
@@ -70,10 +66,10 @@ func insertStrings(r io.Reader, markerAndValues ...string) (io.Reader, error) {
 	if err := scanner.Err(); err != nil {
 		return nil, err
 	}
-	return buf, nil
+	return out, nil
 }
 
-func InsertStringsInFile(path string, markerAndValues ...string) error {
+func InsertStringsInFile(path string, markerAndValues map[string][]string) error {
 	isGoFile := false
 	if ext := filepath.Ext(path); ext == ".go" {
 		isGoFile = true
@@ -84,7 +80,7 @@ func InsertStringsInFile(path string, markerAndValues ...string) error {
 		return err
 	}
 
-	r, err := insertStrings(f, markerAndValues...)
+	r, err := insertStrings(f, markerAndValues)
 	if err != nil {
 		return err
 	}
@@ -114,4 +110,25 @@ func InsertStringsInFile(path string, markerAndValues ...string) error {
 	}
 
 	return err
+}
+
+// filterExistingValues removes the single-line values that already exists in
+// the given reader. Multi-line values are ignore currently simply because we
+// don't have a use-case for it.
+func filterExistingValues(r io.Reader, markerAndValues map[string][]string) error {
+	scanner := bufio.NewScanner(r)
+	for scanner.Scan() {
+		line := scanner.Text()
+		for marker, vals := range markerAndValues {
+			for i, val := range vals {
+				if strings.TrimSpace(line) == strings.TrimSpace(val) {
+					markerAndValues[marker] = append(vals[:i], vals[i+1:]...)
+				}
+			}
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		return err
+	}
+	return nil
 }
