@@ -54,7 +54,7 @@ Next, we get the types corresponding to actual Kinds, `CronJob` and `CronJobList
 `TypeMeta` (which describes API version and Kind), and also contains `ObjectMeta`, which holds things
 like name, namespace, and labels.
 
-`CronJobList` is simply a container for multiple `CronJobs`.  It's the Kind used in bulk operations,
+`CronJobList` is simply a container for multiple `CronJob`s.  It's the Kind used in bulk operations,
 like LIST.
 
 In general, we never modify either of these -- all modifications go in either Spec or Status
