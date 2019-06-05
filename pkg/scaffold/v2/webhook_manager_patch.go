@@ -37,7 +37,7 @@ func (p *ManagerWebhookPatch) GetInput() (input.Input, error) {
 }
 
 var ManagerWebhookPatchTemplate = `apiVersion: apps/v1
-kind: StatefulSet
+kind: Deployment
 metadata:
   name: controller-manager
   namespace: system

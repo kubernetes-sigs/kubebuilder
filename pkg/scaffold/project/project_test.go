@@ -14,7 +14,9 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
+	scaffoldv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/v1"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/scaffoldtest"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/metricsauth"
 )
 
 var _ = Describe("Project", func() {
@@ -247,7 +249,7 @@ Copyright %s Example Owners.
 		})
 		Context("with defaults ", func() {
 			It("should match the golden file", func() {
-				instance := &project.KustomizeImagePatch{}
+				instance := &scaffoldv1.KustomizeImagePatch{}
 				instance.Repo = "project"
 				Expect(s.Execute(input.Options{}, instance)).NotTo(HaveOccurred())
 
@@ -264,7 +266,7 @@ Copyright %s Example Owners.
 		})
 		Context("with defaults ", func() {
 			It("should match the golden file", func() {
-				instance := &project.KustomizePrometheusMetricsPatch{}
+				instance := &metricsauth.KustomizePrometheusMetricsPatch{}
 				instance.Repo = "project"
 				Expect(s.Execute(input.Options{}, instance)).NotTo(HaveOccurred())
 

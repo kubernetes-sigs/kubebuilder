@@ -162,6 +162,7 @@ func (api *API) scaffoldV2() error {
 			&resourcev2.Group{Resource: r},
 			&resourcev2.CRDSample{Resource: r},
 			&crdv2.EnableWebhookPatch{Resource: r},
+			&crdv2.EnableCAInjectionPatch{Resource: r},
 		)
 		if err != nil {
 			return fmt.Errorf("error scaffolding APIs: %v", err)

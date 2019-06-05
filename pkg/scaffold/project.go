@@ -23,14 +23,16 @@ import (
 	"os/exec"
 	"strings"
 
+	"sigs.k8s.io/kubebuilder/cmd/util"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
+	scaffoldv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/v1"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/manager"
-
-	"sigs.k8s.io/kubebuilder/cmd/util"
+	metricsauthv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/v1/metricsauth"
 	scaffoldv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v2/certmanager"
 	managerv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2/manager"
+	metricsauthv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2/metricsauth"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v2/webhook"
 )
 
@@ -110,9 +112,9 @@ func (p *V1Project) Scaffold() error {
 		input.Options{ProjectPath: projectInput.Path, BoilerplatePath: bpInput.Path},
 		&project.GitIgnore{},
 		&project.KustomizeRBAC{},
-		&project.KustomizeImagePatch{},
-		&project.KustomizePrometheusMetricsPatch{},
-		&project.KustomizeAuthProxyPatch{},
+		&scaffoldv1.KustomizeImagePatch{},
+		&metricsauthv1.KustomizePrometheusMetricsPatch{},
+		&metricsauthv1.KustomizeAuthProxyPatch{},
 		&project.AuthProxyService{},
 		&project.AuthProxyRole{},
 		&project.AuthProxyRoleBinding{},
@@ -179,9 +181,9 @@ func (p *V2Project) Scaffold() error {
 	return s.Execute(
 		input.Options{ProjectPath: projectInput.Path, BoilerplatePath: bpInput.Path},
 		&project.GitIgnore{},
-		&project.KustomizeImagePatch{},
-		&project.KustomizePrometheusMetricsPatch{},
-		&project.KustomizeAuthProxyPatch{},
+		&scaffoldv2.KustomizeImagePatch{},
+		&metricsauthv2.KustomizePrometheusMetricsPatch{},
+		&metricsauthv2.KustomizeAuthProxyPatch{},
 		&project.AuthProxyService{},
 		&project.AuthProxyRole{},
 		&project.AuthProxyRoleBinding{},
@@ -193,6 +195,8 @@ func (p *V2Project) Scaffold() error {
 		&scaffoldv2.Kustomize{},
 		&scaffoldv2.ManagerWebhookPatch{},
 		&scaffoldv2.ManagerRoleBinding{},
+		&scaffoldv2.LeaderElectionRole{},
+		&scaffoldv2.LeaderElectionRoleBinding{},
 		&scaffoldv2.KustomizeRBAC{},
 		&managerv2.Kustomization{},
 		&webhook.Kustomization{},
