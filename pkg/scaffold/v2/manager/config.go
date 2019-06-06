@@ -45,7 +45,6 @@ kind: Namespace
 metadata:
   labels:
     control-plane: controller-manager
-    controller-tools.k8s.io: "1.0"
   name: system
 ---
 apiVersion: apps/v1
@@ -55,18 +54,15 @@ metadata:
   namespace: system
   labels:
     control-plane: controller-manager
-    controller-tools.k8s.io: "1.0"
 spec:
   selector:
     matchLabels:
       control-plane: controller-manager
-      controller-tools.k8s.io: "1.0"
   replicas: 1
   template:
     metadata:
       labels:
         control-plane: controller-manager
-        controller-tools.k8s.io: "1.0"
     spec:
       containers:
       - command:

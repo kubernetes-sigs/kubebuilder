@@ -14,52 +14,46 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package resource
+package v2
 
 import (
-	"fmt"
 	"path/filepath"
 
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 )
 
-var _ input.File = &Role{}
+var _ input.File = &AuthProxyService{}
 
-// Role scaffolds the config/manager/group_role_rbac.yaml file
-type Role struct {
+// AuthProxyService scaffolds the config/rbac/auth_proxy_service.yaml file
+type AuthProxyService struct {
 	input.Input
-
-	// Resource is a resource in the API group
-	Resource *Resource
 }
 
 // GetInput implements input.File
-func (r *Role) GetInput() (input.Input, error) {
+func (r *AuthProxyService) GetInput() (input.Input, error) {
 	if r.Path == "" {
-		r.Path = filepath.Join("config", "manager", fmt.Sprintf(
-			"%s_role_rbac.yaml", r.Resource.Group))
+		r.Path = filepath.Join("config", "rbac", "auth_proxy_service.yaml")
 	}
-	r.TemplateBody = roleTemplate
+	r.TemplateBody = AuthProxyServiceTemplate
 	return r.Input, nil
 }
 
-// Validate validates the values
-func (r *Role) Validate() error {
-	return r.Resource.Validate()
-}
-
-var roleTemplate = `apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
+var AuthProxyServiceTemplate = `apiVersion: v1
+kind: Service
 metadata:
+  annotations:
+    prometheus.io/port: "8443"
+    prometheus.io/scheme: https
+    prometheus.io/scrape: "true"
   labels:
-    controller-tools.k8s.io: "1.0"
-  name: {{.Resource.Group}}-role
-rules:
-- apiGroups:
-  - {{ .Resource.Group }}.{{ .Domain }}
-  resources:
-  - '*'
-  verbs:
-  - '*'
-
+    control-plane: controller-manager
+  name: controller-manager-metrics-service
+  namespace: system
+spec:
+  ports:
+  - name: https
+    port: 8443
+    targetPort: https
+  selector:
+    control-plane: controller-manager
 `
