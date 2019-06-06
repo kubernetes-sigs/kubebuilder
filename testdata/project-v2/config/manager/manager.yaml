@@ -30,7 +30,6 @@ spec:
       - command:
         - /manager
         image: controller:latest
-        imagePullPolicy: Always
         name: manager
         resources:
           limits:

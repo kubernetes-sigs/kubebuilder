@@ -72,7 +72,6 @@ spec:
       - command:
         - /manager
         image: {{ .Image }}
-        imagePullPolicy: Always
         name: manager
         resources:
           limits:

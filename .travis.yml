@@ -18,13 +18,17 @@ git:
 
 go_import_path: sigs.k8s.io/kubebuilder
 
+services:
+- docker
+
 before_install:
 - go get -u github.com/golang/dep/cmd/dep
 - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then curl -sL https://github.com/git-lfs/git-lfs/releases/download/v2.7.2/git-lfs-darwin-amd64-v2.7.2.tar.gz | tar -xz git-lfs; fi
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then GO111MODULE=on scripts/install_and_setup.sh; fi
 
 before_script:
- - git lfs install
- - git lfs pull
+- git lfs install
+- git lfs pull
 
 # Install must be set to prevent default `go get` to run.
 # The dependencies have already been vendored by `dep` so
@@ -33,6 +37,7 @@ install:
   -
 
 script:
+- if [ "$TRAVIS_OS_NAME" = "linux" ]; then GO111MODULE=on TRACE=1 PATH=$PATH:$(pwd) ./test_e2e.sh ; fi
 - GO111MODULE=on TRACE=1 ./test.sh
 - ./scripts/install_test.sh
 
