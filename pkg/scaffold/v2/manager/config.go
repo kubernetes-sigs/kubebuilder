@@ -67,6 +67,8 @@ spec:
       containers:
       - command:
         - /manager
+        args:
+        - --enable-leader-election
         image: {{ .Image }}
         name: manager
         resources:
