@@ -1,5 +1,5 @@
 /*
-Copyright 2018 The Kubernetes Authors.
+Copyright 2019 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,13 +17,13 @@ limitations under the License.
 package e2e
 
 import (
+	"bufio"
+	"bytes"
 	"crypto/rand"
+	"io/ioutil"
 	"math/big"
 	"os"
 	"strings"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 )
 
 // randomSuffix returns a 4-letter string.
@@ -55,8 +55,38 @@ func getNonEmptyLines(output string) []string {
 	return res
 }
 
-func prepare(workDir string) {
-	By("create a path under given project dir, as the test work dir")
-	err := os.MkdirAll(workDir, 0755)
-	Expect(err).NotTo(HaveOccurred())
+// insertCode searches target content in the file and insert `toInsert` after the target.
+func insertCode(filename, target, code string) error {
+	contents, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return err
+	}
+	idx := strings.Index(string(contents), target)
+	out := string(contents[:idx+len(target)]) + code + string(contents[idx+len(target):])
+	return ioutil.WriteFile(filename, []byte(out), 0644)
+}
+
+// uncommentCode searches for target in the file and remove the prefix of the target content.
+func uncommentCode(filename, target, prefix string) error {
+	f, err := os.Open(filename)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	out := new(bytes.Buffer)
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		// uncomment the target line
+		if strings.Contains(line, target) {
+			line = strings.ReplaceAll(line, target, strings.TrimSpace(strings.TrimPrefix(target, prefix)))
+		}
+		_, err = out.WriteString(line + "\n")
+		if err != nil {
+			return err
+		}
+	}
+	return ioutil.WriteFile(filename, out.Bytes(), 0644)
 }

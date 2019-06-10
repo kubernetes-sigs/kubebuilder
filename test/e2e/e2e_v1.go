@@ -1,5 +1,5 @@
 /*
-Copyright 2018 The Kubernetes Authors.
+Copyright 2019 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package e2e
 
 import (
 	"fmt"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -30,69 +29,49 @@ import (
 
 var _ = Describe("kubebuilder", func() {
 	Context("with v1 scaffolding", func() {
-		imageName := "controller:v0.0.1"
-		var testSuffix string
-		var c *config
-		var kbTest *kubebuilderTest
-
+		var kbc *KBTestContext
 		BeforeEach(func() {
 			var err error
-			testSuffix, err = randomSuffix()
+			kbc, err = TestContext("GO111MODULE=off")
 			Expect(err).NotTo(HaveOccurred())
-			c, err = configWithSuffix(testSuffix)
-			Expect(err).NotTo(HaveOccurred())
-			kbTest = &kubebuilderTest{
-				Dir: c.workDir,
-				Env: []string{"GO111MODULE=off"},
-			}
-			prepare(c.workDir)
+			Expect(kbc.Prepare()).To(Succeed())
 		})
 
 		AfterEach(func() {
 			By("clean up created API objects during test process")
-			resources, err := kbTest.RunKustomizeCommand("build", filepath.Join("config", "default"))
-			if err != nil {
-				fmt.Fprintf(GinkgoWriter, "error when running kustomize build during cleaning up: %v\n", err)
-			}
-			if _, err = kbTest.RunKubectlCommandWithInput(resources, "delete", "--recursive", "-f", "-"); err != nil {
-				fmt.Fprintf(GinkgoWriter, "error when running kubectl delete during cleaning up: %v\n", err)
-			}
-			if _, err = kbTest.RunKubectlCommand(
+			kbc.CleanupManifests(filepath.Join("config", "default"))
+			if _, err := kbc.Kubectl.Command(
 				"delete", "--recursive",
 				"-f", filepath.Join("config", "crds"),
 			); err != nil {
 				fmt.Fprintf(GinkgoWriter, "error when running kubectl delete during cleaning up crd: %v\n", err)
 			}
 
-			By("remove container image created during test")
-			kbTest.CleanupImage(c.controllerImageName)
-
-			By("remove test work dir")
-			os.RemoveAll(c.workDir)
+			By("remove container image and work dir")
+			kbc.Destroy()
 		})
 
 		It("should generate a runnable project", func() {
 			// prepare v1 vendor
 			By("untar the vendor tarball")
 			cmd := exec.Command("tar", "-zxf", "../../../testdata/vendor.v1.tgz")
-			cmd.Dir = c.workDir
-			err := cmd.Run()
+			_, err := kbc.Run(cmd)
 			Expect(err).Should(Succeed())
 
 			var controllerPodName string
 
 			By("init v1 project")
-			err = kbTest.Init(
+			err = kbc.Init(
 				"--project-version", "1",
-				"--domain", c.domain,
+				"--domain", kbc.Domain,
 				"--dep=false")
 			Expect(err).Should(Succeed())
 
 			By("creating api definition")
-			err = kbTest.CreateAPI(
-				"--group", c.group,
-				"--version", c.version,
-				"--kind", c.kind,
+			err = kbc.CreateAPI(
+				"--group", kbc.Group,
+				"--version", kbc.Version,
+				"--kind", kbc.Kind,
 				"--namespaced",
 				"--resource",
 				"--controller",
@@ -100,7 +79,7 @@ var _ = Describe("kubebuilder", func() {
 			Expect(err).Should(Succeed())
 
 			By("creating core-type resource controller")
-			err = kbTest.CreateAPI(
+			err = kbc.CreateAPI(
 				"--group", "apps",
 				"--version", "v1",
 				"--kind", "Deployment",
@@ -111,11 +90,11 @@ var _ = Describe("kubebuilder", func() {
 			Expect(err).Should(Succeed())
 
 			By("building image")
-			err = kbTest.Make("docker-build", "IMG="+imageName)
+			err = kbc.Make("docker-build", "IMG="+kbc.ImageName)
 			Expect(err).Should(Succeed())
 
 			By("loading docker image into kind cluster")
-			err = kbTest.LoadImageToKindCluster(imageName)
+			err = kbc.LoadImageToKindCluster()
 			Expect(err).Should(Succeed())
 
 			// NOTE: If you want to run the test against a GKE cluster, you will need to grant yourself permission.
@@ -123,15 +102,15 @@ var _ = Describe("kubebuilder", func() {
 			// $ kubectl create clusterrolebinding myname-cluster-admin-binding --clusterrole=cluster-admin --user=myname@mycompany.com
 			// https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control
 			By("deploying controller manager")
-			err = kbTest.Make("deploy")
+			err = kbc.Make("deploy")
 			Expect(err).Should(Succeed())
 
 			By("validate the controller-manager pod running as expected")
 			verifyControllerUp := func() error {
 				// Get pod name
-				podOutput, err := kbTest.RunKubectlGetPodsInNamespace(
-					testSuffix,
-					"-l", "control-plane=controller-manager",
+				podOutput, err := kbc.Kubectl.Get(
+					true,
+					"pods", "-l", "control-plane=controller-manager",
 					"-o", "go-template={{ range .items }}{{ if not .metadata.deletionTimestamp }}{{ .metadata.name }}{{ \"\\n\" }}{{ end }}{{ end }}",
 				)
 				Expect(err).NotTo(HaveOccurred())
@@ -143,9 +122,9 @@ var _ = Describe("kubebuilder", func() {
 				Expect(controllerPodName).Should(ContainSubstring("controller-manager"))
 
 				// Validate pod status
-				status, err := kbTest.RunKubectlGetPodsInNamespace(
-					testSuffix,
-					controllerPodName, "-o", "jsonpath={.status.phase}",
+				status, err := kbc.Kubectl.Get(
+					true,
+					"pods", controllerPodName, "-o", "jsonpath={.status.phase}",
 				)
 				Expect(err).NotTo(HaveOccurred())
 				if status != "Running" {
@@ -157,18 +136,14 @@ var _ = Describe("kubebuilder", func() {
 			Eventually(verifyControllerUp, 2*time.Minute, time.Second).Should(Succeed())
 
 			By("creating an instance of CR")
-			inputFile := filepath.Join("config", "samples", fmt.Sprintf("%s_%s_%s.yaml", c.group, c.version, strings.ToLower(c.kind)))
-			_, err = kbTest.RunKubectlCommand("apply", "-f", inputFile)
+			inputFile := filepath.Join("config", "samples", fmt.Sprintf("%s_%s_%s.yaml", kbc.Group, kbc.Version, strings.ToLower(kbc.Kind)))
+			_, err = kbc.Kubectl.Apply(false, "-f", inputFile)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("validate the created resource object gets reconciled in controller")
 			controllerContainerLogs := func() string {
 				// Check container log to validate that the created resource object gets reconciled in controller
-				logOutput, err := kbTest.RunKubectlCommand(
-					"logs", controllerPodName,
-					"-c", "manager",
-					"-n", fmt.Sprintf("e2e-%s-system", testSuffix),
-				)
+				logOutput, err := kbc.Kubectl.Logs(controllerPodName, "-c", "manager")
 				Expect(err).NotTo(HaveOccurred())
 
 				return logOutput
