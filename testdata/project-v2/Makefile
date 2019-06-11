@@ -4,6 +4,13 @@ IMG ?= controller:latest
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true"
 
+# Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
+ifeq (,$(shell go env GOBIN))
+GOBIN=$(shell go env GOPATH)/bin
+else
+GOBIN=$(shell go env GOBIN)
+endif
+
 all: manager
 
 # Run tests
@@ -58,7 +65,7 @@ docker-push:
 controller-gen:
 ifeq (, $(shell which controller-gen))
 	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.2.0-beta.2
-CONTROLLER_GEN=$(shell go env GOPATH)/bin/controller-gen
+CONTROLLER_GEN=$(GOBIN)/controller-gen
 else
 CONTROLLER_GEN=$(shell which controller-gen)
 endif
