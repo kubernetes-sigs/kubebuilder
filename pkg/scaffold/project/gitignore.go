@@ -52,7 +52,7 @@ bin
 *.out
 
 # Kubernetes Generated files - skip generated files, except for vendored files
-
+**/zz_generated.*
 !vendor/**/zz_generated.*
 
 # editor and IDE paraphernalia
