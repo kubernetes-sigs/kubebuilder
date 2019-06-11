@@ -21,9 +21,9 @@ use this as an opportunity to see how to interact with external types.
 
 ## Scaffolding Out Our Project
 
-As covered in the [quick start](./quick-start.md), we'll need to scaffold
+As covered in the [quick start](../quick-start.md), we'll need to scaffold
 out a new project.  Make sure you've [installed
-Kubebuilder](./quick-start.md#installation), then scaffold out a new
+Kubebuilder](../quick-start.md#installation), then scaffold out a new
 project:
 
 ```bash

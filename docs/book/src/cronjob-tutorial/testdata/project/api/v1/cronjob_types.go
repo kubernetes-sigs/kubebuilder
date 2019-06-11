@@ -57,8 +57,12 @@ the fields.
 
 // CronJobSpec defines the desired state of CronJob
 type CronJobSpec struct {
+	// +kubebuilder:validation:Minimum=0
+
 	// The schedule in Cron format, see https://en.wikipedia.org/wiki/Cron.
 	Schedule string `json:"schedule"`
+
+	// +kubebuilder:validation:Minimum=0
 
 	// Optional deadline in seconds for starting the job if it misses scheduled
 	// time for any reason.  Missed jobs executions will be counted as failed ones.
@@ -81,10 +85,14 @@ type CronJobSpec struct {
 	// Specifies the job that will be created when executing a CronJob.
 	JobTemplate batchv1beta1.JobTemplateSpec `json:"jobTemplate"`
 
+	// +kubebuilder:validation:Minimum=0
+
 	// The number of successful finished jobs to retain.
 	// This is a pointer to distinguish between explicit zero and not specified.
 	// +optional
 	SuccessfulJobsHistoryLimit *int32 `json:"successfulJobsHistoryLimit,omitempty"`
+
+	// +kubebuilder:validation:Minimum=0
 
 	// The number of failed finished jobs to retain.
 	// This is a pointer to distinguish between explicit zero and not specified.

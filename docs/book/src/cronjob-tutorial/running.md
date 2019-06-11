@@ -13,6 +13,9 @@ Now that we've installed our CRDs, we can run the controller against our
 cluster.  This will use whatever credentials that we connect to the
 cluster with, so we don't need to worry about RBAC just yet.
 
+Note that if you have a webhook and want to deploy it locally, you need to
+ensure the certificates are in the right place.
+
 In a separate terminal, run
 
 ```bash
