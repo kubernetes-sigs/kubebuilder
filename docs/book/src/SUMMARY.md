@@ -26,4 +26,10 @@
 
 ---
 
+- [Reference](./reference/reference.md)
+
+  - [Using Finalizers](./reference/using-finalizers.md)
+
+---
+
 [Appendix: The TODO Landing Page](./TODO.md)
