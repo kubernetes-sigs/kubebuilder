@@ -16,7 +16,7 @@ takes the name of an object, and returns whether or not we need to try
 again (e.g. in case of errors or periodic controllers, like the
 HorizontalPodAutoscaler).
 
-{{#literatego ./testdata/emptycontroller.go}}
+{{ #literatego ./testdata/emptycontroller.go }}
 
 Now that we've seen the basic structure of a reconciler, let's fill out
 the logic for `CronJob`s.
