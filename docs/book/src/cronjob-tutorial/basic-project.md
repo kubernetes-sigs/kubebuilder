@@ -5,7 +5,7 @@ basic pieces of boilerplate.
 
 ## Build Infrastructure
 
-First up, basic infrastructure for building you project:
+First up, basic infrastructure for building your project:
 
 <details><summary>`go.mod`: A new Go module matching our project, with basic dependencies</summary>
 

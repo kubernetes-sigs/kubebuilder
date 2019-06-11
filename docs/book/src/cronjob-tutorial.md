@@ -2,7 +2,7 @@
 
 Too many tutorials start out with some really contrived setup, or some toy
 application that gets the basics across, and then stalls out on the more
-complicated suff.  Instead, this tutorial should take you through (almost)
+complicated stuff.  Instead, this tutorial should take you through (almost)
 the full gamut of complexity with Kubebuilder, starting off simple and
 building up to something pretty full-featured.
 
@@ -32,5 +32,5 @@ project:
 kubebuilder init --domain tutorial.kubebuilder.io
 ```
 
-Now that we've got've a project in place, let's take a look at what
+Now that we've got a project in place, let's take a look at what
 Kubebuilder has scaffolded for us so far...
