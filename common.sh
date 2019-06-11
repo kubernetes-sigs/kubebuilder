@@ -41,17 +41,10 @@ cd "$base_dir" || {
   exit 1
 }
 
-go_workspace=''
-for p in ${GOPATH//:/ }; do
-  if [[ $PWD/ = $p/* ]]; then
-    go_workspace=$p
-  fi
-done
-
-if [ -z $go_workspace ]; then
-  echo 'Current directory is not in $GOPATH' >&2
-  exit 1
-fi
+# create a temporary gopath, and clean it up (with some sanity checks to ensure
+# we don't do anything terrible)
+tmp_gopath=$(mktemp --tmpdir -d kubebuilder-test-gopath-XXXXXX)
+trap "[[ ${tmp_gopath} == *kubebuilder-test-gopath* ]] && rm -rf ${tmp_gopath}" SIGHUP SIGINT SIGTERM
 
 # k8s_version=1.11.0
 k8s_version=1.14.1
@@ -111,6 +104,10 @@ function prepare_staging_dir {
   fi
 }
 
+# make sure to use our test gobin too
+test_gobin="/tmp/kubebuilder-test-bin"
+export PATH=${PATH}:${test_gobin}
+
 # fetch k8s API gen tools and make it available under kb_root_dir/bin.
 function fetch_tools {
   if [ -n "$SKIP_FETCH_TOOLS" ]; then
@@ -126,6 +123,19 @@ function fetch_tools {
     curl -sL ${kb_tools_download_url} -o "$kb_tools_archive_path"
   fi
   tar -zvxf "$kb_tools_archive_path" -C "$tmp_root/"
+
+  header_text "ensuring dep is present for legacy v1 scaffold tests"
+  if ! which dep; then
+    mkdir -p test_gobin
+    # can't install dep with modules due to dependency versioning (lol)
+    curl -sL -o ${test_gobin}/dep https://github.com/golang/dep/releases/download/0.5.2/dep-$(go env GOOS)-$(go env GOARCH)
+  fi
+
+  header_text "ensuring kind is present for e2e tests"
+  if ! which kind; then
+    mkdir -p test_gobin
+    GOBIN=${test_gobin} GO111MODULE="on" go get sigs.k8s.io/kind@v0.3.0
+  fi
 }
 
 function build_kb {
@@ -142,7 +152,7 @@ function build_kb {
 }
 
 function prepare_testdir_under_gopath {
-  kb_test_dir=${go_workspace}/src/sigs.k8s.io/kubebuilder-test
+  kb_test_dir=${tmp_gopath}/src/sigs.k8s.io/kubebuilder-test
   header_text "preparing test directory $kb_test_dir"
   rm -rf "$kb_test_dir" && mkdir -p "$kb_test_dir" && cd "$kb_test_dir"
   header_text "running kubebuilder commands in test directory $kb_test_dir"
@@ -162,7 +172,7 @@ function setup_envs {
 
 function restore_go_deps {
   header_text "restoring Go dependencies"
-  tar -zxf ${go_workspace}/src/sigs.k8s.io/kubebuilder/testdata/vendor.v1.tgz
+  tar -zxf ${base_dir}/testdata/vendor.v1.tgz
 }
 
 function cache_project {

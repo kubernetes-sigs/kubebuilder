@@ -20,23 +20,16 @@
 #
 set -e
 
-go_workspace=''
-for p in ${GOPATH//:/ }; do
-  if [[ $PWD/ = $p/* ]]; then
-    go_workspace=$p
-  fi
-done
-
-if [ -z $go_workspace ]; then
-  echo 'Current directory is not in $GOPATH' >&2
-  exit 1
-fi
+# create a temporary gopath, and clean it up (with some sanity checks to ensure
+# we don't do anything terrible)
+tmp_gopath=$(mktemp -d kubebuilder-test-gopath-XXXXXX)
+trap "[[ ${tmp_gopath} == *kubebuilder-test-gopath* ]] && rm -rf ${tmp_gopath}" SIGHUP SIGINT SIGTERM
+export GOPATH=${tmp_gopath}
 
 build_kb() {
 	rm -f /tmp/kb && \
 	GO111MODULE=on go build -o /tmp/kb sigs.k8s.io/kubebuilder/cmd
 }
-
 
 #
 # generate_vendor takes project version as input and creates vendor archive
@@ -45,7 +38,7 @@ build_kb() {
 #
 generate_vendor() {
 	version=$1
-	project_dir=${go_workspace}/src/sigs.k8s.io/kubebuilder-test
+	project_dir=${GOPATH}/src/sigs.k8s.io/kubebuilder-test
 	mkdir -p ${project_dir}
 	rm -rf ${project_dir}/*
 	pushd . 

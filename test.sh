@@ -110,7 +110,11 @@ build_kb
 setup_envs
 
 export GO111MODULE=auto
+old_gopath=${GOPATH} # may be empty, that's fine here
+export GOPATH=${tmp_gopath}
 prepare_testdir_under_gopath
+pwd
+echo $GOPATH
 test_init_project
 cache_project
 
@@ -143,7 +147,8 @@ dump_project
 test_create_namespaced_coretype_controller
 
 header_text "running kubebuilder unit tests"
-cd ${go_workspace}/src/sigs.k8s.io/kubebuilder
+GOPATH=${old_gopath} # reset to whatever it was, even if unset
+cd ${base_dir}
 
 export GO111MODULE=on
 go test ./cmd/... ./pkg/...
