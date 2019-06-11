@@ -1,5 +1,6 @@
 resources:
-- webhookmanifests.yaml  # disabled till v2 has webhook support
+- manifests.yaml
+- service.yaml
 
 configurations:
 - kustomizeconfig.yaml

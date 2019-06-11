@@ -1,5 +1,5 @@
 apiVersion: apps/v1
-kind: StatefulSet
+kind: Deployment
 metadata:
   name: controller-manager
   namespace: system
@@ -12,13 +12,12 @@ spec:
         - containerPort: 443
           name: webhook-server
           protocol: TCP
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: webhook-service
-  namespace: system
-spec:
-  ports:
-  - port: 443
-    targetPort: 443
+        volumeMounts:
+        - mountPath: /tmp/k8s-webhook-server/serving-certs
+          name: cert
+          readOnly: true
+      volumes:
+      - name: cert
+        secret:
+          defaultMode: 420
+          secretName: webhook-server-cert
