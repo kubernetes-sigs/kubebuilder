@@ -5,7 +5,7 @@ basic pieces of boilerplate.
 
 ## Build Infrastructure
 
-First up, basic infrastructure for building you project:
+First up, basic infrastructure for building your project:
 
 <details><summary>`go.mod`: A new Go module matching our project, with basic dependencies</summary>
 
@@ -28,24 +28,24 @@ First up, basic infrastructure for building you project:
 
 ## Launch Configuration
 
-We also get launch configuration under the
-[`config/`](https://sigs.k8s.io/kubebuilder.io/docs/book/cronjob-tutorial/testdata/project/config)
+We also get launch configurations under the
+[`config/`](testdata/project/config)
 directory.  Right now, it just contains
 [Kustomize](https://sigs.k8s.io/kustomize) YAML definitions required to
 launch our controller on a cluster, but once we get started writing our
 controller, it'll also hold our CustomResourceDefinitions, RBAC
 configuration, and WebhookConfigurations.
 
-[`config/default`](../TODO.md) contains a [Kustomize base](../TODO.md) for launching
+[`config/default`](testdata/project/config/default) contains a [Kustomize base](../TODO.md) for launching
 the controller in a standard configuration.
 
 Each other directory contains a different piece of configuration,
 refactored out into its own base:
 
-- [`config/manager`](../TODO.md): launch your controllers as pods in the
+- [`config/manager`](testdata/project/config/manager): launch your controllers as pods in the
   cluster
 
-- [`config/rbac`](../TODO.md): permissions required to run your
+- [`config/rbac`](testdata/project/config/rbac): permissions required to run your
   controllers under their own service account
 
 ## The Entrypoint
