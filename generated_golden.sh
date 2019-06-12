@@ -33,7 +33,7 @@ scaffold_test_project() {
 	testdata_dir=$(pwd)/testdata
 	mkdir -p ./testdata/$project
 	rm -rf ./testdata/$project/*
-	pushd . 
+	pushd .
 	cd testdata/$project
 
 	kb=$testdata_dir/../bin/kubebuilder
@@ -79,6 +79,13 @@ scaffold_test_project() {
 }
 
 set -e
+
+if ! git lfs > /dev/null 2>&1 ; then
+    echo "this project requires git-lfs, see: https://git-lfs.github.com/"
+    echo "after installing, you'll need to git checkout ./testdata/*tgz"
+    exit 1
+fi
+
 build_kb
 scaffold_test_project gopath/src/project 1
 scaffold_test_project project-v2 2

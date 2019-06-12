@@ -62,7 +62,7 @@ func (m *Main) Update(opts *MainUpdateOptions) error {
 `, opts.Resource.Group, opts.Resource.Version, resPkg, opts.Resource.Version)
 	ctrlImportCodeFragment := fmt.Sprintf(`"%s/controllers"
 `, opts.Project.Repo)
-	addschemeCodeFragment := fmt.Sprintf(`%s%s.AddToScheme(scheme)
+	addschemeCodeFragment := fmt.Sprintf(`_ = %s%s.AddToScheme(scheme)
 `, opts.Resource.Group, opts.Resource.Version)
 	reconcilerSetupCodeFragment := fmt.Sprintf(`err = (&controllers.%sReconciler{
 	 	Client: mgr.GetClient(),
