@@ -8,12 +8,12 @@ building up to something pretty full-featured.
 
 Let's pretend (and sure, this is a teensy bit contrived) that we've
 finally gotten tired of the maintenance burden of the non-Kubebuilder
-implementation of the CronJob controller in Kuberntes, and we'd like to
+implementation of the CronJob controller in Kubernetes, and we'd like to
 rewrite it using KubeBuilder.
 
 The job (no pun intended) of the *CronJob* controller is to run one-off
 tasks on the Kubernetes cluster at regular intervals.  It does the by
-bulding on top of the *Job* controller, whose task is to run one-off tasks
+building on top of the *Job* controller, whose task is to run one-off tasks
 once, seeing them to completion.
 
 Instead of trying to tackle rewriting the Job controller as well, we'll

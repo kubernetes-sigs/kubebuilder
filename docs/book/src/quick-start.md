@@ -60,7 +60,7 @@ kubebuilder create api --group webapp --version v1 --kind Guestbook
 This will create the files `api/v1/guestbook_types.go` and
 `controller/guestbook_controller.go` for you to edit.
 
-**Optional:** Edit the API definition or the reconcilation business logic.
+**Optional:** Edit the API definition or the reconciliation business logic.
 For more on this see [What is
 a Controller](TODO.md) and [What is
 a Resource](TODO.md)
@@ -110,7 +110,7 @@ Deploy the controller to the cluster:
 make deploy
 ```
 
-If you encouter RBAC errors, you may need to grant yourself cluster-admin
+If you encounter RBAC errors, you may need to grant yourself cluster-admin
 privileges:
 
 <!-- TODO(directxman12): fill this in -->
