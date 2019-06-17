@@ -12,7 +12,7 @@ implementation of the CronJob controller in Kubernetes, and we'd like to
 rewrite it using KubeBuilder.
 
 The job (no pun intended) of the *CronJob* controller is to run one-off
-tasks on the Kubernetes cluster at regular intervals.  It does the by
+tasks on the Kubernetes cluster at regular intervals.  It does this by
 building on top of the *Job* controller, whose task is to run one-off tasks
 once, seeing them to completion.
 
