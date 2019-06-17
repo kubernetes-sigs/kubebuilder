@@ -37,8 +37,8 @@ var (
 
 func init() {
 
-	crewv1.AddToScheme(scheme)
-	corev1.AddToScheme(scheme)
+	_ = crewv1.AddToScheme(scheme)
+	_ = corev1.AddToScheme(scheme)
 	// +kubebuilder:scaffold:scheme
 }
 
