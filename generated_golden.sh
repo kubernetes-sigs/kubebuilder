@@ -43,7 +43,8 @@ scaffold_test_project() {
 		export GO111MODULE=auto
 		export GOPATH=$(pwd)/../.. # go ignores vendor under testdata, so fake out a gopath
 		# untar Gopkg.lock and vendor directory for appropriate project version
-		tar -zxf $testdata_dir/vendor.v$version.tgz
+		download_vendor_archive
+		tar -zxf $tmp_root/vendor.v$version.tgz
 
 		$kb init --project-version $version --domain testproject.org --license apache2 --owner "The Kubernetes authors" --dep=false
 		$kb create api --group crew --version v1 --kind FirstMate --controller=true --resource=true --make=false
@@ -79,12 +80,6 @@ scaffold_test_project() {
 }
 
 set -e
-
-if ! git lfs > /dev/null 2>&1 ; then
-    echo "this project requires git-lfs, see: https://git-lfs.github.com/"
-    echo "after installing, you'll need to git checkout ./testdata/*tgz"
-    exit 1
-fi
 
 build_kb
 scaffold_test_project gopath/src/project 1

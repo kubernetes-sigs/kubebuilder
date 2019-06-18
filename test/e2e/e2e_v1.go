@@ -53,9 +53,16 @@ var _ = Describe("kubebuilder", func() {
 
 		It("should generate a runnable project", func() {
 			// prepare v1 vendor
-			By("untar the vendor tarball")
-			cmd := exec.Command("tar", "-zxf", "../../../testdata/vendor.v1.tgz")
+			By("downloading the vendor tarball")
+			cmd := exec.Command("wget",
+				"https://storage.googleapis.com/kubebuilder-vendor/vendor.v1.tgz",
+				"-O", "/tmp/vendor.v1.tgz")
 			_, err := kbc.Run(cmd)
+			Expect(err).Should(Succeed())
+
+			By("untar the vendor tarball")
+			cmd = exec.Command("tar", "-zxf", "/tmp/vendor.v1.tgz")
+			_, err = kbc.Run(cmd)
 			Expect(err).Should(Succeed())
 
 			var controllerPodName string
