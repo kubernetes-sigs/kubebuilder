@@ -160,9 +160,22 @@ function setup_envs {
   export KUBECONFIG="$(kind get kubeconfig-path --name="kind")"
 }
 
+# download_vendor_archive downloads vendor tarball for v1 projects. It skips the
+# download if tarball exists.
+function download_vendor_archive {
+  archive_name="vendor.v1.tgz"
+  archive_download_url="https://storage.googleapis.com/kubebuilder-vendor/$archive_name"
+  archive_path="$tmp_root/$archive_name"
+  if [ ! -f $archive_path ]; then
+    header_text "downloading vendor archive $archive_path"
+    curl -sL ${archive_download_url} -o "$archive_path"
+  fi
+}
+
 function restore_go_deps {
   header_text "restoring Go dependencies"
-  tar -zxf ${go_workspace}/src/sigs.k8s.io/kubebuilder/testdata/vendor.v1.tgz
+  download_vendor_archive
+  tar -zxf $tmp_root/vendor.v1.tgz
 }
 
 function cache_project {
