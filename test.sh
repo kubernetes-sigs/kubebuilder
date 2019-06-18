@@ -85,14 +85,27 @@ y
 EOF
 }
 
+# download_vendor_archive downloads vendor tarball for v1 projects. It skips the
+# download if tarball exists.
+function download_vendor_archive {
+  archive_name="vendor.v1.tgz"
+  archive_download_url="https://storage.googleapis.com/kubebuilder-vendor/$archive_name"
+  archive_path="$tmp_root/$archive_name"
+  if [ ! -f $archive_path ]; then
+    header_text "downloading vendor archive $archive_path"
+    curl -sL ${archive_download_url} -o "$archive_path"
+  fi
+}
+
 function test_project {
   project_dir=$1
   version=$2
   header_text "performing tests in dir $project_dir for project version v$version"
-  vendor_tarball=$(pwd)/testdata/vendor.v$version.tgz
+  vendor_tarball=$tmp_root/vendor.v$version.tgz
   old_gopath=$GOPATH
   if [[ $version == "1" ]]; then
       export GOPATH=$(pwd)/testdata/gopath
+      download_vendor_archive
   fi
   cd testdata/$project_dir
   # v2 uses modules, and thus doesn't have a vendor directory
