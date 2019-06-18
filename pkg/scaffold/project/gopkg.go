@@ -35,7 +35,7 @@ type GopkgToml struct {
 	// ManagedHeader is the header to write after the user owned pieces and before the managed parts of the Gopkg.toml
 	ManagedHeader string
 
-	// DefaultGopkgUserContent is the default content to use for the user owned pieces
+	// DefaultUserContent is the default content to use for the user owned pieces
 	DefaultUserContent string
 
 	// UserContent is the content to use for the user owned pieces
