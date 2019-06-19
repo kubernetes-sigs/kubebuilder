@@ -21,7 +21,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/markbates/inflect"
+	"github.com/gobuffalo/flect"
 
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/resource"
@@ -38,8 +38,7 @@ type EnableCAInjectionPatch struct {
 // GetInput implements input.File
 func (p *EnableCAInjectionPatch) GetInput() (input.Input, error) {
 	if p.Path == "" {
-		rs := inflect.NewDefaultRuleset()
-		plural := rs.Pluralize(strings.ToLower(p.Resource.Kind))
+		plural := flect.Pluralize(strings.ToLower(p.Resource.Kind))
 		p.Path = filepath.Join("config", "crd", "patches",
 			fmt.Sprintf("cainjection_in_%s.yaml", plural))
 	}

@@ -23,7 +23,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/markbates/inflect"
+	"github.com/gobuffalo/flect"
 	"github.com/spf13/cobra"
 	flag "github.com/spf13/pflag"
 
@@ -65,7 +65,7 @@ This command is only available for v1 scaffolding project.
 			fmt.Println("Writing scaffold for you to edit...")
 
 			if len(o.res.Resource) == 0 {
-				o.res.Resource = inflect.NewDefaultRuleset().Pluralize(strings.ToLower(o.res.Kind))
+				o.res.Resource = flect.Pluralize(strings.ToLower(o.res.Kind))
 			}
 
 			err = (&scaffold.Scaffold{}).Execute(input.Options{},
