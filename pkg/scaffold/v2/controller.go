@@ -23,7 +23,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/markbates/inflect"
+	"github.com/gobuffalo/flect"
 
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/resource"
@@ -52,8 +52,7 @@ func (a *Controller) GetInput() (input.Input, error) {
 	a.ResourcePackage, a.GroupDomain = getResourceInfo(a.Resource, a.Input)
 
 	if a.Plural == "" {
-		rs := inflect.NewDefaultRuleset()
-		a.Plural = rs.Pluralize(strings.ToLower(a.Resource.Kind))
+		a.Plural = flect.Pluralize(strings.ToLower(a.Resource.Kind))
 	}
 
 	if a.Path == "" {

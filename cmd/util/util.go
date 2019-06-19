@@ -29,7 +29,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/markbates/inflect"
+	"github.com/gobuffalo/flect"
 )
 
 var Domain string
@@ -55,7 +55,7 @@ func Write(path, templateName, templateValue string, data interface{}) bool {
 		template.FuncMap{
 			"title":  strings.Title,
 			"lower":  strings.ToLower,
-			"plural": inflect.NewDefaultRuleset().Pluralize,
+			"plural": flect.Pluralize,
 		},
 	).Parse(templateValue))
 

@@ -90,12 +90,12 @@ var _ = Describe("Resource", func() {
 			instance = &resource.Resource{Group: "crew", Kind: "firstMate", Version: "v1"}
 			Expect(instance.Validate()).NotTo(Succeed())
 			Expect(instance.Validate().Error()).To(ContainSubstring(
-				`Kind must be camelcase (expected FirstMate was firstMate)`))
+				`kind must be camelcase (expected FirstMate was firstMate)`))
 
 			instance = &resource.Resource{Group: "crew", Kind: "firstmate", Version: "v1"}
 			Expect(instance.Validate()).NotTo(Succeed())
 			Expect(instance.Validate().Error()).To(ContainSubstring(
-				`Kind must be camelcase (expected Firstmate was firstmate)`))
+				`kind must be camelcase (expected Firstmate was firstmate)`))
 		})
 
 		It("should default the Resource by pluralizing the Kind", func() {
@@ -110,6 +110,12 @@ var _ = Describe("Resource", func() {
 			instance = &resource.Resource{Group: "crew", Kind: "Helmswoman", Version: "v1"}
 			Expect(instance.Validate()).To(Succeed())
 			Expect(instance.Resource).To(Equal("helmswomen"))
+		})
+
+		It("should allow Cat as a Kind", func() {
+			instance := &resource.Resource{Group: "crew", Kind: "Cat", Version: "v1"}
+			Expect(instance.Validate()).To(Succeed())
+			Expect(instance.Resource).To(Equal("cats"))
 		})
 
 		It("should keep the Resource if specified", func() {

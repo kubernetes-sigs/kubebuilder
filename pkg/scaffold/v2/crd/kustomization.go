@@ -21,7 +21,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/markbates/inflect"
+	"github.com/gobuffalo/flect"
 
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/resource"
@@ -61,8 +61,7 @@ func (c *Kustomization) Update() error {
 
 	// TODO(directxman12): not technically valid if something changes from the default
 	// (we'd need to parse the markers)
-	rs := inflect.NewDefaultRuleset()
-	plural := rs.Pluralize(strings.ToLower(c.Resource.Kind))
+	plural := flect.Pluralize(strings.ToLower(c.Resource.Kind))
 
 	kustomizeResourceCodeFragment := fmt.Sprintf("- bases/%s.%s_%s.yaml\n", c.Resource.Group, c.Domain, plural)
 	kustomizeWebhookPatchCodeFragment := fmt.Sprintf("#- patches/webhook_in_%s.yaml\n", plural)
