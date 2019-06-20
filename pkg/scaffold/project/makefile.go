@@ -55,15 +55,15 @@ IMG ?= {{ .Image }}
 all: test manager
 
 # Run tests
-test: generate fmt vet manifests
+test: generate lint manifests
 	go test ./pkg/... ./cmd/... -coverprofile cover.out
 
 # Build manager binary
-manager: generate fmt vet
+manager: generate lint
 	go build -o bin/manager {{ .Repo }}/cmd/manager
 
 # Run against the configured Kubernetes cluster in ~/.kube/config
-run: generate fmt vet
+run: generate lint
 	go run ./cmd/manager/main.go
 
 # Install CRDs into a cluster
@@ -79,13 +79,12 @@ deploy: manifests
 manifests:
 	go run {{ .ControllerToolsPath }}/cmd/controller-gen/main.go all
 
-# Run go fmt against code
-fmt:
-	go fmt ./pkg/... ./cmd/...
+# Run golangci-lint against code
+lint: $(GOPATH)/bin/golangci-lint
+	golangci-lint run  -E gofmt ./pkg/... ./cmd/...
 
-# Run go vet against code
-vet:
-	go vet ./pkg/... ./cmd/...
+$(GOPATH)/bin/golangci-lint:
+	go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
 
 # Generate code
 generate:
