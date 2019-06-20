@@ -54,10 +54,10 @@ need to revisit these.
 
 /*
 `Reconcile` actually performs the reconciling for a single named object.
-Our [`Request`](../TODO.md) just has a name, but we can use the client to fetch
+Our [Request](https://godoc.org/sigs.k8s.io/controller-runtime/pkg/reconcile#Request) just has a name, but we can use the client to fetch
 that object from the cache.
 
-We return a empty result and no error, which indicates to controller-runtime that
+We return an empty result and no error, which indicates to controller-runtime that
 we've succesfully reconciled this object and don't need to try again until there's
 some changes.
 
