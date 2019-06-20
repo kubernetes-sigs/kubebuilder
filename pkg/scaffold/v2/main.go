@@ -130,11 +130,12 @@ import (
 )
 
 var (
-	scheme   = clientgoscheme.Scheme
-    setupLog = ctrl.Log.WithName("setup")
+	scheme = runtime.NewScheme()
+	setupLog = ctrl.Log.WithName("setup")
 )
 
 func init() {
+	_ = clientgoscheme.AddToScheme(scheme)
 
 	%s
 }
@@ -160,7 +161,7 @@ func main() {
 	}
 
 
-    %s
+	%s
 
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
