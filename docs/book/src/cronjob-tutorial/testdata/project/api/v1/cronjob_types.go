@@ -34,14 +34,14 @@ First, let's take a look at our spec.  As we discussed before, spec holds
 Fundamentally a CronJob needs the following pieces:
 
 - A schedule (the *cron* in CronJob)
-- A template to for the Job to run (the
+- A template for the Job to run (the
 *job* in CronJob)
 
 We'll also want a few extras, which will make our users' lives easier:
 
 - A deadline for starting jobs (if we miss this deadline, we'll just wait till
   the next scheduled time)
-- What do to if multiple jobs would run at once (do we wait? stop the old one? run both?)
+- What to do if multiple jobs would run at once (do we wait? stop the old one? run both?)
 - A way to pause the running of a CronJob, in case something's wrong with it
 - Limits on old job history
 
@@ -50,7 +50,7 @@ keep track of whether a job has run.  We can use at least one old job to do
 this.
 
 We'll use several markers (`// +comment`) to specify additional metadata.  These
-will be used by [controller-tools](../TODO.md) when generating our CRD manifest.
+will be used by [controller-tools](https://github.com/kubernetes-sigs/controller-tools) when generating our CRD manifest.
 As we'll see in a bit, controller-tools will also use GoDoc to form descriptions for
 the fields.
 */

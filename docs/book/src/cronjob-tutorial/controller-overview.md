@@ -11,7 +11,7 @@ matches the desired state in the object.  Each controller focuses on one
 We call this process *reconciling*.
 
 In controller-runtime, the logic that implements the reconciling for
-a specific kind is called a [*Reconciler*](../TODO.md).  A reconciler
+a specific kind is called a [*Reconciler*](https://godoc.org/sigs.k8s.io/controller-runtime/pkg/reconcile).  A reconciler
 takes the name of an object, and returns whether or not we need to try
 again (e.g. in case of errors or periodic controllers, like the
 HorizontalPodAutoscaler).
