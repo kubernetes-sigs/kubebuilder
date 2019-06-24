@@ -28,6 +28,7 @@
 
 - [Reference](./reference/reference.md)
 
+  - [Generating CRD](./reference/generating-crd.md)
   - [Using Finalizers](./reference/using-finalizers.md)
 
 ---
