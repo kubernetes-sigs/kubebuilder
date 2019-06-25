@@ -80,7 +80,11 @@ func findCurrentRepo() (string, error) {
 		Mode: packages.NeedName, // name gives us path as well
 	}
 	pkgs, err := packages.Load(pkgCfg, ".")
-	if err == nil && len(pkgs) > 0 {
+	// NB(directxman12): when go modules are off and we're outside GOPATH and
+	// we don't otherwise have a good guess packages.Load will fabricate a path
+	// that consists of `_/absolute/path/to/current/directory`.  We shouldn't
+	// use that when it happens.
+	if err == nil && len(pkgs) > 0 && len(pkgs[0].PkgPath) > 0 && pkgs[0].PkgPath[0] != '_' {
 		return pkgs[0].PkgPath, nil
 	}
 
