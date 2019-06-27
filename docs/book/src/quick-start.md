@@ -37,6 +37,12 @@ arch=$(go env GOARCH)
 curl -o /usr/local/kubebuilder/bin/kustomize -sL https://go.kubebuilder.io/kustomize/${os}/${arch}
 ```
 
+Ensure that kustomize is executable:
+
+```bash
+chmod 755 /usr/local/kubebuilder/bin/kustomize
+```
+
 ## Create a Project
 
 Initialize a new project and Go module for your controllers:
