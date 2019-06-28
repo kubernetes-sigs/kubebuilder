@@ -59,7 +59,7 @@ This command is only available for v1 scaffolding project.
 
 			if projectInfo.Version != project.Version1 {
 				fmt.Printf("webhook scaffolding is not supported for this project version: %s \n", projectInfo.Version)
-				os.Exit(0)
+				os.Exit(1)
 			}
 
 			fmt.Println("Writing scaffold for you to edit...")

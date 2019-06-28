@@ -18,12 +18,11 @@ package e2e
 
 import (
 	"fmt"
+	"io/ioutil"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
-
-	"sigs.k8s.io/kubebuilder/test/e2e/scaffold"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -82,14 +81,17 @@ var _ = Describe("kubebuilder", func() {
 	Count int `+"`"+`json:"count,omitempty"`+"`"+`
 `)).Should(Succeed())
 
+			By("scaffolding mutating and validating webhook")
+			err = kbc.CreateWebhook(
+				"--group", kbc.Group,
+				"--version", kbc.Version,
+				"--kind", kbc.Kind,
+				"--defaulting",
+				"--programmatic-validation")
+			Expect(err).Should(Succeed())
+
 			By("implementing the mutating and validating webhooks")
-			err = (&scaffold.Webhook{
-				Domain:    kbc.Domain,
-				Group:     kbc.Group,
-				Version:   kbc.Version,
-				Kind:      kbc.Kind,
-				Resources: kbc.Resources,
-			}).WriteTo(filepath.Join(
+			err = implementWebhooks(filepath.Join(
 				kbc.Dir, "api", kbc.Version,
 				fmt.Sprintf("%s_webhook.go", strings.ToLower(kbc.Kind))))
 			Expect(err).Should(Succeed())
@@ -212,3 +214,60 @@ var _ = Describe("kubebuilder", func() {
 		})
 	})
 })
+
+func implementWebhooks(filename string) error {
+	bs, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return err
+	}
+	str := string(bs)
+
+	str, err = ensureExistAndReplace(
+		str,
+		"import (",
+		`import (
+	"errors"`)
+	if err != nil {
+		return err
+	}
+
+	// implement defaulting webhook logic
+	str, err = ensureExistAndReplace(
+		str,
+		"// TODO(user): fill in your defaulting logic.",
+		`if r.Spec.Count == 0 {
+		r.Spec.Count = 5
+	}`)
+	if err != nil {
+		return err
+	}
+
+	// implement validation webhook logic
+	str, err = ensureExistAndReplace(
+		str,
+		"// TODO(user): fill in your validation logic upon object creation.",
+		`if r.Spec.Count < 0 {
+		return errors.New(".spec.count must >= 0")
+	}`)
+	if err != nil {
+		return err
+	}
+	str, err = ensureExistAndReplace(
+		str,
+		"// TODO(user): fill in your validation logic upon object update.",
+		`if r.Spec.Count < 0 {
+		return errors.New(".spec.count must >= 0")
+	}`)
+	if err != nil {
+		return err
+	}
+
+	return ioutil.WriteFile(filename, []byte(str), 0644)
+}
+
+func ensureExistAndReplace(input, match, replace string) (string, error) {
+	if strings.Index(input, match) == -1 {
+		return "", fmt.Errorf("can't find %q", match)
+	}
+	return strings.Replace(input, match, replace, -1), nil
+}

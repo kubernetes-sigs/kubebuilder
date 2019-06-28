@@ -115,7 +115,7 @@ func main() {
 
 	rootCmd.AddCommand(
 		newInitProjectCmd(),
-		newAPICommand(),
+		newCreateCmd(),
 		version.NewVersionCmd(),
 		newDocsCmd(),
 		newVendorUpdateCmd(),

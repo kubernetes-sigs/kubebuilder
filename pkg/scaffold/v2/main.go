@@ -21,6 +21,7 @@ import (
 	"path/filepath"
 
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/util"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v2/internal"
 )
@@ -52,7 +53,7 @@ func (m *Main) GetInput() (input.Input, error) {
 func (m *Main) Update(opts *MainUpdateOptions) error {
 	path := "main.go"
 
-	resPkg, _ := getResourceInfo(opts.Resource, input.Input{
+	resPkg, _ := util.GetResourceInfo(opts.Resource, input.Input{
 		Domain: opts.Project.Domain,
 		Repo:   opts.Project.Repo,
 	})
@@ -64,21 +65,25 @@ func (m *Main) Update(opts *MainUpdateOptions) error {
 `, opts.Project.Repo)
 	addschemeCodeFragment := fmt.Sprintf(`_ = %s%s.AddToScheme(scheme)
 `, opts.Resource.Group, opts.Resource.Version)
-	reconcilerSetupCodeFragment := fmt.Sprintf(`err = (&controllers.%sReconciler{
+	reconcilerSetupCodeFragment := fmt.Sprintf(`if err = (&controllers.%sReconciler{
 	 	Client: mgr.GetClient(),
         Log: ctrl.Log.WithName("controllers").WithName("%s"),
-	 }).SetupWithManager(mgr)
-	 if err != nil {
+	}).SetupWithManager(mgr); err != nil {
 	 	setupLog.Error(err, "unable to create controller", "controller", "%s")
 	 	os.Exit(1)
-	 }
+    }
 `, opts.Resource.Kind, opts.Resource.Kind, opts.Resource.Kind)
+	webhookSetupCodeFragment := fmt.Sprintf(`if err = (&%s%s.%s{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "%s")
+		os.Exit(1)
+	}
+`, opts.Resource.Group, opts.Resource.Version, opts.Resource.Kind, opts.Resource.Kind)
 
 	if opts.WireResource {
 		err := internal.InsertStringsInFile(path,
 			map[string][]string{
-				apiPkgImportScaffoldMarker: []string{apiImportCodeFragment},
-				apiSchemeScaffoldMarker:    []string{addschemeCodeFragment},
+				apiPkgImportScaffoldMarker: {apiImportCodeFragment},
+				apiSchemeScaffoldMarker:    {addschemeCodeFragment},
 			})
 		if err != nil {
 			return err
@@ -88,9 +93,18 @@ func (m *Main) Update(opts *MainUpdateOptions) error {
 	if opts.WireController {
 		return internal.InsertStringsInFile(path,
 			map[string][]string{
-				apiPkgImportScaffoldMarker:    []string{apiImportCodeFragment, ctrlImportCodeFragment},
-				apiSchemeScaffoldMarker:       []string{addschemeCodeFragment},
-				reconcilerSetupScaffoldMarker: []string{reconcilerSetupCodeFragment},
+				apiPkgImportScaffoldMarker:    {apiImportCodeFragment, ctrlImportCodeFragment},
+				apiSchemeScaffoldMarker:       {addschemeCodeFragment},
+				reconcilerSetupScaffoldMarker: {reconcilerSetupCodeFragment},
+			})
+	}
+
+	if opts.WireWebhook {
+		return internal.InsertStringsInFile(path,
+			map[string][]string{
+				apiPkgImportScaffoldMarker:    {apiImportCodeFragment, ctrlImportCodeFragment},
+				apiSchemeScaffoldMarker:       {addschemeCodeFragment},
+				reconcilerSetupScaffoldMarker: {webhookSetupCodeFragment},
 			})
 	}
 
@@ -109,6 +123,7 @@ type MainUpdateOptions struct {
 	// Flags to indicate if resource/controller is being scaffolded or not
 	WireResource   bool
 	WireController bool
+	WireWebhook    bool
 }
 
 var mainTemplate = fmt.Sprintf(`{{ .Boilerplate }}

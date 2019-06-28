@@ -130,6 +130,14 @@ func (kc *KBTestContext) CreateAPI(resourceOptions ...string) error {
 	return err
 }
 
+// CreateWebhook is for running `kubebuilder create webhook`
+func (kc *KBTestContext) CreateWebhook(resourceOptions ...string) error {
+	resourceOptions = append([]string{"create", "webhook"}, resourceOptions...)
+	cmd := exec.Command("kubebuilder", resourceOptions...)
+	_, err := kc.Run(cmd)
+	return err
+}
+
 // Make is for running `make` with various targets
 func (kc *KBTestContext) Make(makeOptions ...string) error {
 	cmd := exec.Command("make", makeOptions...)

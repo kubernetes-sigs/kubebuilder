@@ -17,15 +17,13 @@ limitations under the License.
 package v2
 
 import (
-	"fmt"
-	"os"
-	"path"
 	"path/filepath"
 	"strings"
 
 	"github.com/gobuffalo/flect"
 
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/util"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/resource"
 )
 
@@ -49,7 +47,7 @@ type Controller struct {
 // GetInput implements input.File
 func (a *Controller) GetInput() (input.Input, error) {
 
-	a.ResourcePackage, a.GroupDomain = getResourceInfo(a.Resource, a.Input)
+	a.ResourcePackage, a.GroupDomain = util.GetResourceInfo(a.Resource, a.Input)
 
 	if a.Plural == "" {
 		a.Plural = flect.Pluralize(strings.ToLower(a.Resource.Kind))
@@ -62,38 +60,6 @@ func (a *Controller) GetInput() (input.Input, error) {
 	a.TemplateBody = controllerTemplate
 	a.Input.IfExistsAction = input.Error
 	return a.Input, nil
-}
-
-func getResourceInfo(r *resource.Resource, in input.Input) (resourcePackage, groupDomain string) {
-	// Use the k8s.io/api package for core resources
-	coreGroups := map[string]string{
-		"apps":                  "",
-		"admissionregistration": "k8s.io",
-		"apiextensions":         "k8s.io",
-		"authentication":        "k8s.io",
-		"autoscaling":           "",
-		"batch":                 "",
-		"certificates":          "k8s.io",
-		"core":                  "",
-		"extensions":            "",
-		"metrics":               "k8s.io",
-		"policy":                "",
-		"rbac.authorization":    "k8s.io",
-		"storage":               "k8s.io",
-	}
-	resourcePath := filepath.Join("api", r.Version, fmt.Sprintf("%s_types.go", strings.ToLower(r.Kind)))
-	if _, err := os.Stat(resourcePath); os.IsNotExist(err) {
-		if domain, found := coreGroups[r.Group]; found {
-			resourcePackage := path.Join("k8s.io", "api", r.Group)
-			groupDomain = r.Group
-			if domain != "" {
-				groupDomain = r.Group + "." + domain
-			}
-			return resourcePackage, groupDomain
-		}
-		// TODO: need to support '--resource-pkg-path' flag for specifying resourcePath
-	}
-	return path.Join(in.Repo, "api"), r.Group + "." + in.Domain
 }
 
 var controllerTemplate = `{{ .Boilerplate }}

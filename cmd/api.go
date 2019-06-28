@@ -112,7 +112,7 @@ func newAPICommand() *cobra.Command {
 	}
 
 	apiCmd := &cobra.Command{
-		Use:   "create api",
+		Use:   "api",
 		Short: "Scaffold a Kubernetes API",
 		Long: `Scaffold a Kubernetes API by creating a Resource definition and / or a Controller.
 

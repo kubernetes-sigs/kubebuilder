@@ -57,6 +57,7 @@ package {{ .Resource.Version }}
 import (
 	"sigs.k8s.io/controller-runtime/pkg/scheme"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
 var (

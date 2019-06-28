@@ -1,5 +1,5 @@
 /*
-Copyright 2019 The Kubernetes Authors.
+Copyright 2018 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,35 +14,26 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v2
+package main
 
 import (
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"fmt"
+
+	"github.com/spf13/cobra"
 )
 
-var _ input.File = &GoMod{}
-
-// GoMod writes a templatefile for Gopkg.toml
-type GoMod struct {
-	input.Input
-}
-
-// GetInput implements input.File
-func (g *GoMod) GetInput() (input.Input, error) {
-	if g.Path == "" {
-		g.Path = "go.mod"
+func newCreateCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "create",
+		Short: "Scaffold a Kubernetes API or webhook.",
+		Long:  `Scaffold a Kubernetes API or webhook.`,
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Println("Coming soon.")
+		},
 	}
-	g.Input.IfExistsAction = input.Overwrite
-	g.TemplateBody = goModTemplate
-	return g.Input, nil
+	cmd.AddCommand(
+		newAPICommand(),
+		newWebhookV2Cmd(),
+	)
+	return cmd
 }
-
-var goModTemplate = `
-module {{ .Repo }}
-
-go 1.12
-
-require (
-	sigs.k8s.io/controller-runtime v0.2.0-beta.4
-)
-`
