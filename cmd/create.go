@@ -33,7 +33,17 @@ func newCreateCmd() *cobra.Command {
 	}
 	cmd.AddCommand(
 		newAPICommand(),
-		newWebhookV2Cmd(),
 	)
+
+	foundProject, version := getProjectVersion()
+	// It add webhook v2 command in the following 2 cases:
+	// - There are no PROJECT file found.
+	// - version == 2 is found in the PROJECT file.
+	if !foundProject || version == "2" {
+		cmd.AddCommand(
+			newWebhookV2Cmd(),
+		)
+	}
+
 	return cmd
 }
