@@ -64,27 +64,32 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = (&controllers.CaptainReconciler{
+	if err = (&controllers.CaptainReconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("Captain"),
-	}).SetupWithManager(mgr)
-	if err != nil {
+	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Captain")
 		os.Exit(1)
 	}
-	err = (&controllers.FirstMateReconciler{
+	if err = (&crewv1.Captain{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "Captain")
+		os.Exit(1)
+	}
+	if err = (&controllers.FirstMateReconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("FirstMate"),
-	}).SetupWithManager(mgr)
-	if err != nil {
+	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "FirstMate")
 		os.Exit(1)
 	}
-	err = (&controllers.NamespaceReconciler{
+	if err = (&crewv1.FirstMate{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "FirstMate")
+		os.Exit(1)
+	}
+	if err = (&controllers.NamespaceReconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("Namespace"),
-	}).SetupWithManager(mgr)
-	if err != nil {
+	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Namespace")
 		os.Exit(1)
 	}

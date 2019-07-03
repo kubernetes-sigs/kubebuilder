@@ -115,12 +115,17 @@ func main() {
 
 	rootCmd.AddCommand(
 		newInitProjectCmd(),
-		newAPICommand(),
+		newCreateCmd(),
 		version.NewVersionCmd(),
-		newDocsCmd(),
-		newVendorUpdateCmd(),
-		newAlphaCommand(),
 	)
+
+	foundProject, version := getProjectVersion()
+	if foundProject && version == "1" {
+		rootCmd.AddCommand(
+			newAlphaCommand(),
+			newVendorUpdateCmd(),
+		)
+	}
 
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatal(err)
@@ -180,4 +185,17 @@ After the scaffold is written, api will run make on the project.
 			cmd.Help()
 		},
 	}
+}
+
+// getProjectVersion tries to load PROJECT file and returns if the file exist
+// and the version string
+func getProjectVersion() (bool, string) {
+	if _, err := os.Stat("PROJECT"); os.IsNotExist(err) {
+		return false, ""
+	}
+	projectInfo, err := scaffold.LoadProjectFile("PROJECT")
+	if err != nil {
+		log.Fatalf("failed to read the PROJECT file: %v", err)
+	}
+	return true, projectInfo.Version
 }

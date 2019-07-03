@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-go get sigs.k8s.io/kind@v0.3.0
+go get sigs.k8s.io/kind@v0.4.0
 go get sigs.k8s.io/kustomize@v2.1.0
 
 # You can use --image flag to specify the cluster version you want, e.g --image=kindest/node:v1.13.6, the supported version are listed at https://hub.docker.com/r/kindest/node/tags

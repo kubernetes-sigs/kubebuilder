@@ -23,6 +23,7 @@ import (
 
 	"github.com/gobuffalo/flect"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/util"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v2/internal"
 )
@@ -130,7 +131,7 @@ var _ = AfterSuite(func() {
 // adding import paths and code setup for new types.
 func (a *ControllerSuiteTest) Update() error {
 
-	a.ResourcePackage, a.GroupDomain = getResourceInfo(a.Resource, a.Input)
+	a.ResourcePackage, a.GroupDomain = util.GetResourceInfo(a.Resource, a.Input)
 	if a.Plural == "" {
 		a.Plural = flect.Pluralize(strings.ToLower(a.Resource.Kind))
 	}
