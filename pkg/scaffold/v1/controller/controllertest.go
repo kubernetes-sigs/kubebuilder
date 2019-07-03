@@ -124,7 +124,11 @@ func TestReconcile(t *testing.T) {
 		return
 	}
 	g.Expect(err).NotTo(gomega.HaveOccurred())
-	defer c.Delete(context.TODO(), instance)
+	defer func() {
+		err = c.Delete(context.TODO(), instance)
+		t.Logf("failed to delete object: %v", err)
+	}()
+
 	g.Eventually(requests, timeout).Should(gomega.Receive(gomega.Equal(expectedRequest)))
 {{ if .Resource.CreateExampleReconcileBody }}
 	deploy := &appsv1.Deployment{}
