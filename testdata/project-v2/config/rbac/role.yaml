@@ -11,58 +11,58 @@ rules:
   resources:
   - captains
   verbs:
-  - create
-  - delete
   - get
   - list
-  - patch
-  - update
   - watch
+  - create
+  - update
+  - patch
+  - delete
 - apiGroups:
   - crew.testproject.org
   resources:
   - captains/status
   verbs:
   - get
-  - patch
   - update
+  - patch
 - apiGroups:
   - crew.testproject.org
   resources:
   - firstmates
   verbs:
-  - create
-  - delete
   - get
   - list
-  - patch
-  - update
   - watch
+  - create
+  - update
+  - patch
+  - delete
 - apiGroups:
   - crew.testproject.org
   resources:
   - firstmates/status
   verbs:
   - get
-  - patch
   - update
+  - patch
 - apiGroups:
   - ""
   resources:
   - namespaces
   verbs:
-  - create
-  - delete
   - get
   - list
-  - patch
-  - update
   - watch
+  - create
+  - update
+  - patch
+  - delete
 - apiGroups:
   - ""
   resources:
   - namespaces/status
   verbs:
   - get
-  - patch
   - update
+  - patch
