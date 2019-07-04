@@ -75,7 +75,7 @@ func (r *Resource) Validate() error {
 			"version must match ^v\\d+(alpha\\d+|beta\\d+)?$ (was %s)", r.Version)
 	}
 	if r.Kind != flect.Pascalize(r.Kind) {
-		return fmt.Errorf("kind must be camelcase (expected %s was %s)", flect.Pascalize(r.Kind), r.Kind)
+		return fmt.Errorf("kind must be PascalCase (expected %s was %s)", flect.Pascalize(r.Kind), r.Kind)
 	}
 
 	return nil
