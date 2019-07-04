@@ -78,7 +78,7 @@ var _ = Describe("Resource", func() {
 			Expect(instance.Validate().Error()).To(ContainSubstring("kind cannot be empty"))
 		})
 
-		It("should fail if the Kind is not camel cased", func() {
+		It("should fail if the Kind is not pascal cased", func() {
 			// Base case
 			instance := &resource.Resource{Group: "crew", Kind: "FirstMate", Version: "v1"}
 			Expect(instance.Validate()).To(Succeed())
@@ -90,12 +90,12 @@ var _ = Describe("Resource", func() {
 			instance = &resource.Resource{Group: "crew", Kind: "firstMate", Version: "v1"}
 			Expect(instance.Validate()).NotTo(Succeed())
 			Expect(instance.Validate().Error()).To(ContainSubstring(
-				`kind must be camelcase (expected FirstMate was firstMate)`))
+				`kind must be PascalCase (expected FirstMate was firstMate)`))
 
 			instance = &resource.Resource{Group: "crew", Kind: "firstmate", Version: "v1"}
 			Expect(instance.Validate()).NotTo(Succeed())
 			Expect(instance.Validate().Error()).To(ContainSubstring(
-				`kind must be camelcase (expected Firstmate was firstmate)`))
+				`kind must be PascalCase (expected FirstMate was firstmate)`))
 		})
 
 		It("should default the Resource by pluralizing the Kind", func() {
