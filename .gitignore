@@ -16,3 +16,6 @@ bin/*
 # skip testdata gopath non-src
 /testdata/gopath/bin
 /testdata/gopath/pkg
+
+# vendor
+/vendor

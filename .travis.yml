@@ -30,7 +30,7 @@ before_script:
 # The dependencies have already been vendored by `dep` so
 # we don't need to fetch them.
 install:
-  -
+- make vendor
 
 script:
 - if [ "$TRAVIS_OS_NAME" = "linux" ]; then GO111MODULE=on TRACE=1 PATH=$PATH:$(pwd) ./test_e2e.sh ; fi
