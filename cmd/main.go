@@ -166,13 +166,10 @@ After the scaffold is written, api will run make on the project.
 	kubebuilder create api --group ship --version v1beta1 --kind Frigate
 
 	# Edit the API Scheme
-	nano pkg/apis/ship/v1beta1/frigate_types.go
+	nano api/v1beta1/frigate_types.go
 
 	# Edit the Controller
-	nano pkg/controller/frigate/frigate_controller.go
-
-	# Edit the Controller Test
-	nano pkg/controller/frigate/frigate_controller_test.go
+	nano controllers/frigate_controller.go
 
 	# Install CRDs into the Kubernetes cluster using kubectl apply
 	make install
