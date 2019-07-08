@@ -110,7 +110,7 @@ You need to implement the conversion.Hub and conversion.Convertible interfaces f
 		"if set, scaffold the defaulting webhook")
 	cmd.Flags().BoolVar(&o.validation, "programmatic-validation", false,
 		"if set, scaffold the validating webhook")
-	cmd.Flags().BoolVar(&o.validation, "conversion", false,
+	cmd.Flags().BoolVar(&o.conversion, "conversion", false,
 		"if set, scaffold the conversion webhook")
 
 	return cmd
