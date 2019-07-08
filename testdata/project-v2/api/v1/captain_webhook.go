@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -42,4 +43,24 @@ func (r *Captain) Default() {
 	captainlog.Info("default", "name", r.Name)
 
 	// TODO(user): fill in your defaulting logic.
+}
+
+// +kubebuilder:webhook:path=/validate-crew-testproject-org-v1-captain,mutating=false,failurePolicy=fail,groups=crew.testproject.org,resources=captains,verbs=create;update,versions=v1,name=vcaptain.kb.io
+
+var _ webhook.Validator = &Captain{}
+
+// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
+func (r *Captain) ValidateCreate() error {
+	captainlog.Info("validate create", "name", r.Name)
+
+	// TODO(user): fill in your validation logic upon object creation.
+	return nil
+}
+
+// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
+func (r *Captain) ValidateUpdate(old runtime.Object) error {
+	captainlog.Info("validate update", "name", r.Name)
+
+	// TODO(user): fill in your validation logic upon object update.
+	return nil
 }

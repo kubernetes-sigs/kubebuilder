@@ -37,9 +37,9 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-crew-testproject-org-v1-firstmate
+      path: /validate-crew-testproject-org-v1-captain
   failurePolicy: Fail
-  name: vfirstmate.kb.io
+  name: vcaptain.kb.io
   rules:
   - apiGroups:
     - crew.testproject.org
@@ -49,4 +49,4 @@ webhooks:
     - CREATE
     - UPDATE
     resources:
-    - firstmates
+    - captains
