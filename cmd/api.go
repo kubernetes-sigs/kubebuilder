@@ -22,6 +22,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/spf13/cobra"
 	flag "github.com/spf13/pflag"
@@ -29,6 +30,7 @@ import (
 	"sigs.k8s.io/kubebuilder/cmd/util"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/resource"
+	"sigs.k8s.io/kubebuilder/plugins/addon"
 )
 
 type apiOptions struct {
@@ -37,6 +39,9 @@ type apiOptions struct {
 
 	// runMake indicates whether to run make or not after scaffolding APIs
 	runMake bool
+
+	// pattern indicates that we should use a plugin to build according to a pattern
+	pattern string
 }
 
 func (o *apiOptions) bindCmdFlags(cmd *cobra.Command) {
@@ -48,6 +53,10 @@ func (o *apiOptions) bindCmdFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&o.apiScaffolder.DoController, "controller", true,
 		"if set, generate the controller without prompting the user")
 	o.controllerFlag = cmd.Flag("controller")
+	if os.Getenv("KUBEBUILDER_ENABLE_PLUGINS") != "" {
+		cmd.Flags().StringVar(&o.pattern, "pattern", "",
+			"generates an API following an extension pattern (addon)")
+	}
 	o.apiScaffolder.Resource = resourceForFlags(cmd.Flags())
 }
 
@@ -66,6 +75,17 @@ func resourceForFlags(f *flag.FlagSet) *resource.Resource {
 // APICmd represents the resource command
 func (o *apiOptions) runAddAPI() {
 	dieIfNoProject()
+
+	switch strings.ToLower(o.pattern) {
+	case "":
+		// Default pattern
+
+	case "addon":
+		o.apiScaffolder.Plugins = append(o.apiScaffolder.Plugins, &addon.Plugin{})
+
+	default:
+		log.Fatalf("unknown pattern %q", o.pattern)
+	}
 
 	reader := bufio.NewReader(os.Stdin)
 	if !o.resourceFlag.Changed {

@@ -29,6 +29,7 @@ import (
 
 	"golang.org/x/tools/imports"
 	yaml "gopkg.in/yaml.v2"
+	"sigs.k8s.io/kubebuilder/pkg/model"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
 )
@@ -54,6 +55,16 @@ type Scaffold struct {
 	GetWriter func(path string) (io.Writer, error)
 
 	FileExists func(path string) bool
+
+	// Plugins is the list of plugins we should allow to transform our generated scaffolding
+	Plugins []Plugin
+}
+
+// Plugin is the interface that a plugin must implement
+// We will (later) have an ExecPlugin that implements this by exec-ing a binary
+type Plugin interface {
+	// Pipe is the core plugin interface, that transforms a UniverseModel
+	Pipe(u *model.Universe) error
 }
 
 func (s *Scaffold) setFieldsAndValidate(t input.File) error {
@@ -151,8 +162,8 @@ func (s *Scaffold) defaultOptions(options *input.Options) error {
 	return nil
 }
 
-// Execute executes scaffolding the Files
-func (s *Scaffold) Execute(options input.Options, files ...input.File) error {
+// Execute executes scaffolding the for files
+func (s *Scaffold) Execute(u *model.Universe, options input.Options, files ...input.File) error {
 	if s.GetWriter == nil {
 		s.GetWriter = (&FileWriter{}).WriteCloser
 	}
@@ -163,14 +174,33 @@ func (s *Scaffold) Execute(options input.Options, files ...input.File) error {
 		}
 	}
 
+	if u.Boilerplate == "" {
+		u.Boilerplate = s.Boilerplate
+	}
+
 	if err := s.defaultOptions(&options); err != nil {
 		return err
 	}
 	for _, f := range files {
-		if err := s.doFile(f); err != nil {
+		m, err := s.buildFileModel(f)
+		if err != nil {
+			return err
+		}
+		u.Files = append(u.Files, m)
+	}
+
+	for _, plugin := range s.Plugins {
+		if err := plugin.Pipe(u); err != nil {
 			return err
 		}
 	}
+
+	for _, f := range u.Files {
+		if err := s.writeFile(f); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -188,43 +218,45 @@ func isAlreadyExistsError(e error) bool {
 }
 
 // doFile scaffolds a single file
-func (s *Scaffold) doFile(e input.File) error {
+func (s *Scaffold) buildFileModel(e input.File) (*model.File, error) {
 	// Set common fields
 	err := s.setFieldsAndValidate(e)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Get the template input params
 	i, err := e.GetInput()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
+	m := &model.File{
+		Path: i.Path,
+	}
+
+	if b, err := s.doTemplate(i, e); err != nil {
+		return nil, err
+	} else {
+		m.Contents = string(b)
+	}
+
+	return m, nil
+}
+
+func (s *Scaffold) writeFile(file *model.File) error {
 	// Check if the file to write already exists
-	if s.FileExists(i.Path) {
-		switch i.IfExistsAction {
+	if s.FileExists(file.Path) {
+		switch file.IfExistsAction {
 		case input.Overwrite:
 		case input.Skip:
 			return nil
 		case input.Error:
-			return &errorAlreadyExists{path: i.Path}
+			return &errorAlreadyExists{path: file.Path}
 		}
 	}
 
-	if err := s.doTemplate(i, e); err != nil {
-		return err
-	}
-	return nil
-}
-
-// doTemplate executes the template for a file using the input
-func (s *Scaffold) doTemplate(i input.Input, e input.File) error {
-	temp, err := newTemplate(e).Parse(i.TemplateBody)
-	if err != nil {
-		return err
-	}
-	f, err := s.GetWriter(i.Path)
+	f, err := s.GetWriter(file.Path)
 	if err != nil {
 		return err
 	}
@@ -236,10 +268,22 @@ func (s *Scaffold) doTemplate(i input.Input, e input.File) error {
 		}()
 	}
 
+	_, err = f.Write([]byte(file.Contents))
+
+	return err
+}
+
+// doTemplate executes the template for a file using the input
+func (s *Scaffold) doTemplate(i input.Input, e input.File) ([]byte, error) {
+	temp, err := newTemplate(e).Parse(i.TemplateBody)
+	if err != nil {
+		return nil, err
+	}
+
 	out := &bytes.Buffer{}
 	err = temp.Execute(out, e)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	b := out.Bytes()
 
@@ -248,12 +292,11 @@ func (s *Scaffold) doTemplate(i input.Input, e input.File) error {
 		b, err = imports.Process(i.Path, b, nil)
 		if err != nil {
 			fmt.Printf("%s\n", out.Bytes())
-			return err
+			return nil, err
 		}
 	}
 
-	_, err = f.Write(b)
-	return err
+	return b, nil
 }
 
 // newTemplate a new template with common functions

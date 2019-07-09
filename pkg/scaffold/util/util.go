@@ -23,11 +23,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/resource"
 )
 
-func GetResourceInfo(r *resource.Resource, in input.Input) (resourcePackage, groupDomain string) {
+func GetResourceInfo(r *resource.Resource, repo, domain string) (resourcePackage, groupDomain string) {
 	// Use the k8s.io/api package for core resources
 	coreGroups := map[string]string{
 		"apps":                  "",
@@ -69,5 +68,5 @@ func GetResourceInfo(r *resource.Resource, in input.Input) (resourcePackage, gro
 		}
 		// TODO: need to support '--resource-pkg-path' flag for specifying resourcePath
 	}
-	return path.Join(in.Repo, "api"), r.Group + "." + in.Domain
+	return path.Join(repo, "api"), r.Group + "." + domain
 }

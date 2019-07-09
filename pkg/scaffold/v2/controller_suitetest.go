@@ -131,7 +131,7 @@ var _ = AfterSuite(func() {
 // adding import paths and code setup for new types.
 func (a *ControllerSuiteTest) Update() error {
 
-	a.ResourcePackage, a.GroupDomain = util.GetResourceInfo(a.Resource, a.Input)
+	a.ResourcePackage, a.GroupDomain = util.GetResourceInfo(a.Resource, a.Repo, a.Domain)
 	if a.Plural == "" {
 		a.Plural = flect.Pluralize(strings.ToLower(a.Resource.Kind))
 	}

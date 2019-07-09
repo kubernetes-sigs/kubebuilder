@@ -20,6 +20,7 @@ import (
 	"log"
 
 	"github.com/spf13/cobra"
+	"sigs.k8s.io/kubebuilder/pkg/model"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
@@ -35,7 +36,9 @@ kubebuilder update vendor
 `,
 		Run: func(cmd *cobra.Command, args []string) {
 			dieIfNoProject()
-			err := (&scaffold.Scaffold{}).Execute(input.Options{},
+			err := (&scaffold.Scaffold{}).Execute(
+				&model.Universe{},
+				input.Options{},
 				&project.GopkgToml{})
 			if err != nil {
 				log.Fatalf("error updating vendor dependecies %v", err)

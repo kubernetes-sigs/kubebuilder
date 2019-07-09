@@ -53,10 +53,7 @@ func (m *Main) GetInput() (input.Input, error) {
 func (m *Main) Update(opts *MainUpdateOptions) error {
 	path := "main.go"
 
-	resPkg, _ := util.GetResourceInfo(opts.Resource, input.Input{
-		Domain: opts.Project.Domain,
-		Repo:   opts.Project.Repo,
-	})
+	resPkg, _ := util.GetResourceInfo(opts.Resource, opts.Project.Repo, opts.Project.Domain)
 
 	// generate all the code fragments
 	apiImportCodeFragment := fmt.Sprintf(`%s%s "%s/%s"

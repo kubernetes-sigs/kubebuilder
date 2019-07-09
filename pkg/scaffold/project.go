@@ -24,6 +24,7 @@ import (
 	"strings"
 
 	"sigs.k8s.io/kubebuilder/cmd/util"
+	"sigs.k8s.io/kubebuilder/pkg/model"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
 	scaffoldv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/v1"
@@ -77,6 +78,10 @@ func (p *V1Project) EnsureDependencies() (bool, error) {
 	return true, c.Run()
 }
 
+func (p *V1Project) buildUniverse() *model.Universe {
+	return &model.Universe{}
+}
+
 func (p *V1Project) Scaffold() error {
 	p.Project.Version = project.Version1
 
@@ -96,6 +101,7 @@ func (p *V1Project) Scaffold() error {
 	}
 
 	err = s.Execute(
+		p.buildUniverse(),
 		input.Options{ProjectPath: projectInput.Path, BoilerplatePath: bpInput.Path},
 		&p.Project,
 		&p.Boilerplate,
@@ -109,6 +115,7 @@ func (p *V1Project) Scaffold() error {
 
 	s = &Scaffold{}
 	return s.Execute(
+		p.buildUniverse(),
 		input.Options{ProjectPath: projectInput.Path, BoilerplatePath: bpInput.Path},
 		&project.GitIgnore{},
 		&project.KustomizeRBAC{},
@@ -147,6 +154,10 @@ func (p *V2Project) EnsureDependencies() (bool, error) {
 	return true, c.Run()
 }
 
+func (p *V2Project) buildUniverse() *model.Universe {
+	return &model.Universe{}
+}
+
 func (p *V2Project) Scaffold() error {
 	p.Project.Version = project.Version2
 
@@ -166,6 +177,7 @@ func (p *V2Project) Scaffold() error {
 	}
 
 	err = s.Execute(
+		p.buildUniverse(),
 		input.Options{ProjectPath: projectInput.Path, BoilerplatePath: bpInput.Path},
 		&p.Project,
 		&p.Boilerplate,
@@ -179,6 +191,7 @@ func (p *V2Project) Scaffold() error {
 
 	s = &Scaffold{}
 	return s.Execute(
+		p.buildUniverse(),
 		input.Options{ProjectPath: projectInput.Path, BoilerplatePath: bpInput.Path},
 		&project.GitIgnore{},
 		&metricsauthv2.KustomizePrometheusMetricsPatch{},

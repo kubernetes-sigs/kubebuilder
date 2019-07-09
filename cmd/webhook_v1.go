@@ -27,6 +27,7 @@ import (
 	"github.com/spf13/cobra"
 	flag "github.com/spf13/pflag"
 
+	"sigs.k8s.io/kubebuilder/pkg/model"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
@@ -68,7 +69,9 @@ This command is only available for v1 scaffolding project.
 				o.res.Resource = flect.Pluralize(strings.ToLower(o.res.Kind))
 			}
 
-			err = (&scaffold.Scaffold{}).Execute(input.Options{},
+			err = (&scaffold.Scaffold{}).Execute(
+				&model.Universe{},
+				input.Options{},
 				&manager.Webhook{},
 				&webhook.AdmissionHandler{Resource: o.res, Config: webhook.Config{Server: o.server, Type: o.webhookType, Operations: o.operations}},
 				&webhook.AdmissionWebhookBuilder{Resource: o.res, Config: webhook.Config{Server: o.server, Type: o.webhookType, Operations: o.operations}},

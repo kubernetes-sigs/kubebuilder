@@ -56,7 +56,7 @@ type Webhook struct {
 // GetInput implements input.File
 func (a *Webhook) GetInput() (input.Input, error) {
 
-	a.ResourcePackage, a.GroupDomain = util.GetResourceInfo(a.Resource, a.Input)
+	a.ResourcePackage, a.GroupDomain = util.GetResourceInfo(a.Resource, a.Repo, a.Domain)
 
 	a.GroupDomainWithDash = strings.Replace(a.GroupDomain, ".", "-", -1)
 

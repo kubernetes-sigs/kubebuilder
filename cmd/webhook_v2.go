@@ -26,6 +26,7 @@ import (
 	"github.com/gobuffalo/flect"
 	"github.com/spf13/cobra"
 
+	"sigs.k8s.io/kubebuilder/pkg/model"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
@@ -82,6 +83,7 @@ You need to implement the conversion.Hub and conversion.Convertible interfaces f
 				Validating: o.validation,
 			}
 			err = (&scaffold.Scaffold{}).Execute(
+				&model.Universe{},
 				input.Options{},
 				webhookScaffolder,
 			)
