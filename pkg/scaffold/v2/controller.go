@@ -42,6 +42,9 @@ type Controller struct {
 
 	// Is the Group + "." + Domain for the Resource
 	GroupDomain string
+
+	// Pattern specifies an alternative style of controller to generate
+	Pattern string
 }
 
 // GetInput implements input.File
@@ -57,9 +60,26 @@ func (a *Controller) GetInput() (input.Input, error) {
 		a.Path = filepath.Join("controllers",
 			strings.ToLower(a.Resource.Kind)+"_controller.go")
 	}
-	a.TemplateBody = controllerTemplate
+
+	switch a.Pattern {
+	case "addon":
+		a.TemplateBody = controllerTemplate + controllerTemplateBodyPatternAddon
+	default:
+		a.TemplateBody = controllerTemplate + controllerTemplateBodyDefault
+	}
+
 	a.Input.IfExistsAction = input.Error
 	return a.Input, nil
+}
+
+// APIImport returns the import alias for the types package
+func (a *Controller) APIImport() string {
+	switch a.Pattern {
+	case "addon":
+		return "api"
+	default:
+		return a.Resource.Group + a.Resource.Version
+	}
 }
 
 var controllerTemplate = `{{ .Boilerplate }}
@@ -72,19 +92,31 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"github.com/go-logr/logr"
+{{- if eq .Pattern "addon" }}
+	"sigs.k8s.io/kubebuilder-declarative-pattern/pkg/patterns/addon"
+	"sigs.k8s.io/kubebuilder-declarative-pattern/pkg/patterns/addon/pkg/status"
+	"sigs.k8s.io/kubebuilder-declarative-pattern/pkg/patterns/declarative"
+{{ end }}
 
-	{{ .Resource.Group}}{{ .Resource.Version }} "{{ .ResourcePackage }}/{{ .Resource.Version }}"
+	{{ .APIImport }} "{{ .ResourcePackage }}/{{ .Resource.Version }}"
 )
 
 // {{ .Resource.Kind }}Reconciler reconciles a {{ .Resource.Kind }} object
 type {{ .Resource.Kind }}Reconciler struct {
 	client.Client
 	Log logr.Logger
+
+{{ if eq .Pattern "addon" }}
+	declarative.Reconciler
+{{ end }}
 }
 
 // +kubebuilder:rbac:groups={{.GroupDomain}},resources={{ .Plural }},verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups={{.GroupDomain}},resources={{ .Plural }}/status,verbs=get;update;patch
 
+`
+
+var controllerTemplateBodyDefault = `
 func (r *{{ .Resource.Kind }}Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()
 	_ = r.Log.WithValues("{{ .Resource.Kind | lower }}", req.NamespacedName)
@@ -96,7 +128,50 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(req ctrl.Request) (ctrl.Resul
 
 func (r *{{ .Resource.Kind }}Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&{{ .Resource.Group}}{{ .Resource.Version }}.{{ .Resource.Kind }}{}).
+		For(&{{ .APIImport }}.{{ .Resource.Kind }}{}).
 		Complete(r)
+}
+`
+
+var controllerTemplateBodyPatternAddon = `
+func (r *{{ .Resource.Kind }}Reconciler) SetupWithManager(mgr ctrl.Manager) error {
+	addon.Init()
+
+	labels := map[string]string{
+		"k8s-app": "{{ .Resource.Kind | lower }}",
+	}
+
+	watchLabels := declarative.SourceLabel(mgr.GetScheme())
+
+	if err := r.Reconciler.Init(mgr, &{{ .APIImport }}.{{ .Resource.Kind }}{},
+		declarative.WithObjectTransform(declarative.AddLabels(labels)),
+		declarative.WithOwner(declarative.SourceAsOwner),
+		declarative.WithLabels(watchLabels),
+		declarative.WithStatus(status.NewBasic(mgr.GetClient())),
+		// TODO: add an application to your manifest:  declarative.WithObjectTransform(addon.TransformApplicationFromStatus),
+		// TODO: add an application to your manifest:  declarative.WithManagedApplication(watchLabels),
+		declarative.WithObjectTransform(addon.ApplyPatches),
+	); err != nil {
+		return err
+	}
+
+	c, err := controller.New("{{ .Resource.Kind | lower }}-controller", mgr, controller.Options{Reconciler: r})
+	if err != nil {
+		return err
+	}
+
+	// Watch for changes to {{ .Resource.Kind }}
+	err = c.Watch(&source.Kind{Type: &{{ .APIImport }}.{{ .Resource.Kind }}{}}, &handler.EnqueueRequestForObject{})
+	if err != nil {
+		return err
+	}
+
+	// Watch for changes to deployed objects
+	_, err = declarative.WatchAll(mgr.GetConfig(), c, r, watchLabels)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 `

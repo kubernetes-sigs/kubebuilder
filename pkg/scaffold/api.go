@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/pattern/addon"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/controller"
 	resourcev1 "sigs.k8s.io/kubebuilder/pkg/scaffold/v1/resource"
@@ -43,7 +44,15 @@ type API struct {
 
 	// DoController indicates whether to scaffold controller files or not
 	DoController bool
+
+	// Pattern specifies an alternative style of generation
+	Pattern string
 }
+
+const (
+	// PatternAddon is the Pattern flag value that specifies the declarative addon operator pattern
+	PatternAddon = "addon"
+)
 
 // Validate validates whether API scaffold has correct bits to generate
 // scaffolding for API.
@@ -60,6 +69,16 @@ func (api *API) Validate() error {
 	if api.Resource.Kind == "" {
 		return fmt.Errorf("missing kind information for resource")
 	}
+
+	switch api.Pattern {
+	case "":
+		// Default pattern - OK
+	case PatternAddon:
+		// Declarative addon operator pattern
+	default:
+		return fmt.Errorf("unknown pattern %q", api.Pattern)
+	}
+
 	return nil
 }
 
@@ -150,18 +169,34 @@ func (api *API) scaffoldV2() error {
 		fmt.Println(filepath.Join("api", r.Version,
 			fmt.Sprintf("%s_types.go", strings.ToLower(r.Kind))))
 
-		err := (&Scaffold{}).Execute(
-			input.Options{},
+		files := []input.File{
 			&resourcev2.Types{
 				Input: input.Input{
 					Path: filepath.Join("api", r.Version, fmt.Sprintf("%s_types.go", strings.ToLower(r.Kind))),
 				},
-				Resource: r},
+				Resource: r,
+				Pattern:  api.Pattern},
 			&resourcev2.Group{Resource: r},
 			&resourcev2.CRDSample{Resource: r},
 			&crdv2.EnableWebhookPatch{Resource: r},
 			&crdv2.EnableCAInjectionPatch{Resource: r},
-		)
+		}
+
+		switch api.Pattern {
+		case "":
+			// Default pattern
+
+		case "addon":
+			// declarative addon operator
+			packageName := strings.ToLower(r.Kind)
+			files = append(files, &addon.ExampleManifest{PackageName: packageName})
+			files = append(files, &addon.ExampleChannel{})
+
+		default:
+			return fmt.Errorf("unknown pattern %q", api.Pattern)
+		}
+
+		err := (&Scaffold{}).Execute(input.Options{}, files...)
 		if err != nil {
 			return fmt.Errorf("error scaffolding APIs: %v", err)
 		}
@@ -200,7 +235,7 @@ func (api *API) scaffoldV2() error {
 	if api.DoController {
 		fmt.Println(filepath.Join("controllers", fmt.Sprintf("%s_controller.go", strings.ToLower(r.Kind))))
 
-		ctrlScaffolder := &resourcev2.Controller{Resource: r}
+		ctrlScaffolder := &resourcev2.Controller{Resource: r, Pattern: api.Pattern}
 		testsuiteScaffolder := &resourcev2.ControllerSuiteTest{Resource: r}
 		err := (&Scaffold{}).Execute(
 			input.Options{},

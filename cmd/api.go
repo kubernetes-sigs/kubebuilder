@@ -48,6 +48,8 @@ func (o *apiOptions) bindCmdFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&o.apiScaffolder.DoController, "controller", true,
 		"if set, generate the controller without prompting the user")
 	o.controllerFlag = cmd.Flag("controller")
+	cmd.Flags().StringVar(&o.apiScaffolder.Pattern, "pattern", "",
+		"generates an API following an extension pattern (addon)")
 	o.apiScaffolder.Resource = resourceForFlags(cmd.Flags())
 }
 

@@ -33,6 +33,9 @@ type Types struct {
 
 	// Resource is the resource to scaffold the types_test.go file for
 	Resource *resource.Resource
+
+	// Pattern specifies an alternative style of resource to generate
+	Pattern string
 }
 
 // GetInput implements input.File
@@ -51,12 +54,21 @@ func (t *Types) Validate() error {
 	return t.Resource.Validate()
 }
 
+// JSONTag is a helper to build the json tag for a struct
+// It works around escaping problems for the json tag syntax
+func (t *Types) JSONTag(tag string) string {
+	return fmt.Sprintf("`json:\"%s\"`", tag)
+}
+
 var typesTemplate = `{{ .Boilerplate }}
 
 package {{ .Resource.Version }}
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+{{- if eq .Pattern "addon" }}
+	addonv1alpha1 "sigs.k8s.io/kubebuilder-declarative-pattern/pkg/patterns/addon/pkg/apis/v1alpha1"
+{{ end }}
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -64,12 +76,21 @@ import (
 
 // {{.Resource.Kind}}Spec defines the desired state of {{.Resource.Kind}}
 type {{.Resource.Kind}}Spec struct {
+{{ if eq .Pattern "addon" }}
+	addonv1alpha1.CommonSpec {{ .JSONTag ",inline" }}
+	addonv1alpha1.PatchSpec  {{ .JSONTag ",inline" }}
+
+{{ end -}}
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
 // {{.Resource.Kind}}Status defines the observed state of {{.Resource.Kind}}
 type {{.Resource.Kind}}Status struct {
+{{ if eq .Pattern "addon" }}
+	addonv1alpha1.CommonStatus {{ .JSONTag ",inline" }}
+
+{{ end -}}
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 }
@@ -84,6 +105,30 @@ type {{.Resource.Kind}} struct {
 	Spec   {{.Resource.Kind}}Spec   ` + "`" + `json:"spec,omitempty"` + "`" + `
 	Status {{.Resource.Kind}}Status ` + "`" + `json:"status,omitempty"` + "`" + `
 }
+
+{{ if eq .Pattern "addon" }}
+var _ addonv1alpha1.CommonObject = &{{.Resource.Kind}}{}
+
+func (o *{{.Resource.Kind}}) ComponentName() string {
+	return "{{ .Resource.Kind | lower }}"
+}
+
+func (o *{{.Resource.Kind}}) CommonSpec() addonv1alpha1.CommonSpec {
+	return o.Spec.CommonSpec
+}
+
+func (o *{{.Resource.Kind}}) PatchSpec() addonv1alpha1.PatchSpec {
+	return o.Spec.PatchSpec
+}
+
+func (o *{{.Resource.Kind}}) GetCommonStatus() addonv1alpha1.CommonStatus {
+	return o.Status.CommonStatus
+}
+
+func (o *{{.Resource.Kind}}) SetCommonStatus(s addonv1alpha1.CommonStatus) {
+	o.Status.CommonStatus = s
+}
+{{ end }}
 
 // +kubebuilder:object:root=true
 
