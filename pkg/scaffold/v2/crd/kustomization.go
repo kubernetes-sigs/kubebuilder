@@ -82,10 +82,12 @@ resources:
 %s
 
 patches:
-# [WEBHOOK] patches here are for enabling the conversion webhook for each CRD
+# [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix.
+# patches here are for enabling the conversion webhook for each CRD
 %s
 
-# [CAINJECTION] patches here are for enabling the CA injection for each CRD
+# [CERTMANAGER] To enable webhook, uncomment all the sections with [CERTMANAGER] prefix.
+# patches here are for enabling the CA injection for each CRD
 %s
 
 # the following config is for teaching kustomize how to do kustomization for CRDs.

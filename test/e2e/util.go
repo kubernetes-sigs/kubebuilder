@@ -17,12 +17,10 @@ limitations under the License.
 package e2e
 
 import (
-	"bufio"
 	"bytes"
 	"crypto/rand"
 	"io/ioutil"
 	"math/big"
-	"os"
 	"strings"
 )
 
@@ -66,27 +64,38 @@ func insertCode(filename, target, code string) error {
 	return ioutil.WriteFile(filename, []byte(out), 0644)
 }
 
-// uncommentCode searches for target in the file and remove the prefix of the target content.
+// uncommentCode searches for target in the file and remove the comment prefix
+// of the target content. The target content may span multiple lines.
 func uncommentCode(filename, target, prefix string) error {
-	f, err := os.Open(filename)
+	content, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	strContent := string(content)
+
+	idx := strings.Index(strContent, target)
+	if idx < 0 {
+		return nil
+	}
 
 	out := new(bytes.Buffer)
-	scanner := bufio.NewScanner(f)
-	for scanner.Scan() {
-		line := scanner.Text()
+	_, err = out.Write(content[:idx])
+	if err != nil {
+		return err
+	}
 
-		// uncomment the target line
-		if strings.Contains(line, target) {
-			line = strings.ReplaceAll(line, target, strings.TrimSpace(strings.TrimPrefix(target, prefix)))
-		}
-		_, err = out.WriteString(line + "\n")
+	strs := strings.Split(target, "\n")
+	for _, str := range strs {
+		_, err := out.WriteString(strings.TrimPrefix(str, prefix) + "\n")
 		if err != nil {
 			return err
 		}
 	}
+
+	_, err = out.Write(content[idx+len(target):])
+	if err != nil {
+		return err
+	}
+
 	return ioutil.WriteFile(filename, out.Bytes(), 0644)
 }
