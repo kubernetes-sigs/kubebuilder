@@ -96,7 +96,7 @@ var _ = Describe("Resource", func() {
 			instance = &resource.Resource{Group: "crew", Kind: "firstmate", Version: "v1"}
 			Expect(instance.Validate()).NotTo(Succeed())
 			Expect(instance.Validate().Error()).To(ContainSubstring(
-				`kind must be PascalCase (expected FirstMate was firstmate)`))
+				`kind must be PascalCase (expected Firstmate was firstmate)`))
 		})
 
 		It("should default the Resource by pluralizing the Kind", func() {
