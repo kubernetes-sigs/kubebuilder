@@ -57,6 +57,6 @@ apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    certmanager.k8s.io/inject-ca-from: $(NAMESPACE)/$(CERTIFICATENAME)
+    certmanager.k8s.io/inject-ca-from: $(CERTIFICATE_NAMESPACE)/$(CERTIFICATE_NAME)
   name: {{ .Resource.Resource }}.{{ .Resource.Group }}.{{ .Domain }}
 `

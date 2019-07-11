@@ -71,7 +71,7 @@ bases:
 - ../manager
 # [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix including the one in crd/kustomization.yaml
 #- ../webhook
-# [CERTMANAGER] To enable cert-manager, uncomment next line. 'WEBHOOK' components are required.
+# [CERTMANAGER] To enable cert-manager, uncomment all sections with 'CERTMANAGER'. 'WEBHOOK' components are required.
 #- ../certmanager
 
 patches:
@@ -90,8 +90,38 @@ patches:
 # [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix including the one in crd/kustomization.yaml
 #- manager_webhook_patch.yaml
 
-# [CAINJECTION] Uncomment next line to enable the CA injection in the admission webhooks.
-# Uncomment 'CAINJECTION' in crd/kustomization.yaml to enable the CA injection in the admission webhooks.
+# [CERTMANAGER] To enable cert-manager, uncomment all sections with 'CERTMANAGER'.
+# Uncomment 'CERTMANAGER' sections in crd/kustomization.yaml to enable the CA injection in the admission webhooks.
 # 'CERTMANAGER' needs to be enabled to use ca injection
 #- webhookcainjection_patch.yaml
+
+# the following config is for teaching kustomize how to do var substitution
+vars:
+# [CERTMANAGER] To enable cert-manager, uncomment all sections with 'CERTMANAGER' prefix.
+#- name: CERTIFICATE_NAMESPACE # namespace of the certificate CR
+#  objref:
+#    kind: Certificate
+#    group: certmanager.k8s.io
+#    version: v1alpha1
+#    name: serving-cert # this name should match the one in certificate.yaml
+#  fieldref:
+#    fieldpath: metadata.namespace
+#- name: CERTIFICATE_NAME
+#  objref:
+#    kind: Certificate
+#    group: certmanager.k8s.io
+#    version: v1alpha1
+#    name: serving-cert # this name should match the one in certificate.yaml
+#- name: SERVICE_NAMESPACE # namespace of the service
+#  objref:
+#    kind: Service
+#    version: v1
+#    name: webhook-service
+#  fieldref:
+#    fieldpath: metadata.namespace
+#- name: SERVICE_NAME
+#  objref:
+#    kind: Service
+#    version: v1
+#    name: webhook-service
 `

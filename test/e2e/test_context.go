@@ -26,6 +26,8 @@ import (
 	. "github.com/onsi/ginkgo"
 )
 
+const certmanagerVersion = "v0.8.1"
+
 // KBTestContext specified to run e2e tests
 type KBTestContext struct {
 	*cmdContext
@@ -88,13 +90,13 @@ func (kc *KBTestContext) InstallCertManager() error {
 	if _, err := kc.Kubectl.Command("label", "namespace", "cert-manager", "certmanager.k8s.io/disable-validation=true"); err != nil {
 		return err
 	}
-	_, err := kc.Kubectl.Apply(false, "-f", "https://github.com/jetstack/cert-manager/releases/download/v0.8.0/cert-manager.yaml")
+	_, err := kc.Kubectl.Apply(false, "-f", fmt.Sprintf("https://github.com/jetstack/cert-manager/releases/download/%s/cert-manager.yaml", certmanagerVersion))
 	return err
 }
 
 // UninstallCertManager uninstalls the cert manager bundle.
 func (kc *KBTestContext) UninstallCertManager() {
-	if _, err := kc.Kubectl.Delete(false, "-f", "https://github.com/jetstack/cert-manager/releases/download/v0.8.0/cert-manager.yaml"); err != nil {
+	if _, err := kc.Kubectl.Delete(false, "-f", fmt.Sprintf("https://github.com/jetstack/cert-manager/releases/download/%s/cert-manager.yaml", certmanagerVersion)); err != nil {
 		fmt.Fprintf(GinkgoWriter, "error when running kubectl delete during cleaning up cert manager: %v\n", err)
 	}
 	if _, err := kc.Kubectl.Delete(false, "namespace", "cert-manager"); err != nil {

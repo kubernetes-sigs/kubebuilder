@@ -52,10 +52,10 @@ metadata:
   name: serving-cert  # this name should match the one appeared in kustomizeconfig.yaml
   namespace: system
 spec:
-  # $(SERVICENAME) and $(NAMESPACE) will be substituted by kustomize
-  commonName: $(SERVICENAME).$(NAMESPACE).svc
+  # $(SERVICE_NAME) and $(SERVICE_NAMESPACE) will be substituted by kustomize
+  commonName: $(SERVICE_NAME).$(SERVICE_NAMESPACE).svc
   dnsNames:
-  - $(SERVICENAME).$(NAMESPACE).svc.cluster.local
+  - $(SERVICE_NAME).$(SERVICE_NAMESPACE).svc.cluster.local
   issuerRef:
     kind: Issuer
     name: selfsigned-issuer

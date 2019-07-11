@@ -1,13 +1,5 @@
 resources:
 - certificate.yaml
 
-vars:
-- name: CERTIFICATENAME
-  objref:
-    kind: Certificate
-    group: certmanager.k8s.io
-    version: v1alpha1
-    name: serving-cert # this name should match the one in certificate.yaml
-
 configurations:
 - kustomizeconfig.yaml

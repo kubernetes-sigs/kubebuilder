@@ -40,18 +40,18 @@ func (c *InjectCAPatch) GetInput() (input.Input, error) {
 }
 
 var injectCAPatchTemplate = `# This patch add annotation to admission webhook config and
-# the variables $(NAMESPACE) and $(CERTIFICATENAME) will be substituted by kustomize.  
+# the variables $(CERTIFICATE_NAMESPACE) and $(CERTIFICATE_NAME) will be substituted by kustomize.
 apiVersion: admissionregistration.k8s.io/v1beta1
 kind: MutatingWebhookConfiguration
 metadata:
   name: mutating-webhook-configuration
   annotations:
-    certmanager.k8s.io/inject-ca-from: $(NAMESPACE)/$(CERTIFICATENAME)
+    certmanager.k8s.io/inject-ca-from: $(CERTIFICATE_NAMESPACE)/$(CERTIFICATE_NAME)
 ---
 apiVersion: admissionregistration.k8s.io/v1beta1
 kind: ValidatingWebhookConfiguration
 metadata:
   name: validating-webhook-configuration
   annotations:
-    certmanager.k8s.io/inject-ca-from: $(NAMESPACE)/$(CERTIFICATENAME)
+    certmanager.k8s.io/inject-ca-from: $(CERTIFICATE_NAMESPACE)/$(CERTIFICATE_NAME)
 `

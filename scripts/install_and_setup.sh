@@ -15,7 +15,7 @@
 # limitations under the License.
 
 go get sigs.k8s.io/kind@v0.4.0
-go get sigs.k8s.io/kustomize@v2.1.0
+go get sigs.k8s.io/kustomize/v3/cmd/kustomize@v3.0.1
 
 # You can use --image flag to specify the cluster version you want, e.g --image=kindest/node:v1.13.6, the supported version are listed at https://hub.docker.com/r/kindest/node/tags
 kind create cluster --config test/kind-config.yaml --image=kindest/node:v1.14.1
