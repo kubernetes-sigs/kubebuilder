@@ -68,7 +68,7 @@ This will create the files `api/v1/guestbook_types.go` and
 
 **Optional:** Edit the API definition or the reconciliation business logic.
 For more on this see [What is
-a Controller](TODO.md) and [What is
+a Controller](cronjob-tutorial/controller-overview.html) and [What is
 a Resource](TODO.md)
 
 ## Test It Out Locally
