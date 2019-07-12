@@ -38,7 +38,7 @@ import (
 
 /*
 Every set of controllers needs a [*Scheme*](../TODO.md), which provides mappings
-between Kinds and their corresponding Go types.  We'll take a bit more about Kinds
+between Kinds and their corresponding Go types.  We'll talk a bit more about Kinds
 when we write our API definition, so just keep this in mind for later.
 */
 var (
