@@ -7,40 +7,40 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
+  - batch
+  resources:
+  - jobs/status
+  verbs:
+  - get
+- apiGroups:
   - batch.tutorial.kubebuilder.io
   resources:
   - cronjobs
   verbs:
+  - create
+  - delete
   - get
   - list
-  - watch
-  - create
-  - update
   - patch
-  - delete
+  - update
+  - watch
 - apiGroups:
   - batch.tutorial.kubebuilder.io
   resources:
   - cronjobs/status
   verbs:
   - get
-  - update
   - patch
+  - update
 - apiGroups:
   - batch
   resources:
   - jobs
   verbs:
+  - create
+  - delete
   - get
   - list
-  - watch
-  - create
-  - update
   - patch
-  - delete
-- apiGroups:
-  - batch
-  resources:
-  - jobs/status
-  verbs:
-  - get
+  - update
+  - watch

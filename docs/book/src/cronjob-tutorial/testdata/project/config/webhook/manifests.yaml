@@ -14,12 +14,6 @@ webhooks:
       path: /mutate-batch-tutorial-kubebuilder-io-v1-cronjob
   failurePolicy: Fail
   name: mcronjob.kb.io
-  namespaceSelector:
-    matchExpressions:
-    - key: control-plane
-      operator: NotIn
-      values:
-      - controller-manager
   rules:
   - apiGroups:
     - batch.tutorial.kubebuilder.io
@@ -46,12 +40,6 @@ webhooks:
       path: /validate-batch-tutorial-kubebuilder-io-v1-cronjob
   failurePolicy: Fail
   name: vcronjob.kb.io
-  namespaceSelector:
-    matchExpressions:
-    - key: control-plane
-      operator: NotIn
-      values:
-      - controller-manager
   rules:
   - apiGroups:
     - batch.tutorial.kubebuilder.io

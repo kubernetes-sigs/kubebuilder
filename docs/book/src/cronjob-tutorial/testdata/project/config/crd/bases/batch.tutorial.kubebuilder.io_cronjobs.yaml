@@ -28,6 +28,8 @@ spec:
             submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
           type: string
         metadata:
+          description: ObjectMeta is metadata that all persisted resources must have,
+            which includes all objects users must create.
           properties:
             annotations:
               additionalProperties:
@@ -117,7 +119,8 @@ spec:
                 When an object is created, the system will populate this list with
                 the current set of initializers. Only privileged users may set or
                 modify this list. Once it is empty, it may not be modified further
-                by any user."
+                by any user. \n DEPRECATED - initializers are an alpha field and will
+                be removed in v1.15."
               properties:
                 pending:
                   description: Pending is a list of initializers that must execute
@@ -126,6 +129,8 @@ spec:
                     struct will be set to nil and the object is considered as initialized
                     and visible to all clients.
                   items:
+                    description: Initializer is information about an initializer that
+                      has not yet completed.
                     properties:
                       name:
                         description: name of the process that is responsible for initializing
@@ -162,6 +167,9 @@ spec:
                             with the StatusReason failure. Not all StatusReasons may
                             provide detailed causes.
                           items:
+                            description: StatusCause provides more information about
+                              an api.Status failure, including cases when multiple
+                              errors are encountered.
                             properties:
                               field:
                                 description: "The field of the resource that has caused
@@ -273,6 +281,46 @@ spec:
                 and categorize (scope and select) objects. May match selectors of
                 replication controllers and services. More info: http://kubernetes.io/docs/user-guide/labels'
               type: object
+            managedFields:
+              description: "ManagedFields maps workflow-id and version to the set
+                of fields that are managed by that workflow. This is mostly for internal
+                housekeeping, and users typically shouldn't need to set or understand
+                this field. A workflow can be the user's name, a controller's name,
+                or the name of a specific apply path like \"ci-cd\". The set of fields
+                is always in the version that the workflow used when modifying the
+                object. \n This field is alpha and can be changed or removed without
+                notice."
+              items:
+                description: ManagedFieldsEntry is a workflow-id, a FieldSet and the
+                  group version of the resource that the fieldset applies to.
+                properties:
+                  apiVersion:
+                    description: APIVersion defines the version of this resource that
+                      this field set applies to. The format is "group/version" just
+                      like the top-level APIVersion field. It is necessary to track
+                      the version of a field set because it cannot be automatically
+                      converted.
+                    type: string
+                  fields:
+                    additionalProperties: true
+                    description: Fields identifies a set of fields.
+                    type: object
+                  manager:
+                    description: Manager is an identifier of the workflow managing
+                      these fields.
+                    type: string
+                  operation:
+                    description: Operation is the type of operation which lead to
+                      this ManagedFieldsEntry being created. The only valid values
+                      for this field are 'Apply' and 'Update'.
+                    type: string
+                  time:
+                    description: Time is timestamp of when these fields were set.
+                      It should always be empty if Operation is 'Apply'
+                    format: date-time
+                    type: string
+                type: object
+              type: array
             name:
               description: 'Name must be unique within a namespace. Is required when
                 creating resources, although some resources may allow a client to
@@ -295,6 +343,10 @@ spec:
                 will point to this controller, with the controller field set to true.
                 There cannot be more than one managing controller.
               items:
+                description: OwnerReference contains enough information to let you
+                  identify an owning object. An owning object must be in the same
+                  namespace as the dependent, or be cluster-scoped, so there is no
+                  namespace field.
                 properties:
                   apiVersion:
                     description: API version of the referent.
@@ -347,6 +399,7 @@ spec:
               type: string
           type: object
         spec:
+          description: CronJobSpec defines the desired state of CronJob
           properties:
             concurrencyPolicy:
               description: 'Specifies how to treat concurrent executions of a Job.
@@ -470,7 +523,8 @@ spec:
                         is created, the system will populate this list with the current
                         set of initializers. Only privileged users may set or modify
                         this list. Once it is empty, it may not be modified further
-                        by any user."
+                        by any user. \n DEPRECATED - initializers are an alpha field
+                        and will be removed in v1.15."
                       properties:
                         pending:
                           description: Pending is a list of initializers that must
@@ -480,6 +534,8 @@ spec:
                             the object is considered as initialized and visible to
                             all clients.
                           items:
+                            description: Initializer is information about an initializer
+                              that has not yet completed.
                             properties:
                               name:
                                 description: name of the process that is responsible
@@ -518,6 +574,9 @@ spec:
                                     associated with the StatusReason failure. Not
                                     all StatusReasons may provide detailed causes.
                                   items:
+                                    description: StatusCause provides more information
+                                      about an api.Status failure, including cases
+                                      when multiple errors are encountered.
                                     properties:
                                       field:
                                         description: "The field of the resource that
@@ -636,6 +695,48 @@ spec:
                         match selectors of replication controllers and services. More
                         info: http://kubernetes.io/docs/user-guide/labels'
                       type: object
+                    managedFields:
+                      description: "ManagedFields maps workflow-id and version to
+                        the set of fields that are managed by that workflow. This
+                        is mostly for internal housekeeping, and users typically shouldn't
+                        need to set or understand this field. A workflow can be the
+                        user's name, a controller's name, or the name of a specific
+                        apply path like \"ci-cd\". The set of fields is always in
+                        the version that the workflow used when modifying the object.
+                        \n This field is alpha and can be changed or removed without
+                        notice."
+                      items:
+                        description: ManagedFieldsEntry is a workflow-id, a FieldSet
+                          and the group version of the resource that the fieldset
+                          applies to.
+                        properties:
+                          apiVersion:
+                            description: APIVersion defines the version of this resource
+                              that this field set applies to. The format is "group/version"
+                              just like the top-level APIVersion field. It is necessary
+                              to track the version of a field set because it cannot
+                              be automatically converted.
+                            type: string
+                          fields:
+                            additionalProperties: true
+                            description: Fields identifies a set of fields.
+                            type: object
+                          manager:
+                            description: Manager is an identifier of the workflow
+                              managing these fields.
+                            type: string
+                          operation:
+                            description: Operation is the type of operation which
+                              lead to this ManagedFieldsEntry being created. The only
+                              valid values for this field are 'Apply' and 'Update'.
+                            type: string
+                          time:
+                            description: Time is timestamp of when these fields were
+                              set. It should always be empty if Operation is 'Apply'
+                            format: date-time
+                            type: string
+                        type: object
+                      type: array
                     name:
                       description: 'Name must be unique within a namespace. Is required
                         when creating resources, although some resources may allow
@@ -660,6 +761,10 @@ spec:
                         with the controller field set to true. There cannot be more
                         than one managing controller.
                       items:
+                        description: OwnerReference contains enough information to
+                          let you identify an owning object. An owning object must
+                          be in the same namespace as the dependent, or be cluster-scoped,
+                          so there is no namespace field.
                         properties:
                           apiVersion:
                             description: API version of the referent.
@@ -769,6 +874,9 @@ spec:
                           description: matchExpressions is a list of label selector
                             requirements. The requirements are ANDed.
                           items:
+                            description: A label selector requirement is a selector
+                              that contains values, a key, and an operator that relates
+                              the key and values.
                             properties:
                               key:
                                 description: key is the label key that the selector
@@ -915,7 +1023,9 @@ spec:
                                 object is created, the system will populate this list
                                 with the current set of initializers. Only privileged
                                 users may set or modify this list. Once it is empty,
-                                it may not be modified further by any user."
+                                it may not be modified further by any user. \n DEPRECATED
+                                - initializers are an alpha field and will be removed
+                                in v1.15."
                               properties:
                                 pending:
                                   description: Pending is a list of initializers that
@@ -925,6 +1035,8 @@ spec:
                                     struct will be set to nil and the object is considered
                                     as initialized and visible to all clients.
                                   items:
+                                    description: Initializer is information about
+                                      an initializer that has not yet completed.
                                     properties:
                                       name:
                                         description: name of the process that is responsible
@@ -965,6 +1077,10 @@ spec:
                                             failure. Not all StatusReasons may provide
                                             detailed causes.
                                           items:
+                                            description: StatusCause provides more
+                                              information about an api.Status failure,
+                                              including cases when multiple errors
+                                              are encountered.
                                             properties:
                                               field:
                                                 description: "The field of the resource
@@ -1097,6 +1213,51 @@ spec:
                                 objects. May match selectors of replication controllers
                                 and services. More info: http://kubernetes.io/docs/user-guide/labels'
                               type: object
+                            managedFields:
+                              description: "ManagedFields maps workflow-id and version
+                                to the set of fields that are managed by that workflow.
+                                This is mostly for internal housekeeping, and users
+                                typically shouldn't need to set or understand this
+                                field. A workflow can be the user's name, a controller's
+                                name, or the name of a specific apply path like \"ci-cd\".
+                                The set of fields is always in the version that the
+                                workflow used when modifying the object. \n This field
+                                is alpha and can be changed or removed without notice."
+                              items:
+                                description: ManagedFieldsEntry is a workflow-id,
+                                  a FieldSet and the group version of the resource
+                                  that the fieldset applies to.
+                                properties:
+                                  apiVersion:
+                                    description: APIVersion defines the version of
+                                      this resource that this field set applies to.
+                                      The format is "group/version" just like the
+                                      top-level APIVersion field. It is necessary
+                                      to track the version of a field set because
+                                      it cannot be automatically converted.
+                                    type: string
+                                  fields:
+                                    additionalProperties: true
+                                    description: Fields identifies a set of fields.
+                                    type: object
+                                  manager:
+                                    description: Manager is an identifier of the workflow
+                                      managing these fields.
+                                    type: string
+                                  operation:
+                                    description: Operation is the type of operation
+                                      which lead to this ManagedFieldsEntry being
+                                      created. The only valid values for this field
+                                      are 'Apply' and 'Update'.
+                                    type: string
+                                  time:
+                                    description: Time is timestamp of when these fields
+                                      were set. It should always be empty if Operation
+                                      is 'Apply'
+                                    format: date-time
+                                    type: string
+                                type: object
+                              type: array
                             name:
                               description: 'Name must be unique within a namespace.
                                 Is required when creating resources, although some
@@ -1123,6 +1284,10 @@ spec:
                                 field set to true. There cannot be more than one managing
                                 controller.
                               items:
+                                description: OwnerReference contains enough information
+                                  to let you identify an owning object. An owning
+                                  object must be in the same namespace as the dependent,
+                                  or be cluster-scoped, so there is no namespace field.
                                 properties:
                                   apiVersion:
                                     description: API version of the referent.
@@ -1218,6 +1383,11 @@ spec:
                                         the node(s) with the highest sum are the most
                                         preferred.
                                       items:
+                                        description: An empty preferred scheduling
+                                          term matches all objects with implicit weight
+                                          0 (i.e. it's a no-op). A null preferred
+                                          scheduling term matches no objects (i.e.
+                                          is also a no-op).
                                         properties:
                                           preference:
                                             description: A node selector term, associated
@@ -1227,6 +1397,10 @@ spec:
                                                 description: A list of node selector
                                                   requirements by node's labels.
                                                 items:
+                                                  description: A node selector requirement
+                                                    is a selector that contains values,
+                                                    a key, and an operator that relates
+                                                    the key and values.
                                                   properties:
                                                     key:
                                                       description: The label key that
@@ -1264,6 +1438,10 @@ spec:
                                                 description: A list of node selector
                                                   requirements by node's fields.
                                                 items:
+                                                  description: A node selector requirement
+                                                    is a selector that contains values,
+                                                    a key, and an operator that relates
+                                                    the key and values.
                                                   properties:
                                                     key:
                                                       description: The label key that
@@ -1305,8 +1483,8 @@ spec:
                                             format: int32
                                             type: integer
                                         required:
-                                        - weight
                                         - preference
+                                        - weight
                                         type: object
                                       type: array
                                     requiredDuringSchedulingIgnoredDuringExecution:
@@ -1323,11 +1501,19 @@ spec:
                                           description: Required. A list of node selector
                                             terms. The terms are ORed.
                                           items:
+                                            description: A null or empty node selector
+                                              term matches no objects. The requirements
+                                              of them are ANDed. The TopologySelectorTerm
+                                              type implements a subset of the NodeSelectorTerm.
                                             properties:
                                               matchExpressions:
                                                 description: A list of node selector
                                                   requirements by node's labels.
                                                 items:
+                                                  description: A node selector requirement
+                                                    is a selector that contains values,
+                                                    a key, and an operator that relates
+                                                    the key and values.
                                                   properties:
                                                     key:
                                                       description: The label key that
@@ -1365,6 +1551,10 @@ spec:
                                                 description: A list of node selector
                                                   requirements by node's fields.
                                                 items:
+                                                  description: A node selector requirement
+                                                    is a selector that contains values,
+                                                    a key, and an operator that relates
+                                                    the key and values.
                                                   properties:
                                                     key:
                                                       description: The label key that
@@ -1425,6 +1615,9 @@ spec:
                                         podAffinityTerm; the node(s) with the highest
                                         sum are the most preferred.
                                       items:
+                                        description: The weights of all of the matched
+                                          WeightedPodAffinityTerm fields are added
+                                          per-node to find the most preferred node(s)
                                         properties:
                                           podAffinityTerm:
                                             description: Required. A pod affinity
@@ -1441,6 +1634,11 @@ spec:
                                                       requirements. The requirements
                                                       are ANDed.
                                                     items:
+                                                      description: A label selector
+                                                        requirement is a selector
+                                                        that contains values, a key,
+                                                        and an operator that relates
+                                                        the key and values.
                                                       properties:
                                                         key:
                                                           description: key is the
@@ -1518,8 +1716,8 @@ spec:
                                             format: int32
                                             type: integer
                                         required:
-                                        - weight
                                         - podAffinityTerm
+                                        - weight
                                         type: object
                                       type: array
                                     requiredDuringSchedulingIgnoredDuringExecution:
@@ -1535,6 +1733,15 @@ spec:
                                         to each podAffinityTerm are intersected, i.e.
                                         all terms must be satisfied.
                                       items:
+                                        description: Defines a set of pods (namely
+                                          those matching the labelSelector relative
+                                          to the given namespace(s)) that this pod
+                                          should be co-located (affinity) or not co-located
+                                          (anti-affinity) with, where co-located is
+                                          defined as running on a node whose value
+                                          of the label with key <topologyKey> matches
+                                          that of any node on which a pod of the set
+                                          of pods is running
                                         properties:
                                           labelSelector:
                                             description: A label query over a set
@@ -1545,6 +1752,10 @@ spec:
                                                   list of label selector requirements.
                                                   The requirements are ANDed.
                                                 items:
+                                                  description: A label selector requirement
+                                                    is a selector that contains values,
+                                                    a key, and an operator that relates
+                                                    the key and values.
                                                   properties:
                                                     key:
                                                       description: key is the label
@@ -1635,6 +1846,9 @@ spec:
                                         the node(s) with the highest sum are the most
                                         preferred.
                                       items:
+                                        description: The weights of all of the matched
+                                          WeightedPodAffinityTerm fields are added
+                                          per-node to find the most preferred node(s)
                                         properties:
                                           podAffinityTerm:
                                             description: Required. A pod affinity
@@ -1651,6 +1865,11 @@ spec:
                                                       requirements. The requirements
                                                       are ANDed.
                                                     items:
+                                                      description: A label selector
+                                                        requirement is a selector
+                                                        that contains values, a key,
+                                                        and an operator that relates
+                                                        the key and values.
                                                       properties:
                                                         key:
                                                           description: key is the
@@ -1728,8 +1947,8 @@ spec:
                                             format: int32
                                             type: integer
                                         required:
-                                        - weight
                                         - podAffinityTerm
+                                        - weight
                                         type: object
                                       type: array
                                     requiredDuringSchedulingIgnoredDuringExecution:
@@ -1745,6 +1964,15 @@ spec:
                                         nodes corresponding to each podAffinityTerm
                                         are intersected, i.e. all terms must be satisfied.
                                       items:
+                                        description: Defines a set of pods (namely
+                                          those matching the labelSelector relative
+                                          to the given namespace(s)) that this pod
+                                          should be co-located (affinity) or not co-located
+                                          (anti-affinity) with, where co-located is
+                                          defined as running on a node whose value
+                                          of the label with key <topologyKey> matches
+                                          that of any node on which a pod of the set
+                                          of pods is running
                                         properties:
                                           labelSelector:
                                             description: A label query over a set
@@ -1755,6 +1983,10 @@ spec:
                                                   list of label selector requirements.
                                                   The requirements are ANDed.
                                                 items:
+                                                  description: A label selector requirement
+                                                    is a selector that contains values,
+                                                    a key, and an operator that relates
+                                                    the key and values.
                                                   properties:
                                                     key:
                                                       description: key is the label
@@ -1835,6 +2067,8 @@ spec:
                                 must be at least one container in a Pod. Cannot be
                                 updated.
                               items:
+                                description: A single application container that you
+                                  want to run within a pod.
                                 properties:
                                   args:
                                     description: 'Arguments to the entrypoint. The
@@ -1869,6 +2103,8 @@ spec:
                                     description: List of environment variables to
                                       set in the container. Cannot be updated.
                                     items:
+                                      description: EnvVar represents an environment
+                                        variable present in a Container.
                                       properties:
                                         name:
                                           description: Name of the environment variable.
@@ -1994,6 +2230,8 @@ spec:
                                       defined by an Env with a duplicate key will
                                       take precedence. Cannot be updated.
                                     items:
+                                      description: EnvFromSource represents the source
+                                        of a set of ConfigMaps
                                       properties:
                                         configMapRef:
                                           description: The ConfigMap to select from
@@ -2092,6 +2330,9 @@ spec:
                                                   in the request. HTTP allows repeated
                                                   headers.
                                                 items:
+                                                  description: HTTPHeader describes
+                                                    a custom header to be used in
+                                                    HTTP probes
                                                   properties:
                                                     name:
                                                       description: The header field
@@ -2150,14 +2391,20 @@ spec:
                                         type: object
                                       preStop:
                                         description: 'PreStop is called immediately
-                                          before a container is terminated. The container
-                                          is terminated after the handler completes.
-                                          The reason for termination is passed to
-                                          the handler. Regardless of the outcome of
-                                          the handler, the container is eventually
-                                          terminated. Other management of the container
-                                          blocks until the hook completes. More info:
-                                          https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks'
+                                          before a container is terminated due to
+                                          an API request or management event such
+                                          as liveness probe failure, preemption, resource
+                                          contention, etc. The handler is not called
+                                          if the container crashes or exits. The reason
+                                          for termination is passed to the handler.
+                                          The Pod''s termination grace period countdown
+                                          begins before the PreStop hooked is executed.
+                                          Regardless of the outcome of the handler,
+                                          the container will eventually terminate
+                                          within the Pod''s termination grace period.
+                                          Other management of the container blocks
+                                          until the hook completes or until the termination
+                                          grace period is reached. More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks'
                                         properties:
                                           exec:
                                             description: One and only one of the following
@@ -2195,6 +2442,9 @@ spec:
                                                   in the request. HTTP allows repeated
                                                   headers.
                                                 items:
+                                                  description: HTTPHeader describes
+                                                    a custom header to be used in
+                                                    HTTP probes
                                                   properties:
                                                     name:
                                                       description: The header field
@@ -2298,6 +2548,8 @@ spec:
                                             description: Custom headers to set in
                                               the request. HTTP allows repeated headers.
                                             items:
+                                              description: HTTPHeader describes a
+                                                custom header to be used in HTTP probes
                                               properties:
                                                 name:
                                                   description: The header field name
@@ -2392,6 +2644,8 @@ spec:
                                       inside a container will be accessible from the
                                       network. Cannot be updated.
                                     items:
+                                      description: ContainerPort represents a network
+                                        port in a single container.
                                       properties:
                                         containerPort:
                                           description: Number of port to expose on
@@ -2473,6 +2727,8 @@ spec:
                                             description: Custom headers to set in
                                               the request. HTTP allows repeated headers.
                                             items:
+                                              description: HTTPHeader describes a
+                                                custom header to be used in HTTP probes
                                               properties:
                                                 name:
                                                   description: The header field name
@@ -2596,11 +2852,15 @@ spec:
                                           add:
                                             description: Added capabilities
                                             items:
+                                              description: Capability represent POSIX
+                                                capabilities type
                                               type: string
                                             type: array
                                           drop:
                                             description: Removed capabilities
                                             items:
+                                              description: Capability represent POSIX
+                                                capabilities type
                                               type: string
                                             type: array
                                         type: object
@@ -2735,6 +2995,8 @@ spec:
                                       devices to be used by the container. This is
                                       a beta feature.
                                     items:
+                                      description: volumeDevice describes a mapping
+                                        of a raw block device within a container.
                                       properties:
                                         devicePath:
                                           description: devicePath is the path inside
@@ -2746,14 +3008,16 @@ spec:
                                             a persistentVolumeClaim in the pod
                                           type: string
                                       required:
-                                      - name
                                       - devicePath
+                                      - name
                                       type: object
                                     type: array
                                   volumeMounts:
                                     description: Pod volumes to mount into the container's
                                       filesystem. Cannot be updated.
                                     items:
+                                      description: VolumeMount describes a mounting
+                                        of a Volume within a container.
                                       properties:
                                         mountPath:
                                           description: Path within the container at
@@ -2781,9 +3045,19 @@ spec:
                                             which the container's volume should be
                                             mounted. Defaults to "" (volume's root).
                                           type: string
+                                        subPathExpr:
+                                          description: Expanded path within the volume
+                                            from which the container's volume should
+                                            be mounted. Behaves similarly to SubPath
+                                            but environment variable references $(VAR_NAME)
+                                            are expanded using the container's environment.
+                                            Defaults to "" (volume's root). SubPathExpr
+                                            and SubPath are mutually exclusive. This
+                                            field is alpha in 1.14.
+                                          type: string
                                       required:
-                                      - name
                                       - mountPath
+                                      - name
                                       type: object
                                     type: array
                                   workingDir:
@@ -2816,6 +3090,8 @@ spec:
                                     Resolution options given in Options will override
                                     those that appear in the base DNSPolicy.
                                   items:
+                                    description: PodDNSConfigOption defines DNS resolver
+                                      options of a pod.
                                     properties:
                                       name:
                                         description: Required.
@@ -2854,6 +3130,9 @@ spec:
                                 file if specified. This is only valid for non-hostNetwork
                                 pods.
                               items:
+                                description: HostAlias holds the mapping between IP
+                                  and hostnames that will be injected as an entry
+                                  in the pod's hosts file.
                                 properties:
                                   hostnames:
                                     description: Hostnames for the above IP address.
@@ -2893,6 +3172,9 @@ spec:
                                 in the case of docker, only DockerConfig type secrets
                                 are honored. More info: https://kubernetes.io/docs/concepts/containers/images#specifying-imagepullsecrets-on-a-pod'
                               items:
+                                description: LocalObjectReference contains enough
+                                  information to let you locate the referenced object
+                                  inside the same namespace.
                                 properties:
                                   name:
                                     description: 'Name of the referent. More info:
@@ -2920,6 +3202,8 @@ spec:
                                 currently be added or removed. Cannot be updated.
                                 More info: https://kubernetes.io/docs/concepts/workloads/pods/init-containers/'
                               items:
+                                description: A single application container that you
+                                  want to run within a pod.
                                 properties:
                                   args:
                                     description: 'Arguments to the entrypoint. The
@@ -2954,6 +3238,8 @@ spec:
                                     description: List of environment variables to
                                       set in the container. Cannot be updated.
                                     items:
+                                      description: EnvVar represents an environment
+                                        variable present in a Container.
                                       properties:
                                         name:
                                           description: Name of the environment variable.
@@ -3079,6 +3365,8 @@ spec:
                                       defined by an Env with a duplicate key will
                                       take precedence. Cannot be updated.
                                     items:
+                                      description: EnvFromSource represents the source
+                                        of a set of ConfigMaps
                                       properties:
                                         configMapRef:
                                           description: The ConfigMap to select from
@@ -3177,6 +3465,9 @@ spec:
                                                   in the request. HTTP allows repeated
                                                   headers.
                                                 items:
+                                                  description: HTTPHeader describes
+                                                    a custom header to be used in
+                                                    HTTP probes
                                                   properties:
                                                     name:
                                                       description: The header field
@@ -3235,14 +3526,20 @@ spec:
                                         type: object
                                       preStop:
                                         description: 'PreStop is called immediately
-                                          before a container is terminated. The container
-                                          is terminated after the handler completes.
-                                          The reason for termination is passed to
-                                          the handler. Regardless of the outcome of
-                                          the handler, the container is eventually
-                                          terminated. Other management of the container
-                                          blocks until the hook completes. More info:
-                                          https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks'
+                                          before a container is terminated due to
+                                          an API request or management event such
+                                          as liveness probe failure, preemption, resource
+                                          contention, etc. The handler is not called
+                                          if the container crashes or exits. The reason
+                                          for termination is passed to the handler.
+                                          The Pod''s termination grace period countdown
+                                          begins before the PreStop hooked is executed.
+                                          Regardless of the outcome of the handler,
+                                          the container will eventually terminate
+                                          within the Pod''s termination grace period.
+                                          Other management of the container blocks
+                                          until the hook completes or until the termination
+                                          grace period is reached. More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks'
                                         properties:
                                           exec:
                                             description: One and only one of the following
@@ -3280,6 +3577,9 @@ spec:
                                                   in the request. HTTP allows repeated
                                                   headers.
                                                 items:
+                                                  description: HTTPHeader describes
+                                                    a custom header to be used in
+                                                    HTTP probes
                                                   properties:
                                                     name:
                                                       description: The header field
@@ -3383,6 +3683,8 @@ spec:
                                             description: Custom headers to set in
                                               the request. HTTP allows repeated headers.
                                             items:
+                                              description: HTTPHeader describes a
+                                                custom header to be used in HTTP probes
                                               properties:
                                                 name:
                                                   description: The header field name
@@ -3477,6 +3779,8 @@ spec:
                                       inside a container will be accessible from the
                                       network. Cannot be updated.
                                     items:
+                                      description: ContainerPort represents a network
+                                        port in a single container.
                                       properties:
                                         containerPort:
                                           description: Number of port to expose on
@@ -3558,6 +3862,8 @@ spec:
                                             description: Custom headers to set in
                                               the request. HTTP allows repeated headers.
                                             items:
+                                              description: HTTPHeader describes a
+                                                custom header to be used in HTTP probes
                                               properties:
                                                 name:
                                                   description: The header field name
@@ -3681,11 +3987,15 @@ spec:
                                           add:
                                             description: Added capabilities
                                             items:
+                                              description: Capability represent POSIX
+                                                capabilities type
                                               type: string
                                             type: array
                                           drop:
                                             description: Removed capabilities
                                             items:
+                                              description: Capability represent POSIX
+                                                capabilities type
                                               type: string
                                             type: array
                                         type: object
@@ -3820,6 +4130,8 @@ spec:
                                       devices to be used by the container. This is
                                       a beta feature.
                                     items:
+                                      description: volumeDevice describes a mapping
+                                        of a raw block device within a container.
                                       properties:
                                         devicePath:
                                           description: devicePath is the path inside
@@ -3831,14 +4143,16 @@ spec:
                                             a persistentVolumeClaim in the pod
                                           type: string
                                       required:
-                                      - name
                                       - devicePath
+                                      - name
                                       type: object
                                     type: array
                                   volumeMounts:
                                     description: Pod volumes to mount into the container's
                                       filesystem. Cannot be updated.
                                     items:
+                                      description: VolumeMount describes a mounting
+                                        of a Volume within a container.
                                       properties:
                                         mountPath:
                                           description: Path within the container at
@@ -3866,9 +4180,19 @@ spec:
                                             which the container's volume should be
                                             mounted. Defaults to "" (volume's root).
                                           type: string
+                                        subPathExpr:
+                                          description: Expanded path within the volume
+                                            from which the container's volume should
+                                            be mounted. Behaves similarly to SubPath
+                                            but environment variable references $(VAR_NAME)
+                                            are expanded using the container's environment.
+                                            Defaults to "" (volume's root). SubPathExpr
+                                            and SubPath are mutually exclusive. This
+                                            field is alpha in 1.14.
+                                          type: string
                                       required:
-                                      - name
                                       - mountPath
+                                      - name
                                       type: object
                                     type: array
                                   workingDir:
@@ -3918,8 +4242,10 @@ spec:
                                 be evaluated for pod readiness. A pod is ready when
                                 all its containers are ready AND all conditions specified
                                 in the readiness gates have status equal to "True"
-                                More info: https://github.com/kubernetes/community/blob/master/keps/sig-network/0007-pod-ready%2B%2B.md'
+                                More info: https://git.k8s.io/enhancements/keps/sig-network/0007-pod-ready%2B%2B.md'
                               items:
+                                description: PodReadinessGate contains the reference
+                                  to a pod condition
                                 properties:
                                   conditionType:
                                     description: ConditionType refers to a condition
@@ -3942,7 +4268,7 @@ spec:
                                 or empty, the "legacy" RuntimeClass will be used,
                                 which is an implicit class with an empty definition
                                 that uses the default runtime handler. More info:
-                                https://github.com/kubernetes/community/blob/master/keps/sig-node/0014-runtime-class.md
+                                https://git.k8s.io/enhancements/keps/sig-node/runtime-class.md
                                 This is an alpha feature and may change in the future.'
                               type: string
                             schedulerName:
@@ -4037,6 +4363,8 @@ spec:
                                     used for the pod. Pods with unsupported sysctls
                                     (by the container runtime) might fail to launch.
                                   items:
+                                    description: Sysctl defines a kernel parameter
+                                      to be set
                                     properties:
                                       name:
                                         description: Name of a property to set
@@ -4093,6 +4421,9 @@ spec:
                             tolerations:
                               description: If specified, the pod's tolerations.
                               items:
+                                description: The pod this Toleration is attached to
+                                  tolerates any taint that matches the triple <key,value,effect>
+                                  using the matching operator <operator>.
                                 properties:
                                   effect:
                                     description: Effect indicates the taint effect
@@ -4135,6 +4466,9 @@ spec:
                               description: 'List of volumes that can be mounted by
                                 containers belonging to the pod. More info: https://kubernetes.io/docs/concepts/storage/volumes'
                               items:
+                                description: Volume represents a named volume in a
+                                  pod that may be accessed by any container in the
+                                  pod.
                                 properties:
                                   awsElasticBlockStore:
                                     description: 'AWSElasticBlockStore represents
@@ -4347,6 +4681,8 @@ spec:
                                           must be relative and may not contain the
                                           '..' path or start with '..'.
                                         items:
+                                          description: Maps a string key to a path
+                                            within a volume.
                                           properties:
                                             key:
                                               description: The key to project.
@@ -4385,6 +4721,56 @@ spec:
                                           or it's keys must be defined
                                         type: boolean
                                     type: object
+                                  csi:
+                                    description: CSI (Container Storage Interface)
+                                      represents storage that is handled by an external
+                                      CSI driver (Alpha feature).
+                                    properties:
+                                      driver:
+                                        description: Driver is the name of the CSI
+                                          driver that handles this volume. Consult
+                                          with your admin for the correct name as
+                                          registered in the cluster.
+                                        type: string
+                                      fsType:
+                                        description: Filesystem type to mount. Ex.
+                                          "ext4", "xfs", "ntfs". If not provided,
+                                          the empty value is passed to the associated
+                                          CSI driver which will determine the default
+                                          filesystem to apply.
+                                        type: string
+                                      nodePublishSecretRef:
+                                        description: NodePublishSecretRef is a reference
+                                          to the secret object containing sensitive
+                                          information to pass to the CSI driver to
+                                          complete the CSI NodePublishVolume and NodeUnpublishVolume
+                                          calls. This field is optional, and  may
+                                          be empty if no secret is required. If the
+                                          secret object contains more than one secret,
+                                          all secret references are passed.
+                                        properties:
+                                          name:
+                                            description: 'Name of the referent. More
+                                              info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                              TODO: Add other useful fields. apiVersion,
+                                              kind, uid?'
+                                            type: string
+                                        type: object
+                                      readOnly:
+                                        description: Specifies a read-only configuration
+                                          for the volume. Defaults to false (read/write).
+                                        type: boolean
+                                      volumeAttributes:
+                                        additionalProperties:
+                                          type: string
+                                        description: VolumeAttributes stores driver-specific
+                                          properties that are passed to the CSI driver.
+                                          Consult your driver's documentation for
+                                          supported values.
+                                        type: object
+                                    required:
+                                    - driver
+                                    type: object
                                   downwardAPI:
                                     description: DownwardAPI represents downward API
                                       about the pod that should populate this volume
@@ -4404,6 +4790,9 @@ spec:
                                         description: Items is a list of downward API
                                           volume file
                                         items:
+                                          description: DownwardAPIVolumeFile represents
+                                            information to create the file containing
+                                            the pod field
                                           properties:
                                             fieldRef:
                                               description: 'Required: Selects a field
@@ -4778,9 +5167,9 @@ spec:
                                           860 and 3260).
                                         type: string
                                     required:
-                                    - targetPortal
                                     - iqn
                                     - lun
+                                    - targetPortal
                                     type: object
                                   name:
                                     description: 'Volume''s name. Must be a DNS_LABEL
@@ -4806,8 +5195,8 @@ spec:
                                           address of the NFS server. More info: https://kubernetes.io/docs/concepts/storage/volumes#nfs'
                                         type: string
                                     required:
-                                    - server
                                     - path
+                                    - server
                                     type: object
                                   persistentVolumeClaim:
                                     description: 'PersistentVolumeClaimVolumeSource
@@ -4885,6 +5274,8 @@ spec:
                                       sources:
                                         description: list of volume projections
                                         items:
+                                          description: Projection that may be projected
+                                            along with other supported volume types
                                           properties:
                                             configMap:
                                               description: information about the configMap
@@ -4907,6 +5298,8 @@ spec:
                                                     be relative and may not contain
                                                     the '..' path or start with '..'.
                                                   items:
+                                                    description: Maps a string key
+                                                      to a path within a volume.
                                                     properties:
                                                       key:
                                                         description: The key to project.
@@ -4958,6 +5351,10 @@ spec:
                                                   description: Items is a list of
                                                     DownwardAPIVolume file
                                                   items:
+                                                    description: DownwardAPIVolumeFile
+                                                      represents information to create
+                                                      the file containing the pod
+                                                      field
                                                     properties:
                                                       fieldRef:
                                                         description: 'Required: Selects
@@ -5055,6 +5452,8 @@ spec:
                                                     be relative and may not contain
                                                     the '..' path or start with '..'.
                                                   items:
+                                                    description: Maps a string key
+                                                      to a path within a volume.
                                                     properties:
                                                       key:
                                                         description: The key to project.
@@ -5160,6 +5559,12 @@ spec:
                                           entries are separated with commas) which
                                           acts as the central registry for volumes
                                         type: string
+                                      tenant:
+                                        description: Tenant owning the given Quobyte
+                                          volume in the Backend Used with dynamically
+                                          provisioned Quobyte volumes, value is set
+                                          by the plugin
+                                        type: string
                                       user:
                                         description: User to map volume access to
                                           Defaults to serivceaccount user
@@ -5228,8 +5633,8 @@ spec:
                                           is admin. More info: https://releases.k8s.io/HEAD/examples/volumes/rbd/README.md#how-to-use-it'
                                         type: string
                                     required:
-                                    - monitors
                                     - image
+                                    - monitors
                                     type: object
                                   scaleIO:
                                     description: ScaleIO represents a ScaleIO persistent
@@ -5291,8 +5696,8 @@ spec:
                                         type: string
                                     required:
                                     - gateway
-                                    - system
                                     - secretRef
+                                    - system
                                     type: object
                                   secret:
                                     description: 'Secret represents a secret that
@@ -5323,6 +5728,8 @@ spec:
                                           be relative and may not contain the '..'
                                           path or start with '..'.
                                         items:
+                                          description: Maps a string key to a path
+                                            within a volume.
                                           properties:
                                             key:
                                               description: The key to project.
@@ -5457,6 +5864,7 @@ spec:
               type: object
             schedule:
               description: The schedule in Cron format, see https://en.wikipedia.org/wiki/Cron.
+              minLength: 0
               type: string
             startingDeadlineSeconds:
               description: Optional deadline in seconds for starting the job if it
@@ -5476,14 +5884,17 @@ spec:
                 it does not apply to already started executions.  Defaults to false.
               type: boolean
           required:
-          - schedule
           - jobTemplate
+          - schedule
           type: object
         status:
+          description: CronJobStatus defines the observed state of CronJob
           properties:
             active:
               description: A list of pointers to currently running jobs.
               items:
+                description: ObjectReference contains enough information to let you
+                  inspect or modify the referred object.
                 properties:
                   apiVersion:
                     description: API version of the referent.
