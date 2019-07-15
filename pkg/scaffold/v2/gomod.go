@@ -22,7 +22,7 @@ import (
 
 var _ input.File = &GoMod{}
 
-// GoMod writes a templatefile for Gopkg.toml
+// GoMod writes a templatefile for go.mod
 type GoMod struct {
 	input.Input
 }

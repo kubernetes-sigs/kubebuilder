@@ -45,7 +45,7 @@ Writes the following files:
 - a boilerplate license file
 - a PROJECT file with the domain and repo
 - a Makefile to build the project
-- a Gopkg.toml with project dependencies
+- a go.mod with project dependencies
 - a Kustomization.yaml for customizating manifests
 - a Patch file for customizing image for manager manifests
 - a Patch file for enabling prometheus metrics
