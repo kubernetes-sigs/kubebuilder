@@ -20,7 +20,7 @@ import (
 	"flag"
 	"os"
 
-	kbatchv1beta1 "k8s.io/api/batch/v1"
+	kbatchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -34,10 +34,10 @@ import (
 
 /*
 The first difference to notice is that kubebuilder has added the new API
-group's package (`kbatchv1beta1`) to our scheme.  This means that we can use those
+group's package (`batchv1`) to our scheme.  This means that we can use those
 objects in our controller.
 
-We'll also need to add the kubernetes batch v1 scheme, since we're creating
+We'll also need to add the kubernetes batch v1 (`kbatchv1`) scheme, since we're creating
 and listing Jobs.
 */
 var (
@@ -47,7 +47,7 @@ var (
 
 func init() {
 
-	kbatchv1beta1.AddToScheme(scheme) // we've added this ourselves
+	kbatchv1.AddToScheme(scheme) // we've added this ourselves
 	batchv1.AddToScheme(scheme)
 	// +kubebuilder:scaffold:scheme
 }

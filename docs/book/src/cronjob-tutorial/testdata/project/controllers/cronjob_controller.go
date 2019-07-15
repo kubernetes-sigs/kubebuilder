@@ -447,7 +447,7 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	/*
-		Once we've figured out what to do with existing jobs, we'll actually create our desired job
+	Once we've figured out what to do with existing jobs, we'll actually create our desired job
 	*/
 
 	/*
@@ -508,7 +508,7 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	/*
 	### 7: Requeue when we either see a running job or it's time for the next scheduled run
 
-	Finally, we'll return the result that we prepped above, that says we want to requue
+	Finally, we'll return the result that we prepped above, that says we want to requeue
 	when our next run would need to occur.  This is taken as a maximum deadline -- if something
 	else changes in between, like our job starts or finishes, we get modified, etc, we might
 	reconcile again sooner.
