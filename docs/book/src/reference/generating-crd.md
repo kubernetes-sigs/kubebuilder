@@ -53,10 +53,10 @@ type ToySpec struct {
 	// +kubebuilder:validation:UniqueItems=false
 	Knights []string `json:"knights,omitempty"`
 
-	// +kubebuilder:validation:Enum=Lion,Wolf,Dragon
+	// +kubebuilder:validation:Enum=Lion;Wolf;Dragon
 	Alias string `json:"alias,omitempty"`
 
-	// +kubebuilder:validation:Enum=1,2,3
+	// +kubebuilder:validation:Enum=1;2;3
 	Rank    int    `json:"rank"`
 }
 
