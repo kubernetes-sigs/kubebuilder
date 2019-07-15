@@ -13,7 +13,7 @@ a directory for the new group-version.
 
 In this case, the [`api/v1/`](../TODO.md) directory is created,
 corresponding to the `batch.tutorial.kubebuilder.io/v1` (remember our
-[`--domain` setting](../cronjob-tutorial.html#scaffolding-out-our-project)
+[`--domain` setting](cronjob-tutorial.md#scaffolding-out-our-project)
 from the beginning?).
 
 It has also added a file for our `CronJob` Kind,
