@@ -55,7 +55,7 @@ This markers is responsible for generating a mutating webhook manifest.
 The meaning of each marker can be found [here](../TODO.md).
 */
 
-// +kubebuilder:webhook:path=/mutate-batch-tutorial-kubebuilder-io-tutorial-kubebuilder-io-v1-cronjob,mutating=true,failurePolicy=fail,groups=batch.tutorial.kubebuilder.io.tutorial.kubebuilder.io,resources=cronjobs,verbs=create;update,versions=v1,name=mcronjob.kb.io
+// +kubebuilder:webhook:path=/mutate-batch-tutorial-kubebuilder-io-v1-cronjob,mutating=true,failurePolicy=fail,groups=batch.tutorial.kubebuilder.io,resources=cronjobs,verbs=create;update,versions=v1,name=mcronjob.kb.io
 
 /*
 We use the `webhook.Defaulter` interface to set defaults to our CRD.
@@ -93,7 +93,7 @@ This markers is responsible for generating a validating webhook manifest.
 The meaning of each marker can be found [here](../TODO.md).
 */
 
-// +kubebuilder:webhook:path=/validate-batch-tutorial-kubebuilder-io-tutorial-kubebuilder-io-v1-cronjob,mutating=false,failurePolicy=fail,groups=batch.tutorial.kubebuilder.io.tutorial.kubebuilder.io,resources=cronjobs,verbs=create;update,versions=v1,name=vcronjob.kb.io
+// +kubebuilder:webhook:path=/validate-batch-tutorial-kubebuilder-io-v1-cronjob,mutating=false,failurePolicy=fail,groups=batch.tutorial.kubebuilder.io,resources=cronjobs,verbs=create;update,versions=v1,name=vcronjob.kb.io
 
 /*
 To validate our CRD beyond what's possible with declarative validation.
@@ -133,15 +133,21 @@ func (r *CronJob) ValidateUpdate(old runtime.Object) error {
 We validate the name and the spec of the CronJob.
 */
 
-func (c *CronJob) validateCronJob() error {
-	allErrs := c.validateCronJobSpec()
-	if err := c.validateCronJobName(); err != nil {
+func (r *CronJob) validateCronJob() error {
+	var allErrs field.ErrorList
+	if err := r.validateCronJobName(); err != nil {
 		allErrs = append(allErrs, err)
+	}
+	if err := r.validateCronJobSpec(); err != nil {
+		allErrs = append(allErrs, err)
+	}
+	if len(allErrs) == 0 {
+		return nil
 	}
 
 	return apierrors.NewInvalid(
 		schema.GroupKind{Group: "batch.tutorial.kubebuilder.io", Kind: "CronJob"},
-		c.Name, allErrs)
+		r.Name, allErrs)
 }
 
 /*
@@ -152,14 +158,24 @@ You can find all of the kubebuilder supported markers for
 declaring validation in [here](../TODO.md).
 */
 
-func (c *CronJob) validateCronJobSpec() field.ErrorList {
+func (r *CronJob) validateCronJobSpec() *field.Error {
 	// The field helpers from the kubernetes API machinery help us return nicely
 	// structured validation errors.
-	allErrs := field.ErrorList{}
-	allErrs = append(allErrs, validateScheduleFormat(
-		c.Spec.Schedule,
-		field.NewPath("spec").Child("schedule"))...)
-	return allErrs
+	return validateScheduleFormat(
+		r.Spec.Schedule,
+		field.NewPath("spec").Child("schedule"))
+}
+
+/*
+We'll need to validate the [cron](https://en.wikipedia.org/wiki/Cron) schedule
+is well-formatted.
+*/
+
+func validateScheduleFormat(schedule string, fldPath *field.Path) *field.Error {
+	if _, err := cron.ParseStandard(schedule); err != nil {
+		return field.Invalid(fldPath, schedule, err.Error())
+	}
+	return nil
 }
 
 /*
@@ -171,31 +187,17 @@ the apimachinery repo, so we can't declaratively validate it using
 the validation schema.
 */
 
-func (c *CronJob) validateCronJobName() *field.Error {
-	if len(c.ObjectMeta.Name) > validationutils.DNS1035LabelMaxLength-11 {
+func (r *CronJob) validateCronJobName() *field.Error {
+	if len(r.ObjectMeta.Name) > validationutils.DNS1035LabelMaxLength-11 {
 		// The job name length is 63 character like all Kubernetes objects
 		// (which must fit in a DNS subdomain). The cronjob controller appends
 		// a 11-character suffix to the cronjob (`-$TIMESTAMP`) when creating
 		// a job. The job name length limit is 63 characters. Therefore cronjob
 		// names must have length <= 63-11=52. If we don't validate this here,
 		// then job creation will fail later.
-		return field.Invalid(field.NewPath("metadata").Child("name"), c.Name, "must be no more than 52 characters")
+		return field.Invalid(field.NewPath("metadata").Child("name"), r.Name, "must be no more than 52 characters")
 	}
 	return nil
 }
 
 // +kubebuilder:docs-gen:collapse=Validate object name
-
-/*
-We'll need to validate the [cron](https://en.wikipedia.org/wiki/Cron) schedule
-is well-formatted.
-*/
-
-func validateScheduleFormat(schedule string, fldPath *field.Path) field.ErrorList {
-	allErrs := field.ErrorList{}
-	if _, err := cron.ParseStandard(schedule); err != nil {
-		allErrs = append(allErrs, field.Invalid(fldPath, schedule, err.Error()))
-	}
-
-	return allErrs
-}
