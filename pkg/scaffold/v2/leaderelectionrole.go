@@ -64,4 +64,10 @@ rules:
   - get
   - update
   - patch
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
 `
