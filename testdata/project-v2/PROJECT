@@ -8,3 +8,6 @@ resources:
 - group: crew
   version: v1
   kind: FirstMate
+- group: crew
+  version: v1
+  kind: Admiral

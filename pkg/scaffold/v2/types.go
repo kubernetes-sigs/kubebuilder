@@ -75,6 +75,7 @@ type {{.Resource.Kind}}Status struct {
 }
 
 // +kubebuilder:object:root=true
+{{ if not .Resource.Namespaced }} // +kubebuilder:resource:scope=Cluster {{ end }}
 
 // {{.Resource.Kind}} is the Schema for the {{ .Resource.Resource }} API
 type {{.Resource.Kind}} struct {
