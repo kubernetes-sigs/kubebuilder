@@ -18,7 +18,7 @@ limitations under the License.
 
 Our package starts out with some basic imports.  Particularly:
 
-- The core [controller-runtime](../TODO.md) library
+- The core [controller-runtime](https://godoc.org/sigs.k8s.io/controller-runtime) library
 - The default controller-runtime logging, Zap (more on that a bit later)
 
 */
@@ -37,9 +37,11 @@ import (
 )
 
 /*
-Every set of controllers needs a [*Scheme*](../TODO.md), which provides mappings
-between Kinds and their corresponding Go types.  We'll talk a bit more about Kinds
-when we write our API definition, so just keep this in mind for later.
+Every set of controllers needs a
+[*Scheme*](https://book.kubebuilder.io/cronjob-tutorial/gvks.html#err-but-whats-that-scheme-thing),
+which provides mappings between Kinds and their corresponding Go types.  We'll
+talk a bit more about Kinds when we write our API definition, so just keep this
+in mind for later.
 */
 var (
 	scheme   = runtime.NewScheme()

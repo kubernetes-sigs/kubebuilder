@@ -33,7 +33,7 @@
 
 - [Reference](./reference/reference.md)
 
-  - [Generating CRD](./reference/generating-crd.md)
+  - [Generating CRDs](./reference/generating-crd.md)
   - [Using Finalizers](./reference/using-finalizers.md)
   - [Kind cluster](reference/kind.md)
   - [What's a webhook?](reference/webhook-overview.md)

@@ -66,10 +66,10 @@ kubebuilder create api --group webapp --version v1 --kind Guestbook
 This will create the files `api/v1/guestbook_types.go` and
 `controller/guestbook_controller.go` for you to edit.
 
-**Optional:** Edit the API definition or the reconciliation business logic.
-For more on this see [What is
-a Controller](cronjob-tutorial/controller-overview.html) and [What is
-a Resource](TODO.md)
+**Optional:** Edit the API definition or the reconciliation business
+logic. For more on this see [What's in
+a Controller](cronjob-tutorial/controller-overview.md) and [Designing an
+API](/cronjob-tutorial/api-design.md).
 
 ## Test It Out Locally
 

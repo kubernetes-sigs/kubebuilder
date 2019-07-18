@@ -19,7 +19,9 @@ Each API group-version contains one or more API types, which we call
 be able to store all the data of the other forms, somehow (we can store
 the data in fields, or in annotations).  This means that using an older
 API version won't cause newer data to be lost or corrupted.  See the
-[Kubernetes API guidelines](../TODO.md) for more information.
+[Kubernetes API
+guidelines](https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md)
+for more information.
 
 You'll also hear mention of *resources* on occasion.  A resource is simply
 a use of a Kind in the API.  Often, there's a one-to-one mapping between
@@ -47,7 +49,8 @@ API!
 ## Err, but what's that Scheme thing?
 
 The `Scheme` we saw before is simply a way to keep track of what Go type
-corresponds to a given GVK.
+corresponds to a given GVK (don't be overwhelemed by its
+[godocs](https://godoc.org/k8s.io/apimachinery/pkg/runtime#Scheme)).
 
 For instance, suppose we mark that the
 `"tutorial.kubebuilder.io/api/v1".CronJob{}` type as being in the

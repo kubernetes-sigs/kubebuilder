@@ -29,7 +29,8 @@ number: `2.5` is `2500m`.
 There are two supported bases: 10 and 2 (called decimal and binary,
 respectively).  Decimal base is indicated with "normal" SI suffixes (e.g.
 `M` and `K`), while Binary base is specified in "mebi" notation (e.g. `Mi`
-and `Ki`).  Think [megabytes vs mebibytes](../TODO.md).
+and `Ki`).  Think [megabytes vs
+mebibytes](https://en.wikipedia.org/wiki/Binary_prefix).
 
 </details>
 

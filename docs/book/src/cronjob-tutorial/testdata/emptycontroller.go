@@ -63,9 +63,10 @@ some changes.
 
 Most controllers need a logging handle and a context, so we set them up here.
 
-The [context](../TODO.md) is used to allow cancelation of requests, and potentially
-things like tracing.  It's the first argument to all client methods.  The `Background`
-context is just a basic context without any extra data or timing restrictions.
+The [context](https://golang.org/pkg/context/) is used to allow cancelation of
+requests, and potentially things like tracing.  It's the first argument to all
+client methods.  The `Background` context is just a basic context without any
+extra data or timing restrictions.
 
 The logging handle lets us log.  controller-runtime uses structured logging through a
 library called [logr](https://github.com/go-logr/logr).  As we'll see shortly,
