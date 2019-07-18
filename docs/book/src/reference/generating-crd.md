@@ -1,4 +1,4 @@
-# Generating CRD
+# Generating CRDs
 
 Kubebuilder provides a tool named `controller-gen` to generate manifests for CustomResourceDefinitions. The tool resides in the [controller-tools](http://sigs.k8s.io/controller-tools) repository and is installed through a Makefile target called `controller-gen`. 
 
@@ -147,5 +147,4 @@ the following:
 
 - Set `CRD_OPTIONS ?= "crd:trivialVersions=false"` in the Makefile
 - Annotate the Go struct with marker `// +kubebuilder:storageversion` for the
-  indicating the storage version. Read [more](../TODO.md) for supporting
-  multiple versions in your project
+  indicating the storage version.

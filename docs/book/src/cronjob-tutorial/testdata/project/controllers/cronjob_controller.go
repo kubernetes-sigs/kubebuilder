@@ -109,10 +109,12 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	/*
 	### 1: Load the CronJob by name
 
-	We'll fetch the CronJob using our client.  All client methods take a context
-	(to allow for cancellation) as their first argument, and the object in question
-	as their last.  Get is a bit special, in that it takes a [`NamespacedName`](../TODO.md)
-	as the middle argument (most don't have a middle argument, as we'll see below).
+	We'll fetch the CronJob using our client.  All client methods take a
+	context (to allow for cancellation) as their first argument, and the object
+	in question as their last.  Get is a bit special, in that it takes a
+	[`NamespacedName`](https://godoc.org/sigs.k8s.io/controller-runtime/pkg/client#ObjectKey)
+	as the middle argument (most don't have a middle argument, as we'll see
+	below).
 
 	Many client methods also take variadic options at the end.
 	*/

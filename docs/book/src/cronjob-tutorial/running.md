@@ -2,8 +2,8 @@
 
 To test out the controller, we can run it locally against the cluster.
 Before we do so, though, we'll need to install our CRDs, as per the [quick
-start](../TODO.md).  This will automatically update the YAML manifests
-using controller-tools, if needed:
+start](/quick-start.md).  This will automatically update the YAML
+manifests using controller-tools, if needed:
 
 ```bash
 make install
