@@ -16,32 +16,18 @@ os=$(go env GOOS)
 arch=$(go env GOARCH)
 
 # download kubebuilder and extract it to tmp
-curl -sL https://go.kubebuilder.io/dl/2.0.0-alpha.4/${os}/${arch} | tar -xz -C /tmp/
+curl -sL https://go.kubebuilder.io/dl/2.0.0-beta.0/${os}/${arch} | tar -xz -C /tmp/
 
 # move to a long-term location and put it on your path
 # (you'll need to set the KUBEBUILDER_ASSETS env var if you put it somewhere else)
-sudo mv /tmp/kubebuilder_2.0.0-alpha.4_${os}_${arch} /usr/local/kubebuilder
+sudo mv /tmp/kubebuilder_2.0.0-beta.0_${os}_${arch} /usr/local/kubebuilder
 export PATH=$PATH:/usr/local/kubebuilder/bin
 ```
 
 You can also install a KubeBuilder master snapshot from
 `https://go.kubebuilder.io/dl/latest/${os}/${arch}`.
 
-Install [kustomize](https://sigs.k8s.io/kustomize):
-
-```bash
-os=$(go env GOOS)
-arch=$(go env GOARCH)
-
-# download kustomize to the kubebuilder assets folder
-curl -o /usr/local/kubebuilder/bin/kustomize -sL https://go.kubebuilder.io/kustomize/${os}/${arch}
-```
-
-Ensure that kustomize is executable:
-
-```bash
-chmod 755 /usr/local/kubebuilder/bin/kustomize
-```
+Install [kustomize](https://sigs.k8s.io/kustomize/docs/INSTALL.md) v3.0.1+
 
 ## Create a Project
 
