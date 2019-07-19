@@ -181,7 +181,6 @@ func (p *V2Project) Scaffold() error {
 	return s.Execute(
 		input.Options{ProjectPath: projectInput.Path, BoilerplatePath: bpInput.Path},
 		&project.GitIgnore{},
-		&scaffoldv2.KustomizeImagePatch{},
 		&metricsauthv2.KustomizePrometheusMetricsPatch{},
 		&metricsauthv2.KustomizeAuthProxyPatch{},
 		&scaffoldv2.AuthProxyService{},

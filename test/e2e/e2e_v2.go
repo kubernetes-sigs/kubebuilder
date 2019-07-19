@@ -150,7 +150,7 @@ var _ = Describe("kubebuilder", func() {
 			// $ kubectl create clusterrolebinding myname-cluster-admin-binding --clusterrole=cluster-admin --user=myname@mycompany.com
 			// https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control
 			By("deploying controller manager")
-			err = kbc.Make("deploy")
+			err = kbc.Make("deploy", "IMG="+kbc.ImageName)
 			Expect(err).Should(Succeed())
 
 			By("validate the controller-manager pod running as expected")
