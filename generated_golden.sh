@@ -67,6 +67,7 @@ scaffold_test_project() {
 		$kb create webhook --group crew --version v1 --kind Captain --defaulting --programmatic-validation
 		$kb create api --group crew --version v1 --kind FirstMate --controller=true --resource=true --make=false
 		$kb create webhook --group crew --version v1 --kind FirstMate --conversion
+		$kb create api --group crew --version v1 --kind Admiral --controller=true --resource=true --namespaced=false --make=false
 		# TODO(droot): Adding a second group is a valid test case and kubebuilder is expected to report an error in this case. It
 		# doesn't do that currently so leaving it commented so that we can enable it later.
 		# $kb create api --group ship --version v1beta1 --kind Frigate --example=false --controller=true --resource=true --make=false
