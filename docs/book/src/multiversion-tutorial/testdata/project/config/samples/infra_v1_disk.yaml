@@ -1,0 +1,6 @@
+apiVersion: infra.kubebuilder.io/v1
+kind: Disk
+metadata:
+  name: disk-sample
+spec:
+  price: 10 USD

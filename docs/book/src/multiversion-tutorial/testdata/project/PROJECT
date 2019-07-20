@@ -1,0 +1,13 @@
+version: "2"
+domain: kubebuilder.io
+repo: infra.kubebuilder.io
+resources:
+- group: infra
+  version: v1
+  kind: Disk
+- group: infra
+  version: v2
+  kind: Disk
+- group: infra
+  version: v3
+  kind: Disk

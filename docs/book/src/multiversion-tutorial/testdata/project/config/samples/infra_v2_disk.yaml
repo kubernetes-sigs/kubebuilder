@@ -1,0 +1,6 @@
+apiVersion: infra.kubebuilder.io/v2
+kind: Disk
+metadata:
+  name: disk-sample
+spec:
+  
