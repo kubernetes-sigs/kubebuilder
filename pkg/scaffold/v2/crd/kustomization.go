@@ -81,7 +81,7 @@ var kustomizationTemplate = fmt.Sprintf(`# This kustomization.yaml is not intend
 resources:
 %s
 
-patches:
+patchesStrategicMerge:
 # [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix.
 # patches here are for enabling the conversion webhook for each CRD
 %s
