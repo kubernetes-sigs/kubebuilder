@@ -1,0 +1,355 @@
+/* Base styles and content styles */
+
+@import 'variables.css';
+
+html {
+    font-family: "Open Sans", sans-serif;
+    color: var(--fg);
+    background-color: var(--bg);
+    text-size-adjust: none;
+}
+
+body {
+    margin: 0;
+    font-size: 1rem;
+    overflow-x: hidden;
+}
+
+code {
+    font-family: "Source Code Pro", Consolas, "Ubuntu Mono", Menlo, "DejaVu Sans Mono", monospace, monospace;
+    font-size: 0.875em; /* please adjust the ace font size accordingly in editor.js */
+}
+
+.left { float: left; }
+.right { float: right; }
+.hidden { display: none; }
+.play-button.hidden { display: none; }
+
+h2, h3 { margin-top: 2.5em; }
+h4, h5 { margin-top: 2em; }
+
+.header + .header h3,
+.header + .header h4,
+.header + .header h5 { 
+    margin-top: 1em;
+}
+
+a.header:target h1:before,
+a.header:target h2:before,
+a.header:target h3:before,
+a.header:target h4:before {
+    display: inline-block;
+    content: "»";
+    margin-left: -30px;
+    width: 30px;
+}
+
+.page {
+    outline: 0;
+    padding: 0 var(--page-padding);
+}
+.page-wrapper {
+    box-sizing: border-box;
+}
+.js .page-wrapper {
+    transition: margin-left 0.3s ease, transform 0.3s ease; /* Animation: slide away */
+}
+
+.content {
+    overflow-y: auto;
+    padding: 0 15px;
+    padding-bottom: 50px;
+}
+.content main {
+    margin-left: auto;
+    margin-right: auto;
+    max-width: var(--content-max-width);
+}
+.content a { text-decoration: none; }
+.content a:hover { text-decoration: underline; }
+.content img { max-width: 100%; }
+.content .header:link,
+.content .header:visited {
+    color: var(--fg);
+}
+.content .header:link,
+.content .header:visited:hover {
+    text-decoration: none;
+}
+
+table {
+    margin: 0 auto;
+    border-collapse: collapse;
+}
+table td {
+    padding: 3px 20px;
+    border: 1px var(--table-border-color) solid;
+}
+table thead {
+    background: var(--table-header-bg);
+}
+table thead td {
+    font-weight: 700;
+    border: none;
+}
+table thead tr {
+    border: 1px var(--table-header-bg) solid;
+}
+/* Alternate background colors for rows */
+table tbody tr:nth-child(2n) {
+    background: var(--table-alternate-bg);
+}
+
+
+blockquote {
+    margin: 20px 0;
+    padding: 0 20px;
+    color: var(--fg);
+    background-color: var(--quote-bg);
+    border-top: .1em solid var(--quote-border);
+    border-bottom: .1em solid var(--quote-border);
+}
+
+
+:not(.footnote-definition) + .footnote-definition,
+.footnote-definition + :not(.footnote-definition) {
+    margin-top: 2em;
+}
+.footnote-definition {
+    font-size: 0.9em;
+    margin: 0.5em 0;
+}
+.footnote-definition p {
+    display: inline;
+}
+
+.tooltiptext {
+    position: absolute;
+    visibility: hidden;
+    color: #fff;
+    background-color: #333;
+    transform: translateX(-50%); /* Center by moving tooltip 50% of its width left */
+    left: -8px; /* Half of the width of the icon */
+    top: -35px;
+    font-size: 0.8em;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 8px;
+    margin: 5px;
+    z-index: 1000;
+}
+.tooltipped .tooltiptext {
+    visibility: visible;
+}
+
+/* From here on out is custom stuff */
+
+/* marker docs styles */
+
+/* NB(directxman12): The general gist of this is that we use semantic markup
+ * for the actual HTML as much as possible, and then use CSS to look pretty and
+ * extract the actual relevant information.  Theoretically, this'll let us do
+ * stuff like transform the information for different screen widths. */
+
+/* the marker */
+.marker {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 0.25em;
+}
+
+/* the marker name */
+.marker > dt.name::before {
+    content: '// +';
+}
+.marker > dt.name {
+    font-weight: bold;
+    order: 0; /* hack around the ::before's positioning to get it after the line */
+}
+
+/* the target blob */
+.marker::before {
+    content: "on " attr(data-target);
+    padding: 1px 6px;
+    border-radius: 20%;
+    background: var(--quote-bg);
+    margin-left: 0.5em;
+    font-weight: normal;
+    opacity: 0.75;
+    font-size: 0.75em;
+    order: 2; /* hack around the ::before's positioning to get it after the line */
+}
+
+/* deprecated markers */
+.marker.deprecated[data-target] {
+    /* use attribute marker for specificity */
+    order: 4;
+    opacity: 0.65;
+}
+
+.marker.deprecated::before {
+    content: "deprecated (on " attr(data-target) ")";
+    color: red;
+}
+.marker.deprecated:not([data-deprecated=""])::before {
+    content: "use " attr(data-deprecated) " (on " attr(data-target) ")";
+    color: red;
+}
+
+/* the summary arguments (hidden in non-summary view) */
+.marker dd.args {
+    margin-left: 0;
+    font-family: mono;
+    order: 1; /* hack around the ::before's positioning to get it after the line */
+}
+.marker dl.args.summary {
+    display: inline-block;
+    margin-bottom: 0;
+    margin-top: 0;
+}
+/* TODO(directxman12): optional */
+.marker dl.args.summary dt {
+    display: inline-block;
+    font-style: inherit;
+}
+.marker dl.args.summary dt:first-child::before {
+    content: ':';
+}
+.marker dl.args.summary dt::before {
+    content: ',';
+}
+.marker dl.args.summary dt:first-of-type:last-of-type::before {
+    content: '';
+}
+/* hide in non-summary view */
+.marker dd.args {
+    display: none
+}
+
+/* the description */
+.marker dd.description {
+    order: 3; /* hack around the ::before's positioning to get it after the line */
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* all arguments */
+.marker dl.args dt.argument::after {
+    content: '=';
+}
+.marker dl.args dd.type {
+    font-style: italic;
+}
+.marker .argument {
+    display: inline-block;
+    margin-left: 0;
+}
+.marker .argument.type {
+    font-size: 0.875em;
+}
+.marker .literal {
+    font-family: "Source Code Pro", Consolas, "Ubuntu Mono", Menlo, "DejaVu Sans Mono", monospace, monospace;
+    font-size: 0.875em; /* please adjust the ace font size accordingly in editor.js */
+}
+.marker .argument.type::before {
+    content: '‹';
+}
+.marker .argument.type::after {
+    content: '›';
+}
+
+/* summary args */
+.marker .args.summary .argument.optional {
+    opacity: 0.75;
+}
+
+/* anonymous marker args */
+.marker.anonymous .description details {
+    order: 1;
+    flex: 1; /* don't cause arg syntax to wrap */
+}
+.marker.anonymous .description .args {
+    order: 0; /* go before the description */
+
+    /* all on a single line */
+    margin-top: 0;
+    margin-bottom: 0;
+    margin-right: 1em;
+}
+.marker.anonymous .description {
+    flex-direction: row;
+}
+.marker .description dl.args:empty {
+    margin-top: 0;
+}
+
+.marker .type .slice::before {
+    content: '[]';
+}
+
+/* description args */
+.marker .description dt.argument.optional::before {
+    content: "opt";
+    padding: 1px 4px;
+    border-radius: 20%;
+    background: var(--quote-bg);
+    opacity: 0.5;
+    margin-left: -3em;
+    float: left;
+}
+
+/* help text */
+.marker summary.no-details {
+    list-style: none;
+}
+.marker summary.no-details::-webkit-details-marker {
+    display: none;
+}
+
+/* summary view */
+#markers-summarize:checked ~ dl > .marker dd.args {
+    display: inline-block
+}
+#markers-summarize:checked ~ dl > .marker dd.description dl.args {
+    display: none
+}
+#markers-summarize:checked ~ dl > .marker dd.description {
+    margin-bottom: 0.25em;
+}
+
+#markers-summarize {
+    display: none;
+}
+label[for="markers-summarize"]::before {
+    margin-right: 0.5em;
+    content: '\25bc';
+    display: inline-block;
+}
+#markers-summarize:checked ~ label[for="markers-summarize"]::before {
+    content: '\25b6';
+}
+
+/* misc */
+/* marker details should be indented to be in line with the summary,
+ * which is indented due to the expando
+ */
+.marker details > p {
+    margin-left: 1em;
+}
+
+/* sort by target */
+.marker[data-target="package"] {
+    order: 2;
+}
+.marker[data-target="type"] {
+    order: 1;
+}
+.marker[data-target="field"] {
+    order: 0;
+}
+.markers {
+    display: flex;
+    flex-direction: column;
+}
