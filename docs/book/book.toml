@@ -10,3 +10,6 @@ curly-quotes = true
 
 [preprocessor.literatego]
 command = "./litgo.sh"
+
+[preprocessor.markerdocs]
+command = "./markerdocs.sh"
