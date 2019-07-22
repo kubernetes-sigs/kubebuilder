@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+export GO111MODULE=on
+
 go get sigs.k8s.io/kind@v0.4.0
 go get sigs.k8s.io/kustomize/v3/cmd/kustomize@v3.0.1
 
