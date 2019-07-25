@@ -188,21 +188,33 @@ func extractContents(contents []byte, path string) (string, error) {
 			out.WriteString("</summary>")
 		}
 		if strings.TrimSpace(pair.comment) != "" {
+			out.WriteString("\n")
 			out.WriteString(pair.comment)
 		}
 
 		if strings.TrimSpace(pair.code) != "" {
-			out.WriteString("\n```go\n")
-			out.WriteString(pair.code)
-			out.WriteString("\n```\n")
+			out.WriteString("\n\n```go")
+			out.WriteString(wrapWithNewlines(pair.code))
+			out.WriteString("```\n")
 		}
 		if pair.collapse != ""{
-			out.WriteString("</details>")
+			out.WriteString("\n</details>")
 		}
 		// TODO(directxman12): nice side-by-side sections
 	}
 
 	return out.String(), nil
+}
+
+// wrapWithNewlines ensures that we begin and end with a newline character.
+func wrapWithNewlines(src string) string {
+	if src[0] != '\n' {
+		src = "\n" + src
+	}
+	if src[len(src)-1] != '\n' {
+		src = src + "\n"
+	}
+	return src
 }
 
 func main() {
