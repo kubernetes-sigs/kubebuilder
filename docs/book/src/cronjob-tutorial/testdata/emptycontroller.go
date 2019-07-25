@@ -44,9 +44,10 @@ type CronJobReconciler struct {
 }
 
 /*
-Most controllers eventually end up running on the cluster, so they need RBAC permissions.
-These are the bare minimum permissions needed to run.  As we add more functionality, we'll
-need to revisit these.
+Most controllers eventually end up running on the cluster, so they need RBAC
+permissions, which we specify using controller-tools [RBAC
+markers](/reference/markers/rbac.md).  These are the bare minimum permissions
+needed to run.  As we add more functionality, we'll need to revisit these.
 */
 
 // +kubebuilder:rbac:groups=batch.tutorial.kubebuilder.io,resources=cronjobs,verbs=get;list;watch;create;update;patch;delete

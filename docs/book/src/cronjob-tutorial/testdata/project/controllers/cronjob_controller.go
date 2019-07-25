@@ -87,7 +87,8 @@ func ignoreNotFound(err error) error {
 
 /*
 Notice that we need a few more RBAC permissions -- since we're creating and
-managing jobs now, we'll need permissions for those.
+managing jobs now, we'll need permissions for those, which means adding
+a couple more [markers](/reference/markers/rbac.md).
 */
 
 // +kubebuilder:rbac:groups=batch.tutorial.kubebuilder.io,resources=cronjobs,verbs=get;list;watch;create;update;patch;delete
