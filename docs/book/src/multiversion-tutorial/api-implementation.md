@@ -154,7 +154,7 @@ Let's take a quick look at the `api/v1/disk_webhook.go` file.
 
 If you look at `main.go`, you will notice the following snippet that invokes the
 SetupWebhook method.
-```Go
+```go
 	.....
 
 	if err = (&infrav1.Disk{}).SetupWebhookWithManager(mgr); err != nil {
@@ -176,7 +176,14 @@ CRD_OPTIONS ?= "crd:trivialVersions=false"
 ```
 
 Run `make manifests` to ensure that CRD manifests gets generated under `config/crd/bases/` directory.
-[TODO](../TODO.md) embed a compressed form of the generated CRD `testdata/project/config/crd`
+
+<details><summary>`infra.kubebuilder.io_disks.yaml`: the generated CRD YAML</summary>
+
+```yaml
+{{#include ./testdata/project/config/crd/bases/infra.kubebuilder.io_disks.yaml}}
+```
+
+</details>
 
 ### Manifests Generation
 
