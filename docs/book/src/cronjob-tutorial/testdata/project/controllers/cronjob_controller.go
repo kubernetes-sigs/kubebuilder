@@ -203,7 +203,7 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			successfulJobs = append(successfulJobs, &childJobs.Items[i])
 		}
 
-		// We'll store the launch time in an annotation, so we'll reconsitute that from
+		// We'll store the launch time in an annotation, so we'll reconstitute that from
 		// the active jobs themselves.
 		scheduledTimeForJob, err := getScheduledTimeForJob(&job)
 		if err != nil {
