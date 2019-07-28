@@ -28,7 +28,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/robfig/cron"
-	kbatch "k8s.io/api/batch/v1"
+	kbatchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -134,7 +134,7 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	Similarly to Get, we can use the List method to list the child jobs.  Notice that we use variadic options to
 	set the namespace and field match (which is actually an index lookup that we set up below).
 	*/
-	var childJobs kbatch.JobList
+	var childJobs kbatchv1.JobList
 	if err := r.List(ctx, &childJobs, client.InNamespace(req.Namespace), client.MatchingField(jobOwnerKey, req.Name)); err != nil {
 		log.Error(err, "unable to list child Jobs")
 		return ctrl.Result{}, err
@@ -153,9 +153,9 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	*/
 
 	// find the active list of jobs
-	var activeJobs []*kbatch.Job
-	var successfulJobs []*kbatch.Job
-	var failedJobs []*kbatch.Job
+	var activeJobs []*kbatchv1.Job
+	var successfulJobs []*kbatchv1.Job
+	var failedJobs []*kbatchv1.Job
 	var mostRecentTime *time.Time // find the last run so we can update the status
 
 	/*
@@ -163,9 +163,9 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	Status conditions allow us to add extensible status information to our objects that other
 	humans and controllers can examine to check things like completion and health.
 	*/
-	isJobFinished := func(job *kbatch.Job) (bool, kbatch.JobConditionType) {
+	isJobFinished := func(job *kbatchv1.Job) (bool, kbatchv1.JobConditionType) {
 		for _, c := range job.Status.Conditions {
-			if (c.Type == kbatch.JobComplete || c.Type == kbatch.JobFailed) && c.Status == corev1.ConditionTrue {
+			if (c.Type == kbatchv1.JobComplete || c.Type == kbatchv1.JobFailed) && c.Status == corev1.ConditionTrue {
 				return true, c.Type
 			}
 		}
@@ -178,7 +178,7 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	We'll use a helper to extract the scheduled time from the annotation that
 	we added during job creation.
 	*/
-	getScheduledTimeForJob := func(job *kbatch.Job) (*time.Time, error) {
+	getScheduledTimeForJob := func(job *kbatchv1.Job) (*time.Time, error) {
 		timeRaw := job.Annotations[scheduledTimeAnnotation]
 		if len(timeRaw) == 0 {
 			return nil, nil
@@ -197,9 +197,9 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		switch finishedType {
 		case "": // ongoing
 			activeJobs = append(activeJobs, &childJobs.Items[i])
-		case kbatch.JobFailed:
+		case kbatchv1.JobFailed:
 			failedJobs = append(failedJobs, &childJobs.Items[i])
-		case kbatch.JobComplete:
+		case kbatchv1.JobComplete:
 			successfulJobs = append(successfulJobs, &childJobs.Items[i])
 		}
 
@@ -463,11 +463,11 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	to clean up jobs when we delete the CronJob, and allows controller-runtime to figure out
 	which cronjob needs to be reconciled when a given job changes (is added, deleted, completes, etc).
 	*/
-	constructJobForCronJob := func(cronJob *batch.CronJob, scheduledTime time.Time) (*kbatch.Job, error) {
+	constructJobForCronJob := func(cronJob *batch.CronJob, scheduledTime time.Time) (*kbatchv1.Job, error) {
 		// We want job names for a given nominal start time to have a deterministic name to avoid the same job being created twice
 		name := fmt.Sprintf("%s-%d", cronJob.Name, scheduledTime.Unix())
 
-		job := &kbatch.Job{
+		job := &kbatchv1.Job{
 			ObjectMeta: metav1.ObjectMeta{
 				Labels:      make(map[string]string),
 				Annotations: make(map[string]string),
@@ -544,9 +544,9 @@ func (r *CronJobReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		r.Clock = realClock{}
 	}
 
-	if err := mgr.GetFieldIndexer().IndexField(&kbatch.Job{}, jobOwnerKey, func(rawObj runtime.Object) []string {
+	if err := mgr.GetFieldIndexer().IndexField(&kbatchv1.Job{}, jobOwnerKey, func(rawObj runtime.Object) []string {
 		// grab the job object, extract the owner...
-		job := rawObj.(*kbatch.Job)
+		job := rawObj.(*kbatchv1.Job)
 		owner := metav1.GetControllerOf(job)
 		if owner == nil {
 			return nil
@@ -564,6 +564,6 @@ func (r *CronJobReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&batch.CronJob{}).
-		Owns(&kbatch.Job{}).
+		Owns(&kbatchv1.Job{}).
 		Complete(r)
 }
