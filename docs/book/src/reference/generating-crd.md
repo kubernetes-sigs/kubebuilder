@@ -1,131 +1,81 @@
 # Generating CRDs
 
-Kubebuilder provides a tool named `controller-gen` to generate manifests for CustomResourceDefinitions. The tool resides in the [controller-tools](http://sigs.k8s.io/controller-tools) repository and is installed through a Makefile target called `controller-gen`. 
+KubeBuilder uses a tool called [`controller-gen`][controller-tools] to
+generate utility code and Kubernetes object YAML, like
+CustomResourceDefinitions.
 
-If you examine the `Makefile` in your project, you will see a target named `manifests` for generating manifests. `manifests` target is also listed as prerequisite for other targets like `run`, `tests`, `deploy` etc to ensure CRD manifests are regenerated when needed.
+To do this, it makes use of special "marker comments" (comments that start
+with `// +`) to indicate additional information about fields, types, and
+packages.  In the case of CRDs, these are generally pulled from your
+`_types.go` files.  For more information on markers, see the [marker
+reference docs][marker-ref].
 
-```sh
-# Generate manifests e.g. CRD, RBAC etc.
-manifests: controller-gen
-	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+KubeBuilder provides a `make` target to run controller-gen and generate
+CRDs: `make manifests`.
 
-# find or download controller-gen
-# download controller-gen if necessary
-controller-gen:
-ifeq (, $(shell which controller-gen))
-	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.2.0-beta.2
-CONTROLLER_GEN=$(GOBIN)/controller-gen
-else
-CONTROLLER_GEN=$(shell which controller-gen)
-endif
-```
-
-When you run `make manifests`, you should see generated CRDs are under `config/crd/bases` directory.
-
-`controller-gen` generates manifests for RBAC as well, but this section covers the generation of CRD manifests.
-
-`controller-gen` reads kubebuilder markers of the form `// +kubebuilder:something...` defined as Go comments in the `<your-api-kind>_types.go` file under `apis/...` to produce the CRD manifests. Sections below describe various supported annotations.
+When you run `make manifests`, you should see CRDs generated under the
+`config/crd/bases` directory.  `make manifests` can generate a number of
+other artifacts as well -- see the [marker reference docs][marker-ref] for
+more details.
 
 ## Validation
 
-CRDs support [validation](https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#validation) by definining ([OpenAPI v3 schema](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.0.md#schemaObject)) in the validation section. To learn more about the validation feature, refer to the original docs [here](https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#validation). One can specify validation for a field by annotating the field with kubebuilder marker which is of the form`// +kubebuilder:validation:<key=value>`. If you want to specify multiple validations for a field, you can add multiple such markers as demonstrated in the example below.
+CRDs support [declarative validation][kube-validation] using an [OpenAPI
+v3 schema][openapi-schema] in the `validation` section.
 
-Currently, supporting keys are `Maximum`, `Minimum`, `MaxLength`, `MinLength`, `MaxItems`, `MinItems`, `UniqueItems`, `Enum`, `Pattern`, `ExclusiveMaximum`,
- `ExclusiveMinimum`, `MultipleOf`, `Format`. The `// +kubebuilder:validation:Pattern=.+:.+` annotation specifies the Pattern validation requiring that the `Image` field match the regular expression `.+:.+`
+In general, [validation markers](./markers/crd-validation.md) may be
+attached to fields or to types. If you're defining complex validation, if
+you need to re-use validation, or if you need to validate slice elements,
+it's often best to define a new type to describe your validation.
 
-**Example:**
+For example:
 
 ```go
 type ToySpec struct {
-
-	// +kubebuilder:validation:Maximum=100
-	// +kubebuilder:validation:Minimum=1
-	// +kubebuilder:validation:ExclusiveMinimum=true
-	Power  float32 `json:"power,omitempty"`
-
-	Bricks int32   `json:"bricks,omitempty"`
 	// +kubebuilder:validation:MaxLength=15
 	// +kubebuilder:validation:MinLength=1
 	Name string `json:"name,omitempty"`
 
 	// +kubebuilder:validation:MaxItems=500
 	// +kubebuilder:validation:MinItems=1
-	// +kubebuilder:validation:UniqueItems=false
+	// +kubebuilder:validation:UniqueItems=true
 	Knights []string `json:"knights,omitempty"`
 
-	// +kubebuilder:validation:Enum=Lion;Wolf;Dragon
-	Alias string `json:"alias,omitempty"`
-
-	// +kubebuilder:validation:Enum=1;2;3
-	Rank    int    `json:"rank"`
+	Alias   Alias   `json:"alias,omitempty"`
+	Rank    Rank    `json:"rank"`
 }
+
+// +kubebuilder:validation:Enum=Lion;Wolf;Dragon
+type Alias string
+
+// +kubebuilder:validation:Minimum=1
+// +kubebuilder:validation:Maximum=3
+// +kubebuilder:validation:ExclusiveMaximum=false
+type Rank int32
 
 ```
 
-## Additional printer columns
+## Additional Printer Columns
 
-Starting with Kubernetes 1.11, kubectl uses server-side printing. The server
-decides which columns are shown by the kubectl get command. You can 
-[customize these columns using a CustomResourceDefinition](https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#additional-printer-columns).
-To add an additional column, add a comment with the following marker format
-just above the struct definition of the Kind.
+Starting with Kubernetes 1.11, `kubectl get` can ask the server what
+columns to display.  For CRDs, this can be used to provide useful,
+type-specific information with `kubectl get`, similar to the information
+provided for built-in types.
 
-Format: `// +kubebuilder:printcolumn:name="Name",type="type",JSONPath="json-path",description="desc",priority="priority",format="format"`
+The information that gets displayed can be controlled with the
+[additionalPrinterColumns field][kube-additional-printer-columns] on your
+CRD, which is controlled by the
+[`+kubebuilder:printcolumn`][crd-markers] marker on the Go type for
+your CRD.
 
-Note that `description`, `priority` and `format` are optional. Refer to the
-[additonal printer columns docs](https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#additional-printer-columns)
-to learn more about the values of `name`, `type`, `JsonPath`, `description`, `priority` and `format`.
-
-The following example adds the `Spec`, `Replicas`, and `Age` columns.
-
-```go
-// +kubebuilder:printcolumn:name="Spec",type="integer",JSONPath=".spec.cronSpec",description="status of the kind"
-// +kubebuilder:printcolumn:name="Replicas",type="integer",JSONPath=".spec.replicas",description="The number of jobs launched by the CronJob"
-// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
-type CronTab struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	Spec   CronTabSpec   `json:"spec,omitempty"`
-	Status CronTabStatus `json:"status,omitempty"`
-}
-
-```
-
-
-## Subresource
-Custom resources support `/status` and `/scale` subresources as of kubernetes
-1.13 release. You can learn more about the subresources [here](https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#status-subresource).
-
-### 1. Status
-To enable `/status` subresource, annotate the kind with `// +kubebuilder:subresource:status` marker.
-
-### 2. Scale
-To enable `/scale` subresource, annotate the kind with `// +kubebuilder:subresource:scale:specpath=<jsonpath>,statuspath=<jsonpath>,selectorpath=<jsonpath>` marker.
-
-Scale subresource marker contains three fields: `specpath`, `statuspath` and `selectorpath`.
-
-- `specpath` refers to `specReplicasPath` attribute of Scale object, and value `jsonpath` defines the JSONPath inside of a custom resource that corresponds to `Scale.Spec.Replicas`. This is a required field.
-- `statuspath` refers to `statusReplicasPath` attribute of Scale object. and the `jsonpath` value of it defines the JSONPath inside of a custom resource that corresponds to `Scale.Status.Replicas`. This is a required field.
-- `selectorpath` refers to `labelSelectorPath` attribute of Scale object, and the value `jsonpath` defines the JSONPath inside of a custom resource that corresponds to `Scale.Status.Selector`. This is an optional field.
-
-
-**Example:**
+For instance, in the following example, we add fields to display
+information about the knights, rank, and alias fields from the validation
+example:
 
 ```go
-type ToySpec struct {
-	Replicas *int32 `json:"replicas"` // Add this field in Toy Spec, so the jsonpath to this field is `.spec.replicas`
-}
-
-// ToyStatus defines the observed state of Toy
-type ToyStatus struct {
-	Replicas int32 `json:"replicas"` // Add this field in Toy Status, so the jsonpath to this field is `.status.replicas`
-}
-
-
-// Toy is the Schema for the toys API
-// +kubebuilder:subresource:status
-// +kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.replicas
+// +kubebuilder:printcolumn:name="Alias",type=string,JSONPATH=`.spec.alias`
+// +kubebuilder:printcolumn:name="Rank",type=integer,JSONPATH=`.spec.rank`
+// +kubebuilder:printcolumn:name="Bravely Run Away",type=boolean,JSONPath=`.spec.knights[?(@ == "Sir Robin")]`,description="when danger rears its ugly head, he bravely turned his tail and fled",priority=10
 type Toy struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -136,15 +86,137 @@ type Toy struct {
 
 ```
 
-In order to enable scale subresource in type definition file, you have to apply the scale subresource right before the kind struct definition, with correct jsonpath values according to the spec and status. And then make sure the jsonpaths are already defined in the Spec and Status struct. Finally, update the `<kind>_types_test.go` files according to the types Spec and Status changes.
+## Subresources
 
-In the above example for the type `Toy`, we added `// +kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.replicas` comment before `Toy` struct definition. `.spec.replicas` refers to the josnpath of Spec struct field (`ToySpec.Replicas`). And jsonpath `.status.healthyReplicas` refers to Status struct field (`ToyStatus.Replicas`).
+CRDs can choose to implement the `/status` and `/scale`
+[subresources][kube-subresources] as of Kubernetes 1.13.
+
+It's generally reccomended that you make use of the `/status` subresource
+on all resources that have a status field.
+
+Both subresources have a corresponding [marker][crd-markers].
+
+### Status
+
+The status subresource is enabled via `+kubebuilder:subresource:status`.
+When enabled, updates at the main resource will not change status.
+Similarly, updates to the status subresource cannot change anything but
+the status field.
+
+For example:
+
+```go
+// +kubebuilder:status:subresource
+type Toy struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   ToySpec   `json:"spec,omitempty"`
+	Status ToyStatus `json:"status,omitempty"`
+}
+```
+
+### Scale
+
+The scale subresource is enabled via `+kubebuilder:subresource:scale`.
+When enabled, users will be able to use `kubectl scale` with your
+resource.  If the `selectorpath` argument pointed to the string form of
+a label selector, the HorizontalPodAutoscaler will be able to autoscale
+your resource.
+
+For example:
+
+```go
+type CustomSetSpec struct {
+	Replicas *int32 `json:"replicas"`
+}
+
+type CustomSetStatus struct {
+	Replicas int32 `json:"replicas"`
+    Selector string `json:"selector"` // this must be the string form of the selector
+}
+
+
+// +kubebuilder:subresource:status
+// +kubebuilder:subresource:scale:specpath=.spec.replicas,statuspath=.status.replicas,selectorpath=.status.selector
+type CustomSet struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   ToySpec   `json:"spec,omitempty"`
+	Status ToyStatus `json:"status,omitempty"`
+}
+```
 
 ## Multiple Versions
 
-If you are defining multiple versions of a kind in your project, you need to do
-the following:
+As of Kubernetes 1.13, you can have multiple versions of your Kind defined
+in your CRD, and use a webhook to convert between them.
 
-- Set `CRD_OPTIONS ?= "crd:trivialVersions=false"` in the Makefile
-- Annotate the Go struct with marker `// +kubebuilder:storageversion` for the
-  indicating the storage version.
+For more details on this process, see the [multiversion
+tutorial](/multiversion-tutorial/tutorial.md).
+
+By default, KubeBuilder disables generating different validation for
+different versions of the Kind in your CRD, to be compatible with older
+Kubernetes versions.
+
+You'll need to enable this by switching the line in your makefile that
+says `CRD_OPTIONS ?= "crd:trivialVersions=true` to `CRD_OPTIONS ?= crd`
+
+Then, you can use the `+kubebuilder:storageversion` [marker][crd-markers]
+to indicate the [GVK](/cronjob-tutorial/gvks.md "Group-Version-Kind") that
+should be used to store data by the API server.
+
+## Under the hood
+
+KubeBuilder scaffolds out make rules to run `controller-gen`.  The rules
+will automatically install controller-gen if it's not on your path using
+`go get` with Go modules.
+
+You can also run `controller-gen` directly, if you want to see what it's
+doing.
+
+Each controller-gen "generator" is controlled by an option to
+controller-gen, using the same syntax as markers.  For instance, to
+generate CRDs with "trivial versions" (no version conversion webhooks), we
+call `controller-gen crd:trivialVersions=false paths=./api/...`.
+
+controller-gen also supports different output "rules" to controller how
+and where output goes.  Notice the `manifests` make rule (condensed
+slightly to only generate CRDs):
+
+```makefile
+# Generate manifests for CRDs
+manifests: controller-gen
+	$(CONTROLLER_GEN) crd:trivialVersions=true paths="./..." output:crd:artifacts:config=config/crd/bases
+```
+
+It uses the `output:crd:artifacts` output rule to indicate that
+CRD-related config (non-code) artifacts should end up in
+`config/crd/bases` instead of `config/crd`.
+
+To see all the options for `controller-gen`, run
+
+```shell
+$ controller-gen -h
+```
+
+or, for more details:
+
+```shell
+$ controller-gen -hhh
+```
+
+[marker-ref]: ./markers.md "Markers for Config/Code Generation"
+
+[kube-validation]: https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#validation "Custom Resource Definitions: Validation"
+
+[openapi-schema]: https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.0.md#schemaObject "OpenAPI v3"
+
+[kube-additional-printer-colums]: https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#additional-printer-columns "Custom Resource Definitions: Additional Printer Columns"
+
+[kube-subresources]: https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#status-subresource "Custom Resource Definitions: Status Subresource"
+
+[crd-markers]: ./markers/crd.md "CRD Generation"
+
+[controller-tools]: https://sigs.k8s.io/controller-tools "Controller Tools"
