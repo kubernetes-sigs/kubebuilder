@@ -42,6 +42,14 @@
   - [Kind cluster](reference/kind.md)
   - [What's a webhook?](reference/webhook-overview.md)
     - [Admission webhook](reference/admission-webhook.md)
+  - [Markers for Config/Code Generation](./reference/markers.md)
+
+      - [CRD Generation](./reference/markers/crd.md)
+      - [CRD Validation](./reference/markers/crd-validation.md)
+      - [Webhook](./reference/markers/webhook.md)
+      - [Object/DeepCopy](./reference/markers/object.md)
+      - [RBAC](./reference/markers/rbac.md)
+
 ---
 
 [Appendix: The TODO Landing Page](./TODO.md)

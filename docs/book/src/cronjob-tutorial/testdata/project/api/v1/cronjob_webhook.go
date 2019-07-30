@@ -50,9 +50,9 @@ func (r *CronJob) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 /*
 Notice that we use kubebuilder markers to generate webhook manifests.
-This markers is responsible for generating a mutating webhook manifest.
+This marker is responsible for generating a mutating webhook manifest.
 
-The meaning of each marker can be found [here](../TODO.md).
+The meaning of each marker can be found [here](/reference/markers/webhook.md).
 */
 
 // +kubebuilder:webhook:path=/mutate-batch-tutorial-kubebuilder-io-v1-cronjob,mutating=true,failurePolicy=fail,groups=batch.tutorial.kubebuilder.io,resources=cronjobs,verbs=create;update,versions=v1,name=mcronjob.kb.io
@@ -87,10 +87,7 @@ func (r *CronJob) Default() {
 }
 
 /*
-Notice that we use kubebuilder markers to generate webhook manifests.
-This markers is responsible for generating a validating webhook manifest.
-
-The meaning of each marker can be found [here](../TODO.md).
+This marker is responsible for generating a validating webhook manifest.
 */
 
 // +kubebuilder:webhook:path=/validate-batch-tutorial-kubebuilder-io-v1-cronjob,mutating=false,failurePolicy=fail,groups=batch.tutorial.kubebuilder.io,resources=cronjobs,verbs=create;update,versions=v1,name=vcronjob.kb.io
@@ -156,7 +153,7 @@ You can find kubebuilder validation markers (prefixed
 with `// +kubebuilder:validation`) in the [API](api-design.md)
 You can find all of the kubebuilder supported markers for
 declaring validation by running `controller-gen crd -w`,
-or [here](../TODO.md).
+or [here](/reference/markers/crd-validation.md).
 */
 
 func (r *CronJob) validateCronJobSpec() *field.Error {

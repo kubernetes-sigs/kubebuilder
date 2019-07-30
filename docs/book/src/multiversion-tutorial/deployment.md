@@ -34,7 +34,7 @@ kubectl get disks.v2.infra.kubebuilder.io/disk-sample -o yaml
 ```
 
 ```yaml
-apiVersion: infra.kubebuilder.io/v2 <-- note the v2 version
+apiVersion: infra.kubebuilder.io/v2 # <-- note the v2 version
 kind: Disk
 metadata:
   name: disk-sample
@@ -54,7 +54,7 @@ status: {}
 kubectl get disks.v3.infra.kubebuilder.io/disk-sample -o yaml
 ```
 ```yaml
-apiVersion: infra.kubebuilder.io/v3 <-- note the v3 version
+apiVersion: infra.kubebuilder.io/v3 # <-- note the v3 version
 kind: Disk
 metadata:
   name: disk-sample
@@ -62,7 +62,7 @@ metadata:
   uid: 0e9be0fd-a284-11e9-bbbe-42010a8001af <-- note the same uid as v2
   ....
 spec:
-  pricePerGB: <-- note the pricePerGB name of the field
+  pricePerGB: # <-- note the pricePerGB name of the field
     amount: 10
     currency: USD
 status: {}

@@ -58,9 +58,11 @@ At this point, our main function is fairly simple:
 
 - We set up some basic flags for metrics.
 
-- We instantiate a [*manager*](../TODO.md), which keeps track of running all of
-our controllers, as well as setting up shared caches and clients to the API
-server (notice we tell the manager about our Scheme).
+- We instantiate a
+[*manager*](https://godoc.org/sigs.k8s.io/controller-runtime/pkg/manager#Manager),
+which keeps track of running all of our controllers, as well as setting up
+shared caches and clients to the API server (notice we tell the manager about
+our Scheme).
 
 - We run our manager, which in turn runs all of our controllers and webhooks.
 The manager is set up to run until it receives a graceful shutdown signal.

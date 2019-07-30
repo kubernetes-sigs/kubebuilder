@@ -1,3 +1,19 @@
+/*
+Copyright 2019 The Kubernetes Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package main
 
 import (
@@ -23,48 +39,16 @@ import (
 type Literate struct {}
 func (_ Literate) SupportsOutput(_ string) bool { return true }
 func (_ Literate) Process(input *plugin.Input) error {
-	return plugin.EachItemInBook(&input.Book, func(chapter *plugin.BookChapter) error {
-		if chapter.Content == "" {
-			return nil
+	return plugin.EachCommand(&input.Book, "literatego", func(chapter *plugin.BookChapter, relPath string) (string, error) {
+		path := filepath.Join(input.Context.Root, input.Context.Config.Book.Src, filepath.Dir(chapter.Path), relPath)
+
+		// TODO(directxman12): don't escape root?
+		contents, err := ioutil.ReadFile(path)
+		if err != nil {
+			return "", fmt.Errorf("unable to import %q: %v", path, err)
 		}
 
-		// figure out all the trigger expressins
-		partsRaw := strings.Split(chapter.Content, "{{#literatego ")
-		// the first section won't start with `{{#literatego ` as per how split works
-		if len(partsRaw) < 2 {
-			return nil
-		}
-
-		var res []string
-		res = append(res, partsRaw[0])
-		for _, part := range partsRaw[1:] {
-			endDelim := strings.Index(part, "}}")
-			if endDelim < 0 {
-				return fmt.Errorf("missing end delimiter in chapter %q", chapter.Name)
-			}
-			// we need to join the path with the context root and the book's
-			// source directory, since we assume paths are relative to the
-			// given chapter file, like `{{#include}}`
-			relPath := part[:endDelim]
-			path := filepath.Join(input.Context.Root, input.Context.Config.Book.Src, filepath.Dir(chapter.Path), relPath)
-
-			// TODO(directxman12): don't escape root?
-			contents, err := ioutil.ReadFile(path)
-			if err != nil {
-				return fmt.Errorf("unable to import %q: %v", path, err)
-			}
-
-			newContents, err := extractContents(contents, path)
-			if err != nil {
-				return fmt.Errorf("unable to process %q: %v", path, err)
-			}
-
-			res = append(res, string(newContents))
-			res = append(res, part[endDelim+2:])
-		}
-
-		chapter.Content = strings.Join(res, "")
-		return nil
+		return extractContents(contents, path)
 	})
 }
 
@@ -204,21 +188,33 @@ func extractContents(contents []byte, path string) (string, error) {
 			out.WriteString("</summary>")
 		}
 		if strings.TrimSpace(pair.comment) != "" {
+			out.WriteString("\n")
 			out.WriteString(pair.comment)
 		}
 
 		if strings.TrimSpace(pair.code) != "" {
-			out.WriteString("\n```go\n")
-			out.WriteString(pair.code)
-			out.WriteString("\n```\n")
+			out.WriteString("\n\n```go")
+			out.WriteString(wrapWithNewlines(pair.code))
+			out.WriteString("```\n")
 		}
 		if pair.collapse != ""{
-			out.WriteString("</details>")
+			out.WriteString("\n</details>")
 		}
 		// TODO(directxman12): nice side-by-side sections
 	}
 
 	return out.String(), nil
+}
+
+// wrapWithNewlines ensures that we begin and end with a newline character.
+func wrapWithNewlines(src string) string {
+	if src[0] != '\n' {
+		src = "\n" + src
+	}
+	if src[len(src)-1] != '\n' {
+		src = src + "\n"
+	}
+	return src
 }
 
 func main() {
