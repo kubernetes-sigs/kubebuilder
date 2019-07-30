@@ -25,15 +25,11 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"text/template"
 
 	"github.com/gobuffalo/flect"
 )
-
-var Domain string
-var Repo string
 
 // writeIfNotFound returns true if the file was created and false if it already exists
 func WriteIfNotFound(path, templateName, templateValue string, data interface{}) bool {
@@ -106,20 +102,6 @@ func GetCopyright(file string) string {
 		return ""
 	}
 	return string(cr)
-}
-
-func GetDomain() string {
-	b, err := ioutil.ReadFile(filepath.Join("pkg", "apis", "doc.go"))
-	if err != nil {
-		log.Fatalf("Could not find pkg/apis/doc.go.  First run `kubebuilder init --domain <domain>`.")
-	}
-	r := regexp.MustCompile("\\+domain=(.*)")
-	l := r.FindSubmatch(b)
-	if len(l) < 2 {
-		log.Fatalf("pkg/apis/doc.go does not contain the domain (// +domain=.*)")
-	}
-	Domain = string(l[1])
-	return Domain
 }
 
 func create(path string) {
