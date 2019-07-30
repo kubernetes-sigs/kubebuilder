@@ -103,13 +103,17 @@ func (o *projectOptions) bindCmdlineFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&o.boilerplate.Owner, "owner", "", "Owner to add to the copyright")
 
 	// project args
-	cmd.Flags().StringVar(&o.project.Repo, "repo", util.Repo, "name of the github repo.  "+
+	cmd.Flags().StringVar(&o.project.Repo, "repo", "", "name of the github repo.  "+
 		"defaults to the go package of the current working directory.")
 	cmd.Flags().StringVar(&o.project.Domain, "domain", "k8s.io", "domain for groups")
 	cmd.Flags().StringVar(&o.project.Version, "project-version", project.Version2, "project version")
 }
 
 func (o *projectOptions) initializeProject() {
+	if o.project.Repo == "" {
+		o.project.Repo = util.Repo
+	}
+
 	if err := o.validate(); err != nil {
 		log.Fatal(err)
 	}

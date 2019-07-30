@@ -104,26 +104,19 @@ func findCurrentRepo() (string, error) {
 }
 
 func main() {
-	repoPath, err := findCurrentRepo()
-	if err != nil {
-		log.Fatal(fmt.Errorf("error finding current repository: %v", err))
-	}
-
-	util.Repo = repoPath
-
 	rootCmd := defaultCommand()
 
 	rootCmd.AddCommand(
-		newInitProjectCmd(),
-		newCreateCmd(),
+		projectCommand(newInitProjectCmd()),
+		projectCommand(newCreateCmd()),
 		version.NewVersionCmd(),
 	)
 
 	foundProject, version := getProjectVersion()
 	if foundProject && version == "1" {
 		rootCmd.AddCommand(
-			newAlphaCommand(),
-			newVendorUpdateCmd(),
+			projectCommand(newAlphaCommand()),
+			projectCommand(newVendorUpdateCmd()),
 		)
 	}
 
@@ -182,6 +175,21 @@ After the scaffold is written, api will run make on the project.
 			cmd.Help()
 		},
 	}
+}
+
+func projectCommand(wrapped *cobra.Command) *cobra.Command {
+	existing := wrapped.PersistentPreRun
+	wrapped.PersistentPreRun = func(cmd *cobra.Command, args []string) {
+		repoPath, err := findCurrentRepo()
+		if err != nil {
+			log.Fatal(fmt.Errorf("error finding current repository: %v", err))
+		}
+		util.Repo = repoPath
+		if existing != nil {
+			existing(cmd, args)
+		}
+	}
+	return wrapped
 }
 
 // getProjectVersion tries to load PROJECT file and returns if the file exist
