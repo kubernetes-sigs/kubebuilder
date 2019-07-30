@@ -183,7 +183,7 @@ func extractContents(contents []byte, path string) (string, error) {
 	
 	for _, pair := range pairs {
 		if pair.collapse != "" {
-			out.WriteString("<details><summary>")
+			out.WriteString("<details class=\"collapse-code\"><summary>")
 			out.WriteString(pair.collapse)
 			out.WriteString("</summary>")
 		}
