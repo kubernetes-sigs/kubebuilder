@@ -12,10 +12,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+// +kubebuilder:gen-docs:collapse=Apache License
 
-// Package v2 contains API Schema definitions for the infra v2 API group
+// Package v2 contains API Schema definitions for the batch v2 API group
 // +kubebuilder:object:generate=true
-// +groupName=infra.kubebuilder.io
+// +groupName=batch.tutorial.kubebuilder.io
 package v2
 
 import (
@@ -25,7 +26,7 @@ import (
 
 var (
 	// GroupVersion is group version used to register these objects
-	GroupVersion = schema.GroupVersion{Group: "infra.kubebuilder.io", Version: "v2"}
+	GroupVersion = schema.GroupVersion{Group: "batch.tutorial.kubebuilder.io", Version: "v2"}
 
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
 	SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}

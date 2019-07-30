@@ -12,23 +12,16 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+// +kubebuilder:docs-gen:collapse=Apache License
 
 package v1
 
-import (
-	ctrl "sigs.k8s.io/controller-runtime"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
-)
+/*
+Implementing the hub method is pretty easy -- we just have to add an empty
+method called `Hub()` to serve as a
+[marker](https://godoc.org/sigs.k8s.io/controller-runtime/pkg/conversion#Hub).
+We could also just put this inline in our `cronjob_types.go` file.
+*/
 
-// +kubebuilder:docs-gen:collapse=Imports
-
-// log is for logging in this package.
-var disklog = logf.Log.WithName("disk-resource")
-
-// SetupWebhookWithManager ensures that webhooks such as Admission or Conversion
-// for the Disk API are registerd with the manager.
-func (r *Disk) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
-		Complete()
-}
+// Hub marks this type as a conversion hub.
+func (*CronJob) Hub() {}

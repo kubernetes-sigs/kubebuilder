@@ -1,13 +1,7 @@
 version: "2"
-domain: kubebuilder.io
-repo: infra.kubebuilder.io
+domain: tutorial.kubebuilder.io
+repo: tutorial.kubebuilder.io/project
 resources:
-- group: infra
-  version: v1
-  kind: Disk
-- group: infra
+- group: batch
   version: v2
-  kind: Disk
-- group: infra
-  version: v3
-  kind: Disk
+  kind: CronJob
