@@ -28,9 +28,15 @@
     - [Deploying webhooks](./cronjob-tutorial/running-webhook.md)
 
   - [Epilogue](./cronjob-tutorial/epilogue.md)
-- [Tutorial: Multi-version API](./multiversion-tutorial/tutorial.md)
-  - [Concepts](./multiversion-tutorial/concepts.md)
-  - [Implement APIs](./multiversion-tutorial/api-implementation.md)
+
+- [Tutorial: Multi-Version API](./multiversion-tutorial/tutorial.md)
+
+  - [Changing things up](./multiversion-tutorial/api-changes.md)
+  - [Hubs, spokes, and other wheel metaphors](./multiversion-tutorial/conversion-concepts.md)
+  - [Implementing conversion](./multiversion-tutorial/conversion.md)
+
+      - [and setting up the webhooks](./multiversion-tutorial/webhooks.md)
+
   - [Deployment and Testing](./multiversion-tutorial/deployment.md)
 
 ---

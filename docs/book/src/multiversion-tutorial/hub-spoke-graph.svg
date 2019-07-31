@@ -1,0 +1,81 @@
+<svg
+   xmlns="http://www.w3.org/2000/svg"
+   version="1.1"
+   width="10352"
+   height="10352"
+   preserveAspectRatio="xMidYMid meet" viewBox="0 0 10352 10352"
+   alt="a seven-spoke hub-spoke graph"
+   id="hub-spoke-graph">
+  <defs
+     id="defs37" />
+  <g
+     style="fill:none;stroke-width:70"
+     transform="translate(276, 300)"
+     id="g32">
+    <path
+       style="fill:none;stroke-width:70;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="M 113.08429,6113.9954 4982.533,4864.2096 9887.353,6125.7859"
+       id="path848"/>
+    <path
+       style="fill:none;stroke-width:70;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="m 4997.2126,1.63198 10.3317,4900.09452 -2180.0607,4597.941"
+       id="path852"/>
+    <path
+       style="fill:none;stroke-width:70;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="M 7216.7333,9562.1046 5010.9543,4876.7586"
+       id="path854"/>
+    <path
+       style="fill:none;stroke-width:70;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="M 1079.8998,1881.2301 5007.5443,4901.7265 8914.6424,1866.492"
+       id="path850"/>
+    <g
+       style="fill:blue;stroke-width:70"
+       id="g30">
+      <circle
+         cx="2831"
+         cy="9505"
+         r="200"
+         id="circle14" />
+      <circle
+         cx="5000"
+         cy="0"
+         r="200"
+         id="circle16" />
+      <circle
+         cx="8909"
+         cy="1883"
+         r="200"
+         id="circle18" />
+      <circle
+         cx="9875"
+         cy="6113"
+         r="200"
+         id="circle20" />
+      <circle
+         cx="7169"
+         cy="9505"
+         r="200"
+         id="circle22" />
+      <circle
+         cx="2831"
+         cy="9505"
+         r="200"
+         id="circle24" />
+      <circle
+         cx="125"
+         cy="6113"
+         r="200"
+         id="circle26" />
+      <circle
+         cx="1091"
+         cy="1883"
+         r="200"
+         id="circle28" />
+      <circle
+         id="circle41"
+         r="200"
+         cy="4876"
+         cx="5000" />
+    </g>
+  </g>
+</svg>

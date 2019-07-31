@@ -1,0 +1,15 @@
+<svg xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" version="1.0" width="10352" height="10352" preserveAspectRatio="xMidYMid meet" viewBox="0 0 10352 10352" alt="an eight-vertex complete graph"> 
+<g style="fill:none;stroke-width:70">
+<path d="M 7089,557 L 9795,7089 L 3263,9795 L 557,3263 L 7089,557 L 7089,9795 L 557,7089 L 3263,557 L 9795,3263 L 7089,9795 L 557,3263 L 9795,3263 L 3263,9795 L 3263,557 L 9795,7089 L 557,7089 L 7089,557 M 9795,7089 L 557,3263 M 3263,557 L 7089,9795 M 9795,3263 L 557,7089"/> 
+<polyline points="6913,381 9619,3087 9619,6913 6913,9619 3087,9619 381,6913 381,3087 3087,381 6913,381 3087,9619" transform="translate(176,176)" />
+</g>
+<g style="fill:blue;stroke-width:70" transform="translate(2831,9505)">
+<circle r="200" cx="419" cy="-8996"/> 
+<circle r="200" cx="-2311" cy="-6258"/> 
+<circle r="200" cx="-2314" cy="-2403"/> 
+<circle r="200" cx="6999" cy="-2410"/> 
+<circle r="200" cx="6999" cy="-6258"/> 
+<circle r="200" cx="4266" cy="-8989"/> 
+<circle r="200" cx="4257" cy="306"/> 
+<circle r="200" cx="411" cy="315"/>
+</g></svg>

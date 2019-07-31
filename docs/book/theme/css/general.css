@@ -353,3 +353,47 @@ label[for="markers-summarize"]::before {
     display: flex;
     flex-direction: column;
 }
+
+/* details elements (not markers) */
+main > details.collapse-code > summary {
+    font-size: 80%;
+    opacity: 0.7;
+}
+
+main > details.collapse-code > summary::after {
+    content: " (hidden)";
+}
+
+/* diagrams */
+
+.diagrams {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.diagrams > * {
+    margin-left: 1em;
+    margin-right: 1em;
+    font-size: 160%;
+    font-weight: bold;
+}
+
+.diagrams object, .diagrams svg {
+    max-width: 100%;
+    max-height: 10em; /* force svg height to behave */
+}
+
+.diagrams path, .diagrams polyline, .diagrams circle {
+    stroke: var(--fg);
+}
+
+.diagrams path.text {
+    fill: var(--fg);
+    stroke: none;
+}
+
+.diagrams path.text.invert {
+    fill: black;
+    stroke: none;
+}
