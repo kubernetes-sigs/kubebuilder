@@ -73,18 +73,19 @@ type projectOptions struct {
 	skipGoVersionCheck bool
 
 	boilerplate project.Boilerplate
-	project project.Project
+	project     project.Project
 
 	// deprecated flags
-	dep                bool
-	depFlag            *flag.Flag
-	depArgs            []string
+	dep     bool
+	depFlag *flag.Flag
+	depArgs []string
 
 	// final result
 	scaffolder scaffold.ProjectScaffolder
 }
 
 func (o *projectOptions) bindCmdlineFlags(cmd *cobra.Command) {
+
 	cmd.Flags().BoolVar(&o.skipGoVersionCheck, "skip-go-version-check", false, "if specified, skip checking the Go version")
 
 	// dependency args
@@ -103,9 +104,9 @@ func (o *projectOptions) bindCmdlineFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&o.boilerplate.Owner, "owner", "", "Owner to add to the copyright")
 
 	// project args
-	cmd.Flags().StringVar(&o.project.Repo, "repo", util.Repo, "name of the github repo.  "+
+	cmd.Flags().StringVar(&o.project.Repo, "repo", "", "name of the github repo.  "+
 		"defaults to the go package of the current working directory.")
-	cmd.Flags().StringVar(&o.project.Domain, "domain", "k8s.io", "domain for groups")
+	cmd.Flags().StringVar(&o.project.Domain, "domain", "my.domain", "domain for groups")
 	cmd.Flags().StringVar(&o.project.Version, "project-version", project.Version2, "project version")
 }
 
@@ -132,6 +133,13 @@ func (o *projectOptions) validate() error {
 			return err
 		}
 	}
+	if o.project.Repo == "" {
+		repoPath, err := findCurrentRepo()
+		if err != nil {
+			return fmt.Errorf("error finding current repository: %v", err)
+		}
+		o.project.Repo = repoPath
+	}
 
 	switch o.project.Version {
 	case project.Version1:
@@ -140,15 +148,15 @@ func (o *projectOptions) validate() error {
 			defEnsure = &o.dep
 		}
 		o.scaffolder = &scaffold.V1Project{
-			Project: o.project,
+			Project:     o.project,
 			Boilerplate: o.boilerplate,
 
-			DepArgs: o.depArgs,
+			DepArgs:          o.depArgs,
 			DefinitelyEnsure: defEnsure,
 		}
 	case project.Version2:
 		o.scaffolder = &scaffold.V2Project{
-			Project: o.project,
+			Project:     o.project,
 			Boilerplate: o.boilerplate,
 		}
 	default:

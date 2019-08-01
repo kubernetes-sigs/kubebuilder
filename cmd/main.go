@@ -26,7 +26,6 @@ import (
 	"github.com/spf13/cobra"
 	"golang.org/x/tools/go/packages"
 
-	"sigs.k8s.io/kubebuilder/cmd/util"
 	"sigs.k8s.io/kubebuilder/cmd/version"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold"
 )
@@ -104,13 +103,6 @@ func findCurrentRepo() (string, error) {
 }
 
 func main() {
-	repoPath, err := findCurrentRepo()
-	if err != nil {
-		log.Fatal(fmt.Errorf("error finding current repository: %v", err))
-	}
-
-	util.Repo = repoPath
-
 	rootCmd := defaultCommand()
 
 	rootCmd.AddCommand(
@@ -146,7 +138,7 @@ Typical project lifecycle:
 
 - initialize a project:
 
-  kubebuilder init --domain k8s.io --license apache2 --owner "The Kubernetes authors"
+  kubebuilder init --domain example.com --license apache2 --owner "The Kubernetes authors"
 
 - create one or more a new resource APIs and add your code to them:
 
