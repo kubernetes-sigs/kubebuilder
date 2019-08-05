@@ -67,7 +67,7 @@ func (src *CronJob) ConvertTo(dstRaw conversion.Hub) error {
 	dst.Spec.Schedule = strings.Join(scheduleParts, " ")
 
 	/*
-	The rest of the conversion is pretty rote.
+		The rest of the conversion is pretty rote.
 	*/
 	// ObjectMeta
 	dst.ObjectMeta = src.ObjectMeta
@@ -109,13 +109,13 @@ func (dst *CronJob) ConvertFrom(srcRaw conversion.Hub) error {
 		return &part
 	}
 	dst.Spec.Schedule.Minute = partIfNeeded(schedParts[0])
-	dst.Spec.Schedule.Hour = partIfNeeded(schedParts[0])
-	dst.Spec.Schedule.DayOfMonth = partIfNeeded(schedParts[0])
-	dst.Spec.Schedule.Month = partIfNeeded(schedParts[0])
-	dst.Spec.Schedule.DayOfWeek = partIfNeeded(schedParts[0])
+	dst.Spec.Schedule.Hour = partIfNeeded(schedParts[1])
+	dst.Spec.Schedule.DayOfMonth = partIfNeeded(schedParts[2])
+	dst.Spec.Schedule.Month = partIfNeeded(schedParts[3])
+	dst.Spec.Schedule.DayOfWeek = partIfNeeded(schedParts[4])
 
 	/*
-	The rest of the conversion is pretty rote.
+		The rest of the conversion is pretty rote.
 	*/
 	// ObjectMeta
 	dst.ObjectMeta = src.ObjectMeta
