@@ -87,7 +87,7 @@ func main() {
 	// +kubebuilder:docs-gen:collapse=existing setup
 
 	/*
-	Our existing call to SetupWebhookWithManager registers our conversion webhooks with the manager, too.
+		Our existing call to SetupWebhookWithManager registers our conversion webhooks with the manager, too.
 	*/
 	if err = (&batchv1.CronJob{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create webhook", "webhook", "Captain")

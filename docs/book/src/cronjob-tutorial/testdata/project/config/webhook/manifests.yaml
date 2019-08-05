@@ -1,32 +1,6 @@
 
 ---
 apiVersion: admissionregistration.k8s.io/v1beta1
-kind: MutatingWebhookConfiguration
-metadata:
-  creationTimestamp: null
-  name: mutating-webhook-configuration
-webhooks:
-- clientConfig:
-    caBundle: Cg==
-    service:
-      name: webhook-service
-      namespace: system
-      path: /mutate-batch-tutorial-kubebuilder-io-v1-cronjob
-  failurePolicy: Fail
-  name: mcronjob.kb.io
-  rules:
-  - apiGroups:
-    - batch.tutorial.kubebuilder.io
-    apiVersions:
-    - v1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - cronjobs
-
----
-apiVersion: admissionregistration.k8s.io/v1beta1
 kind: ValidatingWebhookConfiguration
 metadata:
   creationTimestamp: null

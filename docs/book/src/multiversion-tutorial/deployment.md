@@ -7,7 +7,7 @@ bits disabled.  To enable them, we need to:
 
 - Enable `patches/webhook_in_<kind>.yaml` and
   `patches/cainjection_in_<kind>.yaml` in
-  `config/crds/kustomization.yaml` file.
+  `config/crd/kustomization.yaml` file.
 
 - Enable `../certmanager` and `../webhook` directories under the
   `bases` section in `config/default/kustomization.yaml` file.
@@ -17,6 +17,15 @@ bits disabled.  To enable them, we need to:
 
 - Enable all the vars under the `CERTMANAGER` section in
   `config/default/kustomization.yaml` file.
+
+Additionally, we'll need to set the `CRD_OPTIONS` variable to just
+`"crd"`, removing the `trivialVersions` option (this ensures that we
+actually [generate validation for each version][ref-multiver], instead of
+telling Kubernetes that they're the same):
+
+```makefile
+CRD_OPTIONS ?= "crd"
+```
 
 Now we have all our code changes and manifests in place, so let's deploy it to
 the cluster and test it out.
@@ -28,8 +37,9 @@ with
 [0.9.0-alpha.0](https://github.com/jetstack/cert-manager/releases/tag/v0.9.0-alpha.0)
 release.
 
-Once all our ducks are in a row with certificates, we can run `make deploy` (as normal)
-to deploy all the bits (i.e. the controller-manager deployment) onto the cluster.
+Once all our ducks are in a row with certificates, we can run `make
+install deploy` (as normal) to deploy all the bits (CRD,
+controller-manager deployment) onto the cluster.
 
 ## Testing
 
@@ -45,14 +55,14 @@ We'll make a v2 version based on our v1 version (put it under `config/samples`)
 Then, we can create it on the cluster: 
 
 ```shell
-kubectl apply -f config/samples/batch_v2_cronjob.yaml`
+kubectl apply -f config/samples/batch_v2_cronjob.yaml
 ```
 
 If we've done everything correctly, it should create successfully,
 and we should be able to fetch it using both the v2 resource
 
 ```shell
-kubectl get cronjobs.v2.tutorial.kubebuilder.io -o yaml
+kubectl get cronjobs.v2.batch.tutorial.kubebuilder.io -o yaml
 ```
 
 ```yaml
@@ -62,7 +72,7 @@ kubectl get cronjobs.v2.tutorial.kubebuilder.io -o yaml
 and the v1 resource
 
 ```shell
-kubectl get cronjobs.v1.tutorial.kubebuilder.io -o yaml
+kubectl get cronjobs.v1.batch.tutorial.kubebuilder.io -o yaml
 ```
 ```yaml
 {{#include ./testdata/project/config/samples/batch_v2_cronjob.yaml}}
@@ -76,3 +86,5 @@ reconcile, even though our controller is written against our v1 API version.
 
 ## Troubleshooting
 TODO(../TODO.md) steps for troubleshoting
+
+[ref-multiver]: /reference/generating-crd.md#multiple-versions "Generating CRDs: Multiple Versions"
