@@ -4,7 +4,7 @@ Simplified Builder-Based Scaffolding
 ## Background
 
 The current scaffolding in kubebuilder produces a directory structure that
-looks something like this (compiled artificacts like config omitted for
+looks something like this (compiled artifacts like config omitted for
 brevity):
 
 <details>
@@ -114,7 +114,7 @@ files, 6 are KubeBuilder-specific glue code, 4 are test setup, and
 user-edited code.
 
 This proliferation of files makes it difficult for users to understand how
-their code relates to the library, posing some barier for initial adoption
+their code relates to the library, posing some barrier for initial adoption
 and moving beyond a basic knowledge of functionality to actual
 understanding of the structure.  A common line of questioning amongst
 newcomers to KubeBuilder includes "where should I put my code that adds
@@ -179,7 +179,7 @@ Users receive a simply scaffolded structure to start. Simple projects can
 remain relatively simple, and complicated projects can decide to adopt
 a different structure as they grow.
 
-The new scaffoled project structure looks something like this (compiled
+The new scaffold project structure looks something like this (compiled
 artifacts like config omitted for brevity):
 
 ```shell
@@ -223,7 +223,7 @@ func (r *myReconciler) SetupWithManager(mgr ctrl.Manager) error {
 ```
 
 This makes it abundantly clear where to start looking at the code
-(`main.go` is the defacto standard entrypoint for many go programs), and
+(`main.go` is the defacto standard entry-point for many go programs), and
 simplifies the levels of hierarchy.  Furthermore, since `main.go` actually
 instantiates an instance of the reconciler, users are able to add custom
 logic having to do with flags.
@@ -248,7 +248,7 @@ easy to setup with a manager.
 
 These suggestions make it much harder to scaffold out additional versions
 and kinds.  You need to have each version in a separate package, so that
-type names don't confict.  While we could put scheme registration in with
+type names don't conflict.  While we could put scheme registration in with
 `kind_types.go`, if a project has multiple "significant" Kinds in an API
 group, it's not immediately clear which file has the scheme registration.
 
@@ -323,7 +323,7 @@ scaffold out the builder.  We have two options here:
 
 2. Simply adding a new controller, and reminding the user to add the
    builder themselves.  This is easier for the maintainers, but perhaps
-   a slighly poorer UX for the users.  However, writing out a builder by
+   a slightly poorer UX for the users.  However, writing out a builder by
    hand is significantly less complex than adding a controller by hand in
    the current structure.
 
@@ -348,7 +348,7 @@ versions, controllers, etc
 ### Teaching more complicated project structures
 
 Some controllers may eventually want more complicated project structures.
-We should have a section of the book reccomending options for when you
+We should have a section of the book recommending options for when you
 project gets very complicated.
 
 ### Additional Tooling Work
