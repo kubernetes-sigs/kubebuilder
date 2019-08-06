@@ -40,6 +40,12 @@
   - [Deployment and Testing](./multiversion-tutorial/deployment.md)
 
 ---
+- [User Guides](./user-guide.md)
+
+  - [Kubebuilder v1 vs v2](./migration/v1vsv2.md)
+  - [Migration Guide](./migration/guide.md)
+
+---
 
 - [Reference](./reference/reference.md)
 

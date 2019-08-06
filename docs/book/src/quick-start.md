@@ -27,7 +27,7 @@ export PATH=$PATH:/usr/local/kubebuilder/bin
 You can also install a KubeBuilder master snapshot from
 `https://go.kubebuilder.io/dl/latest/${os}/${arch}`.
 
-Install [kustomize](https://sigs.k8s.io/kustomize/docs/INSTALL.md) v3.0.1+
+Install [kustomize](https://sigs.k8s.io/kustomize/docs/INSTALL.md) v3.1.0+
 
 ## Create a Project
 

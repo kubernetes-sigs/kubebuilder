@@ -1,0 +1,98 @@
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: MutatingWebhookConfiguration
+metadata:
+  annotations:
+    alpha.admissionwebhook.cert-manager.io: "true"
+  creationTimestamp: null
+  name: test-mutating-webhook-cfg
+webhooks:
+- clientConfig:
+    caBundle: XG4=
+    service:
+      name: webhook-service
+      namespace: test-system
+      path: /mutating-create-update-cronjob
+  failurePolicy: Fail
+  name: mutating-create-update-cronjob.tutorial.kubebuilder.io
+  namespaceSelector:
+    matchExpressions:
+    - key: control-plane
+      operator: DoesNotExist
+  rules:
+  - apiGroups:
+    - batch.tutorial.kubebuilder.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - cronjobs
+---
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    alpha.admissionwebhook.cert-manager.io: "true"
+  creationTimestamp: null
+  name: test-validating-webhook-cfg
+webhooks:
+- clientConfig:
+    caBundle: XG4=
+    service:
+      name: webhook-service
+      namespace: test-system
+      path: /validating-create-cronjob
+  failurePolicy: Fail
+  name: validating-create-cronjob.tutorial.kubebuilder.io
+  namespaceSelector:
+    matchExpressions:
+    - key: control-plane
+      operator: DoesNotExist
+  rules:
+  - apiGroups:
+    - batch.tutorial.kubebuilder.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    resources:
+    - cronjobs
+- clientConfig:
+    caBundle: XG4=
+    service:
+      name: webhook-service
+      namespace: test-system
+      path: /validating-update-cronjob
+  failurePolicy: Fail
+  name: validating-update-cronjob.tutorial.kubebuilder.io
+  namespaceSelector:
+    matchExpressions:
+    - key: control-plane
+      operator: DoesNotExist
+  rules:
+  - apiGroups:
+    - batch.tutorial.kubebuilder.io
+    apiVersions:
+    - v1
+    operations:
+    - UPDATE
+    resources:
+    - cronjobs
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    alpha.service.cert-manager.io/serving-cert-secret-name: webhook-server-secret
+  creationTimestamp: null
+  name: webhook-service
+  namespace: test-system
+spec:
+  ports:
+  - port: 443
+    targetPort: 9876
+  selector:
+    app: webhook-server
+status:
+  loadBalancer: {}
