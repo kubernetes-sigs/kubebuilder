@@ -11,7 +11,7 @@ Use your best judgement.
 
 When submitting a design document, we encourage having written
 a proof-of-concept, and it's perfectly acceptable to submit the
-proof-of-concept PR simulatenously with the design document, as the
+proof-of-concept PR simultaneously with the design document, as the
 proof-of-concept process can help iron out wrinkles and can help with the
 `Example` section of the template.
 
