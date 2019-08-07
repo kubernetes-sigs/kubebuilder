@@ -90,7 +90,8 @@ func (r *CronJob) Default() {
 This marker is responsible for generating a validating webhook manifest.
 */
 
-// +kubebuilder:webhook:path=/validate-batch-tutorial-kubebuilder-io-v1-cronjob,mutating=false,failurePolicy=fail,groups=batch.tutorial.kubebuilder.io,resources=cronjobs,verbs=create;update,versions=v1,name=vcronjob.kb.io
+// TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
+// +kubebuilder:webhook:verbs=create;update,path=/validate-batch-tutorial-kubebuilder-io-v1-cronjob,mutating=false,failurePolicy=fail,groups=batch.tutorial.kubebuilder.io,resources=cronjobs,versions=v1,name=vcronjob.kb.io
 
 /*
 To validate our CRD beyond what's possible with declarative validation.
@@ -103,11 +104,15 @@ schedule without making up a long regular expression.
 If `webhook.Validator` interface is implemented, a webhook will automatically be
 served that calls the validation.
 
-The `ValidateCreate` and `ValidateUpdate` methods are expected to validate that its
-receiver upon creation and update respectively. We separate out ValidateCreate
-from ValidateUpdate to allow behavior like making certain fields immutable, so
-that they can only be set on creation.
-Here, however, we just use the same shared validation.
+The `ValidateCreate`, `ValidateUpdate` and `ValidateDelete` methods are expected
+to validate that its receiver upon creation, update and deletion respectively.
+We separate out ValidateCreate from ValidateUpdate to allow behavior like making
+certain fields immutable, so that they can only be set on creation.
+ValidateDelete is also separated from ValidateUpdate to allow different
+validation behavior on deletion.
+Here, however, we just use the same shared validation for `ValidateCreate` and
+`ValidateUpdate`. And we do nothing in `ValidateDelete`, since we don't need to
+validate anything on deletion.
 */
 
 var _ webhook.Validator = &CronJob{}
@@ -124,6 +129,14 @@ func (r *CronJob) ValidateUpdate(old runtime.Object) error {
 	cronjoblog.Info("validate update", "name", r.Name)
 
 	return r.validateCronJob()
+}
+
+// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
+func (r *CronJob) ValidateDelete() error {
+	cronjoblog.Info("validate delete", "name", r.Name)
+
+	// TODO(user): fill in your validation logic upon object deletion.
+	return nil
 }
 
 /*
