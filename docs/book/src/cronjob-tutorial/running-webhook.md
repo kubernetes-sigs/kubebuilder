@@ -57,5 +57,19 @@ kubectl create -f config/samples/batch_v1_cronjob.yaml
 You can also try to create an invalid CronJob (e.g. use an ill-formatted
 schedule field). You should see a creation failure with a validation error.
 
-**Note**: If you are
+<aside class="note warning">
 
+<h1>The Bootstrapping Problem</h1>
+
+If you are deploying a webhook for pods in the same cluster, be
+careful about the bootstrapping problem, since the creation request of the
+webhook pod would be sent to the webhook pod itself, which hasn't come up yet.
+
+To make it work, you can either use [namespaceSelector] if your kubernetes
+version is 1.9+ or use [objectSelector] if your kubernetes version is 1.15+ to
+skip itself.
+
+</aside>
+
+[namespaceSelector]: https://github.com/kubernetes/api/blob/kubernetes-1.14.5/admissionregistration/v1beta1/types.go#L189-L233
+[objectSelector]: https://github.com/kubernetes/api/blob/kubernetes-1.15.2/admissionregistration/v1beta1/types.go#L262-L274
