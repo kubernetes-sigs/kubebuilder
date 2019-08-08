@@ -402,6 +402,7 @@ main > details.collapse-code > summary::after {
 aside.note {
     border: 1px solid var(--searchbar-border-color);
     border-radius: 3px;
+    margin-top: 1em;
 }
 
 aside.note > * {
@@ -416,6 +417,7 @@ aside.note > h1 {
     padding: 0.5em 1em;
     font-size: 100%;
     font-weight: normal;
+    background: var(--quote-bg);
 }
 
 /* warning notes */
