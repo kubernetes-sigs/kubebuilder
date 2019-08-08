@@ -83,7 +83,7 @@ kubebuilder create api --group batch --version v1 --kind CronJob
 ```
 
 If you're using multiple groups, some manual work is required to migrate.
-Please follow [this](/TODO.md) for more details.
+Please follow [this](/migration/multi-group.md) for more details.
 
 ### Migrate the APIs
 
