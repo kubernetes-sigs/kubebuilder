@@ -43,7 +43,8 @@
 - [User Guides](./user-guide.md)
 
   - [Kubebuilder v1 vs v2](./migration/v1vsv2.md)
-  - [Migration Guide](./migration/guide.md)
+
+      - [Migration Guide](./migration/guide.md)
 
 ---
 
