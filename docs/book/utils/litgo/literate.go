@@ -26,6 +26,8 @@ import (
 	"log"
 	"strings"
 	"unicode"
+	"path"
+	"net/url"
 
 	"sigs.k8s.io/kubebuilder/docs/book/utils/plugin"
 )
@@ -36,11 +38,23 @@ import (
 // It's triggered by using the an expression like `{{#literatego ./path/to/source/file.go}}`.
 // The marker `+kubebuilder:docs-gen:collapse=<string>` can be used to collapse a description/code
 // pair into a details block with the given summary.
-type Literate struct {}
+type Literate struct {
+	// PrettyPathPrunePrefix specifies the prefix, if any to prune off of user-visible paths
+	PrettyPathPrunePrefix string
+	// BaseSourcePath specifies the base path to internet-reachable versions of the source code used
+	BaseSourcePath *url.URL
+}
 func (_ Literate) SupportsOutput(_ string) bool { return true }
-func (_ Literate) Process(input *plugin.Input) error {
+func (l Literate) Process(input *plugin.Input) error {
+	bookSrcDir := filepath.Join(input.Context.Root, input.Context.Config.Book.Src)
 	return plugin.EachCommand(&input.Book, "literatego", func(chapter *plugin.BookChapter, relPath string) (string, error) {
-		path := filepath.Join(input.Context.Root, input.Context.Config.Book.Src, filepath.Dir(chapter.Path), relPath)
+		chapterDir := filepath.Dir(chapter.Path)
+		pathInfo := filePathInfo{
+			chapterRelativePath: relPath,
+			chapterDir: chapterDir,
+			bookSrcDir: bookSrcDir,
+		}
+		path := pathInfo.FullPath()
 
 		// TODO(directxman12): don't escape root?
 		contents, err := ioutil.ReadFile(path)
@@ -48,8 +62,36 @@ func (_ Literate) Process(input *plugin.Input) error {
 			return "", fmt.Errorf("unable to import %q: %v", path, err)
 		}
 
-		return extractContents(contents, path)
+		return l.extractContents(contents, pathInfo)
 	})
+}
+
+// filePathInfo stores different paths to a file, to allow for nicely
+// displaying relative path information.
+type filePathInfo struct {
+	// chapterRelativePath is the path relative to the current chapter file
+	chapterRelativePath string
+
+	// chapterDir is the directory of the chapter, relative to bookSrcDir
+	chapterDir string
+
+	// bookSrcDir is the absoulte book source path
+	bookSrcDir string
+}
+
+// FullPath resturns the full, absolute path to the given file on the source filesystem.
+func (f filePathInfo) FullPath() string {
+	return filepath.Join(f.bookSrcDir, f.chapterDir, f.chapterRelativePath)
+}
+
+// viewablePath returns the internet-viewable path to the given source file
+func (f filePathInfo) ViewablePath(baseBookSrcURL url.URL) string {
+	relPath := filepath.ToSlash(filepath.Join(f.chapterDir, f.chapterRelativePath))
+	outURL := baseBookSrcURL
+
+	outURL.Path = path.Join(outURL.Path, relPath)
+	
+	return outURL.String()
 }
 
 // commentCodePair represents a block of code with some text before it, optionally
@@ -173,13 +215,27 @@ func extractPairs(contents []byte, path string) ([]commentCodePair, error) {
 
 // extractContents extracts comment-code pairs from the given named file
 // contents, and then renders the result to markdown.
-func extractContents(contents []byte, path string) (string, error) {
-	pairs, err := extractPairs(contents, path)
+func (l Literate) extractContents(contents []byte, pathInfo filePathInfo) (string, error) {
+	pairs, err := extractPairs(contents, pathInfo.FullPath())
 	if err != nil {
 		return "", err
 	}
 
 	out := new(strings.Builder)
+
+	out.WriteString(`<div class="literate">`)
+
+	// write the source so that readers can easily find the code
+	sourcePath := pathInfo.ViewablePath(*l.BaseSourcePath)
+	prettyPath := pathInfo.chapterRelativePath
+	if l.PrettyPathPrunePrefix != "" {
+		prunedPath, err := filepath.Rel(l.PrettyPathPrunePrefix, prettyPath)
+		if err != nil {
+			return "", fmt.Errorf("unable to remove path prefix %q from %q: %v", l.PrettyPathPrunePrefix, prettyPath, err)
+		}
+		prettyPath = prunedPath
+	}
+	out.WriteString(fmt.Sprintf(`<cite class="literate-source"><a href="%[1]s">%[2]s</a></cite>`, sourcePath, prettyPath))
 	
 	for _, pair := range pairs {
 		if pair.collapse != "" {
@@ -189,7 +245,7 @@ func extractContents(contents []byte, path string) (string, error) {
 		}
 		if strings.TrimSpace(pair.comment) != "" {
 			out.WriteString("\n")
-			out.WriteString(pair.comment)
+			out.WriteString(removeIndent(pair.comment))
 		}
 
 		if strings.TrimSpace(pair.code) != "" {
@@ -202,23 +258,41 @@ func extractContents(contents []byte, path string) (string, error) {
 		}
 		// TODO(directxman12): nice side-by-side sections
 	}
+	out.WriteString(`</div>`)
 
 	return out.String(), nil
 }
 
+// removeIndent removes any initial indent that gofmt puts in place,
+// because it likes to make our lives harder.
+//
+// If we left them in place, text would turn into legacy markdown codeblocks.
+func removeIndent(comment string) string {
+	lines := strings.Split(comment, "\n")
+	for i, line := range lines {
+		if strings.HasPrefix(line, "\t") {
+			lines[i] = line[1:]
+		}
+	}
+	return strings.Join(lines, "\n")
+}
+
 // wrapWithNewlines ensures that we begin and end with a newline character.
 func wrapWithNewlines(src string) string {
-	if src[0] != '\n' {
-		src = "\n" + src
-	}
-	if src[len(src)-1] != '\n' {
-		src = src + "\n"
-	}
-	return src
+	src = strings.Trim(src, "\n") // remove newlines first to avoid too many
+	return "\n" + src + "\n"
 }
 
 func main() {
-	if err := plugin.Run(Literate{}, os.Stdin, os.Stdout, os.Args[1:]...); err != nil {
+	baseURL, err := url.Parse("https://sigs.k8s.io/kubebuilder/docs/book/src")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	cfg := Literate{
+		PrettyPathPrunePrefix: "testdata",
+		BaseSourcePath: baseURL,
+	}
+	if err := plugin.Run(cfg, os.Stdin, os.Stdout, os.Args[1:]...); err != nil {
 		log.Fatal(err.Error())
 	}
 }

@@ -19,6 +19,23 @@ once, seeing them to completion.
 Instead of trying to tackle rewriting the Job controller as well, we'll
 use this as an opportunity to see how to interact with external types.
 
+<aside class="note">
+
+<h1>Following Along vs Jumping Ahead</h1>
+
+Note that most of this tutorial is generated from literate Go files that
+live in the book source directory:
+[docs/book/src/cronjob-tutorial/testdata][tutorial-source].  The full,
+runnable project lives in [project][tutorial-project-source], while
+intermediate files live directly under the [testdata][tutorial-source]
+directory.
+
+[tutorial-source]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/docs/book/src/cronjob-tutorial/testdata
+
+[tutorial-project-source]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/docs/book/src/cronjob-tutorial/testdata/project
+
+</aside>
+
 ## Scaffolding Out Our Project
 
 As covered in the [quick start](../quick-start.md), we'll need to scaffold

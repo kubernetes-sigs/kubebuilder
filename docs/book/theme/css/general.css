@@ -402,6 +402,7 @@ main > details.collapse-code > summary::after {
 aside.note {
     border: 1px solid var(--searchbar-border-color);
     border-radius: 3px;
+    margin-top: 1em;
 }
 
 aside.note > * {
@@ -416,6 +417,7 @@ aside.note > h1 {
     padding: 0.5em 1em;
     font-size: 100%;
     font-weight: normal;
+    background: var(--quote-bg);
 }
 
 /* warning notes */
@@ -436,4 +438,32 @@ aside.note.warning > h1::before {
     padding-right: 0.6em;
     border-radius: 50%;
     border: 2px solid var(--warning-note-color, #f0ad4e);
+}
+
+/* literate source citations */
+cite.literate-source {
+    font-size: 75%;
+    font-family: "Source Code Pro", Consolas, "Ubuntu Mono", Menlo, "DejaVu Sans Mono", monospace, monospace;
+}
+cite.literate-source::before {
+    content: "$ ";
+    font-weight: bold;
+    font-style: normal;
+}
+
+cite.literate-source > a::before {
+    content: "vim ";
+    font-style: normal;
+    color: var(--fg);
+}
+
+/* hide the annoying "copy to clipboard" buttons */
+.literate pre > .buttons {
+    display: none;
+}
+
+/* add a bit of extra padding for readability */
+.literate pre code {
+    padding-top: 0.75em;
+    padding-bottom: 0.75em;
 }
