@@ -84,7 +84,8 @@ respectively.  Notice that each has a different API version.
 Finally, if we wait a bit, we should notice that our CronJob continues to
 reconcile, even though our controller is written against our v1 API version.
 
-## Troubleshooting
-TODO(../TODO.md) steps for troubleshoting
+## Troubleshooting 
+
+[steps for troubleshooting](/TODO.md)
 
 [ref-multiver]: /reference/generating-crd.md#multiple-versions "Generating CRDs: Multiple Versions"

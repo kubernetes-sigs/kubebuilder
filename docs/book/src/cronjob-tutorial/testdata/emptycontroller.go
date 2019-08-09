@@ -91,7 +91,6 @@ when the manager is started.
 For now, we just note that this reconciler operates on `CronJob`s.  Later,
 we'll use this to mark that we care about related objects as well.
 
-TODO: jump back to main?
 */
 
 func (r *CronJobReconciler) SetupWithManager(mgr ctrl.Manager) error {

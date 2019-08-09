@@ -245,7 +245,7 @@ func (l Literate) extractContents(contents []byte, pathInfo filePathInfo) (strin
 		}
 		if strings.TrimSpace(pair.comment) != "" {
 			out.WriteString("\n")
-			out.WriteString(pair.comment)
+			out.WriteString(removeIndent(pair.comment))
 		}
 
 		if strings.TrimSpace(pair.code) != "" {
@@ -261,6 +261,20 @@ func (l Literate) extractContents(contents []byte, pathInfo filePathInfo) (strin
 	out.WriteString(`</div>`)
 
 	return out.String(), nil
+}
+
+// removeIndent removes any initial indent that gofmt puts in place,
+// because it likes to make our lives harder.
+//
+// If we left them in place, text would turn into legacy markdown codeblocks.
+func removeIndent(comment string) string {
+	lines := strings.Split(comment, "\n")
+	for i, line := range lines {
+		if strings.HasPrefix(line, "\t") {
+			lines[i] = line[1:]
+		}
+	}
+	return strings.Join(lines, "\n")
 }
 
 // wrapWithNewlines ensures that we begin and end with a newline character.
