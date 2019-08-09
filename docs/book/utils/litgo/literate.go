@@ -223,6 +223,8 @@ func (l Literate) extractContents(contents []byte, pathInfo filePathInfo) (strin
 
 	out := new(strings.Builder)
 
+	out.WriteString(`<div class="literate">`)
+
 	// write the source so that readers can easily find the code
 	sourcePath := pathInfo.ViewablePath(*l.BaseSourcePath)
 	prettyPath := pathInfo.chapterRelativePath
@@ -256,19 +258,15 @@ func (l Literate) extractContents(contents []byte, pathInfo filePathInfo) (strin
 		}
 		// TODO(directxman12): nice side-by-side sections
 	}
+	out.WriteString(`</div>`)
 
 	return out.String(), nil
 }
 
 // wrapWithNewlines ensures that we begin and end with a newline character.
 func wrapWithNewlines(src string) string {
-	if src[0] != '\n' {
-		src = "\n" + src
-	}
-	if src[len(src)-1] != '\n' {
-		src = src + "\n"
-	}
-	return src
+	src = strings.Trim(src, "\n") // remove newlines first to avoid too many
+	return "\n" + src + "\n"
 }
 
 func main() {
