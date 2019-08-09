@@ -7,7 +7,8 @@ basic pieces of boilerplate.
 
 First up, basic infrastructure for building your project:
 
-<details><summary>`go.mod`: A new Go module matching our project, with basic dependencies</summary>
+<details> <summary>`go.mod`: A new Go module matching our project, with
+basic dependencies</summary>
 
 ```go
 {{#include ./testdata/project/go.mod}}

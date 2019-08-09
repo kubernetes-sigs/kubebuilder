@@ -439,3 +439,20 @@ aside.note.warning > h1::before {
     border-radius: 50%;
     border: 2px solid var(--warning-note-color, #f0ad4e);
 }
+
+/* literate source citations */
+cite.literate-source {
+    font-size: 75%;
+    font-family: "Source Code Pro", Consolas, "Ubuntu Mono", Menlo, "DejaVu Sans Mono", monospace, monospace;
+}
+cite.literate-source::before {
+    content: "$ ";
+    font-weight: bold;
+    font-style: normal;
+}
+
+cite.literate-source > a::before {
+    content: "vim ";
+    font-style: normal;
+    color: var(--fg);
+}
