@@ -203,9 +203,9 @@ In this new layout, `main.go` constructs the reconciler:
 // ...
 func main() {
 	// ...
-	err := &controllers.MyReconciler{
+	err := (&controllers.MyReconciler{
 		MySuperSpecialAppClient: doSomeThingsWithFlags(),
-	}.SetupWithManager(mgr)
+	}).SetupWithManager(mgr)
 	// ...
 }
 ```
@@ -214,7 +214,7 @@ while `mykind_controller.go` actually sets up the controller using the
 reconciler:
 
 ```go
-func (r *myReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *MyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&api.MyAppType{}).
 		Owns(&corev1.Pod{}).
@@ -425,10 +425,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = controllers.MyKindReconciler{
+	err = (&controllers.MyKindReconciler{
 		Client: mgr.GetClient(),
         log: ctrl.Log.WithName("mykind-controller"),
-	}.SetupWithManager(mgr)
+	}).SetupWithManager(mgr)
 	if err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "mykind")
 		os.Exit(1)
@@ -463,12 +463,12 @@ import (
 	"my.repo/api/v1"
 )
 
-type myKindReconciler struct {
+type MyKindReconciler struct {
 	client.Client
 	log logr.Logger
 }
 
-func (r *myKindReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
+func (r *MyKindReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
 	log := r.log.WithValues("mykind", req.NamespacedName)
 
@@ -477,7 +477,7 @@ func (r *myKindReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	return req.Result{}, nil
 }
 
-func (r *myKindReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *MyKindReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(v1.MyKind{}).
 		Complete(r)
