@@ -9,7 +9,7 @@ Normally, we'd run
 kubebuilder create webhook --group batch --version v1 --kind CronJob --conversion
 ```
 
-to scaffold out the wehbook setup.  However, we've already got webhook
+to scaffold out the webhook setup.  However, we've already got webhook
 setup, from when we built our defaulting and validating webhooks!
 
 ## Webhook setup...

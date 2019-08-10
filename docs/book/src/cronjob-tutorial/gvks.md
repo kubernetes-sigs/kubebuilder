@@ -49,7 +49,7 @@ API!
 ## Err, but what's that Scheme thing?
 
 The `Scheme` we saw before is simply a way to keep track of what Go type
-corresponds to a given GVK (don't be overwhelemed by its
+corresponds to a given GVK (don't be overwhelmed by its
 [godocs](https://godoc.org/k8s.io/apimachinery/pkg/runtime#Scheme)).
 
 For instance, suppose we mark that the

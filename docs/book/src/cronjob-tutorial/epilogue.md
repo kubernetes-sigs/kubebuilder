@@ -12,7 +12,7 @@ Additionally, you can try the following steps on your own -- we'll have
 a tutorial section on them Soon™: 
 
 - writing unit/integration tests (check out [envtest][envtest])
-- adding [additonal printer columns][printer-columns] `kubectl get`
+- adding [additional printer columns][printer-columns] `kubectl get`
 
 [envtest]: https://godoc.org/sigs.k8s.io/controller-runtime/pkg/envtest
 
