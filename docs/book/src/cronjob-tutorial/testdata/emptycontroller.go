@@ -59,7 +59,7 @@ Our [Request](https://godoc.org/sigs.k8s.io/controller-runtime/pkg/reconcile#Req
 that object from the cache.
 
 We return an empty result and no error, which indicates to controller-runtime that
-we've succesfully reconciled this object and don't need to try again until there's
+we've successfully reconciled this object and don't need to try again until there's
 some changes.
 
 Most controllers need a logging handle and a context, so we set them up here.

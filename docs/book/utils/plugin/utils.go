@@ -31,7 +31,7 @@ func EachCommand(book *Book, cmd string, callback func(chapter *BookChapter, arg
 			return nil
 		}
 
-		// figure out all the trigger expressins
+		// figure out all the trigger expressions
 		partsRaw := strings.Split(chapter.Content, cmdStart)
 		// the first section won't start with `{{#<cmd> ` as per how split works
 		if len(partsRaw) < 2 {

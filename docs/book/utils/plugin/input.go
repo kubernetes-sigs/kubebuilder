@@ -48,7 +48,7 @@ type BookSection struct {
 }
 
 // BookItem is an mdBook item.
-// It wraps an underlying struct to provide proper marshalling and unmarhsaling
+// It wraps an underlying struct to provide proper marshalling and unmarshalling
 // according to what serde produces/expects.
 type BookItem bookItem
 

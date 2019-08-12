@@ -34,7 +34,7 @@ import (
 
 // Literate is a plugin that extracts block comments from Go source and
 // interleaves them with the surrounding code as fenced code blocks.
-// It should suppot all output formats.
+// It should support all output formats.
 // It's triggered by using the an expression like `{{#literatego ./path/to/source/file.go}}`.
 // The marker `+kubebuilder:docs-gen:collapse=<string>` can be used to collapse a description/code
 // pair into a details block with the given summary.
@@ -75,11 +75,11 @@ type filePathInfo struct {
 	// chapterDir is the directory of the chapter, relative to bookSrcDir
 	chapterDir string
 
-	// bookSrcDir is the absoulte book source path
+	// bookSrcDir is the absolute book source path
 	bookSrcDir string
 }
 
-// FullPath resturns the full, absolute path to the given file on the source filesystem.
+// FullPath returns the full, absolute path to the given file on the source filesystem.
 func (f filePathInfo) FullPath() string {
 	return filepath.Join(f.bookSrcDir, f.chapterDir, f.chapterRelativePath)
 }

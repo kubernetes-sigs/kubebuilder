@@ -3,7 +3,7 @@
 KubeBuilder makes use of a tool called `controller-gen` (from
 [controller-tools](https://godoc.org/sigs.k8s.io/controller-tools)) for
 generating utility code and Kubernetes YAML.  This code and config
-generation is controlled by the presenence of special "marker comments" in
+generation is controlled by the presence of special "marker comments" in
 Go code.
 
 Markers are single-line comments that start with a plus, followed by
@@ -59,10 +59,10 @@ ints, and bools follow their Go syntax:
 ```go
 // +kubebuilder:validation:ExclusiveMaximum=false
 // +kubebulder:validation:Format="date-time"
-// +kubebuilder:validation:Maxium=42
+// +kubebuilder:validation:Maximum=42
 ```
 
-For convinience, in simple cases the quotes may be omitted from strings,
+For convenience, in simple cases the quotes may be omitted from strings,
 although this is not encouraged for anything other than single-word
 strings:
 

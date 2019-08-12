@@ -130,7 +130,7 @@ const (
 Next, let's design our status, which holds observed state.  It contains any information
 we want users or other controllers to be able to easily obtain.
 
-We'll keep a list of actively running jobs, as well as the last time that we succesfully
+We'll keep a list of actively running jobs, as well as the last time that we successfully
 ran our job.  Notice that we use `metav1.Time` instead of `time.Time` to get the stable
 serialization, as mentioned above.
 */
