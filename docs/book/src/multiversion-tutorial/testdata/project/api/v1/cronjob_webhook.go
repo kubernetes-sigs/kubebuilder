@@ -72,7 +72,8 @@ func (r *CronJob) Default() {
 	}
 }
 
-// +kubebuilder:webhook:path=/validate-batch-tutorial-kubebuilder-io-v1-cronjob,mutating=false,failurePolicy=fail,groups=batch.tutorial.kubebuilder.io,resources=cronjobs,verbs=create;update,versions=v1,name=vcronjob.kb.io
+// TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
+// +kubebuilder:webhook:verbs=create;update,path=/validate-batch-tutorial-kubebuilder-io-v1-cronjob,mutating=false,failurePolicy=fail,groups=batch.tutorial.kubebuilder.io,resources=cronjobs,versions=v1,name=vcronjob.kb.io
 
 var _ webhook.Validator = &CronJob{}
 
@@ -88,6 +89,14 @@ func (r *CronJob) ValidateUpdate(old runtime.Object) error {
 	cronjoblog.Info("validate update", "name", r.Name)
 
 	return r.validateCronJob()
+}
+
+// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
+func (r *CronJob) ValidateDelete() error {
+	cronjoblog.Info("validate delete", "name", r.Name)
+
+	// TODO(user): fill in your validation logic upon object deletion.
+	return nil
 }
 
 func (r *CronJob) validateCronJob() error {

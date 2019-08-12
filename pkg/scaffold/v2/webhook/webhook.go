@@ -118,7 +118,8 @@ func (r *{{ .Resource.Kind }}) Default() {
 `
 
 	ValidatingWebhookTemplate = `
-// +kubebuilder:webhook:path=/validate-{{ .GroupDomainWithDash }}-{{ .Resource.Version }}-{{ lower .Resource.Kind }},mutating=false,failurePolicy=fail,groups={{ .GroupDomain }},resources={{ .Plural }},verbs=create;update,versions={{ .Resource.Version }},name=v{{ lower .Resource.Kind }}.kb.io
+// TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
+// +kubebuilder:webhook:verbs=create;update,path=/validate-{{ .GroupDomainWithDash }}-{{ .Resource.Version }}-{{ lower .Resource.Kind }},mutating=false,failurePolicy=fail,groups={{ .GroupDomain }},resources={{ .Plural }},versions={{ .Resource.Version }},name=v{{ lower .Resource.Kind }}.kb.io
 
 var _ webhook.Validator = &{{ .Resource.Kind }}{}
 
@@ -135,6 +136,14 @@ func (r *{{ .Resource.Kind }}) ValidateUpdate(old runtime.Object) error {
 	{{ lower .Resource.Kind }}log.Info("validate update", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object update.
+	return nil
+}
+
+// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
+func (r *{{ .Resource.Kind }}) ValidateDelete() error {
+	{{ lower .Resource.Kind }}log.Info("validate delete", "name", r.Name)
+
+	// TODO(user): fill in your validation logic upon object deletion.
 	return nil
 }
 `
