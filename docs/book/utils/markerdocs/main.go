@@ -114,8 +114,11 @@ func markerTemplate(marker *MarkerDoc) toHTML {
 // will be added to locations marked `{{#markerdocs category name}}`.
 // This allows us to put additional documentation in each category.
 type MarkerDocs struct {
-	// MarkerCategories contains the generators for which to query controller-tools.
-	MarkerGenerators []string
+	// Args contains the arguments to pass to controller-gen to get
+	// marker help JSON output.  Each key is a prefix to apply to
+	// category names (for disambiguation), and each value is an invocation
+	// of controller-gen.
+	Args map[string][]string
 }
 
 func (_ MarkerDocs) SupportsOutput(_ string) bool { return true }
@@ -128,6 +131,11 @@ func (p MarkerDocs) Process(input *plugin.Input) error {
 	// first, find all categories...
 	markersByCategory := make(map[string][]MarkerDoc)
 	for _, cat := range markerDocs {
+		if cat.Category == "" {
+			// skip un-named categories, which are intended to be hidden
+			// (e.g. all the per-generate idendical output rules)
+			continue
+		}
 		markersByCategory[cat.Category] = cat.Markers
 	}
 
@@ -145,10 +153,15 @@ func (p MarkerDocs) Process(input *plugin.Input) error {
 			return "", fmt.Errorf("unknown category %q", category)
 		}
 
+		// HTML5 says that any characters are valid in ID except for space,
+		// but may not be empty (which we prevent by skipping un-named categories):
+		// https://www.w3.org/TR/html52/dom.html#element-attrdef-global-id 
+		categoryAlias := strings.ReplaceAll(category, " ", "-")
+
 		content := new(strings.Builder)
 
 		// NB(directxman12): wrap this in a div to prevent the markdown processor from inserting extra paragraphs
-		fmt.Fprint(content, "<div><input checked type=\"checkbox\" id=\"markers-summarize\"></input><label for=\"markers-summarize\">Show Detailed Argument Help</label><dl class=\"markers\">")
+		fmt.Fprintf(content, "<div><input checked type=\"checkbox\" class=\"markers-summarize\" id=\"markers-summarize-%[1]s\"></input><label class=\"markers-summarize\" for=\"markers-summarize-%[1]s\">Show Detailed Argument Help</label><dl class=\"markers\">", categoryAlias)
 
 		// write the markers
 		for _, marker := range markers {
@@ -204,17 +217,28 @@ func wrapWithNewlines(src string) string {
 
 // getMarkerDocs fetches marker documentation from controller-gen
 func (p MarkerDocs) getMarkerDocs() ([]CategoryDoc, error) {
-	args := []string{"-wwww"} // wonderful-world-wide-web
-	args = append(args, p.MarkerGenerators...)
-	cmd := exec.Command("controller-gen", args...)
-	outRaw, err := cmd.Output()
-	if err != nil {
-		return nil, err
-	}
-
 	var res []CategoryDoc
-	if err := json.Unmarshal(outRaw, &res); err != nil {
-		return nil, err
+	for categoryPrefix, args := range p.Args {
+		cmd := exec.Command("controller-gen", args...)
+		outRaw, err := cmd.Output()
+		if err != nil {
+			return nil, err
+		}
+
+		var invocationRes []CategoryDoc
+		if err := json.Unmarshal(outRaw, &invocationRes); err != nil {
+			return nil, err
+		}
+
+		for i, category := range invocationRes {
+			// leave empty categories as-is, so that they're skipped
+			if category.Category == "" {
+				continue
+			}
+			invocationRes[i].Category = categoryPrefix + category.Category
+		}
+
+		res = append(res, invocationRes...)
 	}
 
 	return res, nil
@@ -222,7 +246,12 @@ func (p MarkerDocs) getMarkerDocs() ([]CategoryDoc, error) {
 
 func main() {
 	if err := plugin.Run(MarkerDocs{
-		MarkerGenerators: []string{"crd", "webhook", "rbac:roleName=cheddar" /* role name doesn't mean anything here */, "object"},
+		Args: map[string][]string{
+			// marker args
+			"": []string{"-wwww", "crd", "webhook", "rbac:roleName=cheddar" /* role name doesn't mean anything here */, "object"},
+			// cli options args
+			"CLI: ": []string{"-hhhh"},
+		},
 	}, os.Stdin, os.Stdout, os.Args[1:]...); err != nil {
 		log.Fatal(err.Error())
 	}

@@ -66,6 +66,8 @@
       - [Object/DeepCopy](./reference/markers/object.md)
       - [RBAC](./reference/markers/rbac.md)
 
+  - [controller-gen CLI](./reference/controller-gen.md)
+
 ---
 
 [Appendix: The TODO Landing Page](./TODO.md)

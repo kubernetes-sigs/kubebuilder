@@ -1,7 +1,7 @@
 # Markers for Config/Code Generation
 
-KubeBuilder makes use of a tool called `controller-gen` (from
-[controller-tools](https://godoc.org/sigs.k8s.io/controller-tools)) for
+KubeBuilder makes use of a tool called
+[controller-gen](/reference/controller-gen.md) for
 generating utility code and Kubernetes YAML.  This code and config
 generation is controlled by the presence of special "marker comments" in
 Go code.
