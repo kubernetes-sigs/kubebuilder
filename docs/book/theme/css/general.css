@@ -219,9 +219,6 @@ blockquote {
 .marker dl.args.summary dt::before {
     content: ',';
 }
-.marker dl.args.summary dt:first-of-type:last-of-type::before {
-    content: '';
-}
 /* hide in non-summary view */
 .marker dd.args {
     display: none
@@ -309,25 +306,25 @@ blockquote {
 }
 
 /* summary view */
-#markers-summarize:checked ~ dl > .marker dd.args {
+.markers-summarize:checked ~ dl > .marker dd.args {
     display: inline-block
 }
-#markers-summarize:checked ~ dl > .marker dd.description dl.args {
+.markers-summarize:checked ~ dl > .marker dd.description dl.args {
     display: none
 }
-#markers-summarize:checked ~ dl > .marker dd.description {
+.markers-summarize:checked ~ dl > .marker dd.description {
     margin-bottom: 0.25em;
 }
 
-#markers-summarize {
+input.markers-summarize {
     display: none;
 }
-label[for="markers-summarize"]::before {
+label.markers-summarize::before {
     margin-right: 0.5em;
     content: '\25bc';
     display: inline-block;
 }
-#markers-summarize:checked ~ label[for="markers-summarize"]::before {
+input.markers-summarize:checked ~ label.markers-summarize::before {
     content: '\25b6';
 }
 
