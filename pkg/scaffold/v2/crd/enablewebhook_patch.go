@@ -68,4 +68,7 @@ spec:
         namespace: system
         name: webhook-service
         path: /convert
+  # With conversion webhook promoted to Beta in Kubernetes 1.15, it requires setting preserveUnknownFields to false.
+  # Refer to https://github.com/kubernetes/kubernetes/pull/78426 for details.
+  preserveUnknownFields: false
 `
