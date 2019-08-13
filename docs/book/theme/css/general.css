@@ -352,14 +352,69 @@ input.markers-summarize:checked ~ label.markers-summarize::before {
 }
 
 /* details elements (not markers) */
-main > details.collapse-code > summary {
-    font-size: 80%;
-    opacity: 0.7;
+details.collapse-code {
+    margin-top: 0.125em;
+    margin-bottom: 0.125em;
 }
 
-main > details.collapse-code > summary::after {
-    content: " (hidden)";
+details.collapse-code > summary {
+    width: 100%;
+    cursor: pointer;
+    display: flex;
+    box-sizing: border-box; /* why isn't this the default? :-/ */
 }
+
+details.collapse-code > summary::after {
+    content: "\25c0";
+    float: right;
+    font-size: 0.875em;
+    color: var(--inline-code-color);
+    opacity: 0.8;
+}
+
+details.collapse-code[open] > summary::after {
+    content: "\25bc";
+}
+
+details.collapse-code > summary pre {
+    flex: 1;
+    box-sizing: border-box; /* why isn't this the default? :-/ */
+    margin: inherit;
+    padding: 0.25em 0.5em;
+}
+
+details.collapse-code > summary pre span::after {
+    content: " (hidden)";
+    font-size: 80%;
+}
+
+details.collapse-code[open] > summary pre span::after {
+    content: "";
+}
+
+details.collapse-code > summary pre span::before {
+    content: "// ";
+}
+
+/* make summary into code a bit nicer looking */
+details.collapse-code[open] > summary + pre {
+    margin-top: 0;
+}
+
+/* get rid of the ugly blue box that makes the summary->code look bad */
+details.collapse-code summary:focus {
+    outline: none;
+    font-weight: bold; /* keep something around for tab users */
+}
+
+/* don't show the default expando */
+details.collapse-code > summary {
+    list-style: none;
+}
+details.collapse-code > summary::-webkit-details-marker {
+    display: none;
+}
+
 
 /* diagrams */
 

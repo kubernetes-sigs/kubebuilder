@@ -239,9 +239,12 @@ func (l Literate) extractContents(contents []byte, pathInfo filePathInfo) (strin
 	
 	for _, pair := range pairs {
 		if pair.collapse != "" {
-			out.WriteString("<details class=\"collapse-code\"><summary>")
+			// NB(directxman12): we add the hljs class to "cheat" and get the
+			// right background with theming, since hljs doesn't use CSS
+			// variables.
+			out.WriteString("<details class=\"collapse-code\"><summary class=\"hljs\"><pre class=\"hljs\"><span class=\"hljs-comment\">")
 			out.WriteString(pair.collapse)
-			out.WriteString("</summary>")
+			out.WriteString("</span></pre></summary>")
 		}
 		if strings.TrimSpace(pair.comment) != "" {
 			out.WriteString("\n")
