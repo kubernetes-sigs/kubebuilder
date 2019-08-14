@@ -277,11 +277,13 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			return failedJobs[i].Status.StartTime.Before(failedJobs[j].Status.StartTime)
 		})
 		for i, job := range failedJobs {
-			if err := r.Delete(ctx, job); err != nil {
-				log.Error(err, "unable to delete old failed job", "job", job)
-			}
-			if int32(i) >= *cronJob.Spec.FailedJobsHistoryLimit {
+			if int32(i) >= int32(len(failedJobs))-*cronJob.Spec.FailedJobsHistoryLimit {
 				break
+			}
+			if err := r.Delete(ctx, job, client.PropagationPolicy(metav1.DeletePropagationBackground)); ignoreNotFound(err) != nil {
+				log.Error(err, "unable to delete old failed job", "job", job)
+			} else {
+				log.V(0).Info("deleted old failed job", "job", job)
 			}
 		}
 	}
@@ -294,11 +296,13 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			return successfulJobs[i].Status.StartTime.Before(successfulJobs[j].Status.StartTime)
 		})
 		for i, job := range successfulJobs {
-			if err := r.Delete(ctx, job); err != nil {
-				log.Error(err, "unable to delete old successful job", "job", job)
-			}
-			if int32(i) >= *cronJob.Spec.SuccessfulJobsHistoryLimit {
+			if int32(i) >= int32(len(successfulJobs))-*cronJob.Spec.SuccessfulJobsHistoryLimit {
 				break
+			}
+			if err := r.Delete(ctx, job, client.PropagationPolicy(metav1.DeletePropagationBackground)); ignoreNotFound(err) != nil {
+				log.Error(err, "unable to delete old successful job", "job", job)
+			} else {
+				log.V(0).Info("deleted old successful job", "job", job)
 			}
 		}
 	}
@@ -333,10 +337,10 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		Otherwise, we'll just return the missed runs (of which we'll just use the latest),
 		and the next run, so that we can know when it's time to reconcile again.
 	*/
-	getNextSchedule := func(cronJob *batch.CronJob, now time.Time) (lastMissed *time.Time, next time.Time, err error) {
+	getNextSchedule := func(cronJob *batch.CronJob, now time.Time) (lastMissed time.Time, next time.Time, err error) {
 		sched, err := cron.ParseStandard(cronJob.Spec.Schedule)
 		if err != nil {
-			return nil, time.Time{}, fmt.Errorf("Unparseable schedule %q: %v", cronJob.Spec.Schedule, err)
+			return time.Time{}, time.Time{}, fmt.Errorf("Unparseable schedule %q: %v", cronJob.Spec.Schedule, err)
 		}
 
 		// for optimization purposes, cheat a bit and start from our last observed run time
@@ -357,12 +361,12 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			}
 		}
 		if earliestTime.After(now) {
-			return nil, sched.Next(now), nil
+			return time.Time{}, sched.Next(now), nil
 		}
 
 		starts := 0
 		for t := sched.Next(earliestTime); !t.After(now); t = sched.Next(t) {
-			lastMissed = &t
+			lastMissed = t
 			// An object might miss several starts. For example, if
 			// controller gets wedged on Friday at 5:01pm when everyone has
 			// gone home, and someone comes in on Tuesday AM and discovers
@@ -380,7 +384,7 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			starts++
 			if starts > 100 {
 				// We can't get the most recent times so just return an empty slice
-				return nil, time.Time{}, fmt.Errorf("Too many missed start times (> 100). Set or decrease .spec.startingDeadlineSeconds or check clock skew.")
+				return time.Time{}, time.Time{}, fmt.Errorf("Too many missed start times (> 100). Set or decrease .spec.startingDeadlineSeconds or check clock skew.")
 			}
 		}
 		return lastMissed, sched.Next(now), nil
@@ -409,7 +413,7 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 		If we've missed a run, and we're still within the deadline to start it, we'll need to run a job.
 	*/
-	if missedRun == nil {
+	if missedRun.IsZero() {
 		log.V(1).Info("no upcoming scheduled times, sleeping until next")
 		return scheduledResult, nil
 	}
@@ -442,7 +446,7 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	if cronJob.Spec.ConcurrencyPolicy == batch.ReplaceConcurrent {
 		for _, activeJob := range activeJobs {
 			// we don't care if the job was already deleted
-			if err := r.Delete(ctx, activeJob); ignoreNotFound(err) != nil {
+			if err := r.Delete(ctx, activeJob, client.PropagationPolicy(metav1.DeletePropagationBackground)); ignoreNotFound(err) != nil {
 				log.Error(err, "unable to delete active job", "job", activeJob)
 				return ctrl.Result{}, err
 			}
@@ -493,7 +497,7 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	// +kubebuilder:docs-gen:collapse=constructJobForCronJob
 
 	// actually make the job...
-	job, err := constructJobForCronJob(&cronJob, *missedRun)
+	job, err := constructJobForCronJob(&cronJob, missedRun)
 	if err != nil {
 		log.Error(err, "unable to construct job from template")
 		// don't bother requeuing until we get a change to the spec
