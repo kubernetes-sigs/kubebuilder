@@ -106,7 +106,7 @@ the status field.
 For example:
 
 ```go
-// +kubebuilder:status:subresource
+// +kubebuilder:subresource:status
 type Toy struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
