@@ -67,6 +67,7 @@
       - [RBAC](./reference/markers/rbac.md)
 
   - [controller-gen CLI](./reference/controller-gen.md)
+  - [Artifacts](./reference/artifacts.md)
 
 ---
 
