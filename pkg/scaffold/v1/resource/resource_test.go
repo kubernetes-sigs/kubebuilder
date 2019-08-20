@@ -1,131 +1,158 @@
 package resource_test
 
 import (
+	"fmt"
 	"path/filepath"
+	"strings"
 	"testing"
 
-	"fmt"
-
-	"strings"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/scaffoldtest"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/resource"
 )
 
-var _ = Describe("Resource", func() {
-	Describe("scaffolding an API", func() {
-		It("should succeed if the Resource is valid", func() {
-			instance := &resource.Resource{Group: "crew", Version: "v1", Kind: "FirstMate"}
-			Expect(instance.Validate()).To(Succeed())
-		})
+func TestScaffoldingAPI(t *testing.T) {
+	grid := []struct {
+		Name             string
+		Instance         *resource.Resource
+		ExpectedError    string
+		ExpectedResource string
+	}{
+		{
+			Name:     "succeed if the Resource is valid",
+			Instance: &resource.Resource{Group: "crew", Version: "v1", Kind: "FirstMate"},
+		},
+		{
+			Name:          "fail if the Group is not specified",
+			Instance:      &resource.Resource{Version: "v1", Kind: "FirstMate"},
+			ExpectedError: "group cannot be empty",
+		},
+		{
+			Name:          "fail if the Group is not all lowercase",
+			Instance:      &resource.Resource{Group: "Crew", Version: "v1", Kind: "FirstMate"},
+			ExpectedError: "group must match ^[a-z]+$ (was Crew)",
+		},
+		{
+			Name:          "fail if the Group contains non-alpha characters",
+			Instance:      &resource.Resource{Group: "crew1", Version: "v1", Kind: "FirstMate"},
+			ExpectedError: "group must match ^[a-z]+$ (was crew1)",
+		},
+		{
+			Name:          "fail if the Version is not specified",
+			Instance:      &resource.Resource{Group: "crew", Kind: "FirstMate"},
+			ExpectedError: "version cannot be empty",
+		},
+		{
+			Name:          "fail if the Kind is not specified",
+			Instance:      &resource.Resource{Group: "crew", Version: "v1"},
+			ExpectedError: "kind cannot be empty",
+		},
+		{
+			Name:             "allow Cat as a Kind",
+			Instance:         &resource.Resource{Group: "crew", Kind: "Cat", Version: "v1"},
+			ExpectedResource: "cats",
+		},
 
-		It("should fail if the Group is not specified", func() {
-			instance := &resource.Resource{Version: "v1", Kind: "FirstMate"}
-			Expect(instance.Validate()).NotTo(Succeed())
-			Expect(instance.Validate().Error()).To(ContainSubstring("group cannot be empty"))
-		})
+		{
+			Name:             "keep the Resource if specified",
+			Instance:         &resource.Resource{Group: "crew", Kind: "FirstMate", Version: "v1", Resource: "myresource"},
+			ExpectedResource: "myresource",
+		},
 
-		It("should fail if the Group is not all lowercase", func() {
-			instance := &resource.Resource{Group: "Crew", Version: "v1", Kind: "FirstMate"}
-			Expect(instance.Validate()).NotTo(Succeed())
-			Expect(instance.Validate().Error()).To(ContainSubstring("group must match ^[a-z]+$ (was Crew)"))
-		})
+		{
+			Name:     "fail if the Kind is not camel cased (FirstMate - base case)",
+			Instance: &resource.Resource{Group: "crew", Kind: "FirstMate", Version: "v1"},
+		},
 
-		It("should fail if the Group contains non-alpha characters", func() {
-			instance := &resource.Resource{Group: "crew1", Version: "v1", Kind: "FirstMate"}
-			Expect(instance.Validate()).NotTo(Succeed())
-			Expect(instance.Validate().Error()).To(ContainSubstring("group must match ^[a-z]+$ (was crew1)"))
-		})
-
-		It("should fail if the Version is not specified", func() {
-			instance := &resource.Resource{Group: "crew", Kind: "FirstMate"}
-			Expect(instance.Validate()).NotTo(Succeed())
-			Expect(instance.Validate().Error()).To(ContainSubstring("version cannot be empty"))
-		})
-
-		It("should fail if the Version does not match the version format", func() {
-			instance := &resource.Resource{Group: "crew", Version: "1", Kind: "FirstMate"}
-			Expect(instance.Validate()).NotTo(Succeed())
-			Expect(instance.Validate().Error()).To(ContainSubstring(
-				`version must match ^v\d+(alpha\d+|beta\d+)?$ (was 1)`))
-
-			instance = &resource.Resource{Group: "crew", Version: "1beta1", Kind: "FirstMate"}
-			Expect(instance.Validate()).NotTo(Succeed())
-			Expect(instance.Validate().Error()).To(ContainSubstring(
-				`version must match ^v\d+(alpha\d+|beta\d+)?$ (was 1beta1)`))
-
-			instance = &resource.Resource{Group: "crew", Version: "a1beta1", Kind: "FirstMate"}
-			Expect(instance.Validate()).NotTo(Succeed())
-			Expect(instance.Validate().Error()).To(ContainSubstring(
-				`version must match ^v\d+(alpha\d+|beta\d+)?$ (was a1beta1)`))
-
-			instance = &resource.Resource{Group: "crew", Version: "v1beta", Kind: "FirstMate"}
-			Expect(instance.Validate()).NotTo(Succeed())
-			Expect(instance.Validate().Error()).To(ContainSubstring(
-				`version must match ^v\d+(alpha\d+|beta\d+)?$ (was v1beta)`))
-
-			instance = &resource.Resource{Group: "crew", Version: "v1beta1alpha1", Kind: "FirstMate"}
-			Expect(instance.Validate()).NotTo(Succeed())
-			Expect(instance.Validate().Error()).To(ContainSubstring(
-				`version must match ^v\d+(alpha\d+|beta\d+)?$ (was v1beta1alpha1)`))
-		})
-
-		It("should fail if the Kind is not specified", func() {
-			instance := &resource.Resource{Group: "crew", Version: "v1"}
-			Expect(instance.Validate()).NotTo(Succeed())
-			Expect(instance.Validate().Error()).To(ContainSubstring("kind cannot be empty"))
-		})
-
-		It("should fail if the Kind is not camel cased", func() {
-			// Base case
-			instance := &resource.Resource{Group: "crew", Kind: "FirstMate", Version: "v1"}
-			Expect(instance.Validate()).To(Succeed())
-
+		{
 			// Can't detect this case :(
-			instance = &resource.Resource{Group: "crew", Kind: "Firstmate", Version: "v1"}
-			Expect(instance.Validate()).To(Succeed())
+			Name:     "fail if the Kind is not camel cased (Firstmate - cannot be detected)",
+			Instance: &resource.Resource{Group: "crew", Kind: "Firstmate", Version: "v1"},
+		},
 
-			instance = &resource.Resource{Group: "crew", Kind: "firstMate", Version: "v1"}
-			Expect(instance.Validate()).NotTo(Succeed())
-			Expect(instance.Validate().Error()).To(ContainSubstring(
-				`kind must be camelcase (expected FirstMate was firstMate)`))
+		{
+			Name:          "fail if the Kind is not camel cased (firstMate)",
+			Instance:      &resource.Resource{Group: "crew", Kind: "firstMate", Version: "v1"},
+			ExpectedError: "kind must be camelcase (expected FirstMate was firstMate)",
+		},
 
-			instance = &resource.Resource{Group: "crew", Kind: "firstmate", Version: "v1"}
-			Expect(instance.Validate()).NotTo(Succeed())
-			Expect(instance.Validate().Error()).To(ContainSubstring(
-				`kind must be camelcase (expected Firstmate was firstmate)`))
+		{
+			Name:          "fail if the Kind is not camel cased (firstmate)",
+			Instance:      &resource.Resource{Group: "crew", Kind: "firstmate", Version: "v1"},
+			ExpectedError: "kind must be camelcase (expected Firstmate was firstmate)",
+		},
+
+		{
+			Name:             "default the Resource by pluralizing the Kind (FirstMate)",
+			Instance:         &resource.Resource{Group: "crew", Kind: "FirstMate", Version: "v1"},
+			ExpectedResource: "firstmates",
+		},
+
+		{
+			Name:             "default the Resource by pluralizing the Kind (fish)",
+			Instance:         &resource.Resource{Group: "crew", Kind: "Fish", Version: "v1"},
+			ExpectedResource: "fish",
+		},
+
+		{
+			Name:             "default the Resource by pluralizing the Kind (Helmswoman)",
+			Instance:         &resource.Resource{Group: "crew", Kind: "Helmswoman", Version: "v1"},
+			ExpectedResource: "helmswomen",
+		},
+	}
+
+	for _, g := range grid {
+		g := g
+		t.Run(fmt.Sprintf("%s resource=%+v", g.Name, g.Instance), func(t *testing.T) {
+			err := g.Instance.Validate()
+			if g.ExpectedError == "" {
+				if err != nil {
+					t.Errorf("validate failed unexpectedly: err=%v", err)
+				}
+			} else {
+				if err == nil {
+					t.Errorf("validate succeeded, but was expected to fail with %q", g.ExpectedError)
+				} else {
+					if !strings.Contains(err.Error(), g.ExpectedError) {
+						t.Errorf("validate expected to fail with %q, but failed with %q", g.ExpectedError, err.Error())
+					}
+				}
+			}
+
+			if g.ExpectedResource != "" {
+				if g.Instance.Resource != g.ExpectedResource {
+					t.Errorf("unexpected Resource; expected %q, was %q", g.ExpectedResource, g.Instance.Resource)
+				}
+			}
 		})
+	}
+}
 
-		It("should default the Resource by pluralizing the Kind", func() {
-			instance := &resource.Resource{Group: "crew", Kind: "FirstMate", Version: "v1"}
-			Expect(instance.Validate()).To(Succeed())
-			Expect(instance.Resource).To(Equal("firstmates"))
+func TestValidateVersion(t *testing.T) {
+	versions := []string{
+		"1",
+		"1beta1",
+		"a1beta1",
+		"v1beta",
+		"v1beta1alpha1",
+	}
 
-			instance = &resource.Resource{Group: "crew", Kind: "Fish", Version: "v1"}
-			Expect(instance.Validate()).To(Succeed())
-			Expect(instance.Resource).To(Equal("fish"))
-
-			instance = &resource.Resource{Group: "crew", Kind: "Helmswoman", Version: "v1"}
-			Expect(instance.Validate()).To(Succeed())
-			Expect(instance.Resource).To(Equal("helmswomen"))
+	for _, version := range versions {
+		version := version
+		t.Run(fmt.Sprintf("version=%s", version), func(t *testing.T) {
+			instance := &resource.Resource{Group: "crew", Version: version, Kind: "FirstMate"}
+			err := instance.Validate()
+			if err == nil {
+				t.Errorf("validate succeeded, but was expected to fail with version error")
+			} else {
+				expectedError := `version must match ^v\d+(alpha\d+|beta\d+)?$ (was ` + version + `)`
+				if !strings.Contains(err.Error(), expectedError) {
+					t.Errorf("validate expected to fail with %q, but failed with %q", expectedError, err.Error())
+				}
+			}
 		})
-
-		It("should allow Cat as a Kind", func() {
-			instance := &resource.Resource{Group: "crew", Kind: "Cat", Version: "v1"}
-			Expect(instance.Validate()).To(Succeed())
-			Expect(instance.Resource).To(Equal("cats"))
-		})
-
-		It("should keep the Resource if specified", func() {
-			instance := &resource.Resource{Group: "crew", Kind: "FirstMate", Version: "v1", Resource: "myresource"}
-			Expect(instance.Validate()).To(Succeed())
-			Expect(instance.Resource).To(Equal("myresource"))
-		})
-	})
-})
+	}
+}
 
 func TestScaffoldResources(t *testing.T) {
 	resources := []*resource.Resource{
