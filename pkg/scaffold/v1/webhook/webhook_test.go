@@ -134,7 +134,7 @@ var _ = Describe("Webhook", func() {
 			for j := range files {
 				f := files[j]
 				Context(f.file, func() {
-					It("should write a file matching the golden file", func() {
+					It(fmt.Sprintf("should write a file matching the golden file %s", f.file), func() {
 						s, result := scaffoldtest.NewTestScaffold(f.file, f.file)
 						Expect(s.Execute(scaffoldtest.Options(), f.instance)).To(Succeed())
 						Expect(result.Actual.String()).To(Equal(result.Golden), result.Actual.String())
