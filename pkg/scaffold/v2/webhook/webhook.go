@@ -92,10 +92,14 @@ const (
 package {{ .Resource.Version }}
 
 import (
+{{ if or .Validating .Defaulting }}
 	"k8s.io/apimachinery/pkg/runtime"
+{{ end -}}
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+{{- if or .Validating .Defaulting }}
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+{{ end }}
 )
 
 // log is for logging in this package.

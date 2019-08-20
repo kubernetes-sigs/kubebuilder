@@ -19,6 +19,7 @@ package scaffold
 import (
 	"bytes"
 	"fmt"
+	"go/format"
 	"io"
 	"io/ioutil"
 	"log"
@@ -27,7 +28,6 @@ import (
 	"strings"
 	"text/template"
 
-	"golang.org/x/tools/imports"
 	"sigs.k8s.io/kubebuilder/pkg/model"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
@@ -289,7 +289,7 @@ func (s *Scaffold) doTemplate(i input.Input, e input.File) ([]byte, error) {
 
 	// gofmt the imports
 	if filepath.Ext(i.Path) == ".go" {
-		b, err = imports.Process(i.Path, b, nil)
+		b, err = format.Source(b)
 		if err != nil {
 			fmt.Printf("%s\n", out.Bytes())
 			return nil, err
