@@ -18,12 +18,13 @@ package scaffoldtest
 
 import (
 	"bytes"
+	"go/build"
 	"io"
 	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
-	"go/build"
+	"testing"
 
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
@@ -92,4 +93,47 @@ func NewTestScaffold(writeToPath, goldenPath string) (*scaffold.Scaffold, *TestR
 		r.Golden = string(b)
 	}
 	return s, r
+}
+
+// NewGoTestScaffold returns a new Scaffold and TestResult instance for testing
+func NewGoTestScaffold(t *testing.T, writeToPath, goldenPath string) (*scaffold.Scaffold, *TestResult) {
+	projRoot := getProjectRoot()
+	r := &TestResult{}
+	// Setup scaffold
+	s := &scaffold.Scaffold{
+		GetWriter: func(path string) (io.Writer, error) {
+			if path != writeToPath {
+				t.Errorf("call to GetWriter on unexpected path.  expected=%s, actual=%s", writeToPath, path)
+			}
+			return &r.Actual, nil
+		},
+		FileExists: func(path string) bool {
+			return path != writeToPath
+		},
+		ProjectPath: filepath.Join(projRoot, "testdata", "gopath", "src", "project"),
+	}
+	oldGoPath := build.Default.GOPATH
+	build.Default.GOPATH = filepath.Join(projRoot, "testdata", "gopath")
+	defer func() { build.Default.GOPATH = oldGoPath }()
+	if _, err := os.Stat(build.Default.GOPATH); err != nil {
+		t.Fatalf("error from stat on %s: %v", build.Default.GOPATH, err)
+	}
+
+	if len(goldenPath) > 0 {
+		p := filepath.Join(projRoot, "testdata", "gopath", "src", "project", goldenPath)
+		b, err := ioutil.ReadFile(p)
+		if err != nil {
+			t.Fatalf("unexpected error reading golden file %q: %v", p, err)
+		}
+		r.Golden = string(b)
+	}
+	return s, r
+}
+
+func (r *TestResult) CheckGoldenOutput(t *testing.T, actual string) {
+	if r.Golden == actual {
+		return
+	}
+
+	t.Errorf("output did not match golden output\nactual=%s\nexpected=%s", actual, r.Golden)
 }

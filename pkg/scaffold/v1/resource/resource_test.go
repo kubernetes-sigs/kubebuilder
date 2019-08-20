@@ -2,6 +2,7 @@ package resource_test
 
 import (
 	"path/filepath"
+	"testing"
 
 	"fmt"
 
@@ -124,7 +125,9 @@ var _ = Describe("Resource", func() {
 			Expect(instance.Resource).To(Equal("myresource"))
 		})
 	})
+})
 
+func TestScaffoldResources(t *testing.T) {
 	resources := []*resource.Resource{
 		{Group: "crew", Version: "v1", Kind: "FirstMate", Namespaced: true, CreateExampleReconcileBody: true},
 		{Group: "ship", Version: "v1beta1", Kind: "Frigate", Namespaced: true, CreateExampleReconcileBody: false},
@@ -133,7 +136,7 @@ var _ = Describe("Resource", func() {
 
 	for i := range resources {
 		r := resources[i]
-		Describe(fmt.Sprintf("scaffolding API %s", r.Kind), func() {
+		t.Run(fmt.Sprintf("scaffolding API %s", r.Kind), func(t *testing.T) {
 			files := []struct {
 				instance input.File
 				file     string
@@ -178,14 +181,14 @@ var _ = Describe("Resource", func() {
 
 			for j := range files {
 				f := files[j]
-				Context(f.file, func() {
-					It("should write a file matching the golden file", func() {
-						s, result := scaffoldtest.NewTestScaffold(f.file, f.file)
-						Expect(s.Execute(scaffoldtest.Options(), f.instance)).To(Succeed())
-						Expect(result.Actual.String()).To(Equal(result.Golden), result.Actual.String())
-					})
+				t.Run(fmt.Sprintf("file %s", f.file), func(t *testing.T) {
+					s, result := scaffoldtest.NewGoTestScaffold(t, f.file, f.file)
+					if err := s.Execute(scaffoldtest.Options(), f.instance); err != nil {
+						t.Fatalf("error from Execute: %v", err)
+					}
+					result.CheckGoldenOutput(t, result.Actual.String())
 				})
 			}
 		})
 	}
-})
+}
