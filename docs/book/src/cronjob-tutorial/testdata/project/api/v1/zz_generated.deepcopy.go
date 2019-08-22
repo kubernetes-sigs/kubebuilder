@@ -22,6 +22,7 @@ package v1
 
 import (
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -130,7 +131,8 @@ func (in *CronJobStatus) DeepCopyInto(out *CronJobStatus) {
 	}
 	if in.LastScheduleTime != nil {
 		in, out := &in.LastScheduleTime, &out.LastScheduleTime
-		*out = (*in).DeepCopy()
+		*out = new(metav1.Time)
+		(*in).DeepCopyInto(*out)
 	}
 }
 
