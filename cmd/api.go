@@ -126,7 +126,7 @@ After the scaffold is written, api will run make on the project.
 	kubebuilder create api --group ship --version v1beta1 --kind Frigate
 	
 	# Edit the API Scheme
-	nano api/ship/v1beta1/frigate_types.go
+	nano api/v1beta1/frigate_types.go
 
 	# Edit the Controller
 	nano controllers/frigate/frigate_controller.go
