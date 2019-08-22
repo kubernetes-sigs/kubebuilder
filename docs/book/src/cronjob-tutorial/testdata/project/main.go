@@ -91,9 +91,20 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Captain")
 		os.Exit(1)
 	}
-	if err = (&batchv1.CronJob{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "Captain")
-		os.Exit(1)
+
+	/*
+		We'll also set up webhooks for our type, which we'll talk about next.
+		We just need to add them to the manager.  Since we might want to run
+		the webhooks separately, or not run them when testing our controller
+		locally, we'll put them behind an environment variable.
+
+		We'll just make sure to set `ENABLE_WEBHOOKS=false` when we run locally.
+	*/
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err = (&batchv1.CronJob{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Captain")
+			os.Exit(1)
+		}
 	}
 	// +kubebuilder:scaffold:builder
 
