@@ -183,7 +183,7 @@ func (pf *ProjectFile) ResourceGroups() []string {
 	}
 
 	groups := []string{}
-	for g, _ := range groupSet {
+	for g := range groupSet {
 		groups = append(groups, g)
 	}
 	return groups
