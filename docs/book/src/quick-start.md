@@ -96,10 +96,10 @@ Build and push your image to the location specified by `IMG`:
 make docker-build docker-push IMG=<some-registry>/controller
 ```
 
-Deploy the controller to the cluster:
+Deploy the controller to the cluster with image specified by `IMG`:
 
 ```bash
-make deploy
+make deploy IMG=<some-registry>/controller
 ```
 
 If you encounter RBAC errors, you may need to grant yourself cluster-admin
