@@ -104,7 +104,7 @@ func (o *projectOptions) bindCmdlineFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&o.boilerplate.Owner, "owner", "", "Owner to add to the copyright")
 
 	// project args
-	cmd.Flags().StringVar(&o.project.Repo, "repo", "", "name of the github repo.  "+
+	cmd.Flags().StringVar(&o.project.Repo, "repo", "", "name to use for go module, e.g. github.com/user/repo.  "+
 		"defaults to the go package of the current working directory.")
 	cmd.Flags().StringVar(&o.project.Domain, "domain", "my.domain", "domain for groups")
 	cmd.Flags().StringVar(&o.project.Version, "project-version", project.Version2, "project version")
