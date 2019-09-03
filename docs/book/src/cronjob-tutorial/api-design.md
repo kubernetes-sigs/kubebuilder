@@ -6,8 +6,8 @@ specify this.  We can also use the `omitempty` struct tag to mark that
 a field should be omitted from serialization when empty.
 
 Fields may use most of the primitive types.  Numbers are the exception:
-for API compatibility purposes, we accept two forms of numbers: `int32`
-for integers, and `resource.Quantity` for decimals.
+for API compatibility purposes, we accept three forms of numbers: `int32`
+and `int64` for integers, and `resource.Quantity` for decimals.
 
 <details><summary>Hold up, what's a Quantity?</summary>
 
