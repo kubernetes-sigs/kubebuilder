@@ -18,7 +18,7 @@ subresource MUST be provided to enable system components to update statuses of
 resources they manage.
 
 You can read more about the API convention in [Kubernetes API Convention
-doc](https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#spec-and-status).
+doc](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status).
 
 {% panel style="info", title="Status subresource support in Kubernetes" %}
 Subresource support for CRD is enabled by default in 1.10+ releases
