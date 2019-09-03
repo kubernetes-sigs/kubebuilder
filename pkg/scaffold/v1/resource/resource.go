@@ -24,6 +24,8 @@ import (
 	"github.com/gobuffalo/flect"
 )
 
+const GroupMatchRegex = "^[a-z-]+$"
+
 // Resource contains the information required to scaffold files for a resource.
 type Resource struct {
 	// Namespaced is true if the resource is namespaced
@@ -64,9 +66,9 @@ func (r *Resource) Validate() error {
 		r.Resource = flect.Pluralize(strings.ToLower(r.Kind))
 	}
 
-	groupMatch := regexp.MustCompile("^[a-z]+$")
+	groupMatch := regexp.MustCompile(GroupMatchRegex)
 	if !groupMatch.MatchString(r.Group) {
-		return fmt.Errorf("group must match ^[a-z]+$ (was %s)", r.Group)
+		return fmt.Errorf("group must match %s (was %s)", GroupMatchRegex, r.Group)
 	}
 
 	versionMatch := regexp.MustCompile("^v\\d+(alpha\\d+|beta\\d+)?$")

@@ -30,13 +30,13 @@ var _ = Describe("Resource", func() {
 		It("should fail if the Group is not all lowercase", func() {
 			instance := &resource.Resource{Group: "Crew", Version: "v1", Kind: "FirstMate"}
 			Expect(instance.Validate()).NotTo(Succeed())
-			Expect(instance.Validate().Error()).To(ContainSubstring("group must match ^[a-z]+$ (was Crew)"))
+			Expect(instance.Validate().Error()).To(ContainSubstring("group must match %s (was Crew)", resource.GroupMatchRegex))
 		})
 
 		It("should fail if the Group contains non-alpha characters", func() {
 			instance := &resource.Resource{Group: "crew1", Version: "v1", Kind: "FirstMate"}
 			Expect(instance.Validate()).NotTo(Succeed())
-			Expect(instance.Validate().Error()).To(ContainSubstring("group must match ^[a-z]+$ (was crew1)"))
+			Expect(instance.Validate().Error()).To(ContainSubstring("group must match %s (was crew1)", resource.GroupMatchRegex))
 		})
 
 		It("should fail if the Version is not specified", func() {
