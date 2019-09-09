@@ -67,6 +67,48 @@
     status = 302
     force = true
 
+[[redirects]]
+    from = "https://go.kubebuilder.io/test-tools"
+    to = "https://console.cloud.google.com/storage/browser/kubebuilder-tools"
+    status = 302
+    force = true
+
+[[redirects]]
+    from = "https://go.kubebuilder.io/test-tools/:version"
+    to = "https://console.cloud.google.com/storage/browser/kubebuilder-tools/?prefix=kubebuilder-tools-:version"
+    status = 302
+    force = true
+
+[[redirects]]
+    from = "https://go.kubebuilder.io/test-tools/:version/:os"
+    to = "https://console.cloud.google.com/storage/browser/_details/kubebuilder-tools/kubebuilder-tools-:version-:os-amd64.tar.gz"
+    status = 302
+    force = true
+
+[[redirects]]
+    from = "https://go.kubebuilder.io/test-tools/:version/:os/:arch"
+    to = "https://console.cloud.google.com/storage/browser/_details/kubebuilder-tools/kubebuilder-tools-:version-:os-:arch.tar.gz"
+    status = 302
+    force = true
+
+[[redirects]]
+    from = "https://go.kubebuilder.io/images"
+    to = "gcr.io/kubebuilder"
+    status = 302
+    force = true
+
+[[redirects]]
+    from = "https://go.kubebuilder.io/images/:os"
+    to = "gcr.io/kubebuilder/thirdparty-:os"
+    status = 302
+    force = true
+
+[[redirects]]
+    from = "https://go.kubebuilder.io/images/:os/:version"
+    to = "gcr.io/kubebuilder/thirdparty-:os::version"
+    status = 302
+    force = true
+
 # TODO(directxman12): change this to standard kustomize when the next version is released (2.1.0) 
 [[redirects]]
     from = "https://go.kubebuilder.io/kustomize/:os/:arch"
