@@ -31,6 +31,14 @@ install: build
 generate:
 	GO111MODULE=on ./generated_golden.sh
 
+.PHONY: test
 test:
 	go test -v ./cmd/... ./pkg/...
 
+.PHONY: test-project-generation
+test-project-generation:
+	./test.sh
+
+.PHONY: test-e2e
+test-e2e:
+	./test_e2e.sh

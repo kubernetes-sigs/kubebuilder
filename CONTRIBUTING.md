@@ -15,15 +15,9 @@ Please see https://git.k8s.io/community/CLA.md for more info.
 
 ## How to build kubebuilder locally
 
-1. Build
-```sh
-$ make build
-```
-
-1. Test
-```sh
-$ ./test.sh
-```
+1. Ensure you activate module support before continue (`$ export GO111MODULE=on`)
+1. Build the project by using the command `make build`
+1. Run the tests by using the command `make test` and `make test-project-generation`
 
 ## Community, discussion and support
 
