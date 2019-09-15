@@ -215,6 +215,6 @@ Change the image name in the Makefile if needed.
 Finally, we can run `make` and `make docker-build` to ensure things are working
 fine.
 
-[v1-project]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/docs/book/src/migration/testdata/gopath/project
+[v1-project]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/docs/book/src/migration/testdata/gopath/project-v1
 [v2-project]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/docs/book/src/cronjob-tutorial/testdata/project
 [builtin-type-example]: https://sigs.k8s.io/controller-runtime/examples/builtins
