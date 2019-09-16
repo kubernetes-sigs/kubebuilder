@@ -69,7 +69,7 @@ field, which may be set by autoscalers.
 // ContainerSetSpec defines the desired state of ContainerSet
 type ContainerSetSpec struct {
   // replicas is the number of replicas to maintain
-  Replicas int32 `json:"replicas,omitempty"`
+  Replicas *int32 `json:"replicas,omitempty"`
 
   // image is the container image to run.  Image must have a tag.
   // +kubebuilder:validation:Pattern=.+:.+
@@ -91,7 +91,7 @@ events to update the field.
 ```go
 // ContainerSetStatus defines the observed state of ContainerSet
 type ContainerSetStatus struct {
-  HealthyReplicas int32 `json:"healthyReplicas,omitempty"`
+  HealthyReplicas *int32 `json:"healthyReplicas,omitempty"`
 }
 ```
 {% endmethod %}
