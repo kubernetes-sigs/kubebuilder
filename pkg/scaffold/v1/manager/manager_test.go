@@ -6,6 +6,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"sigs.k8s.io/kubebuilder/pkg/model"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/scaffoldtest"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/manager"
@@ -48,7 +49,7 @@ var _ = Describe("Manager", func() {
 			Context(f.file, func() {
 				It(fmt.Sprintf("should write a file matching the golden file %s", f.file), func() {
 					s, result := scaffoldtest.NewTestScaffold(f.file, f.file)
-					Expect(s.Execute(scaffoldtest.Options(), f.instance)).To(Succeed())
+					Expect(s.Execute(&model.Universe{}, scaffoldtest.Options(), f.instance)).To(Succeed())
 					Expect(result.Actual.String()).To(Equal(result.Golden), result.Actual.String())
 				})
 			})
@@ -61,7 +62,7 @@ var _ = Describe("Manager", func() {
 				instance := &manager.APIs{}
 				s, _ := scaffoldtest.NewTestScaffold(filepath.Join("pkg", "apis", "apis.go"), "")
 				s.ProjectPath = "."
-				err := s.Execute(scaffoldtest.Options(), instance)
+				err := s.Execute(&model.Universe{}, scaffoldtest.Options(), instance)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("Rel: can't make"))
 			})

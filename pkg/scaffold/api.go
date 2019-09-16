@@ -21,8 +21,11 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/gobuffalo/flect"
+	"sigs.k8s.io/kubebuilder/pkg/model"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/util"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/controller"
 	resourcev1 "sigs.k8s.io/kubebuilder/pkg/scaffold/v1/resource"
 	resourcev2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2"
@@ -33,6 +36,9 @@ import (
 // representing the API and controller that implements the behavior for the API.
 type API struct {
 	scaffold *Scaffold
+
+	// Plugins is the list of plugins we should allow to transform our generated scaffolding
+	Plugins []Plugin
 
 	Resource *resourcev1.Resource
 
@@ -60,6 +66,7 @@ func (api *API) Validate() error {
 	if api.Resource.Kind == "" {
 		return fmt.Errorf("missing kind information for resource")
 	}
+
 	return nil
 }
 
@@ -89,6 +96,23 @@ func (api *API) Scaffold() error {
 	}
 }
 
+func (api *API) buildUniverse() *model.Universe {
+	resource := &model.Resource{
+		Namespaced: api.Resource.Namespaced,
+		Group:      api.Resource.Group,
+		Version:    api.Resource.Version,
+		Kind:       api.Resource.Kind,
+		Resource:   api.Resource.Resource,
+		Plural:     flect.Pluralize(strings.ToLower(api.Resource.Kind)),
+	}
+
+	resource.GoPackage, resource.GroupDomain = util.GetResourceInfo(api.Resource, api.project.Repo, api.project.Domain)
+
+	return &model.Universe{
+		Resource: resource,
+	}
+}
+
 func (api *API) scaffoldV1() error {
 	r := api.Resource
 
@@ -98,7 +122,7 @@ func (api *API) scaffoldV1() error {
 		fmt.Println(filepath.Join("pkg", "apis", r.Group, r.Version,
 			fmt.Sprintf("%s_types_test.go", strings.ToLower(r.Kind))))
 
-		err := (&Scaffold{}).Execute(input.Options{},
+		err := (&Scaffold{}).Execute(api.buildUniverse(), input.Options{},
 			&resourcev1.Register{Resource: r},
 			&resourcev1.Types{Resource: r},
 			&resourcev1.VersionSuiteTest{Resource: r},
@@ -125,7 +149,7 @@ func (api *API) scaffoldV1() error {
 		fmt.Println(filepath.Join("pkg", "controller", strings.ToLower(r.Kind),
 			fmt.Sprintf("%s_controller_test.go", strings.ToLower(r.Kind))))
 
-		err := (&Scaffold{}).Execute(input.Options{},
+		err := (&Scaffold{}).Execute(api.buildUniverse(), input.Options{},
 			&controller.Controller{Resource: r},
 			&controller.AddController{Resource: r},
 			&controller.Test{Resource: r},
@@ -150,8 +174,7 @@ func (api *API) scaffoldV2() error {
 		fmt.Println(filepath.Join("api", r.Version,
 			fmt.Sprintf("%s_types.go", strings.ToLower(r.Kind))))
 
-		err := (&Scaffold{}).Execute(
-			input.Options{},
+		files := []input.File{
 			&resourcev2.Types{
 				Input: input.Input{
 					Path: filepath.Join("api", r.Version, fmt.Sprintf("%s_types.go", strings.ToLower(r.Kind))),
@@ -161,13 +184,18 @@ func (api *API) scaffoldV2() error {
 			&resourcev2.CRDSample{Resource: r},
 			&crdv2.EnableWebhookPatch{Resource: r},
 			&crdv2.EnableCAInjectionPatch{Resource: r},
-		)
-		if err != nil {
+		}
+
+		scaffold := &Scaffold{
+			Plugins: api.Plugins,
+		}
+
+		if err := scaffold.Execute(api.buildUniverse(), input.Options{}, files...); err != nil {
 			return fmt.Errorf("error scaffolding APIs: %v", err)
 		}
 
 		crdKustomization := &crdv2.Kustomization{Resource: r}
-		err = (&Scaffold{}).Execute(
+		err := (&Scaffold{}).Execute(api.buildUniverse(),
 			input.Options{},
 			crdKustomization,
 			&crdv2.KustomizeConfig{},
@@ -203,6 +231,7 @@ func (api *API) scaffoldV2() error {
 		ctrlScaffolder := &resourcev2.Controller{Resource: r}
 		testsuiteScaffolder := &resourcev2.ControllerSuiteTest{Resource: r}
 		err := (&Scaffold{}).Execute(
+			api.buildUniverse(),
 			input.Options{},
 			testsuiteScaffolder,
 			ctrlScaffolder,

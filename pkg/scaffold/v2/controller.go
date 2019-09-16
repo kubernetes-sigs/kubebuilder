@@ -47,7 +47,7 @@ type Controller struct {
 // GetInput implements input.File
 func (a *Controller) GetInput() (input.Input, error) {
 
-	a.ResourcePackage, a.GroupDomain = util.GetResourceInfo(a.Resource, a.Input)
+	a.ResourcePackage, a.GroupDomain = util.GetResourceInfo(a.Resource, a.Repo, a.Domain)
 
 	if a.Plural == "" {
 		a.Plural = flect.Pluralize(strings.ToLower(a.Resource.Kind))
@@ -57,7 +57,9 @@ func (a *Controller) GetInput() (input.Input, error) {
 		a.Path = filepath.Join("controllers",
 			strings.ToLower(a.Resource.Kind)+"_controller.go")
 	}
+
 	a.TemplateBody = controllerTemplate
+
 	a.Input.IfExistsAction = input.Error
 	return a.Input, nil
 }
@@ -73,7 +75,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"github.com/go-logr/logr"
 
-	{{ .Resource.Group}}{{ .Resource.Version }} "{{ .ResourcePackage }}/{{ .Resource.Version }}"
+	{{ .Resource.Group }}{{ .Resource.Version }} "{{ .ResourcePackage }}/{{ .Resource.Version }}"
 )
 
 // {{ .Resource.Kind }}Reconciler reconciles a {{ .Resource.Kind }} object
@@ -96,7 +98,7 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(req ctrl.Request) (ctrl.Resul
 
 func (r *{{ .Resource.Kind }}Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&{{ .Resource.Group}}{{ .Resource.Version }}.{{ .Resource.Kind }}{}).
+		For(&{{ .Resource.Group }}{{ .Resource.Version }}.{{ .Resource.Kind }}{}).
 		Complete(r)
 }
 `
