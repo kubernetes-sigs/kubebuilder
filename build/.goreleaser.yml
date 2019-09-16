@@ -9,6 +9,13 @@ builds:
    - linux
   goarch:
    - amd64
+   - arm64
+   - ppc64le
+  ignore:
+   - goos: darwin
+     goarch: arm64
+   - goos: darwin
+     goarch: ppc64le
   env:
    - CGO_ENABLED=0
    - GO111MODULE=on
