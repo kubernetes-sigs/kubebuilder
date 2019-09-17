@@ -48,6 +48,6 @@ roleRef:
   name: proxy-role
 subjects:
 - kind: ServiceAccount
-  name: default
+  name: kubebuilder
   namespace: system
 `

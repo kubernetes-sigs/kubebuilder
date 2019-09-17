@@ -61,6 +61,7 @@ scaffold_test_project() {
 		export GO111MODULE=on
 		export PATH=$PATH:$(go env GOPATH)/bin
 		go mod init sigs.k8s.io/kubebuilder/testdata/project-v2  # our repo autodetection will traverse up to the kb module if we don't do this
+		go get sigs.k8s.io/controller-runtime@v0.2.1
 
 		$kb init --project-version $version --domain testproject.org --license apache2 --owner "The Kubernetes authors"
 		$kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false

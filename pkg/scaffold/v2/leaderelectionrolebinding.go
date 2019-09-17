@@ -48,6 +48,6 @@ roleRef:
   name: leader-election-role
 subjects:
 - kind: ServiceAccount
-  name: default
+  name: kubebuilder
   namespace: system
 `

@@ -48,7 +48,6 @@ roleRef:
   name: manager-role
 subjects:
 - kind: ServiceAccount
-  name: default
+  name: kubebuilder
   namespace: system
 `
-
