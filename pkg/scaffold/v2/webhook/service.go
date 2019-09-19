@@ -48,7 +48,7 @@ metadata:
 spec:
   ports:
     - port: 443
-      targetPort: 443
+      targetPort: 9443
   selector:
     control-plane: controller-manager
 `
