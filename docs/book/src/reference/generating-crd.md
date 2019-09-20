@@ -179,7 +179,7 @@ doing.
 Each controller-gen "generator" is controlled by an option to
 controller-gen, using the same syntax as markers.  For instance, to
 generate CRDs with "trivial versions" (no version conversion webhooks), we
-call `controller-gen crd:trivialVersions=false paths=./api/...`.
+call `controller-gen crd:trivialVersions=true paths=./api/...`.
 
 controller-gen also supports different output "rules" to controller how
 and where output goes.  Notice the `manifests` make rule (condensed
