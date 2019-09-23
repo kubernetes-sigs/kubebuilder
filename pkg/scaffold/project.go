@@ -37,6 +37,13 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v2/webhook"
 )
 
+const (
+	// controller runtime version to be used in the project
+	controllerRuntimeVersion = "v0.2.0"
+	// ControllerTools version to be used in the project
+	controllerToolsVersion = "v0.2.0"
+)
+
 type ProjectScaffolder interface {
 	EnsureDependencies() (bool, error)
 	Scaffold() error
@@ -147,11 +154,26 @@ func (p *V2Project) Validate() error {
 }
 
 func (p *V2Project) EnsureDependencies() (bool, error) {
-	c := exec.Command("go", "mod", "tidy") // #nosec
+	// ensure that we are pinning controller-runtime version
+	// xref: https://github.com/kubernetes-sigs/kubebuilder/issues/997
+	c := exec.Command("go", "get", "sigs.k8s.io/controller-runtime@"+controllerRuntimeVersion) // #nosec
 	c.Stderr = os.Stderr
 	c.Stdout = os.Stdout
 	fmt.Println(strings.Join(c.Args, " "))
-	return true, c.Run()
+	err := c.Run()
+	if err != nil {
+		return false, err
+	}
+
+	c = exec.Command("go", "mod", "tidy") // #nosec
+	c.Stderr = os.Stderr
+	c.Stdout = os.Stdout
+	fmt.Println(strings.Join(c.Args, " "))
+	err = c.Run()
+	if err != nil {
+		return false, err
+	}
+	return true, err
 }
 
 func (p *V2Project) buildUniverse() *model.Universe {
@@ -201,8 +223,8 @@ func (p *V2Project) Scaffold() error {
 		&project.AuthProxyRoleBinding{},
 		&managerv2.Config{Image: imgName},
 		&scaffoldv2.Main{},
-		&scaffoldv2.GoMod{},
-		&scaffoldv2.Makefile{Image: imgName},
+		&scaffoldv2.GoMod{ControllerRuntimeVersion: controllerRuntimeVersion},
+		&scaffoldv2.Makefile{Image: imgName, ControllerToolsVersion: controllerToolsVersion},
 		&scaffoldv2.Dockerfile{},
 		&scaffoldv2.Kustomize{},
 		&scaffoldv2.ManagerWebhookPatch{},

@@ -9,7 +9,9 @@ spec:
   group: crew.testproject.org
   names:
     kind: FirstMate
+    listKind: FirstMateList
     plural: firstmates
+    singular: firstmate
   scope: ""
   validation:
     openAPIV3Schema:
@@ -34,6 +36,7 @@ spec:
           description: FirstMateStatus defines the observed state of FirstMate
           type: object
       type: object
+  version: v1
   versions:
   - name: v1
     served: true
