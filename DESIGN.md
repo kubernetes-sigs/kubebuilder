@@ -11,7 +11,7 @@ project and its various components.
   to version using existing mechanisms, and more concise.
 
 * **Copy-pasting is bad**: Copy-pasted code suffers from similar problems
-  as code generation, except more accutely.  Copy-pasted code is nearly
+  as code generation, except more acutely.  Copy-pasted code is nearly
   impossible to easy update, and frequently suffers from bugs and
   misunderstandings.  If something is being copy-pasted, it should
   refactored into a library component or remote
@@ -58,7 +58,7 @@ project and its various components.
   Kubernetes API machinery should not feel out of place.  Abstractions
   should be intuitive to new users but feel familiar to experienced ones.
   Abstractions should embrace the concepts of Kubernetes (e.g. declarative
-  idemptotent reconcilers) while simplifying the details.
+  idempotent reconcilers) while simplifying the details.
 
 ## controller-runtime
 
@@ -78,7 +78,7 @@ project and its various components.
   code.
 
 * **A Little Bit of Magic Goes a Long Way**: In absence of generics,
-  reflection is acceptible, especially when it leads to clearer, conciser
+  reflection is acceptable, especially when it leads to clearer, conciser
   code.  However, when possible interfaces that use reflection should be
   designed to avoid requiring the end-developer to use type assertions,
   string splitting, which are error-prone and repetitive.  These should be
@@ -86,7 +86,7 @@ project and its various components.
 
 * **Defaults Over Constructors**: When not a huge performance impact,
   favor auto-defaulting and `Options` structs over constructors.
-  Constructors quickly become unclear due to lack of names associatiated
+  Constructors quickly become unclear due to lack of names associated
   with values, and don't work well with optional values.
 
 ## Development
