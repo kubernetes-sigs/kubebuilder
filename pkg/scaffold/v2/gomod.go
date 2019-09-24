@@ -25,6 +25,7 @@ var _ input.File = &GoMod{}
 // GoMod writes a templatefile for go.mod
 type GoMod struct {
 	input.Input
+	ControllerRuntimeVersion string
 }
 
 // GetInput implements input.File
@@ -43,6 +44,6 @@ module {{ .Repo }}
 go 1.12
 
 require (
-	sigs.k8s.io/controller-runtime v0.2.0
+	sigs.k8s.io/controller-runtime {{ .ControllerRuntimeVersion }}
 )
 `

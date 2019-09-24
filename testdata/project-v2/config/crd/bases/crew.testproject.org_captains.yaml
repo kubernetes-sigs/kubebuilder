@@ -9,7 +9,9 @@ spec:
   group: crew.testproject.org
   names:
     kind: Captain
+    listKind: CaptainList
     plural: captains
+    singular: captain
   scope: ""
   validation:
     openAPIV3Schema:
@@ -34,6 +36,7 @@ spec:
           description: CaptainStatus defines the observed state of Captain
           type: object
       type: object
+  version: v1
   versions:
   - name: v1
     served: true

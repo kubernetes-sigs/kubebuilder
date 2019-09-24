@@ -9,7 +9,9 @@ spec:
   group: crew.testproject.org
   names:
     kind: Admiral
+    listKind: AdmiralList
     plural: admirals
+    singular: admiral
   scope: Cluster
   validation:
     openAPIV3Schema:
@@ -34,6 +36,7 @@ spec:
           description: AdmiralStatus defines the observed state of Admiral
           type: object
       type: object
+  version: v1
   versions:
   - name: v1
     served: true

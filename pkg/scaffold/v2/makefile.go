@@ -27,6 +27,8 @@ type Makefile struct {
 	input.Input
 	// Image is controller manager image name
 	Image string
+	// Controller tools version to use in the project
+	ControllerToolsVersion string
 }
 
 // GetInput implements input.File
@@ -106,7 +108,7 @@ docker-push:
 # download controller-gen if necessary
 controller-gen:
 ifeq (, $(shell which controller-gen))
-	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.2.0
+	go get sigs.k8s.io/controller-tools/cmd/controller-gen@{{.ControllerToolsVersion}}
 CONTROLLER_GEN=$(GOBIN)/controller-gen
 else
 CONTROLLER_GEN=$(shell which controller-gen)
