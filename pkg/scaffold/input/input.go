@@ -30,7 +30,7 @@ const (
 	Overwrite
 )
 
-// Input is the input for scaffoldig a file
+// Input is the input for scaffolding a file
 type Input struct {
 	// Path is the file to write
 	Path string
