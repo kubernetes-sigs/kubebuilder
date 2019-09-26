@@ -18,7 +18,7 @@ Follow the [instructions](https://book.kubebuilder.io/quick-start.html#installat
 
 See the [Getting Started](https://book.kubebuilder.io/quick-start.html) documentation.
 
-![Quick Start](docs/gif/quickstart-1.0.0.gif)
+![Quick Start](docs/gif/kb-demo.v2.0.1.svg)
 
 ## Documentation
 
