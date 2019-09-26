@@ -27,7 +27,7 @@ desc "Examine scaffolded files..."
 run "tree ."
 clear
 
-desc "Let's create cronjob api"
+desc "Create our custom cronjob api"
 run "kubebuilder create api --group batch --version v1 --kind CronJob"
 clear
 
@@ -35,7 +35,7 @@ desc "Let's take a look at the API and Controller files"
 run "tree ./api ./controllers"
 clear
 
-desc "Install CRD in Kubernetes cluster"
+desc "Install CRDs in Kubernetes cluster"
 run "make install"
 clear
 
