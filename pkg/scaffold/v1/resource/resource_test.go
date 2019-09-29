@@ -28,16 +28,28 @@ var _ = Describe("Resource", func() {
 			Expect(instance.Validate().Error()).To(ContainSubstring("group cannot be empty"))
 		})
 
-		It("should fail if the Group is not all lowercase", func() {
-			instance := &resource.Resource{Group: "Crew", Version: "v1", Kind: "FirstMate"}
+		It("should fail if the Group starts with dash characters", func() {
+			instance := &resource.Resource{Group: "-crew1", Version: "v1", Kind: "FirstMate"}
 			Expect(instance.Validate()).NotTo(Succeed())
-			Expect(instance.Validate().Error()).To(ContainSubstring("group must match %s (was Crew)", resource.GroupMatchRegex))
+			Expect(instance.Validate().Error()).To(ContainSubstring("group must match %s (was -crew1)", resource.GroupMatchRegex))
 		})
 
-		It("should fail if the Group contains non-alpha characters", func() {
-			instance := &resource.Resource{Group: "crew1", Version: "v1", Kind: "FirstMate"}
+		It("should fail if the Group ends with dash characters", func() {
+			instance := &resource.Resource{Group: "crew1-", Version: "v1", Kind: "FirstMate"}
 			Expect(instance.Validate()).NotTo(Succeed())
-			Expect(instance.Validate().Error()).To(ContainSubstring("group must match %s (was crew1)", resource.GroupMatchRegex))
+			Expect(instance.Validate().Error()).To(ContainSubstring("group must match %s (was crew1-)", resource.GroupMatchRegex))
+		})
+
+		It("should fail if the Group starts with underscore characters", func() {
+			instance := &resource.Resource{Group: "_crew1", Version: "v1", Kind: "FirstMate"}
+			Expect(instance.Validate()).NotTo(Succeed())
+			Expect(instance.Validate().Error()).To(ContainSubstring("group must match %s (was _crew1)", resource.GroupMatchRegex))
+		})
+
+		It("should fail if the Group ends with underscore characters", func() {
+			instance := &resource.Resource{Group: "crew1_", Version: "v1", Kind: "FirstMate"}
+			Expect(instance.Validate()).NotTo(Succeed())
+			Expect(instance.Validate().Error()).To(ContainSubstring("group must match %s (was crew1_)", resource.GroupMatchRegex))
 		})
 
 		It("should fail if the Version is not specified", func() {

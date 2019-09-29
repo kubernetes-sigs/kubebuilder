@@ -24,7 +24,8 @@ import (
 	"github.com/gobuffalo/flect"
 )
 
-const GroupMatchRegex = "^[a-z-]+$"
+// GroupMatchRegex is the regex used to validate groupNames
+const GroupMatchRegex = "^[a-zA-Z0-9]+[a-zA-Z0-9-_]*[a-zA-Z0-9]+$"
 
 // Resource contains the information required to scaffold files for a resource.
 type Resource struct {
