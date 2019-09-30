@@ -20,5 +20,5 @@ in the format of `<certificate-namespace>/<certificate-name>`.
 This is the [kustomize](https://github.com/kubernetes-sigs/kustomize) patch we
 used for annotating the Mutating|ValidatingWebhookConfiguration objects.
 ```yaml
-{{#include ./testdata/project/config/default/webhookcainjection_patch.yaml}}
+{{#include ./testdata/project/deploy/default/webhookcainjection_patch.yaml}}
 ```

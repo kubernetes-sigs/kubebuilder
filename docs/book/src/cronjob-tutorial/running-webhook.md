@@ -51,7 +51,7 @@ Now you can create a valid CronJob to test your webhooks. The creation should
 successfully go through.
 
 ```bash
-kubectl create -f config/samples/batch_v1_cronjob.yaml
+kubectl create -f deploy/samples/batch_v1_cronjob.yaml
 ```
 
 You can also try to create an invalid CronJob (e.g. use an ill-formatted

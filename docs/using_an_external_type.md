@@ -114,8 +114,8 @@ func TestMain(m *testing.M) {
 	t := &envtest.Environment{
 		Config:             cfg,
 		CRDDirectoryPaths:  []string{
-		  filepath.Join("..", "..", "..", "config", "crds"),
-		  filepath.Join("..", "..", "..", "vendor", "github.com", "theiruser", "theirproject", "config", "crds"),
+		  filepath.Join("..", "..", "..", "deploy", "crds"),
+		  filepath.Join("..", "..", "..", "vendor", "github.com", "theiruser", "theirproject", "deploy", "crds"),
         },
 		UseExistingCluster: true,
 	}

@@ -49,7 +49,7 @@ conversion by requesting different versions.
 We'll make a v2 version based on our v1 version (put it under `config/samples`)
 
 ```yaml
-{{#include ./testdata/project/config/samples/batch_v2_cronjob.yaml}}
+{{#include ./testdata/project/deploy/samples/batch_v2_cronjob.yaml}}
 ```
 
 Then, we can create it on the cluster: 
@@ -66,7 +66,7 @@ kubectl get cronjobs.v2.batch.tutorial.kubebuilder.io -o yaml
 ```
 
 ```yaml
-{{#include ./testdata/project/config/samples/batch_v2_cronjob.yaml}}
+{{#include ./testdata/project/deploy/samples/batch_v2_cronjob.yaml}}
 ```
 
 and the v1 resource
@@ -75,7 +75,7 @@ and the v1 resource
 kubectl get cronjobs.v1.batch.tutorial.kubebuilder.io -o yaml
 ```
 ```yaml
-{{#include ./testdata/project/config/samples/batch_v2_cronjob.yaml}}
+{{#include ./testdata/project/deploy/samples/batch_v2_cronjob.yaml}}
 ```
 
 Both should be filled out, and look equivalent to our v2 and v1 samples,

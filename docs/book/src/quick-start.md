@@ -85,7 +85,7 @@ Create your samples (make sure to edit them first if you've changed the
 API definition):
 
 ```bash
-kubectl apply -f config/samples/
+kubectl apply -f deploy/samples/
 ```
 
 ## Run It On the Cluster
