@@ -69,6 +69,7 @@
   - [controller-gen CLI](./reference/controller-gen.md)
   - [Artifacts](./reference/artifacts.md)
   - [Writing controller tests](./reference/writing-tests.md)
+  - [Metrics](./reference/metrics.md)
 
 ---
 
