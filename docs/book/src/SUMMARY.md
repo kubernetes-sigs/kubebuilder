@@ -70,6 +70,8 @@
   - [Artifacts](./reference/artifacts.md)
   - [Writing controller tests](./reference/writing-tests.md)
 
+    - [Using envtest in integration tests](./reference/testing/envtest.md)
+
 ---
 
 [Appendix: The TODO Landing Page](./TODO.md)
