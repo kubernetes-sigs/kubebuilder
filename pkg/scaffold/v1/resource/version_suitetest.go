@@ -36,7 +36,7 @@ type VersionSuiteTest struct {
 // GetInput implements input.File
 func (v *VersionSuiteTest) GetInput() (input.Input, error) {
 	if v.Path == "" {
-		v.Path = filepath.Join("pkg", "apis", v.Resource.Group, v.Resource.Version,
+		v.Path = filepath.Join("pkg", "apis", v.Resource.GroupImportSafe, v.Resource.Version,
 			fmt.Sprintf("%s_suite_test.go", v.Resource.Version))
 	}
 	v.TemplateBody = versionSuiteTestTemplate

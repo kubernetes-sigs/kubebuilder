@@ -49,7 +49,7 @@ func (g *Group) Validate() error {
 
 var groupTemplate = `{{ .Boilerplate }}
 
-// Package {{.Resource.Version}} contains API Schema definitions for the {{ .Resource.Group }} {{.Resource.Version}} API group
+// Package {{.Resource.Version}} contains API Schema definitions for the {{ .Resource.GroupImportSafe }} {{.Resource.Version}} API group
 // +kubebuilder:object:generate=true
 // +groupName={{ .Resource.Group }}.{{ .Domain }}
 package {{ .Resource.Version }}

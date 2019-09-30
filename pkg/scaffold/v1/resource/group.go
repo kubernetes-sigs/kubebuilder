@@ -48,6 +48,6 @@ func (g *Group) Validate() error {
 
 var groupTemplate = `{{ .Boilerplate }}
 
-// Package {{ .Resource.Group }} contains {{ .Resource.Group }} API versions
-package {{ .Resource.Group }}
+// Package {{ .Resource.GroupImportSafe }} contains {{ .Resource.Group }} API versions
+package {{ .Resource.GroupImportSafe }}
 `

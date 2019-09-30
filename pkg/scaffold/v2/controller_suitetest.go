@@ -139,12 +139,12 @@ func (a *ControllerSuiteTest) Update() error {
 	ctrlImportCodeFragment := fmt.Sprintf(`"%s/controllers"
 `, a.Repo)
 	apiImportCodeFragment := fmt.Sprintf(`%s%s "%s/%s"
-`, a.Resource.Group, a.Resource.Version, a.ResourcePackage, a.Resource.Version)
+`, a.Resource.GroupImportSafe, a.Resource.Version, a.ResourcePackage, a.Resource.Version)
 
 	addschemeCodeFragment := fmt.Sprintf(`err = %s%s.AddToScheme(scheme.Scheme)
 Expect(err).NotTo(HaveOccurred())
 
-`, a.Resource.Group, a.Resource.Version)
+`, a.Resource.GroupImportSafe, a.Resource.Version)
 
 	err := internal.InsertStringsInFile(a.Path,
 		map[string][]string{

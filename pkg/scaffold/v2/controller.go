@@ -75,7 +75,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"github.com/go-logr/logr"
 
-	{{ .Resource.Group }}{{ .Resource.Version }} "{{ .ResourcePackage }}/{{ .Resource.Version }}"
+	{{ .Resource.GroupImportSafe }}{{ .Resource.Version }} "{{ .ResourcePackage }}/{{ .Resource.Version }}"
 )
 
 // {{ .Resource.Kind }}Reconciler reconciles a {{ .Resource.Kind }} object
@@ -98,7 +98,7 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(req ctrl.Request) (ctrl.Resul
 
 func (r *{{ .Resource.Kind }}Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&{{ .Resource.Group }}{{ .Resource.Version }}.{{ .Resource.Kind }}{}).
+		For(&{{ .Resource.GroupImportSafe }}{{ .Resource.Version }}.{{ .Resource.Kind }}{}).
 		Complete(r)
 }
 `
