@@ -53,8 +53,8 @@ In general, markers may either be:
   comma-separated.  Order of arguments doesn't matter.  Some arguments may
   be optional.
 
-Marker arguments may be strings, ints, bools, or slices thereof.  Strings,
-ints, and bools follow their Go syntax:
+Marker arguments may be strings, ints, bools, slices, or maps thereof.
+Strings, ints, and bools follow their Go syntax:
 
 ```go
 // +kubebuilder:validation:ExclusiveMaximum=false
@@ -81,4 +81,13 @@ or, in simple cases, by separating with semicolons:
 
 ```go
 // +kubebuilder:validation:Enum=Wallace;Gromit;Chicken
+```
+
+Maps are specified with string keys and values of any type (effectively
+`map[string]interface{}`). A map is surrounded by curly braces (`{}`),
+each key and value is separated by a colon (`:`), and each key-value
+pair is separated by a comma:
+
+```go
+// +kubebuilder:validation:Default={magic: {numero: 42, stringified: forty-two}}
 ```
