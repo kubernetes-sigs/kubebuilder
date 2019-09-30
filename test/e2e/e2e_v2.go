@@ -215,9 +215,9 @@ var _ = Describe("kubebuilder", func() {
 			By("creating an instance of CR")
 			// currently controller-runtime doesn't provide a readiness probe, we retry a few times
 			// we can change it to probe the readiness endpoint after CR supports it.
-			sampleFile := filepath.Join("config", "samples", fmt.Sprintf("%s_%s_%s.yaml", kbc.Group, kbc.Version, strings.ToLower(kbc.Kind)))
+			customResourceFile := filepath.Join("config", "cr", fmt.Sprintf("%s_%s_%s.yaml", kbc.Group, kbc.Version, strings.ToLower(kbc.Kind)))
 			Eventually(func() error {
-				_, err = kbc.Kubectl.Apply(true, "-f", sampleFile)
+				_, err = kbc.Kubectl.Apply(true, "-f", customResourceFile)
 				return err
 			}, time.Minute, time.Second).Should(Succeed())
 
@@ -232,7 +232,7 @@ var _ = Describe("kubebuilder", func() {
 			By("validate mutating and validating webhooks are working fine")
 			cnt, err := kbc.Kubectl.Get(
 				true,
-				"-f", sampleFile,
+				"-f", customResourceFile,
 				"-o", "go-template={{ .spec.count }}")
 			Expect(err).NotTo(HaveOccurred())
 			count, err := strconv.Atoi(cnt)

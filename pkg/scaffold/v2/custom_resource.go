@@ -25,10 +25,10 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/resource"
 )
 
-var _ input.File = &CRDSample{}
+var _ input.File = &CustomResource{}
 
-// CRDSample scaffolds a manifest for CRD sample.
-type CRDSample struct {
+// CustomResource scaffolds a manifest for CRD instance.
+type CustomResource struct {
 	input.Input
 
 	// Resource is a resource in the API group
@@ -36,26 +36,26 @@ type CRDSample struct {
 }
 
 // GetInput implements input.File
-func (c *CRDSample) GetInput() (input.Input, error) {
+func (c *CustomResource) GetInput() (input.Input, error) {
 	if c.Path == "" {
-		c.Path = filepath.Join("config", "samples", fmt.Sprintf(
+		c.Path = filepath.Join("config", "cr", fmt.Sprintf(
 			"%s_%s_%s.yaml", c.Resource.Group, c.Resource.Version, strings.ToLower(c.Resource.Kind)))
 	}
 
 	c.IfExistsAction = input.Error
-	c.TemplateBody = crdSampleTemplate
+	c.TemplateBody = customResourceTemplate
 	return c.Input, nil
 }
 
 // Validate validates the values
-func (c *CRDSample) Validate() error {
+func (c *CustomResource) Validate() error {
 	return c.Resource.Validate()
 }
 
-var crdSampleTemplate = `apiVersion: {{ .Resource.Group }}.{{ .Domain }}/{{ .Resource.Version }}
+var customResourceTemplate = `apiVersion: {{ .Resource.Group }}.{{ .Domain }}/{{ .Resource.Version }}
 kind: {{ .Resource.Kind }}
 metadata:
-  name: {{ lower .Resource.Kind }}-sample
+  name: {{ lower .Resource.Kind }}
 spec:
   # Add fields here
   foo: bar

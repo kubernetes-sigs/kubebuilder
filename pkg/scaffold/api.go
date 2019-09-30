@@ -181,7 +181,7 @@ func (api *API) scaffoldV2() error {
 				},
 				Resource: r},
 			&resourcev2.Group{Resource: r},
-			&resourcev2.CRDSample{Resource: r},
+			&resourcev2.CustomResource{Resource: r},
 			&crdv2.EnableWebhookPatch{Resource: r},
 			&crdv2.EnableCAInjectionPatch{Resource: r},
 		}
