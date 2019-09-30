@@ -51,7 +51,7 @@ func (a *Doc) Validate() error {
 
 var docGoTemplate = `{{ .Boilerplate }}
 
-// Package {{.Resource.Version}} contains API Schema definitions for the {{ .Resource.Group }} {{.Resource.Version}} API group
+// Package {{.Resource.Version}} contains API Schema definitions for the {{ .Resource.GroupImportSafe }} {{.Resource.Version}} API group
 // +k8s:openapi-gen=true
 // +k8s:deepcopy-gen=package,register
 // +k8s:conversion-gen={{ .Repo }}/pkg/apis/{{ .Resource.Group }}

@@ -34,6 +34,10 @@ type Resource struct {
 	// Group is the API Group.  Does not contain the domain.
 	Group string
 
+	// GroupImportSafe is the API Group.  Does not contain the domain and it the "-"
+	// It is used to do safe imports.
+	GroupImportSafe string
+
 	// Version is the API version - e.g. v1beta1
 	Version string
 
@@ -70,6 +74,8 @@ func (r *Resource) Validate() error {
 	if !groupMatch.MatchString(r.Group) {
 		return fmt.Errorf("group must match %s (was %s)", GroupMatchRegex, r.Group)
 	}
+
+	r.GroupImportSafe = strings.Replace(r.Group, "-", "", -1)
 
 	versionMatch := regexp.MustCompile("^v\\d+(alpha\\d+|beta\\d+)?$")
 	if !versionMatch.MatchString(r.Version) {

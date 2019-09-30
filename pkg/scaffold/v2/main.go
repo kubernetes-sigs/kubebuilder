@@ -57,11 +57,11 @@ func (m *Main) Update(opts *MainUpdateOptions) error {
 
 	// generate all the code fragments
 	apiImportCodeFragment := fmt.Sprintf(`%s%s "%s/%s"
-`, opts.Resource.Group, opts.Resource.Version, resPkg, opts.Resource.Version)
+`, opts.Resource.GroupImportSafe, opts.Resource.Version, resPkg, opts.Resource.Version)
 	ctrlImportCodeFragment := fmt.Sprintf(`"%s/controllers"
 `, opts.Project.Repo)
 	addschemeCodeFragment := fmt.Sprintf(`_ = %s%s.AddToScheme(scheme)
-`, opts.Resource.Group, opts.Resource.Version)
+`, opts.Resource.GroupImportSafe, opts.Resource.Version)
 	reconcilerSetupCodeFragment := fmt.Sprintf(`if err = (&controllers.%sReconciler{
 	 	Client: mgr.GetClient(),
         Log: ctrl.Log.WithName("controllers").WithName("%s"),
@@ -74,7 +74,7 @@ func (m *Main) Update(opts *MainUpdateOptions) error {
 		setupLog.Error(err, "unable to create webhook", "webhook", "%s")
 		os.Exit(1)
 	}
-`, opts.Resource.Group, opts.Resource.Version, opts.Resource.Kind, opts.Resource.Kind)
+`, opts.Resource.GroupImportSafe, opts.Resource.Version, opts.Resource.Kind, opts.Resource.Kind)
 
 	if opts.WireResource {
 		err := internal.InsertStringsInFile(path,

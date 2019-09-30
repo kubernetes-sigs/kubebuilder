@@ -37,7 +37,7 @@ type Types struct {
 // GetInput implements input.File
 func (t *Types) GetInput() (input.Input, error) {
 	if t.Path == "" {
-		t.Path = filepath.Join("pkg", "apis", t.Resource.Group, t.Resource.Version,
+		t.Path = filepath.Join("pkg", "apis", t.Resource.GroupImportSafe, t.Resource.Version,
 			fmt.Sprintf("%s_types.go", strings.ToLower(t.Resource.Kind)))
 	}
 	t.TemplateBody = typesTemplate
