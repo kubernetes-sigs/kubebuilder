@@ -39,14 +39,14 @@ You should see logs from the controller about starting up, but it won't do
 anything just yet.
 
 At this point, we need a CronJob to test with.  Let's write a sample to
-`config/samples/batch_v1_cronjob.yaml`, and use that:
+`config/cr/batch_v1_cronjob.yaml`, and use that:
 
 ```yaml
-{{#include ./testdata/project/config/samples/batch_v1_cronjob.yaml}}
+{{#include ./testdata/project/config/cr/batch_v1_cronjob.yaml}}
 ```
 
 ```bash
-kubectl create -f config/samples/batch_v1_cronjob.yaml
+kubectl create -f config/cr/batch_v1_cronjob.yaml
 ```
 
 At this point, you should see a flurry of activity.  If you watch the

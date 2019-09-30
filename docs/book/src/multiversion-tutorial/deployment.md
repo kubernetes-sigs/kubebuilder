@@ -46,16 +46,16 @@ controller-manager deployment) onto the cluster.
 Once all of the bits are up an running on the cluster with conversion enabled, we can test out our
 conversion by requesting different versions.
 
-We'll make a v2 version based on our v1 version (put it under `config/samples`)
+We'll make a v2 version based on our v1 version (put it under `config/cr`)
 
 ```yaml
-{{#include ./testdata/project/config/samples/batch_v2_cronjob.yaml}}
+{{#include ./testdata/project/config/cr/batch_v2_cronjob.yaml}}
 ```
 
-Then, we can create it on the cluster: 
+Then, we can create this instance of Custom Resource on the cluster: 
 
 ```shell
-kubectl apply -f config/samples/batch_v2_cronjob.yaml
+kubectl apply -f config/cr/batch_v2_cronjob.yaml
 ```
 
 If we've done everything correctly, it should create successfully,
@@ -66,7 +66,7 @@ kubectl get cronjobs.v2.batch.tutorial.kubebuilder.io -o yaml
 ```
 
 ```yaml
-{{#include ./testdata/project/config/samples/batch_v2_cronjob.yaml}}
+{{#include ./testdata/project/config/cr/batch_v2_cronjob.yaml}}
 ```
 
 and the v1 resource
@@ -75,10 +75,10 @@ and the v1 resource
 kubectl get cronjobs.v1.batch.tutorial.kubebuilder.io -o yaml
 ```
 ```yaml
-{{#include ./testdata/project/config/samples/batch_v2_cronjob.yaml}}
+{{#include ./testdata/project/config/cr/batch_v2_cronjob.yaml}}
 ```
 
-Both should be filled out, and look equivalent to our v2 and v1 samples,
+Both should be filled out, and look equivalent to our v2 cr and v1 samples,
 respectively.  Notice that each has a different API version.
 
 Finally, if we wait a bit, we should notice that our CronJob continues to

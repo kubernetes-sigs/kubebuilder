@@ -79,13 +79,13 @@ terminal if you want to leave it running):
 make run
 ```
 
-## Install Samples
+## Install Instance of Custom Resources
 
-Create your samples (make sure to edit them first if you've changed the
+Create your CR (make sure to edit them first if you've changed the
 API definition):
 
 ```bash
-kubectl apply -f config/samples/
+kubectl apply -f config/cr/
 ```
 
 ## Run It On the Cluster
