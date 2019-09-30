@@ -38,7 +38,7 @@ type CRDSample struct {
 // GetInput implements input.File
 func (c *CRDSample) GetInput() (input.Input, error) {
 	if c.Path == "" {
-		c.Path = filepath.Join("config", "samples", fmt.Sprintf(
+		c.Path = filepath.Join("deploy", "samples", fmt.Sprintf(
 			"%s_%s_%s.yaml", c.Resource.Group, c.Resource.Version, strings.ToLower(c.Resource.Kind)))
 	}
 

@@ -24,7 +24,7 @@ import (
 
 var _ input.File = &LeaderElectionRole{}
 
-// LeaderElectionRole scaffolds the config/rbac/leader_election_role.yaml file
+// LeaderElectionRole scaffolds the deploy/rbac/leader_election_role.yaml file
 type LeaderElectionRole struct {
 	input.Input
 }
@@ -32,7 +32,7 @@ type LeaderElectionRole struct {
 // GetInput implements input.File
 func (r *LeaderElectionRole) GetInput() (input.Input, error) {
 	if r.Path == "" {
-		r.Path = filepath.Join("config", "rbac", "leader_election_role.yaml")
+		r.Path = filepath.Join("deploy", "rbac", "leader_election_role.yaml")
 	}
 	r.TemplateBody = leaderElectionRoleTemplate
 	return r.Input, nil

@@ -32,7 +32,7 @@ type Service struct {
 // GetInput implements input.File
 func (c *Service) GetInput() (input.Input, error) {
 	if c.Path == "" {
-		c.Path = filepath.Join("config", "webhook", "service.yaml")
+		c.Path = filepath.Join("deploy", "webhook", "service.yaml")
 	}
 	c.TemplateBody = ServiceTemplate
 	c.Input.IfExistsAction = input.Error

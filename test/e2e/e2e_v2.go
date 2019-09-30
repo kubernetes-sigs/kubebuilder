@@ -43,7 +43,7 @@ var _ = Describe("kubebuilder", func() {
 
 		AfterEach(func() {
 			By("clean up created API objects during test process")
-			kbc.CleanupManifests(filepath.Join("config", "default"))
+			kbc.CleanupManifests(filepath.Join("deploy", "default"))
 
 			By("uninstalling cert manager bundle")
 			kbc.UninstallCertManager()
@@ -98,18 +98,18 @@ var _ = Describe("kubebuilder", func() {
 
 			By("uncomment kustomization.yaml to enable webhook and ca injection")
 			Expect(uncommentCode(
-				filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+				filepath.Join(kbc.Dir, "deploy", "default", "kustomization.yaml"),
 				"#- ../webhook", "#")).To(Succeed())
 			Expect(uncommentCode(
-				filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+				filepath.Join(kbc.Dir, "deploy", "default", "kustomization.yaml"),
 				"#- ../certmanager", "#")).To(Succeed())
 			Expect(uncommentCode(
-				filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+				filepath.Join(kbc.Dir, "deploy", "default", "kustomization.yaml"),
 				"#- manager_webhook_patch.yaml", "#")).To(Succeed())
 			Expect(uncommentCode(
-				filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+				filepath.Join(kbc.Dir, "deploy", "default", "kustomization.yaml"),
 				"#- webhookcainjection_patch.yaml", "#")).To(Succeed())
-			Expect(uncommentCode(filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+			Expect(uncommentCode(filepath.Join(kbc.Dir, "deploy", "default", "kustomization.yaml"),
 				`#- name: CERTIFICATE_NAMESPACE # namespace of the certificate CR
 #  objref:
 #    kind: Certificate
@@ -215,7 +215,7 @@ var _ = Describe("kubebuilder", func() {
 			By("creating an instance of CR")
 			// currently controller-runtime doesn't provide a readiness probe, we retry a few times
 			// we can change it to probe the readiness endpoint after CR supports it.
-			sampleFile := filepath.Join("config", "samples", fmt.Sprintf("%s_%s_%s.yaml", kbc.Group, kbc.Version, strings.ToLower(kbc.Kind)))
+			sampleFile := filepath.Join("deploy", "samples", fmt.Sprintf("%s_%s_%s.yaml", kbc.Group, kbc.Version, strings.ToLower(kbc.Kind)))
 			Eventually(func() error {
 				_, err = kbc.Kubectl.Apply(true, "-f", sampleFile)
 				return err

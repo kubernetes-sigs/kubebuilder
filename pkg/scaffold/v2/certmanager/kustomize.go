@@ -30,7 +30,7 @@ type Kustomization struct {
 // GetInput implements input.File
 func (p *Kustomization) GetInput() (input.Input, error) {
 	if p.Path == "" {
-		p.Path = filepath.Join("config", "certmanager", "kustomization.yaml")
+		p.Path = filepath.Join("deploy", "certmanager", "kustomization.yaml")
 	}
 	p.TemplateBody = kustomizationTemplate
 	return p.Input, nil

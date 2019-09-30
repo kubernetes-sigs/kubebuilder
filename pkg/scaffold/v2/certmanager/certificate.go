@@ -30,7 +30,7 @@ type CertManager struct {
 // GetInput implements input.File
 func (p *CertManager) GetInput() (input.Input, error) {
 	if p.Path == "" {
-		p.Path = filepath.Join("config", "certmanager", "certificate.yaml")
+		p.Path = filepath.Join("deploy", "certmanager", "certificate.yaml")
 	}
 	p.TemplateBody = certManagerTemplate
 	return p.Input, nil

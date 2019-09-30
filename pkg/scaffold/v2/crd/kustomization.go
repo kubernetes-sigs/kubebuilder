@@ -47,7 +47,7 @@ type Kustomization struct {
 // GetInput implements input.File
 func (c *Kustomization) GetInput() (input.Input, error) {
 	if c.Path == "" {
-		c.Path = filepath.Join("config", "crd", "kustomization.yaml")
+		c.Path = filepath.Join("deploy", "crd", "kustomization.yaml")
 	}
 	c.TemplateBody = kustomizationTemplate
 	c.Input.IfExistsAction = input.Error
@@ -56,7 +56,7 @@ func (c *Kustomization) GetInput() (input.Input, error) {
 
 func (c *Kustomization) Update() error {
 	if c.Path == "" {
-		c.Path = filepath.Join("config", "crd", "kustomization.yaml")
+		c.Path = filepath.Join("deploy", "crd", "kustomization.yaml")
 	}
 
 	// TODO(directxman12): not technically valid if something changes from the default
@@ -77,7 +77,7 @@ func (c *Kustomization) Update() error {
 
 var kustomizationTemplate = fmt.Sprintf(`# This kustomization.yaml is not intended to be run by itself,
 # since it depends on service name and namespace that are out of this kustomize package.
-# It should be run by config/default
+# It should be run by deploy/default
 resources:
 %s
 

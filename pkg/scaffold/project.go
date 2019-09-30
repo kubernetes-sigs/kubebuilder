@@ -28,13 +28,13 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
 	scaffoldv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/v1"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/manager"
+	managerv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/v1/manager"
 	metricsauthv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/v1/metricsauth"
 	scaffoldv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/v2/certmanager"
+	certmanagerv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2/certmanager"
 	managerv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2/manager"
 	metricsauthv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2/metricsauth"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/v2/webhook"
+	webhookv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2/webhook"
 )
 
 const (
@@ -132,16 +132,16 @@ func (p *V1Project) Scaffold() error {
 		&scaffoldv1.AuthProxyService{},
 		&project.AuthProxyRole{},
 		&project.AuthProxyRoleBinding{},
-		&manager.Config{Image: imgName},
+		&managerv1.Config{Image: imgName},
 		&project.Makefile{Image: imgName},
 		&project.GopkgToml{},
-		&manager.Dockerfile{},
+		&managerv1.Dockerfile{},
 		&project.Kustomize{},
 		&project.KustomizeManager{},
-		&manager.APIs{},
-		&manager.Controller{},
-		&manager.Webhook{},
-		&manager.Cmd{})
+		&managerv1.APIs{},
+		&managerv1.Controller{},
+		&managerv1.Webhook{},
+		&managerv1.Cmd{})
 }
 
 type V2Project struct {
@@ -216,12 +216,12 @@ func (p *V2Project) Scaffold() error {
 		p.buildUniverse(),
 		input.Options{ProjectPath: projectInput.Path, BoilerplatePath: bpInput.Path},
 		&project.GitIgnore{},
+		&scaffoldv2.AuthProxyRole{},
+		&scaffoldv2.AuthProxyRoleBinding{},
 		&metricsauthv2.KustomizePrometheusMetricsPatch{},
 		&metricsauthv2.KustomizeAuthProxyPatch{},
 		&scaffoldv2.AuthProxyService{},
-		&project.AuthProxyRole{},
-		&project.AuthProxyRoleBinding{},
-		&managerv2.Config{Image: imgName},
+		&managerv2.Deploy{Image: imgName},
 		&scaffoldv2.Main{},
 		&scaffoldv2.GoMod{ControllerRuntimeVersion: controllerRuntimeVersion},
 		&scaffoldv2.Makefile{Image: imgName, ControllerToolsVersion: controllerToolsVersion},
@@ -233,11 +233,11 @@ func (p *V2Project) Scaffold() error {
 		&scaffoldv2.LeaderElectionRoleBinding{},
 		&scaffoldv2.KustomizeRBAC{},
 		&managerv2.Kustomization{},
-		&webhook.Kustomization{},
-		&webhook.KustomizeConfigWebhook{},
-		&webhook.Service{},
-		&webhook.InjectCAPatch{},
-		&certmanager.CertManager{},
-		&certmanager.Kustomization{},
-		&certmanager.KustomizeConfig{})
+		&webhookv2.Kustomization{},
+		&webhookv2.KustomizeConfigWebhook{},
+		&webhookv2.Service{},
+		&webhookv2.InjectCAPatch{},
+		&certmanagerv2.CertManager{},
+		&certmanagerv2.Kustomization{},
+		&certmanagerv2.KustomizeConfig{})
 }

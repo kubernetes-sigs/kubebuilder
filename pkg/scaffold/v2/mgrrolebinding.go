@@ -24,7 +24,7 @@ import (
 
 var _ input.File = &ManagerRoleBinding{}
 
-// ManagerRoleBinding scaffolds the config/rbac/role_binding.yaml file
+// ManagerRoleBinding scaffolds the deploy/rbac/role_binding.yaml file
 type ManagerRoleBinding struct {
 	input.Input
 }
@@ -32,7 +32,7 @@ type ManagerRoleBinding struct {
 // GetInput implements input.File
 func (r *ManagerRoleBinding) GetInput() (input.Input, error) {
 	if r.Path == "" {
-		r.Path = filepath.Join("config", "rbac", "role_binding.yaml")
+		r.Path = filepath.Join("deploy", "rbac", "role_binding.yaml")
 	}
 	r.TemplateBody = managerBindingTemplate
 	return r.Input, nil

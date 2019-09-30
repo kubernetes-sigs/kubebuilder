@@ -32,7 +32,7 @@ type KustomizeConfigWebhook struct {
 // GetInput implements input.File
 func (c *KustomizeConfigWebhook) GetInput() (input.Input, error) {
 	if c.Path == "" {
-		c.Path = filepath.Join("config", "webhook", "kustomizeconfig.yaml")
+		c.Path = filepath.Join("deploy", "webhook", "kustomizeconfig.yaml")
 	}
 	c.TemplateBody = KustomizeConfigWebhookTemplate
 	c.Input.IfExistsAction = input.Error

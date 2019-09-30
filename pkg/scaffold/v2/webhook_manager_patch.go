@@ -30,7 +30,7 @@ type ManagerWebhookPatch struct {
 // GetInput implements input.File
 func (p *ManagerWebhookPatch) GetInput() (input.Input, error) {
 	if p.Path == "" {
-		p.Path = filepath.Join("config", "default", "manager_webhook_patch.yaml")
+		p.Path = filepath.Join("deploy", "default", "manager_webhook_patch.yaml")
 	}
 	p.TemplateBody = ManagerWebhookPatchTemplate
 	return p.Input, nil

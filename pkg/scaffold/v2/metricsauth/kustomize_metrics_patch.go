@@ -33,7 +33,7 @@ type KustomizePrometheusMetricsPatch struct {
 // GetInput implements input.File
 func (c *KustomizePrometheusMetricsPatch) GetInput() (input.Input, error) {
 	if c.Path == "" {
-		c.Path = filepath.Join("config", "default", "manager_prometheus_metrics_patch.yaml")
+		c.Path = filepath.Join("deploy", "default", "manager_prometheus_metrics_patch.yaml")
 	}
 	c.TemplateBody = kustomizePrometheusMetricsPatchTemplate
 	c.Input.IfExistsAction = input.Error

@@ -22,30 +22,30 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 )
 
-var _ input.File = &LeaderElectionRoleBinding{}
+var _ input.File = &AuthProxyRoleBinding{}
 
-// LeaderElectionRoleBinding scaffolds the deploy/rbac/leader_election_role_binding.yaml file
-type LeaderElectionRoleBinding struct {
+// AuthProxyRoleBinding scaffolds the config/rbac/auth_proxy_role_binding_rbac.yaml file
+type AuthProxyRoleBinding struct {
 	input.Input
 }
 
 // GetInput implements input.File
-func (r *LeaderElectionRoleBinding) GetInput() (input.Input, error) {
+func (r *AuthProxyRoleBinding) GetInput() (input.Input, error) {
 	if r.Path == "" {
-		r.Path = filepath.Join("deploy", "rbac", "leader_election_role_binding.yaml")
+		r.Path = filepath.Join("deploy", "rbac", "auth_proxy_role_binding.yaml")
 	}
-	r.TemplateBody = leaderElectionRoleBindingTemplate
+	r.TemplateBody = proxyRoleBindinggTemplate
 	return r.Input, nil
 }
 
-var leaderElectionRoleBindingTemplate = `apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
+var proxyRoleBindinggTemplate = `apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
 metadata:
-  name: leader-election-rolebinding
+  name: proxy-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: leader-election-role
+  kind: ClusterRole
+  name: proxy-role
 subjects:
 - kind: ServiceAccount
   name: default

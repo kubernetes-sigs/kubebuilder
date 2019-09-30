@@ -39,7 +39,7 @@ type EnableWebhookPatch struct {
 func (p *EnableWebhookPatch) GetInput() (input.Input, error) {
 	if p.Path == "" {
 		plural := flect.Pluralize(strings.ToLower(p.Resource.Kind))
-		p.Path = filepath.Join("config", "crd", "patches",
+		p.Path = filepath.Join("deploy", "crd", "patches",
 			fmt.Sprintf("webhook_in_%s.yaml", plural))
 	}
 	p.TemplateBody = enableWebhookPatchTemplate

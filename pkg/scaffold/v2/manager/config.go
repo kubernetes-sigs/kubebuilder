@@ -22,25 +22,25 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 )
 
-var _ input.File = &Config{}
+var _ input.File = &Deploy{}
 
-// Config scaffolds yaml config for the manager.
-type Config struct {
+// Deploy scaffolds yaml deploy and configurations for the manager.
+type Deploy struct {
 	input.Input
 	// Image is controller manager image name
 	Image string
 }
 
 // GetInput implements input.File
-func (c *Config) GetInput() (input.Input, error) {
+func (c *Deploy) GetInput() (input.Input, error) {
 	if c.Path == "" {
-		c.Path = filepath.Join("config", "manager", "manager.yaml")
+		c.Path = filepath.Join("deploy", "manager", "manager.yaml")
 	}
-	c.TemplateBody = configTemplate
+	c.TemplateBody = deployTemplate
 	return c.Input, nil
 }
 
-var configTemplate = `apiVersion: v1
+var deployTemplate = `apiVersion: v1
 kind: Namespace
 metadata:
   labels:

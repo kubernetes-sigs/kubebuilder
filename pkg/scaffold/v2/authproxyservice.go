@@ -24,7 +24,7 @@ import (
 
 var _ input.File = &AuthProxyService{}
 
-// AuthProxyService scaffolds the config/rbac/auth_proxy_service.yaml file
+// AuthProxyService scaffolds the deploy/rbac/auth_proxy_service.yaml file
 type AuthProxyService struct {
 	input.Input
 }
@@ -32,7 +32,7 @@ type AuthProxyService struct {
 // GetInput implements input.File
 func (r *AuthProxyService) GetInput() (input.Input, error) {
 	if r.Path == "" {
-		r.Path = filepath.Join("config", "rbac", "auth_proxy_service.yaml")
+		r.Path = filepath.Join("deploy", "rbac", "auth_proxy_service.yaml")
 	}
 	r.TemplateBody = AuthProxyServiceTemplate
 	return r.Input, nil

@@ -33,7 +33,7 @@ type KustomizeAuthProxyPatch struct {
 // GetInput implements input.File
 func (c *KustomizeAuthProxyPatch) GetInput() (input.Input, error) {
 	if c.Path == "" {
-		c.Path = filepath.Join("config", "default", "manager_auth_proxy_patch.yaml")
+		c.Path = filepath.Join("deploy", "default", "manager_auth_proxy_patch.yaml")
 	}
 	c.TemplateBody = kustomizeAuthProxyPatchTemplate
 	c.Input.IfExistsAction = input.Error

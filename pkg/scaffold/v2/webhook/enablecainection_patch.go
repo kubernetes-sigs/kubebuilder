@@ -32,7 +32,7 @@ type InjectCAPatch struct {
 // GetInput implements input.File
 func (c *InjectCAPatch) GetInput() (input.Input, error) {
 	if c.Path == "" {
-		c.Path = filepath.Join("config", "default", "webhookcainjection_patch.yaml")
+		c.Path = filepath.Join("deploy", "default", "webhookcainjection_patch.yaml")
 	}
 	c.TemplateBody = injectCAPatchTemplate
 	c.Input.IfExistsAction = input.Error

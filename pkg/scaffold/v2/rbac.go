@@ -32,7 +32,7 @@ type KustomizeRBAC struct {
 // GetInput implements input.File
 func (c *KustomizeRBAC) GetInput() (input.Input, error) {
 	if c.Path == "" {
-		c.Path = filepath.Join("config", "rbac", "kustomization.yaml")
+		c.Path = filepath.Join("deploy", "rbac", "kustomization.yaml")
 	}
 	c.TemplateBody = kustomizeRBACTemplate
 	c.Input.IfExistsAction = input.Error
