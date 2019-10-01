@@ -1,12 +1,12 @@
-# Running GitBook
+# Running mdBook
 
-1. Follow the instructions at [https://toolchain.gitbook.com/](https://toolchain.gitbook.com/) to
-  install gitbook.
+The kubebuilder book is served using [mdBook](https://github.com/rust-lang-nursery/mdBook). If you want to test changes to the book locally, follow these directions:
+
+1. Follow the instructions at [https://github.com/rust-lang-nursery/mdBook#installation](https://github.com/rust-lang-nursery/mdBook#installation) to
+  install mdBook.
 1. cd into the `docs/book` directory
-1. Run `gitbook install`
-1. Run `gitbook build`
-1. Run `gitbook serve`
-1. Visit `http://localhost:4000`
+1. Run `mdbook serve`
+1. Visit [http://localhost:3000](http://localhost:3000)
 
 # Steps to deploy
 
