@@ -31,13 +31,13 @@ var _ = Describe("Resource", func() {
 		It("should fail if the Group is not all lowercase", func() {
 			instance := &resource.Resource{Group: "Crew", Version: "v1", Kind: "FirstMate"}
 			Expect(instance.Validate()).NotTo(Succeed())
-			Expect(instance.Validate().Error()).To(ContainSubstring("group must match %s (was Crew)", resource.GroupMatchRegex))
+			Expect(instance.Validate().Error()).To(ContainSubstring("group name is invalid: ([a DNS-1123 subdomain must consist of lower case alphanumeric characters"))
 		})
 
 		It("should fail if the Group contains non-alpha characters", func() {
-			instance := &resource.Resource{Group: "crew1", Version: "v1", Kind: "FirstMate"}
+			instance := &resource.Resource{Group: "crew1*?", Version: "v1", Kind: "FirstMate"}
 			Expect(instance.Validate()).NotTo(Succeed())
-			Expect(instance.Validate().Error()).To(ContainSubstring("group must match %s (was crew1)", resource.GroupMatchRegex))
+			Expect(instance.Validate().Error()).To(ContainSubstring("group name is invalid: ([a DNS-1123 subdomain must consist of lower case alphanumeric characters"))
 		})
 
 		It("should fail if the Version is not specified", func() {

@@ -24,8 +24,6 @@ import (
 	"github.com/gobuffalo/flect"
 )
 
-const GroupMatchRegex = "^[a-z-]+$"
-
 // Resource contains the information required to scaffold files for a resource.
 type Resource struct {
 	// Namespaced is true if the resource is namespaced
@@ -70,9 +68,8 @@ func (r *Resource) Validate() error {
 		r.Resource = flect.Pluralize(strings.ToLower(r.Kind))
 	}
 
-	groupMatch := regexp.MustCompile(GroupMatchRegex)
-	if !groupMatch.MatchString(r.Group) {
-		return fmt.Errorf("group must match %s (was %s)", GroupMatchRegex, r.Group)
+	if err := IsDNS1123Subdomain(r.Group); err != nil {
+		return fmt.Errorf("group name is invalid: (%v)", err)
 	}
 
 	r.GroupImportSafe = strings.Replace(r.Group, "-", "", -1)
@@ -88,3 +85,54 @@ func (r *Resource) Validate() error {
 
 	return nil
 }
+
+// The following code came from "k8s.io/apimachinery/pkg/util/validation"
+// If be required the usage of more funcs from this then please replace it for the import
+// ---------------------------------------
+const (
+	dns1123LabelFmt          string = "[a-z0-9]([-a-z0-9]*[a-z0-9])?"
+	dns1123SubdomainFmt      string = dns1123LabelFmt + "(\\." + dns1123LabelFmt + ")*"
+	dns1123SubdomainErrorMsg string = "a DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character"
+
+	// dns1123SubdomainMaxLength is a subdomain's max length in DNS (RFC 1123)
+	dns1123SubdomainMaxLength int = 253
+)
+
+var dns1123SubdomainRegexp = regexp.MustCompile("^" + dns1123SubdomainFmt + "$")
+
+// IsDNS1123Subdomain tests for a string that conforms to the definition of a
+// subdomain in DNS (RFC 1123).
+func IsDNS1123Subdomain(value string) []string {
+	var errs []string
+	if len(value) > dns1123SubdomainMaxLength {
+		errs = append(errs, maxLenError(dns1123SubdomainMaxLength))
+	}
+	if !dns1123SubdomainRegexp.MatchString(value) {
+		errs = append(errs, regexError(dns1123SubdomainErrorMsg, dns1123SubdomainFmt, "example.com"))
+	}
+	return errs
+}
+
+// MaxLenError returns a string explanation of a "string too long" validation
+// failure.
+func maxLenError(length int) string {
+	return fmt.Sprintf("must be no more than %d characters", length)
+}
+
+// RegexError returns a string explanation of a regex validation failure.
+func regexError(msg string, fmt string, examples ...string) string {
+	if len(examples) == 0 {
+		return msg + " (regex used for validation is '" + fmt + "')"
+	}
+	msg += " (e.g. "
+	for i := range examples {
+		if i > 0 {
+			msg += " or "
+		}
+		msg += "'" + examples[i] + "', "
+	}
+	msg += "regex used for validation is '" + fmt + "')"
+	return msg
+}
+
+// ---------------------------------------
