@@ -196,6 +196,14 @@ privileges or be logged in as admin. See [Prerequisites for using Kubernetes RBA
 
 </aside> 
 
+## Uninstall CRDs
+
+To delete your CRDs from the cluster:
+
+```bash
+make uninstall
+```
+
 ## Next Step 
 
 Now, follow up the [CronJob tutorial][cronjob-tutorial] to better understand how it works by developing a demo example project. 
@@ -204,3 +212,4 @@ Now, follow up the [CronJob tutorial][cronjob-tutorial] to better understand how
 [cronjob-tutorial]: https://book.kubebuilder.io/cronjob-tutorial/cronjob-tutorial.html
 [GOPATH-golang-docs]: https://golang.org/doc/code.html#GOPATH
 [how-to-write-go-code-golang-docs]: https://golang.org/doc/code.html 
+
