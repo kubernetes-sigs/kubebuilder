@@ -32,8 +32,9 @@ func ExampleChannel(u *model.Universe) error {
 	m := &model.File{
 		Path:           filepath.Join("channels", "stable"),
 		Contents:       exampleChannel,
-		IfExistsAction: input.Error,
+		IfExistsAction: input.Skip,
 	}
 
-	return AddFile(u, m)
+	_, err := AddFile(u, m)
+	return err
 }

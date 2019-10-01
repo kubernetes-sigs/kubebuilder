@@ -228,9 +228,13 @@ func (api *API) scaffoldV2() error {
 	if api.DoController {
 		fmt.Println(filepath.Join("controllers", fmt.Sprintf("%s_controller.go", strings.ToLower(r.Kind))))
 
+		scaffold := &Scaffold{
+			Plugins: api.Plugins,
+		}
+
 		ctrlScaffolder := &resourcev2.Controller{Resource: r}
 		testsuiteScaffolder := &resourcev2.ControllerSuiteTest{Resource: r}
-		err := (&Scaffold{}).Execute(
+		err := scaffold.Execute(
 			api.buildUniverse(),
 			input.Options{},
 			testsuiteScaffolder,

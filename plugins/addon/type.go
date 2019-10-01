@@ -19,7 +19,7 @@ func ReplaceTypes(u *model.Universe) error {
 	}
 
 	m := &model.File{
-		Path:           filepath.Join("controllers", strings.ToLower(u.Resource.Kind)+"_controller.go"),
+		Path:           filepath.Join("api", u.Resource.Version, strings.ToLower(u.Resource.Kind)+"_types.go"),
 		Contents:       contents,
 		IfExistsAction: input.Error,
 	}
