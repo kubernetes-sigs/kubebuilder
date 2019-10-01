@@ -35,10 +35,12 @@ func ExampleManifest(u *model.Universe) error {
 	m := &model.File{
 		Path:           filepath.Join("channels", "packages", packageName, exampleManifestVersion, "manifest.yaml"),
 		Contents:       exampleManifestContents,
-		IfExistsAction: input.Error,
+		IfExistsAction: input.Skip,
 	}
 
-	return AddFile(u, m)
+	_, err := AddFile(u, m)
+
+	return err
 }
 
 // getPackageName returns the (default) name of the declarative package
