@@ -61,8 +61,8 @@ Now that we know it's working, we can run it in the cluster. Stop the
 `make run` invocation, and run
 
 ```bash
-make docker-build docker-push IMG=<some-registry>/controller
-make deploy IMG=<some-registry>/controller
+make docker-build docker-push IMG=<some-registry>/<project-name>:tag
+make deploy IMG=<some-registry>/<project-name>:tag
 ```
 
 If we list cronjobs again like we did before, we should see the controller

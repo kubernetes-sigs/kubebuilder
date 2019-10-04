@@ -7,6 +7,14 @@ This Quick Start guide will cover:
 - [Running locally](#test-it-out-locally)
 - [Running in-cluster](#run-it-on-the-cluster)
 
+## Prerequisites
+
+- [go](https://golang.org/dl/) version v1.12+.
+- [docker](https://docs.docker.com/install/) version 17.03+.
+- [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) version v1.11.3+.
+- [kustomize](https://sigs.k8s.io/kustomize/docs/INSTALL.md) v3.1.0+
+- Access to a Kubernetes v1.11.3+ cluster.
+
 ## Installation
 
 Install [kubebuilder](https://sigs.k8s.io/kubebuilder):
@@ -24,64 +32,139 @@ sudo mv /tmp/kubebuilder_2.0.1_${os}_${arch} /usr/local/kubebuilder
 export PATH=$PATH:/usr/local/kubebuilder/bin
 ```
 
-You can also install a KubeBuilder master snapshot from
-`https://go.kubebuilder.io/dl/latest/${os}/${arch}`.
+<aside class="note">
+<h1>Using master branch</h1>
 
-Install [kustomize](https://sigs.k8s.io/kustomize/docs/INSTALL.md) v3.1.0+
+Also, you can install a master snapshot from `https://go.kubebuilder.io/dl/latest/${os}/${arch}`.
+
+</aside>
 
 ## Create a Project
 
-Initialize a new project and Go module for your controllers:
+Create a directory, and then run the following command inside of it to initialize a new project:
 
 ```bash
 kubebuilder init --domain my.domain
 ```
 
+<aside class="note">
+<h1>Not in $GOPATH</h1>
+
 If you're not in `GOPATH`, you'll need to run `go mod init <modulename>`
-in order to tell kubebuilder and Go the base import path of your module.
+in order to tell kubebuilder and Go the base import path of your module.  
+
+</aside>
+
+<aside class="note">
+<h1>Go package issues</h1>
+
+Ensure that you activate the module support by running `$ export GO111MODULE=on` 
+to solve issues as `cannot find package ... (from $GOROOT)`.
+
+</aside>
+
 
 ## Create an API
 
-Create a new API group-version called `webapp/v1`, and a kind `Guestbook`
-in that API group-version:
+Run the following command to create a new API (group/version) as `webapp/v1` and the new Kind(CRD) `Guestbook` on it:
 
 ```bash
 kubebuilder create api --group webapp --version v1 --kind Guestbook
 ```
 
-This will create the files `api/v1/guestbook_types.go` and
-`controller/guestbook_controller.go` for you to edit.
+<aside class="note">
+<h1>Press Options</h1>
 
-**Optional:** Edit the API definition or the reconciliation business
-logic. For more on this see [What's in
-a Controller](cronjob-tutorial/controller-overview.md) and [Designing an
-API](/cronjob-tutorial/api-design.md).
+If you press `y` for Create Resource [y/n] and for Create Controller [y/n] then this will create the files `api/v1/guestbook_types.go` where the API is defined 
+and the `controller/guestbook_controller.go` where the reconciliation business logic is implemented for this Kind(CRD).
 
-## Test It Out Locally
+</aside>
+
+
+**OPTIONAL:** Edit the API definition and the reconciliation business
+logic. For more info see [Designing an API](/cronjob-tutorial/api-design.md) and [What's in
+a Controller](cronjob-tutorial/controller-overview.md).
+
+<details><summary>Click here to see an example. `(api/v1/guestbook_types.go)` </summary>
+<p>
+
+```go 
+// GuestbookSpec defines the desired state of Guestbook
+type GuestbookSpec struct {
+	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+	// Important: Run "make" to regenerate code after modifying this file
+
+    // Quantity of instances
+    // +kubebuilder:validation:Minimum=1
+    // +kubebuilder:validation:Maximum=10
+    Size int32 `json:"size"`
+    
+    // Name of the ConfigMap for GuestbookSpec's configuration
+    // +kubebuilder:validation:MaxLength=15
+    // +kubebuilder:validation:MinLength=1
+    ConfigMapName string `json:"configMapName"`
+    
+    // +kubebuilder:validation:Enum=Phone,Address,Name
+    Type string `json:"alias,omitempty"`
+    
+	// TLS policy of Guestbook nodes
+	TLS *TLSPolicy `json:"TLS,omitempty"`
+}
+
+// GuestbookStatus defines the observed state of Guestbook
+type GuestbookStatus struct {
+	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
+	// Important: Run "make" to regenerate code after modifying this file
+	
+	// GuestbookStatus is the set of Guestbook node specific statuses: Active or Standby
+    GuestbookStatus GuestbookStatus `json:"guestbookStatus"`
+    
+    // Status of Guestbook Nodes
+    Nodes []string `json:"nodes"`
+}
+
+type GuestbookStatus struct {
+
+	// PodName of the active Guestbook node. 
+	Active string `json:"active"`
+
+	// PodNames of the standby Guestbook nodes.
+	Standby []string `json:"standby"`
+}	
+```
+
+</p>
+</details>
+
+
+## Test It Out 
 
 You'll need a Kubernetes cluster to run against.  You can use
 [KIND](https://sigs.k8s.io/kind) to get a local cluster for testing, or
 run against a remote cluster.
 
+<aside class="note">
+<h1>Context Used</h1>
+
 Your controller will automatically use the current context in your
 kubeconfig file (i.e. whatever cluster `kubectl cluster-info` shows).
 
-Install the CRDs into the cluster:
+</aside> 
 
+Install the CRDs into the cluster:
 ```bash
 make install
 ```
 
 Run your controller (this will run in the foreground, so switch to a new
 terminal if you want to leave it running):
-
 ```bash
 make run
 ```
 
-## Install Samples
+## Install Instances of Custom Resources
 
-Create your samples (make sure to edit them first if you've changed the
+If you pressed `y` for Create Resource [y/n] then you created an (CR)Custom Resource for your (CRD)Custom Resource Definition in your samples (make sure to edit them first if you've changed the
 API definition):
 
 ```bash
@@ -93,16 +176,23 @@ kubectl apply -f config/samples/
 Build and push your image to the location specified by `IMG`:
 
 ```bash
-make docker-build docker-push IMG=<some-registry>/controller
+make docker-build docker-push IMG=<some-registry>/<project-name>:tag
 ```
 
 Deploy the controller to the cluster with image specified by `IMG`:
 
 ```bash
-make deploy IMG=<some-registry>/controller
+make deploy IMG=<some-registry>/<project-name>:tag
 ```
 
-If you encounter RBAC errors, you may need to grant yourself cluster-admin
-privileges:
+<aside class="note">
+<h1>RBAC errors</h1>
 
-<!-- TODO(directxman12): fill this in -->
+If you encounter RBAC errors, you may need to grant yourself cluster-admin
+privileges or be logged in as admin. See [Prerequisites for using Kubernetes RBAC on GKE cluster v1.11.x and older][pre-rbc-gke] which may can be your case.  
+
+</aside> 
+
+Now, follow up the tutorial for you understanding better how it works and check an full example project working. 
+
+[pre-rbc-gke]:https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#iam-rolebinding-bootstrap
