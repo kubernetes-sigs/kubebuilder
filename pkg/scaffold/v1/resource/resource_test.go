@@ -119,6 +119,12 @@ var _ = Describe("Resource", func() {
 			Expect(instance.Resource).To(Equal("cats"))
 		})
 
+		It("should allow hyphens in group names", func() {
+			instance := &resource.Resource{Group: "my-project", Kind: "Cat", Version: "v1"}
+			Expect(instance.Validate()).To(Succeed())
+			Expect(instance.GroupImportSafe).To(Equal("myproject"))
+		})
+
 		It("should keep the Resource if specified", func() {
 			instance := &resource.Resource{Group: "crew", Kind: "FirstMate", Version: "v1", Resource: "myresource"}
 			Expect(instance.Validate()).To(Succeed())
