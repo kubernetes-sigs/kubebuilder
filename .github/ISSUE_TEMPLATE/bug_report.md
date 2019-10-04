@@ -1,8 +1,7 @@
 ---
 name: Bug report
-about: Problems and issues
+about: Problems and issues with code or docs
 title: ''
-labels: kind/bug
 assignees: ''
 
 ---
@@ -15,32 +14,35 @@ assignees: ''
 
 -->
 
-/kind bug
-
 <!-- 
-Thanks for filing an issue! Before hitting the button, please answer these questions.
-Fill in as much of the template below as you can. If you leave out information, we can't help you as well.
+
+Hiya!  Welcome to KubeBuilder!  For a smooth issue process, try to answer the following questions.
+Don't worry if they're not all applicable; just try to include what you can :-)
+
+If you need to include code snippets or logs, please put them in fenced code
+blocks.  If they're super-long, please use the details tag like
+<details><summary>super-long log</summary> lots of stuff </details>
+
 -->
 
-**What did you do?**
-A clear and concise description of the steps you took (or insert a code snippet).
+<!-- What broke (please include exact error messages if you can) -->
 
-**What did you expect to see?**
-A clear and concise description of what you expected to happen (or insert a code snippet).
+<!-- What did you expect to happen?  What do you think went wrong? -->
 
-**What did you see instead? Under which circumstances?**
-A clear and concise description of what you expected to happen (or insert a code snippet).
+<!-- If you don't know what broke, but have a minimal reproducer, that would be super-helpful helpful! -->
 
-**Environment**
-* go version:
+<!--
 
-<!--- Insert the output of `go version` here -->
+What versions of software are you using?  Specifically, the following are often useful:
 
-* Kubernetes version information:
-<!--- Insert the output of `kubectl version` here -->
+* go version
+* kubebuilder version (`kubebuilder version`) and scaffolding version (check your `PROJECT` file)
+* controller-runtime version (check your `go.mod` file)
+* controller-tools version
+* Kubernetes & kubectl versions (just run `kubectl version` against your API server)
 
-**Possible Solution**
-<!--- Only if you have suggestions on a fix for the bug -->
+-->
 
-**Additional context**
-Add any other context about the problem here.
+<!-- If this is actually about documentation, add `/kind documentation` below -->
+
+/kind bug

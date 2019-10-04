@@ -1,0 +1,6 @@
+apiVersion: code.godocs.io/v1alpha1
+kind: PullRequest
+metadata:
+  name: test
+spec:
+  url: "https://github.com/droot/godocbot-test-rep/pull/1" 

@@ -1,0 +1,3 @@
+version: "2"
+domain: godocs.io
+repo: sigs.k8s.io/controller-tools/examples/godocbot

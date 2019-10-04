@@ -1,0 +1,23 @@
+language: go
+
+go:
+  - 1.9.x
+
+go_import_path: sigs.k8s.io/testing_frameworks
+
+before_install:
+  - source ./bin/consider-early-travis-exit.sh
+  - ./bin/install-test-dependencies.sh
+
+# Install must be set to prevent default `go get` to run.
+# The dependencies have already been vendored by `dep` so
+# we don't need to fetch them.
+install:
+  -
+
+script:
+  - ./bin/pre-commit.sh
+
+# TBD. Suppressing for now.
+notifications:
+  email: false
