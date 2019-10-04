@@ -26,7 +26,7 @@ import (
 	. "github.com/onsi/ginkgo"
 )
 
-const certmanagerVersion = "v0.8.1"
+const certmanagerVersion = "v0.10.1"
 
 // KBTestContext specified to run e2e tests
 type KBTestContext struct {
@@ -97,10 +97,10 @@ func (kc *KBTestContext) InstallCertManager() error {
 // UninstallCertManager uninstalls the cert manager bundle.
 func (kc *KBTestContext) UninstallCertManager() {
 	if _, err := kc.Kubectl.Delete(false, "-f", fmt.Sprintf("https://github.com/jetstack/cert-manager/releases/download/%s/cert-manager.yaml", certmanagerVersion)); err != nil {
-		fmt.Fprintf(GinkgoWriter, "error when running kubectl delete during cleaning up cert manager: %v\n", err)
+		fmt.Fprintf(GinkgoWriter, "warning: error when running kubectl delete during cleaning up cert manager: %v\n", err)
 	}
 	if _, err := kc.Kubectl.Delete(false, "namespace", "cert-manager"); err != nil {
-		fmt.Fprintf(GinkgoWriter, "error when cleaning up the cert manager namespace: %v\n", err)
+		fmt.Fprintf(GinkgoWriter, "warning: error when cleaning up the cert manager namespace: %v\n", err)
 	}
 }
 
@@ -109,10 +109,10 @@ func (kc *KBTestContext) CleanupManifests(dir string) {
 	cmd := exec.Command("kustomize", "build", dir)
 	output, err := kc.Run(cmd)
 	if err != nil {
-		fmt.Fprintf(GinkgoWriter, "error when running kustomize build: %v\n", err)
+		fmt.Fprintf(GinkgoWriter, "warning: error when running kustomize build: %v\n", err)
 	}
 	if _, err := kc.Kubectl.CommandWithInput(string(output), "delete", "-f", "-"); err != nil {
-		fmt.Fprintf(GinkgoWriter, "error when running kubectl delete -f -: %v\n", err)
+		fmt.Fprintf(GinkgoWriter, "warning: error when running kubectl delete -f -: %v\n", err)
 	}
 }
 
@@ -151,10 +151,10 @@ func (kc *KBTestContext) Make(makeOptions ...string) error {
 func (kc *KBTestContext) Destroy() {
 	cmd := exec.Command("docker", "rmi", "-f", kc.ImageName)
 	if _, err := kc.Run(cmd); err != nil {
-		fmt.Fprintf(GinkgoWriter, "error when removing the local image: %v\n", err)
+		fmt.Fprintf(GinkgoWriter, "warning: error when removing the local image: %v\n", err)
 	}
 	if err := os.RemoveAll(kc.Dir); err != nil {
-		fmt.Fprintf(GinkgoWriter, "error when removing the word dir: %v\n", err)
+		fmt.Fprintf(GinkgoWriter, "warning: error when removing the word dir: %v\n", err)
 	}
 }
 
