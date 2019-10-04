@@ -65,6 +65,7 @@ func (m *Main) Update(opts *MainUpdateOptions) error {
 	reconcilerSetupCodeFragment := fmt.Sprintf(`if err = (&controllers.%sReconciler{
 	 	Client: mgr.GetClient(),
         Log: ctrl.Log.WithName("controllers").WithName("%s"),
+        Scheme: mgr.GetScheme(),  
 	}).SetupWithManager(mgr); err != nil {
 	 	setupLog.Error(err, "unable to create controller", "controller", "%s")
 	 	os.Exit(1)
