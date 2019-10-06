@@ -69,9 +69,11 @@ func findCurrentRepo() (string, error) {
 	}
 
 	// next easy case: existing go module
-	path, err := findGoModulePath(false)
-	if err == nil {
-		return path, nil
+	if _, err := os.Stat("go.mod"); os.IsExist(err) {
+		path, err := findGoModulePath(false)
+		if err == nil {
+			return path, nil
+		}
 	}
 
 	// next, check if we've got a package in the current directory
