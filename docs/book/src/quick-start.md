@@ -41,17 +41,20 @@ Also, you can install a master snapshot from `https://go.kubebuilder.io/dl/lates
 
 ## Create a Project
 
-Create a directory, and then run the following command inside of it to initialize a new project:
+Create a directory, and then run the init command inside of it to initialize a new project. Follows an example.
 
 ```bash
-kubebuilder init --domain my.domain
+$ mkdir $GOPATH/src/example
+$ cd $GOPATH/src/example
+$ kubebuilder init --domain my.domain
 ```
 
 <aside class="note">
 <h1>Not in $GOPATH</h1>
 
-If you're not in `GOPATH`, you'll need to run `go mod init <modulename>`
-in order to tell kubebuilder and Go the base import path of your module.  
+If you're not in `GOPATH`, you'll need to run `go mod init <modulename>` in order to tell kubebuilder and Go the base import path of your module. 
+
+For a further understanding of `GOPATH` see [The GOPATH environment variable][GOPATH-golang-docs] in the [How to Write Go Code][how-to-write-go-code-golang-docs] golang page doc.   
 
 </aside>
 
@@ -193,6 +196,11 @@ privileges or be logged in as admin. See [Prerequisites for using Kubernetes RBA
 
 </aside> 
 
-Now, follow up the tutorial for you understanding better how it works and check an full example project working. 
+## Next Step 
+
+Now, follow up the CronJob tutorial[cronjob-tutorial] to better understand how it works by developing a demo example project. 
 
 [pre-rbc-gke]:https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#iam-rolebinding-bootstrap
+[cronjob-tutorial]: ../src/cronjob-tutorial/cronjob-tutorial.md
+[GOPATH-golang-docs]: https://golang.org/doc/code.html#GOPATH
+[how-to-write-go-code-golang-docs]: https://golang.org/doc/code.html 
