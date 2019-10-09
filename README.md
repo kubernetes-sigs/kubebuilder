@@ -13,7 +13,6 @@ to simplify building and publishing Kubernetes APIs from scratch.
 It is strongly recommended that you use a released version. Release binaries are available on the [releases](https://github.com/kubernetes-sigs/kubebuilder/releases) page.
 Follow the [instructions](https://book.kubebuilder.io/quick-start.html#installation) to install Kubebuilder.
 
-
 ## Getting Started
 
 See the [Getting Started](https://book.kubebuilder.io/quick-start.html) documentation.
