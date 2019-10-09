@@ -12,6 +12,9 @@ os:
 go:
 - "1.12"
 
+env:
+  - GOPROXY=https://proxy.golang.org/
+
 git:
   depth: 3
 
@@ -21,7 +24,9 @@ services:
 - docker
 
 before_install:
-- go get -u github.com/golang/dep/cmd/dep
+# NOTE: The latest version of dep requires go 1.13
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then mkdir -p /Users/travis/gopath/bin; fi
+- GO111MODULE=on curl https://raw.githubusercontent.com/golang/dep/v0.5.1/install.sh | sh
 - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then GO111MODULE=on scripts/install_and_setup.sh; fi
 
 before_script:
