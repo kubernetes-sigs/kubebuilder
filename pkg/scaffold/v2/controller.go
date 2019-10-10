@@ -82,6 +82,7 @@ import (
 type {{ .Resource.Kind }}Reconciler struct {
 	client.Client
 	Log logr.Logger
+	Scheme *runtime.Scheme
 }
 
 // +kubebuilder:rbac:groups={{.GroupDomain}},resources={{ .Plural }},verbs=get;list;watch;create;update;patch;delete
