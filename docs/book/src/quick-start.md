@@ -44,9 +44,9 @@ Also, you can install a master snapshot from `https://go.kubebuilder.io/dl/lates
 Create a directory, and then run the init command inside of it to initialize a new project. Follows an example.
 
 ```bash
-$ mkdir $GOPATH/src/example
-$ cd $GOPATH/src/example
-$ kubebuilder init --domain my.domain
+mkdir $GOPATH/src/example
+cd $GOPATH/src/example
+kubebuilder init --domain my.domain
 ```
 
 <aside class="note">
