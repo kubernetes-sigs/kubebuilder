@@ -14,12 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package e2e
+package v1
 
 import (
 	"fmt"
 	"os/exec"
 	"path/filepath"
+	"sigs.k8s.io/kubebuilder/test/e2e/utils"
 	"strings"
 	"time"
 
@@ -29,10 +30,10 @@ import (
 
 var _ = Describe("kubebuilder", func() {
 	Context("with v1 scaffolding", func() {
-		var kbc *KBTestContext
+		var kbc *utils.KBTestContext
 		BeforeEach(func() {
 			var err error
-			kbc, err = TestContext("GO111MODULE=off")
+			kbc, err = utils.TestContext("GO111MODULE=off")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(kbc.Prepare()).To(Succeed())
 		})
@@ -121,7 +122,7 @@ var _ = Describe("kubebuilder", func() {
 					"-o", "go-template={{ range .items }}{{ if not .metadata.deletionTimestamp }}{{ .metadata.name }}{{ \"\\n\" }}{{ end }}{{ end }}",
 				)
 				Expect(err).NotTo(HaveOccurred())
-				podNames := getNonEmptyLines(podOutput)
+				podNames := utils.GetNonEmptyLines(podOutput)
 				if len(podNames) != 1 {
 					return fmt.Errorf("expect 1 controller pods running, but got %d", len(podNames))
 				}

@@ -39,6 +39,7 @@ install:
 
 script:
 - if [ "$TRAVIS_OS_NAME" = "linux" ]; then GO111MODULE=on TRACE=1 PATH=$PATH:$(pwd) ./test_e2e.sh ; fi
+- if [ "$TRAVIS_OS_NAME" = "linux" ]; then GO111MODULE=on TRACE=1 PATH=$PATH:$(pwd) ./test_e2e_v2.sh ; fi
 - GO111MODULE=on TRACE=1 ./test.sh
 
 # TBD. Suppressing for now.

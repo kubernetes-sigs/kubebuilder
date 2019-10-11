@@ -27,4 +27,4 @@ setup_envs
 docker pull gcr.io/kubebuilder/kube-rbac-proxy:v0.4.1
 kind load docker-image gcr.io/kubebuilder/kube-rbac-proxy:v0.4.1
 
-go test ./test/e2e/v1
+go test ./test/e2e/v2

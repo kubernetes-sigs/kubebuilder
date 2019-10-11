@@ -41,4 +41,5 @@ test-project-generation:
 
 .PHONY: test-e2e
 test-e2e:
-	./test_e2e.sh
+	./test_e2e_v1.sh
+	./test_e2e_v2.sh
