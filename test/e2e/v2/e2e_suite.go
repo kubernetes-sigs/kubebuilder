@@ -14,12 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package e2e
+package v2
 
 import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"sigs.k8s.io/kubebuilder/test/e2e/utils"
 	"strconv"
 	"strings"
 	"time"
@@ -30,10 +31,10 @@ import (
 
 var _ = Describe("kubebuilder", func() {
 	Context("with v2 scaffolding", func() {
-		var kbc *KBTestContext
+		var kbc *utils.KBTestContext
 		BeforeEach(func() {
 			var err error
-			kbc, err = TestContext("GO111MODULE=on")
+			kbc, err = utils.TestContext("GO111MODULE=on")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(kbc.Prepare()).To(Succeed())
 
@@ -73,7 +74,7 @@ var _ = Describe("kubebuilder", func() {
 			Expect(err).Should(Succeed())
 
 			By("implementing the API")
-			Expect(insertCode(
+			Expect(utils.InsertCode(
 				filepath.Join(kbc.Dir, "api", kbc.Version, fmt.Sprintf("%s_types.go", strings.ToLower(kbc.Kind))),
 				fmt.Sprintf(`type %sSpec struct {
 `, kbc.Kind),
@@ -97,19 +98,19 @@ var _ = Describe("kubebuilder", func() {
 			Expect(err).Should(Succeed())
 
 			By("uncomment kustomization.yaml to enable webhook and ca injection")
-			Expect(uncommentCode(
+			Expect(utils.UncommentCode(
 				filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 				"#- ../webhook", "#")).To(Succeed())
-			Expect(uncommentCode(
+			Expect(utils.UncommentCode(
 				filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 				"#- ../certmanager", "#")).To(Succeed())
-			Expect(uncommentCode(
+			Expect(utils.UncommentCode(
 				filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 				"#- manager_webhook_patch.yaml", "#")).To(Succeed())
-			Expect(uncommentCode(
+			Expect(utils.UncommentCode(
 				filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 				"#- webhookcainjection_patch.yaml", "#")).To(Succeed())
-			Expect(uncommentCode(filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+			Expect(utils.UncommentCode(filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 				`#- name: CERTIFICATE_NAMESPACE # namespace of the certificate CR
 #  objref:
 #    kind: Certificate
@@ -161,7 +162,7 @@ var _ = Describe("kubebuilder", func() {
 					"pods", "-l", "control-plane=controller-manager",
 					"-o", "go-template={{ range .items }}{{ if not .metadata.deletionTimestamp }}{{ .metadata.name }}{{ \"\\n\" }}{{ end }}{{ end }}")
 				Expect(err).NotTo(HaveOccurred())
-				podNames := getNonEmptyLines(podOutput)
+				podNames := utils.GetNonEmptyLines(podOutput)
 				if len(podNames) != 1 {
 					return fmt.Errorf("expect 1 controller pods running, but got %d", len(podNames))
 				}

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package e2e
+package utils
 
 import (
 	"bytes"
@@ -39,9 +39,9 @@ func randomSuffix() (string, error) {
 	return string(res), nil
 }
 
-// getNonEmptyLines converts given command output string into individual objects
+// GetNonEmptyLines converts given command output string into individual objects
 // according to line breakers, and ignores the empty elements in it.
-func getNonEmptyLines(output string) []string {
+func GetNonEmptyLines(output string) []string {
 	var res []string
 	elements := strings.Split(output, "\n")
 	for _, element := range elements {
@@ -53,8 +53,8 @@ func getNonEmptyLines(output string) []string {
 	return res
 }
 
-// insertCode searches target content in the file and insert `toInsert` after the target.
-func insertCode(filename, target, code string) error {
+// InsertCode searches target content in the file and insert `toInsert` after the target.
+func InsertCode(filename, target, code string) error {
 	contents, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return err
@@ -64,9 +64,9 @@ func insertCode(filename, target, code string) error {
 	return ioutil.WriteFile(filename, []byte(out), 0644)
 }
 
-// uncommentCode searches for target in the file and remove the comment prefix
+// UncommentCode searches for target in the file and remove the comment prefix
 // of the target content. The target content may span multiple lines.
-func uncommentCode(filename, target, prefix string) error {
+func UncommentCode(filename, target, prefix string) error {
 	content, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return err

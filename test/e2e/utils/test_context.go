@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package e2e
+package utils
 
 import (
 	"fmt"
@@ -30,7 +30,7 @@ const certmanagerVersion = "v0.10.1"
 
 // KBTestContext specified to run e2e tests
 type KBTestContext struct {
-	*cmdContext
+	*CmdContext
 	TestSuffix string
 	Domain     string
 	Group      string
@@ -55,7 +55,7 @@ func TestContext(env ...string) (*KBTestContext, error) {
 		return nil, err
 	}
 
-	cc := &cmdContext{
+	cc := &CmdContext{
 		Env: env,
 		Dir: path,
 	}
@@ -68,10 +68,10 @@ func TestContext(env ...string) (*KBTestContext, error) {
 		Kind:       "Foo" + testSuffix,
 		Resources:  "foo" + testSuffix + "s",
 		ImageName:  "e2e-test/controller-manager:" + testSuffix,
-		cmdContext: cc,
+		CmdContext: cc,
 		Kubectl: &Kubectl{
 			Namespace:  fmt.Sprintf("e2e-%s-system", testSuffix),
-			cmdContext: cc,
+			CmdContext: cc,
 		},
 	}, nil
 }
@@ -166,13 +166,13 @@ func (kc *KBTestContext) LoadImageToKindCluster() error {
 	return err
 }
 
-type cmdContext struct {
+type CmdContext struct {
 	// environment variables in k=v format.
 	Env []string
 	Dir string
 }
 
-func (cc *cmdContext) Run(cmd *exec.Cmd) ([]byte, error) {
+func (cc *CmdContext) Run(cmd *exec.Cmd) ([]byte, error) {
 	cmd.Dir = cc.Dir
 	cmd.Env = append(os.Environ(), cc.Env...)
 	command := strings.Join(cmd.Args, " ")
