@@ -16,7 +16,7 @@
 
 export GO111MODULE=on
 
-go get sigs.k8s.io/kind@v0.4.0
+go get sigs.k8s.io/kind@v0.5.1
 go get sigs.k8s.io/kustomize/v3/cmd/kustomize@v3.1.0
 
 # You can use --image flag to specify the cluster version you want, e.g --image=kindest/node:v1.13.6, the supported version are listed at https://hub.docker.com/r/kindest/node/tags
