@@ -27,6 +27,7 @@ import (
 )
 
 const certmanagerVersion = "v0.10.1"
+const prometheusOperatorVersion= "0.33"
 
 // KBTestContext specified to run e2e tests
 type KBTestContext struct {
@@ -92,6 +93,19 @@ func (kc *KBTestContext) InstallCertManager() error {
 	}
 	_, err := kc.Kubectl.Apply(false, "-f", fmt.Sprintf("https://github.com/jetstack/cert-manager/releases/download/%s/cert-manager.yaml", certmanagerVersion))
 	return err
+}
+
+// InstallPrometheusOperManager installs the prometheus manager bundle.
+func (kc *KBTestContext) InstallPrometheusOperManager() error {
+	_, err := kc.Kubectl.Apply(false, "-f", fmt.Sprintf("https://raw.githubusercontent.com/coreos/prometheus-operator/release-%s/bundle.yaml", prometheusOperatorVersion))
+	return err
+}
+
+// UninstallPrometheusOperManager uninstalls the prometheus manager bundle.
+func (kc *KBTestContext) UninstallPrometheusOperManager() {
+	if _, err := kc.Kubectl.Delete(false, "-f", fmt.Sprintf("https://github.com/coreos/prometheus-operator/blob/release-%s/bundle.yaml", prometheusOperatorVersion)); err != nil {
+		fmt.Fprintf(GinkgoWriter, "error when running kubectl delete during cleaning up prometheus bundle: %v\n", err)
+	}
 }
 
 // UninstallCertManager uninstalls the cert manager bundle.

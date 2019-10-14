@@ -41,10 +41,6 @@ func (r *AuthProxyService) GetInput() (input.Input, error) {
 var AuthProxyServiceTemplate = `apiVersion: v1
 kind: Service
 metadata:
-  annotations:
-    prometheus.io/port: "8443"
-    prometheus.io/scheme: https
-    prometheus.io/scrape: "true"
   labels:
     control-plane: controller-manager
   name: controller-manager-metrics-service

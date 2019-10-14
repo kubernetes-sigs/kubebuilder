@@ -34,6 +34,7 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v2/certmanager"
 	managerv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2/manager"
 	metricsauthv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2/metricsauth"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/v2/prometheus"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v2/webhook"
 )
 
@@ -216,7 +217,6 @@ func (p *V2Project) Scaffold() error {
 		p.buildUniverse(),
 		input.Options{ProjectPath: projectInput.Path, BoilerplatePath: bpInput.Path},
 		&project.GitIgnore{},
-		&metricsauthv2.KustomizePrometheusMetricsPatch{},
 		&metricsauthv2.KustomizeAuthProxyPatch{},
 		&scaffoldv2.AuthProxyService{},
 		&project.AuthProxyRole{},
@@ -237,6 +237,8 @@ func (p *V2Project) Scaffold() error {
 		&webhook.KustomizeConfigWebhook{},
 		&webhook.Service{},
 		&webhook.InjectCAPatch{},
+		&prometheus.Kustomization{},
+		&prometheus.PrometheusServiceMonitor{},
 		&certmanager.CertManager{},
 		&certmanager.Kustomization{},
 		&certmanager.KustomizeConfig{})

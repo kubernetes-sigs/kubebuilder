@@ -40,11 +40,17 @@ var _ = Describe("kubebuilder", func() {
 
 			By("installing cert manager bundle")
 			Expect(kbc.InstallCertManager()).To(Succeed())
+
+			By("installing prometheus operator")
+			Expect(kbc.InstallPrometheusOperManager()).To(Succeed())
 		})
 
 		AfterEach(func() {
 			By("clean up created API objects during test process")
 			kbc.CleanupManifests(filepath.Join("config", "default"))
+
+			By("uninstalling prometheus manager bundle")
+			kbc.UninstallPrometheusOperManager()
 
 			By("uninstalling cert manager bundle")
 			kbc.UninstallCertManager()
@@ -104,6 +110,9 @@ var _ = Describe("kubebuilder", func() {
 			Expect(utils.UncommentCode(
 				filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 				"#- ../certmanager", "#")).To(Succeed())
+			Expect(utils.UncommentCode(
+				filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+				"#- ../prometheus", "#")).To(Succeed())
 			Expect(utils.UncommentCode(
 				filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 				"#- manager_webhook_patch.yaml", "#")).To(Succeed())
@@ -189,6 +198,20 @@ var _ = Describe("kubebuilder", func() {
 				return err
 			}, time.Minute, time.Second).Should(Succeed())
 
+			By("validate prometheus manager has provisioned the Service")
+			Eventually(func() error {
+				_, err := kbc.Kubectl.Get(
+					false,
+					"Service", "prometheus-operator")
+				return err
+			}, time.Minute, time.Second).Should(Succeed())
+
+			By("validate Service Monitor for Prometheus is applied in the namespace")
+			_, err = kbc.Kubectl.Get(
+				true,
+				"ServiceMonitor")
+			Expect(err).NotTo(HaveOccurred())
+			
 			By("validate the mutating|validating webhooks have the CA injected")
 			verifyCAInjection := func() error {
 				mwhOutput, err := kbc.Kubectl.Get(
