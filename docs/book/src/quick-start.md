@@ -4,7 +4,7 @@ This Quick Start guide will cover:
 
 - [Creating a project](#create-a-project)
 - [Creating an API](#create-an-api)
-- [Running locally](#test-it-out-locally)
+- [Running locally](#test-it-out)
 - [Running in-cluster](#run-it-on-the-cluster)
 
 ## Prerequisites
@@ -198,9 +198,9 @@ privileges or be logged in as admin. See [Prerequisites for using Kubernetes RBA
 
 ## Next Step 
 
-Now, follow up the CronJob tutorial[cronjob-tutorial] to better understand how it works by developing a demo example project. 
+Now, follow up the [CronJob tutorial][cronjob-tutorial] to better understand how it works by developing a demo example project. 
 
 [pre-rbc-gke]:https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#iam-rolebinding-bootstrap
-[cronjob-tutorial]: ../src/cronjob-tutorial/cronjob-tutorial.md
+[cronjob-tutorial]: https://book.kubebuilder.io/cronjob-tutorial/cronjob-tutorial.html
 [GOPATH-golang-docs]: https://golang.org/doc/code.html#GOPATH
 [how-to-write-go-code-golang-docs]: https://golang.org/doc/code.html 
