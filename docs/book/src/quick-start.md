@@ -198,7 +198,7 @@ privileges or be logged in as admin. See [Prerequisites for using Kubernetes RBA
 
 ## Next Step 
 
-Now, follow up the CronJob tutorial[cronjob-tutorial] to better understand how it works by developing a demo example project. 
+Now, follow up the CronJob tutorial [cronjob-tutorial] to better understand how it works by developing a demo example project. 
 
 [pre-rbc-gke]:https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#iam-rolebinding-bootstrap
 [cronjob-tutorial]: ../src/cronjob-tutorial/cronjob-tutorial.md
