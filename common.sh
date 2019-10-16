@@ -166,10 +166,13 @@ function download_vendor_archive {
   archive_name="vendor.v1.tgz"
   archive_download_url="https://storage.googleapis.com/kubebuilder-vendor/$archive_name"
   archive_path="$tmp_root/$archive_name"
-  if [ ! -f $archive_path ]; then
-    header_text "downloading vendor archive $archive_path"
-    curl -sL ${archive_download_url} -o "$archive_path"
+  header_text "checking the path $archive_path to download the $archive_name"
+  if [ -f $archive_path ]; then
+    header_text "removing file which exists"
+    rm $archive_path
   fi
+  header_text "downloading vendor archive from $archive_download_url"
+  curl -sL ${archive_download_url} -o "$archive_path"
 }
 
 function restore_go_deps {
