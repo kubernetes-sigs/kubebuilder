@@ -44,6 +44,12 @@ You can reach the maintainers of this project at:
 - [Slack](http://slack.k8s.io/)
 - [Mailing List](https://groups.google.com/forum/#!forum/kubernetes-kubebuilder)
 
+## Becoming a reviewer or approver
+
+Contributors may eventually become official reviewers or approvers in
+KubeBuilder and the related repositories.  See
+[CONTRIBUTING-ROLES.md](docs/CONTRIBUTING-ROLES.md) for more information.
+
 ## Code of conduct
 
 Participation in the Kubernetes community is governed by the [Kubernetes Code of Conduct](code-of-conduct.md).
