@@ -417,7 +417,9 @@ func init() {
 }
 
 func main() {
-	ctrl.SetLogger(zap.Logger(true))
+	ctrl.SetLogger(zap.New(func(o *zap.Options) {
+		o.Development = true
+	}))
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{Scheme: scheme})
 	if err != nil {
