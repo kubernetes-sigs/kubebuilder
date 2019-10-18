@@ -71,6 +71,8 @@
   - [Writing controller tests](./reference/writing-tests.md)
   - [Metrics](./reference/metrics.md)
 
+    - [Using envtest in integration tests](./reference/testing/envtest.md)
+
 ---
 
 [Appendix: The TODO Landing Page](./TODO.md)
