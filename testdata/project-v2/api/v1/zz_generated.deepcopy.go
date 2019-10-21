@@ -55,7 +55,7 @@ func (in *Admiral) DeepCopyObject() runtime.Object {
 func (in *AdmiralList) DeepCopyInto(out *AdmiralList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]Admiral, len(*in))
@@ -144,7 +144,7 @@ func (in *Captain) DeepCopyObject() runtime.Object {
 func (in *CaptainList) DeepCopyInto(out *CaptainList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]Captain, len(*in))
@@ -233,7 +233,7 @@ func (in *FirstMate) DeepCopyObject() runtime.Object {
 func (in *FirstMateList) DeepCopyInto(out *FirstMateList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]FirstMate, len(*in))
