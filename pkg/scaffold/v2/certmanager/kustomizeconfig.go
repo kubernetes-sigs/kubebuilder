@@ -39,17 +39,17 @@ func (p *KustomizeConfig) GetInput() (input.Input, error) {
 var kustomizeConfigTemplate = `# This configuration is for teaching kustomize how to update name ref and var substitution 
 nameReference:
 - kind: Issuer
-  group: certmanager.k8s.io
+  group: cert-manager.io
   fieldSpecs:
   - kind: Certificate
-    group: certmanager.k8s.io
+    group: cert-manager.io
     path: spec/issuerRef/name
 
 varReference:
 - kind: Certificate
-  group: certmanager.k8s.io
+  group: cert-manager.io
   path: spec/commonName
 - kind: Certificate
-  group: certmanager.k8s.io
+  group: cert-manager.io
   path: spec/dnsNames
 `

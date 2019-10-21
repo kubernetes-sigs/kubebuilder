@@ -20,10 +20,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
-	"sigs.k8s.io/kubebuilder/test/e2e/utils"
 	"strconv"
 	"strings"
 	"time"
+
+	"sigs.k8s.io/kubebuilder/test/e2e/utils"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -123,16 +124,16 @@ var _ = Describe("kubebuilder", func() {
 				`#- name: CERTIFICATE_NAMESPACE # namespace of the certificate CR
 #  objref:
 #    kind: Certificate
-#    group: certmanager.k8s.io
-#    version: v1alpha1
+#    group: cert-manager.io
+#    version: v1alpha2
 #    name: serving-cert # this name should match the one in certificate.yaml
 #  fieldref:
 #    fieldpath: metadata.namespace
 #- name: CERTIFICATE_NAME
 #  objref:
 #    kind: Certificate
-#    group: certmanager.k8s.io
-#    version: v1alpha1
+#    group: cert-manager.io
+#    version: v1alpha2
 #    name: serving-cert # this name should match the one in certificate.yaml
 #- name: SERVICE_NAMESPACE # namespace of the service
 #  objref:
@@ -211,7 +212,7 @@ var _ = Describe("kubebuilder", func() {
 				true,
 				"ServiceMonitor")
 			Expect(err).NotTo(HaveOccurred())
-			
+
 			By("validate the mutating|validating webhooks have the CA injected")
 			verifyCAInjection := func() error {
 				mwhOutput, err := kbc.Kubectl.Get(
