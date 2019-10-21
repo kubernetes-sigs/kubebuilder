@@ -27,6 +27,9 @@ import (
 type CaptainSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+
+	// Foo is an example field of Captain. Edit Captain_types.go to remove/update
+	Foo string `json:"foo,omitempty"`
 }
 
 // CaptainStatus defines the observed state of Captain

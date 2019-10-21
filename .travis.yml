@@ -12,8 +12,23 @@ os:
 go:
 - "1.12"
 
+# A build matix defines the K8s versions to use for e2e tests. Travis runs these in parrellel
 env:
+  - KIND_K8S_VERSION="v1.16.2" GOPROXY=https://proxy.golang.org/
+  - KIND_K8S_VERSION="v1.15.3" GOPROXY=https://proxy.golang.org/
+  - KIND_K8S_VERSION="v1.14.1" GOPROXY=https://proxy.golang.org/
   - GOPROXY=https://proxy.golang.org/
+# As OSX isn't running KIND e2e tests exlude it from the matrix
+matrix:
+  exclude:
+  - os: osx
+    env: KIND_K8S_VERSION="v1.16.2" GOPROXY=https://proxy.golang.org/
+  - os: osx
+    env: KIND_K8S_VERSION="v1.15.3" GOPROXY=https://proxy.golang.org/
+  - os: osx
+    env: KIND_K8S_VERSION="v1.14.1" GOPROXY=https://proxy.golang.org/
+  - os: linux
+    env: GOPROXY=https://proxy.golang.org/
 
 git:
   depth: 3
@@ -26,7 +41,7 @@ services:
 before_install:
 # NOTE: The latest version of dep requires go 1.13
 - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then mkdir -p /Users/travis/gopath/bin; fi
-- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then GO111MODULE=on scripts/install_and_setup.sh; fi
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then GO111MODULE=on scripts/install_and_setup.sh $KIND_K8S_VERSION; fi
 - GO111MODULE=on go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.2.2
 - GO111MODULE=on go get sigs.k8s.io/kustomize/kustomize/v3@v3.2.1
 

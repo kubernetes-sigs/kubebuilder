@@ -26,8 +26,8 @@ import (
 	. "github.com/onsi/ginkgo"
 )
 
-const certmanagerVersion = "v0.10.1"
-const prometheusOperatorVersion= "0.33"
+const certmanagerVersion = "v0.11.0"
+const prometheusOperatorVersion = "0.33"
 
 // KBTestContext specified to run e2e tests
 type KBTestContext struct {
@@ -88,10 +88,7 @@ func (kc *KBTestContext) InstallCertManager() error {
 	if _, err := kc.Kubectl.Command("create", "namespace", "cert-manager"); err != nil {
 		return err
 	}
-	if _, err := kc.Kubectl.Command("label", "namespace", "cert-manager", "certmanager.k8s.io/disable-validation=true"); err != nil {
-		return err
-	}
-	_, err := kc.Kubectl.Apply(false, "-f", fmt.Sprintf("https://github.com/jetstack/cert-manager/releases/download/%s/cert-manager.yaml", certmanagerVersion))
+	_, err := kc.Kubectl.Apply(false, "-f", fmt.Sprintf("https://github.com/jetstack/cert-manager/releases/download/%s/cert-manager.yaml", certmanagerVersion), "--validate=false")
 	return err
 }
 
