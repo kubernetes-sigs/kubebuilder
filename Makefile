@@ -51,7 +51,7 @@ generate: ## Update/generate all mock data. You should run this commands to upda
 
 .PHONY: generate-testdata
 generate-testdata: ## Update/generate the testdata in $GOPATH/src/sigs.k8s.io/kubebuilder
-	GO111MODULE=on ./generated_golden.sh
+	GO111MODULE=on ./generate_golden.sh
 
 .PHONY: generate-vendor
 generate-vendor: ## Update/generate the vendor by using the path $GOPATH/src/sigs.k8s.io/kubebuilder-test

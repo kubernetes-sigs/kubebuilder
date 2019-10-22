@@ -76,6 +76,7 @@ scaffold_test_project() {
 	fi
 	make all test # v2 doesn't test by default
 	rm -f Gopkg.lock
+	rm -f go.sum
 	rm -rf ./vendor
 	rm -rf ./bin
 	export GOPATH=$oldgopath
@@ -83,6 +84,8 @@ scaffold_test_project() {
 }
 
 set -e
+
+GOPROXY=https://proxy.golang.org/
 
 build_kb
 scaffold_test_project gopath/src/project 1
