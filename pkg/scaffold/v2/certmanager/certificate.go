@@ -54,8 +54,8 @@ metadata:
   namespace: system
 spec:
   # $(SERVICE_NAME) and $(SERVICE_NAMESPACE) will be substituted by kustomize
-  commonName: $(SERVICE_NAME).$(SERVICE_NAMESPACE).svc
   dnsNames:
+  - $(SERVICE_NAME).$(SERVICE_NAMESPACE).svc
   - $(SERVICE_NAME).$(SERVICE_NAMESPACE).svc.cluster.local
   issuerRef:
     kind: Issuer
