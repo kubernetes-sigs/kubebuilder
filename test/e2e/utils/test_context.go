@@ -88,9 +88,7 @@ func (kc *KBTestContext) InstallCertManager() error {
 	if _, err := kc.Kubectl.Command("create", "namespace", "cert-manager"); err != nil {
 		return err
 	}
-	if _, err := kc.Kubectl.Command("label", "namespace", "cert-manager", "cert-manager.io/disable-validation=true"); err != nil {
-		return err
-	}
+	
 	_, err := kc.Kubectl.Apply(false, "-f", fmt.Sprintf("https://github.com/jetstack/cert-manager/releases/download/%s/cert-manager.yaml", certmanagerVersion))
 	return err
 }

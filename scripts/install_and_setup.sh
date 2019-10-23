@@ -19,4 +19,4 @@ export GO111MODULE=on
 go get sigs.k8s.io/kind@v0.5.1
 
 # You can use --image flag to specify the cluster version you want, e.g --image=kindest/node:v1.13.6, the supported version are listed at https://hub.docker.com/r/kindest/node/tags
-kind create cluster --config test/kind-config.yaml --image=kindest/node:v1.14.1
+kind create cluster --config test/kind-config.yaml --image=kindest/node:v1.16.2
