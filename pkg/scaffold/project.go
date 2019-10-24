@@ -40,9 +40,9 @@ import (
 
 const (
 	// controller runtime version to be used in the project
-	controllerRuntimeVersion = "v0.2.2"
+	controllerRuntimeVersion = "v0.3.0"
 	// ControllerTools version to be used in the project
-	controllerToolsVersion = "v0.2.1"
+	controllerToolsVersion = "v0.2.2"
 )
 
 type ProjectScaffolder interface {
