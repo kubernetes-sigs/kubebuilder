@@ -73,8 +73,8 @@ information about the knights, rank, and alias fields from the validation
 example:
 
 ```go
-// +kubebuilder:printcolumn:name="Alias",type=string,JSONPATH=`.spec.alias`
-// +kubebuilder:printcolumn:name="Rank",type=integer,JSONPATH=`.spec.rank`
+// +kubebuilder:printcolumn:name="Alias",type=string,JSONPath=`.spec.alias`
+// +kubebuilder:printcolumn:name="Rank",type=integer,JSONPath=`.spec.rank`
 // +kubebuilder:printcolumn:name="Bravely Run Away",type=boolean,JSONPath=`.spec.knights[?(@ == "Sir Robin")]`,description="when danger rears its ugly head, he bravely turned his tail and fled",priority=10
 type Toy struct {
 	metav1.TypeMeta   `json:",inline"`
