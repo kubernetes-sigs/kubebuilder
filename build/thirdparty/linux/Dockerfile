@@ -25,11 +25,11 @@ ENV DEST /usr/local/kubebuilder/bin/
 RUN apk add --no-cache curl && \
     mkdir -p $DEST || echo ""
  
-RUN curl -sLO https://storage.googleapis.com/kubernetes-release/release/v1.14.1/bin/linux/amd64/kubectl && \
+RUN curl -sLO https://storage.googleapis.com/kubernetes-release/release/v1.15.5/bin/linux/amd64/kubectl && \
     chmod +x kubectl && \
     cp kubectl $DEST
 
-RUN curl -sLO https://dl.k8s.io/v1.14.1/kubernetes-server-linux-amd64.tar.gz && \
+RUN curl -sLO https://dl.k8s.io/v1.15.5/kubernetes-server-linux-amd64.tar.gz && \
     tar xzf kubernetes-server-linux-amd64.tar.gz && \
     cp kubernetes/server/bin/kube-apiserver $DEST
 
