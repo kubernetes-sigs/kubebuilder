@@ -4,3 +4,4 @@ metadata:
   name: captain-sample
 spec:
   # Add fields here
+  foo: bar

@@ -33,6 +33,11 @@ spec:
           type: object
         spec:
           description: CaptainSpec defines the desired state of Captain
+          properties:
+            foo:
+              description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+                Important: Run "make" to regenerate code after modifying this file'
+              type: string
           type: object
         status:
           description: CaptainStatus defines the observed state of Captain

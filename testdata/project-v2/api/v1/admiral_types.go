@@ -27,6 +27,7 @@ import (
 type AdmiralSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	Foo string `json:"foo,omitempty"`
 }
 
 // AdmiralStatus defines the observed state of Admiral

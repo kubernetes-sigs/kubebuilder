@@ -27,6 +27,7 @@ import (
 type FirstMateSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	Foo string `json:"foo,omitempty"`
 }
 
 // FirstMateStatus defines the observed state of FirstMate
