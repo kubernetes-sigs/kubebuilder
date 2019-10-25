@@ -14,9 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+K8S_VERSION=$1
+
 export GO111MODULE=on
 
 go get sigs.k8s.io/kind@v0.5.1
 
 # You can use --image flag to specify the cluster version you want, e.g --image=kindest/node:v1.13.6, the supported version are listed at https://hub.docker.com/r/kindest/node/tags
-kind create cluster --config test/kind-config.yaml --image=kindest/node:v1.15.3
+kind create cluster --config test/kind-config.yaml --image=kindest/node:$K8S_VERSION

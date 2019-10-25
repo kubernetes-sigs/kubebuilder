@@ -49,16 +49,16 @@ vars:
 #- name: CERTIFICATE_NAMESPACE # namespace of the certificate CR
 #  objref:
 #    kind: Certificate
-#    group: certmanager.k8s.io
-#    version: v1alpha1
+#    group: cert-manager.io
+#    version: v1alpha2
 #    name: serving-cert # this name should match the one in certificate.yaml
 #  fieldref:
 #    fieldpath: metadata.namespace
 #- name: CERTIFICATE_NAME
 #  objref:
 #    kind: Certificate
-#    group: certmanager.k8s.io
-#    version: v1alpha1
+#    group: cert-manager.io
+#    version: v1alpha2
 #    name: serving-cert # this name should match the one in certificate.yaml
 #- name: SERVICE_NAMESPACE # namespace of the service
 #  objref:
