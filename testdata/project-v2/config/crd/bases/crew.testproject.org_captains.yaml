@@ -35,8 +35,8 @@ spec:
           description: CaptainSpec defines the desired state of Captain
           properties:
             foo:
-              description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-                Important: Run "make" to regenerate code after modifying this file'
+              description: Foo is an example field of Captain. Edit Captain_types.go
+                to remove/update
               type: string
           type: object
         status:
