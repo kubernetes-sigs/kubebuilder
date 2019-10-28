@@ -18,11 +18,15 @@ package util
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
 
+	"gopkg.in/yaml.v1"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/resource"
 )
 
@@ -69,4 +73,23 @@ func GetResourceInfo(r *resource.Resource, repo, domain string) (resourcePackage
 		// TODO: need to support '--resource-pkg-path' flag for specifying resourcePath
 	}
 	return path.Join(repo, "api"), r.Group + "." + domain
+}
+
+// LoadProjectFile reads the project file and deserializes it into a Project
+func LoadProjectFile(path string) (input.ProjectFile, error) {
+	in, err := ioutil.ReadFile(path) // nolint: gosec
+	if err != nil {
+		return input.ProjectFile{}, err
+	}
+	p := input.ProjectFile{}
+	err = yaml.Unmarshal(in, &p)
+	if err != nil {
+		return input.ProjectFile{}, err
+	}
+	if p.Version == "" {
+		// older kubebuilder project does not have scaffolding version
+		// specified, so default it to Version1
+		p.Version = project.Version1
+	}
+	return p, nil
 }

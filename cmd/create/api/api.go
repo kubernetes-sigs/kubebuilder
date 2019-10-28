@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package api
 
 import (
 	"bufio"
@@ -74,7 +74,7 @@ func resourceForFlags(f *flag.FlagSet) *resource.Resource {
 
 // APICmd represents the resource command
 func (o *apiOptions) runAddAPI() {
-	dieIfNoProject()
+	util.DieIfNoProject()
 
 	switch strings.ToLower(o.pattern) {
 	case "":
@@ -126,7 +126,7 @@ func (o *apiOptions) postScaffold() error {
 	return nil
 }
 
-func newAPICommand() *cobra.Command {
+func NewAPICommand() *cobra.Command {
 	options := apiOptions{
 		apiScaffolder: scaffold.API{},
 	}
@@ -168,11 +168,4 @@ After the scaffold is written, api will run make on the project.
 	options.bindCmdFlags(apiCmd)
 
 	return apiCmd
-}
-
-// dieIfNoProject checks to make sure the command is run from a directory containing a project file.
-func dieIfNoProject() {
-	if _, err := os.Stat("PROJECT"); os.IsNotExist(err) {
-		log.Fatalf("Command must be run from a directory containing %s", "PROJECT")
-	}
 }

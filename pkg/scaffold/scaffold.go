@@ -31,7 +31,7 @@ import (
 	yaml "gopkg.in/yaml.v2"
 	"sigs.k8s.io/kubebuilder/pkg/model"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/util"
 )
 
 // Scaffold writes Templates to scaffold new files
@@ -97,25 +97,6 @@ func (s *Scaffold) setFieldsAndValidate(t input.File) error {
 	return nil
 }
 
-// LoadProjectFile reads the project file and deserializes it into a Project
-func LoadProjectFile(path string) (input.ProjectFile, error) {
-	in, err := ioutil.ReadFile(path) // nolint: gosec
-	if err != nil {
-		return input.ProjectFile{}, err
-	}
-	p := input.ProjectFile{}
-	err = yaml.Unmarshal(in, &p)
-	if err != nil {
-		return input.ProjectFile{}, err
-	}
-	if p.Version == "" {
-		// older kubebuilder project does not have scaffolding version
-		// specified, so default it to Version1
-		p.Version = project.Version1
-	}
-	return p, nil
-}
-
 // saveProjectFile saves the given ProjectFile at the given path.
 func saveProjectFile(path string, project *input.ProjectFile) error {
 	content, err := yaml.Marshal(project)
@@ -154,7 +135,7 @@ func (s *Scaffold) defaultOptions(options *input.Options) error {
 		return err
 	}
 
-	s.Project, err = LoadProjectFile(options.ProjectPath)
+	s.Project, err = util.LoadProjectFile(options.ProjectPath)
 	if !s.ProjectOptional && err != nil {
 		return err
 	}

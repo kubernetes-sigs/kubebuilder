@@ -14,36 +14,28 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package alpha
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
+	"sigs.k8s.io/kubebuilder/cmd/alpha/webhookv1"
 )
 
-func newCreateCmd() *cobra.Command {
+// NewAlphaCommand returns alpha subcommand which will be mounted
+// at the root command by the caller.
+func NewAlphaCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "create",
-		Short: "Scaffold a Kubernetes API or webhook.",
-		Long:  `Scaffold a Kubernetes API or webhook.`,
-		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("Coming soon.")
-		},
+		Use:   "alpha",
+		Short: "Expose commands which are in experimental or early stages of development",
+		Long:  `Command group for commands which are either experimental or in early stages of development`,
+		Example: `
+# scaffolds webhook server
+kubebuilder alpha webhook <params>
+`,
 	}
+
 	cmd.AddCommand(
-		newAPICommand(),
+		webhookv1.NewWebhookCmd(),
 	)
-
-	foundProject, version := getProjectVersion()
-	// It add webhook v2 command in the following 2 cases:
-	// - There are no PROJECT file found.
-	// - version == 2 is found in the PROJECT file.
-	if !foundProject || version == "2" {
-		cmd.AddCommand(
-			newWebhookV2Cmd(),
-		)
-	}
-
 	return cmd
 }

@@ -29,6 +29,9 @@ import (
 	"text/template"
 
 	"github.com/gobuffalo/flect"
+	flag "github.com/spf13/pflag"
+	sutil "sigs.k8s.io/kubebuilder/pkg/scaffold/util"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/resource"
 )
 
 // writeIfNotFound returns true if the file was created and false if it already exists
@@ -150,4 +153,34 @@ func IsProjectNotInitialized() bool {
 		}
 	}
 	return true
+}
+
+// GetProjectVersion tries to load PROJECT file and returns if the file exist
+// and the version string
+func GetProjectVersion() (bool, string) {
+	if _, err := os.Stat("PROJECT"); os.IsNotExist(err) {
+		return false, ""
+	}
+	projectInfo, err := sutil.LoadProjectFile("PROJECT")
+	if err != nil {
+		log.Fatalf("failed to read the PROJECT file: %v", err)
+	}
+	return true, projectInfo.Version
+}
+
+// DieIfNoProject checks to make sure the command is run from a directory containing a project file.
+func DieIfNoProject() {
+	if _, err := os.Stat("PROJECT"); os.IsNotExist(err) {
+		log.Fatalf("Command must be run from a directory containing %s", "PROJECT")
+	}
+}
+
+// GVKForFlags registers flags for Resource fields and returns the Resource
+func GVKForFlags(f *flag.FlagSet) *resource.Resource {
+	r := &resource.Resource{}
+	f.StringVar(&r.Group, "group", "", "resource Group")
+	f.StringVar(&r.Version, "version", "", "resource Version")
+	f.StringVar(&r.Kind, "kind", "", "resource Kind")
+	f.StringVar(&r.Resource, "resource", "", "resource Resource")
+	return r
 }

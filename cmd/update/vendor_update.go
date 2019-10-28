@@ -14,19 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package update
 
 import (
 	"log"
 
 	"github.com/spf13/cobra"
+	"sigs.k8s.io/kubebuilder/cmd/util"
 	"sigs.k8s.io/kubebuilder/pkg/model"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
 )
 
-func newVendorUpdateCmd() *cobra.Command {
+func NewVendorUpdateCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "update",
 		Short: "Update vendor dependencies",
@@ -35,7 +36,7 @@ func newVendorUpdateCmd() *cobra.Command {
 kubebuilder update vendor
 `,
 		Run: func(cmd *cobra.Command, args []string) {
-			dieIfNoProject()
+			util.DieIfNoProject()
 			err := (&scaffold.Scaffold{}).Execute(
 				&model.Universe{},
 				input.Options{},

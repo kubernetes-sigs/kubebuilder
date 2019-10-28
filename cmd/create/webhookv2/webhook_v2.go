@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package webhookv2
 
 import (
 	"fmt"
@@ -26,16 +26,18 @@ import (
 	"github.com/gobuffalo/flect"
 	"github.com/spf13/cobra"
 
+	"sigs.k8s.io/kubebuilder/cmd/util"
 	"sigs.k8s.io/kubebuilder/pkg/model"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
+	sutil "sigs.k8s.io/kubebuilder/pkg/scaffold/util"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/resource"
 	resourcev2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v2/webhook"
 )
 
-func newWebhookV2Cmd() *cobra.Command {
+func NewWebhookV2Cmd() *cobra.Command {
 	o := webhookV2Options{}
 
 	cmd := &cobra.Command{
@@ -49,9 +51,9 @@ func newWebhookV2Cmd() *cobra.Command {
 	kubebuilder create webhook --group crew --version v1 --kind FirstMate --conversion
 `,
 		Run: func(cmd *cobra.Command, args []string) {
-			dieIfNoProject()
+			util.DieIfNoProject()
 
-			projectInfo, err := scaffold.LoadProjectFile("PROJECT")
+			projectInfo, err := sutil.LoadProjectFile("PROJECT")
 			if err != nil {
 				log.Fatalf("failed to read the PROJECT file: %v", err)
 			}
@@ -107,7 +109,7 @@ You need to implement the conversion.Hub and conversion.Convertible interfaces f
 
 		},
 	}
-	o.res = gvkForFlags(cmd.Flags())
+	o.res = util.GVKForFlags(cmd.Flags())
 	cmd.Flags().BoolVar(&o.defaulting, "defaulting", false,
 		"if set, scaffold the defaulting webhook")
 	cmd.Flags().BoolVar(&o.validation, "programmatic-validation", false,

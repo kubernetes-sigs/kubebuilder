@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package webhookv1
 
 import (
 	"fmt"
@@ -25,18 +25,19 @@ import (
 
 	"github.com/gobuffalo/flect"
 	"github.com/spf13/cobra"
-	flag "github.com/spf13/pflag"
 
+	"sigs.k8s.io/kubebuilder/cmd/util"
 	"sigs.k8s.io/kubebuilder/pkg/model"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
+	sutil "sigs.k8s.io/kubebuilder/pkg/scaffold/util"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/manager"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/webhook"
 )
 
-func newWebhookCmd() *cobra.Command {
+func NewWebhookCmd() *cobra.Command {
 	o := webhookOptions{}
 
 	cmd := &cobra.Command{
@@ -51,9 +52,9 @@ This command is only available for v1 scaffolding project.
 	kubebuilder alpha webhook --group crew --version v1 --kind FirstMate --type=mutating --operations=create,update
 `,
 		Run: func(cmd *cobra.Command, args []string) {
-			dieIfNoProject()
+			util.DieIfNoProject()
 
-			projectInfo, err := scaffold.LoadProjectFile("PROJECT")
+			projectInfo, err := sutil.LoadProjectFile("PROJECT")
 			if err != nil {
 				log.Fatalf("failed to read the PROJECT file: %v", err)
 			}
@@ -103,7 +104,7 @@ This command is only available for v1 scaffolding project.
 		"the operations that the webhook will intercept, e.g. create, update, delete and connect")
 	cmd.Flags().BoolVar(&o.doMake, "make", true,
 		"if true, run make after generating files")
-	o.res = gvkForFlags(cmd.Flags())
+	o.res = util.GVKForFlags(cmd.Flags())
 	return cmd
 }
 
@@ -114,14 +115,4 @@ type webhookOptions struct {
 	server      string
 	webhookType string
 	doMake      bool
-}
-
-// gvkForFlags registers flags for Resource fields and returns the Resource
-func gvkForFlags(f *flag.FlagSet) *resource.Resource {
-	r := &resource.Resource{}
-	f.StringVar(&r.Group, "group", "", "resource Group")
-	f.StringVar(&r.Version, "version", "", "resource Version")
-	f.StringVar(&r.Kind, "kind", "", "resource Kind")
-	f.StringVar(&r.Resource, "resource", "", "resource Resource")
-	return r
 }

@@ -72,7 +72,7 @@ func (api *API) Validate() error {
 
 func (api *API) setDefaults() error {
 	if api.project == nil {
-		p, err := LoadProjectFile("PROJECT")
+		p, err := util.LoadProjectFile("PROJECT")
 		if err != nil {
 			return err
 		}
