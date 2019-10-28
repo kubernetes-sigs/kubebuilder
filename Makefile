@@ -60,7 +60,7 @@ generate-vendor: ## Update/generate the vendor by using the path $GOPATH/src/sig
 .PHONY: generate-setup
 generate-setup: ## Current workarround to generate the testdata with the correct controller-gen version
 	- rm -rf $(CONTROLLER_GEN_BIN_PATH)
-	- GO111MODULE=on go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.2.1
+	- GO111MODULE=on go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.2.2
 
 ##@ Tests
 
