@@ -63,13 +63,13 @@ func (m *Main) Update(opts *MainUpdateOptions) error {
 	addschemeCodeFragment := fmt.Sprintf(`_ = %s%s.AddToScheme(scheme)
 `, opts.Resource.GroupImportSafe, opts.Resource.Version)
 	reconcilerSetupCodeFragment := fmt.Sprintf(`if err = (&controllers.%sReconciler{
-	 	Client: mgr.GetClient(),
-        Log: ctrl.Log.WithName("controllers").WithName("%s"),
-        Scheme: mgr.GetScheme(),  
+		Client: mgr.GetClient(),
+		Log: ctrl.Log.WithName("controllers").WithName("%s"),
+		Scheme: mgr.GetScheme(),  
 	}).SetupWithManager(mgr); err != nil {
-	 	setupLog.Error(err, "unable to create controller", "controller", "%s")
-	 	os.Exit(1)
-    }
+		setupLog.Error(err, "unable to create controller", "controller", "%s")
+		os.Exit(1)
+	}
 `, opts.Resource.Kind, opts.Resource.Kind, opts.Resource.Kind)
 	webhookSetupCodeFragment := fmt.Sprintf(`if err = (&%s%s.%s{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create webhook", "webhook", "%s")
@@ -130,14 +130,13 @@ package main
 
 import (
 	"flag"
-    "os"
+	"os"
 
+	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
-    ctrl "sigs.k8s.io/controller-runtime"
-    "sigs.k8s.io/controller-runtime/pkg/log/zap"
-    "k8s.io/apimachinery/pkg/runtime"
-
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	%s
 )
@@ -175,7 +174,6 @@ func main() {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
-
 
 	%s
 
