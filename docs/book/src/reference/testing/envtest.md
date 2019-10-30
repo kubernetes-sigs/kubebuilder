@@ -3,7 +3,7 @@
 
 Using `envtest` in integration tests follows the general flow of:
 
-```
+```go
 import sigs.k8s.io/controller-runtime/pkg/envtest
 
 //specify testEnv configuration
@@ -41,13 +41,14 @@ You can use environment variables and/or flags to specify the `api-server` and `
 #### Flags
 Here's an example of modifying the flags with which to start the API server in your integration tests, compared to the default values in `envtest.DefaultKubeAPIServerFlags`:
 
-```
+```go
 customApiServerFlags := []string{
 	"--secure-port=6884",
 	"--admission-control=MutatingAdmissionWebhook",
 }
 
-apiServerFlags := append(envtest.DefaultKubeAPIServerFlags, customApiServerFlags)
+apiServerFlags := append([]string(nil), envtest.DefaultKubeAPIServerFlags...)
+apiServerFlags = append(apiServerFlags, customApiServerFlags...)
 
 testEnv = &envtest.Environment{
 	CRDDirectoryPaths: []string{filepath.Join("..", "config", "crd", "bases")},
