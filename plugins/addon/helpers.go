@@ -16,21 +16,24 @@ import (
 
 type PluginFunc func(u *model.Universe) error
 
-// AddFile adds the specified file to the model, returning a file if the file already exists
-func AddFile(u *model.Universe, add *model.File) error {
+// AddFile adds the specified file to the model.
+// If the file exists the function returns false and does not modify the Universe
+// If the file does not exist, the function returns true and adds the file to the Universe
+// If there is a problem with the file the function returns an error
+func AddFile(u *model.Universe, add *model.File) (bool, error) {
 	p := add.Path
 	if p == "" {
-		return fmt.Errorf("path must be set")
+		return false, fmt.Errorf("path must be set")
 	}
 
 	for _, f := range u.Files {
 		if f.Path == p {
-			return fmt.Errorf("file already exists at path %q", p)
+			return false, nil
 		}
 	}
 
 	u.Files = append(u.Files, add)
-	return nil
+	return true, nil
 }
 
 // ReplaceFileIfExists replaces the specified file in the model by path
