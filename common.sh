@@ -152,7 +152,10 @@ function fetch_kind {
   header_text "Checking for kind"
   if ! is_installed kind ; then
     header_text "Installing kind"
+    KIND_DIR=$(mktemp -d)
+    pushd $KIND_DIR
     GO111MODULE=on go get sigs.k8s.io/kind@v0.5.1
+    popd
   fi
 }
 
