@@ -1,3 +1,3 @@
 module sigs.k8s.io/kubebuilder/docs/book/utils
 
-go 1.12
+go 1.13

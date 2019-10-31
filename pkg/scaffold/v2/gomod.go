@@ -41,7 +41,7 @@ func (g *GoMod) GetInput() (input.Input, error) {
 var goModTemplate = `
 module {{ .Repo }}
 
-go 1.12
+go 1.13
 
 require (
 	sigs.k8s.io/controller-runtime {{ .ControllerRuntimeVersion }}

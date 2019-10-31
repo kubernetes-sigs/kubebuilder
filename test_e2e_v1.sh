@@ -20,6 +20,7 @@ set -o pipefail
 source common.sh
 
 fetch_tools
+install_go_dep
 build_kb
 
 setup_envs
