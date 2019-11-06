@@ -21,6 +21,7 @@ import (
 	"path/filepath"
 
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 )
 
 var _ input.File = &TypesTest{}
@@ -30,7 +31,7 @@ type VersionSuiteTest struct {
 	input.Input
 
 	// Resource is the resource to scaffold the types_test.go file for
-	Resource *Resource
+	Resource *resource.Resource
 }
 
 // GetInput implements input.File

@@ -20,6 +20,7 @@ import (
 	"path/filepath"
 
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 )
 
 var _ input.File = &Doc{}
@@ -29,7 +30,7 @@ type Doc struct {
 	input.Input
 
 	// Resource is a resource for the API version
-	Resource *Resource
+	Resource *resource.Resource
 
 	// Comments are additional lines to write to the doc.go file
 	Comments []string
