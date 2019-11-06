@@ -21,6 +21,7 @@ import (
 	"path/filepath"
 
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 )
 
 var _ input.File = &AddToScheme{}
@@ -30,7 +31,7 @@ type AddToScheme struct {
 	input.Input
 
 	// Resource is a resource in the API group
-	Resource *Resource
+	Resource *resource.Resource
 }
 
 // GetInput implements input.File

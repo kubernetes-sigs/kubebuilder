@@ -30,8 +30,8 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/resource"
-	resourcev2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
+	scaffoldv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v2/webhook"
 )
 
@@ -92,8 +92,8 @@ You need to implement the conversion.Hub and conversion.Convertible interfaces f
 				os.Exit(1)
 			}
 
-			err = (&resourcev2.Main{}).Update(
-				&resourcev2.MainUpdateOptions{
+			err = (&scaffoldv2.Main{}).Update(
+				&scaffoldv2.MainUpdateOptions{
 					Project:        &projectInfo,
 					WireResource:   false,
 					WireController: false,

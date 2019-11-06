@@ -24,7 +24,7 @@ import (
 	"github.com/gobuffalo/flect"
 
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/resource"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 )
 
 // EnableWebhookPatch scaffolds a EnableWebhookPatch for a Resource

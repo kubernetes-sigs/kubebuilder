@@ -23,8 +23,8 @@ import (
 
 	"github.com/gobuffalo/flect"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/util"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v2/internal"
 )
 
