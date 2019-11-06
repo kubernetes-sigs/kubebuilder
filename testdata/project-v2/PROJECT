@@ -1,13 +1,13 @@
-version: "2"
 domain: testproject.org
 repo: sigs.k8s.io/kubebuilder/testdata/project-v2
 resources:
 - group: crew
-  version: v1
   kind: Captain
-- group: crew
   version: v1
+- group: crew
   kind: FirstMate
-- group: crew
   version: v1
+- group: crew
   kind: Admiral
+  version: v1
+version: "2"
