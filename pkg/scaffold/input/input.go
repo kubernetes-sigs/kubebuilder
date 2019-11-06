@@ -162,17 +162,17 @@ type Options struct {
 // ProjectFile is deserialized into a PROJECT file
 type ProjectFile struct {
 	// Version is the project version - defaults to "1"
-	Version string `yaml:"version,omitempty"`
+	Version string `json:"version,omitempty"`
 
 	// Domain is the domain associated with the project and used for API groups
-	Domain string `yaml:"domain,omitempty"`
+	Domain string `json:"domain,omitempty"`
 
 	// Repo is the go package name of the project root
-	Repo string `yaml:"repo,omitempty"`
+	Repo string `json:"repo,omitempty"`
 
 	// Resources tracks scaffolded resources in the project. This info is
 	// tracked only in project with version 2.
-	Resources []Resource `yaml:"resources,omitempty"`
+	Resources []Resource `json:"resources,omitempty"`
 }
 
 // ResourceGroups returns unique groups of scaffolded resources in the project.
@@ -191,7 +191,7 @@ func (pf *ProjectFile) ResourceGroups() []string {
 
 // Resource contains information about scaffolded resources.
 type Resource struct {
-	Group   string `yaml:"group,omitempty"`
-	Version string `yaml:"version,omitempty"`
-	Kind    string `yaml:"kind,omitempty"`
+	Group   string `json:"group,omitempty"`
+	Version string `json:"version,omitempty"`
+	Kind    string `json:"kind,omitempty"`
 }
