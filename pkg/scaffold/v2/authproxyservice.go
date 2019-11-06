@@ -30,12 +30,12 @@ type AuthProxyService struct {
 }
 
 // GetInput implements input.File
-func (r *AuthProxyService) GetInput() (input.Input, error) {
-	if r.Path == "" {
-		r.Path = filepath.Join("config", "rbac", "auth_proxy_service.yaml")
+func (f *AuthProxyService) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = filepath.Join("config", "rbac", "auth_proxy_service.yaml")
 	}
-	r.TemplateBody = AuthProxyServiceTemplate
-	return r.Input, nil
+	f.TemplateBody = AuthProxyServiceTemplate
+	return f.Input, nil
 }
 
 const AuthProxyServiceTemplate = `apiVersion: v1

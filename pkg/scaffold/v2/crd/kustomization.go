@@ -45,29 +45,29 @@ type Kustomization struct {
 }
 
 // GetInput implements input.File
-func (c *Kustomization) GetInput() (input.Input, error) {
-	if c.Path == "" {
-		c.Path = filepath.Join("config", "crd", "kustomization.yaml")
+func (f *Kustomization) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = filepath.Join("config", "crd", "kustomization.yaml")
 	}
-	c.TemplateBody = kustomizationTemplate
-	c.Input.IfExistsAction = input.Error
-	return c.Input, nil
+	f.TemplateBody = kustomizationTemplate
+	f.Input.IfExistsAction = input.Error
+	return f.Input, nil
 }
 
-func (c *Kustomization) Update() error {
-	if c.Path == "" {
-		c.Path = filepath.Join("config", "crd", "kustomization.yaml")
+func (f *Kustomization) Update() error {
+	if f.Path == "" {
+		f.Path = filepath.Join("config", "crd", "kustomization.yaml")
 	}
 
 	// TODO(directxman12): not technically valid if something changes from the default
 	// (we'd need to parse the markers)
-	plural := flect.Pluralize(strings.ToLower(c.Resource.Kind))
+	plural := flect.Pluralize(strings.ToLower(f.Resource.Kind))
 
-	kustomizeResourceCodeFragment := fmt.Sprintf("- bases/%s.%s_%s.yaml\n", c.Resource.Group, c.Domain, plural)
+	kustomizeResourceCodeFragment := fmt.Sprintf("- bases/%s.%s_%s.yaml\n", f.Resource.Group, f.Domain, plural)
 	kustomizeWebhookPatchCodeFragment := fmt.Sprintf("#- patches/webhook_in_%s.yaml\n", plural)
 	kustomizeCAInjectionPatchCodeFragment := fmt.Sprintf("#- patches/cainjection_in_%s.yaml\n", plural)
 
-	return internal.InsertStringsInFile(c.Path,
+	return internal.InsertStringsInFile(f.Path,
 		map[string][]string{
 			kustomizeResourceScaffoldMarker:         {kustomizeResourceCodeFragment},
 			kustomizeWebhookPatchScaffoldMarker:     {kustomizeWebhookPatchCodeFragment},

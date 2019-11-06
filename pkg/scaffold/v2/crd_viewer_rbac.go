@@ -36,18 +36,18 @@ type CRDViewerRole struct {
 }
 
 // GetInput implements input.File
-func (g *CRDViewerRole) GetInput() (input.Input, error) {
-	if g.Path == "" {
-		g.Path = filepath.Join("config", "rbac", fmt.Sprintf("%s_viewer_role.yaml", strings.ToLower(g.Resource.Kind)))
+func (f *CRDViewerRole) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = filepath.Join("config", "rbac", fmt.Sprintf("%s_viewer_role.yaml", strings.ToLower(f.Resource.Kind)))
 	}
 
-	g.TemplateBody = crdRoleViewerTemplate
-	return g.Input, nil
+	f.TemplateBody = crdRoleViewerTemplate
+	return f.Input, nil
 }
 
 // Validate validates the values
-func (g *CRDViewerRole) Validate() error {
-	return g.Resource.Validate()
+func (f *CRDViewerRole) Validate() error {
+	return f.Resource.Validate()
 }
 
 const crdRoleViewerTemplate = `# permissions for end users to view {{ .Resource.Resource }}.

@@ -30,12 +30,12 @@ type Webhook struct {
 }
 
 // GetInput implements input.File
-func (c *Webhook) GetInput() (input.Input, error) {
-	if c.Path == "" {
-		c.Path = filepath.Join("pkg", "webhook", "webhook.go")
+func (f *Webhook) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = filepath.Join("pkg", "webhook", "webhook.go")
 	}
-	c.TemplateBody = webhookTemplate
-	return c.Input, nil
+	f.TemplateBody = webhookTemplate
+	return f.Input, nil
 }
 
 const webhookTemplate = `{{ .Boilerplate }}

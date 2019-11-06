@@ -30,12 +30,12 @@ type CertManager struct {
 }
 
 // GetInput implements input.File
-func (p *CertManager) GetInput() (input.Input, error) {
-	if p.Path == "" {
-		p.Path = filepath.Join("config", "certmanager", "certificate.yaml")
+func (f *CertManager) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = filepath.Join("config", "certmanager", "certificate.yaml")
 	}
-	p.TemplateBody = certManagerTemplate
-	return p.Input, nil
+	f.TemplateBody = certManagerTemplate
+	return f.Input, nil
 }
 
 const certManagerTemplate = `# The following manifests contain a self-signed issuer CR and a certificate CR.

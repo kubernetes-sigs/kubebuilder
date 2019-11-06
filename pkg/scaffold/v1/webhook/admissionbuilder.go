@@ -47,29 +47,29 @@ type AdmissionWebhookBuilder struct {
 }
 
 // GetInput implements input.File
-func (a *AdmissionWebhookBuilder) GetInput() (input.Input, error) {
-	a.ResourcePackage = getResourceInfo(coreGroups, a.Resource, a.Input)
+func (f *AdmissionWebhookBuilder) GetInput() (input.Input, error) {
+	f.ResourcePackage = getResourceInfo(coreGroups, f.Resource, f.Input)
 
-	if a.Type == "mutating" {
-		a.Mutating = true
+	if f.Type == "mutating" {
+		f.Mutating = true
 	}
-	a.Type = strings.ToLower(a.Type)
-	a.BuilderName = builderName(a.Config, strings.ToLower(a.Resource.Kind))
-	ops := make([]string, len(a.Operations))
-	for i, op := range a.Operations {
+	f.Type = strings.ToLower(f.Type)
+	f.BuilderName = builderName(f.Config, strings.ToLower(f.Resource.Kind))
+	ops := make([]string, len(f.Operations))
+	for i, op := range f.Operations {
 		ops[i] = "admissionregistrationv1beta1." + strings.Title(op)
 	}
-	a.OperationsParameterString = strings.Join(ops, ", ")
+	f.OperationsParameterString = strings.Join(ops, ", ")
 
-	if a.Path == "" {
-		a.Path = filepath.Join("pkg", "webhook",
-			fmt.Sprintf("%s_server", a.Server),
-			strings.ToLower(a.Resource.Kind),
-			a.Type,
-			fmt.Sprintf("%s_webhook.go", strings.Join(a.Operations, "_")))
+	if f.Path == "" {
+		f.Path = filepath.Join("pkg", "webhook",
+			fmt.Sprintf("%s_server", f.Server),
+			strings.ToLower(f.Resource.Kind),
+			f.Type,
+			fmt.Sprintf("%s_webhook.go", strings.Join(f.Operations, "_")))
 	}
-	a.TemplateBody = admissionWebhookBuilderTemplate
-	return a.Input, nil
+	f.TemplateBody = admissionWebhookBuilderTemplate
+	return f.Input, nil
 }
 
 const admissionWebhookBuilderTemplate = `{{ .Boilerplate }}

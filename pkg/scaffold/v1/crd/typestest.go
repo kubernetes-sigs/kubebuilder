@@ -36,19 +36,19 @@ type TypesTest struct {
 }
 
 // GetInput implements input.File
-func (t *TypesTest) GetInput() (input.Input, error) {
-	if t.Path == "" {
-		t.Path = filepath.Join("pkg", "apis", t.Resource.Group, t.Resource.Version,
-			fmt.Sprintf("%s_types_test.go", strings.ToLower(t.Resource.Kind)))
+func (f *TypesTest) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = filepath.Join("pkg", "apis", f.Resource.Group, f.Resource.Version,
+			fmt.Sprintf("%s_types_test.go", strings.ToLower(f.Resource.Kind)))
 	}
-	t.TemplateBody = typesTestTemplate
-	t.IfExistsAction = input.Error
-	return t.Input, nil
+	f.TemplateBody = typesTestTemplate
+	f.IfExistsAction = input.Error
+	return f.Input, nil
 }
 
 // Validate validates the values
-func (t *TypesTest) Validate() error {
-	return t.Resource.Validate()
+func (f *TypesTest) Validate() error {
+	return f.Resource.Validate()
 }
 
 const typesTestTemplate = `{{ .Boilerplate }}

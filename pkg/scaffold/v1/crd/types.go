@@ -36,19 +36,19 @@ type Types struct {
 }
 
 // GetInput implements input.File
-func (t *Types) GetInput() (input.Input, error) {
-	if t.Path == "" {
-		t.Path = filepath.Join("pkg", "apis", t.Resource.GroupImportSafe, t.Resource.Version,
-			fmt.Sprintf("%s_types.go", strings.ToLower(t.Resource.Kind)))
+func (f *Types) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = filepath.Join("pkg", "apis", f.Resource.GroupImportSafe, f.Resource.Version,
+			fmt.Sprintf("%s_types.go", strings.ToLower(f.Resource.Kind)))
 	}
-	t.TemplateBody = typesTemplate
-	t.IfExistsAction = input.Error
-	return t.Input, nil
+	f.TemplateBody = typesTemplate
+	f.IfExistsAction = input.Error
+	return f.Input, nil
 }
 
 // Validate validates the values
-func (t *Types) Validate() error {
-	return t.Resource.Validate()
+func (f *Types) Validate() error {
+	return f.Resource.Validate()
 }
 
 const typesTemplate = `{{ .Boilerplate }}

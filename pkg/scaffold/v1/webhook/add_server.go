@@ -33,12 +33,12 @@ type AddServer struct {
 }
 
 // GetInput implements input.File
-func (a *AddServer) GetInput() (input.Input, error) {
-	if a.Path == "" {
-		a.Path = filepath.Join("pkg", "webhook", fmt.Sprintf("add_%s_server.go", a.Server))
+func (f *AddServer) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = filepath.Join("pkg", "webhook", fmt.Sprintf("add_%s_server.go", f.Server))
 	}
-	a.TemplateBody = addServerTemplate
-	return a.Input, nil
+	f.TemplateBody = addServerTemplate
+	return f.Input, nil
 }
 
 const addServerTemplate = `{{ .Boilerplate }}

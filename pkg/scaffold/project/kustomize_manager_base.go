@@ -30,13 +30,13 @@ type KustomizeManager struct {
 }
 
 // GetInput implements input.File
-func (c *KustomizeManager) GetInput() (input.Input, error) {
-	if c.Path == "" {
-		c.Path = filepath.Join("config", "manager", "kustomization.yaml")
+func (f *KustomizeManager) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = filepath.Join("config", "manager", "kustomization.yaml")
 	}
-	c.TemplateBody = kustomizeManagerTemplate
-	c.Input.IfExistsAction = input.Error
-	return c.Input, nil
+	f.TemplateBody = kustomizeManagerTemplate
+	f.Input.IfExistsAction = input.Error
+	return f.Input, nil
 }
 
 const kustomizeManagerTemplate = `resources:

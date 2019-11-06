@@ -30,12 +30,12 @@ type Cmd struct {
 }
 
 // GetInput implements input.File
-func (a *Cmd) GetInput() (input.Input, error) {
-	if a.Path == "" {
-		a.Path = filepath.Join("cmd", "manager", "main.go")
+func (f *Cmd) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = filepath.Join("cmd", "manager", "main.go")
 	}
-	a.TemplateBody = cmdTemplate
-	return a.Input, nil
+	f.TemplateBody = cmdTemplate
+	return f.Input, nil
 }
 
 const cmdTemplate = `{{ .Boilerplate }}

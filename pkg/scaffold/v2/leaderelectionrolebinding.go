@@ -30,12 +30,12 @@ type LeaderElectionRoleBinding struct {
 }
 
 // GetInput implements input.File
-func (r *LeaderElectionRoleBinding) GetInput() (input.Input, error) {
-	if r.Path == "" {
-		r.Path = filepath.Join("config", "rbac", "leader_election_role_binding.yaml")
+func (f *LeaderElectionRoleBinding) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = filepath.Join("config", "rbac", "leader_election_role_binding.yaml")
 	}
-	r.TemplateBody = leaderElectionRoleBindingTemplate
-	return r.Input, nil
+	f.TemplateBody = leaderElectionRoleBindingTemplate
+	return f.Input, nil
 }
 
 const leaderElectionRoleBindingTemplate = `apiVersion: rbac.authorization.k8s.io/v1

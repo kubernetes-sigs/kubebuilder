@@ -30,13 +30,13 @@ type KustomizeConfig struct {
 }
 
 // GetInput implements input.File
-func (c *KustomizeConfig) GetInput() (input.Input, error) {
-	if c.Path == "" {
-		c.Path = filepath.Join("config", "crd", "kustomizeconfig.yaml")
+func (f *KustomizeConfig) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = filepath.Join("config", "crd", "kustomizeconfig.yaml")
 	}
-	c.TemplateBody = kustomizeConfigTemplate
-	c.Input.IfExistsAction = input.Error
-	return c.Input, nil
+	f.TemplateBody = kustomizeConfigTemplate
+	f.Input.IfExistsAction = input.Error
+	return f.Input, nil
 }
 
 const kustomizeConfigTemplate = `# This file is for teaching kustomize how to substitute name and namespace reference in CRD

@@ -30,12 +30,12 @@ type Controller struct {
 }
 
 // GetInput implements input.File
-func (c *Controller) GetInput() (input.Input, error) {
-	if c.Path == "" {
-		c.Path = filepath.Join("pkg", "controller", "controller.go")
+func (f *Controller) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = filepath.Join("pkg", "controller", "controller.go")
 	}
-	c.TemplateBody = controllerTemplate
-	return c.Input, nil
+	f.TemplateBody = controllerTemplate
+	return f.Input, nil
 }
 
 const controllerTemplate = `{{ .Boilerplate }}

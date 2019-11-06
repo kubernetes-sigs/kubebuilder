@@ -34,17 +34,17 @@ type Group struct {
 }
 
 // GetInput implements input.File
-func (g *Group) GetInput() (input.Input, error) {
-	if g.Path == "" {
-		g.Path = filepath.Join("pkg", "apis", g.Resource.Group, "group.go")
+func (f *Group) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = filepath.Join("pkg", "apis", f.Resource.Group, "group.go")
 	}
-	g.TemplateBody = groupTemplate
-	return g.Input, nil
+	f.TemplateBody = groupTemplate
+	return f.Input, nil
 }
 
 // Validate validates the values
-func (g *Group) Validate() error {
-	return g.Resource.Validate()
+func (f *Group) Validate() error {
+	return f.Resource.Validate()
 }
 
 const groupTemplate = `{{ .Boilerplate }}

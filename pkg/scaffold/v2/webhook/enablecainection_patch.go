@@ -30,13 +30,13 @@ type InjectCAPatch struct {
 }
 
 // GetInput implements input.File
-func (c *InjectCAPatch) GetInput() (input.Input, error) {
-	if c.Path == "" {
-		c.Path = filepath.Join("config", "default", "webhookcainjection_patch.yaml")
+func (f *InjectCAPatch) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = filepath.Join("config", "default", "webhookcainjection_patch.yaml")
 	}
-	c.TemplateBody = injectCAPatchTemplate
-	c.Input.IfExistsAction = input.Error
-	return c.Input, nil
+	f.TemplateBody = injectCAPatchTemplate
+	f.Input.IfExistsAction = input.Error
+	return f.Input, nil
 }
 
 const injectCAPatchTemplate = `# This patch add annotation to admission webhook config and

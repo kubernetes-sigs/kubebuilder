@@ -41,21 +41,21 @@ var deepCopy = strings.Join([]string{
 	"-i ./..."}, " ")
 
 // GetInput implements input.File
-func (a *APIs) GetInput() (input.Input, error) {
-	if a.Path == "" {
-		a.Path = filepath.Join("pkg", "apis", "apis.go")
+func (f *APIs) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = filepath.Join("pkg", "apis", "apis.go")
 	}
 
-	b, err := filepath.Rel(filepath.Join(a.Input.ProjectPath, "pkg", "apis"), a.BoilerplatePath)
+	relPath, err := filepath.Rel(filepath.Join(f.Input.ProjectPath, "pkg", "apis"), f.BoilerplatePath)
 	if err != nil {
 		return input.Input{}, err
 	}
-	if len(a.Comments) == 0 {
-		a.Comments = append(a.Comments,
-			"// Generate deepcopy for apis", fmt.Sprintf("%s -h %s", deepCopy, filepath.ToSlash(b)))
+	if len(f.Comments) == 0 {
+		f.Comments = append(f.Comments,
+			"// Generate deepcopy for apis", fmt.Sprintf("%s -h %s", deepCopy, filepath.ToSlash(relPath)))
 	}
-	a.TemplateBody = apisTemplate
-	return a.Input, nil
+	f.TemplateBody = apisTemplate
+	return f.Input, nil
 }
 
 const apisTemplate = `{{ .Boilerplate }}

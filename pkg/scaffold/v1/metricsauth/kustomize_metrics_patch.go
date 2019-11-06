@@ -31,13 +31,13 @@ type KustomizePrometheusMetricsPatch struct {
 }
 
 // GetInput implements input.File
-func (c *KustomizePrometheusMetricsPatch) GetInput() (input.Input, error) {
-	if c.Path == "" {
-		c.Path = filepath.Join("config", "default", "manager_prometheus_metrics_patch.yaml")
+func (f *KustomizePrometheusMetricsPatch) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = filepath.Join("config", "default", "manager_prometheus_metrics_patch.yaml")
 	}
-	c.TemplateBody = kustomizePrometheusMetricsPatchTemplate
-	c.Input.IfExistsAction = input.Error
-	return c.Input, nil
+	f.TemplateBody = kustomizePrometheusMetricsPatchTemplate
+	f.Input.IfExistsAction = input.Error
+	return f.Input, nil
 }
 
 const kustomizePrometheusMetricsPatchTemplate = `# This patch enables Prometheus scraping for the manager pod.

@@ -38,17 +38,17 @@ type AdmissionWebhooks struct {
 }
 
 // GetInput implements input.File
-func (a *AdmissionWebhooks) GetInput() (input.Input, error) {
-	a.Server = strings.ToLower(a.Server)
-	a.Type = strings.ToLower(a.Type)
-	if a.Path == "" {
-		a.Path = filepath.Join("pkg", "webhook",
-			fmt.Sprintf("%s_server", a.Server),
-			strings.ToLower(a.Resource.Kind),
-			a.Type, "webhooks.go")
+func (f *AdmissionWebhooks) GetInput() (input.Input, error) {
+	f.Server = strings.ToLower(f.Server)
+	f.Type = strings.ToLower(f.Type)
+	if f.Path == "" {
+		f.Path = filepath.Join("pkg", "webhook",
+			fmt.Sprintf("%s_server", f.Server),
+			strings.ToLower(f.Resource.Kind),
+			f.Type, "webhooks.go")
 	}
-	a.TemplateBody = webhooksTemplate
-	return a.Input, nil
+	f.TemplateBody = webhooksTemplate
+	return f.Input, nil
 }
 
 const webhooksTemplate = `{{ .Boilerplate }}
