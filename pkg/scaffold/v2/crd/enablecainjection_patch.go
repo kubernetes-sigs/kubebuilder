@@ -36,19 +36,19 @@ type EnableCAInjectionPatch struct {
 }
 
 // GetInput implements input.File
-func (p *EnableCAInjectionPatch) GetInput() (input.Input, error) {
-	if p.Path == "" {
-		plural := flect.Pluralize(strings.ToLower(p.Resource.Kind))
-		p.Path = filepath.Join("config", "crd", "patches",
+func (f *EnableCAInjectionPatch) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		plural := flect.Pluralize(strings.ToLower(f.Resource.Kind))
+		f.Path = filepath.Join("config", "crd", "patches",
 			fmt.Sprintf("cainjection_in_%s.yaml", plural))
 	}
-	p.TemplateBody = EnableCAInjectionPatchTemplate
-	return p.Input, nil
+	f.TemplateBody = EnableCAInjectionPatchTemplate
+	return f.Input, nil
 }
 
 // Validate validates the values
-func (g *EnableCAInjectionPatch) Validate() error {
-	return g.Resource.Validate()
+func (f *EnableCAInjectionPatch) Validate() error {
+	return f.Resource.Validate()
 }
 
 const EnableCAInjectionPatchTemplate = `# The following patch adds a directive for certmanager to inject CA into the CRD

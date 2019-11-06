@@ -34,16 +34,16 @@ type KustomizeImagePatch struct {
 }
 
 // GetInput implements input.File
-func (c *KustomizeImagePatch) GetInput() (input.Input, error) {
-	if c.Path == "" {
-		c.Path = filepath.Join("config", "default", "manager_image_patch.yaml")
+func (f *KustomizeImagePatch) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = filepath.Join("config", "default", "manager_image_patch.yaml")
 	}
-	if c.ImageURL == "" {
-		c.ImageURL = "IMAGE_URL"
+	if f.ImageURL == "" {
+		f.ImageURL = "IMAGE_URL"
 	}
-	c.TemplateBody = kustomizeImagePatchTemplate
-	c.Input.IfExistsAction = input.Error
-	return c.Input, nil
+	f.TemplateBody = kustomizeImagePatchTemplate
+	f.Input.IfExistsAction = input.Error
+	return f.Input, nil
 }
 
 const kustomizeImagePatchTemplate = `apiVersion: apps/v1

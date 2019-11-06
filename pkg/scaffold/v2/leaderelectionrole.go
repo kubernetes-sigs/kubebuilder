@@ -30,12 +30,12 @@ type LeaderElectionRole struct {
 }
 
 // GetInput implements input.File
-func (r *LeaderElectionRole) GetInput() (input.Input, error) {
-	if r.Path == "" {
-		r.Path = filepath.Join("config", "rbac", "leader_election_role.yaml")
+func (f *LeaderElectionRole) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = filepath.Join("config", "rbac", "leader_election_role.yaml")
 	}
-	r.TemplateBody = leaderElectionRoleTemplate
-	return r.Input, nil
+	f.TemplateBody = leaderElectionRoleTemplate
+	return f.Input, nil
 }
 
 const leaderElectionRoleTemplate = `# permissions to do leader election.

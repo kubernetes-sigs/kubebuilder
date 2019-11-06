@@ -28,12 +28,12 @@ type PrometheusServiceMonitor struct {
 }
 
 // GetInput implements input.File
-func (p *PrometheusServiceMonitor) GetInput() (input.Input, error) {
-	if p.Path == "" {
-		p.Path = filepath.Join("config", "prometheus", "monitor.yaml")
+func (f *PrometheusServiceMonitor) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = filepath.Join("config", "prometheus", "monitor.yaml")
 	}
-	p.TemplateBody = monitorTemplate
-	return p.Input, nil
+	f.TemplateBody = monitorTemplate
+	return f.Input, nil
 }
 
 const monitorTemplate = `

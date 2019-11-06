@@ -28,12 +28,12 @@ type GitIgnore struct {
 }
 
 // GetInput implements input.File
-func (c *GitIgnore) GetInput() (input.Input, error) {
-	if c.Path == "" {
-		c.Path = ".gitignore"
+func (f *GitIgnore) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = ".gitignore"
 	}
-	c.TemplateBody = gitignoreTemplate
-	return c.Input, nil
+	f.TemplateBody = gitignoreTemplate
+	return f.Input, nil
 }
 
 const gitignoreTemplate = `

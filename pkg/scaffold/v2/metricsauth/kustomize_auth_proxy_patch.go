@@ -31,13 +31,13 @@ type KustomizeAuthProxyPatch struct {
 }
 
 // GetInput implements input.File
-func (c *KustomizeAuthProxyPatch) GetInput() (input.Input, error) {
-	if c.Path == "" {
-		c.Path = filepath.Join("config", "default", "manager_auth_proxy_patch.yaml")
+func (f *KustomizeAuthProxyPatch) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = filepath.Join("config", "default", "manager_auth_proxy_patch.yaml")
 	}
-	c.TemplateBody = kustomizeAuthProxyPatchTemplate
-	c.Input.IfExistsAction = input.Error
-	return c.Input, nil
+	f.TemplateBody = kustomizeAuthProxyPatchTemplate
+	f.Input.IfExistsAction = input.Error
+	return f.Input, nil
 }
 
 const kustomizeAuthProxyPatchTemplate = `# This patch inject a sidecar container which is a HTTP proxy for the controller manager,

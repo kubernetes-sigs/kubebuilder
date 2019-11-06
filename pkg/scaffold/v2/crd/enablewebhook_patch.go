@@ -36,19 +36,19 @@ type EnableWebhookPatch struct {
 }
 
 // GetInput implements input.File
-func (p *EnableWebhookPatch) GetInput() (input.Input, error) {
-	if p.Path == "" {
-		plural := flect.Pluralize(strings.ToLower(p.Resource.Kind))
-		p.Path = filepath.Join("config", "crd", "patches",
+func (f *EnableWebhookPatch) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		plural := flect.Pluralize(strings.ToLower(f.Resource.Kind))
+		f.Path = filepath.Join("config", "crd", "patches",
 			fmt.Sprintf("webhook_in_%s.yaml", plural))
 	}
-	p.TemplateBody = enableWebhookPatchTemplate
-	return p.Input, nil
+	f.TemplateBody = enableWebhookPatchTemplate
+	return f.Input, nil
 }
 
 // Validate validates the values
-func (g *EnableWebhookPatch) Validate() error {
-	return g.Resource.Validate()
+func (f *EnableWebhookPatch) Validate() error {
+	return f.Resource.Validate()
 }
 
 const enableWebhookPatchTemplate = `# The following patch enables conversion webhook for CRD

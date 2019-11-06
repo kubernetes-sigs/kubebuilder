@@ -35,21 +35,21 @@ type Kustomize struct {
 }
 
 // GetInput implements input.File
-func (c *Kustomize) GetInput() (input.Input, error) {
-	if c.Path == "" {
-		c.Path = filepath.Join("config", "default", "kustomization.yaml")
+func (f *Kustomize) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = filepath.Join("config", "default", "kustomization.yaml")
 	}
-	if c.Prefix == "" {
+	if f.Prefix == "" {
 		// use directory name as prefix
 		dir, err := os.Getwd()
 		if err != nil {
 			return input.Input{}, err
 		}
-		c.Prefix = strings.ToLower(filepath.Base(dir))
+		f.Prefix = strings.ToLower(filepath.Base(dir))
 	}
-	c.TemplateBody = kustomizeTemplate
-	c.Input.IfExistsAction = input.Error
-	return c.Input, nil
+	f.TemplateBody = kustomizeTemplate
+	f.Input.IfExistsAction = input.Error
+	return f.Input, nil
 }
 
 const kustomizeTemplate = `# Adds namespace to all resources.

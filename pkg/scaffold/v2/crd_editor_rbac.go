@@ -36,18 +36,18 @@ type CRDEditorRole struct {
 }
 
 // GetInput implements input.File
-func (g *CRDEditorRole) GetInput() (input.Input, error) {
-	if g.Path == "" {
-		g.Path = filepath.Join("config", "rbac", fmt.Sprintf("%s_editor_role.yaml", strings.ToLower(g.Resource.Kind)))
+func (f *CRDEditorRole) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = filepath.Join("config", "rbac", fmt.Sprintf("%s_editor_role.yaml", strings.ToLower(f.Resource.Kind)))
 	}
 
-	g.TemplateBody = crdRoleEditorTemplate
-	return g.Input, nil
+	f.TemplateBody = crdRoleEditorTemplate
+	return f.Input, nil
 }
 
 // Validate validates the values
-func (g *CRDEditorRole) Validate() error {
-	return g.Resource.Validate()
+func (f *CRDEditorRole) Validate() error {
+	return f.Resource.Validate()
 }
 
 const crdRoleEditorTemplate = `# permissions for end users to edit {{ .Resource.Resource }}.

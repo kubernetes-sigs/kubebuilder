@@ -35,18 +35,18 @@ type VersionSuiteTest struct {
 }
 
 // GetInput implements input.File
-func (v *VersionSuiteTest) GetInput() (input.Input, error) {
-	if v.Path == "" {
-		v.Path = filepath.Join("pkg", "apis", v.Resource.GroupImportSafe, v.Resource.Version,
-			fmt.Sprintf("%s_suite_test.go", v.Resource.Version))
+func (f *VersionSuiteTest) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = filepath.Join("pkg", "apis", f.Resource.GroupImportSafe, f.Resource.Version,
+			fmt.Sprintf("%s_suite_test.go", f.Resource.Version))
 	}
-	v.TemplateBody = versionSuiteTestTemplate
-	return v.Input, nil
+	f.TemplateBody = versionSuiteTestTemplate
+	return f.Input, nil
 }
 
 // Validate validates the values
-func (v *VersionSuiteTest) Validate() error {
-	return v.Resource.Validate()
+func (f *VersionSuiteTest) Validate() error {
+	return f.Resource.Validate()
 }
 
 const versionSuiteTestTemplate = `{{ .Boilerplate }}

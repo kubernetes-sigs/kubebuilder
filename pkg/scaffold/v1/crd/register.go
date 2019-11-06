@@ -34,17 +34,17 @@ type Register struct {
 }
 
 // GetInput implements input.File
-func (r *Register) GetInput() (input.Input, error) {
-	if r.Path == "" {
-		r.Path = filepath.Join("pkg", "apis", r.Resource.Group, r.Resource.Version, "register.go")
+func (f *Register) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = filepath.Join("pkg", "apis", f.Resource.Group, f.Resource.Version, "register.go")
 	}
-	r.TemplateBody = registerTemplate
-	return r.Input, nil
+	f.TemplateBody = registerTemplate
+	return f.Input, nil
 }
 
 // Validate validates the values
-func (r *Register) Validate() error {
-	return r.Resource.Validate()
+func (f *Register) Validate() error {
+	return f.Resource.Validate()
 }
 
 const registerTemplate = `{{ .Boilerplate }}

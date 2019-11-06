@@ -33,13 +33,13 @@ type SuiteTest struct {
 }
 
 // GetInput implements input.File
-func (a *SuiteTest) GetInput() (input.Input, error) {
-	if a.Path == "" {
-		a.Path = filepath.Join("pkg", "controller",
-			strings.ToLower(a.Resource.Kind), strings.ToLower(a.Resource.Kind)+"_controller_suite_test.go")
+func (f *SuiteTest) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = filepath.Join("pkg", "controller",
+			strings.ToLower(f.Resource.Kind), strings.ToLower(f.Resource.Kind)+"_controller_suite_test.go")
 	}
-	a.TemplateBody = controllerSuiteTestTemplate
-	return a.Input, nil
+	f.TemplateBody = controllerSuiteTestTemplate
+	return f.Input, nil
 }
 
 const controllerSuiteTestTemplate = `{{ .Boilerplate }}

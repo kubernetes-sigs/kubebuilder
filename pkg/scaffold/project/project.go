@@ -40,29 +40,29 @@ type Project struct {
 }
 
 // GetInput implements input.File
-func (c *Project) GetInput() (input.Input, error) {
-	if c.Path == "" {
-		c.Path = "PROJECT"
+func (f *Project) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = "PROJECT"
 	}
-	if c.Version == "" {
-		c.Version = Version1
+	if f.Version == "" {
+		f.Version = Version1
 	}
-	if c.Repo == "" {
+	if f.Repo == "" {
 		return input.Input{}, fmt.Errorf("must specify repository")
 	}
 
-	out, err := yaml.Marshal(c.ProjectFile)
+	out, err := yaml.Marshal(f.ProjectFile)
 	if err != nil {
 		return input.Input{}, err
 	}
 
 	return input.Input{
-		Path:           c.Path,
+		Path:           f.Path,
 		TemplateBody:   string(out),
-		Repo:           c.Repo,
-		Version:        c.Version,
-		Domain:         c.Domain,
-		MultiGroup:     c.MultiGroup,
+		Repo:           f.Repo,
+		Version:        f.Version,
+		Domain:         f.Domain,
+		MultiGroup:     f.MultiGroup,
 		IfExistsAction: input.Error,
 	}, nil
 }

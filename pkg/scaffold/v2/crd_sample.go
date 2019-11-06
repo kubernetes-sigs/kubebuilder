@@ -36,20 +36,20 @@ type CRDSample struct {
 }
 
 // GetInput implements input.File
-func (c *CRDSample) GetInput() (input.Input, error) {
-	if c.Path == "" {
-		c.Path = filepath.Join("config", "samples", fmt.Sprintf(
-			"%s_%s_%s.yaml", c.Resource.Group, c.Resource.Version, strings.ToLower(c.Resource.Kind)))
+func (f *CRDSample) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = filepath.Join("config", "samples", fmt.Sprintf(
+			"%s_%s_%s.yaml", f.Resource.Group, f.Resource.Version, strings.ToLower(f.Resource.Kind)))
 	}
 
-	c.IfExistsAction = input.Error
-	c.TemplateBody = crdSampleTemplate
-	return c.Input, nil
+	f.IfExistsAction = input.Error
+	f.TemplateBody = crdSampleTemplate
+	return f.Input, nil
 }
 
 // Validate validates the values
-func (c *CRDSample) Validate() error {
-	return c.Resource.Validate()
+func (f *CRDSample) Validate() error {
+	return f.Resource.Validate()
 }
 
 const crdSampleTemplate = `apiVersion: {{ .Resource.Group }}.{{ .Domain }}/{{ .Resource.Version }}

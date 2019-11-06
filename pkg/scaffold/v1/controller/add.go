@@ -36,13 +36,13 @@ type AddController struct {
 }
 
 // GetInput implements input.File
-func (a *AddController) GetInput() (input.Input, error) {
-	if a.Path == "" {
-		a.Path = filepath.Join("pkg", "controller", fmt.Sprintf(
-			"add_%s.go", strings.ToLower(a.Resource.Kind)))
+func (f *AddController) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = filepath.Join("pkg", "controller", fmt.Sprintf(
+			"add_%s.go", strings.ToLower(f.Resource.Kind)))
 	}
-	a.TemplateBody = addControllerTemplate
-	return a.Input, nil
+	f.TemplateBody = addControllerTemplate
+	return f.Input, nil
 }
 
 const addControllerTemplate = `{{ .Boilerplate }}

@@ -35,18 +35,18 @@ type AddToScheme struct {
 }
 
 // GetInput implements input.File
-func (a *AddToScheme) GetInput() (input.Input, error) {
-	if a.Path == "" {
-		a.Path = filepath.Join("pkg", "apis", fmt.Sprintf(
-			"addtoscheme_%s_%s.go", a.Resource.Group, a.Resource.Version))
+func (f *AddToScheme) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = filepath.Join("pkg", "apis", fmt.Sprintf(
+			"addtoscheme_%s_%s.go", f.Resource.Group, f.Resource.Version))
 	}
-	a.TemplateBody = addResourceTemplate
-	return a.Input, nil
+	f.TemplateBody = addResourceTemplate
+	return f.Input, nil
 }
 
 // Validate validates the values
-func (a *AddToScheme) Validate() error {
-	return a.Resource.Validate()
+func (f *AddToScheme) Validate() error {
+	return f.Resource.Validate()
 }
 
 // NB(directxman12): we need that package alias on the API import otherwise imports.Process
