@@ -29,7 +29,7 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/util"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/controller"
-	resourcev1 "sigs.k8s.io/kubebuilder/pkg/scaffold/v1/resource"
+	crdv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/v1/crd"
 	scaffoldv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2"
 	crdv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2/crd"
 )
@@ -119,14 +119,14 @@ func (api *API) scaffoldV1() error {
 			fmt.Sprintf("%s_types_test.go", strings.ToLower(r.Kind))))
 
 		err := (&Scaffold{}).Execute(api.buildUniverse(), input.Options{},
-			&resourcev1.Register{Resource: r},
-			&resourcev1.Types{Resource: r},
-			&resourcev1.VersionSuiteTest{Resource: r},
-			&resourcev1.TypesTest{Resource: r},
-			&resourcev1.Doc{Resource: r},
-			&resourcev1.Group{Resource: r},
-			&resourcev1.AddToScheme{Resource: r},
-			&resourcev1.CRDSample{Resource: r},
+			&crdv1.Register{Resource: r},
+			&crdv1.Types{Resource: r},
+			&crdv1.VersionSuiteTest{Resource: r},
+			&crdv1.TypesTest{Resource: r},
+			&crdv1.Doc{Resource: r},
+			&crdv1.Group{Resource: r},
+			&crdv1.AddToScheme{Resource: r},
+			&crdv1.CRDSample{Resource: r},
 		)
 		if err != nil {
 			return fmt.Errorf("error scaffolding APIs: %v", err)
