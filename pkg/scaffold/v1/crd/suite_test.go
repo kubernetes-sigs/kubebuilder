@@ -1,4 +1,4 @@
-package resource_test
+package crd_test
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/scaffoldtest"
-	. "sigs.k8s.io/kubebuilder/pkg/scaffold/v1/resource"
+	. "sigs.k8s.io/kubebuilder/pkg/scaffold/v1/crd"
 )
 
 func TestResource(t *testing.T) {
