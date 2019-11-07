@@ -115,6 +115,10 @@ func (o *projectOptions) initializeProject() {
 		log.Fatal(err)
 	}
 
+	if o.project.Version == project.Version1 {
+		printV1DeprecationWarning()
+	}
+
 	if err := o.scaffolder.Scaffold(); err != nil {
 		log.Fatalf("error scaffolding project: %v", err)
 	}

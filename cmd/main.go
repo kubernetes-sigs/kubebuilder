@@ -28,6 +28,11 @@ import (
 
 	"sigs.k8s.io/kubebuilder/cmd/version"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
+)
+
+const (
+	NoticeColor = "\033[1;36m%s\033[0m"
 )
 
 // module and goMod arg just enough of the output of `go mod edit -json` for our purposes
@@ -112,7 +117,9 @@ func main() {
 	)
 
 	foundProject, version := getProjectVersion()
-	if foundProject && version == "1" {
+	if foundProject && version == project.Version1 {
+		printV1DeprecationWarning()
+
 		rootCmd.AddCommand(
 			newAlphaCommand(),
 			newVendorUpdateCmd(),
@@ -187,4 +194,8 @@ func getProjectVersion() (bool, string) {
 		log.Fatalf("failed to read the PROJECT file: %v", err)
 	}
 	return true, projectInfo.Version
+}
+
+func printV1DeprecationWarning() {
+	fmt.Printf(NoticeColor, "[Deprecation Notice] The v1 projects are deprecated and will not be supported beyond Feb 1, 2020.\nSee how to upgrade your project to v2: https://book.kubebuilder.io/migration/guide.html\n")
 }
