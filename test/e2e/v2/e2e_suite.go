@@ -246,6 +246,20 @@ var _ = Describe("kubebuilder", func() {
 				return err
 			}, time.Minute, time.Second).Should(Succeed())
 
+			By("applying CRD Editor Role")
+			crdEditorRole := filepath.Join("config", "rbac", fmt.Sprintf("%s_editor_role.yaml", strings.ToLower(kbc.Kind)))
+			Eventually(func() error {
+				_, err = kbc.Kubectl.Apply(true, "-f", crdEditorRole)
+				return err
+			}, time.Minute, time.Second).Should(Succeed())
+
+			By("applying CRD Viewer Role")
+			crdViewerRole := filepath.Join("config", "rbac", fmt.Sprintf("%s_viewer_role.yaml", strings.ToLower(kbc.Kind)))
+			Eventually(func() error {
+				_, err = kbc.Kubectl.Apply(true, "-f", crdViewerRole)
+				return err
+			}, time.Minute, time.Second).Should(Succeed())
+
 			By("validate the created resource object gets reconciled in controller")
 			managerContainerLogs := func() string {
 				logOutput, err := kbc.Kubectl.Logs(controllerPodName, "-c", "manager")
