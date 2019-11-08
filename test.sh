@@ -19,6 +19,8 @@ set -o pipefail
 
 source common.sh
 
+install_dep_by_git
+
 function test_init_project {
   header_text "performing init project"
   kubebuilder init --project-version 1 --domain example.com <<< "n"
@@ -111,7 +113,7 @@ build_kb
 
 setup_envs
 
-export GO111MODULE=auto
+export GO111MODULE=off
 prepare_testdir_under_gopath
 test_init_project
 cache_project
@@ -153,7 +155,7 @@ go test ./cmd/... ./pkg/...
 # test project v1
 # auto is roughly equivalent to off in our case, 
 # since we'll be in a gopath (basically, reset to default)
-GO111MODULE=auto test_project gopath/src/project 1
+GO111MODULE=off test_project gopath/src/project 1
 
 # test project v2
 GO111MODULE=on test_project project-v2 2

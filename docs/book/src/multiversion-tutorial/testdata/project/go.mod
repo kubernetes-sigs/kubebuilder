@@ -1,22 +1,20 @@
 module tutorial.kubebuilder.io/project
 
-go 1.12
+go 1.13
 
 require (
-	github.com/go-logr/logr v0.1.0
-	github.com/gogo/protobuf v1.2.1 // indirect
-	github.com/json-iterator/go v1.1.6 // indirect
-	github.com/modern-go/reflect2 v1.0.1 // indirect
-	github.com/onsi/ginkgo v1.8.0 // indirect
-	github.com/onsi/gomega v1.5.0 // indirect
-	github.com/robfig/cron v1.1.0
-	github.com/spf13/pflag v1.0.3 // indirect
-	golang.org/x/net v0.0.0-20190501004415-9ce7a6920f09 // indirect
-	golang.org/x/sys v0.0.0-20190429190828-d89cdac9e872 // indirect
+	github.com/gobuffalo/flect v0.1.5
+	github.com/golang/protobuf v1.3.1 // indirect
+	github.com/kr/pretty v0.1.0 // indirect
+	github.com/onsi/ginkgo v1.8.0
+	github.com/onsi/gomega v1.5.0
+	github.com/spf13/afero v1.2.2
+	github.com/spf13/cobra v0.0.5
+	github.com/spf13/pflag v1.0.3
+	golang.org/x/net v0.0.0-20190812203447-cdfb69ac37fc // indirect
+	golang.org/x/sys v0.0.0-20190621203818-d432491b9138 // indirect
 	golang.org/x/text v0.3.2 // indirect
-	gopkg.in/yaml.v2 v2.2.2 // indirect
-	k8s.io/api v0.0.0-20190409021203-6e4e0e4f393b
-	k8s.io/apimachinery v0.0.0-20190404173353-6a84e37a896d
-	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
-	sigs.k8s.io/controller-runtime v0.2.0-beta.5
+	golang.org/x/tools v0.0.0-20190621195816-6e04913cbbac
+	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
+	gopkg.in/yaml.v2 v2.2.2
 )

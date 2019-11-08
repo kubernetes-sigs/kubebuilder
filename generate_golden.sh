@@ -40,7 +40,7 @@ scaffold_test_project() {
 
 	oldgopath=$GOPATH
 	if [ $version == "1" ]; then
-		export GO111MODULE=auto
+		export GO111MODULE=off
 		export GOPATH=$(pwd)/../.. # go ignores vendor under testdata, so fake out a gopath
 		# untar Gopkg.lock and vendor directory for appropriate project version
 		download_vendor_archive
@@ -84,8 +84,6 @@ scaffold_test_project() {
 }
 
 set -e
-
-GOPROXY=https://proxy.golang.org/
 
 build_kb
 scaffold_test_project gopath/src/project 1

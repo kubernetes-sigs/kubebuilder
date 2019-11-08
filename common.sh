@@ -115,7 +115,6 @@ function fetch_tools {
   if [ -n "$SKIP_FETCH_TOOLS" ]; then
     return 0
   fi
-  fetch_go_tools
   fetch_kb_tools
 }
 
@@ -144,7 +143,8 @@ function build_kb {
   GO111MODULE=on go build $opts -o $tmp_root/kubebuilder/bin/kubebuilder ./cmd
 }
 
-function fetch_go_tools {
+# Required to install the go dep in the https://prow.k8s.io/.
+function install_dep_by_git {
   header_text "Checking for dep"
   export PATH=$(go env GOPATH)/src/github.com/golang/dep/bin:$PATH
   if ! is_installed dep ; then
@@ -159,7 +159,15 @@ function fetch_go_tools {
     go build -ldflags="-X main.version=$DEP_LATEST" -o bin/dep ./cmd/dep
     popd
   fi
+}
 
+function install_go_dep {
+  header_text "Checking for dep"
+  export PATH=$(go env GOPATH)/src/github.com/golang/dep/bin:$PATH
+  if ! is_installed dep ; then
+    header_text "Installing dep"
+    curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+  fi
 }
 
 function is_installed {

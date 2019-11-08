@@ -54,7 +54,7 @@ generate-testdata: ## Update/generate the testdata in $GOPATH/src/sigs.k8s.io/ku
 	GO111MODULE=on ./generate_golden.sh
 
 .PHONY: generate-vendor
-generate-vendor: ## Update/generate the vendor by using the path $GOPATH/src/sigs.k8s.io/kubebuilder-test
+generate-vendor: ## (deprecated) - Update/generate the vendor by using the path $GOPATH/src/sigs.k8s.io/kubebuilder-test
 	GO111MODULE=off ./generate_vendor.sh
 
 .PHONY: generate-setup
