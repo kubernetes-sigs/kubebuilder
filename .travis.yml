@@ -40,9 +40,7 @@ services:
 
 before_install:
 - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then mkdir -p /Users/travis/gopath/bin; fi
-- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then GO111MODULE=on scripts/install_and_setup.sh $KIND_K8S_VERSION; fi
-- GO111MODULE=on go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.2.2
-- GO111MODULE=on go get sigs.k8s.io/kustomize/kustomize/v3@v3.2.1
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then scripts/setup.sh $KIND_K8S_VERSION; fi
 
 before_script:
 
@@ -53,11 +51,13 @@ install:
   -
 
 script:
-- GO111MODULE=on TRACE=1 ./golden_test.sh
-- GO111MODULE=on TRACE=1 ./test.sh
-- if [ "$TRAVIS_OS_NAME" = "linux" ]; then GO111MODULE=on TRACE=1 PATH=$PATH:$(pwd) ./test_e2e_v1.sh ; fi
-- if [ "$TRAVIS_OS_NAME" = "linux" ]; then GO111MODULE=on TRACE=1 PATH=$PATH:$(pwd) ./test_e2e_v2.sh ; fi
+# The golden_test.sh check if the the testdata is updated according to the current changes
+# To update the testdata use the Makefile targets `make generate-setup` then `make generate-testdata`
+- ./golden_test.sh
+- ./test.sh
+- if [ "$TRAVIS_OS_NAME" = "linux" ]; then PATH=$PATH:$(pwd) ./test_e2e.sh; fi
 
 # TBD. Suppressing for now.
 notifications:
   email: false
+

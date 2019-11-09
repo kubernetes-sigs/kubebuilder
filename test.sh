@@ -19,6 +19,10 @@ set -o pipefail
 
 source common.sh
 
+export TRACE=1
+export GO111MODULE=on
+
+# This test is used by prow and if the dep not be installed by git then it will face the GOBIN issue.
 install_dep_by_git
 
 function test_init_project {
@@ -100,7 +104,7 @@ function test_project {
   fi
   cd testdata/$project_dir
   # v2 uses modules, and thus doesn't have a vendor directory
-  [[ -e ${vendor_tarball} ]] && tar -zxf $vendor_tarball 
+  [[ -e ${vendor_tarball} ]] && tar -zxf $vendor_tarball
   make all test # v2 doesn't test on all by default
   [[ -e ${vendor_tarball} ]] && rm -rf ./vendor && rm -f Gopkg.lock
   cd -
@@ -153,7 +157,7 @@ export GO111MODULE=on
 go test ./cmd/... ./pkg/...
 
 # test project v1
-# auto is roughly equivalent to off in our case, 
+# auto is roughly equivalent to off in our case,
 # since we'll be in a gopath (basically, reset to default)
 GO111MODULE=off test_project gopath/src/project 1
 
@@ -161,3 +165,4 @@ GO111MODULE=off test_project gopath/src/project 1
 GO111MODULE=on test_project project-v2 2
 
 exit $rc
+
