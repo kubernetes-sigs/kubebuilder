@@ -19,6 +19,9 @@ set -o pipefail
 
 source common.sh
 
+export TRACE=1
+export GO111MODULE=on
+
 fetch_tools
 install_go_dep
 build_kb
@@ -28,4 +31,6 @@ setup_envs
 docker pull gcr.io/kubebuilder/kube-rbac-proxy:v0.4.1
 kind load docker-image gcr.io/kubebuilder/kube-rbac-proxy:v0.4.1
 
+# The v1 is deprecated
 go test ./test/e2e/v1
+go test ./test/e2e/v2

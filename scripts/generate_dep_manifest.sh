@@ -14,6 +14,10 @@
 # depManifestOverride variable in cmd/kubebuilder/initproject/dep_manifest.go
 #
 
+########################################################################################################
+# NOTE: It is deprecated since is valid just for version 1                                             #
+########################################################################################################
+
 tmp_file="/tmp/dep.txt"
 dep status -json|jq '.[]|.ProjectRoot,.Revision, .Version' > $tmp_file
 while read name ; do 
