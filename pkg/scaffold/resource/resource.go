@@ -54,37 +54,57 @@ type Resource struct {
 
 // Validate checks the Resource values to make sure they are valid.
 func (r *Resource) Validate() error {
-	if len(r.Group) == 0 {
+	if r.isGroupEmpty() {
 		return fmt.Errorf("group cannot be empty")
 	}
-	if len(r.Version) == 0 {
+	if r.isVersionEmpty() {
 		return fmt.Errorf("version cannot be empty")
 	}
-	if len(r.Kind) == 0 {
+	if r.isKindEmpty() {
 		return fmt.Errorf("kind cannot be empty")
 	}
-
-	if len(r.Resource) == 0 {
-		r.Resource = flect.Pluralize(strings.ToLower(r.Kind))
-	}
-
+	// Check if the Group has a valid value for for it
 	if err := IsDNS1123Subdomain(r.Group); err != nil {
 		return fmt.Errorf("group name is invalid: (%v)", err)
 	}
-
-	r.GroupImportSafe = strings.Replace(r.Group, "-", "", -1)
-	r.GroupImportSafe = strings.Replace(r.GroupImportSafe, ".", "", -1)
-
+	// Check if the version is a valid value
 	versionMatch := regexp.MustCompile("^v\\d+(alpha\\d+|beta\\d+)?$")
 	if !versionMatch.MatchString(r.Version) {
 		return fmt.Errorf(
 			"version must match ^v\\d+(alpha\\d+|beta\\d+)?$ (was %s)", r.Version)
 	}
+	// Check if the Kind is a valid value
 	if r.Kind != flect.Pascalize(r.Kind) {
 		return fmt.Errorf("kind must be PascalCase (expected %s was %s)", flect.Pascalize(r.Kind), r.Kind)
 	}
 
+	// todo: move it for the proper place since they are not validations and then, should not be here
+	// Add in r.Resource the Kind plural
+	if len(r.Resource) == 0 {
+		r.Resource = flect.Pluralize(strings.ToLower(r.Kind))
+	}
+	// Replace the caracter "-" for "" to allow scaffold the go imports
+	r.GroupImportSafe = strings.Replace(r.Group, "-", "", -1)
+    r.GroupImportSafe = strings.Replace(r.GroupImportSafe, ".", "", -1)
 	return nil
+}
+
+// isKindEmpty will return true if the --kind flag do not be informed
+// NOTE: required check if the flags are assuming the other flags as value
+func (r *Resource) isKindEmpty() bool {
+	return len(r.Kind) == 0 || r.Kind == "--group" || r.Kind == "--version"
+}
+
+// isVersionEmpty will return true if the --version flag do not be informed
+// NOTE: required check if the flags are assuming the other flags as value
+func (r *Resource) isVersionEmpty() bool {
+	return len(r.Version) == 0 || r.Version == "--group" || r.Version == "--kind"
+}
+
+// isVersionEmpty will return true if the --group flag do not be informed
+// NOTE: required check if the flags are assuming the other flags as value
+func (r *Resource) isGroupEmpty() bool {
+	return len(r.Group) == 0 || r.Group == "--version" || r.Group == "--kind"
 }
 
 // The following code came from "k8s.io/apimachinery/pkg/util/validation"
