@@ -7,8 +7,8 @@ Kubernetes projects require that you sign a Contributor License Agreement (CLA) 
 Please see https://git.k8s.io/community/CLA.md for more info.
 
 ## Prerequisites
-- [go](https://golang.org/dl/) version v1.12+.
-- [dep](https://github.com/golang/dep) dep v0.5.1+ < v.0.5.4
+- [go](https://golang.org/dl/) version v1.13+.
+- [dep](https://github.com/golang/dep) dep v0.5+
 - [docker](https://docs.docker.com/install/) version 17.03+.
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) version v1.11.3+.
 - [kustomize](https://sigs.k8s.io/kustomize/docs/INSTALL.md) v3.1.0+
@@ -33,7 +33,7 @@ $ git clone git@github.com:<user>/kubebuilder.git $GOPATH/src/sigs.k8s.io/kubebu
 1. Build the project by using the command `make build` 
 1. Run the tests by using the command `make test`
 1. Run the command `make install` to create a bin with the source code 
-1. Run the script `./generated_golden.sh` to update/generate the mock data used in the e2e test in `$GOPATH/src/sigs.k8s.io/kubebuilder/testdata/`
+1. Run the script `make generate` to update/generate the mock data used in the e2e test in `$GOPATH/src/sigs.k8s.io/kubebuilder/testdata/`
 
 ## Community, discussion and support
 
