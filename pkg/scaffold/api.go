@@ -49,6 +49,9 @@ type API struct {
 
 	// DoController indicates whether to scaffold controller files or not
 	DoController bool
+
+	// Force indicates that the resource should be created even if it already exists.
+	Force bool
 }
 
 // Validate validates whether API scaffold has correct bits to generate
@@ -65,6 +68,10 @@ func (api *API) Validate() error {
 	}
 	if api.Resource.Kind == "" {
 		return fmt.Errorf("missing kind information for resource")
+	}
+
+	if api.resourceExists() && !api.Force {
+		return fmt.Errorf("API resource already exists")
 	}
 
 	return nil
@@ -209,12 +216,14 @@ func (api *API) scaffoldV2() error {
 			return fmt.Errorf("error updating kustomization.yaml: %v", err)
 		}
 
-		// update scaffolded resource in project file
-		api.project.Resources = append(api.project.Resources,
-			input.Resource{Group: r.Group, Version: r.Version, Kind: r.Kind})
-		err = saveProjectFile("PROJECT", api.project)
-		if err != nil {
-			fmt.Printf("error updating project file with resource information : %v \n", err)
+		if !api.resourceExists() {
+			// update scaffolded resource in project file
+			api.project.Resources = append(api.project.Resources,
+				input.Resource{Group: r.Group, Version: r.Version, Kind: r.Kind})
+			err = saveProjectFile("PROJECT", api.project)
+			if err != nil {
+				fmt.Printf("error updating project file with resource information : %v \n", err)
+			}
 		}
 
 	} else {
@@ -273,4 +282,18 @@ func (api *API) validateResourceGroup(resource *resourcev1.Resource) error {
 		}
 	}
 	return nil
+}
+
+// resourceExists returns true if API resource is already tracked by the PROJECT file.
+// Note that this works only for v2, since in v1 resources are not tracked by the PROJECT file.
+func (api *API) resourceExists() bool {
+	for _, resource := range api.project.Resources {
+		if resource.Group == api.Resource.Group &&
+			resource.Version == api.Resource.Version &&
+			resource.Kind == api.Resource.Kind {
+			return true
+		}
+	}
+
+	return false
 }
