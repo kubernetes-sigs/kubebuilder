@@ -19,6 +19,7 @@ package v2
 import (
 	"os"
 	"path/filepath"
+	"strings"
 
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 )
@@ -44,7 +45,7 @@ func (c *Kustomize) GetInput() (input.Input, error) {
 		if err != nil {
 			return input.Input{}, err
 		}
-		c.Prefix = filepath.Base(dir)
+		c.Prefix = strings.ToLower(filepath.Base(dir))
 	}
 	c.TemplateBody = kustomizeTemplate
 	c.Input.IfExistsAction = input.Error
