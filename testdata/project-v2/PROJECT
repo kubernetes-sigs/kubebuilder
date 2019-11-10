@@ -10,4 +10,5 @@ resources:
 - group: crew
   kind: Admiral
   version: v1
+type: go
 version: "2"

@@ -109,6 +109,10 @@ func (o *projectOptions) bindCmdlineFlags(cmd *cobra.Command) {
 		"defaults to the go package of the current working directory.")
 	cmd.Flags().StringVar(&o.project.Domain, "domain", "my.domain", "domain for groups")
 	cmd.Flags().StringVar(&o.project.Version, "project-version", project.Version2, "project version")
+	cmd.Flags().StringVar(&o.project.ProjectType, "type", project.Go, "project type")
+
+	// hiding type since the kubebuilder just works with go so far.
+	cmd.Flags().MarkHidden("type")
 }
 
 func (o *projectOptions) initializeProject() {
@@ -180,6 +184,16 @@ func (o *projectOptions) validate() error {
 		}
 	default:
 		return fmt.Errorf("unknown project version %v", o.project.Version)
+	}
+
+	switch o.project.ProjectType {
+	case project.Go:
+	case project.Ansible:
+		return fmt.Errorf("The hybrid Ansible type is not supported by kubebuilder")
+	case project.Helm:
+		return fmt.Errorf("The hybrid Helm type is not supported by kubebuilder")
+	default:
+		return fmt.Errorf("unknown project type %v", o.project.ProjectType)
 	}
 
 	if err := o.scaffolder.Validate(); err != nil {

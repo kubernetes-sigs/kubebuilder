@@ -56,6 +56,9 @@ type Input struct {
 	// Repo is the go project package
 	Repo string
 
+	// Type is the type of project to support SDK hybrid
+	ProjectType string
+
 	// ProjectPath is the relative path to the project root
 	ProjectPath string
 }
@@ -173,6 +176,9 @@ type ProjectFile struct {
 	// Resources tracks scaffolded resources in the project. This info is
 	// tracked only in project with version 2.
 	Resources []Resource `json:"resources,omitempty"`
+
+	//Define the type of the project to support SDK hybrid
+	ProjectType string  `json:"type,omitempty"`
 }
 
 // ResourceGroups returns unique groups of scaffolded resources in the project.

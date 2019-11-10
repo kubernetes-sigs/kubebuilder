@@ -1,3 +1,4 @@
 domain: testproject.org
 repo: project
+type: go
 version: "1"

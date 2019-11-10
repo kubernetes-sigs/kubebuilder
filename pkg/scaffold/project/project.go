@@ -35,7 +35,6 @@ var _ input.File = &Project{}
 type Project struct {
 	// Path is the output file location - defaults to PROJECT
 	Path string
-
 	input.ProjectFile
 }
 
@@ -47,6 +46,11 @@ func (c *Project) GetInput() (input.Input, error) {
 	if c.Version == "" {
 		c.Version = Version1
 	}
+
+	if c.ProjectType == "" {
+		c.ProjectType = Go
+	}
+
 	if c.Repo == "" {
 		return input.Input{}, fmt.Errorf("must specify repository")
 	}
@@ -61,6 +65,7 @@ func (c *Project) GetInput() (input.Input, error) {
 		TemplateBody:   string(out),
 		Repo:           c.Repo,
 		Version:        c.Version,
+		ProjectType:    c.ProjectType,
 		Domain:         c.Domain,
 		IfExistsAction: input.Error,
 	}, nil
