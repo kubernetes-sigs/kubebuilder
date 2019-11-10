@@ -21,6 +21,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -137,6 +138,20 @@ func (o *projectOptions) validate() error {
 			return err
 		}
 	}
+
+	// use directory name as prefix
+	dir, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("error to get the current path: %v", err)
+	}
+
+	// check if the name of th project pass is a valid name for k8s objects
+	// it will be used to create the namespace
+	projectName := filepath.Base(dir)
+	if err := util.IsValidName(strings.ToLower(projectName)); err != nil {
+		return fmt.Errorf("project name (%v) is invalid: (%v)", projectName, err)
+	}
+
 	if o.project.Repo == "" {
 		repoPath, err := findCurrentRepo()
 		if err != nil {
