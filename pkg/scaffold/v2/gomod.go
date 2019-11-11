@@ -38,7 +38,7 @@ func (g *GoMod) GetInput() (input.Input, error) {
 	return g.Input, nil
 }
 
-var goModTemplate = `
+const goModTemplate = `
 module {{ .Repo }}
 
 go 1.13

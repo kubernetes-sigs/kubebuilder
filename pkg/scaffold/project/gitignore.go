@@ -36,7 +36,7 @@ func (c *GitIgnore) GetInput() (input.Input, error) {
 	return c.Input, nil
 }
 
-var gitignoreTemplate = `
+const gitignoreTemplate = `
 # Binaries for programs and plugins
 *.exe
 *.exe~

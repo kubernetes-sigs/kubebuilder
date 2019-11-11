@@ -49,7 +49,7 @@ func (a *AddAdmissionWebhookBuilderHandler) GetInput() (input.Input, error) {
 	return a.Input, nil
 }
 
-var addAdmissionWebhookBuilderHandlerTemplate = `{{ .Boilerplate }}
+const addAdmissionWebhookBuilderHandlerTemplate = `{{ .Boilerplate }}
 
 package {{ .Server }}server
 

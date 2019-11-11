@@ -47,7 +47,7 @@ func (g *Group) Validate() error {
 	return g.Resource.Validate()
 }
 
-var groupTemplate = `{{ .Boilerplate }}
+const groupTemplate = `{{ .Boilerplate }}
 
 // Package {{.Resource.Version}} contains API Schema definitions for the {{ .Resource.GroupImportSafe }} {{.Resource.Version}} API group
 // +kubebuilder:object:generate=true

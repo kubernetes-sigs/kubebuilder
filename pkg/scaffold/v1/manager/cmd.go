@@ -38,7 +38,7 @@ func (a *Cmd) GetInput() (input.Input, error) {
 	return a.Input, nil
 }
 
-var cmdTemplate = `{{ .Boilerplate }}
+const cmdTemplate = `{{ .Boilerplate }}
 
 package main
 

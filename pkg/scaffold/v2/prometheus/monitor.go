@@ -19,7 +19,7 @@ func (p *PrometheusServiceMonitor) GetInput() (input.Input, error) {
 	return p.Input, nil
 }
 
-var monitorTemplate = `
+const monitorTemplate = `
 # Prometheus Monitor Service (Metrics)
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor

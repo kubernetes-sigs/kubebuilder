@@ -40,7 +40,7 @@ func (c *Config) GetInput() (input.Input, error) {
 	return c.Input, nil
 }
 
-var configTemplate = `apiVersion: v1
+const configTemplate = `apiVersion: v1
 kind: Namespace
 metadata:
   labels:

@@ -65,7 +65,7 @@ func (c *Boilerplate) GetInput() (input.Input, error) {
 	return c.Input, nil
 }
 
-var apache = `/*
+const apache = `/*
 {{ if .Owner }}Copyright {{ .Year }} {{ .Owner }}.
 {{ end }}
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -81,6 +81,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */`
 
-var none = `/*
+const none = `/*
 {{ if .Owner }}Copyright {{ .Year }} {{ .Owner }}{{ end }}.
 */`

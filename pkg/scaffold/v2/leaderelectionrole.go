@@ -38,7 +38,7 @@ func (r *LeaderElectionRole) GetInput() (input.Input, error) {
 	return r.Input, nil
 }
 
-var leaderElectionRoleTemplate = `# permissions to do leader election.
+const leaderElectionRoleTemplate = `# permissions to do leader election.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:

@@ -36,7 +36,7 @@ func (p *ManagerWebhookPatch) GetInput() (input.Input, error) {
 	return p.Input, nil
 }
 
-var ManagerWebhookPatchTemplate = `apiVersion: apps/v1
+const ManagerWebhookPatchTemplate = `apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: controller-manager

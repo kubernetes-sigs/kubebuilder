@@ -38,7 +38,7 @@ func (c *Webhook) GetInput() (input.Input, error) {
 	return c.Input, nil
 }
 
-var webhookTemplate = `{{ .Boilerplate }}
+const webhookTemplate = `{{ .Boilerplate }}
 
 package webhook
 

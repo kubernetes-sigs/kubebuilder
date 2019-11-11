@@ -52,7 +52,7 @@ func (a *AddToScheme) Validate() error {
 // NB(directxman12): we need that package alias on the API import otherwise imports.Process
 // gets wicked (or hella, if you're feeling west-coasty) confused.
 
-var addResourceTemplate = `{{ .Boilerplate }}
+const addResourceTemplate = `{{ .Boilerplate }}
 
 package apis
 
