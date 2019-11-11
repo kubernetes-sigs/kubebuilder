@@ -22,6 +22,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// var needs to be used instead of const as ldflags is used to fill this
+// information in the release process
 var (
 	kubeBuilderVersion      = "unknown"
 	kubernetesVendorVersion = "unknown"
@@ -41,7 +43,7 @@ type Version struct {
 	GoArch             string `json:"goArch"`
 }
 
-func GetVersion() Version {
+func getVersion() Version {
 	return Version{
 		kubeBuilderVersion,
 		kubernetesVendorVersion,
@@ -67,5 +69,5 @@ func NewVersionCmd() *cobra.Command {
 }
 
 func runVersion(_ *cobra.Command, _ []string) {
-	GetVersion().Print()
+	getVersion().Print()
 }
