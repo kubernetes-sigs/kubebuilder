@@ -172,7 +172,7 @@ func (o *projectOptions) validate() error {
 	}
 
 	if util.ProjectExist() {
-		return fmt.Errorf("Failed to initialize project because project is already initialized")
+		return fmt.Errorf("failed to initialize project because project is already initialized")
 	}
 
 	return nil
@@ -190,16 +190,16 @@ func fetchAndCheckGoVersion() error {
 	cmd := exec.Command("go", "version")
 	out, err := cmd.Output()
 	if err != nil {
-		return fmt.Errorf("Failed to retrieve 'go version': %v", string(out))
+		return fmt.Errorf("failed to retrieve 'go version': %v", string(out))
 	}
 
 	split := strings.Split(string(out), " ")
 	if len(split) < 3 {
-		return fmt.Errorf("Found invalid Go version: %q", string(out))
+		return fmt.Errorf("found invalid Go version: %q", string(out))
 	}
 	goVer := split[2]
 	if err := checkGoVersion(goVer); err != nil {
-		return fmt.Errorf("Go version '%s' is incompatible because '%s'", goVer, err)
+		return fmt.Errorf("go version '%s' is incompatible because '%s'", goVer, err)
 	}
 	return nil
 }
