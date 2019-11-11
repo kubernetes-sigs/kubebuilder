@@ -33,6 +33,7 @@ var controllerTemplate = `{{ .Boilerplate }}
 package controllers
 
 import (
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -54,6 +55,7 @@ var _ reconcile.Reconciler = &{{ .Resource.Kind }}Reconciler{}
 type {{ .Resource.Kind }}Reconciler struct {
 	client.Client
 	Log logr.Logger
+	Scheme *runtime.Scheme
 
 	declarative.Reconciler
 }
