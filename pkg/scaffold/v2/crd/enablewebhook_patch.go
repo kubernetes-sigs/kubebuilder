@@ -51,7 +51,7 @@ func (g *EnableWebhookPatch) Validate() error {
 	return g.Resource.Validate()
 }
 
-var enableWebhookPatchTemplate = `# The following patch enables conversion webhook for CRD
+const enableWebhookPatchTemplate = `# The following patch enables conversion webhook for CRD
 # CRD conversion requires k8s 1.13 or later.
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition

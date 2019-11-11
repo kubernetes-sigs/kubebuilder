@@ -134,7 +134,7 @@ const DefaultGopkgUserContent = `required = [
 
 `
 
-var depTemplate = `{{ .UserContent }}
+const depTemplate = `{{ .UserContent }}
 # STANZAS BELOW ARE GENERATED AND MAY BE WRITTEN - DO NOT MODIFY BELOW THIS LINE.
 
 {{ range $element := .Stanzas -}}

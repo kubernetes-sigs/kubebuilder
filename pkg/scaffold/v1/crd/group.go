@@ -47,7 +47,7 @@ func (g *Group) Validate() error {
 	return g.Resource.Validate()
 }
 
-var groupTemplate = `{{ .Boilerplate }}
+const groupTemplate = `{{ .Boilerplate }}
 
 // Package {{ .Resource.GroupImportSafe }} contains {{ .Resource.Group }} API versions
 package {{ .Resource.GroupImportSafe }}

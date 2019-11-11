@@ -36,7 +36,7 @@ func (c *Dockerfile) GetInput() (input.Input, error) {
 	return c.Input, nil
 }
 
-var dockerfileTemplate = `# Build the manager binary
+const dockerfileTemplate = `# Build the manager binary
 FROM golang:1.13 as builder
 
 WORKDIR /workspace

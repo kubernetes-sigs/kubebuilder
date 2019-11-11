@@ -38,7 +38,7 @@ func (r *AuthProxyService) GetInput() (input.Input, error) {
 	return r.Input, nil
 }
 
-var AuthProxyServiceTemplate = `apiVersion: v1
+const AuthProxyServiceTemplate = `apiVersion: v1
 kind: Service
 metadata:
   annotations:

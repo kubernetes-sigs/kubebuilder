@@ -38,7 +38,7 @@ func (r *ManagerRoleBinding) GetInput() (input.Input, error) {
 	return r.Input, nil
 }
 
-var managerBindingTemplate = `apiVersion: rbac.authorization.k8s.io/v1
+const managerBindingTemplate = `apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: manager-rolebinding
@@ -51,4 +51,3 @@ subjects:
   name: default
   namespace: system
 `
-

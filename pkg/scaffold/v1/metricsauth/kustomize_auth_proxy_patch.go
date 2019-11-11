@@ -40,7 +40,7 @@ func (c *KustomizeAuthProxyPatch) GetInput() (input.Input, error) {
 	return c.Input, nil
 }
 
-var kustomizeAuthProxyPatchTemplate = `# This patch inject a sidecar container which is a HTTP proxy for the controller manager,
+const kustomizeAuthProxyPatchTemplate = `# This patch inject a sidecar container which is a HTTP proxy for the controller manager,
 # it performs RBAC authorization against the Kubernetes API using SubjectAccessReviews.
 apiVersion: apps/v1
 kind: StatefulSet

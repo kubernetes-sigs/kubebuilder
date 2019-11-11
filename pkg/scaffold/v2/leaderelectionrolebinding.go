@@ -38,7 +38,7 @@ func (r *LeaderElectionRoleBinding) GetInput() (input.Input, error) {
 	return r.Input, nil
 }
 
-var leaderElectionRoleBindingTemplate = `apiVersion: rbac.authorization.k8s.io/v1
+const leaderElectionRoleBindingTemplate = `apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: leader-election-rolebinding

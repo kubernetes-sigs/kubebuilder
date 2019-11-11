@@ -50,7 +50,7 @@ func (a *Doc) Validate() error {
 	return a.Resource.Validate()
 }
 
-var docGoTemplate = `{{ .Boilerplate }}
+const docGoTemplate = `{{ .Boilerplate }}
 
 // Package {{.Resource.Version}} contains API Schema definitions for the {{ .Resource.GroupImportSafe }} {{.Resource.Version}} API group
 // +k8s:openapi-gen=true

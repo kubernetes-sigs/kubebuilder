@@ -38,7 +38,7 @@ func (r *AuthProxyRoleBinding) GetInput() (input.Input, error) {
 	return r.Input, nil
 }
 
-var proxyRoleBindinggTemplate = `apiVersion: rbac.authorization.k8s.io/v1
+const proxyRoleBindinggTemplate = `apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: proxy-rolebinding

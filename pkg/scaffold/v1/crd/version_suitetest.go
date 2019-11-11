@@ -49,7 +49,7 @@ func (v *VersionSuiteTest) Validate() error {
 	return v.Resource.Validate()
 }
 
-var versionSuiteTestTemplate = `{{ .Boilerplate }}
+const versionSuiteTestTemplate = `{{ .Boilerplate }}
 
 package {{ .Resource.Version }}
 

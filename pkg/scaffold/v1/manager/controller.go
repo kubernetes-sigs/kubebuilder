@@ -38,7 +38,7 @@ func (c *Controller) GetInput() (input.Input, error) {
 	return c.Input, nil
 }
 
-var controllerTemplate = `{{ .Boilerplate }}
+const controllerTemplate = `{{ .Boilerplate }}
 
 package controller
 

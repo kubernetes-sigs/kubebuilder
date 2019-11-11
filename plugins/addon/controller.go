@@ -28,7 +28,7 @@ func ReplaceController(u *model.Universe) error {
 	return nil
 }
 
-var controllerTemplate = `{{ .Boilerplate }}
+const controllerTemplate = `{{ .Boilerplate }}
 
 package controllers
 

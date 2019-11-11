@@ -75,7 +75,7 @@ func (a *AdmissionWebhookBuilder) GetInput() (input.Input, error) {
 	return a.Input, nil
 }
 
-var admissionWebhookBuilderTemplate = `{{ .Boilerplate }}
+const admissionWebhookBuilderTemplate = `{{ .Boilerplate }}
 
 package {{ .Type }}
 

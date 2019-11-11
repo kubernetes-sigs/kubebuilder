@@ -46,7 +46,7 @@ func (c *KustomizeImagePatch) GetInput() (input.Input, error) {
 	return c.Input, nil
 }
 
-var kustomizeImagePatchTemplate = `apiVersion: apps/v1
+const kustomizeImagePatchTemplate = `apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: controller-manager

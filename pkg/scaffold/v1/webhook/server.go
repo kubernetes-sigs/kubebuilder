@@ -45,7 +45,7 @@ func (a *Server) GetInput() (input.Input, error) {
 	return a.Input, nil
 }
 
-var serverTemplate = `{{ .Boilerplate }}
+const serverTemplate = `{{ .Boilerplate }}
 
 package {{ .Server }}server
 

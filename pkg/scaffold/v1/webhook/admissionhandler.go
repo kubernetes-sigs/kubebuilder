@@ -74,7 +74,7 @@ func (a *AdmissionHandler) GetInput() (input.Input, error) {
 	return a.Input, nil
 }
 
-var addAdmissionHandlerTemplate = `{{ .Boilerplate }}
+const addAdmissionHandlerTemplate = `{{ .Boilerplate }}
 
 package {{ .Type }}
 

@@ -52,7 +52,7 @@ func (c *CRDSample) Validate() error {
 	return c.Resource.Validate()
 }
 
-var crdSampleTemplate = `apiVersion: {{ .Resource.Group }}.{{ .Domain }}/{{ .Resource.Version }}
+const crdSampleTemplate = `apiVersion: {{ .Resource.Group }}.{{ .Domain }}/{{ .Resource.Version }}
 kind: {{ .Resource.Kind }}
 metadata:
   name: {{ lower .Resource.Kind }}-sample

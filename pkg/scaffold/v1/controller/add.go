@@ -45,7 +45,7 @@ func (a *AddController) GetInput() (input.Input, error) {
 	return a.Input, nil
 }
 
-var addControllerTemplate = `{{ .Boilerplate }}
+const addControllerTemplate = `{{ .Boilerplate }}
 
 package controller
 

@@ -58,7 +58,7 @@ func (a *APIs) GetInput() (input.Input, error) {
 	return a.Input, nil
 }
 
-var apisTemplate = `{{ .Boilerplate }}
+const apisTemplate = `{{ .Boilerplate }}
 
 {{ range $line := .Comments }}{{ $line }}
 {{ end }}
