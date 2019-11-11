@@ -66,6 +66,6 @@ func NewVersionCmd() *cobra.Command {
 	}
 }
 
-func runVersion(cmd *cobra.Command, args []string) {
+func runVersion(_ *cobra.Command, _ []string) {
 	GetVersion().Print()
 }
