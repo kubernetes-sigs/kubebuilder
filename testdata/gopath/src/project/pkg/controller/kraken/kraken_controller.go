@@ -19,11 +19,10 @@ package kraken
 import (
 	"context"
 
-	creaturesv2alpha1 "project/pkg/apis/creatures/v2alpha1"
-
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	creaturesv2alpha1 "project/pkg/apis/creatures/v2alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"

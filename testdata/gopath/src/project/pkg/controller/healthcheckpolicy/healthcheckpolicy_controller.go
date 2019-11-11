@@ -19,11 +19,10 @@ package healthcheckpolicy
 import (
 	"context"
 
-	policyv1beta1 "project/pkg/apis/policy/v1beta1"
-
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	policyv1beta1 "project/pkg/apis/policy/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
