@@ -265,7 +265,7 @@ func (api *API) scaffoldV2() error {
 func (api *API) validateResourceGroup(r *resource.Resource) error {
 	for _, existingGroup := range api.project.ResourceGroups() {
 		if strings.ToLower(r.Group) != strings.ToLower(existingGroup) {
-			return fmt.Errorf("Group '%s' is not same as existing group '%s'. Multiple groups are not supported yet.", r.Group, existingGroup)
+			return fmt.Errorf("group '%s' is not same as existing group '%s'. Multiple groups are not supported yet.", r.Group, existingGroup)
 		}
 	}
 	return nil
