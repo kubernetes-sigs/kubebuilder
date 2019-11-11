@@ -57,14 +57,8 @@ func (api *API) Validate() error {
 	if err := api.setDefaults(); err != nil {
 		return err
 	}
-	if api.Resource.Group == "" {
-		return fmt.Errorf("missing group information for resource")
-	}
-	if api.Resource.Version == "" {
-		return fmt.Errorf("missing version information for resource")
-	}
-	if api.Resource.Kind == "" {
-		return fmt.Errorf("missing kind information for resource")
+	if err := api.Resource.Validate(); err != nil {
+		return err
 	}
 
 	return nil
