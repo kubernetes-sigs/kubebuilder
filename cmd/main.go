@@ -116,8 +116,8 @@ func main() {
 		version.NewVersionCmd(),
 	)
 
-	foundProject, version := getProjectVersion()
-	if foundProject && version == project.Version1 {
+	foundProject, projectVersion := getProjectVersion()
+	if foundProject && projectVersion == project.Version1 {
 		printV1DeprecationWarning()
 
 		rootCmd.AddCommand(
