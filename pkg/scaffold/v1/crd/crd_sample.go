@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package resource
+package crd
 
 import (
 	"fmt"
@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 )
 
 var _ input.File = &CRDSample{}
@@ -31,7 +32,7 @@ type CRDSample struct {
 	input.Input
 
 	// Resource is a resource in the API group
-	Resource *Resource
+	Resource *resource.Resource
 }
 
 // GetInput implements input.File

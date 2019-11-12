@@ -22,13 +22,15 @@ import (
 	"strings"
 
 	"github.com/gobuffalo/flect"
+
 	"sigs.k8s.io/kubebuilder/pkg/model"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/util"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/controller"
-	resourcev1 "sigs.k8s.io/kubebuilder/pkg/scaffold/v1/resource"
-	resourcev2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2"
+	crdv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/v1/crd"
+	scaffoldv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2"
 	crdv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2/crd"
 )
 
@@ -40,7 +42,7 @@ type API struct {
 	// Plugins is the list of plugins we should allow to transform our generated scaffolding
 	Plugins []Plugin
 
-	Resource *resourcev1.Resource
+	Resource *resource.Resource
 
 	project *input.ProjectFile
 
@@ -91,7 +93,7 @@ func (api *API) Scaffold() error {
 }
 
 func (api *API) buildUniverse() *model.Universe {
-	resource := &model.Resource{
+	resourceModel := &model.Resource{
 		Namespaced: api.Resource.Namespaced,
 		Group:      api.Resource.Group,
 		Version:    api.Resource.Version,
@@ -100,10 +102,10 @@ func (api *API) buildUniverse() *model.Universe {
 		Plural:     flect.Pluralize(strings.ToLower(api.Resource.Kind)),
 	}
 
-	resource.GoPackage, resource.GroupDomain = util.GetResourceInfo(api.Resource, api.project.Repo, api.project.Domain)
+	resourceModel.GoPackage, resourceModel.GroupDomain = util.GetResourceInfo(api.Resource, api.project.Repo, api.project.Domain)
 
 	return &model.Universe{
-		Resource: resource,
+		Resource: resourceModel,
 	}
 }
 
@@ -117,14 +119,14 @@ func (api *API) scaffoldV1() error {
 			fmt.Sprintf("%s_types_test.go", strings.ToLower(r.Kind))))
 
 		err := (&Scaffold{}).Execute(api.buildUniverse(), input.Options{},
-			&resourcev1.Register{Resource: r},
-			&resourcev1.Types{Resource: r},
-			&resourcev1.VersionSuiteTest{Resource: r},
-			&resourcev1.TypesTest{Resource: r},
-			&resourcev1.Doc{Resource: r},
-			&resourcev1.Group{Resource: r},
-			&resourcev1.AddToScheme{Resource: r},
-			&resourcev1.CRDSample{Resource: r},
+			&crdv1.Register{Resource: r},
+			&crdv1.Types{Resource: r},
+			&crdv1.VersionSuiteTest{Resource: r},
+			&crdv1.TypesTest{Resource: r},
+			&crdv1.Doc{Resource: r},
+			&crdv1.Group{Resource: r},
+			&crdv1.AddToScheme{Resource: r},
+			&crdv1.CRDSample{Resource: r},
 		)
 		if err != nil {
 			return fmt.Errorf("error scaffolding APIs: %v", err)
@@ -169,13 +171,13 @@ func (api *API) scaffoldV2() error {
 			fmt.Sprintf("%s_types.go", strings.ToLower(r.Kind))))
 
 		files := []input.File{
-			&resourcev2.Types{
+			&scaffoldv2.Types{
 				Input: input.Input{
 					Path: filepath.Join("api", r.Version, fmt.Sprintf("%s_types.go", strings.ToLower(r.Kind))),
 				},
 				Resource: r},
-			&resourcev2.Group{Resource: r},
-			&resourcev2.CRDSample{Resource: r},
+			&scaffoldv2.Group{Resource: r},
+			&scaffoldv2.CRDSample{Resource: r},
 			&crdv2.EnableWebhookPatch{Resource: r},
 			&crdv2.EnableCAInjectionPatch{Resource: r},
 		}
@@ -226,8 +228,8 @@ func (api *API) scaffoldV2() error {
 			Plugins: api.Plugins,
 		}
 
-		ctrlScaffolder := &resourcev2.Controller{Resource: r}
-		testsuiteScaffolder := &resourcev2.ControllerSuiteTest{Resource: r}
+		ctrlScaffolder := &scaffoldv2.Controller{Resource: r}
+		testsuiteScaffolder := &scaffoldv2.ControllerSuiteTest{Resource: r}
 		err := scaffold.Execute(
 			api.buildUniverse(),
 			input.Options{},
@@ -244,8 +246,8 @@ func (api *API) scaffoldV2() error {
 		}
 	}
 
-	err := (&resourcev2.Main{}).Update(
-		&resourcev2.MainUpdateOptions{
+	err := (&scaffoldv2.Main{}).Update(
+		&scaffoldv2.MainUpdateOptions{
 			Project:        api.project,
 			WireResource:   api.DoResource,
 			WireController: api.DoController,
@@ -260,10 +262,10 @@ func (api *API) scaffoldV2() error {
 
 // Since we support single group only in v2 scaffolding, validate if resource
 // being created belongs to existing group.
-func (api *API) validateResourceGroup(resource *resourcev1.Resource) error {
+func (api *API) validateResourceGroup(r *resource.Resource) error {
 	for _, existingGroup := range api.project.ResourceGroups() {
-		if strings.ToLower(resource.Group) != strings.ToLower(existingGroup) {
-			return fmt.Errorf("Group '%s' is not same as existing group '%s'. Multiple groups are not supported yet.", resource.Group, existingGroup)
+		if strings.ToLower(r.Group) != strings.ToLower(existingGroup) {
+			return fmt.Errorf("Group '%s' is not same as existing group '%s'. Multiple groups are not supported yet.", r.Group, existingGroup)
 		}
 	}
 	return nil

@@ -14,12 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package resource
+package crd
 
 import (
 	"path/filepath"
 
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 )
 
 var _ input.File = &Group{}
@@ -29,7 +30,7 @@ type Group struct {
 	input.Input
 
 	// Resource is a resource in the API group
-	Resource *Resource
+	Resource *resource.Resource
 }
 
 // GetInput implements input.File

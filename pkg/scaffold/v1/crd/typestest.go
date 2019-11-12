@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package resource
+package crd
 
 import (
 	"fmt"
@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 )
 
 var _ input.File = &TypesTest{}
@@ -31,7 +32,7 @@ type TypesTest struct {
 	input.Input
 
 	// Resource is the resource to scaffold the types_test.go file for
-	Resource *Resource
+	Resource *resource.Resource
 }
 
 // GetInput implements input.File
