@@ -53,8 +53,8 @@ install:
   -
 
 script:
-- GO111MODULE=on TRACE=1 ./golden_test.sh
-- GO111MODULE=on TRACE=1 ./test.sh
+- ./golden_test.sh
+- ./test_e2e.sh
 - if [ "$TRAVIS_OS_NAME" = "linux" ]; then GO111MODULE=on TRACE=1 PATH=$PATH:$(pwd) ./test_e2e_v1.sh ; fi
 - if [ "$TRAVIS_OS_NAME" = "linux" ]; then GO111MODULE=on TRACE=1 PATH=$PATH:$(pwd) ./test_e2e_v2.sh ; fi
 

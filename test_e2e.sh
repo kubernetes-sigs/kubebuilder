@@ -19,6 +19,9 @@ set -o pipefail
 
 source common.sh
 
+export TRACE=1
+export GO111MODULE=on
+
 install_dep_by_git
 
 function test_init_project {

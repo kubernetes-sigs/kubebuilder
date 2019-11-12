@@ -20,7 +20,7 @@ set -o pipefail
 # Enable tracing in this script off by setting the TRACE variable in your
 # environment to any value:
 #
-# $ TRACE=1 test.sh
+# $ TRACE=1 test_e2e.sh
 TRACE=${TRACE:-""}
 if [ -n "$TRACE" ]; then
   set -x
@@ -30,7 +30,7 @@ fi
 # with this version. This is to assist testing functionality which depends on
 # version .e.g gopkg.toml generation.
 #
-# $ INJECT_KB_VERSION=0.1.7 test.sh
+# $ INJECT_KB_VERSION=0.1.7 test_e2e.sh
 INJECT_KB_VERSION=${INJECT_KB_VERSION:-unknown}
 
 # Make sure, we run in the root of the repo and
@@ -71,7 +71,7 @@ fi
 # Turn colors in this script off by setting the NO_COLOR variable in your
 # environment to any value:
 #
-# $ NO_COLOR=1 test.sh
+# $ NO_COLOR=1 test_e2e.sh
 NO_COLOR=${NO_COLOR:-""}
 if [ -z "$NO_COLOR" ]; then
   header=$'\e[1;33m'
@@ -94,7 +94,7 @@ kb_orig=$(pwd)
 # Skip fetching and untaring the tools by setting the SKIP_FETCH_TOOLS variable
 # in your environment to any value:
 #
-# $ SKIP_FETCH_TOOLS=1 ./test.sh
+# $ SKIP_FETCH_TOOLS=1 ./test_e2e.sh
 #
 # If you skip fetching tools, this script will use the tools already on your
 # machine, but rebuild the kubebuilder and kubebuilder-bin binaries.

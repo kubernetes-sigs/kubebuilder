@@ -19,6 +19,9 @@ set -o pipefail
 
 source common.sh
 
+export GO111MODULE=on
+export TRACE=1
+
 fetch_tools
 install_go_dep
 build_kb
