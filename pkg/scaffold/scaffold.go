@@ -28,7 +28,7 @@ import (
 	"text/template"
 
 	"golang.org/x/tools/imports"
-	yaml "gopkg.in/yaml.v2"
+	"sigs.k8s.io/yaml"
 	"sigs.k8s.io/kubebuilder/pkg/model"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
