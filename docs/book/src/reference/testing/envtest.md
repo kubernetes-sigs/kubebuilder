@@ -55,3 +55,19 @@ testEnv = &envtest.Environment{
 	KubeAPIServerFlags: apiServerFlags,
 }
 ```
+
+### Testing considerations
+
+Unless you're using an existing cluster, keep in mind that no built-in controllers are running in the test context. In some ways, the test control plane will behave differently from "real" clusters, and that might have an impact on how you write tests. One common example is garbage collection; because there are no controllers monitoring built-in resources, objects do not get deleted, even if an `OwnerReference` is set up.
+
+To test that the deletion lifecycle works, test the ownership instead of asserting on existence. For example:
+
+```go
+expectedOwnerReference := v1.OwnerReference{
+	Kind:       "MyCoolCustomResource",
+	APIVersion: "my.api.example.com/v1beta1",
+	UID:        "d9607e19-f88f-11e6-a518-42010a800195",
+	Name:       "userSpecifiedResourceName",
+}
+Expect(deployment.ObjectMeta.OwnerReferences).To(ContainElement(expectedOwnerReference))
+```
