@@ -23,6 +23,7 @@ package controllers
 
 import (
 	"context"
+	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/go-logr/logr"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -41,6 +42,7 @@ objects, so these are added out of the box.
 type CronJobReconciler struct {
 	client.Client
 	Log logr.Logger
+	Scheme *runtime.Scheme
 }
 
 /*
