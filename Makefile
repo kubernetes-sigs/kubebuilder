@@ -54,7 +54,7 @@ generate-testdata: ## Update/generate the testdata in $GOPATH/src/sigs.k8s.io/ku
 	GO111MODULE=on ./generate_golden.sh
 
 .PHONY: generate-vendor
-generate-vendor: ## (deprecated) - Update/generate the vendor by using the path $GOPATH/src/sigs.k8s.io/kubebuilder-test
+generate-vendor: ## (Deprecated) Update/generate the vendor by using the path $GOPATH/src/sigs.k8s.io/kubebuilder-test
 	GO111MODULE=off ./generate_vendor.sh
 
 .PHONY: generate-setup
@@ -68,12 +68,11 @@ generate-setup: ## Current workarround to generate the testdata with the correct
 test: ## Run the go tests ($ go test -v ./cmd/... ./pkg/...)
 	go test -v ./cmd/... ./pkg/...
 
-.PHONY: test-project-generation
-test-project-generation: ## Run the unit tests (used in the CI)
-	- go get sigs.k8s.io/kind@v0.5.1
+.PHONY: test-ci
+test-ci: ## Run the unit tests (used in the CI)
+	./setup.sh
 	./test.sh
 
 .PHONY: test-e2e
 test-e2e: ## Run the integration tests (used in the CI)
-	./test_e2e_v1.sh
-	./test_e2e_v2.sh
+	./test_e2e.sh

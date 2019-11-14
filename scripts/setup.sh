@@ -1,5 +1,6 @@
-#!/usr/bin/env bash
-# Copyright 2018 The Kubernetes Authors.
+#!/bin/sh
+
+# Copyright 2019 The Kubernetes Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,7 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-export TRACE=1
+K8S_VERSION=$1
+
 export GO111MODULE=on
 
-./test.sh
+# setup go module to create the cluster
+go get sigs.k8s.io/kind@v0.5.1
+
+# You can use --image flag to specify the cluster version you want, e.g --image=kindest/node:v1.13.6, the supported version are listed at https://hub.docker.com/r/kindest/node/tags
+kind create cluster --config test/kind-config.yaml --image=kindest/node:$K8S_VERSION
+
+# setup the go modules required
+go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.2.2
+go get sigs.k8s.io/kustomize/kustomize/v3@v3.2.1
