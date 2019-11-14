@@ -23,7 +23,8 @@ export TRACE=1
 export GO111MODULE=on
 
 fetch_tools
-install_go_dep
+# This test is used by prow and if the dep not be installed by git then it will face the GOBIN issue.
+install_dep_by_git
 build_kb
 
 setup_envs
