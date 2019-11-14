@@ -42,6 +42,7 @@ import (
 	"sigs.k8s.io/kubebuilder-declarative-pattern/pkg/patterns/declarative"
 
 	"github.com/go-logr/logr"
+	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -54,6 +55,7 @@ var _ reconcile.Reconciler = &{{ .Resource.Kind }}Reconciler{}
 type {{ .Resource.Kind }}Reconciler struct {
 	client.Client
 	Log logr.Logger
+	Scheme *runtime.Scheme
 
 	declarative.Reconciler
 }
