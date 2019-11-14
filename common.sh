@@ -156,7 +156,7 @@ function install_dep_by_git {
     DEP_LATEST=$(git describe --abbrev=0 --tags)
     git checkout $DEP_LATEST
     mkdir bin
-    go build -ldflags="-X main.version=$DEP_LATEST" -o bin/dep ./cmd/dep
+    GO111MODULE=off go build -ldflags="-X main.version=$DEP_LATEST" -o bin/dep ./cmd/dep
     popd
   fi
 }
