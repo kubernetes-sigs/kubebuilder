@@ -156,7 +156,7 @@ function install_dep_by_git {
     DEP_LATEST=$(git describe --abbrev=0 --tags)
     git checkout $DEP_LATEST
     mkdir bin
-    go build -ldflags="-X main.version=$DEP_LATEST" -o bin/dep ./cmd/dep
+    GO111MODULE=off go build -ldflags="-X main.version=$DEP_LATEST" -o bin/dep ./cmd/dep
     popd
   fi
 }
@@ -167,6 +167,17 @@ function install_go_dep {
   if ! is_installed dep ; then
     header_text "Installing dep"
     curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+  fi
+}
+
+function install_kind {
+  header_text "Checking for kind"
+  if ! is_installed kind ; then
+    header_text "Installing kind"
+    KIND_DIR=$(mktemp -d)
+    pushd $KIND_DIR
+    GO111MODULE=on go get sigs.k8s.io/kind@v0.6.0
+    popd
   fi
 }
 

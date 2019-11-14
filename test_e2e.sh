@@ -23,11 +23,14 @@ export TRACE=1
 export GO111MODULE=on
 
 fetch_tools
-install_go_dep
+# This test is used by prow and if the dep not be installed by git then it will face the GOBIN issue.
+install_dep_by_git
+install_kind
 build_kb
 
 setup_envs
 
+source "$(pwd)/scripts/setup.sh" ${KIND_K8S_VERSION}
 docker pull gcr.io/kubebuilder/kube-rbac-proxy:v0.4.1
 kind load docker-image gcr.io/kubebuilder/kube-rbac-proxy:v0.4.1
 
