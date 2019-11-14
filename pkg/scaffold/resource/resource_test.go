@@ -117,6 +117,12 @@ var _ = Describe("Resource", func() {
 			Expect(instance.GroupImportSafe).To(Equal("myproject"))
 		})
 
+		It("should allow dots in group names", func() {
+			instance := &Resource{Group: "example.com", Kind: "Cat", Version: "v1"}
+			Expect(instance.Validate()).To(Succeed())
+			Expect(instance.GroupImportSafe).To(Equal("examplecom"))
+		})
+
 		It("should keep the Resource if specified", func() {
 			instance := &Resource{Group: "crew", Kind: "FirstMate", Version: "v1", Resource: "myresource"}
 			Expect(instance.Validate()).To(Succeed())

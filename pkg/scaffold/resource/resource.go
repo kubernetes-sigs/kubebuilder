@@ -73,6 +73,7 @@ func (r *Resource) Validate() error {
 	}
 
 	r.GroupImportSafe = strings.Replace(r.Group, "-", "", -1)
+	r.GroupImportSafe = strings.Replace(r.GroupImportSafe, ".", "", -1)
 
 	versionMatch := regexp.MustCompile("^v\\d+(alpha\\d+|beta\\d+)?$")
 	if !versionMatch.MatchString(r.Version) {
