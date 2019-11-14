@@ -61,7 +61,7 @@ func (v *ControllerSuiteTest) Validate() error {
 	return v.Resource.Validate()
 }
 
-var controllerSuiteTestTemplate = `{{ .Boilerplate }}
+const controllerSuiteTestTemplate = `{{ .Boilerplate }}
 
 package controllers
 

@@ -39,7 +39,7 @@ func (c *KustomizeConfigWebhook) GetInput() (input.Input, error) {
 	return c.Input, nil
 }
 
-var KustomizeConfigWebhookTemplate = `# the following config is for teaching kustomize where to look at when substituting vars.
+const KustomizeConfigWebhookTemplate = `# the following config is for teaching kustomize where to look at when substituting vars.
 # It requires kustomize v2.1.0 or newer to work properly.
 nameReference:
 - kind: Service

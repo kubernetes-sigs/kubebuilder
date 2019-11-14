@@ -47,7 +47,7 @@ func (r *Register) Validate() error {
 	return r.Resource.Validate()
 }
 
-var registerTemplate = `{{ .Boilerplate }}
+const registerTemplate = `{{ .Boilerplate }}
 
 // NOTE: Boilerplate only.  Ignore this file.
 

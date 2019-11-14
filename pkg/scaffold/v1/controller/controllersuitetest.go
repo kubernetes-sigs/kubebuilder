@@ -42,7 +42,7 @@ func (a *SuiteTest) GetInput() (input.Input, error) {
 	return a.Input, nil
 }
 
-var controllerSuiteTestTemplate = `{{ .Boilerplate }}
+const controllerSuiteTestTemplate = `{{ .Boilerplate }}
 
 package {{ lower .Resource.Kind }}
 

@@ -51,7 +51,7 @@ func (a *AdmissionWebhooks) GetInput() (input.Input, error) {
 	return a.Input, nil
 }
 
-var webhooksTemplate = `{{ .Boilerplate }}
+const webhooksTemplate = `{{ .Boilerplate }}
 
 package {{ .Type }}
 

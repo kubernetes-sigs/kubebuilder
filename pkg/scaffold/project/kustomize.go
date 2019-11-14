@@ -51,7 +51,7 @@ func (c *Kustomize) GetInput() (input.Input, error) {
 	return c.Input, nil
 }
 
-var kustomizeTemplate = `# Adds namespace to all resources.
+const kustomizeTemplate = `# Adds namespace to all resources.
 namespace: {{.Prefix}}-system
 
 # Value of this field is prepended to the

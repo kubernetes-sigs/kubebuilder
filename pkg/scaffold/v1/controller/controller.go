@@ -97,7 +97,7 @@ func getResourceInfo(coreGroups map[string]string, r *resource.Resource, in inpu
 	return path.Join(in.Repo, "pkg", "apis"), r.Group + "." + in.Domain
 }
 
-var controllerTemplate = `{{ .Boilerplate }}
+const controllerTemplate = `{{ .Boilerplate }}
 
 package {{ lower .Resource.Kind }}
 

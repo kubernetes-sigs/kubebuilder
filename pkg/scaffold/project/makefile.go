@@ -48,7 +48,7 @@ func (c *Makefile) GetInput() (input.Input, error) {
 	return c.Input, nil
 }
 
-var makefileTemplate = `
+const makefileTemplate = `
 # Image URL to use all building/pushing image targets
 IMG ?= {{ .Image }}
 

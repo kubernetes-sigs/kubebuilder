@@ -66,7 +66,7 @@ func (a *Test) GetInput() (input.Input, error) {
 	return a.Input, nil
 }
 
-var controllerTestTemplate = `{{ .Boilerplate }}
+const controllerTestTemplate = `{{ .Boilerplate }}
 
 package {{ lower .Resource.Kind }}
 

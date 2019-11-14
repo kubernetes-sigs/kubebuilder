@@ -39,7 +39,7 @@ func (c *Service) GetInput() (input.Input, error) {
 	return c.Input, nil
 }
 
-var ServiceTemplate = `
+const ServiceTemplate = `
 apiVersion: v1
 kind: Service
 metadata:

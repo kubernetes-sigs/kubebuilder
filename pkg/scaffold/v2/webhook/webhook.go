@@ -68,14 +68,15 @@ func (a *Webhook) GetInput() (input.Input, error) {
 		a.Path = filepath.Join("api", a.Resource.Version,
 			fmt.Sprintf("%s_webhook.go", strings.ToLower(a.Resource.Kind)))
 	}
+	webhookTemplate := WebhookTemplate
 	if a.Defaulting {
-		WebhookTemplate = WebhookTemplate + DefaultingWebhookTemplate
+		webhookTemplate = webhookTemplate + DefaultingWebhookTemplate
 	}
 	if a.Validating {
-		WebhookTemplate = WebhookTemplate + ValidatingWebhookTemplate
+		webhookTemplate = webhookTemplate + ValidatingWebhookTemplate
 	}
 
-	a.TemplateBody = WebhookTemplate
+	a.TemplateBody = webhookTemplate
 	a.Input.IfExistsAction = input.Error
 	return a.Input, nil
 }
@@ -85,7 +86,7 @@ func (g *Webhook) Validate() error {
 	return g.Resource.Validate()
 }
 
-var (
+const (
 	WebhookTemplate = `{{ .Boilerplate }}
 
 package {{ .Resource.Version }}

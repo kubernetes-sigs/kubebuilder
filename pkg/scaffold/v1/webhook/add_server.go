@@ -45,7 +45,7 @@ func (a *AddServer) GetInput() (input.Input, error) {
 	return a.Input, nil
 }
 
-var addServerTemplate = `{{ .Boilerplate }}
+const addServerTemplate = `{{ .Boilerplate }}
 
 package webhook
 

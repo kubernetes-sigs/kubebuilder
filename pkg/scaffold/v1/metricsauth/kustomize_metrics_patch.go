@@ -40,7 +40,7 @@ func (c *KustomizePrometheusMetricsPatch) GetInput() (input.Input, error) {
 	return c.Input, nil
 }
 
-var kustomizePrometheusMetricsPatchTemplate = `# This patch enables Prometheus scraping for the manager pod.
+const kustomizePrometheusMetricsPatchTemplate = `# This patch enables Prometheus scraping for the manager pod.
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:

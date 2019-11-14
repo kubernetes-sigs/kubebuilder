@@ -36,7 +36,7 @@ func (p *CertManager) GetInput() (input.Input, error) {
 	return p.Input, nil
 }
 
-var certManagerTemplate = `# The following manifests contain a self-signed issuer CR and a certificate CR.
+const certManagerTemplate = `# The following manifests contain a self-signed issuer CR and a certificate CR.
 # More document can be found at https://docs.cert-manager.io
 # WARNING: Targets CertManager 0.11 check https://docs.cert-manager.io/en/latest/tasks/upgrading/index.html for breaking changes
 apiVersion: cert-manager.io/v1alpha2

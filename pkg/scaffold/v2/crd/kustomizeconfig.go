@@ -39,7 +39,7 @@ func (c *KustomizeConfig) GetInput() (input.Input, error) {
 	return c.Input, nil
 }
 
-var kustomizeConfigTemplate = `# This file is for teaching kustomize how to substitute name and namespace reference in CRD
+const kustomizeConfigTemplate = `# This file is for teaching kustomize how to substitute name and namespace reference in CRD
 nameReference:
 - kind: Service
   version: v1

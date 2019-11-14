@@ -51,7 +51,7 @@ func (t *Types) Validate() error {
 	return t.Resource.Validate()
 }
 
-var typesTemplate = `{{ .Boilerplate }}
+const typesTemplate = `{{ .Boilerplate }}
 
 package {{ .Resource.Version }}
 

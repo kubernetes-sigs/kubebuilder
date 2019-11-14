@@ -37,7 +37,7 @@ func JSONTag(tag string) string {
 
 // Resource.Resource
 
-var typesTemplate = `{{ .Boilerplate }}
+const typesTemplate = `{{ .Boilerplate }}
 
 package {{ .Resource.Version }}
 
