@@ -26,7 +26,7 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 )
 
-func GetResourceInfo(r *resource.Resource, repo, domain string) (resourcePackage, groupDomain string) {
+func GetResourceInfo(r *resource.Resource, repo, domain string, isMultiGroup bool) (resourcePackage, groupDomain string) {
 	// Use the k8s.io/api package for core resources
 	coreGroups := map[string]string{
 		"apps":                  "",
@@ -53,14 +53,21 @@ func GetResourceInfo(r *resource.Resource, repo, domain string) (resourcePackage
 		"setting":               "k8s.io",
 		"storage":               "k8s.io",
 	}
-	resourcePath := filepath.Join("api", r.Version, fmt.Sprintf("%s_types.go", strings.ToLower(r.Kind)))
+
+	var resourcePath string
+	if isMultiGroup {
+		resourcePath = filepath.Join("apis", r.Group, r.Version, fmt.Sprintf("%s_types.go", strings.ToLower(r.Kind)))
+	} else {
+		resourcePath = filepath.Join("api", r.Version, fmt.Sprintf("%s_types.go", strings.ToLower(r.Kind)))
+	}
+
 	if _, err := os.Stat(resourcePath); os.IsNotExist(err) {
 		if domain, found := coreGroups[r.Group]; found {
 			// TODO: support apiextensions.k8s.io and metrics.k8s.io.
 			// apiextensions.k8s.io is in k8s.io/apiextensions-apiserver/pkg/apis/apiextensions
 			// metrics.k8s.io is in k8s.io/metrics/pkg/apis/metrics
 			resourcePackage := path.Join("k8s.io", "api", r.Group)
-			groupDomain := r.Group
+			groupDomain = r.Group
 			if domain != "" {
 				groupDomain = r.Group + "." + domain
 			}
@@ -68,5 +75,10 @@ func GetResourceInfo(r *resource.Resource, repo, domain string) (resourcePackage
 		}
 		// TODO: need to support '--resource-pkg-path' flag for specifying resourcePath
 	}
-	return path.Join(repo, "api"), r.Group + "." + domain
+
+	if isMultiGroup {
+		return path.Join(repo, "apis", r.Group), r.Group + "." + domain
+	} else {
+		return path.Join(repo, "api"), r.Group + "." + domain
+	}
 }

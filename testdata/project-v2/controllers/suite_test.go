@@ -29,8 +29,6 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	corev1 "k8s.io/api/core/v1"
-
 	crewv1 "sigs.k8s.io/kubebuilder/testdata/project-v2/api/v1"
 	// +kubebuilder:scaffold:imports
 )
@@ -70,9 +68,6 @@ var _ = BeforeSuite(func(done Done) {
 	Expect(err).NotTo(HaveOccurred())
 
 	err = crewv1.AddToScheme(scheme.Scheme)
-	Expect(err).NotTo(HaveOccurred())
-
-	err = corev1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	// +kubebuilder:scaffold:scheme

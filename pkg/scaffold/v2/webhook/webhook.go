@@ -53,7 +53,7 @@ type Webhook struct {
 // GetInput implements input.File
 func (a *Webhook) GetInput() (input.Input, error) {
 
-	_, a.GroupDomain = util.GetResourceInfo(a.Resource, a.Repo, a.Domain)
+	_, a.GroupDomain = util.GetResourceInfo(a.Resource, a.Repo, a.Domain, a.MultiGroup)
 
 	a.GroupDomainWithDash = strings.Replace(a.GroupDomain, ".", "-", -1)
 
@@ -62,9 +62,13 @@ func (a *Webhook) GetInput() (input.Input, error) {
 	}
 
 	if a.Path == "" {
-		a.Path = filepath.Join("api", a.Resource.Version,
-			fmt.Sprintf("%s_webhook.go", strings.ToLower(a.Resource.Kind)))
+		if a.MultiGroup {
+			a.Path = filepath.Join("apis", a.Resource.Group, a.Resource.Version, fmt.Sprintf("%s_webhook.go", strings.ToLower(a.Resource.Kind)))
+		} else {
+			a.Path = filepath.Join("api", a.Resource.Version, fmt.Sprintf("%s_webhook.go", strings.ToLower(a.Resource.Kind)))
+		}
 	}
+
 	webhookTemplate := WebhookTemplate
 	if a.Defaulting {
 		webhookTemplate = webhookTemplate + DefaultingWebhookTemplate

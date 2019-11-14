@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v2
+package controller
 
 import (
 	"path/filepath"
@@ -47,17 +47,22 @@ type Controller struct {
 // GetInput implements input.File
 func (a *Controller) GetInput() (input.Input, error) {
 
-	a.ResourcePackage, a.GroupDomain = util.GetResourceInfo(a.Resource, a.Repo, a.Domain)
+	a.ResourcePackage, a.GroupDomain = util.GetResourceInfo(a.Resource, a.Repo, a.Domain, a.MultiGroup)
 
 	if a.Plural == "" {
 		a.Plural = flect.Pluralize(strings.ToLower(a.Resource.Kind))
 	}
 
 	if a.Path == "" {
-		a.Path = filepath.Join("controllers",
-			strings.ToLower(a.Resource.Kind)+"_controller.go")
+		if a.MultiGroup {
+			a.Path = filepath.Join("controllers",
+				a.Resource.Group,
+				strings.ToLower(a.Resource.Kind)+"_controller.go")
+		} else {
+			a.Path = filepath.Join("controllers",
+				strings.ToLower(a.Resource.Kind)+"_controller.go")
+		}
 	}
-
 	a.TemplateBody = controllerTemplate
 
 	a.Input.IfExistsAction = input.Error

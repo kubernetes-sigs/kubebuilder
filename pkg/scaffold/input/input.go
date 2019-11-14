@@ -58,6 +58,9 @@ type Input struct {
 
 	// ProjectPath is the relative path to the project root
 	ProjectPath string
+
+	// MultiGroup is the multi-group boolean from the PROJECT file
+	MultiGroup bool
 }
 
 // Domain allows a domain to be set on an object
@@ -125,6 +128,17 @@ func (i *Input) SetVersion(v string) {
 	}
 }
 
+// MultiGroup allows the project version to be set on an object
+type MultiGroup interface {
+	// SetVersion sets the project version
+	SetMultiGroup(value bool)
+}
+
+// SetVersion sets the MultiGroup value
+func (i *Input) SetMultiGroup(v bool) {
+	i.MultiGroup = v
+}
+
 // ProjecPath allows the project path to be set on an object
 type ProjecPath interface {
 	// SetProjectPath sets the project file location
@@ -173,6 +187,9 @@ type ProjectFile struct {
 	// Resources tracks scaffolded resources in the project. This info is
 	// tracked only in project with version 2.
 	Resources []Resource `json:"resources,omitempty"`
+
+	// Multigroup tracks if the project has more than one group
+	MultiGroup bool `json:"multigroup,omitempty"`
 }
 
 // ResourceGroups returns unique groups of scaffolded resources in the project.
