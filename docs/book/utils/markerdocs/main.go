@@ -17,12 +17,12 @@ limitations under the License.
 package main
 
 import (
-	"fmt"
-	"os"
-	"log"
-	"strings"
-	"os/exec"
 	"encoding/json"
+	"fmt"
+	"log"
+	"os"
+	"os/exec"
+	"strings"
 
 	"sigs.k8s.io/kubebuilder/docs/book/utils/plugin"
 )
@@ -44,7 +44,7 @@ func maybeDetails(help *DetailedHelp) toHTML {
 	if help.Summary == "" && help.Details == "" {
 		return Fragment{}
 	}
-	
+
 	return Fragment{
 		details(nil,
 			summary(optionalClasses{"no-details": help.Details == ""},
@@ -59,7 +59,7 @@ func markerTemplate(marker *MarkerDoc) toHTML {
 	// the marker name
 	term := dt(classes{"literal", "name"},
 		Text(marker.Name))
-	
+
 	// the args summary (displayed in summary mode)
 	var fields []toHTML
 	for _, field := range marker.Fields {
@@ -73,7 +73,7 @@ func markerTemplate(marker *MarkerDoc) toHTML {
 	argsDef := dd(classes{"args"},
 		dl(classes{"args", "summary"},
 			fields...))
-	
+
 	// the argument details (displayed in details mode)
 	var args Fragment
 	for _, field := range marker.Fields {
@@ -91,14 +91,14 @@ func markerTemplate(marker *MarkerDoc) toHTML {
 		maybeDetails(&marker.DetailedHelp),
 		dl(classes{"args"},
 			args))
-		
+
 	// the overall wrapping marker (common classes go here to make it easier to select
 	// on certain things w/o duplication)
 	markerAttrs := attrs{
 		optionalClasses{
-			"marker": true,
+			"marker":     true,
 			"deprecated": marker.DeprecatedInFavorOf != nil,
-			"anonymous": marker.Anonymous(),
+			"anonymous":  marker.Anonymous(),
 		},
 		dataAttr{Name: "target", Value: marker.Target},
 	}
@@ -155,7 +155,7 @@ func (p MarkerDocs) Process(input *plugin.Input) error {
 
 		// HTML5 says that any characters are valid in ID except for space,
 		// but may not be empty (which we prevent by skipping un-named categories):
-		// https://www.w3.org/TR/html52/dom.html#element-attrdef-global-id 
+		// https://www.w3.org/TR/html52/dom.html#element-attrdef-global-id
 		categoryAlias := strings.ReplaceAll(category, " ", "-")
 
 		content := new(strings.Builder)
@@ -182,7 +182,7 @@ func (p MarkerDocs) Process(input *plugin.Input) error {
 
 	// ... and finally make sure we didn't miss any
 	if len(usedCategories) != len(markersByCategory) {
-		unusedCategories := make([]string, 0, len(markersByCategory) - len(usedCategories))
+		unusedCategories := make([]string, 0, len(markersByCategory)-len(usedCategories))
 		for cat := range markersByCategory {
 			if _, ok := usedCategories[cat]; !ok {
 				unusedCategories = append(unusedCategories, cat)

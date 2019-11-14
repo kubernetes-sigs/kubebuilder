@@ -18,16 +18,16 @@ package main
 
 import (
 	"fmt"
-	"os"
-	"io/ioutil"
-	"path/filepath"
 	"go/scanner"
 	"go/token"
+	"io/ioutil"
 	"log"
+	"net/url"
+	"os"
+	"path"
+	"path/filepath"
 	"strings"
 	"unicode"
-	"path"
-	"net/url"
 
 	"sigs.k8s.io/kubebuilder/docs/book/utils/plugin"
 )
@@ -44,6 +44,7 @@ type Literate struct {
 	// BaseSourcePath specifies the base path to internet-reachable versions of the source code used
 	BaseSourcePath *url.URL
 }
+
 func (_ Literate) SupportsOutput(_ string) bool { return true }
 func (l Literate) Process(input *plugin.Input) error {
 	bookSrcDir := filepath.Join(input.Context.Root, input.Context.Config.Book.Src)
@@ -51,8 +52,8 @@ func (l Literate) Process(input *plugin.Input) error {
 		chapterDir := filepath.Dir(chapter.Path)
 		pathInfo := filePathInfo{
 			chapterRelativePath: relPath,
-			chapterDir: chapterDir,
-			bookSrcDir: bookSrcDir,
+			chapterDir:          chapterDir,
+			bookSrcDir:          bookSrcDir,
 		}
 		path := pathInfo.FullPath()
 
@@ -90,15 +91,15 @@ func (f filePathInfo) ViewablePath(baseBookSrcURL url.URL) string {
 	outURL := baseBookSrcURL
 
 	outURL.Path = path.Join(outURL.Path, relPath)
-	
+
 	return outURL.String()
 }
 
 // commentCodePair represents a block of code with some text before it, optionally
 // marked as collapsed with the given "collapse summary".
 type commentCodePair struct {
-	comment string
-	code string
+	comment  string
+	code     string
 	collapse string
 }
 
@@ -141,7 +142,7 @@ func isBlockComment(tok token.Token, lit string) bool {
 // commentText extracts the text from the given comment, slicing off
 // some common amount of whitespace prefix.
 func commentText(raw string, lineOffset int) string {
-	rawBody := raw[2:len(raw)-2] // chop of the delimiters
+	rawBody := raw[2 : len(raw)-2] // chop of the delimiters
 	lines := strings.Split(rawBody, "\n")
 	if len(lines) == 0 {
 		return ""
@@ -188,8 +189,8 @@ func extractPairs(contents []byte, path string) ([]commentCodePair, error) {
 		if collapse == "" && !isBlockComment(tok, lit) {
 			continue
 		}
-		codeEnd := file.Offset(pos)-1
-		if codeEnd - lastCodeBlockStart > 0 {
+		codeEnd := file.Offset(pos) - 1
+		if codeEnd-lastCodeBlockStart > 0 {
 			lastPair.code = string(contents[lastCodeBlockStart:codeEnd])
 		}
 		pairs = append(pairs, lastPair)
@@ -197,12 +198,12 @@ func extractPairs(contents []byte, path string) ([]commentCodePair, error) {
 			line := file.Line(pos)
 			lineStart := file.LineStart(line)
 			lastPair = commentCodePair{
-				comment: commentText(lit, file.Offset(pos) - file.Offset(lineStart)),
+				comment: commentText(lit, file.Offset(pos)-file.Offset(lineStart)),
 			}
 		} else {
 			lastPair = commentCodePair{}
 		}
-		lastCodeBlockStart = file.Offset(pos)+len(lit)
+		lastCodeBlockStart = file.Offset(pos) + len(lit)
 	}
 	lastPair.code = string(contents[lastCodeBlockStart:])
 	pairs = append(pairs, lastPair)
@@ -236,7 +237,7 @@ func (l Literate) extractContents(contents []byte, pathInfo filePathInfo) (strin
 		prettyPath = prunedPath
 	}
 	out.WriteString(fmt.Sprintf(`<cite class="literate-source"><a href="%[1]s">%[2]s</a></cite>`, sourcePath, prettyPath))
-	
+
 	for _, pair := range pairs {
 		if pair.collapse != "" {
 			// NB(directxman12): we add the hljs class to "cheat" and get the
@@ -256,7 +257,7 @@ func (l Literate) extractContents(contents []byte, pathInfo filePathInfo) (strin
 			out.WriteString(wrapWithNewlines(pair.code))
 			out.WriteString("```\n")
 		}
-		if pair.collapse != ""{
+		if pair.collapse != "" {
 			out.WriteString("\n</details>")
 		}
 		// TODO(directxman12): nice side-by-side sections
@@ -293,7 +294,7 @@ func main() {
 	}
 	cfg := Literate{
 		PrettyPathPrunePrefix: "testdata",
-		BaseSourcePath: baseURL,
+		BaseSourcePath:        baseURL,
 	}
 	if err := plugin.Run(cfg, os.Stdin, os.Stdout, os.Args[1:]...); err != nil {
 		log.Fatal(err.Error())

@@ -18,10 +18,9 @@ package main
 
 import (
 	"fmt"
-	"strings"
 	"html"
 	"io"
-
+	"strings"
 )
 
 // NB(directxman12): we use this instead of templates to avoid
@@ -39,6 +38,7 @@ type toHTML interface {
 
 // Text is a chunk of text in an HTML doc.
 type Text string
+
 func (t Text) WriteHTML(w io.Writer) error {
 	_, err := io.WriteString(w, html.EscapeString(string(t)))
 	return err
@@ -46,10 +46,11 @@ func (t Text) WriteHTML(w io.Writer) error {
 
 // Tag is some tag with contents and attributes in an HTML doc.
 type Tag struct {
-	Name string
-	Attrs Attrs
+	Name     string
+	Attrs    Attrs
 	Children []toHTML
 }
+
 func (t Tag) WriteHTML(w io.Writer) error {
 	attrsOut := ""
 	if t.Attrs != nil {
@@ -74,6 +75,7 @@ func (t Tag) WriteHTML(w io.Writer) error {
 
 // Fragment is some series of tags, text, etc in an HTML doc.
 type Fragment []toHTML
+
 func (f Fragment) WriteHTML(w io.Writer) error {
 	for _, item := range f {
 		if err := item.WriteHTML(w); err != nil {
@@ -91,10 +93,12 @@ type Attrs interface {
 
 // classes sets the class attribute to these class names.
 type classes []string
+
 func (c classes) ToAttrs() string { return fmt.Sprintf("class=%q", strings.Join(c, " ")) }
 
 // optionalClasses sets the the class attribute to these class names, if their values are true.
 type optionalClasses map[string]bool
+
 func (c optionalClasses) ToAttrs() string {
 	actualClasses := make([]string, 0, len(c))
 	for class, active := range c {
@@ -107,6 +111,7 @@ func (c optionalClasses) ToAttrs() string {
 
 // attrs joins together one or more Attrs.
 type attrs []Attrs
+
 func (a attrs) ToAttrs() string {
 	parts := make([]string, len(a))
 	for i, attr := range a {
@@ -117,9 +122,10 @@ func (a attrs) ToAttrs() string {
 
 // dataAttr represents some `data-*` attribute.
 type dataAttr struct {
-	Name string
+	Name  string
 	Value string
 }
+
 func (d dataAttr) ToAttrs() string {
 	return fmt.Sprintf("data-%s=%q", d.Name, d.Value)
 }
@@ -129,20 +135,19 @@ func (d dataAttr) ToAttrs() string {
 func makeTag(name string) func(Attrs, ...toHTML) Tag {
 	return func(attrs Attrs, children ...toHTML) Tag {
 		return Tag{
-			Name: name,
-			Attrs: attrs,
+			Name:     name,
+			Attrs:    attrs,
 			Children: children,
 		}
 	}
 }
 
 var (
-	dd = makeTag("dd")
-	dt = makeTag("dt")
-	dl = makeTag("dl")
+	dd      = makeTag("dd")
+	dt      = makeTag("dt")
+	dl      = makeTag("dl")
 	details = makeTag("details")
 	summary = makeTag("summary")
-	span = makeTag("span")
-	div = makeTag("div")
+	span    = makeTag("span")
+	div     = makeTag("div")
 )
-

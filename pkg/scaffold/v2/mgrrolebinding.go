@@ -51,4 +51,3 @@ subjects:
   name: default
   namespace: system
 `
-

@@ -17,11 +17,11 @@ limitations under the License.
 package plugin
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
-	"encoding/json"
-	"os"
 	"io/ioutil"
+	"os"
 )
 
 // Plugin represents a mdBook plugin.
@@ -35,7 +35,7 @@ type Plugin interface {
 // Run runs the given plugin on the given input stream, outputting its result to the given
 // result, assuming the given command-line args (without program name).
 func Run(plug Plugin, inputRaw io.Reader, outputRaw io.Writer, args ...string) error {
-	if len(args) > 1 && args[0] == "supports" {	
+	if len(args) > 1 && args[0] == "supports" {
 		// we support any renderer, no need to check (name is in Args[1])
 		if plug.SupportsOutput(args[1]) {
 			return nil

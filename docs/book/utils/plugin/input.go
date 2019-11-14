@@ -17,20 +17,22 @@ limitations under the License.
 package plugin
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
-	"bytes"
 )
 
 // Context is a (partial) mdBook execution context.
 type Context struct {
-	Root string `json:"root"`
+	Root   string `json:"root"`
 	Config Config `json:"config"`
 }
+
 // Config is a (partial) mdBook config
 type Config struct {
 	Book BookConfig `json:"book"`
 }
+
 // BookConfig is a (partial) mdBook [book] stanza
 type BookConfig struct {
 	Src string `json:"src"`
@@ -38,8 +40,8 @@ type BookConfig struct {
 
 // Book is an mdBook book.
 type Book struct {
-	Sections []BookItem `json:"sections"`
-	NonExhaustive *struct{} `json:"__non_exhaustive"`
+	Sections      []BookItem `json:"sections"`
+	NonExhaustive *struct{}  `json:"__non_exhaustive"`
 }
 
 // BookSection is an mdBook section.
@@ -87,18 +89,18 @@ func (b BookItem) MarshalJSON() ([]byte, error) {
 
 // bookItem is the underlying mdBook item without custom serialization.
 type bookItem struct {
-	Chapter *BookChapter `json:"Chapter"`
-	Separator bool `json:"-"`
+	Chapter   *BookChapter `json:"Chapter"`
+	Separator bool         `json:"-"`
 }
 
 // BookChapter is an mdBook chapter.
-type BookChapter struct{
-	Name string `json:"name"`
-	Content string `json:"content"`
-	Number SectionNumber `json:"number"`
-	SubItems []BookItem `json:"sub_items"`
-	Path string `json:"path"`
-	ParentNames []string `json:"parent_names"`
+type BookChapter struct {
+	Name        string        `json:"name"`
+	Content     string        `json:"content"`
+	Number      SectionNumber `json:"number"`
+	SubItems    []BookItem    `json:"sub_items"`
+	Path        string        `json:"path"`
+	ParentNames []string      `json:"parent_names"`
 }
 
 // SectionNumber is an mdBook section number (e.g. `1.2` is `{1,2}`).
@@ -109,7 +111,7 @@ type SectionNumber []uint32
 // a Rust tuple.
 type Input struct {
 	Context Context
-	Book Book
+	Book    Book
 }
 
 func (p *Input) UnmarshalJSON(input []byte) error {
@@ -152,7 +154,7 @@ func EachItem(parentItem *BookItem, visitor ChapterVisitor) error {
 	if parentItem.Chapter == nil {
 		return nil
 	}
-	
+
 	if err := visitor(parentItem.Chapter); err != nil {
 		return err
 	}
