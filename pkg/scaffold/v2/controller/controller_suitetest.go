@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v2
+package controller
 
 import (
 	"fmt"
@@ -23,6 +23,7 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/util"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/v2"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v2/internal"
 )
 
@@ -32,15 +33,24 @@ var _ input.File = &ControllerSuiteTest{}
 type ControllerSuiteTest struct {
 	input.Input
 
-	// Resource is the resource to scaffold the controller_kind_test.go file for
+	// Resource is the Resource to make the Controller for
 	Resource *resource.Resource
 }
 
 // GetInput implements input.File
 func (v *ControllerSuiteTest) GetInput() (input.Input, error) {
+
 	if v.Path == "" {
-		v.Path = filepath.Join("controllers", "suite_test.go")
+		if v.MultiGroup {
+			v.Path = filepath.Join("controllers",
+				v.Resource.Group,
+				"suite_test.go")
+		} else {
+			v.Path = filepath.Join("controllers", "suite_test.go")
+			v.Input.IfExistsAction = input.Error
+		}
 	}
+
 	v.TemplateBody = controllerSuiteTestTemplate
 	return v.Input, nil
 }
@@ -116,7 +126,7 @@ var _ = AfterSuite(func() {
 // adding import paths and code setup for new types.
 func (a *ControllerSuiteTest) Update() error {
 
-	resourcePackage, _ := util.GetResourceInfo(a.Resource, a.Repo, a.Domain)
+	resourcePackage, _ := util.GetResourceInfo(a.Resource, a.Repo, a.Domain, a.MultiGroup)
 
 	ctrlImportCodeFragment := fmt.Sprintf(`"%s/controllers"
 `, a.Repo)
@@ -130,8 +140,8 @@ Expect(err).NotTo(HaveOccurred())
 
 	err := internal.InsertStringsInFile(a.Path,
 		map[string][]string{
-			apiPkgImportScaffoldMarker: []string{ctrlImportCodeFragment, apiImportCodeFragment},
-			apiSchemeScaffoldMarker:    []string{addschemeCodeFragment},
+			v2.ApiPkgImportScaffoldMarker: []string{ctrlImportCodeFragment, apiImportCodeFragment},
+			v2.ApiSchemeScaffoldMarker:    []string{addschemeCodeFragment},
 		})
 	if err != nil {
 		return err

@@ -27,6 +27,9 @@ type Universe struct {
 	Resource *Resource `json:"resource,omitempty"`
 
 	Files []*File `json:"files,omitempty"`
+
+	// Multigroup tracks if the project has more than one group
+	MultiGroup bool `json:"multigroup,omitempty"`
 }
 
 // Resource describes the resource currently being generated

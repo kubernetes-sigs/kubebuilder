@@ -27,9 +27,9 @@ import (
 )
 
 const (
-	apiPkgImportScaffoldMarker    = "// +kubebuilder:scaffold:imports"
-	apiSchemeScaffoldMarker       = "// +kubebuilder:scaffold:scheme"
-	reconcilerSetupScaffoldMarker = "// +kubebuilder:scaffold:builder"
+	ApiPkgImportScaffoldMarker    = "// +kubebuilder:scaffold:imports"
+	ApiSchemeScaffoldMarker       = "// +kubebuilder:scaffold:scheme"
+	ReconcilerSetupScaffoldMarker = "// +kubebuilder:scaffold:builder"
 )
 
 var _ input.File = &Main{}
@@ -53,16 +53,37 @@ func (m *Main) GetInput() (input.Input, error) {
 func (m *Main) Update(opts *MainUpdateOptions) error {
 	path := "main.go"
 
-	resPkg, _ := util.GetResourceInfo(opts.Resource, opts.Project.Repo, opts.Project.Domain)
+	resPkg, _ := util.GetResourceInfo(opts.Resource, opts.Project.Repo, opts.Project.Domain, opts.Project.MultiGroup)
 
 	// generate all the code fragments
 	apiImportCodeFragment := fmt.Sprintf(`%s%s "%s/%s"
 `, opts.Resource.GroupImportSafe, opts.Resource.Version, resPkg, opts.Resource.Version)
-	ctrlImportCodeFragment := fmt.Sprintf(`"%s/controllers"
-`, opts.Project.Repo)
+
 	addschemeCodeFragment := fmt.Sprintf(`_ = %s%s.AddToScheme(scheme)
 `, opts.Resource.GroupImportSafe, opts.Resource.Version)
-	reconcilerSetupCodeFragment := fmt.Sprintf(`if err = (&controllers.%sReconciler{
+
+	var reconcilerSetupCodeFragment, ctrlImportCodeFragment string
+
+	if opts.Project.MultiGroup {
+
+		ctrlImportCodeFragment = fmt.Sprintf(`controller%s "%s/controllers/%s"
+`, opts.Resource.GroupImportSafe, opts.Project.Repo, opts.Resource.Group)
+
+		reconcilerSetupCodeFragment = fmt.Sprintf(`if err = (&controller%s.%sReconciler{
+		Client: mgr.GetClient(),
+		Log: ctrl.Log.WithName("controllers").WithName("%s"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "%s")
+		os.Exit(1)
+	}
+`, opts.Resource.GroupImportSafe, opts.Resource.Kind, opts.Resource.Kind, opts.Resource.Kind)
+	} else {
+
+		ctrlImportCodeFragment = fmt.Sprintf(`"%s/controllers"
+`, opts.Project.Repo)
+
+		reconcilerSetupCodeFragment = fmt.Sprintf(`if err = (&controllers.%sReconciler{
 		Client: mgr.GetClient(),
 		Log: ctrl.Log.WithName("controllers").WithName("%s"),
 		Scheme: mgr.GetScheme(),  
@@ -71,6 +92,9 @@ func (m *Main) Update(opts *MainUpdateOptions) error {
 		os.Exit(1)
 	}
 `, opts.Resource.Kind, opts.Resource.Kind, opts.Resource.Kind)
+
+	}
+
 	webhookSetupCodeFragment := fmt.Sprintf(`if err = (&%s%s.%s{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create webhook", "webhook", "%s")
 		os.Exit(1)
@@ -80,8 +104,8 @@ func (m *Main) Update(opts *MainUpdateOptions) error {
 	if opts.WireResource {
 		err := internal.InsertStringsInFile(path,
 			map[string][]string{
-				apiPkgImportScaffoldMarker: {apiImportCodeFragment},
-				apiSchemeScaffoldMarker:    {addschemeCodeFragment},
+				ApiPkgImportScaffoldMarker: {apiImportCodeFragment},
+				ApiSchemeScaffoldMarker:    {addschemeCodeFragment},
 			})
 		if err != nil {
 			return err
@@ -91,18 +115,18 @@ func (m *Main) Update(opts *MainUpdateOptions) error {
 	if opts.WireController {
 		return internal.InsertStringsInFile(path,
 			map[string][]string{
-				apiPkgImportScaffoldMarker:    {apiImportCodeFragment, ctrlImportCodeFragment},
-				apiSchemeScaffoldMarker:       {addschemeCodeFragment},
-				reconcilerSetupScaffoldMarker: {reconcilerSetupCodeFragment},
+				ApiPkgImportScaffoldMarker:    {apiImportCodeFragment, ctrlImportCodeFragment},
+				ApiSchemeScaffoldMarker:       {addschemeCodeFragment},
+				ReconcilerSetupScaffoldMarker: {reconcilerSetupCodeFragment},
 			})
 	}
 
 	if opts.WireWebhook {
 		return internal.InsertStringsInFile(path,
 			map[string][]string{
-				apiPkgImportScaffoldMarker:    {apiImportCodeFragment, ctrlImportCodeFragment},
-				apiSchemeScaffoldMarker:       {addschemeCodeFragment},
-				reconcilerSetupScaffoldMarker: {webhookSetupCodeFragment},
+				ApiPkgImportScaffoldMarker:    {apiImportCodeFragment, ctrlImportCodeFragment},
+				ApiSchemeScaffoldMarker:       {addschemeCodeFragment},
+				ReconcilerSetupScaffoldMarker: {webhookSetupCodeFragment},
 			})
 	}
 
@@ -181,4 +205,4 @@ func main() {
 		os.Exit(1)
 	}
 }
-`, apiPkgImportScaffoldMarker, apiSchemeScaffoldMarker, reconcilerSetupScaffoldMarker)
+`, ApiPkgImportScaffoldMarker, ApiSchemeScaffoldMarker, ReconcilerSetupScaffoldMarker)

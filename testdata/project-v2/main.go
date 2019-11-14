@@ -26,8 +26,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	corev1 "k8s.io/api/core/v1"
-
 	crewv1 "sigs.k8s.io/kubebuilder/testdata/project-v2/api/v1"
 	"sigs.k8s.io/kubebuilder/testdata/project-v2/controllers"
 	// +kubebuilder:scaffold:imports
@@ -42,7 +40,6 @@ func init() {
 	_ = clientgoscheme.AddToScheme(scheme)
 
 	_ = crewv1.AddToScheme(scheme)
-	_ = corev1.AddToScheme(scheme)
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -99,14 +96,6 @@ func main() {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Admiral")
-		os.Exit(1)
-	}
-	if err = (&controllers.NamespaceReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Namespace"),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Namespace")
 		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder

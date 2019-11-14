@@ -36,7 +36,11 @@ type Group struct {
 // GetInput implements input.File
 func (g *Group) GetInput() (input.Input, error) {
 	if g.Path == "" {
-		g.Path = filepath.Join("api", g.Resource.Version, "groupversion_info.go")
+		if g.MultiGroup {
+			g.Path = filepath.Join("apis", g.Resource.Group, g.Resource.Version, "groupversion_info.go")
+		} else {
+			g.Path = filepath.Join("api", g.Resource.Version, "groupversion_info.go")
+		}
 	}
 	g.TemplateBody = groupTemplate
 	return g.Input, nil

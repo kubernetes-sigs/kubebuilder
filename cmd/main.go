@@ -112,6 +112,7 @@ func main() {
 
 	rootCmd.AddCommand(
 		newInitProjectCmd(),
+		newEditProjectCmd(),
 		newCreateCmd(),
 		version.NewVersionCmd(),
 	)
