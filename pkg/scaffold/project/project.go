@@ -19,8 +19,8 @@ package project
 import (
 	"fmt"
 
-	"sigs.k8s.io/yaml"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/yaml"
 )
 
 // constants for scaffolding version
