@@ -24,14 +24,14 @@ type DetailedHelp struct {
 }
 
 type Argument struct {
-	Type string `json:"type"`
-	Optional bool `json:"optional"`
-	ItemType  *Argument `json:"itemType"`
+	Type     string    `json:"type"`
+	Optional bool      `json:"optional"`
+	ItemType *Argument `json:"itemType"`
 }
 
 type FieldHelp struct {
 	// definition
-	Name string `json:"name"`
+	Name     string `json:"name"`
 	Argument `json:",inline"`
 
 	// help
@@ -42,23 +42,22 @@ type FieldHelp struct {
 type MarkerDoc struct {
 	// definition
 
-	Name string `json:"name"`
+	Name   string `json:"name"`
 	Target string `json:"target"`
 
 	// help
 
-	DetailedHelp `json:",inline"`
-	Category string `json:"category"`
-	DeprecatedInFavorOf *string `json:"deprecatedInFavorOf"`
-	Fields []FieldHelp `json:"fields"`
+	DetailedHelp        `json:",inline"`
+	Category            string      `json:"category"`
+	DeprecatedInFavorOf *string     `json:"deprecatedInFavorOf"`
+	Fields              []FieldHelp `json:"fields"`
 }
 
 type CategoryDoc struct {
-	Category string `json:"category"`
-	Markers []MarkerDoc `json:"markers"`
+	Category string      `json:"category"`
+	Markers  []MarkerDoc `json:"markers"`
 }
 
 func (m MarkerDoc) Anonymous() bool {
 	return len(m.Fields) == 1 && m.Fields[0].Name == ""
 }
-

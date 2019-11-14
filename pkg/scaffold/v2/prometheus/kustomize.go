@@ -38,4 +38,3 @@ func (p *Kustomization) GetInput() (input.Input, error) {
 var kustomizationTemplate = `resources:
 - monitor.yaml
 `
-

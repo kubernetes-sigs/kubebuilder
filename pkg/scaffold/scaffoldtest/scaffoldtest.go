@@ -18,12 +18,12 @@ package scaffoldtest
 
 import (
 	"bytes"
+	"go/build"
 	"io"
 	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
-	"go/build"
 
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
