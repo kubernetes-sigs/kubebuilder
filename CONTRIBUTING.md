@@ -31,9 +31,20 @@ $ git clone git@github.com:<user>/kubebuilder.git $GOPATH/src/sigs.k8s.io/kubebu
 
 1. Ensure you activate module support before continue (`$ export GO111MODULE=on`)
 1. Build the project by using the command `make build` 
-1. Run the tests by using the command `make test`
 1. Run the command `make install` to create a bin with the source code 
+
+## How to test kubebuilder locally
+
+1. Run the tests by using the command `make test`. It will execute unit tests. 
 1. Run the script `make generate` to update/generate the mock data used in the e2e test in `$GOPATH/src/sigs.k8s.io/kubebuilder/testdata/`
+
+**IMPORTANT:** The `make generate` is very helpful. By using it, you can check if good part of the commands still working successfully after the changes. Also, note that its usage is a pre-requirement to submit a PR.
+ 
+## Where the CI Tests are configured?
+
+1. See the [Travis](.travis.yml) file to check its tests and the scripts used on it. 
+1. Note that the prow tests used in the CI are configured in [kubernetes-sigs/kubebuilder/kubebuilder-presubmits.yaml](https://github.com/kubernetes/test-infra/blob/master/config/jobs/kubernetes-sigs/kubebuilder/kubebuilder-presubmits.yaml). 
+1. Check that all scripts used by the CI are defined in the project.  
 
 ## Community, discussion and support
 
