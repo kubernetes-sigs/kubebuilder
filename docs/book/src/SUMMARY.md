@@ -62,6 +62,7 @@
 
       - [CRD Generation](./reference/markers/crd.md)
       - [CRD Validation](./reference/markers/crd-validation.md)
+      - [CRD Processing](./reference/markers/crd-processing.md)
       - [Webhook](./reference/markers/webhook.md)
       - [Object/DeepCopy](./reference/markers/object.md)
       - [RBAC](./reference/markers/rbac.md)

@@ -25,5 +25,5 @@ go get sigs.k8s.io/kind@v0.5.1
 kind create cluster --config test/kind-config.yaml --image=kindest/node:$K8S_VERSION
 
 # setup the go modules required
-go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.2.2
+go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.2.4
 go get sigs.k8s.io/kustomize/kustomize/v3@v3.2.1
