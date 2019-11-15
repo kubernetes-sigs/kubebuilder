@@ -42,9 +42,7 @@ ${cmd} /tmp/mdbook.${ext}
 chmod +x /tmp/mdbook
 
 echo "grabbing the latest released controller-gen"
-# TODO(directxman12): remove the @v0.2.0-beta.4 once get v0.2.0 released,
-# so that we actually get the latest version
-go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.2.2
+go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.2.4
 
 # make sure we add the go bin directory to our path
 gobin=$(go env GOBIN)
