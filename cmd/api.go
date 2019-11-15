@@ -57,6 +57,8 @@ func (o *apiOptions) bindCmdFlags(cmd *cobra.Command) {
 		cmd.Flags().StringVar(&o.pattern, "pattern", "",
 			"generates an API following an extension pattern (addon)")
 	}
+	cmd.Flags().BoolVar(&o.apiScaffolder.Force, "force", false,
+		"attempt to create resource even if it already exists")
 	o.apiScaffolder.Resource = resourceForFlags(cmd.Flags())
 }
 
