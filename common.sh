@@ -17,6 +17,17 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
+# check if modules are enabled
+(go mod edit -json &>/dev/null)
+MODULES_ENABLED=$?
+
+MOD_OPT=""
+MODULES_OPT=${MODULES_OPT:-""}
+if [[ -n "${MODULES_OPT}" && $MODULES_ENABLED ]]; then
+    MOD_OPT="-mod=${MODULES_OPT}"
+fi
+
+
 # Enable tracing in this script off by setting the TRACE variable in your
 # environment to any value:
 #
@@ -112,14 +123,13 @@ function prepare_staging_dir {
 
 # fetch k8s API gen tools and make it available under kb_root_dir/bin.
 function fetch_tools {
-  if [ -n "$SKIP_FETCH_TOOLS" ]; then
-    return 0
+  if [ -z "$SKIP_FETCH_TOOLS" ]; then
+    fetch_kb_tools
   fi
-  fetch_kb_tools
 }
 
 function fetch_kb_tools {
-  header_text "fetching tools"
+  header_text "fetching kb tools"
   kb_tools_archive_name="kubebuilder-tools-$k8s_version-$goos-$goarch.tar.gz"
   kb_tools_download_url="https://storage.googleapis.com/kubebuilder-tools/$kb_tools_archive_name"
 

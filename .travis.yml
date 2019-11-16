@@ -50,6 +50,8 @@ install:
   -
 
 script:
+- curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.21.0
+- ./scripts/verify.sh
 # The golden_test.sh check if the the testdata is updated according to the current changes
 # To update the testdata use the Makefile targets `make generate-setup` then `make generate-testdata`
 - ./golden_test.sh

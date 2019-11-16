@@ -60,7 +60,7 @@ func GetResourceInfo(r *resource.Resource, repo, domain string) (resourcePackage
 			// apiextensions.k8s.io is in k8s.io/apiextensions-apiserver/pkg/apis/apiextensions
 			// metrics.k8s.io is in k8s.io/metrics/pkg/apis/metrics
 			resourcePackage := path.Join("k8s.io", "api", r.Group)
-			groupDomain = r.Group
+			groupDomain := r.Group
 			if domain != "" {
 				groupDomain = r.Group + "." + domain
 			}

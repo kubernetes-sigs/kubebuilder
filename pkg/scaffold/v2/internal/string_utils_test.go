@@ -25,7 +25,6 @@ type insertStrTest struct {
 	input         string
 	markerNValues map[string][]string
 	expected      string
-	got           string
 }
 
 func TestInsertStrBelowMarker(t *testing.T) {

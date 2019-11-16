@@ -37,8 +37,6 @@ import (
 // API contains configuration for generating scaffolding for Go type
 // representing the API and controller that implements the behavior for the API.
 type API struct {
-	scaffold *Scaffold
-
 	// Plugins is the list of plugins we should allow to transform our generated scaffolding
 	Plugins []Plugin
 
@@ -275,7 +273,7 @@ func (api *API) scaffoldV2() error {
 // being created belongs to existing group.
 func (api *API) validateResourceGroup(r *resource.Resource) error {
 	for _, existingGroup := range api.project.ResourceGroups() {
-		if strings.ToLower(r.Group) != strings.ToLower(existingGroup) {
+		if !strings.EqualFold(r.Group, existingGroup) {
 			return fmt.Errorf("group '%s' is not same as existing group '%s'. Multiple groups are not supported yet.", r.Group, existingGroup)
 		}
 	}

@@ -48,7 +48,7 @@ type AdmissionHandler struct {
 
 // GetInput implements input.File
 func (a *AdmissionHandler) GetInput() (input.Input, error) {
-	a.ResourcePackage, _ = getResourceInfo(coreGroups, a.Resource, a.Input)
+	a.ResourcePackage = getResourceInfo(coreGroups, a.Resource, a.Input)
 	a.Type = strings.ToLower(a.Type)
 	if a.Type == "mutating" {
 		a.Mutate = true

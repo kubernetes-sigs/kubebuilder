@@ -44,7 +44,7 @@ func (k *Kubectl) CommandWithInput(stdinInput string, cmdOptions ...string) (str
 	}
 	go func() {
 		defer stdin.Close()
-		io.WriteString(stdin, stdinInput)
+		_, _ = io.WriteString(stdin, stdinInput)
 	}()
 	output, err := k.Run(cmd)
 	return string(output), err
