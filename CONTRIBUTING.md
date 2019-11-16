@@ -39,6 +39,8 @@ $ git clone git@github.com:<user>/kubebuilder.git $GOPATH/src/sigs.k8s.io/kubebu
 1. Run the script `make generate` to update/generate the mock data used in the e2e test in `$GOPATH/src/sigs.k8s.io/kubebuilder/testdata/`
 
 **IMPORTANT:** The `make generate` is very helpful. By using it, you can check if good part of the commands still working successfully after the changes. Also, note that its usage is a pre-requirement to submit a PR.
+
+**NOTE** To run `make lint` is required to install `golangci-lint` locally it. More info: https://github.com/golangci/golangci-lint#install
  
 ## Where the CI Tests are configured?
 

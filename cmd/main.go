@@ -178,7 +178,9 @@ After the scaffold is written, api will run make on the project.
 `,
 
 		Run: func(cmd *cobra.Command, args []string) {
-			cmd.Help()
+			if err := cmd.Help(); err != nil {
+				log.Fatalf("failed to call the help: %v", err)
+			}
 		},
 	}
 }

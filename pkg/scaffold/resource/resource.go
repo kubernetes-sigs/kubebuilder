@@ -68,7 +68,7 @@ func (r *Resource) Validate() error {
 		return fmt.Errorf("group name is invalid: (%v)", err)
 	}
 	// Check if the version is a valid value
-	versionMatch := regexp.MustCompile("^v\\d+(alpha\\d+|beta\\d+)?$")
+	versionMatch := regexp.MustCompile(`^v\d+(alpha\d+|beta\d+)?$`)
 	if !versionMatch.MatchString(r.Version) {
 		return fmt.Errorf(
 			"version must match ^v\\d+(alpha\\d+|beta\\d+)?$ (was %s)", r.Version)
@@ -85,7 +85,7 @@ func (r *Resource) Validate() error {
 	}
 	// Replace the caracter "-" for "" to allow scaffold the go imports
 	r.GroupImportSafe = strings.Replace(r.Group, "-", "", -1)
-    r.GroupImportSafe = strings.Replace(r.GroupImportSafe, ".", "", -1)
+	r.GroupImportSafe = strings.Replace(r.GroupImportSafe, ".", "", -1)
 	return nil
 }
 

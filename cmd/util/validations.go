@@ -12,8 +12,9 @@ import (
 const (
 	qnameCharFmt string = "[a-z0-9]([-a-z0-9]*[a-z0-9])?"
 	// The value is 56 because it will be contact with "-system" = 63
-    qualifiedNameMaxLength int = 56
+	qualifiedNameMaxLength int = 56
 )
+
 var qualifiedNameRegexp = regexp.MustCompile("^" + qnameCharFmt + "$")
 
 //IsValidName used to check the name of the project

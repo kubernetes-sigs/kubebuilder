@@ -73,13 +73,13 @@ var _ = Describe("Webhook", func() {
 				{
 					file: filepath.Join("pkg", "webhook", "add_default_server.go"),
 					instance: &AddServer{
-						Config:   in.Config,
+						Config: in.Config,
 					},
 				},
 				{
 					file: filepath.Join("pkg", "webhook", "default_server", "server.go"),
 					instance: &Server{
-						Config:   in.Config,
+						Config: in.Config,
 					},
 				},
 				{
@@ -112,8 +112,8 @@ var _ = Describe("Webhook", func() {
 						strings.ToLower(in.Kind), strings.ToLower(in.Type),
 						fmt.Sprintf("%s_webhook.go", strings.Join(in.Operations, "_"))),
 					instance: &AdmissionWebhookBuilder{
-						Resource:    &in.Resource,
-						Config:      in.Config,
+						Resource: &in.Resource,
+						Config:   in.Config,
 					},
 				},
 				{
@@ -121,8 +121,8 @@ var _ = Describe("Webhook", func() {
 						strings.ToLower(in.Kind), strings.ToLower(in.Type),
 						fmt.Sprintf("%s_%s_handler.go", strings.ToLower(in.Kind), strings.Join(in.Operations, "_"))),
 					instance: &AdmissionHandler{
-						Resource:    &in.Resource,
-						Config:      in.Config,
+						Resource: &in.Resource,
+						Config:   in.Config,
 					},
 				},
 			}
