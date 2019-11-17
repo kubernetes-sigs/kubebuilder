@@ -58,6 +58,17 @@ script:
 - ./test.sh
 - if [ "$TRAVIS_OS_NAME" = "linux" ]; then PATH=$PATH:$(pwd) ./test_e2e.sh; fi
 
+jobs:
+  include:
+    - stage: Go Coverage
+      before_script:
+        # The following module is used to integrate the projct with coveralls.io. It allow us to easily sent the data.
+        # More info: https://github.com/mattn/goveralls
+        - go get github.com/mattn/goveralls@v0.0.4
+      script:
+        - make test-coverage
+        - $GOPATH/bin/goveralls -service=travis-ci -coverprofile=coverage-all.out -repotoken=$COVERALLS_TOKEN
+
 # TBD. Suppressing for now.
 notifications:
   email: false
