@@ -8,3 +8,4 @@ approvers:
 reviewers:
   - kubebuilder-admins
   - kubebuilder-maintainers
+  - camilamacedo86
