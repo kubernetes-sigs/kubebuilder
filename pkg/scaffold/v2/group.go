@@ -42,11 +42,6 @@ func (g *Group) GetInput() (input.Input, error) {
 	return g.Input, nil
 }
 
-// Validate validates the values
-func (g *Group) Validate() error {
-	return g.Resource.Validate()
-}
-
 const groupTemplate = `{{ .Boilerplate }}
 
 // Package {{.Resource.Version}} contains API Schema definitions for the {{ .Resource.GroupImportSafe }} {{.Resource.Version}} API group

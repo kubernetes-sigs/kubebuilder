@@ -67,7 +67,7 @@ type Plugin interface {
 	Pipe(u *model.Universe) error
 }
 
-func (s *Scaffold) setFieldsAndValidate(t input.File) error {
+func (s *Scaffold) setFields(t input.File) error {
 	// Set boilerplate on templates
 	if b, ok := t.(input.BoilerplatePath); ok {
 		b.SetBoilerplatePath(s.BoilerplatePath)
@@ -88,12 +88,6 @@ func (s *Scaffold) setFieldsAndValidate(t input.File) error {
 		b.SetProjectPath(s.ProjectPath)
 	}
 
-	// Validate the template is ok
-	if v, ok := t.(input.Validate); ok {
-		if err := v.Validate(); err != nil {
-			return err
-		}
-	}
 	return nil
 }
 
@@ -220,7 +214,7 @@ func isAlreadyExistsError(e error) bool {
 // doFile scaffolds a single file
 func (s *Scaffold) buildFileModel(e input.File) (*model.File, error) {
 	// Set common fields
-	err := s.setFieldsAndValidate(e)
+	err := s.setFields(e)
 	if err != nil {
 		return nil, err
 	}

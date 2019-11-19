@@ -46,11 +46,6 @@ func (t *Types) GetInput() (input.Input, error) {
 	return t.Input, nil
 }
 
-// Validate validates the values
-func (t *Types) Validate() error {
-	return t.Resource.Validate()
-}
-
 const typesTemplate = `{{ .Boilerplate }}
 
 package {{ .Resource.Version }}

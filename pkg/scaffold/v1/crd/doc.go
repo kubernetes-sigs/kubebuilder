@@ -45,11 +45,6 @@ func (a *Doc) GetInput() (input.Input, error) {
 	return a.Input, nil
 }
 
-// Validate validates the values
-func (a *Doc) Validate() error {
-	return a.Resource.Validate()
-}
-
 const docGoTemplate = `{{ .Boilerplate }}
 
 // Package {{.Resource.Version}} contains API Schema definitions for the {{ .Resource.GroupImportSafe }} {{.Resource.Version}} API group

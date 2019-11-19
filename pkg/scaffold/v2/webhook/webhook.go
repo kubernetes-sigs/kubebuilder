@@ -81,11 +81,6 @@ func (a *Webhook) GetInput() (input.Input, error) {
 	return a.Input, nil
 }
 
-// Validate validates the values
-func (g *Webhook) Validate() error {
-	return g.Resource.Validate()
-}
-
 const (
 	WebhookTemplate = `{{ .Boilerplate }}
 

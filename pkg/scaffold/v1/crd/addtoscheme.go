@@ -44,11 +44,6 @@ func (a *AddToScheme) GetInput() (input.Input, error) {
 	return a.Input, nil
 }
 
-// Validate validates the values
-func (a *AddToScheme) Validate() error {
-	return a.Resource.Validate()
-}
-
 // NB(directxman12): we need that package alias on the API import otherwise imports.Process
 // gets wicked (or hella, if you're feeling west-coasty) confused.
 

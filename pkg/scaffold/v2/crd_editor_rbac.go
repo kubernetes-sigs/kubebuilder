@@ -45,11 +45,6 @@ func (g *CRDEditorRole) GetInput() (input.Input, error) {
 	return g.Input, nil
 }
 
-// Validate validates the values
-func (g *CRDEditorRole) Validate() error {
-	return g.Resource.Validate()
-}
-
 const crdRoleEditorTemplate = `# permissions to do edit {{ .Resource.Resource }}.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole

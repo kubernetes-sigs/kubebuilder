@@ -21,9 +21,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"strings"
 
-	"github.com/gobuffalo/flect"
 	"github.com/spf13/cobra"
 	flag "github.com/spf13/pflag"
 
@@ -63,11 +61,11 @@ This command is only available for v1 scaffolding project.
 				os.Exit(1)
 			}
 
-			fmt.Println("Writing scaffold for you to edit...")
-
-			if len(o.res.Resource) == 0 {
-				o.res.Resource = flect.Pluralize(strings.ToLower(o.res.Kind))
+			if err := o.res.Validate(); err != nil {
+				log.Fatal(err)
 			}
+
+			fmt.Println("Writing scaffold for you to edit...")
 
 			err = (&scaffold.Scaffold{}).Execute(
 				&model.Universe{},

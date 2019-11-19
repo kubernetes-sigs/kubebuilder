@@ -46,11 +46,6 @@ func (p *EnableCAInjectionPatch) GetInput() (input.Input, error) {
 	return p.Input, nil
 }
 
-// Validate validates the values
-func (g *EnableCAInjectionPatch) Validate() error {
-	return g.Resource.Validate()
-}
-
 const EnableCAInjectionPatchTemplate = `# The following patch adds a directive for certmanager to inject CA into the CRD
 # CRD conversion requires k8s 1.13 or later.
 apiVersion: apiextensions.k8s.io/v1beta1

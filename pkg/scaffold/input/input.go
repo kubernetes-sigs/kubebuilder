@@ -144,12 +144,6 @@ type File interface {
 	GetInput() (Input, error)
 }
 
-// Validate validates input
-type Validate interface {
-	// Validate returns true if the template has valid values
-	Validate() error
-}
-
 // Options are the options for executing scaffold templates
 type Options struct {
 	// BoilerplatePath is the path to the boilerplate file

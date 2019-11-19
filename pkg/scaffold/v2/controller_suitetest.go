@@ -56,11 +56,6 @@ func (v *ControllerSuiteTest) GetInput() (input.Input, error) {
 	return v.Input, nil
 }
 
-// Validate validates the values
-func (v *ControllerSuiteTest) Validate() error {
-	return v.Resource.Validate()
-}
-
 const controllerSuiteTestTemplate = `{{ .Boilerplate }}
 
 package controllers

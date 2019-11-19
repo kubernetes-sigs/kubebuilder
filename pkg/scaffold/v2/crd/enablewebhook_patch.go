@@ -46,11 +46,6 @@ func (p *EnableWebhookPatch) GetInput() (input.Input, error) {
 	return p.Input, nil
 }
 
-// Validate validates the values
-func (g *EnableWebhookPatch) Validate() error {
-	return g.Resource.Validate()
-}
-
 const enableWebhookPatchTemplate = `# The following patch enables conversion webhook for CRD
 # CRD conversion requires k8s 1.13 or later.
 apiVersion: apiextensions.k8s.io/v1beta1
