@@ -20,12 +20,14 @@ import (
 	"flag"
 	"os"
 
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	corev1 "k8s.io/api/core/v1"
+
 	crewv1 "sigs.k8s.io/kubebuilder/testdata/project-v2/api/v1"
 	"sigs.k8s.io/kubebuilder/testdata/project-v2/controllers"
 	// +kubebuilder:scaffold:imports

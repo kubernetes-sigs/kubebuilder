@@ -73,7 +73,6 @@ package {{ lower .Resource.Kind }}
 import (
 	"testing"
 	"time"
-
 	"github.com/onsi/gomega"
 	"golang.org/x/net/context"
 	{{ if .Resource.CreateExampleReconcileBody -}}

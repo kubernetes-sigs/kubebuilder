@@ -28,11 +28,19 @@ import (
 	"text/template"
 
 	"golang.org/x/tools/imports"
+
 	"sigs.k8s.io/kubebuilder/pkg/model"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
 	"sigs.k8s.io/yaml"
 )
+
+var options = imports.Options{
+	Comments:   true,
+	TabIndent:  true,
+	TabWidth:   8,
+	FormatOnly: true,
+}
 
 // Scaffold writes Templates to scaffold new files
 type Scaffold struct {
@@ -181,6 +189,10 @@ func (s *Scaffold) Execute(u *model.Universe, options input.Options, files ...in
 	if err := s.defaultOptions(&options); err != nil {
 		return err
 	}
+
+	// Set the repo as the local prefix so that it knows how to group imports
+	imports.LocalPrefix = s.Project.Repo
+
 	for _, f := range files {
 		m, err := s.buildFileModel(f)
 		if err != nil {
@@ -289,7 +301,7 @@ func (s *Scaffold) doTemplate(i input.Input, e input.File) ([]byte, error) {
 
 	// gofmt the imports
 	if filepath.Ext(i.Path) == ".go" {
-		b, err = imports.Process(i.Path, b, nil)
+		b, err = imports.Process(i.Path, b, &options)
 		if err != nil {
 			fmt.Printf("%s\n", out.Bytes())
 			return nil, err

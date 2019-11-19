@@ -20,15 +20,15 @@ import (
 	"flag"
 	"os"
 
-	"project/pkg/apis"
-	"project/pkg/controller"
-	"project/pkg/webhook"
-
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
+
+	"project/pkg/apis"
+	"project/pkg/controller"
+	"project/pkg/webhook"
 )
 
 func main() {
