@@ -17,3 +17,7 @@ bin/*
 # skip testdata gopath non-src
 /testdata/gopath/bin
 /testdata/gopath/pkg
+
+# skip testdata go.mod, since it may have
+# different result depending on go version
+/testdata/project-v2/go.sum
