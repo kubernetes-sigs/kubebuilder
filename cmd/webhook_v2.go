@@ -71,6 +71,10 @@ func newWebhookV2Cmd() *cobra.Command {
 
 			fmt.Println("Writing scaffold for you to edit...")
 
+			if err := o.res.Init(); err != nil {
+				log.Fatal(err)
+			}
+
 			fmt.Println(filepath.Join("api", o.res.Version,
 				fmt.Sprintf("%s_webhook.go", strings.ToLower(o.res.Kind))))
 			if o.conversion {

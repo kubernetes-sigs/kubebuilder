@@ -26,17 +26,18 @@ import (
 
 // Resource contains the information required to scaffold files for a resource.
 type Resource struct {
-	// Namespaced is true if the resource is namespaced
+	// Namespaced is true if the resource is namespaced.
 	Namespaced bool
 
-	// Group is the API Group.  Does not contain the domain.
+	// Group is the API Group. Does not contain the domain.
 	Group string
 
-	// GroupImportSafe is the API Group.  Does not contain the domain and it the "-"
-	// It is used to do safe imports.
+	// GroupImportSafe is the API Group cleaned to be used for imports.
+	// Does not contain the domain.
+	// Does not need to be provided, it gets filled by Init.
 	GroupImportSafe string
 
-	// Version is the API version - e.g. v1beta1
+	// Version is the API version - e.g. v1beta1.
 	Version string
 
 	// Kind is the API Kind.
@@ -45,22 +46,20 @@ type Resource struct {
 	// Resource is the API Resource.
 	Resource string
 
-	// ShortNames is the list of resource shortnames.
-	ShortNames []string
-
-	// CreateExampleReconcileBody will create a Deployment in the Reconcile example
+	// CreateExampleReconcileBody will create a Deployment in the Reconcile example.
+	// Deprecated: v1
 	CreateExampleReconcileBody bool
 }
 
 // Validate checks the Resource values to make sure they are valid.
 func (r *Resource) Validate() error {
-	if r.isGroupEmpty() {
+	if r.isEmpty(r.Group) {
 		return fmt.Errorf("group cannot be empty")
 	}
-	if r.isVersionEmpty() {
+	if r.isEmpty(r.Version) {
 		return fmt.Errorf("version cannot be empty")
 	}
-	if r.isKindEmpty() {
+	if r.isEmpty(r.Kind) {
 		return fmt.Errorf("kind cannot be empty")
 	}
 	// Check if the Group has a valid value for for it
@@ -78,33 +77,28 @@ func (r *Resource) Validate() error {
 		return fmt.Errorf("kind must be PascalCase (expected %s was %s)", flect.Pascalize(r.Kind), r.Kind)
 	}
 
-	// todo: move it for the proper place since they are not validations and then, should not be here
-	// Add in r.Resource the Kind plural
-	if len(r.Resource) == 0 {
-		r.Resource = flect.Pluralize(strings.ToLower(r.Kind))
-	}
-	// Replace the caracter "-" for "" to allow scaffold the go imports
-	r.GroupImportSafe = strings.Replace(r.Group, "-", "", -1)
-    r.GroupImportSafe = strings.Replace(r.GroupImportSafe, ".", "", -1)
 	return nil
 }
 
-// isKindEmpty will return true if the --kind flag do not be informed
-// NOTE: required check if the flags are assuming the other flags as value
-func (r *Resource) isKindEmpty() bool {
-	return len(r.Kind) == 0 || r.Kind == "--group" || r.Kind == "--version"
+// isEmpty will return true if the provided flag is not set or the value is missing.
+// If provided without value it may take another flag as value, so we need to
+// check if it starts by a dash.
+func (_ *Resource) isEmpty(value string) bool {
+	return len(value) == 0 || strings.HasPrefix(value, "-")
 }
 
-// isVersionEmpty will return true if the --version flag do not be informed
-// NOTE: required check if the flags are assuming the other flags as value
-func (r *Resource) isVersionEmpty() bool {
-	return len(r.Version) == 0 || r.Version == "--group" || r.Version == "--kind"
-}
+// Init fills Resource fields that can be obtained from other fields.
+func (r *Resource) Init() error {
+	// Obtain the Kind plural
+	if len(r.Resource) == 0 {
+		r.Resource = flect.Pluralize(strings.ToLower(r.Kind))
+	}
 
-// isVersionEmpty will return true if the --group flag do not be informed
-// NOTE: required check if the flags are assuming the other flags as value
-func (r *Resource) isGroupEmpty() bool {
-	return len(r.Group) == 0 || r.Group == "--version" || r.Group == "--kind"
+	// Remove the characters "-" & "." from the group to use it as import alias
+	r.GroupImportSafe = strings.Replace(r.Group, "-", "", -1)
+	r.GroupImportSafe = strings.Replace(r.GroupImportSafe, ".", "", -1)
+
+	return nil
 }
 
 // The following code came from "k8s.io/apimachinery/pkg/util/validation"

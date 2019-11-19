@@ -67,6 +67,10 @@ This command is only available for v1 scaffolding project.
 
 			fmt.Println("Writing scaffold for you to edit...")
 
+			if err := o.res.Init(); err != nil {
+				log.Fatal(err)
+			}
+
 			err = (&scaffold.Scaffold{}).Execute(
 				&model.Universe{},
 				input.Options{},
