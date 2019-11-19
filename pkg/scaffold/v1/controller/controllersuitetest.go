@@ -52,7 +52,6 @@ import (
 	"path/filepath"
 	"sync"
 	"testing"
-
 	"github.com/onsi/gomega"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"

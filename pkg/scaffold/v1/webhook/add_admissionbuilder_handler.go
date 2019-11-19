@@ -55,7 +55,6 @@ package {{ .Server }}server
 
 import (
 	"fmt"
-
 	"{{ .Repo }}/pkg/webhook/{{ .Server }}_server/{{ lower .Resource.Kind }}/{{ .Type }}"
 )
 

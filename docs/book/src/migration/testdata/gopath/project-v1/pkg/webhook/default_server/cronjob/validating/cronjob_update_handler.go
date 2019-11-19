@@ -20,11 +20,11 @@ import (
 	"context"
 	"net/http"
 
-	batchv1 "project/pkg/apis/batch/v1"
-
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission/types"
+
+	batchv1 "project/pkg/apis/batch/v1"
 )
 
 func init() {

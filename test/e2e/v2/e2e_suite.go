@@ -24,10 +24,10 @@ import (
 	"strings"
 	"time"
 
-	"sigs.k8s.io/kubebuilder/test/e2e/utils"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	"sigs.k8s.io/kubebuilder/test/e2e/utils"
 )
 
 var _ = Describe("kubebuilder", func() {
