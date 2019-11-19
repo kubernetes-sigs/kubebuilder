@@ -89,6 +89,10 @@ func (o *apiOptions) runAddAPI() {
 		log.Fatalf("unknown pattern %q", o.pattern)
 	}
 
+	if err := o.apiScaffolder.Validate(); err != nil {
+		log.Fatalln(err)
+	}
+
 	reader := bufio.NewReader(os.Stdin)
 	if !o.resourceFlag.Changed {
 		fmt.Println("Create Resource [y/n]")
@@ -98,10 +102,6 @@ func (o *apiOptions) runAddAPI() {
 	if !o.controllerFlag.Changed {
 		fmt.Println("Create Controller [y/n]")
 		o.apiScaffolder.DoController = util.Yesno(reader)
-	}
-
-	if err := o.apiScaffolder.Validate(); err != nil {
-		log.Fatalln(err)
 	}
 
 	fmt.Println("Writing scaffold for you to edit...")
