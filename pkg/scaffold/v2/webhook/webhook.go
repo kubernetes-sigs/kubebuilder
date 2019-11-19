@@ -33,9 +33,6 @@ type Webhook struct {
 	// Resource is the Resource to make the Webhook for
 	Resource *resource.Resource
 
-	// ResourcePackage is the package of the Resource
-	ResourcePackage string
-
 	// Is the Group + "." + Domain for the Resource
 	GroupDomain string
 
@@ -51,7 +48,7 @@ type Webhook struct {
 // GetInput implements input.File
 func (a *Webhook) GetInput() (input.Input, error) {
 
-	a.ResourcePackage, a.GroupDomain = util.GetResourceInfo(a.Resource, a.Repo, a.Domain)
+	_, a.GroupDomain = util.GetResourceInfo(a.Resource, a.Repo, a.Domain)
 
 	a.GroupDomainWithDash = strings.Replace(a.GroupDomain, ".", "-", -1)
 

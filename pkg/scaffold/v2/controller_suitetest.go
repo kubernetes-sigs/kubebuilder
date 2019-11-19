@@ -34,12 +34,6 @@ type ControllerSuiteTest struct {
 
 	// Resource is the resource to scaffold the controller_kind_test.go file for
 	Resource *resource.Resource
-
-	// ResourcePackage is the package of the Resource
-	ResourcePackage string
-
-	// Is the Group + "." + Domain for the Resource
-	GroupDomain string
 }
 
 // GetInput implements input.File
@@ -120,12 +114,12 @@ var _ = AfterSuite(func() {
 // adding import paths and code setup for new types.
 func (a *ControllerSuiteTest) Update() error {
 
-	a.ResourcePackage, a.GroupDomain = util.GetResourceInfo(a.Resource, a.Repo, a.Domain)
+	resourcePackage, _ := util.GetResourceInfo(a.Resource, a.Repo, a.Domain)
 
 	ctrlImportCodeFragment := fmt.Sprintf(`"%s/controllers"
 `, a.Repo)
 	apiImportCodeFragment := fmt.Sprintf(`%s%s "%s/%s"
-`, a.Resource.GroupImportSafe, a.Resource.Version, a.ResourcePackage, a.Resource.Version)
+`, a.Resource.GroupImportSafe, a.Resource.Version, resourcePackage, a.Resource.Version)
 
 	addschemeCodeFragment := fmt.Sprintf(`err = %s%s.AddToScheme(scheme.Scheme)
 Expect(err).NotTo(HaveOccurred())
