@@ -75,7 +75,7 @@ type {{.Resource.Kind}}Status struct {
 // +genclient:nonNamespaced
 {{- end }}
 
-// {{.Resource.Kind}} is the Schema for the {{ .Resource.Resource }} API
+// {{.Resource.Kind}} is the Schema for the {{ .Resource.Plural }} API
 // +k8s:openapi-gen=true
 type {{.Resource.Kind}} struct {
 	metav1.TypeMeta   ` + "`" + `json:",inline"` + "`" + `

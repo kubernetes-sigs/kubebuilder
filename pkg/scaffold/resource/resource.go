@@ -49,6 +49,10 @@ type Resource struct {
 	// CreateExampleReconcileBody will create a Deployment in the Reconcile example.
 	// Deprecated: v1
 	CreateExampleReconcileBody bool
+
+	// Plural is the plural form of the API kind.
+	// Does not need to be provided, it gets filled by Init.
+	Plural string
 }
 
 // Validate checks the Resource values to make sure they are valid.
@@ -90,8 +94,9 @@ func (_ *Resource) isEmpty(value string) bool {
 // Init fills Resource fields that can be obtained from other fields.
 func (r *Resource) Init() error {
 	// Obtain the Kind plural
+	r.Plural = flect.Pluralize(strings.ToLower(r.Kind))
 	if len(r.Resource) == 0 {
-		r.Resource = flect.Pluralize(strings.ToLower(r.Kind))
+		r.Resource = r.Plural
 	}
 
 	// Remove the characters "-" & "." from the group to use it as import alias

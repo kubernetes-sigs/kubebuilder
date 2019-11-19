@@ -95,16 +95,19 @@ var _ = Describe("Resource", func() {
 			instance := &Resource{Group: "crew", Kind: "FirstMate", Version: "v1"}
 			Expect(instance.Validate()).To(Succeed())
 			Expect(instance.Init()).To(Succeed())
+			Expect(instance.Plural).To(Equal("firstmates"))
 			Expect(instance.Resource).To(Equal("firstmates"))
 
 			instance = &Resource{Group: "crew", Kind: "Fish", Version: "v1"}
 			Expect(instance.Validate()).To(Succeed())
 			Expect(instance.Init()).To(Succeed())
+			Expect(instance.Plural).To(Equal("fish"))
 			Expect(instance.Resource).To(Equal("fish"))
 
 			instance = &Resource{Group: "crew", Kind: "Helmswoman", Version: "v1"}
 			Expect(instance.Validate()).To(Succeed())
 			Expect(instance.Init()).To(Succeed())
+			Expect(instance.Plural).To(Equal("helmswomen"))
 			Expect(instance.Resource).To(Equal("helmswomen"))
 		})
 
@@ -112,6 +115,7 @@ var _ = Describe("Resource", func() {
 			instance := &Resource{Group: "crew", Kind: "Cat", Version: "v1"}
 			Expect(instance.Validate()).To(Succeed())
 			Expect(instance.Init()).To(Succeed())
+			Expect(instance.Plural).To(Equal("cats"))
 			Expect(instance.Resource).To(Equal("cats"))
 		})
 

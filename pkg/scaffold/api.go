@@ -21,8 +21,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/gobuffalo/flect"
-
 	"sigs.k8s.io/kubebuilder/pkg/model"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
@@ -110,7 +108,7 @@ func (api *API) buildUniverse() *model.Universe {
 		Version:    api.Resource.Version,
 		Kind:       api.Resource.Kind,
 		Resource:   api.Resource.Resource,
-		Plural:     flect.Pluralize(strings.ToLower(api.Resource.Kind)),
+		Plural:     api.Resource.Plural,
 	}
 
 	resourceModel.GoPackage, resourceModel.GroupDomain = util.GetResourceInfo(api.Resource, api.project.Repo, api.project.Domain)

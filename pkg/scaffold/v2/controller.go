@@ -20,8 +20,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/gobuffalo/flect"
-
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/util"
@@ -37,9 +35,6 @@ type Controller struct {
 	// ResourcePackage is the package of the Resource
 	ResourcePackage string
 
-	// Plural is the plural lowercase of kind
-	Plural string
-
 	// Is the Group + "." + Domain for the Resource
 	GroupDomain string
 }
@@ -48,10 +43,6 @@ type Controller struct {
 func (a *Controller) GetInput() (input.Input, error) {
 
 	a.ResourcePackage, a.GroupDomain = util.GetResourceInfo(a.Resource, a.Repo, a.Domain)
-
-	if a.Plural == "" {
-		a.Plural = flect.Pluralize(strings.ToLower(a.Resource.Kind))
-	}
 
 	if a.Path == "" {
 		a.Path = filepath.Join("controllers",
@@ -86,8 +77,8 @@ type {{ .Resource.Kind }}Reconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups={{.GroupDomain}},resources={{ .Plural }},verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups={{.GroupDomain}},resources={{ .Plural }}/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups={{ .GroupDomain }},resources={{ .Resource.Plural }},verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups={{ .GroupDomain }},resources={{ .Resource.Plural }}/status,verbs=get;update;patch
 
 func (r *{{ .Resource.Kind }}Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()

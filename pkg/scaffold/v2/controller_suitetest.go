@@ -19,9 +19,7 @@ package v2
 import (
 	"fmt"
 	"path/filepath"
-	"strings"
 
-	"github.com/gobuffalo/flect"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/util"
@@ -39,9 +37,6 @@ type ControllerSuiteTest struct {
 
 	// ResourcePackage is the package of the Resource
 	ResourcePackage string
-
-	// Plural is the plural lowercase of kind
-	Plural string
 
 	// Is the Group + "." + Domain for the Resource
 	GroupDomain string
@@ -126,9 +121,6 @@ var _ = AfterSuite(func() {
 func (a *ControllerSuiteTest) Update() error {
 
 	a.ResourcePackage, a.GroupDomain = util.GetResourceInfo(a.Resource, a.Repo, a.Domain)
-	if a.Plural == "" {
-		a.Plural = flect.Pluralize(strings.ToLower(a.Resource.Kind))
-	}
 
 	ctrlImportCodeFragment := fmt.Sprintf(`"%s/controllers"
 `, a.Repo)
