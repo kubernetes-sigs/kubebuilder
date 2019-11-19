@@ -20,11 +20,11 @@ import (
 	"context"
 	"net/http"
 
-	creaturesv2alpha1 "project/pkg/apis/creatures/v2alpha1"
-
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission/types"
+
+	creaturesv2alpha1 "project/pkg/apis/creatures/v2alpha1"
 )
 
 func init() {

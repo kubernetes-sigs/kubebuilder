@@ -17,10 +17,10 @@ limitations under the License.
 package validating
 
 import (
-	shipv1beta1 "project/pkg/apis/ship/v1beta1"
-
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission/builder"
+
+	shipv1beta1 "project/pkg/apis/ship/v1beta1"
 )
 
 func init() {

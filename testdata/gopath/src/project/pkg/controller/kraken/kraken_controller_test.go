@@ -25,10 +25,11 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	creaturesv2alpha1 "project/pkg/apis/creatures/v2alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	creaturesv2alpha1 "project/pkg/apis/creatures/v2alpha1"
 )
 
 var c client.Client
