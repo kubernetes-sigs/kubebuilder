@@ -20,7 +20,6 @@ import (
 	"flag"
 	"os"
 
-	kbatchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
@@ -38,8 +37,8 @@ The first difference to notice is that kubebuilder has added the new API
 group's package (`batchv1`) to our scheme.  This means that we can use those
 objects in our controller.
 
-We'll also need to add the kubernetes batch v1 (`kbatchv1`) scheme, since we're creating
-and listing Jobs.
+If we would be using any other CRD we would have to add their scheme the same way.
+Builtin types such as Job have their scheme added by `clientgoscheme`.
 */
 var (
 	scheme   = runtime.NewScheme()
@@ -49,7 +48,6 @@ var (
 func init() {
 	_ = clientgoscheme.AddToScheme(scheme)
 
-	_ = kbatchv1.AddToScheme(scheme) // we've added this ourselves
 	_ = batchv1.AddToScheme(scheme)
 	// +kubebuilder:scaffold:scheme
 }
