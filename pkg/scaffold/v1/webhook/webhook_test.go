@@ -20,7 +20,6 @@ var _ = Describe("Webhook", func() {
 	}
 
 	serverName := "default"
-	domainName := "testproject.org"
 	inputs := []*webhookTestcase{
 		{
 			Resource: resource.Resource{Group: "crew", Version: "v1", Kind: "FirstMate", Namespaced: true, CreateExampleReconcileBody: true},
@@ -66,6 +65,9 @@ var _ = Describe("Webhook", func() {
 
 	for i := range inputs {
 		in := inputs[i]
+		_ = in.Validate()
+		_ = in.Init()
+
 		Describe(fmt.Sprintf("scaffolding webhook %s", in.Kind), func() {
 			files := []struct {
 				instance input.File
@@ -115,9 +117,8 @@ var _ = Describe("Webhook", func() {
 						strings.ToLower(in.Kind), strings.ToLower(in.Type),
 						fmt.Sprintf("%s_webhook.go", strings.Join(in.Operations, "_"))),
 					instance: &AdmissionWebhookBuilder{
-						Resource:    &in.Resource,
-						Config:      in.Config,
-						GroupDomain: domainName,
+						Resource: &in.Resource,
+						Config:   in.Config,
 					},
 				},
 				{
@@ -125,9 +126,8 @@ var _ = Describe("Webhook", func() {
 						strings.ToLower(in.Kind), strings.ToLower(in.Type),
 						fmt.Sprintf("%s_%s_handler.go", strings.ToLower(in.Kind), strings.Join(in.Operations, "_"))),
 					instance: &AdmissionHandler{
-						Resource:    &in.Resource,
-						Config:      in.Config,
-						GroupDomain: domainName,
+						Resource: &in.Resource,
+						Config:   in.Config,
 					},
 				},
 			}

@@ -30,6 +30,9 @@ var _ = Describe("Resource", func() {
 
 	for i := range resources {
 		r := resources[i]
+		_ = r.Validate()
+		_ = r.Init()
+
 		Describe(fmt.Sprintf("scaffolding API %s", r.Kind), func() {
 			files := []struct {
 				instance input.File
