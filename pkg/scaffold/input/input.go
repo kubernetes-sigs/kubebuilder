@@ -144,6 +144,12 @@ type File interface {
 	GetInput() (Input, error)
 }
 
+// RequiresValidation is a file that requires validation
+type RequiresValidation interface {
+	File
+	Validate() error
+}
+
 // Options are the options for executing scaffold templates
 type Options struct {
 	// BoilerplatePath is the path to the boilerplate file

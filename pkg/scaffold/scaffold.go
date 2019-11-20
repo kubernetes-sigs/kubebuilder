@@ -91,6 +91,14 @@ func (s *Scaffold) setFields(t input.File) error {
 	return nil
 }
 
+func (_ *Scaffold) validate(file input.File) error {
+	if reqValFile, ok := file.(input.RequiresValidation); ok {
+		return reqValFile.Validate()
+	}
+
+	return nil
+}
+
 // LoadProjectFile reads the project file and deserializes it into a Project
 func LoadProjectFile(path string) (input.ProjectFile, error) {
 	in, err := ioutil.ReadFile(path) // nolint: gosec
@@ -214,8 +222,12 @@ func isAlreadyExistsError(e error) bool {
 // doFile scaffolds a single file
 func (s *Scaffold) buildFileModel(e input.File) (*model.File, error) {
 	// Set common fields
-	err := s.setFields(e)
-	if err != nil {
+	if err := s.setFields(e); err != nil {
+		return nil, err
+	}
+
+	// Validate the file scaffold
+	if err := s.validate(e); err != nil {
 		return nil, err
 	}
 
