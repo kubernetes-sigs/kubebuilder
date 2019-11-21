@@ -18,7 +18,7 @@ set -o nounset
 set -o pipefail
 
 source common.sh
-source "$(pwd)/scripts/setup.sh" v1.16.2
+source "$(pwd)/scripts/setup.sh" ${KIND_K8S_VERSION}
 
 export TRACE=1
 export GO111MODULE=on
