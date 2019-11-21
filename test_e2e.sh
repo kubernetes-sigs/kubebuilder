@@ -18,6 +18,7 @@ set -o nounset
 set -o pipefail
 
 source common.sh
+source "$(pwd)/scripts/setup.sh"
 
 export TRACE=1
 export GO111MODULE=on
