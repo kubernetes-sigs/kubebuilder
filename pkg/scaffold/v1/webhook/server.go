@@ -21,7 +21,6 @@ import (
 	"path/filepath"
 
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 )
 
 var _ input.File = &Server{}
@@ -29,9 +28,6 @@ var _ input.File = &Server{}
 // Server scaffolds how to construct a webhook server and register webhooks.
 type Server struct {
 	input.Input
-
-	// Resource is a resource in the API group
-	Resource *resource.Resource
 
 	Config
 }

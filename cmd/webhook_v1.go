@@ -77,8 +77,8 @@ This command is only available for v1 scaffolding project.
 				&webhook.AdmissionWebhookBuilder{Resource: o.res, Config: webhook.Config{Server: o.server, Type: o.webhookType, Operations: o.operations}},
 				&webhook.AdmissionWebhooks{Resource: o.res, Config: webhook.Config{Server: o.server, Type: o.webhookType, Operations: o.operations}},
 				&webhook.AddAdmissionWebhookBuilderHandler{Resource: o.res, Config: webhook.Config{Server: o.server, Type: o.webhookType, Operations: o.operations}},
-				&webhook.Server{Resource: o.res, Config: webhook.Config{Server: o.server, Type: o.webhookType, Operations: o.operations}},
-				&webhook.AddServer{Resource: o.res, Config: webhook.Config{Server: o.server, Type: o.webhookType, Operations: o.operations}},
+				&webhook.Server{Config: webhook.Config{Server: o.server, Type: o.webhookType, Operations: o.operations}},
+				&webhook.AddServer{Config: webhook.Config{Server: o.server, Type: o.webhookType, Operations: o.operations}},
 			)
 			if err != nil {
 				log.Fatal(err)

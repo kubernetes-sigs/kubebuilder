@@ -31,9 +31,6 @@ type Doc struct {
 
 	// Resource is a resource for the API version
 	Resource *resource.Resource
-
-	// Comments are additional lines to write to the doc.go file
-	Comments []string
 }
 
 // GetInput implements input.File
