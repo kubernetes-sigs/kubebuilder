@@ -34,9 +34,6 @@ type AdmissionHandler struct {
 	// ResourcePackage is the package of the Resource
 	ResourcePackage string
 
-	// GroupDomain is the Group + "." + Domain for the Resource
-	GroupDomain string
-
 	// Resource is a resource in the API group
 	Resource *resource.Resource
 
@@ -51,7 +48,7 @@ type AdmissionHandler struct {
 
 // GetInput implements input.File
 func (a *AdmissionHandler) GetInput() (input.Input, error) {
-	a.ResourcePackage, a.GroupDomain = getResourceInfo(coreGroups, a.Resource, a.Input)
+	a.ResourcePackage, _ = getResourceInfo(coreGroups, a.Resource, a.Input)
 	a.Type = strings.ToLower(a.Type)
 	if a.Type == "mutating" {
 		a.Mutate = true
