@@ -25,7 +25,7 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 )
 
-var _ input.File = &Server{}
+var _ input.File = &AdmissionWebhooks{}
 
 // AdmissionWebhooks scaffolds how to construct a webhook server and register webhooks.
 type AdmissionWebhooks struct {
