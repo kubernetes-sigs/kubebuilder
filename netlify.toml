@@ -69,25 +69,25 @@
 
 [[redirects]]
     from = "https://go.kubebuilder.io/test-tools"
-    to = "https://console.cloud.google.com/storage/browser/kubebuilder-tools"
+    to = "https://storage.googleapis.com/kubebuilder-tools"
     status = 302
     force = true
 
 [[redirects]]
     from = "https://go.kubebuilder.io/test-tools/:version"
-    to = "https://console.cloud.google.com/storage/browser/kubebuilder-tools/?prefix=kubebuilder-tools-:version"
+    to = "https://storage.googleapis.com/kubebuilder-tools/?prefix=kubebuilder-tools-:version"
     status = 302
     force = true
 
 [[redirects]]
     from = "https://go.kubebuilder.io/test-tools/:version/:os"
-    to = "https://console.cloud.google.com/storage/browser/_details/kubebuilder-tools/kubebuilder-tools-:version-:os-amd64.tar.gz"
+    to = "https://storage.googleapis.com/kubebuilder-tools/kubebuilder-tools-:version-:os-amd64.tar.gz"
     status = 302
     force = true
 
 [[redirects]]
     from = "https://go.kubebuilder.io/test-tools/:version/:os/:arch"
-    to = "https://console.cloud.google.com/storage/browser/_details/kubebuilder-tools/kubebuilder-tools-:version-:os-:arch.tar.gz"
+    to = "https://storage.googleapis.com/kubebuilder-tools/kubebuilder-tools-:version-:os-:arch.tar.gz"
     status = 302
     force = true
 
