@@ -21,8 +21,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 )
 
 var _ input.File = &TypesTest{}
@@ -38,7 +38,7 @@ type TypesTest struct {
 // GetInput implements input.File
 func (f *TypesTest) GetInput() (input.Input, error) {
 	if f.Path == "" {
-		f.Path = filepath.Join("pkg", "apis", f.Resource.Group, f.Resource.Version,
+		f.Path = filepath.Join("pkg", "apis", f.Resource.GroupPackageName, f.Resource.Version,
 			fmt.Sprintf("%s_types_test.go", strings.ToLower(f.Resource.Kind)))
 	}
 	f.TemplateBody = typesTestTemplate

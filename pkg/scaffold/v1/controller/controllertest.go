@@ -20,8 +20,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 )
 
 var _ input.File = &Test{}
@@ -32,9 +32,6 @@ type Test struct {
 
 	// Resource is the Resource to make the Controller for
 	Resource *resource.Resource
-
-	// ResourcePackage is the package of the Resource
-	ResourcePackage string
 }
 
 // GetInput implements input.File
@@ -43,25 +40,6 @@ func (f *Test) GetInput() (input.Input, error) {
 		f.Path = filepath.Join("pkg", "controller",
 			strings.ToLower(f.Resource.Kind), strings.ToLower(f.Resource.Kind)+"_controller_test.go")
 	}
-
-	// Use the k8s.io/api package for core resources
-	coreGroups := map[string]string{
-		"apps":                  "",
-		"admissionregistration": "k8s.io",
-		"apiextensions":         "k8s.io",
-		"authentication":        "k8s.io",
-		"autoscaling":           "",
-		"batch":                 "",
-		"certificates":          "k8s.io",
-		"core":                  "",
-		"extensions":            "",
-		"metrics":               "k8s.io",
-		"policy":                "",
-		"rbac.authorization":    "k8s.io",
-		"storage":               "k8s.io",
-	}
-
-	f.ResourcePackage, _ = getResourceInfo(coreGroups, f.Resource, f.Input)
 
 	f.TemplateBody = controllerTestTemplate
 	f.Input.IfExistsAction = input.Error
@@ -87,7 +65,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	{{ .Resource.Group}}{{ .Resource.Version }} "{{ .ResourcePackage }}/{{ .Resource.Group}}/{{ .Resource.Version }}"
+	{{ .Resource.ImportAlias }} "{{ .Resource.Package }}"
 )
 
 var c client.Client
@@ -99,7 +77,7 @@ const timeout = time.Second * 5
 
 func TestReconcile(t *testing.T) {
 	g := gomega.NewGomegaWithT(t)
-	instance := &{{ .Resource.Group }}{{ .Resource.Version }}.{{ .Resource.Kind }}{ObjectMeta: metav1.ObjectMeta{Name: "foo"{{ if .Resource.Namespaced }}, Namespace: "default"{{end}}}}
+	instance := &{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{ObjectMeta: metav1.ObjectMeta{Name: "foo"{{ if .Resource.Namespaced }}, Namespace: "default"{{end}}}}
 
 	// Setup the Manager and Controller.  Wrap the Controller Reconcile function so it writes each request to a
 	// channel when it is finished.

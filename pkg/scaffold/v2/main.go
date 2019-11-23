@@ -21,9 +21,8 @@ import (
 	"path/filepath"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/config"
+	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/util"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v2/internal"
 )
 
@@ -54,23 +53,21 @@ func (f *Main) GetInput() (input.Input, error) {
 func (f *Main) Update(opts *MainUpdateOptions) error {
 	path := "main.go"
 
-	resPkg, _ := util.GetResourceInfo(opts.Resource, opts.Config.Repo, opts.Config.Domain, opts.Config.MultiGroup)
-
 	// generate all the code fragments
-	apiImportCodeFragment := fmt.Sprintf(`%s%s "%s/%s"
-`, opts.Resource.GroupImportSafe, opts.Resource.Version, resPkg, opts.Resource.Version)
+	apiImportCodeFragment := fmt.Sprintf(`%s "%s"
+`, opts.Resource.ImportAlias, opts.Resource.Package)
 
-	addschemeCodeFragment := fmt.Sprintf(`_ = %s%s.AddToScheme(scheme)
-`, opts.Resource.GroupImportSafe, opts.Resource.Version)
+	addschemeCodeFragment := fmt.Sprintf(`_ = %s.AddToScheme(scheme)
+`, opts.Resource.ImportAlias)
 
 	var reconcilerSetupCodeFragment, ctrlImportCodeFragment string
 
 	if opts.Config.MultiGroup {
 
-		ctrlImportCodeFragment = fmt.Sprintf(`controller%s "%s/controllers/%s"
-`, opts.Resource.GroupImportSafe, opts.Config.Repo, opts.Resource.Group)
+		ctrlImportCodeFragment = fmt.Sprintf(`%scontroller "%s/controllers/%s"
+`, opts.Resource.GroupPackageName, opts.Config.Repo, opts.Resource.Group)
 
-		reconcilerSetupCodeFragment = fmt.Sprintf(`if err = (&controller%s.%sReconciler{
+		reconcilerSetupCodeFragment = fmt.Sprintf(`if err = (&%scontroller.%sReconciler{
 		Client: mgr.GetClient(),
 		Log: ctrl.Log.WithName("controllers").WithName("%s"),
 		Scheme: mgr.GetScheme(),
@@ -78,7 +75,8 @@ func (f *Main) Update(opts *MainUpdateOptions) error {
 		setupLog.Error(err, "unable to create controller", "controller", "%s")
 		os.Exit(1)
 	}
-`, opts.Resource.GroupImportSafe, opts.Resource.Kind, opts.Resource.Kind, opts.Resource.Kind)
+`, opts.Resource.GroupPackageName, opts.Resource.Kind, opts.Resource.Kind, opts.Resource.Kind)
+
 	} else {
 
 		ctrlImportCodeFragment = fmt.Sprintf(`"%s/controllers"
@@ -96,11 +94,11 @@ func (f *Main) Update(opts *MainUpdateOptions) error {
 
 	}
 
-	webhookSetupCodeFragment := fmt.Sprintf(`if err = (&%s%s.%s{}).SetupWebhookWithManager(mgr); err != nil {
+	webhookSetupCodeFragment := fmt.Sprintf(`if err = (&%s.%s{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create webhook", "webhook", "%s")
 		os.Exit(1)
 	}
-`, opts.Resource.GroupImportSafe, opts.Resource.Version, opts.Resource.Kind, opts.Resource.Kind)
+`, opts.Resource.ImportAlias, opts.Resource.Kind, opts.Resource.Kind)
 
 	if opts.WireResource {
 		err := internal.InsertStringsInFile(path,

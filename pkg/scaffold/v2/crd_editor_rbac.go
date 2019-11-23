@@ -21,8 +21,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 )
 
 var _ input.File = &CRDEditorRole{}
@@ -50,16 +50,16 @@ func (f *CRDEditorRole) Validate() error {
 	return f.Resource.Validate()
 }
 
-const crdRoleEditorTemplate = `# permissions for end users to edit {{ .Resource.Resource }}.
+const crdRoleEditorTemplate = `# permissions for end users to edit {{ .Resource.Plural }}.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: {{ lower .Resource.Kind }}-editor-role
 rules:
 - apiGroups:
-  - {{ .Resource.Group }}.{{ .Domain }}
+  - {{ .Resource.Domain }}
   resources:
-  - {{ .Resource.Resource }}
+  - {{ .Resource.Plural }}
   verbs:
   - create
   - delete
@@ -69,9 +69,9 @@ rules:
   - update
   - watch
 - apiGroups:
-  - {{ .Resource.Group }}.{{ .Domain }}
+  - {{ .Resource.Domain }}
   resources:
-  - {{ .Resource.Resource }}/status
+  - {{ .Resource.Plural }}/status
   verbs:
   - get
 `

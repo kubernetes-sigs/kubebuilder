@@ -29,8 +29,8 @@ import (
 
 	"sigs.k8s.io/kubebuilder/cmd/internal"
 	"sigs.k8s.io/kubebuilder/internal/config"
+	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 	"sigs.k8s.io/kubebuilder/plugins/addon"
 )
 
@@ -92,7 +92,7 @@ type apiOptions struct {
 	// pattern indicates that we should use a plugin to build according to a pattern
 	pattern string
 
-	resource *resource.Resource
+	resource *resource.Options
 
 	// Check if we have to scaffold resource and/or controller
 	resourceFlag   *flag.Flag
@@ -125,7 +125,7 @@ func (o *apiOptions) bindFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&o.force, "force", false,
 		"attempt to create resource even if it already exists")
 
-	o.resource = &resource.Resource{}
+	o.resource = &resource.Options{}
 	cmd.Flags().StringVar(&o.resource.Kind, "kind", "", "resource Kind")
 	cmd.Flags().StringVar(&o.resource.Group, "group", "", "resource Group")
 	cmd.Flags().StringVar(&o.resource.Version, "version", "", "resource Version")
@@ -202,6 +202,18 @@ func (o *apiOptions) validate(c *config.Config) error {
 }
 
 func (o *apiOptions) scaffolder(c *config.Config) (scaffold.Scaffolder, error) {
+	// Create the actual resource from the resource options
+	var res *resource.Resource
+	switch {
+	case c.IsV1():
+		res = o.resource.NewV1Resource(&c.Config, o.doResource)
+	case c.IsV2():
+		res = o.resource.NewResource(&c.Config, o.doResource)
+	default:
+		return nil, fmt.Errorf("unknown project version %v", c.Version)
+	}
+
+	// Load the requested plugins
 	plugins := make([]scaffold.Plugin, 0)
 	switch strings.ToLower(o.pattern) {
 	case "":
@@ -214,9 +226,13 @@ func (o *apiOptions) scaffolder(c *config.Config) (scaffold.Scaffolder, error) {
 		return nil, fmt.Errorf("unknown pattern %q", o.pattern)
 	}
 
-	return scaffold.NewAPIScaffolder(c, o.resource, o.doResource, o.doController, plugins), nil
+	return scaffold.NewAPIScaffolder(c, res, o.doResource, o.doController, plugins), nil
 }
 
 func (o *apiOptions) postScaffold(_ *config.Config) error {
-	return internal.RunCmd("Running make", "make")
+	if o.runMake {
+		return internal.RunCmd("Running make", "make")
+	}
+
+	return nil
 }

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package v1 contains API Schema definitions for the foopolicy v1 API group
+// Package v1 contains API Schema definitions for the foo.policy v1 API group
 // +kubebuilder:object:generate=true
 // +groupName=foo.policy.testproject.org
 package v1

@@ -19,8 +19,8 @@ package crd
 import (
 	"path/filepath"
 
+	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 )
 
 var _ input.File = &Register{}
@@ -36,7 +36,7 @@ type Register struct {
 // GetInput implements input.File
 func (f *Register) GetInput() (input.Input, error) {
 	if f.Path == "" {
-		f.Path = filepath.Join("pkg", "apis", f.Resource.Group, f.Resource.Version, "register.go")
+		f.Path = filepath.Join("pkg", "apis", f.Resource.GroupPackageName, f.Resource.Version, "register.go")
 	}
 	f.TemplateBody = registerTemplate
 	return f.Input, nil
@@ -50,15 +50,15 @@ func (f *Register) Validate() error {
 // nolint:lll
 const registerTemplate = `{{ .Boilerplate }}
 
-// NOTE: Boilerplate only.  Ignore this file.
+// NOTE: Boilerplate only. Ignore this file.
 
-// Package {{.Resource.Version}} contains API Schema definitions for the {{ .Resource.Group }} {{.Resource.Version}} API group
+// Package {{ .Resource.Version }} contains API Schema definitions for the {{ .Resource.Group }} {{ .Resource.Version }} API group
 // +k8s:openapi-gen=true
 // +k8s:deepcopy-gen=package,register
-// +k8s:conversion-gen={{ .Repo }}/pkg/apis/{{ .Resource.Group }}
+// +k8s:conversion-gen={{ .Repo }}/pkg/apis/{{ .Resource.GroupPackageName }}
 // +k8s:defaulter-gen=TypeMeta
-// +groupName={{ .Resource.Group }}.{{ .Domain }}
-package {{.Resource.Version}}
+// +groupName={{ .Resource.Domain }}
+package {{ .Resource.Version }}
 
 import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -67,7 +67,7 @@ import (
 
 var (
 	// SchemeGroupVersion is group version used to register these objects
-	SchemeGroupVersion = schema.GroupVersion{Group: "{{ .Resource.GroupImportSafe }}.{{ .Domain }}", Version: "{{ .Resource.Version }}"}
+	SchemeGroupVersion = schema.GroupVersion{Group: "{{ .Resource.Domain }}", Version: "{{ .Resource.Version }}"}
 
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
 	SchemeBuilder = &scheme.Builder{GroupVersion: SchemeGroupVersion}

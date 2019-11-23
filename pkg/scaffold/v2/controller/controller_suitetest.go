@@ -20,9 +20,8 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/util"
 	scaffoldv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v2/internal"
 )
@@ -39,7 +38,6 @@ type SuiteTest struct {
 
 // GetInput implements input.File
 func (f *SuiteTest) GetInput() (input.Input, error) {
-
 	if f.Path == "" {
 		if f.MultiGroup {
 			f.Path = filepath.Join("controllers", f.Resource.Group, "suite_test.go")
@@ -122,18 +120,15 @@ var _ = AfterSuite(func() {
 // Update updates given file (suite_test.go) with code fragments required for
 // adding import paths and code setup for new types.
 func (f *SuiteTest) Update() error {
-
-	resourcePackage, _ := util.GetResourceInfo(f.Resource, f.Repo, f.Domain, f.MultiGroup)
-
 	ctrlImportCodeFragment := fmt.Sprintf(`"%s/controllers"
 `, f.Repo)
-	apiImportCodeFragment := fmt.Sprintf(`%s%s "%s/%s"
-`, f.Resource.GroupImportSafe, f.Resource.Version, resourcePackage, f.Resource.Version)
+	apiImportCodeFragment := fmt.Sprintf(`%s "%s"
+`, f.Resource.ImportAlias, f.Resource.Package)
 
-	addschemeCodeFragment := fmt.Sprintf(`err = %s%s.AddToScheme(scheme.Scheme)
+	addschemeCodeFragment := fmt.Sprintf(`err = %s.AddToScheme(scheme.Scheme)
 Expect(err).NotTo(HaveOccurred())
 
-`, f.Resource.GroupImportSafe, f.Resource.Version)
+`, f.Resource.ImportAlias)
 
 	err := internal.InsertStringsInFile(f.Path,
 		map[string][]string{

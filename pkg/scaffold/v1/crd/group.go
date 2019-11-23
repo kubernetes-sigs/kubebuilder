@@ -19,8 +19,8 @@ package crd
 import (
 	"path/filepath"
 
+	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 )
 
 var _ input.File = &Group{}
@@ -36,7 +36,7 @@ type Group struct {
 // GetInput implements input.File
 func (f *Group) GetInput() (input.Input, error) {
 	if f.Path == "" {
-		f.Path = filepath.Join("pkg", "apis", f.Resource.Group, "group.go")
+		f.Path = filepath.Join("pkg", "apis", f.Resource.GroupPackageName, "group.go")
 	}
 	f.TemplateBody = groupTemplate
 	return f.Input, nil
@@ -49,6 +49,6 @@ func (f *Group) Validate() error {
 
 const groupTemplate = `{{ .Boilerplate }}
 
-// Package {{ .Resource.GroupImportSafe }} contains {{ .Resource.Group }} API versions
-package {{ .Resource.GroupImportSafe }}
+// Package {{ .Resource.GroupPackageName }} contains {{ .Resource.Group }} API versions
+package {{ .Resource.GroupPackageName }}
 `

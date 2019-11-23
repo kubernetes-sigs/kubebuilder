@@ -19,8 +19,8 @@ package crd
 import (
 	"path/filepath"
 
+	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 )
 
 var _ input.File = &Doc{}
@@ -36,7 +36,7 @@ type Doc struct {
 // GetInput implements input.File
 func (f *Doc) GetInput() (input.Input, error) {
 	if f.Path == "" {
-		f.Path = filepath.Join("pkg", "apis", f.Resource.Group, f.Resource.Version, "doc.go")
+		f.Path = filepath.Join("pkg", "apis", f.Resource.GroupPackageName, f.Resource.Version, "doc.go")
 	}
 	f.TemplateBody = docGoTemplate
 	return f.Input, nil
@@ -50,11 +50,11 @@ func (f *Doc) Validate() error {
 // nolint:lll
 const docGoTemplate = `{{ .Boilerplate }}
 
-// Package {{.Resource.Version}} contains API Schema definitions for the {{ .Resource.GroupImportSafe }} {{.Resource.Version}} API group
+// Package {{ .Resource.Version }} contains API Schema definitions for the {{ .Resource.Group }} {{ .Resource.Version }} API group
 // +k8s:openapi-gen=true
 // +k8s:deepcopy-gen=package,register
-// +k8s:conversion-gen={{ .Repo }}/pkg/apis/{{ .Resource.Group }}
+// +k8s:conversion-gen={{ .Repo }}/pkg/apis/{{ .Resource.GroupPackageName }}
 // +k8s:defaulter-gen=TypeMeta
-// +groupName={{ .Resource.Group }}.{{ .Domain }}
-package {{.Resource.Version}}
+// +groupName={{ .Resource.Domain }}
+package {{ .Resource.Version }}
 `

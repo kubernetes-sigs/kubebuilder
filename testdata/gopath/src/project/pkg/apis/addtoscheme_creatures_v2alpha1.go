@@ -17,10 +17,10 @@ limitations under the License.
 package apis
 
 import (
-	api "project/pkg/apis/creatures/v2alpha1"
+	creaturesv2alpha1 "project/pkg/apis/creatures/v2alpha1"
 )
 
 func init() {
 	// Register the types with the Scheme so the components can map objects to GroupVersionKinds and back
-	AddToSchemes = append(AddToSchemes, api.SchemeBuilder.AddToScheme)
+	AddToSchemes = append(AddToSchemes, creaturesv2alpha1.SchemeBuilder.AddToScheme)
 }
