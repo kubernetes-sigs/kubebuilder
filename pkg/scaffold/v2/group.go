@@ -19,8 +19,8 @@ package v2
 import (
 	"path/filepath"
 
+	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 )
 
 var _ input.File = &Group{}
@@ -54,9 +54,9 @@ func (f *Group) Validate() error {
 // nolint:lll
 const groupTemplate = `{{ .Boilerplate }}
 
-// Package {{.Resource.Version}} contains API Schema definitions for the {{ .Resource.GroupImportSafe }} {{.Resource.Version}} API group
+// Package {{ .Resource.Version }} contains API Schema definitions for the {{ .Resource.Group }} {{ .Resource.Version }} API group
 // +kubebuilder:object:generate=true
-// +groupName={{ .Resource.Group }}.{{ .Domain }}
+// +groupName={{ .Resource.Domain }}
 package {{ .Resource.Version }}
 
 import (
@@ -66,7 +66,7 @@ import (
 
 var (
 	// GroupVersion is group version used to register these objects
-	GroupVersion = schema.GroupVersion{Group: "{{ .Resource.Group }}.{{ .Domain }}", Version: "{{ .Resource.Version }}"}
+	GroupVersion = schema.GroupVersion{Group: "{{ .Resource.Domain }}", Version: "{{ .Resource.Version }}"}
 
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
 	SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}

@@ -17,16 +17,11 @@ limitations under the License.
 package controller
 
 import (
-	"fmt"
-	"os"
-	"path"
 	"path/filepath"
 	"strings"
 
-	"github.com/gobuffalo/flect"
-
+	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 )
 
 var _ input.File = &Controller{}
@@ -37,42 +32,10 @@ type Controller struct {
 
 	// Resource is the Resource to make the Controller for
 	Resource *resource.Resource
-
-	// ResourcePackage is the package of the Resource
-	ResourcePackage string
-
-	// Plural is the plural lowercase of kind
-	Plural string
-
-	// Is the Group + "." + Domain for the Resource
-	GroupDomain string
 }
 
 // GetInput implements input.File
 func (f *Controller) GetInput() (input.Input, error) {
-	// Use the k8s.io/api package for core resources
-	coreGroups := map[string]string{
-		"apps":                  "",
-		"admissionregistration": "k8s.io",
-		"apiextensions":         "k8s.io",
-		"authentication":        "k8s.io",
-		"autoscaling":           "",
-		"batch":                 "",
-		"certificates":          "k8s.io",
-		"core":                  "",
-		"extensions":            "",
-		"metrics":               "k8s.io",
-		"policy":                "",
-		"rbac.authorization":    "k8s.io",
-		"storage":               "k8s.io",
-	}
-
-	f.ResourcePackage, f.GroupDomain = getResourceInfo(coreGroups, f.Resource, f.Input)
-
-	if f.Plural == "" {
-		f.Plural = flect.Pluralize(strings.ToLower(f.Resource.Kind))
-	}
-
 	if f.Path == "" {
 		f.Path = filepath.Join("pkg", "controller",
 			strings.ToLower(f.Resource.Kind),
@@ -81,27 +44,6 @@ func (f *Controller) GetInput() (input.Input, error) {
 	f.TemplateBody = controllerTemplate
 	f.Input.IfExistsAction = input.Error
 	return f.Input, nil
-}
-
-func getResourceInfo(coreGroups map[string]string,
-	r *resource.Resource,
-	in input.Input,
-) (resourcePackage, groupDomain string) {
-	resourcePath := filepath.Join("pkg", "apis", r.Group, r.Version,
-		fmt.Sprintf("%s_types.go", strings.ToLower(r.Kind)))
-
-	if _, err := os.Stat(resourcePath); os.IsNotExist(err) {
-		if domain, found := coreGroups[r.Group]; found {
-			resourcePackage := path.Join("k8s.io", "api")
-			groupDomain = r.Group
-			if domain != "" {
-				groupDomain = r.Group + "." + domain
-			}
-			return resourcePackage, groupDomain
-		}
-		// TODO: need to support '--resource-pkg-path' flag for specifying resourcePath
-	}
-	return path.Join(in.Repo, "pkg", "apis"), r.Group + "." + in.Domain
 }
 
 // nolint:lll
@@ -126,7 +68,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	{{ .Resource.Group}}{{ .Resource.Version }} "{{ .ResourcePackage }}/{{ .Resource.Group}}/{{ .Resource.Version }}"
+	{{ .Resource.ImportAlias }} "{{ .Resource.Package }}"
 )
 
 var log = logf.Log.WithName("{{ lower .Resource.Kind }}-controller")
@@ -140,7 +82,7 @@ var log = logf.Log.WithName("{{ lower .Resource.Kind }}-controller")
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	{{ .Resource.Group}}{{ .Resource.Version }} "{{ .ResourcePackage }}/{{ .Resource.Group}}/{{ .Resource.Version }}"
+	{{ .Resource.ImportAlias }} "{{ .Resource.Package }}"
 )
 {{ end -}}
 
@@ -169,7 +111,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	// Watch for changes to {{ .Resource.Kind }}
-	err = c.Watch(&source.Kind{Type: &{{ .Resource.Group}}{{ .Resource.Version }}.{{ .Resource.Kind }}{}}, &handler.EnqueueRequestForObject{})
+	err = c.Watch(&source.Kind{Type: &{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
@@ -178,7 +120,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Uncomment watch a Deployment created by {{ .Resource.Kind }} - change this for objects you create
 	err = c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
-		OwnerType:    &{{ .Resource.Group}}{{ .Resource.Version }}.{{ .Resource.Kind }}{},
+		OwnerType:    &{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{},
 	})
 	if err != nil {
 		return err
@@ -204,11 +146,11 @@ type Reconcile{{ .Resource.Kind }} struct {
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=deployments/status,verbs=get;update;patch
 {{ end -}}
-// +kubebuilder:rbac:groups={{.GroupDomain}},resources={{ .Plural }},verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups={{.GroupDomain}},resources={{ .Plural }}/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups={{ .Resource.Domain }},resources={{ .Resource.Plural }},verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups={{ .Resource.Domain }},resources={{ .Resource.Plural }}/status,verbs=get;update;patch
 func (r *Reconcile{{ .Resource.Kind }}) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	// Fetch the {{ .Resource.Kind }} instance
-	instance := &{{ .Resource.Group}}{{ .Resource.Version }}.{{ .Resource.Kind }}{}
+	instance := &{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{}
 	err := r.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {

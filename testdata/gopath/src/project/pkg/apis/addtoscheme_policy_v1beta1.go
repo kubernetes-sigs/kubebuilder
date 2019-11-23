@@ -17,10 +17,10 @@ limitations under the License.
 package apis
 
 import (
-	api "project/pkg/apis/policy/v1beta1"
+	policyv1beta1 "project/pkg/apis/policy/v1beta1"
 )
 
 func init() {
 	// Register the types with the Scheme so the components can map objects to GroupVersionKinds and back
-	AddToSchemes = append(AddToSchemes, api.SchemeBuilder.AddToScheme)
+	AddToSchemes = append(AddToSchemes, policyv1beta1.SchemeBuilder.AddToScheme)
 }

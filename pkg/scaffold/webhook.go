@@ -23,8 +23,8 @@ import (
 
 	"sigs.k8s.io/kubebuilder/pkg/model"
 	"sigs.k8s.io/kubebuilder/pkg/model/config"
+	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 	managerv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/v1/manager"
 	webhookv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/v1/webhook"
 	scaffoldv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2"
@@ -91,7 +91,7 @@ func (s *webhookScaffolder) scaffoldV1() error {
 	universe, err := model.NewUniverse(
 		model.WithConfig(s.config),
 		// TODO(adirio): missing model.WithBoilerplate[From], needs boilerplate or path
-		model.WithResource(s.resource, s.config),
+		model.WithResource(s.resource),
 	)
 	if err != nil {
 		return err
@@ -129,7 +129,7 @@ You need to implement the conversion.Hub and conversion.Convertible interfaces f
 	universe, err := model.NewUniverse(
 		model.WithConfig(s.config),
 		// TODO(adirio): missing model.WithBoilerplate[From], needs boilerplate or path
-		model.WithResource(s.resource, s.config),
+		model.WithResource(s.resource),
 	)
 	if err != nil {
 		return err

@@ -23,8 +23,8 @@ import (
 
 	"github.com/gobuffalo/flect"
 
+	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 )
 
 var _ input.File = &EnableCAInjectionPatch{}
@@ -60,5 +60,5 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: $(CERTIFICATE_NAMESPACE)/$(CERTIFICATE_NAME)
-  name: {{ .Resource.Resource }}.{{ .Resource.Group }}.{{ .Domain }}
+  name: {{ .Resource.Plural }}.{{ .Resource.Domain }}
 `

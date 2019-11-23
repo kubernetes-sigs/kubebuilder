@@ -16,10 +16,6 @@ limitations under the License.
 
 package config
 
-import (
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
-)
-
 const (
 	// Scaffolding versions
 	Version1 = "1"
@@ -72,7 +68,7 @@ func (config Config) ResourceGroups() []string {
 
 // HasResource returns true if API resource is already tracked
 // NOTE: this works only for v2, since in v1 resources are not tracked
-func (config Config) HasResource(target *resource.Resource) bool {
+func (config Config) HasResource(target GVK) bool {
 	// Short-circuit v1
 	if config.Version == Version1 {
 		return false
@@ -92,20 +88,19 @@ func (config Config) HasResource(target *resource.Resource) bool {
 // AddResource appends the provided resource to the tracked ones
 // It returns if the configuration was modified
 // NOTE: this works only for v2, since in v1 resources are not tracked
-func (config *Config) AddResource(r *resource.Resource) bool {
+func (config *Config) AddResource(gvk GVK) bool {
 	// Short-circuit v1
 	if config.Version == Version1 {
 		return false
 	}
 
 	// No-op if the resource was already tracked, return false
-	if config.HasResource(r) {
+	if config.HasResource(gvk) {
 		return false
 	}
 
 	// Append the resource to the tracked ones, return true
-	config.Resources = append(config.Resources,
-		GVK{Group: r.Group, Version: r.Version, Kind: r.Kind})
+	config.Resources = append(config.Resources, gvk)
 	return true
 }
 
@@ -117,14 +112,7 @@ type GVK struct {
 }
 
 // isEqualTo compares it with another resource
-func (r GVK) isEqualTo(other *resource.Resource) bool {
-	// Prevent panic if other is nil
-	if other == nil {
-		return r.Group == "" &&
-			r.Version == "" &&
-			r.Kind == ""
-	}
-
+func (r GVK) isEqualTo(other GVK) bool {
 	return r.Group == other.Group &&
 		r.Version == other.Version &&
 		r.Kind == other.Kind

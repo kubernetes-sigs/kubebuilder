@@ -21,8 +21,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 )
 
 var _ input.File = &CRDSample{}
@@ -40,7 +40,7 @@ type CRDSample struct {
 func (f *CRDSample) GetInput() (input.Input, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "samples", fmt.Sprintf(
-			"%s_%s_%s.yaml", f.Resource.Group, f.Resource.Version, strings.ToLower(f.Resource.Kind)))
+			"%s_%s_%s.yaml", f.Resource.GroupPackageName, f.Resource.Version, strings.ToLower(f.Resource.Kind)))
 	}
 
 	f.IfExistsAction = input.Error
@@ -53,7 +53,7 @@ func (f *CRDSample) Validate() error {
 	return f.Resource.Validate()
 }
 
-const crdSampleTemplate = `apiVersion: {{ .Resource.Group }}.{{ .Domain }}/{{ .Resource.Version }}
+const crdSampleTemplate = `apiVersion: {{ .Resource.Domain }}/{{ .Resource.Version }}
 kind: {{ .Resource.Kind }}
 metadata:
   labels:

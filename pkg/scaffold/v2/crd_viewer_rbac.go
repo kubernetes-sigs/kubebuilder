@@ -21,8 +21,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 )
 
 var _ input.File = &CRDViewerRole{}
@@ -50,24 +50,24 @@ func (f *CRDViewerRole) Validate() error {
 	return f.Resource.Validate()
 }
 
-const crdRoleViewerTemplate = `# permissions for end users to view {{ .Resource.Resource }}.
+const crdRoleViewerTemplate = `# permissions for end users to view {{ .Resource.Plural }}.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: {{ lower .Resource.Kind }}-viewer-role
 rules:
 - apiGroups:
-  - {{ .Resource.Group }}.{{ .Domain }}
+  - {{ .Resource.Domain }}
   resources:
-  - {{ .Resource.Resource }}
+  - {{ .Resource.Plural }}
   verbs:
   - get
   - list
   - watch
 - apiGroups:
-  - {{ .Resource.Group }}.{{ .Domain }}
+  - {{ .Resource.Domain }}
   resources:
-  - {{ .Resource.Resource }}/status
+  - {{ .Resource.Plural }}/status
   verbs:
   - get
 `

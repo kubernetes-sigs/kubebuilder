@@ -25,22 +25,23 @@ import (
 	. "github.com/onsi/gomega"
 
 	"sigs.k8s.io/kubebuilder/pkg/model"
+	"sigs.k8s.io/kubebuilder/pkg/model/config"
+	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/scaffoldtest"
 	. "sigs.k8s.io/kubebuilder/pkg/scaffold/v1/webhook"
 )
 
 var _ = Describe("Webhook", func() {
 	type webhookTestcase struct {
-		resource.Resource
+		resource.Options
 		Config
 	}
 
 	serverName := "default"
 	inputs := []*webhookTestcase{
 		{
-			Resource: resource.Resource{
+			Options: resource.Options{
 				Group:                      "crew",
 				Version:                    "v1",
 				Kind:                       "FirstMate",
@@ -54,7 +55,7 @@ var _ = Describe("Webhook", func() {
 			},
 		},
 		{
-			Resource: resource.Resource{
+			Options: resource.Options{
 				Group:                      "crew",
 				Version:                    "v1",
 				Kind:                       "FirstMate",
@@ -68,7 +69,7 @@ var _ = Describe("Webhook", func() {
 			},
 		},
 		{
-			Resource: resource.Resource{
+			Options: resource.Options{
 				Group:                      "ship",
 				Version:                    "v1beta1",
 				Kind:                       "Frigate",
@@ -82,7 +83,7 @@ var _ = Describe("Webhook", func() {
 			},
 		},
 		{
-			Resource: resource.Resource{
+			Options: resource.Options{
 				Group:                      "creatures",
 				Version:                    "v2alpha1",
 				Kind:                       "Kraken",
@@ -96,7 +97,7 @@ var _ = Describe("Webhook", func() {
 			},
 		},
 		{
-			Resource: resource.Resource{
+			Options: resource.Options{
 				Group:                      "core",
 				Version:                    "v1",
 				Kind:                       "Namespace",
@@ -113,7 +114,14 @@ var _ = Describe("Webhook", func() {
 
 	for i := range inputs {
 		in := inputs[i]
-		_ = in.Validate()
+		res := in.Options.NewV1Resource(
+			&config.Config{
+				Version: config.Version1,
+				Domain:  "testproject.org",
+				Repo:    "project",
+			},
+			false,
+		)
 
 		Describe(fmt.Sprintf("scaffolding webhook %s", in.Kind), func() {
 			files := []struct {
@@ -136,15 +144,7 @@ var _ = Describe("Webhook", func() {
 					file: filepath.Join("pkg", "webhook", "default_server",
 						fmt.Sprintf("add_%s_%s.go", strings.ToLower(in.Type), strings.ToLower(in.Kind))),
 					instance: &AddAdmissionWebhookBuilderHandler{
-						Resource: &in.Resource,
-						Config:   in.Config,
-					},
-				},
-				{
-					file: filepath.Join("pkg", "webhook", "default_server",
-						fmt.Sprintf("add_%s_%s.go", strings.ToLower(in.Type), strings.ToLower(in.Kind))),
-					instance: &AddAdmissionWebhookBuilderHandler{
-						Resource: &in.Resource,
+						Resource: res,
 						Config:   in.Config,
 					},
 				},
@@ -153,7 +153,7 @@ var _ = Describe("Webhook", func() {
 						strings.ToLower(in.Kind), strings.ToLower(in.Type),
 						"webhooks.go"),
 					instance: &AdmissionWebhooks{
-						Resource: &in.Resource,
+						Resource: res,
 						Config:   in.Config,
 					},
 				},
@@ -162,7 +162,7 @@ var _ = Describe("Webhook", func() {
 						strings.ToLower(in.Kind), strings.ToLower(in.Type),
 						fmt.Sprintf("%s_webhook.go", strings.Join(in.Operations, "_"))),
 					instance: &AdmissionWebhookBuilder{
-						Resource: &in.Resource,
+						Resource: res,
 						Config:   in.Config,
 					},
 				},
@@ -171,7 +171,7 @@ var _ = Describe("Webhook", func() {
 						strings.ToLower(in.Kind), strings.ToLower(in.Type),
 						fmt.Sprintf("%s_%s_handler.go", strings.ToLower(in.Kind), strings.Join(in.Operations, "_"))),
 					instance: &AdmissionHandler{
-						Resource: &in.Resource,
+						Resource: res,
 						Config:   in.Config,
 					},
 				},

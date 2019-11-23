@@ -21,11 +21,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/gobuffalo/flect"
-
+	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/util"
 )
 
 var _ input.File = &Webhook{}
@@ -37,13 +34,7 @@ type Webhook struct {
 	// Resource is the Resource to make the Webhook for
 	Resource *resource.Resource
 
-	// Plural is the plural lowercase of kind
-	Plural string
-
-	// Is the Group + "." + Domain for the Resource
-	GroupDomain string
-
-	// Is the Group + "." + Domain for the Resource
+	// Is the Group domain for the Resource replacing '.' with '-'
 	GroupDomainWithDash string
 
 	// If scaffold the defaulting webhook
@@ -54,14 +45,7 @@ type Webhook struct {
 
 // GetInput implements input.File
 func (f *Webhook) GetInput() (input.Input, error) {
-
-	_, f.GroupDomain = util.GetResourceInfo(f.Resource, f.Repo, f.Domain, f.MultiGroup)
-
-	f.GroupDomainWithDash = strings.Replace(f.GroupDomain, ".", "-", -1)
-
-	if f.Plural == "" {
-		f.Plural = flect.Pluralize(strings.ToLower(f.Resource.Kind))
-	}
+	f.GroupDomainWithDash = strings.Replace(f.Resource.Domain, ".", "-", -1)
 
 	if f.Path == "" {
 		if f.MultiGroup {
@@ -108,7 +92,7 @@ import (
 // log is for logging in this package.
 var {{ lower .Resource.Kind }}log = logf.Log.WithName("{{ lower .Resource.Kind }}-resource")
 
-func (r *{{.Resource.Kind}}) SetupWebhookWithManager(mgr ctrl.Manager) error {
+func (r *{{ .Resource.Kind }}) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
 		Complete()
@@ -119,7 +103,7 @@ func (r *{{.Resource.Kind}}) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 	// nolint:lll
 	DefaultingWebhookTemplate = `
-// +kubebuilder:webhook:path=/mutate-{{ .GroupDomainWithDash }}-{{ .Resource.Version }}-{{ lower .Resource.Kind }},mutating=true,failurePolicy=fail,groups={{ .GroupDomain }},resources={{ .Plural }},verbs=create;update,versions={{ .Resource.Version }},name=m{{ lower .Resource.Kind }}.kb.io
+// +kubebuilder:webhook:path=/mutate-{{ .GroupDomainWithDash }}-{{ .Resource.Version }}-{{ lower .Resource.Kind }},mutating=true,failurePolicy=fail,groups={{ .Resource.Domain }},resources={{ .Resource.Plural }},verbs=create;update,versions={{ .Resource.Version }},name=m{{ lower .Resource.Kind }}.kb.io
 
 var _ webhook.Defaulter = &{{ .Resource.Kind }}{}
 
@@ -133,7 +117,7 @@ func (r *{{ .Resource.Kind }}) Default() {
 	// nolint:lll
 	ValidatingWebhookTemplate = `
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:verbs=create;update,path=/validate-{{ .GroupDomainWithDash }}-{{ .Resource.Version }}-{{ lower .Resource.Kind }},mutating=false,failurePolicy=fail,groups={{ .GroupDomain }},resources={{ .Plural }},versions={{ .Resource.Version }},name=v{{ lower .Resource.Kind }}.kb.io
+// +kubebuilder:webhook:verbs=create;update,path=/validate-{{ .GroupDomainWithDash }}-{{ .Resource.Version }}-{{ lower .Resource.Kind }},mutating=false,failurePolicy=fail,groups={{ .Resource.Domain }},resources={{ .Resource.Plural }},versions={{ .Resource.Version }},name=v{{ lower .Resource.Kind }}.kb.io
 
 var _ webhook.Validator = &{{ .Resource.Kind }}{}
 

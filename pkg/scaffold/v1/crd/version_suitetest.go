@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 )
 
 var _ input.File = &TypesTest{}
@@ -37,7 +37,7 @@ type VersionSuiteTest struct {
 // GetInput implements input.File
 func (f *VersionSuiteTest) GetInput() (input.Input, error) {
 	if f.Path == "" {
-		f.Path = filepath.Join("pkg", "apis", f.Resource.GroupImportSafe, f.Resource.Version,
+		f.Path = filepath.Join("pkg", "apis", f.Resource.GroupPackageName, f.Resource.Version,
 			fmt.Sprintf("%s_suite_test.go", f.Resource.Version))
 	}
 	f.TemplateBody = versionSuiteTestTemplate

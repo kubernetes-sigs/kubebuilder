@@ -60,7 +60,8 @@ func (f *APIs) GetInput() (input.Input, error) {
 
 const apisTemplate = `{{ .Boilerplate }}
 
-{{ range $line := .Comments }}{{ $line }}
+{{ range $line := .Comments -}}
+{{ $line }}
 {{ end }}
 // Package apis contains Kubernetes API groups.
 package apis
