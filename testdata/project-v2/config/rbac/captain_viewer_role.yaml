@@ -1,4 +1,4 @@
-# permissions to do viewer captains.
+# permissions for end users to view captains.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:

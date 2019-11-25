@@ -1,4 +1,4 @@
-# permissions to do edit admirals.
+# permissions for end users to edit admirals.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -22,5 +22,3 @@ rules:
   - admirals/status
   verbs:
   - get
-  - patch
-  - update
