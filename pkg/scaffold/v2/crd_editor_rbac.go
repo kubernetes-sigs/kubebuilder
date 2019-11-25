@@ -50,7 +50,7 @@ func (g *CRDEditorRole) Validate() error {
 	return g.Resource.Validate()
 }
 
-const crdRoleEditorTemplate = `# permissions to do edit {{ .Resource.Resource }}.
+const crdRoleEditorTemplate = `# permissions for end users to edit {{ .Resource.Resource }}.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -74,6 +74,4 @@ rules:
   - {{ .Resource.Resource }}/status
   verbs:
   - get
-  - patch
-  - update
 `
