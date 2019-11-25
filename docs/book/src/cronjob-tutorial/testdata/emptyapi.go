@@ -26,7 +26,7 @@ import (
 )
 
 /*
-Next, we get types for the Spec and Status of our Kind.  Kubernetes functions
+Next, we define types for the Spec and Status of our Kind.  Kubernetes functions
 by reconciling desired state (`Spec`) with actual cluster state (other objects'
 `Status`) and external state, and then recording what it observed (`Status`).
 Thus, every *functional* object includes spec and status.  A few types, like
@@ -49,7 +49,7 @@ type CronJobStatus struct {
 }
 
 /*
-Next, we get the types corresponding to actual Kinds, `CronJob` and `CronJobList`.
+Next, we define the types corresponding to actual Kinds, `CronJob` and `CronJobList`.
 `CronJob` is our root type, and describes the `CronJob` kind.  Like all Kubernetes objects, it contains
 `TypeMeta` (which describes API version and Kind), and also contains `ObjectMeta`, which holds things
 like name, namespace, and labels.
@@ -57,7 +57,7 @@ like name, namespace, and labels.
 `CronJobList` is simply a container for multiple `CronJob`s.  It's the Kind used in bulk operations,
 like LIST.
 
-In general, we never modify either of these -- all modifications go in either Spec or Status
+In general, we never modify either of these -- all modifications go in either Spec or Status.
 
 That little `+kubebuilder:object:root` comment is called a marker.  We'll see
 more of them in a bit, but know that they act as extra metadata, telling

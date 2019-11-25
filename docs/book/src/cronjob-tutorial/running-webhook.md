@@ -26,7 +26,7 @@ You don't need to push the image to a remote container registry if you are using
 a kind cluster. You can directly load your local image to your kind cluster:
 
 ```bash
-kind load docker-image your-image-namge:your-tag
+kind load docker-image your-image-name:your-tag
 ```
 
 ## Deploy Webhooks

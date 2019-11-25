@@ -23,7 +23,7 @@ also need to make sure anything we add in v2 is supported in v2.  In some
 cases, this means we need to add new fields to v1, but in our case, we
 won't have to, since we're not adding new functionality.
 
-Keeping all that in mind, let's figure convert our example above to be
+Keeping all that in mind, let's convert our example above to be
 slightly more structured:
 
 ```yaml
