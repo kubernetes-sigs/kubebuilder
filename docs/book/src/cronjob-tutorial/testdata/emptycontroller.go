@@ -33,7 +33,7 @@ import (
 )
 
 /*
-Next, kubebuilder has scaffold out a basic reconciler struct for us.
+Next, kubebuilder has scaffolded a basic reconciler struct for us.
 Pretty much every reconciler needs to log, and needs to be able to fetch
 objects, so these are added out of the box.
 */
