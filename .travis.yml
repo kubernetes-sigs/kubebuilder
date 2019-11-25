@@ -40,7 +40,6 @@ services:
 
 before_install:
 - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then mkdir -p /Users/travis/gopath/bin; fi
-- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then scripts/setup.sh $KIND_K8S_VERSION; fi
 
 before_script:
 
