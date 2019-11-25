@@ -1,4 +1,4 @@
-# permissions to do edit firstmates.
+# permissions for end users to edit firstmates.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -22,5 +22,3 @@ rules:
   - firstmates/status
   verbs:
   - get
-  - patch
-  - update

@@ -50,7 +50,7 @@ func (g *CRDViewerRole) Validate() error {
 	return g.Resource.Validate()
 }
 
-const crdRoleViewerTemplate = `# permissions to do viewer {{ .Resource.Resource }}.
+const crdRoleViewerTemplate = `# permissions for end users to view {{ .Resource.Resource }}.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
