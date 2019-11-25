@@ -30,7 +30,6 @@ import (
 	"golang.org/x/tools/imports"
 	"sigs.k8s.io/kubebuilder/pkg/model"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
 	"sigs.k8s.io/yaml"
 )
 
@@ -111,7 +110,7 @@ func LoadProjectFile(path string) (input.ProjectFile, error) {
 	if p.Version == "" {
 		// older kubebuilder project does not have scaffolding version
 		// specified, so default it to Version1
-		p.Version = project.Version1
+		p.Version = Version1
 	}
 	return p, nil
 }

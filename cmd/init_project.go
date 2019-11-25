@@ -31,7 +31,7 @@ import (
 
 	"sigs.k8s.io/kubebuilder/cmd/util"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/files" // TODO: remove this dependency
 )
 
 func newInitProjectCmd() *cobra.Command {
@@ -73,8 +73,8 @@ type projectOptions struct {
 	fetchDeps          bool
 	skipGoVersionCheck bool
 
-	boilerplate project.Boilerplate
-	project     project.Project
+	boilerplate files.Boilerplate
+	project     files.Project
 
 	// deprecated flags
 	dep     bool
@@ -108,7 +108,7 @@ func (o *projectOptions) bindCmdlineFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&o.project.Repo, "repo", "", "name to use for go module, e.g. github.com/user/repo.  "+
 		"defaults to the go package of the current working directory.")
 	cmd.Flags().StringVar(&o.project.Domain, "domain", "my.domain", "domain for groups")
-	cmd.Flags().StringVar(&o.project.Version, "project-version", project.Version2, "project version")
+	cmd.Flags().StringVar(&o.project.Version, "project-version", scaffold.Version2, "project version")
 }
 
 func (o *projectOptions) initializeProject() {
@@ -116,7 +116,7 @@ func (o *projectOptions) initializeProject() {
 		log.Fatal(err)
 	}
 
-	if o.project.Version == project.Version1 {
+	if o.project.Version == scaffold.Version1 {
 		printV1DeprecationWarning()
 	}
 
@@ -161,7 +161,7 @@ func (o *projectOptions) validate() error {
 	}
 
 	switch o.project.Version {
-	case project.Version1:
+	case scaffold.Version1:
 		var defEnsure *bool
 		if o.depFlag.Changed {
 			defEnsure = &o.dep
@@ -173,7 +173,7 @@ func (o *projectOptions) validate() error {
 			DepArgs:          o.depArgs,
 			DefinitelyEnsure: defEnsure,
 		}
-	case project.Version2:
+	case scaffold.Version2:
 		o.scaffolder = &scaffold.V2Project{
 			Project:     o.project,
 			Boilerplate: o.boilerplate,

@@ -28,7 +28,6 @@ import (
 
 	"sigs.k8s.io/kubebuilder/cmd/version"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
 )
 
 const (
@@ -117,7 +116,7 @@ func main() {
 	)
 
 	foundProject, projectVersion := getProjectVersion()
-	if foundProject && projectVersion == project.Version1 {
+	if foundProject && projectVersion == scaffold.Version1 {
 		printV1DeprecationWarning()
 
 		rootCmd.AddCommand(

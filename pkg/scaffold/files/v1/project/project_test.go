@@ -13,11 +13,12 @@ import (
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/kubebuilder/pkg/model"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/files"
+	filesv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/files/v1"
+	. "sigs.k8s.io/kubebuilder/pkg/scaffold/files/v1/project"
+	metricsauthv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/files/v1/metricsauth"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/scaffoldtest"
-	scaffoldv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/v1"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/metricsauth"
 )
 
 var _ = Describe("Project", func() {
@@ -40,20 +41,20 @@ var _ = Describe("Project", func() {
 		})
 
 		It("should match the golden file", func() {
-			instance := &project.Boilerplate{Year: year, License: "apache2", Owner: "The Kubernetes authors"}
+			instance := &files.Boilerplate{Year: year, License: "apache2", Owner: "The Kubernetes authors"}
 			Expect(s.Execute(&model.Universe{}, input.Options{}, instance)).NotTo(HaveOccurred())
 			Expect(result.Actual.String()).To(BeEquivalentTo(result.Golden))
 		})
 
 		It("should skip writing boilerplate if the file exists", func() {
-			i, err := (&project.Boilerplate{}).GetInput()
+			i, err := (&files.Boilerplate{}).GetInput()
 			Expect(err).NotTo(HaveOccurred())
 			Expect(i.IfExistsAction).To(Equal(input.Skip))
 		})
 
 		Context("for apache2", func() {
 			It("should write the apache2 boilerplate with specified owners", func() {
-				instance := &project.Boilerplate{Year: year, Owner: "Example Owners"}
+				instance := &files.Boilerplate{Year: year, Owner: "Example Owners"}
 				Expect(s.Execute(&model.Universe{}, input.Options{}, instance)).NotTo(HaveOccurred())
 				e := strings.Replace(
 					result.Golden, "The Kubernetes authors", "Example Owners", -1)
@@ -61,7 +62,7 @@ var _ = Describe("Project", func() {
 			})
 
 			It("should use apache2 as the default", func() {
-				instance := &project.Boilerplate{Year: year, Owner: "The Kubernetes authors"}
+				instance := &files.Boilerplate{Year: year, Owner: "The Kubernetes authors"}
 				Expect(s.Execute(&model.Universe{}, input.Options{}, instance)).NotTo(HaveOccurred())
 				Expect(result.Actual.String()).To(BeEquivalentTo(result.Golden))
 			})
@@ -70,7 +71,7 @@ var _ = Describe("Project", func() {
 		Context("for none", func() {
 			It("should write the empty boilerplate", func() {
 				// Scaffold a boilerplate file
-				instance := &project.Boilerplate{Year: year, License: "none", Owner: "Example Owners"}
+				instance := &files.Boilerplate{Year: year, License: "none", Owner: "Example Owners"}
 				Expect(s.Execute(&model.Universe{}, input.Options{}, instance)).NotTo(HaveOccurred())
 				Expect(result.Actual.String()).To(BeEquivalentTo(fmt.Sprintf(`/*
 Copyright %s Example Owners.
@@ -80,7 +81,7 @@ Copyright %s Example Owners.
 
 		Context("if the boilerplate is given", func() {
 			It("should skip writing Gopkg.toml", func() {
-				instance := &project.Boilerplate{}
+				instance := &files.Boilerplate{}
 				instance.Boilerplate = `/* Hello World */`
 
 				Expect(s.Execute(&model.Universe{}, input.Options{}, instance)).NotTo(HaveOccurred())
@@ -96,7 +97,7 @@ Copyright %s Example Owners.
 		})
 		Context("with defaults ", func() {
 			It("should match the golden file", func() {
-				instance := &project.GopkgToml{}
+				instance := &GopkgToml{}
 				Expect(s.Execute(&model.Universe{}, input.Options{}, instance)).NotTo(HaveOccurred())
 
 				// Verify the contents matches the golden file.
@@ -114,12 +115,12 @@ Copyright %s Example Owners.
 			})
 
 			It("should skip writing Gopkg.toml", func() {
-				e := strings.Replace(string(result.Golden), project.DefaultGopkgHeader, "", -1)
+				e := strings.Replace(string(result.Golden), DefaultGopkgHeader, "", -1)
 				_, err = f.Write([]byte(e))
 				Expect(err).NotTo(HaveOccurred())
 				Expect(f.Close()).NotTo(HaveOccurred())
 
-				instance := &project.GopkgToml{}
+				instance := &GopkgToml{}
 				instance.Input.Path = f.Name()
 
 				err = s.Execute(&model.Universe{}, input.Options{}, instance)
@@ -140,13 +141,13 @@ Copyright %s Example Owners.
 
 			It("should keep the user content", func() {
 				e := strings.Replace(string(result.Golden),
-					project.DefaultGopkgUserContent, "Hello World", -1)
+					DefaultGopkgUserContent, "Hello World", -1)
 				_, err = f.Write([]byte(e))
 				Expect(err).NotTo(HaveOccurred())
 				Expect(f.Close()).NotTo(HaveOccurred())
 
 				fmt.Printf("Write\n\n")
-				instance := &project.GopkgToml{}
+				instance := &GopkgToml{}
 				instance.Input.Path = f.Name()
 
 				Expect(s.Execute(&model.Universe{}, input.Options{}, instance)).NotTo(HaveOccurred())
@@ -165,7 +166,7 @@ Copyright %s Example Owners.
 			})
 
 			It("should use the default user content", func() {
-				instance := &project.GopkgToml{}
+				instance := &GopkgToml{}
 				instance.Input.Path = writeToPath
 
 				err = s.Execute(&model.Universe{}, input.Options{}, instance)
@@ -182,7 +183,7 @@ Copyright %s Example Owners.
 		})
 		Context("with defaults ", func() {
 			It("should match the golden file", func() {
-				instance := &project.Makefile{Image: "controller:latest"}
+				instance := &Makefile{Image: "controller:latest"}
 				instance.Repo = "project"
 				Expect(s.Execute(&model.Universe{}, input.Options{}, instance)).NotTo(HaveOccurred())
 
@@ -199,7 +200,7 @@ Copyright %s Example Owners.
 		})
 		Context("with defaults ", func() {
 			It("should match the golden file", func() {
-				instance := &project.Kustomize{Prefix: "project"}
+				instance := &Kustomize{Prefix: "project"}
 				instance.Repo = "project"
 				Expect(s.Execute(&model.Universe{}, input.Options{}, instance)).NotTo(HaveOccurred())
 
@@ -216,7 +217,7 @@ Copyright %s Example Owners.
 		})
 		Context("with rbac", func() {
 			It("should match the golden file", func() {
-				instance := &project.KustomizeRBAC{}
+				instance := &KustomizeRBAC{}
 				instance.Repo = "project"
 				Expect(s.Execute(&model.Universe{}, input.Options{}, instance)).NotTo(HaveOccurred())
 
@@ -233,7 +234,7 @@ Copyright %s Example Owners.
 		})
 		Context("with manager", func() {
 			It("should match the golden file", func() {
-				instance := &project.KustomizeManager{}
+				instance := &KustomizeManager{}
 				instance.Repo = "project"
 				Expect(s.Execute(&model.Universe{}, input.Options{}, instance)).NotTo(HaveOccurred())
 
@@ -250,7 +251,7 @@ Copyright %s Example Owners.
 		})
 		Context("with defaults ", func() {
 			It("should match the golden file", func() {
-				instance := &scaffoldv1.KustomizeImagePatch{}
+				instance := &filesv1.KustomizeImagePatch{}
 				instance.Repo = "project"
 				Expect(s.Execute(&model.Universe{}, input.Options{}, instance)).NotTo(HaveOccurred())
 
@@ -267,7 +268,7 @@ Copyright %s Example Owners.
 		})
 		Context("with defaults ", func() {
 			It("should match the golden file", func() {
-				instance := &metricsauth.KustomizePrometheusMetricsPatch{}
+				instance := &metricsauthv1.KustomizePrometheusMetricsPatch{}
 				instance.Repo = "project"
 				Expect(s.Execute(&model.Universe{}, input.Options{}, instance)).NotTo(HaveOccurred())
 
@@ -284,7 +285,7 @@ Copyright %s Example Owners.
 		})
 		Context("with defaults ", func() {
 			It("should match the golden file", func() {
-				instance := &project.GitIgnore{}
+				instance := &GitIgnore{}
 				Expect(s.Execute(&model.Universe{}, input.Options{}, instance)).NotTo(HaveOccurred())
 
 				// Verify the contents matches the golden file.
@@ -293,14 +294,14 @@ Copyright %s Example Owners.
 		})
 	})
 
-	Describe("scaffolding a PROEJCT", func() {
+	Describe("scaffolding a PROJECT", func() {
 		BeforeEach(func() {
 			goldenPath = filepath.Join("PROJECT")
 			writeToPath = goldenPath
 		})
 		Context("with defaults", func() {
 			It("should match the golden file", func() {
-				instance := &project.Project{}
+				instance := &files.Project{}
 				instance.Version = "1"
 				instance.Domain = "testproject.org"
 				instance.Repo = "project"

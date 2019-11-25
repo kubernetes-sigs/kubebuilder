@@ -25,17 +25,19 @@ import (
 
 	"sigs.k8s.io/kubebuilder/cmd/util"
 	"sigs.k8s.io/kubebuilder/pkg/model"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/files"
+	scaffoldv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/files/v1"
+	managerv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/files/v1/manager"
+	metricsauthv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/files/v1/metricsauth"
+	projectv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/files/v1/project"
+	scaffoldv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/files/v2"
+	certmanagerv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/files/v2/certmanager"
+	managerv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/files/v2/manager"
+	metricsauthv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/files/v2/metricsauth"
+	projectv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/files/v2/project"
+	prometheusv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/files/v2/prometheus"
+	webhookv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/files/v2/webhook"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
-	scaffoldv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/v1"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/manager"
-	metricsauthv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/v1/metricsauth"
-	scaffoldv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/v2/certmanager"
-	managerv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2/manager"
-	metricsauthv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2/metricsauth"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/v2/prometheus"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/v2/webhook"
 )
 
 const (
@@ -52,8 +54,8 @@ type ProjectScaffolder interface {
 }
 
 type V1Project struct {
-	Project     project.Project
-	Boilerplate project.Boilerplate
+	Project     files.Project
+	Boilerplate files.Boilerplate
 
 	DepArgs          []string
 	DefinitelyEnsure *bool
@@ -91,8 +93,6 @@ func (p *V1Project) buildUniverse() *model.Universe {
 }
 
 func (p *V1Project) Scaffold() error {
-	p.Project.Version = project.Version1
-
 	s := &Scaffold{
 		BoilerplateOptional: true,
 		ProjectOptional:     true,
@@ -125,29 +125,29 @@ func (p *V1Project) Scaffold() error {
 	return s.Execute(
 		p.buildUniverse(),
 		input.Options{ProjectPath: projectInput.Path, BoilerplatePath: bpInput.Path},
-		&project.GitIgnore{},
-		&project.KustomizeRBAC{},
+		&projectv1.GitIgnore{},
+		&projectv1.KustomizeRBAC{},
 		&scaffoldv1.KustomizeImagePatch{},
 		&metricsauthv1.KustomizePrometheusMetricsPatch{},
 		&metricsauthv1.KustomizeAuthProxyPatch{},
 		&scaffoldv1.AuthProxyService{},
-		&project.AuthProxyRole{},
-		&project.AuthProxyRoleBinding{},
-		&manager.Config{Image: imgName},
-		&project.Makefile{Image: imgName},
-		&project.GopkgToml{},
-		&manager.Dockerfile{},
-		&project.Kustomize{},
-		&project.KustomizeManager{},
-		&manager.APIs{},
-		&manager.Controller{},
-		&manager.Webhook{},
-		&manager.Cmd{})
+		&projectv1.AuthProxyRole{},
+		&projectv1.AuthProxyRoleBinding{},
+		&managerv1.Config{Image: imgName},
+		&projectv1.Makefile{Image: imgName},
+		&projectv1.GopkgToml{},
+		&managerv1.Dockerfile{},
+		&projectv1.Kustomize{},
+		&projectv1.KustomizeManager{},
+		&managerv1.APIs{},
+		&managerv1.Controller{},
+		&managerv1.Webhook{},
+		&managerv1.Cmd{})
 }
 
 type V2Project struct {
-	Project     project.Project
-	Boilerplate project.Boilerplate
+	Project     files.Project
+	Boilerplate files.Boilerplate
 }
 
 func (p *V2Project) Validate() error {
@@ -182,8 +182,6 @@ func (p *V2Project) buildUniverse() *model.Universe {
 }
 
 func (p *V2Project) Scaffold() error {
-	p.Project.Version = project.Version2
-
 	s := &Scaffold{
 		BoilerplateOptional: true,
 		ProjectOptional:     true,
@@ -216,11 +214,11 @@ func (p *V2Project) Scaffold() error {
 	return s.Execute(
 		p.buildUniverse(),
 		input.Options{ProjectPath: projectInput.Path, BoilerplatePath: bpInput.Path},
-		&project.GitIgnore{},
+		&projectv2.GitIgnore{},
 		&metricsauthv2.KustomizeAuthProxyPatch{},
 		&scaffoldv2.AuthProxyService{},
-		&project.AuthProxyRole{},
-		&project.AuthProxyRoleBinding{},
+		&projectv2.AuthProxyRole{},
+		&projectv2.AuthProxyRoleBinding{},
 		&managerv2.Config{Image: imgName},
 		&scaffoldv2.Main{},
 		&scaffoldv2.GoMod{ControllerRuntimeVersion: controllerRuntimeVersion},
@@ -233,13 +231,13 @@ func (p *V2Project) Scaffold() error {
 		&scaffoldv2.LeaderElectionRoleBinding{},
 		&scaffoldv2.KustomizeRBAC{},
 		&managerv2.Kustomization{},
-		&webhook.Kustomization{},
-		&webhook.KustomizeConfigWebhook{},
-		&webhook.Service{},
-		&webhook.InjectCAPatch{},
-		&prometheus.Kustomization{},
-		&prometheus.PrometheusServiceMonitor{},
-		&certmanager.CertManager{},
-		&certmanager.Kustomization{},
-		&certmanager.KustomizeConfig{})
+		&webhookv2.Kustomization{},
+		&webhookv2.KustomizeConfigWebhook{},
+		&webhookv2.Service{},
+		&webhookv2.InjectCAPatch{},
+		&prometheusv2.Kustomization{},
+		&prometheusv2.PrometheusServiceMonitor{},
+		&certmanagerv2.CertManager{},
+		&certmanagerv2.Kustomization{},
+		&certmanagerv2.KustomizeConfig{})
 }

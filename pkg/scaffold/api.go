@@ -24,14 +24,13 @@ import (
 	"github.com/gobuffalo/flect"
 
 	"sigs.k8s.io/kubebuilder/pkg/model"
+	controllerv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/files/v1/controller"
+	crdv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/files/v1/crd"
+	scaffoldv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/files/v2"
+	crdv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/files/v2/crd"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/util"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/controller"
-	crdv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/v1/crd"
-	scaffoldv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2"
-	crdv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2/crd"
 )
 
 // API contains configuration for generating scaffolding for Go type
@@ -90,9 +89,9 @@ func (api *API) Scaffold() error {
 	}
 
 	switch ver := api.project.Version; ver {
-	case project.Version1:
+	case Version1:
 		return api.scaffoldV1()
-	case project.Version2:
+	case Version2:
 		return api.scaffoldV2()
 	default:
 		return fmt.Errorf("")
@@ -153,10 +152,10 @@ func (api *API) scaffoldV1() error {
 			fmt.Sprintf("%s_controller_test.go", strings.ToLower(r.Kind))))
 
 		err := (&Scaffold{}).Execute(api.buildUniverse(), input.Options{},
-			&controller.Controller{Resource: r},
-			&controller.AddController{Resource: r},
-			&controller.Test{Resource: r},
-			&controller.SuiteTest{Resource: r},
+			&controllerv1.Controller{Resource: r},
+			&controllerv1.AddController{Resource: r},
+			&controllerv1.Test{Resource: r},
+			&controllerv1.SuiteTest{Resource: r},
 		)
 		if err != nil {
 			return fmt.Errorf("error scaffolding controller: %v", err)

@@ -14,19 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package project
+package files
 
 import (
 	"fmt"
 
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/yaml"
-)
-
-// constants for scaffolding version
-const (
-	Version1 = "1"
-	Version2 = "2"
 )
 
 var _ input.File = &Project{}
@@ -45,7 +39,7 @@ func (c *Project) GetInput() (input.Input, error) {
 		c.Path = "PROJECT"
 	}
 	if c.Version == "" {
-		c.Version = Version1
+		c.Version = "1"
 	}
 	if c.Repo == "" {
 		return input.Input{}, fmt.Errorf("must specify repository")

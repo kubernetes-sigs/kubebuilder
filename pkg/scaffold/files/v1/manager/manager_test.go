@@ -7,9 +7,9 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/kubebuilder/pkg/model"
+	. "sigs.k8s.io/kubebuilder/pkg/scaffold/files/v1/manager"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/scaffoldtest"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/manager"
 )
 
 var _ = Describe("Manager", func() {
@@ -20,27 +20,27 @@ var _ = Describe("Manager", func() {
 		}{
 			{
 				file:     filepath.Join("pkg", "apis", "apis.go"),
-				instance: &manager.APIs{},
+				instance: &APIs{},
 			},
 			{
 				file:     filepath.Join("cmd", "manager", "main.go"),
-				instance: &manager.Cmd{},
+				instance: &Cmd{},
 			},
 			{
 				file:     filepath.Join("config", "manager", "manager.yaml"),
-				instance: &manager.Config{Image: "controller:latest"},
+				instance: &Config{Image: "controller:latest"},
 			},
 			{
 				file:     filepath.Join("pkg", "controller", "controller.go"),
-				instance: &manager.Controller{},
+				instance: &Controller{},
 			},
 			{
 				file:     filepath.Join("pkg", "webhook", "webhook.go"),
-				instance: &manager.Webhook{},
+				instance: &Webhook{},
 			},
 			{
 				file:     filepath.Join("Dockerfile"),
-				instance: &manager.Dockerfile{},
+				instance: &Dockerfile{},
 			},
 		}
 
@@ -59,7 +59,7 @@ var _ = Describe("Manager", func() {
 	Describe(fmt.Sprintf("scaffolding Manager"), func() {
 		Context("APIs", func() {
 			It("should return an error if the relative path cannot be calculated", func() {
-				instance := &manager.APIs{}
+				instance := &APIs{}
 				s, _ := scaffoldtest.NewTestScaffold(filepath.Join("pkg", "apis", "apis.go"), "")
 				s.ProjectPath = "."
 				err := s.Execute(&model.Universe{}, scaffoldtest.Options(), instance)

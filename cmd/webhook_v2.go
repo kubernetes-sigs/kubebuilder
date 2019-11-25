@@ -28,11 +28,10 @@ import (
 
 	"sigs.k8s.io/kubebuilder/pkg/model"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold"
+	scaffoldv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/files/v2"
+	webhookv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/files/v2/webhook"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
-	scaffoldv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/v2/webhook"
 )
 
 func newWebhookV2Cmd() *cobra.Command {
@@ -56,7 +55,7 @@ func newWebhookV2Cmd() *cobra.Command {
 				log.Fatalf("failed to read the PROJECT file: %v", err)
 			}
 
-			if projectInfo.Version != project.Version2 {
+			if projectInfo.Version != scaffold.Version2 {
 				fmt.Printf("kubebuilder webhook is for project version: 2, the version of this project is: %s \n", projectInfo.Version)
 				os.Exit(1)
 			}
@@ -77,7 +76,7 @@ func newWebhookV2Cmd() *cobra.Command {
 				fmt.Println(`Webhook server has been set up for you.
 You need to implement the conversion.Hub and conversion.Convertible interfaces for your CRD types.`)
 			}
-			webhookScaffolder := &webhook.Webhook{
+			webhookScaffolder := &webhookv2.Webhook{
 				Resource:   o.res,
 				Defaulting: o.defaulting,
 				Validating: o.validation,

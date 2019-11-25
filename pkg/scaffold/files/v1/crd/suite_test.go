@@ -10,10 +10,10 @@ import (
 	. "github.com/onsi/gomega"
 
 	"sigs.k8s.io/kubebuilder/pkg/model"
+	. "sigs.k8s.io/kubebuilder/pkg/scaffold/files/v1/crd"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/scaffoldtest"
-	. "sigs.k8s.io/kubebuilder/pkg/scaffold/v1/crd"
 )
 
 func TestResource(t *testing.T) {
