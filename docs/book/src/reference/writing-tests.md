@@ -3,7 +3,7 @@
 Testing Kubernetes controller is a big subject, and the boilerplate testing
 files generated for you by kubebuilder are fairly minimal.
 
-[Writing and Running Integration Tests](/reference/testing/integration.md) documents steps to consider when writing integration steps for your controllers, and available options for configuring your test control plane using [`envtest`](https://godoc.org/github.com/kubernetes-sigs/controller-runtime/pkg/envtest).
+[Writing and Running Integration Tests](/reference/testing/envtest.md) documents steps to consider when writing integration steps for your controllers, and available options for configuring your test control plane using [`envtest`](https://godoc.org/github.com/kubernetes-sigs/controller-runtime/pkg/envtest).
 
 Until more documentation has been written, your best bet to get started is to look at some
 existing examples, such as:
