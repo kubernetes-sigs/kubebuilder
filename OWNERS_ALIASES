@@ -12,3 +12,4 @@ aliases:
   kubebuilder-reviewers:
     - camilamacedo86
     - joelanford
+    - estroz
