@@ -9,3 +9,6 @@ aliases:
     - Liujingfang1
     - mengqiy
     - pmorie
+  kubebuilder-reviewers:
+    - camilamacedo86
+    - joelanford
