@@ -1,5 +1,7 @@
 **Running End-to-end Tests on Remote Clusters**
 
+**This document is for kubebuilder v1 only**
+
 This article outlines steps to run e2e tests on remote clusters for controllers created using `kubebuilder`. For example, after developing a database controller, the developer may want to run some e2e tests on a GKE cluster to verify the controller is working as expected. Currently, `kubebuilder` does not provide a template for running the e2e tests. This article serves to address this deficit.
 
 The steps are as follow:
