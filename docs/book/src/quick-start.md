@@ -192,7 +192,7 @@ make deploy IMG=<some-registry>/<project-name>:tag
 <h1>RBAC errors</h1>
 
 If you encounter RBAC errors, you may need to grant yourself cluster-admin
-privileges or be logged in as admin. See [Prerequisites for using Kubernetes RBAC on GKE cluster v1.11.x and older][pre-rbc-gke] which may can be your case.  
+privileges or be logged in as admin. See [Prerequisites for using Kubernetes RBAC on GKE cluster v1.11.x and older][pre-rbc-gke] which may be your case.  
 
 </aside> 
 
