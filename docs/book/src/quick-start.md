@@ -91,49 +91,45 @@ a Controller](cronjob-tutorial/controller-overview.md).
 <details><summary>Click here to see an example. `(api/v1/guestbook_types.go)` </summary>
 <p>
 
-```go 
+```go
 // GuestbookSpec defines the desired state of Guestbook
 type GuestbookSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-    // Quantity of instances
-    // +kubebuilder:validation:Minimum=1
-    // +kubebuilder:validation:Maximum=10
-    Size int32 `json:"size"`
-    
-    // Name of the ConfigMap for GuestbookSpec's configuration
-    // +kubebuilder:validation:MaxLength=15
-    // +kubebuilder:validation:MinLength=1
-    ConfigMapName string `json:"configMapName"`
-    
-    // +kubebuilder:validation:Enum=Phone,Address,Name
-    Type string `json:"alias,omitempty"`
-    
-	// TLS policy of Guestbook nodes
-	TLS *TLSPolicy `json:"TLS,omitempty"`
+	// Quantity of instances
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Maximum=10
+	Size int32 `json:"size"`
+
+	// Name of the ConfigMap for GuestbookSpec's configuration
+	// +kubebuilder:validation:MaxLength=15
+	// +kubebuilder:validation:MinLength=1
+	ConfigMapName string `json:"configMapName"`
+
+	// +kubebuilder:validation:Enum=Phone,Address,Name
+	Type string `json:"alias,omitempty"`
 }
 
 // GuestbookStatus defines the observed state of Guestbook
 type GuestbookStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	
-	// GuestbookStatus is the set of Guestbook node specific statuses: Active or Standby
-    GuestbookStatus GuestbookStatus `json:"guestbookStatus"`
-    
-    // Status of Guestbook Nodes
-    Nodes []string `json:"nodes"`
-}
 
-type GuestbookStatus struct {
-
-	// PodName of the active Guestbook node. 
+	// PodName of the active Guestbook node.
 	Active string `json:"active"`
 
 	// PodNames of the standby Guestbook nodes.
 	Standby []string `json:"standby"`
-}	
+}
+
+type Guestbook struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   GuestbookSpec   `json:"spec,omitempty"`
+	Status GuestbookStatus `json:"status,omitempty"`
+}
 ```
 
 </p>
