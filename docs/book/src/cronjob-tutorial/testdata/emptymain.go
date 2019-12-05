@@ -27,7 +27,9 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
@@ -72,6 +74,7 @@ pod termination.
 While we don't have anything to run just yet, remember where that
 `+kubebuilder:scaffold:builder` comment is -- things'll get interesting there
 soon.
+
 */
 
 func main() {
@@ -88,6 +91,38 @@ func main() {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
+
+
+	/*
+		Note that the Manager can restrict the namespace that all controllers will watch for resources by:
+	*/
+
+	mgr, err = ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+		Scheme: scheme,
+		Namespace: namespace,
+		MetricsBindAddress: metricsAddr,
+	})
+
+	/*
+		The above example will change the scope of your project to a single Namespace. In this scenario,
+		it is also suggested to restrict the provided authorization to this namespace by replacing the default
+		ClusterRole and ClusterRoleBinding to Role and RoleBinding respectively
+		For further information see the kubernetes documentation about Using [RBAC Authorization](https://kubernetes.io/docs/reference/access-authn-authz/rbac/).
+
+		Also, it is possible to use the MultiNamespacedCacheBuilder to watch a specific set of namespaces:
+	*/
+
+	var namespaces []string // List of Namespaces
+
+	mgr, err = ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+		Scheme: scheme,
+		NewCache: cache.MultiNamespacedCacheBuilder(namespaces),
+		MetricsBindAddress: fmt.Sprintf("%s:%d", metricsHost, metricsPort),
+	})
+
+	/*
+		For further information see [MultiNamespacedCacheBuilder](https://godoc.org/github.com/kubernetes-sigs/controller-runtime/pkg/cache#MultiNamespacedCacheBuilder)
+	*/
 
 	// +kubebuilder:scaffold:builder
 
