@@ -46,6 +46,10 @@ $ git clone git@github.com:<user>/kubebuilder.git $GOPATH/src/sigs.k8s.io/kubebu
 1. Note that the prow tests used in the CI are configured in [kubernetes-sigs/kubebuilder/kubebuilder-presubmits.yaml](https://github.com/kubernetes/test-infra/blob/master/config/jobs/kubernetes-sigs/kubebuilder/kubebuilder-presubmits.yaml). 
 1. Check that all scripts used by the CI are defined in the project.  
 
+## How to preview the changes performed in the docs?
+
+Check the CI job after to do the Pull Request and then, click on in the `Details` of `netlify/kubebuilder/deploy-preview`
+
 ## Community, discussion and support
 
 Learn how to engage with the Kubernetes community on the [community page](http://kubernetes.io/community/).
