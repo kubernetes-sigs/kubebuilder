@@ -20,7 +20,6 @@ var _ = Describe("Webhook", func() {
 	}
 
 	serverName := "default"
-	domainName := "testproject.org"
 	inputs := []*webhookTestcase{
 		{
 			Resource: resource.Resource{Group: "crew", Version: "v1", Kind: "FirstMate", Namespaced: true, CreateExampleReconcileBody: true},
@@ -74,14 +73,12 @@ var _ = Describe("Webhook", func() {
 				{
 					file: filepath.Join("pkg", "webhook", "add_default_server.go"),
 					instance: &AddServer{
-						Resource: &in.Resource,
 						Config:   in.Config,
 					},
 				},
 				{
 					file: filepath.Join("pkg", "webhook", "default_server", "server.go"),
 					instance: &Server{
-						Resource: &in.Resource,
 						Config:   in.Config,
 					},
 				},
@@ -117,7 +114,6 @@ var _ = Describe("Webhook", func() {
 					instance: &AdmissionWebhookBuilder{
 						Resource:    &in.Resource,
 						Config:      in.Config,
-						GroupDomain: domainName,
 					},
 				},
 				{
@@ -127,7 +123,6 @@ var _ = Describe("Webhook", func() {
 					instance: &AdmissionHandler{
 						Resource:    &in.Resource,
 						Config:      in.Config,
-						GroupDomain: domainName,
 					},
 				},
 			}
