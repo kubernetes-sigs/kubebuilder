@@ -28,6 +28,8 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/util"
 )
 
+var _ input.File = &Webhook{}
+
 // Webhook scaffolds a Webhook for a Resource
 type Webhook struct {
 	input.Input

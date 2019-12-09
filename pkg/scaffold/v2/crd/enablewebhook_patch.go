@@ -27,6 +27,8 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 )
 
+var _ input.File = &EnableWebhookPatch{}
+
 // EnableWebhookPatch scaffolds a EnableWebhookPatch for a Resource
 type EnableWebhookPatch struct {
 	input.Input

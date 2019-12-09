@@ -24,6 +24,8 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 )
 
+var _ input.File = &Test{}
+
 // Test scaffolds a Controller Test
 type Test struct {
 	input.Input
