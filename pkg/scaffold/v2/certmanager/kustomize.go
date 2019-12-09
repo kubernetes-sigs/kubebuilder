@@ -22,6 +22,8 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 )
 
+var _ input.File = &Kustomization{}
+
 // Kustomization scaffolds the kustomizaiton in the certmanager folder
 type Kustomization struct {
 	input.Input

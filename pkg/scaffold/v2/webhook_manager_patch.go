@@ -22,6 +22,8 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 )
 
+var _ input.File = &ManagerWebhookPatch{}
+
 // CRDWebhookPatch scaffolds a CRDWebhookPatch for a Resource
 type ManagerWebhookPatch struct {
 	input.Input

@@ -22,6 +22,8 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 )
 
+var _ input.File = &PrometheusServiceMonitor{}
+
 // PrometheusMetricsService scaffolds an issuer CR and a certificate CR
 type PrometheusServiceMonitor struct {
 	input.Input

@@ -27,6 +27,8 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 )
 
+var _ input.File = &EnableCAInjectionPatch{}
+
 // EnableCAInjectionPatch scaffolds a EnableCAInjectionPatch for a Resource
 type EnableCAInjectionPatch struct {
 	input.Input

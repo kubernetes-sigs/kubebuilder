@@ -24,6 +24,8 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 )
 
+var _ input.File = &SuiteTest{}
+
 // SuiteTest scaffolds a SuiteTest
 type SuiteTest struct {
 	input.Input

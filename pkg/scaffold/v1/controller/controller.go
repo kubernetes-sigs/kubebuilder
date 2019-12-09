@@ -29,6 +29,8 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 )
 
+var _ input.File = &Controller{}
+
 // Controller scaffolds a Controller for a Resource
 type Controller struct {
 	input.Input
