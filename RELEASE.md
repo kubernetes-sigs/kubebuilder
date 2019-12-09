@@ -6,7 +6,7 @@ The Kubebuilder Project is released on an as-needed basis. The process is as fol
 1. All [OWNERS](OWNERS) must LGTM this release
 1. An OWNER runs `git tag -s $VERSION` and inserts the changelog and pushes the tag with `git push $VERSION`
 1. The release issue is closed
-1. An announcement email is sent to `kubernetes-kubebuilder@googlegroups.com` with the subject `[ANNOUNCE] kubebuilder $VERSION is released`
+1. An announcement email is sent to `kubebuilder@googlegroups.com` with the subject `[ANNOUNCE] kubebuilder $VERSION is released`
 
 Note: This process does not apply to EAP or alpha (pre-)releases which may be cut at any time for development
 and testing.
