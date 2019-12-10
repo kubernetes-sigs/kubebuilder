@@ -54,8 +54,7 @@ func init() {
 
 /*
 The other thing that's changed is that kubebuilder has added a block calling our
-CronJob controller's `SetupWithManager` method.  Since we now use a `Scheme` as well,
-we'll need to pass that to the reconciler ourselves.
+CronJob controller's `SetupWithManager` method.
 */
 
 func main() {
@@ -76,17 +75,19 @@ func main() {
 		Scheme:             scheme,
 		MetricsBindAddress: metricsAddr,
 		LeaderElection:     enableLeaderElection,
+		Port:               9443,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
+
 	// +kubebuilder:docs-gen:collapse=old stuff
 
 	if err = (&controllers.CronJobReconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("Captain"),
-		Scheme: mgr.GetScheme(), // we've added this ourselves
+		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Captain")
 		os.Exit(1)

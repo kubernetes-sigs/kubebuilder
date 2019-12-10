@@ -41,10 +41,7 @@ import (
 )
 
 /*
-Next, we'll need a few more bits in our Reconciler:
-
-We'll need the Scheme, in order to call some helpers that set owner references,
-and we'll need a Clock, which will allow us to fake timing in our tests.
+Next, we'll need a Clock, which will allow us to fake timing in our tests.
 */
 
 // CronJobReconciler reconciles a CronJob object
