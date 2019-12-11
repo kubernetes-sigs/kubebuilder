@@ -308,10 +308,10 @@ func (api *API) validateResourceGroup(r *resource.Resource) error {
 // resourceExists returns true if API resource is already tracked by the PROJECT file.
 // Note that this works only for v2, since in v1 resources are not tracked by the PROJECT file.
 func (api *API) resourceExists() bool {
-	for _, resource := range api.project.Resources {
-		if resource.Group == api.Resource.Group &&
-			resource.Version == api.Resource.Version &&
-			resource.Kind == api.Resource.Kind {
+	for _, r := range api.project.Resources {
+		if r.Group == api.Resource.Group &&
+			r.Version == api.Resource.Version &&
+			r.Kind == api.Resource.Kind {
 			return true
 		}
 	}
