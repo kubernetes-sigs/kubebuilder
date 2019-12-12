@@ -96,8 +96,13 @@ func (o *projectOptions) bindCmdlineFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&o.dep, "dep", true, "if specified, determines whether dep will be used.")
 	o.depFlag = cmd.Flag("dep")
 	cmd.Flags().StringArrayVar(&o.depArgs, "depArgs", nil, "Additional arguments for dep")
-	cmd.Flags().MarkDeprecated("dep", "use the fetch-deps flag instead")
-	cmd.Flags().MarkDeprecated("depArgs", "will be removed with version 1 scaffolding")
+
+	if err := cmd.Flags().MarkDeprecated("dep", "use the fetch-deps flag instead"); err != nil {
+		log.Printf("error to mark dep flag as deprecated: %v", err)
+	}
+	if err := cmd.Flags().MarkDeprecated("depArgs", "will be removed with version 1 scaffolding"); err != nil {
+		log.Printf("error to mark dep flag as deprecated: %v", err)
+	}
 
 	// boilerplate args
 	cmd.Flags().StringVar(&o.boilerplate.Path, "path", "", "path for boilerplate")

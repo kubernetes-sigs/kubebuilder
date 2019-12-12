@@ -62,6 +62,10 @@ generate-setup: ## Current workarround to generate the testdata with the correct
 	- rm -rf $(CONTROLLER_GEN_BIN_PATH)
 	- GO111MODULE=on go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.2.4
 
+.PHONY: lint
+lint: ## Run code lint checks
+	./scripts/verify.sh
+
 ##@ Tests
 
 .PHONY: test

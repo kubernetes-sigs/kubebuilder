@@ -332,7 +332,7 @@ func implementWebhooks(filename string) error {
 }
 
 func ensureExistAndReplace(input, match, replace string) (string, error) {
-	if strings.Index(input, match) == -1 {
+	if !strings.Contains(input, match) {
 		return "", fmt.Errorf("can't find %q", match)
 	}
 	return strings.Replace(input, match, replace, -1), nil

@@ -48,7 +48,7 @@ type AdmissionWebhookBuilder struct {
 
 // GetInput implements input.File
 func (a *AdmissionWebhookBuilder) GetInput() (input.Input, error) {
-	a.ResourcePackage, _ = getResourceInfo(coreGroups, a.Resource, a.Input)
+	a.ResourcePackage = getResourceInfo(coreGroups, a.Resource, a.Input)
 
 	if a.Type == "mutating" {
 		a.Mutating = true

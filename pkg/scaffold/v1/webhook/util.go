@@ -49,19 +49,15 @@ func builderName(config Config, resource string) string {
 	return fmt.Sprintf("%s-%s-%s", config.Type, opsStr, resource)
 }
 
-func getResourceInfo(coreGroups map[string]string, r *resource.Resource, in input.Input) (resourcePackage, groupDomain string) {
+func getResourceInfo(coreGroups map[string]string, r *resource.Resource, in input.Input) (resourcePackage string) {
 	resourcePath := filepath.Join("pkg", "apis", r.Group, r.Version,
 		fmt.Sprintf("%s_types.go", strings.ToLower(r.Kind)))
 	if _, err := os.Stat(resourcePath); os.IsNotExist(err) {
-		if domain, found := coreGroups[r.Group]; found {
+		if _, found := coreGroups[r.Group]; found {
 			resourcePackage := path.Join("k8s.io", "api")
-			groupDomain = r.Group
-			if domain != "" {
-				groupDomain = r.Group + "." + domain
-			}
-			return resourcePackage, groupDomain
+			return resourcePackage
 		}
 		// TODO: need to support '--resource-pkg-path' flag for specifying resourcePath
 	}
-	return path.Join(in.Repo, "pkg", "apis"), r.Group + "." + in.Domain
+	return path.Join(in.Repo, "pkg", "apis")
 }
