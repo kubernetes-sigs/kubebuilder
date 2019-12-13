@@ -1,5 +1,7 @@
 **Writing and Running Integration Tests**
 
+**This document is for kubebuilder v1 only**
+
 This article explores steps to write and run integration tests for controllers created using Kubebuilder. Kubebuilder provides a template for writing integration tests. You can simply run all integration (and unit) tests within the project by running: `make test`
 
 For example, there is a controller watches *Parent* objects. The *Parent* objects create *Child* objects. Note that the *Child* objects must have their `.ownerReferences` field setting to the `Parent` objects. You can find the template under `pkg/controller/parent/parent_controller_test.go`:
