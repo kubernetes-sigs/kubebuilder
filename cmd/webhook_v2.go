@@ -23,7 +23,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/gobuffalo/flect"
 	"github.com/spf13/cobra"
 
 	"sigs.k8s.io/kubebuilder/pkg/model"
@@ -66,11 +65,12 @@ func newWebhookV2Cmd() *cobra.Command {
 				os.Exit(1)
 			}
 
-			if len(o.res.Resource) == 0 {
-				o.res.Resource = flect.Pluralize(strings.ToLower(o.res.Kind))
+			if err := o.res.Validate(); err != nil {
+				log.Fatal(err)
 			}
 
 			fmt.Println("Writing scaffold for you to edit...")
+
 			fmt.Println(filepath.Join("api", o.res.Version,
 				fmt.Sprintf("%s_webhook.go", strings.ToLower(o.res.Kind))))
 			if o.conversion {
