@@ -158,8 +158,9 @@ type File interface {
 	GetInput() (Input, error)
 }
 
-// Validate validates input
-type Validate interface {
+// RequiresValidation is a file that requires validation
+type RequiresValidation interface {
+	File
 	// Validate returns true if the template has valid values
 	Validate() error
 }
