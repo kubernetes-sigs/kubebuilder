@@ -1,7 +1,7 @@
 # Extensible CLI and Scaffolding Plugins
 
-## Overview 
-I would like for Kubebuilder to become more extensible, such that it could be imported and used as a library in other projects. Specifically, I'm looking for a way to use Kubebuilder's existing CLI and scaffolding for Go projects, but to also be able to augment Kubebuilder's project versions with other custom project versions so that I can support the Kubebuilder workflow with non-Go operators (e.g. operator-sdk's Ansible and Helm-based operators).
+## Overview
+I would like for Kubebuilder to become more extensible, such that it could be imported and used as a library in other projects. Specifically, I'm looking for a way to use Kubebuilder's existing CLI and scaffolding for Go projects, but to also be able to augment the Kubebuilder project structure with other custom project types so that I can support the Kubebuilder workflow with non-Go operators (e.g. operator-sdk's Ansible and Helm-based operators).
 
 The idea is for Kubebuilder to define one or more plugin interfaces that can be used to drive what the `init`, `create api` and `create webhooks` subcommands do and to add a new `cli` package that other projects can use to integrate out-of-tree plugins with the Kubebuilder CLI in their own projects.
 
@@ -21,9 +21,12 @@ Each plugin would minimally be required to implement the `Plugin` interface.
 
 ```go
 type Plugin interface {
-    // Version is the project version that this plugin implements.
-    // For example, Kubebuilder's Go v2 plugin implementation would return "2"
-    Version() string
+    // Version returns the project version that this plugin implements.
+    // For example, Kubebuilder's Go v2 plugin implementation would return 2.
+    Version() uint
+    // Name returns a name defining the plugin type.
+    // For example, Kubebuilder's plugins would return "go".
+    Name() string
 }
 ```
 
@@ -33,7 +36,7 @@ Next, a plugin could optionally implement further interfaces to declare its supp
 * `CreateAPIPlugin` - to create APIs (and possibly controllers) for existing projects
 * `CreateWebhookPlugin` - to create webhooks for existing projects
 
-Each of these interfaces would follow the same pattern (see the InitPlugin interface example below).
+Each of these interfaces would follow the same pattern (see the `InitPlugin` interface example below).
 
 ```go
 type InitPlugin interface {
@@ -66,7 +69,7 @@ To generically support deprecated project versions, we could also add a `Depreca
 // that the plugin is deprecated.  The CLI uses this to print deprecation
 // warnings when the plugin is in use.
 type Deprecated interface {
-    // DeprecationWarning returns a deprecation message that callers 
+    // DeprecationWarning returns a deprecation message that callers
     // can use to warn users of deprecations
     DeprecationWarning() string
 }
@@ -122,7 +125,7 @@ func main() {
 ## Comments & Questions
 
 ### Cobra Commands
-As discussed earlier as part of [#1148](https://github.com/kubernetes-sigs/kubebuilder/pull/1148), one goal is to eliminate the use of `cobra.Command` in the exported API of Kubebuilder since that is considered an internal implementation detail. 
+As discussed earlier as part of [#1148](https://github.com/kubernetes-sigs/kubebuilder/pull/1148), one goal is to eliminate the use of `cobra.Command` in the exported API of Kubebuilder since that is considered an internal implementation detail.
 
 However, at some point, projects that make use of this extensibility will likely want to integrate their own subcommands. In this proposal, `cli.WithExtraCommands()` _DOES_ expose `cobra.Command` to allow callers to pass their own subcommands to the CLI.
 
