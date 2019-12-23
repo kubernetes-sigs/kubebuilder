@@ -64,7 +64,7 @@ if [ -z $go_workspace ]; then
   exit 1
 fi
 
-k8s_version=1.15.5
+k8s_version=1.16.2
 goarch=amd64
 goos="unknown"
 
