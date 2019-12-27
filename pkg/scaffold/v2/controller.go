@@ -75,6 +75,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	crossplane "github.com/muvaf/crossplane-resourcepacks/pkg/controllers"
 
 	{{ .Resource.GroupImportSafe }}{{ .Resource.Version }} "{{ .ResourcePackage }}/{{ .Resource.Version }}"
 )
@@ -89,18 +90,10 @@ type {{ .Resource.Kind }}Reconciler struct {
 // +kubebuilder:rbac:groups={{.GroupDomain}},resources={{ .Plural }},verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups={{.GroupDomain}},resources={{ .Plural }}/status,verbs=get;update;patch
 
-func (r *{{ .Resource.Kind }}Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	_ = context.Background()
-	_ = r.Log.WithValues("{{ .Resource.Kind | lower }}", req.NamespacedName)
-
-	// your logic here
-
-	return ctrl.Result{}, nil
-}
-
 func (r *{{ .Resource.Kind }}Reconciler) SetupWithManager(mgr ctrl.Manager) error {
+	reconciler := crossplane.NewResourcePackReconciler(mgr, {{ .Resource.GroupImportSafe }}{{ .Resource.Version }}.{{ .Resource.Kind }}GroupVersionKind)
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&{{ .Resource.GroupImportSafe }}{{ .Resource.Version }}.{{ .Resource.Kind }}{}).
-		Complete(r)
+		Complete(reconciler)
 }
 `

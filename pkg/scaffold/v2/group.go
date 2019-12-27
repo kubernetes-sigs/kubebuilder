@@ -69,4 +69,11 @@ var (
 	// AddToScheme adds the types in this group-version to the given scheme.
 	AddToScheme = SchemeBuilder.AddToScheme
 )
+
+// Type metadata.
+var (
+	{{.Resource.Kind}}Kind             = "{{.Resource.Kind}}"
+	{{.Resource.Kind}}KindAPIVersion   = {{.Resource.Kind}}Kind + "." + GroupVersion.String()
+	{{.Resource.Kind}}GroupVersionKind = GroupVersion.WithKind({{.Resource.Kind}}Kind)
+)
 `

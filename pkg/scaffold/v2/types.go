@@ -57,6 +57,8 @@ package {{ .Resource.Version }}
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	runtime "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -73,11 +75,13 @@ type {{.Resource.Kind}}Spec struct {
 
 // {{.Resource.Kind}}Status defines the observed state of {{.Resource.Kind}}
 type {{.Resource.Kind}}Status struct {
+	runtime.ConditionedStatus ` + "`" + `json:",inline"` + "`" + `
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 {{ if not .Resource.Namespaced }} // +kubebuilder:resource:scope=Cluster {{ end }}
 
 // {{.Resource.Kind}} is the Schema for the {{ .Resource.Resource }} API
@@ -87,6 +91,14 @@ type {{.Resource.Kind}} struct {
 
 	Spec   {{.Resource.Kind}}Spec   ` + "`" + `json:"spec,omitempty"` + "`" + `
 	Status {{.Resource.Kind}}Status ` + "`" + `json:"status,omitempty"` + "`" + `
+}
+
+func (in *{{.Resource.Kind}}) GetCondition(ct runtime.ConditionType) runtime.Condition {
+	return in.Status.GetCondition(ct)
+}
+
+func (in *{{.Resource.Kind}}) SetConditions(c ...runtime.Condition) {
+	in.Status.SetConditions(c...)
 }
 
 // +kubebuilder:object:root=true
