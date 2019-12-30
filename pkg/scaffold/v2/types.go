@@ -18,8 +18,11 @@ package v2
 
 import (
 	"fmt"
+	"io/ioutil"
 	"path/filepath"
+	"sigs.k8s.io/yaml"
 	"strings"
+	"unicode"
 
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
@@ -41,7 +44,11 @@ func (t *Types) GetInput() (input.Input, error) {
 		t.Path = filepath.Join("pkg", "apis", t.Resource.Group, t.Resource.Version,
 			fmt.Sprintf("%s_types.go", strings.ToLower(t.Resource.Kind)))
 	}
-	t.TemplateBody = typesTemplate
+	tmpl, err := t.applyStackfile(typesTemplate)
+	if err != nil {
+		return input.Input{}, err
+	}
+	t.TemplateBody = tmpl
 	t.IfExistsAction = input.Error
 	return t.Input, nil
 }
@@ -51,14 +58,96 @@ func (t *Types) Validate() error {
 	return t.Resource.Validate()
 }
 
+type Stackfile struct {
+	CRDTemplate `json:"crdTemplate"`
+}
+
+type CRDTemplate struct {
+	Fields []CRDField `json:"fields,omitempty"`
+}
+
+type CRDField struct {
+	Name string `json:"name,omitempty"`
+	Type string `json:"type"`
+	Comment string `json:"comment"`
+	Package string `json:"package,omitempty"`
+}
+
+func (t *Types) applyStackfile(template string) (string, error) {
+	stackFileBytes, err := ioutil.ReadFile(filepath.Join("", "Stackfile.yaml"))
+	if err != nil {
+		return "", err
+	}
+	stackFile := &Stackfile{}
+	if err := yaml.Unmarshal(stackFileBytes, stackFile); err != nil {
+		return "", err
+	}
+	template, err = injectCustomCRDFields(*stackFile, template)
+	if err != nil {
+		return "", err
+	}
+	return template, nil
+}
+
+func injectCustomCRDFields(stackFile Stackfile, template string) (string, error) {
+	var fieldStrings []string
+	importedPackages := map[string]string{
+		"k8s.io/apimachinery/pkg/apis/meta/v1": "metav1",
+		"github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1": "runtime",
+	}
+	packageLabels := map[string]bool{
+		"metav1": true,
+		"runtime": true,
+	}
+	for _, field := range stackFile.Fields {
+		typeName := field.Type
+		label, ok := importedPackages[field.Package]
+		if !ok && field.Package != "" {
+			label = generateUniqueLabel(field.Package, packageLabels)
+			importedPackages[field.Package] = label
+			packageLabels[label] = true
+		}
+		if label != "" {
+			typeName = fmt.Sprintf("%v.%v", label, typeName)
+		}
+		runes := []rune(field.Name)
+		runes[0] = unicode.ToUpper(runes[0])
+		fieldName := string(runes)
+		fieldStrings = append(fieldStrings, fmt.Sprintf(`
+	// %v
+	%v %v ` + "`" + `json:"%v"` + "`" + `
+`, field.Comment, fieldName, typeName, field.Name))
+	}
+	allFields := strings.Join(fieldStrings, "")
+	result := strings.Replace(template, "<PLACEHOLDER_FOR_CRD_TYPES>", allFields, -1)
+	var importStrings []string
+	for path, label := range importedPackages {
+		importStrings = append(importStrings, fmt.Sprintf(`
+	%v "%v"`, label, path))
+	}
+	allImports := strings.Join(importStrings, "")
+	return strings.Replace(result, "<PLACEHOLDER_FOR_GO_IMPORTS>", allImports, -1), nil
+}
+
+func generateUniqueLabel(packagePath string, existingLabels map[string]bool) string {
+	// I know this is inefficient...
+	elements := strings.Split(packagePath, "/")
+	candidate := elements[len(elements)-1]
+	for i := len(elements)-2; i >= 0; i-- {
+		if _, ok := existingLabels[candidate]; !ok {
+			return candidate
+		}
+		candidate = fmt.Sprintf("%s%s", elements[i], candidate)
+	}
+	return candidate
+}
+
 const typesTemplate = `{{ .Boilerplate }}
 
 package {{ .Resource.Version }}
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	runtime "github.com/crossplaneio/crossplane-runtime/apis/core/v1alpha1"
+<PLACEHOLDER_FOR_GO_IMPORTS>
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -66,11 +155,9 @@ import (
 
 // {{.Resource.Kind}}Spec defines the desired state of {{.Resource.Kind}}
 type {{.Resource.Kind}}Spec struct {
+<PLACEHOLDER_FOR_CRD_TYPES>
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-
-	// Foo is an example field of {{.Resource.Kind}}. Edit {{.Resource.Kind}}_types.go to remove/update
-	Foo string ` + "`" + `json:"foo,omitempty"` + "`" + `
 }
 
 // {{.Resource.Kind}}Status defines the observed state of {{.Resource.Kind}}
