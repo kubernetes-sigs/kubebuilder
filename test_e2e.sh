@@ -34,6 +34,13 @@ source "$(pwd)/scripts/setup.sh" ${KIND_K8S_VERSION}
 docker pull gcr.io/kubebuilder/kube-rbac-proxy:v0.4.1
 kind load docker-image gcr.io/kubebuilder/kube-rbac-proxy:v0.4.1
 
+# remove running containers on exit
+function cleanup() {
+    kind delete cluster
+}
+
+trap cleanup EXIT
+
 # The v1 is deprecated
 go test ./test/e2e/v1
 go test ./test/e2e/v2
