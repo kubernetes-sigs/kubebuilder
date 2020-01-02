@@ -59,7 +59,7 @@ Learn how to engage with the Kubernetes community on the [community page](http:/
 You can reach the maintainers of this project at:
 
 - [Slack](http://slack.k8s.io/)
-- [Mailing List](https://groups.google.com/forum/#!forum/kubernetes-kubebuilder)
+- [Mailing List](https://groups.google.com/forum/#!forum/kubebuilder)
 
 ## Becoming a reviewer or approver
 
