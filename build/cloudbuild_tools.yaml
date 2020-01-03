@@ -14,20 +14,20 @@
 
 steps:
 - name: "gcr.io/cloud-builders/docker"
-  args: ["build", "-t", "gcr.io/kubebuilder/thirdparty-${_GOOS}:1.15.5", "./build/thirdparty/${_GOOS}"]
+  args: ["build", "-t", "gcr.io/kubebuilder/thirdparty-${_GOOS}:1.16.4", "./build/thirdparty/${_GOOS}"]
   # darwin takes forever
   timeout: 30m
 
-- name: "gcr.io/kubebuilder/thirdparty-${_GOOS}:1.15.5"
-  args: ["cp", "/kubebuilder_${_GOOS}_${_GOARCH}.tar.gz", "/workspace/kubebuilder-1.15.5-${_GOOS}-${_GOARCH}.tar.gz"]
+- name: "gcr.io/kubebuilder/thirdparty-${_GOOS}:1.16.4"
+  args: ["cp", "/kubebuilder_${_GOOS}_${_GOARCH}.tar.gz", "/workspace/kubebuilder-1.16.4-${_GOOS}-${_GOARCH}.tar.gz"]
   env:
   - 'GOOS=${_GOOS}'
   - 'GOARCH=${_GOARCH}'
 - name: 'gcr.io/cloud-builders/gsutil'
-  args: ['-h', 'Content-Type:application/gzip', 'cp', '/workspace/kubebuilder-1.15.5-${_GOOS}-${_GOARCH}.tar.gz', 'gs://kubebuilder-tools/kubebuilder-tools-1.15.5-${_GOOS}-${_GOARCH}.tar.gz']
+  args: ['-h', 'Content-Type:application/gzip', 'cp', '/workspace/kubebuilder-1.16.4-${_GOOS}-${_GOARCH}.tar.gz', 'gs://kubebuilder-tools/kubebuilder-tools-1.16.4-${_GOOS}-${_GOARCH}.tar.gz']
   env:
   - 'GOOS=${_GOOS}'
   - 'GOARCH=${_GOARCH}'
-images: ["gcr.io/kubebuilder/thirdparty-${_GOOS}:1.15.5"]
+images: ["gcr.io/kubebuilder/thirdparty-${_GOOS}:1.16.4"]
 # darwin takes forever
 timeout: 30m

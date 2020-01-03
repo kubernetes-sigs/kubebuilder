@@ -17,7 +17,7 @@
 # - kubectl (fetch)
 # - etcd (fetch)
 
-FROM golang:1.12.9 as darwin
+FROM golang:1.12.14 as darwin
 # Install tools
 ENV CGO 0
 ENV DEST /usr/local/kubebuilder/bin/
@@ -28,7 +28,7 @@ RUN apt update && \
     go get github.com/jteeuwen/go-bindata/go-bindata && \
     ( mkdir -p $DEST || echo "" )
 
-RUN git clone https://github.com/kubernetes/kubernetes $GOPATH/src/k8s.io/kubernetes --depth=1 -b v1.15.5
+RUN git clone https://github.com/kubernetes/kubernetes $GOPATH/src/k8s.io/kubernetes --depth=1 -b v1.16.4
 
 WORKDIR /go/src/k8s.io/kubernetes
 
@@ -39,7 +39,7 @@ ENV KUBE_BUILD_PLATFORMS darwin/amd64
 RUN make WHAT=cmd/kube-apiserver && \
     cp _output/local/bin/$KUBE_BUILD_PLATFORMS/kube-apiserver $DEST
 
-RUN curl -sLO https://storage.googleapis.com/kubernetes-release/release/v1.15.5/bin/darwin/amd64/kubectl && \
+RUN curl -sLO https://storage.googleapis.com/kubernetes-release/release/v1.16.4/bin/darwin/amd64/kubectl && \
     chmod +x kubectl && \
     cp kubectl $DEST
 
