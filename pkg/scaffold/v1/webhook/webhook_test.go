@@ -65,6 +65,8 @@ var _ = Describe("Webhook", func() {
 
 	for i := range inputs {
 		in := inputs[i]
+		_ = in.Validate()
+
 		Describe(fmt.Sprintf("scaffolding webhook %s", in.Kind), func() {
 			files := []struct {
 				instance input.File
