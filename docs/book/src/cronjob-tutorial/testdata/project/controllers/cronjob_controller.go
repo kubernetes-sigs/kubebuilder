@@ -30,7 +30,6 @@ import (
 	"github.com/robfig/cron"
 	kbatch "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
-	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ref "k8s.io/client-go/tools/reference"
@@ -67,20 +66,6 @@ type Clock interface {
 }
 
 // +kubebuilder:docs-gen:collapse=Clock
-
-/*
-We generally want to ignore (not requeue) NotFound errors, since we'll get a
-reconciliation request once the object exists, and requeuing in the meantime
-won't help.
-*/
-func ignoreNotFound(err error) error {
-	if apierrs.IsNotFound(err) {
-		return nil
-	}
-	return err
-}
-
-// +kubebuilder:docs-gen:collapse=ignoreNotFound
 
 /*
 Notice that we need a few more RBAC permissions -- since we're creating and
@@ -122,7 +107,7 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		// we'll ignore not-found errors, since they can't be fixed by an immediate
 		// requeue (we'll need to wait for a new notification), and we can get them
 		// on deleted requests.
-		return ctrl.Result{}, ignoreNotFound(err)
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
 	/*
@@ -277,7 +262,7 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			if int32(i) >= int32(len(failedJobs))-*cronJob.Spec.FailedJobsHistoryLimit {
 				break
 			}
-			if err := r.Delete(ctx, job, client.PropagationPolicy(metav1.DeletePropagationBackground)); ignoreNotFound(err) != nil {
+			if err := r.Delete(ctx, job, client.PropagationPolicy(metav1.DeletePropagationBackground)); client.IgnoreNotFound(err) != nil {
 				log.Error(err, "unable to delete old failed job", "job", job)
 			} else {
 				log.V(0).Info("deleted old failed job", "job", job)
@@ -296,7 +281,7 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			if int32(i) >= int32(len(successfulJobs))-*cronJob.Spec.SuccessfulJobsHistoryLimit {
 				break
 			}
-			if err := r.Delete(ctx, job, client.PropagationPolicy(metav1.DeletePropagationBackground)); ignoreNotFound(err) != nil {
+			if err := r.Delete(ctx, job, client.PropagationPolicy(metav1.DeletePropagationBackground)); (err) != nil {
 				log.Error(err, "unable to delete old successful job", "job", job)
 			} else {
 				log.V(0).Info("deleted old successful job", "job", job)
@@ -443,7 +428,7 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	if cronJob.Spec.ConcurrencyPolicy == batch.ReplaceConcurrent {
 		for _, activeJob := range activeJobs {
 			// we don't care if the job was already deleted
-			if err := r.Delete(ctx, activeJob, client.PropagationPolicy(metav1.DeletePropagationBackground)); ignoreNotFound(err) != nil {
+			if err := r.Delete(ctx, activeJob, client.PropagationPolicy(metav1.DeletePropagationBackground)); client.IgnoreNotFound(err) != nil {
 				log.Error(err, "unable to delete active job", "job", activeJob)
 				return ctrl.Result{}, err
 			}
