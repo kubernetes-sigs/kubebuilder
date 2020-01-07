@@ -28,7 +28,6 @@ import (
 
 	kbatch "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
-	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -108,18 +107,6 @@ type Clock interface {
 	Now() time.Time
 }
 
-/*
-We generally want to ignore (not requeue) NotFound errors, since we'll get a
-reconciliation request once the object exists, and requeuing in the meantime
-won't help.
-*/
-func ignoreNotFound(err error) error {
-	if apierrs.IsNotFound(err) {
-		return nil
-	}
-	return err
-}
-
 var (
 	scheduledTimeAnnotation = "batch.tutorial.kubebuilder.io/scheduled-at"
 )
@@ -142,7 +129,7 @@ func (r *ReconcileCronJob) Reconcile(req reconcile.Request) (reconcile.Result, e
 		// we'll ignore not-found errors, since they can't be fixed by an immediate
 		// requeue (we'll need to wait for a new notification), and we can get them
 		// on deleted requests.
-		return ctrl.Result{}, ignoreNotFound(err)
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
 	var childJobs kbatch.JobList
@@ -372,7 +359,7 @@ func (r *ReconcileCronJob) Reconcile(req reconcile.Request) (reconcile.Result, e
 	if cronJob.Spec.ConcurrencyPolicy == batchv1.ReplaceConcurrent {
 		for _, activeJob := range activeJobs {
 			// we don't care if the job was already deleted
-			if err := r.Delete(ctx, activeJob); ignoreNotFound(err) != nil {
+			if err := r.Delete(ctx, activeJob); client.IgnoreNotFound(err) != nil {
 				log.Error(err, "unable to delete active job", "job", activeJob)
 				return ctrl.Result{}, err
 			}
