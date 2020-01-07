@@ -20,8 +20,6 @@ import (
 	"testing"
 	"time"
 
-	creaturesv2alpha1 "project/pkg/apis/creatures/v2alpha1"
-
 	"github.com/onsi/gomega"
 	"golang.org/x/net/context"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -30,6 +28,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	creaturesv2alpha1 "project/pkg/apis/creatures/v2alpha1"
 )
 
 var c client.Client

@@ -23,9 +23,6 @@ import (
 	"time"
 
 	"github.com/robfig/cron"
-
-	batchv1 "project/pkg/apis/batch/v1"
-
 	kbatch "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,6 +34,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+
+	batchv1 "project/pkg/apis/batch/v1"
 )
 
 var log = logf.Log.WithName("controller")

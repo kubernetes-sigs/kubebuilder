@@ -7,6 +7,7 @@ import (
 	"text/template"
 
 	"github.com/gobuffalo/flect"
+
 	"sigs.k8s.io/kubebuilder/pkg/model"
 )
 

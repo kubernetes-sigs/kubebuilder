@@ -20,8 +20,6 @@ import (
 	"context"
 	"reflect"
 
-	crewv1 "project/pkg/apis/crew/v1"
-
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -36,6 +34,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+
+	crewv1 "project/pkg/apis/crew/v1"
 )
 
 var log = logf.Log.WithName("firstmate-controller")
