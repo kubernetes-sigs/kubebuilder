@@ -179,7 +179,7 @@ doing.
 Each controller-gen "generator" is controlled by an option to
 controller-gen, using the same syntax as markers.  For instance, to
 generate CRDs with "trivial versions" (no version conversion webhooks), we
-call `controller-gen crd:trivialVersions=true paths=./api/...`.
+call `go run sigs.k8s.io/controller-tools/cmd/controller-gen crd:trivialVersions=true paths=./api/...`.
 
 controller-gen also supports different output "rules" to control how
 and where output goes.  Notice the `manifests` make rule (condensed
@@ -198,13 +198,13 @@ CRD-related config (non-code) artifacts should end up in
 To see all the options for `controller-gen`, run
 
 ```shell
-$ controller-gen -h
+$ go run sigs.k8s.io/controller-tools/cmd/controller-gen -h
 ```
 
 or, for more details:
 
 ```shell
-$ controller-gen -hhh
+$ go run sigs.k8s.io/controller-tools/cmd/controller-gen -hhh
 ```
 
 [marker-ref]: ./markers.md "Markers for Config/Code Generation"
