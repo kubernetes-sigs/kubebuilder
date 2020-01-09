@@ -1,6 +1,7 @@
 # Extensible CLI and Scaffolding Plugins
 
 ## Overview
+
 I would like for Kubebuilder to become more extensible, such that it could be imported and used as a library in other projects. Specifically, I'm looking for a way to use Kubebuilder's existing CLI and scaffolding for Go projects, but to also be able to augment the Kubebuilder project structure with other custom project types so that I can support the Kubebuilder workflow with non-Go operators (e.g. operator-sdk's Ansible and Helm-based operators).
 
 The idea is for Kubebuilder to define one or more plugin interfaces that can be used to drive what the `init`, `create api` and `create webhooks` subcommands do and to add a new `cli` package that other projects can use to integrate out-of-tree plugins with the Kubebuilder CLI in their own projects.
@@ -12,18 +13,21 @@ The idea is for Kubebuilder to define one or more plugin interfaces that can be 
 * Possibly [#1218](https://github.com/kubernetes-sigs/kubebuilder/issues/1218)
 
 ## Prototype implementation
-https://github.com/joelanford/kubebuilder-exp
+
+Barebones plugin refactor: https://github.com/joelanford/kubebuilder-exp
+Kubebuilder feature branch: https://github.com/kubernetes-sigs/kubebuilder/tree/feature/plugins-part-2-electric-boogaloo
 
 ## Plugin interfaces
 
 ### Required
+
 Each plugin would minimally be required to implement the `Plugin` interface.
 
 ```go
 type Plugin interface {
     // Version returns the project version that this plugin implements.
     // For example, Kubebuilder's Go v2 plugin implementation would return 2.
-    Version() uint
+    Version() string
     // Name returns a name defining the plugin type.
     // For example, Kubebuilder's plugins would return "go".
     Name() string
@@ -31,6 +35,7 @@ type Plugin interface {
 ```
 
 ### Optional
+
 Next, a plugin could optionally implement further interfaces to declare its support for specific Kubebuilder subcommands. For example:
 * `InitPlugin` - to initialize new projects
 * `CreateAPIPlugin` - to create APIs (and possibly controllers) for existing projects
@@ -39,24 +44,37 @@ Next, a plugin could optionally implement further interfaces to declare its supp
 Each of these interfaces would follow the same pattern (see the `InitPlugin` interface example below).
 
 ```go
-type InitPlugin interface {
+type InitPluginGetter interface {
     Plugin
+    // GetInitPlugin returns the underlying InitPlugin interface.
+    GetInitPlugin() InitPlugin
+}
 
-    // InitDescription returns a description of what this plugin initializes
-    // for a new project. It is used to display help.
-    InitDescription() string
+type InitPlugin interface {
+    GenericSubcommand
+}
+```
 
-    // InitHelp returns one or more examples of the command-line usage
-    // of this plugin's project initialization support. It is used to display help.
-    InitExample() string
+Each specialized plugin interface can leverage a generic subcommand interface, which prevents duplication of methods while permitting type checking and interface flexibility. A plugin context can be used to preserve default help text in case a plugin does not implement its own.
 
-    // BindInitFlags binds the plugin's init flags to the CLI. This allows each
-    // plugin to define its own command line flags for the `kubebuilder init`
-    // subcommand.
-    BindInitFlags(fs *pflag.FlagSet)
+```go
+type GenericSubcommand interface {
+    // UpdateContext updates a PluginContext with command-specific help text, like description and examples.
+    // Can be a no-op if default help text is desired.
+    UpdateContext(*PluginContext)
+    // BindFlags binds the plugin's flags to the CLI. This allows each plugin to define its own
+    // command line flags for the kubebuilder subcommand.
+    BindFlags(fs *pflag.FlagSet)
+    // Run runs the subcommand.
+    Run() error
+}
 
-    // Init initializes a project.
-    Init() error
+type PluginContext struct {
+    // Description is a description of what this subcommand does. It is used to display help.
+    Description string
+    // Examples are one or more examples of the command-line usage
+    // of this plugin's project subcommand support. It is used to display help.
+    Examples string
 }
 ```
 
@@ -125,6 +143,7 @@ func main() {
 ## Comments & Questions
 
 ### Cobra Commands
+
 As discussed earlier as part of [#1148](https://github.com/kubernetes-sigs/kubebuilder/pull/1148), one goal is to eliminate the use of `cobra.Command` in the exported API of Kubebuilder since that is considered an internal implementation detail.
 
 However, at some point, projects that make use of this extensibility will likely want to integrate their own subcommands. In this proposal, `cli.WithExtraCommands()` _DOES_ expose `cobra.Command` to allow callers to pass their own subcommands to the CLI.
