@@ -28,6 +28,7 @@ import (
 var _ input.File = &CRDSample{}
 
 // CRDSample scaffolds a manifest for CRD sample.
+// nolint:golint
 type CRDSample struct {
 	input.Input
 

@@ -181,7 +181,7 @@ func (api *API) scaffoldV2() error {
 			// If the --force was used to re-crete a resource that was created before then,
 			// the PROJECT file will not be updated.
 			if err := saveProjectFile("PROJECT", api.project); err != nil {
-				return fmt.Errorf("error updating project file with resource information : %v \n", err)
+				return fmt.Errorf("error updating project file with resource information: %v", err)
 			}
 		}
 
@@ -249,7 +249,7 @@ func (api *API) scaffoldV2() error {
 		}
 
 		ctrlScaffolder := &controllerv2.Controller{Resource: r}
-		testsuiteScaffolder := &controllerv2.ControllerSuiteTest{Resource: r}
+		testsuiteScaffolder := &controllerv2.SuiteTest{Resource: r}
 		err := scaffold.Execute(
 			api.buildUniverse(),
 			input.Options{},
@@ -297,10 +297,10 @@ func (api *API) isGroupAllowed(r *resource.Resource) bool {
 // validateResourceGroup will return an error if the group cannot be created
 func (api *API) validateResourceGroup(r *resource.Resource) error {
 	if api.resourceExists() && !api.Force {
-		return fmt.Errorf("group '%s', version '%s' and kind '%s' already exists.", r.Group, r.Version, r.Kind)
+		return fmt.Errorf("group '%s', version '%s' and kind '%s' already exists", r.Group, r.Version, r.Kind)
 	}
 	if !api.isGroupAllowed(r) {
-		return fmt.Errorf("group '%s' is not same as existing group. Multiple groups are not enabled in this project. To enable, use the multigroup command.", r.Group)
+		return fmt.Errorf("group '%s' is not same as existing group. Multiple groups are not enabled in this project. To enable, use the multigroup command", r.Group)
 	}
 	return nil
 }

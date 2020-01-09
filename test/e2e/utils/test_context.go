@@ -24,7 +24,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo" //nolint:golint
 )
 
 const certmanagerVersion = "v0.11.0"

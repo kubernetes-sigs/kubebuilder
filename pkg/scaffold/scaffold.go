@@ -100,7 +100,7 @@ func (s *Scaffold) setFields(t input.File) {
 	}
 }
 
-func (_ *Scaffold) validate(file input.File) error {
+func (s *Scaffold) validate(file input.File) error {
 	if reqValFile, ok := file.(input.RequiresValidation); ok {
 		return reqValFile.Validate()
 	}
@@ -239,11 +239,11 @@ func (s *Scaffold) buildFileModel(e input.File) (*model.File, error) {
 		Path: i.Path,
 	}
 
-	if b, err := s.doTemplate(i, e); err != nil {
+	b, err := s.doTemplate(i, e)
+	if err != nil {
 		return nil, err
-	} else {
-		m.Contents = string(b)
 	}
+	m.Contents = string(b)
 
 	return m, nil
 }

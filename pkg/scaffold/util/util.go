@@ -78,7 +78,6 @@ func GetResourceInfo(r *resource.Resource, repo, domain string, isMultiGroup boo
 
 	if isMultiGroup {
 		return path.Join(repo, "apis", r.Group), r.Group + "." + domain
-	} else {
-		return path.Join(repo, "api"), r.Group + "." + domain
 	}
+	return path.Join(repo, "api"), r.Group + "." + domain
 }
