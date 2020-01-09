@@ -38,12 +38,13 @@ golangci-lint run --disable-all \
     --enable=nakedret \
     --enable=interfacer \
     --enable=misspell \
-    --enable=dupl
+    --enable=dupl \
+    --enable=goimports \
+
 
 ##todo(camilamacedo86): The following checks requires fixes in the code
 # --enable=golint
 # --enable=gocyclo
-# --enable=goimports
 # --enable=lll
 # --enable=goconst
 # --enable=gosec
