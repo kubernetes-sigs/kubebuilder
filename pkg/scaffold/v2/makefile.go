@@ -51,7 +51,7 @@ IMG ?= {{ .Image }}
 CRD_OPTIONS ?= "crd:trivialVersions=true"
 
 # Define how controller-gen is executed
-CONTROLLER_GEN ?= "go run sigs.k8s.io/controller-tools/cmd/controller-gen"
+CONTROLLER_GEN ?= go run sigs.k8s.io/controller-tools/cmd/controller-gen
 
 all: manager
 
