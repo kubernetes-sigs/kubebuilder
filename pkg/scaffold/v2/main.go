@@ -27,8 +27,8 @@ import (
 )
 
 const (
-	ApiPkgImportScaffoldMarker    = "// +kubebuilder:scaffold:imports"
-	ApiSchemeScaffoldMarker       = "// +kubebuilder:scaffold:scheme"
+	APIPkgImportScaffoldMarker    = "// +kubebuilder:scaffold:imports"
+	APISchemeScaffoldMarker       = "// +kubebuilder:scaffold:scheme"
 	ReconcilerSetupScaffoldMarker = "// +kubebuilder:scaffold:builder"
 )
 
@@ -104,8 +104,8 @@ func (f *Main) Update(opts *MainUpdateOptions) error {
 	if opts.WireResource {
 		err := internal.InsertStringsInFile(path,
 			map[string][]string{
-				ApiPkgImportScaffoldMarker: {apiImportCodeFragment},
-				ApiSchemeScaffoldMarker:    {addschemeCodeFragment},
+				APIPkgImportScaffoldMarker: {apiImportCodeFragment},
+				APISchemeScaffoldMarker:    {addschemeCodeFragment},
 			})
 		if err != nil {
 			return err
@@ -115,8 +115,8 @@ func (f *Main) Update(opts *MainUpdateOptions) error {
 	if opts.WireController {
 		return internal.InsertStringsInFile(path,
 			map[string][]string{
-				ApiPkgImportScaffoldMarker:    {apiImportCodeFragment, ctrlImportCodeFragment},
-				ApiSchemeScaffoldMarker:       {addschemeCodeFragment},
+				APIPkgImportScaffoldMarker:    {apiImportCodeFragment, ctrlImportCodeFragment},
+				APISchemeScaffoldMarker:       {addschemeCodeFragment},
 				ReconcilerSetupScaffoldMarker: {reconcilerSetupCodeFragment},
 			})
 	}
@@ -124,8 +124,8 @@ func (f *Main) Update(opts *MainUpdateOptions) error {
 	if opts.WireWebhook {
 		return internal.InsertStringsInFile(path,
 			map[string][]string{
-				ApiPkgImportScaffoldMarker:    {apiImportCodeFragment, ctrlImportCodeFragment},
-				ApiSchemeScaffoldMarker:       {addschemeCodeFragment},
+				APIPkgImportScaffoldMarker:    {apiImportCodeFragment, ctrlImportCodeFragment},
+				APISchemeScaffoldMarker:       {addschemeCodeFragment},
 				ReconcilerSetupScaffoldMarker: {webhookSetupCodeFragment},
 			})
 	}
@@ -205,4 +205,4 @@ func main() {
 		os.Exit(1)
 	}
 }
-`, ApiPkgImportScaffoldMarker, ApiSchemeScaffoldMarker, ReconcilerSetupScaffoldMarker)
+`, APIPkgImportScaffoldMarker, APISchemeScaffoldMarker, ReconcilerSetupScaffoldMarker)

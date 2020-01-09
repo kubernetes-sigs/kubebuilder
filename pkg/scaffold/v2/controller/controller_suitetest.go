@@ -27,10 +27,10 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v2/internal"
 )
 
-var _ input.File = &ControllerSuiteTest{}
+var _ input.File = &SuiteTest{}
 
-// ControllerSuiteTest scaffolds the suite_test.go file to setup the controller test
-type ControllerSuiteTest struct {
+// SuiteTest scaffolds the suite_test.go file to setup the controller test
+type SuiteTest struct {
 	input.Input
 
 	// Resource is the Resource to make the Controller for
@@ -38,7 +38,7 @@ type ControllerSuiteTest struct {
 }
 
 // GetInput implements input.File
-func (f *ControllerSuiteTest) GetInput() (input.Input, error) {
+func (f *SuiteTest) GetInput() (input.Input, error) {
 
 	if f.Path == "" {
 		if f.MultiGroup {
@@ -53,7 +53,7 @@ func (f *ControllerSuiteTest) GetInput() (input.Input, error) {
 }
 
 // Validate validates the values
-func (f *ControllerSuiteTest) Validate() error {
+func (f *SuiteTest) Validate() error {
 	return f.Resource.Validate()
 }
 
@@ -121,7 +121,7 @@ var _ = AfterSuite(func() {
 
 // Update updates given file (suite_test.go) with code fragments required for
 // adding import paths and code setup for new types.
-func (f *ControllerSuiteTest) Update() error {
+func (f *SuiteTest) Update() error {
 
 	resourcePackage, _ := util.GetResourceInfo(f.Resource, f.Repo, f.Domain, f.MultiGroup)
 
@@ -137,8 +137,8 @@ Expect(err).NotTo(HaveOccurred())
 
 	err := internal.InsertStringsInFile(f.Path,
 		map[string][]string{
-			scaffoldv2.ApiPkgImportScaffoldMarker: {ctrlImportCodeFragment, apiImportCodeFragment},
-			scaffoldv2.ApiSchemeScaffoldMarker:    {addschemeCodeFragment},
+			scaffoldv2.APIPkgImportScaffoldMarker: {ctrlImportCodeFragment, apiImportCodeFragment},
+			scaffoldv2.APISchemeScaffoldMarker:    {addschemeCodeFragment},
 		})
 	if err != nil {
 		return err
