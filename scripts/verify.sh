@@ -35,9 +35,9 @@ golangci-lint run --disable-all \
     --enable=goimports \
     --enable=gocyclo \
     --enable=goconst \
+    --enable=maligned \
 
 ##todo(camilamacedo86): The following checks requires fixes in the code
 # --enable=golint
 # --enable=lll
 # --enable=gosec
-# --enable=maligned
