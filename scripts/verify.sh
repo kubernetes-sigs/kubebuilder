@@ -34,11 +34,10 @@ golangci-lint run --disable-all \
     --enable=dupl \
     --enable=goimports \
     --enable=gocyclo \
-
+    --enable=goconst \
 
 ##todo(camilamacedo86): The following checks requires fixes in the code
 # --enable=golint
 # --enable=lll
-# --enable=goconst
 # --enable=gosec
 # --enable=maligned
