@@ -68,21 +68,22 @@ kubebuilder init --domain example.org --license apache2 --owner "The Kubernetes 
 }
 
 type projectOptions struct {
+	boilerplate project.Boilerplate
+	project     project.Project
+
+	// final result
+	scaffolder scaffold.ProjectScaffolder
+
+	// deprecated flags
+	depFlag *flag.Flag
+	depArgs []string
 
 	// flags
 	fetchDeps          bool
 	skipGoVersionCheck bool
 
-	boilerplate project.Boilerplate
-	project     project.Project
-
 	// deprecated flags
-	dep     bool
-	depFlag *flag.Flag
-	depArgs []string
-
-	// final result
-	scaffolder scaffold.ProjectScaffolder
+	dep bool
 }
 
 func (o *projectOptions) bindCmdlineFlags(cmd *cobra.Command) {

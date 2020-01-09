@@ -26,9 +26,6 @@ import (
 
 // Resource contains the information required to scaffold files for a resource.
 type Resource struct {
-	// Namespaced is true if the resource is namespaced
-	Namespaced bool
-
 	// Group is the API Group.  Does not contain the domain.
 	Group string
 
@@ -50,6 +47,9 @@ type Resource struct {
 
 	// CreateExampleReconcileBody will create a Deployment in the Reconcile example
 	CreateExampleReconcileBody bool
+
+	// Namespaced is true if the resource is namespaced
+	Namespaced bool
 }
 
 // Validate checks the Resource values to make sure they are valid.

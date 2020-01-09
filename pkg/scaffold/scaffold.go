@@ -50,22 +50,22 @@ type Scaffold struct {
 	// Boilerplate is the contents of the boilerplate file for code generation
 	Boilerplate string
 
-	BoilerplateOptional bool
-
 	// Project is the project
 	Project input.ProjectFile
-
-	ProjectOptional bool
 
 	// ProjectPath is the relative path to the project root
 	ProjectPath string
 
 	GetWriter func(path string) (io.Writer, error)
 
-	FileExists func(path string) bool
-
 	// Plugins is the list of plugins we should allow to transform our generated scaffolding
 	Plugins []Plugin
+
+	FileExists func(path string) bool
+
+	BoilerplateOptional bool
+
+	ProjectOptional bool
 }
 
 // Plugin is the interface that a plugin must implement
