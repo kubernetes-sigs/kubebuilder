@@ -40,6 +40,7 @@ golangci-lint run --disable-all \
     --enable=misspell \
     --enable=dupl \
     --enable=goimports \
+    --enable=gocyclo \
 
 
 ##todo(camilamacedo86): The following checks requires fixes in the code
