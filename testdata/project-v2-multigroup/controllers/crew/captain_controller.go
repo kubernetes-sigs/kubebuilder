@@ -20,33 +20,34 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	crewv1 "sigs.k8s.io/kubebuilder/testdata/project-v2-multigroup/apis/crew/v1"
 )
 
-// NamespaceReconciler reconciles a Namespace object
-type NamespaceReconciler struct {
+// CaptainReconciler reconciles a Captain object
+type CaptainReconciler struct {
 	client.Client
 	Log    logr.Logger
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=core,resources=namespaces/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=crew.testproject.org,resources=captains,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=crew.testproject.org,resources=captains/status,verbs=get;update;patch
 
-func (r *NamespaceReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
+func (r *CaptainReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()
-	_ = r.Log.WithValues("namespace", req.NamespacedName)
+	_ = r.Log.WithValues("captain", req.NamespacedName)
 
 	// your logic here
 
 	return ctrl.Result{}, nil
 }
 
-func (r *NamespaceReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *CaptainReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&corev1.Namespace{}).
+		For(&crewv1.Captain{}).
 		Complete(r)
 }

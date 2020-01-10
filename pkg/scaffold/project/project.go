@@ -62,6 +62,7 @@ func (c *Project) GetInput() (input.Input, error) {
 		Repo:           c.Repo,
 		Version:        c.Version,
 		Domain:         c.Domain,
+		MultiGroup:     c.MultiGroup,
 		IfExistsAction: input.Error,
 	}, nil
 }

@@ -1,0 +1,24 @@
+# permissions for end users to edit healthcheckpolicies.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: healthcheckpolicy-editor-role
+rules:
+- apiGroups:
+  - foo.policy.testproject.org
+  resources:
+  - healthcheckpolicies
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - foo.policy.testproject.org
+  resources:
+  - healthcheckpolicies/status
+  verbs:
+  - get

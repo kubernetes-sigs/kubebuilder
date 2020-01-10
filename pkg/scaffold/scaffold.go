@@ -95,7 +95,9 @@ func (s *Scaffold) setFieldsAndValidate(t input.File) error {
 	if b, ok := t.(input.ProjecPath); ok {
 		b.SetProjectPath(s.ProjectPath)
 	}
-
+	if b, ok := t.(input.MultiGroup); ok {
+		b.SetMultiGroup(s.Project.MultiGroup)
+	}
 	// Validate the template is ok
 	if v, ok := t.(input.Validate); ok {
 		if err := v.Validate(); err != nil {
