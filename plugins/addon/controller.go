@@ -28,6 +28,7 @@ func ReplaceController(u *model.Universe) error {
 	return nil
 }
 
+// nolint:lll
 const controllerTemplate = `{{ .Boilerplate }}
 
 package controllers

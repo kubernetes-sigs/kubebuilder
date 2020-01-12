@@ -47,6 +47,7 @@ func (f *Register) Validate() error {
 	return f.Resource.Validate()
 }
 
+// nolint:lll
 const registerTemplate = `{{ .Boilerplate }}
 
 // NOTE: Boilerplate only.  Ignore this file.

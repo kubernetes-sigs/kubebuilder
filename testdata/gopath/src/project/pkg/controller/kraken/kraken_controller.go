@@ -37,8 +37,8 @@ import (
 * business logic.  Delete these comments after modifying this file.*
  */
 
-// Add creates a new Kraken Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
-// and Start it when the Manager is Started.
+// Add creates a new Kraken Controller and adds it to the Manager with default RBAC.
+// The Manager will set fields on the Controller and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
 	return add(mgr, newReconciler(mgr))
 }

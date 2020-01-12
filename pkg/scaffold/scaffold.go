@@ -110,7 +110,7 @@ func (s *Scaffold) validate(file input.File) error {
 
 // LoadProjectFile reads the project file and deserializes it into a Project
 func LoadProjectFile(path string) (input.ProjectFile, error) {
-	in, err := ioutil.ReadFile(path) // nolint: gosec
+	in, err := ioutil.ReadFile(path) // nolint:gosec
 	if err != nil {
 		return input.ProjectFile{}, err
 	}
@@ -142,7 +142,7 @@ func saveProjectFile(path string, project *input.ProjectFile) error {
 
 // GetBoilerplate reads the boilerplate file
 func getBoilerplate(path string) (string, error) {
-	b, err := ioutil.ReadFile(path) // nolint: gosec
+	b, err := ioutil.ReadFile(path) // nolint:gosec
 	return string(b), err
 }
 

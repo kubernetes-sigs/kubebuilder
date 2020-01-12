@@ -66,17 +66,17 @@ This command is only available for v1 scaffolding project.
 			}
 
 			fmt.Println("Writing scaffold for you to edit...")
-
+			config := webhook.Config{Server: o.server, Type: o.webhookType, Operations: o.operations}
 			err = (&scaffold.Scaffold{}).Execute(
 				&model.Universe{},
 				input.Options{},
 				&manager.Webhook{},
-				&webhook.AdmissionHandler{Resource: o.res, Config: webhook.Config{Server: o.server, Type: o.webhookType, Operations: o.operations}},
-				&webhook.AdmissionWebhookBuilder{Resource: o.res, Config: webhook.Config{Server: o.server, Type: o.webhookType, Operations: o.operations}},
-				&webhook.AdmissionWebhooks{Resource: o.res, Config: webhook.Config{Server: o.server, Type: o.webhookType, Operations: o.operations}},
-				&webhook.AddAdmissionWebhookBuilderHandler{Resource: o.res, Config: webhook.Config{Server: o.server, Type: o.webhookType, Operations: o.operations}},
-				&webhook.Server{Config: webhook.Config{Server: o.server, Type: o.webhookType, Operations: o.operations}},
-				&webhook.AddServer{Config: webhook.Config{Server: o.server, Type: o.webhookType, Operations: o.operations}},
+				&webhook.AdmissionHandler{Resource: o.res, Config: config},
+				&webhook.AdmissionWebhookBuilder{Resource: o.res, Config: config},
+				&webhook.AdmissionWebhooks{Resource: o.res, Config: config},
+				&webhook.AddAdmissionWebhookBuilderHandler{Resource: o.res, Config: config},
+				&webhook.Server{Config: config},
+				&webhook.AddServer{Config: config},
 			)
 			if err != nil {
 				log.Fatal(err)

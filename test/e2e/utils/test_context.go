@@ -29,6 +29,8 @@ import (
 
 const certmanagerVersion = "v0.11.0"
 const prometheusOperatorVersion = "0.33"
+const certmanagerURL = "https://github.com/jetstack/cert-manager/releases/download/%s/cert-manager.yaml"
+const prometheusOperatorURL = "https://raw.githubusercontent.com/coreos/prometheus-operator/release-%s/bundle.yaml"
 
 // KBTestContext specified to run e2e tests
 type KBTestContext struct {
@@ -89,27 +91,32 @@ func (kc *KBTestContext) InstallCertManager() error {
 	if _, err := kc.Kubectl.Command("create", "namespace", "cert-manager"); err != nil {
 		return err
 	}
-	_, err := kc.Kubectl.Apply(false, "-f", fmt.Sprintf("https://github.com/jetstack/cert-manager/releases/download/%s/cert-manager.yaml", certmanagerVersion), "--validate=false")
+	url := fmt.Sprintf(certmanagerURL, certmanagerVersion)
+	_, err := kc.Kubectl.Apply(false, "-f", url, "--validate=false")
 	return err
 }
 
 // InstallPrometheusOperManager installs the prometheus manager bundle.
 func (kc *KBTestContext) InstallPrometheusOperManager() error {
-	_, err := kc.Kubectl.Apply(false, "-f", fmt.Sprintf("https://raw.githubusercontent.com/coreos/prometheus-operator/release-%s/bundle.yaml", prometheusOperatorVersion))
+	url := fmt.Sprintf(prometheusOperatorURL, prometheusOperatorVersion)
+	_, err := kc.Kubectl.Apply(false, "-f", url)
 	return err
 }
 
 // UninstallPrometheusOperManager uninstalls the prometheus manager bundle.
 func (kc *KBTestContext) UninstallPrometheusOperManager() {
-	if _, err := kc.Kubectl.Delete(false, "-f", fmt.Sprintf("https://github.com/coreos/prometheus-operator/blob/release-%s/bundle.yaml", prometheusOperatorVersion)); err != nil {
+	url := fmt.Sprintf(prometheusOperatorURL, prometheusOperatorVersion)
+	if _, err := kc.Kubectl.Delete(false, "-f", url); err != nil {
 		fmt.Fprintf(GinkgoWriter, "error when running kubectl delete during cleaning up prometheus bundle: %v\n", err)
 	}
 }
 
 // UninstallCertManager uninstalls the cert manager bundle.
 func (kc *KBTestContext) UninstallCertManager() {
-	if _, err := kc.Kubectl.Delete(false, "-f", fmt.Sprintf("https://github.com/jetstack/cert-manager/releases/download/%s/cert-manager.yaml", certmanagerVersion)); err != nil {
-		fmt.Fprintf(GinkgoWriter, "warning: error when running kubectl delete during cleaning up cert manager: %v\n", err)
+	url := fmt.Sprintf(certmanagerURL, certmanagerVersion)
+	if _, err := kc.Kubectl.Delete(false, "-f", url); err != nil {
+		fmt.Fprintf(GinkgoWriter,
+			"warning: error when running kubectl delete during cleaning up cert manager: %v\n", err)
 	}
 	if _, err := kc.Kubectl.Delete(false, "namespace", "cert-manager"); err != nil {
 		fmt.Fprintf(GinkgoWriter, "warning: error when cleaning up the cert manager namespace: %v\n", err)

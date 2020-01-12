@@ -39,6 +39,7 @@ func (f *KustomizeConfigWebhook) GetInput() (input.Input, error) {
 	return f.Input, nil
 }
 
+// nolint:lll
 const KustomizeConfigWebhookTemplate = `# the following config is for teaching kustomize where to look at when substituting vars.
 # It requires kustomize v2.1.0 or newer to work properly.
 nameReference:

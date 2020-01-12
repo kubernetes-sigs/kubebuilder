@@ -39,7 +39,13 @@ var _ = Describe("Webhook", func() {
 	serverName := "default"
 	inputs := []*webhookTestcase{
 		{
-			Resource: resource.Resource{Group: "crew", Version: "v1", Kind: "FirstMate", Namespaced: true, CreateExampleReconcileBody: true},
+			Resource: resource.Resource{
+				Group:                      "crew",
+				Version:                    "v1",
+				Kind:                       "FirstMate",
+				Namespaced:                 true,
+				CreateExampleReconcileBody: true,
+			},
 			Config: Config{
 				Type:       "mutating",
 				Operations: []string{"create", "update"},
@@ -47,7 +53,13 @@ var _ = Describe("Webhook", func() {
 			},
 		},
 		{
-			Resource: resource.Resource{Group: "crew", Version: "v1", Kind: "FirstMate", Namespaced: true, CreateExampleReconcileBody: true},
+			Resource: resource.Resource{
+				Group:                      "crew",
+				Version:                    "v1",
+				Kind:                       "FirstMate",
+				Namespaced:                 true,
+				CreateExampleReconcileBody: true,
+			},
 			Config: Config{
 				Type:       "mutating",
 				Operations: []string{"delete"},
@@ -55,7 +67,13 @@ var _ = Describe("Webhook", func() {
 			},
 		},
 		{
-			Resource: resource.Resource{Group: "ship", Version: "v1beta1", Kind: "Frigate", Namespaced: true, CreateExampleReconcileBody: false},
+			Resource: resource.Resource{
+				Group:                      "ship",
+				Version:                    "v1beta1",
+				Kind:                       "Frigate",
+				Namespaced:                 true,
+				CreateExampleReconcileBody: false,
+			},
 			Config: Config{
 				Type:       "validating",
 				Operations: []string{"update"},
@@ -63,7 +81,13 @@ var _ = Describe("Webhook", func() {
 			},
 		},
 		{
-			Resource: resource.Resource{Group: "creatures", Version: "v2alpha1", Kind: "Kraken", Namespaced: false, CreateExampleReconcileBody: false},
+			Resource: resource.Resource{
+				Group:                      "creatures",
+				Version:                    "v2alpha1",
+				Kind:                       "Kraken",
+				Namespaced:                 false,
+				CreateExampleReconcileBody: false,
+			},
 			Config: Config{
 				Type:       "validating",
 				Operations: []string{"create"},
@@ -71,7 +95,13 @@ var _ = Describe("Webhook", func() {
 			},
 		},
 		{
-			Resource: resource.Resource{Group: "core", Version: "v1", Kind: "Namespace", Namespaced: false, CreateExampleReconcileBody: false},
+			Resource: resource.Resource{
+				Group:                      "core",
+				Version:                    "v1",
+				Kind:                       "Namespace",
+				Namespaced:                 false,
+				CreateExampleReconcileBody: false,
+			},
 			Config: Config{
 				Type:       "mutating",
 				Operations: []string{"update"},

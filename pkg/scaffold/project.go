@@ -62,7 +62,8 @@ type V1Project struct {
 func (p *V1Project) Validate() error {
 	_, err := exec.LookPath("dep")
 	if err != nil {
-		return fmt.Errorf("dep is not installed (%v). Follow steps at: https://golang.github.io/dep/docs/installation.html", err)
+		return fmt.Errorf("dep is not installed (%v). "+
+			"Follow steps at: https://golang.github.io/dep/docs/installation.html", err)
 	}
 	return nil
 }

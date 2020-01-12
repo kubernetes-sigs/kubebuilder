@@ -65,9 +65,11 @@ func (f *Webhook) GetInput() (input.Input, error) {
 
 	if f.Path == "" {
 		if f.MultiGroup {
-			f.Path = filepath.Join("apis", f.Resource.Group, f.Resource.Version, fmt.Sprintf("%s_webhook.go", strings.ToLower(f.Resource.Kind)))
+			f.Path = filepath.Join("apis", f.Resource.Group, f.Resource.Version,
+				fmt.Sprintf("%s_webhook.go", strings.ToLower(f.Resource.Kind)))
 		} else {
-			f.Path = filepath.Join("api", f.Resource.Version, fmt.Sprintf("%s_webhook.go", strings.ToLower(f.Resource.Kind)))
+			f.Path = filepath.Join("api", f.Resource.Version,
+				fmt.Sprintf("%s_webhook.go", strings.ToLower(f.Resource.Kind)))
 		}
 	}
 
@@ -115,6 +117,7 @@ func (r *{{.Resource.Kind}}) SetupWebhookWithManager(mgr ctrl.Manager) error {
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 `
 
+	// nolint:lll
 	DefaultingWebhookTemplate = `
 // +kubebuilder:webhook:path=/mutate-{{ .GroupDomainWithDash }}-{{ .Resource.Version }}-{{ lower .Resource.Kind }},mutating=true,failurePolicy=fail,groups={{ .GroupDomain }},resources={{ .Plural }},verbs=create;update,versions={{ .Resource.Version }},name=m{{ lower .Resource.Kind }}.kb.io
 
@@ -127,7 +130,7 @@ func (r *{{ .Resource.Kind }}) Default() {
 	// TODO(user): fill in your defaulting logic.
 }
 `
-
+	// nolint:lll
 	ValidatingWebhookTemplate = `
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
 // +kubebuilder:webhook:verbs=create;update,path=/validate-{{ .GroupDomainWithDash }}-{{ .Resource.Version }}-{{ lower .Resource.Kind }},mutating=false,failurePolicy=fail,groups={{ .GroupDomain }},resources={{ .Plural }},versions={{ .Resource.Version }},name=v{{ lower .Resource.Kind }}.kb.io
