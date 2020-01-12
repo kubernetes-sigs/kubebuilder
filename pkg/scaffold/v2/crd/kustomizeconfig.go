@@ -38,6 +38,7 @@ func (f *KustomizeConfig) GetInput() (input.Input, error) {
 	return f.Input, nil
 }
 
+// nolint:lll
 const kustomizeConfigTemplate = `# This file is for teaching kustomize how to substitute name and namespace reference in CRD
 nameReference:
 - kind: Service

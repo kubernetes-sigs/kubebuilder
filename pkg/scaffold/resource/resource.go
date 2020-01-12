@@ -113,7 +113,8 @@ func (r *Resource) isGroupEmpty() bool {
 const (
 	dns1123LabelFmt          string = "[a-z0-9]([-a-z0-9]*[a-z0-9])?"
 	dns1123SubdomainFmt      string = dns1123LabelFmt + "(\\." + dns1123LabelFmt + ")*"
-	dns1123SubdomainErrorMsg string = "a DNS-1123 subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character"
+	dns1123SubdomainErrorMsg string = "a DNS-1123 subdomain must consist of lower case alphanumeric characters," +
+		" '-' or '.', and must start and end with an alphanumeric character"
 
 	// dns1123SubdomainMaxLength is a subdomain's max length in DNS (RFC 1123)
 	dns1123SubdomainMaxLength int = 253

@@ -108,7 +108,12 @@ func (api *API) buildUniverse() *model.Universe {
 		Plural:     flect.Pluralize(strings.ToLower(api.Resource.Kind)),
 	}
 
-	resourceModel.GoPackage, resourceModel.GroupDomain = util.GetResourceInfo(api.Resource, api.project.Repo, api.project.Domain, api.project.MultiGroup)
+	resourceModel.GoPackage, resourceModel.GroupDomain = util.GetResourceInfo(
+		api.Resource,
+		api.project.Repo,
+		api.project.Domain,
+		api.project.MultiGroup,
+	)
 
 	return &model.Universe{
 		Resource:   resourceModel,
@@ -300,7 +305,8 @@ func (api *API) validateResourceGroup(r *resource.Resource) error {
 		return fmt.Errorf("group '%s', version '%s' and kind '%s' already exists", r.Group, r.Version, r.Kind)
 	}
 	if !api.isGroupAllowed(r) {
-		return fmt.Errorf("group '%s' is not same as existing group. Multiple groups are not enabled in this project. To enable, use the multigroup command", r.Group)
+		return fmt.Errorf("group '%s' is not same as existing group."+
+			" Multiple groups are not enabled in this project. To enable, use the multigroup command.", r.Group)
 	}
 	return nil
 }

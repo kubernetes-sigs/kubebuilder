@@ -108,7 +108,8 @@ var _ = Describe("kubebuilder", func() {
 
 			// NOTE: If you want to run the test against a GKE cluster, you will need to grant yourself permission.
 			// Otherwise, you may see "... is forbidden: attempt to grant extra privileges"
-			// $ kubectl create clusterrolebinding myname-cluster-admin-binding --clusterrole=cluster-admin --user=myname@mycompany.com
+			// $ kubectl create clusterrolebinding myname-cluster-admin-binding \
+			// --clusterrole=cluster-admin --user=myname@mycompany.com
 			// https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control
 			By("deploying controller manager")
 			err = kbc.Make("deploy")
@@ -120,7 +121,8 @@ var _ = Describe("kubebuilder", func() {
 				podOutput, err := kbc.Kubectl.Get(
 					true,
 					"pods", "-l", "control-plane=controller-manager",
-					"-o", "go-template={{ range .items }}{{ if not .metadata.deletionTimestamp }}{{ .metadata.name }}{{ \"\\n\" }}{{ end }}{{ end }}",
+					"-o", "go-template={{ range .items }}{{ if not .metadata.deletionTimestamp }}{{ .metadata.name }}"+
+						"{{ \"\\n\" }}{{ end }}{{ end }}",
 				)
 				Expect(err).NotTo(HaveOccurred())
 				podNames := utils.GetNonEmptyLines(podOutput)
@@ -145,7 +147,8 @@ var _ = Describe("kubebuilder", func() {
 			Eventually(verifyControllerUp, 2*time.Minute, time.Second).Should(Succeed())
 
 			By("creating an instance of CR")
-			inputFile := filepath.Join("config", "samples", fmt.Sprintf("%s_%s_%s.yaml", kbc.Group, kbc.Version, strings.ToLower(kbc.Kind)))
+			inputFile := filepath.Join("config", "samples",
+				fmt.Sprintf("%s_%s_%s.yaml", kbc.Group, kbc.Version, strings.ToLower(kbc.Kind)))
 			_, err = kbc.Kubectl.Apply(false, "-f", inputFile)
 			Expect(err).NotTo(HaveOccurred())
 

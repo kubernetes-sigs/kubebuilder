@@ -83,9 +83,13 @@ func (f *Controller) GetInput() (input.Input, error) {
 	return f.Input, nil
 }
 
-func getResourceInfo(coreGroups map[string]string, r *resource.Resource, in input.Input) (resourcePackage, groupDomain string) {
+func getResourceInfo(coreGroups map[string]string,
+	r *resource.Resource,
+	in input.Input,
+) (resourcePackage, groupDomain string) {
 	resourcePath := filepath.Join("pkg", "apis", r.Group, r.Version,
 		fmt.Sprintf("%s_types.go", strings.ToLower(r.Kind)))
+
 	if _, err := os.Stat(resourcePath); os.IsNotExist(err) {
 		if domain, found := coreGroups[r.Group]; found {
 			resourcePackage := path.Join("k8s.io", "api")
@@ -100,6 +104,7 @@ func getResourceInfo(coreGroups map[string]string, r *resource.Resource, in inpu
 	return path.Join(in.Repo, "pkg", "apis"), r.Group + "." + in.Domain
 }
 
+// nolint:lll
 const controllerTemplate = `{{ .Boilerplate }}
 
 package {{ lower .Resource.Kind }}
@@ -144,8 +149,8 @@ var log = logf.Log.WithName("{{ lower .Resource.Kind }}-controller")
 * business logic.  Delete these comments after modifying this file.*
  */
 
-// Add creates a new {{ .Resource.Kind }} Controller and adds it to the Manager with default RBAC. The Manager will set fields on the Controller
-// and Start it when the Manager is Started.
+// Add creates a new {{ .Resource.Kind }} Controller and adds it to the Manager with default RBAC. 
+// The Manager will set fields on the Controller and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
 	return add(mgr, newReconciler(mgr))
 }

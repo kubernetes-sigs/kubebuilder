@@ -47,6 +47,7 @@ func (f *Doc) Validate() error {
 	return f.Resource.Validate()
 }
 
+// nolint:lll
 const docGoTemplate = `{{ .Boilerplate }}
 
 // Package {{.Resource.Version}} contains API Schema definitions for the {{ .Resource.GroupImportSafe }} {{.Resource.Version}} API group

@@ -38,6 +38,7 @@ func (f *KustomizeConfig) GetInput() (input.Input, error) {
 	return f.Input, nil
 }
 
+// nolint:lll
 const kustomizeConfigTemplate = `# This configuration is for teaching kustomize how to update name ref and var substitution 
 nameReference:
 - kind: Issuer

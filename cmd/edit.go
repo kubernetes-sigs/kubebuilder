@@ -52,7 +52,8 @@ func newEditProjectCmd() *cobra.Command {
 			}
 
 			if projectInfo.Version != project.Version2 {
-				log.Fatalf("kubebuilder multigroup is for project version: 2, the version of this project is: %s \n", projectInfo.Version)
+				log.Fatalf("kubebuilder multigroup is for project version: 2,"+
+					" the version of this project is: %s \n", projectInfo.Version)
 			}
 
 			// Set MultiGroup Option

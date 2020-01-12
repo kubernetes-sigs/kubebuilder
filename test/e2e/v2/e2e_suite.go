@@ -159,7 +159,8 @@ var _ = Describe("kubebuilder", func() {
 
 			// NOTE: If you want to run the test against a GKE cluster, you will need to grant yourself permission.
 			// Otherwise, you may see "... is forbidden: attempt to grant extra privileges"
-			// $ kubectl create clusterrolebinding myname-cluster-admin-binding --clusterrole=cluster-admin --user=myname@mycompany.com
+			// $ kubectl create clusterrolebinding myname-cluster-admin-binding \
+			// --clusterrole=cluster-admin --user=myname@mycompany.com
 			// https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control
 			By("deploying controller manager")
 			err = kbc.Make("deploy", "IMG="+kbc.ImageName)
@@ -171,7 +172,8 @@ var _ = Describe("kubebuilder", func() {
 				podOutput, err := kbc.Kubectl.Get(
 					true,
 					"pods", "-l", "control-plane=controller-manager",
-					"-o", "go-template={{ range .items }}{{ if not .metadata.deletionTimestamp }}{{ .metadata.name }}{{ \"\\n\" }}{{ end }}{{ end }}")
+					"-o", "go-template={{ range .items }}{{ if not .metadata.deletionTimestamp }}{{ .metadata.name }}"+
+						"{{ \"\\n\" }}{{ end }}{{ end }}")
 				Expect(err).NotTo(HaveOccurred())
 				podNames := utils.GetNonEmptyLines(podOutput)
 				if len(podNames) != 1 {
@@ -209,7 +211,8 @@ var _ = Describe("kubebuilder", func() {
 			cmdOpts := []string{
 				"run", "--generator=run-pod/v1", "curl", "--image=curlimages/curl:7.68.0", "--restart=OnFailure", "--",
 				"curl", "-v", "-k", "-H", fmt.Sprintf(`Authorization: Bearer %s`, token),
-				fmt.Sprintf("https://e2e-%v-controller-manager-metrics-service.e2e-%v-system.svc:8443/metrics", kbc.TestSuffix, kbc.TestSuffix),
+				fmt.Sprintf("https://e2e-%v-controller-manager-metrics-service.e2e-%v-system.svc:8443/metrics",
+					kbc.TestSuffix, kbc.TestSuffix),
 			}
 			_, err = kbc.Kubectl.CommandInNamespace(cmdOpts...)
 			Expect(err).NotTo(HaveOccurred())
@@ -285,14 +288,16 @@ var _ = Describe("kubebuilder", func() {
 			By("creating an instance of CR")
 			// currently controller-runtime doesn't provide a readiness probe, we retry a few times
 			// we can change it to probe the readiness endpoint after CR supports it.
-			sampleFile := filepath.Join("config", "samples", fmt.Sprintf("%s_%s_%s.yaml", kbc.Group, kbc.Version, strings.ToLower(kbc.Kind)))
+			sampleFile := filepath.Join("config", "samples",
+				fmt.Sprintf("%s_%s_%s.yaml", kbc.Group, kbc.Version, strings.ToLower(kbc.Kind)))
 			Eventually(func() error {
 				_, err = kbc.Kubectl.Apply(true, "-f", sampleFile)
 				return err
 			}, time.Minute, time.Second).Should(Succeed())
 
 			By("applying CRD Editor Role")
-			crdEditorRole := filepath.Join("config", "rbac", fmt.Sprintf("%s_editor_role.yaml", strings.ToLower(kbc.Kind)))
+			crdEditorRole := filepath.Join("config", "rbac",
+				fmt.Sprintf("%s_editor_role.yaml", strings.ToLower(kbc.Kind)))
 			Eventually(func() error {
 				_, err = kbc.Kubectl.Apply(true, "-f", crdEditorRole)
 				return err
