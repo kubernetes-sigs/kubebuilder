@@ -28,12 +28,12 @@ type Dockerfile struct {
 }
 
 // GetInput implements input.File
-func (c *Dockerfile) GetInput() (input.Input, error) {
-	if c.Path == "" {
-		c.Path = "Dockerfile"
+func (f *Dockerfile) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = "Dockerfile"
 	}
-	c.TemplateBody = dockerfileTemplate
-	return c.Input, nil
+	f.TemplateBody = dockerfileTemplate
+	return f.Input, nil
 }
 
 const dockerfileTemplate = `# Build the manager binary

@@ -30,13 +30,13 @@ type KustomizeRBAC struct {
 }
 
 // GetInput implements input.File
-func (c *KustomizeRBAC) GetInput() (input.Input, error) {
-	if c.Path == "" {
-		c.Path = filepath.Join("config", "rbac", "kustomization.yaml")
+func (f *KustomizeRBAC) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = filepath.Join("config", "rbac", "kustomization.yaml")
 	}
-	c.TemplateBody = kustomizeRBACTemplate
-	c.Input.IfExistsAction = input.Error
-	return c.Input, nil
+	f.TemplateBody = kustomizeRBACTemplate
+	f.Input.IfExistsAction = input.Error
+	return f.Input, nil
 }
 
 const kustomizeRBACTemplate = `resources:

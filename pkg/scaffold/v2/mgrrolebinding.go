@@ -30,12 +30,12 @@ type ManagerRoleBinding struct {
 }
 
 // GetInput implements input.File
-func (r *ManagerRoleBinding) GetInput() (input.Input, error) {
-	if r.Path == "" {
-		r.Path = filepath.Join("config", "rbac", "role_binding.yaml")
+func (f *ManagerRoleBinding) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = filepath.Join("config", "rbac", "role_binding.yaml")
 	}
-	r.TemplateBody = managerBindingTemplate
-	return r.Input, nil
+	f.TemplateBody = managerBindingTemplate
+	return f.Input, nil
 }
 
 const managerBindingTemplate = `apiVersion: rbac.authorization.k8s.io/v1

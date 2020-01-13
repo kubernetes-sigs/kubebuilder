@@ -30,13 +30,13 @@ type Kustomization struct {
 }
 
 // GetInput implements input.File
-func (c *Kustomization) GetInput() (input.Input, error) {
-	if c.Path == "" {
-		c.Path = filepath.Join("config", "webhook", "kustomization.yaml")
+func (f *Kustomization) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = filepath.Join("config", "webhook", "kustomization.yaml")
 	}
-	c.TemplateBody = KustomizeWebhookTemplate
-	c.Input.IfExistsAction = input.Error
-	return c.Input, nil
+	f.TemplateBody = KustomizeWebhookTemplate
+	f.Input.IfExistsAction = input.Error
+	return f.Input, nil
 }
 
 const KustomizeWebhookTemplate = `resources:

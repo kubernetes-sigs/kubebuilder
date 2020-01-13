@@ -60,40 +60,40 @@ type Stanza struct {
 }
 
 // GetInput implements input.File
-func (g *GopkgToml) GetInput() (input.Input, error) {
-	if g.Path == "" {
-		g.Path = "Gopkg.toml"
+func (f *GopkgToml) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = "Gopkg.toml"
 	}
-	if g.ManagedHeader == "" {
-		g.ManagedHeader = DefaultGopkgHeader
+	if f.ManagedHeader == "" {
+		f.ManagedHeader = DefaultGopkgHeader
 	}
 
 	// Set the user content to be used if the Gopkg.toml doesn't exist
-	if g.DefaultUserContent == "" {
-		g.DefaultUserContent = DefaultGopkgUserContent
+	if f.DefaultUserContent == "" {
+		f.DefaultUserContent = DefaultGopkgUserContent
 	}
 
 	// Set the user owned content from the last Gopkg.toml file - e.g. everything before the header
-	lastBytes, err := ioutil.ReadFile(g.Path)
+	lastBytes, err := ioutil.ReadFile(f.Path)
 	if err != nil {
-		g.UserContent = g.DefaultUserContent
-	} else if g.UserContent, err = g.getUserContent(lastBytes); err != nil {
+		f.UserContent = f.DefaultUserContent
+	} else if f.UserContent, err = f.getUserContent(lastBytes); err != nil {
 		return input.Input{}, err
 	}
 
-	g.Input.IfExistsAction = input.Overwrite
-	g.TemplateBody = depTemplate
-	return g.Input, nil
+	f.Input.IfExistsAction = input.Overwrite
+	f.TemplateBody = depTemplate
+	return f.Input, nil
 }
 
-func (g *GopkgToml) getUserContent(b []byte) (string, error) {
+func (f *GopkgToml) getUserContent(b []byte) (string, error) {
 	// Keep the users lines
 	scanner := bufio.NewScanner(bytes.NewReader(b))
 	userLines := []string{}
 	found := false
 	for scanner.Scan() {
 		l := scanner.Text()
-		if l == g.ManagedHeader {
+		if l == f.ManagedHeader {
 			found = true
 			break
 		}

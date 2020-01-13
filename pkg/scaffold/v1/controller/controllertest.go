@@ -38,10 +38,10 @@ type Test struct {
 }
 
 // GetInput implements input.File
-func (a *Test) GetInput() (input.Input, error) {
-	if a.Path == "" {
-		a.Path = filepath.Join("pkg", "controller",
-			strings.ToLower(a.Resource.Kind), strings.ToLower(a.Resource.Kind)+"_controller_test.go")
+func (f *Test) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = filepath.Join("pkg", "controller",
+			strings.ToLower(f.Resource.Kind), strings.ToLower(f.Resource.Kind)+"_controller_test.go")
 	}
 
 	// Use the k8s.io/api package for core resources
@@ -61,11 +61,11 @@ func (a *Test) GetInput() (input.Input, error) {
 		"storage":               "k8s.io",
 	}
 
-	a.ResourcePackage, _ = getResourceInfo(coreGroups, a.Resource, a.Input)
+	f.ResourcePackage, _ = getResourceInfo(coreGroups, f.Resource, f.Input)
 
-	a.TemplateBody = controllerTestTemplate
-	a.Input.IfExistsAction = input.Error
-	return a.Input, nil
+	f.TemplateBody = controllerTestTemplate
+	f.Input.IfExistsAction = input.Error
+	return f.Input, nil
 }
 
 const controllerTestTemplate = `{{ .Boilerplate }}

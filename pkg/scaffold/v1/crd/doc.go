@@ -34,17 +34,17 @@ type Doc struct {
 }
 
 // GetInput implements input.File
-func (a *Doc) GetInput() (input.Input, error) {
-	if a.Path == "" {
-		a.Path = filepath.Join("pkg", "apis", a.Resource.Group, a.Resource.Version, "doc.go")
+func (f *Doc) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = filepath.Join("pkg", "apis", f.Resource.Group, f.Resource.Version, "doc.go")
 	}
-	a.TemplateBody = docGoTemplate
-	return a.Input, nil
+	f.TemplateBody = docGoTemplate
+	return f.Input, nil
 }
 
 // Validate validates the values
-func (a *Doc) Validate() error {
-	return a.Resource.Validate()
+func (f *Doc) Validate() error {
+	return f.Resource.Validate()
 }
 
 const docGoTemplate = `{{ .Boilerplate }}

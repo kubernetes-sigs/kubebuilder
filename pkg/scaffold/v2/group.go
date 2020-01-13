@@ -34,21 +34,21 @@ type Group struct {
 }
 
 // GetInput implements input.File
-func (g *Group) GetInput() (input.Input, error) {
-	if g.Path == "" {
-		if g.MultiGroup {
-			g.Path = filepath.Join("apis", g.Resource.Group, g.Resource.Version, "groupversion_info.go")
+func (f *Group) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		if f.MultiGroup {
+			f.Path = filepath.Join("apis", f.Resource.Group, f.Resource.Version, "groupversion_info.go")
 		} else {
-			g.Path = filepath.Join("api", g.Resource.Version, "groupversion_info.go")
+			f.Path = filepath.Join("api", f.Resource.Version, "groupversion_info.go")
 		}
 	}
-	g.TemplateBody = groupTemplate
-	return g.Input, nil
+	f.TemplateBody = groupTemplate
+	return f.Input, nil
 }
 
 // Validate validates the values
-func (g *Group) Validate() error {
-	return g.Resource.Validate()
+func (f *Group) Validate() error {
+	return f.Resource.Validate()
 }
 
 const groupTemplate = `{{ .Boilerplate }}

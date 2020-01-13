@@ -38,26 +38,23 @@ type ControllerSuiteTest struct {
 }
 
 // GetInput implements input.File
-func (v *ControllerSuiteTest) GetInput() (input.Input, error) {
+func (f *ControllerSuiteTest) GetInput() (input.Input, error) {
 
-	if v.Path == "" {
-		if v.MultiGroup {
-			v.Path = filepath.Join("controllers",
-				v.Resource.Group,
-				"suite_test.go")
+	if f.Path == "" {
+		if f.MultiGroup {
+			f.Path = filepath.Join("controllers", f.Resource.Group, "suite_test.go")
 		} else {
-			v.Path = filepath.Join("controllers", "suite_test.go")
-			v.Input.IfExistsAction = input.Error
+			f.Path = filepath.Join("controllers", "suite_test.go")
 		}
 	}
 
-	v.TemplateBody = controllerSuiteTestTemplate
-	return v.Input, nil
+	f.TemplateBody = controllerSuiteTestTemplate
+	return f.Input, nil
 }
 
 // Validate validates the values
-func (v *ControllerSuiteTest) Validate() error {
-	return v.Resource.Validate()
+func (f *ControllerSuiteTest) Validate() error {
+	return f.Resource.Validate()
 }
 
 const controllerSuiteTestTemplate = `{{ .Boilerplate }}
@@ -124,21 +121,21 @@ var _ = AfterSuite(func() {
 
 // Update updates given file (suite_test.go) with code fragments required for
 // adding import paths and code setup for new types.
-func (a *ControllerSuiteTest) Update() error {
+func (f *ControllerSuiteTest) Update() error {
 
-	resourcePackage, _ := util.GetResourceInfo(a.Resource, a.Repo, a.Domain, a.MultiGroup)
+	resourcePackage, _ := util.GetResourceInfo(f.Resource, f.Repo, f.Domain, f.MultiGroup)
 
 	ctrlImportCodeFragment := fmt.Sprintf(`"%s/controllers"
-`, a.Repo)
+`, f.Repo)
 	apiImportCodeFragment := fmt.Sprintf(`%s%s "%s/%s"
-`, a.Resource.GroupImportSafe, a.Resource.Version, resourcePackage, a.Resource.Version)
+`, f.Resource.GroupImportSafe, f.Resource.Version, resourcePackage, f.Resource.Version)
 
 	addschemeCodeFragment := fmt.Sprintf(`err = %s%s.AddToScheme(scheme.Scheme)
 Expect(err).NotTo(HaveOccurred())
 
-`, a.Resource.GroupImportSafe, a.Resource.Version)
+`, f.Resource.GroupImportSafe, f.Resource.Version)
 
-	err := internal.InsertStringsInFile(a.Path,
+	err := internal.InsertStringsInFile(f.Path,
 		map[string][]string{
 			scaffoldv2.ApiPkgImportScaffoldMarker: []string{ctrlImportCodeFragment, apiImportCodeFragment},
 			scaffoldv2.ApiSchemeScaffoldMarker:    []string{addschemeCodeFragment},

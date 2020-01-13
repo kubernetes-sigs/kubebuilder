@@ -30,13 +30,13 @@ type Service struct {
 }
 
 // GetInput implements input.File
-func (c *Service) GetInput() (input.Input, error) {
-	if c.Path == "" {
-		c.Path = filepath.Join("config", "webhook", "service.yaml")
+func (f *Service) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = filepath.Join("config", "webhook", "service.yaml")
 	}
-	c.TemplateBody = ServiceTemplate
-	c.Input.IfExistsAction = input.Error
-	return c.Input, nil
+	f.TemplateBody = ServiceTemplate
+	f.Input.IfExistsAction = input.Error
+	return f.Input, nil
 }
 
 const ServiceTemplate = `

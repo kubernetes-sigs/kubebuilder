@@ -49,7 +49,7 @@ type Controller struct {
 }
 
 // GetInput implements input.File
-func (a *Controller) GetInput() (input.Input, error) {
+func (f *Controller) GetInput() (input.Input, error) {
 	// Use the k8s.io/api package for core resources
 	coreGroups := map[string]string{
 		"apps":                  "",
@@ -67,20 +67,20 @@ func (a *Controller) GetInput() (input.Input, error) {
 		"storage":               "k8s.io",
 	}
 
-	a.ResourcePackage, a.GroupDomain = getResourceInfo(coreGroups, a.Resource, a.Input)
+	f.ResourcePackage, f.GroupDomain = getResourceInfo(coreGroups, f.Resource, f.Input)
 
-	if a.Plural == "" {
-		a.Plural = flect.Pluralize(strings.ToLower(a.Resource.Kind))
+	if f.Plural == "" {
+		f.Plural = flect.Pluralize(strings.ToLower(f.Resource.Kind))
 	}
 
-	if a.Path == "" {
-		a.Path = filepath.Join("pkg", "controller",
-			strings.ToLower(a.Resource.Kind),
-			strings.ToLower(a.Resource.Kind)+"_controller.go")
+	if f.Path == "" {
+		f.Path = filepath.Join("pkg", "controller",
+			strings.ToLower(f.Resource.Kind),
+			strings.ToLower(f.Resource.Kind)+"_controller.go")
 	}
-	a.TemplateBody = controllerTemplate
-	a.Input.IfExistsAction = input.Error
-	return a.Input, nil
+	f.TemplateBody = controllerTemplate
+	f.Input.IfExistsAction = input.Error
+	return f.Input, nil
 }
 
 func getResourceInfo(coreGroups map[string]string, r *resource.Resource, in input.Input) (resourcePackage, groupDomain string) {

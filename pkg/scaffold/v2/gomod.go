@@ -29,13 +29,13 @@ type GoMod struct {
 }
 
 // GetInput implements input.File
-func (g *GoMod) GetInput() (input.Input, error) {
-	if g.Path == "" {
-		g.Path = "go.mod"
+func (f *GoMod) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = "go.mod"
 	}
-	g.Input.IfExistsAction = input.Overwrite
-	g.TemplateBody = goModTemplate
-	return g.Input, nil
+	f.Input.IfExistsAction = input.Overwrite
+	f.TemplateBody = goModTemplate
+	return f.Input, nil
 }
 
 const goModTemplate = `

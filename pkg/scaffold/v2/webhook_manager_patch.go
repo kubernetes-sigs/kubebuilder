@@ -30,12 +30,12 @@ type ManagerWebhookPatch struct {
 }
 
 // GetInput implements input.File
-func (p *ManagerWebhookPatch) GetInput() (input.Input, error) {
-	if p.Path == "" {
-		p.Path = filepath.Join("config", "default", "manager_webhook_patch.yaml")
+func (f *ManagerWebhookPatch) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = filepath.Join("config", "default", "manager_webhook_patch.yaml")
 	}
-	p.TemplateBody = ManagerWebhookPatchTemplate
-	return p.Input, nil
+	f.TemplateBody = ManagerWebhookPatchTemplate
+	return f.Input, nil
 }
 
 const ManagerWebhookPatchTemplate = `apiVersion: apps/v1

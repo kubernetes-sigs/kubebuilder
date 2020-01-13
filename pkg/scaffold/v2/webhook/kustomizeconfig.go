@@ -30,13 +30,13 @@ type KustomizeConfigWebhook struct {
 }
 
 // GetInput implements input.File
-func (c *KustomizeConfigWebhook) GetInput() (input.Input, error) {
-	if c.Path == "" {
-		c.Path = filepath.Join("config", "webhook", "kustomizeconfig.yaml")
+func (f *KustomizeConfigWebhook) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = filepath.Join("config", "webhook", "kustomizeconfig.yaml")
 	}
-	c.TemplateBody = KustomizeConfigWebhookTemplate
-	c.Input.IfExistsAction = input.Error
-	return c.Input, nil
+	f.TemplateBody = KustomizeConfigWebhookTemplate
+	f.Input.IfExistsAction = input.Error
+	return f.Input, nil
 }
 
 const KustomizeConfigWebhookTemplate = `# the following config is for teaching kustomize where to look at when substituting vars.

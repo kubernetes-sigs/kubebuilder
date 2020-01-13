@@ -40,17 +40,17 @@ type Main struct {
 }
 
 // GetInput implements input.File
-func (m *Main) GetInput() (input.Input, error) {
-	if m.Path == "" {
-		m.Path = filepath.Join("main.go")
+func (f *Main) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = filepath.Join("main.go")
 	}
-	m.TemplateBody = mainTemplate
-	return m.Input, nil
+	f.TemplateBody = mainTemplate
+	return f.Input, nil
 }
 
 // Update updates main.go with code fragments required to wire a new
 // resource/controller.
-func (m *Main) Update(opts *MainUpdateOptions) error {
+func (f *Main) Update(opts *MainUpdateOptions) error {
 	path := "main.go"
 
 	resPkg, _ := util.GetResourceInfo(opts.Resource, opts.Project.Repo, opts.Project.Domain, opts.Project.MultiGroup)

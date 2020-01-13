@@ -47,28 +47,28 @@ type Controller struct {
 }
 
 // GetInput implements input.File
-func (a *Controller) GetInput() (input.Input, error) {
+func (f *Controller) GetInput() (input.Input, error) {
 
-	a.ResourcePackage, a.GroupDomain = util.GetResourceInfo(a.Resource, a.Repo, a.Domain, a.MultiGroup)
+	f.ResourcePackage, f.GroupDomain = util.GetResourceInfo(f.Resource, f.Repo, f.Domain, f.MultiGroup)
 
-	if a.Plural == "" {
-		a.Plural = flect.Pluralize(strings.ToLower(a.Resource.Kind))
+	if f.Plural == "" {
+		f.Plural = flect.Pluralize(strings.ToLower(f.Resource.Kind))
 	}
 
-	if a.Path == "" {
-		if a.MultiGroup {
-			a.Path = filepath.Join("controllers",
-				a.Resource.Group,
-				strings.ToLower(a.Resource.Kind)+"_controller.go")
+	if f.Path == "" {
+		if f.MultiGroup {
+			f.Path = filepath.Join("controllers",
+				f.Resource.Group,
+				strings.ToLower(f.Resource.Kind)+"_controller.go")
 		} else {
-			a.Path = filepath.Join("controllers",
-				strings.ToLower(a.Resource.Kind)+"_controller.go")
+			f.Path = filepath.Join("controllers",
+				strings.ToLower(f.Resource.Kind)+"_controller.go")
 		}
 	}
-	a.TemplateBody = controllerTemplate
+	f.TemplateBody = controllerTemplate
 
-	a.Input.IfExistsAction = input.Error
-	return a.Input, nil
+	f.Input.IfExistsAction = input.Error
+	return f.Input, nil
 }
 
 const controllerTemplate = `{{ .Boilerplate }}

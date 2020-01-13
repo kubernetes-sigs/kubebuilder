@@ -30,12 +30,12 @@ type KustomizeConfig struct {
 }
 
 // GetInput implements input.File
-func (p *KustomizeConfig) GetInput() (input.Input, error) {
-	if p.Path == "" {
-		p.Path = filepath.Join("config", "certmanager", "kustomizeconfig.yaml")
+func (f *KustomizeConfig) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = filepath.Join("config", "certmanager", "kustomizeconfig.yaml")
 	}
-	p.TemplateBody = kustomizeConfigTemplate
-	return p.Input, nil
+	f.TemplateBody = kustomizeConfigTemplate
+	return f.Input, nil
 }
 
 const kustomizeConfigTemplate = `# This configuration is for teaching kustomize how to update name ref and var substitution 

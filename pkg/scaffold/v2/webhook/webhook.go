@@ -53,40 +53,40 @@ type Webhook struct {
 }
 
 // GetInput implements input.File
-func (a *Webhook) GetInput() (input.Input, error) {
+func (f *Webhook) GetInput() (input.Input, error) {
 
-	_, a.GroupDomain = util.GetResourceInfo(a.Resource, a.Repo, a.Domain, a.MultiGroup)
+	_, f.GroupDomain = util.GetResourceInfo(f.Resource, f.Repo, f.Domain, f.MultiGroup)
 
-	a.GroupDomainWithDash = strings.Replace(a.GroupDomain, ".", "-", -1)
+	f.GroupDomainWithDash = strings.Replace(f.GroupDomain, ".", "-", -1)
 
-	if a.Plural == "" {
-		a.Plural = flect.Pluralize(strings.ToLower(a.Resource.Kind))
+	if f.Plural == "" {
+		f.Plural = flect.Pluralize(strings.ToLower(f.Resource.Kind))
 	}
 
-	if a.Path == "" {
-		if a.MultiGroup {
-			a.Path = filepath.Join("apis", a.Resource.Group, a.Resource.Version, fmt.Sprintf("%s_webhook.go", strings.ToLower(a.Resource.Kind)))
+	if f.Path == "" {
+		if f.MultiGroup {
+			f.Path = filepath.Join("apis", f.Resource.Group, f.Resource.Version, fmt.Sprintf("%s_webhook.go", strings.ToLower(f.Resource.Kind)))
 		} else {
-			a.Path = filepath.Join("api", a.Resource.Version, fmt.Sprintf("%s_webhook.go", strings.ToLower(a.Resource.Kind)))
+			f.Path = filepath.Join("api", f.Resource.Version, fmt.Sprintf("%s_webhook.go", strings.ToLower(f.Resource.Kind)))
 		}
 	}
 
 	webhookTemplate := WebhookTemplate
-	if a.Defaulting {
+	if f.Defaulting {
 		webhookTemplate = webhookTemplate + DefaultingWebhookTemplate
 	}
-	if a.Validating {
+	if f.Validating {
 		webhookTemplate = webhookTemplate + ValidatingWebhookTemplate
 	}
 
-	a.TemplateBody = webhookTemplate
-	a.Input.IfExistsAction = input.Error
-	return a.Input, nil
+	f.TemplateBody = webhookTemplate
+	f.Input.IfExistsAction = input.Error
+	return f.Input, nil
 }
 
 // Validate validates the values
-func (g *Webhook) Validate() error {
-	return g.Resource.Validate()
+func (f *Webhook) Validate() error {
+	return f.Resource.Validate()
 }
 
 const (

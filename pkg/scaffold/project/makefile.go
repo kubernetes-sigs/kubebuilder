@@ -33,19 +33,19 @@ type Makefile struct {
 }
 
 // GetInput implements input.File
-func (c *Makefile) GetInput() (input.Input, error) {
-	if c.Path == "" {
-		c.Path = "Makefile"
+func (f *Makefile) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = "Makefile"
 	}
-	if c.Image == "" {
-		c.Image = "controller:latest"
+	if f.Image == "" {
+		f.Image = "controller:latest"
 	}
-	if c.ControllerToolsPath == "" {
-		c.ControllerToolsPath = "vendor/sigs.k8s.io/controller-tools"
+	if f.ControllerToolsPath == "" {
+		f.ControllerToolsPath = "vendor/sigs.k8s.io/controller-tools"
 	}
-	c.TemplateBody = makefileTemplate
-	c.Input.IfExistsAction = input.Error
-	return c.Input, nil
+	f.TemplateBody = makefileTemplate
+	f.Input.IfExistsAction = input.Error
+	return f.Input, nil
 }
 
 const makefileTemplate = `

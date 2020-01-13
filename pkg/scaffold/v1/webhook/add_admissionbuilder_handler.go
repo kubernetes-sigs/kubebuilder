@@ -38,15 +38,15 @@ type AddAdmissionWebhookBuilderHandler struct {
 }
 
 // GetInput implements input.File
-func (a *AddAdmissionWebhookBuilderHandler) GetInput() (input.Input, error) {
-	a.Server = strings.ToLower(a.Server)
-	if a.Path == "" {
-		a.Path = filepath.Join("pkg", "webhook",
-			fmt.Sprintf("%s_server", a.Server),
-			fmt.Sprintf("add_%s_%s.go", a.Type, strings.ToLower(a.Resource.Kind)))
+func (f *AddAdmissionWebhookBuilderHandler) GetInput() (input.Input, error) {
+	f.Server = strings.ToLower(f.Server)
+	if f.Path == "" {
+		f.Path = filepath.Join("pkg", "webhook",
+			fmt.Sprintf("%s_server", f.Server),
+			fmt.Sprintf("add_%s_%s.go", f.Type, strings.ToLower(f.Resource.Kind)))
 	}
-	a.TemplateBody = addAdmissionWebhookBuilderHandlerTemplate
-	return a.Input, nil
+	f.TemplateBody = addAdmissionWebhookBuilderHandlerTemplate
+	return f.Input, nil
 }
 
 const addAdmissionWebhookBuilderHandlerTemplate = `{{ .Boilerplate }}

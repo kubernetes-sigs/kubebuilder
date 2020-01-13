@@ -32,12 +32,12 @@ type Config struct {
 }
 
 // GetInput implements input.File
-func (c *Config) GetInput() (input.Input, error) {
-	if c.Path == "" {
-		c.Path = filepath.Join("config", "manager", "manager.yaml")
+func (f *Config) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = filepath.Join("config", "manager", "manager.yaml")
 	}
-	c.TemplateBody = configTemplate
-	return c.Input, nil
+	f.TemplateBody = configTemplate
+	return f.Input, nil
 }
 
 const configTemplate = `apiVersion: v1

@@ -41,28 +41,28 @@ type Boilerplate struct {
 }
 
 // GetInput implements input.File
-func (c *Boilerplate) GetInput() (input.Input, error) {
-	if c.Path == "" {
-		c.Path = filepath.Join("hack", "boilerplate.go.txt")
+func (f *Boilerplate) GetInput() (input.Input, error) {
+	if f.Path == "" {
+		f.Path = filepath.Join("hack", "boilerplate.go.txt")
 	}
 
 	// Boilerplate given
-	if len(c.Boilerplate) > 0 {
-		c.TemplateBody = c.Boilerplate
-		return c.Input, nil
+	if len(f.Boilerplate) > 0 {
+		f.TemplateBody = f.Boilerplate
+		return f.Input, nil
 	}
 
 	// Pick a template boilerplate option
-	if c.Year == "" {
-		c.Year = fmt.Sprintf("%v", time.Now().Year())
+	if f.Year == "" {
+		f.Year = fmt.Sprintf("%v", time.Now().Year())
 	}
-	switch c.License {
+	switch f.License {
 	case "", "apache2":
-		c.TemplateBody = apache
+		f.TemplateBody = apache
 	case "none":
-		c.TemplateBody = none
+		f.TemplateBody = none
 	}
-	return c.Input, nil
+	return f.Input, nil
 }
 
 const apache = `/*
