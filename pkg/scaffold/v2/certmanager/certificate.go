@@ -22,6 +22,8 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 )
 
+var _ input.File = &CertManager{}
+
 // CertManager scaffolds an issuer CR and a certificate CR
 type CertManager struct {
 	input.Input
