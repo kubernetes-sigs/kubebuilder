@@ -1,10 +1,11 @@
-# See the OWNERS docs: https://git.k8s.io/community/contributors/devel/owners.md
+# See the OWNERS docs: https://git.k8s.io/community/contributors/guide/owners.md
 
 aliases:
-  kubebuilder-admins:
-    - directxman12
+  kubebuilder-owners:
     - droot
     - pwittrock
+  kubebuilder-admins:
+    - directxman12
   kubebuilder-maintainers:
     - Liujingfang1
     - mengqiy
