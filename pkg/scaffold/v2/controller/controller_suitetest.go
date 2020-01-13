@@ -23,7 +23,7 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/util"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/v2"
+	scaffoldv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v2/internal"
 )
 
@@ -140,8 +140,8 @@ Expect(err).NotTo(HaveOccurred())
 
 	err := internal.InsertStringsInFile(a.Path,
 		map[string][]string{
-			v2.ApiPkgImportScaffoldMarker: []string{ctrlImportCodeFragment, apiImportCodeFragment},
-			v2.ApiSchemeScaffoldMarker:    []string{addschemeCodeFragment},
+			scaffoldv2.ApiPkgImportScaffoldMarker: []string{ctrlImportCodeFragment, apiImportCodeFragment},
+			scaffoldv2.ApiSchemeScaffoldMarker:    []string{addschemeCodeFragment},
 		})
 	if err != nil {
 		return err
