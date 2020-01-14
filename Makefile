@@ -80,3 +80,10 @@ test-ci: ## Run the unit tests (used in the CI)
 .PHONY: test-e2e
 test-e2e: ## Run the integration tests (used in the CI)
 	./test_e2e.sh
+
+.PHONY: test-coverage
+test-coverage:  ## Run coveralls
+	# remove all coverage files if exists
+	- rm -rf *.out
+	# run the go tests and gen the file coverage-all used to do the integration with coverrals.io
+	go test -failfast -tags=integration -coverprofile=coverage-all.out -covermode=count ./pkg/... ./cmd/...
