@@ -36,8 +36,9 @@ v1beta1.AddToScheme(scheme)
 // +kubebuilder:scaffold:apis-add-scheme
 `,
 			markerNValues: map[string][]string{
-				"// +kubebuilder:scaffold:apis-add-scheme": []string{
-					"v1.AddToScheme(scheme)\n", "somefunc()\n"},
+				"// +kubebuilder:scaffold:apis-add-scheme": {
+					"v1.AddToScheme(scheme)\n", "somefunc()\n",
+				},
 			},
 			expected: `
 v1beta1.AddToScheme(scheme)
@@ -52,8 +53,9 @@ v1beta1.AddToScheme(scheme)
 // +kubebuilder:scaffold:apis-add-scheme
 `,
 			markerNValues: map[string][]string{
-				"// +kubebuilder:scaffold:apis-add-scheme": []string{
-					"v1beta1.AddToScheme(scheme)\n", "v1.AddToScheme(scheme)\n"},
+				"// +kubebuilder:scaffold:apis-add-scheme": {
+					"v1beta1.AddToScheme(scheme)\n", "v1.AddToScheme(scheme)\n",
+				},
 			},
 			expected: `
 v1beta1.AddToScheme(scheme)
@@ -68,8 +70,11 @@ v1beta1.AddToScheme(scheme)
 // +kubebuilder:scaffold:apis-add-scheme
 `,
 			markerNValues: map[string][]string{
-				"// +kubebuilder:scaffold:apis-add-scheme": []string{`v1.AddToScheme(scheme)
-`}},
+				"// +kubebuilder:scaffold:apis-add-scheme": {
+					`v1.AddToScheme(scheme)
+`,
+				},
+			},
 			expected: `
 v1beta1.AddToScheme(scheme)
 v1.AddToScheme(scheme)

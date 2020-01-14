@@ -137,8 +137,8 @@ Expect(err).NotTo(HaveOccurred())
 
 	err := internal.InsertStringsInFile(f.Path,
 		map[string][]string{
-			scaffoldv2.ApiPkgImportScaffoldMarker: []string{ctrlImportCodeFragment, apiImportCodeFragment},
-			scaffoldv2.ApiSchemeScaffoldMarker:    []string{addschemeCodeFragment},
+			scaffoldv2.ApiPkgImportScaffoldMarker: {ctrlImportCodeFragment, apiImportCodeFragment},
+			scaffoldv2.ApiSchemeScaffoldMarker:    {addschemeCodeFragment},
 		})
 	if err != nil {
 		return err
