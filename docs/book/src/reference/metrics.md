@@ -3,6 +3,24 @@
 By default, controller-runtime builds a global prometheus registry and
 publishes a collection of performance metrics for each controller.
 
+## Protecting the Metrics
+
+These metrics are protected by [kube-auth-proxy](https://github.com/brancz/kube-rbac-proxy)
+by default if using kubebuilder. Kubebuilder v2.2.0+ scaffold a clusterrole which
+can be found at `config/rbac/auth_proxy_client_clusterrole.yaml`.
+
+You will need to grant permissions to your Prometheus server so that it can
+scrape the protected metrics. To achieve that, you can create a
+`clusterRoleBinding` to bind the `clusterRole` to the service account that your
+Prometheus server uses.
+
+You can run the following kubectl command to create it. If using kubebuilder
+`<project-prefix>` is the `namePrefix` field in `config/default/kustomization.yaml`.
+
+```bash
+kubectl create clusterrolebinding metrics --clusterrole=<project-prefix>-metrics-reader --serviceaccount=<namespace>:<service-account-name>
+```
+
 ## Exporting Metrics for Prometheus
 
 Follow the steps below to export the metrics using the Prometheus Operator:

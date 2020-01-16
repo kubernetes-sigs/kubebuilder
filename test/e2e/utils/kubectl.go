@@ -18,8 +18,8 @@ package utils
 
 import (
 	"errors"
-	"io"
 	"os/exec"
+	"strings"
 )
 
 // Kubectl contains context to run kubectl commands
@@ -35,19 +35,10 @@ func (k *Kubectl) Command(cmdOptions ...string) (string, error) {
 	return string(output), err
 }
 
-// CommandWithInput is a general func to run kubectl commands with input
-func (k *Kubectl) CommandWithInput(stdinInput string, cmdOptions ...string) (string, error) {
-	cmd := exec.Command("kubectl", cmdOptions...)
-	stdin, err := cmd.StdinPipe()
-	if err != nil {
-		return "", err
-	}
-	go func() {
-		defer stdin.Close()
-		_, _ = io.WriteString(stdin, stdinInput)
-	}()
-	output, err := k.Run(cmd)
-	return string(output), err
+// WithInput is a general func to run kubectl commands with input
+func (k *Kubectl) WithInput(stdinInput string) *Kubectl {
+	k.Stdin = strings.NewReader(stdinInput)
+	return k
 }
 
 // CommandInNamespace is a general func to run kubectl commands in the namespace

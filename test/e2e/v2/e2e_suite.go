@@ -17,6 +17,7 @@ limitations under the License.
 package v2
 
 import (
+	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
@@ -190,6 +191,50 @@ var _ = Describe("kubebuilder", func() {
 				return nil
 			}
 			Eventually(verifyControllerUp, time.Minute, time.Second).Should(Succeed())
+
+			By("granting permissions to access the metrics and read the token")
+			_, err = kbc.Kubectl.Command(
+				"create", "clusterrolebinding", "metrics",
+				fmt.Sprintf("--clusterrole=e2e-%s-metrics-reader", kbc.TestSuffix),
+				fmt.Sprintf("--serviceaccount=%s:default", kbc.Kubectl.Namespace))
+			Expect(err).NotTo(HaveOccurred())
+
+			b64Token, err := kbc.Kubectl.Get(true, "secrets", "-o=jsonpath={.items[0].data.token}")
+			Expect(err).NotTo(HaveOccurred())
+			token, err := base64.StdEncoding.DecodeString(strings.TrimSpace(b64Token))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(token)).To(BeNumerically(">", 0))
+
+			By("creating a pod with curl image")
+			cmdOpts := []string{
+				"run", "--generator=run-pod/v1", "curl", "--image=curlimages/curl:7.68.0", "--restart=OnFailure", "--",
+				"curl", "-v", "-k", "-H", fmt.Sprintf(`Authorization: Bearer %s`, token),
+				fmt.Sprintf("https://e2e-%v-controller-manager-metrics-service.e2e-%v-system.svc:8443/metrics", kbc.TestSuffix, kbc.TestSuffix),
+			}
+			_, err = kbc.Kubectl.CommandInNamespace(cmdOpts...)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("validating the curl pod running as expected")
+			verifyCurlUp := func() error {
+				// Validate pod status
+				status, err := kbc.Kubectl.Get(
+					true,
+					"pods", "curl", "-o", "jsonpath={.status.phase}")
+				Expect(err).NotTo(HaveOccurred())
+				if status != "Completed" && status != "Succeeded" {
+					return fmt.Errorf("curl pod in %s status", status)
+				}
+				return nil
+			}
+			Eventually(verifyCurlUp, 30*time.Second, time.Second).Should(Succeed())
+
+			By("validating the metrics endpoint is serving as expected")
+			getCurlLogs := func() string {
+				logOutput, err := kbc.Kubectl.Logs("curl")
+				Expect(err).NotTo(HaveOccurred())
+				return logOutput
+			}
+			Eventually(getCurlLogs, 10*time.Second, time.Second).Should(ContainSubstring("< HTTP/2 200"))
 
 			By("validate cert manager has provisioned the certificate secret")
 			Eventually(func() error {
