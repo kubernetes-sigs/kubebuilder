@@ -26,6 +26,7 @@ import (
 	"strconv"
 	"strings"
 
+	docker "github.com/docker/distribution/reference"
 	"github.com/spf13/cobra"
 	flag "github.com/spf13/pflag"
 
@@ -70,6 +71,7 @@ kubebuilder init --domain example.org --license apache2 --owner "The Kubernetes 
 type projectOptions struct {
 	boilerplate project.Boilerplate
 	project     project.Project
+	imageName   string
 
 	// final result
 	scaffolder scaffold.ProjectScaffolder
@@ -115,6 +117,8 @@ func (o *projectOptions) bindCmdlineFlags(cmd *cobra.Command) {
 		"defaults to the go package of the current working directory.")
 	cmd.Flags().StringVar(&o.project.Domain, "domain", "my.domain", "domain for groups")
 	cmd.Flags().StringVar(&o.project.Version, "project-version", project.Version2, "project version")
+
+	cmd.Flags().StringVar(&o.imageName, "image", "controller:latest", "name for the generated docker image")
 }
 
 func (o *projectOptions) initializeProject() {
@@ -166,6 +170,11 @@ func (o *projectOptions) validate() error {
 		o.project.Repo = repoPath
 	}
 
+	// check if the provided image name is valid
+	if _, err := docker.Parse(o.imageName); err != nil {
+		return fmt.Errorf("image name (%s) is invalid: %v", o.imageName, err)
+	}
+
 	switch o.project.Version {
 	case project.Version1:
 		var defEnsure *bool
@@ -175,6 +184,7 @@ func (o *projectOptions) validate() error {
 		o.scaffolder = &scaffold.V1Project{
 			Project:     o.project,
 			Boilerplate: o.boilerplate,
+			ImageName:   o.imageName,
 
 			DepArgs:          o.depArgs,
 			DefinitelyEnsure: defEnsure,
@@ -183,6 +193,7 @@ func (o *projectOptions) validate() error {
 		o.scaffolder = &scaffold.V2Project{
 			Project:     o.project,
 			Boilerplate: o.boilerplate,
+			ImageName:   o.imageName,
 		}
 	default:
 		return fmt.Errorf("unknown project version %v", o.project.Version)

@@ -3,11 +3,13 @@ module sigs.k8s.io/kubebuilder
 go 1.13
 
 require (
+	github.com/docker/distribution v2.7.1+incompatible
 	github.com/gobuffalo/flect v0.1.5
 	github.com/golang/protobuf v1.3.1 // indirect
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/onsi/ginkgo v1.8.0
 	github.com/onsi/gomega v1.5.0
+	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect
 	github.com/spf13/afero v1.2.2
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.3

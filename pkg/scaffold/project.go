@@ -54,6 +54,7 @@ type ProjectScaffolder interface {
 type V1Project struct {
 	Project     project.Project
 	Boilerplate project.Boilerplate
+	ImageName   string
 
 	DepArgs          []string
 	DefinitelyEnsure *bool
@@ -118,9 +119,6 @@ func (p *V1Project) Scaffold() error {
 		return err
 	}
 
-	// default controller manager image name
-	imgName := "controller:latest"
-
 	s = &Scaffold{}
 	return s.Execute(
 		p.buildUniverse(),
@@ -133,8 +131,8 @@ func (p *V1Project) Scaffold() error {
 		&scaffoldv1.AuthProxyService{},
 		&project.AuthProxyRole{},
 		&project.AuthProxyRoleBinding{},
-		&manager.Config{Image: imgName},
-		&project.Makefile{Image: imgName},
+		&manager.Config{Image: p.ImageName},
+		&project.Makefile{Image: p.ImageName},
 		&project.GopkgToml{},
 		&manager.Dockerfile{},
 		&project.Kustomize{},
@@ -148,6 +146,7 @@ func (p *V1Project) Scaffold() error {
 type V2Project struct {
 	Project     project.Project
 	Boilerplate project.Boilerplate
+	ImageName   string
 }
 
 func (p *V2Project) Validate() error {
@@ -209,9 +208,6 @@ func (p *V2Project) Scaffold() error {
 		return err
 	}
 
-	// default controller manager image name
-	imgName := "controller:latest"
-
 	s = &Scaffold{}
 	return s.Execute(
 		p.buildUniverse(),
@@ -222,10 +218,10 @@ func (p *V2Project) Scaffold() error {
 		&metricsauthv2.ClientClusterRole{},
 		&project.AuthProxyRole{},
 		&project.AuthProxyRoleBinding{},
-		&managerv2.Config{Image: imgName},
+		&managerv2.Config{Image: p.ImageName},
 		&scaffoldv2.Main{},
 		&scaffoldv2.GoMod{ControllerRuntimeVersion: controllerRuntimeVersion},
-		&scaffoldv2.Makefile{Image: imgName, ControllerToolsVersion: controllerToolsVersion},
+		&scaffoldv2.Makefile{Image: p.ImageName, ControllerToolsVersion: controllerToolsVersion},
 		&scaffoldv2.Dockerfile{},
 		&scaffoldv2.Kustomize{},
 		&scaffoldv2.ManagerWebhookPatch{},
