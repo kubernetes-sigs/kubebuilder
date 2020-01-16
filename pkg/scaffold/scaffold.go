@@ -63,8 +63,10 @@ type Scaffold struct {
 
 	FileExists func(path string) bool
 
+	// BoilerplateOptional, if true, skips errors reading the Boilerplate file
 	BoilerplateOptional bool
 
+	// ConfigOptional, if true, skips errors reading the project configuration
 	ConfigOptional bool
 }
 
@@ -72,46 +74,47 @@ type Scaffold struct {
 // We will (later) have an ExecPlugin that implements this by exec-ing a binary
 type Plugin interface {
 	// Pipe is the core plugin interface, that transforms a UniverseModel
-	Pipe(u *model.Universe) error
+	Pipe(universe *model.Universe) error
 }
 
 func (s *Scaffold) setFields(t input.File) {
-	// Set boilerplate on templates
-	if b, ok := t.(input.BoilerplatePath); ok {
-		b.SetBoilerplatePath(s.BoilerplatePath)
+	// Inject project configuration into file templates
+	if s.Config != nil {
+		if b, ok := t.(input.Domain); ok {
+			b.SetDomain(s.Config.Domain)
+		}
+		if b, ok := t.(input.Version); ok {
+			b.SetVersion(s.Config.Version)
+		}
+		if b, ok := t.(input.Repo); ok {
+			b.SetRepo(s.Config.Repo)
+		}
+		if b, ok := t.(input.ProjecPath); ok {
+			b.SetProjectPath(s.ConfigPath)
+		}
+		if b, ok := t.(input.MultiGroup); ok {
+			b.SetMultiGroup(s.Config.MultiGroup)
+		}
 	}
-	if b, ok := t.(input.Boilerplate); ok {
-		b.SetBoilerplate(s.Boilerplate)
+	// Inject boilerplate into file templates
+	if s.BoilerplatePath != "" {
+		if b, ok := t.(input.BoilerplatePath); ok {
+			b.SetBoilerplatePath(s.BoilerplatePath)
+		}
 	}
-	if b, ok := t.(input.Domain); ok {
-		b.SetDomain(s.Config.Domain)
-	}
-	if b, ok := t.(input.Version); ok {
-		b.SetVersion(s.Config.Version)
-	}
-	if b, ok := t.(input.Repo); ok {
-		b.SetRepo(s.Config.Repo)
-	}
-	if b, ok := t.(input.ProjecPath); ok {
-		b.SetProjectPath(s.ConfigPath)
-	}
-	if b, ok := t.(input.MultiGroup); ok {
-		b.SetMultiGroup(s.Config.MultiGroup)
+	if s.Boilerplate != "" {
+		if b, ok := t.(input.Boilerplate); ok {
+			b.SetBoilerplate(s.Boilerplate)
+		}
 	}
 }
 
-func (s *Scaffold) validate(file input.File) error {
+func validate(file input.File) error {
 	if reqValFile, ok := file.(input.RequiresValidation); ok {
 		return reqValFile.Validate()
 	}
 
 	return nil
-}
-
-// GetBoilerplate reads the boilerplate file
-func getBoilerplate(path string) (string, error) {
-	b, err := ioutil.ReadFile(path) // nolint:gosec
-	return string(b), err
 }
 
 func (s *Scaffold) defaultOptions(options *input.Options) error {
@@ -128,21 +131,39 @@ func (s *Scaffold) defaultOptions(options *input.Options) error {
 	s.BoilerplatePath = options.BoilerplatePath
 
 	var err error
-	s.Boilerplate, err = getBoilerplate(options.BoilerplatePath)
-	if !s.BoilerplateOptional && err != nil {
-		return err
-	}
-
 	s.Config, err = internalconfig.ReadFrom(options.ProjectPath)
 	if !s.ConfigOptional && err != nil {
 		return err
 	}
 
+	var boilerplateBytes []byte
+	boilerplateBytes, err = ioutil.ReadFile(options.BoilerplatePath) // nolint:gosec
+	if !s.BoilerplateOptional && err != nil {
+		return err
+	}
+	s.Boilerplate = string(boilerplateBytes)
+
 	return nil
 }
 
+func (s *Scaffold) universeDefaults(universe *model.Universe, files int) {
+	if universe.Config == nil {
+		universe.Config = s.Config
+	}
+
+	if universe.Boilerplate == "" {
+		universe.Boilerplate = s.Boilerplate
+	}
+
+	universe.Files = make([]*model.File, 0, files)
+}
+
 // Execute executes scaffolding the for files
-func (s *Scaffold) Execute(u *model.Universe, options input.Options, files ...input.File) error {
+func (s *Scaffold) Execute(
+	universe *model.Universe,
+	options input.Options,
+	files ...input.File,
+) error {
 	if s.GetWriter == nil {
 		s.GetWriter = (&FileWriter{}).WriteCloser
 	}
@@ -153,32 +174,30 @@ func (s *Scaffold) Execute(u *model.Universe, options input.Options, files ...in
 		}
 	}
 
-	if u.Boilerplate == "" {
-		u.Boilerplate = s.Boilerplate
-	}
-
 	if err := s.defaultOptions(&options); err != nil {
 		return err
 	}
 
+	s.universeDefaults(universe, len(files))
+
 	// Set the repo as the local prefix so that it knows how to group imports
-	imports.LocalPrefix = s.Config.Repo
+	imports.LocalPrefix = universe.Config.Repo
 
 	for _, f := range files {
 		m, err := s.buildFileModel(f)
 		if err != nil {
 			return err
 		}
-		u.Files = append(u.Files, m)
+		universe.Files = append(universe.Files, m)
 	}
 
 	for _, plugin := range s.Plugins {
-		if err := plugin.Pipe(u); err != nil {
+		if err := plugin.Pipe(universe); err != nil {
 			return err
 		}
 	}
 
-	for _, f := range u.Files {
+	for _, f := range universe.Files {
 		if err := s.writeFile(f); err != nil {
 			return err
 		}
@@ -193,7 +212,7 @@ func (s *Scaffold) buildFileModel(e input.File) (*model.File, error) {
 	s.setFields(e)
 
 	// Validate the file scaffold
-	if err := s.validate(e); err != nil {
+	if err := validate(e); err != nil {
 		return nil, err
 	}
 
@@ -207,7 +226,7 @@ func (s *Scaffold) buildFileModel(e input.File) (*model.File, error) {
 		Path: i.Path,
 	}
 
-	b, err := s.doTemplate(i, e)
+	b, err := doTemplate(i, e)
 	if err != nil {
 		return nil, err
 	}
@@ -246,7 +265,7 @@ func (s *Scaffold) writeFile(file *model.File) error {
 }
 
 // doTemplate executes the template for a file using the input
-func (s *Scaffold) doTemplate(i input.Input, e input.File) ([]byte, error) {
+func doTemplate(i input.Input, e input.File) ([]byte, error) {
 	temp, err := newTemplate(e).Parse(i.TemplateBody)
 	if err != nil {
 		return nil, err

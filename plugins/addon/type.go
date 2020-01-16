@@ -19,7 +19,7 @@ func ReplaceTypes(u *model.Universe) error {
 	}
 
 	var path string
-	if u.MultiGroup {
+	if u.Config.MultiGroup {
 		path = filepath.Join("apis", u.Resource.Version, strings.ToLower(u.Resource.Kind)+"_types.go")
 	} else {
 		path = filepath.Join("api", u.Resource.Version, strings.ToLower(u.Resource.Kind)+"_types.go")

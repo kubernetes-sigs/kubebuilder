@@ -39,13 +39,21 @@ kubebuilder update vendor
 		Run: func(cmd *cobra.Command, args []string) {
 			internal.DieIfNotConfigured()
 
-			err := (&scaffold.Scaffold{}).Execute(
-				&model.Universe{},
+			universe, err := model.NewUniverse(
+				model.WithConfigFrom("PROJECT"),
+				model.WithoutBoilerplate,
+			)
+			if err != nil {
+				log.Fatalf("error updating vendor dependencies: %v", err)
+			}
+
+			err = (&scaffold.Scaffold{}).Execute(
+				universe,
 				input.Options{},
 				&project.GopkgToml{},
 			)
 			if err != nil {
-				log.Fatalf("error updating vendor dependecies %v", err)
+				log.Fatalf("error updating vendor dependencies: %v", err)
 			}
 		},
 	}
