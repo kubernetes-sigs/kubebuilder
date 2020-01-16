@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v2
+package metricsauth
 
 import (
 	"path/filepath"
@@ -22,34 +22,27 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 )
 
-var _ input.File = &AuthProxyService{}
+var _ input.File = &ClientClusterRole{}
 
-// AuthProxyService scaffolds the config/rbac/auth_proxy_service.yaml file
-type AuthProxyService struct {
+// ClientClusterRole scaffolds the config/rbac/client_clusterrole.yaml file
+type ClientClusterRole struct {
 	input.Input
 }
 
 // GetInput implements input.File
-func (f *AuthProxyService) GetInput() (input.Input, error) {
+func (f *ClientClusterRole) GetInput() (input.Input, error) {
 	if f.Path == "" {
-		f.Path = filepath.Join("config", "rbac", "auth_proxy_service.yaml")
+		f.Path = filepath.Join("config", "rbac", "auth_proxy_client_clusterrole.yaml")
 	}
-	f.TemplateBody = AuthProxyServiceTemplate
+	f.TemplateBody = ClientClusterRoleTemplate
 	return f.Input, nil
 }
 
-const AuthProxyServiceTemplate = `apiVersion: v1
-kind: Service
+const ClientClusterRoleTemplate = `apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
 metadata:
-  labels:
-    control-plane: controller-manager
-  name: controller-manager-metrics-service
-  namespace: system
-spec:
-  ports:
-  - name: https
-    port: 8443
-    targetPort: https
-  selector:
-    control-plane: controller-manager
+  name: metrics-reader
+rules:
+- nonResourceURLs: ["/metrics"]
+  verbs: ["get"]
 `

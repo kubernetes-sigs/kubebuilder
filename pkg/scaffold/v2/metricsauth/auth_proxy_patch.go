@@ -22,16 +22,16 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 )
 
-var _ input.File = &KustomizeAuthProxyPatch{}
+var _ input.File = &AuthProxyPatch{}
 
-// KustomizeAuthProxyPatch scaffolds the patch file for enabling
+// AuthProxyPatch scaffolds the patch file for enabling
 // prometheus metrics for manager Pod.
-type KustomizeAuthProxyPatch struct {
+type AuthProxyPatch struct {
 	input.Input
 }
 
 // GetInput implements input.File
-func (f *KustomizeAuthProxyPatch) GetInput() (input.Input, error) {
+func (f *AuthProxyPatch) GetInput() (input.Input, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "default", "manager_auth_proxy_patch.yaml")
 	}

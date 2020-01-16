@@ -18,6 +18,7 @@ package utils
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -122,7 +123,7 @@ func (kc *KBTestContext) CleanupManifests(dir string) {
 	if err != nil {
 		fmt.Fprintf(GinkgoWriter, "warning: error when running kustomize build: %v\n", err)
 	}
-	if _, err := kc.Kubectl.CommandWithInput(string(output), "delete", "-f", "-"); err != nil {
+	if _, err := kc.Kubectl.WithInput(string(output)).Command("delete", "-f", "-"); err != nil {
 		fmt.Fprintf(GinkgoWriter, "warning: error when running kubectl delete -f -: %v\n", err)
 	}
 }
@@ -179,13 +180,15 @@ func (kc *KBTestContext) LoadImageToKindCluster() error {
 
 type CmdContext struct {
 	// environment variables in k=v format.
-	Env []string
-	Dir string
+	Env   []string
+	Dir   string
+	Stdin io.Reader
 }
 
 func (cc *CmdContext) Run(cmd *exec.Cmd) ([]byte, error) {
 	cmd.Dir = cc.Dir
 	cmd.Env = append(os.Environ(), cc.Env...)
+	cmd.Stdin = cc.Stdin
 	command := strings.Join(cmd.Args, " ")
 	fmt.Fprintf(GinkgoWriter, "running: %s\n", command)
 	output, err := cmd.CombinedOutput()
