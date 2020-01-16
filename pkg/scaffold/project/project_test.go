@@ -37,6 +37,8 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/metricsauth"
 )
 
+const repo = "project"
+
 var _ = Describe("Project", func() {
 	var result *scaffoldtest.TestResult
 	var writeToPath, goldenPath string
@@ -200,7 +202,7 @@ Copyright %s Example Owners.
 		Context("with defaults ", func() {
 			It("should match the golden file", func() {
 				instance := &project.Makefile{Image: "controller:latest"}
-				instance.Repo = "project"
+				instance.Repo = repo
 				Expect(s.Execute(&model.Universe{}, input.Options{}, instance)).NotTo(HaveOccurred())
 
 				// Verify the contents matches the golden file.
@@ -217,7 +219,7 @@ Copyright %s Example Owners.
 		Context("with defaults ", func() {
 			It("should match the golden file", func() {
 				instance := &project.Kustomize{Prefix: "project"}
-				instance.Repo = "project"
+				instance.Repo = repo
 				Expect(s.Execute(&model.Universe{}, input.Options{}, instance)).NotTo(HaveOccurred())
 
 				// Verify the contents matches the golden file.
@@ -234,7 +236,7 @@ Copyright %s Example Owners.
 		Context("with rbac", func() {
 			It("should match the golden file", func() {
 				instance := &project.KustomizeRBAC{}
-				instance.Repo = "project"
+				instance.Repo = repo
 				Expect(s.Execute(&model.Universe{}, input.Options{}, instance)).NotTo(HaveOccurred())
 
 				// Verify the contents matches the golden file.
@@ -251,7 +253,7 @@ Copyright %s Example Owners.
 		Context("with manager", func() {
 			It("should match the golden file", func() {
 				instance := &project.KustomizeManager{}
-				instance.Repo = "project"
+				instance.Repo = repo
 				Expect(s.Execute(&model.Universe{}, input.Options{}, instance)).NotTo(HaveOccurred())
 
 				// Verify the contents matches the golden file.
@@ -268,7 +270,7 @@ Copyright %s Example Owners.
 		Context("with defaults ", func() {
 			It("should match the golden file", func() {
 				instance := &scaffoldv1.KustomizeImagePatch{}
-				instance.Repo = "project"
+				instance.Repo = repo
 				Expect(s.Execute(&model.Universe{}, input.Options{}, instance)).NotTo(HaveOccurred())
 
 				// Verify the contents matches the golden file.
@@ -285,7 +287,7 @@ Copyright %s Example Owners.
 		Context("with defaults ", func() {
 			It("should match the golden file", func() {
 				instance := &metricsauth.KustomizePrometheusMetricsPatch{}
-				instance.Repo = "project"
+				instance.Repo = repo
 				Expect(s.Execute(&model.Universe{}, input.Options{}, instance)).NotTo(HaveOccurred())
 
 				// Verify the contents matches the golden file.
@@ -320,7 +322,7 @@ Copyright %s Example Owners.
 				instance := &project.Project{}
 				instance.Version = "1"
 				instance.Domain = "testproject.org"
-				instance.Repo = "project"
+				instance.Repo = repo
 				Expect(s.Execute(&model.Universe{}, input.Options{}, instance)).NotTo(HaveOccurred())
 
 				// Verify the contents matches the golden file.
