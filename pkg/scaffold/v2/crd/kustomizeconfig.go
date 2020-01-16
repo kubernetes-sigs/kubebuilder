@@ -35,7 +35,6 @@ func (f *KustomizeConfig) GetInput() (input.Input, error) {
 		f.Path = filepath.Join("config", "crd", "kustomizeconfig.yaml")
 	}
 	f.TemplateBody = kustomizeConfigTemplate
-	f.Input.IfExistsAction = input.Error
 	return f.Input, nil
 }
 
