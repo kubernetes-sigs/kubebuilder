@@ -50,7 +50,6 @@ func (f *Kustomization) GetInput() (input.Input, error) {
 		f.Path = filepath.Join("config", "crd", "kustomization.yaml")
 	}
 	f.TemplateBody = kustomizationTemplate
-	f.Input.IfExistsAction = input.Error
 	return f.Input, nil
 }
 

@@ -221,7 +221,7 @@ func (api *API) scaffoldV2() error {
 			crdKustomization,
 			&crdv2.KustomizeConfig{},
 		)
-		if err != nil && !isAlreadyExistsError(err) {
+		if err != nil {
 			return fmt.Errorf("error scaffolding kustomization: %v", err)
 		}
 
