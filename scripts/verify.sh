@@ -14,20 +14,14 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-set -e
-
 source ./common.sh
-
-header_text "running go vet"
-go vet ${MOD_OPT} ../...
-
-header_text "running go fmt"
-go fmt ${MOD_OPT} ../...
 
 header_text "running golangci-lint"
 cd .. # To go to the root of the project
 golangci-lint run --disable-all \
     --deadline 5m \
+    --enable=govet \
+    --enable=gofmt \
     --enable=misspell \
     --enable=structcheck \
     --enable=deadcode \
@@ -37,7 +31,6 @@ golangci-lint run --disable-all \
     --enable=ineffassign \
     --enable=nakedret \
     --enable=interfacer \
-    --enable=misspell \
     --enable=dupl \
     --enable=goimports \
     --enable=gocyclo \
@@ -45,10 +38,7 @@ golangci-lint run --disable-all \
 
 ##todo(camilamacedo86): The following checks requires fixes in the code
 # --enable=golint
-# --enable=gocyclo
 # --enable=lll
 # --enable=goconst
 # --enable=gosec
 # --enable=maligned
-
-GO111MODULES=on go list -mod=readonly ./...
