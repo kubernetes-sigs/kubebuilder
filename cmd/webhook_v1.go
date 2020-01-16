@@ -66,9 +66,20 @@ This command is only available for v1 scaffolding project.
 			}
 
 			fmt.Println("Writing scaffold for you to edit...")
+
+			universe, err := model.NewUniverse(
+				model.WithConfig(projectConfig),
+				// TODO: missing model.WithBoilerplate[From], needs boilerplate or path
+				model.WithResource(o.res, projectConfig),
+			)
+			if err != nil {
+				log.Fatalf("error scaffolding webhook: %v", err)
+			}
+
 			webhookConfig := webhook.Config{Server: o.server, Type: o.webhookType, Operations: o.operations}
+
 			err = (&scaffold.Scaffold{}).Execute(
-				&model.Universe{},
+				universe,
 				input.Options{},
 				&manager.Webhook{},
 				&webhook.AdmissionHandler{Resource: o.res, Config: webhookConfig},
@@ -79,7 +90,7 @@ This command is only available for v1 scaffolding project.
 				&webhook.AddServer{Config: webhookConfig},
 			)
 			if err != nil {
-				log.Fatal(err)
+				log.Fatalf("error scaffolding webhook: %v", err)
 			}
 
 			if o.doMake {

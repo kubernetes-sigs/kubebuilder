@@ -87,19 +87,27 @@ func newWebhookV2Cmd() *cobra.Command {
 				fmt.Println(`Webhook server has been set up for you.
 You need to implement the conversion.Hub and conversion.Convertible interfaces for your CRD types.`)
 			}
-			webhookScaffolder := &webhook.Webhook{
-				Resource:   o.res,
-				Defaulting: o.defaulting,
-				Validating: o.validation,
-			}
-			err = (&scaffold.Scaffold{}).Execute(
-				&model.Universe{},
-				input.Options{},
-				webhookScaffolder,
+
+			universe, err := model.NewUniverse(
+				model.WithConfig(projectConfig),
+				// TODO: missing model.WithBoilerplate[From], needs boilerplate or path
+				model.WithResource(o.res, projectConfig),
 			)
 			if err != nil {
-				fmt.Printf("error scaffolding webhook: %v", err)
-				os.Exit(1)
+				log.Fatalf("error scaffolding webhook: %v", err)
+			}
+
+			err = (&scaffold.Scaffold{}).Execute(
+				universe,
+				input.Options{},
+				&webhook.Webhook{
+					Resource:   o.res,
+					Defaulting: o.defaulting,
+					Validating: o.validation,
+				},
+			)
+			if err != nil {
+				log.Fatalf("error scaffolding webhook: %v", err)
 			}
 
 			err = (&scaffoldv2.Main{}).Update(
