@@ -48,7 +48,7 @@ var _ = Describe("Project", func() {
 	JustBeforeEach(func() {
 		s, result = scaffoldtest.NewTestScaffold(writeToPath, goldenPath)
 		s.BoilerplateOptional = true
-		s.ProjectOptional = true
+		s.ConfigOptional = true
 		year = strconv.Itoa(time.Now().Year())
 	})
 

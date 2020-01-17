@@ -23,9 +23,9 @@ import (
 	"strings"
 )
 
-// Yesno reads from stdin looking for one of "y", "yes", "n", "no" and returns
+// YesNo reads from stdin looking for one of "y", "yes", "n", "no" and returns
 // true for "y" and false for "n"
-func Yesno(reader *bufio.Reader) bool {
+func YesNo(reader *bufio.Reader) bool {
 	for {
 		text := readstdin(reader)
 		switch text {

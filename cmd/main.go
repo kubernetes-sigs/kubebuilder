@@ -26,9 +26,8 @@ import (
 	"github.com/spf13/cobra"
 	"golang.org/x/tools/go/packages"
 
+	"sigs.k8s.io/kubebuilder/cmd/internal"
 	"sigs.k8s.io/kubebuilder/cmd/version"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
 )
 
 const (
@@ -67,13 +66,7 @@ func findGoModulePath(forceModules bool) (string, error) {
 // findCurrentRepo attempts to determine the current repository
 // though a combination of go/packages and `go mod` commands/tricks.
 func findCurrentRepo() (string, error) {
-	// easiest case: project file already exists
-	projFile, err := scaffold.LoadProjectFile("PROJECT")
-	if err == nil {
-		return projFile.Repo, nil
-	}
-
-	// next easy case: existing go module
+	// easiest case: existing go module
 	path, err := findGoModulePath(false)
 	if err == nil {
 		return path, nil
@@ -118,8 +111,7 @@ func main() {
 		version.NewVersionCmd(),
 	)
 
-	foundProject, projectVersion := getProjectVersion()
-	if foundProject && projectVersion == project.Version1 {
+	if internal.ConfiguredAndV1() {
 		printV1DeprecationWarning()
 
 		rootCmd.AddCommand(
@@ -185,19 +177,6 @@ After the scaffold is written, api will run make on the project.
 			}
 		},
 	}
-}
-
-// getProjectVersion tries to load PROJECT file and returns if the file exist
-// and the version string
-func getProjectVersion() (bool, string) {
-	if _, err := os.Stat("PROJECT"); os.IsNotExist(err) {
-		return false, ""
-	}
-	projectInfo, err := scaffold.LoadProjectFile("PROJECT")
-	if err != nil {
-		log.Fatalf("failed to read the PROJECT file: %v", err)
-	}
-	return true, projectInfo.Version
 }
 
 func printV1DeprecationWarning() {

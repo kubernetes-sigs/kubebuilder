@@ -77,7 +77,7 @@ func NewTestScaffold(writeToPath, goldenPath string) (*scaffold.Scaffold, *TestR
 		FileExists: func(path string) bool {
 			return path != writeToPath
 		},
-		ProjectPath: filepath.Join(projRoot, "testdata", "gopath", "src", "project"),
+		ConfigPath: filepath.Join(projRoot, "testdata", "gopath", "src", "project"),
 	}
 	oldGoPath := build.Default.GOPATH
 	build.Default.GOPATH = filepath.Join(projRoot, "testdata", "gopath")

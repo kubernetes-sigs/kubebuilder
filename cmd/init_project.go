@@ -29,7 +29,9 @@ import (
 	"github.com/spf13/cobra"
 	flag "github.com/spf13/pflag"
 
+	"sigs.k8s.io/kubebuilder/cmd/internal"
 	"sigs.k8s.io/kubebuilder/cmd/util"
+	"sigs.k8s.io/kubebuilder/pkg/model/config"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
 )
@@ -44,7 +46,7 @@ func newInitProjectCmd() *cobra.Command {
 
 Writes the following files:
 - a boilerplate license file
-- a PROJECT file with the domain and repo
+- a PROJECT file with the project configuration
 - a Makefile to build the project
 - a go.mod with project dependencies
 - a Kustomization.yaml for customizating manifests
@@ -117,15 +119,17 @@ func (o *projectOptions) bindCmdlineFlags(cmd *cobra.Command) {
 		"name to use for go module, e.g. github.com/user/repo.  "+
 			"defaults to the go package of the current working directory.")
 	cmd.Flags().StringVar(&o.project.Domain, "domain", "my.domain", "domain for groups")
-	cmd.Flags().StringVar(&o.project.Version, "project-version", project.Version2, "project version")
+	cmd.Flags().StringVar(&o.project.Version, "project-version", config.Version2, "project version")
 }
 
 func (o *projectOptions) initializeProject() {
+	internal.DieIfConfigured()
+
 	if err := o.validate(); err != nil {
 		log.Fatal(err)
 	}
 
-	if o.project.Version == project.Version1 {
+	if o.project.IsV1() {
 		printV1DeprecationWarning()
 	}
 
@@ -169,8 +173,8 @@ func (o *projectOptions) validate() error {
 		o.project.Repo = repoPath
 	}
 
-	switch o.project.Version {
-	case project.Version1:
+	switch {
+	case o.project.IsV1():
 		var defEnsure *bool
 		if o.depFlag.Changed {
 			defEnsure = &o.dep
@@ -182,7 +186,7 @@ func (o *projectOptions) validate() error {
 			DepArgs:          o.depArgs,
 			DefinitelyEnsure: defEnsure,
 		}
-	case project.Version2:
+	case o.project.IsV2():
 		o.scaffolder = &scaffold.V2Project{
 			Project:     o.project,
 			Boilerplate: o.boilerplate,
@@ -193,10 +197,6 @@ func (o *projectOptions) validate() error {
 
 	if err := o.scaffolder.Validate(); err != nil {
 		return err
-	}
-
-	if util.ProjectExist() {
-		return fmt.Errorf("failed to initialize project because project is already initialized")
 	}
 
 	return nil
