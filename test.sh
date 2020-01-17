@@ -163,6 +163,7 @@ GO111MODULE=off test_project gopath/src/project 1
 
 # test project v2
 GO111MODULE=on test_project project-v2 2
+GO111MODULE=on test_project project-v2-multigroup 2
 
 exit $rc
 
