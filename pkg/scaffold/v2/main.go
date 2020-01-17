@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"sigs.k8s.io/kubebuilder/pkg/model/config"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/util"
@@ -53,7 +54,7 @@ func (f *Main) GetInput() (input.Input, error) {
 func (f *Main) Update(opts *MainUpdateOptions) error {
 	path := "main.go"
 
-	resPkg, _ := util.GetResourceInfo(opts.Resource, opts.Project.Repo, opts.Project.Domain, opts.Project.MultiGroup)
+	resPkg, _ := util.GetResourceInfo(opts.Resource, opts.Config.Repo, opts.Config.Domain, opts.Config.MultiGroup)
 
 	// generate all the code fragments
 	apiImportCodeFragment := fmt.Sprintf(`%s%s "%s/%s"
@@ -64,10 +65,10 @@ func (f *Main) Update(opts *MainUpdateOptions) error {
 
 	var reconcilerSetupCodeFragment, ctrlImportCodeFragment string
 
-	if opts.Project.MultiGroup {
+	if opts.Config.MultiGroup {
 
 		ctrlImportCodeFragment = fmt.Sprintf(`controller%s "%s/controllers/%s"
-`, opts.Resource.GroupImportSafe, opts.Project.Repo, opts.Resource.Group)
+`, opts.Resource.GroupImportSafe, opts.Config.Repo, opts.Resource.Group)
 
 		reconcilerSetupCodeFragment = fmt.Sprintf(`if err = (&controller%s.%sReconciler{
 		Client: mgr.GetClient(),
@@ -81,7 +82,7 @@ func (f *Main) Update(opts *MainUpdateOptions) error {
 	} else {
 
 		ctrlImportCodeFragment = fmt.Sprintf(`"%s/controllers"
-`, opts.Project.Repo)
+`, opts.Config.Repo)
 
 		reconcilerSetupCodeFragment = fmt.Sprintf(`if err = (&controllers.%sReconciler{
 		Client: mgr.GetClient(),
@@ -136,8 +137,8 @@ func (f *Main) Update(opts *MainUpdateOptions) error {
 // MainUpdateOptions contains info required for wiring an API/Controller in
 // main.go.
 type MainUpdateOptions struct {
-	// Project contains info about the project
-	Project *input.ProjectFile
+	// Config contains info about the project
+	Config *config.Config
 
 	// Resource is the resource being added
 	Resource *resource.Resource

@@ -25,10 +25,11 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"sigs.k8s.io/kubebuilder/cmd/internal"
+	"sigs.k8s.io/kubebuilder/internal/config"
 	"sigs.k8s.io/kubebuilder/pkg/model"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 	scaffoldv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v2/webhook"
@@ -49,16 +50,16 @@ func newWebhookV2Cmd() *cobra.Command {
 	kubebuilder create webhook --group crew --version v1 --kind FirstMate --conversion
 `,
 		Run: func(cmd *cobra.Command, args []string) {
-			dieIfNoProject()
+			internal.DieIfNotConfigured()
 
-			projectInfo, err := scaffold.LoadProjectFile("PROJECT")
+			projectConfig, err := config.Read()
 			if err != nil {
-				log.Fatalf("failed to read the PROJECT file: %v", err)
+				log.Fatalf("failed to read the configuration file: %v", err)
 			}
 
-			if projectInfo.Version != project.Version2 {
+			if !projectConfig.IsV2() {
 				fmt.Printf("kubebuilder webhook is for project version: 2,"+
-					" the version of this project is: %s \n", projectInfo.Version)
+					" the version of this project is: %s \n", projectConfig.Version)
 				os.Exit(1)
 			}
 
@@ -74,7 +75,7 @@ func newWebhookV2Cmd() *cobra.Command {
 
 			fmt.Println("Writing scaffold for you to edit...")
 
-			if projectInfo.MultiGroup {
+			if projectConfig.MultiGroup {
 				fmt.Println(filepath.Join("apis", o.res.Group, o.res.Version,
 					fmt.Sprintf("%s_webhook.go", strings.ToLower(o.res.Kind))))
 			} else {
@@ -103,7 +104,7 @@ You need to implement the conversion.Hub and conversion.Convertible interfaces f
 
 			err = (&scaffoldv2.Main{}).Update(
 				&scaffoldv2.MainUpdateOptions{
-					Project:        &projectInfo,
+					Config:         projectConfig,
 					WireResource:   false,
 					WireController: false,
 					WireWebhook:    true,

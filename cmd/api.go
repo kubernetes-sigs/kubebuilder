@@ -27,6 +27,7 @@ import (
 	"github.com/spf13/cobra"
 	flag "github.com/spf13/pflag"
 
+	"sigs.k8s.io/kubebuilder/cmd/internal"
 	"sigs.k8s.io/kubebuilder/cmd/util"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
@@ -76,7 +77,7 @@ func resourceForFlags(f *flag.FlagSet) *resource.Resource {
 
 // APICmd represents the resource command
 func (o *apiOptions) runAddAPI() {
-	dieIfNoProject()
+	internal.DieIfNotConfigured()
 
 	switch strings.ToLower(o.pattern) {
 	case "":
@@ -96,12 +97,12 @@ func (o *apiOptions) runAddAPI() {
 	reader := bufio.NewReader(os.Stdin)
 	if !o.resourceFlag.Changed {
 		fmt.Println("Create Resource [y/n]")
-		o.apiScaffolder.DoResource = util.Yesno(reader)
+		o.apiScaffolder.DoResource = util.YesNo(reader)
 	}
 
 	if !o.controllerFlag.Changed {
 		fmt.Println("Create Controller [y/n]")
-		o.apiScaffolder.DoController = util.Yesno(reader)
+		o.apiScaffolder.DoController = util.YesNo(reader)
 	}
 
 	fmt.Println("Writing scaffold for you to edit...")
@@ -170,11 +171,4 @@ After the scaffold is written, api will run make on the project.
 	options.bindCmdFlags(apiCmd)
 
 	return apiCmd
-}
-
-// dieIfNoProject checks to make sure the command is run from a directory containing a project file.
-func dieIfNoProject() {
-	if _, err := os.Stat("PROJECT"); os.IsNotExist(err) {
-		log.Fatalf("Command must be run from a directory containing %s", "PROJECT")
-	}
 }

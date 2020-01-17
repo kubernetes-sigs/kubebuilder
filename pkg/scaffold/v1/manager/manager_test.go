@@ -78,7 +78,7 @@ var _ = Describe("Manager", func() {
 			It("should return an error if the relative path cannot be calculated", func() {
 				instance := &manager.APIs{}
 				s, _ := scaffoldtest.NewTestScaffold(filepath.Join("pkg", "apis", "apis.go"), "")
-				s.ProjectPath = "."
+				s.ConfigPath = "."
 				err := s.Execute(&model.Universe{}, scaffoldtest.Options(), instance)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("Rel: can't make"))

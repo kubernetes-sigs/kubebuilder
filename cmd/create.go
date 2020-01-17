@@ -20,6 +20,8 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
+
+	"sigs.k8s.io/kubebuilder/cmd/internal"
 )
 
 func newCreateCmd() *cobra.Command {
@@ -35,11 +37,7 @@ func newCreateCmd() *cobra.Command {
 		newAPICommand(),
 	)
 
-	foundProject, version := getProjectVersion()
-	// It add webhook v2 command in the following 2 cases:
-	// - There are no PROJECT file found.
-	// - version == 2 is found in the PROJECT file.
-	if !foundProject || version == "2" {
+	if !internal.ConfiguredAndV1() {
 		cmd.AddCommand(
 			newWebhookV2Cmd(),
 		)
