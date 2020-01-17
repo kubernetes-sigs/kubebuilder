@@ -58,7 +58,7 @@ Strings, ints, and bools follow their Go syntax:
 
 ```go
 // +kubebuilder:validation:ExclusiveMaximum=false
-// +kubebulder:validation:Format="date-time"
+// +kubebuilder:validation:Format="date-time"
 // +kubebuilder:validation:Maximum=42
 ```
 
