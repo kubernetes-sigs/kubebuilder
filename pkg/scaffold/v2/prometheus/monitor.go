@@ -22,23 +22,23 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 )
 
-var _ input.File = &PrometheusServiceMonitor{}
+var _ input.File = &ServiceMonitor{}
 
-// PrometheusMetricsService scaffolds an issuer CR and a certificate CR
-type PrometheusServiceMonitor struct {
+// ServiceMonitor scaffolds an issuer CR and a certificate CR
+type ServiceMonitor struct {
 	input.Input
 }
 
 // GetInput implements input.File
-func (f *PrometheusServiceMonitor) GetInput() (input.Input, error) {
+func (f *ServiceMonitor) GetInput() (input.Input, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "prometheus", "monitor.yaml")
 	}
-	f.TemplateBody = monitorTemplate
+	f.TemplateBody = serviceMonitorTemplate
 	return f.Input, nil
 }
 
-const monitorTemplate = `
+const serviceMonitorTemplate = `
 # Prometheus Monitor Service (Metrics)
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor

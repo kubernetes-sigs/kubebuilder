@@ -39,8 +39,6 @@ golangci-lint run --disable-all \
     --enable=gosec \
     --enable=staticcheck \
     --enable=unused \
-    --enable=gosimple
+    --enable=gosimple \
+    --enable=golint \
 
-##todo(camilamacedo86): The following checks requires fixes in the code
-# --enable=golint
-# --enable=lll

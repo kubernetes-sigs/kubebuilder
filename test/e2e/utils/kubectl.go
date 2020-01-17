@@ -54,9 +54,8 @@ func (k *Kubectl) Apply(inNamespace bool, cmdOptions ...string) (string, error) 
 	ops := append([]string{"apply"}, cmdOptions...)
 	if inNamespace {
 		return k.CommandInNamespace(ops...)
-	} else {
-		return k.Command(ops...)
 	}
+	return k.Command(ops...)
 }
 
 // Get is a func to run kubectl get commands
@@ -64,9 +63,8 @@ func (k *Kubectl) Get(inNamespace bool, cmdOptions ...string) (string, error) {
 	ops := append([]string{"get"}, cmdOptions...)
 	if inNamespace {
 		return k.CommandInNamespace(ops...)
-	} else {
-		return k.Command(ops...)
 	}
+	return k.Command(ops...)
 }
 
 // Delete is a func to run kubectl delete commands
@@ -74,9 +72,8 @@ func (k *Kubectl) Delete(inNamespace bool, cmdOptions ...string) (string, error)
 	ops := append([]string{"delete"}, cmdOptions...)
 	if inNamespace {
 		return k.CommandInNamespace(ops...)
-	} else {
-		return k.Command(ops...)
 	}
+	return k.Command(ops...)
 }
 
 // Logs is a func to run kubectl logs commands

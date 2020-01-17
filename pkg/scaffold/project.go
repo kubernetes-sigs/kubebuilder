@@ -239,7 +239,7 @@ func (p *V2Project) Scaffold() error {
 		&webhook.Service{},
 		&webhook.InjectCAPatch{},
 		&prometheus.Kustomization{},
-		&prometheus.PrometheusServiceMonitor{},
+		&prometheus.ServiceMonitor{},
 		&certmanager.CertManager{},
 		&certmanager.Kustomization{},
 		&certmanager.KustomizeConfig{})

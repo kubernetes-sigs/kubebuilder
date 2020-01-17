@@ -60,7 +60,7 @@ func newEditProjectCmd() *cobra.Command {
 
 			err = saveProjectFile("PROJECT", &projectInfo)
 			if err != nil {
-				log.Fatalf("error updating project file with resource information : %v \n", err)
+				log.Fatalf("error updating project file with resource information : %v", err)
 			}
 		},
 	}
