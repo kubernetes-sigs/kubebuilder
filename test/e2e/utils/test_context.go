@@ -161,6 +161,7 @@ func (kc *KBTestContext) Make(makeOptions ...string) error {
 
 // CleanupImage is for cleaning up the docker images for testing
 func (kc *KBTestContext) Destroy() {
+	// nolint:gosec
 	cmd := exec.Command("docker", "rmi", "-f", kc.ImageName)
 	if _, err := kc.Run(cmd); err != nil {
 		fmt.Fprintf(GinkgoWriter, "warning: error when removing the local image: %v\n", err)
