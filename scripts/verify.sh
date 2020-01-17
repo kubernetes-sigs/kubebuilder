@@ -37,6 +37,9 @@ golangci-lint run --disable-all \
     --enable=goconst \
     --enable=maligned \
     --enable=gosec \
+    --enable=staticcheck \
+    --enable=unused \
+    --enable=gosimple
 
 ##todo(camilamacedo86): The following checks requires fixes in the code
 # --enable=golint

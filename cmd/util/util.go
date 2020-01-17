@@ -21,8 +21,7 @@ import (
 )
 
 func ProjectExist() bool {
-	_, err := os.Stat("PROJECT")
-	if err != nil {
+	if _, err := os.Stat("PROJECT"); err != nil {
 		return false
 	}
 
