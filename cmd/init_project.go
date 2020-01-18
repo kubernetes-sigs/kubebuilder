@@ -88,7 +88,8 @@ type projectOptions struct {
 
 func (o *projectOptions) bindCmdlineFlags(cmd *cobra.Command) {
 
-	cmd.Flags().BoolVar(&o.skipGoVersionCheck, "skip-go-version-check", false, "if specified, skip checking the Go version")
+	cmd.Flags().BoolVar(&o.skipGoVersionCheck, "skip-go-version-check",
+		false, "if specified, skip checking the Go version")
 
 	// dependency args
 	cmd.Flags().BoolVar(&o.fetchDeps, "fetch-deps", true, "ensure dependencies are downloaded")
@@ -107,12 +108,14 @@ func (o *projectOptions) bindCmdlineFlags(cmd *cobra.Command) {
 
 	// boilerplate args
 	cmd.Flags().StringVar(&o.boilerplate.Path, "path", "", "path for boilerplate")
-	cmd.Flags().StringVar(&o.boilerplate.License, "license", "apache2", "license to use to boilerplate.  May be one of apache2,none")
+	cmd.Flags().StringVar(&o.boilerplate.License, "license", "apache2",
+		"license to use to boilerplate.  May be one of apache2,none")
 	cmd.Flags().StringVar(&o.boilerplate.Owner, "owner", "", "Owner to add to the copyright")
 
 	// project args
-	cmd.Flags().StringVar(&o.project.Repo, "repo", "", "name to use for go module, e.g. github.com/user/repo.  "+
-		"defaults to the go package of the current working directory.")
+	cmd.Flags().StringVar(&o.project.Repo, "repo", "",
+		"name to use for go module, e.g. github.com/user/repo.  "+
+			"defaults to the go package of the current working directory.")
 	cmd.Flags().StringVar(&o.project.Domain, "domain", "my.domain", "domain for groups")
 	cmd.Flags().StringVar(&o.project.Version, "project-version", project.Version2, "project version")
 }

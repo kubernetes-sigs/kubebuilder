@@ -41,4 +41,4 @@ golangci-lint run --disable-all \
     --enable=unused \
     --enable=gosimple \
     --enable=golint \
-
+    --enable=lll \

@@ -101,7 +101,8 @@ func findCurrentRepo() (string, error) {
 			err = fmt.Errorf("%s", string(exitErr.Stderr))
 		}
 		// give up, let the user figure it out
-		return "", fmt.Errorf("could not determine repository path from module data, package data, or by initializing a module: %v", err)
+		return "", fmt.Errorf("could not determine repository path from module data, "+
+			"package data, or by initializing a module: %v", err)
 	}
 	defer os.Remove("go.mod") // clean up after ourselves
 	return findGoModulePath(true)
@@ -200,5 +201,7 @@ func getProjectVersion() (bool, string) {
 }
 
 func printV1DeprecationWarning() {
-	fmt.Printf(NoticeColor, "[Deprecation Notice] The v1 projects are deprecated and will not be supported beyond Feb 1, 2020.\nSee how to upgrade your project to v2: https://book.kubebuilder.io/migration/guide.html\n")
+	fmt.Printf(NoticeColor, "[Deprecation Notice] The v1 projects are deprecated and will not be supported "+
+		"beyond Feb 1, 2020.\nSee how to upgrade your project to v2:"+
+		" https://book.kubebuilder.io/migration/guide.html\n")
 }

@@ -26,7 +26,11 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 )
 
-func GetResourceInfo(r *resource.Resource, repo, domain string, isMultiGroup bool) (resourcePackage, groupDomain string) {
+func GetResourceInfo(r *resource.Resource,
+	repo string,
+	domain string,
+	isMultiGroup bool,
+) (resourcePackage, groupDomain string) {
 	// Use the k8s.io/api package for core resources
 	coreGroups := map[string]string{
 		"apps":                  "",

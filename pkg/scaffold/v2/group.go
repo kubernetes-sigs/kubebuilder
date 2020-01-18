@@ -51,6 +51,7 @@ func (f *Group) Validate() error {
 	return f.Resource.Validate()
 }
 
+// nolint:lll
 const groupTemplate = `{{ .Boilerplate }}
 
 // Package {{.Resource.Version}} contains API Schema definitions for the {{ .Resource.GroupImportSafe }} {{.Resource.Version}} API group

@@ -40,7 +40,8 @@ func newWebhookV2Cmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "webhook",
 		Short: "Scaffold a webhook for an API resource.",
-		Long:  `Scaffold a webhook for an API resource. You can choose to scaffold defaulting, validating and (or) conversion webhooks.`,
+		Long: `Scaffold a webhook for an API resource. You can choose to scaffold defaulting, ` +
+			`validating and (or) conversion webhooks.`,
 		Example: `	# Create defaulting and validating webhooks for CRD of group crew, version v1 and kind FirstMate.
 	kubebuilder create webhook --group crew --version v1 --kind FirstMate --defaulting --programmatic-validation
 
@@ -56,12 +57,14 @@ func newWebhookV2Cmd() *cobra.Command {
 			}
 
 			if projectInfo.Version != project.Version2 {
-				fmt.Printf("kubebuilder webhook is for project version: 2, the version of this project is: %s \n", projectInfo.Version)
+				fmt.Printf("kubebuilder webhook is for project version: 2,"+
+					" the version of this project is: %s \n", projectInfo.Version)
 				os.Exit(1)
 			}
 
 			if !o.defaulting && !o.validation && !o.conversion {
-				fmt.Printf("kubebuilder webhook requires at least one of --defaulting, --programmatic-validation and --conversion to be true")
+				fmt.Printf("kubebuilder webhook requires at least one of" +
+					" --defaulting, --programmatic-validation and --conversion to be true")
 				os.Exit(1)
 			}
 
