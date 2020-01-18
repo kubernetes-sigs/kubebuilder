@@ -41,7 +41,7 @@ You need to enable the webhook and cert manager configuration through kustomize.
 Now you can deploy it to your cluster by
 
 ```bash
-make deploy
+make deploy IMG=<some-registry>/<project-name>:tag
 ```
 
 Wait a while til the webhook pod comes up and the certificates are provisioned.
