@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package internal
 
 import (
 	"testing"
@@ -33,6 +33,7 @@ func TestCheckGoVersion(t *testing.T) {
 		{"go1.11rc", false},
 		{"go1.11.1", false},
 		{"go1.12rc2", false},
+		{"go1.13", false},
 	}
 
 	for _, test := range tests {

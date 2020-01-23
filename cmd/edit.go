@@ -17,59 +17,82 @@ limitations under the License.
 package main
 
 import (
+	"errors"
+	"fmt"
 	"log"
+	"os"
 
 	"github.com/spf13/cobra"
 
-	"sigs.k8s.io/kubebuilder/cmd/internal"
 	"sigs.k8s.io/kubebuilder/internal/config"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold"
 )
 
-func newEditProjectCmd() *cobra.Command {
+type editError struct {
+	err error
+}
 
-	opts := editProjectCmdOptions{}
+func (e editError) Error() string {
+	return fmt.Sprintf("failed to edit configuration: %v", e.err)
+}
 
-	editProjectCmd := &cobra.Command{
+func newEditCmd() *cobra.Command {
+	options := &editOptions{}
+
+	cmd := &cobra.Command{
 		Use:   "edit",
 		Short: "This command will edit the project configuration",
 		Long:  `This command will edit the project configuration`,
-		Example: `
-		# To enable the multigroup layout/support
-		kubebuilder edit --multigroup
-		
-		# To disable the multigroup layout/support
-		kubebuilder edit --multigroup=false`,
-		Run: func(cmd *cobra.Command, args []string) {
-			internal.DieIfNotConfigured()
+		Example: `	# Enable the multigroup layout
+	kubebuilder edit --multigroup
 
-			projectConfig, err := config.Load()
-			if err != nil {
-				log.Fatalf("failed to read the configuration file: %v", err)
-			}
-
-			if opts.multigroup {
-				if !projectConfig.IsV2() {
-					log.Fatalf("kubebuilder multigroup is for project version: 2,"+
-						" the version of this project is: %s \n", projectConfig.Version)
-				}
-
-				// Set MultiGroup Option
-				projectConfig.MultiGroup = true
-			}
-
-			err = projectConfig.Save()
-			if err != nil {
-				log.Fatalf("error updating project file with resource information : %v", err)
+	# Disable the multigroup layout
+	kubebuilder edit --multigroup=false`,
+		Run: func(_ *cobra.Command, _ []string) {
+			if err := run(options); err != nil {
+				log.Fatal(editError{err})
 			}
 		},
 	}
 
-	editProjectCmd.Flags().BoolVar(&opts.multigroup, "multigroup", false,
-		"if set as true, then the tool will generate the project files with multigroup layout")
+	options.bindFlags(cmd)
 
-	return editProjectCmd
+	return cmd
 }
 
-type editProjectCmdOptions struct {
+var _ commandOptions = &editOptions{}
+
+type editOptions struct {
 	multigroup bool
+}
+
+func (o *editOptions) bindFlags(cmd *cobra.Command) {
+	cmd.Flags().BoolVar(&o.multigroup, "multigroup", false, "enable or disable multigroup layout")
+}
+
+func (o *editOptions) loadConfig() (*config.Config, error) {
+	projectConfig, err := config.Load()
+	if os.IsNotExist(err) {
+		return nil, errors.New("unable to find configuration file, project must be initialized")
+	}
+
+	return projectConfig, err
+}
+
+func (o *editOptions) validate(c *config.Config) error {
+	if !c.IsV2() {
+		if c.MultiGroup {
+			return fmt.Errorf("multiple group support can't be enabled for version %s", c.Version)
+		}
+	}
+
+	return nil
+}
+
+func (o *editOptions) scaffolder(c *config.Config) (scaffold.Scaffolder, error) { // nolint:unparam
+	return scaffold.NewEditScaffolder(c, o.multigroup), nil
+}
+
+func (o *editOptions) postScaffold(_ *config.Config) error {
+	return nil
 }

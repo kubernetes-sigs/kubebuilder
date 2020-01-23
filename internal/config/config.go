@@ -26,8 +26,13 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-// Default path for the configuration file
-const DefaultPath = "PROJECT"
+const (
+	// Default path for the configuration file
+	DefaultPath = "PROJECT"
+
+	// Default version if flag not provided
+	DefaultVersion = config.Version2
+)
 
 func exists(path string) (bool, error) {
 	// Look up the file
@@ -43,12 +48,6 @@ func exists(path string) (bool, error) {
 		err = nil
 	}
 	return false, err
-}
-
-// Exists verifies that the configuration file exists in the default path
-// TODO: consider removing this verification in favor of using Load and checking the error
-func Exists() (bool, error) {
-	return exists(DefaultPath)
 }
 
 func readFrom(path string) (c config.Config, err error) {
@@ -96,7 +95,6 @@ type Config struct {
 }
 
 // New creates a new configuration that will be stored at the provided path
-// TODO: this method should be used during the initialization command, unused for now
 func New(path string) *Config {
 	return &Config{
 		Config: config.Config{
@@ -146,12 +144,16 @@ func (c Config) Save() error {
 	}
 
 	// Write the marshalled configuration
-	err = ioutil.WriteFile(c.path, content, os.ModePerm)
+	err = ioutil.WriteFile(c.path, content, 0600)
 	if err != nil {
 		return saveError{fmt.Errorf("failed to save configuration to %s: %v", c.path, err)}
 	}
 
 	return nil
+}
+
+func (c Config) Path() string {
+	return c.path
 }
 
 type saveError struct {

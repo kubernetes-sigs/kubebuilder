@@ -311,23 +311,4 @@ Copyright %s Example Owners.
 			})
 		})
 	})
-
-	Describe("scaffolding a PROEJCT", func() {
-		BeforeEach(func() {
-			goldenPath = filepath.Join("PROJECT")
-			writeToPath = goldenPath
-		})
-		Context("with defaults", func() {
-			It("should match the golden file", func() {
-				instance := &project.Project{}
-				instance.Version = "1"
-				instance.Domain = "testproject.org"
-				instance.Repo = repo
-				Expect(s.Execute(&model.Universe{}, input.Options{}, instance)).NotTo(HaveOccurred())
-
-				// Verify the contents matches the golden file.
-				Expect(result.Actual.String()).To(BeEquivalentTo(result.Golden))
-			})
-		})
-	})
 })
