@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package webhook
+package webhook_test
 
 import (
 	"fmt"
@@ -28,6 +28,7 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/scaffoldtest"
+	. "sigs.k8s.io/kubebuilder/pkg/scaffold/v1/webhook"
 )
 
 var _ = Describe("Webhook", func() {

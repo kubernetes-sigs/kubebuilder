@@ -17,45 +17,33 @@ limitations under the License.
 package internal
 
 import (
+	"fmt"
 	"log"
+	"os"
 
 	"sigs.k8s.io/kubebuilder/internal/config"
 )
 
-// isProjectConfigured checks for the existence of the configuration file
-func isProjectConfigured() bool {
-	exists, err := config.Exists()
-	if err != nil {
-		log.Fatalf("Unable to check if configuration file exists: %v", err)
-	}
-
-	return exists
-}
-
-// DieIfConfigured exists if a configuration file was found
-func DieIfConfigured() {
-	if isProjectConfigured() {
-		log.Fatalf("Project is already initialized")
-	}
-}
-
-// DieIfNotConfigured exists if no configuration file was found
-func DieIfNotConfigured() {
-	if !isProjectConfigured() {
-		log.Fatalf("Command must be run after `kubebuilder init ...`")
-	}
-}
+const (
+	noticeColor = "\033[1;36m%s\033[0m"
+)
 
 // ConfiguredAndV1 returns true if the project is already configured and it is v1
 func ConfiguredAndV1() bool {
-	if !isProjectConfigured() {
+	projectConfig, err := config.Read()
+
+	if os.IsNotExist(err) {
 		return false
 	}
 
-	projectConfig, err := config.Read()
 	if err != nil {
 		log.Fatalf("failed to read the configuration file: %v", err)
 	}
 
 	return projectConfig.IsV1()
+}
+
+func PrintV1DeprecationWarning() {
+	fmt.Printf(noticeColor, "[Deprecation Notice] The v1 projects are deprecated and will not be supported beyond "+
+		"Feb 1, 2020.\nSee how to upgrade your project to v2: https://book.kubebuilder.io/migration/guide.html\n")
 }

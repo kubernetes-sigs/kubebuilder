@@ -1,5 +1,5 @@
 /*
-Copyright 2018 The Kubernetes Authors.
+Copyright 2020 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,16 +14,26 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package scaffold
 
 import (
-	"github.com/spf13/cobra"
+	"sigs.k8s.io/kubebuilder/internal/config"
 )
 
-func newAlphaCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "alpha",
-		Short: "Expose commands which are in experimental or early stages of development",
-		Long:  `Command group for commands which are either experimental or in early stages of development`,
+type editScaffolder struct {
+	config     *config.Config
+	multigroup bool
+}
+
+func NewEditScaffolder(config *config.Config, multigroup bool) Scaffolder {
+	return &editScaffolder{
+		config:     config,
+		multigroup: multigroup,
 	}
+}
+
+func (s *editScaffolder) Scaffold() error {
+	s.config.MultiGroup = s.multigroup
+
+	return s.config.Save()
 }

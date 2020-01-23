@@ -25,111 +25,86 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/model"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/controller"
+	controllerv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/v1/controller"
 	crdv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/v1/crd"
 	scaffoldv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2"
 	controllerv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2/controller"
 	crdv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2/crd"
 )
 
-// API contains configuration for generating scaffolding for Go type
+// apiScaffolder contains configuration for generating scaffolding for Go type
 // representing the API and controller that implements the behavior for the API.
-type API struct {
-	// Plugins is the list of plugins we should allow to transform our generated scaffolding
-	Plugins []Plugin
-
-	Resource *resource.Resource
-
-	config *config.Config
-
-	// DoResource indicates whether to scaffold API Resource or not
-	DoResource bool
-
-	// DoController indicates whether to scaffold controller files or not
-	DoController bool
-
-	// Force indicates that the resource should be created even if it already exists.
-	Force bool
+type apiScaffolder struct {
+	config   *config.Config
+	resource *resource.Resource
+	// plugins is the list of plugins we should allow to transform our generated scaffolding
+	plugins []Plugin
+	// doResource indicates whether to scaffold API Resource or not
+	doResource bool
+	// doController indicates whether to scaffold controller files or not
+	doController bool
 }
 
-// Validate validates whether API scaffold has correct bits to generate
-// scaffolding for API.
-func (api *API) Validate() error {
-	if err := api.setDefaults(); err != nil {
-		return err
+func NewAPIScaffolder(
+	config *config.Config,
+	res *resource.Resource,
+	doResource, doController bool,
+	plugins []Plugin,
+) Scaffolder {
+	return &apiScaffolder{
+		plugins:      plugins,
+		resource:     res,
+		config:       config,
+		doResource:   doResource,
+		doController: doController,
 	}
-	if err := api.Resource.Validate(); err != nil {
-		return err
-	}
-
-	if api.config.HasResource(api.Resource) && !api.Force {
-		return fmt.Errorf("API resource already exists")
-	}
-
-	return nil
 }
 
-func (api *API) setDefaults() (err error) {
-	if api.config == nil {
-		api.config, err = config.Load()
-		if err != nil {
-			return
-		}
-	}
-
-	return
-}
-
-func (api *API) Scaffold() error {
-	if err := api.setDefaults(); err != nil {
-		return err
-	}
+func (s *apiScaffolder) Scaffold() error {
+	fmt.Println("Writing scaffold for you to edit...")
 
 	switch {
-	case api.config.IsV1():
-		return api.scaffoldV1()
-	case api.config.IsV2():
-		return api.scaffoldV2()
+	case s.config.IsV1():
+		return s.scaffoldV1()
+	case s.config.IsV2():
+		return s.scaffoldV2()
 	default:
-		return fmt.Errorf("unknown project version %v", api.config.Version)
+		return fmt.Errorf("unknown project version %v", s.config.Version)
 	}
 }
 
-func (api *API) buildUniverse(resource *resource.Resource) (*model.Universe, error) {
+func (s *apiScaffolder) buildUniverse() (*model.Universe, error) {
 	return model.NewUniverse(
-		model.WithConfig(&api.config.Config),
+		model.WithConfig(&s.config.Config),
 		// TODO: missing model.WithBoilerplate[From], needs boilerplate or path
-		model.WithResource(resource, &api.config.Config),
+		model.WithResource(s.resource, &s.config.Config),
 	)
 }
 
-func (api *API) scaffoldV1() error {
-	r := api.Resource
+func (s *apiScaffolder) scaffoldV1() error {
+	if s.doResource {
+		fmt.Println(filepath.Join("pkg", "apis", s.resource.Group, s.resource.Version,
+			fmt.Sprintf("%s_types.go", strings.ToLower(s.resource.Kind))))
+		fmt.Println(filepath.Join("pkg", "apis", s.resource.Group, s.resource.Version,
+			fmt.Sprintf("%s_types_test.go", strings.ToLower(s.resource.Kind))))
 
-	if api.DoResource {
-		fmt.Println(filepath.Join("pkg", "apis", r.Group, r.Version,
-			fmt.Sprintf("%s_types.go", strings.ToLower(r.Kind))))
-		fmt.Println(filepath.Join("pkg", "apis", r.Group, r.Version,
-			fmt.Sprintf("%s_types_test.go", strings.ToLower(r.Kind))))
-
-		universe, err := api.buildUniverse(r)
+		universe, err := s.buildUniverse()
 		if err != nil {
 			return fmt.Errorf("error building API scaffold: %v", err)
 		}
 
-		err = (&Scaffold{}).Execute(
+		if err := (&Scaffold{}).Execute(
 			universe,
 			input.Options{},
-			&crdv1.Register{Resource: r},
-			&crdv1.Types{Resource: r},
-			&crdv1.VersionSuiteTest{Resource: r},
-			&crdv1.TypesTest{Resource: r},
-			&crdv1.Doc{Resource: r},
-			&crdv1.Group{Resource: r},
-			&crdv1.AddToScheme{Resource: r},
-			&crdv1.CRDSample{Resource: r},
-		)
-		if err != nil {
+			&crdv1.Register{Resource: s.resource},
+			&crdv1.Types{Resource: s.resource},
+			&crdv1.VersionSuiteTest{Resource: s.resource},
+			&crdv1.TypesTest{Resource: s.resource},
+			&crdv1.Doc{Resource: s.resource},
+			&crdv1.Group{Resource: s.resource},
+			&crdv1.AddToScheme{Resource: s.resource},
+			&crdv1.CRDSample{Resource: s.resource},
+		); err != nil {
 			return fmt.Errorf("error scaffolding APIs: %v", err)
 		}
 	} else {
@@ -137,29 +112,28 @@ func (api *API) scaffoldV1() error {
 		// because this could result in a fork-bomb of k8s resources where watching a
 		// deployment, replicaset etc. results in generating deployment which
 		// end up generating replicaset, pod etc recursively.
-		r.CreateExampleReconcileBody = false
+		s.resource.CreateExampleReconcileBody = false
 	}
 
-	if api.DoController {
-		fmt.Println(filepath.Join("pkg", "controller", strings.ToLower(r.Kind),
-			fmt.Sprintf("%s_controller.go", strings.ToLower(r.Kind))))
-		fmt.Println(filepath.Join("pkg", "controller", strings.ToLower(r.Kind),
-			fmt.Sprintf("%s_controller_test.go", strings.ToLower(r.Kind))))
+	if s.doController {
+		fmt.Println(filepath.Join("pkg", "controller", strings.ToLower(s.resource.Kind),
+			fmt.Sprintf("%s_controller.go", strings.ToLower(s.resource.Kind))))
+		fmt.Println(filepath.Join("pkg", "controller", strings.ToLower(s.resource.Kind),
+			fmt.Sprintf("%s_controller_test.go", strings.ToLower(s.resource.Kind))))
 
-		universe, err := api.buildUniverse(r)
+		universe, err := s.buildUniverse()
 		if err != nil {
 			return fmt.Errorf("error building controller scaffold: %v", err)
 		}
 
-		err = (&Scaffold{}).Execute(
+		if err := (&Scaffold{}).Execute(
 			universe,
 			input.Options{},
-			&controller.Controller{Resource: r},
-			&controller.AddController{Resource: r},
-			&controller.Test{Resource: r},
-			&controller.SuiteTest{Resource: r},
-		)
-		if err != nil {
+			&controllerv1.Controller{Resource: s.resource},
+			&controllerv1.AddController{Resource: s.resource},
+			&controllerv1.Test{Resource: s.resource},
+			&controllerv1.SuiteTest{Resource: s.resource},
+		); err != nil {
 			return fmt.Errorf("error scaffolding controller: %v", err)
 		}
 	}
@@ -167,73 +141,60 @@ func (api *API) scaffoldV1() error {
 	return nil
 }
 
-func (api *API) scaffoldV2() error {
-	r := api.Resource
-
-	if api.DoResource {
-		if err := api.validateResourceGroup(r); err != nil {
-			return err
-		}
-
+func (s *apiScaffolder) scaffoldV2() error {
+	if s.doResource {
 		// Only save the resource in the config file if it didn't exist
-		if api.config.AddResource(api.Resource) {
-			if err := api.config.Save(); err != nil {
+		if s.config.AddResource(s.resource) {
+			if err := s.config.Save(); err != nil {
 				return fmt.Errorf("error updating project file with resource information : %v", err)
 			}
 		}
 
 		var path string
-		if api.config.MultiGroup {
-			path = filepath.Join("apis", r.Group, r.Version, fmt.Sprintf("%s_types.go", strings.ToLower(r.Kind)))
+		if s.config.MultiGroup {
+			path = filepath.Join("apis", s.resource.Group, s.resource.Version,
+				fmt.Sprintf("%s_types.go", strings.ToLower(s.resource.Kind)))
 		} else {
-			path = filepath.Join("api", r.Version, fmt.Sprintf("%s_types.go", strings.ToLower(r.Kind)))
+			path = filepath.Join("api", s.resource.Version,
+				fmt.Sprintf("%s_types.go", strings.ToLower(s.resource.Kind)))
 		}
 		fmt.Println(path)
 
-		scaffold := &Scaffold{
-			Plugins: api.Plugins,
-		}
-
-		universe, err := api.buildUniverse(r)
+		universe, err := s.buildUniverse()
 		if err != nil {
 			return fmt.Errorf("error building API scaffold: %v", err)
 		}
 
-		files := []input.File{
-			&scaffoldv2.Types{
-				Input: input.Input{
-					Path: path,
-				},
-				Resource: r},
-			&scaffoldv2.Group{Resource: r},
-			&scaffoldv2.CRDSample{Resource: r},
-			&scaffoldv2.CRDEditorRole{Resource: r},
-			&scaffoldv2.CRDViewerRole{Resource: r},
-			&crdv2.EnableWebhookPatch{Resource: r},
-			&crdv2.EnableCAInjectionPatch{Resource: r},
-		}
-
-		if err = scaffold.Execute(universe, input.Options{}, files...); err != nil {
+		if err := (&Scaffold{Plugins: s.plugins}).Execute(
+			universe,
+			input.Options{},
+			&scaffoldv2.Types{Input: input.Input{Path: path}, Resource: s.resource},
+			&scaffoldv2.Group{Resource: s.resource},
+			&scaffoldv2.CRDSample{Resource: s.resource},
+			&scaffoldv2.CRDEditorRole{Resource: s.resource},
+			&scaffoldv2.CRDViewerRole{Resource: s.resource},
+			&crdv2.EnableWebhookPatch{Resource: s.resource},
+			&crdv2.EnableCAInjectionPatch{Resource: s.resource},
+		); err != nil {
 			return fmt.Errorf("error scaffolding APIs: %v", err)
 		}
 
-		universe, err = api.buildUniverse(r)
+		universe, err = s.buildUniverse()
 		if err != nil {
 			return fmt.Errorf("error building kustomization scaffold: %v", err)
 		}
 
-		crdKustomization := &crdv2.Kustomization{Resource: r}
-		err = (&Scaffold{}).Execute(
+		kustomizationFile := &crdv2.Kustomization{Resource: s.resource}
+		if err := (&Scaffold{}).Execute(
 			universe,
 			input.Options{},
-			crdKustomization,
+			kustomizationFile,
 			&crdv2.KustomizeConfig{},
-		)
-		if err != nil {
+		); err != nil {
 			return fmt.Errorf("error scaffolding kustomization: %v", err)
 		}
 
-		if err := crdKustomization.Update(); err != nil {
+		if err := kustomizationFile.Update(); err != nil {
 			return fmt.Errorf("error updating kustomization.yaml: %v", err)
 		}
 
@@ -242,78 +203,48 @@ func (api *API) scaffoldV2() error {
 		// because this could result in a fork-bomb of k8s resources where watching a
 		// deployment, replicaset etc. results in generating deployment which
 		// end up generating replicaset, pod etc recursively.
-		r.CreateExampleReconcileBody = false
+		s.resource.CreateExampleReconcileBody = false
 	}
 
-	if api.DoController {
-		if api.config.MultiGroup {
-			fmt.Println(filepath.Join("controllers", fmt.Sprintf("%s/%s_controller.go", r.Group, strings.ToLower(r.Kind))))
+	if s.doController {
+		if s.config.MultiGroup {
+			fmt.Println(filepath.Join("controllers", s.resource.Group,
+				fmt.Sprintf("%s_controller.go", strings.ToLower(s.resource.Kind))))
 		} else {
-			fmt.Println(filepath.Join("controllers", fmt.Sprintf("%s_controller.go", strings.ToLower(r.Kind))))
+			fmt.Println(filepath.Join("controllers",
+				fmt.Sprintf("%s_controller.go", strings.ToLower(s.resource.Kind))))
 		}
 
-		scaffold := &Scaffold{
-			Plugins: api.Plugins,
-		}
-
-		universe, err := api.buildUniverse(r)
+		universe, err := s.buildUniverse()
 		if err != nil {
 			return fmt.Errorf("error building controller scaffold: %v", err)
 		}
 
-		testsuiteScaffolder := &controllerv2.SuiteTest{Resource: r}
-		err = scaffold.Execute(
+		suiteTestFile := &controllerv2.SuiteTest{Resource: s.resource}
+		if err := (&Scaffold{Plugins: s.plugins}).Execute(
 			universe,
 			input.Options{},
-			testsuiteScaffolder,
-			&controllerv2.Controller{Resource: r},
-		)
-		if err != nil {
+			suiteTestFile,
+			&controllerv2.Controller{Resource: s.resource},
+		); err != nil {
 			return fmt.Errorf("error scaffolding controller: %v", err)
 		}
 
-		err = testsuiteScaffolder.Update()
-		if err != nil {
+		if err := suiteTestFile.Update(); err != nil {
 			return fmt.Errorf("error updating suite_test.go under controllers pkg: %v", err)
 		}
 	}
 
-	err := (&scaffoldv2.Main{}).Update(
+	if err := (&scaffoldv2.Main{}).Update(
 		&scaffoldv2.MainUpdateOptions{
-			Config:         &api.config.Config,
-			WireResource:   api.DoResource,
-			WireController: api.DoController,
-			Resource:       r,
-		})
-	if err != nil {
+			Config:         &s.config.Config,
+			WireResource:   s.doResource,
+			WireController: s.doController,
+			Resource:       s.resource,
+		},
+	); err != nil {
 		return fmt.Errorf("error updating main.go: %v", err)
 	}
 
-	return nil
-}
-
-// isGroupAllowed will check if the group is == the group used before
-// and not allow new groups if the project is not enabled to use multigroup layout
-func (api *API) isGroupAllowed(r *resource.Resource) bool {
-	if api.config.MultiGroup {
-		return true
-	}
-	for _, existingGroup := range api.config.ResourceGroups() {
-		if !strings.EqualFold(r.Group, existingGroup) {
-			return false
-		}
-	}
-	return true
-}
-
-// validateResourceGroup will return an error if the group cannot be created
-func (api *API) validateResourceGroup(r *resource.Resource) error {
-	if api.config.HasResource(api.Resource) && !api.Force {
-		return fmt.Errorf("group '%s', version '%s' and kind '%s' already exists", r.Group, r.Version, r.Kind)
-	}
-	if !api.isGroupAllowed(r) {
-		return fmt.Errorf("group '%s' is not same as existing group."+
-			" Multiple groups are not enabled in this project. To enable, use the multigroup command", r.Group)
-	}
 	return nil
 }

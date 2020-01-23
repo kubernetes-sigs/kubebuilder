@@ -17,31 +17,13 @@ limitations under the License.
 package main
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
-
-	"sigs.k8s.io/kubebuilder/cmd/internal"
 )
 
 func newCreateCmd() *cobra.Command {
-	cmd := &cobra.Command{
+	return &cobra.Command{
 		Use:   "create",
 		Short: "Scaffold a Kubernetes API or webhook.",
 		Long:  `Scaffold a Kubernetes API or webhook.`,
-		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("Coming soon.")
-		},
 	}
-	cmd.AddCommand(
-		newAPICommand(),
-	)
-
-	if !internal.ConfiguredAndV1() {
-		cmd.AddCommand(
-			newWebhookV2Cmd(),
-		)
-	}
-
-	return cmd
 }
