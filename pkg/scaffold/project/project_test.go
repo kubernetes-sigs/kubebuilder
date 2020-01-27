@@ -133,7 +133,7 @@ Copyright %s Example Owners.
 			})
 
 			It("should skip writing Gopkg.toml", func() {
-				e := strings.Replace(string(result.Golden), project.DefaultGopkgHeader, "", -1)
+				e := strings.Replace(result.Golden, project.DefaultGopkgHeader, "", -1)
 				_, err = f.Write([]byte(e))
 				Expect(err).NotTo(HaveOccurred())
 				Expect(f.Close()).NotTo(HaveOccurred())
@@ -158,7 +158,7 @@ Copyright %s Example Owners.
 			})
 
 			It("should keep the user content", func() {
-				e := strings.Replace(string(result.Golden),
+				e := strings.Replace(result.Golden,
 					project.DefaultGopkgUserContent, "Hello World", -1)
 				_, err = f.Write([]byte(e))
 				Expect(err).NotTo(HaveOccurred())
