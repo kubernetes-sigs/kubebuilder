@@ -23,9 +23,9 @@ import (
 
 	"github.com/gobuffalo/flect"
 
+	"sigs.k8s.io/kubebuilder/internal/config"
 	"sigs.k8s.io/kubebuilder/pkg/model"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/util"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/controller"
@@ -43,7 +43,7 @@ type API struct {
 
 	Resource *resource.Resource
 
-	project *input.ProjectFile
+	config *config.Config
 
 	// DoResource indicates whether to scaffold API Resource or not
 	DoResource bool
@@ -65,22 +65,22 @@ func (api *API) Validate() error {
 		return err
 	}
 
-	if api.resourceExists() && !api.Force {
+	if api.config.HasResource(api.Resource) && !api.Force {
 		return fmt.Errorf("API resource already exists")
 	}
 
 	return nil
 }
 
-func (api *API) setDefaults() error {
-	if api.project == nil {
-		p, err := LoadProjectFile("PROJECT")
+func (api *API) setDefaults() (err error) {
+	if api.config == nil {
+		api.config, err = config.Load()
 		if err != nil {
-			return err
+			return
 		}
-		api.project = &p
 	}
-	return nil
+
+	return
 }
 
 func (api *API) Scaffold() error {
@@ -88,13 +88,13 @@ func (api *API) Scaffold() error {
 		return err
 	}
 
-	switch ver := api.project.Version; ver {
-	case project.Version1:
+	switch {
+	case api.config.IsV1():
 		return api.scaffoldV1()
-	case project.Version2:
+	case api.config.IsV2():
 		return api.scaffoldV2()
 	default:
-		return fmt.Errorf("")
+		return fmt.Errorf("unknown project version %v", api.config.Version)
 	}
 }
 
@@ -110,14 +110,14 @@ func (api *API) buildUniverse() *model.Universe {
 
 	resourceModel.GoPackage, resourceModel.GroupDomain = util.GetResourceInfo(
 		api.Resource,
-		api.project.Repo,
-		api.project.Domain,
-		api.project.MultiGroup,
+		api.config.Repo,
+		api.config.Domain,
+		api.config.MultiGroup,
 	)
 
 	return &model.Universe{
 		Resource:   resourceModel,
-		MultiGroup: api.project.MultiGroup,
+		MultiGroup: api.config.MultiGroup,
 	}
 }
 
@@ -179,19 +179,15 @@ func (api *API) scaffoldV2() error {
 			return err
 		}
 
-		if !api.resourceExists() {
-			api.project.Resources = append(api.project.Resources,
-				input.Resource{Group: r.Group, Version: r.Version, Kind: r.Kind})
-
-			// If the --force was used to re-crete a resource that was created before then,
-			// the PROJECT file will not be updated.
-			if err := saveProjectFile("PROJECT", api.project); err != nil {
-				return fmt.Errorf("error updating project file with resource information: %v", err)
+		// Only save the resource in the config file if it didn't exist
+		if api.config.AddResource(api.Resource) {
+			if err := api.config.Save(); err != nil {
+				return fmt.Errorf("error updating project file with resource information : %v", err)
 			}
 		}
 
 		var path string
-		if api.project.MultiGroup {
+		if api.config.MultiGroup {
 			path = filepath.Join("apis", r.Group, r.Version, fmt.Sprintf("%s_types.go", strings.ToLower(r.Kind)))
 		} else {
 			path = filepath.Join("api", r.Version, fmt.Sprintf("%s_types.go", strings.ToLower(r.Kind)))
@@ -243,7 +239,7 @@ func (api *API) scaffoldV2() error {
 	}
 
 	if api.DoController {
-		if api.project.MultiGroup {
+		if api.config.MultiGroup {
 			fmt.Println(filepath.Join("controllers", fmt.Sprintf("%s/%s_controller.go", r.Group, strings.ToLower(r.Kind))))
 		} else {
 			fmt.Println(filepath.Join("controllers", fmt.Sprintf("%s_controller.go", strings.ToLower(r.Kind))))
@@ -273,7 +269,7 @@ func (api *API) scaffoldV2() error {
 
 	err := (&scaffoldv2.Main{}).Update(
 		&scaffoldv2.MainUpdateOptions{
-			Project:        api.project,
+			Config:         &api.config.Config,
 			WireResource:   api.DoResource,
 			WireController: api.DoController,
 			Resource:       r,
@@ -288,10 +284,10 @@ func (api *API) scaffoldV2() error {
 // isGroupAllowed will check if the group is == the group used before
 // and not allow new groups if the project is not enabled to use multigroup layout
 func (api *API) isGroupAllowed(r *resource.Resource) bool {
-	if api.project.MultiGroup {
+	if api.config.MultiGroup {
 		return true
 	}
-	for _, existingGroup := range api.project.ResourceGroups() {
+	for _, existingGroup := range api.config.ResourceGroups() {
 		if !strings.EqualFold(r.Group, existingGroup) {
 			return false
 		}
@@ -301,26 +297,12 @@ func (api *API) isGroupAllowed(r *resource.Resource) bool {
 
 // validateResourceGroup will return an error if the group cannot be created
 func (api *API) validateResourceGroup(r *resource.Resource) error {
-	if api.resourceExists() && !api.Force {
+	if api.config.HasResource(api.Resource) && !api.Force {
 		return fmt.Errorf("group '%s', version '%s' and kind '%s' already exists", r.Group, r.Version, r.Kind)
 	}
 	if !api.isGroupAllowed(r) {
 		return fmt.Errorf("group '%s' is not same as existing group."+
-			" Multiple groups are not enabled in this project. To enable, use the multigroup command.", r.Group)
+			" Multiple groups are not enabled in this project. To enable, use the multigroup command", r.Group)
 	}
 	return nil
-}
-
-// resourceExists returns true if API resource is already tracked by the PROJECT file.
-// Note that this works only for v2, since in v1 resources are not tracked by the PROJECT file.
-func (api *API) resourceExists() bool {
-	for _, r := range api.project.Resources {
-		if r.Group == api.Resource.Group &&
-			r.Version == api.Resource.Version &&
-			r.Kind == api.Resource.Kind {
-			return true
-		}
-	}
-
-	return false
 }

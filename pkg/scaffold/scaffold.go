@@ -29,10 +29,10 @@ import (
 
 	"golang.org/x/tools/imports"
 
+	internalconfig "sigs.k8s.io/kubebuilder/internal/config"
 	"sigs.k8s.io/kubebuilder/pkg/model"
+	"sigs.k8s.io/kubebuilder/pkg/model/config"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
-	"sigs.k8s.io/yaml"
 )
 
 var options = imports.Options{
@@ -50,11 +50,11 @@ type Scaffold struct {
 	// Boilerplate is the contents of the boilerplate file for code generation
 	Boilerplate string
 
-	// Project is the project
-	Project input.ProjectFile
+	// Config is the project configuration
+	Config *config.Config
 
-	// ProjectPath is the relative path to the project root
-	ProjectPath string
+	// ConfigPath is the relative path to the project root
+	ConfigPath string
 
 	GetWriter func(path string) (io.Writer, error)
 
@@ -65,7 +65,7 @@ type Scaffold struct {
 
 	BoilerplateOptional bool
 
-	ProjectOptional bool
+	ConfigOptional bool
 }
 
 // Plugin is the interface that a plugin must implement
@@ -84,19 +84,19 @@ func (s *Scaffold) setFields(t input.File) {
 		b.SetBoilerplate(s.Boilerplate)
 	}
 	if b, ok := t.(input.Domain); ok {
-		b.SetDomain(s.Project.Domain)
+		b.SetDomain(s.Config.Domain)
 	}
 	if b, ok := t.(input.Version); ok {
-		b.SetVersion(s.Project.Version)
+		b.SetVersion(s.Config.Version)
 	}
 	if b, ok := t.(input.Repo); ok {
-		b.SetRepo(s.Project.Repo)
+		b.SetRepo(s.Config.Repo)
 	}
 	if b, ok := t.(input.ProjecPath); ok {
-		b.SetProjectPath(s.ProjectPath)
+		b.SetProjectPath(s.ConfigPath)
 	}
 	if b, ok := t.(input.MultiGroup); ok {
-		b.SetMultiGroup(s.Project.MultiGroup)
+		b.SetMultiGroup(s.Config.MultiGroup)
 	}
 }
 
@@ -105,38 +105,6 @@ func (s *Scaffold) validate(file input.File) error {
 		return reqValFile.Validate()
 	}
 
-	return nil
-}
-
-// LoadProjectFile reads the project file and deserializes it into a Project
-func LoadProjectFile(path string) (input.ProjectFile, error) {
-	in, err := ioutil.ReadFile(path) // nolint:gosec
-	if err != nil {
-		return input.ProjectFile{}, err
-	}
-	p := input.ProjectFile{}
-	err = yaml.Unmarshal(in, &p)
-	if err != nil {
-		return input.ProjectFile{}, err
-	}
-	if p.Version == "" {
-		// older kubebuilder project does not have scaffolding version
-		// specified, so default it to Version1
-		p.Version = project.Version1
-	}
-	return p, nil
-}
-
-// saveProjectFile saves the given ProjectFile at the given path.
-func saveProjectFile(path string, project *input.ProjectFile) error {
-	content, err := yaml.Marshal(project)
-	if err != nil {
-		return fmt.Errorf("error marshalling project info %v", err)
-	}
-	err = ioutil.WriteFile(path, content, os.ModePerm)
-	if err != nil {
-		return fmt.Errorf("failed to save project file at %s %v", path, err)
-	}
 	return nil
 }
 
@@ -154,7 +122,7 @@ func (s *Scaffold) defaultOptions(options *input.Options) error {
 
 	// Use the default Project path if unset
 	if options.ProjectPath == "" {
-		options.ProjectPath = "PROJECT"
+		options.ProjectPath = internalconfig.DefaultPath
 	}
 
 	s.BoilerplatePath = options.BoilerplatePath
@@ -165,8 +133,8 @@ func (s *Scaffold) defaultOptions(options *input.Options) error {
 		return err
 	}
 
-	s.Project, err = LoadProjectFile(options.ProjectPath)
-	if !s.ProjectOptional && err != nil {
+	s.Config, err = internalconfig.ReadFrom(options.ProjectPath)
+	if !s.ConfigOptional && err != nil {
 		return err
 	}
 
@@ -194,7 +162,7 @@ func (s *Scaffold) Execute(u *model.Universe, options input.Options, files ...in
 	}
 
 	// Set the repo as the local prefix so that it knows how to group imports
-	imports.LocalPrefix = s.Project.Repo
+	imports.LocalPrefix = s.Config.Repo
 
 	for _, f := range files {
 		m, err := s.buildFileModel(f)

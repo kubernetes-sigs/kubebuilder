@@ -72,7 +72,7 @@ func (p *V1Project) EnsureDependencies() (bool, error) {
 	if p.DefinitelyEnsure == nil {
 		reader := bufio.NewReader(os.Stdin)
 		fmt.Println("Run `dep ensure` to fetch dependencies (Recommended) [y/n]?")
-		if !util.Yesno(reader) {
+		if !util.YesNo(reader) {
 			return false, nil
 		}
 	} else if !*p.DefinitelyEnsure {
@@ -92,11 +92,9 @@ func (p *V1Project) buildUniverse() *model.Universe {
 }
 
 func (p *V1Project) Scaffold() error {
-	p.Project.Version = project.Version1
-
 	s := &Scaffold{
 		BoilerplateOptional: true,
-		ProjectOptional:     true,
+		ConfigOptional:      true,
 	}
 
 	projectInput, err := p.Project.GetInput()
@@ -183,11 +181,9 @@ func (p *V2Project) buildUniverse() *model.Universe {
 }
 
 func (p *V2Project) Scaffold() error {
-	p.Project.Version = project.Version2
-
 	s := &Scaffold{
 		BoilerplateOptional: true,
-		ProjectOptional:     true,
+		ConfigOptional:      true,
 	}
 
 	projectInput, err := p.Project.GetInput()

@@ -17,16 +17,12 @@ limitations under the License.
 package main
 
 import (
-	"fmt"
-	"io/ioutil"
 	"log"
 
 	"github.com/spf13/cobra"
 
-	"sigs.k8s.io/kubebuilder/pkg/scaffold"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
-	"sigs.k8s.io/yaml"
+	"sigs.k8s.io/kubebuilder/cmd/internal"
+	"sigs.k8s.io/kubebuilder/internal/config"
 )
 
 func newEditProjectCmd() *cobra.Command {
@@ -35,8 +31,8 @@ func newEditProjectCmd() *cobra.Command {
 
 	editProjectCmd := &cobra.Command{
 		Use:   "edit",
-		Short: "This command will edit the configuration of the PROJECT file",
-		Long:  `This command will edit the configuration of the PROJECT file`,
+		Short: "This command will edit the project configuration",
+		Long:  `This command will edit the project configuration`,
 		Example: `
 		# To enable the multigroup layout/support
 		kubebuilder edit --multigroup
@@ -44,22 +40,24 @@ func newEditProjectCmd() *cobra.Command {
 		# To disable the multigroup layout/support
 		kubebuilder edit --multigroup=false`,
 		Run: func(cmd *cobra.Command, args []string) {
-			dieIfNoProject()
+			internal.DieIfNotConfigured()
 
-			projectInfo, err := scaffold.LoadProjectFile("PROJECT")
+			projectConfig, err := config.Load()
 			if err != nil {
-				log.Fatalf("failed to read the PROJECT file: %v", err)
+				log.Fatalf("failed to read the configuration file: %v", err)
 			}
 
-			if projectInfo.Version != project.Version2 {
-				log.Fatalf("kubebuilder multigroup is for project version: 2,"+
-					" the version of this project is: %s \n", projectInfo.Version)
+			if opts.multigroup {
+				if !projectConfig.IsV2() {
+					log.Fatalf("kubebuilder multigroup is for project version: 2,"+
+						" the version of this project is: %s \n", projectConfig.Version)
+				}
+
+				// Set MultiGroup Option
+				projectConfig.MultiGroup = true
 			}
 
-			// Set MultiGroup Option
-			projectInfo.MultiGroup = opts.multigroup
-
-			err = saveProjectFile("PROJECT", &projectInfo)
+			err = projectConfig.Save()
 			if err != nil {
 				log.Fatalf("error updating project file with resource information : %v", err)
 			}
@@ -70,19 +68,6 @@ func newEditProjectCmd() *cobra.Command {
 		"if set as true, then the tool will generate the project files with multigroup layout")
 
 	return editProjectCmd
-}
-
-// saveProjectFile saves the given ProjectFile at the given path.
-func saveProjectFile(path string, project *input.ProjectFile) error {
-	content, err := yaml.Marshal(project)
-	if err != nil {
-		return fmt.Errorf("error marshalling project info %v", err)
-	}
-	err = ioutil.WriteFile(path, content, 0666)
-	if err != nil {
-		return fmt.Errorf("failed to save project file at %s %v", path, err)
-	}
-	return nil
 }
 
 type editProjectCmdOptions struct {

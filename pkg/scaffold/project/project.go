@@ -19,14 +19,10 @@ package project
 import (
 	"fmt"
 
+	internalconfig "sigs.k8s.io/kubebuilder/internal/config"
+	"sigs.k8s.io/kubebuilder/pkg/model/config"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/yaml"
-)
-
-// constants for scaffolding version
-const (
-	Version1 = "1"
-	Version2 = "2"
 )
 
 var _ input.File = &Project{}
@@ -36,22 +32,22 @@ type Project struct {
 	// Path is the output file location - defaults to PROJECT
 	Path string
 
-	input.ProjectFile
+	config.Config
 }
 
 // GetInput implements input.File
 func (f *Project) GetInput() (input.Input, error) {
 	if f.Path == "" {
-		f.Path = "PROJECT"
+		f.Path = internalconfig.DefaultPath
 	}
 	if f.Version == "" {
-		f.Version = Version1
+		f.Version = config.Version1
 	}
 	if f.Repo == "" {
 		return input.Input{}, fmt.Errorf("must specify repository")
 	}
 
-	out, err := yaml.Marshal(f.ProjectFile)
+	out, err := yaml.Marshal(f.Config)
 	if err != nil {
 		return input.Input{}, err
 	}

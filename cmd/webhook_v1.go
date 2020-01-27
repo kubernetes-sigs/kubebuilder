@@ -25,10 +25,11 @@ import (
 	"github.com/spf13/cobra"
 	flag "github.com/spf13/pflag"
 
+	"sigs.k8s.io/kubebuilder/cmd/internal"
+	"sigs.k8s.io/kubebuilder/internal/config"
 	"sigs.k8s.io/kubebuilder/pkg/model"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/manager"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/webhook"
@@ -49,16 +50,15 @@ This command is only available for v1 scaffolding project.
 	kubebuilder alpha webhook --group crew --version v1 --kind FirstMate --type=mutating --operations=create,update
 `,
 		Run: func(cmd *cobra.Command, args []string) {
-			dieIfNoProject()
+			internal.DieIfNotConfigured()
 
-			projectInfo, err := scaffold.LoadProjectFile("PROJECT")
+			projectConfig, err := config.Read()
 			if err != nil {
-				log.Fatalf("failed to read the PROJECT file: %v", err)
+				log.Fatalf("failed to read the configuration file: %v", err)
 			}
 
-			if projectInfo.Version != project.Version1 {
-				fmt.Printf("webhook scaffolding is not supported for this project version: %s \n", projectInfo.Version)
-				os.Exit(1)
+			if !projectConfig.IsV1() {
+				log.Fatalf("webhook scaffolding is not supported for this project version: %s \n", projectConfig.Version)
 			}
 
 			if err := o.res.Validate(); err != nil {
@@ -66,17 +66,17 @@ This command is only available for v1 scaffolding project.
 			}
 
 			fmt.Println("Writing scaffold for you to edit...")
-			config := webhook.Config{Server: o.server, Type: o.webhookType, Operations: o.operations}
+			webhookConfig := webhook.Config{Server: o.server, Type: o.webhookType, Operations: o.operations}
 			err = (&scaffold.Scaffold{}).Execute(
 				&model.Universe{},
 				input.Options{},
 				&manager.Webhook{},
-				&webhook.AdmissionHandler{Resource: o.res, Config: config},
-				&webhook.AdmissionWebhookBuilder{Resource: o.res, Config: config},
-				&webhook.AdmissionWebhooks{Resource: o.res, Config: config},
-				&webhook.AddAdmissionWebhookBuilderHandler{Resource: o.res, Config: config},
-				&webhook.Server{Config: config},
-				&webhook.AddServer{Config: config},
+				&webhook.AdmissionHandler{Resource: o.res, Config: webhookConfig},
+				&webhook.AdmissionWebhookBuilder{Resource: o.res, Config: webhookConfig},
+				&webhook.AdmissionWebhooks{Resource: o.res, Config: webhookConfig},
+				&webhook.AddAdmissionWebhookBuilderHandler{Resource: o.res, Config: webhookConfig},
+				&webhook.Server{Config: webhookConfig},
+				&webhook.AddServer{Config: webhookConfig},
 			)
 			if err != nil {
 				log.Fatal(err)
