@@ -186,7 +186,7 @@ function install_kind {
     header_text "Installing kind"
     KIND_DIR=$(mktemp -d)
     pushd $KIND_DIR
-    GO111MODULE=on go get sigs.k8s.io/kind@v0.6.0
+    GO111MODULE=on go get sigs.k8s.io/kind@v0.7.0
     popd
   fi
 }
