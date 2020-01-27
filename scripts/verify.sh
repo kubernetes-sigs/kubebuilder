@@ -37,8 +37,12 @@ golangci-lint run --disable-all --deadline 5m \
     --enable=maligned \
     --enable=misspell \
     --enable=nakedret \
+    --enable=prealloc \
+    --enable=scopelint \
     --enable=staticcheck \
     --enable=structcheck \
+    --enable=typecheck \
+    --enable=unconvert \
     --enable=unparam \
     --enable=unused \
     --enable=varcheck \
