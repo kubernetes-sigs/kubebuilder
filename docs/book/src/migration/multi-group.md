@@ -73,7 +73,7 @@ Note that this option indicates to KubeBuilder that this is a multi-group projec
 In this way, if the project is not new and has previous APIs already implemented will be in the previous structure. 
 Notice that with the `multi-group` project the Kind API's files are
 created under `apis/<group>/<version>` instead of `api/<version>`. 
-Also, note that the controllers will be created under `pkg/controllers/<group>` instead of `pkg/controllers`. 
+Also, note that the controllers will be created under `controllers/<group>` instead of `controllers`. 
 That is the reason why we moved the previously generated APIs with the provided scripts in the previous steps. 
 Remember to update the references afterwards.
 
