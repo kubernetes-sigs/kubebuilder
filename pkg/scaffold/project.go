@@ -87,14 +87,18 @@ func (p *V1Project) EnsureDependencies() (bool, error) {
 	return true, c.Run()
 }
 
-func (p *V1Project) buildUniverse() *model.Universe {
-	return &model.Universe{}
-}
-
 func (p *V1Project) Scaffold() error {
 	s := &Scaffold{
 		BoilerplateOptional: true,
 		ConfigOptional:      true,
+	}
+
+	universe, err := model.NewUniverse(
+		model.WithConfig(&p.Project.Config),
+		model.WithoutBoilerplate,
+	)
+	if err != nil {
+		return fmt.Errorf("error initializing project: %v", err)
 	}
 
 	projectInput, err := p.Project.GetInput()
@@ -108,7 +112,7 @@ func (p *V1Project) Scaffold() error {
 	}
 
 	err = s.Execute(
-		p.buildUniverse(),
+		universe,
 		input.Options{ProjectPath: projectInput.Path, BoilerplatePath: bpInput.Path},
 		&p.Project,
 		&p.Boilerplate,
@@ -121,8 +125,17 @@ func (p *V1Project) Scaffold() error {
 	imgName := "controller:latest"
 
 	s = &Scaffold{}
+
+	universe, err = model.NewUniverse(
+		model.WithConfig(&p.Project.Config),
+		model.WithBoilerplateFrom(p.Boilerplate.Path),
+	)
+	if err != nil {
+		return fmt.Errorf("error initializing project: %v", err)
+	}
+
 	return s.Execute(
-		p.buildUniverse(),
+		universe,
 		input.Options{ProjectPath: projectInput.Path, BoilerplatePath: bpInput.Path},
 		&project.GitIgnore{},
 		&project.KustomizeRBAC{},
@@ -176,14 +189,18 @@ func (p *V2Project) EnsureDependencies() (bool, error) {
 	return true, err
 }
 
-func (p *V2Project) buildUniverse() *model.Universe {
-	return &model.Universe{}
-}
-
 func (p *V2Project) Scaffold() error {
 	s := &Scaffold{
 		BoilerplateOptional: true,
 		ConfigOptional:      true,
+	}
+
+	universe, err := model.NewUniverse(
+		model.WithConfig(&p.Project.Config),
+		model.WithoutBoilerplate,
+	)
+	if err != nil {
+		return fmt.Errorf("error initializing project: %v", err)
 	}
 
 	projectInput, err := p.Project.GetInput()
@@ -197,7 +214,7 @@ func (p *V2Project) Scaffold() error {
 	}
 
 	err = s.Execute(
-		p.buildUniverse(),
+		universe,
 		input.Options{ProjectPath: projectInput.Path, BoilerplatePath: bpInput.Path},
 		&p.Project,
 		&p.Boilerplate,
@@ -210,8 +227,17 @@ func (p *V2Project) Scaffold() error {
 	imgName := "controller:latest"
 
 	s = &Scaffold{}
+
+	universe, err = model.NewUniverse(
+		model.WithConfig(&p.Project.Config),
+		model.WithBoilerplateFrom(p.Boilerplate.Path),
+	)
+	if err != nil {
+		return fmt.Errorf("error initializing project: %v", err)
+	}
+
 	return s.Execute(
-		p.buildUniverse(),
+		universe,
 		input.Options{ProjectPath: projectInput.Path, BoilerplatePath: bpInput.Path},
 		&project.GitIgnore{},
 		&metricsauthv2.AuthProxyPatch{},
@@ -239,5 +265,6 @@ func (p *V2Project) Scaffold() error {
 		&prometheus.ServiceMonitor{},
 		&certmanager.CertManager{},
 		&certmanager.Kustomization{},
-		&certmanager.KustomizeConfig{})
+		&certmanager.KustomizeConfig{},
+	)
 }

@@ -21,13 +21,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/gobuffalo/flect"
-
 	"sigs.k8s.io/kubebuilder/internal/config"
 	"sigs.k8s.io/kubebuilder/pkg/model"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/util"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v1/controller"
 	crdv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/v1/crd"
 	scaffoldv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2"
@@ -98,27 +95,12 @@ func (api *API) Scaffold() error {
 	}
 }
 
-func (api *API) buildUniverse() *model.Universe {
-	resourceModel := &model.Resource{
-		Namespaced: api.Resource.Namespaced,
-		Group:      api.Resource.Group,
-		Version:    api.Resource.Version,
-		Kind:       api.Resource.Kind,
-		Resource:   api.Resource.Resource,
-		Plural:     flect.Pluralize(strings.ToLower(api.Resource.Kind)),
-	}
-
-	resourceModel.GoPackage, resourceModel.GroupDomain = util.GetResourceInfo(
-		api.Resource,
-		api.config.Repo,
-		api.config.Domain,
-		api.config.MultiGroup,
+func (api *API) buildUniverse(resource *resource.Resource) (*model.Universe, error) {
+	return model.NewUniverse(
+		model.WithConfig(&api.config.Config),
+		// TODO: missing model.WithBoilerplate[From], needs boilerplate or path
+		model.WithResource(resource, &api.config.Config),
 	)
-
-	return &model.Universe{
-		Resource:   resourceModel,
-		MultiGroup: api.config.MultiGroup,
-	}
 }
 
 func (api *API) scaffoldV1() error {
@@ -130,7 +112,14 @@ func (api *API) scaffoldV1() error {
 		fmt.Println(filepath.Join("pkg", "apis", r.Group, r.Version,
 			fmt.Sprintf("%s_types_test.go", strings.ToLower(r.Kind))))
 
-		err := (&Scaffold{}).Execute(api.buildUniverse(), input.Options{},
+		universe, err := api.buildUniverse(r)
+		if err != nil {
+			return fmt.Errorf("error building API scaffold: %v", err)
+		}
+
+		err = (&Scaffold{}).Execute(
+			universe,
+			input.Options{},
 			&crdv1.Register{Resource: r},
 			&crdv1.Types{Resource: r},
 			&crdv1.VersionSuiteTest{Resource: r},
@@ -157,7 +146,14 @@ func (api *API) scaffoldV1() error {
 		fmt.Println(filepath.Join("pkg", "controller", strings.ToLower(r.Kind),
 			fmt.Sprintf("%s_controller_test.go", strings.ToLower(r.Kind))))
 
-		err := (&Scaffold{}).Execute(api.buildUniverse(), input.Options{},
+		universe, err := api.buildUniverse(r)
+		if err != nil {
+			return fmt.Errorf("error building controller scaffold: %v", err)
+		}
+
+		err = (&Scaffold{}).Execute(
+			universe,
+			input.Options{},
 			&controller.Controller{Resource: r},
 			&controller.AddController{Resource: r},
 			&controller.Test{Resource: r},
@@ -194,6 +190,15 @@ func (api *API) scaffoldV2() error {
 		}
 		fmt.Println(path)
 
+		scaffold := &Scaffold{
+			Plugins: api.Plugins,
+		}
+
+		universe, err := api.buildUniverse(r)
+		if err != nil {
+			return fmt.Errorf("error building API scaffold: %v", err)
+		}
+
 		files := []input.File{
 			&scaffoldv2.Types{
 				Input: input.Input{
@@ -208,16 +213,18 @@ func (api *API) scaffoldV2() error {
 			&crdv2.EnableCAInjectionPatch{Resource: r},
 		}
 
-		scaffold := &Scaffold{
-			Plugins: api.Plugins,
-		}
-
-		if err := scaffold.Execute(api.buildUniverse(), input.Options{}, files...); err != nil {
+		if err = scaffold.Execute(universe, input.Options{}, files...); err != nil {
 			return fmt.Errorf("error scaffolding APIs: %v", err)
 		}
 
+		universe, err = api.buildUniverse(r)
+		if err != nil {
+			return fmt.Errorf("error building kustomization scaffold: %v", err)
+		}
+
 		crdKustomization := &crdv2.Kustomization{Resource: r}
-		err := (&Scaffold{}).Execute(api.buildUniverse(),
+		err = (&Scaffold{}).Execute(
+			universe,
 			input.Options{},
 			crdKustomization,
 			&crdv2.KustomizeConfig{},
@@ -249,13 +256,17 @@ func (api *API) scaffoldV2() error {
 			Plugins: api.Plugins,
 		}
 
-		ctrlScaffolder := &controllerv2.Controller{Resource: r}
+		universe, err := api.buildUniverse(r)
+		if err != nil {
+			return fmt.Errorf("error building controller scaffold: %v", err)
+		}
+
 		testsuiteScaffolder := &controllerv2.SuiteTest{Resource: r}
-		err := scaffold.Execute(
-			api.buildUniverse(),
+		err = scaffold.Execute(
+			universe,
 			input.Options{},
 			testsuiteScaffolder,
-			ctrlScaffolder,
+			&controllerv2.Controller{Resource: r},
 		)
 		if err != nil {
 			return fmt.Errorf("error scaffolding controller: %v", err)
