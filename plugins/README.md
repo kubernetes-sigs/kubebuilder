@@ -13,7 +13,7 @@ When you specify `KUBEBUILDER_ENABLE_PLUGINS=1`, a flag `--pattern` will become
 available for resource generation.  Specifying `--pattern=addon` will change
 resource code generation to generate code that follows the addon pattern, as
 being developed in the
-[addon-operators](https://github.com/kubernetes-sigs/addon-operators)
+[cluster-addons](https://github.com/kubernetes-sigs/cluster-addons)
 subproject.
 
 The `pattern=addon` plugin is intended to serve both as an example of a plugin,
