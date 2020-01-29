@@ -17,170 +17,117 @@ limitations under the License.
 package main
 
 import (
-	"encoding/json"
-	"fmt"
 	"log"
-	"os"
-	"os/exec"
 
 	"github.com/spf13/cobra"
-	"golang.org/x/tools/go/packages"
 
 	"sigs.k8s.io/kubebuilder/cmd/internal"
 	"sigs.k8s.io/kubebuilder/cmd/version"
+	"sigs.k8s.io/kubebuilder/internal/config"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold"
 )
 
-const (
-	NoticeColor = "\033[1;36m%s\033[0m"
-)
+// commandOptions represent the types used to implement the different commands
+type commandOptions interface {
+	// bindFlags binds the command flags to the fields in the options struct
+	bindFlags(command *cobra.Command)
 
-// module and goMod arg just enough of the output of `go mod edit -json` for our purposes
-type goMod struct {
-	Module module
-}
-type module struct {
-	Path string
+	// The following steps define a generic logic to follow when developing new commands. Some steps may be no-ops.
+	// - Step 1: load the config failing if expected but not found or if not expected but found
+	loadConfig() (*config.Config, error)
+	// - Step 2: verify that the command can be run (e.g., go version, project version, arguments, ...)
+	validate(*config.Config) error
+	// - Step 3: create the Scaffolder instance
+	scaffolder(*config.Config) (scaffold.Scaffolder, error)
+	// - Step 4: call the Scaffold method of the Scaffolder instance
+	// Doesn't need any method
+	// - Step 5: finish the command execution
+	postScaffold(*config.Config) error
 }
 
-// findGoModulePath finds the path of the current module, if present.
-func findGoModulePath(forceModules bool) (string, error) {
-	cmd := exec.Command("go", "mod", "edit", "-json")
-	cmd.Env = append(cmd.Env, os.Environ()...)
-	if forceModules {
-		cmd.Env = append(cmd.Env, "GO111MODULE=on" /* turn on modules just for these commands */)
-	}
-	out, err := cmd.Output()
+// run executes a command
+func run(options commandOptions) error {
+	// Step 1: load config
+	projectConfig, err := options.loadConfig()
 	if err != nil {
-		if exitErr, isExitErr := err.(*exec.ExitError); isExitErr {
-			err = fmt.Errorf("%s", string(exitErr.Stderr))
-		}
-		return "", err
+		return err
 	}
-	mod := goMod{}
-	if err := json.Unmarshal(out, &mod); err != nil {
-		return "", err
+
+	// Step 2: validate
+	if err := options.validate(projectConfig); err != nil {
+		return err
 	}
-	return mod.Module.Path, nil
+
+	// Step 3: create scaffolder
+	scaffolder, err := options.scaffolder(projectConfig)
+	if err != nil {
+		return err
+	}
+
+	// Step 4: scaffold
+	if err := scaffolder.Scaffold(); err != nil {
+		return err
+	}
+
+	// Step 5: finish
+	if err := options.postScaffold(projectConfig); err != nil {
+		return err
+	}
+
+	return nil
 }
 
-// findCurrentRepo attempts to determine the current repository
-// though a combination of go/packages and `go mod` commands/tricks.
-func findCurrentRepo() (string, error) {
-	// easiest case: existing go module
-	path, err := findGoModulePath(false)
-	if err == nil {
-		return path, nil
+func buildCmdTree() *cobra.Command {
+	if internal.ConfiguredAndV1() {
+		internal.PrintV1DeprecationWarning()
 	}
 
-	// next, check if we've got a package in the current directory
-	pkgCfg := &packages.Config{
-		Mode: packages.NeedName, // name gives us path as well
+	// kubebuilder
+	rootCmd := newRootCmd()
+
+	// kubebuilder alpha
+	alphaCmd := newAlphaCmd()
+	// kubebuilder alpha webhook (v1 only)
+	if internal.ConfiguredAndV1() {
+		alphaCmd.AddCommand(newWebhookCmd())
 	}
-	pkgs, err := packages.Load(pkgCfg, ".")
-	// NB(directxman12): when go modules are off and we're outside GOPATH and
-	// we don't otherwise have a good guess packages.Load will fabricate a path
-	// that consists of `_/absolute/path/to/current/directory`.  We shouldn't
-	// use that when it happens.
-	if err == nil && len(pkgs) > 0 && len(pkgs[0].PkgPath) > 0 && pkgs[0].PkgPath[0] != '_' {
-		return pkgs[0].PkgPath, nil
+	// Only add alpha group if it has subcommands
+	if alphaCmd.HasSubCommands() {
+		rootCmd.AddCommand(alphaCmd)
 	}
 
-	// otherwise, try to get `go mod init` to guess for us -- it's pretty good
-	cmd := exec.Command("go", "mod", "init")
-	cmd.Env = append(cmd.Env, os.Environ()...)
-	cmd.Env = append(cmd.Env, "GO111MODULE=on" /* turn on modules just for these commands */)
-	if _, err := cmd.Output(); err != nil {
-		if exitErr, isExitErr := err.(*exec.ExitError); isExitErr {
-			err = fmt.Errorf("%s", string(exitErr.Stderr))
-		}
-		// give up, let the user figure it out
-		return "", fmt.Errorf("could not determine repository path from module data, "+
-			"package data, or by initializing a module: %v", err)
+	// kubebuilder create
+	createCmd := newCreateCmd()
+	// kubebuilder create api
+	createCmd.AddCommand(newAPICmd())
+	// kubebuilder create webhook (v2 only)
+	if !internal.ConfiguredAndV1() {
+		createCmd.AddCommand(newWebhookV2Cmd())
 	}
-	defer os.Remove("go.mod") // clean up after ourselves
-	return findGoModulePath(true)
+	// Only add create group if it has subcommands
+	if createCmd.HasSubCommands() {
+		rootCmd.AddCommand(createCmd)
+	}
+
+	// kubebuilder edit
+	rootCmd.AddCommand(newEditCmd())
+
+	// kubebuilder init
+	rootCmd.AddCommand(newInitCmd())
+
+	// kubebuilder update (v1 only)
+	if internal.ConfiguredAndV1() {
+		rootCmd.AddCommand(newUpdateCmd())
+	}
+
+	// kubebuilder version
+	rootCmd.AddCommand(version.NewVersionCmd())
+
+	return rootCmd
 }
 
 func main() {
-	rootCmd := defaultCommand()
-
-	rootCmd.AddCommand(
-		newInitProjectCmd(),
-		newEditProjectCmd(),
-		newCreateCmd(),
-		version.NewVersionCmd(),
-	)
-
-	if internal.ConfiguredAndV1() {
-		printV1DeprecationWarning()
-
-		rootCmd.AddCommand(
-			newAlphaCommand(),
-			newVendorUpdateCmd(),
-		)
-	}
-
-	if err := rootCmd.Execute(); err != nil {
+	if err := buildCmdTree().Execute(); err != nil {
 		log.Fatal(err)
 	}
-}
-
-func defaultCommand() *cobra.Command {
-	return &cobra.Command{
-		Use:   "kubebuilder",
-		Short: "Development kit for building Kubernetes extensions and tools.",
-		Long: `
-Development kit for building Kubernetes extensions and tools.
-
-Provides libraries and tools to create new projects, APIs and controllers.
-Includes tools for packaging artifacts into an installer container.
-
-Typical project lifecycle:
-
-- initialize a project:
-
-  kubebuilder init --domain example.com --license apache2 --owner "The Kubernetes authors"
-
-- create one or more a new resource APIs and add your code to them:
-
-  kubebuilder create api --group <group> --version <version> --kind <Kind>
-
-Create resource will prompt the user for if it should scaffold the Resource and / or Controller. To only
-scaffold a Controller for an existing Resource, select "n" for Resource. To only define
-the schema for a Resource without writing a Controller, select "n" for Controller.
-
-After the scaffold is written, api will run make on the project.
-`,
-		Example: `
-	# Initialize your project
-	kubebuilder init --domain example.com --license apache2 --owner "The Kubernetes authors"
-
-	# Create a frigates API with Group: ship, Version: v1beta1 and Kind: Frigate
-	kubebuilder create api --group ship --version v1beta1 --kind Frigate
-
-	# Edit the API Scheme
-	nano api/v1beta1/frigate_types.go
-
-	# Edit the Controller
-	nano controllers/frigate_controller.go
-
-	# Install CRDs into the Kubernetes cluster using kubectl apply
-	make install
-
-	# Regenerate code and run against the Kubernetes cluster configured by ~/.kube/config
-	make run
-`,
-
-		Run: func(cmd *cobra.Command, args []string) {
-			if err := cmd.Help(); err != nil {
-				log.Fatalf("failed to call the help: %v", err)
-			}
-		},
-	}
-}
-
-func printV1DeprecationWarning() {
-	fmt.Printf(NoticeColor, "[Deprecation Notice] The v1 projects are deprecated and will not be supported "+
-		"beyond Feb 1, 2020.\nSee how to upgrade your project to v2:"+
-		" https://book.kubebuilder.io/migration/guide.html\n")
 }

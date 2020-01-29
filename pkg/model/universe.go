@@ -22,7 +22,6 @@ import (
 
 	"github.com/gobuffalo/flect"
 
-	internalconfig "sigs.k8s.io/kubebuilder/internal/config"
 	"sigs.k8s.io/kubebuilder/pkg/model/config"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/util"
@@ -59,19 +58,6 @@ func NewUniverse(options ...UniverseOption) (*Universe, error) {
 
 // UniverseOption configure Universe
 type UniverseOption func(*Universe) error
-
-// WithConfigFrom loads the project configuration from the provided path
-func WithConfigFrom(path string) UniverseOption {
-	return func(universe *Universe) error {
-		projectConfig, err := internalconfig.ReadFrom(path)
-		if err != nil {
-			return err
-		}
-
-		universe.Config = projectConfig
-		return nil
-	}
-}
 
 // WithConfig stores the already loaded project configuration
 func WithConfig(projectConfig *config.Config) UniverseOption {

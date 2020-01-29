@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package util
+package internal
 
 import (
 	"fmt"
@@ -26,27 +26,26 @@ import (
 // ---------------------------------------
 
 const (
-	qnameCharFmt string = "[a-z0-9]([-a-z0-9]*[a-z0-9])?"
-	// The value is 56 because it will be contact with "-system" = 63
-	qualifiedNameMaxLength int = 56
+	dns1123LabelFmt       string = "[a-z0-9]([-a-z0-9]*[a-z0-9])?"
+	dns1123LabelMaxLength int    = 56 // = 63 - len("-system")
 )
 
-var qualifiedNameRegexp = regexp.MustCompile("^" + qnameCharFmt + "$")
+var dns1123LabelRegexp = regexp.MustCompile("^" + dns1123LabelFmt + "$")
 
-//IsValidName used to check the name of the project
-func IsValidName(value string) []string {
+//IsDNS1123Label tests for a string that conforms to the definition of a label in DNS (RFC 1123).
+func IsDNS1123Label(value string) []string {
 	var errs []string
-	if len(value) > qualifiedNameMaxLength {
-		errs = append(errs, MaxLenError(qualifiedNameMaxLength))
+	if len(value) > dns1123LabelMaxLength {
+		errs = append(errs, maxLenError(dns1123LabelMaxLength))
 	}
-	if !qualifiedNameRegexp.MatchString(value) {
-		errs = append(errs, RegexError("invalid value for project name", qnameCharFmt))
+	if !dns1123LabelRegexp.MatchString(value) {
+		errs = append(errs, regexError("invalid value for project name", dns1123LabelFmt))
 	}
 	return errs
 }
 
-// RegexError returns a string explanation of a regex validation failure.
-func RegexError(msg string, fmt string, examples ...string) string {
+// regexError returns a string explanation of a regex validation failure.
+func regexError(msg string, fmt string, examples ...string) string {
 	if len(examples) == 0 {
 		return msg + " (regex used for validation is '" + fmt + "')"
 	}
@@ -61,8 +60,8 @@ func RegexError(msg string, fmt string, examples ...string) string {
 	return msg
 }
 
-// MaxLenError returns a string explanation of a "string too long" validation
+// maxLenError returns a string explanation of a "string too long" validation
 // failure.
-func MaxLenError(length int) string {
+func maxLenError(length int) string {
 	return fmt.Sprintf("must be no more than %d characters", length)
 }
