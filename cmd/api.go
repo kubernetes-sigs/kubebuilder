@@ -31,6 +31,7 @@ import (
 
 	"sigs.k8s.io/kubebuilder/cmd/internal"
 	"sigs.k8s.io/kubebuilder/internal/config"
+	"sigs.k8s.io/kubebuilder/pkg/model"
 	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold"
 	"sigs.k8s.io/kubebuilder/plugins/addon"
@@ -222,7 +223,7 @@ func (o *apiOptions) scaffolder(c *config.Config) (scaffold.Scaffolder, error) {
 	}
 
 	// Load the requested plugins
-	plugins := make([]scaffold.Plugin, 0)
+	plugins := make([]model.Plugin, 0)
 	switch strings.ToLower(o.pattern) {
 	case "":
 		// Default pattern
