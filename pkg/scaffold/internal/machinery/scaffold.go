@@ -14,14 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package scaffold
+package machinery
 
 import (
 	"bytes"
 	"fmt"
-	"io"
-	"log"
-	"os"
 	"path/filepath"
 	"strings"
 	"text/template"
@@ -30,6 +27,7 @@ import (
 
 	"sigs.k8s.io/kubebuilder/pkg/model"
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/filesystem"
 )
 
 var options = imports.Options{
@@ -39,45 +37,34 @@ var options = imports.Options{
 	FormatOnly: true,
 }
 
-// Scaffold writes Templates to scaffold new files
-type Scaffold struct {
+// Scaffold uses templates to scaffold new files
+type Scaffold interface {
+	// Execute writes to disk the provided templates
+	Execute(*model.Universe, ...file.Template) error
+}
+
+// scaffold implements Scaffold interface
+type scaffold struct {
 	// plugins is the list of plugins we should allow to transform our generated scaffolding
-	plugins []Plugin
+	plugins []model.Plugin
 
-	GetWriter func(path string) (io.Writer, error)
-
-	FileExists func(path string) bool
+	// fs allows to mock the file system for tests
+	fs filesystem.FileSystem
 }
 
-// NewScaffold creates a new Scaffold
-func NewScaffold(plugins ...Plugin) *Scaffold {
-	return &Scaffold{plugins: plugins}
-}
-
-// Plugin is the interface that a plugin must implement
-// We will (later) have an ExecPlugin that implements this by exec-ing a binary
-type Plugin interface {
-	// Pipe is the core plugin interface, that transforms a UniverseModel
-	Pipe(universe *model.Universe) error
-}
-
-// Execute executes scaffolding the for files
-func (s *Scaffold) Execute(
-	universe *model.Universe,
-	files ...file.Template,
-) error {
-	if s.GetWriter == nil {
-		s.GetWriter = (&FileWriter{}).WriteCloser
+func NewScaffold(plugins ...model.Plugin) Scaffold {
+	return &scaffold{
+		plugins: plugins,
+		fs:      filesystem.New(),
 	}
-	if s.FileExists == nil {
-		s.FileExists = func(path string) bool {
-			_, err := os.Stat(path)
-			return err == nil
-		}
-	}
+}
 
+// Execute implements Scaffold.Execute
+func (s *scaffold) Execute(universe *model.Universe, files ...file.Template) error {
 	// Set the repo as the local prefix so that it knows how to group imports
-	imports.LocalPrefix = universe.Config.Repo
+	if universe.Config != nil {
+		imports.LocalPrefix = universe.Config.Repo
+	}
 
 	for _, f := range files {
 		m, err := buildFileModel(universe, f)
@@ -121,7 +108,8 @@ func buildFileModel(universe *model.Universe, t file.Template) (*file.File, erro
 	}
 
 	m := &file.File{
-		Path: i.Path,
+		Path:           i.Path,
+		IfExistsAction: i.IfExistsAction,
 	}
 
 	b, err := doTemplate(i, t)
@@ -133,28 +121,28 @@ func buildFileModel(universe *model.Universe, t file.Template) (*file.File, erro
 	return m, nil
 }
 
-func (s *Scaffold) writeFile(f *file.File) error {
+func (s *scaffold) writeFile(f *file.File) error {
 	// Check if the file to write already exists
-	if s.FileExists(f.Path) {
-		switch f.IfExistsAction {
-		case file.Overwrite:
-		case file.Skip:
-			return nil
-		case file.Error:
-			return fmt.Errorf("%s already exists", f.Path)
-		}
-	}
-
-	writer, err := s.GetWriter(f.Path)
+	exists, err := s.fs.Exists(f.Path)
 	if err != nil {
 		return err
 	}
-	if c, ok := writer.(io.Closer); ok {
-		defer func() {
-			if err := c.Close(); err != nil {
-				log.Fatal(err)
-			}
-		}()
+	if exists {
+		switch f.IfExistsAction {
+		case file.Overwrite:
+			// By not returning, the file is written as if it didn't exist
+		case file.Skip:
+			// By returning nil, the file is not written but the process will carry on
+			return nil
+		case file.Error:
+			// By returning an error, the file is not written and the process will fail
+			return fmt.Errorf("failed to create %s: file already exists", f.Path)
+		}
+	}
+
+	writer, err := s.fs.Create(f.Path)
+	if err != nil {
+		return err
 	}
 
 	_, err = writer.Write([]byte(f.Contents))
@@ -163,14 +151,14 @@ func (s *Scaffold) writeFile(f *file.File) error {
 }
 
 // doTemplate executes the template for a file using the input
-func doTemplate(i file.Input, e file.Template) ([]byte, error) {
-	temp, err := newTemplate(e).Parse(i.TemplateBody)
+func doTemplate(i file.Input, t file.Template) ([]byte, error) {
+	temp, err := newTemplate(t).Parse(i.TemplateBody)
 	if err != nil {
 		return nil, err
 	}
 
 	out := &bytes.Buffer{}
-	err = temp.Execute(out, e)
+	err = temp.Execute(out, t)
 	if err != nil {
 		return nil, err
 	}
@@ -180,7 +168,6 @@ func doTemplate(i file.Input, e file.Template) ([]byte, error) {
 	if filepath.Ext(i.Path) == ".go" {
 		b, err = imports.Process(i.Path, b, &options)
 		if err != nil {
-			fmt.Printf("%s\n", out.Bytes())
 			return nil, err
 		}
 	}
