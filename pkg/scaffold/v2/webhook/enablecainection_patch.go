@@ -19,23 +19,23 @@ package webhook
 import (
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
-var _ input.File = &InjectCAPatch{}
+var _ file.Template = &InjectCAPatch{}
 
 // InjectCAPatch scaffolds the InjectCAPatch file in manager folder.
 type InjectCAPatch struct {
-	input.Input
+	file.Input
 }
 
-// GetInput implements input.File
-func (f *InjectCAPatch) GetInput() (input.Input, error) {
+// GetInput implements input.Template
+func (f *InjectCAPatch) GetInput() (file.Input, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "default", "webhookcainjection_patch.yaml")
 	}
 	f.TemplateBody = injectCAPatchTemplate
-	f.Input.IfExistsAction = input.Error
+	f.Input.IfExistsAction = file.Error
 	return f.Input, nil
 }
 

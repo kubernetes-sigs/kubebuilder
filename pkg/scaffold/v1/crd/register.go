@@ -19,22 +19,22 @@ package crd
 import (
 	"path/filepath"
 
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 	"sigs.k8s.io/kubebuilder/pkg/model/resource"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 )
 
-var _ input.File = &Register{}
+var _ file.Template = &Register{}
 
 // Register scaffolds the pkg/apis/group/version/register.go file
 type Register struct {
-	input.Input
+	file.Input
 
 	// Resource is the resource to scaffold the types_test.go file for
 	Resource *resource.Resource
 }
 
-// GetInput implements input.File
-func (f *Register) GetInput() (input.Input, error) {
+// GetInput implements input.Template
+func (f *Register) GetInput() (file.Input, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("pkg", "apis", f.Resource.GroupPackageName, f.Resource.Version, "register.go")
 	}

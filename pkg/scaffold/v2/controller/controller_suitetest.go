@@ -20,24 +20,24 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 	"sigs.k8s.io/kubebuilder/pkg/model/resource"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	scaffoldv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v2/internal"
 )
 
-var _ input.File = &SuiteTest{}
+var _ file.Template = &SuiteTest{}
 
 // SuiteTest scaffolds the suite_test.go file to setup the controller test
 type SuiteTest struct {
-	input.Input
+	file.Input
 
 	// Resource is the Resource to make the Controller for
 	Resource *resource.Resource
 }
 
-// GetInput implements input.File
-func (f *SuiteTest) GetInput() (input.Input, error) {
+// GetInput implements input.Template
+func (f *SuiteTest) GetInput() (file.Input, error) {
 	if f.Path == "" {
 		if f.MultiGroup {
 			f.Path = filepath.Join("controllers", f.Resource.Group, "suite_test.go")

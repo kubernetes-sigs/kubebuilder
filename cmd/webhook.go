@@ -19,8 +19,10 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 
@@ -110,7 +112,13 @@ func (o *webhookV1Options) validate(c *config.Config) error {
 	return nil
 }
 
-func (o *webhookV1Options) scaffolder(c *config.Config) (scaffold.Scaffolder, error) { // nolint:unparam
+func (o *webhookV1Options) scaffolder(c *config.Config) (scaffold.Scaffolder, error) {
+	// Load the boilerplate
+	bp, err := ioutil.ReadFile(filepath.Join("hack", "boilerplate.go.txt")) // nolint:gosec
+	if err != nil {
+		return nil, fmt.Errorf("unable to load boilerplate: %v", err)
+	}
+
 	// Create the actual resource from the resource options
 	var res *resource.Resource
 	switch {
@@ -122,7 +130,7 @@ func (o *webhookV1Options) scaffolder(c *config.Config) (scaffold.Scaffolder, er
 		return nil, fmt.Errorf("unknown project version %v", c.Version)
 	}
 
-	return scaffold.NewV1WebhookScaffolder(&c.Config, res, o.server, o.webhookType, o.operations), nil
+	return scaffold.NewV1WebhookScaffolder(&c.Config, string(bp), res, o.server, o.webhookType, o.operations), nil
 }
 
 func (o *webhookV1Options) postScaffold(_ *config.Config) error {
@@ -213,6 +221,12 @@ func (o *webhookV2Options) validate(c *config.Config) error {
 }
 
 func (o *webhookV2Options) scaffolder(c *config.Config) (scaffold.Scaffolder, error) { // nolint:unparam
+	// Load the boilerplate
+	bp, err := ioutil.ReadFile(filepath.Join("hack", "boilerplate.go.txt")) // nolint:gosec
+	if err != nil {
+		return nil, fmt.Errorf("unable to load boilerplate: %v", err)
+	}
+
 	// Create the actual resource from the resource options
 	var res *resource.Resource
 	switch {
@@ -224,7 +238,7 @@ func (o *webhookV2Options) scaffolder(c *config.Config) (scaffold.Scaffolder, er
 		return nil, fmt.Errorf("unknown project version %v", c.Version)
 	}
 
-	return scaffold.NewV2WebhookScaffolder(&c.Config, res, o.defaulting, o.validation, o.conversion), nil
+	return scaffold.NewV2WebhookScaffolder(&c.Config, string(bp), res, o.defaulting, o.validation, o.conversion), nil
 }
 
 func (o *webhookV2Options) postScaffold(_ *config.Config) error {

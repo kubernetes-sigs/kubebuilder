@@ -14,10 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package model
+package file
 
-import (
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+// IfExistsAction determines what to do if the scaffold file already exists
+type IfExistsAction int
+
+const (
+	// Skip skips the file and moves to the next one
+	Skip IfExistsAction = iota
+
+	// Error returns an error and stops processing
+	Error
+
+	// Overwrite truncates and overwrites the existing file
+	Overwrite
 )
 
 // File describes a file that will be written
@@ -28,7 +38,6 @@ type File struct {
 	// Contents is the generated output
 	Contents string `json:"contents,omitempty"`
 
-	// TODO: Move input.IfExistsAction into model
 	// IfExistsAction determines what to do if the file exists
-	IfExistsAction input.IfExistsAction `json:"ifExistsAction,omitempty"`
+	IfExistsAction IfExistsAction `json:"ifExistsAction,omitempty"`
 }

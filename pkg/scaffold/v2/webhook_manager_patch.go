@@ -19,18 +19,18 @@ package v2
 import (
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
-var _ input.File = &ManagerWebhookPatch{}
+var _ file.Template = &ManagerWebhookPatch{}
 
 // CRDWebhookPatch scaffolds a CRDWebhookPatch for a Resource
 type ManagerWebhookPatch struct {
-	input.Input
+	file.Input
 }
 
-// GetInput implements input.File
-func (f *ManagerWebhookPatch) GetInput() (input.Input, error) {
+// GetInput implements input.Template
+func (f *ManagerWebhookPatch) GetInput() (file.Input, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "default", "manager_webhook_patch.yaml")
 	}

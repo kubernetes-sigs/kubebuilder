@@ -19,18 +19,18 @@ package project
 import (
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
-var _ input.File = &AuthProxyRoleBinding{}
+var _ file.Template = &AuthProxyRoleBinding{}
 
 // AuthProxyRoleBinding scaffolds the config/rbac/auth_proxy_role_binding_rbac.yaml file
 type AuthProxyRoleBinding struct {
-	input.Input
+	file.Input
 }
 
-// GetInput implements input.File
-func (f *AuthProxyRoleBinding) GetInput() (input.Input, error) {
+// GetInput implements input.Template
+func (f *AuthProxyRoleBinding) GetInput() (file.Input, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "rbac", "auth_proxy_role_binding.yaml")
 	}

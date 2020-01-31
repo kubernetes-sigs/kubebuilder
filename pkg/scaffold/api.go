@@ -24,7 +24,6 @@ import (
 	"sigs.k8s.io/kubebuilder/internal/config"
 	"sigs.k8s.io/kubebuilder/pkg/model"
 	"sigs.k8s.io/kubebuilder/pkg/model/resource"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	controllerv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/v1/controller"
 	crdv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/v1/crd"
 	scaffoldv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2"
@@ -35,8 +34,9 @@ import (
 // apiScaffolder contains configuration for generating scaffolding for Go type
 // representing the API and controller that implements the behavior for the API.
 type apiScaffolder struct {
-	config   *config.Config
-	resource *resource.Resource
+	config      *config.Config
+	boilerplate string
+	resource    *resource.Resource
 	// plugins is the list of plugins we should allow to transform our generated scaffolding
 	plugins []Plugin
 	// doResource indicates whether to scaffold API Resource or not
@@ -47,14 +47,16 @@ type apiScaffolder struct {
 
 func NewAPIScaffolder(
 	config *config.Config,
+	boilerplate string,
 	res *resource.Resource,
 	doResource, doController bool,
 	plugins []Plugin,
 ) Scaffolder {
 	return &apiScaffolder{
-		plugins:      plugins,
-		resource:     res,
 		config:       config,
+		boilerplate:  boilerplate,
+		resource:     res,
+		plugins:      plugins,
 		doResource:   doResource,
 		doController: doController,
 	}
@@ -73,10 +75,10 @@ func (s *apiScaffolder) Scaffold() error {
 	}
 }
 
-func (s *apiScaffolder) buildUniverse() (*model.Universe, error) {
+func (s *apiScaffolder) newUniverse() *model.Universe {
 	return model.NewUniverse(
 		model.WithConfig(&s.config.Config),
-		// TODO: missing model.WithBoilerplate[From], needs boilerplate or path
+		model.WithBoilerplate(s.boilerplate),
 		model.WithResource(s.resource),
 	)
 }
@@ -88,14 +90,8 @@ func (s *apiScaffolder) scaffoldV1() error {
 		fmt.Println(filepath.Join("pkg", "apis", s.resource.GroupPackageName, s.resource.Version,
 			fmt.Sprintf("%s_types_test.go", strings.ToLower(s.resource.Kind))))
 
-		universe, err := s.buildUniverse()
-		if err != nil {
-			return fmt.Errorf("error building API scaffold: %v", err)
-		}
-
-		if err := (&Scaffold{}).Execute(
-			universe,
-			input.Options{},
+		if err := NewScaffold().Execute(
+			s.newUniverse(),
 			&crdv1.Register{Resource: s.resource},
 			&crdv1.Types{Resource: s.resource},
 			&crdv1.VersionSuiteTest{Resource: s.resource},
@@ -121,14 +117,8 @@ func (s *apiScaffolder) scaffoldV1() error {
 		fmt.Println(filepath.Join("pkg", "controller", strings.ToLower(s.resource.Kind),
 			fmt.Sprintf("%s_controller_test.go", strings.ToLower(s.resource.Kind))))
 
-		universe, err := s.buildUniverse()
-		if err != nil {
-			return fmt.Errorf("error building controller scaffold: %v", err)
-		}
-
-		if err := (&Scaffold{}).Execute(
-			universe,
-			input.Options{},
+		if err := NewScaffold().Execute(
+			s.newUniverse(),
 			&controllerv1.Controller{Resource: s.resource},
 			&controllerv1.AddController{Resource: s.resource},
 			&controllerv1.Test{Resource: s.resource},
@@ -158,14 +148,8 @@ func (s *apiScaffolder) scaffoldV2() error {
 				fmt.Sprintf("%s_types.go", strings.ToLower(s.resource.Kind))))
 		}
 
-		universe, err := s.buildUniverse()
-		if err != nil {
-			return fmt.Errorf("error building API scaffold: %v", err)
-		}
-
-		if err := (&Scaffold{Plugins: s.plugins}).Execute(
-			universe,
-			input.Options{},
+		if err := NewScaffold(s.plugins...).Execute(
+			s.newUniverse(),
 			&scaffoldv2.Types{Resource: s.resource},
 			&scaffoldv2.Group{Resource: s.resource},
 			&scaffoldv2.CRDSample{Resource: s.resource},
@@ -177,15 +161,9 @@ func (s *apiScaffolder) scaffoldV2() error {
 			return fmt.Errorf("error scaffolding APIs: %v", err)
 		}
 
-		universe, err = s.buildUniverse()
-		if err != nil {
-			return fmt.Errorf("error building kustomization scaffold: %v", err)
-		}
-
 		kustomizationFile := &crdv2.Kustomization{Resource: s.resource}
-		if err := (&Scaffold{}).Execute(
-			universe,
-			input.Options{},
+		if err := NewScaffold().Execute(
+			s.newUniverse(),
 			kustomizationFile,
 			&crdv2.KustomizeConfig{},
 		); err != nil {
@@ -213,15 +191,9 @@ func (s *apiScaffolder) scaffoldV2() error {
 				fmt.Sprintf("%s_controller.go", strings.ToLower(s.resource.Kind))))
 		}
 
-		universe, err := s.buildUniverse()
-		if err != nil {
-			return fmt.Errorf("error building controller scaffold: %v", err)
-		}
-
 		suiteTestFile := &controllerv2.SuiteTest{Resource: s.resource}
-		if err := (&Scaffold{Plugins: s.plugins}).Execute(
-			universe,
-			input.Options{},
+		if err := NewScaffold(s.plugins...).Execute(
+			s.newUniverse(),
 			suiteTestFile,
 			&controllerv2.Controller{Resource: s.resource},
 		); err != nil {

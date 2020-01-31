@@ -20,7 +20,7 @@ import (
 	"path/filepath"
 
 	"sigs.k8s.io/kubebuilder/pkg/model"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
 const exampleChannel = `# Versions for the stable channel
@@ -29,10 +29,10 @@ manifests:
 `
 
 func ExampleChannel(u *model.Universe) error {
-	m := &model.File{
+	m := &file.File{
 		Path:           filepath.Join("channels", "stable"),
 		Contents:       exampleChannel,
-		IfExistsAction: input.Skip,
+		IfExistsAction: file.Skip,
 	}
 
 	_, err := AddFile(u, m)

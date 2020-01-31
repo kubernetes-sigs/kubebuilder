@@ -21,14 +21,14 @@ import (
 	"path/filepath"
 	"time"
 
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
-var _ input.File = &Boilerplate{}
+var _ file.Template = &Boilerplate{}
 
 // Boilerplate scaffolds a boilerplate header file.
 type Boilerplate struct {
-	input.Input
+	file.Input
 
 	// License is the License type to write
 	License string
@@ -40,8 +40,8 @@ type Boilerplate struct {
 	Year string
 }
 
-// GetInput implements input.File
-func (f *Boilerplate) GetInput() (input.Input, error) {
+// GetInput implements input.Template
+func (f *Boilerplate) GetInput() (file.Input, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("hack", "boilerplate.go.txt")
 	}

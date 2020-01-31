@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 	"sigs.k8s.io/kubebuilder/pkg/model/resource"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v2/internal"
 )
 
@@ -31,18 +31,18 @@ const (
 	kustomizeCAInjectionPatchScaffoldMarker = "# +kubebuilder:scaffold:crdkustomizecainjectionpatch"
 )
 
-var _ input.File = &Kustomization{}
+var _ file.Template = &Kustomization{}
 
 // Kustomization scaffolds the kustomization file in manager folder.
 type Kustomization struct {
-	input.Input
+	file.Input
 
 	// Resource is the Resource to make the EnableWebhookPatch for
 	Resource *resource.Resource
 }
 
-// GetInput implements input.File
-func (f *Kustomization) GetInput() (input.Input, error) {
+// GetInput implements input.Template
+func (f *Kustomization) GetInput() (file.Input, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "crd", "kustomization.yaml")
 	}

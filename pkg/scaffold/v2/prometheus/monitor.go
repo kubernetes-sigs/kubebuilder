@@ -19,18 +19,18 @@ package prometheus
 import (
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
-var _ input.File = &ServiceMonitor{}
+var _ file.Template = &ServiceMonitor{}
 
 // ServiceMonitor scaffolds an issuer CR and a certificate CR
 type ServiceMonitor struct {
-	input.Input
+	file.Input
 }
 
-// GetInput implements input.File
-func (f *ServiceMonitor) GetInput() (input.Input, error) {
+// GetInput implements input.Template
+func (f *ServiceMonitor) GetInput() (file.Input, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "prometheus", "monitor.yaml")
 	}

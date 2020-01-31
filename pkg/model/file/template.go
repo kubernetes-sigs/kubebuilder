@@ -14,21 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package input
-
-// IfExistsAction determines what to do if the scaffold file already exists
-type IfExistsAction int
-
-const (
-	// Skip skips the file and moves to the next one
-	Skip IfExistsAction = iota
-
-	// Error returns an error and stops processing
-	Error
-
-	// Overwrite truncates and overwrites the existing file
-	Overwrite
-)
+package file
 
 // Input is the input for scaffolding a file
 type Input struct {
@@ -44,20 +30,11 @@ type Input struct {
 	// Boilerplate is the contents of a Boilerplate go header file
 	Boilerplate string
 
-	// BoilerplatePath is the path to a Boilerplate go header file
-	BoilerplatePath string
-
-	// Version is the project version
-	Version string
-
 	// Domain is the domain for the APIs
 	Domain string
 
 	// Repo is the go project package
 	Repo string
-
-	// ProjectPath is the relative path to the project root
-	ProjectPath string
 
 	// MultiGroup is the multi-group boolean from the PROJECT file
 	MultiGroup bool
@@ -102,32 +79,6 @@ func (i *Input) SetBoilerplate(b string) {
 	}
 }
 
-// BoilerplatePath allows boilerplate file path to be set on an object
-type BoilerplatePath interface {
-	// SetBoilerplatePath sets the boilerplate file path
-	SetBoilerplatePath(string)
-}
-
-// SetBoilerplatePath sets the boilerplate file path
-func (i *Input) SetBoilerplatePath(bp string) {
-	if i.BoilerplatePath == "" {
-		i.BoilerplatePath = bp
-	}
-}
-
-// Version allows the project version to be set on an object
-type Version interface {
-	// SetVersion sets the project version
-	SetVersion(string)
-}
-
-// SetVersion sets the project version
-func (i *Input) SetVersion(v string) {
-	if i.Version == "" {
-		i.Version = v
-	}
-}
-
 // MultiGroup allows the project version to be set on an object
 type MultiGroup interface {
 	// SetVersion sets the project version
@@ -139,37 +90,15 @@ func (i *Input) SetMultiGroup(v bool) {
 	i.MultiGroup = v
 }
 
-// ProjecPath allows the project path to be set on an object
-type ProjecPath interface {
-	// SetProjectPath sets the project file location
-	SetProjectPath(string)
-}
-
-// SetProjectPath sets the project path
-func (i *Input) SetProjectPath(p string) {
-	if i.ProjectPath == "" {
-		i.ProjectPath = p
-	}
-}
-
-// File is a scaffoldable file
-type File interface {
+// Template is a scaffoldable file template
+type Template interface {
 	// GetInput returns the Input for creating a scaffold file
 	GetInput() (Input, error)
 }
 
 // RequiresValidation is a file that requires validation
 type RequiresValidation interface {
-	File
+	Template
 	// Validate returns true if the template has valid values
 	Validate() error
-}
-
-// Options are the options for executing scaffold templates
-type Options struct {
-	// BoilerplatePath is the path to the boilerplate file
-	BoilerplatePath string
-
-	// Path is the path to the project
-	ProjectPath string
 }

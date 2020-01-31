@@ -21,15 +21,15 @@ import (
 	"path/filepath"
 	"strings"
 
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 	"sigs.k8s.io/kubebuilder/pkg/model/resource"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 )
 
-var _ input.File = &AddAdmissionWebhookBuilderHandler{}
+var _ file.Template = &AddAdmissionWebhookBuilderHandler{}
 
 // AdmissionHandler scaffolds an admission handler
 type AdmissionHandler struct {
-	input.Input
+	file.Input
 
 	// Resource is a resource in the API group
 	Resource *resource.Resource
@@ -43,8 +43,8 @@ type AdmissionHandler struct {
 	Mutate bool
 }
 
-// GetInput implements input.File
-func (f *AdmissionHandler) GetInput() (input.Input, error) {
+// GetInput implements input.Template
+func (f *AdmissionHandler) GetInput() (file.Input, error) {
 	f.Type = strings.ToLower(f.Type)
 	if f.Type == "mutating" {
 		f.Mutate = true

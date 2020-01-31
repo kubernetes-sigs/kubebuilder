@@ -17,23 +17,23 @@ limitations under the License.
 package v2
 
 import (
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
-var _ input.File = &GoMod{}
+var _ file.Template = &GoMod{}
 
 // GoMod writes a templatefile for go.mod
 type GoMod struct {
-	input.Input
+	file.Input
 	ControllerRuntimeVersion string
 }
 
-// GetInput implements input.File
-func (f *GoMod) GetInput() (input.Input, error) {
+// GetInput implements input.Template
+func (f *GoMod) GetInput() (file.Input, error) {
 	if f.Path == "" {
 		f.Path = "go.mod"
 	}
-	f.Input.IfExistsAction = input.Overwrite
+	f.Input.IfExistsAction = file.Overwrite
 	f.TemplateBody = goModTemplate
 	return f.Input, nil
 }

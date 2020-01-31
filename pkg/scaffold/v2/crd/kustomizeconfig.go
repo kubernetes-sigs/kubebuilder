@@ -19,18 +19,18 @@ package crd
 import (
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
-var _ input.File = &KustomizeConfig{}
+var _ file.Template = &KustomizeConfig{}
 
 // KustomizeConfig scaffolds the kustomizeconfig file in crd folder.
 type KustomizeConfig struct {
-	input.Input
+	file.Input
 }
 
-// GetInput implements input.File
-func (f *KustomizeConfig) GetInput() (input.Input, error) {
+// GetInput implements input.Template
+func (f *KustomizeConfig) GetInput() (file.Input, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "crd", "kustomizeconfig.yaml")
 	}

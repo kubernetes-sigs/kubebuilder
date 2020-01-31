@@ -23,22 +23,22 @@ import (
 
 	"github.com/gobuffalo/flect"
 
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 	"sigs.k8s.io/kubebuilder/pkg/model/resource"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 )
 
-var _ input.File = &EnableCAInjectionPatch{}
+var _ file.Template = &EnableCAInjectionPatch{}
 
 // EnableCAInjectionPatch scaffolds a EnableCAInjectionPatch for a Resource
 type EnableCAInjectionPatch struct {
-	input.Input
+	file.Input
 
 	// Resource is the Resource to make the EnableCAInjectionPatch for
 	Resource *resource.Resource
 }
 
-// GetInput implements input.File
-func (f *EnableCAInjectionPatch) GetInput() (input.Input, error) {
+// GetInput implements input.Template
+func (f *EnableCAInjectionPatch) GetInput() (file.Input, error) {
 	if f.Path == "" {
 		plural := flect.Pluralize(strings.ToLower(f.Resource.Kind))
 		f.Path = filepath.Join("config", "crd", "patches",

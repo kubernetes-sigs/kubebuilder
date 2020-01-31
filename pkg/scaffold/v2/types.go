@@ -21,22 +21,22 @@ import (
 	"path/filepath"
 	"strings"
 
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 	"sigs.k8s.io/kubebuilder/pkg/model/resource"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 )
 
-var _ input.File = &Types{}
+var _ file.Template = &Types{}
 
 // Types scaffolds the api/<version>/<kind>_types.go file to define the schema for an API
 type Types struct {
-	input.Input
+	file.Input
 
 	// Resource is the resource to scaffold the types_test.go file for
 	Resource *resource.Resource
 }
 
-// GetInput implements input.File
-func (f *Types) GetInput() (input.Input, error) {
+// GetInput implements input.Template
+func (f *Types) GetInput() (file.Input, error) {
 	if f.Path == "" {
 		if f.MultiGroup {
 			f.Path = filepath.Join("apis", f.Resource.Group, f.Resource.Version,
@@ -48,7 +48,7 @@ func (f *Types) GetInput() (input.Input, error) {
 	}
 
 	f.TemplateBody = typesTemplate
-	f.IfExistsAction = input.Error
+	f.IfExistsAction = file.Error
 	return f.Input, nil
 }
 

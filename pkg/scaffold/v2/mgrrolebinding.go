@@ -19,18 +19,18 @@ package v2
 import (
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
-var _ input.File = &ManagerRoleBinding{}
+var _ file.Template = &ManagerRoleBinding{}
 
 // ManagerRoleBinding scaffolds the config/rbac/role_binding.yaml file
 type ManagerRoleBinding struct {
-	input.Input
+	file.Input
 }
 
-// GetInput implements input.File
-func (f *ManagerRoleBinding) GetInput() (input.Input, error) {
+// GetInput implements input.Template
+func (f *ManagerRoleBinding) GetInput() (file.Input, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "rbac", "role_binding.yaml")
 	}
