@@ -20,22 +20,22 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 	"sigs.k8s.io/kubebuilder/pkg/model/resource"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 )
 
-var _ input.File = &AddToScheme{}
+var _ file.Template = &AddToScheme{}
 
 // AddToScheme scaffolds the code to add the resource to a SchemeBuilder.
 type AddToScheme struct {
-	input.Input
+	file.Input
 
 	// Resource is a resource in the API group
 	Resource *resource.Resource
 }
 
-// GetInput implements input.File
-func (f *AddToScheme) GetInput() (input.Input, error) {
+// GetInput implements input.Template
+func (f *AddToScheme) GetInput() (file.Input, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("pkg", "apis", fmt.Sprintf(
 			"addtoscheme_%s_%s.go", f.Resource.GroupPackageName, f.Resource.Version))

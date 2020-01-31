@@ -19,23 +19,23 @@ package webhook
 import (
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
-var _ input.File = &KustomizeConfigWebhook{}
+var _ file.Template = &KustomizeConfigWebhook{}
 
 // KustomizeConfigWebhook scaffolds the Kustomization file in manager folder.
 type KustomizeConfigWebhook struct {
-	input.Input
+	file.Input
 }
 
-// GetInput implements input.File
-func (f *KustomizeConfigWebhook) GetInput() (input.Input, error) {
+// GetInput implements input.Template
+func (f *KustomizeConfigWebhook) GetInput() (file.Input, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "webhook", "kustomizeconfig.yaml")
 	}
 	f.TemplateBody = KustomizeConfigWebhookTemplate
-	f.Input.IfExistsAction = input.Error
+	f.Input.IfExistsAction = file.Error
 	return f.Input, nil
 }
 

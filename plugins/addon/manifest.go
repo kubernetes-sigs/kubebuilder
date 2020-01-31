@@ -21,7 +21,7 @@ import (
 	"strings"
 
 	"sigs.k8s.io/kubebuilder/pkg/model"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
 const exampleManifestVersion = "0.0.1"
@@ -32,10 +32,10 @@ const exampleManifestContents = `# Placeholder manifest - replace with the manif
 func ExampleManifest(u *model.Universe) error {
 	packageName := getPackageName(u)
 
-	m := &model.File{
+	m := &file.File{
 		Path:           filepath.Join("channels", "packages", packageName, exampleManifestVersion, "manifest.yaml"),
 		Contents:       exampleManifestContents,
-		IfExistsAction: input.Skip,
+		IfExistsAction: file.Skip,
 	}
 
 	_, err := AddFile(u, m)

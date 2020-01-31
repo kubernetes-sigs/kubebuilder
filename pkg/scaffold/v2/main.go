@@ -21,8 +21,8 @@ import (
 	"path/filepath"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/config"
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 	"sigs.k8s.io/kubebuilder/pkg/model/resource"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v2/internal"
 )
 
@@ -32,15 +32,15 @@ const (
 	ReconcilerSetupScaffoldMarker = "// +kubebuilder:scaffold:builder"
 )
 
-var _ input.File = &Main{}
+var _ file.Template = &Main{}
 
 // Main scaffolds a main.go to run Controllers
 type Main struct {
-	input.Input
+	file.Input
 }
 
-// GetInput implements input.File
-func (f *Main) GetInput() (input.Input, error) {
+// GetInput implements input.Template
+func (f *Main) GetInput() (file.Input, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("main.go")
 	}

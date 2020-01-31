@@ -18,11 +18,12 @@ package scaffold
 
 import (
 	"fmt"
+	"io/ioutil"
 	"path/filepath"
 
 	"sigs.k8s.io/kubebuilder/internal/config"
 	"sigs.k8s.io/kubebuilder/pkg/model"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
 	scaffoldv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/v1"
 	managerv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/v1/manager"
@@ -47,6 +48,7 @@ const (
 type initScaffolder struct {
 	config          *config.Config
 	boilerplatePath string
+	boilerplate     string
 	license         string
 	owner           string
 }
@@ -60,6 +62,13 @@ func NewInitScaffolder(config *config.Config, license, owner string) Scaffolder 
 	}
 }
 
+func (s *initScaffolder) newUniverse() *model.Universe {
+	return model.NewUniverse(
+		model.WithConfig(&s.config.Config),
+		model.WithBoilerplate(s.boilerplate),
+	)
+}
+
 func (s *initScaffolder) Scaffold() error {
 	fmt.Println("Writing scaffold for you to edit...")
 
@@ -67,19 +76,10 @@ func (s *initScaffolder) Scaffold() error {
 		return err
 	}
 
-	universe, err := model.NewUniverse(
-		model.WithConfig(&s.config.Config),
-		model.WithoutBoilerplate,
-	)
-	if err != nil {
-		return fmt.Errorf("error initializing project: %v", err)
-	}
-
-	if err := (&Scaffold{BoilerplateOptional: true}).Execute(
-		universe,
-		input.Options{ProjectPath: s.config.Path(), BoilerplatePath: s.boilerplatePath},
+	if err := NewScaffold().Execute(
+		s.newUniverse(), // Boilerplate is still empty by this call as desired
 		&project.Boilerplate{
-			Input:   input.Input{Path: s.boilerplatePath},
+			Input:   file.Input{Path: s.boilerplatePath},
 			License: s.license,
 			Owner:   s.owner,
 		},
@@ -87,17 +87,14 @@ func (s *initScaffolder) Scaffold() error {
 		return err
 	}
 
-	universe, err = model.NewUniverse(
-		model.WithConfig(&s.config.Config),
-		model.WithBoilerplateFrom(s.boilerplatePath),
-	)
+	boilerplateBytes, err := ioutil.ReadFile(s.boilerplatePath) // nolint:gosec
 	if err != nil {
-		return fmt.Errorf("error initializing project: %v", err)
+		return err
 	}
+	s.boilerplate = string(boilerplateBytes)
 
-	if err := (&Scaffold{}).Execute(
-		universe,
-		input.Options{ProjectPath: s.config.Path(), BoilerplatePath: s.boilerplatePath},
+	if err := NewScaffold().Execute(
+		s.newUniverse(),
 		&project.GitIgnore{},
 		&project.AuthProxyRole{},
 		&project.AuthProxyRoleBinding{},
@@ -116,17 +113,8 @@ func (s *initScaffolder) Scaffold() error {
 }
 
 func (s *initScaffolder) scaffoldV1() error {
-	universe, err := model.NewUniverse(
-		model.WithConfig(&s.config.Config),
-		model.WithBoilerplateFrom(s.boilerplatePath),
-	)
-	if err != nil {
-		return fmt.Errorf("error initializing project: %v", err)
-	}
-
-	return (&Scaffold{}).Execute(
-		universe,
-		input.Options{ProjectPath: s.config.Path(), BoilerplatePath: s.boilerplatePath},
+	return NewScaffold().Execute(
+		s.newUniverse(),
 		&project.KustomizeRBAC{},
 		&scaffoldv1.KustomizeImagePatch{},
 		&metricsauthv1.KustomizePrometheusMetricsPatch{},
@@ -138,7 +126,7 @@ func (s *initScaffolder) scaffoldV1() error {
 		&managerv1.Dockerfile{},
 		&project.Kustomize{},
 		&project.KustomizeManager{},
-		&managerv1.APIs{},
+		&managerv1.APIs{BoilerplatePath: s.boilerplatePath},
 		&managerv1.Controller{},
 		&managerv1.Webhook{},
 		&managerv1.Cmd{},
@@ -146,24 +134,19 @@ func (s *initScaffolder) scaffoldV1() error {
 }
 
 func (s *initScaffolder) scaffoldV2() error {
-	universe, err := model.NewUniverse(
-		model.WithConfig(&s.config.Config),
-		model.WithBoilerplateFrom(s.boilerplatePath),
-	)
-	if err != nil {
-		return fmt.Errorf("error initializing project: %v", err)
-	}
-
-	return (&Scaffold{}).Execute(
-		universe,
-		input.Options{ProjectPath: s.config.Path(), BoilerplatePath: s.boilerplatePath},
+	return NewScaffold().Execute(
+		s.newUniverse(),
 		&metricsauthv2.AuthProxyPatch{},
 		&metricsauthv2.AuthProxyService{},
 		&metricsauthv2.ClientClusterRole{},
 		&managerv2.Config{Image: ImageName},
 		&scaffoldv2.Main{},
 		&scaffoldv2.GoMod{ControllerRuntimeVersion: ControllerRuntimeVersion},
-		&scaffoldv2.Makefile{Image: ImageName, ControllerToolsVersion: ControllerToolsVersion},
+		&scaffoldv2.Makefile{
+			Image:                  ImageName,
+			BoilerplatePath:        s.boilerplatePath,
+			ControllerToolsVersion: ControllerToolsVersion,
+		},
 		&scaffoldv2.Dockerfile{},
 		&scaffoldv2.Kustomize{},
 		&scaffoldv2.ManagerWebhookPatch{},

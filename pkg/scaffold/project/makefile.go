@@ -17,14 +17,14 @@ limitations under the License.
 package project
 
 import (
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
-var _ input.File = &Makefile{}
+var _ file.Template = &Makefile{}
 
 // Makefile scaffolds the Makefile
 type Makefile struct {
-	input.Input
+	file.Input
 	// Image is controller manager image name
 	Image string
 
@@ -32,8 +32,8 @@ type Makefile struct {
 	ControllerToolsPath string
 }
 
-// GetInput implements input.File
-func (f *Makefile) GetInput() (input.Input, error) {
+// GetInput implements input.Template
+func (f *Makefile) GetInput() (file.Input, error) {
 	if f.Path == "" {
 		f.Path = "Makefile"
 	}
@@ -44,7 +44,7 @@ func (f *Makefile) GetInput() (input.Input, error) {
 		f.ControllerToolsPath = "vendor/sigs.k8s.io/controller-tools"
 	}
 	f.TemplateBody = makefileTemplate
-	f.Input.IfExistsAction = input.Error
+	f.Input.IfExistsAction = file.Error
 	return f.Input, nil
 }
 

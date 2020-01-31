@@ -21,22 +21,22 @@ import (
 	"path/filepath"
 	"strings"
 
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 	"sigs.k8s.io/kubebuilder/pkg/model/resource"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 )
 
-var _ input.File = &AddController{}
+var _ file.Template = &AddController{}
 
 // AddController scaffolds adds a new Controller.
 type AddController struct {
-	input.Input
+	file.Input
 
 	// Resource is a resource in the API group
 	Resource *resource.Resource
 }
 
-// GetInput implements input.File
-func (f *AddController) GetInput() (input.Input, error) {
+// GetInput implements input.Template
+func (f *AddController) GetInput() (file.Input, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("pkg", "controller", fmt.Sprintf(
 			"add_%s.go", strings.ToLower(f.Resource.Kind)))

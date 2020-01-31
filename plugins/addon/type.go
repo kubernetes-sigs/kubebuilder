@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"sigs.k8s.io/kubebuilder/pkg/model"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
 func ReplaceTypes(u *model.Universe) error {
@@ -25,10 +25,10 @@ func ReplaceTypes(u *model.Universe) error {
 		path = filepath.Join("api", u.Resource.Version, strings.ToLower(u.Resource.Kind)+"_types.go")
 	}
 
-	m := &model.File{
+	m := &file.File{
 		Path:           path,
 		Contents:       contents,
-		IfExistsAction: input.Error,
+		IfExistsAction: file.Error,
 	}
 
 	ReplaceFileIfExists(u, m)

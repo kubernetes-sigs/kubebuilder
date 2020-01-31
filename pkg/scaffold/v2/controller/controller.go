@@ -20,22 +20,22 @@ import (
 	"path/filepath"
 	"strings"
 
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 	"sigs.k8s.io/kubebuilder/pkg/model/resource"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 )
 
-var _ input.File = &Controller{}
+var _ file.Template = &Controller{}
 
 // Controller scaffolds a Controller for a Resource
 type Controller struct {
-	input.Input
+	file.Input
 
 	// Resource is the Resource to make the Controller for
 	Resource *resource.Resource
 }
 
-// GetInput implements input.File
-func (f *Controller) GetInput() (input.Input, error) {
+// GetInput implements input.Template
+func (f *Controller) GetInput() (file.Input, error) {
 	if f.Path == "" {
 		if f.MultiGroup {
 			f.Path = filepath.Join("controllers", f.Resource.Group,
@@ -47,7 +47,7 @@ func (f *Controller) GetInput() (input.Input, error) {
 	}
 	f.TemplateBody = controllerTemplate
 
-	f.Input.IfExistsAction = input.Error
+	f.Input.IfExistsAction = file.Error
 	return f.Input, nil
 }
 

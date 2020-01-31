@@ -17,18 +17,18 @@ limitations under the License.
 package project
 
 import (
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
-var _ input.File = &GitIgnore{}
+var _ file.Template = &GitIgnore{}
 
 // GitIgnore scaffolds the .gitignore file
 type GitIgnore struct {
-	input.Input
+	file.Input
 }
 
-// GetInput implements input.File
-func (f *GitIgnore) GetInput() (input.Input, error) {
+// GetInput implements input.Template
+func (f *GitIgnore) GetInput() (file.Input, error) {
 	if f.Path == "" {
 		f.Path = ".gitignore"
 	}

@@ -19,18 +19,18 @@ package manager
 import (
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
-var _ input.File = &Cmd{}
+var _ file.Template = &Cmd{}
 
 // Cmd scaffolds a manager.go to run Controllers
 type Cmd struct {
-	input.Input
+	file.Input
 }
 
-// GetInput implements input.File
-func (f *Cmd) GetInput() (input.Input, error) {
+// GetInput implements input.Template
+func (f *Cmd) GetInput() (file.Input, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("cmd", "manager", "main.go")
 	}

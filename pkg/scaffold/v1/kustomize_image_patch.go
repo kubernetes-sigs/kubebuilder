@@ -19,22 +19,22 @@ package v1
 import (
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
-var _ input.File = &KustomizeImagePatch{}
+var _ file.Template = &KustomizeImagePatch{}
 
 // KustomizeImagePatch scaffolds the patch file for customizing image URL
 // manifest file for manager resource.
 type KustomizeImagePatch struct {
-	input.Input
+	file.Input
 
 	// ImageURL to use for controller image in manager's manifest.
 	ImageURL string
 }
 
-// GetInput implements input.File
-func (f *KustomizeImagePatch) GetInput() (input.Input, error) {
+// GetInput implements input.Template
+func (f *KustomizeImagePatch) GetInput() (file.Input, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "default", "manager_image_patch.yaml")
 	}
@@ -42,7 +42,7 @@ func (f *KustomizeImagePatch) GetInput() (input.Input, error) {
 		f.ImageURL = "IMAGE_URL"
 	}
 	f.TemplateBody = kustomizeImagePatchTemplate
-	f.Input.IfExistsAction = input.Error
+	f.Input.IfExistsAction = file.Error
 	return f.Input, nil
 }
 

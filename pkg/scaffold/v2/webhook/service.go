@@ -19,23 +19,23 @@ package webhook
 import (
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
-var _ input.File = &Service{}
+var _ file.Template = &Service{}
 
 // Service scaffolds the Service file in manager folder.
 type Service struct {
-	input.Input
+	file.Input
 }
 
-// GetInput implements input.File
-func (f *Service) GetInput() (input.Input, error) {
+// GetInput implements input.Template
+func (f *Service) GetInput() (file.Input, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "webhook", "service.yaml")
 	}
 	f.TemplateBody = ServiceTemplate
-	f.Input.IfExistsAction = input.Error
+	f.Input.IfExistsAction = file.Error
 	return f.Input, nil
 }
 

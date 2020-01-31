@@ -19,18 +19,18 @@ package prometheus
 import (
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
-var _ input.File = &Kustomization{}
+var _ file.Template = &Kustomization{}
 
 // Kustomization scaffolds the kustomizaiton in the prometheus folder
 type Kustomization struct {
-	input.Input
+	file.Input
 }
 
-// GetInput implements input.File
-func (f *Kustomization) GetInput() (input.Input, error) {
+// GetInput implements input.Template
+func (f *Kustomization) GetInput() (file.Input, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "prometheus", "kustomization.yaml")
 	}

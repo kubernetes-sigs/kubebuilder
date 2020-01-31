@@ -20,8 +20,10 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -202,6 +204,12 @@ func (o *apiOptions) validate(c *config.Config) error {
 }
 
 func (o *apiOptions) scaffolder(c *config.Config) (scaffold.Scaffolder, error) {
+	// Load the boilerplate
+	bp, err := ioutil.ReadFile(filepath.Join("hack", "boilerplate.go.txt")) // nolint:gosec
+	if err != nil {
+		return nil, fmt.Errorf("unable to load boilerplate: %v", err)
+	}
+
 	// Create the actual resource from the resource options
 	var res *resource.Resource
 	switch {
@@ -226,7 +234,7 @@ func (o *apiOptions) scaffolder(c *config.Config) (scaffold.Scaffolder, error) {
 		return nil, fmt.Errorf("unknown pattern %q", o.pattern)
 	}
 
-	return scaffold.NewAPIScaffolder(c, res, o.doResource, o.doController, plugins), nil
+	return scaffold.NewAPIScaffolder(c, string(bp), res, o.doResource, o.doController, plugins), nil
 }
 
 func (o *apiOptions) postScaffold(_ *config.Config) error {

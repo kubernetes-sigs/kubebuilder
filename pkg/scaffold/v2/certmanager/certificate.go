@@ -19,18 +19,18 @@ package certmanager
 import (
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
-var _ input.File = &CertManager{}
+var _ file.Template = &CertManager{}
 
 // CertManager scaffolds an issuer CR and a certificate CR
 type CertManager struct {
-	input.Input
+	file.Input
 }
 
-// GetInput implements input.File
-func (f *CertManager) GetInput() (input.Input, error) {
+// GetInput implements input.Template
+func (f *CertManager) GetInput() (file.Input, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "certmanager", "certificate.yaml")
 	}

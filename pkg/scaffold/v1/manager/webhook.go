@@ -19,18 +19,18 @@ package manager
 import (
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
-var _ input.File = &Webhook{}
+var _ file.Template = &Webhook{}
 
 // Webhook scaffolds a webhook.go to add webhook server(s) to a manager.Cmd
 type Webhook struct {
-	input.Input
+	file.Input
 }
 
-// GetInput implements input.File
-func (f *Webhook) GetInput() (input.Input, error) {
+// GetInput implements input.Template
+func (f *Webhook) GetInput() (file.Input, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("pkg", "webhook", "webhook.go")
 	}
