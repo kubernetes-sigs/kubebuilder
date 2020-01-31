@@ -58,6 +58,7 @@
   - [Kind cluster](reference/kind.md)
   - [What's a webhook?](reference/webhook-overview.md)
     - [Admission webhook](reference/admission-webhook.md)
+    - [Webhooks for Core Types](reference/webhook-for-core-types.md)
   - [Markers for Config/Code Generation](./reference/markers.md)
 
       - [CRD Generation](./reference/markers/crd.md)
