@@ -351,12 +351,17 @@ input.markers-summarize:checked ~ label.markers-summarize::before {
     flex-direction: column;
 }
 
-/* details elements (not markers) */
-details.collapse-code {
+/* don't add margin between collapsed code elements and pre blocks */
+/* (this just removes all margin around pre, but that's generally fine) */
+.literate pre {
+    margin: 0;
+}
+.literate cite.literate-source + * {
+    /* a bit of margin against the cite element */
     margin-top: 0.125em;
-    margin-bottom: 0.125em;
 }
 
+/* details elements (not markers) */
 details.collapse-code > summary {
     width: 100%;
     cursor: pointer;
