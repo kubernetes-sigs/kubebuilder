@@ -23,8 +23,8 @@ import (
 
 	"sigs.k8s.io/kubebuilder/internal/config"
 	"sigs.k8s.io/kubebuilder/pkg/model"
+	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 	controllerv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/v1/controller"
 	crdv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/v1/crd"
 	scaffoldv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2"
@@ -77,15 +77,15 @@ func (s *apiScaffolder) buildUniverse() (*model.Universe, error) {
 	return model.NewUniverse(
 		model.WithConfig(&s.config.Config),
 		// TODO: missing model.WithBoilerplate[From], needs boilerplate or path
-		model.WithResource(s.resource, &s.config.Config),
+		model.WithResource(s.resource),
 	)
 }
 
 func (s *apiScaffolder) scaffoldV1() error {
 	if s.doResource {
-		fmt.Println(filepath.Join("pkg", "apis", s.resource.Group, s.resource.Version,
+		fmt.Println(filepath.Join("pkg", "apis", s.resource.GroupPackageName, s.resource.Version,
 			fmt.Sprintf("%s_types.go", strings.ToLower(s.resource.Kind))))
-		fmt.Println(filepath.Join("pkg", "apis", s.resource.Group, s.resource.Version,
+		fmt.Println(filepath.Join("pkg", "apis", s.resource.GroupPackageName, s.resource.Version,
 			fmt.Sprintf("%s_types_test.go", strings.ToLower(s.resource.Kind))))
 
 		universe, err := s.buildUniverse()
@@ -144,21 +144,19 @@ func (s *apiScaffolder) scaffoldV1() error {
 func (s *apiScaffolder) scaffoldV2() error {
 	if s.doResource {
 		// Only save the resource in the config file if it didn't exist
-		if s.config.AddResource(s.resource) {
+		if s.config.AddResource(s.resource.GVK()) {
 			if err := s.config.Save(); err != nil {
 				return fmt.Errorf("error updating project file with resource information : %v", err)
 			}
 		}
 
-		var path string
 		if s.config.MultiGroup {
-			path = filepath.Join("apis", s.resource.Group, s.resource.Version,
-				fmt.Sprintf("%s_types.go", strings.ToLower(s.resource.Kind)))
+			fmt.Println(filepath.Join("apis", s.resource.Group, s.resource.Version,
+				fmt.Sprintf("%s_types.go", strings.ToLower(s.resource.Kind))))
 		} else {
-			path = filepath.Join("api", s.resource.Version,
-				fmt.Sprintf("%s_types.go", strings.ToLower(s.resource.Kind)))
+			fmt.Println(filepath.Join("api", s.resource.Version,
+				fmt.Sprintf("%s_types.go", strings.ToLower(s.resource.Kind))))
 		}
-		fmt.Println(path)
 
 		universe, err := s.buildUniverse()
 		if err != nil {
@@ -168,7 +166,7 @@ func (s *apiScaffolder) scaffoldV2() error {
 		if err := (&Scaffold{Plugins: s.plugins}).Execute(
 			universe,
 			input.Options{},
-			&scaffoldv2.Types{Input: input.Input{Path: path}, Resource: s.resource},
+			&scaffoldv2.Types{Resource: s.resource},
 			&scaffoldv2.Group{Resource: s.resource},
 			&scaffoldv2.CRDSample{Resource: s.resource},
 			&scaffoldv2.CRDEditorRole{Resource: s.resource},

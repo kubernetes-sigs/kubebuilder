@@ -21,8 +21,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 )
 
 var _ input.File = &Types{}
@@ -38,9 +38,15 @@ type Types struct {
 // GetInput implements input.File
 func (f *Types) GetInput() (input.Input, error) {
 	if f.Path == "" {
-		f.Path = filepath.Join("pkg", "apis", f.Resource.Group, f.Resource.Version,
-			fmt.Sprintf("%s_types.go", strings.ToLower(f.Resource.Kind)))
+		if f.MultiGroup {
+			f.Path = filepath.Join("apis", f.Resource.Group, f.Resource.Version,
+				fmt.Sprintf("%s_types.go", strings.ToLower(f.Resource.Kind)))
+		} else {
+			f.Path = filepath.Join("api", f.Resource.Version,
+				fmt.Sprintf("%s_types.go", strings.ToLower(f.Resource.Kind)))
+		}
 	}
+
 	f.TemplateBody = typesTemplate
 	f.IfExistsAction = input.Error
 	return f.Input, nil
@@ -62,17 +68,17 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// {{.Resource.Kind}}Spec defines the desired state of {{.Resource.Kind}}
-type {{.Resource.Kind}}Spec struct {
+// {{ .Resource.Kind }}Spec defines the desired state of {{ .Resource.Kind }}
+type {{ .Resource.Kind }}Spec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of {{.Resource.Kind}}. Edit {{.Resource.Kind}}_types.go to remove/update
+	// Foo is an example field of {{ .Resource.Kind }}. Edit {{ .Resource.Kind }}_types.go to remove/update
 	Foo string ` + "`" + `json:"foo,omitempty"` + "`" + `
 }
 
-// {{.Resource.Kind}}Status defines the observed state of {{.Resource.Kind}}
-type {{.Resource.Kind}}Status struct {
+// {{ .Resource.Kind }}Status defines the observed state of {{ .Resource.Kind }}
+type {{ .Resource.Kind }}Status struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 }
@@ -80,25 +86,25 @@ type {{.Resource.Kind}}Status struct {
 // +kubebuilder:object:root=true
 {{ if not .Resource.Namespaced }} // +kubebuilder:resource:scope=Cluster {{ end }}
 
-// {{.Resource.Kind}} is the Schema for the {{ .Resource.Resource }} API
-type {{.Resource.Kind}} struct {
+// {{ .Resource.Kind }} is the Schema for the {{ .Resource.Plural }} API
+type {{ .Resource.Kind }} struct {
 	metav1.TypeMeta   ` + "`" + `json:",inline"` + "`" + `
 	metav1.ObjectMeta ` + "`" + `json:"metadata,omitempty"` + "`" + `
 
-	Spec   {{.Resource.Kind}}Spec   ` + "`" + `json:"spec,omitempty"` + "`" + `
-	Status {{.Resource.Kind}}Status ` + "`" + `json:"status,omitempty"` + "`" + `
+	Spec   {{ .Resource.Kind }}Spec   ` + "`" + `json:"spec,omitempty"` + "`" + `
+	Status {{ .Resource.Kind }}Status ` + "`" + `json:"status,omitempty"` + "`" + `
 }
 
 // +kubebuilder:object:root=true
 
-// {{.Resource.Kind}}List contains a list of {{.Resource.Kind}}
-type {{.Resource.Kind}}List struct {
+// {{ .Resource.Kind }}List contains a list of {{ .Resource.Kind }}
+type {{ .Resource.Kind }}List struct {
 	metav1.TypeMeta ` + "`" + `json:",inline"` + "`" + `
 	metav1.ListMeta ` + "`" + `json:"metadata,omitempty"` + "`" + `
 	Items           []{{ .Resource.Kind }} ` + "`" + `json:"items"` + "`" + `
 }
 
 func init() {
-	SchemeBuilder.Register(&{{.Resource.Kind}}{}, &{{.Resource.Kind}}List{})
+	SchemeBuilder.Register(&{{ .Resource.Kind }}{}, &{{ .Resource.Kind }}List{})
 }
 `

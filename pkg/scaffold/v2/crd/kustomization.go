@@ -19,12 +19,9 @@ package crd
 import (
 	"fmt"
 	"path/filepath"
-	"strings"
 
-	"github.com/gobuffalo/flect"
-
+	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/v2/internal"
 )
 
@@ -60,11 +57,10 @@ func (f *Kustomization) Update() error {
 
 	// TODO(directxman12): not technically valid if something changes from the default
 	// (we'd need to parse the markers)
-	plural := flect.Pluralize(strings.ToLower(f.Resource.Kind))
 
-	kustomizeResourceCodeFragment := fmt.Sprintf("- bases/%s.%s_%s.yaml\n", f.Resource.Group, f.Domain, plural)
-	kustomizeWebhookPatchCodeFragment := fmt.Sprintf("#- patches/webhook_in_%s.yaml\n", plural)
-	kustomizeCAInjectionPatchCodeFragment := fmt.Sprintf("#- patches/cainjection_in_%s.yaml\n", plural)
+	kustomizeResourceCodeFragment := fmt.Sprintf("- bases/%s_%s.yaml\n", f.Resource.Domain, f.Resource.Plural)
+	kustomizeWebhookPatchCodeFragment := fmt.Sprintf("#- patches/webhook_in_%s.yaml\n", f.Resource.Plural)
+	kustomizeCAInjectionPatchCodeFragment := fmt.Sprintf("#- patches/cainjection_in_%s.yaml\n", f.Resource.Plural)
 
 	return internal.InsertStringsInFile(f.Path,
 		map[string][]string{

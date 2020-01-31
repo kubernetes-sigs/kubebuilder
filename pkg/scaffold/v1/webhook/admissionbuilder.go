@@ -21,8 +21,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 )
 
 var _ input.File = &AdmissionWebhookBuilder{}
@@ -33,9 +33,6 @@ type AdmissionWebhookBuilder struct {
 
 	// Resource is a resource in the API group
 	Resource *resource.Resource
-
-	// ResourcePackage is the package of the Resource
-	ResourcePackage string
 
 	Config
 
@@ -48,8 +45,6 @@ type AdmissionWebhookBuilder struct {
 
 // GetInput implements input.File
 func (f *AdmissionWebhookBuilder) GetInput() (input.Input, error) {
-	f.ResourcePackage = getResourceInfo(coreGroups, f.Resource, f.Input)
-
 	if f.Type == "mutating" {
 		f.Mutating = true
 	}
@@ -79,7 +74,7 @@ package {{ .Type }}
 import (
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission/builder"
-	{{ .Resource.Group}}{{ .Resource.Version }} "{{ .ResourcePackage }}/{{ .Resource.Group}}/{{ .Resource.Version }}"
+	{{ .Resource.ImportAlias }} "{{ .Resource.Package }}"
 )
 
 func init() {
@@ -93,6 +88,6 @@ func init() {
 {{ end }}
 		Operations({{ .OperationsParameterString }}).
 		FailurePolicy(admissionregistrationv1beta1.Fail).
-		ForType(&{{ .Resource.Group}}{{ .Resource.Version }}.{{ .Resource.Kind }}{})
+		ForType(&{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{})
 }
 `

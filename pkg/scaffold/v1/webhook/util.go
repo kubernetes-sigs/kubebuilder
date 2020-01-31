@@ -18,46 +18,10 @@ package webhook
 
 import (
 	"fmt"
-	"os"
-	"path"
-	"path/filepath"
 	"strings"
-
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 )
-
-// Use the k8s.io/api package for core resources
-var coreGroups = map[string]string{
-	"apps":                  "",
-	"admissionregistration": "k8s.io",
-	"apiextensions":         "k8s.io",
-	"authentication":        "k8s.io",
-	"autoscaling":           "",
-	"batch":                 "",
-	"certificates":          "k8s.io",
-	"core":                  "",
-	"extensions":            "",
-	"metrics":               "k8s.io",
-	"policy":                "",
-	"rbac.authorization":    "k8s.io",
-	"storage":               "k8s.io",
-}
 
 func builderName(config Config, resource string) string {
 	opsStr := strings.Join(config.Operations, "-")
 	return fmt.Sprintf("%s-%s-%s", config.Type, opsStr, resource)
-}
-
-func getResourceInfo(coreGroups map[string]string, r *resource.Resource, in input.Input) (resourcePackage string) {
-	resourcePath := filepath.Join("pkg", "apis", r.Group, r.Version,
-		fmt.Sprintf("%s_types.go", strings.ToLower(r.Kind)))
-	if _, err := os.Stat(resourcePath); os.IsNotExist(err) {
-		if _, found := coreGroups[r.Group]; found {
-			resourcePackage := path.Join("k8s.io", "api")
-			return resourcePackage
-		}
-		// TODO: need to support '--resource-pkg-path' flag for specifying resourcePath
-	}
-	return path.Join(in.Repo, "pkg", "apis")
 }

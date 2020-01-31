@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package v1beta2 contains API Schema definitions for the seacreatures v1beta2 API group
+// Package v1beta2 contains API Schema definitions for the sea-creatures v1beta2 API group
 // +kubebuilder:object:generate=true
 // +groupName=sea-creatures.testproject.org
 package v1beta2

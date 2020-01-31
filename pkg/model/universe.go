@@ -18,13 +18,9 @@ package model
 
 import (
 	"io/ioutil"
-	"strings"
-
-	"github.com/gobuffalo/flect"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/config"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/util"
+	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 )
 
 // Universe describes the entire state of file generation
@@ -36,7 +32,7 @@ type Universe struct {
 	Boilerplate string `json:"boilerplate,omitempty"`
 
 	// Resource contains the information of the API that is being scaffolded
-	Resource *Resource `json:"resource,omitempty"`
+	Resource *resource.Resource `json:"resource,omitempty"`
 
 	// Files contains the model of the files that are being scaffolded
 	Files []*File `json:"files,omitempty"`
@@ -83,7 +79,7 @@ func WithBoilerplateFrom(path string) UniverseOption {
 // WithBoilerplate stores the already loaded project configuration
 func WithBoilerplate(boilerplate string) UniverseOption {
 	return func(universe *Universe) error {
-		universe.Boilerplate = string(boilerplate)
+		universe.Boilerplate = boilerplate
 		return nil
 	}
 }
@@ -95,25 +91,10 @@ func WithoutBoilerplate(universe *Universe) error {
 }
 
 // WithResource stores the provided resource
-func WithResource(resource *resource.Resource, project *config.Config) UniverseOption {
+func WithResource(resource *resource.Resource) UniverseOption {
 	return func(universe *Universe) error {
-		resourceModel := &Resource{
-			Namespaced: resource.Namespaced,
-			Group:      resource.Group,
-			Version:    resource.Version,
-			Kind:       resource.Kind,
-			Resource:   resource.Resource,
-			Plural:     flect.Pluralize(strings.ToLower(resource.Kind)),
-		}
+		universe.Resource = resource
 
-		resourceModel.GoPackage, resourceModel.GroupDomain = util.GetResourceInfo(
-			resource,
-			project.Repo,
-			project.Domain,
-			project.MultiGroup,
-		)
-
-		universe.Resource = resourceModel
 		return nil
 	}
 }

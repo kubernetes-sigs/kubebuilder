@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 )
 
 var _ input.File = &AddToScheme{}
@@ -38,7 +38,7 @@ type AddToScheme struct {
 func (f *AddToScheme) GetInput() (input.Input, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("pkg", "apis", fmt.Sprintf(
-			"addtoscheme_%s_%s.go", f.Resource.Group, f.Resource.Version))
+			"addtoscheme_%s_%s.go", f.Resource.GroupPackageName, f.Resource.Version))
 	}
 	f.TemplateBody = addResourceTemplate
 	return f.Input, nil
@@ -57,11 +57,11 @@ const addResourceTemplate = `{{ .Boilerplate }}
 package apis
 
 import (
-	api "{{ .Repo }}/pkg/apis/{{ .Resource.Group }}/{{ .Resource.Version }}"
+	{{ .Resource.ImportAlias }} "{{ .Resource.Package }}"
 )
 
 func init() {
 	// Register the types with the Scheme so the components can map objects to GroupVersionKinds and back
-	AddToSchemes = append(AddToSchemes, api.SchemeBuilder.AddToScheme)
+	AddToSchemes = append(AddToSchemes, {{ .Resource.ImportAlias }}.SchemeBuilder.AddToScheme)
 }
 `

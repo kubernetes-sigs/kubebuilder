@@ -23,8 +23,8 @@ import (
 
 	"github.com/gobuffalo/flect"
 
+	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 )
 
 var _ input.File = &EnableWebhookPatch{}
@@ -58,7 +58,7 @@ const enableWebhookPatchTemplate = `# The following patch enables conversion web
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: {{ .Resource.Resource }}.{{ .Resource.Group }}.{{ .Domain }}
+  name: {{ .Resource.Plural }}.{{ .Resource.Domain }}
 spec:
   conversion:
     strategy: Webhook

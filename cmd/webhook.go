@@ -26,8 +26,8 @@ import (
 
 	"sigs.k8s.io/kubebuilder/cmd/internal"
 	"sigs.k8s.io/kubebuilder/internal/config"
+	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 )
 
 type webhookError struct {
@@ -67,7 +67,7 @@ This command is only available for v1 scaffolding project.
 var _ commandOptions = &webhookV1Options{}
 
 type webhookV1Options struct {
-	resource    *resource.Resource
+	resource    *resource.Options
 	server      string
 	webhookType string
 	operations  []string
@@ -82,11 +82,11 @@ func (o *webhookV1Options) bindFlags(cmd *cobra.Command) {
 
 	cmd.Flags().BoolVar(&o.doMake, "make", true, "if true, run make after generating files")
 
-	o.resource = &resource.Resource{}
+	o.resource = &resource.Options{}
 	cmd.Flags().StringVar(&o.resource.Group, "group", "", "resource Group")
 	cmd.Flags().StringVar(&o.resource.Version, "version", "", "resource Version")
 	cmd.Flags().StringVar(&o.resource.Kind, "kind", "", "resource Kind")
-	cmd.Flags().StringVar(&o.resource.Resource, "resource", "", "resource Resource")
+	cmd.Flags().StringVar(&o.resource.Plural, "resource", "", "resource Resource")
 }
 
 func (o *webhookV1Options) loadConfig() (*config.Config, error) {
@@ -111,7 +111,18 @@ func (o *webhookV1Options) validate(c *config.Config) error {
 }
 
 func (o *webhookV1Options) scaffolder(c *config.Config) (scaffold.Scaffolder, error) { // nolint:unparam
-	return scaffold.NewV1WebhookScaffolder(&c.Config, o.resource, o.server, o.webhookType, o.operations), nil
+	// Create the actual resource from the resource options
+	var res *resource.Resource
+	switch {
+	case c.IsV1():
+		res = o.resource.NewV1Resource(&c.Config, false)
+	case c.IsV2():
+		res = o.resource.NewResource(&c.Config, false)
+	default:
+		return nil, fmt.Errorf("unknown project version %v", c.Version)
+	}
+
+	return scaffold.NewV1WebhookScaffolder(&c.Config, res, o.server, o.webhookType, o.operations), nil
 }
 
 func (o *webhookV1Options) postScaffold(_ *config.Config) error {
@@ -154,18 +165,18 @@ func newWebhookV2Cmd() *cobra.Command {
 var _ commandOptions = &webhookV2Options{}
 
 type webhookV2Options struct {
-	resource   *resource.Resource
+	resource   *resource.Options
 	defaulting bool
 	validation bool
 	conversion bool
 }
 
 func (o *webhookV2Options) bindFlags(cmd *cobra.Command) {
-	o.resource = &resource.Resource{}
+	o.resource = &resource.Options{}
 	cmd.Flags().StringVar(&o.resource.Group, "group", "", "resource Group")
 	cmd.Flags().StringVar(&o.resource.Version, "version", "", "resource Version")
 	cmd.Flags().StringVar(&o.resource.Kind, "kind", "", "resource Kind")
-	cmd.Flags().StringVar(&o.resource.Resource, "resource", "", "resource Resource")
+	cmd.Flags().StringVar(&o.resource.Plural, "resource", "", "resource Resource")
 
 	cmd.Flags().BoolVar(&o.defaulting, "defaulting", false,
 		"if set, scaffold the defaulting webhook")
@@ -202,7 +213,18 @@ func (o *webhookV2Options) validate(c *config.Config) error {
 }
 
 func (o *webhookV2Options) scaffolder(c *config.Config) (scaffold.Scaffolder, error) { // nolint:unparam
-	return scaffold.NewV2WebhookScaffolder(&c.Config, o.resource, o.defaulting, o.validation, o.conversion), nil
+	// Create the actual resource from the resource options
+	var res *resource.Resource
+	switch {
+	case c.IsV1():
+		res = o.resource.NewV1Resource(&c.Config, false)
+	case c.IsV2():
+		res = o.resource.NewResource(&c.Config, false)
+	default:
+		return nil, fmt.Errorf("unknown project version %v", c.Version)
+	}
+
+	return scaffold.NewV2WebhookScaffolder(&c.Config, res, o.defaulting, o.validation, o.conversion), nil
 }
 
 func (o *webhookV2Options) postScaffold(_ *config.Config) error {

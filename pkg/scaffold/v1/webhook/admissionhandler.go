@@ -21,8 +21,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 )
 
 var _ input.File = &AddAdmissionWebhookBuilderHandler{}
@@ -30,9 +30,6 @@ var _ input.File = &AddAdmissionWebhookBuilderHandler{}
 // AdmissionHandler scaffolds an admission handler
 type AdmissionHandler struct {
 	input.Input
-
-	// ResourcePackage is the package of the Resource
-	ResourcePackage string
 
 	// Resource is a resource in the API group
 	Resource *resource.Resource
@@ -48,7 +45,6 @@ type AdmissionHandler struct {
 
 // GetInput implements input.File
 func (f *AdmissionHandler) GetInput() (input.Input, error) {
-	f.ResourcePackage = getResourceInfo(coreGroups, f.Resource, f.Input)
 	f.Type = strings.ToLower(f.Type)
 	if f.Type == "mutating" {
 		f.Mutate = true
@@ -79,10 +75,11 @@ package {{ .Type }}
 import (
 	"context"
 	"net/http"
+
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission/types"
-	{{ .Resource.Group}}{{ .Resource.Version }} "{{ .ResourcePackage }}/{{ .Resource.Group}}/{{ .Resource.Version }}"
+	{{ .Resource.ImportAlias }} "{{ .Resource.Package }}"
 )
 
 func init() {
@@ -105,12 +102,12 @@ type {{ .Resource.Kind }}{{ .OperationsString }}Handler struct {
 	Decoder types.Decoder
 }
 {{ if .Mutate }}
-func (h *{{ .Resource.Kind }}{{ .OperationsString }}Handler) {{ .Type }}{{ .Resource.Kind }}Fn(ctx context.Context, obj *{{ .Resource.Group}}{{ .Resource.Version }}.{{ .Resource.Kind }}) error {
+func (h *{{ .Resource.Kind }}{{ .OperationsString }}Handler) {{ .Type }}{{ .Resource.Kind }}Fn(ctx context.Context, obj *{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}) error {
 	// TODO(user): implement your admission logic
 	return nil
 }
 {{ else }}
-func (h *{{ .Resource.Kind }}{{ .OperationsString }}Handler) {{ .Type }}{{ .Resource.Kind }}Fn(ctx context.Context, obj *{{ .Resource.Group}}{{ .Resource.Version }}.{{ .Resource.Kind }}) (bool, string, error) {
+func (h *{{ .Resource.Kind }}{{ .OperationsString }}Handler) {{ .Type }}{{ .Resource.Kind }}Fn(ctx context.Context, obj *{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}) (bool, string, error) {
 	// TODO(user): implement your admission logic
 	return true, "allowed to be admitted", nil
 }
@@ -119,7 +116,7 @@ var _ admission.Handler = &{{ .Resource.Kind }}{{ .OperationsString }}Handler{}
 {{ if .Mutate }}
 // Handle handles admission requests.
 func (h *{{ .Resource.Kind }}{{ .OperationsString }}Handler) Handle(ctx context.Context, req types.Request) types.Response {
-	obj := &{{ .Resource.Group}}{{ .Resource.Version }}.{{ .Resource.Kind }}{}
+	obj := &{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{}
 
 	err := h.Decoder.Decode(req, obj)
 	if err != nil {
@@ -136,7 +133,7 @@ func (h *{{ .Resource.Kind }}{{ .OperationsString }}Handler) Handle(ctx context.
 {{ else }}
 // Handle handles admission requests.
 func (h *{{ .Resource.Kind }}{{ .OperationsString }}Handler) Handle(ctx context.Context, req types.Request) types.Response {
-	obj := &{{ .Resource.Group}}{{ .Resource.Version }}.{{ .Resource.Kind }}{}
+	obj := &{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{}
 
 	err := h.Decoder.Decode(req, obj)
 	if err != nil {

@@ -26,8 +26,9 @@ import (
 	. "github.com/onsi/gomega"
 
 	"sigs.k8s.io/kubebuilder/pkg/model"
+	"sigs.k8s.io/kubebuilder/pkg/model/config"
+	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/scaffoldtest"
 	. "sigs.k8s.io/kubebuilder/pkg/scaffold/v1/crd"
 )
@@ -38,16 +39,21 @@ func TestResource(t *testing.T) {
 }
 
 var _ = Describe("Resource", func() {
-	resources := []*resource.Resource{
+	resources := []*resource.Options{
 		{Group: "crew", Version: "v1", Kind: "FirstMate", Namespaced: true, CreateExampleReconcileBody: true},
 		{Group: "ship", Version: "v1beta1", Kind: "Frigate", Namespaced: true, CreateExampleReconcileBody: false},
 		{Group: "creatures", Version: "v2alpha1", Kind: "Kraken", Namespaced: false, CreateExampleReconcileBody: false},
 	}
 
 	for i := range resources {
-		r := resources[i]
-		_ = r.Validate()
-
+		r := resources[i].NewV1Resource(
+			&config.Config{
+				Version: config.Version1,
+				Domain:  "testproject.org",
+				Repo:    "project",
+			},
+			true,
+		)
 		Describe(fmt.Sprintf("scaffolding API %s", r.Kind), func() {
 			files := []struct {
 				instance input.File
@@ -55,38 +61,38 @@ var _ = Describe("Resource", func() {
 			}{
 				{
 					file: filepath.Join("pkg", "apis",
-						fmt.Sprintf("addtoscheme_%s_%s.go", r.Group, r.Version)),
+						fmt.Sprintf("addtoscheme_%s_%s.go", r.GroupPackageName, r.Version)),
 					instance: &AddToScheme{Resource: r},
 				},
 				{
-					file:     filepath.Join("pkg", "apis", r.Group, r.Version, "doc.go"),
+					file:     filepath.Join("pkg", "apis", r.GroupPackageName, r.Version, "doc.go"),
 					instance: &Doc{Resource: r},
 				},
 				{
-					file:     filepath.Join("pkg", "apis", r.Group, "group.go"),
+					file:     filepath.Join("pkg", "apis", r.GroupPackageName, "group.go"),
 					instance: &Group{Resource: r},
 				},
 				{
-					file:     filepath.Join("pkg", "apis", r.Group, r.Version, "register.go"),
+					file:     filepath.Join("pkg", "apis", r.GroupPackageName, r.Version, "register.go"),
 					instance: &Register{Resource: r},
 				},
 				{
-					file: filepath.Join("pkg", "apis", r.Group, r.Version,
+					file: filepath.Join("pkg", "apis", r.GroupPackageName, r.Version,
 						strings.ToLower(r.Kind)+"_types.go"),
 					instance: &Types{Resource: r},
 				},
 				{
-					file: filepath.Join("pkg", "apis", r.Group, r.Version,
+					file: filepath.Join("pkg", "apis", r.GroupPackageName, r.Version,
 						strings.ToLower(r.Kind)+"_types_test.go"),
 					instance: &TypesTest{Resource: r},
 				},
 				{
-					file:     filepath.Join("pkg", "apis", r.Group, r.Version, r.Version+"_suite_test.go"),
+					file:     filepath.Join("pkg", "apis", r.GroupPackageName, r.Version, r.Version+"_suite_test.go"),
 					instance: &VersionSuiteTest{Resource: r},
 				},
 				{
 					file: filepath.Join("config", "samples",
-						fmt.Sprintf("%s_%s_%s.yaml", r.Group, r.Version, strings.ToLower(r.Kind))),
+						fmt.Sprintf("%s_%s_%s.yaml", r.GroupPackageName, r.Version, strings.ToLower(r.Kind))),
 					instance: &CRDSample{Resource: r},
 				},
 			}

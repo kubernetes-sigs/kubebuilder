@@ -17,10 +17,10 @@ limitations under the License.
 package apis
 
 import (
-	api "project/pkg/apis/crew/v1"
+	crewv1 "project/pkg/apis/crew/v1"
 )
 
 func init() {
 	// Register the types with the Scheme so the components can map objects to GroupVersionKinds and back
-	AddToSchemes = append(AddToSchemes, api.SchemeBuilder.AddToScheme)
+	AddToSchemes = append(AddToSchemes, crewv1.SchemeBuilder.AddToScheme)
 }
