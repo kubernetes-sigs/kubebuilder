@@ -60,6 +60,7 @@ func NewAPIScaffolder(
 	}
 }
 
+// Scaffold
 func (s *apiScaffolder) Scaffold() error {
 	fmt.Println("Writing scaffold for you to edit...")
 
