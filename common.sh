@@ -18,12 +18,14 @@ set -o nounset
 set -o pipefail
 
 # check if modules are enabled
-(go mod edit -json &>/dev/null)
-MODULES_ENABLED=$?
+MODULES_ENABLED=""
+if go mod edit -json &>/dev/null ; then
+  MODULES_ENABLED="1"
+fi
 
 MOD_OPT=""
 MODULES_OPT=${MODULES_OPT:-""}
-if [[ -n "${MODULES_OPT}" && $MODULES_ENABLED ]]; then
+if [[ -n "${MODULES_OPT}" && -n "${MODULES_ENABLED}" ]]; then
     MOD_OPT="-mod=${MODULES_OPT}"
 fi
 
