@@ -17,9 +17,8 @@ limitations under the License.
 package model
 
 import (
-	"io/ioutil"
-
 	"sigs.k8s.io/kubebuilder/pkg/model/config"
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 )
 
@@ -35,66 +34,65 @@ type Universe struct {
 	Resource *resource.Resource `json:"resource,omitempty"`
 
 	// Files contains the model of the files that are being scaffolded
-	Files []*File `json:"files,omitempty"`
+	Files []*file.File `json:"files,omitempty"`
 }
 
 // NewUniverse creates a new Universe
-func NewUniverse(options ...UniverseOption) (*Universe, error) {
+func NewUniverse(options ...UniverseOption) *Universe {
 	universe := &Universe{}
 
 	// Apply options
 	for _, option := range options {
-		if err := option(universe); err != nil {
-			return nil, err
-		}
+		option(universe)
 	}
 
-	return universe, nil
+	return universe
 }
 
 // UniverseOption configure Universe
-type UniverseOption func(*Universe) error
+type UniverseOption func(*Universe)
 
 // WithConfig stores the already loaded project configuration
 func WithConfig(projectConfig *config.Config) UniverseOption {
-	return func(universe *Universe) error {
+	return func(universe *Universe) {
 		universe.Config = projectConfig
-		return nil
-	}
-}
-
-// WithBoilerplateFrom loads the boilerplate from the provided path
-func WithBoilerplateFrom(path string) UniverseOption {
-	return func(universe *Universe) error {
-		boilerplate, err := ioutil.ReadFile(path)
-		if err != nil {
-			return err
-		}
-
-		universe.Boilerplate = string(boilerplate)
-		return nil
 	}
 }
 
 // WithBoilerplate stores the already loaded project configuration
 func WithBoilerplate(boilerplate string) UniverseOption {
-	return func(universe *Universe) error {
+	return func(universe *Universe) {
 		universe.Boilerplate = boilerplate
-		return nil
 	}
 }
 
 // WithoutBoilerplate is used for files that do not require a boilerplate
-func WithoutBoilerplate(universe *Universe) error {
-	universe.Boilerplate = "-"
-	return nil
+func WithoutBoilerplate(universe *Universe) {
+	universe.Boilerplate = ""
 }
 
 // WithResource stores the provided resource
 func WithResource(resource *resource.Resource) UniverseOption {
-	return func(universe *Universe) error {
+	return func(universe *Universe) {
 		universe.Resource = resource
+	}
+}
 
-		return nil
+func (u Universe) InjectInto(t file.Template) {
+	// Inject project configuration
+	if u.Config != nil {
+		if templateWithDomain, ok := t.(file.Domain); ok {
+			templateWithDomain.SetDomain(u.Config.Domain)
+		}
+		if templateWithRepository, ok := t.(file.Repo); ok {
+			templateWithRepository.SetRepo(u.Config.Repo)
+		}
+		if templateWithMultiGroup, ok := t.(file.MultiGroup); ok {
+			templateWithMultiGroup.SetMultiGroup(u.Config.MultiGroup)
+		}
+	}
+	// Inject boilerplate
+	if templateWithBoilerplate, ok := t.(file.Boilerplate); ok {
+		templateWithBoilerplate.SetBoilerplate(u.Boilerplate)
 	}
 }

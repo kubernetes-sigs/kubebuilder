@@ -21,15 +21,16 @@ import (
 	"path/filepath"
 	"strings"
 
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
-var _ input.File = &APIs{}
+var _ file.Template = &APIs{}
 
 // APIs scaffolds a apis.go to register types with a Scheme
 type APIs struct {
-	input.Input
-
+	file.Input
+	// BoilerplatePath is the path to the boilerplate file
+	BoilerplatePath string
 	// Comments is a list of comments to add to the apis.go
 	Comments []string
 }
@@ -40,15 +41,15 @@ var deepCopy = strings.Join([]string{
 	"-O zz_generated.deepcopy",
 	"-i ./..."}, " ")
 
-// GetInput implements input.File
-func (f *APIs) GetInput() (input.Input, error) {
+// GetInput implements input.Template
+func (f *APIs) GetInput() (file.Input, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("pkg", "apis", "apis.go")
 	}
 
-	relPath, err := filepath.Rel(filepath.Join(f.Input.ProjectPath, "pkg", "apis"), f.BoilerplatePath)
+	relPath, err := filepath.Rel(filepath.Dir(f.Path), f.BoilerplatePath)
 	if err != nil {
-		return input.Input{}, err
+		return file.Input{}, err
 	}
 	if len(f.Comments) == 0 {
 		f.Comments = append(f.Comments,

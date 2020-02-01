@@ -19,22 +19,22 @@ package crd
 import (
 	"path/filepath"
 
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 	"sigs.k8s.io/kubebuilder/pkg/model/resource"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 )
 
-var _ input.File = &Doc{}
+var _ file.Template = &Doc{}
 
 // Doc scaffolds the pkg/apis/group/version/doc.go directory
 type Doc struct {
-	input.Input
+	file.Input
 
 	// Resource is a resource for the API version
 	Resource *resource.Resource
 }
 
-// GetInput implements input.File
-func (f *Doc) GetInput() (input.Input, error) {
+// GetInput implements input.Template
+func (f *Doc) GetInput() (file.Input, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("pkg", "apis", f.Resource.GroupPackageName, f.Resource.Version, "doc.go")
 	}

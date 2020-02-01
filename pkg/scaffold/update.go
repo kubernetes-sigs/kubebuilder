@@ -19,7 +19,6 @@ package scaffold
 import (
 	"sigs.k8s.io/kubebuilder/pkg/model"
 	"sigs.k8s.io/kubebuilder/pkg/model/config"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
 )
 
@@ -34,17 +33,11 @@ func NewUpdateScaffolder(config *config.Config) Scaffolder {
 }
 
 func (s *updateScaffolder) Scaffold() error {
-	universe, err := model.NewUniverse(
-		model.WithConfig(s.config),
-		model.WithoutBoilerplate,
-	)
-	if err != nil {
-		return err
-	}
-
-	return (&Scaffold{}).Execute(
-		universe,
-		input.Options{},
+	return NewScaffold().Execute(
+		model.NewUniverse(
+			model.WithConfig(s.config),
+			model.WithoutBoilerplate,
+		),
 		&project.GopkgToml{},
 	)
 }

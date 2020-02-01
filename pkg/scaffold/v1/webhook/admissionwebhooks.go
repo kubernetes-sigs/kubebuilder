@@ -21,15 +21,15 @@ import (
 	"path/filepath"
 	"strings"
 
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 	"sigs.k8s.io/kubebuilder/pkg/model/resource"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 )
 
-var _ input.File = &AdmissionWebhooks{}
+var _ file.Template = &AdmissionWebhooks{}
 
 // AdmissionWebhooks scaffolds how to construct a webhook server and register webhooks.
 type AdmissionWebhooks struct {
-	input.Input
+	file.Input
 
 	// Resource is a resource in the API group
 	Resource *resource.Resource
@@ -37,8 +37,8 @@ type AdmissionWebhooks struct {
 	Config
 }
 
-// GetInput implements input.File
-func (f *AdmissionWebhooks) GetInput() (input.Input, error) {
+// GetInput implements input.Template
+func (f *AdmissionWebhooks) GetInput() (file.Input, error) {
 	f.Server = strings.ToLower(f.Server)
 	f.Type = strings.ToLower(f.Type)
 	if f.Path == "" {

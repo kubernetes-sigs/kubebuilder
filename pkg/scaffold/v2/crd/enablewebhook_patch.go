@@ -23,22 +23,22 @@ import (
 
 	"github.com/gobuffalo/flect"
 
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 	"sigs.k8s.io/kubebuilder/pkg/model/resource"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 )
 
-var _ input.File = &EnableWebhookPatch{}
+var _ file.Template = &EnableWebhookPatch{}
 
 // EnableWebhookPatch scaffolds a EnableWebhookPatch for a Resource
 type EnableWebhookPatch struct {
-	input.Input
+	file.Input
 
 	// Resource is the Resource to make the EnableWebhookPatch for
 	Resource *resource.Resource
 }
 
-// GetInput implements input.File
-func (f *EnableWebhookPatch) GetInput() (input.Input, error) {
+// GetInput implements input.Template
+func (f *EnableWebhookPatch) GetInput() (file.Input, error) {
 	if f.Path == "" {
 		plural := flect.Pluralize(strings.ToLower(f.Resource.Kind))
 		f.Path = filepath.Join("config", "crd", "patches",

@@ -21,22 +21,22 @@ import (
 	"path/filepath"
 	"strings"
 
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 	"sigs.k8s.io/kubebuilder/pkg/model/resource"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 )
 
-var _ input.File = &CRDViewerRole{}
+var _ file.Template = &CRDViewerRole{}
 
 // CRD Viewer role scaffolds the config/rbca/<kind>_viewer_role.yaml
 type CRDViewerRole struct {
-	input.Input
+	file.Input
 
 	// Resource is a resource in the API group
 	Resource *resource.Resource
 }
 
-// GetInput implements input.File
-func (f *CRDViewerRole) GetInput() (input.Input, error) {
+// GetInput implements input.Template
+func (f *CRDViewerRole) GetInput() (file.Input, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "rbac", fmt.Sprintf("%s_viewer_role.yaml", strings.ToLower(f.Resource.Kind)))
 	}

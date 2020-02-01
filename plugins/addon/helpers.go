@@ -9,6 +9,7 @@ import (
 	"github.com/gobuffalo/flect"
 
 	"sigs.k8s.io/kubebuilder/pkg/model"
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
 // This file gathers functions that are likely to be useful to other
@@ -21,7 +22,7 @@ type PluginFunc func(u *model.Universe) error
 // If the file exists the function returns false and does not modify the Universe
 // If the file does not exist, the function returns true and adds the file to the Universe
 // If there is a problem with the file the function returns an error
-func AddFile(u *model.Universe, add *model.File) (bool, error) {
+func AddFile(u *model.Universe, add *file.File) (bool, error) {
 	p := add.Path
 	if p == "" {
 		return false, fmt.Errorf("path must be set")
@@ -39,7 +40,7 @@ func AddFile(u *model.Universe, add *model.File) (bool, error) {
 
 // ReplaceFileIfExists replaces the specified file in the model by path
 // Returns true iff the file was replaced.
-func ReplaceFileIfExists(u *model.Universe, add *model.File) bool {
+func ReplaceFileIfExists(u *model.Universe, add *file.File) bool {
 	p := add.Path
 	if p == "" {
 		panic("path must be set")
@@ -57,7 +58,7 @@ func ReplaceFileIfExists(u *model.Universe, add *model.File) bool {
 
 // ReplaceFile replaces the specified file in the model by path
 // If the file does not exist, it returns an error
-func ReplaceFile(u *model.Universe, add *model.File) error {
+func ReplaceFile(u *model.Universe, add *file.File) error {
 	found := ReplaceFileIfExists(u, add)
 	if !found {
 		return fmt.Errorf("file not found %q", add.Path)

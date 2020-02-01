@@ -19,23 +19,23 @@ package project
 import (
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
-var _ input.File = &KustomizeRBAC{}
+var _ file.Template = &KustomizeRBAC{}
 
 // KustomizeRBAC scaffolds the Kustomization file in rbac folder.
 type KustomizeRBAC struct {
-	input.Input
+	file.Input
 }
 
-// GetInput implements input.File
-func (f *KustomizeRBAC) GetInput() (input.Input, error) {
+// GetInput implements input.Template
+func (f *KustomizeRBAC) GetInput() (file.Input, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "rbac", "kustomization.yaml")
 	}
 	f.TemplateBody = kustomizeRBACTemplate
-	f.Input.IfExistsAction = input.Error
+	f.Input.IfExistsAction = file.Error
 	return f.Input, nil
 }
 

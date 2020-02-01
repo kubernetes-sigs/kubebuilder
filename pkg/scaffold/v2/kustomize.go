@@ -21,21 +21,21 @@ import (
 	"path/filepath"
 	"strings"
 
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
-var _ input.File = &Kustomize{}
+var _ file.Template = &Kustomize{}
 
 // Kustomize scaffolds the Kustomization file for the default overlay
 type Kustomize struct {
-	input.Input
+	file.Input
 
 	// Prefix to use for name prefix customization
 	Prefix string
 }
 
-// GetInput implements input.File
-func (f *Kustomize) GetInput() (input.Input, error) {
+// GetInput implements input.Template
+func (f *Kustomize) GetInput() (file.Input, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "default", "kustomization.yaml")
 	}
@@ -43,12 +43,12 @@ func (f *Kustomize) GetInput() (input.Input, error) {
 		// use directory name as prefix
 		dir, err := os.Getwd()
 		if err != nil {
-			return input.Input{}, err
+			return file.Input{}, err
 		}
 		f.Prefix = strings.ToLower(filepath.Base(dir))
 	}
 	f.TemplateBody = kustomizeTemplate
-	f.Input.IfExistsAction = input.Error
+	f.Input.IfExistsAction = file.Error
 	return f.Input, nil
 }
 

@@ -21,29 +21,29 @@ import (
 	"path/filepath"
 	"strings"
 
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 	"sigs.k8s.io/kubebuilder/pkg/model/resource"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
 )
 
-var _ input.File = &CRDSample{}
+var _ file.Template = &CRDSample{}
 
 // CRDSample scaffolds a manifest for CRD sample.
 // nolint:golint
 type CRDSample struct {
-	input.Input
+	file.Input
 
 	// Resource is a resource in the API group
 	Resource *resource.Resource
 }
 
-// GetInput implements input.File
-func (f *CRDSample) GetInput() (input.Input, error) {
+// GetInput implements input.Template
+func (f *CRDSample) GetInput() (file.Input, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "samples", fmt.Sprintf(
 			"%s_%s_%s.yaml", f.Resource.GroupPackageName, f.Resource.Version, strings.ToLower(f.Resource.Kind)))
 	}
 
-	f.IfExistsAction = input.Error
+	f.IfExistsAction = file.Error
 	f.TemplateBody = crdSampleTemplate
 	return f.Input, nil
 }

@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"sigs.k8s.io/kubebuilder/pkg/model"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
 func ReplaceController(u *model.Universe) error {
@@ -17,10 +17,10 @@ func ReplaceController(u *model.Universe) error {
 		return err
 	}
 
-	m := &model.File{
+	m := &file.File{
 		Path:           filepath.Join("controllers", strings.ToLower(u.Resource.Kind)+"_controller.go"),
 		Contents:       contents,
-		IfExistsAction: input.Error,
+		IfExistsAction: file.Error,
 	}
 
 	ReplaceFileIfExists(u, m)

@@ -17,18 +17,18 @@ limitations under the License.
 package v2
 
 import (
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
-var _ input.File = &Dockerfile{}
+var _ file.Template = &Dockerfile{}
 
 // Dockerfile scaffolds a Dockerfile for building a main
 type Dockerfile struct {
-	input.Input
+	file.Input
 }
 
-// GetInput implements input.File
-func (f *Dockerfile) GetInput() (input.Input, error) {
+// GetInput implements input.Template
+func (f *Dockerfile) GetInput() (file.Input, error) {
 	if f.Path == "" {
 		f.Path = "Dockerfile"
 	}

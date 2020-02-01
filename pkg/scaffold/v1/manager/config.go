@@ -19,20 +19,20 @@ package manager
 import (
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
-var _ input.File = &Config{}
+var _ file.Template = &Config{}
 
 // Config scaffolds yaml config for the manager.
 type Config struct {
-	input.Input
+	file.Input
 	// Image is controller manager image name
 	Image string
 }
 
-// GetInput implements input.File
-func (f *Config) GetInput() (input.Input, error) {
+// GetInput implements input.Template
+func (f *Config) GetInput() (file.Input, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "manager", "manager.yaml")
 	}

@@ -20,20 +20,20 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
-var _ input.File = &Server{}
+var _ file.Template = &Server{}
 
 // Server scaffolds how to construct a webhook server and register webhooks.
 type Server struct {
-	input.Input
+	file.Input
 
 	Config
 }
 
-// GetInput implements input.File
-func (f *Server) GetInput() (input.Input, error) {
+// GetInput implements input.Template
+func (f *Server) GetInput() (file.Input, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("pkg", "webhook", fmt.Sprintf("%s_server", f.Server), "server.go")
 	}

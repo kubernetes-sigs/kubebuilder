@@ -19,24 +19,24 @@ package metricsauth
 import (
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
-var _ input.File = &KustomizeAuthProxyPatch{}
+var _ file.Template = &KustomizeAuthProxyPatch{}
 
 // KustomizeAuthProxyPatch scaffolds the patch file for enabling
 // prometheus metrics for manager Pod.
 type KustomizeAuthProxyPatch struct {
-	input.Input
+	file.Input
 }
 
-// GetInput implements input.File
-func (f *KustomizeAuthProxyPatch) GetInput() (input.Input, error) {
+// GetInput implements input.Template
+func (f *KustomizeAuthProxyPatch) GetInput() (file.Input, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "default", "manager_auth_proxy_patch.yaml")
 	}
 	f.TemplateBody = kustomizeAuthProxyPatchTemplate
-	f.Input.IfExistsAction = input.Error
+	f.Input.IfExistsAction = file.Error
 	return f.Input, nil
 }
 

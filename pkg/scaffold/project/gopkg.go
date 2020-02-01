@@ -23,14 +23,14 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
+	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
-var _ input.File = &GopkgToml{}
+var _ file.Template = &GopkgToml{}
 
 // GopkgToml writes a templatefile for Gopkg.toml
 type GopkgToml struct {
-	input.Input
+	file.Input
 
 	// ManagedHeader is the header to write after the user owned pieces and before the managed parts of the Gopkg.toml
 	ManagedHeader string
@@ -59,8 +59,8 @@ type Stanza struct {
 	Revision string
 }
 
-// GetInput implements input.File
-func (f *GopkgToml) GetInput() (input.Input, error) {
+// GetInput implements input.Template
+func (f *GopkgToml) GetInput() (file.Input, error) {
 	if f.Path == "" {
 		f.Path = "Gopkg.toml"
 	}
@@ -78,10 +78,10 @@ func (f *GopkgToml) GetInput() (input.Input, error) {
 	if err != nil {
 		f.UserContent = f.DefaultUserContent
 	} else if f.UserContent, err = f.getUserContent(lastBytes); err != nil {
-		return input.Input{}, err
+		return file.Input{}, err
 	}
 
-	f.Input.IfExistsAction = input.Overwrite
+	f.Input.IfExistsAction = file.Overwrite
 	f.TemplateBody = depTemplate
 	return f.Input, nil
 }
