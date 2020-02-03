@@ -33,9 +33,17 @@ const (
 
 	// dns1123SubdomainMaxLength is a subdomain's max length in DNS (RFC 1123)
 	dns1123SubdomainMaxLength int = 253
+
+	dns1035LabelFmt    string = "[a-z]([-a-z0-9]*[a-z0-9])?"
+	dns1035LabelErrMsg string = "a DNS-1035 label must consist of lower case alphanumeric characters or '-', " +
+		"start with an alphabetic character, and end with an alphanumeric character"
+
+	// DNS1035LabelMaxLength is a label's max length in DNS (RFC 1035)
+	dns1035LabelMaxLength int = 63
 )
 
 var dns1123SubdomainRegexp = regexp.MustCompile("^" + dns1123SubdomainFmt + "$")
+var dns1035LabelRegexp = regexp.MustCompile("^" + dns1035LabelFmt + "$")
 
 // IsDNS1123Subdomain tests for a string that conforms to the definition of a
 // subdomain in DNS (RFC 1123).
@@ -46,6 +54,17 @@ func IsDNS1123Subdomain(value string) []string {
 	}
 	if !dns1123SubdomainRegexp.MatchString(value) {
 		errs = append(errs, regexError(dns1123SubdomainErrorMsg, dns1123SubdomainFmt, "example.com"))
+	}
+	return errs
+}
+
+func isDNS1035Label(value string) []string {
+	var errs []string
+	if len(value) > dns1035LabelMaxLength {
+		errs = append(errs, maxLenError(dns1035LabelMaxLength))
+	}
+	if !dns1035LabelRegexp.MatchString(value) {
+		errs = append(errs, regexError(dns1035LabelErrMsg, dns1035LabelFmt, "my-name", "abc-123"))
 	}
 	return errs
 }

@@ -126,9 +126,17 @@ func (opts *Options) Validate() error {
 			"version must match %s (was %s)", versionPattern, opts.Version)
 	}
 
-	// Check if the Kind is PascalCase
-	if opts.Kind != flect.Pascalize(opts.Kind) {
-		return fmt.Errorf("kind must be PascalCase (expected %s was %s)", flect.Pascalize(opts.Kind), opts.Kind)
+	validationErrors := []string{}
+
+	// require Kind to start with an uppercase character
+	if string(opts.Kind[0]) == strings.ToLower(string(opts.Kind[0])) {
+		validationErrors = append(validationErrors, "Kind must start with an uppercase character")
+	}
+
+	validationErrors = append(validationErrors, isDNS1035Label(strings.ToLower(opts.Kind))...)
+
+	if len(validationErrors) != 0 {
+		return fmt.Errorf("Invalid Kind: %#v", validationErrors)
 	}
 
 	// TODO: validate plural strings if provided
