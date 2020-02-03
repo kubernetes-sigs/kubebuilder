@@ -24,6 +24,7 @@ import (
 	"sigs.k8s.io/kubebuilder/internal/config"
 	"sigs.k8s.io/kubebuilder/pkg/model"
 	"sigs.k8s.io/kubebuilder/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/machinery"
 	controllerv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/v1/controller"
 	crdv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/v1/crd"
 	scaffoldv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2"
@@ -38,7 +39,7 @@ type apiScaffolder struct {
 	boilerplate string
 	resource    *resource.Resource
 	// plugins is the list of plugins we should allow to transform our generated scaffolding
-	plugins []Plugin
+	plugins []model.Plugin
 	// doResource indicates whether to scaffold API Resource or not
 	doResource bool
 	// doController indicates whether to scaffold controller files or not
@@ -50,7 +51,7 @@ func NewAPIScaffolder(
 	boilerplate string,
 	res *resource.Resource,
 	doResource, doController bool,
-	plugins []Plugin,
+	plugins []model.Plugin,
 ) Scaffolder {
 	return &apiScaffolder{
 		config:       config,
@@ -90,7 +91,7 @@ func (s *apiScaffolder) scaffoldV1() error {
 		fmt.Println(filepath.Join("pkg", "apis", s.resource.GroupPackageName, s.resource.Version,
 			fmt.Sprintf("%s_types_test.go", strings.ToLower(s.resource.Kind))))
 
-		if err := NewScaffold().Execute(
+		if err := machinery.NewScaffold().Execute(
 			s.newUniverse(),
 			&crdv1.Register{Resource: s.resource},
 			&crdv1.Types{Resource: s.resource},
@@ -117,7 +118,7 @@ func (s *apiScaffolder) scaffoldV1() error {
 		fmt.Println(filepath.Join("pkg", "controller", strings.ToLower(s.resource.Kind),
 			fmt.Sprintf("%s_controller_test.go", strings.ToLower(s.resource.Kind))))
 
-		if err := NewScaffold().Execute(
+		if err := machinery.NewScaffold().Execute(
 			s.newUniverse(),
 			&controllerv1.Controller{Resource: s.resource},
 			&controllerv1.AddController{Resource: s.resource},
@@ -148,7 +149,7 @@ func (s *apiScaffolder) scaffoldV2() error {
 				fmt.Sprintf("%s_types.go", strings.ToLower(s.resource.Kind))))
 		}
 
-		if err := NewScaffold(s.plugins...).Execute(
+		if err := machinery.NewScaffold(s.plugins...).Execute(
 			s.newUniverse(),
 			&scaffoldv2.Types{Resource: s.resource},
 			&scaffoldv2.Group{Resource: s.resource},
@@ -162,7 +163,7 @@ func (s *apiScaffolder) scaffoldV2() error {
 		}
 
 		kustomizationFile := &crdv2.Kustomization{Resource: s.resource}
-		if err := NewScaffold().Execute(
+		if err := machinery.NewScaffold().Execute(
 			s.newUniverse(),
 			kustomizationFile,
 			&crdv2.KustomizeConfig{},
@@ -192,7 +193,7 @@ func (s *apiScaffolder) scaffoldV2() error {
 		}
 
 		suiteTestFile := &controllerv2.SuiteTest{Resource: s.resource}
-		if err := NewScaffold(s.plugins...).Execute(
+		if err := machinery.NewScaffold(s.plugins...).Execute(
 			s.newUniverse(),
 			suiteTestFile,
 			&controllerv2.Controller{Resource: s.resource},

@@ -19,6 +19,7 @@ package scaffold
 import (
 	"sigs.k8s.io/kubebuilder/pkg/model"
 	"sigs.k8s.io/kubebuilder/pkg/model/config"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/machinery"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
 )
 
@@ -33,7 +34,7 @@ func NewUpdateScaffolder(config *config.Config) Scaffolder {
 }
 
 func (s *updateScaffolder) Scaffold() error {
-	return NewScaffold().Execute(
+	return machinery.NewScaffold().Execute(
 		model.NewUniverse(
 			model.WithConfig(s.config),
 			model.WithoutBoilerplate,

@@ -24,6 +24,7 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/model"
 	"sigs.k8s.io/kubebuilder/pkg/model/config"
 	"sigs.k8s.io/kubebuilder/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/machinery"
 	managerv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/v1/manager"
 	webhookv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/v1/webhook"
 	scaffoldv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2"
@@ -94,7 +95,7 @@ func (s *webhookScaffolder) Scaffold() error {
 func (s *webhookScaffolder) scaffoldV1() error {
 	webhookConfig := webhookv1.Config{Server: s.server, Type: s.webhookType, Operations: s.operations}
 
-	return NewScaffold().Execute(
+	return machinery.NewScaffold().Execute(
 		model.NewUniverse(
 			model.WithConfig(s.config),
 			model.WithBoilerplate(s.boilerplate),
@@ -129,7 +130,7 @@ You need to implement the conversion.Hub and conversion.Convertible interfaces f
 		Defaulting: s.defaulting,
 		Validating: s.validation,
 	}
-	if err := NewScaffold().Execute(
+	if err := machinery.NewScaffold().Execute(
 		model.NewUniverse(
 			model.WithConfig(s.config),
 			model.WithBoilerplate(s.boilerplate),

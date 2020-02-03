@@ -24,6 +24,7 @@ import (
 	"sigs.k8s.io/kubebuilder/internal/config"
 	"sigs.k8s.io/kubebuilder/pkg/model"
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/machinery"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
 	scaffoldv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/v1"
 	managerv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/v1/manager"
@@ -76,7 +77,7 @@ func (s *initScaffolder) Scaffold() error {
 		return err
 	}
 
-	if err := NewScaffold().Execute(
+	if err := machinery.NewScaffold().Execute(
 		s.newUniverse(), // Boilerplate is still empty by this call as desired
 		&project.Boilerplate{
 			Input:   file.Input{Path: s.boilerplatePath},
@@ -93,7 +94,7 @@ func (s *initScaffolder) Scaffold() error {
 	}
 	s.boilerplate = string(boilerplateBytes)
 
-	if err := NewScaffold().Execute(
+	if err := machinery.NewScaffold().Execute(
 		s.newUniverse(),
 		&project.GitIgnore{},
 		&project.AuthProxyRole{},
@@ -113,7 +114,7 @@ func (s *initScaffolder) Scaffold() error {
 }
 
 func (s *initScaffolder) scaffoldV1() error {
-	return NewScaffold().Execute(
+	return machinery.NewScaffold().Execute(
 		s.newUniverse(),
 		&project.KustomizeRBAC{},
 		&scaffoldv1.KustomizeImagePatch{},
@@ -134,7 +135,7 @@ func (s *initScaffolder) scaffoldV1() error {
 }
 
 func (s *initScaffolder) scaffoldV2() error {
-	return NewScaffold().Execute(
+	return machinery.NewScaffold().Execute(
 		s.newUniverse(),
 		&metricsauthv2.AuthProxyPatch{},
 		&metricsauthv2.AuthProxyService{},
