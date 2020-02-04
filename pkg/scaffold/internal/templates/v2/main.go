@@ -23,7 +23,7 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/model/config"
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
 	"sigs.k8s.io/kubebuilder/pkg/model/resource"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v2/internal"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/machinery"
 )
 
 const (
@@ -101,7 +101,7 @@ func (f *Main) Update(opts *MainUpdateOptions) error {
 `, opts.Resource.ImportAlias, opts.Resource.Kind, opts.Resource.Kind)
 
 	if opts.WireResource {
-		err := internal.InsertStringsInFile(path,
+		err := machinery.InsertStringsInFile(path,
 			map[string][]string{
 				APIPkgImportScaffoldMarker: {apiImportCodeFragment},
 				APISchemeScaffoldMarker:    {addschemeCodeFragment},
@@ -112,7 +112,7 @@ func (f *Main) Update(opts *MainUpdateOptions) error {
 	}
 
 	if opts.WireController {
-		return internal.InsertStringsInFile(path,
+		return machinery.InsertStringsInFile(path,
 			map[string][]string{
 				APIPkgImportScaffoldMarker:    {apiImportCodeFragment, ctrlImportCodeFragment},
 				APISchemeScaffoldMarker:       {addschemeCodeFragment},
@@ -121,7 +121,7 @@ func (f *Main) Update(opts *MainUpdateOptions) error {
 	}
 
 	if opts.WireWebhook {
-		return internal.InsertStringsInFile(path,
+		return machinery.InsertStringsInFile(path,
 			map[string][]string{
 				APIPkgImportScaffoldMarker:    {apiImportCodeFragment, ctrlImportCodeFragment},
 				APISchemeScaffoldMarker:       {addschemeCodeFragment},
