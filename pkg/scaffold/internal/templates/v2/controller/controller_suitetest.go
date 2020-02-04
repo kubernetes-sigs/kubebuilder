@@ -22,8 +22,8 @@ import (
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
 	"sigs.k8s.io/kubebuilder/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/machinery"
 	templatesv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v2"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v2/internal"
 )
 
 var _ file.Template = &SuiteTest{}
@@ -130,7 +130,7 @@ Expect(err).NotTo(HaveOccurred())
 
 `, f.Resource.ImportAlias)
 
-	err := internal.InsertStringsInFile(f.Path,
+	err := machinery.InsertStringsInFile(f.Path,
 		map[string][]string{
 			templatesv2.APIPkgImportScaffoldMarker: {ctrlImportCodeFragment, apiImportCodeFragment},
 			templatesv2.APISchemeScaffoldMarker:    {addschemeCodeFragment},
