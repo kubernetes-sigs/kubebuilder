@@ -25,11 +25,11 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/model"
 	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/machinery"
-	controllerv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/v1/controller"
-	crdv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/v1/crd"
-	scaffoldv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2"
-	controllerv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2/controller"
-	crdv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2/crd"
+	controllerv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v1/controller"
+	crdv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v1/crd"
+	templatesv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v2"
+	controllerv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v2/controller"
+	crdv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v2/crd"
 )
 
 // apiScaffolder contains configuration for generating scaffolding for Go type
@@ -151,11 +151,11 @@ func (s *apiScaffolder) scaffoldV2() error {
 
 		if err := machinery.NewScaffold(s.plugins...).Execute(
 			s.newUniverse(),
-			&scaffoldv2.Types{Resource: s.resource},
-			&scaffoldv2.Group{Resource: s.resource},
-			&scaffoldv2.CRDSample{Resource: s.resource},
-			&scaffoldv2.CRDEditorRole{Resource: s.resource},
-			&scaffoldv2.CRDViewerRole{Resource: s.resource},
+			&templatesv2.Types{Resource: s.resource},
+			&templatesv2.Group{Resource: s.resource},
+			&templatesv2.CRDSample{Resource: s.resource},
+			&templatesv2.CRDEditorRole{Resource: s.resource},
+			&templatesv2.CRDViewerRole{Resource: s.resource},
 			&crdv2.EnableWebhookPatch{Resource: s.resource},
 			&crdv2.EnableCAInjectionPatch{Resource: s.resource},
 		); err != nil {
@@ -206,8 +206,8 @@ func (s *apiScaffolder) scaffoldV2() error {
 		}
 	}
 
-	if err := (&scaffoldv2.Main{}).Update(
-		&scaffoldv2.MainUpdateOptions{
+	if err := (&templatesv2.Main{}).Update(
+		&templatesv2.MainUpdateOptions{
 			Config:         &s.config.Config,
 			WireResource:   s.doResource,
 			WireController: s.doController,

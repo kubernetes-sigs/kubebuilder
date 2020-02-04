@@ -14,50 +14,41 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package project
+package v2
 
 import (
+	"path/filepath"
+
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
-var _ file.Template = &GitIgnore{}
+var _ file.Template = &AuthProxyRole{}
 
-// GitIgnore scaffolds the .gitignore file
-type GitIgnore struct {
+// AuthProxyRole scaffolds the config/rbac/auth_proxy_role.yaml file
+type AuthProxyRole struct {
 	file.Input
 }
 
 // GetInput implements input.Template
-func (f *GitIgnore) GetInput() (file.Input, error) {
+func (f *AuthProxyRole) GetInput() (file.Input, error) {
 	if f.Path == "" {
-		f.Path = ".gitignore"
+		f.Path = filepath.Join("config", "rbac", "auth_proxy_role.yaml")
 	}
-	f.TemplateBody = gitignoreTemplate
+	f.TemplateBody = proxyRoleTemplate
 	return f.Input, nil
 }
 
-const gitignoreTemplate = `
-# Binaries for programs and plugins
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
-bin
-
-# Test binary, build with ` + "`go test -c`" + `
-*.test
-
-# Output of the go coverage tool, specifically when used with LiteIDE
-*.out
-
-# Kubernetes Generated files - skip generated files, except for vendored files
-
-!vendor/**/zz_generated.*
-
-# editor and IDE paraphernalia
-.idea
-*.swp
-*.swo
-*~
+const proxyRoleTemplate = `apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: proxy-role
+rules:
+- apiGroups: ["authentication.k8s.io"]
+  resources:
+  - tokenreviews
+  verbs: ["create"]
+- apiGroups: ["authorization.k8s.io"]
+  resources:
+  - subjectaccessreviews
+  verbs: ["create"]
 `

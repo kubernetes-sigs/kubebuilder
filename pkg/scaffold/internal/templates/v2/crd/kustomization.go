@@ -22,7 +22,7 @@ import (
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
 	"sigs.k8s.io/kubebuilder/pkg/model/resource"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/v2/internal"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v2/internal"
 )
 
 const (

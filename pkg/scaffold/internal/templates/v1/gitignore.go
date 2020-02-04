@@ -1,5 +1,5 @@
 /*
-Copyright 2019 The Kubernetes Authors.
+Copyright 2018 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,31 +14,50 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package project
+package v1
 
 import (
-	"path/filepath"
-
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
-var _ file.Template = &KustomizeManager{}
+var _ file.Template = &GitIgnore{}
 
-// KustomizeManager scaffolds the Kustomization file in manager folder.
-type KustomizeManager struct {
+// GitIgnore scaffolds the .gitignore file
+type GitIgnore struct {
 	file.Input
 }
 
 // GetInput implements input.Template
-func (f *KustomizeManager) GetInput() (file.Input, error) {
+func (f *GitIgnore) GetInput() (file.Input, error) {
 	if f.Path == "" {
-		f.Path = filepath.Join("config", "manager", "kustomization.yaml")
+		f.Path = ".gitignore"
 	}
-	f.TemplateBody = kustomizeManagerTemplate
-	f.Input.IfExistsAction = file.Error
+	f.TemplateBody = gitignoreTemplate
 	return f.Input, nil
 }
 
-const kustomizeManagerTemplate = `resources:
-- manager.yaml
+const gitignoreTemplate = `
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin
+
+# Test binary, build with ` + "`go test -c`" + `
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Kubernetes Generated files - skip generated files, except for vendored files
+
+!vendor/**/zz_generated.*
+
+# editor and IDE paraphernalia
+.idea
+*.swp
+*.swo
+*~
 `
