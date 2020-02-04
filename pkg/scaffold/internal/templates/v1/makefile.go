@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package project
+package v1
 
 import (
 	"sigs.k8s.io/kubebuilder/pkg/model/file"

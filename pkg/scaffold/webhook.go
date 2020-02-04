@@ -25,10 +25,10 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/model/config"
 	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/machinery"
-	managerv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/v1/manager"
-	webhookv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/v1/webhook"
-	scaffoldv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2"
-	webhookv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2/webhook"
+	managerv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v1/manager"
+	webhookv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v1/webhook"
+	templatesv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v2"
+	webhookv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v2/webhook"
 )
 
 type webhookScaffolder struct {
@@ -141,8 +141,8 @@ You need to implement the conversion.Hub and conversion.Convertible interfaces f
 		return err
 	}
 
-	if err := (&scaffoldv2.Main{}).Update(
-		&scaffoldv2.MainUpdateOptions{
+	if err := (&templatesv2.Main{}).Update(
+		&templatesv2.MainUpdateOptions{
 			Config:         s.config,
 			WireResource:   false,
 			WireController: false,

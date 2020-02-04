@@ -1,5 +1,5 @@
 /*
-Copyright 2018 The Kubernetes Authors.
+Copyright 2019 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package project
+package v1
 
 import (
 	"path/filepath"
@@ -22,33 +22,23 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
-var _ file.Template = &AuthProxyRole{}
+var _ file.Template = &KustomizeManager{}
 
-// AuthProxyRole scaffolds the config/rbac/auth_proxy_role.yaml file
-type AuthProxyRole struct {
+// KustomizeManager scaffolds the Kustomization file in manager folder.
+type KustomizeManager struct {
 	file.Input
 }
 
 // GetInput implements input.Template
-func (f *AuthProxyRole) GetInput() (file.Input, error) {
+func (f *KustomizeManager) GetInput() (file.Input, error) {
 	if f.Path == "" {
-		f.Path = filepath.Join("config", "rbac", "auth_proxy_role.yaml")
+		f.Path = filepath.Join("config", "manager", "kustomization.yaml")
 	}
-	f.TemplateBody = proxyRoleTemplate
+	f.TemplateBody = kustomizeManagerTemplate
+	f.Input.IfExistsAction = file.Error
 	return f.Input, nil
 }
 
-const proxyRoleTemplate = `apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: proxy-role
-rules:
-- apiGroups: ["authentication.k8s.io"]
-  resources:
-  - tokenreviews
-  verbs: ["create"]
-- apiGroups: ["authorization.k8s.io"]
-  resources:
-  - subjectaccessreviews
-  verbs: ["create"]
+const kustomizeManagerTemplate = `resources:
+- manager.yaml
 `
