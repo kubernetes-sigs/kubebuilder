@@ -110,6 +110,16 @@ func Load() (*Config, error) {
 	return LoadFrom(DefaultPath)
 }
 
+// LoadInitialized calls Load() but returns helpful error messages if the config
+// does not exist.
+func LoadInitialized() (*Config, error) {
+	c, err := Load()
+	if os.IsNotExist(err) {
+		return nil, errors.New("unable to find configuration file, project must be initialized")
+	}
+	return c, err
+}
+
 // LoadFrom obtains the configuration from the provided path allowing to persist changes (Save method)
 func LoadFrom(path string) (*Config, error) {
 	c, err := readFrom(path)
