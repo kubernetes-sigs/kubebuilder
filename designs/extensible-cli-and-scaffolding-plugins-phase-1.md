@@ -25,13 +25,51 @@ Each plugin would minimally be required to implement the `Plugin` interface.
 
 ```go
 type Plugin interface {
-    // Version returns the project version that this plugin implements.
-    // For example, Kubebuilder's Go v2 plugin implementation would return 2.
+    // Version returns the plugin's semantic version, ex. "v1.2.3".
+    //
+    // Note: this version is different from config version.
     Version() string
-    // Name returns a name defining the plugin type.
-    // For example, Kubebuilder's plugins would return "go".
+    // Name returns a DNS1123 label string defining the plugin type.
+    // For example, Kubebuilder's main plugin would return "go".
+    //
+    // Plugin names can be fully-qualified, and non-fully-qualified names are
+    // prepended to ".kubebuilder.io" to prevent conflicts.
     Name() string
+    // SupportedProjectVersions lists all project configuration versions this
+    // plugin supports, ex. []string{"2", "3"}. The returned slice cannot be empty.
+    SupportedProjectVersions() []string
 }
+```
+
+#### Plugin naming
+
+Plugin names (returned by `Name()`) must be DNS1123 labels. The returned name
+may be fully qualified (fq), ex. `go.kubebuilder.io`, or not but internally will
+always be fq by either appending `.kubebuilder.io` to the name or using an
+existing qualifier defined by the plugin. FQ names prevent conflicts between
+plugin names; the plugin runner will ask the user to add a name qualifier to
+a conflicting plugin.
+
+#### Project file plugin `layout`
+
+The `PROJECT` file will specify what base plugin generated the project under
+a `layout` key. `layout` will have the format: `Plugin.Name() + "/" + Plugin.Version()`.
+`version` and `layout` have versions with different meanings: `version` is the
+project config version, while `layout`'s version is the plugin semantic version.
+The value in `version` will determine that in `layout` by a plugin's supported
+project versions (via `SupportedProjectVersions()`).
+
+Example `PROJECT` file:
+
+```yaml
+version: "3-alpha"
+layout: go/v1.0.0
+domain: testproject.org
+repo: github.com/test-inc/testproject
+resources:
+- group: crew
+  kind: Captain
+  version: v1
 ```
 
 ### Optional
@@ -144,6 +182,8 @@ func main() {
 
 ### Cobra Commands
 
+**RESOLUTION:** `cobra` will be used directly in Phase 1 since it is a widely used, feature-rich CLI package. This, however unlikely, may change in future phases.
+
 As discussed earlier as part of [#1148](https://github.com/kubernetes-sigs/kubebuilder/pull/1148), one goal is to eliminate the use of `cobra.Command` in the exported API of Kubebuilder since that is considered an internal implementation detail.
 
 However, at some point, projects that make use of this extensibility will likely want to integrate their own subcommands. In this proposal, `cli.WithExtraCommands()` _DOES_ expose `cobra.Command` to allow callers to pass their own subcommands to the CLI.
@@ -161,6 +201,6 @@ Are there other ideas for how to handle the following requirements?
 * Support cohesive help output
 
 ### Other
-1. Should the `InitPlugin` interface methods be required of all plugins?
-2. Any other approaches or ideas?
-3. Anything I didn't cover that could use more explanation?
+1. ~Should the `InitPlugin` interface methods be required of all plugins?~ No
+2. ~Any other approaches or ideas?~
+3. ~Anything I didn't cover that could use more explanation?~
