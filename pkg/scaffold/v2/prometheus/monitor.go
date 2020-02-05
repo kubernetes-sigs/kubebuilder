@@ -52,5 +52,6 @@ spec:
     - path: /metrics
       port: https
   selector:
-    control-plane: controller-manager
+    matchLabels:
+      control-plane: controller-manager
 `
