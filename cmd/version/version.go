@@ -60,8 +60,8 @@ func (v Version) Print() {
 	fmt.Printf("Version: %#v\n", v)
 }
 
-// NewVersionCmd creates a new command that prints the CLI version
-func NewVersionCmd() *cobra.Command {
+// NewCmd creates a new command that prints the CLI version
+func NewCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:     "version",
 		Short:   "Print the kubebuilder version",
