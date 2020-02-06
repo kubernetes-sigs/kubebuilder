@@ -20,7 +20,7 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/model"
 	"sigs.k8s.io/kubebuilder/pkg/model/config"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/machinery"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
+	templatesv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v1"
 )
 
 type updateScaffolder struct {
@@ -39,6 +39,6 @@ func (s *updateScaffolder) Scaffold() error {
 			model.WithConfig(s.config),
 			model.WithoutBoilerplate,
 		),
-		&project.GopkgToml{},
+		&templatesv1.GopkgToml{},
 	)
 }
