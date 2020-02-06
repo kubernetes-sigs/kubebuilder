@@ -17,9 +17,7 @@ limitations under the License.
 package controller
 
 import (
-	"fmt"
 	"path/filepath"
-	"strings"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
@@ -37,9 +35,9 @@ type AddController struct {
 // SetTemplateDefaults implements input.Template
 func (f *AddController) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = filepath.Join("pkg", "controller", fmt.Sprintf(
-			"add_%s.go", strings.ToLower(f.Resource.Kind)))
+		f.Path = filepath.Join("pkg", "controller", "add_%[kind].go")
 	}
+	f.Path = f.Resource.Replacer().Replace(f.Path)
 
 	f.TemplateBody = addControllerTemplate
 

@@ -18,8 +18,6 @@ package scaffold
 
 import (
 	"fmt"
-	"path/filepath"
-	"strings"
 
 	"sigs.k8s.io/kubebuilder/internal/config"
 	"sigs.k8s.io/kubebuilder/pkg/model"
@@ -90,11 +88,6 @@ func (s *apiScaffolder) newUniverse() *model.Universe {
 
 func (s *apiScaffolder) scaffoldV1() error {
 	if s.doResource {
-		fmt.Println(filepath.Join("pkg", "apis", s.resource.GroupPackageName, s.resource.Version,
-			fmt.Sprintf("%s_types.go", strings.ToLower(s.resource.Kind))))
-		fmt.Println(filepath.Join("pkg", "apis", s.resource.GroupPackageName, s.resource.Version,
-			fmt.Sprintf("%s_types_test.go", strings.ToLower(s.resource.Kind))))
-
 		if err := machinery.NewScaffold().Execute(
 			s.newUniverse(),
 			&crdv1.Register{},
@@ -117,11 +110,6 @@ func (s *apiScaffolder) scaffoldV1() error {
 	}
 
 	if s.doController {
-		fmt.Println(filepath.Join("pkg", "controller", strings.ToLower(s.resource.Kind),
-			fmt.Sprintf("%s_controller.go", strings.ToLower(s.resource.Kind))))
-		fmt.Println(filepath.Join("pkg", "controller", strings.ToLower(s.resource.Kind),
-			fmt.Sprintf("%s_controller_test.go", strings.ToLower(s.resource.Kind))))
-
 		if err := machinery.NewScaffold().Execute(
 			s.newUniverse(),
 			&controllerv1.Controller{},
@@ -143,14 +131,6 @@ func (s *apiScaffolder) scaffoldV2() error {
 			if err := s.config.Save(); err != nil {
 				return fmt.Errorf("error updating project file with resource information : %v", err)
 			}
-		}
-
-		if s.config.MultiGroup {
-			fmt.Println(filepath.Join("apis", s.resource.Group, s.resource.Version,
-				fmt.Sprintf("%s_types.go", strings.ToLower(s.resource.Kind))))
-		} else {
-			fmt.Println(filepath.Join("api", s.resource.Version,
-				fmt.Sprintf("%s_types.go", strings.ToLower(s.resource.Kind))))
 		}
 
 		if err := machinery.NewScaffold(s.plugins...).Execute(
@@ -183,14 +163,6 @@ func (s *apiScaffolder) scaffoldV2() error {
 	}
 
 	if s.doController {
-		if s.config.MultiGroup {
-			fmt.Println(filepath.Join("controllers", s.resource.Group,
-				fmt.Sprintf("%s_controller.go", strings.ToLower(s.resource.Kind))))
-		} else {
-			fmt.Println(filepath.Join("controllers",
-				fmt.Sprintf("%s_controller.go", strings.ToLower(s.resource.Kind))))
-		}
-
 		if err := machinery.NewScaffold(s.plugins...).Execute(
 			s.newUniverse(),
 			&controllerv2.SuiteTest{},

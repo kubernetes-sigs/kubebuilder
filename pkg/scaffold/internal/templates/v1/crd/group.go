@@ -34,8 +34,9 @@ type Group struct {
 // SetTemplateDefaults implements input.Template
 func (f *Group) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = filepath.Join("pkg", "apis", f.Resource.GroupPackageName, "group.go")
+		f.Path = filepath.Join("pkg", "apis", "%[group-package-name]", "group.go")
 	}
+	f.Path = f.Resource.Replacer().Replace(f.Path)
 
 	f.TemplateBody = groupTemplate
 

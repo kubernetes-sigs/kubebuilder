@@ -35,8 +35,9 @@ type Doc struct {
 // SetTemplateDefaults implements input.Template
 func (f *Doc) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = filepath.Join("pkg", "apis", f.Resource.GroupPackageName, f.Resource.Version, "doc.go")
+		f.Path = filepath.Join("pkg", "apis", "%[group-package-name]", "%[version]", "doc.go")
 	}
+	f.Path = f.Resource.Replacer().Replace(f.Path)
 
 	f.TemplateBody = docGoTemplate
 

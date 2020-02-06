@@ -17,11 +17,7 @@ limitations under the License.
 package crd
 
 import (
-	"fmt"
 	"path/filepath"
-	"strings"
-
-	"github.com/gobuffalo/flect"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
@@ -37,10 +33,9 @@ type EnableWebhookPatch struct {
 // SetTemplateDefaults implements input.Template
 func (f *EnableWebhookPatch) SetTemplateDefaults() error {
 	if f.Path == "" {
-		plural := flect.Pluralize(strings.ToLower(f.Resource.Kind))
-		f.Path = filepath.Join("config", "crd", "patches",
-			fmt.Sprintf("webhook_in_%s.yaml", plural))
+		f.Path = filepath.Join("config", "crd", "patches", "webhook_in_%[plural].yaml")
 	}
+	f.Path = f.Resource.Replacer().Replace(f.Path)
 
 	f.TemplateBody = enableWebhookPatchTemplate
 

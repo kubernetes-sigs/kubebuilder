@@ -168,9 +168,11 @@ func (opts *Options) safeImport(unsafe string) string {
 func (opts *Options) NewV1Resource(c *config.Config, doResource bool) *Resource {
 	res := opts.newResource()
 
+	replacer := res.Replacer()
+
 	// NOTE: while directories can have "-" and ".", v1 needs that directory to be a Go package
 	//       and that is the reason why we remove them for the directory
-	pkg := path.Join(c.Repo, "pkg", "apis", res.GroupPackageName, opts.Version)
+	pkg := replacer.Replace(path.Join(c.Repo, "pkg", "apis", "%[group-package-name]", "%[version]"))
 	domain := c.Domain
 
 	// pkg and domain may need to be changed in case we are referring to a builtin core resource:
@@ -180,11 +182,11 @@ func (opts *Options) NewV1Resource(c *config.Config, doResource bool) *Resource 
 	//  - In any other case, default to                          => project resource
 	// TODO: need to support '--resource-pkg-path' flag for specifying resourcePath
 	if !doResource {
-		file := filepath.Join("pkg", "apis", res.GroupPackageName, opts.Version,
-			fmt.Sprintf("%s_types.go", strings.ToLower(opts.Kind)))
+		file := replacer.Replace(filepath.Join(
+			"pkg", "apis", "%[group-package-name]", "%[version]", "%[kind]_types.go"))
 		if _, err := os.Stat(file); os.IsNotExist(err) {
 			if coreDomain, found := coreGroups[opts.Group]; found {
-				pkg = path.Join("k8s.io", "api", opts.Group, opts.Version)
+				pkg = replacer.Replace(path.Join("k8s.io", "api", "%[group]", "%[version]"))
 				domain = coreDomain
 			}
 		}
@@ -205,9 +207,11 @@ func (opts *Options) NewV1Resource(c *config.Config, doResource bool) *Resource 
 func (opts *Options) NewResource(c *config.Config, doResource bool) *Resource {
 	res := opts.newResource()
 
-	pkg := path.Join(c.Repo, "api", opts.Version)
+	replacer := res.Replacer()
+
+	pkg := replacer.Replace(path.Join(c.Repo, "api", "%[version]"))
 	if c.MultiGroup {
-		pkg = path.Join(c.Repo, "apis", res.Group, opts.Version)
+		pkg = replacer.Replace(path.Join(c.Repo, "apis", "%[group]", "%[version]"))
 	}
 	domain := c.Domain
 
@@ -220,7 +224,7 @@ func (opts *Options) NewResource(c *config.Config, doResource bool) *Resource {
 	if !doResource {
 		if !c.HasResource(opts.GVK()) {
 			if coreDomain, found := coreGroups[opts.Group]; found {
-				pkg = path.Join("k8s.io", "api", opts.Group, opts.Version)
+				pkg = replacer.Replace(path.Join("k8s.io", "api", "%[group]", "%[version]"))
 				domain = coreDomain
 			}
 		}
