@@ -102,10 +102,10 @@ func (s *webhookScaffolder) scaffoldV1() error {
 			model.WithResource(s.resource),
 		),
 		&managerv1.Webhook{},
-		&webhookv1.AdmissionHandler{Resource: s.resource, Config: webhookConfig},
-		&webhookv1.AdmissionWebhookBuilder{Resource: s.resource, Config: webhookConfig},
-		&webhookv1.AdmissionWebhooks{Resource: s.resource, Config: webhookConfig},
-		&webhookv1.AddAdmissionWebhookBuilderHandler{Resource: s.resource, Config: webhookConfig},
+		&webhookv1.AdmissionHandler{Config: webhookConfig},
+		&webhookv1.AdmissionWebhookBuilder{Config: webhookConfig},
+		&webhookv1.AdmissionWebhooks{Config: webhookConfig},
+		&webhookv1.AddAdmissionWebhookBuilderHandler{Config: webhookConfig},
 		&webhookv1.Server{Config: webhookConfig},
 		&webhookv1.AddServer{Config: webhookConfig},
 	)
@@ -125,11 +125,7 @@ func (s *webhookScaffolder) scaffoldV2() error {
 You need to implement the conversion.Hub and conversion.Convertible interfaces for your CRD types.`)
 	}
 
-	webhookScaffolder := &webhookv2.Webhook{
-		Resource:   s.resource,
-		Defaulting: s.defaulting,
-		Validating: s.validation,
-	}
+	webhookScaffolder := &webhookv2.Webhook{Defaulting: s.defaulting, Validating: s.validation}
 	if err := machinery.NewScaffold().Execute(
 		model.NewUniverse(
 			model.WithConfig(s.config),

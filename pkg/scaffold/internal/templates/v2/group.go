@@ -20,7 +20,6 @@ import (
 	"path/filepath"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
-	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 )
 
 var _ file.Template = &Group{}
@@ -28,9 +27,7 @@ var _ file.Template = &Group{}
 // Group scaffolds the api/<version>/groupversion_info.go
 type Group struct {
 	file.Input
-
-	// Resource is a resource in the API group
-	Resource *resource.Resource
+	file.ResourceMixin
 }
 
 // GetInput implements input.Template

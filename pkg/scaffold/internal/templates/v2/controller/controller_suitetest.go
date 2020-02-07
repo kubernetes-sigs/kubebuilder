@@ -21,7 +21,6 @@ import (
 	"path/filepath"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
-	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/machinery"
 	templatesv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v2"
 )
@@ -31,9 +30,7 @@ var _ file.Template = &SuiteTest{}
 // SuiteTest scaffolds the suite_test.go file to setup the controller test
 type SuiteTest struct {
 	file.Input
-
-	// Resource is the Resource to make the Controller for
-	Resource *resource.Resource
+	file.ResourceMixin
 }
 
 // GetInput implements input.Template

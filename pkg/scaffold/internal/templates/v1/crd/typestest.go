@@ -22,7 +22,6 @@ import (
 	"strings"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
-	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 )
 
 var _ file.Template = &TypesTest{}
@@ -30,9 +29,7 @@ var _ file.Template = &TypesTest{}
 // TypesTest scaffolds the pkg/apis/group/version/kind_types_test.go file to test the API schema
 type TypesTest struct {
 	file.Input
-
-	// Resource is the resource to scaffold the types_test.go file for
-	Resource *resource.Resource
+	file.ResourceMixin
 }
 
 // GetInput implements input.Template

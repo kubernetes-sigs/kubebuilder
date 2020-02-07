@@ -21,7 +21,6 @@ import (
 	"strings"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
-	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 )
 
 var _ file.Template = &Test{}
@@ -29,9 +28,7 @@ var _ file.Template = &Test{}
 // Test scaffolds a Controller Test
 type Test struct {
 	file.Input
-
-	// Resource is the Resource to make the Controller for
-	Resource *resource.Resource
+	file.ResourceMixin
 }
 
 // GetInput implements input.Template

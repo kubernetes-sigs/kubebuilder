@@ -16,6 +16,10 @@ limitations under the License.
 
 package file
 
+import (
+	"sigs.k8s.io/kubebuilder/pkg/model/resource"
+)
+
 // Input is the input for scaffolding a file
 type Input struct {
 	// Path is the file to write
@@ -88,6 +92,24 @@ type MultiGroup interface {
 // SetVersion sets the MultiGroup value
 func (i *Input) SetMultiGroup(v bool) {
 	i.MultiGroup = v
+}
+
+// HasResource allows a resource to be used on a template
+type HasResource interface {
+	// InjectResource sets the template resource
+	InjectResource(*resource.Resource)
+}
+
+// ResourceMixin provides templates with a injectable resource field
+type ResourceMixin struct {
+	Resource *resource.Resource
+}
+
+// InjectResource implements HasResource
+func (m *ResourceMixin) InjectResource(res *resource.Resource) {
+	if m.Resource == nil {
+		m.Resource = res
+	}
 }
 
 // Template is a scaffoldable file template
