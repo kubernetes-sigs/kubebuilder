@@ -27,6 +27,7 @@ var _ file.Template = &Group{}
 // Group scaffolds the api/<version>/groupversion_info.go
 type Group struct {
 	file.Input
+	file.MultiGroupMixin
 	file.BoilerplateMixin
 	file.ResourceMixin
 }

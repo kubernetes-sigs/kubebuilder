@@ -28,6 +28,7 @@ var _ file.Template = &Controller{}
 // Controller scaffolds a Controller for a Resource
 type Controller struct {
 	file.Input
+	file.MultiGroupMixin
 	file.BoilerplateMixin
 	file.ResourceMixin
 }

@@ -36,9 +36,6 @@ type Input struct {
 
 	// Repo is the go project package
 	Repo string
-
-	// MultiGroup is the multi-group boolean from the PROJECT file
-	MultiGroup bool
 }
 
 // Domain allows a domain to be set on an object
@@ -67,20 +64,26 @@ func (i *Input) SetRepo(r string) {
 	}
 }
 
-// MultiGroup allows the project version to be set on an object
-type MultiGroup interface {
-	// SetVersion sets the project version
-	SetMultiGroup(value bool)
+// HasMultiGroup allows the multi-group flag to be used on a template
+type HasMultiGroup interface {
+	// InjectMultiGroup sets the template multi-group flag
+	InjectMultiGroup(bool)
 }
 
-// SetVersion sets the MultiGroup value
-func (i *Input) SetMultiGroup(v bool) {
-	i.MultiGroup = v
+// MultiGroupMixin provides templates with a injectable multi-group flag field
+type MultiGroupMixin struct {
+	// MultiGroup is the multi-group flag
+	MultiGroup bool
+}
+
+// InjectMultiGroup implements HasMultiGroup
+func (m *MultiGroupMixin) InjectMultiGroup(flag bool) {
+	m.MultiGroup = flag
 }
 
 // HasBoilerplate allows a boilerplate to be used on a template
 type HasBoilerplate interface {
-	// InjectBoilerplate sets the template resource
+	// InjectBoilerplate sets the template boilerplate
 	InjectBoilerplate(string)
 }
 

@@ -27,8 +27,9 @@ import (
 var _ file.Template = &Webhook{}
 
 // Webhook scaffolds a Webhook for a Resource
-type Webhook struct {
+type Webhook struct { // nolint:maligned
 	file.Input
+	file.MultiGroupMixin
 	file.BoilerplateMixin
 	file.ResourceMixin
 
