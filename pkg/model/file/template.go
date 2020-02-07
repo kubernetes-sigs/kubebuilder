@@ -30,21 +30,24 @@ type Input struct {
 
 	// TemplateBody is the template body to execute
 	TemplateBody string
+}
 
+// HasDomain allows the domain to be used on a template
+type HasDomain interface {
+	// InjectDomain sets the template domain
+	InjectDomain(string)
+}
+
+// DomainMixin provides templates with a injectable domain field
+type DomainMixin struct {
 	// Domain is the domain for the APIs
 	Domain string
 }
 
-// Domain allows a domain to be set on an object
-type Domain interface {
-	// SetDomain sets the domain
-	SetDomain(string)
-}
-
-// SetDomain sets the domain
-func (i *Input) SetDomain(d string) {
-	if i.Domain == "" {
-		i.Domain = d
+// InjectDomain implements HasDomain
+func (m *DomainMixin) InjectDomain(domain string) {
+	if m.Domain == "" {
+		m.Domain = domain
 	}
 }
 

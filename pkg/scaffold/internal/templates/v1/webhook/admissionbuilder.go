@@ -29,6 +29,7 @@ var _ file.Template = &AdmissionWebhookBuilder{}
 // AdmissionWebhookBuilder scaffolds adds a new webhook server.
 type AdmissionWebhookBuilder struct {
 	file.Input
+	file.DomainMixin
 	file.BoilerplateMixin
 	file.ResourceMixin
 

@@ -81,8 +81,8 @@ func WithResource(resource *resource.Resource) UniverseOption {
 func (u Universe) InjectInto(t file.Template) {
 	// Inject project configuration
 	if u.Config != nil {
-		if templateWithDomain, ok := t.(file.Domain); ok {
-			templateWithDomain.SetDomain(u.Config.Domain)
+		if templateWithDomain, hasDomain := t.(file.HasDomain); hasDomain {
+			templateWithDomain.InjectDomain(u.Config.Domain)
 		}
 		if templateWithRepository, hasRepository := t.(file.HasRepository); hasRepository {
 			templateWithRepository.InjectRepository(u.Config.Repo)
