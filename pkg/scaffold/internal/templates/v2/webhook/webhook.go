@@ -65,7 +65,7 @@ func (f *Webhook) GetInput() (file.Input, error) {
 	}
 
 	f.TemplateBody = webhookTemplate
-	f.Input.IfExistsAction = file.Error
+	f.IfExistsAction = file.Error
 	return f.Input, nil
 }
 

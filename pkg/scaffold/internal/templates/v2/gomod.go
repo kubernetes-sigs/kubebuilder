@@ -35,7 +35,7 @@ func (f *GoMod) GetInput() (file.Input, error) {
 	if f.Path == "" {
 		f.Path = "go.mod"
 	}
-	f.Input.IfExistsAction = file.Overwrite
+	f.IfExistsAction = file.Overwrite
 	f.TemplateBody = goModTemplate
 	return f.Input, nil
 }

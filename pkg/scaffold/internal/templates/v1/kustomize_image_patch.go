@@ -42,7 +42,7 @@ func (f *KustomizeImagePatch) GetInput() (file.Input, error) {
 		f.ImageURL = "IMAGE_URL"
 	}
 	f.TemplateBody = kustomizeImagePatchTemplate
-	f.Input.IfExistsAction = file.Error
+	f.IfExistsAction = file.Error
 	return f.Input, nil
 }
 

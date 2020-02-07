@@ -48,7 +48,7 @@ func (f *Kustomize) GetInput() (file.Input, error) {
 		f.Prefix = strings.ToLower(filepath.Base(dir))
 	}
 	f.TemplateBody = kustomizeTemplate
-	f.Input.IfExistsAction = file.Error
+	f.IfExistsAction = file.Error
 	return f.Input, nil
 }
 

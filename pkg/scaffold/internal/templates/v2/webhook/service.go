@@ -35,7 +35,7 @@ func (f *Service) GetInput() (file.Input, error) {
 		f.Path = filepath.Join("config", "webhook", "service.yaml")
 	}
 	f.TemplateBody = ServiceTemplate
-	f.Input.IfExistsAction = file.Error
+	f.IfExistsAction = file.Error
 	return f.Input, nil
 }
 

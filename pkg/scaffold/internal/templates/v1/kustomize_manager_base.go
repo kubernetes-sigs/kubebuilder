@@ -35,7 +35,7 @@ func (f *KustomizeManager) GetInput() (file.Input, error) {
 		f.Path = filepath.Join("config", "manager", "kustomization.yaml")
 	}
 	f.TemplateBody = kustomizeManagerTemplate
-	f.Input.IfExistsAction = file.Error
+	f.IfExistsAction = file.Error
 	return f.Input, nil
 }
 

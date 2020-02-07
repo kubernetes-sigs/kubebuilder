@@ -36,7 +36,7 @@ func (f *KustomizePrometheusMetricsPatch) GetInput() (file.Input, error) {
 		f.Path = filepath.Join("config", "default", "manager_prometheus_metrics_patch.yaml")
 	}
 	f.TemplateBody = kustomizePrometheusMetricsPatchTemplate
-	f.Input.IfExistsAction = file.Error
+	f.IfExistsAction = file.Error
 	return f.Input, nil
 }
 

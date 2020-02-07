@@ -40,7 +40,7 @@ func (f *Test) GetInput() (file.Input, error) {
 	}
 
 	f.TemplateBody = controllerTestTemplate
-	f.Input.IfExistsAction = file.Error
+	f.IfExistsAction = file.Error
 	return f.Input, nil
 }
 

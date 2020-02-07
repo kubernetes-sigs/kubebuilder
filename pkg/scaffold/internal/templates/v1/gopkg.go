@@ -81,7 +81,7 @@ func (f *GopkgToml) GetInput() (file.Input, error) {
 		return file.Input{}, err
 	}
 
-	f.Input.IfExistsAction = file.Overwrite
+	f.IfExistsAction = file.Overwrite
 	f.TemplateBody = depTemplate
 	return f.Input, nil
 }

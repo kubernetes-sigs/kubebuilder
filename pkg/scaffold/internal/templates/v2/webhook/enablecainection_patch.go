@@ -35,7 +35,7 @@ func (f *InjectCAPatch) GetInput() (file.Input, error) {
 		f.Path = filepath.Join("config", "default", "webhookcainjection_patch.yaml")
 	}
 	f.TemplateBody = injectCAPatchTemplate
-	f.Input.IfExistsAction = file.Error
+	f.IfExistsAction = file.Error
 	return f.Input, nil
 }
 

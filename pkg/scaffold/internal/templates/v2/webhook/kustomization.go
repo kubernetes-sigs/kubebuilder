@@ -35,7 +35,7 @@ func (f *Kustomization) GetInput() (file.Input, error) {
 		f.Path = filepath.Join("config", "webhook", "kustomization.yaml")
 	}
 	f.TemplateBody = KustomizeWebhookTemplate
-	f.Input.IfExistsAction = file.Error
+	f.IfExistsAction = file.Error
 	return f.Input, nil
 }
 

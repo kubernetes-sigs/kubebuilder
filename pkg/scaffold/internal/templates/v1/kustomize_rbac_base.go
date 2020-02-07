@@ -35,7 +35,7 @@ func (f *KustomizeRBAC) GetInput() (file.Input, error) {
 		f.Path = filepath.Join("config", "rbac", "kustomization.yaml")
 	}
 	f.TemplateBody = kustomizeRBACTemplate
-	f.Input.IfExistsAction = file.Error
+	f.IfExistsAction = file.Error
 	return f.Input, nil
 }
 

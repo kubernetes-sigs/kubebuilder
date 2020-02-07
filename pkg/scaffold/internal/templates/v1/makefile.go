@@ -46,7 +46,7 @@ func (f *Makefile) GetInput() (file.Input, error) {
 		f.ControllerToolsPath = "vendor/sigs.k8s.io/controller-tools"
 	}
 	f.TemplateBody = makefileTemplate
-	f.Input.IfExistsAction = file.Error
+	f.IfExistsAction = file.Error
 	return f.Input, nil
 }
 

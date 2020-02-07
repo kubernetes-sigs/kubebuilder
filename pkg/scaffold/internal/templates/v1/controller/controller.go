@@ -40,7 +40,7 @@ func (f *Controller) GetInput() (file.Input, error) {
 			strings.ToLower(f.Resource.Kind)+"_controller.go")
 	}
 	f.TemplateBody = controllerTemplate
-	f.Input.IfExistsAction = file.Error
+	f.IfExistsAction = file.Error
 	return f.Input, nil
 }
 

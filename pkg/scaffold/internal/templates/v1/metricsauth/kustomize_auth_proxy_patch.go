@@ -36,7 +36,7 @@ func (f *KustomizeAuthProxyPatch) GetInput() (file.Input, error) {
 		f.Path = filepath.Join("config", "default", "manager_auth_proxy_patch.yaml")
 	}
 	f.TemplateBody = kustomizeAuthProxyPatchTemplate
-	f.Input.IfExistsAction = file.Error
+	f.IfExistsAction = file.Error
 	return f.Input, nil
 }
 

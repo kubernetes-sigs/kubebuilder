@@ -42,7 +42,7 @@ func (f *Makefile) GetInput() (file.Input, error) {
 		f.Image = "controller:latest"
 	}
 	f.TemplateBody = makefileTemplate
-	f.Input.IfExistsAction = file.Error
+	f.IfExistsAction = file.Error
 	return f.Input, nil
 }
 

@@ -46,7 +46,7 @@ func (f *Controller) GetInput() (file.Input, error) {
 	}
 	f.TemplateBody = controllerTemplate
 
-	f.Input.IfExistsAction = file.Error
+	f.IfExistsAction = file.Error
 	return f.Input, nil
 }
 
