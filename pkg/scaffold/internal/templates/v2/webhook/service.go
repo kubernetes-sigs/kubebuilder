@@ -29,14 +29,17 @@ type Service struct {
 	file.TemplateMixin
 }
 
-// GetTemplateMixin implements input.Template
-func (f *Service) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *Service) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "webhook", "service.yaml")
 	}
+
 	f.TemplateBody = ServiceTemplate
+
 	f.IfExistsAction = file.Error
-	return f.TemplateMixin, nil
+
+	return nil
 }
 
 const ServiceTemplate = `

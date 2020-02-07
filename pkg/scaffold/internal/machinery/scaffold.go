@@ -102,7 +102,7 @@ func buildFileModel(universe *model.Universe, t file.Template) (*file.File, erro
 	}
 
 	// Get the template input params
-	_, err := t.GetTemplateMixin()
+	err := t.SetTemplateDefaults()
 	if err != nil {
 		return nil, err
 	}

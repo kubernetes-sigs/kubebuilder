@@ -29,13 +29,15 @@ type KustomizeConfig struct {
 	file.TemplateMixin
 }
 
-// GetTemplateMixin implements input.Template
-func (f *KustomizeConfig) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *KustomizeConfig) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "certmanager", "kustomizeconfig.yaml")
 	}
+
 	f.TemplateBody = kustomizeConfigTemplate
-	return f.TemplateMixin, nil
+
+	return nil
 }
 
 // nolint:lll

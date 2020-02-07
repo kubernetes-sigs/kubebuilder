@@ -42,10 +42,8 @@ type Webhook struct { // nolint:maligned
 	Validating bool
 }
 
-// GetTemplateMixin implements input.Template
-func (f *Webhook) GetTemplateMixin() (file.TemplateMixin, error) {
-	f.GroupDomainWithDash = strings.Replace(f.Resource.Domain, ".", "-", -1)
-
+// SetTemplateDefaults implements input.Template
+func (f *Webhook) SetTemplateDefaults() error {
 	if f.Path == "" {
 		if f.MultiGroup {
 			f.Path = filepath.Join("apis", f.Resource.Group, f.Resource.Version,
@@ -63,10 +61,13 @@ func (f *Webhook) GetTemplateMixin() (file.TemplateMixin, error) {
 	if f.Validating {
 		webhookTemplate = webhookTemplate + ValidatingWebhookTemplate
 	}
-
 	f.TemplateBody = webhookTemplate
+
 	f.IfExistsAction = file.Error
-	return f.TemplateMixin, nil
+
+	f.GroupDomainWithDash = strings.Replace(f.Resource.Domain, ".", "-", -1)
+
+	return nil
 }
 
 // Validate validates the values

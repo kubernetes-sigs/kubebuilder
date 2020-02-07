@@ -29,13 +29,15 @@ type AuthProxyService struct {
 	file.TemplateMixin
 }
 
-// GetTemplateMixin implements input.Template
-func (f *AuthProxyService) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *AuthProxyService) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "rbac", "auth_proxy_service.yaml")
 	}
+
 	f.TemplateBody = AuthProxyServiceTemplate
-	return f.TemplateMixin, nil
+
+	return nil
 }
 
 const AuthProxyServiceTemplate = `apiVersion: v1

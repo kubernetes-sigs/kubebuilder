@@ -35,18 +35,22 @@ type AdmissionWebhooks struct {
 	Config
 }
 
-// GetTemplateMixin implements input.Template
-func (f *AdmissionWebhooks) GetTemplateMixin() (file.TemplateMixin, error) {
-	f.Server = strings.ToLower(f.Server)
-	f.Type = strings.ToLower(f.Type)
+// SetTemplateDefaults implements input.Template
+func (f *AdmissionWebhooks) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("pkg", "webhook",
 			fmt.Sprintf("%s_server", f.Server),
 			strings.ToLower(f.Resource.Kind),
 			f.Type, "webhooks.go")
 	}
+
 	f.TemplateBody = webhooksTemplate
-	return f.TemplateMixin, nil
+
+	f.Server = strings.ToLower(f.Server)
+
+	f.Type = strings.ToLower(f.Type)
+
+	return nil
 }
 
 const webhooksTemplate = `{{ .Boilerplate }}

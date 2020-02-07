@@ -34,15 +34,17 @@ type EnableCAInjectionPatch struct {
 	file.ResourceMixin
 }
 
-// GetTemplateMixin implements input.Template
-func (f *EnableCAInjectionPatch) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *EnableCAInjectionPatch) SetTemplateDefaults() error {
 	if f.Path == "" {
 		plural := flect.Pluralize(strings.ToLower(f.Resource.Kind))
 		f.Path = filepath.Join("config", "crd", "patches",
 			fmt.Sprintf("cainjection_in_%s.yaml", plural))
 	}
+
 	f.TemplateBody = EnableCAInjectionPatchTemplate
-	return f.TemplateMixin, nil
+
+	return nil
 }
 
 // Validate validates the values

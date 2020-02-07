@@ -34,15 +34,17 @@ type EnableWebhookPatch struct {
 	file.ResourceMixin
 }
 
-// GetTemplateMixin implements input.Template
-func (f *EnableWebhookPatch) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *EnableWebhookPatch) SetTemplateDefaults() error {
 	if f.Path == "" {
 		plural := flect.Pluralize(strings.ToLower(f.Resource.Kind))
 		f.Path = filepath.Join("config", "crd", "patches",
 			fmt.Sprintf("webhook_in_%s.yaml", plural))
 	}
+
 	f.TemplateBody = enableWebhookPatchTemplate
-	return f.TemplateMixin, nil
+
+	return nil
 }
 
 // Validate validates the values

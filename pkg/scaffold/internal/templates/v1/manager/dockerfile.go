@@ -28,13 +28,15 @@ type Dockerfile struct {
 	file.RepositoryMixin
 }
 
-// GetTemplateMixin implements input.Template
-func (f *Dockerfile) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *Dockerfile) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = "Dockerfile"
 	}
+
 	f.TemplateBody = dockerfileTemplate
-	return f.TemplateMixin, nil
+
+	return nil
 }
 
 const dockerfileTemplate = `# Build the manager binary

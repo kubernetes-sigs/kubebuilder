@@ -30,14 +30,17 @@ type AuthProxyPatch struct {
 	file.TemplateMixin
 }
 
-// GetTemplateMixin implements input.Template
-func (f *AuthProxyPatch) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *AuthProxyPatch) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "default", "manager_auth_proxy_patch.yaml")
 	}
+
 	f.TemplateBody = kustomizeAuthProxyPatchTemplate
+
 	f.IfExistsAction = file.Error
-	return f.TemplateMixin, nil
+
+	return nil
 }
 
 const kustomizeAuthProxyPatchTemplate = `# This patch inject a sidecar container which is a HTTP proxy for the 

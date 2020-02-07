@@ -29,13 +29,15 @@ type LeaderElectionRoleBinding struct {
 	file.TemplateMixin
 }
 
-// GetTemplateMixin implements input.Template
-func (f *LeaderElectionRoleBinding) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *LeaderElectionRoleBinding) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "rbac", "leader_election_role_binding.yaml")
 	}
+
 	f.TemplateBody = leaderElectionRoleBindingTemplate
-	return f.TemplateMixin, nil
+
+	return nil
 }
 
 const leaderElectionRoleBindingTemplate = `apiVersion: rbac.authorization.k8s.io/v1

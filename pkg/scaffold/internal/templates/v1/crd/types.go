@@ -33,15 +33,18 @@ type Types struct {
 	file.ResourceMixin
 }
 
-// GetTemplateMixin implements input.Template
-func (f *Types) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *Types) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("pkg", "apis", f.Resource.GroupPackageName, f.Resource.Version,
 			fmt.Sprintf("%s_types.go", strings.ToLower(f.Resource.Kind)))
 	}
+
 	f.TemplateBody = typesTemplate
+
 	f.IfExistsAction = file.Error
-	return f.TemplateMixin, nil
+
+	return nil
 }
 
 // Validate validates the values

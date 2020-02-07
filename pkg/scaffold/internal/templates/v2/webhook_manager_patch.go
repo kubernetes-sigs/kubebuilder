@@ -29,13 +29,15 @@ type ManagerWebhookPatch struct {
 	file.TemplateMixin
 }
 
-// GetTemplateMixin implements input.Template
-func (f *ManagerWebhookPatch) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *ManagerWebhookPatch) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "default", "manager_webhook_patch.yaml")
 	}
+
 	f.TemplateBody = ManagerWebhookPatchTemplate
-	return f.TemplateMixin, nil
+
+	return nil
 }
 
 const ManagerWebhookPatchTemplate = `apiVersion: apps/v1

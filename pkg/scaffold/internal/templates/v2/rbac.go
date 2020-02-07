@@ -29,14 +29,17 @@ type KustomizeRBAC struct {
 	file.TemplateMixin
 }
 
-// GetTemplateMixin implements input.Template
-func (f *KustomizeRBAC) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *KustomizeRBAC) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "rbac", "kustomization.yaml")
 	}
+
 	f.TemplateBody = kustomizeRBACTemplate
+
 	f.IfExistsAction = file.Error
-	return f.TemplateMixin, nil
+
+	return nil
 }
 
 const kustomizeRBACTemplate = `resources:

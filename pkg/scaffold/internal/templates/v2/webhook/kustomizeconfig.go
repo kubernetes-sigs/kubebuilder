@@ -29,14 +29,17 @@ type KustomizeConfigWebhook struct {
 	file.TemplateMixin
 }
 
-// GetTemplateMixin implements input.Template
-func (f *KustomizeConfigWebhook) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *KustomizeConfigWebhook) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "webhook", "kustomizeconfig.yaml")
 	}
+
 	f.TemplateBody = KustomizeConfigWebhookTemplate
+
 	f.IfExistsAction = file.Error
-	return f.TemplateMixin, nil
+
+	return nil
 }
 
 // nolint:lll

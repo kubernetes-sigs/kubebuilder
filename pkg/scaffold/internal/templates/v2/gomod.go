@@ -30,14 +30,17 @@ type GoMod struct {
 	ControllerRuntimeVersion string
 }
 
-// GetTemplateMixin implements input.Template
-func (f *GoMod) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *GoMod) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = "go.mod"
 	}
-	f.IfExistsAction = file.Overwrite
+
 	f.TemplateBody = goModTemplate
-	return f.TemplateMixin, nil
+
+	f.IfExistsAction = file.Overwrite
+
+	return nil
 }
 
 const goModTemplate = `

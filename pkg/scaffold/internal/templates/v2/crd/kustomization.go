@@ -38,13 +38,15 @@ type Kustomization struct {
 	file.ResourceMixin
 }
 
-// GetTemplateMixin implements input.Template
-func (f *Kustomization) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *Kustomization) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "crd", "kustomization.yaml")
 	}
+
 	f.TemplateBody = kustomizationTemplate
-	return f.TemplateMixin, nil
+
+	return nil
 }
 
 func (f *Kustomization) Update() error {

@@ -36,8 +36,8 @@ type SuiteTest struct {
 	file.ResourceMixin
 }
 
-// GetTemplateMixin implements input.Template
-func (f *SuiteTest) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *SuiteTest) SetTemplateDefaults() error {
 	if f.Path == "" {
 		if f.MultiGroup {
 			f.Path = filepath.Join("controllers", f.Resource.Group, "suite_test.go")
@@ -47,7 +47,8 @@ func (f *SuiteTest) GetTemplateMixin() (file.TemplateMixin, error) {
 	}
 
 	f.TemplateBody = controllerSuiteTestTemplate
-	return f.TemplateMixin, nil
+
+	return nil
 }
 
 // Validate validates the values

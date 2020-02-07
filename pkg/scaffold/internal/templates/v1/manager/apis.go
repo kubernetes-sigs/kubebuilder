@@ -42,22 +42,25 @@ var deepCopy = strings.Join([]string{
 	"-O zz_generated.deepcopy",
 	"-i ./..."}, " ")
 
-// GetTemplateMixin implements input.Template
-func (f *APIs) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *APIs) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("pkg", "apis", "apis.go")
 	}
 
+	f.TemplateBody = apisTemplate
+
 	relPath, err := filepath.Rel(filepath.Dir(f.Path), f.BoilerplatePath)
 	if err != nil {
-		return file.TemplateMixin{}, err
+		return err
 	}
+
 	if len(f.Comments) == 0 {
 		f.Comments = append(f.Comments,
 			"// Generate deepcopy for apis", fmt.Sprintf("%s -h %s", deepCopy, filepath.ToSlash(relPath)))
 	}
-	f.TemplateBody = apisTemplate
-	return f.TemplateMixin, nil
+
+	return nil
 }
 
 const apisTemplate = `{{ .Boilerplate }}

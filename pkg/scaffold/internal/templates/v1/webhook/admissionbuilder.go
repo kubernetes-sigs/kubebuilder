@@ -42,19 +42,8 @@ type AdmissionWebhookBuilder struct {
 	Mutating bool
 }
 
-// GetTemplateMixin implements input.Template
-func (f *AdmissionWebhookBuilder) GetTemplateMixin() (file.TemplateMixin, error) {
-	if f.Type == "mutating" {
-		f.Mutating = true
-	}
-	f.Type = strings.ToLower(f.Type)
-	f.BuilderName = builderName(f.Config, strings.ToLower(f.Resource.Kind))
-	ops := make([]string, len(f.Operations))
-	for i, op := range f.Operations {
-		ops[i] = "admissionregistrationv1beta1." + strings.Title(op)
-	}
-	f.OperationsParameterString = strings.Join(ops, ", ")
-
+// SetTemplateDefaults implements input.Template
+func (f *AdmissionWebhookBuilder) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("pkg", "webhook",
 			fmt.Sprintf("%s_server", f.Server),
@@ -62,8 +51,24 @@ func (f *AdmissionWebhookBuilder) GetTemplateMixin() (file.TemplateMixin, error)
 			f.Type,
 			fmt.Sprintf("%s_webhook.go", strings.Join(f.Operations, "_")))
 	}
+
 	f.TemplateBody = admissionWebhookBuilderTemplate
-	return f.TemplateMixin, nil
+
+	f.Type = strings.ToLower(f.Type)
+
+	if f.Type == "mutating" {
+		f.Mutating = true
+	}
+
+	f.BuilderName = builderName(f.Config, strings.ToLower(f.Resource.Kind))
+
+	ops := make([]string, len(f.Operations))
+	for i, op := range f.Operations {
+		ops[i] = "admissionregistrationv1beta1." + strings.Title(op)
+	}
+	f.OperationsParameterString = strings.Join(ops, ", ")
+
+	return nil
 }
 
 const admissionWebhookBuilderTemplate = `{{ .Boilerplate }}

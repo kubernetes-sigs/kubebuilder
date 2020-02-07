@@ -29,14 +29,17 @@ type Kustomization struct {
 	file.TemplateMixin
 }
 
-// GetTemplateMixin implements input.Template
-func (f *Kustomization) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *Kustomization) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "webhook", "kustomization.yaml")
 	}
+
 	f.TemplateBody = KustomizeWebhookTemplate
+
 	f.IfExistsAction = file.Error
-	return f.TemplateMixin, nil
+
+	return nil
 }
 
 const KustomizeWebhookTemplate = `resources:

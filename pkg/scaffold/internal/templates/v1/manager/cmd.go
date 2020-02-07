@@ -31,13 +31,15 @@ type Cmd struct {
 	file.BoilerplateMixin
 }
 
-// GetTemplateMixin implements input.Template
-func (f *Cmd) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *Cmd) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("cmd", "manager", "main.go")
 	}
+
 	f.TemplateBody = cmdTemplate
-	return f.TemplateMixin, nil
+
+	return nil
 }
 
 const cmdTemplate = `{{ .Boilerplate }}

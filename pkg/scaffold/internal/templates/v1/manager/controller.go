@@ -30,13 +30,15 @@ type Controller struct {
 	file.BoilerplateMixin
 }
 
-// GetTemplateMixin implements input.Template
-func (f *Controller) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *Controller) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("pkg", "controller", "controller.go")
 	}
+
 	f.TemplateBody = controllerTemplate
-	return f.TemplateMixin, nil
+
+	return nil
 }
 
 const controllerTemplate = `{{ .Boilerplate }}

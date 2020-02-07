@@ -29,13 +29,15 @@ type CertManager struct {
 	file.TemplateMixin
 }
 
-// GetTemplateMixin implements input.Template
-func (f *CertManager) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *CertManager) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "certmanager", "certificate.yaml")
 	}
+
 	f.TemplateBody = certManagerTemplate
-	return f.TemplateMixin, nil
+
+	return nil
 }
 
 const certManagerTemplate = `# The following manifests contain a self-signed issuer CR and a certificate CR.

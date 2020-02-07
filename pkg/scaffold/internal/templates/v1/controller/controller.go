@@ -32,16 +32,19 @@ type Controller struct {
 	file.ResourceMixin
 }
 
-// GetTemplateMixin implements input.Template
-func (f *Controller) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *Controller) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("pkg", "controller",
 			strings.ToLower(f.Resource.Kind),
 			strings.ToLower(f.Resource.Kind)+"_controller.go")
 	}
+
 	f.TemplateBody = controllerTemplate
+
 	f.IfExistsAction = file.Error
-	return f.TemplateMixin, nil
+
+	return nil
 }
 
 // nolint:lll

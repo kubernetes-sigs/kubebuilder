@@ -30,13 +30,15 @@ type Webhook struct {
 	file.BoilerplateMixin
 }
 
-// GetTemplateMixin implements input.Template
-func (f *Webhook) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *Webhook) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("pkg", "webhook", "webhook.go")
 	}
+
 	f.TemplateBody = webhookTemplate
-	return f.TemplateMixin, nil
+
+	return nil
 }
 
 // nolint:lll

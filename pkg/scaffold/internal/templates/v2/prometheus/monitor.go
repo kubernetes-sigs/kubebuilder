@@ -29,13 +29,15 @@ type ServiceMonitor struct {
 	file.TemplateMixin
 }
 
-// GetTemplateMixin implements input.Template
-func (f *ServiceMonitor) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *ServiceMonitor) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "prometheus", "monitor.yaml")
 	}
+
 	f.TemplateBody = serviceMonitorTemplate
-	return f.TemplateMixin, nil
+
+	return nil
 }
 
 const serviceMonitorTemplate = `

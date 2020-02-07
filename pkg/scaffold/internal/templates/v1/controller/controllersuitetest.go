@@ -33,14 +33,16 @@ type SuiteTest struct {
 	file.ResourceMixin
 }
 
-// GetTemplateMixin implements input.Template
-func (f *SuiteTest) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *SuiteTest) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("pkg", "controller",
 			strings.ToLower(f.Resource.Kind), strings.ToLower(f.Resource.Kind)+"_controller_suite_test.go")
 	}
+
 	f.TemplateBody = controllerSuiteTestTemplate
-	return f.TemplateMixin, nil
+
+	return nil
 }
 
 const controllerSuiteTestTemplate = `{{ .Boilerplate }}

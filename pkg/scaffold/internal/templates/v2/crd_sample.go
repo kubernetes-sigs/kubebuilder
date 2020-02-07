@@ -32,16 +32,18 @@ type CRDSample struct {
 	file.ResourceMixin
 }
 
-// GetTemplateMixin implements input.Template
-func (f *CRDSample) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *CRDSample) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "samples", fmt.Sprintf(
 			"%s_%s_%s.yaml", f.Resource.Group, f.Resource.Version, strings.ToLower(f.Resource.Kind)))
 	}
 
 	f.IfExistsAction = file.Error
+
 	f.TemplateBody = crdSampleTemplate
-	return f.TemplateMixin, nil
+
+	return nil
 }
 
 // Validate validates the values

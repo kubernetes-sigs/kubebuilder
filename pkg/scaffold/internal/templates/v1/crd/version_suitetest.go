@@ -32,14 +32,16 @@ type VersionSuiteTest struct {
 	file.ResourceMixin
 }
 
-// GetTemplateMixin implements input.Template
-func (f *VersionSuiteTest) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *VersionSuiteTest) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("pkg", "apis", f.Resource.GroupPackageName, f.Resource.Version,
 			fmt.Sprintf("%s_suite_test.go", f.Resource.Version))
 	}
+
 	f.TemplateBody = versionSuiteTestTemplate
-	return f.TemplateMixin, nil
+
+	return nil
 }
 
 // Validate validates the values

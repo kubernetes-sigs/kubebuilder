@@ -29,13 +29,15 @@ type LeaderElectionRole struct {
 	file.TemplateMixin
 }
 
-// GetTemplateMixin implements input.Template
-func (f *LeaderElectionRole) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *LeaderElectionRole) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "rbac", "leader_election_role.yaml")
 	}
+
 	f.TemplateBody = leaderElectionRoleTemplate
-	return f.TemplateMixin, nil
+
+	return nil
 }
 
 const leaderElectionRoleTemplate = `# permissions to do leader election.

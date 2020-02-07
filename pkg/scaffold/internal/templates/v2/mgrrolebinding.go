@@ -29,13 +29,15 @@ type ManagerRoleBinding struct {
 	file.TemplateMixin
 }
 
-// GetTemplateMixin implements input.Template
-func (f *ManagerRoleBinding) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *ManagerRoleBinding) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "rbac", "role_binding.yaml")
 	}
+
 	f.TemplateBody = managerBindingTemplate
-	return f.TemplateMixin, nil
+
+	return nil
 }
 
 const managerBindingTemplate = `apiVersion: rbac.authorization.k8s.io/v1

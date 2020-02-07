@@ -34,14 +34,16 @@ type AddController struct {
 	file.ResourceMixin
 }
 
-// GetTemplateMixin implements input.Template
-func (f *AddController) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *AddController) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("pkg", "controller", fmt.Sprintf(
 			"add_%s.go", strings.ToLower(f.Resource.Kind)))
 	}
+
 	f.TemplateBody = addControllerTemplate
-	return f.TemplateMixin, nil
+
+	return nil
 }
 
 const addControllerTemplate = `{{ .Boilerplate }}

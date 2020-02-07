@@ -27,13 +27,15 @@ type GitIgnore struct {
 	file.TemplateMixin
 }
 
-// GetTemplateMixin implements input.Template
-func (f *GitIgnore) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *GitIgnore) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = ".gitignore"
 	}
+
 	f.TemplateBody = gitignoreTemplate
-	return f.TemplateMixin, nil
+
+	return nil
 }
 
 const gitignoreTemplate = `

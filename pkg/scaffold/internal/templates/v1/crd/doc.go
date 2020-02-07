@@ -32,13 +32,15 @@ type Doc struct {
 	file.ResourceMixin
 }
 
-// GetTemplateMixin implements input.Template
-func (f *Doc) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *Doc) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("pkg", "apis", f.Resource.GroupPackageName, f.Resource.Version, "doc.go")
 	}
+
 	f.TemplateBody = docGoTemplate
-	return f.TemplateMixin, nil
+
+	return nil
 }
 
 // Validate validates the values

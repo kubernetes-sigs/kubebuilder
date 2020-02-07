@@ -32,14 +32,15 @@ type CRDEditorRole struct {
 	file.ResourceMixin
 }
 
-// GetTemplateMixin implements input.Template
-func (f *CRDEditorRole) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *CRDEditorRole) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "rbac", fmt.Sprintf("%s_editor_role.yaml", strings.ToLower(f.Resource.Kind)))
 	}
 
 	f.TemplateBody = crdRoleEditorTemplate
-	return f.TemplateMixin, nil
+
+	return nil
 }
 
 // Validate validates the values

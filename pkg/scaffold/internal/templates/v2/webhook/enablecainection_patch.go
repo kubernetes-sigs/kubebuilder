@@ -29,14 +29,17 @@ type InjectCAPatch struct {
 	file.TemplateMixin
 }
 
-// GetTemplateMixin implements input.Template
-func (f *InjectCAPatch) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *InjectCAPatch) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "default", "webhookcainjection_patch.yaml")
 	}
+
 	f.TemplateBody = injectCAPatchTemplate
+
 	f.IfExistsAction = file.Error
-	return f.TemplateMixin, nil
+
+	return nil
 }
 
 const injectCAPatchTemplate = `# This patch add annotation to admission webhook config and

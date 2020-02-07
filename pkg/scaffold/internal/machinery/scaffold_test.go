@@ -166,7 +166,7 @@ var _ = Describe("Scaffold", func() {
 			Expect(err.Error()).To(ContainSubstring(testError.Error()))
 		})
 
-		It("should fail if a template GetTemplateMixin method fails", func() {
+		It("should fail if a template SetTemplateDefaults method fails", func() {
 			s = &scaffold{
 				fs: filesystem.NewMock(
 					filesystem.MockOutput(&output),
@@ -389,6 +389,8 @@ var _ = Describe("Scaffold", func() {
 	})
 })
 
+var _ model.Plugin = fakePlugin{}
+
 // fakePlugin is used to mock a model.Plugin in order to test Scaffold
 type fakePlugin struct {
 	err error
@@ -399,6 +401,8 @@ func (f fakePlugin) Pipe(_ *model.Universe) error {
 	return f.err
 }
 
+var _ file.Template = fakeFile{}
+
 // fakeFile is used to mock a file.File in order to test Scaffold
 type fakeFile struct {
 	path           string
@@ -407,15 +411,6 @@ type fakeFile struct {
 
 	err           error
 	validateError error
-}
-
-// GetTemplateMixin implements file.Template
-func (f fakeFile) GetTemplateMixin() (file.TemplateMixin, error) {
-	if f.err != nil {
-		return file.TemplateMixin{}, f.err
-	}
-
-	return file.TemplateMixin{f.path, f.body, f.ifExistsAction}, nil
 }
 
 // GetPath implements file.Template
@@ -431,6 +426,15 @@ func (f fakeFile) GetBody() string {
 // GetIfExistsAction implements file.Template
 func (f fakeFile) GetIfExistsAction() file.IfExistsAction {
 	return f.ifExistsAction
+}
+
+// SetTemplateDefaults implements file.Template
+func (f fakeFile) SetTemplateDefaults() error {
+	if f.err != nil {
+		return f.err
+	}
+
+	return nil
 }
 
 // Validate implements file.RequiresValidation

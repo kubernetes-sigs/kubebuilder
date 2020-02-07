@@ -29,13 +29,15 @@ type AuthProxyRole struct {
 	file.TemplateMixin
 }
 
-// GetTemplateMixin implements input.Template
-func (f *AuthProxyRole) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *AuthProxyRole) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "rbac", "auth_proxy_role.yaml")
 	}
+
 	f.TemplateBody = proxyRoleTemplate
-	return f.TemplateMixin, nil
+
+	return nil
 }
 
 const proxyRoleTemplate = `apiVersion: rbac.authorization.k8s.io/v1

@@ -33,17 +33,21 @@ type Makefile struct {
 	ControllerToolsVersion string
 }
 
-// GetTemplateMixin implements input.Template
-func (f *Makefile) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *Makefile) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = "Makefile"
 	}
+
+	f.TemplateBody = makefileTemplate
+
+	f.IfExistsAction = file.Error
+
 	if f.Image == "" {
 		f.Image = "controller:latest"
 	}
-	f.TemplateBody = makefileTemplate
-	f.IfExistsAction = file.Error
-	return f.TemplateMixin, nil
+
+	return nil
 }
 
 // nolint:lll

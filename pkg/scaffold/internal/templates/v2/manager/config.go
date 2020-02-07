@@ -31,13 +31,15 @@ type Config struct {
 	Image string
 }
 
-// GetTemplateMixin implements input.Template
-func (f *Config) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *Config) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "manager", "manager.yaml")
 	}
+
 	f.TemplateBody = configTemplate
-	return f.TemplateMixin, nil
+
+	return nil
 }
 
 const configTemplate = `apiVersion: v1

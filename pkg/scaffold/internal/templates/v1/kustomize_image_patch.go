@@ -33,17 +33,21 @@ type KustomizeImagePatch struct {
 	ImageURL string
 }
 
-// GetTemplateMixin implements input.Template
-func (f *KustomizeImagePatch) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *KustomizeImagePatch) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "default", "manager_image_patch.yaml")
 	}
+
+	f.TemplateBody = kustomizeImagePatchTemplate
+
+	f.IfExistsAction = file.Error
+
 	if f.ImageURL == "" {
 		f.ImageURL = "IMAGE_URL"
 	}
-	f.TemplateBody = kustomizeImagePatchTemplate
-	f.IfExistsAction = file.Error
-	return f.TemplateMixin, nil
+
+	return nil
 }
 
 const kustomizeImagePatchTemplate = `apiVersion: apps/v1

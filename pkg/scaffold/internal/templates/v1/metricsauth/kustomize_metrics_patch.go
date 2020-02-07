@@ -30,14 +30,17 @@ type KustomizePrometheusMetricsPatch struct {
 	file.TemplateMixin
 }
 
-// GetTemplateMixin implements input.Template
-func (f *KustomizePrometheusMetricsPatch) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *KustomizePrometheusMetricsPatch) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "default", "manager_prometheus_metrics_patch.yaml")
 	}
+
 	f.TemplateBody = kustomizePrometheusMetricsPatchTemplate
+
 	f.IfExistsAction = file.Error
-	return f.TemplateMixin, nil
+
+	return nil
 }
 
 const kustomizePrometheusMetricsPatchTemplate = `# This patch enables Prometheus scraping for the manager pod.

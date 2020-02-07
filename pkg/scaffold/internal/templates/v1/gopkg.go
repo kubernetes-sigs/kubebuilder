@@ -59,11 +59,16 @@ type Stanza struct {
 	Revision string
 }
 
-// GetTemplateMixin implements input.Template
-func (f *GopkgToml) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *GopkgToml) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = "Gopkg.toml"
 	}
+
+	f.TemplateBody = depTemplate
+
+	f.IfExistsAction = file.Overwrite
+
 	if f.ManagedHeader == "" {
 		f.ManagedHeader = DefaultGopkgHeader
 	}
@@ -78,12 +83,10 @@ func (f *GopkgToml) GetTemplateMixin() (file.TemplateMixin, error) {
 	if err != nil {
 		f.UserContent = f.DefaultUserContent
 	} else if f.UserContent, err = f.getUserContent(lastBytes); err != nil {
-		return file.TemplateMixin{}, err
+		return err
 	}
 
-	f.IfExistsAction = file.Overwrite
-	f.TemplateBody = depTemplate
-	return f.TemplateMixin, nil
+	return nil
 }
 
 func (f *GopkgToml) getUserContent(b []byte) (string, error) {

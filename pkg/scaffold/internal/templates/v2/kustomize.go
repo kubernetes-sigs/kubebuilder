@@ -34,22 +34,26 @@ type Kustomize struct {
 	Prefix string
 }
 
-// GetTemplateMixin implements input.Template
-func (f *Kustomize) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *Kustomize) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "default", "kustomization.yaml")
 	}
+
+	f.TemplateBody = kustomizeTemplate
+
+	f.IfExistsAction = file.Error
+
 	if f.Prefix == "" {
 		// use directory name as prefix
 		dir, err := os.Getwd()
 		if err != nil {
-			return file.TemplateMixin{}, err
+			return err
 		}
 		f.Prefix = strings.ToLower(filepath.Base(dir))
 	}
-	f.TemplateBody = kustomizeTemplate
-	f.IfExistsAction = file.Error
-	return f.TemplateMixin, nil
+
+	return nil
 }
 
 const kustomizeTemplate = `# Adds namespace to all resources.

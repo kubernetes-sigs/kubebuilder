@@ -33,8 +33,8 @@ type Controller struct {
 	file.ResourceMixin
 }
 
-// GetTemplateMixin implements input.Template
-func (f *Controller) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *Controller) SetTemplateDefaults() error {
 	if f.Path == "" {
 		if f.MultiGroup {
 			f.Path = filepath.Join("controllers", f.Resource.Group,
@@ -44,10 +44,12 @@ func (f *Controller) GetTemplateMixin() (file.TemplateMixin, error) {
 				strings.ToLower(f.Resource.Kind)+"_controller.go")
 		}
 	}
+
 	f.TemplateBody = controllerTemplate
 
 	f.IfExistsAction = file.Error
-	return f.TemplateMixin, nil
+
+	return nil
 }
 
 // nolint:lll

@@ -34,8 +34,8 @@ type Types struct {
 	file.ResourceMixin
 }
 
-// GetTemplateMixin implements input.Template
-func (f *Types) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *Types) SetTemplateDefaults() error {
 	if f.Path == "" {
 		if f.MultiGroup {
 			f.Path = filepath.Join("apis", f.Resource.Group, f.Resource.Version,
@@ -47,8 +47,10 @@ func (f *Types) GetTemplateMixin() (file.TemplateMixin, error) {
 	}
 
 	f.TemplateBody = typesTemplate
+
 	f.IfExistsAction = file.Error
-	return f.TemplateMixin, nil
+
+	return nil
 }
 
 // Validate validates the values

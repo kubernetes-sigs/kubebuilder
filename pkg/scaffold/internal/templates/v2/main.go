@@ -40,13 +40,15 @@ type Main struct {
 	file.BoilerplateMixin
 }
 
-// GetTemplateMixin implements input.Template
-func (f *Main) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *Main) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("main.go")
 	}
+
 	f.TemplateBody = mainTemplate
-	return f.TemplateMixin, nil
+
+	return nil
 }
 
 // Update updates main.go with code fragments required to wire a new

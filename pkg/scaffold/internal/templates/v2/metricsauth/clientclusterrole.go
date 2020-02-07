@@ -29,13 +29,15 @@ type ClientClusterRole struct {
 	file.TemplateMixin
 }
 
-// GetTemplateMixin implements input.Template
-func (f *ClientClusterRole) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *ClientClusterRole) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "rbac", "auth_proxy_client_clusterrole.yaml")
 	}
+
 	f.TemplateBody = ClientClusterRoleTemplate
-	return f.TemplateMixin, nil
+
+	return nil
 }
 
 const ClientClusterRoleTemplate = `apiVersion: rbac.authorization.k8s.io/v1beta1

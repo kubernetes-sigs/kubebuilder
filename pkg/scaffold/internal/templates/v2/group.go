@@ -32,8 +32,8 @@ type Group struct {
 	file.ResourceMixin
 }
 
-// GetTemplateMixin implements input.Template
-func (f *Group) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *Group) SetTemplateDefaults() error {
 	if f.Path == "" {
 		if f.MultiGroup {
 			f.Path = filepath.Join("apis", f.Resource.Group, f.Resource.Version, "groupversion_info.go")
@@ -41,8 +41,10 @@ func (f *Group) GetTemplateMixin() (file.TemplateMixin, error) {
 			f.Path = filepath.Join("api", f.Resource.Version, "groupversion_info.go")
 		}
 	}
+
 	f.TemplateBody = groupTemplate
-	return f.TemplateMixin, nil
+
+	return nil
 }
 
 // Validate validates the values

@@ -33,13 +33,15 @@ type Server struct {
 	Config
 }
 
-// GetTemplateMixin implements input.Template
-func (f *Server) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *Server) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("pkg", "webhook", fmt.Sprintf("%s_server", f.Server), "server.go")
 	}
+
 	f.TemplateBody = serverTemplate
-	return f.TemplateMixin, nil
+
+	return nil
 }
 
 const serverTemplate = `{{ .Boilerplate }}

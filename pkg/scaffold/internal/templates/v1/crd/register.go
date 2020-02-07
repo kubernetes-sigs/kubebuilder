@@ -32,13 +32,15 @@ type Register struct {
 	file.ResourceMixin
 }
 
-// GetTemplateMixin implements input.Template
-func (f *Register) GetTemplateMixin() (file.TemplateMixin, error) {
+// SetTemplateDefaults implements input.Template
+func (f *Register) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("pkg", "apis", f.Resource.GroupPackageName, f.Resource.Version, "register.go")
 	}
+
 	f.TemplateBody = registerTemplate
-	return f.TemplateMixin, nil
+
+	return nil
 }
 
 // Validate validates the values

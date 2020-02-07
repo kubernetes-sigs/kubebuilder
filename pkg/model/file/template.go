@@ -22,14 +22,14 @@ import (
 
 // Template is a scaffoldable file template
 type Template interface {
-	// GetTemplateMixin returns the TemplateMixin for creating a scaffold file
-	GetTemplateMixin() (TemplateMixin, error)
 	// GetPath returns the path to the file location
 	GetPath() string
 	// GetBody returns the template body
 	GetBody() string
 	// GetIfExistsAction returns the behavior when creating a file that already exists
 	GetIfExistsAction() IfExistsAction
+	// SetTemplateDefaults returns the TemplateMixin for creating a scaffold file
+	SetTemplateDefaults() error
 }
 
 // TemplateMixin is the input for scaffolding a file
@@ -44,15 +44,15 @@ type TemplateMixin struct {
 	IfExistsAction IfExistsAction
 }
 
-func(t *TemplateMixin) GetPath() string {
+func (t *TemplateMixin) GetPath() string {
 	return t.Path
 }
 
-func(t *TemplateMixin) GetBody() string {
+func (t *TemplateMixin) GetBody() string {
 	return t.TemplateBody
 }
 
-func(t *TemplateMixin) GetIfExistsAction() IfExistsAction {
+func (t *TemplateMixin) GetIfExistsAction() IfExistsAction {
 	return t.IfExistsAction
 }
 
