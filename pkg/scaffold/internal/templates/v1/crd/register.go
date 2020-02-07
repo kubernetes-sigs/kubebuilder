@@ -27,6 +27,7 @@ var _ file.Template = &Register{}
 // Register scaffolds the pkg/apis/group/version/register.go file
 type Register struct {
 	file.Input
+	file.RepositoryMixin
 	file.BoilerplateMixin
 	file.ResourceMixin
 }

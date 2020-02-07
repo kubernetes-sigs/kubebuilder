@@ -25,6 +25,8 @@ var _ file.Template = &Makefile{}
 // Makefile scaffolds the Makefile
 type Makefile struct {
 	file.Input
+	file.RepositoryMixin
+
 	// Image is controller manager image name
 	Image string
 

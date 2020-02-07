@@ -84,8 +84,8 @@ func (u Universe) InjectInto(t file.Template) {
 		if templateWithDomain, ok := t.(file.Domain); ok {
 			templateWithDomain.SetDomain(u.Config.Domain)
 		}
-		if templateWithRepository, ok := t.(file.Repo); ok {
-			templateWithRepository.SetRepo(u.Config.Repo)
+		if templateWithRepository, hasRepository := t.(file.HasRepository); hasRepository {
+			templateWithRepository.InjectRepository(u.Config.Repo)
 		}
 		if templateWithMultiGroup, hasMultiGroup := t.(file.HasMultiGroup); hasMultiGroup {
 			templateWithMultiGroup.InjectMultiGroup(u.Config.MultiGroup)

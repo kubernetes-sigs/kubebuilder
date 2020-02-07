@@ -33,9 +33,6 @@ type Input struct {
 
 	// Domain is the domain for the APIs
 	Domain string
-
-	// Repo is the go project package
-	Repo string
 }
 
 // Domain allows a domain to be set on an object
@@ -51,16 +48,22 @@ func (i *Input) SetDomain(d string) {
 	}
 }
 
-// Repo allows a repo to be set on an object
-type Repo interface {
-	// SetRepo sets the repo
-	SetRepo(string)
+// HasRepository allows the repository to be used on a template
+type HasRepository interface {
+	// InjectRepository sets the template repository
+	InjectRepository(string)
 }
 
-// SetRepo sets the repo
-func (i *Input) SetRepo(r string) {
-	if i.Repo == "" {
-		i.Repo = r
+// RepositoryMixin provides templates with a injectable repository field
+type RepositoryMixin struct {
+	// Repo is the go project package path
+	Repo string
+}
+
+// InjectRepository implements HasRepository
+func (m *RepositoryMixin) InjectRepository(repository string) {
+	if m.Repo == "" {
+		m.Repo = repository
 	}
 }
 

@@ -25,6 +25,8 @@ var _ file.Template = &GoMod{}
 // GoMod writes a templatefile for go.mod
 type GoMod struct {
 	file.Input
+	file.RepositoryMixin
+
 	ControllerRuntimeVersion string
 }
 

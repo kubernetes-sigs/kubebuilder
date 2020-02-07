@@ -28,6 +28,7 @@ var _ file.Template = &SuiteTest{}
 // SuiteTest scaffolds a SuiteTest
 type SuiteTest struct {
 	file.Input
+	file.RepositoryMixin
 	file.BoilerplateMixin
 	file.ResourceMixin
 }

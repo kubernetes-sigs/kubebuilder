@@ -27,6 +27,7 @@ var _ file.Template = &Doc{}
 // Doc scaffolds the pkg/apis/group/version/doc.go directory
 type Doc struct {
 	file.Input
+	file.RepositoryMixin
 	file.BoilerplateMixin
 	file.ResourceMixin
 }

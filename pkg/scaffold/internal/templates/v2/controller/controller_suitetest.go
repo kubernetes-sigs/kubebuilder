@@ -30,6 +30,7 @@ var _ file.Template = &SuiteTest{}
 // SuiteTest scaffolds the suite_test.go file to setup the controller test
 type SuiteTest struct {
 	file.Input
+	file.RepositoryMixin
 	file.MultiGroupMixin
 	file.BoilerplateMixin
 	file.ResourceMixin
