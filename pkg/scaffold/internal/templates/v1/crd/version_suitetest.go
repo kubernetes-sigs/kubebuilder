@@ -21,7 +21,6 @@ import (
 	"path/filepath"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
-	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 )
 
 var _ file.Template = &TypesTest{}
@@ -29,9 +28,8 @@ var _ file.Template = &TypesTest{}
 // VersionSuiteTest scaffolds the version_suite_test.go file to setup the versions test
 type VersionSuiteTest struct {
 	file.Input
-
-	// Resource is the resource to scaffold the types_test.go file for
-	Resource *resource.Resource
+	file.BoilerplateMixin
+	file.ResourceMixin
 }
 
 // GetInput implements input.Template

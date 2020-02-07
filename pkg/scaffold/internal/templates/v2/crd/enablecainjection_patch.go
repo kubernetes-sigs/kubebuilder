@@ -24,7 +24,6 @@ import (
 	"github.com/gobuffalo/flect"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
-	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 )
 
 var _ file.Template = &EnableCAInjectionPatch{}
@@ -32,9 +31,7 @@ var _ file.Template = &EnableCAInjectionPatch{}
 // EnableCAInjectionPatch scaffolds a EnableCAInjectionPatch for a Resource
 type EnableCAInjectionPatch struct {
 	file.Input
-
-	// Resource is the Resource to make the EnableCAInjectionPatch for
-	Resource *resource.Resource
+	file.ResourceMixin
 }
 
 // GetInput implements input.Template

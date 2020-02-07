@@ -81,18 +81,24 @@ func WithResource(resource *resource.Resource) UniverseOption {
 func (u Universe) InjectInto(t file.Template) {
 	// Inject project configuration
 	if u.Config != nil {
-		if templateWithDomain, ok := t.(file.Domain); ok {
-			templateWithDomain.SetDomain(u.Config.Domain)
+		if templateWithDomain, hasDomain := t.(file.HasDomain); hasDomain {
+			templateWithDomain.InjectDomain(u.Config.Domain)
 		}
-		if templateWithRepository, ok := t.(file.Repo); ok {
-			templateWithRepository.SetRepo(u.Config.Repo)
+		if templateWithRepository, hasRepository := t.(file.HasRepository); hasRepository {
+			templateWithRepository.InjectRepository(u.Config.Repo)
 		}
-		if templateWithMultiGroup, ok := t.(file.MultiGroup); ok {
-			templateWithMultiGroup.SetMultiGroup(u.Config.MultiGroup)
+		if templateWithMultiGroup, hasMultiGroup := t.(file.HasMultiGroup); hasMultiGroup {
+			templateWithMultiGroup.InjectMultiGroup(u.Config.MultiGroup)
 		}
 	}
 	// Inject boilerplate
-	if templateWithBoilerplate, ok := t.(file.Boilerplate); ok {
-		templateWithBoilerplate.SetBoilerplate(u.Boilerplate)
+	if templateWithBoilerplate, hasBoilerplate := t.(file.HasBoilerplate); hasBoilerplate {
+		templateWithBoilerplate.InjectBoilerplate(u.Boilerplate)
+	}
+	// Inject resource
+	if u.Resource != nil {
+		if templateWithResource, hasResource := t.(file.HasResource); hasResource {
+			templateWithResource.InjectResource(u.Resource)
+		}
 	}
 }

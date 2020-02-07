@@ -20,7 +20,6 @@ import (
 	"path/filepath"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
-	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 )
 
 var _ file.Template = &Doc{}
@@ -28,9 +27,9 @@ var _ file.Template = &Doc{}
 // Doc scaffolds the pkg/apis/group/version/doc.go directory
 type Doc struct {
 	file.Input
-
-	// Resource is a resource for the API version
-	Resource *resource.Resource
+	file.RepositoryMixin
+	file.BoilerplateMixin
+	file.ResourceMixin
 }
 
 // GetInput implements input.Template

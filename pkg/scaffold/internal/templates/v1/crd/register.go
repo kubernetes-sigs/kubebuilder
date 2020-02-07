@@ -20,7 +20,6 @@ import (
 	"path/filepath"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
-	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 )
 
 var _ file.Template = &Register{}
@@ -28,9 +27,9 @@ var _ file.Template = &Register{}
 // Register scaffolds the pkg/apis/group/version/register.go file
 type Register struct {
 	file.Input
-
-	// Resource is the resource to scaffold the types_test.go file for
-	Resource *resource.Resource
+	file.RepositoryMixin
+	file.BoilerplateMixin
+	file.ResourceMixin
 }
 
 // GetInput implements input.Template

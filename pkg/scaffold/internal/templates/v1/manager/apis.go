@@ -29,6 +29,7 @@ var _ file.Template = &APIs{}
 // APIs scaffolds a apis.go to register types with a Scheme
 type APIs struct {
 	file.Input
+	file.BoilerplateMixin
 	// BoilerplatePath is the path to the boilerplate file
 	BoilerplatePath string
 	// Comments is a list of comments to add to the apis.go

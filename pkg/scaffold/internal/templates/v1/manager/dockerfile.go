@@ -25,6 +25,7 @@ var _ file.Template = &Dockerfile{}
 // Dockerfile scaffolds a Dockerfile for building a main
 type Dockerfile struct {
 	file.Input
+	file.RepositoryMixin
 }
 
 // GetInput implements input.Template

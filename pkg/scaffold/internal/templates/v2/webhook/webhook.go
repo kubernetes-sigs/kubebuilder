@@ -22,17 +22,16 @@ import (
 	"strings"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
-	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 )
 
 var _ file.Template = &Webhook{}
 
 // Webhook scaffolds a Webhook for a Resource
-type Webhook struct {
+type Webhook struct { // nolint:maligned
 	file.Input
-
-	// Resource is the Resource to make the Webhook for
-	Resource *resource.Resource
+	file.MultiGroupMixin
+	file.BoilerplateMixin
+	file.ResourceMixin
 
 	// Is the Group domain for the Resource replacing '.' with '-'
 	GroupDomainWithDash string

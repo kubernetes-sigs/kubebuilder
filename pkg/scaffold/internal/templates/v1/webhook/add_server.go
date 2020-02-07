@@ -28,6 +28,8 @@ var _ file.Template = &AddServer{}
 // AddServer scaffolds adds a new webhook server.
 type AddServer struct {
 	file.Input
+	file.RepositoryMixin
+	file.BoilerplateMixin
 
 	Config
 }

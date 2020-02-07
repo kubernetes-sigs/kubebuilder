@@ -27,6 +27,7 @@ var _ file.Template = &Webhook{}
 // Webhook scaffolds a webhook.go to add webhook server(s) to a manager.Cmd
 type Webhook struct {
 	file.Input
+	file.BoilerplateMixin
 }
 
 // GetInput implements input.Template

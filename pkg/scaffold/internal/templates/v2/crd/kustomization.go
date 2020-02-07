@@ -21,7 +21,6 @@ import (
 	"path/filepath"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
-	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/machinery"
 )
 
@@ -36,9 +35,7 @@ var _ file.Template = &Kustomization{}
 // Kustomization scaffolds the kustomization file in manager folder.
 type Kustomization struct {
 	file.Input
-
-	// Resource is the Resource to make the EnableWebhookPatch for
-	Resource *resource.Resource
+	file.ResourceMixin
 }
 
 // GetInput implements input.Template

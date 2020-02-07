@@ -22,7 +22,6 @@ import (
 	"strings"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
-	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 )
 
 var _ file.Template = &AdmissionWebhooks{}
@@ -30,9 +29,8 @@ var _ file.Template = &AdmissionWebhooks{}
 // AdmissionWebhooks scaffolds how to construct a webhook server and register webhooks.
 type AdmissionWebhooks struct {
 	file.Input
-
-	// Resource is a resource in the API group
-	Resource *resource.Resource
+	file.BoilerplateMixin
+	file.ResourceMixin
 
 	Config
 }

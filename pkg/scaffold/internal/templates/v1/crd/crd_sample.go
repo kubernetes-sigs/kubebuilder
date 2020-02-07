@@ -22,7 +22,6 @@ import (
 	"strings"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
-	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 )
 
 var _ file.Template = &CRDSample{}
@@ -31,9 +30,7 @@ var _ file.Template = &CRDSample{}
 // nolint:golint
 type CRDSample struct {
 	file.Input
-
-	// Resource is a resource in the API group
-	Resource *resource.Resource
+	file.ResourceMixin
 }
 
 // GetInput implements input.Template

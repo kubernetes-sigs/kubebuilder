@@ -22,7 +22,6 @@ import (
 	"strings"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
-	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 )
 
 var _ file.Template = &CRDViewerRole{}
@@ -30,9 +29,7 @@ var _ file.Template = &CRDViewerRole{}
 // CRD Viewer role scaffolds the config/rbca/<kind>_viewer_role.yaml
 type CRDViewerRole struct {
 	file.Input
-
-	// Resource is a resource in the API group
-	Resource *resource.Resource
+	file.ResourceMixin
 }
 
 // GetInput implements input.Template

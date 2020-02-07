@@ -37,6 +37,7 @@ var _ file.Template = &Main{}
 // Main scaffolds a main.go to run Controllers
 type Main struct {
 	file.Input
+	file.BoilerplateMixin
 }
 
 // GetInput implements input.Template

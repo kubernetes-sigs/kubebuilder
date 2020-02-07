@@ -24,7 +24,6 @@ import (
 	"github.com/gobuffalo/flect"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
-	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 )
 
 var _ file.Template = &EnableWebhookPatch{}
@@ -32,9 +31,7 @@ var _ file.Template = &EnableWebhookPatch{}
 // EnableWebhookPatch scaffolds a EnableWebhookPatch for a Resource
 type EnableWebhookPatch struct {
 	file.Input
-
-	// Resource is the Resource to make the EnableWebhookPatch for
-	Resource *resource.Resource
+	file.ResourceMixin
 }
 
 // GetInput implements input.Template

@@ -27,6 +27,7 @@ var _ file.Template = &Controller{}
 // Controller scaffolds a controller.go to add Controllers to a manager.Cmd
 type Controller struct {
 	file.Input
+	file.BoilerplateMixin
 }
 
 // GetInput implements input.Template
