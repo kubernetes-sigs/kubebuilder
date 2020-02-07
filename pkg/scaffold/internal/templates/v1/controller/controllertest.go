@@ -27,13 +27,13 @@ var _ file.Template = &Test{}
 
 // Test scaffolds a Controller Test
 type Test struct {
-	file.Input
+	file.TemplateMixin
 	file.BoilerplateMixin
 	file.ResourceMixin
 }
 
-// GetInput implements input.Template
-func (f *Test) GetInput() (file.Input, error) {
+// GetTemplateMixin implements input.Template
+func (f *Test) GetTemplateMixin() (file.TemplateMixin, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("pkg", "controller",
 			strings.ToLower(f.Resource.Kind), strings.ToLower(f.Resource.Kind)+"_controller_test.go")
@@ -41,7 +41,7 @@ func (f *Test) GetInput() (file.Input, error) {
 
 	f.TemplateBody = controllerTestTemplate
 	f.IfExistsAction = file.Error
-	return f.Input, nil
+	return f.TemplateMixin, nil
 }
 
 // nolint:lll

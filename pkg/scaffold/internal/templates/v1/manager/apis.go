@@ -28,7 +28,7 @@ var _ file.Template = &APIs{}
 
 // APIs scaffolds a apis.go to register types with a Scheme
 type APIs struct {
-	file.Input
+	file.TemplateMixin
 	file.BoilerplateMixin
 	// BoilerplatePath is the path to the boilerplate file
 	BoilerplatePath string
@@ -42,22 +42,22 @@ var deepCopy = strings.Join([]string{
 	"-O zz_generated.deepcopy",
 	"-i ./..."}, " ")
 
-// GetInput implements input.Template
-func (f *APIs) GetInput() (file.Input, error) {
+// GetTemplateMixin implements input.Template
+func (f *APIs) GetTemplateMixin() (file.TemplateMixin, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("pkg", "apis", "apis.go")
 	}
 
 	relPath, err := filepath.Rel(filepath.Dir(f.Path), f.BoilerplatePath)
 	if err != nil {
-		return file.Input{}, err
+		return file.TemplateMixin{}, err
 	}
 	if len(f.Comments) == 0 {
 		f.Comments = append(f.Comments,
 			"// Generate deepcopy for apis", fmt.Sprintf("%s -h %s", deepCopy, filepath.ToSlash(relPath)))
 	}
 	f.TemplateBody = apisTemplate
-	return f.Input, nil
+	return f.TemplateMixin, nil
 }
 
 const apisTemplate = `{{ .Boilerplate }}

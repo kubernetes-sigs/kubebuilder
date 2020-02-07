@@ -27,17 +27,17 @@ var _ file.Template = &KustomizeAuthProxyPatch{}
 // KustomizeAuthProxyPatch scaffolds the patch file for enabling
 // prometheus metrics for manager Pod.
 type KustomizeAuthProxyPatch struct {
-	file.Input
+	file.TemplateMixin
 }
 
-// GetInput implements input.Template
-func (f *KustomizeAuthProxyPatch) GetInput() (file.Input, error) {
+// GetTemplateMixin implements input.Template
+func (f *KustomizeAuthProxyPatch) GetTemplateMixin() (file.TemplateMixin, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "default", "manager_auth_proxy_patch.yaml")
 	}
 	f.TemplateBody = kustomizeAuthProxyPatchTemplate
 	f.IfExistsAction = file.Error
-	return f.Input, nil
+	return f.TemplateMixin, nil
 }
 
 const kustomizeAuthProxyPatchTemplate = `# This patch inject a sidecar container which is a HTTP proxy for the 

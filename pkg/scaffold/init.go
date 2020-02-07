@@ -89,9 +89,9 @@ func (s *initScaffolder) scaffoldV1() error {
 	if err := machinery.NewScaffold().Execute(
 		s.newUniverse(""),
 		&templatesv1.Boilerplate{
-			Input:   file.Input{Path: s.boilerplatePath},
-			License: s.license,
-			Owner:   s.owner,
+			TemplateMixin: file.TemplateMixin{Path: s.boilerplatePath},
+			License:       s.license,
+			Owner:         s.owner,
 		},
 	); err != nil {
 		return err
@@ -129,9 +129,9 @@ func (s *initScaffolder) scaffoldV2() error {
 	if err := machinery.NewScaffold().Execute(
 		s.newUniverse(""),
 		&templatesv2.Boilerplate{
-			Input:   file.Input{Path: s.boilerplatePath},
-			License: s.license,
-			Owner:   s.owner,
+			TemplateMixin: file.TemplateMixin{Path: s.boilerplatePath},
+			License:       s.license,
+			Owner:         s.owner,
 		},
 	); err != nil {
 		return err

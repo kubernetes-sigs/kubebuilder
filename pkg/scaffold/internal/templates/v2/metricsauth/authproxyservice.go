@@ -26,16 +26,16 @@ var _ file.Template = &AuthProxyService{}
 
 // AuthProxyService scaffolds the config/rbac/auth_proxy_service.yaml file
 type AuthProxyService struct {
-	file.Input
+	file.TemplateMixin
 }
 
-// GetInput implements input.Template
-func (f *AuthProxyService) GetInput() (file.Input, error) {
+// GetTemplateMixin implements input.Template
+func (f *AuthProxyService) GetTemplateMixin() (file.TemplateMixin, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "rbac", "auth_proxy_service.yaml")
 	}
 	f.TemplateBody = AuthProxyServiceTemplate
-	return f.Input, nil
+	return f.TemplateMixin, nil
 }
 
 const AuthProxyServiceTemplate = `apiVersion: v1

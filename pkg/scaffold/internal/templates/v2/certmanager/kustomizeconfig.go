@@ -26,16 +26,16 @@ var _ file.Template = &KustomizeConfig{}
 
 // KustomizeConfig scaffolds the kustomizeconfig in the certmanager folder
 type KustomizeConfig struct {
-	file.Input
+	file.TemplateMixin
 }
 
-// GetInput implements input.Template
-func (f *KustomizeConfig) GetInput() (file.Input, error) {
+// GetTemplateMixin implements input.Template
+func (f *KustomizeConfig) GetTemplateMixin() (file.TemplateMixin, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "certmanager", "kustomizeconfig.yaml")
 	}
 	f.TemplateBody = kustomizeConfigTemplate
-	return f.Input, nil
+	return f.TemplateMixin, nil
 }
 
 // nolint:lll

@@ -20,8 +20,8 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 )
 
-// Input is the input for scaffolding a file
-type Input struct {
+// TemplateMixin is the input for scaffolding a file
+type TemplateMixin struct {
 	// Path is the file to write
 	Path string
 
@@ -126,8 +126,8 @@ func (m *ResourceMixin) InjectResource(res *resource.Resource) {
 
 // Template is a scaffoldable file template
 type Template interface {
-	// GetInput returns the Input for creating a scaffold file
-	GetInput() (Input, error)
+	// GetTemplateMixin returns the TemplateMixin for creating a scaffold file
+	GetTemplateMixin() (TemplateMixin, error)
 }
 
 // RequiresValidation is a file that requires validation

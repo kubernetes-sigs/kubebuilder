@@ -26,16 +26,16 @@ var _ file.Template = &LeaderElectionRole{}
 
 // LeaderElectionRole scaffolds the config/rbac/leader_election_role.yaml file
 type LeaderElectionRole struct {
-	file.Input
+	file.TemplateMixin
 }
 
-// GetInput implements input.Template
-func (f *LeaderElectionRole) GetInput() (file.Input, error) {
+// GetTemplateMixin implements input.Template
+func (f *LeaderElectionRole) GetTemplateMixin() (file.TemplateMixin, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "rbac", "leader_election_role.yaml")
 	}
 	f.TemplateBody = leaderElectionRoleTemplate
-	return f.Input, nil
+	return f.TemplateMixin, nil
 }
 
 const leaderElectionRoleTemplate = `# permissions to do leader election.

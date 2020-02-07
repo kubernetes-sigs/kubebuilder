@@ -24,7 +24,7 @@ var _ file.Template = &Makefile{}
 
 // Makefile scaffolds the Makefile
 type Makefile struct {
-	file.Input
+	file.TemplateMixin
 	file.RepositoryMixin
 
 	// Image is controller manager image name
@@ -34,8 +34,8 @@ type Makefile struct {
 	ControllerToolsPath string
 }
 
-// GetInput implements input.Template
-func (f *Makefile) GetInput() (file.Input, error) {
+// GetTemplateMixin implements input.Template
+func (f *Makefile) GetTemplateMixin() (file.TemplateMixin, error) {
 	if f.Path == "" {
 		f.Path = "Makefile"
 	}
@@ -47,7 +47,7 @@ func (f *Makefile) GetInput() (file.Input, error) {
 	}
 	f.TemplateBody = makefileTemplate
 	f.IfExistsAction = file.Error
-	return f.Input, nil
+	return f.TemplateMixin, nil
 }
 
 const makefileTemplate = `

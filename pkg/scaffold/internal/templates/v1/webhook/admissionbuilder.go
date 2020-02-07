@@ -28,7 +28,7 @@ var _ file.Template = &AdmissionWebhookBuilder{}
 
 // AdmissionWebhookBuilder scaffolds adds a new webhook server.
 type AdmissionWebhookBuilder struct {
-	file.Input
+	file.TemplateMixin
 	file.DomainMixin
 	file.BoilerplateMixin
 	file.ResourceMixin
@@ -42,8 +42,8 @@ type AdmissionWebhookBuilder struct {
 	Mutating bool
 }
 
-// GetInput implements input.Template
-func (f *AdmissionWebhookBuilder) GetInput() (file.Input, error) {
+// GetTemplateMixin implements input.Template
+func (f *AdmissionWebhookBuilder) GetTemplateMixin() (file.TemplateMixin, error) {
 	if f.Type == "mutating" {
 		f.Mutating = true
 	}
@@ -63,7 +63,7 @@ func (f *AdmissionWebhookBuilder) GetInput() (file.Input, error) {
 			fmt.Sprintf("%s_webhook.go", strings.Join(f.Operations, "_")))
 	}
 	f.TemplateBody = admissionWebhookBuilderTemplate
-	return f.Input, nil
+	return f.TemplateMixin, nil
 }
 
 const admissionWebhookBuilderTemplate = `{{ .Boilerplate }}

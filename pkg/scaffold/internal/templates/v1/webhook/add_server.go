@@ -27,20 +27,20 @@ var _ file.Template = &AddServer{}
 
 // AddServer scaffolds adds a new webhook server.
 type AddServer struct {
-	file.Input
+	file.TemplateMixin
 	file.RepositoryMixin
 	file.BoilerplateMixin
 
 	Config
 }
 
-// GetInput implements input.Template
-func (f *AddServer) GetInput() (file.Input, error) {
+// GetTemplateMixin implements input.Template
+func (f *AddServer) GetTemplateMixin() (file.TemplateMixin, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("pkg", "webhook", fmt.Sprintf("add_%s_server.go", f.Server))
 	}
 	f.TemplateBody = addServerTemplate
-	return f.Input, nil
+	return f.TemplateMixin, nil
 }
 
 const addServerTemplate = `{{ .Boilerplate }}

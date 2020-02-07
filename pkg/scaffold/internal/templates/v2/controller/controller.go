@@ -27,14 +27,14 @@ var _ file.Template = &Controller{}
 
 // Controller scaffolds a Controller for a Resource
 type Controller struct {
-	file.Input
+	file.TemplateMixin
 	file.MultiGroupMixin
 	file.BoilerplateMixin
 	file.ResourceMixin
 }
 
-// GetInput implements input.Template
-func (f *Controller) GetInput() (file.Input, error) {
+// GetTemplateMixin implements input.Template
+func (f *Controller) GetTemplateMixin() (file.TemplateMixin, error) {
 	if f.Path == "" {
 		if f.MultiGroup {
 			f.Path = filepath.Join("controllers", f.Resource.Group,
@@ -47,7 +47,7 @@ func (f *Controller) GetInput() (file.Input, error) {
 	f.TemplateBody = controllerTemplate
 
 	f.IfExistsAction = file.Error
-	return f.Input, nil
+	return f.TemplateMixin, nil
 }
 
 // nolint:lll

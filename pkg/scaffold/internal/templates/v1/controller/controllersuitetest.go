@@ -27,20 +27,20 @@ var _ file.Template = &SuiteTest{}
 
 // SuiteTest scaffolds a SuiteTest
 type SuiteTest struct {
-	file.Input
+	file.TemplateMixin
 	file.RepositoryMixin
 	file.BoilerplateMixin
 	file.ResourceMixin
 }
 
-// GetInput implements input.Template
-func (f *SuiteTest) GetInput() (file.Input, error) {
+// GetTemplateMixin implements input.Template
+func (f *SuiteTest) GetTemplateMixin() (file.TemplateMixin, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("pkg", "controller",
 			strings.ToLower(f.Resource.Kind), strings.ToLower(f.Resource.Kind)+"_controller_suite_test.go")
 	}
 	f.TemplateBody = controllerSuiteTestTemplate
-	return f.Input, nil
+	return f.TemplateMixin, nil
 }
 
 const controllerSuiteTestTemplate = `{{ .Boilerplate }}

@@ -30,19 +30,19 @@ var _ file.Template = &EnableCAInjectionPatch{}
 
 // EnableCAInjectionPatch scaffolds a EnableCAInjectionPatch for a Resource
 type EnableCAInjectionPatch struct {
-	file.Input
+	file.TemplateMixin
 	file.ResourceMixin
 }
 
-// GetInput implements input.Template
-func (f *EnableCAInjectionPatch) GetInput() (file.Input, error) {
+// GetTemplateMixin implements input.Template
+func (f *EnableCAInjectionPatch) GetTemplateMixin() (file.TemplateMixin, error) {
 	if f.Path == "" {
 		plural := flect.Pluralize(strings.ToLower(f.Resource.Kind))
 		f.Path = filepath.Join("config", "crd", "patches",
 			fmt.Sprintf("cainjection_in_%s.yaml", plural))
 	}
 	f.TemplateBody = EnableCAInjectionPatchTemplate
-	return f.Input, nil
+	return f.TemplateMixin, nil
 }
 
 // Validate validates the values

@@ -28,14 +28,14 @@ var _ file.Template = &Kustomize{}
 
 // Kustomize scaffolds the Kustomization file for the default overlay
 type Kustomize struct {
-	file.Input
+	file.TemplateMixin
 
 	// Prefix to use for name prefix customization
 	Prefix string
 }
 
-// GetInput implements input.Template
-func (f *Kustomize) GetInput() (file.Input, error) {
+// GetTemplateMixin implements input.Template
+func (f *Kustomize) GetTemplateMixin() (file.TemplateMixin, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "default", "kustomization.yaml")
 	}
@@ -43,13 +43,13 @@ func (f *Kustomize) GetInput() (file.Input, error) {
 		// use directory name as prefix
 		dir, err := os.Getwd()
 		if err != nil {
-			return file.Input{}, err
+			return file.TemplateMixin{}, err
 		}
 		f.Prefix = strings.ToLower(filepath.Base(dir))
 	}
 	f.TemplateBody = kustomizeTemplate
 	f.IfExistsAction = file.Error
-	return f.Input, nil
+	return f.TemplateMixin, nil
 }
 
 const kustomizeTemplate = `# Adds namespace to all resources.

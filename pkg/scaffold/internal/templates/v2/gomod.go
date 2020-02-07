@@ -24,20 +24,20 @@ var _ file.Template = &GoMod{}
 
 // GoMod writes a templatefile for go.mod
 type GoMod struct {
-	file.Input
+	file.TemplateMixin
 	file.RepositoryMixin
 
 	ControllerRuntimeVersion string
 }
 
-// GetInput implements input.Template
-func (f *GoMod) GetInput() (file.Input, error) {
+// GetTemplateMixin implements input.Template
+func (f *GoMod) GetTemplateMixin() (file.TemplateMixin, error) {
 	if f.Path == "" {
 		f.Path = "go.mod"
 	}
 	f.IfExistsAction = file.Overwrite
 	f.TemplateBody = goModTemplate
-	return f.Input, nil
+	return f.TemplateMixin, nil
 }
 
 const goModTemplate = `

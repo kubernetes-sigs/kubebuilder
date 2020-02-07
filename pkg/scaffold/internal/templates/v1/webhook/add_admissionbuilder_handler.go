@@ -28,7 +28,7 @@ var _ file.Template = &AddAdmissionWebhookBuilderHandler{}
 
 // AddAdmissionWebhookBuilderHandler scaffolds adds a new admission webhook builder.
 type AddAdmissionWebhookBuilderHandler struct {
-	file.Input
+	file.TemplateMixin
 	file.RepositoryMixin
 	file.BoilerplateMixin
 	file.ResourceMixin
@@ -36,8 +36,8 @@ type AddAdmissionWebhookBuilderHandler struct {
 	Config
 }
 
-// GetInput implements input.Template
-func (f *AddAdmissionWebhookBuilderHandler) GetInput() (file.Input, error) {
+// GetTemplateMixin implements input.Template
+func (f *AddAdmissionWebhookBuilderHandler) GetTemplateMixin() (file.TemplateMixin, error) {
 	f.Server = strings.ToLower(f.Server)
 	if f.Path == "" {
 		f.Path = filepath.Join("pkg", "webhook",
@@ -45,7 +45,7 @@ func (f *AddAdmissionWebhookBuilderHandler) GetInput() (file.Input, error) {
 			fmt.Sprintf("add_%s_%s.go", f.Type, strings.ToLower(f.Resource.Kind)))
 	}
 	f.TemplateBody = addAdmissionWebhookBuilderHandlerTemplate
-	return f.Input, nil
+	return f.TemplateMixin, nil
 }
 
 const addAdmissionWebhookBuilderHandlerTemplate = `{{ .Boilerplate }}

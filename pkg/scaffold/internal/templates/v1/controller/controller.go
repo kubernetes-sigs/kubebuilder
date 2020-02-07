@@ -27,13 +27,13 @@ var _ file.Template = &Controller{}
 
 // Controller scaffolds a Controller for a Resource
 type Controller struct {
-	file.Input
+	file.TemplateMixin
 	file.BoilerplateMixin
 	file.ResourceMixin
 }
 
-// GetInput implements input.Template
-func (f *Controller) GetInput() (file.Input, error) {
+// GetTemplateMixin implements input.Template
+func (f *Controller) GetTemplateMixin() (file.TemplateMixin, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("pkg", "controller",
 			strings.ToLower(f.Resource.Kind),
@@ -41,7 +41,7 @@ func (f *Controller) GetInput() (file.Input, error) {
 	}
 	f.TemplateBody = controllerTemplate
 	f.IfExistsAction = file.Error
-	return f.Input, nil
+	return f.TemplateMixin, nil
 }
 
 // nolint:lll

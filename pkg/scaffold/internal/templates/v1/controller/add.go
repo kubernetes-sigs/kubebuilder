@@ -28,20 +28,20 @@ var _ file.Template = &AddController{}
 
 // AddController scaffolds adds a new Controller.
 type AddController struct {
-	file.Input
+	file.TemplateMixin
 	file.RepositoryMixin
 	file.BoilerplateMixin
 	file.ResourceMixin
 }
 
-// GetInput implements input.Template
-func (f *AddController) GetInput() (file.Input, error) {
+// GetTemplateMixin implements input.Template
+func (f *AddController) GetTemplateMixin() (file.TemplateMixin, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("pkg", "controller", fmt.Sprintf(
 			"add_%s.go", strings.ToLower(f.Resource.Kind)))
 	}
 	f.TemplateBody = addControllerTemplate
-	return f.Input, nil
+	return f.TemplateMixin, nil
 }
 
 const addControllerTemplate = `{{ .Boilerplate }}

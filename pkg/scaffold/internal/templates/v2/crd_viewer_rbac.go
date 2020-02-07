@@ -28,18 +28,18 @@ var _ file.Template = &CRDViewerRole{}
 
 // CRD Viewer role scaffolds the config/rbca/<kind>_viewer_role.yaml
 type CRDViewerRole struct {
-	file.Input
+	file.TemplateMixin
 	file.ResourceMixin
 }
 
-// GetInput implements input.Template
-func (f *CRDViewerRole) GetInput() (file.Input, error) {
+// GetTemplateMixin implements input.Template
+func (f *CRDViewerRole) GetTemplateMixin() (file.TemplateMixin, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "rbac", fmt.Sprintf("%s_viewer_role.yaml", strings.ToLower(f.Resource.Kind)))
 	}
 
 	f.TemplateBody = crdRoleViewerTemplate
-	return f.Input, nil
+	return f.TemplateMixin, nil
 }
 
 // Validate validates the values

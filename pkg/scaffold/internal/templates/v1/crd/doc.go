@@ -26,19 +26,19 @@ var _ file.Template = &Doc{}
 
 // Doc scaffolds the pkg/apis/group/version/doc.go directory
 type Doc struct {
-	file.Input
+	file.TemplateMixin
 	file.RepositoryMixin
 	file.BoilerplateMixin
 	file.ResourceMixin
 }
 
-// GetInput implements input.Template
-func (f *Doc) GetInput() (file.Input, error) {
+// GetTemplateMixin implements input.Template
+func (f *Doc) GetTemplateMixin() (file.TemplateMixin, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("pkg", "apis", f.Resource.GroupPackageName, f.Resource.Version, "doc.go")
 	}
 	f.TemplateBody = docGoTemplate
-	return f.Input, nil
+	return f.TemplateMixin, nil
 }
 
 // Validate validates the values

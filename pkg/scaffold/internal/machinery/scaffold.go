@@ -102,7 +102,7 @@ func buildFileModel(universe *model.Universe, t file.Template) (*file.File, erro
 	}
 
 	// Get the template input params
-	i, err := t.GetInput()
+	i, err := t.GetTemplateMixin()
 	if err != nil {
 		return nil, err
 	}
@@ -151,7 +151,7 @@ func (s *scaffold) writeFile(f *file.File) error {
 }
 
 // doTemplate executes the template for a file using the input
-func doTemplate(i file.Input, t file.Template) ([]byte, error) {
+func doTemplate(i file.TemplateMixin, t file.Template) ([]byte, error) {
 	temp, err := newTemplate(t).Parse(i.TemplateBody)
 	if err != nil {
 		return nil, err

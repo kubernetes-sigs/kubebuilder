@@ -26,14 +26,14 @@ var _ file.Template = &Group{}
 
 // Group scaffolds the api/<version>/groupversion_info.go
 type Group struct {
-	file.Input
+	file.TemplateMixin
 	file.MultiGroupMixin
 	file.BoilerplateMixin
 	file.ResourceMixin
 }
 
-// GetInput implements input.Template
-func (f *Group) GetInput() (file.Input, error) {
+// GetTemplateMixin implements input.Template
+func (f *Group) GetTemplateMixin() (file.TemplateMixin, error) {
 	if f.Path == "" {
 		if f.MultiGroup {
 			f.Path = filepath.Join("apis", f.Resource.Group, f.Resource.Version, "groupversion_info.go")
@@ -42,7 +42,7 @@ func (f *Group) GetInput() (file.Input, error) {
 		}
 	}
 	f.TemplateBody = groupTemplate
-	return f.Input, nil
+	return f.TemplateMixin, nil
 }
 
 // Validate validates the values

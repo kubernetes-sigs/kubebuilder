@@ -28,7 +28,7 @@ var _ file.Template = &AddAdmissionWebhookBuilderHandler{}
 
 // AdmissionHandler scaffolds an admission handler
 type AdmissionHandler struct {
-	file.Input
+	file.TemplateMixin
 	file.BoilerplateMixin
 	file.ResourceMixin
 
@@ -41,8 +41,8 @@ type AdmissionHandler struct {
 	Mutate bool
 }
 
-// GetInput implements input.Template
-func (f *AdmissionHandler) GetInput() (file.Input, error) {
+// GetTemplateMixin implements input.Template
+func (f *AdmissionHandler) GetTemplateMixin() (file.TemplateMixin, error) {
 	f.Type = strings.ToLower(f.Type)
 	if f.Type == "mutating" {
 		f.Mutate = true
@@ -62,7 +62,7 @@ func (f *AdmissionHandler) GetInput() (file.Input, error) {
 			fmt.Sprintf("%s_%s_handler.go", strings.ToLower(f.Resource.Kind), strings.Join(f.Operations, "_")))
 	}
 	f.TemplateBody = addAdmissionHandlerTemplate
-	return f.Input, nil
+	return f.TemplateMixin, nil
 }
 
 // nolint:lll

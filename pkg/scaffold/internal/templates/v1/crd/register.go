@@ -26,19 +26,19 @@ var _ file.Template = &Register{}
 
 // Register scaffolds the pkg/apis/group/version/register.go file
 type Register struct {
-	file.Input
+	file.TemplateMixin
 	file.RepositoryMixin
 	file.BoilerplateMixin
 	file.ResourceMixin
 }
 
-// GetInput implements input.Template
-func (f *Register) GetInput() (file.Input, error) {
+// GetTemplateMixin implements input.Template
+func (f *Register) GetTemplateMixin() (file.TemplateMixin, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("pkg", "apis", f.Resource.GroupPackageName, f.Resource.Version, "register.go")
 	}
 	f.TemplateBody = registerTemplate
-	return f.Input, nil
+	return f.TemplateMixin, nil
 }
 
 // Validate validates the values

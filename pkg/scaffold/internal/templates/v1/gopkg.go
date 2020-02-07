@@ -30,7 +30,7 @@ var _ file.Template = &GopkgToml{}
 
 // GopkgToml writes a templatefile for Gopkg.toml
 type GopkgToml struct {
-	file.Input
+	file.TemplateMixin
 
 	// ManagedHeader is the header to write after the user owned pieces and before the managed parts of the Gopkg.toml
 	ManagedHeader string
@@ -59,8 +59,8 @@ type Stanza struct {
 	Revision string
 }
 
-// GetInput implements input.Template
-func (f *GopkgToml) GetInput() (file.Input, error) {
+// GetTemplateMixin implements input.Template
+func (f *GopkgToml) GetTemplateMixin() (file.TemplateMixin, error) {
 	if f.Path == "" {
 		f.Path = "Gopkg.toml"
 	}
@@ -78,12 +78,12 @@ func (f *GopkgToml) GetInput() (file.Input, error) {
 	if err != nil {
 		f.UserContent = f.DefaultUserContent
 	} else if f.UserContent, err = f.getUserContent(lastBytes); err != nil {
-		return file.Input{}, err
+		return file.TemplateMixin{}, err
 	}
 
 	f.IfExistsAction = file.Overwrite
 	f.TemplateBody = depTemplate
-	return f.Input, nil
+	return f.TemplateMixin, nil
 }
 
 func (f *GopkgToml) getUserContent(b []byte) (string, error) {

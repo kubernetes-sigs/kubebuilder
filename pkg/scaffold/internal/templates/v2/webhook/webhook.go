@@ -28,7 +28,7 @@ var _ file.Template = &Webhook{}
 
 // Webhook scaffolds a Webhook for a Resource
 type Webhook struct { // nolint:maligned
-	file.Input
+	file.TemplateMixin
 	file.MultiGroupMixin
 	file.BoilerplateMixin
 	file.ResourceMixin
@@ -42,8 +42,8 @@ type Webhook struct { // nolint:maligned
 	Validating bool
 }
 
-// GetInput implements input.Template
-func (f *Webhook) GetInput() (file.Input, error) {
+// GetTemplateMixin implements input.Template
+func (f *Webhook) GetTemplateMixin() (file.TemplateMixin, error) {
 	f.GroupDomainWithDash = strings.Replace(f.Resource.Domain, ".", "-", -1)
 
 	if f.Path == "" {
@@ -66,7 +66,7 @@ func (f *Webhook) GetInput() (file.Input, error) {
 
 	f.TemplateBody = webhookTemplate
 	f.IfExistsAction = file.Error
-	return f.Input, nil
+	return f.TemplateMixin, nil
 }
 
 // Validate validates the values

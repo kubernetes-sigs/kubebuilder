@@ -24,16 +24,16 @@ var _ file.Template = &GitIgnore{}
 
 // GitIgnore scaffolds the .gitignore file
 type GitIgnore struct {
-	file.Input
+	file.TemplateMixin
 }
 
-// GetInput implements input.Template
-func (f *GitIgnore) GetInput() (file.Input, error) {
+// GetTemplateMixin implements input.Template
+func (f *GitIgnore) GetTemplateMixin() (file.TemplateMixin, error) {
 	if f.Path == "" {
 		f.Path = ".gitignore"
 	}
 	f.TemplateBody = gitignoreTemplate
-	return f.Input, nil
+	return f.TemplateMixin, nil
 }
 
 const gitignoreTemplate = `

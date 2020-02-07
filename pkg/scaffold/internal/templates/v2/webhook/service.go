@@ -26,17 +26,17 @@ var _ file.Template = &Service{}
 
 // Service scaffolds the Service file in manager folder.
 type Service struct {
-	file.Input
+	file.TemplateMixin
 }
 
-// GetInput implements input.Template
-func (f *Service) GetInput() (file.Input, error) {
+// GetTemplateMixin implements input.Template
+func (f *Service) GetTemplateMixin() (file.TemplateMixin, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "webhook", "service.yaml")
 	}
 	f.TemplateBody = ServiceTemplate
 	f.IfExistsAction = file.Error
-	return f.Input, nil
+	return f.TemplateMixin, nil
 }
 
 const ServiceTemplate = `

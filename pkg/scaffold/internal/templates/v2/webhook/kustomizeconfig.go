@@ -26,17 +26,17 @@ var _ file.Template = &KustomizeConfigWebhook{}
 
 // KustomizeConfigWebhook scaffolds the Kustomization file in manager folder.
 type KustomizeConfigWebhook struct {
-	file.Input
+	file.TemplateMixin
 }
 
-// GetInput implements input.Template
-func (f *KustomizeConfigWebhook) GetInput() (file.Input, error) {
+// GetTemplateMixin implements input.Template
+func (f *KustomizeConfigWebhook) GetTemplateMixin() (file.TemplateMixin, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "webhook", "kustomizeconfig.yaml")
 	}
 	f.TemplateBody = KustomizeConfigWebhookTemplate
 	f.IfExistsAction = file.Error
-	return f.Input, nil
+	return f.TemplateMixin, nil
 }
 
 // nolint:lll

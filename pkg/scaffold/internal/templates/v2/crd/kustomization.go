@@ -34,17 +34,17 @@ var _ file.Template = &Kustomization{}
 
 // Kustomization scaffolds the kustomization file in manager folder.
 type Kustomization struct {
-	file.Input
+	file.TemplateMixin
 	file.ResourceMixin
 }
 
-// GetInput implements input.Template
-func (f *Kustomization) GetInput() (file.Input, error) {
+// GetTemplateMixin implements input.Template
+func (f *Kustomization) GetTemplateMixin() (file.TemplateMixin, error) {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "crd", "kustomization.yaml")
 	}
 	f.TemplateBody = kustomizationTemplate
-	return f.Input, nil
+	return f.TemplateMixin, nil
 }
 
 func (f *Kustomization) Update() error {
