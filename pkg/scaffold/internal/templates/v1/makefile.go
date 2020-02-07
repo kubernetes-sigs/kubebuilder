@@ -24,7 +24,7 @@ var _ file.Template = &Makefile{}
 
 // Makefile scaffolds the Makefile
 type Makefile struct {
-	file.Input
+	file.TemplateMixin
 	file.RepositoryMixin
 
 	// Image is controller manager image name
@@ -34,20 +34,25 @@ type Makefile struct {
 	ControllerToolsPath string
 }
 
-// GetInput implements input.Template
-func (f *Makefile) GetInput() (file.Input, error) {
+// SetTemplateDefaults implements input.Template
+func (f *Makefile) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = "Makefile"
 	}
+
+	f.TemplateBody = makefileTemplate
+
+	f.IfExistsAction = file.Error
+
 	if f.Image == "" {
 		f.Image = "controller:latest"
 	}
+
 	if f.ControllerToolsPath == "" {
 		f.ControllerToolsPath = "vendor/sigs.k8s.io/controller-tools"
 	}
-	f.TemplateBody = makefileTemplate
-	f.Input.IfExistsAction = file.Error
-	return f.Input, nil
+
+	return nil
 }
 
 const makefileTemplate = `

@@ -27,19 +27,21 @@ var _ file.Template = &TypesTest{}
 
 // VersionSuiteTest scaffolds the version_suite_test.go file to setup the versions test
 type VersionSuiteTest struct {
-	file.Input
+	file.TemplateMixin
 	file.BoilerplateMixin
 	file.ResourceMixin
 }
 
-// GetInput implements input.Template
-func (f *VersionSuiteTest) GetInput() (file.Input, error) {
+// SetTemplateDefaults implements input.Template
+func (f *VersionSuiteTest) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("pkg", "apis", f.Resource.GroupPackageName, f.Resource.Version,
 			fmt.Sprintf("%s_suite_test.go", f.Resource.Version))
 	}
+
 	f.TemplateBody = versionSuiteTestTemplate
-	return f.Input, nil
+
+	return nil
 }
 
 // Validate validates the values

@@ -28,20 +28,23 @@ var _ file.Template = &Types{}
 
 // Types scaffolds the pkg/apis/group/version/kind_types.go file to define the schema for an API
 type Types struct {
-	file.Input
+	file.TemplateMixin
 	file.BoilerplateMixin
 	file.ResourceMixin
 }
 
-// GetInput implements input.Template
-func (f *Types) GetInput() (file.Input, error) {
+// SetTemplateDefaults implements input.Template
+func (f *Types) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("pkg", "apis", f.Resource.GroupPackageName, f.Resource.Version,
 			fmt.Sprintf("%s_types.go", strings.ToLower(f.Resource.Kind)))
 	}
+
 	f.TemplateBody = typesTemplate
+
 	f.IfExistsAction = file.Error
-	return f.Input, nil
+
+	return nil
 }
 
 // Validate validates the values

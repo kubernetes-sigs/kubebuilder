@@ -26,18 +26,20 @@ var _ file.Template = &Cmd{}
 
 // Cmd scaffolds a manager.go to run Controllers
 type Cmd struct {
-	file.Input
+	file.TemplateMixin
 	file.RepositoryMixin
 	file.BoilerplateMixin
 }
 
-// GetInput implements input.Template
-func (f *Cmd) GetInput() (file.Input, error) {
+// SetTemplateDefaults implements input.Template
+func (f *Cmd) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("cmd", "manager", "main.go")
 	}
+
 	f.TemplateBody = cmdTemplate
-	return f.Input, nil
+
+	return nil
 }
 
 const cmdTemplate = `{{ .Boilerplate }}

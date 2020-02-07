@@ -28,25 +28,29 @@ var _ file.Template = &AdmissionWebhooks{}
 
 // AdmissionWebhooks scaffolds how to construct a webhook server and register webhooks.
 type AdmissionWebhooks struct {
-	file.Input
+	file.TemplateMixin
 	file.BoilerplateMixin
 	file.ResourceMixin
 
 	Config
 }
 
-// GetInput implements input.Template
-func (f *AdmissionWebhooks) GetInput() (file.Input, error) {
-	f.Server = strings.ToLower(f.Server)
-	f.Type = strings.ToLower(f.Type)
+// SetTemplateDefaults implements input.Template
+func (f *AdmissionWebhooks) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("pkg", "webhook",
 			fmt.Sprintf("%s_server", f.Server),
 			strings.ToLower(f.Resource.Kind),
 			f.Type, "webhooks.go")
 	}
+
 	f.TemplateBody = webhooksTemplate
-	return f.Input, nil
+
+	f.Server = strings.ToLower(f.Server)
+
+	f.Type = strings.ToLower(f.Type)
+
+	return nil
 }
 
 const webhooksTemplate = `{{ .Boilerplate }}

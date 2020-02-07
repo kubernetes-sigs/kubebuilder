@@ -29,15 +29,15 @@ var _ file.Template = &SuiteTest{}
 
 // SuiteTest scaffolds the suite_test.go file to setup the controller test
 type SuiteTest struct {
-	file.Input
+	file.TemplateMixin
 	file.RepositoryMixin
 	file.MultiGroupMixin
 	file.BoilerplateMixin
 	file.ResourceMixin
 }
 
-// GetInput implements input.Template
-func (f *SuiteTest) GetInput() (file.Input, error) {
+// SetTemplateDefaults implements input.Template
+func (f *SuiteTest) SetTemplateDefaults() error {
 	if f.Path == "" {
 		if f.MultiGroup {
 			f.Path = filepath.Join("controllers", f.Resource.Group, "suite_test.go")
@@ -47,7 +47,8 @@ func (f *SuiteTest) GetInput() (file.Input, error) {
 	}
 
 	f.TemplateBody = controllerSuiteTestTemplate
-	return f.Input, nil
+
+	return nil
 }
 
 // Validate validates the values

@@ -30,19 +30,21 @@ var _ file.Template = &EnableWebhookPatch{}
 
 // EnableWebhookPatch scaffolds a EnableWebhookPatch for a Resource
 type EnableWebhookPatch struct {
-	file.Input
+	file.TemplateMixin
 	file.ResourceMixin
 }
 
-// GetInput implements input.Template
-func (f *EnableWebhookPatch) GetInput() (file.Input, error) {
+// SetTemplateDefaults implements input.Template
+func (f *EnableWebhookPatch) SetTemplateDefaults() error {
 	if f.Path == "" {
 		plural := flect.Pluralize(strings.ToLower(f.Resource.Kind))
 		f.Path = filepath.Join("config", "crd", "patches",
 			fmt.Sprintf("webhook_in_%s.yaml", plural))
 	}
+
 	f.TemplateBody = enableWebhookPatchTemplate
-	return f.Input, nil
+
+	return nil
 }
 
 // Validate validates the values

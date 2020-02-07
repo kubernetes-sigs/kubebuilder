@@ -102,17 +102,17 @@ func buildFileModel(universe *model.Universe, t file.Template) (*file.File, erro
 	}
 
 	// Get the template input params
-	i, err := t.GetInput()
+	err := t.SetTemplateDefaults()
 	if err != nil {
 		return nil, err
 	}
 
 	m := &file.File{
-		Path:           i.Path,
-		IfExistsAction: i.IfExistsAction,
+		Path:           t.GetPath(),
+		IfExistsAction: t.GetIfExistsAction(),
 	}
 
-	b, err := doTemplate(i, t)
+	b, err := doTemplate(t)
 	if err != nil {
 		return nil, err
 	}
@@ -151,8 +151,8 @@ func (s *scaffold) writeFile(f *file.File) error {
 }
 
 // doTemplate executes the template for a file using the input
-func doTemplate(i file.Input, t file.Template) ([]byte, error) {
-	temp, err := newTemplate(t).Parse(i.TemplateBody)
+func doTemplate(t file.Template) ([]byte, error) {
+	temp, err := newTemplate(t).Parse(t.GetBody())
 	if err != nil {
 		return nil, err
 	}
@@ -165,8 +165,8 @@ func doTemplate(i file.Input, t file.Template) ([]byte, error) {
 	b := out.Bytes()
 
 	// gofmt the imports
-	if filepath.Ext(i.Path) == ".go" {
-		b, err = imports.Process(i.Path, b, &options)
+	if filepath.Ext(t.GetPath()) == ".go" {
+		b, err = imports.Process(t.GetPath(), b, &options)
 		if err != nil {
 			return nil, err
 		}

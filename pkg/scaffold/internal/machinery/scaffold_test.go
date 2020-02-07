@@ -124,9 +124,7 @@ var _ = Describe("Scaffold", func() {
 					model.WithConfig(&config.Config{}),
 				),
 				fakeFile{
-					input: file.Input{
-						TemplateBody: fileContent,
-					},
+					body: fileContent,
 				},
 			)).To(Succeed())
 			Expect(output.String()).To(Equal(fileContent))
@@ -143,9 +141,7 @@ var _ = Describe("Scaffold", func() {
 			err := s.Execute(
 				model.NewUniverse(),
 				fakeFile{
-					input: file.Input{
-						TemplateBody: fileContent,
-					},
+					body: fileContent,
 				},
 			)
 			Expect(err).To(HaveOccurred())
@@ -162,9 +158,7 @@ var _ = Describe("Scaffold", func() {
 			err := s.Execute(
 				model.NewUniverse(),
 				fakeFile{
-					input: file.Input{
-						TemplateBody: fileContent,
-					},
+					body:          fileContent,
 					validateError: testError,
 				},
 			)
@@ -172,7 +166,7 @@ var _ = Describe("Scaffold", func() {
 			Expect(err.Error()).To(ContainSubstring(testError.Error()))
 		})
 
-		It("should fail if a template GetInput method fails", func() {
+		It("should fail if a template SetTemplateDefaults method fails", func() {
 			s = &scaffold{
 				fs: filesystem.NewMock(
 					filesystem.MockOutput(&output),
@@ -182,10 +176,8 @@ var _ = Describe("Scaffold", func() {
 			err := s.Execute(
 				model.NewUniverse(),
 				fakeFile{
-					input: file.Input{
-						TemplateBody: fileContent,
-					},
-					err: testError,
+					body: fileContent,
+					err:  testError,
 				},
 			)
 			Expect(err).To(HaveOccurred())
@@ -202,9 +194,7 @@ var _ = Describe("Scaffold", func() {
 			err := s.Execute(
 				model.NewUniverse(),
 				fakeFile{
-					input: file.Input{
-						TemplateBody: fileContent + "{{ .Field }",
-					},
+					body: fileContent + "{{ .Field }",
 				},
 			)
 			Expect(err).To(HaveOccurred())
@@ -221,9 +211,7 @@ var _ = Describe("Scaffold", func() {
 			err := s.Execute(
 				model.NewUniverse(),
 				fakeFile{
-					input: file.Input{
-						TemplateBody: fileContent + "{{ .Field }}",
-					},
+					body: fileContent + "{{ .Field }}",
 				},
 			)
 			Expect(err).To(HaveOccurred())
@@ -240,10 +228,8 @@ var _ = Describe("Scaffold", func() {
 			Expect(s.Execute(
 				model.NewUniverse(),
 				fakeFile{
-					input: file.Input{
-						Path:         "file.go",
-						TemplateBody: "package file",
-					},
+					path: "file.go",
+					body: "package file",
 				},
 			)).To(Succeed())
 			Expect(output.String()).To(Equal("package file\n"))
@@ -259,10 +245,8 @@ var _ = Describe("Scaffold", func() {
 			err := s.Execute(
 				model.NewUniverse(),
 				fakeFile{
-					input: file.Input{
-						Path:         "file.go",
-						TemplateBody: fileContent,
-					},
+					path: "file.go",
+					body: fileContent,
 				},
 			)
 			Expect(err).To(HaveOccurred())
@@ -283,9 +267,7 @@ var _ = Describe("Scaffold", func() {
 				Expect(s.Execute(
 					model.NewUniverse(),
 					fakeFile{
-						input: file.Input{
-							TemplateBody: fileContent,
-						},
+						body: fileContent,
 					},
 				)).To(Succeed())
 				Expect(output.String()).To(BeEmpty())
@@ -295,10 +277,8 @@ var _ = Describe("Scaffold", func() {
 				Expect(s.Execute(
 					model.NewUniverse(),
 					fakeFile{
-						input: file.Input{
-							IfExistsAction: file.Overwrite,
-							TemplateBody:   fileContent,
-						},
+						body:           fileContent,
+						ifExistsAction: file.Overwrite,
 					},
 				)).To(Succeed())
 				Expect(output.String()).To(Equal(fileContent))
@@ -308,11 +288,9 @@ var _ = Describe("Scaffold", func() {
 				err := s.Execute(
 					model.NewUniverse(),
 					fakeFile{
-						input: file.Input{
-							Path:           "filename",
-							IfExistsAction: file.Error,
-							TemplateBody:   fileContent,
-						},
+						path:           "filename",
+						body:           fileContent,
+						ifExistsAction: file.Error,
 					},
 				)
 				Expect(err).To(HaveOccurred())
@@ -333,9 +311,7 @@ var _ = Describe("Scaffold", func() {
 				err := s.Execute(
 					model.NewUniverse(),
 					fakeFile{
-						input: file.Input{
-							TemplateBody: fileContent,
-						},
+						body: fileContent,
 					},
 				)
 				Expect(err).To(HaveOccurred())
@@ -352,9 +328,7 @@ var _ = Describe("Scaffold", func() {
 				err := s.Execute(
 					model.NewUniverse(),
 					fakeFile{
-						input: file.Input{
-							TemplateBody: fileContent,
-						},
+						body: fileContent,
 					},
 				)
 				Expect(err).To(HaveOccurred())
@@ -371,9 +345,7 @@ var _ = Describe("Scaffold", func() {
 				err := s.Execute(
 					model.NewUniverse(),
 					fakeFile{
-						input: file.Input{
-							TemplateBody: fileContent,
-						},
+						body: fileContent,
 					},
 				)
 				Expect(err).To(HaveOccurred())
@@ -390,9 +362,7 @@ var _ = Describe("Scaffold", func() {
 				err := s.Execute(
 					model.NewUniverse(),
 					fakeFile{
-						input: file.Input{
-							TemplateBody: fileContent,
-						},
+						body: fileContent,
 					},
 				)
 				Expect(err).To(HaveOccurred())
@@ -409,9 +379,7 @@ var _ = Describe("Scaffold", func() {
 				err := s.Execute(
 					model.NewUniverse(),
 					fakeFile{
-						input: file.Input{
-							TemplateBody: fileContent,
-						},
+						body: fileContent,
 					},
 				)
 				Expect(err).To(HaveOccurred())
@@ -420,6 +388,8 @@ var _ = Describe("Scaffold", func() {
 		})
 	})
 })
+
+var _ model.Plugin = fakePlugin{}
 
 // fakePlugin is used to mock a model.Plugin in order to test Scaffold
 type fakePlugin struct {
@@ -431,20 +401,40 @@ func (f fakePlugin) Pipe(_ *model.Universe) error {
 	return f.err
 }
 
+var _ file.Template = fakeFile{}
+
 // fakeFile is used to mock a file.File in order to test Scaffold
 type fakeFile struct {
-	input         file.Input
+	path           string
+	body           string
+	ifExistsAction file.IfExistsAction
+
 	err           error
 	validateError error
 }
 
-// GetInput implements file.Template
-func (f fakeFile) GetInput() (file.Input, error) {
+// GetPath implements file.Template
+func (f fakeFile) GetPath() string {
+	return f.path
+}
+
+// GetBody implements file.Template
+func (f fakeFile) GetBody() string {
+	return f.body
+}
+
+// GetIfExistsAction implements file.Template
+func (f fakeFile) GetIfExistsAction() file.IfExistsAction {
+	return f.ifExistsAction
+}
+
+// SetTemplateDefaults implements file.Template
+func (f fakeFile) SetTemplateDefaults() error {
 	if f.err != nil {
-		return file.Input{}, f.err
+		return f.err
 	}
 
-	return f.input, nil
+	return nil
 }
 
 // Validate implements file.RequiresValidation

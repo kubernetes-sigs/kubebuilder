@@ -36,17 +36,19 @@ var _ file.Template = &Main{}
 
 // Main scaffolds a main.go to run Controllers
 type Main struct {
-	file.Input
+	file.TemplateMixin
 	file.BoilerplateMixin
 }
 
-// GetInput implements input.Template
-func (f *Main) GetInput() (file.Input, error) {
+// SetTemplateDefaults implements input.Template
+func (f *Main) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("main.go")
 	}
+
 	f.TemplateBody = mainTemplate
-	return f.Input, nil
+
+	return nil
 }
 
 // Update updates main.go with code fragments required to wire a new

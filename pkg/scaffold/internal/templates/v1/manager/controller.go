@@ -26,17 +26,19 @@ var _ file.Template = &Controller{}
 
 // Controller scaffolds a controller.go to add Controllers to a manager.Cmd
 type Controller struct {
-	file.Input
+	file.TemplateMixin
 	file.BoilerplateMixin
 }
 
-// GetInput implements input.Template
-func (f *Controller) GetInput() (file.Input, error) {
+// SetTemplateDefaults implements input.Template
+func (f *Controller) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("pkg", "controller", "controller.go")
 	}
+
 	f.TemplateBody = controllerTemplate
-	return f.Input, nil
+
+	return nil
 }
 
 const controllerTemplate = `{{ .Boilerplate }}

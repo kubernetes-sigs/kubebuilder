@@ -28,28 +28,32 @@ var _ file.Template = &Kustomize{}
 
 // Kustomize scaffolds the Kustomization file.
 type Kustomize struct {
-	file.Input
+	file.TemplateMixin
 
 	// Prefix to use for name prefix customization
 	Prefix string
 }
 
-// GetInput implements input.Template
-func (f *Kustomize) GetInput() (file.Input, error) {
+// SetTemplateDefaults implements input.Template
+func (f *Kustomize) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "default", "kustomization.yaml")
 	}
+
+	f.TemplateBody = kustomizeTemplate
+
+	f.IfExistsAction = file.Error
+
 	if f.Prefix == "" {
 		// use directory name as prefix
 		dir, err := os.Getwd()
 		if err != nil {
-			return file.Input{}, err
+			return err
 		}
 		f.Prefix = strings.ToLower(filepath.Base(dir))
 	}
-	f.TemplateBody = kustomizeTemplate
-	f.Input.IfExistsAction = file.Error
-	return f.Input, nil
+
+	return nil
 }
 
 const kustomizeTemplate = `# Adds namespace to all resources.

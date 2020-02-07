@@ -26,18 +26,20 @@ var _ file.Template = &Group{}
 
 // Group scaffolds the pkg/apis/group/group.go
 type Group struct {
-	file.Input
+	file.TemplateMixin
 	file.BoilerplateMixin
 	file.ResourceMixin
 }
 
-// GetInput implements input.Template
-func (f *Group) GetInput() (file.Input, error) {
+// SetTemplateDefaults implements input.Template
+func (f *Group) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("pkg", "apis", f.Resource.GroupPackageName, "group.go")
 	}
+
 	f.TemplateBody = groupTemplate
-	return f.Input, nil
+
+	return nil
 }
 
 // Validate validates the values

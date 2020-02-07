@@ -26,17 +26,20 @@ var _ file.Template = &Kustomization{}
 
 // Kustomization scaffolds the Kustomization file in manager folder.
 type Kustomization struct {
-	file.Input
+	file.TemplateMixin
 }
 
-// GetInput implements input.Template
-func (f *Kustomization) GetInput() (file.Input, error) {
+// SetTemplateDefaults implements input.Template
+func (f *Kustomization) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "webhook", "kustomization.yaml")
 	}
+
 	f.TemplateBody = KustomizeWebhookTemplate
-	f.Input.IfExistsAction = file.Error
-	return f.Input, nil
+
+	f.IfExistsAction = file.Error
+
+	return nil
 }
 
 const KustomizeWebhookTemplate = `resources:

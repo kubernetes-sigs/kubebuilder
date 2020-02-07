@@ -28,18 +28,19 @@ var _ file.Template = &CRDEditorRole{}
 
 // CRD Editor role scaffolds the config/rbca/<kind>_editor_role.yaml
 type CRDEditorRole struct {
-	file.Input
+	file.TemplateMixin
 	file.ResourceMixin
 }
 
-// GetInput implements input.Template
-func (f *CRDEditorRole) GetInput() (file.Input, error) {
+// SetTemplateDefaults implements input.Template
+func (f *CRDEditorRole) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "rbac", fmt.Sprintf("%s_editor_role.yaml", strings.ToLower(f.Resource.Kind)))
 	}
 
 	f.TemplateBody = crdRoleEditorTemplate
-	return f.Input, nil
+
+	return nil
 }
 
 // Validate validates the values
