@@ -418,6 +418,21 @@ func (f fakeFile) GetTemplateMixin() (file.TemplateMixin, error) {
 	return file.TemplateMixin{f.path, f.body, f.ifExistsAction}, nil
 }
 
+// GetPath implements file.Template
+func (f fakeFile) GetPath() string {
+	return f.path
+}
+
+// GetBody implements file.Template
+func (f fakeFile) GetBody() string {
+	return f.body
+}
+
+// GetIfExistsAction implements file.Template
+func (f fakeFile) GetIfExistsAction() file.IfExistsAction {
+	return f.ifExistsAction
+}
+
 // Validate implements file.RequiresValidation
 func (f fakeFile) Validate() error {
 	return f.validateError

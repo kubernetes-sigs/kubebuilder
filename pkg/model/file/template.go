@@ -20,16 +20,40 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 )
 
+// Template is a scaffoldable file template
+type Template interface {
+	// GetTemplateMixin returns the TemplateMixin for creating a scaffold file
+	GetTemplateMixin() (TemplateMixin, error)
+	// GetPath returns the path to the file location
+	GetPath() string
+	// GetBody returns the template body
+	GetBody() string
+	// GetIfExistsAction returns the behavior when creating a file that already exists
+	GetIfExistsAction() IfExistsAction
+}
+
 // TemplateMixin is the input for scaffolding a file
 type TemplateMixin struct {
 	// Path is the file to write
 	Path string
 
-	// IfExistsAction determines what to do if the file exists
-	IfExistsAction IfExistsAction
-
 	// TemplateBody is the template body to execute
 	TemplateBody string
+
+	// IfExistsAction determines what to do if the file exists
+	IfExistsAction IfExistsAction
+}
+
+func(t *TemplateMixin) GetPath() string {
+	return t.Path
+}
+
+func(t *TemplateMixin) GetBody() string {
+	return t.TemplateBody
+}
+
+func(t *TemplateMixin) GetIfExistsAction() IfExistsAction {
+	return t.IfExistsAction
 }
 
 // HasDomain allows the domain to be used on a template
@@ -122,12 +146,6 @@ func (m *ResourceMixin) InjectResource(res *resource.Resource) {
 	if m.Resource == nil {
 		m.Resource = res
 	}
-}
-
-// Template is a scaffoldable file template
-type Template interface {
-	// GetTemplateMixin returns the TemplateMixin for creating a scaffold file
-	GetTemplateMixin() (TemplateMixin, error)
 }
 
 // RequiresValidation is a file that requires validation
