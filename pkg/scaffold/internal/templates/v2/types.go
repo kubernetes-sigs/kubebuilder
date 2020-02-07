@@ -29,6 +29,7 @@ var _ file.Template = &Types{}
 // Types scaffolds the api/<version>/<kind>_types.go file to define the schema for an API
 type Types struct {
 	file.Input
+	file.BoilerplateMixin
 	file.ResourceMixin
 }
 

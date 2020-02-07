@@ -28,6 +28,7 @@ var _ file.Template = &Server{}
 // Server scaffolds how to construct a webhook server and register webhooks.
 type Server struct {
 	file.Input
+	file.BoilerplateMixin
 
 	Config
 }

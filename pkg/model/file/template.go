@@ -31,9 +31,6 @@ type Input struct {
 	// TemplateBody is the template body to execute
 	TemplateBody string
 
-	// Boilerplate is the contents of a Boilerplate go header file
-	Boilerplate string
-
 	// Domain is the domain for the APIs
 	Domain string
 
@@ -70,19 +67,6 @@ func (i *Input) SetRepo(r string) {
 	}
 }
 
-// Boilerplate allows boilerplate text to be set on an object
-type Boilerplate interface {
-	// SetBoilerplate sets the boilerplate text
-	SetBoilerplate(string)
-}
-
-// SetBoilerplate sets the boilerplate text
-func (i *Input) SetBoilerplate(b string) {
-	if i.Boilerplate == "" {
-		i.Boilerplate = b
-	}
-}
-
 // MultiGroup allows the project version to be set on an object
 type MultiGroup interface {
 	// SetVersion sets the project version
@@ -92,6 +76,25 @@ type MultiGroup interface {
 // SetVersion sets the MultiGroup value
 func (i *Input) SetMultiGroup(v bool) {
 	i.MultiGroup = v
+}
+
+// HasBoilerplate allows a boilerplate to be used on a template
+type HasBoilerplate interface {
+	// InjectBoilerplate sets the template resource
+	InjectBoilerplate(string)
+}
+
+// BoilerplateMixin provides templates with a injectable boilerplate field
+type BoilerplateMixin struct {
+	// Boilerplate is the contents of a Boilerplate go header file
+	Boilerplate string
+}
+
+// InjectBoilerplate implements HasBoilerplate
+func (m *BoilerplateMixin) InjectBoilerplate(boilerplate string) {
+	if m.Boilerplate == "" {
+		m.Boilerplate = boilerplate
+	}
 }
 
 // HasResource allows a resource to be used on a template

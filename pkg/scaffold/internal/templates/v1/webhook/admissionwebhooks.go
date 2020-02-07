@@ -29,6 +29,7 @@ var _ file.Template = &AdmissionWebhooks{}
 // AdmissionWebhooks scaffolds how to construct a webhook server and register webhooks.
 type AdmissionWebhooks struct {
 	file.Input
+	file.BoilerplateMixin
 	file.ResourceMixin
 
 	Config

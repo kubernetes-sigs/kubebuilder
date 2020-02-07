@@ -92,8 +92,8 @@ func (u Universe) InjectInto(t file.Template) {
 		}
 	}
 	// Inject boilerplate
-	if templateWithBoilerplate, ok := t.(file.Boilerplate); ok {
-		templateWithBoilerplate.SetBoilerplate(u.Boilerplate)
+	if templateWithBoilerplate, hasBoilerplate := t.(file.HasBoilerplate); hasBoilerplate {
+		templateWithBoilerplate.InjectBoilerplate(u.Boilerplate)
 	}
 	// Inject resource
 	if u.Resource != nil {

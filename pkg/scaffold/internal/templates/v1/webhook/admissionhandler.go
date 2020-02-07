@@ -29,6 +29,7 @@ var _ file.Template = &AddAdmissionWebhookBuilderHandler{}
 // AdmissionHandler scaffolds an admission handler
 type AdmissionHandler struct {
 	file.Input
+	file.BoilerplateMixin
 	file.ResourceMixin
 
 	Config

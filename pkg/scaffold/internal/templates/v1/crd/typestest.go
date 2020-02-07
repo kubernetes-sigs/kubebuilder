@@ -29,6 +29,7 @@ var _ file.Template = &TypesTest{}
 // TypesTest scaffolds the pkg/apis/group/version/kind_types_test.go file to test the API schema
 type TypesTest struct {
 	file.Input
+	file.BoilerplateMixin
 	file.ResourceMixin
 }
 

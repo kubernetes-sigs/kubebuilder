@@ -29,6 +29,7 @@ var _ file.Template = &Webhook{}
 // Webhook scaffolds a Webhook for a Resource
 type Webhook struct {
 	file.Input
+	file.BoilerplateMixin
 	file.ResourceMixin
 
 	// Is the Group domain for the Resource replacing '.' with '-'

@@ -27,6 +27,7 @@ var _ file.Template = &Group{}
 // Group scaffolds the pkg/apis/group/group.go
 type Group struct {
 	file.Input
+	file.BoilerplateMixin
 	file.ResourceMixin
 }
 

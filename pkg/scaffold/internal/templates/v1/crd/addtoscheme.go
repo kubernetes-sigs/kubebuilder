@@ -28,6 +28,7 @@ var _ file.Template = &AddToScheme{}
 // AddToScheme scaffolds the code to add the resource to a SchemeBuilder.
 type AddToScheme struct {
 	file.Input
+	file.BoilerplateMixin
 	file.ResourceMixin
 }
 

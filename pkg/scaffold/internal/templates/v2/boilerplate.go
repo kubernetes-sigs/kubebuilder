@@ -29,6 +29,7 @@ var _ file.Template = &Boilerplate{}
 // Boilerplate scaffolds a boilerplate header file.
 type Boilerplate struct {
 	file.Input
+	file.BoilerplateMixin
 
 	// License is the License type to write
 	License string

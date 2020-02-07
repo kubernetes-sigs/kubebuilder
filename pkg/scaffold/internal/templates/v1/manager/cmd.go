@@ -27,6 +27,7 @@ var _ file.Template = &Cmd{}
 // Cmd scaffolds a manager.go to run Controllers
 type Cmd struct {
 	file.Input
+	file.BoilerplateMixin
 }
 
 // GetInput implements input.Template

@@ -28,6 +28,7 @@ var _ file.Template = &Test{}
 // Test scaffolds a Controller Test
 type Test struct {
 	file.Input
+	file.BoilerplateMixin
 	file.ResourceMixin
 }
 

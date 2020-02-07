@@ -29,6 +29,7 @@ var _ file.Template = &AddController{}
 // AddController scaffolds adds a new Controller.
 type AddController struct {
 	file.Input
+	file.BoilerplateMixin
 	file.ResourceMixin
 }
 

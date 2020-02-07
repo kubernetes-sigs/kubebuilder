@@ -28,6 +28,7 @@ var _ file.Template = &TypesTest{}
 // VersionSuiteTest scaffolds the version_suite_test.go file to setup the versions test
 type VersionSuiteTest struct {
 	file.Input
+	file.BoilerplateMixin
 	file.ResourceMixin
 }
 
