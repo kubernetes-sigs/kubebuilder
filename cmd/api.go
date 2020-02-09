@@ -161,29 +161,27 @@ func (o *apiOptions) validate(c *config.Config) error {
 		o.doController = internal.YesNo(reader)
 	}
 
+	resourceExists := c.HasResource(o.resource.GVK())
+
+	if !c.IsV1() {
+		if !resourceExists && !o.doResource {
+			return errors.New("API resource do not exists. " +
+				"A Controller cannot be create for a resource that do not exist.")
+		}
+	}
+
 	// In case we want to scaffold a resource API we need to do some checks
 	if o.doResource {
 		// Skip the following check for v1 as resources aren't tracked
 		if !c.IsV1() {
 			// Check that resource doesn't exist or flag force was set
 			if !o.force {
-				resourceExists := false
-				for _, r := range c.Resources {
-					if r.Group == o.resource.Group &&
-						r.Version == o.resource.Version &&
-						r.Kind == o.resource.Kind {
-						resourceExists = true
-						break
-					}
-				}
 				if resourceExists {
-					return errors.New("API resource already exists")
+					fmt.Printf("API resource already exists. Creating just the Controller ...")
+					o.doResource = false
 				}
 			}
-		}
 
-		// The following check is v2 specific as multi-group isn't enabled by default
-		if c.IsV2() {
 			// Check the group is the same for single-group projects
 			if !c.MultiGroup {
 				validGroup := true
