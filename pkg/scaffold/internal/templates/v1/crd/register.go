@@ -43,7 +43,7 @@ func (f *Register) SetTemplateDefaults() error {
 	return nil
 }
 
-// nolint:lll
+//nolint:lll
 const registerTemplate = `{{ .Boilerplate }}
 
 // NOTE: Boilerplate only. Ignore this file.

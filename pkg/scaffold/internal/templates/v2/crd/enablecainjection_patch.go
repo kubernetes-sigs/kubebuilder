@@ -42,12 +42,12 @@ func (f *EnableCAInjectionPatch) SetTemplateDefaults() error {
 			fmt.Sprintf("cainjection_in_%s.yaml", plural))
 	}
 
-	f.TemplateBody = EnableCAInjectionPatchTemplate
+	f.TemplateBody = enableCAInjectionPatchTemplate
 
 	return nil
 }
 
-const EnableCAInjectionPatchTemplate = `# The following patch adds a directive for certmanager to inject CA into the CRD
+const enableCAInjectionPatchTemplate = `# The following patch adds a directive for certmanager to inject CA into the CRD
 # CRD conversion requires k8s 1.13 or later.
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition

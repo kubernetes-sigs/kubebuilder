@@ -16,8 +16,8 @@ limitations under the License.
 
 package config
 
+// Scaffolding versions
 const (
-	// Scaffolding versions
 	Version1 = "1"
 	Version2 = "2"
 )

@@ -27,6 +27,7 @@ const defaultMainPath = "main.go"
 
 var _ file.Template = &Main{}
 
+// Main scaffolds the controller manager entry point
 type Main struct {
 	file.TemplateMixin
 	file.BoilerplateMixin
@@ -64,7 +65,7 @@ func (*MainUpdater) GetPath() string {
 	return defaultMainPath
 }
 
-// GetPath implements Builder
+// GetIfExistsAction implements Builder
 func (*MainUpdater) GetIfExistsAction() file.IfExistsAction {
 	return file.Overwrite
 }

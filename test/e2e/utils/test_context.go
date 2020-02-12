@@ -166,9 +166,9 @@ func (kc *KBTestContext) Make(makeOptions ...string) error {
 	return err
 }
 
-// CleanupImage is for cleaning up the docker images for testing
+// Destroy is for cleaning up the docker images for testing
 func (kc *KBTestContext) Destroy() {
-	// nolint:gosec
+	//nolint:gosec
 	cmd := exec.Command("docker", "rmi", "-f", kc.ImageName)
 	if _, err := kc.Run(cmd); err != nil {
 		fmt.Fprintf(GinkgoWriter, "warning: error when removing the local image: %v\n", err)
@@ -186,6 +186,7 @@ func (kc *KBTestContext) LoadImageToKindCluster() error {
 	return err
 }
 
+// CmdContext provides context for command execution
 type CmdContext struct {
 	// environment variables in k=v format.
 	Env   []string
@@ -193,6 +194,7 @@ type CmdContext struct {
 	Stdin io.Reader
 }
 
+// Run executes the provided command within this context
 func (cc *CmdContext) Run(cmd *exec.Cmd) ([]byte, error) {
 	cmd.Dir = cc.Dir
 	cmd.Env = append(os.Environ(), cc.Env...)

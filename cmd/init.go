@@ -179,7 +179,7 @@ func (o *initOptions) validate(c *config.Config) error {
 	return nil
 }
 
-func (o *initOptions) scaffolder(c *config.Config) (scaffold.Scaffolder, error) { // nolint:unparam
+func (o *initOptions) scaffolder(c *config.Config) (scaffold.Scaffolder, error) { //nolint:unparam
 	return scaffold.NewInitScaffolder(c, o.license, o.owner), nil
 }
 

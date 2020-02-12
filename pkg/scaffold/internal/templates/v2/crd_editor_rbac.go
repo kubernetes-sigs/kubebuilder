@@ -26,7 +26,7 @@ import (
 
 var _ file.Template = &CRDEditorRole{}
 
-// CRD Editor role scaffolds the config/rbca/<kind>_editor_role.yaml
+// CRDEditorRole scaffolds the config/rbac/<kind>_editor_role.yaml
 type CRDEditorRole struct {
 	file.TemplateMixin
 	file.ResourceMixin

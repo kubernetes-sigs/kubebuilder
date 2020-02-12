@@ -81,7 +81,7 @@ func (o *updateOptions) validate(c *config.Config) error {
 	return nil
 }
 
-func (o *updateOptions) scaffolder(c *config.Config) (scaffold.Scaffolder, error) { // nolint:unparam
+func (o *updateOptions) scaffolder(c *config.Config) (scaffold.Scaffolder, error) { //nolint:unparam
 	return scaffold.NewUpdateScaffolder(&c.Config), nil
 }
 

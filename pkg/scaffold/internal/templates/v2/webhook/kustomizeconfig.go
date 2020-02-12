@@ -35,15 +35,15 @@ func (f *KustomizeConfigWebhook) SetTemplateDefaults() error {
 		f.Path = filepath.Join("config", "webhook", "kustomizeconfig.yaml")
 	}
 
-	f.TemplateBody = KustomizeConfigWebhookTemplate
+	f.TemplateBody = kustomizeConfigWebhookTemplate
 
 	f.IfExistsAction = file.Error
 
 	return nil
 }
 
-// nolint:lll
-const KustomizeConfigWebhookTemplate = `# the following config is for teaching kustomize where to look at when substituting vars.
+//nolint:lll
+const kustomizeConfigWebhookTemplate = `# the following config is for teaching kustomize where to look at when substituting vars.
 # It requires kustomize v2.1.0 or newer to work properly.
 nameReference:
 - kind: Service

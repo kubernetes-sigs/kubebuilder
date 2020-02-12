@@ -35,12 +35,12 @@ func (f *AuthProxyService) SetTemplateDefaults() error {
 		f.Path = filepath.Join("config", "rbac", "auth_proxy_service.yaml")
 	}
 
-	f.TemplateBody = AuthProxyServiceTemplate
+	f.TemplateBody = authProxyServiceTemplate
 
 	return nil
 }
 
-const AuthProxyServiceTemplate = `apiVersion: v1
+const authProxyServiceTemplate = `apiVersion: v1
 kind: Service
 metadata:
   annotations:

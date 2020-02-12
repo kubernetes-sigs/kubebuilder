@@ -32,6 +32,8 @@ import (
 	crdv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v2/crd"
 )
 
+var _ Scaffolder = &apiScaffolder{}
+
 // apiScaffolder contains configuration for generating scaffolding for Go type
 // representing the API and controller that implements the behavior for the API.
 type apiScaffolder struct {
@@ -46,6 +48,7 @@ type apiScaffolder struct {
 	doController bool
 }
 
+// NewAPIScaffolder returns a new Scaffolder for API/controller creation operations
 func NewAPIScaffolder(
 	config *config.Config,
 	boilerplate string,
@@ -63,6 +66,7 @@ func NewAPIScaffolder(
 	}
 }
 
+// Scaffold implements Scaffolder
 func (s *apiScaffolder) Scaffold() error {
 	fmt.Println("Writing scaffold for you to edit...")
 

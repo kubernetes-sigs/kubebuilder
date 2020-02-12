@@ -107,7 +107,7 @@ var _ = Describe("Resource Options", func() {
 		It("should fail if Kind starts with a lowercase character", func() {
 			options := &Options{Group: "crew", Kind: "lOWERCASESTART", Version: "v1"}
 			err := options.Validate()
-			Expect(err).To(MatchError(ContainSubstring("Kind must start with an uppercase character")))
+			Expect(err).To(MatchError(ContainSubstring("kind must start with an uppercase character")))
 		})
 	})
 })

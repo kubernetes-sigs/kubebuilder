@@ -43,7 +43,7 @@ func (f *Doc) SetTemplateDefaults() error {
 	return nil
 }
 
-// nolint:lll
+//nolint:lll
 const docGoTemplate = `{{ .Boilerplate }}
 
 // Package {{ .Resource.Version }} contains API Schema definitions for the {{ .Resource.Group }} {{ .Resource.Version }} API group

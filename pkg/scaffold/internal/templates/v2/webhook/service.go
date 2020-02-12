@@ -35,14 +35,14 @@ func (f *Service) SetTemplateDefaults() error {
 		f.Path = filepath.Join("config", "webhook", "service.yaml")
 	}
 
-	f.TemplateBody = ServiceTemplate
+	f.TemplateBody = serviceTemplate
 
 	f.IfExistsAction = file.Error
 
 	return nil
 }
 
-const ServiceTemplate = `
+const serviceTemplate = `
 apiVersion: v1
 kind: Service
 metadata:

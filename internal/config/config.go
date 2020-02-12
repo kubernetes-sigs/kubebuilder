@@ -27,10 +27,10 @@ import (
 )
 
 const (
-	// Default path for the configuration file
+	// DefaultPath is the default path for the configuration file
 	DefaultPath = "PROJECT"
 
-	// Default version if flag not provided
+	// DefaultVersion is the version which will be used when the version flag is not provided
 	DefaultVersion = config.Version2
 )
 
@@ -52,7 +52,7 @@ func exists(path string) (bool, error) {
 
 func readFrom(path string) (c config.Config, err error) {
 	// Read the file
-	in, err := ioutil.ReadFile(path) // nolint: gosec
+	in, err := ioutil.ReadFile(path) //nolint:gosec
 	if err != nil {
 		return
 	}
@@ -152,6 +152,7 @@ func (c Config) Save() error {
 	return nil
 }
 
+// Path returns the path for configuration file
 func (c Config) Path() string {
 	return c.path
 }

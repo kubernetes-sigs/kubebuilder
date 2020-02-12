@@ -51,6 +51,7 @@ type TemplateMixin struct {
 	TemplateBody string
 }
 
+// GetBody implements Template
 func (t *TemplateMixin) GetBody() string {
 	return t.TemplateBody
 }

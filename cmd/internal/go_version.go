@@ -24,6 +24,7 @@ import (
 	"strings"
 )
 
+// ValidateGoVersion verifies that Go is installed and the current go version is supported by kubebuilder
 func ValidateGoVersion() error {
 	err := fetchAndCheckGoVersion()
 	if err != nil {

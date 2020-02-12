@@ -27,7 +27,7 @@ import (
 var _ file.Template = &CRDSample{}
 
 // CRDSample scaffolds a manifest for CRD sample.
-// nolint:golint
+//nolint:golint
 type CRDSample struct {
 	file.TemplateMixin
 	file.ResourceMixin

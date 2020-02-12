@@ -39,6 +39,7 @@ type toHTML interface {
 // Text is a chunk of text in an HTML doc.
 type Text string
 
+// WriteHTML writes the string as HTML to the given Writer
 func (t Text) WriteHTML(w io.Writer) error {
 	_, err := io.WriteString(w, html.EscapeString(string(t)))
 	return err
@@ -51,6 +52,7 @@ type Tag struct {
 	Children []toHTML
 }
 
+// WriteHTML writes the tag as HTML to the given Writer
 func (t Tag) WriteHTML(w io.Writer) error {
 	attrsOut := ""
 	if t.Attrs != nil {
@@ -76,6 +78,7 @@ func (t Tag) WriteHTML(w io.Writer) error {
 // Fragment is some series of tags, text, etc in an HTML doc.
 type Fragment []toHTML
 
+// WriteHTML writes the fragment as HTML to the given Writer
 func (f Fragment) WriteHTML(w io.Writer) error {
 	for _, item := range f {
 		if err := item.WriteHTML(w); err != nil {
@@ -94,11 +97,13 @@ type Attrs interface {
 // classes sets the class attribute to these class names.
 type classes []string
 
+// ToAttrs implements Attrs
 func (c classes) ToAttrs() string { return fmt.Sprintf("class=%q", strings.Join(c, " ")) }
 
 // optionalClasses sets the the class attribute to these class names, if their values are true.
 type optionalClasses map[string]bool
 
+// ToAttrs implements Attrs
 func (c optionalClasses) ToAttrs() string {
 	actualClasses := make([]string, 0, len(c))
 	for class, active := range c {
@@ -112,6 +117,7 @@ func (c optionalClasses) ToAttrs() string {
 // attrs joins together one or more Attrs.
 type attrs []Attrs
 
+// ToAttrs implements Attrs
 func (a attrs) ToAttrs() string {
 	parts := make([]string, len(a))
 	for i, attr := range a {
@@ -126,6 +132,7 @@ type dataAttr struct {
 	Value string
 }
 
+// ToAttrs implements Attrs
 func (d dataAttr) ToAttrs() string {
 	return fmt.Sprintf("data-%s=%q", d.Name, d.Value)
 }
