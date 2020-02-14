@@ -34,7 +34,7 @@ type Universe struct {
 	Resource *resource.Resource `json:"resource,omitempty"`
 
 	// Files contains the model of the files that are being scaffolded
-	Files []*file.File `json:"files,omitempty"`
+	Files map[string]*file.File `json:"files,omitempty"`
 }
 
 // NewUniverse creates a new Universe
@@ -78,7 +78,7 @@ func WithResource(resource *resource.Resource) UniverseOption {
 	}
 }
 
-func (u Universe) InjectInto(t file.Template) {
+func (u Universe) InjectInto(t file.Builder) {
 	// Inject project configuration
 	if u.Config != nil {
 		if templateWithDomain, hasDomain := t.(file.HasDomain); hasDomain {

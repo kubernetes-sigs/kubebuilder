@@ -162,17 +162,12 @@ func (s *apiScaffolder) scaffoldV2() error {
 			return fmt.Errorf("error scaffolding APIs: %v", err)
 		}
 
-		kustomizationFile := &crdv2.Kustomization{}
 		if err := machinery.NewScaffold().Execute(
 			s.newUniverse(),
-			kustomizationFile,
+			&crdv2.Kustomization{},
 			&crdv2.KustomizeConfig{},
 		); err != nil {
 			return fmt.Errorf("error scaffolding kustomization: %v", err)
-		}
-
-		if err := kustomizationFile.Update(); err != nil {
-			return fmt.Errorf("error updating kustomization.yaml: %v", err)
 		}
 
 	} else {
@@ -192,27 +187,18 @@ func (s *apiScaffolder) scaffoldV2() error {
 				fmt.Sprintf("%s_controller.go", strings.ToLower(s.resource.Kind))))
 		}
 
-		suiteTestFile := &controllerv2.SuiteTest{}
 		if err := machinery.NewScaffold(s.plugins...).Execute(
 			s.newUniverse(),
-			suiteTestFile,
+			&controllerv2.SuiteTest{},
 			&controllerv2.Controller{},
 		); err != nil {
 			return fmt.Errorf("error scaffolding controller: %v", err)
 		}
-
-		if err := suiteTestFile.Update(); err != nil {
-			return fmt.Errorf("error updating suite_test.go under controllers pkg: %v", err)
-		}
 	}
 
-	if err := (&templatesv2.Main{}).Update(
-		&templatesv2.MainUpdateOptions{
-			Config:         &s.config.Config,
-			WireResource:   s.doResource,
-			WireController: s.doController,
-			Resource:       s.resource,
-		},
+	if err := machinery.NewScaffold(s.plugins...).Execute(
+		s.newUniverse(),
+		&templatesv2.MainUpdater{WireResource: s.doResource, WireController: s.doController},
 	); err != nil {
 		return fmt.Errorf("error updating main.go: %v", err)
 	}

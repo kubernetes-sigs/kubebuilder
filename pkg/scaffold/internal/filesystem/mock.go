@@ -26,8 +26,11 @@ type mockFileSystem struct {
 	path            string
 	exists          func(path string) bool
 	existsError     error
+	openFileError   error
 	createDirError  error
 	createFileError error
+	input           *bytes.Buffer
+	readFileError   error
 	output          *bytes.Buffer
 	writeFileError  error
 	closeFileError  error
@@ -59,8 +62,7 @@ func MockPath(path string) MockOptions {
 	}
 }
 
-// MockExists makes FileSystem.Exists use the provided function to check if the
-// file exists
+// MockExists makes FileSystem.Exists use the provided function to check if the file exists
 func MockExists(exists func(path string) bool) MockOptions {
 	return func(fs *mockFileSystem) {
 		fs.exists = exists
@@ -71,6 +73,13 @@ func MockExists(exists func(path string) bool) MockOptions {
 func MockExistsError(err error) MockOptions {
 	return func(fs *mockFileSystem) {
 		fs.existsError = err
+	}
+}
+
+// MockOpenFileError makes FileSystem.Open return err
+func MockOpenFileError(err error) MockOptions {
+	return func(fs *mockFileSystem) {
+		fs.openFileError = err
 	}
 }
 
@@ -88,6 +97,20 @@ func MockCreateFileError(err error) MockOptions {
 	}
 }
 
+// MockInput provides a buffer where the content will be read from
+func MockInput(input *bytes.Buffer) MockOptions {
+	return func(fs *mockFileSystem) {
+		fs.input = input
+	}
+}
+
+// MockReadFileError  makes the Read method (of the io.Reader returned by FileSystem.Open) return err
+func MockReadFileError(err error) MockOptions {
+	return func(fs *mockFileSystem) {
+		fs.readFileError = err
+	}
+}
+
 // MockOutput provides a buffer where the content will be written
 func MockOutput(output *bytes.Buffer) MockOptions {
 	return func(fs *mockFileSystem) {
@@ -95,16 +118,14 @@ func MockOutput(output *bytes.Buffer) MockOptions {
 	}
 }
 
-// MockWriteFileError makes the Write method (of the io.Writer returned by
-// FileSystem.Create) return err
+// MockWriteFileError makes the Write method (of the io.Writer returned by FileSystem.Create) return err
 func MockWriteFileError(err error) MockOptions {
 	return func(fs *mockFileSystem) {
 		fs.writeFileError = err
 	}
 }
 
-// MockCloseFileError makes the Write method (of the io.Writer returned by
-// FileSystem.Create) return err
+// MockCloseFileError makes the Write method (of the io.Writer returned by FileSystem.Create) return err
 func MockCloseFileError(err error) MockOptions {
 	return func(fs *mockFileSystem) {
 		fs.closeFileError = err
@@ -114,10 +135,23 @@ func MockCloseFileError(err error) MockOptions {
 // Exists implements FileSystem.Exists
 func (fs mockFileSystem) Exists(path string) (bool, error) {
 	if fs.existsError != nil {
-		return false, fs.existsError
+		return false, fileExistsError{path, fs.existsError}
 	}
 
 	return fs.exists(path), nil
+}
+
+// Open implements FileSystem.Open
+func (fs mockFileSystem) Open(path string) (io.ReadCloser, error) {
+	if fs.openFileError != nil {
+		return nil, openFileError{path, fs.openFileError}
+	}
+
+	if fs.input == nil {
+		fs.input = bytes.NewBufferString("Hello world!")
+	}
+
+	return &mockReadFile{path, fs.input, fs.readFileError, fs.closeFileError}, nil
 }
 
 // Create implements FileSystem.Create
@@ -130,11 +164,37 @@ func (fs mockFileSystem) Create(path string) (io.Writer, error) {
 		return nil, createFileError{path, fs.createFileError}
 	}
 
-	return &mockFile{path, fs.output, fs.writeFileError, fs.closeFileError}, nil
+	return &mockWriteFile{path, fs.output, fs.writeFileError, fs.closeFileError}, nil
 }
 
-// mockFile implements io.Writer mocking a file for tests
-type mockFile struct {
+// mockReadFile implements io.Reader mocking a readFile for tests
+type mockReadFile struct {
+	path           string
+	input          *bytes.Buffer
+	readFileError  error
+	closeFileError error
+}
+
+// Read implements io.Reader.ReadCloser
+func (f *mockReadFile) Read(content []byte) (n int, err error) {
+	if f.readFileError != nil {
+		return 0, readFileError{path: f.path, err: f.readFileError}
+	}
+
+	return f.input.Read(content)
+}
+
+// Read implements io.Reader.ReadCloser
+func (f *mockReadFile) Close() error {
+	if f.closeFileError != nil {
+		return closeFileError{path: f.path, err: f.closeFileError}
+	}
+
+	return nil
+}
+
+// mockWriteFile implements io.Writer mocking a writeFile for tests
+type mockWriteFile struct {
 	path           string
 	content        *bytes.Buffer
 	writeFileError error
@@ -142,7 +202,7 @@ type mockFile struct {
 }
 
 // Write implements io.Writer.Write
-func (f *mockFile) Write(content []byte) (n int, err error) {
+func (f *mockWriteFile) Write(content []byte) (n int, err error) {
 	defer func() {
 		if err == nil && f.closeFileError != nil {
 			err = closeFileError{path: f.path, err: f.closeFileError}

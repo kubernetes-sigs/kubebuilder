@@ -27,6 +27,7 @@ var _ file.Template = &Config{}
 // Config scaffolds yaml config for the manager.
 type Config struct {
 	file.TemplateMixin
+
 	// Image is controller manager image name
 	Image string
 }

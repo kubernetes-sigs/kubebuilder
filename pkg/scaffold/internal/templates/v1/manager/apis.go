@@ -30,6 +30,7 @@ var _ file.Template = &APIs{}
 type APIs struct {
 	file.TemplateMixin
 	file.BoilerplateMixin
+
 	// BoilerplatePath is the path to the boilerplate file
 	BoilerplatePath string
 	// Comments is a list of comments to add to the apis.go

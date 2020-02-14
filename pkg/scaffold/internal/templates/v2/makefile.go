@@ -25,6 +25,7 @@ var _ file.Template = &Makefile{}
 // Makefile scaffolds the Makefile
 type Makefile struct {
 	file.TemplateMixin
+
 	// Image is controller manager image name
 	Image string
 	// BoilerplatePath is the path to the boilerplate file

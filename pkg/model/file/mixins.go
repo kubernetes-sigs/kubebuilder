@@ -20,46 +20,50 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 )
 
-// Template is a scaffoldable file template
-type Template interface {
-	// GetPath returns the path to the file location
-	GetPath() string
-	// GetBody returns the template body
-	GetBody() string
-	// GetIfExistsAction returns the behavior when creating a file that already exists
-	GetIfExistsAction() IfExistsAction
-	// SetTemplateDefaults returns the TemplateMixin for creating a scaffold file
-	SetTemplateDefaults() error
+// PathMixin provides file builders with a path field
+type PathMixin struct {
+	// Path is the of the file
+	Path string
 }
 
-// TemplateMixin is the input for scaffolding a file
-type TemplateMixin struct {
-	// Path is the file to write
-	Path string
+// GetPath implements Builder
+func (t *PathMixin) GetPath() string {
+	return t.Path
+}
 
-	// TemplateBody is the template body to execute
-	TemplateBody string
-
+// IfExistsActionMixin provides file builders with a if-exists-action field
+type IfExistsActionMixin struct {
 	// IfExistsAction determines what to do if the file exists
 	IfExistsAction IfExistsAction
 }
 
-func (t *TemplateMixin) GetPath() string {
-	return t.Path
+// GetIfExistsAction implements Builder
+func (t *IfExistsActionMixin) GetIfExistsAction() IfExistsAction {
+	return t.IfExistsAction
+}
+
+// TemplateMixin is the mixin that should be embedded in Template builders
+type TemplateMixin struct {
+	PathMixin
+	IfExistsActionMixin
+
+	// TemplateBody is the template body to execute
+	TemplateBody string
 }
 
 func (t *TemplateMixin) GetBody() string {
 	return t.TemplateBody
 }
 
-func (t *TemplateMixin) GetIfExistsAction() IfExistsAction {
-	return t.IfExistsAction
+// InserterMixin is the mixin that should be embedded in Inserter builders
+type InserterMixin struct {
+	PathMixin
 }
 
-// HasDomain allows the domain to be used on a template
-type HasDomain interface {
-	// InjectDomain sets the template domain
-	InjectDomain(string)
+// GetIfExistsAction implements Builder
+func (t *InserterMixin) GetIfExistsAction() IfExistsAction {
+	// Inserter builders always need to overwrite previous files
+	return Overwrite
 }
 
 // DomainMixin provides templates with a injectable domain field
@@ -75,12 +79,6 @@ func (m *DomainMixin) InjectDomain(domain string) {
 	}
 }
 
-// HasRepository allows the repository to be used on a template
-type HasRepository interface {
-	// InjectRepository sets the template repository
-	InjectRepository(string)
-}
-
 // RepositoryMixin provides templates with a injectable repository field
 type RepositoryMixin struct {
 	// Repo is the go project package path
@@ -94,12 +92,6 @@ func (m *RepositoryMixin) InjectRepository(repository string) {
 	}
 }
 
-// HasMultiGroup allows the multi-group flag to be used on a template
-type HasMultiGroup interface {
-	// InjectMultiGroup sets the template multi-group flag
-	InjectMultiGroup(bool)
-}
-
 // MultiGroupMixin provides templates with a injectable multi-group flag field
 type MultiGroupMixin struct {
 	// MultiGroup is the multi-group flag
@@ -109,12 +101,6 @@ type MultiGroupMixin struct {
 // InjectMultiGroup implements HasMultiGroup
 func (m *MultiGroupMixin) InjectMultiGroup(flag bool) {
 	m.MultiGroup = flag
-}
-
-// HasBoilerplate allows a boilerplate to be used on a template
-type HasBoilerplate interface {
-	// InjectBoilerplate sets the template boilerplate
-	InjectBoilerplate(string)
 }
 
 // BoilerplateMixin provides templates with a injectable boilerplate field
@@ -130,12 +116,6 @@ func (m *BoilerplateMixin) InjectBoilerplate(boilerplate string) {
 	}
 }
 
-// HasResource allows a resource to be used on a template
-type HasResource interface {
-	// InjectResource sets the template resource
-	InjectResource(*resource.Resource)
-}
-
 // ResourceMixin provides templates with a injectable resource field
 type ResourceMixin struct {
 	Resource *resource.Resource
@@ -146,11 +126,4 @@ func (m *ResourceMixin) InjectResource(res *resource.Resource) {
 	if m.Resource == nil {
 		m.Resource = res
 	}
-}
-
-// RequiresValidation is a file that requires validation
-type RequiresValidation interface {
-	Template
-	// Validate returns true if the template has valid values
-	Validate() error
 }

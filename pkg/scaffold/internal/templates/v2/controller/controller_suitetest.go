@@ -21,11 +21,10 @@ import (
 	"path/filepath"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/machinery"
-	templatesv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v2"
 )
 
 var _ file.Template = &SuiteTest{}
+var _ file.Inserter = &SuiteTest{}
 
 // SuiteTest scaffolds the suite_test.go file to setup the controller test
 type SuiteTest struct {
@@ -36,7 +35,7 @@ type SuiteTest struct {
 	file.ResourceMixin
 }
 
-// SetTemplateDefaults implements input.Template
+// SetTemplateDefaults implements file.Template
 func (f *SuiteTest) SetTemplateDefaults() error {
 	if f.Path == "" {
 		if f.MultiGroup {
@@ -46,7 +45,10 @@ func (f *SuiteTest) SetTemplateDefaults() error {
 		}
 	}
 
-	f.TemplateBody = controllerSuiteTestTemplate
+	f.TemplateBody = fmt.Sprintf(controllerSuiteTestTemplate,
+		file.NewMarkerFor(f.Path, importMarker),
+		file.NewMarkerFor(f.Path, addSchemeMarker),
+	)
 
 	return nil
 }
@@ -54,6 +56,51 @@ func (f *SuiteTest) SetTemplateDefaults() error {
 // Validate validates the values
 func (f *SuiteTest) Validate() error {
 	return f.Resource.Validate()
+}
+
+const (
+	importMarker    = "imports"
+	addSchemeMarker = "scheme"
+)
+
+// GetMarkers implements file.Inserter
+func (f *SuiteTest) GetMarkers() []file.Marker {
+	return []file.Marker{
+		file.NewMarkerFor(f.Path, importMarker),
+		file.NewMarkerFor(f.Path, addSchemeMarker),
+	}
+}
+
+const (
+	apiImportCodeFragment = `%s "%s"
+`
+	addschemeCodeFragment = `err = %s.AddToScheme(scheme.Scheme)
+Expect(err).NotTo(HaveOccurred())
+
+`
+)
+
+// GetCodeFragments implements file.Inserter
+func (f *SuiteTest) GetCodeFragments() file.CodeFragmentsMap {
+	fragments := make(file.CodeFragmentsMap, 2)
+
+	// Generate import code fragments
+	imports := make([]string, 0)
+	imports = append(imports, fmt.Sprintf(apiImportCodeFragment, f.Resource.ImportAlias, f.Resource.Package))
+
+	// Generate add scheme code fragments
+	addScheme := make([]string, 0)
+	addScheme = append(addScheme, fmt.Sprintf(addschemeCodeFragment, f.Resource.ImportAlias))
+
+	// Only store code fragments in the map if the slices are non-empty
+	if len(imports) != 0 {
+		fragments[file.NewMarkerFor(f.Path, importMarker)] = imports
+	}
+	if len(addScheme) != 0 {
+		fragments[file.NewMarkerFor(f.Path, addSchemeMarker)] = addScheme
+	}
+
+	return fragments
 }
 
 const controllerSuiteTestTemplate = `{{ .Boilerplate }}
@@ -71,7 +118,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	// +kubebuilder:scaffold:imports
+	%s
 )
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
@@ -102,7 +149,7 @@ var _ = BeforeSuite(func(done Done) {
 	Expect(err).ToNot(HaveOccurred())
 	Expect(cfg).ToNot(BeNil())
 
-	// +kubebuilder:scaffold:scheme
+	%s
 
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
 	Expect(err).ToNot(HaveOccurred())
@@ -117,28 +164,3 @@ var _ = AfterSuite(func() {
 	Expect(err).ToNot(HaveOccurred())
 })
 `
-
-// Update updates given file (suite_test.go) with code fragments required for
-// adding import paths and code setup for new types.
-func (f *SuiteTest) Update() error {
-	ctrlImportCodeFragment := fmt.Sprintf(`"%s/controllers"
-`, f.Repo)
-	apiImportCodeFragment := fmt.Sprintf(`%s "%s"
-`, f.Resource.ImportAlias, f.Resource.Package)
-
-	addschemeCodeFragment := fmt.Sprintf(`err = %s.AddToScheme(scheme.Scheme)
-Expect(err).NotTo(HaveOccurred())
-
-`, f.Resource.ImportAlias)
-
-	err := machinery.InsertStringsInFile(f.Path,
-		map[string][]string{
-			templatesv2.APIPkgImportScaffoldMarker: {ctrlImportCodeFragment, apiImportCodeFragment},
-			templatesv2.APISchemeScaffoldMarker:    {addschemeCodeFragment},
-		})
-	if err != nil {
-		return err
-	}
-
-	return nil
-}

@@ -20,10 +20,10 @@ import (
 	"testing"
 
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 
 	"sigs.k8s.io/kubebuilder/pkg/model"
-	"sigs.k8s.io/kubebuilder/pkg/model/config"
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/filesystem"
 )
@@ -103,157 +103,267 @@ var _ = Describe("Scaffold", func() {
 		const fileContent = "Hello world!"
 
 		var (
-			s         Scaffold
-			output    bytes.Buffer
-			testError = errors.New("error text")
+			output  bytes.Buffer
+			testErr = errors.New("error text")
 		)
 
 		BeforeEach(func() {
 			output.Reset()
 		})
 
-		It("should write the file", func() {
-			s = &scaffold{
-				fs: filesystem.NewMock(
-					filesystem.MockOutput(&output),
-				),
-			}
+		DescribeTable("successes",
+			func(expected string, files ...file.Builder) {
+				s := &scaffold{
+					fs: filesystem.NewMock(
+						filesystem.MockOutput(&output),
+					),
+				}
 
-			Expect(s.Execute(
-				model.NewUniverse(
-					model.WithConfig(&config.Config{}),
-				),
-				fakeFile{
-					body: fileContent,
+				Expect(s.Execute(model.NewUniverse(), files...)).To(Succeed())
+				Expect(output.String()).To(Equal(expected))
+			},
+			Entry("should write the file",
+				fileContent,
+				fakeTemplate{body: fileContent},
+			),
+			Entry("should skip optional models if already have one",
+				fileContent,
+				fakeTemplate{body: fileContent},
+				fakeTemplate{},
+			),
+			Entry("should overwrite required models if already have one",
+				fileContent,
+				fakeTemplate{},
+				fakeTemplate{fakeBuilder: fakeBuilder{ifExistsAction: file.Overwrite}, body: fileContent},
+			),
+			Entry("should format a go file",
+				"package file\n",
+				fakeTemplate{fakeBuilder: fakeBuilder{path: "file.go"}, body: "package    file"},
+			),
+		)
+
+		DescribeTable("file builders related errors",
+			func(errMsg string, files ...file.Builder) {
+				s := &scaffold{fs: filesystem.NewMock()}
+
+				err := s.Execute(model.NewUniverse(), files...)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring(errMsg))
+			},
+			Entry("should fail if unable to validate a file builder",
+				testErr.Error(),
+				fakeRequiresValidation{validateErr: testErr},
+			),
+			Entry("should fail if unable to set default values for a template",
+				testErr.Error(),
+				fakeTemplate{err: testErr},
+			),
+			Entry("should fail if an unexpected previous model is found",
+				"failed to create filename: model already exists",
+				fakeTemplate{fakeBuilder: fakeBuilder{path: "filename"}},
+				fakeTemplate{fakeBuilder: fakeBuilder{path: "filename", ifExistsAction: file.Error}},
+			),
+			Entry("should fail if behavior if file exists is not defined",
+				"unknown behavior if file exists (-1) for filename",
+				fakeTemplate{fakeBuilder: fakeBuilder{path: "filename"}},
+				fakeTemplate{fakeBuilder: fakeBuilder{path: "filename", ifExistsAction: -1}},
+			),
+			Entry("should fail if a template is broken",
+				"template: ",
+				fakeTemplate{body: "{{ .Field }"},
+			),
+			Entry("should fail if a template params aren't provided",
+				"template: ",
+				fakeTemplate{body: "{{ .Field }}"},
+			),
+			Entry("should fail if unable to format a go file",
+				"expected 'package', found ",
+				fakeTemplate{fakeBuilder: fakeBuilder{path: "file.go"}, body: fileContent},
+			),
+		)
+
+		DescribeTable("insert strings",
+			func(input, expected string, files ...file.Builder) {
+				s := &scaffold{
+					fs: filesystem.NewMock(
+						filesystem.MockInput(bytes.NewBufferString(input)),
+						filesystem.MockOutput(&output),
+						filesystem.MockExists(func(_ string) bool { return len(input) != 0 }),
+					),
+				}
+
+				Expect(s.Execute(model.NewUniverse(), files...)).To(Succeed())
+				Expect(output.String()).To(Equal(expected))
+			},
+			Entry("should insert lines for go files",
+				`
+// +kubebuilder:scaffold:-
+`,
+				`
+1
+2
+// +kubebuilder:scaffold:-
+`,
+				fakeInserter{codeFragments: file.CodeFragmentsMap{
+					file.NewMarkerFor("file.go", "-"): {"1\n", "2\n"}},
 				},
-			)).To(Succeed())
-			Expect(output.String()).To(Equal(fileContent))
-		})
+			),
+			Entry("should insert lines for yaml files",
+				`
+# +kubebuilder:scaffold:-
+`,
+				`
+1
+2
+# +kubebuilder:scaffold:-
+`,
+				fakeInserter{codeFragments: file.CodeFragmentsMap{
+					file.NewMarkerFor("file.yaml", "-"): {"1\n", "2\n"}},
+				},
+			),
+			Entry("should use models if there is no file",
+				"",
+				`
+1
+2
+// +kubebuilder:scaffold:-
+`,
+				fakeTemplate{fakeBuilder: fakeBuilder{ifExistsAction: file.Overwrite}, body: `
+// +kubebuilder:scaffold:-
+`},
+				fakeInserter{codeFragments: file.CodeFragmentsMap{
+					file.NewMarkerFor("file.go", "-"): {"1\n", "2\n"}},
+				},
+			),
+			Entry("should use required models over files",
+				fileContent,
+				`
+1
+2
+// +kubebuilder:scaffold:-
+`,
+				fakeTemplate{fakeBuilder: fakeBuilder{ifExistsAction: file.Overwrite}, body: `
+// +kubebuilder:scaffold:-
+`},
+				fakeInserter{codeFragments: file.CodeFragmentsMap{
+					file.NewMarkerFor("file.go", "-"): {"1\n", "2\n"}},
+				},
+			),
+			Entry("should use files over optional models",
+				`
+// +kubebuilder:scaffold:-
+`,
+				`
+1
+2
+// +kubebuilder:scaffold:-
+`,
+				fakeTemplate{body: fileContent},
+				fakeInserter{
+					codeFragments: file.CodeFragmentsMap{
+						file.NewMarkerFor("file.go", "-"): {"1\n", "2\n"},
+					},
+				},
+			),
+			Entry("should filter invalid markers",
+				`
+// +kubebuilder:scaffold:-
+// +kubebuilder:scaffold:*
+`,
+				`
+1
+2
+// +kubebuilder:scaffold:-
+// +kubebuilder:scaffold:*
+`,
+				fakeInserter{
+					markers: []file.Marker{file.NewMarkerFor("file.go", "-")},
+					codeFragments: file.CodeFragmentsMap{
+						file.NewMarkerFor("file.go", "-"): {"1\n", "2\n"},
+						file.NewMarkerFor("file.go", "*"): {"3\n", "4\n"},
+					},
+				},
+			),
+			Entry("should filter already existing one-line code fragments",
+				`
+1
+// +kubebuilder:scaffold:-
+3
+4
+// +kubebuilder:scaffold:*
+`,
+				`
+1
+2
+// +kubebuilder:scaffold:-
+3
+4
+// +kubebuilder:scaffold:*
+`,
+				fakeInserter{
+					codeFragments: file.CodeFragmentsMap{
+						file.NewMarkerFor("file.go", "-"): {"1\n", "2\n"},
+						file.NewMarkerFor("file.go", "*"): {"3\n", "4\n"},
+					},
+				},
+			),
+			Entry("should not insert anything if no code fragment",
+				"", // input is provided through a template as mock fs doesn't copy it to the output buffer if no-op
+				`
+// +kubebuilder:scaffold:-
+`,
+				fakeTemplate{body: `
+// +kubebuilder:scaffold:-
+`},
+				fakeInserter{
+					codeFragments: file.CodeFragmentsMap{
+						file.NewMarkerFor("file.go", "-"): {},
+					},
+				},
+			),
+		)
+
+		DescribeTable("insert strings related errors",
+			func(errMsg string, files ...file.Builder) {
+				s := &scaffold{
+					fs: filesystem.NewMock(
+						filesystem.MockExists(func(_ string) bool { return true }),
+					),
+				}
+
+				err := s.Execute(model.NewUniverse(), files...)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring(errMsg))
+			},
+			Entry("should fail if inserting into a model that fails when a file exists and it does exist",
+				"failed to create filename: file already exists",
+				fakeTemplate{fakeBuilder: fakeBuilder{path: "filename", ifExistsAction: file.Error}},
+				fakeInserter{fakeBuilder: fakeBuilder{path: "filename"}},
+			),
+			Entry("should fail if inserting into a model with unknown behavior if the file exists and it does exist",
+				"unknown behavior if file exists (-1) for filename",
+				fakeTemplate{fakeBuilder: fakeBuilder{path: "filename", ifExistsAction: -1}},
+				fakeInserter{fakeBuilder: fakeBuilder{path: "filename"}},
+			),
+		)
 
 		It("should fail if a plugin fails", func() {
-			s = &scaffold{
-				fs: filesystem.NewMock(
-					filesystem.MockOutput(&output),
-				),
-				plugins: []model.Plugin{fakePlugin{err: testError}},
+			s := &scaffold{
+				fs:      filesystem.NewMock(),
+				plugins: []model.Plugin{fakePlugin{err: testErr}},
 			}
 
 			err := s.Execute(
 				model.NewUniverse(),
-				fakeFile{
-					body: fileContent,
-				},
+				fakeTemplate{},
 			)
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring(testError.Error()))
+			Expect(err.Error()).To(ContainSubstring(testErr.Error()))
 		})
 
-		It("should fail if a template validation fails", func() {
-			s = &scaffold{
-				fs: filesystem.NewMock(
-					filesystem.MockOutput(&output),
-				),
-			}
+		Context("write when the file already exists", func() {
+			var s Scaffold
 
-			err := s.Execute(
-				model.NewUniverse(),
-				fakeFile{
-					body:          fileContent,
-					validateError: testError,
-				},
-			)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring(testError.Error()))
-		})
-
-		It("should fail if a template SetTemplateDefaults method fails", func() {
-			s = &scaffold{
-				fs: filesystem.NewMock(
-					filesystem.MockOutput(&output),
-				),
-			}
-
-			err := s.Execute(
-				model.NewUniverse(),
-				fakeFile{
-					body: fileContent,
-					err:  testError,
-				},
-			)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring(testError.Error()))
-		})
-
-		It("should fail if a template is broken", func() {
-			s = &scaffold{
-				fs: filesystem.NewMock(
-					filesystem.MockOutput(&output),
-				),
-			}
-
-			err := s.Execute(
-				model.NewUniverse(),
-				fakeFile{
-					body: fileContent + "{{ .Field }",
-				},
-			)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("template: "))
-		})
-
-		It("should fail if a template params aren't provided", func() {
-			s = &scaffold{
-				fs: filesystem.NewMock(
-					filesystem.MockOutput(&output),
-				),
-			}
-
-			err := s.Execute(
-				model.NewUniverse(),
-				fakeFile{
-					body: fileContent + "{{ .Field }}",
-				},
-			)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("template: "))
-		})
-
-		It("should format a go file", func() {
-			s = &scaffold{
-				fs: filesystem.NewMock(
-					filesystem.MockOutput(&output),
-				),
-			}
-
-			Expect(s.Execute(
-				model.NewUniverse(),
-				fakeFile{
-					path: "file.go",
-					body: "package file",
-				},
-			)).To(Succeed())
-			Expect(output.String()).To(Equal("package file\n"))
-		})
-
-		It("should fail if unable to format a go file", func() {
-			s = &scaffold{
-				fs: filesystem.NewMock(
-					filesystem.MockOutput(&output),
-				),
-			}
-
-			err := s.Execute(
-				model.NewUniverse(),
-				fakeFile{
-					path: "file.go",
-					body: fileContent,
-				},
-			)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("expected 'package', found "))
-		})
-
-		Context("when the file already exists", func() {
 			BeforeEach(func() {
 				s = &scaffold{
 					fs: filesystem.NewMock(
@@ -266,9 +376,7 @@ var _ = Describe("Scaffold", func() {
 			It("should skip the file by default", func() {
 				Expect(s.Execute(
 					model.NewUniverse(),
-					fakeFile{
-						body: fileContent,
-					},
+					fakeTemplate{body: fileContent},
 				)).To(Succeed())
 				Expect(output.String()).To(BeEmpty())
 			})
@@ -276,10 +384,7 @@ var _ = Describe("Scaffold", func() {
 			It("should write the file if configured to do so", func() {
 				Expect(s.Execute(
 					model.NewUniverse(),
-					fakeFile{
-						body:           fileContent,
-						ifExistsAction: file.Overwrite,
-					},
+					fakeTemplate{fakeBuilder: fakeBuilder{ifExistsAction: file.Overwrite}, body: fileContent},
 				)).To(Succeed())
 				Expect(output.String()).To(Equal(fileContent))
 			})
@@ -287,11 +392,7 @@ var _ = Describe("Scaffold", func() {
 			It("should error if configured to do so", func() {
 				err := s.Execute(
 					model.NewUniverse(),
-					fakeFile{
-						path:           "filename",
-						body:           fileContent,
-						ifExistsAction: file.Error,
-					},
+					fakeTemplate{fakeBuilder: fakeBuilder{path: "filename", ifExistsAction: file.Error}, body: fileContent},
 				)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("failed to create filename: file already exists"))
@@ -299,93 +400,60 @@ var _ = Describe("Scaffold", func() {
 			})
 		})
 
-		Context("when the filesystem returns an error", func() {
-
-			It("should fail if fs.Exists failed", func() {
-				s = &scaffold{
+		DescribeTable("filesystem errors",
+			func(
+				mockErrorF func(error) filesystem.MockOptions,
+				checkErrorF func(error) bool,
+				files ...file.Builder,
+			) {
+				s := &scaffold{
 					fs: filesystem.NewMock(
-						filesystem.MockExistsError(testError),
+						mockErrorF(testErr),
 					),
 				}
 
-				err := s.Execute(
-					model.NewUniverse(),
-					fakeFile{
-						body: fileContent,
-					},
-				)
+				err := s.Execute(model.NewUniverse(), files...)
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring(testError.Error()))
-			})
-
-			It("should fail if fs.Create was unable to create the directory", func() {
-				s = &scaffold{
-					fs: filesystem.NewMock(
-						filesystem.MockCreateDirError(testError),
-					),
-				}
-
-				err := s.Execute(
-					model.NewUniverse(),
-					fakeFile{
-						body: fileContent,
-					},
-				)
-				Expect(err).To(HaveOccurred())
-				Expect(filesystem.IsCreateDirectoryError(err)).To(BeTrue())
-			})
-
-			It("should fail if fs.Create was unable to create the file", func() {
-				s = &scaffold{
-					fs: filesystem.NewMock(
-						filesystem.MockCreateFileError(testError),
-					),
-				}
-
-				err := s.Execute(
-					model.NewUniverse(),
-					fakeFile{
-						body: fileContent,
-					},
-				)
-				Expect(err).To(HaveOccurred())
-				Expect(filesystem.IsCreateFileError(err)).To(BeTrue())
-			})
-
-			It("should fail if fs.Create().Write was unable to write the file", func() {
-				s = &scaffold{
-					fs: filesystem.NewMock(
-						filesystem.MockWriteFileError(testError),
-					),
-				}
-
-				err := s.Execute(
-					model.NewUniverse(),
-					fakeFile{
-						body: fileContent,
-					},
-				)
-				Expect(err).To(HaveOccurred())
-				Expect(filesystem.IsWriteFileError(err)).To(BeTrue())
-			})
-
-			It("should fail if fs.Create().Write was unable to close the file", func() {
-				s = &scaffold{
-					fs: filesystem.NewMock(
-						filesystem.MockCloseFileError(testError),
-					),
-				}
-
-				err := s.Execute(
-					model.NewUniverse(),
-					fakeFile{
-						body: fileContent,
-					},
-				)
-				Expect(err).To(HaveOccurred())
-				Expect(filesystem.IsCloseFileError(err)).To(BeTrue())
-			})
-		})
+				Expect(checkErrorF(err)).To(BeTrue())
+			},
+			Entry("should fail if fs.Exists failed (at file writing)",
+				filesystem.MockExistsError, filesystem.IsFileExistsError,
+				fakeTemplate{},
+			),
+			Entry("should fail if fs.Exists failed (at model updating)",
+				filesystem.MockExistsError, filesystem.IsFileExistsError,
+				fakeTemplate{},
+				fakeInserter{},
+			),
+			Entry("should fail if fs.Open was unable to open the file",
+				filesystem.MockOpenFileError, filesystem.IsOpenFileError,
+				fakeInserter{},
+			),
+			Entry("should fail if fs.Open().Read was unable to read the file",
+				filesystem.MockReadFileError, filesystem.IsReadFileError,
+				fakeInserter{},
+			),
+			Entry("should fail if fs.Open().Close was unable to close the file",
+				filesystem.MockCloseFileError, filesystem.IsCloseFileError,
+				fakeInserter{},
+			),
+			Entry("should fail if fs.Create was unable to create the directory",
+				filesystem.MockCreateDirError, filesystem.IsCreateDirectoryError,
+				fakeTemplate{},
+			),
+			Entry("should fail if fs.Create was unable to create the file",
+				filesystem.MockCreateFileError, filesystem.IsCreateFileError,
+				fakeTemplate{},
+			),
+			Entry("should fail if fs.Create().Write was unable to write the file",
+				filesystem.MockWriteFileError, filesystem.IsWriteFileError,
+				fakeTemplate{},
+			),
+			Entry("should fail if fs.Create().Write was unable to close the file",
+				filesystem.MockCloseFileError, filesystem.IsCloseFileError,
+				fakeTemplate{},
+			),
+		)
 	})
 })
 
@@ -401,35 +469,55 @@ func (f fakePlugin) Pipe(_ *model.Universe) error {
 	return f.err
 }
 
-var _ file.Template = fakeFile{}
+var _ file.Builder = fakeBuilder{}
 
-// fakeFile is used to mock a file.File in order to test Scaffold
-type fakeFile struct {
+// fakeBuilder is used to mock a file.Builder
+type fakeBuilder struct {
 	path           string
-	body           string
 	ifExistsAction file.IfExistsAction
-
-	err           error
-	validateError error
 }
 
-// GetPath implements file.Template
-func (f fakeFile) GetPath() string {
+// GetPath implements file.Builder
+func (f fakeBuilder) GetPath() string {
 	return f.path
 }
 
-// GetBody implements file.Template
-func (f fakeFile) GetBody() string {
-	return f.body
-}
-
-// GetIfExistsAction implements file.Template
-func (f fakeFile) GetIfExistsAction() file.IfExistsAction {
+// GetIfExistsAction implements file.Builder
+func (f fakeBuilder) GetIfExistsAction() file.IfExistsAction {
 	return f.ifExistsAction
 }
 
+var _ file.RequiresValidation = fakeRequiresValidation{}
+
+// fakeRequiresValidation is used to mock a file.RequiresValidation in order to test Scaffold
+type fakeRequiresValidation struct {
+	fakeBuilder
+
+	validateErr error
+}
+
+// Validate implements file.RequiresValidation
+func (f fakeRequiresValidation) Validate() error {
+	return f.validateErr
+}
+
+var _ file.Template = fakeTemplate{}
+
+// fakeTemplate is used to mock a file.File in order to test Scaffold
+type fakeTemplate struct {
+	fakeBuilder
+
+	body string
+	err  error
+}
+
+// GetBody implements file.Template
+func (f fakeTemplate) GetBody() string {
+	return f.body
+}
+
 // SetTemplateDefaults implements file.Template
-func (f fakeFile) SetTemplateDefaults() error {
+func (f fakeTemplate) SetTemplateDefaults() error {
 	if f.err != nil {
 		return f.err
 	}
@@ -437,7 +525,27 @@ func (f fakeFile) SetTemplateDefaults() error {
 	return nil
 }
 
-// Validate implements file.RequiresValidation
-func (f fakeFile) Validate() error {
-	return f.validateError
+type fakeInserter struct {
+	fakeBuilder
+
+	markers       []file.Marker
+	codeFragments file.CodeFragmentsMap
+}
+
+// GetMarkers implements file.UpdatableTemplate
+func (f fakeInserter) GetMarkers() []file.Marker {
+	if f.markers != nil {
+		return f.markers
+	}
+
+	markers := make([]file.Marker, 0, len(f.codeFragments))
+	for marker := range f.codeFragments {
+		markers = append(markers, marker)
+	}
+	return markers
+}
+
+// GetCodeFragments implements file.UpdatableTemplate
+func (f fakeInserter) GetCodeFragments() file.CodeFragmentsMap {
+	return f.codeFragments
 }

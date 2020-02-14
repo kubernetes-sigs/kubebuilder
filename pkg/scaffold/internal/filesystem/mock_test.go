@@ -31,6 +31,7 @@ func TestMockFileSystem(t *testing.T) {
 	RunSpecs(t, "MockFileSystem suite")
 }
 
+//nolint:dupl
 var _ = Describe("MockFileSystem", func() {
 	var (
 		fsi     FileSystem
@@ -60,6 +61,14 @@ var _ = Describe("MockFileSystem", func() {
 			Expect(exists).To(BeFalse())
 		})
 
+		It("should open readable files", func() {
+			f, err := fsi.Open("")
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = f.Read([]byte(""))
+			Expect(err).NotTo(HaveOccurred())
+		})
+
 		It("should create writable files", func() {
 			f, err := fsi.Create("")
 			Expect(err).NotTo(HaveOccurred())
@@ -84,6 +93,14 @@ var _ = Describe("MockFileSystem", func() {
 			exists, err := fsi.Exists("")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(exists).To(BeFalse())
+		})
+
+		It("should open readable files", func() {
+			f, err := fsi.Open("")
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = f.Read([]byte(""))
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("should create writable files", func() {
@@ -114,6 +131,14 @@ var _ = Describe("MockFileSystem", func() {
 			Expect(exists).To(BeTrue())
 		})
 
+		It("should open readable files", func() {
+			f, err := fsi.Open("")
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = f.Read([]byte(""))
+			Expect(err).NotTo(HaveOccurred())
+		})
+
 		It("should create writable files", func() {
 			f, err := fsi.Create("")
 			Expect(err).NotTo(HaveOccurred())
@@ -135,7 +160,45 @@ var _ = Describe("MockFileSystem", func() {
 		It("should error when calling Exists", func() {
 			_, err := fsi.Exists("")
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring(testErr.Error()))
+			Expect(IsFileExistsError(err)).To(BeTrue())
+		})
+
+		It("should open readable files", func() {
+			f, err := fsi.Open("")
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = f.Read([]byte(""))
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should create writable files", func() {
+			f, err := fsi.Create("")
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = f.Write([]byte(""))
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
+
+	Context("when using MockOpenFileError", func() {
+		BeforeEach(func() {
+			options = []MockOptions{MockOpenFileError(testErr)}
+		})
+
+		It("should be a mockFileSystem instance", func() {
+			Expect(ok).To(BeTrue())
+		})
+
+		It("should claim that files don't exist", func() {
+			exists, err := fsi.Exists("")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(exists).To(BeFalse())
+		})
+
+		It("should error when calling Open", func() {
+			_, err := fsi.Open("")
+			Expect(err).To(HaveOccurred())
+			Expect(IsOpenFileError(err)).To(BeTrue())
 		})
 
 		It("should create writable files", func() {
@@ -162,6 +225,14 @@ var _ = Describe("MockFileSystem", func() {
 			Expect(exists).To(BeFalse())
 		})
 
+		It("should open readable files", func() {
+			f, err := fsi.Open("")
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = f.Read([]byte(""))
+			Expect(err).NotTo(HaveOccurred())
+		})
+
 		It("should error when calling Create", func() {
 			_, err := fsi.Create("")
 			Expect(err).To(HaveOccurred())
@@ -169,7 +240,7 @@ var _ = Describe("MockFileSystem", func() {
 		})
 	})
 
-	Context("when using MockCreateFileError", func() { // TODO
+	Context("when using MockCreateFileError", func() {
 		BeforeEach(func() {
 			options = []MockOptions{MockCreateFileError(testErr)}
 		})
@@ -184,10 +255,93 @@ var _ = Describe("MockFileSystem", func() {
 			Expect(exists).To(BeFalse())
 		})
 
+		It("should open readable files", func() {
+			f, err := fsi.Open("")
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = f.Read([]byte(""))
+			Expect(err).NotTo(HaveOccurred())
+		})
+
 		It("should error when calling Create", func() {
 			_, err := fsi.Create("")
 			Expect(err).To(HaveOccurred())
 			Expect(IsCreateFileError(err)).To(BeTrue())
+		})
+	})
+
+	Context("when using MockInput", func() {
+		var (
+			input       *bytes.Buffer
+			fileContent = []byte("Hello world!")
+		)
+
+		BeforeEach(func() {
+			input = bytes.NewBufferString("Hello world!")
+			options = []MockOptions{MockInput(input)}
+		})
+
+		It("should be a mockFileSystem instance", func() {
+			Expect(ok).To(BeTrue())
+		})
+
+		It("should claim that files don't exist", func() {
+			exists, err := fsi.Exists("")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(exists).To(BeFalse())
+		})
+
+		It("should open readable files and the content to be accessible", func() {
+			f, err := fsi.Open("")
+			Expect(err).NotTo(HaveOccurred())
+
+			output := make([]byte, len(fileContent))
+			n, err := f.Read(output)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(n).To(Equal(len(fileContent)))
+			Expect(output).To(Equal(fileContent))
+		})
+
+		It("should create writable files", func() {
+			f, err := fsi.Create("")
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = f.Write([]byte(""))
+			Expect(err).NotTo(HaveOccurred())
+		})
+	})
+
+	Context("when using MockReadFileError", func() {
+		BeforeEach(func() {
+			options = []MockOptions{MockReadFileError(testErr)}
+		})
+
+		It("should be a mockFileSystem instance", func() {
+			Expect(ok).To(BeTrue())
+		})
+
+		It("should claim that files don't exist", func() {
+			exists, err := fsi.Exists("")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(exists).To(BeFalse())
+		})
+
+		It("should error when calling Open().Read", func() {
+			f, err := fsi.Open("")
+			Expect(err).NotTo(HaveOccurred())
+
+			output := make([]byte, 0)
+			_, err = f.Read(output)
+			Expect(err).To(HaveOccurred())
+			Expect(IsReadFileError(err)).To(BeTrue())
+		})
+
+		It("should create writable files", func() {
+			f, err := fsi.Create("")
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = f.Write([]byte(""))
+			Expect(err).NotTo(HaveOccurred())
 		})
 	})
 
@@ -210,6 +364,14 @@ var _ = Describe("MockFileSystem", func() {
 			exists, err := fsi.Exists("")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(exists).To(BeFalse())
+		})
+
+		It("should open readable files", func() {
+			f, err := fsi.Open("")
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = f.Read([]byte(""))
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("should create writable files and the content should be accesible", func() {
@@ -238,6 +400,14 @@ var _ = Describe("MockFileSystem", func() {
 			Expect(exists).To(BeFalse())
 		})
 
+		It("should open readable files", func() {
+			f, err := fsi.Open("")
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = f.Read([]byte(""))
+			Expect(err).NotTo(HaveOccurred())
+		})
+
 		It("should error when calling Create().Write", func() {
 			f, err := fsi.Create("")
 			Expect(err).NotTo(HaveOccurred())
@@ -261,6 +431,15 @@ var _ = Describe("MockFileSystem", func() {
 			exists, err := fsi.Exists("")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(exists).To(BeFalse())
+		})
+
+		It("should error when calling Open().Close", func() {
+			f, err := fsi.Open("")
+			Expect(err).NotTo(HaveOccurred())
+
+			err = f.Close()
+			Expect(err).To(HaveOccurred())
+			Expect(IsCloseFileError(err)).To(BeTrue())
 		})
 
 		It("should error when calling Create().Write", func() {

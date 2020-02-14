@@ -21,16 +21,10 @@ import (
 	"path/filepath"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/machinery"
-)
-
-const (
-	kustomizeResourceScaffoldMarker         = "# +kubebuilder:scaffold:crdkustomizeresource"
-	kustomizeWebhookPatchScaffoldMarker     = "# +kubebuilder:scaffold:crdkustomizewebhookpatch"
-	kustomizeCAInjectionPatchScaffoldMarker = "# +kubebuilder:scaffold:crdkustomizecainjectionpatch"
 )
 
 var _ file.Template = &Kustomization{}
+var _ file.Inserter = &Kustomization{}
 
 // Kustomization scaffolds the kustomization file in manager folder.
 type Kustomization struct {
@@ -38,38 +32,76 @@ type Kustomization struct {
 	file.ResourceMixin
 }
 
-// SetTemplateDefaults implements input.Template
+// SetTemplateDefaults implements file.Template
 func (f *Kustomization) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "crd", "kustomization.yaml")
 	}
 
-	f.TemplateBody = kustomizationTemplate
+	f.TemplateBody = fmt.Sprintf(kustomizationTemplate,
+		file.NewMarkerFor(f.Path, resourceMarker),
+		file.NewMarkerFor(f.Path, webhookPatchMarker),
+		file.NewMarkerFor(f.Path, caInjectionPatchMarker),
+	)
 
 	return nil
 }
 
-func (f *Kustomization) Update() error {
-	if f.Path == "" {
-		f.Path = filepath.Join("config", "crd", "kustomization.yaml")
+const (
+	resourceMarker         = "crdkustomizeresource"
+	webhookPatchMarker     = "crdkustomizewebhookpatch"
+	caInjectionPatchMarker = "crdkustomizecainjectionpatch"
+)
+
+// GetMarkers implements file.Inserter
+func (f *Kustomization) GetMarkers() []file.Marker {
+	return []file.Marker{
+		file.NewMarkerFor(f.Path, resourceMarker),
+		file.NewMarkerFor(f.Path, webhookPatchMarker),
+		file.NewMarkerFor(f.Path, caInjectionPatchMarker),
 	}
-
-	// TODO(directxman12): not technically valid if something changes from the default
-	// (we'd need to parse the markers)
-
-	kustomizeResourceCodeFragment := fmt.Sprintf("- bases/%s_%s.yaml\n", f.Resource.Domain, f.Resource.Plural)
-	kustomizeWebhookPatchCodeFragment := fmt.Sprintf("#- patches/webhook_in_%s.yaml\n", f.Resource.Plural)
-	kustomizeCAInjectionPatchCodeFragment := fmt.Sprintf("#- patches/cainjection_in_%s.yaml\n", f.Resource.Plural)
-
-	return machinery.InsertStringsInFile(f.Path,
-		map[string][]string{
-			kustomizeResourceScaffoldMarker:         {kustomizeResourceCodeFragment},
-			kustomizeWebhookPatchScaffoldMarker:     {kustomizeWebhookPatchCodeFragment},
-			kustomizeCAInjectionPatchScaffoldMarker: {kustomizeCAInjectionPatchCodeFragment},
-		})
 }
 
-var kustomizationTemplate = fmt.Sprintf(`# This kustomization.yaml is not intended to be run by itself,
+const (
+	resourceCodeFragment = `- bases/%s_%s.yaml
+`
+	webhookPatchCodeFragment = `#- patches/webhook_in_%s.yaml
+`
+	caInjectionPatchCodeFragment = `#- patches/cainjection_in_%s.yaml
+`
+)
+
+// GetCodeFragments implements file.Inserter
+func (f *Kustomization) GetCodeFragments() file.CodeFragmentsMap {
+	fragments := make(file.CodeFragmentsMap, 3)
+
+	// Generate resource code fragments
+	res := make([]string, 0)
+	res = append(res, fmt.Sprintf(resourceCodeFragment, f.Resource.Domain, f.Resource.Plural))
+
+	// Generate resource code fragments
+	webhookPatch := make([]string, 0)
+	webhookPatch = append(webhookPatch, fmt.Sprintf(webhookPatchCodeFragment, f.Resource.Plural))
+
+	// Generate resource code fragments
+	caInjectionPatch := make([]string, 0)
+	caInjectionPatch = append(caInjectionPatch, fmt.Sprintf(caInjectionPatchCodeFragment, f.Resource.Plural))
+
+	// Only store code fragments in the map if the slices are non-empty
+	if len(res) != 0 {
+		fragments[file.NewMarkerFor(f.Path, resourceMarker)] = res
+	}
+	if len(webhookPatch) != 0 {
+		fragments[file.NewMarkerFor(f.Path, webhookPatchMarker)] = webhookPatch
+	}
+	if len(caInjectionPatch) != 0 {
+		fragments[file.NewMarkerFor(f.Path, caInjectionPatchMarker)] = caInjectionPatch
+	}
+
+	return fragments
+}
+
+var kustomizationTemplate = `# This kustomization.yaml is not intended to be run by itself,
 # since it depends on service name and namespace that are out of this kustomize package.
 # It should be run by config/default
 resources:
@@ -87,4 +119,4 @@ patchesStrategicMerge:
 # the following config is for teaching kustomize how to do kustomization for CRDs.
 configurations:
 - kustomizeconfig.yaml
-`, kustomizeResourceScaffoldMarker, kustomizeWebhookPatchScaffoldMarker, kustomizeCAInjectionPatchScaffoldMarker)
+`
