@@ -44,11 +44,6 @@ func (f *VersionSuiteTest) SetTemplateDefaults() error {
 	return nil
 }
 
-// Validate validates the values
-func (f *VersionSuiteTest) Validate() error {
-	return f.Resource.Validate()
-}
-
 const versionSuiteTestTemplate = `{{ .Boilerplate }}
 
 package {{ .Resource.Version }}

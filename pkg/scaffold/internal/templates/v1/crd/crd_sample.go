@@ -47,11 +47,6 @@ func (f *CRDSample) SetTemplateDefaults() error {
 	return nil
 }
 
-// Validate validates the values
-func (f *CRDSample) Validate() error {
-	return f.Resource.Validate()
-}
-
 const crdSampleTemplate = `apiVersion: {{ .Resource.Domain }}/{{ .Resource.Version }}
 kind: {{ .Resource.Kind }}
 metadata:

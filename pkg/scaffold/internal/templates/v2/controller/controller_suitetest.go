@@ -53,11 +53,6 @@ func (f *SuiteTest) SetTemplateDefaults() error {
 	return nil
 }
 
-// Validate validates the values
-func (f *SuiteTest) Validate() error {
-	return f.Resource.Validate()
-}
-
 const (
 	importMarker    = "imports"
 	addSchemeMarker = "scheme"

@@ -54,12 +54,6 @@ type Resource struct {
 	CreateExampleReconcileBody bool `json:"-"`
 }
 
-// Validate checks the Resource values to make sure they are valid.
-func (r *Resource) Validate() error {
-	// TODO: remove when all calls have been removed
-	return nil
-}
-
 func (r *Resource) GVK() config.GVK {
 	return config.GVK{
 		Group:   r.Group,

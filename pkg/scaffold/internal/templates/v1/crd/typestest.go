@@ -47,11 +47,6 @@ func (f *TypesTest) SetTemplateDefaults() error {
 	return nil
 }
 
-// Validate validates the values
-func (f *TypesTest) Validate() error {
-	return f.Resource.Validate()
-}
-
 const typesTestTemplate = `{{ .Boilerplate }}
 
 package {{ .Resource.Version }}

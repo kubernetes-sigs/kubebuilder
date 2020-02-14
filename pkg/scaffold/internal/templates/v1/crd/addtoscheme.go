@@ -44,11 +44,6 @@ func (f *AddToScheme) SetTemplateDefaults() error {
 	return nil
 }
 
-// Validate validates the values
-func (f *AddToScheme) Validate() error {
-	return f.Resource.Validate()
-}
-
 // NB(directxman12): we need that package alias on the API import otherwise imports.Process
 // gets wicked (or hella, if you're feeling west-coasty) confused.
 

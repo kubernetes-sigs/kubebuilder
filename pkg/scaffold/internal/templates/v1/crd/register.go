@@ -43,11 +43,6 @@ func (f *Register) SetTemplateDefaults() error {
 	return nil
 }
 
-// Validate validates the values
-func (f *Register) Validate() error {
-	return f.Resource.Validate()
-}
-
 // nolint:lll
 const registerTemplate = `{{ .Boilerplate }}
 

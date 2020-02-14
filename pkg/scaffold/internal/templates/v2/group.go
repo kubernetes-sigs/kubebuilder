@@ -47,11 +47,6 @@ func (f *Group) SetTemplateDefaults() error {
 	return nil
 }
 
-// Validate validates the values
-func (f *Group) Validate() error {
-	return f.Resource.Validate()
-}
-
 // nolint:lll
 const groupTemplate = `{{ .Boilerplate }}
 

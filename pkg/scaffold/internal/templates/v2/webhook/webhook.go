@@ -70,11 +70,6 @@ func (f *Webhook) SetTemplateDefaults() error {
 	return nil
 }
 
-// Validate validates the values
-func (f *Webhook) Validate() error {
-	return f.Resource.Validate()
-}
-
 const (
 	WebhookTemplate = `{{ .Boilerplate }}
 

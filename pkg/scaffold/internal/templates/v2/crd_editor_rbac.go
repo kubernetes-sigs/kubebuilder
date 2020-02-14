@@ -43,11 +43,6 @@ func (f *CRDEditorRole) SetTemplateDefaults() error {
 	return nil
 }
 
-// Validate validates the values
-func (f *CRDEditorRole) Validate() error {
-	return f.Resource.Validate()
-}
-
 const crdRoleEditorTemplate = `# permissions for end users to edit {{ .Resource.Plural }}.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole

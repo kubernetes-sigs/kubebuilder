@@ -43,11 +43,6 @@ func (f *Doc) SetTemplateDefaults() error {
 	return nil
 }
 
-// Validate validates the values
-func (f *Doc) Validate() error {
-	return f.Resource.Validate()
-}
-
 // nolint:lll
 const docGoTemplate = `{{ .Boilerplate }}
 
