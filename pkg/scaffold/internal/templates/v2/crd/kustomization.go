@@ -55,9 +55,6 @@ func (f *Kustomization) Update() error {
 		f.Path = filepath.Join("config", "crd", "kustomization.yaml")
 	}
 
-	// TODO(directxman12): not technically valid if something changes from the default
-	// (we'd need to parse the markers)
-
 	kustomizeResourceCodeFragment := fmt.Sprintf("- bases/%s_%s.yaml\n", f.Resource.Domain, f.Resource.Plural)
 	kustomizeWebhookPatchCodeFragment := fmt.Sprintf("#- patches/webhook_in_%s.yaml\n", f.Resource.Plural)
 	kustomizeCAInjectionPatchCodeFragment := fmt.Sprintf("#- patches/cainjection_in_%s.yaml\n", f.Resource.Plural)
