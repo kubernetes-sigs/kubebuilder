@@ -24,16 +24,18 @@ var _ file.Template = &Dockerfile{}
 
 // Dockerfile scaffolds a Dockerfile for building a main
 type Dockerfile struct {
-	file.Input
+	file.TemplateMixin
 }
 
-// GetInput implements input.Template
-func (f *Dockerfile) GetInput() (file.Input, error) {
+// SetTemplateDefaults implements input.Template
+func (f *Dockerfile) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = "Dockerfile"
 	}
+
 	f.TemplateBody = dockerfileTemplate
-	return f.Input, nil
+
+	return nil
 }
 
 const dockerfileTemplate = `# Build the manager binary

@@ -26,17 +26,20 @@ var _ file.Template = &KustomizeManager{}
 
 // KustomizeManager scaffolds the Kustomization file in manager folder.
 type KustomizeManager struct {
-	file.Input
+	file.TemplateMixin
 }
 
-// GetInput implements input.Template
-func (f *KustomizeManager) GetInput() (file.Input, error) {
+// SetTemplateDefaults implements input.Template
+func (f *KustomizeManager) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "manager", "kustomization.yaml")
 	}
+
 	f.TemplateBody = kustomizeManagerTemplate
-	f.Input.IfExistsAction = file.Error
-	return f.Input, nil
+
+	f.IfExistsAction = file.Error
+
+	return nil
 }
 
 const kustomizeManagerTemplate = `resources:

@@ -36,6 +36,9 @@ type FileSystem interface {
 	// Exists checks if the file exists
 	Exists(path string) (bool, error)
 
+	// Open opens the file and returns a self-closing io.Reader.
+	Open(path string) (io.ReadCloser, error)
+
 	// Create creates the directory and file and returns a self-closing
 	// io.Writer pointing to that file. If the file exists, it truncates it.
 	Create(path string) (io.Writer, error)
@@ -87,7 +90,22 @@ func FilePermissions(filePerm os.FileMode) Options {
 
 // Exists implements FileSystem.Exists
 func (fs fileSystem) Exists(path string) (bool, error) {
-	return afero.Exists(fs.fs, path)
+	exists, err := afero.Exists(fs.fs, path)
+	if err != nil {
+		return false, fileExistsError{path, err}
+	}
+
+	return exists, nil
+}
+
+// Open implements FileSystem.Open
+func (fs fileSystem) Open(path string) (io.ReadCloser, error) {
+	rc, err := fs.fs.Open(path)
+	if err != nil {
+		return nil, openFileError{path, err}
+	}
+
+	return &readFile{path, rc}, nil
 }
 
 // Create implements FileSystem.Create
@@ -103,17 +121,49 @@ func (fs fileSystem) Create(path string) (io.Writer, error) {
 		return nil, createFileError{path, err}
 	}
 
-	return &file{path, wc}, nil
+	return &writeFile{path, wc}, nil
 }
 
-// file implements io.Writer
-type file struct {
+var _ io.ReadCloser = &readFile{}
+
+// readFile implements io.Reader
+type readFile struct {
+	path string
+	io.ReadCloser
+}
+
+// Read implements io.Reader.ReadCloser
+func (f *readFile) Read(content []byte) (n int, err error) {
+	// Read the content
+	n, err = f.ReadCloser.Read(content)
+	// EOF is a special case error that we can't wrap
+	if err == io.EOF {
+		return
+	}
+	if err != nil {
+		return n, readFileError{f.path, err}
+	}
+
+	return n, nil
+}
+
+// Close implements io.Reader.ReadCloser
+func (f *readFile) Close() error {
+	if err := f.ReadCloser.Close(); err != nil {
+		return closeFileError{f.path, err}
+	}
+
+	return nil
+}
+
+// writeFile implements io.Writer
+type writeFile struct {
 	path string
 	io.WriteCloser
 }
 
 // Write implements io.Writer.Write
-func (f *file) Write(content []byte) (n int, err error) {
+func (f *writeFile) Write(content []byte) (n int, err error) {
 	// Close the file when we end writing
 	defer func() {
 		if closeErr := f.Close(); err == nil && closeErr != nil {

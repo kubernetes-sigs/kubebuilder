@@ -22,28 +22,29 @@ import (
 	"strings"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
-	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 )
 
 var _ file.Template = &TypesTest{}
 
 // TypesTest scaffolds the pkg/apis/group/version/kind_types_test.go file to test the API schema
 type TypesTest struct {
-	file.Input
-
-	// Resource is the resource to scaffold the types_test.go file for
-	Resource *resource.Resource
+	file.TemplateMixin
+	file.BoilerplateMixin
+	file.ResourceMixin
 }
 
-// GetInput implements input.Template
-func (f *TypesTest) GetInput() (file.Input, error) {
+// SetTemplateDefaults implements input.Template
+func (f *TypesTest) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("pkg", "apis", f.Resource.GroupPackageName, f.Resource.Version,
 			fmt.Sprintf("%s_types_test.go", strings.ToLower(f.Resource.Kind)))
 	}
+
 	f.TemplateBody = typesTestTemplate
+
 	f.IfExistsAction = file.Error
-	return f.Input, nil
+
+	return nil
 }
 
 // Validate validates the values

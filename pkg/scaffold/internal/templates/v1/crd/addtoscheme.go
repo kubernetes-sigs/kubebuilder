@@ -21,27 +21,27 @@ import (
 	"path/filepath"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
-	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 )
 
 var _ file.Template = &AddToScheme{}
 
 // AddToScheme scaffolds the code to add the resource to a SchemeBuilder.
 type AddToScheme struct {
-	file.Input
-
-	// Resource is a resource in the API group
-	Resource *resource.Resource
+	file.TemplateMixin
+	file.BoilerplateMixin
+	file.ResourceMixin
 }
 
-// GetInput implements input.Template
-func (f *AddToScheme) GetInput() (file.Input, error) {
+// SetTemplateDefaults implements input.Template
+func (f *AddToScheme) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("pkg", "apis", fmt.Sprintf(
 			"addtoscheme_%s_%s.go", f.Resource.GroupPackageName, f.Resource.Version))
 	}
+
 	f.TemplateBody = addResourceTemplate
-	return f.Input, nil
+
+	return nil
 }
 
 // Validate validates the values

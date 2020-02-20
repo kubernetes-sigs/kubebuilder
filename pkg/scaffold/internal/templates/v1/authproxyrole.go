@@ -26,16 +26,18 @@ var _ file.Template = &AuthProxyRole{}
 
 // AuthProxyRole scaffolds the config/rbac/auth_proxy_role.yaml file
 type AuthProxyRole struct {
-	file.Input
+	file.TemplateMixin
 }
 
-// GetInput implements input.Template
-func (f *AuthProxyRole) GetInput() (file.Input, error) {
+// SetTemplateDefaults implements input.Template
+func (f *AuthProxyRole) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "rbac", "auth_proxy_role.yaml")
 	}
+
 	f.TemplateBody = proxyRoleTemplate
-	return f.Input, nil
+
+	return nil
 }
 
 const proxyRoleTemplate = `apiVersion: rbac.authorization.k8s.io/v1

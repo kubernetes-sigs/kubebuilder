@@ -27,23 +27,27 @@ var _ file.Template = &KustomizeImagePatch{}
 // KustomizeImagePatch scaffolds the patch file for customizing image URL
 // manifest file for manager resource.
 type KustomizeImagePatch struct {
-	file.Input
+	file.TemplateMixin
 
 	// ImageURL to use for controller image in manager's manifest.
 	ImageURL string
 }
 
-// GetInput implements input.Template
-func (f *KustomizeImagePatch) GetInput() (file.Input, error) {
+// SetTemplateDefaults implements input.Template
+func (f *KustomizeImagePatch) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "default", "manager_image_patch.yaml")
 	}
+
+	f.TemplateBody = kustomizeImagePatchTemplate
+
+	f.IfExistsAction = file.Error
+
 	if f.ImageURL == "" {
 		f.ImageURL = "IMAGE_URL"
 	}
-	f.TemplateBody = kustomizeImagePatchTemplate
-	f.Input.IfExistsAction = file.Error
-	return f.Input, nil
+
+	return nil
 }
 
 const kustomizeImagePatchTemplate = `apiVersion: apps/v1

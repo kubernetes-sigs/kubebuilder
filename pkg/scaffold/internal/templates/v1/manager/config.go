@@ -26,18 +26,21 @@ var _ file.Template = &Config{}
 
 // Config scaffolds yaml config for the manager.
 type Config struct {
-	file.Input
+	file.TemplateMixin
+
 	// Image is controller manager image name
 	Image string
 }
 
-// GetInput implements input.Template
-func (f *Config) GetInput() (file.Input, error) {
+// SetTemplateDefaults implements input.Template
+func (f *Config) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "manager", "manager.yaml")
 	}
+
 	f.TemplateBody = configTemplate
-	return f.Input, nil
+
+	return nil
 }
 
 const configTemplate = `apiVersion: v1

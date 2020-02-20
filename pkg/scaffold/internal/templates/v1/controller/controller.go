@@ -21,29 +21,30 @@ import (
 	"strings"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
-	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 )
 
 var _ file.Template = &Controller{}
 
 // Controller scaffolds a Controller for a Resource
 type Controller struct {
-	file.Input
-
-	// Resource is the Resource to make the Controller for
-	Resource *resource.Resource
+	file.TemplateMixin
+	file.BoilerplateMixin
+	file.ResourceMixin
 }
 
-// GetInput implements input.Template
-func (f *Controller) GetInput() (file.Input, error) {
+// SetTemplateDefaults implements input.Template
+func (f *Controller) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("pkg", "controller",
 			strings.ToLower(f.Resource.Kind),
 			strings.ToLower(f.Resource.Kind)+"_controller.go")
 	}
+
 	f.TemplateBody = controllerTemplate
-	f.Input.IfExistsAction = file.Error
-	return f.Input, nil
+
+	f.IfExistsAction = file.Error
+
+	return nil
 }
 
 // nolint:lll

@@ -26,16 +26,18 @@ var _ file.Template = &ManagerWebhookPatch{}
 
 // CRDWebhookPatch scaffolds a CRDWebhookPatch for a Resource
 type ManagerWebhookPatch struct {
-	file.Input
+	file.TemplateMixin
 }
 
-// GetInput implements input.Template
-func (f *ManagerWebhookPatch) GetInput() (file.Input, error) {
+// SetTemplateDefaults implements input.Template
+func (f *ManagerWebhookPatch) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "default", "manager_webhook_patch.yaml")
 	}
+
 	f.TemplateBody = ManagerWebhookPatchTemplate
-	return f.Input, nil
+
+	return nil
 }
 
 const ManagerWebhookPatchTemplate = `apiVersion: apps/v1

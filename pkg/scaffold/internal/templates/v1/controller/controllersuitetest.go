@@ -21,27 +21,28 @@ import (
 	"strings"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
-	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 )
 
 var _ file.Template = &SuiteTest{}
 
 // SuiteTest scaffolds a SuiteTest
 type SuiteTest struct {
-	file.Input
-
-	// Resource is the Resource to make the Controller for
-	Resource *resource.Resource
+	file.TemplateMixin
+	file.RepositoryMixin
+	file.BoilerplateMixin
+	file.ResourceMixin
 }
 
-// GetInput implements input.Template
-func (f *SuiteTest) GetInput() (file.Input, error) {
+// SetTemplateDefaults implements input.Template
+func (f *SuiteTest) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("pkg", "controller",
 			strings.ToLower(f.Resource.Kind), strings.ToLower(f.Resource.Kind)+"_controller_suite_test.go")
 	}
+
 	f.TemplateBody = controllerSuiteTestTemplate
-	return f.Input, nil
+
+	return nil
 }
 
 const controllerSuiteTestTemplate = `{{ .Boilerplate }}

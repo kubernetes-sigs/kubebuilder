@@ -20,26 +20,27 @@ import (
 	"path/filepath"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
-	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 )
 
 var _ file.Template = &Doc{}
 
 // Doc scaffolds the pkg/apis/group/version/doc.go directory
 type Doc struct {
-	file.Input
-
-	// Resource is a resource for the API version
-	Resource *resource.Resource
+	file.TemplateMixin
+	file.RepositoryMixin
+	file.BoilerplateMixin
+	file.ResourceMixin
 }
 
-// GetInput implements input.Template
-func (f *Doc) GetInput() (file.Input, error) {
+// SetTemplateDefaults implements input.Template
+func (f *Doc) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("pkg", "apis", f.Resource.GroupPackageName, f.Resource.Version, "doc.go")
 	}
+
 	f.TemplateBody = docGoTemplate
-	return f.Input, nil
+
+	return nil
 }
 
 // Validate validates the values

@@ -22,31 +22,33 @@ import (
 	"strings"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
-	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 )
 
 var _ file.Template = &AddAdmissionWebhookBuilderHandler{}
 
 // AddAdmissionWebhookBuilderHandler scaffolds adds a new admission webhook builder.
 type AddAdmissionWebhookBuilderHandler struct {
-	file.Input
-
-	// Resource is a resource in the API group
-	Resource *resource.Resource
+	file.TemplateMixin
+	file.RepositoryMixin
+	file.BoilerplateMixin
+	file.ResourceMixin
 
 	Config
 }
 
-// GetInput implements input.Template
-func (f *AddAdmissionWebhookBuilderHandler) GetInput() (file.Input, error) {
-	f.Server = strings.ToLower(f.Server)
+// SetTemplateDefaults implements input.Template
+func (f *AddAdmissionWebhookBuilderHandler) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("pkg", "webhook",
 			fmt.Sprintf("%s_server", f.Server),
 			fmt.Sprintf("add_%s_%s.go", f.Type, strings.ToLower(f.Resource.Kind)))
 	}
+
 	f.TemplateBody = addAdmissionWebhookBuilderHandlerTemplate
-	return f.Input, nil
+
+	f.Server = strings.ToLower(f.Server)
+
+	return nil
 }
 
 const addAdmissionWebhookBuilderHandlerTemplate = `{{ .Boilerplate }}

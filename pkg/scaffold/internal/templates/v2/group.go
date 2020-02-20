@@ -20,21 +20,20 @@ import (
 	"path/filepath"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
-	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 )
 
 var _ file.Template = &Group{}
 
 // Group scaffolds the api/<version>/groupversion_info.go
 type Group struct {
-	file.Input
-
-	// Resource is a resource in the API group
-	Resource *resource.Resource
+	file.TemplateMixin
+	file.MultiGroupMixin
+	file.BoilerplateMixin
+	file.ResourceMixin
 }
 
-// GetInput implements input.Template
-func (f *Group) GetInput() (file.Input, error) {
+// SetTemplateDefaults implements input.Template
+func (f *Group) SetTemplateDefaults() error {
 	if f.Path == "" {
 		if f.MultiGroup {
 			f.Path = filepath.Join("apis", f.Resource.Group, f.Resource.Version, "groupversion_info.go")
@@ -42,8 +41,10 @@ func (f *Group) GetInput() (file.Input, error) {
 			f.Path = filepath.Join("api", f.Resource.Version, "groupversion_info.go")
 		}
 	}
+
 	f.TemplateBody = groupTemplate
-	return f.Input, nil
+
+	return nil
 }
 
 // Validate validates the values

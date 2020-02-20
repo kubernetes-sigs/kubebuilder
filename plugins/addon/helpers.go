@@ -28,13 +28,11 @@ func AddFile(u *model.Universe, add *file.File) (bool, error) {
 		return false, fmt.Errorf("path must be set")
 	}
 
-	for _, f := range u.Files {
-		if f.Path == p {
-			return false, nil
-		}
+	if _, found := u.Files[p]; found {
+		return false, nil
 	}
 
-	u.Files = append(u.Files, add)
+	u.Files[p] = add
 	return true, nil
 }
 
@@ -46,11 +44,9 @@ func ReplaceFileIfExists(u *model.Universe, add *file.File) bool {
 		panic("path must be set")
 	}
 
-	for i, f := range u.Files {
-		if f.Path == p {
-			u.Files[i] = add
-			return true
-		}
+	if _, found := u.Files[p]; found {
+		u.Files[p] = add
+		return true
 	}
 
 	return false

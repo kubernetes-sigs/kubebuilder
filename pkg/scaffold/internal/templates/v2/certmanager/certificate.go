@@ -26,16 +26,18 @@ var _ file.Template = &CertManager{}
 
 // CertManager scaffolds an issuer CR and a certificate CR
 type CertManager struct {
-	file.Input
+	file.TemplateMixin
 }
 
-// GetInput implements input.Template
-func (f *CertManager) GetInput() (file.Input, error) {
+// SetTemplateDefaults implements input.Template
+func (f *CertManager) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "certmanager", "certificate.yaml")
 	}
+
 	f.TemplateBody = certManagerTemplate
-	return f.Input, nil
+
+	return nil
 }
 
 const certManagerTemplate = `# The following manifests contain a self-signed issuer CR and a certificate CR.

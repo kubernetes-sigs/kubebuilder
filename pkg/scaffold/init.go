@@ -23,7 +23,6 @@ import (
 
 	"sigs.k8s.io/kubebuilder/internal/config"
 	"sigs.k8s.io/kubebuilder/pkg/model"
-	"sigs.k8s.io/kubebuilder/pkg/model/file"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/machinery"
 	templatesv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v1"
 	managerv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v1/manager"
@@ -86,13 +85,13 @@ func (s *initScaffolder) Scaffold() error {
 }
 
 func (s *initScaffolder) scaffoldV1() error {
+	bpFile := &templatesv1.Boilerplate{}
+	bpFile.Path = s.boilerplatePath
+	bpFile.License = s.license
+	bpFile.Owner = s.owner
 	if err := machinery.NewScaffold().Execute(
 		s.newUniverse(""),
-		&templatesv1.Boilerplate{
-			Input:   file.Input{Path: s.boilerplatePath},
-			License: s.license,
-			Owner:   s.owner,
-		},
+		bpFile,
 	); err != nil {
 		return err
 	}
@@ -126,13 +125,13 @@ func (s *initScaffolder) scaffoldV1() error {
 }
 
 func (s *initScaffolder) scaffoldV2() error {
+	bpFile := &templatesv2.Boilerplate{}
+	bpFile.Path = s.boilerplatePath
+	bpFile.License = s.license
+	bpFile.Owner = s.owner
 	if err := machinery.NewScaffold().Execute(
 		s.newUniverse(""),
-		&templatesv2.Boilerplate{
-			Input:   file.Input{Path: s.boilerplatePath},
-			License: s.license,
-			Owner:   s.owner,
-		},
+		bpFile,
 	); err != nil {
 		return err
 	}

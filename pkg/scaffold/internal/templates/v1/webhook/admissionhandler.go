@@ -22,17 +22,15 @@ import (
 	"strings"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
-	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 )
 
 var _ file.Template = &AddAdmissionWebhookBuilderHandler{}
 
 // AdmissionHandler scaffolds an admission handler
 type AdmissionHandler struct {
-	file.Input
-
-	// Resource is a resource in the API group
-	Resource *resource.Resource
+	file.TemplateMixin
+	file.BoilerplateMixin
+	file.ResourceMixin
 
 	Config
 
@@ -43,19 +41,8 @@ type AdmissionHandler struct {
 	Mutate bool
 }
 
-// GetInput implements input.Template
-func (f *AdmissionHandler) GetInput() (file.Input, error) {
-	f.Type = strings.ToLower(f.Type)
-	if f.Type == "mutating" {
-		f.Mutate = true
-	}
-	f.BuilderName = builderName(f.Config, strings.ToLower(f.Resource.Kind))
-	ops := make([]string, len(f.Operations))
-	for i, op := range f.Operations {
-		ops[i] = strings.Title(op)
-	}
-	f.OperationsString = strings.Join(ops, "")
-
+// SetTemplateDefaults implements input.Template
+func (f *AdmissionHandler) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("pkg", "webhook",
 			fmt.Sprintf("%s_server", f.Server),
@@ -63,8 +50,24 @@ func (f *AdmissionHandler) GetInput() (file.Input, error) {
 			f.Type,
 			fmt.Sprintf("%s_%s_handler.go", strings.ToLower(f.Resource.Kind), strings.Join(f.Operations, "_")))
 	}
+
 	f.TemplateBody = addAdmissionHandlerTemplate
-	return f.Input, nil
+
+	f.Type = strings.ToLower(f.Type)
+
+	if f.Type == "mutating" {
+		f.Mutate = true
+	}
+
+	f.BuilderName = builderName(f.Config, strings.ToLower(f.Resource.Kind))
+
+	ops := make([]string, len(f.Operations))
+	for i, op := range f.Operations {
+		ops[i] = strings.Title(op)
+	}
+	f.OperationsString = strings.Join(ops, "")
+
+	return nil
 }
 
 // nolint:lll

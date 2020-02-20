@@ -22,7 +22,6 @@ import (
 	"strings"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
-	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 )
 
 var _ file.Template = &CRDSample{}
@@ -30,22 +29,22 @@ var _ file.Template = &CRDSample{}
 // CRDSample scaffolds a manifest for CRD sample.
 // nolint:golint
 type CRDSample struct {
-	file.Input
-
-	// Resource is a resource in the API group
-	Resource *resource.Resource
+	file.TemplateMixin
+	file.ResourceMixin
 }
 
-// GetInput implements input.Template
-func (f *CRDSample) GetInput() (file.Input, error) {
+// SetTemplateDefaults implements input.Template
+func (f *CRDSample) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "samples", fmt.Sprintf(
 			"%s_%s_%s.yaml", f.Resource.GroupPackageName, f.Resource.Version, strings.ToLower(f.Resource.Kind)))
 	}
 
-	f.IfExistsAction = file.Error
 	f.TemplateBody = crdSampleTemplate
-	return f.Input, nil
+
+	f.IfExistsAction = file.Error
+
+	return nil
 }
 
 // Validate validates the values

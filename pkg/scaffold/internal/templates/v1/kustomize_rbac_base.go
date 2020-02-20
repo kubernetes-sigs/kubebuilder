@@ -26,17 +26,20 @@ var _ file.Template = &KustomizeRBAC{}
 
 // KustomizeRBAC scaffolds the Kustomization file in rbac folder.
 type KustomizeRBAC struct {
-	file.Input
+	file.TemplateMixin
 }
 
-// GetInput implements input.Template
-func (f *KustomizeRBAC) GetInput() (file.Input, error) {
+// SetTemplateDefaults implements input.Template
+func (f *KustomizeRBAC) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "rbac", "kustomization.yaml")
 	}
+
 	f.TemplateBody = kustomizeRBACTemplate
-	f.Input.IfExistsAction = file.Error
-	return f.Input, nil
+
+	f.IfExistsAction = file.Error
+
+	return nil
 }
 
 const kustomizeRBACTemplate = `resources:

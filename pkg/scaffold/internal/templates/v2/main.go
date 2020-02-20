@@ -20,54 +20,83 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/pkg/model/config"
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
-	"sigs.k8s.io/kubebuilder/pkg/model/resource"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/machinery"
 )
 
-const (
-	APIPkgImportScaffoldMarker    = "// +kubebuilder:scaffold:imports"
-	APISchemeScaffoldMarker       = "// +kubebuilder:scaffold:scheme"
-	ReconcilerSetupScaffoldMarker = "// +kubebuilder:scaffold:builder"
-)
+const defaultMainPath = "main.go"
 
 var _ file.Template = &Main{}
 
-// Main scaffolds a main.go to run Controllers
 type Main struct {
-	file.Input
+	file.TemplateMixin
+	file.BoilerplateMixin
 }
 
-// GetInput implements input.Template
-func (f *Main) GetInput() (file.Input, error) {
+// SetTemplateDefaults implements file.Template
+func (f *Main) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = filepath.Join("main.go")
+		f.Path = filepath.Join(defaultMainPath)
 	}
-	f.TemplateBody = mainTemplate
-	return f.Input, nil
+
+	f.TemplateBody = fmt.Sprintf(mainTemplate,
+		file.NewMarkerFor(f.Path, importMarker),
+		file.NewMarkerFor(f.Path, addSchemeMarker),
+		file.NewMarkerFor(f.Path, setupMarker),
+	)
+
+	return nil
 }
 
-// Update updates main.go with code fragments required to wire a new
-// resource/controller.
-func (f *Main) Update(opts *MainUpdateOptions) error {
-	path := "main.go"
+var _ file.Inserter = &MainUpdater{}
 
-	// generate all the code fragments
-	apiImportCodeFragment := fmt.Sprintf(`%s "%s"
-`, opts.Resource.ImportAlias, opts.Resource.Package)
+// MainUpdater updates main.go to run Controllers
+type MainUpdater struct { //nolint:maligned
+	file.RepositoryMixin
+	file.MultiGroupMixin
+	file.ResourceMixin
 
-	addschemeCodeFragment := fmt.Sprintf(`_ = %s.AddToScheme(scheme)
-`, opts.Resource.ImportAlias)
+	// Flags to indicate which parts need to be included when updating the file
+	WireResource, WireController, WireWebhook bool
+}
 
-	var reconcilerSetupCodeFragment, ctrlImportCodeFragment string
+// GetPath implements Builder
+func (*MainUpdater) GetPath() string {
+	return defaultMainPath
+}
 
-	if opts.Config.MultiGroup {
+// GetPath implements Builder
+func (*MainUpdater) GetIfExistsAction() file.IfExistsAction {
+	return file.Overwrite
+}
 
-		ctrlImportCodeFragment = fmt.Sprintf(`%scontroller "%s/controllers/%s"
-`, opts.Resource.GroupPackageName, opts.Config.Repo, opts.Resource.Group)
+const (
+	importMarker    = "imports"
+	addSchemeMarker = "scheme"
+	setupMarker     = "builder"
+)
 
-		reconcilerSetupCodeFragment = fmt.Sprintf(`if err = (&%scontroller.%sReconciler{
+// GetMarkers implements file.Inserter
+func (f *MainUpdater) GetMarkers() []file.Marker {
+	return []file.Marker{
+		file.NewMarkerFor(defaultMainPath, importMarker),
+		file.NewMarkerFor(defaultMainPath, addSchemeMarker),
+		file.NewMarkerFor(defaultMainPath, setupMarker),
+	}
+}
+
+const (
+	apiImportCodeFragment = `%s "%s"
+`
+	controllerImportCodeFragment = `"%s/controllers"
+`
+	// TODO(v3): `&%scontrollers` should be used instead of `&%scontroller` as there may be multiple
+	//  controller for different Kinds in the same group. However, this is a backwards incompatible
+	//  change, and thus should be done for next project version.
+	multiGroupControllerImportCodeFragment = `%scontroller "%s/controllers/%s"
+`
+	addschemeCodeFragment = `_ = %s.AddToScheme(scheme)
+`
+	reconcilerSetupCodeFragment = `if err = (&controllers.%sReconciler{
 		Client: mgr.GetClient(),
 		Log: ctrl.Log.WithName("controllers").WithName("%s"),
 		Scheme: mgr.GetScheme(),
@@ -75,79 +104,82 @@ func (f *Main) Update(opts *MainUpdateOptions) error {
 		setupLog.Error(err, "unable to create controller", "controller", "%s")
 		os.Exit(1)
 	}
-`, opts.Resource.GroupPackageName, opts.Resource.Kind, opts.Resource.Kind, opts.Resource.Kind)
-
-	} else {
-
-		ctrlImportCodeFragment = fmt.Sprintf(`"%s/controllers"
-`, opts.Config.Repo)
-
-		reconcilerSetupCodeFragment = fmt.Sprintf(`if err = (&controllers.%sReconciler{
+`
+	// TODO(v3): loggers for the same Kind controllers from different groups use the same logger.
+	//  `.WithName("controllers").WithName(GROUP).WithName(KIND)` should be used instead. However,
+	//  this is a backwards incompatible change, and thus should be done for next project version.
+	multiGroupReconcilerSetupCodeFragment = `if err = (&%scontroller.%sReconciler{
 		Client: mgr.GetClient(),
 		Log: ctrl.Log.WithName("controllers").WithName("%s"),
-		Scheme: mgr.GetScheme(),  
+		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "%s")
 		os.Exit(1)
 	}
-`, opts.Resource.Kind, opts.Resource.Kind, opts.Resource.Kind)
-
-	}
-
-	webhookSetupCodeFragment := fmt.Sprintf(`if err = (&%s.%s{}).SetupWebhookWithManager(mgr); err != nil {
+`
+	webhookSetupCodeFragment = `if err = (&%s.%s{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create webhook", "webhook", "%s")
 		os.Exit(1)
 	}
-`, opts.Resource.ImportAlias, opts.Resource.Kind, opts.Resource.Kind)
+`
+)
 
-	if opts.WireResource {
-		err := machinery.InsertStringsInFile(path,
-			map[string][]string{
-				APIPkgImportScaffoldMarker: {apiImportCodeFragment},
-				APISchemeScaffoldMarker:    {addschemeCodeFragment},
-			})
-		if err != nil {
-			return err
+// GetCodeFragments implements file.Inserter
+func (f *MainUpdater) GetCodeFragments() file.CodeFragmentsMap {
+	fragments := make(file.CodeFragmentsMap, 3)
+
+	// If resource is not being provided we are creating the file, not updating it
+	if f.Resource == nil {
+		return fragments
+	}
+
+	// Generate import code fragments
+	imports := make([]string, 0)
+	imports = append(imports, fmt.Sprintf(apiImportCodeFragment, f.Resource.ImportAlias, f.Resource.Package))
+	if f.WireController {
+		if !f.MultiGroup {
+			imports = append(imports, fmt.Sprintf(controllerImportCodeFragment, f.Repo))
+		} else {
+			imports = append(imports, fmt.Sprintf(multiGroupControllerImportCodeFragment,
+				f.Resource.GroupPackageName, f.Repo, f.Resource.Group))
 		}
 	}
 
-	if opts.WireController {
-		return machinery.InsertStringsInFile(path,
-			map[string][]string{
-				APIPkgImportScaffoldMarker:    {apiImportCodeFragment, ctrlImportCodeFragment},
-				APISchemeScaffoldMarker:       {addschemeCodeFragment},
-				ReconcilerSetupScaffoldMarker: {reconcilerSetupCodeFragment},
-			})
+	// Generate add scheme code fragments
+	addScheme := make([]string, 0)
+	addScheme = append(addScheme, fmt.Sprintf(addschemeCodeFragment, f.Resource.ImportAlias))
+
+	// Generate setup code fragments
+	setup := make([]string, 0)
+	if f.WireController {
+		if !f.MultiGroup {
+			setup = append(setup, fmt.Sprintf(reconcilerSetupCodeFragment,
+				f.Resource.Kind, f.Resource.Kind, f.Resource.Kind))
+		} else {
+			setup = append(setup, fmt.Sprintf(multiGroupReconcilerSetupCodeFragment,
+				f.Resource.GroupPackageName, f.Resource.Kind, f.Resource.Kind, f.Resource.Kind))
+		}
+	}
+	if f.WireWebhook {
+		setup = append(setup, fmt.Sprintf(webhookSetupCodeFragment,
+			f.Resource.ImportAlias, f.Resource.Kind, f.Resource.Kind))
 	}
 
-	if opts.WireWebhook {
-		return machinery.InsertStringsInFile(path,
-			map[string][]string{
-				APIPkgImportScaffoldMarker:    {apiImportCodeFragment, ctrlImportCodeFragment},
-				APISchemeScaffoldMarker:       {addschemeCodeFragment},
-				ReconcilerSetupScaffoldMarker: {webhookSetupCodeFragment},
-			})
+	// Only store code fragments in the map if the slices are non-empty
+	if len(imports) != 0 {
+		fragments[file.NewMarkerFor(defaultMainPath, importMarker)] = imports
+	}
+	if len(addScheme) != 0 {
+		fragments[file.NewMarkerFor(defaultMainPath, addSchemeMarker)] = addScheme
+	}
+	if len(setup) != 0 {
+		fragments[file.NewMarkerFor(defaultMainPath, setupMarker)] = setup
 	}
 
-	return nil
+	return fragments
 }
 
-// MainUpdateOptions contains info required for wiring an API/Controller in
-// main.go.
-type MainUpdateOptions struct {
-	// Config contains info about the project
-	Config *config.Config
-
-	// Resource is the resource being added
-	Resource *resource.Resource
-
-	// Flags to indicate if resource/controller is being scaffolded or not
-	WireResource   bool
-	WireController bool
-	WireWebhook    bool
-}
-
-var mainTemplate = fmt.Sprintf(`{{ .Boilerplate }}
+var mainTemplate = `{{ .Boilerplate }}
 
 package main
 
@@ -205,4 +237,4 @@ func main() {
 		os.Exit(1)
 	}
 }
-`, APIPkgImportScaffoldMarker, APISchemeScaffoldMarker, ReconcilerSetupScaffoldMarker)
+`

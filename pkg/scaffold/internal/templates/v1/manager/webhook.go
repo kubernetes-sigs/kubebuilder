@@ -26,16 +26,19 @@ var _ file.Template = &Webhook{}
 
 // Webhook scaffolds a webhook.go to add webhook server(s) to a manager.Cmd
 type Webhook struct {
-	file.Input
+	file.TemplateMixin
+	file.BoilerplateMixin
 }
 
-// GetInput implements input.Template
-func (f *Webhook) GetInput() (file.Input, error) {
+// SetTemplateDefaults implements input.Template
+func (f *Webhook) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("pkg", "webhook", "webhook.go")
 	}
+
 	f.TemplateBody = webhookTemplate
-	return f.Input, nil
+
+	return nil
 }
 
 // nolint:lll

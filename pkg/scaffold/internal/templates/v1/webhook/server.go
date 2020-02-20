@@ -27,18 +27,21 @@ var _ file.Template = &Server{}
 
 // Server scaffolds how to construct a webhook server and register webhooks.
 type Server struct {
-	file.Input
+	file.TemplateMixin
+	file.BoilerplateMixin
 
 	Config
 }
 
-// GetInput implements input.Template
-func (f *Server) GetInput() (file.Input, error) {
+// SetTemplateDefaults implements input.Template
+func (f *Server) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("pkg", "webhook", fmt.Sprintf("%s_server", f.Server), "server.go")
 	}
+
 	f.TemplateBody = serverTemplate
-	return f.Input, nil
+
+	return nil
 }
 
 const serverTemplate = `{{ .Boilerplate }}

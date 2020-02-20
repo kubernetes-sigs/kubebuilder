@@ -17,8 +17,10 @@ limitations under the License.
 package machinery
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"path/filepath"
 	"strings"
 	"text/template"
@@ -39,8 +41,8 @@ var options = imports.Options{
 
 // Scaffold uses templates to scaffold new files
 type Scaffold interface {
-	// Execute writes to disk the provided templates
-	Execute(*model.Universe, ...file.Template) error
+	// Execute writes to disk the provided files
+	Execute(*model.Universe, ...file.Builder) error
 }
 
 // scaffold implements Scaffold interface
@@ -60,26 +62,49 @@ func NewScaffold(plugins ...model.Plugin) Scaffold {
 }
 
 // Execute implements Scaffold.Execute
-func (s *scaffold) Execute(universe *model.Universe, files ...file.Template) error {
+func (s *scaffold) Execute(universe *model.Universe, files ...file.Builder) error {
+	// Initialize the universe files
+	universe.Files = make(map[string]*file.File, len(files))
+
 	// Set the repo as the local prefix so that it knows how to group imports
 	if universe.Config != nil {
 		imports.LocalPrefix = universe.Config.Repo
 	}
 
 	for _, f := range files {
-		m, err := buildFileModel(universe, f)
-		if err != nil {
-			return err
+		// Inject common fields
+		universe.InjectInto(f)
+
+		// Validate file builders
+		if reqValFile, requiresValidation := f.(file.RequiresValidation); requiresValidation {
+			if err := reqValFile.Validate(); err != nil {
+				return err
+			}
 		}
-		universe.Files = append(universe.Files, m)
+
+		// Build models for Template builders
+		if t, isTemplate := f.(file.Template); isTemplate {
+			if err := s.buildFileModel(t, universe.Files); err != nil {
+				return err
+			}
+		}
+
+		// Build models for Inserter builders
+		if i, isInserter := f.(file.Inserter); isInserter {
+			if err := s.updateFileModel(i, universe.Files); err != nil {
+				return err
+			}
+		}
 	}
 
+	// Execute plugins
 	for _, plugin := range s.plugins {
 		if err := plugin.Pipe(universe); err != nil {
 			return err
 		}
 	}
 
+	// Persist the files to disk
 	for _, f := range universe.Files {
 		if err := s.writeFile(f); err != nil {
 			return err
@@ -90,38 +115,248 @@ func (s *scaffold) Execute(universe *model.Universe, files ...file.Template) err
 }
 
 // buildFileModel scaffolds a single file
-func buildFileModel(universe *model.Universe, t file.Template) (*file.File, error) {
-	// Inject common fields
-	universe.InjectInto(t)
+func (scaffold) buildFileModel(t file.Template, models map[string]*file.File) error {
+	// Set the template default values
+	err := t.SetTemplateDefaults()
+	if err != nil {
+		return err
+	}
 
-	// Validate the file scaffold
-	if reqValFile, ok := t.(file.RequiresValidation); ok {
-		if err := reqValFile.Validate(); err != nil {
+	// Handle already existing models
+	if _, found := models[t.GetPath()]; found {
+		switch t.GetIfExistsAction() {
+		case file.Skip:
+			return nil
+		case file.Error:
+			return fmt.Errorf("failed to create %s: model already exists", t.GetPath())
+		case file.Overwrite:
+		default:
+			return fmt.Errorf("unknown behavior if file exists (%d) for %s", t.GetIfExistsAction(), t.GetPath())
+		}
+	}
+
+	m := &file.File{
+		Path:           t.GetPath(),
+		IfExistsAction: t.GetIfExistsAction(),
+	}
+
+	b, err := doTemplate(t)
+	if err != nil {
+		return err
+	}
+	m.Contents = string(b)
+
+	models[m.Path] = m
+	return nil
+}
+
+// doTemplate executes the template for a file using the input
+func doTemplate(t file.Template) ([]byte, error) {
+	temp, err := newTemplate(t).Parse(t.GetBody())
+	if err != nil {
+		return nil, err
+	}
+
+	out := &bytes.Buffer{}
+	err = temp.Execute(out, t)
+	if err != nil {
+		return nil, err
+	}
+	b := out.Bytes()
+
+	// TODO(adirio): move go-formatting to write step
+	// gofmt the imports
+	if filepath.Ext(t.GetPath()) == ".go" {
+		b, err = imports.Process(t.GetPath(), b, &options)
+		if err != nil {
 			return nil, err
 		}
 	}
 
-	// Get the template input params
-	i, err := t.GetInput()
-	if err != nil {
-		return nil, err
-	}
-
-	m := &file.File{
-		Path:           i.Path,
-		IfExistsAction: i.IfExistsAction,
-	}
-
-	b, err := doTemplate(i, t)
-	if err != nil {
-		return nil, err
-	}
-	m.Contents = string(b)
-
-	return m, nil
+	return b, nil
 }
 
-func (s *scaffold) writeFile(f *file.File) error {
+// newTemplate a new template with common functions
+func newTemplate(t file.Template) *template.Template {
+	return template.New(fmt.Sprintf("%T", t)).Funcs(template.FuncMap{
+		"title": strings.Title,
+		"lower": strings.ToLower,
+	})
+}
+
+// updateFileModel updates a single file
+func (s scaffold) updateFileModel(i file.Inserter, models map[string]*file.File) error {
+	m, err := s.loadPreviousModel(i, models)
+	if err != nil {
+		return err
+	}
+
+	// Get valid code fragments
+	codeFragments := getValidCodeFragments(i)
+
+	// Remove code fragments that already were applied
+	err = filterExistingValues(m.Contents, codeFragments)
+	if err != nil {
+		return err
+	}
+
+	// If no code fragment to insert, we are done
+	if len(codeFragments) == 0 {
+		return nil
+	}
+
+	content, err := insertStrings(m.Contents, codeFragments)
+	if err != nil {
+		return err
+	}
+
+	// TODO(adirio): move go-formatting to write step
+	formattedContent := content
+	if ext := filepath.Ext(i.GetPath()); ext == ".go" {
+		formattedContent, err = imports.Process(i.GetPath(), content, nil)
+		if err != nil {
+			return err
+		}
+	}
+
+	m.Contents = string(formattedContent)
+	m.IfExistsAction = file.Overwrite
+	models[m.Path] = m
+	return nil
+}
+
+// loadPreviousModel gets the previous model from the models map or the actual file
+func (s scaffold) loadPreviousModel(i file.Inserter, models map[string]*file.File) (*file.File, error) {
+	// Lets see if we already have a model for this file
+	if m, found := models[i.GetPath()]; found {
+		// Check if there is already an scaffolded file
+		exists, err := s.fs.Exists(i.GetPath())
+		if err != nil {
+			return nil, err
+		}
+
+		// If there is a model but no scaffolded file we return the model
+		if !exists {
+			return m, nil
+		}
+
+		// If both a model and a file are found, check which has preference
+		switch m.IfExistsAction {
+		case file.Skip:
+			// File has preference
+			fromFile, err := s.loadModelFromFile(i.GetPath())
+			if err != nil {
+				return m, nil
+			}
+			return fromFile, nil
+		case file.Error:
+			// Writing will result in an error, so we can return error now
+			return nil, fmt.Errorf("failed to create %s: file already exists", i.GetPath())
+		case file.Overwrite:
+			// Model has preference
+			return m, nil
+		default:
+			return nil, fmt.Errorf("unknown behavior if file exists (%d) for %s", m.IfExistsAction, i.GetPath())
+		}
+	}
+
+	// There was no model
+	return s.loadModelFromFile(i.GetPath())
+}
+
+// loadModelFromFile gets the previous model from the actual file
+func (s scaffold) loadModelFromFile(path string) (f *file.File, err error) {
+	reader, err := s.fs.Open(path)
+	if err != nil {
+		return
+	}
+	defer func() {
+		closeErr := reader.Close()
+		if err == nil {
+			err = closeErr
+		}
+	}()
+
+	content, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return
+	}
+
+	f = &file.File{Path: path, Contents: string(content)}
+	return
+}
+
+// getValidCodeFragments obtains the code fragments from a file.Inserter
+func getValidCodeFragments(i file.Inserter) file.CodeFragmentsMap {
+	// Get the code fragments
+	codeFragments := i.GetCodeFragments()
+
+	// Validate the code fragments
+	validMarkers := i.GetMarkers()
+	for marker := range codeFragments {
+		valid := false
+		for _, validMarker := range validMarkers {
+			if marker == validMarker {
+				valid = true
+				break
+			}
+		}
+		if !valid {
+			delete(codeFragments, marker)
+		}
+	}
+
+	return codeFragments
+}
+
+// filterExistingValues removes the single-line values that already exists
+// TODO: Add support for multi-line duplicate values
+func filterExistingValues(content string, codeFragmentsMap file.CodeFragmentsMap) error {
+	scanner := bufio.NewScanner(strings.NewReader(content))
+	for scanner.Scan() {
+		line := scanner.Text()
+		for marker, codeFragments := range codeFragmentsMap {
+			for i, codeFragment := range codeFragments {
+				if strings.TrimSpace(line) == strings.TrimSpace(codeFragment) {
+					codeFragmentsMap[marker] = append(codeFragments[:i], codeFragments[i+1:]...)
+				}
+			}
+			if len(codeFragmentsMap[marker]) == 0 {
+				delete(codeFragmentsMap, marker)
+			}
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func insertStrings(content string, codeFragmentsMap file.CodeFragmentsMap) ([]byte, error) {
+	out := new(bytes.Buffer)
+
+	scanner := bufio.NewScanner(strings.NewReader(content))
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		for marker, codeFragments := range codeFragmentsMap {
+			if strings.TrimSpace(line) == strings.TrimSpace(marker.String()) {
+				for _, codeFragment := range codeFragments {
+					_, _ = out.WriteString(codeFragment) // bytes.Buffer.WriteString always returns nil errors
+				}
+			}
+		}
+
+		_, _ = out.WriteString(line + "\n") // bytes.Buffer.WriteString always returns nil errors
+	}
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
+	return out.Bytes(), nil
+}
+
+func (s scaffold) writeFile(f *file.File) error {
 	// Check if the file to write already exists
 	exists, err := s.fs.Exists(f.Path)
 	if err != nil {
@@ -148,37 +383,4 @@ func (s *scaffold) writeFile(f *file.File) error {
 	_, err = writer.Write([]byte(f.Contents))
 
 	return err
-}
-
-// doTemplate executes the template for a file using the input
-func doTemplate(i file.Input, t file.Template) ([]byte, error) {
-	temp, err := newTemplate(t).Parse(i.TemplateBody)
-	if err != nil {
-		return nil, err
-	}
-
-	out := &bytes.Buffer{}
-	err = temp.Execute(out, t)
-	if err != nil {
-		return nil, err
-	}
-	b := out.Bytes()
-
-	// gofmt the imports
-	if filepath.Ext(i.Path) == ".go" {
-		b, err = imports.Process(i.Path, b, &options)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return b, nil
-}
-
-// newTemplate a new template with common functions
-func newTemplate(t file.Template) *template.Template {
-	return template.New(fmt.Sprintf("%T", t)).Funcs(template.FuncMap{
-		"title": strings.Title,
-		"lower": strings.ToLower,
-	})
 }

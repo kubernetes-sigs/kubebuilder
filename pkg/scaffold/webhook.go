@@ -92,20 +92,24 @@ func (s *webhookScaffolder) Scaffold() error {
 	}
 }
 
+func (s *webhookScaffolder) newUniverse() *model.Universe {
+	return model.NewUniverse(
+		model.WithConfig(s.config),
+		model.WithBoilerplate(s.boilerplate),
+		model.WithResource(s.resource),
+	)
+}
+
 func (s *webhookScaffolder) scaffoldV1() error {
 	webhookConfig := webhookv1.Config{Server: s.server, Type: s.webhookType, Operations: s.operations}
 
 	return machinery.NewScaffold().Execute(
-		model.NewUniverse(
-			model.WithConfig(s.config),
-			model.WithBoilerplate(s.boilerplate),
-			model.WithResource(s.resource),
-		),
+		s.newUniverse(),
 		&managerv1.Webhook{},
-		&webhookv1.AdmissionHandler{Resource: s.resource, Config: webhookConfig},
-		&webhookv1.AdmissionWebhookBuilder{Resource: s.resource, Config: webhookConfig},
-		&webhookv1.AdmissionWebhooks{Resource: s.resource, Config: webhookConfig},
-		&webhookv1.AddAdmissionWebhookBuilderHandler{Resource: s.resource, Config: webhookConfig},
+		&webhookv1.AdmissionHandler{Config: webhookConfig},
+		&webhookv1.AdmissionWebhookBuilder{Config: webhookConfig},
+		&webhookv1.AdmissionWebhooks{Config: webhookConfig},
+		&webhookv1.AddAdmissionWebhookBuilderHandler{Config: webhookConfig},
 		&webhookv1.Server{Config: webhookConfig},
 		&webhookv1.AddServer{Config: webhookConfig},
 	)
@@ -125,32 +129,12 @@ func (s *webhookScaffolder) scaffoldV2() error {
 You need to implement the conversion.Hub and conversion.Convertible interfaces for your CRD types.`)
 	}
 
-	webhookScaffolder := &webhookv2.Webhook{
-		Resource:   s.resource,
-		Defaulting: s.defaulting,
-		Validating: s.validation,
-	}
 	if err := machinery.NewScaffold().Execute(
-		model.NewUniverse(
-			model.WithConfig(s.config),
-			model.WithBoilerplate(s.boilerplate),
-			model.WithResource(s.resource),
-		),
-		webhookScaffolder,
+		s.newUniverse(),
+		&webhookv2.Webhook{Defaulting: s.defaulting, Validating: s.validation},
+		&templatesv2.MainUpdater{WireWebhook: true},
 	); err != nil {
 		return err
-	}
-
-	if err := (&templatesv2.Main{}).Update(
-		&templatesv2.MainUpdateOptions{
-			Config:         s.config,
-			WireResource:   false,
-			WireController: false,
-			WireWebhook:    true,
-			Resource:       s.resource,
-		},
-	); err != nil {
-		return fmt.Errorf("error updating main.go: %v", err)
 	}
 
 	return nil

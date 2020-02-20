@@ -26,16 +26,18 @@ var _ file.Template = &AuthProxyRoleBinding{}
 
 // AuthProxyRoleBinding scaffolds the config/rbac/auth_proxy_role_binding_rbac.yaml file
 type AuthProxyRoleBinding struct {
-	file.Input
+	file.TemplateMixin
 }
 
-// GetInput implements input.Template
-func (f *AuthProxyRoleBinding) GetInput() (file.Input, error) {
+// SetTemplateDefaults implements input.Template
+func (f *AuthProxyRoleBinding) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "rbac", "auth_proxy_role_binding.yaml")
 	}
+
 	f.TemplateBody = proxyRoleBindinggTemplate
-	return f.Input, nil
+
+	return nil
 }
 
 const proxyRoleBindinggTemplate = `apiVersion: rbac.authorization.k8s.io/v1

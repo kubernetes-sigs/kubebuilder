@@ -26,16 +26,18 @@ var _ file.Template = &Kustomization{}
 
 // Kustomization scaffolds the kustomizaiton in the certmanager folder
 type Kustomization struct {
-	file.Input
+	file.TemplateMixin
 }
 
-// GetInput implements input.Template
-func (f *Kustomization) GetInput() (file.Input, error) {
+// SetTemplateDefaults implements input.Template
+func (f *Kustomization) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "certmanager", "kustomization.yaml")
 	}
+
 	f.TemplateBody = kustomizationTemplate
-	return f.Input, nil
+
+	return nil
 }
 
 const kustomizationTemplate = `resources:

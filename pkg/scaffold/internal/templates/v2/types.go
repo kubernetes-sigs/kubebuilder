@@ -22,21 +22,20 @@ import (
 	"strings"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
-	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 )
 
 var _ file.Template = &Types{}
 
 // Types scaffolds the api/<version>/<kind>_types.go file to define the schema for an API
 type Types struct {
-	file.Input
-
-	// Resource is the resource to scaffold the types_test.go file for
-	Resource *resource.Resource
+	file.TemplateMixin
+	file.MultiGroupMixin
+	file.BoilerplateMixin
+	file.ResourceMixin
 }
 
-// GetInput implements input.Template
-func (f *Types) GetInput() (file.Input, error) {
+// SetTemplateDefaults implements input.Template
+func (f *Types) SetTemplateDefaults() error {
 	if f.Path == "" {
 		if f.MultiGroup {
 			f.Path = filepath.Join("apis", f.Resource.Group, f.Resource.Version,
@@ -48,8 +47,10 @@ func (f *Types) GetInput() (file.Input, error) {
 	}
 
 	f.TemplateBody = typesTemplate
+
 	f.IfExistsAction = file.Error
-	return f.Input, nil
+
+	return nil
 }
 
 // Validate validates the values

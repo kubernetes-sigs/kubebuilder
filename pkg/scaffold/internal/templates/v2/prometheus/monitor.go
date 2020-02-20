@@ -26,16 +26,18 @@ var _ file.Template = &ServiceMonitor{}
 
 // ServiceMonitor scaffolds an issuer CR and a certificate CR
 type ServiceMonitor struct {
-	file.Input
+	file.TemplateMixin
 }
 
-// GetInput implements input.Template
-func (f *ServiceMonitor) GetInput() (file.Input, error) {
+// SetTemplateDefaults implements input.Template
+func (f *ServiceMonitor) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "prometheus", "monitor.yaml")
 	}
+
 	f.TemplateBody = serviceMonitorTemplate
-	return f.Input, nil
+
+	return nil
 }
 
 const serviceMonitorTemplate = `

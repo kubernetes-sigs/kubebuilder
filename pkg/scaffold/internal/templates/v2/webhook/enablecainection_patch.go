@@ -26,17 +26,20 @@ var _ file.Template = &InjectCAPatch{}
 
 // InjectCAPatch scaffolds the InjectCAPatch file in manager folder.
 type InjectCAPatch struct {
-	file.Input
+	file.TemplateMixin
 }
 
-// GetInput implements input.Template
-func (f *InjectCAPatch) GetInput() (file.Input, error) {
+// SetTemplateDefaults implements input.Template
+func (f *InjectCAPatch) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "default", "webhookcainjection_patch.yaml")
 	}
+
 	f.TemplateBody = injectCAPatchTemplate
-	f.Input.IfExistsAction = file.Error
-	return f.Input, nil
+
+	f.IfExistsAction = file.Error
+
+	return nil
 }
 
 const injectCAPatchTemplate = `# This patch add annotation to admission webhook config and

@@ -93,14 +93,14 @@ func (s *apiScaffolder) scaffoldV1() error {
 
 		if err := machinery.NewScaffold().Execute(
 			s.newUniverse(),
-			&crdv1.Register{Resource: s.resource},
-			&crdv1.Types{Resource: s.resource},
-			&crdv1.VersionSuiteTest{Resource: s.resource},
-			&crdv1.TypesTest{Resource: s.resource},
-			&crdv1.Doc{Resource: s.resource},
-			&crdv1.Group{Resource: s.resource},
-			&crdv1.AddToScheme{Resource: s.resource},
-			&crdv1.CRDSample{Resource: s.resource},
+			&crdv1.Register{},
+			&crdv1.Types{},
+			&crdv1.VersionSuiteTest{},
+			&crdv1.TypesTest{},
+			&crdv1.Doc{},
+			&crdv1.Group{},
+			&crdv1.AddToScheme{},
+			&crdv1.CRDSample{},
 		); err != nil {
 			return fmt.Errorf("error scaffolding APIs: %v", err)
 		}
@@ -120,10 +120,10 @@ func (s *apiScaffolder) scaffoldV1() error {
 
 		if err := machinery.NewScaffold().Execute(
 			s.newUniverse(),
-			&controllerv1.Controller{Resource: s.resource},
-			&controllerv1.AddController{Resource: s.resource},
-			&controllerv1.Test{Resource: s.resource},
-			&controllerv1.SuiteTest{Resource: s.resource},
+			&controllerv1.Controller{},
+			&controllerv1.AddController{},
+			&controllerv1.Test{},
+			&controllerv1.SuiteTest{},
 		); err != nil {
 			return fmt.Errorf("error scaffolding controller: %v", err)
 		}
@@ -151,28 +151,23 @@ func (s *apiScaffolder) scaffoldV2() error {
 
 		if err := machinery.NewScaffold(s.plugins...).Execute(
 			s.newUniverse(),
-			&templatesv2.Types{Resource: s.resource},
-			&templatesv2.Group{Resource: s.resource},
-			&templatesv2.CRDSample{Resource: s.resource},
-			&templatesv2.CRDEditorRole{Resource: s.resource},
-			&templatesv2.CRDViewerRole{Resource: s.resource},
-			&crdv2.EnableWebhookPatch{Resource: s.resource},
-			&crdv2.EnableCAInjectionPatch{Resource: s.resource},
+			&templatesv2.Types{},
+			&templatesv2.Group{},
+			&templatesv2.CRDSample{},
+			&templatesv2.CRDEditorRole{},
+			&templatesv2.CRDViewerRole{},
+			&crdv2.EnableWebhookPatch{},
+			&crdv2.EnableCAInjectionPatch{},
 		); err != nil {
 			return fmt.Errorf("error scaffolding APIs: %v", err)
 		}
 
-		kustomizationFile := &crdv2.Kustomization{Resource: s.resource}
 		if err := machinery.NewScaffold().Execute(
 			s.newUniverse(),
-			kustomizationFile,
+			&crdv2.Kustomization{},
 			&crdv2.KustomizeConfig{},
 		); err != nil {
 			return fmt.Errorf("error scaffolding kustomization: %v", err)
-		}
-
-		if err := kustomizationFile.Update(); err != nil {
-			return fmt.Errorf("error updating kustomization.yaml: %v", err)
 		}
 
 	} else {
@@ -192,27 +187,18 @@ func (s *apiScaffolder) scaffoldV2() error {
 				fmt.Sprintf("%s_controller.go", strings.ToLower(s.resource.Kind))))
 		}
 
-		suiteTestFile := &controllerv2.SuiteTest{Resource: s.resource}
 		if err := machinery.NewScaffold(s.plugins...).Execute(
 			s.newUniverse(),
-			suiteTestFile,
-			&controllerv2.Controller{Resource: s.resource},
+			&controllerv2.SuiteTest{},
+			&controllerv2.Controller{},
 		); err != nil {
 			return fmt.Errorf("error scaffolding controller: %v", err)
 		}
-
-		if err := suiteTestFile.Update(); err != nil {
-			return fmt.Errorf("error updating suite_test.go under controllers pkg: %v", err)
-		}
 	}
 
-	if err := (&templatesv2.Main{}).Update(
-		&templatesv2.MainUpdateOptions{
-			Config:         &s.config.Config,
-			WireResource:   s.doResource,
-			WireController: s.doController,
-			Resource:       s.resource,
-		},
+	if err := machinery.NewScaffold(s.plugins...).Execute(
+		s.newUniverse(),
+		&templatesv2.MainUpdater{WireResource: s.doResource, WireController: s.doController},
 	); err != nil {
 		return fmt.Errorf("error updating main.go: %v", err)
 	}

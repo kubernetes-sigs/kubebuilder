@@ -22,27 +22,25 @@ import (
 	"strings"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
-	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 )
 
 var _ file.Template = &CRDViewerRole{}
 
 // CRD Viewer role scaffolds the config/rbca/<kind>_viewer_role.yaml
 type CRDViewerRole struct {
-	file.Input
-
-	// Resource is a resource in the API group
-	Resource *resource.Resource
+	file.TemplateMixin
+	file.ResourceMixin
 }
 
-// GetInput implements input.Template
-func (f *CRDViewerRole) GetInput() (file.Input, error) {
+// SetTemplateDefaults implements input.Template
+func (f *CRDViewerRole) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "rbac", fmt.Sprintf("%s_viewer_role.yaml", strings.ToLower(f.Resource.Kind)))
 	}
 
 	f.TemplateBody = crdRoleViewerTemplate
-	return f.Input, nil
+
+	return nil
 }
 
 // Validate validates the values

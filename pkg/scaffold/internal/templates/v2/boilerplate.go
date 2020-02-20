@@ -28,7 +28,8 @@ var _ file.Template = &Boilerplate{}
 
 // Boilerplate scaffolds a boilerplate header file.
 type Boilerplate struct {
-	file.Input
+	file.TemplateMixin
+	file.BoilerplateMixin
 
 	// License is the License type to write
 	License string
@@ -40,29 +41,31 @@ type Boilerplate struct {
 	Year string
 }
 
-// GetInput implements input.Template
-func (f *Boilerplate) GetInput() (file.Input, error) {
+// SetTemplateDefaults implements input.Template
+func (f *Boilerplate) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("hack", "boilerplate.go.txt")
+	}
+
+	if f.Year == "" {
+		f.Year = fmt.Sprintf("%v", time.Now().Year())
 	}
 
 	// Boilerplate given
 	if len(f.Boilerplate) > 0 {
 		f.TemplateBody = f.Boilerplate
-		return f.Input, nil
+		return nil
 	}
 
 	// Pick a template boilerplate option
-	if f.Year == "" {
-		f.Year = fmt.Sprintf("%v", time.Now().Year())
-	}
 	switch f.License {
 	case "", "apache2":
 		f.TemplateBody = apache
 	case "none":
 		f.TemplateBody = none
 	}
-	return f.Input, nil
+
+	return nil
 }
 
 const apache = `/*
