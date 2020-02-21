@@ -19,13 +19,16 @@ package v1
 import (
 	"bufio"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/internal/cmdutil"
 	"sigs.k8s.io/kubebuilder/internal/config"
+	"sigs.k8s.io/kubebuilder/pkg/model"
 	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/pkg/plugin/internal"
@@ -135,11 +138,17 @@ func (p *createAPIPlugin) Validate(_ *config.Config) error {
 }
 
 func (p *createAPIPlugin) GetScaffolder(c *config.Config) (scaffold.Scaffolder, error) {
+	// Load the boilerplate
+	bp, err := ioutil.ReadFile(filepath.Join("hack", "boilerplate.go.txt")) // nolint:gosec
+	if err != nil {
+		return nil, fmt.Errorf("unable to load boilerplate: %v", err)
+	}
+
 	// Create the actual resource from the resource options
 	res := p.resource.NewV1Resource(&c.Config, p.doResource)
 
 	// Load the requested plugins
-	plugins := make([]scaffold.Plugin, 0)
+	plugins := make([]model.Plugin, 0)
 	switch strings.ToLower(p.pattern) {
 	case "":
 		// Default pattern
@@ -149,7 +158,7 @@ func (p *createAPIPlugin) GetScaffolder(c *config.Config) (scaffold.Scaffolder, 
 		return nil, fmt.Errorf("unknown pattern %q", p.pattern)
 	}
 
-	return scaffold.NewAPIScaffolder(c, res, p.doResource, p.doController, plugins), nil
+	return scaffold.NewAPIScaffolder(c, string(bp), res, p.doResource, p.doController, plugins), nil
 }
 
 func (p *createAPIPlugin) PostScaffold(_ *config.Config) error {

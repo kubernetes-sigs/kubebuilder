@@ -44,7 +44,7 @@ kind load docker-image your-image-name:your-tag
 
 - Point `kubectl` to the kind cluster
 ```bash
-export KUBECONFIG="$(kind get kubeconfig-path --name="kind")"
+kind export kubeconfig
 ```
 
 - Delete a kind cluster
