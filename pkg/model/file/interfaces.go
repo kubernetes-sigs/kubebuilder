@@ -40,7 +40,7 @@ type Template interface {
 	Builder
 	// GetBody returns the template body
 	GetBody() string
-	// SetTemplateDefaults returns the TemplateMixin for creating a scaffold file
+	// SetTemplateDefaults sets the default values for templates
 	SetTemplateDefaults() error
 }
 
