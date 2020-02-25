@@ -32,8 +32,6 @@ type Base interface {
 	// Version returns the plugin's semantic version, ex. "v1.2.3".
 	//
 	// Note: this version is different from config version.
-	//
-	// TODO: version format enforcement.
 	Version() string
 	// SupportedProjectVersions lists all project configuration versions this
 	// plugin supports, ex. []string{"2", "3"}. The returned slice cannot be empty.

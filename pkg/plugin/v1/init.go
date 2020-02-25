@@ -30,6 +30,7 @@ import (
 
 	"sigs.k8s.io/kubebuilder/internal/cmdutil"
 	"sigs.k8s.io/kubebuilder/internal/config"
+	"sigs.k8s.io/kubebuilder/pkg/internal/validation"
 	"sigs.k8s.io/kubebuilder/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/pkg/plugin/internal"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold"
@@ -141,7 +142,7 @@ func (p *initPlugin) Validate(c *config.Config) error {
 		return fmt.Errorf("error to get the current path: %v", err)
 	}
 	projectName := filepath.Base(dir)
-	if err := internal.IsDNS1123Label(strings.ToLower(projectName)); err != nil {
+	if err := validation.IsDNS1123Label(strings.ToLower(projectName)); err != nil {
 		return fmt.Errorf("project name (%s) is invalid: %v", projectName, err)
 	}
 
