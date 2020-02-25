@@ -43,11 +43,6 @@ func (f *CRDViewerRole) SetTemplateDefaults() error {
 	return nil
 }
 
-// Validate validates the values
-func (f *CRDViewerRole) Validate() error {
-	return f.Resource.Validate()
-}
-
 const crdRoleViewerTemplate = `# permissions for end users to view {{ .Resource.Plural }}.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole

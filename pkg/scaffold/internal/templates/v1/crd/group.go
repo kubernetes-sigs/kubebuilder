@@ -42,11 +42,6 @@ func (f *Group) SetTemplateDefaults() error {
 	return nil
 }
 
-// Validate validates the values
-func (f *Group) Validate() error {
-	return f.Resource.Validate()
-}
-
 const groupTemplate = `{{ .Boilerplate }}
 
 // Package {{ .Resource.GroupPackageName }} contains {{ .Resource.Group }} API versions
