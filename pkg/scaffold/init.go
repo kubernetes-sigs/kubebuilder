@@ -18,21 +18,21 @@ package scaffold
 
 import (
 	"fmt"
+	"io/ioutil"
 	"path/filepath"
 
 	"sigs.k8s.io/kubebuilder/internal/config"
 	"sigs.k8s.io/kubebuilder/pkg/model"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
-	scaffoldv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/v1"
-	managerv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/v1/manager"
-	metricsauthv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/v1/metricsauth"
-	scaffoldv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2"
-	certmanagerv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2/certmanager"
-	managerv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2/manager"
-	metricsauthv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2/metricsauth"
-	prometheusv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2/prometheus"
-	webhookv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/v2/webhook"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/machinery"
+	templatesv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v1"
+	managerv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v1/manager"
+	metricsauthv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v1/metricsauth"
+	templatesv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v2"
+	certmanagerv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v2/certmanager"
+	managerv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v2/manager"
+	metricsauthv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v2/metricsauth"
+	prometheusv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v2/prometheus"
+	webhookv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v2/webhook"
 )
 
 const (
@@ -60,48 +60,17 @@ func NewInitScaffolder(config *config.Config, license, owner string) Scaffolder 
 	}
 }
 
+func (s *initScaffolder) newUniverse(boilerplate string) *model.Universe {
+	return model.NewUniverse(
+		model.WithConfig(&s.config.Config),
+		model.WithBoilerplate(boilerplate),
+	)
+}
+
 func (s *initScaffolder) Scaffold() error {
 	fmt.Println("Writing scaffold for you to edit...")
 
 	if err := s.config.Save(); err != nil {
-		return err
-	}
-
-	universe, err := model.NewUniverse(
-		model.WithConfig(&s.config.Config),
-		model.WithoutBoilerplate,
-	)
-	if err != nil {
-		return fmt.Errorf("error initializing project: %v", err)
-	}
-
-	if err := (&Scaffold{BoilerplateOptional: true}).Execute(
-		universe,
-		input.Options{ProjectPath: s.config.Path(), BoilerplatePath: s.boilerplatePath},
-		&project.Boilerplate{
-			Input:   input.Input{Path: s.boilerplatePath},
-			License: s.license,
-			Owner:   s.owner,
-		},
-	); err != nil {
-		return err
-	}
-
-	universe, err = model.NewUniverse(
-		model.WithConfig(&s.config.Config),
-		model.WithBoilerplateFrom(s.boilerplatePath),
-	)
-	if err != nil {
-		return fmt.Errorf("error initializing project: %v", err)
-	}
-
-	if err := (&Scaffold{}).Execute(
-		universe,
-		input.Options{ProjectPath: s.config.Path(), BoilerplatePath: s.boilerplatePath},
-		&project.GitIgnore{},
-		&project.AuthProxyRole{},
-		&project.AuthProxyRoleBinding{},
-	); err != nil {
 		return err
 	}
 
@@ -116,29 +85,39 @@ func (s *initScaffolder) Scaffold() error {
 }
 
 func (s *initScaffolder) scaffoldV1() error {
-	universe, err := model.NewUniverse(
-		model.WithConfig(&s.config.Config),
-		model.WithBoilerplateFrom(s.boilerplatePath),
-	)
-	if err != nil {
-		return fmt.Errorf("error initializing project: %v", err)
+	bpFile := &templatesv1.Boilerplate{}
+	bpFile.Path = s.boilerplatePath
+	bpFile.License = s.license
+	bpFile.Owner = s.owner
+	if err := machinery.NewScaffold().Execute(
+		s.newUniverse(""),
+		bpFile,
+	); err != nil {
+		return err
 	}
 
-	return (&Scaffold{}).Execute(
-		universe,
-		input.Options{ProjectPath: s.config.Path(), BoilerplatePath: s.boilerplatePath},
-		&project.KustomizeRBAC{},
-		&scaffoldv1.KustomizeImagePatch{},
+	boilerplate, err := ioutil.ReadFile(s.boilerplatePath) // nolint:gosec
+	if err != nil {
+		return err
+	}
+
+	return machinery.NewScaffold().Execute(
+		s.newUniverse(string(boilerplate)),
+		&templatesv1.GitIgnore{},
+		&templatesv1.AuthProxyRole{},
+		&templatesv1.AuthProxyRoleBinding{},
+		&templatesv1.KustomizeRBAC{},
+		&templatesv1.KustomizeImagePatch{},
 		&metricsauthv1.KustomizePrometheusMetricsPatch{},
 		&metricsauthv1.KustomizeAuthProxyPatch{},
-		&scaffoldv1.AuthProxyService{},
+		&templatesv1.AuthProxyService{},
 		&managerv1.Config{Image: ImageName},
-		&project.Makefile{Image: ImageName},
-		&project.GopkgToml{},
+		&templatesv1.Makefile{Image: ImageName},
+		&templatesv1.GopkgToml{},
 		&managerv1.Dockerfile{},
-		&project.Kustomize{},
-		&project.KustomizeManager{},
-		&managerv1.APIs{},
+		&templatesv1.Kustomize{},
+		&templatesv1.KustomizeManager{},
+		&managerv1.APIs{BoilerplatePath: s.boilerplatePath},
 		&managerv1.Controller{},
 		&managerv1.Webhook{},
 		&managerv1.Cmd{},
@@ -146,31 +125,45 @@ func (s *initScaffolder) scaffoldV1() error {
 }
 
 func (s *initScaffolder) scaffoldV2() error {
-	universe, err := model.NewUniverse(
-		model.WithConfig(&s.config.Config),
-		model.WithBoilerplateFrom(s.boilerplatePath),
-	)
-	if err != nil {
-		return fmt.Errorf("error initializing project: %v", err)
+	bpFile := &templatesv2.Boilerplate{}
+	bpFile.Path = s.boilerplatePath
+	bpFile.License = s.license
+	bpFile.Owner = s.owner
+	if err := machinery.NewScaffold().Execute(
+		s.newUniverse(""),
+		bpFile,
+	); err != nil {
+		return err
 	}
 
-	return (&Scaffold{}).Execute(
-		universe,
-		input.Options{ProjectPath: s.config.Path(), BoilerplatePath: s.boilerplatePath},
+	boilerplate, err := ioutil.ReadFile(s.boilerplatePath) // nolint:gosec
+	if err != nil {
+		return err
+	}
+
+	return machinery.NewScaffold().Execute(
+		s.newUniverse(string(boilerplate)),
+		&templatesv2.GitIgnore{},
+		&templatesv2.AuthProxyRole{},
+		&templatesv2.AuthProxyRoleBinding{},
 		&metricsauthv2.AuthProxyPatch{},
 		&metricsauthv2.AuthProxyService{},
 		&metricsauthv2.ClientClusterRole{},
 		&managerv2.Config{Image: ImageName},
-		&scaffoldv2.Main{},
-		&scaffoldv2.GoMod{ControllerRuntimeVersion: ControllerRuntimeVersion},
-		&scaffoldv2.Makefile{Image: ImageName, ControllerToolsVersion: ControllerToolsVersion},
-		&scaffoldv2.Dockerfile{},
-		&scaffoldv2.Kustomize{},
-		&scaffoldv2.ManagerWebhookPatch{},
-		&scaffoldv2.ManagerRoleBinding{},
-		&scaffoldv2.LeaderElectionRole{},
-		&scaffoldv2.LeaderElectionRoleBinding{},
-		&scaffoldv2.KustomizeRBAC{},
+		&templatesv2.Main{},
+		&templatesv2.GoMod{ControllerRuntimeVersion: ControllerRuntimeVersion},
+		&templatesv2.Makefile{
+			Image:                  ImageName,
+			BoilerplatePath:        s.boilerplatePath,
+			ControllerToolsVersion: ControllerToolsVersion,
+		},
+		&templatesv2.Dockerfile{},
+		&templatesv2.Kustomize{},
+		&templatesv2.ManagerWebhookPatch{},
+		&templatesv2.ManagerRoleBinding{},
+		&templatesv2.LeaderElectionRole{},
+		&templatesv2.LeaderElectionRoleBinding{},
+		&templatesv2.KustomizeRBAC{},
 		&managerv2.Kustomization{},
 		&webhookv2.Kustomization{},
 		&webhookv2.KustomizeConfigWebhook{},

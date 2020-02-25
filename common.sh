@@ -216,7 +216,6 @@ function setup_envs {
   export TEST_ASSET_KUBE_APISERVER=$tmp_root/kubebuilder/bin/kube-apiserver
   export TEST_ASSET_ETCD=$tmp_root/kubebuilder/bin/etcd
   export TEST_DEP=$tmp_root/kubebuilder/init_project
-  export KUBECONFIG="$(kind get kubeconfig-path --name="kind")"
 }
 
 # download_vendor_archive downloads vendor tarball for v1 projects. It skips the

@@ -18,31 +18,4 @@ source ./common.sh
 
 header_text "running golangci-lint"
 cd .. # To go to the root of the project
-# Keep the enabled linters in separate, ordered lines to avoid duplicates.
-golangci-lint run --disable-all --deadline 5m \
-    --enable=deadcode \
-    --enable=dupl \
-    --enable=errcheck \
-    --enable=goconst \
-    --enable=gocyclo \
-    --enable=gofmt \
-    --enable=goimports \
-    --enable=golint \
-    --enable=gosec \
-    --enable=gosimple \
-    --enable=govet \
-    --enable=ineffassign \
-    --enable=interfacer \
-    --enable=lll \
-    --enable=maligned \
-    --enable=misspell \
-    --enable=nakedret \
-    --enable=prealloc \
-    --enable=scopelint \
-    --enable=staticcheck \
-    --enable=structcheck \
-    --enable=typecheck \
-    --enable=unconvert \
-    --enable=unparam \
-    --enable=unused \
-    --enable=varcheck \
+golangci-lint run

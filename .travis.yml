@@ -5,16 +5,12 @@ cache:
   - $HOME/.cache/go-build
   - $GOPATH/pkg/mod
 
-os: linux
+os:
+  - linux
+  - osx
 
 go:
   - "1.13"
-
-# A build matrix defines the K8s versions to use for e2e tests. Travis runs these in parallel
-env:
-  - KIND_K8S_VERSION="v1.16.2"
-  - KIND_K8S_VERSION="v1.15.3"
-  - KIND_K8S_VERSION="v1.14.1"
 
 git:
   depth: 3
@@ -28,38 +24,22 @@ services: docker
 # we don't need to fetch them.
 install: skip
 
-before_script: PATH=$PATH:$(pwd)
-
-script: ./test_e2e.sh
+script: ./test.sh
 
 jobs:
   include:
     - stage: linting
-      env:
       before_script: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.21.0
       script: ./scripts/verify.sh
 
     - stage: golden
       # The golden_test.sh check if the the testdata is updated according to the current changes
       # To update the testdata use the Makefile targets `make generate-setup` then `make generate-testdata`
-      env:
-      before_script: skip
       script: ./golden_test.sh
 
-    - stage: local
-      env:
-      before_script: skip
-      script: ./test.sh
-    - stage: local
-      os: osx
-      env:
-      before_script: skip
-      script: ./test.sh
-
     - stage: coverage
-      # The following module is used to integrate the projct with goveralls.io. It allow us to easily sent the data.
+      # The following module is used to integrate the project with coveralls.io. It allow us to easily sent the data.
       # More info: https://github.com/mattn/goveralls
-      env:
       before_script: go get github.com/mattn/goveralls@v0.0.4
       script:
         - make test-coverage
@@ -68,7 +48,6 @@ jobs:
 stages:
   - linting
   - golden
-  - local
   - test
   - coverage
 

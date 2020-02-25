@@ -19,8 +19,8 @@ package scaffold
 import (
 	"sigs.k8s.io/kubebuilder/pkg/model"
 	"sigs.k8s.io/kubebuilder/pkg/model/config"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/input"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/project"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/machinery"
+	templatesv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v1"
 )
 
 type updateScaffolder struct {
@@ -34,17 +34,11 @@ func NewUpdateScaffolder(config *config.Config) Scaffolder {
 }
 
 func (s *updateScaffolder) Scaffold() error {
-	universe, err := model.NewUniverse(
-		model.WithConfig(s.config),
-		model.WithoutBoilerplate,
-	)
-	if err != nil {
-		return err
-	}
-
-	return (&Scaffold{}).Execute(
-		universe,
-		input.Options{},
-		&project.GopkgToml{},
+	return machinery.NewScaffold().Execute(
+		model.NewUniverse(
+			model.WithConfig(s.config),
+			model.WithoutBoilerplate,
+		),
+		&templatesv1.GopkgToml{},
 	)
 }

@@ -18,6 +18,8 @@ package v1
 
 import (
 	"fmt"
+	"io/ioutil"
+	"path/filepath"
 
 	"github.com/spf13/pflag"
 
@@ -85,10 +87,16 @@ func (p *createWebhookPlugin) Validate(_ *config.Config) error {
 }
 
 func (p *createWebhookPlugin) GetScaffolder(c *config.Config) (scaffold.Scaffolder, error) { // nolint:unparam
+	// Load the boilerplate
+	bp, err := ioutil.ReadFile(filepath.Join("hack", "boilerplate.go.txt")) // nolint:gosec
+	if err != nil {
+		return nil, fmt.Errorf("unable to load boilerplate: %v", err)
+	}
+
 	// Create the actual resource from the resource options
 	res := p.resource.NewV1Resource(&c.Config, false)
 
-	return scaffold.NewV1WebhookScaffolder(&c.Config, res, p.server, p.webhookType, p.operations), nil
+	return scaffold.NewV1WebhookScaffolder(&c.Config, string(bp), res, p.server, p.webhookType, p.operations), nil
 }
 
 func (p *createWebhookPlugin) PostScaffold(_ *config.Config) error {

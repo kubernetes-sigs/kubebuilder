@@ -1,7 +1,10 @@
 package resource_test
 
 import (
+	"strings"
+
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 
 	. "sigs.k8s.io/kubebuilder/pkg/model/resource"
@@ -73,24 +76,38 @@ var _ = Describe("Resource Options", func() {
 			Expect(options.Validate().Error()).To(ContainSubstring("kind cannot be empty"))
 		})
 
-		It("should fail if the Kind is not pascal cased", func() {
-			// Base case
-			options := &Options{Group: "crew", Version: "v1", Kind: "FirstMate"}
-			Expect(options.Validate()).To(Succeed())
+		DescribeTable("valid Kind values-according to core Kubernetes",
+			func(kind string) {
+				options := &Options{Group: "crew", Kind: kind, Version: "v1"}
+				Expect(options.Validate()).To(Succeed())
+			},
+			Entry("should pass validation if Kind is camelcase", "FirstMate"),
+			Entry("should pass validation if Kind has more than one caps at the start", "FIRSTMate"),
+		)
 
-			// Can't detect this case :(
-			options = &Options{Group: "crew", Version: "v1", Kind: "Firstmate"}
-			Expect(options.Validate()).To(Succeed())
+		It("should fail if Kind is too long", func() {
+			kind := strings.Repeat("a", 64)
 
-			options = &Options{Group: "crew", Version: "v1", Kind: "firstMate"}
-			Expect(options.Validate()).NotTo(Succeed())
-			Expect(options.Validate().Error()).To(ContainSubstring(
-				`kind must be PascalCase (expected FirstMate was firstMate)`))
+			options := &Options{Group: "crew", Kind: kind, Version: "v1"}
+			err := options.Validate()
+			Expect(err).To(MatchError(ContainSubstring("must be no more than 63 characters")))
+		})
 
-			options = &Options{Group: "crew", Version: "v1", Kind: "firstmate"}
-			Expect(options.Validate()).NotTo(Succeed())
-			Expect(options.Validate().Error()).To(ContainSubstring(
-				`kind must be PascalCase (expected Firstmate was firstmate)`))
+		DescribeTable("invalid Kind values-according to core Kubernetes",
+			func(kind string) {
+				options := &Options{Group: "crew", Kind: kind, Version: "v1"}
+				Expect(options.Validate()).To(MatchError(
+					ContainSubstring("a DNS-1035 label must consist of lower case alphanumeric characters")))
+			},
+			Entry("should fail validation if Kind contains whitespaces", "Something withSpaces"),
+			Entry("should fail validation if Kind ends in -", "KindEndingIn-"),
+			Entry("should fail validation if Kind starts with number", "0ValidityKind"),
+		)
+
+		It("should fail if Kind starts with a lowercase character", func() {
+			options := &Options{Group: "crew", Kind: "lOWERCASESTART", Version: "v1"}
+			err := options.Validate()
+			Expect(err).To(MatchError(ContainSubstring("Kind must start with an uppercase character")))
 		})
 	})
 })
