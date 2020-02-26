@@ -75,7 +75,7 @@ and the v1 resource
 kubectl get cronjobs.v1.batch.tutorial.kubebuilder.io -o yaml
 ```
 ```yaml
-{{#include ./testdata/project/config/samples/batch_v2_cronjob.yaml}}
+{{#include ./testdata/project/config/samples/batch_v1_cronjob.yaml}}
 ```
 
 Both should be filled out, and look equivalent to our v2 and v1 samples,
