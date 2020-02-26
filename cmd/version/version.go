@@ -34,6 +34,7 @@ var (
 	buildDate = "1970-01-01T00:00:00Z" // build date in ISO8601 format, output of $(date -u +'%Y-%m-%dT%H:%M:%SZ')
 )
 
+// Version contains all the information related to the CLI version
 type Version struct {
 	KubeBuilderVersion string `json:"kubeBuilderVersion"`
 	KubernetesVendor   string `json:"kubernetesVendor"`
@@ -54,10 +55,12 @@ func getVersion() Version {
 	}
 }
 
+// Print prints the CLI version
 func (v Version) Print() {
 	fmt.Printf("Version: %#v\n", v)
 }
 
+// NewVersionCmd creates a new command that prints the CLI version
 func NewVersionCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:     "version",

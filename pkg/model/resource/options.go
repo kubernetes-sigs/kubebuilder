@@ -90,6 +90,7 @@ type Options struct {
 	CreateExampleReconcileBody bool
 }
 
+// Validate verifies that all the fields have valid values
 func (opts *Options) Validate() error {
 	// Check that the required flags did not get a flag as their value
 	// We can safely look for a '-' as the first char as none of the fields accepts it
@@ -122,21 +123,20 @@ func (opts *Options) Validate() error {
 
 	// Check if the version follows the valid pattern
 	if !versionRegex.MatchString(opts.Version) {
-		return fmt.Errorf(
-			"version must match %s (was %s)", versionPattern, opts.Version)
+		return fmt.Errorf("version must match %s (was %s)", versionPattern, opts.Version)
 	}
 
 	validationErrors := []string{}
 
 	// require Kind to start with an uppercase character
 	if string(opts.Kind[0]) == strings.ToLower(string(opts.Kind[0])) {
-		validationErrors = append(validationErrors, "Kind must start with an uppercase character")
+		validationErrors = append(validationErrors, "kind must start with an uppercase character")
 	}
 
 	validationErrors = append(validationErrors, isDNS1035Label(strings.ToLower(opts.Kind))...)
 
 	if len(validationErrors) != 0 {
-		return fmt.Errorf("Invalid Kind: %#v", validationErrors)
+		return fmt.Errorf("invalid Kind: %#v", validationErrors)
 	}
 
 	// TODO: validate plural strings if provided
@@ -144,6 +144,7 @@ func (opts *Options) Validate() error {
 	return nil
 }
 
+// GVK returns the group-version-kind information to check against tracked resources in the configuration file
 func (opts *Options) GVK() config.GVK {
 	return config.GVK{
 		Group:   opts.Group,
@@ -163,6 +164,7 @@ func (opts *Options) safeImport(unsafe string) string {
 	return safe
 }
 
+// NewV1Resource creates a new resource from the options specific to v1
 func (opts *Options) NewV1Resource(c *config.Config, doResource bool) *Resource {
 	res := opts.newResource()
 
@@ -199,6 +201,7 @@ func (opts *Options) NewV1Resource(c *config.Config, doResource bool) *Resource 
 	return res
 }
 
+// NewResource creates a new resource from the options
 func (opts *Options) NewResource(c *config.Config, doResource bool) *Resource {
 	res := opts.newResource()
 

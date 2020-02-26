@@ -4,9 +4,11 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/model"
 )
 
+// Plugin implements model.Plugin
 type Plugin struct {
 }
 
+// Pipe implements model.Plugin
 func (p *Plugin) Pipe(u *model.Universe) error {
 	functions := []PluginFunc{
 		ExampleManifest,

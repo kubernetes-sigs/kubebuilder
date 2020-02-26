@@ -26,7 +26,7 @@ import (
 
 var _ file.Template = &CRDViewerRole{}
 
-// CRD Viewer role scaffolds the config/rbca/<kind>_viewer_role.yaml
+// CRDViewerRole scaffolds the config/rbac/<kind>_viewer_role.yaml
 type CRDViewerRole struct {
 	file.TemplateMixin
 	file.ResourceMixin

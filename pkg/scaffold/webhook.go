@@ -31,6 +31,8 @@ import (
 	webhookv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v2/webhook"
 )
 
+var _ Scaffolder = &webhookScaffolder{}
+
 type webhookScaffolder struct {
 	config      *config.Config
 	boilerplate string
@@ -43,6 +45,7 @@ type webhookScaffolder struct {
 	defaulting, validation, conversion bool
 }
 
+// NewV1WebhookScaffolder returns a new Scaffolder for v1 webhook creation operations
 func NewV1WebhookScaffolder(
 	config *config.Config,
 	boilerplate string,
@@ -61,6 +64,7 @@ func NewV1WebhookScaffolder(
 	}
 }
 
+// NewV2WebhookScaffolder returns a new Scaffolder for v2 webhook creation operations
 func NewV2WebhookScaffolder(
 	config *config.Config,
 	boilerplate string,
@@ -79,6 +83,7 @@ func NewV2WebhookScaffolder(
 	}
 }
 
+// Scaffold implements Scaffolder
 func (s *webhookScaffolder) Scaffold() error {
 	fmt.Println("Writing scaffold for you to edit...")
 

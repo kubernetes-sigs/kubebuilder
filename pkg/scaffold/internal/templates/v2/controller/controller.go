@@ -52,7 +52,7 @@ func (f *Controller) SetTemplateDefaults() error {
 	return nil
 }
 
-// nolint:lll
+//nolint:lll
 const controllerTemplate = `{{ .Boilerplate }}
 
 package controllers

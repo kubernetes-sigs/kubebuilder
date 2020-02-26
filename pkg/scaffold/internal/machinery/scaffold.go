@@ -54,6 +54,7 @@ type scaffold struct {
 	fs filesystem.FileSystem
 }
 
+// NewScaffold returns a new Scaffold with the provided plugins
 func NewScaffold(plugins ...model.Plugin) Scaffold {
 	return &scaffold{
 		plugins: plugins,

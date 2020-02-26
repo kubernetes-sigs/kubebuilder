@@ -206,7 +206,7 @@ func (o *apiOptions) validate(c *config.Config) error {
 
 func (o *apiOptions) scaffolder(c *config.Config) (scaffold.Scaffolder, error) {
 	// Load the boilerplate
-	bp, err := ioutil.ReadFile(filepath.Join("hack", "boilerplate.go.txt")) // nolint:gosec
+	bp, err := ioutil.ReadFile(filepath.Join("hack", "boilerplate.go.txt")) //nolint:gosec
 	if err != nil {
 		return nil, fmt.Errorf("unable to load boilerplate: %v", err)
 	}

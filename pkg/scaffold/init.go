@@ -36,13 +36,15 @@ import (
 )
 
 const (
-	// controller runtime version to be used in the project
+	// ControllerRuntimeVersion is the kubernetes-sigs/controller-runtime version to be used in the project
 	ControllerRuntimeVersion = "v0.4.0"
-	// ControllerTools version to be used in the project
+	// ControllerToolsVersion is the kubernetes-sigs/controller-tools version to be used in the project
 	ControllerToolsVersion = "v0.2.4"
 
-	ImageName = "controller:latest"
+	imageName = "controller:latest"
 )
+
+var _ Scaffolder = &initScaffolder{}
 
 type initScaffolder struct {
 	config          *config.Config
@@ -51,6 +53,7 @@ type initScaffolder struct {
 	owner           string
 }
 
+// NewInitScaffolder returns a new Scaffolder for project initialization operations
 func NewInitScaffolder(config *config.Config, license, owner string) Scaffolder {
 	return &initScaffolder{
 		config:          config,
@@ -67,6 +70,7 @@ func (s *initScaffolder) newUniverse(boilerplate string) *model.Universe {
 	)
 }
 
+// Scaffold implements Scaffolder
 func (s *initScaffolder) Scaffold() error {
 	fmt.Println("Writing scaffold for you to edit...")
 
@@ -96,7 +100,7 @@ func (s *initScaffolder) scaffoldV1() error {
 		return err
 	}
 
-	boilerplate, err := ioutil.ReadFile(s.boilerplatePath) // nolint:gosec
+	boilerplate, err := ioutil.ReadFile(s.boilerplatePath) //nolint:gosec
 	if err != nil {
 		return err
 	}
@@ -111,8 +115,8 @@ func (s *initScaffolder) scaffoldV1() error {
 		&metricsauthv1.KustomizePrometheusMetricsPatch{},
 		&metricsauthv1.KustomizeAuthProxyPatch{},
 		&templatesv1.AuthProxyService{},
-		&managerv1.Config{Image: ImageName},
-		&templatesv1.Makefile{Image: ImageName},
+		&managerv1.Config{Image: imageName},
+		&templatesv1.Makefile{Image: imageName},
 		&templatesv1.GopkgToml{},
 		&managerv1.Dockerfile{},
 		&templatesv1.Kustomize{},
@@ -136,7 +140,7 @@ func (s *initScaffolder) scaffoldV2() error {
 		return err
 	}
 
-	boilerplate, err := ioutil.ReadFile(s.boilerplatePath) // nolint:gosec
+	boilerplate, err := ioutil.ReadFile(s.boilerplatePath) //nolint:gosec
 	if err != nil {
 		return err
 	}
@@ -149,11 +153,11 @@ func (s *initScaffolder) scaffoldV2() error {
 		&metricsauthv2.AuthProxyPatch{},
 		&metricsauthv2.AuthProxyService{},
 		&metricsauthv2.ClientClusterRole{},
-		&managerv2.Config{Image: ImageName},
+		&managerv2.Config{Image: imageName},
 		&templatesv2.Main{},
 		&templatesv2.GoMod{ControllerRuntimeVersion: ControllerRuntimeVersion},
 		&templatesv2.Makefile{
-			Image:                  ImageName,
+			Image:                  imageName,
 			BoilerplatePath:        s.boilerplatePath,
 			ControllerToolsVersion: ControllerToolsVersion,
 		},

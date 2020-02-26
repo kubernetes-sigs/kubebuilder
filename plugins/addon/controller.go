@@ -8,6 +8,7 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
+// ReplaceController replaces the controller with a modified version
 func ReplaceController(u *model.Universe) error {
 	templateBody := controllerTemplate
 
@@ -28,7 +29,7 @@ func ReplaceController(u *model.Universe) error {
 	return nil
 }
 
-// nolint:lll
+//nolint:lll
 const controllerTemplate = `{{ .Boilerplate }}
 
 package controllers

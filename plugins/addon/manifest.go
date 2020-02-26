@@ -29,6 +29,7 @@ const exampleManifestVersion = "0.0.1"
 const exampleManifestContents = `# Placeholder manifest - replace with the manifest for your addon
 `
 
+// ExampleManifest adds a model file for the manifest placeholder
 func ExampleManifest(u *model.Universe) error {
 	packageName := getPackageName(u)
 

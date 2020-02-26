@@ -23,16 +23,20 @@ import (
 	templatesv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v1"
 )
 
+var _ Scaffolder = &updateScaffolder{}
+
 type updateScaffolder struct {
 	config *config.Config
 }
 
+// NewUpdateScaffolder returns a new Scaffolder for vendor update operations
 func NewUpdateScaffolder(config *config.Config) Scaffolder {
 	return &updateScaffolder{
 		config: config,
 	}
 }
 
+// Scaffold implements Scaffolder
 func (s *updateScaffolder) Scaffold() error {
 	return machinery.NewScaffold().Execute(
 		model.NewUniverse(

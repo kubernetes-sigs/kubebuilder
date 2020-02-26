@@ -54,6 +54,7 @@ type BookSection struct {
 // according to what serde produces/expects.
 type BookItem bookItem
 
+// UnmarshalJSON implements encoding/json.Unmarshaler
 func (b *BookItem) UnmarshalJSON(input []byte) error {
 	// match how serde serializes rust enums.
 	if input[0] == '"' {
@@ -79,6 +80,7 @@ func (b *BookItem) UnmarshalJSON(input []byte) error {
 	return nil
 }
 
+// MarshalJSON implements encoding/json.Marshaler
 func (b BookItem) MarshalJSON() ([]byte, error) {
 	if b.Separator {
 		return json.Marshal("Separator")
@@ -114,6 +116,7 @@ type Input struct {
 	Book    Book
 }
 
+// UnmarshalJSON implements encoding/json.Unmarshaler
 func (p *Input) UnmarshalJSON(input []byte) error {
 	// deserialize from the JSON equivalent to the Rust tuple
 	// `(context, book)`

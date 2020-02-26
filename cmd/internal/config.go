@@ -43,6 +43,7 @@ func ConfiguredAndV1() bool {
 	return projectConfig.IsV1()
 }
 
+// PrintV1DeprecationWarning prints a deprecation warning if some v1 feature is used
 func PrintV1DeprecationWarning() {
 	fmt.Printf(noticeColor, "[Deprecation Notice] The v1 projects are deprecated and will not be supported beyond "+
 		"Feb 1, 2020.\nSee how to upgrade your project to v2: https://book.kubebuilder.io/migration/guide.html\n")

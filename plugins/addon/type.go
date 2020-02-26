@@ -9,6 +9,7 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
+// ReplaceTypes replaces the API types with a modified version
 func ReplaceTypes(u *model.Universe) error {
 	funcs := DefaultTemplateFunctions()
 	funcs["JSONTag"] = JSONTag

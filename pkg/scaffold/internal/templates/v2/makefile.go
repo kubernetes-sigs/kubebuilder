@@ -51,7 +51,7 @@ func (f *Makefile) SetTemplateDefaults() error {
 	return nil
 }
 
-// nolint:lll
+//nolint:lll
 const makefileTemplate = `
 # Image URL to use all building/pushing image targets
 IMG ?= {{ .Image }}

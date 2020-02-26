@@ -114,7 +114,7 @@ func (o *webhookV1Options) validate(c *config.Config) error {
 
 func (o *webhookV1Options) scaffolder(c *config.Config) (scaffold.Scaffolder, error) {
 	// Load the boilerplate
-	bp, err := ioutil.ReadFile(filepath.Join("hack", "boilerplate.go.txt")) // nolint:gosec
+	bp, err := ioutil.ReadFile(filepath.Join("hack", "boilerplate.go.txt")) //nolint:gosec
 	if err != nil {
 		return nil, fmt.Errorf("unable to load boilerplate: %v", err)
 	}
@@ -220,9 +220,9 @@ func (o *webhookV2Options) validate(c *config.Config) error {
 	return nil
 }
 
-func (o *webhookV2Options) scaffolder(c *config.Config) (scaffold.Scaffolder, error) { // nolint:unparam
+func (o *webhookV2Options) scaffolder(c *config.Config) (scaffold.Scaffolder, error) { //nolint:unparam
 	// Load the boilerplate
-	bp, err := ioutil.ReadFile(filepath.Join("hack", "boilerplate.go.txt")) // nolint:gosec
+	bp, err := ioutil.ReadFile(filepath.Join("hack", "boilerplate.go.txt")) //nolint:gosec
 	if err != nil {
 		return nil, fmt.Errorf("unable to load boilerplate: %v", err)
 	}

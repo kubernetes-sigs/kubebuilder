@@ -70,7 +70,7 @@ func (f *AdmissionHandler) SetTemplateDefaults() error {
 	return nil
 }
 
-// nolint:lll
+//nolint:lll
 const addAdmissionHandlerTemplate = `{{ .Boilerplate }}
 
 package {{ .Type }}

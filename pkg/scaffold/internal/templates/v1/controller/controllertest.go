@@ -46,7 +46,7 @@ func (f *Test) SetTemplateDefaults() error {
 	return nil
 }
 
-// nolint:lll
+//nolint:lll
 const controllerTestTemplate = `{{ .Boilerplate }}
 
 package {{ lower .Resource.Kind }}

@@ -54,6 +54,7 @@ type Resource struct {
 	CreateExampleReconcileBody bool `json:"-"`
 }
 
+// GVK returns the group-version-kind information to check against tracked resources in the configuration file
 func (r *Resource) GVK() config.GVK {
 	return config.GVK{
 		Group:   r.Group,

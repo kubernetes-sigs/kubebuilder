@@ -35,12 +35,12 @@ func (f *ClientClusterRole) SetTemplateDefaults() error {
 		f.Path = filepath.Join("config", "rbac", "auth_proxy_client_clusterrole.yaml")
 	}
 
-	f.TemplateBody = ClientClusterRoleTemplate
+	f.TemplateBody = clientClusterRoleTemplate
 
 	return nil
 }
 
-const ClientClusterRoleTemplate = `apiVersion: rbac.authorization.k8s.io/v1beta1
+const clientClusterRoleTemplate = `apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRole
 metadata:
   name: metrics-reader
