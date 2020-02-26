@@ -19,7 +19,6 @@ package v2
 import (
 	"fmt"
 	"path/filepath"
-	"strings"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
@@ -38,13 +37,13 @@ type Types struct {
 func (f *Types) SetTemplateDefaults() error {
 	if f.Path == "" {
 		if f.MultiGroup {
-			f.Path = filepath.Join("apis", f.Resource.Group, f.Resource.Version,
-				fmt.Sprintf("%s_types.go", strings.ToLower(f.Resource.Kind)))
+			f.Path = filepath.Join("apis", "%[group]", "%[version]", "%[kind]_types.go")
 		} else {
-			f.Path = filepath.Join("api", f.Resource.Version,
-				fmt.Sprintf("%s_types.go", strings.ToLower(f.Resource.Kind)))
+			f.Path = filepath.Join("api", "%[version]", "%[kind]_types.go")
 		}
 	}
+	f.Path = f.Resource.Replacer().Replace(f.Path)
+	fmt.Println(f.Path)
 
 	f.TemplateBody = typesTemplate
 

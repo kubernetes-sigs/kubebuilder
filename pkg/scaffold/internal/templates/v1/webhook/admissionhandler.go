@@ -17,7 +17,6 @@ limitations under the License.
 package webhook
 
 import (
-	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -44,12 +43,10 @@ type AdmissionHandler struct {
 // SetTemplateDefaults implements input.Template
 func (f *AdmissionHandler) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = filepath.Join("pkg", "webhook",
-			fmt.Sprintf("%s_server", f.Server),
-			strings.ToLower(f.Resource.Kind),
-			f.Type,
-			fmt.Sprintf("%s_%s_handler.go", strings.ToLower(f.Resource.Kind), strings.Join(f.Operations, "_")))
+		f.Path = filepath.Join("pkg", "webhook", f.Server+"_server", "%[kind]", f.Type,
+			"%[kind]_"+strings.Join(f.Operations, "_")+"_handler.go")
 	}
+	f.Path = f.Resource.Replacer().Replace(f.Path)
 
 	f.TemplateBody = addAdmissionHandlerTemplate
 

@@ -39,11 +39,12 @@ type SuiteTest struct {
 func (f *SuiteTest) SetTemplateDefaults() error {
 	if f.Path == "" {
 		if f.MultiGroup {
-			f.Path = filepath.Join("controllers", f.Resource.Group, "suite_test.go")
+			f.Path = filepath.Join("controllers", "%[group]", "suite_test.go")
 		} else {
 			f.Path = filepath.Join("controllers", "suite_test.go")
 		}
 	}
+	f.Path = f.Resource.Replacer().Replace(f.Path)
 
 	f.TemplateBody = fmt.Sprintf(controllerSuiteTestTemplate,
 		file.NewMarkerFor(f.Path, importMarker),

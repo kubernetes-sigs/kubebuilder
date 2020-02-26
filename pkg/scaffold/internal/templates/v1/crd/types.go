@@ -19,7 +19,6 @@ package crd
 import (
 	"fmt"
 	"path/filepath"
-	"strings"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
@@ -36,9 +35,10 @@ type Types struct {
 // SetTemplateDefaults implements input.Template
 func (f *Types) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = filepath.Join("pkg", "apis", f.Resource.GroupPackageName, f.Resource.Version,
-			fmt.Sprintf("%s_types.go", strings.ToLower(f.Resource.Kind)))
+		f.Path = filepath.Join("pkg", "apis", "%[group-package-name]", "%[version]", "%[kind]_types.go")
 	}
+	f.Path = f.Resource.Replacer().Replace(f.Path)
+	fmt.Println(f.Path)
 
 	f.TemplateBody = typesTemplate
 

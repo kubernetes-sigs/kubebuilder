@@ -17,9 +17,7 @@ limitations under the License.
 package crd
 
 import (
-	"fmt"
 	"path/filepath"
-	"strings"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
@@ -36,9 +34,9 @@ type CRDSample struct {
 // SetTemplateDefaults implements input.Template
 func (f *CRDSample) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = filepath.Join("config", "samples", fmt.Sprintf(
-			"%s_%s_%s.yaml", f.Resource.GroupPackageName, f.Resource.Version, strings.ToLower(f.Resource.Kind)))
+		f.Path = filepath.Join("config", "samples", "%[group-package-name]_%[version]_%[kind].yaml")
 	}
+	f.Path = f.Resource.Replacer().Replace(f.Path)
 
 	f.TemplateBody = crdSampleTemplate
 

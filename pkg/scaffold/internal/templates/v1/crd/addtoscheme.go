@@ -17,7 +17,6 @@ limitations under the License.
 package crd
 
 import (
-	"fmt"
 	"path/filepath"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
@@ -35,9 +34,9 @@ type AddToScheme struct {
 // SetTemplateDefaults implements input.Template
 func (f *AddToScheme) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = filepath.Join("pkg", "apis", fmt.Sprintf(
-			"addtoscheme_%s_%s.go", f.Resource.GroupPackageName, f.Resource.Version))
+		f.Path = filepath.Join("pkg", "apis", "addtoscheme_%[group-package-name]_%[version].go")
 	}
+	f.Path = f.Resource.Replacer().Replace(f.Path)
 
 	f.TemplateBody = addResourceTemplate
 

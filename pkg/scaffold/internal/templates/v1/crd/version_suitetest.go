@@ -17,7 +17,6 @@ limitations under the License.
 package crd
 
 import (
-	"fmt"
 	"path/filepath"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
@@ -35,9 +34,9 @@ type VersionSuiteTest struct {
 // SetTemplateDefaults implements input.Template
 func (f *VersionSuiteTest) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = filepath.Join("pkg", "apis", f.Resource.GroupPackageName, f.Resource.Version,
-			fmt.Sprintf("%s_suite_test.go", f.Resource.Version))
+		f.Path = filepath.Join("pkg", "apis", "%[group-package-name]", "%[version]", "%[version]_suite_test.go")
 	}
+	f.Path = f.Resource.Replacer().Replace(f.Path)
 
 	f.TemplateBody = versionSuiteTestTemplate
 

@@ -17,9 +17,7 @@ limitations under the License.
 package v2
 
 import (
-	"fmt"
 	"path/filepath"
-	"strings"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
@@ -35,8 +33,9 @@ type CRDViewerRole struct {
 // SetTemplateDefaults implements input.Template
 func (f *CRDViewerRole) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = filepath.Join("config", "rbac", fmt.Sprintf("%s_viewer_role.yaml", strings.ToLower(f.Resource.Kind)))
+		f.Path = filepath.Join("config", "rbac", "%[kind]_viewer_role.yaml")
 	}
+	f.Path = f.Resource.Replacer().Replace(f.Path)
 
 	f.TemplateBody = crdRoleViewerTemplate
 

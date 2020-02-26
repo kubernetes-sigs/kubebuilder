@@ -35,8 +35,9 @@ type Register struct {
 // SetTemplateDefaults implements input.Template
 func (f *Register) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = filepath.Join("pkg", "apis", f.Resource.GroupPackageName, f.Resource.Version, "register.go")
+		f.Path = filepath.Join("pkg", "apis", "%[group-package-name]", "%[version]", "register.go")
 	}
+	f.Path = f.Resource.Replacer().Replace(f.Path)
 
 	f.TemplateBody = registerTemplate
 
