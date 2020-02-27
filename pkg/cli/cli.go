@@ -25,6 +25,7 @@ import (
 	"github.com/spf13/cobra"
 
 	internalconfig "sigs.k8s.io/kubebuilder/internal/config"
+	"sigs.k8s.io/kubebuilder/pkg/internal/validation"
 	"sigs.k8s.io/kubebuilder/pkg/model/config"
 	"sigs.k8s.io/kubebuilder/pkg/plugin"
 )
@@ -146,6 +147,12 @@ func (c *cli) initialize() error {
 		return fmt.Errorf("failed to read config: %v", err)
 	}
 
+	// Validate after setting projectVersion but before buildRootCmd so we error
+	// out before an error resulting from an incorrect cli is returned downstream.
+	if err = c.validate(); err != nil {
+		return err
+	}
+
 	c.cmd = c.buildRootCmd()
 
 	// Add extra commands injected by options.
@@ -168,6 +175,37 @@ func (c *cli) initialize() error {
 			if d, isDeprecated := p.(plugin.Deprecated); isDeprecated {
 				fmt.Printf(noticeColor, fmt.Sprintf("[Deprecation Notice] %s\n\n",
 					d.DeprecationWarning()))
+			}
+		}
+	}
+
+	return nil
+}
+
+// validate validates fields in a cli.
+func (c cli) validate() error {
+	// Validate project versions.
+	if err := validation.ValidateProjectVersion(c.defaultProjectVersion); err != nil {
+		return fmt.Errorf("failed to validate default project version %q: %v", c.defaultProjectVersion, err)
+	}
+	if err := validation.ValidateProjectVersion(c.projectVersion); err != nil {
+		return fmt.Errorf("failed to validate project version %q: %v", c.projectVersion, err)
+	}
+
+	// Validate plugin versions and name.
+	for _, versionedPlugins := range c.plugins {
+		for _, versionedPlugin := range versionedPlugins {
+			pluginName := versionedPlugin.Name()
+			pluginVersion := versionedPlugin.Version()
+			if err := plugin.ValidateVersion(pluginVersion); err != nil {
+				return fmt.Errorf("failed to validate plugin %q version %q: %v",
+					pluginName, pluginVersion, err)
+			}
+			for _, projectVersion := range versionedPlugin.SupportedProjectVersions() {
+				if err := validation.ValidateProjectVersion(projectVersion); err != nil {
+					return fmt.Errorf("failed to validate plugin %q supported project version %q: %v",
+						pluginName, projectVersion, err)
+				}
 			}
 		}
 	}
