@@ -31,6 +31,10 @@ func main() {
 			&pluginv1.Plugin{},
 			&pluginv2.Plugin{},
 		),
+		cli.WithDefaultPlugins(
+			&pluginv1.Plugin{},
+			&pluginv2.Plugin{},
+		),
 		cli.WithExtraCommands(
 			newEditCmd(),
 			newUpdateCmd(),

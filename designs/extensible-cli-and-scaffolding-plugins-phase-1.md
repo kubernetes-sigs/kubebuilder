@@ -62,7 +62,7 @@ project versions (via `SupportedProjectVersions()`).
 Example `PROJECT` file:
 
 ```yaml
-version: "3-alpha"
+version: "2"
 layout: go/v1.0.0
 domain: testproject.org
 repo: github.com/test-inc/testproject
