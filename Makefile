@@ -60,7 +60,7 @@ generate-vendor: ## (Deprecated) Update/generate the vendor by using the path $G
 .PHONY: generate-setup
 generate-setup: ## Current workarround to generate the testdata with the correct controller-gen version
 	- rm -rf $(CONTROLLER_GEN_BIN_PATH)
-	- GO111MODULE=on go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.2.4
+	- GO111MODULE=on go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.2.5
 
 .PHONY: lint
 lint: ## Run code lint checks
