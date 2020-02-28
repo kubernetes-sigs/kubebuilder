@@ -37,9 +37,9 @@ import (
 
 const (
 	// ControllerRuntimeVersion is the kubernetes-sigs/controller-runtime version to be used in the project
-	ControllerRuntimeVersion = "v0.4.0"
+	ControllerRuntimeVersion = "v0.5.0"
 	// ControllerToolsVersion is the kubernetes-sigs/controller-tools version to be used in the project
-	ControllerToolsVersion = "v0.2.4"
+	ControllerToolsVersion = "v0.2.5"
 
 	imageName = "controller:latest"
 )
