@@ -63,4 +63,5 @@ gobin=$(go env GOBIN)
 gobin=${GOBIN:-$(go env GOPATH)/bin}  # GOBIN won't always be set :-/
 
 export PATH=${gobin}:$PATH
-/tmp/mdbook build
+verb=${1:-build}
+/tmp/mdbook ${verb}
