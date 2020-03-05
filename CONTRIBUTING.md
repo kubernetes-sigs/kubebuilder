@@ -48,7 +48,21 @@ $ git clone git@github.com:<user>/kubebuilder.git $GOPATH/src/sigs.k8s.io/kubebu
 1. Note that the prow tests used in the CI are configured in [kubernetes-sigs/kubebuilder/kubebuilder-presubmits.yaml](https://github.com/kubernetes/test-infra/blob/master/config/jobs/kubernetes-sigs/kubebuilder/kubebuilder-presubmits.yaml). 
 1. Check that all scripts used by the CI are defined in the project.  
 
-## How to preview the changes performed in the docs?
+## How to contribute to docs
+
+We currently have 2 production branches, `book-v2` and `book-v1`. `book-v2` maps
+to `book.kubebuilder.io` which contains our latest released features, while
+`book-v1` maps to `book-v1.book.kubebuilder.io`, which contains our legacy docs
+for kubebuilder V1.
+
+Docs for unreleased features live in the `master` branch. We merge the `master`
+branch into the `book-v2` branch when doing the releases.
+
+If adding doc for an unreleased feature, the PR should target `master` branch.
+If updating existing docs, the PR should target `master` branch and then
+cherry-picked into `book-v2` branch.
+
+### How to preview the changes performed in the docs?
 
 Check the CI job after to do the Pull Request and then, click on in the `Details` of `netlify/kubebuilder/deploy-preview`
 
