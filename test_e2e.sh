@@ -31,8 +31,8 @@ build_kb
 setup_envs
 
 source "$(pwd)/scripts/setup.sh" ${KIND_K8S_VERSION}
-docker pull gcr.io/kubebuilder/kube-rbac-proxy:v0.4.1
-kind load docker-image gcr.io/kubebuilder/kube-rbac-proxy:v0.4.1
+docker pull gcr.io/kubebuilder/kube-rbac-proxy:v0.5.0
+kind load docker-image gcr.io/kubebuilder/kube-rbac-proxy:v0.5.0
 
 # remove running containers on exit
 function cleanup() {
