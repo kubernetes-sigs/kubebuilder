@@ -1,0 +1,13 @@
+domain: testproject.org
+repo: sigs.k8s.io/kubebuilder/testdata/project-v2-addon
+resources:
+- group: crew
+  kind: Captain
+  version: v1
+- group: crew
+  kind: FirstMate
+  version: v1
+- group: crew
+  kind: Admiral
+  version: v1
+version: "2"

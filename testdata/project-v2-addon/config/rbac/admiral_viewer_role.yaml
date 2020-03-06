@@ -1,0 +1,20 @@
+# permissions for end users to view admirals.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: admiral-viewer-role
+rules:
+- apiGroups:
+  - crew.testproject.org
+  resources:
+  - admirals
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - crew.testproject.org
+  resources:
+  - admirals/status
+  verbs:
+  - get
