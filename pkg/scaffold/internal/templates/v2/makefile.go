@@ -58,6 +58,21 @@ IMG ?= {{ .Image }}
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true"
 
+# A list of dependencies taken from:
+# https://book.kubebuilder.io/quick-start.html#prerequisites
+DEPS = go docker kubectl kustomize
+
+# We define this with :=, as we want it to be ran immediately
+# before every other target.
+CHECK_DEPS := $(foreach dep,\
+	$(DEPS), \
+	$(if \
+		$(shell command -v $(dep) 2>/dev/null), \
+		, \
+		$(error "Unable to find $(dep) in your PATH") \
+	) \
+)
+
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
