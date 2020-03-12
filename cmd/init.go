@@ -30,8 +30,14 @@ import (
 	flag "github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/cmd/internal"
+	"sigs.k8s.io/kubebuilder/cmd/internal/dependencies"
 	"sigs.k8s.io/kubebuilder/internal/config"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold"
+)
+
+const (
+	skipGoFlag        = "skip-go-version-check"
+	skipKustomizeFlag = "skip-kustomize-version-check"
 )
 
 type initError struct {
@@ -92,13 +98,15 @@ type initOptions struct {
 	dep     bool
 
 	// flags
-	fetchDeps          bool
-	skipGoVersionCheck bool
+	fetchDeps                 bool
+	skipGoVersionCheck        bool
+	skipKustomizeVersionCheck bool
 }
 
 func (o *initOptions) bindFlags(cmd *cobra.Command) {
-	cmd.Flags().BoolVar(&o.skipGoVersionCheck, "skip-go-version-check",
-		false, "if specified, skip checking the Go version")
+	cmd.Flags().BoolVar(&o.skipGoVersionCheck, skipGoFlag, false, "if specified, skip checking the Go version")
+	cmd.Flags().BoolVar(&o.skipKustomizeVersionCheck, skipKustomizeFlag, false,
+		"if specified, skip checking the kustomize version")
 
 	// dependency args
 	cmd.Flags().BoolVar(&o.fetchDeps, "fetch-deps", true, "ensure dependencies are downloaded")
@@ -137,11 +145,31 @@ func (o *initOptions) loadConfig() (*config.Config, error) {
 	return o.config, nil
 }
 
+type skipableError struct {
+	flag string
+	err  error
+}
+
+func (e skipableError) Error() string {
+	return fmt.Sprintf("%v (skip this check using the --%s flag)", e.err, e.flag)
+}
+
+func (e skipableError) Unwrap() error {
+	return e.err
+}
+
 func (o *initOptions) validate(c *config.Config) error {
-	// Requires go1.11+
+	// Check dependencies
 	if !o.skipGoVersionCheck {
-		if err := internal.ValidateGoVersion(); err != nil {
-			return err
+		// Requires go 1.11+
+		if err := dependencies.CheckGo(); err != nil {
+			return skipableError{skipGoFlag, err}
+		}
+	}
+	if !o.skipKustomizeVersionCheck {
+		// Requires kustomize 3.1+
+		if err := dependencies.CheckKustomize(); err != nil {
+			return skipableError{skipKustomizeFlag, err}
 		}
 	}
 
