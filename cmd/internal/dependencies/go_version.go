@@ -20,6 +20,7 @@ import (
 	"os/exec"
 	"regexp"
 	"runtime"
+	"strings"
 )
 
 // Minimum required go version
@@ -90,7 +91,7 @@ func CheckGo() error {
 		return err
 	}
 
-	return checkGo(string(out), false)
+	return checkGo(strings.TrimSpace(string(out)), false)
 }
 
 // checkCustomize is used for tests

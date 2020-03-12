@@ -83,7 +83,7 @@ func CheckKustomize() error {
 		return err
 	}
 
-	return checkKustomize(string(out))
+	return checkKustomize(strings.TrimSpace(string(out)))
 }
 
 // checkCustomize is used for tests
