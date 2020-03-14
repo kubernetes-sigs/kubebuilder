@@ -40,6 +40,8 @@ const (
 	ControllerRuntimeVersion = "v0.5.0"
 	// ControllerToolsVersion is the kubernetes-sigs/controller-tools version to be used in the project
 	ControllerToolsVersion = "v0.2.5"
+	// KustomizeVersion is the kubernetes-sigs/kustomize version to be used in the project
+	KustomizeVersion = "v3.5.4"
 
 	imageName = "controller:latest"
 )
@@ -160,6 +162,7 @@ func (s *initScaffolder) scaffoldV2() error {
 			Image:                  imageName,
 			BoilerplatePath:        s.boilerplatePath,
 			ControllerToolsVersion: ControllerToolsVersion,
+			KustomizeVersion:       KustomizeVersion,
 		},
 		&templatesv2.Dockerfile{},
 		&templatesv2.Kustomize{},
