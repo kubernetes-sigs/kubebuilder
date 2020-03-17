@@ -84,8 +84,40 @@ respectively.  Notice that each has a different API version.
 Finally, if we wait a bit, we should notice that our CronJob continues to
 reconcile, even though our controller is written against our v1 API version.
 
+<aside class="note">
+
+<h1>kubectl and Preferred Versions</h1>
+
+When we access our API types from Go code, we ask for a specific version
+by using that version's Go type (e.g. `batchv2.CronJob`).
+
+You might've noticed that the above invocations of kubectl looked
+a little different from what we usually do -- namely, they specify
+a *group-version-resource*, instead of just a resource.
+
+When we write `kubectl get cronjob`, kubectl needs to figure out which
+group-version-resource that maps to.  To do this, it uses the *discovery
+API* to figure out the preferred version of the `cronjob` resource.  For
+CRDs, this is more-or-less the latest stable version (see the [CRD
+docs][CRD-version-pref] for specific details).
+
+With our updates to CronJob, this means that `kubectl get cronjob` fetches
+the `batch/v2` group-version.
+
+If we want to specify an exact version, we can use `kubectl get
+resource.version.group`, as we do above.
+
+***You should always use fully-qualified group-version-resource syntax in
+scripts***.  `kubectl get resource` is for humans, self-aware robots, and
+other sentient beings that can figure out new versions.  `kubectl get
+resource.version.group` is for everything else.
+
+</aside>
+
 ## Troubleshooting 
 
 [steps for troubleshooting](/TODO.md)
 
 [ref-multiver]: /reference/generating-crd.md#multiple-versions "Generating CRDs: Multiple Versions"
+
+[crd-version-pref]: https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definition-versioning/#version-priority "Versions in CustomResourceDefinitions"
