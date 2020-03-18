@@ -51,7 +51,7 @@ generate: ## Update/generate all mock data. You should run this commands to upda
 
 .PHONY: generate-testdata
 generate-testdata: ## Update/generate the testdata in $GOPATH/src/sigs.k8s.io/kubebuilder
-	GO111MODULE=on ./generate_golden.sh
+	GO111MODULE=on ./generate_testdata.sh
 
 .PHONY: generate-vendor
 generate-vendor: ## (Deprecated) Update/generate the vendor by using the path $GOPATH/src/sigs.k8s.io/kubebuilder-test
@@ -68,18 +68,13 @@ lint: ## Run code lint checks
 
 ##@ Tests
 
-.PHONY: test
-test: ## Run the go tests ($ go test -v ./cmd/... ./pkg/...)
+.PHONY: go-test
+go-test: ## Run the go tests ($ go test -v ./cmd/... ./pkg/...)
 	go test -v ./cmd/... ./pkg/...
 
-.PHONY: test-ci
-test-ci: ## Run the unit tests (used in the CI)
-	./setup.sh
+.PHONY: test
+test: ## Run the unit tests (used in the CI)
 	./test.sh
-
-.PHONY: test-e2e
-test-e2e: ## Run the integration tests (used in the CI)
-	./test_e2e.sh
 
 .PHONY: test-coverage
 test-coverage:  ## Run coveralls
@@ -87,3 +82,7 @@ test-coverage:  ## Run coveralls
 	- rm -rf *.out
 	# run the go tests and gen the file coverage-all used to do the integration with coverrals.io
 	go test -failfast -tags=integration -coverprofile=coverage-all.out -covermode=count ./pkg/... ./cmd/...
+
+.PHONY: check-testdata
+check-testdata: ## Run the script to ensure that the testdata is updated
+	./check_testdata.sh
