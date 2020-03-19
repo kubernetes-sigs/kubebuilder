@@ -123,6 +123,9 @@ func buildCmdTree() *cobra.Command {
 	// kubebuilder version
 	rootCmd.AddCommand(version.NewVersionCmd())
 
+	// kubebuilder completion
+	rootCmd.AddCommand(newCompletionCmd())
+
 	return rootCmd
 }
 
