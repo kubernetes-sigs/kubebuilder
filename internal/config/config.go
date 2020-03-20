@@ -98,7 +98,7 @@ type Config struct {
 func New(path string) *Config {
 	return &Config{
 		Config: config.Config{
-			Version: config.Version2,
+			Version: DefaultVersion,
 		},
 		path:         path,
 		mustNotExist: true,
