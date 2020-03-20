@@ -30,7 +30,8 @@ import (
 	flag "github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/cmd/internal"
-	"sigs.k8s.io/kubebuilder/internal/config"
+	internalconfig "sigs.k8s.io/kubebuilder/internal/config"
+	"sigs.k8s.io/kubebuilder/pkg/model/config"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold"
 )
 
@@ -80,7 +81,7 @@ kubebuilder init --domain example.org --license apache2 --owner "The Kubernetes 
 var _ commandOptions = &initOptions{}
 
 type initOptions struct {
-	config *config.Config
+	config config.Config
 
 	// boilerplate options
 	license string
@@ -121,23 +122,24 @@ func (o *initOptions) bindFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&o.owner, "owner", "", "owner to add to the copyright")
 
 	// project args
-	o.config = config.New(config.DefaultPath)
 	cmd.Flags().StringVar(&o.config.Repo, "repo", "", "name to use for go module (e.g., github.com/user/repo), "+
 		"defaults to the go package of the current working directory.")
 	cmd.Flags().StringVar(&o.config.Domain, "domain", "my.domain", "domain for groups")
-	cmd.Flags().StringVar(&o.config.Version, "project-version", config.DefaultVersion, "project version")
+	cmd.Flags().StringVar(&o.config.Version, "project-version", internalconfig.DefaultVersion, "project version")
 }
 
-func (o *initOptions) loadConfig() (*config.Config, error) {
-	_, err := config.Read()
+func (o *initOptions) loadConfig() (*internalconfig.Config, error) {
+	_, err := internalconfig.Read()
 	if err == nil || os.IsExist(err) {
 		return nil, errors.New("already initialized")
 	}
-
-	return o.config, nil
+	// Initialize a new config to write.
+	config := internalconfig.New(internalconfig.DefaultPath)
+	config.Config = o.config
+	return config, nil
 }
 
-func (o *initOptions) validate(c *config.Config) error {
+func (o *initOptions) validate(c *internalconfig.Config) error {
 	// Requires go1.11+
 	if !o.skipGoVersionCheck {
 		if err := internal.ValidateGoVersion(); err != nil {
@@ -179,11 +181,11 @@ func (o *initOptions) validate(c *config.Config) error {
 	return nil
 }
 
-func (o *initOptions) scaffolder(c *config.Config) (scaffold.Scaffolder, error) { //nolint:unparam
+func (o *initOptions) scaffolder(c *internalconfig.Config) (scaffold.Scaffolder, error) { //nolint:unparam
 	return scaffold.NewInitScaffolder(c, o.license, o.owner), nil
 }
 
-func (o *initOptions) postScaffold(c *config.Config) error {
+func (o *initOptions) postScaffold(c *internalconfig.Config) error {
 	switch {
 	case c.IsV1():
 		if !o.depFlag.Changed {
