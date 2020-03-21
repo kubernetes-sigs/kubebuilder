@@ -21,6 +21,8 @@ import (
 	"strings"
 
 	"github.com/spf13/pflag"
+
+	"sigs.k8s.io/kubebuilder/pkg/model/config"
 )
 
 type Base interface {
@@ -57,6 +59,10 @@ type GenericSubcommand interface {
 	BindFlags(*pflag.FlagSet)
 	// Run runs the subcommand.
 	Run() error
+	// InjectConfig passes a config to a plugin. The plugin may modify the
+	// config. Initializing, loading, and saving the config is managed by the
+	// cli package.
+	InjectConfig(*config.Config)
 }
 
 type Context struct {
@@ -77,9 +83,6 @@ type InitPluginGetter interface {
 
 type Init interface {
 	GenericSubcommand
-	// SetVersion injects the version a project is initialized with into the
-	// plugin.
-	SetVersion(string)
 }
 
 type CreateAPIPluginGetter interface {

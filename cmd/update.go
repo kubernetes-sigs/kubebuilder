@@ -45,6 +45,10 @@ func newUpdateCmd() *cobra.Command {
 		Example: fmt.Sprintf(`	# Update the vendor dependencies:
 	kubebuiler update vendor`),
 		Run: func(cmd *cobra.Command, args []string) {
+			var err error
+			if options.config, err = config.LoadInitialized(); err != nil {
+				log.Fatal(err)
+			}
 			if err := cmdutil.Run(options); err != nil {
 				log.Fatal(updateError{err})
 			}
@@ -54,24 +58,22 @@ func newUpdateCmd() *cobra.Command {
 
 var _ cmdutil.RunOptions = &updateOptions{}
 
-type updateOptions struct{}
-
-func (o *updateOptions) LoadConfig() (*config.Config, error) {
-	return config.LoadInitialized()
+type updateOptions struct {
+	config *config.Config
 }
 
-func (o *updateOptions) Validate(c *config.Config) error {
-	if !c.IsV1() {
-		return fmt.Errorf("vendor was only used in project version 1, this project is %s", c.Version)
+func (o *updateOptions) Validate() error {
+	if !o.config.IsV1() {
+		return fmt.Errorf("vendor was only used in project version 1, this project is %s", o.config.Version)
 	}
 
 	return nil
 }
 
-func (o *updateOptions) GetScaffolder(c *config.Config) (scaffold.Scaffolder, error) { //nolint:unparam
-	return scaffold.NewUpdateScaffolder(&c.Config), nil
+func (o *updateOptions) GetScaffolder() (scaffold.Scaffolder, error) {
+	return scaffold.NewUpdateScaffolder(&o.config.Config), nil
 }
 
-func (o *updateOptions) PostScaffold(_ *config.Config) error {
+func (o *updateOptions) PostScaffold() error {
 	return nil
 }

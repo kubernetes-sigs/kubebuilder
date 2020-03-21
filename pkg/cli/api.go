@@ -21,6 +21,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"sigs.k8s.io/kubebuilder/internal/config"
 	"sigs.k8s.io/kubebuilder/pkg/plugin"
 )
 
@@ -81,10 +82,18 @@ func (c cli) bindCreateAPI(ctx plugin.Context, cmd *cobra.Command) {
 		return
 	}
 
+	cfg, err := config.LoadInitialized()
+	if err != nil {
+		cmdErr(cmd, err)
+		return
+	}
+
 	createAPI := getter.GetCreateAPIPlugin()
+	createAPI.InjectConfig(&cfg.Config)
 	createAPI.BindFlags(cmd.Flags())
 	createAPI.UpdateContext(&ctx)
 	cmd.Long = ctx.Description
 	cmd.Example = ctx.Examples
-	cmd.RunE = runECmdFunc(createAPI, fmt.Sprintf("failed to create api for project with version %q", c.projectVersion))
+	cmd.RunE = runECmdFunc(cfg, createAPI,
+		fmt.Sprintf("failed to create API with version %q", c.projectVersion))
 }

@@ -17,50 +17,39 @@ limitations under the License.
 package cmdutil
 
 import (
-	"sigs.k8s.io/kubebuilder/internal/config"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold"
 )
 
 // RunOptions represent the types used to implement the different commands
 type RunOptions interface {
-	// The following steps define a generic logic to follow when developing new commands. Some steps may be no-ops.
-	// - Step 1: load the config failing if expected but not found or if not expected but found
-	LoadConfig() (*config.Config, error)
-	// - Step 2: verify that the command can be run (e.g., go version, project version, arguments, ...)
-	Validate(*config.Config) error
-	// - Step 3: create the Scaffolder instance
-	GetScaffolder(*config.Config) (scaffold.Scaffolder, error)
-	// - Step 4: call the Scaffold method of the Scaffolder instance
-	// Doesn't need any method
-	// - Step 5: finish the command execution
-	PostScaffold(*config.Config) error
+	// - Step 1: verify that the command can be run (e.g., go version, project version, arguments, ...)
+	Validate() error
+	// - Step 2: create the Scaffolder instance
+	GetScaffolder() (scaffold.Scaffolder, error)
+	// - Step 3: call the Scaffold method of the Scaffolder instance. Doesn't need any method
+	// - Step 4: finish the command execution
+	PostScaffold() error
 }
 
 // Run executes a command
 func Run(options RunOptions) error {
-	// Step 1: load config
-	projectConfig, err := options.LoadConfig()
-	if err != nil {
+	// Step 1: validate
+	if err := options.Validate(); err != nil {
 		return err
 	}
 
-	// Step 2: validate
-	if err := options.Validate(projectConfig); err != nil {
-		return err
-	}
-
-	// Step 3: create scaffolder
-	scaffolder, err := options.GetScaffolder(projectConfig)
+	// Step 2: get scaffolder
+	scaffolder, err := options.GetScaffolder()
 	if err != nil {
 		return err
 	}
-	// Step 4: scaffold
+	// Step 3: scaffold
 	if err := scaffolder.Scaffold(); err != nil {
 		return err
 	}
 
-	// Step 5: finish
-	if err := options.PostScaffold(projectConfig); err != nil {
+	// Step 4: finish
+	if err := options.PostScaffold(); err != nil {
 		return err
 	}
 
