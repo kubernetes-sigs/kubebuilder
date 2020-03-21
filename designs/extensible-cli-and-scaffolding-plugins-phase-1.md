@@ -102,9 +102,13 @@ type GenericSubcommand interface {
     UpdateContext(*PluginContext)
     // BindFlags binds the plugin's flags to the CLI. This allows each plugin to define its own
     // command line flags for the kubebuilder subcommand.
-    BindFlags(fs *pflag.FlagSet)
+    BindFlags(*pflag.FlagSet)
     // Run runs the subcommand.
     Run() error
+    // InjectConfig passes a config to a plugin. The plugin may modify the
+    // config. Initializing, loading, and saving the config is managed by the
+    // cli package.
+    InjectConfig(*config.Config)
 }
 
 type PluginContext struct {

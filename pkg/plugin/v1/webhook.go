@@ -24,7 +24,7 @@ import (
 	"github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/internal/cmdutil"
-	"sigs.k8s.io/kubebuilder/internal/config"
+	"sigs.k8s.io/kubebuilder/pkg/model/config"
 	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/pkg/plugin/internal"
@@ -32,6 +32,8 @@ import (
 )
 
 type createWebhookPlugin struct {
+	config *config.Config
+
 	resource    *resource.Options
 	server      string
 	webhookType string
@@ -71,22 +73,22 @@ func (p *createWebhookPlugin) BindFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&p.resource.Plural, "resource", "", "resource Resource")
 }
 
+func (p *createWebhookPlugin) InjectConfig(c *config.Config) {
+	p.config = c
+}
+
 func (p *createWebhookPlugin) Run() error {
 	return cmdutil.Run(p)
 }
 
-func (p *createWebhookPlugin) LoadConfig() (*config.Config, error) {
-	return config.LoadInitialized()
-}
-
-func (p *createWebhookPlugin) Validate(_ *config.Config) error {
+func (p *createWebhookPlugin) Validate() error {
 	if err := p.resource.Validate(); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (p *createWebhookPlugin) GetScaffolder(c *config.Config) (scaffold.Scaffolder, error) { // nolint:unparam
+func (p *createWebhookPlugin) GetScaffolder() (scaffold.Scaffolder, error) {
 	// Load the boilerplate
 	bp, err := ioutil.ReadFile(filepath.Join("hack", "boilerplate.go.txt")) //nolint:gosec
 	if err != nil {
@@ -94,12 +96,11 @@ func (p *createWebhookPlugin) GetScaffolder(c *config.Config) (scaffold.Scaffold
 	}
 
 	// Create the actual resource from the resource options
-	res := p.resource.NewV1Resource(&c.Config, false)
-
-	return scaffold.NewV1WebhookScaffolder(&c.Config, string(bp), res, p.server, p.webhookType, p.operations), nil
+	res := p.resource.NewV1Resource(p.config, false)
+	return scaffold.NewV1WebhookScaffolder(p.config, string(bp), res, p.server, p.webhookType, p.operations), nil
 }
 
-func (p *createWebhookPlugin) PostScaffold(_ *config.Config) error {
+func (p *createWebhookPlugin) PostScaffold() error {
 	if p.doMake {
 		err := internal.RunCmd("Running make", "make")
 		if err != nil {

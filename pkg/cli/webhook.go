@@ -21,6 +21,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"sigs.k8s.io/kubebuilder/internal/config"
 	"sigs.k8s.io/kubebuilder/pkg/plugin"
 )
 
@@ -81,11 +82,18 @@ func (c cli) bindCreateWebhook(ctx plugin.Context, cmd *cobra.Command) {
 		return
 	}
 
+	cfg, err := config.LoadInitialized()
+	if err != nil {
+		cmdErr(cmd, err)
+		return
+	}
+
 	createWebhook := getter.GetCreateWebhookPlugin()
+	createWebhook.InjectConfig(&cfg.Config)
 	createWebhook.BindFlags(cmd.Flags())
 	createWebhook.UpdateContext(&ctx)
 	cmd.Long = ctx.Description
 	cmd.Example = ctx.Examples
-	cmd.RunE = runECmdFunc(createWebhook,
-		fmt.Sprintf("failed to create webhook for project with version %q", c.projectVersion))
+	cmd.RunE = runECmdFunc(cfg, createWebhook,
+		fmt.Sprintf("failed to create webhook with version %q", c.projectVersion))
 }
