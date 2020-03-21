@@ -142,6 +142,7 @@ function fetch_kb_tools {
   tar -zvxf "$kb_tools_archive_path" -C "$tmp_root/"
 }
 
+
 function build_kb {
   header_text "building kubebuilder"
 
