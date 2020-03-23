@@ -9,6 +9,7 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
+// ReplaceTypes replaces the API types with a modified version
 func ReplaceTypes(u *model.Universe) error {
 	funcs := DefaultTemplateFunctions()
 	funcs["JSONTag"] = JSONTag
@@ -74,8 +75,9 @@ type {{.Resource.Kind}}Status struct {
 }
 
 // +kubebuilder:object:root=true
+{{ if not .Resource.Namespaced }} // +kubebuilder:resource:scope=Cluster {{ end }}
 
-// {{.Resource.Kind}} is the Schema for the {{ .Resource.Resource }} API
+// {{.Resource.Kind}} is the Schema for the {{ .Resource.Plural }} API
 type {{.Resource.Kind}} struct {
 	metav1.TypeMeta   ` + "`" + `json:",inline"` + "`" + `
 	metav1.ObjectMeta ` + "`" + `json:"metadata,omitempty"` + "`" + `
@@ -107,6 +109,7 @@ func (o *{{.Resource.Kind}}) SetCommonStatus(s addonv1alpha1.CommonStatus) {
 }
 
 // +kubebuilder:object:root=true
+{{ if not .Resource.Namespaced }} // +kubebuilder:resource:scope=Cluster {{ end }}
 
 // {{.Resource.Kind}}List contains a list of {{.Resource.Kind}}
 type {{.Resource.Kind}}List struct {

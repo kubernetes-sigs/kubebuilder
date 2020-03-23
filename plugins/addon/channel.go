@@ -28,6 +28,7 @@ manifests:
 - version: 0.0.1
 `
 
+// ExampleChannel adds a model file for the channel
 func ExampleChannel(u *model.Universe) error {
 	m := &file.File{
 		Path:           filepath.Join("channels", "stable"),

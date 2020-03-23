@@ -36,23 +36,19 @@ type Group struct {
 func (f *Group) SetTemplateDefaults() error {
 	if f.Path == "" {
 		if f.MultiGroup {
-			f.Path = filepath.Join("apis", f.Resource.Group, f.Resource.Version, "groupversion_info.go")
+			f.Path = filepath.Join("apis", "%[group]", "%[version]", "groupversion_info.go")
 		} else {
-			f.Path = filepath.Join("api", f.Resource.Version, "groupversion_info.go")
+			f.Path = filepath.Join("api", "%[version]", "groupversion_info.go")
 		}
 	}
+	f.Path = f.Resource.Replacer().Replace(f.Path)
 
 	f.TemplateBody = groupTemplate
 
 	return nil
 }
 
-// Validate validates the values
-func (f *Group) Validate() error {
-	return f.Resource.Validate()
-}
-
-// nolint:lll
+//nolint:lll
 const groupTemplate = `{{ .Boilerplate }}
 
 // Package {{ .Resource.Version }} contains API Schema definitions for the {{ .Resource.Group }} {{ .Resource.Version }} API group

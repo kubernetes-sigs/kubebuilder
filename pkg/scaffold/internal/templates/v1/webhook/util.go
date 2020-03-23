@@ -22,6 +22,5 @@ import (
 )
 
 func builderName(config Config, resource string) string {
-	opsStr := strings.Join(config.Operations, "-")
-	return fmt.Sprintf("%s-%s-%s", config.Type, opsStr, resource)
+	return fmt.Sprintf("%s-%s-%s", config.Type, strings.Join(config.Operations, "-"), resource)
 }

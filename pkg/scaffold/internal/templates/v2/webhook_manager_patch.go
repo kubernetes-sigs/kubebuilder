@@ -24,7 +24,7 @@ import (
 
 var _ file.Template = &ManagerWebhookPatch{}
 
-// CRDWebhookPatch scaffolds a CRDWebhookPatch for a Resource
+// ManagerWebhookPatch scaffolds a ManagerWebhookPatch for a Resource
 type ManagerWebhookPatch struct {
 	file.TemplateMixin
 }
@@ -35,12 +35,12 @@ func (f *ManagerWebhookPatch) SetTemplateDefaults() error {
 		f.Path = filepath.Join("config", "default", "manager_webhook_patch.yaml")
 	}
 
-	f.TemplateBody = ManagerWebhookPatchTemplate
+	f.TemplateBody = managerWebhookPatchTemplate
 
 	return nil
 }
 
-const ManagerWebhookPatchTemplate = `apiVersion: apps/v1
+const managerWebhookPatchTemplate = `apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: controller-manager

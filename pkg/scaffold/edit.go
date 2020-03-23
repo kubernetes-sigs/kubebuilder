@@ -20,11 +20,14 @@ import (
 	"sigs.k8s.io/kubebuilder/internal/config"
 )
 
+var _ Scaffolder = &editScaffolder{}
+
 type editScaffolder struct {
 	config     *config.Config
 	multigroup bool
 }
 
+// NewEditScaffolder returns a new Scaffolder for configuration edit operations
 func NewEditScaffolder(config *config.Config, multigroup bool) Scaffolder {
 	return &editScaffolder{
 		config:     config,
@@ -32,6 +35,7 @@ func NewEditScaffolder(config *config.Config, multigroup bool) Scaffolder {
 	}
 }
 
+// Scaffold implements Scaffolder
 func (s *editScaffolder) Scaffold() error {
 	s.config.MultiGroup = s.multigroup
 

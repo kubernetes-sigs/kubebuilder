@@ -67,15 +67,14 @@ func main() {
 			"Enabling this will ensure there is only one active controller manager.")
 	flag.Parse()
 
-	ctrl.SetLogger(zap.New(func(o *zap.Options) {
-		o.Development = true
-	}))
+	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:             scheme,
 		MetricsBindAddress: metricsAddr,
-		LeaderElection:     enableLeaderElection,
 		Port:               9443,
+		LeaderElection:     enableLeaderElection,
+		LeaderElectionID:   "e9b53b87.testproject.org",
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")

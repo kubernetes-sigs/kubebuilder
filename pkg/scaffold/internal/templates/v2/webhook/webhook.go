@@ -46,20 +46,20 @@ type Webhook struct { // nolint:maligned
 func (f *Webhook) SetTemplateDefaults() error {
 	if f.Path == "" {
 		if f.MultiGroup {
-			f.Path = filepath.Join("apis", f.Resource.Group, f.Resource.Version,
-				fmt.Sprintf("%s_webhook.go", strings.ToLower(f.Resource.Kind)))
+			f.Path = filepath.Join("apis", "%[group]", "%[version]", "%[kind]_webhook.go")
 		} else {
-			f.Path = filepath.Join("api", f.Resource.Version,
-				fmt.Sprintf("%s_webhook.go", strings.ToLower(f.Resource.Kind)))
+			f.Path = filepath.Join("api", "%[version]", "%[kind]_webhook.go")
 		}
 	}
+	f.Path = f.Resource.Replacer().Replace(f.Path)
+	fmt.Println(f.Path)
 
-	webhookTemplate := WebhookTemplate
+	webhookTemplate := webhookTemplate
 	if f.Defaulting {
-		webhookTemplate = webhookTemplate + DefaultingWebhookTemplate
+		webhookTemplate = webhookTemplate + defaultingWebhookTemplate
 	}
 	if f.Validating {
-		webhookTemplate = webhookTemplate + ValidatingWebhookTemplate
+		webhookTemplate = webhookTemplate + validatingWebhookTemplate
 	}
 	f.TemplateBody = webhookTemplate
 
@@ -70,13 +70,8 @@ func (f *Webhook) SetTemplateDefaults() error {
 	return nil
 }
 
-// Validate validates the values
-func (f *Webhook) Validate() error {
-	return f.Resource.Validate()
-}
-
 const (
-	WebhookTemplate = `{{ .Boilerplate }}
+	webhookTemplate = `{{ .Boilerplate }}
 
 package {{ .Resource.Version }}
 
@@ -101,8 +96,8 @@ func (r *{{ .Resource.Kind }}) SetupWebhookWithManager(mgr ctrl.Manager) error {
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 `
 
-	// nolint:lll
-	DefaultingWebhookTemplate = `
+	//nolint:lll
+	defaultingWebhookTemplate = `
 // +kubebuilder:webhook:path=/mutate-{{ .GroupDomainWithDash }}-{{ .Resource.Version }}-{{ lower .Resource.Kind }},mutating=true,failurePolicy=fail,groups={{ .Resource.Domain }},resources={{ .Resource.Plural }},verbs=create;update,versions={{ .Resource.Version }},name=m{{ lower .Resource.Kind }}.kb.io
 
 var _ webhook.Defaulter = &{{ .Resource.Kind }}{}
@@ -114,8 +109,8 @@ func (r *{{ .Resource.Kind }}) Default() {
 	// TODO(user): fill in your defaulting logic.
 }
 `
-	// nolint:lll
-	ValidatingWebhookTemplate = `
+	//nolint:lll
+	validatingWebhookTemplate = `
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
 // +kubebuilder:webhook:verbs=create;update,path=/validate-{{ .GroupDomainWithDash }}-{{ .Resource.Version }}-{{ lower .Resource.Kind }},mutating=false,failurePolicy=fail,groups={{ .Resource.Domain }},resources={{ .Resource.Plural }},versions={{ .Resource.Version }},name=v{{ lower .Resource.Kind }}.kb.io
 

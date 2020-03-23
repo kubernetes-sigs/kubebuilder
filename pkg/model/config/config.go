@@ -16,8 +16,12 @@ limitations under the License.
 
 package config
 
+import (
+	"strings"
+)
+
+// Scaffolding versions
 const (
-	// Scaffolding versions
 	Version1 = "1"
 	Version2 = "2"
 )
@@ -51,29 +55,8 @@ func (config Config) IsV2() bool {
 	return config.Version == Version2
 }
 
-// ResourceGroups returns unique groups of scaffolded resources in the project
-func (config Config) ResourceGroups() []string {
-	groupSet := map[string]struct{}{}
-	for _, r := range config.Resources {
-		groupSet[r.Group] = struct{}{}
-	}
-
-	groups := make([]string, 0, len(groupSet))
-	for g := range groupSet {
-		groups = append(groups, g)
-	}
-
-	return groups
-}
-
 // HasResource returns true if API resource is already tracked
-// NOTE: this works only for v2, since in v1 resources are not tracked
 func (config Config) HasResource(target GVK) bool {
-	// Short-circuit v1
-	if config.Version == Version1 {
-		return false
-	}
-
 	// Return true if the target resource is found in the tracked resources
 	for _, r := range config.Resources {
 		if r.isEqualTo(target) {
@@ -87,10 +70,10 @@ func (config Config) HasResource(target GVK) bool {
 
 // AddResource appends the provided resource to the tracked ones
 // It returns if the configuration was modified
-// NOTE: this works only for v2, since in v1 resources are not tracked
+// NOTE: in v1 resources are not tracked, so we return false
 func (config *Config) AddResource(gvk GVK) bool {
 	// Short-circuit v1
-	if config.Version == Version1 {
+	if config.IsV1() {
 		return false
 	}
 
@@ -102,6 +85,19 @@ func (config *Config) AddResource(gvk GVK) bool {
 	// Append the resource to the tracked ones, return true
 	config.Resources = append(config.Resources, gvk)
 	return true
+}
+
+// HasGroup returns true if group is already tracked
+func (config Config) HasGroup(group string) bool {
+	// Return true if the target group is found in the tracked resources
+	for _, r := range config.Resources {
+		if strings.EqualFold(group, r.Group) {
+			return true
+		}
+	}
+
+	// Return false otherwise
+	return false
 }
 
 // GVK contains information about scaffolded resources

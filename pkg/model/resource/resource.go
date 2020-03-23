@@ -17,6 +17,9 @@ limitations under the License.
 package resource
 
 import (
+	"fmt"
+	"strings"
+
 	"sigs.k8s.io/kubebuilder/pkg/model/config"
 )
 
@@ -54,16 +57,27 @@ type Resource struct {
 	CreateExampleReconcileBody bool `json:"-"`
 }
 
-// Validate checks the Resource values to make sure they are valid.
-func (r *Resource) Validate() error {
-	// TODO: remove when all calls have been removed
-	return nil
-}
-
+// GVK returns the group-version-kind information to check against tracked resources in the configuration file
 func (r *Resource) GVK() config.GVK {
 	return config.GVK{
 		Group:   r.Group,
 		Version: r.Version,
 		Kind:    r.Kind,
 	}
+}
+
+func wrapKey(key string) string {
+	return fmt.Sprintf("%%[%s]", key)
+}
+
+func (r Resource) Replacer() *strings.Replacer {
+	var replacements []string
+
+	replacements = append(replacements, wrapKey("group"), r.Group)
+	replacements = append(replacements, wrapKey("group-package-name"), r.GroupPackageName)
+	replacements = append(replacements, wrapKey("version"), r.Version)
+	replacements = append(replacements, wrapKey("kind"), strings.ToLower(r.Kind))
+	replacements = append(replacements, wrapKey("plural"), strings.ToLower(r.Plural))
+
+	return strings.NewReplacer(replacements...)
 }

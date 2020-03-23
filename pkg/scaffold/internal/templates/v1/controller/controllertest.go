@@ -17,8 +17,8 @@ limitations under the License.
 package controller
 
 import (
+	"fmt"
 	"path/filepath"
-	"strings"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
@@ -35,9 +35,10 @@ type Test struct {
 // SetTemplateDefaults implements input.Template
 func (f *Test) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = filepath.Join("pkg", "controller",
-			strings.ToLower(f.Resource.Kind), strings.ToLower(f.Resource.Kind)+"_controller_test.go")
+		f.Path = filepath.Join("pkg", "controller", "%[kind]", "%[kind]_controller_test.go")
 	}
+	f.Path = f.Resource.Replacer().Replace(f.Path)
+	fmt.Println(f.Path)
 
 	f.TemplateBody = controllerTestTemplate
 
@@ -46,7 +47,7 @@ func (f *Test) SetTemplateDefaults() error {
 	return nil
 }
 
-// nolint:lll
+//nolint:lll
 const controllerTestTemplate = `{{ .Boilerplate }}
 
 package {{ lower .Resource.Kind }}

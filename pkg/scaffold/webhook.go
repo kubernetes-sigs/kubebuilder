@@ -18,8 +18,6 @@ package scaffold
 
 import (
 	"fmt"
-	"path/filepath"
-	"strings"
 
 	"sigs.k8s.io/kubebuilder/pkg/model"
 	"sigs.k8s.io/kubebuilder/pkg/model/config"
@@ -30,6 +28,8 @@ import (
 	templatesv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v2"
 	webhookv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v2/webhook"
 )
+
+var _ Scaffolder = &webhookScaffolder{}
 
 type webhookScaffolder struct {
 	config      *config.Config
@@ -43,6 +43,7 @@ type webhookScaffolder struct {
 	defaulting, validation, conversion bool
 }
 
+// NewV1WebhookScaffolder returns a new Scaffolder for v1 webhook creation operations
 func NewV1WebhookScaffolder(
 	config *config.Config,
 	boilerplate string,
@@ -61,6 +62,7 @@ func NewV1WebhookScaffolder(
 	}
 }
 
+// NewV2WebhookScaffolder returns a new Scaffolder for v2 webhook creation operations
 func NewV2WebhookScaffolder(
 	config *config.Config,
 	boilerplate string,
@@ -79,6 +81,7 @@ func NewV2WebhookScaffolder(
 	}
 }
 
+// Scaffold implements Scaffolder
 func (s *webhookScaffolder) Scaffold() error {
 	fmt.Println("Writing scaffold for you to edit...")
 
@@ -116,14 +119,6 @@ func (s *webhookScaffolder) scaffoldV1() error {
 }
 
 func (s *webhookScaffolder) scaffoldV2() error {
-	if s.config.MultiGroup {
-		fmt.Println(filepath.Join("apis", s.resource.Group, s.resource.Version,
-			fmt.Sprintf("%s_webhook.go", strings.ToLower(s.resource.Kind))))
-	} else {
-		fmt.Println(filepath.Join("api", s.resource.Version,
-			fmt.Sprintf("%s_webhook.go", strings.ToLower(s.resource.Kind))))
-	}
-
 	if s.conversion {
 		fmt.Println(`Webhook server has been set up for you.
 You need to implement the conversion.Hub and conversion.Convertible interfaces for your CRD types.`)

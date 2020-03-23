@@ -18,7 +18,9 @@ package v2
 
 import (
 	"fmt"
+	"hash/fnv"
 	"path/filepath"
+	"text/template"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
@@ -26,10 +28,14 @@ import (
 const defaultMainPath = "main.go"
 
 var _ file.Template = &Main{}
+var _ file.UseCustomFuncMap = &Main{}
 
+// Main scaffolds the controller manager entry point
 type Main struct {
 	file.TemplateMixin
 	file.BoilerplateMixin
+	file.DomainMixin
+	file.RepositoryMixin
 }
 
 // SetTemplateDefaults implements file.Template
@@ -45,6 +51,19 @@ func (f *Main) SetTemplateDefaults() error {
 	)
 
 	return nil
+}
+
+func hash(s string) (string, error) {
+	hasher := fnv.New32a()
+	hasher.Write([]byte(s)) // nolint:errcheck
+	return fmt.Sprintf("%x", hasher.Sum(nil)), nil
+}
+
+// GetFuncMap implements file.UseCustomFuncMap
+func (f *Main) GetFuncMap() template.FuncMap {
+	fm := file.DefaultFuncMap()
+	fm["hash"] = hash
+	return fm
 }
 
 var _ file.Inserter = &MainUpdater{}
@@ -64,7 +83,7 @@ func (*MainUpdater) GetPath() string {
 	return defaultMainPath
 }
 
-// GetPath implements Builder
+// GetIfExistsAction implements Builder
 func (*MainUpdater) GetIfExistsAction() file.IfExistsAction {
 	return file.Overwrite
 }
@@ -214,15 +233,14 @@ func main() {
 		"Enabling this will ensure there is only one active controller manager.")
 	flag.Parse()
 
-	ctrl.SetLogger(zap.New(func(o *zap.Options) {
-		o.Development = true
-	}))
+	ctrl.SetLogger(zap.New(zap.UseDevMode(true))) 
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:             scheme,
 		MetricsBindAddress: metricsAddr,
-		LeaderElection:     enableLeaderElection,
 		Port:               9443, 
+		LeaderElection:     enableLeaderElection, 
+		LeaderElectionID:   "{{ hash .Repo }}.{{ .Domain }}",
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")

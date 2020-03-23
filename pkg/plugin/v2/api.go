@@ -141,34 +141,14 @@ func (p *createAPIPlugin) Validate(c *config.Config) error {
 	// In case we want to scaffold a resource API we need to do some checks
 	if p.doResource {
 		// Check that resource doesn't exist or flag force was set
-		if !p.force {
-			resourceExists := false
-			for _, r := range c.Resources {
-				if r.Group == p.resource.Group &&
-					r.Version == p.resource.Version &&
-					r.Kind == p.resource.Kind {
-					resourceExists = true
-					break
-				}
-			}
-			if resourceExists {
-				return errors.New("API resource already exists")
-			}
+		if !p.force && c.HasResource(p.resource.GVK()) {
+			return errors.New("API resource already exists")
 		}
 
-		// Check the group is the same for single-group projects
-		if !c.MultiGroup {
-			validGroup := true
-			for _, existingGroup := range c.ResourceGroups() {
-				if !strings.EqualFold(p.resource.Group, existingGroup) {
-					validGroup = false
-					break
-				}
-			}
-			if !validGroup {
-				return fmt.Errorf("multiple groups are not allowed by default, to enable multi-group visit %s",
-					"kubebuilder.io/migration/multi-group.html")
-			}
+		// Check that the provided group can be added to the project
+		if c.IsV2() && !c.MultiGroup && len(c.Resources) != 0 && !c.HasGroup(p.resource.Group) {
+			return fmt.Errorf("multiple groups are not allowed by default, to enable multi-group visit %s",
+				"kubebuilder.io/migration/multi-group.html")
 		}
 	}
 

@@ -28,15 +28,17 @@ var commentsByExt = map[string]string{
 	//  this is a backwards incompatible change, and thus should be done for next project version.
 	".go":   "// ",
 	".yaml": "# ",
+	// When adding additional file extensions, update also the NewMarkerFor documentation and error
 }
 
-// Marker represents a comment LoC that will be used to insert code fragments by update operations
+// Marker represents a machine-readable comment that will be used for scaffolding purposes
 type Marker struct {
 	comment string
 	value   string
 }
 
 // NewMarkerFor creates a new marker customized for the specific file
+// Supported file extensions: .go, .ext
 func NewMarkerFor(path string, value string) Marker {
 	ext := filepath.Ext(path)
 	if comment, found := commentsByExt[ext]; found {
@@ -51,6 +53,9 @@ func (m Marker) String() string {
 	return m.comment + prefix + m.value
 }
 
+// CodeFragments represents a set of code fragments
+// A code fragment is a piece of code provided as a Go string, it may have multiple lines
 type CodeFragments []string
 
+// CodeFragmentsMap binds Markers and CodeFragments together
 type CodeFragmentsMap map[Marker]CodeFragments

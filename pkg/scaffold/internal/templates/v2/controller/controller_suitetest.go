@@ -39,11 +39,12 @@ type SuiteTest struct {
 func (f *SuiteTest) SetTemplateDefaults() error {
 	if f.Path == "" {
 		if f.MultiGroup {
-			f.Path = filepath.Join("controllers", f.Resource.Group, "suite_test.go")
+			f.Path = filepath.Join("controllers", "%[group]", "suite_test.go")
 		} else {
 			f.Path = filepath.Join("controllers", "suite_test.go")
 		}
 	}
+	f.Path = f.Resource.Replacer().Replace(f.Path)
 
 	f.TemplateBody = fmt.Sprintf(controllerSuiteTestTemplate,
 		file.NewMarkerFor(f.Path, importMarker),
@@ -51,11 +52,6 @@ func (f *SuiteTest) SetTemplateDefaults() error {
 	)
 
 	return nil
-}
-
-// Validate validates the values
-func (f *SuiteTest) Validate() error {
-	return f.Resource.Validate()
 }
 
 const (
@@ -116,6 +112,7 @@ import (
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
+	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	%s
@@ -133,7 +130,7 @@ func TestAPIs(t *testing.T) {
 
 	RunSpecsWithDefaultAndCustomReporters(t,
 	"Controller Suite",
-	[]Reporter{envtest.NewlineReporter{}})
+	[]Reporter{printer.NewlineReporter{}})
 }
 
 var _ = BeforeSuite(func(done Done) {

@@ -17,7 +17,6 @@ limitations under the License.
 package crd
 
 import (
-	"fmt"
 	"path/filepath"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
@@ -35,18 +34,13 @@ type AddToScheme struct {
 // SetTemplateDefaults implements input.Template
 func (f *AddToScheme) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = filepath.Join("pkg", "apis", fmt.Sprintf(
-			"addtoscheme_%s_%s.go", f.Resource.GroupPackageName, f.Resource.Version))
+		f.Path = filepath.Join("pkg", "apis", "addtoscheme_%[group-package-name]_%[version].go")
 	}
+	f.Path = f.Resource.Replacer().Replace(f.Path)
 
 	f.TemplateBody = addResourceTemplate
 
 	return nil
-}
-
-// Validate validates the values
-func (f *AddToScheme) Validate() error {
-	return f.Resource.Validate()
 }
 
 // NB(directxman12): we need that package alias on the API import otherwise imports.Process

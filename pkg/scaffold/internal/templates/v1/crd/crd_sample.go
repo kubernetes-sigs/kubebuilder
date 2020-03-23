@@ -17,9 +17,7 @@ limitations under the License.
 package crd
 
 import (
-	"fmt"
 	"path/filepath"
-	"strings"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
@@ -27,7 +25,7 @@ import (
 var _ file.Template = &CRDSample{}
 
 // CRDSample scaffolds a manifest for CRD sample.
-// nolint:golint
+//nolint:golint
 type CRDSample struct {
 	file.TemplateMixin
 	file.ResourceMixin
@@ -36,20 +34,15 @@ type CRDSample struct {
 // SetTemplateDefaults implements input.Template
 func (f *CRDSample) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = filepath.Join("config", "samples", fmt.Sprintf(
-			"%s_%s_%s.yaml", f.Resource.GroupPackageName, f.Resource.Version, strings.ToLower(f.Resource.Kind)))
+		f.Path = filepath.Join("config", "samples", "%[group-package-name]_%[version]_%[kind].yaml")
 	}
+	f.Path = f.Resource.Replacer().Replace(f.Path)
 
 	f.TemplateBody = crdSampleTemplate
 
 	f.IfExistsAction = file.Error
 
 	return nil
-}
-
-// Validate validates the values
-func (f *CRDSample) Validate() error {
-	return f.Resource.Validate()
 }
 
 const crdSampleTemplate = `apiVersion: {{ .Resource.Domain }}/{{ .Resource.Version }}

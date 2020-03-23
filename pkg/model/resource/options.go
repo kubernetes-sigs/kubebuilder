@@ -91,6 +91,7 @@ type Options struct {
 	CreateExampleReconcileBody bool
 }
 
+// Validate verifies that all the fields have valid values
 func (opts *Options) Validate() error {
 	// Check that the required flags did not get a flag as their value
 	// We can safely look for a '-' as the first char as none of the fields accepts it
@@ -123,21 +124,20 @@ func (opts *Options) Validate() error {
 
 	// Check if the version follows the valid pattern
 	if !versionRegex.MatchString(opts.Version) {
-		return fmt.Errorf(
-			"version must match %s (was %s)", versionPattern, opts.Version)
+		return fmt.Errorf("version must match %s (was %s)", versionPattern, opts.Version)
 	}
 
 	validationErrors := []string{}
 
 	// require Kind to start with an uppercase character
 	if string(opts.Kind[0]) == strings.ToLower(string(opts.Kind[0])) {
-		validationErrors = append(validationErrors, "Kind must start with an uppercase character")
+		validationErrors = append(validationErrors, "kind must start with an uppercase character")
 	}
 
 	validationErrors = append(validationErrors, validation.IsDNS1035Label(strings.ToLower(opts.Kind))...)
 
 	if len(validationErrors) != 0 {
-		return fmt.Errorf("Invalid Kind: %#v", validationErrors)
+		return fmt.Errorf("invalid Kind: %#v", validationErrors)
 	}
 
 	// TODO: validate plural strings if provided
@@ -145,6 +145,7 @@ func (opts *Options) Validate() error {
 	return nil
 }
 
+// GVK returns the group-version-kind information to check against tracked resources in the configuration file
 func (opts *Options) GVK() config.GVK {
 	return config.GVK{
 		Group:   opts.Group,
@@ -164,12 +165,15 @@ func (opts *Options) safeImport(unsafe string) string {
 	return safe
 }
 
+// NewV1Resource creates a new resource from the options specific to v1
 func (opts *Options) NewV1Resource(c *config.Config, doResource bool) *Resource {
 	res := opts.newResource()
 
+	replacer := res.Replacer()
+
 	// NOTE: while directories can have "-" and ".", v1 needs that directory to be a Go package
 	//       and that is the reason why we remove them for the directory
-	pkg := path.Join(c.Repo, "pkg", "apis", res.GroupPackageName, opts.Version)
+	pkg := replacer.Replace(path.Join(c.Repo, "pkg", "apis", "%[group-package-name]", "%[version]"))
 	domain := c.Domain
 
 	// pkg and domain may need to be changed in case we are referring to a builtin core resource:
@@ -179,11 +183,11 @@ func (opts *Options) NewV1Resource(c *config.Config, doResource bool) *Resource 
 	//  - In any other case, default to                          => project resource
 	// TODO: need to support '--resource-pkg-path' flag for specifying resourcePath
 	if !doResource {
-		file := filepath.Join("pkg", "apis", res.GroupPackageName, opts.Version,
-			fmt.Sprintf("%s_types.go", strings.ToLower(opts.Kind)))
+		file := replacer.Replace(filepath.Join(
+			"pkg", "apis", "%[group-package-name]", "%[version]", "%[kind]_types.go"))
 		if _, err := os.Stat(file); os.IsNotExist(err) {
 			if coreDomain, found := coreGroups[opts.Group]; found {
-				pkg = path.Join("k8s.io", "api", opts.Group, opts.Version)
+				pkg = replacer.Replace(path.Join("k8s.io", "api", "%[group]", "%[version]"))
 				domain = coreDomain
 			}
 		}
@@ -200,12 +204,15 @@ func (opts *Options) NewV1Resource(c *config.Config, doResource bool) *Resource 
 	return res
 }
 
+// NewResource creates a new resource from the options
 func (opts *Options) NewResource(c *config.Config, doResource bool) *Resource {
 	res := opts.newResource()
 
-	pkg := path.Join(c.Repo, "api", opts.Version)
+	replacer := res.Replacer()
+
+	pkg := replacer.Replace(path.Join(c.Repo, "api", "%[version]"))
 	if c.MultiGroup {
-		pkg = path.Join(c.Repo, "apis", res.Group, opts.Version)
+		pkg = replacer.Replace(path.Join(c.Repo, "apis", "%[group]", "%[version]"))
 	}
 	domain := c.Domain
 
@@ -218,7 +225,7 @@ func (opts *Options) NewResource(c *config.Config, doResource bool) *Resource {
 	if !doResource {
 		if !c.HasResource(opts.GVK()) {
 			if coreDomain, found := coreGroups[opts.Group]; found {
-				pkg = path.Join("k8s.io", "api", opts.Group, opts.Version)
+				pkg = replacer.Replace(path.Join("k8s.io", "api", "%[group]", "%[version]"))
 				domain = coreDomain
 			}
 		}

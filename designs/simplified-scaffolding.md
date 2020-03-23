@@ -123,7 +123,7 @@ not immediately obvious to these users why the project is structured the
 way it is.
 
 Additionally, we scaffold out API "tests" that test that the API server is
-able to recieve create requests for the objects, but don't encourage
+able to receive create requests for the objects, but don't encourage
 modification beyond that.  An informal survey seems to indicate that most
 users don't actually modify these tests (many repositories continue to
 look like
@@ -417,9 +417,7 @@ func init() {
 }
 
 func main() {
-	ctrl.SetLogger(zap.New(func(o *zap.Options) {
-		o.Development = true
-	}))
+	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{Scheme: scheme})
 	if err != nil {
