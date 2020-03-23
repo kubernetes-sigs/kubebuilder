@@ -35,14 +35,14 @@ func (f *Kustomization) SetTemplateDefaults() error {
 		f.Path = filepath.Join("config", "webhook", "kustomization.yaml")
 	}
 
-	f.TemplateBody = KustomizeWebhookTemplate
+	f.TemplateBody = kustomizeWebhookTemplate
 
 	f.IfExistsAction = file.Error
 
 	return nil
 }
 
-const KustomizeWebhookTemplate = `resources:
+const kustomizeWebhookTemplate = `resources:
 - manifests.yaml
 - service.yaml
 

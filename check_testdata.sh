@@ -32,12 +32,12 @@ check_directory=testdata
 
 # Check testdata directory first. If there are any uncommitted change, fail the test.
 if [[ `git status ${check_directory} --porcelain` ]]; then
-  header_text "Golden test precondition failed!"
-  header_text "Please commit the change under testdata directory before running the golden test"
+  header_text "Generate Testdata test precondition failed!"
+  header_text "Please commit the change under testdata directory before running the Generate Testdata test"
   exit 1
 fi
 
-./generate_golden.sh
+./generate_testdata.sh
 
 # Check if there are any changes to files under testdata directory.
 if [[ `git status ${check_directory} --porcelain` ]]; then
@@ -45,9 +45,9 @@ if [[ `git status ${check_directory} --porcelain` ]]; then
   git status ${check_directory} --porcelain
   header_text "git diff ${check_directory}"
   git diff ${check_directory}
-  header_text "Golden test failed!"
-  header_text "Please make sure you have run ./generate_golden.sh if you have changed the scaffolding"
+  header_text "Generate Testdata failed!"
+  header_text "Please, if you have changed the scaffolding make sure you have run: make generate"
   exit 1
 else
-  header_text "Golden test passed!"
+  header_text "Generate Testdata passed!"
 fi

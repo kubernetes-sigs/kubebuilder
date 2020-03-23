@@ -8,6 +8,7 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
+// ReplaceController replaces the controller with a modified version
 func ReplaceController(u *model.Universe) error {
 	templateBody := controllerTemplate
 
@@ -28,7 +29,7 @@ func ReplaceController(u *model.Universe) error {
 	return nil
 }
 
-// nolint:lll
+//nolint:lll
 const controllerTemplate = `{{ .Boilerplate }}
 
 package controllers
@@ -47,7 +48,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	api "{{ .Resource.GoPackage }}/{{ .Resource.Version }}"
+	api "{{ .Resource.Package }}"
 )
 
 var _ reconcile.Reconciler = &{{ .Resource.Kind }}Reconciler{}
@@ -61,8 +62,8 @@ type {{ .Resource.Kind }}Reconciler struct {
 	declarative.Reconciler
 }
 
-// +kubebuilder:rbac:groups={{.Resource.GroupDomain}},resources={{ .Resource.Plural }},verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups={{.Resource.GroupDomain}},resources={{ .Resource.Plural }}/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups={{ .Resource.Domain }},resources={{ .Resource.Plural }},verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups={{ .Resource.Domain }},resources={{ .Resource.Plural }}/status,verbs=get;update;patch
 
 func (r *{{ .Resource.Kind }}Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	addon.Init()

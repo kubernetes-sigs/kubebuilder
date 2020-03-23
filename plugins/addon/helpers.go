@@ -16,6 +16,7 @@ import (
 // plugins.  Once we have validated they are used in more than one
 // place, we can promote them to a shared location.
 
+// PluginFunc executes a step of Plugin
 type PluginFunc func(u *model.Universe) error
 
 // AddFile adds the specified file to the model.
@@ -37,7 +38,7 @@ func AddFile(u *model.Universe, add *file.File) (bool, error) {
 }
 
 // ReplaceFileIfExists replaces the specified file in the model by path
-// Returns true iff the file was replaced.
+// Returns true if the file was replaced.
 func ReplaceFileIfExists(u *model.Universe, add *file.File) bool {
 	p := add.Path
 	if p == "" {
@@ -62,6 +63,7 @@ func ReplaceFile(u *model.Universe, add *file.File) error {
 	return nil
 }
 
+// DefaultTemplateFunctions returns a map of template helpers
 func DefaultTemplateFunctions() template.FuncMap {
 	return template.FuncMap{
 		"title":  strings.Title,
@@ -70,6 +72,7 @@ func DefaultTemplateFunctions() template.FuncMap {
 	}
 }
 
+// RunTemplate parses a template
 func RunTemplate(templateName, templateValue string, data interface{}, funcMap template.FuncMap) (string, error) {
 	t, err := template.New(templateName).Funcs(funcMap).Parse(templateValue)
 	if err != nil {

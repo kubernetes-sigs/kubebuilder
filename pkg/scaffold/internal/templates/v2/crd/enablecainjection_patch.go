@@ -17,11 +17,7 @@ limitations under the License.
 package crd
 
 import (
-	"fmt"
 	"path/filepath"
-	"strings"
-
-	"github.com/gobuffalo/flect"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
@@ -37,22 +33,16 @@ type EnableCAInjectionPatch struct {
 // SetTemplateDefaults implements input.Template
 func (f *EnableCAInjectionPatch) SetTemplateDefaults() error {
 	if f.Path == "" {
-		plural := flect.Pluralize(strings.ToLower(f.Resource.Kind))
-		f.Path = filepath.Join("config", "crd", "patches",
-			fmt.Sprintf("cainjection_in_%s.yaml", plural))
+		f.Path = filepath.Join("config", "crd", "patches", "cainjection_in_%[plural].yaml")
 	}
+	f.Path = f.Resource.Replacer().Replace(f.Path)
 
-	f.TemplateBody = EnableCAInjectionPatchTemplate
+	f.TemplateBody = enableCAInjectionPatchTemplate
 
 	return nil
 }
 
-// Validate validates the values
-func (f *EnableCAInjectionPatch) Validate() error {
-	return f.Resource.Validate()
-}
-
-const EnableCAInjectionPatchTemplate = `# The following patch adds a directive for certmanager to inject CA into the CRD
+const enableCAInjectionPatchTemplate = `# The following patch adds a directive for certmanager to inject CA into the CRD
 # CRD conversion requires k8s 1.13 or later.
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition

@@ -54,6 +54,7 @@ type scaffold struct {
 	fs filesystem.FileSystem
 }
 
+// NewScaffold returns a new Scaffold with the provided plugins
 func NewScaffold(plugins ...model.Plugin) Scaffold {
 	return &scaffold{
 		plugins: plugins,
@@ -178,10 +179,12 @@ func doTemplate(t file.Template) ([]byte, error) {
 
 // newTemplate a new template with common functions
 func newTemplate(t file.Template) *template.Template {
-	return template.New(fmt.Sprintf("%T", t)).Funcs(template.FuncMap{
-		"title": strings.Title,
-		"lower": strings.ToLower,
-	})
+	fm := file.DefaultFuncMap()
+	useFM, ok := t.(file.UseCustomFuncMap)
+	if ok {
+		fm = useFM.GetFuncMap()
+	}
+	return template.New(fmt.Sprintf("%T", t)).Funcs(fm)
 }
 
 // updateFileModel updates a single file

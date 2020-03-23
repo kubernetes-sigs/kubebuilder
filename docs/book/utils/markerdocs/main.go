@@ -121,7 +121,10 @@ type MarkerDocs struct {
 	Args map[string][]string
 }
 
-func (_ MarkerDocs) SupportsOutput(_ string) bool { return true }
+// SupportsOutput implements plugin.Plugin
+func (MarkerDocs) SupportsOutput(_ string) bool { return true }
+
+// Process implements plugin.Plugin
 func (p MarkerDocs) Process(input *plugin.Input) error {
 	markerDocs, err := p.getMarkerDocs()
 	if err != nil {
@@ -161,7 +164,10 @@ func (p MarkerDocs) Process(input *plugin.Input) error {
 		content := new(strings.Builder)
 
 		// NB(directxman12): wrap this in a div to prevent the markdown processor from inserting extra paragraphs
-		fmt.Fprintf(content, "<div><input checked type=\"checkbox\" class=\"markers-summarize\" id=\"markers-summarize-%[1]s\"></input><label class=\"markers-summarize\" for=\"markers-summarize-%[1]s\">Show Detailed Argument Help</label><dl class=\"markers\">", categoryAlias)
+		_, err := fmt.Fprintf(content, "<div><input checked type=\"checkbox\" class=\"markers-summarize\" id=\"markers-summarize-%[1]s\"></input><label class=\"markers-summarize\" for=\"markers-summarize-%[1]s\">Show Detailed Argument Help</label><dl class=\"markers\">", categoryAlias)
+		if err != nil {
+			return "", fmt.Errorf("unable to render marker documentation summary: %v", err)
+		}
 
 		// write the markers
 		for _, marker := range markers {
@@ -170,7 +176,9 @@ func (p MarkerDocs) Process(input *plugin.Input) error {
 			}
 		}
 
-		fmt.Fprintf(content, "</dl></div>")
+		if _, err = fmt.Fprintf(content, "</dl></div>"); err != nil {
+			return "", fmt.Errorf("unable to render marker documentation: %v", err)
+		}
 
 		usedCategories[category] = struct{}{}
 

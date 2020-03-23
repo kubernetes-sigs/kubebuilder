@@ -82,9 +82,7 @@ func main() {
 	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
 	flag.Parse()
 
-	ctrl.SetLogger(zap.New(func(o *zap.Options) {
-		o.Development = true
-	}))
+	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{Scheme: scheme, MetricsBindAddress: metricsAddr})
 	if err != nil {
@@ -92,14 +90,13 @@ func main() {
 		os.Exit(1)
 	}
 
-
 	/*
 		Note that the Manager can restrict the namespace that all controllers will watch for resources by:
 	*/
 
 	mgr, err = ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme: scheme,
-		Namespace: namespace,
+		Scheme:             scheme,
+		Namespace:          namespace,
 		MetricsBindAddress: metricsAddr,
 	})
 
@@ -115,8 +112,8 @@ func main() {
 	var namespaces []string // List of Namespaces
 
 	mgr, err = ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme: scheme,
-		NewCache: cache.MultiNamespacedCacheBuilder(namespaces),
+		Scheme:             scheme,
+		NewCache:           cache.MultiNamespacedCacheBuilder(namespaces),
 		MetricsBindAddress: fmt.Sprintf("%s:%d", metricsHost, metricsPort),
 	})
 

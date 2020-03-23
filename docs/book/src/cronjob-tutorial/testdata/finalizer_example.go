@@ -41,8 +41,8 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
 	log := r.Log.WithValues("cronjob", req.NamespacedName)
 
-	var cronJob batch.CronJob
-	if err := r.Get(ctx, req.NamespacedName, &cronJob); err != nil {
+	var cronJob *batchv1.CronJob
+	if err := r.Get(ctx, req.NamespacedName, cronJob); err != nil {
 		log.Error(err, "unable to fetch CronJob")
 		// we'll ignore not-found errors, since they can't be fixed by an immediate
 		// requeue (we'll need to wait for a new notification), and we can get them
@@ -81,10 +81,13 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			}
 		}
 
-		return ctrl.Result{}, err
+		// Stop reconciliation as the item is being deleted
+		return ctrl.Result{}, nil
 	}
 
-	// rest of the reconciler code
+	// Your reconcile logic
+
+	return ctrl.Result{}, nil
 }
 
 func (r *Reconciler) deleteExternalResources(cronJob *batch.CronJob) error {

@@ -78,27 +78,28 @@ func WithResource(resource *resource.Resource) UniverseOption {
 	}
 }
 
-func (u Universe) InjectInto(t file.Builder) {
+// InjectInto injects fields from the universe into the builder
+func (u Universe) InjectInto(builder file.Builder) {
 	// Inject project configuration
 	if u.Config != nil {
-		if templateWithDomain, hasDomain := t.(file.HasDomain); hasDomain {
-			templateWithDomain.InjectDomain(u.Config.Domain)
+		if builderWithDomain, hasDomain := builder.(file.HasDomain); hasDomain {
+			builderWithDomain.InjectDomain(u.Config.Domain)
 		}
-		if templateWithRepository, hasRepository := t.(file.HasRepository); hasRepository {
-			templateWithRepository.InjectRepository(u.Config.Repo)
+		if builderWithRepository, hasRepository := builder.(file.HasRepository); hasRepository {
+			builderWithRepository.InjectRepository(u.Config.Repo)
 		}
-		if templateWithMultiGroup, hasMultiGroup := t.(file.HasMultiGroup); hasMultiGroup {
-			templateWithMultiGroup.InjectMultiGroup(u.Config.MultiGroup)
+		if builderWithMultiGroup, hasMultiGroup := builder.(file.HasMultiGroup); hasMultiGroup {
+			builderWithMultiGroup.InjectMultiGroup(u.Config.MultiGroup)
 		}
 	}
 	// Inject boilerplate
-	if templateWithBoilerplate, hasBoilerplate := t.(file.HasBoilerplate); hasBoilerplate {
-		templateWithBoilerplate.InjectBoilerplate(u.Boilerplate)
+	if builderWithBoilerplate, hasBoilerplate := builder.(file.HasBoilerplate); hasBoilerplate {
+		builderWithBoilerplate.InjectBoilerplate(u.Boilerplate)
 	}
 	// Inject resource
 	if u.Resource != nil {
-		if templateWithResource, hasResource := t.(file.HasResource); hasResource {
-			templateWithResource.InjectResource(u.Resource)
+		if builderWithResource, hasResource := builder.(file.HasResource); hasResource {
+			builderWithResource.InjectResource(u.Resource)
 		}
 	}
 }

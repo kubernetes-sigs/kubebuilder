@@ -17,6 +17,8 @@ limitations under the License.
 package file
 
 import (
+	"text/template"
+
 	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 )
 
@@ -40,7 +42,7 @@ type Template interface {
 	Builder
 	// GetBody returns the template body
 	GetBody() string
-	// SetTemplateDefaults returns the TemplateMixin for creating a scaffold file
+	// SetTemplateDefaults sets the default values for templates
 	SetTemplateDefaults() error
 }
 
@@ -81,4 +83,10 @@ type HasBoilerplate interface {
 type HasResource interface {
 	// InjectResource sets the template resource
 	InjectResource(*resource.Resource)
+}
+
+// UseCustomFuncMap allows a template to use a custom template.FuncMap instead of the default FuncMap.
+type UseCustomFuncMap interface {
+	// GetFuncMap returns a custom FuncMap.
+	GetFuncMap() template.FuncMap
 }

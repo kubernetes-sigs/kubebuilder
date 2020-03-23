@@ -17,8 +17,8 @@ limitations under the License.
 package controller
 
 import (
+	"fmt"
 	"path/filepath"
-	"strings"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
@@ -37,13 +37,13 @@ type Controller struct {
 func (f *Controller) SetTemplateDefaults() error {
 	if f.Path == "" {
 		if f.MultiGroup {
-			f.Path = filepath.Join("controllers", f.Resource.Group,
-				strings.ToLower(f.Resource.Kind)+"_controller.go")
+			f.Path = filepath.Join("controllers", "%[group]", "%[kind]_controller.go")
 		} else {
-			f.Path = filepath.Join("controllers",
-				strings.ToLower(f.Resource.Kind)+"_controller.go")
+			f.Path = filepath.Join("controllers", "%[kind]_controller.go")
 		}
 	}
+	f.Path = f.Resource.Replacer().Replace(f.Path)
+	fmt.Println(f.Path)
 
 	f.TemplateBody = controllerTemplate
 
@@ -52,7 +52,7 @@ func (f *Controller) SetTemplateDefaults() error {
 	return nil
 }
 
-// nolint:lll
+//nolint:lll
 const controllerTemplate = `{{ .Boilerplate }}
 
 package controllers

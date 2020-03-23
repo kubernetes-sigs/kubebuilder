@@ -86,6 +86,11 @@ Before you file an issue, please search existing issues to see if your issue is 
   For realtime discussion,  you can join the [#kubebuilder](https://slack.k8s.io/#kubebuilder) slack channel. Slack requires registration, but the Kubernetes team is open invitation to anyone to register here. Feel free to come and ask any questions.
 
 ## Contributing
+
 Contributions are greatly appreciated. The maintainers actively manage the issues list, and try to highlight issues suitable for newcomers.
 The project follows the typical GitHub pull request model. See [CONTRIBUTING.md](CONTRIBUTING.md) for more details.
 Before starting any work, please either comment on an existing issue, or file a new one.
+
+## Supportability
+
+Currently, Kubebuilder officially supports OSX and Linux platforms. So, if you are using a Windows OS you may find issues. Contributions towards supporting Windows are welcome.

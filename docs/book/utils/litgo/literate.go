@@ -45,7 +45,10 @@ type Literate struct {
 	BaseSourcePath *url.URL
 }
 
-func (_ Literate) SupportsOutput(_ string) bool { return true }
+// SupportsOutput implements plugin.Plugin
+func (Literate) SupportsOutput(_ string) bool { return true }
+
+// Process implements plugin.Plugin
 func (l Literate) Process(input *plugin.Input) error {
 	bookSrcDir := filepath.Join(input.Context.Root, input.Context.Config.Book.Src)
 	return plugin.EachCommand(&input.Book, "literatego", func(chapter *plugin.BookChapter, relPath string) (string, error) {

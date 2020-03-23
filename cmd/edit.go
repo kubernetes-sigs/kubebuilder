@@ -83,7 +83,7 @@ func (o *editOptions) Validate(c *config.Config) error {
 	return nil
 }
 
-func (o *editOptions) GetScaffolder(c *config.Config) (scaffold.Scaffolder, error) { // nolint:unparam
+func (o *editOptions) GetScaffolder(c *config.Config) (scaffold.Scaffolder, error) { //nolint:unparam
 	return scaffold.NewEditScaffolder(c, o.multigroup), nil
 }
 

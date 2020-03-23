@@ -17,7 +17,6 @@ limitations under the License.
 package webhook
 
 import (
-	"fmt"
 	"path/filepath"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
@@ -36,7 +35,7 @@ type Server struct {
 // SetTemplateDefaults implements input.Template
 func (f *Server) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = filepath.Join("pkg", "webhook", fmt.Sprintf("%s_server", f.Server), "server.go")
+		f.Path = filepath.Join("pkg", "webhook", f.Server+"_server", "server.go")
 	}
 
 	f.TemplateBody = serverTemplate

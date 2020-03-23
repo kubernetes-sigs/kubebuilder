@@ -41,7 +41,7 @@ func (f *Webhook) SetTemplateDefaults() error {
 	return nil
 }
 
-// nolint:lll
+//nolint:lll
 const webhookTemplate = `{{ .Boilerplate }}
 
 package webhook

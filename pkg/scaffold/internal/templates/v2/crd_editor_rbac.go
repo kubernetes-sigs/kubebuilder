@@ -17,16 +17,14 @@ limitations under the License.
 package v2
 
 import (
-	"fmt"
 	"path/filepath"
-	"strings"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
 var _ file.Template = &CRDEditorRole{}
 
-// CRD Editor role scaffolds the config/rbca/<kind>_editor_role.yaml
+// CRDEditorRole scaffolds the config/rbac/<kind>_editor_role.yaml
 type CRDEditorRole struct {
 	file.TemplateMixin
 	file.ResourceMixin
@@ -35,17 +33,13 @@ type CRDEditorRole struct {
 // SetTemplateDefaults implements input.Template
 func (f *CRDEditorRole) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = filepath.Join("config", "rbac", fmt.Sprintf("%s_editor_role.yaml", strings.ToLower(f.Resource.Kind)))
+		f.Path = filepath.Join("config", "rbac", "%[kind]_editor_role.yaml")
 	}
+	f.Path = f.Resource.Replacer().Replace(f.Path)
 
 	f.TemplateBody = crdRoleEditorTemplate
 
 	return nil
-}
-
-// Validate validates the values
-func (f *CRDEditorRole) Validate() error {
-	return f.Resource.Validate()
 }
 
 const crdRoleEditorTemplate = `# permissions for end users to edit {{ .Resource.Plural }}.
