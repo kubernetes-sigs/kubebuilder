@@ -28,8 +28,8 @@ import (
 	"github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/internal/cmdutil"
-	"sigs.k8s.io/kubebuilder/internal/config"
 	"sigs.k8s.io/kubebuilder/pkg/model"
+	"sigs.k8s.io/kubebuilder/pkg/model/config"
 	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/pkg/plugin/internal"
@@ -38,6 +38,8 @@ import (
 )
 
 type createAPIPlugin struct {
+	config *config.Config
+
 	// pattern indicates that we should use a plugin to build according to a pattern
 	pattern string
 
@@ -115,15 +117,15 @@ func (p *createAPIPlugin) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.resource.Namespaced, "namespaced", true, "resource is namespaced")
 }
 
+func (p *createAPIPlugin) InjectConfig(c *config.Config) {
+	p.config = c
+}
+
 func (p *createAPIPlugin) Run() error {
 	return cmdutil.Run(p)
 }
 
-func (p *createAPIPlugin) LoadConfig() (*config.Config, error) {
-	return config.LoadInitialized()
-}
-
-func (p *createAPIPlugin) Validate(c *config.Config) error {
+func (p *createAPIPlugin) Validate() error {
 	if err := p.resource.Validate(); err != nil {
 		return err
 	}
@@ -141,12 +143,13 @@ func (p *createAPIPlugin) Validate(c *config.Config) error {
 	// In case we want to scaffold a resource API we need to do some checks
 	if p.doResource {
 		// Check that resource doesn't exist or flag force was set
-		if !p.force && c.HasResource(p.resource.GVK()) {
+		if !p.force && p.config.HasResource(p.resource.GVK()) {
 			return errors.New("API resource already exists")
 		}
 
 		// Check that the provided group can be added to the project
-		if c.IsV2() && !c.MultiGroup && len(c.Resources) != 0 && !c.HasGroup(p.resource.Group) {
+		if p.config.IsV2() && !p.config.MultiGroup &&
+			len(p.config.Resources) != 0 && !p.config.HasGroup(p.resource.Group) {
 			return fmt.Errorf("multiple groups are not allowed by default, to enable multi-group visit %s",
 				"kubebuilder.io/migration/multi-group.html")
 		}
@@ -155,15 +158,12 @@ func (p *createAPIPlugin) Validate(c *config.Config) error {
 	return nil
 }
 
-func (p *createAPIPlugin) GetScaffolder(c *config.Config) (scaffold.Scaffolder, error) {
+func (p *createAPIPlugin) GetScaffolder() (scaffold.Scaffolder, error) {
 	// Load the boilerplate
 	bp, err := ioutil.ReadFile(filepath.Join("hack", "boilerplate.go.txt")) // nolint:gosec
 	if err != nil {
 		return nil, fmt.Errorf("unable to load boilerplate: %v", err)
 	}
-
-	// Create the actual resource from the resource options
-	res := p.resource.NewResource(&c.Config, p.doResource)
 
 	// Load the requested plugins
 	plugins := make([]model.Plugin, 0)
@@ -176,10 +176,12 @@ func (p *createAPIPlugin) GetScaffolder(c *config.Config) (scaffold.Scaffolder, 
 		return nil, fmt.Errorf("unknown pattern %q", p.pattern)
 	}
 
-	return scaffold.NewAPIScaffolder(c, string(bp), res, p.doResource, p.doController, plugins), nil
+	// Create the actual resource from the resource options
+	res := p.resource.NewResource(p.config, p.doResource)
+	return scaffold.NewAPIScaffolder(p.config, string(bp), res, p.doResource, p.doController, plugins), nil
 }
 
-func (p *createAPIPlugin) PostScaffold(_ *config.Config) error {
+func (p *createAPIPlugin) PostScaffold() error {
 	if p.runMake {
 		return internal.RunCmd("Running make", "make")
 	}

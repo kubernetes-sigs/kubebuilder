@@ -26,6 +26,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
+	"sigs.k8s.io/kubebuilder/internal/config"
 	"sigs.k8s.io/kubebuilder/pkg/plugin"
 )
 
@@ -145,11 +146,25 @@ func (c cli) bindInit(ctx plugin.Context, cmd *cobra.Command) {
 			c.projectVersion)
 	}
 
+	cfg := config.New(config.DefaultPath)
+	cfg.Version = c.projectVersion
+
 	init := getter.GetInitPlugin()
+	init.InjectConfig(&cfg.Config)
 	init.BindFlags(cmd.Flags())
-	init.SetVersion(c.projectVersion)
 	init.UpdateContext(&ctx)
 	cmd.Long = ctx.Description
 	cmd.Example = ctx.Examples
-	cmd.RunE = runECmdFunc(init, fmt.Sprintf("failed to initialize project with version %q", c.projectVersion))
+	cmd.RunE = func(*cobra.Command, []string) error {
+		// Check if a config is initialized in the command runner so the check
+		// doesn't erroneously fail other commands used in initialized projects.
+		_, err := config.Read()
+		if err == nil || os.IsExist(err) {
+			log.Fatal("config already initialized")
+		}
+		if err := init.Run(); err != nil {
+			return fmt.Errorf("failed to initialize project with version %q: %v", c.projectVersion, err)
+		}
+		return cfg.Save()
+	}
 }

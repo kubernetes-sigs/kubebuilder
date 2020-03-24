@@ -316,27 +316,3 @@ After the scaffold is written, api will run make on the project.
 		},
 	}
 }
-
-// cmdErr updates a cobra command to output error information when executed
-// or used with the help flag.
-func cmdErr(cmd *cobra.Command, err error) {
-	cmd.Long = fmt.Sprintf("%s\nNote: %v", cmd.Long, err)
-	cmd.RunE = errCmdFunc(err)
-}
-
-// errCmdFunc returns a cobra RunE function that returns the provided error
-func errCmdFunc(err error) func(*cobra.Command, []string) error {
-	return func(*cobra.Command, []string) error {
-		return err
-	}
-}
-
-// runECmdFunc returns a cobra RunE function that runs gsub and returns its value.
-func runECmdFunc(gsub plugin.GenericSubcommand, msg string) func(*cobra.Command, []string) error { // nolint:interfacer
-	return func(*cobra.Command, []string) error {
-		if err := gsub.Run(); err != nil {
-			return fmt.Errorf("%s: %v", msg, err)
-		}
-		return nil
-	}
-}

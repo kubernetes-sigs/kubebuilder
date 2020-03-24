@@ -25,13 +25,15 @@ import (
 	"github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/internal/cmdutil"
-	"sigs.k8s.io/kubebuilder/internal/config"
+	"sigs.k8s.io/kubebuilder/pkg/model/config"
 	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold"
 )
 
 type createWebhookPlugin struct {
+	config *config.Config
+
 	resource   *resource.Options
 	defaulting bool
 	validation bool
@@ -72,15 +74,15 @@ func (p *createWebhookPlugin) BindFlags(fs *pflag.FlagSet) {
 		"if set, scaffold the conversion webhook")
 }
 
+func (p *createWebhookPlugin) InjectConfig(c *config.Config) {
+	p.config = c
+}
+
 func (p *createWebhookPlugin) Run() error {
 	return cmdutil.Run(p)
 }
 
-func (p *createWebhookPlugin) LoadConfig() (*config.Config, error) {
-	return config.LoadInitialized()
-}
-
-func (p *createWebhookPlugin) Validate(_ *config.Config) error {
+func (p *createWebhookPlugin) Validate() error {
 	if err := p.resource.Validate(); err != nil {
 		return err
 	}
@@ -93,7 +95,7 @@ func (p *createWebhookPlugin) Validate(_ *config.Config) error {
 	return nil
 }
 
-func (p *createWebhookPlugin) GetScaffolder(c *config.Config) (scaffold.Scaffolder, error) { // nolint:unparam
+func (p *createWebhookPlugin) GetScaffolder() (scaffold.Scaffolder, error) {
 	// Load the boilerplate
 	bp, err := ioutil.ReadFile(filepath.Join("hack", "boilerplate.go.txt")) // nolint:gosec
 	if err != nil {
@@ -101,10 +103,10 @@ func (p *createWebhookPlugin) GetScaffolder(c *config.Config) (scaffold.Scaffold
 	}
 
 	// Create the actual resource from the resource options
-	res := p.resource.NewResource(&c.Config, false)
-	return scaffold.NewV2WebhookScaffolder(&c.Config, string(bp), res, p.defaulting, p.validation, p.conversion), nil
+	res := p.resource.NewResource(p.config, false)
+	return scaffold.NewV2WebhookScaffolder(p.config, string(bp), res, p.defaulting, p.validation, p.conversion), nil
 }
 
-func (p *createWebhookPlugin) PostScaffold(_ *config.Config) error {
+func (p *createWebhookPlugin) PostScaffold() error {
 	return nil
 }
