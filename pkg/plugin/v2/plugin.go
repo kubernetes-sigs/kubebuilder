@@ -20,6 +20,13 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/plugin"
 )
 
+const (
+	pluginName    = "go" + plugin.DefaultNameQualifier
+	pluginVersion = "v2.0.0"
+)
+
+var supportedProjectVersions = []string{"2"}
+
 var (
 	_ plugin.Base                      = Plugin{}
 	_ plugin.InitPluginGetter          = Plugin{}
@@ -33,26 +40,9 @@ type Plugin struct {
 	createWebhookPlugin
 }
 
-func (Plugin) Name() string {
-	return "go"
-}
-
-func (Plugin) Version() string {
-	return "v2.0.0"
-}
-
-func (Plugin) SupportedProjectVersions() []string {
-	return []string{"2"}
-}
-
-func (p Plugin) GetInitPlugin() plugin.Init {
-	return &p.initPlugin
-}
-
-func (p Plugin) GetCreateAPIPlugin() plugin.CreateAPI {
-	return &p.createAPIPlugin
-}
-
-func (p Plugin) GetCreateWebhookPlugin() plugin.CreateWebhook {
-	return &p.createWebhookPlugin
-}
+func (Plugin) Name() string                                   { return pluginName }
+func (Plugin) Version() string                                { return pluginVersion }
+func (Plugin) SupportedProjectVersions() []string             { return supportedProjectVersions }
+func (p Plugin) GetInitPlugin() plugin.Init                   { return &p.initPlugin }
+func (p Plugin) GetCreateAPIPlugin() plugin.CreateAPI         { return &p.createAPIPlugin }
+func (p Plugin) GetCreateWebhookPlugin() plugin.CreateWebhook { return &p.createWebhookPlugin }

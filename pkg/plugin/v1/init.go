@@ -35,7 +35,7 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold"
 )
 
-type initPlugin struct { // nolint:maligned
+type initPlugin struct {
 	config *config.Config
 
 	// boilerplate options

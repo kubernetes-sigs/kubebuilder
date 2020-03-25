@@ -1,4 +1,5 @@
 domain: testproject.org
+layout: go.kubebuilder.io/v2.0.0
 repo: sigs.k8s.io/kubebuilder/testdata/project-v2
 resources:
 - group: crew

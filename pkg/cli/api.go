@@ -55,14 +55,9 @@ func (c cli) newAPIContext() plugin.Context {
 }
 
 func (c cli) bindCreateAPI(ctx plugin.Context, cmd *cobra.Command) {
-	versionedPlugins, err := c.getVersionedPlugins()
-	if err != nil {
-		cmdErr(cmd, err)
-		return
-	}
 	var getter plugin.CreateAPIPluginGetter
 	var hasGetter bool
-	for _, p := range versionedPlugins {
+	for _, p := range c.resolvedPlugins {
 		tmpGetter, isGetter := p.(plugin.CreateAPIPluginGetter)
 		if isGetter {
 			if hasGetter {

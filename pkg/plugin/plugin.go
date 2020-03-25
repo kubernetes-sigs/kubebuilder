@@ -25,11 +25,11 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/model/config"
 )
 
+const DefaultNameQualifier = ".kubebuilder.io"
+
 type Base interface {
 	// Name returns a DNS1123 label string defining the plugin type.
 	// For example, Kubebuilder's main plugin would return "go".
-	//
-	// TODO: fully-qualified automatic append and comparison.
 	Name() string
 	// Version returns the plugin's semantic version, ex. "v1.2.3".
 	//
@@ -40,9 +40,32 @@ type Base interface {
 	SupportedProjectVersions() []string
 }
 
-// Key returns a Base plugin's unique identifying string.
-func Key(p Base) string {
-	return path.Join(p.Name(), "v"+strings.TrimLeft(p.Version(), "v"))
+// Key returns a unique identifying string for a plugin's name and version.
+func Key(name, version string) string {
+	if version == "" {
+		return name
+	}
+	return path.Join(name, "v"+strings.TrimLeft(version, "v"))
+}
+
+// KeyFor returns a Base plugin's unique identifying string.
+func KeyFor(p Base) string {
+	return Key(p.Name(), p.Version())
+}
+
+// SplitKey returns a name and version for a plugin key.
+func SplitKey(key string) (string, string) {
+	if !strings.Contains(key, "/") {
+		return key, ""
+	}
+	keyParts := strings.SplitN(key, "/", 2)
+	return keyParts[0], keyParts[1]
+}
+
+// GetShortName returns plugin's short name (name before domain) if name
+// is fully qualified (has a domain suffix), otherwise GetShortName returns name.
+func GetShortName(name string) string {
+	return strings.SplitN(name, ".", 2)[0]
 }
 
 type Deprecated interface {

@@ -24,7 +24,6 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/internal/config"
 	"sigs.k8s.io/kubebuilder/pkg/plugin"
@@ -45,13 +44,8 @@ func (c *cli) newInitCmd() *cobra.Command {
 	cmd.Flags().String("project-version", c.defaultProjectVersion,
 		fmt.Sprintf("project version, possible values: (%s)", strings.Join(c.getAvailableProjectVersions(), ", ")))
 
-	// Pre-parse the project version and help flags so that we can
-	// dynamically bind to a plugin's init implementation (or not).
-	var isHelpOnly bool
-	c.projectVersion, isHelpOnly = c.getBaseFlags()
-
 	// If only the help flag was set, return the command as is.
-	if isHelpOnly {
+	if c.doGenericHelp {
 		return cmd
 	}
 
@@ -85,7 +79,7 @@ func (c cli) getInitHelpExamples() string {
 }
 
 func (c cli) getAvailableProjectVersions() (projectVersions []string) {
-	for version, versionedPlugins := range c.plugins {
+	for version, versionedPlugins := range c.pluginsFromOptions {
 		for _, p := range versionedPlugins {
 			// There will only be one init plugin per version.
 			if _, isInit := p.(plugin.Init); !isInit {
@@ -100,37 +94,10 @@ func (c cli) getAvailableProjectVersions() (projectVersions []string) {
 	return projectVersions
 }
 
-// getBaseFlags parses the command line arguments, looking for --project-version
-// and help. If an error occurs or only --help is set, getBaseFlags returns an
-// empty string and true. Otherwise, getBaseFlags returns the project version
-// and false.
-func (c cli) getBaseFlags() (string, bool) {
-	fs := pflag.NewFlagSet("base", pflag.ExitOnError)
-	fs.ParseErrorsWhitelist = pflag.ParseErrorsWhitelist{UnknownFlags: true}
-
-	var (
-		projectVersion string
-		help           bool
-	)
-	fs.StringVar(&projectVersion, "project-version", c.defaultProjectVersion, "project version")
-	fs.BoolVarP(&help, "help", "h", false, "print help")
-
-	err := fs.Parse(os.Args[1:])
-	doHelp := err != nil || help && !fs.Lookup("project-version").Changed
-	if doHelp {
-		return "", true
-	}
-	return projectVersion, false
-}
-
 func (c cli) bindInit(ctx plugin.Context, cmd *cobra.Command) {
-	versionedPlugins, err := c.getVersionedPlugins()
-	if err != nil {
-		log.Fatal(err)
-	}
 	var getter plugin.InitPluginGetter
 	var hasGetter bool
-	for _, p := range versionedPlugins {
+	for _, p := range c.resolvedPlugins {
 		tmpGetter, isGetter := p.(plugin.InitPluginGetter)
 		if isGetter {
 			if hasGetter {
@@ -142,7 +109,7 @@ func (c cli) bindInit(ctx plugin.Context, cmd *cobra.Command) {
 		}
 	}
 	if !hasGetter {
-		log.Fatalf("project version %q does not support a project initialization plugin",
+		log.Fatalf("project version %q does not support an initialization plugin",
 			c.projectVersion)
 	}
 

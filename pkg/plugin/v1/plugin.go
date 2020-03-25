@@ -20,6 +20,16 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/plugin"
 )
 
+const (
+	pluginName    = "go" + plugin.DefaultNameQualifier
+	pluginVersion = "v1.0.0"
+
+	deprecationWarning = `The v1 projects are deprecated and will not be supported beyond Feb 1, 2020.
+See how to upgrade your project to v2: https://book.kubebuilder.io/migration/guide.html`
+)
+
+var supportedProjectVersions = []string{"1"}
+
 var (
 	_ plugin.Base                      = Plugin{}
 	_ plugin.InitPluginGetter          = Plugin{}
@@ -34,31 +44,10 @@ type Plugin struct {
 	createWebhookPlugin
 }
 
-func (Plugin) Name() string {
-	return "go"
-}
-
-func (Plugin) Version() string {
-	return "v1.0.0"
-}
-
-func (Plugin) SupportedProjectVersions() []string {
-	return []string{"1"}
-}
-
-func (p Plugin) GetInitPlugin() plugin.Init {
-	return &p.initPlugin
-}
-
-func (p Plugin) GetCreateAPIPlugin() plugin.CreateAPI {
-	return &p.createAPIPlugin
-}
-
-func (p Plugin) GetCreateWebhookPlugin() plugin.CreateWebhook {
-	return &p.createWebhookPlugin
-}
-
-func (Plugin) DeprecationWarning() string {
-	return `The v1 projects are deprecated and will not be supported beyond Feb 1, 2020.
-See how to upgrade your project to v2: https://book.kubebuilder.io/migration/guide.html`
-}
+func (Plugin) Name() string                                   { return pluginName }
+func (Plugin) Version() string                                { return pluginVersion }
+func (Plugin) SupportedProjectVersions() []string             { return supportedProjectVersions }
+func (p Plugin) GetInitPlugin() plugin.Init                   { return &p.initPlugin }
+func (p Plugin) GetCreateAPIPlugin() plugin.CreateAPI         { return &p.createAPIPlugin }
+func (p Plugin) GetCreateWebhookPlugin() plugin.CreateWebhook { return &p.createWebhookPlugin }
+func (Plugin) DeprecationWarning() string                     { return deprecationWarning }

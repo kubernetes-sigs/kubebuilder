@@ -43,6 +43,9 @@ type Config struct {
 
 	// Multigroup tracks if the project has more than one group
 	MultiGroup bool `json:"multigroup,omitempty"`
+
+	// Layout contains a key specifying which plugin created a project.
+	Layout string `json:"layout,omitempty"`
 }
 
 // IsV1 returns true if it is a v1 project

@@ -33,7 +33,7 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold"
 )
 
-type initPlugin struct { // nolint:maligned
+type initPlugin struct {
 	config *config.Config
 
 	// boilerplate options
@@ -107,6 +107,8 @@ func (p *initPlugin) BindFlags(fs *pflag.FlagSet) {
 }
 
 func (p *initPlugin) InjectConfig(c *config.Config) {
+	// v2 project configs get a 'layout' value.
+	c.Layout = plugin.KeyFor(Plugin{})
 	p.config = c
 }
 

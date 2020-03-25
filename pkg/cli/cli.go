@@ -17,12 +17,13 @@ limitations under the License.
 package cli
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 
 	internalconfig "sigs.k8s.io/kubebuilder/internal/config"
 	"sigs.k8s.io/kubebuilder/pkg/internal/validation"
@@ -35,6 +36,10 @@ const (
 	runInProjectRootMsg = `For project-specific information, run this command in the root directory of a
 project.
 `
+
+	projectVersionFlag = "project-version"
+	helpFlag           = "help"
+	pluginNamesFlag    = "plugins"
 )
 
 // CLI interacts with a command line interface.
@@ -58,21 +63,32 @@ type cli struct {
 	projectVersion string
 	// True if the project has config file.
 	configured bool
+	// Whether the command is requesting help.
+	doGenericHelp bool
+
+	// Plugins injected by options.
+	pluginsFromOptions map[string][]plugin.Base
+	// Default plugins injected by options.
+	defaultPluginsFromOptions map[string][]plugin.Base
+	// A mapping of plugin name to version passed by to --plugins.
+	cliPluginKeys map[string]string
+	// A filtered set of plugins that should be used by command constructors.
+	resolvedPlugins []plugin.Base
 
 	// Base command.
 	cmd *cobra.Command
 	// Commands injected by options.
 	extraCommands []*cobra.Command
-	// Plugins injected by options.
-	plugins map[string][]plugin.Base
 }
 
 // New creates a new cli instance.
 func New(opts ...Option) (CLI, error) {
 	c := &cli{
-		commandName:           "kubebuilder",
-		defaultProjectVersion: internalconfig.DefaultVersion,
-		plugins:               map[string][]plugin.Base{},
+		commandName:               "kubebuilder",
+		defaultProjectVersion:     internalconfig.DefaultVersion,
+		pluginsFromOptions:        make(map[string][]plugin.Base),
+		defaultPluginsFromOptions: make(map[string][]plugin.Base),
+		cliPluginKeys:             make(map[string]string),
 	}
 	for _, opt := range opts {
 		if err := opt(c); err != nil {
@@ -113,10 +129,25 @@ func WithPlugins(plugins ...plugin.Base) Option {
 	return func(c *cli) error {
 		for _, p := range plugins {
 			for _, version := range p.SupportedProjectVersions() {
-				if _, ok := c.plugins[version]; !ok {
-					c.plugins[version] = []plugin.Base{}
+				if _, ok := c.pluginsFromOptions[version]; !ok {
+					c.pluginsFromOptions[version] = []plugin.Base{}
 				}
-				c.plugins[version] = append(c.plugins[version], p)
+				c.pluginsFromOptions[version] = append(c.pluginsFromOptions[version], p)
+			}
+		}
+		return nil
+	}
+}
+
+// WithDefaultPlugins is an Option that sets the cli's default plugins.
+func WithDefaultPlugins(plugins ...plugin.Base) Option {
+	return func(c *cli) error {
+		for _, p := range plugins {
+			for _, version := range p.SupportedProjectVersions() {
+				if _, ok := c.defaultPluginsFromOptions[version]; !ok {
+					c.defaultPluginsFromOptions[version] = []plugin.Base{}
+				}
+				c.defaultPluginsFromOptions[version] = append(c.defaultPluginsFromOptions[version], p)
 			}
 		}
 		return nil
@@ -134,12 +165,20 @@ func WithExtraCommands(cmds ...*cobra.Command) Option {
 
 // initialize initializes the cli.
 func (c *cli) initialize() error {
+	// Initialize cli with globally-relevant flags or flags that determine
+	// certain plugin type's configuration.
+	if err := c.parseBaseFlags(); err != nil {
+		return err
+	}
+
 	// Configure the project version first for plugin retrieval in command
 	// constructors.
 	projectConfig, err := internalconfig.Read()
 	if os.IsNotExist(err) {
 		c.configured = false
-		c.projectVersion = c.defaultProjectVersion
+		if c.projectVersion == "" {
+			c.projectVersion = c.defaultProjectVersion
+		}
 	} else if err == nil {
 		c.configured = true
 		c.projectVersion = projectConfig.Version
@@ -151,6 +190,40 @@ func (c *cli) initialize() error {
 	// out before an error resulting from an incorrect cli is returned downstream.
 	if err = c.validate(); err != nil {
 		return err
+	}
+
+	// With or without a config, a user can:
+	// 1. Not set --plugins
+	// 2. Set --plugins to a plugin, ex. --plugins=go
+	// In case 1, either default plugins or the config layout can be used to
+	// determine which plugin to use. Otherwise, the value passed to --plugins
+	// is used. Since both layout and a --plugins value are user input, they
+	// may need to be resolved to known plugin keys.
+	var filterKeys map[string]string
+	switch {
+	case len(c.cliPluginKeys) != 0:
+		// Filter plugins by keys passed in CLI.
+		filterKeys = c.cliPluginKeys
+	case c.configured && !projectConfig.IsV1():
+		// All non-v1 configs must have a layout key. This check will help with
+		// migration.
+		if projectConfig.Layout == "" {
+			return fmt.Errorf("config must have a layout value")
+		}
+		// Use defaults if no config is found, otherwise infer plugins from the
+		// config's layout.
+		name, version := plugin.SplitKey(projectConfig.Layout)
+		filterKeys = map[string]string{name: version}
+	default:
+		// Use the default plugins for this project version.
+		c.resolvedPlugins = c.defaultPluginsFromOptions[c.projectVersion]
+	}
+	if len(filterKeys) != 0 {
+		plugins := c.pluginsFromOptions[c.projectVersion]
+		c.resolvedPlugins, err = resolvePluginsByKeys(plugins, filterKeys)
+		if err != nil {
+			return err
+		}
 	}
 
 	c.cmd = c.buildRootCmd()
@@ -166,17 +239,49 @@ func (c *cli) initialize() error {
 	}
 
 	// Write deprecation notices after all commands have been constructed.
-	if c.projectVersion != "" {
-		versionedPlugins, err := c.getVersionedPlugins()
-		if err != nil {
-			return err
+	for _, p := range c.resolvedPlugins {
+		if d, isDeprecated := p.(plugin.Deprecated); isDeprecated {
+			fmt.Printf(noticeColor, fmt.Sprintf("[Deprecation Notice] %s\n\n",
+				d.DeprecationWarning()))
 		}
-		for _, p := range versionedPlugins {
-			if d, isDeprecated := p.(plugin.Deprecated); isDeprecated {
-				fmt.Printf(noticeColor, fmt.Sprintf("[Deprecation Notice] %s\n\n",
-					d.DeprecationWarning()))
-			}
+	}
+
+	return nil
+}
+
+// parseBaseFlags parses the command line arguments, looking for flags that
+// affect initialization of a cli. An error is returned only if an error
+// unrelated to flag parsing occurs.
+func (c *cli) parseBaseFlags() error {
+	// Create a dummy "base" flagset to populate from CLI args.
+	fs := pflag.NewFlagSet("base", pflag.ExitOnError)
+	fs.ParseErrorsWhitelist = pflag.ParseErrorsWhitelist{UnknownFlags: true}
+
+	// Set base flags that require pre-parsing to initialize c.
+	fs.StringVar(&c.projectVersion, projectVersionFlag, c.defaultProjectVersion, "project version")
+	help := false
+	fs.BoolVarP(&help, helpFlag, "h", false, "print help")
+	pluginKeys := []string{}
+	fs.StringSliceVar(&pluginKeys, pluginNamesFlag, nil, "plugins to run")
+
+	// Parse current CLI args outside of cobra.
+	err := fs.Parse(os.Args[1:])
+	// User needs *generic* help if args are incorrect or --help is set and
+	// --project-version is not set. Plugin-specific help is given if a
+	// plugin.Context is updated, which does not require this field.
+	c.doGenericHelp = err != nil || help && !fs.Lookup(projectVersionFlag).Changed
+
+	// Parse plugin keys into a more manageable data structure (map) and check
+	// for duplicates.
+	for _, key := range pluginKeys {
+		pluginName, pluginVersion := plugin.SplitKey(key)
+		if pluginName == "" {
+			return fmt.Errorf("plugin key %q must at least have a name", key)
 		}
+		if _, exists := c.cliPluginKeys[pluginName]; exists {
+			return fmt.Errorf("duplicate plugin name %q", pluginName)
+		}
+		c.cliPluginKeys[pluginName] = pluginVersion
 	}
 
 	return nil
@@ -192,24 +297,73 @@ func (c cli) validate() error {
 		return fmt.Errorf("failed to validate project version %q: %v", c.projectVersion, err)
 	}
 
+	if _, versionFound := c.pluginsFromOptions[c.projectVersion]; !versionFound {
+		return fmt.Errorf("no plugins for project version %q", c.projectVersion)
+	}
+	// If --plugins is not set, no layout exists, and no defaults exist, we
+	// cannot know which Getter to use for a plugin type.
+	if !c.configured && len(c.cliPluginKeys) == 0 {
+		_, versionExists := c.defaultPluginsFromOptions[c.projectVersion]
+		if !versionExists {
+			return fmt.Errorf("no default plugins for project version %s", c.projectVersion)
+		}
+	}
+
 	// Validate plugin versions and name.
-	for _, versionedPlugins := range c.plugins {
-		for _, versionedPlugin := range versionedPlugins {
-			pluginName := versionedPlugin.Name()
-			pluginVersion := versionedPlugin.Version()
+	for _, versionedPlugins := range c.pluginsFromOptions {
+		if err := validatePlugins(versionedPlugins...); err != nil {
+			return err
+		}
+	}
+	for _, defaultPlugins := range c.defaultPluginsFromOptions {
+		if err := validatePlugins(defaultPlugins...); err != nil {
+			return err
+		}
+	}
+
+	// Validate plugin keys set in CLI.
+	for pluginName, pluginVersion := range c.cliPluginKeys {
+		if err := plugin.ValidateName(pluginName); err != nil {
+			return fmt.Errorf("failed to validate plugin name %q: %v", pluginName, err)
+		}
+		// CLI-set plugins do not have to contain a version.
+		if pluginVersion != "" {
 			if err := plugin.ValidateVersion(pluginVersion); err != nil {
 				return fmt.Errorf("failed to validate plugin %q version %q: %v",
 					pluginName, pluginVersion, err)
 			}
-			for _, projectVersion := range versionedPlugin.SupportedProjectVersions() {
-				if err := validation.ValidateProjectVersion(projectVersion); err != nil {
-					return fmt.Errorf("failed to validate plugin %q supported project version %q: %v",
-						pluginName, projectVersion, err)
-				}
-			}
 		}
 	}
 
+	return nil
+}
+
+// validatePlugins validates the name and versions of a list of plugins.
+func validatePlugins(plugins ...plugin.Base) error {
+	pluginNameSet := make(map[string]struct{}, len(plugins))
+	for _, p := range plugins {
+		pluginName := p.Name()
+		if err := plugin.ValidateName(pluginName); err != nil {
+			return fmt.Errorf("failed to validate plugin name %q: %v", pluginName, err)
+		}
+		pluginVersion := p.Version()
+		if err := plugin.ValidateVersion(pluginVersion); err != nil {
+			return fmt.Errorf("failed to validate plugin %q version %q: %v",
+				pluginName, pluginVersion, err)
+		}
+		for _, projectVersion := range p.SupportedProjectVersions() {
+			if err := validation.ValidateProjectVersion(projectVersion); err != nil {
+				return fmt.Errorf("failed to validate plugin %q supported project version %q: %v",
+					pluginName, projectVersion, err)
+			}
+		}
+		// Check for duplicate plugin names. Names outside of a version can
+		// conflict because multiple project versions of a plugin may exist.
+		if _, seen := pluginNameSet[pluginName]; seen {
+			return fmt.Errorf("two plugins have the same name: %q", pluginName)
+		}
+		pluginNameSet[pluginName] = struct{}{}
+	}
 	return nil
 }
 
@@ -219,6 +373,7 @@ func (c cli) buildRootCmd() *cobra.Command {
 	configuredAndV1 := c.configured && c.projectVersion == config.Version1
 
 	rootCmd := c.defaultCommand()
+	rootCmd.PersistentFlags().StringSlice(pluginNamesFlag, nil, "plugins to run")
 
 	// kubebuilder alpha
 	alphaCmd := c.newAlphaCmd()
@@ -248,20 +403,79 @@ func (c cli) buildRootCmd() *cobra.Command {
 	return rootCmd
 }
 
-// getVersionedPlugins returns all plugins for the project version that c is
-// configured with.
-func (c cli) getVersionedPlugins() ([]plugin.Base, error) {
-	if c.projectVersion == "" {
-		return nil, errors.New("project version not set")
+// resolvePluginsByKeys filters versionedPlugins by resolving names from a
+// set of plugin keys, returning unambiguously matched plugins.
+// A plugin passes the filter if:
+// - Name and version are the same.
+// - Long or short name is the same, and only one version for that name exists.
+// If long or short name is the same, but multiple versions for that name exist,
+// resolvePluginsByKeys will not guess which version to use and returns an error.
+func resolvePluginsByKeys(versionedPlugins []plugin.Base, cliPluginKeys map[string]string) ([]plugin.Base, error) {
+	// Find all potential mateches for this plugin's name.
+	acceptedMatches, maybeMatchesByKey := []plugin.Base{}, map[string][]plugin.Base{}
+	for pluginName, pluginVersion := range cliPluginKeys {
+		cliPluginKey := plugin.Key(pluginName, pluginVersion)
+		// Prevents duplicate versions with the same name from being added to
+		// maybeMatchesByKey.
+		foundExactMatch := false
+		for _, versionedPlugin := range versionedPlugins {
+			longName := versionedPlugin.Name()
+			shortName := plugin.GetShortName(longName)
+
+			switch {
+			// Exact match.
+			case pluginName == longName && pluginVersion == versionedPlugin.Version():
+				acceptedMatches = append(acceptedMatches, versionedPlugin)
+				delete(maybeMatchesByKey, cliPluginKey)
+				foundExactMatch = true
+			// Is at least a name match, and the CLI version wasn't set or was set
+			// and matches.
+			case pluginName == longName || pluginName == shortName:
+				if pluginVersion == "" || pluginVersion == versionedPlugin.Version() {
+					maybeMatchesByKey[cliPluginKey] = append(maybeMatchesByKey[cliPluginKey], versionedPlugin)
+				}
+			}
+			// No more plugins need to be checked for cliPluginKey.
+			if foundExactMatch {
+				break
+			}
+		}
+		// No possible or exact plugin match was found.
+		_, foundMaybeMatch := maybeMatchesByKey[cliPluginKey]
+		if !foundExactMatch && !foundMaybeMatch {
+			return nil, fmt.Errorf("no plugins for key %q were found", cliPluginKey)
+		}
 	}
-	versionedPlugins, versionFound := c.plugins[c.projectVersion]
-	if !versionFound {
-		return nil, fmt.Errorf("unknown project version %q", c.projectVersion)
+
+	// No ambiguously keyed plugins.
+	if len(maybeMatchesByKey) == 0 {
+		return acceptedMatches, nil
 	}
-	return versionedPlugins, nil
+
+	errMsgs := []string{}
+	for key, maybeMatches := range maybeMatchesByKey {
+		if len(maybeMatches) == 1 {
+			// Only one plugin for a CLI key, which means there's only one version
+			// for that plugin and either its short or long name matched the CLI name.
+			acceptedMatches = append(acceptedMatches, maybeMatches...)
+		} else {
+			// Multiple possible plugins the user could be specifying, return an
+			// error with ambiguous plugin info.
+			pluginKeys := []string{}
+			for _, p := range maybeMatches {
+				pluginKeys = append(pluginKeys, plugin.KeyFor(p))
+			}
+			errMsgs = append(errMsgs, fmt.Sprintf("%q: %+q", key, pluginKeys))
+		}
+	}
+
+	if len(errMsgs) == 0 {
+		return acceptedMatches, nil
+	}
+	return nil, fmt.Errorf("ambiguous plugin keys, possible matches: %s", strings.Join(errMsgs, ", "))
 }
 
-// defaultCommand results the root command without its subcommands.
+// defaultCommand returns the root command without its subcommands.
 func (c cli) defaultCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:   c.commandName,
