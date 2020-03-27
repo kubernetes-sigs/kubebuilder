@@ -50,28 +50,6 @@ existing qualifier defined by the plugin. FQ names prevent conflicts between
 plugin names; the plugin runner will ask the user to add a name qualifier to
 a conflicting plugin.
 
-#### Project file plugin `layout`
-
-The `PROJECT` file will specify what base plugin generated the project under
-a `layout` key. `layout` will have the format: `Plugin.Name() + "/" + Plugin.Version()`.
-`version` and `layout` have versions with different meanings: `version` is the
-project config version, while `layout`'s version is the plugin semantic version.
-The value in `version` will determine that in `layout` by a plugin's supported
-project versions (via `SupportedProjectVersions()`).
-
-Example `PROJECT` file:
-
-```yaml
-version: "2"
-layout: go/v1.0.0
-domain: testproject.org
-repo: github.com/test-inc/testproject
-resources:
-- group: crew
-  kind: Captain
-  version: v1
-```
-
 ### Optional
 
 Next, a plugin could optionally implement further interfaces to declare its support for specific Kubebuilder subcommands. For example:
@@ -133,6 +111,36 @@ type Deprecated interface {
     // can use to warn users of deprecations
     DeprecationWarning() string
 }
+```
+
+## Configuration
+
+### Config version `3-alpha`
+
+Any changes that break `PROJECT` file backwards-compatibility require a version
+bump. This new version will be `3-alpha`, which will eventually be bumped to
+`3` once the below config changes have stabilized.
+
+### Project file plugin `layout`
+
+The `PROJECT` file will specify what base plugin generated the project under
+a `layout` key. `layout` will have the format: `Plugin.Name() + "/" + Plugin.Version()`.
+`version` and `layout` have versions with different meanings: `version` is the
+project config version, while `layout`'s version is the plugin semantic version.
+The value in `version` will determine that in `layout` by a plugin's supported
+project versions (via `SupportedProjectVersions()`).
+
+Example `PROJECT` file:
+
+```yaml
+version: "3-alpha"
+layout: go/v1.0.0
+domain: testproject.org
+repo: github.com/test-inc/testproject
+resources:
+- group: crew
+  kind: Captain
+  version: v1
 ```
 
 ## CLI

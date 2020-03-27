@@ -204,7 +204,7 @@ func (c *cli) initialize() error {
 	case len(c.cliPluginKeys) != 0:
 		// Filter plugins by keys passed in CLI.
 		filterKeys = c.cliPluginKeys
-	case c.configured && !projectConfig.IsV1():
+	case c.configured && projectConfig.IsV3():
 		// All non-v1 configs must have a layout key. This check will help with
 		// migration.
 		if projectConfig.Layout == "" {
@@ -300,9 +300,9 @@ func (c cli) validate() error {
 	if _, versionFound := c.pluginsFromOptions[c.projectVersion]; !versionFound {
 		return fmt.Errorf("no plugins for project version %q", c.projectVersion)
 	}
-	// If --plugins is not set, no layout exists (no config or project is v1),
+	// If --plugins is not set, no layout exists (no config or project is v1 or v2),
 	// and no defaults exist, we cannot know which plugins to use.
-	if (!c.configured || c.projectVersion == config.Version1) && len(c.cliPluginKeys) == 0 {
+	if (!c.configured || c.projectVersion != config.Version3) && len(c.cliPluginKeys) == 0 {
 		_, versionExists := c.defaultPluginsFromOptions[c.projectVersion]
 		if !versionExists {
 			return fmt.Errorf("no default plugins for project version %s", c.projectVersion)

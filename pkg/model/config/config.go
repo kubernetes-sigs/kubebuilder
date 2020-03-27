@@ -27,6 +27,7 @@ import (
 const (
 	Version1 = "1"
 	Version2 = "2"
+	Version3 = "3-alpha"
 )
 
 // Config is the unmarshalled representation of the configuration file
@@ -63,6 +64,11 @@ func (c Config) IsV1() bool {
 // IsV2 returns true if it is a v2 project
 func (c Config) IsV2() bool {
 	return c.Version == Version2
+}
+
+// IsV3 returns true if it is a v3 project
+func (c Config) IsV3() bool {
+	return c.Version == Version3
 }
 
 // HasResource returns true if API resource is already tracked

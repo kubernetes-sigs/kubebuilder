@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	"sigs.k8s.io/kubebuilder/pkg/model/config"
 	"sigs.k8s.io/kubebuilder/pkg/plugin"
 )
 
@@ -28,7 +29,7 @@ const (
 See how to upgrade your project to v2: https://book.kubebuilder.io/migration/guide.html`
 )
 
-var supportedProjectVersions = []string{"1"}
+var supportedProjectVersions = []string{config.Version1}
 
 var (
 	_ plugin.Base                      = Plugin{}
