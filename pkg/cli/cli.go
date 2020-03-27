@@ -300,9 +300,9 @@ func (c cli) validate() error {
 	if _, versionFound := c.pluginsFromOptions[c.projectVersion]; !versionFound {
 		return fmt.Errorf("no plugins for project version %q", c.projectVersion)
 	}
-	// If --plugins is not set, no layout exists, and no defaults exist, we
-	// cannot know which Getter to use for a plugin type.
-	if !c.configured && len(c.cliPluginKeys) == 0 {
+	// If --plugins is not set, no layout exists (no config or project is v1),
+	// and no defaults exist, we cannot know which plugins to use.
+	if (!c.configured || c.projectVersion == config.Version1) && len(c.cliPluginKeys) == 0 {
 		_, versionExists := c.defaultPluginsFromOptions[c.projectVersion]
 		if !versionExists {
 			return fmt.Errorf("no default plugins for project version %s", c.projectVersion)
