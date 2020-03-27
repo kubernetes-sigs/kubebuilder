@@ -55,7 +55,7 @@ scaffold_test_project() {
         $kb create api --group core --version v1 --kind Namespace --example=false --controller=true --resource=false --namespaced=false --make=false
         $kb alpha webhook --group core --version v1 --kind Namespace --type=mutating --operations=update --make=false
         $kb create api --group policy --version v1beta1 --kind HealthCheckPolicy --example=false --controller=true --resource=true --namespaced=false --make=false
-    elif [ $version == "2" ]; then
+    elif [ $version == "2" ] || [ $version == "3-alpha" ]; then
         header_text "Starting to generate projects with version $version"
         header_text "Generating $project"
 
@@ -66,14 +66,14 @@ scaffold_test_project() {
         header_text "initializing $project..."
         $kb init --project-version $version --domain testproject.org --license apache2 --owner "The Kubernetes authors"
 
-        if [ $project == "project-v2" ]; then
+        if [ $project == "project-v2" ] || [ $project == "project-v3" ]; then
             header_text 'Creating APIs ...'
             $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false
             $kb create webhook --group crew --version v1 --kind Captain --defaulting --programmatic-validation
             $kb create api --group crew --version v1 --kind FirstMate --controller=true --resource=true --make=false
             $kb create webhook --group crew --version v1 --kind FirstMate --conversion
             $kb create api --group crew --version v1 --kind Admiral --controller=true --resource=true --namespaced=false --make=false
-        elif [ $project == "project-v2-multigroup" ]; then
+        elif [ $project == "project-v2-multigroup" ] || [ $project == "project-v3-multigroup" ]; then
             header_text 'Switching to multigroup layout ...'
             $kb edit --multigroup=true
 
@@ -112,3 +112,5 @@ scaffold_test_project gopath/src/project 1
 scaffold_test_project project-v2 2
 scaffold_test_project project-v2-multigroup 2
 scaffold_test_project project-v2-addon 2
+scaffold_test_project project-v3 3-alpha
+scaffold_test_project project-v3-multigroup 3-alpha

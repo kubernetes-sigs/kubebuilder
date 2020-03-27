@@ -44,3 +44,4 @@ trap cleanup EXIT
 # The v1 is deprecated
 go test ./test/e2e/v1
 go test ./test/e2e/v2
+go test ./test/e2e/v3

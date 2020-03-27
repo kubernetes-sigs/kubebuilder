@@ -107,8 +107,10 @@ func (p *initPlugin) BindFlags(fs *pflag.FlagSet) {
 }
 
 func (p *initPlugin) InjectConfig(c *config.Config) {
-	// v2 project configs get a 'layout' value.
-	c.Layout = plugin.KeyFor(Plugin{})
+	// v3 project configs get a 'layout' value.
+	if c.IsV3() {
+		c.Layout = plugin.KeyFor(Plugin{})
+	}
 	p.config = c
 }
 

@@ -9,5 +9,5 @@ require (
 	k8s.io/apimachinery v0.17.2
 	k8s.io/client-go v0.17.2
 	sigs.k8s.io/controller-runtime v0.5.0
-	sigs.k8s.io/kubebuilder-declarative-pattern v0.0.0-20200413154948-0284e6ed8028
+	sigs.k8s.io/kubebuilder-declarative-pattern v0.0.0-20200414151614-92702a3972f3
 )

@@ -79,7 +79,7 @@ func (s *initScaffolder) Scaffold() error {
 	switch {
 	case s.config.IsV1():
 		return s.scaffoldV1()
-	case s.config.IsV2():
+	case s.config.IsV2(), s.config.IsV3():
 		return s.scaffoldV2()
 	default:
 		return fmt.Errorf("unknown project version %v", s.config.Version)
