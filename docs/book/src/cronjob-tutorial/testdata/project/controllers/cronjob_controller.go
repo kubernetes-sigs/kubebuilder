@@ -124,9 +124,9 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	/*
-
-		<aside class="note"> 
-
+	
+		<aside class="note">
+		
 		<h1>What is this index about?</h1>
 
 		<p>The reconciler fetches all jobs owned by the cronjob for the status. As our number of cronjobs increases, 
