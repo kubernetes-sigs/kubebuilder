@@ -37,6 +37,14 @@ export PATH=$PATH:/usr/local/kubebuilder/bin
 
 Also, you can install a master snapshot from `https://go.kubebuilder.io/dl/latest/${os}/${arch}`.
 
+
+</aside>
+
+<aside class="note">
+<h1>Enabling shell autocompletion</h1>
+
+Kubebuilder provides autocompletion support for Bash and Zsh via the command `kubebuilder completion <bash|zsh>`, which can save you a lot of typing. For further information see the [completion](./reference/completion.md) document.
+
 </aside>
 
 ## Create a Project

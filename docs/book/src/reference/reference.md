@@ -23,6 +23,7 @@
       - [RBAC](markers/rbac.md)
 
   - [controller-gen CLI](controller-gen.md)
+  - [completion](completion.md)
   - [Artifacts](artifacts.md)
   - [Writing controller tests](writing-tests.md)
   - [Metrics](metrics.md)
