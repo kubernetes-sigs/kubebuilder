@@ -20,6 +20,13 @@
 export GOPROXY?=https://proxy.golang.org/
 CONTROLLER_GEN_BIN_PATH := $(shell which controller-gen)
 
+# Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
+ifeq (,$(shell go env GOBIN))
+GOBIN=$(shell go env GOPATH)/bin
+else
+GOBIN=$(shell go env GOBIN)
+endif
+
 ##@ General
 
 # The help will print out all targets with their descriptions organized bellow their categories. The categories are represented by `##@` and the target descriptions by `##`.
@@ -45,7 +52,9 @@ install: ## Build and install the binary with the current source code. Use it to
 
 .PHONY: generate
 generate: ## Update/generate all mock data. You should run this commands to update the mock data after your changes.
-	make generate-setup
+    # If exists, rremove the controller-gen installed locally. It ensures that the version which will be used
+    # is the version defined in the Makefile scaffolded.
+	- rm -rf $(CONTROLLER_GEN_BIN_PATH)
 	make generate-testdata
 	go mod tidy
 
@@ -56,11 +65,6 @@ generate-testdata: ## Update/generate the testdata in $GOPATH/src/sigs.k8s.io/ku
 .PHONY: generate-vendor
 generate-vendor: ## (Deprecated) Update/generate the vendor by using the path $GOPATH/src/sigs.k8s.io/kubebuilder-test
 	GO111MODULE=off ./generate_vendor.sh
-
-.PHONY: generate-setup
-generate-setup: ## Current workarround to generate the testdata with the correct controller-gen version
-	- rm -rf $(CONTROLLER_GEN_BIN_PATH)
-	- GO111MODULE=on go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.2.5
 
 .PHONY: lint
 lint: ## Run code lint checks
