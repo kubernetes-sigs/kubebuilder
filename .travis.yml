@@ -30,12 +30,16 @@ jobs:
   include:
     - stage: linting
       before_script: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.23.3
-      script: ./scripts/verify.sh
+      script: make lint
+      after_success: echo "Linting check succeeded"
+      after_failure: echo "Linting check failed. Run make lint to check it locally"
 
-    - stage: golden
-      # The golden_test.sh check if the the testdata is updated according to the current changes
-      # To update the testdata use the Makefile targets `make generate-setup` then `make generate-testdata`
-      script: ./golden_test.sh
+    - stage: testdata
+      # Check if the the testdata is updated according to the current changes
+      # To update the testdata use the Makefile target `make generate`
+      script: make check-testdata
+      after_success: echo "Generate check succeeded."
+      after_failure: echo "Generate check failed. Run make test-gen to check it locally and use make generate to fix it"
 
     - stage: coverage
       # The following module is used to integrate the project with coveralls.io. It allow us to easily sent the data.
@@ -44,10 +48,11 @@ jobs:
       script:
         - make test-coverage
         - $GOPATH/bin/goveralls -service=travis-ci -coverprofile=coverage-all.out -repotoken=$COVERALLS_TOKEN
-
+      after_success: echo "Coverage check succeeded. See in goveralls if the % of code covered with tests decreased."
+      after_failure: echo "Coverage step failed. Run make test-coverage to check it locally"
 stages:
   - linting
-  - golden
+  - testdata
   - test
   - coverage
 

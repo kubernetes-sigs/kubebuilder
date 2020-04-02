@@ -17,6 +17,7 @@ aliases:
   kubebuilder-reviewers:
     - joelanford
     - estroz
+    - adirio
 
   # folks who may have context on ancient history,
   # but are no longer directly involved

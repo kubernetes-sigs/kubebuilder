@@ -19,7 +19,7 @@ In Kubernetes, **all versions must be safely round-tripable through each
 other**.  This means that if we convert from version 1 to version 2, and
 then back to version 1, we must not lose information.  Thus, any change we
 make to our API must be compatible with whatever we supported in v1, and
-also need to make sure anything we add in v2 is supported in v2.  In some
+also need to make sure anything we add in v2 is supported in v1.  In some
 cases, this means we need to add new fields to v1, but in our case, we
 won't have to, since we're not adding new functionality.
 
