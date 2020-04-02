@@ -1,4 +1,4 @@
-module sigs.k8s.io/kubebuilder/testdata/project-v2-addon
+module sigs.k8s.io/kubebuilder/testdata/project-v3-addon
 
 go 1.13
 

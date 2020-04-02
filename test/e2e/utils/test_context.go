@@ -92,7 +92,16 @@ func (kc *KBTestContext) InstallCertManager() error {
 		return err
 	}
 	url := fmt.Sprintf(certmanagerURL, certmanagerVersion)
-	_, err := kc.Kubectl.Apply(false, "-f", url, "--validate=false")
+	if _, err := kc.Kubectl.Apply(false, "-f", url, "--validate=false"); err != nil {
+		return err
+	}
+	// Wait for cert-manager-webhook to be ready, which can take time if cert-manager
+	// was re-installed after uninstalling on a cluster.
+	_, err := kc.Kubectl.Wait(false, "deployment.apps/cert-manager-webhook",
+		"--for", "condition=Available",
+		"--namespace", "cert-manager",
+		"--timeout", "5m",
+	)
 	return err
 }
 

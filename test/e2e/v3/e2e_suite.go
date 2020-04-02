@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v3
+package v2
 
 import (
 	"encoding/base64"
@@ -196,7 +196,7 @@ var _ = Describe("kubebuilder", func() {
 
 			By("granting permissions to access the metrics and read the token")
 			_, err = kbc.Kubectl.Command(
-				"create", "clusterrolebinding", "metrics",
+				"create", "clusterrolebinding", fmt.Sprintf("metrics-%s", kbc.TestSuffix),
 				fmt.Sprintf("--clusterrole=e2e-%s-metrics-reader", kbc.TestSuffix),
 				fmt.Sprintf("--serviceaccount=%s:default", kbc.Kubectl.Namespace))
 			Expect(err).NotTo(HaveOccurred())
