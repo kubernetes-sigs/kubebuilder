@@ -63,7 +63,7 @@ scaffold_test_project() {
         export PATH=$PATH:$(go env GOPATH)/bin
         go mod init sigs.k8s.io/kubebuilder/testdata/$project  # our repo autodetection will traverse up to the kb module if we don't do this
 
-        header_text "initializing $project..."
+        header_text "initializing $project ..."
         $kb init --project-version $version --domain testproject.org --license apache2 --owner "The Kubernetes authors"
 
         if [ $project == "project-v2" ] || [ $project == "project-v3" ]; then
@@ -87,7 +87,7 @@ scaffold_test_project() {
             $kb create api --group sea-creatures --version v1beta1 --kind Kraken --controller=true --resource=true --make=false
             $kb create api --group sea-creatures --version v1beta2 --kind Leviathan --controller=true --resource=true --make=false
             $kb create api --group foo.policy --version v1 --kind HealthCheckPolicy --controller=true --resource=true --make=false
-        elif [ $project == "project-v2-addon" ]; then
+          elif [ $project == "project-v2-addon" ] || [ $project == "project-v3-addon" ]; then
             header_text 'enabling --pattern flag ...'
             export KUBEBUILDER_ENABLE_PLUGINS=1
             header_text 'Creating APIs ...'
@@ -114,3 +114,4 @@ scaffold_test_project project-v2-multigroup 2
 scaffold_test_project project-v2-addon 2
 scaffold_test_project project-v3 3-alpha
 scaffold_test_project project-v3-multigroup 3-alpha
+scaffold_test_project project-v3-addon 3-alpha
