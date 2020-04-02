@@ -79,7 +79,7 @@ func (s *scaffold) Execute(universe *model.Universe, files ...file.Builder) erro
 		// Validate file builders
 		if reqValFile, requiresValidation := f.(file.RequiresValidation); requiresValidation {
 			if err := reqValFile.Validate(); err != nil {
-				return err
+				return file.NewValidateError(err)
 			}
 		}
 
@@ -101,7 +101,7 @@ func (s *scaffold) Execute(universe *model.Universe, files ...file.Builder) erro
 	// Execute plugins
 	for _, plugin := range s.plugins {
 		if err := plugin.Pipe(universe); err != nil {
-			return err
+			return model.NewPluginError(err)
 		}
 	}
 
@@ -120,7 +120,7 @@ func (scaffold) buildFileModel(t file.Template, models map[string]*file.File) er
 	// Set the template default values
 	err := t.SetTemplateDefaults()
 	if err != nil {
-		return err
+		return file.NewSetTemplateDefaultsError(err)
 	}
 
 	// Handle already existing models
@@ -129,10 +129,10 @@ func (scaffold) buildFileModel(t file.Template, models map[string]*file.File) er
 		case file.Skip:
 			return nil
 		case file.Error:
-			return fmt.Errorf("failed to create %s: model already exists", t.GetPath())
+			return modelAlreadyExistsError{t.GetPath()}
 		case file.Overwrite:
 		default:
-			return fmt.Errorf("unknown behavior if file exists (%d) for %s", t.GetIfExistsAction(), t.GetPath())
+			return unknownIfExistsActionError{t.GetPath(), t.GetIfExistsAction()}
 		}
 	}
 
@@ -254,12 +254,12 @@ func (s scaffold) loadPreviousModel(i file.Inserter, models map[string]*file.Fil
 			return fromFile, nil
 		case file.Error:
 			// Writing will result in an error, so we can return error now
-			return nil, fmt.Errorf("failed to create %s: file already exists", i.GetPath())
+			return nil, fileAlreadyExistsError{i.GetPath()}
 		case file.Overwrite:
 			// Model has preference
 			return m, nil
 		default:
-			return nil, fmt.Errorf("unknown behavior if file exists (%d) for %s", m.IfExistsAction, i.GetPath())
+			return nil, unknownIfExistsActionError{i.GetPath(), m.IfExistsAction}
 		}
 	}
 
@@ -374,7 +374,7 @@ func (s scaffold) writeFile(f *file.File) error {
 			return nil
 		case file.Error:
 			// By returning an error, the file is not written and the process will fail
-			return fmt.Errorf("failed to create %s: file already exists", f.Path)
+			return fileAlreadyExistsError{f.Path}
 		}
 	}
 

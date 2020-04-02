@@ -92,7 +92,7 @@ func FilePermissions(filePerm os.FileMode) Options {
 func (fs fileSystem) Exists(path string) (bool, error) {
 	exists, err := afero.Exists(fs.fs, path)
 	if err != nil {
-		return false, fileExistsError{path, err}
+		return exists, fileExistsError{path, err}
 	}
 
 	return exists, nil

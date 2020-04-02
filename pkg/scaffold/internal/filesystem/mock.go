@@ -205,12 +205,12 @@ type mockWriteFile struct {
 func (f *mockWriteFile) Write(content []byte) (n int, err error) {
 	defer func() {
 		if err == nil && f.closeFileError != nil {
-			err = closeFileError{path: f.path, err: f.closeFileError}
+			err = closeFileError{f.path, f.closeFileError}
 		}
 	}()
 
 	if f.writeFileError != nil {
-		return 0, writeFileError{path: f.path, err: f.writeFileError}
+		return 0, writeFileError{f.path, f.writeFileError}
 	}
 
 	return f.content.Write(content)

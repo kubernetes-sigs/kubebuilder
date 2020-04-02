@@ -143,6 +143,33 @@ var _ = Describe("Scaffold", func() {
 		)
 
 		DescribeTable("file builders related errors",
+			func(f func(error) bool, files ...file.Builder) {
+				s := &scaffold{fs: filesystem.NewMock()}
+
+				Expect(f(s.Execute(model.NewUniverse(), files...))).To(BeTrue())
+			},
+			Entry("should fail if unable to validate a file builder",
+				file.IsValidateError,
+				fakeRequiresValidation{validateErr: testErr},
+			),
+			Entry("should fail if unable to set default values for a template",
+				file.IsSetTemplateDefaultsError,
+				fakeTemplate{err: testErr},
+			),
+			Entry("should fail if an unexpected previous model is found",
+				IsModelAlreadyExistsError,
+				fakeTemplate{fakeBuilder: fakeBuilder{path: "filename"}},
+				fakeTemplate{fakeBuilder: fakeBuilder{path: "filename", ifExistsAction: file.Error}},
+			),
+			Entry("should fail if behavior if file exists is not defined",
+				IsUnknownIfExistsActionError,
+				fakeTemplate{fakeBuilder: fakeBuilder{path: "filename"}},
+				fakeTemplate{fakeBuilder: fakeBuilder{path: "filename", ifExistsAction: -1}},
+			),
+		)
+
+		// Following errors are unwrapped, so we need to check for substrings
+		DescribeTable("template related errors",
 			func(errMsg string, files ...file.Builder) {
 				s := &scaffold{fs: filesystem.NewMock()}
 
@@ -150,24 +177,6 @@ var _ = Describe("Scaffold", func() {
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring(errMsg))
 			},
-			Entry("should fail if unable to validate a file builder",
-				testErr.Error(),
-				fakeRequiresValidation{validateErr: testErr},
-			),
-			Entry("should fail if unable to set default values for a template",
-				testErr.Error(),
-				fakeTemplate{err: testErr},
-			),
-			Entry("should fail if an unexpected previous model is found",
-				"failed to create filename: model already exists",
-				fakeTemplate{fakeBuilder: fakeBuilder{path: "filename"}},
-				fakeTemplate{fakeBuilder: fakeBuilder{path: "filename", ifExistsAction: file.Error}},
-			),
-			Entry("should fail if behavior if file exists is not defined",
-				"unknown behavior if file exists (-1) for filename",
-				fakeTemplate{fakeBuilder: fakeBuilder{path: "filename"}},
-				fakeTemplate{fakeBuilder: fakeBuilder{path: "filename", ifExistsAction: -1}},
-			),
 			Entry("should fail if a template is broken",
 				"template: ",
 				fakeTemplate{body: "{{ .Field }"},
@@ -324,7 +333,7 @@ var _ = Describe("Scaffold", func() {
 		)
 
 		DescribeTable("insert strings related errors",
-			func(errMsg string, files ...file.Builder) {
+			func(f func(error) bool, files ...file.Builder) {
 				s := &scaffold{
 					fs: filesystem.NewMock(
 						filesystem.MockExists(func(_ string) bool { return true }),
@@ -333,15 +342,15 @@ var _ = Describe("Scaffold", func() {
 
 				err := s.Execute(model.NewUniverse(), files...)
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring(errMsg))
+				Expect(f(err)).To(BeTrue())
 			},
 			Entry("should fail if inserting into a model that fails when a file exists and it does exist",
-				"failed to create filename: file already exists",
+				IsFileAlreadyExistsError,
 				fakeTemplate{fakeBuilder: fakeBuilder{path: "filename", ifExistsAction: file.Error}},
 				fakeInserter{fakeBuilder: fakeBuilder{path: "filename"}},
 			),
 			Entry("should fail if inserting into a model with unknown behavior if the file exists and it does exist",
-				"unknown behavior if file exists (-1) for filename",
+				IsUnknownIfExistsActionError,
 				fakeTemplate{fakeBuilder: fakeBuilder{path: "filename", ifExistsAction: -1}},
 				fakeInserter{fakeBuilder: fakeBuilder{path: "filename"}},
 			),
@@ -357,8 +366,8 @@ var _ = Describe("Scaffold", func() {
 				model.NewUniverse(),
 				fakeTemplate{},
 			)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring(testErr.Error()))
+			Expect(err).To(MatchError(testErr))
+			Expect(model.IsPluginError(err)).To(BeTrue())
 		})
 
 		Context("write when the file already exists", func() {
@@ -395,7 +404,7 @@ var _ = Describe("Scaffold", func() {
 					fakeTemplate{fakeBuilder: fakeBuilder{path: "filename", ifExistsAction: file.Error}, body: fileContent},
 				)
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("failed to create filename: file already exists"))
+				Expect(IsFileAlreadyExistsError(err)).To(BeTrue())
 				Expect(output.String()).To(BeEmpty())
 			})
 		})
