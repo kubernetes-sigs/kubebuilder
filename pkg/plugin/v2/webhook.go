@@ -17,7 +17,6 @@ limitations under the License.
 package v2
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
@@ -33,6 +32,8 @@ import (
 
 type createWebhookPlugin struct {
 	config *config.Config
+	// For help text.
+	commandName string
 
 	resource   *resource.Options
 	defaulting bool
@@ -45,7 +46,7 @@ var (
 	_ cmdutil.RunOptions   = &createAPIPlugin{}
 )
 
-func (p createWebhookPlugin) UpdateContext(ctx *plugin.Context) {
+func (p *createWebhookPlugin) UpdateContext(ctx *plugin.Context) {
 	ctx.Description = `Scaffold a webhook for an API resource. You can choose to scaffold defaulting,
 validating and (or) conversion webhooks.
 `
@@ -57,6 +58,8 @@ validating and (or) conversion webhooks.
   %s create webhook --group crew --version v1 --kind FirstMate --conversion
 `,
 		ctx.CommandName, ctx.CommandName)
+
+	p.commandName = ctx.CommandName
 }
 
 func (p *createWebhookPlugin) BindFlags(fs *pflag.FlagSet) {
@@ -88,8 +91,8 @@ func (p *createWebhookPlugin) Validate() error {
 	}
 
 	if !p.defaulting && !p.validation && !p.conversion {
-		return errors.New("kubebuilder webhook requires at least one of" +
-			" --defaulting, --programmatic-validation and --conversion to be true")
+		return fmt.Errorf("%s create webhook requires at least one of --defaulting,"+
+			" --programmatic-validation and --conversion to be true", p.commandName)
 	}
 
 	return nil
