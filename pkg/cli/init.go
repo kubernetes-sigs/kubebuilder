@@ -25,7 +25,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"sigs.k8s.io/kubebuilder/internal/config"
+	internalconfig "sigs.k8s.io/kubebuilder/internal/config"
+	"sigs.k8s.io/kubebuilder/pkg/model/config"
 	"sigs.k8s.io/kubebuilder/pkg/plugin"
 )
 
@@ -41,8 +42,14 @@ func (c *cli) newInitCmd() *cobra.Command {
 
 	// Register --project-version on the dynamically created command
 	// so that it shows up in help and does not cause a parse error.
-	cmd.Flags().String("project-version", c.defaultProjectVersion,
+	cmd.Flags().String(projectVersionFlag, c.defaultProjectVersion,
 		fmt.Sprintf("project version, possible values: (%s)", strings.Join(c.getAvailableProjectVersions(), ", ")))
+	// The --plugins flag can only be called to init projects v2+.
+	if c.projectVersion != config.Version1 {
+		cmd.Flags().StringSlice(pluginsFlag, nil,
+			"Name and optionally version of the plugin to initialize the project with. "+
+				fmt.Sprintf("Available plugins: (%s)", strings.Join(c.getAvailablePlugins(), ", ")))
+	}
 
 	// If only the help flag was set, return the command as is.
 	if c.doGenericHelp {
@@ -94,6 +101,18 @@ func (c cli) getAvailableProjectVersions() (projectVersions []string) {
 	return projectVersions
 }
 
+func (c cli) getAvailablePlugins() (pluginKeys []string) {
+	for _, versionedPlugins := range c.pluginsFromOptions {
+		for _, p := range versionedPlugins {
+			// Only return non-deprecated plugins.
+			if _, isDeprecated := p.(plugin.Deprecated); !isDeprecated {
+				pluginKeys = append(pluginKeys, strconv.Quote(plugin.KeyFor(p)))
+			}
+		}
+	}
+	return pluginKeys
+}
+
 func (c cli) bindInit(ctx plugin.Context, cmd *cobra.Command) {
 	var getter plugin.InitPluginGetter
 	var hasGetter bool
@@ -109,14 +128,14 @@ func (c cli) bindInit(ctx plugin.Context, cmd *cobra.Command) {
 		}
 	}
 	if !hasGetter {
-		if len(c.cliPluginKeys) == 0 {
+		if c.cliPluginKey == "" {
 			log.Fatalf("project version %q does not support an initialization plugin", c.projectVersion)
 		} else {
-			log.Fatalf("plugin %q does not support an initialization plugin", c.cliPluginKeys)
+			log.Fatalf("plugin %q does not support an initialization plugin", c.cliPluginKey)
 		}
 	}
 
-	cfg := config.New(config.DefaultPath)
+	cfg := internalconfig.New(internalconfig.DefaultPath)
 	cfg.Version = c.projectVersion
 
 	init := getter.GetInitPlugin()
@@ -128,7 +147,7 @@ func (c cli) bindInit(ctx plugin.Context, cmd *cobra.Command) {
 	cmd.RunE = func(*cobra.Command, []string) error {
 		// Check if a config is initialized in the command runner so the check
 		// doesn't erroneously fail other commands used in initialized projects.
-		_, err := config.Read()
+		_, err := internalconfig.Read()
 		if err == nil || os.IsExist(err) {
 			log.Fatal("config already initialized")
 		}
