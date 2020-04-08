@@ -70,15 +70,15 @@ func (c cli) bindCreateWebhook(ctx plugin.Context, cmd *cobra.Command) {
 			getter = tmpGetter
 		}
 	}
-	if !hasGetter {
-		err := fmt.Errorf("project version %q does not support a webhook creation plugin",
-			c.projectVersion)
+
+	cfg, err := config.LoadInitialized()
+	if err != nil {
 		cmdErr(cmd, err)
 		return
 	}
 
-	cfg, err := config.LoadInitialized()
-	if err != nil {
+	if !hasGetter {
+		err := fmt.Errorf("layout plugin %q does not support a webhook creation plugin", cfg.Layout)
 		cmdErr(cmd, err)
 		return
 	}

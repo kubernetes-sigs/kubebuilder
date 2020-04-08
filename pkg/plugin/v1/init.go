@@ -37,6 +37,8 @@ import (
 
 type initPlugin struct {
 	config *config.Config
+	// For help text.
+	commandName string
 
 	// boilerplate options
 	license string
@@ -57,7 +59,7 @@ var (
 	_ cmdutil.RunOptions = &initPlugin{}
 )
 
-func (p initPlugin) UpdateContext(ctx *plugin.Context) {
+func (p *initPlugin) UpdateContext(ctx *plugin.Context) {
 	ctx.Description = `Initialize a new project including vendor/ directory and Go package directories.
 
 Writes the following files:
@@ -76,6 +78,8 @@ project will prompt the user to run 'dep ensure' after writing the project files
   %s init --project-version=1 --domain example.org --license apache2 --owner "The Kubernetes authors"
 `,
 		ctx.CommandName)
+
+	p.commandName = ctx.CommandName
 }
 
 func (p *initPlugin) BindFlags(fs *pflag.FlagSet) {
@@ -177,6 +181,6 @@ func (p *initPlugin) PostScaffold() error {
 		return err
 	}
 
-	fmt.Println("Next: define a resource with:\n$ kubebuilder create api")
+	fmt.Printf("Next: define a resource with:\n$ %s create api\n", p.commandName)
 	return nil
 }
