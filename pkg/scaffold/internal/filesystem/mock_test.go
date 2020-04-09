@@ -159,7 +159,7 @@ var _ = Describe("MockFileSystem", func() {
 
 		It("should error when calling Exists", func() {
 			_, err := fsi.Exists("")
-			Expect(err).To(HaveOccurred())
+			Expect(err).To(MatchError(testErr))
 			Expect(IsFileExistsError(err)).To(BeTrue())
 		})
 
@@ -197,7 +197,7 @@ var _ = Describe("MockFileSystem", func() {
 
 		It("should error when calling Open", func() {
 			_, err := fsi.Open("")
-			Expect(err).To(HaveOccurred())
+			Expect(err).To(MatchError(testErr))
 			Expect(IsOpenFileError(err)).To(BeTrue())
 		})
 
@@ -235,7 +235,7 @@ var _ = Describe("MockFileSystem", func() {
 
 		It("should error when calling Create", func() {
 			_, err := fsi.Create("")
-			Expect(err).To(HaveOccurred())
+			Expect(err).To(MatchError(testErr))
 			Expect(IsCreateDirectoryError(err)).To(BeTrue())
 		})
 	})
@@ -265,7 +265,7 @@ var _ = Describe("MockFileSystem", func() {
 
 		It("should error when calling Create", func() {
 			_, err := fsi.Create("")
-			Expect(err).To(HaveOccurred())
+			Expect(err).To(MatchError(testErr))
 			Expect(IsCreateFileError(err)).To(BeTrue())
 		})
 	})
@@ -332,7 +332,7 @@ var _ = Describe("MockFileSystem", func() {
 
 			output := make([]byte, 0)
 			_, err = f.Read(output)
-			Expect(err).To(HaveOccurred())
+			Expect(err).To(MatchError(testErr))
 			Expect(IsReadFileError(err)).To(BeTrue())
 		})
 
@@ -413,7 +413,7 @@ var _ = Describe("MockFileSystem", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			_, err = f.Write([]byte(""))
-			Expect(err).To(HaveOccurred())
+			Expect(err).To(MatchError(testErr))
 			Expect(IsWriteFileError(err)).To(BeTrue())
 		})
 	})
@@ -438,7 +438,7 @@ var _ = Describe("MockFileSystem", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			err = f.Close()
-			Expect(err).To(HaveOccurred())
+			Expect(err).To(MatchError(testErr))
 			Expect(IsCloseFileError(err)).To(BeTrue())
 		})
 
@@ -447,7 +447,7 @@ var _ = Describe("MockFileSystem", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			_, err = f.Write([]byte(""))
-			Expect(err).To(HaveOccurred())
+			Expect(err).To(MatchError(testErr))
 			Expect(IsCloseFileError(err)).To(BeTrue())
 		})
 	})

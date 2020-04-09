@@ -16,9 +16,33 @@ limitations under the License.
 
 package model
 
+import (
+	"errors"
+)
+
 // Plugin is the interface that a plugin must implement
 // We will (later) have an ExecPlugin that implements this by exec-ing a binary
 type Plugin interface {
 	// Pipe is the core plugin interface, that transforms a UniverseModel
 	Pipe(*Universe) error
+}
+
+// pluginError is a wrapper error that will be used for errors returned by Plugin.Pipe
+type pluginError struct {
+	error
+}
+
+// NewPluginError wraps an error to specify it was returned by Plugin.Pipe
+func NewPluginError(err error) error {
+	return pluginError{err}
+}
+
+// Unwrap implements Wrapper interface
+func (e pluginError) Unwrap() error {
+	return e.error
+}
+
+// IsPluginError checks if the error was returned by Plugin.Pipe
+func IsPluginError(err error) bool {
+	return errors.As(err, &pluginError{})
 }

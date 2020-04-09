@@ -17,6 +17,7 @@ limitations under the License.
 package filesystem
 
 import (
+	"errors"
 	"fmt"
 )
 
@@ -30,14 +31,19 @@ type fileExistsError struct {
 	err  error
 }
 
+// Error implements error interface
 func (e fileExistsError) Error() string {
 	return fmt.Sprintf("failed to check if %s exists: %v", e.path, e.err)
 }
 
+// Unwrap implements Wrapper interface
+func (e fileExistsError) Unwrap() error {
+	return e.err
+}
+
 // IsFileExistsError checks if the returned error is because the file could not be checked for existence
-func IsFileExistsError(e error) bool {
-	_, ok := e.(fileExistsError)
-	return ok
+func IsFileExistsError(err error) bool {
+	return errors.As(err, &fileExistsError{})
 }
 
 // openFileError is returned if the file could not be opened
@@ -46,14 +52,19 @@ type openFileError struct {
 	err  error
 }
 
+// Error implements error interface
 func (e openFileError) Error() string {
 	return fmt.Sprintf("failed to open %s: %v", e.path, e.err)
 }
 
+// Unwrap implements Wrapper interface
+func (e openFileError) Unwrap() error {
+	return e.err
+}
+
 // IsOpenFileError checks if the returned error is because the file could not be opened
-func IsOpenFileError(e error) bool {
-	_, ok := e.(openFileError)
-	return ok
+func IsOpenFileError(err error) bool {
+	return errors.As(err, &openFileError{})
 }
 
 // createDirectoryError is returned if the directory could not be created
@@ -62,14 +73,19 @@ type createDirectoryError struct {
 	err  error
 }
 
+// Error implements error interface
 func (e createDirectoryError) Error() string {
 	return fmt.Sprintf("failed to create directory for %s: %v", e.path, e.err)
 }
 
+// Unwrap implements Wrapper interface
+func (e createDirectoryError) Unwrap() error {
+	return e.err
+}
+
 // IsCreateDirectoryError checks if the returned error is because the directory could not be created
-func IsCreateDirectoryError(e error) bool {
-	_, ok := e.(createDirectoryError)
-	return ok
+func IsCreateDirectoryError(err error) bool {
+	return errors.As(err, &createDirectoryError{})
 }
 
 // createFileError is returned if the file could not be created
@@ -78,14 +94,19 @@ type createFileError struct {
 	err  error
 }
 
+// Error implements error interface
 func (e createFileError) Error() string {
 	return fmt.Sprintf("failed to create %s: %v", e.path, e.err)
 }
 
+// Unwrap implements Wrapper interface
+func (e createFileError) Unwrap() error {
+	return e.err
+}
+
 // IsCreateFileError checks if the returned error is because the file could not be created
-func IsCreateFileError(e error) bool {
-	_, ok := e.(createFileError)
-	return ok
+func IsCreateFileError(err error) bool {
+	return errors.As(err, &createFileError{})
 }
 
 // readFileError is returned if the file could not be read
@@ -94,14 +115,19 @@ type readFileError struct {
 	err  error
 }
 
+// Error implements error interface
 func (e readFileError) Error() string {
 	return fmt.Sprintf("failed to read from %s: %v", e.path, e.err)
 }
 
+// Unwrap implements Wrapper interface
+func (e readFileError) Unwrap() error {
+	return e.err
+}
+
 // IsReadFileError checks if the returned error is because the file could not be read
-func IsReadFileError(e error) bool {
-	_, ok := e.(readFileError)
-	return ok
+func IsReadFileError(err error) bool {
+	return errors.As(err, &readFileError{})
 }
 
 // writeFileError is returned if the file could not be written
@@ -110,14 +136,19 @@ type writeFileError struct {
 	err  error
 }
 
+// Error implements error interface
 func (e writeFileError) Error() string {
 	return fmt.Sprintf("failed to write to %s: %v", e.path, e.err)
 }
 
-// IsWriteFileError checks if the returned error is because the file could not be written
-func IsWriteFileError(e error) bool {
-	_, ok := e.(writeFileError)
-	return ok
+// Unwrap implements Wrapper interface
+func (e writeFileError) Unwrap() error {
+	return e.err
+}
+
+// IsWriteFileError checks if the returned error is because the file could not be written to
+func IsWriteFileError(err error) bool {
+	return errors.As(err, &writeFileError{})
 }
 
 // closeFileError is returned if the file could not be created
@@ -126,12 +157,17 @@ type closeFileError struct {
 	err  error
 }
 
+// Error implements error interface
 func (e closeFileError) Error() string {
 	return fmt.Sprintf("failed to close %s: %v", e.path, e.err)
 }
 
+// Unwrap implements Wrapper interface
+func (e closeFileError) Unwrap() error {
+	return e.err
+}
+
 // IsCloseFileError checks if the returned error is because the file could not be closed
-func IsCloseFileError(e error) bool {
-	_, ok := e.(closeFileError)
-	return ok
+func IsCloseFileError(err error) bool {
+	return errors.As(err, &closeFileError{})
 }
