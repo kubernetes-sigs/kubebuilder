@@ -76,7 +76,7 @@ func (o *editOptions) bindFlags(cmd *cobra.Command) {
 }
 
 func (o *editOptions) Validate() error {
-	if !o.config.IsV2() {
+	if !o.config.IsV2() && !o.config.IsV3() {
 		if o.config.MultiGroup {
 			return fmt.Errorf("multiple group support can't be enabled for version %s", o.config.Version)
 		}

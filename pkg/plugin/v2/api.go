@@ -148,7 +148,7 @@ func (p *createAPIPlugin) Validate() error {
 		}
 
 		// Check that the provided group can be added to the project
-		if p.config.IsV2() && !p.config.MultiGroup &&
+		if (p.config.IsV2() || p.config.IsV3()) && !p.config.MultiGroup &&
 			len(p.config.Resources) != 0 && !p.config.HasGroup(p.resource.Group) {
 			return fmt.Errorf("multiple groups are not allowed by default, to enable multi-group visit %s",
 				"kubebuilder.io/migration/multi-group.html")

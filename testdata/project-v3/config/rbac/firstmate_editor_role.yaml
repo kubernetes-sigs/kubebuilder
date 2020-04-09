@@ -1,0 +1,24 @@
+# permissions for end users to edit firstmates.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: firstmate-editor-role
+rules:
+- apiGroups:
+  - crew.testproject.org
+  resources:
+  - firstmates
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - crew.testproject.org
+  resources:
+  - firstmates/status
+  verbs:
+  - get

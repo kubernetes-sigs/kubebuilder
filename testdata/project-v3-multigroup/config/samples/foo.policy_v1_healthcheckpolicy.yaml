@@ -1,0 +1,7 @@
+apiVersion: foo.policy.testproject.org/v1
+kind: HealthCheckPolicy
+metadata:
+  name: healthcheckpolicy-sample
+spec:
+  # Add fields here
+  foo: bar
