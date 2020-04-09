@@ -109,8 +109,11 @@ func (c cli) bindInit(ctx plugin.Context, cmd *cobra.Command) {
 		}
 	}
 	if !hasGetter {
-		log.Fatalf("project version %q does not support an initialization plugin",
-			c.projectVersion)
+		if len(c.cliPluginKeys) == 0 {
+			log.Fatalf("project version %q does not support an initialization plugin", c.projectVersion)
+		} else {
+			log.Fatalf("plugin %q does not support an initialization plugin", c.cliPluginKeys)
+		}
 	}
 
 	cfg := config.New(config.DefaultPath)
