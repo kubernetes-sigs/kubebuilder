@@ -24,11 +24,11 @@ os=$(go env GOOS)
 arch=$(go env GOARCH)
 
 # download kubebuilder and extract it to tmp
-curl -L https://go.kubebuilder.io/dl/2.2.0/${os}/${arch} | tar -xz -C /tmp/
+curl -L https://go.kubebuilder.io/dl/2.3.1/${os}/${arch} | tar -xz -C /tmp/
 
 # move to a long-term location and put it on your path
 # (you'll need to set the KUBEBUILDER_ASSETS env var if you put it somewhere else)
-sudo mv /tmp/kubebuilder_2.2.0_${os}_${arch} /usr/local/kubebuilder
+sudo mv /tmp/kubebuilder_2.3.1_${os}_${arch} /usr/local/kubebuilder
 export PATH=$PATH:/usr/local/kubebuilder/bin
 ```
 
@@ -36,6 +36,14 @@ export PATH=$PATH:/usr/local/kubebuilder/bin
 <h1>Using master branch</h1>
 
 Also, you can install a master snapshot from `https://go.kubebuilder.io/dl/latest/${os}/${arch}`.
+
+
+</aside>
+
+<aside class="note">
+<h1>Enabling shell autocompletion</h1>
+
+Kubebuilder provides autocompletion support for Bash and Zsh via the command `kubebuilder completion <bash|zsh>`, which can save you a lot of typing. For further information see the [completion](./reference/completion.md) document.
 
 </aside>
 
