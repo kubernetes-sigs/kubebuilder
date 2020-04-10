@@ -21,6 +21,7 @@ import (
 	"os"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -46,15 +47,15 @@ var (
 )
 
 func init() {
-	_ = clientgoscheme.AddToScheme(scheme)
+	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-	_ = crewv1.AddToScheme(scheme)
-	_ = shipv1beta1.AddToScheme(scheme)
-	_ = shipv1.AddToScheme(scheme)
-	_ = shipv2alpha1.AddToScheme(scheme)
-	_ = seacreaturesv1beta1.AddToScheme(scheme)
-	_ = seacreaturesv1beta2.AddToScheme(scheme)
-	_ = foopolicyv1.AddToScheme(scheme)
+	utilruntime.Must(crewv1.AddToScheme(scheme))
+	utilruntime.Must(shipv1beta1.AddToScheme(scheme))
+	utilruntime.Must(shipv1.AddToScheme(scheme))
+	utilruntime.Must(shipv2alpha1.AddToScheme(scheme))
+	utilruntime.Must(seacreaturesv1beta1.AddToScheme(scheme))
+	utilruntime.Must(seacreaturesv1beta2.AddToScheme(scheme))
+	utilruntime.Must(foopolicyv1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 

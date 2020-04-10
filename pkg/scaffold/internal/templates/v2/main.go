@@ -113,7 +113,7 @@ const (
 	//  change, and thus should be done for next project version.
 	multiGroupControllerImportCodeFragment = `%scontroller "%s/controllers/%s"
 `
-	addschemeCodeFragment = `_ = %s.AddToScheme(scheme)
+	addschemeCodeFragment = `utilruntime.Must(%s.AddToScheme(scheme))
 `
 	reconcilerSetupCodeFragment = `if err = (&controllers.%sReconciler{
 		Client: mgr.GetClient(),
@@ -206,6 +206,7 @@ import (
 	"flag"
 	"os"
 	"k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -219,7 +220,7 @@ var (
 )
 
 func init() {
-	_ = clientgoscheme.AddToScheme(scheme)
+	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	%s
 }
