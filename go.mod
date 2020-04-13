@@ -3,7 +3,7 @@ module sigs.k8s.io/kubebuilder
 go 1.13
 
 require (
-	github.com/gobuffalo/flect v0.2.0
+	github.com/gobuffalo/flect v0.2.1
 	github.com/golang/protobuf v1.3.4 // indirect
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/onsi/ginkgo v1.12.0
@@ -11,7 +11,6 @@ require (
 	github.com/spf13/afero v1.2.2
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.5
-	github.com/stretchr/testify v1.4.0 // indirect
 	golang.org/x/mod v0.2.0 // indirect
 	golang.org/x/net v0.0.0-20200301022130-244492dfa37a // indirect
 	golang.org/x/sys v0.0.0-20200302083256-062a44052db1 // indirect
