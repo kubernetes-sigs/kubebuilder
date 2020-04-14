@@ -56,16 +56,17 @@ scaffold_test_project() {
         $kb alpha webhook --group core --version v1 --kind Namespace --type=mutating --operations=update --make=false
         $kb create api --group policy --version v1beta1 --kind HealthCheckPolicy --example=false --controller=true --resource=true --namespaced=false --make=false
     elif [ $version == "2" ]; then
-        header_text 'Starting to generate projects with version 2'
+        header_text "Starting to generate projects with version $version"
+        header_text "Generating $project"
+
+        export GO111MODULE=on
+        export PATH=$PATH:$(go env GOPATH)/bin
+        go mod init sigs.k8s.io/kubebuilder/testdata/$project  # our repo autodetection will traverse up to the kb module if we don't do this
+
+        header_text "initializing $project..."
+        $kb init --project-version $version --domain testproject.org --license apache2 --owner "The Kubernetes authors"
+
         if [ $project == "project-v2" ]; then
-            header_text 'Generating project-v2'
-            export GO111MODULE=on
-            export PATH=$PATH:$(go env GOPATH)/bin
-            go mod init sigs.k8s.io/kubebuilder/testdata/project-v2  # our repo autodetection will traverse up to the kb module if we don't do this
-
-            header_text 'initializing  project-v2 ...'
-            $kb init --project-version $version --domain testproject.org --license apache2 --owner "The Kubernetes authors"
-
             header_text 'Creating APIs ...'
             $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false
             $kb create webhook --group crew --version v1 --kind Captain --defaulting --programmatic-validation
@@ -73,14 +74,6 @@ scaffold_test_project() {
             $kb create webhook --group crew --version v1 --kind FirstMate --conversion
             $kb create api --group crew --version v1 --kind Admiral --controller=true --resource=true --namespaced=false --make=false
         elif [ $project == "project-v2-multigroup" ]; then
-            header_text 'Generating project-v2-multigroup'
-            export GO111MODULE=on
-            export PATH=$PATH:$(go env GOPATH)/bin
-            go mod init sigs.k8s.io/kubebuilder/testdata/project-v2-multigroup  # our repo autodetection will traverse up to the kb module if we don't do this
-
-            header_text 'initializing  project-v2-multigroup ...'
-            $kb init --project-version $version --domain testproject.org --license apache2 --owner "The Kubernetes authors"
-
             header_text 'Switching to multigroup layout ...'
             $kb edit --multigroup=true
 
@@ -95,15 +88,7 @@ scaffold_test_project() {
             $kb create api --group sea-creatures --version v1beta2 --kind Leviathan --controller=true --resource=true --make=false
             $kb create api --group foo.policy --version v1 --kind HealthCheckPolicy --controller=true --resource=true --make=false
         elif [ $project == "project-v2-addon" ]; then
-            header_text 'Generating project-v2-addon'
-            export GO111MODULE=on
-            export PATH=$PATH:$(go env GOPATH)/bin
-            go mod init sigs.k8s.io/kubebuilder/testdata/project-v2-addon  # our repo autodetection will traverse up to the kb module if we don't do this
-
-            header_text 'initializing  project-v2-addon ...'
-            $kb init --project-version $version --domain testproject.org --license apache2 --owner "The Kubernetes authors"
-
-            header_text 'enableling --pattern flag ...'
+            header_text 'enabling --pattern flag ...'
             export KUBEBUILDER_ENABLE_PLUGINS=1
             header_text 'Creating APIs ...'
             $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --pattern=addon
