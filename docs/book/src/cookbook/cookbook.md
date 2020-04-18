@@ -8,7 +8,7 @@ recommendations.
 While the tutorial part of this book provides onboarding into the operator
 realm, real world use cases often surpass the tutorial example(s). Hence we
 want to provide a place to share common implementation patterns in order
-to enable other users, may they be operator experts or novices, a palce to both
+to enable other users, may they be operator experts or novices, a place to both
 share and validate common approaches they encounter while developing operators.
 
 ## Recipies
