@@ -79,4 +79,6 @@
 
 ---
 
+- [Cookbook](./cookbook/cookbook.md)
+
 [Appendix: The TODO Landing Page](./TODO.md)
