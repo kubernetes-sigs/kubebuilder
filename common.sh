@@ -29,6 +29,13 @@ if [[ -n "${MODULES_OPT}" && -n "${MODULES_ENABLED}" ]]; then
     MOD_OPT="-mod=${MODULES_OPT}"
 fi
 
+# Default to the first GOPATH if there are multiple ones
+CHECK_GOPATH=$(go env GOPATH)
+if [[ $CHECK_GOPATH == *":"* ]]; then
+    GOPATH=$(echo $CHECK_GOPATH | cut -d: -f1)
+    GOBIN=$GOPATH/bin
+fi
+
 
 # Enable tracing in this script off by setting the TRACE variable in your
 # environment to any value:

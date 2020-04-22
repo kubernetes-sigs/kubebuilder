@@ -60,9 +60,17 @@ IMG ?= {{ .Image }}
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true"
 
+# Default to the first directory in the list, if GOPATH has multiple paths
+CHECK_GOPATH=$(shell go env GOPATH)
+ifneq (,$(findstring :,$(CHECK_GOPATH)))
+GOPATH=$(firstword $(subst :, ,$(CHECK_GOPATH)))
+else
+GOPATH=$(shell go env GOPATH)
+endif
+
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
-GOBIN=$(shell go env GOPATH)/bin
+GOBIN=$(GOPATH)/bin
 else
 GOBIN=$(shell go env GOBIN)
 endif

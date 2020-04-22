@@ -59,8 +59,14 @@ echo "grabbing the latest released controller-gen"
 go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.2.5
 
 # make sure we add the go bin directory to our path
-gobin=$(go env GOBIN)
-gobin=${GOBIN:-$(go env GOPATH)/bin}  # GOBIN won't always be set :-/
+CHECK_GOPATH=$(go env GOPATH)
+if [[ $CHECK_GOPATH == *":"* ]]; then
+    GOPATH=$(echo $CHECK_GOPATH | cut -d: -f1)
+    gobin=$GOPATH/bin
+else
+    gobin=$(go env GOBIN)
+    gobin=${GOBIN:-$(go env GOPATH)/bin}  # GOBIN won't always be set :-/
+fi
 
 export PATH=${gobin}:$PATH
 verb=${1:-build}

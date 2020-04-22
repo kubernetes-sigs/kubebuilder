@@ -20,9 +20,17 @@
 export GOPROXY?=https://proxy.golang.org/
 CONTROLLER_GEN_BIN_PATH := $(shell which controller-gen)
 
+# Default to the first directory in the list, if GOPATH has multiple paths
+CHECK_GOPATH=$(shell go env GOPATH)
+ifneq (,$(findstring :,$(CHECK_GOPATH)))
+GOPATH=$(firstword $(subst :, ,$(CHECK_GOPATH)))
+else
+GOPATH=$(shell go env GOPATH)
+endif
+
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
-GOBIN=$(shell go env GOPATH)/bin
+GOBIN=$(GOPATH)/bin
 else
 GOBIN=$(shell go env GOBIN)
 endif
@@ -46,7 +54,7 @@ build: ## Build the project locally
 .PHONY: install
 install: ## Build and install the binary with the current source code. Use it to test your changes locally.
 	make build
-	cp ./bin/kubebuilder $(shell go env GOPATH)/bin/kubebuilder
+	cp ./bin/kubebuilder $(GOBIN)/kubebuilder
 
 ##@ Development
 

@@ -36,13 +36,20 @@ scaffold_test_project() {
     pushd .
     cd testdata/$project
     kb=$testdata_dir/../bin/kubebuilder
+
+    # Default to the first GOPATH if there are multiple ones
+    CHECK_GOPATH=$(go env GOPATH)
+    if [[ $CHECK_GOPATH == *":"* ]]; then
+        GOPATH=$(echo $CHECK_GOPATH | cut -d: -f1)
+    fi
     oldgopath=$GOPATH
+
     if [ $version == "2" ] || [ $version == "3-alpha" ]; then
         header_text "Starting to generate projects with version $version"
         header_text "Generating $project"
 
         export GO111MODULE=on
-        export PATH=$PATH:$(go env GOPATH)/bin
+        export PATH=$PATH:$GOPATH/bin
         go mod init sigs.k8s.io/kubebuilder/testdata/$project  # our repo autodetection will traverse up to the kb module if we don't do this
 
         header_text "initializing $project ..."

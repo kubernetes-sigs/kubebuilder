@@ -3,7 +3,13 @@
 IMG ?= controller:latest
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd"
-
+# Default to the first directory in the list, if GOPATH has multiple paths
+CHECK_GOPATH=$(shell go env GOPATH)
+ifneq (,$(findstring :,$(CHECK_GOPATH)))
+GOPATH=$(firstword $(subst :, ,$(CHECK_GOPATH)))
+else
+GOPATH=$(shell go env GOPATH)
+endif
 all: manager
 
 # Run tests
@@ -58,7 +64,7 @@ docker-push:
 controller-gen:
 ifeq (, $(shell which controller-gen))
 	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.2.0-beta.3
-CONTROLLER_GEN=$(shell go env GOPATH)/bin/controller-gen
+CONTROLLER_GEN=$(GOPATH)/bin/controller-gen
 else
 CONTROLLER_GEN=$(shell which controller-gen)
 endif
