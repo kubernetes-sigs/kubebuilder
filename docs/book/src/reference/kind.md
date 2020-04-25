@@ -24,17 +24,20 @@ For example, the following is a sample `kind` configuration.
 ```
 
 Using the configuration above, run the following command will give you a k8s
-1.14.2 cluster with 1 master and 3 workers.
+v1.17.2 cluster with 1 master and 3 workers.
 
 ```bash
-kind create cluster --config hack/kind-config.yaml --image=kindest/node:v1.14.2
+kind create cluster --config hack/kind-config.yaml --image=kindest/node:v1.17.2
 ```
 
 You can use `--image` flag to specify the cluster version you want, e.g.
-`--image=kindest/node:v1.13.6`, the supported version are listed
+`--image=kindest/node:v1.17.2`, the supported version are listed
 [here](https://hub.docker.com/r/kindest/node/tags)
 
-## Cheetsheet
+## Load Docker Image into the Cluster
+
+When developing with a local kind cluster, loading docker images to the cluster
+is a very useful feature. You can avoid using a container registry.
 
 - [Load a local image into a kind cluster](https://kind.sigs.k8s.io/docs/user/quick-start/#loading-an-image-into-your-cluster).
 
@@ -42,10 +45,7 @@ You can use `--image` flag to specify the cluster version you want, e.g.
 kind load docker-image your-image-name:your-tag
 ```
 
-- Point `kubectl` to the kind cluster
-```bash
-kind export kubeconfig
-```
+## Delete a Cluster
 
 - Delete a kind cluster
 ```bash
