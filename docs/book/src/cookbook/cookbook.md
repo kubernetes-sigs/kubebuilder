@@ -1,6 +1,6 @@
 # Cookbook
 
-A curated collection of operator development patterns, use-cases and generic\
+A curated collection of operator development patterns, use-cases and generic
 recommendations.
 
 ## Rationale
@@ -11,7 +11,7 @@ want to provide a place to share common implementation patterns in order
 to enable other users, may they be operator experts or novices, a place to both
 share and validate common approaches they encounter while developing operators.
 
-## Recipies
+## Recipes
 
 <aside class="note">
 
