@@ -1,0 +1,12 @@
+{
+  "name": "irm",
+  "name_pretty": "Stackdriver Incident Response and Management API",
+  "product_documentation": "https://cloud.google.com/incident-response/",
+  "client_documentation": "https://godoc.org/cloud.google.com/go/irm/apiv1alpha2",
+  "release_level": "alpha",
+  "language": "go",
+  "repo": "googleapis/google-cloud-go",
+  "distribution_name": "cloud.google.com/go",
+  "api_id": "irm.googleapis.com",
+  "requires_billing": true
+}

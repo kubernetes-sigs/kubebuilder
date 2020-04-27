@@ -1,0 +1,12 @@
+{
+  "name": "logging",
+  "name_pretty": "Stackdriver Logging",
+  "product_documentation": "https://cloud.google.com/logging",
+  "client_documentation": "https://godoc.org/cloud.google.com/go/logging",
+  "release_level": "ga",
+  "language": "go",
+  "repo": "googleapis/google-cloud-go",
+  "distribution_name": "cloud.google.com/go/logging",
+  "api_id": "logging.googleapis.com",
+  "requires_billing": true
+}

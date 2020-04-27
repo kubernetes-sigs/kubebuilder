@@ -1,0 +1,12 @@
+{
+  "name": "pubsub",
+  "name_pretty": "Cloud Pub/Sub API",
+  "product_documentation": "https://cloud.google.com/pubsub",
+  "client_documentation": "https://godoc.org/cloud.google.com/go/pubsub/apiv1",
+  "release_level": "ga",
+  "language": "go",
+  "repo": "googleapis/google-cloud-go",
+  "distribution_name": "cloud.google.com/go/pubsub",
+  "api_id": "pubsub.googleapis.com",
+  "requires_billing": true
+}

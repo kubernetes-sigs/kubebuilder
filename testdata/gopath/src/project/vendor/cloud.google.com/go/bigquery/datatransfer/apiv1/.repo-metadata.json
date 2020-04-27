@@ -1,0 +1,12 @@
+{
+  "name": "datatransfer",
+  "name_pretty": "Google Bigquery Data Transfer Service",
+  "product_documentation": "https://cloud.google.com/bigquery/transfer/",
+  "client_documentation": "https://godoc.org/cloud.google.com/go/bigquery/datatransfer/apiv1",
+  "release_level": "alpha",
+  "language": "go",
+  "repo": "googleapis/google-cloud-go",
+  "distribution_name": "cloud.google.com/go",
+  "api_id": "bigquerydatatransfer.googleapis.com",
+  "requires_billing": true
+}

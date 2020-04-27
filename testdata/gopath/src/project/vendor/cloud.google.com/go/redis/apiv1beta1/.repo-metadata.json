@@ -1,0 +1,12 @@
+{
+  "name": "redis",
+  "name_pretty": "Cloud Memorystore for Redis API",
+  "product_documentation": "https://cloud.google.com/memorystore/docs/redis",
+  "client_documentation": "https://godoc.org/cloud.google.com/go/redis/apiv1beta1",
+  "release_level": "beta",
+  "language": "go",
+  "repo": "googleapis/google-cloud-go",
+  "distribution_name": "cloud.google.com/go",
+  "api_id": "redis.googleapis.com",
+  "requires_billing": true
+}

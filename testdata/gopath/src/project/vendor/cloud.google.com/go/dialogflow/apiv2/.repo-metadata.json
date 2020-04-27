@@ -1,0 +1,12 @@
+{
+  "name": "dialogflow",
+  "name_pretty": "Dialogflow",
+  "product_documentation": "https://cloud.google.com/dialogflow",
+  "client_documentation": "https://godoc.org/cloud.google.com/go/dialogflow/apiv2",
+  "release_level": "alpha",
+  "language": "go",
+  "repo": "googleapis/google-cloud-go",
+  "distribution_name": "cloud.google.com/go",
+  "api_id": "dialogflow.googleapis.com",
+  "requires_billing": true
+}

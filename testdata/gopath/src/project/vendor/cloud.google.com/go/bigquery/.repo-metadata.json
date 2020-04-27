@@ -1,0 +1,12 @@
+{
+  "name": "bigquery",
+  "name_pretty": "BigQuery",
+  "product_documentation": "https://cloud.google.com/bigquery",
+  "client_documentation": "https://godoc.org/cloud.google.com/go/bigquery",
+  "release_level": "ga",
+  "language": "go",
+  "repo": "googleapis/google-cloud-go",
+  "distribution_name": "cloud.google.com/go/bigquery",
+  "api_id": "bigquery:v2",
+  "requires_billing": true
+}

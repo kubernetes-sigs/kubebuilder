@@ -1,0 +1,12 @@
+{
+  "name": "texttospeech",
+  "name_pretty": "Cloud Text-to-Speech",
+  "product_documentation": "https://cloud.google.com/text-to-speech",
+  "client_documentation": "https://godoc.org/cloud.google.com/go/texttospeech/apiv1",
+  "release_level": "alpha",
+  "language": "go",
+  "repo": "googleapis/google-cloud-go",
+  "distribution_name": "cloud.google.com/go",
+  "api_id": "texttospeech.googleapis.com",
+  "requires_billing": true
+}

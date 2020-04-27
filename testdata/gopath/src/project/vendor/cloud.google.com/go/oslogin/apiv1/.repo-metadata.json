@@ -1,0 +1,12 @@
+{
+  "name": "oslogin",
+  "name_pretty": "Cloud OS Login API",
+  "product_documentation": "https://cloud.google.com/compute/docs/oslogin",
+  "client_documentation": "https://godoc.org/cloud.google.com/go/oslogin/apiv1",
+  "release_level": "alpha",
+  "language": "go",
+  "repo": "googleapis/google-cloud-go",
+  "distribution_name": "cloud.google.com/go",
+  "api_id": "oslogin.googleapis.com",
+  "requires_billing": true
+}

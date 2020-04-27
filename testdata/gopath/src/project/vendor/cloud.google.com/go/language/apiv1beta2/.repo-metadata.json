@@ -1,0 +1,12 @@
+{
+  "name": "language",
+  "name_pretty": "Natural Language API",
+  "product_documentation": "https://cloud.google.com/natural-language",
+  "client_documentation": "https://godoc.org/cloud.google.com/go/language/apiv1beta2",
+  "release_level": "beta",
+  "language": "go",
+  "repo": "googleapis/google-cloud-go",
+  "distribution_name": "cloud.google.com/go",
+  "api_id": "language.googleapis.com",
+  "requires_billing": true
+}

@@ -1,0 +1,12 @@
+{
+  "name": "kms",
+  "name_pretty": "Cloud Key Management Service API",
+  "product_documentation": "https://cloud.google.com/kms",
+  "client_documentation": "https://godoc.org/cloud.google.com/go/kms/apiv1",
+  "release_level": "ga",
+  "language": "go",
+  "repo": "googleapis/google-cloud-go",
+  "distribution_name": "cloud.google.com/go/kms/apiv1",
+  "api_id": "cloudkms.googleapis.com",
+  "requires_billing": true
+}

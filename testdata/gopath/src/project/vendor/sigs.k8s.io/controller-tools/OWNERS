@@ -1,0 +1,11 @@
+# See the OWNERS docs: https://git.k8s.io/community/contributors/devel/owners.md
+owners:
+  - directxman12
+  - droot
+  - pwittrock
+approvers:
+  - controller-tools-admins
+  - controller-tools-maintainers
+reviewers:
+  - controller-tools-admins
+  - controller-tools-maintainers

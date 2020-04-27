@@ -1,0 +1,12 @@
+{
+  "name": "webrisk",
+  "name_pretty": "Web Risk API",
+  "product_documentation": "https://cloud.google.com/web-risk",
+  "client_documentation": "https://godoc.org/cloud.google.com/go/webrisk/apiv1beta1",
+  "release_level": "beta",
+  "language": "go",
+  "repo": "googleapis/google-cloud-go",
+  "distribution_name": "cloud.google.com/go",
+  "api_id": "webrisk.googleapis.com",
+  "requires_billing": true
+}

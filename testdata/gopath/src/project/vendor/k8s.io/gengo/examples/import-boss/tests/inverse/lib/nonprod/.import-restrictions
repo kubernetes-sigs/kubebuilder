@@ -1,0 +1,9 @@
+{
+   "InverseRules": [{
+       "Transitive": true,
+       "SelectorRegexp": "k8s[.]io/gengo",
+       "AllowedPrefixes": [
+         "k8s.io/gengo/examples/import-boss/tests/inverse/lib"
+       ]
+   }]
+}

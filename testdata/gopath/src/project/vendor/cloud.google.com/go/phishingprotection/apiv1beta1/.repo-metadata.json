@@ -1,0 +1,12 @@
+{
+  "name": "phishingprotection",
+  "name_pretty": "Phishing Protection API",
+  "product_documentation": "https://cloud.google.com/phishing-protection/",
+  "client_documentation": "https://godoc.org/cloud.google.com/go/phishingprotection/apiv1beta1",
+  "release_level": "beta",
+  "language": "go",
+  "repo": "googleapis/google-cloud-go",
+  "distribution_name": "cloud.google.com/go",
+  "api_id": "phishingprotection.googleapis.com",
+  "requires_billing": true
+}

@@ -1,0 +1,12 @@
+{
+  "name": "translate",
+  "name_pretty": "Translation API",
+  "product_documentation": "https://cloud.google.com/translate",
+  "client_documentation": "https://godoc.org/cloud.google.com/go/translate",
+  "release_level": "ga",
+  "language": "go",
+  "repo": "googleapis/google-cloud-go",
+  "distribution_name": "cloud.google.com/go/translate",
+  "api_id": "translate.googleapis.com",
+  "requires_billing": true
+}

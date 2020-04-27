@@ -1,0 +1,12 @@
+{
+  "name": "debugger",
+  "name_pretty": "Stackdriver Debugger",
+  "product_documentation": "https://cloud.google.com/debugger",
+  "client_documentation": "https://godoc.org/cloud.google.com/go/debugger/apiv2",
+  "release_level": "alpha",
+  "language": "go",
+  "repo": "googleapis/google-cloud-go",
+  "distribution_name": "cloud.google.com/go",
+  "api_id": "clouddebugger.googleapis.com",
+  "requires_billing": true
+}

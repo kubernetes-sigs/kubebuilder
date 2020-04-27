@@ -1,0 +1,63 @@
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package spanner_bench;
+
+message ReadQuery{
+  // The query to use in the read call.
+  string Query = 1;
+}
+
+message User{
+  string name = 1;
+  int64 age = 2;
+}
+
+message InsertQuery{
+   // The query to use in the insert call.
+  repeated User users = 1;
+}
+
+message UpdateQuery{
+  // The queries to use in the update call.
+  repeated string Queries = 1;
+}
+
+message EmptyResponse{
+}
+
+service SpannerBenchWrapper{
+  // Read represents operations like Go's ReadOnlyTransaction.Query, Java's
+  // ReadOnlyTransaction.executeQuery, Python's snapshot.read, and Node's
+  // Transaction.Read.
+  //
+  // It will typically be used to read many items.
+  rpc Read(ReadQuery) returns (EmptyResponse) {}
+
+  // Insert represents operations like Go's Client.Apply, Java's
+  // DatabaseClient.writeAtLeastOnce, Python's transaction.commit, and Node's
+  // Transaction.Commit.
+  //
+  // It will typically be used to insert many items.
+  rpc Insert(InsertQuery) returns (EmptyResponse){}
+
+  // Update represents operations like Go's ReadWriteTransaction.BatchUpdate,
+  // Java's TransactionRunner.run, Python's Batch.update, and Node's
+  // Transaction.BatchUpdate.
+  //
+  // It will typically be used to update many items.
+  rpc Update(UpdateQuery) returns (EmptyResponse){}
+}

@@ -1,0 +1,13 @@
+language: go
+
+go:
+  - 1.9.x # See README.md for current minimum version.
+  - 1.10.x
+  - 1.11.x
+  - 1.12.x
+
+script:
+  - make check_license unused test-short
+  - if [[ ! $TRAVIS_GO_VERSION =~ ^1\.9\.[x0-9]+$ ]]; then make lint; fi
+  # Style is only checked against the latest supported Go version.
+  - if [[ $TRAVIS_GO_VERSION =~ ^1\.(12)\. ]]; then make style; fi

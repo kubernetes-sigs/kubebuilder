@@ -1,0 +1,3 @@
+version: "1"
+domain: myk8s.io
+repo: sigs.k8s.io/controller-tools/pkg/crd/generator/testData

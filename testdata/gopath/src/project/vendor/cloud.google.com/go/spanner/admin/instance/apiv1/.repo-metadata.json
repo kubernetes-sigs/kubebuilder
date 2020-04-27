@@ -1,0 +1,12 @@
+{
+  "name": "spanner",
+  "name_pretty": "Cloud Spanner API",
+  "product_documentation": "https://cloud.google.com/spanner",
+  "client_documentation": "https://godoc.org/cloud.google.com/go/spanner/admin/instance/apiv1",
+  "release_level": "alpha",
+  "language": "go",
+  "repo": "googleapis/google-cloud-go",
+  "distribution_name": "cloud.google.com/go",
+  "api_id": "spanner.googleapis.com",
+  "requires_billing": true
+}

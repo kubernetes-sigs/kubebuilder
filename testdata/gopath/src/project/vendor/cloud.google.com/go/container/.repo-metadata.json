@@ -1,0 +1,12 @@
+{
+  "name": "container",
+  "name_pretty": "Kubernetes Engine API",
+  "product_documentation": "https://cloud.google.com/kubernetes-engine",
+  "client_documentation": "https://godoc.org/cloud.google.com/go/container",
+  "release_level": "deprecated",
+  "language": "go",
+  "repo": "googleapis/google-cloud-go",
+  "distribution_name": "cloud.google.com/go/container",
+  "api_id": "container.googleapis.com",
+  "requires_billing": true
+}

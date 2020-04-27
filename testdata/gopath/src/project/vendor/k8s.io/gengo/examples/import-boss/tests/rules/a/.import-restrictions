@@ -1,0 +1,11 @@
+{
+   "Rules": [{
+       "SelectorRegexp": "k8s[.]io/gengo",
+       "AllowedPrefixes": [
+         "k8s.io/gengo/examples/import-boss/tests/rules/b"
+       ],
+       "ForbiddenPrefixes": [
+         "k8s.io/gengo/examples/import-boss/tests/rules/c"
+       ]
+   }]
+}

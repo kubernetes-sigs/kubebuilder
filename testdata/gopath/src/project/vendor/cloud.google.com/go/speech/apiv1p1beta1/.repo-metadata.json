@@ -1,0 +1,12 @@
+{
+  "name": "speech",
+  "name_pretty": "Cloud Speech-to-Text",
+  "product_documentation": "https://cloud.google.com/speech-to-text",
+  "client_documentation": "https://godoc.org/cloud.google.com/go/speech/apiv1p1beta1",
+  "release_level": "beta",
+  "language": "go",
+  "repo": "googleapis/google-cloud-go",
+  "distribution_name": "cloud.google.com/go",
+  "api_id": "speech.googleapis.com",
+  "requires_billing": true
+}

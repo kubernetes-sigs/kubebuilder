@@ -1,0 +1,12 @@
+{
+  "name": "recaptchaenterprise",
+  "name_pretty": "reCAPTCHA Enterprise API",
+  "product_documentation": "https://cloud.google.com/recaptcha-enterprise",
+  "client_documentation": "https://godoc.org/cloud.google.com/go/recaptchaenterprise/apiv1beta1",
+  "release_level": "beta",
+  "language": "go",
+  "repo": "googleapis/google-cloud-go",
+  "distribution_name": "cloud.google.com/go",
+  "api_id": "recaptchaenterprise.googleapis.com",
+  "requires_billing": true
+}

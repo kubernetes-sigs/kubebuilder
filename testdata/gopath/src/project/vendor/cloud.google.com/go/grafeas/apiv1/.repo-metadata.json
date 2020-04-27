@@ -1,0 +1,12 @@
+{
+  "name": "grafeas",
+  "name_pretty": "Container Analysis API",
+  "product_documentation": "https://cloud.google.com/container-registry/docs/container-analysis",
+  "client_documentation": "https://godoc.org/cloud.google.com/go/grafeas/apiv1",
+  "release_level": "alpha",
+  "language": "go",
+  "repo": "googleapis/google-cloud-go",
+  "distribution_name": "cloud.google.com/go",
+  "api_id": "grafeas",
+  "requires_billing": true
+}

@@ -1,0 +1,12 @@
+{
+  "name": "videointelligence",
+  "name_pretty": "Translation API",
+  "product_documentation": "https://cloud.google.com/video-intelligence",
+  "client_documentation": "https://godoc.org/cloud.google.com/go/videointelligence/apiv1",
+  "release_level": "alpha",
+  "language": "go",
+  "repo": "googleapis/google-cloud-go",
+  "distribution_name": "cloud.google.com/go",
+  "api_id": "videointelligence.googleapis.com",
+  "requires_billing": true
+}
