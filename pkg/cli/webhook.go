@@ -1,5 +1,5 @@
 /*
-Copyright 2018 The Kubernetes Authors.
+Copyright 2020 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -56,17 +56,15 @@ func (c cli) newWebhookContext() plugin.Context {
 
 func (c cli) bindCreateWebhook(ctx plugin.Context, cmd *cobra.Command) {
 	var getter plugin.CreateWebhookPluginGetter
-	var hasGetter bool
 	for _, p := range c.resolvedPlugins {
 		tmpGetter, isGetter := p.(plugin.CreateWebhookPluginGetter)
 		if isGetter {
-			if hasGetter {
+			if getter != nil {
 				err := fmt.Errorf("duplicate webhook creation plugins for project version %q: %s, %s",
 					c.projectVersion, getter.Name(), p.Name())
 				cmdErr(cmd, err)
 				return
 			}
-			hasGetter = true
 			getter = tmpGetter
 		}
 	}
@@ -77,7 +75,7 @@ func (c cli) bindCreateWebhook(ctx plugin.Context, cmd *cobra.Command) {
 		return
 	}
 
-	if !hasGetter {
+	if getter == nil {
 		err := fmt.Errorf("layout plugin %q does not support a webhook creation plugin", cfg.Layout)
 		cmdErr(cmd, err)
 		return

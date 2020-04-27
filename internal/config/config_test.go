@@ -72,7 +72,7 @@ version: "1"`,
 					Version: config.Version1,
 					Repo:    "github.com/example/project",
 					Domain:  "example.com",
-					ExtraFields: map[string]interface{}{
+					Plugins: map[string]interface{}{
 						"plugin-x": "single plugin datum",
 					},
 				},
@@ -113,7 +113,7 @@ version: "2"`,
 					Version: config.Version2,
 					Repo:    "github.com/example/project",
 					Domain:  "example.com",
-					ExtraFields: map[string]interface{}{
+					Plugins: map[string]interface{}{
 						"plugin-x": map[string]interface{}{
 							"data-1": "single plugin datum",
 						},
@@ -130,7 +130,7 @@ version: "2"`,
 				Version: config.Version2,
 				Repo:    "github.com/example/project",
 				Domain:  "example.com",
-				ExtraFields: map[string]interface{}{
+				Plugins: map[string]interface{}{
 					"plugin-x": map[string]interface{}{
 						"data-1": "single plugin datum",
 					},

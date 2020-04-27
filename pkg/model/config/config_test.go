@@ -21,7 +21,7 @@ import (
 	"testing"
 )
 
-func TestEncodeDecodeExtraFields(t *testing.T) {
+func TestEncodeDecodePluginConfig(t *testing.T) {
 	// Test plugin config. Don't want to export this config, but need it to
 	// be accessible by unmarshallers.
 	type PluginConfig struct {
@@ -30,12 +30,12 @@ func TestEncodeDecodeExtraFields(t *testing.T) {
 	}
 
 	cases := []struct {
-		description    string
-		config         Config
-		key            string
-		extraFieldsObj interface{}
-		expConfig      Config
-		wantErr        bool
+		description     string
+		config          Config
+		key             string
+		pluginConfigObj interface{}
+		expConfig       Config
+		wantErr         bool
 	}{
 		{
 			description: "config version 1",
@@ -46,19 +46,19 @@ func TestEncodeDecodeExtraFields(t *testing.T) {
 			description: "config version 1 with extra fields",
 			config:      Config{Version: Version1},
 			key:         "plugin-x",
-			extraFieldsObj: map[string]interface{}{
+			pluginConfigObj: map[string]interface{}{
 				"plugin-x": "single plugin datum",
 			},
 			wantErr: true,
 		},
 		{
-			description:    "config version 2",
-			key:            "plugin-x",
-			extraFieldsObj: PluginConfig{},
-			config:         Config{Version: Version2},
+			description:     "config version 2",
+			key:             "plugin-x",
+			pluginConfigObj: PluginConfig{},
+			config:          Config{Version: Version2},
 			expConfig: Config{
 				Version: Version2,
-				ExtraFields: map[string]interface{}{
+				Plugins: map[string]interface{}{
 					"plugin-x": map[string]interface{}{
 						"data-1": "",
 						"data-2": "",
@@ -70,13 +70,13 @@ func TestEncodeDecodeExtraFields(t *testing.T) {
 			description: "config version 2 with extra fields as struct",
 			config:      Config{Version: Version2},
 			key:         "plugin-x",
-			extraFieldsObj: PluginConfig{
+			pluginConfigObj: PluginConfig{
 				"plugin value 1",
 				"plugin value 2",
 			},
 			expConfig: Config{
 				Version: Version2,
-				ExtraFields: map[string]interface{}{
+				Plugins: map[string]interface{}{
 					"plugin-x": map[string]interface{}{
 						"data-1": "plugin value 1",
 						"data-2": "plugin value 2",
@@ -87,31 +87,31 @@ func TestEncodeDecodeExtraFields(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		// Test EncodeExtraFields
-		err := c.config.EncodeExtraFields(c.key, c.extraFieldsObj)
+		// Test EncodePluginConfig
+		err := c.config.EncodePluginConfig(c.key, c.pluginConfigObj)
 		if err != nil {
 			if !c.wantErr {
-				t.Errorf("%s: expected EncodeExtraFields to succeed, got error: %s", c.description, err)
+				t.Errorf("%s: expected EncodePluginConfig to succeed, got error: %s", c.description, err)
 			}
 		} else if c.wantErr {
-			t.Errorf("%s: expected EncodeExtraFields to fail, got no error", c.description)
+			t.Errorf("%s: expected EncodePluginConfig to fail, got no error", c.description)
 		} else if !reflect.DeepEqual(c.expConfig, c.config) {
 			t.Errorf("%s: compare encoded configs\nexpected:\n%#v\n\nreturned:\n%#v",
 				c.description, c.expConfig, c.config)
 		}
 
-		// Test DecodeExtraFields
+		// Test DecodePluginConfig
 		obj := PluginConfig{}
-		err = c.config.DecodeExtraFields(c.key, &obj)
+		err = c.config.DecodePluginConfig(c.key, &obj)
 		if err != nil {
 			if !c.wantErr {
-				t.Errorf("%s: expected DecodeExtraFields to succeed, got error: %s", c.description, err)
+				t.Errorf("%s: expected DecodePluginConfig to succeed, got error: %s", c.description, err)
 			}
 		} else if c.wantErr {
-			t.Errorf("%s: expected DecodeExtraFields to fail, got no error", c.description)
-		} else if !reflect.DeepEqual(c.extraFieldsObj, obj) {
+			t.Errorf("%s: expected DecodePluginConfig to fail, got no error", c.description)
+		} else if !reflect.DeepEqual(c.pluginConfigObj, obj) {
 			t.Errorf("%s: compare decoded extra fields objs\nexpected:\n%#v\n\nreturned:\n%#v",
-				c.description, c.extraFieldsObj, obj)
+				c.description, c.pluginConfigObj, obj)
 		}
 	}
 }

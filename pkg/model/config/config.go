@@ -51,9 +51,9 @@ type Config struct {
 	// Layout contains a key specifying which plugin created a project.
 	Layout string `json:"layout,omitempty"`
 
-	// ExtraFields is an arbitrary YAML blob that can be used by non-kubebuilder
-	// plugins for plugin-specific configure.
-	ExtraFields map[string]interface{} `json:"plugins,omitempty"`
+	// Plugins is an arbitrary YAML blob that can be used by external
+	// plugins for plugin-specific configuration.
+	Plugins map[string]interface{} `json:"plugins,omitempty"`
 }
 
 // IsV1 returns true if it is a v1 project
@@ -130,10 +130,11 @@ func (r GVK) isEqualTo(other GVK) bool {
 		r.Kind == other.Kind
 }
 
+// Marshal returns the bytes of c.
 func (c Config) Marshal() ([]byte, error) {
 	// Ignore extra fields at first.
 	cfg := c
-	cfg.ExtraFields = nil
+	cfg.Plugins = nil
 	content, err := yaml.Marshal(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("error marshalling project configuration: %v", err)
@@ -144,8 +145,8 @@ func (c Config) Marshal() ([]byte, error) {
 	}
 	// Append extra fields to put them at the config's bottom, unless the
 	// project is v1 which does not support extra fields.
-	if !cfg.IsV1() && len(c.ExtraFields) != 0 {
-		extraFieldBytes, err := yaml.Marshal(Config{ExtraFields: c.ExtraFields})
+	if !cfg.IsV1() && len(c.Plugins) != 0 {
+		extraFieldBytes, err := yaml.Marshal(Config{Plugins: c.Plugins})
 		if err != nil {
 			return nil, fmt.Errorf("error marshalling project configuration extra fields: %v", err)
 		}
@@ -154,59 +155,62 @@ func (c Config) Marshal() ([]byte, error) {
 	return content, nil
 }
 
-func Unmarshal(in []byte, out *Config) error {
-	if err := yaml.UnmarshalStrict(in, out); err != nil {
+// Unmarshal unmarshals the bytes of a Config into c.
+func (c *Config) Unmarshal(b []byte) error {
+	if err := yaml.UnmarshalStrict(b, c); err != nil {
 		return fmt.Errorf("error unmarshalling project configuration: %v", err)
 	}
 	// v1 projects do not support extra fields.
-	if out.IsV1() {
-		out.ExtraFields = nil
+	if c.IsV1() {
+		c.Plugins = nil
 	}
 	return nil
 }
 
-// EncodeExtraFields encodes extraFieldsObj in c. This method is intended to
-// be used for custom configuration objects.
-func (c *Config) EncodeExtraFields(key string, extraFieldsObj interface{}) error {
+// EncodePluginConfig encodes a config object into c by overwriting the existing
+// object stored under key. This method is intended to be used for custom
+// configuration objects.
+func (c *Config) EncodePluginConfig(key string, configObj interface{}) error {
 	// Short-circuit v1
 	if c.IsV1() {
 		return fmt.Errorf("v1 project configs do not have extra fields")
 	}
 
 	// Get object's bytes and set them under key in extra fields.
-	b, err := yaml.Marshal(extraFieldsObj)
+	b, err := yaml.Marshal(configObj)
 	if err != nil {
-		return fmt.Errorf("failed to convert %T object to bytes: %s", extraFieldsObj, err)
+		return fmt.Errorf("failed to convert %T object to bytes: %s", configObj, err)
 	}
 	var fields map[string]interface{}
 	if err := yaml.Unmarshal(b, &fields); err != nil {
-		return fmt.Errorf("failed to unmarshal %T object bytes: %s", extraFieldsObj, err)
+		return fmt.Errorf("failed to unmarshal %T object bytes: %s", configObj, err)
 	}
-	c.ExtraFields = map[string]interface{}{
-		key: fields,
+	if c.Plugins == nil {
+		c.Plugins = make(map[string]interface{})
 	}
+	c.Plugins[key] = fields
 	return nil
 }
 
-// DecodeExtraFields decodes extra fields stored in c into extraFieldsObj. This
+// DecodePluginConfig decodes a plugin config stored in c into configObj. This
 // method is intended to be used for custom configuration objects.
-// extraFieldsObj must be a pointer.
-func (c Config) DecodeExtraFields(key string, extraFieldsObj interface{}) error {
+// configObj must be a pointer.
+func (c Config) DecodePluginConfig(key string, configObj interface{}) error {
 	// Short-circuit v1
 	if c.IsV1() {
 		return fmt.Errorf("v1 project configs do not have extra fields")
 	}
-	if len(c.ExtraFields) == 0 {
+	if len(c.Plugins) == 0 {
 		return nil
 	}
 
 	// Get the object blob by key and unmarshal into the object.
-	if pluginConfig, hasKey := c.ExtraFields[key]; hasKey {
+	if pluginConfig, hasKey := c.Plugins[key]; hasKey {
 		b, err := yaml.Marshal(pluginConfig)
 		if err != nil {
 			return fmt.Errorf("failed to convert extra fields object to bytes: %s", err)
 		}
-		if err := yaml.Unmarshal(b, extraFieldsObj); err != nil {
+		if err := yaml.Unmarshal(b, configObj); err != nil {
 			return fmt.Errorf("failed to unmarshal extra fields object: %s", err)
 		}
 	}
