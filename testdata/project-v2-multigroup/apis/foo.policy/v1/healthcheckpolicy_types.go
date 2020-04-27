@@ -39,6 +39,7 @@ type HealthCheckPolicyStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 
 // HealthCheckPolicy is the Schema for the healthcheckpolicies API
 type HealthCheckPolicy struct {

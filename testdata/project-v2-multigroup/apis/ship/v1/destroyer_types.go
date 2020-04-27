@@ -39,6 +39,7 @@ type DestroyerStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Cluster
 
 // Destroyer is the Schema for the destroyers API

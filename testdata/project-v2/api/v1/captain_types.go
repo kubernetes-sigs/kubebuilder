@@ -39,6 +39,7 @@ type CaptainStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 
 // Captain is the Schema for the captains API
 type Captain struct {

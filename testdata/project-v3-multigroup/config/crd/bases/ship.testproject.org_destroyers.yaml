@@ -15,6 +15,8 @@ spec:
     plural: destroyers
     singular: destroyer
   scope: Cluster
+  subresources:
+    status: {}
   validation:
     openAPIV3Schema:
       description: Destroyer is the Schema for the destroyers API

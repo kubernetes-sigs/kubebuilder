@@ -39,6 +39,7 @@ type LeviathanStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 
 // Leviathan is the Schema for the leviathans API
 type Leviathan struct {

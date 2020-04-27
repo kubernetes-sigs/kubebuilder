@@ -39,6 +39,7 @@ type CruiserStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Cluster
 
 // Cruiser is the Schema for the cruisers API

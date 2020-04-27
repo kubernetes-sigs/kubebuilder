@@ -15,6 +15,8 @@ spec:
     plural: healthcheckpolicies
     singular: healthcheckpolicy
   scope: Namespaced
+  subresources:
+    status: {}
   validation:
     openAPIV3Schema:
       description: HealthCheckPolicy is the Schema for the healthcheckpolicies API
