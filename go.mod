@@ -5,7 +5,6 @@ go 1.13
 require (
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/gobuffalo/flect v0.2.1
-	github.com/golang/protobuf v1.3.4 // indirect
 	github.com/onsi/ginkgo v1.12.0
 	github.com/onsi/gomega v1.9.0
 	github.com/spf13/afero v1.2.2

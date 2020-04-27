@@ -118,6 +118,9 @@ func WithCommandName(name string) Option {
 // version. Setting an unknown version will result in an error.
 func WithDefaultProjectVersion(version string) Option {
 	return func(c *cli) error {
+		if err := validation.ValidateProjectVersion(version); err != nil {
+			return fmt.Errorf("broken pre-set default project version %q: %v", version, err)
+		}
 		c.defaultProjectVersion = version
 		return nil
 	}
@@ -134,6 +137,11 @@ func WithPlugins(plugins ...plugin.Base) Option {
 				c.pluginsFromOptions[version] = append(c.pluginsFromOptions[version], p)
 			}
 		}
+		for _, plugins := range c.pluginsFromOptions {
+			if err := validatePlugins(plugins...); err != nil {
+				return fmt.Errorf("broken pre-set plugins: %v", err)
+			}
+		}
 		return nil
 	}
 }
@@ -147,6 +155,11 @@ func WithDefaultPlugins(plugins ...plugin.Base) Option {
 					c.defaultPluginsFromOptions[version] = []plugin.Base{}
 				}
 				c.defaultPluginsFromOptions[version] = append(c.defaultPluginsFromOptions[version], p)
+			}
+		}
+		for _, plugins := range c.defaultPluginsFromOptions {
+			if err := validatePlugins(plugins...); err != nil {
+				return fmt.Errorf("broken pre-set default plugins: %v", err)
 			}
 		}
 		return nil
@@ -271,12 +284,9 @@ func (c *cli) parseBaseFlags() error {
 
 // validate validates fields in a cli.
 func (c cli) validate() error {
-	// Validate project versions.
-	if err := validation.ValidateProjectVersion(c.defaultProjectVersion); err != nil {
-		return fmt.Errorf("failed to validate default project version %q: %v", c.defaultProjectVersion, err)
-	}
+	// Validate project version.
 	if err := validation.ValidateProjectVersion(c.projectVersion); err != nil {
-		return fmt.Errorf("failed to validate project version %q: %v", c.projectVersion, err)
+		return fmt.Errorf("invalid project version %q: %v", c.projectVersion, err)
 	}
 
 	if _, versionFound := c.pluginsFromOptions[c.projectVersion]; !versionFound {
@@ -297,22 +307,17 @@ func (c cli) validate() error {
 			return err
 		}
 	}
-	for _, defaultPlugins := range c.defaultPluginsFromOptions {
-		if err := validatePlugins(defaultPlugins...); err != nil {
-			return err
-		}
-	}
 
 	// Validate plugin keys set in CLI.
 	if c.cliPluginKey != "" {
 		pluginName, pluginVersion := plugin.SplitKey(c.cliPluginKey)
 		if err := plugin.ValidateName(pluginName); err != nil {
-			return fmt.Errorf("failed to validate plugin name %q: %v", pluginName, err)
+			return fmt.Errorf("invalid plugin name %q: %v", pluginName, err)
 		}
 		// CLI-set plugins do not have to contain a version.
 		if pluginVersion != "" {
 			if err := plugin.ValidateVersion(pluginVersion); err != nil {
-				return fmt.Errorf("failed to validate plugin %q version %q: %v",
+				return fmt.Errorf("invalid plugin %q version %q: %v",
 					pluginName, pluginVersion, err)
 			}
 		}
@@ -327,16 +332,16 @@ func validatePlugins(plugins ...plugin.Base) error {
 	for _, p := range plugins {
 		pluginName := p.Name()
 		if err := plugin.ValidateName(pluginName); err != nil {
-			return fmt.Errorf("failed to validate plugin name %q: %v", pluginName, err)
+			return fmt.Errorf("invalid plugin name %q: %v", pluginName, err)
 		}
 		pluginVersion := p.Version()
 		if err := plugin.ValidateVersion(pluginVersion); err != nil {
-			return fmt.Errorf("failed to validate plugin %q version %q: %v",
+			return fmt.Errorf("invalid plugin %q version %q: %v",
 				pluginName, pluginVersion, err)
 		}
 		for _, projectVersion := range p.SupportedProjectVersions() {
 			if err := validation.ValidateProjectVersion(projectVersion); err != nil {
-				return fmt.Errorf("failed to validate plugin %q supported project version %q: %v",
+				return fmt.Errorf("invalid plugin %q supported project version %q: %v",
 					pluginName, projectVersion, err)
 			}
 		}

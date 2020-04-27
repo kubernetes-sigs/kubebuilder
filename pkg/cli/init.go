@@ -1,5 +1,5 @@
 /*
-Copyright 2017 The Kubernetes Authors.
+Copyright 2020 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -86,17 +86,19 @@ func (c cli) getInitHelpExamples() string {
 }
 
 func (c cli) getAvailableProjectVersions() (projectVersions []string) {
+	versionSet := make(map[string]struct{})
 	for version, versionedPlugins := range c.pluginsFromOptions {
 		for _, p := range versionedPlugins {
-			// There will only be one init plugin per version.
-			if _, isInit := p.(plugin.Init); !isInit {
-				// Only return project versions from non-deprecated plugins.
-				if _, isDeprecated := p.(plugin.Deprecated); !isDeprecated {
-					projectVersions = append(projectVersions, strconv.Quote(version))
-					break
-				}
+			// If there's at least one non-deprecated plugin per version, that
+			// version is "available".
+			if _, isDeprecated := p.(plugin.Deprecated); !isDeprecated {
+				versionSet[version] = struct{}{}
+				break
 			}
 		}
+	}
+	for version := range versionSet {
+		projectVersions = append(projectVersions, strconv.Quote(version))
 	}
 	return projectVersions
 }
@@ -115,19 +117,17 @@ func (c cli) getAvailablePlugins() (pluginKeys []string) {
 
 func (c cli) bindInit(ctx plugin.Context, cmd *cobra.Command) {
 	var getter plugin.InitPluginGetter
-	var hasGetter bool
 	for _, p := range c.resolvedPlugins {
 		tmpGetter, isGetter := p.(plugin.InitPluginGetter)
 		if isGetter {
-			if hasGetter {
+			if getter != nil {
 				log.Fatalf("duplicate initialization plugins for project version %q: %s, %s",
 					c.projectVersion, getter.Name(), p.Name())
 			}
-			hasGetter = true
 			getter = tmpGetter
 		}
 	}
-	if !hasGetter {
+	if getter == nil {
 		if c.cliPluginKey == "" {
 			log.Fatalf("project version %q does not support an initialization plugin", c.projectVersion)
 		} else {

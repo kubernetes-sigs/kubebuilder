@@ -42,8 +42,8 @@ func newUpdateCmd() *cobra.Command {
 		Use:   "update",
 		Short: "Update vendor dependencies",
 		Long:  `Update vendor dependencies`,
-		Example: fmt.Sprintf(`	# Update the vendor dependencies:
-	kubebuiler update vendor`),
+		Example: `	# Update the vendor dependencies:
+	kubebuiler update vendor`,
 		Run: func(cmd *cobra.Command, args []string) {
 			var err error
 			if options.config, err = config.LoadInitialized(); err != nil {

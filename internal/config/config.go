@@ -58,7 +58,7 @@ func readFrom(fs afero.Fs, path string) (c config.Config, err error) {
 	}
 
 	// Unmarshal the file content
-	if err = config.Unmarshal(in, &c); err != nil {
+	if err = c.Unmarshal(in); err != nil {
 		return
 	}
 
