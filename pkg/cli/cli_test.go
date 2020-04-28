@@ -37,34 +37,43 @@ var _ = Describe("CLI", func() {
 
 		It("should check key correctly", func() {
 
+			By("Resolving foo.example.com/v1.0.0")
 			resolvedPlugins, err := resolvePluginsByKey(plugins, "foo.example.com/v1.0.0")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(getPluginKeys(resolvedPlugins...)).To(Equal([]string{"foo.example.com/v1.0.0"}))
 
+			By("Resolving foo.example.com")
 			resolvedPlugins, err = resolvePluginsByKey(plugins, "foo.example.com")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(getPluginKeys(resolvedPlugins...)).To(Equal([]string{"foo.example.com/v1.0.0"}))
 
+			By("Resolving baz")
 			resolvedPlugins, err = resolvePluginsByKey(plugins, "baz")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(getPluginKeys(resolvedPlugins...)).To(Equal([]string{"baz.example.com/v1.0.0"}))
 
+			By("Resolving foo/v2.0.0")
 			resolvedPlugins, err = resolvePluginsByKey(plugins, "foo/v2.0.0")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(getPluginKeys(resolvedPlugins...)).To(Equal([]string{"foo.kubebuilder.io/v2.0.0"}))
 
+			By("Resolving blah")
 			_, err = resolvePluginsByKey(plugins, "blah")
 			Expect(err).To(MatchError(`plugin key "blah" does not match a known plugin`))
 
+			By("Resolving foo.example.com/v2.0.0")
 			_, err = resolvePluginsByKey(plugins, "foo.example.com/v2.0.0")
 			Expect(err).To(MatchError(`plugin key "foo.example.com/v2.0.0" does not match a known plugin`))
 
+			By("Resolving foo.kubebuilder.io")
 			_, err = resolvePluginsByKey(plugins, "foo.kubebuilder.io")
 			Expect(err).To(MatchError(`plugin key "foo.kubebuilder.io" matches more than one known plugin`))
 
+			By("Resolving foo/v1.0.0")
 			_, err = resolvePluginsByKey(plugins, "foo/v1.0.0")
 			Expect(err).To(MatchError(`plugin key "foo/v1.0.0" matches more than one known plugin`))
 
+			By("Resolving foo")
 			_, err = resolvePluginsByKey(plugins, "foo")
 			Expect(err).To(MatchError(`plugin key "foo" matches more than one known plugin`))
 		})

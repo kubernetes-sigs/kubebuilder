@@ -146,11 +146,11 @@ func (c Config) Marshal() ([]byte, error) {
 	// Append extra fields to put them at the config's bottom, unless the
 	// project is v1 which does not support extra fields.
 	if !cfg.IsV1() && len(c.Plugins) != 0 {
-		extraFieldBytes, err := yaml.Marshal(Config{Plugins: c.Plugins})
+		pluginConfigBytes, err := yaml.Marshal(Config{Plugins: c.Plugins})
 		if err != nil {
 			return nil, fmt.Errorf("error marshalling project configuration extra fields: %v", err)
 		}
-		content = append(content, extraFieldBytes...)
+		content = append(content, pluginConfigBytes...)
 	}
 	return content, nil
 }
