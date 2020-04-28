@@ -21,8 +21,8 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/internal/config"
 	"sigs.k8s.io/kubebuilder/pkg/model"
+	"sigs.k8s.io/kubebuilder/pkg/model/config"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/machinery"
 	templatesv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v1"
 	managerv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v1/manager"
@@ -67,7 +67,7 @@ func NewInitScaffolder(config *config.Config, license, owner string) Scaffolder 
 
 func (s *initScaffolder) newUniverse(boilerplate string) *model.Universe {
 	return model.NewUniverse(
-		model.WithConfig(&s.config.Config),
+		model.WithConfig(s.config),
 		model.WithBoilerplate(boilerplate),
 	)
 }
@@ -76,14 +76,10 @@ func (s *initScaffolder) newUniverse(boilerplate string) *model.Universe {
 func (s *initScaffolder) Scaffold() error {
 	fmt.Println("Writing scaffold for you to edit...")
 
-	if err := s.config.Save(); err != nil {
-		return err
-	}
-
 	switch {
 	case s.config.IsV1():
 		return s.scaffoldV1()
-	case s.config.IsV2():
+	case s.config.IsV2(), s.config.IsV3():
 		return s.scaffoldV2()
 	default:
 		return fmt.Errorf("unknown project version %v", s.config.Version)

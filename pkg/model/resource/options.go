@@ -26,6 +26,7 @@ import (
 
 	"github.com/gobuffalo/flect"
 
+	"sigs.k8s.io/kubebuilder/pkg/internal/validation"
 	"sigs.k8s.io/kubebuilder/pkg/model/config"
 )
 
@@ -117,7 +118,7 @@ func (opts *Options) Validate() error {
 	}
 
 	// Check if the Group has a valid DNS1123 subdomain value
-	if err := IsDNS1123Subdomain(opts.Group); err != nil {
+	if err := validation.IsDNS1123Subdomain(opts.Group); err != nil {
 		return fmt.Errorf("group name is invalid: (%v)", err)
 	}
 
@@ -133,7 +134,7 @@ func (opts *Options) Validate() error {
 		validationErrors = append(validationErrors, "kind must start with an uppercase character")
 	}
 
-	validationErrors = append(validationErrors, isDNS1035Label(strings.ToLower(opts.Kind))...)
+	validationErrors = append(validationErrors, validation.IsDNS1035Label(strings.ToLower(opts.Kind))...)
 
 	if len(validationErrors) != 0 {
 		return fmt.Errorf("invalid Kind: %#v", validationErrors)

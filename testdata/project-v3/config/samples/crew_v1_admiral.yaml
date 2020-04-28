@@ -1,0 +1,7 @@
+apiVersion: crew.testproject.org/v1
+kind: Admiral
+metadata:
+  name: admiral-sample
+spec:
+  # Add fields here
+  foo: bar

@@ -17,13 +17,12 @@ limitations under the License.
 package main
 
 import (
-	"errors"
 	"fmt"
 	"log"
-	"os"
 
 	"github.com/spf13/cobra"
 
+	"sigs.k8s.io/kubebuilder/internal/cmdutil"
 	"sigs.k8s.io/kubebuilder/internal/config"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold"
 )
@@ -49,7 +48,11 @@ func newEditCmd() *cobra.Command {
 	# Disable the multigroup layout
 	kubebuilder edit --multigroup=false`,
 		Run: func(_ *cobra.Command, _ []string) {
-			if err := run(options); err != nil {
+			var err error
+			if options.config, err = config.LoadInitialized(); err != nil {
+				log.Fatal(err)
+			}
+			if err := cmdutil.Run(options); err != nil {
 				log.Fatal(editError{err})
 			}
 		},
@@ -60,9 +63,11 @@ func newEditCmd() *cobra.Command {
 	return cmd
 }
 
-var _ commandOptions = &editOptions{}
+var _ cmdutil.RunOptions = &editOptions{}
 
 type editOptions struct {
+	config *config.Config
+
 	multigroup bool
 }
 
@@ -70,29 +75,20 @@ func (o *editOptions) bindFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&o.multigroup, "multigroup", false, "enable or disable multigroup layout")
 }
 
-func (o *editOptions) loadConfig() (*config.Config, error) {
-	projectConfig, err := config.Load()
-	if os.IsNotExist(err) {
-		return nil, errors.New("unable to find configuration file, project must be initialized")
-	}
-
-	return projectConfig, err
-}
-
-func (o *editOptions) validate(c *config.Config) error {
-	if !c.IsV2() {
-		if c.MultiGroup {
-			return fmt.Errorf("multiple group support can't be enabled for version %s", c.Version)
+func (o *editOptions) Validate() error {
+	if !o.config.IsV2() && !o.config.IsV3() {
+		if o.config.MultiGroup {
+			return fmt.Errorf("multiple group support can't be enabled for version %s", o.config.Version)
 		}
 	}
 
 	return nil
 }
 
-func (o *editOptions) scaffolder(c *config.Config) (scaffold.Scaffolder, error) { //nolint:unparam
-	return scaffold.NewEditScaffolder(c, o.multigroup), nil
+func (o *editOptions) GetScaffolder() (scaffold.Scaffolder, error) {
+	return scaffold.NewEditScaffolder(&o.config.Config, o.multigroup), nil
 }
 
-func (o *editOptions) postScaffold(_ *config.Config) error {
-	return nil
+func (o *editOptions) PostScaffold() error {
+	return o.config.Save()
 }

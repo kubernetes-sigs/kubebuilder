@@ -26,3 +26,6 @@ bin/*
 /testdata/project-v2/go.sum
 /testdata/project-v2-addon/go.sum
 /testdata/project-v2-multigroup/go.sum
+/testdata/project-v3/go.sum
+/testdata/project-v3-multigroup/go.sum
+/testdata/project-v3-addon/go.sum

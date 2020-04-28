@@ -17,13 +17,12 @@ limitations under the License.
 package main
 
 import (
-	"errors"
 	"fmt"
 	"log"
-	"os"
 
 	"github.com/spf13/cobra"
 
+	"sigs.k8s.io/kubebuilder/internal/cmdutil"
 	"sigs.k8s.io/kubebuilder/internal/config"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold"
 )
@@ -39,52 +38,42 @@ func (e updateError) Error() string {
 func newUpdateCmd() *cobra.Command {
 	options := &updateOptions{}
 
-	cmd := &cobra.Command{
+	return &cobra.Command{
 		Use:   "update",
 		Short: "Update vendor dependencies",
 		Long:  `Update vendor dependencies`,
-		Example: `Update the vendor dependencies:
-kubebuilder update
-`,
-		Run: func(_ *cobra.Command, _ []string) {
-			if err := run(options); err != nil {
+		Example: `	# Update the vendor dependencies:
+	kubebuiler update vendor`,
+		Run: func(cmd *cobra.Command, args []string) {
+			var err error
+			if options.config, err = config.LoadInitialized(); err != nil {
+				log.Fatal(err)
+			}
+			if err := cmdutil.Run(options); err != nil {
 				log.Fatal(updateError{err})
 			}
 		},
 	}
-
-	options.bindFlags(cmd)
-
-	return cmd
 }
 
-var _ commandOptions = &updateOptions{}
+var _ cmdutil.RunOptions = &updateOptions{}
 
-type updateOptions struct{}
-
-func (o *updateOptions) bindFlags(_ *cobra.Command) {}
-
-func (o *updateOptions) loadConfig() (*config.Config, error) {
-	projectConfig, err := config.Load()
-	if os.IsNotExist(err) {
-		return nil, errors.New("unable to find configuration file, project must be initialized")
-	}
-
-	return projectConfig, err
+type updateOptions struct {
+	config *config.Config
 }
 
-func (o *updateOptions) validate(c *config.Config) error {
-	if !c.IsV1() {
-		return fmt.Errorf("vendor was only used for v1, this project is %s", c.Version)
+func (o *updateOptions) Validate() error {
+	if !o.config.IsV1() {
+		return fmt.Errorf("vendor was only used in project version 1, this project is %s", o.config.Version)
 	}
 
 	return nil
 }
 
-func (o *updateOptions) scaffolder(c *config.Config) (scaffold.Scaffolder, error) { //nolint:unparam
-	return scaffold.NewUpdateScaffolder(&c.Config), nil
+func (o *updateOptions) GetScaffolder() (scaffold.Scaffolder, error) {
+	return scaffold.NewUpdateScaffolder(&o.config.Config), nil
 }
 
-func (o *updateOptions) postScaffold(_ *config.Config) error {
+func (o *updateOptions) PostScaffold() error {
 	return nil
 }

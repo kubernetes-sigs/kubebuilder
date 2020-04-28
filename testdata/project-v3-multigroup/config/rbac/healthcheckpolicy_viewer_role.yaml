@@ -1,0 +1,20 @@
+# permissions for end users to view healthcheckpolicies.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: healthcheckpolicy-viewer-role
+rules:
+- apiGroups:
+  - foo.policy.testproject.org
+  resources:
+  - healthcheckpolicies
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - foo.policy.testproject.org
+  resources:
+  - healthcheckpolicies/status
+  verbs:
+  - get

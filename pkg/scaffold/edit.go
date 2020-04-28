@@ -17,7 +17,7 @@ limitations under the License.
 package scaffold
 
 import (
-	"sigs.k8s.io/kubebuilder/internal/config"
+	"sigs.k8s.io/kubebuilder/pkg/model/config"
 )
 
 var _ Scaffolder = &editScaffolder{}
@@ -38,6 +38,5 @@ func NewEditScaffolder(config *config.Config, multigroup bool) Scaffolder {
 // Scaffold implements Scaffolder
 func (s *editScaffolder) Scaffold() error {
 	s.config.MultiGroup = s.multigroup
-
-	return s.config.Save()
+	return nil
 }

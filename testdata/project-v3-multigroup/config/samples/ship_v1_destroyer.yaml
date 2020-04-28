@@ -1,0 +1,7 @@
+apiVersion: ship.testproject.org/v1
+kind: Destroyer
+metadata:
+  name: destroyer-sample
+spec:
+  # Add fields here
+  foo: bar

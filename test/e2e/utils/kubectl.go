@@ -81,3 +81,12 @@ func (k *Kubectl) Logs(cmdOptions ...string) (string, error) {
 	ops := append([]string{"logs"}, cmdOptions...)
 	return k.CommandInNamespace(ops...)
 }
+
+// Wait is a func to run kubectl wait commands
+func (k *Kubectl) Wait(inNamespace bool, cmdOptions ...string) (string, error) {
+	ops := append([]string{"wait"}, cmdOptions...)
+	if inNamespace {
+		return k.CommandInNamespace(ops...)
+	}
+	return k.Command(ops...)
+}
