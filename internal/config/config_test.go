@@ -17,116 +17,57 @@ limitations under the License.
 package config
 
 import (
-	"reflect"
-	"strings"
-	"testing"
+	"os"
 
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/config"
 )
 
-func TestSaveReadFrom(t *testing.T) {
-	cases := []struct {
-		description  string
-		config       Config
-		expConfig    config.Config
-		expConfigStr string
-		wantSaveErr  bool
-	}{
-		{
-			description:  "empty config",
-			config:       Config{},
-			expConfigStr: "",
-			wantSaveErr:  true,
-		},
-		{
-			description:  "empty config with path",
-			config:       Config{path: DefaultPath},
-			expConfig:    config.Config{Version: config.Version1},
-			expConfigStr: "",
-		},
-		{
-			description: "config version 1",
-			config: Config{
-				Config: config.Config{
-					Version: config.Version1,
-					Repo:    "github.com/example/project",
-					Domain:  "example.com",
-				},
-				path: DefaultPath,
-			},
-			expConfig: config.Config{
-				Version: config.Version1,
-				Repo:    "github.com/example/project",
-				Domain:  "example.com",
-			},
-			expConfigStr: `domain: example.com
-repo: github.com/example/project
-version: "1"`,
-		},
-		{
-			description: "config version 1 with extra fields",
-			config: Config{
-				Config: config.Config{
-					Version: config.Version1,
-					Repo:    "github.com/example/project",
-					Domain:  "example.com",
-					Plugins: map[string]interface{}{
-						"plugin-x": "single plugin datum",
-					},
-				},
-				path: DefaultPath,
-			},
-			expConfig: config.Config{
-				Version: config.Version1,
-				Repo:    "github.com/example/project",
-				Domain:  "example.com",
-			},
-			expConfigStr: `domain: example.com
-repo: github.com/example/project
-version: "1"`,
-		},
-		{
-			description: "config version 2 without extra fields",
-			config: Config{
-				Config: config.Config{
-					Version: config.Version2,
-					Repo:    "github.com/example/project",
-					Domain:  "example.com",
-				},
-				path: DefaultPath,
-			},
-			expConfig: config.Config{
+var _ = Describe("Config", func() {
+	It("should save correctly", func() {
+		var (
+			cfg               Config
+			expectedConfigStr string
+		)
+
+		By("saving empty config")
+		Expect(cfg.Save()).To(HaveOccurred())
+
+		By("saving empty config with path")
+		cfg = Config{
+			fs:   afero.NewMemMapFs(),
+			path: DefaultPath,
+		}
+		Expect(cfg.Save()).ToNot(HaveOccurred())
+		cfgBytes, err := afero.ReadFile(cfg.fs, DefaultPath)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(string(cfgBytes)).To(Equal(expectedConfigStr))
+
+		By("saving config version 2")
+		cfg = Config{
+			Config: config.Config{
 				Version: config.Version2,
 				Repo:    "github.com/example/project",
 				Domain:  "example.com",
 			},
-			expConfigStr: `domain: example.com
+			fs:   afero.NewMemMapFs(),
+			path: DefaultPath,
+		}
+		expectedConfigStr = `domain: example.com
 repo: github.com/example/project
-version: "2"`,
-		},
-		{
-			description: "config version 2 with extra fields",
-			config: Config{
-				Config: config.Config{
-					Version: config.Version2,
-					Repo:    "github.com/example/project",
-					Domain:  "example.com",
-					Plugins: map[string]interface{}{
-						"plugin-x": map[string]interface{}{
-							"data-1": "single plugin datum",
-						},
-						"plugin-y/v1": map[string]interface{}{
-							"data-1": "plugin value 1",
-							"data-2": "plugin value 2",
-							"data-3": []string{"plugin value 3", "plugin value 4"},
-						},
-					},
-				},
-				path: DefaultPath,
-			},
-			expConfig: config.Config{
+version: "2"
+`
+		Expect(cfg.Save()).ToNot(HaveOccurred())
+		cfgBytes, err = afero.ReadFile(cfg.fs, DefaultPath)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(string(cfgBytes)).To(Equal(expectedConfigStr))
+
+		By("saving config version 2 with plugin config")
+		cfg = Config{
+			Config: config.Config{
 				Version: config.Version2,
 				Repo:    "github.com/example/project",
 				Domain:  "example.com",
@@ -137,11 +78,14 @@ version: "2"`,
 					"plugin-y/v1": map[string]interface{}{
 						"data-1": "plugin value 1",
 						"data-2": "plugin value 2",
-						"data-3": []interface{}{"plugin value 3", "plugin value 4"},
+						"data-3": []string{"plugin value 3", "plugin value 4"},
 					},
 				},
 			},
-			expConfigStr: `domain: example.com
+			fs:   afero.NewMemMapFs(),
+			path: DefaultPath,
+		}
+		expectedConfigStr = `domain: example.com
 repo: github.com/example/project
 version: "2"
 plugins:
@@ -152,41 +96,69 @@ plugins:
     data-2: plugin value 2
     data-3:
     - plugin value 3
-    - plugin value 4`,
-		},
-	}
+    - plugin value 4
+`
+		Expect(cfg.Save()).ToNot(HaveOccurred())
+		cfgBytes, err = afero.ReadFile(cfg.fs, DefaultPath)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(string(cfgBytes)).To(Equal(expectedConfigStr))
+	})
 
-	for _, c := range cases {
-		// Setup
-		c.config.fs = afero.NewMemMapFs()
+	It("should load correctly", func() {
+		var (
+			fs             = afero.NewMemMapFs()
+			configStr      string
+			expectedConfig config.Config
+		)
 
-		// Test Save
-		err := c.config.Save()
-		if err != nil {
-			if !c.wantSaveErr {
-				t.Errorf("%s: expected Save to succeed, got error: %s", c.description, err)
-			}
-			continue
-		} else if c.wantSaveErr {
-			t.Errorf("%s: expected Save to fail, got no error", c.description)
-			continue
+		By("loading config version 2")
+		configStr = `domain: example.com
+repo: github.com/example/project
+version: "2"`
+		expectedConfig = config.Config{
+			Version: config.Version2,
+			Repo:    "github.com/example/project",
+			Domain:  "example.com",
 		}
-		configBytes, err := afero.ReadFile(c.config.fs, c.config.path)
-		if err != nil {
-			t.Fatalf("%s: %s", c.description, err)
-		}
-		if c.expConfigStr != strings.TrimSpace(string(configBytes)) {
-			t.Errorf("%s: compare saved configs\nexpected:\n%s\n\nreturned:\n%s",
-				c.description, c.expConfigStr, string(configBytes))
-		}
+		err := afero.WriteFile(fs, DefaultPath, []byte(configStr), os.ModePerm)
+		Expect(err).ToNot(HaveOccurred())
+		cfg, err := readFrom(fs, DefaultPath)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(cfg).To(BeEquivalentTo(expectedConfig))
 
-		// Test readFrom
-		cfg, err := readFrom(c.config.fs, c.config.path)
-		if err != nil {
-			t.Fatalf("%s: %s", c.description, err)
+		By("loading config version 2 with plugin config")
+		fs = afero.NewMemMapFs()
+		configStr = `domain: example.com
+repo: github.com/example/project
+version: "2"
+plugins:
+  plugin-x:
+    data-1: single plugin datum
+  plugin-y/v1:
+    data-1: plugin value 1
+    data-2: plugin value 2
+    data-3:
+    - "plugin value 3"
+    - "plugin value 4"`
+		expectedConfig = config.Config{
+			Version: config.Version2,
+			Repo:    "github.com/example/project",
+			Domain:  "example.com",
+			Plugins: map[string]interface{}{
+				"plugin-x": map[string]interface{}{
+					"data-1": "single plugin datum",
+				},
+				"plugin-y/v1": map[string]interface{}{
+					"data-1": "plugin value 1",
+					"data-2": "plugin value 2",
+					"data-3": []interface{}{"plugin value 3", "plugin value 4"},
+				},
+			},
 		}
-		if !reflect.DeepEqual(c.expConfig, cfg) {
-			t.Errorf("%s: compare read configs\nexpected:\n%#v\n\nreturned:\n%#v", c.description, c.expConfig, cfg)
-		}
-	}
-}
+		err = afero.WriteFile(fs, DefaultPath, []byte(configStr), os.ModePerm)
+		Expect(err).ToNot(HaveOccurred())
+		cfg, err = readFrom(fs, DefaultPath)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(cfg).To(Equal(expectedConfig))
+	})
+})

@@ -17,101 +17,127 @@ limitations under the License.
 package config
 
 import (
-	"reflect"
-	"testing"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
-func TestEncodeDecodePluginConfig(t *testing.T) {
+var _ = Describe("Config", func() {
 	// Test plugin config. Don't want to export this config, but need it to
-	// be accessible by unmarshallers.
+	// be accessible by test.
 	type PluginConfig struct {
 		Data1 string `json:"data-1"`
 		Data2 string `json:"data-2"`
 	}
 
-	cases := []struct {
-		description     string
-		config          Config
-		key             string
-		pluginConfigObj interface{}
-		expConfig       Config
-		wantErr         bool
-	}{
-		{
-			description: "config version 1",
-			config:      Config{Version: Version1},
-			wantErr:     true,
-		},
-		{
-			description: "config version 1 with extra fields",
-			config:      Config{Version: Version1},
-			key:         "plugin-x",
-			pluginConfigObj: map[string]interface{}{
-				"plugin-x": "single plugin datum",
-			},
-			wantErr: true,
-		},
-		{
-			description:     "config version 2",
-			key:             "plugin-x",
-			pluginConfigObj: PluginConfig{},
-			config:          Config{Version: Version2},
-			expConfig: Config{
-				Version: Version2,
-				Plugins: map[string]interface{}{
-					"plugin-x": map[string]interface{}{
-						"data-1": "",
-						"data-2": "",
-					},
+	It("should encode correctly", func() {
+		var (
+			key            = "plugin-x"
+			config         Config
+			pluginConfig   PluginConfig
+			expectedConfig Config
+		)
+
+		By("Using config version 1")
+		config = Config{Version: Version1}
+		pluginConfig = PluginConfig{}
+		Expect(config.EncodePluginConfig(key, pluginConfig)).To(HaveOccurred())
+
+		By("Using config version 1 with extra fields")
+		config = Config{Version: Version1}
+		pluginConfig = PluginConfig{
+			Data1: "single plugin datum",
+		}
+		Expect(config.EncodePluginConfig(key, pluginConfig)).To(HaveOccurred())
+
+		By("Using config version 2")
+		config = Config{Version: Version2}
+		pluginConfig = PluginConfig{}
+		expectedConfig = Config{
+			Version: Version2,
+			Plugins: map[string]interface{}{
+				"plugin-x": map[string]interface{}{
+					"data-1": "",
+					"data-2": "",
 				},
 			},
-		},
-		{
-			description: "config version 2 with extra fields as struct",
-			config:      Config{Version: Version2},
-			key:         "plugin-x",
-			pluginConfigObj: PluginConfig{
-				"plugin value 1",
-				"plugin value 2",
-			},
-			expConfig: Config{
-				Version: Version2,
-				Plugins: map[string]interface{}{
-					"plugin-x": map[string]interface{}{
-						"data-1": "plugin value 1",
-						"data-2": "plugin value 2",
-					},
+		}
+		Expect(config.EncodePluginConfig(key, pluginConfig)).NotTo(HaveOccurred())
+		Expect(config).To(Equal(expectedConfig))
+
+		By("Using config version 2 with extra fields as struct")
+		config = Config{Version: Version2}
+		pluginConfig = PluginConfig{
+			"plugin value 1",
+			"plugin value 2",
+		}
+		expectedConfig = Config{
+			Version: Version2,
+			Plugins: map[string]interface{}{
+				"plugin-x": map[string]interface{}{
+					"data-1": "plugin value 1",
+					"data-2": "plugin value 2",
 				},
 			},
-		},
-	}
-
-	for _, c := range cases {
-		// Test EncodePluginConfig
-		err := c.config.EncodePluginConfig(c.key, c.pluginConfigObj)
-		if err != nil {
-			if !c.wantErr {
-				t.Errorf("%s: expected EncodePluginConfig to succeed, got error: %s", c.description, err)
-			}
-		} else if c.wantErr {
-			t.Errorf("%s: expected EncodePluginConfig to fail, got no error", c.description)
-		} else if !reflect.DeepEqual(c.expConfig, c.config) {
-			t.Errorf("%s: compare encoded configs\nexpected:\n%#v\n\nreturned:\n%#v",
-				c.description, c.expConfig, c.config)
 		}
+		Expect(config.EncodePluginConfig(key, pluginConfig)).NotTo(HaveOccurred())
+		Expect(config).To(Equal(expectedConfig))
+	})
 
-		// Test DecodePluginConfig
-		obj := PluginConfig{}
-		err = c.config.DecodePluginConfig(c.key, &obj)
-		if err != nil {
-			if !c.wantErr {
-				t.Errorf("%s: expected DecodePluginConfig to succeed, got error: %s", c.description, err)
-			}
-		} else if c.wantErr {
-			t.Errorf("%s: expected DecodePluginConfig to fail, got no error", c.description)
-		} else if !reflect.DeepEqual(c.pluginConfigObj, obj) {
-			t.Errorf("%s: compare decoded extra fields objs\nexpected:\n%#v\n\nreturned:\n%#v",
-				c.description, c.pluginConfigObj, obj)
+	It("should decode correctly", func() {
+		var (
+			key                  = "plugin-x"
+			config               Config
+			pluginConfig         PluginConfig
+			expectedPluginConfig PluginConfig
+		)
+
+		By("Using config version 1")
+		config = Config{Version: Version1}
+		pluginConfig = PluginConfig{}
+		Expect(config.DecodePluginConfig(key, &pluginConfig)).To(HaveOccurred())
+
+		By("Using config version 1 with extra fields")
+		config = Config{Version: Version1}
+		pluginConfig = PluginConfig{
+			Data1: "single plugin datum",
 		}
-	}
-}
+		Expect(config.DecodePluginConfig(key, &pluginConfig)).To(HaveOccurred())
+
+		By("Using empty config version 2")
+		config = Config{
+			Version: Version2,
+			Plugins: map[string]interface{}{
+				"plugin-x": map[string]interface{}{},
+			},
+		}
+		pluginConfig = PluginConfig{}
+		expectedPluginConfig = PluginConfig{}
+		Expect(config.DecodePluginConfig(key, &pluginConfig)).NotTo(HaveOccurred())
+		Expect(pluginConfig).To(Equal(expectedPluginConfig))
+
+		By("Using config version 2")
+		config = Config{Version: Version2}
+		pluginConfig = PluginConfig{}
+		expectedPluginConfig = PluginConfig{}
+		Expect(config.DecodePluginConfig(key, &pluginConfig)).NotTo(HaveOccurred())
+		Expect(pluginConfig).To(Equal(expectedPluginConfig))
+
+		By("Using config version 2 with extra fields as struct")
+		config = Config{
+			Version: Version2,
+			Plugins: map[string]interface{}{
+				"plugin-x": map[string]interface{}{
+					"data-1": "plugin value 1",
+					"data-2": "plugin value 2",
+				},
+			},
+		}
+		pluginConfig = PluginConfig{}
+		expectedPluginConfig = PluginConfig{
+			"plugin value 1",
+			"plugin value 2",
+		}
+		Expect(config.DecodePluginConfig(key, &pluginConfig)).NotTo(HaveOccurred())
+		Expect(pluginConfig).To(Equal(expectedPluginConfig))
+	})
+})
