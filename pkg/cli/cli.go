@@ -294,7 +294,8 @@ func (c cli) validate() error {
 	}
 	// If --plugins is not set, no layout exists (no config or project is v1 or v2),
 	// and no defaults exist, we cannot know which plugins to use.
-	if (!c.configured || c.projectVersion != config.Version3) && c.cliPluginKey == "" {
+	isLayoutSupported := c.projectVersion == config.Version3Alpha
+	if (!c.configured || !isLayoutSupported) && c.cliPluginKey == "" {
 		_, versionExists := c.defaultPluginsFromOptions[c.projectVersion]
 		if !versionExists {
 			return fmt.Errorf("no default plugins for project version %s", c.projectVersion)

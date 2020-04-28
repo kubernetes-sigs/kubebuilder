@@ -31,7 +31,7 @@ const (
 	DefaultPath = "PROJECT"
 
 	// DefaultVersion is the version which will be used when the version flag is not provided
-	DefaultVersion = config.Version3
+	DefaultVersion = config.Version3Alpha
 )
 
 func exists(fs afero.Fs, path string) (bool, error) {
