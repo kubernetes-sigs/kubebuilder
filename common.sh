@@ -155,33 +155,6 @@ function build_kb {
   GO111MODULE=on go build $opts -o $tmp_root/kubebuilder/bin/kubebuilder ./cmd
 }
 
-# Required to install the go dep in the https://prow.k8s.io/.
-function install_dep_by_git {
-  header_text "Checking for dep"
-  export PATH=$(go env GOPATH)/src/github.com/golang/dep/bin:$PATH
-  if ! is_installed dep ; then
-    header_text "Installing dep"
-    DEP_DIR=$(go env GOPATH)/src/github.com/golang/dep
-    mkdir -p $DEP_DIR
-    pushd $DEP_DIR
-    git clone https://github.com/golang/dep.git .
-    DEP_LATEST=$(git describe --abbrev=0 --tags)
-    git checkout $DEP_LATEST
-    mkdir bin
-    GO111MODULE=off go build -ldflags="-X main.version=$DEP_LATEST" -o bin/dep ./cmd/dep
-    popd
-  fi
-}
-
-function install_go_dep {
-  header_text "Checking for dep"
-  export PATH=$(go env GOPATH)/src/github.com/golang/dep/bin:$PATH
-  if ! is_installed dep ; then
-    header_text "Installing dep"
-    curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-  fi
-}
-
 function install_kind {
   header_text "Checking for kind"
   if ! is_installed kind ; then
@@ -218,27 +191,6 @@ function setup_envs {
   export TEST_DEP=$tmp_root/kubebuilder/init_project
 }
 
-# download_vendor_archive downloads vendor tarball for v1 projects. It skips the
-# download if tarball exists.
-function download_vendor_archive {
-  archive_name="vendor.v1.tgz"
-  archive_download_url="https://storage.googleapis.com/kubebuilder-vendor/$archive_name"
-  archive_path="$tmp_root/$archive_name"
-  header_text "checking the path $archive_path to download the $archive_name"
-  if [ -f $archive_path ]; then
-    header_text "removing file which exists"
-    rm $archive_path
-  fi
-  header_text "downloading vendor archive from $archive_download_url"
-  curl -sL ${archive_download_url} -o "$archive_path"
-}
-
-function restore_go_deps {
-  header_text "restoring Go dependencies"
-  download_vendor_archive
-  tar -zxf $tmp_root/vendor.v1.tgz
-}
-
 function cache_project {
   header_text "caching initialized projects"
   if [ -d "$TEST_DEP" ]; then
@@ -252,6 +204,5 @@ function dump_project {
   header_text "restoring cached project"
   if [ -d "$TEST_DEP" ]; then
     cp -r $TEST_DEP/* .
-    restore_go_deps
   fi
 }

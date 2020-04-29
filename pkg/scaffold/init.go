@@ -24,15 +24,12 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/model"
 	"sigs.k8s.io/kubebuilder/pkg/model/config"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/machinery"
-	templatesv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v1"
-	managerv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v1/manager"
-	metricsauthv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v1/metricsauth"
-	templatesv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v2"
-	certmanagerv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v2/certmanager"
-	managerv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v2/manager"
-	metricsauthv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v2/metricsauth"
-	prometheusv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v2/prometheus"
-	webhookv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v2/webhook"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/certmanager"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/manager"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/metricsauth"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/prometheus"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/webhook"
 )
 
 const (
@@ -77,17 +74,15 @@ func (s *initScaffolder) Scaffold() error {
 	fmt.Println("Writing scaffold for you to edit...")
 
 	switch {
-	case s.config.IsV1():
-		return s.scaffoldV1()
 	case s.config.IsV2(), s.config.IsV3():
-		return s.scaffoldV2()
+		return s.scaffold()
 	default:
 		return fmt.Errorf("unknown project version %v", s.config.Version)
 	}
 }
 
-func (s *initScaffolder) scaffoldV1() error {
-	bpFile := &templatesv1.Boilerplate{}
+func (s *initScaffolder) scaffold() error {
+	bpFile := &templates.Boilerplate{}
 	bpFile.Path = s.boilerplatePath
 	bpFile.License = s.license
 	bpFile.Owner = s.owner
@@ -105,77 +100,37 @@ func (s *initScaffolder) scaffoldV1() error {
 
 	return machinery.NewScaffold().Execute(
 		s.newUniverse(string(boilerplate)),
-		&templatesv1.GitIgnore{},
-		&templatesv1.AuthProxyRole{},
-		&templatesv1.AuthProxyRoleBinding{},
-		&templatesv1.KustomizeRBAC{},
-		&templatesv1.KustomizeImagePatch{},
-		&metricsauthv1.KustomizePrometheusMetricsPatch{},
-		&metricsauthv1.KustomizeAuthProxyPatch{},
-		&templatesv1.AuthProxyService{},
-		&managerv1.Config{Image: imageName},
-		&templatesv1.Makefile{Image: imageName},
-		&templatesv1.GopkgToml{},
-		&managerv1.Dockerfile{},
-		&templatesv1.Kustomize{},
-		&templatesv1.KustomizeManager{},
-		&managerv1.APIs{BoilerplatePath: s.boilerplatePath},
-		&managerv1.Controller{},
-		&managerv1.Webhook{},
-		&managerv1.Cmd{},
-	)
-}
-
-func (s *initScaffolder) scaffoldV2() error {
-	bpFile := &templatesv2.Boilerplate{}
-	bpFile.Path = s.boilerplatePath
-	bpFile.License = s.license
-	bpFile.Owner = s.owner
-	if err := machinery.NewScaffold().Execute(
-		s.newUniverse(""),
-		bpFile,
-	); err != nil {
-		return err
-	}
-
-	boilerplate, err := ioutil.ReadFile(s.boilerplatePath) //nolint:gosec
-	if err != nil {
-		return err
-	}
-
-	return machinery.NewScaffold().Execute(
-		s.newUniverse(string(boilerplate)),
-		&templatesv2.GitIgnore{},
-		&templatesv2.AuthProxyRole{},
-		&templatesv2.AuthProxyRoleBinding{},
-		&metricsauthv2.AuthProxyPatch{},
-		&metricsauthv2.AuthProxyService{},
-		&metricsauthv2.ClientClusterRole{},
-		&managerv2.Config{Image: imageName},
-		&templatesv2.Main{},
-		&templatesv2.GoMod{ControllerRuntimeVersion: ControllerRuntimeVersion},
-		&templatesv2.Makefile{
+		&templates.GitIgnore{},
+		&templates.AuthProxyRole{},
+		&templates.AuthProxyRoleBinding{},
+		&metricsauth.AuthProxyPatch{},
+		&metricsauth.AuthProxyService{},
+		&metricsauth.ClientClusterRole{},
+		&manager.Config{Image: imageName},
+		&templates.Main{},
+		&templates.GoMod{ControllerRuntimeVersion: ControllerRuntimeVersion},
+		&templates.Makefile{
 			Image:                  imageName,
 			BoilerplatePath:        s.boilerplatePath,
 			ControllerToolsVersion: ControllerToolsVersion,
 			KustomizeVersion:       KustomizeVersion,
 		},
-		&templatesv2.Dockerfile{},
-		&templatesv2.Kustomize{},
-		&templatesv2.ManagerWebhookPatch{},
-		&templatesv2.ManagerRoleBinding{},
-		&templatesv2.LeaderElectionRole{},
-		&templatesv2.LeaderElectionRoleBinding{},
-		&templatesv2.KustomizeRBAC{},
-		&managerv2.Kustomization{},
-		&webhookv2.Kustomization{},
-		&webhookv2.KustomizeConfigWebhook{},
-		&webhookv2.Service{},
-		&webhookv2.InjectCAPatch{},
-		&prometheusv2.Kustomization{},
-		&prometheusv2.ServiceMonitor{},
-		&certmanagerv2.CertManager{},
-		&certmanagerv2.Kustomization{},
-		&certmanagerv2.KustomizeConfig{},
+		&templates.Dockerfile{},
+		&templates.Kustomize{},
+		&templates.ManagerWebhookPatch{},
+		&templates.ManagerRoleBinding{},
+		&templates.LeaderElectionRole{},
+		&templates.LeaderElectionRoleBinding{},
+		&templates.KustomizeRBAC{},
+		&manager.Kustomization{},
+		&webhook.Kustomization{},
+		&webhook.KustomizeConfigWebhook{},
+		&webhook.Service{},
+		&webhook.InjectCAPatch{},
+		&prometheus.Kustomization{},
+		&prometheus.ServiceMonitor{},
+		&certmanager.CertManager{},
+		&certmanager.Kustomization{},
+		&certmanager.KustomizeConfig{},
 	)
 }

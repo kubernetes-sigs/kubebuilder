@@ -23,8 +23,6 @@ export TRACE=1
 export GO111MODULE=on
 
 fetch_tools
-# This test is used by prow and if the dep not be installed by git then it will face the GOBIN issue.
-install_dep_by_git
 install_kind
 build_kb
 
@@ -40,8 +38,5 @@ function cleanup() {
 }
 
 trap cleanup EXIT
-
-# The v1 is deprecated
-go test ./test/e2e/v1
 go test ./test/e2e/v2
 go test ./test/e2e/v3

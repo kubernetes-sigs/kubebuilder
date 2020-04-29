@@ -18,9 +18,7 @@ package resource
 
 import (
 	"fmt"
-	"os"
 	"path"
-	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -85,10 +83,6 @@ type Options struct {
 
 	// Namespaced is true if the resource is namespaced.
 	Namespaced bool
-
-	// CreateExampleReconcileBody will create a Deployment in the Reconcile example.
-	// v1 only
-	CreateExampleReconcileBody bool
 }
 
 // Validate verifies that all the fields have valid values
@@ -163,45 +157,6 @@ func (opts *Options) safeImport(unsafe string) string {
 	safe = strings.Replace(safe, ".", "", -1)
 
 	return safe
-}
-
-// NewV1Resource creates a new resource from the options specific to v1
-func (opts *Options) NewV1Resource(c *config.Config, doResource bool) *Resource {
-	res := opts.newResource()
-
-	replacer := res.Replacer()
-
-	// NOTE: while directories can have "-" and ".", v1 needs that directory to be a Go package
-	//       and that is the reason why we remove them for the directory
-	pkg := replacer.Replace(path.Join(c.Repo, "pkg", "apis", "%[group-package-name]", "%[version]"))
-	domain := c.Domain
-
-	// pkg and domain may need to be changed in case we are referring to a builtin core resource:
-	//  - Check if we are scaffolding the resource now           => project resource
-	//  - Check if we already scaffolded the resource            => project resource
-	//  - Check if the resource group is a well-known core group => builtin core resource
-	//  - In any other case, default to                          => project resource
-	// TODO: need to support '--resource-pkg-path' flag for specifying resourcePath
-	if !doResource {
-		file := replacer.Replace(filepath.Join(
-			"pkg", "apis", "%[group-package-name]", "%[version]", "%[kind]_types.go"))
-		if _, err := os.Stat(file); os.IsNotExist(err) {
-			if coreDomain, found := coreGroups[opts.Group]; found {
-				pkg = replacer.Replace(path.Join("k8s.io", "api", "%[group]", "%[version]"))
-				domain = coreDomain
-			}
-		}
-	}
-
-	res.Package = pkg
-	res.Domain = opts.Group
-	if domain != "" {
-		res.Domain += "." + domain
-	}
-
-	res.CreateExampleReconcileBody = opts.CreateExampleReconcileBody
-
-	return res
 }
 
 // NewResource creates a new resource from the options

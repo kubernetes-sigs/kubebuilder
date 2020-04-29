@@ -107,7 +107,7 @@ func (p *createWebhookPlugin) GetScaffolder() (scaffold.Scaffolder, error) {
 
 	// Create the actual resource from the resource options
 	res := p.resource.NewResource(p.config, false)
-	return scaffold.NewV2WebhookScaffolder(p.config, string(bp), res, p.defaulting, p.validation, p.conversion), nil
+	return scaffold.NewWebhookScaffolder(p.config, string(bp), res, p.defaulting, p.validation, p.conversion), nil
 }
 
 func (p *createWebhookPlugin) PostScaffold() error {

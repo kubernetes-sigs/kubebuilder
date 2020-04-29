@@ -51,10 +51,6 @@ type Resource struct {
 
 	// Namespaced is true if the resource is namespaced.
 	Namespaced bool `json:"namespaced,omitempty"`
-
-	// CreateExampleReconcileBody will create a Deployment in the Reconcile example.
-	// v1 only
-	CreateExampleReconcileBody bool `json:"-"`
 }
 
 // GVK returns the group-version-kind information to check against tracked resources in the configuration file
