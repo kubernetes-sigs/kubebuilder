@@ -11,7 +11,6 @@ Please see https://git.k8s.io/community/CLA.md for more info.
 ## Prerequisites
 
 - [go](https://golang.org/dl/) version v1.13+.
-- [dep](https://github.com/golang/dep) dep v0.5+
 - [docker](https://docs.docker.com/install/) version 17.03+.
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) version v1.11.3+.
 - [kustomize](https://sigs.k8s.io/kustomize/docs/INSTALL.md) v3.1.0+

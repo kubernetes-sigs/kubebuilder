@@ -22,12 +22,9 @@ source common.sh
 export TRACE=1
 export GO111MODULE=on
 
-# This test is used by prow and if the dep not be installed by git then it will face the GOBIN issue.
-install_dep_by_git
-
 function test_init_project {
   header_text "performing init project"
-  kubebuilder init --project-version 1 --domain example.com <<< "n"
+  kubebuilder init --domain example.com <<< "n"
 }
 
 function test_make_project {
@@ -96,19 +93,9 @@ function test_project {
   project_dir=$1
   version=$2
   header_text "performing tests in dir $project_dir for project version v$version"
-  vendor_tarball=$tmp_root/vendor.v$version.tgz
-  old_gopath=$GOPATH
-  if [[ $version == "1" ]]; then
-      export GOPATH=$(pwd)/testdata/gopath
-      download_vendor_archive
-  fi
   cd testdata/$project_dir
-  # v2 uses modules, and thus doesn't have a vendor directory
-  [[ -e ${vendor_tarball} ]] && tar -zxf $vendor_tarball
-  make all test # v2 doesn't test on all by default
-  [[ -e ${vendor_tarball} ]] && rm -rf ./vendor && rm -f Gopkg.lock
+  make all test
   cd -
-  export GOPATH=$old_gopath
 }
 
 prepare_staging_dir
@@ -117,7 +104,6 @@ build_kb
 
 setup_envs
 
-export GO111MODULE=off
 prepare_testdir_under_gopath
 test_init_project
 cache_project
@@ -155,11 +141,6 @@ cd ${go_workspace}/src/sigs.k8s.io/kubebuilder
 
 export GO111MODULE=on
 go test ./cmd/... ./pkg/...
-
-# test project v1
-# auto is roughly equivalent to off in our case,
-# since we'll be in a gopath (basically, reset to default)
-GO111MODULE=off test_project gopath/src/project 1
 
 # test project v2
 GO111MODULE=on test_project project-v2 2

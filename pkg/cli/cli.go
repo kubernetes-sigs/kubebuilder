@@ -194,6 +194,11 @@ func (c *cli) initialize() error {
 	} else if err == nil {
 		c.configured = true
 		c.projectVersion = projectConfig.Version
+
+		if projectConfig.IsV1() {
+			return fmt.Errorf(noticeColor, "The v1 projects are no longer supported.\n"+
+				"See how to upgrade your project to v2: https://book.kubebuilder.io/migration/guide.html\n")
+		}
 	} else {
 		return fmt.Errorf("failed to read config: %v", err)
 	}
@@ -359,16 +364,12 @@ func validatePlugins(plugins ...plugin.Base) error {
 // buildRootCmd returns a root command with a subcommand tree reflecting the
 // current project's state.
 func (c cli) buildRootCmd() *cobra.Command {
-	configuredAndV1 := c.configured && c.projectVersion == config.Version1
-
 	rootCmd := c.defaultCommand()
 
 	// kubebuilder alpha
 	alphaCmd := c.newAlphaCmd()
-	// kubebuilder alpha webhook (v1 only)
-	if configuredAndV1 {
-		alphaCmd.AddCommand(c.newCreateWebhookCmd())
-	}
+
+	// Only add alpha group if it has subcommands
 	if alphaCmd.HasSubCommands() {
 		rootCmd.AddCommand(alphaCmd)
 	}
@@ -377,10 +378,7 @@ func (c cli) buildRootCmd() *cobra.Command {
 	createCmd := c.newCreateCmd()
 	// kubebuilder create api
 	createCmd.AddCommand(c.newCreateAPICmd())
-	// kubebuilder create webhook (!v1)
-	if !configuredAndV1 {
-		createCmd.AddCommand(c.newCreateWebhookCmd())
-	}
+	createCmd.AddCommand(c.newCreateWebhookCmd())
 	if createCmd.HasSubCommands() {
 		rootCmd.AddCommand(createCmd)
 	}

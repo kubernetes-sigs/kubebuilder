@@ -23,11 +23,9 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/model/config"
 	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/machinery"
-	controllerv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v1/controller"
-	crdv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v1/crd"
-	templatesv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v2"
-	controllerv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v2/controller"
-	crdv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v2/crd"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/controller"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/crd"
 )
 
 var _ Scaffolder = &apiScaffolder{}
@@ -69,10 +67,8 @@ func (s *apiScaffolder) Scaffold() error {
 	fmt.Println("Writing scaffold for you to edit...")
 
 	switch {
-	case s.config.IsV1():
-		return s.scaffoldV1()
 	case s.config.IsV2(), s.config.IsV3():
-		return s.scaffoldV2()
+		return s.scaffold()
 	default:
 		return fmt.Errorf("unknown project version %v", s.config.Version)
 	}
@@ -86,82 +82,38 @@ func (s *apiScaffolder) newUniverse() *model.Universe {
 	)
 }
 
-func (s *apiScaffolder) scaffoldV1() error {
-	if s.doResource {
-		if err := machinery.NewScaffold().Execute(
-			s.newUniverse(),
-			&crdv1.Register{},
-			&crdv1.Types{},
-			&crdv1.VersionSuiteTest{},
-			&crdv1.TypesTest{},
-			&crdv1.Doc{},
-			&crdv1.Group{},
-			&crdv1.AddToScheme{},
-			&crdv1.CRDSample{},
-		); err != nil {
-			return fmt.Errorf("error scaffolding APIs: %v", err)
-		}
-	} else {
-		// disable generation of example reconcile body if not scaffolding resource
-		// because this could result in a fork-bomb of k8s resources where watching a
-		// deployment, replicaset etc. results in generating deployment which
-		// end up generating replicaset, pod etc recursively.
-		s.resource.CreateExampleReconcileBody = false
-	}
-
-	if s.doController {
-		if err := machinery.NewScaffold().Execute(
-			s.newUniverse(),
-			&controllerv1.Controller{},
-			&controllerv1.AddController{},
-			&controllerv1.Test{},
-			&controllerv1.SuiteTest{},
-		); err != nil {
-			return fmt.Errorf("error scaffolding controller: %v", err)
-		}
-	}
-
-	return nil
-}
-
-func (s *apiScaffolder) scaffoldV2() error {
+func (s *apiScaffolder) scaffold() error {
 	if s.doResource {
 		s.config.AddResource(s.resource.GVK())
 
 		if err := machinery.NewScaffold(s.plugins...).Execute(
 			s.newUniverse(),
-			&templatesv2.Types{},
-			&templatesv2.Group{},
-			&templatesv2.CRDSample{},
-			&templatesv2.CRDEditorRole{},
-			&templatesv2.CRDViewerRole{},
-			&crdv2.EnableWebhookPatch{},
-			&crdv2.EnableCAInjectionPatch{},
+			&templates.Types{},
+			&templates.Group{},
+			&templates.CRDSample{},
+			&templates.CRDEditorRole{},
+			&templates.CRDViewerRole{},
+			&crd.EnableWebhookPatch{},
+			&crd.EnableCAInjectionPatch{},
 		); err != nil {
 			return fmt.Errorf("error scaffolding APIs: %v", err)
 		}
 
 		if err := machinery.NewScaffold().Execute(
 			s.newUniverse(),
-			&crdv2.Kustomization{},
-			&crdv2.KustomizeConfig{},
+			&crd.Kustomization{},
+			&crd.KustomizeConfig{},
 		); err != nil {
 			return fmt.Errorf("error scaffolding kustomization: %v", err)
 		}
 
-	} else {
-		// disable generation of example reconcile body if not scaffolding resource
-		// because this could result in a fork-bomb of k8s resources where watching a
-		// deployment, replicaset etc. results in generating deployment which
-		// end up generating replicaset, pod etc recursively.
-		s.resource.CreateExampleReconcileBody = false
 	}
 
 	if s.doController {
 		if err := machinery.NewScaffold(s.plugins...).Execute(
 			s.newUniverse(),
-			&controllerv2.SuiteTest{},
-			&controllerv2.Controller{},
+			&controller.SuiteTest{},
+			&controller.Controller{},
 		); err != nil {
 			return fmt.Errorf("error scaffolding controller: %v", err)
 		}
@@ -169,7 +121,7 @@ func (s *apiScaffolder) scaffoldV2() error {
 
 	if err := machinery.NewScaffold(s.plugins...).Execute(
 		s.newUniverse(),
-		&templatesv2.MainUpdater{WireResource: s.doResource, WireController: s.doController},
+		&templates.MainUpdater{WireResource: s.doResource, WireController: s.doController},
 	); err != nil {
 		return fmt.Errorf("error updating main.go: %v", err)
 	}

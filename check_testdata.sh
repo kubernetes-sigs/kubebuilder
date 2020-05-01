@@ -23,7 +23,6 @@ export TRACE=1
 export GO111MODULE=on
 
 fetch_tools
-install_go_dep
 build_kb
 
 setup_envs

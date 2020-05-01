@@ -1,9 +1,0 @@
-apiVersion: creatures.testproject.org/v2alpha1
-kind: Kraken
-metadata:
-  labels:
-    controller-tools.k8s.io: "1.0"
-  name: kraken-sample
-spec:
-  # Add fields here
-  foo: bar

@@ -23,10 +23,8 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/model/config"
 	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/machinery"
-	managerv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v1/manager"
-	webhookv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v1/webhook"
-	templatesv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v2"
-	webhookv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v2/webhook"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates"
+	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/webhook"
 )
 
 var _ Scaffolder = &webhookScaffolder{}
@@ -35,35 +33,13 @@ type webhookScaffolder struct {
 	config      *config.Config
 	boilerplate string
 	resource    *resource.Resource
-	// v1
-	server      string
-	webhookType string
-	operations  []string
+
 	// v2
 	defaulting, validation, conversion bool
 }
 
-// NewV1WebhookScaffolder returns a new Scaffolder for v1 webhook creation operations
-func NewV1WebhookScaffolder(
-	config *config.Config,
-	boilerplate string,
-	resource *resource.Resource,
-	server string,
-	webhookType string,
-	operations []string,
-) Scaffolder {
-	return &webhookScaffolder{
-		config:      config,
-		boilerplate: boilerplate,
-		resource:    resource,
-		server:      server,
-		webhookType: webhookType,
-		operations:  operations,
-	}
-}
-
-// NewV2WebhookScaffolder returns a new Scaffolder for v2 webhook creation operations
-func NewV2WebhookScaffolder(
+// NewWebhookScaffolder returns a new Scaffolder for v2 webhook creation operations
+func NewWebhookScaffolder(
 	config *config.Config,
 	boilerplate string,
 	resource *resource.Resource,
@@ -86,10 +62,8 @@ func (s *webhookScaffolder) Scaffold() error {
 	fmt.Println("Writing scaffold for you to edit...")
 
 	switch {
-	case s.config.IsV1():
-		return s.scaffoldV1()
 	case s.config.IsV2(), s.config.IsV3():
-		return s.scaffoldV2()
+		return s.scaffold()
 	default:
 		return fmt.Errorf("unknown project version %v", s.config.Version)
 	}
@@ -103,22 +77,7 @@ func (s *webhookScaffolder) newUniverse() *model.Universe {
 	)
 }
 
-func (s *webhookScaffolder) scaffoldV1() error {
-	webhookConfig := webhookv1.Config{Server: s.server, Type: s.webhookType, Operations: s.operations}
-
-	return machinery.NewScaffold().Execute(
-		s.newUniverse(),
-		&managerv1.Webhook{},
-		&webhookv1.AdmissionHandler{Config: webhookConfig},
-		&webhookv1.AdmissionWebhookBuilder{Config: webhookConfig},
-		&webhookv1.AdmissionWebhooks{Config: webhookConfig},
-		&webhookv1.AddAdmissionWebhookBuilderHandler{Config: webhookConfig},
-		&webhookv1.Server{Config: webhookConfig},
-		&webhookv1.AddServer{Config: webhookConfig},
-	)
-}
-
-func (s *webhookScaffolder) scaffoldV2() error {
+func (s *webhookScaffolder) scaffold() error {
 	if s.conversion {
 		fmt.Println(`Webhook server has been set up for you.
 You need to implement the conversion.Hub and conversion.Convertible interfaces for your CRD types.`)
@@ -126,8 +85,8 @@ You need to implement the conversion.Hub and conversion.Convertible interfaces f
 
 	if err := machinery.NewScaffold().Execute(
 		s.newUniverse(),
-		&webhookv2.Webhook{Defaulting: s.defaulting, Validating: s.validation},
-		&templatesv2.MainUpdater{WireWebhook: true},
+		&webhook.Webhook{Defaulting: s.defaulting, Validating: s.validation},
+		&templates.MainUpdater{WireWebhook: true},
 	); err != nil {
 		return err
 	}
