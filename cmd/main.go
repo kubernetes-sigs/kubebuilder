@@ -34,7 +34,6 @@ func main() {
 		),
 		cli.WithExtraCommands(
 			newEditCmd(),
-			newUpdateCmd(),
 			newCompletionCmd(),
 			version.NewCmd(),
 		),
