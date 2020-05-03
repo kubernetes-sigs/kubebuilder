@@ -67,7 +67,7 @@ var _ = Describe("kubebuilder", func() {
 			err := kbc.Init(
 				"--project-version", "3-alpha",
 				"--domain", kbc.Domain,
-				"--dep=false")
+				"--fetch-deps=false")
 			Expect(err).Should(Succeed())
 
 			By("creating api definition")
