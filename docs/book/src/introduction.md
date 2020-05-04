@@ -39,6 +39,11 @@ Including:
     - How to use Declarative vs Webhook Validation
     - How to implement API versioning
 
+## Contribution
+
+If you like to contribute to either this book or the code, please be so kind
+to read our [Contribution](https://github.com/kubernetes-sigs/kubebuilder/blob/master/CONTRIBUTING.md) guidelines first.
+
 ## Resources
 
 * Repository: [sigs.k8s.io/kubebuilder](https://sigs.k8s.io/kubebuilder)
