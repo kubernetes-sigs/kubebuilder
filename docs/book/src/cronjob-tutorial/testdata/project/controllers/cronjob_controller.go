@@ -125,18 +125,18 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	/*
 
-		<aside class="note"> 
+		<aside class="note">
 
 		<h1>What is this index about?</h1>
 
-		<p>The reconciler fetches all jobs owned by the cronjob for the status. As our number of cronjobs increases, 
-		looking these up can become quite slow as we have to filter through all of them. For a more efficient lookup, 
-		these jobs will be indexed locally on the controller's name. A jobOwnerKey field is added to the 
-		cached job objects. This key references the owning controller and functions as the index. Later in this 
+		<p>The reconciler fetches all jobs owned by the cronjob for the status. As our number of cronjobs increases,
+		looking these up can become quite slow as we have to filter through all of them. For a more efficient lookup,
+		these jobs will be indexed locally on the controller's name. A jobOwnerKey field is added to the
+		cached job objects. This key references the owning controller and functions as the index. Later in this
 		document we will configure the manager to actually index this field.</p>
-			
+
 		</aside>
-		
+
 		Once we have all the jobs we own, we'll split them into active, successful,
 		and failed jobs, keeping track of the most recent run so that we can record it
 		in status.  Remember, status should be able to be reconstituted from the state
@@ -544,7 +544,7 @@ func (r *CronJobReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		r.Clock = realClock{}
 	}
 
-	if err := mgr.GetFieldIndexer().IndexField(&kbatch.Job{}, jobOwnerKey, func(rawObj runtime.Object) []string {
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &kbatch.Job{}, jobOwnerKey, func(rawObj runtime.Object) []string {
 		// grab the job object, extract the owner...
 		job := rawObj.(*kbatch.Job)
 		owner := metav1.GetControllerOf(job)

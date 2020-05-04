@@ -1,3 +1,9 @@
-version: "2"
+version: "3-alpha"
 domain: tutorial.kubebuilder.io
+layout: go.kubebuilder.io/v2.0.0
 repo: tutorial.kubebuilder.io/project
+resources:
+- group: batch
+  kind: CronJob
+  version: v1
+version: 3-alpha

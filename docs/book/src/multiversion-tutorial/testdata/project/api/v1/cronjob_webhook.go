@@ -29,7 +29,7 @@ import (
 )
 
 // +kubebuilder:docs-gen:collapse=Go imports
-
+// log is for logging in this package.
 var cronjoblog = logf.Log.WithName("cronjob-resource")
 
 /*
