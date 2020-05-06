@@ -95,7 +95,7 @@ func (r *Reconciler) deleteExternalResources(cronJob *batch.CronJob) error {
 	// delete any external resources associated with the cronJob
 	//
 	// Ensure that delete implementation is idempotent and safe to invoke
-	// multiple types for same object.
+	// multiple times for same object.
 }
 
 // Helper functions to check and remove string from a slice of strings.
