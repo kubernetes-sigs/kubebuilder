@@ -24,5 +24,5 @@ export GO111MODULE=on
 kind create cluster -v 4 --retain --wait=1m --config test/kind-config.yaml --image=kindest/node:$K8S_VERSION
 
 # setup the go modules required
-go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.2.5
+go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.3.0
 go get sigs.k8s.io/kustomize/kustomize/v3@v3.2.1

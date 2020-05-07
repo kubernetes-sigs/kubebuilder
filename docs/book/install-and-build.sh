@@ -16,6 +16,17 @@
 
 set -e
 
+# The following code is required to allow the preview works with an upper go version
+# More info : https://community.netlify.com/t/go-version-1-13/5680
+# Get the directory that this script file is in
+THIS_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+
+cd "$THIS_DIR"
+
+[[ -n "$(command -v gimme)" ]] && eval "$(gimme stable)"
+echo go version
+GOBIN=$THIS_DIR/functions go install ./...
+
 os=$(go env GOOS)
 arch=$(go env GOARCH)
 
@@ -56,7 +67,7 @@ ${cmd} /tmp/mdbook.${ext}
 chmod +x /tmp/mdbook
 
 echo "grabbing the latest released controller-gen"
-go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.2.5
+go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.3.0
 
 # make sure we add the go bin directory to our path
 gobin=$(go env GOBIN)
