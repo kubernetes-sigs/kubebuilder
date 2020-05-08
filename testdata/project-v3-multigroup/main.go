@@ -38,7 +38,7 @@ import (
 	foopolicycontroller "sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/controllers/foo.policy"
 	seacreaturescontroller "sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/controllers/sea-creatures"
 	shipcontroller "sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/controllers/ship"
-	// +kubebuilder:scaffold:imports
+	//+kubebuilder:scaffold:imports
 )
 
 var (
@@ -56,7 +56,7 @@ func init() {
 	utilruntime.Must(seacreaturesv1beta1.AddToScheme(scheme))
 	utilruntime.Must(seacreaturesv1beta2.AddToScheme(scheme))
 	utilruntime.Must(foopolicyv1.AddToScheme(scheme))
-	// +kubebuilder:scaffold:scheme
+	//+kubebuilder:scaffold:scheme
 }
 
 func main() {
@@ -146,7 +146,7 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "HealthCheckPolicy")
 		os.Exit(1)
 	}
-	// +kubebuilder:scaffold:builder
+	//+kubebuilder:scaffold:builder
 
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {

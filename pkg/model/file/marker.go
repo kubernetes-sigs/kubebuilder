@@ -24,11 +24,8 @@ import (
 const prefix = "+kubebuilder:scaffold:"
 
 var commentsByExt = map[string]string{
-	// TODO(v3): machine-readable comments should not have spaces by Go convention. However,
-	//  this is a backwards incompatible change, and thus should be done for next project version.
-	".go":   "// ",
-	".yaml": "# ",
-	// When adding additional file extensions, update also the NewMarkerFor documentation and error
+	".go": "//", // Marker annotations for go files should not have spaces by go convention: //+kubebuilder:*
+	".yaml": "# ", // Marker annotations for yaml files are more readable with spaces: # +kubebuilder:*
 }
 
 // Marker represents a machine-readable comment that will be used for scaffolding purposes
