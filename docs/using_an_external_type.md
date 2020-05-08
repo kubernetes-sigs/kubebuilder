@@ -105,7 +105,7 @@ dep ensure --add
 
 Edit the `CRDDirectoryPaths` in your test suite by appending the path to their CRDs:
 
-file pkg/controller/my_kind_controller_suite_test.go
+file pkg/controllers/my_kind_controller_suite_test.go
 ```
 var cfg *rest.Config
 

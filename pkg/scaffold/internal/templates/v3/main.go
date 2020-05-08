@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package templates
+package v3
 
 import (
 	"fmt"
@@ -108,7 +108,7 @@ const (
 `
 	controllerImportCodeFragment = `"%s/controllers"
 `
-	multiGroupControllerImportCodeFragment = `%scontroller "%s/controllers/%s"
+	multiGroupControllerImportCodeFragment = `%scontrollers "%s/controllers/%s"
 `
 	addschemeCodeFragment = `utilruntime.Must(%s.AddToScheme(scheme))
 `
@@ -121,9 +121,9 @@ const (
 		os.Exit(1)
 	}
 `
-	multiGroupReconcilerSetupCodeFragment = `if err = (&%scontroller.%sReconciler{
+	multiGroupReconcilerSetupCodeFragment = `if err = (&%scontrollers.%sReconciler{
 		Client: mgr.GetClient(),
-		Log: ctrl.Log.WithName("controllers").WithName("%s"),
+		Log: ctrl.Log.WithName("controllers").WithName("%s").WithName("%s"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "%s")
@@ -170,7 +170,7 @@ func (f *MainUpdater) GetCodeFragments() file.CodeFragmentsMap {
 				f.Resource.Kind, f.Resource.Kind, f.Resource.Kind))
 		} else {
 			setup = append(setup, fmt.Sprintf(multiGroupReconcilerSetupCodeFragment,
-				f.Resource.GroupPackageName, f.Resource.Kind, f.Resource.Kind, f.Resource.Kind))
+				f.Resource.GroupPackageName, f.Resource.Kind, f.Resource.Group, f.Resource.Kind, f.Resource.Kind))
 		}
 	}
 	if f.WireWebhook {

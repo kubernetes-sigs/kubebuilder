@@ -26,6 +26,7 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/controller"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/crd"
+	templatesv3 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v3"
 )
 
 var _ Scaffolder = &apiScaffolder{}
@@ -82,6 +83,7 @@ func (s *apiScaffolder) newUniverse() *model.Universe {
 	)
 }
 
+//nolint:dupl
 func (s *apiScaffolder) scaffold() error {
 	if s.doResource {
 		s.config.AddResource(s.resource.GVK())
@@ -119,12 +121,20 @@ func (s *apiScaffolder) scaffold() error {
 		}
 	}
 
-	if err := machinery.NewScaffold(s.plugins...).Execute(
-		s.newUniverse(),
-		&templates.MainUpdater{WireResource: s.doResource, WireController: s.doController},
-	); err != nil {
-		return fmt.Errorf("error updating main.go: %v", err)
+	if s.config.IsV2() {
+		if err := machinery.NewScaffold(s.plugins...).Execute(
+			s.newUniverse(),
+			&templates.MainUpdater{WireResource: s.doResource, WireController: s.doController},
+		); err != nil {
+			return fmt.Errorf("error updating main.go: %v", err)
+		}
+	} else {
+		if err := machinery.NewScaffold(s.plugins...).Execute(
+			s.newUniverse(),
+			&templatesv3.MainUpdater{WireResource: s.doResource, WireController: s.doController},
+		); err != nil {
+			return fmt.Errorf("error updating main.go: %v", err)
+		}
 	}
-
 	return nil
 }

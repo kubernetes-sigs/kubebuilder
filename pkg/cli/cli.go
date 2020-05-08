@@ -353,7 +353,7 @@ func validatePlugins(plugins ...plugin.Base) error {
 		}
 		// Check for duplicate plugin names. Names outside of a version can
 		// conflict because multiple project versions of a plugin may exist.
-		if _, seen := pluginNameSet[pluginName]; seen {
+		if _, seen := pluginNameSet[fmt.Sprintf("%v/%v", p.Name(), p.Version())]; seen {
 			return fmt.Errorf("two plugins have the same name: %q", pluginName)
 		}
 		pluginNameSet[pluginName] = struct{}{}
