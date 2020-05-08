@@ -18,7 +18,6 @@ package v2
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -41,11 +40,6 @@ type initPlugin struct {
 	// boilerplate options
 	license string
 	owner   string
-
-	// deprecated flags
-	depFlag *pflag.Flag
-	depArgs []string
-	dep     bool
 
 	// flags
 	fetchDeps          bool
@@ -86,18 +80,6 @@ func (p *initPlugin) BindFlags(fs *pflag.FlagSet) {
 
 	// dependency args
 	fs.BoolVar(&p.fetchDeps, "fetch-deps", true, "ensure dependencies are downloaded")
-
-	// deprecated dependency args
-	fs.BoolVar(&p.dep, "dep", true, "if specified, determines whether dep will be used.")
-	p.depFlag = fs.Lookup("dep")
-	fs.StringArrayVar(&p.depArgs, "depArgs", nil, "additional arguments for dep")
-
-	if err := fs.MarkDeprecated("dep", "use the fetch-deps flag instead"); err != nil {
-		log.Printf("error to mark dep flag as deprecated: %v", err)
-	}
-	if err := fs.MarkDeprecated("depArgs", "will be removed with version 1 scaffolding"); err != nil {
-		log.Printf("error to mark dep flag as deprecated: %v", err)
-	}
 
 	// boilerplate args
 	fs.StringVar(&p.license, "license", "apache2",
@@ -157,7 +139,7 @@ func (p *initPlugin) GetScaffolder() (scaffold.Scaffolder, error) {
 }
 
 func (p *initPlugin) PostScaffold() error {
-	if (p.depFlag.Changed && !p.dep) || (!p.depFlag.Changed && !p.fetchDeps) {
+	if !p.fetchDeps {
 		fmt.Println("Skipping fetching dependencies.")
 		return nil
 	}
