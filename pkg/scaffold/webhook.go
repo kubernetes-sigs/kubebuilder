@@ -60,7 +60,7 @@ func NewWebhookScaffolder(
 
 // Scaffold implements Scaffolder
 func (s *webhookScaffolder) Scaffold() error {
-	fmt.Println("Writing scaffold for you to edit...")
+	fmt.Println("Writing scaffoldV3 for you to edit...")
 
 	switch {
 	case s.config.IsV2():

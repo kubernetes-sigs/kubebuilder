@@ -83,7 +83,6 @@ func (s *apiScaffolder) newUniverse() *model.Universe {
 	)
 }
 
-//nolint:dupl
 func (s *apiScaffolder) scaffold() error {
 	if s.doResource {
 		s.config.AddResource(s.resource.GVK())
@@ -136,5 +135,6 @@ func (s *apiScaffolder) scaffold() error {
 			return fmt.Errorf("error updating main.go: %v", err)
 		}
 	}
+
 	return nil
 }

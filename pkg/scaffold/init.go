@@ -21,6 +21,8 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
+	v3 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v3"
+
 	"sigs.k8s.io/kubebuilder/pkg/model"
 	"sigs.k8s.io/kubebuilder/pkg/model/config"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/machinery"
@@ -98,6 +100,43 @@ func (s *initScaffolder) scaffold() error {
 		return err
 	}
 
+	if s.config.IsV2() {
+		return machinery.NewScaffold().Execute(
+			s.newUniverse(string(boilerplate)),
+			&templates.GitIgnore{},
+			&templates.AuthProxyRole{},
+			&templates.AuthProxyRoleBinding{},
+			&metricsauth.AuthProxyPatch{},
+			&metricsauth.AuthProxyService{},
+			&metricsauth.ClientClusterRole{},
+			&manager.Config{Image: imageName},
+			&templates.Main{},
+			&templates.GoMod{ControllerRuntimeVersion: ControllerRuntimeVersion},
+			&templates.Makefile{
+				Image:                  imageName,
+				BoilerplatePath:        s.boilerplatePath,
+				ControllerToolsVersion: ControllerToolsVersion,
+				KustomizeVersion:       KustomizeVersion,
+			},
+			&templates.Dockerfile{},
+			&templates.Kustomize{},
+			&templates.ManagerWebhookPatch{},
+			&templates.ManagerRoleBinding{},
+			&templates.LeaderElectionRole{},
+			&templates.LeaderElectionRoleBinding{},
+			&templates.KustomizeRBAC{},
+			&manager.Kustomization{},
+			&webhook.Kustomization{},
+			&webhook.KustomizeConfigWebhook{},
+			&webhook.Service{},
+			&webhook.InjectCAPatch{},
+			&prometheus.Kustomization{},
+			&prometheus.ServiceMonitor{},
+			&certmanager.CertManager{},
+			&certmanager.Kustomization{},
+			&certmanager.KustomizeConfig{},
+		)
+	}
 	return machinery.NewScaffold().Execute(
 		s.newUniverse(string(boilerplate)),
 		&templates.GitIgnore{},
@@ -116,6 +155,7 @@ func (s *initScaffolder) scaffold() error {
 			KustomizeVersion:       KustomizeVersion,
 		},
 		&templates.Dockerfile{},
+		&v3.DockerignoreFile{},
 		&templates.Kustomize{},
 		&templates.ManagerWebhookPatch{},
 		&templates.ManagerRoleBinding{},
