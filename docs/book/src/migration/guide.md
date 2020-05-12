@@ -107,7 +107,7 @@ Our API types should look like the following:
 
 ```go
 // +kubebuilder:object:root=true
-
+// +kubebuilder:subresource:status
 // CronJob is the Schema for the cronjobs API
 type CronJob struct {...}
 

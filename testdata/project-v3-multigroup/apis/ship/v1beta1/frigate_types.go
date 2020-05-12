@@ -39,6 +39,7 @@ type FrigateStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 
 // Frigate is the Schema for the frigates API
 type Frigate struct {

@@ -39,6 +39,7 @@ type KrakenStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 
 // Kraken is the Schema for the krakens API
 type Kraken struct {

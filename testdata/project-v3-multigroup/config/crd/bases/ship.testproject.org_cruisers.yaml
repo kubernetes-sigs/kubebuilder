@@ -15,6 +15,8 @@ spec:
     plural: cruisers
     singular: cruiser
   scope: Cluster
+  subresources:
+    status: {}
   validation:
     openAPIV3Schema:
       description: Cruiser is the Schema for the cruisers API

@@ -15,6 +15,8 @@ spec:
     plural: frigates
     singular: frigate
   scope: Namespaced
+  subresources:
+    status: {}
   validation:
     openAPIV3Schema:
       description: Frigate is the Schema for the frigates API
