@@ -33,10 +33,10 @@ import (
 
 var _ = Describe("kubebuilder", func() {
 	Context("with v3 scaffolding", func() {
-		var kbc *utils.KBTestContext
+		var kbc *utils.TestContext
 		BeforeEach(func() {
 			var err error
-			kbc, err = utils.TestContext("GO111MODULE=on")
+			kbc, err = utils.NewTestContext(utils.KubebuilderBinName, "GO111MODULE=on")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(kbc.Prepare()).To(Succeed())
 
