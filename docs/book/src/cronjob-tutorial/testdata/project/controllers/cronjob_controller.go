@@ -496,7 +496,7 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	if err != nil {
 		log.Error(err, "unable to construct job from template")
 		// don't bother requeuing until we get a change to the spec
-		return scheduledResult, nil
+		return ctrl.Result{}, nil
 	}
 
 	// ...and create it on the cluster
