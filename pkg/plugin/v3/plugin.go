@@ -23,7 +23,7 @@ import (
 
 const (
 	pluginName    = "go" + plugin.DefaultNameQualifier
-	pluginVersion = "v3.0.0"
+	pluginVersion = "v3.1.0" // bump version just to test
 )
 
 var supportedProjectVersions = []string{config.Version3Alpha}
