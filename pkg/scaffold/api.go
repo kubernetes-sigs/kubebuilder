@@ -28,6 +28,10 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/crd"
 )
 
+// (used only to gen api with --pattern=addon)
+// KbDeclarativePattern is the sigs.k8s.io/kubebuilder-declarative-pattern version
+const KbDeclarativePattern = "v0.0.0-20200522144838-848d48e5b073"
+
 var _ Scaffolder = &apiScaffolder{}
 
 // apiScaffolder contains configuration for generating scaffolding for Go type

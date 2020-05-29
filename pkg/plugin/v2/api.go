@@ -182,6 +182,21 @@ func (p *createAPIPlugin) GetScaffolder() (scaffold.Scaffolder, error) {
 }
 
 func (p *createAPIPlugin) PostScaffold() error {
+	// Load the requested plugins
+	switch strings.ToLower(p.pattern) {
+	case "":
+		// Default pattern
+	case "addon":
+		// Ensure that we are pinning sigs.k8s.io/kubebuilder-declarative-pattern version
+		err := internal.RunCmd("Get controller runtime", "go", "get",
+			"sigs.k8s.io/kubebuilder-declarative-pattern@"+scaffold.KbDeclarativePattern)
+		if err != nil {
+			return err
+		}
+	default:
+		return fmt.Errorf("unknown pattern %q", p.pattern)
+	}
+
 	if p.runMake {
 		return internal.RunCmd("Running make", "make")
 	}
