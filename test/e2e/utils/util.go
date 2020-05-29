@@ -24,8 +24,12 @@ import (
 	"strings"
 )
 
-// randomSuffix returns a 4-letter string.
-func randomSuffix() (string, error) {
+const (
+	KubebuilderBinName = "kubebuilder"
+)
+
+// RandomSuffix returns a 4-letter string.
+func RandomSuffix() (string, error) {
 	source := []rune("abcdefghijklmnopqrstuvwxyz")
 	res := make([]rune, 4)
 	for i := range res {

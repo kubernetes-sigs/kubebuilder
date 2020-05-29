@@ -32,8 +32,8 @@ const prometheusOperatorVersion = "0.33"
 const certmanagerURL = "https://github.com/jetstack/cert-manager/releases/download/%s/cert-manager.yaml"
 const prometheusOperatorURL = "https://raw.githubusercontent.com/coreos/prometheus-operator/release-%s/bundle.yaml"
 
-// KBTestContext specified to run e2e tests
-type KBTestContext struct {
+// TestContext specified to run e2e tests
+type TestContext struct {
 	*CmdContext
 	TestSuffix string
 	Domain     string
@@ -43,12 +43,13 @@ type KBTestContext struct {
 	Resources  string
 	ImageName  string
 	Kubectl    *Kubectl
+	BinaryName string
 }
 
-// TestContext init with a random suffix for test KBTestContext stuff,
+// NewTestContext init with a random suffix for test TestContext stuff,
 // to avoid conflict when running tests synchronously.
-func TestContext(env ...string) (*KBTestContext, error) {
-	testSuffix, err := randomSuffix()
+func NewTestContext(binaryName string, env ...string) (*TestContext, error) {
+	testSuffix, err := RandomSuffix()
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +65,7 @@ func TestContext(env ...string) (*KBTestContext, error) {
 		Dir: path,
 	}
 
-	return &KBTestContext{
+	return &TestContext{
 		TestSuffix: testSuffix,
 		Domain:     "example.com" + testSuffix,
 		Group:      testGroup,
@@ -77,27 +78,28 @@ func TestContext(env ...string) (*KBTestContext, error) {
 			Namespace:  fmt.Sprintf("e2e-%s-system", testSuffix),
 			CmdContext: cc,
 		},
+		BinaryName: binaryName,
 	}, nil
 }
 
 // Prepare prepare a work directory for testing
-func (kc *KBTestContext) Prepare() error {
-	fmt.Fprintf(GinkgoWriter, "preparing testing directory: %s\n", kc.Dir)
-	return os.MkdirAll(kc.Dir, 0755)
+func (t *TestContext) Prepare() error {
+	fmt.Fprintf(GinkgoWriter, "preparing testing directory: %s\n", t.Dir)
+	return os.MkdirAll(t.Dir, 0755)
 }
 
 // InstallCertManager installs the cert manager bundle.
-func (kc *KBTestContext) InstallCertManager() error {
-	if _, err := kc.Kubectl.Command("create", "namespace", "cert-manager"); err != nil {
+func (t *TestContext) InstallCertManager() error {
+	if _, err := t.Kubectl.Command("create", "namespace", "cert-manager"); err != nil {
 		return err
 	}
 	url := fmt.Sprintf(certmanagerURL, certmanagerVersion)
-	if _, err := kc.Kubectl.Apply(false, "-f", url, "--validate=false"); err != nil {
+	if _, err := t.Kubectl.Apply(false, "-f", url, "--validate=false"); err != nil {
 		return err
 	}
 	// Wait for cert-manager-webhook to be ready, which can take time if cert-manager
 	// was re-installed after uninstalling on a cluster.
-	_, err := kc.Kubectl.Wait(false, "deployment.apps/cert-manager-webhook",
+	_, err := t.Kubectl.Wait(false, "deployment.apps/cert-manager-webhook",
 		"--for", "condition=Available",
 		"--namespace", "cert-manager",
 		"--timeout", "5m",
@@ -106,92 +108,95 @@ func (kc *KBTestContext) InstallCertManager() error {
 }
 
 // InstallPrometheusOperManager installs the prometheus manager bundle.
-func (kc *KBTestContext) InstallPrometheusOperManager() error {
+func (t *TestContext) InstallPrometheusOperManager() error {
 	url := fmt.Sprintf(prometheusOperatorURL, prometheusOperatorVersion)
-	_, err := kc.Kubectl.Apply(false, "-f", url)
+	_, err := t.Kubectl.Apply(false, "-f", url)
 	return err
 }
 
 // UninstallPrometheusOperManager uninstalls the prometheus manager bundle.
-func (kc *KBTestContext) UninstallPrometheusOperManager() {
+func (t *TestContext) UninstallPrometheusOperManager() {
 	url := fmt.Sprintf(prometheusOperatorURL, prometheusOperatorVersion)
-	if _, err := kc.Kubectl.Delete(false, "-f", url); err != nil {
+	if _, err := t.Kubectl.Delete(false, "-f", url); err != nil {
 		fmt.Fprintf(GinkgoWriter, "error when running kubectl delete during cleaning up prometheus bundle: %v\n", err)
 	}
 }
 
 // UninstallCertManager uninstalls the cert manager bundle.
-func (kc *KBTestContext) UninstallCertManager() {
+func (t *TestContext) UninstallCertManager() {
 	url := fmt.Sprintf(certmanagerURL, certmanagerVersion)
-	if _, err := kc.Kubectl.Delete(false, "-f", url); err != nil {
+	if _, err := t.Kubectl.Delete(false, "-f", url); err != nil {
 		fmt.Fprintf(GinkgoWriter,
 			"warning: error when running kubectl delete during cleaning up cert manager: %v\n", err)
 	}
-	if _, err := kc.Kubectl.Delete(false, "namespace", "cert-manager"); err != nil {
+	if _, err := t.Kubectl.Delete(false, "namespace", "cert-manager"); err != nil {
 		fmt.Fprintf(GinkgoWriter, "warning: error when cleaning up the cert manager namespace: %v\n", err)
 	}
 }
 
 // CleanupManifests is a helper func to run kustomize build and pipe the output to kubectl delete -f -
-func (kc *KBTestContext) CleanupManifests(dir string) {
+func (t *TestContext) CleanupManifests(dir string) {
 	cmd := exec.Command("kustomize", "build", dir)
-	output, err := kc.Run(cmd)
+	output, err := t.Run(cmd)
 	if err != nil {
 		fmt.Fprintf(GinkgoWriter, "warning: error when running kustomize build: %v\n", err)
 	}
-	if _, err := kc.Kubectl.WithInput(string(output)).Command("delete", "-f", "-"); err != nil {
+	if _, err := t.Kubectl.WithInput(string(output)).Command("delete", "-f", "-"); err != nil {
 		fmt.Fprintf(GinkgoWriter, "warning: error when running kubectl delete -f -: %v\n", err)
 	}
 }
 
 // Init is for running `kubebuilder init`
-func (kc *KBTestContext) Init(initOptions ...string) error {
+func (t *TestContext) Init(initOptions ...string) error {
 	initOptions = append([]string{"init"}, initOptions...)
-	cmd := exec.Command("kubebuilder", initOptions...)
-	_, err := kc.Run(cmd)
+	//nolint:gosec
+	cmd := exec.Command(t.BinaryName, initOptions...)
+	_, err := t.Run(cmd)
 	return err
 }
 
 // CreateAPI is for running `kubebuilder create api`
-func (kc *KBTestContext) CreateAPI(resourceOptions ...string) error {
+func (t *TestContext) CreateAPI(resourceOptions ...string) error {
 	resourceOptions = append([]string{"create", "api"}, resourceOptions...)
-	cmd := exec.Command("kubebuilder", resourceOptions...)
-	_, err := kc.Run(cmd)
+	//nolint:gosec
+	cmd := exec.Command(t.BinaryName, resourceOptions...)
+	_, err := t.Run(cmd)
 	return err
 }
 
 // CreateWebhook is for running `kubebuilder create webhook`
-func (kc *KBTestContext) CreateWebhook(resourceOptions ...string) error {
+func (t *TestContext) CreateWebhook(resourceOptions ...string) error {
 	resourceOptions = append([]string{"create", "webhook"}, resourceOptions...)
-	cmd := exec.Command("kubebuilder", resourceOptions...)
-	_, err := kc.Run(cmd)
+	//nolint:gosec
+	cmd := exec.Command(t.BinaryName, resourceOptions...)
+	_, err := t.Run(cmd)
 	return err
 }
 
 // Make is for running `make` with various targets
-func (kc *KBTestContext) Make(makeOptions ...string) error {
+func (t *TestContext) Make(makeOptions ...string) error {
 	cmd := exec.Command("make", makeOptions...)
-	_, err := kc.Run(cmd)
+	_, err := t.Run(cmd)
 	return err
 }
 
 // Destroy is for cleaning up the docker images for testing
-func (kc *KBTestContext) Destroy() {
+func (t *TestContext) Destroy() {
 	//nolint:gosec
-	cmd := exec.Command("docker", "rmi", "-f", kc.ImageName)
-	if _, err := kc.Run(cmd); err != nil {
+	cmd := exec.Command("docker", "rmi", "-f", t.ImageName)
+	if _, err := t.Run(cmd); err != nil {
 		fmt.Fprintf(GinkgoWriter, "warning: error when removing the local image: %v\n", err)
 	}
-	if err := os.RemoveAll(kc.Dir); err != nil {
+	if err := os.RemoveAll(t.Dir); err != nil {
 		fmt.Fprintf(GinkgoWriter, "warning: error when removing the word dir: %v\n", err)
 	}
 }
 
 // LoadImageToKindCluster loads a local docker image to the kind cluster
-func (kc *KBTestContext) LoadImageToKindCluster() error {
-	kindOptions := []string{"load", "docker-image", kc.ImageName}
+func (t *TestContext) LoadImageToKindCluster() error {
+	kindOptions := []string{"load", "docker-image", t.ImageName}
 	cmd := exec.Command("kind", kindOptions...)
-	_, err := kc.Run(cmd)
+	_, err := t.Run(cmd)
 	return err
 }
 
