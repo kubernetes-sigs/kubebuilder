@@ -72,4 +72,5 @@ rules:
   - events
   verbs:
   - create
+  - patch
 `
