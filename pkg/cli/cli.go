@@ -351,12 +351,12 @@ func validatePlugins(plugins ...plugin.Base) error {
 					pluginName, projectVersion, err)
 			}
 		}
-		// Check for duplicate plugin names. Names outside of a version can
-		// conflict because multiple project versions of a plugin may exist.
-		if _, seen := pluginNameSet[pluginName]; seen {
-			return fmt.Errorf("two plugins have the same name: %q", pluginName)
+		// Check for duplicate plugin keys.
+		pluginKey := plugin.KeyFor(p)
+		if _, seen := pluginNameSet[pluginKey]; seen {
+			return fmt.Errorf("two plugins have the same key: %q", pluginKey)
 		}
-		pluginNameSet[pluginName] = struct{}{}
+		pluginNameSet[pluginKey] = struct{}{}
 	}
 	return nil
 }
