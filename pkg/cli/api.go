@@ -19,6 +19,7 @@ package cli // nolint:dupl
 import (
 	"fmt"
 
+	"github.com/blang/semver"
 	"github.com/spf13/cobra"
 
 	"sigs.k8s.io/kubebuilder/internal/config"
@@ -56,14 +57,25 @@ func (c cli) newAPIContext() plugin.Context {
 
 func (c cli) bindCreateAPI(ctx plugin.Context, cmd *cobra.Command) {
 	var getter plugin.CreateAPIPluginGetter
+
+	// get the upper plugin version
+	tmpVersion, _ := semver.Make("0.0.1")
+	for _, p := range c.resolvedPlugins {
+		pluginVersion, _ := semver.Make(p.Version())
+		if pluginVersion.Compare(tmpVersion) == -1 {
+			tmpVersion = pluginVersion
+		}
+	}
+
 	for _, p := range c.resolvedPlugins {
 		tmpGetter, isGetter := p.(plugin.CreateAPIPluginGetter)
 		if isGetter {
-			if getter != nil {
-				err := fmt.Errorf("duplicate API creation plugins for project version %q: %s, %s",
-					c.projectVersion, getter.Name(), p.Name())
-				cmdErr(cmd, err)
-				return
+			// When has more than one supportable plugin. E.g:
+			// - go.kubebuilder.io/v2.0.0 which is supported by V2 and V3
+			// - go.kubebuilder.io/v3.0.0 which is supported by V3
+			if getter != nil && getter.Version() == tmpVersion.String() {
+				// stop when the getter plugin is the upper version found
+				break
 			}
 			getter = tmpGetter
 		}

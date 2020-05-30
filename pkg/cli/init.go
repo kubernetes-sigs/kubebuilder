@@ -23,6 +23,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/blang/semver"
 	"github.com/spf13/cobra"
 
 	internalconfig "sigs.k8s.io/kubebuilder/internal/config"
@@ -117,16 +118,30 @@ func (c cli) getAvailablePlugins() (pluginKeys []string) {
 
 func (c cli) bindInit(ctx plugin.Context, cmd *cobra.Command) {
 	var getter plugin.InitPluginGetter
+
+	// get the upper plugin version
+	tmpVersion, _ := semver.Make("0.0.1")
+	for _, p := range c.resolvedPlugins {
+		pluginVersion, _ := semver.Make(p.Version())
+		if pluginVersion.Compare(tmpVersion) == -1 {
+			tmpVersion = pluginVersion
+		}
+	}
+
 	for _, p := range c.resolvedPlugins {
 		tmpGetter, isGetter := p.(plugin.InitPluginGetter)
 		if isGetter {
-			if getter != nil {
-				log.Fatalf("duplicate initialization plugins for project version %q: %s, %s",
-					c.projectVersion, getter.Name(), p.Name())
+			// When has more than one supportable plugin. E.g:
+			// - go.kubebuilder.io/v2.0.0 which is supported by V2 and V3
+			// - go.kubebuilder.io/v3.0.0 which is supported by V3
+			if getter != nil && getter.Version() == tmpVersion.String() {
+				// stop when the getter plugin is the upper version found
+				break
 			}
 			getter = tmpGetter
 		}
 	}
+
 	if getter == nil {
 		if c.cliPluginKey == "" {
 			log.Fatalf("project version %q does not support an initialization plugin", c.projectVersion)
