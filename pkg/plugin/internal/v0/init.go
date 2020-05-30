@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v2
+package v0
 
 import (
 	"fmt"
@@ -28,11 +28,12 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/internal/validation"
 	"sigs.k8s.io/kubebuilder/pkg/model/config"
 	"sigs.k8s.io/kubebuilder/pkg/plugin"
-	"sigs.k8s.io/kubebuilder/pkg/plugin/internal"
+	pluginutil "sigs.k8s.io/kubebuilder/pkg/plugin/internal/util"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold"
 )
 
-type initPlugin struct {
+// InitPlugin scaffolds a Go controller project.
+type InitPlugin struct {
 	config *config.Config
 	// For help text.
 	commandName string
@@ -47,11 +48,11 @@ type initPlugin struct {
 }
 
 var (
-	_ plugin.Init        = &initPlugin{}
-	_ cmdutil.RunOptions = &initPlugin{}
+	_ plugin.Init        = &InitPlugin{}
+	_ cmdutil.RunOptions = &InitPlugin{}
 )
 
-func (p *initPlugin) UpdateContext(ctx *plugin.Context) {
+func (p *InitPlugin) UpdateContext(ctx *plugin.Context) {
 	ctx.Description = `Initialize a new project including vendor/ directory and Go package directories.
 
 Writes the following files:
@@ -74,7 +75,7 @@ project will prompt the user to run 'dep ensure' after writing the project files
 	p.commandName = ctx.CommandName
 }
 
-func (p *initPlugin) BindFlags(fs *pflag.FlagSet) {
+func (p *InitPlugin) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.skipGoVersionCheck, "skip-go-version-check",
 		false, "if specified, skip checking the Go version")
 
@@ -92,22 +93,18 @@ func (p *initPlugin) BindFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&p.config.Domain, "domain", "my.domain", "domain for groups")
 }
 
-func (p *initPlugin) InjectConfig(c *config.Config) {
-	// v3 project configs get a 'layout' value.
-	if c.IsV3() {
-		c.Layout = plugin.KeyFor(Plugin{})
-	}
+func (p *InitPlugin) InjectConfig(c *config.Config) {
 	p.config = c
 }
 
-func (p *initPlugin) Run() error {
+func (p *InitPlugin) Run() error {
 	return cmdutil.Run(p)
 }
 
-func (p *initPlugin) Validate() error {
+func (p *InitPlugin) Validate() error {
 	// Requires go1.11+
 	if !p.skipGoVersionCheck {
-		if err := internal.ValidateGoVersion(); err != nil {
+		if err := pluginutil.ValidateGoVersion(); err != nil {
 			return err
 		}
 	}
@@ -124,7 +121,7 @@ func (p *initPlugin) Validate() error {
 
 	// Try to guess repository if flag is not set.
 	if p.config.Repo == "" {
-		repoPath, err := internal.FindCurrentRepo()
+		repoPath, err := pluginutil.FindCurrentRepo()
 		if err != nil {
 			return fmt.Errorf("error finding current repository: %v", err)
 		}
@@ -134,11 +131,11 @@ func (p *initPlugin) Validate() error {
 	return nil
 }
 
-func (p *initPlugin) GetScaffolder() (scaffold.Scaffolder, error) {
+func (p *InitPlugin) GetScaffolder() (scaffold.Scaffolder, error) {
 	return scaffold.NewInitScaffolder(p.config, p.license, p.owner), nil
 }
 
-func (p *initPlugin) PostScaffold() error {
+func (p *InitPlugin) PostScaffold() error {
 	if !p.fetchDeps {
 		fmt.Println("Skipping fetching dependencies.")
 		return nil
@@ -146,18 +143,18 @@ func (p *initPlugin) PostScaffold() error {
 
 	// Ensure that we are pinning controller-runtime version
 	// xref: https://github.com/kubernetes-sigs/kubebuilder/issues/997
-	err := internal.RunCmd("Get controller runtime", "go", "get",
+	err := pluginutil.RunCmd("Get controller runtime", "go", "get",
 		"sigs.k8s.io/controller-runtime@"+scaffold.ControllerRuntimeVersion)
 	if err != nil {
 		return err
 	}
 
-	err = internal.RunCmd("Update go.mod", "go", "mod", "tidy")
+	err = pluginutil.RunCmd("Update go.mod", "go", "mod", "tidy")
 	if err != nil {
 		return err
 	}
 
-	err = internal.RunCmd("Running make", "make")
+	err = pluginutil.RunCmd("Running make", "make")
 	if err != nil {
 		return err
 	}

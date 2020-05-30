@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v2
+package v0
 
 import (
 	"fmt"
@@ -30,7 +30,9 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/scaffold"
 )
 
-type createWebhookPlugin struct {
+// CreateWebhookPlugin scaffolds a Go webhook definition and manifests for
+// a resource.
+type CreateWebhookPlugin struct {
 	config *config.Config
 	// For help text.
 	commandName string
@@ -42,11 +44,11 @@ type createWebhookPlugin struct {
 }
 
 var (
-	_ plugin.CreateWebhook = &createWebhookPlugin{}
-	_ cmdutil.RunOptions   = &createAPIPlugin{}
+	_ plugin.CreateWebhook = &CreateWebhookPlugin{}
+	_ cmdutil.RunOptions   = &CreateWebhookPlugin{}
 )
 
-func (p *createWebhookPlugin) UpdateContext(ctx *plugin.Context) {
+func (p *CreateWebhookPlugin) UpdateContext(ctx *plugin.Context) {
 	ctx.Description = `Scaffold a webhook for an API resource. You can choose to scaffold defaulting,
 validating and (or) conversion webhooks.
 `
@@ -62,7 +64,7 @@ validating and (or) conversion webhooks.
 	p.commandName = ctx.CommandName
 }
 
-func (p *createWebhookPlugin) BindFlags(fs *pflag.FlagSet) {
+func (p *CreateWebhookPlugin) BindFlags(fs *pflag.FlagSet) {
 	p.resource = &resource.Options{}
 	fs.StringVar(&p.resource.Group, "group", "", "resource Group")
 	fs.StringVar(&p.resource.Version, "version", "", "resource Version")
@@ -77,15 +79,15 @@ func (p *createWebhookPlugin) BindFlags(fs *pflag.FlagSet) {
 		"if set, scaffold the conversion webhook")
 }
 
-func (p *createWebhookPlugin) InjectConfig(c *config.Config) {
+func (p *CreateWebhookPlugin) InjectConfig(c *config.Config) {
 	p.config = c
 }
 
-func (p *createWebhookPlugin) Run() error {
+func (p *CreateWebhookPlugin) Run() error {
 	return cmdutil.Run(p)
 }
 
-func (p *createWebhookPlugin) Validate() error {
+func (p *CreateWebhookPlugin) Validate() error {
 	if err := p.resource.Validate(); err != nil {
 		return err
 	}
@@ -98,7 +100,7 @@ func (p *createWebhookPlugin) Validate() error {
 	return nil
 }
 
-func (p *createWebhookPlugin) GetScaffolder() (scaffold.Scaffolder, error) {
+func (p *CreateWebhookPlugin) GetScaffolder() (scaffold.Scaffolder, error) {
 	// Load the boilerplate
 	bp, err := ioutil.ReadFile(filepath.Join("hack", "boilerplate.go.txt")) // nolint:gosec
 	if err != nil {
@@ -110,6 +112,6 @@ func (p *createWebhookPlugin) GetScaffolder() (scaffold.Scaffolder, error) {
 	return scaffold.NewWebhookScaffolder(p.config, string(bp), res, p.defaulting, p.validation, p.conversion), nil
 }
 
-func (p *createWebhookPlugin) PostScaffold() error {
+func (p *CreateWebhookPlugin) PostScaffold() error {
 	return nil
 }

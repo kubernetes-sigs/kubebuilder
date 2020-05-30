@@ -24,10 +24,10 @@ import (
 
 const (
 	pluginName    = "go" + plugin.DefaultNameQualifier
-	pluginVersion = "v2.0.0"
+	pluginVersion = "v0"
 )
 
-var supportedProjectVersions = []string{config.Version3Alpha}
+var supportedProjectVersions = []string{config.Version2}
 
 var (
 	_ plugin.Base                      = Plugin{}
@@ -37,7 +37,7 @@ var (
 )
 
 type Plugin struct {
-	InitPlugin
+	pluginsv0.InitPlugin
 	pluginsv0.CreateAPIPlugin
 	pluginsv0.CreateWebhookPlugin
 }
@@ -48,13 +48,3 @@ func (Plugin) SupportedProjectVersions() []string             { return supported
 func (p Plugin) GetInitPlugin() plugin.Init                   { return &p.InitPlugin }
 func (p Plugin) GetCreateAPIPlugin() plugin.CreateAPI         { return &p.CreateAPIPlugin }
 func (p Plugin) GetCreateWebhookPlugin() plugin.CreateWebhook { return &p.CreateWebhookPlugin }
-
-// InitPlugin wraps the v0 Init plugin for plugin v2.0.
-type InitPlugin struct {
-	pluginsv0.InitPlugin
-}
-
-func (p *InitPlugin) InjectConfig(c *config.Config) {
-	c.Layout = plugin.KeyFor(Plugin{})
-	p.InitPlugin.InjectConfig(c)
-}

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v2
+package v0
 
 import (
 	"bufio"
@@ -32,12 +32,13 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/model/config"
 	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/pkg/plugin"
-	"sigs.k8s.io/kubebuilder/pkg/plugin/internal"
+	pluginutil "sigs.k8s.io/kubebuilder/pkg/plugin/internal/util"
 	"sigs.k8s.io/kubebuilder/pkg/scaffold"
 	"sigs.k8s.io/kubebuilder/plugins/addon"
 )
 
-type createAPIPlugin struct {
+// CreateAPIPlugin scaffolds a Go API definition and manifests for a resource.
+type CreateAPIPlugin struct {
 	config *config.Config
 
 	// pattern indicates that we should use a plugin to build according to a pattern
@@ -59,11 +60,11 @@ type createAPIPlugin struct {
 }
 
 var (
-	_ plugin.CreateAPI   = &createAPIPlugin{}
-	_ cmdutil.RunOptions = &createAPIPlugin{}
+	_ plugin.CreateAPI   = &CreateAPIPlugin{}
+	_ cmdutil.RunOptions = &CreateAPIPlugin{}
 )
 
-func (p createAPIPlugin) UpdateContext(ctx *plugin.Context) {
+func (p CreateAPIPlugin) UpdateContext(ctx *plugin.Context) {
 	ctx.Description = `Scaffold a Kubernetes API by creating a Resource definition and / or a Controller.
 
 create resource will prompt the user for if it should scaffold the Resource and / or Controller.  To only
@@ -93,7 +94,7 @@ After the scaffold is written, api will run make on the project.
 		ctx.CommandName)
 }
 
-func (p *createAPIPlugin) BindFlags(fs *pflag.FlagSet) {
+func (p *CreateAPIPlugin) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.runMake, "make", true, "if true, run make after generating files")
 
 	fs.BoolVar(&p.doResource, "resource", true,
@@ -117,15 +118,15 @@ func (p *createAPIPlugin) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.resource.Namespaced, "namespaced", true, "resource is namespaced")
 }
 
-func (p *createAPIPlugin) InjectConfig(c *config.Config) {
+func (p *CreateAPIPlugin) InjectConfig(c *config.Config) {
 	p.config = c
 }
 
-func (p *createAPIPlugin) Run() error {
+func (p *CreateAPIPlugin) Run() error {
 	return cmdutil.Run(p)
 }
 
-func (p *createAPIPlugin) Validate() error {
+func (p *CreateAPIPlugin) Validate() error {
 	if err := p.resource.Validate(); err != nil {
 		return err
 	}
@@ -133,11 +134,11 @@ func (p *createAPIPlugin) Validate() error {
 	reader := bufio.NewReader(os.Stdin)
 	if !p.resourceFlag.Changed {
 		fmt.Println("Create Resource [y/n]")
-		p.doResource = internal.YesNo(reader)
+		p.doResource = pluginutil.YesNo(reader)
 	}
 	if !p.controllerFlag.Changed {
 		fmt.Println("Create Controller [y/n]")
-		p.doController = internal.YesNo(reader)
+		p.doController = pluginutil.YesNo(reader)
 	}
 
 	// In case we want to scaffold a resource API we need to do some checks
@@ -158,7 +159,7 @@ func (p *createAPIPlugin) Validate() error {
 	return nil
 }
 
-func (p *createAPIPlugin) GetScaffolder() (scaffold.Scaffolder, error) {
+func (p *CreateAPIPlugin) GetScaffolder() (scaffold.Scaffolder, error) {
 	// Load the boilerplate
 	bp, err := ioutil.ReadFile(filepath.Join("hack", "boilerplate.go.txt")) // nolint:gosec
 	if err != nil {
@@ -181,9 +182,9 @@ func (p *createAPIPlugin) GetScaffolder() (scaffold.Scaffolder, error) {
 	return scaffold.NewAPIScaffolder(p.config, string(bp), res, p.doResource, p.doController, plugins), nil
 }
 
-func (p *createAPIPlugin) PostScaffold() error {
+func (p *CreateAPIPlugin) PostScaffold() error {
 	if p.runMake {
-		return internal.RunCmd("Running make", "make")
+		return pluginutil.RunCmd("Running make", "make")
 	}
 	return nil
 }

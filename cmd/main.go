@@ -21,15 +21,18 @@ import (
 
 	"sigs.k8s.io/kubebuilder/cmd/version"
 	"sigs.k8s.io/kubebuilder/pkg/cli"
+	pluginv0 "sigs.k8s.io/kubebuilder/pkg/plugin/v0"
 	pluginv2 "sigs.k8s.io/kubebuilder/pkg/plugin/v2"
 )
 
 func main() {
 	c, err := cli.New(
 		cli.WithPlugins(
+			&pluginv0.Plugin{},
 			&pluginv2.Plugin{},
 		),
 		cli.WithDefaultPlugins(
+			&pluginv0.Plugin{},
 			&pluginv2.Plugin{},
 		),
 		cli.WithExtraCommands(
