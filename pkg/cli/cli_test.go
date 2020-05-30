@@ -17,11 +17,18 @@ limitations under the License.
 package cli
 
 import (
+	"testing"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
 	"sigs.k8s.io/kubebuilder/pkg/plugin"
 )
+
+func TestCLI(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "CLI Suite")
+}
 
 var _ = Describe("CLI", func() {
 	Describe("resolvePluginsByKey", func() {
@@ -76,6 +83,28 @@ var _ = Describe("CLI", func() {
 			By("Resolving foo")
 			_, err = resolvePluginsByKey(plugins, "foo")
 			Expect(err).To(MatchError(`plugin key "foo" matches more than one known plugin`))
+		})
+	})
+
+	Describe("Check if has duplicate plugins", func() {
+		It("should work successfully when a plugin has many versions", func() {
+			plugins := makePluginsForKeys(
+				"foo.example.com/v1.0.0",
+				"foo.example.com/v2.0.0",
+				"foo.example.com/v3.0.0",
+			)
+
+			err := validatePlugins(plugins...)
+			Expect(err).NotTo(HaveOccurred())
+		})
+		It("should fail when found more than one plugin with the same name and version", func() {
+			plugins := makePluginsForKeys(
+				"foo.example.com/v1.0.0",
+				"foo.example.com/v1.0.0",
+			)
+
+			err := validatePlugins(plugins...)
+			Expect(err).To(HaveOccurred())
 		})
 	})
 })
