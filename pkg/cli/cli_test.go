@@ -17,120 +17,142 @@ limitations under the License.
 package cli
 
 import (
-	"testing"
+	"os"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"sigs.k8s.io/kubebuilder/pkg/model/config"
 	"sigs.k8s.io/kubebuilder/pkg/plugin"
 )
 
-func TestCLI(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "CLI Suite")
-}
-
 var _ = Describe("CLI", func() {
-	Describe("resolvePluginsByKey", func() {
-		plugins := makePluginsForKeys(
-			"foo.example.com/v1.0.0",
-			"bar.example.com/v1.0.0",
-			"baz.example.com/v1.0.0",
-			"foo.kubebuilder.io/v1.0.0",
-			"foo.kubebuilder.io/v2.0.0",
-			"bar.kubebuilder.io/v1.0.0",
-			"bar.kubebuilder.io/v2.0.0",
-		)
 
-		It("should check key correctly", func() {
+	var (
+		c               CLI
+		err             error
+		pluginNameA     = "go.example.com"
+		pluginNameB     = "go.test.com"
+		projectVersions = []string{config.Version2, config.Version3Alpha}
+		pluginAV1       = makeAllPlugin(pluginNameA, "v1.0", projectVersions...)
+		pluginAV2       = makeAllPlugin(pluginNameA, "v2.0", projectVersions...)
+		pluginBV1       = makeAllPlugin(pluginNameB, "v1.0", projectVersions...)
+		pluginBV2       = makeAllPlugin(pluginNameB, "v2.0", projectVersions...)
+		allPlugins      = []plugin.Base{pluginAV1, pluginAV2, pluginBV1, pluginBV2}
+	)
 
-			By("Resolving foo.example.com/v1.0.0")
-			resolvedPlugins, err := resolvePluginsByKey(plugins, "foo.example.com/v1.0.0")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(getPluginKeys(resolvedPlugins...)).To(Equal([]string{"foo.example.com/v1.0.0"}))
+	Describe("New", func() {
 
-			By("Resolving foo.example.com")
-			resolvedPlugins, err = resolvePluginsByKey(plugins, "foo.example.com")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(getPluginKeys(resolvedPlugins...)).To(Equal([]string{"foo.example.com/v1.0.0"}))
+		Context("with no plugins specified", func() {
+			It("should return a valid CLI", func() {
+				By("setting one plugin")
+				c, err = New(WithDefaultPlugins(pluginAV1), WithPlugins(pluginAV1))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(c).NotTo(BeNil())
+				Expect(c.(*cli).pluginsFromOptions).To(Equal(makeSetByProjVer(pluginAV1)))
+				Expect(c.(*cli).resolvedPlugins).To(Equal([]plugin.Base{pluginAV1}))
 
-			By("Resolving baz")
-			resolvedPlugins, err = resolvePluginsByKey(plugins, "baz")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(getPluginKeys(resolvedPlugins...)).To(Equal([]string{"baz.example.com/v1.0.0"}))
+				By("setting two plugins with different names and versions")
+				c, err = New(WithDefaultPlugins(pluginAV1), WithPlugins(pluginAV1, pluginBV2))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(c).NotTo(BeNil())
+				Expect(c.(*cli).pluginsFromOptions).To(Equal(makeSetByProjVer(pluginAV1, pluginBV2)))
+				Expect(c.(*cli).resolvedPlugins).To(Equal([]plugin.Base{pluginAV1}))
 
-			By("Resolving foo/v2.0.0")
-			resolvedPlugins, err = resolvePluginsByKey(plugins, "foo/v2.0.0")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(getPluginKeys(resolvedPlugins...)).To(Equal([]string{"foo.kubebuilder.io/v2.0.0"}))
+				By("setting two plugins with the same names and different versions")
+				c, err = New(WithDefaultPlugins(pluginAV1), WithPlugins(pluginAV1, pluginAV2))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(c).NotTo(BeNil())
+				Expect(c.(*cli).pluginsFromOptions).To(Equal(makeSetByProjVer(pluginAV1, pluginAV2)))
+				Expect(c.(*cli).resolvedPlugins).To(Equal([]plugin.Base{pluginAV1}))
 
-			By("Resolving blah")
-			_, err = resolvePluginsByKey(plugins, "blah")
-			Expect(err).To(MatchError(`plugin key "blah" does not match a known plugin`))
+				By("setting two plugins with different names and the same version")
+				c, err = New(WithDefaultPlugins(pluginAV1), WithPlugins(pluginAV1, pluginBV1))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(c).NotTo(BeNil())
+				Expect(c.(*cli).pluginsFromOptions).To(Equal(makeSetByProjVer(pluginAV1, pluginBV1)))
+				Expect(c.(*cli).resolvedPlugins).To(Equal([]plugin.Base{pluginAV1}))
+			})
 
-			By("Resolving foo.example.com/v2.0.0")
-			_, err = resolvePluginsByKey(plugins, "foo.example.com/v2.0.0")
-			Expect(err).To(MatchError(`plugin key "foo.example.com/v2.0.0" does not match a known plugin`))
+			It("should return an error", func() {
+				By("not setting any plugins or default plugins")
+				_, err = New()
+				Expect(err).To(MatchError(`no plugins for project version "3-alpha"`))
 
-			By("Resolving foo.kubebuilder.io")
-			_, err = resolvePluginsByKey(plugins, "foo.kubebuilder.io")
-			Expect(err).To(MatchError(`plugin key "foo.kubebuilder.io" matches more than one known plugin`))
+				By("not setting any plugin")
+				_, err = New(WithDefaultPlugins(pluginAV1))
+				Expect(err).To(MatchError(`no plugins for project version "3-alpha"`))
 
-			By("Resolving foo/v1.0.0")
-			_, err = resolvePluginsByKey(plugins, "foo/v1.0.0")
-			Expect(err).To(MatchError(`plugin key "foo/v1.0.0" matches more than one known plugin`))
+				By("not setting any default plugins")
+				_, err = New(WithPlugins(pluginAV1))
+				Expect(err).To(MatchError(`no default plugins for project version "3-alpha"`))
 
-			By("Resolving foo")
-			_, err = resolvePluginsByKey(plugins, "foo")
-			Expect(err).To(MatchError(`plugin key "foo" matches more than one known plugin`))
+				By("setting two plugins of the same name and version")
+				_, err = New(WithDefaultPlugins(pluginAV1), WithPlugins(pluginAV1, pluginAV1))
+				Expect(err).To(MatchError(`broken pre-set plugins: two plugins have the same key: "go.example.com/v1.0"`))
+			})
 		})
-	})
 
-	Describe("Check if has duplicate plugins", func() {
-		It("should work successfully when a plugin has many versions", func() {
-			plugins := makePluginsForKeys(
-				"foo.example.com/v1.0.0",
-				"foo.example.com/v2.0.0",
-				"foo.example.com/v3.0.0",
+		Context("with --plugins set", func() {
+
+			var (
+				args []string
 			)
 
-			err := validatePlugins(plugins...)
-			Expect(err).NotTo(HaveOccurred())
-		})
-		It("should fail when found more than one plugin with the same name and version", func() {
-			plugins := makePluginsForKeys(
-				"foo.example.com/v1.0.0",
-				"foo.example.com/v1.0.0",
-			)
+			BeforeEach(func() {
+				args = os.Args
+			})
 
-			err := validatePlugins(plugins...)
-			Expect(err).To(HaveOccurred())
+			AfterEach(func() {
+				os.Args = args
+			})
+
+			It("should return a valid CLI", func() {
+				By(`setting cliPluginKey to "go"`)
+				setPluginsFlag("go")
+				c, err = New(WithDefaultPlugins(pluginAV1), WithPlugins(pluginAV1, pluginAV2))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(c).NotTo(BeNil())
+				Expect(c.(*cli).pluginsFromOptions).To(Equal(makeSetByProjVer(pluginAV1, pluginAV2)))
+				Expect(c.(*cli).resolvedPlugins).To(Equal([]plugin.Base{pluginAV1}))
+
+				By(`setting cliPluginKey to "go/v1"`)
+				setPluginsFlag("go/v1")
+				c, err = New(WithDefaultPlugins(pluginAV1), WithPlugins(pluginAV1, pluginBV2))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(c).NotTo(BeNil())
+				Expect(c.(*cli).pluginsFromOptions).To(Equal(makeSetByProjVer(pluginAV1, pluginBV2)))
+				Expect(c.(*cli).resolvedPlugins).To(Equal([]plugin.Base{pluginAV1}))
+
+				By(`setting cliPluginKey to "go/v2"`)
+				setPluginsFlag("go/v2")
+				c, err = New(WithDefaultPlugins(pluginAV1), WithPlugins(pluginAV1, pluginBV2))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(c).NotTo(BeNil())
+				Expect(c.(*cli).pluginsFromOptions).To(Equal(makeSetByProjVer(pluginAV1, pluginBV2)))
+				Expect(c.(*cli).resolvedPlugins).To(Equal([]plugin.Base{pluginBV2}))
+
+				By(`setting cliPluginKey to "go.test.com/v2"`)
+				setPluginsFlag("go.test.com/v2")
+				c, err = New(WithDefaultPlugins(pluginAV1), WithPlugins(allPlugins...))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(c).NotTo(BeNil())
+				Expect(c.(*cli).pluginsFromOptions).To(Equal(makeSetByProjVer(allPlugins...)))
+				Expect(c.(*cli).resolvedPlugins).To(Equal([]plugin.Base{pluginBV2}))
+			})
+
+			It("should return an error", func() {
+				By(`setting cliPluginKey to an non-existent key "foo"`)
+				setPluginsFlag("foo")
+				_, err = New(WithDefaultPlugins(pluginAV1), WithPlugins(pluginAV1, pluginAV2))
+				Expect(err).To(MatchError(errAmbiguousPlugin{"foo", "no names match"}))
+			})
 		})
+
 	})
+
 })
 
-type mockPlugin struct {
-	name, version string
-}
-
-func (p mockPlugin) Name() string                     { return p.name }
-func (p mockPlugin) Version() string                  { return p.version }
-func (mockPlugin) SupportedProjectVersions() []string { return []string{"2"} }
-
-func makeBasePlugin(name, version string) plugin.Base {
-	return mockPlugin{name, version}
-}
-
-func makePluginsForKeys(keys ...string) (plugins []plugin.Base) {
-	for _, key := range keys {
-		plugins = append(plugins, makeBasePlugin(plugin.SplitKey(key)))
-	}
-	return
-}
-
-func getPluginKeys(plugins ...plugin.Base) (keys []string) {
-	for _, p := range plugins {
-		keys = append(keys, plugin.KeyFor(p))
-	}
-	return
+func setPluginsFlag(key string) {
+	os.Args = append(os.Args, "init", "--"+pluginsFlag, key)
 }

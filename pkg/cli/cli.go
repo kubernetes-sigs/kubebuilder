@@ -154,12 +154,10 @@ func WithDefaultPlugins(plugins ...plugin.Base) Option {
 					return fmt.Errorf("broken pre-set default plugins: "+
 						"project version %q already has plugin %q", version, plugin.KeyFor(vp))
 				}
+				if err := validatePlugin(p); err != nil {
+					return fmt.Errorf("broken pre-set default plugin %q: %v", plugin.KeyFor(p), err)
+				}
 				c.defaultPluginsFromOptions[version] = p
-			}
-		}
-		for _, p := range c.defaultPluginsFromOptions {
-			if err := validatePlugin(p); err != nil {
-				return fmt.Errorf("broken pre-set default plugin %q: %v", plugin.KeyFor(p), err)
 			}
 		}
 		return nil
@@ -196,8 +194,8 @@ func (c *cli) initialize() error {
 		c.projectVersion = projectConfig.Version
 
 		if projectConfig.IsV1() {
-			return fmt.Errorf(noticeColor, "The v1 projects are no longer supported.\n"+
-				"See how to upgrade your project to v2: https://book.kubebuilder.io/migration/guide.html\n")
+			return fmt.Errorf(noticeColor, "project version 1 is no longer supported.\n"+
+				"See how to upgrade your project: https://book.kubebuilder.io/migration/guide.html\n")
 		}
 	} else {
 		return fmt.Errorf("failed to read config: %v", err)
@@ -218,22 +216,32 @@ func (c *cli) initialize() error {
 	// layout and --plugins values can be short (ex. "go/v2.0.0") or unversioned
 	// (ex. "go.kubebuilder.io") keys or both, their values may need to be
 	// resolved to known plugins by key.
-	plugins := c.pluginsFromOptions[c.projectVersion]
+	// Default plugins are checked first so any input key that has more than one
+	// match across all specified plugins will resolve. This behavior is desirable
+	// in situations like 'init --plugins "go"' when multiple go-type plugins
+	// are available but only one default is for a particular project version.
+	allPlugins := c.pluginsFromOptions[c.projectVersion]
+	defaultPlugin := []plugin.Base{c.defaultPluginsFromOptions[c.projectVersion]}
 	switch {
 	case c.cliPluginKey != "":
 		// Filter plugin by keys passed in CLI.
-		c.resolvedPlugins, err = resolvePluginsByKey(plugins, c.cliPluginKey)
+		if c.resolvedPlugins, err = resolvePluginsByKey(defaultPlugin, c.cliPluginKey); err != nil {
+			c.resolvedPlugins, err = resolvePluginsByKey(allPlugins, c.cliPluginKey)
+		}
 	case c.configured && projectConfig.IsV3():
 		// All non-v1 configs must have a layout key. This check will help with
 		// migration.
-		if projectConfig.Layout == "" {
+		layout := projectConfig.Layout
+		if layout == "" {
 			return fmt.Errorf("config must have a layout value")
 		}
 		// Filter plugin by config's layout value.
-		c.resolvedPlugins, err = resolvePluginsByKey(plugins, projectConfig.Layout)
+		if c.resolvedPlugins, err = resolvePluginsByKey(defaultPlugin, layout); err != nil {
+			c.resolvedPlugins, err = resolvePluginsByKey(allPlugins, layout)
+		}
 	default:
 		// Use the default plugins for this project version.
-		c.resolvedPlugins = []plugin.Base{c.defaultPluginsFromOptions[c.projectVersion]}
+		c.resolvedPlugins = defaultPlugin
 	}
 	if err != nil {
 		return err
@@ -303,14 +311,7 @@ func (c cli) validate() error {
 	if (!c.configured || !isLayoutSupported) && c.cliPluginKey == "" {
 		_, versionExists := c.defaultPluginsFromOptions[c.projectVersion]
 		if !versionExists {
-			return fmt.Errorf("no default plugins for project version %s", c.projectVersion)
-		}
-	}
-
-	// Validate plugin versions and name.
-	for _, versionedPlugins := range c.pluginsFromOptions {
-		if err := validatePlugins(versionedPlugins...); err != nil {
-			return err
+			return fmt.Errorf("no default plugins for project version %q", c.projectVersion)
 		}
 	}
 
@@ -334,17 +335,17 @@ func (c cli) validate() error {
 
 // validatePlugins validates the name and versions of a list of plugins.
 func validatePlugins(plugins ...plugin.Base) error {
-	pluginNameSet := make(map[string]struct{}, len(plugins))
+	pluginKeySet := make(map[string]struct{}, len(plugins))
 	for _, p := range plugins {
 		if err := validatePlugin(p); err != nil {
 			return err
 		}
 		// Check for duplicate plugin keys.
 		pluginKey := plugin.KeyFor(p)
-		if _, seen := pluginNameSet[pluginKey]; seen {
+		if _, seen := pluginKeySet[pluginKey]; seen {
 			return fmt.Errorf("two plugins have the same key: %q", pluginKey)
 		}
-		pluginNameSet[pluginKey] = struct{}{}
+		pluginKeySet[pluginKey] = struct{}{}
 	}
 	return nil
 }
@@ -395,62 +396,6 @@ func (c cli) buildRootCmd() *cobra.Command {
 	rootCmd.AddCommand(c.newInitCmd())
 
 	return rootCmd
-}
-
-// resolvePluginsByKey finds a plugin for pluginKey if it exactly matches
-// some form of a known plugin's key. Those forms can be a:
-// - Fully qualified key: "go.kubebuilder.io/v2.0.0"
-// - Short key: "go/v2.0.0"
-// - Fully qualified name: "go.kubebuilder.io"
-// - Short name: "go"
-// Some of these keys may conflict, ex. the fully-qualified and short names of
-// "go.kubebuilder.io/v1.0.0" and "go.kubebuilder.io/v2.0.0" have ambiguous
-// unversioned names "go.kubernetes.io" and "go". If pluginKey is ambiguous
-// or does not match any known plugin's key, an error is returned.
-//
-// Note: resolvePluginsByKey returns a slice so initialize() can generalize
-// setting default plugins if no pluginKey is set.
-func resolvePluginsByKey(versionedPlugins []plugin.Base, pluginKey string) ([]plugin.Base, error) {
-	// Make a set of all possible key combinations to check pluginKey against.
-	// If the key is not ambiguous, set a valid pointer to the plugin for that
-	// key, otherwise set a tombstone so we know it is ambiguous. There will
-	// always be at least one key per plugin if their names are fully-qualified.
-	//
-	// Note: this isn't actually that inefficient compared to a memory-efficient
-	// solution since we're working with very small N's; it is also very simple.
-	allPluginKeyCombos := make(map[string]*plugin.Base)
-	for i, p := range versionedPlugins {
-		key := plugin.KeyFor(p)
-		// Short-circuit if we have an exact match.
-		if key == pluginKey {
-			return []plugin.Base{p}, nil
-		}
-		name := p.Name()
-		keys := []string{key, name}
-		if shortName := plugin.GetShortName(name); name != shortName {
-			keys = append(keys, shortName)
-			keys = append(keys, plugin.Key(shortName, p.Version()))
-		}
-
-		pp := &versionedPlugins[i]
-		for _, k := range keys {
-			if _, hasKey := allPluginKeyCombos[k]; hasKey {
-				allPluginKeyCombos[k] = nil
-			} else {
-				allPluginKeyCombos[k] = pp
-			}
-		}
-	}
-
-	pp, hasKey := allPluginKeyCombos[pluginKey]
-	if !hasKey {
-		return nil, fmt.Errorf("plugin key %q does not match a known plugin", pluginKey)
-	}
-	if pp == nil {
-		return nil, fmt.Errorf("plugin key %q matches more than one known plugin", pluginKey)
-	}
-
-	return []plugin.Base{*pp}, nil
 }
 
 // defaultCommand returns the root command without its subcommands.
