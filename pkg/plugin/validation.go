@@ -17,7 +17,6 @@ limitations under the License.
 package plugin
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/blang/semver"
@@ -25,24 +24,57 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/internal/validation"
 )
 
+// errInvalidVersion should be returned when a plugin's version is invalid.
+type errInvalidVersion struct {
+	version, msg string
+}
+
+func (e errInvalidVersion) Error() string {
+	if e.version == "" {
+		return fmt.Sprintf("plugin version is empty")
+	}
+	return fmt.Sprintf("invalid plugin version %q: %s", e.version, e.msg)
+}
+
 // ValidateVersion ensures version adheres to the plugin version format,
 // which is tolerant semver.
 func ValidateVersion(version string) error {
 	if version == "" {
-		return errors.New("plugin version is empty")
+		return errInvalidVersion{}
 	}
 	// ParseTolerant allows versions with a "v" prefix or shortened versions,
 	// ex. "3" or "v3.0".
-	if _, err := semver.ParseTolerant(version); err != nil {
-		return fmt.Errorf("failed to validate plugin version %q: %v", version, err)
+	v, err := semver.ParseTolerant(version)
+	if err != nil {
+		return errInvalidVersion{version, err.Error()}
 	}
+	cv := semver.Version{Major: v.Major, Minor: v.Minor}
+	if !v.Equals(cv) {
+		return errInvalidVersion{version, "must contain major and minor version only"}
+	}
+
 	return nil
+}
+
+// errInvalidName should be returned when a plugin's name is invalid.
+type errInvalidName struct {
+	name, msg string
+}
+
+func (e errInvalidName) Error() string {
+	if e.name == "" {
+		return fmt.Sprintf("plugin name is empty")
+	}
+	return fmt.Sprintf("invalid plugin name %q: %s", e.name, e.msg)
 }
 
 // ValidateName ensures name is a valid DNS 1123 subdomain.
 func ValidateName(name string) error {
+	if name == "" {
+		return errInvalidName{}
+	}
 	if errs := validation.IsDNS1123Subdomain(name); len(errs) != 0 {
-		return fmt.Errorf("plugin name %q is invalid: %v", name, errs)
+		return errInvalidName{name, fmt.Sprintf("%s", errs)}
 	}
 	return nil
 }
