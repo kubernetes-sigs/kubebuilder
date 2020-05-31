@@ -78,6 +78,7 @@
   - [Using envtest in integration tests](./reference/envtest.md)
 
   - [Metrics](./reference/metrics.md)
+  - [CLI Plugins](./reference/cli-plugins.md)
 
 ---
 
