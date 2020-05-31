@@ -28,3 +28,4 @@
   - [Writing controller tests](writing-tests.md)
   - [Metrics](metrics.md)
   - [Makefile Helpers](makefile-helpers.md)
+  - [CLI plugins](cli-plugins.md)

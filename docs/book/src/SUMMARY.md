@@ -26,7 +26,7 @@
 
     - [Deploying the cert manager](./cronjob-tutorial/cert-manager.md)
     - [Deploying webhooks](./cronjob-tutorial/running-webhook.md)
-  
+
   - [Writing tests](./cronjob-tutorial/writing-tests.md)
 
   - [Epilogue](./cronjob-tutorial/epilogue.md)
@@ -48,11 +48,11 @@
   - [Kubebuilder v1 vs v2](./migration/v1vsv2.md)
 
       - [Migration Guide](./migration/migration_guide_v1tov2.md)
-  
+
   - [Kubebuilder v2 vs v3](./migration/v2vsv3.md)
-  
+
       - [Migration Guide](./migration/migration_guide_v2tov3.md)
-      
+
   - [Single Group to Multi-Group](./migration/multi-group.md)
 
 ---
@@ -82,6 +82,7 @@
 
   - [Metrics](./reference/metrics.md)
   - [Makefile Helpers](makefile-helpers.md)
+  - [CLI Plugins](./reference/cli-plugins.md)
 
 ---
 
