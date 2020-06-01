@@ -60,8 +60,8 @@ func (c cli) bindCreateWebhook(ctx plugin.Context, cmd *cobra.Command) {
 		tmpGetter, isGetter := p.(plugin.CreateWebhookPluginGetter)
 		if isGetter {
 			if getter != nil {
-				err := fmt.Errorf("duplicate webhook creation plugins for project version %q: %s, %s",
-					c.projectVersion, getter.Name(), p.Name())
+				err := fmt.Errorf("duplicate webhook creation plugins for project version %q (%s, %s), "+
+					"use a more specific plugin key", c.projectVersion, plugin.KeyFor(getter), plugin.KeyFor(p))
 				cmdErr(cmd, err)
 				return
 			}

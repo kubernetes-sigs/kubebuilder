@@ -32,6 +32,12 @@ func cmdErr(cmd *cobra.Command, err error) {
 	cmd.RunE = errCmdFunc(err)
 }
 
+// cmdErrNoHelp calls cmdErr(cmd, err) then turns cmd's usage off.
+func cmdErrNoHelp(cmd *cobra.Command, err error) {
+	cmdErr(cmd, err)
+	cmd.SilenceUsage = true
+}
+
 // errCmdFunc returns a cobra RunE function that returns the provided error
 func errCmdFunc(err error) func(*cobra.Command, []string) error {
 	return func(*cobra.Command, []string) error {

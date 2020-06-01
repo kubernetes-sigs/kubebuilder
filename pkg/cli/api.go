@@ -60,8 +60,8 @@ func (c cli) bindCreateAPI(ctx plugin.Context, cmd *cobra.Command) {
 		tmpGetter, isGetter := p.(plugin.CreateAPIPluginGetter)
 		if isGetter {
 			if getter != nil {
-				err := fmt.Errorf("duplicate API creation plugins for project version %q: %s, %s",
-					c.projectVersion, getter.Name(), p.Name())
+				err := fmt.Errorf("duplicate API creation plugins for project version %q (%s, %s), "+
+					"use a more specific plugin key", c.projectVersion, plugin.KeyFor(getter), plugin.KeyFor(p))
 				cmdErr(cmd, err)
 				return
 			}

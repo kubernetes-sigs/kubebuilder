@@ -121,18 +121,23 @@ func (c cli) bindInit(ctx plugin.Context, cmd *cobra.Command) {
 		tmpGetter, isGetter := p.(plugin.InitPluginGetter)
 		if isGetter {
 			if getter != nil {
-				log.Fatalf("duplicate initialization plugins for project version %q: %s, %s",
-					c.projectVersion, getter.Name(), p.Name())
+				err := fmt.Errorf("duplicate initialization plugins for project version %q (%s, %s), "+
+					"use a more specific plugin key", c.projectVersion, plugin.KeyFor(getter), plugin.KeyFor(p))
+				cmdErrNoHelp(cmd, err)
+				return
 			}
 			getter = tmpGetter
 		}
 	}
 	if getter == nil {
+		var err error
 		if c.cliPluginKey == "" {
-			log.Fatalf("project version %q does not support an initialization plugin", c.projectVersion)
+			err = fmt.Errorf("project version %q does not support an initialization plugin", c.projectVersion)
 		} else {
-			log.Fatalf("plugin %q does not support an initialization plugin", c.cliPluginKey)
+			err = fmt.Errorf("plugin %q does not support an initialization plugin", c.cliPluginKey)
 		}
+		cmdErrNoHelp(cmd, err)
+		return
 	}
 
 	cfg := internalconfig.New(internalconfig.DefaultPath)
