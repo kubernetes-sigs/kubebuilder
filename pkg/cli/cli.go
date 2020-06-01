@@ -68,8 +68,9 @@ type cli struct {
 
 	// Plugins injected by options.
 	pluginsFromOptions map[string][]plugin.Base
-	// Default plugins injected by options.
-	defaultPluginsFromOptions map[string][]plugin.Base
+	// Default plugins injected by options. Only one plugin per project version
+	// is allowed.
+	defaultPluginsFromOptions map[string]plugin.Base
 	// A plugin key passed to --plugins on invoking 'init'.
 	cliPluginKey string
 	// A filtered set of plugins that should be used by command constructors.
@@ -87,7 +88,7 @@ func New(opts ...Option) (CLI, error) {
 		commandName:               "kubebuilder",
 		defaultProjectVersion:     internalconfig.DefaultVersion,
 		pluginsFromOptions:        make(map[string][]plugin.Base),
-		defaultPluginsFromOptions: make(map[string][]plugin.Base),
+		defaultPluginsFromOptions: make(map[string]plugin.Base),
 	}
 	for _, opt := range opts {
 		if err := opt(c); err != nil {
@@ -131,9 +132,6 @@ func WithPlugins(plugins ...plugin.Base) Option {
 	return func(c *cli) error {
 		for _, p := range plugins {
 			for _, version := range p.SupportedProjectVersions() {
-				if _, ok := c.pluginsFromOptions[version]; !ok {
-					c.pluginsFromOptions[version] = []plugin.Base{}
-				}
 				c.pluginsFromOptions[version] = append(c.pluginsFromOptions[version], p)
 			}
 		}
@@ -146,20 +144,22 @@ func WithPlugins(plugins ...plugin.Base) Option {
 	}
 }
 
-// WithDefaultPlugins is an Option that sets the cli's default plugins.
+// WithDefaultPlugins is an Option that sets the cli's default plugins. Only
+// one plugin per project version is allowed.
 func WithDefaultPlugins(plugins ...plugin.Base) Option {
 	return func(c *cli) error {
 		for _, p := range plugins {
 			for _, version := range p.SupportedProjectVersions() {
-				if _, ok := c.defaultPluginsFromOptions[version]; !ok {
-					c.defaultPluginsFromOptions[version] = []plugin.Base{}
+				if vp, hasVer := c.defaultPluginsFromOptions[version]; hasVer {
+					return fmt.Errorf("broken pre-set default plugins: "+
+						"project version %q already has plugin %q", version, plugin.KeyFor(vp))
 				}
-				c.defaultPluginsFromOptions[version] = append(c.defaultPluginsFromOptions[version], p)
+				c.defaultPluginsFromOptions[version] = p
 			}
 		}
-		for _, plugins := range c.defaultPluginsFromOptions {
-			if err := validatePlugins(plugins...); err != nil {
-				return fmt.Errorf("broken pre-set default plugins: %v", err)
+		for _, p := range c.defaultPluginsFromOptions {
+			if err := validatePlugin(p); err != nil {
+				return fmt.Errorf("broken pre-set default plugin %q: %v", plugin.KeyFor(p), err)
 			}
 		}
 		return nil
@@ -233,7 +233,7 @@ func (c *cli) initialize() error {
 		c.resolvedPlugins, err = resolvePluginsByKey(plugins, projectConfig.Layout)
 	default:
 		// Use the default plugins for this project version.
-		c.resolvedPlugins = c.defaultPluginsFromOptions[c.projectVersion]
+		c.resolvedPlugins = []plugin.Base{c.defaultPluginsFromOptions[c.projectVersion]}
 	}
 	if err != nil {
 		return err
@@ -336,20 +336,8 @@ func (c cli) validate() error {
 func validatePlugins(plugins ...plugin.Base) error {
 	pluginNameSet := make(map[string]struct{}, len(plugins))
 	for _, p := range plugins {
-		pluginName := p.Name()
-		if err := plugin.ValidateName(pluginName); err != nil {
-			return fmt.Errorf("invalid plugin name %q: %v", pluginName, err)
-		}
-		pluginVersion := p.Version()
-		if err := plugin.ValidateVersion(pluginVersion); err != nil {
-			return fmt.Errorf("invalid plugin %q version %q: %v",
-				pluginName, pluginVersion, err)
-		}
-		for _, projectVersion := range p.SupportedProjectVersions() {
-			if err := validation.ValidateProjectVersion(projectVersion); err != nil {
-				return fmt.Errorf("invalid plugin %q supported project version %q: %v",
-					pluginName, projectVersion, err)
-			}
+		if err := validatePlugin(p); err != nil {
+			return err
 		}
 		// Check for duplicate plugin keys.
 		pluginKey := plugin.KeyFor(p)
@@ -357,6 +345,26 @@ func validatePlugins(plugins ...plugin.Base) error {
 			return fmt.Errorf("two plugins have the same key: %q", pluginKey)
 		}
 		pluginNameSet[pluginKey] = struct{}{}
+	}
+	return nil
+}
+
+// validatePlugin validates the name and versions of a plugin.
+func validatePlugin(p plugin.Base) error {
+	pluginName := p.Name()
+	if err := plugin.ValidateName(pluginName); err != nil {
+		return fmt.Errorf("invalid plugin name %q: %v", pluginName, err)
+	}
+	pluginVersion := p.Version()
+	if err := plugin.ValidateVersion(pluginVersion); err != nil {
+		return fmt.Errorf("invalid plugin %q version %q: %v",
+			pluginName, pluginVersion, err)
+	}
+	for _, projectVersion := range p.SupportedProjectVersions() {
+		if err := validation.ValidateProjectVersion(projectVersion); err != nil {
+			return fmt.Errorf("invalid plugin %q supported project version %q: %v",
+				pluginName, projectVersion, err)
+		}
 	}
 	return nil
 }
