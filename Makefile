@@ -82,6 +82,11 @@ test-coverage:  ## Run coveralls
 	# run the go tests and gen the file coverage-all used to do the integration with coverrals.io
 	go test -failfast -tags=integration -coverprofile=coverage-all.out -covermode=count ./pkg/... ./cmd/...
 
+.PHONY: test-e2e-local
+test-e2e-local: ## It will run the script to install kind and run e2e tests
+	## To keep the same kind cluster between test runs, use `SKIP_KIND_CLEANUP=1 make test-e2e-local`
+	./test_e2e_local.sh
+
 .PHONY: check-testdata
 check-testdata: ## Run the script to ensure that the testdata is updated
 	./check_testdata.sh
