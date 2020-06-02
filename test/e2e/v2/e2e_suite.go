@@ -32,6 +32,27 @@ import (
 )
 
 var _ = Describe("kubebuilder", func() {
+
+	BeforeSuite(func() {
+		k := &utils.Kubectl{}
+
+		By("installing cert manager bundle")
+		Expect(k.InstallCertManager()).To(Succeed())
+
+		By("installing prometheus operator")
+		Expect(k.InstallPrometheusOperManager()).To(Succeed())
+	})
+
+	AfterSuite(func() {
+		k := &utils.Kubectl{}
+
+		By("uninstalling prometheus manager bundle")
+		k.UninstallPrometheusOperManager()
+
+		By("uninstalling cert manager bundle")
+		k.UninstallCertManager()
+	})
+
 	Context("with v2 scaffolding", func() {
 		var kbc *utils.TestContext
 		BeforeEach(func() {
@@ -39,29 +60,38 @@ var _ = Describe("kubebuilder", func() {
 			kbc, err = utils.NewTestContext(utils.KubebuilderBinName, "GO111MODULE=on")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(kbc.Prepare()).To(Succeed())
-
-			By("installing cert manager bundle")
-			Expect(kbc.InstallCertManager()).To(Succeed())
-
-			By("installing prometheus operator")
-			Expect(kbc.InstallPrometheusOperManager()).To(Succeed())
 		})
 
 		AfterEach(func() {
 			By("clean up created API objects during test process")
 			kbc.CleanupManifests(filepath.Join("config", "default"))
 
-			By("uninstalling prometheus manager bundle")
-			kbc.UninstallPrometheusOperManager()
-
-			By("uninstalling cert manager bundle")
-			kbc.UninstallCertManager()
-
 			By("remove container image and work dir")
 			kbc.Destroy()
 		})
 
-		It("should generate a runnable project", func() {
+		It("should generate a minimal runnable project from init", func() {
+			By("init v2 project")
+			err := kbc.Init(
+				"--project-version", "2",
+				"--domain", kbc.Domain,
+				"--fetch-deps=false")
+			Expect(err).Should(Succeed())
+
+			By("building image")
+			err = kbc.Make("docker-build", "IMG="+kbc.ImageName)
+			Expect(err).Should(Succeed())
+
+			By("loading docker image into kind cluster")
+			err = kbc.LoadImageToKindCluster()
+			Expect(err).Should(Succeed())
+
+			By("deploying controller manager")
+			err = kbc.Make("deploy", "IMG="+kbc.ImageName)
+			Expect(err).Should(Succeed())
+		})
+
+		It("should generate a working fully featured project", func() {
 			var controllerPodName string
 			By("init v2 project")
 			err := kbc.Init(

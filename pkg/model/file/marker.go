@@ -19,6 +19,7 @@ package file
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 )
 
 const prefix = "+kubebuilder:scaffold:"
@@ -31,6 +32,11 @@ var commentsByExt = map[string]string{
 	// When adding additional file extensions, update also the NewMarkerFor documentation and error
 }
 
+var commentsByPrefix = map[string]string{
+	"Dockerfile": "# ",
+	// When adding additional file extensions, update also the NewMarkerFor documentation and error
+}
+
 // Marker represents a machine-readable comment that will be used for scaffolding purposes
 type Marker struct {
 	comment string
@@ -39,13 +45,20 @@ type Marker struct {
 
 // NewMarkerFor creates a new marker customized for the specific file
 // Supported file extensions: .go, .ext
+// Supported file name prefixes: Dockerfile
 func NewMarkerFor(path string, value string) Marker {
 	ext := filepath.Ext(path)
 	if comment, found := commentsByExt[ext]; found {
 		return Marker{comment, value}
 	}
 
-	panic(fmt.Errorf("unknown file extension: '%s', expected '.go' or '.yaml'", ext))
+	for prefix, comment := range commentsByPrefix {
+		if strings.HasPrefix(path, prefix) {
+			return Marker{comment, value}
+		}
+	}
+
+	panic(fmt.Errorf("unknown file: '%s', expected '*.go', '*.yaml' or 'Dockerfile*'", path))
 }
 
 // String implements Stringer

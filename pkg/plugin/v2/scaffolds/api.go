@@ -127,6 +127,8 @@ func (s *apiScaffolder) scaffold() error {
 	if err := machinery.NewScaffold(s.plugins...).Execute(
 		s.newUniverse(),
 		&templates.MainUpdater{WireResource: s.doResource, WireController: s.doController},
+		&templates.DockerfileUpdater{HasResource: s.doResource, HasController: s.doController},
+		&templates.KustomizeUpdater{HasResource: s.doResource, HasController: s.doController},
 	); err != nil {
 		return fmt.Errorf("error updating main.go: %v", err)
 	}

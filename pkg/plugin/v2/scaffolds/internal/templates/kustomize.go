@@ -17,11 +17,16 @@ limitations under the License.
 package templates
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
+)
+
+var (
+	defaultKustomizePath = filepath.Join("config", "default", "kustomization.yaml")
 )
 
 var _ file.Template = &Kustomize{}
@@ -37,10 +42,12 @@ type Kustomize struct {
 // SetTemplateDefaults implements input.Template
 func (f *Kustomize) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = filepath.Join("config", "default", "kustomization.yaml")
+		f.Path = defaultKustomizePath
 	}
 
-	f.TemplateBody = kustomizeTemplate
+	f.TemplateBody = fmt.Sprintf(kustomizeTemplate,
+		file.NewMarkerFor(f.Path, basesMarker),
+	)
 
 	f.IfExistsAction = file.Error
 
@@ -54,6 +61,54 @@ func (f *Kustomize) SetTemplateDefaults() error {
 	}
 
 	return nil
+}
+
+var _ file.Inserter = &KustomizeUpdater{}
+
+type KustomizeUpdater struct { //nolint:maligned
+	// Flags to indicate which parts need to be included when updating the file
+	HasResource, HasController bool
+}
+
+// GetPath implements Builder
+func (*KustomizeUpdater) GetPath() string {
+	return defaultKustomizePath
+}
+
+// GetIfExistsAction implements Builder
+func (*KustomizeUpdater) GetIfExistsAction() file.IfExistsAction {
+	return file.Overwrite
+}
+
+const (
+	basesMarker = "bases"
+)
+
+// GetMarkers implements file.Inserter
+func (f *KustomizeUpdater) GetMarkers() []file.Marker {
+	return []file.Marker{
+		file.NewMarkerFor(defaultKustomizePath, basesMarker),
+	}
+}
+
+// GetCodeFragments implements file.Inserter
+func (f *KustomizeUpdater) GetCodeFragments() file.CodeFragmentsMap {
+	var fragment file.CodeFragments
+
+	if f.HasResource {
+		fragment = append(fragment, "- ../crd\n")
+	}
+
+	if f.HasController {
+		fragment = append(fragment, "- ../rbac\n")
+	}
+
+	fragments := make(file.CodeFragmentsMap, 1)
+	if len(fragment) > 0 {
+		fragments[file.NewMarkerFor(defaultKustomizePath, basesMarker)] = fragment
+	}
+
+	return fragments
 }
 
 const kustomizeTemplate = `# Adds namespace to all resources.
@@ -71,15 +126,14 @@ namePrefix: {{ .Prefix }}-
 #  someName: someValue
 
 bases:
-- ../crd
-- ../rbac
 - ../manager
-# [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix including the one in 
+%s
+# [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix including the one in
 # crd/kustomization.yaml
 #- ../webhook
 # [CERTMANAGER] To enable cert-manager, uncomment all sections with 'CERTMANAGER'. 'WEBHOOK' components are required.
 #- ../certmanager
-# [PROMETHEUS] To enable prometheus monitor, uncomment all sections with 'PROMETHEUS'. 
+# [PROMETHEUS] To enable prometheus monitor, uncomment all sections with 'PROMETHEUS'.
 #- ../prometheus
 
 patchesStrategicMerge:
@@ -88,7 +142,7 @@ patchesStrategicMerge:
   # endpoint w/o any authn/z, please comment the following line.
 - manager_auth_proxy_patch.yaml
 
-# [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix including the one in 
+# [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix including the one in
 # crd/kustomization.yaml
 #- manager_webhook_patch.yaml
 

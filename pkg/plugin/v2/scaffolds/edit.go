@@ -17,7 +17,6 @@ limitations under the License.
 package scaffolds
 
 import (
-	"fmt"
 	"io/ioutil"
 	"strings"
 
@@ -52,29 +51,18 @@ func (s *editScaffolder) Scaffold() error {
 
 	// update dockerfile
 	if s.multigroup {
-		str, err = ensureExistAndReplace(
+		str = strings.Replace(
 			str,
 			"COPY api/ api/",
-			`COPY apis/ apis/`)
-		if err != nil {
-			return err
-		}
+			`COPY apis/ apis/`,
+			-1)
 	} else {
-		str, err = ensureExistAndReplace(
+		str = strings.Replace(
 			str,
 			"COPY apis/ apis/",
-			`COPY api/ api/`)
-		if err != nil {
-			return err
-		}
+			`COPY api/ api/`,
+			-1)
 	}
 
 	return ioutil.WriteFile(filename, []byte(str), 0644)
-}
-
-func ensureExistAndReplace(input, match, replace string) (string, error) {
-	if !strings.Contains(input, match) {
-		return "", fmt.Errorf("can't find %q", match)
-	}
-	return strings.Replace(input, match, replace, -1), nil
 }
