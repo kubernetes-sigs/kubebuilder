@@ -20,8 +20,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/blang/semver"
-
+	"sigs.k8s.io/kubebuilder/pkg/internal/validation"
 	"sigs.k8s.io/kubebuilder/pkg/plugin"
 )
 
@@ -37,12 +36,12 @@ func (e errAmbiguousPlugin) Error() string {
 
 // resolvePluginsByKey resolves versionedPlugins to a subset of plugins by
 // matching keys to some form of pluginKey. Those forms can be a:
-// - Fully qualified key: "go.kubebuilder.io/v2.0"
-// - Short key: "go/v2.0"
+// - Fully qualified key: "go.kubebuilder.io/v2"
+// - Short key: "go/v2"
 // - Fully qualified name: "go.kubebuilder.io"
 // - Short name: "go"
 // Some of these keys may conflict, ex. the fully-qualified and short names of
-// "go.kubebuilder.io/v1.0" and "go.kubebuilder.io/v2.0" have ambiguous
+// "go.kubebuilder.io/v1" and "go.kubebuilder.io/v2" have ambiguous
 // unversioned names "go.kubernetes.io" and "go". If pluginKey is ambiguous
 // or does not match any known plugin's key, an error is returned.
 //
@@ -52,82 +51,53 @@ func resolvePluginsByKey(versionedPlugins []plugin.Base, pluginKey string) (reso
 
 	name, version := plugin.SplitKey(pluginKey)
 
-	// Compare versions first to narrow the list of name comparisons.
-	if version == "" {
-		// Case: if plugin key has no version, check all plugin names.
-		resolved = versionedPlugins
-	} else {
-		// Case: if plugin key has version, filter by version.
-		resolved = findPluginsMatchingVersion(versionedPlugins, version)
-	}
-
-	if len(resolved) == 0 {
-		return nil, errAmbiguousPlugin{pluginKey, "no versions match"}
-	}
-
 	// Compare names, taking into account whether name is fully-qualified or not.
 	shortName := plugin.GetShortName(name)
 	if name == shortName {
 		// Case: if plugin name is short, find matching short names.
-		resolved = findPluginsMatchingShortName(resolved, shortName)
+		resolved = findPluginsMatchingShortName(versionedPlugins, shortName)
 	} else {
 		// Case: if plugin name is fully-qualified, match only fully-qualified names.
-		resolved = findPluginsMatchingName(resolved, name)
+		resolved = findPluginsMatchingName(versionedPlugins, name)
 	}
 
 	if len(resolved) == 0 {
-		return nil, errAmbiguousPlugin{pluginKey, "no names match"}
-	}
-
-	// Since plugins has already been resolved by matching names and versions,
-	// it should only contain one matching value for a versionless pluginKey if
-	// it isn't ambiguous.
-	if version == "" {
-		if len(resolved) == 1 {
-			return resolved, nil
+		return nil, errAmbiguousPlugin{
+			key: pluginKey,
+			msg: fmt.Sprintf("no names match, possible plugins: %+q", makePluginKeySlice(versionedPlugins...)),
 		}
-		return nil, errAmbiguousPlugin{pluginKey, fmt.Sprintf("possible keys: %+q", makePluginKeySlice(resolved...))}
 	}
 
-	rp, err := resolveToPlugin(resolved)
-	if err != nil {
-		return nil, errAmbiguousPlugin{pluginKey, err.Error()}
-	}
-	return []plugin.Base{rp}, nil
-}
-
-// findPluginsMatchingVersion returns a set of plugins with Version() matching
-// version. The set will contain plugins with either major and minor versions
-// matching exactly or major versions matching exactly and greater minor versions,
-// but not a mix of the two match types.
-func findPluginsMatchingVersion(plugins []plugin.Base, version string) []plugin.Base {
-	// Assume versions have been validated already.
-	v := must(semver.ParseTolerant(version))
-
-	var equal, matchingMajor []plugin.Base
-	for _, p := range plugins {
-		pv := must(semver.ParseTolerant(p.Version()))
-		if v.Major == pv.Major {
-			if v.Minor == pv.Minor {
-				equal = append(equal, p)
-			} else if v.Minor < pv.Minor {
-				matchingMajor = append(matchingMajor, p)
+	if version != "" {
+		// Case: if plugin key has version, filter by version.
+		v, err := plugin.ParseVersion(version)
+		if err != nil {
+			return nil, err
+		}
+		keys := makePluginKeySlice(resolved...)
+		for i := 0; i < len(resolved); i++ {
+			if v.Compare(resolved[i].Version()) != 0 {
+				resolved = append(resolved[:i], resolved[i+1:]...)
+				i--
+			}
+		}
+		if len(resolved) == 0 {
+			return nil, errAmbiguousPlugin{
+				key: pluginKey,
+				msg: fmt.Sprintf("no versions match, possible plugins: %+q", keys),
 			}
 		}
 	}
 
-	if len(equal) != 0 {
-		return equal
+	// Since plugins has already been resolved by matching names and versions,
+	// it should only contain one matching value if it isn't ambiguous.
+	if len(resolved) != 1 {
+		return nil, errAmbiguousPlugin{
+			key: pluginKey,
+			msg: fmt.Sprintf("matching plugins: %+q", makePluginKeySlice(resolved...)),
+		}
 	}
-	return matchingMajor
-}
-
-// must wraps semver.Parse and panics if err is non-nil.
-func must(v semver.Version, err error) semver.Version {
-	if err != nil {
-		panic(err)
-	}
-	return v
+	return resolved, nil
 }
 
 // findPluginsMatchingName returns a set of plugins with Name() exactly
@@ -152,51 +122,6 @@ func findPluginsMatchingShortName(plugins []plugin.Base, shortName string) (equa
 	return equal
 }
 
-// resolveToPlugin returns a single plugin from plugins given the following
-// conditions about plugins:
-// 1. len(plugins) > 0.
-// 2. No two plugin names are different.
-// An error is returned if either condition is invalidated.
-func resolveToPlugin(plugins []plugin.Base) (rp plugin.Base, err error) {
-	// Versions are either an exact match or have greater minor versions, so
-	// we choose the last in a sorted list of versions to get the correct one.
-	versions := make([]semver.Version, len(plugins))
-	for i, p := range plugins {
-		versions[i] = must(semver.ParseTolerant(p.Version()))
-	}
-	if len(versions) == 0 {
-		return nil, fmt.Errorf("possible versions: %+q", versions)
-	}
-	semver.Sort(versions)
-	useVersion := versions[len(versions)-1]
-
-	// If more than one name in plugins exists, the name portion of pluginKey
-	// needs to be more specific.
-	nameSet := make(map[string]struct{})
-	for _, p := range plugins {
-		nameSet[p.Name()] = struct{}{}
-		// This condition will only be true once for an unambiguous plugin name,
-		// since plugin keys have been checked for duplicates already.
-		if must(semver.ParseTolerant(p.Version())).Equals(useVersion) {
-			rp = p
-		}
-	}
-	if len(nameSet) != 1 {
-		return nil, fmt.Errorf("possible names: %+q", makeKeySlice(nameSet))
-	}
-
-	return rp, nil
-}
-
-// makeKeySlice returns a slice of all map keys in set.
-func makeKeySlice(set map[string]struct{}) (keys []string) {
-	for key := range set {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-	return
-}
-
 // makePluginKeySlice returns a slice of all keys for each plugin in plugins.
 func makePluginKeySlice(plugins ...plugin.Base) (keys []string) {
 	for _, p := range plugins {
@@ -204,4 +129,38 @@ func makePluginKeySlice(plugins ...plugin.Base) (keys []string) {
 	}
 	sort.Strings(keys)
 	return
+}
+
+// validatePlugins validates the name and versions of a list of plugins.
+func validatePlugins(plugins ...plugin.Base) error {
+	pluginKeySet := make(map[string]struct{}, len(plugins))
+	for _, p := range plugins {
+		if err := validatePlugin(p); err != nil {
+			return err
+		}
+		// Check for duplicate plugin keys.
+		pluginKey := plugin.KeyFor(p)
+		if _, seen := pluginKeySet[pluginKey]; seen {
+			return fmt.Errorf("two plugins have the same key: %q", pluginKey)
+		}
+		pluginKeySet[pluginKey] = struct{}{}
+	}
+	return nil
+}
+
+// validatePlugin validates the name and versions of a plugin.
+func validatePlugin(p plugin.Base) error {
+	pluginName := p.Name()
+	if err := plugin.ValidateName(pluginName); err != nil {
+		return fmt.Errorf("invalid plugin name %q: %v", pluginName, err)
+	}
+	if err := p.Version().Validate(); err != nil {
+		return fmt.Errorf("invalid plugin version %q: %v", p.Version(), err)
+	}
+	for _, projectVersion := range p.SupportedProjectVersions() {
+		if err := validation.ValidateProjectVersion(projectVersion); err != nil {
+			return fmt.Errorf("invalid project version %q: %v", projectVersion, err)
+		}
+	}
+	return nil
 }

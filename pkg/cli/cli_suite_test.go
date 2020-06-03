@@ -36,12 +36,13 @@ func TestCLI(t *testing.T) {
 
 // Test plugin types and constructors.
 type mockPlugin struct {
-	name, version   string
+	name            string
+	version         plugin.Version
 	projectVersions []string
 }
 
 func (p mockPlugin) Name() string                       { return p.name }
-func (p mockPlugin) Version() string                    { return p.version }
+func (p mockPlugin) Version() plugin.Version            { return p.version }
 func (p mockPlugin) SupportedProjectVersions() []string { return p.projectVersions }
 
 func (mockPlugin) UpdateContext(*plugin.Context) {}
@@ -50,7 +51,11 @@ func (mockPlugin) InjectConfig(*config.Config)   {}
 func (mockPlugin) Run() error                    { return nil }
 
 func makeBasePlugin(name, version string, projVers ...string) plugin.Base {
-	return mockPlugin{name, version, projVers}
+	v, err := plugin.ParseVersion(version)
+	if err != nil {
+		panic(err)
+	}
+	return mockPlugin{name, v, projVers}
 }
 
 func makePluginsForKeys(keys ...string) (plugins []plugin.Base) {
