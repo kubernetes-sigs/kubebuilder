@@ -54,7 +54,7 @@ var _ = Describe("Config", func() {
 		pluginConfig = PluginConfig{}
 		expectedConfig = Config{
 			Version: Version2,
-			Plugins: map[string]interface{}{
+			Plugins: PluginConfigs{
 				"plugin-x": map[string]interface{}{
 					"data-1": "",
 					"data-2": "",
@@ -72,7 +72,7 @@ var _ = Describe("Config", func() {
 		}
 		expectedConfig = Config{
 			Version: Version2,
-			Plugins: map[string]interface{}{
+			Plugins: PluginConfigs{
 				"plugin-x": map[string]interface{}{
 					"data-1": "plugin value 1",
 					"data-2": "plugin value 2",
@@ -106,7 +106,7 @@ var _ = Describe("Config", func() {
 		By("Using empty config version 2")
 		config = Config{
 			Version: Version2,
-			Plugins: map[string]interface{}{
+			Plugins: PluginConfigs{
 				"plugin-x": map[string]interface{}{},
 			},
 		}
@@ -125,7 +125,7 @@ var _ = Describe("Config", func() {
 		By("Using config version 2 with extra fields as struct")
 		config = Config{
 			Version: Version2,
-			Plugins: map[string]interface{}{
+			Plugins: PluginConfigs{
 				"plugin-x": map[string]interface{}{
 					"data-1": "plugin value 1",
 					"data-2": "plugin value 2",

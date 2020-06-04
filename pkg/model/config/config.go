@@ -51,10 +51,16 @@ type Config struct {
 	// Layout contains a key specifying which plugin created a project.
 	Layout string `json:"layout,omitempty"`
 
-	// Plugins is an arbitrary YAML blob that can be used by external
-	// plugins for plugin-specific configuration.
-	Plugins map[string]interface{} `json:"plugins,omitempty"`
+	// Plugins holds plugin-specific configs mapped by plugin key. These configs should be
+	// encoded/decoded using EncodePluginConfig/DecodePluginConfig, respectively.
+	Plugins PluginConfigs `json:"plugins,omitempty"`
 }
+
+// PluginConfigs holds a set of arbitrary plugin configuration objects mapped by plugin key.
+type PluginConfigs map[string]pluginConfig
+
+// pluginConfig is an arbitrary plugin configuration object.
+type pluginConfig interface{}
 
 // IsV1 returns true if it is a v1 project
 func (c Config) IsV1() bool {
@@ -186,7 +192,7 @@ func (c *Config) EncodePluginConfig(key string, configObj interface{}) error {
 		return fmt.Errorf("failed to unmarshal %T object bytes: %s", configObj, err)
 	}
 	if c.Plugins == nil {
-		c.Plugins = make(map[string]interface{})
+		c.Plugins = make(map[string]pluginConfig)
 	}
 	c.Plugins[key] = fields
 	return nil
