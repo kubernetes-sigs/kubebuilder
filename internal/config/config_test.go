@@ -71,7 +71,7 @@ version: "2"
 				Version: config.Version2,
 				Repo:    "github.com/example/project",
 				Domain:  "example.com",
-				Plugins: map[string]interface{}{
+				Plugins: config.PluginConfigs{
 					"plugin-x": map[string]interface{}{
 						"data-1": "single plugin datum",
 					},
@@ -144,7 +144,7 @@ plugins:
 			Version: config.Version2,
 			Repo:    "github.com/example/project",
 			Domain:  "example.com",
-			Plugins: map[string]interface{}{
+			Plugins: config.PluginConfigs{
 				"plugin-x": map[string]interface{}{
 					"data-1": "single plugin datum",
 				},
