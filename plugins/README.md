@@ -31,7 +31,7 @@ yaml or json (to be determined!).
 
 While we are developing this functionality though, we are developing it using an
 in-process golang interface named `Plugin`, defined in
-[pkg/scaffold/scaffold.go](../pkg/scaffold/scaffold.go).  The interface is a
+[pkg/plugin/scaffold/scaffold.go](../pkg/plugin/scaffold/scaffold.go).  The interface is a
 simple single-method interface that is intended to mirror the data-in / data-out
 approach that will be used when executing a plugin in a separate binary.  When
 we have more stability of the plugin, we intend to replace the in-process

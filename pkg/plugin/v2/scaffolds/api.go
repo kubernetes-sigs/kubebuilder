@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package scaffold
+package scaffolds
 
 import (
 	"fmt"
@@ -22,17 +22,18 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/model"
 	"sigs.k8s.io/kubebuilder/pkg/model/config"
 	"sigs.k8s.io/kubebuilder/pkg/model/resource"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/machinery"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/controller"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/crd"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/internal/machinery"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/scaffold"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/v2/scaffolds/internal/templates"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/v2/scaffolds/internal/templates/controller"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/v2/scaffolds/internal/templates/crd"
 )
 
 // (used only to gen api with --pattern=addon)
 // KbDeclarativePattern is the sigs.k8s.io/kubebuilder-declarative-pattern version
 const KbDeclarativePattern = "v0.0.0-20200522144838-848d48e5b073"
 
-var _ Scaffolder = &apiScaffolder{}
+var _ scaffold.Scaffolder = &apiScaffolder{}
 
 // apiScaffolder contains configuration for generating scaffolding for Go type
 // representing the API and controller that implements the behavior for the API.
@@ -55,7 +56,7 @@ func NewAPIScaffolder(
 	res *resource.Resource,
 	doResource, doController bool,
 	plugins []model.Plugin,
-) Scaffolder {
+) scaffold.Scaffolder {
 	return &apiScaffolder{
 		config:       config,
 		boilerplate:  boilerplate,

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package scaffold
+package scaffolds
 
 import (
 	"fmt"
@@ -22,9 +22,10 @@ import (
 	"strings"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/config"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/scaffold"
 )
 
-var _ Scaffolder = &editScaffolder{}
+var _ scaffold.Scaffolder = &editScaffolder{}
 
 type editScaffolder struct {
 	config     *config.Config
@@ -32,7 +33,7 @@ type editScaffolder struct {
 }
 
 // NewEditScaffolder returns a new Scaffolder for configuration edit operations
-func NewEditScaffolder(config *config.Config, multigroup bool) Scaffolder {
+func NewEditScaffolder(config *config.Config, multigroup bool) scaffold.Scaffolder {
 	return &editScaffolder{
 		config:     config,
 		multigroup: multigroup,

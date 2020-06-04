@@ -17,7 +17,7 @@ limitations under the License.
 package cmdutil
 
 import (
-	"sigs.k8s.io/kubebuilder/pkg/scaffold"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/scaffold"
 )
 
 // RunOptions represent the types used to implement the different commands

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package scaffold
+package scaffolds
 
 import (
 	"fmt"
@@ -23,13 +23,14 @@ import (
 
 	"sigs.k8s.io/kubebuilder/pkg/model"
 	"sigs.k8s.io/kubebuilder/pkg/model/config"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/machinery"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/certmanager"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/manager"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/metricsauth"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/prometheus"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/webhook"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/internal/machinery"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/scaffold"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/v2/scaffolds/internal/templates"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/v2/scaffolds/internal/templates/certmanager"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/v2/scaffolds/internal/templates/manager"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/v2/scaffolds/internal/templates/metricsauth"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/v2/scaffolds/internal/templates/prometheus"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/v2/scaffolds/internal/templates/webhook"
 )
 
 const (
@@ -43,7 +44,7 @@ const (
 	imageName = "controller:latest"
 )
 
-var _ Scaffolder = &initScaffolder{}
+var _ scaffold.Scaffolder = &initScaffolder{}
 
 type initScaffolder struct {
 	config          *config.Config
@@ -53,7 +54,7 @@ type initScaffolder struct {
 }
 
 // NewInitScaffolder returns a new Scaffolder for project initialization operations
-func NewInitScaffolder(config *config.Config, license, owner string) Scaffolder {
+func NewInitScaffolder(config *config.Config, license, owner string) scaffold.Scaffolder {
 	return &initScaffolder{
 		config:          config,
 		boilerplatePath: filepath.Join("hack", "boilerplate.go.txt"),
