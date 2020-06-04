@@ -34,10 +34,10 @@ var _ = Describe("CLI", func() {
 		pluginNameA     = "go.example.com"
 		pluginNameB     = "go.test.com"
 		projectVersions = []string{config.Version2, config.Version3Alpha}
-		pluginAV1       = makeAllPlugin(pluginNameA, "v1.0", projectVersions...)
-		pluginAV2       = makeAllPlugin(pluginNameA, "v2.0", projectVersions...)
-		pluginBV1       = makeAllPlugin(pluginNameB, "v1.0", projectVersions...)
-		pluginBV2       = makeAllPlugin(pluginNameB, "v2.0", projectVersions...)
+		pluginAV1       = makeAllPlugin(pluginNameA, "v1", projectVersions...)
+		pluginAV2       = makeAllPlugin(pluginNameA, "v2", projectVersions...)
+		pluginBV1       = makeAllPlugin(pluginNameB, "v1", projectVersions...)
+		pluginBV2       = makeAllPlugin(pluginNameB, "v2", projectVersions...)
 		allPlugins      = []plugin.Base{pluginAV1, pluginAV2, pluginBV1, pluginBV2}
 	)
 
@@ -89,7 +89,7 @@ var _ = Describe("CLI", func() {
 
 				By("setting two plugins of the same name and version")
 				_, err = New(WithDefaultPlugins(pluginAV1), WithPlugins(pluginAV1, pluginAV1))
-				Expect(err).To(MatchError(`broken pre-set plugins: two plugins have the same key: "go.example.com/v1.0"`))
+				Expect(err).To(MatchError(`broken pre-set plugins: two plugins have the same key: "go.example.com/v1"`))
 			})
 		})
 
@@ -145,7 +145,10 @@ var _ = Describe("CLI", func() {
 				By(`setting cliPluginKey to an non-existent key "foo"`)
 				setPluginsFlag("foo")
 				_, err = New(WithDefaultPlugins(pluginAV1), WithPlugins(pluginAV1, pluginAV2))
-				Expect(err).To(MatchError(errAmbiguousPlugin{"foo", "no names match"}))
+				Expect(err).To(MatchError(errAmbiguousPlugin{
+					key: "foo",
+					msg: `no names match, possible plugins: ["go.example.com/v1" "go.example.com/v2"]`,
+				}))
 			})
 		})
 

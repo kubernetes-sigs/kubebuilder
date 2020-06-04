@@ -17,6 +17,8 @@ limitations under the License.
 package cli
 
 import (
+	"fmt"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -27,38 +29,38 @@ var _ = Describe("resolvePluginsByKey", func() {
 
 	var (
 		plugins = makePluginsForKeys(
-			"foo.example.com/v1.0",
-			"bar.example.com/v1.0",
-			"baz.example.com/v1.0",
-			"foo.kubebuilder.io/v1.0",
-			"foo.kubebuilder.io/v2.0",
-			"bar.kubebuilder.io/v1.0",
-			"bar.kubebuilder.io/v2.0",
+			"foo.example.com/v1",
+			"bar.example.com/v1",
+			"baz.example.com/v1",
+			"foo.kubebuilder.io/v1",
+			"foo.kubebuilder.io/v2",
+			"bar.kubebuilder.io/v1",
+			"bar.kubebuilder.io/v2",
 		)
 		resolvedPlugins []plugin.Base
 		err             error
 	)
 
 	It("should resolve keys correctly", func() {
-		By("resolving foo.example.com/v1.0")
-		resolvedPlugins, err = resolvePluginsByKey(plugins, "foo.example.com/v1.0")
+		By("resolving foo.example.com/v1")
+		resolvedPlugins, err = resolvePluginsByKey(plugins, "foo.example.com/v1")
 		Expect(err).NotTo(HaveOccurred())
-		Expect(makePluginKeySlice(resolvedPlugins...)).To(Equal([]string{"foo.example.com/v1.0"}))
+		Expect(makePluginKeySlice(resolvedPlugins...)).To(Equal([]string{"foo.example.com/v1"}))
 
 		By("resolving foo.example.com")
 		resolvedPlugins, err = resolvePluginsByKey(plugins, "foo.example.com")
 		Expect(err).NotTo(HaveOccurred())
-		Expect(makePluginKeySlice(resolvedPlugins...)).To(Equal([]string{"foo.example.com/v1.0"}))
+		Expect(makePluginKeySlice(resolvedPlugins...)).To(Equal([]string{"foo.example.com/v1"}))
 
 		By("resolving baz")
 		resolvedPlugins, err = resolvePluginsByKey(plugins, "baz")
 		Expect(err).NotTo(HaveOccurred())
-		Expect(makePluginKeySlice(resolvedPlugins...)).To(Equal([]string{"baz.example.com/v1.0"}))
+		Expect(makePluginKeySlice(resolvedPlugins...)).To(Equal([]string{"baz.example.com/v1"}))
 
-		By("resolving foo/v2.0")
-		resolvedPlugins, err = resolvePluginsByKey(plugins, "foo/v2.0")
+		By("resolving foo/v2")
+		resolvedPlugins, err = resolvePluginsByKey(plugins, "foo/v2")
 		Expect(err).NotTo(HaveOccurred())
-		Expect(makePluginKeySlice(resolvedPlugins...)).To(Equal([]string{"foo.kubebuilder.io/v2.0"}))
+		Expect(makePluginKeySlice(resolvedPlugins...)).To(Equal([]string{"foo.kubebuilder.io/v2"}))
 	})
 
 	It("should return an error", func() {
@@ -66,49 +68,50 @@ var _ = Describe("resolvePluginsByKey", func() {
 		_, err = resolvePluginsByKey(plugins, "foo.kubebuilder.io")
 		Expect(err).To(MatchError(errAmbiguousPlugin{
 			key: "foo.kubebuilder.io",
-			msg: `possible keys: ["foo.kubebuilder.io/v1.0" "foo.kubebuilder.io/v2.0"]`,
+			msg: `matching plugins: ["foo.kubebuilder.io/v1" "foo.kubebuilder.io/v2"]`,
 		}))
 
-		By("resolving foo/v1.0")
-		_, err = resolvePluginsByKey(plugins, "foo/v1.0")
+		By("resolving foo/v1")
+		_, err = resolvePluginsByKey(plugins, "foo/v1")
 		Expect(err).To(MatchError(errAmbiguousPlugin{
-			key: "foo/v1.0",
-			msg: `possible names: ["foo.example.com" "foo.kubebuilder.io"]`,
+			key: "foo/v1",
+			msg: `matching plugins: ["foo.example.com/v1" "foo.kubebuilder.io/v1"]`,
 		}))
 
 		By("resolving foo")
 		_, err = resolvePluginsByKey(plugins, "foo")
 		Expect(err).To(MatchError(errAmbiguousPlugin{
 			key: "foo",
-			msg: `possible keys: ["foo.example.com/v1.0" "foo.kubebuilder.io/v1.0" "foo.kubebuilder.io/v2.0"]`,
+			msg: `matching plugins: ["foo.example.com/v1" "foo.kubebuilder.io/v1" "foo.kubebuilder.io/v2"]`,
 		}))
 
 		By("resolving blah")
 		_, err = resolvePluginsByKey(plugins, "blah")
 		Expect(err).To(MatchError(errAmbiguousPlugin{
 			key: "blah",
-			msg: "no names match",
+			msg: fmt.Sprintf("no names match, possible plugins: %+q", makePluginKeySlice(plugins...)),
 		}))
 
-		By("resolving foo.example.com/v2.0")
-		_, err = resolvePluginsByKey(plugins, "foo.example.com/v2.0")
+		By("resolving foo.example.com/v2")
+		_, err = resolvePluginsByKey(plugins, "foo.example.com/v2")
 		Expect(err).To(MatchError(errAmbiguousPlugin{
-			key: "foo.example.com/v2.0",
-			msg: "no names match",
+			key: "foo.example.com/v2",
+			msg: fmt.Sprintf(`no versions match, possible plugins: ["foo.example.com/v1"]`),
 		}))
 
-		By("resolving foo/v3.0")
-		_, err = resolvePluginsByKey(plugins, "foo/v3.0")
+		By("resolving foo/v3")
+		_, err = resolvePluginsByKey(plugins, "foo/v3")
 		Expect(err).To(MatchError(errAmbiguousPlugin{
-			key: "foo/v3.0",
-			msg: "no versions match",
+			key: "foo/v3",
+			msg: "no versions match, possible plugins: " +
+				`["foo.example.com/v1" "foo.kubebuilder.io/v1" "foo.kubebuilder.io/v2"]`,
 		}))
 
-		By("resolving foo.example.com/v3.0")
-		_, err = resolvePluginsByKey(plugins, "foo.example.com/v3.0")
+		By("resolving foo.example.com/v3")
+		_, err = resolvePluginsByKey(plugins, "foo.example.com/v3")
 		Expect(err).To(MatchError(errAmbiguousPlugin{
-			key: "foo.example.com/v3.0",
-			msg: "no versions match",
+			key: "foo.example.com/v3",
+			msg: `no versions match, possible plugins: ["foo.example.com/v1"]`,
 		}))
 	})
 })

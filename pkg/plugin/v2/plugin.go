@@ -21,12 +21,12 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/plugin"
 )
 
-const (
-	pluginName    = "go" + plugin.DefaultNameQualifier
-	pluginVersion = "v2.0.0"
-)
+const pluginName = "go" + plugin.DefaultNameQualifier
 
-var supportedProjectVersions = []string{config.Version2, config.Version3Alpha}
+var (
+	supportedProjectVersions = []string{config.Version2, config.Version3Alpha}
+	pluginVersion            = plugin.Version{Number: 2}
+)
 
 var (
 	_ plugin.Base                      = Plugin{}
@@ -42,7 +42,7 @@ type Plugin struct {
 }
 
 func (Plugin) Name() string                                   { return pluginName }
-func (Plugin) Version() string                                { return pluginVersion }
+func (Plugin) Version() plugin.Version                        { return pluginVersion }
 func (Plugin) SupportedProjectVersions() []string             { return supportedProjectVersions }
 func (p Plugin) GetInitPlugin() plugin.Init                   { return &p.initPlugin }
 func (p Plugin) GetCreateAPIPlugin() plugin.CreateAPI         { return &p.createAPIPlugin }

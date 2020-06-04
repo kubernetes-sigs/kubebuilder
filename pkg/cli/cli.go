@@ -213,7 +213,7 @@ func (c *cli) initialize() error {
 	// In case 1, default plugins will be used to determine which plugin to use.
 	// In case 2, the value passed to --plugins is used.
 	// For all other commands, a config's 'layout' key is used. Since both
-	// layout and --plugins values can be short (ex. "go/v2.0.0") or unversioned
+	// layout and --plugins values can be short (ex. "go/v2") or unversioned
 	// (ex. "go.kubebuilder.io") keys or both, their values may need to be
 	// resolved to known plugins by key.
 	// Default plugins are checked first so any input key that has more than one
@@ -323,50 +323,12 @@ func (c cli) validate() error {
 		}
 		// CLI-set plugins do not have to contain a version.
 		if pluginVersion != "" {
-			if err := plugin.ValidateVersion(pluginVersion); err != nil {
-				return fmt.Errorf("invalid plugin %q version %q: %v",
-					pluginName, pluginVersion, err)
+			if _, err := plugin.ParseVersion(pluginVersion); err != nil {
+				return fmt.Errorf("invalid plugin version %q: %v", pluginVersion, err)
 			}
 		}
 	}
 
-	return nil
-}
-
-// validatePlugins validates the name and versions of a list of plugins.
-func validatePlugins(plugins ...plugin.Base) error {
-	pluginKeySet := make(map[string]struct{}, len(plugins))
-	for _, p := range plugins {
-		if err := validatePlugin(p); err != nil {
-			return err
-		}
-		// Check for duplicate plugin keys.
-		pluginKey := plugin.KeyFor(p)
-		if _, seen := pluginKeySet[pluginKey]; seen {
-			return fmt.Errorf("two plugins have the same key: %q", pluginKey)
-		}
-		pluginKeySet[pluginKey] = struct{}{}
-	}
-	return nil
-}
-
-// validatePlugin validates the name and versions of a plugin.
-func validatePlugin(p plugin.Base) error {
-	pluginName := p.Name()
-	if err := plugin.ValidateName(pluginName); err != nil {
-		return fmt.Errorf("invalid plugin name %q: %v", pluginName, err)
-	}
-	pluginVersion := p.Version()
-	if err := plugin.ValidateVersion(pluginVersion); err != nil {
-		return fmt.Errorf("invalid plugin %q version %q: %v",
-			pluginName, pluginVersion, err)
-	}
-	for _, projectVersion := range p.SupportedProjectVersions() {
-		if err := validation.ValidateProjectVersion(projectVersion); err != nil {
-			return fmt.Errorf("invalid plugin %q supported project version %q: %v",
-				pluginName, projectVersion, err)
-		}
-	}
 	return nil
 }
 
