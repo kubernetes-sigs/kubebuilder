@@ -24,7 +24,8 @@ import (
 
 	"sigs.k8s.io/kubebuilder/internal/cmdutil"
 	"sigs.k8s.io/kubebuilder/internal/config"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/scaffold"
+	scaffolds "sigs.k8s.io/kubebuilder/pkg/plugin/v2/scaffolds"
 )
 
 type editError struct {
@@ -80,7 +81,7 @@ func (o *editOptions) Validate() error {
 }
 
 func (o *editOptions) GetScaffolder() (scaffold.Scaffolder, error) {
-	return scaffold.NewEditScaffolder(&o.config.Config, o.multigroup), nil
+	return scaffolds.NewEditScaffolder(&o.config.Config, o.multigroup), nil
 }
 
 func (o *editOptions) PostScaffold() error {

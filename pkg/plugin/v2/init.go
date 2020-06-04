@@ -28,8 +28,9 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/internal/validation"
 	"sigs.k8s.io/kubebuilder/pkg/model/config"
 	"sigs.k8s.io/kubebuilder/pkg/plugin"
-	"sigs.k8s.io/kubebuilder/pkg/plugin/internal"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/internal/util"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/scaffold"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/v2/scaffolds"
 )
 
 type initPlugin struct {
@@ -107,7 +108,7 @@ func (p *initPlugin) Run() error {
 func (p *initPlugin) Validate() error {
 	// Requires go1.11+
 	if !p.skipGoVersionCheck {
-		if err := internal.ValidateGoVersion(); err != nil {
+		if err := util.ValidateGoVersion(); err != nil {
 			return err
 		}
 	}
@@ -124,7 +125,7 @@ func (p *initPlugin) Validate() error {
 
 	// Try to guess repository if flag is not set.
 	if p.config.Repo == "" {
-		repoPath, err := internal.FindCurrentRepo()
+		repoPath, err := util.FindCurrentRepo()
 		if err != nil {
 			return fmt.Errorf("error finding current repository: %v", err)
 		}
@@ -135,7 +136,7 @@ func (p *initPlugin) Validate() error {
 }
 
 func (p *initPlugin) GetScaffolder() (scaffold.Scaffolder, error) {
-	return scaffold.NewInitScaffolder(p.config, p.license, p.owner), nil
+	return scaffolds.NewInitScaffolder(p.config, p.license, p.owner), nil
 }
 
 func (p *initPlugin) PostScaffold() error {
@@ -146,18 +147,18 @@ func (p *initPlugin) PostScaffold() error {
 
 	// Ensure that we are pinning controller-runtime version
 	// xref: https://github.com/kubernetes-sigs/kubebuilder/issues/997
-	err := internal.RunCmd("Get controller runtime", "go", "get",
-		"sigs.k8s.io/controller-runtime@"+scaffold.ControllerRuntimeVersion)
+	err := util.RunCmd("Get controller runtime", "go", "get",
+		"sigs.k8s.io/controller-runtime@"+scaffolds.ControllerRuntimeVersion)
 	if err != nil {
 		return err
 	}
 
-	err = internal.RunCmd("Update go.mod", "go", "mod", "tidy")
+	err = util.RunCmd("Update go.mod", "go", "mod", "tidy")
 	if err != nil {
 		return err
 	}
 
-	err = internal.RunCmd("Running make", "make")
+	err = util.RunCmd("Running make", "make")
 	if err != nil {
 		return err
 	}

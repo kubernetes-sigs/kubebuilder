@@ -32,8 +32,9 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/model/config"
 	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/pkg/plugin"
-	"sigs.k8s.io/kubebuilder/pkg/plugin/internal"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/internal/util"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/scaffold"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/v2/scaffolds"
 	"sigs.k8s.io/kubebuilder/plugins/addon"
 )
 
@@ -133,11 +134,11 @@ func (p *createAPIPlugin) Validate() error {
 	reader := bufio.NewReader(os.Stdin)
 	if !p.resourceFlag.Changed {
 		fmt.Println("Create Resource [y/n]")
-		p.doResource = internal.YesNo(reader)
+		p.doResource = util.YesNo(reader)
 	}
 	if !p.controllerFlag.Changed {
 		fmt.Println("Create Controller [y/n]")
-		p.doController = internal.YesNo(reader)
+		p.doController = util.YesNo(reader)
 	}
 
 	// In case we want to scaffold a resource API we need to do some checks
@@ -148,8 +149,7 @@ func (p *createAPIPlugin) Validate() error {
 		}
 
 		// Check that the provided group can be added to the project
-		if (p.config.IsV2() || p.config.IsV3()) && !p.config.MultiGroup &&
-			len(p.config.Resources) != 0 && !p.config.HasGroup(p.resource.Group) {
+		if !p.config.MultiGroup && len(p.config.Resources) != 0 && !p.config.HasGroup(p.resource.Group) {
 			return fmt.Errorf("multiple groups are not allowed by default, to enable multi-group visit %s",
 				"kubebuilder.io/migration/multi-group.html")
 		}
@@ -178,7 +178,7 @@ func (p *createAPIPlugin) GetScaffolder() (scaffold.Scaffolder, error) {
 
 	// Create the actual resource from the resource options
 	res := p.resource.NewResource(p.config, p.doResource)
-	return scaffold.NewAPIScaffolder(p.config, string(bp), res, p.doResource, p.doController, plugins), nil
+	return scaffolds.NewAPIScaffolder(p.config, string(bp), res, p.doResource, p.doController, plugins), nil
 }
 
 func (p *createAPIPlugin) PostScaffold() error {
@@ -188,8 +188,8 @@ func (p *createAPIPlugin) PostScaffold() error {
 		// Default pattern
 	case "addon":
 		// Ensure that we are pinning sigs.k8s.io/kubebuilder-declarative-pattern version
-		err := internal.RunCmd("Get controller runtime", "go", "get",
-			"sigs.k8s.io/kubebuilder-declarative-pattern@"+scaffold.KbDeclarativePattern)
+		err := util.RunCmd("Get controller runtime", "go", "get",
+			"sigs.k8s.io/kubebuilder-declarative-pattern@"+scaffolds.KbDeclarativePattern)
 		if err != nil {
 			return err
 		}
@@ -198,7 +198,7 @@ func (p *createAPIPlugin) PostScaffold() error {
 	}
 
 	if p.runMake {
-		return internal.RunCmd("Running make", "make")
+		return util.RunCmd("Running make", "make")
 	}
 	return nil
 }

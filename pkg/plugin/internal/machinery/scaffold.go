@@ -29,7 +29,7 @@ import (
 
 	"sigs.k8s.io/kubebuilder/pkg/model"
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/filesystem"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/internal/filesystem"
 )
 
 var options = imports.Options{
