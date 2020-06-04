@@ -28,8 +28,10 @@ build_kb() {
 # project-version.
 #
 scaffold_test_project() {
-    project=$1
-    version=$2
+    local project=$1
+    local version=$2
+    local plugin=${3:-""}
+
     testdata_dir=$(pwd)/testdata
     mkdir -p ./testdata/$project
     rm -rf ./testdata/$project/*
@@ -37,7 +39,15 @@ scaffold_test_project() {
     cd testdata/$project
     kb=$testdata_dir/../bin/kubebuilder
     oldgopath=$GOPATH
+    # Set "--plugins $plugin" if $plugin is not null.
+    local plugin_flag="${plugin:+--plugins $plugin}"
+
     if [ $version == "2" ] || [ $version == "3-alpha" ]; then
+        if [ $version == "2" ] && [ -n "$plugin_flag" ]; then
+          echo "--plugins flag may not be set for project versions less than 3"
+          exit 1
+        fi
+
         header_text "Starting to generate projects with version $version"
         header_text "Generating $project"
 
@@ -46,7 +56,7 @@ scaffold_test_project() {
         go mod init sigs.k8s.io/kubebuilder/testdata/$project  # our repo autodetection will traverse up to the kb module if we don't do this
 
         header_text "initializing $project ..."
-        $kb init --project-version $version --domain testproject.org --license apache2 --owner "The Kubernetes authors"
+        $kb init $plugin_flag --project-version $version --domain testproject.org --license apache2 --owner "The Kubernetes authors"
 
         if [ $project == "project-v2" ] || [ $project == "project-v3" ]; then
             header_text 'Creating APIs ...'
@@ -91,6 +101,6 @@ build_kb
 scaffold_test_project project-v2 2
 scaffold_test_project project-v2-multigroup 2
 scaffold_test_project project-v2-addon 2
-scaffold_test_project project-v3 3-alpha
-scaffold_test_project project-v3-multigroup 3-alpha
-scaffold_test_project project-v3-addon 3-alpha
+scaffold_test_project project-v3 3-alpha go/v3-alpha
+scaffold_test_project project-v3-multigroup 3-alpha go/v3-alpha
+scaffold_test_project project-v3-addon 3-alpha go/v3-alpha
