@@ -1,3 +1,30 @@
 .menu-title img {
     vertical-align: bottom;
 }
+
+#notice-bar {
+    background: var(--bg);
+    padding: 1em;
+    margin-left: calc(-1 * var(--page-padding));
+    margin-right: calc(-1 * var(--page-padding));
+    margin-bottom: 1em;
+
+    border-bottom: 1px solid var(--table-border-color);
+    box-shadow: 0 1px 5px 0 var(--table-border-color);
+}
+
+#notice-bar * {
+    color: var(--fg);
+}
+
+#notice-bar a {
+    text-decoration: none;
+}
+
+#notice-bar a:not(.header) { 
+    color: var(--links);
+}
+
+#notice-bar h2 {
+    margin-top: 0;
+}
