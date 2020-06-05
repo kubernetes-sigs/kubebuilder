@@ -104,9 +104,8 @@ func (v Version) Compare(vp Version) int {
 		if s == sp {
 			return 0
 		}
-		// Since stages are not equal, if s is greater it must either be: beta when sp is alpha
-		// or "", or alpha when sp is "", otherwise it is lesser.
-		if s == BetaStage || (s == AlphaStage && sp == "") {
+		// Since stages are not equal, check: stable > beta > alpha.
+		if s == "" || (s == BetaStage && sp == AlphaStage) {
 			return 1
 		}
 	} else if v.Number > vp.Number {

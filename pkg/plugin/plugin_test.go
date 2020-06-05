@@ -133,13 +133,13 @@ var _ = g.Describe("Compare", func() {
 		}
 
 		sortedVersions = []Version{
-			{Number: 1},
 			{Number: 1, Stage: AlphaStage},
+			{Number: 1},
 			{Number: 2, Stage: AlphaStage},
 			{Number: 2, Stage: BetaStage},
-			{Number: 4},
 			{Number: 4, Stage: AlphaStage},
 			{Number: 4, Stage: BetaStage},
+			{Number: 4},
 			{Number: 30},
 			{Number: 44, Stage: AlphaStage},
 			{Number: 44, Stage: AlphaStage},
