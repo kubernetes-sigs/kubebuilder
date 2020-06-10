@@ -37,20 +37,20 @@ var _ = Describe("kubebuilder", func() {
 		k := &utils.Kubectl{}
 
 		By("installing cert manager bundle")
-		Expect(k.InstallCertManager()).To(Succeed())
+		Expect(utils.InstallCertManager(k)).To(Succeed())
 
 		By("installing prometheus operator")
-		Expect(k.InstallPrometheusOperManager()).To(Succeed())
+		Expect(utils.InstallPrometheusOperManager(k)).To(Succeed())
 	})
 
 	AfterSuite(func() {
 		k := &utils.Kubectl{}
 
 		By("uninstalling prometheus manager bundle")
-		k.UninstallPrometheusOperManager()
+		utils.UninstallPrometheusOperManager(k)
 
 		By("uninstalling cert manager bundle")
-		k.UninstallCertManager()
+		utils.UninstallCertManager(k)
 	})
 
 	Context("with v2 scaffolding", func() {
