@@ -48,7 +48,10 @@ scaffold_test_project() {
         header_text "initializing $project ..."
         $kb init --project-version $version --domain testproject.org --license apache2 --owner "The Kubernetes authors"
 
-        if [ $project == "project-v2" ] || [ $project == "project-v3" ]; then
+        if [ $project == "project-v2-init-only" ] || [ $project == "project-v3-init-only" ]; then
+            # do nothing further
+            :
+        elif [ $project == "project-v2" ] || [ $project == "project-v3" ]; then
             header_text 'Creating APIs ...'
             $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false
             $kb create webhook --group crew --version v1 --kind Captain --defaulting --programmatic-validation
@@ -89,8 +92,10 @@ set -e
 
 build_kb
 scaffold_test_project project-v2 2
+scaffold_test_project project-v2-init-only 2
 scaffold_test_project project-v2-multigroup 2
 scaffold_test_project project-v2-addon 2
 scaffold_test_project project-v3 3-alpha
+scaffold_test_project project-v3-init-only 3-alpha
 scaffold_test_project project-v3-multigroup 3-alpha
 scaffold_test_project project-v3-addon 3-alpha
