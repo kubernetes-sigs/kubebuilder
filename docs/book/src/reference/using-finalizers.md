@@ -5,7 +5,7 @@ say you create an external resource (such as a storage bucket) for each object o
 your API type, and you want to delete the associated external resource
 on object's deletion from Kubernetes, you can use a finalizer to do that.
 
-You can read more about the finalizers in the [Kubernetes reference docs](https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#finalizers). The section below demonstrates how to register and trigger pre-delete hooks
+You can read more about the finalizers in the [Kubernetes reference docs](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#finalizers). The section below demonstrates how to register and trigger pre-delete hooks
 in the `Reconcile` method of a controller.
 
 The key point to note is that a finalizer causes "delete" on the object to become 
