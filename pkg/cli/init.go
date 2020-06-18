@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -100,18 +101,24 @@ func (c cli) getAvailableProjectVersions() (projectVersions []string) {
 	for version := range versionSet {
 		projectVersions = append(projectVersions, strconv.Quote(version))
 	}
+	sort.Strings(projectVersions)
 	return projectVersions
 }
 
 func (c cli) getAvailablePlugins() (pluginKeys []string) {
+	keySet := make(map[string]struct{})
 	for _, versionedPlugins := range c.pluginsFromOptions {
 		for _, p := range versionedPlugins {
 			// Only return non-deprecated plugins.
 			if _, isDeprecated := p.(plugin.Deprecated); !isDeprecated {
-				pluginKeys = append(pluginKeys, strconv.Quote(plugin.KeyFor(p)))
+				keySet[plugin.KeyFor(p)] = struct{}{}
 			}
 		}
 	}
+	for key := range keySet {
+		pluginKeys = append(pluginKeys, strconv.Quote(key))
+	}
+	sort.Strings(pluginKeys)
 	return pluginKeys
 }
 
