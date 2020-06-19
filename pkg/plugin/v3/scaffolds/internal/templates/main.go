@@ -121,12 +121,9 @@ const (
 		os.Exit(1)
 	}
 `
-	// TODO(v3): loggers for the same Kind controllers from different groups use the same logger.
-	//  `.WithName("controllers").WithName(GROUP).WithName(KIND)` should be used instead. However,
-	//  this is a backwards incompatible change, and thus should be done for next project version.
 	multiGroupReconcilerSetupCodeFragment = `if err = (&%scontrollers.%sReconciler{
 		Client: mgr.GetClient(),
-		Log: ctrl.Log.WithName("controllers").WithName("%s"),
+		Log: ctrl.Log.WithName("controllers").WithName("%s").WithName("%s"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "%s")
@@ -173,7 +170,7 @@ func (f *MainUpdater) GetCodeFragments() file.CodeFragmentsMap {
 				f.Resource.Kind, f.Resource.Kind, f.Resource.Kind))
 		} else {
 			setup = append(setup, fmt.Sprintf(multiGroupReconcilerSetupCodeFragment,
-				f.Resource.GroupPackageName, f.Resource.Kind, f.Resource.Kind, f.Resource.Kind))
+				f.Resource.GroupPackageName, f.Resource.Kind, f.Resource.Group, f.Resource.Kind, f.Resource.Kind))
 		}
 	}
 	if f.WireWebhook {
