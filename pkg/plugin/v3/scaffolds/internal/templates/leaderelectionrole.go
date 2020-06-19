@@ -61,14 +61,6 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - configmaps/status
-  verbs:
-  - get
-  - update
-  - patch
-- apiGroups:
-  - ""
-  resources:
   - events
   verbs:
   - create
