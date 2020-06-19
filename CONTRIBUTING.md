@@ -54,6 +54,7 @@ Following the targets that can be used to test your changes locally.
 | make lint |  Check the code implementation | yes   |
 | make test-coverage |  Run coveralls to check the % of code covered by tests | yes   |
 | make check-testdata |  Checks if the testdata dir is updated with the latest changes | yes   |
+| make test-e2e-local |  Runs the CI e2e tests locally | no   |
 
 **NOTE** To use the `make lint` is required to install `golangci-lint` locally. More info: https://github.com/golangci/golangci-lint#install
 

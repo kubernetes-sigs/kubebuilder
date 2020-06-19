@@ -194,7 +194,11 @@ func (t *TestContext) Destroy() {
 
 // LoadImageToKindCluster loads a local docker image to the kind cluster
 func (t *TestContext) LoadImageToKindCluster() error {
-	kindOptions := []string{"load", "docker-image", t.ImageName}
+	cluster := "kind"
+	if v, ok := os.LookupEnv("KIND_CLUSTER"); ok {
+		cluster = v
+	}
+	kindOptions := []string{"load", "docker-image", t.ImageName, "--name", cluster}
 	cmd := exec.Command("kind", kindOptions...)
 	_, err := t.Run(cmd)
 	return err
