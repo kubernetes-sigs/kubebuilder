@@ -87,7 +87,7 @@ kubebuilder create api --group webapp --version v1 --kind Guestbook
 <h1>Press Options</h1>
 
 If you press `y` for Create Resource [y/n] and for Create Controller [y/n] then this will create the files `api/v1/guestbook_types.go` where the API is defined 
-and the `controller/guestbook_controller.go` where the reconciliation business logic is implemented for this Kind(CRD).
+and the `controllers/guestbook_controller.go` where the reconciliation business logic is implemented for this Kind(CRD).
 
 </aside>
 
