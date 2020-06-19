@@ -1,6 +1,6 @@
-# KubeBuilder Design Principals
+# KubeBuilder Design Principles
 
-This lays out some of the guiding design principals behind the KubeBuilder
+This lays out some of the guiding design principles behind the KubeBuilder
 project and its various components.
 
 ## Overarching
