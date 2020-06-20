@@ -69,7 +69,7 @@ lint: ## Run code lint checks
 
 .PHONY: go-test
 go-test: ## Run the go tests ($ go test -v ./cmd/... ./pkg/...)
-	go test -v ./cmd/... ./pkg/...
+	go test -race -v ./cmd/... ./pkg/...
 
 .PHONY: test
 test: ## Run the unit tests (used in the CI)
@@ -80,7 +80,7 @@ test-coverage:  ## Run coveralls
 	# remove all coverage files if exists
 	- rm -rf *.out
 	# run the go tests and gen the file coverage-all used to do the integration with coverrals.io
-	go test -failfast -tags=integration -coverprofile=coverage-all.out -covermode=count ./pkg/... ./cmd/...
+	go test -race -failfast -tags=integration -coverprofile=coverage-all.out ./pkg/... ./cmd/...
 
 .PHONY: test-e2e-local
 test-e2e-local: ## It will run the script to install kind and run e2e tests
