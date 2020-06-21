@@ -96,7 +96,7 @@ var _ = Describe("resolvePluginsByKey", func() {
 		_, err = resolvePluginsByKey(plugins, "foo.example.com/v2")
 		Expect(err).To(MatchError(errAmbiguousPlugin{
 			key: "foo.example.com/v2",
-			msg: fmt.Sprintf(`no versions match, possible plugins: ["foo.example.com/v1"]`),
+			msg: `no versions match, possible plugins: ["foo.example.com/v1"]`,
 		}))
 
 		By("resolving foo/v3")

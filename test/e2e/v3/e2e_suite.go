@@ -377,7 +377,8 @@ func implementWebhooks(filename string) error {
 	if err != nil {
 		return err
 	}
-
+	// false positive
+	// nolint:gosec
 	return ioutil.WriteFile(filename, []byte(str), 0644)
 }
 

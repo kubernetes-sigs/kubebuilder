@@ -68,7 +68,8 @@ func (s *editScaffolder) Scaffold() error {
 			return err
 		}
 	}
-
+	// false positive
+	// nolint:gosec
 	return ioutil.WriteFile(filename, []byte(str), 0644)
 }
 

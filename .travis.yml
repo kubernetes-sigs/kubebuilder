@@ -24,7 +24,7 @@ script: ./test.sh
 jobs:
   include:
     - stage: linting
-      before_script: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.23.3
+      before_script: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.27.0
       script: make lint
       after_success: echo "Linting check succeeded"
       after_failure: echo "Linting check failed. Run make lint to check it locally"
