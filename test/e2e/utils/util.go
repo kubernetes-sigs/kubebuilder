@@ -65,6 +65,8 @@ func InsertCode(filename, target, code string) error {
 	}
 	idx := strings.Index(string(contents), target)
 	out := string(contents[:idx+len(target)]) + code + string(contents[idx+len(target):])
+	// false positive
+	// nolint:gosec
 	return ioutil.WriteFile(filename, []byte(out), 0644)
 }
 
@@ -100,6 +102,7 @@ func UncommentCode(filename, target, prefix string) error {
 	if err != nil {
 		return err
 	}
-
+	// false positive
+	// nolint:gosec
 	return ioutil.WriteFile(filename, out.Bytes(), 0644)
 }
