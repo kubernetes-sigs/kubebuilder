@@ -44,10 +44,11 @@ func Run(options RunOptions) error {
 		return err
 	}
 	// Step 3: scaffold
-	if err := scaffolder.Scaffold(); err != nil {
-		return err
+	if scaffolder != nil {
+		if err := scaffolder.Scaffold(); err != nil {
+			return err
+		}
 	}
-
 	// Step 4: finish
 	if err := options.PostScaffold(); err != nil {
 		return err
