@@ -208,6 +208,14 @@ To delete your CRDs from the cluster:
 make uninstall
 ```
 
+## Undeploy controller
+
+UnDeploy the controller to the cluster:
+
+```bash
+make undeploy
+```
+
 ## Next Step 
 
 Now, follow up the [CronJob tutorial][cronjob-tutorial] to better understand how it works by developing a demo example project. 
