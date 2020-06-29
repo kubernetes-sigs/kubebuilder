@@ -26,6 +26,8 @@
 
     - [Deploying the cert manager](./cronjob-tutorial/cert-manager.md)
     - [Deploying webhooks](./cronjob-tutorial/running-webhook.md)
+  
+  - [Writing tests](./cronjob-tutorial/writing-tests.md)
 
   - [Epilogue](./cronjob-tutorial/epilogue.md)
 
@@ -72,7 +74,7 @@
   - [Artifacts](./reference/artifacts.md)
   - [Writing controller tests](./reference/writing-tests.md)
 
-    - [Using envtest in integration tests](./reference/testing/envtest.md)
+  - [Using envtest in integration tests](./reference/envtest.md)
 
   - [Metrics](./reference/metrics.md)
 
