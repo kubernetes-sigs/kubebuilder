@@ -112,6 +112,7 @@ func (s *initScaffolder) scaffold() error {
 			KustomizeVersion:       KustomizeVersion,
 		},
 		&templates.Dockerfile{},
+		&templates.DockerignoreFile{},
 		&templates.Kustomize{},
 		&templates.ManagerWebhookPatch{},
 		&templates.ManagerRoleBinding{},
