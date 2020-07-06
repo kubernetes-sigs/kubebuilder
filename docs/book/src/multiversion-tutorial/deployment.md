@@ -120,4 +120,4 @@ resource.version.group` is for everything else.
 
 [ref-multiver]: /reference/generating-crd.md#multiple-versions "Generating CRDs: Multiple Versions"
 
-[crd-version-pref]: https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definition-versioning/#version-priority "Versions in CustomResourceDefinitions"
+[crd-version-pref]: https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definition-versioning/#version-priority "Versions in CustomResourceDefinitions"

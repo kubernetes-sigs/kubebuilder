@@ -7,7 +7,7 @@ when certain event happens.
 In the kubernetes world, there are 3 kinds of webhooks:
 [admission webhook](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#admission-webhooks),
 [authorization webhook](https://kubernetes.io/docs/reference/access-authn-authz/webhook/) and
-[CRD conversion webhook](https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definition-versioning/#webhook-conversion).
+[CRD conversion webhook](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definition-versioning/#webhook-conversion).
 
 In [controller-runtime](https://godoc.org/sigs.k8s.io/controller-runtime/pkg/webhook)
 libraries, we support admission webhooks and CRD conversion webhooks.
