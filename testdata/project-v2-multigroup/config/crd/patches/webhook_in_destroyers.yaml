@@ -5,6 +5,7 @@ kind: CustomResourceDefinition
 metadata:
   name: destroyers.ship.testproject.org
 spec:
+  preserveUnknownFields: false
   conversion:
     strategy: Webhook
     webhookClientConfig:

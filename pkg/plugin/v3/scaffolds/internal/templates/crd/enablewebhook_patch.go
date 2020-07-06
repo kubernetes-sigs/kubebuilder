@@ -49,6 +49,7 @@ kind: CustomResourceDefinition
 metadata:
   name: {{ .Resource.Plural }}.{{ .Resource.Domain }}
 spec:
+  preserveUnknownFields: false
   conversion:
     strategy: Webhook
     webhookClientConfig:

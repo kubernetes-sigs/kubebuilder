@@ -5,6 +5,7 @@ kind: CustomResourceDefinition
 metadata:
   name: admirals.crew.testproject.org
 spec:
+  preserveUnknownFields: false
   conversion:
     strategy: Webhook
     webhookClientConfig:
