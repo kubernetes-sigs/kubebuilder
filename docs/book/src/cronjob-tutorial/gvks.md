@@ -50,7 +50,7 @@ API!
 
 The `Scheme` we saw before is simply a way to keep track of what Go type
 corresponds to a given GVK (don't be overwhelmed by its
-[godocs](https://godoc.org/k8s.io/apimachinery/pkg/runtime#Scheme)).
+[godocs](https://pkg.go.dev/k8s.io/apimachinery/pkg/runtime?tab=doc#Scheme)).
 
 For instance, suppose we mark that the
 `"tutorial.kubebuilder.io/api/v1".CronJob{}` type as being in the

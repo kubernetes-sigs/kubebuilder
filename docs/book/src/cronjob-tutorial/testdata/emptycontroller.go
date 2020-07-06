@@ -57,7 +57,7 @@ needed to run.  As we add more functionality, we'll need to revisit these.
 
 /*
 `Reconcile` actually performs the reconciling for a single named object.
-Our [Request](https://godoc.org/sigs.k8s.io/controller-runtime/pkg/reconcile#Request) just has a name, but we can use the client to fetch
+Our [Request](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/reconcile?tab=doc#Request) just has a name, but we can use the client to fetch
 that object from the cache.
 
 We return an empty result and no error, which indicates to controller-runtime that

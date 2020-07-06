@@ -35,8 +35,8 @@ var cronjoblog = logf.Log.WithName("cronjob-resource")
 /*
 This setup is doubles as setup for our conversion webhooks: as long as our
 types implement the
-[Hub](https://godoc.org/sigs.k8s.io/controller-runtime/pkg/conversion#Hub) and
-[Convertible](https://godoc.org/sigs.k8s.io/controller-runtime/pkg/conversion#Convertible)
+[Hub](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/conversion?tab=doc#Hub) and
+[Convertible](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/conversion?tab=doc#Convertible)
 interfaces, a conversion webhook will be registered.
 */
 

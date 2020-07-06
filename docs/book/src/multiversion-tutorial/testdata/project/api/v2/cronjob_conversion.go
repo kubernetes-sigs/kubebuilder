@@ -17,7 +17,7 @@ package v2
 
 /*
 For imports, we'll need the controller-runtime
-[`conversion`](https://godoc.org/sigs.k8s.io/controller-runtime/pkg/conversion)
+[`conversion`](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/conversion?tab=doc)
 package, plus the API version for our hub type (v1), and finally some of the
 standard packages.
 */
@@ -27,14 +27,14 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 
-	"tutorial.kubebuilder.io/project/api/v1"
+	v1 "tutorial.kubebuilder.io/project/api/v1"
 )
 
 // +kubebuilder:docs-gen:collapse=Imports
 
 /*
 Our "spoke" versions need to implement the
-[`Convertible`](https://godoc.org/sigs.k8s.io/controller-runtime/pkg/conversion#Convertible)
+[`Convertible`](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/conversion?tab=doc#Convertible)
 interface.  Namely, they'll need `ConvertTo` and `ConvertFrom` methods to convert to/from
 the hub version.
 */

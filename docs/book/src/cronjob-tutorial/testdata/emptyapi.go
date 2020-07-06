@@ -64,7 +64,7 @@ more of them in a bit, but know that they act as extra metadata, telling
 [controller-tools](https://github.com/kubernetes-sigs/controller-tools) (our code and YAML generator) extra information.
 This particular one tells the `object` generator that this type represents
 a Kind.  Then, the `object` generator generates an implementation of the
-[runtime.Object](https://godoc.org/k8s.io/apimachinery/pkg/runtime#Object) interface for us, which is the standard
+[runtime.Object](https://pkg.go.dev/k8s.io/apimachinery/pkg/runtime?tab=doc#Object) interface for us, which is the standard
 interface that all types representing Kinds must implement.
 */
 
@@ -90,7 +90,7 @@ type CronJobList struct {
 
 /*
 Finally, we add the Go types to the API group.  This allows us to add the
-types in this API group to any [Scheme](https://godoc.org/k8s.io/apimachinery/pkg/runtime#Scheme).
+types in this API group to any [Scheme](https://pkg.go.dev/k8s.io/apimachinery/pkg/runtime?tab=doc#Scheme).
 */
 func init() {
 	SchemeBuilder.Register(&CronJob{}, &CronJobList{})

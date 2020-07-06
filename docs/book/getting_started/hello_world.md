@@ -2,10 +2,10 @@
 
 A new project may be scaffolded for a user by running `kubebuilder init` and then scaffolding a
 new API with `kubebuilder create api`. More on this topic in
-[Project Creation and Structure](../basics/project_creation_and_structure.md) 
+[Project Creation and Structure](../basics/project_creation_and_structure.md)
 
 This chapter shows a simple Controller implementation using the
-[controller-runtime builder](https://godoc.org/sigs.k8s.io/controller-runtime/pkg/builder)
+[controller-runtime builder](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/builder?tab=doc)
 libraries to do most of the Controller configuration.
 
 While Kubernetes APIs have typically have 3 components, (Resource, Controller, Manager), this
@@ -92,7 +92,7 @@ func (a *ReplicaSetController) Reconcile(
 
   // List the Pods matching the PodTemplate Labels
   pods := &corev1.PodList{}
-  err = a.List(context.TODO(), 
+  err = a.List(context.TODO(),
     client.InNamespace(req.Namespace).
         MatchingLabels(rs.Spec.Template.Labels),
     pods)
@@ -101,7 +101,7 @@ func (a *ReplicaSetController) Reconcile(
   }
 
   // Update the ReplicaSet
-  rs.Labels["selector-pod-count"] = 
+  rs.Labels["selector-pod-count"] =
     fmt.Sprintf("%v", len(pods.Items))
   err = a.Update(context.TODO(), rs)
   if err != nil {

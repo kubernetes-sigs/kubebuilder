@@ -18,7 +18,7 @@ proof-of-concept process can help iron out wrinkles and can help with the
 ## Out-of-Date Designs
 
 **KubeBuilder documentation (the [book](https://book.kubebuilder.io) and
-the [GoDoc](https://godoc.org/sigs.k8s.io/controller-runtime)) should be
+the [GoDoc](https://pkg.go.dev/sigs.k8s.io/controller-runtime?tab=doc)) should be
 considered the canonical, update-to-date reference and architectural
 documentation** for KubeBuilder.
 
