@@ -140,7 +140,7 @@ scattered deep in a folder structure.
 
 We introduced the builder pattern for controller construction in
 controller-runtime
-([GoDoc](https://godoc.org/sigs.k8s.io/controller-runtime/pkg/builder#ControllerManagedBy))
+([GoDoc](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/builder?tab=doc#ControllerManagedBy))
 as a way to simplify construction of controllers and reduce boilerplate
 for the common cases of controller construction.  Informal feedback from
 this has been positive, and it enables fairly rapid, clear, and concise

@@ -18,7 +18,7 @@ limitations under the License.
 
 Our package starts out with some basic imports.  Particularly:
 
-- The core [controller-runtime](https://godoc.org/sigs.k8s.io/controller-runtime) library
+- The core [controller-runtime](https://pkg.go.dev/sigs.k8s.io/controller-runtime?tab=doc) library
 - The default controller-runtime logging, Zap (more on that a bit later)
 
 */
@@ -61,7 +61,7 @@ At this point, our main function is fairly simple:
 - We set up some basic flags for metrics.
 
 - We instantiate a
-[*manager*](https://godoc.org/sigs.k8s.io/controller-runtime/pkg/manager#Manager),
+[*manager*](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/manager?tab=doc#Manager),
 which keeps track of running all of our controllers, as well as setting up
 shared caches and clients to the API server (notice we tell the manager about
 our Scheme).
@@ -118,7 +118,7 @@ func main() {
 	})
 
 	/*
-		For further information see [MultiNamespacedCacheBuilder](https://godoc.org/github.com/kubernetes-sigs/controller-runtime/pkg/cache#MultiNamespacedCacheBuilder)
+		For further information see [MultiNamespacedCacheBuilder](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/cache?tab=doc#MultiNamespacedCacheBuilder)
 	*/
 
 	// +kubebuilder:scaffold:builder

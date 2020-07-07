@@ -1,5 +1,5 @@
 ## Using envtest in integration tests
-[`controller-runtime`](http://sigs.k8s.io/controller-runtime) offers `envtest` ([godoc](https://godoc.org/github.com/kubernetes-sigs/controller-runtime/pkg/envtest)), a package that helps write integration tests for your controllers by setting up and starting an instance of etcd and the Kubernetes API server, without kubelet, controller-manager or other components.
+[`controller-runtime`](http://sigs.k8s.io/controller-runtime) offers `envtest` ([godoc](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/envtest?tab=doc)), a package that helps write integration tests for your controllers by setting up and starting an instance of etcd and the Kubernetes API server, without kubelet, controller-manager or other components.
 
 Using `envtest` in integration tests follows the general flow of:
 

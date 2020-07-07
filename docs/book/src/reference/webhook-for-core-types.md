@@ -12,7 +12,7 @@ follow the steps below to add admission webhooks for core types.
 ## Implement Your Handler
 
 You need to have your handler implements the
-[admission.Handler](https://godoc.org/github.com/kubernetes-sigs/controller-runtime/pkg/webhook/admission#Handler)
+[admission.Handler](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/webhook/admission?tab=doc#Handler)
 interface.
 
 ```go

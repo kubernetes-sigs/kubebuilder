@@ -9,7 +9,7 @@ In the kubernetes world, there are 3 kinds of webhooks:
 [authorization webhook](https://kubernetes.io/docs/reference/access-authn-authz/webhook/) and
 [CRD conversion webhook](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definition-versioning/#webhook-conversion).
 
-In [controller-runtime](https://godoc.org/sigs.k8s.io/controller-runtime/pkg/webhook)
+In [controller-runtime](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/webhook?tab=doc)
 libraries, we support admission webhooks and CRD conversion webhooks.
 
 Kubernetes supports these dynamic admission webhooks as of version 1.9 (when the

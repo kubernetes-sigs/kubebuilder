@@ -36,9 +36,9 @@ See [Generating CRDs](./generating-crd.md) for a comprehensive overview.
 ## Marker Syntax
 
 Exact syntax is described in the [godocs for
-controller-tools](https://godoc.org/sigs.k8s.io/controller-tools/pkg/markers).
+controller-tools](https://pkg.go.dev/sigs.k8s.io/controller-tools/pkg/markers?tab=doc).
 
-In general, markers may either be: 
+In general, markers may either be:
 
 - **Empty** (`+kubebuilder:validation:Optional`): empty markers are like boolean flags on the command line
   -- just specifying them enables some behavior.

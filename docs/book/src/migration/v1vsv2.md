@@ -61,5 +61,5 @@ image size and attack surface.
 
 - v2 requires kustomize v3.1.0+.
 
-[LeaderElectionRunable]: https://godoc.org/sigs.k8s.io/controller-runtime/pkg/manager#LeaderElectionRunnable
-[pkg-runtime-godoc]: https://godoc.org/sigs.k8s.io/controller-runtime/pkg/runtime
+[LeaderElectionRunable]: https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/manager?tab=doc#LeaderElectionRunnable
+[pkg-runtime-godoc]: https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/runtime?tab=doc
