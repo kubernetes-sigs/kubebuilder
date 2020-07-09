@@ -57,6 +57,29 @@ cd $GOPATH/src/example
 kubebuilder init --domain my.domain
 ```
 
+If there is an error similar to `dial tcp x.x.x.x:443: i/o timeout`, you need to set go proxy.
+Go version >= 1.13
+
+```bash
+go env -w GO111MODULE=on
+go env -w GOPROXY="https://goproxy.io,direct"
+
+# Set environment variable allow bypassing the proxy for selected modules (optional)
+go env -w GOPRIVATE="*.corp.example.com"
+
+# Set environment variable allow bypassing the proxy for specified organizations (optional)
+go env -w GOPRIVATE="example.com/org_name"
+```
+
+Go version <= 1.12
+
+```bash
+# Enable the go modules feature
+export GO111MODULE="on"
+# Set the GOPROXY environment variable
+export GOPROXY="https://goproxy.io"
+```
+
 <aside class="note">
 <h1>Not in $GOPATH</h1>
 
@@ -190,12 +213,39 @@ Build and push your image to the location specified by `IMG`:
 ```bash
 make docker-build docker-push IMG=<some-registry>/<project-name>:tag
 ```
+If you don’t want to push the image to the mirror repository, just build it
+
+```bash
+make docker-build IMG=<some-registry>/<project-name>:tag
+```
+
+When you build the image, you may get an error similar to `dial tcp x.x.x.x:443: i/o timeout`, You need to edit the `Dockerfile` and set the go proxy
+
+```bash
+#Set the go proxy above "RUN go mod download"
+
+#Go version >=1.13
+RUN go env -w GO111MODULE=on
+RUN go env -w GOPROXY=https://goproxy.io,direct
+RUN go mod download
+
+#Go version <=1.12
+RUN export GO111MODULE="on"
+RUN export GOPROXY="https://goproxy.io"
+RUN go mod download
+
+```
+
+You may get another error similar to `Get https://gcr.io/v2/: net/http: request canceled while waiting for connection (Client.Timeout exceeded while awaiting headers)`, You need to edit the `Dockerfile` and replace the image `gcr.io/distroless/static:nonroot`
 
 Deploy the controller to the cluster with image specified by `IMG`:
 
 ```bash
 make deploy IMG=<some-registry>/<project-name>:tag
 ```
+
+If the pod's status is `ErrImagePull`,You need to edit the file `config/default/manager_auth_proxy_patch.yaml` and replace the image.
+
 
 <aside class="note">
 <h1>RBAC errors</h1>
