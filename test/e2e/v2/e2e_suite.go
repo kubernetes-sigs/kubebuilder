@@ -269,7 +269,7 @@ var _ = Describe("kubebuilder", func() {
 					fmt.Sprintf("e2e-%s-mutating-webhook-configuration", kbc.TestSuffix),
 					"-o", "go-template={{ range .webhooks }}{{ .clientConfig.caBundle }}{{ end }}")
 				Expect(err).NotTo(HaveOccurred())
-				// sanity check that ca should be long enough, because there may be a place holder "\n"
+				// check that ca should be long enough, because there may be a place holder "\n"
 				Expect(len(mwhOutput)).To(BeNumerically(">", 10))
 
 				vwhOutput, err := kbc.Kubectl.Get(
@@ -278,7 +278,7 @@ var _ = Describe("kubebuilder", func() {
 					fmt.Sprintf("e2e-%s-validating-webhook-configuration", kbc.TestSuffix),
 					"-o", "go-template={{ range .webhooks }}{{ .clientConfig.caBundle }}{{ end }}")
 				Expect(err).NotTo(HaveOccurred())
-				// sanity check that ca should be long enough, because there may be a place holder "\n"
+				// check that ca should be long enough, because there may be a place holder "\n"
 				Expect(len(vwhOutput)).To(BeNumerically(">", 10))
 
 				return nil
