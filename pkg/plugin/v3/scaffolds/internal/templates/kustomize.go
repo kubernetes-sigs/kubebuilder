@@ -18,7 +18,6 @@ package templates
 
 import (
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 
@@ -30,7 +29,6 @@ var _ file.Template = &Kustomize{}
 // Kustomize scaffolds the Kustomization file for the default overlay
 type Kustomize struct {
 	file.TemplateMixin
-	file.RepositoryMixin
 
 	// Prefix to use for name prefix customization
 	Prefix string
@@ -47,16 +45,12 @@ func (f *Kustomize) SetTemplateDefaults() error {
 	f.IfExistsAction = file.Error
 
 	if f.Prefix == "" {
-		if f.Repo != "" {
-			f.Prefix = strings.ToLower(path.Base(f.Repo))
-		} else {
-			// Use directory name as prefix if no repo is present.
-			dir, err := os.Getwd()
-			if err != nil {
-				return err
-			}
-			f.Prefix = strings.ToLower(filepath.Base(dir))
+		// use directory name as prefix
+		dir, err := os.Getwd()
+		if err != nil {
+			return err
 		}
+		f.Prefix = strings.ToLower(filepath.Base(dir))
 	}
 
 	return nil
@@ -80,12 +74,12 @@ bases:
 - ../crd
 - ../rbac
 - ../manager
-# [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix including the one in
+# [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix including the one in 
 # crd/kustomization.yaml
 #- ../webhook
 # [CERTMANAGER] To enable cert-manager, uncomment all sections with 'CERTMANAGER'. 'WEBHOOK' components are required.
 #- ../certmanager
-# [PROMETHEUS] To enable prometheus monitor, uncomment all sections with 'PROMETHEUS'.
+# [PROMETHEUS] To enable prometheus monitor, uncomment all sections with 'PROMETHEUS'. 
 #- ../prometheus
 
 patchesStrategicMerge:
@@ -94,7 +88,7 @@ patchesStrategicMerge:
   # endpoint w/o any authn/z, please comment the following line.
 - manager_auth_proxy_patch.yaml
 
-# [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix including the one in
+# [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix including the one in 
 # crd/kustomization.yaml
 #- manager_webhook_patch.yaml
 

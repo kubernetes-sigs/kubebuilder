@@ -18,7 +18,8 @@ package v3
 
 import (
 	"fmt"
-	"path"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/spf13/pflag"
@@ -108,6 +109,17 @@ func (p *initPlugin) Validate() error {
 			return err
 		}
 	}
+
+	// Check if the project name is a valid namespace according to k8s
+	dir, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("error to get the current path: %v", err)
+	}
+	projectName := filepath.Base(dir)
+	if err := validation.IsDNS1123Label(strings.ToLower(projectName)); err != nil {
+		return fmt.Errorf("project name (%s) is invalid: %v", projectName, err)
+	}
+
 	// Try to guess repository if flag is not set.
 	if p.config.Repo == "" {
 		repoPath, err := util.FindCurrentRepo()
@@ -115,13 +127,6 @@ func (p *initPlugin) Validate() error {
 			return fmt.Errorf("error finding current repository: %v", err)
 		}
 		p.config.Repo = repoPath
-	}
-
-	// Use base repository path as project name, since a project should be able to exist in an
-	// arbitrarily-named directory.
-	projectName := path.Base(p.config.Repo)
-	if err := validation.IsDNS1123Label(strings.ToLower(projectName)); err != nil {
-		return fmt.Errorf("project name (%s) is invalid: %v", projectName, err)
 	}
 
 	return nil
