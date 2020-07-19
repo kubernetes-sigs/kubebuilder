@@ -92,7 +92,7 @@ type Toy struct {
 CRDs can choose to implement the `/status` and `/scale`
 [subresources][kube-subresources] as of Kubernetes 1.13.
 
-It's generally reccomended that you make use of the `/status` subresource
+It's generally recommended that you make use of the `/status` subresource
 on all resources that have a status field.
 
 Both subresources have a corresponding [marker][crd-markers].

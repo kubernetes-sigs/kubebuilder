@@ -24,7 +24,7 @@ default).
 
 If you're not running a local API server, you'll also need to figure out
 how to proxy traffic from the remote cluster to your local webhook server.
-For this reason, we generally reccomended disabling webhooks when doing
+For this reason, we generally recommend disabling webhooks when doing
 your local code-run-test cycle, as we do below.
 
 </aside>
