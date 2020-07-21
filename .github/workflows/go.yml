@@ -30,9 +30,9 @@ jobs:
             dep ensure
         fi
     - name: Build
-      run: sh ./docs/book/install-and-build.sh
+      run: bash ./docs/book/install-and-build.sh
     - name: lint
-      run: sh ./docs/book/litgo.sh
+      run: bash ./docs/book/litgo.sh
     - name: Deploy
       uses: peaceiris/actions-gh-pages@v3
       with:
