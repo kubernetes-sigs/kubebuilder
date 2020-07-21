@@ -41,6 +41,9 @@ type Config struct {
 	// Repo is the go package name of the project root
 	Repo string `json:"repo,omitempty"`
 
+	// ProjectName is the name of this controller project set on initialization.
+	ProjectName string `json:"project-name,omitempty"`
+
 	// Resources tracks scaffolded resources in the project
 	// This info is tracked only in project with version 2
 	Resources []GVK `json:"resources,omitempty"`

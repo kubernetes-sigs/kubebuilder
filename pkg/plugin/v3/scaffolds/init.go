@@ -113,7 +113,7 @@ func (s *initScaffolder) scaffold() error {
 		},
 		&templates.Dockerfile{},
 		&templates.DockerignoreFile{},
-		&templates.Kustomize{},
+		&templates.Kustomize{Prefix: s.config.ProjectName},
 		&templates.ManagerWebhookPatch{},
 		&templates.ManagerRoleBinding{},
 		&templates.LeaderElectionRole{},
