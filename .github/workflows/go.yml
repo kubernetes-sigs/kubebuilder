@@ -29,10 +29,10 @@ jobs:
             curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
             dep ensure
         fi
-    - name: lint
-      run: sh ./docs/book/litgo.sh
     - name: Build
       run: sh ./docs/book/install-and-build.sh
+    - name: lint
+      run: sh ./docs/book/litgo.sh
     - name: Deploy
       uses: peaceiris/actions-gh-pages@v3
       with:
