@@ -17,9 +17,7 @@ limitations under the License.
 package templates
 
 import (
-	"os"
 	"path/filepath"
-	"strings"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
@@ -29,9 +27,7 @@ var _ file.Template = &Kustomize{}
 // Kustomize scaffolds the Kustomization file for the default overlay
 type Kustomize struct {
 	file.TemplateMixin
-
-	// Prefix to use for name prefix customization
-	Prefix string
+	file.ProjectNameMixin
 }
 
 // SetTemplateDefaults implements input.Template
@@ -44,27 +40,18 @@ func (f *Kustomize) SetTemplateDefaults() error {
 
 	f.IfExistsAction = file.Error
 
-	if f.Prefix == "" {
-		// Use directory name as prefix.
-		wd, err := os.Getwd()
-		if err != nil {
-			return err
-		}
-		f.Prefix = strings.ToLower(filepath.Base(wd))
-	}
-
 	return nil
 }
 
 const kustomizeTemplate = `# Adds namespace to all resources.
-namespace: {{ .Prefix }}-system
+namespace: {{ .ProjectName }}-system
 
 # Value of this field is prepended to the
 # names of all resources, e.g. a deployment named
 # "wordpress" becomes "alices-wordpress".
 # Note that it should also match with the prefix (text before '-') of the namespace
 # field above.
-namePrefix: {{ .Prefix }}-
+namePrefix: {{ .ProjectName }}-
 
 # Labels to add to all resources and selectors.
 #commonLabels:

@@ -117,9 +117,9 @@ func (p *initPlugin) Validate() error {
 		if err != nil {
 			return fmt.Errorf("error getting current directory: %v", err)
 		}
-		p.config.ProjectName = path.Base(dir)
+		p.config.ProjectName = strings.ToLower(path.Base(dir))
 	}
-	if err := validation.IsDNS1123Label(strings.ToLower(p.config.ProjectName)); err != nil {
+	if err := validation.IsDNS1123Label(p.config.ProjectName); err != nil {
 		return fmt.Errorf("project name (%s) is invalid: %v", p.config.ProjectName, err)
 	}
 
