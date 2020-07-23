@@ -128,3 +128,15 @@ func (m *ResourceMixin) InjectResource(res *resource.Resource) {
 		m.Resource = res
 	}
 }
+
+// ProjectNameMixin provides templates with an injectable project name field.
+type ProjectNameMixin struct {
+	ProjectName string
+}
+
+// InjectProjectName implements HasProjectName.
+func (m *ProjectNameMixin) InjectProjectName(projectName string) {
+	if m.ProjectName == "" {
+		m.ProjectName = projectName
+	}
+}

@@ -42,7 +42,7 @@ type Config struct {
 	Repo string `json:"repo,omitempty"`
 
 	// ProjectName is the name of this controller project set on initialization.
-	ProjectName string `json:"project-name,omitempty"`
+	ProjectName string `json:"projectName,omitempty"`
 
 	// Resources tracks scaffolded resources in the project
 	// This info is tracked only in project with version 2
