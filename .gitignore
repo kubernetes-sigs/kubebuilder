@@ -13,6 +13,7 @@ docs/book/book/
 
 # skip bin
 bin/*
+testbin/*
 
 # skip .out files (coverage tests)
 *.out
