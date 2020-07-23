@@ -49,5 +49,10 @@ project:
 kubebuilder init --domain tutorial.kubebuilder.io
 ```
 
+<aside class="note">
+Your project's name defaults to that of your current working directory.
+You can pass `--project-name=<dns1123-label-string>` to set a different project name.
+</aside>
+
 Now that we've got a project in place, let's take a look at what
 Kubebuilder has scaffolded for us so far...
