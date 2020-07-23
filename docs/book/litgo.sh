@@ -16,10 +16,14 @@
 
 set -ex
 
-(
-    pushd ./utils
-    go build -o ../../../bin/literate-go ./litgo
-    popd
-) &>/dev/null
+if [ -z "$IN_DOCKER" ]; then
+    (
+        pushd ./utils
+        go build -o ../../../bin/literate-go ./litgo
+        popd
+    ) &>/dev/null
 
-../../bin/literate-go "$@"
+    ../../bin/literate-go "$@"
+else
+    literate-go "$@"
+fi
