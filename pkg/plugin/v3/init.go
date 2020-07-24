@@ -19,7 +19,7 @@ package v3
 import (
 	"fmt"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/spf13/pflag"
@@ -117,7 +117,7 @@ func (p *initPlugin) Validate() error {
 		if err != nil {
 			return fmt.Errorf("error getting current directory: %v", err)
 		}
-		p.config.ProjectName = strings.ToLower(path.Base(dir))
+		p.config.ProjectName = strings.ToLower(filepath.Base(dir))
 	}
 	if err := validation.IsDNS1123Label(p.config.ProjectName); err != nil {
 		return fmt.Errorf("project name (%s) is invalid: %v", p.config.ProjectName, err)
