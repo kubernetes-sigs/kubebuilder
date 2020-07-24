@@ -1,7 +1,7 @@
 [build]
     base = "docs/book"
     command = "./install-and-build.sh"
-    publish = "docs/book/book"
+    publish = "book"
 
 
 # Standard Netlify redirects
