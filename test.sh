@@ -152,4 +152,7 @@ GO111MODULE=on test_project project-v3 3-alpha
 GO111MODULE=on test_project project-v3-multigroup 3-alpha
 GO111MODULE=on test_project project-v3-addon 3-alpha
 
+# test script that setup envtest
+./scripts/setup_envtest_bins.sh v1.18.2 v3.4.3
+
 exit $rc

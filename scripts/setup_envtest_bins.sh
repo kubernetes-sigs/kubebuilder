@@ -31,7 +31,7 @@ ARCH=$(uname -m | sed 's/x86_64/amd64/')
 ETCD_EXT="tar.gz"
 TESTBIN_DIR=testbin
 
-function setup_testenv_bin() {
+setup_testenv_bin() {
   # Do nothing if the $TESTBIN_DIR directory exist already.
   if [ ! -d $TESTBIN_DIR ]; then
     mkdir -p $TESTBIN_DIR
