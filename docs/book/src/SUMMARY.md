@@ -1,84 +1,84 @@
 # Summary
 
-[Introduction](./introduction.md)
+[引言](./introduction.md)
 
-[Quick Start](./quick-start.md)
+[快速入门](./quick-start.md)
 
 ---
 
-- [Tutorial: Building CronJob](cronjob-tutorial/cronjob-tutorial.md)
+- [教程：构建 CronJob](cronjob-tutorial/cronjob-tutorial.md)
 
-  - [What's in a basic project?](./cronjob-tutorial/basic-project.md)
-  - [Every journey needs a start, every program a main](./cronjob-tutorial/empty-main.md)
-  - [Groups and Versions and Kinds, oh my!](./cronjob-tutorial/gvks.md)
-  - [Adding a new API](./cronjob-tutorial/new-api.md)
-  - [Designing an API](./cronjob-tutorial/api-design.md)
+  - [基本项目中有什么？](./cronjob-tutorial/basic-project.md)
+  - [每一个旅程都需要一个起点，每个程序都需要一个 main 入口](./cronjob-tutorial/empty-main.md)
+  - [Groups、Versions 和 Kinds 之间的关系](./cronjob-tutorial/gvks.md)
+  - [创建一个API](./cronjob-tutorial/new-api.md)
+  - [设计一个API](./cronjob-tutorial/api-design.md)
 
-      - [A Brief Aside: What's the rest of this stuff?](./cronjob-tutorial/other-api-files.md)
+      - [简要说明：剩下文件的作用？](./cronjob-tutorial/other-api-files.md)
 
-  - [What's in a controller?](./cronjob-tutorial/controller-overview.md)
-  - [Implementing a controller](./cronjob-tutorial/controller-implementation.md)
+  - [controller 中有什么？](./cronjob-tutorial/controller-overview.md)
+  - [实现一个 controller](./cronjob-tutorial/controller-implementation.md)
 
-    - [You said something about main?](./cronjob-tutorial/main-revisited.md)
+    - [main 的修改？](./cronjob-tutorial/main-revisited.md)
 
-  - [Implementing defaulting/validating webhooks](./cronjob-tutorial/webhook-implementation.md)
-  - [Running and deploying the controller](./cronjob-tutorial/running.md)
+  - [实现 defaulting/validating webhooks](./cronjob-tutorial/webhook-implementation.md)
+  - [运行和部署 controller](./cronjob-tutorial/running.md)
 
-    - [Deploying the cert manager](./cronjob-tutorial/cert-manager.md)
-    - [Deploying webhooks](./cronjob-tutorial/running-webhook.md)
+    - [部署 cert manager](./cronjob-tutorial/cert-manager.md)
+    - [部署 webhooks](./cronjob-tutorial/running-webhook.md)
   
-  - [Writing tests](./cronjob-tutorial/writing-tests.md)
+  - [编写测试](./cronjob-tutorial/writing-tests.md)
 
-  - [Epilogue](./cronjob-tutorial/epilogue.md)
+  - [结语](./cronjob-tutorial/epilogue.md)
 
-- [Tutorial: Multi-Version API](./multiversion-tutorial/tutorial.md)
+- [教程: Multi-Version API](./multiversion-tutorial/tutorial.md)
 
   - [Changing things up](./multiversion-tutorial/api-changes.md)
   - [Hubs, spokes, and other wheel metaphors](./multiversion-tutorial/conversion-concepts.md)
-  - [Implementing conversion](./multiversion-tutorial/conversion.md)
+  - [实现 conversion](./multiversion-tutorial/conversion.md)
 
-      - [and setting up the webhooks](./multiversion-tutorial/webhooks.md)
+      - [配置 webhooks](./multiversion-tutorial/webhooks.md)
 
-  - [Deployment and Testing](./multiversion-tutorial/deployment.md)
-
----
-
-- [Migrations](./migrations.md)
-
-  - [Kubebuilder v1 vs v2](./migration/v1vsv2.md)
-
-      - [Migration Guide](./migration/guide.md)
-
-  - [Single Group to Multi-Group](./migration/multi-group.md)
+  - [Deployment 和 Testing](./multiversion-tutorial/deployment.md)
 
 ---
 
-- [Reference](./reference/reference.md)
+- [迁移](./migrations.md)
 
-  - [Generating CRDs](./reference/generating-crd.md)
-  - [Using Finalizers](./reference/using-finalizers.md)
-  - [Kind cluster](reference/kind.md)
-  - [What's a webhook?](reference/webhook-overview.md)
-    - [Admission webhook](reference/admission-webhook.md)
-    - [Webhooks for Core Types](reference/webhook-for-core-types.md)
-  - [Markers for Config/Code Generation](./reference/markers.md)
+  - [Kubebuilder 从 v1 迁移到 v2 ](./migration/v1vsv2.md)
 
-      - [CRD Generation](./reference/markers/crd.md)
-      - [CRD Validation](./reference/markers/crd-validation.md)
-      - [CRD Processing](./reference/markers/crd-processing.md)
+      - [迁移指南](./migration/guide.md)
+
+  - [Single Group 到 Multi-Group](./migration/multi-group.md)
+
+---
+
+- [参考](./reference/reference.md)
+
+  - [生成 CRDs](./reference/generating-crd.md)
+  - [使用 Finalizers](./reference/using-finalizers.md)
+  - [Kind 集群](reference/kind.md)
+  - [webhook 是什么?](reference/webhook-overview.md)
+    - [准入 webhook](reference/admission-webhook.md)
+    - [核心类型的 Webhooks](reference/webhook-for-core-types.md)
+  - [用于配置/代码生成的标记](./reference/markers.md)
+
+      - [CRD 生成](./reference/markers/crd.md)
+      - [CRD 验证](./reference/markers/crd-validation.md)
+      - [CRD 处理](./reference/markers/crd-processing.md)
       - [Webhook](./reference/markers/webhook.md)
       - [Object/DeepCopy](./reference/markers/object.md)
       - [RBAC](./reference/markers/rbac.md)
 
-  - [controller-gen CLI](./reference/controller-gen.md)
-  - [completion](./reference/completion.md)
-  - [Artifacts](./reference/artifacts.md)
-  - [Writing controller tests](./reference/writing-tests.md)
+  - [controller-gen 命令行界面](./reference/controller-gen.md)
+  - [shell 自动补全](./reference/completion.md)
+  - [制品包](./reference/artifacts.md)
+  - [编写 controller 测试](./reference/writing-tests.md)
 
-  - [Using envtest in integration tests](./reference/envtest.md)
+  - [在集成测试中使用 envtest](./reference/envtest.md)
 
-  - [Metrics](./reference/metrics.md)
+  - [指标](./reference/metrics.md)
 
 ---
 
-[Appendix: The TODO Landing Page](./TODO.md)
+[附录: TODO 界面](./TODO.md)
