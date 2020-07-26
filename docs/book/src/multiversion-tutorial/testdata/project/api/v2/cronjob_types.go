@@ -15,9 +15,8 @@ limitations under the License.
 // +kubebuilder:docs-gen:collapse=Apache License
 
 /*
-Since we're in a v2 package, controller-gen will assume this is for the v2
-version automatically.  We could override that with the [`+versionName`
-marker](/reference/markers/crd.md).
+因为我们现在在v2 包中，controller-gen 将自动假设这是对于 v2 版本的。
+我们可以用[`+versionName`marker](/reference/markers/crd.md)去重写它。
 */
 package v2
 
@@ -29,17 +28,17 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+// 编辑这个文件！这是你拥有的脚手架！
+// 注意: json 标签是必需的。为了字段能够被序列化任何你添加的新的字段一定有 json 标签。
 
 // +kubebuilder:docs-gen:collapse=Imports
 
 /*
-We'll leave our spec largely unchanged, except to change the schedule field to a new type.
+除了将 schedule 字段更改为一个新类型外，我们将基本上保持 spec 不变。
 */
-// CronJobSpec defines the desired state of CronJob
+// CronJobSpec 定义了 CronJob 期待的状态
 type CronJobSpec struct {
-	// The schedule in Cron format, see https://en.wikipedia.org/wiki/Cron.
+	// Cron 格式的 schedule，详情请看https://en.wikipedia.org/wiki/Cron。
 	Schedule CronSchedule `json:"schedule"`
 
 	/*
@@ -47,38 +46,37 @@ type CronJobSpec struct {
 
 	// +kubebuilder:validation:Minimum=0
 
-	// Optional deadline in seconds for starting the job if it misses scheduled
-	// time for any reason.  Missed jobs executions will be counted as failed ones.
+	// 对于开始 job 以秒为单位的可选的并如果由于任何原因错失了调度的时间截止日期。未执行的
+	// job 将被统计为失败的 job 。
 	// +optional
 	StartingDeadlineSeconds *int64 `json:"startingDeadlineSeconds,omitempty"`
 
-	// Specifies how to treat concurrent executions of a Job.
-	// Valid values are:
-	// - "Allow" (default): allows CronJobs to run concurrently;
-	// - "Forbid": forbids concurrent runs, skipping next run if previous run hasn't finished yet;
-	// - "Replace": cancels currently running job and replaces it with a new one
+	// 指定如何处理job的并发执行。
+	// 有效的值是：
+	// - "Allow" (默认)： 允许 CronJobs 并发执行；
+	// - "Forbid"：禁止并发执行，如果之前运行的还没有完成，跳过下一次执行；
+	// - "Replace"： 取消当前正在运行的 job 并用新的 job 替换它
 	// +optional
 	ConcurrencyPolicy ConcurrencyPolicy `json:"concurrencyPolicy,omitempty"`
 
-	// This flag tells the controller to suspend subsequent executions, it does
-	// not apply to already started executions.  Defaults to false.
+	// 此标志告诉控制器暂停后续执行，它不会应用到已经开始执行的 job 。默认值是 false。
 	// +optional
 	Suspend *bool `json:"suspend,omitempty"`
 
-	// Specifies the job that will be created when executing a CronJob.
+	// 指定当执行一个 CronJob 时将会被创建的 job 。
 	JobTemplate batchv1beta1.JobTemplateSpec `json:"jobTemplate"`
 
 	// +kubebuilder:validation:Minimum=0
 
-	// The number of successful finished jobs to retain.
-	// This is a pointer to distinguish between explicit zero and not specified.
+	// 要保留的成功完成的 jobs 的数量。
+	// 这是一个用来区分明确 0 值和未指定的指针。
 	// +optional
 	SuccessfulJobsHistoryLimit *int32 `json:"successfulJobsHistoryLimit,omitempty"`
 
 	// +kubebuilder:validation:Minimum=0
 
-	// The number of failed finished jobs to retain.
-	// This is a pointer to distinguish between explicit zero and not specified.
+	// 要保留的失败的 jobs 的数量。
+	// 这是一个用来区分明确 0 值和未指定的指针。
 	// +optional
 	FailedJobsHistoryLimit *int32 `json:"failedJobsHistoryLimit,omitempty"`
 
@@ -86,72 +84,67 @@ type CronJobSpec struct {
 }
 
 /*
-Next, we'll need to define a type to hold our schedule.
-Based on our proposed YAML above, it'll have a field for
-each corresponding Cron "field".
+接下来，我们定义一个类型存储我们的 schedule 。
+基于我们上面提议的 YAML 格式，每个对应的 Cron “field” 都有一个字段。
 */
 
-// describes a Cron schedule.
+// 描述一个Cron schedule。
 type CronSchedule struct {
-	// specifies the minute during which the job executes.
+	// 指定 job 执行的分钟数。
 	// +optional
 	Minute *CronField `json:"minute,omitempty"`
-	// specifies the hour during which the job executes.
+	// 指定 job 执行的小时数。
 	// +optional
 	Hour *CronField `json:"hour,omitempty"`
-	// specifies the day of the month during which the job executes.
+	// 指定 job 执行的月的天数。
 	// +optional
 	DayOfMonth *CronField `json:"dayOfMonth,omitempty"`
-	// specifies the month during which the job executes.
+	// 指定 job 执行的月数。
 	// +optional
 	Month *CronField `json:"month,omitempty"`
-	// specifies the day of the week during which the job executes.
+	// 指定 job 执行的一周的天数。
 	// +optional
 	DayOfWeek *CronField `json:"dayOfWeek,omitempty"`
 }
 
 /*
-Finally, we'll define a wrapper type to represent a field.
-We could attach additional validation to this field,
-but for now we'll just use it for documentation purposes.
+最后，我们定义一个封装器类型来表示一个字段。
+我们可以为这个字段附加一些额外的验证，但是现在我们只仅仅用它做文档的目的。
 */
 
-// represents a Cron field specifier.
+// 表示一个 Cron 字段说明符。
 type CronField string
 
 /*
-All the other types will stay the same as before.
+所有其他类型将保持与以前相同。
 */
 
-// ConcurrencyPolicy describes how the job will be handled.
-// Only one of the following concurrent policies may be specified.
-// If none of the following policies is specified, the default one
-// is AllowConcurrent.
+// ConcurrencyPolicy 描述 job 将会被怎样处理。仅仅下面并发策略中的一种可以被指定。
+// 如果没有指定下面策略的任何一种，那么默认的一个是 AllowConcurrent 。
 // +kubebuilder:validation:Enum=Allow;Forbid;Replace
 type ConcurrencyPolicy string
 
 const (
-	// AllowConcurrent allows CronJobs to run concurrently.
+	// AllowConcurrent 允许 CronJobs 并发执行.
 	AllowConcurrent ConcurrencyPolicy = "Allow"
 
-	// ForbidConcurrent forbids concurrent runs, skipping next run if previous
-	// hasn't finished yet.
+	// ForbidConcurrent 禁止并发执行, 如果之前运行的还没有完成，跳过下一次执行
 	ForbidConcurrent ConcurrencyPolicy = "Forbid"
 
-	// ReplaceConcurrent cancels currently running job and replaces it with a new one.
+	// ReplaceConcurrent 取消当前正在运行的 job 并用新的 job 替换它。
 	ReplaceConcurrent ConcurrencyPolicy = "Replace"
 )
 
-// CronJobStatus defines the observed state of CronJob
+// CronJobStatus 定义了 CronJob 观察的的状态
 type CronJobStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// 插入额外的 STATUS 字段 - 定义集群观察的状态
+	// 重要：修改了这个文件之后运行"make"去重新生成代码
 
-	// A list of pointers to currently running jobs.
+	// 一个存储当前正在运行 job 的指针列表。
 	// +optional
 	Active []corev1.ObjectReference `json:"active,omitempty"`
 
-	// Information when was the last time the job was successfully scheduled.
+	// 当 job 最后一次成功被调度的信息。
 	// +optional
 	LastScheduleTime *metav1.Time `json:"lastScheduleTime,omitempty"`
 }
@@ -159,7 +152,7 @@ type CronJobStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// CronJob is the Schema for the cronjobs API
+// CronJob 是 cronjobs API 的 Schema
 type CronJob struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -170,7 +163,7 @@ type CronJob struct {
 
 // +kubebuilder:object:root=true
 
-// CronJobList contains a list of CronJob
+// CronJobList 包含了一个 CronJob 的列表
 type CronJobList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

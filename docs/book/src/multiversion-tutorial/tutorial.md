@@ -31,6 +31,6 @@ CRD 转换在 Kubernetes 1.13 版本（也就是说它是默认关闭的，需�
 
 </aside>
 
-接下来，让我们弄清楚我们想要做哪些更改。..
+接下来，让我们弄清楚我们想要做哪些更改。
 
 [kube-feature-gates]: https://kubernetes.io/docs/reference/command-line-tools-reference/feature-gates/ "Kubernetes Feature Gates"
