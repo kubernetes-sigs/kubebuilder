@@ -1,55 +1,54 @@
-# Quick Start
+# 快速入门
 
-This Quick Start guide will cover:
+快速入门包含如下内容：
 
-- [Creating a project](#create-a-project)
-- [Creating an API](#create-an-api)
-- [Running locally](#test-it-out)
-- [Running in-cluster](#run-it-on-the-cluster)
+- [创建一个项目](#创建一个项目)
+- [创建一个 API](#创建一个-API)
+- [测试](#测试)
+- [如何在集群中运行](#如何在集群中运行)
 
-## Prerequisites
+## 依赖组件
 
 - [go](https://golang.org/dl/) version v1.13+.
 - [docker](https://docs.docker.com/install/) version 17.03+.
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) version v1.11.3+.
 - [kustomize](https://sigs.k8s.io/kustomize/docs/INSTALL.md) v3.1.0+
-- Access to a Kubernetes v1.11.3+ cluster.
+- 能够访问 Kubernetes v1.11.3+ 集群
 
-## Installation
+## 安装
 
-Install [kubebuilder](https://sigs.k8s.io/kubebuilder):
+安装 [kubebuilder](https://sigs.k8s.io/kubebuilder):
 
 ```bash
 os=$(go env GOOS)
 arch=$(go env GOARCH)
 
-# download kubebuilder and extract it to tmp
+# 下载 kubebuilder 并解压到 tmp 目录中
 curl -L https://go.kubebuilder.io/dl/2.3.1/${os}/${arch} | tar -xz -C /tmp/
 
-# move to a long-term location and put it on your path
-# (you'll need to set the KUBEBUILDER_ASSETS env var if you put it somewhere else)
+# 将 kubebuilder 移动到一个长期的路径，并将其加入环境变量 path 中 
+# （如果你把 kubebuilder 放在别的地方，你需要额外设置 KUBEBUILDER_ASSETS 环境变量）
 sudo mv /tmp/kubebuilder_2.3.1_${os}_${arch} /usr/local/kubebuilder
 export PATH=$PATH:/usr/local/kubebuilder/bin
 ```
 
 <aside class="note">
-<h1>Using master branch</h1>
+<h1>请使用 master 分支的 kubebuilder 进行构建</h1>
 
-Also, you can install a master snapshot from `https://go.kubebuilder.io/dl/latest/${os}/${arch}`.
-
+另外，你可以从 `https://go.kubebuilder.io/dl/latest/${os}/${arch}` 下载安装包
 
 </aside>
 
 <aside class="note">
 <h1>Enabling shell autocompletion</h1>
 
-Kubebuilder provides autocompletion support for Bash and Zsh via the command `kubebuilder completion <bash|zsh>`, which can save you a lot of typing. For further information see the [completion](./reference/completion.md) document.
+Kubebuilder 通过 `kubebuilder completion <bash|zsh>` 命令为 Bash 和 Zsh 提供了自动完成的支持，这可以节省你大量的重复编码工作。更多信息请参见 [completion](./reference/completion.md) 文档。
 
 </aside>
 
-## Create a Project
+## 创建一个项目
 
-Create a directory, and then run the init command inside of it to initialize a new project. Follows an example.
+创建一个目录，然后在里面运行 `kubebuilder init` 命令，初始化一个新项目。示例如下。
 
 ```bash
 mkdir $GOPATH/src/example
@@ -58,45 +57,39 @@ kubebuilder init --domain my.domain
 ```
 
 <aside class="note">
-<h1>Not in $GOPATH</h1>
+<h1>如果你的安装目录不在 `$GOPATH` 中</h1>
 
-If you're not in `GOPATH`, you'll need to run `go mod init <modulename>` in order to tell kubebuilder and Go the base import path of your module. 
+如果你的 kubebuilder 安装目录不在 `$GOPATH` 中，你需要运行 `go mod init <modulename>` 来告诉 kubebuilder 和 Go module 的基本导入路径。
 
-For a further understanding of `GOPATH` see [The GOPATH environment variable][GOPATH-golang-docs] in the [How to Write Go Code][how-to-write-go-code-golang-docs] golang page doc.   
+若要进一步了解 `GOPATH`，参阅 [如何编写 Go 代码][how-to-write-go-code-golang-docs] 页面文档中的 [GOPATH 环境变量][GOPATH-golang-docs] 章节。    
 
 </aside>
 
 <aside class="note">
-<h1>Go package issues</h1>
+<h1>Go package 问题</h1>
 
-Ensure that you activate the module support by running `$ export GO111MODULE=on` 
-to solve issues as `cannot find package ... (from $GOROOT)`.
+确保你已经执行 `$ export GO111MODULE=on` 命令来激活模块支持，以解决像 `cannot find package .... (from $GOROOT)` 这样的问题。
 
 </aside>
 
+## 创建一个 API
 
-## Create an API
-
-Run the following command to create a new API (group/version) as `webapp/v1` and the new Kind(CRD) `Guestbook` on it:
+运行下面的命令，创建一个新的 API（组/版本）为 "webapp/v1"，并在上面创建新的 Kind(CRD) "Guestbook"。
 
 ```bash
 kubebuilder create api --group webapp --version v1 --kind Guestbook
 ```
 
 <aside class="note">
-<h1>Press Options</h1>
+<h1>创建选项</h1>
 
-If you press `y` for Create Resource [y/n] and for Create Controller [y/n] then this will create the files `api/v1/guestbook_types.go` where the API is defined 
-and the `controllers/guestbook_controller.go` where the reconciliation business logic is implemented for this Kind(CRD).
+如果你在 Create Resource [y/n] 和 Create Controller [y/n] 中按`y`，那么这将创建文件 `api/v1/guestbook_types.go` ，该文件中定义相关 API ，而针对于这一类型 (CRD) 的对账业务逻辑生成在 `controller/guestbook_controller.go` 文件中。
 
 </aside>
 
+**可选项：** 编辑 API 定义和对账业务逻辑。更多信息请参见 [设计一个 API](/cronjob-tutorial/api-design.md) 和 [控制器](cronjob-tutorial/controller-overview.md)。
 
-**OPTIONAL:** Edit the API definition and the reconciliation business
-logic. For more info see [Designing an API](/cronjob-tutorial/api-design.md) and [What's in
-a Controller](cronjob-tutorial/controller-overview.md).
-
-<details><summary>Click here to see an example. `(api/v1/guestbook_types.go)` </summary>
+<details><summary>示例 `(api/v1/guestbook_types.go)` </summary>
 <p>
 
 ```go
@@ -148,85 +141,79 @@ type Guestbook struct {
 </p>
 </details>
 
+## 测试
 
-## Test It Out 
-
-You'll need a Kubernetes cluster to run against.  You can use
-[KIND](https://sigs.k8s.io/kind) to get a local cluster for testing, or
-run against a remote cluster.
+你需要一个 Kubernetes 集群来运行。 你可以使用 [KIND](https://sigs.k8s.io/kind) 来获取一个本地集群进行测试，也可以在远程集群上运行。
 
 <aside class="note">
-<h1>Context Used</h1>
+<h1>使用的上下文</h1>
 
-Your controller will automatically use the current context in your
-kubeconfig file (i.e. whatever cluster `kubectl cluster-info` shows).
+你的控制器将自动使用你的 `kubeconfig` 文件中的当前上下文（即无论群集 `kubectl cluster-info` 显示的是什么群集）。
 
 </aside> 
 
-Install the CRDs into the cluster:
+将 CRD 安装到集群中
+
 ```bash
 make install
 ```
 
-Run your controller (this will run in the foreground, so switch to a new
-terminal if you want to leave it running):
+运行控制器（这将在前台运行，如果你想让它一直运行，请切换到新的终端）。
+
 ```bash
 make run
 ```
 
-## Install Instances of Custom Resources
+## 安装 CR 实例
 
-If you pressed `y` for Create Resource [y/n] then you created an (CR)Custom Resource for your (CRD)Custom Resource Definition in your samples (make sure to edit them first if you've changed the
-API definition):
+如果你按了 `y` 创建资源 [y/n]，那么你就为示例中的自定义资源定义 `CRD` 创建了一个自定义资源 `CR` （如果你更改了 API 定义，请务必先编辑它们）。
 
 ```bash
 kubectl apply -f config/samples/
 ```
 
-## Run It On the Cluster
+## 如何在集群中运行
 
-Build and push your image to the location specified by `IMG`:
+构建并推送你的镜像到 `IMG` 指定的位置。
 
 ```bash
 make docker-build docker-push IMG=<some-registry>/<project-name>:tag
 ```
 
-Deploy the controller to the cluster with image specified by `IMG`:
+根据 `IMG` 指定的镜像将控制器部署到集群中。
 
 ```bash
 make deploy IMG=<some-registry>/<project-name>:tag
 ```
 
 <aside class="note">
-<h1>RBAC errors</h1>
+<h1>RBAC 错误</h1>
 
-If you encounter RBAC errors, you may need to grant yourself cluster-admin
-privileges or be logged in as admin. See [Prerequisites for using Kubernetes RBAC on GKE cluster v1.11.x and older][pre-rbc-gke] which may be your case.  
+如果你遇到 RBAC 错误，你可能需要授予自己集群管理员权限或以管理员身份登录。请参考 [在 GKE 集群 v1.11.x 及以上版本上使用 Kubernetes RBAC 的组件依赖][pre-rbc-gke] 可能是你的情况。 
 
 </aside> 
 
-## Uninstall CRDs
+## 卸载 CRD
 
-To delete your CRDs from the cluster:
+从你的集群中删除 CRD
 
 ```bash
 make uninstall
 ```
 
-## Undeploy controller
+## 卸载控制器
 
-UnDeploy the controller to the cluster:
+从集群中卸载控制器
 
 ```bash
 make undeploy
 ```
 
-## Next Step 
+## 下一步 
 
-Now, follow up the [CronJob tutorial][cronjob-tutorial] to better understand how it works by developing a demo example project. 
+现在，参照 [CronJob 教程][cronjob-tutorial]，通过开发一个演示示例项目更好地理解 kubebuilder 的工作原理。
 
 [pre-rbc-gke]:https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#iam-rolebinding-bootstrap
 [cronjob-tutorial]: https://book.kubebuilder.io/cronjob-tutorial/cronjob-tutorial.html
 [GOPATH-golang-docs]: https://golang.org/doc/code.html#GOPATH
 [how-to-write-go-code-golang-docs]: https://golang.org/doc/code.html 
-
