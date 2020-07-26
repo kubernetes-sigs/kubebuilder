@@ -1,47 +1,25 @@
-# Designing an API
+# 设计一个 API
 
-In Kubernetes, we have a few rules for how we design APIs. Namely, all
-serialized fields *must* be `camelCase`, so we use JSON struct tags to
-specify this.  We can also use the `omitempty` struct tag to mark that
-a field should be omitted from serialization when empty.
+在 Kubernetes 中，我们对如何设计 API 有一些原则。也就是说，所有序列化的字段**必须**是 `驼峰式` ，所以我们使用的 JSON 标签需要遵循该格式。我们也可以使用`omitempty` 标签来标记一个字段在空的时候应该在序列化的时候省略。
 
-Fields may use most of the primitive types.  Numbers are the exception:
-for API compatibility purposes, we accept three forms of numbers: `int32`
-and `int64` for integers, and `resource.Quantity` for decimals.
+字段可以使用大多数的基本类型。数字是个例外：出于 API 兼容性的目的，我们只允许三种数字类型。对于整数，需要使用 `int32` 和 `int64` 类型；对于小数，使用 `resource.Quantity` 类型。
 
-<details><summary>Hold up, what's a Quantity?</summary>
+<details><summary>等等，什么是 `resource.Quantity`？</summary>
 
-Quantities are a special notation for decimal numbers that have an
-explicitly fixed representation that makes them more portable across
-machines.  You've probably noticed them when specifying resources requests
-and limits on pods in Kubernetes.
+`Quantity` 是十进制数的一种特殊符号，它有一个明确固定的表示方式，使它们在不同的机器上更具可移植性。 你可能在 Kubernetes 中指定资源请求和对 pods 的限制时已经注意到它们。
 
-They conceptually work similar to floating point numbers: they have
-a significand, base, and exponent. Their serializable and human readable format
-uses whole numbers and suffixes to specify values much the way we describe
-computer storage.
+它们在概念上的工作原理类似于浮点数：它们有一个 significand、基数和指数。它们的序列化和人类可读格式使用整数和后缀来指定值，就像我们描述计算机存储的方式一样。
 
-For instance, the value `2m` means `0.002` in decimal notation.  `2Ki`
-means `2048` in decimal, while `2K` means `2000` in decimal.  If we want
-to specify fractions, we switch to a suffix that lets us use a whole
-number: `2.5` is `2500m`.
+例如，值 `2m` 在十进制符号中表示 `0.002`。 `2Ki` 在十进制中表示 `2048` ，而 `2K` 在十进制中表示 `2000`。 如果我们要指定分数，我们就换成一个后缀，让我们使用一个整数：`2.5` 就是 `2500m`。
 
-There are two supported bases: 10 and 2 (called decimal and binary,
-respectively).  Decimal base is indicated with "normal" SI suffixes (e.g.
-`M` and `K`), while Binary base is specified in "mebi" notation (e.g. `Mi`
-and `Ki`).  Think [megabytes vs
-mebibytes](https://en.wikipedia.org/wiki/Binary_prefix).
+有两个支持的基数：10 和 2（分别称为十进制和二进制）。十进制基数用 "普通的" SI 后缀表示（如 `M` 和 `K` ），而二进制基数用 "mebi" 符号表示（如 `Mi` 和 `Ki` ）。 对比 [megabytes vs mebibytes](https://en.wikipedia.org/wiki/Binary_prefix)。
 
 </details>
 
-There's one other special type that we use: `metav1.Time`.  This functions
-identically to `time.Time`, except that it has a fixed, portable
-serialization format.
+还有一个我们使用的特殊类型：`metav1.Time`。 它有一个稳定的、可移植的序列化格式的功能，其他与 `time.Time` 相同。
 
-With that out of the way, let's take a look at what our CronJob object
-looks like!
+说完了这些，让我们来看看我们的 CronJob 对象是什么样子的吧！
 
 {{#literatego ./testdata/project/api/v1/cronjob_types.go}}
 
-Now that we have an API, we'll need to write a controller to actually
-implement the functionality.
+现在我们定义好了一个 API，我们需要编写一个控制器来实际实现这些功能。
