@@ -1,22 +1,21 @@
-# Implementing defaulting/validating webhooks
+# 实现默认/验证 webhook
 
-If you want to implement [admission webhooks](../reference/admission-webhook.md)
-for your CRD, the only thing you need to do is to implement the `Defaulter`
-and (or) the `Validator` interface.
+如果你想为你的 CRD 实现一个 [admission webhooks](../reference/admission-webhook.md)，
+你需要做的一件事就是去实现`Defaulter` 和/或 `Validator` 接口。
 
-Kubebuilder takes care of the rest for you, such as
+Kubebuilder 会帮你处理剩下的事情，像下面这些：
 
-1. Creating the webhook server.
-1. Ensuring the server has been added in the manager.
-1. Creating handlers for your webhooks.
-1. Registering each handler with a path in your server.
+1. 创建 webhook 服务端。
+2. 确保服务端已添加到 manager 中。
+3. 为你的 webhooks 创建处理函数。
+4. 用路径在你的服务端中注册每个处理函数。
 
-First, let's scaffold the webhooks for our CRD (CronJob). We’ll need to run the following command with the `--defaulting` and `--programmatic-validation` flags (since our test project will use defaulting and validating webhooks):
+首先，让我们为我们的 CRD (CronJob) 创建一个 webhooks 的支架。我们将需要运行下面的命令并带上 `--defaulting` 和 `--programmatic-validation` 标志（因为我们的测试项目会用到默认和验证 webhooks)：
 
 ```bash
 kubebuilder create webhook --group batch --version v1 --kind CronJob --defaulting --programmatic-validation
 ```
 
-This will scaffold the webhook functions and register your webhook with the manager in your `main.go` for you.
+这里会在你的 `main.go` 中搭建一个 webhook 函数的支架并用 manager 注册你的 webhook。
 
 {{#literatego ./testdata/project/api/v1/cronjob_webhook.go}}

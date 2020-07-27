@@ -1,18 +1,18 @@
 # 教程：多版本 API
 
 大多数项目都是从一个 alpha API 开始的，这个 API 会随着发布版本的不同而变化。
-然后，最终，大多数项目将会转向更稳定的版本。一旦你的 API 足够的稳定，你就不能够对它做破坏性的修改。
+然后，最终大多数项目将会转向更稳定的版本。一旦你的 API 足够的稳定，你就不能够对它做破坏性的修改。
 这就是 API 版本发挥作用的地方。
 
 让我们对 `CronJob` API spec 做一些改变，确保我们的 CronJob 项目支持所有不同的版本。
 
-如果你还没有准备好，确保你已经阅读过了基础的 [CronJob 教程](/cronjob-tutorial/cronjob-tutorial.md)。
+如果你还没有准备好，请确保你已经阅读过了基础的 [CronJob 教程](/cronjob-tutorial/cronjob-tutorial.md)。
 
 <aside class="note">
 
 <h1>跟随 vs 跳跃</h1>
 
-注意本教程的大部分内容是由形成一个可运行的项目的 literate Go 文件生成的，并且放在了本书的下面源目录下 [docs/book/src/multiversion-tutorial/testdata/project][tutorial-source]。
+请注意本教程的大部分内容是由形成一个可运行的项目的 literate Go 文件生成的，并且放在了本书的下面源目录下 [docs/book/src/multiversion-tutorial/testdata/project][tutorial-source]。
 
 [tutorial-source]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/docs/book/src/multiversion-tutorial/testdata/project
 

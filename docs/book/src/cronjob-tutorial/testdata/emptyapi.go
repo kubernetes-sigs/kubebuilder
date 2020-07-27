@@ -15,7 +15,7 @@ limitations under the License.
 // +kubebuilder:docs-gen:collapse=Apache License
 
 /*
-我们非常简单地开始：我们导入`meta/v1` API 组，该组通常本身并不会被暴露，而是包含所有 Kubernetes 种类共有的元数据。
+我们非常简单地开始：我们导入`meta/v1` API 组，通常本身并不会暴露该组，而是包含所有 Kubernetes 种类共有的元数据。
 */
 package v1
 
@@ -30,7 +30,7 @@ import (
 但是大部分类型需要做这一步。
 */
 // 编辑这个文件！这是你拥有的脚手架！
-// 注意: json 标签是必需的。为了字段能够被序列化任何你添加的新的字段一定有json标签。
+// 注意: json 标签是必需的。为了能够序列化字段，任何你添加的新的字段一定有json标签。
 
 // CronJobSpec 定义了 CronJob 期待的状态
 type CronJobSpec struct {
