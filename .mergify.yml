@@ -2,7 +2,7 @@ pull_request_rules:
   - name: Automatic merge when approved by Jimmy
     conditions:
       - "approved-reviews-by=rootsongjc"
-   #   - "#approved-reviews-by>=1"
+      - "#approved-reviews-by>=1"
       - base=zh
     actions:
       merge:
@@ -10,7 +10,7 @@ pull_request_rules:
   - name: Automatic merge when approved by zhangguanzhang
     conditions:
       - "approved-reviews-by=zhangguanzhang"
-  #    - "#approved-reviews-by>=1"
+      - "#approved-reviews-by>=1"
       - base=zh
     actions:
       merge:
@@ -18,7 +18,7 @@ pull_request_rules:
   - name: Automatic merge when approved by lhb008
     conditions:
       - "approved-reviews-by=lhb008"
-  #    - "#approved-reviews-by>=1"
+      - "#approved-reviews-by>=1"
       - base=zh
     actions:
       merge:
