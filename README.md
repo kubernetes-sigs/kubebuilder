@@ -1,13 +1,9 @@
-## 如何参与中文翻译
-
-想要成为志愿者，参与中文翻译的请移步[中文翻译指南](https://github.com/cloudnativeto/kubebuilder/blob/zh/docs/book/README.md)
+## Kubebuilder
 
 [![Build Status](https://travis-ci.org/kubernetes-sigs/kubebuilder.svg?branch=master)](https://travis-ci.org/kubernetes-sigs/kubebuilder "Travis")
 [![Go Report Card](https://goreportcard.com/badge/sigs.k8s.io/kubebuilder)](https://goreportcard.com/report/sigs.k8s.io/kubebuilder)
 
-## Kubebuilder
-
-**翻译的小伙伴请直接查看 docs/book目录**
+本仓库用于 Kubebuilder 文档汉化，如何参与请参考 [Kubebuilder 中文文档翻译指导手册](./book/README.md)。
 
 Kubebuilder is a framework for building Kubernetes APIs using [custom resource definitions (CRDs)](https://kubernetes.io/docs/tasks/access-kubernetes-api/extend-api-custom-resource-definitions).
 
