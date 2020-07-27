@@ -1,3 +1,7 @@
+## 如何参与中文翻译
+
+想要成为志愿者，参与中文翻译的请移步[中文翻译指南](https://github.com/cloudnativeto/kubebuilder/blob/zh/docs/book/README.md)
+
 [![Build Status](https://travis-ci.org/kubernetes-sigs/kubebuilder.svg?branch=master)](https://travis-ci.org/kubernetes-sigs/kubebuilder "Travis")
 [![Go Report Card](https://goreportcard.com/badge/sigs.k8s.io/kubebuilder)](https://goreportcard.com/report/sigs.k8s.io/kubebuilder)
 
