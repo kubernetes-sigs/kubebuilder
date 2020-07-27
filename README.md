@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.org/kubernetes-sigs/kubebuilder.svg?branch=master)](https://travis-ci.org/kubernetes-sigs/kubebuilder "Travis")
 [![Go Report Card](https://goreportcard.com/badge/sigs.k8s.io/kubebuilder)](https://goreportcard.com/report/sigs.k8s.io/kubebuilder)
 
-本仓库用于 Kubebuilder 文档汉化，如何参与请参考 [Kubebuilder 中文文档翻译指导手册](./book/README.md)。
+本仓库用于 Kubebuilder 文档汉化，如何参与请参考 [Kubebuilder 中文文档翻译指导手册](./docs/book/README.md)。
 
 Kubebuilder is a framework for building Kubernetes APIs using [custom resource definitions (CRDs)](https://kubernetes.io/docs/tasks/access-kubernetes-api/extend-api-custom-resource-definitions).
 
