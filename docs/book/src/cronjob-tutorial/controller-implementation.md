@@ -1,24 +1,21 @@
-# Implementing a controller
+# 实现一个控制器
 
-The basic logic of our CronJob controller is this:
+CronJob控制器的基本逻辑如下:
 
-1. Load the named CronJob
+1. 加载指定的控制器
 
-2. List all active jobs, and update the status
+2. 列出所有活跃的jobs, 更新其状态
 
-3. Clean up old jobs according to the history limits
+3. 根据允许保留的历史版本数, 删除版本过旧的jobs
 
-4. Check if we're suspended (and don't do anything else if we are)
+4. 检查当前job是否被挂起(如果被挂起, 则不执行任何操作)
 
-5. Get the next scheduled run
+5. 获取下一个定时任务
 
-6. Run a new job if it's on schedule, not past the deadline, and not
-   blocked by our concurrency policy
-
-7. Requeue when we either see a running job (done automatically) or it's
-   time for the next scheduled run.
+6. 如果一个定时任务到了触发时机, 且没有过期, 没有被当前的并发策略阻塞,  运行一个新Job执行定时任务 
+   
+7. 当任务正在运行或到了下一次执行时间, job重新入队.
 
 {{#literatego ./testdata/project/controllers/cronjob_controller.go}}
 
-That was a doozy, but now we've got a working controller.  Let's test
-against the cluster, then, if we don't have any issues, deploy it!
+看起来有点浅显, 不过我们总算了有了个能运行的控制器了. 让我们在集群里测试下它, 如果没什么问题, 把它部署起来! 
