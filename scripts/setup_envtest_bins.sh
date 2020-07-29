@@ -77,10 +77,16 @@ setup_testenv_bin() {
       [[ -x $TESTBIN_DIR/kube-apiserver && -x ${TESTBIN_DIR}/kubectl ]] || curl -L https://dl.k8s.io/${K8S_VER}/kubernetes-server-${OS}-${ARCH}.tar.gz | tar zx -C ${TESTBIN_DIR} --strip-components=3 kubernetes/server/bin/kube-apiserver kubernetes/server/bin/kubectl
     fi
   fi
-  export PATH=/$TESTBIN_DIR:$PATH
-  export TEST_ASSET_KUBECTL=/$TESTBIN_DIR/kubectl
-  export TEST_ASSET_KUBE_APISERVER=/$TESTBIN_DIR/kube-apiserver
-  export TEST_ASSET_ETCD=/$TESTBIN_DIR/etcd
+
+  echo "#"
+  echo "# To automatically configure your environment, run this script as:"
+  echo "#"
+  echo "#    eval \$($0 $K8S_VER $ETCD_VER)'"
+  echo "#"
+  echo export PATH=$(realpath $TESTBIN_DIR):$PATH
+  echo export TEST_ASSET_KUBECTL=$(realpath $TESTBIN_DIR)/kubectl
+  echo export TEST_ASSET_KUBE_APISERVER=$(realpath $TESTBIN_DIR)/kube-apiserver
+  echo export TEST_ASSET_ETCD=$(realpath $TESTBIN_DIR)/etcd
 }
 
 setup_testenv_bin
