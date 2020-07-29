@@ -1,6 +1,6 @@
 /*
-Ideally, we should have one `<kind>_conroller_test.go` for each controller scaffolded and called in the `test_suite.go`.
-So, let's write our example test for the CronJob controller (`cronjob_controller_test.go.`)
+理想情況下，我们应该对于每一个控制器支架有一个 `<kind>_conroller_test.go` ，并在 `test_suite.go` 中调用。
+因此，让我们为CronJob控制器编写示例测试(`cronjob_controller_test.go。`)
 */
 
 /*
@@ -20,7 +20,7 @@ limitations under the License.
 // +kubebuilder:docs-gen:collapse=Apache License
 
 /*
-As usual, we start with the necessary imports. We also define some utility variables.
+像往常一样，我们从必要的导入开始。我们还定义了一些有用的变量。
 */
 package controllers
 
@@ -43,16 +43,15 @@ import (
 // +kubebuilder:docs-gen:collapse=Imports
 
 /*
-The first step to writing a simple integration test is to actually create an instance of CronJob you can run tests against.
-Note that to create a CronJob, you’ll need to create a stub CronJob struct that contains your CronJob’s specifications.
+编写一个简单的集成测试的第一步是真实的创建一个您可以运行测试的 CronJob 的实例。
+请注意，要创建一个 CronJob，你需要创建一个包含您 CronJob 规范的存根 CronJob 结构体。
 
-Note that when we create a stub CronJob, the CronJob also needs stubs of its required downstream objects.
-Without the stubbed Job template spec and the Pod template spec below, the Kubernetes API will not be able to
-create the CronJob.
+请注意，当我们创建一个存根 CronJob ，CronJob 还需要它所需要的下游对象的存根。
+没有下面存根的 Job 模板 spec 和 Pod 模板 spec ，Kubernetes API 将不能创建 CronJob 。
 */
 var _ = Describe("CronJob controller", func() {
 
-	// Define utility constants for object names and testing timeouts/durations and intervals.
+	// 定义对象名称和测试超时/持续时间和间隔的有用的常量。
 	const (
 		CronjobName      = "test-cronjob"
 		CronjobNamespace = "test-cronjob-namespace"
@@ -80,10 +79,10 @@ var _ = Describe("CronJob controller", func() {
 					Schedule: "1 * * * *",
 					JobTemplate: batchv1beta1.JobTemplateSpec{
 						Spec: batchv1.JobSpec{
-							// For simplicity, we only fill out the required fields.
+							// 为简单起见，我们只填写必需的字段。
 							Template: v1.PodTemplateSpec{
 								Spec: v1.PodSpec{
-									// For simplicity, we only fill out the required fields.
+									// 为简单起见，我们只填写必需的字段。
 									Containers: []v1.Container{
 										{
 											Name:  "test-container",
@@ -100,20 +99,20 @@ var _ = Describe("CronJob controller", func() {
 			Expect(k8sClient.Create(ctx, cronJob)).Should(Succeed())
 
 			/*
-				After creating this CronJob, let's check that the CronJob's Spec fields match what we passed in.
-				Note that, because the k8s apiserver may not have finished creating a CronJob after our `Create()` call from earlier, we will use Gomega’s Eventually() testing function instead of Expect() to give the apiserver an opportunity to finish creating our CronJob.
+				在创建这个 CronJob 之后，让我们检查 CronJob 的 Spec 字段是否与我们传入的匹配。
+				请注意，因为 k8s apiserver 在前面的 ‘Create()’ 调用之后可能还没有完成 CronJob 的创建，我将用 Gomega 的 Eventually() 测试函数代替 Expect() 去给 apiserver 一个机会去完成CronJob的创建。
 
-				`Eventually()` will repeatedly run the function provided as an argument every interval seconds until
-				(a) the function’s output matches what’s expected in the subsequent `Should()` call, or
-				(b) the number of attempts * interval period exceed the provided timeout value.
+				`Eventually()` 将会每隔一秒重复运行作为一个参数的函数直到
+				(a) 函数的输出匹配后续的`Should()`调用期望的，或者
+				(b) 尝试的次数 * 间隔周期 的值超过提供的超时的值。
 
-				In the examples below, timeout and interval are Go Duration values of our choosing.
+				在下面的示例中，timeout 和 interval 是我们选择的 Go Duration 值。
 			*/
 
 			cronjobLookupKey := types.NamespacedName{Name: CronjobName, Namespace: CronjobNamespace}
 			createdCronjob := &cronjobv1.CronJob{}
 
-			// We'll need to retry getting this newly created CronJob, given that creation may not immediately happen.
+			// 我们需要重新尝试获得这个新创建的 CronJob ，因为创建可能不会立即发生。
 			Eventually(func() bool {
 				err := k8sClient.Get(ctx, cronjobLookupKey, createdCronjob)
 				if err != nil {
@@ -121,15 +120,15 @@ var _ = Describe("CronJob controller", func() {
 				}
 				return true
 			}, timeout, interval).Should(BeTrue())
-			// Let's make sure our Schedule string value was properly converted/handled.
+			// 让我们确保我们的Schedule 字符串值被正确地转换/处理。
 			Expect(createdCronjob.Spec.Schedule).Should(Equal("1 * * * *"))
 			/*
-				Now that we've created a CronJob in our test cluster, the next step is to write a test that actually tests our CronJob controller’s behavior.
-				Let’s test the CronJob controller’s logic responsible for updating CronJob.Status.Active with actively running jobs.
-				We’ll verify that when a CronJob has a single active downstream Job, its CronJob.Status.Active field contains a reference to this Job.
+				现在，我们已经在我们的测试集群中创建了一个CronJob，下一步是写一个测试用例去真正的测试我们 CronJob 控制器的行为。
+				让我们测试 CronJob 控制器负责更新活动的正在运行的 Jobs 的 CronJob.Status.Active 的逻辑。
+				我们将验证当 CronJob 有一个活动的下游 Job ，它的 CronJob.Status.Active 字段包含对该Job的引用。
 
-				First, we should get the test CronJob we created earlier, and verify that it currently does not have any active jobs.
-				We use Gomega's `Consistently()` check here to ensure that the active job count remains 0 over a duration of time.
+				首先，我们应该获取之前创建的测试 CronJob ，并验证它目前没有任何活动的作业。
+				我们在这里用 Gomega 的 `Consistently()` 检查，以确保活动的 Job 总数在一段时间内保持为 0 。
 			*/
 			By("By checking the CronJob has zero active Jobs")
 			Consistently(func() (int, error) {
@@ -140,12 +139,12 @@ var _ = Describe("CronJob controller", func() {
 				return len(createdCronjob.Status.Active), nil
 			}, duration, interval).Should(Equal(0))
 			/*
-				Next, we actually create a stubbed Job that will belong to our CronJob, as well as its downstream template specs.
-				We set the Job's status's "Active" count to 2 to simulate the Job running two pods, which means the Job is actively running.
+				下一步，我们实际上创建了一个存根的 Job ，它属于我们的 CronJob，以及它的下游模板 specs 。
+				我们设置 Job 的状态的 "Active" 总数为 2，以模拟我们的 Job 运行了二个 pod ，意味着Job是正在活跃地运行。
 
-				We then take the stubbed Job and set its owner reference to point to our test CronJob.
-				This ensures that the test Job belongs to, and is tracked by, our test CronJob.
-				Once that’s done, we create our new Job instance.
+				然后，我们接受存根的 Job ，并将其所有者引用设置为指向我们的测试 CronJob 。
+				这确保了测试 Job 属于我们的测试 CronJob ，并被它跟踪。
+				一旦完成，我们就创建新的 Job 实例。
 			*/
 			By("By creating a new Job")
 			testJob := &batchv1.Job{
@@ -156,7 +155,7 @@ var _ = Describe("CronJob controller", func() {
 				Spec: batchv1.JobSpec{
 					Template: v1.PodTemplateSpec{
 						Spec: v1.PodSpec{
-							// For simplicity, we only fill out the required fields.
+							// 为简单起见，我们只填写必需的字段。
 							Containers: []v1.Container{
 								{
 									Name:  "test-container",
@@ -172,7 +171,7 @@ var _ = Describe("CronJob controller", func() {
 				},
 			}
 
-			// Note that your CronJob’s GroupVersionKind is required to set up this owner reference.
+			// 请注意，需要您 CronJob 的 GroupVersionKind 来设置此所有者引用。
 			kind := reflect.TypeOf(cronjobv1.CronJob{}).Name()
 			gvk := cronjobv1.GroupVersion.WithKind(kind)
 
@@ -180,8 +179,8 @@ var _ = Describe("CronJob controller", func() {
 			testJob.SetOwnerReferences([]metav1.OwnerReference{*controllerRef})
 			Expect(k8sClient.Create(ctx, testJob)).Should(Succeed())
 			/*
-				Adding this Job to our test CronJob should trigger our controller’s reconciler logic.
-				After that, we can write a test that evaluates whether our controller eventually updates our CronJob’s Status field as expected!
+				添加这个 Job 到我们的测试 CronJob 中将会触发我们的控制器协调器的逻辑。
+				之后，我们可以编写一个测试用例验证我们的控制器是否按照预期最终更新了我们的 CronJob 的状态字段！
 			*/
 			By("By checking that the CronJob has one active Job")
 			Eventually(func() ([]string, error) {
@@ -202,5 +201,5 @@ var _ = Describe("CronJob controller", func() {
 })
 
 /*
-	After writing all this code, you can run `go test ./...` in your `controllers/` directory again to run your new test!
+	编写完这些代码之后，您可以在 `controllers/` 目录下执行 `go test ./...` 去再次运行您的新的测试示例！
 */
