@@ -26,11 +26,13 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/plugin/internal/machinery"
 	"sigs.k8s.io/kubebuilder/pkg/plugin/scaffold"
 	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates"
-	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates/certmanager"
-	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates/manager"
-	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates/metricsauth"
-	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates/prometheus"
-	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates/webhook"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates/config/certmanager"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates/config/hack"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates/config/kdefault"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates/config/manager"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates/config/prometheus"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates/config/rbac"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates/config/webhook"
 )
 
 const (
@@ -78,7 +80,7 @@ func (s *initScaffolder) Scaffold() error {
 
 // TODO: re-use universe created by s.newUniverse() if possible.
 func (s *initScaffolder) scaffold() error {
-	bpFile := &templates.Boilerplate{}
+	bpFile := &hack.Boilerplate{}
 	bpFile.Path = s.boilerplatePath
 	bpFile.License = s.license
 	bpFile.Owner = s.owner
@@ -97,11 +99,11 @@ func (s *initScaffolder) scaffold() error {
 	return machinery.NewScaffold().Execute(
 		s.newUniverse(string(boilerplate)),
 		&templates.GitIgnore{},
-		&templates.AuthProxyRole{},
-		&templates.AuthProxyRoleBinding{},
-		&metricsauth.AuthProxyPatch{},
-		&metricsauth.AuthProxyService{},
-		&metricsauth.ClientClusterRole{},
+		&rbac.AuthProxyRole{},
+		&rbac.AuthProxyRoleBinding{},
+		&kdefault.AuthProxyPatch{},
+		&rbac.AuthProxyService{},
+		&rbac.ClientClusterRole{},
 		&manager.Config{Image: imageName},
 		&templates.Main{},
 		&templates.GoMod{ControllerRuntimeVersion: ControllerRuntimeVersion},
@@ -113,17 +115,17 @@ func (s *initScaffolder) scaffold() error {
 		},
 		&templates.Dockerfile{},
 		&templates.DockerignoreFile{},
-		&templates.Kustomize{},
-		&templates.ManagerWebhookPatch{},
-		&templates.ManagerRoleBinding{},
-		&templates.LeaderElectionRole{},
-		&templates.LeaderElectionRoleBinding{},
-		&templates.KustomizeRBAC{},
+		&kdefault.Kustomize{},
+		&kdefault.ManagerWebhookPatch{},
+		&rbac.ManagerRoleBinding{},
+		&rbac.LeaderElectionRole{},
+		&rbac.LeaderElectionRoleBinding{},
+		&rbac.KustomizeRBAC{},
 		&manager.Kustomization{},
 		&webhook.Kustomization{},
 		&webhook.KustomizeConfigWebhook{},
 		&webhook.Service{},
-		&webhook.InjectCAPatch{},
+		&kdefault.InjectCAPatch{},
 		&prometheus.Kustomization{},
 		&prometheus.ServiceMonitor{},
 		&certmanager.CertManager{},
