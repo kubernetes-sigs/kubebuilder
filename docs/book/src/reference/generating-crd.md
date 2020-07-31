@@ -66,7 +66,7 @@ type Toy struct {
 
 ## 子资源
 
-从 Kubernetes 1.13 开始 CRD 可以选择实现 `/status` 和 `/scale` 这类[子资源][kube-subresources]。
+在 Kubernetes 1.13 中 CRD 可以选择实现 `/status` 和 `/scale` 这类[子资源][kube-subresources]。
 
 通常推荐你在所有资源上实现 `/status` 子资源的时候，要有一个状态字段。
 
@@ -129,23 +129,15 @@ Kubernetes 1.13，你可以有在你的 CRD 的同一个 Kind 中定义多个版
 
 这样，你就可以使用  `+kubebuilder:storageversion` [标签][crd-markers] 来告知 [GVK](/cronjob-tutorial/gvks.md "Group-Version-Kind") 这个字段应该被 API 服务来存储数据。
 
-## Under the hood
+## 背后执行
 
-KubeBuilder scaffolds out make rules to run `controller-gen`.  The rules
-will automatically install controller-gen if it's not on your path using
-`go get` with Go modules.
+KubeBuilder 会制定规则来运行 `controller-gen`。如果 `controller-gen` 不在 `go get` 用来下载 Go 模块的路径下的时候，这些规则会自动的安装 `controller-gen`。
 
-You can also run `controller-gen` directly, if you want to see what it's
-doing.
+如果你想它到底做了什么，你也可以直接运行 `controller-gen`。
 
-Each controller-gen "generator" is controlled by an option to
-controller-gen, using the same syntax as markers.  For instance, to
-generate CRDs with "trivial versions" (no version conversion webhooks), we
-call `controller-gen crd:trivialVersions=true paths=./api/...`.
+每一个 `controller-gen` “生成器” 都由 `controller-gen` 的一个参数选项控制，和标签的语法一样。比如，要生成带有 "trivial versions" 的 CRD（无版本转换的 webhook），我们可以执行 `controller-gen crd:trivialVersions=true paths=./api/...`。
 
-controller-gen also supports different output "rules" to control how
-and where output goes.  Notice the `manifests` make rule (condensed
-slightly to only generate CRDs):
+`controller-gen` 也支持不同的输出“规则”，以此来控制如何及输出到哪里。注意 `manifests` 生成规则（是只生成 CRD 的简短写法）：
 
 ```makefile
 # Generate manifests for CRDs
@@ -153,18 +145,15 @@ manifests: controller-gen
 	$(CONTROLLER_GEN) crd:trivialVersions=true paths="./..." output:crd:artifacts:config=config/crd/bases
 ```
 
-It uses the `output:crd:artifacts` output rule to indicate that
-CRD-related config (non-code) artifacts should end up in
-`config/crd/bases` instead of `config/crd`.
+它使用了 `output:crd:artifacts`  输出规则来表示 CRD 关联的配置（非代码）应该用 `config/crd/bases`，而不是用 `config/crd`。
 
-To see all the options for `controller-gen`, run
 运行如下命令可以看到 `controller-gen` 的所有支持参数：
 
 ```shell
 $ controller-gen -h
 ```
 
-or, for more details:
+或者，这样查看更多详情：
 
 ```shell
 $ controller-gen -hhh
