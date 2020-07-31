@@ -1,24 +1,15 @@
-# Deploying the cert manager
+# 部署 cert manager
 
-We suggest using [cert manager](https://github.com/jetstack/cert-manager) for
-provisioning the certificates for the webhook server. Other solutions should
-also work as long as they put the certificates in the desired location.
+我们建议使用 [cert manager](https://github.com/jetstack/cert-manager) 为 webhook 服务器提供证书。只要其他解决方案将证书放在期望的位置，也将会起作用。
 
-You can follow
-[the cert manager documentation](https://docs.cert-manager.io/en/latest/getting-started/install/kubernetes.html)
-to install it.
+你可以按照 [cert manager 文档](https://docs.cert-manager.io/en/latest/getting-started/install/kubernetes.html) 进行安装。
 
-Cert manager also has a component called CA injector, which is responsible for
-injecting the CA bundle into the Mutating|ValidatingWebhookConfiguration.
+Cert manager 还有一个叫做 CA 注入器的组件，该组件负责将 CA 捆绑注入到 Mutating|ValidatingWebhookConfiguration 中。
 
-To accomplish that, you need to use an annotation with key
-`cert-manager.io/inject-ca-from`
-in the Mutating|ValidatingWebhookConfiguration objects.
-The value of the annotation should point to an existing certificate CR instance
-in the format of `<certificate-namespace>/<certificate-name>`.
+为此，你需要在 Mutating|ValidatingWebhookConfiguration 对象中使用带有 key 为 `cert-manager.io/inject-ca-from` 的注释。
+注释的值应指向现有的证书 CR 实例，格式为 `<certificate-namespace>/<certificate-name>`。
 
-This is the [kustomize](https://github.com/kubernetes-sigs/kustomize) patch we
-used for annotating the Mutating|ValidatingWebhookConfiguration objects.
+这是我们用于注释 Mutating|ValidatingWebhookConfiguration 对象的 [kustomize](https://github.com/kubernetes-sigs/kustomize) patch。
 ```yaml
 {{#include ./testdata/project/config/default/webhookcainjection_patch.yaml}}
 ```
