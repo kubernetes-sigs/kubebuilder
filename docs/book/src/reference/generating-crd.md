@@ -10,7 +10,7 @@ KubeBuilder 提供了提供了一个 `make` 的命令来运行 controller-gen �
 
 ## 验证
 
-CRD 支持使用 [OpenAPI v3 schema][openapi-schema] 在 `validation` 段中进行[声明式验证 validation][kube-validation]。
+CRD 支持使用 [OpenAPI v3 schema][openapi-schema] 在 `validation` 段中进行[声明式验证][kube-validation]。
 
 通常，[验证标记](./markers/crd-validation.md)可能会关联到字段或者类型。如果你定义了复杂的验证，或者如果你需要重复使用验证，亦或者你需要验证切片元素，那么通常你最好定义一个新的类型来描述你的验证。
 
@@ -41,13 +41,13 @@ type Rank int32
 
 ```
 
-## 打印其其它信息列
+## 打印其它信息列
 
 从 Kubernetes 1.11 开始，`kubectl get` 可以询问 Kubernetes 服务要展示哪些列。对于 CRD 来说，可以用 `kubectl get` 来提供展示有用的特定类型的信息，类似于为内置类型提供的信息。
 
-你 CRD 的 [additionalPrinterColumns 字段][kube-additional-printer-columns]控制了要展示的信息，它是通过在给 CRD 的 Go 类型上标注 [`+kubebuilder:printcolumn`][crd-markers] 标签来控制要展示的信息。
+你 CRD 的 [additionalPrinterColumns 字段][kube-additional-printer-columns] 控制了要展示的信息，它是通过在给 CRD 的 Go 类型上标注 [`+kubebuilder:printcolumn`][crd-markers] 标签来控制要展示的信息。
 
-比如下面的验证例子，我们为 knights, rank, 和 alias 字段添加了要展示的信息字段。
+比如下面的验证例子，我们为 knights，rank，和 alias 字段添加了要展示的信息字段。
 
 ```go
 // +kubebuilder:printcolumn:name="Alias",type=string,JSONPath=`.spec.alias`
@@ -133,7 +133,7 @@ Kubernetes 1.13，你可以有在你的 CRD 的同一个 Kind 中定义多个版
 
 KubeBuilder 会制定规则来运行 `controller-gen`。如果 `controller-gen` 不在 `go get` 用来下载 Go 模块的路径下的时候，这些规则会自动的安装 `controller-gen`。
 
-如果你想它到底做了什么，你也可以直接运行 `controller-gen`。
+如果你想看它到底做了什么，你也可以直接运行 `controller-gen`。
 
 每一个 `controller-gen` “生成器” 都由 `controller-gen` 的一个参数选项控制，和标签的语法一样。比如，要生成带有 "trivial versions" 的 CRD（无版本转换的 webhook），我们可以执行 `controller-gen crd:trivialVersions=true paths=./api/...`。
 
