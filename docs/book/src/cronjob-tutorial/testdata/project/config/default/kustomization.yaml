@@ -1,14 +1,11 @@
-# Adds namespace to all resources.
+# 为所有资源添加名字空间
 namespace: project-system
 
-# Value of this field is prepended to the
-# names of all resources, e.g. a deployment named
-# "wordpress" becomes "alices-wordpress".
-# Note that it should also match with the prefix (text before '-') of the namespace
-# field above.
+# 这个字段的值会加在所有资源名字的前面，比如一个叫做 "wordpress" 的 deployment 会变成 "alices-wordpress"。
+# 注意它应该和上面名字空间字段的前缀匹配（'-' 之前的字符串）。
 namePrefix: project-
 
-# Labels to add to all resources and selectors.
+# 要给所有资源和选择器添加的标签。
 #commonLabels:
 #  someName: someValue
 
@@ -16,38 +13,35 @@ bases:
 - ../crd
 - ../rbac
 - ../manager
-# [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix including the one in
-# crd/kustomization.yaml
+# [WEBHOOK] 用于启用 webhook，取消注释所有有 [WEBHOOK] 前缀的字段，包括在 crd/kustomization.yaml 中的。
 - ../webhook
-# [CERTMANAGER] To enable cert-manager, uncomment all sections with 'CERTMANAGER'. 'WEBHOOK' components are required.
+# [CERTMANAGER] 用于启用证书管理，需要取消带有 'CERTMANAGER' 的所有字段的注释。'WEBHOOK' 组件是必须的。
 - ../certmanager
-# [PROMETHEUS] To enable prometheus monitor, uncomment all sections with 'PROMETHEUS'.
+# [PROMETHEUS] 用于启用 prometheus 监控，取消带有 'PROMETHEUS' 的左右字段的注释。
 #- ../prometheus
 
 patchesStrategicMerge:
-  # Protect the /metrics endpoint by putting it behind auth.
-  # If you want your controller-manager to expose the /metrics
-  # endpoint w/o any authn/z, please comment the following line.
+  # 通过给 /metrics 的 endpoint 加上认证来保护它。
+  # 如果你想你的 controller-manager 暴露 /metrics 的 endpoint 并且不需要任何授权，那么注释掉下面这行。
 - manager_auth_proxy_patch.yaml
 
-# [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix including the one in
-# crd/kustomization.yaml
+# [WEBHOOK] 用于启用 webhook，取消注释所有有 [WEBHOOK] 前缀的字段，包括在 crd/kustomization.yaml 中的。
 - manager_webhook_patch.yaml
 
-# [CERTMANAGER] To enable cert-manager, uncomment all sections with 'CERTMANAGER'.
-# Uncomment 'CERTMANAGER' sections in crd/kustomization.yaml to enable the CA injection in the admission webhooks.
-# 'CERTMANAGER' needs to be enabled to use ca injection
+# [CERTMANAGER] 用于启用证书管理，需要取消带有 'CERTMANAGER' 的所有字段的注释。
+# 取消在 crd/kustomization.yaml 中 'CERTMANAGER' 部分的注释可以在许可的 webhook 中启用 CA 注入。
+# 需要启用 'CERTMANAGER' 来使用 ca 注入。
 - webhookcainjection_patch.yaml
 
-# the following config is for teaching kustomize how to do var substitution
+# 下面的配置是为了教授 kustomize 如何进行变量替换。
 vars:
-# [CERTMANAGER] To enable cert-manager, uncomment all sections with 'CERTMANAGER' prefix.
-- name: CERTIFICATE_NAMESPACE # namespace of the certificate CR
+# [CERTMANAGER] 用于启用证书管理，取消带有 'CERTMANAGER' 前缀的所有部分注释。
+- name: CERTIFICATE_NAMESPACE # CR 证书的命名空间
   objref:
     kind: Certificate
     group: cert-manager.io
     version: v1alpha2
-    name: serving-cert # this name should match the one in certificate.yaml
+    name: serving-cert # 这个名字应该和 certificate.yaml 文件中的一个名字相匹配
   fieldref:
     fieldpath: metadata.namespace
 - name: CERTIFICATE_NAME
@@ -55,8 +49,8 @@ vars:
     kind: Certificate
     group: cert-manager.io
     version: v1alpha2
-    name: serving-cert # this name should match the one in certificate.yaml
-- name: SERVICE_NAMESPACE # namespace of the service
+    name: serving-cert # 这个名字应该和 certificate.yaml 文件中的一个名字相匹配
+- name: SERVICE_NAMESPACE # service 的命名空间
   objref:
     kind: Service
     version: v1

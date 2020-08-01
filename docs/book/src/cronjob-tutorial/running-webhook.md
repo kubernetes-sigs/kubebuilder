@@ -57,7 +57,7 @@ kubectl create -f config/samples/batch_v1_cronjob.yaml
 
 如果你在同一个集群为 pod 部署了一个 webhook，要留意以启动问题，因为创建 webhook pod 的请求可能会被发送到 webhook pod 它自己，而它自己还没有启动起来。
 
-为了让它能正常工作，你可以使用选择器来跳过它自己，如果你的 kubernetes 版本是 1.9+ 的可以使用 [namespaceSelector]，如果你的 kubernetes 版本是 1.15+ 的使用[objectSelector]。
+为了让它能正常工作，你可以使用选择器来跳过它自己，如果你的 kubernetes 版本是 1.9+ 的可以使用 [namespaceSelector]，如果你的 kubernetes 版本是 1.15+ 的使用 [objectSelector]。
 
 </aside>
 
