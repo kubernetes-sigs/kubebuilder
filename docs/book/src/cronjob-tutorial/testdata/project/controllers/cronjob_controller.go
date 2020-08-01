@@ -53,7 +53,7 @@ type CronJobReconciler struct {
 
 /*
 我们虚拟了一个时钟以便在测试中方便地来回调节时间，
-此出的真实时钟则调用`time.Now`
+调用`time.Now`获取真实时间
 */
 type realClock struct{}
 
@@ -195,7 +195,7 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			successfulJobs = append(successfulJobs, &childJobs.Items[i])
 		}
 
-		//将启动时间存放在注释中，当job生效时可以从中读取 
+		//将启动时间存放在注释中，当job生效时可以从中读取
 		scheduledTimeForJob, err := getScheduledTimeForJob(&job)
 		if err != nil {
 			log.Error(err, "unable to parse schedule time for child job", "job", &job)
@@ -251,7 +251,7 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 		### 3: 根据保留的历史版本数清理过旧的job
 
-		
+
 		我们先清理掉一些版本太旧的job，这样可以不用保留太多无用的job
 	*/
 
@@ -398,7 +398,7 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		### 6: 如果job符合执行时机，并且没有超出截止时间，且不被并发策略阻塞，执行该job
 
 		如果job遗漏了一次执行，且还没超出截止时间，把遗漏的这次执行也不上
-		
+
 	*/
 	if missedRun.IsZero() {
 		log.V(1).Info("no upcoming scheduled times, sleeping until next")
@@ -455,7 +455,7 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	*/
 	constructJobForCronJob := func(cronJob *batch.CronJob, scheduledTime time.Time) (*kbatch.Job, error) {
-		// job名称带上执行时间以确保唯一性，避免排定执行时间的job创建两次 
+		// job名称带上执行时间以确保唯一性，避免排定执行时间的job创建两次
 		name := fmt.Sprintf("%s-%d", cronJob.Name, scheduledTime.Unix())
 
 		job := &kbatch.Job{
