@@ -25,8 +25,19 @@ err = testEnv.Stop()
 Logs from the test runs are prefixed with `test-env`.
 
 ### Configuring your test control plane
-You can use environment variables and/or flags to specify the `api-server` and `etcd` setup within your integration tests.
 
+You can use environment variables and/or flags to specify the `kubectl`, `api-server` and `etcd` setup within your 
+integration tests. The location of the binaries which will be used by the [EnvtTest][envtest] is done due the following environment 
+variables. See:
+
+```shell
+$ export TEST_ASSET_KUBECTL=<kubectl-bin-path>
+$ export TEST_ASSET_KUBE_APISERVER=<api-server-bin-path>
+$ export TEST_ASSET_ETCD=<etcd-bin-path>
+``` 
+
+Note that `kubebuilder` scaffold in your Makefile the `setupenvtest` target which download the binaries and setup it.  
+ 
 #### Environment Variables
 
 | Variable name | Type | When to use |
@@ -71,3 +82,4 @@ expectedOwnerReference := v1.OwnerReference{
 }
 Expect(deployment.ObjectMeta.OwnerReferences).To(ContainElement(expectedOwnerReference))
 ```
+[envtest]: https://godoc.org/sigs.k8s.io/controller-runtime/pkg/envtest
