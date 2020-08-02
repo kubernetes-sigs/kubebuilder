@@ -29,7 +29,7 @@ patchesStrategicMerge:
 - manager_webhook_patch.yaml
 
 # [CERTMANAGER] 用于启用证书管理，需要取消带有 'CERTMANAGER' 的所有字段的注释。
-# 取消在 crd/kustomization.yaml 中 'CERTMANAGER' 部分的注释可以在许可的 webhook 中启用 CA 注入。
+# 取消在 crd/kustomization.yaml 中 'CERTMANAGER' 部分的注释可以在 admission webhook 中启用 CA 注入。
 # 需要启用 'CERTMANAGER' 来使用 ca 注入。
 - webhookcainjection_patch.yaml
 

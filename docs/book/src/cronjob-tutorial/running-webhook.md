@@ -1,4 +1,4 @@
-# 部署认可的 Webhooks
+# 部署 Admission Webhooks
 
 ## Kind Cluster
 
