@@ -4,4 +4,4 @@
 
 {{#literatego ./testdata/project/main.go}}
 
-*现在* 我们可以开始实现自己的控制器了。
+*现在* 我们可以实现我们的控制器了。
