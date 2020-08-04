@@ -1,65 +1,52 @@
-# Deployment and Testing
+# 部署和测试
 
-Before we can test out our conversion, we'll need to enable them conversion in our CRD:
+在测试版本转换之前，我们需要在 CRD 中启用转换：
 
-Kubebuilder generates Kubernetes manifests under the `config` directory with webhook
-bits disabled.  To enable them, we need to:
+Kubebuilder 在 `config` directory 目录下生成禁用 webhook bits 的 Kubernetes 清单。要启用它们，我们需要：
 
-- Enable `patches/webhook_in_<kind>.yaml` and
-  `patches/cainjection_in_<kind>.yaml` in
-  `config/crd/kustomization.yaml` file.
+- 在 `config/crd/kustomization.yaml` 文件启用 `patches/webhook_in_<kind>.yaml` 和
+  `patches/cainjection_in_<kind>.yaml`。
 
-- Enable `../certmanager` and `../webhook` directories under the
-  `bases` section in `config/default/kustomization.yaml` file.
+- 在 `config/default/kustomization.yaml` 文件的 `bases` 部分下启用 `../certmanager` 和 `../webhook` 目录。
 
-- Enable `manager_webhook_patch.yaml` under the `patches` section
-  in `config/default/kustomization.yaml` file.
+- 在 `config/default/kustomization.yaml` 文件的 `patches` 部分下启用 `manager_webhook_patch.yaml`。
 
-- Enable all the vars under the `CERTMANAGER` section in
-  `config/default/kustomization.yaml` file.
+- 在 `config/default/kustomization.yaml` 文件的 `CERTMANAGER` 部分下启用所有变量。
 
-Additionally, we'll need to set the `CRD_OPTIONS` variable to just
-`"crd"`, removing the `trivialVersions` option (this ensures that we
-actually [generate validation for each version][ref-multiver], instead of
-telling Kubernetes that they're the same):
+此外，我们需要将 `CRD_OPTIONS` 变量设置为 `"crd"`，删除 `trivialVersions` 选项（这确保我们实际 
+[为每个版本生成验证][ref-multiver]，而不是告诉 Kubernetes 它们是一样的）：
 
 ```makefile
 CRD_OPTIONS ?= "crd"
 ```
 
-Now we have all our code changes and manifests in place, so let's deploy it to
-the cluster and test it out.
+现在，我们已经完成了所有的代码更改和清单，让我们将其部署到集群并对其进行测试。
 
-You'll need [cert-manager](../cronjob-tutorial/cert-manager.md) installed
-(version `0.9.0+`) unless you've got some other certificate management
-solution.  The Kubebuilder team has tested the instructions in this tutorial
-with
+你需要安装 [cert-manager](../cronjob-tutorial/cert-manager.md)（`0.9.0+` 版本），
+除非你有其他证书管理解决方案。Kubebuilder 团队已在
 [0.9.0-alpha.0](https://github.com/jetstack/cert-manager/releases/tag/v0.9.0-alpha.0)
-release.
+版本中测试了本教程中的指令。
 
-Once all our ducks are in a row with certificates, we can run `make
-install deploy` (as normal) to deploy all the bits (CRD,
-controller-manager deployment) onto the cluster.
+一旦所有的 duck 都有了证书, 我们就可以运行 `make install deploy`（和平常一样）将所有的 bits（CRD,
+controller-manager deployment）部署到集群上。
 
-## Testing
+## 测试
 
-Once all of the bits are up an running on the cluster with conversion enabled, we can test out our
-conversion by requesting different versions.
+一旦启用了转换的所有 bits 都在群集上运行，我们就可以通过请求不同的版本来测试转换。
 
-We'll make a v2 version based on our v1 version (put it under `config/samples`)
+我们将基于 v1 版本制作 v2 版本（将其放在 `config/samples` 下）
 
 ```yaml
 {{#include ./testdata/project/config/samples/batch_v2_cronjob.yaml}}
 ```
 
-Then, we can create it on the cluster: 
+然后，我们可以在集群中创建它：
 
 ```shell
 kubectl apply -f config/samples/batch_v2_cronjob.yaml
 ```
 
-If we've done everything correctly, it should create successfully,
-and we should be able to fetch it using both the v2 resource
+如果我们正确地完成了所有操作，那么它应该能够成功地创建，并且我们能够使用 v2 资源来获取它
 
 ```shell
 kubectl get cronjobs.v2.batch.tutorial.kubebuilder.io -o yaml
@@ -69,7 +56,7 @@ kubectl get cronjobs.v2.batch.tutorial.kubebuilder.io -o yaml
 {{#include ./testdata/project/config/samples/batch_v2_cronjob.yaml}}
 ```
 
-and the v1 resource
+v1 资源
 
 ```shell
 kubectl get cronjobs.v1.batch.tutorial.kubebuilder.io -o yaml
@@ -78,45 +65,36 @@ kubectl get cronjobs.v1.batch.tutorial.kubebuilder.io -o yaml
 {{#include ./testdata/project/config/samples/batch_v1_cronjob.yaml}}
 ```
 
-Both should be filled out, and look equivalent to our v2 and v1 samples,
-respectively.  Notice that each has a different API version.
+两者都应填写，并分别看起来等同于的 v2 和 v1 示例。注意，每个都有不同的 API 版本。
 
-Finally, if we wait a bit, we should notice that our CronJob continues to
-reconcile, even though our controller is written against our v1 API version.
+最后，如果稍等片刻，我们应该注意到，即使我们的控制器是根据 v1 API 版本编写的，我们的 CronJob 仍在继续协调。
 
 <aside class="note">
 
-<h1>kubectl and Preferred Versions</h1>
+<h1>kubectl 和首选版本</h1>
 
-When we access our API types from Go code, we ask for a specific version
-by using that version's Go type (e.g. `batchv2.CronJob`).
+当我们从 Go 代码访问 API 类型时，我们会通过使用该版本的 Go 类型（例如 `batchv2.CronJob`）来请求特定版本。
 
-You might've noticed that the above invocations of kubectl looked
-a little different from what we usually do -- namely, they specify
-a *group-version-resource*, instead of just a resource.
+你可能已经注意到，上面对 kubectl 的调用与我们通常所做的看起来有些不同 —— 即，它指定了一个 
+*group-version-resource* 而不是一个资源。
 
-When we write `kubectl get cronjob`, kubectl needs to figure out which
-group-version-resource that maps to.  To do this, it uses the *discovery
-API* to figure out the preferred version of the `cronjob` resource.  For
-CRDs, this is more-or-less the latest stable version (see the [CRD
-docs][CRD-version-pref] for specific details).
+当我们运行 `kubectl get cronjob` 时, kubectl 需要弄清楚映射到哪个
+group-version-resource。为此，它使用 *discovery API* 来找出 `cronjob` 资源的首选版本。对于 CRD，
+这或多或少是最新的稳定版本（具体细节请参阅 [CRD 文档][CRD-version-pref])。
 
-With our updates to CronJob, this means that `kubectl get cronjob` fetches
-the `batch/v2` group-version.
+随着我们对 CronJob 的更新, 意味着 `kubectl get cronjob` 将获取 `batch/v2` group-version.
 
-If we want to specify an exact version, we can use `kubectl get
-resource.version.group`, as we do above.
+如果我们想指定一个确切的版本，可以像上面一样使用 `kubectl get resource.version.group`。
 
-***You should always use fully-qualified group-version-resource syntax in
-scripts***.  `kubectl get resource` is for humans, self-aware robots, and
-other sentient beings that can figure out new versions.  `kubectl get
-resource.version.group` is for everything else.
+***你应该始终在脚本中使用完全合格的 group-version-resource 语法***。
+`kubectl get resource` 是为人类、有自我意识的机器人和其他能够理解新版本的众生设计的。
+`kubectl get resource.version.group` 用于其他的一切。
 
 </aside>
 
-## Troubleshooting 
+## 故障排除 
 
-[steps for troubleshooting](/TODO.md)
+[故障排除的步骤](/TODO.md)
 
 [ref-multiver]: /reference/generating-crd.md#multiple-versions "Generating CRDs: Multiple Versions"
 
