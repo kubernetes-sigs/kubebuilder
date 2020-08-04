@@ -5,7 +5,6 @@ kind: CustomResourceDefinition
 metadata:
   name: leviathans.sea-creatures.testproject.org
 spec:
-  preserveUnknownFields: false
   conversion:
     strategy: Webhook
     webhookClientConfig:
