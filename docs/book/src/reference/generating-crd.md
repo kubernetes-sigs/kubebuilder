@@ -1,34 +1,27 @@
-# Generating CRDs
+# 生成 CRDs
 
-KubeBuilder uses a tool called [`controller-gen`][controller-tools] to
-generate utility code and Kubernetes object YAML, like
-CustomResourceDefinitions.
+KubeBuilder 用工具 [`controller-gen`][controller-tools] 来生成功能代码和描述 Kubernetes 
+对象的 YAML 文件，比如 CustomResourceDefinitions。
 
-To do this, it makes use of special "marker comments" (comments that start
-with `// +`) to indicate additional information about fields, types, and
-packages.  In the case of CRDs, these are generally pulled from your
-`_types.go` files.  For more information on markers, see the [marker
-reference docs][marker-ref].
+为此，它使用了特殊的“标记注释”(以 `// +` 为开头的注释)来表明与字段，类型和包有关的额外信息。
+对于 CRD 来讲，他们通常是从你的 `_types.go` 生成的。关于标记的更多详细信息，可以查看 [marker
+reference docs][marker-ref]。
 
-KubeBuilder provides a `make` target to run controller-gen and generate
-CRDs: `make manifests`.
+KubeBuilder 提供了一个能够运行 controller-gen 并生成 CRDs 的 `make` 命令: `make manifests`。
 
-When you run `make manifests`, you should see CRDs generated under the
-`config/crd/bases` directory.  `make manifests` can generate a number of
-other artifacts as well -- see the [marker reference docs][marker-ref] for
-more details.
+当你运行 `make manifests` 命令时，你应该能在 `config/crd/bases` 目录下看到生成的CRDs。
+`make manifests` 命令还能够生成其他的制品--更多详情可以看 [marker reference docs][marker-ref] 。
 
-## Validation
+## 验证
 
-CRDs support [declarative validation][kube-validation] using an [OpenAPI
-v3 schema][openapi-schema] in the `validation` section.
+在验证章节，CRDs 支持用 [OpenAPI
+v3 schema][openapi-schema] 来支持验证 [declarative validation][kube-validation]。
 
-In general, [validation markers](./markers/crd-validation.md) may be
-attached to fields or to types. If you're defining complex validation, if
-you need to re-use validation, or if you need to validate slice elements,
-it's often best to define a new type to describe your validation.
+通常， [validation markers](./markers/crd-validation.md)  或许是和字段或者类型相关联的。
+如果你定义了复杂的验证，或者如果你需要重新验证，抑或你需要验证分片元素，最好的办法是定义一个
+新的类型来描述你的验证。
 
-For example:
+比如:
 
 ```go
 type ToySpec struct {
@@ -55,22 +48,17 @@ type Rank int32
 
 ```
 
-## Additional Printer Columns
+## 额外的列信息打印
 
-Starting with Kubernetes 1.11, `kubectl get` can ask the server what
-columns to display.  For CRDs, this can be used to provide useful,
-type-specific information with `kubectl get`, similar to the information
-provided for built-in types.
+从 Kubernetes 1.11 版本开始，`kubectl get` 可以告诉服务端如何进行行信息的显示。
+对于 CRDs 来讲， `kubectl get` 可以被用来提供一些有用的，特定类型的信息，类似于
+内置类型的信息展示。
 
-The information that gets displayed can be controlled with the
-[additionalPrinterColumns field][kube-additional-printer-columns] on your
-CRD, which is controlled by the
-[`+kubebuilder:printcolumn`][crd-markers] marker on the Go type for
-your CRD.
 
-For instance, in the following example, we add fields to display
-information about the knights, rank, and alias fields from the validation
-example:
+对于你的CRD，显示的信息可以用 [additionalPrinterColumns field][kube-additional-printer-columns] 
+来进行控制，这些 CRD 是被 [`+kubebuilder:printcolumn`][crd-markers] 之类的 Go 类型标记来控制的。
+
+例如，在随后的例子中，我们添加字段来显示 knights，rank 和 alias 字段的信息：
 
 ```go
 // +kubebuilder:printcolumn:name="Alias",type=string,JSONPath=`.spec.alias`
@@ -87,24 +75,21 @@ type Toy struct {
 
 ```
 
-## Subresources
+## 子资源
 
-CRDs can choose to implement the `/status` and `/scale`
-[subresources][kube-subresources] as of Kubernetes 1.13.
+截止 Kubernetes 1.13 版本，可以选择实现 CRDs 的 `/status` 和 `/scale`
 
-It's generally recommended that you make use of the `/status` subresource
-on all resources that have a status field.
+在所有具有 status 字段的资源中，我们推荐你使用 `/status` 子资源。
 
-Both subresources have a corresponding [marker][crd-markers].
+所有的子资源都有一个相对应的 [marker][crd-markers]。
 
-### Status
+### 状态
 
-The status subresource is enabled via `+kubebuilder:subresource:status`.
-When enabled, updates at the main resource will not change status.
-Similarly, updates to the status subresource cannot change anything but
-the status field.
+status 子资源可以通过 `+kubebuilder:subresource:status` 来进行启用。启用后，
+主资源的更新不会使子资源的状态发生变化。类似的，子资源的更新除了带来 status 
+字段的更新外，不会引起其他任何变化。
 
-For example:
+比如:
 
 ```go
 // +kubebuilder:subresource:status
@@ -117,15 +102,14 @@ type Toy struct {
 }
 ```
 
-### Scale
+### 伸缩
 
-The scale subresource is enabled via `+kubebuilder:subresource:scale`.
-When enabled, users will be able to use `kubectl scale` with your
-resource.  If the `selectorpath` argument pointed to the string form of
-a label selector, the HorizontalPodAutoscaler will be able to autoscale
-your resource.
+子资源的伸缩可以通过 `+kubebuilder:subresource:scale` 来启用。启用后，用户
+可以使用 `kubectl scale` 来对你的资源进行扩容或者缩容。如果 `selectorpath` 参数
+是指向一个  label selector 的字符格式， 那么 HorizontalPodAutoscaler 就会对你的资源
+进行自动扩容或者缩容。
 
-For example:
+比如:
 
 ```go
 type CustomSetSpec struct {
@@ -149,60 +133,58 @@ type CustomSet struct {
 }
 ```
 
-## Multiple Versions
+## 多版本
 
-As of Kubernetes 1.13, you can have multiple versions of your Kind defined
-in your CRD, and use a webhook to convert between them.
+从 Kubernetes 1.13 开始，在你的 CRD 中定义的 Kind 可以有多个版本，可以用一个 
+webhook 来完成彼此的切换。
 
-For more details on this process, see the [multiversion
-tutorial](/multiversion-tutorial/tutorial.md).
+关于这一点，更多的信息可以查看 [multiversion
+tutorial](/multiversion-tutorial/tutorial.md)。
 
-By default, KubeBuilder disables generating different validation for
-different versions of the Kind in your CRD, to be compatible with older
-Kubernetes versions.
 
-You'll need to enable this by switching the line in your makefile that
-says `CRD_OPTIONS ?= "crd:trivialVersions=true` to `CRD_OPTIONS ?= crd`
+默认的， KubeBuilder 禁用了为用户自定义 CRD 中的 Kind  的不同版本生成不同的验证，
+这样做是为了能兼容较老版本的 Kubernetes 。
 
-Then, you can use the `+kubebuilder:storageversion` [marker][crd-markers]
-to indicate the [GVK](/cronjob-tutorial/gvks.md "Group-Version-Kind") that
-should be used to store data by the API server.
 
-## Under the hood
+你可以通过把你 makefile 中的 `CRD_OPTIONS ?= "crd:trivialVersions=true`
+改成 `CRD_OPTIONS ?= crd` 来启用这个功能。
 
-KubeBuilder scaffolds out make rules to run `controller-gen`.  The rules
-will automatically install controller-gen if it's not on your path using
-`go get` with Go modules.
 
-You can also run `controller-gen` directly, if you want to see what it's
-doing.
+然后，你就可以用 `+kubebuilder:storageversion` [marker][crd-markers] 来表明
+ [GVK](/cronjob-tutorial/gvks.md "Group-Version-Kind") 应该被用来存储 API server
+ 的数据。
 
-Each controller-gen "generator" is controlled by an option to
-controller-gen, using the same syntax as markers.  For instance, to
-generate CRDs with "trivial versions" (no version conversion webhooks), we
-call `controller-gen crd:trivialVersions=true paths=./api/...`.
+## 写在最后
 
-controller-gen also supports different output "rules" to control how
-and where output goes.  Notice the `manifests` make rule (condensed
-slightly to only generate CRDs):
+KubeBuilder scaffolds out 使用一些规则来运行 `controller-gen`。如果在使用 Go 
+模块的 `go get` 所输出的路径中，没有找到 controller-gen ，那么这些规则将自动
+安装 controller-gen 。
+
+如果你想知道到底发生了什么，你还可以直接运行 `controller-gen` 。
+
+每一个 controller-gen “生成器” 都有一个 controller-gen 选项来控制，使用语法
+和 markers 是一样的。例如，为了用 "trivial versions" (没有版本转换 webhooks) 选项
+来生成 CRDs, 我们使用 `controller-gen crd:trivialVersions=true paths=./api/...` 。
+
+controller-gen 也支持不同的输出“规则”来控制输出如何运作以及在哪儿运作。
+注意 `manifests` 的 make 规则(仅仅用来生成 CRDs ):
 
 ```makefile
-# Generate manifests for CRDs
+# 生成 CRD 清单
 manifests: controller-gen
 	$(CONTROLLER_GEN) crd:trivialVersions=true paths="./..." output:crd:artifacts:config=config/crd/bases
 ```
 
-It uses the `output:crd:artifacts` output rule to indicate that
-CRD-related config (non-code) artifacts should end up in
-`config/crd/bases` instead of `config/crd`.
+它使用 `output:crd:artifacts` 输出规则来表明与 CRD 相关的配置(非代码级别) 应该在 `config/crd/bases`
+目录下，而不是 `config/crd` 目录下。
 
-To see all the options for `controller-gen`, run
+如果要查看 `controller-gen` 的其他使用选项，可以运行
 
 ```shell
 $ controller-gen -h
 ```
 
-or, for more details:
+或者，可以执行以下命令，获取更多详细信息:
 
 ```shell
 $ controller-gen -hhh
