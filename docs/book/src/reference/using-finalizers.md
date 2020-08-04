@@ -1,25 +1,17 @@
-# Using Finalizers
+# 使用Finalizers
 
-`Finalizers` allow controllers to implement asynchronous pre-delete hooks. Let's
-say you create an external resource (such as a storage bucket) for each object of
-your API type, and you want to delete the associated external resource
-on object's deletion from Kubernetes, you can use a finalizer to do that.
+`Finalizers`允许控制器实现异步预删除挂钩。假设你为API类型的每个对象创建了一个外部资源（例如存储桶），并且想要从Kubernetes中删除对象同时删除关联的外部资源，则可以使用终结器来实现。
 
-You can read more about the finalizers in the [Kubernetes reference docs](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#finalizers). The section below demonstrates how to register and trigger pre-delete hooks
-in the `Reconcile` method of a controller.
+您可以在[Kubernetes参考文档中](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#finalizers)阅读有关终结器的更多信息。以下部分演示了如何在`Reconcile`控制器方法中注册和触发预删除挂钩。
 
-The key point to note is that a finalizer causes "delete" on the object to become 
-an "update" to set deletion timestamp. Presence of deletion timestamp on the object
-indicates that it is being deleted. Otherwise, without finalizers, a delete
-shows up as a reconcile where the object is missing from the cache.
+要注意的关键点是终结器使对象上的“删除”成为设置删除时间戳的“更新”。对象上存在删除时间戳记表明该对象正在被删除。否则，在没有终结器的情况下，删除将显示为协调，缓存中缺少该对象。
 
-Highlights:
-- If the object is not being deleted and does not have the finalizer registered,
-  then add the finalizer and update the object in Kubernetes.
-- If object is being deleted and the finalizer is still present in finalizers list,
-  then execute the pre-delete logic and remove the finalizer and update the
-  object.
-- Ensure that the pre-delete logic is idempotent.
+注意：
+
+- 如果未删除对象并且未注册终结器，则添加终结器并在Kubernetes中更新对象。
+- 如果要删除对象，但终结器列表中仍存在终结器，请执行预删除逻辑并移除终结器并更新对象。
+- 确保预删除逻辑是幂等的。
 
 {{#literatego ../cronjob-tutorial/testdata/finalizer_example.go}}
+
 
