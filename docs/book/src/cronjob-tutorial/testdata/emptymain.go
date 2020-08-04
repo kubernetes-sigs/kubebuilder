@@ -56,7 +56,7 @@ func init() {
 
 - 我们通过 flag 库解析入参
 - 我们实例化了一个[*manager*](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/manager#Manager)，它记录着我们所有控制器的运行情况，以及设置共享缓存和API服务器的客户端（注意，我们把我们的 Scheme 的信息告诉了 manager）。
-- 运行 manager，它反过来运行我们所有的控制器和 webhooks。manager 状态被设置为运行中，直到它收到一个优雅停机 (graceful shutdown) 信号。这样一来，当我们在 Kubernetes 上运行时，我们就可以优雅地停止 pod。
+- 运行 manager，它反过来运行我们所有的控制器和 webhooks。manager 状态被设置为 Running，直到它收到一个优雅停机 (graceful shutdown) 信号。这样一来，当我们在 Kubernetes 上运行时，我们就可以优雅地停止 pod。
 
 虽然我们现在还没有任何业务代码可供执行，但请记住 `+kubebuilder:scaffold:builder` 的注释 --- 事情很快就会变得有趣起来。
 
@@ -86,7 +86,7 @@ func main() {
 	})
 
 	/*
-		上面的例子将把你的项目改成只监听单一的命名空间。在这种情况下，建议通过将默认的 ClusterRole 和 ClusterRoleBinding 分别替换为 Role 和RoleBinding 来限制所提供给这个命名空间的授权。
+		上面的例子将把你的项目改成只监听单一的命名空间。在这种情况下，建议通过将默认的 ClusterRole 和 ClusterRoleBinding 分别替换为 Role 和 RoleBinding 来限制所提供给这个命名空间的授权。
 
 		另外，也可以使用 [MultiNamespacedCacheBuilder](https://pkg.go.dev/github.com/kubernetes-sigs/controller-runtime/pkg/cache#MultiNamespacedCacheBuilder) 来监听特定的命名空间。
 	*/
