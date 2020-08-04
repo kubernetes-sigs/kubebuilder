@@ -44,19 +44,20 @@ func (f *EnableWebhookPatch) SetTemplateDefaults() error {
 
 const enableWebhookPatchTemplate = `# The following patch enables conversion webhook for CRD
 # CRD conversion requires k8s 1.13 or later.
-apiVersion: apiextensions.k8s.io/v1beta1
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   name: {{ .Resource.Plural }}.{{ .Resource.Domain }}
 spec:
   conversion:
     strategy: Webhook
-    webhookClientConfig:
-      # this is "\n" used as a placeholder, otherwise it will be rejected by the apiserver for being blank,
-      # but we're going to set it later using the cert-manager (or potentially a patch if not using cert-manager)
-      caBundle: Cg==
-      service:
-        namespace: system
-        name: webhook-service
-        path: /convert
+    webhook:
+      clientConfig:
+        # this is "\n" used as a placeholder, otherwise it will be rejected by the apiserver for being blank,
+        # but we're going to set it later using the cert-manager (or potentially a patch if not using cert-manager)
+        caBundle: Cg==
+        service:
+          namespace: system
+          name: webhook-service
+          path: /convert
 `
