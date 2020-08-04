@@ -2,7 +2,7 @@
 
 在测试版本转换之前，我们需要在 CRD 中启用转换：
 
-Kubebuilder 在 `config` directory 目录下生成禁用 webhook bits 的 Kubernetes 清单。要启用它们，我们需要：
+Kubebuilder 在 `config` 目录下生成禁用 webhook bits 的 Kubernetes 清单。要启用它们，我们需要：
 
 - 在 `config/crd/kustomization.yaml` 文件启用 `patches/webhook_in_<kind>.yaml` 和
   `patches/cainjection_in_<kind>.yaml`。
@@ -27,7 +27,7 @@ CRD_OPTIONS ?= "crd"
 [0.9.0-alpha.0](https://github.com/jetstack/cert-manager/releases/tag/v0.9.0-alpha.0)
 版本中测试了本教程中的指令。
 
-一旦所有的 duck 都有了证书, 我们就可以运行 `make install deploy`（和平常一样）将所有的 bits（CRD,
+一旦所有的证书准备妥当后, 我们就可以运行 `make install deploy`（和平常一样）将所有的 bits（CRD,
 controller-manager deployment）部署到集群上。
 
 ## 测试
@@ -82,7 +82,7 @@ kubectl get cronjobs.v1.batch.tutorial.kubebuilder.io -o yaml
 group-version-resource。为此，它使用 *discovery API* 来找出 `cronjob` 资源的首选版本。对于 CRD，
 这或多或少是最新的稳定版本（具体细节请参阅 [CRD 文档][CRD-version-pref])。
 
-随着我们对 CronJob 的更新, 意味着 `kubectl get cronjob` 将获取 `batch/v2` group-version.
+随着我们对 CronJob 的更新, 意味着 `kubectl get cronjob` 将获取 `batch/v2` group-version。
 
 如果我们想指定一个确切的版本，可以像上面一样使用 `kubectl get resource.version.group`。
 
