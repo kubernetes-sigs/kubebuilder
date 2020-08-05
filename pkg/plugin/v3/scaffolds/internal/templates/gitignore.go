@@ -46,6 +46,7 @@ const gitignoreTemplate = `
 *.so
 *.dylib
 bin
+testbin/*
 
 # Test binary, build with ` + "`go test -c`" + `
 *.test
