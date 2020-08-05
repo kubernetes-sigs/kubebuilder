@@ -48,6 +48,9 @@ COPY --from=builder /go/bin/* /bin/
 
 ENV IN_DOCKER=true
 
+RUN apk add bash && \
+    rm -rf /var/cache/apk/*
+
 WORKDIR /opt
 ENTRYPOINT ["/bin/mdbook"]
 CMD ["build"]
