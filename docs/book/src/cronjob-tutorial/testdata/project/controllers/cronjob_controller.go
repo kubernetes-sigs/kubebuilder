@@ -91,8 +91,8 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	/*
 		### 1: 根据名称加载定时任务
 
-		通过client获取定时任务。所有client方法第一个参数都是context(用于取消定时任务)作为
-		第一个参数，把请求对象信息作为最后一个参数。Get方法例外，它把
+		通过 client 获取定时任务。所有 client 方法第一个参数都是 context（用于取消定时任务）作为
+		第一个参数，把请求对象信息作为最后一个参数。Get 方法例外，它把
 		[`NamespacedName`](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/client?tab=doc#ObjectKey)
 		作为中间的第二个参数（大多数方法都没有中间的NamespacedName参数，下文会提到）
 
@@ -101,17 +101,17 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	var cronJob batch.CronJob
 	if err := r.Get(ctx, req.NamespacedName, &cronJob); err != nil {
 		log.Error(err, "unable to fetch CronJob")
-		//忽略掉not-found错误，它们不能通过重新排队修复(要等待新的通知)
+		//忽略掉 not-found 错误，它们不能通过重新排队修复（要等待新的通知）
 		//在删除一个不存在的对象时，可能会报这个错误。
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
 	/*
-		### 2: 列出所有有效job，更新它们的状态
+		### 2: 列出所有有效 job，更新它们的状态
 
-		为确保每个job的状态都会被更新到，我们需要列出某个CronJob在当前命名空间下的所有job。
-		和Get方法类似，我们可以使用List方法来列出CronJob下所有的job。注意，我们使用变长参数
-		来映射命名空间和任意多个匹配变量(实际上相当于是建立了一个索引)。
+		为确保每个  job 的状态都会被更新到，我们需要列出某个 CronJob 在当前命名空间下的所有 job。
+		和 Get 方法类似，我们可以使用 List 方法来列出 CronJob 下所有的 job。注意，我们使用变长参数
+		来映射命名空间和任意多个匹配变量（实际上相当于是建立了一个索引）。
 
 	*/
 	var childJobs kbatch.JobList
@@ -124,35 +124,35 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 		<aside class="note">
 
-		<h1>索引的作用?</h1>
+		<h1>索引的作用？</h1>
 
 
-		<p>调谐器会获取cronjob下的所有job以更新它们状态。随着cronjob数量的增加，遍历全部conjob
-		查找会变的相当低效。为了提高查询效率，这些任务会根据控制器名称建立索引。缓存后的job对象会
-		被添加上一个jobOwnerKey字段。这个字段引用其归属控制器和函数作为索引。在下文中，我们将配置
-		manager作为这个字段的索引</p>
+		<p>调谐器会获取 cronjob 下的所有 job 以更新它们状态。随着 cronjob 数量的增加，遍历全部 conjob
+		查找会变的相当低效。为了提高查询效率，这些任务会根据控制器名称建立索引。缓存后的 job 对象会
+		被添加上一个 jobOwnerKey 字段。这个字段引用其归属控制器和函数作为索引。在下文中，我们将配置
+		manager 作为这个字段的索引</p>
 
 		</aside>
 
-		查找到所有的job后，将其归类为active，successful，failed三种类型，同时持续跟踪其
-		最新的执行情况以更新其状态。牢记，status值应该是从实际的运行状态中实时获取。从cronjob
-		中读取job的状态通常不是一个好做法。应该从每次执行状态中获取。我们后续也采用这种方法。
+		查找到所有的 job 后，将其归类为 active，successful，failed 三种类型，同时持续跟踪其
+		最新的执行情况以更新其状态。牢记，status 值应该是从实际的运行状态中实时获取。从 cronjob
+		中读取 job 的状态通常不是一个好做法。应该从每次执行状态中获取。我们后续也采用这种方法。
 
-		我们可以检查一个job是否已处于“finished”状态，使用status条件还可以知道它是succeeded
-		或failed状态。
+		我们可以检查一个 job 是否已处于 “finished” 状态，使用 status 条件还可以知道它是 succeeded
+		或 failed 状态。
 
 	*/
 
-	// 找出所有有效的job
+	// 找出所有有效的 job
 	var activeJobs []*kbatch.Job
 	var successfulJobs []*kbatch.Job
 	var failedJobs []*kbatch.Job
 	var mostRecentTime *time.Time // 记录其最近一次运行时间以便更新状态
 
 	/*
-		当一个job被标记为"succeeded"或"failed"时，我们认为这个任务处于"finished"状态。
-		Status conditions允许我们给job对象添加额外的状态信息，开发人员或控制器可以通过
-		这些校验信息来检查job的完成或健康状态。
+		当一个 job 被标记为 "succeeded" 或 "failed" 时，我们认为这个任务处于 "finished" 状态。
+		Status conditions 允许我们给 job 对象添加额外的状态信息，开发人员或控制器可以通过
+		这些校验信息来检查 job 的完成或健康状态。
 
 	*/
 	isJobFinished := func(job *kbatch.Job) (bool, kbatch.JobConditionType) {
@@ -167,7 +167,7 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	// +kubebuilder:docs-gen:collapse=isJobFinished
 
 	/*
-		使用辅助函数来提取创建job时注释中排定的执行时间
+		使用辅助函数来提取创建 job 时注释中排定的执行时间
 
 	*/
 	getScheduledTimeForJob := func(job *kbatch.Job) (*time.Time, error) {
@@ -226,17 +226,17 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	/*
-		此处会记录我们观察到的job数量。为便于调试，略微提高日志级别。注意，这里没有使用
+		此处会记录我们观察到的 job 数量。为便于调试，略微提高日志级别。注意，这里没有使用
 		格式化字符串，使用由键值对构成的固定格式信息来输出日志。这样更易于过滤和查询日志
 
 	*/
 	log.V(1).Info("job count", "active jobs", len(activeJobs), "successful jobs", len(successfulJobs), "failed jobs", len(failedJobs))
 
 	/*
-		使用收集到日期信息来更新CRD状态。和之前类似，通过client来完成操作。
-		针对status这一子资源，我们可以使用`Status`部分的`Update`方法。
+		使用收集到日期信息来更新 CRD 状态。和之前类似，通过 client 来完成操作。
+		针对 status 这一子资源，我们可以使用`Status`部分的`Update`方法。
 
-		status子资源会忽略掉对spec的变更。这与其它更新操作的发生冲突的风险更小，
+		status 子资源会忽略掉对 spec 的变更。这与其它更新操作的发生冲突的风险更小，
 		而且实现了权限分离。
 
 	*/
@@ -246,13 +246,13 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	/*
-		更新状态后，后续要确保状态符合我们在spec定下的预期。
+		更新状态后，后续要确保状态符合我们在 spec 定下的预期。
 
 
-		### 3: 根据保留的历史版本数清理过旧的job
+		### 3: 根据保留的历史版本数清理过旧的 job
 
 
-		我们先清理掉一些版本太旧的job，这样可以不用保留太多无用的job
+		我们先清理掉一些版本太旧的 job，这样可以不用保留太多无用的 job
 	*/
 
 	// 注意: 删除操作采用的“尽力而为”策略
@@ -297,8 +297,8 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	/* ### 4: 检查是否被挂起
 
-	如果当前cronjob被挂起，不会再运行其下的任何job，我们将其停止。这对于某些job出现异常
-	的排查非常有用。我们无需删除cronjob来中止其后续其他job的运行。
+	如果当前 cronjob 被挂起，不会再运行其下的任何 job，我们将其停止。这对于某些 job 出现异常
+	的排查非常有用。我们无需删除 cronjob 来中止其后续其他 job 的运行。
 
 	*/
 
@@ -308,15 +308,15 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	/*
-		### 5: 计算job下一次执行时间
+		### 5: 计算 job 下一次执行时间
 
-		如果cronjob没被挂起，则我们需要计算它的下一次执行时间，
+		如果 cronjob 没被挂起，则我们需要计算它的下一次执行时间，
 		同时检查是否有遗漏的执行没被处理
 
 	*/
 
 	/*
-		借助强大的cron库，我们可以轻易的计算出定时任务的下一次执行时间。
+		借助强大的 cron 库，我们可以轻易的计算出定时任务的下一次执行时间。
 		我们根据最近一次的执行时间来计算下一次执行时间，如果没有找到最近
 		一次执行时间，则根据定时任务的创建时间来计算。
 
@@ -357,13 +357,13 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		starts := 0
 		for t := sched.Next(earliestTime); !t.After(now); t = sched.Next(t) {
 			lastMissed = t
-			// 一个CronJob可能会遗漏多次执行。举个例子，周五5:00pm技术人员下班后，
+			// 一个 CronJob 可能会遗漏多次执行。举个例子，周五5:00pm技术人员下班后，
 			// 控制器在5:01pm发生了异常。然后直到周二早上才有技术人员发现问题并
 			// 重启控制器。那么所有的以1小时为周期执行的定时任务，在没有技术人员
-			// 进一步的干预下，都会有80多个job在恢复正常后一并启动（如果job允许
+			// 进一步的干预下，都会有80多个 job 在恢复正常后一并启动（如果 job 允许
 			// 多并发和延迟启动）
 
-			// 如果CronJob的某些地方出现异常，控制器或apiservers(用于设置任务创建时间)
+			// 如果 CronJob 的某些地方出现异常，控制器或 apiservers (用于设置任务创建时间)
 			// 的时钟不正确, 那么就有可能出现错过很多次执行时间的情形（跨度可达数十年）
 			// 这将会占满控制器的CPU和内存资源。这种情况下，我们不需要列出错过的全部
 			// 执行时间。
@@ -388,16 +388,16 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	/*
 		上述步骤执行完后，将准备好的请求加入队列直到下次执行，
-		然后确定这些job是否要实际执行
+		然后确定这些 job 是否要实际执行
 
 	*/
 	scheduledResult := ctrl.Result{RequeueAfter: nextRun.Sub(r.Now())} // 保存以便别处复用
 	log = log.WithValues("now", r.Now(), "next run", nextRun)
 
 	/*
-		### 6: 如果job符合执行时机，并且没有超出截止时间，且不被并发策略阻塞，执行该job
+		### 6: 如果 job 符合执行时机，并且没有超出截止时间，且不被并发策略阻塞，执行该 job
 
-		如果job遗漏了一次执行，且还没超出截止时间，把遗漏的这次执行也不上
+		如果 job 遗漏了一次执行，且还没超出截止时间，把遗漏的这次执行也不上
 
 	*/
 	if missedRun.IsZero() {
@@ -418,18 +418,18 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	/*
-		如果确认job需要实际执行。我们有三种策略执行该job。要么先等待现有的job执行完后，在启动本次job；
-		或是直接覆盖取代现有的job；或是不考虑现有的job，直接作为新的job执行。因为缓存导致的信息有所延迟，
+		如果确认 job 需要实际执行。我们有三种策略执行该 job。要么先等待现有的 job 执行完后，在启动本次 job；
+		或是直接覆盖取代现有的job；或是不考虑现有的 job，直接作为新的 job 执行。因为缓存导致的信息有所延迟，
 		当更新信息后需要重新排队。
 
 	*/
-	// 确定要job的执行策略 —— 并发策略可能禁止多个job同时运行
+	// 确定要 job 的执行策略 —— 并发策略可能禁止多个job同时运行
 	if cronJob.Spec.ConcurrencyPolicy == batch.ForbidConcurrent && len(activeJobs) > 0 {
 		log.V(1).Info("concurrency policy blocks concurrent runs, skipping", "num active", len(activeJobs))
 		return scheduledResult, nil
 	}
 
-	// 直接覆盖现有job
+	// 直接覆盖现有 job
 	if cronJob.Spec.ConcurrencyPolicy == batch.ReplaceConcurrent {
 		for _, activeJob := range activeJobs {
 			// we don't care if the job was already deleted
@@ -441,17 +441,17 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	/*
-		确定如何处理现有job后，创建符合我们预期的job
+		确定如何处理现有 job 后，创建符合我们预期的 job
 	*/
 
 	/*
-		基于CronJob模版构建job，从模板复制spec及对象的元信息。
+		基于 CronJob 模版构建 job，从模板复制 spec 及对象的元信息。
 
 		然后在注解中设置执行时间，这样我们可以在每次的调谐中获取起作为“上一次执行时间”
 
-		最后，还需要设置 owner reference字段。当我们删除CronJob时，Kubernetes垃圾收集
-		器会根据这个字段对应的job。同时，当某个job状态发生变更（创建，删除，完成）时，
-		controller-runtime可以根据这个字段识别出要对那个CronJob进行调谐。
+		最后，还需要设置 owner reference字段。当我们删除 CronJob 时，Kubernetes 垃圾收集
+		器会根据这个字段对应的 job。同时，当某个job状态发生变更（创建，删除，完成）时，
+		controller-runtime 可以根据这个字段识别出要对那个CronJob进行调谐。
 
 	*/
 	constructJobForCronJob := func(cronJob *batch.CronJob, scheduledTime time.Time) (*kbatch.Job, error) {
@@ -499,27 +499,27 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	log.V(1).Info("created Job for CronJob run", "job", job)
 
 	/*
-		### 7: 当job开始运行或到了job下一次的执行时间，重新排队
+		### 7: 当 job 开始运行或到了 job 下一次的执行时间，重新排队
 
 		最终我们返回上述预备的结果。我们还需重新排队当任务还有下一次执行时。
 		这被视作最长截止时间——如果期间发生了变更，例如job被提前启动或是提前
 		结束，或被修改，我们可能会更早进行调谐。
 
 	*/
-	// 当有job进入运行状态后，重新排队，同时更新状态
+	// 当有 job 进入运行状态后，重新排队，同时更新状态
 	return scheduledResult, nil
 }
 
 /*
-### 启动CronJob控制器
+### 启动 CronJob 控制器
 
-最后，我们还要完善下我们的启动过程。为了让调谐器可以通过job的owner值快速找到Job。
-我们需要一个索引。声明一个索引键，后续我们可以将其用于client的虚拟变量名中，从Job
-对象中提取索引值。此处的索引会帮我们处理好namespaces的映射关系。所以如果Job有owner
-值，我们快速地获取owner值。
+最后，我们还要完善下我们的启动过程。为了让调谐器可以通过 job 的 owner 值快速找到 job。
+我们需要一个索引。声明一个索引键，后续我们可以将其用于 client 的虚拟变量名中，从 job
+对象中提取索引值。此处的索引会帮我们处理好 namespaces 的映射关系。所以如果 job 有 owner
+值，我们快速地获取 owner 值。
 
-另外，我们需要告知manager，这个控制器拥有哪些Jobs。当对应的Jobs发生变更或被删除时，
-自动调用调谐器对CronJob进行调谐。
+另外，我们需要告知 manager，这个控制器拥有哪些 job。当对应的Jobs发生变更或被删除时，
+自动调用调谐器对 CronJob 进行调谐。
 
 */
 var (
@@ -534,18 +534,18 @@ func (r *CronJobReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &kbatch.Job{}, jobOwnerKey, func(rawObj runtime.Object) []string {
-		//获取job对象，提取owner...
+		//获取 job 对象，提取 owner...
 		job := rawObj.(*kbatch.Job)
 		owner := metav1.GetControllerOf(job)
 		if owner == nil {
 			return nil
 		}
-		// ...确保owner是个CronJob...
+		// ...确保 owner 是个 CronJob...
 		if owner.APIVersion != apiGVStr || owner.Kind != "CronJob" {
 			return nil
 		}
 
-		// ...是CronJob，返回
+		// ...是 CronJob，返回
 		return []string{owner.Name}
 	}); err != nil {
 		return err
