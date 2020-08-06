@@ -2,7 +2,7 @@
 
 测试 Kubernetes 控制器是一个大的课题，kubebuilder 为您生成的样板测试文件相当少。
 
-带您了解 Kubebuilder-generated 控制器的集成测试模式，我们将重新阅读一遍我们在第一篇教程中构建的 CronJob，并为它编写一个简单的测试。
+为了带您了解 Kubebuilder 生成的控制器的集成测试模式，我们将重新阅读一遍我们在第一篇教程中构建的 CronJob，并为它编写一个简单的测试。
 
 基本的方法是，在生成的 `suite_test.go` 文件中，您将用 envtest 去创建一个本地 Kubernetes API 服务端，并实例化和运行你的控制器，然后编写附加的 `*_test.go` 文件并用 [Ginko](http://onsi.github.io/ginkgo) 去测试它。
 
@@ -12,7 +12,7 @@
 
 {{#literatego ../cronjob-tutorial/testdata/project/controllers/suite_test.go}}
 
-## 测试控制器的行为
+## 测试控制器行为
 
 {{#literatego ../cronjob-tutorial/testdata/project/controllers/cronjob_controller_test.go}}
 
@@ -26,4 +26,4 @@
 
 还有更多使用 envtest 来严格测试控制器行为的例子。包括：
 
-* Azure Databricks Operator: 看他们详细的 [`suite_test.go`](https://github.com/microsoft/azure-databricks-operator/blob/0f722a710fea06b86ecdccd9455336ca712bf775/controllers/suite_test.go) 和在那个目录下的任何 `*_test.go` 文件 [例如这个](https://github.com/microsoft/azure-databricks-operator/blob/0f722a710fea06b86ecdccd9455336ca712bf775/controllers/secretscope_controller_test.go)。
+* Azure Databricks Operator: 仔细阅读 [`suite_test.go`](https://github.com/microsoft/azure-databricks-operator/blob/0f722a710fea06b86ecdccd9455336ca712bf775/controllers/suite_test.go) 以及那个目录下所有的 `*_test.go` 文件 [例如这个](https://github.com/microsoft/azure-databricks-operator/blob/0f722a710fea06b86ecdccd9455336ca712bf775/controllers/secretscope_controller_test.go)。
