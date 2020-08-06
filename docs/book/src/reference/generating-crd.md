@@ -74,7 +74,7 @@ type Toy struct {
 
 ### 状态
 
-通过 `+kubebuilder:subresource:status` 设置子资源的状态。当时启用状态时，更细主资源不会修改它的状态。类似的，更新子资源状态也只是修改了状态字段。
+通过 `+kubebuilder:subresource:status` 设置子资源的状态。当时启用状态时，更新主资源不会修改它的状态。类似的，更新子资源状态也只是修改了状态字段。
 
 例如：
 
@@ -133,7 +133,7 @@ Kubernetes 1.13，你可以在你的 CRD 的同一个 Kind 中定义多个版本
 
 KubeBuilder 会制定规则来运行 `controller-gen`。如果 `controller-gen` 不在 `go get` 用来下载 Go 模块的路径下的时候，这些规则会自动的安装 `controller-gen`。
 
-如果你想指导它到底做了什么，你也可以直接运行 `controller-gen`。
+如果你想知道它到底做了什么，你也可以直接运行 `controller-gen`。
 
 每一个 `controller-gen` “生成器” 都由 `controller-gen` 的一个参数选项控制，和标签的语法一样。比如，要生成带有 "trivial versions" 的 CRD（无版本转换的 webhook），我们可以执行 `controller-gen crd:trivialVersions=true paths=./api/...`。
 
