@@ -517,7 +517,7 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 对象中提取索引值。此处的索引会帮我们处理好 namespaces 的映射关系。所以如果 job 有 owner
 值，我们快速地获取 owner 值。
 
-另外，我们需要告知 manager，这个控制器拥有哪些 job。当对应的Jobs发生变更或被删除时，
+另外，我们需要告知 manager，这个控制器拥有哪些 job。当对应的 job 发生变更或被删除时，
 自动调用调谐器对 CronJob 进行调谐。
 
 */
