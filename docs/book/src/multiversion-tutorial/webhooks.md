@@ -1,26 +1,23 @@
-# Setting up the webhooks
+# 设置 webhook
 
-Our conversion is in place, so all that's left is to tell
-controller-runtime about our conversion.
+我们的 conversion 已经就位，所以接下来就是告诉 controller-runtime 关于我们的 conversion。
 
-Normally, we'd run
+通常，我们通过运行
 
 ```shell
 kubebuilder create webhook --group batch --version v1 --kind CronJob --conversion
 ```
 
-to scaffold out the webhook setup.  However, we've already got webhook
-setup, from when we built our defaulting and validating webhooks!
+来搭建起 webhook 设置。然而，当我们已经创建好默认和验证过的 webhook 时，我们就已经设置好 webhook。
 
-## Webhook setup...
+## Webhook 设置...
 
 {{#literatego ./testdata/project/api/v1/cronjob_webhook.go}}
 
-## ...and `main.go`
+## ...以及 `main.go`
 
-Similarly, our existing main file is sufficient:
+同样地，我们的 main 文件也已就绪：
 
 {{#literatego ./testdata/project/main.go}}
 
-Everything's set up and ready to go!  All that's left now is to test out
-our webhooks.
+所有都已经设置准备好！接下来要做的只有测试我们的 webhook。

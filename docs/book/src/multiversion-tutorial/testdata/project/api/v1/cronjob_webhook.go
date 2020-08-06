@@ -33,11 +33,10 @@ import (
 var cronjoblog = logf.Log.WithName("cronjob-resource")
 
 /*
-This setup is doubles as setup for our conversion webhooks: as long as our
-types implement the
-[Hub](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/conversion?tab=doc#Hub) and
+对于 conversion webhook 这项设置达成了两个目标：在我们的类型实现
+[Hub](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/conversion?tab=doc#Hub) 和
 [Convertible](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/conversion?tab=doc#Convertible)
-interfaces, a conversion webhook will be registered.
+接口的同时，一个 conversion webhook 会被成功注册。
 */
 
 func (r *CronJob) SetupWebhookWithManager(mgr ctrl.Manager) error {
@@ -50,7 +49,7 @@ func (r *CronJob) SetupWebhookWithManager(mgr ctrl.Manager) error {
  */
 var _ webhook.Defaulter = &CronJob{}
 
-// Default implements webhook.Defaulter so a webhook will be registered for the type
+// Default 实现 webhook.Defaulter 使这类型的 webhook 被成功注册
 func (r *CronJob) Default() {
 	cronjoblog.Info("default", "name", r.Name)
 
@@ -70,30 +69,30 @@ func (r *CronJob) Default() {
 	}
 }
 
-// TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
+// TODO(user): 修改 verbs 为 "verbs=create;update;delete"，如果你想允许删除验证。
 // +kubebuilder:webhook:verbs=create;update,path=/validate-batch-tutorial-kubebuilder-io-v1-cronjob,mutating=false,failurePolicy=fail,groups=batch.tutorial.kubebuilder.io,resources=cronjobs,versions=v1,name=vcronjob.kb.io
 
 var _ webhook.Validator = &CronJob{}
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
+// ValidateCreate 实现 webhook.Validator 使这类型的 webhook 被成功注册
 func (r *CronJob) ValidateCreate() error {
 	cronjoblog.Info("validate create", "name", r.Name)
 
 	return r.validateCronJob()
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
+// ValidateUpdate 实现 webhook.Validator 使这类型的 webhook 被成功注册
 func (r *CronJob) ValidateUpdate(old runtime.Object) error {
 	cronjoblog.Info("validate update", "name", r.Name)
 
 	return r.validateCronJob()
 }
 
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
+// ValidateDelete 实现 webhook.Validator 使这类型的 webhook 被成功注册
 func (r *CronJob) ValidateDelete() error {
 	cronjoblog.Info("validate delete", "name", r.Name)
 
-	// TODO(user): fill in your validation logic upon object deletion.
+	// TODO(user): 在对象删除之前填入你的验证逻辑
 	return nil
 }
 
@@ -115,8 +114,8 @@ func (r *CronJob) validateCronJob() error {
 }
 
 func (r *CronJob) validateCronJobSpec() *field.Error {
-	// The field helpers from the kubernetes API machinery help us return nicely
-	// structured validation errors.
+	// 来自 kubernetes API 的 field 帮助器帮助我们返回友好的
+	// 结构化的验证错误。
 	return validateScheduleFormat(
 		r.Spec.Schedule,
 		field.NewPath("spec").Child("schedule"))
@@ -131,12 +130,12 @@ func validateScheduleFormat(schedule string, fldPath *field.Path) *field.Error {
 
 func (r *CronJob) validateCronJobName() *field.Error {
 	if len(r.ObjectMeta.Name) > validationutils.DNS1035LabelMaxLength-11 {
-		// The job name length is 63 character like all Kubernetes objects
-		// (which must fit in a DNS subdomain). The cronjob controller appends
-		// a 11-character suffix to the cronjob (`-$TIMESTAMP`) when creating
-		// a job. The job name length limit is 63 characters. Therefore cronjob
-		// names must have length <= 63-11=52. If we don't validate this here,
-		// then job creation will fail later.
+		// 和所有的 Kubernetes 对象一样 job 名称的长度是 63 个字符
+		// （它必须适合一个 DNS 子域名）。 当创建一个 job，cronjob 控制器在 
+		// cronjob 后附加一个 11 个字符的后缀 (`-$TIMESTAMP`) 。
+		// job 名称的长度限制是 63 个字符。因此 cronjob
+		// 名称的长度必须 <= 63-11=52。如果这里我们不验证，
+		// 那么 job 的创建稍后将会失败。
 		return field.Invalid(field.NewPath("metadata").Child("name"), r.Name, "must be no more than 52 characters")
 	}
 	return nil
