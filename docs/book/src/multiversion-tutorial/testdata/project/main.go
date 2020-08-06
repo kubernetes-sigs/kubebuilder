@@ -45,7 +45,7 @@ var (
 func init() {
 	_ = clientgoscheme.AddToScheme(scheme)
 
-	_ = kbatchv1.AddToScheme(scheme) // we've added this ourselves
+	_ = kbatchv1.AddToScheme(scheme) // 我们自己添加的
 	_ = batchv1.AddToScheme(scheme)
 	_ = batchv2.AddToScheme(scheme)
 	// +kubebuilder:scaffold:scheme
@@ -88,7 +88,7 @@ func main() {
 	// +kubebuilder:docs-gen:collapse=existing setup
 
 	/*
-		Our existing call to SetupWebhookWithManager registers our conversion webhooks with the manager, too.
+		我们现在调用 SetupWebhookWithManager 来注册我们的 conversion webhook 到管理器，如此。
 	*/
 	if err = (&batchv1.CronJob{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create webhook", "webhook", "Captain")
