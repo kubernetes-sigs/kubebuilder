@@ -15,8 +15,7 @@ limitations under the License.
 // +kubebuilder:docs-gen:collapse=Apache License
 
 /*
-开始编码之前，先引进基本的依赖。除此之外还需要一些额外的依赖库，
-在使用到它们时，我们再详细介绍。
+开始编码之前，先引进基本的依赖。除此之外还需要一些额外的依赖库，在使用到它们时，我们再详细介绍。
 */
 package controllers
 
@@ -43,7 +42,7 @@ import (
 接下来，我们需要一个时钟好让我们在测试中模拟计时。
 */
 
-// CronJob调谐器对CronJob对象进行调谐
+// CronJob 调谐器对 CronJob 对象进行调谐
 type CronJobReconciler struct {
 	client.Client
 	Log    logr.Logger
@@ -451,11 +450,11 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 		最后，还需要设置 owner reference字段。当我们删除 CronJob 时，Kubernetes 垃圾收集
 		器会根据这个字段对应的 job。同时，当某个job状态发生变更（创建，删除，完成）时，
-		controller-runtime 可以根据这个字段识别出要对那个CronJob进行调谐。
+		controller-runtime 可以根据这个字段识别出要对那个 CronJob 进行调谐。
 
 	*/
 	constructJobForCronJob := func(cronJob *batch.CronJob, scheduledTime time.Time) (*kbatch.Job, error) {
-		// job名称带上执行时间以确保唯一性，避免排定执行时间的job创建两次
+		// job 名称带上执行时间以确保唯一性，避免排定执行时间的 job 创建两次
 		name := fmt.Sprintf("%s-%d", cronJob.Name, scheduledTime.Unix())
 
 		job := &kbatch.Job{
@@ -482,15 +481,15 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 	// +kubebuilder:docs-gen:collapse=constructJobForCronJob
 
-	// 构建job
+	// 构建 job
 	job, err := constructJobForCronJob(&cronJob, missedRun)
 	if err != nil {
 		log.Error(err, "unable to construct job from template")
-		// job的spec没有变更，无需重新排队
+		// job 的 spec 没有变更，无需重新排队
 		return scheduledResult, nil
 	}
 
-	// ...在集群中创建job
+	// ...在集群中创建 job
 	if err := r.Create(ctx, job); err != nil {
 		log.Error(err, "unable to create Job for CronJob", "job", job)
 		return ctrl.Result{}, err
@@ -502,7 +501,7 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		### 7: 当 job 开始运行或到了 job 下一次的执行时间，重新排队
 
 		最终我们返回上述预备的结果。我们还需重新排队当任务还有下一次执行时。
-		这被视作最长截止时间——如果期间发生了变更，例如job被提前启动或是提前
+		这被视作最长截止时间——如果期间发生了变更，例如 job 被提前启动或是提前
 		结束，或被修改，我们可能会更早进行调谐。
 
 	*/
