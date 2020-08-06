@@ -23,5 +23,5 @@ method called `Hub()` to serve as a
 We could also just put this inline in our `cronjob_types.go` file.
 */
 
-// Hub marks this type as a conversion hub.
+// Hub 标记这个类型是一个用来转换的 hub。
 func (*CronJob) Hub() {}

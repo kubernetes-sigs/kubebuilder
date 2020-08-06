@@ -1,21 +1,17 @@
-# Implementing conversion
+# 实现转换
 
-With our model for conversion in place, it's time to actually implement
-the conversion functions.  We'll put them in a file called
-`cronjob_conversion.go` next to our `cronjob_types.go` file, to avoid
-cluttering up our main types file with extra functions.
+当我们要转换的模型就绪，就可以开始实现转换方法了。 我们将这些方法放置在和 `cronjob_types.go` 文件相同的目录的 `cronjob_conversion.go` 文件中，来避免我们主要的类型文件和额外的方法产生混乱。
 
 ## Hub...
 
-First, we'll implement the hub.  We'll choose the v1 version as the hub:
+首先，我们需要实现 hub 接口。我们会选择 v1 版本作为 hub 的一个实现：
 
 {{#literatego ./testdata/project/api/v1/cronjob_conversion.go}}
 
-## ... and Spokes
+## ... 然后 Spokes
 
-Then, we'll implement our spoke, the v2 version:
+然后，我们需要实现我们的 spoke 接口，例如 v2 版本：
 
 {{#literatego ./testdata/project/api/v2/cronjob_conversion.go}}
 
-Now that we've got our conversions in place, all that we need to do is
-wire up our main to serve the webhook!
+现在我们的转换方法已经就绪，我们要做的就是启动我们的 main 方法来运行 webhook。
