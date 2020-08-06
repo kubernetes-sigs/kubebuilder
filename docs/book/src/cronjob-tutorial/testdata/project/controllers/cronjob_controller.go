@@ -109,7 +109,7 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	/*
 		### 2: 列出所有有效 job，更新它们的状态
 
-		为确保每个  job 的状态都会被更新到，我们需要列出某个 CronJob 在当前命名空间下的所有 job。
+		为确保每个 job 的状态都会被更新到，我们需要列出某个 CronJob 在当前命名空间下的所有 job。
 		和 Get 方法类似，我们可以使用 List 方法来列出 CronJob 下所有的 job。注意，我们使用变长参数
 		来映射命名空间和任意多个匹配变量（实际上相当于是建立了一个索引）。
 
