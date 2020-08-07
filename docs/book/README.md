@@ -40,7 +40,7 @@
 
 ### 2 术语表
 
-为保证翻译的统一性和准确性，请在翻译前、翻译时、校对时参考[术语表]()。
+为保证翻译的统一性和准确性，请在翻译前、翻译时、校对时参考[术语表](https://github.com/cloudnativeto/kubebuilder/blob/zh/docs/book/term.md)。
 
 术语表内容包含以下几类：
 
