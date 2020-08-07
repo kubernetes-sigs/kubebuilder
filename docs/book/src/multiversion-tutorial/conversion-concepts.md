@@ -1,29 +1,28 @@
-# Hubs, spokes, and other wheel metaphors
+# Hubs, spokes, 和其他的 wheel metaphors
 
-Since we now have two different versions, and users can request either
-version, we'll have to define a way to convert between our version. For
-CRDs, this is done using a webhook, similar to the defaulting and
-validating webhooks we [defined in the base
-tutorial](/cronjob-tutorial/webhook-implementation.md).  Like before,
-controller-runtime will help us wire together the nitty-gritty bits, we
-just have to implement the actual conversion.
+由于我们现在有两个不同的版本，用户可以请求任意一个
+版本，我们必须定义一种在版本之间进行转换的方法。对于
+CRD，这是通过使用 Webhook 完成的，类似我们[在基础中定义webhooks
+教程]（/ cronjob-tutorial / webhook-implementation.md）的默认设置和
+验证一样。像以前一样，
+控制器运行时将帮助我们将所有细节都连接在一起，
+而我们只需实现本身的转换即可。
 
-Before we do that, though, we'll need to understand how controller-runtime
-thinks about versions.  Namely:
+在执行此操作之前，我们需要了解控制器运行时如何
+处理版本的方法。即：
 
-## Complete graphs are insufficiently nautical
+## 完整的图表的不足之处
 
-A simple approach to defining conversion might be to define conversion
-functions to convert between each of our versions.  Then, whenever we need
-to convert, we'd look up the appropriate function, and call it to run the
-conversion.
+定义转化的一种简单方法可能是定义转化
+函数如何可以在我们的每个版本之间进行转换。然后，只要我们需要
+要进行转换的时候，我们只需要查找适当的函数，然后调用它就可以执行
+转换。
 
-This works fine when we just have two versions, but what if we had
-4 types? 8 types? That'd be a lot of conversion functions.
+当我们只有两个版本时，这可以正常工作，但是如果我们有4个版本，4个版本的时候，或者更多的时候该怎么办？那将会有很多转换功能。
 
-Instead, controller-runtime models conversion in terms of a "hub and
-spoke" model -- we mark one version as the "hub", and all other versions
-just define conversion to and from the hub:
+相反，控制器运行时会根据 “hub 和
+spoke” 模型-我们将一个版本标记为“hub”，而所有其他版本
+只需定义为与 hub 之间的来源即可：
 
 <!-- include these inline so we can style an match variables -->
 <div class="diagrams">
@@ -32,30 +31,28 @@ just define conversion to and from the hub:
 {{#include ./hub-spoke-graph.svg}}
 </div>
 
-Then, if we have to convert between two non-hub versions, we first convert
-to the hub version, and then to our desired version:
+如果我们必须在两个hub 之间进行转换，则我们首先要进行转换
+到这个 hub 对应的版本，然后再转换到我们所需的版本：
 
 <div class="diagrams">
 {{#include ./conversion-diagram.svg}}
 </div>
 
-This cuts down on the number of conversion functions that we have to
-define, and is modeled off of what Kubernetes does internally.
+这样就减少了我们必须转换的函数数量
+定义，其实就是在模仿 Kubernetes 实际内部工作方式。
 
-## What does that have to do with Webhooks?
+## 与Webhooks有什么关系？
 
-When API clients, like kubectl or your controller, request a particular
-version of your resource, the Kubernetes API server needs to return
-a result that's of that version.  However, that version might not match
-the version stored by the API server.
+当API客户端（例如kubectl或您的控制器）请求特定的
+版本的资源，Kubernetes API服务器需要返回
+该版本的结果。但是，该版本可能不匹配
+API服务器实际存储的版本。
 
-In that case, the API server needs to know how to convert between the
-desired version and the stored version.  Since the conversions aren't
-built in for CRDs, the Kubernetes API server calls out to a webhook to do
-the conversion instead.  For KubeBuilder, this webhook is implemented by
-controller-runtime, and performs the hub-and-spoke conversions that we
-discussed above.
+在这种情况下，API服务器需要知道如何在
+所需的版本和存储的版本之间进行转换。由于转换不是
+CRD内置的，于是Kubernetes API服务器通过调用Webhook来执行
+转换。对于KubeBuilder，跟我们上面讨论一样，Webhook通过
+控制器运行时来执行hub-and-spoke的转换。
 
-Now that we have the model for conversion down pat, we can actually
-implement our conversions.
-
+现在我们有了向下转换的模型，我们就可以
+实现转化操作了。
