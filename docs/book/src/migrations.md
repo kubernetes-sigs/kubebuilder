@@ -1,10 +1,7 @@
-# Migrations
+# 迁移
 
-Migrating between project structures in KubeBuilder generally involves
-a bit of manual work.
+Kubebuilder 项目结构之间的迁移通常会涉及到一些手动操作。
 
-This section details what's required to migrate, between different
-versions of KubeBuilder scaffolding, as well as to more complex project
-layout structures.
+这部分将详细说明，在 Kubebuilder 自动生成的不同版本之间迁移或向更复杂的项目层级结构迁移时所需具备的条件。
 - 
 - 
