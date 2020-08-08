@@ -1,72 +1,57 @@
 # controller-gen CLI
 
-KubeBuilder makes use of a tool called
-[controller-gen](https://sigs.k8s.io/controller-tools/cmd/controller-gen)
-for generating utility code and Kubernetes YAML.  This code and config
-generation is controlled by the presence of special ["marker
-comments"](/reference/markers.md) in Go code.
+KubeBuilder使用了一个称为 [controller-gen](https://sigs.k8s.io/controller-tools/cmd/controller-gen)
+用于生成代码和 Kubernetes YAML。 代码和配置的生成规则是被Go 代码中的一些特殊[标记注释](/reference/markers.md)控制的。
 
-controller-gen is built out of different "generators" (which specify what
-to generate) and "output rules" (which specify how and where to write the
-results).
+controller-gen由不同的“ generators”(指定什生成什么)和“输出规则”(指定如何以及在何处输出结果)。
 
-Both are configured through command line options specified in [marker
-format](/reference/markers.md).
+两者都是通过指定的命令行参数配置的，更详细的说明见 [标记格式化](/reference/markers.md)。
 
-For instance,
+
+例如，
+
 
 ```shell
 controller-gen paths=./... crd:trivialVersions=true rbac:roleName=controller-perms output:crd:artifacts:config=config/crd/bases
 ```
 
-generates CRDs and RBAC, and specifically stores the generated CRD YAML in
-`config/crd/bases`.  For the RBAC, it uses the default output rules
-(`config/rbac`).  It considers every package in the current directory tree
-(as per the normal rules of the go `...` wildcard).
+生成的CRD和RBAC YAML文件默认存储在`config/crd/bases`目录。 
+RBAC规则默认输出到(`config/rbac`)。 主要考虑到当前目录结构中的每个包的关系。
+(按照 go `...` 的通配符规则)。
 
-## Generators
+## 生成器
 
-Each different generator is configured through a CLI option.  Multiple
-generators may be used in a single invocation of `controller-gen`.
+每个不同的生成器都是通过CLI选项配置的。 controller-gen一次运行也可以指定多个生成器。
 
 {{#markerdocs CLI: generators}}
 
-## Output Rules
+## 输出规则
 
-Output rules configure how a given generator outputs its results. There is
-always one global "fallback" output rule (specified as `output:<rule>`),
-plus per-generator overrides (specified as `output:<generator>:<rule>`).
+输出规则配置给定生成器如何输出其结果。 默认是一个全局“回调”输出规则(指定为 `output:<rule>`)，
+另外还有per-generator的规则(指定为`output:<generator>:<rule>`)，会覆盖掉默认规则。
 
 <aside class="note">
 
-<h1>Default Rules</h1>
+<h1>默认规则</h1>
 
-When no fallback rule is specified manually, a set of default
-per-generator rules are used which result in YAML going to
-`config/<generator>`, and code staying where it belongs.
 
-The default rules are equivalent to
-`output:<generator>:artifacts:config=config/<generator>` for each
-generator.
+如果没有手动指定回调规则，默认的per-generator将被使用，生成的YAML将放到
+`config/<generator>`相应目录，代码所在的位置不变。
 
-When a "fallback" rule is specified, that'll be used instead of the
-default rules.
 
-For example, if you specify `crd rbac:roleName=controller-perms
-output:crd:stdout`, you'll get CRDs on standard out, and rbac in a file in
-`config/rbac`. If you were to add in a global rule instead, like `crd
-rbac:roleName=controller-perms output:crd:stdout output:none`, you'd get
-CRDs to standard out, and everything else to /dev/null, because we've
-explicitly specified a fallback.
+对于每个生成器来说，默认的规则等价于`output:<generator>:artifacts:config=config/<generator>`。
+
+指定“回调”规则后，将使用该规则代替默认规则。
+
+例如，如果你指定`crd rbac:roleName=controller-permsoutput:crd:stdout`，你将在标准输出中获得CRD，在`config/rbac`目录得到rbac规则。 
+如果你要添加全局规则，例如`crdrbac:roleName=controller-perms output:crd:stdout output:none`，CRD会被重定向到终端输出，其他被重定向到/dev/null，因为我们已经明确指定一个回调。
 
 </aside>
 
-For brevity, the per-generator output rules (`output:<generator>:<rule>`)
-are omitted below.  They are equivalent to the global fallback options
-listed here.
+为简便起见，每个生成器的输出规则(`output:<generator>:<rule>`)默认省略。 相当于这里列出的全局备用选项。
 
 {{#markerdocs CLI: output rules (optionally as output:<generator>:...)}}
 
-## Other Options
+## 其他选项
 
 {{#markerdocs CLI: generic}}
