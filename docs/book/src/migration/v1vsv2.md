@@ -5,14 +5,14 @@
 所有细节变化（破坏性的或者其他）可以查询 [controller-runtime](https://github.com/kubernetes-sigs/controller-runtime/releases),
 [controller-tools](https://github.com/kubernetes-sigs/controller-tools/releases) 和 [kubebuilder](https://github.com/kubernetes-sigs/kubebuilder/releases) 发布说明。
 
-## Common changes
+## 常规变化
 
-V2 版本项目中使用 go modules。但是 kubebuilder 会继续支持 `dep` 直到 go 1.13 out。
+V2 版本项目中使用 go modules。但是 kubebuilder 会继续支持 `dep` 直到 go 1.13 正式发布。
 
 ## controller-runtime
 
 - `Client.List` 现在使用 functional options (`List(ctx, list, ...option)`) 代替 `List(ctx, ListOptions, list)`。
-- `Client` interface 加入了 `Client.DeleteAllOf`。
+- `Client` 接口加入了 `Client.DeleteAllOf`。
 
 - 默认开启 Metrics。
 
@@ -20,7 +20,7 @@ V2 版本项目中使用 go modules。但是 kubebuilder 会继续支持 `dep` �
 
 ## Webhook-related
 
-- webhooks 的自动证书生成已经被移除，并且它将不再自动注册。使用 controller-tools 去生成 webhook 配置。如果你需要生成证书，我们推荐使用 [cert-manager](https://github.com/jetstack/cert-manager)。Kubebuilder v2 版本将会 scaffold 出证书管理器配置供你使用 -- 更多细节请看 [Webhook 教程](/cronjob-tutorial/webhook-implementation.md)。
+- webhooks 的自动证书生成已经被移除，并且它将不再自动注册。使用 controller-tools 去生成 webhook 配置。如果你需要生成证书，我们推荐使用 [cert-manager](https://github.com/jetstack/cert-manager)。Kubebuilder v2 版本将会自动生成证书管理器配置供你使用 -- 更多细节请看 [Webhook 教程](/cronjob-tutorial/webhook-implementation.md)。
 
 - `builder` 包现在为 controllers 和 webhooks 提供了独立的生成器，这便于选择哪个去运行。
 
@@ -34,7 +34,7 @@ V2 版本项目中使用 go modules。但是 kubebuilder 会继续支持 `dep` �
 
 - 在 v1 版本中，manager 作为一个 `StatefulSet` 部署，而在 v2 版本中是作为一个 `Deployment` 部署。
 
-- `kubebuilder create webhook` 命令被添加到 scaffold mutating/validating/conversion webhooks. 它代替了 `kubebuilder alpha webhook` 命令。
+- `kubebuilder create webhook` 命令被用来自动生成 mutating/validating/conversion webhooks. 它代替了 `kubebuilder alpha webhook` 命令。
 - v2 版本使用 `distroless/static` 代替 Ubuntu 作为基础镜像。这减少了镜像大小和受攻击面。
 
 - v2 版本要求 kustomize v3.1.0+。
