@@ -44,7 +44,8 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	var cronJob *batchv1.CronJob
 	if err := r.Get(ctx, req.NamespacedName, cronJob); err != nil {
 		log.Error(err, "unable to fetch CronJob")
-	         // 我们将忽略未找到的错误，因为不能通过重新加入队列的方式来修复这些错误
+		// 在我们删除一个不存在的对象的时，我们会遇到not-found errors这样的报错
+	    // 我们将暂时忽略，因为不能通过重新加入队列的方式来修复这些错误
 		 //（我们需要等待新的通知），而且我们可以根据删除的请求来获取它们
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
@@ -54,8 +55,8 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	// 检查 DeletionTimestamp 以确定对象是否在删除中
 	if cronJob.ObjectMeta.DeletionTimestamp.IsZero() {
-		// 该对象不会被删除，因为如果没有我们的 finalizer，
-		// 然后添加 finalizer 并更新对象，相当于注册我们的 finalizer。
+		// 如果当前对象没有 finalizer， 说明其没有处于正被删除的状态。
+		// 接着让我们添加 finalizer 并更新对象，相当于注册我们的 finalizer。
 		if !containsString(cronJob.ObjectMeta.Finalizers, myFinalizerName) {
 			cronJob.ObjectMeta.Finalizers = append(cronJob.ObjectMeta.Finalizers, myFinalizerName)
 			if err := r.Update(context.Background(), cronJob); err != nil {
@@ -91,7 +92,7 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 func (r *Reconciler) deleteExternalResources(cronJob *batch.CronJob) error {
 
 	// 删除与 cronJob 相关的任何外部资源
-	// 确保删除实现是幂等且可以安全调用同一对象多次。
+	// 确保删除是幂等性操作且可以安全调用同一对象多次。
 }
 
 // 辅助函数用于检查并从字符串切片中删除字符串。
