@@ -23,7 +23,7 @@
 {{#include ./conversion-diagram.svg}}
 </div>
 
-这样就减少了我们所需定义转换函数的数量，其实就是在模仿 Kubernetes 内部的实际工作方式。
+这样就减少了我们所需定义转换函数的数量，其实就是在模仿 Kubernetes 内部实际的工作方式。
 
 ## 与Webhooks有什么关系？
 
