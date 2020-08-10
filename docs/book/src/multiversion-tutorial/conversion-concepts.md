@@ -27,7 +27,7 @@
 
 ## 与 Webhooks 有什么关系？
 
-当 API 客户端（例如 kubectl 或您的控制器）请求特定的版本的资源，Kubernetes API 服务器需要返回该版本的结果。但是，该版本可能不匹配API服务器实际存储的版本。
+当 API 客户端（例如 kubectl 或你的控制器）请求特定的版本的资源，Kubernetes API 服务器需要返回该版本的结果。但是，该版本可能不匹配 API 服务器实际存储的版本。
 
 在这种情况下，API 服务器需要知道如何在所需的版本和存储的版本之间进行转换。由于转换不是 CRD 内置的，于是 Kubernetes API 服务器通过调用 Webhook 来执行转换。对于 KubeBuilder ，跟我们上面讨论一样，Webhook 通过控制器运行时来执行 hub-and-spoke 的转换。
 
