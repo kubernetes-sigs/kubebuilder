@@ -1,6 +1,6 @@
 # 实现转换
 
-当我们要转换的模型就绪，就可以开始实现转换方法了。 我们将这些方法放置在和 `cronjob_types.go` 文件相同的目录的 `cronjob_conversion.go` 文件中，来避免我们主要的类型文件和额外的方法产生混乱。
+采用的转换模型已经就绪，就可以开始实现转换函数了。 我们将这些函数放置在 `cronjob_conversion.go` 文件中，`cronjob_conversion.go` 文件和 `cronjob_types.go` 文件同目录，以避免我们主要的类型文件和额外的方法产生混乱。
 
 ## Hub...
 

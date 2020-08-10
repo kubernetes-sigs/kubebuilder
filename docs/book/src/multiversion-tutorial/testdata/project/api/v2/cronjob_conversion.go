@@ -35,7 +35,7 @@ import (
 /*
 我们的 "spoke" 版本需要实现
 [`Convertible`](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/conversion?tab=doc#Convertible)
-接口。顾名思义，它需要 `ConvertTo` 和 `ConvertFrom` 方法来从 hub 版本转换。
+接口。顾名思义，它需要实现 `ConvertTo` 从（其它版本）向 hub 版本转换，`ConvertFrom` 实现从 hub 版本转换到（其他版本）。
 */
 
 /*
@@ -88,7 +88,7 @@ func (src *CronJob) ConvertTo(dstRaw conversion.Hub) error {
 }
 
 /*
-ConvertFrom 期望修改其调用者以包含转换后的对象。
+ConvertFrom 期望修改其接收者以包含转换后的对象。
 大部分转换都是直接赋值，除了那些发生变化的 field。
 */
 
