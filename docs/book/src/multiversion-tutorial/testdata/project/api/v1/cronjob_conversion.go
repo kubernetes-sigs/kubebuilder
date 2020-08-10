@@ -17,10 +17,7 @@ limitations under the License.
 package v1
 
 /*
-Implementing the hub method is pretty easy -- we just have to add an empty
-method called `Hub()` to serve as a
-[marker](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/conversion?tab=doc#Hub).
-We could also just put this inline in our `cronjob_types.go` file.
+实现 hub 方法相当容易 -- 我们只需要添加一个叫做 `Hub()` 的空方法来作为一个 [标记](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/conversion?tab=doc#Hub)。我们也可以将这行代码放到 `cronjob_types.go` 文件中。
 */
 
 // Hub 标记这个类型是一个用来转换的 hub。
