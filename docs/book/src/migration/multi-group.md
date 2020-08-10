@@ -7,7 +7,7 @@
 kubebuilder在早期的v2版本(v2.0.0)中不支持 Multi-group 代码生成功能。
 
 想要更新项目结构支持 Multi-Group，请运行命令`kubebuilder edit --multigroup = true`。 
-更新到 Multi-group 结构后，将在新结构中生成新的种类，但是需要一些其他手动操作才能将旧的API组移至新结构中。
+更新到 Multi-group 结构后，将在新结构中生成新的kinds，但是需要一些其他手动操作才能将旧的API组移至新结构中。
 
 </aside>
 
@@ -22,7 +22,7 @@ kubebuilder在早期的v2版本(v2.0.0)中不支持 Multi-group 代码生成功�
 package v1
 ```
 
-为了让api结构更清晰，我们将 `api` 重名名为 `apis`，并将现有的 API 移动到新的子目录 batch 中：
+为了让api结构更清晰，我们将 `api` 重命名为 `apis`，并将现有的 API 移动到新的子目录 batch 中：
 
 ```bash
 mkdir apis/batch
@@ -59,13 +59,13 @@ repo: tutorial.kubebuilder.io/project
 multigroup: true
 ```
 
-请注意，此选项表示这是一个Multi-group项目。
+请注意，`multigroup: true`表示这是一个Multi-group项目。
 
-这样，如果项目不是新项目，并且已经实现了以前的API，则将在以前的结构中。
+通过上述操作将项目标记为Multi-group项目后，原本已经实现的API仍旧保持原来的目录结构。该命令并不会自动帮你做调整。
 请注意，在 `multi-group` 项目中，Kind API 的文件被生成在 `apis/<group>/<version>`，而不是在 `api/<version>`。
 另外，请注意控制器将在 `controllers/<group>` 目录下创建，而不是在 `controllers`。 
 这就是为什么我们在前面的步骤中使用脚本移动之前生成的API。
-请记住，之后要更新参考。
+请记住，之后要更新引用。
 
 [CronJob教程] [cronjob-tutorial]更详细地解释了每个更改（在KubeBuilder为single-group项目生成这些更改的上下文中）。
 
