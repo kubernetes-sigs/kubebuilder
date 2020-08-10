@@ -1,4 +1,5 @@
 /*
+Copyright 2020 The Kubernetes authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,8 +15,12 @@ limitations under the License.
 */
 // +kubebuilder:docs-gen:collapse=Apache License
 
+/*
+ */
 package v1
 
+/*
+ */
 import (
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"

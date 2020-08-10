@@ -1,9 +1,8 @@
-# The following patch enables conversion webhook for CRDw
+# The following patch enables conversion webhook for CRD
+# CRD conversion requires k8s 1.13 or later.
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  annotations:
-    cert-manager.io/inject-ca-from: $(CERTIFICATE_NAMESPACE)/$(CERTIFICATE_NAME)
   name: cronjobs.batch.tutorial.kubebuilder.io
 spec:
   conversion:
@@ -11,8 +10,8 @@ spec:
     webhookClientConfig:
       # this is "\n" used as a placeholder, otherwise it will be rejected by the apiserver for being blank,
       # but we're going to set it later using the cert-manager (or potentially a patch if not using cert-manager)
-      caBundle: XG4= 
+      caBundle: Cg==
       service:
-        namespace: $(CERTIFICATE_NAMESPACE)
+        namespace: system
         name: webhook-service
         path: /convert
