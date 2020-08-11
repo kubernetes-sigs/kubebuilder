@@ -45,8 +45,8 @@ func (c *cli) newInitCmd() *cobra.Command {
 	// so that it shows up in help and does not cause a parse error.
 	cmd.Flags().String(projectVersionFlag, c.defaultProjectVersion,
 		fmt.Sprintf("project version, possible values: (%s)", strings.Join(c.getAvailableProjectVersions(), ", ")))
-	// The --plugins flag can only be called to init projects v2+.
-	if c.projectVersion != config.Version1 {
+	// The --plugins flag can only be called to init projects v3+.
+	if c.projectVersion != config.Version2 {
 		cmd.Flags().StringSlice(pluginsFlag, nil,
 			"Name and optionally version of the plugin to initialize the project with. "+
 				fmt.Sprintf("Available plugins: (%s)", strings.Join(c.getAvailablePlugins(), ", ")))

@@ -37,11 +37,6 @@ var _ = Describe("Config", func() {
 			expectedConfig Config
 		)
 
-		By("Using config version 1")
-		config = Config{Version: Version1}
-		pluginConfig = PluginConfig{}
-		Expect(config.EncodePluginConfig(key, pluginConfig)).NotTo(Succeed())
-
 		By("Using config version 2")
 		config = Config{Version: Version2}
 		pluginConfig = PluginConfig{}
@@ -95,11 +90,6 @@ var _ = Describe("Config", func() {
 			pluginConfig         PluginConfig
 			expectedPluginConfig PluginConfig
 		)
-
-		By("Using config version 1")
-		config = Config{Version: Version1}
-		pluginConfig = PluginConfig{}
-		Expect(config.DecodePluginConfig(key, &pluginConfig)).NotTo(Succeed())
 
 		By("Using config version 2")
 		config = Config{Version: Version2}

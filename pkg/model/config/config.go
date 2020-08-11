@@ -23,9 +23,8 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-// Scaffolding versions
+// Project versions.
 const (
-	Version1      = "1"
 	Version2      = "2"
 	Version3Alpha = "3-alpha"
 )
@@ -65,11 +64,6 @@ type PluginConfigs map[string]pluginConfig
 // pluginConfig is an arbitrary plugin configuration object.
 type pluginConfig interface{}
 
-// IsV1 returns true if it is a v1 project
-func (c Config) IsV1() bool {
-	return c.Version == Version1
-}
-
 // IsV2 returns true if it is a v2 project
 func (c Config) IsV2() bool {
 	return c.Version == Version2
@@ -78,6 +72,12 @@ func (c Config) IsV2() bool {
 // IsV3 returns true if it is a v3 project
 func (c Config) IsV3() bool {
 	return c.Version == Version3Alpha
+}
+
+// IsVersionSupported returns true if a Config's version is supported by this kubebuilder version.
+// This method must be updated each time support is added or removed for a project version.
+func (c Config) IsVersionSupported() bool {
+	return c.IsV2() || c.IsV3()
 }
 
 // HasResource returns true if API resource is already tracked
@@ -95,13 +95,7 @@ func (c Config) HasResource(target GVK) bool {
 
 // AddResource appends the provided resource to the tracked ones
 // It returns if the configuration was modified
-// NOTE: in v1 resources are not tracked, so we return false
 func (c *Config) AddResource(gvk GVK) bool {
-	// Short-circuit v1
-	if c.IsV1() {
-		return false
-	}
-
 	// No-op if the resource was already tracked, return false
 	if c.HasResource(gvk) {
 		return false

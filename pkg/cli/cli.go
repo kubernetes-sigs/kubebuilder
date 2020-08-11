@@ -193,8 +193,8 @@ func (c *cli) initialize() error {
 		c.configured = true
 		c.projectVersion = projectConfig.Version
 
-		if projectConfig.IsV1() {
-			return fmt.Errorf(noticeColor, "project version 1 is no longer supported.\n"+
+		if !projectConfig.IsVersionSupported() {
+			return fmt.Errorf(noticeColor, fmt.Sprintf("project version %q is no longer supported.\n", projectConfig.Version)+
 				"See how to upgrade your project: https://book.kubebuilder.io/migration/guide.html\n")
 		}
 	} else {
