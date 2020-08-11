@@ -58,15 +58,15 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		// The object is not being deleted, so if it does not have our finalizer,
 		// then lets add the finalizer and update the object. This is equivalent
 		// registering our finalizer.
-		if !containsString(cronJob.ObjectMeta.Finalizers, myFinalizerName) {
-			cronJob.ObjectMeta.Finalizers = append(cronJob.ObjectMeta.Finalizers, myFinalizerName)
+		if !containsString(cronJob.GetFinalizers(), myFinalizerName) {
+			cronJob.SetFinalizers(append(cronJob.GetFinalizers(), myFinalizerName))
 			if err := r.Update(context.Background(), cronJob); err != nil {
 				return ctrl.Result{}, err
 			}
 		}
 	} else {
 		// The object is being deleted
-		if containsString(cronJob.ObjectMeta.Finalizers, myFinalizerName) {
+		if containsString(cronJob.GetFinalizers(), myFinalizerName) {
 			// our finalizer is present, so lets handle any external dependency
 			if err := r.deleteExternalResources(cronJob); err != nil {
 				// if fail to delete the external dependency here, return with error
@@ -75,7 +75,7 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			}
 
 			// remove our finalizer from the list and update it.
-			cronJob.ObjectMeta.Finalizers = removeString(cronJob.ObjectMeta.Finalizers, myFinalizerName)
+			cronJob.SetFinalizers(removeString(cronJob.GetFinalizers(), myFinalizerName))
 			if err := r.Update(context.Background(), cronJob); err != nil {
 				return ctrl.Result{}, err
 			}
