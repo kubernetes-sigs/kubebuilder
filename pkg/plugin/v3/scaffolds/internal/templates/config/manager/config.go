@@ -67,6 +67,8 @@ spec:
       labels:
         control-plane: controller-manager
     spec:
+      securityContext:
+        runAsUser: 65532
       containers:
       - command:
         - /manager
@@ -74,6 +76,8 @@ spec:
         - --enable-leader-election
         image: {{ .Image }}
         name: manager
+        securityContext:
+          allowPrivilegeEscalation: false
         resources:
           limits:
             cpu: 100m
