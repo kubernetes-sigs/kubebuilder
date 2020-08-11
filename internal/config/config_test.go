@@ -27,67 +27,69 @@ import (
 )
 
 var _ = Describe("Config", func() {
-	It("should save correctly", func() {
-		var (
-			cfg               Config
-			expectedConfigStr string
-		)
+	var (
+		cfg               Config
+		expectedConfigStr string
+	)
 
-		By("saving empty config")
-		Expect(cfg.Save()).To(HaveOccurred())
+	Context("with valid keys", func() {
+		It("should save correctly", func() {
 
-		By("saving empty config with path")
-		cfg = Config{
-			fs:   afero.NewMemMapFs(),
-			path: DefaultPath,
-		}
-		Expect(cfg.Save()).ToNot(HaveOccurred())
-		cfgBytes, err := afero.ReadFile(cfg.fs, DefaultPath)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(string(cfgBytes)).To(Equal(expectedConfigStr))
+			By("saving empty config")
+			Expect(cfg.Save()).To(HaveOccurred())
 
-		By("saving config version 2")
-		cfg = Config{
-			Config: config.Config{
-				Version: config.Version2,
-				Repo:    "github.com/example/project",
-				Domain:  "example.com",
-			},
-			fs:   afero.NewMemMapFs(),
-			path: DefaultPath,
-		}
-		expectedConfigStr = `domain: example.com
+			By("saving empty config with path")
+			cfg = Config{
+				fs:   afero.NewMemMapFs(),
+				path: DefaultPath,
+			}
+			Expect(cfg.Save()).To(Succeed())
+			cfgBytes, err := afero.ReadFile(cfg.fs, DefaultPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(cfgBytes)).To(Equal(expectedConfigStr))
+
+			By("saving config version 2")
+			cfg = Config{
+				Config: config.Config{
+					Version: config.Version2,
+					Repo:    "github.com/example/project",
+					Domain:  "example.com",
+				},
+				fs:   afero.NewMemMapFs(),
+				path: DefaultPath,
+			}
+			expectedConfigStr = `domain: example.com
 repo: github.com/example/project
 version: "2"
 `
-		Expect(cfg.Save()).ToNot(HaveOccurred())
-		cfgBytes, err = afero.ReadFile(cfg.fs, DefaultPath)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(string(cfgBytes)).To(Equal(expectedConfigStr))
+			Expect(cfg.Save()).To(Succeed())
+			cfgBytes, err = afero.ReadFile(cfg.fs, DefaultPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(cfgBytes)).To(Equal(expectedConfigStr))
 
-		By("saving config version 2 with plugin config")
-		cfg = Config{
-			Config: config.Config{
-				Version: config.Version2,
-				Repo:    "github.com/example/project",
-				Domain:  "example.com",
-				Plugins: config.PluginConfigs{
-					"plugin-x": map[string]interface{}{
-						"data-1": "single plugin datum",
-					},
-					"plugin-y/v1": map[string]interface{}{
-						"data-1": "plugin value 1",
-						"data-2": "plugin value 2",
-						"data-3": []string{"plugin value 3", "plugin value 4"},
+			By("saving config version 3-alpha with plugin config")
+			cfg = Config{
+				Config: config.Config{
+					Version: config.Version3Alpha,
+					Repo:    "github.com/example/project",
+					Domain:  "example.com",
+					Plugins: config.PluginConfigs{
+						"plugin-x": map[string]interface{}{
+							"data-1": "single plugin datum",
+						},
+						"plugin-y/v1": map[string]interface{}{
+							"data-1": "plugin value 1",
+							"data-2": "plugin value 2",
+							"data-3": []string{"plugin value 3", "plugin value 4"},
+						},
 					},
 				},
-			},
-			fs:   afero.NewMemMapFs(),
-			path: DefaultPath,
-		}
-		expectedConfigStr = `domain: example.com
+				fs:   afero.NewMemMapFs(),
+				path: DefaultPath,
+			}
+			expectedConfigStr = `domain: example.com
 repo: github.com/example/project
-version: "2"
+version: "3-alpha"
 plugins:
   plugin-x:
     data-1: single plugin datum
@@ -98,39 +100,39 @@ plugins:
     - plugin value 3
     - plugin value 4
 `
-		Expect(cfg.Save()).ToNot(HaveOccurred())
-		cfgBytes, err = afero.ReadFile(cfg.fs, DefaultPath)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(string(cfgBytes)).To(Equal(expectedConfigStr))
-	})
+			Expect(cfg.Save()).To(Succeed())
+			cfgBytes, err = afero.ReadFile(cfg.fs, DefaultPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(string(cfgBytes)).To(Equal(expectedConfigStr))
+		})
 
-	It("should load correctly", func() {
-		var (
-			fs             = afero.NewMemMapFs()
-			configStr      string
-			expectedConfig config.Config
-		)
+		It("should load correctly", func() {
+			var (
+				fs             = afero.NewMemMapFs()
+				configStr      string
+				expectedConfig config.Config
+			)
 
-		By("loading config version 2")
-		configStr = `domain: example.com
+			By("loading config version 2")
+			configStr = `domain: example.com
 repo: github.com/example/project
 version: "2"`
-		expectedConfig = config.Config{
-			Version: config.Version2,
-			Repo:    "github.com/example/project",
-			Domain:  "example.com",
-		}
-		err := afero.WriteFile(fs, DefaultPath, []byte(configStr), os.ModePerm)
-		Expect(err).ToNot(HaveOccurred())
-		cfg, err := readFrom(fs, DefaultPath)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(cfg).To(BeEquivalentTo(expectedConfig))
+			expectedConfig = config.Config{
+				Version: config.Version2,
+				Repo:    "github.com/example/project",
+				Domain:  "example.com",
+			}
+			err := afero.WriteFile(fs, DefaultPath, []byte(configStr), os.ModePerm)
+			Expect(err).ToNot(HaveOccurred())
+			cfg, err := readFrom(fs, DefaultPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cfg).To(BeEquivalentTo(expectedConfig))
 
-		By("loading config version 2 with plugin config")
-		fs = afero.NewMemMapFs()
-		configStr = `domain: example.com
+			By("loading config version 3-alpha with plugin config")
+			fs = afero.NewMemMapFs()
+			configStr = `domain: example.com
 repo: github.com/example/project
-version: "2"
+version: "3-alpha"
 plugins:
   plugin-x:
     data-1: single plugin datum
@@ -140,25 +142,67 @@ plugins:
     data-3:
     - "plugin value 3"
     - "plugin value 4"`
-		expectedConfig = config.Config{
-			Version: config.Version2,
-			Repo:    "github.com/example/project",
-			Domain:  "example.com",
-			Plugins: config.PluginConfigs{
-				"plugin-x": map[string]interface{}{
-					"data-1": "single plugin datum",
+			expectedConfig = config.Config{
+				Version: config.Version2,
+				Repo:    "github.com/example/project",
+				Domain:  "example.com",
+				Plugins: config.PluginConfigs{
+					"plugin-x": map[string]interface{}{
+						"data-1": "single plugin datum",
+					},
+					"plugin-y/v1": map[string]interface{}{
+						"data-1": "plugin value 1",
+						"data-2": "plugin value 2",
+						"data-3": []interface{}{"plugin value 3", "plugin value 4"},
+					},
 				},
-				"plugin-y/v1": map[string]interface{}{
-					"data-1": "plugin value 1",
-					"data-2": "plugin value 2",
-					"data-3": []interface{}{"plugin value 3", "plugin value 4"},
+			}
+			err = afero.WriteFile(fs, DefaultPath, []byte(configStr), os.ModePerm)
+			Expect(err).ToNot(HaveOccurred())
+			cfg, err = readFrom(fs, DefaultPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cfg).To(Equal(expectedConfig))
+		})
+	})
+
+	Context("with invalid keys", func() {
+		It("should return a save error", func() {
+			By("saving config version 2 with plugin config")
+			cfg = Config{
+				Config: config.Config{
+					Version: config.Version2,
+					Repo:    "github.com/example/project",
+					Domain:  "example.com",
+					Plugins: config.PluginConfigs{
+						"plugin-x": map[string]interface{}{
+							"data-1": "single plugin datum",
+						},
+					},
 				},
-			},
-		}
-		err = afero.WriteFile(fs, DefaultPath, []byte(configStr), os.ModePerm)
-		Expect(err).ToNot(HaveOccurred())
-		cfg, err = readFrom(fs, DefaultPath)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(cfg).To(Equal(expectedConfig))
+				fs:   afero.NewMemMapFs(),
+				path: DefaultPath,
+			}
+			Expect(cfg.Save()).NotTo(Succeed())
+		})
+
+		It("should return a load error", func() {
+			var (
+				fs        afero.Fs
+				configStr string
+				err       error
+			)
+			By("loading config version 2 with plugin config")
+			fs = afero.NewMemMapFs()
+			configStr = `domain: example.com
+repo: github.com/example/project
+version: "3-alpha"
+plugins:
+	plugin-x:
+		data-1: single plugin datum`
+			err = afero.WriteFile(fs, DefaultPath, []byte(configStr), os.ModePerm)
+			Expect(err).ToNot(HaveOccurred())
+			_, err = readFrom(fs, DefaultPath)
+			Expect(err).To(HaveOccurred())
+		})
 	})
 })

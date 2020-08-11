@@ -40,20 +40,25 @@ var _ = Describe("Config", func() {
 		By("Using config version 1")
 		config = Config{Version: Version1}
 		pluginConfig = PluginConfig{}
-		Expect(config.EncodePluginConfig(key, pluginConfig)).To(HaveOccurred())
-
-		By("Using config version 1 with extra fields")
-		config = Config{Version: Version1}
-		pluginConfig = PluginConfig{
-			Data1: "single plugin datum",
-		}
-		Expect(config.EncodePluginConfig(key, pluginConfig)).To(HaveOccurred())
+		Expect(config.EncodePluginConfig(key, pluginConfig)).NotTo(Succeed())
 
 		By("Using config version 2")
 		config = Config{Version: Version2}
 		pluginConfig = PluginConfig{}
+		Expect(config.EncodePluginConfig(key, pluginConfig)).NotTo(Succeed())
+
+		By("Using config version 2 with extra fields")
+		config = Config{Version: Version2}
+		pluginConfig = PluginConfig{
+			Data1: "single plugin datum",
+		}
+		Expect(config.EncodePluginConfig(key, pluginConfig)).NotTo(Succeed())
+
+		By("Using config version 3-alpha")
+		config = Config{Version: Version3Alpha}
+		pluginConfig = PluginConfig{}
 		expectedConfig = Config{
-			Version: Version2,
+			Version: Version3Alpha,
 			Plugins: PluginConfigs{
 				"plugin-x": map[string]interface{}{
 					"data-1": "",
@@ -61,17 +66,17 @@ var _ = Describe("Config", func() {
 				},
 			},
 		}
-		Expect(config.EncodePluginConfig(key, pluginConfig)).NotTo(HaveOccurred())
+		Expect(config.EncodePluginConfig(key, pluginConfig)).To(Succeed())
 		Expect(config).To(Equal(expectedConfig))
 
-		By("Using config version 2 with extra fields as struct")
-		config = Config{Version: Version2}
+		By("Using config version 3-alpha with extra fields as struct")
+		config = Config{Version: Version3Alpha}
 		pluginConfig = PluginConfig{
 			"plugin value 1",
 			"plugin value 2",
 		}
 		expectedConfig = Config{
-			Version: Version2,
+			Version: Version3Alpha,
 			Plugins: PluginConfigs{
 				"plugin-x": map[string]interface{}{
 					"data-1": "plugin value 1",
@@ -79,7 +84,7 @@ var _ = Describe("Config", func() {
 				},
 			},
 		}
-		Expect(config.EncodePluginConfig(key, pluginConfig)).NotTo(HaveOccurred())
+		Expect(config.EncodePluginConfig(key, pluginConfig)).To(Succeed())
 		Expect(config).To(Equal(expectedConfig))
 	})
 
@@ -94,37 +99,42 @@ var _ = Describe("Config", func() {
 		By("Using config version 1")
 		config = Config{Version: Version1}
 		pluginConfig = PluginConfig{}
-		Expect(config.DecodePluginConfig(key, &pluginConfig)).To(HaveOccurred())
+		Expect(config.DecodePluginConfig(key, &pluginConfig)).NotTo(Succeed())
 
-		By("Using config version 1 with extra fields")
-		config = Config{Version: Version1}
+		By("Using config version 2")
+		config = Config{Version: Version2}
+		pluginConfig = PluginConfig{}
+		Expect(config.DecodePluginConfig(key, &pluginConfig)).NotTo(Succeed())
+
+		By("Using config version 2 with extra fields")
+		config = Config{Version: Version2}
 		pluginConfig = PluginConfig{
 			Data1: "single plugin datum",
 		}
-		Expect(config.DecodePluginConfig(key, &pluginConfig)).To(HaveOccurred())
+		Expect(config.DecodePluginConfig(key, &pluginConfig)).NotTo(Succeed())
 
-		By("Using empty config version 2")
+		By("Using empty config version 3-alpha")
 		config = Config{
-			Version: Version2,
+			Version: Version3Alpha,
 			Plugins: PluginConfigs{
 				"plugin-x": map[string]interface{}{},
 			},
 		}
 		pluginConfig = PluginConfig{}
 		expectedPluginConfig = PluginConfig{}
-		Expect(config.DecodePluginConfig(key, &pluginConfig)).NotTo(HaveOccurred())
+		Expect(config.DecodePluginConfig(key, &pluginConfig)).To(Succeed())
 		Expect(pluginConfig).To(Equal(expectedPluginConfig))
 
-		By("Using config version 2")
-		config = Config{Version: Version2}
+		By("Using config version 3-alpha")
+		config = Config{Version: Version3Alpha}
 		pluginConfig = PluginConfig{}
 		expectedPluginConfig = PluginConfig{}
-		Expect(config.DecodePluginConfig(key, &pluginConfig)).NotTo(HaveOccurred())
+		Expect(config.DecodePluginConfig(key, &pluginConfig)).To(Succeed())
 		Expect(pluginConfig).To(Equal(expectedPluginConfig))
 
-		By("Using config version 2 with extra fields as struct")
+		By("Using config version 3-alpha with extra fields as struct")
 		config = Config{
-			Version: Version2,
+			Version: Version3Alpha,
 			Plugins: PluginConfigs{
 				"plugin-x": map[string]interface{}{
 					"data-1": "plugin value 1",
@@ -137,7 +147,7 @@ var _ = Describe("Config", func() {
 			"plugin value 1",
 			"plugin value 2",
 		}
-		Expect(config.DecodePluginConfig(key, &pluginConfig)).NotTo(HaveOccurred())
+		Expect(config.DecodePluginConfig(key, &pluginConfig)).To(Succeed())
 		Expect(pluginConfig).To(Equal(expectedPluginConfig))
 	})
 })
