@@ -1,4 +1,4 @@
-# Kubebuilder v1 版本 对 v2 版本
+# Kubebuilder v1 版本 VS v2 版本
 
 这篇文档涵盖了从 v1 版本迁移到 v2 版本时所有破坏性的变化。
 
