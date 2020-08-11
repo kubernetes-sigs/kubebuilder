@@ -13,7 +13,7 @@ KubeBuilder 在早期的 v2 版本（v2.0.0）中不支持 Multi-group 代码生
 
 尽管默认情况下 KubeBuilder v2 不会在同一存储库中搭建与多个 API 组兼容的项目结构，但可以修改默认项目结构以支持它。
 
-让我们迁移下[CronJob 示例] [cronjob-tutorial]。
+让我们迁移下[CronJob 示例][cronjob-tutorial]。
 
 通常，我们使用 API 组的前缀作为目录名称。 查看 `api/v1/groupversion_info.go`，我们可以看到：
 
@@ -40,7 +40,7 @@ mv controllers/* controllers/batch/
 ```
 
 接下来，我们将需要更新所有对旧软件包名称的引用。
-对于 CronJob，我们需要更新 `main.go` 和 `controllers/batch/cronjob_controller.go`
+对于 CronJob，我们需要更新 `main.go` 和 `controllers/batch/cronjob_controller.go`。
 
 如果你已经在项目中添加了其他文件，那么也需要更新这些文件中的引用。
 
@@ -67,7 +67,7 @@ multigroup: true
 这就是为什么我们在前面的步骤中使用脚本移动之前生成的 API。
 请记住，之后要更新引用。
 
-[CronJob教程] [cronjob-tutorial]更详细地解释了每个更改（在 KubeBuilder 为 Single-group 项目生成这些更改的上下文中）。
+[CronJob教程][cronjob-tutorial]更详细地解释了每个更改（在 KubeBuilder 为 Single-group 项目生成这些更改的上下文中）。
 
 [multi-group-issue]: https://github.com/kubernetes-sigs/kubebuilder/issues/923 "KubeBuilder Issue #923"
 [cronjob-tutorial]: /cronjob-tutorial/cronjob-tutorial.md "Tutorial: Building CronJob"
