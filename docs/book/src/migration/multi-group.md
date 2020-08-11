@@ -4,7 +4,7 @@
 
 <h1>Note</h1>
 
-KubeBuilder 在早期的 v2 版本(v2.0.0) 中不支持 Multi-group 代码生成功能。
+KubeBuilder 在早期的 v2 版本（v2.0.0）中不支持 Multi-group 代码生成功能。
 
 想要更新项目结构支持 Multi-Group，请运行命令 `kubebuilder edit --multigroup = true`。 
 更新到 Multi-group 结构后，将在新结构中生成新的 Kind，但是需要一些其他手动操作才能将旧的 API 组移至新结构中。
@@ -13,7 +13,7 @@ KubeBuilder 在早期的 v2 版本(v2.0.0) 中不支持 Multi-group 代码生成
 
 尽管默认情况下 KubeBuilder v2 不会在同一存储库中搭建与多个 API 组兼容的项目结构，但可以修改默认项目结构以支持它。
 
-让我们迁移下[CronJob示例] [cronjob-tutorial]。
+让我们迁移下[CronJob 示例] [cronjob-tutorial]。
 
 通常，我们使用 API 组的前缀作为目录名称。 查看 `api/v1/groupversion_info.go`，我们可以看到：
 
