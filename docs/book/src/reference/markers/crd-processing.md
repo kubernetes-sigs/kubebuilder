@@ -1,8 +1,7 @@
-# CRD Processing
+# CRD 处理
 
-These markers help control how the Kubernetes API server processes API
-requests involving your custom resources.
+当你有自定义资源请求时,这些标记有助于 Kubernetes API 服务器控制处理 API。
 
-See [Generating CRDs](/reference/generating-crd.md) for examples.
+作为例子可查看章节[生成 CRDs](/reference/generating-crd.md).
 
 {{#markerdocs CRD processing}}
