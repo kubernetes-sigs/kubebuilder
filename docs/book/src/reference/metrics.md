@@ -1,12 +1,12 @@
 # 指标
 
-默认情况下，controller-runtime 会构建一个全局 prometheus 注册，并且会为每个控制器发布一堆性能指标。
+默认情况下，controller-runtime 会构建一个全局 prometheus 注册，并且会为每个控制器发布一系列性能指标。
 
 ## 指标保护
 
 如果使用了 kubebuilder [kube-auth-proxy](https://github.com/brancz/kube-rbac-proxy) 默认会保护这些指标。Kubebuilder v2.2.0+ 会创建一个集群角色，它在 `config/rbac/auth_proxy_client_clusterrole.yaml` 文件中配置。
 
-你需要给你所有的 Prometheus 服务授权，以便它可以拿到这些被保护的指标。为实现授权，你可以创建一个 `clusterRoleBinding` 把 `clusterRole` 绑定到一个你x的 Prometheus 服务使用的账户上。
+你需要给你所有的 Prometheus 服务授权，以便它可以拿到这些被保护的指标。为实现授权，你可以创建一个 `clusterRoleBinding` 把 `clusterRole` 绑定到一个你的 Prometheus 服务使用的账户上。
 
 可以运行下面的 kubectl 命令来创建它。如果你使用 kubebuilder，在`config/default/kustomization.yaml` 文件中 `namePrefix` 字段是 `<project-prefix>`。
 
@@ -17,11 +17,11 @@ kubectl create clusterrolebinding metrics --clusterrole=<project-prefix>-metrics
 ## 给 Prometheus 导出指标
 按照下面的步骤来用 Prometheus Operator 导出指标：
 
-1. 安装 Prometheus 和 Prometheus Operator。如果没有自己的监控系统，推荐使用 [kube-prometheus](https://github.com/coreos/kube-prometheus#installing)。如果你经验丰富，那么可以只安装 Prometheus 和 Prometheus Operator。
+1. 安装 Prometheus 和 Prometheus Operator。如果没有自己的监控系统，在生产环境上我们推荐使用 [kube-prometheus](https://github.com/coreos/kube-prometheus#installing)。如果你只是做实验，那么可以只安装 Prometheus 和 Prometheus Operator。
 2. 在 `config/default/kustomization.yaml` 配置文件中取消 `- ../prometheus` 这一行的注释。它会创建可以导出指标的 `ServiceMonitor` 资源。
 
 ```yaml
-# [PROMETHEUS] To enable prometheus monitor, uncomment all sections with 'PROMETHEUS'.
+# [PROMETHEUS] 用于启用 prometheus 监控, 取消所有带 'PROMETHEUS' 部分的注释。
 - ../prometheus
 ```
 
