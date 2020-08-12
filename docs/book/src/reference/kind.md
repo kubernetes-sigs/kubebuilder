@@ -1,53 +1,45 @@
-# Kind Cluster
+# Kind 集群
 
-This only cover the basics to use a kind cluster. You can find more details at
-[kind documentation](https://kind.sigs.k8s.io/).
+这篇文章只涉及到使用一个 kind 集群的基础。你可以在 [kind 文档](https://kind.sigs.k8s.io/) 中找到更详细的介绍。
 
-## Installation
+## 安装
 
-You can follow [this](https://kind.sigs.k8s.io/#installation-and-usage) to
-install `kind`.
+你可以按照[这个文档](https://kind.sigs.k8s.io/#installation-and-usage)来安装 `kind`。
 
-## Create a Cluster
+## 创建一个集群
 
-You can simply create a `kind` cluster by
-
+你可以简单的通过下面的命令来创建一个 `kind` 集群。
 ```bash
 kind create cluster
 ```
 
-To customize your cluster, you can provide additional configuration.
-For example, the following is a sample `kind` configuration.
+要定制你的集群，你可以提供额外的配置。比如，下面的例子是一个 `kind` 配置的例子。
 
 ```yaml
 {{#include ../cronjob-tutorial/testdata/project/hack/kind-config.yaml}}
 ```
 
-Using the configuration above, run the following command will give you a k8s
-v1.17.2 cluster with 1 master and 3 workers.
+使用上面的配置来运行下面的命令会创建一个 k8s v1.17.2 的集群，包含了 1 个 master 节点和 3 个 worker 节点。
 
 ```bash
 kind create cluster --config hack/kind-config.yaml --image=kindest/node:v1.17.2
 ```
 
-You can use `--image` flag to specify the cluster version you want, e.g.
-`--image=kindest/node:v1.17.2`, the supported version are listed
-[here](https://hub.docker.com/r/kindest/node/tags)
+你可以使用 `--image` 标记来指定你想创建集群的版本，比如：`--image=kindest/node:v1.17.2`，能支持的版本在[这里](https://hub.docker.com/r/kindest/node/tags)。
 
-## Load Docker Image into the Cluster
+## 加载 Docker 镜像到集群
 
-When developing with a local kind cluster, loading docker images to the cluster
-is a very useful feature. You can avoid using a container registry.
+当使用一个本地 kind 集群进行开发时，加载 docker 镜像到集群中是一个非常有用的功能。可以让你避免使用容器仓库。
 
-- [Load a local image into a kind cluster](https://kind.sigs.k8s.io/docs/user/quick-start/#loading-an-image-into-your-cluster).
+- [加载一个本地镜像到一个 kind 集群](https://kind.sigs.k8s.io/docs/user/quick-start/#loading-an-image-into-your-cluster)。
 
 ```bash
 kind load docker-image your-image-name:your-tag
 ```
 
-## Delete a Cluster
+## 删除一个集群
 
-- Delete a kind cluster
+- 删除一个 kind 集群
 ```bash
 kind delete cluster
 ```
