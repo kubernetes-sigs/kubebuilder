@@ -31,7 +31,7 @@ kind create cluster --config hack/kind-config.yaml --image=kindest/node:v1.17.2
 
 当使用一个本地 kind 集群进行开发时，加载 docker 镜像到集群中是一个非常有用的功能。可以让你避免使用容器仓库。
 
-- [加载一个本地镜像到一个 kind 集群](https://kind.sigs.k8s.io/docs/user/quick-start/#loading-an-image-into-your-cluster).
+- [加载一个本地镜像到一个 kind 集群](https://kind.sigs.k8s.io/docs/user/quick-start/#loading-an-image-into-your-cluster)。
 
 ```bash
 kind load docker-image your-image-name:your-tag
