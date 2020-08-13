@@ -45,8 +45,8 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	if err := r.Get(ctx, req.NamespacedName, cronJob); err != nil {
 		log.Error(err, "unable to fetch CronJob")
 		// 在我们删除一个不存在的对象的时，我们会遇到not-found errors这样的报错
-	    // 我们将暂时忽略，因为不能通过重新加入队列的方式来修复这些错误
-		 //（我们需要等待新的通知），而且我们可以根据删除的请求来获取它们
+	        // 我们将暂时忽略，因为不能通过重新加入队列的方式来修复这些错误
+	        //（我们需要等待新的通知），而且我们可以根据删除的请求来获取它们
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
