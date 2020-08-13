@@ -33,17 +33,16 @@ import (
 // +kubebuilder:docs-gen:collapse=Imports
 
 /*
-Our "spoke" versions need to implement the
+我们的 "spoke" 版本需要实现
 [`Convertible`](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/conversion?tab=doc#Convertible)
-interface.  Namely, they'll need `ConvertTo` and `ConvertFrom` methods to convert to/from
-the hub version.
+接口。顾名思义，它需要实现 `ConvertTo` 从（其它版本）向 hub 版本转换，`ConvertFrom` 实现从 hub 版本转换到（其他版本）。
 */
 
 /*
-ConvertTo is expected to modify its argument to contain the converted object.
-Most of the conversion is straightforward copying, except for converting our changed field.
+ConvertTo 期望修改其参数以包含转换后的对象。
+大部分转换都是直接赋值，除了那些发生变化的 field。
 */
-// ConvertTo converts this CronJob to the Hub version (v1).
+// ConvertTo 转换 CronJob 到 Hub 版本 (v1).
 func (src *CronJob) ConvertTo(dstRaw conversion.Hub) error {
 	dst := dstRaw.(*v1.CronJob)
 
@@ -67,7 +66,7 @@ func (src *CronJob) ConvertTo(dstRaw conversion.Hub) error {
 	dst.Spec.Schedule = strings.Join(scheduleParts, " ")
 
 	/*
-		The rest of the conversion is pretty rote.
+		剩下的转换都相当机械。
 	*/
 	// ObjectMeta
 	dst.ObjectMeta = src.ObjectMeta
@@ -89,11 +88,11 @@ func (src *CronJob) ConvertTo(dstRaw conversion.Hub) error {
 }
 
 /*
-ConvertFrom is expected to modify its receiver to contain the converted object.
-Most of the conversion is straightforward copying, except for converting our changed field.
+ConvertFrom 期望修改其接收者以包含转换后的对象。
+大部分转换都是直接赋值，除了那些发生变化的 field。
 */
 
-// ConvertFrom converts from the Hub version (v1) to this version.
+// ConvertFrom 从 Hub 版本 (v1) 转换到这个版本。
 func (dst *CronJob) ConvertFrom(srcRaw conversion.Hub) error {
 	src := srcRaw.(*v1.CronJob)
 
