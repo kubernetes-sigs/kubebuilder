@@ -1,6 +1,6 @@
 # 核心类型的准入 Webhook
 
-为 CRD 构建准入 webhook 非常容易，这在 CronJob 教程中已经介绍过了。由于 kubebuilder 不支持核心类型的 webhook 搭建，您必须使用 controller-runtime 的库来处理它。这里可以参考 controller-runtime 的一个 [示例](https://github.com/kubernetes-sigs/controller-runtime/tree/master/examples/builtins)。
+为 CRD 构建准入 webhook 非常容易，这在 CronJob 教程中已经介绍过了。由于 kubebuilder 不支持核心类型的 webhook 自动生成，您必须使用 controller-runtime 的库来处理它。这里可以参考 controller-runtime 的一个 [示例](https://github.com/kubernetes-sigs/controller-runtime/tree/master/examples/builtins)。
 
 建议使用 kubebuilder 初始化一个项目，然后按照下面的步骤为核心类型添加准入 webhook。
 
