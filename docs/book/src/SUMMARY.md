@@ -72,9 +72,8 @@
 
   - [controller-gen CLI](./reference/controller-gen.md)
   - [Artifacts](./reference/artifacts.md)
-  - [Writing controller tests](./reference/writing-tests.md)
 
-  - [Using envtest in integration tests](./reference/envtest.md)
+  - [Configuring EnvTest](./reference/envtest.md)
 
   - [Metrics](./reference/metrics.md)
 
