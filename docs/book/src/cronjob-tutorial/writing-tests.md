@@ -7,7 +7,7 @@ To walk you through integration testing patterns for Kubebuilder-generated contr
 
 The basic approach is that, in your generated `suite_test.go` file, you will use envtest to create a local Kubernetes API server, instantiate and run your controllers, and then write additional `*_test.go` files to test it using [Ginko](http://onsi.github.io/ginkgo).
 
-If you want to tinker with how your envtest cluster is configured, see section [Writing and Running Integration Tests](/reference/testing/envtest.md) as well as the [`envtest docs`](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/envtest?tab=doc).
+If you want to tinker with how your envtest cluster is configured, see section [Configuring envtest for integration tests](../reference/envtest.md) as well as the [`envtest docs`](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/envtest?tab=doc).
 
 ## Test Environment Setup
 
