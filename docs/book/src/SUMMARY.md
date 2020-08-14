@@ -77,6 +77,7 @@
   - [Configuring EnvTest](./reference/envtest.md)
 
   - [Metrics](./reference/metrics.md)
+  - [Makefile Helpers](makefile-helpers.md)
 
 ---
 
