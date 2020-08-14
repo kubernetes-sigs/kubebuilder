@@ -12,7 +12,7 @@ project that looks like a native v2 project. However, in some cases, it's
 possible to do an in-place upgrade (i.e. reuse the v1 project layout, upgrading
 controller-runtime and controller-tools.  
 
-Let's take the [example v1 project][v1-project] and migrate it to Kubebuilder
+Let's take as example an V1 project and migrate it to Kubebuilder
 v2. At the end, we should have something that looks like the
 [example v2 project][v2-project].
 
@@ -215,6 +215,5 @@ Change the image name in the Makefile if needed.
 Finally, we can run `make` and `make docker-build` to ensure things are working
 fine.
 
-[v1-project]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/docs/book/src/migration/testdata/gopath/project-v1
 [v2-project]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/docs/book/src/cronjob-tutorial/testdata/project
 [builtin-type-example]: https://sigs.k8s.io/controller-runtime/examples/builtins
