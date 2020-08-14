@@ -12,7 +12,7 @@ Why?
 
 ## Cert Manager
 
-You need follow [this](./cert-manager.md) to install the cert manager bundle.
+You need to follow [this](./cert-manager.md) to install the cert manager bundle.
 
 ## Build your image
 
