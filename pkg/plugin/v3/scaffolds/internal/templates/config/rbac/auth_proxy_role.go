@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package templates
+package rbac
 
 import (
 	"path/filepath"
@@ -22,36 +22,35 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
-var _ file.Template = &KustomizeRBAC{}
+var _ file.Template = &AuthProxyRole{}
 
-// KustomizeRBAC scaffolds the Kustomization file in rbac folder.
-type KustomizeRBAC struct {
+// AuthProxyRole scaffolds the config/rbac/auth_proxy_role.yaml file
+type AuthProxyRole struct {
 	file.TemplateMixin
 }
 
 // SetTemplateDefaults implements input.Template
-func (f *KustomizeRBAC) SetTemplateDefaults() error {
+func (f *AuthProxyRole) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = filepath.Join("config", "rbac", "kustomization.yaml")
+		f.Path = filepath.Join("config", "rbac", "auth_proxy_role.yaml")
 	}
 
-	f.TemplateBody = kustomizeRBACTemplate
-
-	f.IfExistsAction = file.Error
+	f.TemplateBody = proxyRoleTemplate
 
 	return nil
 }
 
-const kustomizeRBACTemplate = `resources:
-- role.yaml
-- role_binding.yaml
-- leader_election_role.yaml
-- leader_election_role_binding.yaml
-# Comment the following 4 lines if you want to disable
-# the auth proxy (https://github.com/brancz/kube-rbac-proxy)
-# which protects your /metrics endpoint.
-- auth_proxy_service.yaml
-- auth_proxy_role.yaml
-- auth_proxy_role_binding.yaml
-- auth_proxy_client_clusterrole.yaml
+const proxyRoleTemplate = `apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: proxy-role
+rules:
+- apiGroups: ["authentication.k8s.io"]
+  resources:
+  - tokenreviews
+  verbs: ["create"]
+- apiGroups: ["authorization.k8s.io"]
+  resources:
+  - subjectaccessreviews
+  verbs: ["create"]
 `

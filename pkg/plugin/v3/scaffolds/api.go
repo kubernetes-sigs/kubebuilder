@@ -25,8 +25,11 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/plugin/internal/machinery"
 	"sigs.k8s.io/kubebuilder/pkg/plugin/scaffold"
 	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates"
-	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates/controller"
-	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates/crd"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates/config/api"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates/config/controller"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates/config/crd"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates/config/rbac"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates/config/samples"
 )
 
 var _ scaffold.Scaffolder = &apiScaffolder{}
@@ -84,11 +87,11 @@ func (s *apiScaffolder) scaffold() error {
 
 		if err := machinery.NewScaffold(s.plugins...).Execute(
 			s.newUniverse(),
-			&templates.Types{},
-			&templates.Group{},
-			&templates.CRDSample{},
-			&templates.CRDEditorRole{},
-			&templates.CRDViewerRole{},
+			&api.Types{},
+			&api.Group{},
+			&samples.CRDSample{},
+			&rbac.CRDEditorRole{},
+			&rbac.CRDViewerRole{},
 			&crd.EnableWebhookPatch{},
 			&crd.EnableCAInjectionPatch{},
 		); err != nil {

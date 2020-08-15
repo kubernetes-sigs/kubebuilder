@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package metricsauth
+package rbac
 
 import (
 	"path/filepath"
@@ -22,36 +22,34 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
-var _ file.Template = &AuthProxyService{}
+var _ file.Template = &LeaderElectionRoleBinding{}
 
-// AuthProxyService scaffolds the config/rbac/auth_proxy_service.yaml file
-type AuthProxyService struct {
+// LeaderElectionRoleBinding scaffolds the config/rbac/leader_election_role_binding.yaml file
+type LeaderElectionRoleBinding struct {
 	file.TemplateMixin
 }
 
 // SetTemplateDefaults implements input.Template
-func (f *AuthProxyService) SetTemplateDefaults() error {
+func (f *LeaderElectionRoleBinding) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = filepath.Join("config", "rbac", "auth_proxy_service.yaml")
+		f.Path = filepath.Join("config", "rbac", "leader_election_role_binding.yaml")
 	}
 
-	f.TemplateBody = authProxyServiceTemplate
+	f.TemplateBody = leaderElectionRoleBindingTemplate
 
 	return nil
 }
 
-const authProxyServiceTemplate = `apiVersion: v1
-kind: Service
+const leaderElectionRoleBindingTemplate = `apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
 metadata:
-  labels:
-    control-plane: controller-manager
-  name: controller-manager-metrics-service
+  name: leader-election-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: leader-election-role
+subjects:
+- kind: ServiceAccount
+  name: default
   namespace: system
-spec:
-  ports:
-  - name: https
-    port: 8443
-    targetPort: https
-  selector:
-    control-plane: controller-manager
 `

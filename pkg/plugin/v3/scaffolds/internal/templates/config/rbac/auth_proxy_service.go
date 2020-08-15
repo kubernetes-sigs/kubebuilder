@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package templates
+package rbac
 
 import (
 	"path/filepath"
@@ -22,47 +22,36 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
-var _ file.Template = &LeaderElectionRole{}
+var _ file.Template = &AuthProxyService{}
 
-// LeaderElectionRole scaffolds the config/rbac/leader_election_role.yaml file
-type LeaderElectionRole struct {
+// AuthProxyService scaffolds the config/rbac/auth_proxy_service.yaml file
+type AuthProxyService struct {
 	file.TemplateMixin
 }
 
 // SetTemplateDefaults implements input.Template
-func (f *LeaderElectionRole) SetTemplateDefaults() error {
+func (f *AuthProxyService) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = filepath.Join("config", "rbac", "leader_election_role.yaml")
+		f.Path = filepath.Join("config", "rbac", "auth_proxy_service.yaml")
 	}
 
-	f.TemplateBody = leaderElectionRoleTemplate
+	f.TemplateBody = authProxyServiceTemplate
 
 	return nil
 }
 
-const leaderElectionRoleTemplate = `# permissions to do leader election.
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
+const authProxyServiceTemplate = `apiVersion: v1
+kind: Service
 metadata:
-  name: leader-election-role
-rules:
-- apiGroups:
-  - ""
-  resources:
-  - configmaps
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-  - update
-  - patch
-  - delete
-- apiGroups:
-  - ""
-  resources:
-  - events
-  verbs:
-  - create
-  - patch
+  labels:
+    control-plane: controller-manager
+  name: controller-manager-metrics-service
+  namespace: system
+spec:
+  ports:
+  - name: https
+    port: 8443
+    targetPort: https
+  selector:
+    control-plane: controller-manager
 `

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package templates
+package rbac
 
 import (
 	"path/filepath"
@@ -22,32 +22,32 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
-var _ file.Template = &ManagerRoleBinding{}
+var _ file.Template = &AuthProxyRoleBinding{}
 
-// ManagerRoleBinding scaffolds the config/rbac/role_binding.yaml file
-type ManagerRoleBinding struct {
+// AuthProxyRoleBinding scaffolds the config/rbac/auth_proxy_role_binding_rbac.yaml file
+type AuthProxyRoleBinding struct {
 	file.TemplateMixin
 }
 
 // SetTemplateDefaults implements input.Template
-func (f *ManagerRoleBinding) SetTemplateDefaults() error {
+func (f *AuthProxyRoleBinding) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = filepath.Join("config", "rbac", "role_binding.yaml")
+		f.Path = filepath.Join("config", "rbac", "auth_proxy_role_binding.yaml")
 	}
 
-	f.TemplateBody = managerBindingTemplate
+	f.TemplateBody = proxyRoleBindinggTemplate
 
 	return nil
 }
 
-const managerBindingTemplate = `apiVersion: rbac.authorization.k8s.io/v1
+const proxyRoleBindinggTemplate = `apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: manager-rolebinding
+  name: proxy-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: manager-role
+  name: proxy-role
 subjects:
 - kind: ServiceAccount
   name: default

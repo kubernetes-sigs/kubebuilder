@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package templates
+package samples
 
 import (
 	"path/filepath"
@@ -22,35 +22,33 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
-var _ file.Template = &AuthProxyRole{}
+var _ file.Template = &CRDSample{}
 
-// AuthProxyRole scaffolds the config/rbac/auth_proxy_role.yaml file
-type AuthProxyRole struct {
+// CRDSample scaffolds a manifest for CRD sample.
+type CRDSample struct {
 	file.TemplateMixin
+	file.ResourceMixin
 }
 
 // SetTemplateDefaults implements input.Template
-func (f *AuthProxyRole) SetTemplateDefaults() error {
+func (f *CRDSample) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = filepath.Join("config", "rbac", "auth_proxy_role.yaml")
+		f.Path = filepath.Join("config", "samples", "%[group]_%[version]_%[kind].yaml")
 	}
+	f.Path = f.Resource.Replacer().Replace(f.Path)
 
-	f.TemplateBody = proxyRoleTemplate
+	f.IfExistsAction = file.Error
+
+	f.TemplateBody = crdSampleTemplate
 
 	return nil
 }
 
-const proxyRoleTemplate = `apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
+const crdSampleTemplate = `apiVersion: {{ .Resource.Domain }}/{{ .Resource.Version }}
+kind: {{ .Resource.Kind }}
 metadata:
-  name: proxy-role
-rules:
-- apiGroups: ["authentication.k8s.io"]
-  resources:
-  - tokenreviews
-  verbs: ["create"]
-- apiGroups: ["authorization.k8s.io"]
-  resources:
-  - subjectaccessreviews
-  verbs: ["create"]
+  name: {{ lower .Resource.Kind }}-sample
+spec:
+  # Add fields here
+  foo: bar
 `

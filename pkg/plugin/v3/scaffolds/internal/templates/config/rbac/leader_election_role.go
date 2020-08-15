@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package templates
+package rbac
 
 import (
 	"path/filepath"
@@ -22,34 +22,47 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
-var _ file.Template = &LeaderElectionRoleBinding{}
+var _ file.Template = &LeaderElectionRole{}
 
-// LeaderElectionRoleBinding scaffolds the config/rbac/leader_election_role_binding.yaml file
-type LeaderElectionRoleBinding struct {
+// LeaderElectionRole scaffolds the config/rbac/leader_election_role.yaml file
+type LeaderElectionRole struct {
 	file.TemplateMixin
 }
 
 // SetTemplateDefaults implements input.Template
-func (f *LeaderElectionRoleBinding) SetTemplateDefaults() error {
+func (f *LeaderElectionRole) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = filepath.Join("config", "rbac", "leader_election_role_binding.yaml")
+		f.Path = filepath.Join("config", "rbac", "leader_election_role.yaml")
 	}
 
-	f.TemplateBody = leaderElectionRoleBindingTemplate
+	f.TemplateBody = leaderElectionRoleTemplate
 
 	return nil
 }
 
-const leaderElectionRoleBindingTemplate = `apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
+const leaderElectionRoleTemplate = `# permissions to do leader election.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
 metadata:
-  name: leader-election-rolebinding
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
   name: leader-election-role
-subjects:
-- kind: ServiceAccount
-  name: default
-  namespace: system
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
 `
