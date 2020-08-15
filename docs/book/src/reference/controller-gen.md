@@ -35,7 +35,7 @@ RBAC 规则默认输出到(`config/rbac`)。 主要考虑到当前目录结构�
 <h1>默认规则</h1>
 
 
-如果没有手动指定 fallback 规则，默认的 per-generator 将被使用，生成的YAML将放到
+如果没有手动指定 fallback 规则，默认的 per-generator 将被使用，生成的 YAML 将放到
 `config/<generator>`相应目录，代码所在的位置不变。
 
 
