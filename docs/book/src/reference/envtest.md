@@ -1,45 +1,46 @@
-## Using envtest in integration tests
-[`controller-runtime`](http://sigs.k8s.io/controller-runtime) offers `envtest` ([godoc](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/envtest?tab=doc)), a package that helps write integration tests for your controllers by setting up and starting an instance of etcd and the Kubernetes API server, without kubelet, controller-manager or other components.
+## 在集成测试中使用 envtest
 
-Using `envtest` in integration tests follows the general flow of:
+[`controller-runtime`](http://sigs.k8s.io/controller-runtime) 提供 `envtest` ([godoc](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/envtest?tab=doc))，这个包可以帮助你为你在 etcd 和 Kubernetes API server 中设置并启动的 controllers 实例来写集成测试，不需要 kubelet，controller-manager 或者其他组件。
+
+可以根据以下通用流程在集成测试中使用 `envtest`：
 
 ```go
 import sigs.k8s.io/controller-runtime/pkg/envtest
 
-//specify testEnv configuration
+//指定 testEnv 配置
 testEnv = &envtest.Environment{
 	CRDDirectoryPaths: []string{filepath.Join("..", "config", "crd", "bases")},
 }
 
-//start testEnv
+//启动 testEnv
 cfg, err = testEnv.Start()
 
-//write test logic
+//编写测试逻辑
 
-//stop testEnv
+//停止 testEnv
 err = testEnv.Stop()
 ```
 
-`kubebuilder` does the boilerplate setup and teardown of testEnv for you, in the ginkgo test suite that it generates under the `/controllers` directory.
+`kubebuilder` 为你提供了 testEnv 的设置和清除模版，在生成的 `/controllers` 目录下的 ginkgo 测试套件中。
 
-Logs from the test runs are prefixed with `test-env`.
 
-### Configuring your test control plane
-You can use environment variables and/or flags to specify the `api-server` and `etcd` setup within your integration tests.
+测试运行中的 Logs 以 `test-env` 为前缀。
 
-#### Environment Variables
+### 配置你的测试控制面
+你可以在你的集成测试中使用环境变量和/或者标记位来指定 `api-server` 和 `etcd` 设置。
+#### 环境变量
 
-| Variable name | Type | When to use |
+| 变量名称   |    类型   | 使用时机 |
 | --- | :--- | :--- |
-| `USE_EXISTING_CLUSTER` | boolean | Instead of setting up a local control plane, point to the control plane of an existing cluster. |
-| `KUBEBUILDER_ASSETS` | path to directory | Point integration tests to a directory containing all binaries (api-server, etcd and kubectl). |
-| `TEST_ASSET_KUBE_APISERVER`, `TEST_ASSET_ETCD`, `TEST_ASSET_KUBECTL` | paths to, respectively, api-server, etcd and kubectl binaries | Similar to `KUBEBUILDER_ASSETS`, but more granular. Point integration tests to use binaries other than the default ones. These environment variables can also be used to ensure specific tests run with expected versions of these binaries. |
-| `KUBEBUILDER_CONTROLPLANE_START_TIMEOUT` and `KUBEBUILDER_CONTROLPLANE_STOP_TIMEOUT` | durations in format supported by [`time.ParseDuration`](https://golang.org/pkg/time/#ParseDuration) | Specify timeouts different from the default for the test control plane to (respectively) start and stop; any test run that exceeds them will fail. |
-| `KUBEBUILDER_ATTACH_CONTROL_PLANE_OUTPUT` | boolean | Set to `true` to attach the control plane's stdout and stderr to os.Stdout and os.Stderr. This can be useful when debugging test failures, as output will include output from the control plane. |
+| `USE_EXISTING_CLUSTER` | boolean | 可以指向一个已存在 cluster 的控制面，而不用设置一个本地的控制面。 |
+| `KUBEBUILDER_ASSETS` | 目录路径 | 将集成测试指向一个包含所有二进制文件（api-server，etcd 和 kubectl）的目录。 |
+| `TEST_ASSET_KUBE_APISERVER`, `TEST_ASSET_ETCD`, `TEST_ASSET_KUBECTL` | 分别代表 api-server，etcd，和 kubectl 二进制文件的路径 | 和 `KUBEBUILDER_ASSETS` 相似，但是更细一点。指示集成测试使用非默认的二进制文件。这些环境变量也可以被用来确保特定的测试是在期望版本的二进制文件下运行的。|
+| `KUBEBUILDER_CONTROLPLANE_START_TIMEOUT` 和 `KUBEBUILDER_CONTROLPLANE_STOP_TIMEOUT` | [`time.ParseDuration`](https://golang.org/pkg/time/#ParseDuration) 支持的持续时间的格式 | 指定不同于测试控制面（分别）启动和停止的超时时间；任何超出设置的测试都会运行失败。|
+| `KUBEBUILDER_ATTACH_CONTROL_PLANE_OUTPUT` | boolean | 设置为 `true` 可以将控制面的标准输出和标准错误贴合到 os.Stdout 和 os.Stderr 上。这种做法在调试测试失败时是非常有用的，因为输出包含控制面的输出。|
 
+#### 标记位
 
-#### Flags
-Here's an example of modifying the flags with which to start the API server in your integration tests, compared to the default values in `envtest.DefaultKubeAPIServerFlags`:
+下面是一个在你的集成测试中通过修改标记位来启动 API server 的例子，和 `envtest.DefaultKubeAPIServerFlags` 中的默认值相对比：
 
 ```go
 customApiServerFlags := []string{
@@ -56,11 +57,12 @@ testEnv = &envtest.Environment{
 }
 ```
 
-### Testing considerations
+### 测试注意事项
 
-Unless you're using an existing cluster, keep in mind that no built-in controllers are running in the test context. In some ways, the test control plane will behave differently from "real" clusters, and that might have an impact on how you write tests. One common example is garbage collection; because there are no controllers monitoring built-in resources, objects do not get deleted, even if an `OwnerReference` is set up.
+除非你在使用一个已存在的 cluster，否则需要记住在测试内容中没有内置的 controllers 在运行。在某些方面，测试控制面会表现的和“真实” clusters 有点不一样，这可能会对你如何写测试有些影响。一个很常见的例子就是垃圾回收；因为没有 controllers 来监控内置的资源，对象是不会被删除的，即使设置了 `OwnerReference`。 
 
-To test that the deletion lifecycle works, test the ownership instead of asserting on existence. For example:
+
+为了测试删除生命周期是否工作正常，要测试所有权而不是仅仅判断是否存在。比如：
 
 ```go
 expectedOwnerReference := v1.OwnerReference{
