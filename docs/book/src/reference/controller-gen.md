@@ -1,6 +1,6 @@
 # controller-gen CLI
 
-KubeBuilder使用了一个称为 [controller-gen](https://sigs.k8s.io/controller-tools/cmd/controller-gen)
+KubeBuilder 使用了一个称为 [controller-gen](https://sigs.k8s.io/controller-tools/cmd/controller-gen)
 用于生成通用代码和 Kubernetes YAML。 代码和配置的生成规则是被 Go 代码中的一些特殊[标记注释](/reference/markers.md)控制的。
 
 controller-gen 由不同的“generators”(指定生成什么)和“输出规则”(指定如何以及在何处输出结果)。
@@ -21,7 +21,7 @@ RBAC 规则默认输出到(`config/rbac`)。 主要考虑到当前目录结构�
 
 ## 生成器
 
-每个不同的生成器都是通过CLI选项配置的。controller-gen 一次运行也可以指定多个生成器。
+每个不同的生成器都是通过 CLI 选项配置的。controller-gen 一次运行也可以指定多个生成器。
 
 {{#markerdocs CLI: generators}}
 
