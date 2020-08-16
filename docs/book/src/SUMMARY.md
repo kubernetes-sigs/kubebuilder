@@ -73,7 +73,6 @@
   - [controller-gen 命令行界面](./reference/controller-gen.md)
   - [shell 自动补全](./reference/completion.md)
   - [制品包](./reference/artifacts.md)
-  - [编写 controller 测试](./reference/writing-tests.md)
 
   - [在集成测试中使用 envtest](./reference/envtest.md)
 
