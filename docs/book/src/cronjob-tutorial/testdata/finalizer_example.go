@@ -44,20 +44,19 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	var cronJob *batchv1.CronJob
 	if err := r.Get(ctx, req.NamespacedName, cronJob); err != nil {
 		log.Error(err, "unable to fetch CronJob")
-		// we'll ignore not-found errors, since they can't be fixed by an immediate
-		// requeue (we'll need to wait for a new notification), and we can get them
-		// on deleted requests.
+		// 在我们删除一个不存在的对象的时，我们会遇到not-found errors这样的报错
+	        // 我们将暂时忽略，因为不能通过重新加入队列的方式来修复这些错误
+	        //（我们需要等待新的通知），而且我们可以根据删除的请求来获取它们
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	// name of our custom finalizer
+	// 自定义 finalizer 的名字
 	myFinalizerName := "storage.finalizers.tutorial.kubebuilder.io"
 
-	// examine DeletionTimestamp to determine if object is under deletion
+	// 检查 DeletionTimestamp 以确定对象是否在删除中
 	if cronJob.ObjectMeta.DeletionTimestamp.IsZero() {
-		// The object is not being deleted, so if it does not have our finalizer,
-		// then lets add the finalizer and update the object. This is equivalent
-		// registering our finalizer.
+		// 如果当前对象没有 finalizer， 说明其没有处于正被删除的状态。
+		// 接着让我们添加 finalizer 并更新对象，相当于注册我们的 finalizer。
 		if !containsString(cronJob.ObjectMeta.Finalizers, myFinalizerName) {
 			cronJob.ObjectMeta.Finalizers = append(cronJob.ObjectMeta.Finalizers, myFinalizerName)
 			if err := r.Update(context.Background(), cronJob); err != nil {
@@ -65,23 +64,23 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			}
 		}
 	} else {
-		// The object is being deleted
+		// 这个对象将要被删除
 		if containsString(cronJob.ObjectMeta.Finalizers, myFinalizerName) {
-			// our finalizer is present, so lets handle any external dependency
+			// 我们的 finalizer 就在这, 接下来就是处理外部依赖
 			if err := r.deleteExternalResources(cronJob); err != nil {
-				// if fail to delete the external dependency here, return with error
-				// so that it can be retried
+				// 如果无法在此处删除外部依赖项，则返回错误
+				// 以便可以重试
 				return ctrl.Result{}, err
 			}
 
-			// remove our finalizer from the list and update it.
+			// 从列表中删除我们的 finalizer 并进行更新。
 			cronJob.ObjectMeta.Finalizers = removeString(cronJob.ObjectMeta.Finalizers, myFinalizerName)
 			if err := r.Update(context.Background(), cronJob); err != nil {
 				return ctrl.Result{}, err
 			}
 		}
 
-		// Stop reconciliation as the item is being deleted
+		// 当它们被删除的时候停止 reconciliation
 		return ctrl.Result{}, nil
 	}
 
@@ -91,14 +90,12 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 }
 
 func (r *Reconciler) deleteExternalResources(cronJob *batch.CronJob) error {
-	//
-	// delete any external resources associated with the cronJob
-	//
-	// Ensure that delete implementation is idempotent and safe to invoke
-	// multiple times for same object.
+
+	// 删除与 cronJob 相关的任何外部资源
+	// 确保删除是幂等性操作且可以安全调用同一对象多次。
 }
 
-// Helper functions to check and remove string from a slice of strings.
+// 辅助函数用于检查并从字符串切片中删除字符串。
 func containsString(slice []string, s string) bool {
 	for _, item := range slice {
 		if item == s {
@@ -117,3 +114,4 @@ func removeString(slice []string, s string) (result []string) {
 	}
 	return
 }
+
