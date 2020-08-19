@@ -63,7 +63,7 @@ Writes the following files:
 - a Kustomization.yaml for customizating manifests
 - a Patch file for customizing image for manager manifests
 - a Patch file for enabling prometheus metrics
-- a cmd/manager/main.go to run
+- a main.go to run
 
 project will prompt the user to run 'dep ensure' after writing the project files.
 `
