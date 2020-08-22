@@ -34,4 +34,4 @@ CRD_OPTIONS ?= "crd:trivialVersions=true"
 |   CRD_OPTIONS	|   API version	|  
 |---	|---	|
 | `"crd:trivialVersions=true"` |  `apiextensions.k8s.io/v1beta1` |
-| `"crd:trivialVersions=true"` | `apiextensions.k8s.io/v1`	|  
+| `"crd:crdVersions=v1"` | `apiextensions.k8s.io/v1`	|  
