@@ -1,8 +1,6 @@
-**注意：** 着急的读者可以直接跳到这里 [Quick
-Start](quick-start.md)。
+**注意：** 着急的读者可以直接跳到这里[快速开始](quick-start.md)。
 
-**若在使用 Kubebuilder v1? 请查看 [legacy
-documentation](https://book-v1.book.kubebuilder.io)**
+**若在使用 Kubebuilder v1? 请查看 [legacy documentation](https://book-v1.book.kubebuilder.io)**。
 
 ## 文档适合哪些人看
 
@@ -40,11 +38,7 @@ API 扩展开发者将学习实现标准的 Kubernetes API 原理和概念，以
 
 ## 资源
 
-* 代码仓库：[sigs.k8s.io/kubebuilder](https://sigs.k8s.io/kubebuilder)
-
-* Slack 沟通群：[#kubebuilder](http://slack.k8s.io/#kubebuilder)
-
-* 谷歌沟通群：
-  [kubebuilder@googlegroups.com](https://groups.google.com/forum/#!forum/kubebuilder)  
-* 云原生社区：
-  [https://cloudnative.to](https://cloudnative.tor)  
+- 代码仓库：[sigs.k8s.io/kubebuilder](https://sigs.k8s.io/kubebuilder)
+- Slack 沟通群：[#kubebuilder](http://slack.k8s.io/#kubebuilder)
+- Google Group：[kubebuilder@googlegroups.com](https://groups.google.com/forum/#!forum/kubebuilder)
+- 云原生社区：[https://cloudnative.to](https://cloudnative.to)
