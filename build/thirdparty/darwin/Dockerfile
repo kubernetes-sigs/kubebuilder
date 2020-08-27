@@ -17,7 +17,7 @@
 # - kubectl (fetch)
 # - etcd (fetch)
 
-FROM golang:1.14.7 as darwin
+FROM golang:1.15 as darwin
 # Install tools
 ENV CGO 0
 ENV DEST /usr/local/kubebuilder/bin/
@@ -28,7 +28,7 @@ RUN apt update && \
     go get github.com/jteeuwen/go-bindata/go-bindata && \
     ( mkdir -p $DEST || echo "" )
 
-RUN git clone https://github.com/kubernetes/kubernetes $GOPATH/src/k8s.io/kubernetes --depth=1 -b v1.17.9
+RUN git clone https://github.com/kubernetes/kubernetes $GOPATH/src/k8s.io/kubernetes --depth=1 -b v1.19.0
 
 WORKDIR /go/src/k8s.io/kubernetes
 
@@ -39,11 +39,11 @@ ENV KUBE_BUILD_PLATFORMS darwin/amd64
 RUN make WHAT=cmd/kube-apiserver && \
     cp _output/local/bin/$KUBE_BUILD_PLATFORMS/kube-apiserver $DEST
 
-RUN curl -sLO https://storage.googleapis.com/kubernetes-release/release/v1.17.9/bin/darwin/amd64/kubectl && \
+RUN curl -sLO https://storage.googleapis.com/kubernetes-release/release/v1.19.0/bin/darwin/amd64/kubectl && \
     chmod +x kubectl && \
     cp kubectl $DEST
 
-ENV ETCD_VERSION="3.3.11"
+ENV ETCD_VERSION="3.4.9"
 ENV ETCD_DOWNLOAD_FILE="etcd-v${ETCD_VERSION}-darwin-amd64.zip"
 RUN curl -sLO https://github.com/coreos/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-darwin-amd64.zip -o ${ETCD_DOWNLOAD_FILE} && \
     unzip -o ${ETCD_DOWNLOAD_FILE} && \
