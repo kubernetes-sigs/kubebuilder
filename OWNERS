@@ -1,0 +1,9 @@
+# See the OWNERS docs: https://git.k8s.io/community/contributors/guide/owners.md
+
+approvers:
+  - kubebuilder-admins
+  - kubebuilder-approvers
+reviewers:
+  - kubebuilder-admins
+  - kubebuilder-reviewers
+  - kubebuilder-approvers
