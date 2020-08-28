@@ -24,8 +24,13 @@ err = testEnv.Stop()
 
 Logs from the test runs are prefixed with `test-env`.
 
-## Configuring your test control plane
-You can use environment variables and/or flags to specify the `api-server` and `etcd` setup within your integration tests.
+### Configuring your test control plane
+
+Controller-runtime’s [envtest](https://godoc.org/sigs.k8s.io/controller-runtime/pkg/envtest) framework requires `kubectl`, `kube-apiserver`, and `etcd` binaries be present locally to simulate the API portions of a real cluster. 
+
+For projects built with plugin v3+ (see your PROJECT file's `layout` key), the `make test` command will install these binaries to the `testbin/` directory and use them when running tests that use `envtest`.  
+
+You can use environment variables and/or flags to specify the `kubectl`,`api-server` and `etcd` setup within your integration tests.
 
 ### Environment Variables
 
@@ -37,6 +42,32 @@ You can use environment variables and/or flags to specify the `api-server` and `
 | `KUBEBUILDER_CONTROLPLANE_START_TIMEOUT` and `KUBEBUILDER_CONTROLPLANE_STOP_TIMEOUT` | durations in format supported by [`time.ParseDuration`](https://golang.org/pkg/time/#ParseDuration) | Specify timeouts different from the default for the test control plane to (respectively) start and stop; any test run that exceeds them will fail. |
 | `KUBEBUILDER_ATTACH_CONTROL_PLANE_OUTPUT` | boolean | Set to `true` to attach the control plane's stdout and stderr to os.Stdout and os.Stderr. This can be useful when debugging test failures, as output will include output from the control plane. |
 
+See that the `test` makefile target will ensure that all is properly setup when you are using it. However, if you would like to run the tests without use the Makefile targets, for example via an IDE, then you can set the environment variables directly in the code of your `suite_test.go`:
+
+```go 
+var _ = BeforeSuite(func(done Done) {
+	Expect(os.Setenv("TEST_ASSET_KUBE_APISERVER", "../testbin/bin/kube-apiserver")).To(Succeed())
+	Expect(os.Setenv("TEST_ASSET_ETCD", "../testbin/bin/etcd")).To(Succeed())
+	Expect(os.Setenv("TEST_ASSET_KUBECTL", "../testbin/bin/kubectl")).To(Succeed())
+
+	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
+	testenv = &envtest.Environment{}
+
+	_, err := testenv.Start()
+	Expect(err).NotTo(HaveOccurred())
+
+	close(done)
+}, 60)
+
+var _ = AfterSuite(func() {
+	Expect(testenv.Stop()).To(Succeed())
+
+	Expect(os.Unsetenv("TEST_ASSET_KUBE_APISERVER")).To(Succeed())
+	Expect(os.Unsetenv("TEST_ASSET_ETCD")).To(Succeed())
+	Expect(os.Unsetenv("TEST_ASSET_KUBECTL")).To(Succeed())
+
+})
+```  
 
 ### Flags
 Here's an example of modifying the flags with which to start the API server in your integration tests, compared to the default values in `envtest.DefaultKubeAPIServerFlags`:

@@ -14,6 +14,9 @@ docs/book/book/
 # skip bin
 bin/*
 testbin/*
+testdata/project-v3-addon/testbin/*
+testdata/project-v3-multigroup/testbin/*
+testdata/project-v3/testbin/*
 
 # skip .out files (coverage tests)
 *.out

@@ -25,7 +25,11 @@ arch=$(go env GOARCH)
 
 # download kubebuilder and extract it to tmp
 curl -L https://go.kubebuilder.io/dl/2.3.1/${os}/${arch} | tar -xz -C /tmp/
+```
 
+If you are using a Kubebuilder plugin version less than version `v3+`, you must configure the Kubernetes binaries required for the [envtest][envtest], run: 
+
+```bash
 # move to a long-term location and put it on your path
 # (you'll need to set the KUBEBUILDER_ASSETS env var if you put it somewhere else)
 sudo mv /tmp/kubebuilder_2.3.1_${os}_${arch} /usr/local/kubebuilder
@@ -36,7 +40,6 @@ export PATH=$PATH:/usr/local/kubebuilder/bin
 <h1>Using master branch</h1>
 
 Also, you can install a master snapshot from `https://go.kubebuilder.io/dl/latest/${os}/${arch}`.
-
 
 </aside>
 
@@ -225,8 +228,8 @@ make undeploy
 
 Now, follow up the [CronJob tutorial][cronjob-tutorial] to better understand how it works by developing a demo example project. 
 
-[pre-rbc-gke]:https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#iam-rolebinding-bootstrap
+[pre-rbc-gke]: https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#iam-rolebinding-bootstrap
 [cronjob-tutorial]: https://book.kubebuilder.io/cronjob-tutorial/cronjob-tutorial.html
 [GOPATH-golang-docs]: https://golang.org/doc/code.html#GOPATH
 [how-to-write-go-code-golang-docs]: https://golang.org/doc/code.html 
-
+[envtest]: https://book.kubebuilder.io/reference/testing/envtest.html
