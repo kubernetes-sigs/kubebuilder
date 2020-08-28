@@ -28,6 +28,7 @@ Check out the Kubebuilder [book](https://book.kubebuilder.io).
 
 - Kubebuilder Book: [book.kubebuilder.io](https://book.kubebuilder.io)
 - GitHub Repo: [kubernetes-sigs/kubebuilder](https://github.com/kubernetes-sigs/kubebuilder)
+- Tutorial: [CronJob tutorial source code](https://github.com/kubernetes-sigs/kubebuilder/tree/master/docs/book/src/cronjob-tutorial/testdata/project)
 - Slack channel: [#kubebuilder](https://slack.k8s.io/#kubebuilder)
 - Google Group: [kubebuilder@googlegroups.com](https://groups.google.com/forum/#!forum/kubebuilder)
 - Planned Work: [Sprint Dashboard](https://github.com/kubernetes-sigs/kubebuilder/projects/1)
