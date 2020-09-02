@@ -1,4 +1,4 @@
-# Every journey needs a start, every program a main
+# Every journey needs a start, every program needs a main
 
 {{#literatego ./testdata/emptymain.go}}
 
