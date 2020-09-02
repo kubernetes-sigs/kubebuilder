@@ -87,10 +87,6 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "FirstMate")
 		os.Exit(1)
 	}
-	if err = (&crewv1.FirstMate{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "FirstMate")
-		os.Exit(1)
-	}
 	if err = (&controllers.AdmiralReconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("Admiral"),
@@ -101,6 +97,10 @@ func main() {
 	}
 	if err = (&crewv1.Admiral{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create webhook", "webhook", "Admiral")
+		os.Exit(1)
+	}
+	if err = (&crewv1.FirstMate{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "FirstMate")
 		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder

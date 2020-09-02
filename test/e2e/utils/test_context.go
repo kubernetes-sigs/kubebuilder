@@ -70,9 +70,9 @@ func NewTestContext(binaryName string, env ...string) (*TestContext, error) {
 		Domain:     "example.com" + testSuffix,
 		Group:      testGroup,
 		Version:    "v1alpha1",
-		Kind:       "Foo" + testSuffix,
-		Resources:  "foo" + testSuffix + "s",
-		ImageName:  "e2e-test/controller-manager:" + testSuffix,
+		Kind:       fmt.Sprintf("Foo%s", testSuffix),
+		Resources:  fmt.Sprintf("foo%s", testSuffix) + "s",
+		ImageName:  fmt.Sprintf("e2e-test/controller-manager:%s", testSuffix),
 		CmdContext: cc,
 		Kubectl: &Kubectl{
 			Namespace:  fmt.Sprintf("e2e-%s-system", testSuffix),

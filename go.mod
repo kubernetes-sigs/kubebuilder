@@ -10,5 +10,6 @@ require (
 	github.com/spf13/cobra v0.0.7
 	github.com/spf13/pflag v1.0.5
 	golang.org/x/tools v0.0.0-20200403190813-44a64ad78b9b
+	k8s.io/klog v1.0.0
 	sigs.k8s.io/yaml v1.2.0
 )

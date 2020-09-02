@@ -36,10 +36,12 @@ type Webhook struct { // nolint:maligned
 	// Is the Group domain for the Resource replacing '.' with '-'
 	GroupDomainWithDash string
 
-	// If scaffold the defaulting webhook
+	// If defaulting webhook is to be scaffolded
 	Defaulting bool
-	// If scaffold the validating webhook
+	// If validating webhook is to be scaffolded
 	Validating bool
+	// If conversion webhook is to be scaffolded
+	Conversion bool
 }
 
 // SetTemplateDefaults implements input.Template

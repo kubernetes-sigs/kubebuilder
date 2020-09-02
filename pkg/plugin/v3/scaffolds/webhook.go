@@ -38,6 +38,8 @@ type webhookScaffolder struct {
 
 	// Webhook type options.
 	defaulting, validation, conversion bool
+	webhookSpokeVersion                string
+	webhookHubVersion                  string
 }
 
 // NewWebhookScaffolder returns a new Scaffolder for v2 webhook creation operations
@@ -48,14 +50,18 @@ func NewWebhookScaffolder(
 	defaulting bool,
 	validation bool,
 	conversion bool,
+	webhookSpokeVersion string,
+	webhookHubVersion string,
 ) scaffold.Scaffolder {
 	return &webhookScaffolder{
-		config:      config,
-		boilerplate: boilerplate,
-		resource:    resource,
-		defaulting:  defaulting,
-		validation:  validation,
-		conversion:  conversion,
+		config:              config,
+		boilerplate:         boilerplate,
+		resource:            resource,
+		defaulting:          defaulting,
+		validation:          validation,
+		conversion:          conversion,
+		webhookSpokeVersion: webhookSpokeVersion,
+		webhookHubVersion:   webhookHubVersion,
 	}
 }
 
@@ -74,18 +80,30 @@ func (s *webhookScaffolder) newUniverse() *model.Universe {
 }
 
 func (s *webhookScaffolder) scaffold() error {
-	if s.conversion {
-		fmt.Println(`Webhook server has been set up for you.
-You need to implement the conversion.Hub and conversion.Convertible interfaces for your CRD types.`)
-	}
-
-	if err := machinery.NewScaffold().Execute(
-		s.newUniverse(),
-		&api.Webhook{Defaulting: s.defaulting, Validating: s.validation},
-		&templates.MainUpdater{WireWebhook: true},
-		&kdefault.InjectCAPatch{},
-	); err != nil {
-		return err
+	if s.webhookSpokeVersion != "" && s.webhookHubVersion != "" {
+		if err := machinery.NewScaffold().Execute(
+			s.newUniverse(),
+			&api.Webhook{Defaulting: s.defaulting, Validating: s.validation},
+			&api.HubConversion{HubVersion: s.webhookHubVersion},
+			&api.SpokeConversion{SpokeVersion: s.webhookSpokeVersion},
+			&templates.MainUpdater{WireWebhook: true},
+			&kdefault.InjectCAPatch{},
+		); err != nil {
+			return err
+		}
+	} else {
+		if s.conversion {
+			fmt.Println(`Webhook server has been set up for you.		
+ You need to implement the conversion.Hub and conversion.Convertible interfaces for your CRD types.`)
+		}
+		if err := machinery.NewScaffold().Execute(
+			s.newUniverse(),
+			&api.Webhook{Defaulting: s.defaulting, Validating: s.validation, Conversion: s.conversion},
+			&templates.MainUpdater{WireWebhook: true},
+			&kdefault.InjectCAPatch{},
+		); err != nil {
+			return err
+		}
 	}
 
 	// TODO: Add test suite for conversion webhook after #1664 has been merged & conversion tests supported in envtest.

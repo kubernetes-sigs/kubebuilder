@@ -12,4 +12,7 @@ resources:
 - group: crew
   kind: Admiral
   version: v1
+- group: crew
+  kind: FirstMate
+  version: v2
 version: 3-alpha

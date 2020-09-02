@@ -62,9 +62,16 @@ scaffold_test_project() {
             $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false
             $kb create webhook --group crew --version v1 --kind Captain --defaulting --programmatic-validation
             $kb create api --group crew --version v1 --kind FirstMate --controller=true --resource=true --make=false
-            $kb create webhook --group crew --version v1 --kind FirstMate --conversion
             $kb create api --group crew --version v1 --kind Admiral --controller=true --resource=true --namespaced=false --make=false
             $kb create webhook --group crew --version v1 --kind Admiral --defaulting
+            if [ "$plugin" == "go/v3-alpha" ]; then
+                header_text 'Creating API for conversion webhook ...'
+                $kb create api --group crew --version v2 --kind FirstMate --controller=false --resource=true --make=false
+                $kb create webhook --group crew --version v1 --kind FirstMate --hub=v1 --spoke=v2
+                sed -i '/subresource:status/a \/\/ +kubebuilder:storageversion' api/v1/firstmate_types.go # specify storage version for controller-gen
+            else
+                $kb create webhook --group crew --version v1 --kind FirstMate --conversion
+            fi
         elif [ $project == "project-v2-multigroup" ] || [ $project == "project-v3-multigroup" ]; then
             header_text 'Switching to multigroup layout ...'
             $kb edit --multigroup=true
