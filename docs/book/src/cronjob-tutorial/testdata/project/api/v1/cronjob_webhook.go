@@ -161,7 +161,8 @@ func (r *CronJob) validateCronJob() error {
 /*
 Some fields are declaratively validated by OpenAPI schema.
 You can find kubebuilder validation markers (prefixed
-with `// +kubebuilder:validation`) in the [API](api-design.md)
+with `// +kubebuilder:validation`) in the
+[Designing an API](api-design.md) section.
 You can find all of the kubebuilder supported markers for
 declaring validation by running `controller-gen crd -w`,
 or [here](/reference/markers/crd-validation.md).
