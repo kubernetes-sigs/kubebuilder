@@ -1,5 +1,5 @@
-## Using envtest in integration tests
-[`controller-runtime`](http://sigs.k8s.io/controller-runtime) offers `envtest` ([godoc](https://godoc.org/github.com/kubernetes-sigs/controller-runtime/pkg/envtest)), a package that helps write integration tests for your controllers by setting up and starting an instance of etcd and the Kubernetes API server, without kubelet, controller-manager or other components.
+# Configuring envtest for integration tests
+[`controller-runtime`](http://sigs.k8s.io/controller-runtime) offers `envtest` ([godoc](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/envtest?tab=doc)), a package that helps write integration tests for your controllers by setting up and starting an instance of etcd and the Kubernetes API server, without kubelet, controller-manager or other components.
 
 Using `envtest` in integration tests follows the general flow of:
 
@@ -24,10 +24,10 @@ err = testEnv.Stop()
 
 Logs from the test runs are prefixed with `test-env`.
 
-### Configuring your test control plane
+## Configuring your test control plane
 You can use environment variables and/or flags to specify the `api-server` and `etcd` setup within your integration tests.
 
-#### Environment Variables
+### Environment Variables
 
 | Variable name | Type | When to use |
 | --- | :--- | :--- |
@@ -38,7 +38,7 @@ You can use environment variables and/or flags to specify the `api-server` and `
 | `KUBEBUILDER_ATTACH_CONTROL_PLANE_OUTPUT` | boolean | Set to `true` to attach the control plane's stdout and stderr to os.Stdout and os.Stderr. This can be useful when debugging test failures, as output will include output from the control plane. |
 
 
-#### Flags
+### Flags
 Here's an example of modifying the flags with which to start the API server in your integration tests, compared to the default values in `envtest.DefaultKubeAPIServerFlags`:
 
 ```go
@@ -56,7 +56,7 @@ testEnv = &envtest.Environment{
 }
 ```
 
-### Testing considerations
+## Testing considerations
 
 Unless you're using an existing cluster, keep in mind that no built-in controllers are running in the test context. In some ways, the test control plane will behave differently from "real" clusters, and that might have an impact on how you write tests. One common example is garbage collection; because there are no controllers monitoring built-in resources, objects do not get deleted, even if an `OwnerReference` is set up.
 
