@@ -103,7 +103,7 @@ func main() {
 	/*
 		The above example will change the scope of your project to a single Namespace. In this scenario,
 		it is also suggested to restrict the provided authorization to this namespace by replacing the default
-		ClusterRole and ClusterRoleBinding to Role and RoleBinding respectively
+		ClusterRole and ClusterRoleBinding to Role and RoleBinding respectively.
 		For further information see the kubernetes documentation about Using [RBAC Authorization](https://kubernetes.io/docs/reference/access-authn-authz/rbac/).
 
 		Also, it is possible to use the MultiNamespacedCacheBuilder to watch a specific set of namespaces:
