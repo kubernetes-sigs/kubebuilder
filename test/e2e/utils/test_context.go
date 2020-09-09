@@ -27,9 +27,7 @@ import (
 	. "github.com/onsi/ginkgo" //nolint:golint
 )
 
-const certmanagerVersion = "v0.11.0"
 const prometheusOperatorVersion = "0.33"
-const certmanagerURL = "https://github.com/jetstack/cert-manager/releases/download/%s/cert-manager.yaml"
 const prometheusOperatorURL = "https://raw.githubusercontent.com/coreos/prometheus-operator/release-%s/bundle.yaml"
 
 // TestContext specified to run e2e tests
@@ -89,7 +87,7 @@ func (t *TestContext) Prepare() error {
 }
 
 // InstallCertManager installs the cert manager bundle.
-func (t *TestContext) InstallCertManager() error {
+func (t *TestContext) InstallCertManager(certmanagerURL string, certmanagerVersion string) error {
 	if _, err := t.Kubectl.Command("create", "namespace", "cert-manager"); err != nil {
 		return err
 	}
@@ -123,7 +121,7 @@ func (t *TestContext) UninstallPrometheusOperManager() {
 }
 
 // UninstallCertManager uninstalls the cert manager bundle.
-func (t *TestContext) UninstallCertManager() {
+func (t *TestContext) UninstallCertManager(certmanagerURL string, certmanagerVersion string) {
 	url := fmt.Sprintf(certmanagerURL, certmanagerVersion)
 	if _, err := t.Kubectl.Delete(false, "-f", url); err != nil {
 		fmt.Fprintf(GinkgoWriter,

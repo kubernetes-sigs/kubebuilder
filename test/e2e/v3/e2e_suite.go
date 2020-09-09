@@ -31,6 +31,9 @@ import (
 	"sigs.k8s.io/kubebuilder/test/e2e/utils"
 )
 
+const certmanagerVersion = "v1.0.1"
+const certmanagerURL = "https://github.com/jetstack/cert-manager/releases/download/%s/cert-manager-legacy.yaml"
+
 var _ = Describe("kubebuilder", func() {
 	Context("with v3 scaffolding", func() {
 		var kbc *utils.TestContext
@@ -41,7 +44,7 @@ var _ = Describe("kubebuilder", func() {
 			Expect(kbc.Prepare()).To(Succeed())
 
 			By("installing cert manager bundle")
-			Expect(kbc.InstallCertManager()).To(Succeed())
+			Expect(kbc.InstallCertManager(certmanagerURL, certmanagerVersion)).To(Succeed())
 
 			By("installing prometheus operator")
 			Expect(kbc.InstallPrometheusOperManager()).To(Succeed())
@@ -55,7 +58,7 @@ var _ = Describe("kubebuilder", func() {
 			kbc.UninstallPrometheusOperManager()
 
 			By("uninstalling cert manager bundle")
-			kbc.UninstallCertManager()
+			kbc.UninstallCertManager(certmanagerURL, certmanagerVersion)
 
 			By("remove container image and work dir")
 			kbc.Destroy()
@@ -126,7 +129,7 @@ var _ = Describe("kubebuilder", func() {
 #  objref:
 #    kind: Certificate
 #    group: cert-manager.io
-#    version: v1alpha2
+#    version: v1
 #    name: serving-cert # this name should match the one in certificate.yaml
 #  fieldref:
 #    fieldpath: metadata.namespace
@@ -134,7 +137,7 @@ var _ = Describe("kubebuilder", func() {
 #  objref:
 #    kind: Certificate
 #    group: cert-manager.io
-#    version: v1alpha2
+#    version: v1
 #    name: serving-cert # this name should match the one in certificate.yaml
 #- name: SERVICE_NAMESPACE # namespace of the service
 #  objref:

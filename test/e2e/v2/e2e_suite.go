@@ -31,6 +31,9 @@ import (
 	"sigs.k8s.io/kubebuilder/test/e2e/utils"
 )
 
+const certmanagerVersion = "v0.11.0"
+const certmanagerURL = "https://github.com/jetstack/cert-manager/releases/download/%s/cert-manager.yaml"
+
 var _ = Describe("kubebuilder", func() {
 	Context("with v2 scaffolding", func() {
 		var kbc *utils.TestContext
@@ -41,7 +44,7 @@ var _ = Describe("kubebuilder", func() {
 			Expect(kbc.Prepare()).To(Succeed())
 
 			By("installing cert manager bundle")
-			Expect(kbc.InstallCertManager()).To(Succeed())
+			Expect(kbc.InstallCertManager(certmanagerURL, certmanagerVersion)).To(Succeed())
 
 			By("installing prometheus operator")
 			Expect(kbc.InstallPrometheusOperManager()).To(Succeed())
@@ -55,7 +58,7 @@ var _ = Describe("kubebuilder", func() {
 			kbc.UninstallPrometheusOperManager()
 
 			By("uninstalling cert manager bundle")
-			kbc.UninstallCertManager()
+			kbc.UninstallCertManager(certmanagerURL, certmanagerVersion)
 
 			By("remove container image and work dir")
 			kbc.Destroy()
