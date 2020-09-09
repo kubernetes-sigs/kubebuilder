@@ -23,11 +23,6 @@ script: ./test.sh
 
 jobs:
   include:
-    - stage: linting
-      script: make lint
-      after_success: echo "Linting check succeeded"
-      after_failure: echo "Linting check failed. Run make lint to check it locally"
-
     - stage: testdata
       # Check if the the testdata is updated according to the current changes
       # To update the testdata use the Makefile target `make generate`
@@ -45,7 +40,6 @@ jobs:
       after_success: echo "Coverage check succeeded. See in goveralls if the % of code covered with tests decreased."
       after_failure: echo "Coverage step failed. Run make test-coverage to check it locally"
 stages:
-  - linting
   - testdata
   - test
   - coverage
