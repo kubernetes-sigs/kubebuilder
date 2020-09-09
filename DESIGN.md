@@ -37,7 +37,7 @@ project and its various components.
 * **Batteries Included**: KubeBuilder projects should contain enough
   deployment information to reasonably develop and run the scaffolded
   project.  This includes testing, deployment files, and development
-  infrastructure to go from an code to running containers.
+  infrastructure to go from code to running containers.
 
 ## controller-tools and controller-runtime
 
@@ -111,7 +111,7 @@ project and its various components.
   tend to be brittle and gradually become more complicated over time (e.g.
   fake client implementations tend to grow into poorly-written, incomplete
   API servers).  Recording of actions tends to lead to brittle tests that
-  requiring changing during refactors.  Instead, test that the end desired
+  requires changes during refactors.  Instead, test that the end desired
   state is correct.  Test the way the world should be, without caring how
   it got there, and provide easy ways to set up the real components so
   that mocks aren't required.
