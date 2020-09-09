@@ -59,6 +59,30 @@ Following the targets that can be used to test your changes locally.
 
 **NOTE** To use the `make lint` is required to install `golangci-lint` locally. More info: https://github.com/golangci/golangci-lint#install
 
+## PR Process
+
+Every PR should be annotated with an icon indicating whether it's
+a:
+
+- Breaking change: :warning: (`:warning:`)
+- Non-breaking feature: :sparkles: (`:sparkles:`)
+- Patch fix: :bug: (`:bug:`)
+- Docs: :book: (`:book:`)
+- Infra/Tests/Other: :seedling: (`:seedling:`)
+- No release note: :ghost: (`:ghost:`)
+
+Use :ghost: (no release note) only for the PRs that change or revert unreleased
+changes, which don't deserve a release note. Please don't abuse it.
+
+You can also use the equivalent emoji directly, since GitHub doesn't
+render the `:xyz:` aliases in PR titles.
+
+Individual commits should not be tagged separately, but will generally be
+assumed to match the PR. For instance, if you have a bugfix in with
+a breaking change, it's generally encouraged to submit the bugfix
+separately, but if you must put them in one PR, mark the commit
+separately.
+
 ## Where the CI Tests are configured
 
 1. See the [Travis](.travis.yml) file to check its tests and the scripts used on it. 
