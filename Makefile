@@ -61,9 +61,24 @@ generate: ## Update/generate all mock data. You should run this commands to upda
 .PHONY: generate-testdata
 generate-testdata: ## Update/generate the testdata in $GOPATH/src/sigs.k8s.io/kubebuilder
 	GO111MODULE=on ./generate_testdata.sh
+
 .PHONY: lint
-lint: ## Run code lint checks
-	./scripts/verify.sh
+lint: golangci-lint ## Run golangci lint checks
+	@$(GOLANGCI_LINT) run
+
+lint-fix: golangci-lint ## Run golangci lint to automatically perform fixes
+	@$(GOLANGCI_LINT) run --fix
+
+golangci-lint:
+ifeq (, $(shell which golangci-lint))
+	@{ \
+	set -e ;\
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.29.0 ;\
+	}
+GOLANGCI_LINT=$(shell go env GOPATH)/bin/golangci-lint
+else
+GOLANGCI_LINT=$(shell which golangci-lint)
+endif
 
 ##@ Tests
 

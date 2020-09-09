@@ -51,7 +51,8 @@ Following the targets that can be used to test your changes locally.
 |---	|---	|---	|
 | make go-test |  Runs go tests | no   	|
 | make test| Runs tests in shell (`./test.sh`)	|  yes 	|
-| make lint |  Check the code implementation | yes   |
+| make lint |  Run [golangci][golangci] lint checks | yes   |
+| make lint-fix |   Run [golangci][golangci] to automatically perform fixes | no   |
 | make test-coverage |  Run coveralls to check the % of code covered by tests | yes   |
 | make check-testdata |  Checks if the testdata dir is updated with the latest changes | yes   |
 | make test-e2e-local |  Runs the CI e2e tests locally | no   |
@@ -134,3 +135,4 @@ KubeBuilder and the related repositories.  See
 
 Participation in the Kubernetes community is governed by the [Kubernetes Code of Conduct](code-of-conduct.md).
 
+[golangci]:https://github.com/golangci/golangci-lint
