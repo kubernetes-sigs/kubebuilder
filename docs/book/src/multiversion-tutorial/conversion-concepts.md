@@ -46,13 +46,13 @@ define, and is modeled off of what Kubernetes does internally.
 
 When API clients, like kubectl or your controller, request a particular
 version of your resource, the Kubernetes API server needs to return
-a result that's of that version.  However, that version might not match
+a result of that version.  However, that version might not match
 the version stored by the API server.
 
 In that case, the API server needs to know how to convert between the
 desired version and the stored version.  Since the conversions aren't
 built in for CRDs, the Kubernetes API server calls out to a webhook to do
-the conversion instead.  For KubeBuilder, this webhook is implemented by
+the conversion instead.  With KubeBuilder, this webhook is implemented by
 controller-runtime, and performs the hub-and-spoke conversions that we
 discussed above.
 
