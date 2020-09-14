@@ -53,6 +53,10 @@
         <script type="text/javascript">
             var path_to_root = "{{ path_to_root }}";
             var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "{{ preferred_dark_theme }}" : "{{ default_theme }}";
+            
+            if (default_theme === "") {
+                default_theme = "light";
+            }
         </script>
 
         <!-- Work around some values being stored in localStorage wrapped in quotes -->
