@@ -49,5 +49,4 @@ if [ -z "${SKIP_KIND_CLEANUP:-}" ]; then
 fi
 
 # when changing these commands, make sure to keep in sync with ./test_e2e.sh
-go test ./test/e2e/v2 -v -ginkgo.v
-go test ./test/e2e/v3 -v -ginkgo.v
+go test ./test/e2e/ -v -ginkgo.v

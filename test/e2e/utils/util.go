@@ -19,6 +19,7 @@ package utils
 import (
 	"bytes"
 	"crypto/rand"
+	"fmt"
 	"io/ioutil"
 	"math/big"
 	"strings"
@@ -81,7 +82,7 @@ func UncommentCode(filename, target, prefix string) error {
 
 	idx := strings.Index(strContent, target)
 	if idx < 0 {
-		return nil
+		return fmt.Errorf("unable to find the code %s to be uncomment", target)
 	}
 
 	out := new(bytes.Buffer)
@@ -105,4 +106,64 @@ func UncommentCode(filename, target, prefix string) error {
 	// false positive
 	// nolint:gosec
 	return ioutil.WriteFile(filename, out.Bytes(), 0644)
+}
+
+// ImplementWebhooks will mock a valid webhook data
+func ImplementWebhooks(filename string) error {
+	bs, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return err
+	}
+	str := string(bs)
+
+	str, err = EnsureExistAndReplace(
+		str,
+		"import (",
+		`import (
+	"errors"`)
+	if err != nil {
+		return err
+	}
+
+	// implement defaulting webhook logic
+	str, err = EnsureExistAndReplace(
+		str,
+		"// TODO(user): fill in your defaulting logic.",
+		`if r.Spec.Count == 0 {
+		r.Spec.Count = 5
+	}`)
+	if err != nil {
+		return err
+	}
+
+	// implement validation webhook logic
+	str, err = EnsureExistAndReplace(
+		str,
+		"// TODO(user): fill in your validation logic upon object creation.",
+		`if r.Spec.Count < 0 {
+		return errors.New(".spec.count must >= 0")
+	}`)
+	if err != nil {
+		return err
+	}
+	str, err = EnsureExistAndReplace(
+		str,
+		"// TODO(user): fill in your validation logic upon object update.",
+		`if r.Spec.Count < 0 {
+		return errors.New(".spec.count must >= 0")
+	}`)
+	if err != nil {
+		return err
+	}
+	// false positive
+	// nolint:gosec
+	return ioutil.WriteFile(filename, []byte(str), 0644)
+}
+
+// EnsureExistAndReplace will check that exists to perform the replace
+func EnsureExistAndReplace(input, match, replace string) (string, error) {
+	if !strings.Contains(input, match) {
+		return "", fmt.Errorf("can't find %q", match)
+	}
+	return strings.Replace(input, match, replace, -1), nil
 }

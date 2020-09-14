@@ -14,12 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v3
+// NOTE That the we are not centralizing the code from v2 and v3 to keep easier
+// kept it manatained. The v3 represents the v3+ which can be changed as the v2 is kept
+// to ensure its supportability.
+//nolint:dupl
+package e2e_test
 
 import (
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -33,29 +36,14 @@ import (
 
 var _ = Describe("kubebuilder", func() {
 	Context("with v3 scaffolding", func() {
-		var kbc *utils.TestContext
 		BeforeEach(func() {
-			var err error
-			kbc, err = utils.NewTestContext(utils.KubebuilderBinName, "GO111MODULE=on")
-			Expect(err).NotTo(HaveOccurred())
+			By("creating the repository")
 			Expect(kbc.Prepare()).To(Succeed())
-
-			By("installing cert manager bundle")
-			Expect(kbc.InstallCertManager()).To(Succeed())
-
-			By("installing prometheus operator")
-			Expect(kbc.InstallPrometheusOperManager()).To(Succeed())
 		})
 
 		AfterEach(func() {
 			By("clean up created API objects during test process")
 			kbc.CleanupManifests(filepath.Join("config", "default"))
-
-			By("uninstalling prometheus manager bundle")
-			kbc.UninstallPrometheusOperManager()
-
-			By("uninstalling cert manager bundle")
-			kbc.UninstallCertManager()
 
 			By("remove container image and work dir")
 			kbc.Destroy()
@@ -100,7 +88,7 @@ var _ = Describe("kubebuilder", func() {
 			Expect(err).Should(Succeed())
 
 			By("implementing the mutating and validating webhooks")
-			err = implementWebhooks(filepath.Join(
+			err = utils.ImplementWebhooks(filepath.Join(
 				kbc.Dir, "api", kbc.Version,
 				fmt.Sprintf("%s_webhook.go", strings.ToLower(kbc.Kind))))
 			Expect(err).Should(Succeed())
@@ -208,6 +196,9 @@ var _ = Describe("kubebuilder", func() {
 			Expect(len(token)).To(BeNumerically(">", 0))
 
 			By("creating a pod with curl image")
+			// todo: the flag --generator=run-pod/v1 is deprecated, however, shows that besides
+			// it should not make any difference and work locally successfully when the flag is removed
+			// travis has been failing and the curl pod is not found when the flag is not used
 			cmdOpts := []string{
 				"run", "--generator=run-pod/v1", "curl", "--image=curlimages/curl:7.68.0", "--restart=OnFailure", "--",
 				"curl", "-v", "-k", "-H", fmt.Sprintf(`Authorization: Bearer %s`, token),
@@ -229,15 +220,15 @@ var _ = Describe("kubebuilder", func() {
 				}
 				return nil
 			}
-			Eventually(verifyCurlUp, 30*time.Second, time.Second).Should(Succeed())
+			Eventually(verifyCurlUp, time.Minute, time.Second).Should(Succeed())
 
-			By("validating the metrics endpoint is serving as expected")
+			By("checking metrics endpoint serving as expected")
 			getCurlLogs := func() string {
 				logOutput, err := kbc.Kubectl.Logs("curl")
 				Expect(err).NotTo(HaveOccurred())
 				return logOutput
 			}
-			Eventually(getCurlLogs, 10*time.Second, time.Second).Should(ContainSubstring("< HTTP/2 200"))
+			Eventually(getCurlLogs, 3*time.Minute, time.Second).Should(ContainSubstring("< HTTP/2 200"))
 
 			By("validate cert manager has provisioned the certificate secret")
 			Eventually(func() error {
@@ -330,61 +321,3 @@ var _ = Describe("kubebuilder", func() {
 		})
 	})
 })
-
-func implementWebhooks(filename string) error {
-	bs, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return err
-	}
-	str := string(bs)
-
-	str, err = ensureExistAndReplace(
-		str,
-		"import (",
-		`import (
-	"errors"`)
-	if err != nil {
-		return err
-	}
-
-	// implement defaulting webhook logic
-	str, err = ensureExistAndReplace(
-		str,
-		"// TODO(user): fill in your defaulting logic.",
-		`if r.Spec.Count == 0 {
-		r.Spec.Count = 5
-	}`)
-	if err != nil {
-		return err
-	}
-
-	// implement validation webhook logic
-	str, err = ensureExistAndReplace(
-		str,
-		"// TODO(user): fill in your validation logic upon object creation.",
-		`if r.Spec.Count < 0 {
-		return errors.New(".spec.count must >= 0")
-	}`)
-	if err != nil {
-		return err
-	}
-	str, err = ensureExistAndReplace(
-		str,
-		"// TODO(user): fill in your validation logic upon object update.",
-		`if r.Spec.Count < 0 {
-		return errors.New(".spec.count must >= 0")
-	}`)
-	if err != nil {
-		return err
-	}
-	// false positive
-	// nolint:gosec
-	return ioutil.WriteFile(filename, []byte(str), 0644)
-}
-
-func ensureExistAndReplace(input, match, replace string) (string, error) {
-	if !strings.Contains(input, match) {
-		return "", fmt.Errorf("can't find %q", match)
-	}
-	return strings.Replace(input, match, replace, -1), nil
-}
