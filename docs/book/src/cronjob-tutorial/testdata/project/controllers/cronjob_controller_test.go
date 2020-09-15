@@ -55,7 +55,7 @@ var _ = Describe("CronJob controller", func() {
 	// Define utility constants for object names and testing timeouts/durations and intervals.
 	const (
 		CronjobName      = "test-cronjob"
-		CronjobNamespace = "test-cronjob-namespace"
+		CronjobNamespace = "default"
 		JobName          = "test-job"
 
 		timeout  = time.Second * 10
