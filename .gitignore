@@ -17,6 +17,8 @@ testbin/*
 testdata/project-v3-addon/testbin/*
 testdata/project-v3-multigroup/testbin/*
 testdata/project-v3/testbin/*
+docs/book/src/multiversion-tutorial/testdata/project/bin/*
+docs/book/src/cronjob-tutorial/testdata/project/bin/*
 
 # skip .out files (coverage tests)
 *.out
