@@ -13,4 +13,21 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-// +kubebuilder:gen-docs:collapse=Apache License
+
+package v2
+
+import (
+	ctrl "sigs.k8s.io/controller-runtime"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+)
+
+// log is for logging in this package.
+var cronjoblog = logf.Log.WithName("cronjob-resource")
+
+func (r *CronJob) SetupWebhookWithManager(mgr ctrl.Manager) error {
+	return ctrl.NewWebhookManagedBy(mgr).
+		For(r).
+		Complete()
+}
+
+// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!

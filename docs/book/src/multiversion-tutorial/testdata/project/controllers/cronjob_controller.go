@@ -1,4 +1,5 @@
 /*
+Copyright 2020 The Kubernetes authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -118,7 +119,7 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		set the namespace and field match (which is actually an index lookup that we set up below).
 	*/
 	var childJobs kbatch.JobList
-	if err := r.List(ctx, &childJobs, client.InNamespace(req.Namespace), client.MatchingField(jobOwnerKey, req.Name)); err != nil {
+	if err := r.List(ctx, &childJobs, client.InNamespace(req.Namespace), client.MatchingFields{jobOwnerKey: req.Name}); err != nil {
 		log.Error(err, "unable to list child Jobs")
 		return ctrl.Result{}, err
 	}
