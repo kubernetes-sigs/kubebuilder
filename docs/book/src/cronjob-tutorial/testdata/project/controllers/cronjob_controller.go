@@ -144,7 +144,7 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		root object.  Instead, you should reconstruct it every run.  That's what we'll
 		do here.
 
-		We can check if a job is "finished" and whether it succeeded or failed using status
+		We can check if a job is "finished" and whether it Complete or Failed using status
 		conditions.  We'll put that logic in a helper to make our code cleaner.
 	*/
 
@@ -155,7 +155,7 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	var mostRecentTime *time.Time // find the last run so we can update the status
 
 	/*
-		We consider a job "finished" if it has a "succeeded" or "failed" condition marked as true.
+		We consider a job "finished" if it has a "Complete" or "Failed" condition marked as true.
 		Status conditions allow us to add extensible status information to our objects that other
 		humans and controllers can examine to check things like completion and health.
 	*/
