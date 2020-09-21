@@ -32,8 +32,8 @@ setup_envs
 export KIND_CLUSTER=local-kubebuilder-e2e
 if ! kind get clusters | grep -q $KIND_CLUSTER ; then
     source "$(pwd)/scripts/setup.sh" ${KIND_K8S_VERSION} $KIND_CLUSTER
-    docker pull gcr.io/kubebuilder/kube-rbac-proxy:v0.5.0
-    kind load --name $KIND_CLUSTER docker-image gcr.io/kubebuilder/kube-rbac-proxy:v0.5.0
+    docker pull gcr.io/kubebuilder/kube-rbac-proxy:v0.8.0
+    kind load --name $KIND_CLUSTER docker-image gcr.io/kubebuilder/kube-rbac-proxy:v0.8.0
 fi
 
 kind export kubeconfig --kubeconfig $tmp_root/kubeconfig --name $KIND_CLUSTER
