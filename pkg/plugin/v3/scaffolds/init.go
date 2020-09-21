@@ -42,8 +42,8 @@ const (
 	ControllerToolsVersion = "v0.3.0"
 	// KustomizeVersion is the kubernetes-sigs/kustomize version to be used in the project
 	KustomizeVersion = "v3.5.4"
-	// todo: update the tag release when the next version of the project be released with this script
 	// ControllerRuntimeEnvTestVersion version to be used to download the envtest setup script
+	// todo: update the tag release when the next version of the project be released with this script
 	ControllerRuntimeEnvTestVersion = "master"
 
 	imageName = "controller:latest"

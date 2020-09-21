@@ -29,8 +29,8 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/plugin/v2/scaffolds/internal/templates/crd"
 )
 
-// (used only to gen api with --pattern=addon)
 // KbDeclarativePattern is the sigs.k8s.io/kubebuilder-declarative-pattern version
+// (used only to gen api with --pattern=addon)
 const KbDeclarativePattern = "v0.0.0-20200522144838-848d48e5b073"
 
 var _ scaffold.Scaffolder = &apiScaffolder{}

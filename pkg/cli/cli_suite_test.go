@@ -77,8 +77,13 @@ type mockInitPlugin struct{ mockPlugin }
 type mockCreateAPIPlugin struct{ mockPlugin }
 type mockCreateWebhookPlugin struct{ mockPlugin }
 
-func (p mockInitPlugin) GetInitPlugin() plugin.Init                            { return p }
-func (p mockCreateAPIPlugin) GetCreateAPIPlugin() plugin.CreateAPI             { return p }
+// GetInitPlugin will return the plugin which is responsible for initialized the project
+func (p mockInitPlugin) GetInitPlugin() plugin.Init { return p }
+
+// GetCreateAPIPlugin will return the plugin which is responsible for scaffolding APIs for the project
+func (p mockCreateAPIPlugin) GetCreateAPIPlugin() plugin.CreateAPI { return p }
+
+// GetCreateWebhookPlugin will return the plugin which is responsible for scaffolding webhooks for the project
 func (p mockCreateWebhookPlugin) GetCreateWebhookPlugin() plugin.CreateWebhook { return p }
 
 func makeAllPlugin(name, version string, projectVersions ...string) plugin.Base {

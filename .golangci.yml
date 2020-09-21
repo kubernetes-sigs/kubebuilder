@@ -1,3 +1,12 @@
+issues:
+  # don't skip warning about doc comments
+  # don't exclude the default set of lint
+  exclude-use-default: false
+  # restore some of the defaults
+  # (fill in the rest as needed)
+  exclude-rules:
+    - linters: [gosec]
+      path: "test/e2e/*"
 linters:
   disable-all: true
   enable:

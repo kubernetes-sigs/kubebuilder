@@ -55,7 +55,9 @@ func (f *Main) SetTemplateDefaults() error {
 
 func hash(s string) (string, error) {
 	hasher := fnv.New32a()
-	hasher.Write([]byte(s)) // nolint:errcheck
+	if _, err := hasher.Write([]byte(s)); err != nil {
+		return "", err
+	}
 	return fmt.Sprintf("%x", hasher.Sum(nil)), nil
 }
 

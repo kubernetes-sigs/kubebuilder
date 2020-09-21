@@ -35,15 +35,29 @@ var (
 	_ plugin.CreateWebhookPluginGetter = Plugin{}
 )
 
+// Plugin defines the plugins operations for the v2 plugin version.
 type Plugin struct {
 	initPlugin
 	createAPIPlugin
 	createWebhookPlugin
 }
 
-func (Plugin) Name() string                                   { return pluginName }
-func (Plugin) Version() plugin.Version                        { return pluginVersion }
-func (Plugin) SupportedProjectVersions() []string             { return supportedProjectVersions }
-func (p Plugin) GetInitPlugin() plugin.Init                   { return &p.initPlugin }
-func (p Plugin) GetCreateAPIPlugin() plugin.CreateAPI         { return &p.createAPIPlugin }
+// Name returns the name of the plugin for the v2 which is in this case `go.kubebuilder.io`
+func (Plugin) Name() string { return pluginName }
+
+// Version returns the version of the plugin which in this case is 2
+func (Plugin) Version() plugin.Version { return pluginVersion }
+
+// SupportedProjectVersions returns an array with all versions project versions are supported by the plugin
+// E.g a plugin can be used with projects that were built with the PROJECT version 3-alpha but not in the Project
+// version 2. See that the PROJECT version is defined in the attribute version of the PROJECT file.
+func (Plugin) SupportedProjectVersions() []string { return supportedProjectVersions }
+
+// GetInitPlugin will return the plugin versions for v2 which is responsible for initialized and scaffold the project
+func (p Plugin) GetInitPlugin() plugin.Init { return &p.initPlugin }
+
+// GetCreateAPIPlugin will return the plugin for v2 which is responsible for scaffold apis
+func (p Plugin) GetCreateAPIPlugin() plugin.CreateAPI { return &p.createAPIPlugin }
+
+// GetCreateWebhookPlugin will return the plugin for v2 which is responsible for scaffold webhooks for the project
 func (p Plugin) GetCreateWebhookPlugin() plugin.CreateWebhook { return &p.createWebhookPlugin }
