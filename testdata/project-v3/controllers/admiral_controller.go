@@ -38,6 +38,15 @@ type AdmiralReconciler struct {
 // +kubebuilder:rbac:groups=crew.testproject.org,resources=admirals/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=crew.testproject.org,resources=admirals/finalizers,verbs=update
 
+// Reconcile is part of the main kubernetes reconciliation loop which aims to
+// move the current state of the cluster closer to the desired state.
+// TODO(user): Modify the Reconcile function to compare the state specified by
+// the Admiral object against the actual cluster state, and then
+// perform operations to make the cluster state reflect the state specified by
+// the user.
+//
+// For more details, check Reconcile and its Result here:
+// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.6.3/pkg/reconcile
 func (r *AdmiralReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()
 	_ = r.Log.WithValues("admiral", req.NamespacedName)
@@ -47,6 +56,7 @@ func (r *AdmiralReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
+// SetupWithManager sets up the controller with the Manager.
 func (r *AdmiralReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&crewv1.Admiral{}).
