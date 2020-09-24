@@ -21,6 +21,12 @@ rules:
 - apiGroups:
   - crew.testproject.org
   resources:
+  - captains/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - crew.testproject.org
+  resources:
   - captains/status
   verbs:
   - get
@@ -38,6 +44,12 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - foo.policy.testproject.org
+  resources:
+  - healthcheckpolicies/finalizers
+  verbs:
+  - update
 - apiGroups:
   - foo.policy.testproject.org
   resources:
@@ -61,6 +73,12 @@ rules:
 - apiGroups:
   - sea-creatures.testproject.org
   resources:
+  - krakens/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - sea-creatures.testproject.org
+  resources:
   - krakens/status
   verbs:
   - get
@@ -78,6 +96,12 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - sea-creatures.testproject.org
+  resources:
+  - leviathans/finalizers
+  verbs:
+  - update
 - apiGroups:
   - sea-creatures.testproject.org
   resources:
@@ -101,6 +125,12 @@ rules:
 - apiGroups:
   - ship.testproject.org
   resources:
+  - cruisers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - ship.testproject.org
+  resources:
   - cruisers/status
   verbs:
   - get
@@ -121,6 +151,12 @@ rules:
 - apiGroups:
   - ship.testproject.org
   resources:
+  - destroyers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - ship.testproject.org
+  resources:
   - destroyers/status
   verbs:
   - get
@@ -138,6 +174,12 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - ship.testproject.org
+  resources:
+  - frigates/finalizers
+  verbs:
+  - update
 - apiGroups:
   - ship.testproject.org
   resources:
