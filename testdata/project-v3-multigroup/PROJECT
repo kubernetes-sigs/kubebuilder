@@ -25,4 +25,6 @@ resources:
 - group: foo.policy
   kind: HealthCheckPolicy
   version: v1
+- kind: Lakers
+  version: v1
 version: 3-alpha

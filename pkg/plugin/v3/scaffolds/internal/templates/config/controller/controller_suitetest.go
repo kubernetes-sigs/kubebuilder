@@ -41,7 +41,7 @@ type SuiteTest struct {
 // SetTemplateDefaults implements file.Template
 func (f *SuiteTest) SetTemplateDefaults() error {
 	if f.Path == "" {
-		if f.MultiGroup {
+		if f.MultiGroup && f.Resource.Group != "" {
 			f.Path = filepath.Join("controllers", "%[group]", "suite_test.go")
 		} else {
 			f.Path = filepath.Join("controllers", "suite_test.go")
@@ -57,7 +57,7 @@ func (f *SuiteTest) SetTemplateDefaults() error {
 	// If is multigroup the path needs to be ../../ since it has
 	// the group dir.
 	f.CRDDirectoryRelativePath = `".."`
-	if f.MultiGroup {
+	if f.MultiGroup && f.Resource.Group != "" {
 		f.CRDDirectoryRelativePath = `"..", ".."`
 	}
 

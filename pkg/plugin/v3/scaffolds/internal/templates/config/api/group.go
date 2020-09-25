@@ -36,7 +36,11 @@ type Group struct {
 func (f *Group) SetTemplateDefaults() error {
 	if f.Path == "" {
 		if f.MultiGroup {
-			f.Path = filepath.Join("apis", "%[group]", "%[version]", "groupversion_info.go")
+			if f.Resource.Group != "" {
+				f.Path = filepath.Join("apis", "%[group]", "%[version]", "groupversion_info.go")
+			} else {
+				f.Path = filepath.Join("apis", "%[version]", "groupversion_info.go")
+			}
 		} else {
 			f.Path = filepath.Join("api", "%[version]", "groupversion_info.go")
 		}

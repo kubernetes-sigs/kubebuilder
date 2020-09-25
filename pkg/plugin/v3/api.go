@@ -137,6 +137,10 @@ func (p *createAPIPlugin) Validate() error {
 		return err
 	}
 
+	if p.resource.Group == "" && p.config.Domain == "" {
+		return fmt.Errorf("can not have group and domain both empty")
+	}
+
 	// TODO: re-evaluate whether y/n input still makes sense. We should probably always
 	// scaffold the resource and controller.
 	reader := bufio.NewReader(os.Stdin)

@@ -188,3 +188,29 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - testproject.org
+  resources:
+  - lakers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - testproject.org
+  resources:
+  - lakers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - testproject.org
+  resources:
+  - lakers/status
+  verbs:
+  - get
+  - patch
+  - update
