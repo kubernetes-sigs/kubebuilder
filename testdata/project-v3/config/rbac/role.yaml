@@ -21,6 +21,12 @@ rules:
 - apiGroups:
   - crew.testproject.org
   resources:
+  - admirals/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - crew.testproject.org
+  resources:
   - admirals/status
   verbs:
   - get
@@ -41,6 +47,12 @@ rules:
 - apiGroups:
   - crew.testproject.org
   resources:
+  - captains/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - crew.testproject.org
+  resources:
   - captains/status
   verbs:
   - get
@@ -58,6 +70,12 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - crew.testproject.org
+  resources:
+  - firstmates/finalizers
+  verbs:
+  - update
 - apiGroups:
   - crew.testproject.org
   resources:

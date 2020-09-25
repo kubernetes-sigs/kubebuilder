@@ -36,6 +36,7 @@ type CruiserReconciler struct {
 
 // +kubebuilder:rbac:groups=ship.testproject.org,resources=cruisers,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=ship.testproject.org,resources=cruisers/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=ship.testproject.org,resources=cruisers/finalizers,verbs=update
 
 func (r *CruiserReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()
