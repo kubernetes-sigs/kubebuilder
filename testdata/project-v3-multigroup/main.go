@@ -34,6 +34,8 @@ import (
 	shipv1 "sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/apis/ship/v1"
 	shipv1beta1 "sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/apis/ship/v1beta1"
 	shipv2alpha1 "sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/apis/ship/v2alpha1"
+	testprojectorgv1 "sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/apis/v1"
+	"sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/controllers"
 	crewcontrollers "sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/controllers/crew"
 	foopolicycontrollers "sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/controllers/foo.policy"
 	seacreaturescontrollers "sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/controllers/sea-creatures"
@@ -56,6 +58,7 @@ func init() {
 	utilruntime.Must(seacreaturesv1beta1.AddToScheme(scheme))
 	utilruntime.Must(seacreaturesv1beta2.AddToScheme(scheme))
 	utilruntime.Must(foopolicyv1.AddToScheme(scheme))
+	utilruntime.Must(testprojectorgv1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -144,6 +147,18 @@ func main() {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "HealthCheckPolicy")
+		os.Exit(1)
+	}
+	if err = (&controllers.LakersReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("Lakers"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Lakers")
+		os.Exit(1)
+	}
+	if err = (&testprojectorgv1.Lakers{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "Lakers")
 		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder

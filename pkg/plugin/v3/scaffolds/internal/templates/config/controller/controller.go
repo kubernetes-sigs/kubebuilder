@@ -36,7 +36,7 @@ type Controller struct {
 // SetTemplateDefaults implements input.Template
 func (f *Controller) SetTemplateDefaults() error {
 	if f.Path == "" {
-		if f.MultiGroup {
+		if f.MultiGroup && f.Resource.Group != "" {
 			f.Path = filepath.Join("controllers", "%[group]", "%[kind]_controller.go")
 		} else {
 			f.Path = filepath.Join("controllers", "%[kind]_controller.go")

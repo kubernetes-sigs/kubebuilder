@@ -37,7 +37,11 @@ type Types struct {
 func (f *Types) SetTemplateDefaults() error {
 	if f.Path == "" {
 		if f.MultiGroup {
-			f.Path = filepath.Join("apis", "%[group]", "%[version]", "%[kind]_types.go")
+			if f.Resource.Group != "" {
+				f.Path = filepath.Join("apis", "%[group]", "%[version]", "%[kind]_types.go")
+			} else {
+				f.Path = filepath.Join("apis", "%[version]", "%[kind]_types.go")
+			}
 		} else {
 			f.Path = filepath.Join("api", "%[version]", "%[kind]_types.go")
 		}

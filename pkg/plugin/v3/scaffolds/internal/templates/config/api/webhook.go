@@ -46,7 +46,11 @@ type Webhook struct { // nolint:maligned
 func (f *Webhook) SetTemplateDefaults() error {
 	if f.Path == "" {
 		if f.MultiGroup {
-			f.Path = filepath.Join("apis", "%[group]", "%[version]", "%[kind]_webhook.go")
+			if f.Resource.Group != "" {
+				f.Path = filepath.Join("apis", "%[group]", "%[version]", "%[kind]_webhook.go")
+			} else {
+				f.Path = filepath.Join("apis", "%[version]", "%[kind]_webhook.go")
+			}
 		} else {
 			f.Path = filepath.Join("api", "%[version]", "%[kind]_webhook.go")
 		}

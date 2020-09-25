@@ -150,7 +150,7 @@ func (f *MainUpdater) GetCodeFragments() file.CodeFragmentsMap {
 	imports := make([]string, 0)
 	imports = append(imports, fmt.Sprintf(apiImportCodeFragment, f.Resource.ImportAlias, f.Resource.Package))
 	if f.WireController {
-		if !f.MultiGroup {
+		if !f.MultiGroup || f.Resource.Group == "" {
 			imports = append(imports, fmt.Sprintf(controllerImportCodeFragment, f.Repo))
 		} else {
 			imports = append(imports, fmt.Sprintf(multiGroupControllerImportCodeFragment,
@@ -165,7 +165,7 @@ func (f *MainUpdater) GetCodeFragments() file.CodeFragmentsMap {
 	// Generate setup code fragments
 	setup := make([]string, 0)
 	if f.WireController {
-		if !f.MultiGroup {
+		if !f.MultiGroup || f.Resource.Group == "" {
 			setup = append(setup, fmt.Sprintf(reconcilerSetupCodeFragment,
 				f.Resource.Kind, f.Resource.Kind, f.Resource.Kind))
 		} else {
