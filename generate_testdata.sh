@@ -38,7 +38,6 @@ scaffold_test_project() {
     pushd .
     cd testdata/$project
     kb=$testdata_dir/../bin/kubebuilder
-    oldgopath=$GOPATH
     # Set "--plugins $plugin" if $plugin is not null.
     local plugin_flag="${plugin:+--plugins $plugin}"
 
@@ -95,7 +94,6 @@ scaffold_test_project() {
     make all test
     rm -f go.sum
     rm -rf ./bin
-    export GOPATH=$oldgopath
     popd
 }
 
