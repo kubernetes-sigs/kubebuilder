@@ -14,5 +14,5 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package scaffold contains libraries for scaffolding code to use with controller-runtime
+// Package scaffolds contains libraries for scaffolding code to use with controller-runtime
 package scaffolds

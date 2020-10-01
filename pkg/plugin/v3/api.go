@@ -38,8 +38,8 @@ import (
 	"sigs.k8s.io/kubebuilder/plugins/addon"
 )
 
-// (used only to gen api with --pattern=addon)
 // KbDeclarativePatternVersion is the sigs.k8s.io/kubebuilder-declarative-pattern version
+// (used only to gen api with --pattern=addon)
 // TODO: remove this when a better solution for using addons is implemented.
 const KbDeclarativePatternVersion = "v0.0.0-20200522144838-848d48e5b073"
 

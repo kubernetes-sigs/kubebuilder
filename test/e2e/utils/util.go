@@ -25,6 +25,7 @@ import (
 )
 
 const (
+	// KubebuilderBinName define the name of the kubebuilder binary to be used in the tests
 	KubebuilderBinName = "kubebuilder"
 )
 
