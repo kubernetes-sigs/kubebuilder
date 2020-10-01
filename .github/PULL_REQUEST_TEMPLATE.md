@@ -14,6 +14,16 @@ reading the git commit log).
 Please don't @-mention people in PR or commit messages (do so in an
 additional comment).
 
+please add an icon to the title of this PR depending on the type:
+
+- ⚠ (:warning:): breaking
+- ✨ (:sparkles:): new non-breaking feature
+- 🐛 (:bug:): bugfix
+- 📖 (:book:): documentation
+- 🌱 (:seedling:): infrastructure/other
+
+See https://sigs.k8s.io/kubebuilder-release-tools for more information.
+
 **PLEASE REMOVE THIS COMMENT BLOCK BEFORE SUBMITTING THE PR** (the bits
 between the arrows)
 
