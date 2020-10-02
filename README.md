@@ -76,6 +76,10 @@ Provide clean library abstractions with clear and well exampled godocs.
   - Driven off of `//+` comments
 - Provide bootstrapping commands to initialize new packages
 
+## Versioning and Releasing
+
+See [VERSIONING.md](VERSIONING.md).
+
 ## Troubleshooting
 
 - ### Bugs and Feature Requests:

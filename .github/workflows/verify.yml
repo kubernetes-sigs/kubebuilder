@@ -1,0 +1,16 @@
+name: PR Verifier
+
+on:
+  pull_request_target:
+    types: [opened, edited, reopened]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    name: verify PR contents
+    steps:
+    - name: Verifier action
+      id: verifier
+      uses: kubernetes-sigs/kubebuilder-release-tools@v0.1.1
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
