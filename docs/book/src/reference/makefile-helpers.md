@@ -35,3 +35,16 @@ CRD_OPTIONS ?= "crd:trivialVersions=true"
 |---	|---	|
 | `"crd:trivialVersions=true"` |  `apiextensions.k8s.io/v1beta1` |
 | `"crd:crdVersions=v1"` | `apiextensions.k8s.io/v1`	|  
+
+## To get all the manifests without deploying
+
+By adding `make dry-run` you can get the patched manifests in the dry-run folder, unlike `make depĺoy` which runs `kustomize` and `kubectl apply`.
+
+To accomplish this, add the following lines to the Makefile:
+
+```make
+dry-run: manifests
+	cd config/manager && kustomize edit set image controller=${IMG}
+	mkdir -p dry-run
+	kustomize build config/default > dry-run/manifests.yaml
+```
