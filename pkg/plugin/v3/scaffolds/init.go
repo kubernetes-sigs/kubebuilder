@@ -37,14 +37,11 @@ import (
 
 const (
 	// ControllerRuntimeVersion is the kubernetes-sigs/controller-runtime version to be used in the project
-	ControllerRuntimeVersion = "v0.6.2"
+	ControllerRuntimeVersion = "v0.6.3"
 	// ControllerToolsVersion is the kubernetes-sigs/controller-tools version to be used in the project
 	ControllerToolsVersion = "v0.3.0"
 	// KustomizeVersion is the kubernetes-sigs/kustomize version to be used in the project
 	KustomizeVersion = "v3.5.4"
-	// ControllerRuntimeEnvTestVersion version to be used to download the envtest setup script
-	// todo: update the tag release when the next version of the project be released with this script
-	ControllerRuntimeEnvTestVersion = "master"
 
 	imageName = "controller:latest"
 )
@@ -111,11 +108,11 @@ func (s *initScaffolder) scaffold() error {
 		&templates.Main{},
 		&templates.GoMod{ControllerRuntimeVersion: ControllerRuntimeVersion},
 		&templates.Makefile{
-			Image:                           imageName,
-			BoilerplatePath:                 s.boilerplatePath,
-			ControllerToolsVersion:          ControllerToolsVersion,
-			KustomizeVersion:                KustomizeVersion,
-			ControllerRuntimeEnvTestVersion: ControllerRuntimeEnvTestVersion,
+			Image:                    imageName,
+			BoilerplatePath:          s.boilerplatePath,
+			ControllerToolsVersion:   ControllerToolsVersion,
+			KustomizeVersion:         KustomizeVersion,
+			ControllerRuntimeVersion: ControllerRuntimeVersion,
 		},
 		&templates.Dockerfile{},
 		&templates.DockerignoreFile{},

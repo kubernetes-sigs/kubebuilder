@@ -8,6 +8,6 @@ require (
 	github.com/onsi/gomega v1.10.1
 	k8s.io/apimachinery v0.18.6
 	k8s.io/client-go v0.18.6
-	sigs.k8s.io/controller-runtime v0.6.2
+	sigs.k8s.io/controller-runtime v0.6.3
 	sigs.k8s.io/kubebuilder-declarative-pattern v0.0.0-20200522144838-848d48e5b073
 )
