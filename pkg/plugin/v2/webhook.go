@@ -96,6 +96,12 @@ func (p *createWebhookPlugin) Validate() error {
 			" --programmatic-validation and --conversion to be true", p.commandName)
 	}
 
+	// check if resource exist to create webhook
+	if !p.config.HasResource(p.resource.GVK()) {
+		return fmt.Errorf("%s create webhook requires an api with the group,"+
+			" kind and version provided", p.commandName)
+	}
+
 	return nil
 }
 
