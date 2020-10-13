@@ -99,6 +99,10 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Admiral")
 		os.Exit(1)
 	}
+	if err = (&crewv1.Admiral{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "Admiral")
+		os.Exit(1)
+	}
 	// +kubebuilder:scaffold:builder
 
 	setupLog.Info("starting manager")

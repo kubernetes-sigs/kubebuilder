@@ -114,12 +114,20 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Destroyer")
 		os.Exit(1)
 	}
+	if err = (&shipv1.Destroyer{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "Destroyer")
+		os.Exit(1)
+	}
 	if err = (&shipcontroller.CruiserReconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("Cruiser"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Cruiser")
+		os.Exit(1)
+	}
+	if err = (&shipv2alpha1.Cruiser{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "Cruiser")
 		os.Exit(1)
 	}
 	if err = (&seacreaturescontroller.KrakenReconciler{

@@ -24,6 +24,24 @@ webhooks:
     - UPDATE
     resources:
     - captains
+- clientConfig:
+    caBundle: Cg==
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-ship-testproject-org-v1-destroyer
+  failurePolicy: Fail
+  name: mdestroyer.kb.io
+  rules:
+  - apiGroups:
+    - ship.testproject.org
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - destroyers
 
 ---
 apiVersion: admissionregistration.k8s.io/v1beta1
@@ -50,3 +68,21 @@ webhooks:
     - UPDATE
     resources:
     - captains
+- clientConfig:
+    caBundle: Cg==
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-ship-testproject-org-v2alpha1-cruiser
+  failurePolicy: Fail
+  name: vcruiser.kb.io
+  rules:
+  - apiGroups:
+    - ship.testproject.org
+    apiVersions:
+    - v2alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - cruisers
