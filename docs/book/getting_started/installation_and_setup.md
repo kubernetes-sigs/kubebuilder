@@ -25,6 +25,8 @@ mv kubebuilder_${version}_darwin_${arch} kubebuilder && sudo mv kubebuilder /usr
 export PATH=$PATH:/usr/local/kubebuilder/bin
 ```
 
+Don't use homebrew to install kubebuilder. The [homebrew recipe is broken](https://github.com/Homebrew/homebrew-core/issues/44175).
+
 {% sample lang="linux" %}
 ```bash
 version=1.0.8 # latest stable version
