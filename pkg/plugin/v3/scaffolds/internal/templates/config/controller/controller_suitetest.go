@@ -111,7 +111,11 @@ func (f *SuiteTest) GetCodeFragments() file.CodeFragmentsMap {
 
 const controllerSuiteTestTemplate = `{{ .Boilerplate }}
 
+{{if and .MultiGroup .Resource.Group }}
+package {{ .Resource.GroupPackageName }}
+{{else}}
 package controllers
+{{end}}
 
 import (
 	"path/filepath"

@@ -55,7 +55,11 @@ func (f *Controller) SetTemplateDefaults() error {
 //nolint:lll
 const controllerTemplate = `{{ .Boilerplate }}
 
+{{if and .MultiGroup .Resource.Group }}
+package {{ .Resource.GroupPackageName }}
+{{else}}
 package controllers
+{{end}}
 
 import (
 	"context"
