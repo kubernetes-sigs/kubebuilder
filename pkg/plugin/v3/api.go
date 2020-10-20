@@ -43,6 +43,9 @@ import (
 // TODO: remove this when a better solution for using addons is implemented.
 const KbDeclarativePatternVersion = "v0.0.0-20200522144838-848d48e5b073"
 
+// DefaultMainPath is default file path of main.go
+const DefaultMainPath = "main.go"
+
 type createAPIPlugin struct {
 	config *config.Config
 
@@ -139,6 +142,11 @@ func (p *createAPIPlugin) Validate() error {
 
 	if p.resource.Group == "" && p.config.Domain == "" {
 		return fmt.Errorf("can not have group and domain both empty")
+	}
+
+	// check if main.go is present in the root directory
+	if _, err := os.Stat(DefaultMainPath); os.IsNotExist(err) {
+		return fmt.Errorf("%s file should present in the root directory", DefaultMainPath)
 	}
 
 	// TODO: re-evaluate whether y/n input still makes sense. We should probably always
