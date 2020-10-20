@@ -126,7 +126,6 @@ func (s *initScaffolder) scaffold() error {
 		&webhook.Kustomization{},
 		&webhook.KustomizeConfigWebhook{},
 		&webhook.Service{},
-		&kdefault.InjectCAPatch{},
 		&prometheus.Kustomization{},
 		&prometheus.ServiceMonitor{},
 		&certmanager.CertManager{},
