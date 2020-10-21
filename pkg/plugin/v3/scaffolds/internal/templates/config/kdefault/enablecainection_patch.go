@@ -37,7 +37,8 @@ func (f *InjectCAPatch) SetTemplateDefaults() error {
 
 	f.TemplateBody = injectCAPatchTemplate
 
-	f.IfExistsAction = file.Error
+	// If file webhookcainjection_patch.yaml exist, skip its creation
+	f.IfExistsAction = file.Skip
 
 	return nil
 }
