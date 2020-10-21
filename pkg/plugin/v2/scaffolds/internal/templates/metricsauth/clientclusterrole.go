@@ -40,7 +40,7 @@ func (f *ClientClusterRole) SetTemplateDefaults() error {
 	return nil
 }
 
-const clientClusterRoleTemplate = `apiVersion: rbac.authorization.k8s.io/v1beta1
+const clientClusterRoleTemplate = `apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: metrics-reader
