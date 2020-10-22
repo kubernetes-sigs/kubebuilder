@@ -17,6 +17,7 @@ limitations under the License.
 package v3
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -111,6 +112,11 @@ func (p *initPlugin) Validate() error {
 		}
 	}
 
+	// Check if the current directory has not files or directories which does not allow to init the project
+	if err := checkDir(); err != nil {
+		return err
+	}
+
 	// Check if the project name is a valid k8s namespace (DNS 1123 label).
 	if p.config.ProjectName == "" {
 		dir, err := os.Getwd()
@@ -165,5 +171,28 @@ func (p *initPlugin) PostScaffold() error {
 	}
 
 	fmt.Printf("Next: define a resource with:\n$ %s create api\n", p.commandName)
+	return nil
+}
+
+// checkDir will return error if the current directory has files which are
+// not the go.mod and/or starts with the prefix (.) such as .gitignore.
+// Note that, it is expected that the directory to scaffold the project is cleaned.
+// Otherwise, it might face issues to do the scaffold. The go.mod is allowed because user might run
+// go mod init before use the plugin it for not be required inform
+// the go module via the repo --flag.
+func checkDir() error {
+	err := filepath.Walk(".",
+		func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			if info.Name() != "go.mod" && !strings.HasPrefix(info.Name(), ".") {
+				return errors.New("only the go.mod and files with the prefix \"(.)\" are allowed before the init")
+			}
+			return nil
+		})
+	if err != nil {
+		return err
+	}
 	return nil
 }
