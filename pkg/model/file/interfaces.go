@@ -85,6 +85,12 @@ type HasResource interface {
 	InjectResource(*resource.Resource)
 }
 
+// HasProjectName allows a project name to be used on a template.
+type HasProjectName interface {
+	// InjectProjectName sets the template project name.
+	InjectProjectName(string)
+}
+
 // UseCustomFuncMap allows a template to use a custom template.FuncMap instead of the default FuncMap.
 type UseCustomFuncMap interface {
 	// GetFuncMap returns a custom FuncMap.

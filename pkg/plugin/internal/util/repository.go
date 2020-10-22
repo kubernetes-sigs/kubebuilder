@@ -88,6 +88,7 @@ func FindCurrentRepo() (string, error) {
 		return "", fmt.Errorf("could not determine repository path from module data, "+
 			"package data, or by initializing a module: %v", err)
 	}
+	//nolint:errcheck
 	defer os.Remove("go.mod") // clean up after ourselves
 	return findGoModulePath(true)
 }

@@ -22,7 +22,7 @@ import (
 
 var _ file.Template = &DockerignoreFile{}
 
-// Dockerfile scaffolds a DockerignoreFile for building a main
+// DockerignoreFile scaffolds a DockerignoreFile for building a main
 type DockerignoreFile struct {
 	file.TemplateMixin
 }

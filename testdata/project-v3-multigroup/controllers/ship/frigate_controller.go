@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controllers
+package ship
 
 import (
 	"context"
@@ -36,6 +36,7 @@ type FrigateReconciler struct {
 
 // +kubebuilder:rbac:groups=ship.testproject.org,resources=frigates,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=ship.testproject.org,resources=frigates/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=ship.testproject.org,resources=frigates/finalizers,verbs=update
 
 func (r *FrigateReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()

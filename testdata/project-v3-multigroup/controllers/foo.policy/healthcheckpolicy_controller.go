@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controllers
+package foopolicy
 
 import (
 	"context"
@@ -36,6 +36,7 @@ type HealthCheckPolicyReconciler struct {
 
 // +kubebuilder:rbac:groups=foo.policy.testproject.org,resources=healthcheckpolicies,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=foo.policy.testproject.org,resources=healthcheckpolicies/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=foo.policy.testproject.org,resources=healthcheckpolicies/finalizers,verbs=update
 
 func (r *HealthCheckPolicyReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()

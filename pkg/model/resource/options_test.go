@@ -17,10 +17,9 @@ var _ = Describe("Resource Options", func() {
 			Expect(options.Validate()).To(Succeed())
 		})
 
-		It("should fail if the Group is not specified", func() {
+		It("should succeed if the Group is not specified for V3", func() {
 			options := &Options{Version: "v1", Kind: "FirstMate"}
-			Expect(options.Validate()).NotTo(Succeed())
-			Expect(options.Validate().Error()).To(ContainSubstring("group cannot be empty"))
+			Expect(options.Validate()).To(Succeed())
 		})
 
 		It("should fail if the Group is not all lowercase", func() {
@@ -43,6 +42,7 @@ var _ = Describe("Resource Options", func() {
 			Expect(options.Validate().Error()).To(ContainSubstring("version cannot be empty"))
 		})
 
+		//nolint:dupl
 		It("should fail if the Version does not match the version format", func() {
 			options := &Options{Group: "crew", Version: "1", Kind: "FirstMate"}
 			Expect(options.Validate()).NotTo(Succeed())
@@ -107,6 +107,108 @@ var _ = Describe("Resource Options", func() {
 		It("should fail if Kind starts with a lowercase character", func() {
 			options := &Options{Group: "crew", Kind: "lOWERCASESTART", Version: "v1"}
 			err := options.Validate()
+			Expect(err).To(MatchError(ContainSubstring("kind must start with an uppercase character")))
+		})
+	})
+
+	// We are duplicating the test cases for ValidateV2 with the Validate(). This test cases will be removed when
+	// the V2 will no longer be supported.
+	Describe("scaffolding an API for V2", func() {
+		It("should succeed if the Options is valid for V2", func() {
+			options := &Options{Group: "crew", Version: "v1", Kind: "FirstMate"}
+			Expect(options.ValidateV2()).To(Succeed())
+		})
+
+		It("should not succeed if the Group is not specified for V2", func() {
+			options := &Options{Version: "v1", Kind: "FirstMate"}
+			Expect(options.ValidateV2()).NotTo(Succeed())
+			Expect(options.ValidateV2().Error()).To(ContainSubstring("group cannot be empty"))
+		})
+
+		It("should fail if the Group is not all lowercase for V2", func() {
+			options := &Options{Group: "Crew", Version: "v1", Kind: "FirstMate"}
+			Expect(options.ValidateV2()).NotTo(Succeed())
+			Expect(options.ValidateV2().Error()).To(ContainSubstring("group name is invalid: " +
+				"([a DNS-1123 subdomain must consist of lower case alphanumeric characters"))
+		})
+
+		It("should fail if the Group contains non-alpha characters for V2", func() {
+			options := &Options{Group: "crew1*?", Version: "v1", Kind: "FirstMate"}
+			Expect(options.ValidateV2()).NotTo(Succeed())
+			Expect(options.ValidateV2().Error()).To(ContainSubstring("group name is invalid: " +
+				"([a DNS-1123 subdomain must consist of lower case alphanumeric characters"))
+		})
+
+		It("should fail if the Version is not specified for V2", func() {
+			options := &Options{Group: "crew", Kind: "FirstMate"}
+			Expect(options.ValidateV2()).NotTo(Succeed())
+			Expect(options.ValidateV2().Error()).To(ContainSubstring("version cannot be empty"))
+		})
+		//nolint:dupl
+		It("should fail if the Version does not match the version format for V2", func() {
+			options := &Options{Group: "crew", Version: "1", Kind: "FirstMate"}
+			Expect(options.ValidateV2()).NotTo(Succeed())
+			Expect(options.ValidateV2().Error()).To(ContainSubstring(
+				`version must match ^v\d+(alpha\d+|beta\d+)?$ (was 1)`))
+
+			options = &Options{Group: "crew", Version: "1beta1", Kind: "FirstMate"}
+			Expect(options.ValidateV2()).NotTo(Succeed())
+			Expect(options.ValidateV2().Error()).To(ContainSubstring(
+				`version must match ^v\d+(alpha\d+|beta\d+)?$ (was 1beta1)`))
+
+			options = &Options{Group: "crew", Version: "a1beta1", Kind: "FirstMate"}
+			Expect(options.ValidateV2()).NotTo(Succeed())
+			Expect(options.ValidateV2().Error()).To(ContainSubstring(
+				`version must match ^v\d+(alpha\d+|beta\d+)?$ (was a1beta1)`))
+
+			options = &Options{Group: "crew", Version: "v1beta", Kind: "FirstMate"}
+			Expect(options.ValidateV2()).NotTo(Succeed())
+			Expect(options.ValidateV2().Error()).To(ContainSubstring(
+				`version must match ^v\d+(alpha\d+|beta\d+)?$ (was v1beta)`))
+
+			options = &Options{Group: "crew", Version: "v1beta1alpha1", Kind: "FirstMate"}
+			Expect(options.ValidateV2()).NotTo(Succeed())
+			Expect(options.ValidateV2().Error()).To(ContainSubstring(
+				`version must match ^v\d+(alpha\d+|beta\d+)?$ (was v1beta1alpha1)`))
+		})
+
+		It("should fail if the Kind is not specified for V2", func() {
+			options := &Options{Group: "crew", Version: "v1"}
+			Expect(options.ValidateV2()).NotTo(Succeed())
+			Expect(options.ValidateV2().Error()).To(ContainSubstring("kind cannot be empty"))
+		})
+
+		DescribeTable("valid Kind values-according to core Kubernetes for V2",
+			func(kind string) {
+				options := &Options{Group: "crew", Kind: kind, Version: "v1"}
+				Expect(options.ValidateV2()).To(Succeed())
+			},
+			Entry("should pass validation if Kind is camelcase", "FirstMate"),
+			Entry("should pass validation if Kind has more than one caps at the start", "FIRSTMate"),
+		)
+
+		It("should fail if Kind is too long for V2", func() {
+			kind := strings.Repeat("a", 64)
+
+			options := &Options{Group: "crew", Kind: kind, Version: "v1"}
+			err := options.ValidateV2()
+			Expect(err).To(MatchError(ContainSubstring("must be no more than 63 characters")))
+		})
+
+		DescribeTable("invalid Kind values-according to core Kubernetes for V2",
+			func(kind string) {
+				options := &Options{Group: "crew", Kind: kind, Version: "v1"}
+				Expect(options.ValidateV2()).To(MatchError(
+					ContainSubstring("a DNS-1035 label must consist of lower case alphanumeric characters")))
+			},
+			Entry("should fail validation if Kind contains whitespaces", "Something withSpaces"),
+			Entry("should fail validation if Kind ends in -", "KindEndingIn-"),
+			Entry("should fail validation if Kind starts with number", "0ValidityKind"),
+		)
+
+		It("should fail if Kind starts with a lowercase character for V2", func() {
+			options := &Options{Group: "crew", Kind: "lOWERCASESTART", Version: "v1"}
+			err := options.ValidateV2()
 			Expect(err).To(MatchError(ContainSubstring("kind must start with an uppercase character")))
 		})
 	})

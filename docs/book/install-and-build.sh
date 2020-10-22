@@ -60,13 +60,13 @@ esac
 
 # grab mdbook
 # we hardcode linux/amd64 since rust uses a different naming scheme and it's a pain to tran
-if [ ! -f /tmp/mdbook ]; then
-    echo "downloading mdBook-v0.3.1-${arch}-${target}.${ext}"
-    set -x
-    curl -sL -o /tmp/mdbook.${ext} https://github.com/rust-lang-nursery/mdBook/releases/download/v0.3.1/mdBook-v0.3.1-${arch}-${target}.${ext}
-    ${cmd} /tmp/mdbook.${ext}
-    chmod +x /tmp/mdbook
-fi
+
+echo "downloading mdBook-v0.4.2-${arch}-${target}.${ext}"
+set -x
+curl -sL -o /tmp/mdbook.${ext} https://github.com/rust-lang-nursery/mdBook/releases/download/v0.4.2/mdBook-v0.4.2-${arch}-${target}.${ext}
+${cmd} /tmp/mdbook.${ext}
+chmod +x /tmp/mdbook
+
 
 echo "grabbing the latest released controller-gen"
 go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.3.0

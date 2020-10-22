@@ -41,6 +41,9 @@ type Config struct {
 	// Repo is the go package name of the project root
 	Repo string `json:"repo,omitempty"`
 
+	// ProjectName is the name of this controller project set on initialization.
+	ProjectName string `json:"projectName,omitempty"`
+
 	// Resources tracks scaffolded resources in the project
 	// This info is tracked only in project with version 2
 	Resources []GVK `json:"resources,omitempty"`
@@ -150,8 +153,8 @@ func (c Config) Marshal() ([]byte, error) {
 		content = []byte{}
 	}
 	// Append extra fields to put them at the config's bottom, unless the
-	// project is v1 which does not support extra fields.
-	if !cfg.IsV1() && len(c.Plugins) != 0 {
+	// project version is < v3 which do not support a plugins field.
+	if cfg.IsV3() && len(c.Plugins) != 0 {
 		pluginConfigBytes, err := yaml.Marshal(Config{Plugins: c.Plugins})
 		if err != nil {
 			return nil, fmt.Errorf("error marshalling project configuration extra fields: %v", err)
@@ -166,8 +169,8 @@ func (c *Config) Unmarshal(b []byte) error {
 	if err := yaml.UnmarshalStrict(b, c); err != nil {
 		return fmt.Errorf("error unmarshalling project configuration: %v", err)
 	}
-	// v1 projects do not support extra fields.
-	if c.IsV1() {
+	// Project versions < v3 do not support a plugins field.
+	if !c.IsV3() {
 		c.Plugins = nil
 	}
 	return nil
@@ -175,11 +178,12 @@ func (c *Config) Unmarshal(b []byte) error {
 
 // EncodePluginConfig encodes a config object into c by overwriting the existing
 // object stored under key. This method is intended to be used for custom
-// configuration objects.
+// configuration objects, which were introduced in project version 3-alpha.
+// EncodePluginConfig will return an error if used on any project version < v3.
 func (c *Config) EncodePluginConfig(key string, configObj interface{}) error {
-	// Short-circuit v1
-	if c.IsV1() {
-		return fmt.Errorf("v1 project configs do not have extra fields")
+	// Short-circuit project versions < v3.
+	if !c.IsV3() {
+		return fmt.Errorf("project versions < v3 do not support extra fields")
 	}
 
 	// Get object's bytes and set them under key in extra fields.
@@ -198,13 +202,13 @@ func (c *Config) EncodePluginConfig(key string, configObj interface{}) error {
 	return nil
 }
 
-// DecodePluginConfig decodes a plugin config stored in c into configObj. This
-// method is intended to be used for custom configuration objects.
-// configObj must be a pointer.
+// DecodePluginConfig decodes a plugin config stored in c into configObj, which must be a pointer
+// This method is intended to be used for custom configuration objects, which were introduced
+// in project version 3-alpha. EncodePluginConfig will return an error if used on any project version < v3.
 func (c Config) DecodePluginConfig(key string, configObj interface{}) error {
-	// Short-circuit v1
-	if c.IsV1() {
-		return fmt.Errorf("v1 project configs do not have extra fields")
+	// Short-circuit project versions < v3.
+	if !c.IsV3() {
+		return fmt.Errorf("project versions < v3 do not support extra fields")
 	}
 	if len(c.Plugins) == 0 {
 		return nil

@@ -19,7 +19,6 @@ package v2
 import (
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -100,7 +99,7 @@ var _ = Describe("kubebuilder", func() {
 			Expect(err).Should(Succeed())
 
 			By("implementing the mutating and validating webhooks")
-			err = implementWebhooks(filepath.Join(
+			err = utils.ImplementWebhooks(filepath.Join(
 				kbc.Dir, "api", kbc.Version,
 				fmt.Sprintf("%s_webhook.go", strings.ToLower(kbc.Kind))))
 			Expect(err).Should(Succeed())
@@ -330,61 +329,3 @@ var _ = Describe("kubebuilder", func() {
 		})
 	})
 })
-
-func implementWebhooks(filename string) error {
-	bs, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return err
-	}
-	str := string(bs)
-
-	str, err = ensureExistAndReplace(
-		str,
-		"import (",
-		`import (
-	"errors"`)
-	if err != nil {
-		return err
-	}
-
-	// implement defaulting webhook logic
-	str, err = ensureExistAndReplace(
-		str,
-		"// TODO(user): fill in your defaulting logic.",
-		`if r.Spec.Count == 0 {
-		r.Spec.Count = 5
-	}`)
-	if err != nil {
-		return err
-	}
-
-	// implement validation webhook logic
-	str, err = ensureExistAndReplace(
-		str,
-		"// TODO(user): fill in your validation logic upon object creation.",
-		`if r.Spec.Count < 0 {
-		return errors.New(".spec.count must >= 0")
-	}`)
-	if err != nil {
-		return err
-	}
-	str, err = ensureExistAndReplace(
-		str,
-		"// TODO(user): fill in your validation logic upon object update.",
-		`if r.Spec.Count < 0 {
-		return errors.New(".spec.count must >= 0")
-	}`)
-	if err != nil {
-		return err
-	}
-	// false positive
-	// nolint:gosec
-	return ioutil.WriteFile(filename, []byte(str), 0644)
-}
-
-func ensureExistAndReplace(input, match, replace string) (string, error) {
-	if !strings.Contains(input, match) {
-		return "", fmt.Errorf("can't find %q", match)
-	}
-	return strings.Replace(input, match, replace, -1), nil
-}

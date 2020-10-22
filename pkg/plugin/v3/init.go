@@ -18,7 +18,8 @@ package v3
 
 import (
 	"fmt"
-	"path"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/spf13/pflag"
@@ -62,7 +63,7 @@ Writes the following files:
 - a Kustomization.yaml for customizating manifests
 - a Patch file for customizing image for manager manifests
 - a Patch file for enabling prometheus metrics
-- a cmd/manager/main.go to run
+- a main.go to run
 
 project will prompt the user to run 'dep ensure' after writing the project files.
 `
@@ -90,6 +91,7 @@ func (p *initPlugin) BindFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&p.config.Repo, "repo", "", "name to use for go module (e.g., github.com/user/repo), "+
 		"defaults to the go package of the current working directory.")
 	fs.StringVar(&p.config.Domain, "domain", "my.domain", "domain for groups")
+	fs.StringVar(&p.config.ProjectName, "project-name", "", "name of this project")
 }
 
 func (p *initPlugin) InjectConfig(c *config.Config) {
@@ -108,6 +110,19 @@ func (p *initPlugin) Validate() error {
 			return err
 		}
 	}
+
+	// Check if the project name is a valid k8s namespace (DNS 1123 label).
+	if p.config.ProjectName == "" {
+		dir, err := os.Getwd()
+		if err != nil {
+			return fmt.Errorf("error getting current directory: %v", err)
+		}
+		p.config.ProjectName = strings.ToLower(filepath.Base(dir))
+	}
+	if err := validation.IsDNS1123Label(p.config.ProjectName); err != nil {
+		return fmt.Errorf("project name (%s) is invalid: %v", p.config.ProjectName, err)
+	}
+
 	// Try to guess repository if flag is not set.
 	if p.config.Repo == "" {
 		repoPath, err := util.FindCurrentRepo()
@@ -115,13 +130,6 @@ func (p *initPlugin) Validate() error {
 			return fmt.Errorf("error finding current repository: %v", err)
 		}
 		p.config.Repo = repoPath
-	}
-
-	// Use base repository path as project name, since a project should be able to exist in an
-	// arbitrarily-named directory.
-	projectName := path.Base(p.config.Repo)
-	if err := validation.IsDNS1123Label(strings.ToLower(projectName)); err != nil {
-		return fmt.Errorf("project name (%s) is invalid: %v", projectName, err)
 	}
 
 	return nil

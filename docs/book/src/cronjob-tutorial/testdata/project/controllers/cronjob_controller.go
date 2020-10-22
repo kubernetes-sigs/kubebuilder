@@ -1,4 +1,5 @@
 /*
+Copyright 2020 The Kubernetes authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -141,7 +142,6 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		或 failed 状态。
 
 	*/
-
 	// 找出所有有效的 job
 	var activeJobs []*kbatch.Job
 	var successfulJobs []*kbatch.Job
@@ -152,7 +152,6 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		当一个 job 被标记为 "succeeded" 或 "failed" 时，我们认为这个任务处于 "finished" 状态。
 		Status conditions 允许我们给 job 对象添加额外的状态信息，开发人员或控制器可以通过
 		这些校验信息来检查 job 的完成或健康状态。
-
 	*/
 	isJobFinished := func(job *kbatch.Job) (bool, kbatch.JobConditionType) {
 		for _, c := range job.Status.Conditions {

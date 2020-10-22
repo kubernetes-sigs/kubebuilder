@@ -72,7 +72,6 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 				// 以便可以重试
 				return ctrl.Result{}, err
 			}
-
 			// 从列表中删除我们的 finalizer 并进行更新。
 			cronJob.ObjectMeta.Finalizers = removeString(cronJob.ObjectMeta.Finalizers, myFinalizerName)
 			if err := r.Update(context.Background(), cronJob); err != nil {

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controllers
+package ship
 
 import (
 	"context"
@@ -36,6 +36,7 @@ type DestroyerReconciler struct {
 
 // +kubebuilder:rbac:groups=ship.testproject.org,resources=destroyers,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=ship.testproject.org,resources=destroyers/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=ship.testproject.org,resources=destroyers/finalizers,verbs=update
 
 func (r *DestroyerReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()

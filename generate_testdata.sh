@@ -38,7 +38,6 @@ scaffold_test_project() {
     pushd .
     cd testdata/$project
     kb=$testdata_dir/../bin/kubebuilder
-    oldgopath=$GOPATH
     # Set "--plugins $plugin" if $plugin is not null.
     local plugin_flag="${plugin:+--plugins $plugin}"
 
@@ -79,7 +78,11 @@ scaffold_test_project() {
             $kb create api --group sea-creatures --version v1beta1 --kind Kraken --controller=true --resource=true --make=false
             $kb create api --group sea-creatures --version v1beta2 --kind Leviathan --controller=true --resource=true --make=false
             $kb create api --group foo.policy --version v1 --kind HealthCheckPolicy --controller=true --resource=true --make=false
-          elif [ $project == "project-v2-addon" ] || [ $project == "project-v3-addon" ]; then
+            if [ $project == "project-v3-multigroup" ]; then
+              $kb create api --version v1 --kind Lakers --controller=true --resource=true --make=false
+              $kb create webhook --version v1 --kind Lakers --defaulting --programmatic-validation
+            fi
+        elif [ $project == "project-v2-addon" ] || [ $project == "project-v3-addon" ]; then
             header_text 'enabling --pattern flag ...'
             export KUBEBUILDER_ENABLE_PLUGINS=1
             header_text 'Creating APIs ...'
@@ -91,7 +94,6 @@ scaffold_test_project() {
     make all test
     rm -f go.sum
     rm -rf ./bin
-    export GOPATH=$oldgopath
     popd
 }
 

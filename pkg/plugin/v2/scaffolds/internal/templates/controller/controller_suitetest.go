@@ -1,5 +1,5 @@
 /*
-Copyright 2019 The Kubernetes Authors.
+Copyright 2020 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -33,6 +33,9 @@ type SuiteTest struct {
 	file.MultiGroupMixin
 	file.BoilerplateMixin
 	file.ResourceMixin
+
+	// CRDDirectoryRelativePath define the Path for the CRD when it is multigroup
+	CRDDirectoryRelativePath string
 }
 
 // SetTemplateDefaults implements file.Template
@@ -50,6 +53,13 @@ func (f *SuiteTest) SetTemplateDefaults() error {
 		file.NewMarkerFor(f.Path, importMarker),
 		file.NewMarkerFor(f.Path, addSchemeMarker),
 	)
+
+	// If is multigroup the path needs to be ../../ since it has
+	// the group dir.
+	f.CRDDirectoryRelativePath = `".."`
+	if f.MultiGroup {
+		f.CRDDirectoryRelativePath = `"..", ".."`
+	}
 
 	return nil
 }
@@ -138,7 +148,7 @@ var _ = BeforeSuite(func(done Done) {
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths: []string{filepath.Join("..", "config", "crd", "bases")},
+		CRDDirectoryPaths: []string{filepath.Join({{ .CRDDirectoryRelativePath }}, "config", "crd", "bases")},
 	}
 
 	var err error

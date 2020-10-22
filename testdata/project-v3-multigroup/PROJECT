@@ -1,6 +1,7 @@
 domain: testproject.org
 layout: go.kubebuilder.io/v3-alpha
 multigroup: true
+projectName: project-v3-multigroup
 repo: sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup
 resources:
 - group: crew
@@ -23,5 +24,7 @@ resources:
   version: v1beta2
 - group: foo.policy
   kind: HealthCheckPolicy
+  version: v1
+- kind: Lakers
   version: v1
 version: 3-alpha

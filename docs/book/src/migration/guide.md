@@ -5,7 +5,6 @@
 
 请确保你根据[安装指导](/quick-start.md#installation)安装了迁移所需的组件。
 
-
 迁移 v1 项目的推荐方法是创建一个新的 v2 项目，然后将 API 和 reconciliation 代码拷贝过来。
 这种转换就像一个原生的 v2 项目。然后，在某些情况下，是可以进行就地升级的（比如，复用 v1 项目
 的层级结构，升级 controller-runtime 和 controller-tools）。
@@ -216,6 +215,5 @@ v1 中如果对 `main.go` 有任何手动更新，我们需要将修改同步至
 
 最后，我们可以运行 `make` 和 `make docker-build` 来确保一些都运行正常。
 
-[v1-project]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/docs/book/src/migration/testdata/gopath/project-v1
 [v2-project]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/docs/book/src/cronjob-tutorial/testdata/project
 [builtin-type-example]: https://sigs.k8s.io/controller-runtime/examples/builtins

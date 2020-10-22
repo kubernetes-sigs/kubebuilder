@@ -127,7 +127,7 @@ func (p *createAPIPlugin) Run() error {
 }
 
 func (p *createAPIPlugin) Validate() error {
-	if err := p.resource.Validate(); err != nil {
+	if err := p.resource.ValidateV2(); err != nil {
 		return err
 	}
 

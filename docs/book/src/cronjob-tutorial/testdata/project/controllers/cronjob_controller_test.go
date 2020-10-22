@@ -54,7 +54,7 @@ var _ = Describe("CronJob controller", func() {
 	// 定义对象名称、测试超时时间、持续时间以及测试间隔等常量。
 	const (
 		CronjobName      = "test-cronjob"
-		CronjobNamespace = "test-cronjob-namespace"
+		CronjobNamespace = "default"
 		JobName          = "test-job"
 
 		timeout  = time.Second * 10

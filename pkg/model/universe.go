@@ -91,6 +91,9 @@ func (u Universe) InjectInto(builder file.Builder) {
 		if builderWithMultiGroup, hasMultiGroup := builder.(file.HasMultiGroup); hasMultiGroup {
 			builderWithMultiGroup.InjectMultiGroup(u.Config.MultiGroup)
 		}
+		if builderWithProjectName, hasProjectName := builder.(file.HasProjectName); hasProjectName {
+			builderWithProjectName.InjectProjectName(u.Config.ProjectName)
+		}
 	}
 	// Inject boilerplate
 	if builderWithBoilerplate, hasBoilerplate := builder.(file.HasBoilerplate); hasBoilerplate {

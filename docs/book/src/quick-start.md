@@ -9,7 +9,7 @@
 
 ## 依赖组件
 
-- [go](https://golang.org/dl/) version v1.13+.
+- [go](https://golang.org/dl/) version v1.15+.
 - [docker](https://docs.docker.com/install/) version 17.03+.
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) version v1.11.3+.
 - [kustomize](https://sigs.k8s.io/kustomize/docs/INSTALL.md) v3.1.0+
@@ -25,9 +25,14 @@ arch=$(go env GOARCH)
 
 # 下载 kubebuilder 并解压到 tmp 目录中
 curl -L https://go.kubebuilder.io/dl/2.3.1/${os}/${arch} | tar -xz -C /tmp/
+```
 
+If you are using a Kubebuilder plugin version less than version `v3+`, you must configure the Kubernetes binaries required for the [envtest][envtest], run: 
+
+```bash
 # 将 kubebuilder 移动到一个长期的路径，并将其加入环境变量 path 中 
 # （如果你把 kubebuilder 放在别的地方，你需要额外设置 KUBEBUILDER_ASSETS 环境变量）
+
 sudo mv /tmp/kubebuilder_2.3.1_${os}_${arch} /usr/local/kubebuilder
 export PATH=$PATH:/usr/local/kubebuilder/bin
 ```
@@ -39,8 +44,6 @@ export PATH=$PATH:/usr/local/kubebuilder/bin
 
 </aside>
 
-<aside class="note">
-<h1>Enabling shell autocompletion</h1>
 
 Kubebuilder 通过 `kubebuilder completion <bash|zsh>` 命令为 Bash 和 Zsh 提供了自动完成的支持，这可以节省你大量的重复编码工作。更多信息请参见 [completion](./reference/completion.md) 文档。
 
@@ -213,7 +216,8 @@ make undeploy
 
 现在，参照 [CronJob 教程][cronjob-tutorial]，通过开发一个演示示例项目更好地理解 kubebuilder 的工作原理。
 
-[pre-rbc-gke]:https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#iam-rolebinding-bootstrap
+[pre-rbc-gke]: https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#iam-rolebinding-bootstrap
 [cronjob-tutorial]: https://book.kubebuilder.io/cronjob-tutorial/cronjob-tutorial.html
 [GOPATH-golang-docs]: https://golang.org/doc/code.html#GOPATH
 [how-to-write-go-code-golang-docs]: https://golang.org/doc/code.html 
+[envtest]: https://book.kubebuilder.io/reference/testing/envtest.html

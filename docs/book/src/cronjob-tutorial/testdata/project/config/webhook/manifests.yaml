@@ -7,7 +7,6 @@ metadata:
   name: mutating-webhook-configuration
 webhooks:
 - clientConfig:
-    caBundle: Cg==
     service:
       name: webhook-service
       namespace: system
@@ -33,7 +32,6 @@ metadata:
   name: validating-webhook-configuration
 webhooks:
 - clientConfig:
-    caBundle: Cg==
     service:
       name: webhook-service
       namespace: system

@@ -63,7 +63,7 @@ Writes the following files:
 - a Kustomization.yaml for customizating manifests
 - a Patch file for customizing image for manager manifests
 - a Patch file for enabling prometheus metrics
-- a cmd/manager/main.go to run
+- a main.go to run
 
 project will prompt the user to run 'dep ensure' after writing the project files.
 `
@@ -91,6 +91,9 @@ func (p *initPlugin) BindFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&p.config.Repo, "repo", "", "name to use for go module (e.g., github.com/user/repo), "+
 		"defaults to the go package of the current working directory.")
 	fs.StringVar(&p.config.Domain, "domain", "my.domain", "domain for groups")
+	if p.config.IsV3() {
+		fs.StringVar(&p.config.ProjectName, "project-name", "", "name of this project")
+	}
 }
 
 func (p *initPlugin) InjectConfig(c *config.Config) {
@@ -113,13 +116,20 @@ func (p *initPlugin) Validate() error {
 		}
 	}
 
-	// Check if the project name is a valid namespace according to k8s
+	// Check if the project name is a valid k8s namespace (DNS 1123 label).
 	dir, err := os.Getwd()
 	if err != nil {
-		return fmt.Errorf("error to get the current path: %v", err)
+		return fmt.Errorf("error getting current directory: %v", err)
 	}
-	projectName := filepath.Base(dir)
-	if err := validation.IsDNS1123Label(strings.ToLower(projectName)); err != nil {
+	projectName := strings.ToLower(filepath.Base(dir))
+	if p.config.IsV3() {
+		if p.config.ProjectName == "" {
+			p.config.ProjectName = projectName
+		} else {
+			projectName = p.config.ProjectName
+		}
+	}
+	if err := validation.IsDNS1123Label(projectName); err != nil {
 		return fmt.Errorf("project name (%s) is invalid: %v", projectName, err)
 	}
 

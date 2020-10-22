@@ -31,3 +31,4 @@ kubebuilder init --domain tutorial.kubebuilder.io
 ```
 
 现在我们已经创建了一个项目，让我们来看看 Kubebuilder 为我们初始化了哪些组件。....
+

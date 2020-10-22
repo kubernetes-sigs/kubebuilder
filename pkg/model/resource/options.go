@@ -29,8 +29,7 @@ import (
 )
 
 const (
-	versionPattern = "^v\\d+(alpha\\d+|beta\\d+)?$"
-
+	versionPattern  = "^v\\d+(alpha\\d+|beta\\d+)?$"
 	groupRequired   = "group cannot be empty"
 	versionRequired = "version cannot be empty"
 	kindRequired    = "kind cannot be empty"
@@ -85,8 +84,8 @@ type Options struct {
 	Namespaced bool
 }
 
-// Validate verifies that all the fields have valid values
-func (opts *Options) Validate() error {
+// ValidateV2 verifies that V2 project has all the fields have valid values
+func (opts *Options) ValidateV2() error {
 	// Check that the required flags did not get a flag as their value
 	// We can safely look for a '-' as the first char as none of the fields accepts it
 	// NOTE: We must do this for all the required flags first or we may output the wrong
@@ -114,6 +113,56 @@ func (opts *Options) Validate() error {
 	// Check if the Group has a valid DNS1123 subdomain value
 	if err := validation.IsDNS1123Subdomain(opts.Group); err != nil {
 		return fmt.Errorf("group name is invalid: (%v)", err)
+	}
+
+	// Check if the version follows the valid pattern
+	if !versionRegex.MatchString(opts.Version) {
+		return fmt.Errorf("version must match %s (was %s)", versionPattern, opts.Version)
+	}
+
+	validationErrors := []string{}
+
+	// require Kind to start with an uppercase character
+	if string(opts.Kind[0]) == strings.ToLower(string(opts.Kind[0])) {
+		validationErrors = append(validationErrors, "kind must start with an uppercase character")
+	}
+
+	validationErrors = append(validationErrors, validation.IsDNS1035Label(strings.ToLower(opts.Kind))...)
+
+	if len(validationErrors) != 0 {
+		return fmt.Errorf("invalid Kind: %#v", validationErrors)
+	}
+
+	// TODO: validate plural strings if provided
+
+	return nil
+}
+
+// Validate verifies that all the fields have valid values
+func (opts *Options) Validate() error {
+	// Check that the required flags did not get a flag as their value
+	// We can safely look for a '-' as the first char as none of the fields accepts it
+	// NOTE: We must do this for all the required flags first or we may output the wrong
+	// error as flags may seem to be missing because Cobra assigned them to another flag.
+	if strings.HasPrefix(opts.Version, "-") {
+		return fmt.Errorf(versionRequired)
+	}
+	if strings.HasPrefix(opts.Kind, "-") {
+		return fmt.Errorf(kindRequired)
+	}
+	// Now we can check that all the required flags are not empty
+	if len(opts.Version) == 0 {
+		return fmt.Errorf(versionRequired)
+	}
+	if len(opts.Kind) == 0 {
+		return fmt.Errorf(kindRequired)
+	}
+
+	// Check if the Group has a valid DNS1123 subdomain value
+	if len(opts.Group) != 0 {
+		if err := validation.IsDNS1123Subdomain(opts.Group); err != nil {
+			return fmt.Errorf("group name is invalid: (%v)", err)
+		}
 	}
 
 	// Check if the version follows the valid pattern
@@ -167,7 +216,11 @@ func (opts *Options) NewResource(c *config.Config, doResource bool) *Resource {
 
 	pkg := replacer.Replace(path.Join(c.Repo, "api", "%[version]"))
 	if c.MultiGroup {
-		pkg = replacer.Replace(path.Join(c.Repo, "apis", "%[group]", "%[version]"))
+		if opts.Group != "" {
+			pkg = replacer.Replace(path.Join(c.Repo, "apis", "%[group]", "%[version]"))
+		} else {
+			pkg = replacer.Replace(path.Join(c.Repo, "apis", "%[version]"))
+		}
 	}
 	domain := c.Domain
 
@@ -188,8 +241,14 @@ func (opts *Options) NewResource(c *config.Config, doResource bool) *Resource {
 
 	res.Package = pkg
 	res.Domain = opts.Group
-	if domain != "" {
+	if domain != "" && opts.Group != "" {
 		res.Domain += "." + domain
+	} else if opts.Group == "" && !c.IsV2() {
+		// Empty group overrides the default values provided by newResource().
+		// GroupPackageName and ImportAlias includes domain instead of group name as user provided group is empty.
+		res.Domain = domain
+		res.GroupPackageName = opts.safeImport(domain)
+		res.ImportAlias = opts.safeImport(domain + opts.Version)
 	}
 
 	return res

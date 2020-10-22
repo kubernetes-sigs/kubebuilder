@@ -1,0 +1,24 @@
+# permissions for end users to edit cronjobs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cronjob-editor-role
+rules:
+- apiGroups:
+  - batch.tutorial.kubebuilder.io
+  resources:
+  - cronjobs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - batch.tutorial.kubebuilder.io
+  resources:
+  - cronjobs/status
+  verbs:
+  - get

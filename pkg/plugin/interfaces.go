@@ -22,6 +22,7 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/model/config"
 )
 
+// Base is an interface that defines the common base for all plugins
 type Base interface {
 	// Name returns a DNS1123 label string identifying the plugin uniquely. This name should be fully-qualified,
 	// i.e. have a short prefix describing the plugin type (like a language) followed by a domain.
@@ -36,11 +37,13 @@ type Base interface {
 	SupportedProjectVersions() []string
 }
 
+// Deprecated is an interface that defines the messages for plugins that are deprecated.
 type Deprecated interface {
 	// DeprecationWarning returns a string indicating a plugin is deprecated.
 	DeprecationWarning() string
 }
 
+// GenericSubcommand is an interface that defines the plugins operations
 type GenericSubcommand interface {
 	// UpdateContext updates a Context with command-specific help text, like description and examples.
 	// Can be a no-op if default help text is desired.
@@ -56,6 +59,7 @@ type GenericSubcommand interface {
 	InjectConfig(*config.Config)
 }
 
+// Context is the runtime context for a plugin.
 type Context struct {
 	// CommandName sets the command name for a plugin.
 	CommandName string
@@ -66,32 +70,38 @@ type Context struct {
 	Examples string
 }
 
+// InitPluginGetter is an interface that defines gets an Init plugin
 type InitPluginGetter interface {
 	Base
 	// GetInitPlugin returns the underlying Init interface.
 	GetInitPlugin() Init
 }
 
+// Init is an interface that represents an `init` command
 type Init interface {
 	GenericSubcommand
 }
 
+// CreateAPIPluginGetter is an interface that defines gets an Create API plugin
 type CreateAPIPluginGetter interface {
 	Base
 	// GetCreateAPIPlugin returns the underlying CreateAPI interface.
 	GetCreateAPIPlugin() CreateAPI
 }
 
+// CreateAPI is an interface that represents an `create api` command
 type CreateAPI interface {
 	GenericSubcommand
 }
 
+// CreateWebhookPluginGetter is an interface that defines gets an Create WebHook plugin
 type CreateWebhookPluginGetter interface {
 	Base
 	// GetCreateWebhookPlugin returns the underlying CreateWebhook interface.
 	GetCreateWebhookPlugin() CreateWebhook
 }
 
+// CreateWebhook is an interface that represents an `create wekbhook` command
 type CreateWebhook interface {
 	GenericSubcommand
 }

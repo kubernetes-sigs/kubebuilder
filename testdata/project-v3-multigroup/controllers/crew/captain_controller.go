@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controllers
+package crew
 
 import (
 	"context"
@@ -36,6 +36,7 @@ type CaptainReconciler struct {
 
 // +kubebuilder:rbac:groups=crew.testproject.org,resources=captains,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=crew.testproject.org,resources=captains/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=crew.testproject.org,resources=captains/finalizers,verbs=update
 
 func (r *CaptainReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()

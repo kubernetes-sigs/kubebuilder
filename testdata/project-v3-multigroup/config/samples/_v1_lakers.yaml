@@ -1,0 +1,7 @@
+apiVersion: testproject.org/v1
+kind: Lakers
+metadata:
+  name: lakers-sample
+spec:
+  # Add fields here
+  foo: bar

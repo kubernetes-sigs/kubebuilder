@@ -24,6 +24,24 @@ webhooks:
     - UPDATE
     resources:
     - captains
+- clientConfig:
+    caBundle: Cg==
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-testproject-org-v1-lakers
+  failurePolicy: Fail
+  name: mlakers.kb.io
+  rules:
+  - apiGroups:
+    - testproject.org
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - lakers
 
 ---
 apiVersion: admissionregistration.k8s.io/v1beta1
@@ -50,3 +68,21 @@ webhooks:
     - UPDATE
     resources:
     - captains
+- clientConfig:
+    caBundle: Cg==
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-testproject-org-v1-lakers
+  failurePolicy: Fail
+  name: vlakers.kb.io
+  rules:
+  - apiGroups:
+    - testproject.org
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - lakers

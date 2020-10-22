@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controllers
+package seacreatures
 
 import (
 	"context"
@@ -36,6 +36,7 @@ type LeviathanReconciler struct {
 
 // +kubebuilder:rbac:groups=sea-creatures.testproject.org,resources=leviathans,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=sea-creatures.testproject.org,resources=leviathans/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=sea-creatures.testproject.org,resources=leviathans/finalizers,verbs=update
 
 func (r *LeviathanReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()

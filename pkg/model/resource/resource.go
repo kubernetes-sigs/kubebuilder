@@ -66,6 +66,7 @@ func wrapKey(key string) string {
 	return fmt.Sprintf("%%[%s]", key)
 }
 
+// Replacer returns a strings.Replacer that replaces resource keywords with values.
 func (r Resource) Replacer() *strings.Replacer {
 	var replacements []string
 

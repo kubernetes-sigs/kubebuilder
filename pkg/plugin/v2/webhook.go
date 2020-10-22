@@ -87,13 +87,19 @@ func (p *createWebhookPlugin) Run() error {
 }
 
 func (p *createWebhookPlugin) Validate() error {
-	if err := p.resource.Validate(); err != nil {
+	if err := p.resource.ValidateV2(); err != nil {
 		return err
 	}
 
 	if !p.defaulting && !p.validation && !p.conversion {
 		return fmt.Errorf("%s create webhook requires at least one of --defaulting,"+
 			" --programmatic-validation and --conversion to be true", p.commandName)
+	}
+
+	// check if resource exist to create webhook
+	if !p.config.HasResource(p.resource.GVK()) {
+		return fmt.Errorf("%s create webhook requires an api with the group,"+
+			" kind and version provided", p.commandName)
 	}
 
 	return nil
