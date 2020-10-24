@@ -27,7 +27,7 @@ import (
 	. "github.com/onsi/ginkgo" //nolint:golint
 )
 
-const certmanagerVersion = "v0.11.0"
+const certmanagerVersion = "v0.16.1"
 const prometheusOperatorVersion = "0.33"
 const certmanagerURL = "https://github.com/jetstack/cert-manager/releases/download/%s/cert-manager.yaml"
 const prometheusOperatorURL = "https://raw.githubusercontent.com/coreos/prometheus-operator/release-%s/bundle.yaml"
