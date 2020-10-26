@@ -98,3 +98,13 @@ Before starting any work, please either comment on an existing issue, or file a 
 ## Supportability
 
 Currently, Kubebuilder officially supports OSX and Linux platforms. So, if you are using a Windows OS you may find issues. Contributions towards supporting Windows are welcome.
+
+## Community Meetings
+ 
+The following meetings happen biweekly:
+ 
+- Kubebuilder, Controller Runtime, and Controller Tools
+- Kubebuilder Triage
+
+You are more than welcome to attend. For further info join to [kubebuilder@googlegroups.com](https://groups.google.com/g/kubebuilder).
+
