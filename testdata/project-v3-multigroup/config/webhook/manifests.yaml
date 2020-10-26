@@ -29,6 +29,24 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
+      path: /mutate-ship-testproject-org-v1-destroyer
+  failurePolicy: Fail
+  name: mdestroyer.kb.io
+  rules:
+  - apiGroups:
+    - ship.testproject.org
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - destroyers
+- clientConfig:
+    caBundle: Cg==
+    service:
+      name: webhook-service
+      namespace: system
       path: /mutate-testproject-org-v1-lakers
   failurePolicy: Fail
   name: mlakers.kb.io
@@ -68,6 +86,24 @@ webhooks:
     - UPDATE
     resources:
     - captains
+- clientConfig:
+    caBundle: Cg==
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-ship-testproject-org-v2alpha1-cruiser
+  failurePolicy: Fail
+  name: vcruiser.kb.io
+  rules:
+  - apiGroups:
+    - ship.testproject.org
+    apiVersions:
+    - v2alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - cruisers
 - clientConfig:
     caBundle: Cg==
     service:

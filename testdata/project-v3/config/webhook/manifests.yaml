@@ -11,6 +11,24 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
+      path: /mutate-crew-testproject-org-v1-admiral
+  failurePolicy: Fail
+  name: madmiral.kb.io
+  rules:
+  - apiGroups:
+    - crew.testproject.org
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - admirals
+- clientConfig:
+    caBundle: Cg==
+    service:
+      name: webhook-service
+      namespace: system
       path: /mutate-crew-testproject-org-v1-captain
   failurePolicy: Fail
   name: mcaptain.kb.io

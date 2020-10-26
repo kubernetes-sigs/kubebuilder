@@ -78,8 +78,10 @@ package {{ .Resource.Version }}
 import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	{{- if or .Validating .Defaulting }}
+	{{- if or .Validating }}
 	"k8s.io/apimachinery/pkg/runtime"
+	{{- end }}
+	{{- if or .Validating .Defaulting }}
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	{{- end }}
 )
