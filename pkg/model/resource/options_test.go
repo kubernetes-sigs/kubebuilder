@@ -47,27 +47,27 @@ var _ = Describe("Resource Options", func() {
 			options := &Options{Group: "crew", Version: "1", Kind: "FirstMate"}
 			Expect(options.Validate()).NotTo(Succeed())
 			Expect(options.Validate().Error()).To(ContainSubstring(
-				`version must match ^v\d+(alpha\d+|beta\d+)?$ (was 1)`))
+				`version must match ^v\d+(?:alpha\d+|beta\d+)?$ (was 1)`))
 
 			options = &Options{Group: "crew", Version: "1beta1", Kind: "FirstMate"}
 			Expect(options.Validate()).NotTo(Succeed())
 			Expect(options.Validate().Error()).To(ContainSubstring(
-				`version must match ^v\d+(alpha\d+|beta\d+)?$ (was 1beta1)`))
+				`version must match ^v\d+(?:alpha\d+|beta\d+)?$ (was 1beta1)`))
 
 			options = &Options{Group: "crew", Version: "a1beta1", Kind: "FirstMate"}
 			Expect(options.Validate()).NotTo(Succeed())
 			Expect(options.Validate().Error()).To(ContainSubstring(
-				`version must match ^v\d+(alpha\d+|beta\d+)?$ (was a1beta1)`))
+				`version must match ^v\d+(?:alpha\d+|beta\d+)?$ (was a1beta1)`))
 
 			options = &Options{Group: "crew", Version: "v1beta", Kind: "FirstMate"}
 			Expect(options.Validate()).NotTo(Succeed())
 			Expect(options.Validate().Error()).To(ContainSubstring(
-				`version must match ^v\d+(alpha\d+|beta\d+)?$ (was v1beta)`))
+				`version must match ^v\d+(?:alpha\d+|beta\d+)?$ (was v1beta)`))
 
 			options = &Options{Group: "crew", Version: "v1beta1alpha1", Kind: "FirstMate"}
 			Expect(options.Validate()).NotTo(Succeed())
 			Expect(options.Validate().Error()).To(ContainSubstring(
-				`version must match ^v\d+(alpha\d+|beta\d+)?$ (was v1beta1alpha1)`))
+				`version must match ^v\d+(?:alpha\d+|beta\d+)?$ (was v1beta1alpha1)`))
 		})
 
 		It("should fail if the Kind is not specified", func() {
@@ -149,27 +149,27 @@ var _ = Describe("Resource Options", func() {
 			options := &Options{Group: "crew", Version: "1", Kind: "FirstMate"}
 			Expect(options.ValidateV2()).NotTo(Succeed())
 			Expect(options.ValidateV2().Error()).To(ContainSubstring(
-				`version must match ^v\d+(alpha\d+|beta\d+)?$ (was 1)`))
+				`version must match ^v\d+(?:alpha\d+|beta\d+)?$ (was 1)`))
 
 			options = &Options{Group: "crew", Version: "1beta1", Kind: "FirstMate"}
 			Expect(options.ValidateV2()).NotTo(Succeed())
 			Expect(options.ValidateV2().Error()).To(ContainSubstring(
-				`version must match ^v\d+(alpha\d+|beta\d+)?$ (was 1beta1)`))
+				`version must match ^v\d+(?:alpha\d+|beta\d+)?$ (was 1beta1)`))
 
 			options = &Options{Group: "crew", Version: "a1beta1", Kind: "FirstMate"}
 			Expect(options.ValidateV2()).NotTo(Succeed())
 			Expect(options.ValidateV2().Error()).To(ContainSubstring(
-				`version must match ^v\d+(alpha\d+|beta\d+)?$ (was a1beta1)`))
+				`version must match ^v\d+(?:alpha\d+|beta\d+)?$ (was a1beta1)`))
 
 			options = &Options{Group: "crew", Version: "v1beta", Kind: "FirstMate"}
 			Expect(options.ValidateV2()).NotTo(Succeed())
 			Expect(options.ValidateV2().Error()).To(ContainSubstring(
-				`version must match ^v\d+(alpha\d+|beta\d+)?$ (was v1beta)`))
+				`version must match ^v\d+(?:alpha\d+|beta\d+)?$ (was v1beta)`))
 
 			options = &Options{Group: "crew", Version: "v1beta1alpha1", Kind: "FirstMate"}
 			Expect(options.ValidateV2()).NotTo(Succeed())
 			Expect(options.ValidateV2().Error()).To(ContainSubstring(
-				`version must match ^v\d+(alpha\d+|beta\d+)?$ (was v1beta1alpha1)`))
+				`version must match ^v\d+(?:alpha\d+|beta\d+)?$ (was v1beta1alpha1)`))
 		})
 
 		It("should fail if the Kind is not specified for V2", func() {

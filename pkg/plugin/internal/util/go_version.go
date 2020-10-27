@@ -54,7 +54,7 @@ func fetchAndCheckGoVersion() error {
 // checkGoVersion should only ever check if the Go version >= 1.13, since the kubebuilder binary only cares
 // that the go binary supports go modules which were stabilized in that version (i.e. in go 1.13) by default
 func checkGoVersion(verStr string) error {
-	goVerRegex := `^go?([0-9]+)\.([0-9]+)([\.0-9A-Za-z\-]+)?$`
+	goVerRegex := `^go?([0-9]+)\.([0-9]+)[\.0-9A-Za-z\-]*$`
 	m := regexp.MustCompile(goVerRegex).FindStringSubmatch(verStr)
 	if m == nil {
 		return fmt.Errorf("invalid version string")
