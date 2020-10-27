@@ -354,6 +354,8 @@ func (c cli) buildRootCmd() *cobra.Command {
 		rootCmd.AddCommand(createCmd)
 	}
 
+	// kubebuilder edit
+	rootCmd.AddCommand(c.newEditCmd())
 	// kubebuilder init
 	rootCmd.AddCommand(c.newInitCmd())
 

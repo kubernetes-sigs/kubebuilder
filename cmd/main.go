@@ -35,7 +35,6 @@ func main() {
 			&pluginv2.Plugin{},
 		),
 		cli.WithExtraCommands(
-			newEditCmd(),
 			newCompletionCmd(),
 			version.NewCmd(),
 		),
