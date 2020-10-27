@@ -33,6 +33,7 @@ var (
 	_ plugin.InitPluginGetter          = Plugin{}
 	_ plugin.CreateAPIPluginGetter     = Plugin{}
 	_ plugin.CreateWebhookPluginGetter = Plugin{}
+	_ plugin.EditPluginGetter          = Plugin{}
 )
 
 // Plugin defines the plugins operations for the v2 plugin version.
@@ -40,6 +41,7 @@ type Plugin struct {
 	initPlugin
 	createAPIPlugin
 	createWebhookPlugin
+	editPlugin
 }
 
 // Name returns the name of the plugin for the v2 which is in this case `go.kubebuilder.io`
@@ -61,3 +63,6 @@ func (p Plugin) GetCreateAPIPlugin() plugin.CreateAPI { return &p.createAPIPlugi
 
 // GetCreateWebhookPlugin will return the plugin for v2 which is responsible for scaffold webhooks for the project
 func (p Plugin) GetCreateWebhookPlugin() plugin.CreateWebhook { return &p.createWebhookPlugin }
+
+// GetEditPlugin will return the plugin for v2 which is responsible for editing the scaffold of the project
+func (p Plugin) GetEditPlugin() plugin.Edit { return &p.editPlugin }

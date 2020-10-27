@@ -54,6 +54,7 @@ func (c cli) newWebhookContext() plugin.Context {
 	return ctx
 }
 
+// nolint:dupl
 func (c cli) bindCreateWebhook(ctx plugin.Context, cmd *cobra.Command) {
 	var getter plugin.CreateWebhookPluginGetter
 	for _, p := range c.resolvedPlugins {

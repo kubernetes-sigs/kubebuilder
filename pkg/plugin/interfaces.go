@@ -105,3 +105,15 @@ type CreateWebhookPluginGetter interface {
 type CreateWebhook interface {
 	GenericSubcommand
 }
+
+// EditPluginGetter is an interface that defines gets an Edit plugin
+type EditPluginGetter interface {
+	Base
+	// GetEditPlugin returns the underlying Edit interface.
+	GetEditPlugin() Edit
+}
+
+// Edit is an interface that represents an `edit` command
+type Edit interface {
+	GenericSubcommand
+}

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cli // nolint:dupl
+package cli
 
 import (
 	"fmt"
@@ -25,43 +25,41 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/plugin"
 )
 
-func (c *cli) newCreateAPICmd() *cobra.Command {
-	ctx := c.newAPIContext()
+func (c *cli) newEditCmd() *cobra.Command {
+	ctx := c.newEditContext()
 	cmd := &cobra.Command{
-		Use:     "api",
-		Short:   "Scaffold a Kubernetes API",
+		Use:     "edit",
+		Short:   "This command will edit the project configuration",
 		Long:    ctx.Description,
 		Example: ctx.Examples,
 		RunE: errCmdFunc(
-			fmt.Errorf("api subcommand requires an existing project"),
+			fmt.Errorf("project must be initialized"),
 		),
 	}
 
 	// Lookup the plugin for projectVersion and bind it to the command.
-	c.bindCreateAPI(ctx, cmd)
+	c.bindEdit(ctx, cmd)
 	return cmd
+
 }
 
-func (c cli) newAPIContext() plugin.Context {
+func (c *cli) newEditContext() plugin.Context {
 	ctx := plugin.Context{
 		CommandName: c.commandName,
-		Description: `Scaffold a Kubernetes API.
-`,
+		Description: `This command will edit the project configuration. You can have single or multi group project.`,
 	}
-	if !c.configured {
-		ctx.Description = fmt.Sprintf("%s\n%s", ctx.Description, runInProjectRootMsg)
-	}
+
 	return ctx
 }
 
 // nolint:dupl
-func (c cli) bindCreateAPI(ctx plugin.Context, cmd *cobra.Command) {
-	var getter plugin.CreateAPIPluginGetter
+func (c *cli) bindEdit(ctx plugin.Context, cmd *cobra.Command) {
+	var getter plugin.EditPluginGetter
 	for _, p := range c.resolvedPlugins {
-		tmpGetter, isGetter := p.(plugin.CreateAPIPluginGetter)
+		tmpGetter, isGetter := p.(plugin.EditPluginGetter)
 		if isGetter {
 			if getter != nil {
-				err := fmt.Errorf("duplicate API creation plugins for project version %q (%s, %s), "+
+				err := fmt.Errorf("duplicate edit project plugins for project version %q (%s, %s), "+
 					"use a more specific plugin key", c.projectVersion, plugin.KeyFor(getter), plugin.KeyFor(p))
 				cmdErr(cmd, err)
 				return
@@ -77,17 +75,18 @@ func (c cli) bindCreateAPI(ctx plugin.Context, cmd *cobra.Command) {
 	}
 
 	if getter == nil {
-		err := fmt.Errorf("layout plugin %q does not support an API creation plugin", cfg.Layout)
+		err := fmt.Errorf("layout plugin %q does not support a edit project plugin", cfg.Layout)
 		cmdErr(cmd, err)
 		return
 	}
 
-	createAPI := getter.GetCreateAPIPlugin()
-	createAPI.InjectConfig(&cfg.Config)
-	createAPI.BindFlags(cmd.Flags())
-	createAPI.UpdateContext(&ctx)
+	editProject := getter.GetEditPlugin()
+	editProject.InjectConfig(&cfg.Config)
+	editProject.BindFlags(cmd.Flags())
+	editProject.UpdateContext(&ctx)
 	cmd.Long = ctx.Description
 	cmd.Example = ctx.Examples
-	cmd.RunE = runECmdFunc(cfg, createAPI,
-		fmt.Sprintf("failed to create API with version %q", c.projectVersion))
+	cmd.RunE = runECmdFunc(cfg, editProject,
+		fmt.Sprintf("failed to edit project with version %q", c.projectVersion))
+
 }
