@@ -31,6 +31,8 @@ type Controller struct {
 	file.MultiGroupMixin
 	file.BoilerplateMixin
 	file.ResourceMixin
+
+	ControllerRuntimeVersion string
 }
 
 // SetTemplateDefaults implements input.Template
@@ -81,6 +83,15 @@ type {{ .Resource.Kind }}Reconciler struct {
 // +kubebuilder:rbac:groups={{ .Resource.Domain }},resources={{ .Resource.Plural }}/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups={{ .Resource.Domain }},resources={{ .Resource.Plural }}/finalizers,verbs=update
 
+// Reconcile is part of the main kubernetes reconciliation loop which aims to
+// move the current state of the cluster closer to the desired state.
+// TODO(user): Modify the Reconcile function to compare the state specified by
+// the {{ .Resource.Kind }} object against the actual cluster state, and then
+// perform operations to make the cluster state reflect the state specified by
+// the user.
+//
+// For more details, check Reconcile and its Result here:
+// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@{{ .ControllerRuntimeVersion }}/pkg/reconcile
 func (r *{{ .Resource.Kind }}Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()
 	_ = r.Log.WithValues("{{ .Resource.Kind | lower }}", req.NamespacedName)
@@ -90,6 +101,7 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(req ctrl.Request) (ctrl.Resul
 	return ctrl.Result{}, nil
 }
 
+// SetupWithManager sets up the controller with the Manager.
 func (r *{{ .Resource.Kind }}Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{}).
