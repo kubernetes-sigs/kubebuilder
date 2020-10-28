@@ -71,6 +71,8 @@ func (f *Boilerplate) SetTemplateDefaults() error {
 const apache = `/*
 {{ if .Owner -}}
 Copyright {{ .Year }} {{ .Owner }}.
+{{- else -}}
+Copyright {{ .Year }}.
 {{- end }}
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -89,5 +91,7 @@ limitations under the License.
 const none = `/*
 {{ if .Owner -}}
 Copyright {{ .Year }} {{ .Owner }}.
+{{- else -}}
+Copyright {{ .Year }}.
 {{- end }}
 */`
