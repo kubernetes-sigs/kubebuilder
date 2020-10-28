@@ -47,8 +47,12 @@
 
   - [Kubebuilder v1 vs v2](./migration/v1vsv2.md)
 
-      - [Migration Guide](./migration/guide.md)
-
+      - [Migration Guide](./migration/migration_guide_v1tov2.md)
+  
+  - [Kubebuilder v2 vs v3](./migration/v2vsv3.md)
+  
+      - [Migration Guide](./migration/migration_guide_v2tov3.md)
+      
   - [Single Group to Multi-Group](./migration/multi-group.md)
 
 ---

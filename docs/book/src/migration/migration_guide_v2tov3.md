@@ -1,0 +1,236 @@
+# Migration from v2 to v3
+
+Make sure you understand the [differences between Kubebuilder v2 and v3](./v2vsv3.md)
+before continuing
+
+Please ensure you have followed the [installation guide](/quick-start.md#installation)
+to install the required components.
+
+## Steps to migrate to v3 project layout
+
+<aside class="note warning">
+<h1>Note</h1>
+
+The following steps will be based on the [QuickStart][QuickStart] steps. 
+
+</aside>
+
+The following changes need to be applied to the project configuration file (`PROJECT`) that can be found at the root directory:
+
+- Add the `projectName`
+
+The project name is the name of the project directory in lowercase:
+
+```
+...
+projectName: example
+...
+```
+
+- Add the `layout`
+
+The default plugin layout which is equivalent to the previous versions is `go.kubebuilder.io/v2`: 
+
+```
+...
+layout: go.kubebuilder.io/v2
+...
+```
+
+- Update the `version`
+
+The `version` field represents the version of Project layouts. So, you ought to update this to `3-alpha`:
+
+```
+...
+version: 3-alpha`
+...
+```
+
+The final PROJECT file would look like:
+
+```sh
+domain: my.domain
+layout: go.kubebuilder.io/v2
+projectName: example
+repo: example
+resources:
+- group: webapp
+  kind: Guestbook
+  version: v1
+version: 3-alpha
+```
+
+### Verification
+
+Finally, we can run `make` and `make docker-build` to ensure things are working
+fine.
+
+## Migrating your projects to use v3+ plugins
+
+<aside class="note warning">
+
+<h1>Note</h1>
+
+`v3+` plugins are still in alpha phase and are not scaffolded by default. You are able to use them, try it out and get all improvements made so far by initializing projects with the arg `--plugins=go.kubebuilder.io/v3-alpha`: 
+
+```sh 
+kubebuilder init --domain my.domain --plugins=go.kubebuilder.io/v3-alpha
+```
+
+</aside>
+
+<aside class="note warning">
+
+<h1>Note</h1>
+
+Currently, the plugin `v3-alpha` has NO breaking changes. However, until it is declared stable breaking changes can be made related to K8s API deprecations of `v1beta1` versions of `CustomResourceDefinition` and `ValidatingWebhookConfiguration` and to upgrade the `cert-manager`. More info:
+
+- [cert-manager related configuration should be migrated to cert-manager.io/v1 #1666
+](https://github.com/kubernetes-sigs/kubebuilder/issues/1666)
+- [Set preserveUnknownFields to false in the CRD conversion webhook patch #933](https://github.com/kubernetes-sigs/kubebuilder/issues/933)
+- [Migrate existing KB project to v1 CRDs and Webhooks with minimal user effort #1065
+](https://github.com/kubernetes-sigs/kubebuilder/issues/1065)
+   
+</aside>
+
+### Update your PROJECT file
+
+Update the `layout` setting to the new plugin version ` go.kubebuilder.io/v3-alpha` as follows: 
+
+```sh
+ $ cat PROJECT 
+domain: my.domain
+layout: go.kubebuilder.io/v3-alpha
+projectName: example
+repo: example
+resources:
+- group: webapp
+  kind: Guestbook
+  version: v1
+version: 3-alpha
+
+```
+
+### V3+ plugins significant changes in the scalffold
+
+<aside class="note warning">
+
+<h1>Note</h1>
+
+The following changes are NOT breaking changes. In this way, these changes are optional but recommended in order to keep your project up-to-date with the latest changes made so far. 
+
+</aside>
+
+#### Manager Rootless
+
+The projects built with v3+ plugin now define a specific `user ID` and `securityContext` policy to prevent root privilege escalation from the manager container.
+  
+- Update your Dockerfile to define an ID for the user used:
+
+Replace:
+
+```
+USER nonroot:nonroot
+``` 
+
+With:
+
+```
+USER 65532:65532
+```
+
+- Update your `manager.yaml` manifests in the `config/manager/` directory by adding:
+
+```yaml
+...
+spec:
+      securityContext:
+        runAsUser: 65532
+...
+``` 
+
+```yaml
+...
+name: manager
+securityContext:
+  allowPrivilegeEscalation: false
+
+```
+
+The final result would look like:
+
+```yaml 
+...
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: controller-manager
+  namespace: system
+  labels:
+    control-plane: controller-manager
+spec:
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        control-plane: controller-manager
+    spec:
+      securityContext:
+        runAsUser: 65532
+      containers:
+      - command:
+        - /manager
+        args:
+        - --enable-leader-election
+        image: controller:latest
+        name: manager
+        securityContext:
+          allowPrivilegeEscalation: false
+        resources:
+          limits:
+            cpu: 100m
+            memory: 30Mi
+          requests:
+            cpu: 100m
+            memory: 20Mi
+      terminationGracePeriodSeconds: 10
+```
+
+#### Roles (RBAC) bug fixes
+
+From now on, the scaffolded roles include finalizer permissions ([more info](https://github.com/kubernetes-sigs/kubebuilder/issues/1654)). Feel free to add them to your projects. As an example:
+
+```
+...
+- apiGroups:
+  - webapp.my.domain
+  resources:
+  - guestbooks/finalizers
+  verbs:
+  - update
+...
+``` 
+
+Also, the following `configmaps/status` permission is no longer scaffolded since they are invalid. Feel free to remove it from your `role.yaml` file in `config/rbac/` directory:
+
+```yaml
+...
+  resources:
+  - configmaps/status
+  verbs:
+  - get
+  - update
+  - patch
+```
+
+### Verification
+
+Finally, we can run `make` and `make docker-build` to ensure things are working
+fine.
+
+[QuickStart]: /docs/book/src/quick-start.md
+[envtest]: https://book.kubebuilder.io/reference/testing/envtest.html
