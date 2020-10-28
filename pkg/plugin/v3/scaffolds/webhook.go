@@ -88,5 +88,15 @@ You need to implement the conversion.Hub and conversion.Convertible interfaces f
 		return err
 	}
 
+	// TODO: Add test suite for conversion webhook after #1664 has been merged & conversion tests supported in envtest.
+	if s.defaulting || s.validation {
+		if err := machinery.NewScaffold().Execute(
+			s.newUniverse(),
+			&api.WebhookSuite{},
+		); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
