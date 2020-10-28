@@ -37,7 +37,7 @@ var _ = Describe("resolvePluginsByKey", func() {
 			"bar.kubebuilder.io/v1",
 			"bar.kubebuilder.io/v2",
 		)
-		resolvedPlugins []plugin.Base
+		resolvedPlugins []plugin.Plugin
 		err             error
 	)
 

@@ -34,7 +34,7 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds"
 )
 
-type initPlugin struct {
+type initSubcommand struct {
 	config *config.Config
 	// For help text.
 	commandName string
@@ -49,11 +49,11 @@ type initPlugin struct {
 }
 
 var (
-	_ plugin.Init        = &initPlugin{}
-	_ cmdutil.RunOptions = &initPlugin{}
+	_ plugin.InitSubcommand = &initSubcommand{}
+	_ cmdutil.RunOptions    = &initSubcommand{}
 )
 
-func (p *initPlugin) UpdateContext(ctx *plugin.Context) {
+func (p *initSubcommand) UpdateContext(ctx *plugin.Context) {
 	ctx.Description = `Initialize a new project including vendor/ directory and Go package directories.
 
 Writes the following files:
@@ -76,7 +76,7 @@ project will prompt the user to run 'dep ensure' after writing the project files
 	p.commandName = ctx.CommandName
 }
 
-func (p *initPlugin) BindFlags(fs *pflag.FlagSet) {
+func (p *initSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.skipGoVersionCheck, "skip-go-version-check",
 		false, "if specified, skip checking the Go version")
 
@@ -95,16 +95,16 @@ func (p *initPlugin) BindFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&p.config.ProjectName, "project-name", "", "name of this project")
 }
 
-func (p *initPlugin) InjectConfig(c *config.Config) {
+func (p *initSubcommand) InjectConfig(c *config.Config) {
 	c.Layout = plugin.KeyFor(Plugin{})
 	p.config = c
 }
 
-func (p *initPlugin) Run() error {
+func (p *initSubcommand) Run() error {
 	return cmdutil.Run(p)
 }
 
-func (p *initPlugin) Validate() error {
+func (p *initSubcommand) Validate() error {
 	// Requires go1.11+
 	if !p.skipGoVersionCheck {
 		if err := util.ValidateGoVersion(); err != nil {
@@ -141,11 +141,11 @@ func (p *initPlugin) Validate() error {
 	return nil
 }
 
-func (p *initPlugin) GetScaffolder() (scaffold.Scaffolder, error) {
+func (p *initSubcommand) GetScaffolder() (scaffold.Scaffolder, error) {
 	return scaffolds.NewInitScaffolder(p.config, p.license, p.owner), nil
 }
 
-func (p *initPlugin) PostScaffold() error {
+func (p *initSubcommand) PostScaffold() error {
 	if !p.fetchDeps {
 		fmt.Println("Skipping fetching dependencies.")
 		return nil

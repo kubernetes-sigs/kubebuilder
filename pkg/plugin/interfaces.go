@@ -22,18 +22,18 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/model/config"
 )
 
-// Base is an interface that defines the common base for all plugins
-type Base interface {
+// Plugin is an interface that defines the common base for all plugins
+type Plugin interface {
 	// Name returns a DNS1123 label string identifying the plugin uniquely. This name should be fully-qualified,
 	// i.e. have a short prefix describing the plugin type (like a language) followed by a domain.
 	// For example, Kubebuilder's main plugin would return "go.kubebuilder.io".
 	Name() string
 	// Version returns the plugin's version.
 	//
-	// Note: this version is different from config version.
+	// NOTE: this version is different from config version.
 	Version() Version
-	// SupportedProjectVersions lists all project configuration versions this
-	// plugin supports, ex. []string{"2", "3"}. The returned slice cannot be empty.
+	// SupportedProjectVersions lists all project configuration versions this plugin supports, ex. []string{"2", "3"}.
+	// The returned slice cannot be empty.
 	SupportedProjectVersions() []string
 }
 
@@ -43,77 +43,84 @@ type Deprecated interface {
 	DeprecationWarning() string
 }
 
-// GenericSubcommand is an interface that defines the plugins operations
-type GenericSubcommand interface {
-	// UpdateContext updates a Context with command-specific help text, like description and examples.
+// Subcommand is an interface that defines the common base for subcommands returned by plugins
+type Subcommand interface {
+	// UpdateContext updates a Context with subcommand-specific help text, like description and examples. It also serves
+	// to pass context from the CLI to the subcommand, such as the command name.
 	// Can be a no-op if default help text is desired.
 	UpdateContext(*Context)
-	// BindFlags binds the plugin's flags to the CLI. This allows each plugin to define its own
-	// command line flags for the kubebuilder subcommand.
+	// BindFlags binds the subcommand's flags to the CLI. This allows each subcommand to define its own
+	// command line flags.
 	BindFlags(*pflag.FlagSet)
 	// Run runs the subcommand.
 	Run() error
-	// InjectConfig passes a config to a plugin. The plugin may modify the
-	// config. Initializing, loading, and saving the config is managed by the
-	// cli package.
+	// InjectConfig passes a config to a plugin. The plugin may modify the config.
+	// Initializing, loading, and saving the config is managed by the cli package.
 	InjectConfig(*config.Config)
 }
 
-// Context is the runtime context for a plugin.
+// Context is the runtime context for a subcommand.
 type Context struct {
-	// CommandName sets the command name for a plugin.
+	// CommandName sets the command name for a subcommand.
 	CommandName string
 	// Description is a description of what this subcommand does. It is used to display help.
 	Description string
-	// Examples are one or more examples of the command-line usage
-	// of this plugin's project subcommand support. It is used to display help.
+	// Examples are one or more examples of the command-line usage of this subcommand. It is used to display help.
 	Examples string
 }
 
-// InitPluginGetter is an interface that defines gets an Init plugin
-type InitPluginGetter interface {
-	Base
-	// GetInitPlugin returns the underlying Init interface.
-	GetInitPlugin() Init
-}
-
-// Init is an interface that represents an `init` command
+// Init is an interface for plugins that provide an `init` subcommand
 type Init interface {
-	GenericSubcommand
+	Plugin
+	// GetInitSubcommand returns the underlying InitSubcommand interface.
+	GetInitSubcommand() InitSubcommand
 }
 
-// CreateAPIPluginGetter is an interface that defines gets an Create API plugin
-type CreateAPIPluginGetter interface {
-	Base
-	// GetCreateAPIPlugin returns the underlying CreateAPI interface.
-	GetCreateAPIPlugin() CreateAPI
+// InitSubcommand is an interface that represents an `init` subcommand
+type InitSubcommand interface {
+	Subcommand
 }
 
-// CreateAPI is an interface that represents an `create api` command
+// CreateAPI is an interface for plugins that provide a `create api` subcommand
 type CreateAPI interface {
-	GenericSubcommand
+	Plugin
+	// GetCreateAPISubcommand returns the underlying CreateAPISubcommand interface.
+	GetCreateAPISubcommand() CreateAPISubcommand
 }
 
-// CreateWebhookPluginGetter is an interface that defines gets an Create WebHook plugin
-type CreateWebhookPluginGetter interface {
-	Base
-	// GetCreateWebhookPlugin returns the underlying CreateWebhook interface.
-	GetCreateWebhookPlugin() CreateWebhook
+// CreateAPISubcommand is an interface that represents a `create api` subcommand
+type CreateAPISubcommand interface {
+	Subcommand
 }
 
-// CreateWebhook is an interface that represents an `create wekbhook` command
+// CreateWebhook is an interface for plugins that provide a `create webhook` subcommand
 type CreateWebhook interface {
-	GenericSubcommand
+	Plugin
+	// GetCreateWebhookSubcommand returns the underlying CreateWebhookSubcommand interface.
+	GetCreateWebhookSubcommand() CreateWebhookSubcommand
 }
 
-// EditPluginGetter is an interface that defines gets an Edit plugin
-type EditPluginGetter interface {
-	Base
-	// GetEditPlugin returns the underlying Edit interface.
-	GetEditPlugin() Edit
+// CreateWebhookSubcommand is an interface that represents a `create wekbhook` subcommand
+type CreateWebhookSubcommand interface {
+	Subcommand
 }
 
-// Edit is an interface that represents an `edit` command
+// Edit is an interface for plugins that provide a `edit` subcommand
 type Edit interface {
-	GenericSubcommand
+	Plugin
+	// GetEditSubcommand returns the underlying EditSubcommand interface.
+	GetEditSubcommand() EditSubcommand
+}
+
+// EditSubcommand is an interface that represents an `edit` subcommand
+type EditSubcommand interface {
+	Subcommand
+}
+
+// Full is an interface for plugins that provide `init`, `create api`, `create webhook` and `edit` subcommands
+type Full interface {
+	Init
+	CreateAPI
+	CreateWebhook
+	Edit
 }

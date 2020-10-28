@@ -46,8 +46,8 @@ func (e errAmbiguousPlugin) Error() string {
 // or does not match any known plugin's key, an error is returned.
 //
 // This function does not guarantee that the resolved set contains a plugin
-// for each plugin type, i.e. an Init plugin might not be returned.
-func resolvePluginsByKey(versionedPlugins []plugin.Base, pluginKey string) (resolved []plugin.Base, err error) {
+// for each subcommand type, i.e. an InitSubcommand might not be returned.
+func resolvePluginsByKey(versionedPlugins []plugin.Plugin, pluginKey string) (resolved []plugin.Plugin, err error) {
 
 	name, version := plugin.SplitKey(pluginKey)
 
@@ -102,7 +102,7 @@ func resolvePluginsByKey(versionedPlugins []plugin.Base, pluginKey string) (reso
 
 // findPluginsMatchingName returns a set of plugins with Name() exactly
 // matching name.
-func findPluginsMatchingName(plugins []plugin.Base, name string) (equal []plugin.Base) {
+func findPluginsMatchingName(plugins []plugin.Plugin, name string) (equal []plugin.Plugin) {
 	for _, p := range plugins {
 		if p.Name() == name {
 			equal = append(equal, p)
@@ -113,7 +113,7 @@ func findPluginsMatchingName(plugins []plugin.Base, name string) (equal []plugin
 
 // findPluginsMatchingShortName returns a set of plugins with
 // GetShortName(Name()) exactly matching shortName.
-func findPluginsMatchingShortName(plugins []plugin.Base, shortName string) (equal []plugin.Base) {
+func findPluginsMatchingShortName(plugins []plugin.Plugin, shortName string) (equal []plugin.Plugin) {
 	for _, p := range plugins {
 		if plugin.GetShortName(p.Name()) == shortName {
 			equal = append(equal, p)
@@ -123,7 +123,7 @@ func findPluginsMatchingShortName(plugins []plugin.Base, shortName string) (equa
 }
 
 // makePluginKeySlice returns a slice of all keys for each plugin in plugins.
-func makePluginKeySlice(plugins ...plugin.Base) (keys []string) {
+func makePluginKeySlice(plugins ...plugin.Plugin) (keys []string) {
 	for _, p := range plugins {
 		keys = append(keys, plugin.KeyFor(p))
 	}
@@ -132,7 +132,7 @@ func makePluginKeySlice(plugins ...plugin.Base) (keys []string) {
 }
 
 // validatePlugins validates the name and versions of a list of plugins.
-func validatePlugins(plugins ...plugin.Base) error {
+func validatePlugins(plugins ...plugin.Plugin) error {
 	pluginKeySet := make(map[string]struct{}, len(plugins))
 	for _, p := range plugins {
 		if err := validatePlugin(p); err != nil {
@@ -149,7 +149,7 @@ func validatePlugins(plugins ...plugin.Base) error {
 }
 
 // validatePlugin validates the name and versions of a plugin.
-func validatePlugin(p plugin.Base) error {
+func validatePlugin(p plugin.Plugin) error {
 	pluginName := p.Name()
 	if err := plugin.ValidateName(pluginName); err != nil {
 		return fmt.Errorf("invalid plugin name %q: %v", pluginName, err)

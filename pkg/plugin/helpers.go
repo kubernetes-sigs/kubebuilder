@@ -35,8 +35,8 @@ func Key(name, version string) string {
 	return path.Join(name, "v"+strings.TrimLeft(version, "v"))
 }
 
-// KeyFor returns a Base plugin's unique identifying string.
-func KeyFor(p Base) string {
+// KeyFor returns a Plugin's unique identifying string.
+func KeyFor(p Plugin) string {
 	return Key(p.Name(), p.Version().String())
 }
 

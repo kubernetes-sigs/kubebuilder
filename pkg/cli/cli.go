@@ -55,7 +55,7 @@ type Option func(*cli) error
 // cli defines the command line structure and interfaces that are used to
 // scaffold kubebuilder project files.
 type cli struct {
-	// Base command name. Can be injected downstream.
+	// Root command name. Can be injected downstream.
 	commandName string
 	// Default project version. Used in CLI flag setup.
 	defaultProjectVersion string
@@ -70,16 +70,16 @@ type cli struct {
 	completionCommand bool
 
 	// Plugins injected by options.
-	pluginsFromOptions map[string][]plugin.Base
+	pluginsFromOptions map[string][]plugin.Plugin
 	// Default plugins injected by options. Only one plugin per project version
 	// is allowed.
-	defaultPluginsFromOptions map[string]plugin.Base
+	defaultPluginsFromOptions map[string]plugin.Plugin
 	// A plugin key passed to --plugins on invoking 'init'.
 	cliPluginKey string
 	// A filtered set of plugins that should be used by command constructors.
-	resolvedPlugins []plugin.Base
+	resolvedPlugins []plugin.Plugin
 
-	// Base command.
+	// Root command.
 	cmd *cobra.Command
 	// Commands injected by options.
 	extraCommands []*cobra.Command
@@ -90,8 +90,8 @@ func New(opts ...Option) (CLI, error) {
 	c := &cli{
 		commandName:               "kubebuilder",
 		defaultProjectVersion:     internalconfig.DefaultVersion,
-		pluginsFromOptions:        make(map[string][]plugin.Base),
-		defaultPluginsFromOptions: make(map[string]plugin.Base),
+		pluginsFromOptions:        make(map[string][]plugin.Plugin),
+		defaultPluginsFromOptions: make(map[string]plugin.Plugin),
 	}
 	for _, opt := range opts {
 		if err := opt(c); err != nil {
@@ -131,7 +131,7 @@ func WithDefaultProjectVersion(version string) Option {
 }
 
 // WithPlugins is an Option that sets the cli's plugins.
-func WithPlugins(plugins ...plugin.Base) Option {
+func WithPlugins(plugins ...plugin.Plugin) Option {
 	return func(c *cli) error {
 		for _, p := range plugins {
 			for _, version := range p.SupportedProjectVersions() {
@@ -149,7 +149,7 @@ func WithPlugins(plugins ...plugin.Base) Option {
 
 // WithDefaultPlugins is an Option that sets the cli's default plugins. Only
 // one plugin per project version is allowed.
-func WithDefaultPlugins(plugins ...plugin.Base) Option {
+func WithDefaultPlugins(plugins ...plugin.Plugin) Option {
 	return func(c *cli) error {
 		for _, p := range plugins {
 			for _, version := range p.SupportedProjectVersions() {
@@ -230,7 +230,7 @@ func (c *cli) initialize() error {
 	// in situations like 'init --plugins "go"' when multiple go-type plugins
 	// are available but only one default is for a particular project version.
 	allPlugins := c.pluginsFromOptions[c.projectVersion]
-	defaultPlugin := []plugin.Base{c.defaultPluginsFromOptions[c.projectVersion]}
+	defaultPlugin := []plugin.Plugin{c.defaultPluginsFromOptions[c.projectVersion]}
 	switch {
 	case c.cliPluginKey != "":
 		// Filter plugin by keys passed in CLI.

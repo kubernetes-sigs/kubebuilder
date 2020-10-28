@@ -45,14 +45,15 @@ func errCmdFunc(err error) func(*cobra.Command, []string) error {
 	}
 }
 
-// runECmdFunc returns a cobra RunE function that runs gsub and saves the
-// config, which may have been modified by gsub.
+// runECmdFunc returns a cobra RunE function that runs subcommand and saves the
+// config, which may have been modified by subcommand.
 func runECmdFunc(
 	c *config.Config,
-	gsub plugin.GenericSubcommand, // nolint:interfacer
-	msg string) func(*cobra.Command, []string) error {
+	subcommand plugin.Subcommand, // nolint:interfacer
+	msg string,
+) func(*cobra.Command, []string) error {
 	return func(*cobra.Command, []string) error {
-		if err := gsub.Run(); err != nil {
+		if err := subcommand.Run(); err != nil {
 			return fmt.Errorf("%s: %v", msg, err)
 		}
 		return c.Save()

@@ -56,18 +56,24 @@ func (c cli) newWebhookContext() plugin.Context {
 
 // nolint:dupl
 func (c cli) bindCreateWebhook(ctx plugin.Context, cmd *cobra.Command) {
-	var getter plugin.CreateWebhookPluginGetter
+	var createWebhookPlugin plugin.CreateWebhook
 	for _, p := range c.resolvedPlugins {
-		tmpGetter, isGetter := p.(plugin.CreateWebhookPluginGetter)
-		if isGetter {
-			if getter != nil {
-				err := fmt.Errorf("duplicate webhook creation plugins for project version %q (%s, %s), "+
-					"use a more specific plugin key", c.projectVersion, plugin.KeyFor(getter), plugin.KeyFor(p))
+		tmpPlugin, isValid := p.(plugin.CreateWebhook)
+		if isValid {
+			if createWebhookPlugin != nil {
+				err := fmt.Errorf("duplicate webhook creation plugins (%s, %s), use a more specific plugin key",
+					plugin.KeyFor(createWebhookPlugin), plugin.KeyFor(p))
 				cmdErr(cmd, err)
 				return
 			}
-			getter = tmpGetter
+			createWebhookPlugin = tmpPlugin
 		}
+	}
+
+	if createWebhookPlugin == nil {
+		err := fmt.Errorf("relevant plugins do not provide a webhook creation plugin")
+		cmdErr(cmd, err)
+		return
 	}
 
 	cfg, err := config.LoadInitialized()
@@ -76,18 +82,12 @@ func (c cli) bindCreateWebhook(ctx plugin.Context, cmd *cobra.Command) {
 		return
 	}
 
-	if getter == nil {
-		err := fmt.Errorf("layout plugin %q does not support a webhook creation plugin", cfg.Layout)
-		cmdErr(cmd, err)
-		return
-	}
-
-	createWebhook := getter.GetCreateWebhookPlugin()
-	createWebhook.InjectConfig(&cfg.Config)
-	createWebhook.BindFlags(cmd.Flags())
-	createWebhook.UpdateContext(&ctx)
+	subcommand := createWebhookPlugin.GetCreateWebhookSubcommand()
+	subcommand.InjectConfig(&cfg.Config)
+	subcommand.BindFlags(cmd.Flags())
+	subcommand.UpdateContext(&ctx)
 	cmd.Long = ctx.Description
 	cmd.Example = ctx.Examples
-	cmd.RunE = runECmdFunc(cfg, createWebhook,
-		fmt.Sprintf("failed to create webhook with version %q", c.projectVersion))
+	cmd.RunE = runECmdFunc(cfg, subcommand,
+		fmt.Sprintf("failed to create webhook with %q", plugin.KeyFor(createWebhookPlugin)))
 }
