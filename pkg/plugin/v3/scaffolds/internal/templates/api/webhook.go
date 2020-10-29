@@ -36,6 +36,8 @@ type Webhook struct { // nolint:maligned
 	// Is the Group domain for the Resource replacing '.' with '-'
 	GroupDomainWithDash string
 
+	// Version of webhook marker to scaffold
+	WebhookVersion string
 	// If scaffold the defaulting webhook
 	Defaulting bool
 	// If scaffold the validating webhook
@@ -71,6 +73,10 @@ func (f *Webhook) SetTemplateDefaults() error {
 
 	f.GroupDomainWithDash = strings.Replace(f.Resource.Domain, ".", "-", -1)
 
+	if f.WebhookVersion == "" {
+		f.WebhookVersion = "v1"
+	}
+
 	return nil
 }
 
@@ -102,9 +108,10 @@ func (r *{{ .Resource.Kind }}) SetupWebhookWithManager(mgr ctrl.Manager) error {
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 `
 
+	// TODO(estroz): update admissionReviewVersions to include v1 when controller-runtime supports that version.
 	//nolint:lll
 	defaultingWebhookTemplate = `
-// +kubebuilder:webhook:path=/mutate-{{ .GroupDomainWithDash }}-{{ .Resource.Version }}-{{ lower .Resource.Kind }},mutating=true,failurePolicy=fail,groups={{ .Resource.Domain }},resources={{ .Resource.Plural }},verbs=create;update,versions={{ .Resource.Version }},name=m{{ lower .Resource.Kind }}.kb.io
+// +kubebuilder:webhook:{{ if ne .WebhookVersion "v1" }}webhookVersions={{"{"}}{{ .WebhookVersion }}{{"}"}},{{ end }}path=/mutate-{{ .GroupDomainWithDash }}-{{ .Resource.Version }}-{{ lower .Resource.Kind }},mutating=true,failurePolicy=fail,sideEffects=None,groups={{ .Resource.Domain }},resources={{ .Resource.Plural }},verbs=create;update,versions={{ .Resource.Version }},name=m{{ lower .Resource.Kind }}.kb.io,admissionReviewVersions={v1beta1}
 
 var _ webhook.Defaulter = &{{ .Resource.Kind }}{}
 
@@ -115,10 +122,12 @@ func (r *{{ .Resource.Kind }}) Default() {
 	// TODO(user): fill in your defaulting logic.
 }
 `
+
+	// TODO(estroz): update admissionReviewVersions to include v1 when controller-runtime supports that version.
 	//nolint:lll
 	validatingWebhookTemplate = `
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:verbs=create;update,path=/validate-{{ .GroupDomainWithDash }}-{{ .Resource.Version }}-{{ lower .Resource.Kind }},mutating=false,failurePolicy=fail,groups={{ .Resource.Domain }},resources={{ .Resource.Plural }},versions={{ .Resource.Version }},name=v{{ lower .Resource.Kind }}.kb.io
+// +kubebuilder:webhook:{{ if ne .WebhookVersion "v1" }}webhookVersions={{"{"}}{{ .WebhookVersion }}{{"}"}},{{ end }}path=/validate-{{ .GroupDomainWithDash }}-{{ .Resource.Version }}-{{ lower .Resource.Kind }},mutating=false,failurePolicy=fail,sideEffects=None,groups={{ .Resource.Domain }},resources={{ .Resource.Plural }},verbs=create;update,versions={{ .Resource.Version }},name=v{{ lower .Resource.Kind }}.kb.io,admissionReviewVersions={v1beta1}
 
 var _ webhook.Validator = &{{ .Resource.Kind }}{}
 

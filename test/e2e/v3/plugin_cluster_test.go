@@ -33,7 +33,8 @@ import (
 var _ = Describe("kubebuilder", func() {
 	Context("project version 3", func() {
 		var (
-			kbc *utils.TestContext
+			kbc    *utils.TestContext
+			k8sVer utils.KubectlVersion
 		)
 
 		BeforeEach(func() {
@@ -41,6 +42,10 @@ var _ = Describe("kubebuilder", func() {
 			kbc, err = utils.NewTestContext(utils.KubebuilderBinName, "GO111MODULE=on")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(kbc.Prepare()).To(Succeed())
+
+			// Get versions to determine which tests to skip.
+			k8sVer, err = kbc.Kubectl.Version()
+			Expect(err).NotTo(HaveOccurred())
 
 			By("installing the cert-manager bundle")
 			Expect(kbc.InstallCertManager()).To(Succeed())
@@ -71,7 +76,21 @@ var _ = Describe("kubebuilder", func() {
 		})
 		Context("plugin go.kubebuilder.io/v3-alpha", func() {
 			It("should generate a runnable project", func() {
-				GenerateV3(kbc)
+				// Skip if cluster version < 1.16, when v1 CRDs and webhooks did not exist.
+				if srvVer := k8sVer.ServerVersion; srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() < 16 {
+					Skip(fmt.Sprintf("cluster version %s does not support v1 CRDs or webhooks", srvVer.GitVersion))
+				}
+
+				GenerateV3(kbc, "v1")
+				Run(kbc)
+			})
+			It("should generate a runnable project with v1beta1 CRDs and Webhooks", func() {
+				// Skip if cluster version < 1.15, when `.spec.preserveUnknownFields` was not a v1beta1 CRD field.
+				if srvVer := k8sVer.ServerVersion; srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() < 15 {
+					Skip(fmt.Sprintf("cluster version %s does not support project defaults", srvVer.GitVersion))
+				}
+
+				GenerateV3(kbc, "v1beta1")
 				Run(kbc)
 			})
 		})

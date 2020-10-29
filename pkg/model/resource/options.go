@@ -82,6 +82,11 @@ type Options struct {
 
 	// Namespaced is true if the resource is namespaced.
 	Namespaced bool
+
+	// CRDVersion holds the CustomResourceDefinition API version used for the Options.
+	CRDVersion string
+	// WebhookVersion holds the {Validating,Mutating}WebhookConfiguration API version used for the Options.
+	WebhookVersion string
 }
 
 // ValidateV2 verifies that V2 project has all the fields have valid values
@@ -183,6 +188,18 @@ func (opts *Options) Validate() error {
 		return fmt.Errorf("invalid Kind: %#v", validationErrors)
 	}
 
+	// Ensure apiVersions for k8s types are empty or valid.
+	for typ, apiVersion := range map[string]string{
+		"CRD":     opts.CRDVersion,
+		"Webhook": opts.WebhookVersion,
+	} {
+		switch apiVersion {
+		case "", "v1", "v1beta1":
+		default:
+			return fmt.Errorf("%s version must be one of: v1, v1beta1", typ)
+		}
+	}
+
 	// TODO: validate plural strings if provided
 
 	return nil
@@ -191,9 +208,11 @@ func (opts *Options) Validate() error {
 // GVK returns the group-version-kind information to check against tracked resources in the configuration file
 func (opts *Options) GVK() config.GVK {
 	return config.GVK{
-		Group:   opts.Group,
-		Version: opts.Version,
-		Kind:    opts.Kind,
+		Group:          opts.Group,
+		Version:        opts.Version,
+		Kind:           opts.Kind,
+		CRDVersion:     opts.CRDVersion,
+		WebhookVersion: opts.WebhookVersion,
 	}
 }
 
@@ -269,5 +288,7 @@ func (opts *Options) newResource() *Resource {
 		Kind:             opts.Kind,
 		Plural:           plural,
 		ImportAlias:      opts.safeImport(opts.Group + opts.Version),
+		CRDVersion:       opts.CRDVersion,
+		WebhookVersion:   opts.WebhookVersion,
 	}
 }

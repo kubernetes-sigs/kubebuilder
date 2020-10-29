@@ -1,12 +1,14 @@
 
 ---
-apiVersion: admissionregistration.k8s.io/v1beta1
+apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   creationTimestamp: null
   name: mutating-webhook-configuration
 webhooks:
-- clientConfig:
+- admissionReviewVersions:
+  - v1beta1
+  clientConfig:
     caBundle: Cg==
     service:
       name: webhook-service
@@ -24,7 +26,10 @@ webhooks:
     - UPDATE
     resources:
     - captains
-- clientConfig:
+  sideEffects: None
+- admissionReviewVersions:
+  - v1beta1
+  clientConfig:
     caBundle: Cg==
     service:
       name: webhook-service
@@ -42,7 +47,10 @@ webhooks:
     - UPDATE
     resources:
     - destroyers
-- clientConfig:
+  sideEffects: None
+- admissionReviewVersions:
+  - v1beta1
+  clientConfig:
     caBundle: Cg==
     service:
       name: webhook-service
@@ -60,15 +68,18 @@ webhooks:
     - UPDATE
     resources:
     - lakers
+  sideEffects: None
 
 ---
-apiVersion: admissionregistration.k8s.io/v1beta1
+apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   creationTimestamp: null
   name: validating-webhook-configuration
 webhooks:
-- clientConfig:
+- admissionReviewVersions:
+  - v1beta1
+  clientConfig:
     caBundle: Cg==
     service:
       name: webhook-service
@@ -86,7 +97,10 @@ webhooks:
     - UPDATE
     resources:
     - captains
-- clientConfig:
+  sideEffects: None
+- admissionReviewVersions:
+  - v1beta1
+  clientConfig:
     caBundle: Cg==
     service:
       name: webhook-service
@@ -104,7 +118,10 @@ webhooks:
     - UPDATE
     resources:
     - cruisers
-- clientConfig:
+  sideEffects: None
+- admissionReviewVersions:
+  - v1beta1
+  clientConfig:
     caBundle: Cg==
     service:
       name: webhook-service
@@ -122,3 +139,4 @@ webhooks:
     - UPDATE
     resources:
     - lakers
+  sideEffects: None

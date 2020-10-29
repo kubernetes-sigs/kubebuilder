@@ -18,6 +18,7 @@ package v3
 
 import (
 	"fmt"
+	"io/ioutil"
 	"path/filepath"
 	"strings"
 
@@ -122,7 +123,7 @@ Count int `+"`"+`json:"count,omitempty"`+"`"+`
 }
 
 // GenerateV3 implements a go/v3(-alpha) plugin project defined by a TestContext.
-func GenerateV3(kbc *utils.TestContext) {
+func GenerateV3(kbc *utils.TestContext, crdAndWebhookVersion string) {
 	var err error
 
 	By("initializing a v3 project")
@@ -134,6 +135,22 @@ func GenerateV3(kbc *utils.TestContext) {
 	)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
+	// Users have to manually add "crdVersions={non-default-version}" to their Makefile
+	// if using a non-default CRD version.
+	if crdAndWebhookVersion != "v1" {
+		makefilePath := filepath.Join(kbc.Dir, "Makefile")
+		bs, err := ioutil.ReadFile(makefilePath)
+		ExpectWithOffset(1, err).NotTo(HaveOccurred())
+		content, err := utils.EnsureExistAndReplace(
+			string(bs),
+			`CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"`,
+			fmt.Sprintf(`CRD_OPTIONS ?= "crd:crdVersions={%s},trivialVersions=true,preserveUnknownFields=false"`,
+				crdAndWebhookVersion),
+		)
+		ExpectWithOffset(1, err).NotTo(HaveOccurred())
+		ExpectWithOffset(1, ioutil.WriteFile(makefilePath, []byte(content), 0600)).To(Succeed())
+	}
+
 	By("creating API definition")
 	err = kbc.CreateAPI(
 		"--group", kbc.Group,
@@ -143,6 +160,7 @@ func GenerateV3(kbc *utils.TestContext) {
 		"--resource",
 		"--controller",
 		"--make=false",
+		"--crd-version", crdAndWebhookVersion,
 	)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
@@ -162,6 +180,7 @@ Count int `+"`"+`json:"count,omitempty"`+"`"+`
 		"--kind", kbc.Kind,
 		"--defaulting",
 		"--programmatic-validation",
+		"--webhook-version", crdAndWebhookVersion,
 	)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 

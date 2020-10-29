@@ -22,11 +22,16 @@ import (
 	"sigs.k8s.io/kubebuilder/v2/pkg/model/file"
 )
 
+const v1 = "v1"
+
 var _ file.Template = &KustomizeConfig{}
 
 // KustomizeConfig  scaffolds a file that configures the kustomization for the crd folder
 type KustomizeConfig struct {
 	file.TemplateMixin
+
+	// Version of CRD patch generated.
+	CRDVersion string
 }
 
 // SetTemplateDefaults implements file.Template
@@ -36,6 +41,10 @@ func (f *KustomizeConfig) SetTemplateDefaults() error {
 	}
 
 	f.TemplateBody = kustomizeConfigTemplate
+
+	if f.CRDVersion == "" {
+		f.CRDVersion = v1
+	}
 
 	return nil
 }
@@ -47,13 +56,23 @@ nameReference:
   version: v1
   fieldSpecs:
   - kind: CustomResourceDefinition
+    version: {{ .CRDVersion }}
     group: apiextensions.k8s.io
+    {{- if ne .CRDVersion "v1" }}
     path: spec/conversion/webhookClientConfig/service/name
+    {{- else }}
+    path: spec/conversion/webhook/clientConfig/service/name
+    {{- end }}
 
 namespace:
 - kind: CustomResourceDefinition
+  version: {{ .CRDVersion }}
   group: apiextensions.k8s.io
+  {{- if ne .CRDVersion "v1" }}
   path: spec/conversion/webhookClientConfig/service/namespace
+  {{- else }}
+  path: spec/conversion/webhook/clientConfig/service/namespace
+  {{- end }}
   create: false
 
 varReference:

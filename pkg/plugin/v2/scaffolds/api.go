@@ -93,7 +93,7 @@ func (s *apiScaffolder) newUniverse() *model.Universe {
 
 func (s *apiScaffolder) scaffold() error {
 	if s.doResource {
-		s.config.AddResource(s.resource.GVK())
+		s.config.UpdateResources(s.resource.GVK())
 
 		if err := machinery.NewScaffold(s.plugins...).Execute(
 			s.newUniverse(),

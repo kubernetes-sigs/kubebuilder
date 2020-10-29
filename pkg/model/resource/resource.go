@@ -51,14 +51,21 @@ type Resource struct {
 
 	// Namespaced is true if the resource is namespaced.
 	Namespaced bool `json:"namespaced,omitempty"`
+
+	// CRDVersion holds the CustomResourceDefinition API version used for the Resource.
+	CRDVersion string `json:"crdVersion,omitempty"`
+	// WebhookVersion holds the {Validating,Mutating}WebhookConfiguration API version used for the Resource.
+	WebhookVersion string `json:"webhookVersion,omitempty"`
 }
 
 // GVK returns the group-version-kind information to check against tracked resources in the configuration file
 func (r *Resource) GVK() config.GVK {
 	return config.GVK{
-		Group:   r.Group,
-		Version: r.Version,
-		Kind:    r.Kind,
+		Group:          r.Group,
+		Version:        r.Version,
+		Kind:           r.Kind,
+		CRDVersion:     r.CRDVersion,
+		WebhookVersion: r.WebhookVersion,
 	}
 }
 
