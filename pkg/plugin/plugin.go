@@ -39,7 +39,7 @@ const (
 )
 
 // verRe defines the string format of a version.
-var verRe = regexp.MustCompile("^(v)?([1-9][0-9]*)(-alpha|-beta)?$")
+var verRe = regexp.MustCompile("^v?([1-9][0-9]*)(?:-(alpha|beta))?$")
 
 // Version is a plugin version containing a non-zero integer and an optional stage value
 // that if present identifies a version as not stable to some degree.
@@ -75,15 +75,15 @@ func ParseVersion(version string) (v Version, err error) {
 		return v, errors.New("plugin version is empty")
 	}
 
-	// A valid version string will have 4 submatches, each of which may be empty: the full string, "v",
-	// the integer, and the stage suffix. Invalid version strings do not have 4 submatches.
+	// A valid version string will have 3 submatches, each of which may be empty: the full string,
+	// the integer, and the stage suffix. Invalid version strings do not have 3 submatches.
 	submatches := verRe.FindStringSubmatch(version)
-	if len(submatches) != 4 {
+	if len(submatches) != 3 {
 		return v, fmt.Errorf("version format must match %s", verRe.String())
 	}
 
 	// Parse version number.
-	versionNumStr := submatches[2]
+	versionNumStr := submatches[1]
 	if versionNumStr == "" {
 		return v, errors.New("version must contain an integer")
 	}
@@ -92,7 +92,7 @@ func ParseVersion(version string) (v Version, err error) {
 	}
 
 	// Parse stage suffix, if any.
-	v.Stage = strings.TrimPrefix(submatches[3], "-")
+	v.Stage = submatches[2]
 
 	return v, v.Validate()
 }

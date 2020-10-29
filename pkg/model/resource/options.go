@@ -29,7 +29,7 @@ import (
 )
 
 const (
-	versionPattern  = "^v\\d+(alpha\\d+|beta\\d+)?$"
+	versionPattern  = "^v\\d+(?:alpha\\d+|beta\\d+)?$"
 	groupRequired   = "group cannot be empty"
 	versionRequired = "version cannot be empty"
 	kindRequired    = "kind cannot be empty"

@@ -26,9 +26,9 @@ import (
 // "k8s.io/apimachinery" is needed, re-consider whether to add the dependency.
 
 const (
-	dns1123LabelFmt     string = "[a-z0-9]([-a-z0-9]*[a-z0-9])?"
+	dns1123LabelFmt     string = "[a-z0-9](?:[-a-z0-9]*[a-z0-9])?"
 	dns1123SubdomainFmt string = dns1123LabelFmt + "(\\." + dns1123LabelFmt + ")*"
-	dns1035LabelFmt     string = "[a-z]([-a-z0-9]*[a-z0-9])?"
+	dns1035LabelFmt     string = "[a-z](?:[-a-z0-9]*[a-z0-9])?"
 )
 
 type dnsValidationConfig struct {

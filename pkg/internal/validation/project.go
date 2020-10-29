@@ -22,7 +22,7 @@ import (
 )
 
 // projectVersionFmt defines the project version format from a project config.
-const projectVersionFmt string = "[1-9][0-9]*(-(alpha|beta))?"
+const projectVersionFmt string = "[1-9][0-9]*(?:-(?:alpha|beta))?"
 
 var projectVersionRe = regexp.MustCompile("^" + projectVersionFmt + "$")
 
