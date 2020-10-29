@@ -55,6 +55,7 @@ cd "$base_dir" || {
 }
 
 go_workspace=''
+export GOPATH=${GOPATH:-$(go env GOPATH)}
 for p in ${GOPATH//:/ }; do
   if [[ $PWD/ = $p/* ]]; then
     go_workspace=$p
