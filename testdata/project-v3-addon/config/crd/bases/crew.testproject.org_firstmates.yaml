@@ -58,6 +58,8 @@ spec:
               type: array
             healthy:
               type: boolean
+            phase:
+              type: string
           required:
           - healthy
           type: object
