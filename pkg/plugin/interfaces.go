@@ -28,7 +28,7 @@ type Base interface {
 	// i.e. have a short prefix describing the plugin type (like a language) followed by a domain.
 	// For example, Kubebuilder's main plugin would return "go.kubebuilder.io".
 	Name() string
-	// Version returns the plugin's version, which contains an integer and an optional stability of "alpha" or "beta".
+	// Version returns the plugin's version.
 	//
 	// Note: this version is different from config version.
 	Version() Version
