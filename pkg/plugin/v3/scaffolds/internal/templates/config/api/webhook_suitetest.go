@@ -115,7 +115,8 @@ func (f *WebhookSuite) GetCodeFragments() file.CodeFragmentsMap {
 }
 
 const (
-	webhookTestSuiteTemplate = `
+	webhookTestSuiteTemplate = `{{ .Boilerplate }}
+
 package {{ .Resource.Version }}
 
 import (
