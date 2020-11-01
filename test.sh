@@ -140,7 +140,7 @@ header_text "running kubebuilder unit tests"
 cd ${go_workspace}/src/sigs.k8s.io/kubebuilder
 
 export GO111MODULE=on
-go test  -race ./cmd/... ./pkg/...
+go test -race -v ./cmd/... ./pkg/... ./plugins/...
 
 # test project v2
 GO111MODULE=on test_project project-v2 2
