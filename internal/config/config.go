@@ -64,7 +64,7 @@ func readFrom(fs afero.Fs, path string) (c config.Config, err error) {
 
 	// kubebuilder v1 omitted version, so default to v1
 	if c.Version == "" {
-		c.Version = config.Version1
+		return config.Config{}, fmt.Errorf("project version key `version` is empty or does not exist in %s", path)
 	}
 
 	return
@@ -178,4 +178,9 @@ type saveError struct {
 
 func (e saveError) Error() string {
 	return fmt.Sprintf("unable to save the configuration: %v", e.err)
+}
+
+// IsVersionSupported returns true if version is a supported project version.
+func IsVersionSupported(version string) bool {
+	return version == config.Version2 || version == config.Version3Alpha
 }
