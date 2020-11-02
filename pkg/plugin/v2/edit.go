@@ -29,8 +29,6 @@ import (
 
 type editPlugin struct {
 	config *config.Config
-	// For help text
-	commandName string
 
 	multigroup bool
 }
@@ -49,8 +47,6 @@ func (p *editPlugin) UpdateContext(ctx *plugin.Context) {
         # Disable the multigroup layout
         %s edit --multigroup=false
 	`, ctx.CommandName, ctx.CommandName)
-
-	p.commandName = ctx.CommandName
 }
 
 func (p *editPlugin) BindFlags(fs *pflag.FlagSet) {
