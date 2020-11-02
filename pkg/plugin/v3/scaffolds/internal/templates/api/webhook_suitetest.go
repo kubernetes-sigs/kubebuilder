@@ -10,7 +10,7 @@ import (
 var _ file.Template = &WebhookSuite{}
 var _ file.Inserter = &WebhookSuite{}
 
-// WebhookSuite scaffolds the webhook_suite.go file to setup the webhook test
+// WebhookSuite scaffolds the file that sets up the webhook tests
 type WebhookSuite struct {
 	file.TemplateMixin
 	file.MultiGroupMixin

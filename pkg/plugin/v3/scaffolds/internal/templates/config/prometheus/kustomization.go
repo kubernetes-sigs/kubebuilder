@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package rbac
+package prometheus
 
 import (
 	"path/filepath"
@@ -22,34 +22,24 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
-var _ file.Template = &ManagerRoleBinding{}
+var _ file.Template = &Kustomization{}
 
-// ManagerRoleBinding scaffolds the config/rbac/role_binding.yaml file
-type ManagerRoleBinding struct {
+// Kustomization scaffolds a file that defines the kustomization scheme for the prometheus folder
+type Kustomization struct {
 	file.TemplateMixin
 }
 
-// SetTemplateDefaults implements input.Template
-func (f *ManagerRoleBinding) SetTemplateDefaults() error {
+// SetTemplateDefaults implements file.Template
+func (f *Kustomization) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = filepath.Join("config", "rbac", "role_binding.yaml")
+		f.Path = filepath.Join("config", "prometheus", "kustomization.yaml")
 	}
 
-	f.TemplateBody = managerBindingTemplate
+	f.TemplateBody = kustomizationTemplate
 
 	return nil
 }
 
-const managerBindingTemplate = `apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: manager-rolebinding
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: manager-role
-subjects:
-- kind: ServiceAccount
-  name: default
-  namespace: system
+const kustomizationTemplate = `resources:
+- monitor.yaml
 `

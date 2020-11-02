@@ -24,12 +24,12 @@ import (
 
 var _ file.Template = &ManagerWebhookPatch{}
 
-// ManagerWebhookPatch scaffolds a ManagerWebhookPatch for a Resource
+// ManagerWebhookPatch scaffolds a file that defines the patch that enables webhooks on the manager
 type ManagerWebhookPatch struct {
 	file.TemplateMixin
 }
 
-// SetTemplateDefaults implements input.Template
+// SetTemplateDefaults implements file.Template
 func (f *ManagerWebhookPatch) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "default", "manager_webhook_patch.yaml")

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controller
+package controllers
 
 import (
 	"fmt"
@@ -26,7 +26,7 @@ import (
 var _ file.Template = &SuiteTest{}
 var _ file.Inserter = &SuiteTest{}
 
-// SuiteTest scaffolds the suite_test.go file to setup the controller test
+// SuiteTest scaffolds the file that sets up the controller tests
 // nolint:maligned
 type SuiteTest struct {
 	file.TemplateMixin
@@ -34,7 +34,7 @@ type SuiteTest struct {
 	file.BoilerplateMixin
 	file.ResourceMixin
 
-	// CRDDirectoryRelativePath define the Path for the CRD when it is multigroup
+	// CRDDirectoryRelativePath define the Path for the CRD
 	CRDDirectoryRelativePath string
 
 	// WireResource defines the api resources are generated or not.

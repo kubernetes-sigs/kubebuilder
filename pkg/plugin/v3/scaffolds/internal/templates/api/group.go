@@ -24,7 +24,7 @@ import (
 
 var _ file.Template = &Group{}
 
-// Group scaffolds the api/<version>/groupversion_info.go
+// Group scaffolds the file that defines the registration methods for a certain group and version
 type Group struct {
 	file.TemplateMixin
 	file.MultiGroupMixin
@@ -32,7 +32,7 @@ type Group struct {
 	file.ResourceMixin
 }
 
-// SetTemplateDefaults implements input.Template
+// SetTemplateDefaults implements file.Template
 func (f *Group) SetTemplateDefaults() error {
 	if f.Path == "" {
 		if f.MultiGroup {

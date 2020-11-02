@@ -24,12 +24,12 @@ import (
 
 var _ file.Template = &Service{}
 
-// Service scaffolds the Service file in manager folder.
+// Service scaffolds a file that defines the webhook service
 type Service struct {
 	file.TemplateMixin
 }
 
-// SetTemplateDefaults implements input.Template
+// SetTemplateDefaults implements file.Template
 func (f *Service) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "webhook", "service.yaml")

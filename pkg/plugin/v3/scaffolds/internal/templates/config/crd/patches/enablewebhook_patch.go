@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package crd
+package patches
 
 import (
 	"path/filepath"
@@ -24,13 +24,13 @@ import (
 
 var _ file.Template = &EnableWebhookPatch{}
 
-// EnableWebhookPatch scaffolds a EnableWebhookPatch for a Resource
+// EnableWebhookPatch scaffolds a file that defines the patch that enables conversion webhook for the CRD
 type EnableWebhookPatch struct {
 	file.TemplateMixin
 	file.ResourceMixin
 }
 
-// SetTemplateDefaults implements input.Template
+// SetTemplateDefaults implements file.Template
 func (f *EnableWebhookPatch) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "crd", "patches", "webhook_in_%[plural].yaml")

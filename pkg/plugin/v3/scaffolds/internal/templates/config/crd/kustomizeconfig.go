@@ -24,12 +24,12 @@ import (
 
 var _ file.Template = &KustomizeConfig{}
 
-// KustomizeConfig scaffolds the kustomizeconfig file in crd folder.
+// KustomizeConfig  scaffolds a file that configures the kustomization for the crd folder
 type KustomizeConfig struct {
 	file.TemplateMixin
 }
 
-// SetTemplateDefaults implements input.Template
+// SetTemplateDefaults implements file.Template
 func (f *KustomizeConfig) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "crd", "kustomizeconfig.yaml")

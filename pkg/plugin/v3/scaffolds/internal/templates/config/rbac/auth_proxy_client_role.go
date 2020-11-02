@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package prometheus
+package rbac
 
 import (
 	"path/filepath"
@@ -22,24 +22,29 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
-var _ file.Template = &Kustomization{}
+var _ file.Template = &AuthProxyClientRole{}
 
-// Kustomization scaffolds the kustomizaiton in the prometheus folder
-type Kustomization struct {
+// AuthProxyClientRole scaffolds a file that defines the role for the metrics reader
+type AuthProxyClientRole struct {
 	file.TemplateMixin
 }
 
-// SetTemplateDefaults implements input.Template
-func (f *Kustomization) SetTemplateDefaults() error {
+// SetTemplateDefaults implements file.Template
+func (f *AuthProxyClientRole) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = filepath.Join("config", "prometheus", "kustomization.yaml")
+		f.Path = filepath.Join("config", "rbac", "auth_proxy_client_clusterrole.yaml")
 	}
 
-	f.TemplateBody = kustomizationTemplate
+	f.TemplateBody = clientClusterRoleTemplate
 
 	return nil
 }
 
-const kustomizationTemplate = `resources:
-- monitor.yaml
+const clientClusterRoleTemplate = `apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: metrics-reader
+rules:
+- nonResourceURLs: ["/metrics"]
+  verbs: ["get"]
 `

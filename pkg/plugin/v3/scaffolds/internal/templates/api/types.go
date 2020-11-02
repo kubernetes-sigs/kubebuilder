@@ -25,7 +25,7 @@ import (
 
 var _ file.Template = &Types{}
 
-// Types scaffolds the api/<version>/<kind>_types.go file to define the schema for an API
+// Types scaffolds the file that defines the schema for a CRD
 type Types struct {
 	file.TemplateMixin
 	file.MultiGroupMixin
@@ -33,7 +33,7 @@ type Types struct {
 	file.ResourceMixin
 }
 
-// SetTemplateDefaults implements input.Template
+// SetTemplateDefaults implements file.Template
 func (f *Types) SetTemplateDefaults() error {
 	if f.Path == "" {
 		if f.MultiGroup {

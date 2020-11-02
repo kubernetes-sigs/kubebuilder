@@ -26,7 +26,7 @@ import (
 var _ file.Template = &Kustomization{}
 var _ file.Inserter = &Kustomization{}
 
-// Kustomization scaffolds the kustomization file in manager folder.
+// Kustomization scaffolds a file that defines the kustomization scheme for the crd folder
 type Kustomization struct {
 	file.TemplateMixin
 	file.ResourceMixin

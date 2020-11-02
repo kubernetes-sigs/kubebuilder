@@ -24,12 +24,12 @@ import (
 
 var _ file.Template = &AuthProxyRole{}
 
-// AuthProxyRole scaffolds the config/rbac/auth_proxy_role.yaml file
+// AuthProxyRole scaffolds a file that defines the role for the auth proxy
 type AuthProxyRole struct {
 	file.TemplateMixin
 }
 
-// SetTemplateDefaults implements input.Template
+// SetTemplateDefaults implements file.Template
 func (f *AuthProxyRole) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "rbac", "auth_proxy_role.yaml")

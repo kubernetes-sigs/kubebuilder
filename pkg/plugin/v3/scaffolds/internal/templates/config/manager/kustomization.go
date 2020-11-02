@@ -24,12 +24,12 @@ import (
 
 var _ file.Template = &Kustomization{}
 
-// Kustomization scaffolds the Kustomization file in manager folder.
+// Kustomization scaffolds a file that defines the kustomization scheme for the manager folder
 type Kustomization struct {
 	file.TemplateMixin
 }
 
-// SetTemplateDefaults implements input.Template
+// SetTemplateDefaults implements file.Template
 func (f *Kustomization) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "manager", "kustomization.yaml")

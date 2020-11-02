@@ -24,12 +24,12 @@ import (
 
 var _ file.Template = &LeaderElectionRoleBinding{}
 
-// LeaderElectionRoleBinding scaffolds the config/rbac/leader_election_role_binding.yaml file
+// LeaderElectionRoleBinding scaffolds a file that defines the role binding that allows leader election
 type LeaderElectionRoleBinding struct {
 	file.TemplateMixin
 }
 
-// SetTemplateDefaults implements input.Template
+// SetTemplateDefaults implements file.Template
 func (f *LeaderElectionRoleBinding) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "rbac", "leader_election_role_binding.yaml")

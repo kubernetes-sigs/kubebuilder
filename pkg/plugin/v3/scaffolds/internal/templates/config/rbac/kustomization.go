@@ -22,15 +22,15 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
-var _ file.Template = &KustomizeRBAC{}
+var _ file.Template = &Kustomization{}
 
-// KustomizeRBAC scaffolds the Kustomization file in rbac folder.
-type KustomizeRBAC struct {
+// Kustomization scaffolds a file that defines the kustomization scheme for the rbac folder
+type Kustomization struct {
 	file.TemplateMixin
 }
 
-// SetTemplateDefaults implements input.Template
-func (f *KustomizeRBAC) SetTemplateDefaults() error {
+// SetTemplateDefaults implements file.Template
+func (f *Kustomization) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "rbac", "kustomization.yaml")
 	}

@@ -22,16 +22,16 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
-var _ file.Template = &Kustomize{}
+var _ file.Template = &Kustomization{}
 
-// Kustomize scaffolds the Kustomization file for the default overlay
-type Kustomize struct {
+// Kustomization scaffolds a file that defines the kustomization scheme for the default overlay folder
+type Kustomization struct {
 	file.TemplateMixin
 	file.ProjectNameMixin
 }
 
-// SetTemplateDefaults implements input.Template
-func (f *Kustomize) SetTemplateDefaults() error {
+// SetTemplateDefaults implements file.Template
+func (f *Kustomization) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "default", "kustomization.yaml")
 	}

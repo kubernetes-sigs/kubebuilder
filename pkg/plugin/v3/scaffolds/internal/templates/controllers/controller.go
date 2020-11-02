@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controller
+package controllers
 
 import (
 	"fmt"
@@ -25,7 +25,7 @@ import (
 
 var _ file.Template = &Controller{}
 
-// Controller scaffolds a Controller for a Resource
+// Controller scaffolds the file that defines the controller for a CRD or a builtin resource
 // nolint:maligned
 type Controller struct {
 	file.TemplateMixin
@@ -39,7 +39,7 @@ type Controller struct {
 	WireResource bool
 }
 
-// SetTemplateDefaults implements input.Template
+// SetTemplateDefaults implements file.Template
 func (f *Controller) SetTemplateDefaults() error {
 	if f.Path == "" {
 		if f.MultiGroup && f.Resource.Group != "" {

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package crd
+package patches
 
 import (
 	"path/filepath"
@@ -24,13 +24,13 @@ import (
 
 var _ file.Template = &EnableCAInjectionPatch{}
 
-// EnableCAInjectionPatch scaffolds a EnableCAInjectionPatch for a Resource
+// EnableCAInjectionPatch scaffolds a file that defines the patch that injects CA into the CRD
 type EnableCAInjectionPatch struct {
 	file.TemplateMixin
 	file.ResourceMixin
 }
 
-// SetTemplateDefaults implements input.Template
+// SetTemplateDefaults implements file.Template
 func (f *EnableCAInjectionPatch) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "crd", "patches", "cainjection_in_%[plural].yaml")

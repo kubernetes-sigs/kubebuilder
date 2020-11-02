@@ -24,13 +24,13 @@ import (
 
 var _ file.Template = &CRDEditorRole{}
 
-// CRDEditorRole scaffolds the config/rbac/<kind>_editor_role.yaml
+// CRDEditorRole scaffolds a file that defines the role that allows to edit plurals
 type CRDEditorRole struct {
 	file.TemplateMixin
 	file.ResourceMixin
 }
 
-// SetTemplateDefaults implements input.Template
+// SetTemplateDefaults implements file.Template
 func (f *CRDEditorRole) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "rbac", "%[kind]_editor_role.yaml")

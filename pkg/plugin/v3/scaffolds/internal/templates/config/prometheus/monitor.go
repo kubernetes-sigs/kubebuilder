@@ -22,15 +22,15 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
-var _ file.Template = &ServiceMonitor{}
+var _ file.Template = &Monitor{}
 
-// ServiceMonitor scaffolds an issuer CR and a certificate CR
-type ServiceMonitor struct {
+// Monitor scaffolds a file that defines the prometheus service monitor
+type Monitor struct {
 	file.TemplateMixin
 }
 
-// SetTemplateDefaults implements input.Template
-func (f *ServiceMonitor) SetTemplateDefaults() error {
+// SetTemplateDefaults implements file.Template
+func (f *Monitor) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "prometheus", "monitor.yaml")
 	}

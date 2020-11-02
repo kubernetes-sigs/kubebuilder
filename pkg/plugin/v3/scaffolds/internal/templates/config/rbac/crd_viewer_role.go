@@ -24,13 +24,13 @@ import (
 
 var _ file.Template = &CRDViewerRole{}
 
-// CRDViewerRole scaffolds the config/rbac/<kind>_viewer_role.yaml
+// CRDViewerRole scaffolds a file that defines the role that allows to view plurals
 type CRDViewerRole struct {
 	file.TemplateMixin
 	file.ResourceMixin
 }
 
-// SetTemplateDefaults implements input.Template
+// SetTemplateDefaults implements file.Template
 func (f *CRDViewerRole) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "rbac", "%[kind]_viewer_role.yaml")

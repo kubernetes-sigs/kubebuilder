@@ -26,7 +26,7 @@ import (
 
 var _ file.Template = &Boilerplate{}
 
-// Boilerplate scaffolds a boilerplate header file.
+// Boilerplate scaffolds a file that defines the common header for the rest of the files
 type Boilerplate struct {
 	file.TemplateMixin
 	file.BoilerplateMixin
@@ -59,7 +59,7 @@ func (f Boilerplate) Validate() error {
 	return nil
 }
 
-// SetTemplateDefaults implements input.Template
+// SetTemplateDefaults implements file.Template
 func (f *Boilerplate) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("hack", "boilerplate.go.txt")

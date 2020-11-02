@@ -25,7 +25,7 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/plugin/internal/machinery"
 	"sigs.k8s.io/kubebuilder/pkg/plugin/scaffold"
 	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates"
-	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates/config/api"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates/api"
 	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates/config/kdefault"
 )
 
@@ -83,7 +83,7 @@ You need to implement the conversion.Hub and conversion.Convertible interfaces f
 		s.newUniverse(),
 		&api.Webhook{Defaulting: s.defaulting, Validating: s.validation},
 		&templates.MainUpdater{WireWebhook: true},
-		&kdefault.InjectCAPatch{},
+		&kdefault.WebhookCAInjectionPatch{},
 	); err != nil {
 		return err
 	}

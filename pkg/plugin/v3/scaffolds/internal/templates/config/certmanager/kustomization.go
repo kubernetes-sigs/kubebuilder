@@ -14,33 +14,35 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package templates
+package certmanager
 
 import (
+	"path/filepath"
+
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
-var _ file.Template = &DockerignoreFile{}
+var _ file.Template = &Kustomization{}
 
-// DockerignoreFile scaffolds a DockerignoreFile for building a main
-type DockerignoreFile struct {
+// Kustomization scaffolds a file that defines the kustomization scheme for the certmanager folder
+type Kustomization struct {
 	file.TemplateMixin
 }
 
-// SetTemplateDefaults implements input.Template
-func (f *DockerignoreFile) SetTemplateDefaults() error {
+// SetTemplateDefaults implements file.Template
+func (f *Kustomization) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = ".dockerignore"
+		f.Path = filepath.Join("config", "certmanager", "kustomization.yaml")
 	}
 
-	f.TemplateBody = dockerignorefileTemplate
+	f.TemplateBody = kustomizationTemplate
 
 	return nil
 }
 
-const dockerignorefileTemplate = `# More info: https://docs.docker.com/engine/reference/builder/#dockerignore-file
-# Ignore all files which are not go type
-!**/*.go
-!**/*.mod
-!**/*.sum
+const kustomizationTemplate = `resources:
+- certificate.yaml
+
+configurations:
+- kustomizeconfig.yaml
 `

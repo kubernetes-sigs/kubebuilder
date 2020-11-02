@@ -22,15 +22,15 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
-var _ file.Template = &CertManager{}
+var _ file.Template = &Certificate{}
 
-// CertManager scaffolds an issuer CR and a certificate CR
-type CertManager struct {
+// Certificate scaffolds a file that defines the issuer CR and the certificate CR
+type Certificate struct {
 	file.TemplateMixin
 }
 
-// SetTemplateDefaults implements input.Template
-func (f *CertManager) SetTemplateDefaults() error {
+// SetTemplateDefaults implements file.Template
+func (f *Certificate) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "certmanager", "certificate.yaml")
 	}

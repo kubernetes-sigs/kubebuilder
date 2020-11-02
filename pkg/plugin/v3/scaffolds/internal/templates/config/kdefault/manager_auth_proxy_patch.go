@@ -22,16 +22,15 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
-var _ file.Template = &AuthProxyPatch{}
+var _ file.Template = &ManagerAuthProxyPatch{}
 
-// AuthProxyPatch scaffolds the patch file for enabling
-// prometheus metrics for manager Pod.
-type AuthProxyPatch struct {
+// ManagerAuthProxyPatch scaffolds a file that defines the patch that enables prometheus metrics for the manager
+type ManagerAuthProxyPatch struct {
 	file.TemplateMixin
 }
 
-// SetTemplateDefaults implements input.Template
-func (f *AuthProxyPatch) SetTemplateDefaults() error {
+// SetTemplateDefaults implements file.Template
+func (f *ManagerAuthProxyPatch) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "default", "manager_auth_proxy_patch.yaml")
 	}

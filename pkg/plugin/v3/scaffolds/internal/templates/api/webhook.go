@@ -26,7 +26,7 @@ import (
 
 var _ file.Template = &Webhook{}
 
-// Webhook scaffolds a Webhook for a Resource
+// Webhook scaffolds the file that defines a webhook for a CRD or a builtin resource
 type Webhook struct { // nolint:maligned
 	file.TemplateMixin
 	file.MultiGroupMixin
@@ -42,7 +42,7 @@ type Webhook struct { // nolint:maligned
 	Validating bool
 }
 
-// SetTemplateDefaults implements input.Template
+// SetTemplateDefaults implements file.Template
 func (f *Webhook) SetTemplateDefaults() error {
 	if f.Path == "" {
 		if f.MultiGroup {
