@@ -29,7 +29,6 @@ var _ file.Inserter = &SuiteTest{}
 // SuiteTest scaffolds the suite_test.go file to setup the controller test
 type SuiteTest struct {
 	file.TemplateMixin
-	file.RepositoryMixin
 	file.MultiGroupMixin
 	file.BoilerplateMixin
 	file.ResourceMixin
