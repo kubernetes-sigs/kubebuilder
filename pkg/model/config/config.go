@@ -25,7 +25,6 @@ import (
 
 // Scaffolding versions
 const (
-	Version1      = "1"
 	Version2      = "2"
 	Version3Alpha = "3-alpha"
 )
@@ -65,11 +64,6 @@ type PluginConfigs map[string]pluginConfig
 // pluginConfig is an arbitrary plugin configuration object.
 type pluginConfig interface{}
 
-// IsV1 returns true if it is a v1 project
-func (c Config) IsV1() bool {
-	return c.Version == Version1
-}
-
 // IsV2 returns true if it is a v2 project
 func (c Config) IsV2() bool {
 	return c.Version == Version2
@@ -97,11 +91,6 @@ func (c Config) HasResource(target GVK) bool {
 // It returns if the configuration was modified
 // NOTE: in v1 resources are not tracked, so we return false
 func (c *Config) AddResource(gvk GVK) bool {
-	// Short-circuit v1
-	if c.IsV1() {
-		return false
-	}
-
 	// No-op if the resource was already tracked, return false
 	if c.HasResource(gvk) {
 		return false
