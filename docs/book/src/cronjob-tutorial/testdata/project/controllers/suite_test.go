@@ -116,6 +116,7 @@ var _ = BeforeSuite(func(done Done) {
 
 	err = (&CronJobReconciler{
 		Client: k8sManager.GetClient(),
+		Scheme: k8sManager.GetScheme(),
 		Log:    ctrl.Log.WithName("controllers").WithName("CronJob"),
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
