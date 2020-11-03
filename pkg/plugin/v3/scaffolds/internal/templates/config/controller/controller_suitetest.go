@@ -27,6 +27,7 @@ var _ file.Template = &SuiteTest{}
 var _ file.Inserter = &SuiteTest{}
 
 // SuiteTest scaffolds the suite_test.go file to setup the controller test
+// nolint:maligned
 type SuiteTest struct {
 	file.TemplateMixin
 	file.MultiGroupMixin
@@ -35,6 +36,9 @@ type SuiteTest struct {
 
 	// CRDDirectoryRelativePath define the Path for the CRD when it is multigroup
 	CRDDirectoryRelativePath string
+
+	// WireResource defines the api resources are generated or not.
+	WireResource bool
 }
 
 // SetTemplateDefaults implements file.Template
@@ -91,11 +95,15 @@ func (f *SuiteTest) GetCodeFragments() file.CodeFragmentsMap {
 
 	// Generate import code fragments
 	imports := make([]string, 0)
-	imports = append(imports, fmt.Sprintf(apiImportCodeFragment, f.Resource.ImportAlias, f.Resource.Package))
+	if f.WireResource {
+		imports = append(imports, fmt.Sprintf(apiImportCodeFragment, f.Resource.ImportAlias, f.Resource.Package))
+	}
 
 	// Generate add scheme code fragments
 	addScheme := make([]string, 0)
-	addScheme = append(addScheme, fmt.Sprintf(addschemeCodeFragment, f.Resource.ImportAlias))
+	if f.WireResource {
+		addScheme = append(addScheme, fmt.Sprintf(addschemeCodeFragment, f.Resource.ImportAlias))
+	}
 
 	// Only store code fragments in the map if the slices are non-empty
 	if len(imports) != 0 {

@@ -26,6 +26,7 @@ import (
 var _ file.Template = &Controller{}
 
 // Controller scaffolds a Controller for a Resource
+// nolint:maligned
 type Controller struct {
 	file.TemplateMixin
 	file.MultiGroupMixin
@@ -33,6 +34,9 @@ type Controller struct {
 	file.ResourceMixin
 
 	ControllerRuntimeVersion string
+
+	// WireResource defines the api resources are generated or not.
+	WireResource bool
 }
 
 // SetTemplateDefaults implements input.Template
@@ -69,7 +73,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	{{ if .WireResource -}}
 	{{ .Resource.ImportAlias }} "{{ .Resource.Package }}"
+	{{- end }}
 )
 
 // {{ .Resource.Kind }}Reconciler reconciles a {{ .Resource.Kind }} object
@@ -104,7 +110,12 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(req ctrl.Request) (ctrl.Resul
 // SetupWithManager sets up the controller with the Manager.
 func (r *{{ .Resource.Kind }}Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
+		{{ if .WireResource -}}
 		For(&{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{}).
+		{{- else -}}
+		// Uncomment the following line adding a pointer to an instance of the controlled resource as an argument
+		// For().
+		{{- end }}
 		Complete(r)
 }
 `
