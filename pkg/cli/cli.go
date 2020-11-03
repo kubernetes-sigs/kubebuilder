@@ -66,6 +66,9 @@ type cli struct {
 	// Whether the command is requesting help.
 	doGenericHelp bool
 
+	// Whether to add a completion command to the cli
+	completionCommand bool
+
 	// Plugins injected by options.
 	pluginsFromOptions map[string][]plugin.Base
 	// Default plugins injected by options. Only one plugin per project version
@@ -171,6 +174,12 @@ func WithExtraCommands(cmds ...*cobra.Command) Option {
 		c.extraCommands = append(c.extraCommands, cmds...)
 		return nil
 	}
+}
+
+// WithCompletion is an Option that adds the completion subcommand.
+func WithCompletion(c *cli) error {
+	c.completionCommand = true
+	return nil
 }
 
 // initialize initializes the cli.
@@ -343,6 +352,12 @@ func (c cli) buildRootCmd() *cobra.Command {
 	// Only add alpha group if it has subcommands
 	if alphaCmd.HasSubCommands() {
 		rootCmd.AddCommand(alphaCmd)
+	}
+
+	// kubebuilder completion
+	// Only add completion if requested
+	if c.completionCommand {
+		rootCmd.AddCommand(c.newCompletionCmd())
 	}
 
 	// kubebuilder create

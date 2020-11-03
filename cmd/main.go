@@ -35,9 +35,9 @@ func main() {
 			&pluginv2.Plugin{},
 		),
 		cli.WithExtraCommands(
-			newCompletionCmd(),
 			version.NewCmd(),
 		),
+		cli.WithCompletion,
 	)
 	if err != nil {
 		log.Fatal(err)
