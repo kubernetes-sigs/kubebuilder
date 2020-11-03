@@ -14,52 +14,42 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package templates
+package rbac
 
 import (
+	"path/filepath"
+
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
-var _ file.Template = &GitIgnore{}
+var _ file.Template = &LeaderElectionRoleBinding{}
 
-// GitIgnore scaffolds a file that defines which files should be ignored by git
-type GitIgnore struct {
+// LeaderElectionRoleBinding scaffolds a file that defines the role binding that allows leader election
+type LeaderElectionRoleBinding struct {
 	file.TemplateMixin
 }
 
 // SetTemplateDefaults implements file.Template
-func (f *GitIgnore) SetTemplateDefaults() error {
+func (f *LeaderElectionRoleBinding) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = ".gitignore"
+		f.Path = filepath.Join("config", "rbac", "leader_election_role_binding.yaml")
 	}
 
-	f.TemplateBody = gitignoreTemplate
+	f.TemplateBody = leaderElectionRoleBindingTemplate
 
 	return nil
 }
 
-const gitignoreTemplate = `
-# Binaries for programs and plugins
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
-bin
-
-# Test binary, build with ` + "`go test -c`" + `
-*.test
-
-# Output of the go coverage tool, specifically when used with LiteIDE
-*.out
-
-# Kubernetes Generated files - skip generated files, except for vendored files
-
-!vendor/**/zz_generated.*
-
-# editor and IDE paraphernalia
-.idea
-*.swp
-*.swo
-*~
+const leaderElectionRoleBindingTemplate = `apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: leader-election-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: leader-election-role
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: system
 `

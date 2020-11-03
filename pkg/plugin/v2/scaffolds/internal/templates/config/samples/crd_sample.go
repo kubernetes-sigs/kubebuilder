@@ -14,52 +14,41 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package templates
+package samples
 
 import (
+	"path/filepath"
+
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
-var _ file.Template = &GitIgnore{}
+var _ file.Template = &CRDSample{}
 
-// GitIgnore scaffolds a file that defines which files should be ignored by git
-type GitIgnore struct {
+// CRDSample scaffolds a file that defines a sample manifest for the CRD
+type CRDSample struct {
 	file.TemplateMixin
+	file.ResourceMixin
 }
 
 // SetTemplateDefaults implements file.Template
-func (f *GitIgnore) SetTemplateDefaults() error {
+func (f *CRDSample) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = ".gitignore"
+		f.Path = filepath.Join("config", "samples", "%[group]_%[version]_%[kind].yaml")
 	}
+	f.Path = f.Resource.Replacer().Replace(f.Path)
 
-	f.TemplateBody = gitignoreTemplate
+	f.IfExistsAction = file.Error
+
+	f.TemplateBody = crdSampleTemplate
 
 	return nil
 }
 
-const gitignoreTemplate = `
-# Binaries for programs and plugins
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
-bin
-
-# Test binary, build with ` + "`go test -c`" + `
-*.test
-
-# Output of the go coverage tool, specifically when used with LiteIDE
-*.out
-
-# Kubernetes Generated files - skip generated files, except for vendored files
-
-!vendor/**/zz_generated.*
-
-# editor and IDE paraphernalia
-.idea
-*.swp
-*.swo
-*~
+const crdSampleTemplate = `apiVersion: {{ .Resource.Domain }}/{{ .Resource.Version }}
+kind: {{ .Resource.Kind }}
+metadata:
+  name: {{ lower .Resource.Kind }}-sample
+spec:
+  # Add fields here
+  foo: bar
 `

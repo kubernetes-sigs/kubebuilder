@@ -30,7 +30,7 @@ const defaultMainPath = "main.go"
 var _ file.Template = &Main{}
 var _ file.UseCustomFuncMap = &Main{}
 
-// Main scaffolds the controller manager entry point
+// Main scaffolds a file that defines the controller manager entry point
 type Main struct {
 	file.TemplateMixin
 	file.BoilerplateMixin
@@ -80,12 +80,12 @@ type MainUpdater struct { //nolint:maligned
 	WireResource, WireController, WireWebhook bool
 }
 
-// GetPath implements Builder
+// GetPath implements file.Builder
 func (*MainUpdater) GetPath() string {
 	return defaultMainPath
 }
 
-// GetIfExistsAction implements Builder
+// GetIfExistsAction implements file.Builder
 func (*MainUpdater) GetIfExistsAction() file.IfExistsAction {
 	return file.Overwrite
 }

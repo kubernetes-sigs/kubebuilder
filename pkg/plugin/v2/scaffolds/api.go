@@ -25,8 +25,12 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/plugin/internal/machinery"
 	"sigs.k8s.io/kubebuilder/pkg/plugin/scaffold"
 	"sigs.k8s.io/kubebuilder/pkg/plugin/v2/scaffolds/internal/templates"
-	"sigs.k8s.io/kubebuilder/pkg/plugin/v2/scaffolds/internal/templates/controller"
-	"sigs.k8s.io/kubebuilder/pkg/plugin/v2/scaffolds/internal/templates/crd"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/v2/scaffolds/internal/templates/api"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/v2/scaffolds/internal/templates/config/crd"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/v2/scaffolds/internal/templates/config/crd/patches"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/v2/scaffolds/internal/templates/config/rbac"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/v2/scaffolds/internal/templates/config/samples"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/v2/scaffolds/internal/templates/controllers"
 )
 
 // KbDeclarativePattern is the sigs.k8s.io/kubebuilder-declarative-pattern version
@@ -93,13 +97,13 @@ func (s *apiScaffolder) scaffold() error {
 
 		if err := machinery.NewScaffold(s.plugins...).Execute(
 			s.newUniverse(),
-			&templates.Types{},
-			&templates.Group{},
-			&templates.CRDSample{},
-			&templates.CRDEditorRole{},
-			&templates.CRDViewerRole{},
-			&crd.EnableWebhookPatch{},
-			&crd.EnableCAInjectionPatch{},
+			&api.Types{},
+			&api.Group{},
+			&samples.CRDSample{},
+			&rbac.CRDEditorRole{},
+			&rbac.CRDViewerRole{},
+			&patches.EnableWebhookPatch{},
+			&patches.EnableCAInjectionPatch{},
 		); err != nil {
 			return fmt.Errorf("error scaffolding APIs: %v", err)
 		}
@@ -117,8 +121,8 @@ func (s *apiScaffolder) scaffold() error {
 	if s.doController {
 		if err := machinery.NewScaffold(s.plugins...).Execute(
 			s.newUniverse(),
-			&controller.SuiteTest{WireResource: s.doResource},
-			&controller.Controller{WireResource: s.doResource},
+			&controllers.SuiteTest{WireResource: s.doResource},
+			&controllers.Controller{WireResource: s.doResource},
 		); err != nil {
 			return fmt.Errorf("error scaffolding controller: %v", err)
 		}
