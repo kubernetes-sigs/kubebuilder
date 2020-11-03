@@ -1,5 +1,5 @@
 /*
-Copyright 2017 The Kubernetes Authors.
+Copyright 2020 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,33 +14,23 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package cli
 
 import (
-	"log"
+	"fmt"
 
-	"sigs.k8s.io/kubebuilder/v2/pkg/cli"
-	pluginv2 "sigs.k8s.io/kubebuilder/v2/pkg/plugin/v2"
-	pluginv3 "sigs.k8s.io/kubebuilder/v2/pkg/plugin/v3"
+	"github.com/spf13/cobra"
 )
 
-func main() {
-	c, err := cli.New(
-		cli.WithCommandName("kubebuilder"),
-		cli.WithVersion(versionString()),
-		cli.WithPlugins(
-			&pluginv2.Plugin{},
-			&pluginv3.Plugin{},
-		),
-		cli.WithDefaultPlugins(
-			&pluginv2.Plugin{},
-		),
-		cli.WithCompletion,
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if err := c.Run(); err != nil {
-		log.Fatal(err)
+func (c *cli) newVersionCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:     "version",
+		Short:   fmt.Sprintf("Print the %s version", c.commandName),
+		Long:    fmt.Sprintf("Print the %s version", c.commandName),
+		Example: fmt.Sprintf("%s version", c.commandName),
+		RunE: func(_ *cobra.Command, _ []string) error {
+			fmt.Println(c.version)
+			return nil
+		},
 	}
 }

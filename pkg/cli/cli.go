@@ -57,6 +57,9 @@ type Option func(*cli) error
 type cli struct {
 	// Root command name. Can be injected downstream.
 	commandName string
+	// CLI version string
+	version string
+
 	// Default project version. Used in CLI flag setup.
 	defaultProjectVersion string
 	// Project version to scaffold.
@@ -114,6 +117,14 @@ func (c cli) Run() error {
 func WithCommandName(name string) Option {
 	return func(c *cli) error {
 		c.commandName = name
+		return nil
+	}
+}
+
+// WithVersion is an Option that defines the version string of the cli.
+func WithVersion(version string) Option {
+	return func(c *cli) error {
+		c.version = version
 		return nil
 	}
 }
@@ -363,8 +374,15 @@ func (c cli) buildRootCmd() *cobra.Command {
 
 	// kubebuilder edit
 	rootCmd.AddCommand(c.newEditCmd())
+
 	// kubebuilder init
 	rootCmd.AddCommand(c.newInitCmd())
+
+	// kubebuilder version
+	// Only add version if a version string was provided
+	if c.version != "" {
+		rootCmd.AddCommand(c.newVersionCmd())
+	}
 
 	return rootCmd
 }
@@ -416,7 +434,6 @@ After the scaffold is written, api will run make on the project.
   make run
 `,
 			c.commandName, c.commandName),
-
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := cmd.Help(); err != nil {
 				log.Fatal(err)

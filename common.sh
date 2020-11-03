@@ -149,8 +149,8 @@ function build_kb {
   if [ "$INJECT_KB_VERSION" = "unknown" ]; then
     opts=""
   else
-    # TODO: what does this thing do.
-    opts=-ldflags "-X sigs.k8s.io/kubebuilder/v2/cmd/version.kubeBuilderVersion=$INJECT_KB_VERSION"
+    # Injects the version into the cmd/version.go file
+    opts=-ldflags "-X sigs.k8s.io/kubebuilder/v2/cmd.kubeBuilderVersion=$INJECT_KB_VERSION"
   fi
 
   GO111MODULE=on go build $opts -o $tmp_root/kubebuilder/bin/kubebuilder ./cmd
