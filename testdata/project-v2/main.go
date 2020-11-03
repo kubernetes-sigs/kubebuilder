@@ -103,6 +103,14 @@ func main() {
 		setupLog.Error(err, "unable to create webhook", "webhook", "Admiral")
 		os.Exit(1)
 	}
+	if err = (&controllers.LakerReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("Laker"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Laker")
+		os.Exit(1)
+	}
 	// +kubebuilder:scaffold:builder
 
 	setupLog.Info("starting manager")

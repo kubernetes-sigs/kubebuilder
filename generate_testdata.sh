@@ -65,6 +65,7 @@ scaffold_test_project() {
             $kb create webhook --group crew --version v1 --kind FirstMate --conversion
             $kb create api --group crew --version v1 --kind Admiral --controller=true --resource=true --namespaced=false --make=false
             $kb create webhook --group crew --version v1 --kind Admiral --defaulting
+            $kb create api --group crew --version v1 --kind Laker --controller=true --resource=false --make=false
         elif [ $project == "project-v2-multigroup" ] || [ $project == "project-v3-multigroup" ]; then
             header_text 'Switching to multigroup layout ...'
             $kb edit --multigroup=true
@@ -81,6 +82,7 @@ scaffold_test_project() {
             $kb create api --group sea-creatures --version v1beta1 --kind Kraken --controller=true --resource=true --make=false
             $kb create api --group sea-creatures --version v1beta2 --kind Leviathan --controller=true --resource=true --make=false
             $kb create api --group foo.policy --version v1 --kind HealthCheckPolicy --controller=true --resource=true --make=false
+            $kb create api --group apps --version v1 --kind Pod --controller=true --resource=false --make=false
             if [ $project == "project-v3-multigroup" ]; then
               $kb create api --version v1 --kind Lakers --controller=true --resource=true --make=false
               $kb create webhook --version v1 --kind Lakers --defaulting --programmatic-validation

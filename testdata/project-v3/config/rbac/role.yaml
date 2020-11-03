@@ -84,3 +84,29 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - crew.testproject.org
+  resources:
+  - lakers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - crew.testproject.org
+  resources:
+  - lakers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - crew.testproject.org
+  resources:
+  - lakers/status
+  verbs:
+  - get
+  - patch
+  - update

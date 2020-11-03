@@ -39,6 +39,7 @@ import (
 	shipv2alpha1 "sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/apis/ship/v2alpha1"
 	testprojectorgv1 "sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/apis/v1"
 	"sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/controllers"
+	appscontrollers "sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/controllers/apps"
 	crewcontrollers "sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/controllers/crew"
 	foopolicycontrollers "sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/controllers/foo.policy"
 	seacreaturescontrollers "sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/controllers/sea-creatures"
@@ -163,6 +164,14 @@ func main() {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "HealthCheckPolicy")
+		os.Exit(1)
+	}
+	if err = (&appscontrollers.PodReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("apps").WithName("Pod"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Pod")
 		os.Exit(1)
 	}
 	if err = (&controllers.LakersReconciler{

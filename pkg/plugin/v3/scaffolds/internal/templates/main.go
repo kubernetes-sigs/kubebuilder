@@ -150,7 +150,10 @@ func (f *MainUpdater) GetCodeFragments() file.CodeFragmentsMap {
 
 	// Generate import code fragments
 	imports := make([]string, 0)
-	imports = append(imports, fmt.Sprintf(apiImportCodeFragment, f.Resource.ImportAlias, f.Resource.Package))
+	if f.WireResource {
+		imports = append(imports, fmt.Sprintf(apiImportCodeFragment, f.Resource.ImportAlias, f.Resource.Package))
+	}
+
 	if f.WireController {
 		if !f.MultiGroup || f.Resource.Group == "" {
 			imports = append(imports, fmt.Sprintf(controllerImportCodeFragment, f.Repo))
@@ -162,7 +165,9 @@ func (f *MainUpdater) GetCodeFragments() file.CodeFragmentsMap {
 
 	// Generate add scheme code fragments
 	addScheme := make([]string, 0)
-	addScheme = append(addScheme, fmt.Sprintf(addschemeCodeFragment, f.Resource.ImportAlias))
+	if f.WireResource {
+		addScheme = append(addScheme, fmt.Sprintf(addschemeCodeFragment, f.Resource.ImportAlias))
+	}
 
 	// Generate setup code fragments
 	setup := make([]string, 0)
