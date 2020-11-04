@@ -66,6 +66,9 @@ type cli struct {
 	// Whether the command is requesting help.
 	doGenericHelp bool
 
+	// Whether to add a completion command to the cli
+	completionCommand bool
+
 	// Plugins injected by options.
 	pluginsFromOptions map[string][]plugin.Base
 	// Default plugins injected by options. Only one plugin per project version
@@ -173,6 +176,12 @@ func WithExtraCommands(cmds ...*cobra.Command) Option {
 	}
 }
 
+// WithCompletion is an Option that adds the completion subcommand.
+func WithCompletion(c *cli) error {
+	c.completionCommand = true
+	return nil
+}
+
 // initialize initializes the cli.
 func (c *cli) initialize() error {
 	// Initialize cli with globally-relevant flags or flags that determine
@@ -193,8 +202,8 @@ func (c *cli) initialize() error {
 		c.configured = true
 		c.projectVersion = projectConfig.Version
 
-		if projectConfig.IsV1() {
-			return fmt.Errorf(noticeColor, "project version 1 is no longer supported.\n"+
+		if !internalconfig.IsVersionSupported(c.projectVersion) {
+			return fmt.Errorf(noticeColor, fmt.Sprintf("project version %q is no longer supported.\n", projectConfig.Version)+
 				"See how to upgrade your project: https://book.kubebuilder.io/migration/guide.html\n")
 		}
 	} else {
@@ -343,6 +352,12 @@ func (c cli) buildRootCmd() *cobra.Command {
 	// Only add alpha group if it has subcommands
 	if alphaCmd.HasSubCommands() {
 		rootCmd.AddCommand(alphaCmd)
+	}
+
+	// kubebuilder completion
+	// Only add completion if requested
+	if c.completionCommand {
+		rootCmd.AddCommand(c.newCompletionCmd())
 	}
 
 	// kubebuilder create

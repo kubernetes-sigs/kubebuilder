@@ -244,6 +244,23 @@ var _ = Describe("CLI", func() {
 				Expect(c.(*cli).extraCommands[0].Use).To(Equal(commandTest.Use))
 			})
 		})
+
+		Context("WithCompletion", func() {
+			It("should add the completion command if requested", func() {
+				By("not providing WithCompletion")
+				c, err = New(WithDefaultPlugins(pluginAV1), WithPlugins(allPlugins...))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(c).NotTo(BeNil())
+				Expect(c.(*cli).completionCommand).To(BeFalse())
+
+				By("providing WithCompletion")
+				c, err = New(WithCompletion, WithDefaultPlugins(pluginAV1), WithPlugins(allPlugins...))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(c).NotTo(BeNil())
+				Expect(c.(*cli).completionCommand).To(BeTrue())
+			})
+		})
+
 	})
 
 })
