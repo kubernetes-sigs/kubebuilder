@@ -1,5 +1,5 @@
 # Enabling shell autocompletion
-The Kubebuilder completion script for Bash can be generated with the command `kubebuilder completion bash` as the Kubebuilder completion script for Zsh can be generated with the command `kubebuilder completion zsh`. 
+The Kubebuilder completion script can be generated with the command `kubebuilder completion [bash|zsh|powershell]`. 
 Note that sourcing the completion script in your shell enables Kubebuilder autocompletion. 
 
 <aside class="note">
