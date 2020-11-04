@@ -154,7 +154,7 @@ func TestAPIs(t *testing.T) {
 	[]Reporter{printer.NewlineReporter{}})
 }
 
-var _ = BeforeSuite(func(done Done) {
+var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 
 	By("bootstrapping test environment")
@@ -165,8 +165,7 @@ var _ = BeforeSuite(func(done Done) {
 		},
 	}
 
-	var err error
-	cfg, err = testEnv.Start()
+	cfg, err := testEnv.Start()
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
@@ -213,7 +212,6 @@ var _ = BeforeSuite(func(done Done) {
 		return nil
 	}).Should(Succeed())
 
-	close(done)
 }, 60)
 
 var _ = AfterSuite(func() {
