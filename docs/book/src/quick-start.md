@@ -236,10 +236,11 @@ make undeploy
 
 ## Next Step 
 
-Now, follow up the [CronJob tutorial][cronjob-tutorial] to better understand how it works by developing a demo example project. 
+Now, see the [architecture concept diagram][architecture-concept-diagram] for a better overview and follow up the [CronJob tutorial][cronjob-tutorial] to better understand how it works by developing a demo example project. 
 
 [pre-rbc-gke]: https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#iam-rolebinding-bootstrap
 [cronjob-tutorial]: https://book.kubebuilder.io/cronjob-tutorial/cronjob-tutorial.html
 [GOPATH-golang-docs]: https://golang.org/doc/code.html#GOPATH
 [how-to-write-go-code-golang-docs]: https://golang.org/doc/code.html 
 [envtest]: https://book.kubebuilder.io/reference/testing/envtest.html
+[architecture-concept-diagram]: architecture.md
