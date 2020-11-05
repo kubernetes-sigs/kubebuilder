@@ -136,19 +136,26 @@ func (c Config) Marshal() ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error marshalling project configuration: %v", err)
 	}
+
 	// Empty config strings are "{}" due to the map field.
 	if strings.TrimSpace(string(content)) == "{}" {
 		content = []byte{}
 	}
-	// Append extra fields to put them at the config's bottom, unless the
-	// project version is < v3 which do not support a plugins field.
-	if cfg.IsV3() && len(c.Plugins) != 0 {
+
+	// Append extra fields to put them at the config's bottom.
+	if len(c.Plugins) != 0 {
+		// Unless the project version is v2 which does not support a plugins field.
+		if cfg.IsV2() {
+			return nil, fmt.Errorf("error marshalling project configuration: plugin field found for v2")
+		}
+
 		pluginConfigBytes, err := yaml.Marshal(Config{Plugins: c.Plugins})
 		if err != nil {
 			return nil, fmt.Errorf("error marshalling project configuration extra fields: %v", err)
 		}
 		content = append(content, pluginConfigBytes...)
 	}
+
 	return content, nil
 }
 
@@ -157,6 +164,7 @@ func (c *Config) Unmarshal(b []byte) error {
 	if err := yaml.UnmarshalStrict(b, c); err != nil {
 		return fmt.Errorf("error unmarshalling project configuration: %v", err)
 	}
+
 	// Project versions < v3 do not support a plugins field.
 	if !c.IsV3() {
 		c.Plugins = nil

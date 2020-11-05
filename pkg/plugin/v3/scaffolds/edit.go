@@ -22,10 +22,10 @@ import (
 	"strings"
 
 	"sigs.k8s.io/kubebuilder/pkg/model/config"
-	"sigs.k8s.io/kubebuilder/pkg/plugin/scaffold"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/internal/cmdutil"
 )
 
-var _ scaffold.Scaffolder = &editScaffolder{}
+var _ cmdutil.Scaffolder = &editScaffolder{}
 
 type editScaffolder struct {
 	config     *config.Config
@@ -33,7 +33,7 @@ type editScaffolder struct {
 }
 
 // NewEditScaffolder returns a new Scaffolder for configuration edit operations
-func NewEditScaffolder(config *config.Config, multigroup bool) scaffold.Scaffolder {
+func NewEditScaffolder(config *config.Config, multigroup bool) cmdutil.Scaffolder {
 	return &editScaffolder{
 		config:     config,
 		multigroup: multigroup,

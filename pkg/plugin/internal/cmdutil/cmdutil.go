@@ -16,16 +16,18 @@ limitations under the License.
 
 package cmdutil
 
-import (
-	"sigs.k8s.io/kubebuilder/pkg/plugin/scaffold"
-)
+// Scaffolder interface creates files to set up a controller manager
+type Scaffolder interface {
+	// Scaffold performs the scaffolding
+	Scaffold() error
+}
 
 // RunOptions represent the types used to implement the different commands
 type RunOptions interface {
 	// - Step 1: verify that the command can be run (e.g., go version, project version, arguments, ...)
 	Validate() error
 	// - Step 2: create the Scaffolder instance
-	GetScaffolder() (scaffold.Scaffolder, error)
+	GetScaffolder() (Scaffolder, error)
 	// - Step 3: call the Scaffold method of the Scaffolder instance. Doesn't need any method
 	// - Step 4: finish the command execution
 	PostScaffold() error

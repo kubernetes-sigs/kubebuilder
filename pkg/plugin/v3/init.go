@@ -25,12 +25,11 @@ import (
 
 	"github.com/spf13/pflag"
 
-	"sigs.k8s.io/kubebuilder/internal/cmdutil"
 	"sigs.k8s.io/kubebuilder/pkg/internal/validation"
 	"sigs.k8s.io/kubebuilder/pkg/model/config"
 	"sigs.k8s.io/kubebuilder/pkg/plugin"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/internal/cmdutil"
 	"sigs.k8s.io/kubebuilder/pkg/plugin/internal/util"
-	"sigs.k8s.io/kubebuilder/pkg/plugin/scaffold"
 	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds"
 )
 
@@ -141,7 +140,7 @@ func (p *initSubcommand) Validate() error {
 	return nil
 }
 
-func (p *initSubcommand) GetScaffolder() (scaffold.Scaffolder, error) {
+func (p *initSubcommand) GetScaffolder() (cmdutil.Scaffolder, error) {
 	return scaffolds.NewInitScaffolder(p.config, p.license, p.owner), nil
 }
 

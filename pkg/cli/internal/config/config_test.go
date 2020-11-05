@@ -36,7 +36,7 @@ var _ = Describe("Config", func() {
 		It("should save correctly", func() {
 
 			By("saving empty config")
-			Expect(cfg.Save()).To(HaveOccurred())
+			Expect(cfg.Save()).NotTo(Succeed())
 
 			By("saving empty config with path")
 			cfg = Config{
@@ -89,7 +89,7 @@ version: "2"
 			}
 			expectedConfigStr = `domain: example.com
 repo: github.com/example/project
-version: "3-alpha"
+version: 3-alpha
 plugins:
   plugin-x:
     data-1: single plugin datum
@@ -108,12 +108,13 @@ plugins:
 
 		It("should load correctly", func() {
 			var (
-				fs             = afero.NewMemMapFs()
+				fs             afero.Fs
 				configStr      string
 				expectedConfig config.Config
 			)
 
 			By("loading config version 2")
+			fs = afero.NewMemMapFs()
 			configStr = `domain: example.com
 repo: github.com/example/project
 version: "2"`
@@ -122,17 +123,16 @@ version: "2"`
 				Repo:    "github.com/example/project",
 				Domain:  "example.com",
 			}
-			err := afero.WriteFile(fs, DefaultPath, []byte(configStr), os.ModePerm)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(afero.WriteFile(fs, DefaultPath, []byte(configStr), os.ModePerm)).To(Succeed())
 			cfg, err := readFrom(fs, DefaultPath)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(cfg).To(BeEquivalentTo(expectedConfig))
+			Expect(cfg).To(Equal(expectedConfig))
 
 			By("loading config version 3-alpha with plugin config")
 			fs = afero.NewMemMapFs()
 			configStr = `domain: example.com
 repo: github.com/example/project
-version: "3-alpha"
+version: 3-alpha
 plugins:
   plugin-x:
     data-1: single plugin datum
@@ -143,7 +143,7 @@ plugins:
     - "plugin value 3"
     - "plugin value 4"`
 			expectedConfig = config.Config{
-				Version: config.Version2,
+				Version: config.Version3Alpha,
 				Repo:    "github.com/example/project",
 				Domain:  "example.com",
 				Plugins: config.PluginConfigs{
@@ -157,8 +157,7 @@ plugins:
 					},
 				},
 			}
-			err = afero.WriteFile(fs, DefaultPath, []byte(configStr), os.ModePerm)
-			Expect(err).ToNot(HaveOccurred())
+			Expect(afero.WriteFile(fs, DefaultPath, []byte(configStr), os.ModePerm)).To(Succeed())
 			cfg, err = readFrom(fs, DefaultPath)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(cfg).To(Equal(expectedConfig))
@@ -186,22 +185,16 @@ plugins:
 		})
 
 		It("should return a load error", func() {
-			var (
-				fs        afero.Fs
-				configStr string
-				err       error
-			)
 			By("loading config version 2 with plugin config")
-			fs = afero.NewMemMapFs()
-			configStr = `domain: example.com
+			fs := afero.NewMemMapFs()
+			configStr := `domain: example.com
 repo: github.com/example/project
-version: "3-alpha"
+version: "2"
 plugins:
 	plugin-x:
 		data-1: single plugin datum`
-			err = afero.WriteFile(fs, DefaultPath, []byte(configStr), os.ModePerm)
-			Expect(err).ToNot(HaveOccurred())
-			_, err = readFrom(fs, DefaultPath)
+			Expect(afero.WriteFile(fs, DefaultPath, []byte(configStr), os.ModePerm)).To(Succeed())
+			_, err := readFrom(fs, DefaultPath)
 			Expect(err).To(HaveOccurred())
 		})
 	})

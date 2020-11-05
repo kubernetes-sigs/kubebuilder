@@ -22,8 +22,8 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/model"
 	"sigs.k8s.io/kubebuilder/pkg/model/config"
 	"sigs.k8s.io/kubebuilder/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/internal/cmdutil"
 	"sigs.k8s.io/kubebuilder/pkg/plugin/internal/machinery"
-	"sigs.k8s.io/kubebuilder/pkg/plugin/scaffold"
 	"sigs.k8s.io/kubebuilder/pkg/plugin/v2/scaffolds/internal/templates"
 	"sigs.k8s.io/kubebuilder/pkg/plugin/v2/scaffolds/internal/templates/api"
 	"sigs.k8s.io/kubebuilder/pkg/plugin/v2/scaffolds/internal/templates/config/crd"
@@ -37,7 +37,7 @@ import (
 // (used only to gen api with --pattern=addon)
 const KbDeclarativePattern = "v0.0.0-20200522144838-848d48e5b073"
 
-var _ scaffold.Scaffolder = &apiScaffolder{}
+var _ cmdutil.Scaffolder = &apiScaffolder{}
 
 // apiScaffolder contains configuration for generating scaffolding for Go type
 // representing the API and controller that implements the behavior for the API.
@@ -60,7 +60,7 @@ func NewAPIScaffolder(
 	res *resource.Resource,
 	doResource, doController bool,
 	plugins []model.Plugin,
-) scaffold.Scaffolder {
+) cmdutil.Scaffolder {
 	return &apiScaffolder{
 		config:       config,
 		boilerplate:  boilerplate,

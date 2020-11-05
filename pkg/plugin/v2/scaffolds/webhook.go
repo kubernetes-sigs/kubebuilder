@@ -22,13 +22,13 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/model"
 	"sigs.k8s.io/kubebuilder/pkg/model/config"
 	"sigs.k8s.io/kubebuilder/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/internal/cmdutil"
 	"sigs.k8s.io/kubebuilder/pkg/plugin/internal/machinery"
-	"sigs.k8s.io/kubebuilder/pkg/plugin/scaffold"
 	"sigs.k8s.io/kubebuilder/pkg/plugin/v2/scaffolds/internal/templates"
 	"sigs.k8s.io/kubebuilder/pkg/plugin/v2/scaffolds/internal/templates/api"
 )
 
-var _ scaffold.Scaffolder = &webhookScaffolder{}
+var _ cmdutil.Scaffolder = &webhookScaffolder{}
 
 type webhookScaffolder struct {
 	config      *config.Config
@@ -47,7 +47,7 @@ func NewWebhookScaffolder(
 	defaulting bool,
 	validation bool,
 	conversion bool,
-) scaffold.Scaffolder {
+) cmdutil.Scaffolder {
 	return &webhookScaffolder{
 		config:      config,
 		boilerplate: boilerplate,
