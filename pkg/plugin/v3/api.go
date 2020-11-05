@@ -46,7 +46,7 @@ const KbDeclarativePatternVersion = "v0.0.0-20200522144838-848d48e5b073"
 // DefaultMainPath is default file path of main.go
 const DefaultMainPath = "main.go"
 
-type createAPIPlugin struct {
+type createAPISubcommand struct {
 	config *config.Config
 
 	// pattern indicates that we should use a plugin to build according to a pattern
@@ -68,11 +68,11 @@ type createAPIPlugin struct {
 }
 
 var (
-	_ plugin.CreateAPI   = &createAPIPlugin{}
-	_ cmdutil.RunOptions = &createAPIPlugin{}
+	_ plugin.CreateAPISubcommand = &createAPISubcommand{}
+	_ cmdutil.RunOptions         = &createAPISubcommand{}
 )
 
-func (p createAPIPlugin) UpdateContext(ctx *plugin.Context) {
+func (p createAPISubcommand) UpdateContext(ctx *plugin.Context) {
 	ctx.Description = `Scaffold a Kubernetes API by creating a Resource definition and / or a Controller.
 
 create resource will prompt the user for if it should scaffold the Resource and / or Controller.  To only
@@ -102,7 +102,7 @@ After the scaffold is written, api will run make on the project.
 		ctx.CommandName)
 }
 
-func (p *createAPIPlugin) BindFlags(fs *pflag.FlagSet) {
+func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.runMake, "make", true, "if true, run make after generating files")
 
 	fs.BoolVar(&p.doResource, "resource", true,
@@ -127,15 +127,15 @@ func (p *createAPIPlugin) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.resource.Namespaced, "namespaced", true, "resource is namespaced")
 }
 
-func (p *createAPIPlugin) InjectConfig(c *config.Config) {
+func (p *createAPISubcommand) InjectConfig(c *config.Config) {
 	p.config = c
 }
 
-func (p *createAPIPlugin) Run() error {
+func (p *createAPISubcommand) Run() error {
 	return cmdutil.Run(p)
 }
 
-func (p *createAPIPlugin) Validate() error {
+func (p *createAPISubcommand) Validate() error {
 	if err := p.resource.Validate(); err != nil {
 		return err
 	}
@@ -178,7 +178,7 @@ func (p *createAPIPlugin) Validate() error {
 	return nil
 }
 
-func (p *createAPIPlugin) GetScaffolder() (scaffold.Scaffolder, error) {
+func (p *createAPISubcommand) GetScaffolder() (scaffold.Scaffolder, error) {
 	// Load the boilerplate
 	bp, err := ioutil.ReadFile(filepath.Join("hack", "boilerplate.go.txt")) // nolint:gosec
 	if err != nil {
@@ -201,7 +201,7 @@ func (p *createAPIPlugin) GetScaffolder() (scaffold.Scaffolder, error) {
 	return scaffolds.NewAPIScaffolder(p.config, string(bp), res, p.doResource, p.doController, plugins), nil
 }
 
-func (p *createAPIPlugin) PostScaffold() error {
+func (p *createAPISubcommand) PostScaffold() error {
 	// Load the requested plugins
 	switch strings.ToLower(p.pattern) {
 	case "":

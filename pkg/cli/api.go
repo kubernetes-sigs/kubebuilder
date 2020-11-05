@@ -56,18 +56,24 @@ func (c cli) newAPIContext() plugin.Context {
 
 // nolint:dupl
 func (c cli) bindCreateAPI(ctx plugin.Context, cmd *cobra.Command) {
-	var getter plugin.CreateAPIPluginGetter
+	var createAPIPlugin plugin.CreateAPI
 	for _, p := range c.resolvedPlugins {
-		tmpGetter, isGetter := p.(plugin.CreateAPIPluginGetter)
-		if isGetter {
-			if getter != nil {
-				err := fmt.Errorf("duplicate API creation plugins for project version %q (%s, %s), "+
-					"use a more specific plugin key", c.projectVersion, plugin.KeyFor(getter), plugin.KeyFor(p))
+		tmpPlugin, isValid := p.(plugin.CreateAPI)
+		if isValid {
+			if createAPIPlugin != nil {
+				err := fmt.Errorf("duplicate API creation plugins (%s, %s), use a more specific plugin key",
+					plugin.KeyFor(createAPIPlugin), plugin.KeyFor(p))
 				cmdErr(cmd, err)
 				return
 			}
-			getter = tmpGetter
+			createAPIPlugin = tmpPlugin
 		}
+	}
+
+	if createAPIPlugin == nil {
+		err := fmt.Errorf("relevant plugins do not provide an API creation plugin")
+		cmdErr(cmd, err)
+		return
 	}
 
 	cfg, err := config.LoadInitialized()
@@ -76,18 +82,12 @@ func (c cli) bindCreateAPI(ctx plugin.Context, cmd *cobra.Command) {
 		return
 	}
 
-	if getter == nil {
-		err := fmt.Errorf("layout plugin %q does not support an API creation plugin", cfg.Layout)
-		cmdErr(cmd, err)
-		return
-	}
-
-	createAPI := getter.GetCreateAPIPlugin()
-	createAPI.InjectConfig(&cfg.Config)
-	createAPI.BindFlags(cmd.Flags())
-	createAPI.UpdateContext(&ctx)
+	subcommand := createAPIPlugin.GetCreateAPISubcommand()
+	subcommand.InjectConfig(&cfg.Config)
+	subcommand.BindFlags(cmd.Flags())
+	subcommand.UpdateContext(&ctx)
 	cmd.Long = ctx.Description
 	cmd.Example = ctx.Examples
-	cmd.RunE = runECmdFunc(cfg, createAPI,
-		fmt.Sprintf("failed to create API with version %q", c.projectVersion))
+	cmd.RunE = runECmdFunc(cfg, subcommand,
+		fmt.Sprintf("failed to create API with %q", plugin.KeyFor(createAPIPlugin)))
 }

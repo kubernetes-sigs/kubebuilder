@@ -28,41 +28,35 @@ var (
 	pluginVersion            = plugin.Version{Number: 2}
 )
 
-var (
-	_ plugin.Base                      = Plugin{}
-	_ plugin.InitPluginGetter          = Plugin{}
-	_ plugin.CreateAPIPluginGetter     = Plugin{}
-	_ plugin.CreateWebhookPluginGetter = Plugin{}
-	_ plugin.EditPluginGetter          = Plugin{}
-)
+var _ plugin.Full = Plugin{}
 
-// Plugin defines the plugins operations for the v2 plugin version.
+// Plugin implements the plugin.Full interface
 type Plugin struct {
-	initPlugin
-	createAPIPlugin
-	createWebhookPlugin
-	editPlugin
+	initSubcommand
+	createAPISubcommand
+	createWebhookSubcommand
+	editSubcommand
 }
 
-// Name returns the name of the plugin for the v2 which is in this case `go.kubebuilder.io`
+// Name returns the name of the plugin
 func (Plugin) Name() string { return pluginName }
 
-// Version returns the version of the plugin which in this case is 2
+// Version returns the version of the plugin
 func (Plugin) Version() plugin.Version { return pluginVersion }
 
-// SupportedProjectVersions returns an array with all versions project versions are supported by the plugin
-// E.g a plugin can be used with projects that were built with the PROJECT version 3-alpha but not in the Project
-// version 2. See that the PROJECT version is defined in the attribute version of the PROJECT file.
+// SupportedProjectVersions returns an array with all project versions supported by the plugin
 func (Plugin) SupportedProjectVersions() []string { return supportedProjectVersions }
 
-// GetInitPlugin will return the plugin versions for v2 which is responsible for initialized and scaffold the project
-func (p Plugin) GetInitPlugin() plugin.Init { return &p.initPlugin }
+// GetInitSubcommand will return the subcommand which is responsible for initializing and common scaffolding
+func (p Plugin) GetInitSubcommand() plugin.InitSubcommand { return &p.initSubcommand }
 
-// GetCreateAPIPlugin will return the plugin for v2 which is responsible for scaffold apis
-func (p Plugin) GetCreateAPIPlugin() plugin.CreateAPI { return &p.createAPIPlugin }
+// GetCreateAPISubcommand will return the subcommand which is responsible for scaffolding apis
+func (p Plugin) GetCreateAPISubcommand() plugin.CreateAPISubcommand { return &p.createAPISubcommand }
 
-// GetCreateWebhookPlugin will return the plugin for v2 which is responsible for scaffold webhooks for the project
-func (p Plugin) GetCreateWebhookPlugin() plugin.CreateWebhook { return &p.createWebhookPlugin }
+// GetCreateWebhookSubcommand will return the subcommand which is responsible for scaffolding webhooks
+func (p Plugin) GetCreateWebhookSubcommand() plugin.CreateWebhookSubcommand {
+	return &p.createWebhookSubcommand
+}
 
-// GetEditPlugin will return the plugin for v2 which is responsible for editing the scaffold of the project
-func (p Plugin) GetEditPlugin() plugin.Edit { return &p.editPlugin }
+// GetEditSubcommand will return the subcommand which is responsible for editing the scaffold of the project
+func (p Plugin) GetEditSubcommand() plugin.EditSubcommand { return &p.editSubcommand }

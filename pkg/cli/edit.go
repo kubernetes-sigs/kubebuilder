@@ -46,7 +46,8 @@ func (c *cli) newEditCmd() *cobra.Command {
 func (c *cli) newEditContext() plugin.Context {
 	ctx := plugin.Context{
 		CommandName: c.commandName,
-		Description: `This command will edit the project configuration. You can have single or multi group project.`,
+		Description: `Edit the project configuration.
+`,
 	}
 
 	return ctx
@@ -54,18 +55,25 @@ func (c *cli) newEditContext() plugin.Context {
 
 // nolint:dupl
 func (c *cli) bindEdit(ctx plugin.Context, cmd *cobra.Command) {
-	var getter plugin.EditPluginGetter
+	var editPlugin plugin.Edit
 	for _, p := range c.resolvedPlugins {
-		tmpGetter, isGetter := p.(plugin.EditPluginGetter)
-		if isGetter {
-			if getter != nil {
-				err := fmt.Errorf("duplicate edit project plugins for project version %q (%s, %s), "+
-					"use a more specific plugin key", c.projectVersion, plugin.KeyFor(getter), plugin.KeyFor(p))
+		tmpPlugin, isValid := p.(plugin.Edit)
+		if isValid {
+			if editPlugin != nil {
+				err := fmt.Errorf(
+					"duplicate edit project plugins (%s, %s), use a more specific plugin key",
+					plugin.KeyFor(editPlugin), plugin.KeyFor(p))
 				cmdErr(cmd, err)
 				return
 			}
-			getter = tmpGetter
+			editPlugin = tmpPlugin
 		}
+	}
+
+	if editPlugin == nil {
+		err := fmt.Errorf("relevant plugins do not provide a project edit plugin")
+		cmdErr(cmd, err)
+		return
 	}
 
 	cfg, err := config.LoadInitialized()
@@ -74,19 +82,12 @@ func (c *cli) bindEdit(ctx plugin.Context, cmd *cobra.Command) {
 		return
 	}
 
-	if getter == nil {
-		err := fmt.Errorf("layout plugin %q does not support a edit project plugin", cfg.Layout)
-		cmdErr(cmd, err)
-		return
-	}
-
-	editProject := getter.GetEditPlugin()
-	editProject.InjectConfig(&cfg.Config)
-	editProject.BindFlags(cmd.Flags())
-	editProject.UpdateContext(&ctx)
+	subcommand := editPlugin.GetEditSubcommand()
+	subcommand.InjectConfig(&cfg.Config)
+	subcommand.BindFlags(cmd.Flags())
+	subcommand.UpdateContext(&ctx)
 	cmd.Long = ctx.Description
 	cmd.Example = ctx.Examples
-	cmd.RunE = runECmdFunc(cfg, editProject,
-		fmt.Sprintf("failed to edit project with version %q", c.projectVersion))
-
+	cmd.RunE = runECmdFunc(cfg, subcommand,
+		fmt.Sprintf("failed to edit project with %q", plugin.KeyFor(editPlugin)))
 }

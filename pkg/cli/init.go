@@ -123,26 +123,22 @@ func (c cli) getAvailablePlugins() (pluginKeys []string) {
 }
 
 func (c cli) bindInit(ctx plugin.Context, cmd *cobra.Command) {
-	var getter plugin.InitPluginGetter
+	var initPlugin plugin.Init
 	for _, p := range c.resolvedPlugins {
-		tmpGetter, isGetter := p.(plugin.InitPluginGetter)
-		if isGetter {
-			if getter != nil {
-				err := fmt.Errorf("duplicate initialization plugins for project version %q (%s, %s), "+
-					"use a more specific plugin key", c.projectVersion, plugin.KeyFor(getter), plugin.KeyFor(p))
+		tmpPlugin, isValid := p.(plugin.Init)
+		if isValid {
+			if initPlugin != nil {
+				err := fmt.Errorf("duplicate initialization plugins (%s, %s), use a more specific plugin key",
+					plugin.KeyFor(initPlugin), plugin.KeyFor(p))
 				cmdErrNoHelp(cmd, err)
 				return
 			}
-			getter = tmpGetter
+			initPlugin = tmpPlugin
 		}
 	}
-	if getter == nil {
-		var err error
-		if c.cliPluginKey == "" {
-			err = fmt.Errorf("project version %q does not support an initialization plugin", c.projectVersion)
-		} else {
-			err = fmt.Errorf("plugin %q does not support an initialization plugin", c.cliPluginKey)
-		}
+
+	if initPlugin == nil {
+		err := fmt.Errorf("relevant plugins do not provide an initialization plugin")
 		cmdErrNoHelp(cmd, err)
 		return
 	}
@@ -150,10 +146,10 @@ func (c cli) bindInit(ctx plugin.Context, cmd *cobra.Command) {
 	cfg := internalconfig.New(internalconfig.DefaultPath)
 	cfg.Version = c.projectVersion
 
-	init := getter.GetInitPlugin()
-	init.InjectConfig(&cfg.Config)
-	init.BindFlags(cmd.Flags())
-	init.UpdateContext(&ctx)
+	subcommand := initPlugin.GetInitSubcommand()
+	subcommand.InjectConfig(&cfg.Config)
+	subcommand.BindFlags(cmd.Flags())
+	subcommand.UpdateContext(&ctx)
 	cmd.Long = ctx.Description
 	cmd.Example = ctx.Examples
 	cmd.RunE = func(*cobra.Command, []string) error {
@@ -163,8 +159,8 @@ func (c cli) bindInit(ctx plugin.Context, cmd *cobra.Command) {
 		if err == nil || os.IsExist(err) {
 			log.Fatal("config already initialized")
 		}
-		if err := init.Run(); err != nil {
-			return fmt.Errorf("failed to initialize project with version %q: %v", c.projectVersion, err)
+		if err := subcommand.Run(); err != nil {
+			return fmt.Errorf("failed to initialize project with %q: %v", plugin.KeyFor(initPlugin), err)
 		}
 		return cfg.Save()
 	}

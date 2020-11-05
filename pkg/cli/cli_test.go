@@ -40,12 +40,7 @@ func (p mockPlugin) Name() string                       { return p.name }
 func (p mockPlugin) Version() plugin.Version            { return p.version }
 func (p mockPlugin) SupportedProjectVersions() []string { return p.projectVersions }
 
-func (mockPlugin) UpdateContext(*plugin.Context) {}
-func (mockPlugin) BindFlags(*pflag.FlagSet)      {}
-func (mockPlugin) InjectConfig(*config.Config)   {}
-func (mockPlugin) Run() error                    { return nil }
-
-func makeBasePlugin(name, version string, projVers ...string) plugin.Base {
+func makeBasePlugin(name, version string, projVers ...string) plugin.Plugin {
 	v, err := plugin.ParseVersion(version)
 	if err != nil {
 		panic(err)
@@ -53,7 +48,7 @@ func makeBasePlugin(name, version string, projVers ...string) plugin.Base {
 	return mockPlugin{name, v, projVers}
 }
 
-func makePluginsForKeys(keys ...string) (plugins []plugin.Base) {
+func makePluginsForKeys(keys ...string) (plugins []plugin.Plugin) {
 	for _, key := range keys {
 		n, v := plugin.SplitKey(key)
 		plugins = append(plugins, makeBasePlugin(n, v, internalconfig.DefaultVersion))
@@ -61,38 +56,55 @@ func makePluginsForKeys(keys ...string) (plugins []plugin.Base) {
 	return
 }
 
+type mockSubcommand struct{}
+
+func (mockSubcommand) UpdateContext(*plugin.Context) {}
+func (mockSubcommand) BindFlags(*pflag.FlagSet)      {}
+func (mockSubcommand) InjectConfig(*config.Config)   {}
+func (mockSubcommand) Run() error                    { return nil }
+
+// nolint:maligned
 type mockAllPlugin struct {
 	mockPlugin
 	mockInitPlugin
 	mockCreateAPIPlugin
 	mockCreateWebhookPlugin
+	mockEditPlugin
 }
 
-type mockInitPlugin struct{ mockPlugin }
-type mockCreateAPIPlugin struct{ mockPlugin }
-type mockCreateWebhookPlugin struct{ mockPlugin }
+type mockInitPlugin struct{ mockSubcommand }
+type mockCreateAPIPlugin struct{ mockSubcommand }
+type mockCreateWebhookPlugin struct{ mockSubcommand }
+type mockEditPlugin struct{ mockSubcommand }
 
-// GetInitPlugin will return the plugin which is responsible for initialized the project
-func (p mockInitPlugin) GetInitPlugin() plugin.Init { return p }
+// GetInitSubcommand implements plugin.Init
+func (p mockInitPlugin) GetInitSubcommand() plugin.InitSubcommand { return p }
 
-// GetCreateAPIPlugin will return the plugin which is responsible for scaffolding APIs for the project
-func (p mockCreateAPIPlugin) GetCreateAPIPlugin() plugin.CreateAPI { return p }
+// GetCreateAPISubcommand implements plugin.CreateAPI
+func (p mockCreateAPIPlugin) GetCreateAPISubcommand() plugin.CreateAPISubcommand { return p }
 
-// GetCreateWebhookPlugin will return the plugin which is responsible for scaffolding webhooks for the project
-func (p mockCreateWebhookPlugin) GetCreateWebhookPlugin() plugin.CreateWebhook { return p }
+// GetCreateWebhookSubcommand implements plugin.CreateWebhook
+func (p mockCreateWebhookPlugin) GetCreateWebhookSubcommand() plugin.CreateWebhookSubcommand {
+	return p
+}
 
-func makeAllPlugin(name, version string, projectVersions ...string) plugin.Base {
+// GetEditSubcommand implements plugin.Edit
+func (p mockEditPlugin) GetEditSubcommand() plugin.EditSubcommand { return p }
+
+func makeAllPlugin(name, version string, projectVersions ...string) plugin.Plugin {
 	p := makeBasePlugin(name, version, projectVersions...).(mockPlugin)
+	subcommand := mockSubcommand{}
 	return mockAllPlugin{
 		p,
-		mockInitPlugin{p},
-		mockCreateAPIPlugin{p},
-		mockCreateWebhookPlugin{p},
+		mockInitPlugin{subcommand},
+		mockCreateAPIPlugin{subcommand},
+		mockCreateWebhookPlugin{subcommand},
+		mockEditPlugin{subcommand},
 	}
 }
 
-func makeSetByProjVer(ps ...plugin.Base) map[string][]plugin.Base {
-	set := make(map[string][]plugin.Base)
+func makeSetByProjVer(ps ...plugin.Plugin) map[string][]plugin.Plugin {
+	set := make(map[string][]plugin.Plugin)
 	for _, p := range ps {
 		for _, version := range p.SupportedProjectVersions() {
 			set[version] = append(set[version], p)
@@ -117,7 +129,7 @@ var _ = Describe("CLI", func() {
 		pluginAV2       = makeAllPlugin(pluginNameA, "v2", projectVersions...)
 		pluginBV1       = makeAllPlugin(pluginNameB, "v1", projectVersions...)
 		pluginBV2       = makeAllPlugin(pluginNameB, "v2", projectVersions...)
-		allPlugins      = []plugin.Base{pluginAV1, pluginAV2, pluginBV1, pluginBV2}
+		allPlugins      = []plugin.Plugin{pluginAV1, pluginAV2, pluginBV1, pluginBV2}
 	)
 
 	Describe("New", func() {
@@ -129,28 +141,28 @@ var _ = Describe("CLI", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(c).NotTo(BeNil())
 				Expect(c.(*cli).pluginsFromOptions).To(Equal(makeSetByProjVer(pluginAV1)))
-				Expect(c.(*cli).resolvedPlugins).To(Equal([]plugin.Base{pluginAV1}))
+				Expect(c.(*cli).resolvedPlugins).To(Equal([]plugin.Plugin{pluginAV1}))
 
 				By("setting two plugins with different names and versions")
 				c, err = New(WithDefaultPlugins(pluginAV1), WithPlugins(pluginAV1, pluginBV2))
 				Expect(err).NotTo(HaveOccurred())
 				Expect(c).NotTo(BeNil())
 				Expect(c.(*cli).pluginsFromOptions).To(Equal(makeSetByProjVer(pluginAV1, pluginBV2)))
-				Expect(c.(*cli).resolvedPlugins).To(Equal([]plugin.Base{pluginAV1}))
+				Expect(c.(*cli).resolvedPlugins).To(Equal([]plugin.Plugin{pluginAV1}))
 
 				By("setting two plugins with the same names and different versions")
 				c, err = New(WithDefaultPlugins(pluginAV1), WithPlugins(pluginAV1, pluginAV2))
 				Expect(err).NotTo(HaveOccurred())
 				Expect(c).NotTo(BeNil())
 				Expect(c.(*cli).pluginsFromOptions).To(Equal(makeSetByProjVer(pluginAV1, pluginAV2)))
-				Expect(c.(*cli).resolvedPlugins).To(Equal([]plugin.Base{pluginAV1}))
+				Expect(c.(*cli).resolvedPlugins).To(Equal([]plugin.Plugin{pluginAV1}))
 
 				By("setting two plugins with different names and the same version")
 				c, err = New(WithDefaultPlugins(pluginAV1), WithPlugins(pluginAV1, pluginBV1))
 				Expect(err).NotTo(HaveOccurred())
 				Expect(c).NotTo(BeNil())
 				Expect(c.(*cli).pluginsFromOptions).To(Equal(makeSetByProjVer(pluginAV1, pluginBV1)))
-				Expect(c.(*cli).resolvedPlugins).To(Equal([]plugin.Base{pluginAV1}))
+				Expect(c.(*cli).resolvedPlugins).To(Equal([]plugin.Plugin{pluginAV1}))
 			})
 
 			It("should return an error", func() {
@@ -193,7 +205,7 @@ var _ = Describe("CLI", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(c).NotTo(BeNil())
 				Expect(c.(*cli).pluginsFromOptions).To(Equal(makeSetByProjVer(pluginAV1, pluginAV2)))
-				Expect(c.(*cli).resolvedPlugins).To(Equal([]plugin.Base{pluginAV1}))
+				Expect(c.(*cli).resolvedPlugins).To(Equal([]plugin.Plugin{pluginAV1}))
 
 				By(`setting cliPluginKey to "go/v1"`)
 				setPluginsFlag("go/v1")
@@ -201,7 +213,7 @@ var _ = Describe("CLI", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(c).NotTo(BeNil())
 				Expect(c.(*cli).pluginsFromOptions).To(Equal(makeSetByProjVer(pluginAV1, pluginBV2)))
-				Expect(c.(*cli).resolvedPlugins).To(Equal([]plugin.Base{pluginAV1}))
+				Expect(c.(*cli).resolvedPlugins).To(Equal([]plugin.Plugin{pluginAV1}))
 
 				By(`setting cliPluginKey to "go/v2"`)
 				setPluginsFlag("go/v2")
@@ -209,7 +221,7 @@ var _ = Describe("CLI", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(c).NotTo(BeNil())
 				Expect(c.(*cli).pluginsFromOptions).To(Equal(makeSetByProjVer(pluginAV1, pluginBV2)))
-				Expect(c.(*cli).resolvedPlugins).To(Equal([]plugin.Base{pluginBV2}))
+				Expect(c.(*cli).resolvedPlugins).To(Equal([]plugin.Plugin{pluginBV2}))
 
 				By(`setting cliPluginKey to "go.test.com/v2"`)
 				setPluginsFlag("go.test.com/v2")
@@ -217,7 +229,7 @@ var _ = Describe("CLI", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(c).NotTo(BeNil())
 				Expect(c.(*cli).pluginsFromOptions).To(Equal(makeSetByProjVer(allPlugins...)))
-				Expect(c.(*cli).resolvedPlugins).To(Equal([]plugin.Base{pluginBV2}))
+				Expect(c.(*cli).resolvedPlugins).To(Equal([]plugin.Plugin{pluginBV2}))
 			})
 
 			It("should return an error", func() {

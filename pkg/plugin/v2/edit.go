@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/pflag"
+
 	"sigs.k8s.io/kubebuilder/internal/cmdutil"
 	"sigs.k8s.io/kubebuilder/pkg/model/config"
 	"sigs.k8s.io/kubebuilder/pkg/plugin"
@@ -27,18 +28,18 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/plugin/v2/scaffolds"
 )
 
-type editPlugin struct {
+type editSubcommand struct {
 	config *config.Config
 
 	multigroup bool
 }
 
 var (
-	_ plugin.Edit        = &editPlugin{}
-	_ cmdutil.RunOptions = &editPlugin{}
+	_ plugin.EditSubcommand = &editSubcommand{}
+	_ cmdutil.RunOptions    = &editSubcommand{}
 )
 
-func (p *editPlugin) UpdateContext(ctx *plugin.Context) {
+func (p *editSubcommand) UpdateContext(ctx *plugin.Context) {
 	ctx.Description = `This command will edit the project configuration. You can have single or multi group project.`
 
 	ctx.Examples = fmt.Sprintf(`# Enable the multigroup layout
@@ -49,11 +50,11 @@ func (p *editPlugin) UpdateContext(ctx *plugin.Context) {
 	`, ctx.CommandName, ctx.CommandName)
 }
 
-func (p *editPlugin) BindFlags(fs *pflag.FlagSet) {
+func (p *editSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.multigroup, "multigroup", false, "enable or disable multigroup layout")
 }
 
-func (p *editPlugin) InjectConfig(c *config.Config) {
+func (p *editSubcommand) InjectConfig(c *config.Config) {
 	// v3 project configs get a 'layout' value.
 	if c.IsV3() {
 		c.Layout = plugin.KeyFor(Plugin{})
@@ -61,18 +62,18 @@ func (p *editPlugin) InjectConfig(c *config.Config) {
 	p.config = c
 }
 
-func (p *editPlugin) Run() error {
+func (p *editSubcommand) Run() error {
 	return cmdutil.Run(p)
 }
 
-func (p *editPlugin) Validate() error {
+func (p *editSubcommand) Validate() error {
 	return nil
 }
 
-func (p *editPlugin) GetScaffolder() (scaffold.Scaffolder, error) {
+func (p *editSubcommand) GetScaffolder() (scaffold.Scaffolder, error) {
 	return scaffolds.NewEditScaffolder(p.config, p.multigroup), nil
 }
 
-func (p *editPlugin) PostScaffold() error {
+func (p *editSubcommand) PostScaffold() error {
 	return nil
 }
