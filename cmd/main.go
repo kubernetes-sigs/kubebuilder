@@ -27,6 +27,7 @@ import (
 
 func main() {
 	c, err := cli.New(
+		cli.WithCommandName("kubebuilder"),
 		cli.WithPlugins(
 			&pluginv2.Plugin{},
 			&pluginv3.Plugin{},

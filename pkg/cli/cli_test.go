@@ -137,28 +137,40 @@ var _ = Describe("CLI", func() {
 		Context("with no plugins specified", func() {
 			It("should return a valid CLI", func() {
 				By("setting one plugin")
-				c, err = New(WithDefaultPlugins(pluginAV1), WithPlugins(pluginAV1))
+				c, err = New(
+					WithDefaultPlugins(pluginAV1),
+					WithPlugins(pluginAV1),
+				)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(c).NotTo(BeNil())
 				Expect(c.(*cli).pluginsFromOptions).To(Equal(makeSetByProjVer(pluginAV1)))
 				Expect(c.(*cli).resolvedPlugins).To(Equal([]plugin.Plugin{pluginAV1}))
 
 				By("setting two plugins with different names and versions")
-				c, err = New(WithDefaultPlugins(pluginAV1), WithPlugins(pluginAV1, pluginBV2))
+				c, err = New(
+					WithDefaultPlugins(pluginAV1),
+					WithPlugins(pluginAV1, pluginBV2),
+				)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(c).NotTo(BeNil())
 				Expect(c.(*cli).pluginsFromOptions).To(Equal(makeSetByProjVer(pluginAV1, pluginBV2)))
 				Expect(c.(*cli).resolvedPlugins).To(Equal([]plugin.Plugin{pluginAV1}))
 
 				By("setting two plugins with the same names and different versions")
-				c, err = New(WithDefaultPlugins(pluginAV1), WithPlugins(pluginAV1, pluginAV2))
+				c, err = New(
+					WithDefaultPlugins(pluginAV1),
+					WithPlugins(pluginAV1, pluginAV2),
+				)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(c).NotTo(BeNil())
 				Expect(c.(*cli).pluginsFromOptions).To(Equal(makeSetByProjVer(pluginAV1, pluginAV2)))
 				Expect(c.(*cli).resolvedPlugins).To(Equal([]plugin.Plugin{pluginAV1}))
 
 				By("setting two plugins with different names and the same version")
-				c, err = New(WithDefaultPlugins(pluginAV1), WithPlugins(pluginAV1, pluginBV1))
+				c, err = New(
+					WithDefaultPlugins(pluginAV1),
+					WithPlugins(pluginAV1, pluginBV1),
+				)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(c).NotTo(BeNil())
 				Expect(c.(*cli).pluginsFromOptions).To(Equal(makeSetByProjVer(pluginAV1, pluginBV1)))
@@ -171,15 +183,22 @@ var _ = Describe("CLI", func() {
 				Expect(err).To(MatchError(`no plugins for project version "3-alpha"`))
 
 				By("not setting any plugin")
-				_, err = New(WithDefaultPlugins(pluginAV1))
+				_, err = New(
+					WithDefaultPlugins(pluginAV1),
+				)
 				Expect(err).To(MatchError(`no plugins for project version "3-alpha"`))
 
 				By("not setting any default plugins")
-				_, err = New(WithPlugins(pluginAV1))
+				_, err = New(
+					WithPlugins(pluginAV1),
+				)
 				Expect(err).To(MatchError(`no default plugins for project version "3-alpha"`))
 
 				By("setting two plugins of the same name and version")
-				_, err = New(WithDefaultPlugins(pluginAV1), WithPlugins(pluginAV1, pluginAV1))
+				_, err = New(
+					WithDefaultPlugins(pluginAV1),
+					WithPlugins(pluginAV1, pluginAV1),
+				)
 				Expect(err).To(MatchError(`broken pre-set plugins: two plugins have the same key: "go.example.com/v1"`))
 			})
 		})
@@ -201,7 +220,10 @@ var _ = Describe("CLI", func() {
 			It("should return a valid CLI", func() {
 				By(`setting cliPluginKey to "go"`)
 				setPluginsFlag("go")
-				c, err = New(WithDefaultPlugins(pluginAV1), WithPlugins(pluginAV1, pluginAV2))
+				c, err = New(
+					WithDefaultPlugins(pluginAV1),
+					WithPlugins(pluginAV1, pluginAV2),
+				)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(c).NotTo(BeNil())
 				Expect(c.(*cli).pluginsFromOptions).To(Equal(makeSetByProjVer(pluginAV1, pluginAV2)))
@@ -209,7 +231,10 @@ var _ = Describe("CLI", func() {
 
 				By(`setting cliPluginKey to "go/v1"`)
 				setPluginsFlag("go/v1")
-				c, err = New(WithDefaultPlugins(pluginAV1), WithPlugins(pluginAV1, pluginBV2))
+				c, err = New(
+					WithDefaultPlugins(pluginAV1),
+					WithPlugins(pluginAV1, pluginBV2),
+				)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(c).NotTo(BeNil())
 				Expect(c.(*cli).pluginsFromOptions).To(Equal(makeSetByProjVer(pluginAV1, pluginBV2)))
@@ -217,7 +242,10 @@ var _ = Describe("CLI", func() {
 
 				By(`setting cliPluginKey to "go/v2"`)
 				setPluginsFlag("go/v2")
-				c, err = New(WithDefaultPlugins(pluginAV1), WithPlugins(pluginAV1, pluginBV2))
+				c, err = New(
+					WithDefaultPlugins(pluginAV1),
+					WithPlugins(pluginAV1, pluginBV2),
+				)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(c).NotTo(BeNil())
 				Expect(c.(*cli).pluginsFromOptions).To(Equal(makeSetByProjVer(pluginAV1, pluginBV2)))
@@ -225,7 +253,10 @@ var _ = Describe("CLI", func() {
 
 				By(`setting cliPluginKey to "go.test.com/v2"`)
 				setPluginsFlag("go.test.com/v2")
-				c, err = New(WithDefaultPlugins(pluginAV1), WithPlugins(allPlugins...))
+				c, err = New(
+					WithDefaultPlugins(pluginAV1),
+					WithPlugins(allPlugins...),
+				)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(c).NotTo(BeNil())
 				Expect(c.(*cli).pluginsFromOptions).To(Equal(makeSetByProjVer(allPlugins...)))
@@ -235,7 +266,10 @@ var _ = Describe("CLI", func() {
 			It("should return an error", func() {
 				By(`setting cliPluginKey to an non-existent key "foo"`)
 				setPluginsFlag("foo")
-				_, err = New(WithDefaultPlugins(pluginAV1), WithPlugins(pluginAV1, pluginAV2))
+				_, err = New(
+					WithDefaultPlugins(pluginAV1),
+					WithPlugins(pluginAV1, pluginAV2),
+				)
 				Expect(err).To(MatchError(errAmbiguousPlugin{
 					key: "foo",
 					msg: `no names match, possible plugins: ["go.example.com/v1" "go.example.com/v2"]`,
@@ -243,13 +277,87 @@ var _ = Describe("CLI", func() {
 			})
 		})
 
-		Context("with extra commands set", func() {
+		Context("WithCommandName", func() {
+			It("should use the provided command name", func() {
+				commandName := "other-command"
+				c, err = New(
+					WithCommandName(commandName),
+					WithDefaultPlugins(pluginAV1),
+					WithPlugins(allPlugins...),
+				)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(c).NotTo(BeNil())
+				Expect(c.(*cli).commandName).To(Equal(commandName))
+			})
+		})
+
+		Context("WithDefaultProjectVersion", func() {
+			var defaultProjectVersion string
+
+			It("should use the provided default project version", func() {
+				By(`using version "2"`)
+				defaultProjectVersion = "2"
+				c, err = New(
+					WithDefaultProjectVersion(defaultProjectVersion),
+					WithDefaultPlugins(pluginAV1),
+					WithPlugins(allPlugins...),
+				)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(c).NotTo(BeNil())
+				Expect(c.(*cli).defaultProjectVersion).To(Equal(defaultProjectVersion))
+
+				By(`using version "3-alpha"`)
+				defaultProjectVersion = "3-alpha"
+				c, err = New(
+					WithDefaultProjectVersion(defaultProjectVersion),
+					WithDefaultPlugins(pluginAV1),
+					WithPlugins(allPlugins...),
+				)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(c).NotTo(BeNil())
+				Expect(c.(*cli).defaultProjectVersion).To(Equal(defaultProjectVersion))
+			})
+
+			It("should fail for invalid project versions", func() {
+				By(`using version "0"`)
+				defaultProjectVersion = "0"
+				c, err = New(
+					WithDefaultProjectVersion(defaultProjectVersion),
+					WithDefaultPlugins(pluginAV1),
+					WithPlugins(allPlugins...),
+				)
+				Expect(err).To(HaveOccurred())
+
+				By(`using version "1-gamma"`)
+				defaultProjectVersion = "1-gamma"
+				c, err = New(
+					WithDefaultProjectVersion(defaultProjectVersion),
+					WithDefaultPlugins(pluginAV1),
+					WithPlugins(allPlugins...),
+				)
+				Expect(err).To(HaveOccurred())
+
+				By(`using version "1alpha"`)
+				defaultProjectVersion = "1alpha"
+				c, err = New(
+					WithDefaultProjectVersion(defaultProjectVersion),
+					WithDefaultPlugins(pluginAV1),
+					WithPlugins(allPlugins...),
+				)
+				Expect(err).To(HaveOccurred())
+			})
+		})
+
+		Context("WithExtraCommands", func() {
 			It("should work successfully with extra commands", func() {
-				setPluginsFlag("go.test.com/v2")
 				commandTest := &cobra.Command{
 					Use: "example",
 				}
-				c, err = New(WithDefaultPlugins(pluginAV1), WithPlugins(allPlugins...), WithExtraCommands(commandTest))
+				c, err = New(
+					WithExtraCommands(commandTest),
+					WithDefaultPlugins(pluginAV1),
+					WithPlugins(allPlugins...),
+				)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(c).NotTo(BeNil())
 				Expect(c.(*cli).extraCommands[0]).NotTo(BeNil())
