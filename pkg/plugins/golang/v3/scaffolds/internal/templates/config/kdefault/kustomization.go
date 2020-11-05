@@ -28,6 +28,7 @@ var _ file.Template = &Kustomization{}
 type Kustomization struct {
 	file.TemplateMixin
 	file.ProjectNameMixin
+	file.ComponentConfigMixin
 }
 
 // SetTemplateDefaults implements file.Template
@@ -70,10 +71,14 @@ bases:
 #- ../prometheus
 
 patchesStrategicMerge:
-  # Protect the /metrics endpoint by putting it behind auth.
-  # If you want your controller-manager to expose the /metrics
-  # endpoint w/o any authn/z, please comment the following line.
+# Protect the /metrics endpoint by putting it behind auth.
+# If you want your controller-manager to expose the /metrics
+# endpoint w/o any authn/z, please comment the following line.
 - manager_auth_proxy_patch.yaml
+
+# Mount the controller config file for loading manager configurations
+# through a ComponentConfig type
+{{ if not .ComponentConfig }}#{{ end }}- manager_config_patch.yaml
 
 # [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix including the one in
 # crd/kustomization.yaml

@@ -22,34 +22,35 @@ import (
 	"sigs.k8s.io/kubebuilder/v2/pkg/model/file"
 )
 
-var _ file.Template = &Kustomization{}
+var _ file.Template = &ControllerManagerConfig{}
 
-// Kustomization scaffolds a file that defines the kustomization scheme for the manager folder
-type Kustomization struct {
+// ControllerManagerConfig scaffolds the config file in config/manager folder.
+type ControllerManagerConfig struct {
 	file.TemplateMixin
+	file.DomainMixin
+	file.RepositoryMixin
 }
 
-// SetTemplateDefaults implements file.Template
-func (f *Kustomization) SetTemplateDefaults() error {
+// SetTemplateDefaults implements input.Template
+func (f *ControllerManagerConfig) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = filepath.Join("config", "manager", "kustomization.yaml")
+		f.Path = filepath.Join("config", "manager", "controller_manager_config.yaml")
 	}
 
-	f.TemplateBody = kustomizeManagerTemplate
+	f.TemplateBody = controllerManagerConfigTemplate
 
 	f.IfExistsAction = file.Error
 
 	return nil
 }
 
-const kustomizeManagerTemplate = `resources:
-- manager.yaml
-
-generatorOptions:
-  disableNameSuffixHash: true
-
-configMapGenerator:
-- name: manager-config
-  files:
-  - controller_manager_config.yaml
+const controllerManagerConfigTemplate = `apiVersion: controller-runtime.sigs.k8s.io/v1alpha1
+kind: ControllerManagerConfig
+metrics:
+  bindAddress: 127.0.0.1:8080
+webhook:
+  port: 9443
+leaderElection:
+  leaderElect: true
+  resourceName: {{ hashFNV .Repo }}.{{ .Domain }}
 `

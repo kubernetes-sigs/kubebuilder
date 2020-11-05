@@ -91,6 +91,9 @@ func (u Universe) InjectInto(builder file.Builder) {
 		if builderWithMultiGroup, hasMultiGroup := builder.(file.HasMultiGroup); hasMultiGroup {
 			builderWithMultiGroup.InjectMultiGroup(u.Config.MultiGroup)
 		}
+		if builderWithComponentConfig, hasComponentConfig := builder.(file.HasComponentConfig); hasComponentConfig {
+			builderWithComponentConfig.InjectComponentConfig(u.Config.ComponentConfig)
+		}
 		if builderWithProjectName, hasProjectName := builder.(file.HasProjectName); hasProjectName {
 			builderWithProjectName.InjectProjectName(u.Config.ProjectName)
 		}

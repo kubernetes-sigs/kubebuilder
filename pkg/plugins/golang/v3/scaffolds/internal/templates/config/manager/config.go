@@ -27,6 +27,7 @@ var _ file.Template = &Config{}
 // Config scaffolds a file that defines the namespace and the manager deployment
 type Config struct {
 	file.TemplateMixin
+	file.ComponentConfigMixin
 
 	// Image is controller manager image name
 	Image string
@@ -72,8 +73,10 @@ spec:
       containers:
       - command:
         - /manager
+{{- if not .ComponentConfig }}
         args:
         - --enable-leader-election
+{{- end }}
         image: {{ .Image }}
         name: manager
         securityContext:
