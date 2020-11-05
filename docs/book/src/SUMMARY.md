@@ -4,6 +4,8 @@
 
 [Quick Start](./quick-start.md)
 
+[Architecture](./architecture.md)
+
 ---
 
 - [Tutorial: Building CronJob](cronjob-tutorial/cronjob-tutorial.md)
