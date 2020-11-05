@@ -22,12 +22,12 @@ import (
 
 var _ file.Template = &Dockerfile{}
 
-// Dockerfile scaffolds a Dockerfile for building a main
+// Dockerfile scaffolds a file that defines the containerized build process
 type Dockerfile struct {
 	file.TemplateMixin
 }
 
-// SetTemplateDefaults implements input.Template
+// SetTemplateDefaults implements file.Template
 func (f *Dockerfile) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = "Dockerfile"

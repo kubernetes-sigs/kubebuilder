@@ -25,7 +25,7 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/plugin/internal/machinery"
 	"sigs.k8s.io/kubebuilder/pkg/plugin/scaffold"
 	"sigs.k8s.io/kubebuilder/pkg/plugin/v2/scaffolds/internal/templates"
-	"sigs.k8s.io/kubebuilder/pkg/plugin/v2/scaffolds/internal/templates/webhook"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/v2/scaffolds/internal/templates/api"
 )
 
 var _ scaffold.Scaffolder = &webhookScaffolder{}
@@ -86,7 +86,7 @@ You need to implement the conversion.Hub and conversion.Convertible interfaces f
 
 	if err := machinery.NewScaffold().Execute(
 		s.newUniverse(),
-		&webhook.Webhook{Defaulting: s.defaulting, Validating: s.validation},
+		&api.Webhook{Defaulting: s.defaulting, Validating: s.validation},
 		&templates.MainUpdater{WireWebhook: true},
 	); err != nil {
 		return err

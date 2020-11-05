@@ -22,7 +22,7 @@ import (
 
 var _ file.Template = &GoMod{}
 
-// GoMod writes a templatefile for go.mod
+// GoMod scaffolds a file that defines the project dependencies
 type GoMod struct {
 	file.TemplateMixin
 	file.RepositoryMixin
@@ -30,7 +30,7 @@ type GoMod struct {
 	ControllerRuntimeVersion string
 }
 
-// SetTemplateDefaults implements input.Template
+// SetTemplateDefaults implements file.Template
 func (f *GoMod) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = "go.mod"

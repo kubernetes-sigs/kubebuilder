@@ -22,12 +22,12 @@ import (
 
 var _ file.Template = &GitIgnore{}
 
-// GitIgnore scaffolds the .gitignore file
+// GitIgnore scaffolds a file that defines which files should be ignored by git
 type GitIgnore struct {
 	file.TemplateMixin
 }
 
-// SetTemplateDefaults implements input.Template
+// SetTemplateDefaults implements file.Template
 func (f *GitIgnore) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = ".gitignore"

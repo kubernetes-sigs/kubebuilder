@@ -25,11 +25,12 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/plugin/internal/machinery"
 	"sigs.k8s.io/kubebuilder/pkg/plugin/scaffold"
 	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates"
-	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates/config/api"
-	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates/config/controller"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates/api"
 	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates/config/crd"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates/config/crd/patches"
 	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates/config/rbac"
 	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates/config/samples"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates/controllers"
 )
 
 var _ scaffold.Scaffolder = &apiScaffolder{}
@@ -92,8 +93,8 @@ func (s *apiScaffolder) scaffold() error {
 			&samples.CRDSample{},
 			&rbac.CRDEditorRole{},
 			&rbac.CRDViewerRole{},
-			&crd.EnableWebhookPatch{},
-			&crd.EnableCAInjectionPatch{},
+			&patches.EnableWebhookPatch{},
+			&patches.EnableCAInjectionPatch{},
 		); err != nil {
 			return fmt.Errorf("error scaffolding APIs: %v", err)
 		}
@@ -111,8 +112,8 @@ func (s *apiScaffolder) scaffold() error {
 	if s.doController {
 		if err := machinery.NewScaffold(s.plugins...).Execute(
 			s.newUniverse(),
-			&controller.SuiteTest{WireResource: s.doResource},
-			&controller.Controller{ControllerRuntimeVersion: ControllerRuntimeVersion, WireResource: s.doResource},
+			&controllers.SuiteTest{WireResource: s.doResource},
+			&controllers.Controller{ControllerRuntimeVersion: ControllerRuntimeVersion, WireResource: s.doResource},
 		); err != nil {
 			return fmt.Errorf("error scaffolding controller: %v", err)
 		}

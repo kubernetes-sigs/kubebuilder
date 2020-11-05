@@ -24,12 +24,12 @@ import (
 
 var _ file.Template = &AuthProxyService{}
 
-// AuthProxyService scaffolds the config/rbac/auth_proxy_service.yaml file
+// AuthProxyService scaffolds a file that defines the service for the auth proxy
 type AuthProxyService struct {
 	file.TemplateMixin
 }
 
-// SetTemplateDefaults implements input.Template
+// SetTemplateDefaults implements file.Template
 func (f *AuthProxyService) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "rbac", "auth_proxy_service.yaml")

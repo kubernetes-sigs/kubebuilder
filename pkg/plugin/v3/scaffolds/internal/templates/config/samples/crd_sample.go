@@ -24,13 +24,13 @@ import (
 
 var _ file.Template = &CRDSample{}
 
-// CRDSample scaffolds a manifest for CRD sample.
+// CRDSample scaffolds a file that defines a sample manifest for the CRD
 type CRDSample struct {
 	file.TemplateMixin
 	file.ResourceMixin
 }
 
-// SetTemplateDefaults implements input.Template
+// SetTemplateDefaults implements file.Template
 func (f *CRDSample) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "samples", "%[group]_%[version]_%[kind].yaml")

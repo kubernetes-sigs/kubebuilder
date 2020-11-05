@@ -27,12 +27,12 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/plugin/scaffold"
 	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates"
 	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates/config/certmanager"
-	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates/config/hack"
 	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates/config/kdefault"
 	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates/config/manager"
 	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates/config/prometheus"
 	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates/config/rbac"
 	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates/config/webhook"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates/hack"
 )
 
 const (
@@ -101,9 +101,9 @@ func (s *initScaffolder) scaffold() error {
 		&templates.GitIgnore{},
 		&rbac.AuthProxyRole{},
 		&rbac.AuthProxyRoleBinding{},
-		&kdefault.AuthProxyPatch{},
+		&kdefault.ManagerAuthProxyPatch{},
 		&rbac.AuthProxyService{},
-		&rbac.ClientClusterRole{},
+		&rbac.AuthProxyClientRole{},
 		&manager.Config{Image: imageName},
 		&templates.Main{},
 		&templates.GoMod{ControllerRuntimeVersion: ControllerRuntimeVersion},
@@ -115,20 +115,20 @@ func (s *initScaffolder) scaffold() error {
 			ControllerRuntimeVersion: ControllerRuntimeVersion,
 		},
 		&templates.Dockerfile{},
-		&templates.DockerignoreFile{},
-		&kdefault.Kustomize{},
+		&templates.DockerIgnore{},
+		&kdefault.Kustomization{},
 		&kdefault.ManagerWebhookPatch{},
-		&rbac.ManagerRoleBinding{},
+		&rbac.RoleBinding{},
 		&rbac.LeaderElectionRole{},
 		&rbac.LeaderElectionRoleBinding{},
-		&rbac.KustomizeRBAC{},
+		&rbac.Kustomization{},
 		&manager.Kustomization{},
 		&webhook.Kustomization{},
-		&webhook.KustomizeConfigWebhook{},
+		&webhook.KustomizeConfig{},
 		&webhook.Service{},
 		&prometheus.Kustomization{},
-		&prometheus.ServiceMonitor{},
-		&certmanager.CertManager{},
+		&prometheus.Monitor{},
+		&certmanager.Certificate{},
 		&certmanager.Kustomization{},
 		&certmanager.KustomizeConfig{},
 	)

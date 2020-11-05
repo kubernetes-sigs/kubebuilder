@@ -22,15 +22,15 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
-var _ file.Template = &InjectCAPatch{}
+var _ file.Template = &WebhookCAInjectionPatch{}
 
-// InjectCAPatch scaffolds the InjectCAPatch file in manager folder.
-type InjectCAPatch struct {
+// WebhookCAInjectionPatch scaffolds a file that defines the patch that adds annotation to webhooks
+type WebhookCAInjectionPatch struct {
 	file.TemplateMixin
 }
 
-// SetTemplateDefaults implements input.Template
-func (f *InjectCAPatch) SetTemplateDefaults() error {
+// SetTemplateDefaults implements file.Template
+func (f *WebhookCAInjectionPatch) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "default", "webhookcainjection_patch.yaml")
 	}

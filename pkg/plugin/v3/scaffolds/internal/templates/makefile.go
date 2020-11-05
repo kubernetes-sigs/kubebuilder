@@ -22,7 +22,7 @@ import (
 
 var _ file.Template = &Makefile{}
 
-// Makefile scaffolds the Makefile
+// Makefile scaffolds a file that defines project management CLI commands
 type Makefile struct {
 	file.TemplateMixin
 
@@ -38,7 +38,7 @@ type Makefile struct {
 	ControllerRuntimeVersion string
 }
 
-// SetTemplateDefaults implements input.Template
+// SetTemplateDefaults implements file.Template
 func (f *Makefile) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = "Makefile"

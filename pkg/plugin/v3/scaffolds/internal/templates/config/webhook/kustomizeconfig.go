@@ -22,15 +22,15 @@ import (
 	"sigs.k8s.io/kubebuilder/pkg/model/file"
 )
 
-var _ file.Template = &KustomizeConfigWebhook{}
+var _ file.Template = &KustomizeConfig{}
 
-// KustomizeConfigWebhook scaffolds the Kustomization file in manager folder.
-type KustomizeConfigWebhook struct {
+// KustomizeConfig scaffolds a file that configures the kustomization for the webhook folder
+type KustomizeConfig struct {
 	file.TemplateMixin
 }
 
-// SetTemplateDefaults implements input.Template
-func (f *KustomizeConfigWebhook) SetTemplateDefaults() error {
+// SetTemplateDefaults implements file.Template
+func (f *KustomizeConfig) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "webhook", "kustomizeconfig.yaml")
 	}
