@@ -21,7 +21,7 @@ source common.sh
 
 export TRACE=1
 export GO111MODULE=on
-export KIND_K8S_VERSION=${KIND_K8S_VERSION:-v1.17.0}
+export KIND_K8S_VERSION=${KIND_K8S_VERSION:-v1.18.0}
 
 fetch_tools
 install_kind
