@@ -12,8 +12,18 @@ This Quick Start guide will cover:
 - [go](https://golang.org/dl/) version v1.13+.
 - [docker](https://docs.docker.com/install/) version 17.03+.
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) version v1.11.3+.
-- [kustomize](https://sigs.k8s.io/kustomize/docs/INSTALL.md) v3.1.0+
 - Access to a Kubernetes v1.11.3+ cluster.
+
+<aside class="note">
+<h1>Versions and Supportability</h1>
+
+Projects created by Kubebuilder contain a Makefile that will install tools at versions defined at creation time. Those tools are:
+- [kustomize](https://kubernetes-sigs.github.io/kustomize/)
+- [controller-gen](https://github.com/kubernetes-sigs/controller-tools)
+
+The versions which are defined in the `Makefile` and `go.mod` files are the versions tested and therefore is recommend to use the specified versions.
+ 
+</aside>
 
 ## Installation
 
