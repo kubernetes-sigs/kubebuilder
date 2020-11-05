@@ -89,7 +89,6 @@ func (c Config) HasResource(target GVK) bool {
 
 // AddResource appends the provided resource to the tracked ones
 // It returns if the configuration was modified
-// NOTE: in v1 resources are not tracked, so we return false
 func (c *Config) AddResource(gvk GVK) bool {
 	// No-op if the resource was already tracked, return false
 	if c.HasResource(gvk) {
