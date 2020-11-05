@@ -283,7 +283,7 @@ func (c *cli) initialize() error {
 // affect initialization of a cli. An error is returned only if an error
 // unrelated to flag parsing occurs.
 func (c *cli) parseBaseFlags() error {
-	// Create a dummy "base" flagset to populate from CLI args.
+	// Create a partial "base" flagset to populate from CLI args.
 	fs := pflag.NewFlagSet("base", pflag.ExitOnError)
 	fs.ParseErrorsWhitelist = pflag.ParseErrorsWhitelist{UnknownFlags: true}
 
