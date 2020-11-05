@@ -27,14 +27,14 @@ import (
 
 	"github.com/spf13/pflag"
 
-	"sigs.k8s.io/kubebuilder/pkg/model"
-	"sigs.k8s.io/kubebuilder/pkg/model/config"
-	"sigs.k8s.io/kubebuilder/pkg/model/resource"
-	"sigs.k8s.io/kubebuilder/pkg/plugin"
-	"sigs.k8s.io/kubebuilder/pkg/plugin/internal/cmdutil"
-	"sigs.k8s.io/kubebuilder/pkg/plugin/internal/util"
-	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds"
-	"sigs.k8s.io/kubebuilder/plugins/addon"
+	"sigs.k8s.io/kubebuilder/v2/pkg/model"
+	"sigs.k8s.io/kubebuilder/v2/pkg/model/config"
+	"sigs.k8s.io/kubebuilder/v2/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v2/pkg/plugin"
+	"sigs.k8s.io/kubebuilder/v2/pkg/plugin/internal/cmdutil"
+	"sigs.k8s.io/kubebuilder/v2/pkg/plugin/internal/util"
+	"sigs.k8s.io/kubebuilder/v2/pkg/plugin/v3/scaffolds"
+	"sigs.k8s.io/kubebuilder/v2/plugins/addon"
 )
 
 // KbDeclarativePatternVersion is the sigs.k8s.io/kubebuilder-declarative-pattern version

@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"sort"
 
-	"sigs.k8s.io/kubebuilder/pkg/internal/validation"
-	"sigs.k8s.io/kubebuilder/pkg/plugin"
+	"sigs.k8s.io/kubebuilder/v2/pkg/internal/validation"
+	"sigs.k8s.io/kubebuilder/v2/pkg/plugin"
 )
 
 // errAmbiguousPlugin should be returned when an ambiguous plugin key is

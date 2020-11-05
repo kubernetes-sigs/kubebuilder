@@ -19,14 +19,14 @@ package scaffolds
 import (
 	"fmt"
 
-	"sigs.k8s.io/kubebuilder/pkg/model"
-	"sigs.k8s.io/kubebuilder/pkg/model/config"
-	"sigs.k8s.io/kubebuilder/pkg/model/resource"
-	"sigs.k8s.io/kubebuilder/pkg/plugin/internal/cmdutil"
-	"sigs.k8s.io/kubebuilder/pkg/plugin/internal/machinery"
-	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates"
-	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates/api"
-	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates/config/kdefault"
+	"sigs.k8s.io/kubebuilder/v2/pkg/model"
+	"sigs.k8s.io/kubebuilder/v2/pkg/model/config"
+	"sigs.k8s.io/kubebuilder/v2/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v2/pkg/plugin/internal/cmdutil"
+	"sigs.k8s.io/kubebuilder/v2/pkg/plugin/internal/machinery"
+	"sigs.k8s.io/kubebuilder/v2/pkg/plugin/v3/scaffolds/internal/templates"
+	"sigs.k8s.io/kubebuilder/v2/pkg/plugin/v3/scaffolds/internal/templates/api"
+	"sigs.k8s.io/kubebuilder/v2/pkg/plugin/v3/scaffolds/internal/templates/config/kdefault"
 )
 
 var _ cmdutil.Scaffolder = &webhookScaffolder{}

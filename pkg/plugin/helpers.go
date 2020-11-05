@@ -21,7 +21,7 @@ import (
 	"path"
 	"strings"
 
-	"sigs.k8s.io/kubebuilder/pkg/internal/validation"
+	"sigs.k8s.io/kubebuilder/v2/pkg/internal/validation"
 )
 
 // DefaultNameQualifier is the suffix appended to all kubebuilder plugin names.

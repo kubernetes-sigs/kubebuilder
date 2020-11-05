@@ -21,8 +21,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"sigs.k8s.io/kubebuilder/pkg/cli/internal/config"
-	"sigs.k8s.io/kubebuilder/pkg/plugin"
+	"sigs.k8s.io/kubebuilder/v2/pkg/cli/internal/config"
+	"sigs.k8s.io/kubebuilder/v2/pkg/plugin"
 )
 
 // cmdErr updates a cobra command to output error information when executed

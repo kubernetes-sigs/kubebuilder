@@ -20,7 +20,7 @@ import (
 	"errors"
 	"fmt"
 
-	"sigs.k8s.io/kubebuilder/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v2/pkg/model/file"
 )
 
 // This file contains the errors returned by the scaffolding machinery

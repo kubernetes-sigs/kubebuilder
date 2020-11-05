@@ -24,9 +24,9 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	internalconfig "sigs.k8s.io/kubebuilder/pkg/cli/internal/config"
-	"sigs.k8s.io/kubebuilder/pkg/model/config"
-	"sigs.k8s.io/kubebuilder/pkg/plugin"
+	internalconfig "sigs.k8s.io/kubebuilder/v2/pkg/cli/internal/config"
+	"sigs.k8s.io/kubebuilder/v2/pkg/model/config"
+	"sigs.k8s.io/kubebuilder/v2/pkg/plugin"
 )
 
 // Test plugin types and constructors.

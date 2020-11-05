@@ -26,9 +26,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	internalconfig "sigs.k8s.io/kubebuilder/pkg/cli/internal/config"
-	"sigs.k8s.io/kubebuilder/pkg/model/config"
-	"sigs.k8s.io/kubebuilder/pkg/plugin"
+	internalconfig "sigs.k8s.io/kubebuilder/v2/pkg/cli/internal/config"
+	"sigs.k8s.io/kubebuilder/v2/pkg/model/config"
+	"sigs.k8s.io/kubebuilder/v2/pkg/plugin"
 )
 
 func (c *cli) newInitCmd() *cobra.Command {
