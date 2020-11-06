@@ -23,11 +23,10 @@ import (
 
 	"github.com/spf13/pflag"
 
-	"sigs.k8s.io/kubebuilder/internal/cmdutil"
 	"sigs.k8s.io/kubebuilder/pkg/model/config"
 	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/pkg/plugin"
-	"sigs.k8s.io/kubebuilder/pkg/plugin/scaffold"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/internal/cmdutil"
 	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds"
 )
 
@@ -105,7 +104,7 @@ func (p *createWebhookSubcommand) Validate() error {
 	return nil
 }
 
-func (p *createWebhookSubcommand) GetScaffolder() (scaffold.Scaffolder, error) {
+func (p *createWebhookSubcommand) GetScaffolder() (cmdutil.Scaffolder, error) {
 	// Load the boilerplate
 	bp, err := ioutil.ReadFile(filepath.Join("hack", "boilerplate.go.txt")) // nolint:gosec
 	if err != nil {

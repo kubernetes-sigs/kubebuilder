@@ -27,13 +27,12 @@ import (
 
 	"github.com/spf13/pflag"
 
-	"sigs.k8s.io/kubebuilder/internal/cmdutil"
 	"sigs.k8s.io/kubebuilder/pkg/model"
 	"sigs.k8s.io/kubebuilder/pkg/model/config"
 	"sigs.k8s.io/kubebuilder/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/pkg/plugin"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/internal/cmdutil"
 	"sigs.k8s.io/kubebuilder/pkg/plugin/internal/util"
-	"sigs.k8s.io/kubebuilder/pkg/plugin/scaffold"
 	"sigs.k8s.io/kubebuilder/pkg/plugin/v2/scaffolds"
 	"sigs.k8s.io/kubebuilder/plugins/addon"
 )
@@ -158,7 +157,7 @@ func (p *createAPISubcommand) Validate() error {
 	return nil
 }
 
-func (p *createAPISubcommand) GetScaffolder() (scaffold.Scaffolder, error) {
+func (p *createAPISubcommand) GetScaffolder() (cmdutil.Scaffolder, error) {
 	// Load the boilerplate
 	bp, err := ioutil.ReadFile(filepath.Join("hack", "boilerplate.go.txt")) // nolint:gosec
 	if err != nil {

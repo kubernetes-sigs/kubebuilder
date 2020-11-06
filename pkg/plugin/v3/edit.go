@@ -21,10 +21,9 @@ import (
 
 	"github.com/spf13/pflag"
 
-	"sigs.k8s.io/kubebuilder/internal/cmdutil"
 	"sigs.k8s.io/kubebuilder/pkg/model/config"
 	"sigs.k8s.io/kubebuilder/pkg/plugin"
-	"sigs.k8s.io/kubebuilder/pkg/plugin/scaffold"
+	"sigs.k8s.io/kubebuilder/pkg/plugin/internal/cmdutil"
 	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds"
 )
 
@@ -66,7 +65,7 @@ func (p *editSubcommand) Validate() error {
 	return nil
 }
 
-func (p *editSubcommand) GetScaffolder() (scaffold.Scaffolder, error) {
+func (p *editSubcommand) GetScaffolder() (cmdutil.Scaffolder, error) {
 	return scaffolds.NewEditScaffolder(p.config, p.multigroup), nil
 }
 

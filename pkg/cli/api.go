@@ -21,7 +21,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"sigs.k8s.io/kubebuilder/internal/config"
+	"sigs.k8s.io/kubebuilder/pkg/cli/internal/config"
 	"sigs.k8s.io/kubebuilder/pkg/plugin"
 )
 

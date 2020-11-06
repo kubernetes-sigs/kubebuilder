@@ -62,7 +62,7 @@ func readFrom(fs afero.Fs, path string) (c config.Config, err error) {
 		return
 	}
 
-	// kubebuilder v1 omitted version, so default to v1
+	// kubebuilder v1 omitted version and it is not supported, so return an error
 	if c.Version == "" {
 		return config.Config{}, fmt.Errorf("project version key `version` is empty or does not exist in %s", path)
 	}
