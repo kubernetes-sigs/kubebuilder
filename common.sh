@@ -62,11 +62,6 @@ for p in ${GOPATH//:/ }; do
   fi
 done
 
-if [ -z $go_workspace ]; then
-  echo 'Current directory is not in $GOPATH' >&2
-  exit 1
-fi
-
 k8s_version=1.16.4
 goarch=amd64
 goos="unknown"
@@ -120,7 +115,7 @@ function prepare_staging_dir {
   if [ -z "$SKIP_FETCH_TOOLS" ]; then
     rm -rf "$kb_root_dir"
   else
-    rm -f "$kb_root_dir/kubebuilder/bin/kubebuilder"
+    rm -f "$kb_root_dir/bin/kubebuilder"
   fi
 }
 
@@ -153,7 +148,7 @@ function build_kb {
     opts=-ldflags "-X sigs.k8s.io/kubebuilder/v2/cmd.kubeBuilderVersion=$INJECT_KB_VERSION"
   fi
 
-  GO111MODULE=on go build $opts -o $tmp_root/kubebuilder/bin/kubebuilder ./cmd
+  GO111MODULE=on go build $opts -o $kb_root_dir/bin/kubebuilder ./cmd
 }
 
 function install_kind {
@@ -175,7 +170,7 @@ function is_installed {
 }
 
 function prepare_testdir_under_gopath {
-  kb_test_dir=${go_workspace}/src/sigs.k8s.io/kubebuilder-test
+  kb_test_dir=$kb_root_dir/test
   header_text "preparing test directory $kb_test_dir"
   rm -rf "$kb_test_dir" && mkdir -p "$kb_test_dir" && cd "$kb_test_dir"
   header_text "running kubebuilder commands in test directory $kb_test_dir"
@@ -185,11 +180,11 @@ function setup_envs {
   header_text "setting up env vars"
 
   # Setup env vars
-  export PATH=$tmp_root/kubebuilder/bin:$PATH
-  export TEST_ASSET_KUBECTL=$tmp_root/kubebuilder/bin/kubectl
-  export TEST_ASSET_KUBE_APISERVER=$tmp_root/kubebuilder/bin/kube-apiserver
-  export TEST_ASSET_ETCD=$tmp_root/kubebuilder/bin/etcd
-  export TEST_DEP=$tmp_root/kubebuilder/init_project
+  export PATH=$kb_root_dir/bin:$PATH
+  export TEST_ASSET_KUBECTL=$kb_root_dir/bin/kubectl
+  export TEST_ASSET_KUBE_APISERVER=$kb_root_dir/bin/kube-apiserver
+  export TEST_ASSET_ETCD=$kb_root_dir/bin/etcd
+  export TEST_DEP=$kb_root_dir/init_project
 }
 
 function cache_project {
