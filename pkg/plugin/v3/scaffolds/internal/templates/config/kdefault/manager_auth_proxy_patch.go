@@ -65,6 +65,7 @@ spec:
           name: https
       - name: manager
         args:
+        - "--https-address=:8081"
         - "--metrics-addr=127.0.0.1:8080"
         - "--enable-leader-election"
 `

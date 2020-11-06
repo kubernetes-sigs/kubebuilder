@@ -205,6 +205,7 @@ package main
 
 import (
 	"flag"
+	"net/http"
 	"os"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -233,7 +234,9 @@ func init() {
 func main() {
 	var metricsAddr string
 	var enableLeaderElection bool
+	var probeAddr string
 	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
+	flag.StringVar(&probeAddr, "probe-addr", ":8081", "The address the probe endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
 		"Enable leader election for controller manager. " +
 		"Enabling this will ensure there is only one active controller manager.")
@@ -250,6 +253,7 @@ func main() {
 		Scheme:             scheme,
 		MetricsBindAddress: metricsAddr,
 		Port:               9443, 
+		HealthProbeBindAddress: probeAddr,
 		LeaderElection:     enableLeaderElection, 
 		LeaderElectionID:   "{{ hash .Repo }}.{{ .Domain }}",
 	})
@@ -259,6 +263,9 @@ func main() {
 	}
 
 	%s
+
+	_ = mgr.AddHealthzCheck("check", func(_ *http.Request) error { return nil })
+	_ = mgr.AddReadyzCheck("check", func(_ *http.Request) error { return nil })
 
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
