@@ -22,8 +22,9 @@ import (
 
 func (c *cli) newCreateCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "create",
-		Short: "Scaffold a Kubernetes API or webhook",
-		Long:  `Scaffold a Kubernetes API or webhook.`,
+		Use:        "create",
+		SuggestFor: []string{"new"},
+		Short:      "Scaffold a Kubernetes API or webhook",
+		Long:       `Scaffold a Kubernetes API or webhook.`,
 	}
 }
