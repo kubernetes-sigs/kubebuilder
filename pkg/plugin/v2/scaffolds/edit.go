@@ -42,7 +42,6 @@ func NewEditScaffolder(config *config.Config, multigroup bool) cmdutil.Scaffolde
 
 // Scaffold implements Scaffolder
 func (s *editScaffolder) Scaffold() error {
-	s.config.MultiGroup = s.multigroup
 	filename := "Dockerfile"
 	bs, err := ioutil.ReadFile(filename)
 	if err != nil {
@@ -56,21 +55,29 @@ func (s *editScaffolder) Scaffold() error {
 			str,
 			"COPY api/ api/",
 			`COPY apis/ apis/`)
-		if err != nil {
-			return err
-		}
 	} else {
 		str, err = ensureExistAndReplace(
 			str,
 			"COPY apis/ apis/",
 			`COPY api/ api/`)
-		if err != nil {
-			return err
-		}
 	}
-	// false positive
-	// nolint:gosec
-	return ioutil.WriteFile(filename, []byte(str), 0644)
+
+	// Ignore the error encountered, if the file is already in desired format.
+	if err != nil && s.multigroup != s.config.MultiGroup {
+		return err
+	}
+
+	s.config.MultiGroup = s.multigroup
+
+	// Check if the str is not empty, because when the file is already in desired format it will return empty string
+	// because there is nothing to replace.
+	if str != "" {
+		// false positive
+		// nolint:gosec
+		return ioutil.WriteFile(filename, []byte(str), 0644)
+	}
+
+	return nil
 }
 
 func ensureExistAndReplace(input, match, replace string) (string, error) {
