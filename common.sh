@@ -149,7 +149,7 @@ function build_kb {
     opts=""
   else
     # TODO: what does this thing do.
-    opts=-ldflags "-X sigs.k8s.io/kubebuilder/cmd/version.kubeBuilderVersion=$INJECT_KB_VERSION"
+    opts=-ldflags "-X sigs.k8s.io/kubebuilder/v2/cmd/version.kubeBuilderVersion=$INJECT_KB_VERSION"
   fi
 
   GO111MODULE=on go build $opts -o $tmp_root/kubebuilder/bin/kubebuilder ./cmd

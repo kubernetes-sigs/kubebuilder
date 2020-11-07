@@ -25,12 +25,12 @@ import (
 
 	"github.com/spf13/pflag"
 
-	"sigs.k8s.io/kubebuilder/pkg/internal/validation"
-	"sigs.k8s.io/kubebuilder/pkg/model/config"
-	"sigs.k8s.io/kubebuilder/pkg/plugin"
-	"sigs.k8s.io/kubebuilder/pkg/plugin/internal/cmdutil"
-	"sigs.k8s.io/kubebuilder/pkg/plugin/internal/util"
-	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds"
+	"sigs.k8s.io/kubebuilder/v2/pkg/internal/validation"
+	"sigs.k8s.io/kubebuilder/v2/pkg/model/config"
+	"sigs.k8s.io/kubebuilder/v2/pkg/plugin"
+	"sigs.k8s.io/kubebuilder/v2/pkg/plugin/internal/cmdutil"
+	"sigs.k8s.io/kubebuilder/v2/pkg/plugin/internal/util"
+	"sigs.k8s.io/kubebuilder/v2/pkg/plugin/v3/scaffolds"
 )
 
 type initSubcommand struct {

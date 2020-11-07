@@ -19,18 +19,18 @@ package scaffolds
 import (
 	"fmt"
 
-	"sigs.k8s.io/kubebuilder/pkg/model"
-	"sigs.k8s.io/kubebuilder/pkg/model/config"
-	"sigs.k8s.io/kubebuilder/pkg/model/resource"
-	"sigs.k8s.io/kubebuilder/pkg/plugin/internal/cmdutil"
-	"sigs.k8s.io/kubebuilder/pkg/plugin/internal/machinery"
-	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates"
-	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates/api"
-	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates/config/crd"
-	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates/config/crd/patches"
-	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates/config/rbac"
-	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates/config/samples"
-	"sigs.k8s.io/kubebuilder/pkg/plugin/v3/scaffolds/internal/templates/controllers"
+	"sigs.k8s.io/kubebuilder/v2/pkg/model"
+	"sigs.k8s.io/kubebuilder/v2/pkg/model/config"
+	"sigs.k8s.io/kubebuilder/v2/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v2/pkg/plugin/internal/cmdutil"
+	"sigs.k8s.io/kubebuilder/v2/pkg/plugin/internal/machinery"
+	"sigs.k8s.io/kubebuilder/v2/pkg/plugin/v3/scaffolds/internal/templates"
+	"sigs.k8s.io/kubebuilder/v2/pkg/plugin/v3/scaffolds/internal/templates/api"
+	"sigs.k8s.io/kubebuilder/v2/pkg/plugin/v3/scaffolds/internal/templates/config/crd"
+	"sigs.k8s.io/kubebuilder/v2/pkg/plugin/v3/scaffolds/internal/templates/config/crd/patches"
+	"sigs.k8s.io/kubebuilder/v2/pkg/plugin/v3/scaffolds/internal/templates/config/rbac"
+	"sigs.k8s.io/kubebuilder/v2/pkg/plugin/v3/scaffolds/internal/templates/config/samples"
+	"sigs.k8s.io/kubebuilder/v2/pkg/plugin/v3/scaffolds/internal/templates/controllers"
 )
 
 var _ cmdutil.Scaffolder = &apiScaffolder{}

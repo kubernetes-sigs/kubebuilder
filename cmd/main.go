@@ -19,10 +19,10 @@ package main
 import (
 	"log"
 
-	"sigs.k8s.io/kubebuilder/cmd/version"
-	"sigs.k8s.io/kubebuilder/pkg/cli"
-	pluginv2 "sigs.k8s.io/kubebuilder/pkg/plugin/v2"
-	pluginv3 "sigs.k8s.io/kubebuilder/pkg/plugin/v3"
+	"sigs.k8s.io/kubebuilder/v2/cmd/version"
+	"sigs.k8s.io/kubebuilder/v2/pkg/cli"
+	pluginv2 "sigs.k8s.io/kubebuilder/v2/pkg/plugin/v2"
+	pluginv3 "sigs.k8s.io/kubebuilder/v2/pkg/plugin/v3"
 )
 
 func main() {

@@ -17,8 +17,8 @@ limitations under the License.
 package v3
 
 import (
-	"sigs.k8s.io/kubebuilder/pkg/model/config"
-	"sigs.k8s.io/kubebuilder/pkg/plugin"
+	"sigs.k8s.io/kubebuilder/v2/pkg/model/config"
+	"sigs.k8s.io/kubebuilder/v2/pkg/plugin"
 )
 
 const pluginName = "go" + plugin.DefaultNameQualifier
