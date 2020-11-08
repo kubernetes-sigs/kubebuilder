@@ -346,14 +346,6 @@ func (c cli) validate() error {
 func (c cli) buildRootCmd() *cobra.Command {
 	rootCmd := c.defaultCommand()
 
-	// kubebuilder alpha
-	alphaCmd := c.newAlphaCmd()
-
-	// Only add alpha group if it has subcommands
-	if alphaCmd.HasSubCommands() {
-		rootCmd.AddCommand(alphaCmd)
-	}
-
 	// kubebuilder completion
 	// Only add completion if requested
 	if c.completionCommand {
