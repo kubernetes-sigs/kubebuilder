@@ -5,14 +5,20 @@
 
 Kubebuilder is a framework for building Kubernetes APIs using [custom resource definitions (CRDs)](https://kubernetes.io/docs/tasks/access-kubernetes-api/extend-api-custom-resource-definitions).
 
+Similar to web development frameworks such as *Ruby on Rails* and *SpringBoot*,
+Kubebuilder increases velocity and reduces the complexity managed by
+developers for rapidly building and publishing Kubernetes APIs in Go.
+It builds on top of the canonical techniques used to build the core Kubernetes APIs to provide simple abstractions that reduce boilerplate and toil.
+
 **Note:** kubebuilder does not exist as an example to *copy-paste*, but instead provides powerful libraries and tools
 to simplify building and publishing Kubernetes APIs from scratch.
+
+Kubebuilder is developed on top of the controller-runtime and controller-tools libraries.
 
 ### Installation
 
 It is strongly recommended that you use a released version. Release binaries are available on the [releases](https://github.com/kubernetes-sigs/kubebuilder/releases) page.
 Follow the [instructions](https://book.kubebuilder.io/quick-start.html#installation) to install Kubebuilder.
-
 
 ## Getting Started
 
