@@ -40,7 +40,7 @@ import (
 // KbDeclarativePatternVersion is the sigs.k8s.io/kubebuilder-declarative-pattern version
 // (used only to gen api with --pattern=addon)
 // TODO: remove this when a better solution for using addons is implemented.
-const KbDeclarativePatternVersion = "v0.0.0-20200522144838-848d48e5b073"
+const KbDeclarativePatternVersion = "1cbf859290cab81ae8e73fc5caebe792280175d1"
 
 // DefaultMainPath is default file path of main.go
 const DefaultMainPath = "main.go"

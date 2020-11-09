@@ -46,9 +46,8 @@ type FrigateReconciler struct {
 // the user.
 //
 // For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.6.3/pkg/reconcile
-func (r *FrigateReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	_ = context.Background()
+// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.7.0-alpha.6/pkg/reconcile
+func (r *FrigateReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = r.Log.WithValues("frigate", req.NamespacedName)
 
 	// your logic here
