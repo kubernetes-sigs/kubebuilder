@@ -78,7 +78,7 @@ func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&p.resource.Group, "group", "", "resource Group")
 	fs.StringVar(&p.resource.Version, "version", "", "resource Version")
 	fs.StringVar(&p.resource.Kind, "kind", "", "resource Kind")
-	fs.StringVar(&p.resource.Plural, "resource", "", "resource Resource")
+	fs.StringVar(&p.resource.Plural, "plural", "", "resource kind irregular plural form")
 	fs.StringVar(&p.resource.Webhooks.WebhookVersion, "webhook-version", defaultWebhookVersion,
 		"version of {Mutating,Validating}WebhookConfigurations to scaffold. Options: [v1, v1beta1]")
 

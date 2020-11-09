@@ -111,9 +111,9 @@ func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.force, "force", false,
 		"attempt to create resource even if it already exists")
 	p.resource = &resource.Options{}
-	fs.StringVar(&p.resource.Kind, "kind", "", "resource Kind")
 	fs.StringVar(&p.resource.Group, "group", "", "resource Group")
 	fs.StringVar(&p.resource.Version, "version", "", "resource Version")
+	fs.StringVar(&p.resource.Kind, "kind", "", "resource Kind")
 	fs.BoolVar(&p.resource.Namespaced, "namespaced", true, "resource is namespaced")
 }
 

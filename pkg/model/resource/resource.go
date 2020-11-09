@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/gobuffalo/flect"
+
 	"sigs.k8s.io/kubebuilder/v2/pkg/model/config"
 )
 
@@ -61,13 +63,20 @@ type Resource struct {
 
 // Data returns the ResourceData information to check against tracked resources in the configuration file
 func (r *Resource) Data() config.ResourceData {
-	return config.ResourceData{
+	data := config.ResourceData{
 		Group:    r.Group,
 		Version:  r.Version,
 		Kind:     r.Kind,
 		API:      &r.API,
 		Webhooks: &r.Webhooks,
 	}
+
+	// Only store plural if it is irregular
+	if r.Plural != flect.Pluralize(strings.ToLower(r.Kind)) {
+		data.Plural = r.Plural
+	}
+
+	return data
 }
 
 func wrapKey(key string) string {

@@ -125,9 +125,10 @@ func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.force, "force", false,
 		"attempt to create resource even if it already exists")
 	p.resource = &resource.Options{}
-	fs.StringVar(&p.resource.Kind, "kind", "", "resource Kind")
 	fs.StringVar(&p.resource.Group, "group", "", "resource Group")
 	fs.StringVar(&p.resource.Version, "version", "", "resource Version")
+	fs.StringVar(&p.resource.Kind, "kind", "", "resource Kind")
+	fs.StringVar(&p.resource.Plural, "plural", "", "resource kind irregular plural form")
 	fs.BoolVar(&p.resource.Namespaced, "namespaced", true, "resource is namespaced")
 	fs.StringVar(&p.resource.API.CRDVersion, "crd-version", defaultCRDVersion,
 		"version of CustomResourceDefinition to scaffold. Options: [v1, v1beta1]")

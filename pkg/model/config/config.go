@@ -165,6 +165,7 @@ type ResourceData struct {
 	Group   string `json:"group,omitempty"`
 	Version string `json:"version,omitempty"`
 	Kind    string `json:"kind,omitempty"`
+	Plural  string `json:"plural,omitempty"`
 
 	// API holds the API data
 	API *API `json:"api,omitempty"`
