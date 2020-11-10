@@ -82,8 +82,18 @@ func NewTestContext(binaryName string, env ...string) (*TestContext, error) {
 	}, nil
 }
 
-// Prepare prepare a work directory for testing
+// Prepare prepares the test environment.
 func (t *TestContext) Prepare() error {
+	// Remove tools used by projects in the environment so the correct version is downloaded for each test.
+	fmt.Fprintf(GinkgoWriter, "cleaning up tools")
+	for _, toolName := range []string{"controller-gen", "kustomize"} {
+		if toolPath, err := exec.LookPath(toolName); err == nil {
+			if err := os.RemoveAll(toolPath); err != nil {
+				return err
+			}
+		}
+	}
+
 	fmt.Fprintf(GinkgoWriter, "preparing testing directory: %s\n", t.Dir)
 	return os.MkdirAll(t.Dir, 0755)
 }

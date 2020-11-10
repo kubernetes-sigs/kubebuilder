@@ -14,14 +14,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-set -e
-
 source common.sh
 
 build_kb() {
     go build -o ./bin/kubebuilder sigs.k8s.io/kubebuilder/v2/cmd
 }
-
 
 #
 # This function scaffolds test projects given a project name and
@@ -32,14 +29,18 @@ scaffold_test_project() {
     local version=$2
     local plugin=${3:-""}
 
-    testdata_dir=$(pwd)/testdata
+    local testdata_dir=$(pwd)/testdata
     mkdir -p ./testdata/$project
     rm -rf ./testdata/$project/*
     pushd .
     cd testdata/$project
-    kb=$testdata_dir/../bin/kubebuilder
+    local kb=$testdata_dir/../bin/kubebuilder
     # Set "--plugins $plugin" if $plugin is not null.
     local plugin_flag="${plugin:+--plugins $plugin}"
+
+    # Remove tool binaries so the correct versions are used for each plugin version.
+    rm -f "$(which controller-gen)"
+    rm -f "$(which kustomize)"
 
     if [ $version == "2" ] || [ $version == "3-alpha" ]; then
         if [ $version == "2" ] && [ -n "$plugin_flag" ]; then
@@ -50,8 +51,6 @@ scaffold_test_project() {
         header_text "Starting to generate projects with version $version"
         header_text "Generating $project"
 
-        export GO111MODULE=on
-        export PATH=$PATH:$(go env GOPATH)/bin
         go mod init sigs.k8s.io/kubebuilder/testdata/$project  # our repo autodetection will traverse up to the kb module if we don't do this
 
         header_text "initializing $project ..."
@@ -103,6 +102,9 @@ scaffold_test_project() {
 }
 
 set -e
+
+export GO111MODULE=on
+export PATH="$PATH:$(go env GOPATH)/bin"
 
 build_kb
 scaffold_test_project project-v2 2

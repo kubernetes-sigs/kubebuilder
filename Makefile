@@ -52,15 +52,12 @@ install: ## Build and install the binary with the current source code. Use it to
 
 .PHONY: generate
 generate: ## Update/generate all mock data. You should run this commands to update the mock data after your changes.
-    # If exists, rremove the controller-gen installed locally. It ensures that the version which will be used
-    # is the version defined in the Makefile scaffolded.
-	- rm -rf $(CONTROLLER_GEN_BIN_PATH)
 	make generate-testdata
 	go mod tidy
 
 .PHONY: generate-testdata
 generate-testdata: ## Update/generate the testdata in $GOPATH/src/sigs.k8s.io/kubebuilder
-	GO111MODULE=on ./generate_testdata.sh
+	./generate_testdata.sh
 
 .PHONY: lint
 lint: golangci-lint ## Run golangci lint checks

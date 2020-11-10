@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubernetes Authors.
+Copyright 2019 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v3
+package v2
 
 import (
 	"encoding/base64"
@@ -31,7 +31,7 @@ import (
 )
 
 var _ = Describe("kubebuilder", func() {
-	Context("with v3 scaffolding", func() {
+	Context("with project version 2 scaffolding", func() {
 		var kbc *utils.TestContext
 		BeforeEach(func() {
 			var err error
@@ -62,9 +62,9 @@ var _ = Describe("kubebuilder", func() {
 
 		It("should generate a runnable project", func() {
 			var controllerPodName string
-			By("init v3 project")
+			By("init v2 project")
 			err := kbc.Init(
-				"--project-version", "3-alpha",
+				"--project-version", "2",
 				"--domain", kbc.Domain,
 				"--fetch-deps=false")
 			Expect(err).Should(Succeed())
