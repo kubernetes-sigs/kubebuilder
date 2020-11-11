@@ -17,6 +17,8 @@ limitations under the License.
 package file
 
 import (
+	"fmt"
+	"hash/fnv"
 	"strings"
 	"text/template"
 )
@@ -24,7 +26,17 @@ import (
 // DefaultFuncMap returns the default template.FuncMap for rendering the template.
 func DefaultFuncMap() template.FuncMap {
 	return template.FuncMap{
-		"title": strings.Title,
-		"lower": strings.ToLower,
+		"title":   strings.Title,
+		"lower":   strings.ToLower,
+		"hashFNV": hashFNV,
 	}
+}
+
+// hashFNV will generate a random string useful for generating a unique string
+func hashFNV(s string) (string, error) {
+	hasher := fnv.New32a()
+	if _, err := hasher.Write([]byte(s)); err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%x", hasher.Sum(nil)), nil
 }

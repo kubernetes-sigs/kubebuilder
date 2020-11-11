@@ -18,9 +18,7 @@ package templates
 
 import (
 	"fmt"
-	"hash/fnv"
 	"path/filepath"
-	"text/template"
 
 	"sigs.k8s.io/kubebuilder/v2/pkg/model/file"
 )
@@ -28,7 +26,6 @@ import (
 const defaultMainPath = "main.go"
 
 var _ file.Template = &Main{}
-var _ file.UseCustomFuncMap = &Main{}
 
 // Main scaffolds a file that defines the controller manager entry point
 type Main struct {
@@ -51,21 +48,6 @@ func (f *Main) SetTemplateDefaults() error {
 	)
 
 	return nil
-}
-
-func hash(s string) (string, error) {
-	hasher := fnv.New32a()
-	if _, err := hasher.Write([]byte(s)); err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("%x", hasher.Sum(nil)), nil
-}
-
-// GetFuncMap implements file.UseCustomFuncMap
-func (f *Main) GetFuncMap() template.FuncMap {
-	fm := file.DefaultFuncMap()
-	fm["hash"] = hash
-	return fm
 }
 
 var _ file.Inserter = &MainUpdater{}
@@ -249,9 +231,9 @@ func main() {
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:             scheme,
 		MetricsBindAddress: metricsAddr,
-		Port:               9443, 
-		LeaderElection:     enableLeaderElection, 
-		LeaderElectionID:   "{{ hash .Repo }}.{{ .Domain }}",
+		Port:               9443,
+		LeaderElection:     enableLeaderElection,
+		LeaderElectionID:   "{{ hashFNV .Repo }}.{{ .Domain }}",
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
