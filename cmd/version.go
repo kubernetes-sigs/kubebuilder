@@ -14,12 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package version
+package main
 
 import (
 	"fmt"
-
-	"github.com/spf13/cobra"
 )
 
 // var needs to be used instead of const as ldflags is used to fill this
@@ -34,8 +32,8 @@ var (
 	buildDate = "1970-01-01T00:00:00Z" // build date in ISO8601 format, output of $(date -u +'%Y-%m-%dT%H:%M:%SZ')
 )
 
-// Version contains all the information related to the CLI version
-type Version struct {
+// version contains all the information related to the CLI version
+type version struct {
 	KubeBuilderVersion string `json:"kubeBuilderVersion"`
 	KubernetesVendor   string `json:"kubernetesVendor"`
 	GitCommit          string `json:"gitCommit"`
@@ -44,33 +42,14 @@ type Version struct {
 	GoArch             string `json:"goArch"`
 }
 
-func getVersion() Version {
-	return Version{
+// versionString returns the CLI version
+func versionString() string {
+	return fmt.Sprintf("Version: %#v", version{
 		kubeBuilderVersion,
 		kubernetesVendorVersion,
 		gitCommit,
 		buildDate,
 		goos,
 		goarch,
-	}
-}
-
-// Print prints the CLI version
-func (v Version) Print() {
-	fmt.Printf("Version: %#v\n", v)
-}
-
-// NewCmd creates a new command that prints the CLI version
-func NewCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:     "version",
-		Short:   "Print the kubebuilder version",
-		Long:    `Print the kubebuilder version`,
-		Example: `kubebuilder version`,
-		Run:     runVersion,
-	}
-}
-
-func runVersion(_ *cobra.Command, _ []string) {
-	getVersion().Print()
+	})
 }

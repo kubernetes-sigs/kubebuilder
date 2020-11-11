@@ -291,6 +291,16 @@ var _ = Describe("CLI", func() {
 			})
 		})
 
+		Context("WithVersion", func() {
+			It("should use the provided version string", func() {
+				version := "Version: 0.0.0"
+				c, err = New(WithVersion(version), WithDefaultPlugins(pluginAV1), WithPlugins(allPlugins...))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(c).NotTo(BeNil())
+				Expect(c.(*cli).version).To(Equal(version))
+			})
+		})
+
 		Context("WithDefaultProjectVersion", func() {
 			var defaultProjectVersion string
 
