@@ -18,7 +18,6 @@
 # Makefile with some common workflow for dev, build and test
 #
 export GOPROXY?=https://proxy.golang.org/
-CONTROLLER_GEN_BIN_PATH := $(shell which controller-gen)
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -46,7 +45,7 @@ build: ## Build the project locally
 .PHONY: install
 install: ## Build and install the binary with the current source code. Use it to test your changes locally.
 	make build
-	cp ./bin/kubebuilder $(shell go env GOPATH)/bin/kubebuilder
+	cp ./bin/kubebuilder $(GOBIN)/kubebuilder
 
 ##@ Development
 
@@ -60,22 +59,19 @@ generate-testdata: ## Update/generate the testdata in $GOPATH/src/sigs.k8s.io/ku
 	./generate_testdata.sh
 
 .PHONY: lint
-lint: golangci-lint ## Run golangci lint checks
-	@$(GOLANGCI_LINT) run
+lint: golangci-lint ## Run golangci-lint linter
+	$(GOLANGCI_LINT) run
 
-lint-fix: golangci-lint ## Run golangci lint to automatically perform fixes
-	@$(GOLANGCI_LINT) run --fix
+.PHONY: lint-fix
+lint-fix: golangci-lint ## Run golangci-lint linter and perform fixes
+	$(GOLANGCI_LINT) run --fix
 
+GOLANGCI_LINT = $(shell pwd)/bin/golangci-lint
 golangci-lint:
-ifeq (, $(shell which golangci-lint))
-	@{ \
+	@[ -f $(GOLANGCI_LINT) ] || { \
 	set -e ;\
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.29.0 ;\
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell dirname $(GOLANGCI_LINT)) v1.29.0 ;\
 	}
-GOLANGCI_LINT=$(shell go env GOPATH)/bin/golangci-lint
-else
-GOLANGCI_LINT=$(shell which golangci-lint)
-endif
 
 ##@ Tests
 
