@@ -92,8 +92,8 @@ EOF
 function test_project {
   local project_dir=$1
   local version=$2
-  rm -f "$(which controller-gen)"
-  rm -f "$(which kustomize)"
+  rm -f "$(command -v controller-gen)"
+  rm -f "$(command -v kustomize)"
   header_text "performing tests in dir $project_dir for project version v$version"
   cd testdata/$project_dir
   make all test

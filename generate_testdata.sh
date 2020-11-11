@@ -39,8 +39,8 @@ scaffold_test_project() {
     local plugin_flag="${plugin:+--plugins $plugin}"
 
     # Remove tool binaries so the correct versions are used for each plugin version.
-    rm -f "$(which controller-gen)"
-    rm -f "$(which kustomize)"
+    rm -f "$(command -v controller-gen)"
+    rm -f "$(command -v kustomize)"
 
     if [ $version == "2" ] || [ $version == "3-alpha" ]; then
         if [ $version == "2" ] && [ -n "$plugin_flag" ]; then
