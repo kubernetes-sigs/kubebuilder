@@ -24,6 +24,7 @@ export GO111MODULE=on
 
 function test_init_project {
   header_text "performing init project"
+  go mod init kubebuilder.io/test
   kubebuilder init --domain example.com <<< "n"
 }
 
@@ -103,6 +104,7 @@ function test_project {
 prepare_staging_dir
 fetch_tools
 build_kb
+pushd .
 
 setup_envs
 
@@ -139,7 +141,7 @@ dump_project
 test_create_namespaced_coretype_controller
 
 header_text "running kubebuilder unit tests"
-cd ${go_workspace}/src/sigs.k8s.io/kubebuilder
+popd
 
 export GO111MODULE=on
 go test -race -v ./cmd/... ./pkg/... ./plugins/...
