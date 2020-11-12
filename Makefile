@@ -38,20 +38,25 @@ help:  ## Display this help
 
 ##@ Build
 
+LD_FLAGS=-ldflags " \
+    -X sigs.k8s.io/kubebuilder/v2/cmd.kubeBuilderVersion=$(shell git descripe --tags --dirty --broken) \
+    -X sigs.k8s.io/kubebuilder/v2/cmd.goos=$(shell go env GOOS) \
+    -X sigs.k8s.io/kubebuilder/v2/cmd.goarch=$(shell go env GOARCH) \
+    -X sigs.k8s.io/kubebuilder/v2/cmd.gitCommit=$(shell git rev-parse HEAD) \
+    -X sigs.k8s.io/kubebuilder/v2/cmd.buildDate=$(shell date -u +'%Y-%m-%dT%H:%M:%SZ') \
+    "
 .PHONY: build
 build: ## Build the project locally
-	go build -o bin/kubebuilder ./cmd
+	go build $(LD_FLAGS) -o bin/kubebuilder ./cmd
 
 .PHONY: install
-install: ## Build and install the binary with the current source code. Use it to test your changes locally.
-	make build
+install: build ## Build and install the binary with the current source code. Use it to test your changes locally.
 	cp ./bin/kubebuilder $(GOBIN)/kubebuilder
 
 ##@ Development
 
 .PHONY: generate
-generate: ## Update/generate all mock data. You should run this commands to update the mock data after your changes.
-	make generate-testdata
+generate: generate-testdata ## Update/generate all mock data. You should run this commands to update the mock data after your changes.
 	go mod tidy
 
 .PHONY: generate-testdata
