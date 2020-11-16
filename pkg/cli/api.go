@@ -25,7 +25,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v2/pkg/plugin"
 )
 
-func (c *cli) newCreateAPICmd() *cobra.Command {
+func (c cli) newCreateAPICmd() *cobra.Command {
 	ctx := c.newAPIContext()
 	cmd := &cobra.Command{
 		Use:     "api",
@@ -43,19 +43,20 @@ func (c *cli) newCreateAPICmd() *cobra.Command {
 }
 
 func (c cli) newAPIContext() plugin.Context {
-	ctx := plugin.Context{
+	return plugin.Context{
 		CommandName: c.commandName,
 		Description: `Scaffold a Kubernetes API.
 `,
 	}
-	if !c.configured {
-		ctx.Description = fmt.Sprintf("%s\n%s", ctx.Description, runInProjectRootMsg)
-	}
-	return ctx
 }
 
 // nolint:dupl
 func (c cli) bindCreateAPI(ctx plugin.Context, cmd *cobra.Command) {
+	if len(c.resolvedPlugins) == 0 {
+		cmdErr(cmd, fmt.Errorf(noPluginError))
+		return
+	}
+
 	var createAPIPlugin plugin.CreateAPI
 	for _, p := range c.resolvedPlugins {
 		tmpPlugin, isValid := p.(plugin.CreateAPI)
@@ -71,8 +72,7 @@ func (c cli) bindCreateAPI(ctx plugin.Context, cmd *cobra.Command) {
 	}
 
 	if createAPIPlugin == nil {
-		err := fmt.Errorf("relevant plugins do not provide an API creation plugin")
-		cmdErr(cmd, err)
+		cmdErr(cmd, fmt.Errorf("resolved plugins do not provide an API creation plugin: %v", c.pluginKeys))
 		return
 	}
 

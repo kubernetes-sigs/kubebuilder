@@ -83,20 +83,20 @@ var _ = g.Describe("Stage.String", func() {
 var _ = g.Describe("Stage.Validate", func() {
 	g.It("should validate existing stages", func() {
 		g.By("for stable stage")
-		Expect(StableStage.Validate()).NotTo(HaveOccurred())
+		Expect(StableStage.Validate()).To(Succeed())
 
 		g.By("for alpha stage")
-		Expect(AlphaStage.Validate()).NotTo(HaveOccurred())
+		Expect(AlphaStage.Validate()).To(Succeed())
 
 		g.By("for beta stage")
-		Expect(BetaStage.Validate()).NotTo(HaveOccurred())
+		Expect(BetaStage.Validate()).To(Succeed())
 	})
 
 	g.It("should fail for non-existing stages", func() {
-		Expect(Stage(34).Validate()).To(HaveOccurred())
-		Expect(Stage(75).Validate()).To(HaveOccurred())
-		Expect(Stage(123).Validate()).To(HaveOccurred())
-		Expect(Stage(255).Validate()).To(HaveOccurred())
+		Expect(Stage(34).Validate()).NotTo(Succeed())
+		Expect(Stage(75).Validate()).NotTo(Succeed())
+		Expect(Stage(123).Validate()).NotTo(Succeed())
+		Expect(Stage(255).Validate()).NotTo(Succeed())
 	})
 })
 
@@ -229,36 +229,36 @@ var _ = g.Describe("Version.String", func() {
 	})
 })
 
-var _ = g.Describe("Stage.Validate", func() {
+var _ = g.Describe("Version.Validate", func() {
 	g.It("should success for a positive version without a stage", func() {
+		g.By("passing version 0")
+		Expect(Version{}.Validate()).To(Succeed())
+		Expect(Version{Number: 0}.Validate()).To(Succeed())
+
 		g.By("for version 1")
-		Expect(Version{Number: 1}.Validate()).NotTo(HaveOccurred())
+		Expect(Version{Number: 1}.Validate()).To(Succeed())
 
 		g.By("for version 22")
-		Expect(Version{Number: 22}.Validate()).NotTo(HaveOccurred())
+		Expect(Version{Number: 22}.Validate()).To(Succeed())
 	})
 
 	g.It("should success for a positive version with a stage", func() {
 		g.By("for version 1 alpha")
-		Expect(Version{Number: 1, Stage: AlphaStage}.Validate()).NotTo(HaveOccurred())
+		Expect(Version{Number: 1, Stage: AlphaStage}.Validate()).To(Succeed())
 
 		g.By("for version 1 beta")
-		Expect(Version{Number: 1, Stage: BetaStage}.Validate()).NotTo(HaveOccurred())
+		Expect(Version{Number: 1, Stage: BetaStage}.Validate()).To(Succeed())
 
 		g.By("for version 22 alpha")
-		Expect(Version{Number: 22, Stage: AlphaStage}.Validate()).NotTo(HaveOccurred())
+		Expect(Version{Number: 22, Stage: AlphaStage}.Validate()).To(Succeed())
 	})
 
 	g.It("should fail for invalid versions", func() {
-		g.By("passing version 0")
-		Expect(Version{}.Validate()).To(HaveOccurred())
-		Expect(Version{Number: 0}.Validate()).To(HaveOccurred())
-
 		g.By("passing a negative version")
-		Expect(Version{Number: -1}.Validate()).To(HaveOccurred())
+		Expect(Version{Number: -1}.Validate()).NotTo(Succeed())
 
 		g.By("passing an invalid stage")
-		Expect(Version{Number: 1, Stage: Stage(173)}.Validate()).To(HaveOccurred())
+		Expect(Version{Number: 1, Stage: Stage(173)}.Validate()).NotTo(Succeed())
 	})
 })
 

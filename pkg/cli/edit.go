@@ -25,7 +25,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v2/pkg/plugin"
 )
 
-func (c *cli) newEditCmd() *cobra.Command {
+func (c cli) newEditCmd() *cobra.Command {
 	ctx := c.newEditContext()
 	cmd := &cobra.Command{
 		Use:     "edit",
@@ -40,21 +40,23 @@ func (c *cli) newEditCmd() *cobra.Command {
 	// Lookup the plugin for projectVersion and bind it to the command.
 	c.bindEdit(ctx, cmd)
 	return cmd
-
 }
 
-func (c *cli) newEditContext() plugin.Context {
-	ctx := plugin.Context{
+func (c cli) newEditContext() plugin.Context {
+	return plugin.Context{
 		CommandName: c.commandName,
 		Description: `Edit the project configuration.
 `,
 	}
-
-	return ctx
 }
 
 // nolint:dupl
-func (c *cli) bindEdit(ctx plugin.Context, cmd *cobra.Command) {
+func (c cli) bindEdit(ctx plugin.Context, cmd *cobra.Command) {
+	if len(c.resolvedPlugins) == 0 {
+		cmdErr(cmd, fmt.Errorf(noPluginError))
+		return
+	}
+
 	var editPlugin plugin.Edit
 	for _, p := range c.resolvedPlugins {
 		tmpPlugin, isValid := p.(plugin.Edit)
@@ -71,8 +73,7 @@ func (c *cli) bindEdit(ctx plugin.Context, cmd *cobra.Command) {
 	}
 
 	if editPlugin == nil {
-		err := fmt.Errorf("relevant plugins do not provide a project edit plugin")
-		cmdErr(cmd, err)
+		cmdErr(cmd, fmt.Errorf("resolved plugins do not provide a project edit plugin: %v", c.pluginKeys))
 		return
 	}
 

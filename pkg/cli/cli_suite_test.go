@@ -21,9 +21,49 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	"sigs.k8s.io/kubebuilder/v2/pkg/plugin"
 )
 
 func TestCLI(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "CLI Suite")
 }
+
+// Test plugin types and constructors.
+var (
+	_ plugin.Plugin = mockPlugin{}
+	_ plugin.Plugin = mockDeprecatedPlugin{}
+)
+
+type mockPlugin struct { //nolint:maligned
+	name            string
+	version         plugin.Version
+	projectVersions []string
+}
+
+func newMockPlugin(name, version string, projVers ...string) plugin.Plugin {
+	v, err := plugin.ParseVersion(version)
+	if err != nil {
+		panic(err)
+	}
+	return mockPlugin{name, v, projVers}
+}
+
+func (p mockPlugin) Name() string                       { return p.name }
+func (p mockPlugin) Version() plugin.Version            { return p.version }
+func (p mockPlugin) SupportedProjectVersions() []string { return p.projectVersions }
+
+type mockDeprecatedPlugin struct { //nolint:maligned
+	mockPlugin
+	deprecation string
+}
+
+func newMockDeprecatedPlugin(name, version, deprecation string, projVers ...string) plugin.Plugin {
+	return mockDeprecatedPlugin{
+		mockPlugin:  newMockPlugin(name, version, projVers...).(mockPlugin),
+		deprecation: deprecation,
+	}
+}
+
+func (p mockDeprecatedPlugin) DeprecationWarning() string { return p.deprecation }

@@ -52,10 +52,54 @@ func GetShortName(name string) string {
 	return strings.SplitN(name, ".", 2)[0]
 }
 
-// ValidateName ensures name is a valid DNS 1123 subdomain.
-func ValidateName(name string) error {
+// Validate ensures a Plugin is valid.
+func Validate(p Plugin) error {
+	if err := validateName(p.Name()); err != nil {
+		return fmt.Errorf("invalid plugin name %q: %v", p.Name(), err)
+	}
+	if err := p.Version().Validate(); err != nil {
+		return fmt.Errorf("invalid plugin version %q: %v", p.Version(), err)
+	}
+	if len(p.SupportedProjectVersions()) == 0 {
+		return fmt.Errorf("plugin %q must support at least one project version", KeyFor(p))
+	}
+	for _, projectVersion := range p.SupportedProjectVersions() {
+		if err := validation.ValidateProjectVersion(projectVersion); err != nil {
+			return fmt.Errorf("plugin %q supports an invalid project version %q: %v", KeyFor(p), projectVersion, err)
+		}
+	}
+	return nil
+}
+
+// ValidateKey ensures both plugin name and version are valid.
+func ValidateKey(key string) error {
+	name, version := SplitKey(key)
+	if err := validateName(name); err != nil {
+		return fmt.Errorf("invalid plugin name %q: %v", name, err)
+	}
+	// CLI-set plugins do not have to contain a version.
+	if version != "" {
+		if _, err := ParseVersion(version); err != nil {
+			return fmt.Errorf("invalid plugin version %q: %v", version, err)
+		}
+	}
+	return nil
+}
+
+// validateName ensures name is a valid DNS 1123 subdomain.
+func validateName(name string) error {
 	if errs := validation.IsDNS1123Subdomain(name); len(errs) != 0 {
 		return fmt.Errorf("invalid plugin name %q: %v", name, errs)
 	}
 	return nil
+}
+
+// SupportsVersion checks if a plugins supports a project version.
+func SupportsVersion(p Plugin, projectVersion string) bool {
+	for _, version := range p.SupportedProjectVersions() {
+		if version == projectVersion {
+			return true
+		}
+	}
+	return false
 }
