@@ -19,9 +19,10 @@ package v2
 import (
 	"sigs.k8s.io/kubebuilder/v2/pkg/model/config"
 	"sigs.k8s.io/kubebuilder/v2/pkg/plugin"
+	"sigs.k8s.io/kubebuilder/v2/pkg/plugins"
 )
 
-const pluginName = "go" + plugin.DefaultNameQualifier
+const pluginName = "go" + plugins.DefaultNameQualifier
 
 var (
 	supportedProjectVersions = []string{config.Version2, config.Version3Alpha}

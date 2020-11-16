@@ -22,7 +22,7 @@ import (
 	"strings"
 
 	"sigs.k8s.io/kubebuilder/v2/pkg/model/config"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugin/internal/cmdutil"
+	"sigs.k8s.io/kubebuilder/v2/pkg/plugins/internal/cmdutil"
 )
 
 var _ cmdutil.Scaffolder = &editScaffolder{}
@@ -55,7 +55,6 @@ func (s *editScaffolder) Scaffold() error {
 			str,
 			"COPY api/ api/",
 			`COPY apis/ apis/`)
-
 	} else {
 		str, err = ensureExistAndReplace(
 			str,

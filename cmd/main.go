@@ -20,8 +20,8 @@ import (
 	"log"
 
 	"sigs.k8s.io/kubebuilder/v2/pkg/cli"
-	pluginv2 "sigs.k8s.io/kubebuilder/v2/pkg/plugin/v2"
-	pluginv3 "sigs.k8s.io/kubebuilder/v2/pkg/plugin/v3"
+	pluginv2 "sigs.k8s.io/kubebuilder/v2/pkg/plugins/golang/v2"
+	pluginv3 "sigs.k8s.io/kubebuilder/v2/pkg/plugins/golang/v3"
 )
 
 func main() {
