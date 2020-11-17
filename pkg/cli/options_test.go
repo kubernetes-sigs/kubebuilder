@@ -45,13 +45,46 @@ var _ = Describe("CLI options", func() {
 		np4 = newMockPlugin(pluginName, pluginVersion, "a")
 	)
 
-	Context("WithCommandName", func() {
-		It("should use provided command name", func() {
-			commandName := "other-command"
-			c, err = newCLI(WithCommandName(commandName))
+	Context("WithRootCommandConfig", func() {
+		It("should use the default command name and descriptions", func() {
+			c, err = newCLI()
+			shortDescription, longDescription, example := buildDefaultDescriptors(defaultCommandName)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(c).NotTo(BeNil())
-			Expect(c.commandName).To(Equal(commandName))
+			Expect(c.cmdCfg.CommandName).To(Equal(defaultCommandName))
+			Expect(c.cmdCfg.Short).To(Equal(shortDescription))
+			Expect(c.cmdCfg.Long).To(Equal(longDescription))
+			Expect(c.cmdCfg.Example).To(Equal(example))
+		})
+
+		It("should use the provided command name and default descriptions", func() {
+			cfg := RootCommandConfig{
+				CommandName: "other-command",
+			}
+			c, err = newCLI(WithRootCommandConfig(cfg))
+			shortDescription, longDescription, example := buildDefaultDescriptors(cfg.CommandName)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(c).NotTo(BeNil())
+			Expect(c.cmdCfg.CommandName).To(Equal(cfg.CommandName))
+			Expect(c.cmdCfg.Short).To(Equal(shortDescription))
+			Expect(c.cmdCfg.Long).To(Equal(longDescription))
+			Expect(c.cmdCfg.Example).To(Equal(example))
+		})
+
+		It("should use the provided command name and descriptions", func() {
+			cfg := RootCommandConfig{
+				CommandName: "other-command",
+				Short:       "Short Description",
+				Long:        "Longer Description of the command",
+				Example:     "Example usage of the command",
+			}
+			c, err = newCLI(WithRootCommandConfig(cfg))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(c).NotTo(BeNil())
+			Expect(c.cmdCfg.CommandName).To(Equal(cfg.CommandName))
+			Expect(c.cmdCfg.Short).To(Equal(cfg.Short))
+			Expect(c.cmdCfg.Long).To(Equal(cfg.Long))
+			Expect(c.cmdCfg.Example).To(Equal(cfg.Example))
 		})
 	})
 

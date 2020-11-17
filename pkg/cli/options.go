@@ -28,10 +28,28 @@ import (
 // Option is a function that can configure the cli
 type Option func(*cli) error
 
-// WithCommandName is an Option that sets the cli's root command name.
-func WithCommandName(name string) Option {
+// WithRootCommandConfig configures a cli's root command.
+func WithRootCommandConfig(cfg RootCommandConfig) Option {
 	return func(c *cli) error {
-		c.commandName = name
+		if cfg.CommandName != "" {
+			c.cmdCfg.CommandName = cfg.CommandName
+		}
+		shortDescription, longDescription, example := buildDefaultDescriptors(c.cmdCfg.CommandName)
+		if cfg.Short != "" {
+			c.cmdCfg.Short = cfg.Short
+		} else {
+			c.cmdCfg.Short = shortDescription
+		}
+		if cfg.Long != "" {
+			c.cmdCfg.Long = cfg.Long
+		} else {
+			c.cmdCfg.Long = longDescription
+		}
+		if cfg.Example != "" {
+			c.cmdCfg.Example = cfg.Example
+		} else {
+			c.cmdCfg.Example = example
+		}
 		return nil
 	}
 }

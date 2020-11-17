@@ -44,7 +44,7 @@ func (c cli) newEditCmd() *cobra.Command {
 
 func (c cli) newEditContext() plugin.Context {
 	return plugin.Context{
-		CommandName: c.commandName,
+		CommandName: c.cmdCfg.CommandName,
 		Description: `Edit the project configuration.
 `,
 	}

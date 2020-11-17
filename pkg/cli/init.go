@@ -63,7 +63,7 @@ func (c cli) newInitCmd() *cobra.Command {
 
 func (c cli) newInitContext() plugin.Context {
 	return plugin.Context{
-		CommandName: c.commandName,
+		CommandName: c.cmdCfg.CommandName,
 		Description: `Initialize a new project.
 
 For further help about a specific project version, set --project-version.
@@ -79,7 +79,7 @@ func (c cli) getInitHelpExamples() string {
   %[1]s init --project-version=%[2]s -h
 
 `,
-			c.commandName, version)
+			c.cmdCfg.CommandName, version)
 		sb.WriteString(rendered)
 	}
 	return strings.TrimSuffix(sb.String(), "\n\n")

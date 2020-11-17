@@ -44,7 +44,7 @@ func (c cli) newCreateAPICmd() *cobra.Command {
 
 func (c cli) newAPIContext() plugin.Context {
 	return plugin.Context{
-		CommandName: c.commandName,
+		CommandName: c.cmdCfg.CommandName,
 		Description: `Scaffold a Kubernetes API.
 `,
 	}

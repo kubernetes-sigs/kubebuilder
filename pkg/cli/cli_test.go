@@ -562,7 +562,6 @@ var _ = Describe("CLI", func() {
 				Expect(err).To(HaveOccurred())
 			})
 		})
-
 		When("an invalid plugin key is set", func() {
 			It("should fail", func() {
 				c = &cli{

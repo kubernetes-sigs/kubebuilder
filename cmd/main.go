@@ -26,8 +26,11 @@ import (
 )
 
 func main() {
+	rootCmdCfg := cli.RootCommandConfig{
+		CommandName: "kubebuilder",
+	}
 	c, err := cli.New(
-		cli.WithCommandName("kubebuilder"),
+		cli.WithRootCommandConfig(rootCmdCfg),
 		cli.WithVersion(versionString()),
 		cli.WithDefaultProjectVersion(config.Version3Alpha),
 		cli.WithPlugins(

@@ -25,9 +25,9 @@ import (
 func (c cli) newVersionCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:     "version",
-		Short:   fmt.Sprintf("Print the %s version", c.commandName),
-		Long:    fmt.Sprintf("Print the %s version", c.commandName),
-		Example: fmt.Sprintf("%s version", c.commandName),
+		Short:   fmt.Sprintf("Print the %s version", c.cmdCfg.CommandName),
+		Long:    fmt.Sprintf("Print the %s version", c.cmdCfg.CommandName),
+		Example: fmt.Sprintf("%s version", c.cmdCfg.CommandName),
 		RunE: func(_ *cobra.Command, _ []string) error {
 			fmt.Println(c.version)
 			return nil

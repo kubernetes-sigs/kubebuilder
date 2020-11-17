@@ -171,8 +171,11 @@ import (
 // Go plugin version unless '--plugins' or 'layout' specify
 // one of the other plugins.
 func main() {
+  rootCmdCfg := cli.RootCommandConfig{
+        CommandName: "controller-builder",
+	}
   c, err := cli.New(
-    cli.WithCommandName("controller-builder"),
+    cli.WithRootCommandConfig(rootCmdCfg),
     cli.WithDefaultProjectVersion("3"),
     cli.WithExtraCommands(newCustomCobraCmd()),
     cli.WithPlugins(

@@ -35,7 +35,7 @@ Linux:
   $ %[1]s completion bash > /etc/bash_completion.d/%[1]s
 MacOS:
   $ %[1]s completion bash > /usr/local/etc/bash_completion.d/%[1]s
-`, c.commandName),
+`, c.cmdCfg.CommandName),
 		RunE: func(cmd *cobra.Command, cmdArgs []string) error {
 			return cmd.Root().GenBashCompletion(os.Stdout)
 		},
@@ -54,7 +54,7 @@ $ echo "autoload -U compinit; compinit" >> ~/.zshrc
 $ %[1]s completion zsh > "${fpath[1]}/_%[1]s"
 
 # You will need to start a new shell for this setup to take effect.
-`, c.commandName),
+`, c.cmdCfg.CommandName),
 		RunE: func(cmd *cobra.Command, cmdArgs []string) error {
 			return cmd.Root().GenZshCompletion(os.Stdout)
 		},
@@ -98,7 +98,7 @@ func (c cli) newCompletionCmd() *cobra.Command {
 		Long: fmt.Sprintf(`Output shell completion code for the specified shell.
 The shell code must be evaluated to provide interactive completion of %[1]s commands.
 Detailed instructions on how to do this for each shell are provided in their own commands.
-`, c.commandName),
+`, c.cmdCfg.CommandName),
 	}
 	cmd.AddCommand(c.newBashCmd())
 	cmd.AddCommand(c.newZshCmd())

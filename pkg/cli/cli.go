@@ -39,6 +39,49 @@ const (
 	pluginsFlag        = "plugins"
 
 	noPluginError = "invalid config file please verify that the version and layout fields are set and valid"
+
+	defaultCommandName      = "kubebuilder"
+	defaultShortDescription = "Development kit for building Kubernetes extensions and tools."
+	defaultLongDescription  = `Development kit for building Kubernetes extensions and tools.
+	
+Provides libraries and tools to create new projects, APIs and controllers.
+Includes tools for packaging artifacts into an installer container.
+			
+Typical project lifecycle:
+			
+- initialize a project:
+			
+  placeHolder init --domain example.com --license apache2 --owner "The Kubernetes authors"
+			
+- create one or more a new resource APIs and add your code to them:
+		
+  placeHolder create api --group <group> --version <version> --kind <Kind>
+		
+Create resource will prompt the user for if it should scaffold the Resource and / or Controller. To only
+scaffold a Controller for an existing Resource, select "n" for Resource. To only define
+the schema for a Resource without writing a Controller, select "n" for Controller.
+			
+After the scaffold is written, api will run make on the project.
+`
+	defaultExample = `
+  # Initialize your project
+  placeHolder init --domain example.com --license apache2 --owner "The Kubernetes authors"
+		  
+  # Create a frigates API with Group: ship, Version: v1beta1 and Kind: Frigate
+  placeHolder create api --group ship --version v1beta1 --kind Frigate
+
+  # Edit the API Scheme
+  nano api/v1beta1/frigate_types.go
+
+  # Edit the Controller
+  nano controllers/frigate_controller.go
+		
+  # Install CRDs into the Kubernetes cluster using kubectl apply
+  make install
+		
+  # Regenerate code and run against the Kubernetes cluster configured by ~/.kube/config
+  make run
+  `
 )
 
 // equalStringSlice checks if two string slices are equal.
@@ -65,13 +108,21 @@ type CLI interface {
 	Run() error
 }
 
+//RootCommandConfig returns the configuration for root cobra.Command
+type RootCommandConfig struct {
+	CommandName string
+	Short       string
+	Long        string
+	Example     string
+}
+
 // cli defines the command line structure and interfaces that are used to
 // scaffold kubebuilder project files.
 type cli struct { //nolint:maligned
 	/* Fields set by Option */
 
-	// Root command name. It is injected downstream to provide correct help, usage, examples and errors.
-	commandName string
+	//Root command config. It is injected downstream to provide correct help, usage, examples and errors.
+	cmdCfg RootCommandConfig
 	// CLI version string.
 	version string
 	// Default project version in case none is provided and a config file can't be found.
@@ -147,9 +198,16 @@ func New(opts ...Option) (CLI, error) {
 // newCLI creates a default cli instance and applies the provided options.
 // It is as a separate function for test purposes.
 func newCLI(opts ...Option) (*cli, error) {
+	//Get default command descriptions
+	shortDescription, longDescription, example := buildDefaultDescriptors(defaultCommandName)
 	// Default cli options.
 	c := &cli{
-		commandName:           "kubebuilder",
+		cmdCfg: RootCommandConfig{
+			CommandName: defaultCommandName,
+			Short:       shortDescription,
+			Long:        longDescription,
+			Example:     example,
+		},
 		defaultProjectVersion: internalconfig.DefaultVersion,
 		defaultPlugins:        make(map[string][]string),
 		plugins:               make(map[string]plugin.Plugin),
@@ -163,6 +221,15 @@ func newCLI(opts ...Option) (*cli, error) {
 	}
 
 	return c, nil
+}
+
+// buildDefaultDescriptors replaces placeholder in default descriptors
+func buildDefaultDescriptors(commandName string) (string, string, string) {
+	replacer := strings.NewReplacer("placeHolder", commandName)
+	short := replacer.Replace(defaultShortDescription)
+	long := replacer.Replace(defaultLongDescription)
+	example := replacer.Replace(defaultExample)
+	return short, long, example
 }
 
 // getInfoFromFlags obtains the project version and plugin keys from flags.
@@ -402,8 +469,17 @@ func (c *cli) resolve() error {
 // buildRootCmd returns a root command with a subcommand tree reflecting the
 // current project's state.
 func (c cli) buildRootCmd() *cobra.Command {
-	rootCmd := c.defaultCommand()
-
+	rootCmd := &cobra.Command{
+		Use:     c.cmdCfg.CommandName,
+		Short:   c.cmdCfg.Short,
+		Long:    c.cmdCfg.Long,
+		Example: c.cmdCfg.Example,
+		Run: func(cmd *cobra.Command, args []string) {
+			if err := cmd.Help(); err != nil {
+				log.Fatal(err)
+			}
+		},
+	}
 	// kubebuilder completion
 	// Only add completion if requested
 	if c.completionCommand {
@@ -432,61 +508,6 @@ func (c cli) buildRootCmd() *cobra.Command {
 	}
 
 	return rootCmd
-}
-
-// defaultCommand returns the root command without its subcommands.
-func (c cli) defaultCommand() *cobra.Command {
-	return &cobra.Command{
-		Use:   c.commandName,
-		Short: "Development kit for building Kubernetes extensions and tools.",
-		Long: fmt.Sprintf(`Development kit for building Kubernetes extensions and tools.
-
-Provides libraries and tools to create new projects, APIs and controllers.
-Includes tools for packaging artifacts into an installer container.
-
-Typical project lifecycle:
-
-- initialize a project:
-
-  %[1]s init --domain example.com --license apache2 --owner "The Kubernetes authors"
-
-- create one or more a new resource APIs and add your code to them:
-
-  %[1]s create api --group <group> --version <version> --kind <Kind>
-
-Create resource will prompt the user for if it should scaffold the Resource and / or Controller. To only
-scaffold a Controller for an existing Resource, select "n" for Resource. To only define
-the schema for a Resource without writing a Controller, select "n" for Controller.
-
-After the scaffold is written, api will run make on the project.
-`,
-			c.commandName),
-		Example: fmt.Sprintf(`
-  # Initialize your project
-  %[1]s init --domain example.com --license apache2 --owner "The Kubernetes authors"
-
-  # Create a frigates API with Group: ship, Version: v1beta1 and Kind: Frigate
-  %[1]s create api --group ship --version v1beta1 --kind Frigate
-
-  # Edit the API Scheme
-  nano api/v1beta1/frigate_types.go
-
-  # Edit the Controller
-  nano controllers/frigate_controller.go
-
-  # Install CRDs into the Kubernetes cluster using kubectl apply
-  make install
-
-  # Regenerate code and run against the Kubernetes cluster configured by ~/.kube/config
-  make run
-`,
-			c.commandName),
-		Run: func(cmd *cobra.Command, args []string) {
-			if err := cmd.Help(); err != nil {
-				log.Fatal(err)
-			}
-		},
-	}
 }
 
 // Run implements CLI.Run.

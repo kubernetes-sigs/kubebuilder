@@ -44,7 +44,7 @@ func (c cli) newCreateWebhookCmd() *cobra.Command {
 
 func (c cli) newWebhookContext() plugin.Context {
 	return plugin.Context{
-		CommandName: c.commandName,
+		CommandName: c.cmdCfg.CommandName,
 		Description: `Scaffold a webhook for an API resource.
 `,
 	}
