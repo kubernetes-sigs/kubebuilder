@@ -4,7 +4,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.4.1-0.20200902055707-2f203e490e8a
+    controller-gen.kubebuilder.io/version: v0.4.1
   creationTimestamp: null
   name: frigates.ship.testproject.org
 spec:
