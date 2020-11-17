@@ -40,7 +40,7 @@ const (
 	// ControllerToolsVersion is the kubernetes-sigs/controller-tools version to be used in the project
 	ControllerToolsVersion = "v0.4.1"
 	// KustomizeVersion is the kubernetes-sigs/kustomize version to be used in the project
-	KustomizeVersion = "v3.5.4"
+	KustomizeVersion = "v3.8.7"
 
 	imageName = "controller:latest"
 )
