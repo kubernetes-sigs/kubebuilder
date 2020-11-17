@@ -120,13 +120,13 @@ func (vi *VersionInfo) parseVersionInts() (err error) {
 	return nil
 }
 
-// KubectlVersion holds a subset of both client and server versions.
-type KubectlVersion struct {
+// KubernetesVersion holds a subset of both client and server versions.
+type KubernetesVersion struct {
 	ClientVersion VersionInfo `json:"clientVersion,omitempty"`
 	ServerVersion VersionInfo `json:"serverVersion,omitempty"`
 }
 
-func (v *KubectlVersion) prepare() (err error) {
+func (v *KubernetesVersion) prepare() (err error) {
 	if err = v.ClientVersion.parseVersionInts(); err != nil {
 		return err
 	}
@@ -137,16 +137,16 @@ func (v *KubectlVersion) prepare() (err error) {
 }
 
 // Version is a func to run kubectl version command
-func (k *Kubectl) Version() (ver KubectlVersion, err error) {
+func (k *Kubectl) Version() (ver KubernetesVersion, err error) {
 	var out string
 	if out, err = k.Command("version", "-o", "json"); err != nil {
-		return KubectlVersion{}, err
+		return KubernetesVersion{}, err
 	}
 	if err = json.Unmarshal([]byte(out), &ver); err != nil {
-		return KubectlVersion{}, err
+		return KubernetesVersion{}, err
 	}
 	if err = ver.prepare(); err != nil {
-		return KubectlVersion{}, err
+		return KubernetesVersion{}, err
 	}
 	return ver, nil
 }

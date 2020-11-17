@@ -39,8 +39,9 @@ var _ = Describe("kubebuilder", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(kbc.Prepare()).To(Succeed())
 
+			// Install cert-manager with v1beta2 CRs.
 			By("installing cert manager bundle")
-			Expect(kbc.InstallCertManager()).To(Succeed())
+			Expect(kbc.InstallCertManager(true)).To(Succeed())
 
 			By("installing prometheus operator")
 			Expect(kbc.InstallPrometheusOperManager()).To(Succeed())
@@ -53,8 +54,9 @@ var _ = Describe("kubebuilder", func() {
 			By("uninstalling prometheus manager bundle")
 			kbc.UninstallPrometheusOperManager()
 
+			// Uninstall cert-manager with v1beta2 CRs.
 			By("uninstalling cert manager bundle")
-			kbc.UninstallCertManager()
+			kbc.UninstallCertManager(true)
 
 			By("remove container image and work dir")
 			kbc.Destroy()
