@@ -30,6 +30,9 @@ import (
 	"sigs.k8s.io/kubebuilder/v2/pkg/plugin/v3/scaffolds"
 )
 
+// defaultWebhookVersion is the default mutating/validating webhook config API version to scaffold.
+const defaultWebhookVersion = "v1"
+
 type createWebhookSubcommand struct {
 	config *config.Config
 	// For help text.
@@ -68,6 +71,8 @@ func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&p.resource.Version, "version", "", "resource Version")
 	fs.StringVar(&p.resource.Kind, "kind", "", "resource Kind")
 	fs.StringVar(&p.resource.Plural, "resource", "", "resource Resource")
+	fs.StringVar(&p.resource.WebhookVersion, "webhook-version", defaultWebhookVersion,
+		"version of {Mutating,Validating}WebhookConfigurations to scaffold. Options: [v1, v1beta1]")
 
 	fs.BoolVar(&p.defaulting, "defaulting", false,
 		"if set, scaffold the defaulting webhook")
@@ -99,6 +104,11 @@ func (p *createWebhookSubcommand) Validate() error {
 	if !p.config.HasResource(p.resource.GVK()) {
 		return fmt.Errorf("%s create webhook requires an api with the group,"+
 			" kind and version provided", p.commandName)
+	}
+
+	if !p.config.IsWebhookVersionCompatible(p.resource.WebhookVersion) {
+		return fmt.Errorf("only one webhook version can be used for all resources, cannot add %q",
+			p.resource.WebhookVersion)
 	}
 
 	return nil

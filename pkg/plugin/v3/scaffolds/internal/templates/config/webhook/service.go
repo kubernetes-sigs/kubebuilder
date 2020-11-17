@@ -37,7 +37,8 @@ func (f *Service) SetTemplateDefaults() error {
 
 	f.TemplateBody = serviceTemplate
 
-	f.IfExistsAction = file.Error
+	// If file exists (ex. because a webhook was already created), skip creation.
+	f.IfExistsAction = file.Skip
 
 	return nil
 }

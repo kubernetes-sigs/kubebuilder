@@ -37,6 +37,9 @@ func (f *ManagerWebhookPatch) SetTemplateDefaults() error {
 
 	f.TemplateBody = managerWebhookPatchTemplate
 
+	// If file exists (ex. because a webhook was already created), skip creation.
+	f.IfExistsAction = file.Skip
+
 	return nil
 }
 

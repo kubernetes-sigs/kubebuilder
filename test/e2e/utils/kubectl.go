@@ -17,8 +17,10 @@ limitations under the License.
 package utils
 
 import (
+	"encoding/json"
 	"errors"
 	"os/exec"
+	"strconv"
 	"strings"
 )
 
@@ -89,4 +91,62 @@ func (k *Kubectl) Wait(inNamespace bool, cmdOptions ...string) (string, error) {
 		return k.CommandInNamespace(ops...)
 	}
 	return k.Command(ops...)
+}
+
+// VersionInfo holds a subset of client/server version information.
+type VersionInfo struct {
+	Major      string `json:"major"`
+	Minor      string `json:"minor"`
+	GitVersion string `json:"gitVersion"`
+
+	// Leaving major/minor int fields unexported prevents them from being set
+	// while leaving their exported counterparts untouched -> incorrect marshaled format.
+	major, minor uint64
+}
+
+// GetMajorInt returns the uint64 representation of vi.Major.
+func (vi VersionInfo) GetMajorInt() uint64 { return vi.major }
+
+// GetMinorInt returns the uint64 representation of vi.Minor.
+func (vi VersionInfo) GetMinorInt() uint64 { return vi.minor }
+
+func (vi *VersionInfo) parseVersionInts() (err error) {
+	if vi.major, err = strconv.ParseUint(vi.Major, 10, 64); err != nil {
+		return err
+	}
+	if vi.minor, err = strconv.ParseUint(vi.Minor, 10, 64); err != nil {
+		return err
+	}
+	return nil
+}
+
+// KubectlVersion holds a subset of both client and server versions.
+type KubectlVersion struct {
+	ClientVersion VersionInfo `json:"clientVersion,omitempty"`
+	ServerVersion VersionInfo `json:"serverVersion,omitempty"`
+}
+
+func (v *KubectlVersion) prepare() (err error) {
+	if err = v.ClientVersion.parseVersionInts(); err != nil {
+		return err
+	}
+	if err = v.ServerVersion.parseVersionInts(); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Version is a func to run kubectl version command
+func (k *Kubectl) Version() (ver KubectlVersion, err error) {
+	var out string
+	if out, err = k.Command("version", "-o", "json"); err != nil {
+		return KubectlVersion{}, err
+	}
+	if err = json.Unmarshal([]byte(out), &ver); err != nil {
+		return KubectlVersion{}, err
+	}
+	if err = ver.prepare(); err != nil {
+		return KubectlVersion{}, err
+	}
+	return ver, nil
 }

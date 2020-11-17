@@ -21,7 +21,9 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Config", func() {
+const v1beta1 = "v1beta1"
+
+var _ = Describe("PluginConfig", func() {
 	// Test plugin config. Don't want to export this config, but need it to
 	// be accessible by test.
 	type PluginConfig struct {
@@ -144,5 +146,96 @@ var _ = Describe("Config", func() {
 		}
 		Expect(config.DecodePluginConfig(key, &pluginConfig)).To(Succeed())
 		Expect(pluginConfig).To(Equal(expectedPluginConfig))
+	})
+})
+
+var _ = Describe("Resource Version Compatibility", func() {
+
+	var (
+		c          *Config
+		gvk1, gvk2 GVK
+
+		defaultVersion = "v1"
+	)
+
+	BeforeEach(func() {
+		c = &Config{}
+		gvk1 = GVK{Group: "example", Version: "v1", Kind: "TestKind"}
+		gvk2 = GVK{Group: "example", Version: "v1", Kind: "TestKind2"}
+	})
+
+	Context("resourceAPIVersionCompatible", func() {
+		It("returns true for a list of empty resources", func() {
+			Expect(c.resourceAPIVersionCompatible("crd", defaultVersion)).To(BeTrue())
+		})
+		It("returns true for one resource with an empty version", func() {
+			c.Resources = []GVK{gvk1}
+			Expect(c.resourceAPIVersionCompatible("crd", defaultVersion)).To(BeTrue())
+		})
+		It("returns true for one resource with matching version", func() {
+			gvk1.CRDVersion = defaultVersion
+			c.Resources = []GVK{gvk1}
+			Expect(c.resourceAPIVersionCompatible("crd", defaultVersion)).To(BeTrue())
+		})
+		It("returns true for two resources with matching versions", func() {
+			gvk1.CRDVersion = defaultVersion
+			gvk2.CRDVersion = defaultVersion
+			c.Resources = []GVK{gvk1, gvk2}
+			Expect(c.resourceAPIVersionCompatible("crd", defaultVersion)).To(BeTrue())
+		})
+		It("returns false for one resource with a non-matching version", func() {
+			gvk1.CRDVersion = v1beta1
+			c.Resources = []GVK{gvk1}
+			Expect(c.resourceAPIVersionCompatible("crd", defaultVersion)).To(BeFalse())
+		})
+		It("returns false for two resources containing a non-matching version", func() {
+			gvk1.CRDVersion = v1beta1
+			gvk2.CRDVersion = defaultVersion
+			c.Resources = []GVK{gvk1, gvk2}
+			Expect(c.resourceAPIVersionCompatible("crd", defaultVersion)).To(BeFalse())
+		})
+
+		It("returns false for two resources containing a non-matching version (webhooks)", func() {
+			gvk1.WebhookVersion = v1beta1
+			gvk2.WebhookVersion = defaultVersion
+			c.Resources = []GVK{gvk1, gvk2}
+			Expect(c.resourceAPIVersionCompatible("webhook", defaultVersion)).To(BeFalse())
+		})
+	})
+})
+
+var _ = Describe("Config", func() {
+	var (
+		c          *Config
+		gvk1, gvk2 GVK
+	)
+
+	BeforeEach(func() {
+		c = &Config{}
+		gvk1 = GVK{Group: "example", Version: "v1", Kind: "TestKind"}
+		gvk2 = GVK{Group: "example", Version: "v1", Kind: "TestKind2"}
+	})
+
+	Context("UpdateResource", func() {
+		It("Adds a non-existing resource", func() {
+			c.UpdateResources(gvk1)
+			Expect(c.Resources).To(Equal([]GVK{gvk1}))
+			// Update again to ensure idempotency.
+			c.UpdateResources(gvk1)
+			Expect(c.Resources).To(Equal([]GVK{gvk1}))
+		})
+		It("Updates an existing resource", func() {
+			c.UpdateResources(gvk1)
+			gvk := GVK{Group: gvk1.Group, Version: gvk1.Version, Kind: gvk1.Kind, CRDVersion: "v1"}
+			c.UpdateResources(gvk)
+			Expect(c.Resources).To(Equal([]GVK{gvk}))
+		})
+		It("Updates an existing resource with more than one resource present", func() {
+			c.UpdateResources(gvk1)
+			c.UpdateResources(gvk2)
+			gvk := GVK{Group: gvk1.Group, Version: gvk1.Version, Kind: gvk1.Kind, CRDVersion: "v1"}
+			c.UpdateResources(gvk)
+			Expect(c.Resources).To(Equal([]GVK{gvk, gvk2}))
+		})
 	})
 })

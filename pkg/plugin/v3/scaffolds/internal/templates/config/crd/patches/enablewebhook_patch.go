@@ -28,6 +28,9 @@ var _ file.Template = &EnableWebhookPatch{}
 type EnableWebhookPatch struct {
 	file.TemplateMixin
 	file.ResourceMixin
+
+	// Version of CRD patch to generate.
+	CRDVersion string
 }
 
 // SetTemplateDefaults implements file.Template
@@ -39,21 +42,36 @@ func (f *EnableWebhookPatch) SetTemplateDefaults() error {
 
 	f.TemplateBody = enableWebhookPatchTemplate
 
+	if f.CRDVersion == "" {
+		f.CRDVersion = v1
+	}
+
 	return nil
 }
 
-const enableWebhookPatchTemplate = `# The following patch enables conversion webhook for CRD
+const enableWebhookPatchTemplate = `# The following patch enables a conversion webhook for the CRD
+{{- if ne .CRDVersion "v1" }}
 # CRD conversion requires k8s 1.13 or later.
-apiVersion: apiextensions.k8s.io/v1beta1
+{{- end }}
+apiVersion: apiextensions.k8s.io/{{ .CRDVersion }}
 kind: CustomResourceDefinition
 metadata:
   name: {{ .Resource.Plural }}.{{ .Resource.Domain }}
 spec:
   conversion:
     strategy: Webhook
+    {{- if ne .CRDVersion "v1" }}
     webhookClientConfig:
       service:
         namespace: system
         name: webhook-service
         path: /convert
+    {{- else }}
+    webhook:
+      clientConfig:
+        service:
+          namespace: system
+          name: webhook-service
+          path: /convert
+    {{- end }}
 `

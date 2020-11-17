@@ -84,7 +84,8 @@ func (s *apiScaffolder) newUniverse() *model.Universe {
 // TODO: re-use universe created by s.newUniverse() if possible.
 func (s *apiScaffolder) scaffold() error {
 	if s.doResource {
-		s.config.AddResource(s.resource.GVK())
+
+		s.config.UpdateResources(s.resource.GVK())
 
 		if err := machinery.NewScaffold(s.plugins...).Execute(
 			s.newUniverse(),
@@ -93,8 +94,8 @@ func (s *apiScaffolder) scaffold() error {
 			&samples.CRDSample{},
 			&rbac.CRDEditorRole{},
 			&rbac.CRDViewerRole{},
-			&patches.EnableWebhookPatch{},
-			&patches.EnableCAInjectionPatch{},
+			&patches.EnableWebhookPatch{CRDVersion: s.resource.CRDVersion},
+			&patches.EnableCAInjectionPatch{CRDVersion: s.resource.CRDVersion},
 		); err != nil {
 			return fmt.Errorf("error scaffolding APIs: %v", err)
 		}
@@ -102,7 +103,7 @@ func (s *apiScaffolder) scaffold() error {
 		if err := machinery.NewScaffold().Execute(
 			s.newUniverse(),
 			&crd.Kustomization{},
-			&crd.KustomizeConfig{},
+			&crd.KustomizeConfig{CRDVersion: s.resource.CRDVersion},
 		); err != nil {
 			return fmt.Errorf("error scaffolding kustomization: %v", err)
 		}

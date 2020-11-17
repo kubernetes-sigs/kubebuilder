@@ -37,10 +37,15 @@ import (
 	"sigs.k8s.io/kubebuilder/v2/plugins/addon"
 )
 
-// KbDeclarativePatternVersion is the sigs.k8s.io/kubebuilder-declarative-pattern version
-// (used only to gen api with --pattern=addon)
-// TODO: remove this when a better solution for using addons is implemented.
-const KbDeclarativePatternVersion = "1cbf859290cab81ae8e73fc5caebe792280175d1"
+const (
+	// KbDeclarativePatternVersion is the sigs.k8s.io/kubebuilder-declarative-pattern version
+	// (used only to gen api with --pattern=addon)
+	// TODO: remove this when a better solution for using addons is implemented.
+	KbDeclarativePatternVersion = "1cbf859290cab81ae8e73fc5caebe792280175d1"
+
+	// defaultCRDVersion is the default CRD API version to scaffold.
+	defaultCRDVersion = "v1"
+)
 
 // DefaultMainPath is default file path of main.go
 const DefaultMainPath = "main.go"
@@ -124,6 +129,8 @@ func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&p.resource.Group, "group", "", "resource Group")
 	fs.StringVar(&p.resource.Version, "version", "", "resource Version")
 	fs.BoolVar(&p.resource.Namespaced, "namespaced", true, "resource is namespaced")
+	fs.StringVar(&p.resource.CRDVersion, "crd-version", defaultCRDVersion,
+		"version of CustomResourceDefinition to scaffold. Options: [v1, v1beta1]")
 }
 
 func (p *createAPISubcommand) InjectConfig(c *config.Config) {
@@ -171,6 +178,12 @@ func (p *createAPISubcommand) Validate() error {
 		if !p.config.MultiGroup && len(p.config.Resources) != 0 && !p.config.HasGroup(p.resource.Group) {
 			return fmt.Errorf("multiple groups are not allowed by default, " +
 				"to enable multi-group visit kubebuilder.io/migration/multi-group.html")
+		}
+
+		// Check CRDVersion against all other CRDVersions in p.config for compatibility.
+		if !p.config.IsCRDVersionCompatible(p.resource.CRDVersion) {
+			return fmt.Errorf("only one CRD version can be used for all resources, cannot add %q",
+				p.resource.CRDVersion)
 		}
 	}
 

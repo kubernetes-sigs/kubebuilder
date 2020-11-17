@@ -27,6 +27,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v2/pkg/plugin/v3/scaffolds/internal/templates"
 	"sigs.k8s.io/kubebuilder/v2/pkg/plugin/v3/scaffolds/internal/templates/api"
 	"sigs.k8s.io/kubebuilder/v2/pkg/plugin/v3/scaffolds/internal/templates/config/kdefault"
+	"sigs.k8s.io/kubebuilder/v2/pkg/plugin/v3/scaffolds/internal/templates/config/webhook"
 )
 
 var _ cmdutil.Scaffolder = &webhookScaffolder{}
@@ -79,11 +80,21 @@ func (s *webhookScaffolder) scaffold() error {
 You need to implement the conversion.Hub and conversion.Convertible interfaces for your CRD types.`)
 	}
 
+	s.config.UpdateResources(s.resource.GVK())
+
 	if err := machinery.NewScaffold().Execute(
 		s.newUniverse(),
-		&api.Webhook{Defaulting: s.defaulting, Validating: s.validation},
+		&api.Webhook{
+			WebhookVersion: s.resource.WebhookVersion,
+			Defaulting:     s.defaulting,
+			Validating:     s.validation,
+		},
 		&templates.MainUpdater{WireWebhook: true},
-		&kdefault.WebhookCAInjectionPatch{},
+		&kdefault.WebhookCAInjectionPatch{WebhookVersion: s.resource.WebhookVersion},
+		&kdefault.ManagerWebhookPatch{},
+		&webhook.Kustomization{WebhookVersion: s.resource.WebhookVersion},
+		&webhook.KustomizeConfig{},
+		&webhook.Service{},
 	); err != nil {
 		return err
 	}

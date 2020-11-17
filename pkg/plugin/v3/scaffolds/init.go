@@ -31,7 +31,6 @@ import (
 	"sigs.k8s.io/kubebuilder/v2/pkg/plugin/v3/scaffolds/internal/templates/config/manager"
 	"sigs.k8s.io/kubebuilder/v2/pkg/plugin/v3/scaffolds/internal/templates/config/prometheus"
 	"sigs.k8s.io/kubebuilder/v2/pkg/plugin/v3/scaffolds/internal/templates/config/rbac"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugin/v3/scaffolds/internal/templates/config/webhook"
 	"sigs.k8s.io/kubebuilder/v2/pkg/plugin/v3/scaffolds/internal/templates/hack"
 )
 
@@ -39,7 +38,7 @@ const (
 	// ControllerRuntimeVersion is the kubernetes-sigs/controller-runtime version to be used in the project
 	ControllerRuntimeVersion = "v0.7.0-alpha.6"
 	// ControllerToolsVersion is the kubernetes-sigs/controller-tools version to be used in the project
-	ControllerToolsVersion = "v0.3.0"
+	ControllerToolsVersion = "v0.4.1"
 	// KustomizeVersion is the kubernetes-sigs/kustomize version to be used in the project
 	KustomizeVersion = "v3.5.4"
 
@@ -98,15 +97,19 @@ func (s *initScaffolder) scaffold() error {
 
 	return machinery.NewScaffold().Execute(
 		s.newUniverse(string(boilerplate)),
-		&templates.GitIgnore{},
+		&rbac.Kustomization{},
 		&rbac.AuthProxyRole{},
 		&rbac.AuthProxyRoleBinding{},
-		&kdefault.ManagerAuthProxyPatch{},
 		&rbac.AuthProxyService{},
 		&rbac.AuthProxyClientRole{},
+		&rbac.RoleBinding{},
+		&rbac.LeaderElectionRole{},
+		&rbac.LeaderElectionRoleBinding{},
+		&manager.Kustomization{},
 		&manager.Config{Image: imageName},
 		&templates.Main{},
 		&templates.GoMod{ControllerRuntimeVersion: ControllerRuntimeVersion},
+		&templates.GitIgnore{},
 		&templates.Makefile{
 			Image:                    imageName,
 			BoilerplatePath:          s.boilerplatePath,
@@ -117,15 +120,7 @@ func (s *initScaffolder) scaffold() error {
 		&templates.Dockerfile{},
 		&templates.DockerIgnore{},
 		&kdefault.Kustomization{},
-		&kdefault.ManagerWebhookPatch{},
-		&rbac.RoleBinding{},
-		&rbac.LeaderElectionRole{},
-		&rbac.LeaderElectionRoleBinding{},
-		&rbac.Kustomization{},
-		&manager.Kustomization{},
-		&webhook.Kustomization{},
-		&webhook.KustomizeConfig{},
-		&webhook.Service{},
+		&kdefault.ManagerAuthProxyPatch{},
 		&prometheus.Kustomization{},
 		&prometheus.Monitor{},
 		&certmanager.Certificate{},

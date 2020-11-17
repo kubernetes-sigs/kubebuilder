@@ -3,13 +3,16 @@ layout: go.kubebuilder.io/v3-alpha
 projectName: project-v3-addon
 repo: sigs.k8s.io/kubebuilder/testdata/project-v3-addon
 resources:
-- group: crew
+- crdVersion: v1
+  group: crew
   kind: Captain
   version: v1
-- group: crew
+- crdVersion: v1
+  group: crew
   kind: FirstMate
   version: v1
-- group: crew
+- crdVersion: v1
+  group: crew
   kind: Admiral
   version: v1
 version: 3-alpha

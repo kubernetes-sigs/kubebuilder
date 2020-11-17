@@ -87,17 +87,19 @@ func (c Config) HasResource(target GVK) bool {
 	return false
 }
 
-// AddResource appends the provided resource to the tracked ones
-// It returns if the configuration was modified
-func (c *Config) AddResource(gvk GVK) bool {
-	// No-op if the resource was already tracked, return false
-	if c.HasResource(gvk) {
-		return false
+// UpdateResources either adds gvk to the tracked set or, if the resource already exists,
+// updates the the equivalent resource in the set.
+func (c *Config) UpdateResources(gvk GVK) {
+	// If the resource already exists, update it.
+	for i, r := range c.Resources {
+		if r.isEqualTo(gvk) {
+			c.Resources[i].merge(gvk)
+			return
+		}
 	}
 
-	// Append the resource to the tracked ones, return true
+	// The resource does not exist, append the resource to the tracked ones.
 	c.Resources = append(c.Resources, gvk)
-	return true
 }
 
 // HasGroup returns true if group is already tracked
@@ -113,11 +115,44 @@ func (c Config) HasGroup(group string) bool {
 	return false
 }
 
+// IsCRDVersionCompatible returns true if crdVersion can be added to the existing set of CRD versions.
+func (c Config) IsCRDVersionCompatible(crdVersion string) bool {
+	return c.resourceAPIVersionCompatible("crd", crdVersion)
+}
+
+// IsWebhookVersionCompatible returns true if webhookVersion can be added to the existing set of Webhook versions.
+func (c Config) IsWebhookVersionCompatible(webhookVersion string) bool {
+	return c.resourceAPIVersionCompatible("webhook", webhookVersion)
+}
+
+// resourceAPIVersionCompatible returns true if version can be added to the existing set of versions
+// for a given verType.
+func (c Config) resourceAPIVersionCompatible(verType, version string) bool {
+	for _, res := range c.Resources {
+		var currVersion string
+		switch verType {
+		case "crd":
+			currVersion = res.CRDVersion
+		case "webhook":
+			currVersion = res.WebhookVersion
+		}
+		if currVersion != "" && version != currVersion {
+			return false
+		}
+	}
+	return true
+}
+
 // GVK contains information about scaffolded resources
 type GVK struct {
 	Group   string `json:"group,omitempty"`
 	Version string `json:"version,omitempty"`
 	Kind    string `json:"kind,omitempty"`
+
+	// CRDVersion holds the CustomResourceDefinition API version used for the GVK.
+	CRDVersion string `json:"crdVersion,omitempty"`
+	// WebhookVersion holds the {Validating,Mutating}WebhookConfiguration API version used for the GVK.
+	WebhookVersion string `json:"webhookVersion,omitempty"`
 }
 
 // isEqualTo compares it with another resource
@@ -125,6 +160,17 @@ func (r GVK) isEqualTo(other GVK) bool {
 	return r.Group == other.Group &&
 		r.Version == other.Version &&
 		r.Kind == other.Kind
+}
+
+// merge combines fields of two GVKs that have matching group, version, and kind,
+// favoring the receiver's values.
+func (r *GVK) merge(other GVK) {
+	if r.CRDVersion == "" && other.CRDVersion != "" {
+		r.CRDVersion = other.CRDVersion
+	}
+	if r.WebhookVersion == "" && other.WebhookVersion != "" {
+		r.WebhookVersion = other.WebhookVersion
+	}
 }
 
 // Marshal returns the bytes of c.

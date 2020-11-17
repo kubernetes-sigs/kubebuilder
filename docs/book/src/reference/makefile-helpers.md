@@ -1,6 +1,6 @@
 # Makefile Helpers
 
-By default, the projects are scaffolded with a `Makefile`. You can customize and update this file as please you. Here, you will find some helpers that can be useful. 
+By default, the projects are scaffolded with a `Makefile`. You can customize and update this file as please you. Here, you will find some helpers that can be useful.
 
 ## To debug with go-delve
 
@@ -14,27 +14,23 @@ run-delve: generate fmt vet manifests
     dlv --listen=:2345 --headless=true --api-version=2 --accept-multiclient exec ./bin/manager
 ```
 
-## To change the version of CRDs 
+## To change the version of CRDs
 
-The tool generate the CRDs by using [controller-tools](https://github.com/kubernetes-sigs/controller-tools), see in the manifests target:
+The `controller-gen` program (from [controller-tools](https://github.com/kubernetes-sigs/controller-tools))
+generates CRDs for kubebuilder projects, wrapped in the following `make` rule:
 
 ```sh
-# Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 ```
 
-In this way, update `CRD_OPTIONS` to define the version of the CRDs manifests which will be generated in the `config/crd/bases` directory:
+`controller-gen` lets you specify what CRD API version to generate (either "v1", the default, or "v1beta1").
+You can direct it to generate a specific version by adding `crd:crdVersions={<version>}` to your `CRD_OPTIONS`,
+found at the top of your Makefile:
 
 ```sh
-# Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
-CRD_OPTIONS ?= "crd:trivialVersions=true"
+CRD_OPTIONS ?= "crd:crdVersions={v1beta1},trivialVersions=true,preserveUnknownFields=false"
 ```
-
-|   CRD_OPTIONS	|   API version	|  
-|---	|---	|
-| `"crd:trivialVersions=true"` |  `apiextensions.k8s.io/v1beta1` |
-| `"crd:crdVersions=v1"` | `apiextensions.k8s.io/v1`	|  
 
 ## To get all the manifests without deploying
 
