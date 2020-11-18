@@ -17,7 +17,14 @@
 builds:
 - main: ./cmd
   binary: kubebuilder
-  ldflags: -s -X sigs.k8s.io/kubebuilder/v2/cmd.kubeBuilderVersion={{.Version}} -X sigs.k8s.io/kubebuilder/v2/cmd.gitCommit={{.Commit}} -X sigs.k8s.io/kubebuilder/v2/cmd.buildDate={{.Date}} -X sigs.k8s.io/kubebuilder/v2/cmd.kubernetesVendorVersion={{.Env.KUBERNETES_VERSION}}
+  ldflags:
+    - -s
+    - -X main.kubeBuilderVersion={{.Version}}
+    - -X main.goos={{.Os}}
+    - -X main.goarch={{.Arch}}
+    - -X main.gitCommit={{.Commit}}
+    - -X main.buildDate={{.Date}}
+    - -X main.kubernetesVendorVersion={{.Env.KUBERNETES_VERSION}}
   goos:
    - darwin
    - linux
