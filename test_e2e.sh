@@ -39,4 +39,4 @@ function cleanup() {
 
 trap cleanup EXIT
 go test ./test/e2e/v2
-go test ./test/e2e/v3 -timeout 15m
+go test ./test/e2e/v3 -timeout 20m
