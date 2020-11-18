@@ -46,7 +46,7 @@ project:
 ```bash
 # we'll use a domain of tutorial.kubebuilder.io,
 # so all API groups will be <group>.tutorial.kubebuilder.io.
-kubebuilder init --domain tutorial.kubebuilder.io
+kubebuilder init --plugins=go/v3-alpha --domain tutorial.kubebuilder.io
 ```
 
 <aside class="note">
