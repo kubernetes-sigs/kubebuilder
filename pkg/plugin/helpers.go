@@ -24,9 +24,6 @@ import (
 	"sigs.k8s.io/kubebuilder/v2/pkg/internal/validation"
 )
 
-// DefaultNameQualifier is the suffix appended to all kubebuilder plugin names.
-const DefaultNameQualifier = ".kubebuilder.io"
-
 // Key returns a unique identifying string for a plugin's name and version.
 func Key(name, version string) string {
 	if version == "" {

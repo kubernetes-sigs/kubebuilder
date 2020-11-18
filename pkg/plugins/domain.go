@@ -14,10 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package scaffold
+package plugins
 
-// Scaffolder interface creates files to set up a controller manager
-type Scaffolder interface {
-	// Scaffold performs the scaffolding
-	Scaffold() error
-}
+// DefaultNameQualifier is the suffix appended to all kubebuilder plugin names.
+const DefaultNameQualifier = ".kubebuilder.io"

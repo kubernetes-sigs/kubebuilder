@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v3
+package v2
 
 import (
 	"fmt"
@@ -23,8 +23,8 @@ import (
 
 	"sigs.k8s.io/kubebuilder/v2/pkg/model/config"
 	"sigs.k8s.io/kubebuilder/v2/pkg/plugin"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugin/internal/cmdutil"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugin/v3/scaffolds"
+	"sigs.k8s.io/kubebuilder/v2/pkg/plugins/golang/v2/scaffolds"
+	"sigs.k8s.io/kubebuilder/v2/pkg/plugins/internal/cmdutil"
 )
 
 type editSubcommand struct {
@@ -54,6 +54,10 @@ func (p *editSubcommand) BindFlags(fs *pflag.FlagSet) {
 }
 
 func (p *editSubcommand) InjectConfig(c *config.Config) {
+	// v3 project configs get a 'layout' value.
+	if c.IsV3() {
+		c.Layout = plugin.KeyFor(Plugin{})
+	}
 	p.config = c
 }
 

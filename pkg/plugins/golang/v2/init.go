@@ -27,9 +27,9 @@ import (
 	"sigs.k8s.io/kubebuilder/v2/pkg/internal/validation"
 	"sigs.k8s.io/kubebuilder/v2/pkg/model/config"
 	"sigs.k8s.io/kubebuilder/v2/pkg/plugin"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugin/internal/cmdutil"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugin/internal/util"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugin/v2/scaffolds"
+	"sigs.k8s.io/kubebuilder/v2/pkg/plugins/golang/v2/scaffolds"
+	"sigs.k8s.io/kubebuilder/v2/pkg/plugins/internal/cmdutil"
+	"sigs.k8s.io/kubebuilder/v2/pkg/plugins/internal/util"
 )
 
 type initSubcommand struct {

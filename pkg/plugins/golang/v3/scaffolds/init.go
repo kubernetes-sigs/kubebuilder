@@ -1,5 +1,5 @@
 /*
-Copyright 2019 The Kubernetes Authors.
+Copyright 2020 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -23,23 +23,22 @@ import (
 
 	"sigs.k8s.io/kubebuilder/v2/pkg/model"
 	"sigs.k8s.io/kubebuilder/v2/pkg/model/config"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugin/internal/cmdutil"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugin/internal/machinery"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugin/v2/scaffolds/internal/templates"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugin/v2/scaffolds/internal/templates/config/certmanager"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugin/v2/scaffolds/internal/templates/config/kdefault"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugin/v2/scaffolds/internal/templates/config/manager"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugin/v2/scaffolds/internal/templates/config/prometheus"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugin/v2/scaffolds/internal/templates/config/rbac"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugin/v2/scaffolds/internal/templates/config/webhook"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugin/v2/scaffolds/internal/templates/hack"
+	"sigs.k8s.io/kubebuilder/v2/pkg/plugins/golang/v3/scaffolds/internal/templates"
+	"sigs.k8s.io/kubebuilder/v2/pkg/plugins/golang/v3/scaffolds/internal/templates/config/certmanager"
+	"sigs.k8s.io/kubebuilder/v2/pkg/plugins/golang/v3/scaffolds/internal/templates/config/kdefault"
+	"sigs.k8s.io/kubebuilder/v2/pkg/plugins/golang/v3/scaffolds/internal/templates/config/manager"
+	"sigs.k8s.io/kubebuilder/v2/pkg/plugins/golang/v3/scaffolds/internal/templates/config/prometheus"
+	"sigs.k8s.io/kubebuilder/v2/pkg/plugins/golang/v3/scaffolds/internal/templates/config/rbac"
+	"sigs.k8s.io/kubebuilder/v2/pkg/plugins/golang/v3/scaffolds/internal/templates/hack"
+	"sigs.k8s.io/kubebuilder/v2/pkg/plugins/internal/cmdutil"
+	"sigs.k8s.io/kubebuilder/v2/pkg/plugins/internal/machinery"
 )
 
 const (
 	// ControllerRuntimeVersion is the kubernetes-sigs/controller-runtime version to be used in the project
-	ControllerRuntimeVersion = "v0.6.3"
+	ControllerRuntimeVersion = "v0.7.0-alpha.6"
 	// ControllerToolsVersion is the kubernetes-sigs/controller-tools version to be used in the project
-	ControllerToolsVersion = "v0.3.0"
+	ControllerToolsVersion = "v0.4.1"
 	// KustomizeVersion is the kubernetes-sigs/kustomize version to be used in the project
 	KustomizeVersion = "v3.5.4"
 
@@ -75,15 +74,10 @@ func (s *initScaffolder) newUniverse(boilerplate string) *model.Universe {
 // Scaffold implements Scaffolder
 func (s *initScaffolder) Scaffold() error {
 	fmt.Println("Writing scaffold for you to edit...")
-
-	switch {
-	case s.config.IsV2(), s.config.IsV3():
-		return s.scaffold()
-	default:
-		return fmt.Errorf("unknown project version %v", s.config.Version)
-	}
+	return s.scaffold()
 }
 
+// TODO: re-use universe created by s.newUniverse() if possible.
 func (s *initScaffolder) scaffold() error {
 	bpFile := &hack.Boilerplate{}
 	bpFile.Path = s.boilerplatePath
@@ -103,33 +97,30 @@ func (s *initScaffolder) scaffold() error {
 
 	return machinery.NewScaffold().Execute(
 		s.newUniverse(string(boilerplate)),
-		&templates.GitIgnore{},
+		&rbac.Kustomization{},
 		&rbac.AuthProxyRole{},
 		&rbac.AuthProxyRoleBinding{},
-		&kdefault.ManagerAuthProxyPatch{},
 		&rbac.AuthProxyService{},
 		&rbac.AuthProxyClientRole{},
-		&manager.Config{Image: imageName},
-		&templates.Main{},
-		&templates.GoMod{ControllerRuntimeVersion: ControllerRuntimeVersion},
-		&templates.Makefile{
-			Image:                  imageName,
-			BoilerplatePath:        s.boilerplatePath,
-			ControllerToolsVersion: ControllerToolsVersion,
-			KustomizeVersion:       KustomizeVersion,
-		},
-		&templates.Dockerfile{},
-		&kdefault.Kustomization{},
-		&kdefault.ManagerWebhookPatch{},
 		&rbac.RoleBinding{},
 		&rbac.LeaderElectionRole{},
 		&rbac.LeaderElectionRoleBinding{},
-		&rbac.Kustomization{},
 		&manager.Kustomization{},
-		&webhook.Kustomization{},
-		&webhook.KustomizeConfig{},
-		&webhook.Service{},
-		&kdefault.WebhookCAInjectionPatch{},
+		&manager.Config{Image: imageName},
+		&templates.Main{},
+		&templates.GoMod{ControllerRuntimeVersion: ControllerRuntimeVersion},
+		&templates.GitIgnore{},
+		&templates.Makefile{
+			Image:                    imageName,
+			BoilerplatePath:          s.boilerplatePath,
+			ControllerToolsVersion:   ControllerToolsVersion,
+			KustomizeVersion:         KustomizeVersion,
+			ControllerRuntimeVersion: ControllerRuntimeVersion,
+		},
+		&templates.Dockerfile{},
+		&templates.DockerIgnore{},
+		&kdefault.Kustomization{},
+		&kdefault.ManagerAuthProxyPatch{},
 		&prometheus.Kustomization{},
 		&prometheus.Monitor{},
 		&certmanager.Certificate{},
