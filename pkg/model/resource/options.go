@@ -228,8 +228,15 @@ func (opts *Options) safeImport(unsafe string) string {
 }
 
 // NewResource creates a new resource from the options
-func (opts *Options) NewResource(c *config.Config, doResource bool) *Resource {
+func (opts *Options) NewResource(c *config.Config, doResource, doController bool) *Resource {
 	res := opts.newResource()
+
+	// the following check was only add to ensure that the behaviour would not
+	// be changed for v2 projects. This if can be removed when v2 is no longer supported
+	if !c.IsV2() {
+		res.API = doResource
+		res.Controller = doController
+	}
 
 	replacer := res.Replacer()
 
@@ -250,7 +257,8 @@ func (opts *Options) NewResource(c *config.Config, doResource bool) *Resource {
 	//  - In any other case, default to                          => project resource
 	// TODO: need to support '--resource-pkg-path' flag for specifying resourcePath
 	if !doResource {
-		if !c.HasResource(opts.GVK()) {
+		res := c.GetResource(opts.GVK())
+		if res == nil || !res.API {
 			if coreDomain, found := coreGroups[opts.Group]; found {
 				pkg = replacer.Replace(path.Join("k8s.io", "api", "%[group]", "%[version]"))
 				domain = coreDomain

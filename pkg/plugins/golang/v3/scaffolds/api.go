@@ -83,10 +83,10 @@ func (s *apiScaffolder) newUniverse() *model.Universe {
 
 // TODO: re-use universe created by s.newUniverse() if possible.
 func (s *apiScaffolder) scaffold() error {
+
+	s.config.UpdateResources(s.resource.GVK())
+
 	if s.doResource {
-
-		s.config.UpdateResources(s.resource.GVK())
-
 		if err := machinery.NewScaffold(s.plugins...).Execute(
 			s.newUniverse(),
 			&api.Types{},
@@ -107,7 +107,6 @@ func (s *apiScaffolder) scaffold() error {
 		); err != nil {
 			return fmt.Errorf("error scaffolding kustomization: %v", err)
 		}
-
 	}
 
 	if s.doController {

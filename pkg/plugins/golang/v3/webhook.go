@@ -107,7 +107,7 @@ func (p *createWebhookSubcommand) Validate() error {
 	}
 
 	// check if resource exist to create webhook
-	if !p.config.HasResource(p.resource.GVK()) {
+	if p.config.GetResource(p.resource.GVK()) == nil {
 		return fmt.Errorf("%s create webhook requires an api with the group,"+
 			" kind and version provided", p.commandName)
 	}
@@ -128,7 +128,7 @@ func (p *createWebhookSubcommand) GetScaffolder() (cmdutil.Scaffolder, error) {
 	}
 
 	// Create the actual resource from the resource options
-	res := p.resource.NewResource(p.config, false)
+	res := p.resource.NewResource(p.config, false, false)
 	return scaffolds.NewWebhookScaffolder(p.config, string(bp), res, p.defaulting, p.validation, p.conversion), nil
 }
 

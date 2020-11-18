@@ -78,17 +78,14 @@ func (c Config) IsV3() bool {
 	return c.Version == Version3Alpha
 }
 
-// HasResource returns true if API resource is already tracked
-func (c Config) HasResource(target GVK) bool {
-	// Return true if the target resource is found in the tracked resources
+// GetResource returns the GKV if the resource is found
+func (c Config) GetResource(target GVK) *GVK {
 	for _, r := range c.Resources {
 		if r.isEqualTo(target) {
-			return true
+			return &r
 		}
 	}
-
-	// Return false otherwise
-	return false
+	return nil
 }
 
 // UpdateResources either adds gvk to the tracked set or, if the resource already exists,
@@ -157,6 +154,11 @@ type GVK struct {
 	CRDVersion string `json:"crdVersion,omitempty"`
 	// WebhookVersion holds the {Validating,Mutating}WebhookConfiguration API version used for the GVK.
 	WebhookVersion string `json:"webhookVersion,omitempty"`
+
+	// API holds true when the api is scaffolded
+	API bool `json:"api,omitempty"`
+	// Controller holds true when the controller is scaffolded
+	Controller bool `json:"controller,omitempty"`
 }
 
 // isEqualTo compares it with another resource
@@ -175,6 +177,8 @@ func (r *GVK) merge(other GVK) {
 	if r.WebhookVersion == "" && other.WebhookVersion != "" {
 		r.WebhookVersion = other.WebhookVersion
 	}
+	r.API = r.API || other.Controller
+	r.Controller = r.Controller || other.Controller
 }
 
 // Marshal returns the bytes of c.
