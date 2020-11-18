@@ -11,27 +11,13 @@ docs/book/book/
 # Skip bazel dirs
 /bazel-*
 
-# skip bin
-bin/*
-testbin/*
-testdata/project-v3-addon/testbin/*
-testdata/project-v3-multigroup/testbin/*
-testdata/project-v3/testbin/*
-docs/book/src/multiversion-tutorial/testdata/project/bin/*
-docs/book/src/cronjob-tutorial/testdata/project/bin/*
+# skip bin dirs
+**/bin/*
+**/testbin/*
 
 # skip .out files (coverage tests)
 *.out
 
-# skip testdata gopath non-src
-/testdata/gopath/bin
-/testdata/gopath/pkg
-
-# skip testdata go.mod, since it may have
+# skip testdata go.sum, since it may have
 # different result depending on go version
-/testdata/project-v2/go.sum
-/testdata/project-v2-addon/go.sum
-/testdata/project-v2-multigroup/go.sum
-/testdata/project-v3/go.sum
-/testdata/project-v3-multigroup/go.sum
-/testdata/project-v3-addon/go.sum
+/testdata/**/go.sum
