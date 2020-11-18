@@ -13,25 +13,12 @@
 #  limitations under the License.
 
 # Instructions to run locally:
-# Download google container builder: https://github.com/GoogleCloudPlatform/container-builder-local
-# Set you GOOS and GOARCH vars to match your system
-# Set OUTPUT to the location to write the directory containing the tar.gz
-# $ container-builder-local --config=build/cloudbuild_local.yaml --dryrun=false \
-# --write-workspace=/tmp/w .
-# Release tar will be in /tmp/w/workspace/dist
+# Download google container builder: https://github.com/GoogleCloudPlatform/cloud-build-local
+# $ mkdir cloudbuild
+# $ cloud-build-local --config=build/cloudbuild_local.yaml --dryrun=false --write-workspace=./cloudbuild .
+# Release tar will be in ./cloudbuild
 
 steps:
-- name: "ubuntu"
-  args: ["mkdir", "-p", "/workspace/_output/linux_amd64"]
-- name: "gcr.io/kubebuilder/thirdparty-linux:1.16.4"
-  args: ["tar", "-xzvf", "/kubebuilder_linux_amd64.tar.gz"]
-  dir: "_output/linux_amd64"
-- name: "ubuntu"
-  args: ["mkdir", "-p", "/workspace/_output/darwin_amd64"]
-- name: "gcr.io/kubebuilder/thirdparty-darwin:1.16.4"
-  args: ["tar", "-xzvf", "/kubebuilder_darwin_amd64.tar.gz"]
-  dir: "_output/darwin_amd64"
-- name: "gcr.io/kubebuilder/goreleaser_with_go_1.12.5:0.0.1"
-  args: ["bash", "build/build_kubebuilder.sh", "--snapshot"]
-  env:
-   - 'KUBERNETES_VERSION=1.16.4'
+- name: "goreleaser/goreleaser:v0.147"
+  entrypoint: "bash"
+  args: ["build/build_kubebuilder.sh", "--snapshot"]

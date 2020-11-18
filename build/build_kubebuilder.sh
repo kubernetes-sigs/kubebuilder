@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 # Copyright 2018 The Kubernetes Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,46 +14,64 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -e
-set -x
+# This script runs goreleaser using the build/.goreleaser.yml config.
+# While it can be run locally, it is intended to be run by cloudbuild
+# in the goreleaser/goreleaser image.
 
-# Google Container Builder automatically checks out all the code under the /workspace directory,
-# but we actually want it to under the correct expected package in the GOPATH (/go)
-# - Create the directory to host the code that matches the expected GOPATH package locations
-# - Use /go as the default GOPATH because this is what the image uses
-# - Link our current directory (containing the source code) to the package location in the GOPATH
+# echo_run echos then evaluates all args.
+function echo_run() {
+  echo $@
+  # Ensure process substitution is evaluated with eval.
+  eval $@
+}
 
-OWNER="sigs.k8s.io"
-REPO="kubebuilder"
+# install_notes installs kubebuilder's release notes generator globally with name "notes".
+function install_notes() {
+  local tmp=$(mktemp -d)
+  pushd "$tmp"
+  go mod init tmp
+  go get sigs.k8s.io/kubebuilder-release-tools/notes
+  popd
+  rm -rf "$tmp"
+}
 
-GO_PKG_OWNER=${GOPATH/:*}/src/$OWNER
-GO_PKG_PATH=$GO_PKG_OWNER/$REPO
+set -o errexit
+set -o pipefail
 
-mkdir -p $GO_PKG_OWNER
-ln -sf $(pwd) $GO_PKG_PATH
+# SNAPSHOT is set by the CLI flag parser if --snapshot is a passed flag.
+# If not set, release notes are not generated.
+SNAPSHOT=
+# GORELEASER_FLAGS sets up goreleaser flags such that it can be run
+# in local/snapshot/prod mode from the same script.
+# NOTE: if --snapshot is set, release is not published to GitHub
+# and the build is available under $PWD/dist.
+GORELEASER_FLAGS=
 
-# When invoked in container builder, this script runs under /workspace which is
-# not under $GOPATH, so we need to `cd` to repo under GOPATH for it to build
-cd $GO_PKG_PATH
-
-
-# NOTE: if snapshot is enabled, release is not published to GitHub and the build
-# is available under workspace/dist directory.
-SNAPSHOT=""
-
-# parse commandline args copied from the link below
-# https://stackoverflow.com/questions/192249/how-do-i-parse-command-line-arguments-in-bash?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
-
-while [[ $# -gt 0 ]]
-do
-key="$1"
-
-case $key in
+while [[ $# -gt 0 ]]; do
+  key="$1"
+  case $key in
     --snapshot)
-    SNAPSHOT="--snapshot"
-    shift # past argument
+    # TODO(estroz): figure out how to generate snapshot release notes with the kubebuilder generator.
+    echo "Running in snapshot mode. Release notes will not be generated from commits."
+    notes="Mock Release Notes for $(git describe --tags --always --broken)"
+    GORELEASER_FLAGS="${key} --release-notes <(echo \"${notes}\")"
+    SNAPSHOT=1
+    shift
     ;;
-esac
+    *)
+    GORELEASER_FLAGS="$GORELEASER_FLAGS ${key}"
+    shift
+    ;;
+  esac
 done
 
-/goreleaser release --config=build/.goreleaser.yml --rm-dist --skip-validate ${SNAPSHOT}
+# Generate real release notes.
+if [ -z "$SNAPSHOT" ]; then
+  tmp_notes="$(mktemp)"
+  trap "rm -f ${tmp_notes}" EXIT
+  install_notes
+  notes | tee "$tmp_notes"
+  GORELEASER_FLAGS="${GORELEASER_FLAGS} --release-notes=${tmp_notes}"
+fi
+
+echo_run goreleaser release --config=build/.goreleaser.yml --rm-dist --skip-validate $GORELEASER_FLAGS

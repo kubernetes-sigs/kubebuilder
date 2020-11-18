@@ -12,8 +12,8 @@ docs/book/book/
 /bazel-*
 
 # skip bin dirs
-**/bin/*
-**/testbin/*
+**/bin
+**/testbin
 
 # skip .out files (coverage tests)
 *.out
