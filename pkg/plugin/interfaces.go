@@ -19,7 +19,7 @@ package plugin
 import (
 	"github.com/spf13/pflag"
 
-	"sigs.k8s.io/kubebuilder/v2/pkg/model/config"
+	"sigs.k8s.io/kubebuilder/v3/pkg/model/config"
 )
 
 // Plugin is an interface that defines the common base for all plugins

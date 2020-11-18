@@ -17,7 +17,7 @@ limitations under the License.
 package file
 
 import (
-	"sigs.k8s.io/kubebuilder/v2/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 )
 
 // PathMixin provides file builders with a path field

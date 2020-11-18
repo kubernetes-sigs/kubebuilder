@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"strings"
 
-	"sigs.k8s.io/kubebuilder/v2/pkg/model/config"
+	"sigs.k8s.io/kubebuilder/v3/pkg/model/config"
 )
 
 // Resource contains the information required to scaffold files for a resource.

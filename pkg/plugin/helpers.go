@@ -21,7 +21,7 @@ import (
 	"path"
 	"strings"
 
-	"sigs.k8s.io/kubebuilder/v2/pkg/internal/validation"
+	"sigs.k8s.io/kubebuilder/v3/pkg/internal/validation"
 )
 
 // Key returns a unique identifying string for a plugin's name and version.

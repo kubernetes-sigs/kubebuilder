@@ -17,9 +17,9 @@ limitations under the License.
 package model
 
 import (
-	"sigs.k8s.io/kubebuilder/v2/pkg/model/config"
-	"sigs.k8s.io/kubebuilder/v2/pkg/model/file"
-	"sigs.k8s.io/kubebuilder/v2/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v3/pkg/model/config"
+	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 )
 
 // Universe describes the entire state of file generation
