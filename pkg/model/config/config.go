@@ -18,8 +18,10 @@ package config
 
 import (
 	"fmt"
+	"path"
 	"strings"
 
+	"github.com/gobuffalo/flect"
 	"sigs.k8s.io/yaml"
 )
 
@@ -34,7 +36,7 @@ type Config struct {
 	// Version is the project version, defaults to "1" (backwards compatibility)
 	Version string `json:"version,omitempty"`
 
-	// Domain is the domain associated with the project and used for API groups
+	// QualifiedGroup is the domain associated with the project and used for API groups
 	Domain string `json:"domain,omitempty"`
 
 	// Repo is the go package name of the project root
@@ -45,7 +47,7 @@ type Config struct {
 
 	// Resources tracks scaffolded resources in the project
 	// This info is tracked only in project with version 2
-	Resources []GVK `json:"resources,omitempty"`
+	Resources []ResourceData `json:"resources,omitempty"`
 
 	// Multigroup tracks if the project has more than one group
 	MultiGroup bool `json:"multigroup,omitempty"`
@@ -78,32 +80,30 @@ func (c Config) IsV3() bool {
 	return c.Version == Version3Alpha
 }
 
-// HasResource returns true if API resource is already tracked
-func (c Config) HasResource(target GVK) bool {
+// GetResource returns the GKV if the resource is found
+func (c Config) GetResource(target ResourceData) *ResourceData {
 	// Return true if the target resource is found in the tracked resources
 	for _, r := range c.Resources {
-		if r.isEqualTo(target) {
-			return true
+		if r.isGVKEqualTo(target) {
+			return &r
 		}
 	}
-
-	// Return false otherwise
-	return false
+	return nil
 }
 
 // UpdateResources either adds gvk to the tracked set or, if the resource already exists,
 // updates the the equivalent resource in the set.
-func (c *Config) UpdateResources(gvk GVK) {
+func (c *Config) UpdateResources(resource ResourceData) {
 	// If the resource already exists, update it.
 	for i, r := range c.Resources {
-		if r.isEqualTo(gvk) {
-			c.Resources[i].merge(gvk)
+		if r.isGVKEqualTo(resource) {
+			c.Resources[i].merge(resource)
 			return
 		}
 	}
 
 	// The resource does not exist, append the resource to the tracked ones.
-	c.Resources = append(c.Resources, gvk)
+	c.Resources = append(c.Resources, resource)
 }
 
 // HasGroup returns true if group is already tracked
@@ -136,9 +136,13 @@ func (c Config) resourceAPIVersionCompatible(verType, version string) bool {
 		var currVersion string
 		switch verType {
 		case "crd":
-			currVersion = res.CRDVersion
+			if res.API != nil {
+				currVersion = res.API.CRDVersion
+			}
 		case "webhook":
-			currVersion = res.WebhookVersion
+			if res.Webhooks != nil {
+				currVersion = res.Webhooks.WebhookVersion
+			}
 		}
 		if currVersion != "" && version != currVersion {
 			return false
@@ -147,20 +151,58 @@ func (c Config) resourceAPIVersionCompatible(verType, version string) bool {
 	return true
 }
 
-// GVK contains information about scaffolded resources
-type GVK struct {
+// ResourceData contains information about scaffolded resources
+type ResourceData struct {
 	Group   string `json:"group,omitempty"`
 	Version string `json:"version,omitempty"`
 	Kind    string `json:"kind,omitempty"`
 
-	// CRDVersion holds the CustomResourceDefinition API version used for the GVK.
+	Domain   string `json:"domain,omitempty"`
+	Plural   string `json:"plural,omitempty"`
+	Endpoint string `json:"endpoint,omitempty"`
+
+	// API holds true when the api is scaffolded
+	API *API `json:"api,omitempty"`
+
+	// Controller holds true when the controller is scaffolded
+	Controller bool `json:"controller,omitempty"`
+
+	// Webhooks holds the Webhooks data
+	Webhooks *Webhooks `json:"webhooks,omitempty"`
+}
+
+// API contains information about scaffolded APIs
+type API struct {
+	// Namespaced is true if the resource is namespaced
+	Namespaced bool `json:"namespaced,omitempty"`
+
+	// CRDVersion holds the CustomResourceDefinition API version used for the ResourceData.
 	CRDVersion string `json:"crdVersion,omitempty"`
-	// WebhookVersion holds the {Validating,Mutating}WebhookConfiguration API version used for the GVK.
+}
+
+// IsEmpty returns if the API's fields all contain zero-values.
+func (a API) IsEmpty() bool {
+	return a.CRDVersion == "" && !a.Namespaced
+}
+
+// Webhooks contains information about scaffolded webhooks
+type Webhooks struct {
+	// Types which are scaffolded
+	Defaulting bool `json:"defaulting,omitempty"`
+	Validation bool `json:"validation,omitempty"`
+	Conversion bool `json:"conversion,omitempty"`
+
+	// WebhookVersion holds the {Validating,Mutating}WebhookConfiguration API version used for the Options.
 	WebhookVersion string `json:"webhookVersion,omitempty"`
 }
 
-// isEqualTo compares it with another resource
-func (r GVK) isEqualTo(other GVK) bool {
+// IsEmpty returns if the Webhooks' fields all contain zero-values.
+func (w Webhooks) IsEmpty() bool {
+	return w.WebhookVersion == "" && !w.Defaulting && !w.Validation && !w.Conversion
+}
+
+// isGVKEqualTo compares it with another resource
+func (r ResourceData) isGVKEqualTo(other ResourceData) bool {
 	return r.Group == other.Group &&
 		r.Version == other.Version &&
 		r.Kind == other.Kind
@@ -168,13 +210,44 @@ func (r GVK) isEqualTo(other GVK) bool {
 
 // merge combines fields of two GVKs that have matching group, version, and kind,
 // favoring the receiver's values.
-func (r *GVK) merge(other GVK) {
-	if r.CRDVersion == "" && other.CRDVersion != "" {
-		r.CRDVersion = other.CRDVersion
+func (r *ResourceData) merge(other ResourceData) {
+	r.Controller = r.Controller || other.Controller
+
+	if other.Webhooks != nil {
+		if r.Webhooks == nil {
+			r.Webhooks = other.Webhooks
+		} else {
+			r.Webhooks.merge(other.Webhooks)
+		}
 	}
-	if r.WebhookVersion == "" && other.WebhookVersion != "" {
-		r.WebhookVersion = other.WebhookVersion
+
+	if other.API != nil {
+		if r.API == nil {
+			r.API = other.API
+		} else {
+			r.API.merge(other.API)
+		}
 	}
+}
+
+// merge compares it with another webhook by setting each webhook type individually so existing values are
+// not overwritten.
+func (w *Webhooks) merge(other *Webhooks) {
+	if w.WebhookVersion == "" && other.WebhookVersion != "" {
+		w.WebhookVersion = other.WebhookVersion
+	}
+	w.Defaulting = w.Defaulting || other.Defaulting
+	w.Validation = w.Validation || other.Validation
+	w.Conversion = w.Conversion || other.Conversion
+}
+
+// merge compares it with another webhook by setting each webhook type individually so existing values are
+// not overwritten.
+func (a *API) merge(other *API) {
+	if a.CRDVersion == "" && other.CRDVersion != "" {
+		a.CRDVersion = other.CRDVersion
+	}
+	a.Namespaced = a.Namespaced || other.Namespaced
 }
 
 // Marshal returns the bytes of c.
@@ -182,6 +255,45 @@ func (c Config) Marshal() ([]byte, error) {
 	// Ignore extra fields at first.
 	cfg := c
 	cfg.Plugins = nil
+
+	// Ignore some fields if v2.
+	if cfg.IsV2() {
+		for i := range cfg.Resources {
+			cfg.Resources[i].API = nil
+			cfg.Resources[i].Controller = false
+			cfg.Resources[i].Webhooks = nil
+			cfg.Resources[i].Plural = ""
+			cfg.Resources[i].Domain = ""
+			cfg.Resources[i].Endpoint = ""
+		}
+	}
+
+	for i, r := range cfg.Resources {
+		//If the plural is regular, omit it.
+		if r.Plural != "" && r.Plural == flect.Pluralize(strings.ToLower(r.Kind)) {
+			c.Resources[i].Plural = ""
+		}
+
+		// If the Endpoint is the default location, omit it.
+		if r.Endpoint != "" && r.Endpoint == c.DefaultAPIEndpointFor(r.Group, r.Version) {
+			c.Resources[i].Endpoint = ""
+		}
+
+		// If the domain is the default one, omit it.
+		if r.Domain != "" && r.Domain == fmt.Sprintf("%s.%s", r.Group, c.Domain) {
+			c.Resources[i].Domain = ""
+		}
+
+		// If API is empty, omit it (prevents `api: {}`).
+		if r.API != nil && r.API.IsEmpty() {
+			cfg.Resources[i].API = nil
+		}
+		// If Webhooks is empty, omit it (prevents `webhooks: {}`).
+		if r.Webhooks != nil && r.Webhooks.IsEmpty() {
+			cfg.Resources[i].Webhooks = nil
+		}
+	}
+
 	content, err := yaml.Marshal(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("error marshalling project configuration: %v", err)
@@ -271,4 +383,15 @@ func (c Config) DecodePluginConfig(key string, configObj interface{}) error {
 		}
 	}
 	return nil
+}
+
+// DefaultAPIEndpointFor returns the default path for the group version informed in the project
+func (c Config) DefaultAPIEndpointFor(group, version string) string {
+	if c.MultiGroup {
+		if group != "" {
+			return path.Join(c.Repo, "apis", group, version)
+		}
+		return path.Join(c.Repo, "apis", version)
+	}
+	return path.Join(c.Repo, "api", version)
 }

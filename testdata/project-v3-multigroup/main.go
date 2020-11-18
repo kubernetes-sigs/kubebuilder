@@ -41,6 +41,7 @@ import (
 	testprojectorgv1 "sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/apis/v1"
 	"sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/controllers"
 	appscontrollers "sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/controllers/apps"
+	authenticationcontrollers "sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/controllers/authentication"
 	crewcontrollers "sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/controllers/crew"
 	foopolicycontrollers "sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/controllers/foo.policy"
 	seacreaturescontrollers "sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/controllers/sea-creatures"
@@ -175,6 +176,14 @@ func main() {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Pod")
+		os.Exit(1)
+	}
+	if err = (&authenticationcontrollers.TokenReviewReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("authentication").WithName("TokenReview"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "TokenReview")
 		os.Exit(1)
 	}
 	if err = (&controllers.LakersReconciler{

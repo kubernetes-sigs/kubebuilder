@@ -44,7 +44,7 @@ func (f *CRDSample) SetTemplateDefaults() error {
 	return nil
 }
 
-const crdSampleTemplate = `apiVersion: {{ .Resource.Domain }}/{{ .Resource.Version }}
+const crdSampleTemplate = `apiVersion: {{ .Resource.QualifiedGroup }}/{{ .Resource.Version }}
 kind: {{ .Resource.Kind }}
 metadata:
   name: {{ lower .Resource.Kind }}-sample

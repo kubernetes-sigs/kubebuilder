@@ -96,7 +96,7 @@ func (f *SuiteTest) GetCodeFragments() file.CodeFragmentsMap {
 	// Generate import code fragments
 	imports := make([]string, 0)
 	if f.WireResource {
-		imports = append(imports, fmt.Sprintf(apiImportCodeFragment, f.Resource.ImportAlias, f.Resource.Package))
+		imports = append(imports, fmt.Sprintf(apiImportCodeFragment, f.Resource.ImportAlias, f.Resource.Endpoint))
 	}
 
 	// Generate add scheme code fragments

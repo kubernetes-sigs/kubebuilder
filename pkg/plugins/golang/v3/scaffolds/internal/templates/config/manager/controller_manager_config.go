@@ -27,7 +27,7 @@ var _ file.Template = &ControllerManagerConfig{}
 // ControllerManagerConfig scaffolds the config file in config/manager folder.
 type ControllerManagerConfig struct {
 	file.TemplateMixin
-	file.DomainMixin
+	file.QualifiedGroupMixin
 	file.RepositoryMixin
 }
 
@@ -54,5 +54,5 @@ webhook:
   port: 9443
 leaderElection:
   leaderElect: true
-  resourceName: {{ hashFNV .Repo }}.{{ .Domain }}
+  resourceName: {{ hashFNV .Repo }}.{{ .QualifiedGroup }}
 `

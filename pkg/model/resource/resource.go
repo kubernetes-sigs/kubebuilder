@@ -24,6 +24,7 @@ import (
 )
 
 // Resource contains the information required to scaffold files for a resource.
+// nolint: maligned
 type Resource struct {
 	// Group is the API Group. Does not contain the domain.
 	Group string `json:"group,omitempty"`
@@ -43,29 +44,41 @@ type Resource struct {
 	// ImportAlias is a cleaned concatenation of Group and Version.
 	ImportAlias string `json:"-"`
 
-	// Package is the go package of the Resource.
-	Package string `json:"package,omitempty"`
+	// Endpoint is the API endpoint which is used import the go package of the Resource.
+	Endpoint string `json:"endpoint,omitempty"`
 
-	// Domain is the Group + "." + Domain of the Resource.
+	// QualifiedGroup is the Group + "." + QualifiedGroup of the Resource.
+	QualifiedGroup string `json:"qualified-group,omitempty"`
+
+	// Domain is the Group + "." + QualifiedGroup of the Resource.
 	Domain string `json:"domain,omitempty"`
 
+	// Controller holds true when the controller is scaffolded
+	Controller bool `json:"controller,omitempty"`
+
 	// Namespaced is true if the resource is namespaced.
+	// todo: remove when the v2 is no longer supported
 	Namespaced bool `json:"namespaced,omitempty"`
 
-	// CRDVersion holds the CustomResourceDefinition API version used for the Resource.
-	CRDVersion string `json:"crdVersion,omitempty"`
-	// WebhookVersion holds the {Validating,Mutating}WebhookConfiguration API version used for the Resource.
-	WebhookVersion string `json:"webhookVersion,omitempty"`
+	// API holds the the api data that is scaffolded
+	API config.API `json:"api,omitempty"`
+
+	// Webhooks holds webhooks data that is scaffolded
+	Webhooks config.Webhooks `json:"webhooks,omitempty"`
 }
 
-// GVK returns the group-version-kind information to check against tracked resources in the configuration file
-func (r *Resource) GVK() config.GVK {
-	return config.GVK{
-		Group:          r.Group,
-		Version:        r.Version,
-		Kind:           r.Kind,
-		CRDVersion:     r.CRDVersion,
-		WebhookVersion: r.WebhookVersion,
+// Data returns the ResourceData information to check against tracked resources in the configuration file
+func (r *Resource) Data() config.ResourceData {
+	return config.ResourceData{
+		Group:      r.Group,
+		Version:    r.Version,
+		Kind:       r.Kind,
+		Domain:     r.Domain,
+		Plural:     r.Plural,
+		Endpoint:   r.Endpoint,
+		Controller: r.Controller,
+		API:        &r.API,
+		Webhooks:   &r.Webhooks,
 	}
 }
 

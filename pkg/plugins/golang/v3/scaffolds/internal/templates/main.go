@@ -31,7 +31,7 @@ var _ file.Template = &Main{}
 type Main struct {
 	file.TemplateMixin
 	file.BoilerplateMixin
-	file.DomainMixin
+	file.QualifiedGroupMixin
 	file.RepositoryMixin
 	file.ComponentConfigMixin
 }
@@ -134,7 +134,7 @@ func (f *MainUpdater) GetCodeFragments() file.CodeFragmentsMap {
 	// Generate import code fragments
 	imports := make([]string, 0)
 	if f.WireResource {
-		imports = append(imports, fmt.Sprintf(apiImportCodeFragment, f.Resource.ImportAlias, f.Resource.Package))
+		imports = append(imports, fmt.Sprintf(apiImportCodeFragment, f.Resource.ImportAlias, f.Resource.Endpoint))
 	}
 
 	if f.WireController {
@@ -246,7 +246,7 @@ func main() {
 		Port:                   9443,
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "{{ hashFNV .Repo }}.{{ .Domain }}",
+		LeaderElectionID:       "{{ hashFNV .Repo }}.{{ .QualifiedGroup }}",
 	})
 {{- else }}
 	var err error

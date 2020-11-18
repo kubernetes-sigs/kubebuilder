@@ -33,6 +33,7 @@ const (
 	groupRequired   = "group cannot be empty"
 	versionRequired = "version cannot be empty"
 	kindRequired    = "kind cannot be empty"
+	k8sDomain       = "k8s.io"
 )
 
 var (
@@ -81,12 +82,15 @@ type Options struct {
 	Plural string
 
 	// Namespaced is true if the resource is namespaced.
+	// todo: remove when v2 is no longer be supported
+	// this attr was only kept because it still in usage in the v2 go plugin templates
 	Namespaced bool
 
-	// CRDVersion holds the CustomResourceDefinition API version used for the Options.
-	CRDVersion string
-	// WebhookVersion holds the {Validating,Mutating}WebhookConfiguration API version used for the Options.
-	WebhookVersion string
+	// API holds the api data
+	API config.API
+
+	// Webhooks holds the webhooks data
+	Webhooks config.Webhooks
 }
 
 // ValidateV2 verifies that V2 project has all the fields have valid values
@@ -190,8 +194,8 @@ func (opts *Options) Validate() error {
 
 	// Ensure apiVersions for k8s types are empty or valid.
 	for typ, apiVersion := range map[string]string{
-		"CRD":     opts.CRDVersion,
-		"Webhook": opts.WebhookVersion,
+		"CRD":     opts.API.CRDVersion,
+		"Webhook": opts.Webhooks.WebhookVersion,
 	} {
 		switch apiVersion {
 		case "", "v1", "v1beta1":
@@ -205,14 +209,14 @@ func (opts *Options) Validate() error {
 	return nil
 }
 
-// GVK returns the group-version-kind information to check against tracked resources in the configuration file
-func (opts *Options) GVK() config.GVK {
-	return config.GVK{
-		Group:          opts.Group,
-		Version:        opts.Version,
-		Kind:           opts.Kind,
-		CRDVersion:     opts.CRDVersion,
-		WebhookVersion: opts.WebhookVersion,
+// Data returns the ResourceData information to check against tracked resources in the configuration file
+func (opts *Options) Data() config.ResourceData {
+	return config.ResourceData{
+		Group:    opts.Group,
+		Version:  opts.Version,
+		Kind:     opts.Kind,
+		API:      &opts.API,
+		Webhooks: &opts.Webhooks,
 	}
 }
 
@@ -228,9 +232,8 @@ func (opts *Options) safeImport(unsafe string) string {
 }
 
 // NewResource creates a new resource from the options
-func (opts *Options) NewResource(c *config.Config, doResource bool) *Resource {
-	res := opts.newResource()
-
+func (opts *Options) NewResource(c *config.Config, doAPI, doController bool) *Resource {
+	res := opts.newResource(doAPI, doController)
 	replacer := res.Replacer()
 
 	pkg := replacer.Replace(path.Join(c.Repo, "api", "%[version]"))
@@ -241,43 +244,57 @@ func (opts *Options) NewResource(c *config.Config, doResource bool) *Resource {
 			pkg = replacer.Replace(path.Join(c.Repo, "apis", "%[version]"))
 		}
 	}
-	domain := c.Domain
+	qualifiedGroup := c.Domain
 
-	// pkg and domain may need to be changed in case we are referring to a builtin core resource:
+	// pkg and qualifiedGroup may need to be changed in case we are referring to a builtin core resource:
 	//  - Check if we are scaffolding the resource now           => project resource
 	//  - Check if we already scaffolded the resource            => project resource
 	//  - Check if the resource group is a well-known core group => builtin core resource
 	//  - In any other case, default to                          => project resource
 	// TODO: need to support '--resource-pkg-path' flag for specifying resourcePath
-	if !doResource {
-		if !c.HasResource(opts.GVK()) {
+	isCoreType := false
+	if !doAPI {
+		if c.GetResource(opts.Data()) == nil {
 			if coreDomain, found := coreGroups[opts.Group]; found {
-				pkg = replacer.Replace(path.Join("k8s.io", "api", "%[group]", "%[version]"))
-				domain = coreDomain
+				pkg = replacer.Replace(path.Join(k8sDomain, "api", "%[group]", "%[version]"))
+				qualifiedGroup = coreDomain
+				res.Domain = coreDomain
+				isCoreType = true
 			}
 		}
 	}
 
-	res.Package = pkg
-	res.Domain = opts.Group
-	if domain != "" && opts.Group != "" {
-		res.Domain += "." + domain
+	res.Endpoint = pkg
+	res.QualifiedGroup = opts.Group
+	if qualifiedGroup != "" && opts.Group != "" {
+		res.QualifiedGroup += "." + qualifiedGroup
 	} else if opts.Group == "" && !c.IsV2() {
 		// Empty group overrides the default values provided by newResource().
-		// GroupPackageName and ImportAlias includes domain instead of group name as user provided group is empty.
-		res.Domain = domain
-		res.GroupPackageName = opts.safeImport(domain)
-		res.ImportAlias = opts.safeImport(domain + opts.Version)
+		// GroupPackageName and ImportAlias includes qualifiedGroup instead of group name as user provided group is empty.
+		res.QualifiedGroup = qualifiedGroup
+		res.GroupPackageName = opts.safeImport(qualifiedGroup)
+		res.ImportAlias = opts.safeImport(qualifiedGroup + opts.Version)
+	}
+
+	// if is not a core type then, update the domain with the value built
+	if !isCoreType {
+		res.Domain = res.QualifiedGroup
 	}
 
 	return res
 }
 
-func (opts *Options) newResource() *Resource {
+func (opts *Options) newResource(doAPI, doController bool) *Resource {
 	// If not provided, compute a plural for for Kind
 	plural := opts.Plural
 	if plural == "" {
 		plural = flect.Pluralize(strings.ToLower(opts.Kind))
+	}
+
+	// To not store the api when we are not scaffolding it
+	apiValue := opts.API
+	if !doAPI {
+		apiValue = config.API{}
 	}
 
 	return &Resource{
@@ -286,9 +303,10 @@ func (opts *Options) newResource() *Resource {
 		GroupPackageName: opts.safeImport(opts.Group),
 		Version:          opts.Version,
 		Kind:             opts.Kind,
+		API:              apiValue,
+		Webhooks:         opts.Webhooks,
+		Controller:       doController,
 		Plural:           plural,
 		ImportAlias:      opts.safeImport(opts.Group + opts.Version),
-		CRDVersion:       opts.CRDVersion,
-		WebhookVersion:   opts.WebhookVersion,
 	}
 }

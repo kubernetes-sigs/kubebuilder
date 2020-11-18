@@ -67,16 +67,16 @@ func (t *InserterMixin) GetIfExistsAction() IfExistsAction {
 	return Overwrite
 }
 
-// DomainMixin provides templates with a injectable domain field
-type DomainMixin struct {
-	// Domain is the domain for the APIs
-	Domain string
+// QualifiedGroupMixin provides templates with a injectable domain field
+type QualifiedGroupMixin struct {
+	// QualifiedGroup is the domain for the APIs
+	QualifiedGroup string
 }
 
-// InjectDomain implements HasDomain
-func (m *DomainMixin) InjectDomain(domain string) {
-	if m.Domain == "" {
-		m.Domain = domain
+// InjectQualifiedGroup implements HasQualifiedGroup
+func (m *QualifiedGroupMixin) InjectQualifiedGroup(qualifiedGroup string) {
+	if m.QualifiedGroup == "" {
+		m.QualifiedGroup = qualifiedGroup
 	}
 }
 

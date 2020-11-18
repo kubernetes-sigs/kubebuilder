@@ -36,27 +36,18 @@ type webhookScaffolder struct {
 	config      *config.Config
 	boilerplate string
 	resource    *resource.Resource
-
-	// Webhook type options.
-	defaulting, validation, conversion bool
 }
 
-// NewWebhookScaffolder returns a new Scaffolder for v2 webhook creation operations
+// NewWebhookScaffolder returns a new Scaffolder for v2 webhooks creation operations
 func NewWebhookScaffolder(
 	config *config.Config,
 	boilerplate string,
 	resource *resource.Resource,
-	defaulting bool,
-	validation bool,
-	conversion bool,
 ) cmdutil.Scaffolder {
 	return &webhookScaffolder{
 		config:      config,
 		boilerplate: boilerplate,
 		resource:    resource,
-		defaulting:  defaulting,
-		validation:  validation,
-		conversion:  conversion,
 	}
 }
 
@@ -75,32 +66,32 @@ func (s *webhookScaffolder) newUniverse() *model.Universe {
 }
 
 func (s *webhookScaffolder) scaffold() error {
-	if s.conversion {
+	if s.resource.Webhooks.Conversion {
 		fmt.Println(`Webhook server has been set up for you.
 You need to implement the conversion.Hub and conversion.Convertible interfaces for your CRD types.`)
 	}
 
-	s.config.UpdateResources(s.resource.GVK())
+	s.config.UpdateResources(s.resource.Data())
 
 	if err := machinery.NewScaffold().Execute(
 		s.newUniverse(),
 		&api.Webhook{
-			WebhookVersion: s.resource.WebhookVersion,
-			Defaulting:     s.defaulting,
-			Validating:     s.validation,
+			WebhookVersion: s.resource.Webhooks.WebhookVersion,
+			Defaulting:     s.resource.Webhooks.Defaulting,
+			Validating:     s.resource.Webhooks.Validation,
 		},
 		&templates.MainUpdater{WireWebhook: true},
-		&kdefault.WebhookCAInjectionPatch{WebhookVersion: s.resource.WebhookVersion},
+		&kdefault.WebhookCAInjectionPatch{WebhookVersion: s.resource.Webhooks.WebhookVersion},
 		&kdefault.ManagerWebhookPatch{},
-		&webhook.Kustomization{WebhookVersion: s.resource.WebhookVersion},
+		&webhook.Kustomization{WebhookVersion: s.resource.Webhooks.WebhookVersion},
 		&webhook.KustomizeConfig{},
 		&webhook.Service{},
 	); err != nil {
 		return err
 	}
 
-	// TODO: Add test suite for conversion webhook after #1664 has been merged & conversion tests supported in envtest.
-	if s.defaulting || s.validation {
+	// TODO: Add test suite for conversion webhooks after #1664 has been merged & conversion tests supported in envtest.
+	if s.resource.Webhooks.Defaulting || s.resource.Webhooks.Validation {
 		if err := machinery.NewScaffold().Execute(
 			s.newUniverse(),
 			&api.WebhookSuite{},

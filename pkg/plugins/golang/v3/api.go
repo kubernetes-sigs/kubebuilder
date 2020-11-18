@@ -61,7 +61,7 @@ type createAPISubcommand struct {
 	// Check if we have to scaffold resource and/or controller
 	resourceFlag   *pflag.Flag
 	controllerFlag *pflag.Flag
-	doResource     bool
+	doAPI          bool
 	doController   bool
 
 	// force indicates that the resource should be created even if it already exists
@@ -109,7 +109,7 @@ After the scaffold is written, api will run make on the project.
 func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.runMake, "make", true, "if true, run make after generating files")
 
-	fs.BoolVar(&p.doResource, "resource", true,
+	fs.BoolVar(&p.doAPI, "resource", true,
 		"if set, generate the resource without prompting the user")
 	p.resourceFlag = fs.Lookup("resource")
 	fs.BoolVar(&p.doController, "controller", true,
@@ -128,8 +128,8 @@ func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&p.resource.Kind, "kind", "", "resource Kind")
 	fs.StringVar(&p.resource.Group, "group", "", "resource Group")
 	fs.StringVar(&p.resource.Version, "version", "", "resource Version")
-	fs.BoolVar(&p.resource.Namespaced, "namespaced", true, "resource is namespaced")
-	fs.StringVar(&p.resource.CRDVersion, "crd-version", defaultCRDVersion,
+	fs.BoolVar(&p.resource.API.Namespaced, "namespaced", true, "resource is namespaced")
+	fs.StringVar(&p.resource.API.CRDVersion, "crd-version", defaultCRDVersion,
 		"version of CustomResourceDefinition to scaffold. Options: [v1, v1beta1]")
 }
 
@@ -160,7 +160,7 @@ func (p *createAPISubcommand) Validate() error {
 	reader := bufio.NewReader(os.Stdin)
 	if !p.resourceFlag.Changed {
 		fmt.Println("Create Resource [y/n]")
-		p.doResource = util.YesNo(reader)
+		p.doAPI = util.YesNo(reader)
 	}
 	if !p.controllerFlag.Changed {
 		fmt.Println("Create Controller [y/n]")
@@ -168,9 +168,10 @@ func (p *createAPISubcommand) Validate() error {
 	}
 
 	// In case we want to scaffold a resource API we need to do some checks
-	if p.doResource {
+	if p.doAPI {
 		// Check that resource doesn't exist or flag force was set
-		if !p.force && p.config.HasResource(p.resource.GVK()) {
+		res := p.config.GetResource(p.resource.Data())
+		if !p.force && (res != nil && res.API != nil) {
 			return errors.New("API resource already exists")
 		}
 
@@ -181,9 +182,9 @@ func (p *createAPISubcommand) Validate() error {
 		}
 
 		// Check CRDVersion against all other CRDVersions in p.config for compatibility.
-		if !p.config.IsCRDVersionCompatible(p.resource.CRDVersion) {
+		if !p.config.IsCRDVersionCompatible(p.resource.API.CRDVersion) {
 			return fmt.Errorf("only one CRD version can be used for all resources, cannot add %q",
-				p.resource.CRDVersion)
+				p.resource.API.CRDVersion)
 		}
 	}
 
@@ -203,14 +204,15 @@ func (p *createAPISubcommand) GetScaffolder() (cmdutil.Scaffolder, error) {
 	case "":
 		// Default pattern
 	case "addon":
+		p.resource.Namespaced = p.resource.API.Namespaced
 		plugins = append(plugins, &addon.Plugin{})
 	default:
 		return nil, fmt.Errorf("unknown pattern %q", p.pattern)
 	}
 
 	// Create the actual resource from the resource options
-	res := p.resource.NewResource(p.config, p.doResource)
-	return scaffolds.NewAPIScaffolder(p.config, string(bp), res, p.doResource, p.doController, plugins), nil
+	res := p.resource.NewResource(p.config, p.doAPI, p.doController)
+	return scaffolds.NewAPIScaffolder(p.config, string(bp), res, p.doAPI, p.doController, plugins), nil
 }
 
 func (p *createAPISubcommand) PostScaffold() error {

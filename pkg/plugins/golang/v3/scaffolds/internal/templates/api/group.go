@@ -57,7 +57,7 @@ const groupTemplate = `{{ .Boilerplate }}
 
 // Package {{ .Resource.Version }} contains API Schema definitions for the {{ .Resource.Group }} {{ .Resource.Version }} API group
 // +kubebuilder:object:generate=true
-// +groupName={{ .Resource.Domain }}
+// +groupName={{ .Resource.QualifiedGroup }}
 package {{ .Resource.Version }}
 
 import (
@@ -67,7 +67,7 @@ import (
 
 var (
 	// GroupVersion is group version used to register these objects
-	GroupVersion = schema.GroupVersion{Group: "{{ .Resource.Domain }}", Version: "{{ .Resource.Version }}"}
+	GroupVersion = schema.GroupVersion{Group: "{{ .Resource.QualifiedGroup }}", Version: "{{ .Resource.Version }}"}
 
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
 	SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}

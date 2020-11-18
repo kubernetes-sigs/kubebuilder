@@ -38,7 +38,7 @@ var _ = Describe("Resource", func() {
 					Domain:  "test.io",
 					Repo:    "test",
 				},
-				true,
+				true, true,
 			)
 			Expect(resource.Namespaced).To(Equal(options.Namespaced))
 			Expect(resource.Group).To(Equal(options.Group))
@@ -47,8 +47,8 @@ var _ = Describe("Resource", func() {
 			Expect(resource.Kind).To(Equal(options.Kind))
 			Expect(resource.Plural).To(Equal("firstmates"))
 			Expect(resource.ImportAlias).To(Equal("crewv1"))
-			Expect(resource.Package).To(Equal(path.Join("test", "api", "v1")))
-			Expect(resource.Domain).To(Equal("crew.test.io"))
+			Expect(resource.Endpoint).To(Equal(path.Join("test", "api", "v1")))
+			Expect(resource.QualifiedGroup).To(Equal("crew.test.io"))
 
 			resource = options.NewResource(
 				&config.Config{
@@ -57,7 +57,7 @@ var _ = Describe("Resource", func() {
 					Repo:       "test",
 					MultiGroup: true,
 				},
-				true,
+				true, true,
 			)
 			Expect(resource.Namespaced).To(Equal(options.Namespaced))
 			Expect(resource.Group).To(Equal(options.Group))
@@ -66,8 +66,8 @@ var _ = Describe("Resource", func() {
 			Expect(resource.Kind).To(Equal(options.Kind))
 			Expect(resource.Plural).To(Equal("firstmates"))
 			Expect(resource.ImportAlias).To(Equal("crewv1"))
-			Expect(resource.Package).To(Equal(path.Join("test", "apis", "crew", "v1")))
-			Expect(resource.Domain).To(Equal("crew.test.io"))
+			Expect(resource.Endpoint).To(Equal(path.Join("test", "apis", "crew", "v1")))
+			Expect(resource.QualifiedGroup).To(Equal("crew.test.io"))
 		})
 
 		It("should default the Plural by pluralizing the Kind", func() {
@@ -82,28 +82,28 @@ var _ = Describe("Resource", func() {
 			options := &Options{Group: "crew", Version: "v1", Kind: "FirstMate"}
 			Expect(options.Validate()).To(Succeed())
 
-			resource := options.NewResource(singleGroupConfig, true)
+			resource := options.NewResource(singleGroupConfig, true, true)
 			Expect(resource.Plural).To(Equal("firstmates"))
 
-			resource = options.NewResource(multiGroupConfig, true)
+			resource = options.NewResource(multiGroupConfig, true, true)
 			Expect(resource.Plural).To(Equal("firstmates"))
 
 			options = &Options{Group: "crew", Version: "v1", Kind: "Fish"}
 			Expect(options.Validate()).To(Succeed())
 
-			resource = options.NewResource(singleGroupConfig, true)
+			resource = options.NewResource(singleGroupConfig, true, true)
 			Expect(resource.Plural).To(Equal("fish"))
 
-			resource = options.NewResource(multiGroupConfig, true)
+			resource = options.NewResource(multiGroupConfig, true, true)
 			Expect(resource.Plural).To(Equal("fish"))
 
 			options = &Options{Group: "crew", Version: "v1", Kind: "Helmswoman"}
 			Expect(options.Validate()).To(Succeed())
 
-			resource = options.NewResource(singleGroupConfig, true)
+			resource = options.NewResource(singleGroupConfig, true, true)
 			Expect(resource.Plural).To(Equal("helmswomen"))
 
-			resource = options.NewResource(multiGroupConfig, true)
+			resource = options.NewResource(multiGroupConfig, true, true)
 			Expect(resource.Plural).To(Equal("helmswomen"))
 		})
 
@@ -115,7 +115,7 @@ var _ = Describe("Resource", func() {
 				&config.Config{
 					Version: config.Version2,
 				},
-				true,
+				true, true,
 			)
 			Expect(resource.Plural).To(Equal("mates"))
 
@@ -124,7 +124,7 @@ var _ = Describe("Resource", func() {
 					Version:    config.Version2,
 					MultiGroup: true,
 				},
-				true,
+				true, true,
 			)
 			Expect(resource.Plural).To(Equal("mates"))
 		})
@@ -145,37 +145,37 @@ var _ = Describe("Resource", func() {
 			options := &Options{Group: "my-project", Version: "v1", Kind: "FirstMate"}
 			Expect(options.Validate()).To(Succeed())
 
-			resource := options.NewResource(singleGroupConfig, true)
+			resource := options.NewResource(singleGroupConfig, true, true)
 
 			Expect(resource.Group).To(Equal(options.Group))
 			Expect(resource.GroupPackageName).To(Equal("myproject"))
 			Expect(resource.ImportAlias).To(Equal("myprojectv1"))
-			Expect(resource.Package).To(Equal(path.Join("test", "api", "v1")))
-			Expect(resource.Domain).To(Equal("my-project.test.io"))
+			Expect(resource.Endpoint).To(Equal(path.Join("test", "api", "v1")))
+			Expect(resource.QualifiedGroup).To(Equal("my-project.test.io"))
 
-			resource = options.NewResource(multiGroupConfig, true)
+			resource = options.NewResource(multiGroupConfig, true, true)
 			Expect(resource.Group).To(Equal(options.Group))
 			Expect(resource.GroupPackageName).To(Equal("myproject"))
 			Expect(resource.ImportAlias).To(Equal("myprojectv1"))
-			Expect(resource.Package).To(Equal(path.Join("test", "apis", "my-project", "v1")))
-			Expect(resource.Domain).To(Equal("my-project.test.io"))
+			Expect(resource.Endpoint).To(Equal(path.Join("test", "apis", "my-project", "v1")))
+			Expect(resource.QualifiedGroup).To(Equal("my-project.test.io"))
 
 			options = &Options{Group: "my.project", Version: "v1", Kind: "FirstMate"}
 			Expect(options.Validate()).To(Succeed())
 
-			resource = options.NewResource(singleGroupConfig, true)
+			resource = options.NewResource(singleGroupConfig, true, true)
 			Expect(resource.Group).To(Equal(options.Group))
 			Expect(resource.GroupPackageName).To(Equal("myproject"))
 			Expect(resource.ImportAlias).To(Equal("myprojectv1"))
-			Expect(resource.Package).To(Equal(path.Join("test", "api", "v1")))
-			Expect(resource.Domain).To(Equal("my.project.test.io"))
+			Expect(resource.Endpoint).To(Equal(path.Join("test", "api", "v1")))
+			Expect(resource.QualifiedGroup).To(Equal("my.project.test.io"))
 
-			resource = options.NewResource(multiGroupConfig, true)
+			resource = options.NewResource(multiGroupConfig, true, true)
 			Expect(resource.Group).To(Equal(options.Group))
 			Expect(resource.GroupPackageName).To(Equal("myproject"))
 			Expect(resource.ImportAlias).To(Equal("myprojectv1"))
-			Expect(resource.Package).To(Equal(path.Join("test", "apis", "my.project", "v1")))
-			Expect(resource.Domain).To(Equal("my.project.test.io"))
+			Expect(resource.Endpoint).To(Equal(path.Join("test", "apis", "my.project", "v1")))
+			Expect(resource.QualifiedGroup).To(Equal("my.project.test.io"))
 		})
 
 		It("should not append '.' if provided an empty domain", func() {
@@ -186,18 +186,18 @@ var _ = Describe("Resource", func() {
 				&config.Config{
 					Version: config.Version2,
 				},
-				true,
+				true, true,
 			)
-			Expect(resource.Domain).To(Equal("crew"))
+			Expect(resource.QualifiedGroup).To(Equal("crew"))
 
 			resource = options.NewResource(
 				&config.Config{
 					Version:    config.Version2,
 					MultiGroup: true,
 				},
-				true,
+				true, true,
 			)
-			Expect(resource.Domain).To(Equal("crew"))
+			Expect(resource.QualifiedGroup).To(Equal("crew"))
 		})
 
 		It("should use core apis", func() {
@@ -216,24 +216,24 @@ var _ = Describe("Resource", func() {
 			options := &Options{Group: "apps", Version: "v1", Kind: "FirstMate"}
 			Expect(options.Validate()).To(Succeed())
 
-			resource := options.NewResource(singleGroupConfig, false)
-			Expect(resource.Package).To(Equal(path.Join("k8s.io", "api", options.Group, options.Version)))
-			Expect(resource.Domain).To(Equal("apps"))
+			resource := options.NewResource(singleGroupConfig, false, true)
+			Expect(resource.Endpoint).To(Equal(path.Join("k8s.io", "api", options.Group, options.Version)))
+			Expect(resource.QualifiedGroup).To(Equal("apps"))
 
-			resource = options.NewResource(multiGroupConfig, false)
-			Expect(resource.Package).To(Equal(path.Join("k8s.io", "api", options.Group, options.Version)))
-			Expect(resource.Domain).To(Equal("apps"))
+			resource = options.NewResource(multiGroupConfig, false, true)
+			Expect(resource.Endpoint).To(Equal(path.Join("k8s.io", "api", options.Group, options.Version)))
+			Expect(resource.QualifiedGroup).To(Equal("apps"))
 
 			options = &Options{Group: "authentication", Version: "v1", Kind: "FirstMate"}
 			Expect(options.Validate()).To(Succeed())
 
-			resource = options.NewResource(singleGroupConfig, false)
-			Expect(resource.Package).To(Equal(path.Join("k8s.io", "api", options.Group, options.Version)))
-			Expect(resource.Domain).To(Equal("authentication.k8s.io"))
+			resource = options.NewResource(singleGroupConfig, false, true)
+			Expect(resource.Endpoint).To(Equal(path.Join("k8s.io", "api", options.Group, options.Version)))
+			Expect(resource.QualifiedGroup).To(Equal("authentication.k8s.io"))
 
-			resource = options.NewResource(multiGroupConfig, false)
-			Expect(resource.Package).To(Equal(path.Join("k8s.io", "api", options.Group, options.Version)))
-			Expect(resource.Domain).To(Equal("authentication.k8s.io"))
+			resource = options.NewResource(multiGroupConfig, false, true)
+			Expect(resource.Endpoint).To(Equal(path.Join("k8s.io", "api", options.Group, options.Version)))
+			Expect(resource.QualifiedGroup).To(Equal("authentication.k8s.io"))
 		})
 		It("should use domain if the group is empty for version v3", func() {
 			options := &Options{Version: "v1", Kind: "FirstMate"}
@@ -245,7 +245,7 @@ var _ = Describe("Resource", func() {
 					Domain:  "test.io",
 					Repo:    "test",
 				},
-				true,
+				true, true,
 			)
 			Expect(resource.Namespaced).To(Equal(options.Namespaced))
 			Expect(resource.Group).To(Equal(""))
@@ -254,8 +254,8 @@ var _ = Describe("Resource", func() {
 			Expect(resource.Kind).To(Equal(options.Kind))
 			Expect(resource.Plural).To(Equal("firstmates"))
 			Expect(resource.ImportAlias).To(Equal("testiov1"))
-			Expect(resource.Package).To(Equal(path.Join("test", "api", "v1")))
-			Expect(resource.Domain).To(Equal("test.io"))
+			Expect(resource.Endpoint).To(Equal(path.Join("test", "api", "v1")))
+			Expect(resource.QualifiedGroup).To(Equal("test.io"))
 		})
 	})
 })

@@ -33,6 +33,32 @@ rules:
   - patch
   - update
 - apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - crew.testproject.org
   resources:
   - captains

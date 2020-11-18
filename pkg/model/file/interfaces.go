@@ -55,10 +55,10 @@ type Inserter interface {
 	GetCodeFragments() CodeFragmentsMap
 }
 
-// HasDomain allows the domain to be used on a template
-type HasDomain interface {
-	// InjectDomain sets the template domain
-	InjectDomain(string)
+// HasQualified allows the domain to be used on a template
+type HasQualified interface {
+	// InjectQualifiedGroup sets the template domain
+	InjectQualifiedGroup(string)
 }
 
 // HasRepository allows the repository to be used on a template

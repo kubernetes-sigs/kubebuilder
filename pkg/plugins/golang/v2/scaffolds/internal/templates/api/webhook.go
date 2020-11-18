@@ -65,7 +65,7 @@ func (f *Webhook) SetTemplateDefaults() error {
 
 	f.IfExistsAction = file.Error
 
-	f.GroupDomainWithDash = strings.Replace(f.Resource.Domain, ".", "-", -1)
+	f.GroupDomainWithDash = strings.Replace(f.Resource.QualifiedGroup, ".", "-", -1)
 
 	return nil
 }
@@ -100,7 +100,7 @@ func (r *{{ .Resource.Kind }}) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 	//nolint:lll
 	defaultingWebhookTemplate = `
-// +kubebuilder:webhook:path=/mutate-{{ .GroupDomainWithDash }}-{{ .Resource.Version }}-{{ lower .Resource.Kind }},mutating=true,failurePolicy=fail,groups={{ .Resource.Domain }},resources={{ .Resource.Plural }},verbs=create;update,versions={{ .Resource.Version }},name=m{{ lower .Resource.Kind }}.kb.io
+// +kubebuilder:webhook:path=/mutate-{{ .GroupDomainWithDash }}-{{ .Resource.Version }}-{{ lower .Resource.Kind }},mutating=true,failurePolicy=fail,groups={{ .Resource.QualifiedGroup }},resources={{ .Resource.Plural }},verbs=create;update,versions={{ .Resource.Version }},name=m{{ lower .Resource.Kind }}.kb.io
 
 var _ webhook.Defaulter = &{{ .Resource.Kind }}{}
 
@@ -114,7 +114,7 @@ func (r *{{ .Resource.Kind }}) Default() {
 	//nolint:lll
 	validatingWebhookTemplate = `
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:verbs=create;update,path=/validate-{{ .GroupDomainWithDash }}-{{ .Resource.Version }}-{{ lower .Resource.Kind }},mutating=false,failurePolicy=fail,groups={{ .Resource.Domain }},resources={{ .Resource.Plural }},versions={{ .Resource.Version }},name=v{{ lower .Resource.Kind }}.kb.io
+// +kubebuilder:webhook:verbs=create;update,path=/validate-{{ .GroupDomainWithDash }}-{{ .Resource.Version }}-{{ lower .Resource.Kind }},mutating=false,failurePolicy=fail,groups={{ .Resource.QualifiedGroup }},resources={{ .Resource.Plural }},versions={{ .Resource.Version }},name=v{{ lower .Resource.Kind }}.kb.io
 
 var _ webhook.Validator = &{{ .Resource.Kind }}{}
 

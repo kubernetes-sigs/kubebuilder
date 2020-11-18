@@ -82,8 +82,8 @@ func WithResource(resource *resource.Resource) UniverseOption {
 func (u Universe) InjectInto(builder file.Builder) {
 	// Inject project configuration
 	if u.Config != nil {
-		if builderWithDomain, hasDomain := builder.(file.HasDomain); hasDomain {
-			builderWithDomain.InjectDomain(u.Config.Domain)
+		if builderWithDomain, hasQualifiedGroup := builder.(file.HasQualified); hasQualifiedGroup {
+			builderWithDomain.InjectQualifiedGroup(u.Config.Domain)
 		}
 		if builderWithRepository, hasRepository := builder.(file.HasRepository); hasRepository {
 			builderWithRepository.InjectRepository(u.Config.Repo)
