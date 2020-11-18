@@ -147,6 +147,22 @@ var _ = Describe("PluginConfig", func() {
 		Expect(config.DecodePluginConfig(key, &pluginConfig)).To(Succeed())
 		Expect(pluginConfig).To(Equal(expectedPluginConfig))
 	})
+
+	It("should Marshal and Unmarshal a plugin", func() {
+		By("Using config with extra fields as struct")
+		cfg := Config{
+			Version: Version3Alpha,
+			Plugins: PluginConfigs{
+				"plugin-x": map[string]interface{}{
+					"data-1": "plugin value 1",
+				},
+			},
+		}
+		b, err := cfg.Marshal()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(string(b)).To(Equal("version: 3-alpha\nplugins:\n  plugin-x:\n    data-1: plugin value 1\n"))
+		Expect(cfg.Unmarshal(b)).To(Succeed())
+	})
 })
 
 var _ = Describe("Resource Version Compatibility", func() {
