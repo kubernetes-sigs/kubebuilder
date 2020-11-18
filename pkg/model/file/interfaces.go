@@ -73,6 +73,12 @@ type HasMultiGroup interface {
 	InjectMultiGroup(bool)
 }
 
+// HasComponentConfig allows the component-config flag to be used on a template
+type HasComponentConfig interface {
+	// InjectComponentConfig sets the template component-config flag
+	InjectComponentConfig(bool)
+}
+
 // HasBoilerplate allows a boilerplate to be used on a template
 type HasBoilerplate interface {
 	// InjectBoilerplate sets the template boilerplate

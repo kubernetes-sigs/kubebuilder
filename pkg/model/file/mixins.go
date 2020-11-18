@@ -104,6 +104,17 @@ func (m *MultiGroupMixin) InjectMultiGroup(flag bool) {
 	m.MultiGroup = flag
 }
 
+// ComponentConfigMixin provides templates with a injectable component-config flag field
+type ComponentConfigMixin struct {
+	// ComponentConfig is the component-config flag
+	ComponentConfig bool
+}
+
+// InjectComponentConfig implements HasComponentConfig
+func (m *ComponentConfigMixin) InjectComponentConfig(flag bool) {
+	m.ComponentConfig = flag
+}
+
 // BoilerplateMixin provides templates with a injectable boilerplate field
 type BoilerplateMixin struct {
 	// Boilerplate is the contents of a Boilerplate go header file

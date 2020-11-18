@@ -50,6 +50,10 @@ type Config struct {
 	// Multigroup tracks if the project has more than one group
 	MultiGroup bool `json:"multigroup,omitempty"`
 
+	// ComponentConfig tracks if the project uses a config file for configuring
+	// the ctrl.Manager
+	ComponentConfig bool `json:"componentConfig,omitempty"`
+
 	// Layout contains a key specifying which plugin created a project.
 	Layout string `json:"layout,omitempty"`
 

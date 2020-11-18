@@ -86,6 +86,8 @@ func (p *initSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&p.license, "license", "apache2",
 		"license to use to boilerplate, may be one of 'apache2', 'none'")
 	fs.StringVar(&p.owner, "owner", "", "owner to add to the copyright")
+	fs.BoolVar(&p.config.ComponentConfig, "component-config", false,
+		"create a versioned ComponentConfig file, may be 'true' or 'false'")
 
 	// project args
 	fs.StringVar(&p.config.Repo, "repo", "", "name to use for go module (e.g., github.com/user/repo), "+

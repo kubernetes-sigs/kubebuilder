@@ -44,4 +44,12 @@ func (f *Kustomization) SetTemplateDefaults() error {
 
 const kustomizeManagerTemplate = `resources:
 - manager.yaml
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+configMapGenerator:
+- name: manager-config
+  files:
+  - controller_manager_config.yaml
 `

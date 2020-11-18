@@ -112,3 +112,4 @@ scaffold_test_project project-v2-addon --project-version=2
 scaffold_test_project project-v3 --project-version=3-alpha --plugins=go/v3-alpha
 scaffold_test_project project-v3-multigroup --project-version=3-alpha --plugins=go/v3-alpha
 scaffold_test_project project-v3-addon --project-version=3-alpha --plugins=go/v3-alpha
+scaffold_test_project project-v3-config --project-version=3-alpha --plugins=go/v3-alpha --component-config

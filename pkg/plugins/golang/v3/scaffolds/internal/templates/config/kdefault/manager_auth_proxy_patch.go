@@ -27,6 +27,7 @@ var _ file.Template = &ManagerAuthProxyPatch{}
 // ManagerAuthProxyPatch scaffolds a file that defines the patch that enables prometheus metrics for the manager
 type ManagerAuthProxyPatch struct {
 	file.TemplateMixin
+	file.ComponentConfigMixin
 }
 
 // SetTemplateDefaults implements file.Template
@@ -42,7 +43,7 @@ func (f *ManagerAuthProxyPatch) SetTemplateDefaults() error {
 	return nil
 }
 
-const kustomizeAuthProxyPatchTemplate = `# This patch inject a sidecar container which is a HTTP proxy for the 
+const kustomizeAuthProxyPatchTemplate = `# This patch inject a sidecar container which is a HTTP proxy for the
 # controller manager, it performs RBAC authorization against the Kubernetes API using SubjectAccessReviews.
 apiVersion: apps/v1
 kind: Deployment
@@ -63,8 +64,10 @@ spec:
         ports:
         - containerPort: 8443
           name: https
+{{- if not .ComponentConfig }}
       - name: manager
         args:
         - "--metrics-addr=127.0.0.1:8080"
         - "--enable-leader-election"
+{{- end }}
 `
