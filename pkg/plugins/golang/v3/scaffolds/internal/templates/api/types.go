@@ -26,11 +26,14 @@ import (
 var _ file.Template = &Types{}
 
 // Types scaffolds the file that defines the schema for a CRD
+// nolint:maligned
 type Types struct {
 	file.TemplateMixin
 	file.MultiGroupMixin
 	file.BoilerplateMixin
 	file.ResourceMixin
+
+	Force bool
 }
 
 // SetTemplateDefaults implements file.Template
@@ -51,7 +54,11 @@ func (f *Types) SetTemplateDefaults() error {
 
 	f.TemplateBody = typesTemplate
 
-	f.IfExistsAction = file.Error
+	if f.Force {
+		f.IfExistsAction = file.Overwrite
+	} else {
+		f.IfExistsAction = file.Error
+	}
 
 	return nil
 }

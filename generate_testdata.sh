@@ -57,6 +57,7 @@ scaffold_test_project() {
   if [ $project == "project-v2" ] || [ $project == "project-v3" ] || [ $project == "project-v3-config" ]; then
     header_text 'Creating APIs ...'
     $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false
+    $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false --force
     $kb create webhook --group crew --version v1 --kind Captain --defaulting --programmatic-validation
     $kb create api --group crew --version v1 --kind FirstMate --controller=true --resource=true --make=false
     $kb create webhook --group crew --version v1 --kind FirstMate --conversion

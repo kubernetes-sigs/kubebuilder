@@ -35,6 +35,8 @@ type Controller struct {
 
 	// WireResource defines the api resources are generated or not.
 	WireResource bool
+
+	Force bool
 }
 
 // SetTemplateDefaults implements file.Template
@@ -51,7 +53,11 @@ func (f *Controller) SetTemplateDefaults() error {
 
 	f.TemplateBody = controllerTemplate
 
-	f.IfExistsAction = file.Error
+	if f.Force {
+		f.IfExistsAction = file.Overwrite
+	} else {
+		f.IfExistsAction = file.Error
+	}
 
 	return nil
 }
