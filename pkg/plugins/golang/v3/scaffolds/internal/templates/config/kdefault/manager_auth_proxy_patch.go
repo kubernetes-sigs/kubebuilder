@@ -67,7 +67,7 @@ spec:
 {{- if not .ComponentConfig }}
       - name: manager
         args:
-        - "--metrics-addr=127.0.0.1:8080"
-        - "--enable-leader-election"
+        - "--metrics-bind-address=127.0.0.1:8080"
+        - "--leader-elect"
 {{- end }}
 `
