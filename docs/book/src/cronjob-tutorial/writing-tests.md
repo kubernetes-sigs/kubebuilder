@@ -5,7 +5,7 @@ files generated for you by kubebuilder are fairly minimal.
 
 To walk you through integration testing patterns for Kubebuilder-generated controllers, we will revisit the CronJob we built in our first tutorial and write a simple test for it.
 
-The basic approach is that, in your generated `suite_test.go` file, you will use envtest to create a local Kubernetes API server, instantiate and run your controllers, and then write additional `*_test.go` files to test it using [Ginko](http://onsi.github.io/ginkgo).
+The basic approach is that, in your generated `suite_test.go` file, you will use envtest to create a local Kubernetes API server, instantiate and run your controllers, and then write additional `*_test.go` files to test it using [Ginkgo](http://onsi.github.io/ginkgo).
 
 If you want to tinker with how your envtest cluster is configured, see section [Configuring envtest for integration tests](../reference/envtest.md) as well as the [`envtest docs`](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/envtest?tab=doc).
 
