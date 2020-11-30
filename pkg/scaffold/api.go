@@ -19,15 +19,15 @@ package scaffold
 import (
 	"fmt"
 
-	"sigs.k8s.io/kubebuilder/internal/config"
-	"sigs.k8s.io/kubebuilder/pkg/model"
-	"sigs.k8s.io/kubebuilder/pkg/model/resource"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/machinery"
-	controllerv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v1/controller"
-	crdv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v1/crd"
-	templatesv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v2"
-	controllerv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v2/controller"
-	crdv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v2/crd"
+	"sigs.k8s.io/kubebuilder/v2/internal/config"
+	"sigs.k8s.io/kubebuilder/v2/pkg/model"
+	"sigs.k8s.io/kubebuilder/v2/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v2/pkg/scaffold/internal/machinery"
+	controllerv1 "sigs.k8s.io/kubebuilder/v2/pkg/scaffold/internal/templates/v1/controller"
+	crdv1 "sigs.k8s.io/kubebuilder/v2/pkg/scaffold/internal/templates/v1/crd"
+	templatesv2 "sigs.k8s.io/kubebuilder/v2/pkg/scaffold/internal/templates/v2"
+	controllerv2 "sigs.k8s.io/kubebuilder/v2/pkg/scaffold/internal/templates/v2/controller"
+	crdv2 "sigs.k8s.io/kubebuilder/v2/pkg/scaffold/internal/templates/v2/crd"
 )
 
 var _ Scaffolder = &apiScaffolder{}

@@ -19,7 +19,7 @@ set -e
 source common.sh
 
 build_kb() {
-    go build -o ./bin/kubebuilder sigs.k8s.io/kubebuilder/cmd
+    go build -o ./bin/kubebuilder sigs.k8s.io/kubebuilder/v2/cmd
 }
 
 

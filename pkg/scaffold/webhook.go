@@ -19,14 +19,14 @@ package scaffold
 import (
 	"fmt"
 
-	"sigs.k8s.io/kubebuilder/pkg/model"
-	"sigs.k8s.io/kubebuilder/pkg/model/config"
-	"sigs.k8s.io/kubebuilder/pkg/model/resource"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/machinery"
-	managerv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v1/manager"
-	webhookv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v1/webhook"
-	templatesv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v2"
-	webhookv2 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v2/webhook"
+	"sigs.k8s.io/kubebuilder/v2/pkg/model"
+	"sigs.k8s.io/kubebuilder/v2/pkg/model/config"
+	"sigs.k8s.io/kubebuilder/v2/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v2/pkg/scaffold/internal/machinery"
+	managerv1 "sigs.k8s.io/kubebuilder/v2/pkg/scaffold/internal/templates/v1/manager"
+	webhookv1 "sigs.k8s.io/kubebuilder/v2/pkg/scaffold/internal/templates/v1/webhook"
+	templatesv2 "sigs.k8s.io/kubebuilder/v2/pkg/scaffold/internal/templates/v2"
+	webhookv2 "sigs.k8s.io/kubebuilder/v2/pkg/scaffold/internal/templates/v2/webhook"
 )
 
 var _ Scaffolder = &webhookScaffolder{}
