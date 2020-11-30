@@ -1,4 +1,4 @@
-
+SHELL := /bin/bash
 # Image URL to use all building/pushing image targets
 IMG ?= controller:latest
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
