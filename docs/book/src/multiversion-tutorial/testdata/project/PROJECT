@@ -3,10 +3,14 @@ layout: go.kubebuilder.io/v3-alpha
 projectName: project
 repo: tutorial.kubebuilder.io/project
 resources:
-- group: batch
+- crdVersion: v1
+  group: batch
   kind: CronJob
   version: v1
-- group: batch
+  webhookVersion: v1
+- crdVersion: v1
+  group: batch
   kind: CronJob
   version: v2
+  webhookVersion: v1
 version: 3-alpha
