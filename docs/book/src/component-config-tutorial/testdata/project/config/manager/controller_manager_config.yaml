@@ -1,0 +1,10 @@
+apiVersion: config.tutorial.kubebuilder.io/v2
+kind: ProjectConfig
+metrics:
+  bindAddress: 127.0.0.1:8080
+webhook:
+  port: 9443
+leaderElection:
+  leaderElect: true
+  resourceName: 80807133.tutorial.kubebuilder.io
+clusterName: example-test

@@ -1,0 +1,22 @@
+componentConfig: true
+domain: tutorial.kubebuilder.io
+layout: go.kubebuilder.io/v3-alpha
+multigroup: true
+projectName: project
+repo: tutorial.kubebuilder.io/project
+resources:
+- crdVersion: v1
+  group: batch
+  kind: CronJob
+  version: v1
+  webhookVersion: v1
+- crdVersion: v1
+  group: batch
+  kind: CronJob
+  version: v2
+  webhookVersion: v1
+- crdVersion: v1
+  group: config
+  kind: ProjectConfig
+  version: v2
+version: 3-alpha

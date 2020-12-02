@@ -1,0 +1,20 @@
+# permissions for end users to view projectconfigs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: projectconfig-viewer-role
+rules:
+- apiGroups:
+  - config.tutorial.kubebuilder.io
+  resources:
+  - projectconfigs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - config.tutorial.kubebuilder.io
+  resources:
+  - projectconfigs/status
+  verbs:
+  - get
