@@ -34,8 +34,8 @@ type FirstMateReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=crew.testproject.org,resources=firstmates,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=crew.testproject.org,resources=firstmates/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=crew.testproject.org,resources=firstmates,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=crew.testproject.org,resources=firstmates/status,verbs=get;update;patch
 
 func (r *FirstMateReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()

@@ -38,8 +38,8 @@ type HealthCheckPolicyStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
+//+kubebuilder:object:root=true
+//+kubebuilder:subresource:status
 
 // HealthCheckPolicy is the Schema for the healthcheckpolicies API
 type HealthCheckPolicy struct {
@@ -50,7 +50,7 @@ type HealthCheckPolicy struct {
 	Status HealthCheckPolicyStatus `json:"status,omitempty"`
 }
 
-// +kubebuilder:object:root=true
+//+kubebuilder:object:root=true
 
 // HealthCheckPolicyList contains a list of HealthCheckPolicy
 type HealthCheckPolicyList struct {

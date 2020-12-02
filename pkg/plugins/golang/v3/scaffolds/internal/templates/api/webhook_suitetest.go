@@ -114,8 +114,7 @@ func (f *WebhookSuite) GetCodeFragments() file.CodeFragmentsMap {
 	return fragments
 }
 
-const (
-	webhookTestSuiteTemplate = `{{ .Boilerplate }}
+const webhookTestSuiteTemplate = `{{ .Boilerplate }}
 
 package {{ .Resource.Version }}
 
@@ -225,4 +224,3 @@ var _ = AfterSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 })
 `
-)

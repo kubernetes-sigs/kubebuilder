@@ -117,7 +117,7 @@ func (r *{{ .Resource.Kind }}) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	// TODO(estroz): update admissionReviewVersions to include v1 when controller-runtime supports that version.
 	//nolint:lll
 	defaultingWebhookTemplate = `
-// +kubebuilder:webhook:{{ if ne .WebhookVersion "v1" }}webhookVersions={{"{"}}{{ .WebhookVersion }}{{"}"}},{{ end }}path=/mutate-{{ .GroupDomainWithDash }}-{{ .Resource.Version }}-{{ lower .Resource.Kind }},mutating=true,failurePolicy=fail,sideEffects=None,groups={{ .Resource.Domain }},resources={{ .Resource.Plural }},verbs=create;update,versions={{ .Resource.Version }},name=m{{ lower .Resource.Kind }}.kb.io,admissionReviewVersions={v1,v1beta1}
+//+kubebuilder:webhook:{{ if ne .WebhookVersion "v1" }}webhookVersions={{"{"}}{{ .WebhookVersion }}{{"}"}},{{ end }}path=/mutate-{{ .GroupDomainWithDash }}-{{ .Resource.Version }}-{{ lower .Resource.Kind }},mutating=true,failurePolicy=fail,sideEffects=None,groups={{ .Resource.Domain }},resources={{ .Resource.Plural }},verbs=create;update,versions={{ .Resource.Version }},name=m{{ lower .Resource.Kind }}.kb.io,admissionReviewVersions={v1,v1beta1}
 
 var _ webhook.Defaulter = &{{ .Resource.Kind }}{}
 
@@ -133,7 +133,7 @@ func (r *{{ .Resource.Kind }}) Default() {
 	//nolint:lll
 	validatingWebhookTemplate = `
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:{{ if ne .WebhookVersion "v1" }}webhookVersions={{"{"}}{{ .WebhookVersion }}{{"}"}},{{ end }}path=/validate-{{ .GroupDomainWithDash }}-{{ .Resource.Version }}-{{ lower .Resource.Kind }},mutating=false,failurePolicy=fail,sideEffects=None,groups={{ .Resource.Domain }},resources={{ .Resource.Plural }},verbs=create;update,versions={{ .Resource.Version }},name=v{{ lower .Resource.Kind }}.kb.io,admissionReviewVersions={v1,v1beta1}
+//+kubebuilder:webhook:{{ if ne .WebhookVersion "v1" }}webhookVersions={{"{"}}{{ .WebhookVersion }}{{"}"}},{{ end }}path=/validate-{{ .GroupDomainWithDash }}-{{ .Resource.Version }}-{{ lower .Resource.Kind }},mutating=false,failurePolicy=fail,sideEffects=None,groups={{ .Resource.Domain }},resources={{ .Resource.Plural }},verbs=create;update,versions={{ .Resource.Version }},name=v{{ lower .Resource.Kind }}.kb.io,admissionReviewVersions={v1,v1beta1}
 
 var _ webhook.Validator = &{{ .Resource.Kind }}{}
 

@@ -38,8 +38,8 @@ type LeviathanStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
+//+kubebuilder:object:root=true
+//+kubebuilder:subresource:status
 
 // Leviathan is the Schema for the leviathans API
 type Leviathan struct {
@@ -50,7 +50,7 @@ type Leviathan struct {
 	Status LeviathanStatus `json:"status,omitempty"`
 }
 
-// +kubebuilder:object:root=true
+//+kubebuilder:object:root=true
 
 // LeviathanList contains a list of Leviathan
 type LeviathanList struct {

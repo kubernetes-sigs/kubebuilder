@@ -29,7 +29,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
-	// +kubebuilder:scaffold:imports
+	//+kubebuilder:scaffold:imports
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -81,7 +81,7 @@ var _ = BeforeSuite(func() {
 	err = admissionv1beta1.AddToScheme(scheme)
 	Expect(err).NotTo(HaveOccurred())
 
-	// +kubebuilder:scaffold:scheme
+	//+kubebuilder:scaffold:scheme
 
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme})
 	Expect(err).NotTo(HaveOccurred())
@@ -102,7 +102,7 @@ var _ = BeforeSuite(func() {
 	err = (&Lakers{}).SetupWebhookWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred())
 
-	// +kubebuilder:scaffold:webhook
+	//+kubebuilder:scaffold:webhook
 
 	go func() {
 		err = mgr.Start(ctx)

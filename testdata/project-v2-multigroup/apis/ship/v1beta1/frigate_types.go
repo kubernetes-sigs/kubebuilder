@@ -38,8 +38,8 @@ type FrigateStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
+//+kubebuilder:object:root=true
+//+kubebuilder:subresource:status
 
 // Frigate is the Schema for the frigates API
 type Frigate struct {
@@ -50,7 +50,7 @@ type Frigate struct {
 	Status FrigateStatus `json:"status,omitempty"`
 }
 
-// +kubebuilder:object:root=true
+//+kubebuilder:object:root=true
 
 // FrigateList contains a list of Frigate
 type FrigateList struct {

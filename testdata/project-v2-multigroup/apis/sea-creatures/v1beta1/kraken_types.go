@@ -38,8 +38,8 @@ type KrakenStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
+//+kubebuilder:object:root=true
+//+kubebuilder:subresource:status
 
 // Kraken is the Schema for the krakens API
 type Kraken struct {
@@ -50,7 +50,7 @@ type Kraken struct {
 	Status KrakenStatus `json:"status,omitempty"`
 }
 
-// +kubebuilder:object:root=true
+//+kubebuilder:object:root=true
 
 // KrakenList contains a list of Kraken
 type KrakenList struct {

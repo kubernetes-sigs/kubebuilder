@@ -343,7 +343,7 @@ func insertStrings(content string, codeFragmentsMap file.CodeFragmentsMap) ([]by
 		line := scanner.Text()
 
 		for marker, codeFragments := range codeFragmentsMap {
-			if strings.TrimSpace(line) == strings.TrimSpace(marker.String()) {
+			if marker.EqualsLine(line) {
 				for _, codeFragment := range codeFragments {
 					_, _ = out.WriteString(codeFragment) // bytes.Buffer.WriteString always returns nil errors
 				}

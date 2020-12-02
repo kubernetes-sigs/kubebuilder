@@ -41,8 +41,8 @@ type CaptainStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
+//+kubebuilder:object:root=true
+//+kubebuilder:subresource:status
 
 // Captain is the Schema for the captains API
 type Captain struct {
@@ -75,7 +75,7 @@ func (o *Captain) SetCommonStatus(s addonv1alpha1.CommonStatus) {
 	o.Status.CommonStatus = s
 }
 
-// +kubebuilder:object:root=true
+//+kubebuilder:object:root=true
 
 // CaptainList contains a list of Captain
 type CaptainList struct {

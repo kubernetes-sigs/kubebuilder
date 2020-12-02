@@ -38,8 +38,8 @@ type LakersStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
+//+kubebuilder:object:root=true
+//+kubebuilder:subresource:status
 
 // Lakers is the Schema for the lakers API
 type Lakers struct {
@@ -50,7 +50,7 @@ type Lakers struct {
 	Status LakersStatus `json:"status,omitempty"`
 }
 
-// +kubebuilder:object:root=true
+//+kubebuilder:object:root=true
 
 // LakersList contains a list of Lakers
 type LakersList struct {

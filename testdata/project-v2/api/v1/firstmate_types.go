@@ -38,8 +38,8 @@ type FirstMateStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
+//+kubebuilder:object:root=true
+//+kubebuilder:subresource:status
 
 // FirstMate is the Schema for the firstmates API
 type FirstMate struct {
@@ -50,7 +50,7 @@ type FirstMate struct {
 	Status FirstMateStatus `json:"status,omitempty"`
 }
 
-// +kubebuilder:object:root=true
+//+kubebuilder:object:root=true
 
 // FirstMateList contains a list of FirstMate
 type FirstMateList struct {

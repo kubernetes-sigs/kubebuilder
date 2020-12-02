@@ -33,7 +33,7 @@ import (
 
 	crewv1 "sigs.k8s.io/kubebuilder/testdata/project-v3-config/api/v1"
 	"sigs.k8s.io/kubebuilder/testdata/project-v3-config/controllers"
-	// +kubebuilder:scaffold:imports
+	//+kubebuilder:scaffold:imports
 )
 
 var (
@@ -45,7 +45,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(crewv1.AddToScheme(scheme))
-	// +kubebuilder:scaffold:scheme
+	//+kubebuilder:scaffold:scheme
 }
 
 func main() {
@@ -122,7 +122,7 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Laker")
 		os.Exit(1)
 	}
-	// +kubebuilder:scaffold:builder
+	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("health", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up health check")

@@ -32,8 +32,8 @@ type PodReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=apps,resources=pods,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=apps,resources=pods/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=apps,resources=pods,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=apps,resources=pods/status,verbs=get;update;patch
 
 func (r *PodReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()

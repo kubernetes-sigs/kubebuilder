@@ -34,9 +34,9 @@ type CruiserReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=ship.testproject.org,resources=cruisers,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=ship.testproject.org,resources=cruisers/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=ship.testproject.org,resources=cruisers/finalizers,verbs=update
+//+kubebuilder:rbac:groups=ship.testproject.org,resources=cruisers,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=ship.testproject.org,resources=cruisers/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=ship.testproject.org,resources=cruisers/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
