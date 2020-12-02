@@ -21,7 +21,8 @@
 steps:
 - name: "goreleaser/goreleaser:v0.147"
   entrypoint: "bash"
-  args: ["build/build_kubebuilder.sh", "--snapshot"]
+  env: ["SNAPSHOT=1"]
+  args: ["build/build_kubebuilder.sh"]
 - name: "ubuntu"
   args: ["tar", "-zcvf", "kubebuilder_linux_amd64.tar.gz", "-C", "dist/kubebuilder_linux_amd64", "kubebuilder"]
 - name: "gcr.io/cloud-builders/gsutil"

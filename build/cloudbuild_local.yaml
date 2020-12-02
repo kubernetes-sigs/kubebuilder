@@ -21,4 +21,5 @@
 steps:
 - name: "goreleaser/goreleaser:v0.147"
   entrypoint: "bash"
-  args: ["build/build_kubebuilder.sh", "--snapshot"]
+  env: ["SNAPSHOT=1"]
+  args: ["build/build_kubebuilder.sh"]

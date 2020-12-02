@@ -18,7 +18,6 @@
 # Global environment variables that are needed for hooks and builds.
 env:
   - GO111MODULE=on
-  - GOPROXY="https://proxy.golang.org|direct"
 
 # Hooks to run before any build is run.
 before:
