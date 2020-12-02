@@ -87,7 +87,7 @@ separately.
 
 ## Where the CI Tests are configured
 
-1. See the [Travis](.travis.yml) file to check its tests and the scripts used on it. 
+1. See the [action files](.github/workflows) to check its tests, and the scripts used on it. 
 1. Note that the prow tests used in the CI are configured in [kubernetes-sigs/kubebuilder/kubebuilder-presubmits.yaml](https://github.com/kubernetes/test-infra/blob/master/config/jobs/kubernetes-sigs/kubebuilder/kubebuilder-presubmits.yaml). 
 1. Check that all scripts used by the CI are defined in the project.  
 
