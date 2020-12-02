@@ -43,6 +43,16 @@
 
   - [Deployment and Testing](./multiversion-tutorial/deployment.md)
 
+- [Tutorial: Component Config](./component-config-tutorial/tutorial.md)
+
+  - [Changing things up](./component-config-tutorial/api-changes.md)
+  - [Defining your Config](./component-config-tutorial/define-config.md)
+
+  - [Using a custom type](./component-config-tutorial/custom-type.md)
+
+      - [Adding a new Config Type](./component-config-tutorial/config-type.md)
+      - [Updating main](./component-config-tutorial/updating-main.md)
+      - [Defining your Custom Config](./component-config-tutorial/define-custom-config.md)
 ---
 
 - [Migrations](./migrations.md)
