@@ -20,7 +20,7 @@ To customize your cluster, you can provide additional configuration.
 For example, the following is a sample `kind` configuration.
 
 ```yaml
-{{#include ../cronjob-tutorial/testdata/project/hack/kind-config.yaml}}
+{{#include ./kind-config.yaml}}
 ```
 
 Using the configuration above, run the following command will give you a k8s
