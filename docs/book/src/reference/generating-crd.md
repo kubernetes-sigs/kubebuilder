@@ -162,11 +162,34 @@ different versions of the Kind in your CRD, to be compatible with older
 Kubernetes versions.
 
 You'll need to enable this by switching the line in your makefile that
-says `CRD_OPTIONS ?= "crd:trivialVersions=true` to `CRD_OPTIONS ?= crd`
+says `CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false`
+to `CRD_OPTIONS ?= crd:preserveUnknownFields=false`
 
 Then, you can use the `+kubebuilder:storageversion` [marker][crd-markers]
 to indicate the [GVK](/cronjob-tutorial/gvks.md "Group-Version-Kind") that
 should be used to store data by the API server.
+
+### Supporting older cluster versions
+
+By default, `kubebuilder create api` will create CRDs of API version `v1`,
+a version introduced in Kubernetes v1.16. If your project intends to support
+Kubernetes cluster versions older than v1.16, you must use the `v1beta1` API version:
+
+```sh
+kubebuilder create api --crd-version v1beta1 ...
+```
+
+To support Kubernetes clusters of version v1.14 or lower, you'll also need to
+remove the controller-gen option `preserveUnknownFields=false` from your Makefile.
+This is done by switching the line that says
+`CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false`
+to `CRD_OPTIONS ?= crd:trivialVersions=true`
+
+<aside class="note">
+
+`v1beta1` is deprecated and will be removed in Kubernetes v1.22, so upgrading is recommended.
+
+</aside>
 
 ## Under the hood
 
