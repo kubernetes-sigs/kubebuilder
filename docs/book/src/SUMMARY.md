@@ -83,7 +83,7 @@
   - [Configuring EnvTest](./reference/envtest.md)
 
   - [Metrics](./reference/metrics.md)
-  - [Makefile Helpers](makefile-helpers.md)
+  - [Makefile Helpers](./reference/makefile-helpers.md)
   - [CLI Plugins](./reference/cli-plugins.md)
 
 ---
