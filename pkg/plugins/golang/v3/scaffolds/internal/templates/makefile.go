@@ -35,8 +35,6 @@ type Makefile struct {
 	ControllerToolsVersion string
 	// Kustomize version to use in the project
 	KustomizeVersion string
-	// ControllerRuntimeVersion version to be used to download the envtest setup script
-	ControllerRuntimeVersion string
 }
 
 // SetTemplateDefaults implements file.Template
@@ -73,11 +71,12 @@ endif
 all: manager
 
 # Run tests
-ENVTEST_ASSETS_DIR=$(shell pwd)/testbin
-test: generate fmt vet manifests
-	mkdir -p ${ENVTEST_ASSETS_DIR}
-	test -f ${ENVTEST_ASSETS_DIR}/setup-envtest.sh || curl -sSLo ${ENVTEST_ASSETS_DIR}/setup-envtest.sh https://raw.githubusercontent.com/kubernetes-sigs/controller-runtime/{{ .ControllerRuntimeVersion }}/hack/setup-envtest.sh
-	source ${ENVTEST_ASSETS_DIR}/setup-envtest.sh; fetch_envtest_tools $(ENVTEST_ASSETS_DIR); setup_envtest_env $(ENVTEST_ASSETS_DIR); go test ./... -coverprofile cover.out
+test: generate fmt vet manifests tooling 
+	go test ./... -coverprofile cover.out
+
+# Get the env test binaries
+tooling:
+	cd hack/; go run tooling.go 
 
 # Build manager binary
 manager: generate fmt vet

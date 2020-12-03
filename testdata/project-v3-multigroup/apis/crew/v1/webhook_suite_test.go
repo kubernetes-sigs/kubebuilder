@@ -21,6 +21,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net"
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
@@ -68,6 +69,13 @@ var _ = BeforeSuite(func() {
 		WebhookInstallOptions: envtest.WebhookInstallOptions{
 			Paths: []string{filepath.Join("..", "..", "..", "config", "webhook")},
 		},
+	}
+
+	By("setting binaries")
+	if os.Getenv("KUBEBUILDER_ASSETS") == "" {
+		binaryAssetsPath, err := filepath.Abs(filepath.Join("..", "..", "..", "bin"))
+		Expect(err).NotTo(HaveOccurred())
+		testEnv.BinaryAssetsDirectory = binaryAssetsPath
 	}
 
 	cfg, err := testEnv.Start()

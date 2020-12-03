@@ -41,6 +41,8 @@ const (
 	ControllerToolsVersion = "v0.4.1"
 	// KustomizeVersion is the kubernetes-sigs/kustomize version to be used in the project
 	KustomizeVersion = "v3.8.7"
+	// KubernetesVersion defines the version used to download the binaries
+	KubernetesVersion = "1.16.4"
 
 	imageName = "controller:latest"
 )
@@ -112,11 +114,10 @@ func (s *initScaffolder) scaffold() error {
 		&templates.GoMod{ControllerRuntimeVersion: ControllerRuntimeVersion},
 		&templates.GitIgnore{},
 		&templates.Makefile{
-			Image:                    imageName,
-			BoilerplatePath:          s.boilerplatePath,
-			ControllerToolsVersion:   ControllerToolsVersion,
-			KustomizeVersion:         KustomizeVersion,
-			ControllerRuntimeVersion: ControllerRuntimeVersion,
+			Image:                  imageName,
+			BoilerplatePath:        s.boilerplatePath,
+			ControllerToolsVersion: ControllerToolsVersion,
+			KustomizeVersion:       KustomizeVersion,
 		},
 		&templates.Dockerfile{},
 		&templates.DockerIgnore{},
@@ -128,5 +129,8 @@ func (s *initScaffolder) scaffold() error {
 		&certmanager.Certificate{},
 		&certmanager.Kustomization{},
 		&certmanager.KustomizeConfig{},
+		&hack.Tooling{
+			KubernetesVersion: KubernetesVersion,
+		},
 	)
 }

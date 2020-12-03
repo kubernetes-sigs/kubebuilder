@@ -33,9 +33,10 @@ type SuiteTest struct {
 	file.MultiGroupMixin
 	file.BoilerplateMixin
 	file.ResourceMixin
+	file.RepositoryMixin
 
-	// CRDDirectoryRelativePath define the Path for the CRD
-	CRDDirectoryRelativePath string
+	// BaseDirectoryRelativePath define the Path for the base directory when it is multigroup
+	BaseDirectoryRelativePath string
 
 	// WireResource defines the api resources are generated or not.
 	WireResource bool
@@ -57,11 +58,10 @@ func (f *SuiteTest) SetTemplateDefaults() error {
 		file.NewMarkerFor(f.Path, addSchemeMarker),
 	)
 
-	// If is multigroup the path needs to be ../../ since it has
-	// the group dir.
-	f.CRDDirectoryRelativePath = `".."`
+	// If is multigroup the path needs to be ../../.. since it has the group dir.
+	f.BaseDirectoryRelativePath = `".."`
 	if f.MultiGroup && f.Resource.Group != "" {
-		f.CRDDirectoryRelativePath = `"..", ".."`
+		f.BaseDirectoryRelativePath = `"..", ".."`
 	}
 
 	return nil
@@ -125,6 +125,8 @@ package controllers
 {{end}}
 
 import (
+	"os"
+
 	"path/filepath"
 	"testing"
 	. "github.com/onsi/ginkgo"
@@ -136,6 +138,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
 	%s
 )
 
@@ -159,7 +162,14 @@ var _ = BeforeSuite(func() {
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths: []string{filepath.Join({{ .CRDDirectoryRelativePath }}, "config", "crd", "bases")},
+		CRDDirectoryPaths: []string{filepath.Join({{ .BaseDirectoryRelativePath }}, "config", "crd", "bases")},
+	}
+
+	By("setting binaries")
+	if os.Getenv("KUBEBUILDER_ASSETS") == ""{
+		binaryAssetsPath, err := filepath.Abs(filepath.Join({{ .BaseDirectoryRelativePath }}, "bin"))
+		Expect(err).NotTo(HaveOccurred())
+		testEnv.BinaryAssetsDirectory = binaryAssetsPath
 	}
 
 	cfg, err := testEnv.Start()

@@ -47,7 +47,7 @@ func (f *WebhookSuite) SetTemplateDefaults() error {
 	// If is multigroup the path needs to be ../../.. since it has the group dir.
 	f.BaseDirectoryRelativePath = `"..", ".."`
 	if f.MultiGroup && f.Resource.Group != "" {
-		f.BaseDirectoryRelativePath = `"..", "..",".."`
+		f.BaseDirectoryRelativePath = `"..", "..", ".."`
 	}
 
 	return nil
@@ -124,6 +124,7 @@ import (
 	"path/filepath"
 	"testing"
 	"fmt"
+	"os"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -167,6 +168,13 @@ var _ = BeforeSuite(func() {
 		WebhookInstallOptions: envtest.WebhookInstallOptions{
 			Paths: []string{filepath.Join({{ .BaseDirectoryRelativePath }}, "config", "webhook")},
 		},
+	}
+	
+	By("setting binaries")
+	if os.Getenv("KUBEBUILDER_ASSETS") == ""{
+		binaryAssetsPath, err := filepath.Abs(filepath.Join({{ .BaseDirectoryRelativePath }}, "bin"))
+		Expect(err).NotTo(HaveOccurred())
+		testEnv.BinaryAssetsDirectory = binaryAssetsPath
 	}
 
 	cfg, err := testEnv.Start()

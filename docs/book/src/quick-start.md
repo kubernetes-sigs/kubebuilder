@@ -36,8 +36,10 @@ arch=$(go env GOARCH)
 # download kubebuilder and extract it to tmp
 curl -L https://go.kubebuilder.io/dl/2.3.1/${os}/${arch} | tar -xz -C /tmp/
 ```
+<aside class="note">
+<h1>Adding EnvTest binaries to your PATH</h1>
 
-If you are using a Kubebuilder plugin version less than version `v3+`, you must configure the Kubernetes binaries required for the [envtest][envtest], run: 
+To add [envtest][envtest] binaries to your path: 
 
 ```bash
 # move to a long-term location and put it on your path
@@ -45,6 +47,10 @@ If you are using a Kubebuilder plugin version less than version `v3+`, you must 
 sudo mv /tmp/kubebuilder_2.3.1_${os}_${arch} /usr/local/kubebuilder
 export PATH=$PATH:/usr/local/kubebuilder/bin
 ```
+
+It is **OPTIONAL** for projects built with CLI versions > 2.3.1. 
+
+</aside>
 
 <aside class="note">
 <h1>Using master branch</h1>
