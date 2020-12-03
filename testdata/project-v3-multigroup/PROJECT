@@ -1,5 +1,5 @@
 domain: testproject.org
-layout: go.kubebuilder.io/v3-alpha
+layout: go.kubebuilder.io/v3
 multigroup: true
 projectName: project-v3-multigroup
 repo: sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup
