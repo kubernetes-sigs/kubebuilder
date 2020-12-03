@@ -1,0 +1,7 @@
+apiVersion: config.tutorial.kubebuilder.io/v2
+kind: ProjectConfig
+metadata:
+  name: projectconfig-sample
+spec:
+  # Add fields here
+  foo: bar
