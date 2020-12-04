@@ -46,6 +46,8 @@ func (f *ControllerManagerConfig) SetTemplateDefaults() error {
 
 const controllerManagerConfigTemplate = `apiVersion: controller-runtime.sigs.k8s.io/v1alpha1
 kind: ControllerManagerConfig
+health:
+  healthProbeBindAddress: :8081
 metrics:
   bindAddress: 127.0.0.1:8080
 webhook:
