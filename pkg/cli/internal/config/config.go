@@ -179,8 +179,3 @@ type saveError struct {
 func (e saveError) Error() string {
 	return fmt.Sprintf("unable to save the configuration: %v", e.err)
 }
-
-// IsVersionSupported returns true if version is a supported project version.
-func IsVersionSupported(version string) bool {
-	return version == config.Version2 || version == config.Version3Alpha
-}

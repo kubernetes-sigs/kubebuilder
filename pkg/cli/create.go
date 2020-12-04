@@ -20,7 +20,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func (c *cli) newCreateCmd() *cobra.Command {
+func (cli) newCreateCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:        "create",
 		SuggestFor: []string{"new"},

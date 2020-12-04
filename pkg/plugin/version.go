@@ -142,7 +142,7 @@ func (v Version) String() string {
 
 // Validate ensures that the version number is positive and the stage is one of the valid stages
 func (v Version) Validate() error {
-	if v.Number < 1 {
+	if v.Number < 0 {
 		return errInvalidVersion
 	}
 	return v.Stage.Validate()

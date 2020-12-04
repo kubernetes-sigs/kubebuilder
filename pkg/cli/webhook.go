@@ -25,7 +25,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v2/pkg/plugin"
 )
 
-func (c *cli) newCreateWebhookCmd() *cobra.Command {
+func (c cli) newCreateWebhookCmd() *cobra.Command {
 	ctx := c.newWebhookContext()
 	cmd := &cobra.Command{
 		Use:     "webhook",
@@ -43,19 +43,20 @@ func (c *cli) newCreateWebhookCmd() *cobra.Command {
 }
 
 func (c cli) newWebhookContext() plugin.Context {
-	ctx := plugin.Context{
+	return plugin.Context{
 		CommandName: c.commandName,
 		Description: `Scaffold a webhook for an API resource.
 `,
 	}
-	if !c.configured {
-		ctx.Description = fmt.Sprintf("%s\n%s", ctx.Description, runInProjectRootMsg)
-	}
-	return ctx
 }
 
 // nolint:dupl
 func (c cli) bindCreateWebhook(ctx plugin.Context, cmd *cobra.Command) {
+	if len(c.resolvedPlugins) == 0 {
+		cmdErr(cmd, fmt.Errorf(noPluginError))
+		return
+	}
+
 	var createWebhookPlugin plugin.CreateWebhook
 	for _, p := range c.resolvedPlugins {
 		tmpPlugin, isValid := p.(plugin.CreateWebhook)
@@ -71,8 +72,7 @@ func (c cli) bindCreateWebhook(ctx plugin.Context, cmd *cobra.Command) {
 	}
 
 	if createWebhookPlugin == nil {
-		err := fmt.Errorf("relevant plugins do not provide a webhook creation plugin")
-		cmdErr(cmd, err)
+		cmdErr(cmd, fmt.Errorf("resolved plugins do not provide a webhook creation plugin: %v", c.pluginKeys))
 		return
 	}
 

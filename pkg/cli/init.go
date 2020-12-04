@@ -31,7 +31,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v2/pkg/plugin"
 )
 
-func (c *cli) newInitCmd() *cobra.Command {
+func (c cli) newInitCmd() *cobra.Command {
 	ctx := c.newInitContext()
 	cmd := &cobra.Command{
 		Use:     "init",
@@ -50,11 +50,6 @@ func (c *cli) newInitCmd() *cobra.Command {
 		cmd.Flags().StringSlice(pluginsFlag, nil,
 			"Name and optionally version of the plugin to initialize the project with. "+
 				fmt.Sprintf("Available plugins: (%s)", strings.Join(c.getAvailablePlugins(), ", ")))
-	}
-
-	// If only the help flag was set, return the command as is.
-	if c.doGenericHelp {
-		return cmd
 	}
 
 	// Lookup the plugin for projectVersion and bind it to the command.
@@ -76,11 +71,11 @@ For further help about a specific project version, set --project-version.
 func (c cli) getInitHelpExamples() string {
 	var sb strings.Builder
 	for _, version := range c.getAvailableProjectVersions() {
-		rendered := fmt.Sprintf(`  # Help for initializing a project with version %s
-  %s init --project-version=%s -h
+		rendered := fmt.Sprintf(`  # Help for initializing a project with version %[2]s
+  %[1]s init --project-version=%[2]s -h
 
 `,
-			version, c.commandName, version)
+			c.commandName, version)
 		sb.WriteString(rendered)
 	}
 	return strings.TrimSuffix(sb.String(), "\n\n")
@@ -88,13 +83,11 @@ func (c cli) getInitHelpExamples() string {
 
 func (c cli) getAvailableProjectVersions() (projectVersions []string) {
 	versionSet := make(map[string]struct{})
-	for version, versionedPlugins := range c.pluginsFromOptions {
-		for _, p := range versionedPlugins {
-			// If there's at least one non-deprecated plugin per version, that
-			// version is "available".
-			if _, isDeprecated := p.(plugin.Deprecated); !isDeprecated {
+	for _, p := range c.plugins {
+		// Only return versions of non-deprecated plugins.
+		if _, isDeprecated := p.(plugin.Deprecated); !isDeprecated {
+			for _, version := range p.SupportedProjectVersions() {
 				versionSet[version] = struct{}{}
-				break
 			}
 		}
 	}
@@ -106,23 +99,23 @@ func (c cli) getAvailableProjectVersions() (projectVersions []string) {
 }
 
 func (c cli) getAvailablePlugins() (pluginKeys []string) {
-	keySet := make(map[string]struct{})
-	for _, versionedPlugins := range c.pluginsFromOptions {
-		for _, p := range versionedPlugins {
-			// Only return non-deprecated plugins.
-			if _, isDeprecated := p.(plugin.Deprecated); !isDeprecated {
-				keySet[plugin.KeyFor(p)] = struct{}{}
-			}
+	for key, p := range c.plugins {
+		// Only return non-deprecated plugins.
+		if _, isDeprecated := p.(plugin.Deprecated); !isDeprecated {
+			pluginKeys = append(pluginKeys, strconv.Quote(key))
 		}
-	}
-	for key := range keySet {
-		pluginKeys = append(pluginKeys, strconv.Quote(key))
 	}
 	sort.Strings(pluginKeys)
 	return pluginKeys
 }
 
 func (c cli) bindInit(ctx plugin.Context, cmd *cobra.Command) {
+	if len(c.resolvedPlugins) == 0 {
+		cmdErr(cmd, fmt.Errorf("no resolved plugins, please specify plugins with --%s or/and --%s flags",
+			projectVersionFlag, pluginsFlag))
+		return
+	}
+
 	var initPlugin plugin.Init
 	for _, p := range c.resolvedPlugins {
 		tmpPlugin, isValid := p.(plugin.Init)
@@ -138,8 +131,7 @@ func (c cli) bindInit(ctx plugin.Context, cmd *cobra.Command) {
 	}
 
 	if initPlugin == nil {
-		err := fmt.Errorf("relevant plugins do not provide an initialization plugin")
-		cmdErrNoHelp(cmd, err)
+		cmdErr(cmd, fmt.Errorf("resolved plugins do not provide a project init plugin: %v", c.pluginKeys))
 		return
 	}
 
