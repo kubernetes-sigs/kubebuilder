@@ -24,7 +24,7 @@ package controllers
 import (
 	"context"
 
-	"github.com/go-logr/logr"
+	"k8s.io/kubernetes/pkg/apis/batch"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -51,7 +51,7 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	// name of our custom finalizer
-	myFinalizerName := "storage.finalizers.tutorial.kubebuilder.io"
+	myFinalizerName := "batch.tutorial.kubebuilder.io/finalizer"
 
 	// examine DeletionTimestamp to determine if object is under deletion
 	if cronJob.ObjectMeta.DeletionTimestamp.IsZero() {
