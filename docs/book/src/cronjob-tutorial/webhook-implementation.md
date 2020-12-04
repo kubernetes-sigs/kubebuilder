@@ -19,4 +19,17 @@ kubebuilder create webhook --group batch --version v1 --kind CronJob --defaultin
 
 This will scaffold the webhook functions and register your webhook with the manager in your `main.go` for you.
 
+<aside class="note">
+
+<h1>Supporting older cluster versions</h1>
+
+The default WebhookConfiguration manifests created alongside your Go webhook implementation
+use API version `v1`. If your project intends to support Kubernetes cluster versions older
+than v1.16, set `--webhook-version v1beta1`. See the [webhook reference][webhook-reference]
+for more information.
+
+[webhook-reference]: /reference/webhook-overview.md#supporting-older-cluster-versions
+
+</aside>
+
 {{#literatego ./testdata/project/api/v1/cronjob_webhook.go}}

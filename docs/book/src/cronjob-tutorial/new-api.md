@@ -11,6 +11,20 @@ kubebuilder create api --group batch --version v1 --kind CronJob
 The first time we call this command for each group-version, it will create
 a directory for the new group-version.
 
+<aside class="note">
+
+<h1>Supporting older cluster versions</h1>
+
+The default CustomResourceDefinition manifests created alongside your Go API types
+use API version `v1`. If your project intends to support Kubernetes cluster versions older
+than v1.16, you must set `--crd-version v1beta1` and remove `preserveUnknownFields=false`
+from the `CRD_OPTIONS` Makefile variable.
+See the [CustomResourceDefinition generation reference][crd-reference] for details.
+
+[crd-reference]: /reference/generating-crd.md#supporting-older-cluster-versions
+
+</aside>
+
 In this case, the
 [`api/v1/`](https://sigs.k8s.io/kubebuilder/docs/book/src/cronjob-tutorial/testdata/project/api/v1)
 directory is created, corresponding to the

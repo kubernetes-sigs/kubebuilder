@@ -17,3 +17,19 @@ feature entered beta).
 
 Kubernetes supports the conversion webhooks as of version 1.15 (when the
 feature entered beta).
+
+### Supporting older cluster versions
+
+By default, `kubebuilder create webhook` will create webhook configs of API version `v1`,
+a version introduced in Kubernetes v1.16. If your project intends to support
+Kubernetes cluster versions older than v1.16, you must use the `v1beta1` API version:
+
+```sh
+kubebuilder create webhook --webhook-version v1beta1 ...
+```
+
+<aside class="note">
+
+`v1beta1` is deprecated and will be removed in a future Kubernetes release, so upgrading is recommended.
+
+</aside>
