@@ -67,6 +67,7 @@ spec:
 {{- if not .ComponentConfig }}
       - name: manager
         args:
+        - "--health-probe-bind-address=:8081"
         - "--metrics-bind-address=127.0.0.1:8080"
         - "--leader-elect"
 {{- end }}
