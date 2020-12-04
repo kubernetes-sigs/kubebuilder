@@ -103,6 +103,9 @@ scaffold_test_project() {
             header_text 'initializing  project-v2-addon ...'
             $kb init --project-version $version --domain testproject.org --license apache2 --owner "The Kubernetes authors"
 
+            # pin the version of the declarative pattern to make tests pass
+            go get sigs.k8s.io/kubebuilder-declarative-pattern@v0.0.0-20200317144824-bbf1fb2a4a9a
+
             header_text 'enableling --pattern flag ...'
             export KUBEBUILDER_ENABLE_PLUGINS=1
             header_text 'Creating APIs ...'
