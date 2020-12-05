@@ -21,7 +21,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"sigs.k8s.io/kubebuilder/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v2/pkg/model/file"
 )
 
 var _ file.Template = &Boilerplate{}

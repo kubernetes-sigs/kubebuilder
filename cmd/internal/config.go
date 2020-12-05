@@ -21,7 +21,7 @@ import (
 	"log"
 	"os"
 
-	"sigs.k8s.io/kubebuilder/internal/config"
+	"sigs.k8s.io/kubebuilder/v2/internal/config"
 )
 
 const (

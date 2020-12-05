@@ -17,10 +17,10 @@ limitations under the License.
 package scaffold
 
 import (
-	"sigs.k8s.io/kubebuilder/pkg/model"
-	"sigs.k8s.io/kubebuilder/pkg/model/config"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold/internal/machinery"
-	templatesv1 "sigs.k8s.io/kubebuilder/pkg/scaffold/internal/templates/v1"
+	"sigs.k8s.io/kubebuilder/v2/pkg/model"
+	"sigs.k8s.io/kubebuilder/v2/pkg/model/config"
+	"sigs.k8s.io/kubebuilder/v2/pkg/scaffold/internal/machinery"
+	templatesv1 "sigs.k8s.io/kubebuilder/v2/pkg/scaffold/internal/templates/v1"
 )
 
 var _ Scaffolder = &updateScaffolder{}

@@ -24,8 +24,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"sigs.k8s.io/kubebuilder/internal/config"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold"
+	"sigs.k8s.io/kubebuilder/v2/internal/config"
+	"sigs.k8s.io/kubebuilder/v2/pkg/scaffold"
 )
 
 type editError struct {

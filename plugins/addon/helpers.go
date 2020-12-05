@@ -8,8 +8,8 @@ import (
 
 	"github.com/gobuffalo/flect"
 
-	"sigs.k8s.io/kubebuilder/pkg/model"
-	"sigs.k8s.io/kubebuilder/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v2/pkg/model"
+	"sigs.k8s.io/kubebuilder/v2/pkg/model/file"
 )
 
 // This file gathers functions that are likely to be useful to other

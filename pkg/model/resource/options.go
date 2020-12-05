@@ -26,7 +26,7 @@ import (
 
 	"github.com/gobuffalo/flect"
 
-	"sigs.k8s.io/kubebuilder/pkg/model/config"
+	"sigs.k8s.io/kubebuilder/v2/pkg/model/config"
 )
 
 const (
