@@ -86,6 +86,13 @@ var _ = Describe("kubebuilder", func() {
 			})
 
 			It("should generate a runnable project", func() {
+				// Ensure that kbc.K8sVersion is populated.
+				if kbc.K8sVersion == nil {
+					K8sVersion, err := kbc.Kubectl.Version()
+					Expect(err).NotTo(HaveOccurred())
+					kbc.K8sVersion = &K8sVersion
+				}
+
 				// Skip if cluster version < 1.16, when v1 CRDs and webhooks did not exist.
 				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() < 16 {
 					Skip(fmt.Sprintf("cluster version %s does not support v1 CRDs or webhooks", srvVer.GitVersion))
@@ -95,6 +102,13 @@ var _ = Describe("kubebuilder", func() {
 				Run(kbc)
 			})
 			It("should generate a runnable project with v1beta1 CRDs and Webhooks", func() {
+				// Ensure that kbc.K8sVersion is populated.
+				if kbc.K8sVersion == nil {
+					K8sVersion, err := kbc.Kubectl.Version()
+					Expect(err).NotTo(HaveOccurred())
+					kbc.K8sVersion = &K8sVersion
+				}
+
 				// Skip if cluster version < 1.15, when `.spec.preserveUnknownFields` was not a v1beta1 CRD field.
 				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() < 15 {
 					Skip(fmt.Sprintf("cluster version %s does not support project defaults", srvVer.GitVersion))

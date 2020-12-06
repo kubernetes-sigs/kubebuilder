@@ -59,10 +59,13 @@ func NewTestContext(binaryName string, env ...string) (*TestContext, error) {
 		Namespace:  fmt.Sprintf("e2e-%s-system", testSuffix),
 		CmdContext: cc,
 	}
-	k8sVersion, err := kubectl.Version()
-	if err != nil {
-		return nil, err
-	}
+
+	// Try to populate the k8sVersion and ignore any error that might be faced.
+	// Note that, the k8sVersion is not an mandatory info and it is
+	// not required for ANY context of tests. For example, the testContext
+	// might be used to run a test outside of the cluster where this info is not
+	// available and not required at all.
+	k8sVersion, _ := kubectl.Version()
 
 	// Set CmdContext.Dir after running Kubectl.Version() because dir does not exist yet.
 	if cc.Dir, err = filepath.Abs("e2e-" + testSuffix); err != nil {
