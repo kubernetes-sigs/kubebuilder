@@ -57,12 +57,12 @@ func (p *createWebhookSubcommand) UpdateContext(ctx *plugin.Context) {
 	ctx.Description = `Scaffold a webhook for an API resource. You can choose to scaffold defaulting,
 validating and (or) conversion webhooks.
 `
-	ctx.Examples = fmt.Sprintf(`  # Create defaulting and validating webhooks for CRD of group crew, version v1
-  # and kind FirstMate.
-  %s create webhook --group crew --version v1 --kind FirstMate --defaulting --programmatic-validation
+	ctx.Examples = fmt.Sprintf(`  # Create defaulting and validating webhooks for CRD of group ship, version v1beta1
+  # and kind Frigate.
+  %s create webhook --group ship --version v1beta1 --kind Frigate --defaulting --programmatic-validation
 
-  # Create conversion webhook for CRD of group crew, version v1 and kind FirstMate.
-  %s create webhook --group crew --version v1 --kind FirstMate --conversion
+  # Create conversion webhook for CRD of group ship, version v1beta1 and kind Frigate.
+  %s create webhook --group ship --version v1beta1 --kind Frigate --conversion
 `,
 		ctx.CommandName, ctx.CommandName)
 
