@@ -27,10 +27,10 @@ arch=$(go env GOARCH)
 curl -L https://go.kubebuilder.io/dl/2.3.1/${os}/${arch} | tar -xz -C /tmp/
 ```
 
-If you are using a Kubebuilder plugin version less than version `v3+`, you must configure the Kubernetes binaries required for the [envtest][envtest], run: 
+If you are using a Kubebuilder plugin version less than version `v3+`, you must configure the Kubernetes binaries required for the [envtest][envtest], run:
 
 ```bash
-# 将 kubebuilder 移动到一个长期的路径，并将其加入环境变量 path 中 
+# 将 kubebuilder 移动到一个长期的路径，并将其加入环境变量 path 中
 # （如果你把 kubebuilder 放在别的地方，你需要额外设置 KUBEBUILDER_ASSETS 环境变量）
 
 sudo mv /tmp/kubebuilder_2.3.1_${os}_${arch} /usr/local/kubebuilder
@@ -64,7 +64,7 @@ kubebuilder init --domain my.domain
 
 如果你的 kubebuilder 安装目录不在 `$GOPATH` 中，你需要运行 `go mod init <modulename>` 来告诉 kubebuilder 和 Go module 的基本导入路径。
 
-若要进一步了解 `GOPATH`，参阅 [如何编写 Go 代码][how-to-write-go-code-golang-docs] 页面文档中的 [GOPATH 环境变量][GOPATH-golang-docs] 章节。    
+若要进一步了解 `GOPATH`，参阅 [如何编写 Go 代码][how-to-write-go-code-golang-docs] 页面文档中的 [GOPATH 环境变量][GOPATH-golang-docs] 章节。
 
 </aside>
 
@@ -153,7 +153,7 @@ type Guestbook struct {
 
 你的控制器将自动使用你的 `kubeconfig` 文件中的当前上下文（即无论群集 `kubectl cluster-info` 显示的是什么群集）。
 
-</aside> 
+</aside>
 
 将 CRD 安装到集群中
 
@@ -192,9 +192,9 @@ make deploy IMG=<some-registry>/<project-name>:tag
 <aside class="note">
 <h1>RBAC 错误</h1>
 
-如果你遇到 RBAC 错误，你可能需要授予自己集群管理员权限或以管理员身份登录。请参考 [在 GKE 集群 v1.11.x 及以上版本上使用 Kubernetes RBAC 的组件依赖][pre-rbc-gke] 可能是你的情况。 
+如果你遇到 RBAC 错误，你可能需要授予自己集群管理员权限或以管理员身份登录。请参考 [在 GKE 集群 v1.11.x 及以上版本上使用 Kubernetes RBAC 的组件依赖][pre-rbc-gke] 可能是你的情况。
 
-</aside> 
+</aside>
 
 ## 卸载 CRD
 
@@ -212,12 +212,12 @@ make uninstall
 make undeploy
 ```
 
-## 下一步 
+## 下一步
 
 现在，参照 [CronJob 教程][cronjob-tutorial]，通过开发一个演示示例项目更好地理解 kubebuilder 的工作原理。
 
 [pre-rbc-gke]: https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#iam-rolebinding-bootstrap
 [cronjob-tutorial]: https://book.kubebuilder.io/cronjob-tutorial/cronjob-tutorial.html
 [GOPATH-golang-docs]: https://golang.org/doc/code.html#GOPATH
-[how-to-write-go-code-golang-docs]: https://golang.org/doc/code.html 
+[how-to-write-go-code-golang-docs]: https://golang.org/doc/code.html
 [envtest]: https://book.kubebuilder.io/reference/testing/envtest.html

@@ -26,7 +26,7 @@
 
     - [部署 cert manager](./cronjob-tutorial/cert-manager.md)
     - [部署 webhooks](./cronjob-tutorial/running-webhook.md)
-  
+
   - [编写测试](./cronjob-tutorial/writing-tests.md)
 
   - [结语](./cronjob-tutorial/epilogue.md)
@@ -49,7 +49,11 @@
 
       - [迁移指南](./migration/guide.md)
 
-  - [Single Group 到 Multi-Group](./migration/multi-group.md)
+  - [Kubebuilder v2 vs v3](./migration/v2vsv3.md)
+
+      - [迁移指南](./migration/migration_guide_v2tov3.md)
+
+  - [Single Group to Multi-Group](./migration/multi-group.md)
 
 ---
 
