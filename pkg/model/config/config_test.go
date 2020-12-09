@@ -19,6 +19,8 @@ package config
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	"sigs.k8s.io/kubebuilder/v2/pkg/model/resource"
 )
 
 const v1beta1 = "v1beta1"
@@ -169,53 +171,63 @@ var _ = Describe("Resource Version Compatibility", func() {
 
 	var (
 		c          *Config
-		gvk1, gvk2 GVK
+		res1, res2 *resource.Resource
 
 		defaultVersion = "v1"
 	)
 
 	BeforeEach(func() {
 		c = &Config{}
-		gvk1 = GVK{Group: "example", Version: "v1", Kind: "TestKind"}
-		gvk2 = GVK{Group: "example", Version: "v1", Kind: "TestKind2"}
+		res1 = &resource.Resource{Group: "example", Domain: "test.io", Version: "v1", Kind: "TestKind"}
+		res2 = &resource.Resource{Group: "example", Domain: "test.io", Version: "v1", Kind: "TestKind2"}
 	})
 
 	Context("resourceAPIVersionCompatible", func() {
 		It("returns true for a list of empty resources", func() {
-			Expect(c.resourceAPIVersionCompatible("crd", defaultVersion)).To(BeTrue())
-		})
-		It("returns true for one resource with an empty version", func() {
-			c.Resources = []GVK{gvk1}
-			Expect(c.resourceAPIVersionCompatible("crd", defaultVersion)).To(BeTrue())
-		})
-		It("returns true for one resource with matching version", func() {
-			gvk1.CRDVersion = defaultVersion
-			c.Resources = []GVK{gvk1}
-			Expect(c.resourceAPIVersionCompatible("crd", defaultVersion)).To(BeTrue())
-		})
-		It("returns true for two resources with matching versions", func() {
-			gvk1.CRDVersion = defaultVersion
-			gvk2.CRDVersion = defaultVersion
-			c.Resources = []GVK{gvk1, gvk2}
-			Expect(c.resourceAPIVersionCompatible("crd", defaultVersion)).To(BeTrue())
-		})
-		It("returns false for one resource with a non-matching version", func() {
-			gvk1.CRDVersion = v1beta1
-			c.Resources = []GVK{gvk1}
-			Expect(c.resourceAPIVersionCompatible("crd", defaultVersion)).To(BeFalse())
-		})
-		It("returns false for two resources containing a non-matching version", func() {
-			gvk1.CRDVersion = v1beta1
-			gvk2.CRDVersion = defaultVersion
-			c.Resources = []GVK{gvk1, gvk2}
-			Expect(c.resourceAPIVersionCompatible("crd", defaultVersion)).To(BeFalse())
+			Expect(c.IsCRDVersionCompatible(defaultVersion)).To(BeTrue())
+			Expect(c.IsWebhookVersionCompatible(defaultVersion)).To(BeTrue())
 		})
 
-		It("returns false for two resources containing a non-matching version (webhooks)", func() {
-			gvk1.WebhookVersion = v1beta1
-			gvk2.WebhookVersion = defaultVersion
-			c.Resources = []GVK{gvk1, gvk2}
-			Expect(c.resourceAPIVersionCompatible("webhook", defaultVersion)).To(BeFalse())
+		It("returns true for one resource with an empty version", func() {
+			c.Resources = []*resource.Resource{res1}
+			Expect(c.IsCRDVersionCompatible(defaultVersion)).To(BeTrue())
+			Expect(c.IsWebhookVersionCompatible(defaultVersion)).To(BeTrue())
+		})
+
+		It("returns true for one resource with matching version", func() {
+			res1.API = &resource.API{Version: defaultVersion}
+			res1.Webhooks = &resource.Webhooks{Version: defaultVersion}
+			c.Resources = []*resource.Resource{res1}
+			Expect(c.IsCRDVersionCompatible(defaultVersion)).To(BeTrue())
+			Expect(c.IsWebhookVersionCompatible(defaultVersion)).To(BeTrue())
+		})
+
+		It("returns true for two resources with matching versions", func() {
+			res1.API = &resource.API{Version: defaultVersion}
+			res1.Webhooks = &resource.Webhooks{Version: defaultVersion}
+			res2.API = &resource.API{Version: defaultVersion}
+			res2.Webhooks = &resource.Webhooks{Version: defaultVersion}
+			c.Resources = []*resource.Resource{res1, res2}
+			Expect(c.IsCRDVersionCompatible(defaultVersion)).To(BeTrue())
+			Expect(c.IsWebhookVersionCompatible(defaultVersion)).To(BeTrue())
+		})
+
+		It("returns false for one resource with a non-matching version", func() {
+			res1.API = &resource.API{Version: v1beta1}
+			res1.Webhooks = &resource.Webhooks{Version: v1beta1}
+			c.Resources = []*resource.Resource{res1}
+			Expect(c.IsCRDVersionCompatible(defaultVersion)).To(BeFalse())
+			Expect(c.IsWebhookVersionCompatible(defaultVersion)).To(BeFalse())
+		})
+
+		It("returns false for two resources containing a non-matching version", func() {
+			res1.API = &resource.API{Version: v1beta1}
+			res1.Webhooks = &resource.Webhooks{Version: v1beta1}
+			res2.API = &resource.API{Version: defaultVersion}
+			res2.Webhooks = &resource.Webhooks{Version: defaultVersion}
+			c.Resources = []*resource.Resource{res1, res2}
+			Expect(c.IsCRDVersionCompatible(defaultVersion)).To(BeFalse())
+			Expect(c.IsWebhookVersionCompatible(defaultVersion)).To(BeFalse())
 		})
 	})
 })
@@ -223,35 +235,55 @@ var _ = Describe("Resource Version Compatibility", func() {
 var _ = Describe("Config", func() {
 	var (
 		c          *Config
-		gvk1, gvk2 GVK
+		res1, res2 *resource.Resource
 	)
 
 	BeforeEach(func() {
 		c = &Config{}
-		gvk1 = GVK{Group: "example", Version: "v1", Kind: "TestKind"}
-		gvk2 = GVK{Group: "example", Version: "v1", Kind: "TestKind2"}
+		res1 = &resource.Resource{Group: "example", Domain: "test.io", Version: "v1", Kind: "TestKind"}
+		res2 = &resource.Resource{Group: "example", Domain: "test.io", Version: "v1", Kind: "TestKind2"}
 	})
 
 	Context("UpdateResource", func() {
+		var err error
 		It("Adds a non-existing resource", func() {
-			c.UpdateResources(gvk1)
-			Expect(c.Resources).To(Equal([]GVK{gvk1}))
+			_, err = c.UpdateResources(res1)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(c.Resources).To(Equal([]*resource.Resource{res1}))
 			// Update again to ensure idempotency.
-			c.UpdateResources(gvk1)
-			Expect(c.Resources).To(Equal([]GVK{gvk1}))
+			_, err = c.UpdateResources(res1)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(c.Resources).To(Equal([]*resource.Resource{res1}))
 		})
 		It("Updates an existing resource", func() {
-			c.UpdateResources(gvk1)
-			gvk := GVK{Group: gvk1.Group, Version: gvk1.Version, Kind: gvk1.Kind, CRDVersion: "v1"}
-			c.UpdateResources(gvk)
-			Expect(c.Resources).To(Equal([]GVK{gvk}))
+			_, err = c.UpdateResources(res1)
+			Expect(err).NotTo(HaveOccurred())
+			res := &resource.Resource{
+				Group:   res1.Group,
+				Domain:  res1.Domain,
+				Version: res1.Version,
+				Kind:    res1.Kind,
+				API:     &resource.API{Version: "v1"},
+			}
+			_, err = c.UpdateResources(res)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(c.Resources).To(Equal([]*resource.Resource{res}))
 		})
 		It("Updates an existing resource with more than one resource present", func() {
-			c.UpdateResources(gvk1)
-			c.UpdateResources(gvk2)
-			gvk := GVK{Group: gvk1.Group, Version: gvk1.Version, Kind: gvk1.Kind, CRDVersion: "v1"}
-			c.UpdateResources(gvk)
-			Expect(c.Resources).To(Equal([]GVK{gvk, gvk2}))
+			_, err = c.UpdateResources(res1)
+			Expect(err).NotTo(HaveOccurred())
+			_, err = c.UpdateResources(res2)
+			Expect(err).NotTo(HaveOccurred())
+			res := &resource.Resource{
+				Group:   res1.Group,
+				Domain:  res1.Domain,
+				Version: res1.Version,
+				Kind:    res1.Kind,
+				API:     &resource.API{Version: "v1"},
+			}
+			_, err = c.UpdateResources(res)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(c.Resources).To(Equal([]*resource.Resource{res, res2}))
 		})
 	})
 })

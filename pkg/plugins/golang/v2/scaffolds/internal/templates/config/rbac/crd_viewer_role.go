@@ -49,7 +49,7 @@ metadata:
   name: {{ lower .Resource.Kind }}-viewer-role
 rules:
 - apiGroups:
-  - {{ .Resource.Domain }}
+  - {{ .Resource.QualifiedGroup }}
   resources:
   - {{ .Resource.Plural }}
   verbs:
@@ -57,7 +57,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - {{ .Resource.Domain }}
+  - {{ .Resource.QualifiedGroup }}
   resources:
   - {{ .Resource.Plural }}/status
   verbs:

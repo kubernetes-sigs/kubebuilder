@@ -68,7 +68,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	{{ if .WireResource -}}
-	{{ .Resource.ImportAlias }} "{{ .Resource.Package }}"
+	{{ .Resource.ImportAlias }} "{{ .Resource.Path }}"
 	{{- end }}
 )
 
@@ -79,8 +79,8 @@ type {{ .Resource.Kind }}Reconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups={{ .Resource.Domain }},resources={{ .Resource.Plural }},verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups={{ .Resource.Domain }},resources={{ .Resource.Plural }}/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups={{ .Resource.QualifiedGroup }},resources={{ .Resource.Plural }},verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups={{ .Resource.QualifiedGroup }},resources={{ .Resource.Plural }}/status,verbs=get;update;patch
 
 func (r *{{ .Resource.Kind }}Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()

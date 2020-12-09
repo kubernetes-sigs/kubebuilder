@@ -92,9 +92,6 @@ const (
 `
 	controllerImportCodeFragment = `"%s/controllers"
 `
-	// TODO(v3): `&%scontrollers` should be used instead of `&%scontroller` as there may be multiple
-	//  controller for different Kinds in the same group. However, this is a backwards incompatible
-	//  change, and thus should be done for next project version.
 	multiGroupControllerImportCodeFragment = `%scontroller "%s/controllers/%s"
 `
 	addschemeCodeFragment = `utilruntime.Must(%s.AddToScheme(scheme))
@@ -108,9 +105,6 @@ const (
 		os.Exit(1)
 	}
 `
-	// TODO(v3): loggers for the same Kind controllers from different groups use the same logger.
-	//  `.WithName("controllers").WithName(GROUP).WithName(KIND)` should be used instead. However,
-	//  this is a backwards incompatible change, and thus should be done for next project version.
 	multiGroupReconcilerSetupCodeFragment = `if err = (&%scontroller.%sReconciler{
 		Client: mgr.GetClient(),
 		Log: ctrl.Log.WithName("controllers").WithName("%s"),
@@ -139,7 +133,7 @@ func (f *MainUpdater) GetCodeFragments() file.CodeFragmentsMap {
 	// Generate import code fragments
 	imports := make([]string, 0)
 	if f.WireResource {
-		imports = append(imports, fmt.Sprintf(apiImportCodeFragment, f.Resource.ImportAlias, f.Resource.Package))
+		imports = append(imports, fmt.Sprintf(apiImportCodeFragment, f.Resource.ImportAlias(), f.Resource.Path))
 	}
 
 	if f.WireController {
@@ -147,14 +141,14 @@ func (f *MainUpdater) GetCodeFragments() file.CodeFragmentsMap {
 			imports = append(imports, fmt.Sprintf(controllerImportCodeFragment, f.Repo))
 		} else {
 			imports = append(imports, fmt.Sprintf(multiGroupControllerImportCodeFragment,
-				f.Resource.GroupPackageName, f.Repo, f.Resource.Group))
+				f.Resource.PackageName(), f.Repo, f.Resource.Group))
 		}
 	}
 
 	// Generate add scheme code fragments
 	addScheme := make([]string, 0)
 	if f.WireResource {
-		addScheme = append(addScheme, fmt.Sprintf(addschemeCodeFragment, f.Resource.ImportAlias))
+		addScheme = append(addScheme, fmt.Sprintf(addschemeCodeFragment, f.Resource.ImportAlias()))
 	}
 
 	// Generate setup code fragments
@@ -165,12 +159,12 @@ func (f *MainUpdater) GetCodeFragments() file.CodeFragmentsMap {
 				f.Resource.Kind, f.Resource.Kind, f.Resource.Kind))
 		} else {
 			setup = append(setup, fmt.Sprintf(multiGroupReconcilerSetupCodeFragment,
-				f.Resource.GroupPackageName, f.Resource.Kind, f.Resource.Kind, f.Resource.Kind))
+				f.Resource.PackageName(), f.Resource.Kind, f.Resource.Kind, f.Resource.Kind))
 		}
 	}
 	if f.WireWebhook {
 		setup = append(setup, fmt.Sprintf(webhookSetupCodeFragment,
-			f.Resource.ImportAlias, f.Resource.Kind, f.Resource.Kind))
+			f.Resource.ImportAlias(), f.Resource.Kind, f.Resource.Kind))
 	}
 
 	// Only store code fragments in the map if the slices are non-empty

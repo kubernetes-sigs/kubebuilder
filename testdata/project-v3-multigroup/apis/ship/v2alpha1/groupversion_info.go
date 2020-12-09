@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package v2alpha1 contains API Schema definitions for the ship v2alpha1 API group
+// Package v2alpha1 contains API Schema definitions for the ship.testproject.org v2alpha1 API group
 // +kubebuilder:object:generate=true
 // +groupName=ship.testproject.org
 package v2alpha1

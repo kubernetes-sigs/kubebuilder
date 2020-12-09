@@ -76,7 +76,7 @@ type {{.Resource.Kind}}Status struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-{{ if not .Resource.Namespaced }} // +kubebuilder:resource:scope=Cluster {{ end }}
+{{ if not .Resource.API.Namespaced }}// +kubebuilder:resource:scope=Cluster{{ end }}
 
 // {{.Resource.Kind}} is the Schema for the {{ .Resource.Plural }} API
 type {{.Resource.Kind}} struct {
@@ -110,7 +110,7 @@ func (o *{{.Resource.Kind}}) SetCommonStatus(s addonv1alpha1.CommonStatus) {
 }
 
 // +kubebuilder:object:root=true
-{{ if not .Resource.Namespaced }} // +kubebuilder:resource:scope=Cluster {{ end }}
+{{ if not .Resource.API.Namespaced }}// +kubebuilder:resource:scope=Cluster{{ end }}
 
 // {{.Resource.Kind}}List contains a list of {{.Resource.Kind}}
 type {{.Resource.Kind}}List struct {

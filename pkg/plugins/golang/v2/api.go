@@ -29,7 +29,6 @@ import (
 
 	"sigs.k8s.io/kubebuilder/v2/pkg/model"
 	"sigs.k8s.io/kubebuilder/v2/pkg/model/config"
-	"sigs.k8s.io/kubebuilder/v2/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v2/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v2/pkg/plugins/golang/v2/scaffolds"
 	"sigs.k8s.io/kubebuilder/v2/pkg/plugins/internal/cmdutil"
@@ -43,13 +42,11 @@ type createAPISubcommand struct {
 	// pattern indicates that we should use a plugin to build according to a pattern
 	pattern string
 
-	resource *resource.Options
+	options *Options
 
 	// Check if we have to scaffold resource and/or controller
 	resourceFlag   *pflag.Flag
 	controllerFlag *pflag.Flag
-	doResource     bool
-	doController   bool
 
 	// force indicates that the resource should be created even if it already exists
 	force bool
@@ -94,27 +91,32 @@ After the scaffold is written, api will run make on the project.
 }
 
 func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
-	fs.BoolVar(&p.runMake, "make", true, "if true, run make after generating files")
+	p.options = &Options{}
+	fs.StringVar(&p.options.Group, "group", "", "resource Group")
+	p.options.Domain = p.config.Domain
+	fs.StringVar(&p.options.Version, "version", "", "resource Version")
+	fs.StringVar(&p.options.Kind, "kind", "", "resource Kind")
 
-	fs.BoolVar(&p.doResource, "resource", true,
+	fs.BoolVar(&p.options.DoAPI, "resource", true,
 		"if set, generate the resource without prompting the user")
 	p.resourceFlag = fs.Lookup("resource")
-	fs.BoolVar(&p.doController, "controller", true,
+	p.options.CRDVersion = "v1beta1"
+	fs.BoolVar(&p.options.Namespaced, "namespaced", true, "resource is namespaced")
+
+	fs.BoolVar(&p.options.DoController, "controller", true,
 		"if set, generate the controller without prompting the user")
 	p.controllerFlag = fs.Lookup("controller")
 
+	fs.BoolVar(&p.runMake, "make", true, "if true, run make after generating files")
+	fs.BoolVar(&p.force, "force", false,
+		"attempt to create resource even if it already exists")
+
+	// TODO: remove this when a better solution for using addons is implemented.
 	if os.Getenv("KUBEBUILDER_ENABLE_PLUGINS") != "" {
 		fs.StringVar(&p.pattern, "pattern", "",
 			"generates an API following an extension pattern (addon)")
 	}
 
-	fs.BoolVar(&p.force, "force", false,
-		"attempt to create resource even if it already exists")
-	p.resource = &resource.Options{}
-	fs.StringVar(&p.resource.Kind, "kind", "", "resource Kind")
-	fs.StringVar(&p.resource.Group, "group", "", "resource Group")
-	fs.StringVar(&p.resource.Version, "version", "", "resource Version")
-	fs.BoolVar(&p.resource.Namespaced, "namespaced", true, "resource is namespaced")
 }
 
 func (p *createAPISubcommand) InjectConfig(c *config.Config) {
@@ -126,29 +128,29 @@ func (p *createAPISubcommand) Run() error {
 }
 
 func (p *createAPISubcommand) Validate() error {
-	if err := p.resource.ValidateV2(); err != nil {
+	if err := p.options.Validate(); err != nil {
 		return err
 	}
 
 	reader := bufio.NewReader(os.Stdin)
 	if !p.resourceFlag.Changed {
 		fmt.Println("Create Resource [y/n]")
-		p.doResource = util.YesNo(reader)
+		p.options.DoAPI = util.YesNo(reader)
 	}
 	if !p.controllerFlag.Changed {
 		fmt.Println("Create Controller [y/n]")
-		p.doController = util.YesNo(reader)
+		p.options.DoController = util.YesNo(reader)
 	}
 
 	// In case we want to scaffold a resource API we need to do some checks
-	if p.doResource {
+	if p.options.DoAPI {
 		// Check that resource doesn't exist or flag force was set
-		if !p.force && p.config.HasResource(p.resource.GVK()) {
+		if !p.force && p.config.GetResource(p.options.GVK(p.config.IsV2())) != nil {
 			return errors.New("API resource already exists")
 		}
 
 		// Check that the provided group can be added to the project
-		if !p.config.MultiGroup && len(p.config.Resources) != 0 && !p.config.HasGroup(p.resource.Group) {
+		if !p.config.MultiGroup && len(p.config.Resources) != 0 && !p.config.HasGroup(p.options.Group) {
 			return fmt.Errorf("multiple groups are not allowed by default, to enable multi-group visit %s",
 				"kubebuilder.io/migration/multi-group.html")
 		}
@@ -176,8 +178,8 @@ func (p *createAPISubcommand) GetScaffolder() (cmdutil.Scaffolder, error) {
 	}
 
 	// Create the actual resource from the resource options
-	res := p.resource.NewResource(p.config, p.doResource)
-	return scaffolds.NewAPIScaffolder(p.config, string(bp), res, p.doResource, p.doController, plugins), nil
+	res := p.options.NewResource(p.config)
+	return scaffolds.NewAPIScaffolder(p.config, string(bp), res, plugins), nil
 }
 
 func (p *createAPISubcommand) PostScaffold() error {

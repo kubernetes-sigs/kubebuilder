@@ -96,13 +96,13 @@ func (f *SuiteTest) GetCodeFragments() file.CodeFragmentsMap {
 	// Generate import code fragments
 	imports := make([]string, 0)
 	if f.WireResource {
-		imports = append(imports, fmt.Sprintf(apiImportCodeFragment, f.Resource.ImportAlias, f.Resource.Package))
+		imports = append(imports, fmt.Sprintf(apiImportCodeFragment, f.Resource.ImportAlias(), f.Resource.Path))
 	}
 
 	// Generate add scheme code fragments
 	addScheme := make([]string, 0)
 	if f.WireResource {
-		addScheme = append(addScheme, fmt.Sprintf(addschemeCodeFragment, f.Resource.ImportAlias))
+		addScheme = append(addScheme, fmt.Sprintf(addschemeCodeFragment, f.Resource.ImportAlias()))
 	}
 
 	// Only store code fragments in the map if the slices are non-empty
@@ -119,7 +119,7 @@ func (f *SuiteTest) GetCodeFragments() file.CodeFragmentsMap {
 const controllerSuiteTestTemplate = `{{ .Boilerplate }}
 
 {{if and .MultiGroup .Resource.Group }}
-package {{ .Resource.GroupPackageName }}
+package {{ .Resource.PackageName }}
 {{else}}
 package controllers
 {{end}}

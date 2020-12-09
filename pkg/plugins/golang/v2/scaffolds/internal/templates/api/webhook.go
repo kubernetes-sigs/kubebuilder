@@ -35,11 +35,6 @@ type Webhook struct { // nolint:maligned
 
 	// Is the Group domain for the Resource replacing '.' with '-'
 	GroupDomainWithDash string
-
-	// If scaffold the defaulting webhook
-	Defaulting bool
-	// If scaffold the validating webhook
-	Validating bool
 }
 
 // SetTemplateDefaults implements file.Template
@@ -54,34 +49,27 @@ func (f *Webhook) SetTemplateDefaults() error {
 	f.Path = f.Resource.Replacer().Replace(f.Path)
 	fmt.Println(f.Path)
 
-	webhookTemplate := webhookTemplate
-	if f.Defaulting {
-		webhookTemplate = webhookTemplate + defaultingWebhookTemplate
-	}
-	if f.Validating {
-		webhookTemplate = webhookTemplate + validatingWebhookTemplate
-	}
 	f.TemplateBody = webhookTemplate
 
 	f.IfExistsAction = file.Error
 
-	f.GroupDomainWithDash = strings.Replace(f.Resource.Domain, ".", "-", -1)
+	f.GroupDomainWithDash = strings.Replace(f.Resource.QualifiedGroup(), ".", "-", -1)
 
 	return nil
 }
 
-const (
-	webhookTemplate = `{{ .Boilerplate }}
+//nolint:lll
+const webhookTemplate = `{{ .Boilerplate }}
 
 package {{ .Resource.Version }}
 
 import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	{{- if .Validating }}
+	{{- if .Resource.Webhooks.Validation }}
 	"k8s.io/apimachinery/pkg/runtime"
 	{{- end }}
-	{{- if or .Validating .Defaulting }}
+	{{- if or .Resource.Webhooks.Validation .Resource.Webhooks.Defaulting }}
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	{{- end }}
 )
@@ -96,11 +84,9 @@ func (r *{{ .Resource.Kind }}) SetupWebhookWithManager(mgr ctrl.Manager) error {
 }
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-`
 
-	//nolint:lll
-	defaultingWebhookTemplate = `
-// +kubebuilder:webhook:path=/mutate-{{ .GroupDomainWithDash }}-{{ .Resource.Version }}-{{ lower .Resource.Kind }},mutating=true,failurePolicy=fail,groups={{ .Resource.Domain }},resources={{ .Resource.Plural }},verbs=create;update,versions={{ .Resource.Version }},name=m{{ lower .Resource.Kind }}.kb.io
+{{ if .Resource.Webhooks.Defaulting -}}
+// +kubebuilder:webhook:path=/mutate-{{ .GroupDomainWithDash }}-{{ .Resource.Version }}-{{ lower .Resource.Kind }},mutating=true,failurePolicy=fail,groups={{ .Resource.QualifiedGroup }},resources={{ .Resource.Plural }},verbs=create;update,versions={{ .Resource.Version }},name=m{{ lower .Resource.Kind }}.kb.io
 
 var _ webhook.Defaulter = &{{ .Resource.Kind }}{}
 
@@ -110,11 +96,11 @@ func (r *{{ .Resource.Kind }}) Default() {
 
 	// TODO(user): fill in your defaulting logic.
 }
-`
-	//nolint:lll
-	validatingWebhookTemplate = `
+
+{{ end -}}
+{{ if .Resource.Webhooks.Validation -}}
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:verbs=create;update,path=/validate-{{ .GroupDomainWithDash }}-{{ .Resource.Version }}-{{ lower .Resource.Kind }},mutating=false,failurePolicy=fail,groups={{ .Resource.Domain }},resources={{ .Resource.Plural }},versions={{ .Resource.Version }},name=v{{ lower .Resource.Kind }}.kb.io
+// +kubebuilder:webhook:verbs=create;update,path=/validate-{{ .GroupDomainWithDash }}-{{ .Resource.Version }}-{{ lower .Resource.Kind }},mutating=false,failurePolicy=fail,groups={{ .Resource.QualifiedGroup }},resources={{ .Resource.Plural }},versions={{ .Resource.Version }},name=v{{ lower .Resource.Kind }}.kb.io
 
 var _ webhook.Validator = &{{ .Resource.Kind }}{}
 
@@ -141,5 +127,6 @@ func (r *{{ .Resource.Kind }}) ValidateDelete() error {
 	// TODO(user): fill in your validation logic upon object deletion.
 	return nil
 }
+
+{{ end -}}
 `
-)

@@ -34,9 +34,6 @@ type webhookScaffolder struct {
 	config      *config.Config
 	boilerplate string
 	resource    *resource.Resource
-
-	// v2
-	defaulting, validation, conversion bool
 }
 
 // NewWebhookScaffolder returns a new Scaffolder for v2 webhook creation operations
@@ -44,30 +41,18 @@ func NewWebhookScaffolder(
 	config *config.Config,
 	boilerplate string,
 	resource *resource.Resource,
-	defaulting bool,
-	validation bool,
-	conversion bool,
 ) cmdutil.Scaffolder {
 	return &webhookScaffolder{
 		config:      config,
 		boilerplate: boilerplate,
 		resource:    resource,
-		defaulting:  defaulting,
-		validation:  validation,
-		conversion:  conversion,
 	}
 }
 
 // Scaffold implements Scaffolder
 func (s *webhookScaffolder) Scaffold() error {
 	fmt.Println("Writing scaffold for you to edit...")
-
-	switch {
-	case s.config.IsV2(), s.config.IsV3():
-		return s.scaffold()
-	default:
-		return fmt.Errorf("unknown project version %v", s.config.Version)
-	}
+	return s.scaffold()
 }
 
 func (s *webhookScaffolder) newUniverse() *model.Universe {
@@ -79,17 +64,27 @@ func (s *webhookScaffolder) newUniverse() *model.Universe {
 }
 
 func (s *webhookScaffolder) scaffold() error {
-	if s.conversion {
-		fmt.Println(`Webhook server has been set up for you.
-You need to implement the conversion.Hub and conversion.Convertible interfaces for your CRD types.`)
+	doConversion := s.resource.Webhooks.Conversion
+
+	if s.config.IsV3() {
+		var err error
+		s.resource, err = s.config.UpdateResources(s.resource)
+		if err != nil {
+			return fmt.Errorf("error updating resources in config: %w", err)
+		}
 	}
 
 	if err := machinery.NewScaffold().Execute(
 		s.newUniverse(),
-		&api.Webhook{Defaulting: s.defaulting, Validating: s.validation},
+		&api.Webhook{},
 		&templates.MainUpdater{WireWebhook: true},
 	); err != nil {
 		return err
+	}
+
+	if doConversion {
+		fmt.Println(`Webhook server has been set up for you.
+You need to implement the conversion.Hub and conversion.Convertible interfaces for your CRD types.`)
 	}
 
 	return nil

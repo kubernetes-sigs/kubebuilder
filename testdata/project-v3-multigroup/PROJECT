@@ -4,40 +4,87 @@ multigroup: true
 projectName: project-v3-multigroup
 repo: sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup
 resources:
-- crdVersion: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: testproject.org
   group: crew
   kind: Captain
   version: v1
-  webhookVersion: v1
-- crdVersion: v1
+  webhooks:
+    defaulting: true
+    validating: true
+    webhookVersion: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: testproject.org
   group: ship
   kind: Frigate
   version: v1beta1
-  webhookVersion: v1
-- crdVersion: v1
+  webhooks:
+    conversion: true
+    webhookVersion: v1
+- api:
+    crdVersion: v1
+  controller: true
+  domain: testproject.org
   group: ship
   kind: Destroyer
   version: v1
-  webhookVersion: v1
-- crdVersion: v1
+  webhooks:
+    defaulting: true
+    webhookVersion: v1
+- api:
+    crdVersion: v1
+  controller: true
+  domain: testproject.org
   group: ship
   kind: Cruiser
   version: v2alpha1
-  webhookVersion: v1
-- crdVersion: v1
+  webhooks:
+    validating: true
+    webhookVersion: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: testproject.org
   group: sea-creatures
   kind: Kraken
   version: v1beta1
-- crdVersion: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: testproject.org
   group: sea-creatures
   kind: Leviathan
   version: v1beta2
-- crdVersion: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: testproject.org
   group: foo.policy
   kind: HealthCheckPolicy
   version: v1
-- crdVersion: v1
+- controller: true
+  group: apps
+  kind: Pod
+  path: k8s.io/api/apps/v1
+  version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: testproject.org
   kind: Lakers
   version: v1
-  webhookVersion: v1
+  webhooks:
+    defaulting: true
+    validating: true
+    webhookVersion: v1
 version: 3-alpha

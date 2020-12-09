@@ -47,10 +47,6 @@ type apiScaffolder struct {
 	resource    *resource.Resource
 	// plugins is the list of plugins we should allow to transform our generated scaffolding
 	plugins []model.Plugin
-	// doResource indicates whether to scaffold API Resource or not
-	doResource bool
-	// doController indicates whether to scaffold controller files or not
-	doController bool
 }
 
 // NewAPIScaffolder returns a new Scaffolder for API/controller creation operations
@@ -58,29 +54,20 @@ func NewAPIScaffolder(
 	config *config.Config,
 	boilerplate string,
 	res *resource.Resource,
-	doResource, doController bool,
 	plugins []model.Plugin,
 ) cmdutil.Scaffolder {
 	return &apiScaffolder{
-		config:       config,
-		boilerplate:  boilerplate,
-		resource:     res,
-		plugins:      plugins,
-		doResource:   doResource,
-		doController: doController,
+		config:      config,
+		boilerplate: boilerplate,
+		resource:    res,
+		plugins:     plugins,
 	}
 }
 
 // Scaffold implements Scaffolder
 func (s *apiScaffolder) Scaffold() error {
 	fmt.Println("Writing scaffold for you to edit...")
-
-	switch {
-	case s.config.IsV2(), s.config.IsV3():
-		return s.scaffold()
-	default:
-		return fmt.Errorf("unknown project version %v", s.config.Version)
-	}
+	return s.scaffold()
 }
 
 func (s *apiScaffolder) newUniverse() *model.Universe {
@@ -92,8 +79,15 @@ func (s *apiScaffolder) newUniverse() *model.Universe {
 }
 
 func (s *apiScaffolder) scaffold() error {
-	if s.doResource {
-		s.config.UpdateResources(s.resource.GVK())
+	// Check if we need to do the API and controller before updating with previously existing info
+	doAPI := s.resource.API != nil && s.resource.API.Version != ""
+	doController := s.resource.Controller
+
+	if doAPI {
+		// Update the known data about resource
+		if _, err := s.config.UpdateResources(s.resource); err != nil {
+			return fmt.Errorf("error updating resources in config: %w", err)
+		}
 
 		if err := machinery.NewScaffold(s.plugins...).Execute(
 			s.newUniverse(),
@@ -105,7 +99,7 @@ func (s *apiScaffolder) scaffold() error {
 			&patches.EnableWebhookPatch{},
 			&patches.EnableCAInjectionPatch{},
 		); err != nil {
-			return fmt.Errorf("error scaffolding APIs: %v", err)
+			return fmt.Errorf("error scaffolding APIs: %w", err)
 		}
 
 		if err := machinery.NewScaffold().Execute(
@@ -113,26 +107,25 @@ func (s *apiScaffolder) scaffold() error {
 			&crd.Kustomization{},
 			&crd.KustomizeConfig{},
 		); err != nil {
-			return fmt.Errorf("error scaffolding kustomization: %v", err)
+			return fmt.Errorf("error scaffolding kustomization: %w", err)
 		}
-
 	}
 
-	if s.doController {
+	if doController {
 		if err := machinery.NewScaffold(s.plugins...).Execute(
 			s.newUniverse(),
-			&controllers.SuiteTest{WireResource: s.doResource},
-			&controllers.Controller{WireResource: s.doResource},
+			&controllers.SuiteTest{WireResource: doAPI},
+			&controllers.Controller{WireResource: doAPI},
 		); err != nil {
-			return fmt.Errorf("error scaffolding controller: %v", err)
+			return fmt.Errorf("error scaffolding controller: %w", err)
 		}
 	}
 
 	if err := machinery.NewScaffold(s.plugins...).Execute(
 		s.newUniverse(),
-		&templates.MainUpdater{WireResource: s.doResource, WireController: s.doController},
+		&templates.MainUpdater{WireResource: doAPI, WireController: doController},
 	); err != nil {
-		return fmt.Errorf("error updating main.go: %v", err)
+		return fmt.Errorf("error updating main.go: %w", err)
 	}
 
 	return nil

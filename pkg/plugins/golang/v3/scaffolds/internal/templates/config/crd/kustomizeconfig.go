@@ -29,9 +29,7 @@ var _ file.Template = &KustomizeConfig{}
 // KustomizeConfig  scaffolds a file that configures the kustomization for the crd folder
 type KustomizeConfig struct {
 	file.TemplateMixin
-
-	// Version of CRD patch generated.
-	CRDVersion string
+	file.ResourceMixin
 }
 
 // SetTemplateDefaults implements file.Template
@@ -41,10 +39,6 @@ func (f *KustomizeConfig) SetTemplateDefaults() error {
 	}
 
 	f.TemplateBody = kustomizeConfigTemplate
-
-	if f.CRDVersion == "" {
-		f.CRDVersion = v1
-	}
 
 	return nil
 }
@@ -56,9 +50,9 @@ nameReference:
   version: v1
   fieldSpecs:
   - kind: CustomResourceDefinition
-    version: {{ .CRDVersion }}
+    version: {{ .Resource.API.Version }}
     group: apiextensions.k8s.io
-    {{- if ne .CRDVersion "v1" }}
+    {{- if ne .Resource.API.Version "v1" }}
     path: spec/conversion/webhookClientConfig/service/name
     {{- else }}
     path: spec/conversion/webhook/clientConfig/service/name
@@ -66,9 +60,9 @@ nameReference:
 
 namespace:
 - kind: CustomResourceDefinition
-  version: {{ .CRDVersion }}
+  version: {{ .Resource.API.Version }}
   group: apiextensions.k8s.io
-  {{- if ne .CRDVersion "v1" }}
+  {{- if ne .Resource.API.Version "v1" }}
   path: spec/conversion/webhookClientConfig/service/namespace
   {{- else }}
   path: spec/conversion/webhook/clientConfig/service/namespace

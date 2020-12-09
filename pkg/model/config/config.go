@@ -21,6 +21,8 @@ import (
 	"strings"
 
 	"sigs.k8s.io/yaml"
+
+	"sigs.k8s.io/kubebuilder/v2/pkg/model/resource"
 )
 
 // Scaffolding versions
@@ -30,6 +32,8 @@ const (
 )
 
 // Config is the unmarshalled representation of the configuration file
+// NOTE: when adding new fields, add them to validate to ensure that
+//   they are only found in the corresponding versions.
 type Config struct {
 	// Version is the project version, defaults to "1" (backwards compatibility)
 	Version string `json:"version,omitempty"`
@@ -44,8 +48,7 @@ type Config struct {
 	ProjectName string `json:"projectName,omitempty"`
 
 	// Resources tracks scaffolded resources in the project
-	// This info is tracked only in project with version 2
-	Resources []GVK `json:"resources,omitempty"`
+	Resources []*resource.Resource `json:"resources,omitempty"`
 
 	// Multigroup tracks if the project has more than one group
 	MultiGroup bool `json:"multigroup,omitempty"`
@@ -78,39 +81,105 @@ func (c Config) IsV3() bool {
 	return c.Version == Version3Alpha
 }
 
-// HasResource returns true if API resource is already tracked
-func (c Config) HasResource(target GVK) bool {
-	// Return true if the target resource is found in the tracked resources
-	for _, r := range c.Resources {
-		if r.isEqualTo(target) {
-			return true
+type unsupportedFieldError struct {
+	fieldName string
+	version   string
+}
+
+func (e unsupportedFieldError) Error() string {
+	return fmt.Sprintf("`%s` field found for %s", e.fieldName, e.version)
+}
+
+func (c Config) errorForField(fieldName string) error {
+	return unsupportedFieldError{fieldName: fieldName, version: c.Version}
+}
+
+// validate checks if a Config is valid or it has some fields that shouldn't be present for that version
+func (c Config) validate() error {
+	if c.IsV2() {
+		if c.ProjectName != "" {
+			return c.errorForField("projectName")
+		}
+		for _, r := range c.Resources {
+			if r.Domain != "" {
+				return c.errorForField("resources[].domain")
+			}
+			if r.Plural != "" {
+				return c.errorForField("resources[].plural")
+			}
+			if r.Path != "" {
+				return c.errorForField("resources[].plural")
+			}
+			if r.API != nil {
+				return c.errorForField("resources[].api")
+			}
+			if r.Controller {
+				return c.errorForField("resources[].controller")
+			}
+			if r.Webhooks != nil {
+				return c.errorForField("resources[].webhooks")
+			}
+		}
+		if c.ComponentConfig {
+			return c.errorForField("componentConfig")
+		}
+		if c.Layout != "" {
+			return c.errorForField("layout")
+		}
+		if len(c.Plugins) != 0 {
+			return c.errorForField("plugins")
 		}
 	}
 
-	// Return false otherwise
-	return false
+	return nil
 }
 
-// UpdateResources either adds gvk to the tracked set or, if the resource already exists,
-// updates the the equivalent resource in the set.
-func (c *Config) UpdateResources(gvk GVK) {
+// GetResource returns the requested resource if it is already tracked
+func (c Config) GetResource(target resource.GVK) *resource.Resource {
+	// Return the target resource if it is found in the tracked resources
+	for _, r := range c.Resources {
+		if r.GVK().IsEqualTo(target) {
+			return r
+		}
+	}
+
+	// Return nil otherwise
+	return nil
+}
+
+// UpdateResources adds the resource to the tracked ones or updates it as needed
+func (c *Config) UpdateResources(res *resource.Resource) (*resource.Resource, error) {
+	// Create a copy of the resource to ensure we do not accidentally modify it
+	resCopy := *res
+
+	// V2 only requires group, version and kind fields
+	if c.IsV2() {
+		resCopy = resource.Resource{
+			Group:   resCopy.Group,
+			Version: resCopy.Version,
+			Kind:    resCopy.Kind,
+		}
+	}
+
+	gvk := resCopy.GVK()
 	// If the resource already exists, update it.
 	for i, r := range c.Resources {
-		if r.isEqualTo(gvk) {
-			c.Resources[i].merge(gvk)
-			return
+		if r.GVK().IsEqualTo(gvk) {
+			err := c.Resources[i].Update(&resCopy)
+			return c.Resources[i], err
 		}
 	}
 
 	// The resource does not exist, append the resource to the tracked ones.
-	c.Resources = append(c.Resources, gvk)
+	c.Resources = append(c.Resources, &resCopy)
+	return res, nil
 }
 
 // HasGroup returns true if group is already tracked
 func (c Config) HasGroup(group string) bool {
 	// Return true if the target group is found in the tracked resources
 	for _, r := range c.Resources {
-		if strings.EqualFold(group, r.Group) {
+		if strings.EqualFold(group, r.QualifiedGroup()) {
 			return true
 		}
 	}
@@ -136,9 +205,13 @@ func (c Config) resourceAPIVersionCompatible(verType, version string) bool {
 		var currVersion string
 		switch verType {
 		case "crd":
-			currVersion = res.CRDVersion
+			if res.API != nil {
+				currVersion = res.API.Version
+			}
 		case "webhook":
-			currVersion = res.WebhookVersion
+			if res.Webhooks != nil {
+				currVersion = res.Webhooks.Version
+			}
 		}
 		if currVersion != "" && version != currVersion {
 			return false
@@ -147,44 +220,84 @@ func (c Config) resourceAPIVersionCompatible(verType, version string) bool {
 	return true
 }
 
-// GVK contains information about scaffolded resources
-type GVK struct {
-	Group   string `json:"group,omitempty"`
-	Version string `json:"version,omitempty"`
-	Kind    string `json:"kind,omitempty"`
-
-	// CRDVersion holds the CustomResourceDefinition API version used for the GVK.
-	CRDVersion string `json:"crdVersion,omitempty"`
-	// WebhookVersion holds the {Validating,Mutating}WebhookConfiguration API version used for the GVK.
-	WebhookVersion string `json:"webhookVersion,omitempty"`
+// simplify omits some fields that can be restored at unmarshalling.
+func (c *Config) simplify() {
+	if c.IsV3() {
+		for i, r := range c.Resources {
+			// If the plural is regular, omit it.
+			if r.Plural == resource.RegularPlural(r.Kind) {
+				c.Resources[i].Plural = ""
+			}
+			// If the path is the default location, omit it.
+			if r.Path == resource.LocalPath(c.Repo, r.Group, r.Version, c.MultiGroup) {
+				c.Resources[i].Path = ""
+			}
+			// If API is empty, omit it (prevents `api: {}`).
+			if r.API != nil && r.API.IsEmpty() {
+				c.Resources[i].API = nil
+			}
+			// If Webhooks is empty, omit it (prevents `webhooks: {}`).
+			if r.Webhooks != nil && r.Webhooks.IsEmpty() {
+				c.Resources[i].Webhooks = nil
+			}
+		}
+	}
 }
 
-// isEqualTo compares it with another resource
-func (r GVK) isEqualTo(other GVK) bool {
-	return r.Group == other.Group &&
-		r.Version == other.Version &&
-		r.Kind == other.Kind
+// restore sets the omitted values that were simplified during marshalling.
+func (c *Config) restore() {
+	if c.IsV3() {
+		for i, r := range c.Resources {
+			// Restore regular plural that were omitted.
+			if r.Plural == "" {
+				c.Resources[i].Plural = resource.RegularPlural(r.Kind)
+			}
+			// Restore the default location that was omitted.
+			if r.Path == "" {
+				c.Resources[i].Path = resource.LocalPath(c.Repo, r.Group, r.Version, c.MultiGroup)
+			}
+			// Create a pointer to an empty struct instead of nil to prevent panics.
+			if r.API == nil {
+				c.Resources[i].API = &resource.API{}
+			}
+			// Create a pointer to an empty struct instead of nil to prevent panics.
+			if r.Webhooks == nil {
+				c.Resources[i].Webhooks = &resource.Webhooks{}
+			}
+		}
+	}
 }
 
-// merge combines fields of two GVKs that have matching group, version, and kind,
-// favoring the receiver's values.
-func (r *GVK) merge(other GVK) {
-	if r.CRDVersion == "" && other.CRDVersion != "" {
-		r.CRDVersion = other.CRDVersion
-	}
-	if r.WebhookVersion == "" && other.WebhookVersion != "" {
-		r.WebhookVersion = other.WebhookVersion
-	}
+type marshalError struct {
+	error
+}
+
+func (e marshalError) Error() string {
+	return fmt.Sprintf("error marshalling project configuration: %s", e.error.Error())
+}
+
+func (e marshalError) Unwrap() error {
+	return e.error
 }
 
 // Marshal returns the bytes of c.
 func (c Config) Marshal() ([]byte, error) {
-	// Ignore extra fields at first.
+	// Validate to verify that no unsupported field is found
+	if err := c.validate(); err != nil {
+		return nil, marshalError{err}
+	}
+
+	// Make a copy of the config in order not to mess with the real configuration.
 	cfg := c
+
+	// Omit those fields that we can restore at unmarshalling to reduce the size of the project configuration file
+	cfg.simplify()
+
+	// Ignore extra fields at first when marshalling.
 	cfg.Plugins = nil
 	content, err := yaml.Marshal(cfg)
 	if err != nil {
-		return nil, fmt.Errorf("error marshalling project configuration: %v", err)
+		return nil, marshalError{err}
 	}
 
 	// Empty config strings are "{}" due to the map field.
@@ -194,31 +307,43 @@ func (c Config) Marshal() ([]byte, error) {
 
 	// Append extra fields to put them at the config's bottom.
 	if len(c.Plugins) != 0 {
-		// Unless the project version is v2 which does not support a plugins field.
-		if cfg.IsV2() {
-			return nil, fmt.Errorf("error marshalling project configuration: plugin field found for v2")
-		}
-
 		pluginConfigBytes, err := yaml.Marshal(Config{Plugins: c.Plugins})
 		if err != nil {
-			return nil, fmt.Errorf("error marshalling project configuration extra fields: %v", err)
+			return nil, marshalError{err}
 		}
+
 		content = append(content, pluginConfigBytes...)
 	}
 
 	return content, nil
 }
 
-// Unmarshal unmarshals the bytes of a Config into c.
+type unmarshalError struct {
+	error
+}
+
+func (e unmarshalError) Error() string {
+	return fmt.Sprintf("error unmarshalling project configuration: %s", e.error.Error())
+}
+
+func (e unmarshalError) Unwrap() error {
+	return e.error
+}
+
+// Unmarshal unmarshalls the bytes of a Config into c.
 func (c *Config) Unmarshal(b []byte) error {
 	if err := yaml.UnmarshalStrict(b, c); err != nil {
-		return fmt.Errorf("error unmarshalling project configuration: %v", err)
+		return unmarshalError{err}
 	}
 
-	// Project versions < v3 do not support a plugins field.
-	if !c.IsV3() {
-		c.Plugins = nil
+	// To simplify the project configuration files we have omitted some fields that could be restored, do it now
+	c.restore()
+
+	// Validate to verify that no unsupported field is found
+	if err := c.validate(); err != nil {
+		return unmarshalError{err}
 	}
+
 	return nil
 }
 
@@ -242,7 +367,7 @@ func (c *Config) EncodePluginConfig(key string, configObj interface{}) error {
 		return fmt.Errorf("failed to unmarshal %T object bytes: %s", configObj, err)
 	}
 	if c.Plugins == nil {
-		c.Plugins = make(map[string]pluginConfig)
+		c.Plugins = make(PluginConfigs)
 	}
 	c.Plugins[key] = fields
 	return nil

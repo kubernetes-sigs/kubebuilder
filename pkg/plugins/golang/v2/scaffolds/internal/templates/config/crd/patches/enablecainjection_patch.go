@@ -49,5 +49,5 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: $(CERTIFICATE_NAMESPACE)/$(CERTIFICATE_NAME)
-  name: {{ .Resource.Plural }}.{{ .Resource.Domain }}
+  name: {{ .Resource.Plural }}.{{ .Resource.QualifiedGroup }}
 `

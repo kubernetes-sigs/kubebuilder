@@ -14,16 +14,23 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package config
+package resource
 
-import (
-	"testing"
+// GVK holds the unique identifier of a resource
+type GVK struct {
+	// Group is the qualified resource's group.
+	Group string
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-)
+	// Version is the resource's version.
+	Version string
 
-func TestConfig(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Config Suite")
+	// Kind is the resource's kind.
+	Kind string
+}
+
+// IsEqualTo compares two GVK objects.
+func (a GVK) IsEqualTo(b GVK) bool {
+	return a.Group == b.Group &&
+		a.Version == b.Version &&
+		a.Kind == b.Kind
 }
