@@ -1,16 +1,14 @@
-# Artifacts
+# 制品
 
-Kubebuilder publishes test binaries and container images in addition
-to the main binary releases.
 
-## Test Binaries
+除了主要的二进制版本外 Kubebuilder 还发布测试二进制文件和容器镜像。
 
-You can find all of the test binaries at `https://go.kubebuilder.io/test-tools`.
-You can find individual test binaries at `https://go.kubebuilder.io/test-tools/${version}/${os}/${arch}`.
+## 测试二进制文件
 
-## Container Images
+你可以在 `https://go.kubebuilder.io/test-tools` 中找到所有的测试二进制文件。
+你可以在 `https://go.kubebuilder.io/test-tools/${version}/${os}/${arch}` 找到单独的二进制文件。
 
-You can find all container images for your os at `https://go.kubebuilder.io/images/${os}`
-or at `gcr.io/kubebuilder/thirdparty-${os}`.
-You can find individual container images at `https://go.kubebuilder.io/images/${os}/${version}`
-or at `gcr.io/kubebuilder/thirdparty-${os}:${version}`.
+## 容器镜像
+
+你可以在 `https://go.kubebuilder.io/images/${os}` 或者 `gcr.io/kubebuilder/thirdparty-${os}` 中找到与你系统相对应的所有容器镜像。
+你可以在 `https://go.kubebuilder.io/images/${os}/${version}` 或者 `gcr.io/kubebuilder/thirdparty-${os}:${version}` 中找到单独的容器镜像。

@@ -16,10 +16,14 @@
 
 set -ex
 
-(
-    pushd ./utils
-    go build -o ../../../bin/marker-docs ./markerdocs
-    popd
-) &>/dev/null
+if [ -z "$IN_DOCKER" ]; then
+    (
+        pushd ./utils
+        go build -o ../../../bin/marker-docs ./markerdocs
+        popd
+    ) &>/dev/null
 
-../../bin/marker-docs "$@"
+    ../../bin/marker-docs "$@"
+else
+    marker-docs "$@"
+fi

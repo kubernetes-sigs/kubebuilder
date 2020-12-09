@@ -36,12 +36,9 @@ import (
 // +kubebuilder:docs-gen:collapse=Imports
 
 /*
-The first difference to notice is that kubebuilder has added the new API
-group's package (`batchv1`) to our scheme.  This means that we can use those
-objects in our controller.
+要注意的第一个区别是 kubebuilder 已经添加了一组新的 API 包（`batchv1`）到 scheme。这意味着可以在我们的控制器中使用这些对象。
 
-If we would be using any other CRD we would have to add their scheme the same way.
-Builtin types such as Job have their scheme added by `clientgoscheme`.
+如果我们要使用任何其他的 CRD，我们必须用相同的方法添加它们的 scheme。内置的类型例如 Job 就添加了它自己的 scheme `clientgoscheme`。
 */
 var (
 	scheme   = runtime.NewScheme()
@@ -56,8 +53,7 @@ func init() {
 }
 
 /*
-The other thing that's changed is that kubebuilder has added a block calling our
-CronJob controller's `SetupWithManager` method.
+另一个变化是 kubebuilder 已经添加了一个阻塞调用我们的 CornJob 控制器的 `SetupWithManager` 方法。
 */
 
 func main() {
@@ -101,12 +97,9 @@ func main() {
 	}
 
 	/*
-		We'll also set up webhooks for our type, which we'll talk about next.
-		We just need to add them to the manager.  Since we might want to run
-		the webhooks separately, or not run them when testing our controller
-		locally, we'll put them behind an environment variable.
+	    我们也会为我们的类型设置 webhook，接下来我们会谈到它。我们只需要将他们添加到 manager。因为我们想分开运行 webhook，而不是在本地测试我们的控制器时运行它们，我们会将它们配置到环境变量中。
 
-		We'll just make sure to set `ENABLE_WEBHOOKS=false` when we run locally.
+		当我们本地运行的时候只需确保 `ENABLE_WEBHOOKS=false`。
 	*/
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		if err = (&batchv1.CronJob{}).SetupWebhookWithManager(mgr); err != nil {

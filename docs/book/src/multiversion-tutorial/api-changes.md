@@ -1,53 +1,41 @@
-# Changing things up
+# 修改
 
-A fairly common change in a Kubernetes API is to take some data that used
-to be unstructured or stored in some special string format, and change it
-to structured data.   Our `schedule` field fits the bill quite nicely for
-this -- right now, in `v1`, our schedules look like
+Kubernetes API 中一个相当常见的改变是获取一些非结构化的或者存储在一些特殊的字符串格式的数据，
+并将其修改为结构化的数据。我们的 `schedule` 字段非常适合这个案例 -- 现在，在 `v1` 中，我们的 schedules 是这样的
 
 ```yaml
 schedule: "*/1 * * * *"
 ```
 
-That's a pretty textbook example of a special string format (it's also
-pretty unreadable unless you're a Unix sysadmin).
+这是一个非常典型的特殊字符串格式的例子（除非你是一个 Unix 系统管理员，否则非常难以理解它）。
 
-Let's make it a bit more structured.  According to the our [CronJob
-code][cronjob-sched-code], we support "standard" Cron format.
+让我们来使它更结构化一点。根据我们 [CronJob 代码][cronjob-sched-code]，我们支持"standard" Cron 格式。
 
-In Kubernetes, **all versions must be safely round-tripable through each
-other**.  This means that if we convert from version 1 to version 2, and
-then back to version 1, we must not lose information.  Thus, any change we
-make to our API must be compatible with whatever we supported in v1, and
-also need to make sure anything we add in v2 is supported in v1.  In some
-cases, this means we need to add new fields to v1, but in our case, we
-won't have to, since we're not adding new functionality.
+在 Kubernetes 里，**所有版本都必须通过彼此进行安全的往返**。这意味着如果我们从版本 1 转换到版本 2，然后回退到版本 1，我们一定会失去一些信息。因此，我们对 API 所做的任何更改都必须与 v1 中所支持的内容兼容还需要确保我们添加到 v2 中的任何内容在 v1 中都得到支持。某些情况下，这意味着我们需要向 V1 中添加新的字段，但是在我们这个例子中，我们不会这么做，因为我们没有添加新的功能。
 
-Keeping all that in mind, let's convert our example above to be
-slightly more structured:
+记住这些，让我们将上面的示例转换为稍微更结构化一点：
 
 ```yaml
 schedule:
   minute: */1
 ```
 
-Now, at least, we've got labels for each of our fields, but we can still
-easily support all the different syntax for each field.
+现在，至少我们每个字段都有了标签，但是我们仍然可以为每个字段轻松地支持所有不同的语法。
 
-We'll need a new API version for this change.  Let's call it v2:
+对这个改变我们将需要一个新的 API 版本。我们称它为 v2:
 
 ```shell
 kubebuilder create api --group batch --version v2 --kind CronJob
 ```
 
-Now, let's copy over our existing types, and make the change:
+现在，让我们复制已经存在的类型，并做一些改变：
 
 {{#literatego ./testdata/project/api/v2/cronjob_types.go}}
 
-## Storage Versions
+## 存储版本
 
 {{#literatego ./testdata/project/api/v1/cronjob_types.go}}
 
-Now that we've got our types in place, we'll need to set up conversion...
+现在我们已经准备好了类型，接下来需要设置转换。
 
 [cronjob-sched-code]: /TODO.md

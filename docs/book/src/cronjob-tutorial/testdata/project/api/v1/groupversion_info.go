@@ -15,15 +15,11 @@ limitations under the License.
 */
 // +kubebuilder:docs-gen:collapse=Apache License
 
-/*
-First, we have some *package-level* markers that denote that there are
-Kubernetes objects in this package, and that this package represents the group
-`batch.tutorial.kubebuilder.io`. The `object` generator makes use of the
-former, while the latter is used by the CRD generator to generate the right
-metadata for the CRDs it creates from this package.
+/* 
+首先，我们有一些*包*级别的标记的标记,表示存在这个包中的 Kubernetes 对象，并且这个包表示 `batch.tutorial.kubebuilder.io` 组。`object` 生成器使用前者，而后者是由 CRD 生成器来生成的，它会从这个包创建 CRD 的元数据。
 */
 
-// Package v1 contains API Schema definitions for the batch v1 API group
+// 包 v1 包含了 batch v1 API 这个组的 API Schema 定义。
 // +kubebuilder:object:generate=true
 // +groupName=batch.tutorial.kubebuilder.io
 package v1
@@ -34,18 +30,17 @@ import (
 )
 
 /*
-Then, we have the commonly useful variables that help us set up our Scheme.
-Since we need to use all the types in this package in our controller, it's
-helpful (and the convention) to have a convenient method to add all the types to
-some other `Scheme`. SchemeBuilder makes this easy for us.
+然后，我们有一些常见且常用的变量来帮助我们设置我们的 Scheme 。因为我们需要在这个包的 controller 中用到所有的类型，
+用一个方便的方法给其他 `Scheme` 来添加所有的类型，是非常有用的(而且也是一种惯例)。SchemeBuilder 能够帮助我们轻松的实现这个事情。
 */
+
 var (
-	// GroupVersion is group version used to register these objects
+	// GroupVersion 是用来注册这些对象的 group version。
 	GroupVersion = schema.GroupVersion{Group: "batch.tutorial.kubebuilder.io", Version: "v1"}
 
-	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
+	// SchemeBuilder 被用来给 GroupVersionKind scheme 添加 go 类型。
 	SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}
 
-	// AddToScheme adds the types in this group-version to the given scheme.
+	// AddToScheme 将 group-version 中的类型添加到指定的 scheme 中。
 	AddToScheme = SchemeBuilder.AddToScheme
 )

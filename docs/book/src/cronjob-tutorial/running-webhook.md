@@ -1,73 +1,64 @@
-# Deploying Admission Webhooks
+# 部署 Admission Webhooks
 
 ## Kind Cluster
 
-It is recommended to develop your webhook with a
-[kind](../reference/kind.md) cluster for faster iteration.
-Why?
+建议使用 [kind](../reference/kind.md) 集群来更快速的开发 webhook。
+为什么呢？
 
-- You can bring up a multi-node cluster locally within 1 minute.
-- You can tear it down in seconds.
-- You don't need to push your images to remote registry.
+- 你可以在 1 分钟内本地启动有多个节点的集群。
+- 你可以在几秒中内关闭它。
+- 你不需要把你的镜像推送到远程仓库。
 
-## Cert Manager
+## 证书管理
 
-You need to follow [this](./cert-manager.md) to install the cert manager bundle.
+你要遵循[这个](./cert-manager.md)来安装证书管理器。
 
-## Build your image
 
-Run the following command to build your image locally.
+## 构建你的镜像
+
+运行下面的命令来本地构建你的镜像。
 
 ```bash
 make docker-build
 ```
 
-You don't need to push the image to a remote container registry if you are using
-a kind cluster. You can directly load your local image to your kind cluster:
+如果你使用的是 kind 集群，那么你不需要把镜像推送到远程容器仓库。你可以直接加载你本地的镜像到你的 kind 集群：
 
 ```bash
 kind load docker-image your-image-name:your-tag
 ```
 
-## Deploy Webhooks
+## 部署 Webhooks
 
-You need to enable the webhook and cert manager configuration through kustomize.
-`config/default/kustomization.yaml` should now look like the following:
+你需要通过启用 webhook 和证书管理配置。`config/default/kustomization.yaml` 应该看起来是这样子的：
 
 ```yaml
 {{#include ./testdata/project/config/default/kustomization.yaml}}
 ```
 
-Now you can deploy it to your cluster by
+现在你可以通过下面的命令把它部署到你的集群中了：
 
 ```bash
 make deploy IMG=<some-registry>/<project-name>:tag
 ```
 
-Wait a while til the webhook pod comes up and the certificates are provisioned.
-It usually completes within 1 minute.
+等一会儿，webhook 的 pod 启动并且也提供了证书认证。这个过程通常需要 1 分钟。
 
-Now you can create a valid CronJob to test your webhooks. The creation should
-successfully go through.
+现在你可以创建一个有效的 CronJob 来测试你的 webhook。这个过程应该会顺利通过的。
 
 ```bash
 kubectl create -f config/samples/batch_v1_cronjob.yaml
 ```
 
-You can also try to create an invalid CronJob (e.g. use an ill-formatted
-schedule field). You should see a creation failure with a validation error.
+你也能试着创建一个无效的 CronJob（比如使用一个非法格式的调度字段）。你应该可以看到创建失败并且有验证错误信息。
 
 <aside class="note warning">
 
-<h1>The Bootstrapping Problem</h1>
+<h1>启动问题</h1>
 
-If you are deploying a webhook for pods in the same cluster, be
-careful about the bootstrapping problem, since the creation request of the
-webhook pod would be sent to the webhook pod itself, which hasn't come up yet.
+如果你在同一个集群为 pod 部署了一个 webhook，要留意以启动问题，因为创建 webhook pod 的请求可能会被发送到 webhook pod 它自己，而它自己还没有启动起来。
 
-To make it work, you can either use [namespaceSelector] if your kubernetes
-version is 1.9+ or use [objectSelector] if your kubernetes version is 1.15+ to
-skip itself.
+为了让它能正常工作，你可以使用选择器来跳过它自己，如果你的 kubernetes 版本是 1.9+ 的可以使用 [namespaceSelector]，如果你的 kubernetes 版本是 1.15+ 的使用 [objectSelector]。
 
 </aside>
 

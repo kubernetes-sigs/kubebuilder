@@ -8,20 +8,13 @@
         {{#if is_print }}
         <meta name="robots" content="noindex" />
         {{/if}}
-        {{#if base_url}}
-        <base href="{{ base_url }}">
-        {{/if}}
-
-
-        <!-- Custom HTML head -->
-        {{> head}}
 
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
         <meta name="description" content="{{ description }}">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff" />
 
-        <link rel="shortcut icon" href="{{ path_to_root }}/logos/favicon.png">
+        <link rel="shortcut icon" href="https://cloudnative.to/kubebuilder/logos/favicon.png">
         <link rel="stylesheet" href="{{ path_to_root }}css/variables.css">
         <link rel="stylesheet" href="{{ path_to_root }}css/general.css">
         <link rel="stylesheet" href="{{ path_to_root }}css/chrome.css">
@@ -29,9 +22,8 @@
 
         <!-- Fonts -->
         <link rel="stylesheet" href="{{ path_to_root }}FontAwesome/css/font-awesome.css">
-        {{#if copy_fonts}}
-        <link rel="stylesheet" href="{{ path_to_root }}fonts/fonts.css">
-        {{/if}}
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css">
+        <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:500" rel="stylesheet" type="text/css">
 
         <!-- Highlight.js Stylesheets -->
         <link rel="stylesheet" href="{{ path_to_root }}highlight.css">
@@ -60,11 +52,9 @@
             try {
                 var theme = localStorage.getItem('mdbook-theme');
                 var sidebar = localStorage.getItem('mdbook-sidebar');
-
                 if (theme.startsWith('"') && theme.endsWith('"')) {
                     localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
                 }
-
                 if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
                     localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
                 }
@@ -96,7 +86,7 @@
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
-            <div class="sidebar-scrollbox">
+            <div id="sidebar-scrollbox" class="sidebar-scrollbox">
                 {{#toc}}{{/toc}}
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
@@ -105,40 +95,41 @@
         <div id="page-wrapper" class="page-wrapper">
 
             <div class="page">
-                <div id="menu-bar-hover-placeholder"></div>
-                <div id="menu-bar" class="menu-bar sticky bordered">
-                    <div class="left-buttons">
-                        <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
-                            <i class="fa fa-bars"></i>
-                        </button>
-                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
-                            <i class="fa fa-paint-brush"></i>
-                        </button>
-                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
-                            <li role="none"><button role="menuitem" class="theme" id="light">{{ theme_option "Light" }}</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="rust">{{ theme_option "Rust" }}</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="coal">{{ theme_option "Coal" }}</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="navy">{{ theme_option "Navy" }}</button></li>
-                            <li role="none"><button role="menuitem" class="theme" id="ayu">{{ theme_option "Ayu" }}</button></li>
-                        </ul>
-                        {{#if search_enabled}}
-                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
-                            <i class="fa fa-search"></i>
-                        </button>
-                        {{/if}}
-                    </div>
+                <div id="menu-bar" class="menu-bar">
+                    <div id="menu-bar-sticky-container">
+                        <div class="left-buttons">
+                            <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                                <i class="fa fa-bars"></i>
+                            </button>
+                            <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                                <i class="fa fa-paint-brush"></i>
+                            </button>
+                            <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                                <li role="none"><button role="menuitem" class="theme" id="light">{{ theme_option "Light" }}</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="rust">{{ theme_option "Rust" }}</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="coal">{{ theme_option "Coal" }}</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="navy">{{ theme_option "Navy" }}</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="ayu">{{ theme_option "Ayu" }}</button></li>
+                            </ul>
+                            {{#if search_enabled}}
+                            <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                                <i class="fa fa-search"></i>
+                            </button>
+                            {{/if}}
+                        </div>
 
-                    <h1 class="menu-title"><img alt="{{ book_title }}" src="{{ path_to_root }}/logos/logo-single-line.png"></h1>
+                        <h1 class="menu-title"><img alt="{{ book_title }}" src="https://cloudnative.to/kubebuilder/logos/logo-single-line.png"></h1>
 
-                    <div class="right-buttons">
-                        <a href="{{ path_to_root }}print.html" title="Print this book" aria-label="Print this book">
-                            <i id="print-button" class="fa fa-print"></i>
-                        </a>
-                        {{#if git_repository_url}}
-                        <a href="{{git_repository_url}}" title="Git repository" aria-label="Git repository">
-                            <i id="git-repository-button" class="fa {{git_repository_icon}}"></i>
-                        </a>
-                        {{/if}}
+                        <div class="right-buttons">
+                            <a href="{{ path_to_root }}print.html" title="Print this book" aria-label="Print this book">
+                                <i id="print-button" class="fa fa-print"></i>
+                            </a>
+                            {{#if git_repository_url}}
+                            <a href="{{git_repository_url}}" title="Git repository" aria-label="Git repository">
+                                <i id="git-repository-button" class="fa {{git_repository_icon}}"></i>
+                            </a>
+                            {{/if}}
+                        </div>
                     </div>
                 </div>
 
@@ -192,13 +183,13 @@
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
                 {{#previous}}
-                    <a rel="prev" href="{{ path_to_root }}{{link}}" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a href="{{ path_to_root }}{{link}}" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
                 {{/previous}}
 
                 {{#next}}
-                    <a rel="next" href="{{ path_to_root }}{{link}}" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a href="{{ path_to_root }}{{link}}" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
                 {{/next}}
@@ -213,10 +204,9 @@
             socket.onmessage = function (event) {
                 if (event.data === "reload") {
                     socket.close();
-                    location.reload();
+                    location.reload(true); // force reload from server (not from cache)
                 }
             };
-
             window.onbeforeunload = function() {
                 socket.close();
             }
@@ -227,7 +217,6 @@
         <!-- Google Analytics Tag -->
         <script type="text/javascript">
             var localAddrs = ["localhost", "127.0.0.1", ""];
-
             // make sure we don't activate google analytics if the developer is
             // inspecting the book locally...
             if (localAddrs.indexOf(document.location.hostname) === -1) {
@@ -235,26 +224,25 @@
                 (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
                 m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
                 })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
-
                 ga('create', '{{google_analytics}}', 'auto');
                 ga('send', 'pageview');
             }
         </script>
         {{/if}}
 
-        {{#if playground_line_numbers}}
+        {{#if playpen_line_numbers}}
         <script type="text/javascript">
-            window.playground_line_numbers = true;
+            window.playpen_line_numbers = true;
+        </script>
+        {{/if}}
+        
+        {{#if playpen_copyable}}
+        <script type="text/javascript">
+            window.playpen_copyable = true;
         </script>
         {{/if}}
 
-        {{#if playground_copyable}}
-        <script type="text/javascript">
-            window.playground_copyable = true;
-        </script>
-        {{/if}}
-
-        {{#if playground_js}}
+        {{#if playpen_js}}
         <script src="{{ path_to_root }}ace.js" type="text/javascript" charset="utf-8"></script>
         <script src="{{ path_to_root }}editor.js" type="text/javascript" charset="utf-8"></script>
         <script src="{{ path_to_root }}mode-rust.js" type="text/javascript" charset="utf-8"></script>

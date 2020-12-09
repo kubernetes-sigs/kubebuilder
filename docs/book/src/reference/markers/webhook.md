@@ -1,7 +1,6 @@
 # Webhook
 
-These markers describe how [webhook configuration](../webhook-overview.md) is generated.
-Use these to keep the description of your webhooks close to the code that
-implements them.
+这些标记描述了[webhook配置](../webhook-overview.md)如何生成。
+使用这些使你的 webhook 描述与实现它们的代码保持一致。
 
 {{#markerdocs Webhook}}
