@@ -34,8 +34,8 @@ type SuiteTest struct {
 	file.BoilerplateMixin
 	file.ResourceMixin
 
-	// CRDDirectoryRelativePath define the Path for the CRD
-	CRDDirectoryRelativePath string
+	// BaseDirectoryRelativePath define the Path for the base directory when it is multigroup
+	BaseDirectoryRelativePath string
 
 	// WireResource defines the api resources are generated or not.
 	WireResource bool
@@ -59,9 +59,9 @@ func (f *SuiteTest) SetTemplateDefaults() error {
 
 	// If is multigroup the path needs to be ../../ since it has
 	// the group dir.
-	f.CRDDirectoryRelativePath = `".."`
+	f.BaseDirectoryRelativePath = `".."`
 	if f.MultiGroup && f.Resource.Group != "" {
-		f.CRDDirectoryRelativePath = `"..", ".."`
+		f.BaseDirectoryRelativePath = `"..", ".."`
 	}
 
 	return nil
@@ -125,8 +125,10 @@ package controllers
 {{end}}
 
 import (
-	"path/filepath"
+	"os"
 	"testing"
+
+	"path/filepath"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -159,7 +161,14 @@ var _ = BeforeSuite(func() {
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths: []string{filepath.Join({{ .CRDDirectoryRelativePath }}, "config", "crd", "bases")},
+		CRDDirectoryPaths: []string{filepath.Join({{ .BaseDirectoryRelativePath }}, "config", "crd", "bases")},
+	}
+
+	By("setting binaries")
+	if os.Getenv("KUBEBUILDER_ASSETS") == ""{
+		binaryAssetsPath, err := filepath.Abs(filepath.Join({{ .BaseDirectoryRelativePath }}, "bin"))
+		Expect(err).NotTo(HaveOccurred())
+		testEnv.BinaryAssetsDirectory = binaryAssetsPath
 	}
 
 	cfg, err := testEnv.Start()

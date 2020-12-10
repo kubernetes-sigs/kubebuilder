@@ -17,8 +17,10 @@ limitations under the License.
 package controllers
 
 import (
-	"path/filepath"
+	"os"
 	"testing"
+
+	"path/filepath"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -55,6 +57,13 @@ var _ = BeforeSuite(func() {
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths: []string{filepath.Join("..", "config", "crd", "bases")},
+	}
+
+	By("setting binaries")
+	if os.Getenv("KUBEBUILDER_ASSETS") == "" {
+		binaryAssetsPath, err := filepath.Abs(filepath.Join("..", "bin"))
+		Expect(err).NotTo(HaveOccurred())
+		testEnv.BinaryAssetsDirectory = binaryAssetsPath
 	}
 
 	cfg, err := testEnv.Start()

@@ -124,6 +124,7 @@ import (
 	"path/filepath"
 	"testing"
 	"fmt"
+	"os"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -169,6 +170,13 @@ var _ = BeforeSuite(func() {
 		},
 	}
 
+	By("setting binaries")
+	if os.Getenv("KUBEBUILDER_ASSETS") == ""{
+		binaryAssetsPath, err := filepath.Abs(filepath.Join({{ .BaseDirectoryRelativePath }}, "bin"))
+		Expect(err).NotTo(HaveOccurred())
+		testEnv.BinaryAssetsDirectory = binaryAssetsPath
+	}
+	
 	cfg, err := testEnv.Start()
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
