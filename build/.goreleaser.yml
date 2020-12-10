@@ -14,50 +14,52 @@
 
 # This is a GoReleaser configuration file for Kubebuilder release.
 # Make sure to check the documentation at http://goreleaser.com
+
+# Global environment variables that are needed for hooks and builds.
+env:
+  - GO111MODULE=on
+
+# Hooks to run before any build is run.
+before:
+  hooks:
+    - go mod download
+
+# Build a binary for each target in targets.
 builds:
-- main: ./cmd
-  binary: kubebuilder
-  ldflags:
-    - -s
-    - -X main.kubeBuilderVersion={{.Version}}
-    - -X main.goos={{.Os}}
-    - -X main.goarch={{.Arch}}
-    - -X main.gitCommit={{.Commit}}
-    - -X main.buildDate={{.Date}}
-    - -X main.kubernetesVendorVersion={{.Env.KUBERNETES_VERSION}}
-  goos:
-   - darwin
-   - linux
-  goarch:
-   - amd64
-   - arm64
-   - ppc64le
-  ignore:
-   - goos: darwin
-     goarch: arm64
-   - goos: darwin
-     goarch: ppc64le
-  env:
-   - CGO_ENABLED=0
-   - GO111MODULE=on
-archive:
-  files:
-    - "/workspace/_output/{{ .Os }}_{{ .Arch }}/kubebuilder/bin/*"
-  wrap_in_directory: true
-# wrap all the binaries under 'bin/' dir
-  wrap_in_directory_path: "bin"
+  - id: kubebuilder
+    main: ./cmd
+    binary: kubebuilder
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    ldflags:
+      - -X main.kubeBuilderVersion={{ .Version }}
+      - -X main.goos={{ .Os }}
+      - -X main.goarch={{ .Arch }}
+      - -X main.gitCommit={{ .Commit }}
+      - -X main.buildDate={{ .Date }}
+      - -X main.kubernetesVendorVersion={{ .Env.KUBERNETES_VERSION }}
+    targets:
+      - linux_amd64
+      - linux_arm64
+      - linux_ppc64le
+      - darwin_amd64
+    env:
+      - KUBERNETES_VERSION=1.19.2
+      - CGO_ENABLED=0
+
+# Only binaries of the form "kubebuilder_${goos}_${goarch}" will be released.
+archives:
+  - format: binary
+    # Setting name_template correctly maps checksums to binary names.
+    name_template: "{{ .Binary }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}"
+
+# Checksum all binaries.
 checksum:
-  name_template: 'checksums.txt'
-snapshot:
-  name_template: "master"
+  name_template: "checksums.txt"
+
+# kubebuilder uses a custom changelog, so leave this empty.
 changelog:
-  sort: asc
-  filters:
-    exclude:
-     - '^docs:'
-     - '^test:'
-     - Merge pull request
-     - Merge branch
+
+# github.com/kubernetes-sigs/kubebuilder
 release:
   github:
     owner: kubernetes-sigs
