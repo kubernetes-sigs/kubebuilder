@@ -158,3 +158,8 @@ func (v Version) Compare(other Version) int {
 
 	return v.Stage.Compare(other.Stage)
 }
+
+// IsStable returns true if v is stable.
+func (v Version) IsStable() bool {
+	return v.Stage.Compare(StableStage) == -1
+}
