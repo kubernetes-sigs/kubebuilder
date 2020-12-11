@@ -67,7 +67,7 @@ ${cmd} /tmp/mdbook.${ext}
 chmod +x /tmp/mdbook
 
 echo "grabbing the latest released controller-gen"
-go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.3.0
+go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.4.1
 
 # make sure we add the go bin directory to our path
 gobin=$(go env GOBIN)
