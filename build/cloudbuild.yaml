@@ -20,11 +20,31 @@
 
 steps:
 - name: "gcr.io/cloud-builders/git"
-  args: ["fetch", "--tags", "--unshallow"]
+  entrypoint: 'bash'
+  args:
+  - '-c'
+  - |
+    git fetch --tags --unshallow
+    git for-each-ref --contains HEAD
+    # TAG_NAME is defined by GCB, so uses 1 dollar sign, BRANCH_NAME is bash, so we need to escape it
+    # with two dollar signs
+    export BRANCH_NAME=$(git for-each-ref --format="%(refname:strip=-1)" --contains HEAD 'refs/remotes/origin/release-*')
+    export ALL_BRANCHES=$(git for-each-ref --format="%(refname:strip=-1)" 'refs/remotes/origin/release-*')
+    echo "branch: $${BRANCH_NAME}, tag: ${TAG_NAME}, all release branches: $${ALL_BRANCHES}"
+    for branch in $${ALL_BRANCHES}; do
+      git branch $${branch} origin/$${branch}
+    done
+    git branch -f $${BRANCH_NAME} HEAD
+    git checkout $${BRANCH_NAME}
+    git branch --set-upstream-to=origin/$${BRANCH_NAME}
+    git tag -d ${TAG_NAME}
 - name: "goreleaser/goreleaser:v0.147"
   entrypoint: "bash"
   args: ["build/build_kubebuilder.sh"]
   secretEnv: ["GITHUB_TOKEN"]
+  env:
+  - 'TAG_NAME=$TAG_NAME'
+  - 'CLOUD_BUILD=true'
 secrets:
 - kmsKeyName: projects/kubebuilder/locations/global/keyRings/kubebuilder-gh-tokens/cryptoKeys/gh-release-token
   secretEnv:

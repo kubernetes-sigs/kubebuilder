@@ -81,7 +81,21 @@ if [ -z "$SNAPSHOT" ]; then
   tmp_notes="$(mktemp)"
   trap "rm -f ${tmp_notes}" EXIT
   install_notes
+  if [[ -n "${CLOUD_BUILD}" ]]; then
+      # we refresh just before this, no point (plus, we fiddle with the current branch a bit)
+      NOTES_FLAGS+=" --use-upstream=false"
+      # we can look for tag alpha/beta here too
+      # (TODO(directxman12): this should be in the tool)
+      [[ "${TAG_NAME}" == "v"*"-alpha."* ]] && NOTES_FLAGS+=" -r alpha"
+      [[ "${TAG_NAME}" == "v"*"-beta."* ]] && NOTES_FLAGS+=" -r beta"
+      [[ "${TAG_NAME}" == "v"*"-rc."* ]] && NOTES_FLAGS+=" -r rc"
+  fi
   notes $NOTES_FLAGS | tee "$tmp_notes"
+  # we need to delete the tag for the release notes script, so restore it when done so that
+  # go releaser can find the right tag
+  if [[ -n "${TAG_NAME}" ]]; then
+      git tag ${TAG_NAME}
+  fi
   GORELEASER_FLAGS="${GORELEASER_FLAGS} --release-notes=${tmp_notes}"
 else
   # TODO(estroz): figure out how to generate snapshot release notes with the kubebuilder generator.
