@@ -296,12 +296,30 @@ func (c *cli) getInfo() error {
 	return err
 }
 
+// TODO(estroz): link a plugin-specific migration guide.
+const unstablePluginMsg = " (plugin version is unstable, there may be an upgrade available: " +
+	"https://kubebuilder.io/migration/plugin/plugins.html)"
+
 // resolve selects from the available plugins those that match the project version and plugin keys provided.
 func (c *cli) resolve() error {
 	var plugins []plugin.Plugin
 	for _, pluginKey := range c.pluginKeys {
 		name, version := plugin.SplitKey(pluginKey)
 		shortName := plugin.GetShortName(name)
+
+		// Plugins are often released as "unstable" (alpha/beta) versions, then upgraded to "stable".
+		// This upgrade effectively removes a plugin, which is fine because unstable plugins are
+		// under no support contract. However users should be notified _why_ their plugin cannot be found.
+		var extraErrMsg string
+		if version != "" {
+			ver, err := plugin.ParseVersion(version)
+			if err != nil {
+				return fmt.Errorf("error parsing input plugin version from key %q: %v", pluginKey, err)
+			}
+			if !ver.IsStable() {
+				extraErrMsg = unstablePluginMsg
+			}
+		}
 
 		var resolvedPlugins []plugin.Plugin
 		isFullName := shortName != name
@@ -312,7 +330,7 @@ func (c *cli) resolve() error {
 		case isFullName && hasVersion:
 			p, isKnown := c.plugins[pluginKey]
 			if !isKnown {
-				return fmt.Errorf("unknown fully qualified plugin %q", pluginKey)
+				return fmt.Errorf("unknown fully qualified plugin %q%s", pluginKey, extraErrMsg)
 			}
 			if !plugin.SupportsVersion(p, c.projectVersion) {
 				return fmt.Errorf("plugin %q does not support project version %q", pluginKey, c.projectVersion)
@@ -358,8 +376,8 @@ func (c *cli) resolve() error {
 		// Only 1 plugin can match
 		switch len(resolvedPlugins) {
 		case 0:
-			return fmt.Errorf("no plugin could be resolved with key %q for project version %q",
-				pluginKey, c.projectVersion)
+			return fmt.Errorf("no plugin could be resolved with key %q for project version %q%s",
+				pluginKey, c.projectVersion, extraErrMsg)
 		case 1:
 			plugins = append(plugins, resolvedPlugins[0])
 		default:
