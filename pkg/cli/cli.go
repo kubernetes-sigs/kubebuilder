@@ -95,6 +95,10 @@ type cli struct {
 	// A filtered set of plugins that should be used by command constructors.
 	resolvedPlugins []plugin.Plugin
 
+	// Whether some generic help should be printed, i.e. if the binary
+	// was invoked outside of a project with incorrect flags or -h|--help.
+	doHelp bool
+
 	// Root command.
 	cmd *cobra.Command
 }
@@ -162,7 +166,7 @@ func newCLI(opts ...Option) (*cli, error) {
 }
 
 // getInfoFromFlags obtains the project version and plugin keys from flags.
-func getInfoFromFlags() (string, []string) {
+func (c *cli) getInfoFromFlags() (string, []string) {
 	// Partially parse the command line arguments
 	fs := pflag.NewFlagSet("base", pflag.ExitOnError)
 
@@ -171,11 +175,18 @@ func getInfoFromFlags() (string, []string) {
 
 	// Define the flags needed for plugin resolution
 	var projectVersion, plugins string
+	var help bool
 	fs.StringVar(&projectVersion, projectVersionFlag, "", "project version")
 	fs.StringVar(&plugins, pluginsFlag, "", "plugins to run")
+	fs.BoolVarP(&help, "help", "h", false, "help flag")
 
 	// Parse the arguments
-	_ = fs.Parse(os.Args[1:])
+	err := fs.Parse(os.Args[1:])
+
+	// User needs *generic* help if args are incorrect or --help is set and
+	// --project-version is not set. Plugin-specific help is given if a
+	// plugin.Context is updated, which does not require this field.
+	c.doHelp = err != nil || help && !fs.Lookup(projectVersionFlag).Changed
 
 	// Split the comma-separated plugins
 	var pluginSet []string
@@ -282,7 +293,7 @@ func (c cli) resolveFlagsAndConfigFileConflicts(
 // getInfo obtains the project version and plugin keys resolving conflicts among flags and the project config file.
 func (c *cli) getInfo() error {
 	// Get project version and plugin info from flags
-	flagProjectVersion, flagPlugins := getInfoFromFlags()
+	flagProjectVersion, flagPlugins := c.getInfoFromFlags()
 	// Get project version and plugin info from project configuration file
 	cfgProjectVersion, cfgPlugins, _ := getInfoFromConfigFile()
 	// We discard the error because not being able to read a project configuration file
@@ -296,7 +307,6 @@ func (c *cli) getInfo() error {
 	return err
 }
 
-// TODO(estroz): link a plugin-specific migration guide.
 const unstablePluginMsg = " (plugin version is unstable, there may be an upgrade available: " +
 	"https://kubebuilder.io/migration/plugin/plugins.html)"
 

@@ -52,6 +52,10 @@ func (c cli) newInitCmd() *cobra.Command {
 				fmt.Sprintf("Available plugins: (%s)", strings.Join(c.getAvailablePlugins(), ", ")))
 	}
 
+	if c.doHelp {
+		return cmd
+	}
+
 	// Lookup the plugin for projectVersion and bind it to the command.
 	c.bindInit(ctx, cmd)
 	return cmd
