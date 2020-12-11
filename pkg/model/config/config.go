@@ -45,7 +45,7 @@ type Config struct {
 
 	// Resources tracks scaffolded resources in the project
 	// This info is tracked only in project with version 2
-	Resources []GVK `json:"resources,omitempty"`
+	Resources []ResourceData `json:"resources,omitempty"`
 
 	// Multigroup tracks if the project has more than one group
 	MultiGroup bool `json:"multigroup,omitempty"`
@@ -78,32 +78,30 @@ func (c Config) IsV3() bool {
 	return c.Version == Version3Alpha
 }
 
-// HasResource returns true if API resource is already tracked
-func (c Config) HasResource(target GVK) bool {
+// GetResource returns the GKV if the resource is found
+func (c Config) GetResource(target ResourceData) *ResourceData {
 	// Return true if the target resource is found in the tracked resources
 	for _, r := range c.Resources {
-		if r.isEqualTo(target) {
-			return true
+		if r.isGVKEqualTo(target) {
+			return &r
 		}
 	}
-
-	// Return false otherwise
-	return false
+	return nil
 }
 
 // UpdateResources either adds gvk to the tracked set or, if the resource already exists,
 // updates the the equivalent resource in the set.
-func (c *Config) UpdateResources(gvk GVK) {
+func (c *Config) UpdateResources(resource ResourceData) {
 	// If the resource already exists, update it.
 	for i, r := range c.Resources {
-		if r.isEqualTo(gvk) {
-			c.Resources[i].merge(gvk)
+		if r.isGVKEqualTo(resource) {
+			c.Resources[i].merge(resource)
 			return
 		}
 	}
 
 	// The resource does not exist, append the resource to the tracked ones.
-	c.Resources = append(c.Resources, gvk)
+	c.Resources = append(c.Resources, resource)
 }
 
 // HasGroup returns true if group is already tracked
@@ -136,9 +134,13 @@ func (c Config) resourceAPIVersionCompatible(verType, version string) bool {
 		var currVersion string
 		switch verType {
 		case "crd":
-			currVersion = res.CRDVersion
+			if res.API != nil {
+				currVersion = res.API.CRDVersion
+			}
 		case "webhook":
-			currVersion = res.WebhookVersion
+			if res.Webhooks != nil {
+				currVersion = res.Webhooks.WebhookVersion
+			}
 		}
 		if currVersion != "" && version != currVersion {
 			return false
@@ -147,20 +149,33 @@ func (c Config) resourceAPIVersionCompatible(verType, version string) bool {
 	return true
 }
 
-// GVK contains information about scaffolded resources
-type GVK struct {
+// ResourceData contains information about scaffolded resources
+type ResourceData struct {
 	Group   string `json:"group,omitempty"`
 	Version string `json:"version,omitempty"`
 	Kind    string `json:"kind,omitempty"`
 
-	// CRDVersion holds the CustomResourceDefinition API version used for the GVK.
+	// API holds the API data
+	API *API `json:"api,omitempty"`
+
+	// Webhooks holds the Webhooks data
+	Webhooks *Webhooks `json:"webhooks,omitempty"`
+}
+
+// API contains information about scaffolded APIs
+type API struct {
+	// CRDVersion holds the CustomResourceDefinition API version used for the ResourceData.
 	CRDVersion string `json:"crdVersion,omitempty"`
-	// WebhookVersion holds the {Validating,Mutating}WebhookConfiguration API version used for the GVK.
+}
+
+// Webhooks contains information about scaffolded webhooks
+type Webhooks struct {
+	// WebhookVersion holds the {Validating,Mutating}WebhookConfiguration API version used for the Options.
 	WebhookVersion string `json:"webhookVersion,omitempty"`
 }
 
-// isEqualTo compares it with another resource
-func (r GVK) isEqualTo(other GVK) bool {
+// isGVKEqualTo compares it with another resource
+func (r ResourceData) isGVKEqualTo(other ResourceData) bool {
 	return r.Group == other.Group &&
 		r.Version == other.Version &&
 		r.Kind == other.Kind
@@ -168,12 +183,37 @@ func (r GVK) isEqualTo(other GVK) bool {
 
 // merge combines fields of two GVKs that have matching group, version, and kind,
 // favoring the receiver's values.
-func (r *GVK) merge(other GVK) {
-	if r.CRDVersion == "" && other.CRDVersion != "" {
-		r.CRDVersion = other.CRDVersion
+func (r *ResourceData) merge(other ResourceData) {
+	if other.Webhooks != nil {
+		if r.Webhooks == nil {
+			r.Webhooks = other.Webhooks
+		} else {
+			r.Webhooks.merge(other.Webhooks)
+		}
 	}
-	if r.WebhookVersion == "" && other.WebhookVersion != "" {
-		r.WebhookVersion = other.WebhookVersion
+
+	if other.API != nil {
+		if r.API == nil {
+			r.API = other.API
+		} else {
+			r.API.merge(other.API)
+		}
+	}
+}
+
+// merge compares it with another webhook by setting each webhook type individually so existing values are
+// not overwritten.
+func (w *Webhooks) merge(other *Webhooks) {
+	if w.WebhookVersion == "" && other.WebhookVersion != "" {
+		w.WebhookVersion = other.WebhookVersion
+	}
+}
+
+// merge compares it with another api by setting each api type individually so existing values are
+// not overwritten.
+func (a *API) merge(other *API) {
+	if a.CRDVersion == "" && other.CRDVersion != "" {
+		a.CRDVersion = other.CRDVersion
 	}
 }
 
@@ -182,6 +222,26 @@ func (c Config) Marshal() ([]byte, error) {
 	// Ignore extra fields at first.
 	cfg := c
 	cfg.Plugins = nil
+
+	// Ignore some fields if v2.
+	if cfg.IsV2() {
+		for i := range cfg.Resources {
+			cfg.Resources[i].API = nil
+			cfg.Resources[i].Webhooks = nil
+		}
+	}
+
+	for i, r := range cfg.Resources {
+		// If API is empty, omit it (prevents `api: {}`).
+		if r.API != nil && r.API.CRDVersion == "" {
+			cfg.Resources[i].API = nil
+		}
+		// If Webhooks is empty, omit it (prevents `webhooks: {}`).
+		if r.Webhooks != nil && r.Webhooks.WebhookVersion == "" {
+			cfg.Resources[i].Webhooks = nil
+		}
+	}
+
 	content, err := yaml.Marshal(cfg)
 	if err != nil {
 		return nil, fmt.Errorf("error marshalling project configuration: %v", err)
