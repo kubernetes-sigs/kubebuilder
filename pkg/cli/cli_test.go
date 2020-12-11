@@ -74,16 +74,20 @@ var _ = Describe("CLI", func() {
 		var (
 			projectVersion string
 			plugins        []string
+			c              *cli
 		)
 
 		// Save os.Args and restore it for every test
 		var args []string
-		BeforeEach(func() { args = os.Args })
+		BeforeEach(func() {
+			c = &cli{}
+			args = os.Args
+		})
 		AfterEach(func() { os.Args = args })
 
 		When("no flag is set", func() {
 			It("should success", func() {
-				projectVersion, plugins = getInfoFromFlags()
+				projectVersion, plugins = c.getInfoFromFlags()
 				Expect(projectVersion).To(Equal(""))
 				Expect(len(plugins)).To(Equal(0))
 			})
@@ -92,7 +96,7 @@ var _ = Describe("CLI", func() {
 		When(fmt.Sprintf("--%s flag is set", projectVersionFlag), func() {
 			It("should success", func() {
 				setProjectVersionFlag("2")
-				projectVersion, plugins = getInfoFromFlags()
+				projectVersion, plugins = c.getInfoFromFlags()
 				Expect(projectVersion).To(Equal("2"))
 				Expect(len(plugins)).To(Equal(0))
 			})
@@ -101,21 +105,21 @@ var _ = Describe("CLI", func() {
 		When(fmt.Sprintf("--%s flag is set", pluginsFlag), func() {
 			It("should success using one plugin key", func() {
 				setPluginsFlag("go/v1")
-				projectVersion, plugins = getInfoFromFlags()
+				projectVersion, plugins = c.getInfoFromFlags()
 				Expect(projectVersion).To(Equal(""))
 				Expect(plugins).To(Equal([]string{"go/v1"}))
 			})
 
 			It("should success using more than one plugin key", func() {
 				setPluginsFlag("go/v1,example/v2,test/v1")
-				projectVersion, plugins = getInfoFromFlags()
+				projectVersion, plugins = c.getInfoFromFlags()
 				Expect(projectVersion).To(Equal(""))
 				Expect(plugins).To(Equal([]string{"go/v1", "example/v2", "test/v1"}))
 			})
 
 			It("should success using more than one plugin key with spaces", func() {
 				setPluginsFlag("go/v1 , example/v2 , test/v1")
-				projectVersion, plugins = getInfoFromFlags()
+				projectVersion, plugins = c.getInfoFromFlags()
 				Expect(projectVersion).To(Equal(""))
 				Expect(plugins).To(Equal([]string{"go/v1", "example/v2", "test/v1"}))
 			})
@@ -125,7 +129,7 @@ var _ = Describe("CLI", func() {
 			It("should success using one plugin key", func() {
 				setProjectVersionFlag("2")
 				setPluginsFlag("go/v1")
-				projectVersion, plugins = getInfoFromFlags()
+				projectVersion, plugins = c.getInfoFromFlags()
 				Expect(projectVersion).To(Equal("2"))
 				Expect(plugins).To(Equal([]string{"go/v1"}))
 			})
@@ -133,7 +137,7 @@ var _ = Describe("CLI", func() {
 			It("should success using more than one plugin keys", func() {
 				setProjectVersionFlag("2")
 				setPluginsFlag("go/v1,example/v2,test/v1")
-				projectVersion, plugins = getInfoFromFlags()
+				projectVersion, plugins = c.getInfoFromFlags()
 				Expect(projectVersion).To(Equal("2"))
 				Expect(plugins).To(Equal([]string{"go/v1", "example/v2", "test/v1"}))
 			})
@@ -141,7 +145,7 @@ var _ = Describe("CLI", func() {
 			It("should success using more than one plugin keys with spaces", func() {
 				setProjectVersionFlag("2")
 				setPluginsFlag("go/v1 , example/v2 , test/v1")
-				projectVersion, plugins = getInfoFromFlags()
+				projectVersion, plugins = c.getInfoFromFlags()
 				Expect(projectVersion).To(Equal("2"))
 				Expect(plugins).To(Equal([]string{"go/v1", "example/v2", "test/v1"}))
 			})
@@ -150,7 +154,7 @@ var _ = Describe("CLI", func() {
 		When("additional flags are set", func() {
 			It("should not fail", func() {
 				setFlag("extra-flag", "extra-value")
-				getInfoFromFlags()
+				c.getInfoFromFlags()
 			})
 		})
 	})
