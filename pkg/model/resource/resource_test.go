@@ -241,7 +241,7 @@ var _ = Describe("Resource", func() {
 
 			resource := options.NewResource(
 				&config.Config{
-					Version: config.Version3Alpha,
+					Version: config.Version3,
 					Domain:  "test.io",
 					Repo:    "test",
 				},

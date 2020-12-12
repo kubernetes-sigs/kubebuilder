@@ -29,13 +29,13 @@ func main() {
 	c, err := cli.New(
 		cli.WithCommandName("kubebuilder"),
 		cli.WithVersion(versionString()),
-		cli.WithDefaultProjectVersion(config.Version3Alpha),
+		cli.WithDefaultProjectVersion(config.Version3),
 		cli.WithPlugins(
 			&pluginv2.Plugin{},
 			&pluginv3.Plugin{},
 		),
 		cli.WithDefaultPlugins(config.Version2, &pluginv2.Plugin{}),
-		cli.WithDefaultPlugins(config.Version3Alpha, &pluginv3.Plugin{}),
+		cli.WithDefaultPlugins(config.Version3, &pluginv3.Plugin{}),
 		cli.WithCompletion,
 	)
 	if err != nil {

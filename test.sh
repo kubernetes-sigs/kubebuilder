@@ -92,10 +92,9 @@ EOF
 
 function test_project {
   local project_dir=$1
-  local version=$2
   rm -f "$(command -v controller-gen)"
   rm -f "$(command -v kustomize)"
-  header_text "performing tests in dir $project_dir for project version v$version"
+  header_text "performing tests in dir $project_dir"
   cd testdata/$project_dir
   make all test
   cd -
@@ -147,14 +146,14 @@ export GO111MODULE=on
 go test -race -v ./cmd/... ./pkg/... ./plugins/...
 
 # test project v2
-test_project project-v2 2
-test_project project-v2-multigroup 2
-test_project project-v2-addon 2
+test_project project-v2
+test_project project-v2-multigroup
+test_project project-v2-addon
 
 # test project v3
-test_project project-v3 3-alpha
-test_project project-v3-multigroup 3-alpha
-test_project project-v3-addon 3-alpha
-test_project project-v3-config 3-alpha
+test_project project-v3
+test_project project-v3-multigroup
+test_project project-v3-addon
+test_project project-v3-config
 
 exit $rc

@@ -25,8 +25,8 @@ import (
 
 // Scaffolding versions
 const (
-	Version2      = "2"
-	Version3Alpha = "3-alpha"
+	Version2 = "2"
+	Version3 = "3"
 )
 
 // Config is the unmarshalled representation of the configuration file
@@ -75,7 +75,7 @@ func (c Config) IsV2() bool {
 
 // IsV3 returns true if it is a v3 project
 func (c Config) IsV3() bool {
-	return c.Version == Version3Alpha
+	return c.Version == Version3
 }
 
 // GetResource returns the GKV if the resource is found

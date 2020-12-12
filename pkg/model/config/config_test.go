@@ -79,10 +79,10 @@ var _ = Describe("PluginConfig", func() {
 		Expect(config.EncodePluginConfig(key, pluginConfig)).NotTo(Succeed())
 
 		By("Using config version 3-alpha")
-		config = Config{Version: Version3Alpha}
+		config = Config{Version: Version3}
 		pluginConfig = PluginConfig{}
 		expectedConfig = Config{
-			Version: Version3Alpha,
+			Version: Version3,
 			Plugins: PluginConfigs{
 				"plugin-x": map[string]interface{}{
 					"data-1": "",
@@ -94,13 +94,13 @@ var _ = Describe("PluginConfig", func() {
 		Expect(config).To(Equal(expectedConfig))
 
 		By("Using config version 3-alpha with extra fields as struct")
-		config = Config{Version: Version3Alpha}
+		config = Config{Version: Version3}
 		pluginConfig = PluginConfig{
 			"plugin value 1",
 			"plugin value 2",
 		}
 		expectedConfig = Config{
-			Version: Version3Alpha,
+			Version: Version3,
 			Plugins: PluginConfigs{
 				"plugin-x": map[string]interface{}{
 					"data-1": "plugin value 1",
@@ -134,7 +134,7 @@ var _ = Describe("PluginConfig", func() {
 
 		By("Using empty config version 3-alpha")
 		config = Config{
-			Version: Version3Alpha,
+			Version: Version3,
 			Plugins: PluginConfigs{
 				"plugin-x": map[string]interface{}{},
 			},
@@ -145,7 +145,7 @@ var _ = Describe("PluginConfig", func() {
 		Expect(pluginConfig).To(Equal(expectedPluginConfig))
 
 		By("Using config version 3-alpha")
-		config = Config{Version: Version3Alpha}
+		config = Config{Version: Version3}
 		pluginConfig = PluginConfig{}
 		expectedPluginConfig = PluginConfig{}
 		Expect(config.DecodePluginConfig(key, &pluginConfig)).To(Succeed())
@@ -153,7 +153,7 @@ var _ = Describe("PluginConfig", func() {
 
 		By("Using config version 3-alpha with extra fields as struct")
 		config = Config{
-			Version: Version3Alpha,
+			Version: Version3,
 			Plugins: PluginConfigs{
 				"plugin-x": map[string]interface{}{
 					"data-1": "plugin value 1",
@@ -173,7 +173,7 @@ var _ = Describe("PluginConfig", func() {
 	It("should Marshal and Unmarshal a plugin", func() {
 		By("Using config with extra fields as struct")
 		cfg := Config{
-			Version: Version3Alpha,
+			Version: Version3,
 			Plugins: PluginConfigs{
 				"plugin-x": map[string]interface{}{
 					"data-1": "plugin value 1",

@@ -70,7 +70,7 @@ version: "2"
 			By("saving config version 3-alpha with plugin config")
 			cfg = Config{
 				Config: config.Config{
-					Version: config.Version3Alpha,
+					Version: config.Version3,
 					Repo:    "github.com/example/project",
 					Domain:  "example.com",
 					Plugins: config.PluginConfigs{
@@ -143,7 +143,7 @@ plugins:
     - "plugin value 3"
     - "plugin value 4"`
 			expectedConfig = config.Config{
-				Version: config.Version3Alpha,
+				Version: config.Version3,
 				Repo:    "github.com/example/project",
 				Domain:  "example.com",
 				Plugins: config.PluginConfigs{
