@@ -35,13 +35,13 @@ spec:
           allowPrivilegeEscalation: false
         livenessProbe:
           httpGet:
-            path: /readyz
+            path: /healthz
             port: 8081
           initialDelaySeconds: 15
           periodSeconds: 20
         readinessProbe:
           httpGet:
-            path: /healthz
+            path: /readyz
             port: 8081
           initialDelaySeconds: 5
           periodSeconds: 10
