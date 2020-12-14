@@ -1,6 +1,6 @@
 componentConfig: true
 domain: testproject.org
-layout: go.kubebuilder.io/v3-alpha
+layout: go.kubebuilder.io/v3
 projectName: project-v3-config
 repo: sigs.k8s.io/kubebuilder/testdata/project-v3-config
 resources:
