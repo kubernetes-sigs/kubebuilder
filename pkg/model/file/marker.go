@@ -28,6 +28,7 @@ var commentsByExt = map[string]string{
 	//  this is a backwards incompatible change, and thus should be done for next project version.
 	".go":   "// ",
 	".yaml": "# ",
+	".yml":  "#",
 	// When adding additional file extensions, update also the NewMarkerFor documentation and error
 }
 
@@ -38,14 +39,14 @@ type Marker struct {
 }
 
 // NewMarkerFor creates a new marker customized for the specific file
-// Supported file extensions: .go, .ext
+// Supported file extensions: .go, .yaml, .yml
 func NewMarkerFor(path string, value string) Marker {
 	ext := filepath.Ext(path)
 	if comment, found := commentsByExt[ext]; found {
 		return Marker{comment, value}
 	}
 
-	panic(fmt.Errorf("unknown file extension: '%s', expected '.go' or '.yaml'", ext))
+	panic(fmt.Errorf("unknown file extension: '%s', expected '.go', '.yaml' or '.yml'", ext))
 }
 
 // String implements Stringer
