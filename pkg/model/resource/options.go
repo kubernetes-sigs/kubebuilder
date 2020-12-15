@@ -83,10 +83,11 @@ type Options struct {
 	// Namespaced is true if the resource is namespaced.
 	Namespaced bool
 
-	// CRDVersion holds the CustomResourceDefinition API version used for the Options.
-	CRDVersion string
-	// WebhookVersion holds the {Validating,Mutating}WebhookConfiguration API version used for the Options.
-	WebhookVersion string
+	// API holds the api data
+	API config.API
+
+	// Webhooks holds the webhooks data
+	Webhooks config.Webhooks
 }
 
 // ValidateV2 verifies that V2 project has all the fields have valid values
@@ -190,8 +191,8 @@ func (opts *Options) Validate() error {
 
 	// Ensure apiVersions for k8s types are empty or valid.
 	for typ, apiVersion := range map[string]string{
-		"CRD":     opts.CRDVersion,
-		"Webhook": opts.WebhookVersion,
+		"CRD":     opts.API.CRDVersion,
+		"Webhook": opts.Webhooks.WebhookVersion,
 	} {
 		switch apiVersion {
 		case "", "v1", "v1beta1":
@@ -205,14 +206,14 @@ func (opts *Options) Validate() error {
 	return nil
 }
 
-// GVK returns the group-version-kind information to check against tracked resources in the configuration file
-func (opts *Options) GVK() config.GVK {
-	return config.GVK{
-		Group:          opts.Group,
-		Version:        opts.Version,
-		Kind:           opts.Kind,
-		CRDVersion:     opts.CRDVersion,
-		WebhookVersion: opts.WebhookVersion,
+// Data returns the ResourceData information to check against tracked resources in the configuration file
+func (opts *Options) Data() config.ResourceData {
+	return config.ResourceData{
+		Group:    opts.Group,
+		Version:  opts.Version,
+		Kind:     opts.Kind,
+		API:      &opts.API,
+		Webhooks: &opts.Webhooks,
 	}
 }
 
@@ -250,7 +251,7 @@ func (opts *Options) NewResource(c *config.Config, doResource bool) *Resource {
 	//  - In any other case, default to                          => project resource
 	// TODO: need to support '--resource-pkg-path' flag for specifying resourcePath
 	if !doResource {
-		if !c.HasResource(opts.GVK()) {
+		if c.GetResource(opts.Data()) == nil {
 			if coreDomain, found := coreGroups[opts.Group]; found {
 				pkg = replacer.Replace(path.Join("k8s.io", "api", "%[group]", "%[version]"))
 				domain = coreDomain
@@ -288,7 +289,7 @@ func (opts *Options) newResource() *Resource {
 		Kind:             opts.Kind,
 		Plural:           plural,
 		ImportAlias:      opts.safeImport(opts.Group + opts.Version),
-		CRDVersion:       opts.CRDVersion,
-		WebhookVersion:   opts.WebhookVersion,
+		API:              opts.API,
+		Webhooks:         opts.Webhooks,
 	}
 }

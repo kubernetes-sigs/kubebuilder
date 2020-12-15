@@ -75,7 +75,7 @@ func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&p.resource.Version, "version", "", "resource Version")
 	fs.StringVar(&p.resource.Kind, "kind", "", "resource Kind")
 	fs.StringVar(&p.resource.Plural, "resource", "", "resource Resource")
-	fs.StringVar(&p.resource.WebhookVersion, "webhook-version", defaultWebhookVersion,
+	fs.StringVar(&p.resource.Webhooks.WebhookVersion, "webhook-version", defaultWebhookVersion,
 		"version of {Mutating,Validating}WebhookConfigurations to scaffold. Options: [v1, v1beta1]")
 
 	fs.BoolVar(&p.runMake, "make", true, "if true, run make after generating files")
@@ -107,14 +107,14 @@ func (p *createWebhookSubcommand) Validate() error {
 	}
 
 	// check if resource exist to create webhook
-	if !p.config.HasResource(p.resource.GVK()) {
+	if p.config.GetResource(p.resource.Data()) == nil {
 		return fmt.Errorf("%s create webhook requires an api with the group,"+
 			" kind and version provided", p.commandName)
 	}
 
-	if !p.config.IsWebhookVersionCompatible(p.resource.WebhookVersion) {
+	if !p.config.IsWebhookVersionCompatible(p.resource.Webhooks.WebhookVersion) {
 		return fmt.Errorf("only one webhook version can be used for all resources, cannot add %q",
-			p.resource.WebhookVersion)
+			p.resource.Webhooks.WebhookVersion)
 	}
 
 	return nil

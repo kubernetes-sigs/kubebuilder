@@ -3,19 +3,25 @@ layout: go.kubebuilder.io/v3
 projectName: project-v3
 repo: sigs.k8s.io/kubebuilder/testdata/project-v3
 resources:
-- crdVersion: v1
+- api:
+    crdVersion: v1
   group: crew
   kind: Captain
   version: v1
-  webhookVersion: v1
-- crdVersion: v1
+  webhooks:
+    webhookVersion: v1
+- api:
+    crdVersion: v1
   group: crew
   kind: FirstMate
   version: v1
-  webhookVersion: v1
-- crdVersion: v1
+  webhooks:
+    webhookVersion: v1
+- api:
+    crdVersion: v1
   group: crew
   kind: Admiral
   version: v1
-  webhookVersion: v1
+  webhooks:
+    webhookVersion: v1
 version: 3-alpha

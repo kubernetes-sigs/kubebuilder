@@ -80,19 +80,19 @@ func (s *webhookScaffolder) scaffold() error {
 You need to implement the conversion.Hub and conversion.Convertible interfaces for your CRD types.`)
 	}
 
-	s.config.UpdateResources(s.resource.GVK())
+	s.config.UpdateResources(s.resource.Data())
 
 	if err := machinery.NewScaffold().Execute(
 		s.newUniverse(),
 		&api.Webhook{
-			WebhookVersion: s.resource.WebhookVersion,
+			WebhookVersion: s.resource.Webhooks.WebhookVersion,
 			Defaulting:     s.defaulting,
 			Validating:     s.validation,
 		},
 		&templates.MainUpdater{WireWebhook: true},
-		&kdefault.WebhookCAInjectionPatch{WebhookVersion: s.resource.WebhookVersion},
+		&kdefault.WebhookCAInjectionPatch{WebhookVersion: s.resource.Webhooks.WebhookVersion},
 		&kdefault.ManagerWebhookPatch{},
-		&webhook.Kustomization{WebhookVersion: s.resource.WebhookVersion},
+		&webhook.Kustomization{WebhookVersion: s.resource.Webhooks.WebhookVersion},
 		&webhook.KustomizeConfig{},
 		&webhook.Service{},
 	); err != nil {

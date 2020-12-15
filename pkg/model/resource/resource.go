@@ -52,20 +52,21 @@ type Resource struct {
 	// Namespaced is true if the resource is namespaced.
 	Namespaced bool `json:"namespaced,omitempty"`
 
-	// CRDVersion holds the CustomResourceDefinition API version used for the Resource.
-	CRDVersion string `json:"crdVersion,omitempty"`
-	// WebhookVersion holds the {Validating,Mutating}WebhookConfiguration API version used for the Resource.
-	WebhookVersion string `json:"webhookVersion,omitempty"`
+	// API holds the the api data that is scaffolded
+	API config.API `json:"api,omitempty"`
+
+	// Webhooks holds webhooks data that is scaffolded
+	Webhooks config.Webhooks `json:"webhooks,omitempty"`
 }
 
-// GVK returns the group-version-kind information to check against tracked resources in the configuration file
-func (r *Resource) GVK() config.GVK {
-	return config.GVK{
-		Group:          r.Group,
-		Version:        r.Version,
-		Kind:           r.Kind,
-		CRDVersion:     r.CRDVersion,
-		WebhookVersion: r.WebhookVersion,
+// Data returns the ResourceData information to check against tracked resources in the configuration file
+func (r *Resource) Data() config.ResourceData {
+	return config.ResourceData{
+		Group:    r.Group,
+		Version:  r.Version,
+		Kind:     r.Kind,
+		API:      &r.API,
+		Webhooks: &r.Webhooks,
 	}
 }
 
