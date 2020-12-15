@@ -117,6 +117,17 @@ func (c Config) HasGroup(group string) bool {
 	return false
 }
 
+// HasWebhook returns true if webhook is already present
+func (c Config) HasWebhook(resource ResourceData) bool {
+	for _, r := range c.Resources {
+		if r.isGVKEqualTo(resource) {
+			return r.Webhooks != nil
+		}
+	}
+
+	return false
+}
+
 // IsCRDVersionCompatible returns true if crdVersion can be added to the existing set of CRD versions.
 func (c Config) IsCRDVersionCompatible(crdVersion string) bool {
 	return c.resourceAPIVersionCompatible("crd", crdVersion)
