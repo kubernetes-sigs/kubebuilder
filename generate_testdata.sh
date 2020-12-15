@@ -63,6 +63,9 @@ scaffold_test_project() {
     $kb create api --group crew --version v1 --kind Admiral --controller=true --resource=true --namespaced=false --make=false
     $kb create webhook --group crew --version v1 --kind Admiral --defaulting
     $kb create api --group crew --version v1 --kind Laker --controller=true --resource=false --make=false
+    if [ $project == "project-v3" ]; then
+      $kb create webhook --group crew --version v1 --kind Captain --defaulting --programmatic-validation --force
+    fi
   elif [[ $project =~ multigroup ]]; then
     header_text 'Switching to multigroup layout ...'
     $kb edit --multigroup=true

@@ -67,7 +67,7 @@ type CLI interface {
 
 // cli defines the command line structure and interfaces that are used to
 // scaffold kubebuilder project files.
-type cli struct {
+type cli struct { //nolint:maligned
 	/* Fields set by Option */
 
 	// Root command name. It is injected downstream to provide correct help, usage, examples and errors.

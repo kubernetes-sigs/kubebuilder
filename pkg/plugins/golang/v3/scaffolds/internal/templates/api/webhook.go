@@ -42,6 +42,8 @@ type Webhook struct { // nolint:maligned
 	Defaulting bool
 	// If scaffold the validating webhook
 	Validating bool
+
+	Force bool
 }
 
 // SetTemplateDefaults implements file.Template
@@ -69,7 +71,11 @@ func (f *Webhook) SetTemplateDefaults() error {
 	}
 	f.TemplateBody = webhookTemplate
 
-	f.IfExistsAction = file.Error
+	if f.Force {
+		f.IfExistsAction = file.Overwrite
+	} else {
+		f.IfExistsAction = file.Error
+	}
 
 	f.GroupDomainWithDash = strings.Replace(f.Resource.Domain, ".", "-", -1)
 
