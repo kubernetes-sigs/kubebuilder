@@ -249,14 +249,15 @@ var _ = Describe("ResourceData Version Compatibility", func() {
 
 var _ = Describe("Config", func() {
 	var (
-		c          *Config
-		gvk1, gvk2 ResourceData
+		c                *Config
+		gvk1, gvk2, gvk3 ResourceData
 	)
 
 	BeforeEach(func() {
 		c = &Config{}
 		gvk1 = ResourceData{Group: "example", Version: "v1", Kind: "TestKind"}
 		gvk2 = ResourceData{Group: "example", Version: "v1", Kind: "TestKind2"}
+		gvk3 = ResourceData{Group: "example", Version: "v1", Kind: "TestKind", Webhooks: &Webhooks{WebhookVersion: v1beta1}}
 	})
 
 	Context("UpdateResource", func() {
@@ -294,5 +295,18 @@ var _ = Describe("Config", func() {
 			Expect(c.HasGroup("hasNot")).To(BeFalse())
 		})
 
+	})
+
+	Context("HasWebhook", func() {
+		It("should return true when config has a webhook for the GVK", func() {
+			c.UpdateResources(gvk3)
+			Expect(c.Resources).To(Equal([]ResourceData{gvk3}))
+			Expect(c.HasWebhook(gvk3)).To(BeTrue())
+		})
+		It("should return false when config does not have a webhook for the GVK", func() {
+			c.UpdateResources(gvk1)
+			Expect(c.Resources).To(Equal([]ResourceData{gvk1}))
+			Expect(c.HasWebhook(gvk1)).To(BeFalse())
+		})
 	})
 })
