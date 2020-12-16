@@ -47,6 +47,8 @@ type apiScaffolder struct {
 	doResource bool
 	// doController indicates whether to scaffold controller files or not
 	doController bool
+	// force indicates whether to scaffold controller files even if it exists or not
+	force bool
 }
 
 // NewAPIScaffolder returns a new Scaffolder for API/controller creation operations
@@ -54,7 +56,7 @@ func NewAPIScaffolder(
 	config *config.Config,
 	boilerplate string,
 	res *resource.Resource,
-	doResource, doController bool,
+	doResource, doController, force bool,
 	plugins []model.Plugin,
 ) cmdutil.Scaffolder {
 	return &apiScaffolder{
@@ -64,6 +66,7 @@ func NewAPIScaffolder(
 		plugins:      plugins,
 		doResource:   doResource,
 		doController: doController,
+		force:        force,
 	}
 }
 
@@ -89,9 +92,9 @@ func (s *apiScaffolder) scaffold() error {
 
 		if err := machinery.NewScaffold(s.plugins...).Execute(
 			s.newUniverse(),
-			&api.Types{},
+			&api.Types{Force: s.force},
 			&api.Group{},
-			&samples.CRDSample{},
+			&samples.CRDSample{Force: s.force},
 			&rbac.CRDEditorRole{},
 			&rbac.CRDViewerRole{},
 			&patches.EnableWebhookPatch{CRDVersion: s.resource.API.CRDVersion},
@@ -113,8 +116,9 @@ func (s *apiScaffolder) scaffold() error {
 	if s.doController {
 		if err := machinery.NewScaffold(s.plugins...).Execute(
 			s.newUniverse(),
-			&controllers.SuiteTest{WireResource: s.doResource},
-			&controllers.Controller{ControllerRuntimeVersion: ControllerRuntimeVersion, WireResource: s.doResource},
+			&controllers.SuiteTest{WireResource: s.doResource, Force: s.force},
+			&controllers.Controller{ControllerRuntimeVersion: ControllerRuntimeVersion, WireResource: s.doResource,
+				Force: s.force},
 		); err != nil {
 			return fmt.Errorf("error scaffolding controller: %v", err)
 		}

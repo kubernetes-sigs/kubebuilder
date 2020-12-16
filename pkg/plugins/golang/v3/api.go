@@ -211,7 +211,7 @@ func (p *createAPISubcommand) GetScaffolder() (cmdutil.Scaffolder, error) {
 
 	// Create the actual resource from the resource options
 	res := p.resource.NewResource(p.config, p.doResource)
-	return scaffolds.NewAPIScaffolder(p.config, string(bp), res, p.doResource, p.doController, plugins), nil
+	return scaffolds.NewAPIScaffolder(p.config, string(bp), res, p.doResource, p.doController, p.force, plugins), nil
 }
 
 func (p *createAPISubcommand) PostScaffold() error {

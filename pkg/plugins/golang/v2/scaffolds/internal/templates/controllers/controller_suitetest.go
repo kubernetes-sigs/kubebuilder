@@ -39,6 +39,8 @@ type SuiteTest struct {
 
 	// WireResource defines the api resources are generated or not.
 	WireResource bool
+
+	Force bool
 }
 
 // SetTemplateDefaults implements file.Template
@@ -62,6 +64,10 @@ func (f *SuiteTest) SetTemplateDefaults() error {
 	f.CRDDirectoryRelativePath = `".."`
 	if f.MultiGroup {
 		f.CRDDirectoryRelativePath = `"..", ".."`
+	}
+
+	if f.Force {
+		f.IfExistsAction = file.Overwrite
 	}
 
 	return nil
