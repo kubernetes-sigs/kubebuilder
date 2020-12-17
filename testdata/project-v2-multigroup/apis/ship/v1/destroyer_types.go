@@ -38,9 +38,9 @@ type DestroyerStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
-// +kubebuilder:resource:scope=Cluster
+//+kubebuilder:object:root=true
+//+kubebuilder:subresource:status
+//+kubebuilder:resource:scope=Cluster
 
 // Destroyer is the Schema for the destroyers API
 type Destroyer struct {
@@ -51,7 +51,7 @@ type Destroyer struct {
 	Status DestroyerStatus `json:"status,omitempty"`
 }
 
-// +kubebuilder:object:root=true
+//+kubebuilder:object:root=true
 
 // DestroyerList contains a list of Destroyer
 type DestroyerList struct {

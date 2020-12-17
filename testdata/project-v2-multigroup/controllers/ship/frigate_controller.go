@@ -34,8 +34,8 @@ type FrigateReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=ship.testproject.org,resources=frigates,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=ship.testproject.org,resources=frigates/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=ship.testproject.org,resources=frigates,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=ship.testproject.org,resources=frigates/status,verbs=get;update;patch
 
 func (r *FrigateReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()

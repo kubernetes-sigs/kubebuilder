@@ -34,8 +34,8 @@ type KrakenReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=sea-creatures.testproject.org,resources=krakens,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=sea-creatures.testproject.org,resources=krakens/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=sea-creatures.testproject.org,resources=krakens,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=sea-creatures.testproject.org,resources=krakens/status,verbs=get;update;patch
 
 func (r *KrakenReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()

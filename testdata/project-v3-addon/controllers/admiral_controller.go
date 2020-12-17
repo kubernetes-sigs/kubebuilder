@@ -44,8 +44,8 @@ type AdmiralReconciler struct {
 	declarative.Reconciler
 }
 
-// +kubebuilder:rbac:groups=crew.testproject.org,resources=admirals,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=crew.testproject.org,resources=admirals/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=crew.testproject.org,resources=admirals,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=crew.testproject.org,resources=admirals/status,verbs=get;update;patch
 
 func (r *AdmiralReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	addon.Init()

@@ -29,7 +29,7 @@ import (
 
 	crewv1 "sigs.k8s.io/kubebuilder/testdata/project-v2/api/v1"
 	"sigs.k8s.io/kubebuilder/testdata/project-v2/controllers"
-	// +kubebuilder:scaffold:imports
+	//+kubebuilder:scaffold:imports
 )
 
 var (
@@ -41,7 +41,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(crewv1.AddToScheme(scheme))
-	// +kubebuilder:scaffold:scheme
+	//+kubebuilder:scaffold:scheme
 }
 
 func main() {
@@ -119,7 +119,7 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Laker")
 		os.Exit(1)
 	}
-	// +kubebuilder:scaffold:builder
+	//+kubebuilder:scaffold:builder
 
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {

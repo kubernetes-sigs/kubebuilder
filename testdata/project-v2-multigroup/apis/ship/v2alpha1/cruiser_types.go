@@ -38,9 +38,9 @@ type CruiserStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
-// +kubebuilder:resource:scope=Cluster
+//+kubebuilder:object:root=true
+//+kubebuilder:subresource:status
+//+kubebuilder:resource:scope=Cluster
 
 // Cruiser is the Schema for the cruisers API
 type Cruiser struct {
@@ -51,7 +51,7 @@ type Cruiser struct {
 	Status CruiserStatus `json:"status,omitempty"`
 }
 
-// +kubebuilder:object:root=true
+//+kubebuilder:object:root=true
 
 // CruiserList contains a list of Cruiser
 type CruiserList struct {

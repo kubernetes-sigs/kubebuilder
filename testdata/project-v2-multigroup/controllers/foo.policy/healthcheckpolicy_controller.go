@@ -34,8 +34,8 @@ type HealthCheckPolicyReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=foo.policy.testproject.org,resources=healthcheckpolicies,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=foo.policy.testproject.org,resources=healthcheckpolicies/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=foo.policy.testproject.org,resources=healthcheckpolicies,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=foo.policy.testproject.org,resources=healthcheckpolicies/status,verbs=get;update;patch
 
 func (r *HealthCheckPolicyReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()

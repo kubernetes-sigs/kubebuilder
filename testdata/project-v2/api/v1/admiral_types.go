@@ -38,9 +38,9 @@ type AdmiralStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
-// +kubebuilder:resource:scope=Cluster
+//+kubebuilder:object:root=true
+//+kubebuilder:subresource:status
+//+kubebuilder:resource:scope=Cluster
 
 // Admiral is the Schema for the admirals API
 type Admiral struct {
@@ -51,7 +51,7 @@ type Admiral struct {
 	Status AdmiralStatus `json:"status,omitempty"`
 }
 
-// +kubebuilder:object:root=true
+//+kubebuilder:object:root=true
 
 // AdmiralList contains a list of Admiral
 type AdmiralList struct {

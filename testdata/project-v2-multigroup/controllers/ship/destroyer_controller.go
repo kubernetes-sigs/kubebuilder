@@ -34,8 +34,8 @@ type DestroyerReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=ship.testproject.org,resources=destroyers,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=ship.testproject.org,resources=destroyers/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=ship.testproject.org,resources=destroyers,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=ship.testproject.org,resources=destroyers/status,verbs=get;update;patch
 
 func (r *DestroyerReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()

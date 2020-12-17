@@ -41,8 +41,8 @@ type FirstMateStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
+//+kubebuilder:object:root=true
+//+kubebuilder:subresource:status
 
 // FirstMate is the Schema for the firstmates API
 type FirstMate struct {
@@ -75,7 +75,7 @@ func (o *FirstMate) SetCommonStatus(s addonv1alpha1.CommonStatus) {
 	o.Status.CommonStatus = s
 }
 
-// +kubebuilder:object:root=true
+//+kubebuilder:object:root=true
 
 // FirstMateList contains a list of FirstMate
 type FirstMateList struct {

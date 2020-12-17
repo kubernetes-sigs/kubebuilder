@@ -89,9 +89,9 @@ type {{ .Resource.Kind }}Status struct {
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
-{{ if not .Resource.Namespaced }} // +kubebuilder:resource:scope=Cluster {{ end }}
+//+kubebuilder:object:root=true
+//+kubebuilder:subresource:status
+{{ if not .Resource.Namespaced }} //+kubebuilder:resource:scope=Cluster {{ end }}
 
 // {{ .Resource.Kind }} is the Schema for the {{ .Resource.Plural }} API
 type {{ .Resource.Kind }} struct {
@@ -102,7 +102,7 @@ type {{ .Resource.Kind }} struct {
 	Status {{ .Resource.Kind }}Status ` + "`" + `json:"status,omitempty"` + "`" + `
 }
 
-// +kubebuilder:object:root=true
+//+kubebuilder:object:root=true
 
 // {{ .Resource.Kind }}List contains a list of {{ .Resource.Kind }}
 type {{ .Resource.Kind }}List struct {

@@ -19,15 +19,14 @@ package file
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 )
 
 const prefix = "+kubebuilder:scaffold:"
 
 var commentsByExt = map[string]string{
-	// TODO(v3): machine-readable comments should not have spaces by Go convention. However,
-	//  this is a backwards incompatible change, and thus should be done for next project version.
-	".go":   "// ",
-	".yaml": "# ",
+	".go":   "//",
+	".yaml": "#",
 	".yml":  "#",
 	// When adding additional file extensions, update also the NewMarkerFor documentation and error
 }
@@ -52,6 +51,12 @@ func NewMarkerFor(path string, value string) Marker {
 // String implements Stringer
 func (m Marker) String() string {
 	return m.comment + prefix + m.value
+}
+
+// EqualsLine compares a marker with a string representation to check if they are the same marker
+func (m Marker) EqualsLine(line string) bool {
+	line = strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(line), m.comment))
+	return line == prefix+m.value
 }
 
 // CodeFragments represents a set of code fragments

@@ -32,8 +32,8 @@ type LakerReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=crew.testproject.org,resources=lakers,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=crew.testproject.org,resources=lakers/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=crew.testproject.org,resources=lakers,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=crew.testproject.org,resources=lakers/status,verbs=get;update;patch
 
 func (r *LakerReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()
