@@ -25,11 +25,13 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/spf13/cobra"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/config"
+	"sigs.k8s.io/kubebuilder/v3/pkg/config"
+	cfgv2 "sigs.k8s.io/kubebuilder/v3/pkg/config/v2"
+	cfgv3alpha "sigs.k8s.io/kubebuilder/v3/pkg/config/v3alpha"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 )
 
-func makeMockPluginsFor(projectVersion string, pluginKeys ...string) []plugin.Plugin {
+func makeMockPluginsFor(projectVersion config.Version, pluginKeys ...string) []plugin.Plugin {
 	plugins := make([]plugin.Plugin, 0, len(pluginKeys))
 	for _, key := range pluginKeys {
 		n, v := plugin.SplitKey(key)
@@ -92,7 +94,7 @@ var _ = Describe("CLI", func() {
 		AfterEach(func() { os.Args = args })
 
 		When("no flag is set", func() {
-			It("should success", func() {
+			It("should succeed", func() {
 				projectVersion, plugins, err = c.getInfoFromFlags()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(projectVersion).To(Equal(""))
@@ -101,7 +103,7 @@ var _ = Describe("CLI", func() {
 		})
 
 		When(fmt.Sprintf("--%s flag is set", projectVersionFlag), func() {
-			It("should success", func() {
+			It("should succeed", func() {
 				setProjectVersionFlag("2")
 				projectVersion, plugins, err = c.getInfoFromFlags()
 				Expect(err).NotTo(HaveOccurred())
@@ -111,7 +113,7 @@ var _ = Describe("CLI", func() {
 		})
 
 		When(fmt.Sprintf("--%s flag is set", pluginsFlag), func() {
-			It("should success using one plugin key", func() {
+			It("should succeed using one plugin key", func() {
 				setPluginsFlag("go/v1")
 				projectVersion, plugins, err = c.getInfoFromFlags()
 				Expect(err).NotTo(HaveOccurred())
@@ -119,7 +121,7 @@ var _ = Describe("CLI", func() {
 				Expect(plugins).To(Equal([]string{"go/v1"}))
 			})
 
-			It("should success using more than one plugin key", func() {
+			It("should succeed using more than one plugin key", func() {
 				setPluginsFlag("go/v1,example/v2,test/v1")
 				projectVersion, plugins, err = c.getInfoFromFlags()
 				Expect(err).NotTo(HaveOccurred())
@@ -127,7 +129,7 @@ var _ = Describe("CLI", func() {
 				Expect(plugins).To(Equal([]string{"go/v1", "example/v2", "test/v1"}))
 			})
 
-			It("should success using more than one plugin key with spaces", func() {
+			It("should succeed using more than one plugin key with spaces", func() {
 				setPluginsFlag("go/v1 , example/v2 , test/v1")
 				projectVersion, plugins, err = c.getInfoFromFlags()
 				Expect(err).NotTo(HaveOccurred())
@@ -137,7 +139,7 @@ var _ = Describe("CLI", func() {
 		})
 
 		When(fmt.Sprintf("--%s and --%s flags are set", projectVersionFlag, pluginsFlag), func() {
-			It("should success using one plugin key", func() {
+			It("should succeed using one plugin key", func() {
 				setProjectVersionFlag("2")
 				setPluginsFlag("go/v1")
 				projectVersion, plugins, err = c.getInfoFromFlags()
@@ -146,7 +148,7 @@ var _ = Describe("CLI", func() {
 				Expect(plugins).To(Equal([]string{"go/v1"}))
 			})
 
-			It("should success using more than one plugin keys", func() {
+			It("should succeed using more than one plugin keys", func() {
 				setProjectVersionFlag("2")
 				setPluginsFlag("go/v1,example/v2,test/v1")
 				projectVersion, plugins, err = c.getInfoFromFlags()
@@ -155,7 +157,7 @@ var _ = Describe("CLI", func() {
 				Expect(plugins).To(Equal([]string{"go/v1", "example/v2", "test/v1"}))
 			})
 
-			It("should success using more than one plugin keys with spaces", func() {
+			It("should succeed using more than one plugin keys with spaces", func() {
 				setProjectVersionFlag("2")
 				setPluginsFlag("go/v1 , example/v2 , test/v1")
 				projectVersion, plugins, err = c.getInfoFromFlags()
@@ -166,7 +168,7 @@ var _ = Describe("CLI", func() {
 		})
 
 		When("additional flags are set", func() {
-			It("should not fail", func() {
+			It("should succeed", func() {
 				setFlag("extra-flag", "extra-value")
 				_, _, err = c.getInfoFromFlags()
 				Expect(err).NotTo(HaveOccurred())
@@ -183,66 +185,36 @@ var _ = Describe("CLI", func() {
 
 	Context("getInfoFromConfig", func() {
 		var (
-			projectConfig  *config.Config
-			projectVersion string
+			projectConfig  config.Config
+			projectVersion config.Version
 			plugins        []string
 			err            error
 		)
 
-		When("having version field", func() {
-			It("should success", func() {
-				projectConfig = &config.Config{
-					Version: "2",
-				}
+		When("not having layout field", func() {
+			It("should succeed", func() {
+				projectConfig = cfgv2.New()
 				projectVersion, plugins, err = getInfoFromConfig(projectConfig)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(projectVersion).To(Equal(projectConfig.Version))
+				Expect(projectVersion.Compare(projectConfig.GetVersion())).To(Equal(0))
 				Expect(len(plugins)).To(Equal(0))
 			})
 		})
 
 		When("having layout field", func() {
-			It("should success", func() {
-				projectConfig = &config.Config{
-					Layout: "go.kubebuilder.io/v2",
-				}
+			It("should succeed", func() {
+				projectConfig = cfgv3alpha.New()
+				Expect(projectConfig.SetLayout("go.kubebuilder.io/v2")).To(Succeed())
 				projectVersion, plugins, err = getInfoFromConfig(projectConfig)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(projectVersion).To(Equal(""))
-				Expect(plugins).To(Equal([]string{projectConfig.Layout}))
-			})
-		})
-
-		When("having both version and layout fields", func() {
-			It("should success", func() {
-				projectConfig = &config.Config{
-					Version: "3-alpha",
-					Layout:  "go.kubebuilder.io/v2",
-				}
-				projectVersion, plugins, err = getInfoFromConfig(projectConfig)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(projectVersion).To(Equal(projectConfig.Version))
-				Expect(plugins).To(Equal([]string{projectConfig.Layout}))
-			})
-		})
-
-		When("not having neither version nor layout fields set", func() {
-			It("should success", func() {
-				projectConfig = &config.Config{}
-				projectVersion, plugins, err = getInfoFromConfig(projectConfig)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(projectVersion).To(Equal(""))
-				Expect(len(plugins)).To(Equal(0))
+				Expect(projectVersion.Compare(projectConfig.GetVersion())).To(Equal(0))
+				Expect(plugins).To(Equal([]string{projectConfig.GetLayout()}))
 			})
 		})
 	})
 
 	Context("cli.resolveFlagsAndConfigFileConflicts", func() {
 		const (
-			projectVersion1 = "1"
-			projectVersion2 = "2"
-			projectVersion3 = "3"
-
 			pluginKey1 = "go.kubebuilder.io/v1"
 			pluginKey2 = "go.kubebuilder.io/v2"
 			pluginKey3 = "go.kubebuilder.io/v3"
@@ -250,58 +222,62 @@ var _ = Describe("CLI", func() {
 		var (
 			c *cli
 
-			projectVersion string
+			projectVersion config.Version
 			plugins        []string
 			err            error
+
+			projectVersion1 = config.Version{Number: 1}
+			projectVersion2 = config.Version{Number: 2}
+			projectVersion3 = config.Version{Number: 3}
 		)
 
 		When("having no project version set", func() {
-			It("should success", func() {
+			It("should succeed", func() {
 				c = &cli{}
 				projectVersion, _, err = c.resolveFlagsAndConfigFileConflicts(
 					"",
-					"",
+					config.Version{},
 					nil,
 					nil,
 				)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(projectVersion).To(Equal(""))
+				Expect(projectVersion.Compare(config.Version{})).To(Equal(0))
 			})
 		})
 
 		When("having one project version source", func() {
 			When("having default project version set", func() {
-				It("should success", func() {
+				It("should succeed", func() {
 					c = &cli{
 						defaultProjectVersion: projectVersion1,
 					}
 					projectVersion, _, err = c.resolveFlagsAndConfigFileConflicts(
 						"",
-						"",
+						config.Version{},
 						nil,
 						nil,
 					)
 					Expect(err).NotTo(HaveOccurred())
-					Expect(projectVersion).To(Equal(projectVersion1))
+					Expect(projectVersion.Compare(projectVersion1)).To(Equal(0))
 				})
 			})
 
 			When("having project version set from flags", func() {
-				It("should success", func() {
+				It("should succeed", func() {
 					c = &cli{}
 					projectVersion, _, err = c.resolveFlagsAndConfigFileConflicts(
-						projectVersion1,
-						"",
+						projectVersion1.String(),
+						config.Version{},
 						nil,
 						nil,
 					)
 					Expect(err).NotTo(HaveOccurred())
-					Expect(projectVersion).To(Equal(projectVersion1))
+					Expect(projectVersion.Compare(projectVersion1)).To(Equal(0))
 				})
 			})
 
 			When("having project version set from config file", func() {
-				It("should success", func() {
+				It("should succeed", func() {
 					c = &cli{}
 					projectVersion, _, err = c.resolveFlagsAndConfigFileConflicts(
 						"",
@@ -310,30 +286,30 @@ var _ = Describe("CLI", func() {
 						nil,
 					)
 					Expect(err).NotTo(HaveOccurred())
-					Expect(projectVersion).To(Equal(projectVersion1))
+					Expect(projectVersion.Compare(projectVersion1)).To(Equal(0))
 				})
 			})
 		})
 
 		When("having two project version source", func() {
 			When("having default project version set and from flags", func() {
-				It("should success", func() {
+				It("should succeed", func() {
 					c = &cli{
 						defaultProjectVersion: projectVersion1,
 					}
 					projectVersion, _, err = c.resolveFlagsAndConfigFileConflicts(
-						projectVersion2,
-						"",
+						projectVersion2.String(),
+						config.Version{},
 						nil,
 						nil,
 					)
 					Expect(err).NotTo(HaveOccurred())
-					Expect(projectVersion).To(Equal(projectVersion2))
+					Expect(projectVersion.Compare(projectVersion2)).To(Equal(0))
 				})
 			})
 
 			When("having default project version set and from config file", func() {
-				It("should success", func() {
+				It("should succeed", func() {
 					c = &cli{
 						defaultProjectVersion: projectVersion1,
 					}
@@ -344,27 +320,27 @@ var _ = Describe("CLI", func() {
 						nil,
 					)
 					Expect(err).NotTo(HaveOccurred())
-					Expect(projectVersion).To(Equal(projectVersion2))
+					Expect(projectVersion.Compare(projectVersion2)).To(Equal(0))
 				})
 			})
 
 			When("having project version set from flags and config file", func() {
-				It("should success if they are the same", func() {
+				It("should succeed if they are the same", func() {
 					c = &cli{}
 					projectVersion, _, err = c.resolveFlagsAndConfigFileConflicts(
-						projectVersion1,
+						projectVersion1.String(),
 						projectVersion1,
 						nil,
 						nil,
 					)
 					Expect(err).NotTo(HaveOccurred())
-					Expect(projectVersion).To(Equal(projectVersion1))
+					Expect(projectVersion.Compare(projectVersion1)).To(Equal(0))
 				})
 
 				It("should fail if they are different", func() {
 					c = &cli{}
 					_, _, err = c.resolveFlagsAndConfigFileConflicts(
-						projectVersion1,
+						projectVersion1.String(),
 						projectVersion2,
 						nil,
 						nil,
@@ -375,18 +351,18 @@ var _ = Describe("CLI", func() {
 		})
 
 		When("having three project version sources", func() {
-			It("should success if project version from flags and config file are the same", func() {
+			It("should succeed if project version from flags and config file are the same", func() {
 				c = &cli{
 					defaultProjectVersion: projectVersion1,
 				}
 				projectVersion, _, err = c.resolveFlagsAndConfigFileConflicts(
-					projectVersion2,
+					projectVersion2.String(),
 					projectVersion2,
 					nil,
 					nil,
 				)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(projectVersion).To(Equal(projectVersion2))
+				Expect(projectVersion.Compare(projectVersion2)).To(Equal(0))
 			})
 
 			It("should fail if project version from flags and config file are different", func() {
@@ -394,7 +370,7 @@ var _ = Describe("CLI", func() {
 					defaultProjectVersion: projectVersion1,
 				}
 				_, _, err = c.resolveFlagsAndConfigFileConflicts(
-					projectVersion2,
+					projectVersion2.String(),
 					projectVersion3,
 					nil,
 					nil,
@@ -405,12 +381,10 @@ var _ = Describe("CLI", func() {
 
 		When("an invalid project version is set", func() {
 			It("should fail", func() {
-				c = &cli{
-					defaultProjectVersion: "v1",
-				}
+				c = &cli{}
 				projectVersion, _, err = c.resolveFlagsAndConfigFileConflicts(
-					"",
-					"",
+					"0",
+					config.Version{},
 					nil,
 					nil,
 				)
@@ -419,11 +393,11 @@ var _ = Describe("CLI", func() {
 		})
 
 		When("having no plugin keys set", func() {
-			It("should success", func() {
+			It("should succeed", func() {
 				c = &cli{}
 				_, plugins, err = c.resolveFlagsAndConfigFileConflicts(
 					"",
-					"",
+					config.Version{},
 					nil,
 					nil,
 				)
@@ -434,17 +408,17 @@ var _ = Describe("CLI", func() {
 
 		When("having one plugin keys source", func() {
 			When("having default plugin keys set", func() {
-				It("should success", func() {
+				It("should succeed", func() {
 					c = &cli{
 						defaultProjectVersion: projectVersion1,
-						defaultPlugins: map[string][]string{
+						defaultPlugins: map[config.Version][]string{
 							projectVersion1: {pluginKey1},
 							projectVersion2: {pluginKey2},
 						},
 					}
 					_, plugins, err = c.resolveFlagsAndConfigFileConflicts(
 						"",
-						"",
+						config.Version{},
 						nil,
 						nil,
 					)
@@ -455,11 +429,11 @@ var _ = Describe("CLI", func() {
 			})
 
 			When("having plugin keys set from flags", func() {
-				It("should success", func() {
+				It("should succeed", func() {
 					c = &cli{}
 					_, plugins, err = c.resolveFlagsAndConfigFileConflicts(
 						"",
-						"",
+						config.Version{},
 						[]string{pluginKey1},
 						nil,
 					)
@@ -470,11 +444,11 @@ var _ = Describe("CLI", func() {
 			})
 
 			When("having plugin keys set from config file", func() {
-				It("should success", func() {
+				It("should succeed", func() {
 					c = &cli{}
 					_, plugins, err = c.resolveFlagsAndConfigFileConflicts(
 						"",
-						"",
+						config.Version{},
 						nil,
 						[]string{pluginKey1},
 					)
@@ -487,15 +461,15 @@ var _ = Describe("CLI", func() {
 
 		When("having two plugin keys source", func() {
 			When("having default plugin keys set and from flags", func() {
-				It("should success", func() {
+				It("should succeed", func() {
 					c = &cli{
-						defaultPlugins: map[string][]string{
-							"": {pluginKey1},
+						defaultPlugins: map[config.Version][]string{
+							{}: {pluginKey1},
 						},
 					}
 					_, plugins, err = c.resolveFlagsAndConfigFileConflicts(
 						"",
-						"",
+						config.Version{},
 						[]string{pluginKey2},
 						nil,
 					)
@@ -506,15 +480,15 @@ var _ = Describe("CLI", func() {
 			})
 
 			When("having default plugin keys set and from config file", func() {
-				It("should success", func() {
+				It("should succeed", func() {
 					c = &cli{
-						defaultPlugins: map[string][]string{
-							"": {pluginKey1},
+						defaultPlugins: map[config.Version][]string{
+							{}: {pluginKey1},
 						},
 					}
 					_, plugins, err = c.resolveFlagsAndConfigFileConflicts(
 						"",
-						"",
+						config.Version{},
 						nil,
 						[]string{pluginKey2},
 					)
@@ -525,11 +499,11 @@ var _ = Describe("CLI", func() {
 			})
 
 			When("having plugin keys set from flags and config file", func() {
-				It("should success if they are the same", func() {
+				It("should succeed if they are the same", func() {
 					c = &cli{}
 					_, plugins, err = c.resolveFlagsAndConfigFileConflicts(
 						"",
-						"",
+						config.Version{},
 						[]string{pluginKey1},
 						[]string{pluginKey1},
 					)
@@ -542,7 +516,7 @@ var _ = Describe("CLI", func() {
 					c = &cli{}
 					_, _, err = c.resolveFlagsAndConfigFileConflicts(
 						"",
-						"",
+						config.Version{},
 						[]string{pluginKey1},
 						[]string{pluginKey2},
 					)
@@ -552,15 +526,15 @@ var _ = Describe("CLI", func() {
 		})
 
 		When("having three plugin keys sources", func() {
-			It("should success if plugin keys from flags and config file are the same", func() {
+			It("should succeed if plugin keys from flags and config file are the same", func() {
 				c = &cli{
-					defaultPlugins: map[string][]string{
-						"": {pluginKey1},
+					defaultPlugins: map[config.Version][]string{
+						{}: {pluginKey1},
 					},
 				}
 				_, plugins, err = c.resolveFlagsAndConfigFileConflicts(
 					"",
-					"",
+					config.Version{},
 					[]string{pluginKey2},
 					[]string{pluginKey2},
 				)
@@ -571,13 +545,13 @@ var _ = Describe("CLI", func() {
 
 			It("should fail if plugin keys from flags and config file are different", func() {
 				c = &cli{
-					defaultPlugins: map[string][]string{
-						"": {pluginKey1},
+					defaultPlugins: map[config.Version][]string{
+						{}: {pluginKey1},
 					},
 				}
 				_, _, err = c.resolveFlagsAndConfigFileConflicts(
 					"",
-					"",
+					config.Version{},
 					[]string{pluginKey2},
 					[]string{pluginKey3},
 				)
@@ -587,16 +561,11 @@ var _ = Describe("CLI", func() {
 
 		When("an invalid plugin key is set", func() {
 			It("should fail", func() {
-				c = &cli{
-					defaultProjectVersion: projectVersion1,
-					defaultPlugins: map[string][]string{
-						projectVersion1: {"invalid_plugin/v1"},
-					},
-				}
+				c = &cli{}
 				_, plugins, err = c.resolveFlagsAndConfigFileConflicts(
 					"",
-					"",
-					nil,
+					config.Version{},
+					[]string{"A"},
 					nil,
 				)
 				Expect(err).To(HaveOccurred())
@@ -609,25 +578,26 @@ var _ = Describe("CLI", func() {
 	//       conflicts are solved appropriately.
 	Context("cli.getInfo", func() {
 		It("should set project version and plugin keys", func() {
-			projectVersion := "2"
+			projectVersion := config.Version{Number: 2}
 			pluginKeys := []string{"go.kubebuilder.io/v2"}
 			c := &cli{
 				defaultProjectVersion: projectVersion,
-				defaultPlugins: map[string][]string{
+				defaultPlugins: map[config.Version][]string{
 					projectVersion: pluginKeys,
 				},
 			}
 			c.cmd = c.newRootCmd()
 			Expect(c.getInfo()).To(Succeed())
-			Expect(c.projectVersion).To(Equal(projectVersion))
+			Expect(c.projectVersion.Compare(projectVersion)).To(Equal(0))
 			Expect(c.pluginKeys).To(Equal(pluginKeys))
 		})
 	})
 
 	Context("cli.resolve", func() {
-		const projectVersion = "2"
 		var (
 			c *cli
+
+			projectVersion = config.Version{Number: 2}
 
 			pluginKeys = []string{
 				"foo.example.com/v1",
@@ -719,7 +689,7 @@ var _ = Describe("CLI", func() {
 		When("providing an invalid option", func() {
 			It("should return an error", func() {
 				// An empty project version is not valid
-				_, err = New(WithDefaultProjectVersion(""))
+				_, err = New(WithDefaultProjectVersion(config.Version{}))
 				Expect(err).To(HaveOccurred())
 			})
 		})
@@ -756,12 +726,14 @@ var _ = Describe("CLI", func() {
 		})
 
 		When("providing deprecated plugins", func() {
-			It("should success and print the deprecation notice", func() {
+			It("should succeed and print the deprecation notice", func() {
 				const (
-					projectVersion     = "2"
 					deprecationWarning = "DEPRECATED"
 				)
-				var deprecatedPlugin = newMockDeprecatedPlugin("deprecated", "v1", deprecationWarning, projectVersion)
+				var (
+					projectVersion   = config.Version{Number: 2}
+					deprecatedPlugin = newMockDeprecatedPlugin("deprecated", "v1", deprecationWarning, projectVersion)
+				)
 
 				// Overwrite stdout to read the output and reset it afterwards
 				r, w, _ := os.Pipe()

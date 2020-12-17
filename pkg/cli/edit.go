@@ -83,7 +83,7 @@ func (c cli) bindEdit(ctx plugin.Context, cmd *cobra.Command) {
 	}
 
 	subcommand := editPlugin.GetEditSubcommand()
-	subcommand.InjectConfig(&cfg.Config)
+	subcommand.InjectConfig(cfg.Config)
 	subcommand.BindFlags(cmd.Flags())
 	subcommand.UpdateContext(&ctx)
 	cmd.Long = ctx.Description

@@ -22,6 +22,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 )
 
@@ -39,27 +40,27 @@ var (
 type mockPlugin struct { //nolint:maligned
 	name            string
 	version         plugin.Version
-	projectVersions []string
+	projectVersions []config.Version
 }
 
-func newMockPlugin(name, version string, projVers ...string) plugin.Plugin {
-	v, err := plugin.ParseVersion(version)
-	if err != nil {
+func newMockPlugin(name, version string, projVers ...config.Version) plugin.Plugin {
+	var v plugin.Version
+	if err := v.Parse(version); err != nil {
 		panic(err)
 	}
 	return mockPlugin{name, v, projVers}
 }
 
-func (p mockPlugin) Name() string                       { return p.name }
-func (p mockPlugin) Version() plugin.Version            { return p.version }
-func (p mockPlugin) SupportedProjectVersions() []string { return p.projectVersions }
+func (p mockPlugin) Name() string                               { return p.name }
+func (p mockPlugin) Version() plugin.Version                    { return p.version }
+func (p mockPlugin) SupportedProjectVersions() []config.Version { return p.projectVersions }
 
 type mockDeprecatedPlugin struct { //nolint:maligned
 	mockPlugin
 	deprecation string
 }
 
-func newMockDeprecatedPlugin(name, version, deprecation string, projVers ...string) plugin.Plugin {
+func newMockDeprecatedPlugin(name, version, deprecation string, projVers ...config.Version) plugin.Plugin {
 	return mockDeprecatedPlugin{
 		mockPlugin:  newMockPlugin(name, version, projVers...).(mockPlugin),
 		deprecation: deprecation,

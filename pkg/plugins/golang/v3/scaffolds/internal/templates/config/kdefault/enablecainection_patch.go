@@ -27,9 +27,7 @@ var _ file.Template = &WebhookCAInjectionPatch{}
 // WebhookCAInjectionPatch scaffolds a file that defines the patch that adds annotation to webhooks
 type WebhookCAInjectionPatch struct {
 	file.TemplateMixin
-
-	// Version of webhook patch to generate.
-	WebhookVersion string
+	file.ResourceMixin
 }
 
 // SetTemplateDefaults implements file.Template
@@ -43,23 +41,19 @@ func (f *WebhookCAInjectionPatch) SetTemplateDefaults() error {
 	// If file exists (ex. because a webhook was already created), skip creation.
 	f.IfExistsAction = file.Skip
 
-	if f.WebhookVersion == "" {
-		f.WebhookVersion = "v1"
-	}
-
 	return nil
 }
 
 const injectCAPatchTemplate = `# This patch add annotation to admission webhook config and
 # the variables $(CERTIFICATE_NAMESPACE) and $(CERTIFICATE_NAME) will be substituted by kustomize.
-apiVersion: admissionregistration.k8s.io/{{ .WebhookVersion }}
+apiVersion: admissionregistration.k8s.io/{{ .Resource.Webhooks.WebhookVersion }}
 kind: MutatingWebhookConfiguration
 metadata:
   name: mutating-webhook-configuration
   annotations:
     cert-manager.io/inject-ca-from: $(CERTIFICATE_NAMESPACE)/$(CERTIFICATE_NAME)
 ---
-apiVersion: admissionregistration.k8s.io/{{ .WebhookVersion }}
+apiVersion: admissionregistration.k8s.io/{{ .Resource.Webhooks.WebhookVersion }}
 kind: ValidatingWebhookConfiguration
 metadata:
   name: validating-webhook-configuration

@@ -49,7 +49,7 @@ metadata:
   name: {{ lower .Resource.Kind }}-editor-role
 rules:
 - apiGroups:
-  - {{ .Resource.Domain }}
+  - {{ .Resource.QualifiedGroup }}
   resources:
   - {{ .Resource.Plural }}
   verbs:
@@ -61,7 +61,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - {{ .Resource.Domain }}
+  - {{ .Resource.QualifiedGroup }}
   resources:
   - {{ .Resource.Plural }}/status
   verbs:

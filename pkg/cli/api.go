@@ -83,7 +83,7 @@ func (c cli) bindCreateAPI(ctx plugin.Context, cmd *cobra.Command) {
 	}
 
 	subcommand := createAPIPlugin.GetCreateAPISubcommand()
-	subcommand.InjectConfig(&cfg.Config)
+	subcommand.InjectConfig(cfg.Config)
 	subcommand.BindFlags(cmd.Flags())
 	subcommand.UpdateContext(&ctx)
 	cmd.Long = ctx.Description

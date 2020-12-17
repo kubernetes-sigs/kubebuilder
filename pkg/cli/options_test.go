@@ -23,26 +23,29 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/spf13/cobra"
 
+	"sigs.k8s.io/kubebuilder/v3/pkg/config"
+	"sigs.k8s.io/kubebuilder/v3/pkg/model/stage"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 )
 
 var _ = Describe("CLI options", func() {
 
 	const (
-		pluginName     = "plugin"
-		pluginVersion  = "v1"
-		projectVersion = "1"
+		pluginName    = "plugin"
+		pluginVersion = "v1"
 	)
 
 	var (
 		c   *cli
 		err error
 
+		projectVersion = config.Version{Number: 1}
+
 		p   = newMockPlugin(pluginName, pluginVersion, projectVersion)
 		np1 = newMockPlugin("Plugin", pluginVersion, projectVersion)
-		np2 = mockPlugin{pluginName, plugin.Version{Number: -1, Stage: plugin.StableStage}, []string{projectVersion}}
+		np2 = mockPlugin{pluginName, plugin.Version{Number: -1}, []config.Version{projectVersion}}
 		np3 = newMockPlugin(pluginName, pluginVersion)
-		np4 = newMockPlugin(pluginName, pluginVersion, "a")
+		np4 = newMockPlugin(pluginName, pluginVersion, config.Version{})
 	)
 
 	Context("WithCommandName", func() {
@@ -67,10 +70,10 @@ var _ = Describe("CLI options", func() {
 
 	Context("WithDefaultProjectVersion", func() {
 		It("should return a valid CLI", func() {
-			defaultProjectVersions := []string{
-				"1",
-				"2",
-				"3-alpha",
+			defaultProjectVersions := []config.Version{
+				{Number: 1},
+				{Number: 2},
+				{Number: 3, Stage: stage.Alpha},
 			}
 			for _, defaultProjectVersion := range defaultProjectVersions {
 				By(fmt.Sprintf("using %q", defaultProjectVersion))
@@ -82,12 +85,9 @@ var _ = Describe("CLI options", func() {
 		})
 
 		It("should return an error", func() {
-			defaultProjectVersions := []string{
-				"",         // Empty default project version
-				"v1",       // 'v' prefix for project version
-				"1alpha",   // non-delimited non-stable suffix
-				"1.alpha",  // non-stable version delimited by '.'
-				"1-alpha1", // number-suffixed non-stable version
+			defaultProjectVersions := []config.Version{
+				{},                                  // Empty default project version
+				{Number: 1, Stage: stage.Stage(27)}, // Invalid stage in default project version
 			}
 			for _, defaultProjectVersion := range defaultProjectVersions {
 				By(fmt.Sprintf("using %q", defaultProjectVersion))
@@ -102,12 +102,12 @@ var _ = Describe("CLI options", func() {
 			c, err = newCLI(WithDefaultPlugins(projectVersion, p))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(c).NotTo(BeNil())
-			Expect(c.defaultPlugins).To(Equal(map[string][]string{projectVersion: {plugin.KeyFor(p)}}))
+			Expect(c.defaultPlugins).To(Equal(map[config.Version][]string{projectVersion: {plugin.KeyFor(p)}}))
 		})
 
 		When("providing an invalid project version", func() {
 			It("should return an error", func() {
-				_, err = newCLI(WithDefaultPlugins("", p))
+				_, err = newCLI(WithDefaultPlugins(config.Version{}, p))
 				Expect(err).To(HaveOccurred())
 			})
 		})
@@ -149,7 +149,7 @@ var _ = Describe("CLI options", func() {
 
 		When("providing a default plugin for an unsupported project version", func() {
 			It("should return an error", func() {
-				_, err = newCLI(WithDefaultPlugins("2", p))
+				_, err = newCLI(WithDefaultPlugins(config.Version{Number: 2}, p))
 				Expect(err).To(HaveOccurred())
 			})
 		})

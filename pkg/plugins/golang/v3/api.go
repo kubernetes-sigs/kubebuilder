@@ -27,10 +27,10 @@ import (
 
 	"github.com/spf13/pflag"
 
+	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/config"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
+	goPlugin "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/cmdutil"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/util"
@@ -51,18 +51,16 @@ const (
 const DefaultMainPath = "main.go"
 
 type createAPISubcommand struct {
-	config *config.Config
+	config config.Config
 
 	// pattern indicates that we should use a plugin to build according to a pattern
 	pattern string
 
-	resource *resource.Options
+	options *goPlugin.Options
 
 	// Check if we have to scaffold resource and/or controller
 	resourceFlag   *pflag.Flag
 	controllerFlag *pflag.Flag
-	doResource     bool
-	doController   bool
 
 	// force indicates that the resource should be created even if it already exists
 	force bool
@@ -109,13 +107,6 @@ After the scaffold is written, api will run make on the project.
 func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.runMake, "make", true, "if true, run make after generating files")
 
-	fs.BoolVar(&p.doResource, "resource", true,
-		"if set, generate the resource without prompting the user")
-	p.resourceFlag = fs.Lookup("resource")
-	fs.BoolVar(&p.doController, "controller", true,
-		"if set, generate the controller without prompting the user")
-	p.controllerFlag = fs.Lookup("controller")
-
 	// TODO: remove this when a better solution for using addons is implemented.
 	if os.Getenv("KUBEBUILDER_ENABLE_PLUGINS") != "" {
 		fs.StringVar(&p.pattern, "pattern", "",
@@ -124,16 +115,27 @@ func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 
 	fs.BoolVar(&p.force, "force", false,
 		"attempt to create resource even if it already exists")
-	p.resource = &resource.Options{}
-	fs.StringVar(&p.resource.Kind, "kind", "", "resource Kind")
-	fs.StringVar(&p.resource.Group, "group", "", "resource Group")
-	fs.StringVar(&p.resource.Version, "version", "", "resource Version")
-	fs.BoolVar(&p.resource.Namespaced, "namespaced", true, "resource is namespaced")
-	fs.StringVar(&p.resource.API.CRDVersion, "crd-version", defaultCRDVersion,
+
+	p.options = &goPlugin.Options{}
+	fs.StringVar(&p.options.Group, "group", "", "resource Group")
+	p.options.Domain = p.config.GetDomain()
+	fs.StringVar(&p.options.Version, "version", "", "resource Version")
+	fs.StringVar(&p.options.Kind, "kind", "", "resource Kind")
+	// p.options.Plural can be set to specify an irregular plural form
+
+	fs.BoolVar(&p.options.DoAPI, "resource", true,
+		"if set, generate the resource without prompting the user")
+	p.resourceFlag = fs.Lookup("resource")
+	fs.StringVar(&p.options.CRDVersion, "crd-version", defaultCRDVersion,
 		"version of CustomResourceDefinition to scaffold. Options: [v1, v1beta1]")
+	fs.BoolVar(&p.options.Namespaced, "namespaced", true, "resource is namespaced")
+
+	fs.BoolVar(&p.options.DoController, "controller", true,
+		"if set, generate the controller without prompting the user")
+	p.controllerFlag = fs.Lookup("controller")
 }
 
-func (p *createAPISubcommand) InjectConfig(c *config.Config) {
+func (p *createAPISubcommand) InjectConfig(c config.Config) {
 	p.config = c
 }
 
@@ -142,11 +144,11 @@ func (p *createAPISubcommand) Run() error {
 }
 
 func (p *createAPISubcommand) Validate() error {
-	if err := p.resource.Validate(); err != nil {
+	if err := p.options.Validate(); err != nil {
 		return err
 	}
 
-	if p.resource.Group == "" && p.config.Domain == "" {
+	if p.options.Group == "" && p.options.Domain == "" {
 		return fmt.Errorf("can not have group and domain both empty")
 	}
 
@@ -160,31 +162,30 @@ func (p *createAPISubcommand) Validate() error {
 	reader := bufio.NewReader(os.Stdin)
 	if !p.resourceFlag.Changed {
 		fmt.Println("Create Resource [y/n]")
-		p.doResource = util.YesNo(reader)
+		p.options.DoAPI = util.YesNo(reader)
 	}
 	if !p.controllerFlag.Changed {
 		fmt.Println("Create Controller [y/n]")
-		p.doController = util.YesNo(reader)
+		p.options.DoController = util.YesNo(reader)
 	}
 
 	// In case we want to scaffold a resource API we need to do some checks
-	if p.doResource {
+	if p.options.DoAPI {
 		// Check that resource doesn't exist or flag force was set
-		res := p.config.GetResource(p.resource.Data())
-		if !p.force && (res != nil && res.API != nil) {
+		if res, err := p.config.GetResource(p.options.GVK()); err == nil && res.HasAPI() && !p.force {
 			return errors.New("API resource already exists")
 		}
 
 		// Check that the provided group can be added to the project
-		if !p.config.MultiGroup && len(p.config.Resources) != 0 && !p.config.HasGroup(p.resource.Group) {
+		if !p.config.IsMultiGroup() && p.config.ResourcesLength() != 0 && !p.config.HasGroup(p.options.Group) {
 			return fmt.Errorf("multiple groups are not allowed by default, " +
 				"to enable multi-group visit kubebuilder.io/migration/multi-group.html")
 		}
 
 		// Check CRDVersion against all other CRDVersions in p.config for compatibility.
-		if !p.config.IsCRDVersionCompatible(p.resource.API.CRDVersion) {
+		if !p.config.IsCRDVersionCompatible(p.options.CRDVersion) {
 			return fmt.Errorf("only one CRD version can be used for all resources, cannot add %q",
-				p.resource.API.CRDVersion)
+				p.options.CRDVersion)
 		}
 	}
 
@@ -209,9 +210,9 @@ func (p *createAPISubcommand) GetScaffolder() (cmdutil.Scaffolder, error) {
 		return nil, fmt.Errorf("unknown pattern %q", p.pattern)
 	}
 
-	// Create the actual resource from the resource options
-	res := p.resource.NewResource(p.config, p.doResource)
-	return scaffolds.NewAPIScaffolder(p.config, string(bp), res, p.doResource, p.doController, p.force, plugins), nil
+	// Create the resource from the options
+	res := p.options.NewResource(p.config)
+	return scaffolds.NewAPIScaffolder(p.config, string(bp), res, p.force, plugins), nil
 }
 
 func (p *createAPISubcommand) PostScaffold() error {

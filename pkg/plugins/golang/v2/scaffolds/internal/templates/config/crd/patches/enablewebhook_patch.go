@@ -47,7 +47,7 @@ const enableWebhookPatchTemplate = `# The following patch enables conversion web
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: {{ .Resource.Plural }}.{{ .Resource.Domain }}
+  name: {{ .Resource.Plural }}.{{ .Resource.QualifiedGroup }}
 spec:
   conversion:
     strategy: Webhook

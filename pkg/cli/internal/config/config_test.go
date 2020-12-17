@@ -23,179 +23,49 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/config"
+	cfgv2 "sigs.k8s.io/kubebuilder/v3/pkg/config/v2"
 )
 
 var _ = Describe("Config", func() {
-	var (
-		cfg               Config
-		expectedConfigStr string
-	)
-
-	Context("with valid keys", func() {
-		It("should save correctly", func() {
-
-			By("saving empty config")
-			Expect(cfg.Save()).NotTo(Succeed())
-
-			By("saving empty config with path")
-			cfg = Config{
-				fs:   afero.NewMemMapFs(),
-				path: DefaultPath,
+	Context("Save", func() {
+		It("should success for valid configs", func() {
+			cfg := Config{
+				Config: cfgv2.New(),
+				fs:     afero.NewMemMapFs(),
+				path:   DefaultPath,
 			}
 			Expect(cfg.Save()).To(Succeed())
+
 			cfgBytes, err := afero.ReadFile(cfg.fs, DefaultPath)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(string(cfgBytes)).To(Equal(expectedConfigStr))
-
-			By("saving config version 2")
-			cfg = Config{
-				Config: config.Config{
-					Version: config.Version2,
-					Repo:    "github.com/example/project",
-					Domain:  "example.com",
-				},
-				fs:   afero.NewMemMapFs(),
-				path: DefaultPath,
-			}
-			expectedConfigStr = `domain: example.com
-repo: github.com/example/project
-version: "2"
-`
-			Expect(cfg.Save()).To(Succeed())
-			cfgBytes, err = afero.ReadFile(cfg.fs, DefaultPath)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(string(cfgBytes)).To(Equal(expectedConfigStr))
-
-			By("saving config version 3-alpha with plugin config")
-			cfg = Config{
-				Config: config.Config{
-					Version: config.Version3Alpha,
-					Repo:    "github.com/example/project",
-					Domain:  "example.com",
-					Plugins: config.PluginConfigs{
-						"plugin-x": map[string]interface{}{
-							"data-1": "single plugin datum",
-						},
-						"plugin-y/v1": map[string]interface{}{
-							"data-1": "plugin value 1",
-							"data-2": "plugin value 2",
-							"data-3": []string{"plugin value 3", "plugin value 4"},
-						},
-					},
-				},
-				fs:   afero.NewMemMapFs(),
-				path: DefaultPath,
-			}
-			expectedConfigStr = `domain: example.com
-repo: github.com/example/project
-version: 3-alpha
-plugins:
-  plugin-x:
-    data-1: single plugin datum
-  plugin-y/v1:
-    data-1: plugin value 1
-    data-2: plugin value 2
-    data-3:
-    - plugin value 3
-    - plugin value 4
-`
-			Expect(cfg.Save()).To(Succeed())
-			cfgBytes, err = afero.ReadFile(cfg.fs, DefaultPath)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(string(cfgBytes)).To(Equal(expectedConfigStr))
+			Expect(string(cfgBytes)).To(Equal(`version: "2"
+`))
 		})
 
-		It("should load correctly", func() {
-			var (
-				fs             afero.Fs
-				configStr      string
-				expectedConfig config.Config
-			)
-
-			By("loading config version 2")
-			fs = afero.NewMemMapFs()
-			configStr = `domain: example.com
-repo: github.com/example/project
-version: "2"`
-			expectedConfig = config.Config{
-				Version: config.Version2,
-				Repo:    "github.com/example/project",
-				Domain:  "example.com",
+		It("should fail if path is not provided", func() {
+			cfg := Config{
+				Config: cfgv2.New(),
+				fs:     afero.NewMemMapFs(),
 			}
-			Expect(afero.WriteFile(fs, DefaultPath, []byte(configStr), os.ModePerm)).To(Succeed())
-			cfg, err := readFrom(fs, DefaultPath)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(cfg).To(Equal(expectedConfig))
-
-			By("loading config version 3-alpha with plugin config")
-			fs = afero.NewMemMapFs()
-			configStr = `domain: example.com
-repo: github.com/example/project
-version: 3-alpha
-plugins:
-  plugin-x:
-    data-1: single plugin datum
-  plugin-y/v1:
-    data-1: plugin value 1
-    data-2: plugin value 2
-    data-3:
-    - "plugin value 3"
-    - "plugin value 4"`
-			expectedConfig = config.Config{
-				Version: config.Version3Alpha,
-				Repo:    "github.com/example/project",
-				Domain:  "example.com",
-				Plugins: config.PluginConfigs{
-					"plugin-x": map[string]interface{}{
-						"data-1": "single plugin datum",
-					},
-					"plugin-y/v1": map[string]interface{}{
-						"data-1": "plugin value 1",
-						"data-2": "plugin value 2",
-						"data-3": []interface{}{"plugin value 3", "plugin value 4"},
-					},
-				},
-			}
-			Expect(afero.WriteFile(fs, DefaultPath, []byte(configStr), os.ModePerm)).To(Succeed())
-			cfg, err = readFrom(fs, DefaultPath)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(cfg).To(Equal(expectedConfig))
+			Expect(cfg.Save()).NotTo(Succeed())
 		})
 	})
 
-	Context("with invalid keys", func() {
-		It("should return a save error", func() {
-			By("saving config version 2 with plugin config")
-			cfg = Config{
-				Config: config.Config{
-					Version: config.Version2,
-					Repo:    "github.com/example/project",
-					Domain:  "example.com",
-					Plugins: config.PluginConfigs{
-						"plugin-x": map[string]interface{}{
-							"data-1": "single plugin datum",
-						},
-					},
-				},
-				fs:   afero.NewMemMapFs(),
-				path: DefaultPath,
-			}
-			Expect(cfg.Save()).NotTo(Succeed())
-		})
-
-		It("should return a load error", func() {
-			By("loading config version 2 with plugin config")
-			fs := afero.NewMemMapFs()
+	Context("readFrom", func() {
+		It("should success for valid configs", func() {
 			configStr := `domain: example.com
 repo: github.com/example/project
-version: "2"
-plugins:
-	plugin-x:
-		data-1: single plugin datum`
+version: "2"`
+			expectedConfig := cfgv2.New()
+			_ = expectedConfig.SetDomain("example.com")
+			_ = expectedConfig.SetRepository("github.com/example/project")
+
+			fs := afero.NewMemMapFs()
 			Expect(afero.WriteFile(fs, DefaultPath, []byte(configStr), os.ModePerm)).To(Succeed())
-			_, err := readFrom(fs, DefaultPath)
-			Expect(err).To(HaveOccurred())
+
+			cfg, err := readFrom(fs, DefaultPath)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(cfg).To(Equal(expectedConfig))
 		})
 	})
 })

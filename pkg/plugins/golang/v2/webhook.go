@@ -23,22 +23,18 @@ import (
 
 	"github.com/spf13/pflag"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/config"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
+	newconfig "sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/cmdutil"
 )
 
 type createWebhookSubcommand struct {
-	config *config.Config
+	config newconfig.Config
 	// For help text.
 	commandName string
 
-	resource   *resource.Options
-	defaulting bool
-	validation bool
-	conversion bool
+	options *Options
 }
 
 var (
@@ -63,21 +59,23 @@ validating and (or) conversion webhooks.
 }
 
 func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
-	p.resource = &resource.Options{}
-	fs.StringVar(&p.resource.Group, "group", "", "resource Group")
-	fs.StringVar(&p.resource.Version, "version", "", "resource Version")
-	fs.StringVar(&p.resource.Kind, "kind", "", "resource Kind")
-	fs.StringVar(&p.resource.Plural, "resource", "", "resource Resource")
+	p.options = &Options{}
+	fs.StringVar(&p.options.Group, "group", "", "resource Group")
+	p.options.Domain = p.config.GetDomain()
+	fs.StringVar(&p.options.Version, "version", "", "resource Version")
+	fs.StringVar(&p.options.Kind, "kind", "", "resource Kind")
+	fs.StringVar(&p.options.Plural, "resource", "", "resource irregular plural form")
 
-	fs.BoolVar(&p.defaulting, "defaulting", false,
+	p.options.WebhookVersion = "v1beta1"
+	fs.BoolVar(&p.options.DoDefaulting, "defaulting", false,
 		"if set, scaffold the defaulting webhook")
-	fs.BoolVar(&p.validation, "programmatic-validation", false,
+	fs.BoolVar(&p.options.DoValidation, "programmatic-validation", false,
 		"if set, scaffold the validating webhook")
-	fs.BoolVar(&p.conversion, "conversion", false,
+	fs.BoolVar(&p.options.DoConversion, "conversion", false,
 		"if set, scaffold the conversion webhook")
 }
 
-func (p *createWebhookSubcommand) InjectConfig(c *config.Config) {
+func (p *createWebhookSubcommand) InjectConfig(c newconfig.Config) {
 	p.config = c
 }
 
@@ -86,17 +84,17 @@ func (p *createWebhookSubcommand) Run() error {
 }
 
 func (p *createWebhookSubcommand) Validate() error {
-	if err := p.resource.ValidateV2(); err != nil {
+	if err := p.options.Validate(); err != nil {
 		return err
 	}
 
-	if !p.defaulting && !p.validation && !p.conversion {
+	if !p.options.DoDefaulting && !p.options.DoValidation && !p.options.DoConversion {
 		return fmt.Errorf("%s create webhook requires at least one of --defaulting,"+
 			" --programmatic-validation and --conversion to be true", p.commandName)
 	}
 
 	// check if resource exist to create webhook
-	if p.config.GetResource(p.resource.Data()) == nil {
+	if !p.config.HasResource(p.options.GVK()) {
 		return fmt.Errorf("%s create webhook requires an api with the group,"+
 			" kind and version provided", p.commandName)
 	}
@@ -111,9 +109,9 @@ func (p *createWebhookSubcommand) GetScaffolder() (cmdutil.Scaffolder, error) {
 		return nil, fmt.Errorf("unable to load boilerplate: %v", err)
 	}
 
-	// Create the actual resource from the resource options
-	res := p.resource.NewResource(p.config, false)
-	return scaffolds.NewWebhookScaffolder(p.config, string(bp), res, p.defaulting, p.validation, p.conversion), nil
+	// Create the resource from the options
+	res := p.options.NewResource(p.config)
+	return scaffolds.NewWebhookScaffolder(p.config, string(bp), res), nil
 }
 
 func (p *createWebhookSubcommand) PostScaffold() error {

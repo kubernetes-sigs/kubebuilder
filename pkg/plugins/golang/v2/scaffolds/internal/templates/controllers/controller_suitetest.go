@@ -37,9 +37,6 @@ type SuiteTest struct {
 	// CRDDirectoryRelativePath define the Path for the CRD
 	CRDDirectoryRelativePath string
 
-	// WireResource defines the api resources are generated or not.
-	WireResource bool
-
 	Force bool
 }
 
@@ -101,14 +98,14 @@ func (f *SuiteTest) GetCodeFragments() file.CodeFragmentsMap {
 
 	// Generate import code fragments
 	imports := make([]string, 0)
-	if f.WireResource {
-		imports = append(imports, fmt.Sprintf(apiImportCodeFragment, f.Resource.ImportAlias, f.Resource.Package))
+	if f.Resource.HasAPI() {
+		imports = append(imports, fmt.Sprintf(apiImportCodeFragment, f.Resource.ImportAlias(), f.Resource.Path))
 	}
 
 	// Generate add scheme code fragments
 	addScheme := make([]string, 0)
-	if f.WireResource {
-		addScheme = append(addScheme, fmt.Sprintf(addschemeCodeFragment, f.Resource.ImportAlias))
+	if f.Resource.HasAPI() {
+		addScheme = append(addScheme, fmt.Sprintf(addschemeCodeFragment, f.Resource.ImportAlias()))
 	}
 
 	// Only store code fragments in the map if the slices are non-empty

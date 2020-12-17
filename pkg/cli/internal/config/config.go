@@ -22,16 +22,14 @@ import (
 	"os"
 
 	"github.com/spf13/afero"
+	"sigs.k8s.io/yaml"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/config"
+	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 )
 
 const (
 	// DefaultPath is the default path for the configuration file
 	DefaultPath = "PROJECT"
-
-	// DefaultVersion is the version which will be used when the version flag is not provided
-	DefaultVersion = config.Version3Alpha
 )
 
 func exists(fs afero.Fs, path string) (bool, error) {
@@ -50,35 +48,46 @@ func exists(fs afero.Fs, path string) (bool, error) {
 	return false, err
 }
 
-func readFrom(fs afero.Fs, path string) (c config.Config, err error) {
+type versionedConfig struct {
+	Version config.Version
+}
+
+func readFrom(fs afero.Fs, path string) (config.Config, error) {
 	// Read the file
 	in, err := afero.ReadFile(fs, path) //nolint:gosec
 	if err != nil {
-		return
+		return nil, err
+	}
+
+	// Check the file version
+	var versioned versionedConfig
+	if err := yaml.Unmarshal(in, &versioned); err != nil {
+		return nil, err
+	}
+
+	// Create the config object
+	var c config.Config
+	c, err = config.New(versioned.Version)
+	if err != nil {
+		return nil, err
 	}
 
 	// Unmarshal the file content
-	if err = c.Unmarshal(in); err != nil {
-		return
+	if err := c.Unmarshal(in); err != nil {
+		return nil, err
 	}
 
-	// kubebuilder v1 omitted version and it is not supported, so return an error
-	if c.Version == "" {
-		return config.Config{}, fmt.Errorf("project version key `version` is empty or does not exist in %s", path)
-	}
-
-	return
+	return c, nil
 }
 
 // Read obtains the configuration from the default path but doesn't allow to persist changes
-func Read() (*config.Config, error) {
+func Read() (config.Config, error) {
 	return ReadFrom(DefaultPath)
 }
 
 // ReadFrom obtains the configuration from the provided path but doesn't allow to persist changes
-func ReadFrom(path string) (*config.Config, error) {
-	c, err := readFrom(afero.NewOsFs(), path)
-	return &c, err
+func ReadFrom(path string) (config.Config, error) {
+	return readFrom(afero.NewOsFs(), path)
 }
 
 // Config extends model/config.Config allowing to persist changes
@@ -96,15 +105,18 @@ type Config struct {
 }
 
 // New creates a new configuration that will be stored at the provided path
-func New(path string) *Config {
+func New(version config.Version, path string) (*Config, error) {
+	cfg, err := config.New(version)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Config{
-		Config: config.Config{
-			Version: DefaultVersion,
-		},
+		Config:       cfg,
 		path:         path,
 		mustNotExist: true,
 		fs:           afero.NewOsFs(),
-	}
+	}, nil
 }
 
 // Load obtains the configuration from the default path allowing to persist changes (Save method)

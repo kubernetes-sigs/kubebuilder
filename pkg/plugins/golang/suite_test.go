@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubernetes Authors.
+Copyright 2021 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package resource_test
+package golang
 
 import (
 	"testing"
@@ -23,7 +23,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestResource(t *testing.T) {
+func TestGoPlugin(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Resource Suite")
+	RunSpecs(t, "Go Plugin Suite")
 }
