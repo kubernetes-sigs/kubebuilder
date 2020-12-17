@@ -62,14 +62,8 @@
       - [Migration Guide](./migration/legacy/migration_guide_v1tov2.md)
 
   - [Kubebuilder v2 vs v3](./migration/v2vsv3.md)
-
-  - [Project Version Migration Guide](./migration/project/projects.md)
-
-    - [v2 to v3](./migration/project/v2_v3.md)
-
-  - [Plugin Version Migration Guide](./migration/plugin/plugins.md)
-
-    - [v2 to v3](./migration/plugin/v2_v3.md)
+      - [Migration Guide](./migration/migration_guide_v2tov3.md)
+      - [Migration by updating the files](./migration/manually_migration_guide_v2_v3.md)
 
   - [Single Group to Multi-Group](./migration/multi-group.md)
 
