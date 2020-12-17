@@ -75,7 +75,7 @@ spec:
         - /manager
 {{- if not .ComponentConfig }}
         args:
-        - --leader-elect
+        - --enable-leader-election
 {{- end }}
         image: {{ .Image }}
         name: manager
