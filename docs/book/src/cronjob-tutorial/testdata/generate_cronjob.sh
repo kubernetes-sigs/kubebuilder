@@ -52,7 +52,7 @@ function gen_cronjob_tutorial {
   mkdir project
   cd project
   header_text "creating tutorial.kubebuilder.io base  ..."
-  kubebuilder init --plugins=go/v3-alpha --domain=tutorial.kubebuilder.io --project-version=3-alpha --repo=tutorial.kubebuilder.io/project --license apache2 --owner "The Kubernetes authors"
+  kubebuilder init --domain=tutorial.kubebuilder.io --project-version=3-alpha --repo=tutorial.kubebuilder.io/project --license apache2 --owner "The Kubernetes authors"
   kubebuilder create api --group batch --version v1 --kind CronJob --resource --controller
   kubebuilder create webhook --group batch --version v1 --kind CronJob --defaulting --programmatic-validation
 }

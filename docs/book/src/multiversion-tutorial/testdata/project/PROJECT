@@ -1,16 +1,20 @@
 domain: tutorial.kubebuilder.io
-layout: go.kubebuilder.io/v3-alpha
+layout: go.kubebuilder.io/v3
 projectName: project
 repo: tutorial.kubebuilder.io/project
 resources:
-- crdVersion: v1
+- api:
+    crdVersion: v1
   group: batch
   kind: CronJob
   version: v1
-  webhookVersion: v1
-- crdVersion: v1
+  webhooks:
+    webhookVersion: v1
+- api:
+    crdVersion: v1
   group: batch
   kind: CronJob
   version: v2
-  webhookVersion: v1
+  webhooks:
+    webhookVersion: v1
 version: 3-alpha
