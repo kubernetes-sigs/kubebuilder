@@ -83,7 +83,7 @@ type CronJobSpec struct {
 	// +optional
 	FailedJobsHistoryLimit *int32 `json:"failedJobsHistoryLimit,omitempty"`
 
-	// +kubebuilder:docs-gen:collapse=The rest of Spec
+	//+kubebuilder:docs-gen:collapse=The rest of Spec
 }
 
 /*
@@ -157,8 +157,8 @@ type CronJobStatus struct {
 	LastScheduleTime *metav1.Time `json:"lastScheduleTime,omitempty"`
 }
 
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
+//+kubebuilder:object:root=true
+//+kubebuilder:subresource:status
 
 // CronJob is the Schema for the cronjobs API
 type CronJob struct {
@@ -169,7 +169,7 @@ type CronJob struct {
 	Status CronJobStatus `json:"status,omitempty"`
 }
 
-// +kubebuilder:object:root=true
+//+kubebuilder:object:root=true
 
 // CronJobList contains a list of CronJob
 type CronJobList struct {

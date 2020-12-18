@@ -124,9 +124,9 @@ the storage version changes -- changing the storage version only affects how
 objects are created/updated after the change.
 */
 
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
-// +kubebuilder:storageversion
+//+kubebuilder:object:root=true
+//+kubebuilder:subresource:status
+//+kubebuilder:storageversion
 
 // CronJob is the Schema for the cronjobs API
 type CronJob struct {
@@ -140,7 +140,7 @@ type CronJob struct {
 /*
  */
 
-// +kubebuilder:object:root=true
+//+kubebuilder:object:root=true
 
 // CronJobList contains a list of CronJob
 type CronJobList struct {
