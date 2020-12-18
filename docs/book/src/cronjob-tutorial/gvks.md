@@ -46,6 +46,24 @@ a package.
 Now that we have our terminology straight, we can *actually* create our
 API!
 
+## So, how can we create our API? 
+
+In the next section, [Adding a new API](./cronjob-tutorial/new-api.html) we will check how the tool help us to create our own API's with the command `kubebuilder create api`.
+
+The goal of this command is to create Custom Resource (CR) and Custom Resource Definition (CRD) for our Kind(s). To check it further see; [Extend the Kubernetes API with CustomResourceDefinitions][kubernetes-extend-api].
+
+## But, why create APIs at all?
+
+New APIs are how we teach Kubernetes about our custom objects. The Go structs are used to generate a Custom Resource Definition (CRD) which includes the schema for our data as well as tracking data like what our new type is called. We can then create instances of our custom objects which will be managed by our [controllers][controllers].
+
+Our APIs and resouces represent our solutions on the clusters. Basically, the CRDs are a definition of our customized Objects, and the CRs are an instance of it.
+
+## Ah, do you have an example? 
+
+Let’s think about the classic scenario where the goal is to have an application and its database running on the platform with Kubernetes. Then, one CRD could represent the App, and another one could represent the DB. By having one CRD to describe the App and another one for the DB, we will not be hurting concepts such as encapsulation, the single responsibility principle, and cohesion. Damaging these concepts could cause unexpected side effects, such as difficulty in extending, reuse, or maintenance, just to mention a few.
+
+In this way, we can create the App CRD which will have its controller and which would be responsible for things like creating Deployments that contain the App and creating Services to access it and etc. Similarly, we could create a CRD to represent the DB, and deploy a controller that would manage DB instances.
+
 ## Err, but what's that Scheme thing?
 
 The `Scheme` we saw before is simply a way to keep track of what Go type
@@ -70,3 +88,6 @@ API server that says
 
 or properly look up the group-version when we go to submit a `&CronJob{}`
 in an update.
+
+[kubernetes-extend-api]: https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/
+[controllers]: ../cronjob-tutorial/controller-overview.md
