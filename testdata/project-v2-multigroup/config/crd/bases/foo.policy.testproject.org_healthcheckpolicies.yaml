@@ -37,7 +37,7 @@ spec:
           description: HealthCheckPolicySpec defines the desired state of HealthCheckPolicy
           properties:
             foo:
-              description: Foo is an example field of HealthCheckPolicy. Edit HealthCheckPolicy_types.go
+              description: Foo is an example field of HealthCheckPolicy. Edit healthcheckpolicy_types.go
                 to remove/update
               type: string
           type: object

@@ -37,7 +37,7 @@ spec:
             description: LakersSpec defines the desired state of Lakers
             properties:
               foo:
-                description: Foo is an example field of Lakers. Edit Lakers_types.go
+                description: Foo is an example field of Lakers. Edit lakers_types.go
                   to remove/update
                 type: string
             type: object

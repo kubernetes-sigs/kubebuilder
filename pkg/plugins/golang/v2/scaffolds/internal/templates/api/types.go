@@ -75,7 +75,7 @@ type {{ .Resource.Kind }}Spec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of {{ .Resource.Kind }}. Edit {{ .Resource.Kind }}_types.go to remove/update
+	// Foo is an example field of {{ .Resource.Kind }}. Edit {{ lower .Resource.Kind }}_types.go to remove/update
 	Foo string ` + "`" + `json:"foo,omitempty"` + "`" + `
 }
 

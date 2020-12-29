@@ -28,7 +28,7 @@ type HealthCheckPolicySpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of HealthCheckPolicy. Edit HealthCheckPolicy_types.go to remove/update
+	// Foo is an example field of HealthCheckPolicy. Edit healthcheckpolicy_types.go to remove/update
 	Foo string `json:"foo,omitempty"`
 }
 
