@@ -37,7 +37,7 @@ spec:
           description: FirstMateSpec defines the desired state of FirstMate
           properties:
             foo:
-              description: Foo is an example field of FirstMate. Edit FirstMate_types.go
+              description: Foo is an example field of FirstMate. Edit firstmate_types.go
                 to remove/update
               type: string
           type: object

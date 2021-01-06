@@ -37,7 +37,7 @@ spec:
             description: DestroyerSpec defines the desired state of Destroyer
             properties:
               foo:
-                description: Foo is an example field of Destroyer. Edit Destroyer_types.go
+                description: Foo is an example field of Destroyer. Edit destroyer_types.go
                   to remove/update
                 type: string
             type: object

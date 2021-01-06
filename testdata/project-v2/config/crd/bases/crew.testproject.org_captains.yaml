@@ -37,7 +37,7 @@ spec:
           description: CaptainSpec defines the desired state of Captain
           properties:
             foo:
-              description: Foo is an example field of Captain. Edit Captain_types.go
+              description: Foo is an example field of Captain. Edit captain_types.go
                 to remove/update
               type: string
           type: object

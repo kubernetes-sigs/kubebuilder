@@ -28,7 +28,7 @@ type AdmiralSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of Admiral. Edit Admiral_types.go to remove/update
+	// Foo is an example field of Admiral. Edit admiral_types.go to remove/update
 	Foo string `json:"foo,omitempty"`
 }
 

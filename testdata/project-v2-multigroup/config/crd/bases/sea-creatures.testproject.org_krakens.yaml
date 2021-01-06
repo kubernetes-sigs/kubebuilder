@@ -37,7 +37,7 @@ spec:
           description: KrakenSpec defines the desired state of Kraken
           properties:
             foo:
-              description: Foo is an example field of Kraken. Edit Kraken_types.go
+              description: Foo is an example field of Kraken. Edit kraken_types.go
                 to remove/update
               type: string
           type: object

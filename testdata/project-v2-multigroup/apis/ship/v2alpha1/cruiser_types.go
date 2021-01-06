@@ -28,7 +28,7 @@ type CruiserSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of Cruiser. Edit Cruiser_types.go to remove/update
+	// Foo is an example field of Cruiser. Edit cruiser_types.go to remove/update
 	Foo string `json:"foo,omitempty"`
 }
 
