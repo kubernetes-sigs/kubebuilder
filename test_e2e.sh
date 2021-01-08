@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+
 # Copyright 2018 The Kubernetes Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,28 +14,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -o errexit
-set -o nounset
-set -o pipefail
-
-source common.sh
-
-export TRACE=1
-export GO111MODULE=on
-
-fetch_tools
-install_kind
-build_kb
-
-setup_envs
-
-source "$(pwd)/scripts/setup.sh" ${KIND_K8S_VERSION}
-
-# remove running containers on exit
-function cleanup() {
-    kind delete cluster
-}
-
-trap cleanup EXIT
-go test ./test/e2e/v2
-go test ./test/e2e/v3 -timeout 20m
+./test/e2e/ci.sh

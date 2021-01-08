@@ -14,34 +14,25 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-source common.sh
+source "$(dirname "$0")/../common.sh"
 
-build_kb() {
-  header_text "Building kubebuilder"
-  go build -o ./bin/kubebuilder ./cmd
-}
-
-#
 # This function scaffolds test projects given a project name and flags.
 #
 # Usage:
 #
 #   scaffold_test_project <project name> <flag1> <flag2>
-#
-scaffold_test_project() {
+function scaffold_test_project {
   local project=$1
   shift
   local init_flags="$@"
 
-  local testdata_dir=$(pwd)/testdata
-  mkdir -p ./testdata/$project
-  rm -rf ./testdata/$project/*
-  pushd .
-  cd testdata/$project
-  local kb=$testdata_dir/../bin/kubebuilder
+  local testdata_dir="$(dirname "$0")/../../testdata"
+  mkdir -p $testdata_dir/$project
+  rm -rf $testdata_dir/$project/*
+  pushd $testdata_dir/$project
 
   # Remove tool binaries for projects of version 2, which don't have locally-configured binaries,
-  # so the correct versions are used.
+  # so the correct versions are used. Also, webhooks in version 2 don't have --make flag
   if [[ $init_flags =~ --project-version=2 ]]; then
     rm -f "$(command -v controller-gen)"
     rm -f "$(command -v kustomize)"
@@ -108,24 +99,20 @@ scaffold_test_project() {
     header_text 'enabling --pattern flag ...'
     export KUBEBUILDER_ENABLE_PLUGINS=1
     header_text 'Creating APIs ...'
-    $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --pattern=addon
+    $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false --pattern=addon
     $kb create api --group crew --version v1 --kind FirstMate --controller=true --resource=true --make=false --pattern=addon
     $kb create api --group crew --version v1 --kind Admiral --controller=true --resource=true --namespaced=false --make=false --pattern=addon
     unset KUBEBUILDER_ENABLE_PLUGINS
   fi
 
-  make all test
+  make generate manifests
   rm -f go.sum
-  rm -rf ./bin ./testbin
+
   popd
 }
 
-set -e
-
-export GO111MODULE=on
-export PATH="$PATH:$(go env GOPATH)/bin"
-
 build_kb
+
 # Project version 2 uses plugin go/v2 (default).
 scaffold_test_project project-v2 --project-version=2
 scaffold_test_project project-v2-multigroup --project-version=2
