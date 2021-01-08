@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubernetes authors.
+Copyright 2021 The Kubernetes authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ type FrigateSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of Frigate. Edit Frigate_types.go to remove/update
+	// Foo is an example field of Frigate. Edit frigate_types.go to remove/update
 	Foo string `json:"foo,omitempty"`
 }
 
@@ -38,8 +38,8 @@ type FrigateStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
+//+kubebuilder:object:root=true
+//+kubebuilder:subresource:status
 
 // Frigate is the Schema for the frigates API
 type Frigate struct {
@@ -50,7 +50,7 @@ type Frigate struct {
 	Status FrigateStatus `json:"status,omitempty"`
 }
 
-// +kubebuilder:object:root=true
+//+kubebuilder:object:root=true
 
 // FrigateList contains a list of Frigate
 type FrigateList struct {

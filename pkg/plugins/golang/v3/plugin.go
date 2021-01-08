@@ -26,7 +26,7 @@ const pluginName = "go" + plugins.DefaultNameQualifier
 
 var (
 	supportedProjectVersions = []string{config.Version3Alpha}
-	pluginVersion            = plugin.Version{Number: 3, Stage: plugin.AlphaStage}
+	pluginVersion            = plugin.Version{Number: 3}
 )
 
 var _ plugin.Full = Plugin{}

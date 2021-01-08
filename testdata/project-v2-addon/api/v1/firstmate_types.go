@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubernetes authors.
+Copyright 2021 The Kubernetes authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -41,8 +41,8 @@ type FirstMateStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
+//+kubebuilder:object:root=true
+//+kubebuilder:subresource:status
 
 // FirstMate is the Schema for the firstmates API
 type FirstMate struct {
@@ -75,7 +75,7 @@ func (o *FirstMate) SetCommonStatus(s addonv1alpha1.CommonStatus) {
 	o.Status.CommonStatus = s
 }
 
-// +kubebuilder:object:root=true
+//+kubebuilder:object:root=true
 
 // FirstMateList contains a list of FirstMate
 type FirstMateList struct {

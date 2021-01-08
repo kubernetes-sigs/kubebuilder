@@ -26,11 +26,14 @@ import (
 var _ file.Template = &Types{}
 
 // Types scaffolds the file that defines the schema for a CRD
+// nolint:maligned
 type Types struct {
 	file.TemplateMixin
 	file.MultiGroupMixin
 	file.BoilerplateMixin
 	file.ResourceMixin
+
+	Force bool
 }
 
 // SetTemplateDefaults implements file.Template
@@ -51,7 +54,11 @@ func (f *Types) SetTemplateDefaults() error {
 
 	f.TemplateBody = typesTemplate
 
-	f.IfExistsAction = file.Error
+	if f.Force {
+		f.IfExistsAction = file.Overwrite
+	} else {
+		f.IfExistsAction = file.Error
+	}
 
 	return nil
 }
@@ -72,7 +79,7 @@ type {{ .Resource.Kind }}Spec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of {{ .Resource.Kind }}. Edit {{ .Resource.Kind }}_types.go to remove/update
+	// Foo is an example field of {{ .Resource.Kind }}. Edit {{ lower .Resource.Kind }}_types.go to remove/update
 	Foo string ` + "`" + `json:"foo,omitempty"` + "`" + `
 }
 
@@ -82,9 +89,9 @@ type {{ .Resource.Kind }}Status struct {
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
-{{ if not .Resource.Namespaced }} // +kubebuilder:resource:scope=Cluster {{ end }}
+//+kubebuilder:object:root=true
+//+kubebuilder:subresource:status
+{{ if not .Resource.Namespaced }} //+kubebuilder:resource:scope=Cluster {{ end }}
 
 // {{ .Resource.Kind }} is the Schema for the {{ .Resource.Plural }} API
 type {{ .Resource.Kind }} struct {
@@ -95,7 +102,7 @@ type {{ .Resource.Kind }} struct {
 	Status {{ .Resource.Kind }}Status ` + "`" + `json:"status,omitempty"` + "`" + `
 }
 
-// +kubebuilder:object:root=true
+//+kubebuilder:object:root=true
 
 // {{ .Resource.Kind }}List contains a list of {{ .Resource.Kind }}
 type {{ .Resource.Kind }}List struct {

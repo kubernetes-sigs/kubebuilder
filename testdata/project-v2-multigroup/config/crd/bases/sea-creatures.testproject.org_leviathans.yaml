@@ -37,7 +37,7 @@ spec:
           description: LeviathanSpec defines the desired state of Leviathan
           properties:
             foo:
-              description: Foo is an example field of Leviathan. Edit Leviathan_types.go
+              description: Foo is an example field of Leviathan. Edit leviathan_types.go
                 to remove/update
               type: string
           type: object

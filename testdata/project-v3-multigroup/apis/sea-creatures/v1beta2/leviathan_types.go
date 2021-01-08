@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubernetes authors.
+Copyright 2021 The Kubernetes authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ type LeviathanSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of Leviathan. Edit Leviathan_types.go to remove/update
+	// Foo is an example field of Leviathan. Edit leviathan_types.go to remove/update
 	Foo string `json:"foo,omitempty"`
 }
 
@@ -38,8 +38,8 @@ type LeviathanStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
+//+kubebuilder:object:root=true
+//+kubebuilder:subresource:status
 
 // Leviathan is the Schema for the leviathans API
 type Leviathan struct {
@@ -50,7 +50,7 @@ type Leviathan struct {
 	Status LeviathanStatus `json:"status,omitempty"`
 }
 
-// +kubebuilder:object:root=true
+//+kubebuilder:object:root=true
 
 // LeviathanList contains a list of Leviathan
 type LeviathanList struct {

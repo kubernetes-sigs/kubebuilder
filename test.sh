@@ -155,5 +155,6 @@ test_project project-v2-addon 2
 test_project project-v3 3-alpha
 test_project project-v3-multigroup 3-alpha
 test_project project-v3-addon 3-alpha
+test_project project-v3-config 3-alpha
 
 exit $rc

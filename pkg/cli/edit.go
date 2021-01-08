@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cli
+package cli // nolint:dupl
 
 import (
 	"fmt"
@@ -50,7 +50,6 @@ func (c cli) newEditContext() plugin.Context {
 	}
 }
 
-// nolint:dupl
 func (c cli) bindEdit(ctx plugin.Context, cmd *cobra.Command) {
 	if len(c.resolvedPlugins) == 0 {
 		cmdErr(cmd, fmt.Errorf(noPluginError))

@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubernetes authors.
+Copyright 2021 The Kubernetes authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -34,9 +34,9 @@ type FrigateReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=ship.testproject.org,resources=frigates,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=ship.testproject.org,resources=frigates/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=ship.testproject.org,resources=frigates/finalizers,verbs=update
+//+kubebuilder:rbac:groups=ship.testproject.org,resources=frigates,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=ship.testproject.org,resources=frigates/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=ship.testproject.org,resources=frigates/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.

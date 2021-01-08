@@ -40,9 +40,9 @@ scaffold_test_project() {
   cd testdata/$project
   local kb=$testdata_dir/../bin/kubebuilder
 
-  # Remove tool binaries for non-plugin projects, which don't have locally-configured binaries,
+  # Remove tool binaries for projects of version 2, which don't have locally-configured binaries,
   # so the correct versions are used.
-  if [[ ! $init_flags =~ --plugins ]]; then
+  if [[ $init_flags =~ --project-version=2 ]]; then
     rm -f "$(command -v controller-gen)"
     rm -f "$(command -v kustomize)"
   fi
@@ -57,12 +57,16 @@ scaffold_test_project() {
   if [ $project == "project-v2" ] || [ $project == "project-v3" ] || [ $project == "project-v3-config" ]; then
     header_text 'Creating APIs ...'
     $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false
+    $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false --force
     $kb create webhook --group crew --version v1 --kind Captain --defaulting --programmatic-validation
     $kb create api --group crew --version v1 --kind FirstMate --controller=true --resource=true --make=false
     $kb create webhook --group crew --version v1 --kind FirstMate --conversion
     $kb create api --group crew --version v1 --kind Admiral --controller=true --resource=true --namespaced=false --make=false
     $kb create webhook --group crew --version v1 --kind Admiral --defaulting
     $kb create api --group crew --version v1 --kind Laker --controller=true --resource=false --make=false
+    if [ $project == "project-v3" ]; then
+      $kb create webhook --group crew --version v1 --kind Captain --defaulting --programmatic-validation --force
+    fi
   elif [[ $project =~ multigroup ]]; then
     header_text 'Switching to multigroup layout ...'
     $kb edit --multigroup=true
@@ -106,10 +110,12 @@ export GO111MODULE=on
 export PATH="$PATH:$(go env GOPATH)/bin"
 
 build_kb
+# Project version 2 uses plugin go/v2 (default).
 scaffold_test_project project-v2 --project-version=2
 scaffold_test_project project-v2-multigroup --project-version=2
 scaffold_test_project project-v2-addon --project-version=2
-scaffold_test_project project-v3 --project-version=3-alpha --plugins=go/v3-alpha
-scaffold_test_project project-v3-multigroup --project-version=3-alpha --plugins=go/v3-alpha
-scaffold_test_project project-v3-addon --project-version=3-alpha --plugins=go/v3-alpha
-scaffold_test_project project-v3-config --project-version=3-alpha --plugins=go/v3-alpha --component-config
+# Project version 3 (default) uses plugin go/v3 (default).
+scaffold_test_project project-v3
+scaffold_test_project project-v3-multigroup
+scaffold_test_project project-v3-addon
+scaffold_test_project project-v3-config --component-config

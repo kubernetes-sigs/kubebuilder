@@ -96,7 +96,7 @@ func (p *createWebhookSubcommand) Validate() error {
 	}
 
 	// check if resource exist to create webhook
-	if !p.config.HasResource(p.resource.GVK()) {
+	if p.config.GetResource(p.resource.Data()) == nil {
 		return fmt.Errorf("%s create webhook requires an api with the group,"+
 			" kind and version provided", p.commandName)
 	}

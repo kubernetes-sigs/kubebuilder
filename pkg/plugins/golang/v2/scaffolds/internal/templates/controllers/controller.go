@@ -35,6 +35,8 @@ type Controller struct {
 
 	// WireResource defines the api resources are generated or not.
 	WireResource bool
+
+	Force bool
 }
 
 // SetTemplateDefaults implements file.Template
@@ -51,7 +53,11 @@ func (f *Controller) SetTemplateDefaults() error {
 
 	f.TemplateBody = controllerTemplate
 
-	f.IfExistsAction = file.Error
+	if f.Force {
+		f.IfExistsAction = file.Overwrite
+	} else {
+		f.IfExistsAction = file.Error
+	}
 
 	return nil
 }
@@ -79,8 +85,8 @@ type {{ .Resource.Kind }}Reconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups={{ .Resource.Domain }},resources={{ .Resource.Plural }},verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups={{ .Resource.Domain }},resources={{ .Resource.Plural }}/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups={{ .Resource.Domain }},resources={{ .Resource.Plural }},verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups={{ .Resource.Domain }},resources={{ .Resource.Plural }}/status,verbs=get;update;patch
 
 func (r *{{ .Resource.Kind }}Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()

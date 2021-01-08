@@ -143,7 +143,7 @@ func (p *createAPISubcommand) Validate() error {
 	// In case we want to scaffold a resource API we need to do some checks
 	if p.doResource {
 		// Check that resource doesn't exist or flag force was set
-		if !p.force && p.config.HasResource(p.resource.GVK()) {
+		if !p.force && p.config.GetResource(p.resource.Data()) != nil {
 			return errors.New("API resource already exists")
 		}
 
@@ -177,7 +177,7 @@ func (p *createAPISubcommand) GetScaffolder() (cmdutil.Scaffolder, error) {
 
 	// Create the actual resource from the resource options
 	res := p.resource.NewResource(p.config, p.doResource)
-	return scaffolds.NewAPIScaffolder(p.config, string(bp), res, p.doResource, p.doController, plugins), nil
+	return scaffolds.NewAPIScaffolder(p.config, string(bp), res, p.doResource, p.doController, p.force, plugins), nil
 }
 
 func (p *createAPISubcommand) PostScaffold() error {

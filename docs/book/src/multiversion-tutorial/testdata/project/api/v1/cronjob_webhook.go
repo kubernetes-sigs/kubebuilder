@@ -29,7 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
-// +kubebuilder:docs-gen:collapse=Go imports
+//+kubebuilder:docs-gen:collapse=Go imports
 
 var cronjoblog = logf.Log.WithName("cronjob-resource")
 

@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubernetes authors.
+Copyright 2021 The Kubernetes authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ type AdmiralSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of Admiral. Edit Admiral_types.go to remove/update
+	// Foo is an example field of Admiral. Edit admiral_types.go to remove/update
 	Foo string `json:"foo,omitempty"`
 }
 
@@ -38,9 +38,9 @@ type AdmiralStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
-// +kubebuilder:resource:scope=Cluster
+//+kubebuilder:object:root=true
+//+kubebuilder:subresource:status
+//+kubebuilder:resource:scope=Cluster
 
 // Admiral is the Schema for the admirals API
 type Admiral struct {
@@ -51,7 +51,7 @@ type Admiral struct {
 	Status AdmiralStatus `json:"status,omitempty"`
 }
 
-// +kubebuilder:object:root=true
+//+kubebuilder:object:root=true
 
 // AdmiralList contains a list of Admiral
 type AdmiralList struct {

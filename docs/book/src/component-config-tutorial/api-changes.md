@@ -11,7 +11,7 @@ steps](/quick-start.md#installation) before continuing.
 ```bash
 # we'll use a domain of tutorial.kubebuilder.io,
 # so all API groups will be <group>.tutorial.kubebuilder.io.
-kubebuilder init --plugins=go/v3-alpha --domain tutorial.kubebuilder.io --component-config
+kubebuilder init --domain tutorial.kubebuilder.io --component-config
 ```
 
 ## Setting up an exising project

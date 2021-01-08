@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubernetes authors.
+Copyright 2021 The Kubernetes authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ type LakersSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of Lakers. Edit Lakers_types.go to remove/update
+	// Foo is an example field of Lakers. Edit lakers_types.go to remove/update
 	Foo string `json:"foo,omitempty"`
 }
 
@@ -38,8 +38,8 @@ type LakersStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
+//+kubebuilder:object:root=true
+//+kubebuilder:subresource:status
 
 // Lakers is the Schema for the lakers API
 type Lakers struct {
@@ -50,7 +50,7 @@ type Lakers struct {
 	Status LakersStatus `json:"status,omitempty"`
 }
 
-// +kubebuilder:object:root=true
+//+kubebuilder:object:root=true
 
 // LakersList contains a list of Lakers
 type LakersList struct {

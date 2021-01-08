@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubernetes authors.
+Copyright 2021 The Kubernetes authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ func (r *Destroyer) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
-// +kubebuilder:webhook:path=/mutate-ship-testproject-org-v1-destroyer,mutating=true,failurePolicy=fail,groups=ship.testproject.org,resources=destroyers,verbs=create;update,versions=v1,name=mdestroyer.kb.io
+//+kubebuilder:webhook:path=/mutate-ship-testproject-org-v1-destroyer,mutating=true,failurePolicy=fail,groups=ship.testproject.org,resources=destroyers,verbs=create;update,versions=v1,name=mdestroyer.kb.io
 
 var _ webhook.Defaulter = &Destroyer{}
 

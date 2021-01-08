@@ -129,7 +129,7 @@ func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&p.resource.Group, "group", "", "resource Group")
 	fs.StringVar(&p.resource.Version, "version", "", "resource Version")
 	fs.BoolVar(&p.resource.Namespaced, "namespaced", true, "resource is namespaced")
-	fs.StringVar(&p.resource.CRDVersion, "crd-version", defaultCRDVersion,
+	fs.StringVar(&p.resource.API.CRDVersion, "crd-version", defaultCRDVersion,
 		"version of CustomResourceDefinition to scaffold. Options: [v1, v1beta1]")
 }
 
@@ -170,7 +170,8 @@ func (p *createAPISubcommand) Validate() error {
 	// In case we want to scaffold a resource API we need to do some checks
 	if p.doResource {
 		// Check that resource doesn't exist or flag force was set
-		if !p.force && p.config.HasResource(p.resource.GVK()) {
+		res := p.config.GetResource(p.resource.Data())
+		if !p.force && (res != nil && res.API != nil) {
 			return errors.New("API resource already exists")
 		}
 
@@ -181,9 +182,9 @@ func (p *createAPISubcommand) Validate() error {
 		}
 
 		// Check CRDVersion against all other CRDVersions in p.config for compatibility.
-		if !p.config.IsCRDVersionCompatible(p.resource.CRDVersion) {
+		if !p.config.IsCRDVersionCompatible(p.resource.API.CRDVersion) {
 			return fmt.Errorf("only one CRD version can be used for all resources, cannot add %q",
-				p.resource.CRDVersion)
+				p.resource.API.CRDVersion)
 		}
 	}
 
@@ -210,7 +211,7 @@ func (p *createAPISubcommand) GetScaffolder() (cmdutil.Scaffolder, error) {
 
 	// Create the actual resource from the resource options
 	res := p.resource.NewResource(p.config, p.doResource)
-	return scaffolds.NewAPIScaffolder(p.config, string(bp), res, p.doResource, p.doController, plugins), nil
+	return scaffolds.NewAPIScaffolder(p.config, string(bp), res, p.doResource, p.doController, p.force, plugins), nil
 }
 
 func (p *createAPISubcommand) PostScaffold() error {

@@ -17,6 +17,7 @@ limitations under the License.
 package v3
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
@@ -43,6 +44,9 @@ type createWebhookSubcommand struct {
 	defaulting bool
 	validation bool
 	conversion bool
+
+	// force indicates that the resource should be created even if it already exists
+	force bool
 
 	// runMake indicates whether to run make or not after scaffolding webhooks
 	runMake bool
@@ -75,10 +79,12 @@ func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&p.resource.Version, "version", "", "resource Version")
 	fs.StringVar(&p.resource.Kind, "kind", "", "resource Kind")
 	fs.StringVar(&p.resource.Plural, "resource", "", "resource Resource")
-	fs.StringVar(&p.resource.WebhookVersion, "webhook-version", defaultWebhookVersion,
+	fs.StringVar(&p.resource.Webhooks.WebhookVersion, "webhook-version", defaultWebhookVersion,
 		"version of {Mutating,Validating}WebhookConfigurations to scaffold. Options: [v1, v1beta1]")
 
 	fs.BoolVar(&p.runMake, "make", true, "if true, run make after generating files")
+	fs.BoolVar(&p.force, "force", false,
+		"attempt to create resource even if it already exists")
 
 	fs.BoolVar(&p.defaulting, "defaulting", false,
 		"if set, scaffold the defaulting webhook")
@@ -107,14 +113,18 @@ func (p *createWebhookSubcommand) Validate() error {
 	}
 
 	// check if resource exist to create webhook
-	if !p.config.HasResource(p.resource.GVK()) {
+	if p.config.GetResource(p.resource.Data()) == nil {
 		return fmt.Errorf("%s create webhook requires an api with the group,"+
 			" kind and version provided", p.commandName)
 	}
 
-	if !p.config.IsWebhookVersionCompatible(p.resource.WebhookVersion) {
+	if p.config.HasWebhook(p.resource.Data()) && !p.force {
+		return errors.New("webhook resource already exists")
+	}
+
+	if !p.config.IsWebhookVersionCompatible(p.resource.Webhooks.WebhookVersion) {
 		return fmt.Errorf("only one webhook version can be used for all resources, cannot add %q",
-			p.resource.WebhookVersion)
+			p.resource.Webhooks.WebhookVersion)
 	}
 
 	return nil
@@ -129,7 +139,8 @@ func (p *createWebhookSubcommand) GetScaffolder() (cmdutil.Scaffolder, error) {
 
 	// Create the actual resource from the resource options
 	res := p.resource.NewResource(p.config, false)
-	return scaffolds.NewWebhookScaffolder(p.config, string(bp), res, p.defaulting, p.validation, p.conversion), nil
+	return scaffolds.NewWebhookScaffolder(p.config, string(bp), res, p.defaulting, p.validation, p.conversion,
+		p.force), nil
 }
 
 func (p *createWebhookSubcommand) PostScaffold() error {

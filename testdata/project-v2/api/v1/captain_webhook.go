@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubernetes authors.
+Copyright 2021 The Kubernetes authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ func (r *Captain) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
-// +kubebuilder:webhook:path=/mutate-crew-testproject-org-v1-captain,mutating=true,failurePolicy=fail,groups=crew.testproject.org,resources=captains,verbs=create;update,versions=v1,name=mcaptain.kb.io
+//+kubebuilder:webhook:path=/mutate-crew-testproject-org-v1-captain,mutating=true,failurePolicy=fail,groups=crew.testproject.org,resources=captains,verbs=create;update,versions=v1,name=mcaptain.kb.io
 
 var _ webhook.Defaulter = &Captain{}
 
@@ -46,7 +46,7 @@ func (r *Captain) Default() {
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:verbs=create;update,path=/validate-crew-testproject-org-v1-captain,mutating=false,failurePolicy=fail,groups=crew.testproject.org,resources=captains,versions=v1,name=vcaptain.kb.io
+//+kubebuilder:webhook:verbs=create;update,path=/validate-crew-testproject-org-v1-captain,mutating=false,failurePolicy=fail,groups=crew.testproject.org,resources=captains,versions=v1,name=vcaptain.kb.io
 
 var _ webhook.Validator = &Captain{}
 

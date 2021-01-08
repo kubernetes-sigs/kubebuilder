@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubernetes authors.
+Copyright 2021 The Kubernetes authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -32,8 +32,8 @@ type LakerReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=crew.testproject.org,resources=lakers,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=crew.testproject.org,resources=lakers/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=crew.testproject.org,resources=lakers,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=crew.testproject.org,resources=lakers/status,verbs=get;update;patch
 
 func (r *LakerReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()

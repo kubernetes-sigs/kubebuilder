@@ -50,11 +50,13 @@ function gen_cronjob_tutorial {
   mkdir project
   cd project
   header_text "generate base  ..."
-  kubebuilder init --plugins=go/v3-alpha --domain=tutorial.kubebuilder.io --project-version=3-alpha --repo=tutorial.kubebuilder.io/project --license apache2 --owner "The Kubernetes authors"
+  kubebuilder init --domain=tutorial.kubebuilder.io --project-version=3-alpha --repo=tutorial.kubebuilder.io/project --license apache2 --owner "The Kubernetes authors"
   kubebuilder create api --group batch --version v1 --kind CronJob --resource --controller --make=false
   kubebuilder create webhook --group batch --version v1 --kind CronJob --defaulting --programmatic-validation
+  kubebuilder create webhook --group batch --version v1 --kind CronJob --conversion --force
   kubebuilder create api --group batch --version v2 --kind CronJob --resource=true --controller=false
-  kubebuilder create webhook --group batch --version v2 --kind CronJob --conversion
+  kubebuilder create webhook --group batch --version v2 --kind CronJob --defaulting --programmatic-validation
+  kubebuilder create webhook --group batch --version v2 --kind CronJob --conversion --force
 }
 
 

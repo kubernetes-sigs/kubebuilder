@@ -38,7 +38,7 @@ type webhookScaffolder struct {
 	resource    *resource.Resource
 
 	// Webhook type options.
-	defaulting, validation, conversion bool
+	defaulting, validation, conversion, force bool
 }
 
 // NewWebhookScaffolder returns a new Scaffolder for v2 webhook creation operations
@@ -49,6 +49,7 @@ func NewWebhookScaffolder(
 	defaulting bool,
 	validation bool,
 	conversion bool,
+	force bool,
 ) cmdutil.Scaffolder {
 	return &webhookScaffolder{
 		config:      config,
@@ -57,6 +58,7 @@ func NewWebhookScaffolder(
 		defaulting:  defaulting,
 		validation:  validation,
 		conversion:  conversion,
+		force:       force,
 	}
 }
 
@@ -80,19 +82,20 @@ func (s *webhookScaffolder) scaffold() error {
 You need to implement the conversion.Hub and conversion.Convertible interfaces for your CRD types.`)
 	}
 
-	s.config.UpdateResources(s.resource.GVK())
+	s.config.UpdateResources(s.resource.Data())
 
 	if err := machinery.NewScaffold().Execute(
 		s.newUniverse(),
 		&api.Webhook{
-			WebhookVersion: s.resource.WebhookVersion,
+			WebhookVersion: s.resource.Webhooks.WebhookVersion,
 			Defaulting:     s.defaulting,
 			Validating:     s.validation,
+			Force:          s.force,
 		},
 		&templates.MainUpdater{WireWebhook: true},
-		&kdefault.WebhookCAInjectionPatch{WebhookVersion: s.resource.WebhookVersion},
+		&kdefault.WebhookCAInjectionPatch{WebhookVersion: s.resource.Webhooks.WebhookVersion},
 		&kdefault.ManagerWebhookPatch{},
-		&webhook.Kustomization{WebhookVersion: s.resource.WebhookVersion},
+		&webhook.Kustomization{WebhookVersion: s.resource.Webhooks.WebhookVersion, Force: s.force},
 		&webhook.KustomizeConfig{},
 		&webhook.Service{},
 	); err != nil {

@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubernetes authors.
+Copyright 2021 The Kubernetes authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -15,8 +15,8 @@ limitations under the License.
 */
 
 // Package v1 contains API Schema definitions for the ship v1 API group
-// +kubebuilder:object:generate=true
-// +groupName=ship.testproject.org
+//+kubebuilder:object:generate=true
+//+groupName=ship.testproject.org
 package v1
 
 import (

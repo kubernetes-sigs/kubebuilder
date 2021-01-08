@@ -30,6 +30,8 @@ type Kustomization struct {
 
 	// Version of webhook the project was configured with.
 	WebhookVersion string
+
+	Force bool
 }
 
 // SetTemplateDefaults implements file.Template
@@ -40,8 +42,12 @@ func (f *Kustomization) SetTemplateDefaults() error {
 
 	f.TemplateBody = kustomizeWebhookTemplate
 
-	// If file exists (ex. because a webhook was already created), skip creation.
-	f.IfExistsAction = file.Skip
+	if f.Force {
+		f.IfExistsAction = file.Overwrite
+	} else {
+		// If file exists (ex. because a webhook was already created), skip creation.
+		f.IfExistsAction = file.Skip
+	}
 
 	if f.WebhookVersion == "" {
 		f.WebhookVersion = "v1"

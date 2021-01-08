@@ -32,9 +32,10 @@ import (
 func GenerateV2(kbc *utils.TestContext) {
 	var err error
 
-	By("initializing a v3 project")
+	By("initializing a project")
 	err = kbc.Init(
 		"--project-version", "3-alpha",
+		"--plugins", "go/v2",
 		"--domain", kbc.Domain,
 		"--fetch-deps=false",
 	)
@@ -126,10 +127,10 @@ Count int `+"`"+`json:"count,omitempty"`+"`"+`
 func GenerateV3(kbc *utils.TestContext, crdAndWebhookVersion string) {
 	var err error
 
-	By("initializing a v3 project")
+	By("initializing a project")
 	err = kbc.Init(
-		"--plugins", "go/v3-alpha",
 		"--project-version", "3-alpha",
+		"--plugins", "go/v3",
 		"--domain", kbc.Domain,
 		"--fetch-deps=false",
 	)

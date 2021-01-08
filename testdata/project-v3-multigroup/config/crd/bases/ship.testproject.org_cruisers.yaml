@@ -37,7 +37,7 @@ spec:
             description: CruiserSpec defines the desired state of Cruiser
             properties:
               foo:
-                description: Foo is an example field of Cruiser. Edit Cruiser_types.go
+                description: Foo is an example field of Cruiser. Edit cruiser_types.go
                   to remove/update
                 type: string
             type: object

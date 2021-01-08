@@ -37,7 +37,7 @@ spec:
           description: FrigateSpec defines the desired state of Frigate
           properties:
             foo:
-              description: Foo is an example field of Frigate. Edit Frigate_types.go
+              description: Foo is an example field of Frigate. Edit frigate_types.go
                 to remove/update
               type: string
           type: object

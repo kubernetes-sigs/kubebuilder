@@ -28,6 +28,8 @@ var _ file.Template = &CRDSample{}
 type CRDSample struct {
 	file.TemplateMixin
 	file.ResourceMixin
+
+	Force bool
 }
 
 // SetTemplateDefaults implements file.Template
@@ -37,7 +39,11 @@ func (f *CRDSample) SetTemplateDefaults() error {
 	}
 	f.Path = f.Resource.Replacer().Replace(f.Path)
 
-	f.IfExistsAction = file.Error
+	if f.Force {
+		f.IfExistsAction = file.Overwrite
+	} else {
+		f.IfExistsAction = file.Error
+	}
 
 	f.TemplateBody = crdSampleTemplate
 

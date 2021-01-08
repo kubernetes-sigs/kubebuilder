@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubernetes authors.
+Copyright 2021 The Kubernetes authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ func (r *Cruiser) SetupWebhookWithManager(mgr ctrl.Manager) error {
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:verbs=create;update,path=/validate-ship-testproject-org-v2alpha1-cruiser,mutating=false,failurePolicy=fail,groups=ship.testproject.org,resources=cruisers,versions=v2alpha1,name=vcruiser.kb.io
+//+kubebuilder:webhook:verbs=create;update,path=/validate-ship-testproject-org-v2alpha1-cruiser,mutating=false,failurePolicy=fail,groups=ship.testproject.org,resources=cruisers,versions=v2alpha1,name=vcruiser.kb.io
 
 var _ webhook.Validator = &Cruiser{}
 

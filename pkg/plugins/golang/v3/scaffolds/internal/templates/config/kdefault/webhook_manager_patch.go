@@ -27,6 +27,8 @@ var _ file.Template = &ManagerWebhookPatch{}
 // ManagerWebhookPatch scaffolds a file that defines the patch that enables webhooks on the manager
 type ManagerWebhookPatch struct {
 	file.TemplateMixin
+
+	Force bool
 }
 
 // SetTemplateDefaults implements file.Template
@@ -37,8 +39,12 @@ func (f *ManagerWebhookPatch) SetTemplateDefaults() error {
 
 	f.TemplateBody = managerWebhookPatchTemplate
 
-	// If file exists (ex. because a webhook was already created), skip creation.
-	f.IfExistsAction = file.Skip
+	if f.Force {
+		f.IfExistsAction = file.Overwrite
+	} else {
+		// If file exists (ex. because a webhook was already created), skip creation.
+		f.IfExistsAction = file.Skip
+	}
 
 	return nil
 }
