@@ -33,12 +33,14 @@ import (
 )
 
 func (c cli) newInitCmd() *cobra.Command {
-	ctx := c.newInitContext()
 	cmd := &cobra.Command{
-		Use:     "init",
-		Short:   "Initialize a new project",
-		Long:    ctx.Description,
-		Example: ctx.Examples,
+		Use:   "init",
+		Short: "Initialize a new project",
+		Long: `Initialize a new project.
+
+For further help about a specific project version, set --project-version.
+`,
+		Example: c.getInitHelpExamples(),
 		Run:     func(cmd *cobra.Command, args []string) {},
 	}
 
@@ -54,19 +56,8 @@ func (c cli) newInitCmd() *cobra.Command {
 	}
 
 	// Lookup the plugin for projectVersion and bind it to the command.
-	c.bindInit(ctx, cmd)
+	c.bindInit(cmd)
 	return cmd
-}
-
-func (c cli) newInitContext() plugin.Context {
-	return plugin.Context{
-		CommandName: c.commandName,
-		Description: `Initialize a new project.
-
-For further help about a specific project version, set --project-version.
-`,
-		Examples: c.getInitHelpExamples(),
-	}
 }
 
 func (c cli) getInitHelpExamples() string {
@@ -110,7 +101,7 @@ func (c cli) getAvailablePlugins() (pluginKeys []string) {
 	return pluginKeys
 }
 
-func (c cli) bindInit(ctx plugin.Context, cmd *cobra.Command) {
+func (c cli) bindInit(cmd *cobra.Command) {
 	if len(c.resolvedPlugins) == 0 {
 		cmdErr(cmd, fmt.Errorf("no resolved plugins, please specify plugins with --%s or/and --%s flags",
 			projectVersionFlag, pluginsFlag))
@@ -144,10 +135,14 @@ func (c cli) bindInit(ctx plugin.Context, cmd *cobra.Command) {
 
 	subcommand := initPlugin.GetInitSubcommand()
 	subcommand.InjectConfig(cfg.Config)
+	meta := subcommand.UpdateMetadata(c.metadata())
 	subcommand.BindFlags(cmd.Flags())
-	subcommand.UpdateContext(&ctx)
-	cmd.Long = ctx.Description
-	cmd.Example = ctx.Examples
+	if meta.Description != "" {
+		cmd.Long = meta.Description
+	}
+	if meta.Examples != "" {
+		cmd.Example = meta.Examples
+	}
 	cmd.RunE = func(*cobra.Command, []string) error {
 		// Check if a config is initialized in the command runner so the check
 		// doesn't erroneously fail other commands used in initialized projects.

@@ -26,32 +26,23 @@ import (
 )
 
 func (c cli) newCreateAPICmd() *cobra.Command {
-	ctx := c.newAPIContext()
 	cmd := &cobra.Command{
-		Use:     "api",
-		Short:   "Scaffold a Kubernetes API",
-		Long:    ctx.Description,
-		Example: ctx.Examples,
+		Use:   "api",
+		Short: "Scaffold a Kubernetes API",
+		Long: `Scaffold a Kubernetes API.
+`,
 		RunE: errCmdFunc(
 			fmt.Errorf("api subcommand requires an existing project"),
 		),
 	}
 
 	// Lookup the plugin for projectVersion and bind it to the command.
-	c.bindCreateAPI(ctx, cmd)
+	c.bindCreateAPI(cmd)
 	return cmd
 }
 
-func (c cli) newAPIContext() plugin.Context {
-	return plugin.Context{
-		CommandName: c.commandName,
-		Description: `Scaffold a Kubernetes API.
-`,
-	}
-}
-
 // nolint:dupl
-func (c cli) bindCreateAPI(ctx plugin.Context, cmd *cobra.Command) {
+func (c cli) bindCreateAPI(cmd *cobra.Command) {
 	if len(c.resolvedPlugins) == 0 {
 		cmdErr(cmd, fmt.Errorf(noPluginError))
 		return
@@ -84,10 +75,14 @@ func (c cli) bindCreateAPI(ctx plugin.Context, cmd *cobra.Command) {
 
 	subcommand := createAPIPlugin.GetCreateAPISubcommand()
 	subcommand.InjectConfig(cfg.Config)
+	meta := subcommand.UpdateMetadata(c.metadata())
 	subcommand.BindFlags(cmd.Flags())
-	subcommand.UpdateContext(&ctx)
-	cmd.Long = ctx.Description
-	cmd.Example = ctx.Examples
+	if meta.Description != "" {
+		cmd.Long = meta.Description
+	}
+	if meta.Examples != "" {
+		cmd.Example = meta.Examples
+	}
 	cmd.RunE = runECmdFunc(cfg, subcommand,
 		fmt.Sprintf("failed to create API with %q", plugin.KeyFor(createAPIPlugin)))
 }

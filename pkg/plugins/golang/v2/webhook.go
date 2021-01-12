@@ -42,20 +42,22 @@ var (
 	_ cmdutil.RunOptions             = &createWebhookSubcommand{}
 )
 
-func (p *createWebhookSubcommand) UpdateContext(ctx *plugin.Context) {
-	ctx.Description = `Scaffold a webhook for an API resource. You can choose to scaffold defaulting,
+func (p *createWebhookSubcommand) UpdateMetadata(meta plugin.CLIMetadata) plugin.CommandMetadata {
+	p.commandName = meta.CommandName
+
+	return plugin.CommandMetadata{
+		Description: `Scaffold a webhook for an API resource. You can choose to scaffold defaulting,
 validating and (or) conversion webhooks.
-`
-	ctx.Examples = fmt.Sprintf(`  # Create defaulting and validating webhooks for CRD of group ship, version v1beta1
+`,
+		Examples: fmt.Sprintf(`  # Create defaulting and validating webhooks for CRD of group ship, version v1beta1
   # and kind Frigate.
-  %s create webhook --group ship --version v1beta1 --kind Frigate --defaulting --programmatic-validation
+  %[1]s create webhook --group ship --version v1beta1 --kind Frigate --defaulting --programmatic-validation
 
   # Create conversion webhook for CRD of group shio, version v1beta1 and kind Frigate.
-  %s create webhook --group ship --version v1beta1 --kind Frigate --conversion
+  %[1]s create webhook --group ship --version v1beta1 --kind Frigate --conversion
 `,
-		ctx.CommandName, ctx.CommandName)
-
-	p.commandName = ctx.CommandName
+			meta.CommandName),
+	}
 }
 
 func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {

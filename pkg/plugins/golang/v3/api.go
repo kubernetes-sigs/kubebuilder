@@ -74,16 +74,17 @@ var (
 	_ cmdutil.RunOptions         = &createAPISubcommand{}
 )
 
-func (p createAPISubcommand) UpdateContext(ctx *plugin.Context) {
-	ctx.Description = `Scaffold a Kubernetes API by creating a Resource definition and / or a Controller.
+func (p *createAPISubcommand) UpdateMetadata(meta plugin.CLIMetadata) plugin.CommandMetadata {
+	return plugin.CommandMetadata{
+		Description: `Scaffold a Kubernetes API by creating a Resource definition and / or a Controller.
 
 create resource will prompt the user for if it should scaffold the Resource and / or Controller.  To only
 scaffold a Controller for an existing Resource, select "n" for Resource.  To only define
 the schema for a Resource without writing a Controller, select "n" for Controller.
 
 After the scaffold is written, api will run make on the project.
-`
-	ctx.Examples = fmt.Sprintf(`  # Create a frigates API with Group: ship, Version: v1beta1 and Kind: Frigate
+`,
+		Examples: fmt.Sprintf(`  # Create a frigates API with Group: ship, Version: v1beta1 and Kind: Frigate
   %s create api --group ship --version v1beta1 --kind Frigate
 
   # Edit the API Scheme
@@ -101,7 +102,8 @@ After the scaffold is written, api will run make on the project.
   # Regenerate code and run against the Kubernetes cluster configured by ~/.kube/config
   make run
 	`,
-		ctx.CommandName)
+			meta.CommandName),
+	}
 }
 
 func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {

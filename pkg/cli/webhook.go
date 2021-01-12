@@ -26,32 +26,23 @@ import (
 )
 
 func (c cli) newCreateWebhookCmd() *cobra.Command {
-	ctx := c.newWebhookContext()
 	cmd := &cobra.Command{
-		Use:     "webhook",
-		Short:   "Scaffold a webhook for an API resource",
-		Long:    ctx.Description,
-		Example: ctx.Examples,
+		Use:   "webhook",
+		Short: "Scaffold a webhook for an API resource",
+		Long: `Scaffold a webhook for an API resource.
+`,
 		RunE: errCmdFunc(
 			fmt.Errorf("webhook subcommand requires an existing project"),
 		),
 	}
 
 	// Lookup the plugin for projectVersion and bind it to the command.
-	c.bindCreateWebhook(ctx, cmd)
+	c.bindCreateWebhook(cmd)
 	return cmd
 }
 
-func (c cli) newWebhookContext() plugin.Context {
-	return plugin.Context{
-		CommandName: c.commandName,
-		Description: `Scaffold a webhook for an API resource.
-`,
-	}
-}
-
 // nolint:dupl
-func (c cli) bindCreateWebhook(ctx plugin.Context, cmd *cobra.Command) {
+func (c cli) bindCreateWebhook(cmd *cobra.Command) {
 	if len(c.resolvedPlugins) == 0 {
 		cmdErr(cmd, fmt.Errorf(noPluginError))
 		return
@@ -84,10 +75,14 @@ func (c cli) bindCreateWebhook(ctx plugin.Context, cmd *cobra.Command) {
 
 	subcommand := createWebhookPlugin.GetCreateWebhookSubcommand()
 	subcommand.InjectConfig(cfg.Config)
+	meta := subcommand.UpdateMetadata(c.metadata())
 	subcommand.BindFlags(cmd.Flags())
-	subcommand.UpdateContext(&ctx)
-	cmd.Long = ctx.Description
-	cmd.Example = ctx.Examples
+	if meta.Description != "" {
+		cmd.Long = meta.Description
+	}
+	if meta.Examples != "" {
+		cmd.Example = meta.Examples
+	}
 	cmd.RunE = runECmdFunc(cfg, subcommand,
 		fmt.Sprintf("failed to create webhook with %q", plugin.KeyFor(createWebhookPlugin)))
 }

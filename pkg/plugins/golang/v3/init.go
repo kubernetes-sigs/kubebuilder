@@ -57,8 +57,11 @@ var (
 	_ cmdutil.RunOptions    = &initSubcommand{}
 )
 
-func (p *initSubcommand) UpdateContext(ctx *plugin.Context) {
-	ctx.Description = `Initialize a new project including vendor/ directory and Go package directories.
+func (p *initSubcommand) UpdateMetadata(meta plugin.CLIMetadata) plugin.CommandMetadata {
+	p.commandName = meta.CommandName
+
+	return plugin.CommandMetadata{
+		Description: `Initialize a new project including vendor/ directory and Go package directories.
 
 Writes the following files:
 - a boilerplate license file
@@ -69,13 +72,12 @@ Writes the following files:
 - a Patch file for customizing image for manager manifests
 - a Patch file for enabling prometheus metrics
 - a main.go to run
-`
-	ctx.Examples = fmt.Sprintf(`  # Scaffold a project using the apache2 license with "The Kubernetes authors" as owners
+`,
+		Examples: fmt.Sprintf(`  # Scaffold a project using the apache2 license with "The Kubernetes authors" as owners
   %s init --project-version=2 --domain example.org --license apache2 --owner "The Kubernetes authors"
 `,
-		ctx.CommandName)
-
-	p.commandName = ctx.CommandName
+			meta.CommandName),
+	}
 }
 
 func (p *initSubcommand) BindFlags(fs *pflag.FlagSet) {
