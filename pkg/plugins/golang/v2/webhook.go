@@ -23,14 +23,14 @@ import (
 
 	"github.com/spf13/pflag"
 
-	newconfig "sigs.k8s.io/kubebuilder/v3/pkg/config"
+	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/cmdutil"
 )
 
 type createWebhookSubcommand struct {
-	config newconfig.Config
+	config config.Config
 	// For help text.
 	commandName string
 
@@ -41,6 +41,10 @@ var (
 	_ plugin.CreateWebhookSubcommand = &createWebhookSubcommand{}
 	_ cmdutil.RunOptions             = &createWebhookSubcommand{}
 )
+
+func (p *createWebhookSubcommand) InjectConfig(c config.Config) {
+	p.config = c
+}
 
 func (p *createWebhookSubcommand) UpdateMetadata(meta plugin.CLIMetadata) plugin.CommandMetadata {
 	p.commandName = meta.CommandName
@@ -75,10 +79,6 @@ func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
 		"if set, scaffold the validating webhook")
 	fs.BoolVar(&p.options.DoConversion, "conversion", false,
 		"if set, scaffold the conversion webhook")
-}
-
-func (p *createWebhookSubcommand) InjectConfig(c newconfig.Config) {
-	p.config = c
 }
 
 func (p *createWebhookSubcommand) Run() error {

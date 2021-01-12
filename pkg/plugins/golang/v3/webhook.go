@@ -54,6 +54,10 @@ var (
 	_ cmdutil.RunOptions             = &createWebhookSubcommand{}
 )
 
+func (p *createWebhookSubcommand) InjectConfig(c config.Config) {
+	p.config = c
+}
+
 func (p *createWebhookSubcommand) UpdateMetadata(meta plugin.CLIMetadata) plugin.CommandMetadata {
 	p.commandName = meta.CommandName
 
@@ -92,10 +96,6 @@ func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.runMake, "make", true, "if true, run make after generating files")
 	fs.BoolVar(&p.force, "force", false,
 		"attempt to create resource even if it already exists")
-}
-
-func (p *createWebhookSubcommand) InjectConfig(c config.Config) {
-	p.config = c
 }
 
 func (p *createWebhookSubcommand) Run() error {

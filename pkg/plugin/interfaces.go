@@ -45,6 +45,9 @@ type Deprecated interface {
 
 // Subcommand is an interface that defines the common base for subcommands returned by plugins
 type Subcommand interface {
+	// InjectConfig passes a config to a plugin. The plugin may modify the config.
+	// Initializing, loading, and saving the config is managed by the cli package.
+	InjectConfig(config.Config)
 	// UpdateMetadata injects CLI meta-data into the Subcommand and returns the Subcommand's metadata for the CLI.
 	// Any zero field in the returned object will use the default value.
 	UpdateMetadata(CLIMetadata) CommandMetadata
@@ -53,9 +56,6 @@ type Subcommand interface {
 	BindFlags(*pflag.FlagSet)
 	// Run runs the subcommand.
 	Run() error
-	// InjectConfig passes a config to a plugin. The plugin may modify the config.
-	// Initializing, loading, and saving the config is managed by the cli package.
-	InjectConfig(config.Config)
 }
 
 // Init is an interface for plugins that provide an `init` subcommand

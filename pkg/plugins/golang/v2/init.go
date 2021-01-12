@@ -58,6 +58,15 @@ var (
 	_ cmdutil.RunOptions    = &initSubcommand{}
 )
 
+func (p *initSubcommand) InjectConfig(c config.Config) {
+	// v2+ project configs get a 'layout' value.
+	if c.GetVersion().Compare(cfgv3alpha.Version) >= 0 {
+		_ = c.SetLayout(plugin.KeyFor(Plugin{}))
+	}
+
+	p.config = c
+}
+
 func (p *initSubcommand) UpdateMetadata(meta plugin.CLIMetadata) plugin.CommandMetadata {
 	p.commandName = meta.CommandName
 
@@ -100,15 +109,6 @@ func (p *initSubcommand) BindFlags(fs *pflag.FlagSet) {
 	if p.config.GetVersion().Compare(cfgv3alpha.Version) >= 0 {
 		fs.StringVar(&p.name, "project-name", "", "name of this project")
 	}
-}
-
-func (p *initSubcommand) InjectConfig(c config.Config) {
-	// v2+ project configs get a 'layout' value.
-	if c.GetVersion().Compare(cfgv3alpha.Version) >= 0 {
-		_ = c.SetLayout(plugin.KeyFor(Plugin{}))
-	}
-
-	p.config = c
 }
 
 func (p *initSubcommand) Run() error {

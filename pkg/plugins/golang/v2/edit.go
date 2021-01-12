@@ -38,6 +38,10 @@ var (
 	_ cmdutil.RunOptions    = &editSubcommand{}
 )
 
+func (p *editSubcommand) InjectConfig(c config.Config) {
+	p.config = c
+}
+
 func (p *editSubcommand) UpdateMetadata(meta plugin.CLIMetadata) plugin.CommandMetadata {
 	return plugin.CommandMetadata{
 		Description: `This command will edit the project configuration. You can have single or multi group project.`,
@@ -52,10 +56,6 @@ func (p *editSubcommand) UpdateMetadata(meta plugin.CLIMetadata) plugin.CommandM
 
 func (p *editSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.multigroup, "multigroup", false, "enable or disable multigroup layout")
-}
-
-func (p *editSubcommand) InjectConfig(c config.Config) {
-	p.config = c
 }
 
 func (p *editSubcommand) Run() error {

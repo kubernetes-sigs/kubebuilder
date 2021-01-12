@@ -60,6 +60,10 @@ var (
 	_ cmdutil.RunOptions         = &createAPISubcommand{}
 )
 
+func (p *createAPISubcommand) InjectConfig(c config.Config) {
+	p.config = c
+}
+
 func (p *createAPISubcommand) UpdateMetadata(meta plugin.CLIMetadata) plugin.CommandMetadata {
 	return plugin.CommandMetadata{
 		Description: `Scaffold a Kubernetes API by creating a Resource definition and / or a Controller.
@@ -119,10 +123,6 @@ func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.options.DoController, "controller", true,
 		"if set, generate the controller without prompting the user")
 	p.controllerFlag = fs.Lookup("controller")
-}
-
-func (p *createAPISubcommand) InjectConfig(c config.Config) {
-	p.config = c
 }
 
 func (p *createAPISubcommand) Run() error {

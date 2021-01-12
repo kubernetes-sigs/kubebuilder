@@ -57,6 +57,12 @@ var (
 	_ cmdutil.RunOptions    = &initSubcommand{}
 )
 
+func (p *initSubcommand) InjectConfig(c config.Config) {
+	_ = c.SetLayout(plugin.KeyFor(Plugin{}))
+
+	p.config = c
+}
+
 func (p *initSubcommand) UpdateMetadata(meta plugin.CLIMetadata) plugin.CommandMetadata {
 	p.commandName = meta.CommandName
 
@@ -99,12 +105,6 @@ func (p *initSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&p.name, "project-name", "", "name of this project")
 	fs.BoolVar(&p.componentConfig, "component-config", false,
 		"create a versioned ComponentConfig file, may be 'true' or 'false'")
-}
-
-func (p *initSubcommand) InjectConfig(c config.Config) {
-	_ = c.SetLayout(plugin.KeyFor(Plugin{}))
-
-	p.config = c
 }
 
 func (p *initSubcommand) Run() error {
