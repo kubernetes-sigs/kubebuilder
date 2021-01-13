@@ -17,7 +17,6 @@ limitations under the License.
 package v3
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -188,7 +187,9 @@ func checkDir() error {
 				return err
 			}
 			if info.Name() != "go.mod" && !strings.HasPrefix(info.Name(), ".") {
-				return errors.New("only the go.mod and files with the prefix \"(.)\" are allowed before the init")
+				return fmt.Errorf(
+					"target directory is not empty (only go.mod and files with the prefix \".\" are allowed); found existing file %q",
+					path)
 			}
 			return nil
 		})
