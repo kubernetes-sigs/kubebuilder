@@ -41,7 +41,7 @@ const (
 	// KbDeclarativePatternVersion is the sigs.k8s.io/kubebuilder-declarative-pattern version
 	// (used only to gen api with --pattern=addon)
 	// TODO: remove this when a better solution for using addons is implemented.
-	KbDeclarativePatternVersion = "1cbf859290cab81ae8e73fc5caebe792280175d1"
+	KbDeclarativePatternVersion = "b84d99da021778217217885dd9582ed3cc879ebe"
 
 	// defaultCRDVersion is the default CRD API version to scaffold.
 	defaultCRDVersion = "v1"
