@@ -80,7 +80,7 @@ Writes the following files:
 - a main.go to run
 `,
 		Examples: fmt.Sprintf(`  # Scaffold a project using the apache2 license with "The Kubernetes authors" as owners
-  %s init --project-version=2 --domain example.org --license apache2 --owner "The Kubernetes authors"
+  %s init --project-version=3-alpha --domain example.org --license apache2 --owner "The Kubernetes authors"
 `,
 			meta.CommandName),
 	}
