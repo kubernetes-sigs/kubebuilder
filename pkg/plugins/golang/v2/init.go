@@ -63,8 +63,6 @@ Writes the following files:
 - a Patch file for customizing image for manager manifests
 - a Patch file for enabling prometheus metrics
 - a main.go to run
-
-project will prompt the user to run 'dep ensure' after writing the project files.
 `
 	ctx.Examples = fmt.Sprintf(`  # Scaffold a project using the apache2 license with "The Kubernetes authors" as owners
   %s init --project-version=2 --domain example.org --license apache2 --owner "The Kubernetes authors"
