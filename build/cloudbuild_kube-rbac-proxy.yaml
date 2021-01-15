@@ -19,5 +19,6 @@ steps:
 - name: "gcr.io/cloud-builders/docker"
   env:
   - "KUBE_RBAC_PROXY_VERSION=${_KUBE_RBAC_PROXY_VERSION}"
-  entrypoint: "./build/build.sh"
+  entrypoint: "/usr/bin/env"
+  args: ["bash", "-c", "./build/build.sh"]
 images: ["gcr.io/kubebuilder/kube-rbac-proxy:${_KUBE_RBAC_PROXY_VERSION}"]
