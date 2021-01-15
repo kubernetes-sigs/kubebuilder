@@ -34,7 +34,8 @@ for a in ${ARCHES[@]}; do
   docker tag "${SOURCE_IMAGE_TAG}-$a" "${TARGET_IMAGE_TAG}-$a"
   # These images must exist remotely to build a manifest list.
   docker push "${TARGET_IMAGE_TAG}-$a"
-  IMAGES=( ${IMAGES[@]} "${TARGET_IMAGE_TAG}-$a" )
+  # weird syntax for bash<4.4
+  IMAGES=( ${IMAGES[@]+"${IMAGES[@]}"} "${TARGET_IMAGE_TAG}-$a" )
 done
 
 # If $TARGET_IMAGE_TAG exists, `manifest create` will fail.
