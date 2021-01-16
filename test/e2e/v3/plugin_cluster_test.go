@@ -74,7 +74,7 @@ var _ = Describe("kubebuilder", func() {
 			})
 		})
 
-		Context("plugin go.kubebuilder.io/v3-alpha", func() {
+		Context("plugin go.kubebuilder.io/v3", func() {
 			// Use cert-manager with v1 CRs.
 			BeforeEach(func() {
 				By("installing the cert-manager bundle")
