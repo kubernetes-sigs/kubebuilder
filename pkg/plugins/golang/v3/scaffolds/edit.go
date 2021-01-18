@@ -21,8 +21,8 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"sigs.k8s.io/kubebuilder/v2/pkg/model/config"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugins/internal/cmdutil"
+	"sigs.k8s.io/kubebuilder/v3/pkg/model/config"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/cmdutil"
 )
 
 var _ cmdutil.Scaffolder = &editScaffolder{}

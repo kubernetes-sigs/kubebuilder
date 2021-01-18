@@ -1,7 +1,7 @@
 package addon
 
 import (
-	"sigs.k8s.io/kubebuilder/v2/pkg/model"
+	"sigs.k8s.io/kubebuilder/v3/pkg/model"
 )
 
 // Plugin implements model.Plugin

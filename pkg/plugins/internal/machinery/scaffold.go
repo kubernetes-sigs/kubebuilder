@@ -27,9 +27,9 @@ import (
 
 	"golang.org/x/tools/imports"
 
-	"sigs.k8s.io/kubebuilder/v2/pkg/model"
-	"sigs.k8s.io/kubebuilder/v2/pkg/model/file"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugins/internal/filesystem"
+	"sigs.k8s.io/kubebuilder/v3/pkg/model"
+	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/filesystem"
 )
 
 var options = imports.Options{

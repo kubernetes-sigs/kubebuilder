@@ -19,10 +19,10 @@ package main
 import (
 	"log"
 
-	"sigs.k8s.io/kubebuilder/v2/pkg/cli"
-	"sigs.k8s.io/kubebuilder/v2/pkg/model/config"
-	pluginv2 "sigs.k8s.io/kubebuilder/v2/pkg/plugins/golang/v2"
-	pluginv3 "sigs.k8s.io/kubebuilder/v2/pkg/plugins/golang/v3"
+	"sigs.k8s.io/kubebuilder/v3/pkg/cli"
+	"sigs.k8s.io/kubebuilder/v3/pkg/model/config"
+	pluginv2 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2"
+	pluginv3 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3"
 )
 
 func main() {

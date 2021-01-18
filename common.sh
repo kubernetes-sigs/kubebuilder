@@ -145,7 +145,7 @@ function build_kb {
     opts=""
   else
     # Injects the version into the cmd/version.go file
-    opts=-ldflags "-X sigs.k8s.io/kubebuilder/v2/cmd.kubeBuilderVersion=$INJECT_KB_VERSION"
+    opts=-ldflags "-X sigs.k8s.io/kubebuilder/v3/cmd.kubeBuilderVersion=$INJECT_KB_VERSION"
   fi
 
   GO111MODULE=on go build $opts -o $kb_root_dir/bin/kubebuilder ./cmd
