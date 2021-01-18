@@ -67,10 +67,10 @@ version: "2"
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(cfgBytes)).To(Equal(expectedConfigStr))
 
-			By("saving config version 3-alpha with plugin config")
+			By("saving config version 3 with plugin config")
 			cfg = Config{
 				Config: config.Config{
-					Version: config.Version3Alpha,
+					Version: config.Version3,
 					Repo:    "github.com/example/project",
 					Domain:  "example.com",
 					Plugins: config.PluginConfigs{
@@ -89,7 +89,7 @@ version: "2"
 			}
 			expectedConfigStr = `domain: example.com
 repo: github.com/example/project
-version: 3-alpha
+version: "3"
 plugins:
   plugin-x:
     data-1: single plugin datum
@@ -128,11 +128,11 @@ version: "2"`
 			Expect(err).NotTo(HaveOccurred())
 			Expect(cfg).To(Equal(expectedConfig))
 
-			By("loading config version 3-alpha with plugin config")
+			By("loading config version 3 with plugin config")
 			fs = afero.NewMemMapFs()
 			configStr = `domain: example.com
 repo: github.com/example/project
-version: 3-alpha
+version: "3"
 plugins:
   plugin-x:
     data-1: single plugin datum
@@ -143,7 +143,7 @@ plugins:
     - "plugin value 3"
     - "plugin value 4"`
 			expectedConfig = config.Config{
-				Version: config.Version3Alpha,
+				Version: config.Version3,
 				Repo:    "github.com/example/project",
 				Domain:  "example.com",
 				Plugins: config.PluginConfigs{

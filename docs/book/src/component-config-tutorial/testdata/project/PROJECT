@@ -19,4 +19,4 @@ resources:
   group: config
   kind: ProjectConfig
   version: v2
-version: 3-alpha
+version: "3"

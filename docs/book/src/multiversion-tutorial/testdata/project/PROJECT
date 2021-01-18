@@ -17,4 +17,4 @@ resources:
   version: v2
   webhooks:
     webhookVersion: v1
-version: 3-alpha
+version: "3"

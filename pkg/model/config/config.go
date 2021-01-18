@@ -25,8 +25,8 @@ import (
 
 // Scaffolding versions
 const (
-	Version2      = "2"
-	Version3Alpha = "3-alpha"
+	Version2 = "2"
+	Version3 = "3"
 )
 
 // Config is the unmarshalled representation of the configuration file
@@ -75,7 +75,7 @@ func (c Config) IsV2() bool {
 
 // IsV3 returns true if it is a v3 project
 func (c Config) IsV3() bool {
-	return c.Version == Version3Alpha
+	return c.Version == Version3
 }
 
 // GetResource returns the GKV if the resource is found
@@ -295,7 +295,7 @@ func (c *Config) Unmarshal(b []byte) error {
 
 // EncodePluginConfig encodes a config object into c by overwriting the existing
 // object stored under key. This method is intended to be used for custom
-// configuration objects, which were introduced in project version 3-alpha.
+// configuration objects, which were introduced in project version 3.
 // EncodePluginConfig will return an error if used on any project version < v3.
 func (c *Config) EncodePluginConfig(key string, configObj interface{}) error {
 	// Short-circuit project versions < v3.
@@ -321,7 +321,7 @@ func (c *Config) EncodePluginConfig(key string, configObj interface{}) error {
 
 // DecodePluginConfig decodes a plugin config stored in c into configObj, which must be a pointer
 // This method is intended to be used for custom configuration objects, which were introduced
-// in project version 3-alpha. EncodePluginConfig will return an error if used on any project version < v3.
+// in project version 3. EncodePluginConfig will return an error if used on any project version < v3.
 func (c Config) DecodePluginConfig(key string, configObj interface{}) error {
 	// Short-circuit project versions < v3.
 	if !c.IsV3() {

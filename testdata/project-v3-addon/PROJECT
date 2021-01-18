@@ -18,4 +18,4 @@ resources:
   group: crew
   kind: Admiral
   version: v1
-version: 3-alpha
+version: "3"

@@ -34,7 +34,7 @@ func GenerateV2(kbc *utils.TestContext) {
 
 	By("initializing a project")
 	err = kbc.Init(
-		"--project-version", "3-alpha",
+		"--project-version", "3",
 		"--plugins", "go/v2",
 		"--domain", kbc.Domain,
 		"--fetch-deps=false",
@@ -129,7 +129,7 @@ func GenerateV3(kbc *utils.TestContext, crdAndWebhookVersion string) {
 
 	By("initializing a project")
 	err = kbc.Init(
-		"--project-version", "3-alpha",
+		"--project-version", "3",
 		"--plugins", "go/v3",
 		"--domain", kbc.Domain,
 		"--fetch-deps=false",
