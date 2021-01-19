@@ -38,6 +38,9 @@ for a in ${ARCHES[@]}; do
   IMAGES=( ${IMAGES[@]+"${IMAGES[@]}"} "${TARGET_IMAGE_TAG}-$a" )
 done
 
+# `manifest` is an experimental CLI feature.
+export DOCKER_CLI_EXPERIMENTAL=enabled
+
 # If $TARGET_IMAGE_TAG exists, `manifest create` will fail.
 docker manifest rm "$TARGET_IMAGE_TAG" || true
 docker manifest create "$TARGET_IMAGE_TAG" ${IMAGES[@]}
