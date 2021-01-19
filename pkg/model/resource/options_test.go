@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 
-	. "sigs.k8s.io/kubebuilder/v2/pkg/model/resource"
+	. "sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 )
 
 var _ = Describe("Resource Options", func() {

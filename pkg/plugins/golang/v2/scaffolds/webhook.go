@@ -19,13 +19,13 @@ package scaffolds
 import (
 	"fmt"
 
-	"sigs.k8s.io/kubebuilder/v2/pkg/model"
-	"sigs.k8s.io/kubebuilder/v2/pkg/model/config"
-	"sigs.k8s.io/kubebuilder/v2/pkg/model/resource"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugins/golang/v2/scaffolds/internal/templates"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugins/golang/v2/scaffolds/internal/templates/api"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugins/internal/cmdutil"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugins/internal/machinery"
+	"sigs.k8s.io/kubebuilder/v3/pkg/model"
+	"sigs.k8s.io/kubebuilder/v3/pkg/model/config"
+	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates/api"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/cmdutil"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/machinery"
 )
 
 var _ cmdutil.Scaffolder = &webhookScaffolder{}

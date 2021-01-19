@@ -19,7 +19,7 @@ package file
 import (
 	"text/template"
 
-	"sigs.k8s.io/kubebuilder/v2/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 )
 
 // Builder defines the basic methods that any file builder must implement

@@ -24,12 +24,12 @@ import (
 
 	"github.com/spf13/pflag"
 
-	"sigs.k8s.io/kubebuilder/v2/pkg/model/config"
-	"sigs.k8s.io/kubebuilder/v2/pkg/model/resource"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugin"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugins/golang/v3/scaffolds"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugins/internal/cmdutil"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugins/internal/util"
+	"sigs.k8s.io/kubebuilder/v3/pkg/model/config"
+	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/cmdutil"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/util"
 )
 
 // defaultWebhookVersion is the default mutating/validating webhook config API version to scaffold.

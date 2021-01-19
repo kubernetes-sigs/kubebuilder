@@ -25,8 +25,8 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/spf13/cobra"
 
-	"sigs.k8s.io/kubebuilder/v2/pkg/model/config"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugin"
+	"sigs.k8s.io/kubebuilder/v3/pkg/model/config"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 )
 
 func makeMockPluginsFor(projectVersion string, pluginKeys ...string) []plugin.Plugin {
