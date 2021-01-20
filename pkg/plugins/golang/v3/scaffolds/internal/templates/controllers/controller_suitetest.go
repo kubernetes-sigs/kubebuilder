@@ -165,7 +165,8 @@ var _ = BeforeSuite(func() {
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths: []string{filepath.Join({{ .CRDDirectoryRelativePath }}, "config", "crd", "bases")},
+		CRDDirectoryPaths:     []string{filepath.Join({{ .CRDDirectoryRelativePath }}, "config", "crd", "bases")},
+		ErrorIfCRDPathMissing: {{ .WireResource }},
 	}
 
 	cfg, err := testEnv.Start()
