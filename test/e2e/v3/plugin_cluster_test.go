@@ -155,6 +155,11 @@ func Run(kbc *utils.TestContext) {
 		}
 		return nil
 	}
+	defer func() {
+		out, err := kbc.Kubectl.CommandInNamespace("describe", "all")
+		ExpectWithOffset(1, err).NotTo(HaveOccurred())
+		fmt.Fprintln(GinkgoWriter, out)
+	}()
 	EventuallyWithOffset(1, verifyControllerUp, time.Minute, time.Second).Should(Succeed())
 
 	By("granting permissions to access the metrics")
