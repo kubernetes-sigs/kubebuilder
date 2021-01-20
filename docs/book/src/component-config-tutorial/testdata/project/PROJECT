@@ -1,6 +1,6 @@
 componentConfig: true
 domain: tutorial.kubebuilder.io
-layout: go.kubebuilder.io/v3-alpha
+layout: go.kubebuilder.io/v3
 multigroup: true
 projectName: project
 repo: tutorial.kubebuilder.io/project
