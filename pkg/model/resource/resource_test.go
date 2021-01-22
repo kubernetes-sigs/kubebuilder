@@ -138,6 +138,16 @@ var _ = Describe("Resource", func() {
 				Entry("no conversion", Resource{Webhooks: &Webhooks{Conversion: false}}),
 			)
 		})
+
+		Context("IsRegularPlural", func() {
+			It("should return true if the regular plural form is used", func() {
+				Expect(Resource{GVK: GVK{Kind: "FirstMate"}, Plural: "firstmates"}.IsRegularPlural()).To(BeTrue())
+			})
+
+			It("should return false if an irregular plural form is used", func() {
+				Expect(Resource{GVK: GVK{Kind: "FirstMate"}, Plural: "mates"}.IsRegularPlural()).To(BeFalse())
+			})
+		})
 	})
 
 	Context("Copy", func() {
@@ -247,6 +257,46 @@ var _ = Describe("Resource", func() {
 					Version: version,
 					Kind:    "OtherKind",
 				},
+			}
+			Expect(r.Update(other)).NotTo(Succeed())
+		})
+
+		It("should fail for different Plurals", func() {
+			r = Resource{
+				GVK: GVK{
+					Group:   group,
+					Version: version,
+					Kind:    kind,
+				},
+				Plural: "kinds",
+			}
+			other = Resource{
+				GVK: GVK{
+					Group:   group,
+					Version: version,
+					Kind:    kind,
+				},
+				Plural: "types",
+			}
+			Expect(r.Update(other)).NotTo(Succeed())
+		})
+
+		It("should fail for different Paths", func() {
+			r = Resource{
+				GVK: GVK{
+					Group:   group,
+					Version: version,
+					Kind:    kind,
+				},
+				Path: "api/v1",
+			}
+			other = Resource{
+				GVK: GVK{
+					Group:   group,
+					Version: version,
+					Kind:    kind,
+				},
+				Path: "apis/group/v1",
 			}
 			Expect(r.Update(other)).NotTo(Succeed())
 		})

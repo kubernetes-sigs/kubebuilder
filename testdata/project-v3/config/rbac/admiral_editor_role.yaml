@@ -1,4 +1,4 @@
-# permissions for end users to edit admirals.
+# permissions for end users to edit admirales.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -7,7 +7,7 @@ rules:
 - apiGroups:
   - crew.testproject.org
   resources:
-  - admirals
+  - admirales
   verbs:
   - create
   - delete
@@ -19,6 +19,6 @@ rules:
 - apiGroups:
   - crew.testproject.org
   resources:
-  - admirals/status
+  - admirales/status
   verbs:
   - get

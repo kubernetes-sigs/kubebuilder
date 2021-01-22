@@ -109,10 +109,10 @@ var _ = BeforeSuite(func() {
 	err = (&Captain{}).SetupWebhookWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred())
 
-	err = (&Admiral{}).SetupWebhookWithManager(mgr)
+	err = (&Captain{}).SetupWebhookWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred())
 
-	err = (&Captain{}).SetupWebhookWithManager(mgr)
+	err = (&Admiral{}).SetupWebhookWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred())
 
 	//+kubebuilder:scaffold:webhook

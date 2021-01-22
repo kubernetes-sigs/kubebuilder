@@ -85,6 +85,11 @@ func (r Resource) HasConversionWebhook() bool {
 	return r.Webhooks != nil && r.Webhooks.Conversion
 }
 
+// IsRegularPlural returns true if the plural is the regular plural form for the kind.
+func (r Resource) IsRegularPlural() bool {
+	return r.Plural == RegularPlural(r.Kind)
+}
+
 // Copy returns a deep copy of the Resource that can be safely modified without affecting the original.
 func (r Resource) Copy() Resource {
 	// As this function doesn't use a pointer receiver, r is already a shallow copy.
@@ -112,9 +117,13 @@ func (r *Resource) Update(other Resource) error {
 		return fmt.Errorf("unable to update a Resource with another with non-matching GVK")
 	}
 
-	// TODO: currently Plural & Path will always match. In the future, this may not be true (e.g. providing a
-	//       --plural flag). In that case, we should yield an error in case of updating two resources with different
-	//       values for these fields.
+	if r.Plural != other.Plural {
+		return fmt.Errorf("unable to update Resource with another with non-matching Plural")
+	}
+
+	if r.Path != other.Path {
+		return fmt.Errorf("unable to update Resource with another with non-matching Path")
+	}
 
 	// Update API.
 	if r.API == nil && other.API != nil {

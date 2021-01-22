@@ -121,7 +121,7 @@ func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 	p.options.Domain = p.config.GetDomain()
 	fs.StringVar(&p.options.Version, "version", "", "resource Version")
 	fs.StringVar(&p.options.Kind, "kind", "", "resource Kind")
-	// p.options.Plural can be set to specify an irregular plural form
+	fs.StringVar(&p.options.Plural, "plural", "", "resource irregular plural form")
 
 	fs.BoolVar(&p.options.DoAPI, "resource", true,
 		"if set, generate the resource without prompting the user")
