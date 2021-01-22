@@ -59,14 +59,22 @@ scaffold_test_project() {
     $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false
     $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false --force
     $kb create webhook --group crew --version v1 --kind Captain --defaulting --programmatic-validation
-    $kb create api --group crew --version v1 --kind FirstMate --controller=true --resource=true --make=false
-    $kb create webhook --group crew --version v1 --kind FirstMate --conversion
-    $kb create api --group crew --version v1 --kind Admiral --controller=true --resource=true --namespaced=false --make=false
-    $kb create webhook --group crew --version v1 --kind Admiral --defaulting
-    $kb create api --group crew --version v1 --kind Laker --controller=true --resource=false --make=false
     if [ $project == "project-v3" ]; then
       $kb create webhook --group crew --version v1 --kind Captain --defaulting --programmatic-validation --force
     fi
+
+    $kb create api --group crew --version v1 --kind FirstMate --controller=true --resource=true --make=false
+    $kb create webhook --group crew --version v1 --kind FirstMate --conversion
+
+    if [ $project == "project-v3" ]; then
+      $kb create api --group crew --version v1 --kind Admiral --plural=admirales --controller=true --resource=true --namespaced=false --make=false
+      $kb create webhook --group crew --version v1 --kind Admiral --plural=admirales --defaulting
+    else
+      $kb create api --group crew --version v1 --kind Admiral --controller=true --resource=true --namespaced=false --make=false
+      $kb create webhook --group crew --version v1 --kind Admiral --defaulting
+    fi
+
+    $kb create api --group crew --version v1 --kind Laker --controller=true --resource=false --make=false
   elif [[ $project =~ multigroup ]]; then
     header_text 'Switching to multigroup layout ...'
     $kb edit --multigroup=true
@@ -74,16 +82,24 @@ scaffold_test_project() {
     header_text 'Creating APIs ...'
     $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false
     $kb create webhook --group crew --version v1 --kind Captain --defaulting --programmatic-validation
+
     $kb create api --group ship --version v1beta1 --kind Frigate --controller=true --resource=true --make=false
     $kb create webhook --group ship --version v1beta1 --kind Frigate --conversion
+
     $kb create api --group ship --version v1 --kind Destroyer --controller=true --resource=true --namespaced=false --make=false
     $kb create webhook --group ship --version v1 --kind Destroyer --defaulting
+
     $kb create api --group ship --version v2alpha1 --kind Cruiser --controller=true --resource=true --namespaced=false --make=false
     $kb create webhook --group ship --version v2alpha1 --kind Cruiser --programmatic-validation
+
     $kb create api --group sea-creatures --version v1beta1 --kind Kraken --controller=true --resource=true --make=false
+
     $kb create api --group sea-creatures --version v1beta2 --kind Leviathan --controller=true --resource=true --make=false
+
     $kb create api --group foo.policy --version v1 --kind HealthCheckPolicy --controller=true --resource=true --make=false
+
     $kb create api --group apps --version v1 --kind Pod --controller=true --resource=false --make=false
+
     if [ $project == "project-v3-multigroup" ]; then
       $kb create api --version v1 --kind Lakers --controller=true --resource=true --make=false
       $kb create webhook --version v1 --kind Lakers --defaulting --programmatic-validation

@@ -91,7 +91,13 @@ type {{ .Resource.Kind }}Status struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-{{ if not .Resource.API.Namespaced }} //+kubebuilder:resource:scope=Cluster {{ end }}
+{{- if and (not .Resource.API.Namespaced) (not .Resource.IsRegularPlural) }}
+//+kubebuilder:resource:path={{ .Resource.Plural }},scope=Cluster
+{{- else if not .Resource.API.Namespaced }}
+//+kubebuilder:resource:scope=Cluster
+{{- else if not .Resource.IsRegularPlural }}
+//+kubebuilder:resource:path={{ .Resource.Plural }}
+{{- end }}
 
 // {{ .Resource.Kind }} is the Schema for the {{ .Resource.Plural }} API
 type {{ .Resource.Kind }} struct {

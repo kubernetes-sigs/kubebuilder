@@ -6,20 +6,20 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.4.1
   creationTimestamp: null
-  name: admirals.crew.testproject.org
+  name: admirales.crew.testproject.org
 spec:
   group: crew.testproject.org
   names:
     kind: Admiral
     listKind: AdmiralList
-    plural: admirals
+    plural: admirales
     singular: admiral
   scope: Cluster
   versions:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: Admiral is the Schema for the admirals API
+        description: Admiral is the Schema for the admirales API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
