@@ -83,7 +83,7 @@ func (c cli) bindCreateWebhook(ctx plugin.Context, cmd *cobra.Command) {
 	}
 
 	subcommand := createWebhookPlugin.GetCreateWebhookSubcommand()
-	subcommand.InjectConfig(&cfg.Config)
+	subcommand.InjectConfig(cfg.Config)
 	subcommand.BindFlags(cmd.Flags())
 	subcommand.UpdateContext(&ctx)
 	cmd.Long = ctx.Description

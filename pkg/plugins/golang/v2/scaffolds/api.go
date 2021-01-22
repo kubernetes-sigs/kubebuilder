@@ -19,8 +19,8 @@ package scaffolds
 import (
 	"fmt"
 
+	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates/api"
@@ -42,61 +42,58 @@ var _ cmdutil.Scaffolder = &apiScaffolder{}
 // apiScaffolder contains configuration for generating scaffolding for Go type
 // representing the API and controller that implements the behavior for the API.
 type apiScaffolder struct {
-	config      *config.Config
+	config      config.Config
 	boilerplate string
-	resource    *resource.Resource
+	resource    resource.Resource
+
 	// plugins is the list of plugins we should allow to transform our generated scaffolding
 	plugins []model.Plugin
-	// doResource indicates whether to scaffold API Resource or not
-	doResource bool
-	// doController indicates whether to scaffold controller files or not
-	doController bool
 
+	// force indicates whether to scaffold controller files even if it exists or not
 	force bool
 }
 
 // NewAPIScaffolder returns a new Scaffolder for API/controller creation operations
 func NewAPIScaffolder(
-	config *config.Config,
+	config config.Config,
 	boilerplate string,
-	res *resource.Resource,
-	doResource, doController, force bool,
+	res resource.Resource,
+	force bool,
 	plugins []model.Plugin,
 ) cmdutil.Scaffolder {
 	return &apiScaffolder{
-		config:       config,
-		boilerplate:  boilerplate,
-		resource:     res,
-		plugins:      plugins,
-		doResource:   doResource,
-		doController: doController,
-		force:        force,
+		config:      config,
+		boilerplate: boilerplate,
+		resource:    res,
+		plugins:     plugins,
+		force:       force,
 	}
 }
 
 // Scaffold implements Scaffolder
 func (s *apiScaffolder) Scaffold() error {
 	fmt.Println("Writing scaffold for you to edit...")
-
-	switch {
-	case s.config.IsV2(), s.config.IsV3():
-		return s.scaffold()
-	default:
-		return fmt.Errorf("unknown project version %v", s.config.Version)
-	}
+	return s.scaffold()
 }
 
 func (s *apiScaffolder) newUniverse() *model.Universe {
 	return model.NewUniverse(
 		model.WithConfig(s.config),
 		model.WithBoilerplate(s.boilerplate),
-		model.WithResource(s.resource),
+		model.WithResource(&s.resource),
 	)
 }
 
 func (s *apiScaffolder) scaffold() error {
-	if s.doResource {
-		s.config.UpdateResources(s.resource.Data())
+	// Keep track of these values before the update
+	doAPI := s.resource.HasAPI()
+	doController := s.resource.HasController()
+
+	if doAPI {
+
+		if err := s.config.UpdateResource(s.resource); err != nil {
+			return fmt.Errorf("error updating resource: %w", err)
+		}
 
 		if err := machinery.NewScaffold(s.plugins...).Execute(
 			s.newUniverse(),
@@ -108,7 +105,7 @@ func (s *apiScaffolder) scaffold() error {
 			&patches.EnableWebhookPatch{},
 			&patches.EnableCAInjectionPatch{},
 		); err != nil {
-			return fmt.Errorf("error scaffolding APIs: %v", err)
+			return fmt.Errorf("error scaffolding APIs: %w", err)
 		}
 
 		if err := machinery.NewScaffold().Execute(
@@ -121,11 +118,11 @@ func (s *apiScaffolder) scaffold() error {
 
 	}
 
-	if s.doController {
+	if doController {
 		if err := machinery.NewScaffold(s.plugins...).Execute(
 			s.newUniverse(),
-			&controllers.SuiteTest{WireResource: s.doResource, Force: s.force},
-			&controllers.Controller{WireResource: s.doResource, Force: s.force},
+			&controllers.SuiteTest{Force: s.force},
+			&controllers.Controller{Force: s.force},
 		); err != nil {
 			return fmt.Errorf("error scaffolding controller: %v", err)
 		}
@@ -133,7 +130,7 @@ func (s *apiScaffolder) scaffold() error {
 
 	if err := machinery.NewScaffold(s.plugins...).Execute(
 		s.newUniverse(),
-		&templates.MainUpdater{WireResource: s.doResource, WireController: s.doController},
+		&templates.MainUpdater{WireResource: doAPI, WireController: doController},
 	); err != nil {
 		return fmt.Errorf("error updating main.go: %v", err)
 	}

@@ -21,282 +21,172 @@ import (
 	"testing"
 
 	g "github.com/onsi/ginkgo" // An alias is required because Context is defined elsewhere in this package.
+	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
+
+	"sigs.k8s.io/kubebuilder/v3/pkg/model/stage"
 )
 
-func TestCLI(t *testing.T) {
+func TestPlugin(t *testing.T) {
 	RegisterFailHandler(g.Fail)
 	g.RunSpecs(t, "Plugin Suite")
 }
 
-var _ = g.Describe("ParseStage", func() {
-	var (
-		s   Stage
-		err error
-	)
+var _ = g.Describe("Version", func() {
+	g.Context("Parse", func() {
+		DescribeTable("should be correctly parsed for valid version strings",
+			func(str string, number int, s stage.Stage) {
+				var v Version
+				Expect(v.Parse(str)).To(Succeed())
+				Expect(v.Number).To(Equal(number))
+				Expect(v.Stage).To(Equal(s))
+			},
+			Entry("for version string `0`", "0", 0, stage.Stable),
+			Entry("for version string `0-alpha`", "0-alpha", 0, stage.Alpha),
+			Entry("for version string `0-beta`", "0-beta", 0, stage.Beta),
+			Entry("for version string `1`", "1", 1, stage.Stable),
+			Entry("for version string `1-alpha`", "1-alpha", 1, stage.Alpha),
+			Entry("for version string `1-beta`", "1-beta", 1, stage.Beta),
+			Entry("for version string `v1`", "v1", 1, stage.Stable),
+			Entry("for version string `v1-alpha`", "v1-alpha", 1, stage.Alpha),
+			Entry("for version string `v1-beta`", "v1-beta", 1, stage.Beta),
+			Entry("for version string `22`", "22", 22, stage.Stable),
+			Entry("for version string `22-alpha`", "22-alpha", 22, stage.Alpha),
+			Entry("for version string `22-beta`", "22-beta", 22, stage.Beta),
+		)
 
-	g.It("should be correctly parsed for valid stage strings", func() {
-		g.By("passing an empty stage string")
-		s, err = ParseStage("")
-		Expect(err).NotTo(HaveOccurred())
-		Expect(s).To(Equal(StableStage))
-
-		g.By("passing `alpha` as the stage string")
-		s, err = ParseStage("alpha")
-		Expect(err).NotTo(HaveOccurred())
-		Expect(s).To(Equal(AlphaStage))
-
-		g.By("passing `beta` as the stage string")
-		s, err = ParseStage("beta")
-		Expect(err).NotTo(HaveOccurred())
-		Expect(s).To(Equal(BetaStage))
+		DescribeTable("should error when parsing an invalid version string",
+			func(str string) {
+				var v Version
+				Expect(v.Parse(str)).NotTo(Succeed())
+			},
+			Entry("for version string ``", ""),
+			Entry("for version string `-1`", "-1"),
+			Entry("for version string `-1-alpha`", "-1-alpha"),
+			Entry("for version string `-1-beta`", "-1-beta"),
+			Entry("for version string `1.0`", "1.0"),
+			Entry("for version string `v1.0`", "v1.0"),
+			Entry("for version string `v1.0-alpha`", "v1.0-alpha"),
+			Entry("for version string `1.0.0`", "1.0.0"),
+			Entry("for version string `1-a`", "1-a"),
+		)
 	})
 
-	g.It("should error when parsing invalid stage strings", func() {
-		g.By("passing a number as the stage string")
-		s, err = ParseStage("1")
-		Expect(err).To(HaveOccurred())
-
-		g.By("passing `gamma` as the stage string")
-		s, err = ParseStage("gamma")
-		Expect(err).To(HaveOccurred())
-
-		g.By("passing a dash-prefixed stage string")
-		s, err = ParseStage("-alpha")
-		Expect(err).To(HaveOccurred())
-	})
-})
-
-var _ = g.Describe("Stage.String", func() {
-	g.It("should return the correct string value", func() {
-		g.By("for stable stage")
-		Expect(StableStage.String()).To(Equal(stableStage))
-
-		g.By("for alpha stage")
-		Expect(AlphaStage.String()).To(Equal(alphaStage))
-
-		g.By("for beta stage")
-		Expect(BetaStage.String()).To(Equal(betaStage))
-	})
-})
-
-var _ = g.Describe("Stage.Validate", func() {
-	g.It("should validate existing stages", func() {
-		g.By("for stable stage")
-		Expect(StableStage.Validate()).To(Succeed())
-
-		g.By("for alpha stage")
-		Expect(AlphaStage.Validate()).To(Succeed())
-
-		g.By("for beta stage")
-		Expect(BetaStage.Validate()).To(Succeed())
+	g.Context("String", func() {
+		DescribeTable("should return the correct string value",
+			func(version Version, str string) { Expect(version.String()).To(Equal(str)) },
+			Entry("for version 0", Version{Number: 0}, "v0"),
+			Entry("for version 0 (stable)", Version{Number: 0, Stage: stage.Stable}, "v0"),
+			Entry("for version 0 (alpha)", Version{Number: 0, Stage: stage.Alpha}, "v0-alpha"),
+			Entry("for version 0 (beta)", Version{Number: 0, Stage: stage.Beta}, "v0-beta"),
+			Entry("for version 0 (implicit)", Version{}, "v0"),
+			Entry("for version 0 (stable) (implicit)", Version{Stage: stage.Stable}, "v0"),
+			Entry("for version 0 (alpha) (implicit)", Version{Stage: stage.Alpha}, "v0-alpha"),
+			Entry("for version 0 (beta) (implicit)", Version{Stage: stage.Beta}, "v0-beta"),
+			Entry("for version 1", Version{Number: 1}, "v1"),
+			Entry("for version 1 (stable)", Version{Number: 1, Stage: stage.Stable}, "v1"),
+			Entry("for version 1 (alpha)", Version{Number: 1, Stage: stage.Alpha}, "v1-alpha"),
+			Entry("for version 1 (beta)", Version{Number: 1, Stage: stage.Beta}, "v1-beta"),
+			Entry("for version 22", Version{Number: 22}, "v22"),
+			Entry("for version 22 (stable)", Version{Number: 22, Stage: stage.Stable}, "v22"),
+			Entry("for version 22 (alpha)", Version{Number: 22, Stage: stage.Alpha}, "v22-alpha"),
+			Entry("for version 22 (beta)", Version{Number: 22, Stage: stage.Beta}, "v22-beta"),
+		)
 	})
 
-	g.It("should fail for non-existing stages", func() {
-		Expect(Stage(34).Validate()).NotTo(Succeed())
-		Expect(Stage(75).Validate()).NotTo(Succeed())
-		Expect(Stage(123).Validate()).NotTo(Succeed())
-		Expect(Stage(255).Validate()).NotTo(Succeed())
+	g.Context("Validate", func() {
+		DescribeTable("should validate valid versions",
+			func(version Version) { Expect(version.Validate()).To(Succeed()) },
+			Entry("for version 0", Version{Number: 0}),
+			Entry("for version 0 (stable)", Version{Number: 0, Stage: stage.Stable}),
+			Entry("for version 0 (alpha)", Version{Number: 0, Stage: stage.Alpha}),
+			Entry("for version 0 (beta)", Version{Number: 0, Stage: stage.Beta}),
+			Entry("for version 0 (implicit)", Version{}),
+			Entry("for version 0 (stable) (implicit)", Version{Stage: stage.Stable}),
+			Entry("for version 0 (alpha) (implicit)", Version{Stage: stage.Alpha}),
+			Entry("for version 0 (beta) (implicit)", Version{Stage: stage.Beta}),
+			Entry("for version 1", Version{Number: 1}),
+			Entry("for version 1 (stable)", Version{Number: 1, Stage: stage.Stable}),
+			Entry("for version 1 (alpha)", Version{Number: 1, Stage: stage.Alpha}),
+			Entry("for version 1 (beta)", Version{Number: 1, Stage: stage.Beta}),
+			Entry("for version 22", Version{Number: 22}),
+			Entry("for version 22 (stable)", Version{Number: 22, Stage: stage.Stable}),
+			Entry("for version 22 (alpha)", Version{Number: 22, Stage: stage.Alpha}),
+			Entry("for version 22 (beta)", Version{Number: 22, Stage: stage.Beta}),
+		)
+
+		DescribeTable("should fail for invalid versions",
+			func(version Version) { Expect(version.Validate()).NotTo(Succeed()) },
+			Entry("for version -1", Version{Number: -1}),
+			Entry("for version -1 (stable)", Version{Number: -1, Stage: stage.Stable}),
+			Entry("for version -1 (alpha)", Version{Number: -1, Stage: stage.Alpha}),
+			Entry("for version -1 (beta)", Version{Number: -1, Stage: stage.Beta}),
+			Entry("for invalid stage", Version{Stage: stage.Stage(34)}),
+		)
 	})
-})
 
-var _ = g.Describe("Stage.Compare", func() {
-	// Test Stage.Compare by sorting a list
-	var (
-		stages = []Stage{
-			StableStage,
-			BetaStage,
-			AlphaStage,
-		}
+	g.Context("Compare", func() {
+		// Test Compare() by sorting a list.
+		var (
+			versions = []Version{
+				{Number: 2, Stage: stage.Alpha},
+				{Number: 44, Stage: stage.Alpha},
+				{Number: 1},
+				{Number: 2, Stage: stage.Beta},
+				{Number: 4, Stage: stage.Beta},
+				{Number: 1, Stage: stage.Alpha},
+				{Number: 4},
+				{Number: 44, Stage: stage.Alpha},
+				{Number: 30},
+				{Number: 4, Stage: stage.Alpha},
+			}
 
-		sortedStages = []Stage{
-			AlphaStage,
-			BetaStage,
-			StableStage,
-		}
-	)
-	g.It("sorts stages correctly", func() {
-		sort.Slice(stages, func(i int, j int) bool {
-			return stages[i].Compare(stages[j]) == -1
+			sortedVersions = []Version{
+				{Number: 1, Stage: stage.Alpha},
+				{Number: 1},
+				{Number: 2, Stage: stage.Alpha},
+				{Number: 2, Stage: stage.Beta},
+				{Number: 4, Stage: stage.Alpha},
+				{Number: 4, Stage: stage.Beta},
+				{Number: 4},
+				{Number: 30},
+				{Number: 44, Stage: stage.Alpha},
+				{Number: 44, Stage: stage.Alpha},
+			}
+		)
+
+		g.It("sorts a valid list of versions correctly", func() {
+			sort.Slice(versions, func(i int, j int) bool {
+				return versions[i].Compare(versions[j]) == -1
+			})
+			Expect(versions).To(Equal(sortedVersions))
 		})
-		Expect(stages).To(Equal(sortedStages))
-	})
-})
 
-var _ = g.Describe("ParseVersion", func() {
-	var (
-		v   Version
-		err error
-	)
-
-	g.It("should be correctly parsed when a version is positive without a stage", func() {
-		g.By("passing version string 1")
-		v, err = ParseVersion("1")
-		Expect(err).NotTo(HaveOccurred())
-		Expect(v.Number).To(BeNumerically("==", int64(1)))
-		Expect(v.Stage).To(Equal(StableStage))
-
-		g.By("passing version string 22")
-		v, err = ParseVersion("22")
-		Expect(err).NotTo(HaveOccurred())
-		Expect(v.Number).To(BeNumerically("==", int64(22)))
-		Expect(v.Stage).To(Equal(StableStage))
-
-		g.By("passing version string v1")
-		v, err = ParseVersion("v1")
-		Expect(err).NotTo(HaveOccurred())
-		Expect(v.Number).To(BeNumerically("==", int64(1)))
-		Expect(v.Stage).To(Equal(StableStage))
 	})
 
-	g.It("should be correctly parsed when a version is positive with a stage", func() {
-		g.By("passing version string 1-alpha")
-		v, err = ParseVersion("1-alpha")
-		Expect(err).NotTo(HaveOccurred())
-		Expect(v.Number).To(BeNumerically("==", int64(1)))
-		Expect(v.Stage).To(Equal(AlphaStage))
+	g.Context("IsStable", func() {
+		DescribeTable("should return true for stable versions",
+			func(version Version) { Expect(version.IsStable()).To(BeTrue()) },
+			Entry("for version 1", Version{Number: 1}),
+			Entry("for version 1 (stable)", Version{Number: 1, Stage: stage.Stable}),
+			Entry("for version 22", Version{Number: 22}),
+			Entry("for version 22 (stable)", Version{Number: 22, Stage: stage.Stable}),
+		)
 
-		g.By("passing version string 1-beta")
-		v, err = ParseVersion("1-beta")
-		Expect(err).NotTo(HaveOccurred())
-		Expect(v.Number).To(BeNumerically("==", int64(1)))
-		Expect(v.Stage).To(Equal(BetaStage))
-
-		g.By("passing version string v1-alpha")
-		v, err = ParseVersion("v1-alpha")
-		Expect(err).NotTo(HaveOccurred())
-		Expect(v.Number).To(BeNumerically("==", int64(1)))
-		Expect(v.Stage).To(Equal(AlphaStage))
-
-		g.By("passing version string v22-alpha")
-		v, err = ParseVersion("v22-alpha")
-		Expect(err).NotTo(HaveOccurred())
-		Expect(v.Number).To(BeNumerically("==", int64(22)))
-		Expect(v.Stage).To(Equal(AlphaStage))
+		DescribeTable("should return false for unstable versions",
+			func(version Version) { Expect(version.IsStable()).To(BeFalse()) },
+			Entry("for version 0", Version{Number: 0}),
+			Entry("for version 0 (stable)", Version{Number: 0, Stage: stage.Stable}),
+			Entry("for version 0 (alpha)", Version{Number: 0, Stage: stage.Alpha}),
+			Entry("for version 0 (beta)", Version{Number: 0, Stage: stage.Beta}),
+			Entry("for version 0 (implicit)", Version{}),
+			Entry("for version 0 (stable) (implicit)", Version{Stage: stage.Stable}),
+			Entry("for version 0 (alpha) (implicit)", Version{Stage: stage.Alpha}),
+			Entry("for version 0 (beta) (implicit)", Version{Stage: stage.Beta}),
+			Entry("for version 1 (alpha)", Version{Number: 1, Stage: stage.Alpha}),
+			Entry("for version 1 (beta)", Version{Number: 1, Stage: stage.Beta}),
+			Entry("for version 22 (alpha)", Version{Number: 22, Stage: stage.Alpha}),
+			Entry("for version 22 (beta)", Version{Number: 22, Stage: stage.Beta}),
+		)
 	})
-
-	g.It("should fail for invalid version strings", func() {
-		g.By("passing version string an empty string")
-		_, err = ParseVersion("")
-		Expect(err).To(HaveOccurred())
-
-		g.By("passing version string 0")
-		_, err = ParseVersion("0")
-		Expect(err).To(HaveOccurred())
-
-		g.By("passing a negative number version string")
-		_, err = ParseVersion("-1")
-		Expect(err).To(HaveOccurred())
-	})
-
-	g.It("should fail validation when a version string is semver", func() {
-		g.By("passing version string 1.0")
-		_, err = ParseVersion("1.0")
-		Expect(err).To(HaveOccurred())
-
-		g.By("passing version string v1.0")
-		_, err = ParseVersion("v1.0")
-		Expect(err).To(HaveOccurred())
-
-		g.By("passing version string v1.0-alpha")
-		_, err = ParseVersion("v1.0-alpha")
-		Expect(err).To(HaveOccurred())
-
-		g.By("passing version string 1.0.0")
-		_, err = ParseVersion("1.0.0")
-		Expect(err).To(HaveOccurred())
-	})
-})
-
-var _ = g.Describe("Version.String", func() {
-	g.It("should return the correct string value", func() {
-		g.By("for stable version 1")
-		Expect(Version{Number: 1}.String()).To(Equal("v1"))
-		Expect(Version{Number: 1, Stage: StableStage}.String()).To(Equal("v1"))
-
-		g.By("for stable version 22")
-		Expect(Version{Number: 22}.String()).To(Equal("v22"))
-		Expect(Version{Number: 22, Stage: StableStage}.String()).To(Equal("v22"))
-
-		g.By("for alpha version 1")
-		Expect(Version{Number: 1, Stage: AlphaStage}.String()).To(Equal("v1-alpha"))
-
-		g.By("for beta version 1")
-		Expect(Version{Number: 1, Stage: BetaStage}.String()).To(Equal("v1-beta"))
-
-		g.By("for alpha version 22")
-		Expect(Version{Number: 22, Stage: AlphaStage}.String()).To(Equal("v22-alpha"))
-	})
-})
-
-var _ = g.Describe("Version.Validate", func() {
-	g.It("should success for a positive version without a stage", func() {
-		g.By("passing version 0")
-		Expect(Version{}.Validate()).To(Succeed())
-		Expect(Version{Number: 0}.Validate()).To(Succeed())
-
-		g.By("for version 1")
-		Expect(Version{Number: 1}.Validate()).To(Succeed())
-
-		g.By("for version 22")
-		Expect(Version{Number: 22}.Validate()).To(Succeed())
-	})
-
-	g.It("should success for a positive version with a stage", func() {
-		g.By("for version 1 alpha")
-		Expect(Version{Number: 1, Stage: AlphaStage}.Validate()).To(Succeed())
-
-		g.By("for version 1 beta")
-		Expect(Version{Number: 1, Stage: BetaStage}.Validate()).To(Succeed())
-
-		g.By("for version 22 alpha")
-		Expect(Version{Number: 22, Stage: AlphaStage}.Validate()).To(Succeed())
-	})
-
-	g.It("should fail for invalid versions", func() {
-		g.By("passing a negative version")
-		Expect(Version{Number: -1}.Validate()).NotTo(Succeed())
-
-		g.By("passing an invalid stage")
-		Expect(Version{Number: 1, Stage: Stage(173)}.Validate()).NotTo(Succeed())
-	})
-})
-
-var _ = g.Describe("Version.Compare", func() {
-	// Test Compare() by sorting a list.
-	var (
-		versions = []Version{
-			{Number: 2, Stage: AlphaStage},
-			{Number: 44, Stage: AlphaStage},
-			{Number: 1},
-			{Number: 2, Stage: BetaStage},
-			{Number: 4, Stage: BetaStage},
-			{Number: 1, Stage: AlphaStage},
-			{Number: 4},
-			{Number: 44, Stage: AlphaStage},
-			{Number: 30},
-			{Number: 4, Stage: AlphaStage},
-		}
-
-		sortedVersions = []Version{
-			{Number: 1, Stage: AlphaStage},
-			{Number: 1},
-			{Number: 2, Stage: AlphaStage},
-			{Number: 2, Stage: BetaStage},
-			{Number: 4, Stage: AlphaStage},
-			{Number: 4, Stage: BetaStage},
-			{Number: 4},
-			{Number: 30},
-			{Number: 44, Stage: AlphaStage},
-			{Number: 44, Stage: AlphaStage},
-		}
-	)
-
-	g.It("sorts a valid list of versions correctly", func() {
-		sort.Slice(versions, func(i int, j int) bool {
-			return versions[i].Compare(versions[j]) == -1
-		})
-		Expect(versions).To(Equal(sortedVersions))
-	})
-
 })

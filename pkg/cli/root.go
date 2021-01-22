@@ -67,12 +67,10 @@ configuration please run:
 `,
 		c.commandName, c.getPluginTable())
 
-	if c.defaultProjectVersion != "" {
-		str += fmt.Sprintf("\nDefault project version: %s\n", c.defaultProjectVersion)
+	str += fmt.Sprintf("\nDefault project version: %s\n", c.defaultProjectVersion)
 
-		if defaultPlugins, hasDefaultPlugins := c.defaultPlugins[c.defaultProjectVersion]; hasDefaultPlugins {
-			str += fmt.Sprintf("Default plugin keys: %q\n", strings.Join(defaultPlugins, ","))
-		}
+	if defaultPlugins, hasDefaultPlugins := c.defaultPlugins[c.defaultProjectVersion]; hasDefaultPlugins {
+		str += fmt.Sprintf("Default plugin keys: %q\n", strings.Join(defaultPlugins, ","))
 	}
 
 	str += fmt.Sprintf(`
@@ -98,11 +96,16 @@ func (c cli) getPluginTable() string {
 			maxPluginKeyLength = len(pluginKey)
 		}
 		pluginKeys = append(pluginKeys, pluginKey)
-		supportedProjectVersions := strings.Join(plugin.SupportedProjectVersions(), ", ")
-		if len(supportedProjectVersions) > maxProjectVersionLength {
-			maxProjectVersionLength = len(supportedProjectVersions)
+		supportedProjectVersions := plugin.SupportedProjectVersions()
+		supportedProjectVersionStrs := make([]string, 0, len(supportedProjectVersions))
+		for _, version := range supportedProjectVersions {
+			supportedProjectVersionStrs = append(supportedProjectVersionStrs, version.String())
 		}
-		projectVersions = append(projectVersions, supportedProjectVersions)
+		supportedProjectVersionsStr := strings.Join(supportedProjectVersionStrs, ", ")
+		if len(supportedProjectVersionsStr) > maxProjectVersionLength {
+			maxProjectVersionLength = len(supportedProjectVersionsStr)
+		}
+		projectVersions = append(projectVersions, supportedProjectVersionsStr)
 	}
 
 	lines := make([]string, 0, len(c.plugins)+2)

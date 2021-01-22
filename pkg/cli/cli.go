@@ -25,8 +25,8 @@ import (
 	"github.com/spf13/pflag"
 
 	internalconfig "sigs.k8s.io/kubebuilder/v3/pkg/cli/internal/config"
-	"sigs.k8s.io/kubebuilder/v3/pkg/internal/validation"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/config"
+	"sigs.k8s.io/kubebuilder/v3/pkg/config"
+	cfgv3alpha "sigs.k8s.io/kubebuilder/v3/pkg/config/v3alpha"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 )
 
@@ -74,9 +74,9 @@ type cli struct { //nolint:maligned
 	// CLI version string.
 	version string
 	// Default project version in case none is provided and a config file can't be found.
-	defaultProjectVersion string
+	defaultProjectVersion config.Version
 	// Default plugins in case none is provided and a config file can't be found.
-	defaultPlugins map[string][]string
+	defaultPlugins map[config.Version][]string
 	// Plugins registered in the cli.
 	plugins map[string]plugin.Plugin
 	// Commands injected by options.
@@ -87,7 +87,7 @@ type cli struct { //nolint:maligned
 	/* Internal fields */
 
 	// Project version to scaffold.
-	projectVersion string
+	projectVersion config.Version
 	// Plugin keys to scaffold with.
 	pluginKeys []string
 
@@ -131,8 +131,8 @@ func newCLI(opts ...Option) (*cli, error) {
 	// Default cli options.
 	c := &cli{
 		commandName:           "kubebuilder",
-		defaultProjectVersion: internalconfig.DefaultVersion,
-		defaultPlugins:        make(map[string][]string),
+		defaultProjectVersion: cfgv3alpha.Version,
+		defaultPlugins:        make(map[config.Version][]string),
 		plugins:               make(map[string]plugin.Plugin),
 	}
 
@@ -191,15 +191,15 @@ func (c *cli) getInfoFromFlags() (string, []string, error) {
 }
 
 // getInfoFromConfigFile obtains the project version and plugin keys from the project config file.
-func getInfoFromConfigFile() (string, []string, error) {
+func getInfoFromConfigFile() (config.Version, []string, error) {
 	// Read the project configuration file
 	projectConfig, err := internalconfig.Read()
 	switch {
 	case err == nil:
 	case os.IsNotExist(err):
-		return "", nil, nil
+		return config.Version{}, nil, nil
 	default:
-		return "", nil, err
+		return config.Version{}, nil, err
 	}
 
 	return getInfoFromConfig(projectConfig)
@@ -207,74 +207,82 @@ func getInfoFromConfigFile() (string, []string, error) {
 
 // getInfoFromConfig obtains the project version and plugin keys from the project config.
 // It is extracted from getInfoFromConfigFile for testing purposes.
-func getInfoFromConfig(projectConfig *config.Config) (string, []string, error) {
+func getInfoFromConfig(projectConfig config.Config) (config.Version, []string, error) {
 	// Split the comma-separated plugins
 	var pluginSet []string
-	if projectConfig.Layout != "" {
-		for _, p := range strings.Split(projectConfig.Layout, ",") {
+	if projectConfig.GetLayout() != "" {
+		for _, p := range strings.Split(projectConfig.GetLayout(), ",") {
 			pluginSet = append(pluginSet, strings.TrimSpace(p))
 		}
 	}
 
-	return projectConfig.Version, pluginSet, nil
+	return projectConfig.GetVersion(), pluginSet, nil
 }
 
 // resolveFlagsAndConfigFileConflicts checks if the provided combined input from flags and
 // the config file is valid and uses default values in case some info was not provided.
 func (c cli) resolveFlagsAndConfigFileConflicts(
-	flagProjectVersion, cfgProjectVersion string,
+	flagProjectVersionString string,
+	cfgProjectVersion config.Version,
 	flagPlugins, cfgPlugins []string,
-) (string, []string, error) {
-	// Resolve project version
-	var projectVersion string
-	switch {
-	// If they are both blank, use the default
-	case flagProjectVersion == "" && cfgProjectVersion == "":
-		projectVersion = c.defaultProjectVersion
-	// If they are equal doesn't matter which we choose
-	case flagProjectVersion == cfgProjectVersion:
-		projectVersion = flagProjectVersion
-	// If any is blank, choose the other
-	case cfgProjectVersion == "":
-		projectVersion = flagProjectVersion
-	case flagProjectVersion == "":
-		projectVersion = cfgProjectVersion
-	// If none is blank and they are different error out
-	default:
-		return "", nil, fmt.Errorf("project version conflict between command line args (%s) "+
-			"and project configuration file (%s)", flagProjectVersion, cfgProjectVersion)
-	}
-	// It still may be empty if default, flag and config project versions are empty
-	if projectVersion != "" {
-		// Validate the project version
-		if err := validation.ValidateProjectVersion(projectVersion); err != nil {
-			return "", nil, err
+) (config.Version, []string, error) {
+	// Parse project configuration version from flags
+	var flagProjectVersion config.Version
+	if flagProjectVersionString != "" {
+		if err := flagProjectVersion.Parse(flagProjectVersionString); err != nil {
+			return config.Version{}, nil, fmt.Errorf("unable to parse project version flag: %w", err)
 		}
+	}
+
+	// Resolve project version
+	var projectVersion config.Version
+	isFlagProjectVersionInvalid := flagProjectVersion.Validate() != nil
+	isCfgProjectVersionInvalid := cfgProjectVersion.Validate() != nil
+	switch {
+	// If they are both invalid (empty is invalid), use the default
+	case isFlagProjectVersionInvalid && isCfgProjectVersionInvalid:
+		projectVersion = c.defaultProjectVersion
+	// If any is invalid (empty is invalid), choose the other
+	case isCfgProjectVersionInvalid:
+		projectVersion = flagProjectVersion
+	case isFlagProjectVersionInvalid:
+		projectVersion = cfgProjectVersion
+	// If they are equal doesn't matter which we choose
+	case flagProjectVersion.Compare(cfgProjectVersion) == 0:
+		projectVersion = flagProjectVersion
+	// If both are valid (empty is invalid) and they are different error out
+	default:
+		return config.Version{}, nil, fmt.Errorf("project version conflict between command line args (%s) "+
+			"and project configuration file (%s)", flagProjectVersionString, cfgProjectVersion)
 	}
 
 	// Resolve plugins
 	var plugins []string
+	isFlagPluginsEmpty := len(flagPlugins) == 0
+	isCfgPluginsEmpty := len(cfgPlugins) == 0
 	switch {
-	// If they are both blank, use the default
-	case len(flagPlugins) == 0 && len(cfgPlugins) == 0:
-		plugins = c.defaultPlugins[projectVersion]
+	// If they are both empty, use the default
+	case isFlagPluginsEmpty && isCfgPluginsEmpty:
+		if defaults, hasDefaults := c.defaultPlugins[projectVersion]; hasDefaults {
+			plugins = defaults
+		}
+	// If any is empty, choose the other
+	case isCfgPluginsEmpty:
+		plugins = flagPlugins
+	case isFlagPluginsEmpty:
+		plugins = cfgPlugins
 	// If they are equal doesn't matter which we choose
 	case equalStringSlice(flagPlugins, cfgPlugins):
 		plugins = flagPlugins
-	// If any is blank, choose the other
-	case len(cfgPlugins) == 0:
-		plugins = flagPlugins
-	case len(flagPlugins) == 0:
-		plugins = cfgPlugins
-	// If none is blank and they are different error out
+	// If none is empty and they are different error out
 	default:
-		return "", nil, fmt.Errorf("plugins conflict between command line args (%v) "+
+		return config.Version{}, nil, fmt.Errorf("plugins conflict between command line args (%v) "+
 			"and project configuration file (%v)", flagPlugins, cfgPlugins)
 	}
 	// Validate the plugins
 	for _, p := range plugins {
 		if err := plugin.ValidateKey(p); err != nil {
-			return "", nil, err
+			return config.Version{}, nil, err
 		}
 	}
 
@@ -315,8 +323,8 @@ func (c *cli) resolve() error {
 		// under no support contract. However users should be notified _why_ their plugin cannot be found.
 		var extraErrMsg string
 		if version != "" {
-			ver, err := plugin.ParseVersion(version)
-			if err != nil {
+			var ver plugin.Version
+			if err := ver.Parse(version); err != nil {
 				return fmt.Errorf("error parsing input plugin version from key %q: %v", pluginKey, err)
 			}
 			if !ver.IsStable() {

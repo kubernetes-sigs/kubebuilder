@@ -21,19 +21,19 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/config"
+	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/cmdutil"
 )
 
 var _ cmdutil.Scaffolder = &editScaffolder{}
 
 type editScaffolder struct {
-	config     *config.Config
+	config     config.Config
 	multigroup bool
 }
 
 // NewEditScaffolder returns a new Scaffolder for configuration edit operations
-func NewEditScaffolder(config *config.Config, multigroup bool) cmdutil.Scaffolder {
+func NewEditScaffolder(config config.Config, multigroup bool) cmdutil.Scaffolder {
 	return &editScaffolder{
 		config:     config,
 		multigroup: multigroup,
@@ -64,11 +64,15 @@ func (s *editScaffolder) Scaffold() error {
 	}
 
 	// Ignore the error encountered, if the file is already in desired format.
-	if err != nil && s.multigroup != s.config.MultiGroup {
+	if err != nil && s.multigroup != s.config.IsMultiGroup() {
 		return err
 	}
 
-	s.config.MultiGroup = s.multigroup
+	if s.multigroup {
+		_ = s.config.SetMultiGroup()
+	} else {
+		_ = s.config.ClearMultiGroup()
+	}
 
 	// Check if the str is not empty, because when the file is already in desired format it will return empty string
 	// because there is nothing to replace.

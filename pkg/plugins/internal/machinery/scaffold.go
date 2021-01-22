@@ -69,7 +69,7 @@ func (s *scaffold) Execute(universe *model.Universe, files ...file.Builder) erro
 
 	// Set the repo as the local prefix so that it knows how to group imports
 	if universe.Config != nil {
-		imports.LocalPrefix = universe.Config.Repo
+		imports.LocalPrefix = universe.Config.GetRepository()
 	}
 
 	for _, f := range files {

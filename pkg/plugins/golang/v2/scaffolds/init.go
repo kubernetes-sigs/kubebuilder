@@ -21,8 +21,8 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
+	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates/config/certmanager"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates/config/kdefault"
@@ -49,14 +49,14 @@ const (
 var _ cmdutil.Scaffolder = &initScaffolder{}
 
 type initScaffolder struct {
-	config          *config.Config
+	config          config.Config
 	boilerplatePath string
 	license         string
 	owner           string
 }
 
 // NewInitScaffolder returns a new Scaffolder for project initialization operations
-func NewInitScaffolder(config *config.Config, license, owner string) cmdutil.Scaffolder {
+func NewInitScaffolder(config config.Config, license, owner string) cmdutil.Scaffolder {
 	return &initScaffolder{
 		config:          config,
 		boilerplatePath: filepath.Join("hack", "boilerplate.go.txt"),
@@ -75,13 +75,7 @@ func (s *initScaffolder) newUniverse(boilerplate string) *model.Universe {
 // Scaffold implements Scaffolder
 func (s *initScaffolder) Scaffold() error {
 	fmt.Println("Writing scaffold for you to edit...")
-
-	switch {
-	case s.config.IsV2(), s.config.IsV3():
-		return s.scaffold()
-	default:
-		return fmt.Errorf("unknown project version %v", s.config.Version)
-	}
+	return s.scaffold()
 }
 
 func (s *initScaffolder) scaffold() error {

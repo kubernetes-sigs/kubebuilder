@@ -17,7 +17,7 @@ limitations under the License.
 package model
 
 import (
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/config"
+	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 )
@@ -25,7 +25,7 @@ import (
 // Universe describes the entire state of file generation
 type Universe struct {
 	// Config stores the project configuration
-	Config *config.Config `json:"config,omitempty"`
+	Config config.Config `json:"config,omitempty"`
 
 	// Boilerplate is the copyright comment added at the top of scaffolded files
 	Boilerplate string `json:"boilerplate,omitempty"`
@@ -53,7 +53,7 @@ func NewUniverse(options ...UniverseOption) *Universe {
 type UniverseOption func(*Universe)
 
 // WithConfig stores the already loaded project configuration
-func WithConfig(projectConfig *config.Config) UniverseOption {
+func WithConfig(projectConfig config.Config) UniverseOption {
 	return func(universe *Universe) {
 		universe.Config = projectConfig
 	}
@@ -83,19 +83,19 @@ func (u Universe) InjectInto(builder file.Builder) {
 	// Inject project configuration
 	if u.Config != nil {
 		if builderWithDomain, hasDomain := builder.(file.HasDomain); hasDomain {
-			builderWithDomain.InjectDomain(u.Config.Domain)
+			builderWithDomain.InjectDomain(u.Config.GetDomain())
 		}
 		if builderWithRepository, hasRepository := builder.(file.HasRepository); hasRepository {
-			builderWithRepository.InjectRepository(u.Config.Repo)
-		}
-		if builderWithMultiGroup, hasMultiGroup := builder.(file.HasMultiGroup); hasMultiGroup {
-			builderWithMultiGroup.InjectMultiGroup(u.Config.MultiGroup)
-		}
-		if builderWithComponentConfig, hasComponentConfig := builder.(file.HasComponentConfig); hasComponentConfig {
-			builderWithComponentConfig.InjectComponentConfig(u.Config.ComponentConfig)
+			builderWithRepository.InjectRepository(u.Config.GetRepository())
 		}
 		if builderWithProjectName, hasProjectName := builder.(file.HasProjectName); hasProjectName {
-			builderWithProjectName.InjectProjectName(u.Config.ProjectName)
+			builderWithProjectName.InjectProjectName(u.Config.GetProjectName())
+		}
+		if builderWithMultiGroup, hasMultiGroup := builder.(file.HasMultiGroup); hasMultiGroup {
+			builderWithMultiGroup.InjectMultiGroup(u.Config.IsMultiGroup())
+		}
+		if builderWithComponentConfig, hasComponentConfig := builder.(file.HasComponentConfig); hasComponentConfig {
+			builderWithComponentConfig.InjectComponentConfig(u.Config.IsComponentConfig())
 		}
 	}
 	// Inject boilerplate

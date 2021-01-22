@@ -33,9 +33,6 @@ type Controller struct {
 	file.BoilerplateMixin
 	file.ResourceMixin
 
-	// WireResource defines the api resources are generated or not.
-	WireResource bool
-
 	Force bool
 }
 
@@ -73,8 +70,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	{{ if .WireResource -}}
-	{{ .Resource.ImportAlias }} "{{ .Resource.Package }}"
+	{{ if .Resource.HasAPI -}}
+	{{ .Resource.ImportAlias }} "{{ .Resource.Path }}"
 	{{- end }}
 )
 
@@ -85,8 +82,8 @@ type {{ .Resource.Kind }}Reconciler struct {
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups={{ .Resource.Domain }},resources={{ .Resource.Plural }},verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups={{ .Resource.Domain }},resources={{ .Resource.Plural }}/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups={{ .Resource.QualifiedGroup }},resources={{ .Resource.Plural }},verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups={{ .Resource.QualifiedGroup }},resources={{ .Resource.Plural }}/status,verbs=get;update;patch
 
 func (r *{{ .Resource.Kind }}Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()
@@ -99,7 +96,7 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(req ctrl.Request) (ctrl.Resul
 
 func (r *{{ .Resource.Kind }}Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		{{ if .WireResource -}}
+		{{ if .Resource.HasAPI -}}
 		For(&{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{}).
 		{{- else -}}
 		// Uncomment the following line adding a pointer to an instance of the controlled resource as an argument

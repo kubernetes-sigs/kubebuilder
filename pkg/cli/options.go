@@ -21,7 +21,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/internal/validation"
+	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 )
 
@@ -46,9 +46,9 @@ func WithVersion(version string) Option {
 
 // WithDefaultProjectVersion is an Option that sets the cli's default project version.
 // Setting an unknown version will result in an error.
-func WithDefaultProjectVersion(version string) Option {
+func WithDefaultProjectVersion(version config.Version) Option {
 	return func(c *cli) error {
-		if err := validation.ValidateProjectVersion(version); err != nil {
+		if err := version.Validate(); err != nil {
 			return fmt.Errorf("broken pre-set default project version %q: %v", version, err)
 		}
 		c.defaultProjectVersion = version
@@ -57,9 +57,9 @@ func WithDefaultProjectVersion(version string) Option {
 }
 
 // WithDefaultPlugins is an Option that sets the cli's default plugins.
-func WithDefaultPlugins(projectVersion string, plugins ...plugin.Plugin) Option {
+func WithDefaultPlugins(projectVersion config.Version, plugins ...plugin.Plugin) Option {
 	return func(c *cli) error {
-		if err := validation.ValidateProjectVersion(projectVersion); err != nil {
+		if err := projectVersion.Validate(); err != nil {
 			return fmt.Errorf("broken pre-set project version %q for default plugins: %v", projectVersion, err)
 		}
 		if len(plugins) == 0 {

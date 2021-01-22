@@ -21,14 +21,14 @@ import (
 
 	"github.com/spf13/pflag"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/config"
+	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/cmdutil"
 )
 
 type editSubcommand struct {
-	config *config.Config
+	config config.Config
 
 	multigroup bool
 }
@@ -53,7 +53,7 @@ func (p *editSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.multigroup, "multigroup", false, "enable or disable multigroup layout")
 }
 
-func (p *editSubcommand) InjectConfig(c *config.Config) {
+func (p *editSubcommand) InjectConfig(c config.Config) {
 	p.config = c
 }
 

@@ -24,8 +24,8 @@ import (
 
 	"github.com/spf13/pflag"
 
+	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/internal/validation"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/cmdutil"
@@ -33,13 +33,19 @@ import (
 )
 
 type initSubcommand struct {
-	config *config.Config
+	config config.Config
 	// For help text.
 	commandName string
 
 	// boilerplate options
 	license string
 	owner   string
+
+	// config options
+	domain          string
+	repo            string
+	name            string
+	componentConfig bool
 
 	// flags
 	fetchDeps          bool
@@ -83,18 +89,19 @@ func (p *initSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&p.license, "license", "apache2",
 		"license to use to boilerplate, may be one of 'apache2', 'none'")
 	fs.StringVar(&p.owner, "owner", "", "owner to add to the copyright")
-	fs.BoolVar(&p.config.ComponentConfig, "component-config", false,
-		"create a versioned ComponentConfig file, may be 'true' or 'false'")
 
 	// project args
-	fs.StringVar(&p.config.Repo, "repo", "", "name to use for go module (e.g., github.com/user/repo), "+
+	fs.StringVar(&p.domain, "domain", "my.domain", "domain for groups")
+	fs.StringVar(&p.repo, "repo", "", "name to use for go module (e.g., github.com/user/repo), "+
 		"defaults to the go package of the current working directory.")
-	fs.StringVar(&p.config.Domain, "domain", "my.domain", "domain for groups")
-	fs.StringVar(&p.config.ProjectName, "project-name", "", "name of this project")
+	fs.StringVar(&p.name, "project-name", "", "name of this project")
+	fs.BoolVar(&p.componentConfig, "component-config", false,
+		"create a versioned ComponentConfig file, may be 'true' or 'false'")
 }
 
-func (p *initSubcommand) InjectConfig(c *config.Config) {
-	c.Layout = plugin.KeyFor(Plugin{})
+func (p *initSubcommand) InjectConfig(c config.Config) {
+	_ = c.SetLayout(plugin.KeyFor(Plugin{}))
+
 	p.config = c
 }
 
@@ -115,31 +122,47 @@ func (p *initSubcommand) Validate() error {
 		return err
 	}
 
-	// Check if the project name is a valid k8s namespace (DNS 1123 label).
-	if p.config.ProjectName == "" {
+	// Assign a default project name
+	if p.name == "" {
 		dir, err := os.Getwd()
 		if err != nil {
 			return fmt.Errorf("error getting current directory: %v", err)
 		}
-		p.config.ProjectName = strings.ToLower(filepath.Base(dir))
+		p.name = strings.ToLower(filepath.Base(dir))
 	}
-	if err := validation.IsDNS1123Label(p.config.ProjectName); err != nil {
-		return fmt.Errorf("project name (%s) is invalid: %v", p.config.ProjectName, err)
+	// Check if the project name is a valid k8s namespace (DNS 1123 label).
+	if err := validation.IsDNS1123Label(p.name); err != nil {
+		return fmt.Errorf("project name (%s) is invalid: %v", p.name, err)
 	}
 
 	// Try to guess repository if flag is not set.
-	if p.config.Repo == "" {
+	if p.repo == "" {
 		repoPath, err := util.FindCurrentRepo()
 		if err != nil {
 			return fmt.Errorf("error finding current repository: %v", err)
 		}
-		p.config.Repo = repoPath
+		p.repo = repoPath
 	}
 
 	return nil
 }
 
 func (p *initSubcommand) GetScaffolder() (cmdutil.Scaffolder, error) {
+	if err := p.config.SetDomain(p.domain); err != nil {
+		return nil, err
+	}
+	if err := p.config.SetRepository(p.repo); err != nil {
+		return nil, err
+	}
+	if err := p.config.SetProjectName(p.name); err != nil {
+		return nil, err
+	}
+	if p.componentConfig {
+		if err := p.config.SetComponentConfig(); err != nil {
+			return nil, err
+		}
+	}
+
 	return scaffolds.NewInitScaffolder(p.config, p.license, p.owner), nil
 }
 

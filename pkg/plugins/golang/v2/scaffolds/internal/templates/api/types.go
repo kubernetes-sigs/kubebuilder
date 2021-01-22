@@ -87,7 +87,7 @@ type {{ .Resource.Kind }}Status struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-{{ if not .Resource.Namespaced }} //+kubebuilder:resource:scope=Cluster {{ end }}
+{{ if not .Resource.API.Namespaced }} //+kubebuilder:resource:scope=Cluster {{ end }}
 
 // {{ .Resource.Kind }} is the Schema for the {{ .Resource.Plural }} API
 type {{ .Resource.Kind }} struct {
