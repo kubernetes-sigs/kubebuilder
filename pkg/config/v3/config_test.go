@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v3alpha
+package v3
 
 import (
 	"testing"
@@ -26,9 +26,9 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 )
 
-func TestConfigV3Alpha(t *testing.T) {
+func TestConfigV3(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Config V3-Alpha Suite")
+	RunSpecs(t, "Config V3 Suite")
 }
 
 var _ = Describe("cfg", func() {
@@ -41,7 +41,7 @@ var _ = Describe("cfg", func() {
 		otherDomain = "other.domain"
 		otherRepo   = "otherrepo"
 		otherName   = "OtherProjectName"
-		otherLayout = "go.kubebuilder.io/v3-alpha"
+		otherLayout = "go.kubebuilder.io/v3"
 	)
 
 	var c cfg
@@ -57,7 +57,7 @@ var _ = Describe("cfg", func() {
 	})
 
 	Context("Version", func() {
-		It("GetVersion should return version 3-alpha", func() {
+		It("GetVersion should return version 3", func() {
 			Expect(c.GetVersion().Compare(Version)).To(Equal(0))
 		})
 	})
@@ -84,7 +84,7 @@ var _ = Describe("cfg", func() {
 		})
 	})
 
-	Context("Name", func() {
+	Context("ProjectName", func() {
 		It("GetProjectName should return the name", func() {
 			Expect(c.GetProjectName()).To(Equal(name))
 		})
@@ -151,29 +151,62 @@ var _ = Describe("cfg", func() {
 	})
 
 	Context("Resources", func() {
-		var res = resource.Resource{
-			GVK: resource.GVK{
-				Group:   "group",
-				Version: "v1",
-				Kind:    "Kind",
-			},
-			API: &resource.API{
-				CRDVersion: "v1",
-				Namespaced: true,
-			},
-			Controller: true,
-			Webhooks: &resource.Webhooks{
-				WebhookVersion: "v1",
-				Defaulting:     true,
-				Validation:     true,
-				Conversion:     true,
-			},
+		var (
+			res = resource.Resource{
+				GVK: resource.GVK{
+					Group:   "group",
+					Version: "v1",
+					Kind:    "Kind",
+				},
+				Plural: "kinds",
+				Path:   "api/v1",
+				API: &resource.API{
+					CRDVersion: "v1",
+					Namespaced: true,
+				},
+				Controller: true,
+				Webhooks: &resource.Webhooks{
+					WebhookVersion: "v1",
+					Defaulting:     true,
+					Validation:     true,
+					Conversion:     true,
+				},
+			}
+			resWithoutPlural = res.Copy()
+		)
+
+		// As some of the tests insert directly into the slice without using the interface methods,
+		// regular plural forms should not be present in here. rsWithoutPlural is used for this purpose.
+		resWithoutPlural.Plural = ""
+
+		// Auxiliary function for GetResource, AddResource and UpdateResource tests
+		checkResource := func(result, expected resource.Resource) {
+			Expect(result.GVK.IsEqualTo(expected.GVK)).To(BeTrue())
+			Expect(result.Plural).To(Equal(expected.Plural))
+			Expect(result.Path).To(Equal(expected.Path))
+			if expected.API == nil {
+				Expect(result.API).To(BeNil())
+			} else {
+				Expect(result.API).NotTo(BeNil())
+				Expect(result.API.CRDVersion).To(Equal(expected.API.CRDVersion))
+				Expect(result.API.Namespaced).To(Equal(expected.API.Namespaced))
+			}
+			Expect(result.Controller).To(Equal(expected.Controller))
+			if expected.Webhooks == nil {
+				Expect(result.Webhooks).To(BeNil())
+			} else {
+				Expect(result.Webhooks).NotTo(BeNil())
+				Expect(result.Webhooks.WebhookVersion).To(Equal(expected.Webhooks.WebhookVersion))
+				Expect(result.Webhooks.Defaulting).To(Equal(expected.Webhooks.Defaulting))
+				Expect(result.Webhooks.Validation).To(Equal(expected.Webhooks.Validation))
+				Expect(result.Webhooks.Conversion).To(Equal(expected.Webhooks.Conversion))
+			}
 		}
 
 		DescribeTable("ResourcesLength should return the number of resources",
 			func(n int) {
 				for i := 0; i < n; i++ {
-					c.Resources = append(c.Resources, res)
+					c.Resources = append(c.Resources, resWithoutPlural)
 				}
 				Expect(c.ResourcesLength()).To(Equal(n))
 			},
@@ -187,7 +220,7 @@ var _ = Describe("cfg", func() {
 		})
 
 		It("HasResource should return true for an existent resource", func() {
-			c.Resources = append(c.Resources, res)
+			c.Resources = append(c.Resources, resWithoutPlural)
 			Expect(c.HasResource(res.GVK)).To(BeTrue())
 		})
 
@@ -197,43 +230,26 @@ var _ = Describe("cfg", func() {
 		})
 
 		It("GetResource should return an existent resource", func() {
-			c.Resources = append(c.Resources, res)
+			c.Resources = append(c.Resources, resWithoutPlural)
 			r, err := c.GetResource(res.GVK)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(r.GVK.IsEqualTo(res.GVK)).To(BeTrue())
-			Expect(r.API).NotTo(BeNil())
-			Expect(r.API.CRDVersion).To(Equal(res.API.CRDVersion))
-			Expect(r.Webhooks).NotTo(BeNil())
-			Expect(r.Webhooks.WebhookVersion).To(Equal(res.Webhooks.WebhookVersion))
+
+			checkResource(r, res)
 		})
 
 		It("GetResources should return a slice of the tracked resources", func() {
-			c.Resources = append(c.Resources, res, res, res)
+			c.Resources = append(c.Resources, resWithoutPlural, resWithoutPlural, resWithoutPlural)
 			resources, err := c.GetResources()
 			Expect(err).NotTo(HaveOccurred())
 			Expect(resources).To(Equal([]resource.Resource{res, res, res}))
 		})
-
-		// Auxiliary function for AddResource and UpdateResource tests
-		checkResource := func(result, expected resource.Resource) {
-			Expect(result.GVK.IsEqualTo(expected.GVK)).To(BeTrue())
-			Expect(result.API).NotTo(BeNil())
-			Expect(result.API.CRDVersion).To(Equal(expected.API.CRDVersion))
-			Expect(result.API.Namespaced).To(BeFalse())
-			Expect(result.Controller).To(BeFalse())
-			Expect(result.Webhooks).NotTo(BeNil())
-			Expect(result.Webhooks.WebhookVersion).To(Equal(expected.Webhooks.WebhookVersion))
-			Expect(result.Webhooks.Defaulting).To(BeFalse())
-			Expect(result.Webhooks.Validation).To(BeFalse())
-			Expect(result.Webhooks.Conversion).To(BeFalse())
-		}
 
 		It("AddResource should add the provided resource if non-existent", func() {
 			l := len(c.Resources)
 			Expect(c.AddResource(res)).To(Succeed())
 			Expect(len(c.Resources)).To(Equal(l + 1))
 
-			checkResource(c.Resources[0], res)
+			checkResource(c.Resources[0], resWithoutPlural)
 		})
 
 		It("AddResource should do nothing if the resource already exists", func() {
@@ -248,37 +264,26 @@ var _ = Describe("cfg", func() {
 			Expect(c.UpdateResource(res)).To(Succeed())
 			Expect(len(c.Resources)).To(Equal(l + 1))
 
-			checkResource(c.Resources[0], res)
+			checkResource(c.Resources[0], resWithoutPlural)
 		})
 
 		It("UpdateResource should update it if the resource already exists", func() {
-			c.Resources = append(c.Resources, resource.Resource{
+			r := resource.Resource{
 				GVK: resource.GVK{
 					Group:   "group",
 					Version: "v1",
 					Kind:    "Kind",
 				},
-			})
+				Path: "api/v1",
+			}
+			c.Resources = append(c.Resources, r)
 			l := len(c.Resources)
-			Expect(c.Resources[0].GVK.IsEqualTo(res.GVK)).To(BeTrue())
-			Expect(c.Resources[0].API).To(BeNil())
-			Expect(c.Resources[0].Controller).To(BeFalse())
-			Expect(c.Resources[0].Webhooks).To(BeNil())
+			checkResource(c.Resources[0], r)
 
 			Expect(c.UpdateResource(res)).To(Succeed())
 			Expect(len(c.Resources)).To(Equal(l))
 
-			r := c.Resources[0]
-			Expect(r.GVK.IsEqualTo(res.GVK)).To(BeTrue())
-			Expect(r.API).NotTo(BeNil())
-			Expect(r.API.CRDVersion).To(Equal(res.API.CRDVersion))
-			Expect(r.API.Namespaced).To(BeFalse())
-			Expect(r.Controller).To(BeFalse())
-			Expect(r.Webhooks).NotTo(BeNil())
-			Expect(r.Webhooks.WebhookVersion).To(Equal(res.Webhooks.WebhookVersion))
-			Expect(r.Webhooks.Defaulting).To(BeFalse())
-			Expect(r.Webhooks.Validation).To(BeFalse())
-			Expect(r.Webhooks.Conversion).To(BeFalse())
+			checkResource(c.Resources[0], resWithoutPlural)
 		})
 
 		It("HasGroup should return false with no tracked resources", func() {
@@ -442,8 +447,9 @@ var _ = Describe("cfg", func() {
 							Version: "v1",
 							Kind:    "Kind2",
 						},
-						API:      &resource.API{CRDVersion: "v1"},
-						Webhooks: &resource.Webhooks{WebhookVersion: "v1"},
+						API:        &resource.API{CRDVersion: "v1"},
+						Controller: true,
+						Webhooks:   &resource.Webhooks{WebhookVersion: "v1"},
 					},
 					{
 						GVK: resource.GVK{
@@ -451,6 +457,7 @@ var _ = Describe("cfg", func() {
 							Version: "v1-beta",
 							Kind:    "Kind",
 						},
+						Plural:   "kindes",
 						API:      &resource.API{},
 						Webhooks: &resource.Webhooks{},
 					},
@@ -459,6 +466,17 @@ var _ = Describe("cfg", func() {
 							Group:   "group2",
 							Version: "v1",
 							Kind:    "Kind",
+						},
+						API: &resource.API{
+							CRDVersion: "v1",
+							Namespaced: true,
+						},
+						Controller: true,
+						Webhooks: &resource.Webhooks{
+							WebhookVersion: "v1",
+							Defaulting:     true,
+							Validation:     true,
+							Conversion:     true,
 						},
 					},
 				},
@@ -479,11 +497,11 @@ var _ = Describe("cfg", func() {
 layout: go.kubebuilder.io/v2
 projectName: ProjectName
 repo: myrepo
-version: 3-alpha
+version: "3"
 `
 			s2 = `componentConfig: true
 domain: other.domain
-layout: go.kubebuilder.io/v3-alpha
+layout: go.kubebuilder.io/v3
 multigroup: true
 plugins:
   plugin-x:
@@ -502,6 +520,7 @@ resources:
   version: v1
 - api:
     crdVersion: v1
+  controller: true
   group: group
   kind: Kind2
   version: v1
@@ -509,11 +528,21 @@ resources:
     webhookVersion: v1
 - group: group
   kind: Kind
+  plural: kindes
   version: v1-beta
-- group: group2
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  group: group2
   kind: Kind
   version: v1
-version: 3-alpha
+  webhooks:
+    conversion: true
+    defaulting: true
+    validation: true
+    webhookVersion: v1
+version: "3"
 `
 		)
 
@@ -560,13 +589,13 @@ version: 3-alpha
 				Expect(c.Unmarshal([]byte(content))).NotTo(Succeed())
 			},
 			Entry("for unknown fields", `field: 1
-version: 3-alpha`),
+version: "3"`),
 		)
 	})
 })
 
 var _ = Describe("New", func() {
-	It("should return a new config for project configuration 3-alpha", func() {
+	It("should return a new config for project configuration 3", func() {
 		Expect(New().GetVersion().Compare(Version)).To(Equal(0))
 	})
 })

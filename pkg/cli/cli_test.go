@@ -27,7 +27,7 @@ import (
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	cfgv2 "sigs.k8s.io/kubebuilder/v3/pkg/config/v2"
-	cfgv3alpha "sigs.k8s.io/kubebuilder/v3/pkg/config/v3alpha"
+	cfgv3 "sigs.k8s.io/kubebuilder/v3/pkg/config/v3"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 )
 
@@ -203,7 +203,7 @@ var _ = Describe("CLI", func() {
 
 		When("having layout field", func() {
 			It("should succeed", func() {
-				projectConfig = cfgv3alpha.New()
+				projectConfig = cfgv3.New()
 				Expect(projectConfig.SetLayout("go.kubebuilder.io/v2")).To(Succeed())
 				projectVersion, plugins, err = getInfoFromConfig(projectConfig)
 				Expect(err).NotTo(HaveOccurred())

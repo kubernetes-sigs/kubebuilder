@@ -78,7 +78,7 @@ var _ = Describe("cfg", func() {
 		})
 	})
 
-	Context("Name", func() {
+	Context("ProjectName", func() {
 		It("GetProjectName should return an empty name", func() {
 			Expect(c.GetProjectName()).To(Equal(""))
 		})

@@ -21,7 +21,7 @@ import (
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/cli"
 	cfgv2 "sigs.k8s.io/kubebuilder/v3/pkg/config/v2"
-	cfgv3alpha "sigs.k8s.io/kubebuilder/v3/pkg/config/v3alpha"
+	cfgv3 "sigs.k8s.io/kubebuilder/v3/pkg/config/v3"
 	pluginv2 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2"
 	pluginv3 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3"
 )
@@ -30,13 +30,13 @@ func main() {
 	c, err := cli.New(
 		cli.WithCommandName("kubebuilder"),
 		cli.WithVersion(versionString()),
-		cli.WithDefaultProjectVersion(cfgv3alpha.Version),
+		cli.WithDefaultProjectVersion(cfgv3.Version),
 		cli.WithPlugins(
 			&pluginv2.Plugin{},
 			&pluginv3.Plugin{},
 		),
 		cli.WithDefaultPlugins(cfgv2.Version, &pluginv2.Plugin{}),
-		cli.WithDefaultPlugins(cfgv3alpha.Version, &pluginv3.Plugin{}),
+		cli.WithDefaultPlugins(cfgv3.Version, &pluginv3.Plugin{}),
 		cli.WithCompletion,
 	)
 	if err != nil {

@@ -40,17 +40,17 @@ type Config interface {
 	SetRepository(repository string) error
 
 	// GetProjectName returns the project name
-	// This method was introduced in project version 3-alpha.
+	// This method was introduced in project version 3.
 	GetProjectName() string
 	// SetProjectName sets the project name
-	// This method was introduced in project version 3-alpha.
+	// This method was introduced in project version 3.
 	SetProjectName(name string) error
 
 	// GetLayout returns the config layout
-	// This method was introduced in project version 3-alpha.
+	// This method was introduced in project version 3.
 	GetLayout() string
 	// SetLayout sets the Config layout
-	// This method was introduced in project version 3-alpha.
+	// This method was introduced in project version 3.
 	SetLayout(layout string) error
 
 	/* Boolean fields */
@@ -63,13 +63,13 @@ type Config interface {
 	ClearMultiGroup() error
 
 	// IsComponentConfig checks if component config is enabled
-	// This method was introduced in project version 3-alpha.
+	// This method was introduced in project version 3.
 	IsComponentConfig() bool
 	// SetComponentConfig enables component config
-	// This method was introduced in project version 3-alpha.
+	// This method was introduced in project version 3.
 	SetComponentConfig() error
 	// ClearComponentConfig disables component config
-	// This method was introduced in project version 3-alpha.
+	// This method was introduced in project version 3.
 	ClearComponentConfig() error
 
 	/* Resources */
@@ -97,12 +97,10 @@ type Config interface {
 	/* Plugins */
 
 	// DecodePluginConfig decodes a plugin config stored in Config into configObj, which must be a pointer.
-	// This method is intended to be used for custom configuration objects, which were introduced in project version
-	// 3-alpha.
+	// This method is intended to be used for custom configuration objects, which were introduced in project version 3.
 	DecodePluginConfig(key string, configObj interface{}) error
 	// EncodePluginConfig encodes a config object into Config by overwriting the existing object stored under key.
-	// This method is intended to be used for custom configuration objects, which were introduced in project version
-	// 3-alpha.
+	// This method is intended to be used for custom configuration objects, which were introduced in project version 3.
 	EncodePluginConfig(key string, configObj interface{}) error
 
 	/* Persistence */
