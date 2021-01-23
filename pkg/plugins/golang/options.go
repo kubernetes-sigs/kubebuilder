@@ -143,7 +143,13 @@ func (opts Options) Validate() error {
 		return fmt.Errorf("invalid Kind: %#v", validationErrors)
 	}
 
-	// TODO: validate plural strings if provided
+	if opts.Plural != "" {
+		validationErrors = append(validationErrors, validation.IsDNS1035Label(opts.Plural)...)
+
+		if len(validationErrors) != 0 {
+			return fmt.Errorf("invalid Plural: %#v", validationErrors)
+		}
+	}
 
 	// Ensure apiVersions for k8s types are empty or valid.
 	for typ, apiVersion := range map[string]string{
