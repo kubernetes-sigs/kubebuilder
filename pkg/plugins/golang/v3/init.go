@@ -207,6 +207,9 @@ func checkDir() error {
 			if err != nil {
 				return err
 			}
+			if info.IsDir() && info.Name() != "." && strings.HasPrefix(info.Name(), ".") {
+				return filepath.SkipDir
+			}
 			if info.Name() != "go.mod" && !strings.HasPrefix(info.Name(), ".") {
 				return fmt.Errorf(
 					"target directory is not empty (only go.mod and files with the prefix \".\" are allowed); found existing file %q",
