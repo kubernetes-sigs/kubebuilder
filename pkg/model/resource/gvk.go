@@ -18,6 +18,18 @@ package resource
 
 import (
 	"fmt"
+	"regexp"
+	"strings"
+
+	"sigs.k8s.io/kubebuilder/v3/pkg/internal/validation"
+)
+
+const (
+	versionPattern = "^v\\d+(?:alpha\\d+|beta\\d+)?$"
+)
+
+var (
+	versionRegex = regexp.MustCompile(versionPattern)
 )
 
 // GVK stores the Group - Version - Kind triplet that uniquely identifies a resource.
@@ -27,6 +39,34 @@ type GVK struct {
 	Domain  string `json:"domain,omitempty"`
 	Version string `json:"version"`
 	Kind    string `json:"kind"`
+}
+
+// Validate checks that the GVK is valid.
+func (gvk GVK) Validate() error {
+	// Check if the qualified group has a valid DNS1123 subdomain value
+	if err := validation.IsDNS1123Subdomain(gvk.QualifiedGroup()); err != nil {
+		// NOTE: IsDNS1123Subdomain returns a slice of strings instead of an error, so no wrapping
+		return fmt.Errorf("either Group or Domain is invalid: %s", err)
+	}
+
+	// Check if the version follows the valid pattern
+	if !versionRegex.MatchString(gvk.Version) {
+		return fmt.Errorf("Version must match %s (was %s)", versionPattern, gvk.Version)
+	}
+
+	// Check if kind has a valid DNS1035 label value
+	if errors := validation.IsDNS1035Label(strings.ToLower(gvk.Kind)); len(errors) != 0 {
+		// NOTE: IsDNS1035Label returns a slice of strings instead of an error, so no wrapping
+		return fmt.Errorf("invalid Kind: %#v", errors)
+	}
+
+	// Require kind to start with an uppercase character
+	// NOTE: previous validation already fails for empty strings, gvk.Kind[0] will not panic
+	if string(gvk.Kind[0]) == strings.ToLower(string(gvk.Kind[0])) {
+		return fmt.Errorf("invalid Kind: must start with an uppercase character")
+	}
+
+	return nil
 }
 
 // QualifiedGroup returns the fully qualified group name with the available information.

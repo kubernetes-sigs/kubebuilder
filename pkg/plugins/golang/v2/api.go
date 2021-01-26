@@ -29,6 +29,7 @@ import (
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model"
+	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/cmdutil"
@@ -43,6 +44,8 @@ type createAPISubcommand struct {
 	pattern string
 
 	options *Options
+
+	resource resource.Resource
 
 	// Check if we have to scaffold resource and/or controller
 	resourceFlag   *pflag.Flag
@@ -124,14 +127,7 @@ func (p *createAPISubcommand) InjectConfig(c config.Config) {
 }
 
 func (p *createAPISubcommand) Run() error {
-	return cmdutil.Run(p)
-}
-
-func (p *createAPISubcommand) Validate() error {
-	if err := p.options.Validate(); err != nil {
-		return err
-	}
-
+	// Ask for API and Controller if not specified
 	reader := bufio.NewReader(os.Stdin)
 	if !p.resourceFlag.Changed {
 		fmt.Println("Create Resource [y/n]")
@@ -142,15 +138,30 @@ func (p *createAPISubcommand) Validate() error {
 		p.options.DoController = util.YesNo(reader)
 	}
 
+	// Create the resource from the options
+	p.resource = p.options.NewResource(p.config)
+
+	return cmdutil.Run(p)
+}
+
+func (p *createAPISubcommand) Validate() error {
+	if err := p.options.Validate(); err != nil {
+		return err
+	}
+
+	if err := p.resource.Validate(); err != nil {
+		return err
+	}
+
 	// In case we want to scaffold a resource API we need to do some checks
-	if p.options.DoAPI {
+	if p.resource.HasAPI() {
 		// Check that resource doesn't exist or flag force was set
-		if !p.force && p.config.HasResource(p.options.GVK()) {
+		if !p.force && p.config.HasResource(p.resource.GVK) {
 			return errors.New("API resource already exists")
 		}
 
 		// Check that the provided group can be added to the project
-		if !p.config.IsMultiGroup() && p.config.ResourcesLength() != 0 && !p.config.HasGroup(p.options.Group) {
+		if !p.config.IsMultiGroup() && p.config.ResourcesLength() != 0 && !p.config.HasGroup(p.resource.Group) {
 			return fmt.Errorf("multiple groups are not allowed by default, to enable multi-group visit %s",
 				"kubebuilder.io/migration/multi-group.html")
 		}
@@ -177,9 +188,7 @@ func (p *createAPISubcommand) GetScaffolder() (cmdutil.Scaffolder, error) {
 		return nil, fmt.Errorf("unknown pattern %q", p.pattern)
 	}
 
-	// Create the resource from the options
-	res := p.options.NewResource(p.config)
-	return scaffolds.NewAPIScaffolder(p.config, string(bp), res, p.force, plugins), nil
+	return scaffolds.NewAPIScaffolder(p.config, string(bp), p.resource, p.force, plugins), nil
 }
 
 func (p *createAPISubcommand) PostScaffold() error {

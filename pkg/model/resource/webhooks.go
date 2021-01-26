@@ -35,6 +35,16 @@ type Webhooks struct {
 	Conversion bool `json:"conversion,omitempty"`
 }
 
+// Validate checks that the Webhooks is valid.
+func (webhooks Webhooks) Validate() error {
+	// Validate the Webhook version
+	if err := validateAPIVersion(webhooks.WebhookVersion); err != nil {
+		return fmt.Errorf("invalid Webhook version: %w", err)
+	}
+
+	return nil
+}
+
 // Copy returns a deep copy of the API that can be safely modified without affecting the original.
 func (webhooks Webhooks) Copy() Webhooks {
 	// As this function doesn't use a pointer receiver, webhooks is already a shallow copy.

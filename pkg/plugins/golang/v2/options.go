@@ -19,19 +19,13 @@ package v2
 import (
 	"fmt"
 	"path"
-	"regexp"
 	"strings"
 
 	newconfig "sigs.k8s.io/kubebuilder/v3/pkg/config"
-	"sigs.k8s.io/kubebuilder/v3/pkg/internal/validation"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 )
 
 const (
-	v1beta1 = "v1beta1"
-	v1      = "v1"
-
-	versionPattern  = "^v\\d+(?:alpha\\d+|beta\\d+)?$"
 	groupPresent    = "group flag present but empty"
 	versionPresent  = "version flag present but empty"
 	kindPresent     = "kind flag present but empty"
@@ -41,8 +35,6 @@ const (
 )
 
 var (
-	versionRegex = regexp.MustCompile(versionPattern)
-
 	coreGroups = map[string]string{
 		"admission":             "k8s.io",
 		"admissionregistration": "k8s.io",
@@ -116,6 +108,7 @@ func (opts Options) Validate() error {
 	if strings.HasPrefix(opts.Kind, "-") {
 		return fmt.Errorf(kindPresent)
 	}
+
 	// Now we can check that all the required flags are not empty
 	if len(opts.Group) == 0 {
 		return fmt.Errorf(groupRequired)
@@ -127,52 +120,7 @@ func (opts Options) Validate() error {
 		return fmt.Errorf(kindRequired)
 	}
 
-	// Check if the qualified group has a valid DNS1123 subdomain value
-	if err := validation.IsDNS1123Subdomain(opts.QualifiedGroup()); err != nil {
-		return fmt.Errorf("either group or domain is invalid: (%v)", err)
-	}
-
-	// Check if the version follows the valid pattern
-	if !versionRegex.MatchString(opts.Version) {
-		return fmt.Errorf("version must match %s (was %s)", versionPattern, opts.Version)
-	}
-
-	validationErrors := []string{}
-
-	// Require kind to start with an uppercase character
-	if string(opts.Kind[0]) == strings.ToLower(string(opts.Kind[0])) {
-		validationErrors = append(validationErrors, "kind must start with an uppercase character")
-	}
-
-	validationErrors = append(validationErrors, validation.IsDNS1035Label(strings.ToLower(opts.Kind))...)
-
-	if len(validationErrors) != 0 {
-		return fmt.Errorf("invalid Kind: %#v", validationErrors)
-	}
-
-	// TODO: validate plural strings if provided
-
-	// Ensure apiVersions for k8s types are empty or valid.
-	for typ, apiVersion := range map[string]string{
-		"CRD":     opts.CRDVersion,
-		"Webhook": opts.WebhookVersion,
-	} {
-		switch apiVersion {
-		case "", v1beta1, v1:
-		default:
-			return fmt.Errorf("%s version must be one of: v1, v1beta1", typ)
-		}
-	}
-
 	return nil
-}
-
-// QualifiedGroup returns the fully qualified group name with the available information.
-func (opts Options) QualifiedGroup() string {
-	if opts.Domain == "" {
-		return opts.Group
-	}
-	return fmt.Sprintf("%s.%s", opts.Group, opts.Domain)
 }
 
 // GVK returns the GVK identifier of a resource.

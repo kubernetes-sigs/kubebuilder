@@ -29,6 +29,16 @@ type API struct {
 	Namespaced bool `json:"namespaced,omitempty"`
 }
 
+// Validate checks that the API is valid.
+func (api API) Validate() error {
+	// Validate the CRD version
+	if err := validateAPIVersion(api.CRDVersion); err != nil {
+		return fmt.Errorf("invalid CRD version: %w", err)
+	}
+
+	return nil
+}
+
 // Copy returns a deep copy of the API that can be safely modified without affecting the original.
 func (api API) Copy() API {
 	// As this function doesn't use a pointer receiver, api is already a shallow copy.
