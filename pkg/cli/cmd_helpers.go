@@ -19,6 +19,7 @@ package cli
 import (
 	"fmt"
 
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/cli/internal/config"
@@ -48,12 +49,13 @@ func errCmdFunc(err error) func(*cobra.Command, []string) error {
 // runECmdFunc returns a cobra RunE function that runs subcommand and saves the
 // config, which may have been modified by subcommand.
 func runECmdFunc(
+	fs afero.Fs,
 	c *config.Config,
-	subcommand plugin.Subcommand, // nolint:interfacer
+	subcommand plugin.Subcommand,
 	msg string,
 ) func(*cobra.Command, []string) error {
 	return func(*cobra.Command, []string) error {
-		if err := subcommand.Run(); err != nil {
+		if err := subcommand.Run(fs); err != nil {
 			return fmt.Errorf("%s: %v", msg, err)
 		}
 		return c.Save()

@@ -25,6 +25,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/spf13/afero"
 	"golang.org/x/tools/imports"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/model"
@@ -55,10 +56,10 @@ type scaffold struct {
 }
 
 // NewScaffold returns a new Scaffold with the provided plugins
-func NewScaffold(plugins ...model.Plugin) Scaffold {
+func NewScaffold(fs afero.Fs, plugins ...model.Plugin) Scaffold {
 	return &scaffold{
 		plugins: plugins,
-		fs:      filesystem.New(),
+		fs:      filesystem.New(fs),
 	}
 }
 

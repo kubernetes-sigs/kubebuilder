@@ -32,6 +32,9 @@ const (
 	DefaultPath = "PROJECT"
 )
 
+// TODO: use cli.fs instead of creating a new afero.Fs for each config. For this purpose, we may want to turn this
+//       package's functions into methods of cli.
+
 func exists(fs afero.Fs, path string) (bool, error) {
 	// Look up the file
 	_, err := fs.Stat(path)

@@ -19,6 +19,8 @@ package scaffolds
 import (
 	"fmt"
 
+	"github.com/spf13/afero"
+
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
@@ -34,6 +36,9 @@ type webhookScaffolder struct {
 	config      config.Config
 	boilerplate string
 	resource    resource.Resource
+
+	// fs is the filesystem that will be used by the scaffolder
+	fs afero.Fs
 }
 
 // NewWebhookScaffolder returns a new Scaffolder for v2 webhook creation operations
@@ -49,10 +54,9 @@ func NewWebhookScaffolder(
 	}
 }
 
-// Scaffold implements Scaffolder
-func (s *webhookScaffolder) Scaffold() error {
-	fmt.Println("Writing scaffold for you to edit...")
-	return s.scaffold()
+// InjectFS implements cmdutil.Scaffolder
+func (s *webhookScaffolder) InjectFS(fs afero.Fs) {
+	s.fs = fs
 }
 
 func (s *webhookScaffolder) newUniverse() *model.Universe {
@@ -63,8 +67,11 @@ func (s *webhookScaffolder) newUniverse() *model.Universe {
 	)
 }
 
-func (s *webhookScaffolder) scaffold() error {
-	if err := machinery.NewScaffold().Execute(
+// Scaffold implements cmdutil.Scaffolder
+func (s *webhookScaffolder) Scaffold() error {
+	fmt.Println("Writing scaffold for you to edit...")
+
+	if err := machinery.NewScaffold(s.fs).Execute(
 		s.newUniverse(),
 		&api.Webhook{},
 		&templates.MainUpdater{WireWebhook: true},

@@ -155,7 +155,7 @@ func (c cli) bindInit(ctx plugin.Context, cmd *cobra.Command) {
 		if err == nil || os.IsExist(err) {
 			log.Fatal("config already initialized")
 		}
-		if err := subcommand.Run(); err != nil {
+		if err := subcommand.Run(c.fs); err != nil {
 			return fmt.Errorf("failed to initialize project with %q: %v", plugin.KeyFor(initPlugin), err)
 		}
 		return cfg.Save()
