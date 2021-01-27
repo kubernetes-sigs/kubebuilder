@@ -19,8 +19,6 @@ package v3
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"path/filepath"
 
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
@@ -132,14 +130,7 @@ func (p *createWebhookSubcommand) Validate() error {
 }
 
 func (p *createWebhookSubcommand) GetScaffolder() (cmdutil.Scaffolder, error) {
-	// Load the boilerplate
-	// TODO: move this inside the cdmutil.scaffolder to use the injected afero.Fs
-	bp, err := ioutil.ReadFile(filepath.Join("hack", "boilerplate.go.txt")) // nolint:gosec
-	if err != nil {
-		return nil, fmt.Errorf("unable to load boilerplate: %v", err)
-	}
-
-	return scaffolds.NewWebhookScaffolder(p.config, string(bp), p.resource, p.force), nil
+	return scaffolds.NewWebhookScaffolder(p.config, p.resource, p.force), nil
 }
 
 func (p *createWebhookSubcommand) PostScaffold() error {
