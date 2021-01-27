@@ -19,6 +19,8 @@ package scaffolds
 import (
 	"fmt"
 
+	"github.com/spf13/afero"
+
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
@@ -36,6 +38,9 @@ type webhookScaffolder struct {
 	config      config.Config
 	boilerplate string
 	resource    resource.Resource
+
+	// fs is the filesystem that will be used by the scaffolder
+	fs afero.Fs
 
 	// force indicates whether to scaffold controller files even if it exists or not
 	force bool
@@ -56,10 +61,9 @@ func NewWebhookScaffolder(
 	}
 }
 
-// Scaffold implements Scaffolder
-func (s *webhookScaffolder) Scaffold() error {
-	fmt.Println("Writing scaffold for you to edit...")
-	return s.scaffold()
+// InjectFS implements cmdutil.Scaffolder
+func (s *webhookScaffolder) InjectFS(fs afero.Fs) {
+	s.fs = fs
 }
 
 func (s *webhookScaffolder) newUniverse() *model.Universe {
@@ -70,7 +74,10 @@ func (s *webhookScaffolder) newUniverse() *model.Universe {
 	)
 }
 
-func (s *webhookScaffolder) scaffold() error {
+// Scaffold implements cmdutil.Scaffolder
+func (s *webhookScaffolder) Scaffold() error {
+	fmt.Println("Writing scaffold for you to edit...")
+
 	// Keep track of these values before the update
 	doDefaulting := s.resource.HasDefaultingWebhook()
 	doValidation := s.resource.HasValidationWebhook()
@@ -80,7 +87,7 @@ func (s *webhookScaffolder) scaffold() error {
 		return fmt.Errorf("error updating resource: %w", err)
 	}
 
-	if err := machinery.NewScaffold().Execute(
+	if err := machinery.NewScaffold(s.fs).Execute(
 		s.newUniverse(),
 		&api.Webhook{Force: s.force},
 		&templates.MainUpdater{WireWebhook: true},
@@ -100,7 +107,7 @@ You need to implement the conversion.Hub and conversion.Convertible interfaces f
 
 	// TODO: Add test suite for conversion webhook after #1664 has been merged & conversion tests supported in envtest.
 	if doDefaulting || doValidation {
-		if err := machinery.NewScaffold().Execute(
+		if err := machinery.NewScaffold(s.fs).Execute(
 			s.newUniverse(),
 			&api.WebhookSuite{},
 		); err != nil {

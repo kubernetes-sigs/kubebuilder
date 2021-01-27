@@ -19,6 +19,8 @@ package scaffolds
 import (
 	"fmt"
 
+	"github.com/spf13/afero"
+
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
@@ -46,6 +48,9 @@ type apiScaffolder struct {
 	boilerplate string
 	resource    resource.Resource
 
+	// fs is the filesystem that will be used by the scaffolder
+	fs afero.Fs
+
 	// plugins is the list of plugins we should allow to transform our generated scaffolding
 	plugins []model.Plugin
 
@@ -70,10 +75,9 @@ func NewAPIScaffolder(
 	}
 }
 
-// Scaffold implements Scaffolder
-func (s *apiScaffolder) Scaffold() error {
-	fmt.Println("Writing scaffold for you to edit...")
-	return s.scaffold()
+// InjectFS implements cmdutil.Scaffolder
+func (s *apiScaffolder) InjectFS(fs afero.Fs) {
+	s.fs = fs
 }
 
 func (s *apiScaffolder) newUniverse() *model.Universe {
@@ -84,7 +88,10 @@ func (s *apiScaffolder) newUniverse() *model.Universe {
 	)
 }
 
-func (s *apiScaffolder) scaffold() error {
+// Scaffold implements cmdutil.Scaffolder
+func (s *apiScaffolder) Scaffold() error {
+	fmt.Println("Writing scaffold for you to edit...")
+
 	// Keep track of these values before the update
 	doAPI := s.resource.HasAPI()
 	doController := s.resource.HasController()
@@ -95,7 +102,7 @@ func (s *apiScaffolder) scaffold() error {
 			return fmt.Errorf("error updating resource: %w", err)
 		}
 
-		if err := machinery.NewScaffold(s.plugins...).Execute(
+		if err := machinery.NewScaffold(s.fs, s.plugins...).Execute(
 			s.newUniverse(),
 			&api.Types{Force: s.force},
 			&api.Group{},
@@ -108,7 +115,7 @@ func (s *apiScaffolder) scaffold() error {
 			return fmt.Errorf("error scaffolding APIs: %w", err)
 		}
 
-		if err := machinery.NewScaffold().Execute(
+		if err := machinery.NewScaffold(s.fs).Execute(
 			s.newUniverse(),
 			&crd.Kustomization{},
 			&crd.KustomizeConfig{},
@@ -119,7 +126,7 @@ func (s *apiScaffolder) scaffold() error {
 	}
 
 	if doController {
-		if err := machinery.NewScaffold(s.plugins...).Execute(
+		if err := machinery.NewScaffold(s.fs, s.plugins...).Execute(
 			s.newUniverse(),
 			&controllers.SuiteTest{Force: s.force},
 			&controllers.Controller{ControllerRuntimeVersion: ControllerRuntimeVersion, Force: s.force},
@@ -128,7 +135,7 @@ func (s *apiScaffolder) scaffold() error {
 		}
 	}
 
-	if err := machinery.NewScaffold(s.plugins...).Execute(
+	if err := machinery.NewScaffold(s.fs, s.plugins...).Execute(
 		s.newUniverse(),
 		&templates.MainUpdater{WireResource: doAPI, WireController: doController},
 	); err != nil {

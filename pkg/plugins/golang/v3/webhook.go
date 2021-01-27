@@ -22,6 +22,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
+	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
@@ -94,11 +95,11 @@ func (p *createWebhookSubcommand) InjectConfig(c config.Config) {
 	p.config = c
 }
 
-func (p *createWebhookSubcommand) Run() error {
+func (p *createWebhookSubcommand) Run(fs afero.Fs) error {
 	// Create the resource from the options
 	p.resource = p.options.NewResource(p.config)
 
-	return cmdutil.Run(p)
+	return cmdutil.Run(p, fs)
 }
 
 func (p *createWebhookSubcommand) Validate() error {
@@ -132,6 +133,7 @@ func (p *createWebhookSubcommand) Validate() error {
 
 func (p *createWebhookSubcommand) GetScaffolder() (cmdutil.Scaffolder, error) {
 	// Load the boilerplate
+	// TODO: move this inside the cdmutil.scaffolder to use the injected afero.Fs
 	bp, err := ioutil.ReadFile(filepath.Join("hack", "boilerplate.go.txt")) // nolint:gosec
 	if err != nil {
 		return nil, fmt.Errorf("unable to load boilerplate: %v", err)

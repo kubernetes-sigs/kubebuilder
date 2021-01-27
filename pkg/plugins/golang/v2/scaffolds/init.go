@@ -18,8 +18,9 @@ package scaffolds
 
 import (
 	"fmt"
-	"io/ioutil"
 	"path/filepath"
+
+	"github.com/spf13/afero"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model"
@@ -53,6 +54,9 @@ type initScaffolder struct {
 	boilerplatePath string
 	license         string
 	owner           string
+
+	// fs is the filesystem that will be used by the scaffolder
+	fs afero.Fs
 }
 
 // NewInitScaffolder returns a new Scaffolder for project initialization operations
@@ -65,6 +69,11 @@ func NewInitScaffolder(config config.Config, license, owner string) cmdutil.Scaf
 	}
 }
 
+// InjectFS implements cmdutil.Scaffolder
+func (s *initScaffolder) InjectFS(fs afero.Fs) {
+	s.fs = fs
+}
+
 func (s *initScaffolder) newUniverse(boilerplate string) *model.Universe {
 	return model.NewUniverse(
 		model.WithConfig(s.config),
@@ -72,30 +81,27 @@ func (s *initScaffolder) newUniverse(boilerplate string) *model.Universe {
 	)
 }
 
-// Scaffold implements Scaffolder
+// Scaffold implements cmdutil.Scaffolder
 func (s *initScaffolder) Scaffold() error {
 	fmt.Println("Writing scaffold for you to edit...")
-	return s.scaffold()
-}
 
-func (s *initScaffolder) scaffold() error {
 	bpFile := &hack.Boilerplate{}
 	bpFile.Path = s.boilerplatePath
 	bpFile.License = s.license
 	bpFile.Owner = s.owner
-	if err := machinery.NewScaffold().Execute(
+	if err := machinery.NewScaffold(s.fs).Execute(
 		s.newUniverse(""),
 		bpFile,
 	); err != nil {
 		return err
 	}
 
-	boilerplate, err := ioutil.ReadFile(s.boilerplatePath) //nolint:gosec
+	boilerplate, err := afero.ReadFile(s.fs, s.boilerplatePath)
 	if err != nil {
 		return err
 	}
 
-	return machinery.NewScaffold().Execute(
+	return machinery.NewScaffold(s.fs).Execute(
 		s.newUniverse(string(boilerplate)),
 		&templates.GitIgnore{},
 		&rbac.AuthProxyRole{},

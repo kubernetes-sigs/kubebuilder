@@ -17,6 +17,7 @@ limitations under the License.
 package plugin
 
 import (
+	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
@@ -53,7 +54,7 @@ type Subcommand interface {
 	// command line flags.
 	BindFlags(*pflag.FlagSet)
 	// Run runs the subcommand.
-	Run() error
+	Run(fs afero.Fs) error
 	// InjectConfig passes a config to a plugin. The plugin may modify the config.
 	// Initializing, loading, and saving the config is managed by the cli package.
 	InjectConfig(config.Config)

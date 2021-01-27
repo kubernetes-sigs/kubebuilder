@@ -21,6 +21,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
@@ -96,6 +97,9 @@ type cli struct { //nolint:maligned
 
 	// Root command.
 	cmd *cobra.Command
+
+	// Underlying fs
+	fs afero.Fs
 }
 
 // New creates a new cli instance.
@@ -134,6 +138,7 @@ func newCLI(opts ...Option) (*cli, error) {
 		defaultProjectVersion: cfgv3.Version,
 		defaultPlugins:        make(map[config.Version][]string),
 		plugins:               make(map[string]plugin.Plugin),
+		fs:                    afero.NewOsFs(),
 	}
 
 	// Apply provided options.
