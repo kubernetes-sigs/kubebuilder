@@ -26,6 +26,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates/api"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates/hack"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/cmdutil"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/machinery"
 )
@@ -42,15 +43,10 @@ type webhookScaffolder struct {
 }
 
 // NewWebhookScaffolder returns a new Scaffolder for v2 webhook creation operations
-func NewWebhookScaffolder(
-	config config.Config,
-	boilerplate string,
-	resource resource.Resource,
-) cmdutil.Scaffolder {
+func NewWebhookScaffolder(config config.Config, resource resource.Resource) cmdutil.Scaffolder {
 	return &webhookScaffolder{
-		config:      config,
-		boilerplate: boilerplate,
-		resource:    resource,
+		config:   config,
+		resource: resource,
 	}
 }
 
@@ -70,6 +66,13 @@ func (s *webhookScaffolder) newUniverse() *model.Universe {
 // Scaffold implements cmdutil.Scaffolder
 func (s *webhookScaffolder) Scaffold() error {
 	fmt.Println("Writing scaffold for you to edit...")
+
+	// Load the boilerplate
+	bp, err := afero.ReadFile(s.fs, hack.DefaultBoilerplatePath)
+	if err != nil {
+		return fmt.Errorf("error scaffolding webhook: unable to load boilerplate: %w", err)
+	}
+	s.boilerplate = string(bp)
 
 	if err := machinery.NewScaffold(s.fs).Execute(
 		s.newUniverse(),

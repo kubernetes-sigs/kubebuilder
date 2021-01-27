@@ -20,9 +20,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/spf13/afero"
@@ -194,13 +192,6 @@ func (p *createAPISubcommand) Validate() error {
 }
 
 func (p *createAPISubcommand) GetScaffolder() (cmdutil.Scaffolder, error) {
-	// Load the boilerplate
-	// TODO: move this inside the cdmutil.scaffolder to use the injected afero.Fs
-	bp, err := ioutil.ReadFile(filepath.Join("hack", "boilerplate.go.txt")) // nolint:gosec
-	if err != nil {
-		return nil, fmt.Errorf("unable to load boilerplate: %v", err)
-	}
-
 	// Load the requested plugins
 	plugins := make([]model.Plugin, 0)
 	switch strings.ToLower(p.pattern) {
@@ -214,7 +205,7 @@ func (p *createAPISubcommand) GetScaffolder() (cmdutil.Scaffolder, error) {
 
 	// Create the resource from the options
 	res := p.options.NewResource(p.config)
-	return scaffolds.NewAPIScaffolder(p.config, string(bp), res, p.force, plugins), nil
+	return scaffolds.NewAPIScaffolder(p.config, res, p.force, plugins), nil
 }
 
 func (p *createAPISubcommand) PostScaffold() error {

@@ -31,6 +31,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/config/rbac"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/config/samples"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/controllers"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/hack"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/cmdutil"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/machinery"
 )
@@ -57,17 +58,15 @@ type apiScaffolder struct {
 // NewAPIScaffolder returns a new Scaffolder for API/controller creation operations
 func NewAPIScaffolder(
 	config config.Config,
-	boilerplate string,
 	res resource.Resource,
 	force bool,
 	plugins []model.Plugin,
 ) cmdutil.Scaffolder {
 	return &apiScaffolder{
-		config:      config,
-		boilerplate: boilerplate,
-		resource:    res,
-		plugins:     plugins,
-		force:       force,
+		config:   config,
+		resource: res,
+		plugins:  plugins,
+		force:    force,
 	}
 }
 
@@ -87,6 +86,13 @@ func (s *apiScaffolder) newUniverse() *model.Universe {
 // Scaffold implements cmdutil.Scaffolder
 func (s *apiScaffolder) Scaffold() error {
 	fmt.Println("Writing scaffold for you to edit...")
+
+	// Load the boilerplate
+	bp, err := afero.ReadFile(s.fs, hack.DefaultBoilerplatePath)
+	if err != nil {
+		return fmt.Errorf("error scaffolding API/controller: unable to load boilerplate: %w", err)
+	}
+	s.boilerplate = string(bp)
 
 	// Keep track of these values before the update
 	doAPI := s.resource.HasAPI()
