@@ -102,7 +102,6 @@ func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 
 	p.options = &Options{}
 	fs.StringVar(&p.options.Group, "group", "", "resource Group")
-	p.options.Domain = p.config.GetDomain()
 	fs.StringVar(&p.options.Version, "version", "", "resource Version")
 	fs.StringVar(&p.options.Kind, "kind", "", "resource Kind")
 	// p.options.Plural can be set to specify an irregular plural form
@@ -120,6 +119,8 @@ func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 
 func (p *createAPISubcommand) InjectConfig(c config.Config) {
 	p.config = c
+
+	p.options.Domain = c.GetDomain()
 }
 
 func (p *createAPISubcommand) Run(fs afero.Fs) error {

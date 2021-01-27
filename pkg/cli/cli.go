@@ -196,9 +196,9 @@ func (c *cli) getInfoFromFlags() (string, []string, error) {
 }
 
 // getInfoFromConfigFile obtains the project version and plugin keys from the project config file.
-func getInfoFromConfigFile() (config.Version, []string, error) {
+func (c cli) getInfoFromConfigFile() (config.Version, []string, error) {
 	// Read the project configuration file
-	projectConfig, err := internalconfig.Read()
+	projectConfig, err := internalconfig.Read(c.fs)
 	switch {
 	case err == nil:
 	case os.IsNotExist(err):
@@ -302,7 +302,7 @@ func (c *cli) getInfo() error {
 		return err
 	}
 	// Get project version and plugin info from project configuration file
-	cfgProjectVersion, cfgPlugins, _ := getInfoFromConfigFile()
+	cfgProjectVersion, cfgPlugins, _ := c.getInfoFromConfigFile()
 	// We discard the error because not being able to read a project configuration file
 	// is not fatal for some commands. The ones that require it need to check its existence.
 
