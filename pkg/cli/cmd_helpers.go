@@ -18,6 +18,7 @@ package cli
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
@@ -46,18 +47,39 @@ func errCmdFunc(err error) func(*cobra.Command, []string) error {
 	}
 }
 
-// runECmdFunc returns a cobra RunE function that runs subcommand and saves the
-// config, which may have been modified by subcommand.
-func runECmdFunc(
-	fs afero.Fs,
-	c *config.Config,
-	subcommand plugin.Subcommand,
-	msg string,
-) func(*cobra.Command, []string) error {
+// preRunECmdFunc returns a cobra PreRunE function that loads the configuration file
+// and injects it into the subcommand
+func preRunECmdFunc(subcmd plugin.Subcommand, cfg *config.Config, msg string) func(*cobra.Command, []string) error {
+	return func(*cobra.Command, []string) error {
+		err := cfg.Load()
+		if os.IsNotExist(err) {
+			return fmt.Errorf("%s: unable to find configuration file, project must be initialized", msg)
+		} else if err != nil {
+			return fmt.Errorf("%s: unable to load configuration file: %w", msg, err)
+		}
+
+		subcmd.InjectConfig(cfg.Config)
+		return nil
+	}
+}
+
+// runECmdFunc returns a cobra RunE function that runs subcommand
+func runECmdFunc(fs afero.Fs, subcommand plugin.Subcommand, msg string) func(*cobra.Command, []string) error {
 	return func(*cobra.Command, []string) error {
 		if err := subcommand.Run(fs); err != nil {
 			return fmt.Errorf("%s: %v", msg, err)
 		}
-		return c.Save()
+		return nil
+	}
+}
+
+// postRunECmdFunc returns a cobra PostRunE function that saves the configuration file
+func postRunECmdFunc(cfg *config.Config, msg string) func(*cobra.Command, []string) error {
+	return func(*cobra.Command, []string) error {
+		err := cfg.Save()
+		if err != nil {
+			return fmt.Errorf("%s: unable to save configuration file: %w", msg, err)
+		}
+		return nil
 	}
 }

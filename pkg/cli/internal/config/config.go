@@ -17,7 +17,6 @@ limitations under the License.
 package config
 
 import (
-	"errors"
 	"fmt"
 	"os"
 
@@ -31,9 +30,6 @@ const (
 	// DefaultPath is the default path for the configuration file
 	DefaultPath = "PROJECT"
 )
-
-// TODO: use cli.fs instead of creating a new afero.Fs for each config. For this purpose, we may want to turn this
-//       package's functions into methods of cli.
 
 func exists(fs afero.Fs, path string) (bool, error) {
 	// Look up the file
@@ -52,12 +48,12 @@ func exists(fs afero.Fs, path string) (bool, error) {
 }
 
 type versionedConfig struct {
-	Version config.Version
+	Version config.Version `json:"version"`
 }
 
 func readFrom(fs afero.Fs, path string) (config.Config, error) {
 	// Read the file
-	in, err := afero.ReadFile(fs, path) //nolint:gosec
+	in, err := afero.ReadFile(fs, path)
 	if err != nil {
 		return nil, err
 	}
@@ -84,75 +80,86 @@ func readFrom(fs afero.Fs, path string) (config.Config, error) {
 }
 
 // Read obtains the configuration from the default path but doesn't allow to persist changes
-func Read() (config.Config, error) {
-	return ReadFrom(DefaultPath)
+func Read(fs afero.Fs) (config.Config, error) {
+	return ReadFrom(fs, DefaultPath)
 }
 
 // ReadFrom obtains the configuration from the provided path but doesn't allow to persist changes
-func ReadFrom(path string) (config.Config, error) {
-	return readFrom(afero.NewOsFs(), path)
+func ReadFrom(fs afero.Fs, path string) (config.Config, error) {
+	return readFrom(fs, path)
 }
 
-// Config extends model/config.Config allowing to persist changes
+// Config extends config.Config allowing to persist changes
 // NOTE: the existence of Config structs in both model and internal packages is to guarantee that kubebuilder
 // is the only project that can modify the file, while plugins can still receive the configuration
 type Config struct {
-	config.Config
-
+	// fs is the filesystem that the Config backend will use to store the config.Config
+	fs afero.Fs
 	// path stores where the config should be saved to
 	path string
 	// mustNotExist requires the file not to exist when saving it
 	mustNotExist bool
-	// fs is for testing.
-	fs afero.Fs
+
+	config.Config
 }
 
 // New creates a new configuration that will be stored at the provided path
-func New(version config.Version, path string) (*Config, error) {
+func New(fs afero.Fs) *Config {
+	return &Config{
+		path: DefaultPath,
+		fs:   fs,
+	}
+}
+
+// Init initializes a new Config for the provided config.Version
+func (c *Config) Init(version config.Version) error {
 	cfg, err := config.New(version)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return &Config{
-		Config:       cfg,
-		path:         path,
-		mustNotExist: true,
-		fs:           afero.NewOsFs(),
-	}, nil
+	c.Config = cfg
+	c.mustNotExist = true
+	return nil
+}
+
+// InitTo initializes a new Config for the provided config.Version to the provided path
+func (c *Config) InitTo(path string, version config.Version) error {
+	c.path = path
+	return c.Init(version)
 }
 
 // Load obtains the configuration from the default path allowing to persist changes (Save method)
-func Load() (*Config, error) {
-	return LoadFrom(DefaultPath)
-}
+func (c *Config) Load() error {
+	c.mustNotExist = false
 
-// LoadInitialized calls Load() but returns helpful error messages if the config
-// does not exist.
-func LoadInitialized() (*Config, error) {
-	c, err := Load()
-	if os.IsNotExist(err) {
-		return nil, errors.New("unable to find configuration file, project must be initialized")
+	cfg, err := readFrom(c.fs, c.path)
+	if err != nil {
+		return err
 	}
-	return c, err
+
+	c.Config = cfg
+	return nil
 }
 
 // LoadFrom obtains the configuration from the provided path allowing to persist changes (Save method)
-func LoadFrom(path string) (*Config, error) {
-	fs := afero.NewOsFs()
-	c, err := readFrom(fs, path)
-	return &Config{Config: c, path: path, fs: fs}, err
+func (c *Config) LoadFrom(path string) error {
+	c.path = path
+	return c.Load()
 }
 
 // Save saves the configuration information
 func (c Config) Save() error {
+	// TODO: instead of exposing Config and checking that the expected use with New and one of Init, InitTo, Load,
+	//       or LoadFrom was used (by checking that the unexported fields fs and Config are set), it would be nicer to
+	//       expose an interface and a constructor and not expose the type.
+	// If fs is unset, it was created directly with `Config{}`
 	if c.fs == nil {
-		c.fs = afero.NewOsFs()
+		return saveError{fmt.Errorf("undefined filesystem, use the constructor New to create Config instances")}
 	}
-	// If path is unset, it was created directly with `Config{}`
-	if c.path == "" {
-		return saveError{errors.New("no information where it should be stored, " +
-			"use one of the constructors (`New`, `Load` or `LoadFrom`) to create Config instances")}
+	// If Config is unset, none of Init, InitTo, Load, or LoadFrom were called successfully
+	if c.Config == nil {
+		return saveError{fmt.Errorf("undefined Config, use one of the initializers: Init, InitTo, Load, LoadFrom")}
 	}
 
 	// If it is a new configuration, the path should not exist yet
@@ -160,10 +167,10 @@ func (c Config) Save() error {
 		// Lets check that the file doesn't exist
 		alreadyExists, err := exists(c.fs, c.path)
 		if err != nil {
-			return saveError{err}
+			return saveError{fmt.Errorf("unable to check for file prior existence: %w", err)}
 		}
 		if alreadyExists {
-			return saveError{errors.New("configuration already exists in the provided path")}
+			return saveError{fmt.Errorf("configuration already exists in the provided path")}
 		}
 	}
 
@@ -176,15 +183,10 @@ func (c Config) Save() error {
 	// Write the marshalled configuration
 	err = afero.WriteFile(c.fs, c.path, content, 0600)
 	if err != nil {
-		return saveError{fmt.Errorf("failed to save configuration to %s: %v", c.path, err)}
+		return saveError{fmt.Errorf("failed to save configuration to %s: %w", c.path, err)}
 	}
 
 	return nil
-}
-
-// Path returns the path for configuration file
-func (c Config) Path() string {
-	return c.path
 }
 
 type saveError struct {
@@ -193,4 +195,8 @@ type saveError struct {
 
 func (e saveError) Error() string {
 	return fmt.Sprintf("unable to save the configuration: %v", e.err)
+}
+
+func (e saveError) Unwrap() error {
+	return e.err
 }

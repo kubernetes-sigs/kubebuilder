@@ -63,7 +63,6 @@ validating and (or) conversion webhooks.
 func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
 	p.options = &Options{}
 	fs.StringVar(&p.options.Group, "group", "", "resource Group")
-	p.options.Domain = p.config.GetDomain()
 	fs.StringVar(&p.options.Version, "version", "", "resource Version")
 	fs.StringVar(&p.options.Kind, "kind", "", "resource Kind")
 	fs.StringVar(&p.options.Plural, "resource", "", "resource irregular plural form")
@@ -79,6 +78,8 @@ func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
 
 func (p *createWebhookSubcommand) InjectConfig(c newconfig.Config) {
 	p.config = c
+
+	p.options.Domain = c.GetDomain()
 }
 
 func (p *createWebhookSubcommand) Run(fs afero.Fs) error {

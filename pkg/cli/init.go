@@ -18,7 +18,6 @@ package cli
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"sort"
 	"strconv"
@@ -136,28 +135,29 @@ func (c cli) bindInit(ctx plugin.Context, cmd *cobra.Command) {
 		return
 	}
 
-	cfg, err := internalconfig.New(c.projectVersion, internalconfig.DefaultPath)
-	if err != nil {
-		cmdErr(cmd, fmt.Errorf("unable to initialize the project configuration: %w", err))
-		return
-	}
-
 	subcommand := initPlugin.GetInitSubcommand()
-	subcommand.InjectConfig(cfg.Config)
 	subcommand.BindFlags(cmd.Flags())
 	subcommand.UpdateContext(&ctx)
+
 	cmd.Long = ctx.Description
 	cmd.Example = ctx.Examples
-	cmd.RunE = func(*cobra.Command, []string) error {
+	cfg := internalconfig.New(c.fs)
+	msg := fmt.Sprintf("failed to initialize project with %q", plugin.KeyFor(initPlugin))
+	cmd.PreRunE = func(*cobra.Command, []string) error {
 		// Check if a config is initialized in the command runner so the check
 		// doesn't erroneously fail other commands used in initialized projects.
-		_, err := internalconfig.Read()
-		if err == nil || os.IsExist(err) {
-			log.Fatal("config already initialized")
+		if _, err := internalconfig.Read(c.fs); err == nil || os.IsExist(err) {
+			return fmt.Errorf("%s: already initialized", msg)
 		}
-		if err := subcommand.Run(c.fs); err != nil {
-			return fmt.Errorf("failed to initialize project with %q: %v", plugin.KeyFor(initPlugin), err)
+
+		err := cfg.Init(c.projectVersion)
+		if err != nil {
+			return fmt.Errorf("%s: error initializing project configuration: %w", msg, err)
 		}
-		return cfg.Save()
+
+		subcommand.InjectConfig(cfg.Config)
+		return nil
 	}
+	cmd.RunE = runECmdFunc(c.fs, subcommand, msg)
+	cmd.PostRunE = postRunECmdFunc(cfg, msg)
 }
