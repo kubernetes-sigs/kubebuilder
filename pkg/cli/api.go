@@ -88,6 +88,6 @@ func (c cli) bindCreateAPI(ctx plugin.Context, cmd *cobra.Command) {
 	subcommand.UpdateContext(&ctx)
 	cmd.Long = ctx.Description
 	cmd.Example = ctx.Examples
-	cmd.RunE = runECmdFunc(cfg, subcommand,
+	cmd.RunE = runECmdFunc(c.fs, cfg, subcommand,
 		fmt.Sprintf("failed to create API with %q", plugin.KeyFor(createAPIPlugin)))
 }
