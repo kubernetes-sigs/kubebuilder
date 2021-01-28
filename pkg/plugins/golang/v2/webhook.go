@@ -22,7 +22,7 @@ import (
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
 
-	newconfig "sigs.k8s.io/kubebuilder/v3/pkg/config"
+	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds"
@@ -30,7 +30,7 @@ import (
 )
 
 type createWebhookSubcommand struct {
-	config newconfig.Config
+	config config.Config
 	// For help text.
 	commandName string
 
@@ -44,20 +44,22 @@ var (
 	_ cmdutil.RunOptions             = &createWebhookSubcommand{}
 )
 
-func (p *createWebhookSubcommand) UpdateContext(ctx *plugin.Context) {
-	ctx.Description = `Scaffold a webhook for an API resource. You can choose to scaffold defaulting,
+func (p *createWebhookSubcommand) UpdateMetadata(meta plugin.CLIMetadata) plugin.CommandMetadata {
+	p.commandName = meta.CommandName
+
+	return plugin.CommandMetadata{
+		Description: `Scaffold a webhook for an API resource. You can choose to scaffold defaulting,
 validating and (or) conversion webhooks.
-`
-	ctx.Examples = fmt.Sprintf(`  # Create defaulting and validating webhooks for CRD of group ship, version v1beta1
+`,
+		Examples: fmt.Sprintf(`  # Create defaulting and validating webhooks for CRD of group ship, version v1beta1
   # and kind Frigate.
-  %s create webhook --group ship --version v1beta1 --kind Frigate --defaulting --programmatic-validation
+  %[1]s create webhook --group ship --version v1beta1 --kind Frigate --defaulting --programmatic-validation
 
   # Create conversion webhook for CRD of group shio, version v1beta1 and kind Frigate.
-  %s create webhook --group ship --version v1beta1 --kind Frigate --conversion
+  %[1]s create webhook --group ship --version v1beta1 --kind Frigate --conversion
 `,
-		ctx.CommandName, ctx.CommandName)
-
-	p.commandName = ctx.CommandName
+			meta.CommandName),
+	}
 }
 
 func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
@@ -76,7 +78,7 @@ func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
 		"if set, scaffold the conversion webhook")
 }
 
-func (p *createWebhookSubcommand) InjectConfig(c newconfig.Config) {
+func (p *createWebhookSubcommand) InjectConfig(c config.Config) {
 	p.config = c
 
 	p.options.Domain = c.GetDomain()

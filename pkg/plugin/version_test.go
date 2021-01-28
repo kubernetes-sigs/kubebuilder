@@ -20,7 +20,7 @@ import (
 	"sort"
 	"testing"
 
-	g "github.com/onsi/ginkgo" // An alias is required because Context is defined elsewhere in this package.
+	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 
@@ -28,12 +28,12 @@ import (
 )
 
 func TestPlugin(t *testing.T) {
-	RegisterFailHandler(g.Fail)
-	g.RunSpecs(t, "Plugin Suite")
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Plugin Suite")
 }
 
-var _ = g.Describe("Version", func() {
-	g.Context("Parse", func() {
+var _ = Describe("Version", func() {
+	Context("Parse", func() {
 		DescribeTable("should be correctly parsed for valid version strings",
 			func(str string, number int, s stage.Stage) {
 				var v Version
@@ -72,7 +72,7 @@ var _ = g.Describe("Version", func() {
 		)
 	})
 
-	g.Context("String", func() {
+	Context("String", func() {
 		DescribeTable("should return the correct string value",
 			func(version Version, str string) { Expect(version.String()).To(Equal(str)) },
 			Entry("for version 0", Version{Number: 0}, "v0"),
@@ -94,7 +94,7 @@ var _ = g.Describe("Version", func() {
 		)
 	})
 
-	g.Context("Validate", func() {
+	Context("Validate", func() {
 		DescribeTable("should validate valid versions",
 			func(version Version) { Expect(version.Validate()).To(Succeed()) },
 			Entry("for version 0", Version{Number: 0}),
@@ -125,7 +125,7 @@ var _ = g.Describe("Version", func() {
 		)
 	})
 
-	g.Context("Compare", func() {
+	Context("Compare", func() {
 		// Test Compare() by sorting a list.
 		var (
 			versions = []Version{
@@ -155,7 +155,7 @@ var _ = g.Describe("Version", func() {
 			}
 		)
 
-		g.It("sorts a valid list of versions correctly", func() {
+		It("sorts a valid list of versions correctly", func() {
 			sort.Slice(versions, func(i int, j int) bool {
 				return versions[i].Compare(versions[j]) == -1
 			})
@@ -164,7 +164,7 @@ var _ = g.Describe("Version", func() {
 
 	})
 
-	g.Context("IsStable", func() {
+	Context("IsStable", func() {
 		DescribeTable("should return true for stable versions",
 			func(version Version) { Expect(version.IsStable()).To(BeTrue()) },
 			Entry("for version 1", Version{Number: 1}),
@@ -189,4 +189,5 @@ var _ = g.Describe("Version", func() {
 			Entry("for version 22 (beta)", Version{Number: 22, Stage: stage.Beta}),
 		)
 	})
+
 })

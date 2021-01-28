@@ -39,15 +39,16 @@ var (
 	_ cmdutil.RunOptions    = &editSubcommand{}
 )
 
-func (p *editSubcommand) UpdateContext(ctx *plugin.Context) {
-	ctx.Description = `This command will edit the project configuration. You can have single or multi group project.`
-
-	ctx.Examples = fmt.Sprintf(`# Enable the multigroup layout
-        %s edit --multigroup
+func (p *editSubcommand) UpdateMetadata(meta plugin.CLIMetadata) plugin.CommandMetadata {
+	return plugin.CommandMetadata{
+		Description: `This command will edit the project configuration. You can have single or multi group project.`,
+		Examples: fmt.Sprintf(`# Enable the multigroup layout
+        %[1]s edit --multigroup
 
         # Disable the multigroup layout
-        %s edit --multigroup=false
-	`, ctx.CommandName, ctx.CommandName)
+        %[1]s edit --multigroup=false
+	`, meta.CommandName),
+	}
 }
 
 func (p *editSubcommand) BindFlags(fs *pflag.FlagSet) {

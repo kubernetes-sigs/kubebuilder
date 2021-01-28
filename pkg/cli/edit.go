@@ -26,31 +26,22 @@ import (
 )
 
 func (c cli) newEditCmd() *cobra.Command {
-	ctx := c.newEditContext()
 	cmd := &cobra.Command{
-		Use:     "edit",
-		Short:   "This command will edit the project configuration",
-		Long:    ctx.Description,
-		Example: ctx.Examples,
+		Use:   "edit",
+		Short: "This command will edit the project configuration",
+		Long: `Edit the project configuration.
+`,
 		RunE: errCmdFunc(
 			fmt.Errorf("project must be initialized"),
 		),
 	}
 
 	// Lookup the plugin for projectVersion and bind it to the command.
-	c.bindEdit(ctx, cmd)
+	c.bindEdit(cmd)
 	return cmd
 }
 
-func (c cli) newEditContext() plugin.Context {
-	return plugin.Context{
-		CommandName: c.commandName,
-		Description: `Edit the project configuration.
-`,
-	}
-}
-
-func (c cli) bindEdit(ctx plugin.Context, cmd *cobra.Command) {
+func (c cli) bindEdit(cmd *cobra.Command) {
 	if len(c.resolvedPlugins) == 0 {
 		cmdErr(cmd, fmt.Errorf(noPluginError))
 		return
@@ -77,11 +68,17 @@ func (c cli) bindEdit(ctx plugin.Context, cmd *cobra.Command) {
 	}
 
 	subcommand := editPlugin.GetEditSubcommand()
-	subcommand.BindFlags(cmd.Flags())
-	subcommand.UpdateContext(&ctx)
 
-	cmd.Long = ctx.Description
-	cmd.Example = ctx.Examples
+	meta := subcommand.UpdateMetadata(c.metadata())
+	if meta.Description != "" {
+		cmd.Long = meta.Description
+	}
+	if meta.Examples != "" {
+		cmd.Example = meta.Examples
+	}
+
+	subcommand.BindFlags(cmd.Flags())
+
 	cfg := config.New(c.fs)
 	msg := fmt.Sprintf("failed to edit project with %q", plugin.KeyFor(editPlugin))
 	cmd.PreRunE = preRunECmdFunc(subcommand, cfg, msg)
