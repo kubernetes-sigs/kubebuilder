@@ -18,8 +18,11 @@ package cli
 
 import (
 	"fmt"
+	"io"
+	"os"
 	"strings"
 
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 )
 
@@ -34,9 +37,10 @@ func (c cli) newRootCmd() *cobra.Command {
 		Long: `CLI tool for building Kubernetes extensions and tools.
 `,
 		Example: c.rootExamples(),
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, _ []string) error {
 			return cmd.Help()
 		},
+		PersistentPostRunE: c.persistChanges,
 	}
 
 	// Global flags for all subcommands
@@ -120,4 +124,67 @@ func (c cli) getPluginTable() string {
 	}
 
 	return strings.Join(lines, "\n")
+}
+
+func closeFile(f io.Closer) {
+	_ = f.Close()
+}
+
+// persistChanges walks the scaffolded files in memory and persist them to disk
+func (c cli) persistChanges(*cobra.Command, []string) error {
+	err := afero.Walk(c.memory, ".", func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return fmt.Errorf("error walking memory filesystem at %q: %w", path, err)
+		}
+
+		if info.IsDir() {
+			// Skip directories, creating files will create the needed directories
+			return nil
+		}
+
+		var exists bool
+		exists, err = afero.Exists(c.disk, path)
+		if err != nil {
+			return fmt.Errorf("unable to check if %q existed previously: %w", path, err)
+		}
+
+		if exists {
+			var diskInfo os.FileInfo
+			diskInfo, err = c.disk.Stat(path)
+			if err != nil {
+				return fmt.Errorf("unable to obtain info of %q: %w", path, err)
+			}
+
+			if os.SameFile(info, diskInfo) {
+				// The file was unchanged, skip it
+				return nil
+			}
+		}
+
+		var source io.ReadCloser
+		source, err = c.memory.Open(path)
+		if err != nil {
+			return fmt.Errorf("unable to read %q from memory: %w", path, err)
+		}
+		defer closeFile(source)
+
+		var sink io.WriteCloser
+		sink, err = c.disk.Create(path)
+		if err != nil {
+			return fmt.Errorf("unable to create/trucate %q file: %w", path, err)
+		}
+		defer closeFile(sink)
+
+		_, err = io.Copy(sink, source)
+		if err != nil {
+			return fmt.Errorf("unable to update %q file: %w", path, err)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("unable to persist scaffolded changes to disk: %w", err)
+	}
+
+	return nil
 }

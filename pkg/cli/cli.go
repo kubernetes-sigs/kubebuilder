@@ -98,8 +98,8 @@ type cli struct { //nolint:maligned
 	// Root command.
 	cmd *cobra.Command
 
-	// Underlying fs
-	fs afero.Fs
+	// Underlying filesystems
+	disk, memory, fs afero.Fs
 }
 
 // New creates a new cli instance.
@@ -132,13 +132,22 @@ func New(opts ...Option) (CLI, error) {
 // newCLI creates a default cli instance and applies the provided options.
 // It is as a separate function for test purposes.
 func newCLI(opts ...Option) (*cli, error) {
+	path, err := os.Getwd()
+	if err != nil {
+		return nil, fmt.Errorf("unable to get working directory: %w", err)
+	}
+	disk := afero.NewBasePathFs(afero.NewOsFs(), path)
+	memory := afero.NewBasePathFs(afero.NewMemMapFs(), path)
+
 	// Default cli options.
 	c := &cli{
 		commandName:           "kubebuilder",
 		defaultProjectVersion: cfgv3alpha.Version,
 		defaultPlugins:        make(map[config.Version][]string),
 		plugins:               make(map[string]plugin.Plugin),
-		fs:                    afero.NewOsFs(),
+		disk:                  disk,
+		memory:                memory,
+		fs:                    afero.NewCopyOnWriteFs(disk, memory),
 	}
 
 	// Apply provided options.
