@@ -46,29 +46,18 @@ type Deprecated interface {
 
 // Subcommand is an interface that defines the common base for subcommands returned by plugins
 type Subcommand interface {
-	// UpdateContext updates a Context with subcommand-specific help text, like description and examples. It also serves
-	// to pass context from the CLI to the subcommand, such as the command name.
-	// Can be a no-op if default help text is desired.
-	UpdateContext(*Context)
+	// UpdateMetadata injects CLI meta-data into the Subcommand and returns the Subcommand's metadata for the CLI.
+	// Any zero field in the returned object will use the default value.
+	UpdateMetadata(CLIMetadata) CommandMetadata
 	// BindFlags binds the subcommand's flags to the CLI. This allows each subcommand to define its own
 	// command line flags.
 	// NOTE(Adirio): by the time we bind flags, the config hasn't been injected, trying to use it panics
 	BindFlags(*pflag.FlagSet)
-	// Run runs the subcommand.
-	Run(fs afero.Fs) error
 	// InjectConfig passes a config to a plugin. The plugin may modify the config.
 	// Initializing, loading, and saving the config is managed by the cli package.
 	InjectConfig(config.Config)
-}
-
-// Context is the runtime context for a subcommand.
-type Context struct {
-	// CommandName sets the command name for a subcommand.
-	CommandName string
-	// Description is a description of what this subcommand does. It is used to display help.
-	Description string
-	// Examples are one or more examples of the command-line usage of this subcommand. It is used to display help.
-	Examples string
+	// Run runs the subcommand.
+	Run(fs afero.Fs) error
 }
 
 // Init is an interface for plugins that provide an `init` subcommand

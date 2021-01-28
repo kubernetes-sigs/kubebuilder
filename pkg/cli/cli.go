@@ -478,6 +478,13 @@ func (c cli) printDeprecationWarnings() {
 	}
 }
 
+// metadata returns CLI's metadata.
+func (c cli) metadata() plugin.CLIMetadata {
+	return plugin.CLIMetadata{
+		CommandName: c.commandName,
+	}
+}
+
 // Run implements CLI.Run.
 func (c cli) Run() error {
 	return c.cmd.Execute()
