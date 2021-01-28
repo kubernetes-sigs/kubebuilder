@@ -17,6 +17,7 @@ limitations under the License.
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"sort"
@@ -25,8 +26,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	internalconfig "sigs.k8s.io/kubebuilder/v3/pkg/cli/internal/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
+	yamlstore "sigs.k8s.io/kubebuilder/v3/pkg/config/store/yaml"
 	cfgv2 "sigs.k8s.io/kubebuilder/v3/pkg/config/v2"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 )
@@ -138,21 +139,20 @@ func (c cli) bindInit(cmd *cobra.Command) {
 
 	subcommand.BindFlags(cmd.Flags())
 
-	cfg := internalconfig.New(c.fs)
+	cfg := yamlstore.New(c.fs)
 	msg := fmt.Sprintf("failed to initialize project with %q", plugin.KeyFor(initPlugin))
 	cmd.PreRunE = func(*cobra.Command, []string) error {
-		// Check if a config is initialized in the command runner so the check
-		// doesn't erroneously fail other commands used in initialized projects.
-		if _, err := internalconfig.Read(c.fs); err == nil || os.IsExist(err) {
+		// Check if a config is initialized.
+		if err := cfg.Load(); err == nil || !errors.Is(err, os.ErrNotExist) {
 			return fmt.Errorf("%s: already initialized", msg)
 		}
 
-		err := cfg.Init(c.projectVersion)
+		err := cfg.New(c.projectVersion)
 		if err != nil {
 			return fmt.Errorf("%s: error initializing project configuration: %w", msg, err)
 		}
 
-		subcommand.InjectConfig(cfg.Config)
+		subcommand.InjectConfig(cfg.Config())
 		return nil
 	}
 	cmd.RunE = runECmdFunc(c.fs, subcommand, msg)

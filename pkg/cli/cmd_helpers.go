@@ -23,7 +23,7 @@ import (
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/cli/internal/config"
+	"sigs.k8s.io/kubebuilder/v3/pkg/config/store"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 )
 
@@ -49,7 +49,7 @@ func errCmdFunc(err error) func(*cobra.Command, []string) error {
 
 // preRunECmdFunc returns a cobra PreRunE function that loads the configuration file
 // and injects it into the subcommand
-func preRunECmdFunc(subcmd plugin.Subcommand, cfg *config.Config, msg string) func(*cobra.Command, []string) error {
+func preRunECmdFunc(subcmd plugin.Subcommand, cfg store.Store, msg string) func(*cobra.Command, []string) error {
 	return func(*cobra.Command, []string) error {
 		err := cfg.Load()
 		if os.IsNotExist(err) {
@@ -58,7 +58,7 @@ func preRunECmdFunc(subcmd plugin.Subcommand, cfg *config.Config, msg string) fu
 			return fmt.Errorf("%s: unable to load configuration file: %w", msg, err)
 		}
 
-		subcmd.InjectConfig(cfg.Config)
+		subcmd.InjectConfig(cfg.Config())
 		return nil
 	}
 }
@@ -74,7 +74,7 @@ func runECmdFunc(fs afero.Fs, subcommand plugin.Subcommand, msg string) func(*co
 }
 
 // postRunECmdFunc returns a cobra PostRunE function that saves the configuration file
-func postRunECmdFunc(cfg *config.Config, msg string) func(*cobra.Command, []string) error {
+func postRunECmdFunc(cfg store.Store, msg string) func(*cobra.Command, []string) error {
 	return func(*cobra.Command, []string) error {
 		err := cfg.Save()
 		if err != nil {

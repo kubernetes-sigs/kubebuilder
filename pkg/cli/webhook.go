@@ -21,7 +21,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/cli/internal/config"
+	yamlstore "sigs.k8s.io/kubebuilder/v3/pkg/config/store/yaml"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 )
 
@@ -79,7 +79,7 @@ func (c cli) bindCreateWebhook(cmd *cobra.Command) {
 
 	subcommand.BindFlags(cmd.Flags())
 
-	cfg := config.New(c.fs)
+	cfg := yamlstore.New(c.fs)
 	msg := fmt.Sprintf("failed to create webhook with %q", plugin.KeyFor(createWebhookPlugin))
 	cmd.PreRunE = preRunECmdFunc(subcommand, cfg, msg)
 	cmd.RunE = runECmdFunc(c.fs, subcommand, msg)
