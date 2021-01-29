@@ -105,7 +105,7 @@ After the scaffold is written, api will run make on the project.
 }
 
 func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
-	fs.BoolVar(&p.runMake, "make", true, "if true, run make after generating files")
+	fs.BoolVar(&p.runMake, "make", true, "if true, run `make generate` after generating files")
 
 	// TODO: remove this when a better solution for using addons is implemented.
 	if os.Getenv("KUBEBUILDER_ENABLE_PLUGINS") != "" {
@@ -232,8 +232,8 @@ func (p *createAPISubcommand) PostScaffold() error {
 		return fmt.Errorf("unknown pattern %q", p.pattern)
 	}
 
-	if p.runMake {
-		return util.RunCmd("Running make", "make")
+	if p.runMake { // TODO: check if API was scaffolded
+		return util.RunCmd("Running make", "make", "generate")
 	}
 	return nil
 }

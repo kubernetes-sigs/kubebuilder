@@ -185,12 +185,6 @@ func (p *initSubcommand) PostScaffold() error {
 		return err
 	}
 
-	// TODO: make this conditional with a '--make' flag, like in 'create api'.
-	err = util.RunCmd("Running make", "make")
-	if err != nil {
-		return err
-	}
-
 	fmt.Printf("Next: define a resource with:\n$ %s create api\n", p.commandName)
 	return nil
 }

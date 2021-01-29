@@ -29,7 +29,6 @@ import (
 	goPlugin "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/cmdutil"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/util"
 )
 
 // defaultWebhookVersion is the default mutating/validating webhook config API version to scaffold.
@@ -44,9 +43,6 @@ type createWebhookSubcommand struct {
 
 	// force indicates that the resource should be created even if it already exists
 	force bool
-
-	// runMake indicates whether to run make or not after scaffolding webhooks
-	runMake bool
 }
 
 var (
@@ -87,7 +83,6 @@ func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.options.DoConversion, "conversion", false,
 		"if set, scaffold the conversion webhook")
 
-	fs.BoolVar(&p.runMake, "make", true, "if true, run make after generating files")
 	fs.BoolVar(&p.force, "force", false,
 		"attempt to create resource even if it already exists")
 }
@@ -139,8 +134,5 @@ func (p *createWebhookSubcommand) GetScaffolder() (cmdutil.Scaffolder, error) {
 }
 
 func (p *createWebhookSubcommand) PostScaffold() error {
-	if p.runMake {
-		return util.RunCmd("Running make", "make")
-	}
 	return nil
 }
