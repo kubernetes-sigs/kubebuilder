@@ -18,6 +18,7 @@ package cli
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -113,6 +114,8 @@ func (c cli) getPluginTable() string {
 		maxPluginKeyLength, pluginKeysHeader, maxProjectVersionLength, projectVersionsHeader))
 	lines = append(lines, strings.Repeat("-", maxPluginKeyLength+2)+"+"+
 		strings.Repeat("-", maxProjectVersionLength+2))
+
+	sort.Strings(pluginKeys)
 	for i, pluginKey := range pluginKeys {
 		supportedProjectVersions := projectVersions[i]
 		lines = append(lines, fmt.Sprintf(" %[1]*[2]s | %[3]*[4]s",
