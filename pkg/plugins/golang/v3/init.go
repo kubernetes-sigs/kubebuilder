@@ -207,9 +207,16 @@ func checkDir() error {
 			if err != nil {
 				return err
 			}
-			if info.Name() != "go.mod" && !strings.HasPrefix(info.Name(), ".") {
+			// Allow the whole .git directory tree
+			if info.IsDir() && strings.HasPrefix(info.Name(), ".") && info.Name() != "." {
+				return filepath.SkipDir
+			}
+			// Also allow go.mod and dot-files
+			if info.Name() != "go.mod" && info.Name() != "go.sum" && !strings.HasPrefix(info.Name(), ".") {
 				return fmt.Errorf(
-					"target directory is not empty (only go.mod and files with the prefix \".\" are allowed); found existing file %q",
+					"target directory is not empty "+
+						"(only go.mod, go.sum, and files and directories with the prefix \".\" are allowed); "+
+						"found existing file %q",
 					path)
 			}
 			return nil
