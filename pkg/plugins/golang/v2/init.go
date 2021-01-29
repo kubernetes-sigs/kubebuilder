@@ -25,7 +25,7 @@ import (
 	"github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	cfgv3alpha "sigs.k8s.io/kubebuilder/v3/pkg/config/v3alpha"
+	cfgv2 "sigs.k8s.io/kubebuilder/v3/pkg/config/v2"
 	"sigs.k8s.io/kubebuilder/v3/pkg/internal/validation"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds"
@@ -95,14 +95,14 @@ func (p *initSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&p.domain, "domain", "my.domain", "domain for groups")
 	fs.StringVar(&p.repo, "repo", "", "name to use for go module (e.g., github.com/user/repo), "+
 		"defaults to the go package of the current working directory.")
-	if p.config.GetVersion().Compare(cfgv3alpha.Version) >= 0 {
+	if p.config.GetVersion().Compare(cfgv2.Version) > 0 {
 		fs.StringVar(&p.name, "project-name", "", "name of this project")
 	}
 }
 
 func (p *initSubcommand) InjectConfig(c config.Config) {
 	// v2+ project configs get a 'layout' value.
-	if c.GetVersion().Compare(cfgv3alpha.Version) >= 0 {
+	if c.GetVersion().Compare(cfgv2.Version) > 0 {
 		_ = c.SetLayout(plugin.KeyFor(Plugin{}))
 	}
 
@@ -121,7 +121,7 @@ func (p *initSubcommand) Validate() error {
 		}
 	}
 
-	if p.config.GetVersion().Compare(cfgv3alpha.Version) >= 0 {
+	if p.config.GetVersion().Compare(cfgv2.Version) > 0 {
 		// Assign a default project name
 		if p.name == "" {
 			dir, err := os.Getwd()
@@ -155,7 +155,7 @@ func (p *initSubcommand) GetScaffolder() (cmdutil.Scaffolder, error) {
 	if err := p.config.SetRepository(p.repo); err != nil {
 		return nil, err
 	}
-	if p.config.GetVersion().Compare(cfgv3alpha.Version) >= 0 {
+	if p.config.GetVersion().Compare(cfgv2.Version) > 0 {
 		if err := p.config.SetProjectName(p.name); err != nil {
 			return nil, err
 		}

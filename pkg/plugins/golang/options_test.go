@@ -25,7 +25,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	cfgv3alpha "sigs.k8s.io/kubebuilder/v3/pkg/config/v3alpha"
+	cfgv3 "sigs.k8s.io/kubebuilder/v3/pkg/config/v3"
 )
 
 var _ = Describe("Options", func() {
@@ -91,7 +91,7 @@ var _ = Describe("Options", func() {
 		var cfg config.Config
 
 		BeforeEach(func() {
-			cfg = cfgv3alpha.New()
+			cfg = cfgv3.New()
 			_ = cfg.SetRepository("test")
 		})
 

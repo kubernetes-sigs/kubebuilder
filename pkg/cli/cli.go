@@ -26,7 +26,7 @@ import (
 
 	internalconfig "sigs.k8s.io/kubebuilder/v3/pkg/cli/internal/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	cfgv3alpha "sigs.k8s.io/kubebuilder/v3/pkg/config/v3alpha"
+	cfgv3 "sigs.k8s.io/kubebuilder/v3/pkg/config/v3"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 )
 
@@ -131,7 +131,7 @@ func newCLI(opts ...Option) (*cli, error) {
 	// Default cli options.
 	c := &cli{
 		commandName:           "kubebuilder",
-		defaultProjectVersion: cfgv3alpha.Version,
+		defaultProjectVersion: cfgv3.Version,
 		defaultPlugins:        make(map[config.Version][]string),
 		plugins:               make(map[string]plugin.Plugin),
 	}

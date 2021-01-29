@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v3alpha
+package v3
 
 import (
 	"fmt"
@@ -24,11 +24,10 @@ import (
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/stage"
 )
 
-// Version is the config.Version for project configuration 3-alpha
-var Version = config.Version{Number: 3, Stage: stage.Alpha}
+// Version is the config.Version for project configuration 3
+var Version = config.Version{Number: 3}
 
 type cfg struct {
 	// Version
@@ -157,8 +156,6 @@ func (c cfg) ResourcesLength() int {
 
 // HasResource implements config.Config
 func (c cfg) HasResource(gvk resource.GVK) bool {
-	gvk.Domain = "" // Version 3 alpha does not include domain per resource
-
 	for _, res := range c.Resources {
 		if gvk.IsEqualTo(res.GVK) {
 			return true
@@ -170,11 +167,16 @@ func (c cfg) HasResource(gvk resource.GVK) bool {
 
 // GetResource implements config.Config
 func (c cfg) GetResource(gvk resource.GVK) (resource.Resource, error) {
-	gvk.Domain = "" // Version 3 alpha does not include domain per resource
-
 	for _, res := range c.Resources {
 		if gvk.IsEqualTo(res.GVK) {
-			return res.Copy(), nil
+			r := res.Copy()
+
+			// Plural is only stored if irregular, so if it is empty recover the regular form
+			if r.Plural == "" {
+				r.Plural = resource.RegularPlural(r.Kind)
+			}
+
+			return r, nil
 		}
 	}
 
@@ -185,25 +187,17 @@ func (c cfg) GetResource(gvk resource.GVK) (resource.Resource, error) {
 func (c cfg) GetResources() ([]resource.Resource, error) {
 	resources := make([]resource.Resource, 0, len(c.Resources))
 	for _, res := range c.Resources {
-		resources = append(resources, res.Copy())
+		r := res.Copy()
+
+		// Plural is only stored if irregular, so if it is empty recover the regular form
+		if r.Plural == "" {
+			r.Plural = resource.RegularPlural(r.Kind)
+		}
+
+		resources = append(resources, r)
 	}
 
 	return resources, nil
-}
-
-func discardNonIncludedFields(res *resource.Resource) {
-	res.Domain = "" // Version 3 alpha does not include domain per resource
-	res.Plural = "" // Version 3 alpha does not include plural forms
-	res.Path = ""   // Version 3 alpha does not include paths
-	if res.API != nil {
-		res.API.Namespaced = false // Version 3 alpha does not include if the api was namespaced
-	}
-	res.Controller = false // Version 3 alpha does not include if the controller was scaffolded
-	if res.Webhooks != nil {
-		res.Webhooks.Defaulting = false // Version 3 alpha does not include if the defaulting webhook was scaffolded
-		res.Webhooks.Validation = false // Version 3 alpha does not include if the validation webhook was scaffolded
-		res.Webhooks.Conversion = false // Version 3 alpha does not include if the conversion webhook was scaffolded
-	}
 }
 
 // AddResource implements config.Config
@@ -211,7 +205,10 @@ func (c *cfg) AddResource(res resource.Resource) error {
 	// As res is passed by value it is already a shallow copy, but we need to make a deep copy
 	res = res.Copy()
 
-	discardNonIncludedFields(&res) // Version 3 alpha does not include several fields from the Resource model
+	// Plural is only stored if irregular
+	if res.Plural == resource.RegularPlural(res.Kind) {
+		res.Plural = ""
+	}
 
 	if !c.HasResource(res.GVK) {
 		c.Resources = append(c.Resources, res)
@@ -224,7 +221,10 @@ func (c *cfg) UpdateResource(res resource.Resource) error {
 	// As res is passed by value it is already a shallow copy, but we need to make a deep copy
 	res = res.Copy()
 
-	discardNonIncludedFields(&res) // Version 3 alpha does not include several fields from the Resource model
+	// Plural is only stored if irregular
+	if res.Plural == resource.RegularPlural(res.Kind) {
+		res.Plural = ""
+	}
 
 	for i, r := range c.Resources {
 		if res.GVK.IsEqualTo(r.GVK) {

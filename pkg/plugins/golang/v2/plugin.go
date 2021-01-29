@@ -19,7 +19,7 @@ package v2
 import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	cfgv2 "sigs.k8s.io/kubebuilder/v3/pkg/config/v2"
-	cfgv3alpha "sigs.k8s.io/kubebuilder/v3/pkg/config/v3alpha"
+	cfgv3 "sigs.k8s.io/kubebuilder/v3/pkg/config/v3"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins"
 )
@@ -27,7 +27,7 @@ import (
 const pluginName = "go" + plugins.DefaultNameQualifier
 
 var (
-	supportedProjectVersions = []config.Version{cfgv2.Version, cfgv3alpha.Version}
+	supportedProjectVersions = []config.Version{cfgv2.Version, cfgv3.Version}
 	pluginVersion            = plugin.Version{Number: 2}
 )
 
