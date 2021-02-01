@@ -17,12 +17,14 @@ limitations under the License.
 package v3
 
 import (
+	"errors"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 
+	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 )
 
@@ -390,13 +392,19 @@ var _ = Describe("cfg", func() {
 			}
 		)
 
+		It("DecodePluginConfig should fail for no plugin config object", func() {
+			var pluginConfig PluginConfig
+			err := c0.DecodePluginConfig(key, &pluginConfig)
+			Expect(err).To(HaveOccurred())
+			Expect(errors.As(err, &config.PluginKeyNotFoundError{})).To(BeTrue())
+		})
+
 		DescribeTable("DecodePluginConfig should retrieve the plugin data correctly",
 			func(inputConfig cfg, expectedPluginConfig PluginConfig) {
 				var pluginConfig PluginConfig
 				Expect(inputConfig.DecodePluginConfig(key, &pluginConfig)).To(Succeed())
 				Expect(pluginConfig).To(Equal(expectedPluginConfig))
 			},
-			Entry("for no plugin config object", c0, nil),
 			Entry("for an empty plugin config object", c1, PluginConfig{}),
 			Entry("for a full plugin config object", c2, pluginConfig),
 			// TODO (coverage): add cases where yaml.Marshal returns an error

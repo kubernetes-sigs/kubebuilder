@@ -37,8 +37,8 @@ var _ = Describe("UnsupportedVersionError", func() {
 	})
 })
 
-var _ = Describe("UnsupportedField", func() {
-	var err = UnsupportedField{
+var _ = Describe("UnsupportedFieldError", func() {
+	var err = UnsupportedFieldError{
 		Version: Version{Number: 1},
 		Field:   "name",
 	}
@@ -50,8 +50,8 @@ var _ = Describe("UnsupportedField", func() {
 	})
 })
 
-var _ = Describe("UnknownResource", func() {
-	var err = UnknownResource{
+var _ = Describe("ResourceNotFoundError", func() {
+	var err = ResourceNotFoundError{
 		GVK: resource.GVK{
 			Group:   "group",
 			Domain:  "my.domain",
@@ -63,6 +63,18 @@ var _ = Describe("UnknownResource", func() {
 	Context("Error", func() {
 		It("should return the correct error message", func() {
 			Expect(err.Error()).To(Equal("resource {group my.domain v1 Kind} could not be found"))
+		})
+	})
+})
+
+var _ = Describe("PluginKeyNotFoundError", func() {
+	var err = PluginKeyNotFoundError{
+		Key: "go.kubebuilder.io/v1",
+	}
+
+	Context("Error", func() {
+		It("should return the correct error message", func() {
+			Expect(err.Error()).To(Equal("plugin key \"go.kubebuilder.io/v1\" could not be found"))
 		})
 	})
 })
