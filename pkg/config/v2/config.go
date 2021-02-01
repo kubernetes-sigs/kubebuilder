@@ -88,7 +88,7 @@ func (c cfg) GetProjectName() string {
 
 // SetProjectName implements config.Config
 func (c *cfg) SetProjectName(string) error {
-	return config.UnsupportedField{
+	return config.UnsupportedFieldError{
 		Version: Version,
 		Field:   "project name",
 	}
@@ -101,7 +101,7 @@ func (c cfg) GetLayout() string {
 
 // SetLayout implements config.Config
 func (c *cfg) SetLayout(string) error {
-	return config.UnsupportedField{
+	return config.UnsupportedFieldError{
 		Version: Version,
 		Field:   "layout",
 	}
@@ -131,7 +131,7 @@ func (c cfg) IsComponentConfig() bool {
 
 // SetComponentConfig implements config.Config
 func (c *cfg) SetComponentConfig() error {
-	return config.UnsupportedField{
+	return config.UnsupportedFieldError{
 		Version: Version,
 		Field:   "component config",
 	}
@@ -139,7 +139,7 @@ func (c *cfg) SetComponentConfig() error {
 
 // ClearComponentConfig implements config.Config
 func (c *cfg) ClearComponentConfig() error {
-	return config.UnsupportedField{
+	return config.UnsupportedFieldError{
 		Version: Version,
 		Field:   "component config",
 	}
@@ -175,7 +175,7 @@ func (c cfg) GetResource(gvk resource.GVK) (resource.Resource, error) {
 		}
 	}
 
-	return resource.Resource{}, config.UnknownResource{GVK: gvk}
+	return resource.Resource{}, config.ResourceNotFoundError{GVK: gvk}
 }
 
 // GetResources implements config.Config
@@ -234,7 +234,7 @@ func (c cfg) IsWebhookVersionCompatible(webhookVersion string) bool {
 
 // DecodePluginConfig implements config.Config
 func (c cfg) DecodePluginConfig(string, interface{}) error {
-	return config.UnsupportedField{
+	return config.UnsupportedFieldError{
 		Version: Version,
 		Field:   "plugins",
 	}
@@ -242,7 +242,7 @@ func (c cfg) DecodePluginConfig(string, interface{}) error {
 
 // EncodePluginConfig implements config.Config
 func (c cfg) EncodePluginConfig(string, interface{}) error {
-	return config.UnsupportedField{
+	return config.UnsupportedFieldError{
 		Version: Version,
 		Field:   "plugins",
 	}

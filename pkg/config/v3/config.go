@@ -180,7 +180,7 @@ func (c cfg) GetResource(gvk resource.GVK) (resource.Resource, error) {
 		}
 	}
 
-	return resource.Resource{}, config.UnknownResource{GVK: gvk}
+	return resource.Resource{}, config.ResourceNotFoundError{GVK: gvk}
 }
 
 // GetResources implements config.Config
@@ -283,7 +283,7 @@ func (c cfg) resourceAPIVersionCompatible(verType, version string) bool {
 // DecodePluginConfig implements config.Config
 func (c cfg) DecodePluginConfig(key string, configObj interface{}) error {
 	if len(c.Plugins) == 0 {
-		return nil
+		return config.PluginKeyNotFoundError{Key: key}
 	}
 
 	// Get the object blob by key and unmarshal into the object.
@@ -295,9 +295,10 @@ func (c cfg) DecodePluginConfig(key string, configObj interface{}) error {
 		if err := yaml.Unmarshal(b, configObj); err != nil {
 			return fmt.Errorf("failed to unmarshal extra fields object: %w", err)
 		}
+		return nil
 	}
 
-	return nil
+	return config.PluginKeyNotFoundError{Key: key}
 }
 
 // EncodePluginConfig will return an error if used on any project version < v3.

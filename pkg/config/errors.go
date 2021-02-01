@@ -32,26 +32,36 @@ func (e UnsupportedVersionError) Error() string {
 	return fmt.Sprintf("version %s is not supported", e.Version)
 }
 
-// UnsupportedField is returned when a project configuration version does not support
+// UnsupportedFieldError is returned when a project configuration version does not support
 // one of the fields as interface must be common for all the versions
-type UnsupportedField struct {
+type UnsupportedFieldError struct {
 	Version Version
 	Field   string
 }
 
 // Error implements error interface
-func (e UnsupportedField) Error() string {
+func (e UnsupportedFieldError) Error() string {
 	return fmt.Sprintf("version %s does not support the %s field", e.Version, e.Field)
 }
 
-// UnknownResource is returned by Config.GetResource when the provided GVK cannot be found
-type UnknownResource struct {
+// ResourceNotFoundError is returned by Config.GetResource when the provided GVK cannot be found
+type ResourceNotFoundError struct {
 	GVK resource.GVK
 }
 
 // Error implements error interface
-func (e UnknownResource) Error() string {
+func (e ResourceNotFoundError) Error() string {
 	return fmt.Sprintf("resource %v could not be found", e.GVK)
+}
+
+// PluginKeyNotFoundError is returned by Config.DecodePluginConfig when the provided key cannot be found
+type PluginKeyNotFoundError struct {
+	Key string
+}
+
+// Error implements error interface
+func (e PluginKeyNotFoundError) Error() string {
+	return fmt.Sprintf("plugin key %q could not be found", e.Key)
 }
 
 // MarshalError is returned by Config.Marshal when something went wrong while marshalling to YAML
