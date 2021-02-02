@@ -29,34 +29,37 @@ var _ = Describe("Resource", func() {
 		domain  = "test.io"
 		version = "v1"
 		kind    = "Kind"
+		plural  = "kinds"
+		v1beta1 = "v1beta1"
 	)
 
 	var (
-		res1 = Resource{
-			GVK: GVK{
-				Group:   group,
-				Domain:  domain,
-				Version: version,
-				Kind:    kind,
-			},
+		gvk = GVK{
+			Group:   group,
+			Domain:  domain,
+			Version: version,
+			Kind:    kind,
 		}
-		res2 = Resource{
-			GVK: GVK{
-				// Empty group
-				Domain:  domain,
-				Version: version,
-				Kind:    kind,
-			},
-		}
-		res3 = Resource{
-			GVK: GVK{
-				Group: group,
-				// Empty domain
-				Version: version,
-				Kind:    kind,
-			},
+		res = Resource{
+			GVK:    gvk,
+			Plural: plural,
 		}
 	)
+
+	Context("Validate", func() {
+		It("should succeed for a valid Resource", func() {
+			Expect(res.Validate()).To(Succeed())
+		})
+
+		DescribeTable("should fail for invalid Resources",
+			func(res Resource) { Expect(res.Validate()).NotTo(Succeed()) },
+			// Ensure that the rest of the fields are valid to check each part
+			Entry("invalid GVK", Resource{GVK: GVK{}, Plural: "plural"}),
+			Entry("invalid Plural", Resource{GVK: gvk, Plural: "Plural"}),
+			Entry("invalid API", Resource{GVK: gvk, Plural: "plural", API: &API{CRDVersion: "1"}}),
+			Entry("invalid Webhooks", Resource{GVK: gvk, Plural: "plural", Webhooks: &Webhooks{WebhookVersion: "1"}}),
+		)
+	})
 
 	Context("compound field", func() {
 		const (
@@ -65,18 +68,37 @@ var _ = Describe("Resource", func() {
 			domainVersion = safeDomain + version
 		)
 
+		var (
+			resNoGroup = Resource{
+				GVK: GVK{
+					// Empty group
+					Domain:  domain,
+					Version: version,
+					Kind:    kind,
+				},
+			}
+			resNoDomain = Resource{
+				GVK: GVK{
+					Group: group,
+					// Empty domain
+					Version: version,
+					Kind:    kind,
+				},
+			}
+		)
+
 		DescribeTable("PackageName should return the correct string",
 			func(res Resource, packageName string) { Expect(res.PackageName()).To(Equal(packageName)) },
-			Entry("fully qualified resource", res1, group),
-			Entry("empty group name", res2, safeDomain),
-			Entry("empty domain", res3, group),
+			Entry("fully qualified resource", res, group),
+			Entry("empty group name", resNoGroup, safeDomain),
+			Entry("empty domain", resNoDomain, group),
 		)
 
 		DescribeTable("ImportAlias",
 			func(res Resource, importAlias string) { Expect(res.ImportAlias()).To(Equal(importAlias)) },
-			Entry("fully qualified resource", res1, groupVersion),
-			Entry("empty group name", res2, domainVersion),
-			Entry("empty domain", res3, groupVersion),
+			Entry("fully qualified resource", res, groupVersion),
+			Entry("empty group name", resNoGroup, domainVersion),
+			Entry("empty domain", resNoDomain, groupVersion),
 		)
 	})
 
@@ -141,30 +163,24 @@ var _ = Describe("Resource", func() {
 
 		Context("IsRegularPlural", func() {
 			It("should return true if the regular plural form is used", func() {
-				Expect(Resource{GVK: GVK{Kind: "FirstMate"}, Plural: "firstmates"}.IsRegularPlural()).To(BeTrue())
+				Expect(res.IsRegularPlural()).To(BeTrue())
 			})
 
 			It("should return false if an irregular plural form is used", func() {
-				Expect(Resource{GVK: GVK{Kind: "FirstMate"}, Plural: "mates"}.IsRegularPlural()).To(BeFalse())
+				Expect(Resource{GVK: gvk, Plural: "types"}.IsRegularPlural()).To(BeFalse())
 			})
 		})
 	})
 
 	Context("Copy", func() {
 		const (
-			plural         = "kinds"
 			path           = "api/v1"
 			crdVersion     = "v1"
 			webhookVersion = "v1"
 		)
 
 		res := Resource{
-			GVK: GVK{
-				Group:   group,
-				Domain:  domain,
-				Version: version,
-				Kind:    kind,
-			},
+			GVK:    gvk,
 			Plural: plural,
 			Path:   path,
 			API: &API{
@@ -207,11 +223,11 @@ var _ = Describe("Resource", func() {
 			other.Kind = "kind2"
 			other.Plural = "kind2s"
 			other.Path = "api/v2"
-			other.API.CRDVersion = "v1beta1"
+			other.API.CRDVersion = v1beta1
 			other.API.Namespaced = false
 			other.API = nil // Change fields before changing pointer
 			other.Controller = false
-			other.Webhooks.WebhookVersion = "v1beta1"
+			other.Webhooks.WebhookVersion = v1beta1
 			other.Webhooks.Defaulting = false
 			other.Webhooks.Validation = false
 			other.Webhooks.Conversion = false
@@ -244,16 +260,11 @@ var _ = Describe("Resource", func() {
 		})
 
 		It("should fail for different GVKs", func() {
-			r = Resource{
-				GVK: GVK{
-					Group:   group,
-					Version: version,
-					Kind:    kind,
-				},
-			}
+			r = Resource{GVK: gvk}
 			other = Resource{
 				GVK: GVK{
 					Group:   group,
+					Domain:  domain,
 					Version: version,
 					Kind:    "OtherKind",
 				},
@@ -263,19 +274,11 @@ var _ = Describe("Resource", func() {
 
 		It("should fail for different Plurals", func() {
 			r = Resource{
-				GVK: GVK{
-					Group:   group,
-					Version: version,
-					Kind:    kind,
-				},
-				Plural: "kinds",
+				GVK:    gvk,
+				Plural: plural,
 			}
 			other = Resource{
-				GVK: GVK{
-					Group:   group,
-					Version: version,
-					Kind:    kind,
-				},
+				GVK:    gvk,
 				Plural: "types",
 			}
 			Expect(r.Update(other)).NotTo(Succeed())
@@ -283,19 +286,11 @@ var _ = Describe("Resource", func() {
 
 		It("should fail for different Paths", func() {
 			r = Resource{
-				GVK: GVK{
-					Group:   group,
-					Version: version,
-					Kind:    kind,
-				},
+				GVK:  gvk,
 				Path: "api/v1",
 			}
 			other = Resource{
-				GVK: GVK{
-					Group:   group,
-					Version: version,
-					Kind:    kind,
-				},
+				GVK:  gvk,
 				Path: "apis/group/v1",
 			}
 			Expect(r.Update(other)).NotTo(Succeed())
@@ -303,19 +298,9 @@ var _ = Describe("Resource", func() {
 
 		Context("API", func() {
 			It("should work with nil APIs", func() {
-				r = Resource{
-					GVK: GVK{
-						Group:   group,
-						Version: version,
-						Kind:    kind,
-					},
-				}
+				r = Resource{GVK: gvk}
 				other = Resource{
-					GVK: GVK{
-						Group:   group,
-						Version: version,
-						Kind:    kind,
-					},
+					GVK: gvk,
 					API: &API{CRDVersion: v1},
 				}
 				Expect(r.Update(other)).To(Succeed())
@@ -325,20 +310,12 @@ var _ = Describe("Resource", func() {
 
 			It("should fail if API.Update fails", func() {
 				r = Resource{
-					GVK: GVK{
-						Group:   group,
-						Version: version,
-						Kind:    kind,
-					},
+					GVK: gvk,
 					API: &API{CRDVersion: v1},
 				}
 				other = Resource{
-					GVK: GVK{
-						Group:   group,
-						Version: version,
-						Kind:    kind,
-					},
-					API: &API{CRDVersion: "v1beta1"},
+					GVK: gvk,
+					API: &API{CRDVersion: v1beta1},
 				}
 				Expect(r.Update(other)).NotTo(Succeed())
 			})
@@ -348,19 +325,9 @@ var _ = Describe("Resource", func() {
 
 		Context("Controller", func() {
 			It("should set the controller flag if provided and not previously set", func() {
-				r = Resource{
-					GVK: GVK{
-						Group:   group,
-						Version: version,
-						Kind:    kind,
-					},
-				}
+				r = Resource{GVK: gvk}
 				other = Resource{
-					GVK: GVK{
-						Group:   group,
-						Version: version,
-						Kind:    kind,
-					},
+					GVK:        gvk,
 					Controller: true,
 				}
 				Expect(r.Update(other)).To(Succeed())
@@ -369,32 +336,18 @@ var _ = Describe("Resource", func() {
 
 			It("should keep the controller flag if previously set", func() {
 				r = Resource{
-					GVK: GVK{
-						Group:   group,
-						Version: version,
-						Kind:    kind,
-					},
+					GVK:        gvk,
 					Controller: true,
 				}
 
 				By("not providing it")
-				other = Resource{
-					GVK: GVK{
-						Group:   group,
-						Version: version,
-						Kind:    kind,
-					},
-				}
+				other = Resource{GVK: gvk}
 				Expect(r.Update(other)).To(Succeed())
 				Expect(r.Controller).To(BeTrue())
 
 				By("providing it")
 				other = Resource{
-					GVK: GVK{
-						Group:   group,
-						Version: version,
-						Kind:    kind,
-					},
+					GVK:        gvk,
 					Controller: true,
 				}
 				Expect(r.Update(other)).To(Succeed())
@@ -402,20 +355,8 @@ var _ = Describe("Resource", func() {
 			})
 
 			It("should not set the controller flag if not provided and not previously set", func() {
-				r = Resource{
-					GVK: GVK{
-						Group:   group,
-						Version: version,
-						Kind:    kind,
-					},
-				}
-				other = Resource{
-					GVK: GVK{
-						Group:   group,
-						Version: version,
-						Kind:    kind,
-					},
-				}
+				r = Resource{GVK: gvk}
+				other = Resource{GVK: gvk}
 				Expect(r.Update(other)).To(Succeed())
 				Expect(r.Controller).To(BeFalse())
 			})
@@ -423,19 +364,9 @@ var _ = Describe("Resource", func() {
 
 		Context("Webhooks", func() {
 			It("should work with nil Webhooks", func() {
-				r = Resource{
-					GVK: GVK{
-						Group:   group,
-						Version: version,
-						Kind:    kind,
-					},
-				}
+				r = Resource{GVK: gvk}
 				other = Resource{
-					GVK: GVK{
-						Group:   group,
-						Version: version,
-						Kind:    kind,
-					},
+					GVK:      gvk,
 					Webhooks: &Webhooks{WebhookVersion: v1},
 				}
 				Expect(r.Update(other)).To(Succeed())
@@ -445,20 +376,12 @@ var _ = Describe("Resource", func() {
 
 			It("should fail if Webhooks.Update fails", func() {
 				r = Resource{
-					GVK: GVK{
-						Group:   group,
-						Version: version,
-						Kind:    kind,
-					},
+					GVK:      gvk,
 					Webhooks: &Webhooks{WebhookVersion: v1},
 				}
 				other = Resource{
-					GVK: GVK{
-						Group:   group,
-						Version: version,
-						Kind:    kind,
-					},
-					Webhooks: &Webhooks{WebhookVersion: "v1beta1"},
+					GVK:      gvk,
+					Webhooks: &Webhooks{WebhookVersion: v1beta1},
 				}
 				Expect(r.Update(other)).NotTo(Succeed())
 			})
@@ -468,15 +391,6 @@ var _ = Describe("Resource", func() {
 	})
 
 	Context("Replacer", func() {
-		res := Resource{
-			GVK: GVK{
-				Group:   group,
-				Domain:  domain,
-				Version: version,
-				Kind:    kind,
-			},
-			Plural: "kinds",
-		}
 		replacer := res.Replacer()
 
 		DescribeTable("should replace the following strings",

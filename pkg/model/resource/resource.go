@@ -19,6 +19,8 @@ package resource
 import (
 	"fmt"
 	"strings"
+
+	"sigs.k8s.io/kubebuilder/v3/pkg/internal/validation"
 )
 
 // Resource contains the information required to scaffold files for a resource.
@@ -40,6 +42,38 @@ type Resource struct {
 
 	// Webhooks holds the information related to the associated webhooks.
 	Webhooks *Webhooks `json:"webhooks,omitempty"`
+}
+
+// Validate checks that the Resource is valid.
+func (r Resource) Validate() error {
+	// Validate the GVK
+	if err := r.GVK.Validate(); err != nil {
+		return err
+	}
+
+	// Validate the Plural
+	// NOTE: IsDNS1035Label returns a slice of strings instead of an error, so no wrapping
+	if errors := validation.IsDNS1035Label(r.Plural); len(errors) != 0 {
+		return fmt.Errorf("invalid Plural: %#v", errors)
+	}
+
+	// TODO: validate the path
+
+	// Validate the API
+	if r.API != nil && !r.API.IsEmpty() {
+		if err := r.API.Validate(); err != nil {
+			return fmt.Errorf("invalid API: %w", err)
+		}
+	}
+
+	// Validate the Webhooks
+	if r.Webhooks != nil && !r.Webhooks.IsEmpty() {
+		if err := r.Webhooks.Validate(); err != nil {
+			return fmt.Errorf("invalid Webhooks: %w", err)
+		}
+	}
+
+	return nil
 }
 
 // PackageName returns a name valid to be used por go packages.

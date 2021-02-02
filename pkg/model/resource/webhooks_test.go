@@ -24,6 +24,19 @@ import (
 
 //nolint:dupl
 var _ = Describe("Webhooks", func() {
+	Context("Validate", func() {
+		It("should succeed for a valid Webhooks", func() {
+			Expect(Webhooks{WebhookVersion: v1}.Validate()).To(Succeed())
+		})
+
+		DescribeTable("should fail for invalid Webhooks",
+			func(webhooks Webhooks) { Expect(webhooks.Validate()).NotTo(Succeed()) },
+			// Ensure that the rest of the fields are valid to check each part
+			Entry("empty webhook version", Webhooks{}),
+			Entry("invalid webhook version", Webhooks{WebhookVersion: "1"}),
+		)
+	})
+
 	Context("Update", func() {
 		var webhook, other Webhooks
 

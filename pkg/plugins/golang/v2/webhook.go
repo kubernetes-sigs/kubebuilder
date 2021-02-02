@@ -24,6 +24,7 @@ import (
 	"github.com/spf13/pflag"
 
 	newconfig "sigs.k8s.io/kubebuilder/v3/pkg/config"
+	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/cmdutil"
@@ -35,6 +36,8 @@ type createWebhookSubcommand struct {
 	commandName string
 
 	options *Options
+
+	resource resource.Resource
 }
 
 var (
@@ -80,6 +83,9 @@ func (p *createWebhookSubcommand) InjectConfig(c newconfig.Config) {
 }
 
 func (p *createWebhookSubcommand) Run() error {
+	// Create the resource from the options
+	p.resource = p.options.NewResource(p.config)
+
 	return cmdutil.Run(p)
 }
 
@@ -88,15 +94,18 @@ func (p *createWebhookSubcommand) Validate() error {
 		return err
 	}
 
-	if !p.options.DoDefaulting && !p.options.DoValidation && !p.options.DoConversion {
+	if err := p.resource.Validate(); err != nil {
+		return err
+	}
+
+	if !p.resource.HasDefaultingWebhook() && !p.resource.HasValidationWebhook() && !p.resource.HasConversionWebhook() {
 		return fmt.Errorf("%s create webhook requires at least one of --defaulting,"+
 			" --programmatic-validation and --conversion to be true", p.commandName)
 	}
 
 	// check if resource exist to create webhook
-	if !p.config.HasResource(p.options.GVK()) {
-		return fmt.Errorf("%s create webhook requires an api with the group,"+
-			" kind and version provided", p.commandName)
+	if !p.config.HasResource(p.resource.GVK) {
+		return fmt.Errorf("%s create webhook requires a previously created API ", p.commandName)
 	}
 
 	return nil
@@ -109,9 +118,7 @@ func (p *createWebhookSubcommand) GetScaffolder() (cmdutil.Scaffolder, error) {
 		return nil, fmt.Errorf("unable to load boilerplate: %v", err)
 	}
 
-	// Create the resource from the options
-	res := p.options.NewResource(p.config)
-	return scaffolds.NewWebhookScaffolder(p.config, string(bp), res), nil
+	return scaffolds.NewWebhookScaffolder(p.config, string(bp), p.resource), nil
 }
 
 func (p *createWebhookSubcommand) PostScaffold() error {

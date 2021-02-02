@@ -29,6 +29,7 @@ import (
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model"
+	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	goPlugin "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds"
@@ -57,6 +58,8 @@ type createAPISubcommand struct {
 	pattern string
 
 	options *goPlugin.Options
+
+	resource resource.Resource
 
 	// Check if we have to scaffold resource and/or controller
 	resourceFlag   *pflag.Flag
@@ -140,23 +143,6 @@ func (p *createAPISubcommand) InjectConfig(c config.Config) {
 }
 
 func (p *createAPISubcommand) Run() error {
-	return cmdutil.Run(p)
-}
-
-func (p *createAPISubcommand) Validate() error {
-	if err := p.options.Validate(); err != nil {
-		return err
-	}
-
-	if p.options.Group == "" && p.options.Domain == "" {
-		return fmt.Errorf("can not have group and domain both empty")
-	}
-
-	// check if main.go is present in the root directory
-	if _, err := os.Stat(DefaultMainPath); os.IsNotExist(err) {
-		return fmt.Errorf("%s file should present in the root directory", DefaultMainPath)
-	}
-
 	// TODO: re-evaluate whether y/n input still makes sense. We should probably always
 	// scaffold the resource and controller.
 	reader := bufio.NewReader(os.Stdin)
@@ -169,23 +155,43 @@ func (p *createAPISubcommand) Validate() error {
 		p.options.DoController = util.YesNo(reader)
 	}
 
+	// Create the resource from the options
+	p.resource = p.options.NewResource(p.config)
+
+	return cmdutil.Run(p)
+}
+
+func (p *createAPISubcommand) Validate() error {
+	if err := p.options.Validate(); err != nil {
+		return err
+	}
+
+	if err := p.resource.Validate(); err != nil {
+		return err
+	}
+
+	// check if main.go is present in the root directory
+	if _, err := os.Stat(DefaultMainPath); os.IsNotExist(err) {
+		return fmt.Errorf("%s file should present in the root directory", DefaultMainPath)
+	}
+
 	// In case we want to scaffold a resource API we need to do some checks
-	if p.options.DoAPI {
+	if p.resource.HasAPI() {
 		// Check that resource doesn't exist or flag force was set
-		if res, err := p.config.GetResource(p.options.GVK()); err == nil && res.HasAPI() && !p.force {
+		if res, err := p.config.GetResource(p.resource.GVK); err == nil && res.HasAPI() && !p.force {
 			return errors.New("API resource already exists")
 		}
 
 		// Check that the provided group can be added to the project
-		if !p.config.IsMultiGroup() && p.config.ResourcesLength() != 0 && !p.config.HasGroup(p.options.Group) {
+		if !p.config.IsMultiGroup() && p.config.ResourcesLength() != 0 && !p.config.HasGroup(p.resource.Group) {
 			return fmt.Errorf("multiple groups are not allowed by default, " +
 				"to enable multi-group visit kubebuilder.io/migration/multi-group.html")
 		}
 
 		// Check CRDVersion against all other CRDVersions in p.config for compatibility.
-		if !p.config.IsCRDVersionCompatible(p.options.CRDVersion) {
+		if !p.config.IsCRDVersionCompatible(p.resource.API.CRDVersion) {
 			return fmt.Errorf("only one CRD version can be used for all resources, cannot add %q",
-				p.options.CRDVersion)
+				p.resource.API.CRDVersion)
 		}
 	}
 
@@ -210,9 +216,7 @@ func (p *createAPISubcommand) GetScaffolder() (cmdutil.Scaffolder, error) {
 		return nil, fmt.Errorf("unknown pattern %q", p.pattern)
 	}
 
-	// Create the resource from the options
-	res := p.options.NewResource(p.config)
-	return scaffolds.NewAPIScaffolder(p.config, string(bp), res, p.force, plugins), nil
+	return scaffolds.NewAPIScaffolder(p.config, string(bp), p.resource, p.force, plugins), nil
 }
 
 func (p *createAPISubcommand) PostScaffold() error {

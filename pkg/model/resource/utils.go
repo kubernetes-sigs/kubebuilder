@@ -17,11 +17,22 @@ limitations under the License.
 package resource
 
 import (
+	"fmt"
 	"path"
 	"strings"
 
 	"github.com/gobuffalo/flect"
 )
+
+// validateAPIVersion validates CRD or Webhook versions
+func validateAPIVersion(version string) error {
+	switch version {
+	case "v1beta1", "v1":
+		return nil
+	default:
+		return fmt.Errorf("API version must be one of: v1beta1, v1")
+	}
+}
 
 // safeImport returns a cleaned version of the provided string that can be used for imports
 func safeImport(unsafe string) string {

@@ -24,6 +24,19 @@ import (
 
 //nolint:dupl
 var _ = Describe("API", func() {
+	Context("Validate", func() {
+		It("should succeed for a valid API", func() {
+			Expect(API{CRDVersion: v1}.Validate()).To(Succeed())
+		})
+
+		DescribeTable("should fail for invalid APIs",
+			func(api API) { Expect(api.Validate()).NotTo(Succeed()) },
+			// Ensure that the rest of the fields are valid to check each part
+			Entry("empty CRD version", API{}),
+			Entry("invalid CRD version", API{CRDVersion: "1"}),
+		)
+	})
+
 	Context("Update", func() {
 		var api, other API
 

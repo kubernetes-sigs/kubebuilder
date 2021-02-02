@@ -25,6 +25,7 @@ import (
 	"github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
+	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	goPlugin "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds"
@@ -40,6 +41,8 @@ type createWebhookSubcommand struct {
 	commandName string
 
 	options *goPlugin.Options
+
+	resource resource.Resource
 
 	// force indicates that the resource should be created even if it already exists
 	force bool
@@ -92,6 +95,9 @@ func (p *createWebhookSubcommand) InjectConfig(c config.Config) {
 }
 
 func (p *createWebhookSubcommand) Run() error {
+	// Create the resource from the options
+	p.resource = p.options.NewResource(p.config)
+
 	return cmdutil.Run(p)
 }
 
@@ -100,22 +106,25 @@ func (p *createWebhookSubcommand) Validate() error {
 		return err
 	}
 
-	if !p.options.DoDefaulting && !p.options.DoValidation && !p.options.DoConversion {
+	if err := p.resource.Validate(); err != nil {
+		return err
+	}
+
+	if !p.resource.HasDefaultingWebhook() && !p.resource.HasValidationWebhook() && !p.resource.HasConversionWebhook() {
 		return fmt.Errorf("%s create webhook requires at least one of --defaulting,"+
 			" --programmatic-validation and --conversion to be true", p.commandName)
 	}
 
 	// check if resource exist to create webhook
-	if r, err := p.config.GetResource(p.options.GVK()); err != nil {
-		return fmt.Errorf("%s create webhook requires an api with the group,"+
-			" kind and version provided", p.commandName)
+	if r, err := p.config.GetResource(p.resource.GVK); err != nil {
+		return fmt.Errorf("%s create webhook requires a previously created API ", p.commandName)
 	} else if r.Webhooks != nil && !r.Webhooks.IsEmpty() && !p.force {
 		return errors.New("webhook resource already exists")
 	}
 
-	if !p.config.IsWebhookVersionCompatible(p.options.WebhookVersion) {
+	if !p.config.IsWebhookVersionCompatible(p.resource.Webhooks.WebhookVersion) {
 		return fmt.Errorf("only one webhook version can be used for all resources, cannot add %q",
-			p.options.WebhookVersion)
+			p.resource.Webhooks.WebhookVersion)
 	}
 
 	return nil
@@ -128,9 +137,7 @@ func (p *createWebhookSubcommand) GetScaffolder() (cmdutil.Scaffolder, error) {
 		return nil, fmt.Errorf("unable to load boilerplate: %v", err)
 	}
 
-	// Create the resource from the options
-	res := p.options.NewResource(p.config)
-	return scaffolds.NewWebhookScaffolder(p.config, string(bp), res, p.force), nil
+	return scaffolds.NewWebhookScaffolder(p.config, string(bp), p.resource, p.force), nil
 }
 
 func (p *createWebhookSubcommand) PostScaffold() error {
