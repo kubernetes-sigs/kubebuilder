@@ -18,7 +18,6 @@ package v2
 
 import (
 	"fmt"
-	"path"
 	"strings"
 
 	newconfig "sigs.k8s.io/kubebuilder/v3/pkg/config"
@@ -26,6 +25,8 @@ import (
 )
 
 const (
+	v1beta1 = "v1beta1"
+
 	groupPresent    = "group flag present but empty"
 	versionPresent  = "version flag present but empty"
 	kindPresent     = "kind flag present but empty"
@@ -76,11 +77,6 @@ type Options struct {
 	// Plural is the resource's kind plural form.
 	// Optional
 	Plural string
-
-	// CRDVersion is the CustomResourceDefinition API version that will be used for the resource.
-	CRDVersion string
-	// WebhookVersion is the {Validating,Mutating}WebhookConfiguration API version that will be used for the resource.
-	WebhookVersion string
 
 	// Namespaced is true if the resource should be namespaced.
 	Namespaced bool
@@ -135,39 +131,32 @@ func (opts Options) GVK() resource.GVK {
 
 // NewResource creates a new resource from the options
 func (opts Options) NewResource(c newconfig.Config) resource.Resource {
-	res := resource.Resource{
-		GVK:        opts.GVK(),
-		Path:       resource.APIPackagePath(c.GetRepository(), opts.Group, opts.Version, c.IsMultiGroup()),
-		Controller: opts.DoController,
-	}
+	options := make([]resource.Option, 0)
 
 	if opts.Plural != "" {
-		res.Plural = opts.Plural
-	} else {
-		// If not provided, compute a plural for for Kind
-		res.Plural = resource.RegularPlural(opts.Kind)
+		options = append(options, resource.WithPlural(opts.Plural))
 	}
+
+	options = append(options, resource.WithLocalPath(c.GetRepository(), c.IsMultiGroup()))
 
 	if opts.DoAPI {
-		res.API = &resource.API{
-			CRDVersion: opts.CRDVersion,
-			Namespaced: opts.Namespaced,
-		}
-	} else {
-		// Make sure that the pointer is not nil to prevent pointer dereference errors
-		res.API = &resource.API{}
+		options = append(options, resource.ScaffoldAPI(v1beta1), resource.WithScope(opts.Namespaced))
 	}
 
-	if opts.DoDefaulting || opts.DoValidation || opts.DoConversion {
-		res.Webhooks = &resource.Webhooks{
-			WebhookVersion: opts.WebhookVersion,
-			Defaulting:     opts.DoDefaulting,
-			Validation:     opts.DoValidation,
-			Conversion:     opts.DoConversion,
-		}
-	} else {
-		// Make sure that the pointer is not nil to prevent pointer dereference errors
-		res.Webhooks = &resource.Webhooks{}
+	if opts.DoController {
+		options = append(options, resource.ScaffoldController())
+	}
+
+	if opts.DoDefaulting {
+		options = append(options, resource.ScaffoldDefaultingWebhook(v1beta1))
+	}
+
+	if opts.DoValidation {
+		options = append(options, resource.ScaffoldValidationWebhook(v1beta1))
+	}
+
+	if opts.DoConversion {
+		options = append(options, resource.ScaffoldConversionWebhook(v1beta1))
 	}
 
 	// domain and path may need to be changed in case we are referring to a builtin core resource:
@@ -179,11 +168,13 @@ func (opts Options) NewResource(c newconfig.Config) resource.Resource {
 	if !opts.DoAPI {
 		if !c.HasResource(opts.GVK()) {
 			if domain, found := coreGroups[opts.Group]; found {
-				res.Domain = domain
-				res.Path = path.Join("k8s.io", "api", opts.Group, opts.Version)
+				opts.Domain = domain
+				options = append(options, resource.WithBuiltInPath())
 			}
 		}
 	}
+
+	res, _ := resource.New(opts.GVK(), options...)
 
 	return res
 }

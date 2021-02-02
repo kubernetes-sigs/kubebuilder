@@ -114,7 +114,6 @@ func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.options.DoAPI, "resource", true,
 		"if set, generate the resource without prompting the user")
 	p.resourceFlag = fs.Lookup("resource")
-	p.options.CRDVersion = "v1beta1"
 	fs.BoolVar(&p.options.Namespaced, "namespaced", true, "resource is namespaced")
 
 	fs.BoolVar(&p.options.DoController, "controller", true,

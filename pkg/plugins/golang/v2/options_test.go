@@ -75,13 +75,17 @@ var _ = Describe("Options", func() {
 					} else {
 						Expect(resource.Path).To(Equal(path.Join(cfg.GetRepository(), "api", options.Version)))
 					}
-					Expect(resource.API.CRDVersion).To(Equal(options.CRDVersion))
-					Expect(resource.API.Namespaced).To(Equal(options.Namespaced))
+					if options.DoAPI {
+						Expect(resource.API.CRDVersion).To(Equal(v1beta1))
+						Expect(resource.API.Namespaced).To(Equal(options.Namespaced))
+					}
 					Expect(resource.Controller).To(Equal(options.DoController))
-					Expect(resource.Webhooks.WebhookVersion).To(Equal(options.WebhookVersion))
-					Expect(resource.Webhooks.Defaulting).To(Equal(options.DoDefaulting))
-					Expect(resource.Webhooks.Validation).To(Equal(options.DoValidation))
-					Expect(resource.Webhooks.Conversion).To(Equal(options.DoConversion))
+					if options.DoDefaulting || options.DoValidation || options.DoConversion {
+						Expect(resource.Webhooks.WebhookVersion).To(Equal(v1beta1))
+						Expect(resource.Webhooks.Defaulting).To(Equal(options.DoDefaulting))
+						Expect(resource.Webhooks.Validation).To(Equal(options.DoValidation))
+						Expect(resource.Webhooks.Conversion).To(Equal(options.DoConversion))
+					}
 					Expect(resource.QualifiedGroup()).To(Equal(options.Group + "." + options.Domain))
 					Expect(resource.PackageName()).To(Equal(options.Group))
 					Expect(resource.ImportAlias()).To(Equal(options.Group + options.Version))
@@ -99,7 +103,6 @@ var _ = Describe("Options", func() {
 				Version:    "v1",
 				Kind:       "FirstMate",
 				DoAPI:      true,
-				CRDVersion: "v1beta1",
 				Namespaced: true,
 			}),
 			Entry("Controller", Options{
@@ -117,7 +120,6 @@ var _ = Describe("Options", func() {
 				DoDefaulting:   true,
 				DoValidation:   true,
 				DoConversion:   true,
-				WebhookVersion: "v1beta1",
 			}),
 		)
 

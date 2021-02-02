@@ -69,7 +69,6 @@ func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&p.options.Kind, "kind", "", "resource Kind")
 	fs.StringVar(&p.options.Plural, "resource", "", "resource irregular plural form")
 
-	p.options.WebhookVersion = "v1beta1"
 	fs.BoolVar(&p.options.DoDefaulting, "defaulting", false,
 		"if set, scaffold the defaulting webhook")
 	fs.BoolVar(&p.options.DoValidation, "programmatic-validation", false,
