@@ -47,6 +47,7 @@ type AdmiralReconciler struct {
 //+kubebuilder:rbac:groups=crew.testproject.org,resources=admirals,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=crew.testproject.org,resources=admirals/status,verbs=get;update;patch
 
+// SetupWithManager sets up the controller with the Manager.
 func (r *AdmiralReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	addon.Init()
 

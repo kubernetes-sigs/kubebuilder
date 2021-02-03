@@ -122,7 +122,7 @@ func (s *apiScaffolder) scaffold() error {
 		if err := machinery.NewScaffold(s.plugins...).Execute(
 			s.newUniverse(),
 			&controllers.SuiteTest{Force: s.force},
-			&controllers.Controller{Force: s.force},
+			&controllers.Controller{ControllerRuntimeVersion: ControllerRuntimeVersion, Force: s.force},
 		); err != nil {
 			return fmt.Errorf("error scaffolding controller: %v", err)
 		}

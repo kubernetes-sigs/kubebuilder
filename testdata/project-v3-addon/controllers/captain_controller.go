@@ -47,6 +47,7 @@ type CaptainReconciler struct {
 //+kubebuilder:rbac:groups=crew.testproject.org,resources=captains,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=crew.testproject.org,resources=captains/status,verbs=get;update;patch
 
+// SetupWithManager sets up the controller with the Manager.
 func (r *CaptainReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	addon.Init()
 
