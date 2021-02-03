@@ -80,7 +80,7 @@ import (
 // {{ .Resource.Kind }}Reconciler reconciles a {{ .Resource.Kind }} object
 type {{ .Resource.Kind }}Reconciler struct {
 	client.Client
-	Log logr.Logger
+	Log    logr.Logger
 	Scheme *runtime.Scheme
 }
 

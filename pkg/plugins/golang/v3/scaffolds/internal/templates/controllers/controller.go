@@ -64,11 +64,7 @@ func (f *Controller) SetTemplateDefaults() error {
 //nolint:lll
 const controllerTemplate = `{{ .Boilerplate }}
 
-{{if and .MultiGroup .Resource.Group }}
-package {{ .Resource.PackageName }}
-{{else}}
-package controllers
-{{end}}
+package {{ if and .MultiGroup .Resource.Group }}{{ .Resource.PackageName }}{{ else }}controllers{{ end }}
 
 import (
 	"context"
@@ -84,7 +80,7 @@ import (
 // {{ .Resource.Kind }}Reconciler reconciles a {{ .Resource.Kind }} object
 type {{ .Resource.Kind }}Reconciler struct {
 	client.Client
-	Log logr.Logger
+	Log    logr.Logger
 	Scheme *runtime.Scheme
 }
 
