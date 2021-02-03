@@ -47,7 +47,7 @@ import (
 	"sigs.k8s.io/kubebuilder-declarative-pattern/pkg/patterns/addon/pkg/status"
 	"sigs.k8s.io/kubebuilder-declarative-pattern/pkg/patterns/declarative"
 
-	api "{{ .Resource.Path }}"
+	{{ .Resource.ImportAlias }} "{{ .Resource.Path }}"
 )
 
 var _ reconcile.Reconciler = &{{ .Resource.Kind }}Reconciler{}
@@ -69,12 +69,12 @@ func (r *{{ .Resource.Kind }}Reconciler) SetupWithManager(mgr ctrl.Manager) erro
 	addon.Init()
 
 	labels := map[string]string{
-		"k8s-app": "{{ .Resource.Kind | lower }}",
+		"k8s-app": "{{ lower .Resource.Kind }}",
 	}
 
 	watchLabels := declarative.SourceLabel(mgr.GetScheme())
 
-	if err := r.Reconciler.Init(mgr, &api.{{ .Resource.Kind }}{},
+	if err := r.Reconciler.Init(mgr, &{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{},
 		declarative.WithObjectTransform(declarative.AddLabels(labels)),
 		declarative.WithOwner(declarative.SourceAsOwner),
 		declarative.WithLabels(watchLabels),
@@ -86,13 +86,13 @@ func (r *{{ .Resource.Kind }}Reconciler) SetupWithManager(mgr ctrl.Manager) erro
 		return err
 	}
 
-	c, err := controller.New("{{ .Resource.Kind | lower }}-controller", mgr, controller.Options{Reconciler: r})
+	c, err := controller.New("{{ lower .Resource.Kind }}-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
 		return err
 	}
 
 	// Watch for changes to {{ .Resource.Kind }}
-	err = c.Watch(&source.Kind{Type: &api.{{ .Resource.Kind }}{}}, &handler.EnqueueRequestForObject{})
+	err = c.Watch(&source.Kind{Type: &{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}

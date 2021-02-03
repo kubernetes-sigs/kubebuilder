@@ -29,7 +29,7 @@ import (
 	"sigs.k8s.io/kubebuilder-declarative-pattern/pkg/patterns/addon/pkg/status"
 	"sigs.k8s.io/kubebuilder-declarative-pattern/pkg/patterns/declarative"
 
-	api "sigs.k8s.io/kubebuilder/testdata/project-v3-addon/api/v1"
+	crewv1 "sigs.k8s.io/kubebuilder/testdata/project-v3-addon/api/v1"
 )
 
 var _ reconcile.Reconciler = &CaptainReconciler{}
@@ -56,7 +56,7 @@ func (r *CaptainReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 	watchLabels := declarative.SourceLabel(mgr.GetScheme())
 
-	if err := r.Reconciler.Init(mgr, &api.Captain{},
+	if err := r.Reconciler.Init(mgr, &crewv1.Captain{},
 		declarative.WithObjectTransform(declarative.AddLabels(labels)),
 		declarative.WithOwner(declarative.SourceAsOwner),
 		declarative.WithLabels(watchLabels),
@@ -74,7 +74,7 @@ func (r *CaptainReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	// Watch for changes to Captain
-	err = c.Watch(&source.Kind{Type: &api.Captain{}}, &handler.EnqueueRequestForObject{})
+	err = c.Watch(&source.Kind{Type: &crewv1.Captain{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
