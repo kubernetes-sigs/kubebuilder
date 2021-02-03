@@ -57,8 +57,8 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// {{.Resource.Kind}}Spec defines the desired state of {{.Resource.Kind}}
-type {{.Resource.Kind}}Spec struct {
+// {{ .Resource.Kind }}Spec defines the desired state of {{ .Resource.Kind }}
+type {{ .Resource.Kind }}Spec struct {
 	addonv1alpha1.CommonSpec {{ JSONTag ",inline" }}
 	addonv1alpha1.PatchSpec  {{ JSONTag ",inline" }}
 
@@ -80,7 +80,7 @@ type {{ .Resource.Kind }}Status struct {
 //+kubebuilder:resource:scope=Cluster
 {{- end }}
 
-// {{.Resource.Kind}} is the Schema for the {{ .Resource.Plural }} API
+// {{ .Resource.Kind }} is the Schema for the {{ .Resource.Plural }} API
 type {{ .Resource.Kind }} struct {
 	metav1.TypeMeta   ` + "`" + `json:",inline"` + "`" + `
 	metav1.ObjectMeta ` + "`" + `json:"metadata,omitempty"` + "`" + `
@@ -92,7 +92,7 @@ type {{ .Resource.Kind }} struct {
 var _ addonv1alpha1.CommonObject = &{{ .Resource.Kind }}{}
 
 func (o *{{ .Resource.Kind }}) ComponentName() string {
-	return "{{ .Resource.Kind | lower }}"
+	return "{{ lower .Resource.Kind }}"
 }
 
 func (o *{{ .Resource.Kind }}) CommonSpec() addonv1alpha1.CommonSpec {
@@ -112,7 +112,6 @@ func (o *{{ .Resource.Kind }}) SetCommonStatus(s addonv1alpha1.CommonStatus) {
 }
 
 //+kubebuilder:object:root=true
-{{ if not .Resource.API.Namespaced }} //+kubebuilder:resource:scope=Cluster {{ end }}
 
 // {{ .Resource.Kind }}List contains a list of {{ .Resource.Kind }}
 type {{ .Resource.Kind }}List struct {
