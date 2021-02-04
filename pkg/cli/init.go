@@ -17,8 +17,8 @@ limitations under the License.
 package cli
 
 import (
+	"errors"
 	"fmt"
-	"log"
 	"os"
 	"sort"
 	"strconv"
@@ -26,8 +26,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	internalconfig "sigs.k8s.io/kubebuilder/v3/pkg/cli/internal/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
+	yamlstore "sigs.k8s.io/kubebuilder/v3/pkg/config/store/yaml"
 	cfgv2 "sigs.k8s.io/kubebuilder/v3/pkg/config/v2"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 )
@@ -136,28 +136,28 @@ func (c CLI) bindInit(ctx plugin.Context, cmd *cobra.Command) {
 		return
 	}
 
-	cfg, err := internalconfig.New(c.projectVersion, internalconfig.DefaultPath)
-	if err != nil {
-		cmdErr(cmd, fmt.Errorf("unable to initialize the project configuration: %w", err))
-		return
-	}
-
 	subcommand := initPlugin.GetInitSubcommand()
-	subcommand.InjectConfig(cfg.Config)
 	subcommand.BindFlags(cmd.Flags())
 	subcommand.UpdateContext(&ctx)
 	cmd.Long = ctx.Description
 	cmd.Example = ctx.Examples
-	cmd.RunE = func(*cobra.Command, []string) error {
-		// Check if a config is initialized in the command runner so the check
-		// doesn't erroneously fail other commands used in initialized projects.
-		_, err := internalconfig.Read()
-		if err == nil || os.IsExist(err) {
-			log.Fatal("config already initialized")
+
+	cfg := yamlstore.New(c.fs)
+	msg := fmt.Sprintf("failed to initialize project with %q", plugin.KeyFor(initPlugin))
+	cmd.PreRunE = func(*cobra.Command, []string) error {
+		// Check if a config is initialized.
+		if err := cfg.Load(); err == nil || !errors.Is(err, os.ErrNotExist) {
+			return fmt.Errorf("%s: already initialized", msg)
 		}
-		if err := subcommand.Run(); err != nil {
-			return fmt.Errorf("failed to initialize project with %q: %v", plugin.KeyFor(initPlugin), err)
+
+		err := cfg.New(c.projectVersion)
+		if err != nil {
+			return fmt.Errorf("%s: error initializing project configuration: %w", msg, err)
 		}
-		return cfg.Save()
+
+		subcommand.InjectConfig(cfg.Config())
+		return nil
 	}
+	cmd.RunE = runECmdFunc(c.fs, subcommand, msg)
+	cmd.PostRunE = postRunECmdFunc(cfg, msg)
 }

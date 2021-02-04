@@ -20,11 +20,10 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
-	"path/filepath"
 	"strings"
 
+	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
@@ -121,7 +120,6 @@ func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 
 	p.options = &goPlugin.Options{}
 	fs.StringVar(&p.options.Group, "group", "", "resource Group")
-	p.options.Domain = p.config.GetDomain()
 	fs.StringVar(&p.options.Version, "version", "", "resource Version")
 	fs.StringVar(&p.options.Kind, "kind", "", "resource Kind")
 	fs.StringVar(&p.options.Plural, "plural", "", "resource irregular plural form")
@@ -140,9 +138,12 @@ func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 
 func (p *createAPISubcommand) InjectConfig(c config.Config) {
 	p.config = c
+
+	// TODO: offer a flag instead of hard-coding the project-wide domain
+	p.options.Domain = c.GetDomain()
 }
 
-func (p *createAPISubcommand) Run() error {
+func (p *createAPISubcommand) Run(fs afero.Fs) error {
 	// TODO: re-evaluate whether y/n input still makes sense. We should probably always
 	// scaffold the resource and controller.
 	reader := bufio.NewReader(os.Stdin)
@@ -158,7 +159,7 @@ func (p *createAPISubcommand) Run() error {
 	// Create the resource from the options
 	p.resource = p.options.NewResource(p.config)
 
-	return cmdutil.Run(p)
+	return cmdutil.Run(p, fs)
 }
 
 func (p *createAPISubcommand) Validate() error {
@@ -199,12 +200,6 @@ func (p *createAPISubcommand) Validate() error {
 }
 
 func (p *createAPISubcommand) GetScaffolder() (cmdutil.Scaffolder, error) {
-	// Load the boilerplate
-	bp, err := ioutil.ReadFile(filepath.Join("hack", "boilerplate.go.txt")) // nolint:gosec
-	if err != nil {
-		return nil, fmt.Errorf("unable to load boilerplate: %v", err)
-	}
-
 	// Load the requested plugins
 	plugins := make([]model.Plugin, 0)
 	switch strings.ToLower(p.pattern) {
@@ -216,7 +211,7 @@ func (p *createAPISubcommand) GetScaffolder() (cmdutil.Scaffolder, error) {
 		return nil, fmt.Errorf("unknown pattern %q", p.pattern)
 	}
 
-	return scaffolds.NewAPIScaffolder(p.config, string(bp), p.resource, p.force, plugins), nil
+	return scaffolds.NewAPIScaffolder(p.config, p.resource, p.force, plugins), nil
 }
 
 func (p *createAPISubcommand) PostScaffold() error {

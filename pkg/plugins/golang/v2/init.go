@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
@@ -96,9 +97,7 @@ func (p *initSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&p.domain, "domain", "my.domain", "domain for groups")
 	fs.StringVar(&p.repo, "repo", "", "name to use for go module (e.g., github.com/user/repo), "+
 		"defaults to the go package of the current working directory.")
-	if p.config.GetVersion().Compare(cfgv2.Version) > 0 {
-		fs.StringVar(&p.name, "project-name", "", "name of this project")
-	}
+	fs.StringVar(&p.name, "project-name", "", "name of this project")
 }
 
 func (p *initSubcommand) InjectConfig(c config.Config) {
@@ -110,8 +109,8 @@ func (p *initSubcommand) InjectConfig(c config.Config) {
 	p.config = c
 }
 
-func (p *initSubcommand) Run() error {
-	return cmdutil.Run(p)
+func (p *initSubcommand) Run(fs afero.Fs) error {
+	return cmdutil.Run(p, fs)
 }
 
 func (p *initSubcommand) Validate() error {

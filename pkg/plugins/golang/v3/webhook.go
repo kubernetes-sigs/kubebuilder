@@ -18,9 +18,8 @@ package v3
 
 import (
 	"fmt"
-	"io/ioutil"
-	"path/filepath"
 
+	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
@@ -72,7 +71,6 @@ validating and (or) conversion webhooks.
 func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
 	p.options = &goPlugin.Options{}
 	fs.StringVar(&p.options.Group, "group", "", "resource Group")
-	p.options.Domain = p.config.GetDomain()
 	fs.StringVar(&p.options.Version, "version", "", "resource Version")
 	fs.StringVar(&p.options.Kind, "kind", "", "resource Kind")
 	fs.StringVar(&p.options.Plural, "plural", "", "resource irregular plural form")
@@ -92,13 +90,16 @@ func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
 
 func (p *createWebhookSubcommand) InjectConfig(c config.Config) {
 	p.config = c
+
+	// TODO: offer a flag instead of hard-coding the project-wide domain
+	p.options.Domain = c.GetDomain()
 }
 
-func (p *createWebhookSubcommand) Run() error {
+func (p *createWebhookSubcommand) Run(fs afero.Fs) error {
 	// Create the resource from the options
 	p.resource = p.options.NewResource(p.config)
 
-	return cmdutil.Run(p)
+	return cmdutil.Run(p, fs)
 }
 
 func (p *createWebhookSubcommand) Validate() error {
@@ -131,13 +132,7 @@ func (p *createWebhookSubcommand) Validate() error {
 }
 
 func (p *createWebhookSubcommand) GetScaffolder() (cmdutil.Scaffolder, error) {
-	// Load the boilerplate
-	bp, err := ioutil.ReadFile(filepath.Join("hack", "boilerplate.go.txt")) // nolint:gosec
-	if err != nil {
-		return nil, fmt.Errorf("unable to load boilerplate: %v", err)
-	}
-
-	return scaffolds.NewWebhookScaffolder(p.config, string(bp), p.resource, p.force), nil
+	return scaffolds.NewWebhookScaffolder(p.config, p.resource, p.force), nil
 }
 
 func (p *createWebhookSubcommand) PostScaffold() error {
