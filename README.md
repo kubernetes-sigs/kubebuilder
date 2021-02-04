@@ -15,6 +15,8 @@ GCP Cloud Build watches this branch.  On every push, it runs the pipeline define
 
 - `_GOARCH=amd64 _GOOS=darwin`
 - `_GOARCH=amd64 _GOOS=linux`
+- `_GOARCH=arm64 _GOOS=linux`
+- `_GOARCH=ppc64le _GOOS=linux`
 
 (we may add more the in the future).
 

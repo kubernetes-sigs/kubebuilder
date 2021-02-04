@@ -13,45 +13,54 @@
 #  limitations under the License.
 
 # Build or fetch the following binaries for darwin and then host them in a tar.gz file in an alpine image
-# - apiserver (build)
+# - kube-apiserver (build)
 # - kubectl (fetch)
 # - etcd (fetch)
 
-FROM golang:1.15 as darwin
-# Install tools
-ENV CGO 0
-ENV DEST /usr/local/kubebuilder/bin/
+FROM golang:1.15 as builder
 
+# Version and platform args.
+ARG KUBERNETES_VERSION
+ARG ETCD_VERSION=v3.4.9
+ARG OS=darwin
+ARG ARCH
+
+# Tools path.
+ENV DEST=/usr/local/kubebuilder/bin/
+
+# Install dependencies.
 RUN apt update && \
-    apt install rsync -y && \
-    apt-get install unzip && \
-    go get github.com/jteeuwen/go-bindata/go-bindata && \
-    ( mkdir -p $DEST || echo "" )
+    apt install unzip rsync -y && \
+    mkdir -p $DEST
 
-RUN git clone https://github.com/kubernetes/kubernetes $GOPATH/src/k8s.io/kubernetes --depth=1 -b v1.20.2
-
-WORKDIR /go/src/k8s.io/kubernetes
-
-# Build for linux first otherwise it won't work for darwin - :(
-ENV KUBE_BUILD_PLATFORMS linux/amd64
-RUN make WHAT=cmd/kube-apiserver
-ENV KUBE_BUILD_PLATFORMS darwin/amd64
+# kube-apiserver
+WORKDIR /kubernetes
+RUN git clone https://github.com/kubernetes/kubernetes . --depth=1 -b ${KUBERNETES_VERSION}
+ENV CGO_ENABLED=0
+ENV KUBE_BUILD_PLATFORMS=${OS}/${ARCH}
 RUN make WHAT=cmd/kube-apiserver && \
-    cp _output/local/bin/$KUBE_BUILD_PLATFORMS/kube-apiserver $DEST
+    cp _output/local/bin/${KUBE_BUILD_PLATFORMS}/kube-apiserver $DEST
 
-RUN curl -sLO https://storage.googleapis.com/kubernetes-release/release/v1.20.2/bin/darwin/amd64/kubectl && \
+# kubectl
+RUN curl -sLO https://storage.googleapis.com/kubernetes-release/release/${KUBERNETES_VERSION}/bin/${OS}/${ARCH}/kubectl && \
     chmod +x kubectl && \
     cp kubectl $DEST
 
-ENV ETCD_VERSION="3.4.9"
-ENV ETCD_DOWNLOAD_FILE="etcd-v${ETCD_VERSION}-darwin-amd64.zip"
-RUN curl -sLO https://github.com/coreos/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-darwin-amd64.zip -o ${ETCD_DOWNLOAD_FILE} && \
-    unzip -o ${ETCD_DOWNLOAD_FILE} && \
-    cp etcd-v${ETCD_VERSION}-darwin-amd64/etcd $DEST
+# etcd
+ENV ETCD_BASE_NAME=etcd-${ETCD_VERSION}-${OS}-${ARCH}
+RUN curl -sLO https://github.com/coreos/etcd/releases/download/${ETCD_VERSION}/${ETCD_BASE_NAME}.zip && \
+    unzip -o ${ETCD_BASE_NAME}.zip && \
+    cp ${ETCD_BASE_NAME}/etcd $DEST
 
+# Package into tarball.
 WORKDIR /usr/local
-RUN tar -czvf /kubebuilder_darwin_amd64.tar.gz kubebuilder/
+RUN tar -czvf /kubebuilder_${OS}_${ARCH}.tar.gz kubebuilder/
 
-# Host the tar.gz file in a thin image
+# Copy tarball to final image.
 FROM alpine:3.8
-COPY --from=darwin /kubebuilder_darwin_amd64.tar.gz /kubebuilder_darwin_amd64.tar.gz
+
+# Platform args.
+ARG OS=darwin
+ARG ARCH
+
+COPY --from=builder /kubebuilder_${OS}_${ARCH}.tar.gz /

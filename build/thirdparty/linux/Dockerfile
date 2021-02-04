@@ -13,34 +13,52 @@
 #  limitations under the License.
 
 # Fetch the following into binaries for linux and then host them in a tar.gz file in an alpine image
-# - apiserver (fetch)
+# - kube-apiserver (fetch)
 # - kubectl (fetch)
 # - etcd (fetch)
 
 # no need for anything fancy
-FROM alpine:3.8 as linux
-# Install tools
-ENV DEST /usr/local/kubebuilder/bin/
+FROM alpine:3.8 as builder
 
+# Version and platform args.
+ARG KUBERNETES_VERSION
+ARG ETCD_VERSION=v3.4.9
+ARG OS=linux
+ARG ARCH
+
+# Tools path.
+ENV DEST=/usr/local/kubebuilder/bin/
+
+# Install dependencies.
 RUN apk add --no-cache curl && \
-    mkdir -p $DEST || echo ""
+    mkdir -p $DEST
 
-RUN curl -sLO https://storage.googleapis.com/kubernetes-release/release/v1.20.2/bin/linux/amd64/kubectl && \
+# kube-apiserver
+ENV K8S_SERVER_BASE_NAME=kubernetes-server-${OS}-${ARCH}
+RUN curl -sLO https://dl.k8s.io/${KUBERNETES_VERSION}/${K8S_SERVER_BASE_NAME}.tar.gz && \
+    tar xzf ${K8S_SERVER_BASE_NAME}.tar.gz && \
+    cp kubernetes/server/bin/kube-apiserver $DEST
+
+# kubectl
+RUN curl -sLO https://storage.googleapis.com/kubernetes-release/release/${KUBERNETES_VERSION}/bin/${OS}/${ARCH}/kubectl && \
     chmod +x kubectl && \
     cp kubectl $DEST
 
-RUN curl -sLO https://dl.k8s.io/v1.20.2/kubernetes-server-linux-amd64.tar.gz && \
-    tar xzf kubernetes-server-linux-amd64.tar.gz && \
-    cp kubernetes/server/bin/kube-apiserver $DEST
+# etcd
+ENV ETCD_BASE_NAME=etcd-${ETCD_VERSION}-${OS}-${ARCH}
+RUN curl -sLO https://github.com/coreos/etcd/releases/download/${ETCD_VERSION}/${ETCD_BASE_NAME}.tar.gz && \
+    tar xzf ${ETCD_BASE_NAME}.tar.gz && \
+    cp ${ETCD_BASE_NAME}/etcd $DEST
 
-ENV ETCD_VERSION="3.4.9"
-ENV ETCD_DOWNLOAD_FILE="etcd-v${ETCD_VERSION}-linux-amd64.tar.gz"
-RUN curl -sLO https://github.com/coreos/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-amd64.tar.gz -o ${ETCD_DOWNLOAD_FILE} && \
-    tar xzf ${ETCD_DOWNLOAD_FILE} && \
-    cp etcd-v${ETCD_VERSION}-linux-amd64/etcd $DEST
-
+# Package into tarball.
 WORKDIR /usr/local
-RUN tar -czvf /kubebuilder_linux_amd64.tar.gz kubebuilder/
+RUN tar -czvf /kubebuilder_${OS}_${ARCH}.tar.gz kubebuilder/
 
+# Copy tarball to final image.
 FROM alpine:3.8
-COPY --from=linux /kubebuilder_linux_amd64.tar.gz /kubebuilder_linux_amd64.tar.gz
+
+# Platform args.
+ARG OS=linux
+ARG ARCH
+
+COPY --from=builder /kubebuilder_${OS}_${ARCH}.tar.gz /
