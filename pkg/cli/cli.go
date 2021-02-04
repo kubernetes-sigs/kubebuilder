@@ -17,6 +17,7 @@ limitations under the License.
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -25,8 +26,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	internalconfig "sigs.k8s.io/kubebuilder/v3/pkg/cli/internal/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
+	yamlstore "sigs.k8s.io/kubebuilder/v3/pkg/config/store/yaml"
 	cfgv3 "sigs.k8s.io/kubebuilder/v3/pkg/config/v3"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 )
@@ -196,18 +197,19 @@ func (c *cli) getInfoFromFlags() (string, []string, error) {
 }
 
 // getInfoFromConfigFile obtains the project version and plugin keys from the project config file.
-func getInfoFromConfigFile() (config.Version, []string, error) {
+func (c cli) getInfoFromConfigFile() (config.Version, []string, error) {
 	// Read the project configuration file
-	projectConfig, err := internalconfig.Read()
+	cfg := yamlstore.New(c.fs)
+	err := cfg.Load()
 	switch {
 	case err == nil:
-	case os.IsNotExist(err):
+	case errors.Is(err, os.ErrNotExist):
 		return config.Version{}, nil, nil
 	default:
 		return config.Version{}, nil, err
 	}
 
-	return getInfoFromConfig(projectConfig)
+	return getInfoFromConfig(cfg.Config())
 }
 
 // getInfoFromConfig obtains the project version and plugin keys from the project config.
@@ -302,7 +304,7 @@ func (c *cli) getInfo() error {
 		return err
 	}
 	// Get project version and plugin info from project configuration file
-	cfgProjectVersion, cfgPlugins, _ := getInfoFromConfigFile()
+	cfgProjectVersion, cfgPlugins, _ := c.getInfoFromConfigFile()
 	// We discard the error because not being able to read a project configuration file
 	// is not fatal for some commands. The ones that require it need to check its existence.
 

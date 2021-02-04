@@ -96,9 +96,7 @@ func (p *initSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&p.domain, "domain", "my.domain", "domain for groups")
 	fs.StringVar(&p.repo, "repo", "", "name to use for go module (e.g., github.com/user/repo), "+
 		"defaults to the go package of the current working directory.")
-	if p.config.GetVersion().Compare(cfgv2.Version) > 0 {
-		fs.StringVar(&p.name, "project-name", "", "name of this project")
-	}
+	fs.StringVar(&p.name, "project-name", "", "name of this project")
 }
 
 func (p *initSubcommand) InjectConfig(c config.Config) {

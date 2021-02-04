@@ -22,7 +22,7 @@ import (
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
 
-	newconfig "sigs.k8s.io/kubebuilder/v3/pkg/config"
+	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	cfgv2 "sigs.k8s.io/kubebuilder/v3/pkg/config/v2"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
@@ -31,7 +31,7 @@ import (
 )
 
 type createWebhookSubcommand struct {
-	config newconfig.Config
+	config config.Config
 	// For help text.
 	commandName string
 
@@ -64,7 +64,6 @@ validating and (or) conversion webhooks.
 func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
 	p.options = &Options{}
 	fs.StringVar(&p.options.Group, "group", "", "resource Group")
-	p.options.Domain = p.config.GetDomain()
 	fs.StringVar(&p.options.Version, "version", "", "resource Version")
 	fs.StringVar(&p.options.Kind, "kind", "", "resource Kind")
 	fs.StringVar(&p.options.Plural, "resource", "", "resource irregular plural form")
@@ -78,8 +77,10 @@ func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
 		"if set, scaffold the conversion webhook")
 }
 
-func (p *createWebhookSubcommand) InjectConfig(c newconfig.Config) {
+func (p *createWebhookSubcommand) InjectConfig(c config.Config) {
 	p.config = c
+
+	p.options.Domain = c.GetDomain()
 }
 
 func (p *createWebhookSubcommand) Run(fs afero.Fs) error {
