@@ -89,7 +89,7 @@ func (c cli) getPluginTable() string {
 		maxPluginKeyLength      = len(pluginKeysHeader)
 		pluginKeys              = make([]string, 0, len(c.plugins))
 		maxProjectVersionLength = len(projectVersionsHeader)
-		projectVersions         = make([]string, 0, len(c.plugins))
+		projectVersions         = make(map[string]string, len(c.plugins))
 	)
 
 	for pluginKey, plugin := range c.plugins {
@@ -106,7 +106,7 @@ func (c cli) getPluginTable() string {
 		if len(supportedProjectVersionsStr) > maxProjectVersionLength {
 			maxProjectVersionLength = len(supportedProjectVersionsStr)
 		}
-		projectVersions = append(projectVersions, supportedProjectVersionsStr)
+		projectVersions[pluginKey] = supportedProjectVersionsStr
 	}
 
 	lines := make([]string, 0, len(c.plugins)+2)
@@ -116,8 +116,8 @@ func (c cli) getPluginTable() string {
 		strings.Repeat("-", maxProjectVersionLength+2))
 
 	sort.Strings(pluginKeys)
-	for i, pluginKey := range pluginKeys {
-		supportedProjectVersions := projectVersions[i]
+	for _, pluginKey := range pluginKeys {
+		supportedProjectVersions := projectVersions[pluginKey]
 		lines = append(lines, fmt.Sprintf(" %[1]*[2]s | %[3]*[4]s",
 			maxPluginKeyLength, pluginKey, maxProjectVersionLength, supportedProjectVersions))
 	}
