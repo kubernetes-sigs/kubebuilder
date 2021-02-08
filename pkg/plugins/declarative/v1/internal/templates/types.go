@@ -21,18 +21,18 @@ import (
 	"path/filepath"
 	"text/template"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
-var _ file.Template = &Types{}
+var _ machinery.Template = &Types{}
 
 // Types scaffolds the file that defines the schema for a CRD
 // nolint:maligned
 type Types struct {
-	file.TemplateMixin
-	file.MultiGroupMixin
-	file.BoilerplateMixin
-	file.ResourceMixin
+	machinery.TemplateMixin
+	machinery.MultiGroupMixin
+	machinery.BoilerplateMixin
+	machinery.ResourceMixin
 }
 
 // SetTemplateDefaults implements file.Template
@@ -48,14 +48,14 @@ func (f *Types) SetTemplateDefaults() error {
 
 	f.TemplateBody = typesTemplate
 
-	f.IfExistsAction = file.Overwrite
+	f.IfExistsAction = machinery.OverwriteFile
 
 	return nil
 }
 
 // GetFuncMap implements file.UseCustomFuncMap
 func (f Types) GetFuncMap() template.FuncMap {
-	funcMap := file.DefaultFuncMap()
+	funcMap := machinery.DefaultFuncMap()
 	funcMap["JSONTag"] = func(tag string) string {
 		return fmt.Sprintf("`json:%q`", tag)
 	}

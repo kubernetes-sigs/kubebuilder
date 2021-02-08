@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package file
+package machinery
 
 import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
@@ -64,7 +64,7 @@ type InserterMixin struct {
 // GetIfExistsAction implements Builder
 func (t *InserterMixin) GetIfExistsAction() IfExistsAction {
 	// Inserter builders always need to overwrite previous files
-	return Overwrite
+	return OverwriteFile
 }
 
 // DomainMixin provides templates with a injectable domain field
@@ -90,6 +90,18 @@ type RepositoryMixin struct {
 func (m *RepositoryMixin) InjectRepository(repository string) {
 	if m.Repo == "" {
 		m.Repo = repository
+	}
+}
+
+// ProjectNameMixin provides templates with an injectable project name field.
+type ProjectNameMixin struct {
+	ProjectName string
+}
+
+// InjectProjectName implements HasProjectName.
+func (m *ProjectNameMixin) InjectProjectName(projectName string) {
+	if m.ProjectName == "" {
+		m.ProjectName = projectName
 	}
 }
 
@@ -137,17 +149,5 @@ type ResourceMixin struct {
 func (m *ResourceMixin) InjectResource(res *resource.Resource) {
 	if m.Resource == nil {
 		m.Resource = res
-	}
-}
-
-// ProjectNameMixin provides templates with an injectable project name field.
-type ProjectNameMixin struct {
-	ProjectName string
-}
-
-// InjectProjectName implements HasProjectName.
-func (m *ProjectNameMixin) InjectProjectName(projectName string) {
-	if m.ProjectName == "" {
-		m.ProjectName = projectName
 	}
 }

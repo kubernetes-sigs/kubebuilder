@@ -24,13 +24,12 @@ import (
 	"github.com/spf13/afero"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery/util"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/declarative/v1/internal/templates"
 	goPluginV3 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/machinery"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/util"
 )
 
 const (
@@ -78,12 +77,14 @@ func (p *createAPISubcommand) Scaffold(fs afero.Fs) error {
 	}
 	boilerplate := string(bp)
 
-	if err := machinery.NewScaffold(fs).Execute(
-		model.NewUniverse(
-			model.WithConfig(p.config),
-			model.WithBoilerplate(boilerplate),
-			model.WithResource(p.resource),
-		),
+	// Initialize the machinery.Scaffold that will write the files to disk
+	scaffold := machinery.NewScaffold(fs,
+		machinery.WithConfig(p.config),
+		machinery.WithBoilerplate(boilerplate),
+		machinery.WithResource(p.resource),
+	)
+
+	if err := scaffold.Execute(
 		&templates.Types{},
 		&templates.Controller{},
 		&templates.Channel{ManifestVersion: exampleManifestVersion},

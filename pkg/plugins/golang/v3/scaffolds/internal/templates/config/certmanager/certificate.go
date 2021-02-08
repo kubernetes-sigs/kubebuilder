@@ -19,14 +19,14 @@ package certmanager
 import (
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
-var _ file.Template = &Certificate{}
+var _ machinery.Template = &Certificate{}
 
 // Certificate scaffolds a file that defines the issuer CR and the certificate CR
 type Certificate struct {
-	file.TemplateMixin
+	machinery.TemplateMixin
 }
 
 // SetTemplateDefaults implements file.Template

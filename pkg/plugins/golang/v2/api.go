@@ -26,22 +26,17 @@ import (
 	"github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery/util"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	goPlugin "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/util"
-	"sigs.k8s.io/kubebuilder/v3/plugins/addon"
 )
 
 var _ plugin.CreateAPISubcommand = &createAPISubcommand{}
 
 type createAPISubcommand struct {
 	config config.Config
-
-	// pattern indicates that we should use a plugin to build according to a pattern
-	pattern string
 
 	options *goPlugin.Options
 
@@ -89,11 +84,6 @@ After the scaffold is written, api will run make on the project.
 
 func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.runMake, "make", true, "if true, run `make generate` after generating files")
-
-	if os.Getenv("KUBEBUILDER_ENABLE_PLUGINS") != "" {
-		fs.StringVar(&p.pattern, "pattern", "",
-			"generates an API following an extension pattern (addon)")
-	}
 
 	fs.BoolVar(&p.force, "force", false,
 		"attempt to create resource even if it already exists")
@@ -158,38 +148,12 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 }
 
 func (p *createAPISubcommand) Scaffold(fs afero.Fs) error {
-	// Load the requested plugins
-	plugins := make([]model.Plugin, 0)
-	switch strings.ToLower(p.pattern) {
-	case "":
-		// Default pattern
-	case "addon":
-		plugins = append(plugins, &addon.Plugin{})
-	default:
-		return fmt.Errorf("unknown pattern %q", p.pattern)
-	}
-
-	scaffolder := scaffolds.NewAPIScaffolder(p.config, *p.resource, p.force, plugins)
+	scaffolder := scaffolds.NewAPIScaffolder(p.config, *p.resource, p.force)
 	scaffolder.InjectFS(fs)
 	return scaffolder.Scaffold()
 }
 
 func (p *createAPISubcommand) PostScaffold() error {
-	// Load the requested plugins
-	switch strings.ToLower(p.pattern) {
-	case "":
-		// Default pattern
-	case "addon":
-		// Ensure that we are pinning sigs.k8s.io/kubebuilder-declarative-pattern version
-		err := util.RunCmd("Get controller runtime", "go", "get",
-			"sigs.k8s.io/kubebuilder-declarative-pattern@"+scaffolds.KbDeclarativePattern)
-		if err != nil {
-			return err
-		}
-	default:
-		return fmt.Errorf("unknown pattern %q", p.pattern)
-	}
-
 	err := util.RunCmd("Update dependencies", "go", "mod", "tidy")
 	if err != nil {
 		return err

@@ -19,14 +19,14 @@ package kdefault
 import (
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
-var _ file.Template = &ManagerWebhookPatch{}
+var _ machinery.Template = &ManagerWebhookPatch{}
 
 // ManagerWebhookPatch scaffolds a file that defines the patch that enables webhooks on the manager
 type ManagerWebhookPatch struct {
-	file.TemplateMixin
+	machinery.TemplateMixin
 
 	Force bool
 }
@@ -40,10 +40,10 @@ func (f *ManagerWebhookPatch) SetTemplateDefaults() error {
 	f.TemplateBody = managerWebhookPatchTemplate
 
 	if f.Force {
-		f.IfExistsAction = file.Overwrite
+		f.IfExistsAction = machinery.OverwriteFile
 	} else {
 		// If file exists (ex. because a webhook was already created), skip creation.
-		f.IfExistsAction = file.Skip
+		f.IfExistsAction = machinery.SkipFile
 	}
 
 	return nil

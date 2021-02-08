@@ -27,9 +27,9 @@ import (
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/internal/validation"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery/util"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/util"
 )
 
 var _ plugin.InitSubcommand = &initSubcommand{}

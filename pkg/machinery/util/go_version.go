@@ -28,7 +28,7 @@ import (
 func ValidateGoVersion() error {
 	err := fetchAndCheckGoVersion()
 	if err != nil {
-		return fmt.Errorf("%s. You can skip this check using the --skip-go-version-check flag", err)
+		return fmt.Errorf("%w. You can skip this check using the --skip-go-version-check flag", err)
 	}
 	return nil
 }
@@ -46,7 +46,7 @@ func fetchAndCheckGoVersion() error {
 	}
 	goVer := split[2]
 	if err := checkGoVersion(goVer); err != nil {
-		return fmt.Errorf("go version '%s' is incompatible because '%s'", goVer, err)
+		return fmt.Errorf("go version '%s' is incompatible because '%w'", goVer, err)
 	}
 	return nil
 }

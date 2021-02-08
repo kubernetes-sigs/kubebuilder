@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package file
+package machinery
 
 import (
 	"fmt"
@@ -45,7 +45,11 @@ func NewMarkerFor(path string, value string) Marker {
 		return Marker{comment, value}
 	}
 
-	panic(fmt.Errorf("unknown file extension: '%s', expected '.go', '.yaml' or '.yml'", ext))
+	extensions := make([]string, 0, len(commentsByExt))
+	for extension := range commentsByExt {
+		extensions = append(extensions, fmt.Sprintf("%q", extension))
+	}
+	panic(fmt.Errorf("unknown file extension: '%s', expected one of: %s", ext, strings.Join(extensions, ", ")))
 }
 
 // String implements Stringer

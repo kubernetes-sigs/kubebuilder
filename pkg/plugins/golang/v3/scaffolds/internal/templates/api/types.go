@@ -20,18 +20,18 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
-var _ file.Template = &Types{}
+var _ machinery.Template = &Types{}
 
 // Types scaffolds the file that defines the schema for a CRD
 // nolint:maligned
 type Types struct {
-	file.TemplateMixin
-	file.MultiGroupMixin
-	file.BoilerplateMixin
-	file.ResourceMixin
+	machinery.TemplateMixin
+	machinery.MultiGroupMixin
+	machinery.BoilerplateMixin
+	machinery.ResourceMixin
 
 	Force bool
 }
@@ -55,9 +55,9 @@ func (f *Types) SetTemplateDefaults() error {
 	f.TemplateBody = typesTemplate
 
 	if f.Force {
-		f.IfExistsAction = file.Overwrite
+		f.IfExistsAction = machinery.OverwriteFile
 	} else {
-		f.IfExistsAction = file.Error
+		f.IfExistsAction = machinery.Error
 	}
 
 	return nil
