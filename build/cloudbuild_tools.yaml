@@ -12,22 +12,36 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+substitutions:
+  _KUBERNETES_VERSION: v1.19.2
 steps:
 - name: "gcr.io/cloud-builders/docker"
-  args: ["build", "-t", "gcr.io/kubebuilder/thirdparty-${_GOOS}:1.20.2", "./build/thirdparty/${_GOOS}"]
+  args: [
+    "build",
+    "--build-arg", "OS=${_GOOS}",
+    "--build-arg", "ARCH=${_GOARCH}",
+    "--build-arg", "KUBERNETES_VERSION=${_KUBERNETES_VERSION}",
+    "-t", "gcr.io/kubebuilder/thirdparty-${_GOOS}-${_GOARCH}:${_KUBERNETES_VERSION}",
+    "./build/thirdparty/${_GOOS}",
+  ]
   # darwin takes forever
   timeout: 30m
 
-- name: "gcr.io/kubebuilder/thirdparty-${_GOOS}:1.20.2"
-  args: ["cp", "/kubebuilder_${_GOOS}_${_GOARCH}.tar.gz", "/workspace/kubebuilder-1.20.2-${_GOOS}-${_GOARCH}.tar.gz"]
-  env:
-  - 'GOOS=${_GOOS}'
-  - 'GOARCH=${_GOARCH}'
-- name: 'gcr.io/cloud-builders/gsutil'
-  args: ['-h', 'Content-Type:application/gzip', 'cp', '/workspace/kubebuilder-1.20.2-${_GOOS}-${_GOARCH}.tar.gz', 'gs://kubebuilder-tools/kubebuilder-tools-1.20.2-${_GOOS}-${_GOARCH}.tar.gz']
-  env:
-  - 'GOOS=${_GOOS}'
-  - 'GOARCH=${_GOARCH}'
-images: ["gcr.io/kubebuilder/thirdparty-${_GOOS}:1.20.2"]
+- name: "gcr.io/kubebuilder/thirdparty-${_GOOS}-${_GOARCH}:${_KUBERNETES_VERSION}"
+  args: [
+    "cp",
+    "/kubebuilder_${_GOOS}_${_GOARCH}.tar.gz",
+    "/workspace/kubebuilder-tools-${_KUBERNETES_VERSION}-${_GOOS}-${_GOARCH}.tar.gz",
+  ]
+
+- name: "gcr.io/cloud-builders/gsutil"
+  args: [
+    "-h", "Content-Type:application/gzip",
+    "cp",
+    "/workspace/kubebuilder-tools-${_KUBERNETES_VERSION}-${_GOOS}-${_GOARCH}.tar.gz",
+    "gs://kubebuilder-tools/kubebuilder-tools-${_KUBERNETES_VERSION}-${_GOOS}-${_GOARCH}.tar.gz",
+  ]
+
+images: ["gcr.io/kubebuilder/thirdparty-${_GOOS}-${_GOARCH}:${_KUBERNETES_VERSION}"]
 # darwin takes forever
 timeout: 30m
