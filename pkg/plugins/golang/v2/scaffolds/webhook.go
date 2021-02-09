@@ -64,6 +64,10 @@ func (s *webhookScaffolder) newUniverse() *model.Universe {
 }
 
 func (s *webhookScaffolder) scaffold() error {
+	if err := s.config.UpdateResource(s.resource); err != nil {
+		return fmt.Errorf("error updating resource: %w", err)
+	}
+
 	if err := machinery.NewScaffold().Execute(
 		s.newUniverse(),
 		&api.Webhook{},
