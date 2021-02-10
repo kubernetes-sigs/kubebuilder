@@ -40,4 +40,10 @@ resources:
   webhooks:
     defaulting: true
     webhookVersion: v1
+- controller: true
+  domain: testproject.org
+  group: crew
+  kind: Laker
+  path: sigs.k8s.io/kubebuilder/testdata/project-v3/api/v1
+  version: v1
 version: "3"

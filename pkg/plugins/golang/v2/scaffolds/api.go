@@ -18,6 +18,7 @@ package scaffolds
 
 import (
 	"fmt"
+	cfgv2 "sigs.k8s.io/kubebuilder/v3/pkg/config/v2"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model"
@@ -89,12 +90,19 @@ func (s *apiScaffolder) scaffold() error {
 	doAPI := s.resource.HasAPI()
 	doController := s.resource.HasController()
 
-	if doAPI {
-
+	// project version=2 do not stored the full data.
+	// In this way, the following check is required. Otherwise
+	// it would store GKV and we would consider that the API was
+	// scaffolded for other checks such as; to not allow create
+	// an webhook without an API scaffolded already.
+	isV2Config := s.config.GetVersion().Compare(cfgv2.Version) == 0
+	if !isV2Config || doAPI {
 		if err := s.config.UpdateResource(s.resource); err != nil {
 			return fmt.Errorf("error updating resource: %w", err)
 		}
+	}
 
+	if doAPI {
 		if err := machinery.NewScaffold(s.plugins...).Execute(
 			s.newUniverse(),
 			&api.Types{Force: s.force},

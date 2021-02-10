@@ -86,12 +86,11 @@ func (s *apiScaffolder) scaffold() error {
 	doAPI := s.resource.HasAPI()
 	doController := s.resource.HasController()
 
+	if err := s.config.UpdateResource(s.resource); err != nil {
+		return fmt.Errorf("error updating resource: %w", err)
+	}
+
 	if doAPI {
-
-		if err := s.config.UpdateResource(s.resource); err != nil {
-			return fmt.Errorf("error updating resource: %w", err)
-		}
-
 		if err := machinery.NewScaffold(s.plugins...).Execute(
 			s.newUniverse(),
 			&api.Types{Force: s.force},
