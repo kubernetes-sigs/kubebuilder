@@ -176,8 +176,8 @@ func (p *createAPISubcommand) Validate() error {
 	}
 
 	// In case we want to scaffold a resource API we need to do some checks
-	if p.resource.HasAPI() {
-		// Check that resource doesn't exist or flag force was set
+	if p.options.DoAPI {
+		// Check that resource doesn't have the API scaffolded or flag force was set
 		if res, err := p.config.GetResource(p.resource.GVK); err == nil && res.HasAPI() && !p.force {
 			return errors.New("API resource already exists")
 		}

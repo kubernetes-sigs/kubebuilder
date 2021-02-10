@@ -98,13 +98,13 @@ func (f *SuiteTest) GetCodeFragments() file.CodeFragmentsMap {
 
 	// Generate import code fragments
 	imports := make([]string, 0)
-	if f.Resource.HasAPI() {
+	if f.Resource.Path != "" {
 		imports = append(imports, fmt.Sprintf(apiImportCodeFragment, f.Resource.ImportAlias(), f.Resource.Path))
 	}
 
 	// Generate add scheme code fragments
 	addScheme := make([]string, 0)
-	if f.Resource.HasAPI() {
+	if f.Resource.Path != "" {
 		addScheme = append(addScheme, fmt.Sprintf(addschemeCodeFragment, f.Resource.ImportAlias()))
 	}
 

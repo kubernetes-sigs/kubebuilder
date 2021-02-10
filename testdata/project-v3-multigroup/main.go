@@ -169,12 +169,12 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "HealthCheckPolicy")
 		os.Exit(1)
 	}
-	if err = (&appscontrollers.PodReconciler{
+	if err = (&appscontrollers.DeploymentReconciler{
 		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("apps").WithName("Pod"),
+		Log:    ctrl.Log.WithName("controllers").WithName("apps").WithName("Deployment"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Pod")
+		setupLog.Error(err, "unable to create controller", "controller", "Deployment")
 		os.Exit(1)
 	}
 	if err = (&controllers.LakersReconciler{

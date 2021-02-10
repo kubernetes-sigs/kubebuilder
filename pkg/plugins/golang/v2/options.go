@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	newconfig "sigs.k8s.io/kubebuilder/v3/pkg/config"
+	cfgv2 "sigs.k8s.io/kubebuilder/v3/pkg/config/v2"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 )
 
@@ -137,7 +138,6 @@ func (opts Options) GVK() resource.GVK {
 func (opts Options) NewResource(c newconfig.Config) resource.Resource {
 	res := resource.Resource{
 		GVK:        opts.GVK(),
-		Path:       resource.APIPackagePath(c.GetRepository(), opts.Group, opts.Version, c.IsMultiGroup()),
 		Controller: opts.DoController,
 	}
 
@@ -149,6 +149,7 @@ func (opts Options) NewResource(c newconfig.Config) resource.Resource {
 	}
 
 	if opts.DoAPI {
+		res.Path = resource.APIPackagePath(c.GetRepository(), opts.Group, opts.Version, c.IsMultiGroup())
 		res.API = &resource.API{
 			CRDVersion: opts.CRDVersion,
 			Namespaced: opts.Namespaced,
@@ -159,6 +160,7 @@ func (opts Options) NewResource(c newconfig.Config) resource.Resource {
 	}
 
 	if opts.DoDefaulting || opts.DoValidation || opts.DoConversion {
+		res.Path = resource.APIPackagePath(c.GetRepository(), opts.Group, opts.Version, c.IsMultiGroup())
 		res.Webhooks = &resource.Webhooks{
 			WebhookVersion: opts.WebhookVersion,
 			Defaulting:     opts.DoDefaulting,
@@ -177,7 +179,14 @@ func (opts Options) NewResource(c newconfig.Config) resource.Resource {
 	//  - In any other case, default to                          => project resource
 	// TODO: need to support '--resource-pkg-path' flag for specifying resourcePath
 	if !opts.DoAPI {
-		if !c.HasResource(opts.GVK()) {
+		var alreadyHasAPI bool
+		if c.GetVersion().Compare(cfgv2.Version) == 0 {
+			alreadyHasAPI = c.HasResource(opts.GVK())
+		} else {
+			loadedRes, err := c.GetResource(opts.GVK())
+			alreadyHasAPI = err == nil && loadedRes.HasAPI()
+		}
+		if !alreadyHasAPI {
 			if domain, found := coreGroups[opts.Group]; found {
 				res.Domain = domain
 				res.Path = path.Join("k8s.io", "api", opts.Group, opts.Version)

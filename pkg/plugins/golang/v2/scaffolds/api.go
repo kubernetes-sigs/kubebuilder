@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
+	cfgv2 "sigs.k8s.io/kubebuilder/v3/pkg/config/v2"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates"
@@ -89,11 +90,19 @@ func (s *apiScaffolder) scaffold() error {
 	doAPI := s.resource.HasAPI()
 	doController := s.resource.HasController()
 
-	if doAPI {
-
+	// Project version v2 only tracked GVK triplets of each resource.
+	// As they were only tracked when the API was scaffolded, the presence of a
+	// resource in the config file was used in webhook creation to verify that
+	// the API had been scaffolded previously. From project version v3 onwards
+	// this information is stored in the API field of the resource, so we can
+	// update the resources except for project version 2 when no API was scaffolded.
+	if doAPI || s.config.GetVersion().Compare(cfgv2.Version) == 1 {
 		if err := s.config.UpdateResource(s.resource); err != nil {
 			return fmt.Errorf("error updating resource: %w", err)
 		}
+	}
+
+	if doAPI {
 
 		if err := machinery.NewScaffold(s.plugins...).Execute(
 			s.newUniverse(),

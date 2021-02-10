@@ -40,4 +40,9 @@ resources:
   webhooks:
     defaulting: true
     webhookVersion: v1
+- controller: true
+  domain: testproject.org
+  group: crew
+  kind: Laker
+  version: v1
 version: "3"

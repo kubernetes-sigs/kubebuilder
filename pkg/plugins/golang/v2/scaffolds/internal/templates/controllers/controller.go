@@ -72,7 +72,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	{{ if .Resource.HasAPI -}}
+	{{ if not (isEmptyStr .Resource.Path) -}}
 	{{ .Resource.ImportAlias }} "{{ .Resource.Path }}"
 	{{- end }}
 )
@@ -108,7 +108,7 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(req ctrl.Request) (ctrl.Resul
 // SetupWithManager sets up the controller with the Manager.
 func (r *{{ .Resource.Kind }}Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		{{ if .Resource.HasAPI -}}
+		{{ if not (isEmptyStr .Resource.Path) -}}
 		For(&{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{}).
 		{{- else -}}
 		// Uncomment the following line adding a pointer to an instance of the controlled resource as an argument

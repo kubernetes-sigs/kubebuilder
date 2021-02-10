@@ -17,7 +17,6 @@ limitations under the License.
 package v3
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
@@ -119,7 +118,7 @@ func (p *createWebhookSubcommand) Validate() error {
 	if r, err := p.config.GetResource(p.resource.GVK); err != nil {
 		return fmt.Errorf("%s create webhook requires a previously created API ", p.commandName)
 	} else if r.Webhooks != nil && !r.Webhooks.IsEmpty() && !p.force {
-		return errors.New("webhook resource already exists")
+		return fmt.Errorf("webhook resource already exists")
 	}
 
 	if !p.config.IsWebhookVersionCompatible(p.resource.Webhooks.WebhookVersion) {

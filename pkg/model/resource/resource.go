@@ -155,8 +155,12 @@ func (r *Resource) Update(other Resource) error {
 		return fmt.Errorf("unable to update Resource with another with non-matching Plural")
 	}
 
-	if r.Path != other.Path {
-		return fmt.Errorf("unable to update Resource with another with non-matching Path")
+	if other.Path != "" && r.Path != other.Path {
+		if r.Path == "" {
+			r.Path = other.Path
+		} else {
+			return fmt.Errorf("unable to update Resource with another with non-matching Path")
+		}
 	}
 
 	// Update API.
