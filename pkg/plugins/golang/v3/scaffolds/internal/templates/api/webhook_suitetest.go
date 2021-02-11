@@ -11,7 +11,7 @@ var _ file.Template = &WebhookSuite{}
 var _ file.Inserter = &WebhookSuite{}
 
 // WebhookSuite scaffolds the file that sets up the webhook tests
-type WebhookSuite struct {
+type WebhookSuite struct { //nolint:maligned
 	file.TemplateMixin
 	file.MultiGroupMixin
 	file.BoilerplateMixin
