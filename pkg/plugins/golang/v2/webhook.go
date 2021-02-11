@@ -24,6 +24,7 @@ import (
 	"github.com/spf13/pflag"
 
 	newconfig "sigs.k8s.io/kubebuilder/v3/pkg/config"
+	cfgv2 "sigs.k8s.io/kubebuilder/v3/pkg/config/v2"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds"
@@ -104,8 +105,16 @@ func (p *createWebhookSubcommand) Validate() error {
 	}
 
 	// check if resource exist to create webhook
-	if !p.config.HasResource(p.resource.GVK) {
-		return fmt.Errorf("%s create webhook requires a previously created API ", p.commandName)
+	if p.config.GetVersion().Compare(cfgv2.Version) == 0 {
+		if !p.config.HasResource(p.resource.GVK) {
+			return fmt.Errorf("%s create webhook requires a previously created API ", p.commandName)
+		}
+	} else {
+		if r, err := p.config.GetResource(p.resource.GVK); err != nil {
+			return fmt.Errorf("%s create webhook requires a previously created API ", p.commandName)
+		} else if r.Webhooks != nil && !r.Webhooks.IsEmpty() {
+			return fmt.Errorf("webhook resource already exists")
+		}
 	}
 
 	return nil

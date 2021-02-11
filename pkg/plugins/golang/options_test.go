@@ -62,6 +62,8 @@ var _ = Describe("Options", func() {
 				for _, multiGroup := range []bool{false, true} {
 					if multiGroup {
 						Expect(cfg.SetMultiGroup()).To(Succeed())
+					} else {
+						Expect(cfg.ClearMultiGroup()).To(Succeed())
 					}
 
 					resource := options.NewResource(cfg)
@@ -70,19 +72,36 @@ var _ = Describe("Options", func() {
 					Expect(resource.Domain).To(Equal(options.Domain))
 					Expect(resource.Version).To(Equal(options.Version))
 					Expect(resource.Kind).To(Equal(options.Kind))
-					if multiGroup {
-						Expect(resource.Path).To(Equal(
-							path.Join(cfg.GetRepository(), "apis", options.Group, options.Version)))
+					Expect(resource.API).NotTo(BeNil())
+					if options.DoAPI || options.DoDefaulting || options.DoValidation || options.DoConversion {
+						if multiGroup {
+							Expect(resource.Path).To(Equal(
+								path.Join(cfg.GetRepository(), "apis", options.Group, options.Version)))
+						} else {
+							Expect(resource.Path).To(Equal(path.Join(cfg.GetRepository(), "api", options.Version)))
+						}
 					} else {
-						Expect(resource.Path).To(Equal(path.Join(cfg.GetRepository(), "api", options.Version)))
+						// Core-resources have a path despite not having an API/Webhook but they are not tested here
+						Expect(resource.Path).To(Equal(""))
 					}
-					Expect(resource.API.CRDVersion).To(Equal(options.CRDVersion))
-					Expect(resource.API.Namespaced).To(Equal(options.Namespaced))
+					if options.DoAPI {
+						Expect(resource.API.CRDVersion).To(Equal(options.CRDVersion))
+						Expect(resource.API.Namespaced).To(Equal(options.Namespaced))
+						Expect(resource.API.IsEmpty()).To(BeFalse())
+					} else {
+						Expect(resource.API.IsEmpty()).To(BeTrue())
+					}
 					Expect(resource.Controller).To(Equal(options.DoController))
-					Expect(resource.Webhooks.WebhookVersion).To(Equal(options.WebhookVersion))
-					Expect(resource.Webhooks.Defaulting).To(Equal(options.DoDefaulting))
-					Expect(resource.Webhooks.Validation).To(Equal(options.DoValidation))
-					Expect(resource.Webhooks.Conversion).To(Equal(options.DoConversion))
+					Expect(resource.Webhooks).NotTo(BeNil())
+					if options.DoDefaulting || options.DoValidation || options.DoConversion {
+						Expect(resource.Webhooks.WebhookVersion).To(Equal(options.WebhookVersion))
+						Expect(resource.Webhooks.Defaulting).To(Equal(options.DoDefaulting))
+						Expect(resource.Webhooks.Validation).To(Equal(options.DoValidation))
+						Expect(resource.Webhooks.Conversion).To(Equal(options.DoConversion))
+						Expect(resource.Webhooks.IsEmpty()).To(BeFalse())
+					} else {
+						Expect(resource.Webhooks.IsEmpty()).To(BeTrue())
+					}
 					Expect(resource.QualifiedGroup()).To(Equal(options.Group + "." + options.Domain))
 					Expect(resource.PackageName()).To(Equal(options.Group))
 					Expect(resource.ImportAlias()).To(Equal(options.Group + options.Version))
@@ -130,6 +149,8 @@ var _ = Describe("Options", func() {
 				for _, multiGroup := range []bool{false, true} {
 					if multiGroup {
 						Expect(cfg.SetMultiGroup()).To(Succeed())
+					} else {
+						Expect(cfg.ClearMultiGroup()).To(Succeed())
 					}
 
 					resource := options.NewResource(cfg)
@@ -150,6 +171,8 @@ var _ = Describe("Options", func() {
 				for _, multiGroup := range []bool{false, true} {
 					if multiGroup {
 						Expect(cfg.SetMultiGroup()).To(Succeed())
+					} else {
+						Expect(cfg.ClearMultiGroup()).To(Succeed())
 					}
 
 					resource := options.NewResource(cfg)
@@ -168,12 +191,15 @@ var _ = Describe("Options", func() {
 					Domain:  "test.io",
 					Version: "v1",
 					Kind:    "FirstMate",
+					DoAPI:   true, // Scaffold the API so that the path is saved
 				}
 				Expect(options.Validate()).To(Succeed())
 
 				for _, multiGroup := range []bool{false, true} {
 					if multiGroup {
 						Expect(cfg.SetMultiGroup()).To(Succeed())
+					} else {
+						Expect(cfg.ClearMultiGroup()).To(Succeed())
 					}
 
 					resource := options.NewResource(cfg)
@@ -201,6 +227,8 @@ var _ = Describe("Options", func() {
 			for _, multiGroup := range []bool{false, true} {
 				if multiGroup {
 					Expect(cfg.SetMultiGroup()).To(Succeed())
+				} else {
+					Expect(cfg.ClearMultiGroup()).To(Succeed())
 				}
 
 				resource := options.NewResource(cfg)
@@ -222,12 +250,15 @@ var _ = Describe("Options", func() {
 				for _, multiGroup := range []bool{false, true} {
 					if multiGroup {
 						Expect(cfg.SetMultiGroup()).To(Succeed())
+					} else {
+						Expect(cfg.ClearMultiGroup()).To(Succeed())
 					}
 
 					resource := options.NewResource(cfg)
 					Expect(resource.Validate()).To(Succeed())
 					Expect(resource.Path).To(Equal(path.Join("k8s.io", "api", options.Group, options.Version)))
-					Expect(resource.API.CRDVersion).To(Equal(""))
+					Expect(resource.API).NotTo(BeNil())
+					Expect(resource.API.IsEmpty()).To(BeTrue())
 					Expect(resource.QualifiedGroup()).To(Equal(qualified))
 				}
 			},
@@ -242,12 +273,15 @@ var _ = Describe("Options", func() {
 				Domain:  "test.io",
 				Version: "v1",
 				Kind:    "FirstMate",
+				DoAPI:   true, // Scaffold the API so that the path is saved
 			}
 			Expect(options.Validate()).To(Succeed())
 
 			for _, multiGroup := range []bool{false, true} {
 				if multiGroup {
 					Expect(cfg.SetMultiGroup()).To(Succeed())
+				} else {
+					Expect(cfg.ClearMultiGroup()).To(Succeed())
 				}
 
 				resource := options.NewResource(cfg)
