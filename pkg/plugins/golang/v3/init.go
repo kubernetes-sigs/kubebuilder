@@ -189,34 +189,46 @@ func (p *initSubcommand) PostScaffold() error {
 	return nil
 }
 
-// checkDir will return error if the current directory has files which are
-// not the go.mod and/or starts with the prefix (.) such as .gitignore.
+// checkDir will return error if the current directory has files which are not allowed.
 // Note that, it is expected that the directory to scaffold the project is cleaned.
-// Otherwise, it might face issues to do the scaffold. The go.mod is allowed because user might run
-// go mod init before use the plugin it for not be required inform
-// the go module via the repo --flag.
+// Otherwise, it might face issues to do the scaffold.
 func checkDir() error {
 	err := filepath.Walk(".",
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
 			}
-			// Allow the whole .git directory tree
+			// Allow directory trees starting with '.'
 			if info.IsDir() && strings.HasPrefix(info.Name(), ".") && info.Name() != "." {
 				return filepath.SkipDir
 			}
-			// Also allow go.mod and dot-files
-			if info.Name() != "go.mod" && info.Name() != "go.sum" && !strings.HasPrefix(info.Name(), ".") {
-				return fmt.Errorf(
-					"target directory is not empty "+
-						"(only go.mod, go.sum, and files and directories with the prefix \".\" are allowed); "+
-						"found existing file %q",
-					path)
+			// Allow files starting with '.'
+			if strings.HasPrefix(info.Name(), ".") {
+				return nil
 			}
-			return nil
+			// Allow files in the following list
+			allowedFiles := []string{
+				"go.mod",    // user might run `go mod init` instead of providing the `--flag` at init
+				"go.sum",    // auto-generated file related to go.mod
+				"LICENSE",   // can be generated when initializing a GitHub project
+				"README.md", // can be generated when initializing a GitHub project
+			}
+			for _, allowedFile := range allowedFiles {
+				if info.Name() == allowedFile {
+					return nil
+				}
+			}
+			// Do not allow any other file
+			return fmt.Errorf(
+				"target directory is not empty (only %s, and files and directories with the prefix \".\" are "+
+					"allowed); found existing file %q", strings.Join(allowedFiles, ", "), path)
 		})
 	if err != nil {
 		return err
 	}
 	return nil
 }
+
+// The go.mod is allowed because user might run
+// go mod init before use the plugin it for not be required inform
+// the go module via the repo --flag.
