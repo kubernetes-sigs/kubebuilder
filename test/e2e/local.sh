@@ -1,6 +1,6 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
-# Copyright 2019 The Kubernetes Authors.
+# Copyright 2018 The Kubernetes Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,15 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-K8S_VERSION=$1
-KIND_NAME="kind"
-if [ $# -gt 1 ]; then
-    KIND_NAME=$2
+source "$(dirname "$0")/../common.sh"
+source "$(dirname "$0")/setup.sh"
+
+kind_cluster=local-kubebuilder-e2e
+create_cluster ${KIND_K8S_VERSION:-v1.18.0} $kind_cluster
+if [ -z "${SKIP_KIND_CLEANUP:-}" ]; then
+    trap delete_cluster EXIT
 fi
 
-export GO111MODULE=on
+kind export kubeconfig --kubeconfig $tmp_root/kubeconfig --name $kind_cluster
+export KUBECONFIG=$tmp_root/kubeconfig
 
-# setup go module to create the cluster
-
-# You can use --image flag to specify the cluster version you want, e.g --image=kindest/node:v1.13.6, the supported version are listed at https://hub.docker.com/r/kindest/node/tags
-kind create cluster -v 4 --name $KIND_NAME --retain --wait=1m --config test/kind-config.yaml --image=kindest/node:$K8S_VERSION
+test_cluster -v -ginkgo.v

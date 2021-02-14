@@ -14,11 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-source test/common.sh
+source "$(dirname "$0")/../common.sh"
+source "$(dirname "$0")/setup.sh"
 
-header_text "Running kubebuilder unit tests"
-go test -race -v ./pkg/...
+kind_cluster="kind"
+create_cluster ${KIND_K8S_VERSION} $kind_cluster
+trap delete_cluster EXIT
 
-./test/integration.sh
-
-./test/testdata/test.sh
+test_cluster
