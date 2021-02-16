@@ -29,9 +29,9 @@ import (
 	"github.com/spf13/cobra"
 	flag "github.com/spf13/pflag"
 
-	"sigs.k8s.io/kubebuilder/cmd/internal"
-	"sigs.k8s.io/kubebuilder/internal/config"
-	"sigs.k8s.io/kubebuilder/pkg/scaffold"
+	"sigs.k8s.io/kubebuilder/v2/cmd/internal"
+	"sigs.k8s.io/kubebuilder/v2/internal/config"
+	"sigs.k8s.io/kubebuilder/v2/pkg/scaffold"
 )
 
 type initError struct {
