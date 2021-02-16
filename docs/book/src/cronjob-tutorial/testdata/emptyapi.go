@@ -68,8 +68,9 @@ a Kind.  Then, the `object` generator generates an implementation of the
 interface that all types representing Kinds must implement.
 */
 
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
+//+kubebuilder:object:root=true
+//+kubebuilder:subresource:status
+
 // CronJob is the Schema for the cronjobs API
 type CronJob struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -79,7 +80,7 @@ type CronJob struct {
 	Status CronJobStatus `json:"status,omitempty"`
 }
 
-// +kubebuilder:object:root=true
+//+kubebuilder:object:root=true
 
 // CronJobList contains a list of CronJob
 type CronJobList struct {
