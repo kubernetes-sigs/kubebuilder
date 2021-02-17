@@ -34,11 +34,18 @@ import (
 // +kubebuilder:docs-gen:collapse=Imports
 
 /*
+By default, kubebuilder will include the RBAC rules necessary to update finalizers for CronJobs.
+*/
+
+//+kubebuilder:rbac:groups=batch.tutorial.kubebuilder.io,resources=cronjobs,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=batch.tutorial.kubebuilder.io,resources=cronjobs/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=batch.tutorial.kubebuilder.io,resources=cronjobs/finalizers,verbs=update
+
+/*
 The code snippet below shows skeleton code for implementing a finalizer.
 */
 
-func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	ctx := context.Background()
+func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("cronjob", req.NamespacedName)
 
 	var cronJob *batchv1.CronJob
@@ -60,7 +67,7 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		// registering our finalizer.
 		if !containsString(cronJob.GetFinalizers(), myFinalizerName) {
 			cronJob.SetFinalizers(append(cronJob.GetFinalizers(), myFinalizerName))
-			if err := r.Update(context.Background(), cronJob); err != nil {
+			if err := r.Update(ctx, cronJob); err != nil {
 				return ctrl.Result{}, err
 			}
 		}
@@ -76,7 +83,7 @@ func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 			// remove our finalizer from the list and update it.
 			cronJob.SetFinalizers(removeString(cronJob.GetFinalizers(), myFinalizerName))
-			if err := r.Update(context.Background(), cronJob); err != nil {
+			if err := r.Update(ctx, cronJob); err != nil {
 				return ctrl.Result{}, err
 			}
 		}
