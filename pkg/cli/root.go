@@ -49,6 +49,10 @@ func (c cli) newRootCmd() *cobra.Command {
 	fs.String(projectVersionFlag, "", "project version")
 	fs.StringSlice(pluginsFlag, nil, "plugin keys of the plugin to initialize the project with")
 
+	// As the root command will be used to shot the help message under some error conditions,
+	// like during plugin resolving, we need to allow unknown flags to prevent parsing errors.
+	cmd.FParseErrWhitelist = cobra.FParseErrWhitelist{UnknownFlags: true}
+
 	return cmd
 }
 
