@@ -169,12 +169,12 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "HealthCheckPolicy")
 		os.Exit(1)
 	}
-	if err = (&appscontrollers.PodReconciler{
+	if err = (&appscontrollers.DeploymentReconciler{
 		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("apps").WithName("Pod"),
+		Log:    ctrl.Log.WithName("controllers").WithName("apps").WithName("Deployment"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Pod")
+		setupLog.Error(err, "unable to create controller", "controller", "Deployment")
 		os.Exit(1)
 	}
 	if err = (&controllers.LakersReconciler{
@@ -191,11 +191,11 @@ func main() {
 	}
 	//+kubebuilder:scaffold:builder
 
-	if err := mgr.AddHealthzCheck("health", healthz.Ping); err != nil {
+	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up health check")
 		os.Exit(1)
 	}
-	if err := mgr.AddReadyzCheck("check", healthz.Ping); err != nil {
+	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up ready check")
 		os.Exit(1)
 	}

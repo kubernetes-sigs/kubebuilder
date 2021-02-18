@@ -155,12 +155,12 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "HealthCheckPolicy")
 		os.Exit(1)
 	}
-	if err = (&appscontroller.PodReconciler{
+	if err = (&appscontroller.DeploymentReconciler{
 		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Pod"),
+		Log:    ctrl.Log.WithName("controllers").WithName("Deployment"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Pod")
+		setupLog.Error(err, "unable to create controller", "controller", "Deployment")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

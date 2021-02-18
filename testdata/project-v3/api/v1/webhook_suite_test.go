@@ -64,7 +64,8 @@ var _ = BeforeSuite(func() {
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths: []string{filepath.Join("..", "..", "config", "crd", "bases")},
+		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "config", "crd", "bases")},
+		ErrorIfCRDPathMissing: false,
 		WebhookInstallOptions: envtest.WebhookInstallOptions{
 			Paths: []string{filepath.Join("..", "..", "config", "webhook")},
 		},
@@ -108,10 +109,10 @@ var _ = BeforeSuite(func() {
 	err = (&Captain{}).SetupWebhookWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred())
 
-	err = (&Admiral{}).SetupWebhookWithManager(mgr)
+	err = (&Captain{}).SetupWebhookWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred())
 
-	err = (&Captain{}).SetupWebhookWithManager(mgr)
+	err = (&Admiral{}).SetupWebhookWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred())
 
 	//+kubebuilder:scaffold:webhook

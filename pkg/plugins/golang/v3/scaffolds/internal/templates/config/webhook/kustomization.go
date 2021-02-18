@@ -19,7 +19,7 @@ package webhook
 import (
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/v2/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
 )
 
 var _ file.Template = &Kustomization{}
@@ -27,9 +27,7 @@ var _ file.Template = &Kustomization{}
 // Kustomization scaffolds a file that defines the kustomization scheme for the webhook folder
 type Kustomization struct {
 	file.TemplateMixin
-
-	// Version of webhook the project was configured with.
-	WebhookVersion string
+	file.ResourceMixin
 
 	Force bool
 }
@@ -49,15 +47,11 @@ func (f *Kustomization) SetTemplateDefaults() error {
 		f.IfExistsAction = file.Skip
 	}
 
-	if f.WebhookVersion == "" {
-		f.WebhookVersion = "v1"
-	}
-
 	return nil
 }
 
 const kustomizeWebhookTemplate = `resources:
-- manifests{{ if ne .WebhookVersion "v1" }}.{{ .WebhookVersion }}{{ end }}.yaml
+- manifests{{ if ne .Resource.Webhooks.WebhookVersion "v1" }}.{{ .Resource.Webhooks.WebhookVersion }}{{ end }}.yaml
 - service.yaml
 
 configurations:

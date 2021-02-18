@@ -17,15 +17,16 @@ limitations under the License.
 package v3
 
 import (
-	"sigs.k8s.io/kubebuilder/v2/pkg/model/config"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugin"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugins"
+	"sigs.k8s.io/kubebuilder/v3/pkg/config"
+	cfgv3 "sigs.k8s.io/kubebuilder/v3/pkg/config/v3"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins"
 )
 
 const pluginName = "go" + plugins.DefaultNameQualifier
 
 var (
-	supportedProjectVersions = []string{config.Version3Alpha}
+	supportedProjectVersions = []config.Version{cfgv3.Version}
 	pluginVersion            = plugin.Version{Number: 3}
 )
 
@@ -46,7 +47,7 @@ func (Plugin) Name() string { return pluginName }
 func (Plugin) Version() plugin.Version { return pluginVersion }
 
 // SupportedProjectVersions returns an array with all project versions supported by the plugin
-func (Plugin) SupportedProjectVersions() []string { return supportedProjectVersions }
+func (Plugin) SupportedProjectVersions() []config.Version { return supportedProjectVersions }
 
 // GetInitSubcommand will return the subcommand which is responsible for initializing and common scaffolding
 func (p Plugin) GetInitSubcommand() plugin.InitSubcommand { return &p.initSubcommand }

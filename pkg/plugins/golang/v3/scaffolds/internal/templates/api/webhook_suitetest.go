@@ -4,18 +4,21 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/v2/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
 )
 
 var _ file.Template = &WebhookSuite{}
 var _ file.Inserter = &WebhookSuite{}
 
 // WebhookSuite scaffolds the file that sets up the webhook tests
-type WebhookSuite struct {
+type WebhookSuite struct { //nolint:maligned
 	file.TemplateMixin
 	file.MultiGroupMixin
 	file.BoilerplateMixin
 	file.ResourceMixin
+
+	// todo: currently is not possible to know if an API was or not scaffolded. We can fix it when #1826 be addressed
+	WireResource bool
 
 	// BaseDirectoryRelativePath define the Path for the base directory when it is multigroup
 	BaseDirectoryRelativePath string
@@ -162,7 +165,8 @@ var _ = BeforeSuite(func() {
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths: []string{filepath.Join({{ .BaseDirectoryRelativePath }}, "config", "crd", "bases")},
+		CRDDirectoryPaths:     []string{filepath.Join({{ .BaseDirectoryRelativePath }}, "config", "crd", "bases")},
+		ErrorIfCRDPathMissing: {{ .WireResource }},
 		WebhookInstallOptions: envtest.WebhookInstallOptions{
 			Paths: []string{filepath.Join({{ .BaseDirectoryRelativePath }}, "config", "webhook")},
 		},

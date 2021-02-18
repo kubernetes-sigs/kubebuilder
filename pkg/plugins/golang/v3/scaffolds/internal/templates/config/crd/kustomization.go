@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/v2/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
 )
 
 var _ file.Template = &Kustomization{}
@@ -78,7 +78,7 @@ func (f *Kustomization) GetCodeFragments() file.CodeFragmentsMap {
 
 	// Generate resource code fragments
 	res := make([]string, 0)
-	res = append(res, fmt.Sprintf(resourceCodeFragment, f.Resource.Domain, f.Resource.Plural))
+	res = append(res, fmt.Sprintf(resourceCodeFragment, f.Resource.QualifiedGroup(), f.Resource.Plural))
 
 	// Generate resource code fragments
 	webhookPatch := make([]string, 0)

@@ -77,7 +77,6 @@ func (o *Admiral) SetCommonStatus(s addonv1alpha1.CommonStatus) {
 }
 
 //+kubebuilder:object:root=true
-//+kubebuilder:resource:scope=Cluster
 
 // AdmiralList contains a list of Admiral
 type AdmiralList struct {

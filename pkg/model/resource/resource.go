@@ -20,54 +20,169 @@ import (
 	"fmt"
 	"strings"
 
-	"sigs.k8s.io/kubebuilder/v2/pkg/model/config"
+	"sigs.k8s.io/kubebuilder/v3/pkg/internal/validation"
 )
 
 // Resource contains the information required to scaffold files for a resource.
 type Resource struct {
-	// Group is the API Group. Does not contain the domain.
-	Group string `json:"group,omitempty"`
+	// GVK contains the resource's Group-Version-Kind triplet.
+	GVK `json:",inline"`
 
-	// GroupPackageName is the API Group cleaned to be used as the package name.
-	GroupPackageName string `json:"-"`
-
-	// Version is the API version.
-	Version string `json:"version,omitempty"`
-
-	// Kind is the API Kind.
-	Kind string `json:"kind,omitempty"`
-
-	// Plural is the API Kind plural form.
+	// Plural is the resource's kind plural form.
 	Plural string `json:"plural,omitempty"`
 
-	// ImportAlias is a cleaned concatenation of Group and Version.
-	ImportAlias string `json:"-"`
+	// Path is the path to the go package where the types are defined.
+	Path string `json:"path,omitempty"`
 
-	// Package is the go package of the Resource.
-	Package string `json:"package,omitempty"`
+	// API holds the information related to the resource API.
+	API *API `json:"api,omitempty"`
 
-	// Domain is the Group + "." + Domain of the Resource.
-	Domain string `json:"domain,omitempty"`
+	// Controller specifies if a controller has been scaffolded.
+	Controller bool `json:"controller,omitempty"`
 
-	// Namespaced is true if the resource is namespaced.
-	Namespaced bool `json:"namespaced,omitempty"`
-
-	// API holds the the api data that is scaffolded
-	API config.API `json:"api,omitempty"`
-
-	// Webhooks holds webhooks data that is scaffolded
-	Webhooks config.Webhooks `json:"webhooks,omitempty"`
+	// Webhooks holds the information related to the associated webhooks.
+	Webhooks *Webhooks `json:"webhooks,omitempty"`
 }
 
-// Data returns the ResourceData information to check against tracked resources in the configuration file
-func (r *Resource) Data() config.ResourceData {
-	return config.ResourceData{
-		Group:    r.Group,
-		Version:  r.Version,
-		Kind:     r.Kind,
-		API:      &r.API,
-		Webhooks: &r.Webhooks,
+// Validate checks that the Resource is valid.
+func (r Resource) Validate() error {
+	// Validate the GVK
+	if err := r.GVK.Validate(); err != nil {
+		return err
 	}
+
+	// Validate the Plural
+	// NOTE: IsDNS1035Label returns a slice of strings instead of an error, so no wrapping
+	if errors := validation.IsDNS1035Label(r.Plural); len(errors) != 0 {
+		return fmt.Errorf("invalid Plural: %#v", errors)
+	}
+
+	// TODO: validate the path
+
+	// Validate the API
+	if r.API != nil && !r.API.IsEmpty() {
+		if err := r.API.Validate(); err != nil {
+			return fmt.Errorf("invalid API: %w", err)
+		}
+	}
+
+	// Validate the Webhooks
+	if r.Webhooks != nil && !r.Webhooks.IsEmpty() {
+		if err := r.Webhooks.Validate(); err != nil {
+			return fmt.Errorf("invalid Webhooks: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// PackageName returns a name valid to be used por go packages.
+func (r Resource) PackageName() string {
+	if r.Group == "" {
+		return safeImport(r.Domain)
+	}
+
+	return safeImport(r.Group)
+}
+
+// ImportAlias returns a identifier usable as an import alias for this resource.
+func (r Resource) ImportAlias() string {
+	if r.Group == "" {
+		return safeImport(r.Domain + r.Version)
+	}
+
+	return safeImport(r.Group + r.Version)
+}
+
+// HasAPI returns true if the resource has an associated API.
+func (r Resource) HasAPI() bool {
+	return r.API != nil && r.API.CRDVersion != ""
+}
+
+// HasController returns true if the resource has an associated controller.
+func (r Resource) HasController() bool {
+	return r.Controller
+}
+
+// HasDefaultingWebhook returns true if the resource has an associated defaulting webhook.
+func (r Resource) HasDefaultingWebhook() bool {
+	return r.Webhooks != nil && r.Webhooks.Defaulting
+}
+
+// HasValidationWebhook returns true if the resource has an associated validation webhook.
+func (r Resource) HasValidationWebhook() bool {
+	return r.Webhooks != nil && r.Webhooks.Validation
+}
+
+// HasConversionWebhook returns true if the resource has an associated conversion webhook.
+func (r Resource) HasConversionWebhook() bool {
+	return r.Webhooks != nil && r.Webhooks.Conversion
+}
+
+// IsRegularPlural returns true if the plural is the regular plural form for the kind.
+func (r Resource) IsRegularPlural() bool {
+	return r.Plural == RegularPlural(r.Kind)
+}
+
+// Copy returns a deep copy of the Resource that can be safely modified without affecting the original.
+func (r Resource) Copy() Resource {
+	// As this function doesn't use a pointer receiver, r is already a shallow copy.
+	// Any field that is a pointer, slice or map needs to be deep copied.
+	if r.API != nil {
+		api := r.API.Copy()
+		r.API = &api
+	}
+	if r.Webhooks != nil {
+		webhooks := r.Webhooks.Copy()
+		r.Webhooks = &webhooks
+	}
+	return r
+}
+
+// Update combines fields of two resources that have matching GVK favoring the receiver's values.
+func (r *Resource) Update(other Resource) error {
+	// If self is nil, return an error
+	if r == nil {
+		return fmt.Errorf("unable to update a nil Resource")
+	}
+
+	// Make sure we are not merging resources for different GVKs.
+	if !r.GVK.IsEqualTo(other.GVK) {
+		return fmt.Errorf("unable to update a Resource with another with non-matching GVK")
+	}
+
+	if r.Plural != other.Plural {
+		return fmt.Errorf("unable to update Resource with another with non-matching Plural")
+	}
+
+	if other.Path != "" && r.Path != other.Path {
+		if r.Path == "" {
+			r.Path = other.Path
+		} else {
+			return fmt.Errorf("unable to update Resource with another with non-matching Path")
+		}
+	}
+
+	// Update API.
+	if r.API == nil && other.API != nil {
+		r.API = &API{}
+	}
+	if err := r.API.Update(other.API); err != nil {
+		return err
+	}
+
+	// Update controller.
+	r.Controller = r.Controller || other.Controller
+
+	// Update Webhooks.
+	if r.Webhooks == nil && other.Webhooks != nil {
+		r.Webhooks = &Webhooks{}
+	}
+	if err := r.Webhooks.Update(other.Webhooks); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func wrapKey(key string) string {
@@ -79,10 +194,10 @@ func (r Resource) Replacer() *strings.Replacer {
 	var replacements []string
 
 	replacements = append(replacements, wrapKey("group"), r.Group)
-	replacements = append(replacements, wrapKey("group-package-name"), r.GroupPackageName)
 	replacements = append(replacements, wrapKey("version"), r.Version)
 	replacements = append(replacements, wrapKey("kind"), strings.ToLower(r.Kind))
 	replacements = append(replacements, wrapKey("plural"), strings.ToLower(r.Plural))
+	replacements = append(replacements, wrapKey("package-name"), r.PackageName())
 
 	return strings.NewReplacer(replacements...)
 }

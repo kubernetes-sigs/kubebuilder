@@ -98,6 +98,10 @@ func main() {
 		setupLog.Error(err, "unable to create webhook", "webhook", "Captain")
 		os.Exit(1)
 	}
+	if err = (&crewv1.Captain{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "Captain")
+		os.Exit(1)
+	}
 	if err = (&controllers.FirstMateReconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("FirstMate"),
@@ -130,17 +134,13 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Laker")
 		os.Exit(1)
 	}
-	if err = (&crewv1.Captain{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "Captain")
-		os.Exit(1)
-	}
 	//+kubebuilder:scaffold:builder
 
-	if err := mgr.AddHealthzCheck("health", healthz.Ping); err != nil {
+	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up health check")
 		os.Exit(1)
 	}
-	if err := mgr.AddReadyzCheck("check", healthz.Ping); err != nil {
+	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up ready check")
 		os.Exit(1)
 	}

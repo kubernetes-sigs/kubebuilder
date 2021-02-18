@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/v2/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
 )
 
 var _ file.Template = &SuiteTest{}
@@ -36,9 +36,6 @@ type SuiteTest struct {
 
 	// CRDDirectoryRelativePath define the Path for the CRD
 	CRDDirectoryRelativePath string
-
-	// WireResource defines the api resources are generated or not.
-	WireResource bool
 
 	Force bool
 }
@@ -101,14 +98,14 @@ func (f *SuiteTest) GetCodeFragments() file.CodeFragmentsMap {
 
 	// Generate import code fragments
 	imports := make([]string, 0)
-	if f.WireResource {
-		imports = append(imports, fmt.Sprintf(apiImportCodeFragment, f.Resource.ImportAlias, f.Resource.Package))
+	if f.Resource.Path != "" {
+		imports = append(imports, fmt.Sprintf(apiImportCodeFragment, f.Resource.ImportAlias(), f.Resource.Path))
 	}
 
 	// Generate add scheme code fragments
 	addScheme := make([]string, 0)
-	if f.WireResource {
-		addScheme = append(addScheme, fmt.Sprintf(addschemeCodeFragment, f.Resource.ImportAlias))
+	if f.Resource.Path != "" {
+		addScheme = append(addScheme, fmt.Sprintf(addschemeCodeFragment, f.Resource.ImportAlias()))
 	}
 
 	// Only store code fragments in the map if the slices are non-empty
@@ -125,7 +122,7 @@ func (f *SuiteTest) GetCodeFragments() file.CodeFragmentsMap {
 const controllerSuiteTestTemplate = `{{ .Boilerplate }}
 
 {{if and .MultiGroup .Resource.Group }}
-package {{ .Resource.GroupPackageName }}
+package {{ .Resource.PackageName }}
 {{else}}
 package controllers
 {{end}}
@@ -165,7 +162,8 @@ var _ = BeforeSuite(func() {
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths: []string{filepath.Join({{ .CRDDirectoryRelativePath }}, "config", "crd", "bases")},
+		CRDDirectoryPaths:     []string{filepath.Join({{ .CRDDirectoryRelativePath }}, "config", "crd", "bases")},
+		ErrorIfCRDPathMissing: {{ .Resource.HasAPI }},
 	}
 
 	cfg, err := testEnv.Start()

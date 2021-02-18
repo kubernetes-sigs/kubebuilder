@@ -27,9 +27,9 @@ import (
 
 	"golang.org/x/tools/imports"
 
-	"sigs.k8s.io/kubebuilder/v2/pkg/model"
-	"sigs.k8s.io/kubebuilder/v2/pkg/model/file"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugins/internal/filesystem"
+	"sigs.k8s.io/kubebuilder/v3/pkg/model"
+	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/filesystem"
 )
 
 var options = imports.Options{
@@ -69,7 +69,7 @@ func (s *scaffold) Execute(universe *model.Universe, files ...file.Builder) erro
 
 	// Set the repo as the local prefix so that it knows how to group imports
 	if universe.Config != nil {
-		imports.LocalPrefix = universe.Config.Repo
+		imports.LocalPrefix = universe.Config.GetRepository()
 	}
 
 	for _, f := range files {

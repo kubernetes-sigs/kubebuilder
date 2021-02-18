@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"sigs.k8s.io/kubebuilder/v2/pkg/model"
-	"sigs.k8s.io/kubebuilder/v2/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/model"
+	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
 )
 
 // ReplaceController replaces the controller with a modified version
@@ -35,6 +35,10 @@ const controllerTemplate = `{{ .Boilerplate }}
 package controllers
 
 import (
+	"github.com/go-logr/logr"
+	"k8s.io/apimachinery/pkg/runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -43,12 +47,7 @@ import (
 	"sigs.k8s.io/kubebuilder-declarative-pattern/pkg/patterns/addon/pkg/status"
 	"sigs.k8s.io/kubebuilder-declarative-pattern/pkg/patterns/declarative"
 
-	"github.com/go-logr/logr"
-	"k8s.io/apimachinery/pkg/runtime"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	api "{{ .Resource.Package }}"
+	{{ .Resource.ImportAlias }} "{{ .Resource.Path }}"
 )
 
 var _ reconcile.Reconciler = &{{ .Resource.Kind }}Reconciler{}
@@ -56,25 +55,26 @@ var _ reconcile.Reconciler = &{{ .Resource.Kind }}Reconciler{}
 // {{ .Resource.Kind }}Reconciler reconciles a {{ .Resource.Kind }} object
 type {{ .Resource.Kind }}Reconciler struct {
 	client.Client
-	Log logr.Logger
+	Log    logr.Logger
 	Scheme *runtime.Scheme
 
 	declarative.Reconciler
 }
 
-//+kubebuilder:rbac:groups={{ .Resource.Domain }},resources={{ .Resource.Plural }},verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups={{ .Resource.Domain }},resources={{ .Resource.Plural }}/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups={{ .Resource.QualifiedGroup }},resources={{ .Resource.Plural }},verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups={{ .Resource.QualifiedGroup }},resources={{ .Resource.Plural }}/status,verbs=get;update;patch
 
+// SetupWithManager sets up the controller with the Manager.
 func (r *{{ .Resource.Kind }}Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	addon.Init()
 
 	labels := map[string]string{
-		"k8s-app": "{{ .Resource.Kind | lower }}",
+		"k8s-app": "{{ lower .Resource.Kind }}",
 	}
 
 	watchLabels := declarative.SourceLabel(mgr.GetScheme())
 
-	if err := r.Reconciler.Init(mgr, &api.{{ .Resource.Kind }}{},
+	if err := r.Reconciler.Init(mgr, &{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{},
 		declarative.WithObjectTransform(declarative.AddLabels(labels)),
 		declarative.WithOwner(declarative.SourceAsOwner),
 		declarative.WithLabels(watchLabels),
@@ -86,13 +86,13 @@ func (r *{{ .Resource.Kind }}Reconciler) SetupWithManager(mgr ctrl.Manager) erro
 		return err
 	}
 
-	c, err := controller.New("{{ .Resource.Kind | lower }}-controller", mgr, controller.Options{Reconciler: r})
+	c, err := controller.New("{{ lower .Resource.Kind }}-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
 		return err
 	}
 
 	// Watch for changes to {{ .Resource.Kind }}
-	err = c.Watch(&source.Kind{Type: &api.{{ .Resource.Kind }}{}}, &handler.EnqueueRequestForObject{})
+	err = c.Watch(&source.Kind{Type: &{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}

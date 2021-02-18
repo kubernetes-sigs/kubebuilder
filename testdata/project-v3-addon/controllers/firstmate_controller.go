@@ -17,6 +17,10 @@ limitations under the License.
 package controllers
 
 import (
+	"github.com/go-logr/logr"
+	"k8s.io/apimachinery/pkg/runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -25,12 +29,7 @@ import (
 	"sigs.k8s.io/kubebuilder-declarative-pattern/pkg/patterns/addon/pkg/status"
 	"sigs.k8s.io/kubebuilder-declarative-pattern/pkg/patterns/declarative"
 
-	"github.com/go-logr/logr"
-	"k8s.io/apimachinery/pkg/runtime"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	api "sigs.k8s.io/kubebuilder/testdata/project-v3-addon/api/v1"
+	crewv1 "sigs.k8s.io/kubebuilder/testdata/project-v3-addon/api/v1"
 )
 
 var _ reconcile.Reconciler = &FirstMateReconciler{}
@@ -47,6 +46,7 @@ type FirstMateReconciler struct {
 //+kubebuilder:rbac:groups=crew.testproject.org,resources=firstmates,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=crew.testproject.org,resources=firstmates/status,verbs=get;update;patch
 
+// SetupWithManager sets up the controller with the Manager.
 func (r *FirstMateReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	addon.Init()
 
@@ -56,7 +56,7 @@ func (r *FirstMateReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 	watchLabels := declarative.SourceLabel(mgr.GetScheme())
 
-	if err := r.Reconciler.Init(mgr, &api.FirstMate{},
+	if err := r.Reconciler.Init(mgr, &crewv1.FirstMate{},
 		declarative.WithObjectTransform(declarative.AddLabels(labels)),
 		declarative.WithOwner(declarative.SourceAsOwner),
 		declarative.WithLabels(watchLabels),
@@ -74,7 +74,7 @@ func (r *FirstMateReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	// Watch for changes to FirstMate
-	err = c.Watch(&source.Kind{Type: &api.FirstMate{}}, &handler.EnqueueRequestForObject{})
+	err = c.Watch(&source.Kind{Type: &crewv1.FirstMate{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
