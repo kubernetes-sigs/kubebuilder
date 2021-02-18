@@ -19,7 +19,7 @@ package patches
 import (
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/v2/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
 )
 
 var _ file.Template = &EnableWebhookPatch{}
@@ -47,7 +47,7 @@ const enableWebhookPatchTemplate = `# The following patch enables conversion web
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: {{ .Resource.Plural }}.{{ .Resource.Domain }}
+  name: {{ .Resource.Plural }}.{{ .Resource.QualifiedGroup }}
 spec:
   conversion:
     strategy: Webhook

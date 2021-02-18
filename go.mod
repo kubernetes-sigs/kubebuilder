@@ -1,4 +1,4 @@
-module sigs.k8s.io/kubebuilder/v2
+module sigs.k8s.io/kubebuilder/v3
 
 go 1.15
 

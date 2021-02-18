@@ -40,7 +40,7 @@ endif
 # http://linuxcommand.org/lc3_adv_awk.php
 
 .PHONY: help
-help:  ## Display this help
+help: ## Display this help
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
 ##@ Build
@@ -68,7 +68,7 @@ generate: generate-testdata ## Update/generate all mock data. You should run thi
 
 .PHONY: generate-testdata
 generate-testdata: ## Update/generate the testdata in $GOPATH/src/sigs.k8s.io/kubebuilder
-	./generate_testdata.sh
+	./test/testdata/generate.sh
 
 .PHONY: lint
 lint: golangci-lint ## Run golangci-lint linter
@@ -87,26 +87,35 @@ golangci-lint:
 
 ##@ Tests
 
-.PHONY: go-test
-go-test: ## Run the unit test
-	go test -race -v ./cmd/... ./pkg/... ./plugins/...
-
 .PHONY: test
-test: ## Run the unit tests (used in the CI)
-	./test.sh
+test: test-unit test-integration test-testdata ## Run the unit and integration tests (used in the CI)
+
+.PHONY: test-unit
+test-unit: ## Run the unit tests
+	go test -race -v ./pkg/...
 
 .PHONY: test-coverage
-test-coverage:  ## Run coveralls
-	# remove all coverage files if exists
-	- rm -rf *.out
-	# run the go tests and gen the file coverage-all used to do the integration with coverrals.io
-	go test -race -failfast -tags=integration -coverprofile=coverage-all.out ./cmd/... ./pkg/... ./plugins/...
+test-coverage: ## Run unit tests creating the output to report coverage
+	- rm -rf *.out  # Remove all coverage files if exists
+	go test -race -failfast -tags=integration -coverprofile=coverage-all.out -coverpkg="./pkg/cli/...,./pkg/config/...,./pkg/internal/...,./pkg/model/...,./pkg/plugin/...,./pkg/plugins/golang,./pkg/plugins/internal/..." ./pkg/...
 
-.PHONY: test-e2e-local
-test-e2e-local: ## It will run the script to install kind and run e2e tests
-	## To keep the same kind cluster between test runs, use `SKIP_KIND_CLEANUP=1 make test-e2e-local`
-	./test_e2e_local.sh
+.PHONY: test-integration
+test-integration: ## Run the integration tests
+	./test/integration.sh
 
 .PHONY: check-testdata
 check-testdata: ## Run the script to ensure that the testdata is updated
-	./check_testdata.sh
+	./test/testdata/check.sh
+
+.PHONY: test-testdata
+test-testdata: ## Run the tests of the testdata directory
+	./test/testdata/test.sh
+
+.PHONY: test-e2e-local
+test-e2e-local: ## Run the end-to-end tests locally
+	## To keep the same kind cluster between test runs, use `SKIP_KIND_CLEANUP=1 make test-e2e-local`
+	./test/e2e/local.sh
+
+.PHONY: test-e2e-ci
+test-e2e-ci: ## Run the end-to-end tests (used in the CI)`
+	./test/e2e/ci.sh

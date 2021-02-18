@@ -26,10 +26,16 @@ import (
 // DefaultFuncMap returns the default template.FuncMap for rendering the template.
 func DefaultFuncMap() template.FuncMap {
 	return template.FuncMap{
-		"title":   strings.Title,
-		"lower":   strings.ToLower,
-		"hashFNV": hashFNV,
+		"title":      strings.Title,
+		"lower":      strings.ToLower,
+		"isEmptyStr": isEmptyString,
+		"hashFNV":    hashFNV,
 	}
+}
+
+// isEmptyString returns whether the string is empty
+func isEmptyString(s string) bool {
+	return s == ""
 }
 
 // hashFNV will generate a random string useful for generating a unique string

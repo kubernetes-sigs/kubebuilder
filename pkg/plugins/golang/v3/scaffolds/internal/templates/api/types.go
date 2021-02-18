@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/v2/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
 )
 
 var _ file.Template = &Types{}
@@ -91,7 +91,13 @@ type {{ .Resource.Kind }}Status struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-{{ if not .Resource.Namespaced }} //+kubebuilder:resource:scope=Cluster {{ end }}
+{{- if and (not .Resource.API.Namespaced) (not .Resource.IsRegularPlural) }}
+//+kubebuilder:resource:path={{ .Resource.Plural }},scope=Cluster
+{{- else if not .Resource.API.Namespaced }}
+//+kubebuilder:resource:scope=Cluster
+{{- else if not .Resource.IsRegularPlural }}
+//+kubebuilder:resource:path={{ .Resource.Plural }}
+{{- end }}
 
 // {{ .Resource.Kind }} is the Schema for the {{ .Resource.Plural }} API
 type {{ .Resource.Kind }} struct {

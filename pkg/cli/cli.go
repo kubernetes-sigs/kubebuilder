@@ -18,17 +18,16 @@ package cli
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	internalconfig "sigs.k8s.io/kubebuilder/v2/pkg/cli/internal/config"
-	"sigs.k8s.io/kubebuilder/v2/pkg/internal/validation"
-	"sigs.k8s.io/kubebuilder/v2/pkg/model/config"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugin"
+	internalconfig "sigs.k8s.io/kubebuilder/v3/pkg/cli/internal/config"
+	"sigs.k8s.io/kubebuilder/v3/pkg/config"
+	cfgv3 "sigs.k8s.io/kubebuilder/v3/pkg/config/v3"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 )
 
 const (
@@ -75,9 +74,9 @@ type cli struct { //nolint:maligned
 	// CLI version string.
 	version string
 	// Default project version in case none is provided and a config file can't be found.
-	defaultProjectVersion string
+	defaultProjectVersion config.Version
 	// Default plugins in case none is provided and a config file can't be found.
-	defaultPlugins map[string][]string
+	defaultPlugins map[config.Version][]string
 	// Plugins registered in the cli.
 	plugins map[string]plugin.Plugin
 	// Commands injected by options.
@@ -88,22 +87,20 @@ type cli struct { //nolint:maligned
 	/* Internal fields */
 
 	// Project version to scaffold.
-	projectVersion string
+	projectVersion config.Version
 	// Plugin keys to scaffold with.
 	pluginKeys []string
 
 	// A filtered set of plugins that should be used by command constructors.
 	resolvedPlugins []plugin.Plugin
 
-	// Whether some generic help should be printed, i.e. if the binary
-	// was invoked outside of a project with incorrect flags or -h|--help.
-	doHelp bool
-
 	// Root command.
 	cmd *cobra.Command
 }
 
 // New creates a new cli instance.
+// Developer errors (e.g. not registering any plugins, extra commands with conflicting names) return an error
+// while user errors (e.g. errors while parsing flags, unresolvable plugins) create a command which return the error.
 func New(opts ...Option) (CLI, error) {
 	// Create the CLI.
 	c, err := newCLI(opts...)
@@ -111,35 +108,19 @@ func New(opts ...Option) (CLI, error) {
 		return nil, err
 	}
 
-	// Get project version and plugin keys.
-	if err := c.getInfo(); err != nil {
-		return nil, err
+	// Build the cmd tree.
+	if err := c.buildCmd(); err != nil {
+		c.cmd.RunE = errCmdFunc(err)
+		return c, nil
 	}
-
-	// Resolve plugins for project version and plugin keys.
-	if err := c.resolve(); err != nil {
-		return nil, err
-	}
-
-	// Build the root command.
-	c.cmd = c.buildRootCmd()
 
 	// Add extra commands injected by options.
-	for _, cmd := range c.extraCommands {
-		for _, subCmd := range c.cmd.Commands() {
-			if cmd.Name() == subCmd.Name() {
-				return nil, fmt.Errorf("command %q already exists", cmd.Name())
-			}
-		}
-		c.cmd.AddCommand(cmd)
+	if err := c.addExtraCommands(); err != nil {
+		return nil, err
 	}
 
 	// Write deprecation notices after all commands have been constructed.
-	for _, p := range c.resolvedPlugins {
-		if d, isDeprecated := p.(plugin.Deprecated); isDeprecated {
-			fmt.Printf(noticeColor, fmt.Sprintf(deprecationFmt, d.DeprecationWarning()))
-		}
-	}
+	c.printDeprecationWarnings()
 
 	return c, nil
 }
@@ -150,8 +131,8 @@ func newCLI(opts ...Option) (*cli, error) {
 	// Default cli options.
 	c := &cli{
 		commandName:           "kubebuilder",
-		defaultProjectVersion: internalconfig.DefaultVersion,
-		defaultPlugins:        make(map[string][]string),
+		defaultProjectVersion: cfgv3.Version,
+		defaultPlugins:        make(map[config.Version][]string),
 		plugins:               make(map[string]plugin.Plugin),
 	}
 
@@ -166,49 +147,59 @@ func newCLI(opts ...Option) (*cli, error) {
 }
 
 // getInfoFromFlags obtains the project version and plugin keys from flags.
-func (c *cli) getInfoFromFlags() (string, []string) {
+func (c *cli) getInfoFromFlags() (string, []string, error) {
 	// Partially parse the command line arguments
-	fs := pflag.NewFlagSet("base", pflag.ExitOnError)
+	fs := pflag.NewFlagSet("base", pflag.ContinueOnError)
+
+	// Load the base command global flags
+	fs.AddFlagSet(c.cmd.PersistentFlags())
 
 	// Omit unknown flags to avoid parsing errors
 	fs.ParseErrorsWhitelist = pflag.ParseErrorsWhitelist{UnknownFlags: true}
 
-	// Define the flags needed for plugin resolution
-	var projectVersion, plugins string
-	var help bool
-	fs.StringVar(&projectVersion, projectVersionFlag, "", "project version")
-	fs.StringVar(&plugins, pluginsFlag, "", "plugins to run")
-	fs.BoolVarP(&help, "help", "h", false, "help flag")
+	// FlagSet special cases --help and -h, so we need to create a dummy flag with these 2 values to prevent the default
+	// behavior (printing the usage of this FlagSet) as we want to print the usage message of the underlying command.
+	fs.BoolP("help", "h", false, fmt.Sprintf("help for %s", c.commandName))
 
 	// Parse the arguments
-	err := fs.Parse(os.Args[1:])
-
-	// User needs *generic* help if args are incorrect or --help is set and
-	// --project-version is not set. Plugin-specific help is given if a
-	// plugin.Context is updated, which does not require this field.
-	c.doHelp = err != nil || help && !fs.Lookup(projectVersionFlag).Changed
-
-	// Split the comma-separated plugins
-	var pluginSet []string
-	if plugins != "" {
-		for _, p := range strings.Split(plugins, ",") {
-			pluginSet = append(pluginSet, strings.TrimSpace(p))
-		}
+	if err := fs.Parse(os.Args[1:]); err != nil {
+		return "", []string{}, err
 	}
 
-	return projectVersion, pluginSet
+	// Define the flags needed for plugin resolution
+	var (
+		projectVersion string
+		plugins        []string
+		err            error
+	)
+	// GetXxxxx methods will not yield errors because we know for certain these flags exist and types match.
+	projectVersion, err = fs.GetString(projectVersionFlag)
+	if err != nil {
+		return "", []string{}, err
+	}
+	plugins, err = fs.GetStringSlice(pluginsFlag)
+	if err != nil {
+		return "", []string{}, err
+	}
+
+	// Remove leading and trailing spaces
+	for i, key := range plugins {
+		plugins[i] = strings.TrimSpace(key)
+	}
+
+	return projectVersion, plugins, nil
 }
 
 // getInfoFromConfigFile obtains the project version and plugin keys from the project config file.
-func getInfoFromConfigFile() (string, []string, error) {
+func getInfoFromConfigFile() (config.Version, []string, error) {
 	// Read the project configuration file
 	projectConfig, err := internalconfig.Read()
 	switch {
 	case err == nil:
 	case os.IsNotExist(err):
-		return "", nil, nil
+		return config.Version{}, nil, nil
 	default:
-		return "", nil, err
+		return config.Version{}, nil, err
 	}
 
 	return getInfoFromConfig(projectConfig)
@@ -216,74 +207,82 @@ func getInfoFromConfigFile() (string, []string, error) {
 
 // getInfoFromConfig obtains the project version and plugin keys from the project config.
 // It is extracted from getInfoFromConfigFile for testing purposes.
-func getInfoFromConfig(projectConfig *config.Config) (string, []string, error) {
+func getInfoFromConfig(projectConfig config.Config) (config.Version, []string, error) {
 	// Split the comma-separated plugins
 	var pluginSet []string
-	if projectConfig.Layout != "" {
-		for _, p := range strings.Split(projectConfig.Layout, ",") {
+	if projectConfig.GetLayout() != "" {
+		for _, p := range strings.Split(projectConfig.GetLayout(), ",") {
 			pluginSet = append(pluginSet, strings.TrimSpace(p))
 		}
 	}
 
-	return projectConfig.Version, pluginSet, nil
+	return projectConfig.GetVersion(), pluginSet, nil
 }
 
 // resolveFlagsAndConfigFileConflicts checks if the provided combined input from flags and
 // the config file is valid and uses default values in case some info was not provided.
 func (c cli) resolveFlagsAndConfigFileConflicts(
-	flagProjectVersion, cfgProjectVersion string,
+	flagProjectVersionString string,
+	cfgProjectVersion config.Version,
 	flagPlugins, cfgPlugins []string,
-) (string, []string, error) {
-	// Resolve project version
-	var projectVersion string
-	switch {
-	// If they are both blank, use the default
-	case flagProjectVersion == "" && cfgProjectVersion == "":
-		projectVersion = c.defaultProjectVersion
-	// If they are equal doesn't matter which we choose
-	case flagProjectVersion == cfgProjectVersion:
-		projectVersion = flagProjectVersion
-	// If any is blank, choose the other
-	case cfgProjectVersion == "":
-		projectVersion = flagProjectVersion
-	case flagProjectVersion == "":
-		projectVersion = cfgProjectVersion
-	// If none is blank and they are different error out
-	default:
-		return "", nil, fmt.Errorf("project version conflict between command line args (%s) "+
-			"and project configuration file (%s)", flagProjectVersion, cfgProjectVersion)
-	}
-	// It still may be empty if default, flag and config project versions are empty
-	if projectVersion != "" {
-		// Validate the project version
-		if err := validation.ValidateProjectVersion(projectVersion); err != nil {
-			return "", nil, err
+) (config.Version, []string, error) {
+	// Parse project configuration version from flags
+	var flagProjectVersion config.Version
+	if flagProjectVersionString != "" {
+		if err := flagProjectVersion.Parse(flagProjectVersionString); err != nil {
+			return config.Version{}, nil, fmt.Errorf("unable to parse project version flag: %w", err)
 		}
+	}
+
+	// Resolve project version
+	var projectVersion config.Version
+	isFlagProjectVersionInvalid := flagProjectVersion.Validate() != nil
+	isCfgProjectVersionInvalid := cfgProjectVersion.Validate() != nil
+	switch {
+	// If they are both invalid (empty is invalid), use the default
+	case isFlagProjectVersionInvalid && isCfgProjectVersionInvalid:
+		projectVersion = c.defaultProjectVersion
+	// If any is invalid (empty is invalid), choose the other
+	case isCfgProjectVersionInvalid:
+		projectVersion = flagProjectVersion
+	case isFlagProjectVersionInvalid:
+		projectVersion = cfgProjectVersion
+	// If they are equal doesn't matter which we choose
+	case flagProjectVersion.Compare(cfgProjectVersion) == 0:
+		projectVersion = flagProjectVersion
+	// If both are valid (empty is invalid) and they are different error out
+	default:
+		return config.Version{}, nil, fmt.Errorf("project version conflict between command line args (%s) "+
+			"and project configuration file (%s)", flagProjectVersionString, cfgProjectVersion)
 	}
 
 	// Resolve plugins
 	var plugins []string
+	isFlagPluginsEmpty := len(flagPlugins) == 0
+	isCfgPluginsEmpty := len(cfgPlugins) == 0
 	switch {
-	// If they are both blank, use the default
-	case len(flagPlugins) == 0 && len(cfgPlugins) == 0:
-		plugins = c.defaultPlugins[projectVersion]
+	// If they are both empty, use the default
+	case isFlagPluginsEmpty && isCfgPluginsEmpty:
+		if defaults, hasDefaults := c.defaultPlugins[projectVersion]; hasDefaults {
+			plugins = defaults
+		}
+	// If any is empty, choose the other
+	case isCfgPluginsEmpty:
+		plugins = flagPlugins
+	case isFlagPluginsEmpty:
+		plugins = cfgPlugins
 	// If they are equal doesn't matter which we choose
 	case equalStringSlice(flagPlugins, cfgPlugins):
 		plugins = flagPlugins
-	// If any is blank, choose the other
-	case len(cfgPlugins) == 0:
-		plugins = flagPlugins
-	case len(flagPlugins) == 0:
-		plugins = cfgPlugins
-	// If none is blank and they are different error out
+	// If none is empty and they are different error out
 	default:
-		return "", nil, fmt.Errorf("plugins conflict between command line args (%v) "+
+		return config.Version{}, nil, fmt.Errorf("plugins conflict between command line args (%v) "+
 			"and project configuration file (%v)", flagPlugins, cfgPlugins)
 	}
 	// Validate the plugins
 	for _, p := range plugins {
 		if err := plugin.ValidateKey(p); err != nil {
-			return "", nil, err
+			return config.Version{}, nil, err
 		}
 	}
 
@@ -293,14 +292,16 @@ func (c cli) resolveFlagsAndConfigFileConflicts(
 // getInfo obtains the project version and plugin keys resolving conflicts among flags and the project config file.
 func (c *cli) getInfo() error {
 	// Get project version and plugin info from flags
-	flagProjectVersion, flagPlugins := c.getInfoFromFlags()
+	flagProjectVersion, flagPlugins, err := c.getInfoFromFlags()
+	if err != nil {
+		return err
+	}
 	// Get project version and plugin info from project configuration file
 	cfgProjectVersion, cfgPlugins, _ := getInfoFromConfigFile()
 	// We discard the error because not being able to read a project configuration file
 	// is not fatal for some commands. The ones that require it need to check its existence.
 
 	// Resolve project version and plugin keys
-	var err error
 	c.projectVersion, c.pluginKeys, err = c.resolveFlagsAndConfigFileConflicts(
 		flagProjectVersion, cfgProjectVersion, flagPlugins, cfgPlugins,
 	)
@@ -322,8 +323,8 @@ func (c *cli) resolve() error {
 		// under no support contract. However users should be notified _why_ their plugin cannot be found.
 		var extraErrMsg string
 		if version != "" {
-			ver, err := plugin.ParseVersion(version)
-			if err != nil {
+			var ver plugin.Version
+			if err := ver.Parse(version); err != nil {
 				return fmt.Errorf("error parsing input plugin version from key %q: %v", pluginKey, err)
 			}
 			if !ver.IsStable() {
@@ -399,15 +400,13 @@ func (c *cli) resolve() error {
 	return nil
 }
 
-// buildRootCmd returns a root command with a subcommand tree reflecting the
+// addSubcommands returns a root command with a subcommand tree reflecting the
 // current project's state.
-func (c cli) buildRootCmd() *cobra.Command {
-	rootCmd := c.defaultCommand()
-
+func (c *cli) addSubcommands() {
 	// kubebuilder completion
 	// Only add completion if requested
 	if c.completionCommand {
-		rootCmd.AddCommand(c.newCompletionCmd())
+		c.cmd.AddCommand(c.newCompletionCmd())
 	}
 
 	// kubebuilder create
@@ -416,76 +415,61 @@ func (c cli) buildRootCmd() *cobra.Command {
 	createCmd.AddCommand(c.newCreateAPICmd())
 	createCmd.AddCommand(c.newCreateWebhookCmd())
 	if createCmd.HasSubCommands() {
-		rootCmd.AddCommand(createCmd)
+		c.cmd.AddCommand(createCmd)
 	}
 
 	// kubebuilder edit
-	rootCmd.AddCommand(c.newEditCmd())
+	c.cmd.AddCommand(c.newEditCmd())
 
 	// kubebuilder init
-	rootCmd.AddCommand(c.newInitCmd())
+	c.cmd.AddCommand(c.newInitCmd())
 
 	// kubebuilder version
 	// Only add version if a version string was provided
 	if c.version != "" {
-		rootCmd.AddCommand(c.newVersionCmd())
+		c.cmd.AddCommand(c.newVersionCmd())
 	}
-
-	return rootCmd
 }
 
-// defaultCommand returns the root command without its subcommands.
-func (c cli) defaultCommand() *cobra.Command {
-	return &cobra.Command{
-		Use:   c.commandName,
-		Short: "Development kit for building Kubernetes extensions and tools.",
-		Long: fmt.Sprintf(`Development kit for building Kubernetes extensions and tools.
+// buildCmd creates the underlying cobra command and stores it internally.
+func (c *cli) buildCmd() error {
+	c.cmd = c.newRootCmd()
 
-Provides libraries and tools to create new projects, APIs and controllers.
-Includes tools for packaging artifacts into an installer container.
+	// Get project version and plugin keys.
+	if err := c.getInfo(); err != nil {
+		return err
+	}
 
-Typical project lifecycle:
+	// Resolve plugins for project version and plugin keys.
+	if err := c.resolve(); err != nil {
+		return err
+	}
 
-- initialize a project:
+	// Add the subcommands
+	c.addSubcommands()
 
-  %[1]s init --domain example.com --license apache2 --owner "The Kubernetes authors"
+	return nil
+}
 
-- create one or more a new resource APIs and add your code to them:
-
-  %[1]s create api --group <group> --version <version> --kind <Kind>
-
-Create resource will prompt the user for if it should scaffold the Resource and / or Controller. To only
-scaffold a Controller for an existing Resource, select "n" for Resource. To only define
-the schema for a Resource without writing a Controller, select "n" for Controller.
-
-After the scaffold is written, api will run make on the project.
-`,
-			c.commandName),
-		Example: fmt.Sprintf(`
-  # Initialize your project
-  %[1]s init --domain example.com --license apache2 --owner "The Kubernetes authors"
-
-  # Create a frigates API with Group: ship, Version: v1beta1 and Kind: Frigate
-  %[1]s create api --group ship --version v1beta1 --kind Frigate
-
-  # Edit the API Scheme
-  nano api/v1beta1/frigate_types.go
-
-  # Edit the Controller
-  nano controllers/frigate_controller.go
-
-  # Install CRDs into the Kubernetes cluster using kubectl apply
-  make install
-
-  # Regenerate code and run against the Kubernetes cluster configured by ~/.kube/config
-  make run
-`,
-			c.commandName),
-		Run: func(cmd *cobra.Command, args []string) {
-			if err := cmd.Help(); err != nil {
-				log.Fatal(err)
+// addExtraCommands adds the additional commands.
+func (c *cli) addExtraCommands() error {
+	for _, cmd := range c.extraCommands {
+		for _, subCmd := range c.cmd.Commands() {
+			if cmd.Name() == subCmd.Name() {
+				return fmt.Errorf("command %q already exists", cmd.Name())
 			}
-		},
+		}
+		c.cmd.AddCommand(cmd)
+	}
+	return nil
+}
+
+// printDeprecationWarnings prints the deprecation warnings of the resolved plugins.
+func (c cli) printDeprecationWarnings() {
+	for _, p := range c.resolvedPlugins {
+		if d, isDeprecated := p.(plugin.Deprecated); isDeprecated {
+			fmt.Printf(noticeColor, fmt.Sprintf(deprecationFmt, d.DeprecationWarning()))
+		}
 	}
 }
 

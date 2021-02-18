@@ -21,8 +21,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"sigs.k8s.io/kubebuilder/v2/pkg/cli/internal/config"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugin"
+	"sigs.k8s.io/kubebuilder/v3/pkg/cli/internal/config"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 )
 
 func (c cli) newEditCmd() *cobra.Command {
@@ -83,7 +83,7 @@ func (c cli) bindEdit(ctx plugin.Context, cmd *cobra.Command) {
 	}
 
 	subcommand := editPlugin.GetEditSubcommand()
-	subcommand.InjectConfig(&cfg.Config)
+	subcommand.InjectConfig(cfg.Config)
 	subcommand.BindFlags(cmd.Flags())
 	subcommand.UpdateContext(&ctx)
 	cmd.Long = ctx.Description

@@ -19,18 +19,18 @@ package scaffolds
 import (
 	"fmt"
 
-	"sigs.k8s.io/kubebuilder/v2/pkg/model"
-	"sigs.k8s.io/kubebuilder/v2/pkg/model/config"
-	"sigs.k8s.io/kubebuilder/v2/pkg/model/resource"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugins/golang/v3/scaffolds/internal/templates"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugins/golang/v3/scaffolds/internal/templates/api"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugins/golang/v3/scaffolds/internal/templates/config/crd"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugins/golang/v3/scaffolds/internal/templates/config/crd/patches"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugins/golang/v3/scaffolds/internal/templates/config/rbac"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugins/golang/v3/scaffolds/internal/templates/config/samples"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugins/golang/v3/scaffolds/internal/templates/controllers"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugins/internal/cmdutil"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugins/internal/machinery"
+	"sigs.k8s.io/kubebuilder/v3/pkg/config"
+	"sigs.k8s.io/kubebuilder/v3/pkg/model"
+	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/api"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/config/crd"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/config/crd/patches"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/config/rbac"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/config/samples"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/controllers"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/cmdutil"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/machinery"
 )
 
 var _ cmdutil.Scaffolder = &apiScaffolder{}
@@ -38,35 +38,31 @@ var _ cmdutil.Scaffolder = &apiScaffolder{}
 // apiScaffolder contains configuration for generating scaffolding for Go type
 // representing the API and controller that implements the behavior for the API.
 type apiScaffolder struct {
-	config      *config.Config
+	config      config.Config
 	boilerplate string
-	resource    *resource.Resource
+	resource    resource.Resource
+
 	// plugins is the list of plugins we should allow to transform our generated scaffolding
 	plugins []model.Plugin
-	// doResource indicates whether to scaffold API Resource or not
-	doResource bool
-	// doController indicates whether to scaffold controller files or not
-	doController bool
+
 	// force indicates whether to scaffold controller files even if it exists or not
 	force bool
 }
 
 // NewAPIScaffolder returns a new Scaffolder for API/controller creation operations
 func NewAPIScaffolder(
-	config *config.Config,
+	config config.Config,
 	boilerplate string,
-	res *resource.Resource,
-	doResource, doController, force bool,
+	res resource.Resource,
+	force bool,
 	plugins []model.Plugin,
 ) cmdutil.Scaffolder {
 	return &apiScaffolder{
-		config:       config,
-		boilerplate:  boilerplate,
-		resource:     res,
-		plugins:      plugins,
-		doResource:   doResource,
-		doController: doController,
-		force:        force,
+		config:      config,
+		boilerplate: boilerplate,
+		resource:    res,
+		plugins:     plugins,
+		force:       force,
 	}
 }
 
@@ -80,15 +76,21 @@ func (s *apiScaffolder) newUniverse() *model.Universe {
 	return model.NewUniverse(
 		model.WithConfig(s.config),
 		model.WithBoilerplate(s.boilerplate),
-		model.WithResource(s.resource),
+		model.WithResource(&s.resource),
 	)
 }
 
 // TODO: re-use universe created by s.newUniverse() if possible.
 func (s *apiScaffolder) scaffold() error {
-	if s.doResource {
+	// Keep track of these values before the update
+	doAPI := s.resource.HasAPI()
+	doController := s.resource.HasController()
 
-		s.config.UpdateResources(s.resource.Data())
+	if err := s.config.UpdateResource(s.resource); err != nil {
+		return fmt.Errorf("error updating resource: %w", err)
+	}
+
+	if doAPI {
 
 		if err := machinery.NewScaffold(s.plugins...).Execute(
 			s.newUniverse(),
@@ -97,8 +99,8 @@ func (s *apiScaffolder) scaffold() error {
 			&samples.CRDSample{Force: s.force},
 			&rbac.CRDEditorRole{},
 			&rbac.CRDViewerRole{},
-			&patches.EnableWebhookPatch{CRDVersion: s.resource.API.CRDVersion},
-			&patches.EnableCAInjectionPatch{CRDVersion: s.resource.API.CRDVersion},
+			&patches.EnableWebhookPatch{},
+			&patches.EnableCAInjectionPatch{},
 		); err != nil {
 			return fmt.Errorf("error scaffolding APIs: %v", err)
 		}
@@ -106,19 +108,18 @@ func (s *apiScaffolder) scaffold() error {
 		if err := machinery.NewScaffold().Execute(
 			s.newUniverse(),
 			&crd.Kustomization{},
-			&crd.KustomizeConfig{CRDVersion: s.resource.API.CRDVersion},
+			&crd.KustomizeConfig{},
 		); err != nil {
 			return fmt.Errorf("error scaffolding kustomization: %v", err)
 		}
 
 	}
 
-	if s.doController {
+	if doController {
 		if err := machinery.NewScaffold(s.plugins...).Execute(
 			s.newUniverse(),
-			&controllers.SuiteTest{WireResource: s.doResource, Force: s.force},
-			&controllers.Controller{ControllerRuntimeVersion: ControllerRuntimeVersion, WireResource: s.doResource,
-				Force: s.force},
+			&controllers.SuiteTest{Force: s.force},
+			&controllers.Controller{ControllerRuntimeVersion: ControllerRuntimeVersion, Force: s.force},
 		); err != nil {
 			return fmt.Errorf("error scaffolding controller: %v", err)
 		}
@@ -126,7 +127,7 @@ func (s *apiScaffolder) scaffold() error {
 
 	if err := machinery.NewScaffold(s.plugins...).Execute(
 		s.newUniverse(),
-		&templates.MainUpdater{WireResource: s.doResource, WireController: s.doController},
+		&templates.MainUpdater{WireResource: doAPI, WireController: doController},
 	); err != nil {
 		return fmt.Errorf("error updating main.go: %v", err)
 	}

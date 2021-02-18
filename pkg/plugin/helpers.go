@@ -21,7 +21,8 @@ import (
 	"path"
 	"strings"
 
-	"sigs.k8s.io/kubebuilder/v2/pkg/internal/validation"
+	"sigs.k8s.io/kubebuilder/v3/pkg/config"
+	"sigs.k8s.io/kubebuilder/v3/pkg/internal/validation"
 )
 
 // Key returns a unique identifying string for a plugin's name and version.
@@ -64,7 +65,7 @@ func Validate(p Plugin) error {
 		return fmt.Errorf("plugin %q must support at least one project version", KeyFor(p))
 	}
 	for _, projectVersion := range p.SupportedProjectVersions() {
-		if err := validation.ValidateProjectVersion(projectVersion); err != nil {
+		if err := projectVersion.Validate(); err != nil {
 			return fmt.Errorf("plugin %q supports an invalid project version %q: %v", KeyFor(p), projectVersion, err)
 		}
 	}
@@ -79,7 +80,8 @@ func ValidateKey(key string) error {
 	}
 	// CLI-set plugins do not have to contain a version.
 	if version != "" {
-		if _, err := ParseVersion(version); err != nil {
+		var v Version
+		if err := v.Parse(version); err != nil {
 			return fmt.Errorf("invalid plugin version %q: %v", version, err)
 		}
 	}
@@ -95,9 +97,9 @@ func validateName(name string) error {
 }
 
 // SupportsVersion checks if a plugins supports a project version.
-func SupportsVersion(p Plugin, projectVersion string) bool {
+func SupportsVersion(p Plugin, projectVersion config.Version) bool {
 	for _, version := range p.SupportedProjectVersions() {
-		if version == projectVersion {
+		if projectVersion.Compare(version) == 0 {
 			return true
 		}
 	}

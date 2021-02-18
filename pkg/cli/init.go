@@ -26,9 +26,10 @@ import (
 
 	"github.com/spf13/cobra"
 
-	internalconfig "sigs.k8s.io/kubebuilder/v2/pkg/cli/internal/config"
-	"sigs.k8s.io/kubebuilder/v2/pkg/model/config"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugin"
+	internalconfig "sigs.k8s.io/kubebuilder/v3/pkg/cli/internal/config"
+	"sigs.k8s.io/kubebuilder/v3/pkg/config"
+	cfgv2 "sigs.k8s.io/kubebuilder/v3/pkg/config/v2"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 )
 
 func (c cli) newInitCmd() *cobra.Command {
@@ -43,17 +44,13 @@ func (c cli) newInitCmd() *cobra.Command {
 
 	// Register --project-version on the dynamically created command
 	// so that it shows up in help and does not cause a parse error.
-	cmd.Flags().String(projectVersionFlag, c.defaultProjectVersion,
+	cmd.Flags().String(projectVersionFlag, c.defaultProjectVersion.String(),
 		fmt.Sprintf("project version, possible values: (%s)", strings.Join(c.getAvailableProjectVersions(), ", ")))
 	// The --plugins flag can only be called to init projects v2+.
-	if c.projectVersion != config.Version2 {
+	if c.projectVersion.Compare(cfgv2.Version) == 1 {
 		cmd.Flags().StringSlice(pluginsFlag, nil,
 			"Name and optionally version of the plugin to initialize the project with. "+
 				fmt.Sprintf("Available plugins: (%s)", strings.Join(c.getAvailablePlugins(), ", ")))
-	}
-
-	if c.doHelp {
-		return cmd
 	}
 
 	// Lookup the plugin for projectVersion and bind it to the command.
@@ -86,7 +83,7 @@ func (c cli) getInitHelpExamples() string {
 }
 
 func (c cli) getAvailableProjectVersions() (projectVersions []string) {
-	versionSet := make(map[string]struct{})
+	versionSet := make(map[config.Version]struct{})
 	for _, p := range c.plugins {
 		// Only return versions of non-deprecated plugins.
 		if _, isDeprecated := p.(plugin.Deprecated); !isDeprecated {
@@ -96,7 +93,7 @@ func (c cli) getAvailableProjectVersions() (projectVersions []string) {
 		}
 	}
 	for version := range versionSet {
-		projectVersions = append(projectVersions, strconv.Quote(version))
+		projectVersions = append(projectVersions, strconv.Quote(version.String()))
 	}
 	sort.Strings(projectVersions)
 	return projectVersions
@@ -139,11 +136,14 @@ func (c cli) bindInit(ctx plugin.Context, cmd *cobra.Command) {
 		return
 	}
 
-	cfg := internalconfig.New(internalconfig.DefaultPath)
-	cfg.Version = c.projectVersion
+	cfg, err := internalconfig.New(c.projectVersion, internalconfig.DefaultPath)
+	if err != nil {
+		cmdErr(cmd, fmt.Errorf("unable to initialize the project configuration: %w", err))
+		return
+	}
 
 	subcommand := initPlugin.GetInitSubcommand()
-	subcommand.InjectConfig(&cfg.Config)
+	subcommand.InjectConfig(cfg.Config)
 	subcommand.BindFlags(cmd.Flags())
 	subcommand.UpdateContext(&ctx)
 	cmd.Long = ctx.Description

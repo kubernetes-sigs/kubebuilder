@@ -19,7 +19,7 @@ package plugin
 import (
 	"github.com/spf13/pflag"
 
-	"sigs.k8s.io/kubebuilder/v2/pkg/model/config"
+	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 )
 
 // Plugin is an interface that defines the common base for all plugins
@@ -32,9 +32,9 @@ type Plugin interface {
 	//
 	// NOTE: this version is different from config version.
 	Version() Version
-	// SupportedProjectVersions lists all project configuration versions this plugin supports, ex. []string{"2", "3"}.
+	// SupportedProjectVersions lists all project configuration versions this plugin supports.
 	// The returned slice cannot be empty.
-	SupportedProjectVersions() []string
+	SupportedProjectVersions() []config.Version
 }
 
 // Deprecated is an interface that defines the messages for plugins that are deprecated.
@@ -56,7 +56,7 @@ type Subcommand interface {
 	Run() error
 	// InjectConfig passes a config to a plugin. The plugin may modify the config.
 	// Initializing, loading, and saving the config is managed by the cli package.
-	InjectConfig(*config.Config)
+	InjectConfig(config.Config)
 }
 
 // Context is the runtime context for a subcommand.

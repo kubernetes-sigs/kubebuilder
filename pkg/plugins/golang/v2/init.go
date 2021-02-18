@@ -24,22 +24,29 @@ import (
 
 	"github.com/spf13/pflag"
 
-	"sigs.k8s.io/kubebuilder/v2/pkg/internal/validation"
-	"sigs.k8s.io/kubebuilder/v2/pkg/model/config"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugin"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugins/golang/v2/scaffolds"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugins/internal/cmdutil"
-	"sigs.k8s.io/kubebuilder/v2/pkg/plugins/internal/util"
+	"sigs.k8s.io/kubebuilder/v3/pkg/config"
+	cfgv2 "sigs.k8s.io/kubebuilder/v3/pkg/config/v2"
+	"sigs.k8s.io/kubebuilder/v3/pkg/internal/validation"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/cmdutil"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/util"
 )
 
 type initSubcommand struct {
-	config *config.Config
+	config config.Config
+
 	// For help text.
 	commandName string
 
 	// boilerplate options
 	license string
 	owner   string
+
+	// config options
+	domain string
+	repo   string
+	name   string
 
 	// flags
 	fetchDeps          bool
@@ -85,19 +92,20 @@ func (p *initSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&p.owner, "owner", "", "owner to add to the copyright")
 
 	// project args
-	fs.StringVar(&p.config.Repo, "repo", "", "name to use for go module (e.g., github.com/user/repo), "+
+	fs.StringVar(&p.domain, "domain", "my.domain", "domain for groups")
+	fs.StringVar(&p.repo, "repo", "", "name to use for go module (e.g., github.com/user/repo), "+
 		"defaults to the go package of the current working directory.")
-	fs.StringVar(&p.config.Domain, "domain", "my.domain", "domain for groups")
-	if p.config.IsV3() {
-		fs.StringVar(&p.config.ProjectName, "project-name", "", "name of this project")
+	if p.config.GetVersion().Compare(cfgv2.Version) > 0 {
+		fs.StringVar(&p.name, "project-name", "", "name of this project")
 	}
 }
 
-func (p *initSubcommand) InjectConfig(c *config.Config) {
-	// v3 project configs get a 'layout' value.
-	if c.IsV3() {
-		c.Layout = plugin.KeyFor(Plugin{})
+func (p *initSubcommand) InjectConfig(c config.Config) {
+	// v2+ project configs get a 'layout' value.
+	if c.GetVersion().Compare(cfgv2.Version) > 0 {
+		_ = c.SetLayout(plugin.KeyFor(Plugin{}))
 	}
+
 	p.config = c
 }
 
@@ -113,36 +121,46 @@ func (p *initSubcommand) Validate() error {
 		}
 	}
 
-	// Check if the project name is a valid k8s namespace (DNS 1123 label).
-	dir, err := os.Getwd()
-	if err != nil {
-		return fmt.Errorf("error getting current directory: %v", err)
-	}
-	projectName := strings.ToLower(filepath.Base(dir))
-	if p.config.IsV3() {
-		if p.config.ProjectName == "" {
-			p.config.ProjectName = projectName
-		} else {
-			projectName = p.config.ProjectName
+	if p.config.GetVersion().Compare(cfgv2.Version) > 0 {
+		// Assign a default project name
+		if p.name == "" {
+			dir, err := os.Getwd()
+			if err != nil {
+				return fmt.Errorf("error getting current directory: %v", err)
+			}
+			p.name = strings.ToLower(filepath.Base(dir))
 		}
-	}
-	if err := validation.IsDNS1123Label(projectName); err != nil {
-		return fmt.Errorf("project name (%s) is invalid: %v", projectName, err)
+		// Check if the project name is a valid k8s namespace (DNS 1123 label).
+		if err := validation.IsDNS1123Label(p.name); err != nil {
+			return fmt.Errorf("project name (%s) is invalid: %v", p.name, err)
+		}
 	}
 
 	// Try to guess repository if flag is not set.
-	if p.config.Repo == "" {
+	if p.repo == "" {
 		repoPath, err := util.FindCurrentRepo()
 		if err != nil {
 			return fmt.Errorf("error finding current repository: %v", err)
 		}
-		p.config.Repo = repoPath
+		p.repo = repoPath
 	}
 
 	return nil
 }
 
 func (p *initSubcommand) GetScaffolder() (cmdutil.Scaffolder, error) {
+	if err := p.config.SetDomain(p.domain); err != nil {
+		return nil, err
+	}
+	if err := p.config.SetRepository(p.repo); err != nil {
+		return nil, err
+	}
+	if p.config.GetVersion().Compare(cfgv2.Version) > 0 {
+		if err := p.config.SetProjectName(p.name); err != nil {
+			return nil, err
+		}
+	}
+
 	return scaffolds.NewInitScaffolder(p.config, p.license, p.owner), nil
 }
 
@@ -161,11 +179,6 @@ func (p *initSubcommand) PostScaffold() error {
 	}
 
 	err = util.RunCmd("Update go.mod", "go", "mod", "tidy")
-	if err != nil {
-		return err
-	}
-
-	err = util.RunCmd("Running make", "make")
 	if err != nil {
 		return err
 	}

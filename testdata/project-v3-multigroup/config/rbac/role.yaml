@@ -9,7 +9,7 @@ rules:
 - apiGroups:
   - apps
   resources:
-  - pods
+  - deployments
   verbs:
   - create
   - delete
@@ -21,13 +21,13 @@ rules:
 - apiGroups:
   - apps
   resources:
-  - pods/finalizers
+  - deployments/finalizers
   verbs:
   - update
 - apiGroups:
   - apps
   resources:
-  - pods/status
+  - deployments/status
   verbs:
   - get
   - patch

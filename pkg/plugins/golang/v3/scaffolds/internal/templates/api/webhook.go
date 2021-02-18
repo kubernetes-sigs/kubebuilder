@@ -21,7 +21,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"sigs.k8s.io/kubebuilder/v2/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
 )
 
 var _ file.Template = &Webhook{}
@@ -34,14 +34,7 @@ type Webhook struct { // nolint:maligned
 	file.ResourceMixin
 
 	// Is the Group domain for the Resource replacing '.' with '-'
-	GroupDomainWithDash string
-
-	// Version of webhook marker to scaffold
-	WebhookVersion string
-	// If scaffold the defaulting webhook
-	Defaulting bool
-	// If scaffold the validating webhook
-	Validating bool
+	QualifiedGroupWithDash string
 
 	Force bool
 }
@@ -63,10 +56,10 @@ func (f *Webhook) SetTemplateDefaults() error {
 	fmt.Println(f.Path)
 
 	webhookTemplate := webhookTemplate
-	if f.Defaulting {
+	if f.Resource.HasDefaultingWebhook() {
 		webhookTemplate = webhookTemplate + defaultingWebhookTemplate
 	}
-	if f.Validating {
+	if f.Resource.HasValidationWebhook() {
 		webhookTemplate = webhookTemplate + validatingWebhookTemplate
 	}
 	f.TemplateBody = webhookTemplate
@@ -77,11 +70,7 @@ func (f *Webhook) SetTemplateDefaults() error {
 		f.IfExistsAction = file.Error
 	}
 
-	f.GroupDomainWithDash = strings.Replace(f.Resource.Domain, ".", "-", -1)
-
-	if f.WebhookVersion == "" {
-		f.WebhookVersion = "v1"
-	}
+	f.QualifiedGroupWithDash = strings.Replace(f.Resource.QualifiedGroup(), ".", "-", -1)
 
 	return nil
 }
@@ -94,10 +83,10 @@ package {{ .Resource.Version }}
 import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	{{- if .Validating }}
+	{{- if .Resource.HasValidationWebhook }}
 	"k8s.io/apimachinery/pkg/runtime"
 	{{- end }}
-	{{- if or .Validating .Defaulting }}
+	{{- if or .Resource.HasValidationWebhook .Resource.HasDefaultingWebhook }}
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	{{- end }}
 )
@@ -117,7 +106,7 @@ func (r *{{ .Resource.Kind }}) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	// TODO(estroz): update admissionReviewVersions to include v1 when controller-runtime supports that version.
 	//nolint:lll
 	defaultingWebhookTemplate = `
-//+kubebuilder:webhook:{{ if ne .WebhookVersion "v1" }}webhookVersions={{"{"}}{{ .WebhookVersion }}{{"}"}},{{ end }}path=/mutate-{{ .GroupDomainWithDash }}-{{ .Resource.Version }}-{{ lower .Resource.Kind }},mutating=true,failurePolicy=fail,sideEffects=None,groups={{ .Resource.Domain }},resources={{ .Resource.Plural }},verbs=create;update,versions={{ .Resource.Version }},name=m{{ lower .Resource.Kind }}.kb.io,admissionReviewVersions={v1,v1beta1}
+//+kubebuilder:webhook:{{ if ne .Resource.Webhooks.WebhookVersion "v1" }}webhookVersions={{"{"}}{{ .Resource.Webhooks.WebhookVersion }}{{"}"}},{{ end }}path=/mutate-{{ .QualifiedGroupWithDash }}-{{ .Resource.Version }}-{{ lower .Resource.Kind }},mutating=true,failurePolicy=fail,sideEffects=None,groups={{ .Resource.QualifiedGroup }},resources={{ .Resource.Plural }},verbs=create;update,versions={{ .Resource.Version }},name=m{{ lower .Resource.Kind }}.kb.io,admissionReviewVersions={v1,v1beta1}
 
 var _ webhook.Defaulter = &{{ .Resource.Kind }}{}
 
@@ -133,7 +122,7 @@ func (r *{{ .Resource.Kind }}) Default() {
 	//nolint:lll
 	validatingWebhookTemplate = `
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-//+kubebuilder:webhook:{{ if ne .WebhookVersion "v1" }}webhookVersions={{"{"}}{{ .WebhookVersion }}{{"}"}},{{ end }}path=/validate-{{ .GroupDomainWithDash }}-{{ .Resource.Version }}-{{ lower .Resource.Kind }},mutating=false,failurePolicy=fail,sideEffects=None,groups={{ .Resource.Domain }},resources={{ .Resource.Plural }},verbs=create;update,versions={{ .Resource.Version }},name=v{{ lower .Resource.Kind }}.kb.io,admissionReviewVersions={v1,v1beta1}
+//+kubebuilder:webhook:{{ if ne .Resource.Webhooks.WebhookVersion "v1" }}webhookVersions={{"{"}}{{ .Resource.Webhooks.WebhookVersion }}{{"}"}},{{ end }}path=/validate-{{ .QualifiedGroupWithDash }}-{{ .Resource.Version }}-{{ lower .Resource.Kind }},mutating=false,failurePolicy=fail,sideEffects=None,groups={{ .Resource.QualifiedGroup }},resources={{ .Resource.Plural }},verbs=create;update,versions={{ .Resource.Version }},name=v{{ lower .Resource.Kind }}.kb.io,admissionReviewVersions={v1,v1beta1}
 
 var _ webhook.Validator = &{{ .Resource.Kind }}{}
 
