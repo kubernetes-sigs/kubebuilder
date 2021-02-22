@@ -499,8 +499,7 @@ var _ = Describe("cfg", func() {
 					},
 				},
 			}
-			// TODO: include cases with Plural, Path, API.namespaced, Controller, Webhooks.Defaulting,
-			//       Webhooks.Validation and Webhooks.Conversion when added
+			// TODO: include cases with Path when added
 			s1 = `domain: my.domain
 layout: go.kubebuilder.io/v2
 projectName: ProjectName
