@@ -92,9 +92,6 @@ const (
 `
 	controllerImportCodeFragment = `"%s/controllers"
 `
-	// TODO(v3): `&%scontrollers` should be used instead of `&%scontroller` as there may be multiple
-	//  controller for different Kinds in the same group. However, this is a backwards incompatible
-	//  change, and thus should be done for next project version.
 	multiGroupControllerImportCodeFragment = `%scontroller "%s/controllers/%s"
 `
 	addschemeCodeFragment = `utilruntime.Must(%s.AddToScheme(scheme))
@@ -108,9 +105,6 @@ const (
 		os.Exit(1)
 	}
 `
-	// TODO(v3): loggers for the same Kind controllers from different groups use the same logger.
-	//  `.WithName("controllers").WithName(GROUP).WithName(KIND)` should be used instead. However,
-	//  this is a backwards incompatible change, and thus should be done for next project version.
 	multiGroupReconcilerSetupCodeFragment = `if err = (&%scontroller.%sReconciler{
 		Client: mgr.GetClient(),
 		Log: ctrl.Log.WithName("controllers").WithName("%s"),
