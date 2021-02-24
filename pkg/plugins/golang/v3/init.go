@@ -180,7 +180,7 @@ func (p *initSubcommand) PostScaffold() error {
 		return err
 	}
 
-	err = util.RunCmd("Update go.mod", "go", "mod", "tidy")
+	err = util.RunCmd("Update dependencies", "go", "mod", "tidy")
 	if err != nil {
 		return err
 	}
