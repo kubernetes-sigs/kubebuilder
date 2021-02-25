@@ -18,16 +18,10 @@ package filesystem
 
 import (
 	"os"
-	"testing"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
-
-func TestFileSystem(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "FileSystem suite")
-}
 
 var _ = Describe("FileSystem", func() {
 	Describe("New", func() {

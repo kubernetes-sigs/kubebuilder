@@ -20,16 +20,10 @@ import (
 	"bytes"
 	"errors"
 	"path/filepath"
-	"testing"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
-
-func TestMockFileSystem(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "MockFileSystem suite")
-}
 
 //nolint:dupl
 var _ = Describe("MockFileSystem", func() {
