@@ -19,17 +19,11 @@ package machinery
 import (
 	"errors"
 	"path/filepath"
-	"testing"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 )
-
-func TestErrors(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Error suite")
-}
 
 var _ = Describe("Errors", func() {
 	var (
