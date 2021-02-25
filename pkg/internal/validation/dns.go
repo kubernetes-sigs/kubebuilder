@@ -40,10 +40,10 @@ type dnsValidationConfig struct {
 }
 
 var dns1123LabelConfig = dnsValidationConfig{
-	format:   dns1123LabelFmt,
-	maxLen:   56, // = 63 - len("-system")
-	re:       regexp.MustCompile("^" + dns1123LabelFmt + "$"),
-	errMsg:   "a DNS-1123 label must consist of lower case alphanumeric characters or '-', " +
+	format: dns1123LabelFmt,
+	maxLen: 56, // = 63 - len("-system")
+	re:     regexp.MustCompile("^" + dns1123LabelFmt + "$"),
+	errMsg: "a DNS-1123 label must consist of lower case alphanumeric characters or '-', " +
 		"and must start and end with an alphanumeric character",
 	examples: []string{"example.com"},
 }
