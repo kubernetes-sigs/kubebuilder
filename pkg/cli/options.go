@@ -57,22 +57,16 @@ func WithDefaultProjectVersion(version config.Version) Option {
 }
 
 // WithDefaultPlugins is an Option that sets the cli's default plugins.
-func WithDefaultPlugins(projectVersion config.Version, plugins ...plugin.Plugin) Option {
+func WithDefaultPlugins(plugins ...plugin.Plugin) Option {
 	return func(c *cli) error {
-		if err := projectVersion.Validate(); err != nil {
-			return fmt.Errorf("broken pre-set project version %q for default plugins: %v", projectVersion, err)
-		}
 		if len(plugins) == 0 {
-			return fmt.Errorf("empty set of plugins provided for project version %q", projectVersion)
+			return fmt.Errorf("empty set of plugins provided")
 		}
 		for _, p := range plugins {
 			if err := plugin.Validate(p); err != nil {
 				return fmt.Errorf("broken pre-set default plugin %q: %v", plugin.KeyFor(p), err)
 			}
-			if !plugin.SupportsVersion(p, projectVersion) {
-				return fmt.Errorf("default plugin %q doesn't support version %q", plugin.KeyFor(p), projectVersion)
-			}
-			c.defaultPlugins[projectVersion] = append(c.defaultPlugins[projectVersion], plugin.KeyFor(p))
+			c.defaultPlugins = append(c.defaultPlugins, plugin.KeyFor(p))
 		}
 		return nil
 	}

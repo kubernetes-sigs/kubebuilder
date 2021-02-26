@@ -74,8 +74,8 @@ configuration please run:
 
 	str += fmt.Sprintf("\nDefault project version: %s\n", c.defaultProjectVersion)
 
-	if defaultPlugins, hasDefaultPlugins := c.defaultPlugins[c.defaultProjectVersion]; hasDefaultPlugins {
-		str += fmt.Sprintf("Default plugin keys: %q\n", strings.Join(defaultPlugins, ","))
+	if len(c.defaultPlugins) != 0 {
+		str += fmt.Sprintf("Default plugin keys: %q\n", strings.Join(c.defaultPlugins, ","))
 	}
 
 	str += fmt.Sprintf(`

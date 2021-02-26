@@ -26,8 +26,10 @@ import (
 
 	internalconfig "sigs.k8s.io/kubebuilder/v3/pkg/cli/internal/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
+	cfgv2 "sigs.k8s.io/kubebuilder/v3/pkg/config/v2"
 	cfgv3 "sigs.k8s.io/kubebuilder/v3/pkg/config/v3"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
+	pluginv2 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2"
 )
 
 const (
@@ -76,7 +78,7 @@ type cli struct { //nolint:maligned
 	// Default project version in case none is provided and a config file can't be found.
 	defaultProjectVersion config.Version
 	// Default plugins in case none is provided and a config file can't be found.
-	defaultPlugins map[config.Version][]string
+	defaultPlugins []string
 	// Plugins registered in the cli.
 	plugins map[string]plugin.Plugin
 	// Commands injected by options.
@@ -132,7 +134,7 @@ func newCLI(opts ...Option) (*cli, error) {
 	c := &cli{
 		commandName:           "kubebuilder",
 		defaultProjectVersion: cfgv3.Version,
-		defaultPlugins:        make(map[config.Version][]string),
+		defaultPlugins:        make([]string, 0),
 		plugins:               make(map[string]plugin.Plugin),
 	}
 
@@ -187,6 +189,12 @@ func (c *cli) getInfoFromFlags() (string, []string, error) {
 		plugins[i] = strings.TrimSpace(key)
 	}
 
+	// For backwards compatibility reasons, defining the project version flag and not defining
+	// the plugins flag should be interpreted as if the plugins flag was set to go/v2.
+	if projectVersion == "2" && len(plugins) == 0 {
+		plugins = append(plugins, plugin.KeyFor(pluginv2.Plugin{}))
+	}
+
 	return projectVersion, plugins, nil
 }
 
@@ -208,6 +216,11 @@ func getInfoFromConfigFile() (config.Version, []string, error) {
 // getInfoFromConfig obtains the project version and plugin keys from the project config.
 // It is extracted from getInfoFromConfigFile for testing purposes.
 func getInfoFromConfig(projectConfig config.Config) (config.Version, []string, error) {
+	// Project v2 did not store the layout field, so we set it to the only available plugin
+	if projectConfig.GetVersion().Compare(cfgv2.Version) == 0 {
+		return cfgv2.Version, []string{plugin.KeyFor(pluginv2.Plugin{})}, nil
+	}
+
 	// Split the comma-separated plugins
 	var pluginSet []string
 	if projectConfig.GetLayout() != "" {
@@ -263,9 +276,7 @@ func (c cli) resolveFlagsAndConfigFileConflicts(
 	switch {
 	// If they are both empty, use the default
 	case isFlagPluginsEmpty && isCfgPluginsEmpty:
-		if defaults, hasDefaults := c.defaultPlugins[projectVersion]; hasDefaults {
-			plugins = defaults
-		}
+		plugins = c.defaultPlugins
 	// If any is empty, choose the other
 	case isCfgPluginsEmpty:
 		plugins = flagPlugins

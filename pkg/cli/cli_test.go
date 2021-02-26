@@ -108,7 +108,7 @@ var _ = Describe("CLI", func() {
 				projectVersion, plugins, err = c.getInfoFromFlags()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(projectVersion).To(Equal("2"))
-				Expect(len(plugins)).To(Equal(0))
+				Expect(plugins).To(Equal([]string{"go.kubebuilder.io/v2"}))
 			})
 		})
 
@@ -197,14 +197,14 @@ var _ = Describe("CLI", func() {
 				projectVersion, plugins, err = getInfoFromConfig(projectConfig)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(projectVersion.Compare(projectConfig.GetVersion())).To(Equal(0))
-				Expect(len(plugins)).To(Equal(0))
+				Expect(plugins).To(Equal([]string{"go.kubebuilder.io/v2"}))
 			})
 		})
 
 		When("having layout field", func() {
 			It("should succeed", func() {
 				projectConfig = cfgv3.New()
-				Expect(projectConfig.SetLayout("go.kubebuilder.io/v2")).To(Succeed())
+				Expect(projectConfig.SetLayout("go.kubebuilder.io/v3")).To(Succeed())
 				projectVersion, plugins, err = getInfoFromConfig(projectConfig)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(projectVersion.Compare(projectConfig.GetVersion())).To(Equal(0))
@@ -411,10 +411,7 @@ var _ = Describe("CLI", func() {
 				It("should succeed", func() {
 					c = &cli{
 						defaultProjectVersion: projectVersion1,
-						defaultPlugins: map[config.Version][]string{
-							projectVersion1: {pluginKey1},
-							projectVersion2: {pluginKey2},
-						},
+						defaultPlugins:        []string{pluginKey1},
 					}
 					_, plugins, err = c.resolveFlagsAndConfigFileConflicts(
 						"",
@@ -463,9 +460,7 @@ var _ = Describe("CLI", func() {
 			When("having default plugin keys set and from flags", func() {
 				It("should succeed", func() {
 					c = &cli{
-						defaultPlugins: map[config.Version][]string{
-							{}: {pluginKey1},
-						},
+						defaultPlugins: []string{pluginKey1},
 					}
 					_, plugins, err = c.resolveFlagsAndConfigFileConflicts(
 						"",
@@ -482,9 +477,7 @@ var _ = Describe("CLI", func() {
 			When("having default plugin keys set and from config file", func() {
 				It("should succeed", func() {
 					c = &cli{
-						defaultPlugins: map[config.Version][]string{
-							{}: {pluginKey1},
-						},
+						defaultPlugins: []string{pluginKey1},
 					}
 					_, plugins, err = c.resolveFlagsAndConfigFileConflicts(
 						"",
@@ -528,9 +521,7 @@ var _ = Describe("CLI", func() {
 		When("having three plugin keys sources", func() {
 			It("should succeed if plugin keys from flags and config file are the same", func() {
 				c = &cli{
-					defaultPlugins: map[config.Version][]string{
-						{}: {pluginKey1},
-					},
+					defaultPlugins: []string{pluginKey1},
 				}
 				_, plugins, err = c.resolveFlagsAndConfigFileConflicts(
 					"",
@@ -545,9 +536,7 @@ var _ = Describe("CLI", func() {
 
 			It("should fail if plugin keys from flags and config file are different", func() {
 				c = &cli{
-					defaultPlugins: map[config.Version][]string{
-						{}: {pluginKey1},
-					},
+					defaultPlugins: []string{pluginKey1},
 				}
 				_, _, err = c.resolveFlagsAndConfigFileConflicts(
 					"",
@@ -582,9 +571,7 @@ var _ = Describe("CLI", func() {
 			pluginKeys := []string{"go.kubebuilder.io/v2"}
 			c := &cli{
 				defaultProjectVersion: projectVersion,
-				defaultPlugins: map[config.Version][]string{
-					projectVersion: pluginKeys,
-				},
+				defaultPlugins:        pluginKeys,
 			}
 			c.cmd = c.newRootCmd()
 			Expect(c.getInfo()).To(Succeed())
@@ -745,7 +732,7 @@ var _ = Describe("CLI", func() {
 
 				c, err = New(
 					WithDefaultProjectVersion(projectVersion),
-					WithDefaultPlugins(projectVersion, deprecatedPlugin),
+					WithDefaultPlugins(deprecatedPlugin),
 					WithPlugins(deprecatedPlugin),
 				)
 				_ = w.Close()

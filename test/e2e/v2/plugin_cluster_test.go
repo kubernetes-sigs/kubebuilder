@@ -67,6 +67,7 @@ var _ = Describe("kubebuilder", func() {
 			By("init v2 project")
 			err := kbc.Init(
 				"--project-version", "2",
+				"--plugins", "go/v2",
 				"--domain", kbc.Domain,
 				"--fetch-deps=false")
 			Expect(err).Should(Succeed())

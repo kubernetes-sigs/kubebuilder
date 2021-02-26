@@ -99,57 +99,43 @@ var _ = Describe("CLI options", func() {
 
 	Context("WithDefaultPlugins", func() {
 		It("should return a valid CLI", func() {
-			c, err = newCLI(WithDefaultPlugins(projectVersion, p))
+			c, err = newCLI(WithDefaultPlugins(p))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(c).NotTo(BeNil())
-			Expect(c.defaultPlugins).To(Equal(map[config.Version][]string{projectVersion: {plugin.KeyFor(p)}}))
-		})
-
-		When("providing an invalid project version", func() {
-			It("should return an error", func() {
-				_, err = newCLI(WithDefaultPlugins(config.Version{}, p))
-				Expect(err).To(HaveOccurred())
-			})
+			Expect(c.defaultPlugins).To(Equal([]string{plugin.KeyFor(p)}))
 		})
 
 		When("providing an empty set of plugins", func() {
 			It("should return an error", func() {
-				_, err = newCLI(WithDefaultPlugins(projectVersion))
+				_, err = newCLI(WithDefaultPlugins())
 				Expect(err).To(HaveOccurred())
 			})
 		})
 
 		When("providing a plugin with an invalid name", func() {
 			It("should return an error", func() {
-				_, err = newCLI(WithDefaultPlugins(projectVersion, np1))
+				_, err = newCLI(WithDefaultPlugins(np1))
 				Expect(err).To(HaveOccurred())
 			})
 		})
 
 		When("providing a plugin with an invalid version", func() {
 			It("should return an error", func() {
-				_, err = newCLI(WithDefaultPlugins(projectVersion, np2))
+				_, err = newCLI(WithDefaultPlugins(np2))
 				Expect(err).To(HaveOccurred())
 			})
 		})
 
 		When("providing a plugin with an empty list of supported versions", func() {
 			It("should return an error", func() {
-				_, err = newCLI(WithDefaultPlugins(projectVersion, np3))
+				_, err = newCLI(WithDefaultPlugins(np3))
 				Expect(err).To(HaveOccurred())
 			})
 		})
 
 		When("providing a plugin with an invalid list of supported versions", func() {
 			It("should return an error", func() {
-				_, err = newCLI(WithDefaultPlugins(projectVersion, np4))
-				Expect(err).To(HaveOccurred())
-			})
-		})
-
-		When("providing a default plugin for an unsupported project version", func() {
-			It("should return an error", func() {
-				_, err = newCLI(WithDefaultPlugins(config.Version{Number: 2}, p))
+				_, err = newCLI(WithDefaultPlugins(np4))
 				Expect(err).To(HaveOccurred())
 			})
 		})
