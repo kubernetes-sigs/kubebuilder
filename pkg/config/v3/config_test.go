@@ -18,6 +18,7 @@ package v3
 
 import (
 	"errors"
+	"sort"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -302,42 +303,60 @@ var _ = Describe("cfg", func() {
 			Expect(c.HasGroup("other-group")).To(BeFalse())
 		})
 
-		It("IsCRDVersionCompatible should return true with no tracked resources", func() {
-			Expect(c.IsCRDVersionCompatible("v1beta1")).To(BeTrue())
-			Expect(c.IsCRDVersionCompatible("v1")).To(BeTrue())
+		It("ListCRDVersions should return an empty list with no tracked resources", func() {
+			Expect(c.ListCRDVersions()).To(BeEmpty())
 		})
 
-		It("IsCRDVersionCompatible should return true only for matching CRD versions of tracked resources", func() {
-			c.Resources = append(c.Resources, resource.Resource{
-				GVK: resource.GVK{
-					Group:   res.Group,
-					Version: res.Version,
-					Kind:    res.Kind,
+		It("ListCRDVersions should return a list of tracked resources CRD versions", func() {
+			c.Resources = append(c.Resources,
+				resource.Resource{
+					GVK: resource.GVK{
+						Group:   res.Group,
+						Version: res.Version,
+						Kind:    res.Kind,
+					},
+					API: &resource.API{CRDVersion: "v1beta1"},
 				},
-				API: &resource.API{CRDVersion: "v1beta1"},
-			})
-			Expect(c.IsCRDVersionCompatible("v1beta1")).To(BeTrue())
-			Expect(c.IsCRDVersionCompatible("v1")).To(BeFalse())
-			Expect(c.IsCRDVersionCompatible("v2")).To(BeFalse())
-		})
-
-		It("IsWebhookVersionCompatible should return true with no tracked resources", func() {
-			Expect(c.IsWebhookVersionCompatible("v1beta1")).To(BeTrue())
-			Expect(c.IsWebhookVersionCompatible("v1")).To(BeTrue())
-		})
-
-		It("IsWebhookVersionCompatible should return true only for matching webhook versions of tracked resources", func() {
-			c.Resources = append(c.Resources, resource.Resource{
-				GVK: resource.GVK{
-					Group:   res.Group,
-					Version: res.Version,
-					Kind:    res.Kind,
+				resource.Resource{
+					GVK: resource.GVK{
+						Group:   res.Group,
+						Version: res.Version,
+						Kind:    "OtherKind",
+					},
+					API: &resource.API{CRDVersion: "v1"},
 				},
-				Webhooks: &resource.Webhooks{WebhookVersion: "v1beta1"},
-			})
-			Expect(c.IsWebhookVersionCompatible("v1beta1")).To(BeTrue())
-			Expect(c.IsWebhookVersionCompatible("v1")).To(BeFalse())
-			Expect(c.IsWebhookVersionCompatible("v2")).To(BeFalse())
+			)
+			versions := c.ListCRDVersions()
+			sort.Strings(versions) // ListCRDVersions has no order guarantee so sorting for reproducibility
+			Expect(versions).To(Equal([]string{"v1", "v1beta1"}))
+		})
+
+		It("ListWebhookVersions should return an empty list with no tracked resources", func() {
+			Expect(c.ListWebhookVersions()).To(BeEmpty())
+		})
+
+		It("ListWebhookVersions should return a list of tracked resources webhook versions", func() {
+			c.Resources = append(c.Resources,
+				resource.Resource{
+					GVK: resource.GVK{
+						Group:   res.Group,
+						Version: res.Version,
+						Kind:    res.Kind,
+					},
+					Webhooks: &resource.Webhooks{WebhookVersion: "v1beta1"},
+				},
+				resource.Resource{
+					GVK: resource.GVK{
+						Group:   res.Group,
+						Version: res.Version,
+						Kind:    "OtherKind",
+					},
+					Webhooks: &resource.Webhooks{WebhookVersion: "v1"},
+				},
+			)
+			versions := c.ListWebhookVersions()
+			sort.Strings(versions) // ListWebhookVersions has no order guarantee so sorting for reproducibility
+			Expect(versions).To(Equal([]string{"v1", "v1beta1"}))
 		})
 	})
 

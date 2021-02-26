@@ -222,14 +222,14 @@ func (c cfg) HasGroup(group string) bool {
 	return false
 }
 
-// IsCRDVersionCompatible implements config.Config
-func (c cfg) IsCRDVersionCompatible(crdVersion string) bool {
-	return crdVersion == apiVersion
+// ListCRDVersions implements config.Config
+func (c cfg) ListCRDVersions() []string {
+	return make([]string, 0)
 }
 
-// IsWebhookVersionCompatible implements config.Config
-func (c cfg) IsWebhookVersionCompatible(webhookVersion string) bool {
-	return webhookVersion == apiVersion
+// ListWebhookVersions implements config.Config
+func (c cfg) ListWebhookVersions() []string {
+	return make([]string, 0)
 }
 
 // DecodePluginConfig implements config.Config

@@ -225,22 +225,12 @@ var _ = Describe("cfg", func() {
 			Expect(c.HasGroup("other-group")).To(BeFalse())
 		})
 
-		It("IsCRDVersionCompatible should return true for `v1beta1`", func() {
-			Expect(c.IsCRDVersionCompatible("v1beta1")).To(BeTrue())
+		It("ListCRDVersions should return an empty list", func() {
+			Expect(c.ListCRDVersions()).To(BeEmpty())
 		})
 
-		It("IsCRDVersionCompatible should return false for any other than `v1beta1`", func() {
-			Expect(c.IsCRDVersionCompatible("v1")).To(BeFalse())
-			Expect(c.IsCRDVersionCompatible("v2")).To(BeFalse())
-		})
-
-		It("IsWebhookVersionCompatible should return true for `v1beta1`", func() {
-			Expect(c.IsWebhookVersionCompatible("v1beta1")).To(BeTrue())
-		})
-
-		It("IsWebhookVersionCompatible should return false for any other than `v1beta1`", func() {
-			Expect(c.IsWebhookVersionCompatible("v1")).To(BeFalse())
-			Expect(c.IsWebhookVersionCompatible("v2")).To(BeFalse())
+		It("ListWebhookVersions should return an empty list", func() {
+			Expect(c.ListWebhookVersions()).To(BeEmpty())
 		})
 	})
 

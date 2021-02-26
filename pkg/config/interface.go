@@ -89,10 +89,10 @@ type Config interface {
 
 	// HasGroup checks if the provided group is the same as any of the tracked resources
 	HasGroup(group string) bool
-	// IsCRDVersionCompatible returns true if crdVersion can be added to the existing set of CRD versions.
-	IsCRDVersionCompatible(crdVersion string) bool
-	// IsWebhookVersionCompatible returns true if webhookVersion can be added to the existing set of Webhook versions.
-	IsWebhookVersionCompatible(webhookVersion string) bool
+	// ListCRDVersions returns a list of the CRD versions in use by the tracked resources
+	ListCRDVersions() []string
+	// ListWebhookVersions returns a list of the webhook versions in use by the tracked resources
+	ListWebhookVersions() []string
 
 	/* Plugins */
 
