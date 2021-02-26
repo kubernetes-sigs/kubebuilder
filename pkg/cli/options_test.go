@@ -230,7 +230,7 @@ var _ = Describe("CLI options", func() {
 		})
 
 		It("should add the completion command if requested", func() {
-			c, err = newCLI(WithCompletion)
+			c, err = newCLI(WithCompletion())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(c).NotTo(BeNil())
 			Expect(c.completionCommand).To(BeTrue())

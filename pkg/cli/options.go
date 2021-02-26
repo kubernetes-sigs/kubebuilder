@@ -105,7 +105,9 @@ func WithExtraCommands(cmds ...*cobra.Command) Option {
 }
 
 // WithCompletion is an Option that adds the completion subcommand.
-func WithCompletion(c *cli) error {
-	c.completionCommand = true
-	return nil
+func WithCompletion() Option {
+	return func(c *cli) error {
+		c.completionCommand = true
+		return nil
+	}
 }
