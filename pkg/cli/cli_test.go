@@ -680,7 +680,7 @@ var _ = Describe("CLI", func() {
 
 		When("enabling completion", func() {
 			It("should create a valid CLI", func() {
-				c, err = New(WithCompletion)
+				c, err = New(WithCompletion())
 				Expect(err).NotTo(HaveOccurred())
 				Expect(hasSubCommand(c, "completion")).To(BeTrue())
 			})

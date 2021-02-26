@@ -37,7 +37,7 @@ func main() {
 		),
 		cli.WithDefaultPlugins(cfgv2.Version, &pluginv2.Plugin{}),
 		cli.WithDefaultPlugins(cfgv3.Version, &pluginv3.Plugin{}),
-		cli.WithCompletion,
+		cli.WithCompletion(),
 	)
 	if err != nil {
 		log.Fatal(err)
