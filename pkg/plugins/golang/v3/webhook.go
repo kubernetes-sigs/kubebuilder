@@ -26,6 +26,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
+	pluginutil "sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
 	goPlugin "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/cmdutil"
@@ -121,7 +122,7 @@ func (p *createWebhookSubcommand) Validate() error {
 		return fmt.Errorf("webhook resource already exists")
 	}
 
-	if !p.config.IsWebhookVersionCompatible(p.resource.Webhooks.WebhookVersion) {
+	if pluginutil.HasDifferentWebhookVersion(p.config, p.resource.Webhooks.WebhookVersion) {
 		return fmt.Errorf("only one webhook version can be used for all resources, cannot add %q",
 			p.resource.Webhooks.WebhookVersion)
 	}

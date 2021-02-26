@@ -249,35 +249,40 @@ func (c cfg) HasGroup(group string) bool {
 	return false
 }
 
-// IsCRDVersionCompatible implements config.Config
-func (c cfg) IsCRDVersionCompatible(crdVersion string) bool {
-	return c.resourceAPIVersionCompatible("crd", crdVersion)
-}
-
-// IsWebhookVersionCompatible implements config.Config
-func (c cfg) IsWebhookVersionCompatible(webhookVersion string) bool {
-	return c.resourceAPIVersionCompatible("webhook", webhookVersion)
-}
-
-func (c cfg) resourceAPIVersionCompatible(verType, version string) bool {
-	for _, res := range c.Resources {
-		var currVersion string
-		switch verType {
-		case "crd":
-			if res.API != nil {
-				currVersion = res.API.CRDVersion
-			}
-		case "webhook":
-			if res.Webhooks != nil {
-				currVersion = res.Webhooks.WebhookVersion
-			}
-		}
-		if currVersion != "" && version != currVersion {
-			return false
+// ListCRDVersions implements config.Config
+func (c cfg) ListCRDVersions() []string {
+	// Make a map to remove duplicates
+	versionSet := make(map[string]struct{})
+	for _, r := range c.Resources {
+		if r.API != nil && r.API.CRDVersion != "" {
+			versionSet[r.API.CRDVersion] = struct{}{}
 		}
 	}
 
-	return true
+	// Convert the map into a slice
+	versions := make([]string, 0, len(versionSet))
+	for version := range versionSet {
+		versions = append(versions, version)
+	}
+	return versions
+}
+
+// ListWebhookVersions implements config.Config
+func (c cfg) ListWebhookVersions() []string {
+	// Make a map to remove duplicates
+	versionSet := make(map[string]struct{})
+	for _, r := range c.Resources {
+		if r.Webhooks != nil && r.Webhooks.WebhookVersion != "" {
+			versionSet[r.Webhooks.WebhookVersion] = struct{}{}
+		}
+	}
+
+	// Convert the map into a slice
+	versions := make([]string, 0, len(versionSet))
+	for version := range versionSet {
+		versions = append(versions, version)
+	}
+	return versions
 }
 
 // DecodePluginConfig implements config.Config
