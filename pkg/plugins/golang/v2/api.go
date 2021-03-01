@@ -163,7 +163,7 @@ func (p *createAPISubcommand) Validate() error {
 		// Check that the provided group can be added to the project
 		if !p.config.IsMultiGroup() && p.config.ResourcesLength() != 0 && !p.config.HasGroup(p.resource.Group) {
 			return fmt.Errorf("multiple groups are not allowed by default, to enable multi-group visit %s",
-				"kubebuilder.io/migration/multi-group.html")
+				"https://kubebuilder.io/migration/multi-group.html")
 		}
 	}
 
