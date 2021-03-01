@@ -237,6 +237,11 @@ func (p *createAPISubcommand) PostScaffold() error {
 		return fmt.Errorf("unknown pattern %q", p.pattern)
 	}
 
+	err := util.RunCmd("Update dependencies", "go", "mod", "tidy")
+	if err != nil {
+		return err
+	}
+
 	if p.runMake { // TODO: check if API was scaffolded
 		return util.RunCmd("Running make", "make", "generate")
 	}
