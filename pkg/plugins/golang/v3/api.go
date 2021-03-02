@@ -21,7 +21,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
@@ -33,7 +32,6 @@ import (
 	pluginutil "sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
 	goPlugin "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/cmdutil"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/util"
 	"sigs.k8s.io/kubebuilder/v3/plugins/addon"
 )
@@ -51,6 +49,8 @@ const (
 // DefaultMainPath is default file path of main.go
 const DefaultMainPath = "main.go"
 
+var _ plugin.CreateAPISubcommand = &createAPISubcommand{}
+
 type createAPISubcommand struct {
 	config config.Config
 
@@ -59,7 +59,7 @@ type createAPISubcommand struct {
 
 	options *goPlugin.Options
 
-	resource resource.Resource
+	resource *resource.Resource
 
 	// Check if we have to scaffold resource and/or controller
 	resourceFlag   *pflag.Flag
@@ -72,13 +72,8 @@ type createAPISubcommand struct {
 	runMake bool
 }
 
-var (
-	_ plugin.CreateAPISubcommand = &createAPISubcommand{}
-	_ cmdutil.RunOptions         = &createAPISubcommand{}
-)
-
-func (p createAPISubcommand) UpdateContext(ctx *plugin.Context) {
-	ctx.Description = `Scaffold a Kubernetes API by creating a Resource definition and / or a Controller.
+func (p *createAPISubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
+	subcmdMeta.Description = `Scaffold a Kubernetes API by creating a Resource definition and / or a Controller.
 
 create resource will prompt the user for if it should scaffold the Resource and / or Controller.  To only
 scaffold a Controller for an existing Resource, select "n" for Resource.  To only define
@@ -86,7 +81,7 @@ the schema for a Resource without writing a Controller, select "n" for Controlle
 
 After the scaffold is written, api will run make on the project.
 `
-	ctx.Examples = fmt.Sprintf(`  # Create a frigates API with Group: ship, Version: v1beta1 and Kind: Frigate
+	subcmdMeta.Examples = fmt.Sprintf(`  # Create a frigates API with Group: ship, Version: v1beta1 and Kind: Frigate
   %s create api --group ship --version v1beta1 --kind Frigate
 
   # Edit the API Scheme
@@ -103,8 +98,7 @@ After the scaffold is written, api will run make on the project.
 
   # Regenerate code and run against the Kubernetes cluster configured by ~/.kube/config
   make run
-	`,
-		ctx.CommandName)
+	`, cliMeta.CommandName)
 }
 
 func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
@@ -120,9 +114,7 @@ func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 		"attempt to create resource even if it already exists")
 
 	p.options = &goPlugin.Options{}
-	fs.StringVar(&p.options.Group, "group", "", "resource Group")
-	fs.StringVar(&p.options.Version, "version", "", "resource Version")
-	fs.StringVar(&p.options.Kind, "kind", "", "resource Kind")
+
 	fs.StringVar(&p.options.Plural, "plural", "", "resource irregular plural form")
 
 	fs.BoolVar(&p.options.DoAPI, "resource", true,
@@ -137,16 +129,18 @@ func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 	p.controllerFlag = fs.Lookup("controller")
 }
 
-func (p *createAPISubcommand) InjectConfig(c config.Config) {
+func (p *createAPISubcommand) InjectConfig(c config.Config) error {
 	p.config = c
 
-	// TODO: offer a flag instead of hard-coding the project-wide domain
-	p.options.Domain = c.GetDomain()
+	return nil
 }
 
-func (p *createAPISubcommand) Run(fs afero.Fs) error {
+func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
+	p.resource = res
+
 	// TODO: re-evaluate whether y/n input still makes sense. We should probably always
 	// scaffold the resource and controller.
+	// Ask for API and Controller if not specified
 	reader := bufio.NewReader(os.Stdin)
 	if !p.resourceFlag.Changed {
 		fmt.Println("Create Resource [y/n]")
@@ -157,30 +151,16 @@ func (p *createAPISubcommand) Run(fs afero.Fs) error {
 		p.options.DoController = util.YesNo(reader)
 	}
 
-	// Create the resource from the options
-	p.resource = p.options.NewResource(p.config)
-
-	return cmdutil.Run(p, fs)
-}
-
-func (p *createAPISubcommand) Validate() error {
-	if err := p.options.Validate(); err != nil {
-		return err
-	}
+	p.options.UpdateResource(p.resource, p.config)
 
 	if err := p.resource.Validate(); err != nil {
 		return err
 	}
 
-	// check if main.go is present in the root directory
-	if _, err := os.Stat(DefaultMainPath); os.IsNotExist(err) {
-		return fmt.Errorf("%s file should present in the root directory", DefaultMainPath)
-	}
-
 	// In case we want to scaffold a resource API we need to do some checks
 	if p.options.DoAPI {
 		// Check that resource doesn't have the API scaffolded or flag force was set
-		if res, err := p.config.GetResource(p.resource.GVK); err == nil && res.HasAPI() && !p.force {
+		if r, err := p.config.GetResource(p.resource.GVK); err == nil && r.HasAPI() && !p.force {
 			return errors.New("API resource already exists")
 		}
 
@@ -200,7 +180,16 @@ func (p *createAPISubcommand) Validate() error {
 	return nil
 }
 
-func (p *createAPISubcommand) GetScaffolder() (cmdutil.Scaffolder, error) {
+func (p *createAPISubcommand) PreScaffold(afero.Fs) error {
+	// check if main.go is present in the root directory
+	if _, err := os.Stat(DefaultMainPath); os.IsNotExist(err) {
+		return fmt.Errorf("%s file should present in the root directory", DefaultMainPath)
+	}
+
+	return nil
+}
+
+func (p *createAPISubcommand) Scaffold(fs afero.Fs) error {
 	// Load the requested plugins
 	plugins := make([]model.Plugin, 0)
 	switch strings.ToLower(p.pattern) {
@@ -209,10 +198,12 @@ func (p *createAPISubcommand) GetScaffolder() (cmdutil.Scaffolder, error) {
 	case "addon":
 		plugins = append(plugins, &addon.Plugin{})
 	default:
-		return nil, fmt.Errorf("unknown pattern %q", p.pattern)
+		return fmt.Errorf("unknown pattern %q", p.pattern)
 	}
 
-	return scaffolds.NewAPIScaffolder(p.config, p.resource, p.force, plugins), nil
+	scaffolder := scaffolds.NewAPIScaffolder(p.config, *p.resource, p.force, plugins)
+	scaffolder.InjectFS(fs)
+	return scaffolder.Scaffold()
 }
 
 func (p *createAPISubcommand) PostScaffold() error {
@@ -237,8 +228,12 @@ func (p *createAPISubcommand) PostScaffold() error {
 		return err
 	}
 
-	if p.runMake { // TODO: check if API was scaffolded
-		return util.RunCmd("Running make", "make", "generate")
+	if p.runMake && p.resource.HasAPI() {
+		err = util.RunCmd("Running make", "make", "generate")
+		if err != nil {
+			return err
+		}
 	}
+
 	return nil
 }

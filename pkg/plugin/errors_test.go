@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubernetes Authors.
+Copyright 2021 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,15 +14,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cmdutil
+package plugin
 
 import (
-	"github.com/spf13/afero"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
-// Scaffolder interface creates files to set up a controller manager
-type Scaffolder interface {
-	InjectFS(afero.Fs)
-	// Scaffold performs the scaffolding
-	Scaffold() error
-}
+var _ = Describe("PluginKeyNotFoundError", func() {
+	var err = ExitError{
+		Plugin: "go.kubebuilder.io/v1",
+		Reason: "skipping plugin",
+	}
+
+	Context("Error", func() {
+		It("should return the correct error message", func() {
+			Expect(err.Error()).To(Equal("plugin \"go.kubebuilder.io/v1\" exit early: skipping plugin"))
+		})
+	})
+})

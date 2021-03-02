@@ -30,9 +30,10 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/internal/validation"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/cmdutil"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/util"
 )
+
+var _ plugin.InitSubcommand = &initSubcommand{}
 
 type initSubcommand struct {
 	config config.Config
@@ -54,30 +55,24 @@ type initSubcommand struct {
 	skipGoVersionCheck bool
 }
 
-var (
-	_ plugin.InitSubcommand = &initSubcommand{}
-	_ cmdutil.RunOptions    = &initSubcommand{}
-)
+func (p *initSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
+	p.commandName = cliMeta.CommandName
 
-func (p *initSubcommand) UpdateContext(ctx *plugin.Context) {
-	ctx.Description = `Initialize a new project including vendor/ directory and Go package directories.
+	subcmdMeta.Description = `Initialize a new project including vendor/ directory and Go package directories.
 
 Writes the following files:
 - a boilerplate license file
 - a PROJECT file with the domain and repo
 - a Makefile to build the project
 - a go.mod with project dependencies
-- a Kustomization.yaml for customizating manifests
+- a Kustomization.yaml for customizing manifests
 - a Patch file for customizing image for manager manifests
 - a Patch file for enabling prometheus metrics
 - a main.go to run
 `
-	ctx.Examples = fmt.Sprintf(`  # Scaffold a project using the apache2 license with "The Kubernetes authors" as owners
-  %s init --project-version=2 --domain example.org --license apache2 --owner "The Kubernetes authors"
-`,
-		ctx.CommandName)
-
-	p.commandName = ctx.CommandName
+	subcmdMeta.Examples = fmt.Sprintf(`# Scaffold a project using the apache2 license with %[2]q as owners
+  %[1]s init --project-version=2 --domain example.org --license apache2 --owner %[2]q
+`, cliMeta.CommandName, "The Kubernetes authors")
 }
 
 func (p *initSubcommand) BindFlags(fs *pflag.FlagSet) {
@@ -99,25 +94,23 @@ func (p *initSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&p.name, "project-name", "", "name of this project")
 }
 
-func (p *initSubcommand) InjectConfig(c config.Config) {
-	// v2+ project configs get a 'layout' value.
-	if c.GetVersion().Compare(cfgv2.Version) > 0 {
-		_ = c.SetLayout(plugin.KeyFor(Plugin{}))
+func (p *initSubcommand) InjectConfig(c config.Config) error {
+	p.config = c
+
+	if err := p.config.SetDomain(p.domain); err != nil {
+		return err
 	}
 
-	p.config = c
-}
-
-func (p *initSubcommand) Run(fs afero.Fs) error {
-	return cmdutil.Run(p, fs)
-}
-
-func (p *initSubcommand) Validate() error {
-	// Requires go1.11+
-	if !p.skipGoVersionCheck {
-		if err := util.ValidateGoVersion(); err != nil {
-			return err
+	// Try to guess repository if flag is not set.
+	if p.repo == "" {
+		repoPath, err := util.FindCurrentRepo()
+		if err != nil {
+			return fmt.Errorf("error finding current repository: %v", err)
 		}
+		p.repo = repoPath
+	}
+	if err := p.config.SetRepository(p.repo); err != nil {
+		return err
 	}
 
 	if p.config.GetVersion().Compare(cfgv2.Version) > 0 {
@@ -133,37 +126,33 @@ func (p *initSubcommand) Validate() error {
 		if err := validation.IsDNS1123Label(p.name); err != nil {
 			return fmt.Errorf("project name (%s) is invalid: %v", p.name, err)
 		}
-	}
-
-	// Try to guess repository if flag is not set.
-	if p.repo == "" {
-		repoPath, err := util.FindCurrentRepo()
-		if err != nil {
-			return fmt.Errorf("error finding current repository: %v", err)
+		if err := p.config.SetProjectName(p.name); err != nil {
+			return err
 		}
-		p.repo = repoPath
 	}
 
 	return nil
 }
 
-func (p *initSubcommand) GetScaffolder() (cmdutil.Scaffolder, error) {
-	if err := p.config.SetDomain(p.domain); err != nil {
-		return nil, err
-	}
-	if err := p.config.SetRepository(p.repo); err != nil {
-		return nil, err
-	}
-	if p.config.GetVersion().Compare(cfgv2.Version) > 0 {
-		if err := p.config.SetProjectName(p.name); err != nil {
-			return nil, err
+func (p *initSubcommand) PreScaffold(afero.Fs) error {
+	// Requires go1.11+
+	if !p.skipGoVersionCheck {
+		if err := util.ValidateGoVersion(); err != nil {
+			return err
 		}
 	}
 
-	return scaffolds.NewInitScaffolder(p.config, p.license, p.owner), nil
+	return nil
 }
 
-func (p *initSubcommand) PostScaffold() error {
+func (p *initSubcommand) Scaffold(fs afero.Fs) error {
+	scaffolder := scaffolds.NewInitScaffolder(p.config, p.license, p.owner)
+	scaffolder.InjectFS(fs)
+	err := scaffolder.Scaffold()
+	if err != nil {
+		return err
+	}
+
 	if !p.fetchDeps {
 		fmt.Println("Skipping fetching dependencies.")
 		return nil
@@ -171,13 +160,17 @@ func (p *initSubcommand) PostScaffold() error {
 
 	// Ensure that we are pinning controller-runtime version
 	// xref: https://github.com/kubernetes-sigs/kubebuilder/issues/997
-	err := util.RunCmd("Get controller runtime", "go", "get",
+	err = util.RunCmd("Get controller runtime", "go", "get",
 		"sigs.k8s.io/controller-runtime@"+scaffolds.ControllerRuntimeVersion)
 	if err != nil {
 		return err
 	}
 
-	err = util.RunCmd("Update dependencies", "go", "mod", "tidy")
+	return nil
+}
+
+func (p *initSubcommand) PostScaffold() error {
+	err := util.RunCmd("Update dependencies", "go", "mod", "tidy")
 	if err != nil {
 		return err
 	}

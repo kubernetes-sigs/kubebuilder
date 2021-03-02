@@ -25,8 +25,9 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/cmdutil"
 )
+
+var _ plugin.EditSubcommand = &editSubcommand{}
 
 type editSubcommand struct {
 	config config.Config
@@ -34,42 +35,31 @@ type editSubcommand struct {
 	multigroup bool
 }
 
-var (
-	_ plugin.EditSubcommand = &editSubcommand{}
-	_ cmdutil.RunOptions    = &editSubcommand{}
-)
-
-func (p *editSubcommand) UpdateContext(ctx *plugin.Context) {
-	ctx.Description = `This command will edit the project configuration. You can have single or multi group project.`
-
-	ctx.Examples = fmt.Sprintf(`# Enable the multigroup layout
-        %s edit --multigroup
+func (p *editSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
+	subcmdMeta.Description = `This command will edit the project configuration.
+Features supported:
+	- Toggle between single or multi group projects.
+`
+	subcmdMeta.Examples = fmt.Sprintf(`# Enable the multigroup layout
+        %[1]s edit --multigroup
 
         # Disable the multigroup layout
-        %s edit --multigroup=false
-	`, ctx.CommandName, ctx.CommandName)
+        %[1]s edit --multigroup=false
+	`, cliMeta.CommandName)
 }
 
 func (p *editSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.multigroup, "multigroup", false, "enable or disable multigroup layout")
 }
 
-func (p *editSubcommand) InjectConfig(c config.Config) {
+func (p *editSubcommand) InjectConfig(c config.Config) error {
 	p.config = c
-}
 
-func (p *editSubcommand) Run(fs afero.Fs) error {
-	return cmdutil.Run(p, fs)
-}
-
-func (p *editSubcommand) Validate() error {
 	return nil
 }
 
-func (p *editSubcommand) GetScaffolder() (cmdutil.Scaffolder, error) {
-	return scaffolds.NewEditScaffolder(p.config, p.multigroup), nil
-}
-
-func (p *editSubcommand) PostScaffold() error {
-	return nil
+func (p *editSubcommand) Scaffold(fs afero.Fs) error {
+	scaffolder := scaffolds.NewEditScaffolder(p.config, p.multigroup)
+	scaffolder.InjectFS(fs)
+	return scaffolder.Scaffold()
 }

@@ -25,17 +25,9 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/internal/validation"
 )
 
-// Key returns a unique identifying string for a plugin's name and version.
-func Key(name, version string) string {
-	if version == "" {
-		return name
-	}
-	return path.Join(name, "v"+strings.TrimLeft(version, "v"))
-}
-
 // KeyFor returns a Plugin's unique identifying string.
 func KeyFor(p Plugin) string {
-	return Key(p.Name(), p.Version().String())
+	return path.Join(p.Name(), p.Version().String())
 }
 
 // SplitKey returns a name and version for a plugin key.
