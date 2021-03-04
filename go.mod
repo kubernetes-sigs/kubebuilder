@@ -6,6 +6,7 @@ require (
 	github.com/cloudflare/cfssl v1.5.0 // for `kubebuilder alpha config-gen`
 	github.com/go-logr/logr v0.3.0 // indirect
 	github.com/gobuffalo/flect v0.2.2
+	github.com/joelanford/go-apidiff v0.1.0
 	// TODO: remove this in favor of embed once using 1.16
 	github.com/markbates/pkger v0.17.1 // for `kubebuilder alpha config-gen`
 	github.com/onsi/ginkgo v1.15.0

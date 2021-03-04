@@ -85,6 +85,16 @@ golangci-lint:
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell dirname $(GOLANGCI_LINT)) v1.37.1 ;\
 	}
 
+.PHONY: apidiff
+apidiff: go-apidiff ## Run the go-apidiff to verify any API differences compared with origin/master
+	$(GO_APIDIFF) master --compare-imports --print-compatible --repo-path=.
+
+GO_APIDIFF = $(shell pwd)/bin/go-apidiff
+go-apidiff:
+	@[ -f $(GO_APIDIFF) ] || { \
+	cd tools && go build -tags=tools -o $(GO_APIDIFF) github.com/joelanford/go-apidiff ;\
+	}
+
 ##@ Tests
 
 .PHONY: test
