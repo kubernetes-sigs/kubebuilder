@@ -14,16 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package config
+package configgen_test
 
 import (
 	"testing"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	configgen "sigs.k8s.io/kubebuilder/v3/pkg/cli/alpha/config-gen"
+	"sigs.k8s.io/kustomize/kyaml/fn/framework/frameworktestutil"
 )
 
-func TestCLI(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Config Suite")
+func TestNewCommand(t *testing.T) {
+	test := frameworktestutil.ResultsChecker{
+		Command: configgen.NewCommand,
+		// Uncomment this line to update the testdata directory
+		// UpdateExpectedFromActual: true,
+	}
+	test.Assert(t)
 }

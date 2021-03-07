@@ -1,5 +1,5 @@
 /*
-Copyright 2021 The Kubernetes Authors.
+
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,16 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package config
+package controllers
 
 import (
-	"testing"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-func TestCLI(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Config Suite")
+// FooReconciler reconciles a Foo object
+type FooReconciler struct{}
+
+// +kubebuilder:rbac:groups=example.my.domain,resources=foos,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=example.my.domain,resources=foos/status,verbs=get;update;patch
+
+func (r *FooReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
+	return ctrl.Result{}, nil
 }
