@@ -43,6 +43,12 @@ func (f *Kustomization) SetTemplateDefaults() error {
 }
 
 const kustomizeRBACTemplate = `resources:
+# All RBAC will be applied under this service account in
+# the deployment namespace. You may comment out this resource
+# if your manager will use a service account that exists at
+# runtime. Be sure to update RoleBinding and ClusterRoleBinding
+# subjects if changing service account names.
+- service_account.yaml
 - role.yaml
 - role_binding.yaml
 - leader_election_role.yaml
