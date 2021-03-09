@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package util
+package golang
 
 import (
 	"encoding/json"
@@ -34,12 +34,9 @@ type module struct {
 }
 
 // findGoModulePath finds the path of the current module, if present.
-func findGoModulePath(forceModules bool) (string, error) {
+func findGoModulePath() (string, error) {
 	cmd := exec.Command("go", "mod", "edit", "-json")
 	cmd.Env = append(cmd.Env, os.Environ()...)
-	if forceModules {
-		cmd.Env = append(cmd.Env, "GO111MODULE=on" /* turn on modules just for these commands */)
-	}
 	out, err := cmd.Output()
 	if err != nil {
 		if exitErr, isExitErr := err.(*exec.ExitError); isExitErr {
@@ -58,7 +55,7 @@ func findGoModulePath(forceModules bool) (string, error) {
 // though a combination of go/packages and `go mod` commands/tricks.
 func FindCurrentRepo() (string, error) {
 	// easiest case: existing go module
-	path, err := findGoModulePath(false)
+	path, err := findGoModulePath()
 	if err == nil {
 		return path, nil
 	}
@@ -79,7 +76,6 @@ func FindCurrentRepo() (string, error) {
 	// otherwise, try to get `go mod init` to guess for us -- it's pretty good
 	cmd := exec.Command("go", "mod", "init")
 	cmd.Env = append(cmd.Env, os.Environ()...)
-	cmd.Env = append(cmd.Env, "GO111MODULE=on" /* turn on modules just for these commands */)
 	if _, err := cmd.Output(); err != nil {
 		if exitErr, isExitErr := err.(*exec.ExitError); isExitErr {
 			err = fmt.Errorf("%s", string(exitErr.Stderr))
@@ -90,5 +86,5 @@ func FindCurrentRepo() (string, error) {
 	}
 	//nolint:errcheck
 	defer os.Remove("go.mod") // clean up after ourselves
-	return findGoModulePath(true)
+	return findGoModulePath()
 }

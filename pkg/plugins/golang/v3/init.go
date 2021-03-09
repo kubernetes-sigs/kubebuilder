@@ -27,9 +27,10 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/internal/validation"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/cmdutil"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/util"
 )
 
 type initSubcommand struct {
@@ -112,7 +113,7 @@ func (p *initSubcommand) Run() error {
 func (p *initSubcommand) Validate() error {
 	// Requires go1.11+
 	if !p.skipGoVersionCheck {
-		if err := util.ValidateGoVersion(); err != nil {
+		if err := golang.ValidateGoVersion(); err != nil {
 			return err
 		}
 	}
@@ -137,7 +138,7 @@ func (p *initSubcommand) Validate() error {
 
 	// Try to guess repository if flag is not set.
 	if p.repo == "" {
-		repoPath, err := util.FindCurrentRepo()
+		repoPath, err := golang.FindCurrentRepo()
 		if err != nil {
 			return fmt.Errorf("error finding current repository: %v", err)
 		}
