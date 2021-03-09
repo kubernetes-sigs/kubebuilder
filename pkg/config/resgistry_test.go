@@ -28,7 +28,7 @@ var _ = Describe("registry", func() {
 	)
 
 	AfterEach(func() {
-		registry = make(map[Version]constructorFunc)
+		registry = make(map[Version]func() Config)
 	})
 
 	Context("Register", func() {
