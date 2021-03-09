@@ -8,6 +8,9 @@ The goal of this phase is to achieve one of the goals proposed for Phase 2: chai
 Phase 2 includes several other challenging goals, but being able to chain plugins will be beneficial
 for third-party developers that are using kubebuilder as a library.
 
+The other main goal of phase 2, discovering and using external plugins, is out of the scope of this phase,
+and will be tackled when phase 2 is implemented.
+
 ## Table of contents
 - [Goal](#goal)
 - [Motivation](#motivation)
@@ -46,36 +49,42 @@ Plugin chaining solves the aforementioned problems but the current plugin API, a
 
 Design a Plugin API that combines the current [`Subcommand`](../pkg/plugin/interfaces.go) and
 [`RunOptions`](../pkg/plugins/internal/cmdutil/cmdutil.go) interfaces and enables plugin-chaining.
-The new `Subcommand` methods can be split in two different categories:
-- Initialization methods
-- Execution methods
+The new `Subcommand` hooks can be split in two different categories:
+- Initialization hooks
+- Execution hooks
 
-Additionally, some of these methods may be optional, in which case a non-implemented method will be skipped
-when it should be called and consider it succeeded. This also allows to create some methods specific for
-a certain subcommand call (e.g.: `Resource`-related methods for the `edit` subcommand are not needed).
+Initialization hooks are run during the dynamic creation of the CLI, which means that they are able to
+modify the CLI, e.g. providing descriptions and examples for subcommands or binding flags.
+Execution hooks are run after the CLI is created, and therefore cannot modify the CLI. On the other hand,
+as they are run during the CLI execution, they have access to user-provided flag values, project configuration,
+the new API resource or the filesystem abstraction, as opposed to the initialization hooks.
+
+Additionally, some of these hooks may be optional, in which case a non-implemented hook will be skipped
+when it should be called and consider it succeeded. This also allows to create some hooks specific for
+a certain subcommand call (e.g.: `Resource`-related hooks for the `edit` subcommand are not needed).
 
 Different ordering guarantees can be considered:
-- Method order guarantee: a method for a plugin will be called after its previous methods succeeded.
-- Steps order guarantee: methods will be called when all plugins have finished the previous method.
-- Plugin order guarantee: same method for each plugin will be called in the order specified
+- Hook order guarantee: a hook for a plugin will be called after its previous hooks succeeded.
+- Steps order guarantee: hooks will be called when all plugins have finished the previous hook.
+- Plugin order guarantee: same hook for each plugin will be called in the order specified
   by the plugin position at the plugin chain.
 
-All of the methods will offer plugin order guarantee, as they all modify/update some item so the order
-of plugins is important. Execution methods need to guarantee step order, as the items that are being modified
+All of the hooks will offer plugin order guarantee, as they all modify/update some item so the order
+of plugins is important. Execution hooks need to guarantee step order, as the items that are being modified
 in each step (config, resource, and filesystem) are also needed in the following steps. This is not true for
-initialization methods that modify items (metadata and flagset) that are only used in their own methods,
-so they only need to guarantee method order.
+initialization hooks that modify items (metadata and flagset) that are only used in their own methods,
+so they only need to guarantee hook order.
 
-Execution methods will be able to return an error. A specific error can be returned to specify that
-no further methods of this plugin should be called, but that the scaffold process should be continued.
+Execution hooks will be able to return an error. A specific error can be returned to specify that
+no further hooks of this plugin should be called, but that the scaffold process should be continued.
 This enables plugins to exit early, e.g., a plugin that scaffolds some files only for cluster-scoped
 resources can detect if the resource is cluster-scoped at one of the first execution steps, and
 therefore, use this error to tell the CLI that no further execution step should be called for itself.
 
-### Initialization methods
+### Initialization hooks
 
 #### Update metadata
-This method will be used for two purposes. It provides CLI-related metadata to the Subcommand (e.g., 
+This hook will be used for two purposes. It provides CLI-related metadata to the Subcommand (e.g., 
 command name) and update the subcommands metadata such as the description or examples.
 
 - Required/optional
@@ -88,7 +97,7 @@ command name) and update the subcommands metadata such as the description or exa
   - [x] Create webhook
 
 #### Bind flags
-This method will allow subcommands to define specific flags.
+This hook will allow subcommands to define specific flags.
 
 - Required/optional
   - [ ] Required
@@ -102,7 +111,7 @@ This method will allow subcommands to define specific flags.
 ### Execution methods
 
 #### Inject configuration
-This method will be used to inject the `Config` object that the plugin can modify at will.
+This hook will be used to inject the `Config` object that the plugin can modify at will.
 The CLI will create/load/save this configuration object.
 
 - Required/optional
@@ -115,7 +124,7 @@ The CLI will create/load/save this configuration object.
   - [x] Create webhook
 
 #### Inject resource
-This method will be used to inject the `Resource` object.
+This hook will be used to inject the `Resource` object created by the CLI.
 
 - Required/optional
   - [x] Required
@@ -127,9 +136,9 @@ This method will be used to inject the `Resource` object.
   - [x] Create webhook
 
 #### Pre-scaffold
-This method will be used to take actions before the main scaffolding is performed, e.g. validations.
+This hook will be used to take actions before the main scaffolding is performed, e.g. validations.
 
-NOTE: a filesystem abstraction will be passed to this method that must be used for scaffolding.
+NOTE: a filesystem abstraction will be passed to this hook, but it should not be used for scaffolding.
 
 - Required/optional
   - [ ] Required
@@ -141,9 +150,9 @@ NOTE: a filesystem abstraction will be passed to this method that must be used f
   - [x] Create webhook
 
 #### Scaffold
-This method will be used to perform the main scaffolding.
+This hook will be used to perform the main scaffolding.
 
-NOTE: a filesystem abstraction will be passed to this method that must be used for scaffolding.
+NOTE: a filesystem abstraction will be passed to this hook that must be used for scaffolding.
 
 - Required/optional
   - [x] Required
@@ -155,10 +164,13 @@ NOTE: a filesystem abstraction will be passed to this method that must be used f
   - [x] Create webhook
 
 #### Post-scaffold
-This method will be used to take actions after the main scaffolding is performed, e.g. cleanup.
+This hook will be used to take actions after the main scaffolding is performed, e.g. cleanup.
 
-NOTE: a filesystem abstraction will **NOT** be passed to this method, as post-scaffold task do not require it.
+NOTE: a filesystem abstraction will **NOT** be passed to this hook, as post-scaffold task do not require it.
 In case some post-scaffold task requires a filesystem abstraction, it could be added.
+
+NOTE 2: the project configuration is saved by the CLI before calling this hook, so changes done to the
+configuration at this hook will not be persisted.
 
 - Required/optional
   - [ ] Required
@@ -168,10 +180,67 @@ In case some post-scaffold task requires a filesystem abstraction, it could be a
   - [x] Edit
   - [x] Create API
   - [x] Create webhook
+  
+### Override plugins for single subcommand calls
+
+Defining plugins at initialization and using them for every command call will solve most of the cases.
+However, there are some cases where a plugin may be wanted just for a certain subcommand call. For
+example, a project with multiple controllers may want to follow the declarative pattern in only one of
+their controllers. The other case is also relevant, a project where most of the controllers follow the
+declarative pattern may need a single controller not to follow it.
+
+In order to achieve this, the `--plugins` flag will be allowed in every command call, overriding the
+value used in its corresponging project initialization call.
+
+### Plugin chain persistence
+
+Currently, the project configuration v3 offers two mechanisms for storing plugin-related information.
+
+- A layout field (`string`) that is used for plugin resolution on initialized projects.
+- A plugin field (`map[string]interface{}`) that is used for plugin configuration raw storage.
+
+Plugin resolution uses the `layout` field to resolve plugins. In this phase, it has to store a plugin
+chain and not a single plugin. As this value is stored as a string, comma-separated representation can
+be used to represent a chain of plugins instead.
+
+NOTE: commas are not allowed in the plugin key.
+
+While the `plugin` field may seem like a better fit to store the plugin chain, as it can already
+contain multiple values, there are several issues with this alternative approach:
+- A map does not provide any order guarantee, and the plugin chain order is relevant.
+- Some plugins do not store plugin-specific configuration information, e.g. the `go`-plugins. So
+  the absence of a plugin key doesn't mean that the plugin is not part of the plugin chain.
+- The desire of running a different set of plugins for a single subcommand call has already been
+  mentioned. Some of these out-of-chain plugins may need to store plugin-specific configuration,
+  so the presence of a plugin doesn't mean that is part of the plugin chain.
+
+The next project configuration version could consider this new requirements to define the
+names/types of these two fields.
+
+### Plugin bundle
+
+As a side-effect of plugin chaining, the user experience may suffer if they need to provide
+several plugin keys for the `--plugins` flag. Additionally, this would also mean a user-facing
+important breaking change.
+
+In order to solve this issue, a plugin bundle concept will be introduced. A plugin bundle
+behaves as a plugin:
+- It has a name: provided at creation.
+- It has a version: provided at creation.
+- It has a list of supported project versions: computed from the common supported project
+  versions of all the plugins in the bundled.
+
+Instead of implementing the optional getter methods that return a subcommand, it offers a way
+to retrieve the list of bundled plugins. This process will be done after plugin resolution.
+
+This way, CLIs will be able to define bundles, which will be used in the user-facing API and
+the plugin resolution process, but later they will be treated as separate plugins offering
+the maintainability and separation of concerns advantages that smaller plugins have in
+comparison with bigger monolithic plugins.
 
 ## Implementation
 
-The following types are used as input/output values of the described methods:
+The following types are used as input/output values of the described hooks:
 ```go
 // CLIMetadata is the runtime meta-data of the CLI
 type CLIMetadata struct {
@@ -197,7 +266,7 @@ func (e ExitError) Error() string {
 }
 ```
 
-The described methods are implemented through the use of the following interfaces.
+The described hooks are implemented through the use of the following interfaces.
 ```go
 type RequiresCLIMetadata interface {
 	InjectCLIMetadata(CLIMetadata)
@@ -220,11 +289,11 @@ type RequiresResource interface {
 }
 
 type HasPreScaffold interface {
-	PreScaffold(afero.Fs) error
+	PreScaffold(machinery.Filesystem) error
 }
 
 type Scaffolder interface {
-	Scaffold(afero.Fs) error
+	Scaffold(machinery.Filesystem) error
 }
 
 type HasPostScaffold interface {
@@ -254,5 +323,13 @@ type CreateAPISubcommand interface {
 type CreateWebhookSubcommand interface {
 	RequiresResource
 	Scaffolder
+}
+```
+
+An additional interface defines the bundle method to return the wrapped plugins:
+```go
+type Bundle interface {
+	Plugin
+	Plugins() []Plugin
 }
 ```
