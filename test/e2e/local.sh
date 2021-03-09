@@ -17,13 +17,13 @@
 source "$(dirname "$0")/../common.sh"
 source "$(dirname "$0")/setup.sh"
 
-kind_cluster=local-kubebuilder-e2e
-create_cluster ${KIND_K8S_VERSION:-v1.18.0} $kind_cluster
+export KIND_CLUSTER="local-kubebuilder-e2e"
+create_cluster ${KIND_K8S_VERSION:-v1.18.0}
 if [ -z "${SKIP_KIND_CLEANUP:-}" ]; then
-    trap delete_cluster EXIT
+  trap delete_cluster EXIT
 fi
 
-kind export kubeconfig --kubeconfig $tmp_root/kubeconfig --name $kind_cluster
+kind export kubeconfig --kubeconfig $tmp_root/kubeconfig --name $KIND_CLUSTER
 export KUBECONFIG=$tmp_root/kubeconfig
 
 test_cluster -v -ginkgo.v

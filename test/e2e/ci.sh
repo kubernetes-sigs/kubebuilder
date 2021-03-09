@@ -17,8 +17,8 @@
 source "$(dirname "$0")/../common.sh"
 source "$(dirname "$0")/setup.sh"
 
-kind_cluster="kind"
-create_cluster ${KIND_K8S_VERSION} $kind_cluster
+export KIND_CLUSTER="kind"
+create_cluster ${KIND_K8S_VERSION}
 trap delete_cluster EXIT
 
 test_cluster
