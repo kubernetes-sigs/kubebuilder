@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubernetes Authors.
+Copyright 2021 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -22,34 +22,27 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
 )
 
-var _ file.Template = &AuthProxyRoleBinding{}
+var _ file.Template = &ServiceAccount{}
 
-// AuthProxyRoleBinding scaffolds a file that defines the role binding for the auth proxy
-type AuthProxyRoleBinding struct {
+// ServiceAccount scaffolds a file that defines the service account the manager is deployed in.
+type ServiceAccount struct {
 	file.TemplateMixin
 }
 
 // SetTemplateDefaults implements file.Template
-func (f *AuthProxyRoleBinding) SetTemplateDefaults() error {
+func (f *ServiceAccount) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = filepath.Join("config", "rbac", "auth_proxy_role_binding.yaml")
+		f.Path = filepath.Join("config", "rbac", "service_account.yaml")
 	}
 
-	f.TemplateBody = proxyRoleBindinggTemplate
+	f.TemplateBody = serviceAccountTemplate
 
 	return nil
 }
 
-const proxyRoleBindinggTemplate = `apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
+const serviceAccountTemplate = `apiVersion: v1
+kind: ServiceAccount
 metadata:
-  name: proxy-rolebinding
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: proxy-role
-subjects:
-- kind: ServiceAccount
   name: controller-manager
   namespace: system
 `

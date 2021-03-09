@@ -105,6 +105,7 @@ func (s *initScaffolder) scaffold() error {
 		&rbac.RoleBinding{},
 		&rbac.LeaderElectionRole{},
 		&rbac.LeaderElectionRoleBinding{},
+		&rbac.ServiceAccount{},
 		&manager.Kustomization{},
 		&manager.Config{Image: imageName},
 		&manager.ControllerManagerConfig{},

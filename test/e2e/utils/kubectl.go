@@ -27,7 +27,8 @@ import (
 // Kubectl contains context to run kubectl commands
 type Kubectl struct {
 	*CmdContext
-	Namespace string
+	Namespace      string
+	ServiceAccount string
 }
 
 // Command is a general func to run kubectl commands
