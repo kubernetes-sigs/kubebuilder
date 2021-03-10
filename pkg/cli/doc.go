@@ -14,23 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Package cli provides the required tools to build a CLI utility that creates
+// scaffolds for operator projects.
+//
+// It is the entrypoint for any CLI that wants to use kubebuilder's scaffolding
+// capabilities.
 package cli
-
-import (
-	"fmt"
-
-	"github.com/spf13/cobra"
-)
-
-func (c CLI) newVersionCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:     "version",
-		Short:   fmt.Sprintf("Print the %s version", c.commandName),
-		Long:    fmt.Sprintf("Print the %s version", c.commandName),
-		Example: fmt.Sprintf("%s version", c.commandName),
-		RunE: func(_ *cobra.Command, _ []string) error {
-			fmt.Println(c.version)
-			return nil
-		},
-	}
-}

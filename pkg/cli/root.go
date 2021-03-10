@@ -29,7 +29,7 @@ const (
 	projectVersionsHeader = "Supported project versions"
 )
 
-func (c cli) newRootCmd() *cobra.Command {
+func (c CLI) newRootCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use: c.commandName,
 		Long: `CLI tool for building Kubernetes extensions and tools.
@@ -44,7 +44,7 @@ func (c cli) newRootCmd() *cobra.Command {
 	// NOTE: the current plugin resolution doesn't allow to provide values to this flag different to those configured
 	//       for the project, so default values need to be empty and considered when these two sources are compared.
 	//       Another approach would be to allow users to overwrite the project configuration values. In this case, flags
-	//       would take precedence over project configuration, which would take precedence over cli defaults.
+	//       would take precedence over project configuration, which would take precedence over CLI defaults.
 	fs := cmd.PersistentFlags()
 	fs.String(projectVersionFlag, "", "project version")
 	fs.StringSlice(pluginsFlag, nil, "plugin keys of the plugin to initialize the project with")
@@ -57,7 +57,7 @@ func (c cli) newRootCmd() *cobra.Command {
 }
 
 // rootExamples builds the examples string for the root command
-func (c cli) rootExamples() string {
+func (c CLI) rootExamples() string {
 	str := fmt.Sprintf(`The first step is to initialize your project:
     %[1]s init --project-version=<PROJECT VERSION> --plugins=<PLUGIN KEYS>
 
@@ -88,7 +88,7 @@ to obtain further info about available commands.`,
 }
 
 // getPluginTable returns an ASCII table of the available plugins and their supported project versions.
-func (c cli) getPluginTable() string {
+func (c CLI) getPluginTable() string {
 	var (
 		maxPluginKeyLength      = len(pluginKeysHeader)
 		pluginKeys              = make([]string, 0, len(c.plugins))

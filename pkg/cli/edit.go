@@ -25,7 +25,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 )
 
-func (c cli) newEditCmd() *cobra.Command {
+func (c CLI) newEditCmd() *cobra.Command {
 	ctx := c.newEditContext()
 	cmd := &cobra.Command{
 		Use:     "edit",
@@ -42,7 +42,7 @@ func (c cli) newEditCmd() *cobra.Command {
 	return cmd
 }
 
-func (c cli) newEditContext() plugin.Context {
+func (c CLI) newEditContext() plugin.Context {
 	return plugin.Context{
 		CommandName: c.commandName,
 		Description: `Edit the project configuration.
@@ -50,7 +50,7 @@ func (c cli) newEditContext() plugin.Context {
 	}
 }
 
-func (c cli) bindEdit(ctx plugin.Context, cmd *cobra.Command) {
+func (c CLI) bindEdit(ctx plugin.Context, cmd *cobra.Command) {
 	if len(c.resolvedPlugins) == 0 {
 		cmdErr(cmd, fmt.Errorf(noPluginError))
 		return

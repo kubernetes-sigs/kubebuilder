@@ -36,7 +36,7 @@ var _ = Describe("CLI options", func() {
 	)
 
 	var (
-		c   *cli
+		c   *CLI
 		err error
 
 		projectVersion = config.Version{Number: 1}
