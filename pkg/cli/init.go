@@ -32,7 +32,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 )
 
-func (c cli) newInitCmd() *cobra.Command {
+func (c CLI) newInitCmd() *cobra.Command {
 	ctx := c.newInitContext()
 	cmd := &cobra.Command{
 		Use:     "init",
@@ -58,7 +58,7 @@ func (c cli) newInitCmd() *cobra.Command {
 	return cmd
 }
 
-func (c cli) newInitContext() plugin.Context {
+func (c CLI) newInitContext() plugin.Context {
 	return plugin.Context{
 		CommandName: c.commandName,
 		Description: `Initialize a new project.
@@ -69,7 +69,7 @@ For further help about a specific project version, set --project-version.
 	}
 }
 
-func (c cli) getInitHelpExamples() string {
+func (c CLI) getInitHelpExamples() string {
 	var sb strings.Builder
 	for _, version := range c.getAvailableProjectVersions() {
 		rendered := fmt.Sprintf(`  # Help for initializing a project with version %[2]s
@@ -82,7 +82,7 @@ func (c cli) getInitHelpExamples() string {
 	return strings.TrimSuffix(sb.String(), "\n\n")
 }
 
-func (c cli) getAvailableProjectVersions() (projectVersions []string) {
+func (c CLI) getAvailableProjectVersions() (projectVersions []string) {
 	versionSet := make(map[config.Version]struct{})
 	for _, p := range c.plugins {
 		// Only return versions of non-deprecated plugins.
@@ -99,7 +99,7 @@ func (c cli) getAvailableProjectVersions() (projectVersions []string) {
 	return projectVersions
 }
 
-func (c cli) getAvailablePlugins() (pluginKeys []string) {
+func (c CLI) getAvailablePlugins() (pluginKeys []string) {
 	for key, p := range c.plugins {
 		// Only return non-deprecated plugins.
 		if _, isDeprecated := p.(plugin.Deprecated); !isDeprecated {
@@ -110,7 +110,7 @@ func (c cli) getAvailablePlugins() (pluginKeys []string) {
 	return pluginKeys
 }
 
-func (c cli) bindInit(ctx plugin.Context, cmd *cobra.Command) {
+func (c CLI) bindInit(ctx plugin.Context, cmd *cobra.Command) {
 	if len(c.resolvedPlugins) == 0 {
 		cmdErr(cmd, fmt.Errorf("no resolved plugins, please specify plugins with --%s or/and --%s flags",
 			projectVersionFlag, pluginsFlag))

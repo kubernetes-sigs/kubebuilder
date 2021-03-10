@@ -65,8 +65,8 @@ func setPluginsFlag(value string) {
 	setFlag(pluginsFlag, value)
 }
 
-func hasSubCommand(c CLI, name string) bool {
-	for _, subcommand := range c.(*cli).cmd.Commands() {
+func hasSubCommand(c *CLI, name string) bool {
+	for _, subcommand := range c.cmd.Commands() {
 		if subcommand.Name() == name {
 			return true
 		}
@@ -81,13 +81,13 @@ var _ = Describe("CLI", func() {
 			projectVersion string
 			plugins        []string
 			err            error
-			c              *cli
+			c              *CLI
 		)
 
 		// Save os.Args and restore it for every test
 		var args []string
 		BeforeEach(func() {
-			c = &cli{}
+			c = &CLI{}
 			c.cmd = c.newRootCmd()
 			args = os.Args
 		})
@@ -213,14 +213,14 @@ var _ = Describe("CLI", func() {
 		})
 	})
 
-	Context("cli.resolveFlagsAndConfigFileConflicts", func() {
+	Context("CLI.resolveFlagsAndConfigFileConflicts", func() {
 		const (
 			pluginKey1 = "go.kubebuilder.io/v1"
 			pluginKey2 = "go.kubebuilder.io/v2"
 			pluginKey3 = "go.kubebuilder.io/v3"
 		)
 		var (
-			c *cli
+			c *CLI
 
 			projectVersion config.Version
 			plugins        []string
@@ -233,7 +233,7 @@ var _ = Describe("CLI", func() {
 
 		When("having no project version set", func() {
 			It("should succeed", func() {
-				c = &cli{}
+				c = &CLI{}
 				projectVersion, _, err = c.resolveFlagsAndConfigFileConflicts(
 					"",
 					config.Version{},
@@ -248,7 +248,7 @@ var _ = Describe("CLI", func() {
 		When("having one project version source", func() {
 			When("having default project version set", func() {
 				It("should succeed", func() {
-					c = &cli{
+					c = &CLI{
 						defaultProjectVersion: projectVersion1,
 					}
 					projectVersion, _, err = c.resolveFlagsAndConfigFileConflicts(
@@ -264,7 +264,7 @@ var _ = Describe("CLI", func() {
 
 			When("having project version set from flags", func() {
 				It("should succeed", func() {
-					c = &cli{}
+					c = &CLI{}
 					projectVersion, _, err = c.resolveFlagsAndConfigFileConflicts(
 						projectVersion1.String(),
 						config.Version{},
@@ -278,7 +278,7 @@ var _ = Describe("CLI", func() {
 
 			When("having project version set from config file", func() {
 				It("should succeed", func() {
-					c = &cli{}
+					c = &CLI{}
 					projectVersion, _, err = c.resolveFlagsAndConfigFileConflicts(
 						"",
 						projectVersion1,
@@ -294,7 +294,7 @@ var _ = Describe("CLI", func() {
 		When("having two project version source", func() {
 			When("having default project version set and from flags", func() {
 				It("should succeed", func() {
-					c = &cli{
+					c = &CLI{
 						defaultProjectVersion: projectVersion1,
 					}
 					projectVersion, _, err = c.resolveFlagsAndConfigFileConflicts(
@@ -310,7 +310,7 @@ var _ = Describe("CLI", func() {
 
 			When("having default project version set and from config file", func() {
 				It("should succeed", func() {
-					c = &cli{
+					c = &CLI{
 						defaultProjectVersion: projectVersion1,
 					}
 					projectVersion, _, err = c.resolveFlagsAndConfigFileConflicts(
@@ -326,7 +326,7 @@ var _ = Describe("CLI", func() {
 
 			When("having project version set from flags and config file", func() {
 				It("should succeed if they are the same", func() {
-					c = &cli{}
+					c = &CLI{}
 					projectVersion, _, err = c.resolveFlagsAndConfigFileConflicts(
 						projectVersion1.String(),
 						projectVersion1,
@@ -338,7 +338,7 @@ var _ = Describe("CLI", func() {
 				})
 
 				It("should fail if they are different", func() {
-					c = &cli{}
+					c = &CLI{}
 					_, _, err = c.resolveFlagsAndConfigFileConflicts(
 						projectVersion1.String(),
 						projectVersion2,
@@ -352,7 +352,7 @@ var _ = Describe("CLI", func() {
 
 		When("having three project version sources", func() {
 			It("should succeed if project version from flags and config file are the same", func() {
-				c = &cli{
+				c = &CLI{
 					defaultProjectVersion: projectVersion1,
 				}
 				projectVersion, _, err = c.resolveFlagsAndConfigFileConflicts(
@@ -366,7 +366,7 @@ var _ = Describe("CLI", func() {
 			})
 
 			It("should fail if project version from flags and config file are different", func() {
-				c = &cli{
+				c = &CLI{
 					defaultProjectVersion: projectVersion1,
 				}
 				_, _, err = c.resolveFlagsAndConfigFileConflicts(
@@ -381,7 +381,7 @@ var _ = Describe("CLI", func() {
 
 		When("an invalid project version is set", func() {
 			It("should fail", func() {
-				c = &cli{}
+				c = &CLI{}
 				projectVersion, _, err = c.resolveFlagsAndConfigFileConflicts(
 					"0",
 					config.Version{},
@@ -394,7 +394,7 @@ var _ = Describe("CLI", func() {
 
 		When("having no plugin keys set", func() {
 			It("should succeed", func() {
-				c = &cli{}
+				c = &CLI{}
 				_, plugins, err = c.resolveFlagsAndConfigFileConflicts(
 					"",
 					config.Version{},
@@ -409,7 +409,7 @@ var _ = Describe("CLI", func() {
 		When("having one plugin keys source", func() {
 			When("having default plugin keys set", func() {
 				It("should succeed", func() {
-					c = &cli{
+					c = &CLI{
 						defaultProjectVersion: projectVersion1,
 						defaultPlugins: map[config.Version][]string{
 							projectVersion1: {pluginKey1},
@@ -430,7 +430,7 @@ var _ = Describe("CLI", func() {
 
 			When("having plugin keys set from flags", func() {
 				It("should succeed", func() {
-					c = &cli{}
+					c = &CLI{}
 					_, plugins, err = c.resolveFlagsAndConfigFileConflicts(
 						"",
 						config.Version{},
@@ -445,7 +445,7 @@ var _ = Describe("CLI", func() {
 
 			When("having plugin keys set from config file", func() {
 				It("should succeed", func() {
-					c = &cli{}
+					c = &CLI{}
 					_, plugins, err = c.resolveFlagsAndConfigFileConflicts(
 						"",
 						config.Version{},
@@ -462,7 +462,7 @@ var _ = Describe("CLI", func() {
 		When("having two plugin keys source", func() {
 			When("having default plugin keys set and from flags", func() {
 				It("should succeed", func() {
-					c = &cli{
+					c = &CLI{
 						defaultPlugins: map[config.Version][]string{
 							{}: {pluginKey1},
 						},
@@ -481,7 +481,7 @@ var _ = Describe("CLI", func() {
 
 			When("having default plugin keys set and from config file", func() {
 				It("should succeed", func() {
-					c = &cli{
+					c = &CLI{
 						defaultPlugins: map[config.Version][]string{
 							{}: {pluginKey1},
 						},
@@ -500,7 +500,7 @@ var _ = Describe("CLI", func() {
 
 			When("having plugin keys set from flags and config file", func() {
 				It("should succeed if they are the same", func() {
-					c = &cli{}
+					c = &CLI{}
 					_, plugins, err = c.resolveFlagsAndConfigFileConflicts(
 						"",
 						config.Version{},
@@ -513,7 +513,7 @@ var _ = Describe("CLI", func() {
 				})
 
 				It("should fail if they are different", func() {
-					c = &cli{}
+					c = &CLI{}
 					_, _, err = c.resolveFlagsAndConfigFileConflicts(
 						"",
 						config.Version{},
@@ -527,7 +527,7 @@ var _ = Describe("CLI", func() {
 
 		When("having three plugin keys sources", func() {
 			It("should succeed if plugin keys from flags and config file are the same", func() {
-				c = &cli{
+				c = &CLI{
 					defaultPlugins: map[config.Version][]string{
 						{}: {pluginKey1},
 					},
@@ -544,7 +544,7 @@ var _ = Describe("CLI", func() {
 			})
 
 			It("should fail if plugin keys from flags and config file are different", func() {
-				c = &cli{
+				c = &CLI{
 					defaultPlugins: map[config.Version][]string{
 						{}: {pluginKey1},
 					},
@@ -561,7 +561,7 @@ var _ = Describe("CLI", func() {
 
 		When("an invalid plugin key is set", func() {
 			It("should fail", func() {
-				c = &cli{}
+				c = &CLI{}
 				_, plugins, err = c.resolveFlagsAndConfigFileConflicts(
 					"",
 					config.Version{},
@@ -573,14 +573,14 @@ var _ = Describe("CLI", func() {
 		})
 	})
 
-	// NOTE: only flag info can be tested with cli.getInfo as the config file doesn't exist,
+	// NOTE: only flag info can be tested with CLI.getInfo as the config file doesn't exist,
 	//       previous tests ensure that the info from config files is read properly and that
 	//       conflicts are solved appropriately.
-	Context("cli.getInfo", func() {
+	Context("CLI.getInfo", func() {
 		It("should set project version and plugin keys", func() {
 			projectVersion := config.Version{Number: 2}
 			pluginKeys := []string{"go.kubebuilder.io/v2"}
-			c := &cli{
+			c := &CLI{
 				defaultProjectVersion: projectVersion,
 				defaultPlugins: map[config.Version][]string{
 					projectVersion: pluginKeys,
@@ -593,9 +593,9 @@ var _ = Describe("CLI", func() {
 		})
 	})
 
-	Context("cli.resolve", func() {
+	Context("CLI.resolve", func() {
 		var (
-			c *cli
+			c *CLI
 
 			projectVersion = config.Version{Number: 2}
 
@@ -622,7 +622,7 @@ var _ = Describe("CLI", func() {
 		} {
 			key, qualified := key, qualified
 			It(fmt.Sprintf("should resolve %q", key), func() {
-				c = &cli{
+				c = &CLI{
 					plugins:        pluginMap,
 					projectVersion: projectVersion,
 					pluginKeys:     []string{key},
@@ -645,7 +645,7 @@ var _ = Describe("CLI", func() {
 		} {
 			key := key
 			It(fmt.Sprintf("should not resolve %q", key), func() {
-				c = &cli{
+				c = &CLI{
 					plugins:        pluginMap,
 					projectVersion: projectVersion,
 					pluginKeys:     []string{key},
@@ -656,7 +656,7 @@ var _ = Describe("CLI", func() {
 	})
 
 	Context("New", func() {
-		var c CLI
+		var c *CLI
 		var err error
 
 		When("no option is provided", func() {

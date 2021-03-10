@@ -25,7 +25,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 )
 
-func (c cli) newCreateWebhookCmd() *cobra.Command {
+func (c CLI) newCreateWebhookCmd() *cobra.Command {
 	ctx := c.newWebhookContext()
 	cmd := &cobra.Command{
 		Use:     "webhook",
@@ -42,7 +42,7 @@ func (c cli) newCreateWebhookCmd() *cobra.Command {
 	return cmd
 }
 
-func (c cli) newWebhookContext() plugin.Context {
+func (c CLI) newWebhookContext() plugin.Context {
 	return plugin.Context{
 		CommandName: c.commandName,
 		Description: `Scaffold a webhook for an API resource.
@@ -51,7 +51,7 @@ func (c cli) newWebhookContext() plugin.Context {
 }
 
 // nolint:dupl
-func (c cli) bindCreateWebhook(ctx plugin.Context, cmd *cobra.Command) {
+func (c CLI) bindCreateWebhook(ctx plugin.Context, cmd *cobra.Command) {
 	if len(c.resolvedPlugins) == 0 {
 		cmdErr(cmd, fmt.Errorf(noPluginError))
 		return

@@ -49,7 +49,7 @@ func errCmdFunc(err error) func(*cobra.Command, []string) error {
 // config, which may have been modified by subcommand.
 func runECmdFunc(
 	c *config.Config,
-	subcommand plugin.Subcommand, // nolint:interfacer
+	subcommand plugin.Subcommand,
 	msg string,
 ) func(*cobra.Command, []string) error {
 	return func(*cobra.Command, []string) error {

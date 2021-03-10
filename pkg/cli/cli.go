@@ -57,16 +57,8 @@ func equalStringSlice(a, b []string) bool {
 	return true
 }
 
-// CLI interacts with a command line interface.
-type CLI interface {
-	// Run runs the CLI, usually returning an error if command line configuration
-	// is incorrect.
-	Run() error
-}
-
-// cli defines the command line structure and interfaces that are used to
-// scaffold kubebuilder project files.
-type cli struct { //nolint:maligned
+// CLI is the command line utility that is used to scaffold kubebuilder project files.
+type CLI struct { //nolint:maligned
 	/* Fields set by Option */
 
 	// Root command name. It is injected downstream to provide correct help, usage, examples and errors.
@@ -77,11 +69,11 @@ type cli struct { //nolint:maligned
 	defaultProjectVersion config.Version
 	// Default plugins in case none is provided and a config file can't be found.
 	defaultPlugins map[config.Version][]string
-	// Plugins registered in the cli.
+	// Plugins registered in the CLI.
 	plugins map[string]plugin.Plugin
 	// Commands injected by options.
 	extraCommands []*cobra.Command
-	// Whether to add a completion command to the cli.
+	// Whether to add a completion command to the CLI.
 	completionCommand bool
 
 	/* Internal fields */
@@ -98,12 +90,17 @@ type cli struct { //nolint:maligned
 	cmd *cobra.Command
 }
 
-// New creates a new cli instance.
-// Developer errors (e.g. not registering any plugins, extra commands with conflicting names) return an error
-// while user errors (e.g. errors while parsing flags, unresolvable plugins) create a command which return the error.
-func New(opts ...Option) (CLI, error) {
+// New creates a new CLI instance.
+//
+// It follows the functional options pattern in order to customize the resulting CLI.
+//
+// It returns an error if any of the provided options fails. As some processing needs
+// to be done, execution errors may be found here. Instead of returning an error, this
+// function will return a valid CLI that errors in Run so that help is provided to the
+// user.
+func New(options ...Option) (*CLI, error) {
 	// Create the CLI.
-	c, err := newCLI(opts...)
+	c, err := newCLI(options...)
 	if err != nil {
 		return nil, err
 	}
@@ -125,11 +122,11 @@ func New(opts ...Option) (CLI, error) {
 	return c, nil
 }
 
-// newCLI creates a default cli instance and applies the provided options.
+// newCLI creates a default CLI instance and applies the provided options.
 // It is as a separate function for test purposes.
-func newCLI(opts ...Option) (*cli, error) {
-	// Default cli options.
-	c := &cli{
+func newCLI(options ...Option) (*CLI, error) {
+	// Default CLI options.
+	c := &CLI{
 		commandName:           "kubebuilder",
 		defaultProjectVersion: cfgv3.Version,
 		defaultPlugins:        make(map[config.Version][]string),
@@ -137,8 +134,8 @@ func newCLI(opts ...Option) (*cli, error) {
 	}
 
 	// Apply provided options.
-	for _, opt := range opts {
-		if err := opt(c); err != nil {
+	for _, option := range options {
+		if err := option(c); err != nil {
 			return nil, err
 		}
 	}
@@ -147,7 +144,7 @@ func newCLI(opts ...Option) (*cli, error) {
 }
 
 // getInfoFromFlags obtains the project version and plugin keys from flags.
-func (c *cli) getInfoFromFlags() (string, []string, error) {
+func (c *CLI) getInfoFromFlags() (string, []string, error) {
 	// Partially parse the command line arguments
 	fs := pflag.NewFlagSet("base", pflag.ContinueOnError)
 
@@ -221,7 +218,7 @@ func getInfoFromConfig(projectConfig config.Config) (config.Version, []string, e
 
 // resolveFlagsAndConfigFileConflicts checks if the provided combined input from flags and
 // the config file is valid and uses default values in case some info was not provided.
-func (c cli) resolveFlagsAndConfigFileConflicts(
+func (c CLI) resolveFlagsAndConfigFileConflicts(
 	flagProjectVersionString string,
 	cfgProjectVersion config.Version,
 	flagPlugins, cfgPlugins []string,
@@ -290,7 +287,7 @@ func (c cli) resolveFlagsAndConfigFileConflicts(
 }
 
 // getInfo obtains the project version and plugin keys resolving conflicts among flags and the project config file.
-func (c *cli) getInfo() error {
+func (c *CLI) getInfo() error {
 	// Get project version and plugin info from flags
 	flagProjectVersion, flagPlugins, err := c.getInfoFromFlags()
 	if err != nil {
@@ -312,7 +309,7 @@ const unstablePluginMsg = " (plugin version is unstable, there may be an upgrade
 	"https://kubebuilder.io/migration/plugin/plugins.html)"
 
 // resolve selects from the available plugins those that match the project version and plugin keys provided.
-func (c *cli) resolve() error {
+func (c *CLI) resolve() error {
 	var plugins []plugin.Plugin
 	for _, pluginKey := range c.pluginKeys {
 		name, version := plugin.SplitKey(pluginKey)
@@ -402,7 +399,7 @@ func (c *cli) resolve() error {
 
 // addSubcommands returns a root command with a subcommand tree reflecting the
 // current project's state.
-func (c *cli) addSubcommands() {
+func (c *CLI) addSubcommands() {
 	// kubebuilder completion
 	// Only add completion if requested
 	if c.completionCommand {
@@ -432,7 +429,7 @@ func (c *cli) addSubcommands() {
 }
 
 // buildCmd creates the underlying cobra command and stores it internally.
-func (c *cli) buildCmd() error {
+func (c *CLI) buildCmd() error {
 	c.cmd = c.newRootCmd()
 
 	// Get project version and plugin keys.
@@ -452,7 +449,7 @@ func (c *cli) buildCmd() error {
 }
 
 // addExtraCommands adds the additional commands.
-func (c *cli) addExtraCommands() error {
+func (c *CLI) addExtraCommands() error {
 	for _, cmd := range c.extraCommands {
 		for _, subCmd := range c.cmd.Commands() {
 			if cmd.Name() == subCmd.Name() {
@@ -465,7 +462,7 @@ func (c *cli) addExtraCommands() error {
 }
 
 // printDeprecationWarnings prints the deprecation warnings of the resolved plugins.
-func (c cli) printDeprecationWarnings() {
+func (c CLI) printDeprecationWarnings() {
 	for _, p := range c.resolvedPlugins {
 		if d, isDeprecated := p.(plugin.Deprecated); isDeprecated {
 			fmt.Printf(noticeColor, fmt.Sprintf(deprecationFmt, d.DeprecationWarning()))
@@ -473,7 +470,9 @@ func (c cli) printDeprecationWarnings() {
 	}
 }
 
-// Run implements CLI.Run.
-func (c cli) Run() error {
+// Run executes the CLI utility.
+//
+// If an error is found, command help and examples will be printed.
+func (c CLI) Run() error {
 	return c.cmd.Execute()
 }

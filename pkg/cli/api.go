@@ -25,7 +25,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 )
 
-func (c cli) newCreateAPICmd() *cobra.Command {
+func (c CLI) newCreateAPICmd() *cobra.Command {
 	ctx := c.newAPIContext()
 	cmd := &cobra.Command{
 		Use:     "api",
@@ -42,7 +42,7 @@ func (c cli) newCreateAPICmd() *cobra.Command {
 	return cmd
 }
 
-func (c cli) newAPIContext() plugin.Context {
+func (c CLI) newAPIContext() plugin.Context {
 	return plugin.Context{
 		CommandName: c.commandName,
 		Description: `Scaffold a Kubernetes API.
@@ -51,7 +51,7 @@ func (c cli) newAPIContext() plugin.Context {
 }
 
 // nolint:dupl
-func (c cli) bindCreateAPI(ctx plugin.Context, cmd *cobra.Command) {
+func (c CLI) bindCreateAPI(ctx plugin.Context, cmd *cobra.Command) {
 	if len(c.resolvedPlugins) == 0 {
 		cmdErr(cmd, fmt.Errorf(noPluginError))
 		return
