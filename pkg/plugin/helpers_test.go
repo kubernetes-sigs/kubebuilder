@@ -17,6 +17,8 @@ limitations under the License.
 package plugin
 
 import (
+	"sort"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
@@ -24,16 +26,6 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/stage"
 )
-
-type mockPlugin struct {
-	name                     string
-	version                  Version
-	supportedProjectVersions []config.Version
-}
-
-func (p mockPlugin) Name() string                               { return p.name }
-func (p mockPlugin) Version() Version                           { return p.version }
-func (p mockPlugin) SupportedProjectVersions() []config.Version { return p.supportedProjectVersions }
 
 const (
 	short = "go"
@@ -143,5 +135,56 @@ var _ = Describe("SupportsVersion", func() {
 	It("should return false for non-supported versions", func() {
 		Expect(SupportsVersion(plugin, config.Version{Number: 1})).To(BeFalse())
 		Expect(SupportsVersion(plugin, config.Version{Number: 3, Stage: stage.Alpha})).To(BeFalse())
+	})
+})
+
+var _ = Describe("CommonSupportedProjectVersions", func() {
+	It("should return the common version", func() {
+		var (
+			p1 = mockPlugin{supportedProjectVersions: []config.Version{
+				{Number: 1},
+				{Number: 2},
+				{Number: 3},
+			}}
+			p2 = mockPlugin{supportedProjectVersions: []config.Version{
+				{Number: 1},
+				{Number: 2, Stage: stage.Beta},
+				{Number: 3, Stage: stage.Alpha},
+			}}
+			p3 = mockPlugin{supportedProjectVersions: []config.Version{
+				{Number: 1},
+				{Number: 2},
+				{Number: 3, Stage: stage.Beta},
+			}}
+			p4 = mockPlugin{supportedProjectVersions: []config.Version{
+				{Number: 2},
+				{Number: 3},
+			}}
+		)
+
+		for _, tc := range []struct {
+			plugins  []Plugin
+			versions []config.Version
+		}{
+			{plugins: []Plugin{p1, p2}, versions: []config.Version{{Number: 1}}},
+			{plugins: []Plugin{p1, p3}, versions: []config.Version{{Number: 1}, {Number: 2}}},
+			{plugins: []Plugin{p1, p4}, versions: []config.Version{{Number: 2}, {Number: 3}}},
+			{plugins: []Plugin{p2, p3}, versions: []config.Version{{Number: 1}}},
+			{plugins: []Plugin{p2, p4}, versions: []config.Version{}},
+			{plugins: []Plugin{p3, p4}, versions: []config.Version{{Number: 2}}},
+
+			{plugins: []Plugin{p1, p2, p3}, versions: []config.Version{{Number: 1}}},
+			{plugins: []Plugin{p1, p2, p4}, versions: []config.Version{}},
+			{plugins: []Plugin{p1, p3, p4}, versions: []config.Version{{Number: 2}}},
+			{plugins: []Plugin{p2, p3, p4}, versions: []config.Version{}},
+
+			{plugins: []Plugin{p1, p2, p3, p4}, versions: []config.Version{}},
+		} {
+			versions := CommonSupportedProjectVersions(tc.plugins...)
+			sort.Slice(versions, func(i int, j int) bool {
+				return versions[i].Compare(versions[j]) == -1
+			})
+			Expect(versions).To(Equal(tc.versions))
+		}
 	})
 })

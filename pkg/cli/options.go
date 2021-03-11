@@ -44,15 +44,21 @@ func WithVersion(version string) Option {
 	}
 }
 
-// WithDefaultProjectVersion is an Option that sets the CLI's default project version.
+// WithPlugins is an Option that sets the CLI's plugins.
 //
-// Setting an invalid version results in an error.
-func WithDefaultProjectVersion(version config.Version) Option {
+// Specifying any invalid plugin results in an error.
+func WithPlugins(plugins ...plugin.Plugin) Option {
 	return func(c *CLI) error {
-		if err := version.Validate(); err != nil {
-			return fmt.Errorf("broken pre-set default project version %q: %v", version, err)
+		for _, p := range plugins {
+			key := plugin.KeyFor(p)
+			if _, isConflicting := c.plugins[key]; isConflicting {
+				return fmt.Errorf("two plugins have the same key: %q", key)
+			}
+			if err := plugin.Validate(p); err != nil {
+				return fmt.Errorf("broken pre-set plugin %q: %v", key, err)
+			}
+			c.plugins[key] = p
 		}
-		c.defaultProjectVersion = version
 		return nil
 	}
 }
@@ -63,7 +69,7 @@ func WithDefaultProjectVersion(version config.Version) Option {
 func WithDefaultPlugins(projectVersion config.Version, plugins ...plugin.Plugin) Option {
 	return func(c *CLI) error {
 		if err := projectVersion.Validate(); err != nil {
-			return fmt.Errorf("broken pre-set project version %q for default plugins: %v", projectVersion, err)
+			return fmt.Errorf("broken pre-set project version %q for default plugins: %w", projectVersion, err)
 		}
 		if len(plugins) == 0 {
 			return fmt.Errorf("empty set of plugins provided for project version %q", projectVersion)
@@ -81,21 +87,15 @@ func WithDefaultPlugins(projectVersion config.Version, plugins ...plugin.Plugin)
 	}
 }
 
-// WithPlugins is an Option that sets the CLI's plugins.
+// WithDefaultProjectVersion is an Option that sets the CLI's default project version.
 //
-// Specifying any invalid plugin results in an error.
-func WithPlugins(plugins ...plugin.Plugin) Option {
+// Setting an invalid version results in an error.
+func WithDefaultProjectVersion(version config.Version) Option {
 	return func(c *CLI) error {
-		for _, p := range plugins {
-			key := plugin.KeyFor(p)
-			if _, isConflicting := c.plugins[key]; isConflicting {
-				return fmt.Errorf("two plugins have the same key: %q", key)
-			}
-			if err := plugin.Validate(p); err != nil {
-				return fmt.Errorf("broken pre-set plugin %q: %v", key, err)
-			}
-			c.plugins[key] = p
+		if err := version.Validate(); err != nil {
+			return fmt.Errorf("broken pre-set default project version %q: %v", version, err)
 		}
+		c.defaultProjectVersion = version
 		return nil
 	}
 }

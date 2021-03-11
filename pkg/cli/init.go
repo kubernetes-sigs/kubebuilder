@@ -28,7 +28,6 @@ import (
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	yamlstore "sigs.k8s.io/kubebuilder/v3/pkg/config/store/yaml"
-	cfgv2 "sigs.k8s.io/kubebuilder/v3/pkg/config/v2"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 )
 
@@ -40,7 +39,7 @@ func (c CLI) newInitCmd() *cobra.Command {
 		Short: "Initialize a new project",
 		Long: `Initialize a new project.
 
-For further help about a specific project version, set --project-version.
+For further help about a specific plugin, set --plugins.
 `,
 		Example: c.getInitHelpExamples(),
 		Run:     func(cmd *cobra.Command, args []string) {},
@@ -48,14 +47,7 @@ For further help about a specific project version, set --project-version.
 
 	// Register --project-version on the dynamically created command
 	// so that it shows up in help and does not cause a parse error.
-	cmd.Flags().String(projectVersionFlag, c.defaultProjectVersion.String(),
-		fmt.Sprintf("project version, possible values: (%s)", strings.Join(c.getAvailableProjectVersions(), ", ")))
-	// The --plugins flag can only be called to init projects v2+.
-	if c.projectVersion.Compare(cfgv2.Version) == 1 {
-		cmd.Flags().StringSlice(pluginsFlag, nil,
-			"Name and optionally version of the plugin to initialize the project with. "+
-				fmt.Sprintf("Available plugins: (%s)", strings.Join(c.getAvailablePlugins(), ", ")))
-	}
+	cmd.Flags().String(projectVersionFlag, c.defaultProjectVersion.String(), "project version")
 
 	// In case no plugin was resolved, instead of failing the construction of the CLI, fail the execution of
 	// this subcommand. This allows the use of subcommands that do not require resolved plugins like help.
@@ -97,6 +89,8 @@ For further help about a specific project version, set --project-version.
 			return fmt.Errorf("%s: error initializing project configuration: %w", initErrorMsg, err)
 		}
 
+		// We extract the plugin keys again instead of using the ones obtained when filtering subcommands
+		// as there plugins are unbundled but we want to keep bundle names in the layout.
 		resolvedPluginKeys := make([]string, 0, len(c.resolvedPlugins))
 		for _, p := range c.resolvedPlugins {
 			resolvedPluginKeys = append(resolvedPluginKeys, plugin.KeyFor(p))

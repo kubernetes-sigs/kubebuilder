@@ -29,7 +29,7 @@ const editErrorMsg = "failed to edit project"
 func (c CLI) newEditCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "edit",
-		Short: "This command will edit the project configuration",
+		Short: "Update the project configuration",
 		Long: `Edit the project configuration.
 `,
 		RunE: errCmdFunc(

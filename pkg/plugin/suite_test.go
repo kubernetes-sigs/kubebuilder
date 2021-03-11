@@ -21,9 +21,21 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 )
 
 func TestPlugin(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Plugin Suite")
 }
+
+type mockPlugin struct {
+	name                     string
+	version                  Version
+	supportedProjectVersions []config.Version
+}
+
+func (p mockPlugin) Name() string                               { return p.name }
+func (p mockPlugin) Version() Version                           { return p.version }
+func (p mockPlugin) SupportedProjectVersions() []config.Version { return p.supportedProjectVersions }

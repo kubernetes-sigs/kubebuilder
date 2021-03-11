@@ -67,9 +67,19 @@ func (c CLI) filterSubcommands(
 	filter func(plugin.Plugin) bool,
 	extract func(plugin.Plugin) plugin.Subcommand,
 ) ([]string, *[]plugin.Subcommand) {
-	pluginKeys := make([]string, 0, len(c.resolvedPlugins))
-	subcommands := make([]plugin.Subcommand, 0, len(c.resolvedPlugins))
+	// Unbundle plugins
+	plugins := make([]plugin.Plugin, 0, len(c.resolvedPlugins))
 	for _, p := range c.resolvedPlugins {
+		if bundle, isBundle := p.(plugin.Bundle); isBundle {
+			plugins = append(plugins, bundle.Plugins()...)
+		} else {
+			plugins = append(plugins, p)
+		}
+	}
+
+	pluginKeys := make([]string, 0, len(plugins))
+	subcommands := make([]plugin.Subcommand, 0, len(plugins))
+	for _, p := range plugins {
 		if filter(p) {
 			pluginKeys = append(pluginKeys, plugin.KeyFor(p))
 			subcommands = append(subcommands, extract(p))

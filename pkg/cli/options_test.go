@@ -17,9 +17,8 @@ limitations under the License.
 package cli
 
 import (
-	"fmt"
-
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/cobra"
 
@@ -68,32 +67,54 @@ var _ = Describe("CLI options", func() {
 		})
 	})
 
-	Context("WithDefaultProjectVersion", func() {
+	Context("WithPlugins", func() {
 		It("should return a valid CLI", func() {
-			defaultProjectVersions := []config.Version{
-				{Number: 1},
-				{Number: 2},
-				{Number: 3, Stage: stage.Alpha},
-			}
-			for _, defaultProjectVersion := range defaultProjectVersions {
-				By(fmt.Sprintf("using %q", defaultProjectVersion))
-				c, err = newCLI(WithDefaultProjectVersion(defaultProjectVersion))
-				Expect(err).NotTo(HaveOccurred())
-				Expect(c).NotTo(BeNil())
-				Expect(c.defaultProjectVersion).To(Equal(defaultProjectVersion))
-			}
+			c, err = newCLI(WithPlugins(p))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(c).NotTo(BeNil())
+			Expect(c.plugins).To(Equal(map[string]plugin.Plugin{plugin.KeyFor(p): p}))
 		})
 
-		It("should return an error", func() {
-			defaultProjectVersions := []config.Version{
-				{},                                  // Empty default project version
-				{Number: 1, Stage: stage.Stage(27)}, // Invalid stage in default project version
-			}
-			for _, defaultProjectVersion := range defaultProjectVersions {
-				By(fmt.Sprintf("using %q", defaultProjectVersion))
-				_, err = newCLI(WithDefaultProjectVersion(defaultProjectVersion))
+		When("providing plugins with same keys", func() {
+			It("should return an error", func() {
+				_, err = newCLI(WithPlugins(p, p))
 				Expect(err).To(HaveOccurred())
-			}
+			})
+		})
+
+		When("providing plugins with same keys in two steps", func() {
+			It("should return an error", func() {
+				_, err = newCLI(WithPlugins(p), WithPlugins(p))
+				Expect(err).To(HaveOccurred())
+			})
+		})
+
+		When("providing a plugin with an invalid name", func() {
+			It("should return an error", func() {
+				_, err = newCLI(WithPlugins(np1))
+				Expect(err).To(HaveOccurred())
+			})
+		})
+
+		When("providing a plugin with an invalid version", func() {
+			It("should return an error", func() {
+				_, err = newCLI(WithPlugins(np2))
+				Expect(err).To(HaveOccurred())
+			})
+		})
+
+		When("providing a plugin with an empty list of supported versions", func() {
+			It("should return an error", func() {
+				_, err = newCLI(WithPlugins(np3))
+				Expect(err).To(HaveOccurred())
+			})
+		})
+
+		When("providing a plugin with an invalid list of supported versions", func() {
+			It("should return an error", func() {
+				_, err = newCLI(WithPlugins(np4))
+				Expect(err).To(HaveOccurred())
+			})
 		})
 	})
 
@@ -155,55 +176,27 @@ var _ = Describe("CLI options", func() {
 		})
 	})
 
-	Context("WithPlugins", func() {
-		It("should return a valid CLI", func() {
-			c, err = newCLI(WithPlugins(p))
-			Expect(err).NotTo(HaveOccurred())
-			Expect(c).NotTo(BeNil())
-			Expect(c.plugins).To(Equal(map[string]plugin.Plugin{plugin.KeyFor(p): p}))
-		})
+	Context("WithDefaultProjectVersion", func() {
+		DescribeTable("should return a valid CLI",
+			func(projectVersion config.Version) {
+				c, err = newCLI(WithDefaultProjectVersion(projectVersion))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(c).NotTo(BeNil())
+				Expect(c.defaultProjectVersion).To(Equal(projectVersion))
+			},
+			Entry("for version `2`", config.Version{Number: 2}),
+			Entry("for version `3-alpha`", config.Version{Number: 3, Stage: stage.Alpha}),
+			Entry("for version `3`", config.Version{Number: 3}),
+		)
 
-		When("providing plugins with same keys", func() {
-			It("should return an error", func() {
-				_, err = newCLI(WithPlugins(p, p))
+		DescribeTable("should fail",
+			func(projectVersion config.Version) {
+				_, err = newCLI(WithDefaultProjectVersion(projectVersion))
 				Expect(err).To(HaveOccurred())
-			})
-		})
-
-		When("providing plugins with same keys in two steps", func() {
-			It("should return an error", func() {
-				_, err = newCLI(WithPlugins(p), WithPlugins(p))
-				Expect(err).To(HaveOccurred())
-			})
-		})
-
-		When("providing a plugin with an invalid name", func() {
-			It("should return an error", func() {
-				_, err = newCLI(WithPlugins(np1))
-				Expect(err).To(HaveOccurred())
-			})
-		})
-
-		When("providing a plugin with an invalid version", func() {
-			It("should return an error", func() {
-				_, err = newCLI(WithPlugins(np2))
-				Expect(err).To(HaveOccurred())
-			})
-		})
-
-		When("providing a plugin with an empty list of supported versions", func() {
-			It("should return an error", func() {
-				_, err = newCLI(WithPlugins(np3))
-				Expect(err).To(HaveOccurred())
-			})
-		})
-
-		When("providing a plugin with an invalid list of supported versions", func() {
-			It("should return an error", func() {
-				_, err = newCLI(WithPlugins(np4))
-				Expect(err).To(HaveOccurred())
-			})
-		})
+			},
+			Entry("for empty version", config.Version{}),
+			Entry("for invalid stage", config.Version{Number: 1, Stage: stage.Stage(27)}),
+		)
 	})
 
 	Context("WithExtraCommands", func() {

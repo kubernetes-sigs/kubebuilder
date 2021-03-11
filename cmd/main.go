@@ -31,7 +31,6 @@ func main() {
 	c, err := cli.New(
 		cli.WithCommandName("kubebuilder"),
 		cli.WithVersion(versionString()),
-		cli.WithDefaultProjectVersion(cfgv3.Version),
 		cli.WithPlugins(
 			&pluginv2.Plugin{},
 			&pluginv3.Plugin{},
@@ -39,6 +38,7 @@ func main() {
 		),
 		cli.WithDefaultPlugins(cfgv2.Version, &pluginv2.Plugin{}),
 		cli.WithDefaultPlugins(cfgv3.Version, &pluginv3.Plugin{}),
+		cli.WithDefaultProjectVersion(cfgv3.Version),
 		cli.WithCompletion(),
 	)
 	if err != nil {

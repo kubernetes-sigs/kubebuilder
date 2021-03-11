@@ -76,3 +76,10 @@ type Full interface {
 	CreateWebhook
 	Edit
 }
+
+// Bundle allows to group plugins under a single key
+type Bundle interface {
+	Plugin
+	// Plugins returns a list of the bundled plugins
+	Plugins() []Plugin
+}
