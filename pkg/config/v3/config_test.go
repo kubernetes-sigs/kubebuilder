@@ -386,8 +386,8 @@ var _ = Describe("cfg", func() {
 				Repository: repo,
 				Name:       name,
 				Layout:     layout,
-				Plugins: PluginConfigs{
-					"plugin-x": map[string]interface{}{
+				Plugins: pluginConfigs{
+					key: map[string]interface{}{
 						"data-1": "",
 					},
 				},
@@ -398,8 +398,8 @@ var _ = Describe("cfg", func() {
 				Repository: repo,
 				Name:       name,
 				Layout:     layout,
-				Plugins: PluginConfigs{
-					"plugin-x": map[string]interface{}{
+				Plugins: pluginConfigs{
+					key: map[string]interface{}{
 						"data-1": "plugin value 1",
 						"data-2": "plugin value 2",
 					},
@@ -414,6 +414,13 @@ var _ = Describe("cfg", func() {
 		It("DecodePluginConfig should fail for no plugin config object", func() {
 			var pluginConfig PluginConfig
 			err := c0.DecodePluginConfig(key, &pluginConfig)
+			Expect(err).To(HaveOccurred())
+			Expect(errors.As(err, &config.PluginKeyNotFoundError{})).To(BeTrue())
+		})
+
+		It("DecodePluginConfig should fail to retrieve data from a non-existent plugin", func() {
+			var pluginConfig PluginConfig
+			err := c1.DecodePluginConfig("plugin-y", &pluginConfig)
 			Expect(err).To(HaveOccurred())
 			Expect(errors.As(err, &config.PluginKeyNotFoundError{})).To(BeTrue())
 		})
@@ -507,7 +514,7 @@ var _ = Describe("cfg", func() {
 						},
 					},
 				},
-				Plugins: PluginConfigs{
+				Plugins: pluginConfigs{
 					"plugin-x": map[string]interface{}{
 						"data-1": "single plugin datum",
 					},

@@ -21,6 +21,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
+	"github.com/spf13/afero"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/model"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
@@ -37,7 +38,7 @@ var _ = Describe("Scaffold", func() {
 
 		Context("when using no plugins", func() {
 			BeforeEach(func() {
-				si = NewScaffold()
+				si = NewScaffold(afero.NewMemMapFs())
 				s, ok = si.(*scaffold)
 			})
 
@@ -56,7 +57,7 @@ var _ = Describe("Scaffold", func() {
 
 		Context("when using one plugin", func() {
 			BeforeEach(func() {
-				si = NewScaffold(fakePlugin{})
+				si = NewScaffold(afero.NewMemMapFs(), fakePlugin{})
 				s, ok = si.(*scaffold)
 			})
 
@@ -75,7 +76,7 @@ var _ = Describe("Scaffold", func() {
 
 		Context("when using several plugins", func() {
 			BeforeEach(func() {
-				si = NewScaffold(fakePlugin{}, fakePlugin{}, fakePlugin{})
+				si = NewScaffold(afero.NewMemMapFs(), fakePlugin{}, fakePlugin{}, fakePlugin{})
 				s, ok = si.(*scaffold)
 			})
 

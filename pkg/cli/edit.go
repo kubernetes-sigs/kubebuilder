@@ -14,80 +14,58 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cli // nolint:dupl
+package cli //nolint:dupl
 
 import (
 	"fmt"
 
 	"github.com/spf13/cobra"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/cli/internal/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 )
 
+const editErrorMsg = "failed to edit project"
+
 func (c CLI) newEditCmd() *cobra.Command {
-	ctx := c.newEditContext()
 	cmd := &cobra.Command{
-		Use:     "edit",
-		Short:   "This command will edit the project configuration",
-		Long:    ctx.Description,
-		Example: ctx.Examples,
+		Use:   "edit",
+		Short: "This command will edit the project configuration",
+		Long: `Edit the project configuration.
+`,
 		RunE: errCmdFunc(
 			fmt.Errorf("project must be initialized"),
 		),
 	}
 
-	// Lookup the plugin for projectVersion and bind it to the command.
-	c.bindEdit(ctx, cmd)
-	return cmd
-}
-
-func (c CLI) newEditContext() plugin.Context {
-	return plugin.Context{
-		CommandName: c.commandName,
-		Description: `Edit the project configuration.
-`,
-	}
-}
-
-func (c CLI) bindEdit(ctx plugin.Context, cmd *cobra.Command) {
+	// In case no plugin was resolved, instead of failing the construction of the CLI, fail the execution of
+	// this subcommand. This allows the use of subcommands that do not require resolved plugins like help.
 	if len(c.resolvedPlugins) == 0 {
-		cmdErr(cmd, fmt.Errorf(noPluginError))
-		return
+		cmdErr(cmd, noResolvedPluginError{})
+		return cmd
 	}
 
-	var editPlugin plugin.Edit
-	for _, p := range c.resolvedPlugins {
-		tmpPlugin, isValid := p.(plugin.Edit)
-		if isValid {
-			if editPlugin != nil {
-				err := fmt.Errorf(
-					"duplicate edit project plugins (%s, %s), use a more specific plugin key",
-					plugin.KeyFor(editPlugin), plugin.KeyFor(p))
-				cmdErr(cmd, err)
-				return
-			}
-			editPlugin = tmpPlugin
-		}
+	// Obtain the plugin keys and subcommands from the plugins that implement plugin.Edit.
+	pluginKeys, subcommands := c.filterSubcommands(
+		func(p plugin.Plugin) bool {
+			_, isValid := p.(plugin.Edit)
+			return isValid
+		},
+		func(p plugin.Plugin) plugin.Subcommand {
+			return p.(plugin.Edit).GetEditSubcommand()
+		},
+	)
+
+	// Verify that there is at least one remaining plugin.
+	if len(*subcommands) == 0 {
+		cmdErr(cmd, noAvailablePluginError{"edit project"})
+		return cmd
 	}
 
-	if editPlugin == nil {
-		cmdErr(cmd, fmt.Errorf("resolved plugins do not provide a project edit plugin: %v", c.pluginKeys))
-		return
-	}
+	// Initialization methods.
+	options := c.initializationMethods(cmd, subcommands)
 
-	cfg, err := config.LoadInitialized()
-	if err != nil {
-		cmdErr(cmd, err)
-		return
-	}
+	// Execution methods.
+	cmd.PreRunE, cmd.RunE, cmd.PostRunE = c.executionMethodsFuncs(pluginKeys, subcommands, options, editErrorMsg)
 
-	subcommand := editPlugin.GetEditSubcommand()
-	subcommand.InjectConfig(cfg.Config)
-	subcommand.BindFlags(cmd.Flags())
-	subcommand.UpdateContext(&ctx)
-	cmd.Long = ctx.Description
-	cmd.Example = ctx.Examples
-	cmd.RunE = runECmdFunc(cfg, subcommand,
-		fmt.Sprintf("failed to edit project with %q", plugin.KeyFor(editPlugin)))
+	return cmd
 }

@@ -26,6 +26,10 @@ import (
 
 const (
 	versionPattern = "^v\\d+(?:alpha\\d+|beta\\d+)?$"
+
+	groupRequired   = "group cannot be empty if the domain is empty"
+	versionRequired = "version cannot be empty"
+	kindRequired    = "kind cannot be empty"
 )
 
 var (
@@ -44,17 +48,26 @@ type GVK struct {
 // Validate checks that the GVK is valid.
 func (gvk GVK) Validate() error {
 	// Check if the qualified group has a valid DNS1123 subdomain value
+	if gvk.QualifiedGroup() == "" {
+		return fmt.Errorf(groupRequired)
+	}
 	if err := validation.IsDNS1123Subdomain(gvk.QualifiedGroup()); err != nil {
 		// NOTE: IsDNS1123Subdomain returns a slice of strings instead of an error, so no wrapping
 		return fmt.Errorf("either Group or Domain is invalid: %s", err)
 	}
 
 	// Check if the version follows the valid pattern
+	if gvk.Version == "" {
+		return fmt.Errorf(versionRequired)
+	}
 	if !versionRegex.MatchString(gvk.Version) {
 		return fmt.Errorf("Version must match %s (was %s)", versionPattern, gvk.Version)
 	}
 
 	// Check if kind has a valid DNS1035 label value
+	if gvk.Kind == "" {
+		return fmt.Errorf(kindRequired)
+	}
 	if errors := validation.IsDNS1035Label(strings.ToLower(gvk.Kind)); len(errors) != 0 {
 		// NOTE: IsDNS1035Label returns a slice of strings instead of an error, so no wrapping
 		return fmt.Errorf("invalid Kind: %#v", errors)

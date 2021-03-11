@@ -26,8 +26,8 @@ import (
 const pluginName = "go" + plugins.DefaultNameQualifier
 
 var (
-	supportedProjectVersions = []config.Version{cfgv3.Version}
 	pluginVersion            = plugin.Version{Number: 3}
+	supportedProjectVersions = []config.Version{cfgv3.Version}
 )
 
 var _ plugin.Full = Plugin{}
