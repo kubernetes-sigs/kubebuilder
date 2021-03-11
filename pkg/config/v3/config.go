@@ -47,12 +47,11 @@ type cfg struct {
 	Resources []resource.Resource `json:"resources,omitempty"`
 
 	// Plugins
-	Plugins PluginConfigs `json:"plugins,omitempty"`
+	Plugins pluginConfigs `json:"plugins,omitempty"`
 }
 
-// PluginConfigs holds a set of arbitrary plugin configuration objects mapped by plugin key.
-// TODO: do not export this once internalconfig has merged with config
-type PluginConfigs map[string]pluginConfig
+// pluginConfigs holds a set of arbitrary plugin configuration objects mapped by plugin key.
+type pluginConfigs map[string]pluginConfig
 
 // pluginConfig is an arbitrary plugin configuration object.
 type pluginConfig interface{}

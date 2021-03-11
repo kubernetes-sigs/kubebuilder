@@ -19,6 +19,7 @@ package v3
 import (
 	"fmt"
 
+	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
@@ -57,8 +58,8 @@ func (p *editSubcommand) InjectConfig(c config.Config) {
 	p.config = c
 }
 
-func (p *editSubcommand) Run() error {
-	return cmdutil.Run(p)
+func (p *editSubcommand) Run(fs afero.Fs) error {
+	return cmdutil.Run(p, fs)
 }
 
 func (p *editSubcommand) Validate() error {
