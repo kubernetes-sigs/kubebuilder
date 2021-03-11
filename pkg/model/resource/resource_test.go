@@ -66,6 +66,8 @@ var _ = Describe("Resource", func() {
 			safeDomain    = "testio"
 			groupVersion  = group + version
 			domainVersion = safeDomain + version
+			safeGroup     = "mygroup"
+			safeAlias     = safeGroup + version
 		)
 
 		var (
@@ -85,6 +87,22 @@ var _ = Describe("Resource", func() {
 					Kind:    kind,
 				},
 			}
+			resHyphenGroup = Resource{
+				GVK: GVK{
+					Group:   "my-group",
+					Domain:  domain,
+					Version: version,
+					Kind:    kind,
+				},
+			}
+			resDotGroup = Resource{
+				GVK: GVK{
+					Group:   "my.group",
+					Domain:  domain,
+					Version: version,
+					Kind:    kind,
+				},
+			}
 		)
 
 		DescribeTable("PackageName should return the correct string",
@@ -92,6 +110,8 @@ var _ = Describe("Resource", func() {
 			Entry("fully qualified resource", res, group),
 			Entry("empty group name", resNoGroup, safeDomain),
 			Entry("empty domain", resNoDomain, group),
+			Entry("hyphen-containing group", resHyphenGroup, safeGroup),
+			Entry("dot-containing group", resDotGroup, safeGroup),
 		)
 
 		DescribeTable("ImportAlias",
@@ -99,6 +119,8 @@ var _ = Describe("Resource", func() {
 			Entry("fully qualified resource", res, groupVersion),
 			Entry("empty group name", resNoGroup, domainVersion),
 			Entry("empty domain", resNoDomain, groupVersion),
+			Entry("hyphen-containing group", resHyphenGroup, safeAlias),
+			Entry("dot-containing group", resDotGroup, safeAlias),
 		)
 	})
 
@@ -282,6 +304,17 @@ var _ = Describe("Resource", func() {
 				Plural: "types",
 			}
 			Expect(r.Update(other)).NotTo(Succeed())
+		})
+
+		It("should work for a new path", func() {
+			const path = "api/v1"
+			r = Resource{GVK: gvk}
+			other = Resource{
+				GVK:  gvk,
+				Path: path,
+			}
+			Expect(r.Update(other)).To(Succeed())
+			Expect(r.Path).To(Equal(path))
 		})
 
 		It("should fail for different Paths", func() {

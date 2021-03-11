@@ -18,32 +18,41 @@ package scaffolds
 
 import (
 	"fmt"
-	"io/ioutil"
 	"strings"
 
+	"github.com/spf13/afero"
+
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/cmdutil"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins"
 )
 
-var _ cmdutil.Scaffolder = &editScaffolder{}
+var _ plugins.Scaffolder = &editScaffolder{}
 
 type editScaffolder struct {
 	config     config.Config
 	multigroup bool
+
+	// fs is the filesystem that will be used by the scaffolder
+	fs afero.Fs
 }
 
 // NewEditScaffolder returns a new Scaffolder for configuration edit operations
-func NewEditScaffolder(config config.Config, multigroup bool) cmdutil.Scaffolder {
+func NewEditScaffolder(config config.Config, multigroup bool) plugins.Scaffolder {
 	return &editScaffolder{
 		config:     config,
 		multigroup: multigroup,
 	}
 }
 
-// Scaffold implements Scaffolder
+// InjectFS implements cmdutil.Scaffolder
+func (s *editScaffolder) InjectFS(fs afero.Fs) {
+	s.fs = fs
+}
+
+// Scaffold implements cmdutil.Scaffolder
 func (s *editScaffolder) Scaffold() error {
 	filename := "Dockerfile"
-	bs, err := ioutil.ReadFile(filename)
+	bs, err := afero.ReadFile(s.fs, filename)
 	if err != nil {
 		return err
 	}
@@ -76,9 +85,8 @@ func (s *editScaffolder) Scaffold() error {
 	// Check if the str is not empty, because when the file is already in desired format it will return empty string
 	// because there is nothing to replace.
 	if str != "" {
-		// false positive
-		// nolint:gosec
-		return ioutil.WriteFile(filename, []byte(str), 0644)
+		// TODO: instead of writing it directly, we should use the scaffolding machinery for consistency
+		return afero.WriteFile(s.fs, filename, []byte(str), 0644)
 	}
 
 	return nil

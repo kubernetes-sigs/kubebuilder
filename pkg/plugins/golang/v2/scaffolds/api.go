@@ -19,10 +19,13 @@ package scaffolds
 import (
 	"fmt"
 
+	"github.com/spf13/afero"
+
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	cfgv2 "sigs.k8s.io/kubebuilder/v3/pkg/config/v2"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates/api"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates/config/crd"
@@ -30,25 +33,19 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates/config/rbac"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates/config/samples"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates/controllers"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/cmdutil"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/machinery"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates/hack"
 )
 
-// KbDeclarativePattern is the sigs.k8s.io/kubebuilder-declarative-pattern version
-// (used only to gen api with --pattern=addon)
-const KbDeclarativePattern = "v0.0.0-20200522144838-848d48e5b073"
-
-var _ cmdutil.Scaffolder = &apiScaffolder{}
+var _ plugins.Scaffolder = &apiScaffolder{}
 
 // apiScaffolder contains configuration for generating scaffolding for Go type
 // representing the API and controller that implements the behavior for the API.
 type apiScaffolder struct {
-	config      config.Config
-	boilerplate string
-	resource    resource.Resource
+	config   config.Config
+	resource resource.Resource
 
-	// plugins is the list of plugins we should allow to transform our generated scaffolding
-	plugins []model.Plugin
+	// fs is the filesystem that will be used by the scaffolder
+	fs afero.Fs
 
 	// force indicates whether to scaffold controller files even if it exists or not
 	force bool
@@ -57,35 +54,38 @@ type apiScaffolder struct {
 // NewAPIScaffolder returns a new Scaffolder for API/controller creation operations
 func NewAPIScaffolder(
 	config config.Config,
-	boilerplate string,
 	res resource.Resource,
 	force bool,
-	plugins []model.Plugin,
-) cmdutil.Scaffolder {
+) plugins.Scaffolder {
 	return &apiScaffolder{
-		config:      config,
-		boilerplate: boilerplate,
-		resource:    res,
-		plugins:     plugins,
-		force:       force,
+		config:   config,
+		resource: res,
+		force:    force,
 	}
 }
 
-// Scaffold implements Scaffolder
+// InjectFS implements cmdutil.Scaffolder
+func (s *apiScaffolder) InjectFS(fs afero.Fs) {
+	s.fs = fs
+}
+
+// Scaffold implements cmdutil.Scaffolder
 func (s *apiScaffolder) Scaffold() error {
 	fmt.Println("Writing scaffold for you to edit...")
-	return s.scaffold()
-}
 
-func (s *apiScaffolder) newUniverse() *model.Universe {
-	return model.NewUniverse(
-		model.WithConfig(s.config),
-		model.WithBoilerplate(s.boilerplate),
-		model.WithResource(&s.resource),
+	// Load the boilerplate
+	boilerplate, err := afero.ReadFile(s.fs, hack.DefaultBoilerplatePath)
+	if err != nil {
+		return fmt.Errorf("error scaffolding API/controller: unable to load boilerplate: %w", err)
+	}
+
+	// Initialize the machinery.Scaffold that will write the files to disk
+	scaffold := machinery.NewScaffold(s.fs,
+		machinery.WithConfig(s.config),
+		machinery.WithBoilerplate(string(boilerplate)),
+		machinery.WithResource(&s.resource),
 	)
-}
 
-func (s *apiScaffolder) scaffold() error {
 	// Keep track of these values before the update
 	doAPI := s.resource.HasAPI()
 	doController := s.resource.HasController()
@@ -103,9 +103,7 @@ func (s *apiScaffolder) scaffold() error {
 	}
 
 	if doAPI {
-
-		if err := machinery.NewScaffold(s.plugins...).Execute(
-			s.newUniverse(),
+		if err := scaffold.Execute(
 			&api.Types{Force: s.force},
 			&api.Group{},
 			&samples.CRDSample{Force: s.force},
@@ -117,19 +115,16 @@ func (s *apiScaffolder) scaffold() error {
 			return fmt.Errorf("error scaffolding APIs: %w", err)
 		}
 
-		if err := machinery.NewScaffold().Execute(
-			s.newUniverse(),
+		if err := scaffold.Execute(
 			&crd.Kustomization{},
 			&crd.KustomizeConfig{},
 		); err != nil {
 			return fmt.Errorf("error scaffolding kustomization: %v", err)
 		}
-
 	}
 
 	if doController {
-		if err := machinery.NewScaffold(s.plugins...).Execute(
-			s.newUniverse(),
+		if err := scaffold.Execute(
 			&controllers.SuiteTest{Force: s.force},
 			&controllers.Controller{ControllerRuntimeVersion: ControllerRuntimeVersion, Force: s.force},
 		); err != nil {
@@ -137,8 +132,7 @@ func (s *apiScaffolder) scaffold() error {
 		}
 	}
 
-	if err := machinery.NewScaffold(s.plugins...).Execute(
-		s.newUniverse(),
+	if err := scaffold.Execute(
 		&templates.MainUpdater{WireResource: doAPI, WireController: doController},
 	); err != nil {
 		return fmt.Errorf("error updating main.go: %v", err)

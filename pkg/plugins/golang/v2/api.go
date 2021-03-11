@@ -20,32 +20,27 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
-	"path/filepath"
-	"strings"
 
+	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
+	goPlugin "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/cmdutil"
-	"sigs.k8s.io/kubebuilder/v3/plugins/addon"
 )
+
+var _ plugin.CreateAPISubcommand = &createAPISubcommand{}
 
 type createAPISubcommand struct {
 	config config.Config
 
-	// pattern indicates that we should use a plugin to build according to a pattern
-	pattern string
+	options *goPlugin.Options
 
-	options *Options
-
-	resource resource.Resource
+	resource *resource.Resource
 
 	// Check if we have to scaffold resource and/or controller
 	resourceFlag   *pflag.Flag
@@ -58,21 +53,16 @@ type createAPISubcommand struct {
 	runMake bool
 }
 
-var (
-	_ plugin.CreateAPISubcommand = &createAPISubcommand{}
-	_ cmdutil.RunOptions         = &createAPISubcommand{}
-)
+func (p *createAPISubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
+	subcmdMeta.Description = `Scaffold a Kubernetes API by writing a Resource definition and/or a Controller.
 
-func (p createAPISubcommand) UpdateContext(ctx *plugin.Context) {
-	ctx.Description = `Scaffold a Kubernetes API by creating a Resource definition and / or a Controller.
+If information about whether the resource and controller should be scaffolded
+was not explicitly provided, it will prompt the user if they should be.
 
-create resource will prompt the user for if it should scaffold the Resource and / or Controller.  To only
-scaffold a Controller for an existing Resource, select "n" for Resource.  To only define
-the schema for a Resource without writing a Controller, select "n" for Controller.
-
-After the scaffold is written, api will run make on the project.
+After the scaffold is written, the dependencies will be updated and
+make generate will be run.
 `
-	ctx.Examples = fmt.Sprintf(`  # Create a frigates API with Group: ship, Version: v1beta1 and Kind: Frigate
+	subcmdMeta.Examples = fmt.Sprintf(`  # Create a frigates API with Group: ship, Version: v1beta1 and Kind: Frigate
   %s create api --group ship --version v1beta1 --kind Frigate
 
   # Edit the API Scheme
@@ -89,32 +79,20 @@ After the scaffold is written, api will run make on the project.
 
   # Regenerate code and run against the Kubernetes cluster configured by ~/.kube/config
   make run
-	`,
-		ctx.CommandName)
+`, cliMeta.CommandName)
 }
 
 func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.runMake, "make", true, "if true, run `make generate` after generating files")
 
-	if os.Getenv("KUBEBUILDER_ENABLE_PLUGINS") != "" {
-		fs.StringVar(&p.pattern, "pattern", "",
-			"generates an API following an extension pattern (addon)")
-	}
-
 	fs.BoolVar(&p.force, "force", false,
 		"attempt to create resource even if it already exists")
 
-	p.options = &Options{}
-	fs.StringVar(&p.options.Group, "group", "", "resource Group")
-	p.options.Domain = p.config.GetDomain()
-	fs.StringVar(&p.options.Version, "version", "", "resource Version")
-	fs.StringVar(&p.options.Kind, "kind", "", "resource Kind")
-	// p.options.Plural can be set to specify an irregular plural form
+	p.options = &goPlugin.Options{CRDVersion: "v1beta1"}
 
 	fs.BoolVar(&p.options.DoAPI, "resource", true,
 		"if set, generate the resource without prompting the user")
 	p.resourceFlag = fs.Lookup("resource")
-	p.options.CRDVersion = "v1beta1"
 	fs.BoolVar(&p.options.Namespaced, "namespaced", true, "resource is namespaced")
 
 	fs.BoolVar(&p.options.DoController, "controller", true,
@@ -122,11 +100,19 @@ func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 	p.controllerFlag = fs.Lookup("controller")
 }
 
-func (p *createAPISubcommand) InjectConfig(c config.Config) {
+func (p *createAPISubcommand) InjectConfig(c config.Config) error {
 	p.config = c
+
+	return nil
 }
 
-func (p *createAPISubcommand) Run() error {
+func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
+	p.resource = res
+
+	if p.resource.Group == "" {
+		return fmt.Errorf("group cannot be empty")
+	}
+
 	// Ask for API and Controller if not specified
 	reader := bufio.NewReader(os.Stdin)
 	if !p.resourceFlag.Changed {
@@ -138,16 +124,7 @@ func (p *createAPISubcommand) Run() error {
 		p.options.DoController = util.YesNo(reader)
 	}
 
-	// Create the resource from the options
-	p.resource = p.options.NewResource(p.config)
-
-	return cmdutil.Run(p)
-}
-
-func (p *createAPISubcommand) Validate() error {
-	if err := p.options.Validate(); err != nil {
-		return err
-	}
+	p.options.UpdateResource(p.resource, p.config)
 
 	if err := p.resource.Validate(); err != nil {
 		return err
@@ -170,50 +147,24 @@ func (p *createAPISubcommand) Validate() error {
 	return nil
 }
 
-func (p *createAPISubcommand) GetScaffolder() (cmdutil.Scaffolder, error) {
-	// Load the boilerplate
-	bp, err := ioutil.ReadFile(filepath.Join("hack", "boilerplate.go.txt")) // nolint:gosec
-	if err != nil {
-		return nil, fmt.Errorf("unable to load boilerplate: %v", err)
-	}
-
-	// Load the requested plugins
-	plugins := make([]model.Plugin, 0)
-	switch strings.ToLower(p.pattern) {
-	case "":
-		// Default pattern
-	case "addon":
-		plugins = append(plugins, &addon.Plugin{})
-	default:
-		return nil, fmt.Errorf("unknown pattern %q", p.pattern)
-	}
-
-	return scaffolds.NewAPIScaffolder(p.config, string(bp), p.resource, p.force, plugins), nil
+func (p *createAPISubcommand) Scaffold(fs afero.Fs) error {
+	scaffolder := scaffolds.NewAPIScaffolder(p.config, *p.resource, p.force)
+	scaffolder.InjectFS(fs)
+	return scaffolder.Scaffold()
 }
 
 func (p *createAPISubcommand) PostScaffold() error {
-	// Load the requested plugins
-	switch strings.ToLower(p.pattern) {
-	case "":
-		// Default pattern
-	case "addon":
-		// Ensure that we are pinning sigs.k8s.io/kubebuilder-declarative-pattern version
-		err := util.RunCmd("Get controller runtime", "go", "get",
-			"sigs.k8s.io/kubebuilder-declarative-pattern@"+scaffolds.KbDeclarativePattern)
-		if err != nil {
-			return err
-		}
-	default:
-		return fmt.Errorf("unknown pattern %q", p.pattern)
-	}
-
 	err := util.RunCmd("Update dependencies", "go", "mod", "tidy")
 	if err != nil {
 		return err
 	}
 
-	if p.runMake { // TODO: check if API was scaffolded
-		return util.RunCmd("Running make", "make", "generate")
+	if p.runMake && p.resource.HasAPI() {
+		err = util.RunCmd("Running make", "make", "generate")
+		if err != nil {
+			return err
+		}
 	}
+
 	return nil
 }

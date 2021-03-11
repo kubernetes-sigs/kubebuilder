@@ -19,14 +19,14 @@ package webhook
 import (
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
-var _ file.Template = &KustomizeConfig{}
+var _ machinery.Template = &KustomizeConfig{}
 
 // KustomizeConfig scaffolds a file that configures the kustomization for the webhook folder
 type KustomizeConfig struct {
-	file.TemplateMixin
+	machinery.TemplateMixin
 }
 
 // SetTemplateDefaults implements file.Template
@@ -38,7 +38,7 @@ func (f *KustomizeConfig) SetTemplateDefaults() error {
 	f.TemplateBody = kustomizeConfigWebhookTemplate
 
 	// If file exists (ex. because a webhook was already created), skip creation.
-	f.IfExistsAction = file.Skip
+	f.IfExistsAction = machinery.SkipFile
 
 	return nil
 }

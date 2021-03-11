@@ -17,14 +17,14 @@ limitations under the License.
 package templates
 
 import (
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
-var _ file.Template = &Dockerfile{}
+var _ machinery.Template = &Dockerfile{}
 
 // Dockerfile scaffolds a file that defines the containerized build process
 type Dockerfile struct {
-	file.TemplateMixin
+	machinery.TemplateMixin
 }
 
 // SetTemplateDefaults implements file.Template

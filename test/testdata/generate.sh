@@ -96,13 +96,10 @@ function scaffold_test_project {
       $kb create webhook --version v1 --kind Lakers --defaulting --programmatic-validation
     fi
   elif [[ $project =~ addon ]]; then
-    header_text 'enabling --pattern flag ...'
-    export KUBEBUILDER_ENABLE_PLUGINS=1
     header_text 'Creating APIs ...'
-    $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false --pattern=addon
-    $kb create api --group crew --version v1 --kind FirstMate --controller=true --resource=true --make=false --pattern=addon
-    $kb create api --group crew --version v1 --kind Admiral --controller=true --resource=true --namespaced=false --make=false --pattern=addon
-    unset KUBEBUILDER_ENABLE_PLUGINS
+    $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false
+    $kb create api --group crew --version v1 --kind FirstMate --controller=true --resource=true --make=false
+    $kb create api --group crew --version v1 --kind Admiral --controller=true --resource=true --namespaced=false --make=false
   fi
 
   make generate manifests
@@ -116,9 +113,9 @@ build_kb
 # Project version 2 uses plugin go/v2 (default).
 scaffold_test_project project-v2 --project-version=2
 scaffold_test_project project-v2-multigroup --project-version=2
-scaffold_test_project project-v2-addon --project-version=2
+scaffold_test_project project-v2-addon --project-version=3 --plugins="go/v2,declarative"
 # Project version 3 (default) uses plugin go/v3 (default).
 scaffold_test_project project-v3
 scaffold_test_project project-v3-multigroup
-scaffold_test_project project-v3-addon
+scaffold_test_project project-v3-addon --plugins="go/v3,declarative"
 scaffold_test_project project-v3-config --component-config

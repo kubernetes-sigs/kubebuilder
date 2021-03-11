@@ -21,15 +21,18 @@ import (
 	"path/filepath"
 	"time"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
-var _ file.Template = &Boilerplate{}
+// DefaultBoilerplatePath is the default path to the boilerplate file
+var DefaultBoilerplatePath = filepath.Join("hack", "boilerplate.go.txt")
+
+var _ machinery.Template = &Boilerplate{}
 
 // Boilerplate scaffolds a file that defines the common header for the rest of the files
 type Boilerplate struct {
-	file.TemplateMixin
-	file.BoilerplateMixin
+	machinery.TemplateMixin
+	machinery.BoilerplateMixin
 
 	// License is the License type to write
 	License string
@@ -62,7 +65,7 @@ func (f Boilerplate) Validate() error {
 // SetTemplateDefaults implements file.Template
 func (f *Boilerplate) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = filepath.Join("hack", "boilerplate.go.txt")
+		f.Path = DefaultBoilerplatePath
 	}
 
 	if f.License == "" {

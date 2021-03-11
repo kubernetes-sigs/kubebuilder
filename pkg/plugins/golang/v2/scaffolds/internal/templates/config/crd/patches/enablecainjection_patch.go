@@ -19,15 +19,15 @@ package patches
 import (
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
-var _ file.Template = &EnableCAInjectionPatch{}
+var _ machinery.Template = &EnableCAInjectionPatch{}
 
 // EnableCAInjectionPatch scaffolds a file that defines the patch that injects CA into the CRD
 type EnableCAInjectionPatch struct {
-	file.TemplateMixin
-	file.ResourceMixin
+	machinery.TemplateMixin
+	machinery.ResourceMixin
 }
 
 // SetTemplateDefaults implements file.Template
