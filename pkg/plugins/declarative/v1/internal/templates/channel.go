@@ -20,14 +20,14 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
-var _ file.Template = &Channel{}
+var _ machinery.Template = &Channel{}
 
 // Channel scaffolds the file for the channel
 type Channel struct {
-	file.TemplateMixin
+	machinery.TemplateMixin
 
 	ManifestVersion string
 }
@@ -41,7 +41,7 @@ func (f *Channel) SetTemplateDefaults() error {
 
 	f.TemplateBody = channelTemplate
 
-	f.IfExistsAction = file.Skip
+	f.IfExistsAction = machinery.SkipFile
 
 	return nil
 }

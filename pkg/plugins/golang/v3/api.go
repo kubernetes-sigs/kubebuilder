@@ -21,27 +21,19 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
 	goPlugin "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds"
-	"sigs.k8s.io/kubebuilder/v3/plugins/addon"
 )
 
 const (
-	// KbDeclarativePatternVersion is the sigs.k8s.io/kubebuilder-declarative-pattern version
-	// (used only to gen api with --pattern=addon)
-	// TODO: remove this when a better solution for using addons is implemented.
-	KbDeclarativePatternVersion = "b84d99da021778217217885dd9582ed3cc879ebe"
-
 	// defaultCRDVersion is the default CRD API version to scaffold.
 	defaultCRDVersion = "v1"
 )
@@ -53,9 +45,6 @@ var _ plugin.CreateAPISubcommand = &createAPISubcommand{}
 
 type createAPISubcommand struct {
 	config config.Config
-
-	// pattern indicates that we should use a plugin to build according to a pattern
-	pattern string
 
 	options *goPlugin.Options
 
@@ -103,12 +92,6 @@ make generate will be run.
 
 func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.runMake, "make", true, "if true, run `make generate` after generating files")
-
-	// TODO: remove this when a better solution for using addons is implemented.
-	if os.Getenv("KUBEBUILDER_ENABLE_PLUGINS") != "" {
-		fs.StringVar(&p.pattern, "pattern", "",
-			"generates an API following an extension pattern (addon)")
-	}
 
 	fs.BoolVar(&p.force, "force", false,
 		"attempt to create resource even if it already exists")
@@ -190,44 +173,16 @@ func (p *createAPISubcommand) PreScaffold(afero.Fs) error {
 }
 
 func (p *createAPISubcommand) Scaffold(fs afero.Fs) error {
-	// Load the requested plugins
-	plugins := make([]model.Plugin, 0)
-	switch strings.ToLower(p.pattern) {
-	case "":
-		// Default pattern
-	case "addon":
-		plugins = append(plugins, &addon.Plugin{})
-	default:
-		return fmt.Errorf("unknown pattern %q", p.pattern)
-	}
-
-	scaffolder := scaffolds.NewAPIScaffolder(p.config, *p.resource, p.force, plugins)
+	scaffolder := scaffolds.NewAPIScaffolder(p.config, *p.resource, p.force)
 	scaffolder.InjectFS(fs)
 	return scaffolder.Scaffold()
 }
 
 func (p *createAPISubcommand) PostScaffold() error {
-	// Load the requested plugins
-	switch strings.ToLower(p.pattern) {
-	case "":
-		// Default pattern
-	case "addon":
-		// Ensure that we are pinning sigs.k8s.io/kubebuilder-declarative-pattern version
-		// TODO: either find a better way to inject this version (ex. tools.go).
-		err := util.RunCmd("Get kubebuilder-declarative-pattern dependency", "go", "get",
-			"sigs.k8s.io/kubebuilder-declarative-pattern@"+KbDeclarativePatternVersion)
-		if err != nil {
-			return err
-		}
-	default:
-		return fmt.Errorf("unknown pattern %q", p.pattern)
-	}
-
 	err := util.RunCmd("Update dependencies", "go", "mod", "tidy")
 	if err != nil {
 		return err
 	}
-
 	if p.runMake && p.resource.HasAPI() {
 		err = util.RunCmd("Running make", "make", "generate")
 		if err != nil {

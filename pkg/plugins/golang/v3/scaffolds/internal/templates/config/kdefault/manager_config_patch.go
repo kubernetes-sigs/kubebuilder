@@ -19,14 +19,14 @@ package kdefault
 import (
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
-var _ file.Template = &ManagerConfigPatch{}
+var _ machinery.Template = &ManagerConfigPatch{}
 
 // ManagerConfigPatch scaffolds a ManagerConfigPatch for a Resource
 type ManagerConfigPatch struct {
-	file.TemplateMixin
+	machinery.TemplateMixin
 }
 
 // SetTemplateDefaults implements input.Template

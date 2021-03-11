@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package file
+package machinery
 
 import (
 	"text/template"
@@ -67,6 +67,12 @@ type HasRepository interface {
 	InjectRepository(string)
 }
 
+// HasProjectName allows a project name to be used on a template.
+type HasProjectName interface {
+	// InjectProjectName sets the template project name.
+	InjectProjectName(string)
+}
+
 // HasMultiGroup allows the multi-group flag to be used on a template
 type HasMultiGroup interface {
 	// InjectMultiGroup sets the template multi-group flag
@@ -89,12 +95,6 @@ type HasBoilerplate interface {
 type HasResource interface {
 	// InjectResource sets the template resource
 	InjectResource(*resource.Resource)
-}
-
-// HasProjectName allows a project name to be used on a template.
-type HasProjectName interface {
-	// InjectProjectName sets the template project name.
-	InjectProjectName(string)
 }
 
 // UseCustomFuncMap allows a template to use a custom template.FuncMap instead of the default FuncMap.

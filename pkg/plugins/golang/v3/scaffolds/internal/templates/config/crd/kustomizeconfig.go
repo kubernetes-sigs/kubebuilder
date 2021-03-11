@@ -19,15 +19,15 @@ package crd
 import (
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
-var _ file.Template = &KustomizeConfig{}
+var _ machinery.Template = &KustomizeConfig{}
 
 // KustomizeConfig  scaffolds a file that configures the kustomization for the crd folder
 type KustomizeConfig struct {
-	file.TemplateMixin
-	file.ResourceMixin
+	machinery.TemplateMixin
+	machinery.ResourceMixin
 }
 
 // SetTemplateDefaults implements file.Template

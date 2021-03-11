@@ -19,15 +19,15 @@ package samples
 import (
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
-var _ file.Template = &CRDSample{}
+var _ machinery.Template = &CRDSample{}
 
 // CRDSample scaffolds a file that defines a sample manifest for the CRD
 type CRDSample struct {
-	file.TemplateMixin
-	file.ResourceMixin
+	machinery.TemplateMixin
+	machinery.ResourceMixin
 
 	Force bool
 }
@@ -40,9 +40,9 @@ func (f *CRDSample) SetTemplateDefaults() error {
 	f.Path = f.Resource.Replacer().Replace(f.Path)
 
 	if f.Force {
-		f.IfExistsAction = file.Overwrite
+		f.IfExistsAction = machinery.OverwriteFile
 	} else {
-		f.IfExistsAction = file.Error
+		f.IfExistsAction = machinery.Error
 	}
 
 	f.TemplateBody = crdSampleTemplate

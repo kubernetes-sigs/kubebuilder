@@ -23,7 +23,8 @@ import (
 	"github.com/spf13/afero"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates/config/certmanager"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates/config/kdefault"
@@ -32,8 +33,6 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates/config/rbac"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates/config/webhook"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates/hack"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/cmdutil"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/machinery"
 )
 
 const (
@@ -47,7 +46,7 @@ const (
 	imageName = "controller:latest"
 )
 
-var _ cmdutil.Scaffolder = &initScaffolder{}
+var _ plugins.Scaffolder = &initScaffolder{}
 
 type initScaffolder struct {
 	config          config.Config
@@ -60,7 +59,7 @@ type initScaffolder struct {
 }
 
 // NewInitScaffolder returns a new Scaffolder for project initialization operations
-func NewInitScaffolder(config config.Config, license, owner string) cmdutil.Scaffolder {
+func NewInitScaffolder(config config.Config, license, owner string) plugins.Scaffolder {
 	return &initScaffolder{
 		config:          config,
 		boilerplatePath: filepath.Join("hack", "boilerplate.go.txt"),
@@ -74,25 +73,23 @@ func (s *initScaffolder) InjectFS(fs afero.Fs) {
 	s.fs = fs
 }
 
-func (s *initScaffolder) newUniverse(boilerplate string) *model.Universe {
-	return model.NewUniverse(
-		model.WithConfig(s.config),
-		model.WithBoilerplate(boilerplate),
-	)
-}
-
 // Scaffold implements cmdutil.Scaffolder
 func (s *initScaffolder) Scaffold() error {
 	fmt.Println("Writing scaffold for you to edit...")
 
-	bpFile := &hack.Boilerplate{}
+	// Initialize the machinery.Scaffold that will write the boilerplate file to disk
+	// The boilerplate file needs to be scaffolded as a separate step as it is going to
+	// be used by the rest of the files, even those scaffolded in this command call.
+	scaffold := machinery.NewScaffold(s.fs,
+		machinery.WithConfig(s.config),
+	)
+
+	bpFile := &hack.Boilerplate{
+		License: s.license,
+		Owner:   s.owner,
+	}
 	bpFile.Path = s.boilerplatePath
-	bpFile.License = s.license
-	bpFile.Owner = s.owner
-	if err := machinery.NewScaffold(s.fs).Execute(
-		s.newUniverse(""),
-		bpFile,
-	); err != nil {
+	if err := scaffold.Execute(bpFile); err != nil {
 		return err
 	}
 
@@ -101,17 +98,26 @@ func (s *initScaffolder) Scaffold() error {
 		return err
 	}
 
-	return machinery.NewScaffold(s.fs).Execute(
-		s.newUniverse(string(boilerplate)),
-		&templates.GitIgnore{},
+	// Initialize the machinery.Scaffold that will write the files to disk
+	scaffold = machinery.NewScaffold(s.fs,
+		machinery.WithConfig(s.config),
+		machinery.WithBoilerplate(string(boilerplate)),
+	)
+
+	return scaffold.Execute(
+		&rbac.Kustomization{},
 		&rbac.AuthProxyRole{},
 		&rbac.AuthProxyRoleBinding{},
-		&kdefault.ManagerAuthProxyPatch{},
 		&rbac.AuthProxyService{},
 		&rbac.AuthProxyClientRole{},
+		&rbac.RoleBinding{},
+		&rbac.LeaderElectionRole{},
+		&rbac.LeaderElectionRoleBinding{},
+		&manager.Kustomization{},
 		&manager.Config{Image: imageName},
 		&templates.Main{},
 		&templates.GoMod{ControllerRuntimeVersion: ControllerRuntimeVersion},
+		&templates.GitIgnore{},
 		&templates.Makefile{
 			Image:                  imageName,
 			BoilerplatePath:        s.boilerplatePath,
@@ -120,16 +126,12 @@ func (s *initScaffolder) Scaffold() error {
 		},
 		&templates.Dockerfile{},
 		&kdefault.Kustomization{},
+		&kdefault.ManagerAuthProxyPatch{},
 		&kdefault.ManagerWebhookPatch{},
-		&rbac.RoleBinding{},
-		&rbac.LeaderElectionRole{},
-		&rbac.LeaderElectionRoleBinding{},
-		&rbac.Kustomization{},
-		&manager.Kustomization{},
+		&kdefault.WebhookCAInjectionPatch{},
 		&webhook.Kustomization{},
 		&webhook.KustomizeConfig{},
 		&webhook.Service{},
-		&kdefault.WebhookCAInjectionPatch{},
 		&prometheus.Kustomization{},
 		&prometheus.Monitor{},
 		&certmanager.Certificate{},

@@ -20,15 +20,15 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
-var _ file.Template = &Manifest{}
+var _ machinery.Template = &Manifest{}
 
 // Manifest scaffolds the file that acts as a placeholder for the manifest
 type Manifest struct {
-	file.TemplateMixin
-	file.ResourceMixin
+	machinery.TemplateMixin
+	machinery.ResourceMixin
 
 	ManifestVersion string
 }
@@ -43,7 +43,7 @@ func (f *Manifest) SetTemplateDefaults() error {
 
 	f.TemplateBody = manifestTemplate
 
-	f.IfExistsAction = file.Skip
+	f.IfExistsAction = machinery.SkipFile
 
 	return nil
 }

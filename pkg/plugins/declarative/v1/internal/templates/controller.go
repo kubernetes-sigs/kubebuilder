@@ -19,18 +19,18 @@ package templates
 import (
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
-var _ file.Template = &Controller{}
+var _ machinery.Template = &Controller{}
 
 // Controller scaffolds the file that defines the controller for a CRD or a builtin resource
 // nolint:maligned
 type Controller struct {
-	file.TemplateMixin
-	file.MultiGroupMixin
-	file.BoilerplateMixin
-	file.ResourceMixin
+	machinery.TemplateMixin
+	machinery.MultiGroupMixin
+	machinery.BoilerplateMixin
+	machinery.ResourceMixin
 }
 
 // SetTemplateDefaults implements file.Template
@@ -46,7 +46,7 @@ func (f *Controller) SetTemplateDefaults() error {
 
 	f.TemplateBody = controllerTemplate
 
-	f.IfExistsAction = file.Overwrite
+	f.IfExistsAction = machinery.OverwriteFile
 
 	return nil
 }

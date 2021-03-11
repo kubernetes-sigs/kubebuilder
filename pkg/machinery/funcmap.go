@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package file
+package machinery
 
 import (
 	"fmt"
@@ -39,10 +39,9 @@ func isEmptyString(s string) bool {
 }
 
 // hashFNV will generate a random string useful for generating a unique string
-func hashFNV(s string) (string, error) {
+func hashFNV(s string) string {
 	hasher := fnv.New32a()
-	if _, err := hasher.Write([]byte(s)); err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("%x", hasher.Sum(nil)), nil
+	// Hash.Write never returns an error
+	_, _ = hasher.Write([]byte(s))
+	return fmt.Sprintf("%x", hasher.Sum(nil))
 }
