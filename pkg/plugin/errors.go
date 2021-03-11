@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubernetes Authors.
+Copyright 2021 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,15 +14,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cmdutil
+package plugin
 
 import (
-	"github.com/spf13/afero"
+	"fmt"
 )
 
-// Scaffolder interface creates files to set up a controller manager
-type Scaffolder interface {
-	InjectFS(afero.Fs)
-	// Scaffold performs the scaffolding
-	Scaffold() error
+// ExitError is a typed error that is returned by a plugin when no further steps should be executed for itself.
+type ExitError struct {
+	Plugin string
+	Reason string
+}
+
+// Error implements error
+func (e ExitError) Error() string {
+	return fmt.Sprintf("plugin %q exit early: %s", e.Plugin, e.Reason)
 }

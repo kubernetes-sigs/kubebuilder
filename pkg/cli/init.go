@@ -32,13 +32,17 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 )
 
+const initErrorMsg = "failed to initialize project"
+
 func (c CLI) newInitCmd() *cobra.Command {
-	ctx := c.newInitContext()
 	cmd := &cobra.Command{
-		Use:     "init",
-		Short:   "Initialize a new project",
-		Long:    ctx.Description,
-		Example: ctx.Examples,
+		Use:   "init",
+		Short: "Initialize a new project",
+		Long: `Initialize a new project.
+
+For further help about a specific project version, set --project-version.
+`,
+		Example: c.getInitHelpExamples(),
 		Run:     func(cmd *cobra.Command, args []string) {},
 	}
 
@@ -53,20 +57,94 @@ func (c CLI) newInitCmd() *cobra.Command {
 				fmt.Sprintf("Available plugins: (%s)", strings.Join(c.getAvailablePlugins(), ", ")))
 	}
 
-	// Lookup the plugin for projectVersion and bind it to the command.
-	c.bindInit(ctx, cmd)
-	return cmd
-}
-
-func (c CLI) newInitContext() plugin.Context {
-	return plugin.Context{
-		CommandName: c.commandName,
-		Description: `Initialize a new project.
-
-For further help about a specific project version, set --project-version.
-`,
-		Examples: c.getInitHelpExamples(),
+	// In case no plugin was resolved, instead of failing the construction of the CLI, fail the execution of
+	// this subcommand. This allows the use of subcommands that do not require resolved plugins like help.
+	if len(c.resolvedPlugins) == 0 {
+		cmdErr(cmd, noResolvedPluginError{})
+		return cmd
 	}
+
+	// Obtain the plugin keys and subcommands from the plugins that implement plugin.Init.
+	pluginKeys, subcommands := c.filterSubcommands(
+		func(p plugin.Plugin) bool {
+			_, isValid := p.(plugin.Init)
+			return isValid
+		},
+		func(p plugin.Plugin) plugin.Subcommand {
+			return p.(plugin.Init).GetInitSubcommand()
+		},
+	)
+
+	// Verify that there is at least one remaining plugin.
+	if len(*subcommands) == 0 {
+		cmdErr(cmd, noAvailablePluginError{"project initialization"})
+		return cmd
+	}
+
+	// Initialization methods.
+	_ = c.initializationMethods(cmd, subcommands)
+
+	// Execution methods.
+	cfg := yamlstore.New(c.fs)
+	cmd.PreRunE = func(*cobra.Command, []string) error {
+		// Check if a config is initialized.
+		if err := cfg.Load(); err == nil || !errors.Is(err, os.ErrNotExist) {
+			return fmt.Errorf("%s: already initialized", initErrorMsg)
+		}
+
+		err := cfg.New(c.projectVersion)
+		if err != nil {
+			return fmt.Errorf("%s: error initializing project configuration: %w", initErrorMsg, err)
+		}
+
+		resolvedPluginKeys := make([]string, 0, len(c.resolvedPlugins))
+		for _, p := range c.resolvedPlugins {
+			resolvedPluginKeys = append(resolvedPluginKeys, plugin.KeyFor(p))
+		}
+		_ = cfg.Config().SetLayout(strings.Join(resolvedPluginKeys, ","))
+
+		// Inject config method.
+		subcommandsCopy := make([]plugin.Subcommand, len(*subcommands))
+		copy(subcommandsCopy, *subcommands)
+		for i, subcommand := range subcommandsCopy {
+			if subcmd, requiresConfig := subcommand.(plugin.RequiresConfig); requiresConfig {
+				if err := subcmd.InjectConfig(cfg.Config()); err != nil {
+					var exitError plugin.ExitError
+					if errors.As(err, &exitError) {
+						fmt.Printf("skipping %q: %s\n", pluginKeys[i], exitError.Reason)
+						*subcommands = append((*subcommands)[:i], (*subcommands)[i+1:]...)
+					} else {
+						return fmt.Errorf("%s: unable to inject the configuration to %q: %w",
+							initErrorMsg, pluginKeys[i], err)
+					}
+				}
+			}
+		}
+
+		// Pre-scaffold method.
+		subcommandsCopy = make([]plugin.Subcommand, len(*subcommands))
+		copy(subcommandsCopy, *subcommands)
+		for i, subcommand := range subcommandsCopy {
+			if subcmd, hasPreScaffold := subcommand.(plugin.HasPreScaffold); hasPreScaffold {
+				if err := subcmd.PreScaffold(c.fs); err != nil {
+					var exitError plugin.ExitError
+					if errors.As(err, &exitError) {
+						fmt.Printf("skipping %q: %s\n", pluginKeys[i], exitError.Reason)
+						*subcommands = append((*subcommands)[:i], (*subcommands)[i+1:]...)
+					} else {
+						return fmt.Errorf("%s: unable to run pre-scaffold tasks of %q: %w",
+							initErrorMsg, pluginKeys[i], err)
+					}
+				}
+			}
+		}
+
+		return nil
+	}
+	cmd.RunE = executionMethodsRunEFunc(pluginKeys, subcommands, c.fs, initErrorMsg)
+	cmd.PostRunE = executionMethodsPostRunEFunc(pluginKeys, subcommands, cfg, initErrorMsg)
+
+	return cmd
 }
 
 func (c CLI) getInitHelpExamples() string {
@@ -108,56 +186,4 @@ func (c CLI) getAvailablePlugins() (pluginKeys []string) {
 	}
 	sort.Strings(pluginKeys)
 	return pluginKeys
-}
-
-func (c CLI) bindInit(ctx plugin.Context, cmd *cobra.Command) {
-	if len(c.resolvedPlugins) == 0 {
-		cmdErr(cmd, fmt.Errorf("no resolved plugins, please specify plugins with --%s or/and --%s flags",
-			projectVersionFlag, pluginsFlag))
-		return
-	}
-
-	var initPlugin plugin.Init
-	for _, p := range c.resolvedPlugins {
-		tmpPlugin, isValid := p.(plugin.Init)
-		if isValid {
-			if initPlugin != nil {
-				err := fmt.Errorf("duplicate initialization plugins (%s, %s), use a more specific plugin key",
-					plugin.KeyFor(initPlugin), plugin.KeyFor(p))
-				cmdErrNoHelp(cmd, err)
-				return
-			}
-			initPlugin = tmpPlugin
-		}
-	}
-
-	if initPlugin == nil {
-		cmdErr(cmd, fmt.Errorf("resolved plugins do not provide a project init plugin: %v", c.pluginKeys))
-		return
-	}
-
-	subcommand := initPlugin.GetInitSubcommand()
-	subcommand.BindFlags(cmd.Flags())
-	subcommand.UpdateContext(&ctx)
-	cmd.Long = ctx.Description
-	cmd.Example = ctx.Examples
-
-	cfg := yamlstore.New(c.fs)
-	msg := fmt.Sprintf("failed to initialize project with %q", plugin.KeyFor(initPlugin))
-	cmd.PreRunE = func(*cobra.Command, []string) error {
-		// Check if a config is initialized.
-		if err := cfg.Load(); err == nil || !errors.Is(err, os.ErrNotExist) {
-			return fmt.Errorf("%s: already initialized", msg)
-		}
-
-		err := cfg.New(c.projectVersion)
-		if err != nil {
-			return fmt.Errorf("%s: error initializing project configuration: %w", msg, err)
-		}
-
-		subcommand.InjectConfig(cfg.Config())
-		return nil
-	}
-	cmd.RunE = runECmdFunc(c.fs, subcommand, msg)
-	cmd.PostRunE = postRunECmdFunc(cfg, msg)
 }

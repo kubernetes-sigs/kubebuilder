@@ -38,8 +38,6 @@ const (
 
 	projectVersionFlag = "project-version"
 	pluginsFlag        = "plugins"
-
-	noPluginError = "invalid config file please verify that the version and layout fields are set and valid"
 )
 
 // equalStringSlice checks if two string slices are equal.
@@ -474,6 +472,13 @@ func (c CLI) printDeprecationWarnings() {
 		if d, isDeprecated := p.(plugin.Deprecated); isDeprecated {
 			fmt.Printf(noticeColor, fmt.Sprintf(deprecationFmt, d.DeprecationWarning()))
 		}
+	}
+}
+
+// metadata returns CLI's metadata.
+func (c CLI) metadata() plugin.CLIMetadata {
+	return plugin.CLIMetadata{
+		CommandName: c.commandName,
 	}
 }
 
