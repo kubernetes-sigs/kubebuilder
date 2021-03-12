@@ -16,25 +16,31 @@ limitations under the License.
 
 package cmdutil
 
+import (
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
+)
+
 // Scaffolder interface creates files to set up a controller manager
 type Scaffolder interface {
+	InjectFS(filesystem machinery.Filesystem)
 	// Scaffold performs the scaffolding
 	Scaffold() error
 }
 
 // RunOptions represent the types used to implement the different commands
 type RunOptions interface {
-	// - Step 1: verify that the command can be run (e.g., go version, project version, arguments, ...)
+	// - Step 1: verify that the command can be run (e.g., go version, project version, arguments, ...).
 	Validate() error
-	// - Step 2: create the Scaffolder instance
+	// - Step 2: create the Scaffolder instance.
 	GetScaffolder() (Scaffolder, error)
-	// - Step 3: call the Scaffold method of the Scaffolder instance. Doesn't need any method
-	// - Step 4: finish the command execution
+	// - Step 3: inject the filesystem into the Scaffolder instance. Doesn't need any method.
+	// - Step 4: call the Scaffold method of the Scaffolder instance. Doesn't need any method.
+	// - Step 5: finish the command execution.
 	PostScaffold() error
 }
 
 // Run executes a command
-func Run(options RunOptions) error {
+func Run(options RunOptions, fs machinery.Filesystem) error {
 	// Step 1: validate
 	if err := options.Validate(); err != nil {
 		return err
@@ -45,13 +51,15 @@ func Run(options RunOptions) error {
 	if err != nil {
 		return err
 	}
-	// Step 3: scaffold
+	// Step 3: inject filesystem
+	scaffolder.InjectFS(fs)
+	// Step 4: scaffold
 	if scaffolder != nil {
 		if err := scaffolder.Scaffold(); err != nil {
 			return err
 		}
 	}
-	// Step 4: finish
+	// Step 5: finish
 	if err := options.PostScaffold(); err != nil {
 		return err
 	}

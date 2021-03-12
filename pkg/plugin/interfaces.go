@@ -20,6 +20,7 @@ import (
 	"github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
 // Plugin is an interface that defines the common base for all plugins
@@ -53,7 +54,7 @@ type Subcommand interface {
 	// command line flags.
 	BindFlags(*pflag.FlagSet)
 	// Run runs the subcommand.
-	Run() error
+	Run(fs machinery.Filesystem) error
 	// InjectConfig passes a config to a plugin. The plugin may modify the config.
 	// Initializing, loading, and saving the config is managed by the cli package.
 	InjectConfig(config.Config)

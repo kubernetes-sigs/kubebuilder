@@ -19,13 +19,17 @@ package scaffolds
 import (
 	"fmt"
 
+	"github.com/spf13/afero"
+
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates/api"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates/hack"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/cmdutil"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/machinery"
+	internalmachinery "sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/machinery"
 )
 
 var _ cmdutil.Scaffolder = &webhookScaffolder{}
@@ -34,25 +38,22 @@ type webhookScaffolder struct {
 	config      config.Config
 	boilerplate string
 	resource    resource.Resource
+
+	// fs is the filesystem that will be used by the scaffolder
+	fs machinery.Filesystem
 }
 
 // NewWebhookScaffolder returns a new Scaffolder for v2 webhook creation operations
-func NewWebhookScaffolder(
-	config config.Config,
-	boilerplate string,
-	resource resource.Resource,
-) cmdutil.Scaffolder {
+func NewWebhookScaffolder(config config.Config, resource resource.Resource) cmdutil.Scaffolder {
 	return &webhookScaffolder{
-		config:      config,
-		boilerplate: boilerplate,
-		resource:    resource,
+		config:   config,
+		resource: resource,
 	}
 }
 
-// Scaffold implements Scaffolder
-func (s *webhookScaffolder) Scaffold() error {
-	fmt.Println("Writing scaffold for you to edit...")
-	return s.scaffold()
+// InjectFS implements cmdutil.Scaffolder
+func (s *webhookScaffolder) InjectFS(fs machinery.Filesystem) {
+	s.fs = fs
 }
 
 func (s *webhookScaffolder) newUniverse() *model.Universe {
@@ -63,12 +64,22 @@ func (s *webhookScaffolder) newUniverse() *model.Universe {
 	)
 }
 
-func (s *webhookScaffolder) scaffold() error {
+// Scaffold implements cmdutil.Scaffolder
+func (s *webhookScaffolder) Scaffold() error {
+	fmt.Println("Writing scaffold for you to edit...")
+
+	// Load the boilerplate
+	bp, err := afero.ReadFile(s.fs.FS, hack.DefaultBoilerplatePath)
+	if err != nil {
+		return fmt.Errorf("error scaffolding webhook: unable to load boilerplate: %w", err)
+	}
+	s.boilerplate = string(bp)
+
 	if err := s.config.UpdateResource(s.resource); err != nil {
 		return fmt.Errorf("error updating resource: %w", err)
 	}
 
-	if err := machinery.NewScaffold().Execute(
+	if err := internalmachinery.NewScaffold(s.fs).Execute(
 		s.newUniverse(),
 		&api.Webhook{},
 		&templates.MainUpdater{WireWebhook: true},

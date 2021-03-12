@@ -19,7 +19,10 @@ package scaffolds
 import (
 	"fmt"
 
+	"github.com/spf13/afero"
+
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates"
@@ -29,8 +32,9 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/config/rbac"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/config/samples"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/controllers"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/hack"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/cmdutil"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/machinery"
+	internalmachinery "sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/machinery"
 )
 
 var _ cmdutil.Scaffolder = &apiScaffolder{}
@@ -42,6 +46,9 @@ type apiScaffolder struct {
 	boilerplate string
 	resource    resource.Resource
 
+	// fs is the filesystem that will be used by the scaffolder
+	fs machinery.Filesystem
+
 	// plugins is the list of plugins we should allow to transform our generated scaffolding
 	plugins []model.Plugin
 
@@ -52,24 +59,21 @@ type apiScaffolder struct {
 // NewAPIScaffolder returns a new Scaffolder for API/controller creation operations
 func NewAPIScaffolder(
 	config config.Config,
-	boilerplate string,
 	res resource.Resource,
 	force bool,
 	plugins []model.Plugin,
 ) cmdutil.Scaffolder {
 	return &apiScaffolder{
-		config:      config,
-		boilerplate: boilerplate,
-		resource:    res,
-		plugins:     plugins,
-		force:       force,
+		config:   config,
+		resource: res,
+		plugins:  plugins,
+		force:    force,
 	}
 }
 
-// Scaffold implements Scaffolder
-func (s *apiScaffolder) Scaffold() error {
-	fmt.Println("Writing scaffold for you to edit...")
-	return s.scaffold()
+// InjectFS implements cmdutil.Scaffolder
+func (s *apiScaffolder) InjectFS(fs machinery.Filesystem) {
+	s.fs = fs
 }
 
 func (s *apiScaffolder) newUniverse() *model.Universe {
@@ -80,8 +84,17 @@ func (s *apiScaffolder) newUniverse() *model.Universe {
 	)
 }
 
-// TODO: re-use universe created by s.newUniverse() if possible.
-func (s *apiScaffolder) scaffold() error {
+// Scaffold implements cmdutil.Scaffolder
+func (s *apiScaffolder) Scaffold() error {
+	fmt.Println("Writing scaffold for you to edit...")
+
+	// Load the boilerplate
+	bp, err := afero.ReadFile(s.fs.FS, hack.DefaultBoilerplatePath)
+	if err != nil {
+		return fmt.Errorf("error scaffolding API/controller: unable to load boilerplate: %w", err)
+	}
+	s.boilerplate = string(bp)
+
 	// Keep track of these values before the update
 	doAPI := s.resource.HasAPI()
 	doController := s.resource.HasController()
@@ -92,7 +105,7 @@ func (s *apiScaffolder) scaffold() error {
 
 	if doAPI {
 
-		if err := machinery.NewScaffold(s.plugins...).Execute(
+		if err := internalmachinery.NewScaffold(s.fs, s.plugins...).Execute(
 			s.newUniverse(),
 			&api.Types{Force: s.force},
 			&api.Group{},
@@ -105,7 +118,7 @@ func (s *apiScaffolder) scaffold() error {
 			return fmt.Errorf("error scaffolding APIs: %v", err)
 		}
 
-		if err := machinery.NewScaffold().Execute(
+		if err := internalmachinery.NewScaffold(s.fs).Execute(
 			s.newUniverse(),
 			&crd.Kustomization{},
 			&crd.KustomizeConfig{},
@@ -116,7 +129,7 @@ func (s *apiScaffolder) scaffold() error {
 	}
 
 	if doController {
-		if err := machinery.NewScaffold(s.plugins...).Execute(
+		if err := internalmachinery.NewScaffold(s.fs, s.plugins...).Execute(
 			s.newUniverse(),
 			&controllers.SuiteTest{Force: s.force},
 			&controllers.Controller{ControllerRuntimeVersion: ControllerRuntimeVersion, Force: s.force},
@@ -125,7 +138,7 @@ func (s *apiScaffolder) scaffold() error {
 		}
 	}
 
-	if err := machinery.NewScaffold(s.plugins...).Execute(
+	if err := internalmachinery.NewScaffold(s.fs, s.plugins...).Execute(
 		s.newUniverse(),
 		&templates.MainUpdater{WireResource: doAPI, WireController: doController},
 	); err != nil {

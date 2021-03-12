@@ -23,11 +23,13 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	cfgv2 "sigs.k8s.io/kubebuilder/v3/pkg/config/v2"
 	cfgv3 "sigs.k8s.io/kubebuilder/v3/pkg/config/v3"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 )
 
@@ -585,6 +587,7 @@ var _ = Describe("CLI", func() {
 				defaultPlugins: map[config.Version][]string{
 					projectVersion: pluginKeys,
 				},
+				fs: machinery.Filesystem{FS: afero.NewMemMapFs()},
 			}
 			c.cmd = c.newRootCmd()
 			Expect(c.getInfo()).To(Succeed())

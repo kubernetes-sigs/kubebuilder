@@ -21,6 +21,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/spf13/afero"
 )
 
 var _ = Describe("FileSystem", func() {
@@ -38,7 +39,7 @@ var _ = Describe("FileSystem", func() {
 
 		Context("when using no options", func() {
 			BeforeEach(func() {
-				fsi = New()
+				fsi = New(afero.NewMemMapFs())
 				fs, ok = fsi.(fileSystem)
 			})
 
@@ -65,7 +66,7 @@ var _ = Describe("FileSystem", func() {
 
 		Context("when using directory permission option", func() {
 			BeforeEach(func() {
-				fsi = New(DirectoryPermissions(dirPerm))
+				fsi = New(afero.NewMemMapFs(), DirectoryPermissions(dirPerm))
 				fs, ok = fsi.(fileSystem)
 			})
 
@@ -92,7 +93,7 @@ var _ = Describe("FileSystem", func() {
 
 		Context("when using file permission option", func() {
 			BeforeEach(func() {
-				fsi = New(FilePermissions(filePerm))
+				fsi = New(afero.NewMemMapFs(), FilePermissions(filePerm))
 				fs, ok = fsi.(fileSystem)
 			})
 
@@ -119,7 +120,7 @@ var _ = Describe("FileSystem", func() {
 
 		Context("when using both directory and file permission options", func() {
 			BeforeEach(func() {
-				fsi = New(DirectoryPermissions(dirPerm), FilePermissions(filePerm))
+				fsi = New(afero.NewMemMapFs(), DirectoryPermissions(dirPerm), FilePermissions(filePerm))
 				fs, ok = fsi.(fileSystem)
 			})
 
