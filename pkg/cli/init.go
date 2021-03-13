@@ -136,7 +136,7 @@ func (c CLI) bindInit(ctx plugin.Context, cmd *cobra.Command) {
 		return
 	}
 
-	cfg, err := internalconfig.New(c.projectVersion, internalconfig.DefaultPath)
+	cfg, err := internalconfig.New(c.fs, c.projectVersion, internalconfig.DefaultPath)
 	if err != nil {
 		cmdErr(cmd, fmt.Errorf("unable to initialize the project configuration: %w", err))
 		return
@@ -151,11 +151,11 @@ func (c CLI) bindInit(ctx plugin.Context, cmd *cobra.Command) {
 	cmd.RunE = func(*cobra.Command, []string) error {
 		// Check if a config is initialized in the command runner so the check
 		// doesn't erroneously fail other commands used in initialized projects.
-		_, err := internalconfig.Read()
+		_, err := internalconfig.Read(c.fs)
 		if err == nil || os.IsExist(err) {
 			log.Fatal("config already initialized")
 		}
-		if err := subcommand.Run(); err != nil {
+		if err := subcommand.Run(c.fs); err != nil {
 			return fmt.Errorf("failed to initialize project with %q: %v", plugin.KeyFor(initPlugin), err)
 		}
 		return cfg.Save()

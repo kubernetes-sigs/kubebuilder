@@ -53,10 +53,10 @@ type fileSystem struct {
 }
 
 // New returns a new FileSystem
-func New(options ...Options) FileSystem {
+func New(underlying afero.Fs, options ...Options) FileSystem {
 	// Default values
 	fs := fileSystem{
-		fs:       afero.NewOsFs(),
+		fs:       underlying,
 		dirPerm:  defaultDirectoryPermission,
 		filePerm: defaultFilePermission,
 		fileMode: createOrUpdate,

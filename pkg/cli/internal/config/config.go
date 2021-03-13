@@ -22,9 +22,10 @@ import (
 	"os"
 
 	"github.com/spf13/afero"
-	"sigs.k8s.io/yaml"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
+	"sigs.k8s.io/yaml"
 )
 
 const (
@@ -81,13 +82,13 @@ func readFrom(fs afero.Fs, path string) (config.Config, error) {
 }
 
 // Read obtains the configuration from the default path but doesn't allow to persist changes
-func Read() (config.Config, error) {
-	return ReadFrom(DefaultPath)
+func Read(fs machinery.Filesystem) (config.Config, error) {
+	return ReadFrom(fs, DefaultPath)
 }
 
 // ReadFrom obtains the configuration from the provided path but doesn't allow to persist changes
-func ReadFrom(path string) (config.Config, error) {
-	return readFrom(afero.NewOsFs(), path)
+func ReadFrom(fs machinery.Filesystem, path string) (config.Config, error) {
+	return readFrom(fs.FS, path)
 }
 
 // Config extends model/config.Config allowing to persist changes
@@ -105,7 +106,7 @@ type Config struct {
 }
 
 // New creates a new configuration that will be stored at the provided path
-func New(version config.Version, path string) (*Config, error) {
+func New(fs machinery.Filesystem, version config.Version, path string) (*Config, error) {
 	cfg, err := config.New(version)
 	if err != nil {
 		return nil, err
@@ -115,19 +116,19 @@ func New(version config.Version, path string) (*Config, error) {
 		Config:       cfg,
 		path:         path,
 		mustNotExist: true,
-		fs:           afero.NewOsFs(),
+		fs:           fs.FS,
 	}, nil
 }
 
 // Load obtains the configuration from the default path allowing to persist changes (Save method)
-func Load() (*Config, error) {
-	return LoadFrom(DefaultPath)
+func Load(fs machinery.Filesystem) (*Config, error) {
+	return LoadFrom(fs, DefaultPath)
 }
 
 // LoadInitialized calls Load() but returns helpful error messages if the config
 // does not exist.
-func LoadInitialized() (*Config, error) {
-	c, err := Load()
+func LoadInitialized(fs machinery.Filesystem) (*Config, error) {
+	c, err := Load(fs)
 	if os.IsNotExist(err) {
 		return nil, errors.New("unable to find configuration file, project must be initialized")
 	}
@@ -135,17 +136,13 @@ func LoadInitialized() (*Config, error) {
 }
 
 // LoadFrom obtains the configuration from the provided path allowing to persist changes (Save method)
-func LoadFrom(path string) (*Config, error) {
-	fs := afero.NewOsFs()
-	c, err := readFrom(fs, path)
-	return &Config{Config: c, path: path, fs: fs}, err
+func LoadFrom(fs machinery.Filesystem, path string) (*Config, error) {
+	c, err := readFrom(fs.FS, path)
+	return &Config{Config: c, path: path, fs: fs.FS}, err
 }
 
 // Save saves the configuration information
 func (c Config) Save() error {
-	if c.fs == nil {
-		c.fs = afero.NewOsFs()
-	}
 	// If path is unset, it was created directly with `Config{}`
 	if c.path == "" {
 		return saveError{errors.New("no information where it should be stored, " +

@@ -76,7 +76,7 @@ func (c CLI) bindCreateWebhook(ctx plugin.Context, cmd *cobra.Command) {
 		return
 	}
 
-	cfg, err := config.LoadInitialized()
+	cfg, err := config.LoadInitialized(c.fs)
 	if err != nil {
 		cmdErr(cmd, err)
 		return
@@ -88,6 +88,6 @@ func (c CLI) bindCreateWebhook(ctx plugin.Context, cmd *cobra.Command) {
 	subcommand.UpdateContext(&ctx)
 	cmd.Long = ctx.Description
 	cmd.Example = ctx.Examples
-	cmd.RunE = runECmdFunc(cfg, subcommand,
+	cmd.RunE = runECmdFunc(c.fs, cfg, subcommand,
 		fmt.Sprintf("failed to create webhook with %q", plugin.KeyFor(createWebhookPlugin)))
 }

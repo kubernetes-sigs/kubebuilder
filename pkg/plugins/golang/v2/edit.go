@@ -22,6 +22,7 @@ import (
 	"github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/cmdutil"
@@ -57,8 +58,8 @@ func (p *editSubcommand) InjectConfig(c config.Config) {
 	p.config = c
 }
 
-func (p *editSubcommand) Run() error {
-	return cmdutil.Run(p)
+func (p *editSubcommand) Run(fs machinery.Filesystem) error {
+	return cmdutil.Run(p, fs)
 }
 
 func (p *editSubcommand) Validate() error {

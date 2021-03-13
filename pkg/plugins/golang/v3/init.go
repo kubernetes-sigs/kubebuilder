@@ -26,6 +26,7 @@ import (
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/internal/validation"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang"
@@ -106,8 +107,8 @@ func (p *initSubcommand) InjectConfig(c config.Config) {
 	p.config = c
 }
 
-func (p *initSubcommand) Run() error {
-	return cmdutil.Run(p)
+func (p *initSubcommand) Run(fs machinery.Filesystem) error {
+	return cmdutil.Run(p, fs)
 }
 
 func (p *initSubcommand) Validate() error {

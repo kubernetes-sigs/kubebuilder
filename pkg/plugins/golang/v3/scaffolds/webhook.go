@@ -19,15 +19,19 @@ package scaffolds
 import (
 	"fmt"
 
+	"github.com/spf13/afero"
+
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/api"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/config/kdefault"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/config/webhook"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/hack"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/cmdutil"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/machinery"
+	internalmachinery "sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/machinery"
 )
 
 var _ cmdutil.Scaffolder = &webhookScaffolder{}
@@ -37,29 +41,25 @@ type webhookScaffolder struct {
 	boilerplate string
 	resource    resource.Resource
 
+	// fs is the filesystem that will be used by the scaffolder
+	fs machinery.Filesystem
+
 	// force indicates whether to scaffold controller files even if it exists or not
 	force bool
 }
 
 // NewWebhookScaffolder returns a new Scaffolder for v2 webhook creation operations
-func NewWebhookScaffolder(
-	config config.Config,
-	boilerplate string,
-	resource resource.Resource,
-	force bool,
-) cmdutil.Scaffolder {
+func NewWebhookScaffolder(config config.Config, resource resource.Resource, force bool) cmdutil.Scaffolder {
 	return &webhookScaffolder{
-		config:      config,
-		boilerplate: boilerplate,
-		resource:    resource,
-		force:       force,
+		config:   config,
+		resource: resource,
+		force:    force,
 	}
 }
 
-// Scaffold implements Scaffolder
-func (s *webhookScaffolder) Scaffold() error {
-	fmt.Println("Writing scaffold for you to edit...")
-	return s.scaffold()
+// InjectFS implements cmdutil.Scaffolder
+func (s *webhookScaffolder) InjectFS(fs machinery.Filesystem) {
+	s.fs = fs
 }
 
 func (s *webhookScaffolder) newUniverse() *model.Universe {
@@ -70,7 +70,17 @@ func (s *webhookScaffolder) newUniverse() *model.Universe {
 	)
 }
 
-func (s *webhookScaffolder) scaffold() error {
+// Scaffold implements cmdutil.Scaffolder
+func (s *webhookScaffolder) Scaffold() error {
+	fmt.Println("Writing scaffold for you to edit...")
+
+	// Load the boilerplate
+	bp, err := afero.ReadFile(s.fs.FS, hack.DefaultBoilerplatePath)
+	if err != nil {
+		return fmt.Errorf("error scaffolding webhook: unable to load boilerplate: %w", err)
+	}
+	s.boilerplate = string(bp)
+
 	// Keep track of these values before the update
 	doDefaulting := s.resource.HasDefaultingWebhook()
 	doValidation := s.resource.HasValidationWebhook()
@@ -80,7 +90,7 @@ func (s *webhookScaffolder) scaffold() error {
 		return fmt.Errorf("error updating resource: %w", err)
 	}
 
-	if err := machinery.NewScaffold().Execute(
+	if err := internalmachinery.NewScaffold(s.fs).Execute(
 		s.newUniverse(),
 		&api.Webhook{Force: s.force},
 		&templates.MainUpdater{WireWebhook: true},
@@ -100,7 +110,7 @@ You need to implement the conversion.Hub and conversion.Convertible interfaces f
 
 	// TODO: Add test suite for conversion webhook after #1664 has been merged & conversion tests supported in envtest.
 	if doDefaulting || doValidation {
-		if err := machinery.NewScaffold().Execute(
+		if err := internalmachinery.NewScaffold(s.fs).Execute(
 			s.newUniverse(),
 			&api.WebhookSuite{},
 		); err != nil {
