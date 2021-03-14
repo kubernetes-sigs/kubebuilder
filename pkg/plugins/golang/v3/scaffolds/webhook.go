@@ -23,7 +23,6 @@ import (
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/api"
@@ -31,15 +30,13 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/config/webhook"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/hack"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/cmdutil"
-	internalmachinery "sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/machinery"
 )
 
 var _ cmdutil.Scaffolder = &webhookScaffolder{}
 
 type webhookScaffolder struct {
-	config      config.Config
-	boilerplate string
-	resource    resource.Resource
+	config   config.Config
+	resource resource.Resource
 
 	// fs is the filesystem that will be used by the scaffolder
 	fs machinery.Filesystem
@@ -62,24 +59,22 @@ func (s *webhookScaffolder) InjectFS(fs machinery.Filesystem) {
 	s.fs = fs
 }
 
-func (s *webhookScaffolder) newUniverse() *model.Universe {
-	return model.NewUniverse(
-		model.WithConfig(s.config),
-		model.WithBoilerplate(s.boilerplate),
-		model.WithResource(&s.resource),
-	)
-}
-
 // Scaffold implements cmdutil.Scaffolder
 func (s *webhookScaffolder) Scaffold() error {
 	fmt.Println("Writing scaffold for you to edit...")
 
 	// Load the boilerplate
-	bp, err := afero.ReadFile(s.fs.FS, hack.DefaultBoilerplatePath)
+	boilerplate, err := afero.ReadFile(s.fs.FS, hack.DefaultBoilerplatePath)
 	if err != nil {
 		return fmt.Errorf("error scaffolding webhook: unable to load boilerplate: %w", err)
 	}
-	s.boilerplate = string(bp)
+
+	// Initialize the machinery.Scaffold that will write the files to disk
+	scaffold := machinery.NewScaffold(s.fs,
+		machinery.WithConfig(s.config),
+		machinery.WithBoilerplate(string(boilerplate)),
+		machinery.WithResource(&s.resource),
+	)
 
 	// Keep track of these values before the update
 	doDefaulting := s.resource.HasDefaultingWebhook()
@@ -90,8 +85,7 @@ func (s *webhookScaffolder) Scaffold() error {
 		return fmt.Errorf("error updating resource: %w", err)
 	}
 
-	if err := internalmachinery.NewScaffold(s.fs).Execute(
-		s.newUniverse(),
+	if err := scaffold.Execute(
 		&api.Webhook{Force: s.force},
 		&templates.MainUpdater{WireWebhook: true},
 		&kdefault.WebhookCAInjectionPatch{},
@@ -110,8 +104,7 @@ You need to implement the conversion.Hub and conversion.Convertible interfaces f
 
 	// TODO: Add test suite for conversion webhook after #1664 has been merged & conversion tests supported in envtest.
 	if doDefaulting || doValidation {
-		if err := internalmachinery.NewScaffold(s.fs).Execute(
-			s.newUniverse(),
+		if err := scaffold.Execute(
 			&api.WebhookSuite{},
 		); err != nil {
 			return err
