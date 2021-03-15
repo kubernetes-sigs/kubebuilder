@@ -75,7 +75,7 @@ func (c *CLI) addExtraAlphaCommands() error {
 				return fmt.Errorf("command %q already exists", fmt.Sprintf("%s %s", alphaCommand, cmd.Name()))
 			}
 		}
-		c.cmd.AddCommand(cmd)
+		alpha.AddCommand(cmd)
 	}
 	return nil
 }
