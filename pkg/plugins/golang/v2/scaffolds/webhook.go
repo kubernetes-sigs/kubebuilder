@@ -23,21 +23,18 @@ import (
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates/api"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates/hack"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/cmdutil"
-	internalmachinery "sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/machinery"
 )
 
 var _ cmdutil.Scaffolder = &webhookScaffolder{}
 
 type webhookScaffolder struct {
-	config      config.Config
-	boilerplate string
-	resource    resource.Resource
+	config   config.Config
+	resource resource.Resource
 
 	// fs is the filesystem that will be used by the scaffolder
 	fs machinery.Filesystem
@@ -56,31 +53,28 @@ func (s *webhookScaffolder) InjectFS(fs machinery.Filesystem) {
 	s.fs = fs
 }
 
-func (s *webhookScaffolder) newUniverse() *model.Universe {
-	return model.NewUniverse(
-		model.WithConfig(s.config),
-		model.WithBoilerplate(s.boilerplate),
-		model.WithResource(&s.resource),
-	)
-}
-
 // Scaffold implements cmdutil.Scaffolder
 func (s *webhookScaffolder) Scaffold() error {
 	fmt.Println("Writing scaffold for you to edit...")
 
 	// Load the boilerplate
-	bp, err := afero.ReadFile(s.fs.FS, hack.DefaultBoilerplatePath)
+	boilerplate, err := afero.ReadFile(s.fs.FS, hack.DefaultBoilerplatePath)
 	if err != nil {
 		return fmt.Errorf("error scaffolding webhook: unable to load boilerplate: %w", err)
 	}
-	s.boilerplate = string(bp)
+
+	// Initialize the machinery.Scaffold that will write the files to disk
+	scaffold := machinery.NewScaffold(s.fs,
+		machinery.WithConfig(s.config),
+		machinery.WithBoilerplate(string(boilerplate)),
+		machinery.WithResource(&s.resource),
+	)
 
 	if err := s.config.UpdateResource(s.resource); err != nil {
 		return fmt.Errorf("error updating resource: %w", err)
 	}
 
-	if err := internalmachinery.NewScaffold(s.fs).Execute(
-		s.newUniverse(),
+	if err := scaffold.Execute(
 		&api.Webhook{},
 		&templates.MainUpdater{WireWebhook: true},
 	); err != nil {

@@ -37,47 +37,6 @@ type Universe struct {
 	Files map[string]*file.File `json:"files,omitempty"`
 }
 
-// NewUniverse creates a new Universe
-func NewUniverse(options ...UniverseOption) *Universe {
-	universe := &Universe{}
-
-	// Apply options
-	for _, option := range options {
-		option(universe)
-	}
-
-	return universe
-}
-
-// UniverseOption configure Universe
-type UniverseOption func(*Universe)
-
-// WithConfig stores the already loaded project configuration
-func WithConfig(projectConfig config.Config) UniverseOption {
-	return func(universe *Universe) {
-		universe.Config = projectConfig
-	}
-}
-
-// WithBoilerplate stores the already loaded project configuration
-func WithBoilerplate(boilerplate string) UniverseOption {
-	return func(universe *Universe) {
-		universe.Boilerplate = boilerplate
-	}
-}
-
-// WithoutBoilerplate is used for files that do not require a boilerplate
-func WithoutBoilerplate(universe *Universe) {
-	universe.Boilerplate = ""
-}
-
-// WithResource stores the provided resource
-func WithResource(resource *resource.Resource) UniverseOption {
-	return func(universe *Universe) {
-		universe.Resource = resource
-	}
-}
-
 // InjectInto injects fields from the universe into the builder
 func (u Universe) InjectInto(builder file.Builder) {
 	// Inject project configuration

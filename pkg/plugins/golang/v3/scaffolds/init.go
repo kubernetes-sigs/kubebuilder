@@ -18,13 +18,11 @@ package scaffolds
 
 import (
 	"fmt"
-	"path/filepath"
 
 	"github.com/spf13/afero"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/config/certmanager"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/config/kdefault"
@@ -33,7 +31,6 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/config/rbac"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/hack"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/cmdutil"
-	internalmachinery "sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/machinery"
 )
 
 const (
@@ -63,7 +60,7 @@ type initScaffolder struct {
 func NewInitScaffolder(config config.Config, license, owner string) cmdutil.Scaffolder {
 	return &initScaffolder{
 		config:          config,
-		boilerplatePath: filepath.Join("hack", "boilerplate.go.txt"),
+		boilerplatePath: hack.DefaultBoilerplatePath,
 		license:         license,
 		owner:           owner,
 	}
@@ -74,25 +71,23 @@ func (s *initScaffolder) InjectFS(fs machinery.Filesystem) {
 	s.fs = fs
 }
 
-func (s *initScaffolder) newUniverse(boilerplate string) *model.Universe {
-	return model.NewUniverse(
-		model.WithConfig(s.config),
-		model.WithBoilerplate(boilerplate),
-	)
-}
-
 // Scaffold implements cmdutil.Scaffolder
 func (s *initScaffolder) Scaffold() error {
 	fmt.Println("Writing scaffold for you to edit...")
 
-	bpFile := &hack.Boilerplate{}
+	// Initialize the machinery.Scaffold that will write the boilerplate file to disk
+	// The boilerplate file needs to be scaffolded as a separate step as it is going to
+	// be used by the rest of the files, even those scaffolded in this command call.
+	scaffold := machinery.NewScaffold(s.fs,
+		machinery.WithConfig(s.config),
+	)
+
+	bpFile := &hack.Boilerplate{
+		License: s.license,
+		Owner:   s.owner,
+	}
 	bpFile.Path = s.boilerplatePath
-	bpFile.License = s.license
-	bpFile.Owner = s.owner
-	if err := internalmachinery.NewScaffold(s.fs).Execute(
-		s.newUniverse(""),
-		bpFile,
-	); err != nil {
+	if err := scaffold.Execute(bpFile); err != nil {
 		return err
 	}
 
@@ -101,8 +96,13 @@ func (s *initScaffolder) Scaffold() error {
 		return err
 	}
 
-	return internalmachinery.NewScaffold(s.fs).Execute(
-		s.newUniverse(string(boilerplate)),
+	// Initialize the machinery.Scaffold that will write the files to disk
+	scaffold = machinery.NewScaffold(s.fs,
+		machinery.WithConfig(s.config),
+		machinery.WithBoilerplate(string(boilerplate)),
+	)
+
+	return scaffold.Execute(
 		&rbac.Kustomization{},
 		&rbac.AuthProxyRole{},
 		&rbac.AuthProxyRoleBinding{},
