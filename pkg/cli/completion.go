@@ -61,10 +61,6 @@ $ %[1]s completion zsh > "${fpath[1]}/_%[1]s"
 	}
 }
 
-/* TODO: support fish code completion
-    At the time this comment is written, the imported spf13.cobra version does not support fish completion.
-    However, fish completion has been added to new spf13.cobra versions. When a new spf13.cobra version that
-    supports it is used, uncomment this command and add it to the base completion command.
 func (c CLI) newFishCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "fish",
@@ -75,11 +71,10 @@ $ %[1]s completion fish | source
 # To load completions for each session, execute once:
 $ %[1]s completion fish > ~/.config/fish/completions/%[1]s.fish`, c.commandName),
 		RunE: func(cmd *cobra.Command, cmdArgs []string) error {
-			return cmd.Root().GenFishCompletion(os.Stdout)
+			return cmd.Root().GenFishCompletion(os.Stdout, true)
 		},
 	}
 }
-*/
 
 func (CLI) newPowerShellCmd() *cobra.Command {
 	return &cobra.Command{
@@ -102,7 +97,7 @@ Detailed instructions on how to do this for each shell are provided in their own
 	}
 	cmd.AddCommand(c.newBashCmd())
 	cmd.AddCommand(c.newZshCmd())
-	// cmd.AddCommand(c.newFishCmd()) // TODO: uncomment when adding fish completion
+	cmd.AddCommand(c.newFishCmd())
 	cmd.AddCommand(c.newPowerShellCmd())
 	return cmd
 }
