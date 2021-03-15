@@ -36,12 +36,12 @@ func (c *CLI) newAlphaCmd() *cobra.Command {
 	alpha := &cobra.Command{
 		Use:        alphaCommand,
 		SuggestFor: []string{"experimental"},
-		Short:      "Alpha kubebuilder subcommands",
+		Short:      "Alpha-stage subcommands",
 		Long: strings.TrimSpace(`
-Alpha kubebuilder commands are for unstable features.
+Alpha subcommands are for unstable features.
 
-- Alpha commands are exploratory and may be removed without warning.
-- No backwards compatibility is provided for any alpha commands.
+- Alpha subcommands are exploratory and may be removed without warning.
+- No backwards compatibility is provided for any alpha subcommands.
  		`),
 	}
 	for i := range alphaCommands {
