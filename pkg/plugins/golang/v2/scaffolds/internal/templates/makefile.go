@@ -17,14 +17,14 @@ limitations under the License.
 package templates
 
 import (
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
-var _ file.Template = &Makefile{}
+var _ machinery.Template = &Makefile{}
 
 // Makefile scaffolds a file that defines project management CLI commands
 type Makefile struct {
-	file.TemplateMixin
+	machinery.TemplateMixin
 
 	// Image is controller manager image name
 	Image string
@@ -44,7 +44,7 @@ func (f *Makefile) SetTemplateDefaults() error {
 
 	f.TemplateBody = makefileTemplate
 
-	f.IfExistsAction = file.Error
+	f.IfExistsAction = machinery.Error
 
 	if f.Image == "" {
 		f.Image = "controller:latest"

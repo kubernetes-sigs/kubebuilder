@@ -19,15 +19,15 @@ package rbac
 import (
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
-var _ file.Template = &CRDViewerRole{}
+var _ machinery.Template = &CRDViewerRole{}
 
 // CRDViewerRole scaffolds a file that defines the role that allows to view plurals
 type CRDViewerRole struct {
-	file.TemplateMixin
-	file.ResourceMixin
+	machinery.TemplateMixin
+	machinery.ResourceMixin
 }
 
 // SetTemplateDefaults implements file.Template

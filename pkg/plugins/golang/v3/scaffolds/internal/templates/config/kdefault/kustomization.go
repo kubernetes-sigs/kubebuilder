@@ -19,16 +19,16 @@ package kdefault
 import (
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
-var _ file.Template = &Kustomization{}
+var _ machinery.Template = &Kustomization{}
 
 // Kustomization scaffolds a file that defines the kustomization scheme for the default overlay folder
 type Kustomization struct {
-	file.TemplateMixin
-	file.ProjectNameMixin
-	file.ComponentConfigMixin
+	machinery.TemplateMixin
+	machinery.ProjectNameMixin
+	machinery.ComponentConfigMixin
 }
 
 // SetTemplateDefaults implements file.Template
@@ -39,7 +39,7 @@ func (f *Kustomization) SetTemplateDefaults() error {
 
 	f.TemplateBody = kustomizeTemplate
 
-	f.IfExistsAction = file.Error
+	f.IfExistsAction = machinery.Error
 
 	return nil
 }

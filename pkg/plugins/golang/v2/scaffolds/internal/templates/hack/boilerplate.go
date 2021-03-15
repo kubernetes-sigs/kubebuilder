@@ -21,18 +21,18 @@ import (
 	"path/filepath"
 	"time"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
 // DefaultBoilerplatePath is the default path to the boilerplate file
 var DefaultBoilerplatePath = filepath.Join("hack", "boilerplate.go.txt")
 
-var _ file.Template = &Boilerplate{}
+var _ machinery.Template = &Boilerplate{}
 
 // Boilerplate scaffolds a file that defines the common header for the rest of the files
 type Boilerplate struct {
-	file.TemplateMixin
-	file.BoilerplateMixin
+	machinery.TemplateMixin
+	machinery.BoilerplateMixin
 
 	// License is the License type to write
 	License string

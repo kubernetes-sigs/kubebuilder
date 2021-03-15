@@ -17,9 +17,7 @@ limitations under the License.
 package cli
 
 import (
-	"errors"
 	"fmt"
-	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -27,46 +25,54 @@ import (
 	"github.com/spf13/cobra"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	yamlstore "sigs.k8s.io/kubebuilder/v3/pkg/config/store/yaml"
-	cfgv2 "sigs.k8s.io/kubebuilder/v3/pkg/config/v2"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 )
 
+const initErrorMsg = "failed to initialize project"
+
 func (c CLI) newInitCmd() *cobra.Command {
-	ctx := c.newInitContext()
 	cmd := &cobra.Command{
-		Use:     "init",
-		Short:   "Initialize a new project",
-		Long:    ctx.Description,
-		Example: ctx.Examples,
+		Use:   "init",
+		Short: "Initialize a new project",
+		Long: `Initialize a new project.
+
+For further help about a specific plugin, set --plugins.
+`,
+		Example: c.getInitHelpExamples(),
 		Run:     func(cmd *cobra.Command, args []string) {},
 	}
 
 	// Register --project-version on the dynamically created command
 	// so that it shows up in help and does not cause a parse error.
-	cmd.Flags().String(projectVersionFlag, c.defaultProjectVersion.String(),
-		fmt.Sprintf("project version, possible values: (%s)", strings.Join(c.getAvailableProjectVersions(), ", ")))
-	// The --plugins flag can only be called to init projects v2+.
-	if c.projectVersion.Compare(cfgv2.Version) == 1 {
-		cmd.Flags().StringSlice(pluginsFlag, nil,
-			"Name and optionally version of the plugin to initialize the project with. "+
-				fmt.Sprintf("Available plugins: (%s)", strings.Join(c.getAvailablePlugins(), ", ")))
+	cmd.Flags().String(projectVersionFlag, c.defaultProjectVersion.String(), "project version")
+
+	// In case no plugin was resolved, instead of failing the construction of the CLI, fail the execution of
+	// this subcommand. This allows the use of subcommands that do not require resolved plugins like help.
+	if len(c.resolvedPlugins) == 0 {
+		cmdErr(cmd, noResolvedPluginError{})
+		return cmd
 	}
 
-	// Lookup the plugin for projectVersion and bind it to the command.
-	c.bindInit(ctx, cmd)
+	// Obtain the plugin keys and subcommands from the plugins that implement plugin.Init.
+	subcommands := c.filterSubcommands(
+		func(p plugin.Plugin) bool {
+			_, isValid := p.(plugin.Init)
+			return isValid
+		},
+		func(p plugin.Plugin) plugin.Subcommand {
+			return p.(plugin.Init).GetInitSubcommand()
+		},
+	)
+
+	// Verify that there is at least one remaining plugin.
+	if len(subcommands) == 0 {
+		cmdErr(cmd, noAvailablePluginError{"project initialization"})
+		return cmd
+	}
+
+	c.applySubcommandHooks(cmd, subcommands, initErrorMsg, true)
+
 	return cmd
-}
-
-func (c CLI) newInitContext() plugin.Context {
-	return plugin.Context{
-		CommandName: c.commandName,
-		Description: `Initialize a new project.
-
-For further help about a specific project version, set --project-version.
-`,
-		Examples: c.getInitHelpExamples(),
-	}
 }
 
 func (c CLI) getInitHelpExamples() string {
@@ -108,56 +114,4 @@ func (c CLI) getAvailablePlugins() (pluginKeys []string) {
 	}
 	sort.Strings(pluginKeys)
 	return pluginKeys
-}
-
-func (c CLI) bindInit(ctx plugin.Context, cmd *cobra.Command) {
-	if len(c.resolvedPlugins) == 0 {
-		cmdErr(cmd, fmt.Errorf("no resolved plugins, please specify plugins with --%s or/and --%s flags",
-			projectVersionFlag, pluginsFlag))
-		return
-	}
-
-	var initPlugin plugin.Init
-	for _, p := range c.resolvedPlugins {
-		tmpPlugin, isValid := p.(plugin.Init)
-		if isValid {
-			if initPlugin != nil {
-				err := fmt.Errorf("duplicate initialization plugins (%s, %s), use a more specific plugin key",
-					plugin.KeyFor(initPlugin), plugin.KeyFor(p))
-				cmdErrNoHelp(cmd, err)
-				return
-			}
-			initPlugin = tmpPlugin
-		}
-	}
-
-	if initPlugin == nil {
-		cmdErr(cmd, fmt.Errorf("resolved plugins do not provide a project init plugin: %v", c.pluginKeys))
-		return
-	}
-
-	subcommand := initPlugin.GetInitSubcommand()
-	subcommand.BindFlags(cmd.Flags())
-	subcommand.UpdateContext(&ctx)
-	cmd.Long = ctx.Description
-	cmd.Example = ctx.Examples
-
-	cfg := yamlstore.New(c.fs)
-	msg := fmt.Sprintf("failed to initialize project with %q", plugin.KeyFor(initPlugin))
-	cmd.PreRunE = func(*cobra.Command, []string) error {
-		// Check if a config is initialized.
-		if err := cfg.Load(); err == nil || !errors.Is(err, os.ErrNotExist) {
-			return fmt.Errorf("%s: already initialized", msg)
-		}
-
-		err := cfg.New(c.projectVersion)
-		if err != nil {
-			return fmt.Errorf("%s: error initializing project configuration: %w", msg, err)
-		}
-
-		subcommand.InjectConfig(cfg.Config())
-		return nil
-	}
-	cmd.RunE = runECmdFunc(c.fs, subcommand, msg)
-	cmd.PostRunE = postRunECmdFunc(cfg, msg)
 }

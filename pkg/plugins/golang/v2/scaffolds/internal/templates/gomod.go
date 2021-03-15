@@ -17,15 +17,15 @@ limitations under the License.
 package templates
 
 import (
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
-var _ file.Template = &GoMod{}
+var _ machinery.Template = &GoMod{}
 
 // GoMod scaffolds a file that defines the project dependencies
 type GoMod struct {
-	file.TemplateMixin
-	file.RepositoryMixin
+	machinery.TemplateMixin
+	machinery.RepositoryMixin
 
 	ControllerRuntimeVersion string
 }
@@ -38,7 +38,7 @@ func (f *GoMod) SetTemplateDefaults() error {
 
 	f.TemplateBody = goModTemplate
 
-	f.IfExistsAction = file.Overwrite
+	f.IfExistsAction = machinery.OverwriteFile
 
 	return nil
 }

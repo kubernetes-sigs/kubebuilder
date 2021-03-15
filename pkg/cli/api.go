@@ -14,77 +14,54 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cli // nolint:dupl
+package cli //nolint:dupl
 
 import (
 	"fmt"
 
 	"github.com/spf13/cobra"
 
-	yamlstore "sigs.k8s.io/kubebuilder/v3/pkg/config/store/yaml"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 )
 
+const apiErrorMsg = "failed to create API"
+
 func (c CLI) newCreateAPICmd() *cobra.Command {
-	ctx := c.newAPIContext()
 	cmd := &cobra.Command{
-		Use:     "api",
-		Short:   "Scaffold a Kubernetes API",
-		Long:    ctx.Description,
-		Example: ctx.Examples,
+		Use:   "api",
+		Short: "Scaffold a Kubernetes API",
+		Long: `Scaffold a Kubernetes API.
+`,
 		RunE: errCmdFunc(
 			fmt.Errorf("api subcommand requires an existing project"),
 		),
 	}
 
-	// Lookup the plugin for projectVersion and bind it to the command.
-	c.bindCreateAPI(ctx, cmd)
-	return cmd
-}
-
-func (c CLI) newAPIContext() plugin.Context {
-	return plugin.Context{
-		CommandName: c.commandName,
-		Description: `Scaffold a Kubernetes API.
-`,
-	}
-}
-
-// nolint:dupl
-func (c CLI) bindCreateAPI(ctx plugin.Context, cmd *cobra.Command) {
+	// In case no plugin was resolved, instead of failing the construction of the CLI, fail the execution of
+	// this subcommand. This allows the use of subcommands that do not require resolved plugins like help.
 	if len(c.resolvedPlugins) == 0 {
-		cmdErr(cmd, fmt.Errorf(noPluginError))
-		return
+		cmdErr(cmd, noResolvedPluginError{})
+		return cmd
 	}
 
-	var createAPIPlugin plugin.CreateAPI
-	for _, p := range c.resolvedPlugins {
-		tmpPlugin, isValid := p.(plugin.CreateAPI)
-		if isValid {
-			if createAPIPlugin != nil {
-				err := fmt.Errorf("duplicate API creation plugins (%s, %s), use a more specific plugin key",
-					plugin.KeyFor(createAPIPlugin), plugin.KeyFor(p))
-				cmdErr(cmd, err)
-				return
-			}
-			createAPIPlugin = tmpPlugin
-		}
+	// Obtain the plugin keys and subcommands from the plugins that implement plugin.CreateAPI.
+	subcommands := c.filterSubcommands(
+		func(p plugin.Plugin) bool {
+			_, isValid := p.(plugin.CreateAPI)
+			return isValid
+		},
+		func(p plugin.Plugin) plugin.Subcommand {
+			return p.(plugin.CreateAPI).GetCreateAPISubcommand()
+		},
+	)
+
+	// Verify that there is at least one remaining plugin.
+	if len(subcommands) == 0 {
+		cmdErr(cmd, noAvailablePluginError{"API creation"})
+		return cmd
 	}
 
-	if createAPIPlugin == nil {
-		cmdErr(cmd, fmt.Errorf("resolved plugins do not provide an API creation plugin: %v", c.pluginKeys))
-		return
-	}
+	c.applySubcommandHooks(cmd, subcommands, apiErrorMsg, false)
 
-	subcommand := createAPIPlugin.GetCreateAPISubcommand()
-	subcommand.BindFlags(cmd.Flags())
-	subcommand.UpdateContext(&ctx)
-	cmd.Long = ctx.Description
-	cmd.Example = ctx.Examples
-
-	cfg := yamlstore.New(c.fs)
-	msg := fmt.Sprintf("failed to create API with %q", plugin.KeyFor(createAPIPlugin))
-	cmd.PreRunE = preRunECmdFunc(subcommand, cfg, msg)
-	cmd.RunE = runECmdFunc(c.fs, subcommand, msg)
-	cmd.PostRunE = postRunECmdFunc(cfg, msg)
+	return cmd
 }
