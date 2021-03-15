@@ -52,12 +52,13 @@ type Subcommand interface {
 	UpdateContext(*Context)
 	// BindFlags binds the subcommand's flags to the CLI. This allows each subcommand to define its own
 	// command line flags.
+	// NOTE(Adirio): by the time we bind flags, the config hasn't been injected, trying to use it panics
 	BindFlags(*pflag.FlagSet)
-	// Run runs the subcommand.
-	Run(fs machinery.Filesystem) error
 	// InjectConfig passes a config to a plugin. The plugin may modify the config.
 	// Initializing, loading, and saving the config is managed by the cli package.
 	InjectConfig(config.Config)
+	// Run runs the subcommand.
+	Run(fs machinery.Filesystem) error
 }
 
 // Context is the runtime context for a subcommand.

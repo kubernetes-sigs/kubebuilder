@@ -120,7 +120,6 @@ func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 
 	p.options = &goPlugin.Options{}
 	fs.StringVar(&p.options.Group, "group", "", "resource Group")
-	p.options.Domain = p.config.GetDomain()
 	fs.StringVar(&p.options.Version, "version", "", "resource Version")
 	fs.StringVar(&p.options.Kind, "kind", "", "resource Kind")
 	fs.StringVar(&p.options.Plural, "plural", "", "resource irregular plural form")
@@ -139,6 +138,9 @@ func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 
 func (p *createAPISubcommand) InjectConfig(c config.Config) {
 	p.config = c
+
+	// TODO: offer a flag instead of hard-coding the project-wide domain
+	p.options.Domain = c.GetDomain()
 }
 
 func (p *createAPISubcommand) Run(fs machinery.Filesystem) error {
