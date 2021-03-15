@@ -67,8 +67,8 @@ func setPluginsFlag(value string) {
 	setFlag(pluginsFlag, value)
 }
 
-func hasSubCommand(c *CLI, name string) bool {
-	for _, subcommand := range c.cmd.Commands() {
+func hasSubCommand(cmd *cobra.Command, name string) bool {
+	for _, subcommand := range cmd.Commands() {
 		if subcommand.Name() == name {
 			return true
 		}
@@ -677,7 +677,7 @@ var _ = Describe("CLI", func() {
 				const version = "version string"
 				c, err = New(WithVersion(version))
 				Expect(err).NotTo(HaveOccurred())
-				Expect(hasSubCommand(c, "version")).To(BeTrue())
+				Expect(hasSubCommand(c.cmd, "version")).To(BeTrue())
 			})
 		})
 
@@ -685,7 +685,7 @@ var _ = Describe("CLI", func() {
 			It("should create a valid CLI", func() {
 				c, err = New(WithCompletion())
 				Expect(err).NotTo(HaveOccurred())
-				Expect(hasSubCommand(c, "completion")).To(BeTrue())
+				Expect(hasSubCommand(c.cmd, "completion")).To(BeTrue())
 			})
 		})
 
@@ -712,18 +712,39 @@ var _ = Describe("CLI", func() {
 		})
 
 		When("providing extra commands", func() {
-			var extraCommand *cobra.Command
-
 			It("should create a valid CLI for non-conflicting ones", func() {
-				extraCommand = &cobra.Command{Use: "extra"}
+				extraCommand := &cobra.Command{Use: "extra"}
 				c, err = New(WithExtraCommands(extraCommand))
 				Expect(err).NotTo(HaveOccurred())
-				Expect(hasSubCommand(c, extraCommand.Use)).To(BeTrue())
+				Expect(hasSubCommand(c.cmd, extraCommand.Use)).To(BeTrue())
 			})
 
 			It("should return an error for conflicting ones", func() {
-				extraCommand = &cobra.Command{Use: "init"}
+				extraCommand := &cobra.Command{Use: "init"}
 				_, err = New(WithExtraCommands(extraCommand))
+				Expect(err).To(HaveOccurred())
+			})
+		})
+
+		When("providing extra alpha commands", func() {
+			It("should create a valid CLI for non-conflicting ones", func() {
+				extraAlphaCommand := &cobra.Command{Use: "extra"}
+				c, err = New(WithExtraAlphaCommands(extraAlphaCommand))
+				Expect(err).NotTo(HaveOccurred())
+				var alpha *cobra.Command
+				for _, subcmd := range c.cmd.Commands() {
+					if subcmd.Name() == alphaCommand {
+						alpha = subcmd
+						break
+					}
+				}
+				Expect(alpha).NotTo(BeNil())
+				Expect(hasSubCommand(alpha, extraAlphaCommand.Use)).To(BeTrue())
+			})
+
+			It("should return an error for conflicting ones", func() {
+				extraAlphaCommand := &cobra.Command{Use: "extra"}
+				_, err = New(WithExtraAlphaCommands(extraAlphaCommand, extraAlphaCommand))
 				Expect(err).To(HaveOccurred())
 			})
 		})
