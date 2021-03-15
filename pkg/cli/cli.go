@@ -76,6 +76,8 @@ type CLI struct { //nolint:maligned
 	plugins map[string]plugin.Plugin
 	// Commands injected by options.
 	extraCommands []*cobra.Command
+	// Alpha commands injected by options.
+	extraAlphaCommands []*cobra.Command
 	// Whether to add a completion command to the CLI.
 	completionCommand bool
 
@@ -119,6 +121,11 @@ func New(options ...Option) (*CLI, error) {
 
 	// Add extra commands injected by options.
 	if err := c.addExtraCommands(); err != nil {
+		return nil, err
+	}
+
+	// Add extra alpha commands injected by options.
+	if err := c.addExtraAlphaCommands(); err != nil {
 		return nil, err
 	}
 

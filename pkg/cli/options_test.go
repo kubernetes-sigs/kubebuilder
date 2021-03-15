@@ -221,6 +221,21 @@ var _ = Describe("CLI options", func() {
 		})
 	})
 
+	Context("WithExtraAlphaCommands", func() {
+		It("should return a valid CLI with extra alpha commands", func() {
+			commandTest := &cobra.Command{
+				Use: "example",
+			}
+			c, err = newCLI(WithExtraAlphaCommands(commandTest))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(c).NotTo(BeNil())
+			Expect(c.extraAlphaCommands).NotTo(BeNil())
+			Expect(len(c.extraAlphaCommands)).To(Equal(1))
+			Expect(c.extraAlphaCommands[0]).NotTo(BeNil())
+			Expect(c.extraAlphaCommands[0].Use).To(Equal(commandTest.Use))
+		})
+	})
+
 	Context("WithCompletion", func() {
 		It("should not add the completion command by default", func() {
 			c, err = newCLI()
