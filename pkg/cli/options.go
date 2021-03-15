@@ -112,6 +112,18 @@ func WithExtraCommands(cmds ...*cobra.Command) Option {
 	}
 }
 
+// WithExtraAlphaCommands is an Option that adds extra alpha subcommands to the CLI.
+//
+// Adding extra alpha commands that duplicate existing commands results in an error.
+func WithExtraAlphaCommands(cmds ...*cobra.Command) Option {
+	return func(c *CLI) error {
+		// We don't know the commands defined by the CLI yet so we are not checking if the extra alpha commands
+		// conflict with a pre-existing one yet. We do this after creating the base commands.
+		c.extraAlphaCommands = append(c.extraAlphaCommands, cmds...)
+		return nil
+	}
+}
+
 // WithCompletion is an Option that adds the completion subcommand.
 func WithCompletion() Option {
 	return func(c *CLI) error {

@@ -17,10 +17,15 @@ limitations under the License.
 package cli
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/spf13/cobra"
 	configgen "sigs.k8s.io/kubebuilder/v3/pkg/cli/alpha/config-gen"
+)
+
+const (
+	alphaCommand = "alpha"
 )
 
 var alphaCommands = []*cobra.Command{
@@ -29,7 +34,7 @@ var alphaCommands = []*cobra.Command{
 
 func (c *CLI) newAlphaCmd() *cobra.Command {
 	alpha := &cobra.Command{
-		Use:        "alpha",
+		Use:        alphaCommand,
 		SuggestFor: []string{"experimental"},
 		Short:      "Alpha kubebuilder subcommands",
 		Long: strings.TrimSpace(`
@@ -46,7 +51,31 @@ Alpha kubebuilder commands are for unstable features.
 }
 
 func (c *CLI) addAlphaCmd() {
-	if len(alphaCommands) > 0 {
+	if (len(alphaCommands) + len(c.extraAlphaCommands)) > 0 {
 		c.cmd.AddCommand(c.newAlphaCmd())
 	}
+}
+
+func (c *CLI) addExtraAlphaCommands() error {
+	// Search for the alpha subcommand
+	var alpha *cobra.Command
+	for _, subCmd := range c.cmd.Commands() {
+		if subCmd.Name() == alphaCommand {
+			alpha = subCmd
+			break
+		}
+	}
+	if alpha == nil {
+		return fmt.Errorf("no %q command found", alphaCommand)
+	}
+
+	for _, cmd := range c.extraAlphaCommands {
+		for _, subCmd := range alpha.Commands() {
+			if cmd.Name() == subCmd.Name() {
+				return fmt.Errorf("command %q already exists", fmt.Sprintf("%s %s", alphaCommand, cmd.Name()))
+			}
+		}
+		c.cmd.AddCommand(cmd)
+	}
+	return nil
 }
