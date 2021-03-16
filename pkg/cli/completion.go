@@ -69,7 +69,8 @@ func (c CLI) newFishCmd() *cobra.Command {
 $ %[1]s completion fish | source
 
 # To load completions for each session, execute once:
-$ %[1]s completion fish > ~/.config/fish/completions/%[1]s.fish`, c.commandName),
+$ %[1]s completion fish > ~/.config/fish/completions/%[1]s.fish
+`, c.commandName),
 		RunE: func(cmd *cobra.Command, cmdArgs []string) error {
 			return cmd.Root().GenFishCompletion(os.Stdout, true)
 		},

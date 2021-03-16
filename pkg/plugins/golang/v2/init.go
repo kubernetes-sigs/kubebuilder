@@ -75,8 +75,7 @@ Writes the following files:
 `
 	ctx.Examples = fmt.Sprintf(`  # Scaffold a project using the apache2 license with "The Kubernetes authors" as owners
   %s init --project-version=2 --domain example.org --license apache2 --owner "The Kubernetes authors"
-`,
-		ctx.CommandName)
+`, ctx.CommandName)
 
 	p.commandName = ctx.CommandName
 }

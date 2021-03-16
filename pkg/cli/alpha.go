@@ -42,7 +42,7 @@ Alpha subcommands are for unstable features.
 
 - Alpha subcommands are exploratory and may be removed without warning.
 - No backwards compatibility is provided for any alpha subcommands.
- 		`),
+`),
 	}
 	for i := range alphaCommands {
 		alpha.AddCommand(alphaCommands[i])
