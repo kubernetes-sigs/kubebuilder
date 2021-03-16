@@ -22,26 +22,6 @@ jobs:
           version: v1.37        # Always uses the latest patch version.
           only-new-issues: true # Show only new issues if it's a pull request
 
-  testdata:
-    name: Verify testdata directory
-    needs: lint
-    runs-on: ubuntu-latest
-    # Pull requests from the same repository won't trigger this checks as they were already triggered by the push
-    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
-    steps:
-      - name: Clone the code
-        uses: actions/checkout@v2
-      - name: Setup Go
-        uses: actions/setup-go@v2
-        with:
-          go-version: '1.15'
-      # This step is needed as the following one tries to remove
-      # kustomize for each test but has no permission to do so
-      - name: Remove pre-installed kustomize
-        run: sudo rm -f /usr/local/bin/kustomize
-      - name: Verify testdata directory
-        run: make check-testdata
-
   test:
     name: Test for ${{ matrix.os }}
     needs: lint
@@ -68,8 +48,6 @@ jobs:
   coverage:
     name: Code coverage
     needs:
-      - lint
-      - testdata
       - test
     runs-on: ubuntu-latest
     # Pull requests from the same repository won't trigger this checks as they were already triggered by the push
@@ -87,3 +65,44 @@ jobs:
         uses: shogo82148/actions-goveralls@v1
         with:
           path-to-profile: coverage-all.out
+
+  testdata:
+    name: Verify testdata directory
+    needs: lint
+    runs-on: ubuntu-latest
+    # Pull requests from the same repository won't trigger this checks as they were already triggered by the push
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    steps:
+      - name: Clone the code
+        uses: actions/checkout@v2
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: '1.15'
+      # This step is needed as the following one tries to remove
+      # kustomize for each test but has no permission to do so
+      - name: Remove pre-installed kustomize
+        run: sudo rm -f /usr/local/bin/kustomize
+      - name: Verify testdata directory
+        run: make check-testdata
+
+  debug:
+    name: Debug failing workflows
+    needs: # Add to this list every job in this workflow
+      - lint
+      - test
+      - coverage
+      - testdata
+    runs-on: ubuntu-latest
+    # Failed PRs are shown in their check but pushes are hard to notice so we create an issue
+    if: failure() && github.event_name == 'push' && github.ref == 'refs/heads/master'
+    steps:
+      - name: Print env and event
+        uses: hmarr/debug-action@v2.0.0
+      - name: Create issue
+        uses: nashmaniac/create-issue-action@v1.1
+        with:
+          title: CI failed for ${{ github.sha }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          labels: kind/bug
+          body: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
