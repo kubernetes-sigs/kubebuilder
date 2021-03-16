@@ -25,8 +25,9 @@ package controllers
 
 import (
 	"path/filepath"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"testing"
+
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -112,8 +113,14 @@ var _ = BeforeSuite(func() {
 		The only difference is that the manager is started in a separate goroutine so it does not block the cleanup of envtest
 		when you’re done running your tests.
 
-		Once you've added the code below, you can actually delete the k8sClient above, because you can get k8sClient from the manager
-		(as shown below).
+		It is not recommended to use the manager client in tests because it is not strongly consistent. Indeed, the manager
+		client is designed to do the "right thing" for controllers by default which is to read from caches. The best solution
+		is to instantiate a new client using client.New for tests (as k8sClient above). It will provide a client that reads
+		directly from the API meaning that you can write tests expecting read-after-write consistency.
+
+		However, keep in mind that you should not do this in the controller's conciliation loop (read an object after you have
+		written it). Kubernetes favors an approach where you first do some reads, process and then do some writes and return.
+		This way, you let the queue take care of the next cycle of readings if they are necessary.
 	*/
 
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
@@ -122,7 +129,7 @@ var _ = BeforeSuite(func() {
 	Expect(err).ToNot(HaveOccurred())
 
 	err = (&CronJobReconciler{
-		Client: k8sManager.GetClient(),
+		Client: k8sClient,
 		Scheme: k8sManager.GetScheme(),
 		Log:    ctrl.Log.WithName("controllers").WithName("CronJob"),
 	}).SetupWithManager(k8sManager)
@@ -132,10 +139,6 @@ var _ = BeforeSuite(func() {
 		err = k8sManager.Start(ctrl.SetupSignalHandler())
 		Expect(err).ToNot(HaveOccurred())
 	}()
-
-	k8sClient = k8sManager.GetClient()
-	Expect(k8sClient).ToNot(BeNil())
-
 }, 60)
 
 /*
