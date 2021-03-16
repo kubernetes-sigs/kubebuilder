@@ -51,12 +51,11 @@ validating and (or) conversion webhooks.
 `
 	ctx.Examples = fmt.Sprintf(`  # Create defaulting and validating webhooks for CRD of group ship, version v1beta1
   # and kind Frigate.
-  %s create webhook --group ship --version v1beta1 --kind Frigate --defaulting --programmatic-validation
+  %[1]s create webhook --group ship --version v1beta1 --kind Frigate --defaulting --programmatic-validation
 
   # Create conversion webhook for CRD of group shio, version v1beta1 and kind Frigate.
-  %s create webhook --group ship --version v1beta1 --kind Frigate --conversion
-`,
-		ctx.CommandName, ctx.CommandName)
+  %[1]s create webhook --group ship --version v1beta1 --kind Frigate --conversion
+`, ctx.CommandName)
 
 	p.commandName = ctx.CommandName
 }

@@ -43,11 +43,11 @@ func (p *editSubcommand) UpdateContext(ctx *plugin.Context) {
 	ctx.Description = `This command will edit the project configuration. You can have single or multi group project.`
 
 	ctx.Examples = fmt.Sprintf(`# Enable the multigroup layout
-        %s edit --multigroup
+        %[1]s edit --multigroup
 
         # Disable the multigroup layout
-        %s edit --multigroup=false
-	`, ctx.CommandName, ctx.CommandName)
+        %[1]s edit --multigroup=false
+`, ctx.CommandName)
 }
 
 func (p *editSubcommand) BindFlags(fs *pflag.FlagSet) {

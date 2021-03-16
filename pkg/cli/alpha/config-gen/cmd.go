@@ -102,7 +102,7 @@ config-gen programatically generates configuration for a controller-runtime base
 project using the project source code (golang) and a KubebuilderConfigGen resource file.
 
 This is an alternative to expressing configuration as a static set of kustomize patches
-in the "config" directory. 
+in the "config" directory.
 
 config-gen may be used as a standalone command run against a file, as a kustomize
 transformer plugin, or as a configuration function (e.g. kpt).
@@ -148,55 +148,55 @@ The KubebuilderConfigGen resource has the following fields:
     crds:
       # path to go module source directory provided to controller-gen libraries
       # optional -- defaults to '.'
-	  sourceDirectory: ./relative/path
+      sourceDirectory: ./relative/path
 
-	# configure how the controller-manager is generated
+    # configure how the controller-manager is generated
     controllerManager:
-	  # image to run
-	  image: my-org/my-project:v0.1.0
+      # image to run
+      image: my-org/my-project:v0.1.0
 
-	  # if set, use component config for the controller-manager
-	  # optional
-	  componentConfig:
-	    # use component config
+      # if set, use component config for the controller-manager
+      # optional
+      componentConfig:
+        # use component config
         enable: true
 
-		# path to component config to put into a ConfigMap
-	    configFilepath: ./path/to/componentconfig.yaml
+        # path to component config to put into a ConfigMap
+        configFilepath: ./path/to/componentconfig.yaml
 
-	  # configure how metrics are exposed
-	  metrics:
-	    # disable the auth proxy required for scraping metrics
+      # configure how metrics are exposed
+      metrics:
+        # disable the auth proxy required for scraping metrics
         # disable: false
 
-		# generate prometheus ServiceMonitor resource
-	    enableServiceMonitor: true
+        # generate prometheus ServiceMonitor resource
+        enableServiceMonitor: true
 
     # configure how webhooks are generated
-	# optional -- defaults to not generating webhook configuration
+    # optional -- defaults to not generating webhook configuration
     webhooks:
-	  # enable will cause webhook config to be generated
-	  enable: true
+      # enable will cause webhook config to be generated
+      enable: true
 
-	  # configures crds which use conversion webhooks
+      # configures crds which use conversion webhooks
       enableConversion:
-	    # key is the name of the CRD
+        # key is the name of the CRD
         "bars.example.my.domain": true
 
       # configures where to get the certificate used for webhooks
-	  # discriminated union
-	  certificateSource:
-	    # type of certificate source
-		# one of ["certManager", "dev", "manual"] -- defaults to "manual"
-		# certManager: certmanager is used to manage certificates -- requires CertManager to be installed
-		# dev: certificate is generated and wired into resources
-		# manual: no certificate is generated or wired into resources
+      # discriminated union
+      certificateSource:
+        # type of certificate source
+        # one of ["certManager", "dev", "manual"] -- defaults to "manual"
+        # certManager: certmanager is used to manage certificates -- requires CertManager to be installed
+        # dev: certificate is generated and wired into resources
+        # manual: no certificate is generated or wired into resources
         type: "dev"
 
-		# options for a dev certificate -- requires "dev" as the type
-		devCertificate:
-		  duration: 1h
-    `)
+        # options for a dev certificate -- requires "dev" as the type
+        devCertificate:
+          duration: 1h
+`)
 	c.Example = strings.TrimSpace(`
 #
 # As command
@@ -209,7 +209,7 @@ apiVersion: kubebuilder.sigs.k8s.io/v1alpha1
     name: project
   spec:
     controllerManager
-	  image: org/project:v0.1.0
+      image: org/project:v0.1.0
 EOF
 
 # run the config generator
@@ -250,7 +250,7 @@ EOF
 
 # generate configuration from kustomize
 kustomize build --enable-alpha-plugins .
-    `)
+`)
 
 	dir, dirErr := getPluginDir()
 	pluginFile := filepath.Join(dir, "KubebuilderConfigGen")
@@ -261,10 +261,10 @@ kustomize build --enable-alpha-plugins .
 		Short: "Install config-gen as a kustomize plugin",
 		Long: strings.TrimSpace(fmt.Sprintf(`
 Write a script to %s for kustomize to locate as a plugin.
-        `, pluginFile)),
+`, pluginFile)),
 		Example: strings.TrimSpace(`
 kubebuilder alpha config-gen install-as-plugin
-        `),
+`),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if dirErr != nil {
 				return dirErr

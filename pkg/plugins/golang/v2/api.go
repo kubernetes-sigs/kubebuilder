@@ -88,8 +88,7 @@ After the scaffold is written, api will run make on the project.
 
   # Regenerate code and run against the Kubernetes cluster configured by ~/.kube/config
   make run
-	`,
-		ctx.CommandName)
+`, ctx.CommandName)
 }
 
 func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
