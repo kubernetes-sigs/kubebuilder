@@ -28,8 +28,6 @@ import (
 // Version is the config.Version for project configuration 2
 var Version = config.Version{Number: 2}
 
-const apiVersion = "v1beta1"
-
 type cfg struct {
 	// Version
 	Version config.Version `json:"version"`
