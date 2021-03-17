@@ -101,7 +101,7 @@ func (p *initSubcommand) BindFlags(fs *pflag.FlagSet) {
 }
 
 func (p *initSubcommand) InjectConfig(c config.Config) {
-	_ = c.SetLayout(plugin.KeyFor(Plugin{}))
+	_ = c.SetPluginChain([]string{plugin.KeyFor(Plugin{})})
 
 	p.config = c
 }

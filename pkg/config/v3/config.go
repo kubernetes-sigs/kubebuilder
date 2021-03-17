@@ -29,15 +29,38 @@ import (
 // Version is the config.Version for project configuration 3
 var Version = config.Version{Number: 3}
 
+// stringSlice is a []string but that can also be unmarshalled from a single string,
+// which is introduced as the first and only element of the slice
+// It is used to offer backwards compatibility as the field used to be a string.
+type stringSlice []string
+
+func (ss *stringSlice) UnmarshalJSON(b []byte) error {
+	if b[0] == '[' {
+		var sl []string
+		if err := yaml.Unmarshal(b, &sl); err != nil {
+			return err
+		}
+		*ss = sl
+		return nil
+	}
+
+	var st string
+	if err := yaml.Unmarshal(b, &st); err != nil {
+		return err
+	}
+	*ss = stringSlice{st}
+	return nil
+}
+
 type cfg struct {
 	// Version
 	Version config.Version `json:"version"`
 
 	// String fields
-	Domain     string `json:"domain,omitempty"`
-	Repository string `json:"repo,omitempty"`
-	Name       string `json:"projectName,omitempty"`
-	Layout     string `json:"layout,omitempty"`
+	Domain      string      `json:"domain,omitempty"`
+	Repository  string      `json:"repo,omitempty"`
+	Name        string      `json:"projectName,omitempty"`
+	PluginChain stringSlice `json:"layout,omitempty"`
 
 	// Boolean fields
 	MultiGroup      bool `json:"multigroup,omitempty"`
@@ -104,13 +127,13 @@ func (c *cfg) SetProjectName(name string) error {
 }
 
 // GetLayout implements config.Config
-func (c cfg) GetLayout() string {
-	return c.Layout
+func (c cfg) GetPluginChain() []string {
+	return c.PluginChain
 }
 
 // SetLayout implements config.Config
-func (c *cfg) SetLayout(layout string) error {
-	c.Layout = layout
+func (c *cfg) SetPluginChain(pluginChain []string) error {
+	c.PluginChain = pluginChain
 	return nil
 }
 
@@ -324,7 +347,7 @@ func (c *cfg) EncodePluginConfig(key string, configObj interface{}) error {
 }
 
 // Marshal implements config.Config
-func (c cfg) Marshal() ([]byte, error) {
+func (c cfg) MarshalYAML() ([]byte, error) {
 	for i, r := range c.Resources {
 		// If API is empty, omit it (prevents `api: {}`).
 		if r.API != nil && r.API.IsEmpty() {
@@ -345,7 +368,7 @@ func (c cfg) Marshal() ([]byte, error) {
 }
 
 // Unmarshal implements config.Config
-func (c *cfg) Unmarshal(b []byte) error {
+func (c *cfg) UnmarshalYAML(b []byte) error {
 	if err := yaml.UnmarshalStrict(b, c); err != nil {
 		return config.UnmarshalError{Err: err}
 	}

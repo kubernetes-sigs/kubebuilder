@@ -94,7 +94,7 @@ func (s *yamlStore) LoadFrom(path string) error {
 	}
 
 	// Unmarshal the file content
-	if err := cfg.Unmarshal(in); err != nil {
+	if err := cfg.UnmarshalYAML(in); err != nil {
 		return store.LoadError{Err: fmt.Errorf("unable to unmarshal config at %q: %w", path, err)}
 	}
 
@@ -128,7 +128,7 @@ func (s yamlStore) SaveTo(path string) error {
 	}
 
 	// Marshall into YAML
-	content, err := s.cfg.Marshal()
+	content, err := s.cfg.MarshalYAML()
 	if err != nil {
 		return store.SaveError{Err: fmt.Errorf("unable to marshal to YAML: %w", err)}
 	}

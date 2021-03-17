@@ -1,5 +1,6 @@
 domain: testproject.org
-layout: go.kubebuilder.io/v3
+layout:
+- go.kubebuilder.io/v3
 projectName: project-v3-addon
 repo: sigs.k8s.io/kubebuilder/testdata/project-v3-addon
 resources:
