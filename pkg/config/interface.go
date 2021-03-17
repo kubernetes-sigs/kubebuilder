@@ -20,78 +20,78 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 )
 
-// Config defines the interface that project configuration types must follow
+// Config defines the interface that project configuration types must follow.
 type Config interface {
 	/* Version */
 
-	// GetVersion returns the current project version
+	// GetVersion returns the current project version.
 	GetVersion() Version
 
 	/* String fields */
 
-	// GetDomain returns the project domain
+	// GetDomain returns the project domain.
 	GetDomain() string
-	// SetDomain sets the project domain
+	// SetDomain sets the project domain.
 	SetDomain(domain string) error
 
 	// GetRepository returns the project repository.
 	GetRepository() string
-	// SetRepository sets the project repository
+	// SetRepository sets the project repository.
 	SetRepository(repository string) error
 
-	// GetProjectName returns the project name
+	// GetProjectName returns the project name.
 	// This method was introduced in project version 3.
 	GetProjectName() string
-	// SetProjectName sets the project name
+	// SetProjectName sets the project name.
 	// This method was introduced in project version 3.
 	SetProjectName(name string) error
 
-	// GetLayout returns the config layout
+	// GetPluginChain returns the plugin chain.
 	// This method was introduced in project version 3.
-	GetLayout() string
-	// SetLayout sets the Config layout
+	GetPluginChain() []string
+	// SetPluginChain sets the plugin chain.
 	// This method was introduced in project version 3.
-	SetLayout(layout string) error
+	SetPluginChain(pluginChain []string) error
 
 	/* Boolean fields */
 
-	// IsMultiGroup checks if multi-group is enabled
+	// IsMultiGroup checks if multi-group is enabled.
 	IsMultiGroup() bool
-	// SetMultiGroup enables multi-group
+	// SetMultiGroup enables multi-group.
 	SetMultiGroup() error
-	// ClearMultiGroup disables multi-group
+	// ClearMultiGroup disables multi-group.
 	ClearMultiGroup() error
 
-	// IsComponentConfig checks if component config is enabled
+	// IsComponentConfig checks if component config is enabled.
 	// This method was introduced in project version 3.
 	IsComponentConfig() bool
-	// SetComponentConfig enables component config
+	// SetComponentConfig enables component config.
 	// This method was introduced in project version 3.
 	SetComponentConfig() error
-	// ClearComponentConfig disables component config
+	// ClearComponentConfig disables component config.
 	// This method was introduced in project version 3.
 	ClearComponentConfig() error
 
 	/* Resources */
 
-	// ResourcesLength returns the number of tracked resources
+	// ResourcesLength returns the number of tracked resources.
 	ResourcesLength() int
-	// HasResource checks if the provided GVK is stored in the Config
+	// HasResource checks if the provided GVK is stored in the Config.
 	HasResource(gvk resource.GVK) bool
-	// GetResource returns the stored resource matching the provided GVK
+	// GetResource returns the stored resource matching the provided GVK.
 	GetResource(gvk resource.GVK) (resource.Resource, error)
-	// GetResources returns all the stored resources
+	// GetResources returns all the stored resources.
 	GetResources() ([]resource.Resource, error)
-	// AddResource adds the provided resource if it was not present, no-op if it was already present
+	// AddResource adds the provided resource if it was not present, no-op if it was already present.
 	AddResource(res resource.Resource) error
-	// UpdateResource adds the provided resource if it was not present, modifies it if it was already present
+	// UpdateResource adds the provided resource if it was not present, modifies it if it was already present.
 	UpdateResource(res resource.Resource) error
 
-	// HasGroup checks if the provided group is the same as any of the tracked resources
+	// HasGroup checks if the provided group is the same as any of the tracked resources.
 	HasGroup(group string) bool
-	// ListCRDVersions returns a list of the CRD versions in use by the tracked resources
+	// ListCRDVersions returns a list of the CRD versions in use by the tracked resources.
 	ListCRDVersions() []string
-	// ListWebhookVersions returns a list of the webhook versions in use by the tracked resources
+	// ListWebhookVersions returns a list of the webhook versions in use by the tracked resources.
 	ListWebhookVersions() []string
 
 	/* Plugins */
@@ -105,8 +105,8 @@ type Config interface {
 
 	/* Persistence */
 
-	// Marshal returns the YAML representation of the Config
-	Marshal() ([]byte, error)
-	// Unmarshal loads the Config fields from its YAML representation
-	Unmarshal([]byte) error
+	// Marshal returns the YAML representation of the Config.
+	MarshalYAML() ([]byte, error)
+	// Unmarshal loads the Config fields from its YAML representation.
+	UnmarshalYAML([]byte) error
 }

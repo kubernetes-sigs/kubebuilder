@@ -78,7 +78,7 @@ var _ = Describe("cfg", func() {
 		})
 	})
 
-	Context("ProjectName", func() {
+	Context("Project name", func() {
 		It("GetProjectName should return an empty name", func() {
 			Expect(c.GetProjectName()).To(Equal(""))
 		})
@@ -88,13 +88,13 @@ var _ = Describe("cfg", func() {
 		})
 	})
 
-	Context("Layout", func() {
-		It("GetLayout should return an empty layout", func() {
-			Expect(c.GetLayout()).To(Equal(""))
+	Context("Plugin chain", func() {
+		It("GetPluginChain should return the only supported plugin", func() {
+			Expect(c.GetPluginChain()).To(Equal([]string{"go.kubebuilder.io/v2"}))
 		})
 
-		It("SetLayout should fail to set the layout", func() {
-			Expect(c.SetLayout("layout")).NotTo(Succeed())
+		It("SetPluginChain should fail to set the plugin chain", func() {
+			Expect(c.SetPluginChain([]string{})).NotTo(Succeed())
 		})
 	})
 
@@ -288,9 +288,9 @@ version: "2"
 `
 		)
 
-		DescribeTable("Marshal should succeed",
+		DescribeTable("MarshalYAML should succeed",
 			func(c cfg, content string) {
-				b, err := c.Marshal()
+				b, err := c.MarshalYAML()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(string(b)).To(Equal(content))
 			},
@@ -298,18 +298,18 @@ version: "2"
 			Entry("for a full configuration", c2, s2),
 		)
 
-		DescribeTable("Marshal should fail",
+		DescribeTable("MarshalYAML should fail",
 			func(c cfg) {
-				_, err := c.Marshal()
+				_, err := c.MarshalYAML()
 				Expect(err).To(HaveOccurred())
 			},
 			// TODO (coverage): add cases where yaml.Marshal returns an error
 		)
 
-		DescribeTable("Unmarshal should succeed",
+		DescribeTable("UnmarshalYAML should succeed",
 			func(content string, c cfg) {
 				var unmarshalled cfg
-				Expect(unmarshalled.Unmarshal([]byte(content))).To(Succeed())
+				Expect(unmarshalled.UnmarshalYAML([]byte(content))).To(Succeed())
 				Expect(unmarshalled.Version.Compare(c.Version)).To(Equal(0))
 				Expect(unmarshalled.Domain).To(Equal(c.Domain))
 				Expect(unmarshalled.Repository).To(Equal(c.Repository))
@@ -320,10 +320,10 @@ version: "2"
 			Entry("full", s2, c2),
 		)
 
-		DescribeTable("Unmarshal should fail",
+		DescribeTable("UnmarshalYAML should fail",
 			func(content string) {
 				var c cfg
-				Expect(c.Unmarshal([]byte(content))).NotTo(Succeed())
+				Expect(c.UnmarshalYAML([]byte(content))).NotTo(Succeed())
 			},
 			Entry("for unknown fields", `field: 1
 version: "2"`),

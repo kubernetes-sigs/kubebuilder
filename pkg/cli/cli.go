@@ -220,15 +220,7 @@ func (c CLI) getInfoFromConfigFile() (config.Version, []string, error) {
 // getInfoFromConfig obtains the project version and plugin keys from the project config.
 // It is extracted from getInfoFromConfigFile for testing purposes.
 func getInfoFromConfig(projectConfig config.Config) (config.Version, []string, error) {
-	// Split the comma-separated plugins
-	var pluginSet []string
-	if projectConfig.GetLayout() != "" {
-		for _, p := range strings.Split(projectConfig.GetLayout(), ",") {
-			pluginSet = append(pluginSet, strings.TrimSpace(p))
-		}
-	}
-
-	return projectConfig.GetVersion(), pluginSet, nil
+	return projectConfig.GetVersion(), projectConfig.GetPluginChain(), nil
 }
 
 // resolveFlagsAndConfigFileConflicts checks if the provided combined input from flags and

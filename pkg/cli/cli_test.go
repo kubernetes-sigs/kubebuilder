@@ -191,6 +191,8 @@ var _ = Describe("CLI", func() {
 			projectVersion config.Version
 			plugins        []string
 			err            error
+
+			pluginChain = []string{"go.kubebuilder.io/v2"}
 		)
 
 		When("not having layout field", func() {
@@ -199,18 +201,18 @@ var _ = Describe("CLI", func() {
 				projectVersion, plugins, err = getInfoFromConfig(projectConfig)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(projectVersion.Compare(projectConfig.GetVersion())).To(Equal(0))
-				Expect(len(plugins)).To(Equal(0))
+				Expect(plugins).To(Equal(pluginChain))
 			})
 		})
 
 		When("having layout field", func() {
 			It("should succeed", func() {
 				projectConfig = cfgv3.New()
-				Expect(projectConfig.SetLayout("go.kubebuilder.io/v2")).To(Succeed())
+				Expect(projectConfig.SetPluginChain(pluginChain)).To(Succeed())
 				projectVersion, plugins, err = getInfoFromConfig(projectConfig)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(projectVersion.Compare(projectConfig.GetVersion())).To(Equal(0))
-				Expect(plugins).To(Equal([]string{projectConfig.GetLayout()}))
+				Expect(plugins).To(Equal(pluginChain))
 			})
 		})
 	})

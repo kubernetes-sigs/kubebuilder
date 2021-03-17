@@ -102,7 +102,7 @@ func (p *initSubcommand) BindFlags(fs *pflag.FlagSet) {
 func (p *initSubcommand) InjectConfig(c config.Config) {
 	// v2+ project configs get a 'layout' value.
 	if c.GetVersion().Compare(cfgv2.Version) > 0 {
-		_ = c.SetLayout(plugin.KeyFor(Plugin{}))
+		_ = c.SetPluginChain([]string{plugin.KeyFor(Plugin{})})
 	}
 
 	p.config = c

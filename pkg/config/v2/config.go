@@ -92,16 +92,16 @@ func (c *cfg) SetProjectName(string) error {
 	}
 }
 
-// GetLayout implements config.Config
-func (c cfg) GetLayout() string {
-	return ""
+// GetPluginChain implements config.Config
+func (c cfg) GetPluginChain() []string {
+	return []string{"go.kubebuilder.io/v2"}
 }
 
-// SetLayout implements config.Config
-func (c *cfg) SetLayout(string) error {
+// SetPluginChain implements config.Config
+func (c *cfg) SetPluginChain([]string) error {
 	return config.UnsupportedFieldError{
 		Version: Version,
-		Field:   "layout",
+		Field:   "plugin chain",
 	}
 }
 
@@ -247,7 +247,7 @@ func (c cfg) EncodePluginConfig(string, interface{}) error {
 }
 
 // Marshal implements config.Config
-func (c cfg) Marshal() ([]byte, error) {
+func (c cfg) MarshalYAML() ([]byte, error) {
 	content, err := yaml.Marshal(c)
 	if err != nil {
 		return nil, config.MarshalError{Err: err}
@@ -257,7 +257,7 @@ func (c cfg) Marshal() ([]byte, error) {
 }
 
 // Unmarshal implements config.Config
-func (c *cfg) Unmarshal(b []byte) error {
+func (c *cfg) UnmarshalYAML(b []byte) error {
 	if err := yaml.UnmarshalStrict(b, c); err != nil {
 		return config.UnmarshalError{Err: err}
 	}
