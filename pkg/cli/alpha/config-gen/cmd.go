@@ -19,6 +19,7 @@ package configgen
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -41,8 +42,7 @@ func NewCommand() *cobra.Command {
 	legacyPlugin := os.Getenv("KUSTOMIZE_PLUGIN_CONFIG_STRING")
 	err := yaml.Unmarshal([]byte(legacyPlugin), kp)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
-		return nil
+		log.Fatal(err)
 	}
 
 	// Eager check to make sure pkged templates are found.
@@ -51,8 +51,7 @@ func NewCommand() *cobra.Command {
 	})
 	if err != nil {
 		// this shouldn't fail if it was compiled correctly
-		fmt.Fprintln(os.Stderr, err.Error())
-		return nil
+		log.Fatal(err)
 	}
 
 	c := framework.TemplateCommand{
@@ -248,36 +247,46 @@ transformers:
       image: my-org/my-project:v0.1.0
 EOF
 
-# generate configuration from kustomize
+# generate configuration from kustomize > v4.0.0
 kustomize build --enable-alpha-plugins .
-`)
 
-	dir, dirErr := getPluginDir()
-	pluginFile := filepath.Join(dir, "KubebuilderConfigGen")
+# generate configuration from kustomize <= v4.0.0
+kustomize build --enable_alpha_plugins .
+`)
 
 	// command for installing the plugin
 	install := &cobra.Command{
 		Use:   "install-as-plugin",
 		Short: "Install config-gen as a kustomize plugin",
-		Long: strings.TrimSpace(fmt.Sprintf(`
-Write a script to %s for kustomize to locate as a plugin.
-`, pluginFile)),
-		Example: strings.TrimSpace(`
+		Long: fmt.Sprintf(`Write a script to %s for kustomize to locate as a plugin.
+This path will be written to $XDG_CONFIG_HOME if set, otherwise $HOME.
+`, pluginScriptPath),
+		Example: `
 kubebuilder alpha config-gen install-as-plugin
-`),
+`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if dirErr != nil {
-				return dirErr
-			}
-			fmt.Fprintf(cmd.OutOrStdout(), "writing kustomize plugin file at %s\n", pluginFile)
-			err = os.MkdirAll(dir, 0700)
+			hd, err := getPluginHomeDir()
 			if err != nil {
+				log.Fatal(err)
+			}
+			fullScriptPath := filepath.Join(hd, pluginScriptPath)
+
+			// Given the script perms, this command will not be able to overwrite the plugin script file.
+			// That's ok, let the user handle removal to maintain security.
+			if info, err := os.Stat(fullScriptPath); err == nil && !info.IsDir() {
+				fmt.Fprintf(cmd.OutOrStdout(), "kustomize plugin configured at %s\n", fullScriptPath)
+				return nil
+			}
+
+			fmt.Fprintf(cmd.OutOrStdout(), "writing kustomize plugin file at %s\n", fullScriptPath)
+
+			dir, _ := filepath.Split(fullScriptPath)
+			if err = os.MkdirAll(dir, 0700); err != nil {
 				return err
 			}
 
-			return ioutil.WriteFile(pluginFile, []byte(`#!/bin/bash 
-KUSTOMIZE_FUNCTION=true kubebuilder alpha config-gen
-`), 0500)
+			// r-x perms to prevent overwrite vulnerability since the script will be executed out-of-tree.
+			return ioutil.WriteFile(fullScriptPath, []byte(pluginScript), 0500)
 		},
 	}
 	c.AddCommand(install)
@@ -285,7 +294,17 @@ KUSTOMIZE_FUNCTION=true kubebuilder alpha config-gen
 	return c
 }
 
-func getPluginDir() (string, error) {
+// Kustomize plugin execution script.
+const pluginScript = `#!/bin/bash
+KUSTOMIZE_FUNCTION=true kubebuilder alpha config-gen
+`
+
+// Qualified directory containing the config-gen plugin script. Child of plugin home dir.
+var pluginScriptPath = filepath.Join("kustomize", "plugin",
+	"kubebuilder.sigs.k8s.io", "v1alpha1", "kubebuilderconfiggen", "KubebuilderConfigGen")
+
+// getPluginHomeDir returns $XDG_CONFIG_HOME if set, otherwise $HOME.
+func getPluginHomeDir() (string, error) {
 	xdg := os.Getenv("XDG_CONFIG_HOME")
 	if xdg == "" {
 		dir, err := os.UserHomeDir()
@@ -294,6 +313,5 @@ func getPluginDir() (string, error) {
 		}
 		xdg = filepath.Join(dir, ".config")
 	}
-	dir := filepath.Join(xdg, "kustomize", "plugin", "kubebuilder.sigs.k8s.io", "v1alpha1", "kubebuilderconfiggen")
-	return dir, nil
+	return xdg, nil
 }
