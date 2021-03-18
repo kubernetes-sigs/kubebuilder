@@ -23,6 +23,7 @@ import (
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates/config/certmanager"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates/config/kdefault"
@@ -31,7 +32,6 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates/config/rbac"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates/config/webhook"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates/hack"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/cmdutil"
 )
 
 const (
@@ -45,7 +45,7 @@ const (
 	imageName = "controller:latest"
 )
 
-var _ cmdutil.Scaffolder = &initScaffolder{}
+var _ plugins.Scaffolder = &initScaffolder{}
 
 type initScaffolder struct {
 	config          config.Config
@@ -58,7 +58,7 @@ type initScaffolder struct {
 }
 
 // NewInitScaffolder returns a new Scaffolder for project initialization operations
-func NewInitScaffolder(config config.Config, license, owner string) cmdutil.Scaffolder {
+func NewInitScaffolder(config config.Config, license, owner string) plugins.Scaffolder {
 	return &initScaffolder{
 		config:          config,
 		boilerplatePath: hack.DefaultBoilerplatePath,
@@ -104,15 +104,19 @@ func (s *initScaffolder) Scaffold() error {
 	)
 
 	return scaffold.Execute(
-		&templates.GitIgnore{},
+		&rbac.Kustomization{},
 		&rbac.AuthProxyRole{},
 		&rbac.AuthProxyRoleBinding{},
-		&kdefault.ManagerAuthProxyPatch{},
 		&rbac.AuthProxyService{},
 		&rbac.AuthProxyClientRole{},
+		&rbac.RoleBinding{},
+		&rbac.LeaderElectionRole{},
+		&rbac.LeaderElectionRoleBinding{},
+		&manager.Kustomization{},
 		&manager.Config{Image: imageName},
 		&templates.Main{},
 		&templates.GoMod{ControllerRuntimeVersion: ControllerRuntimeVersion},
+		&templates.GitIgnore{},
 		&templates.Makefile{
 			Image:                  imageName,
 			BoilerplatePath:        s.boilerplatePath,
@@ -121,16 +125,12 @@ func (s *initScaffolder) Scaffold() error {
 		},
 		&templates.Dockerfile{},
 		&kdefault.Kustomization{},
+		&kdefault.ManagerAuthProxyPatch{},
 		&kdefault.ManagerWebhookPatch{},
-		&rbac.RoleBinding{},
-		&rbac.LeaderElectionRole{},
-		&rbac.LeaderElectionRoleBinding{},
-		&rbac.Kustomization{},
-		&manager.Kustomization{},
+		&kdefault.WebhookCAInjectionPatch{},
 		&webhook.Kustomization{},
 		&webhook.KustomizeConfig{},
 		&webhook.Service{},
-		&kdefault.WebhookCAInjectionPatch{},
 		&prometheus.Kustomization{},
 		&prometheus.Monitor{},
 		&certmanager.Certificate{},

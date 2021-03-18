@@ -19,14 +19,14 @@ package rbac
 import (
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
-var _ file.Template = &LeaderElectionRole{}
+var _ machinery.Template = &LeaderElectionRole{}
 
 // LeaderElectionRole scaffolds a file that defines the role that allows leader election
 type LeaderElectionRole struct {
-	file.TemplateMixin
+	machinery.TemplateMixin
 }
 
 // SetTemplateDefaults implements file.Template

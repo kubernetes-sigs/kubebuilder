@@ -23,6 +23,7 @@ import (
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/config/certmanager"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/config/kdefault"
@@ -30,7 +31,6 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/config/prometheus"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/config/rbac"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/hack"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/cmdutil"
 )
 
 const (
@@ -44,7 +44,7 @@ const (
 	imageName = "controller:latest"
 )
 
-var _ cmdutil.Scaffolder = &initScaffolder{}
+var _ plugins.Scaffolder = &initScaffolder{}
 
 type initScaffolder struct {
 	config          config.Config
@@ -57,7 +57,7 @@ type initScaffolder struct {
 }
 
 // NewInitScaffolder returns a new Scaffolder for project initialization operations
-func NewInitScaffolder(config config.Config, license, owner string) cmdutil.Scaffolder {
+func NewInitScaffolder(config config.Config, license, owner string) plugins.Scaffolder {
 	return &initScaffolder{
 		config:          config,
 		boilerplatePath: hack.DefaultBoilerplatePath,

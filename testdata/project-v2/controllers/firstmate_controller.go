@@ -17,47 +17,73 @@ limitations under the License.
 package controllers
 
 import (
-	"context"
-
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
+	"sigs.k8s.io/kubebuilder-declarative-pattern/pkg/patterns/addon"
+	"sigs.k8s.io/kubebuilder-declarative-pattern/pkg/patterns/addon/pkg/status"
+	"sigs.k8s.io/kubebuilder-declarative-pattern/pkg/patterns/declarative"
 
 	crewv1 "sigs.k8s.io/kubebuilder/testdata/project-v2/api/v1"
 )
+
+var _ reconcile.Reconciler = &FirstMateReconciler{}
 
 // FirstMateReconciler reconciles a FirstMate object
 type FirstMateReconciler struct {
 	client.Client
 	Log    logr.Logger
 	Scheme *runtime.Scheme
+
+	declarative.Reconciler
 }
 
 //+kubebuilder:rbac:groups=crew.testproject.org,resources=firstmates,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=crew.testproject.org,resources=firstmates/status,verbs=get;update;patch
 
-// Reconcile is part of the main kubernetes reconciliation loop which aims to
-// move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the FirstMate object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.6.4/pkg/reconcile
-func (r *FirstMateReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	_ = context.Background()
-	_ = r.Log.WithValues("firstmate", req.NamespacedName)
-
-	// your logic here
-
-	return ctrl.Result{}, nil
-}
-
 // SetupWithManager sets up the controller with the Manager.
 func (r *FirstMateReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&crewv1.FirstMate{}).
-		Complete(r)
+	addon.Init()
+
+	labels := map[string]string{
+		"k8s-app": "firstmate",
+	}
+
+	watchLabels := declarative.SourceLabel(mgr.GetScheme())
+
+	if err := r.Reconciler.Init(mgr, &crewv1.FirstMate{},
+		declarative.WithObjectTransform(declarative.AddLabels(labels)),
+		declarative.WithOwner(declarative.SourceAsOwner),
+		declarative.WithLabels(watchLabels),
+		declarative.WithStatus(status.NewBasic(mgr.GetClient())),
+		// TODO: add an application to your manifest:  declarative.WithObjectTransform(addon.TransformApplicationFromStatus),
+		// TODO: add an application to your manifest:  declarative.WithManagedApplication(watchLabels),
+		declarative.WithObjectTransform(addon.ApplyPatches),
+	); err != nil {
+		return err
+	}
+
+	c, err := controller.New("firstmate-controller", mgr, controller.Options{Reconciler: r})
+	if err != nil {
+		return err
+	}
+
+	// Watch for changes to FirstMate
+	err = c.Watch(&source.Kind{Type: &crewv1.FirstMate{}}, &handler.EnqueueRequestForObject{})
+	if err != nil {
+		return err
+	}
+
+	// Watch for changes to deployed objects
+	_, err = declarative.WatchAll(mgr.GetConfig(), c, r, watchLabels)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

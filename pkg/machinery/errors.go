@@ -18,8 +18,6 @@ package machinery
 
 import (
 	"fmt"
-
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
 )
 
 // This file contains the errors returned by the scaffolding machinery
@@ -42,16 +40,6 @@ type SetTemplateDefaultsError struct {
 
 // Unwrap implements Wrapper interface
 func (e SetTemplateDefaultsError) Unwrap() error {
-	return e.error
-}
-
-// PluginError is a wrapper error that will be used for errors returned by model.Plugin.Pipe
-type PluginError struct {
-	error
-}
-
-// Unwrap implements Wrapper interface
-func (e PluginError) Unwrap() error {
 	return e.error
 }
 
@@ -138,7 +126,7 @@ func (e ModelAlreadyExistsError) Error() string {
 // UnknownIfExistsActionError is returned if the if-exists-action is unknown
 type UnknownIfExistsActionError struct {
 	path           string
-	ifExistsAction file.IfExistsAction
+	ifExistsAction IfExistsAction
 }
 
 // Error implements error interface

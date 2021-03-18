@@ -1,0 +1,3 @@
+# Versions for the stable channel
+manifests:
+- version: 0.0.1

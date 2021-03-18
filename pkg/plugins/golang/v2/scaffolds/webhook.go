@@ -24,13 +24,13 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates/api"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates/hack"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/cmdutil"
 )
 
-var _ cmdutil.Scaffolder = &webhookScaffolder{}
+var _ plugins.Scaffolder = &webhookScaffolder{}
 
 type webhookScaffolder struct {
 	config   config.Config
@@ -41,7 +41,7 @@ type webhookScaffolder struct {
 }
 
 // NewWebhookScaffolder returns a new Scaffolder for v2 webhook creation operations
-func NewWebhookScaffolder(config config.Config, resource resource.Resource) cmdutil.Scaffolder {
+func NewWebhookScaffolder(config config.Config, resource resource.Resource) plugins.Scaffolder {
 	return &webhookScaffolder{
 		config:   config,
 		resource: resource,

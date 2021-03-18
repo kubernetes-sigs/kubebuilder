@@ -66,6 +66,7 @@ var _ = Describe("kubebuilder", func() {
 			var controllerPodName string
 			By("init v2 project")
 			err := kbc.Init(
+				"--plugins", "go/v2",
 				"--project-version", "2",
 				"--domain", kbc.Domain,
 				"--fetch-deps=false")

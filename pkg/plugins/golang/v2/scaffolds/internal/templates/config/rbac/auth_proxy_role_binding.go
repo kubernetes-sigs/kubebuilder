@@ -19,14 +19,14 @@ package rbac
 import (
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
-var _ file.Template = &AuthProxyRoleBinding{}
+var _ machinery.Template = &AuthProxyRoleBinding{}
 
 // AuthProxyRoleBinding scaffolds a file that defines the role binding for the auth proxy
 type AuthProxyRoleBinding struct {
-	file.TemplateMixin
+	machinery.TemplateMixin
 }
 
 // SetTemplateDefaults implements file.Template

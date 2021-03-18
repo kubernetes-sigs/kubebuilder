@@ -24,8 +24,8 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	cfgv2 "sigs.k8s.io/kubebuilder/v3/pkg/config/v2"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates/api"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates/config/crd"
@@ -34,14 +34,9 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates/config/samples"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates/controllers"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates/hack"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/cmdutil"
 )
 
-// KbDeclarativePattern is the sigs.k8s.io/kubebuilder-declarative-pattern version
-// (used only to gen api with --pattern=addon)
-const KbDeclarativePattern = "v0.0.0-20200522144838-848d48e5b073"
-
-var _ cmdutil.Scaffolder = &apiScaffolder{}
+var _ plugins.Scaffolder = &apiScaffolder{}
 
 // apiScaffolder contains configuration for generating scaffolding for Go type
 // representing the API and controller that implements the behavior for the API.
@@ -52,24 +47,15 @@ type apiScaffolder struct {
 	// fs is the filesystem that will be used by the scaffolder
 	fs machinery.Filesystem
 
-	// plugins is the list of plugins we should allow to transform our generated scaffolding
-	plugins []model.Plugin
-
 	// force indicates whether to scaffold controller files even if it exists or not
 	force bool
 }
 
 // NewAPIScaffolder returns a new Scaffolder for API/controller creation operations
-func NewAPIScaffolder(
-	config config.Config,
-	res resource.Resource,
-	force bool,
-	plugins []model.Plugin,
-) cmdutil.Scaffolder {
+func NewAPIScaffolder(config config.Config, res resource.Resource, force bool) plugins.Scaffolder {
 	return &apiScaffolder{
 		config:   config,
 		resource: res,
-		plugins:  plugins,
 		force:    force,
 	}
 }
@@ -91,7 +77,6 @@ func (s *apiScaffolder) Scaffold() error {
 
 	// Initialize the machinery.Scaffold that will write the files to disk
 	scaffold := machinery.NewScaffold(s.fs,
-		machinery.WithPlugins(s.plugins...),
 		machinery.WithConfig(s.config),
 		machinery.WithBoilerplate(string(boilerplate)),
 		machinery.WithResource(&s.resource),

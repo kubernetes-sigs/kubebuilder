@@ -37,7 +37,6 @@ var _ = Describe("Errors", func() {
 		},
 		Entry("for validate errors", ValidateError{testErr}),
 		Entry("for set template defaults errors", SetTemplateDefaultsError{testErr}),
-		Entry("for plugin errors", PluginError{testErr}),
 		Entry("for file existence errors", ExistsFileError{testErr}),
 		Entry("for file opening errors", OpenFileError{testErr}),
 		Entry("for directory creation errors", CreateDirectoryError{testErr}),

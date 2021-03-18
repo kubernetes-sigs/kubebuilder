@@ -19,15 +19,15 @@ package patches
 import (
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
-var _ file.Template = &EnableWebhookPatch{}
+var _ machinery.Template = &EnableWebhookPatch{}
 
 // EnableWebhookPatch scaffolds a file that defines the patch that enables conversion webhook for the CRD
 type EnableWebhookPatch struct {
-	file.TemplateMixin
-	file.ResourceMixin
+	machinery.TemplateMixin
+	machinery.ResourceMixin
 }
 
 // SetTemplateDefaults implements file.Template

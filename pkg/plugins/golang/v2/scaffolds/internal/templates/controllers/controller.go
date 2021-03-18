@@ -20,18 +20,18 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
-var _ file.Template = &Controller{}
+var _ machinery.Template = &Controller{}
 
 // Controller scaffolds the file that defines the controller for a CRD or a builtin resource
 // nolint:maligned
 type Controller struct {
-	file.TemplateMixin
-	file.MultiGroupMixin
-	file.BoilerplateMixin
-	file.ResourceMixin
+	machinery.TemplateMixin
+	machinery.MultiGroupMixin
+	machinery.BoilerplateMixin
+	machinery.ResourceMixin
 
 	ControllerRuntimeVersion string
 
@@ -53,9 +53,9 @@ func (f *Controller) SetTemplateDefaults() error {
 	f.TemplateBody = controllerTemplate
 
 	if f.Force {
-		f.IfExistsAction = file.Overwrite
+		f.IfExistsAction = machinery.OverwriteFile
 	} else {
-		f.IfExistsAction = file.Error
+		f.IfExistsAction = machinery.Error
 	}
 
 	return nil

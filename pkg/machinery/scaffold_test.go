@@ -24,8 +24,6 @@ import (
 	"github.com/spf13/afero"
 
 	cfgv3 "sigs.k8s.io/kubebuilder/v3/pkg/config/v3"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 )
 
@@ -33,79 +31,61 @@ var _ = Describe("Scaffold", func() {
 	Describe("NewScaffold", func() {
 		It("should succeed for no option", func() {
 			s := NewScaffold(Filesystem{FS: afero.NewMemMapFs()})
-			Expect(s.plugins).To(BeNil())
 			Expect(s.fs).NotTo(BeNil())
 			Expect(s.dirPerm).To(Equal(defaultDirectoryPermission))
 			Expect(s.filePerm).To(Equal(defaultFilePermission))
-			Expect(s.config).To(BeNil())
-			Expect(s.boilerplate).To(Equal(""))
-			Expect(s.resource).To(BeNil())
-		})
-
-		It("should succeed with plugins option", func() {
-			plugins := []model.Plugin{fakePlugin{}, fakePlugin{}}
-
-			s := NewScaffold(Filesystem{FS: afero.NewMemMapFs()}, WithPlugins(plugins...))
-			Expect(s.plugins).To(Equal(plugins))
-			Expect(s.fs).NotTo(BeNil())
-			Expect(s.dirPerm).To(Equal(defaultDirectoryPermission))
-			Expect(s.filePerm).To(Equal(defaultFilePermission))
-			Expect(s.config).To(BeNil())
-			Expect(s.boilerplate).To(Equal(""))
-			Expect(s.resource).To(BeNil())
+			Expect(s.injector.config).To(BeNil())
+			Expect(s.injector.boilerplate).To(Equal(""))
+			Expect(s.injector.resource).To(BeNil())
 		})
 
 		It("should succeed with directory permissions option", func() {
 			const dirPermissions os.FileMode = 0755
 
 			s := NewScaffold(Filesystem{FS: afero.NewMemMapFs()}, WithDirectoryPermissions(dirPermissions))
-			Expect(s.plugins).To(BeNil())
 			Expect(s.fs).NotTo(BeNil())
 			Expect(s.dirPerm).To(Equal(dirPermissions))
 			Expect(s.filePerm).To(Equal(defaultFilePermission))
-			Expect(s.config).To(BeNil())
-			Expect(s.boilerplate).To(Equal(""))
-			Expect(s.resource).To(BeNil())
+			Expect(s.injector.config).To(BeNil())
+			Expect(s.injector.boilerplate).To(Equal(""))
+			Expect(s.injector.resource).To(BeNil())
 		})
 
 		It("should succeed with file permissions option", func() {
 			const filePermissions os.FileMode = 0755
 
 			s := NewScaffold(Filesystem{FS: afero.NewMemMapFs()}, WithFilePermissions(filePermissions))
-			Expect(s.plugins).To(BeNil())
 			Expect(s.fs).NotTo(BeNil())
 			Expect(s.dirPerm).To(Equal(defaultDirectoryPermission))
 			Expect(s.filePerm).To(Equal(filePermissions))
-			Expect(s.config).To(BeNil())
-			Expect(s.boilerplate).To(Equal(""))
-			Expect(s.resource).To(BeNil())
+			Expect(s.injector.config).To(BeNil())
+			Expect(s.injector.boilerplate).To(Equal(""))
+			Expect(s.injector.resource).To(BeNil())
 		})
 
 		It("should succeed with config option", func() {
 			cfg := cfgv3.New()
 
 			s := NewScaffold(Filesystem{FS: afero.NewMemMapFs()}, WithConfig(cfg))
-			Expect(s.plugins).To(BeNil())
 			Expect(s.fs).NotTo(BeNil())
 			Expect(s.dirPerm).To(Equal(defaultDirectoryPermission))
 			Expect(s.filePerm).To(Equal(defaultFilePermission))
-			Expect(s.config).NotTo(BeNil())
-			Expect(s.config.GetVersion().Compare(cfgv3.Version)).To(Equal(0))
-			Expect(s.boilerplate).To(Equal(""))
-			Expect(s.resource).To(BeNil())
+			Expect(s.injector.config).NotTo(BeNil())
+			Expect(s.injector.config.GetVersion().Compare(cfgv3.Version)).To(Equal(0))
+			Expect(s.injector.boilerplate).To(Equal(""))
+			Expect(s.injector.resource).To(BeNil())
 		})
 
 		It("should succeed with boilerplate option", func() {
 			const boilerplate = "Copyright"
 
 			s := NewScaffold(Filesystem{FS: afero.NewMemMapFs()}, WithBoilerplate(boilerplate))
-			Expect(s.plugins).To(BeNil())
 			Expect(s.fs).NotTo(BeNil())
 			Expect(s.dirPerm).To(Equal(defaultDirectoryPermission))
 			Expect(s.filePerm).To(Equal(defaultFilePermission))
-			Expect(s.config).To(BeNil())
-			Expect(s.boilerplate).To(Equal(boilerplate))
-			Expect(s.resource).To(BeNil())
+			Expect(s.injector.config).To(BeNil())
+			Expect(s.injector.boilerplate).To(Equal(boilerplate))
+			Expect(s.injector.resource).To(BeNil())
 		})
 
 		It("should succeed with resource option", func() {
@@ -117,14 +97,13 @@ var _ = Describe("Scaffold", func() {
 			}}
 
 			s := NewScaffold(Filesystem{FS: afero.NewMemMapFs()}, WithResource(res))
-			Expect(s.plugins).To(BeNil())
 			Expect(s.fs).NotTo(BeNil())
 			Expect(s.dirPerm).To(Equal(defaultDirectoryPermission))
 			Expect(s.filePerm).To(Equal(defaultFilePermission))
-			Expect(s.config).To(BeNil())
-			Expect(s.boilerplate).To(Equal(""))
-			Expect(s.resource).NotTo(BeNil())
-			Expect(s.resource.GVK.IsEqualTo(res.GVK)).To(BeTrue())
+			Expect(s.injector.config).To(BeNil())
+			Expect(s.injector.boilerplate).To(Equal(""))
+			Expect(s.injector.resource).NotTo(BeNil())
+			Expect(s.injector.resource.GVK.IsEqualTo(res.GVK)).To(BeTrue())
 		})
 	})
 
@@ -147,7 +126,7 @@ var _ = Describe("Scaffold", func() {
 		})
 
 		DescribeTable("successes",
-			func(path, expected string, files ...file.Builder) {
+			func(path, expected string, files ...Builder) {
 				Expect(s.Execute(files...)).To(Succeed())
 
 				b, err := afero.ReadFile(s.fs, path)
@@ -166,7 +145,7 @@ var _ = Describe("Scaffold", func() {
 			Entry("should overwrite required models if already have one",
 				path, content,
 				fakeTemplate{fakeBuilder: fakeBuilder{path: path}},
-				fakeTemplate{fakeBuilder: fakeBuilder{path: path, ifExistsAction: file.Overwrite}, body: content},
+				fakeTemplate{fakeBuilder: fakeBuilder{path: path, ifExistsAction: OverwriteFile}, body: content},
 			),
 			Entry("should format a go file",
 				pathGo, "package file\n",
@@ -175,7 +154,7 @@ var _ = Describe("Scaffold", func() {
 		)
 
 		DescribeTable("file builders related errors",
-			func(errType interface{}, files ...file.Builder) {
+			func(errType interface{}, files ...Builder) {
 				err := s.Execute(files...)
 				Expect(err).To(HaveOccurred())
 				Expect(errors.As(err, errType)).To(BeTrue())
@@ -191,7 +170,7 @@ var _ = Describe("Scaffold", func() {
 			Entry("should fail if an unexpected previous model is found",
 				&ModelAlreadyExistsError{},
 				fakeTemplate{fakeBuilder: fakeBuilder{path: path}},
-				fakeTemplate{fakeBuilder: fakeBuilder{path: path, ifExistsAction: file.Error}},
+				fakeTemplate{fakeBuilder: fakeBuilder{path: path, ifExistsAction: Error}},
 			),
 			Entry("should fail if behavior if-exists-action is not defined",
 				&UnknownIfExistsActionError{},
@@ -202,7 +181,7 @@ var _ = Describe("Scaffold", func() {
 
 		// Following errors are unwrapped, so we need to check for substrings
 		DescribeTable("template related errors",
-			func(errMsg string, files ...file.Builder) {
+			func(errMsg string, files ...Builder) {
 				err := s.Execute(files...)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring(errMsg))
@@ -222,7 +201,7 @@ var _ = Describe("Scaffold", func() {
 		)
 
 		DescribeTable("insert strings",
-			func(path, input, expected string, files ...file.Builder) {
+			func(path, input, expected string, files ...Builder) {
 				Expect(afero.WriteFile(s.fs, path, []byte(input), 0666)).To(Succeed())
 
 				Expect(s.Execute(files...)).To(Succeed())
@@ -246,8 +225,8 @@ var b int
 `,
 				fakeInserter{
 					fakeBuilder: fakeBuilder{path: pathGo},
-					codeFragments: file.CodeFragmentsMap{
-						file.NewMarkerFor(pathGo, "-"): {"var a int\n", "var b int\n"},
+					codeFragments: CodeFragmentsMap{
+						NewMarkerFor(pathGo, "-"): {"var a int\n", "var b int\n"},
 					},
 				},
 			),
@@ -263,8 +242,8 @@ var b int
 `,
 				fakeInserter{
 					fakeBuilder: fakeBuilder{path: pathYaml},
-					codeFragments: file.CodeFragmentsMap{
-						file.NewMarkerFor(pathYaml, "-"): {"1\n", "2\n"},
+					codeFragments: CodeFragmentsMap{
+						NewMarkerFor(pathYaml, "-"): {"1\n", "2\n"},
 					},
 				},
 			),
@@ -276,13 +255,13 @@ var b int
 2
 #+kubebuilder:scaffold:-
 `,
-				fakeTemplate{fakeBuilder: fakeBuilder{path: pathYaml, ifExistsAction: file.Overwrite}, body: `
+				fakeTemplate{fakeBuilder: fakeBuilder{path: pathYaml, ifExistsAction: OverwriteFile}, body: `
 #+kubebuilder:scaffold:-
 `},
 				fakeInserter{
 					fakeBuilder: fakeBuilder{path: pathYaml},
-					codeFragments: file.CodeFragmentsMap{
-						file.NewMarkerFor(pathYaml, "-"): {"1\n", "2\n"},
+					codeFragments: CodeFragmentsMap{
+						NewMarkerFor(pathYaml, "-"): {"1\n", "2\n"},
 					},
 				},
 			),
@@ -294,13 +273,13 @@ var b int
 2
 #+kubebuilder:scaffold:-
 `,
-				fakeTemplate{fakeBuilder: fakeBuilder{path: pathYaml, ifExistsAction: file.Overwrite}, body: `
+				fakeTemplate{fakeBuilder: fakeBuilder{path: pathYaml, ifExistsAction: OverwriteFile}, body: `
 #+kubebuilder:scaffold:-
 `},
 				fakeInserter{
 					fakeBuilder: fakeBuilder{path: pathYaml},
-					codeFragments: file.CodeFragmentsMap{
-						file.NewMarkerFor(pathYaml, "-"): {"1\n", "2\n"},
+					codeFragments: CodeFragmentsMap{
+						NewMarkerFor(pathYaml, "-"): {"1\n", "2\n"},
 					},
 				},
 			),
@@ -317,8 +296,8 @@ var b int
 				fakeTemplate{fakeBuilder: fakeBuilder{path: pathYaml}, body: content},
 				fakeInserter{
 					fakeBuilder: fakeBuilder{path: pathYaml},
-					codeFragments: file.CodeFragmentsMap{
-						file.NewMarkerFor(pathYaml, "-"): {"1\n", "2\n"},
+					codeFragments: CodeFragmentsMap{
+						NewMarkerFor(pathYaml, "-"): {"1\n", "2\n"},
 					},
 				},
 			),
@@ -336,10 +315,10 @@ var b int
 `,
 				fakeInserter{
 					fakeBuilder: fakeBuilder{path: pathYaml},
-					markers:     []file.Marker{file.NewMarkerFor(pathYaml, "-")},
-					codeFragments: file.CodeFragmentsMap{
-						file.NewMarkerFor(pathYaml, "-"): {"1\n", "2\n"},
-						file.NewMarkerFor(pathYaml, "*"): {"3\n", "4\n"},
+					markers:     []Marker{NewMarkerFor(pathYaml, "-")},
+					codeFragments: CodeFragmentsMap{
+						NewMarkerFor(pathYaml, "-"): {"1\n", "2\n"},
+						NewMarkerFor(pathYaml, "*"): {"3\n", "4\n"},
 					},
 				},
 			),
@@ -362,9 +341,9 @@ var b int
 `,
 				fakeInserter{
 					fakeBuilder: fakeBuilder{path: pathYaml},
-					codeFragments: file.CodeFragmentsMap{
-						file.NewMarkerFor(pathYaml, "-"): {"1\n", "2\n"},
-						file.NewMarkerFor(pathYaml, "*"): {"3\n", "4\n"},
+					codeFragments: CodeFragmentsMap{
+						NewMarkerFor(pathYaml, "-"): {"1\n", "2\n"},
+						NewMarkerFor(pathYaml, "*"): {"3\n", "4\n"},
 					},
 				},
 			),
@@ -378,15 +357,15 @@ var b int
 `,
 				fakeInserter{
 					fakeBuilder: fakeBuilder{path: pathYaml},
-					codeFragments: file.CodeFragmentsMap{
-						file.NewMarkerFor(pathYaml, "-"): {},
+					codeFragments: CodeFragmentsMap{
+						NewMarkerFor(pathYaml, "-"): {},
 					},
 				},
 			),
 		)
 
 		DescribeTable("insert strings related errors",
-			func(errType interface{}, files ...file.Builder) {
+			func(errType interface{}, files ...Builder) {
 				Expect(afero.WriteFile(s.fs, path, []byte{}, 0666)).To(Succeed())
 
 				err := s.Execute(files...)
@@ -395,7 +374,7 @@ var b int
 			},
 			Entry("should fail if inserting into a model that fails when a file exists and it does exist",
 				&FileAlreadyExistsError{},
-				fakeTemplate{fakeBuilder: fakeBuilder{path: "filename", ifExistsAction: file.Error}},
+				fakeTemplate{fakeBuilder: fakeBuilder{path: "filename", ifExistsAction: Error}},
 				fakeInserter{fakeBuilder: fakeBuilder{path: "filename"}},
 			),
 			Entry("should fail if inserting into a model with unknown behavior if the file exists and it does exist",
@@ -404,14 +383,6 @@ var b int
 				fakeInserter{fakeBuilder: fakeBuilder{path: "filename"}},
 			),
 		)
-
-		It("should fail if a plugin fails", func() {
-			s.plugins = []model.Plugin{fakePlugin{testErr}}
-
-			err := s.Execute(fakeTemplate{})
-			Expect(err).To(HaveOccurred())
-			Expect(errors.As(err, &PluginError{})).To(BeTrue())
-		})
 
 		Context("write when the file already exists", func() {
 			BeforeEach(func() {
@@ -431,7 +402,7 @@ var b int
 
 			It("should write the file if configured to do so", func() {
 				Expect(s.Execute(fakeTemplate{
-					fakeBuilder: fakeBuilder{path: path, ifExistsAction: file.Overwrite},
+					fakeBuilder: fakeBuilder{path: path, ifExistsAction: OverwriteFile},
 					body:        content,
 				})).To(Succeed())
 
@@ -442,7 +413,7 @@ var b int
 
 			It("should error if configured to do so", func() {
 				err := s.Execute(fakeTemplate{
-					fakeBuilder: fakeBuilder{path: path, ifExistsAction: file.Error},
+					fakeBuilder: fakeBuilder{path: path, ifExistsAction: Error},
 					body:        content,
 				})
 				Expect(err).To(HaveOccurred())
@@ -452,53 +423,41 @@ var b int
 	})
 })
 
-var _ model.Plugin = fakePlugin{}
+var _ Builder = fakeBuilder{}
 
-// fakePlugin is used to mock a model.Plugin in order to test Scaffold
-type fakePlugin struct {
-	err error
-}
-
-// Pipe implements model.Plugin
-func (f fakePlugin) Pipe(_ *model.Universe) error {
-	return f.err
-}
-
-var _ file.Builder = fakeBuilder{}
-
-// fakeBuilder is used to mock a file.Builder
+// fakeBuilder is used to mock a Builder
 type fakeBuilder struct {
 	path           string
-	ifExistsAction file.IfExistsAction
+	ifExistsAction IfExistsAction
 }
 
-// GetPath implements file.Builder
+// GetPath implements Builder
 func (f fakeBuilder) GetPath() string {
 	return f.path
 }
 
-// GetIfExistsAction implements file.Builder
-func (f fakeBuilder) GetIfExistsAction() file.IfExistsAction {
+// GetIfExistsAction implements Builder
+func (f fakeBuilder) GetIfExistsAction() IfExistsAction {
 	return f.ifExistsAction
 }
 
-var _ file.RequiresValidation = fakeRequiresValidation{}
+var _ RequiresValidation = fakeRequiresValidation{}
 
-// fakeRequiresValidation is used to mock a file.RequiresValidation in order to test Scaffold
+// fakeRequiresValidation is used to mock a RequiresValidation in order to test Scaffold
 type fakeRequiresValidation struct {
 	fakeBuilder
 
 	validateErr error
 }
 
-// Validate implements file.RequiresValidation
+// Validate implements RequiresValidation
 func (f fakeRequiresValidation) Validate() error {
 	return f.validateErr
 }
 
-var _ file.Template = fakeTemplate{}
+var _ Template = fakeTemplate{}
 
-// fakeTemplate is used to mock a file.File in order to test Scaffold
+// fakeTemplate is used to mock a File in order to test Scaffold
 type fakeTemplate struct {
 	fakeBuilder
 
@@ -506,12 +465,12 @@ type fakeTemplate struct {
 	err  error
 }
 
-// GetBody implements file.Template
+// GetBody implements Template
 func (f fakeTemplate) GetBody() string {
 	return f.body
 }
 
-// SetTemplateDefaults implements file.Template
+// SetTemplateDefaults implements Template
 func (f fakeTemplate) SetTemplateDefaults() error {
 	if f.err != nil {
 		return f.err
@@ -523,24 +482,24 @@ func (f fakeTemplate) SetTemplateDefaults() error {
 type fakeInserter struct {
 	fakeBuilder
 
-	markers       []file.Marker
-	codeFragments file.CodeFragmentsMap
+	markers       []Marker
+	codeFragments CodeFragmentsMap
 }
 
-// GetMarkers implements file.UpdatableTemplate
-func (f fakeInserter) GetMarkers() []file.Marker {
+// GetMarkers implements Inserter
+func (f fakeInserter) GetMarkers() []Marker {
 	if f.markers != nil {
 		return f.markers
 	}
 
-	markers := make([]file.Marker, 0, len(f.codeFragments))
+	markers := make([]Marker, 0, len(f.codeFragments))
 	for marker := range f.codeFragments {
 		markers = append(markers, marker)
 	}
 	return markers
 }
 
-// GetCodeFragments implements file.UpdatableTemplate
-func (f fakeInserter) GetCodeFragments() file.CodeFragmentsMap {
+// GetCodeFragments implements Inserter
+func (f fakeInserter) GetCodeFragments() CodeFragmentsMap {
 	return f.codeFragments
 }

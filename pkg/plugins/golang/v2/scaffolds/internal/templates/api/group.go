@@ -19,17 +19,17 @@ package api
 import (
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
-var _ file.Template = &Group{}
+var _ machinery.Template = &Group{}
 
 // Group scaffolds the file that defines the registration methods for a certain group and version
 type Group struct {
-	file.TemplateMixin
-	file.MultiGroupMixin
-	file.BoilerplateMixin
-	file.ResourceMixin
+	machinery.TemplateMixin
+	machinery.MultiGroupMixin
+	machinery.BoilerplateMixin
+	machinery.ResourceMixin
 }
 
 // SetTemplateDefaults implements file.Template

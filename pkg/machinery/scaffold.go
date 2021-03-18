@@ -29,8 +29,6 @@ import (
 	"golang.org/x/tools/imports"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 )
 
@@ -50,9 +48,6 @@ var options = imports.Options{
 
 // Scaffold uses templates to scaffold new files
 type Scaffold struct {
-	// plugins is the list of plugins we should allow to transform our generated scaffolding
-	plugins []model.Plugin
-
 	// fs allows to mock the file system for tests
 	fs afero.Fs
 
@@ -60,10 +55,8 @@ type Scaffold struct {
 	dirPerm  os.FileMode
 	filePerm os.FileMode
 
-	// fields to create the universe
-	config      config.Config
-	boilerplate string
-	resource    *resource.Resource
+	// injector is used to provide several fields to the templates
+	injector injector
 }
 
 // ScaffoldOption allows to provide optional arguments to the Scaffold
@@ -84,13 +77,6 @@ func NewScaffold(fs Filesystem, options ...ScaffoldOption) *Scaffold {
 	return s
 }
 
-// WithPlugins sets the plugins to be used
-func WithPlugins(plugins ...model.Plugin) ScaffoldOption {
-	return func(s *Scaffold) {
-		s.plugins = append(s.plugins, plugins...)
-	}
-}
-
 // WithDirectoryPermissions sets the permissions for new directories
 func WithDirectoryPermissions(dirPerm os.FileMode) ScaffoldOption {
 	return func(s *Scaffold) {
@@ -108,7 +94,7 @@ func WithFilePermissions(filePerm os.FileMode) ScaffoldOption {
 // WithConfig provides the project configuration to the Scaffold
 func WithConfig(cfg config.Config) ScaffoldOption {
 	return func(s *Scaffold) {
-		s.config = cfg
+		s.injector.config = cfg
 
 		if cfg != nil && cfg.GetRepository() != "" {
 			imports.LocalPrefix = cfg.GetRepository()
@@ -119,67 +105,50 @@ func WithConfig(cfg config.Config) ScaffoldOption {
 // WithBoilerplate provides the boilerplate to the Scaffold
 func WithBoilerplate(boilerplate string) ScaffoldOption {
 	return func(s *Scaffold) {
-		s.boilerplate = boilerplate
+		s.injector.boilerplate = boilerplate
 	}
 }
 
 // WithResource provides the resource to the Scaffold
 func WithResource(resource *resource.Resource) ScaffoldOption {
 	return func(s *Scaffold) {
-		s.resource = resource
+		s.injector.resource = resource
 	}
 }
 
 // Execute writes to disk the provided files
-func (s *Scaffold) Execute(files ...file.Builder) error {
-	// Initialize the universe
-	universe := &model.Universe{
-		Config:      s.config,
-		Boilerplate: s.boilerplate,
-		Resource:    s.resource,
-		Files:       make(map[string]*file.File, len(files)),
-	}
+func (s *Scaffold) Execute(builders ...Builder) error {
+	// Initialize the files
+	files := make(map[string]*File, len(builders))
 
-	// Set the repo as the local prefix so that it knows how to group imports
-	if universe.Config != nil {
-		imports.LocalPrefix = universe.Config.GetRepository()
-	}
-
-	for _, f := range files {
+	for _, builder := range builders {
 		// Inject common fields
-		universe.InjectInto(f)
+		s.injector.injectInto(builder)
 
 		// Validate file builders
-		if reqValFile, requiresValidation := f.(file.RequiresValidation); requiresValidation {
-			if err := reqValFile.Validate(); err != nil {
+		if reqValBuilder, requiresValidation := builder.(RequiresValidation); requiresValidation {
+			if err := reqValBuilder.Validate(); err != nil {
 				return ValidateError{err}
 			}
 		}
 
 		// Build models for Template builders
-		if t, isTemplate := f.(file.Template); isTemplate {
-			if err := s.buildFileModel(t, universe.Files); err != nil {
+		if t, isTemplate := builder.(Template); isTemplate {
+			if err := s.buildFileModel(t, files); err != nil {
 				return err
 			}
 		}
 
 		// Build models for Inserter builders
-		if i, isInserter := f.(file.Inserter); isInserter {
-			if err := s.updateFileModel(i, universe.Files); err != nil {
+		if i, isInserter := builder.(Inserter); isInserter {
+			if err := s.updateFileModel(i, files); err != nil {
 				return err
 			}
 		}
 	}
 
-	// Execute plugins
-	for _, plugin := range s.plugins {
-		if err := plugin.Pipe(universe); err != nil {
-			return PluginError{err}
-		}
-	}
-
 	// Persist the files to disk
-	for _, f := range universe.Files {
+	for _, f := range files {
 		if err := s.writeFile(f); err != nil {
 			return err
 		}
@@ -189,7 +158,7 @@ func (s *Scaffold) Execute(files ...file.Builder) error {
 }
 
 // buildFileModel scaffolds a single file
-func (Scaffold) buildFileModel(t file.Template, models map[string]*file.File) error {
+func (Scaffold) buildFileModel(t Template, models map[string]*File) error {
 	// Set the template default values
 	if err := t.SetTemplateDefaults(); err != nil {
 		return SetTemplateDefaultsError{err}
@@ -200,11 +169,11 @@ func (Scaffold) buildFileModel(t file.Template, models map[string]*file.File) er
 	// Handle already existing models
 	if _, found := models[path]; found {
 		switch t.GetIfExistsAction() {
-		case file.Skip:
+		case SkipFile:
 			return nil
-		case file.Error:
+		case Error:
 			return ModelAlreadyExistsError{path}
-		case file.Overwrite:
+		case OverwriteFile:
 		default:
 			return UnknownIfExistsActionError{path, t.GetIfExistsAction()}
 		}
@@ -215,7 +184,7 @@ func (Scaffold) buildFileModel(t file.Template, models map[string]*file.File) er
 		return err
 	}
 
-	models[path] = &file.File{
+	models[path] = &File{
 		Path:           path,
 		Contents:       string(b),
 		IfExistsAction: t.GetIfExistsAction(),
@@ -224,13 +193,13 @@ func (Scaffold) buildFileModel(t file.Template, models map[string]*file.File) er
 }
 
 // doTemplate executes the template for a file using the input
-func doTemplate(t file.Template) ([]byte, error) {
+func doTemplate(t Template) ([]byte, error) {
 	// Create a new template.Template using the type of the Template as the name
 	temp := template.New(fmt.Sprintf("%T", t))
 
 	// Set the function map to be used
-	fm := file.DefaultFuncMap()
-	if templateWithFuncMap, hasCustomFuncMap := t.(file.UseCustomFuncMap); hasCustomFuncMap {
+	fm := DefaultFuncMap()
+	if templateWithFuncMap, hasCustomFuncMap := t.(UseCustomFuncMap); hasCustomFuncMap {
 		fm = templateWithFuncMap.GetFuncMap()
 	}
 	temp.Funcs(fm)
@@ -240,6 +209,7 @@ func doTemplate(t file.Template) ([]byte, error) {
 		return nil, err
 	}
 
+	// Execute the template
 	out := &bytes.Buffer{}
 	if err := temp.Execute(out, t); err != nil {
 		return nil, err
@@ -259,7 +229,7 @@ func doTemplate(t file.Template) ([]byte, error) {
 }
 
 // updateFileModel updates a single file
-func (s Scaffold) updateFileModel(i file.Inserter, models map[string]*file.File) error {
+func (s Scaffold) updateFileModel(i Inserter, models map[string]*File) error {
 	m, err := s.loadPreviousModel(i, models)
 	if err != nil {
 		return err
@@ -294,13 +264,13 @@ func (s Scaffold) updateFileModel(i file.Inserter, models map[string]*file.File)
 	}
 
 	m.Contents = string(formattedContent)
-	m.IfExistsAction = file.Overwrite
+	m.IfExistsAction = OverwriteFile
 	models[m.Path] = m
 	return nil
 }
 
 // loadPreviousModel gets the previous model from the models map or the actual file
-func (s Scaffold) loadPreviousModel(i file.Inserter, models map[string]*file.File) (*file.File, error) {
+func (s Scaffold) loadPreviousModel(i Inserter, models map[string]*File) (*File, error) {
 	path := i.GetPath()
 
 	// Lets see if we already have a model for this file
@@ -318,17 +288,17 @@ func (s Scaffold) loadPreviousModel(i file.Inserter, models map[string]*file.Fil
 
 		// If both a model and a file are found, check which has preference
 		switch m.IfExistsAction {
-		case file.Skip:
+		case SkipFile:
 			// File has preference
 			fromFile, err := s.loadModelFromFile(path)
 			if err != nil {
 				return m, nil
 			}
 			return fromFile, nil
-		case file.Error:
+		case Error:
 			// Writing will result in an error, so we can return error now
 			return nil, FileAlreadyExistsError{path}
-		case file.Overwrite:
+		case OverwriteFile:
 			// Model has preference
 			return m, nil
 		default:
@@ -341,7 +311,7 @@ func (s Scaffold) loadPreviousModel(i file.Inserter, models map[string]*file.Fil
 }
 
 // loadModelFromFile gets the previous model from the actual file
-func (s Scaffold) loadModelFromFile(path string) (f *file.File, err error) {
+func (s Scaffold) loadModelFromFile(path string) (f *File, err error) {
 	reader, err := s.fs.Open(path)
 	if err != nil {
 		return nil, OpenFileError{err}
@@ -357,11 +327,11 @@ func (s Scaffold) loadModelFromFile(path string) (f *file.File, err error) {
 		return nil, ReadFileError{err}
 	}
 
-	return &file.File{Path: path, Contents: string(content)}, nil
+	return &File{Path: path, Contents: string(content)}, nil
 }
 
 // getValidCodeFragments obtains the code fragments from a file.Inserter
-func getValidCodeFragments(i file.Inserter) file.CodeFragmentsMap {
+func getValidCodeFragments(i Inserter) CodeFragmentsMap {
 	// Get the code fragments
 	codeFragments := i.GetCodeFragments()
 
@@ -385,7 +355,7 @@ func getValidCodeFragments(i file.Inserter) file.CodeFragmentsMap {
 
 // filterExistingValues removes the single-line values that already exists
 // TODO: Add support for multi-line duplicate values
-func filterExistingValues(content string, codeFragmentsMap file.CodeFragmentsMap) error {
+func filterExistingValues(content string, codeFragmentsMap CodeFragmentsMap) error {
 	scanner := bufio.NewScanner(strings.NewReader(content))
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -406,7 +376,7 @@ func filterExistingValues(content string, codeFragmentsMap file.CodeFragmentsMap
 	return nil
 }
 
-func insertStrings(content string, codeFragmentsMap file.CodeFragmentsMap) ([]byte, error) {
+func insertStrings(content string, codeFragmentsMap CodeFragmentsMap) ([]byte, error) {
 	out := new(bytes.Buffer)
 
 	scanner := bufio.NewScanner(strings.NewReader(content))
@@ -430,7 +400,7 @@ func insertStrings(content string, codeFragmentsMap file.CodeFragmentsMap) ([]by
 	return out.Bytes(), nil
 }
 
-func (s Scaffold) writeFile(f *file.File) (err error) {
+func (s Scaffold) writeFile(f *File) (err error) {
 	// Check if the file to write already exists
 	exists, err := afero.Exists(s.fs, f.Path)
 	if err != nil {
@@ -438,12 +408,12 @@ func (s Scaffold) writeFile(f *file.File) (err error) {
 	}
 	if exists {
 		switch f.IfExistsAction {
-		case file.Overwrite:
+		case OverwriteFile:
 			// By not returning, the file is written as if it didn't exist
-		case file.Skip:
+		case SkipFile:
 			// By returning nil, the file is not written but the process will carry on
 			return nil
-		case file.Error:
+		case Error:
 			// By returning an error, the file is not written and the process will fail
 			return FileAlreadyExistsError{f.Path}
 		}
