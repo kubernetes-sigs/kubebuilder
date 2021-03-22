@@ -61,13 +61,12 @@ type Options struct {
 	CRDVersion string
 	// WebhookVersion is the {Validating,Mutating}WebhookConfiguration API version that will be used for the resource.
 	WebhookVersion string
-
-	// Namespaced is true if the resource should be namespaced.
-	Namespaced bool
-
 	// Spoke refers to the spoke version associated with the hub.
 	// TODO: modify this to be slice, to allow multiple spoke versions in the same command.
 	Spoke string
+
+	// Namespaced is true if the resource should be namespaced.
+	Namespaced bool
 
 	// Flags that define which parts should be scaffolded
 	DoAPI        bool

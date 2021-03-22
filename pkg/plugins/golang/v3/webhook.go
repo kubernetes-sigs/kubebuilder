@@ -93,6 +93,8 @@ func (p *createWebhookSubcommand) InjectConfig(c config.Config) error {
 
 func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 	p.resource = res
+
+	// by default, since the templates for the API have to be scaffolded, setting this to true.
 	p.options.DoScaffold = true
 
 	p.options.UpdateResource(p.resource, p.config)
@@ -109,13 +111,14 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 	}
 
 	// Either defaulting, validating or conversion falgs need to be present, or the spoke version can be specified
-	if !p.resource.HasDefaultingWebhook() && !p.resource.HasValidationWebhook() && !p.resource.HasConversionWebhook() && p.options.Spoke == "" {
+	if !p.resource.HasDefaultingWebhook() && !p.resource.HasValidationWebhook() &&
+		!p.resource.HasConversionWebhook() && p.options.Spoke == "" {
 		return fmt.Errorf("%s create webhook requires at least one of --defaulting,"+
 			" --programmatic-validation and --conversion to be true. If using conversion webhook"+
 			"you can specify the spoke versions in the command.", p.commandName)
 	}
 
-	// check if resource exist to create webhook. Perform this check only when version
+	// check if resource exist to create webhook. Perform this check only when resource with the specified version
 	// is to be scaffolded.
 	if p.options.DoScaffold {
 		if r, err := p.config.GetResource(p.resource.GVK); err != nil {
@@ -134,7 +137,7 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 }
 
 func (p *createWebhookSubcommand) Scaffold(fs machinery.Filesystem) error {
-	scaffolder := scaffolds.NewWebhookScaffolder(p.config, *p.resource, p.force, p.options.DoScaffold, p.options.Spok)
+	scaffolder := scaffolds.NewWebhookScaffolder(p.config, *p.resource, p.force, p.options.DoScaffold, p.options.Spoke)
 	scaffolder.InjectFS(fs)
 	return scaffolder.Scaffold()
 }

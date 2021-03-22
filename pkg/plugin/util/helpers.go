@@ -55,9 +55,7 @@ func categorizeHubAndSpokes(resources []resource.Resource) (hub string, spokes [
 				return "", nil, fmt.Errorf("multiples hubs are not allowed, found %s and %s", hub, res.Version)
 			}
 			hub = res.Version
-			for _, s := range res.Webhooks.Spokes {
-				spokes = append(spokes, s)
-			}
+			spokes = append(spokes, res.Webhooks.Spokes...)
 		}
 	}
 	return hub, spokes, nil

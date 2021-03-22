@@ -81,7 +81,8 @@ func (webhooks *Webhooks) Update(other *Webhooks) error {
 	// Update conversion.
 	webhooks.Conversion = webhooks.Conversion || other.Conversion
 
-	// Update spokes for the resource.
+	// Update spokes for the resource. Append the spoke versions
+	// to the existing version list.
 	if len(other.Spokes) != 0 {
 		if webhooks.Spokes == nil {
 			webhooks.Spokes = make([]string, 0)

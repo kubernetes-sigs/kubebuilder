@@ -23,6 +23,8 @@ resources:
   version: v1
   webhooks:
     defaulting: true
+    spokes:
+    - ""
     validation: true
     webhookVersion: v1
 - api:
@@ -35,8 +37,17 @@ resources:
   path: sigs.k8s.io/kubebuilder/testdata/project-v3-config/api/v1
   version: v1
   webhooks:
-    conversion: true
+    spokes:
+    - v2
     webhookVersion: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: testproject.org
+  group: crew
+  kind: FirstMate
+  path: sigs.k8s.io/kubebuilder/testdata/project-v3-config/api/v2
+  version: v2
 - api:
     crdVersion: v1
   controller: true
@@ -47,6 +58,8 @@ resources:
   version: v1
   webhooks:
     defaulting: true
+    spokes:
+    - ""
     webhookVersion: v1
 - controller: true
   domain: testproject.org

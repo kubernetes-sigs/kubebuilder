@@ -59,7 +59,15 @@ function scaffold_test_project {
     else
       $kb create api --plugins="go/v3,declarative" --group crew --version v1 --kind FirstMate --controller=true --resource=true --make=false
     fi
-    $kb create webhook --group crew --version v1 --kind FirstMate --conversion
+
+    if [ $project == "project-v3" ] || [ $project == "project-v3-config" ]; then
+      header_text 'Creating APIs for conversion webhook ...'
+      $kb create api --group crew --version v2 --kind FirstMate --controller=false --resource=true --make=false
+      $kb create webhook --group crew --version v1 --kind FirstMate --spoke=v2
+      sed -i '/subresource:status/a \/\/ +kubebuilder:storageversion' api/v1/firstmate_types.go # specify storage version for controller-gen
+    else
+      $kb create webhook --group crew --version v1 --kind FirstMate --conversion
+    fi
 
     if [ $project == "project-v3" ]; then
       $kb create api --group crew --version v1 --kind Admiral --plural=admirales --controller=true --resource=true --namespaced=false --make=false

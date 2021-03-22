@@ -32,6 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	crewv1 "sigs.k8s.io/kubebuilder/testdata/project-v3-config/api/v1"
+	crewv2 "sigs.k8s.io/kubebuilder/testdata/project-v3-config/api/v2"
 	"sigs.k8s.io/kubebuilder/testdata/project-v3-config/controllers"
 	//+kubebuilder:scaffold:imports
 )
@@ -45,6 +46,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(crewv1.AddToScheme(scheme))
+	utilruntime.Must(crewv2.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 

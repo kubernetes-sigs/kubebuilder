@@ -47,7 +47,7 @@ var _ = Describe("hasDifferentAPIVersion", func() {
 
 var _ = Describe("CategorizeHubAndSpokes", func() {
 
-	It("check if the right hub and spoke verisons are restured", func() {
+	It("check if the right hub and spoke versions are restured", func() {
 		res := []resource.Resource{{
 			GVK: resource.GVK{
 				Group:   "group",
@@ -64,7 +64,7 @@ var _ = Describe("CategorizeHubAndSpokes", func() {
 		Expect(len(spoke)).To(BeEquivalentTo(2))
 	})
 
-	It("check if error is spoke and hub are nil when not present", func() {
+	It("check the case where spoke and hub are nil when not present in resource", func() {
 		res := []resource.Resource{{
 			GVK: resource.GVK{
 				Group:   "group",

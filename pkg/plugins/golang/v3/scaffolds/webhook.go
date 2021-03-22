@@ -50,7 +50,8 @@ type webhookScaffolder struct {
 }
 
 // NewWebhookScaffolder returns a new Scaffolder for v2 webhook creation operations
-func NewWebhookScaffolder(config config.Config, resource resource.Resource, force bool, doScaffold bool, spoke string) plugins.Scaffolder {
+func NewWebhookScaffolder(config config.Config, resource resource.Resource, force bool,
+	doScaffold bool, spoke string) plugins.Scaffolder {
 	return &webhookScaffolder{
 		config:     config,
 		resource:   resource,
@@ -123,9 +124,10 @@ func (s *webhookScaffolder) Scaffold() error {
 		return err
 	}
 
+	// if spoke is specified then scaffold conversion webhook templates for the user.
 	if hasSpoke && s.doScaffold {
 		if err := scaffold.Execute(
-			&api.Conversion{Hub: true, Version: s.resource.Webhooks.WebhookVersion},
+			&api.Conversion{Hub: true, Version: s.resource.Version},
 			&api.Conversion{Spoke: true, Version: s.spoke},
 		); err != nil {
 			return err
@@ -134,7 +136,8 @@ func (s *webhookScaffolder) Scaffold() error {
 
 	if doConversion && !hasSpoke {
 		fmt.Println(`Webhook server has been set up for you.
-You need to implement the conversion.Hub and conversion.Convertible interfaces for your CRD types.`)
+You need to implement the conversion.Hub and conversion.Convertible interfaces for your CRD types. 
+You can also specify hub and spoke versions in the command to scaffold Convertible and Hub interfaces `)
 	}
 
 	// TODO: Add test suite for conversion webhook after #1664 has been merged & conversion tests supported in envtest.

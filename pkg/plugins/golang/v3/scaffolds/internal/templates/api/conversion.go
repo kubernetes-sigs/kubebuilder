@@ -19,26 +19,22 @@ package api
 import (
 	"fmt"
 	"path/filepath"
-	"strings"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
-var _ file.Template = &Conversion{}
+var _ machinery.Template = &Conversion{}
 
 // Conversion scaffolds the methods of Hub interface for conversion webhook
 type Conversion struct {
-	file.TemplateMixin
-	file.BoilerplateMixin
-	file.ResourceMixin
-
-	// Is the Group domain for the Resource replacing '.' with '-'
-	QualifiedGroupWithDash string
+	machinery.TemplateMixin
+	machinery.BoilerplateMixin
+	machinery.ResourceMixin
 
 	// Version refers to the conversion webhook versions for hub and spoke.
 	Version string
 
-	file.MultiGroupMixin
+	machinery.MultiGroupMixin
 	Force bool
 	// Hub and spoke indicate the template to be scaffolded
 	Hub   bool
@@ -72,12 +68,10 @@ func (c *Conversion) SetTemplateDefaults() error {
 	}
 
 	if c.Force {
-		c.IfExistsAction = file.Overwrite
+		c.IfExistsAction = machinery.OverwriteFile
 	} else {
-		c.IfExistsAction = file.Error
+		c.IfExistsAction = machinery.Error
 	}
-
-	c.QualifiedGroupWithDash = strings.Replace(c.Resource.QualifiedGroup(), ".", "-", -1)
 
 	return nil
 }
