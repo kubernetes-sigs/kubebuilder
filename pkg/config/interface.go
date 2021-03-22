@@ -86,6 +86,8 @@ type Config interface {
 	AddResource(res resource.Resource) error
 	// UpdateResource adds the provided resource if it was not present, modifies it if it was already present.
 	UpdateResource(res resource.Resource) error
+	// ListResourceswithGK list all the resources with the same GK as the GVK provided
+	ListResourceswithGK(gvk resource.GVK) []resource.Resource
 
 	// HasGroup checks if the provided group is the same as any of the tracked resources.
 	HasGroup(group string) bool

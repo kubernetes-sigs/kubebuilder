@@ -178,6 +178,15 @@ var _ = Describe("Webhooks", func() {
 				Expect(webhook.Update(&other)).To(Succeed())
 				Expect(webhook.Conversion).To(BeFalse())
 			})
+
+			It("should update the spokes in conversion webhook", func() {
+				webhook = Webhooks{}
+				other = Webhooks{
+					Spokes: []string{"v1", "v2"},
+				}
+				Expect(webhook.Update(&other)).To(Succeed())
+				Expect(len(webhook.Spokes)).To(BeEquivalentTo(2))
+			})
 		})
 	})
 
@@ -201,6 +210,13 @@ var _ = Describe("Webhooks", func() {
 				Defaulting:     false,
 				Validation:     false,
 				Conversion:     true,
+			}
+			conversionConfig = Webhooks{
+				WebhookVersion: "v1",
+				Defaulting:     false,
+				Validation:     false,
+				Conversion:     false,
+				Spokes:         []string{"v1"},
 			}
 			defaultingAndValidation = Webhooks{
 				WebhookVersion: "v1",
@@ -237,6 +253,7 @@ var _ = Describe("Webhooks", func() {
 			Entry("defaulting", defaulting),
 			Entry("validation", validation),
 			Entry("conversion", conversion),
+			Entry("conversion", conversionConfig),
 			Entry("defaulting and validation", defaultingAndValidation),
 			Entry("defaulting and conversion", defaultingAndConversion),
 			Entry("validation and conversion", validationAndConversion),

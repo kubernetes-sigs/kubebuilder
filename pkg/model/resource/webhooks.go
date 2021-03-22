@@ -33,6 +33,10 @@ type Webhooks struct {
 
 	// Conversion specifies if a conversion webhook is associated to the resource.
 	Conversion bool `json:"conversion,omitempty"`
+
+	// Spoke contains the spoke versions associated with the resource. If this is not
+	// empty, then it means that this resource is the hub
+	Spokes []string `json:"spokes,omitempty"`
 }
 
 // Validate checks that the Webhooks is valid.
@@ -76,6 +80,14 @@ func (webhooks *Webhooks) Update(other *Webhooks) error {
 
 	// Update conversion.
 	webhooks.Conversion = webhooks.Conversion || other.Conversion
+
+	// Update spokes for the resource.
+	if len(other.Spokes) != 0 {
+		if webhooks.Spokes == nil {
+			webhooks.Spokes = make([]string, 0)
+		}
+		webhooks.Spokes = append(webhooks.Spokes, other.Spokes...)
+	}
 
 	return nil
 }

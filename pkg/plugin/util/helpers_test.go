@@ -22,6 +22,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
+	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 )
 
 func TestPlugin(t *testing.T) {
@@ -42,4 +43,67 @@ var _ = Describe("hasDifferentAPIVersion", func() {
 		Entry("for a list of several different versions", []string{"v2", "v3"}),
 		Entry("for a list of several versions containing that version", []string{"v1", "v2"}),
 	)
+})
+
+var _ = Describe("CategorizeHubAndSpokes", func() {
+
+	It("check if the right hub and spoke verisons are restured", func() {
+		res := []resource.Resource{{
+			GVK: resource.GVK{
+				Group:   "group",
+				Version: "v1",
+				Kind:    "kind",
+			},
+			Webhooks: &resource.Webhooks{
+				Spokes: []string{"v2", "v3"},
+			},
+		}}
+		hub, spoke, err := categorizeHubAndSpokes(res)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(hub).To(BeEquivalentTo("v1"))
+		Expect(len(spoke)).To(BeEquivalentTo(2))
+	})
+
+	It("check if error is spoke and hub are nil when not present", func() {
+		res := []resource.Resource{{
+			GVK: resource.GVK{
+				Group:   "group",
+				Version: "v1",
+				Kind:    "kind",
+			},
+		}}
+		hub, spoke, err := categorizeHubAndSpokes(res)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(hub).To(BeEquivalentTo(""))
+		Expect(len(spoke)).To(BeEquivalentTo(0))
+	})
+
+	It("check if error occurs when multiple hubs are found", func() {
+		res := []resource.Resource{{
+			GVK: resource.GVK{
+				Group:   "group",
+				Version: "v1",
+				Kind:    "kind",
+			},
+			Webhooks: &resource.Webhooks{
+				Spokes: []string{"v2", "v3"},
+			},
+		},
+			{
+				GVK: resource.GVK{
+					Group:   "group",
+					Version: "v6",
+					Kind:    "kind",
+				},
+				Webhooks: &resource.Webhooks{
+					Spokes: []string{"v4", "v5"},
+				},
+			},
+		}
+		hub, spoke, err := categorizeHubAndSpokes(res)
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("multiples hubs are not allowed"))
+		Expect(hub).To(BeEquivalentTo(""))
+		Expect(len(spoke)).To(BeEquivalentTo(0))
+	})
 })

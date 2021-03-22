@@ -65,12 +65,20 @@ type Options struct {
 	// Namespaced is true if the resource should be namespaced.
 	Namespaced bool
 
+	// Spoke refers to the spoke version associated with the hub.
+	// TODO: modify this to be slice, to allow multiple spoke versions in the same command.
+	Spoke string
+
 	// Flags that define which parts should be scaffolded
 	DoAPI        bool
 	DoController bool
 	DoDefaulting bool
 	DoValidation bool
 	DoConversion bool
+	// doScaffoldHub indicates if the templates for the provided version are to be scaffolded or not.
+	// By default it is set to true. In cases of conversion webhooks, where the convertible template
+	// for the hub version is already scaffolded, this is made false.
+	DoScaffold bool
 }
 
 // UpdateResource updates the provided resource with the options
@@ -91,7 +99,7 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 		res.Controller = true
 	}
 
-	if opts.DoDefaulting || opts.DoValidation || opts.DoConversion {
+	if opts.DoDefaulting || opts.DoValidation || opts.DoConversion || opts.Spoke != "" {
 		res.Path = resource.APIPackagePath(c.GetRepository(), res.Group, res.Version, c.IsMultiGroup())
 		res.Webhooks.WebhookVersion = opts.WebhookVersion
 		if opts.DoDefaulting {

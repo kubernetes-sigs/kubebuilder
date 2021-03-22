@@ -271,6 +271,18 @@ func (c cfg) HasGroup(group string) bool {
 	return false
 }
 
+// ListResourceswithGK implements config.Config
+func (c cfg) ListResourceswithGK(gvk resource.GVK) []resource.Resource {
+	resources := make([]resource.Resource, 0)
+
+	for _, r := range c.Resources {
+		if r.Group == gvk.Group && r.Kind == gvk.Kind {
+			resources = append(resources, r)
+		}
+	}
+	return resources
+}
+
 // ListCRDVersions implements config.Config
 func (c cfg) ListCRDVersions() []string {
 	// Make a map to remove duplicates

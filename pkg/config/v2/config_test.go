@@ -225,6 +225,25 @@ var _ = Describe("cfg", func() {
 			Expect(c.HasGroup("other-group")).To(BeFalse())
 		})
 
+		It("ListResourceswithGK should be empty since there are no resources with specified GK", func() {
+			versions := c.ListResourceswithGK(resource.GVK{
+				Group: "group",
+				Kind:  "Kind",
+			})
+			Expect(versions).To(BeEmpty())
+		})
+
+		It("ListResourceswithGK should list all the resources with the specified GK", func() {
+			c.Gvks = append(c.Gvks, res.GVK)
+			versions := c.ListResourceswithGK(resource.GVK{
+				Group: "group",
+				Kind:  "Kind",
+			})
+			Expect(versions).NotTo(BeEmpty())
+			Expect(len(versions)).To(BeEquivalentTo(1))
+			Expect(versions[0]).To(BeEquivalentTo(res))
+		})
+
 		It("ListCRDVersions should return an empty list", func() {
 			Expect(c.ListCRDVersions()).To(BeEmpty())
 		})

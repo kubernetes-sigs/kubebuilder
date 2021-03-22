@@ -225,6 +225,20 @@ func (c cfg) ListCRDVersions() []string {
 	return make([]string, 0)
 }
 
+// ListResourceswithGK implements config.Config
+func (c cfg) ListResourceswithGK(gvk resource.GVK) []resource.Resource {
+	resources := make([]resource.Resource, 0)
+
+	for _, r := range c.Gvks {
+		if r.Group == gvk.Group && r.Kind == gvk.Kind {
+			resources = append(resources, resource.Resource{
+				GVK: r,
+			})
+		}
+	}
+	return resources
+}
+
 // ListWebhookVersions implements config.Config
 func (c cfg) ListWebhookVersions() []string {
 	return make([]string, 0)

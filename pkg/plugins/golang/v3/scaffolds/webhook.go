@@ -43,14 +43,20 @@ type webhookScaffolder struct {
 
 	// force indicates whether to scaffold controller files even if it exists or not
 	force bool
+	// doScaffold indicates wheather the templates for the version need to be scaffolded
+	doScaffold bool
+	// spoke refers to the spoke version to be scaffolded
+	spoke string
 }
 
 // NewWebhookScaffolder returns a new Scaffolder for v2 webhook creation operations
-func NewWebhookScaffolder(config config.Config, resource resource.Resource, force bool) plugins.Scaffolder {
+func NewWebhookScaffolder(config config.Config, resource resource.Resource, force bool, doScaffold bool, spoke string) plugins.Scaffolder {
 	return &webhookScaffolder{
-		config:   config,
-		resource: resource,
-		force:    force,
+		config:     config,
+		resource:   resource,
+		force:      force,
+		doScaffold: doScaffold,
+		spoke:      spoke,
 	}
 }
 
@@ -80,9 +86,29 @@ func (s *webhookScaffolder) Scaffold() error {
 	doDefaulting := s.resource.HasDefaultingWebhook()
 	doValidation := s.resource.HasValidationWebhook()
 	doConversion := s.resource.HasConversionWebhook()
+	hasSpoke := s.spoke != ""
 
+	// add the spoke version to the resource, and update the
+	// resource in the config.
+	if s.resource.Webhooks == nil {
+		s.resource.Webhooks = &resource.Webhooks{}
+	}
+	s.resource.Webhooks.Spokes = append(s.resource.Webhooks.Spokes, s.spoke)
 	if err := s.config.UpdateResource(s.resource); err != nil {
 		return fmt.Errorf("error updating resource: %w", err)
+	}
+
+	// if doScaffold is set to false, then scaffold only the spoke and return, since
+	// rest of the templates are already scaffolded.
+	if hasSpoke {
+		if !s.doScaffold {
+			if err := scaffold.Execute(
+				&api.Conversion{Spoke: true, Version: s.spoke},
+			); err != nil {
+				return err
+			}
+			return nil
+		}
 	}
 
 	if err := scaffold.Execute(
@@ -97,7 +123,16 @@ func (s *webhookScaffolder) Scaffold() error {
 		return err
 	}
 
-	if doConversion {
+	if hasSpoke && s.doScaffold {
+		if err := scaffold.Execute(
+			&api.Conversion{Hub: true, Version: s.resource.Webhooks.WebhookVersion},
+			&api.Conversion{Spoke: true, Version: s.spoke},
+		); err != nil {
+			return err
+		}
+	}
+
+	if doConversion && !hasSpoke {
 		fmt.Println(`Webhook server has been set up for you.
 You need to implement the conversion.Hub and conversion.Convertible interfaces for your CRD types.`)
 	}
