@@ -120,10 +120,10 @@ func New(options ...Option) (*CLI, error) {
 func newCLI(options ...Option) (*CLI, error) {
 	// Default CLI options.
 	c := &CLI{
-		commandName:           "kubebuilder",
-		plugins:               make(map[string]plugin.Plugin),
-		defaultPlugins:        make(map[config.Version][]string),
-		fs:                    machinery.Filesystem{FS: afero.NewOsFs()},
+		commandName:    "kubebuilder",
+		plugins:        make(map[string]plugin.Plugin),
+		defaultPlugins: make(map[config.Version][]string),
+		fs:             machinery.Filesystem{FS: afero.NewOsFs()},
 	}
 
 	// Apply provided options.

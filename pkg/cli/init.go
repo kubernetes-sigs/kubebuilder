@@ -104,14 +104,3 @@ func (c CLI) getAvailableProjectVersions() (projectVersions []string) {
 	sort.Strings(projectVersions)
 	return projectVersions
 }
-
-func (c CLI) getAvailablePlugins() (pluginKeys []string) {
-	for key, p := range c.plugins {
-		// Only return non-deprecated plugins.
-		if _, isDeprecated := p.(plugin.Deprecated); !isDeprecated {
-			pluginKeys = append(pluginKeys, strconv.Quote(key))
-		}
-	}
-	sort.Strings(pluginKeys)
-	return pluginKeys
-}
