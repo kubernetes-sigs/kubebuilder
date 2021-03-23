@@ -19,26 +19,32 @@ export PATH=$kb_root_dir/bin:$PATH
 fetch_tools
 install_kind
 
-# Creates a kind cluster given a k8s version and a cluster name.
+# Creates a named kind cluster given a k8s version.
+# The KIND_CLUSTER variable defines the cluster name and
+# is expected to be defined in the calling environment.
 #
 # Usage:
 #
-#   create_cluster <k8s version> <kind cluster name>
+#   export KIND_CLUSTER=<kind cluster name>
+#   create_cluster <k8s version>
 function create_cluster {
-  if ! kind get clusters | grep -q $2 ; then
-    kind create cluster -v 4 --name $2 --retain --wait=1m --config $(dirname "$0")/kind-config.yaml --image=kindest/node:$1
+  : ${KIND_CLUSTER:?"KIND_CLUSTER must be set"}
+  if ! kind get clusters | grep -q $KIND_CLUSTER ; then
+    kind create cluster -v 4 --name $KIND_CLUSTER --retain --wait=1m --config $(dirname "$0")/kind-config.yaml --image=kindest/node:$1
   fi
 }
 
-# Deletes a kind cluster by cluster name. The kind cluster needs to be defined as a variable instead of an argument
-# so that this function can be used with `trap`
+# Deletes a kind cluster by cluster name.
+# The KIND_CLUSTER variable defines the cluster name and
+# is expected to be defined in the calling environment.
 #
 # Usage:
 #
-#   kind_cluster=<kind cluster name>
+#   export KIND_CLUSTER=<kind cluster name>
 #   delete_cluster
 function delete_cluster {
-    kind delete cluster --name $kind_cluster
+  : ${KIND_CLUSTER:?"KIND_CLUSTER must be set"}
+  kind delete cluster --name $KIND_CLUSTER
 }
 
 function test_cluster {

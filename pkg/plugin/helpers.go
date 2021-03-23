@@ -19,23 +19,16 @@ package plugin
 import (
 	"fmt"
 	"path"
+	"sort"
 	"strings"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/internal/validation"
 )
 
-// Key returns a unique identifying string for a plugin's name and version.
-func Key(name, version string) string {
-	if version == "" {
-		return name
-	}
-	return path.Join(name, "v"+strings.TrimLeft(version, "v"))
-}
-
 // KeyFor returns a Plugin's unique identifying string.
 func KeyFor(p Plugin) string {
-	return Key(p.Name(), p.Version().String())
+	return path.Join(p.Name(), p.Version().String())
 }
 
 // SplitKey returns a name and version for a plugin key.
@@ -49,6 +42,7 @@ func SplitKey(key string) (string, string) {
 
 // GetShortName returns plugin's short name (name before domain) if name
 // is fully qualified (has a domain suffix), otherwise GetShortName returns name.
+// Deprecated
 func GetShortName(name string) string {
 	return strings.SplitN(name, ".", 2)[0]
 }
@@ -96,7 +90,7 @@ func validateName(name string) error {
 	return nil
 }
 
-// SupportsVersion checks if a plugins supports a project version.
+// SupportsVersion checks if a plugin supports a project version.
 func SupportsVersion(p Plugin, projectVersion config.Version) bool {
 	for _, version := range p.SupportedProjectVersions() {
 		if projectVersion.Compare(version) == 0 {
@@ -104,4 +98,35 @@ func SupportsVersion(p Plugin, projectVersion config.Version) bool {
 		}
 	}
 	return false
+}
+
+// CommonSupportedProjectVersions returns the projects versions that are supported by all the provided Plugins
+func CommonSupportedProjectVersions(plugins ...Plugin) []config.Version {
+	// Count how many times each supported project version appears
+	supportedProjectVersionCounter := make(map[config.Version]int)
+	for _, plugin := range plugins {
+		for _, supportedProjectVersion := range plugin.SupportedProjectVersions() {
+			if _, exists := supportedProjectVersionCounter[supportedProjectVersion]; !exists {
+				supportedProjectVersionCounter[supportedProjectVersion] = 1
+			} else {
+				supportedProjectVersionCounter[supportedProjectVersion]++
+			}
+		}
+	}
+
+	// Check which versions are present the expected number of times
+	supportedProjectVersions := make([]config.Version, 0, len(supportedProjectVersionCounter))
+	expectedTimes := len(plugins)
+	for supportedProjectVersion, times := range supportedProjectVersionCounter {
+		if times == expectedTimes {
+			supportedProjectVersions = append(supportedProjectVersions, supportedProjectVersion)
+		}
+	}
+
+	// Sort the output to guarantee consistency
+	sort.Slice(supportedProjectVersions, func(i int, j int) bool {
+		return supportedProjectVersions[i].Compare(supportedProjectVersions[j]) == -1
+	})
+
+	return supportedProjectVersions
 }

@@ -19,14 +19,14 @@ package rbac
 import (
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
-var _ file.Template = &LeaderElectionRoleBinding{}
+var _ machinery.Template = &LeaderElectionRoleBinding{}
 
 // LeaderElectionRoleBinding scaffolds a file that defines the role binding that allows leader election
 type LeaderElectionRoleBinding struct {
-	file.TemplateMixin
+	machinery.TemplateMixin
 }
 
 // SetTemplateDefaults implements file.Template
@@ -50,6 +50,6 @@ roleRef:
   name: leader-election-role
 subjects:
 - kind: ServiceAccount
-  name: default
+  name: controller-manager
   namespace: system
 `

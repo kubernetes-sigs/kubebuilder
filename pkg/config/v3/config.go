@@ -29,15 +29,38 @@ import (
 // Version is the config.Version for project configuration 3
 var Version = config.Version{Number: 3}
 
+// stringSlice is a []string but that can also be unmarshalled from a single string,
+// which is introduced as the first and only element of the slice
+// It is used to offer backwards compatibility as the field used to be a string.
+type stringSlice []string
+
+func (ss *stringSlice) UnmarshalJSON(b []byte) error {
+	if b[0] == '[' {
+		var sl []string
+		if err := yaml.Unmarshal(b, &sl); err != nil {
+			return err
+		}
+		*ss = sl
+		return nil
+	}
+
+	var st string
+	if err := yaml.Unmarshal(b, &st); err != nil {
+		return err
+	}
+	*ss = stringSlice{st}
+	return nil
+}
+
 type cfg struct {
 	// Version
 	Version config.Version `json:"version"`
 
 	// String fields
-	Domain     string `json:"domain,omitempty"`
-	Repository string `json:"repo,omitempty"`
-	Name       string `json:"projectName,omitempty"`
-	Layout     string `json:"layout,omitempty"`
+	Domain      string      `json:"domain,omitempty"`
+	Repository  string      `json:"repo,omitempty"`
+	Name        string      `json:"projectName,omitempty"`
+	PluginChain stringSlice `json:"layout,omitempty"`
 
 	// Boolean fields
 	MultiGroup      bool `json:"multigroup,omitempty"`
@@ -47,12 +70,11 @@ type cfg struct {
 	Resources []resource.Resource `json:"resources,omitempty"`
 
 	// Plugins
-	Plugins PluginConfigs `json:"plugins,omitempty"`
+	Plugins pluginConfigs `json:"plugins,omitempty"`
 }
 
-// PluginConfigs holds a set of arbitrary plugin configuration objects mapped by plugin key.
-// TODO: do not export this once internalconfig has merged with config
-type PluginConfigs map[string]pluginConfig
+// pluginConfigs holds a set of arbitrary plugin configuration objects mapped by plugin key.
+type pluginConfigs map[string]pluginConfig
 
 // pluginConfig is an arbitrary plugin configuration object.
 type pluginConfig interface{}
@@ -105,13 +127,13 @@ func (c *cfg) SetProjectName(name string) error {
 }
 
 // GetLayout implements config.Config
-func (c cfg) GetLayout() string {
-	return c.Layout
+func (c cfg) GetPluginChain() []string {
+	return c.PluginChain
 }
 
 // SetLayout implements config.Config
-func (c *cfg) SetLayout(layout string) error {
-	c.Layout = layout
+func (c *cfg) SetPluginChain(pluginChain []string) error {
+	c.PluginChain = pluginChain
 	return nil
 }
 
@@ -249,35 +271,40 @@ func (c cfg) HasGroup(group string) bool {
 	return false
 }
 
-// IsCRDVersionCompatible implements config.Config
-func (c cfg) IsCRDVersionCompatible(crdVersion string) bool {
-	return c.resourceAPIVersionCompatible("crd", crdVersion)
-}
-
-// IsWebhookVersionCompatible implements config.Config
-func (c cfg) IsWebhookVersionCompatible(webhookVersion string) bool {
-	return c.resourceAPIVersionCompatible("webhook", webhookVersion)
-}
-
-func (c cfg) resourceAPIVersionCompatible(verType, version string) bool {
-	for _, res := range c.Resources {
-		var currVersion string
-		switch verType {
-		case "crd":
-			if res.API != nil {
-				currVersion = res.API.CRDVersion
-			}
-		case "webhook":
-			if res.Webhooks != nil {
-				currVersion = res.Webhooks.WebhookVersion
-			}
-		}
-		if currVersion != "" && version != currVersion {
-			return false
+// ListCRDVersions implements config.Config
+func (c cfg) ListCRDVersions() []string {
+	// Make a map to remove duplicates
+	versionSet := make(map[string]struct{})
+	for _, r := range c.Resources {
+		if r.API != nil && r.API.CRDVersion != "" {
+			versionSet[r.API.CRDVersion] = struct{}{}
 		}
 	}
 
-	return true
+	// Convert the map into a slice
+	versions := make([]string, 0, len(versionSet))
+	for version := range versionSet {
+		versions = append(versions, version)
+	}
+	return versions
+}
+
+// ListWebhookVersions implements config.Config
+func (c cfg) ListWebhookVersions() []string {
+	// Make a map to remove duplicates
+	versionSet := make(map[string]struct{})
+	for _, r := range c.Resources {
+		if r.Webhooks != nil && r.Webhooks.WebhookVersion != "" {
+			versionSet[r.Webhooks.WebhookVersion] = struct{}{}
+		}
+	}
+
+	// Convert the map into a slice
+	versions := make([]string, 0, len(versionSet))
+	for version := range versionSet {
+		versions = append(versions, version)
+	}
+	return versions
 }
 
 // DecodePluginConfig implements config.Config
@@ -320,7 +347,7 @@ func (c *cfg) EncodePluginConfig(key string, configObj interface{}) error {
 }
 
 // Marshal implements config.Config
-func (c cfg) Marshal() ([]byte, error) {
+func (c cfg) MarshalYAML() ([]byte, error) {
 	for i, r := range c.Resources {
 		// If API is empty, omit it (prevents `api: {}`).
 		if r.API != nil && r.API.IsEmpty() {
@@ -341,7 +368,7 @@ func (c cfg) Marshal() ([]byte, error) {
 }
 
 // Unmarshal implements config.Config
-func (c *cfg) Unmarshal(b []byte) error {
+func (c *cfg) UnmarshalYAML(b []byte) error {
 	if err := yaml.UnmarshalStrict(b, c); err != nil {
 		return config.UnmarshalError{Err: err}
 	}

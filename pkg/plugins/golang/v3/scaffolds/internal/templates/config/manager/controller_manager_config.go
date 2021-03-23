@@ -19,16 +19,16 @@ package manager
 import (
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
-var _ file.Template = &ControllerManagerConfig{}
+var _ machinery.Template = &ControllerManagerConfig{}
 
 // ControllerManagerConfig scaffolds the config file in config/manager folder.
 type ControllerManagerConfig struct {
-	file.TemplateMixin
-	file.DomainMixin
-	file.RepositoryMixin
+	machinery.TemplateMixin
+	machinery.DomainMixin
+	machinery.RepositoryMixin
 }
 
 // SetTemplateDefaults implements input.Template
@@ -39,7 +39,7 @@ func (f *ControllerManagerConfig) SetTemplateDefaults() error {
 
 	f.TemplateBody = controllerManagerConfigTemplate
 
-	f.IfExistsAction = file.Error
+	f.IfExistsAction = machinery.Error
 
 	return nil
 }

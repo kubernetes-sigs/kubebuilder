@@ -19,14 +19,14 @@ package webhook
 import (
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
-var _ file.Template = &Service{}
+var _ machinery.Template = &Service{}
 
 // Service scaffolds a file that defines the webhook service
 type Service struct {
-	file.TemplateMixin
+	machinery.TemplateMixin
 }
 
 // SetTemplateDefaults implements file.Template
@@ -37,7 +37,7 @@ func (f *Service) SetTemplateDefaults() error {
 
 	f.TemplateBody = serviceTemplate
 
-	f.IfExistsAction = file.Error
+	f.IfExistsAction = machinery.Error
 
 	return nil
 }

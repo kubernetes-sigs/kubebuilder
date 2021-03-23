@@ -1,0 +1,9 @@
+apiVersion: kubebuilder.sigs.k8s.io/v1alpha1
+kind: KubebuilderConfigGen
+metadata:
+  name: example
+spec:
+  crds:
+    sourceDirectory: ../../testdata/project/...
+  controllerManager:
+    image: example/simple:latest

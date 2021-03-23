@@ -19,14 +19,14 @@ package rbac
 import (
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
-var _ file.Template = &AuthProxyService{}
+var _ machinery.Template = &AuthProxyService{}
 
 // AuthProxyService scaffolds a file that defines the service for the auth proxy
 type AuthProxyService struct {
-	file.TemplateMixin
+	machinery.TemplateMixin
 }
 
 // SetTemplateDefaults implements file.Template

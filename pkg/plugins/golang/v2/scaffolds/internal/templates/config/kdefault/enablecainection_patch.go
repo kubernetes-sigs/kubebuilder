@@ -19,14 +19,14 @@ package kdefault
 import (
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
-var _ file.Template = &WebhookCAInjectionPatch{}
+var _ machinery.Template = &WebhookCAInjectionPatch{}
 
 // WebhookCAInjectionPatch scaffolds a file that defines the patch that adds annotation to webhooks
 type WebhookCAInjectionPatch struct {
-	file.TemplateMixin
+	machinery.TemplateMixin
 }
 
 // SetTemplateDefaults implements file.Template
@@ -37,7 +37,7 @@ func (f *WebhookCAInjectionPatch) SetTemplateDefaults() error {
 
 	f.TemplateBody = injectCAPatchTemplate
 
-	f.IfExistsAction = file.Error
+	f.IfExistsAction = machinery.Error
 
 	return nil
 }

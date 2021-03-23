@@ -25,42 +25,51 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 )
 
-// Option is a function that can configure the cli
-type Option func(*cli) error
+// Option is a function used as arguments to New in order to configure the resulting CLI.
+type Option func(*CLI) error
 
-// WithCommandName is an Option that sets the cli's root command name.
+// WithCommandName is an Option that sets the CLI's root command name.
 func WithCommandName(name string) Option {
-	return func(c *cli) error {
+	return func(c *CLI) error {
 		c.commandName = name
 		return nil
 	}
 }
 
-// WithVersion is an Option that defines the version string of the cli.
+// WithVersion is an Option that defines the version string of the CLI.
 func WithVersion(version string) Option {
-	return func(c *cli) error {
+	return func(c *CLI) error {
 		c.version = version
 		return nil
 	}
 }
 
-// WithDefaultProjectVersion is an Option that sets the cli's default project version.
-// Setting an unknown version will result in an error.
-func WithDefaultProjectVersion(version config.Version) Option {
-	return func(c *cli) error {
-		if err := version.Validate(); err != nil {
-			return fmt.Errorf("broken pre-set default project version %q: %v", version, err)
+// WithPlugins is an Option that sets the CLI's plugins.
+//
+// Specifying any invalid plugin results in an error.
+func WithPlugins(plugins ...plugin.Plugin) Option {
+	return func(c *CLI) error {
+		for _, p := range plugins {
+			key := plugin.KeyFor(p)
+			if _, isConflicting := c.plugins[key]; isConflicting {
+				return fmt.Errorf("two plugins have the same key: %q", key)
+			}
+			if err := plugin.Validate(p); err != nil {
+				return fmt.Errorf("broken pre-set plugin %q: %v", key, err)
+			}
+			c.plugins[key] = p
 		}
-		c.defaultProjectVersion = version
 		return nil
 	}
 }
 
-// WithDefaultPlugins is an Option that sets the cli's default plugins.
+// WithDefaultPlugins is an Option that sets the CLI's default plugins.
+//
+// Specifying any invalid plugin results in an error.
 func WithDefaultPlugins(projectVersion config.Version, plugins ...plugin.Plugin) Option {
-	return func(c *cli) error {
+	return func(c *CLI) error {
 		if err := projectVersion.Validate(); err != nil {
-			return fmt.Errorf("broken pre-set project version %q for default plugins: %v", projectVersion, err)
+			return fmt.Errorf("broken pre-set project version %q for default plugins: %w", projectVersion, err)
 		}
 		if len(plugins) == 0 {
 			return fmt.Errorf("empty set of plugins provided for project version %q", projectVersion)
@@ -78,34 +87,47 @@ func WithDefaultPlugins(projectVersion config.Version, plugins ...plugin.Plugin)
 	}
 }
 
-// WithPlugins is an Option that sets the cli's plugins.
-func WithPlugins(plugins ...plugin.Plugin) Option {
-	return func(c *cli) error {
-		for _, p := range plugins {
-			key := plugin.KeyFor(p)
-			if _, isConflicting := c.plugins[key]; isConflicting {
-				return fmt.Errorf("two plugins have the same key: %q", key)
-			}
-			if err := plugin.Validate(p); err != nil {
-				return fmt.Errorf("broken pre-set plugin %q: %v", key, err)
-			}
-			c.plugins[key] = p
+// WithDefaultProjectVersion is an Option that sets the CLI's default project version.
+//
+// Setting an invalid version results in an error.
+func WithDefaultProjectVersion(version config.Version) Option {
+	return func(c *CLI) error {
+		if err := version.Validate(); err != nil {
+			return fmt.Errorf("broken pre-set default project version %q: %v", version, err)
 		}
+		c.defaultProjectVersion = version
 		return nil
 	}
 }
 
-// WithExtraCommands is an Option that adds extra subcommands to the cli.
+// WithExtraCommands is an Option that adds extra subcommands to the CLI.
+//
 // Adding extra commands that duplicate existing commands results in an error.
 func WithExtraCommands(cmds ...*cobra.Command) Option {
-	return func(c *cli) error {
+	return func(c *CLI) error {
+		// We don't know the commands defined by the CLI yet so we are not checking if the extra commands
+		// conflict with a pre-existing one yet. We do this after creating the base commands.
 		c.extraCommands = append(c.extraCommands, cmds...)
 		return nil
 	}
 }
 
+// WithExtraAlphaCommands is an Option that adds extra alpha subcommands to the CLI.
+//
+// Adding extra alpha commands that duplicate existing commands results in an error.
+func WithExtraAlphaCommands(cmds ...*cobra.Command) Option {
+	return func(c *CLI) error {
+		// We don't know the commands defined by the CLI yet so we are not checking if the extra alpha commands
+		// conflict with a pre-existing one yet. We do this after creating the base commands.
+		c.extraAlphaCommands = append(c.extraAlphaCommands, cmds...)
+		return nil
+	}
+}
+
 // WithCompletion is an Option that adds the completion subcommand.
-func WithCompletion(c *cli) error {
-	c.completionCommand = true
-	return nil
+func WithCompletion() Option {
+	return func(c *CLI) error {
+		c.completionCommand = true
+		return nil
+	}
 }

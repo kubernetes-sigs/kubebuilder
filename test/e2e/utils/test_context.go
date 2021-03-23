@@ -56,8 +56,9 @@ func NewTestContext(binaryName string, env ...string) (*TestContext, error) {
 
 	// Use kubectl to get Kubernetes client and cluster version.
 	kubectl := &Kubectl{
-		Namespace:  fmt.Sprintf("e2e-%s-system", testSuffix),
-		CmdContext: cc,
+		Namespace:      fmt.Sprintf("e2e-%s-system", testSuffix),
+		ServiceAccount: fmt.Sprintf("e2e-%s-controller-manager", testSuffix),
+		CmdContext:     cc,
 	}
 	k8sVersion, err := kubectl.Version()
 	if err != nil {

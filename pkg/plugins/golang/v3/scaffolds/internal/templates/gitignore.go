@@ -17,14 +17,14 @@ limitations under the License.
 package templates
 
 import (
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
-var _ file.Template = &GitIgnore{}
+var _ machinery.Template = &GitIgnore{}
 
 // GitIgnore scaffolds a file that defines which files should be ignored by git
 type GitIgnore struct {
-	file.TemplateMixin
+	machinery.TemplateMixin
 }
 
 // SetTemplateDefaults implements file.Template

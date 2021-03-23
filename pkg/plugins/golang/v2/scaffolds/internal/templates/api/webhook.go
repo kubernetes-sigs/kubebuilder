@@ -21,17 +21,17 @@ import (
 	"path/filepath"
 	"strings"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
-var _ file.Template = &Webhook{}
+var _ machinery.Template = &Webhook{}
 
 // Webhook scaffolds the file that defines a webhook for a CRD or a builtin resource
 type Webhook struct { // nolint:maligned
-	file.TemplateMixin
-	file.MultiGroupMixin
-	file.BoilerplateMixin
-	file.ResourceMixin
+	machinery.TemplateMixin
+	machinery.MultiGroupMixin
+	machinery.BoilerplateMixin
+	machinery.ResourceMixin
 
 	// Is the Group domain for the Resource replacing '.' with '-'
 	QualifiedGroupWithDash string
@@ -58,7 +58,7 @@ func (f *Webhook) SetTemplateDefaults() error {
 	}
 	f.TemplateBody = webhookTemplate
 
-	f.IfExistsAction = file.Error
+	f.IfExistsAction = machinery.Error
 
 	f.QualifiedGroupWithDash = strings.Replace(f.Resource.QualifiedGroup(), ".", "-", -1)
 

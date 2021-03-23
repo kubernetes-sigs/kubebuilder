@@ -19,15 +19,15 @@ package kdefault
 import (
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
-var _ file.Template = &ManagerAuthProxyPatch{}
+var _ machinery.Template = &ManagerAuthProxyPatch{}
 
 // ManagerAuthProxyPatch scaffolds a file that defines the patch that enables prometheus metrics for the manager
 type ManagerAuthProxyPatch struct {
-	file.TemplateMixin
-	file.ComponentConfigMixin
+	machinery.TemplateMixin
+	machinery.ComponentConfigMixin
 }
 
 // SetTemplateDefaults implements file.Template
@@ -38,7 +38,7 @@ func (f *ManagerAuthProxyPatch) SetTemplateDefaults() error {
 
 	f.TemplateBody = kustomizeAuthProxyPatchTemplate
 
-	f.IfExistsAction = file.Error
+	f.IfExistsAction = machinery.Error
 
 	return nil
 }
