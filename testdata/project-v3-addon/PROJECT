@@ -1,5 +1,22 @@
 domain: testproject.org
-layout: go.kubebuilder.io/v3
+layout:
+- go.kubebuilder.io/v3
+- declarative.kubebuilder.io/v1
+plugins:
+  declarative.kubebuilder.io/v1:
+    resources:
+    - domain: testproject.org
+      group: crew
+      kind: Captain
+      version: v1
+    - domain: testproject.org
+      group: crew
+      kind: FirstMate
+      version: v1
+    - domain: testproject.org
+      group: crew
+      kind: Admiral
+      version: v1
 projectName: project-v3-addon
 repo: sigs.k8s.io/kubebuilder/testdata/project-v3-addon
 resources:

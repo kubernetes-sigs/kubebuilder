@@ -19,14 +19,14 @@ package prometheus
 import (
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
-var _ file.Template = &Monitor{}
+var _ machinery.Template = &Monitor{}
 
 // Monitor scaffolds a file that defines the prometheus service monitor
 type Monitor struct {
-	file.TemplateMixin
+	machinery.TemplateMixin
 }
 
 // SetTemplateDefaults implements file.Template
@@ -53,6 +53,10 @@ spec:
   endpoints:
     - path: /metrics
       port: https
+      scheme: https
+      bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+      tlsConfig:
+        insecureSkipVerify: true
   selector:
     matchLabels:
       control-plane: controller-manager

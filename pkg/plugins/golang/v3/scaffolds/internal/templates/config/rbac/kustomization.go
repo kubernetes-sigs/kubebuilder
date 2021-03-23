@@ -19,14 +19,14 @@ package rbac
 import (
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
-var _ file.Template = &Kustomization{}
+var _ machinery.Template = &Kustomization{}
 
 // Kustomization scaffolds a file that defines the kustomization scheme for the rbac folder
 type Kustomization struct {
-	file.TemplateMixin
+	machinery.TemplateMixin
 }
 
 // SetTemplateDefaults implements file.Template
@@ -37,12 +37,18 @@ func (f *Kustomization) SetTemplateDefaults() error {
 
 	f.TemplateBody = kustomizeRBACTemplate
 
-	f.IfExistsAction = file.Error
+	f.IfExistsAction = machinery.Error
 
 	return nil
 }
 
 const kustomizeRBACTemplate = `resources:
+# All RBAC will be applied under this service account in
+# the deployment namespace. You may comment out this resource
+# if your manager will use a service account that exists at
+# runtime. Be sure to update RoleBinding and ClusterRoleBinding
+# subjects if changing service account names.
+- service_account.yaml
 - role.yaml
 - role_binding.yaml
 - leader_election_role.yaml

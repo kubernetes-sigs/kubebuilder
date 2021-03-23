@@ -18,6 +18,7 @@ package v3
 
 import (
 	"errors"
+	"sort"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
@@ -38,23 +39,27 @@ var _ = Describe("cfg", func() {
 		domain = "my.domain"
 		repo   = "myrepo"
 		name   = "ProjectName"
-		layout = "go.kubebuilder.io/v2"
 
 		otherDomain = "other.domain"
 		otherRepo   = "otherrepo"
 		otherName   = "OtherProjectName"
-		otherLayout = "go.kubebuilder.io/v3"
 	)
 
-	var c cfg
+	var (
+		c cfg
+
+		pluginChain = []string{"go.kubebuilder.io/v2"}
+
+		otherPluginChain = []string{"go.kubebuilder.io/v3"}
+	)
 
 	BeforeEach(func() {
 		c = cfg{
-			Version:    Version,
-			Domain:     domain,
-			Repository: repo,
-			Name:       name,
-			Layout:     layout,
+			Version:     Version,
+			Domain:      domain,
+			Repository:  repo,
+			Name:        name,
+			PluginChain: pluginChain,
 		}
 	})
 
@@ -86,7 +91,7 @@ var _ = Describe("cfg", func() {
 		})
 	})
 
-	Context("ProjectName", func() {
+	Context("Project name", func() {
 		It("GetProjectName should return the name", func() {
 			Expect(c.GetProjectName()).To(Equal(name))
 		})
@@ -97,14 +102,14 @@ var _ = Describe("cfg", func() {
 		})
 	})
 
-	Context("Layout", func() {
-		It("GetLayout should return the layout", func() {
-			Expect(c.GetLayout()).To(Equal(layout))
+	Context("Plugin chain", func() {
+		It("GetPluginChain should return the plugin chain", func() {
+			Expect(c.GetPluginChain()).To(Equal(pluginChain))
 		})
 
-		It("SetLayout should set the layout", func() {
-			Expect(c.SetLayout(otherLayout)).To(Succeed())
-			Expect(c.Layout).To(Equal(otherLayout))
+		It("SetPluginChain should set the plugin chain", func() {
+			Expect(c.SetPluginChain(otherPluginChain)).To(Succeed())
+			Expect([]string(c.PluginChain)).To(Equal(otherPluginChain))
 		})
 	})
 
@@ -302,42 +307,60 @@ var _ = Describe("cfg", func() {
 			Expect(c.HasGroup("other-group")).To(BeFalse())
 		})
 
-		It("IsCRDVersionCompatible should return true with no tracked resources", func() {
-			Expect(c.IsCRDVersionCompatible("v1beta1")).To(BeTrue())
-			Expect(c.IsCRDVersionCompatible("v1")).To(BeTrue())
+		It("ListCRDVersions should return an empty list with no tracked resources", func() {
+			Expect(c.ListCRDVersions()).To(BeEmpty())
 		})
 
-		It("IsCRDVersionCompatible should return true only for matching CRD versions of tracked resources", func() {
-			c.Resources = append(c.Resources, resource.Resource{
-				GVK: resource.GVK{
-					Group:   res.Group,
-					Version: res.Version,
-					Kind:    res.Kind,
+		It("ListCRDVersions should return a list of tracked resources CRD versions", func() {
+			c.Resources = append(c.Resources,
+				resource.Resource{
+					GVK: resource.GVK{
+						Group:   res.Group,
+						Version: res.Version,
+						Kind:    res.Kind,
+					},
+					API: &resource.API{CRDVersion: "v1beta1"},
 				},
-				API: &resource.API{CRDVersion: "v1beta1"},
-			})
-			Expect(c.IsCRDVersionCompatible("v1beta1")).To(BeTrue())
-			Expect(c.IsCRDVersionCompatible("v1")).To(BeFalse())
-			Expect(c.IsCRDVersionCompatible("v2")).To(BeFalse())
-		})
-
-		It("IsWebhookVersionCompatible should return true with no tracked resources", func() {
-			Expect(c.IsWebhookVersionCompatible("v1beta1")).To(BeTrue())
-			Expect(c.IsWebhookVersionCompatible("v1")).To(BeTrue())
-		})
-
-		It("IsWebhookVersionCompatible should return true only for matching webhook versions of tracked resources", func() {
-			c.Resources = append(c.Resources, resource.Resource{
-				GVK: resource.GVK{
-					Group:   res.Group,
-					Version: res.Version,
-					Kind:    res.Kind,
+				resource.Resource{
+					GVK: resource.GVK{
+						Group:   res.Group,
+						Version: res.Version,
+						Kind:    "OtherKind",
+					},
+					API: &resource.API{CRDVersion: "v1"},
 				},
-				Webhooks: &resource.Webhooks{WebhookVersion: "v1beta1"},
-			})
-			Expect(c.IsWebhookVersionCompatible("v1beta1")).To(BeTrue())
-			Expect(c.IsWebhookVersionCompatible("v1")).To(BeFalse())
-			Expect(c.IsWebhookVersionCompatible("v2")).To(BeFalse())
+			)
+			versions := c.ListCRDVersions()
+			sort.Strings(versions) // ListCRDVersions has no order guarantee so sorting for reproducibility
+			Expect(versions).To(Equal([]string{"v1", "v1beta1"}))
+		})
+
+		It("ListWebhookVersions should return an empty list with no tracked resources", func() {
+			Expect(c.ListWebhookVersions()).To(BeEmpty())
+		})
+
+		It("ListWebhookVersions should return a list of tracked resources webhook versions", func() {
+			c.Resources = append(c.Resources,
+				resource.Resource{
+					GVK: resource.GVK{
+						Group:   res.Group,
+						Version: res.Version,
+						Kind:    res.Kind,
+					},
+					Webhooks: &resource.Webhooks{WebhookVersion: "v1beta1"},
+				},
+				resource.Resource{
+					GVK: resource.GVK{
+						Group:   res.Group,
+						Version: res.Version,
+						Kind:    "OtherKind",
+					},
+					Webhooks: &resource.Webhooks{WebhookVersion: "v1"},
+				},
+			)
+			versions := c.ListWebhookVersions()
+			sort.Strings(versions) // ListWebhookVersions has no order guarantee so sorting for reproducibility
+			Expect(versions).To(Equal([]string{"v1", "v1beta1"}))
 		})
 	})
 
@@ -355,32 +378,32 @@ var _ = Describe("cfg", func() {
 
 		var (
 			c0 = cfg{
-				Version:    Version,
-				Domain:     domain,
-				Repository: repo,
-				Name:       name,
-				Layout:     layout,
+				Version:     Version,
+				Domain:      domain,
+				Repository:  repo,
+				Name:        name,
+				PluginChain: pluginChain,
 			}
 			c1 = cfg{
-				Version:    Version,
-				Domain:     domain,
-				Repository: repo,
-				Name:       name,
-				Layout:     layout,
-				Plugins: PluginConfigs{
-					"plugin-x": map[string]interface{}{
+				Version:     Version,
+				Domain:      domain,
+				Repository:  repo,
+				Name:        name,
+				PluginChain: pluginChain,
+				Plugins: pluginConfigs{
+					key: map[string]interface{}{
 						"data-1": "",
 					},
 				},
 			}
 			c2 = cfg{
-				Version:    Version,
-				Domain:     domain,
-				Repository: repo,
-				Name:       name,
-				Layout:     layout,
-				Plugins: PluginConfigs{
-					"plugin-x": map[string]interface{}{
+				Version:     Version,
+				Domain:      domain,
+				Repository:  repo,
+				Name:        name,
+				PluginChain: pluginChain,
+				Plugins: pluginConfigs{
+					key: map[string]interface{}{
 						"data-1": "plugin value 1",
 						"data-2": "plugin value 2",
 					},
@@ -395,6 +418,13 @@ var _ = Describe("cfg", func() {
 		It("DecodePluginConfig should fail for no plugin config object", func() {
 			var pluginConfig PluginConfig
 			err := c0.DecodePluginConfig(key, &pluginConfig)
+			Expect(err).To(HaveOccurred())
+			Expect(errors.As(err, &config.PluginKeyNotFoundError{})).To(BeTrue())
+		})
+
+		It("DecodePluginConfig should fail to retrieve data from a non-existent plugin", func() {
+			var pluginConfig PluginConfig
+			err := c1.DecodePluginConfig("plugin-y", &pluginConfig)
 			Expect(err).To(HaveOccurred())
 			Expect(errors.As(err, &config.PluginKeyNotFoundError{})).To(BeTrue())
 		})
@@ -427,18 +457,18 @@ var _ = Describe("cfg", func() {
 		var (
 			// BeforeEach is called after the entries are evaluated, and therefore, c is not available
 			c1 = cfg{
-				Version:    Version,
-				Domain:     domain,
-				Repository: repo,
-				Name:       name,
-				Layout:     layout,
+				Version:     Version,
+				Domain:      domain,
+				Repository:  repo,
+				Name:        name,
+				PluginChain: pluginChain,
 			}
 			c2 = cfg{
 				Version:         Version,
 				Domain:          otherDomain,
 				Repository:      otherRepo,
 				Name:            otherName,
-				Layout:          otherLayout,
+				PluginChain:     otherPluginChain,
 				MultiGroup:      true,
 				ComponentConfig: true,
 				Resources: []resource.Resource{
@@ -488,7 +518,7 @@ var _ = Describe("cfg", func() {
 						},
 					},
 				},
-				Plugins: PluginConfigs{
+				Plugins: pluginConfigs{
 					"plugin-x": map[string]interface{}{
 						"data-1": "single plugin datum",
 					},
@@ -499,9 +529,15 @@ var _ = Describe("cfg", func() {
 					},
 				},
 			}
-			// TODO: include cases with Plural, Path, API.namespaced, Controller, Webhooks.Defaulting,
-			//       Webhooks.Validation and Webhooks.Conversion when added
+			// TODO: include cases with Path when added
 			s1 = `domain: my.domain
+layout:
+- go.kubebuilder.io/v2
+projectName: ProjectName
+repo: myrepo
+version: "3"
+`
+			s1bis = `domain: my.domain
 layout: go.kubebuilder.io/v2
 projectName: ProjectName
 repo: myrepo
@@ -509,7 +545,8 @@ version: "3"
 `
 			s2 = `componentConfig: true
 domain: other.domain
-layout: go.kubebuilder.io/v3
+layout:
+- go.kubebuilder.io/v3
 multigroup: true
 plugins:
   plugin-x:
@@ -554,9 +591,9 @@ version: "3"
 `
 		)
 
-		DescribeTable("Marshal should succeed",
+		DescribeTable("MarshalYAML should succeed",
 			func(c cfg, content string) {
-				b, err := c.Marshal()
+				b, err := c.MarshalYAML()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(string(b)).To(Equal(content))
 			},
@@ -564,23 +601,23 @@ version: "3"
 			Entry("for a full configuration", c2, s2),
 		)
 
-		DescribeTable("Marshal should fail",
+		DescribeTable("MarshalYAML should fail",
 			func(c cfg) {
-				_, err := c.Marshal()
+				_, err := c.MarshalYAML()
 				Expect(err).To(HaveOccurred())
 			},
 			// TODO (coverage): add cases where yaml.Marshal returns an error
 		)
 
-		DescribeTable("Unmarshal should succeed",
+		DescribeTable("UnmarshalYAML should succeed",
 			func(content string, c cfg) {
 				var unmarshalled cfg
-				Expect(unmarshalled.Unmarshal([]byte(content))).To(Succeed())
+				Expect(unmarshalled.UnmarshalYAML([]byte(content))).To(Succeed())
 				Expect(unmarshalled.Version.Compare(c.Version)).To(Equal(0))
 				Expect(unmarshalled.Domain).To(Equal(c.Domain))
 				Expect(unmarshalled.Repository).To(Equal(c.Repository))
 				Expect(unmarshalled.Name).To(Equal(c.Name))
-				Expect(unmarshalled.Layout).To(Equal(c.Layout))
+				Expect(unmarshalled.PluginChain).To(Equal(c.PluginChain))
 				Expect(unmarshalled.MultiGroup).To(Equal(c.MultiGroup))
 				Expect(unmarshalled.ComponentConfig).To(Equal(c.ComponentConfig))
 				Expect(unmarshalled.Resources).To(Equal(c.Resources))
@@ -589,12 +626,13 @@ version: "3"
 			},
 			Entry("basic", s1, c1),
 			Entry("full", s2, c2),
+			Entry("string layout", s1bis, c1),
 		)
 
-		DescribeTable("Unmarshal should fail",
+		DescribeTable("UnmarshalYAML should fail",
 			func(content string) {
 				var c cfg
-				Expect(c.Unmarshal([]byte(content))).NotTo(Succeed())
+				Expect(c.UnmarshalYAML([]byte(content))).NotTo(Succeed())
 			},
 			Entry("for unknown fields", `field: 1
 version: "3"`),

@@ -24,7 +24,7 @@
     status = 301
     force = true
 
-# Go Links
+# kubebuilder binary (v3+) and tarball (< v3) redirects.
 [[redirects]]
     from = "https://go.kubebuilder.io/dl/*"
     to = "https://go.kubebuilder.io/releases/:splat"
@@ -37,9 +37,17 @@
     status = 302
     force = true
 
+# Development branch redirect.
 [[redirects]]
-    from = "https://go.kubebuilder.io/releases/:version"
-    to = "https://github.com/kubernetes-sigs/kubebuilder/releases/v:version"
+    from = "https://go.kubebuilder.io/releases/master/:os/:arch"
+    to = "https://storage.googleapis.com/kubebuilder-release/kubebuilder_master_:os_:arch.tar.gz"
+    status = 302
+    force = true
+
+# Latest redirects.
+[[redirects]]
+    from = "https://go.kubebuilder.io/releases/latest"
+    to = "https://github.com/kubernetes-sigs/kubebuilder/releases/latest"
     status = 302
     force = true
 
@@ -50,23 +58,45 @@
     force = true
 
 [[redirects]]
+    from = "https://go.kubebuilder.io/releases/latest/:os/:arch"
+    to = "https://github.com/kubernetes-sigs/kubebuilder/releases/latest/download/kubebuilder_:os_:arch"
+    status = 302
+    force = true
+
+# v1 redirects.
+[[redirects]]
+    from = "https://go.kubebuilder.io/releases/1.:minorpatch/:os/:arch"
+    to = "https://github.com/kubernetes-sigs/kubebuilder/releases/download/v1.:minorpatch/kubebuilder_1.:minorpatch_:os_:arch.tar.gz"
+    status = 302
+    force = true
+
+# v2 redirects.
+[[redirects]]
+    from = "https://go.kubebuilder.io/releases/2.:minorpatch/:os/:arch"
+    to = "https://github.com/kubernetes-sigs/kubebuilder/releases/download/v2.:minorpatch/kubebuilder_2.:minorpatch_:os_:arch.tar.gz"
+    status = 302
+    force = true
+
+# v3+ redirects.
+[[redirects]]
+    from = "https://go.kubebuilder.io/releases/:version"
+    to = "https://github.com/kubernetes-sigs/kubebuilder/releases/v:version"
+    status = 302
+    force = true
+
+[[redirects]]
     from = "https://go.kubebuilder.io/releases/:version/:os"
     to = "https://go.kubebuilder.io/releases/:version/:os/amd64"
     status = 302
     force = true
 
 [[redirects]]
-    from = "https://go.kubebuilder.io/releases/latest/:os/:arch"
-    to = "https://storage.googleapis.com/kubebuilder-release/kubebuilder_master_:os_:arch.tar.gz"
-    status = 302
-    force = true
-
-[[redirects]]
     from = "https://go.kubebuilder.io/releases/:version/:os/:arch"
-    to = "https://github.com/kubernetes-sigs/kubebuilder/releases/download/v:version/kubebuilder_:version_:os_:arch.tar.gz"
+    to = "https://github.com/kubernetes-sigs/kubebuilder/releases/download/v:version/kubebuilder_:os_:arch"
     status = 302
     force = true
 
+# Tools redirects.
 [[redirects]]
     from = "https://go.kubebuilder.io/test-tools"
     to = "https://storage.googleapis.com/kubebuilder-tools"
@@ -74,23 +104,24 @@
     force = true
 
 [[redirects]]
-    from = "https://go.kubebuilder.io/test-tools/:version"
-    to = "https://storage.googleapis.com/kubebuilder-tools/?prefix=kubebuilder-tools-:version"
+    from = "https://go.kubebuilder.io/test-tools/:k8sversion"
+    to = "https://storage.googleapis.com/kubebuilder-tools/?prefix=kubebuilder-tools-:k8sversion"
     status = 302
     force = true
 
 [[redirects]]
-    from = "https://go.kubebuilder.io/test-tools/:version/:os"
-    to = "https://storage.googleapis.com/kubebuilder-tools/kubebuilder-tools-:version-:os-amd64.tar.gz"
+    from = "https://go.kubebuilder.io/test-tools/:k8sversion/:os"
+    to = "https://storage.googleapis.com/kubebuilder-tools/kubebuilder-tools-:k8sversion-:os-amd64.tar.gz"
     status = 302
     force = true
 
 [[redirects]]
-    from = "https://go.kubebuilder.io/test-tools/:version/:os/:arch"
-    to = "https://storage.googleapis.com/kubebuilder-tools/kubebuilder-tools-:version-:os-:arch.tar.gz"
+    from = "https://go.kubebuilder.io/test-tools/:k8sversion/:os/:arch"
+    to = "https://storage.googleapis.com/kubebuilder-tools/kubebuilder-tools-:k8sversion-:os-:arch.tar.gz"
     status = 302
     force = true
 
+# Image redirects.
 [[redirects]]
     from = "https://go.kubebuilder.io/images"
     to = "gcr.io/kubebuilder"
@@ -99,20 +130,19 @@
 
 [[redirects]]
     from = "https://go.kubebuilder.io/images/:os"
-    to = "gcr.io/kubebuilder/thirdparty-:os"
+    to = "https://go.kubebuilder.io/images/:os/amd64"
     status = 302
     force = true
 
 [[redirects]]
-    from = "https://go.kubebuilder.io/images/:os/:version"
-    to = "gcr.io/kubebuilder/thirdparty-:os::version"
+    from = "https://go.kubebuilder.io/images/:os/:arch"
+    to = "gcr.io/kubebuilder/thirdparty-:os-:arch"
     status = 302
     force = true
 
-# TODO(directxman12): change this to standard kustomize when the next version is released (2.1.0) 
 [[redirects]]
-    from = "https://go.kubebuilder.io/kustomize/:os/:arch"
-    to = "https://storage.googleapis.com/kubebuilder-kustomize/kustomize_:os_:arch"
+    from = "https://go.kubebuilder.io/images/:os/:arch/:k8sversion"
+    to = "gcr.io/kubebuilder/thirdparty-:os-:arch::k8sversion"
     status = 302
     force = true
 

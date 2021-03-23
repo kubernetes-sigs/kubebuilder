@@ -69,6 +69,11 @@ var _ = Describe("kubebuilder", func() {
 			})
 
 			It("should generate a runnable project", func() {
+				// go/v3 uses a unqiue-per-project service account name,
+				// while go/v2 still uses "default".
+				tmp := kbc.Kubectl.ServiceAccount
+				kbc.Kubectl.ServiceAccount = "default"
+				defer func() { kbc.Kubectl.ServiceAccount = tmp }()
 				GenerateV2(kbc)
 				Run(kbc)
 			})
@@ -166,7 +171,7 @@ func Run(kbc *utils.TestContext) {
 	_, err = kbc.Kubectl.Command(
 		"create", "clusterrolebinding", fmt.Sprintf("metrics-%s", kbc.TestSuffix),
 		fmt.Sprintf("--clusterrole=e2e-%s-metrics-reader", kbc.TestSuffix),
-		fmt.Sprintf("--serviceaccount=%s:default", kbc.Kubectl.Namespace))
+		fmt.Sprintf("--serviceaccount=%s:%s", kbc.Kubectl.Namespace, kbc.Kubectl.ServiceAccount))
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
 	_ = curlMetrics(kbc)
@@ -263,7 +268,11 @@ func Run(kbc *utils.TestContext) {
 // curlMetrics curl's the /metrics endpoint, returning all logs once a 200 status is returned.
 func curlMetrics(kbc *utils.TestContext) string {
 	By("reading the metrics token")
-	b64Token, err := kbc.Kubectl.Get(true, "secrets", "-o=jsonpath={.items[0].data.token}")
+	// Filter token query by service account in case more than one exists in a namespace.
+	query := fmt.Sprintf(`{.items[?(@.metadata.annotations.kubernetes\.io/service-account\.name=="%s")].data.token}`,
+		kbc.Kubectl.ServiceAccount,
+	)
+	b64Token, err := kbc.Kubectl.Get(true, "secrets", "-o=jsonpath="+query)
 	ExpectWithOffset(2, err).NotTo(HaveOccurred())
 	token, err := base64.StdEncoding.DecodeString(strings.TrimSpace(b64Token))
 	ExpectWithOffset(2, err).NotTo(HaveOccurred())
@@ -271,10 +280,11 @@ func curlMetrics(kbc *utils.TestContext) string {
 
 	By("creating a curl pod")
 	cmdOpts := []string{
-		"run", "--generator=run-pod/v1", "curl", "--image=curlimages/curl:7.68.0", "--restart=OnFailure", "--",
+		"run", "--generator=run-pod/v1", "curl", "--image=curlimages/curl:7.68.0", "--restart=OnFailure",
+		"--serviceaccount=" + kbc.Kubectl.ServiceAccount, "--",
 		"curl", "-v", "-k", "-H", fmt.Sprintf(`Authorization: Bearer %s`, token),
-		fmt.Sprintf("https://e2e-%v-controller-manager-metrics-service.e2e-%v-system.svc:8443/metrics",
-			kbc.TestSuffix, kbc.TestSuffix),
+		fmt.Sprintf("https://e2e-%s-controller-manager-metrics-service.%s.svc:8443/metrics",
+			kbc.TestSuffix, kbc.Kubectl.Namespace),
 	}
 	_, err = kbc.Kubectl.CommandInNamespace(cmdOpts...)
 	ExpectWithOffset(2, err).NotTo(HaveOccurred())

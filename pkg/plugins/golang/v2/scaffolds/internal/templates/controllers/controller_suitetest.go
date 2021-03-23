@@ -20,19 +20,19 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
-var _ file.Template = &SuiteTest{}
-var _ file.Inserter = &SuiteTest{}
+var _ machinery.Template = &SuiteTest{}
+var _ machinery.Inserter = &SuiteTest{}
 
 // SuiteTest scaffolds the file that sets up the controller tests
 // nolint:maligned
 type SuiteTest struct {
-	file.TemplateMixin
-	file.MultiGroupMixin
-	file.BoilerplateMixin
-	file.ResourceMixin
+	machinery.TemplateMixin
+	machinery.MultiGroupMixin
+	machinery.BoilerplateMixin
+	machinery.ResourceMixin
 
 	// CRDDirectoryRelativePath define the Path for the CRD
 	CRDDirectoryRelativePath string
@@ -52,8 +52,8 @@ func (f *SuiteTest) SetTemplateDefaults() error {
 	f.Path = f.Resource.Replacer().Replace(f.Path)
 
 	f.TemplateBody = fmt.Sprintf(controllerSuiteTestTemplate,
-		file.NewMarkerFor(f.Path, importMarker),
-		file.NewMarkerFor(f.Path, addSchemeMarker),
+		machinery.NewMarkerFor(f.Path, importMarker),
+		machinery.NewMarkerFor(f.Path, addSchemeMarker),
 	)
 
 	// If is multigroup the path needs to be ../../ since it has
@@ -64,7 +64,7 @@ func (f *SuiteTest) SetTemplateDefaults() error {
 	}
 
 	if f.Force {
-		f.IfExistsAction = file.Overwrite
+		f.IfExistsAction = machinery.OverwriteFile
 	}
 
 	return nil
@@ -76,10 +76,10 @@ const (
 )
 
 // GetMarkers implements file.Inserter
-func (f *SuiteTest) GetMarkers() []file.Marker {
-	return []file.Marker{
-		file.NewMarkerFor(f.Path, importMarker),
-		file.NewMarkerFor(f.Path, addSchemeMarker),
+func (f *SuiteTest) GetMarkers() []machinery.Marker {
+	return []machinery.Marker{
+		machinery.NewMarkerFor(f.Path, importMarker),
+		machinery.NewMarkerFor(f.Path, addSchemeMarker),
 	}
 }
 
@@ -93,8 +93,8 @@ Expect(err).NotTo(HaveOccurred())
 )
 
 // GetCodeFragments implements file.Inserter
-func (f *SuiteTest) GetCodeFragments() file.CodeFragmentsMap {
-	fragments := make(file.CodeFragmentsMap, 2)
+func (f *SuiteTest) GetCodeFragments() machinery.CodeFragmentsMap {
+	fragments := make(machinery.CodeFragmentsMap, 2)
 
 	// Generate import code fragments
 	imports := make([]string, 0)
@@ -110,10 +110,10 @@ func (f *SuiteTest) GetCodeFragments() file.CodeFragmentsMap {
 
 	// Only store code fragments in the map if the slices are non-empty
 	if len(imports) != 0 {
-		fragments[file.NewMarkerFor(f.Path, importMarker)] = imports
+		fragments[machinery.NewMarkerFor(f.Path, importMarker)] = imports
 	}
 	if len(addScheme) != 0 {
-		fragments[file.NewMarkerFor(f.Path, addSchemeMarker)] = addScheme
+		fragments[machinery.NewMarkerFor(f.Path, addSchemeMarker)] = addScheme
 	}
 
 	return fragments

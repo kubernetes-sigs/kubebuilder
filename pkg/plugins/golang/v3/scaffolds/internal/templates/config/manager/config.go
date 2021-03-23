@@ -19,15 +19,15 @@ package manager
 import (
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
-var _ file.Template = &Config{}
+var _ machinery.Template = &Config{}
 
 // Config scaffolds a file that defines the namespace and the manager deployment
 type Config struct {
-	file.TemplateMixin
-	file.ComponentConfigMixin
+	machinery.TemplateMixin
+	machinery.ComponentConfigMixin
 
 	// Image is controller manager image name
 	Image string
@@ -100,5 +100,6 @@ spec:
           requests:
             cpu: 100m
             memory: 20Mi
+      serviceAccountName: controller-manager
       terminationGracePeriodSeconds: 10
 `

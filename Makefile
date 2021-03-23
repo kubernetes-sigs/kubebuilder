@@ -82,7 +82,7 @@ GOLANGCI_LINT = $(shell pwd)/bin/golangci-lint
 golangci-lint:
 	@[ -f $(GOLANGCI_LINT) ] || { \
 	set -e ;\
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell dirname $(GOLANGCI_LINT)) v1.29.0 ;\
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell dirname $(GOLANGCI_LINT)) v1.37.1 ;\
 	}
 
 ##@ Tests
@@ -97,7 +97,7 @@ test-unit: ## Run the unit tests
 .PHONY: test-coverage
 test-coverage: ## Run unit tests creating the output to report coverage
 	- rm -rf *.out  # Remove all coverage files if exists
-	go test -race -failfast -tags=integration -coverprofile=coverage-all.out -coverpkg="./pkg/cli/...,./pkg/config/...,./pkg/internal/...,./pkg/model/...,./pkg/plugin/...,./pkg/plugins/golang,./pkg/plugins/internal/..." ./pkg/...
+	go test -race -failfast -tags=integration -coverprofile=coverage-all.out -coverpkg="./pkg/cli/...,./pkg/config/...,./pkg/internal/...,./pkg/machinery/...,./pkg/model/...,./pkg/plugin/...,./pkg/plugins/golang" ./pkg/...
 
 .PHONY: test-integration
 test-integration: ## Run the integration tests

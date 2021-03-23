@@ -4,18 +4,18 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
-var _ file.Template = &WebhookSuite{}
-var _ file.Inserter = &WebhookSuite{}
+var _ machinery.Template = &WebhookSuite{}
+var _ machinery.Inserter = &WebhookSuite{}
 
 // WebhookSuite scaffolds the file that sets up the webhook tests
 type WebhookSuite struct { //nolint:maligned
-	file.TemplateMixin
-	file.MultiGroupMixin
-	file.BoilerplateMixin
-	file.ResourceMixin
+	machinery.TemplateMixin
+	machinery.MultiGroupMixin
+	machinery.BoilerplateMixin
+	machinery.ResourceMixin
 
 	// todo: currently is not possible to know if an API was or not scaffolded. We can fix it when #1826 be addressed
 	WireResource bool
@@ -40,9 +40,9 @@ func (f *WebhookSuite) SetTemplateDefaults() error {
 	f.Path = f.Resource.Replacer().Replace(f.Path)
 
 	f.TemplateBody = fmt.Sprintf(webhookTestSuiteTemplate,
-		file.NewMarkerFor(f.Path, importMarker),
-		file.NewMarkerFor(f.Path, addSchemeMarker),
-		file.NewMarkerFor(f.Path, addWebhookManagerMarker),
+		machinery.NewMarkerFor(f.Path, importMarker),
+		machinery.NewMarkerFor(f.Path, addSchemeMarker),
+		machinery.NewMarkerFor(f.Path, addWebhookManagerMarker),
 		"%s",
 		"%d",
 	)
@@ -66,11 +66,11 @@ const (
 )
 
 // GetMarkers implements file.Inserter
-func (f *WebhookSuite) GetMarkers() []file.Marker {
-	return []file.Marker{
-		file.NewMarkerFor(f.Path, importMarker),
-		file.NewMarkerFor(f.Path, addSchemeMarker),
-		file.NewMarkerFor(f.Path, addWebhookManagerMarker),
+func (f *WebhookSuite) GetMarkers() []machinery.Marker {
+	return []machinery.Marker{
+		machinery.NewMarkerFor(f.Path, importMarker),
+		machinery.NewMarkerFor(f.Path, addSchemeMarker),
+		machinery.NewMarkerFor(f.Path, addWebhookManagerMarker),
 	}
 }
 
@@ -88,8 +88,8 @@ Expect(err).NotTo(HaveOccurred())
 )
 
 // GetCodeFragments implements file.Inserter
-func (f *WebhookSuite) GetCodeFragments() file.CodeFragmentsMap {
-	fragments := make(file.CodeFragmentsMap, 3)
+func (f *WebhookSuite) GetCodeFragments() machinery.CodeFragmentsMap {
+	fragments := make(machinery.CodeFragmentsMap, 3)
 
 	// Generate import code fragments
 	imports := make([]string, 0)
@@ -105,13 +105,13 @@ func (f *WebhookSuite) GetCodeFragments() file.CodeFragmentsMap {
 
 	// Only store code fragments in the map if the slices are non-empty
 	if len(addWebhookManager) != 0 {
-		fragments[file.NewMarkerFor(f.Path, addWebhookManagerMarker)] = addWebhookManager
+		fragments[machinery.NewMarkerFor(f.Path, addWebhookManagerMarker)] = addWebhookManager
 	}
 	if len(imports) != 0 {
-		fragments[file.NewMarkerFor(f.Path, importMarker)] = imports
+		fragments[machinery.NewMarkerFor(f.Path, importMarker)] = imports
 	}
 	if len(addScheme) != 0 {
-		fragments[file.NewMarkerFor(f.Path, addSchemeMarker)] = addScheme
+		fragments[machinery.NewMarkerFor(f.Path, addSchemeMarker)] = addScheme
 	}
 
 	return fragments

@@ -23,7 +23,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func (c cli) newBashCmd() *cobra.Command {
+func (c CLI) newBashCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "bash",
 		Short: "Load bash completions",
@@ -42,7 +42,7 @@ MacOS:
 	}
 }
 
-func (c cli) newZshCmd() *cobra.Command {
+func (c CLI) newZshCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "zsh",
 		Short: "Load zsh completions",
@@ -61,11 +61,7 @@ $ %[1]s completion zsh > "${fpath[1]}/_%[1]s"
 	}
 }
 
-/* TODO: support fish code completion
-    At the time this comment is written, the imported spf13.cobra version does not support fish completion.
-    However, fish completion has been added to new spf13.cobra versions. When a new spf13.cobra version that
-    supports it is used, uncomment this command and add it to the base completion command.
-func (c cli) newFishCmd() *cobra.Command {
+func (c CLI) newFishCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "fish",
 		Short: "Load fish completions",
@@ -73,15 +69,15 @@ func (c cli) newFishCmd() *cobra.Command {
 $ %[1]s completion fish | source
 
 # To load completions for each session, execute once:
-$ %[1]s completion fish > ~/.config/fish/completions/%[1]s.fish`, c.commandName),
+$ %[1]s completion fish > ~/.config/fish/completions/%[1]s.fish
+`, c.commandName),
 		RunE: func(cmd *cobra.Command, cmdArgs []string) error {
-			return cmd.Root().GenFishCompletion(os.Stdout)
+			return cmd.Root().GenFishCompletion(os.Stdout, true)
 		},
 	}
 }
-*/
 
-func (cli) newPowerShellCmd() *cobra.Command {
+func (CLI) newPowerShellCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "powershell",
 		Short: "Load powershell completions",
@@ -91,7 +87,7 @@ func (cli) newPowerShellCmd() *cobra.Command {
 	}
 }
 
-func (c cli) newCompletionCmd() *cobra.Command {
+func (c CLI) newCompletionCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "completion",
 		Short: "Load completions for the specified shell",
@@ -102,7 +98,7 @@ Detailed instructions on how to do this for each shell are provided in their own
 	}
 	cmd.AddCommand(c.newBashCmd())
 	cmd.AddCommand(c.newZshCmd())
-	// cmd.AddCommand(c.newFishCmd()) // TODO: uncomment when adding fish completion
+	cmd.AddCommand(c.newFishCmd())
 	cmd.AddCommand(c.newPowerShellCmd())
 	return cmd
 }
