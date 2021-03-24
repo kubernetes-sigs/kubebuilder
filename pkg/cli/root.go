@@ -31,9 +31,8 @@ const (
 
 func (c CLI) newRootCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use: c.commandName,
-		Long: `CLI tool for building Kubernetes extensions and tools.
-`,
+		Use:     c.commandName,
+		Long:    c.description,
 		Example: c.rootExamples(),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cmd.Help()
