@@ -48,6 +48,8 @@ type CLI struct { //nolint:maligned
 	commandName string
 	// CLI version string.
 	version string
+	// CLI root's command description.
+	description string
 	// Plugins registered in the CLI.
 	plugins map[string]plugin.Plugin
 	// Default plugins in case none is provided and a config file can't be found.
@@ -120,7 +122,9 @@ func New(options ...Option) (*CLI, error) {
 func newCLI(options ...Option) (*CLI, error) {
 	// Default CLI options.
 	c := &CLI{
-		commandName:    "kubebuilder",
+		commandName: "kubebuilder",
+		description: `CLI tool for building Kubernetes extensions and tools.
+`,
 		plugins:        make(map[string]plugin.Plugin),
 		defaultPlugins: make(map[config.Version][]string),
 		fs:             machinery.Filesystem{FS: afero.NewOsFs()},

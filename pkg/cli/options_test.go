@@ -67,6 +67,16 @@ var _ = Describe("CLI options", func() {
 		})
 	})
 
+	Context("WithDescription", func() {
+		It("should use the provided description string", func() {
+			description := "alternative description"
+			c, err = newCLI(WithDescription(description))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(c).NotTo(BeNil())
+			Expect(c.description).To(Equal(description))
+		})
+	})
+
 	Context("WithPlugins", func() {
 		It("should return a valid CLI", func() {
 			c, err = newCLI(WithPlugins(p))
