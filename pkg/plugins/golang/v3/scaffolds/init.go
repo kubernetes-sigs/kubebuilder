@@ -25,7 +25,6 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/config/certmanager"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/config/kdefault"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/config/manager"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/config/prometheus"
@@ -132,8 +131,5 @@ func (s *initScaffolder) Scaffold() error {
 		&kdefault.ManagerConfigPatch{},
 		&prometheus.Kustomization{},
 		&prometheus.Monitor{},
-		&certmanager.Certificate{},
-		&certmanager.Kustomization{},
-		&certmanager.KustomizeConfig{},
 	)
 }
