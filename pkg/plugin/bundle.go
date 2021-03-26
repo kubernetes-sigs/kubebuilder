@@ -38,10 +38,22 @@ func NewBundle(name string, version Version, plugins ...Plugin) (Bundle, error) 
 		return nil, fmt.Errorf("in order to bundle plugins, they must all support at least one common project version")
 	}
 
+	// Plugins may be bundles themselves, so unbundle here
+	// NOTE(Adirio): unbundling here ensures that Bundle.Plugin always returns a flat list of Plugins instead of also
+	//               including Bundles, and therefore we don't have to use a recursive algorithm when resolving.
+	allPlugins := make([]Plugin, 0, len(plugins))
+	for _, plugin := range plugins {
+		if pluginBundle, isBundle := plugin.(Bundle); isBundle {
+			allPlugins = append(allPlugins, pluginBundle.Plugins()...)
+		} else {
+			allPlugins = append(allPlugins, plugin)
+		}
+	}
+
 	return bundle{
 		name:                     name,
 		version:                  version,
-		plugins:                  plugins,
+		plugins:                  allPlugins,
 		supportedProjectVersions: supportedProjectVersions,
 	}, nil
 }
