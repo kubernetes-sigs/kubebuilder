@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubernetes Authors.
+Copyright 2019 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v3
+package e2e
 
 import (
 	"encoding/base64"
@@ -31,6 +31,222 @@ import (
 )
 
 var _ = Describe("kubebuilder", func() {
+	Context("project version 2", func() {
+		var kbc *utils.TestContext
+		BeforeEach(func() {
+			var err error
+			kbc, err = utils.NewTestContext(utils.KubebuilderBinName, "GO111MODULE=on")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(kbc.Prepare()).To(Succeed())
+
+			// Install cert-manager with v1beta2 CRs.
+			By("installing cert manager bundle")
+			Expect(kbc.InstallCertManager(true)).To(Succeed())
+
+			By("installing prometheus operator")
+			Expect(kbc.InstallPrometheusOperManager()).To(Succeed())
+		})
+
+		AfterEach(func() {
+			By("clean up created API objects during test process")
+			kbc.CleanupManifests(filepath.Join("config", "default"))
+
+			By("uninstalling prometheus manager bundle")
+			kbc.UninstallPrometheusOperManager()
+
+			// Uninstall cert-manager with v1beta2 CRs.
+			By("uninstalling cert manager bundle")
+			kbc.UninstallCertManager(true)
+
+			By("remove container image and work dir")
+			kbc.Destroy()
+		})
+
+		It("should generate a runnable project", func() {
+			var controllerPodName string
+			GenerateGo(kbc, pluginV2, projectV2, "v1beta1")
+
+			By("building image")
+			err := kbc.Make("docker-build", "IMG="+kbc.ImageName)
+			Expect(err).Should(Succeed())
+
+			By("loading docker image into kind cluster")
+			err = kbc.LoadImageToKindCluster()
+			Expect(err).Should(Succeed())
+
+			// NOTE: If you want to run the test against a GKE cluster, you will need to grant yourself permission.
+			// Otherwise, you may see "... is forbidden: attempt to grant extra privileges"
+			// $ kubectl create clusterrolebinding myname-cluster-admin-binding \
+			// --clusterrole=cluster-admin --user=myname@mycompany.com
+			// https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control
+			By("deploying controller manager")
+			err = kbc.Make("deploy", "IMG="+kbc.ImageName)
+			Expect(err).Should(Succeed())
+
+			By("validate the controller-manager pod running as expected")
+			verifyControllerUp := func() error {
+				// Get pod name
+				podOutput, err := kbc.Kubectl.Get(
+					true,
+					"pods", "-l", "control-plane=controller-manager",
+					"-o", "go-template={{ range .items }}{{ if not .metadata.deletionTimestamp }}{{ .metadata.name }}"+
+						"{{ \"\\n\" }}{{ end }}{{ end }}")
+				Expect(err).NotTo(HaveOccurred())
+				podNames := utils.GetNonEmptyLines(podOutput)
+				if len(podNames) != 1 {
+					return fmt.Errorf("expect 1 controller pods running, but got %d", len(podNames))
+				}
+				controllerPodName = podNames[0]
+				Expect(controllerPodName).Should(ContainSubstring("controller-manager"))
+
+				// Validate pod status
+				status, err := kbc.Kubectl.Get(
+					true,
+					"pods", controllerPodName, "-o", "jsonpath={.status.phase}")
+				Expect(err).NotTo(HaveOccurred())
+				if status != "Running" {
+					return fmt.Errorf("controller pod in %s status", status)
+				}
+				return nil
+			}
+			Eventually(verifyControllerUp, time.Minute, time.Second).Should(Succeed())
+
+			By("granting permissions to access the metrics and read the token")
+			_, err = kbc.Kubectl.Command(
+				"create", "clusterrolebinding", fmt.Sprintf("metrics-%s", kbc.TestSuffix),
+				fmt.Sprintf("--clusterrole=e2e-%s-metrics-reader", kbc.TestSuffix),
+				fmt.Sprintf("--serviceaccount=%s:default", kbc.Kubectl.Namespace))
+			Expect(err).NotTo(HaveOccurred())
+
+			b64Token, err := kbc.Kubectl.Get(true, "secrets", "-o=jsonpath={.items[0].data.token}")
+			Expect(err).NotTo(HaveOccurred())
+			token, err := base64.StdEncoding.DecodeString(strings.TrimSpace(b64Token))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(token)).To(BeNumerically(">", 0))
+
+			By("creating a pod with curl image")
+			cmdOpts := []string{
+				"run", "--generator=run-pod/v1", "curl", "--image=curlimages/curl:7.68.0", "--restart=OnFailure", "--",
+				"curl", "-v", "-k", "-H", fmt.Sprintf(`Authorization: Bearer %s`, token),
+				fmt.Sprintf("https://e2e-%v-controller-manager-metrics-service.e2e-%v-system.svc:8443/metrics",
+					kbc.TestSuffix, kbc.TestSuffix),
+			}
+			_, err = kbc.Kubectl.CommandInNamespace(cmdOpts...)
+			Expect(err).NotTo(HaveOccurred())
+
+			By("validating the curl pod running as expected")
+			verifyCurlUp := func() error {
+				// Validate pod status
+				status, err := kbc.Kubectl.Get(
+					true,
+					"pods", "curl", "-o", "jsonpath={.status.phase}")
+				Expect(err).NotTo(HaveOccurred())
+				if status != "Completed" && status != "Succeeded" {
+					return fmt.Errorf("curl pod in %s status", status)
+				}
+				return nil
+			}
+			Eventually(verifyCurlUp, 30*time.Second, time.Second).Should(Succeed())
+
+			By("validating the metrics endpoint is serving as expected")
+			getCurlLogs := func() string {
+				logOutput, err := kbc.Kubectl.Logs("curl")
+				Expect(err).NotTo(HaveOccurred())
+				return logOutput
+			}
+			Eventually(getCurlLogs, 10*time.Second, time.Second).Should(ContainSubstring("< HTTP/2 200"))
+
+			By("validate cert manager has provisioned the certificate secret")
+			Eventually(func() error {
+				_, err := kbc.Kubectl.Get(
+					true,
+					"secrets", "webhook-server-cert")
+				return err
+			}, time.Minute, time.Second).Should(Succeed())
+
+			By("validate prometheus manager has provisioned the Service")
+			Eventually(func() error {
+				_, err := kbc.Kubectl.Get(
+					false,
+					"Service", "prometheus-operator")
+				return err
+			}, time.Minute, time.Second).Should(Succeed())
+
+			By("validate Service Monitor for Prometheus is applied in the namespace")
+			_, err = kbc.Kubectl.Get(
+				true,
+				"ServiceMonitor")
+			Expect(err).NotTo(HaveOccurred())
+
+			By("validate the mutating|validating webhooks have the CA injected")
+			verifyCAInjection := func() error {
+				mwhOutput, err := kbc.Kubectl.Get(
+					false,
+					"mutatingwebhookconfigurations.admissionregistration.k8s.io",
+					fmt.Sprintf("e2e-%s-mutating-webhook-configuration", kbc.TestSuffix),
+					"-o", "go-template={{ range .webhooks }}{{ .clientConfig.caBundle }}{{ end }}")
+				Expect(err).NotTo(HaveOccurred())
+				// check that ca should be long enough, because there may be a place holder "\n"
+				Expect(len(mwhOutput)).To(BeNumerically(">", 10))
+
+				vwhOutput, err := kbc.Kubectl.Get(
+					false,
+					"validatingwebhookconfigurations.admissionregistration.k8s.io",
+					fmt.Sprintf("e2e-%s-validating-webhook-configuration", kbc.TestSuffix),
+					"-o", "go-template={{ range .webhooks }}{{ .clientConfig.caBundle }}{{ end }}")
+				Expect(err).NotTo(HaveOccurred())
+				// check that ca should be long enough, because there may be a place holder "\n"
+				Expect(len(vwhOutput)).To(BeNumerically(">", 10))
+
+				return nil
+			}
+			Eventually(verifyCAInjection, time.Minute, time.Second).Should(Succeed())
+
+			By("creating an instance of CR")
+			// currently controller-runtime doesn't provide a readiness probe, we retry a few times
+			// we can change it to probe the readiness endpoint after CR supports it.
+			sampleFile := filepath.Join("config", "samples",
+				fmt.Sprintf("%s_%s_%s.yaml", kbc.Group, kbc.Version, strings.ToLower(kbc.Kind)))
+			Eventually(func() error {
+				_, err = kbc.Kubectl.Apply(true, "-f", sampleFile)
+				return err
+			}, time.Minute, time.Second).Should(Succeed())
+
+			By("applying CRD Editor Role")
+			crdEditorRole := filepath.Join("config", "rbac",
+				fmt.Sprintf("%s_editor_role.yaml", strings.ToLower(kbc.Kind)))
+			Eventually(func() error {
+				_, err = kbc.Kubectl.Apply(true, "-f", crdEditorRole)
+				return err
+			}, time.Minute, time.Second).Should(Succeed())
+
+			By("applying CRD Viewer Role")
+			crdViewerRole := filepath.Join("config", "rbac", fmt.Sprintf("%s_viewer_role.yaml", strings.ToLower(kbc.Kind)))
+			Eventually(func() error {
+				_, err = kbc.Kubectl.Apply(true, "-f", crdViewerRole)
+				return err
+			}, time.Minute, time.Second).Should(Succeed())
+
+			By("validate the created resource object gets reconciled in controller")
+			managerContainerLogs := func() string {
+				logOutput, err := kbc.Kubectl.Logs(controllerPodName, "-c", "manager")
+				Expect(err).NotTo(HaveOccurred())
+				return logOutput
+			}
+			Eventually(managerContainerLogs, time.Minute, time.Second).Should(ContainSubstring("Successfully Reconciled"))
+
+			By("validate mutating and validating webhooks are working fine")
+			cnt, err := kbc.Kubectl.Get(
+				true,
+				"-f", sampleFile,
+				"-o", "go-template={{ .spec.count }}")
+			Expect(err).NotTo(HaveOccurred())
+			count, err := strconv.Atoi(cnt)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(count).To(BeNumerically("==", 5))
+		})
+	})
+
 	Context("project version 3", func() {
 		var (
 			kbc *utils.TestContext
@@ -74,7 +290,7 @@ var _ = Describe("kubebuilder", func() {
 				tmp := kbc.Kubectl.ServiceAccount
 				kbc.Kubectl.ServiceAccount = "default"
 				defer func() { kbc.Kubectl.ServiceAccount = tmp }()
-				GenerateV2(kbc)
+				GenerateGo(kbc, pluginV2, projectV3, "v1beta1")
 				Run(kbc)
 			})
 		})
@@ -96,7 +312,7 @@ var _ = Describe("kubebuilder", func() {
 					Skip(fmt.Sprintf("cluster version %s does not support v1 CRDs or webhooks", srvVer.GitVersion))
 				}
 
-				GenerateV3(kbc, "v1")
+				GenerateGo(kbc, pluginV3, projectV3, "v1")
 				Run(kbc)
 			})
 			It("should generate a runnable project with v1beta1 CRDs and Webhooks", func() {
@@ -105,7 +321,7 @@ var _ = Describe("kubebuilder", func() {
 					Skip(fmt.Sprintf("cluster version %s does not support project defaults", srvVer.GitVersion))
 				}
 
-				GenerateV3(kbc, "v1beta1")
+				GenerateGo(kbc, pluginV3, projectV3, "v1beta1")
 				Run(kbc)
 			})
 		})
