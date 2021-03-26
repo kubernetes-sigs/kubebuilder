@@ -2,7 +2,7 @@ domain: testproject.org
 layout:
 - go.kubebuilder.io/v3
 plugins:
-  declarative.kubebuilder.io/v1:
+  declarative.go.kubebuilder.io/v1:
     resources:
     - domain: testproject.org
       group: crew

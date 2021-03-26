@@ -22,10 +22,10 @@ import (
 	cfgv3 "sigs.k8s.io/kubebuilder/v3/pkg/config/v3"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang"
 )
 
-const pluginName = "declarative" + plugins.DefaultNameQualifier
+const pluginName = "declarative." + golang.DefaultGoNameQualifier
 
 var (
 	pluginVersion            = plugin.Version{Number: 1}

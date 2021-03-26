@@ -28,7 +28,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/declarative/v1/internal/templates"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/declarative/v1/internal/templates"
 	goPluginV3 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3"
 )
 
