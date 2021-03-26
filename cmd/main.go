@@ -22,7 +22,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/cli"
 	cfgv2 "sigs.k8s.io/kubebuilder/v3/pkg/config/v2"
 	cfgv3 "sigs.k8s.io/kubebuilder/v3/pkg/config/v3"
-	declarativev1 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/declarative/v1"
+	declarativev1 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/declarative/v1"
 	pluginv2 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2"
 	pluginv3 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3"
 )

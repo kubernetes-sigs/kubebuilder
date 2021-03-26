@@ -1,9 +1,9 @@
 domain: testproject.org
 layout:
 - go.kubebuilder.io/v2
-- declarative.kubebuilder.io/v1
+- declarative.go.kubebuilder.io/v1
 plugins:
-  declarative.kubebuilder.io/v1:
+  declarative.go.kubebuilder.io/v1:
     resources:
     - domain: testproject.org
       group: crew
