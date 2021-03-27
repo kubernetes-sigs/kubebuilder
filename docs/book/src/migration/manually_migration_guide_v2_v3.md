@@ -43,7 +43,8 @@ The default plugin layout which is equivalent to the previous version is `go.kub
 
 ```yaml
 ...
-layout: go.kubebuilder.io/v2
+layout: 
+- go.kubebuilder.io/v2
 ...
 ```
 
@@ -221,7 +222,8 @@ For the QuickStart example, the `PROJECT` file manually updated to use `go.kubeb
 
 ```yaml
 domain: my.domain
-layout: go.kubebuilder.io/v2
+layout: 
+- go.kubebuilder.io/v2
 projectName: example
 repo: example
 resources:
@@ -261,7 +263,8 @@ version: "2"
 
 ```yaml
 domain: testproject.org
-layout: go.kubebuilder.io/v2
+layout: 
+- go.kubebuilder.io/v2
 projectName: example
 repo: sigs.k8s.io/kubebuilder/example
 resources:
@@ -338,7 +341,8 @@ Before updating the `layout`, please ensure you have followed the above steps to
 
 ```yaml
 domain: my.domain
-layout: go.kubebuilder.io/v3
+layout: 
+- go.kubebuilder.io/v3
 ...
 ```
 
