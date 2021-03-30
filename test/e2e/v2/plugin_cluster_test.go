@@ -26,7 +26,9 @@ import (
 
 	. "github.com/onsi/ginkgo" //nolint:golint
 	. "github.com/onsi/gomega" //nolint:golint
+	"github.com/spf13/afero"
 
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/test/e2e/utils"
 )
 
@@ -64,6 +66,8 @@ var _ = Describe("kubebuilder", func() {
 
 		It("should generate a runnable project", func() {
 			var controllerPodName string
+			fs := machinery.Filesystem{FS: afero.NewOsFs()}
+
 			By("init v2 project")
 			err := kbc.Init(
 				"--plugins", "go/v2",
@@ -84,7 +88,8 @@ var _ = Describe("kubebuilder", func() {
 			Expect(err).Should(Succeed())
 
 			By("implementing the API")
-			Expect(utils.InsertCode(
+			Expect(machinery.InsertAfter(
+				fs,
 				filepath.Join(kbc.Dir, "api", kbc.Version, fmt.Sprintf("%s_types.go", strings.ToLower(kbc.Kind))),
 				fmt.Sprintf(`type %sSpec struct {
 `, kbc.Kind),
@@ -102,28 +107,47 @@ var _ = Describe("kubebuilder", func() {
 			Expect(err).Should(Succeed())
 
 			By("implementing the mutating and validating webhooks")
-			err = utils.ImplementWebhooks(filepath.Join(
-				kbc.Dir, "api", kbc.Version,
-				fmt.Sprintf("%s_webhook.go", strings.ToLower(kbc.Kind))))
+			err = utils.ImplementWebhooks(
+				fs,
+				filepath.Join(kbc.Dir, "api", kbc.Version, fmt.Sprintf("%s_webhook.go", strings.ToLower(kbc.Kind))),
+			)
 			Expect(err).Should(Succeed())
 
 			By("uncomment kustomization.yaml to enable webhook and ca injection")
-			Expect(utils.UncommentCode(
+			Expect(machinery.RemovePrefix(
+				fs,
 				filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
-				"#- ../webhook", "#")).To(Succeed())
-			Expect(utils.UncommentCode(
+				"#",
+				"#- ../webhook",
+			)).To(Succeed())
+			Expect(machinery.RemovePrefix(
+				fs,
 				filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
-				"#- ../certmanager", "#")).To(Succeed())
-			Expect(utils.UncommentCode(
+				"#",
+				"#- ../certmanager",
+			)).To(Succeed())
+			Expect(machinery.RemovePrefix(
+				fs,
 				filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
-				"#- ../prometheus", "#")).To(Succeed())
-			Expect(utils.UncommentCode(
+				"#",
+				"#- ../prometheus",
+			)).To(Succeed())
+			Expect(machinery.RemovePrefix(
+				fs,
 				filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
-				"#- manager_webhook_patch.yaml", "#")).To(Succeed())
-			Expect(utils.UncommentCode(
+				"#",
+				"#- manager_webhook_patch.yaml",
+			)).To(Succeed())
+			Expect(machinery.RemovePrefix(
+				fs,
 				filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
-				"#- webhookcainjection_patch.yaml", "#")).To(Succeed())
-			Expect(utils.UncommentCode(filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+				"#",
+				"#- webhookcainjection_patch.yaml",
+			)).To(Succeed())
+			Expect(machinery.RemovePrefix(
+				fs,
+				filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+				"#",
 				`#- name: CERTIFICATE_NAMESPACE # namespace of the certificate CR
 #  objref:
 #    kind: Certificate
@@ -149,7 +173,8 @@ var _ = Describe("kubebuilder", func() {
 #  objref:
 #    kind: Service
 #    version: v1
-#    name: webhook-service`, "#")).To(Succeed())
+#    name: webhook-service`,
+			)).To(Succeed())
 
 			By("building image")
 			err = kbc.Make("docker-build", "IMG="+kbc.ImageName)

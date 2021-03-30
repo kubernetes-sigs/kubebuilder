@@ -17,12 +17,11 @@ limitations under the License.
 package utils
 
 import (
-	"bytes"
 	"crypto/rand"
-	"fmt"
-	"io/ioutil"
 	"math/big"
 	"strings"
+
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
 const (
@@ -59,112 +58,29 @@ func GetNonEmptyLines(output string) []string {
 	return res
 }
 
-// InsertCode searches target content in the file and insert `toInsert` after the target.
-func InsertCode(filename, target, code string) error {
-	contents, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return err
-	}
-	idx := strings.Index(string(contents), target)
-	out := string(contents[:idx+len(target)]) + code + string(contents[idx+len(target):])
-	// false positive
-	// nolint:gosec
-	return ioutil.WriteFile(filename, []byte(out), 0644)
-}
-
-// UncommentCode searches for target in the file and remove the comment prefix
-// of the target content. The target content may span multiple lines.
-func UncommentCode(filename, target, prefix string) error {
-	content, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return err
-	}
-	strContent := string(content)
-
-	idx := strings.Index(strContent, target)
-	if idx < 0 {
-		return nil
-	}
-
-	out := new(bytes.Buffer)
-	_, err = out.Write(content[:idx])
-	if err != nil {
-		return err
-	}
-
-	strs := strings.Split(target, "\n")
-	for _, str := range strs {
-		_, err := out.WriteString(strings.TrimPrefix(str, prefix) + "\n")
-		if err != nil {
-			return err
-		}
-	}
-
-	_, err = out.Write(content[idx+len(target):])
-	if err != nil {
-		return err
-	}
-	// false positive
-	// nolint:gosec
-	return ioutil.WriteFile(filename, out.Bytes(), 0644)
-}
-
 // ImplementWebhooks will mock an webhook data
-func ImplementWebhooks(filename string) error {
-	bs, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return err
-	}
-	str := string(bs)
+func ImplementWebhooks(fs machinery.Filesystem, filename string) error {
+	return machinery.Replace(
+		fs,
+		filename,
 
-	str, err = EnsureExistAndReplace(
-		str,
 		"import (",
 		`import (
-	"errors"`)
-	if err != nil {
-		return err
-	}
+	"errors"`,
 
-	// implement defaulting webhook logic
-	str, err = EnsureExistAndReplace(
-		str,
 		"// TODO(user): fill in your defaulting logic.",
 		`if r.Spec.Count == 0 {
 		r.Spec.Count = 5
-	}`)
-	if err != nil {
-		return err
-	}
+	}`,
 
-	// implement validation webhook logic
-	str, err = EnsureExistAndReplace(
-		str,
 		"// TODO(user): fill in your validation logic upon object creation.",
 		`if r.Spec.Count < 0 {
 		return errors.New(".spec.count must >= 0")
-	}`)
-	if err != nil {
-		return err
-	}
-	str, err = EnsureExistAndReplace(
-		str,
+	}`,
+
 		"// TODO(user): fill in your validation logic upon object update.",
 		`if r.Spec.Count < 0 {
 		return errors.New(".spec.count must >= 0")
-	}`)
-	if err != nil {
-		return err
-	}
-	// false positive
-	// nolint:gosec
-	return ioutil.WriteFile(filename, []byte(str), 0644)
-}
-
-// EnsureExistAndReplace check if the content exists and then do the replace
-func EnsureExistAndReplace(input, match, replace string) (string, error) {
-	if !strings.Contains(input, match) {
-		return "", fmt.Errorf("can't find %q", match)
-	}
-	return strings.Replace(input, match, replace, -1), nil
+	}`,
+	)
 }
