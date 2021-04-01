@@ -18,17 +18,12 @@ package scaffolds
 
 import (
 	"fmt"
-
 	"github.com/spf13/afero"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/config/kdefault"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/config/manager"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/config/prometheus"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/config/rbac"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/hack"
 )
 
@@ -102,18 +97,6 @@ func (s *initScaffolder) Scaffold() error {
 	)
 
 	return scaffold.Execute(
-		&rbac.Kustomization{},
-		&rbac.AuthProxyRole{},
-		&rbac.AuthProxyRoleBinding{},
-		&rbac.AuthProxyService{},
-		&rbac.AuthProxyClientRole{},
-		&rbac.RoleBinding{},
-		&rbac.LeaderElectionRole{},
-		&rbac.LeaderElectionRoleBinding{},
-		&rbac.ServiceAccount{},
-		&manager.Kustomization{},
-		&manager.Config{Image: imageName},
-		&manager.ControllerManagerConfig{},
 		&templates.Main{},
 		&templates.GoMod{ControllerRuntimeVersion: ControllerRuntimeVersion},
 		&templates.GitIgnore{},
@@ -126,10 +109,5 @@ func (s *initScaffolder) Scaffold() error {
 		},
 		&templates.Dockerfile{},
 		&templates.DockerIgnore{},
-		&kdefault.Kustomization{},
-		&kdefault.ManagerAuthProxyPatch{},
-		&kdefault.ManagerConfigPatch{},
-		&prometheus.Kustomization{},
-		&prometheus.Monitor{},
 	)
 }
