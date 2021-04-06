@@ -29,6 +29,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	yamlstore "sigs.k8s.io/kubebuilder/v3/pkg/config/store/yaml"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v3/pkg/model/stage"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 )
 
@@ -144,8 +145,21 @@ func newCLI(options ...Option) (*CLI, error) {
 func (c *CLI) buildCmd() error {
 	c.cmd = c.newRootCmd()
 
+	var uve config.UnsupportedVersionError
+
 	// Get project version and plugin keys.
-	if err := c.getInfo(); err != nil {
+	switch err := c.getInfo(); {
+	case err == nil:
+	case errors.As(err, &uve) && uve.Version.Compare(config.Version{Number: 3, Stage: stage.Alpha}) == 0:
+		// Check if the corresponding stable version exists, set c.projectVersion and break
+		stableVersion := config.Version{
+			Number: uve.Version.Number,
+		}
+		if config.IsRegistered(stableVersion) {
+			// Use the stableVersion
+			c.projectVersion = stableVersion
+		}
+	default:
 		return err
 	}
 

@@ -32,6 +32,7 @@ import (
 	cfgv2 "sigs.k8s.io/kubebuilder/v3/pkg/config/v2"
 	cfgv3 "sigs.k8s.io/kubebuilder/v3/pkg/config/v3"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v3/pkg/model/stage"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	goPluginV3 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3"
 )
@@ -89,6 +90,40 @@ var _ = Describe("CLI", func() {
 		c = &CLI{
 			fs: machinery.Filesystem{FS: afero.NewMemMapFs()},
 		}
+	})
+
+	Context("buildCmd", func() {
+		BeforeEach(func() {
+			projectFile := `domain: zeusville.com
+layout: go.kubebuilder.io/v3
+projectName: demo-zeus-operator
+repo: github.com/jmrodri/demo-zeus-operator
+resources:
+- crdVersion: v1
+  group: test
+  kind: Test
+  version: v1
+version: 3-alpha
+plugins:
+  manifests.sdk.operatorframework.io/v2: {}
+`
+			f, err := c.fs.FS.Create("PROJECT")
+			Expect(err).To(Not(HaveOccurred()))
+
+			_, err = f.WriteString(projectFile)
+			Expect(err).To(Not(HaveOccurred()))
+		})
+
+		When("reading a 3-alpha config", func() {
+			It("should succeed and set the projectVersion", func() {
+				err := c.buildCmd()
+				Expect(err).To(Not(HaveOccurred()))
+				Expect(c.projectVersion.Compare(
+					config.Version{
+						Number: 3,
+						Stage:  stage.Stable})).To(Equal(0))
+			})
+		})
 	})
 
 	// TODO: test CLI.getInfoFromConfigFile using a mock filesystem
