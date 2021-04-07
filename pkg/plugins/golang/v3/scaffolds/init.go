@@ -18,6 +18,7 @@ package scaffolds
 
 import (
 	"fmt"
+
 	"github.com/spf13/afero"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
