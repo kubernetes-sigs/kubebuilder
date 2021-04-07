@@ -39,6 +39,12 @@ rules:
 - apiGroups:
   - batch.tutorial.kubebuilder.io
   resources:
+  - cronjobs/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - batch.tutorial.kubebuilder.io
+  resources:
   - cronjobs/status
   verbs:
   - get

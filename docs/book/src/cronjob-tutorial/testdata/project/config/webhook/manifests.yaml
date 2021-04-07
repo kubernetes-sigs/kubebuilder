@@ -51,6 +51,7 @@ webhooks:
     operations:
     - CREATE
     - UPDATE
+    - DELETE
     resources:
     - cronjobs
   sideEffects: None
