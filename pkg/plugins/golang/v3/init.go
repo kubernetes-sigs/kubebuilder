@@ -25,7 +25,6 @@ import (
 	"github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	"sigs.k8s.io/kubebuilder/v3/pkg/internal/validation"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
@@ -44,11 +43,8 @@ type initSubcommand struct {
 	license string
 	owner   string
 
-	// config options
-	domain          string
-	repo            string
-	name            string
-	componentConfig bool
+	// go config options
+	repo string
 
 	// flags
 	fetchDeps          bool
@@ -86,20 +82,12 @@ func (p *initSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&p.owner, "owner", "", "owner to add to the copyright")
 
 	// project args
-	fs.StringVar(&p.domain, "domain", "my.domain", "domain for groups")
 	fs.StringVar(&p.repo, "repo", "", "name to use for go module (e.g., github.com/user/repo), "+
 		"defaults to the go package of the current working directory.")
-	fs.StringVar(&p.name, "project-name", "", "name of this project")
-	fs.BoolVar(&p.componentConfig, "component-config", false,
-		"create a versioned ComponentConfig file, may be 'true' or 'false'")
 }
 
 func (p *initSubcommand) InjectConfig(c config.Config) error {
 	p.config = c
-
-	if err := p.config.SetDomain(p.domain); err != nil {
-		return err
-	}
 
 	// Try to guess repository if flag is not set.
 	if p.repo == "" {
@@ -111,28 +99,6 @@ func (p *initSubcommand) InjectConfig(c config.Config) error {
 	}
 	if err := p.config.SetRepository(p.repo); err != nil {
 		return err
-	}
-
-	// Assign a default project name
-	if p.name == "" {
-		dir, err := os.Getwd()
-		if err != nil {
-			return fmt.Errorf("error getting current directory: %v", err)
-		}
-		p.name = strings.ToLower(filepath.Base(dir))
-	}
-	// Check if the project name is a valid k8s namespace (DNS 1123 label).
-	if err := validation.IsDNS1123Label(p.name); err != nil {
-		return fmt.Errorf("project name (%s) is invalid: %v", p.name, err)
-	}
-	if err := p.config.SetProjectName(p.name); err != nil {
-		return err
-	}
-
-	if p.componentConfig {
-		if err := p.config.SetComponentConfig(); err != nil {
-			return err
-		}
 	}
 
 	return nil

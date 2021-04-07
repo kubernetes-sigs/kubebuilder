@@ -25,7 +25,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang"
 )
 
-const pluginName = "declarative." + golang.DefaultGoNameQualifier
+const pluginName = "declarative." + golang.DefaultNameQualifier
 
 var (
 	pluginVersion            = plugin.Version{Number: 1}
