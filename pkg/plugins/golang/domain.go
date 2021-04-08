@@ -14,7 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package plugins
+package golang
 
-// DefaultNameQualifier is the suffix appended to all kubebuilder plugin names.
-const DefaultNameQualifier = "kubebuilder.io"
+import "sigs.k8s.io/kubebuilder/v3/pkg/plugins"
+
+// DefaultNameQualifier is the suffix appended to all kubebuilder plugin names for Golang operators.
+const DefaultNameQualifier = "go." + plugins.DefaultNameQualifier

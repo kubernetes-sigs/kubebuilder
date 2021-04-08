@@ -24,7 +24,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins"
 )
 
-const pluginName = "go" + plugins.DefaultNameQualifier
+const pluginName = "go." + plugins.DefaultNameQualifier
 
 var (
 	pluginVersion            = plugin.Version{Number: 2}

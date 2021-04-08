@@ -37,6 +37,9 @@ func (f *KustomizeConfig) SetTemplateDefaults() error {
 
 	f.TemplateBody = kustomizeConfigTemplate
 
+	// If file exists (ex. because a webhook was already created), skip creation.
+	f.IfExistsAction = machinery.SkipFile
+
 	return nil
 }
 
