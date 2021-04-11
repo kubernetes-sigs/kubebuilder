@@ -158,6 +158,9 @@ func (c *CLI) buildCmd() error {
 		if config.IsRegistered(stableVersion) {
 			// Use the stableVersion
 			c.projectVersion = stableVersion
+		} else {
+			// stable version not registered, let's bail out
+			return err
 		}
 	default:
 		return err

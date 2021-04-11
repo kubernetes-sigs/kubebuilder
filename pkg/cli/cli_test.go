@@ -93,8 +93,10 @@ var _ = Describe("CLI", func() {
 	})
 
 	Context("buildCmd", func() {
+		var projectFile string
+
 		BeforeEach(func() {
-			projectFile := `domain: zeusville.com
+			projectFile = `domain: zeusville.com
 layout: go.kubebuilder.io/v3
 projectName: demo-zeus-operator
 repo: github.com/jmrodri/demo-zeus-operator
@@ -122,6 +124,17 @@ plugins:
 					config.Version{
 						Number: 3,
 						Stage:  stage.Stable})).To(Equal(0))
+			})
+			It("should fail when stable is not registered ", func() {
+				// overwrite project file with fake 4-alpha
+				f, err := c.fs.FS.OpenFile("PROJECT", os.O_WRONLY, 0)
+				Expect(err).To(Not(HaveOccurred()))
+				_, err = f.WriteString(strings.ReplaceAll(projectFile, "3-alpha", "4-alpha"))
+				Expect(err).To(Not(HaveOccurred()))
+
+				// buildCmd should return an error
+				err = c.buildCmd()
+				Expect(err).To(HaveOccurred())
 			})
 		})
 	})
