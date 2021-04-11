@@ -25,6 +25,12 @@ func Register(version Version, constructor func() Config) {
 	registry[version] = constructor
 }
 
+// IsRegistered returns true if the given version has been registered through Register
+func IsRegistered(version Version) bool {
+	_, ok := registry[version]
+	return ok
+}
+
 // New creates Config instances from the previously registered implementations through Register
 func New(version Version) (Config, error) {
 	if constructor, exists := registry[version]; exists {
