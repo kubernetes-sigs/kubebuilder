@@ -37,7 +37,7 @@ $ git clone git@github.com:<user>/kubebuilder.git $GOPATH/src/sigs.k8s.io/kubebu
 1. Ensure you activate module support before continue (`$ export GO111MODULE=on`)
 1. Run the command `make install` to create a bin with the source code 
 
-**NOTE** In order to check the local environment run `make go-test`.
+**NOTE** In order to check the local environment run `make test-unit`.
 
 ## What to do before submitting a pull request 
 
@@ -49,7 +49,7 @@ Following the targets that can be used to test your changes locally.
 
 |   Command	|   Description	|  Is called in the CI?  	|
 |---	|---	|---	|
-| make go-test |  Runs go tests | no   	|
+| make test-unit |  Runs go tests | no   	|
 | make test| Runs tests in shell (`./test.sh`)	|  yes 	|
 | make lint |  Run [golangci][golangci] lint checks | yes   |
 | make lint-fix |   Run [golangci][golangci] to automatically perform fixes | no   |
