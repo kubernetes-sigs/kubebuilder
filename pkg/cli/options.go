@@ -44,6 +44,14 @@ func WithVersion(version string) Option {
 	}
 }
 
+// WithDescription is an Option that sets the CLI's root description.
+func WithDescription(description string) Option {
+	return func(c *CLI) error {
+		c.description = description
+		return nil
+	}
+}
+
 // WithPlugins is an Option that sets the CLI's plugins.
 //
 // Specifying any invalid plugin results in an error.

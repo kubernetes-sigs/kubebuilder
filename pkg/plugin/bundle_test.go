@@ -84,6 +84,26 @@ var _ = Describe("Bundle", func() {
 			}
 		})
 
+		It("should accept bundles as input", func() {
+			var a, b Bundle
+			var err error
+			plugins := []Plugin{p1, p2, p3}
+			a, err = NewBundle("a", version, p1, p2)
+			Expect(err).NotTo(HaveOccurred())
+			b, err = NewBundle("b", version, a, p3)
+			Expect(err).NotTo(HaveOccurred())
+			versions := b.SupportedProjectVersions()
+			sort.Slice(versions, func(i int, j int) bool {
+				return versions[i].Compare(versions[j]) == -1
+			})
+			expectedVersions := CommonSupportedProjectVersions(plugins...)
+			sort.Slice(expectedVersions, func(i int, j int) bool {
+				return expectedVersions[i].Compare(expectedVersions[j]) == -1
+			})
+			Expect(versions).To(Equal(expectedVersions))
+			Expect(b.Plugins()).To(Equal(plugins))
+		})
+
 		It("should fail for plugins with no common supported project version", func() {
 			for _, plugins := range [][]Plugin{
 				{p2, p4},

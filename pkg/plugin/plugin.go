@@ -20,7 +20,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 )
 
-// Plugin is an interface that defines the common base for all plugins
+// Plugin is an interface that defines the common base for all plugins.
 type Plugin interface {
 	// Name returns a DNS1123 label string identifying the plugin uniquely. This name should be fully-qualified,
 	// i.e. have a short prefix describing the plugin type (like a language) followed by a domain.
@@ -41,35 +41,35 @@ type Deprecated interface {
 	DeprecationWarning() string
 }
 
-// Init is an interface for plugins that provide an `init` subcommand
+// Init is an interface for plugins that provide an `init` subcommand.
 type Init interface {
 	Plugin
 	// GetInitSubcommand returns the underlying InitSubcommand interface.
 	GetInitSubcommand() InitSubcommand
 }
 
-// CreateAPI is an interface for plugins that provide a `create api` subcommand
+// CreateAPI is an interface for plugins that provide a `create api` subcommand.
 type CreateAPI interface {
 	Plugin
 	// GetCreateAPISubcommand returns the underlying CreateAPISubcommand interface.
 	GetCreateAPISubcommand() CreateAPISubcommand
 }
 
-// CreateWebhook is an interface for plugins that provide a `create webhook` subcommand
+// CreateWebhook is an interface for plugins that provide a `create webhook` subcommand.
 type CreateWebhook interface {
 	Plugin
 	// GetCreateWebhookSubcommand returns the underlying CreateWebhookSubcommand interface.
 	GetCreateWebhookSubcommand() CreateWebhookSubcommand
 }
 
-// Edit is an interface for plugins that provide a `edit` subcommand
+// Edit is an interface for plugins that provide a `edit` subcommand.
 type Edit interface {
 	Plugin
 	// GetEditSubcommand returns the underlying EditSubcommand interface.
 	GetEditSubcommand() EditSubcommand
 }
 
-// Full is an interface for plugins that provide `init`, `create api`, `create webhook` and `edit` subcommands
+// Full is an interface for plugins that provide `init`, `create api`, `create webhook` and `edit` subcommands.
 type Full interface {
 	Init
 	CreateAPI
@@ -77,9 +77,10 @@ type Full interface {
 	Edit
 }
 
-// Bundle allows to group plugins under a single key
+// Bundle allows to group plugins under a single key.
 type Bundle interface {
 	Plugin
-	// Plugins returns a list of the bundled plugins
+	// Plugins returns a list of the bundled plugins.
+	// The returned list should be flattened, i.e., no plugin bundles should be part of this list.
 	Plugins() []Plugin
 }

@@ -37,6 +37,9 @@ func (f *Certificate) SetTemplateDefaults() error {
 
 	f.TemplateBody = certManagerTemplate
 
+	// If file exists (ex. because a webhook was already created), skip creation.
+	f.IfExistsAction = machinery.SkipFile
+
 	return nil
 }
 

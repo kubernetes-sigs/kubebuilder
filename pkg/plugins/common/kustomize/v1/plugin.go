@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubernetes Authors.
+Copyright 2021 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,30 +14,27 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v3
+package v1
 
 import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	cfgv3 "sigs.k8s.io/kubebuilder/v3/pkg/config/v3"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins"
 )
 
-const pluginName = "base." + golang.DefaultNameQualifier
+const pluginName = "kustomize.common." + plugins.DefaultNameQualifier
 
 var (
-	pluginVersion            = plugin.Version{Number: 3}
+	pluginVersion            = plugin.Version{Number: 1}
 	supportedProjectVersions = []config.Version{cfgv3.Version}
 )
 
-var _ plugin.Full = Plugin{}
+var _ plugin.Init = Plugin{}
 
 // Plugin implements the plugin.Full interface
 type Plugin struct {
 	initSubcommand
-	createAPISubcommand
-	createWebhookSubcommand
-	editSubcommand
 }
 
 // Name returns the name of the plugin
@@ -49,16 +46,5 @@ func (Plugin) Version() plugin.Version { return pluginVersion }
 // SupportedProjectVersions returns an array with all project versions supported by the plugin
 func (Plugin) SupportedProjectVersions() []config.Version { return supportedProjectVersions }
 
-// GetInitSubcommand will return the subcommand which is responsible for initializing and common scaffolding
+// GetInitSubcommand will return the subcommand which is responsible for scaffolding init project
 func (p Plugin) GetInitSubcommand() plugin.InitSubcommand { return &p.initSubcommand }
-
-// GetCreateAPISubcommand will return the subcommand which is responsible for scaffolding apis
-func (p Plugin) GetCreateAPISubcommand() plugin.CreateAPISubcommand { return &p.createAPISubcommand }
-
-// GetCreateWebhookSubcommand will return the subcommand which is responsible for scaffolding webhooks
-func (p Plugin) GetCreateWebhookSubcommand() plugin.CreateWebhookSubcommand {
-	return &p.createWebhookSubcommand
-}
-
-// GetEditSubcommand will return the subcommand which is responsible for editing the scaffold of the project
-func (p Plugin) GetEditSubcommand() plugin.EditSubcommand { return &p.editSubcommand }

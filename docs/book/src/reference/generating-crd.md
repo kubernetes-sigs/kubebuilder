@@ -144,8 +144,8 @@ type CustomSet struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ToySpec   `json:"spec,omitempty"`
-	Status ToyStatus `json:"status,omitempty"`
+	Spec   CustomSetSpec   `json:"spec,omitempty"`
+	Status CustomSetStatus `json:"status,omitempty"`
 }
 ```
 
