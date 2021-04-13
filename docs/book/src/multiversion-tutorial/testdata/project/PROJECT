@@ -1,20 +1,34 @@
 domain: tutorial.kubebuilder.io
-layout: go.kubebuilder.io/v3
+layout:
+- go.kubebuilder.io/v3
 projectName: project
 repo: tutorial.kubebuilder.io/project
 resources:
 - api:
     crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: tutorial.kubebuilder.io
   group: batch
   kind: CronJob
+  path: tutorial.kubebuilder.io/project/api/v1
   version: v1
   webhooks:
+    conversion: true
+    defaulting: true
+    validation: true
     webhookVersion: v1
 - api:
     crdVersion: v1
+    namespaced: true
+  domain: tutorial.kubebuilder.io
   group: batch
   kind: CronJob
+  path: tutorial.kubebuilder.io/project/api/v2
   version: v2
   webhooks:
+    conversion: true
+    defaulting: true
+    validation: true
     webhookVersion: v1
-version: 3-alpha
+version: "3"
