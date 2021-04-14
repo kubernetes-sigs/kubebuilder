@@ -3,28 +3,28 @@ kind: Namespace
 metadata:
   labels:
     control-plane: controller-manager
-  name: simple-system
+  name: project-v3-config-gen-system
 ---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: (unknown)
+    controller-gen.kubebuilder.io/version: (devel)
   creationTimestamp: null
-  name: bars.example.my.domain
+  name: admirales.crew.testproject.org
 spec:
-  group: example.my.domain
+  group: crew.testproject.org
   names:
-    kind: Bar
-    listKind: BarList
-    plural: bars
-    singular: bar
-  scope: Namespaced
+    kind: Admiral
+    listKind: AdmiralList
+    plural: admirales
+    singular: admiral
+  scope: Cluster
   versions:
-    - name: v1beta1
+    - name: v1
       schema:
         openAPIV3Schema:
-          description: Bar is the Schema for the bars API
+          description: 'Admiral is the Schema for the admirales '
           properties:
             apiVersion:
               description: 'APIVersion defines the versioned schema '
@@ -35,18 +35,20 @@ spec:
             metadata:
               type: object
             spec:
-              description: BarSpec defines the desired state of Bar
+              description: AdmiralSpec defines the desired state of
               properties:
                 foo:
-                  description: Foo is an example field of Bar.
+                  description: Foo is an example field of Admiral.
                   type: string
               type: object
             status:
-              description: 'BarStatus defines the observed state of '
+              description: AdmiralStatus defines the observed state
               type: object
           type: object
       served: true
       storage: true
+      subresources:
+        status: {}
 status:
   acceptedNames:
     kind: ""
@@ -58,22 +60,22 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: (unknown)
+    controller-gen.kubebuilder.io/version: (devel)
   creationTimestamp: null
-  name: foos.example.my.domain
+  name: captains.crew.testproject.org
 spec:
-  group: example.my.domain
+  group: crew.testproject.org
   names:
-    kind: Foo
-    listKind: FooList
-    plural: foos
-    singular: foo
+    kind: Captain
+    listKind: CaptainList
+    plural: captains
+    singular: captain
   scope: Namespaced
   versions:
-    - name: v1alpha1
+    - name: v1
       schema:
         openAPIV3Schema:
-          description: Foo is the Schema for the foos API
+          description: Captain is the Schema for the captains A
           properties:
             apiVersion:
               description: 'APIVersion defines the versioned schema '
@@ -84,18 +86,20 @@ spec:
             metadata:
               type: object
             spec:
-              description: FooSpec defines the desired state of Foo
+              description: CaptainSpec defines the desired state of
               properties:
                 foo:
-                  description: Foo is an example field of Foo.
+                  description: Foo is an example field of Captain.
                   type: string
               type: object
             status:
-              description: 'FooStatus defines the observed state of '
+              description: CaptainStatus defines the observed state
               type: object
           type: object
       served: true
       storage: true
+      subresources:
+        status: {}
 status:
   acceptedNames:
     kind: ""
@@ -106,8 +110,8 @@ status:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: simple-system-leader-election-role
-  namespace: simple-system
+  name: project-v3-config-gen-system-leader-election-role
+  namespace: project-v3-config-gen-system
 rules:
   - apiGroups:
       - ""
@@ -139,7 +143,7 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: simple-proxy-role
+  name: project-v3-config-gen-controller-manager-proxy-role
 rules:
   - apiGroups: ["authentication.k8s.io"]
     resources:
@@ -151,96 +155,49 @@ rules:
     verbs: ["create"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  creationTimestamp: null
-  name: simple-system-manager-role
-rules:
-  - apiGroups:
-      - example.my.domain
-    resources:
-      - bars
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - example.my.domain
-    resources:
-      - bars/status
-    verbs:
-      - get
-      - patch
-      - update
-  - apiGroups:
-      - example.my.domain
-    resources:
-      - foos
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - example.my.domain
-    resources:
-      - foos/status
-    verbs:
-      - get
-      - patch
-      - update
----
-apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: simple-system-leader-election-rolebinding
-  namespace: simple-system
+  name: project-v3-config-gen-system-leader-election-rolebinding
+  namespace: project-v3-config-gen-system
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: simple-system-leader-election-role
+  name: project-v3-config-gen-system-leader-election-role
 subjects:
   - kind: ServiceAccount
     name: default
-    namespace: simple-system
+    namespace: project-v3-config-gen-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: simple-proxy-rolebinding
+  name: project-v3-config-gen-controller-manager-proxy-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: simple-proxy-role
+  name: project-v3-config-gen-controller-manager-proxy-role
 subjects:
   - kind: ServiceAccount
     name: default
-    namespace: simple-system
+    namespace: project-v3-config-gen-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: simple-system-manager-rolebinding
+  name: project-v3-config-gen-system-manager-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: simple-system-manager-role
+  name: project-v3-config-gen-system-manager-role
 subjects:
   - kind: ServiceAccount
     name: default
-    namespace: simple-system
+    namespace: project-v3-config-gen-system
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  namespace: simple-system
+  namespace: project-v3-config-gen-system
   name: metrics-service
   labels:
     control-plane: controller-manager
@@ -256,7 +213,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: controller-manager
-  namespace: simple-system
+  namespace: project-v3-config-gen-system
   labels:
     control-plane: controller-manager
 spec:
@@ -275,7 +232,7 @@ spec:
           args:
             - "--metrics-addr=127.0.0.1:8080"
             - "--enable-leader-election"
-          image: example/simple:latest
+          image: testproject.org/project-v3-config-gen:v0.1.0
           name: manager
           resources:
             limits:
@@ -295,3 +252,80 @@ spec:
             - containerPort: 8443
               name: https
       terminationGracePeriodSeconds: 10
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  creationTimestamp: null
+  name: mutating-webhook-configuration
+webhooks:
+  - admissionReviewVersions:
+      - v1
+      - v1beta1
+    clientConfig:
+      service:
+        name: webhook-service
+        namespace: system
+        path: /mutate-crew-testproject-org-v1-admiral
+    failurePolicy: Fail
+    name: madmiral.kb.io
+    rules:
+      - apiGroups:
+          - crew.testproject.org
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - admirales
+    sideEffects: None
+  - admissionReviewVersions:
+      - v1
+      - v1beta1
+    clientConfig:
+      service:
+        name: webhook-service
+        namespace: system
+        path: /mutate-crew-testproject-org-v1-captain
+    failurePolicy: Fail
+    name: mcaptain.kb.io
+    rules:
+      - apiGroups:
+          - crew.testproject.org
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - captains
+    sideEffects: None
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  creationTimestamp: null
+  name: validating-webhook-configuration
+webhooks:
+  - admissionReviewVersions:
+      - v1
+      - v1beta1
+    clientConfig:
+      service:
+        name: webhook-service
+        namespace: system
+        path: /validate-crew-testproject-org-v1-captain
+    failurePolicy: Fail
+    name: vcaptain.kb.io
+    rules:
+      - apiGroups:
+          - crew.testproject.org
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - captains
+    sideEffects: None

@@ -19,28 +19,27 @@ package v1
 import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	cfgv3 "sigs.k8s.io/kubebuilder/v3/pkg/config/v3"
+	"sigs.k8s.io/kubebuilder/v3/pkg/model/stage"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins"
 )
 
-const pluginName = "kustomize.common." + plugins.DefaultNameQualifier
+const pluginName = "config-gen.common." + plugins.DefaultNameQualifier
 
 var (
-	pluginVersion            = plugin.Version{Number: 1}
 	supportedProjectVersions = []config.Version{cfgv3.Version}
+	pluginVersion            = plugin.Version{Number: 1, Stage: stage.Alpha}
 )
 
 var (
-	_ plugin.Init          = Plugin{}
-	_ plugin.CreateAPI     = Plugin{}
-	_ plugin.CreateWebhook = Plugin{}
+	_ plugin.Init      = Plugin{}
+	_ plugin.CreateAPI = Plugin{}
 )
 
 // Plugin implements the plugin.Full interface
 type Plugin struct {
 	initSubcommand
 	createAPISubcommand
-	createWebhookSubcommand
 }
 
 // Name returns the name of the plugin
@@ -50,15 +49,10 @@ func (Plugin) Name() string { return pluginName }
 func (Plugin) Version() plugin.Version { return pluginVersion }
 
 // SupportedProjectVersions returns an array with all project versions supported by the plugin
-func (Plugin) SupportedProjectVersions() []config.Version { return supportedProjectVersions }
+func (p Plugin) SupportedProjectVersions() []config.Version { return supportedProjectVersions }
 
-// GetInitSubcommand will return the subcommand which is responsible for scaffolding init project
+// GetInitSubcommand will return the subcommand which is responsible for initializing and common scaffolding
 func (p Plugin) GetInitSubcommand() plugin.InitSubcommand { return &p.initSubcommand }
 
 // GetCreateAPISubcommand will return the subcommand which is responsible for scaffolding apis
 func (p Plugin) GetCreateAPISubcommand() plugin.CreateAPISubcommand { return &p.createAPISubcommand }
-
-// GetCreateWebhookSubcommand will return the subcommand which is responsible for scaffolding webhooks
-func (p Plugin) GetCreateWebhookSubcommand() plugin.CreateWebhookSubcommand {
-	return &p.createWebhookSubcommand
-}

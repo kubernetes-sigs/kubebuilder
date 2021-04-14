@@ -79,6 +79,8 @@ type KubebuilderConfigGenSpec struct {
 }
 
 // CRDs configures how controller-gen is run against the project go source code in order to generate CRDs and RBAC.
+// NB(estroz): consider passing a raw controller-gen options string so fields don't have to be added
+// for options individually.
 type CRDs struct {
 	// SourceDirectory is the go project directory containing source code marked up with controller-gen tags.
 	// Defaults to the directory containing the KubebuilderConfigGen configuration file.

@@ -35,14 +35,20 @@ var commentsByExt = map[string]string{
 type Marker struct {
 	comment string
 	value   string
+	// Any string that might precede this marker.
+	preceding string
 }
 
-// NewMarkerFor creates a new marker customized for the specific file
+// NewMarkerFor creates a new marker customized for the specific file, with at most one preceding string value.
 // Supported file extensions: .go, .yaml, .yml
-func NewMarkerFor(path string, value string) Marker {
+func NewMarkerFor(path, value string, preceding ...string) (m Marker) {
 	ext := filepath.Ext(path)
 	if comment, found := commentsByExt[ext]; found {
-		return Marker{comment, value}
+		m.comment, m.value = comment, value
+		if len(preceding) != 0 {
+			m.preceding = preceding[0]
+		}
+		return m
 	}
 
 	extensions := make([]string, 0, len(commentsByExt))
@@ -54,11 +60,15 @@ func NewMarkerFor(path string, value string) Marker {
 
 // String implements Stringer
 func (m Marker) String() string {
-	return m.comment + prefix + m.value
+	return m.preceding + m.comment + prefix + m.value
 }
 
 // EqualsLine compares a marker with a string representation to check if they are the same marker
 func (m Marker) EqualsLine(line string) bool {
+	if m.preceding != "" {
+		line = strings.TrimPrefix(strings.TrimSpace(line), strings.TrimSpace(m.preceding))
+	}
+
 	line = strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(line), m.comment))
 	return line == prefix+m.value
 }

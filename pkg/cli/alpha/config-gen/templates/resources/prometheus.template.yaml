@@ -8,8 +8,8 @@ metadata:
     control-plane: controller-manager
 spec:
   endpoints:
-    - path: /metrics
-      port: https
+  - path: /metrics
+    port: https
   selector:
     matchLabels:
       control-plane: controller-manager
