@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubernetes Authors.
+Copyright 2021 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,15 +19,13 @@ package scaffolds
 import (
 	"fmt"
 
-	"github.com/spf13/afero"
-
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/api"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/hack"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v1/scaffolds/internal/templates/config/certmanager"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v1/scaffolds/internal/templates/config/kdefault"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v1/scaffolds/internal/templates/config/webhook"
 )
 
 var _ plugins.Scaffolder = &webhookScaffolder{}
@@ -39,7 +37,7 @@ type webhookScaffolder struct {
 	// fs is the filesystem that will be used by the scaffolder
 	fs machinery.Filesystem
 
-	// force indicates whether to scaffold controller files even if it exists or not
+	// force indicates whether to scaffold files even if they exist.
 	force bool
 }
 
@@ -53,55 +51,33 @@ func NewWebhookScaffolder(config config.Config, resource resource.Resource, forc
 }
 
 // InjectFS implements cmdutil.Scaffolder
-func (s *webhookScaffolder) InjectFS(fs machinery.Filesystem) {
-	s.fs = fs
-}
+func (s *webhookScaffolder) InjectFS(fs machinery.Filesystem) { s.fs = fs }
 
 // Scaffold implements cmdutil.Scaffolder
 func (s *webhookScaffolder) Scaffold() error {
-	fmt.Println("Writing scaffold for you to edit...")
-
-	// Load the boilerplate
-	boilerplate, err := afero.ReadFile(s.fs.FS, hack.DefaultBoilerplatePath)
-	if err != nil {
-		return fmt.Errorf("error scaffolding webhook: unable to load boilerplate: %w", err)
-	}
+	fmt.Println("Writing kustomize manifests for you to edit...")
 
 	// Initialize the machinery.Scaffold that will write the files to disk
 	scaffold := machinery.NewScaffold(s.fs,
 		machinery.WithConfig(s.config),
-		machinery.WithBoilerplate(string(boilerplate)),
 		machinery.WithResource(&s.resource),
 	)
-
-	// Keep track of these values before the update
-	doDefaulting := s.resource.HasDefaultingWebhook()
-	doValidation := s.resource.HasValidationWebhook()
-	doConversion := s.resource.HasConversionWebhook()
 
 	if err := s.config.UpdateResource(s.resource); err != nil {
 		return fmt.Errorf("error updating resource: %w", err)
 	}
 
 	if err := scaffold.Execute(
-		&api.Webhook{Force: s.force},
-		&templates.MainUpdater{WireWebhook: true},
+		&kdefault.WebhookCAInjectionPatch{},
+		&kdefault.ManagerWebhookPatch{},
+		&webhook.Kustomization{Force: s.force},
+		&webhook.KustomizeConfig{},
+		&webhook.Service{},
+		&certmanager.Certificate{},
+		&certmanager.Kustomization{},
+		&certmanager.KustomizeConfig{},
 	); err != nil {
-		return err
-	}
-
-	if doConversion {
-		fmt.Println(`Webhook server has been set up for you.
-You need to implement the conversion.Hub and conversion.Convertible interfaces for your CRD types.`)
-	}
-
-	// TODO: Add test suite for conversion webhook after #1664 has been merged & conversion tests supported in envtest.
-	if doDefaulting || doValidation {
-		if err := scaffold.Execute(
-			&api.WebhookSuite{},
-		); err != nil {
-			return err
-		}
+		return fmt.Errorf("error scaffolding kustomize webhook manifests: %v", err)
 	}
 
 	return nil
