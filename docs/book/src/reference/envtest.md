@@ -1,5 +1,45 @@
 # Configuring envtest for integration tests
-[`controller-runtime`](http://sigs.k8s.io/controller-runtime) offers `envtest` ([godoc](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/envtest?tab=doc)), a package that helps write integration tests for your controllers by setting up and starting an instance of etcd and the Kubernetes API server, without kubelet, controller-manager or other components.
+
+The [`controller-runtime/pkg/envtest`][envtest] Go library helps write integration tests for your controllers by setting up and starting an instance of etcd and the Kubernetes API server, without kubelet, controller-manager or other components.
+
+## Installation
+
+The `test` make target, also called by the `docker-build` target,
+[downloads][setup-envtest] a set of envtest binaries (described above) to run tests with.
+Typically nothing needs to be done on your part,
+as the download and install script is fully automated,
+although it does require `bash` to run.
+
+If you would like to download the tarball containing these binaries,
+to use in a disconnected environment for example,
+run the following (Kubernetes version 1.19.2 is an example version):
+
+```sh
+K8S_VERSION=1.19.2
+curl -sSLo envtest-bins.tar.gz "https://storage.googleapis.com/kubebuilder-tools/kubebuilder-tools-${K8S_VERSION}-$(go env GOOS)-$(go env GOARCH).tar.gz"
+```
+
+Then install them:
+
+```sh
+mkdir /opt/kubebuilder/testbin
+tar -C /opt/kubebuilder/testbin --strip-components=1 -zvxf envtest-bins.tar.gz
+```
+
+Once these binaries are installed, you can either change the `test` target to:
+
+```makefile
+test: manifests generate fmt vet
+	go test ./... -coverprofile cover.out
+```
+
+Or configure the existing target to skip the download and point to a [custom location](#environment-variables):
+
+```sh
+make test SKIP_FETCH_TOOLS=1 KUBEBUILDER_ASSETS=/opt/kubebuilder/testbin
+```
+
+## Writing tests
 
 Using `envtest` in integration tests follows the general flow of:
 
@@ -102,3 +142,6 @@ expectedOwnerReference := v1.OwnerReference{
 }
 Expect(deployment.ObjectMeta.OwnerReferences).To(ContainElement(expectedOwnerReference))
 ```
+
+[envtest]:https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/envtest
+[setup-envtest]:https://github.com/kubernetes-sigs/controller-runtime/blob/master/hack/setup-envtest.sh
