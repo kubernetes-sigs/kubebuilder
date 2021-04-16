@@ -1,5 +1,5 @@
 /*
-Ideally, we should have one `<kind>_conroller_test.go` for each controller scaffolded and called in the `test_suite.go`.
+Ideally, we should have one `<kind>_conroller_test.go` for each controller scaffolded and called in the `suite_test.go`.
 So, let's write our example test for the CronJob controller (`cronjob_controller_test.go.`)
 */
 
