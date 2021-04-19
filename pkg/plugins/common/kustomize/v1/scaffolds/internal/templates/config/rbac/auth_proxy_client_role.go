@@ -45,6 +45,8 @@ kind: ClusterRole
 metadata:
   name: metrics-reader
 rules:
-- nonResourceURLs: ["/metrics"]
-  verbs: ["get"]
+- nonResourceURLs:
+  - "/metrics"
+  verbs:
+  - get
 `
