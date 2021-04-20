@@ -400,7 +400,7 @@ CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
 
 To allow downloading the newer versions of the Kubernetes binaries required by Envtest into the `testbin/` directory of your project instead of the global setup, replace:
 
-```
+```makefile
 # Run tests
 test: generate fmt vet manifests
 	go test ./... -coverprofile cover.out
@@ -408,31 +408,25 @@ test: generate fmt vet manifests
 
 With:
 
-```
+```makefile
+# Setting SHELL to bash allows bash commands to be executed by recipes.
+# This is a requirement for 'setup-envtest.sh' in the test target.
+# Options are set to exit when a recipe line exits non-zero or a piped command fails.
+SHELL = /usr/bin/env bash -o pipefail
+.SHELLFLAGS = -ec
+
 ENVTEST_ASSETS_DIR=$(shell pwd)/testbin
 test: manifests generate fmt vet ## Run tests.
 	mkdir -p ${ENVTEST_ASSETS_DIR}
-	test -f ${ENVTEST_ASSETS_DIR}/setup-envtest.sh || curl -sSLo ${ENVTEST_ASSETS_DIR}/setup-envtest.sh https://raw.githubusercontent.com/kubernetes-sigs/controller-runtime/v0.7.0/hack/setup-envtest.sh
+	test -f ${ENVTEST_ASSETS_DIR}/setup-envtest.sh || curl -sSLo ${ENVTEST_ASSETS_DIR}/setup-envtest.sh https://raw.githubusercontent.com/kubernetes-sigs/controller-runtime/v0.8.3/hack/setup-envtest.sh
 	source ${ENVTEST_ASSETS_DIR}/setup-envtest.sh; fetch_envtest_tools $(ENVTEST_ASSETS_DIR); setup_envtest_env $(ENVTEST_ASSETS_DIR); go test ./... -coverprofile cover.out
 ```
 
 <aside class="note">
 <h1>Envtest binaries</h1>
 
-The Kubernetes binaries that are required for the Envtest were upgraded from `1.16.4` to `1.19.2`. You can still install them globally by running: 
-
-```
-os=$(go env GOOS)
-arch=$(go env GOARCH)
-
-# download kubebuilder and extract it to tmp
-curl -LO https://storage.googleapis.com/kubebuilder-tools/kubebuilder-tools-1.19.2-${os}-${arch}.tar.gz | tar -xz -C /tmp/
-
-# move to a long-term location and put it on your path
-# (you'll need to set the KUBEBUILDER_ASSETS env var if you put it somewhere else)
-sudo mv /tmp/kubebuilder-tools-1.19.2-${os}-${arch}.tar.gz /usr/local/kubebuilder
-export PATH=$PATH:/usr/local/kubebuilder/bin
-```
+The Kubernetes binaries that are required for the Envtest were upgraded from `1.16.4` to `1.19.2`.
+You can still install them globally by following [these installation instructions][doc-envtest].
 
 </aside>
 
@@ -648,3 +642,4 @@ Now, re-create the APIS(CRDs) and Webhooks manifests by running the  `kubebuilde
 [custom-resource-definition-versioning]: https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definition-versioning/
 [issue-1999]: https://github.com/kubernetes-sigs/kubebuilder/issues/1999
 [project-customizations]: v2vsv3.md#project-customizations
+[doc-envtest]:/reference/envtest.md
