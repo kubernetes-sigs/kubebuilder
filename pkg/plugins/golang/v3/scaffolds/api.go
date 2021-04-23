@@ -27,10 +27,6 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/api"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/config/crd"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/config/crd/patches"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/config/rbac"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/config/samples"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/controllers"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/hack"
 )
@@ -90,26 +86,12 @@ func (s *apiScaffolder) Scaffold() error {
 	}
 
 	if doAPI {
-
 		if err := scaffold.Execute(
 			&api.Types{Force: s.force},
 			&api.Group{},
-			&samples.CRDSample{Force: s.force},
-			&rbac.CRDEditorRole{},
-			&rbac.CRDViewerRole{},
-			&patches.EnableWebhookPatch{},
-			&patches.EnableCAInjectionPatch{},
 		); err != nil {
 			return fmt.Errorf("error scaffolding APIs: %v", err)
 		}
-
-		if err := scaffold.Execute(
-			&crd.Kustomization{},
-			&crd.KustomizeConfig{},
-		); err != nil {
-			return fmt.Errorf("error scaffolding kustomization: %v", err)
-		}
-
 	}
 
 	if doController {

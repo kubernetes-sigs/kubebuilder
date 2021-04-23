@@ -7,6 +7,7 @@ docs/book/book/
 # Editor temp files
 *~
 \#*#
+*.swp
 
 # Skip bazel dirs
 /bazel-*

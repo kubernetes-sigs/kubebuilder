@@ -13,7 +13,7 @@ v3 projects use Go modules and request Go 1.15+. Dep is no longer supported for 
 
 ## Kubebuilder
 
-- Preliminary support for plugins was added. For more info see the [Extensible CLI and Scaffolding Plugins][plugins-phase1-design-doc].
+- Preliminary support for plugins was added. For more info see the [Extensible CLI and Scaffolding Plugins: phase 1][plugins-phase1-design-doc] and [Extensible CLI and Scaffolding Plugins: phase 1.5][plugins-phase1-design-doc-1.5] 
 
 - The `PROJECT` file now has a new layout.  It stores more information about what resources are in use, to better enable plugins to make useful decisions when scaffolding.
     
@@ -73,6 +73,7 @@ You will check that you can still using the previous layout by using the `go/v2`
 - [Migrating to Kubebuilder v3 by updating the files manually][manually-upgrade]
 
 [plugins-phase1-design-doc]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/designs/extensible-cli-and-scaffolding-plugins-phase-1.md
+[plugins-phase1-design-doc-1.5]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/designs/extensible-cli-and-scaffolding-plugins-phase-1-5.md
 [manually-upgrade]: manually_migration_guide_v2_v3.md
 [component-config-tutorial]: ../component-config-tutorial/tutorial.md
 [issue-1893]: https://github.com/kubernetes-sigs/kubebuilder/issues/1839

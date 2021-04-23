@@ -94,8 +94,17 @@
 
   - [Metrics](./reference/metrics.md)
   - [Makefile Helpers](./reference/makefile-helpers.md)
-  - [CLI Plugins](./reference/cli-plugins.md)
+  - [Project config](./reference/project-config.md)
 
 ---
 
+- [Plugins][plugins]
+
+  - [Extending the CLI](./plugins/extending-cli.md)
+  - [Creating your own plugins](./plugins/creating-plugins.md)
+
+---  
 [Appendix: The TODO Landing Page](./TODO.md)
+
+
+[plugins]: ./plugins/plugins.md

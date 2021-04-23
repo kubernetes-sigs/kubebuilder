@@ -17,6 +17,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect
 	k8s.io/apimachinery v0.20.2 // for `kubebuilder alpha config-gen`
 	k8s.io/utils v0.0.0-20210111153108-fddb29f9d009 // indirect
+	sigs.k8s.io/controller-runtime v0.8.3
 	sigs.k8s.io/controller-tools v0.3.0 // for `kubebuilder alpha config-gen`
 	sigs.k8s.io/kustomize/kyaml v0.10.10 // for `kubebuilder alpha config-gen`
 	sigs.k8s.io/yaml v1.2.0
