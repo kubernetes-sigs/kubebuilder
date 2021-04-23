@@ -39,6 +39,16 @@ var _ = Describe("registry", func() {
 		})
 	})
 
+	Context("IsRegistered", func() {
+		It("should return true for registered constructors", func() {
+			Register(version, f)
+			Expect(IsRegistered(version)).To(BeTrue())
+		})
+		It("should fail for unregistered constructors", func() {
+			Expect(IsRegistered(version)).To(BeFalse())
+		})
+	})
+
 	Context("New", func() {
 		It("should use the registered constructors", func() {
 			registry[version] = f

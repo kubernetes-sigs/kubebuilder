@@ -27,6 +27,7 @@ import (
 	"k8s.io/kubernetes/pkg/apis/batch"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	batchv1 "tutorial.kubebuilder.io/project/api/v1"
 )
@@ -66,7 +67,7 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		// then lets add the finalizer and update the object. This is equivalent
 		// registering our finalizer.
 		if !containsString(cronJob.GetFinalizers(), myFinalizerName) {
-			cronJob.SetFinalizers(append(cronJob.GetFinalizers(), myFinalizerName))
+			controllerutil.AddFinalizer(cronJob, myFinalizerName)
 			if err := r.Update(ctx, cronJob); err != nil {
 				return ctrl.Result{}, err
 			}
@@ -82,7 +83,7 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			}
 
 			// remove our finalizer from the list and update it.
-			cronJob.SetFinalizers(removeString(cronJob.GetFinalizers(), myFinalizerName))
+			controllerutil.RemoveFinalizer(cronJob, myFinalizerName)
 			if err := r.Update(ctx, cronJob); err != nil {
 				return ctrl.Result{}, err
 			}

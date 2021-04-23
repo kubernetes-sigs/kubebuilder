@@ -27,9 +27,6 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/api"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/config/certmanager"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/config/kdefault"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/config/webhook"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/hack"
 )
 
@@ -89,14 +86,6 @@ func (s *webhookScaffolder) Scaffold() error {
 	if err := scaffold.Execute(
 		&api.Webhook{Force: s.force},
 		&templates.MainUpdater{WireWebhook: true},
-		&kdefault.WebhookCAInjectionPatch{},
-		&kdefault.ManagerWebhookPatch{},
-		&webhook.Kustomization{Force: s.force},
-		&webhook.KustomizeConfig{},
-		&webhook.Service{},
-		&certmanager.Certificate{},
-		&certmanager.Kustomization{},
-		&certmanager.KustomizeConfig{},
 	); err != nil {
 		return err
 	}
