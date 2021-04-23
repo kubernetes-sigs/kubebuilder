@@ -106,24 +106,21 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 	}
 
 	// domain and path may need to be changed in case we are referring to a builtin core resource:
-	//  - Check if we are scaffolding the resource now           => project resource
 	//  - Check if we already scaffolded the resource            => project resource
 	//  - Check if the resource group is a well-known core group => builtin core resource
 	//  - In any other case, default to                          => project resource
 	// TODO: need to support '--resource-pkg-path' flag for specifying resourcePath
-	if !opts.DoAPI {
-		var alreadyHasAPI bool
-		if c.GetVersion().Compare(cfgv2.Version) == 0 {
-			alreadyHasAPI = c.HasResource(res.GVK)
-		} else {
-			loadedRes, err := c.GetResource(res.GVK)
-			alreadyHasAPI = err == nil && loadedRes.HasAPI()
-		}
-		if !alreadyHasAPI {
-			if domain, found := coreGroups[res.Group]; found {
-				res.Domain = domain
-				res.Path = path.Join("k8s.io", "api", res.Group, res.Version)
-			}
+	var alreadyHasAPI bool
+	if c.GetVersion().Compare(cfgv2.Version) == 0 {
+		alreadyHasAPI = c.HasResource(res.GVK)
+	} else {
+		loadedRes, err := c.GetResource(res.GVK)
+		alreadyHasAPI = err == nil && loadedRes.HasAPI()
+	}
+	if !alreadyHasAPI {
+		if domain, found := coreGroups[res.Group]; found {
+			res.Domain = domain
+			res.Path = path.Join("k8s.io", "api", res.Group, res.Version)
 		}
 	}
 }

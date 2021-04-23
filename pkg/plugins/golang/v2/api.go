@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/pflag"
 
@@ -133,6 +134,11 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 
 	// In case we want to scaffold a resource API we need to do some checks
 	if p.options.DoAPI {
+		// Generating the API for a core resource is forbidden.
+		if strings.HasPrefix(p.resource.Path, "k8s.io") {
+			return errors.New("scaffolding API for core resources is not supported")
+		}
+
 		// Check that resource doesn't have the API scaffolded or flag force was set
 		if res, err := p.config.GetResource(p.resource.GVK); err == nil && res.HasAPI() && !p.force {
 			return errors.New("API resource already exists")

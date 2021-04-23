@@ -101,7 +101,7 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 			return fmt.Errorf("%s create webhook requires a previously created API ", p.commandName)
 		}
 	} else {
-		if r, err := p.config.GetResource(p.resource.GVK); err != nil {
+		if r, err := p.config.GetResource(p.resource.GVK); err != nil || !r.HasAPI() {
 			return fmt.Errorf("%s create webhook requires a previously created API ", p.commandName)
 		} else if r.Webhooks != nil && !r.Webhooks.IsEmpty() {
 			return fmt.Errorf("webhook resource already exists")
