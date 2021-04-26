@@ -1,5 +1,5 @@
 # allow free form issues as an escape hatch.  This can be taken away if people abuse it ;-)
-blank_issues_enabled: true 
+blank_issues_enabled: true
 
 # link to CR and CT for easier access
 contact_links:
