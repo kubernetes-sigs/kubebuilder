@@ -81,7 +81,7 @@ body:
 
 - type: dropdown
   attributes: 
-    label: " "
+    label: "Extra Labels"
     description: |
       If this is *also* a documentation request, etc, please select that below.
     multiple: true
