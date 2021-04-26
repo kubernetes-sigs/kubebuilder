@@ -14,11 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-source test/common.sh
-
-header_text "Running kubebuilder unit tests"
-go test -race -v ./pkg/...
-
-./test/integration.sh
-
-./test/testdata/test.sh
+# prow calls this file currently, but we can just use `make test` to test
+# the set of things we want.
+make test
