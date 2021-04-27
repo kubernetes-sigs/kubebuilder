@@ -5,7 +5,7 @@ The Kubebuilder Project is released on an as-needed basis. The process is as fol
 1. An issue is proposing a new release with a changelog since the last release. You will need to use the [kubebuilder-release-tools][kubebuilder-release-tools] to generate the notes. See [here][release-notes-generation]
 1. All [OWNERS](OWNERS) must LGTM this release
 1. An OWNER runs `git tag -s $VERSION` and pushes the tag with `git push $VERSION`. Note that after the OWNER push the tag the CI will automatically add the release notes and the assets.
-1. A PR needs to be created to merge `release-X` branch into `book-vX` to pick up the new docs.
+1. A PR needs to be created to merge `master` branch into `book-v3` to pick up the new docs. 
 1. The release issue is closed
 1. An announcement email is sent to `kubebuilder@googlegroups.com` with the subject `[ANNOUNCE] kubebuilder $VERSION is released`
 
