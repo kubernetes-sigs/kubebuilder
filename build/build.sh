@@ -19,10 +19,11 @@
 # This script cannot be inlined due to:
 # https://github.com/GoogleCloudPlatform/cloud-build-local/issues/129
 
-set -eu
+set -eux
 
 SOURCE_IMAGE_TAG="quay.io/brancz/kube-rbac-proxy:${KUBE_RBAC_PROXY_VERSION}"
-TARGET_IMAGE_TAG="gcr.io/kubebuilder/kube-rbac-proxy:${KUBE_RBAC_PROXY_VERSION}"
+#TARGET_IMAGE_TAG="gcr.io/kubebuilder/kube-rbac-proxy:${KUBE_RBAC_PROXY_VERSION}"
+TARGET_IMAGE_TAG="gcr.io/sollyross-test-project/kube-rbac-proxy:${KUBE_RBAC_PROXY_VERSION}"
 
 # Each arch to pull an image for.
 declare ARCHES
@@ -44,4 +45,7 @@ export DOCKER_CLI_EXPERIMENTAL=enabled
 # If $TARGET_IMAGE_TAG exists, `manifest create` will fail.
 docker manifest rm "$TARGET_IMAGE_TAG" || true
 docker manifest create "$TARGET_IMAGE_TAG" ${IMAGES[@]}
+for a in ${ARCHES[@]}; do
+  docker manifest annotate "$TARGET_IMAGE_TAG" "${TARGET_IMAGE_TAG}-$a" --arch $a
+done
 docker manifest push "$TARGET_IMAGE_TAG"
