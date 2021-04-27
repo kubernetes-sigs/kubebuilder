@@ -57,7 +57,7 @@ the desired next version.  Once the PR is merged, Google Cloud Build will
 take care of building and publishing the artifacts.
 
 [envtest-ref]: https://book.kubebuilder.io/reference/artifacts.html
-[tools-branch]: https://github.com/kubernetes-sigs/kubebuilder/tree/tools-releases)
+[tools-branch]: https://github.com/kubernetes-sigs/kubebuilder/tree/tools-releases
 
 ## Versioning
 
