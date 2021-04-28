@@ -21,6 +21,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"unicode"
 
 	"github.com/spf13/pflag"
 
@@ -171,12 +172,25 @@ func checkDir() error {
 			if strings.HasPrefix(info.Name(), ".") {
 				return nil
 			}
+			// Allow files ending with '.md' extension
+			if strings.HasSuffix(info.Name(), ".md") && !info.IsDir() {
+				return nil
+			}
+			// Allow capitalized files except PROJECT
+			isCapitalized := true
+			for _, l := range info.Name() {
+				if !unicode.IsUpper(l) {
+					isCapitalized = false
+					break
+				}
+			}
+			if isCapitalized && info.Name() != "PROJECT" {
+				return nil
+			}
 			// Allow files in the following list
 			allowedFiles := []string{
-				"go.mod",    // user might run `go mod init` instead of providing the `--flag` at init
-				"go.sum",    // auto-generated file related to go.mod
-				"LICENSE",   // can be generated when initializing a GitHub project
-				"README.md", // can be generated when initializing a GitHub project
+				"go.mod", // user might run `go mod init` instead of providing the `--flag` at init
+				"go.sum", // auto-generated file related to go.mod
 			}
 			for _, allowedFile := range allowedFiles {
 				if info.Name() == allowedFile {
@@ -185,8 +199,9 @@ func checkDir() error {
 			}
 			// Do not allow any other file
 			return fmt.Errorf(
-				"target directory is not empty (only %s, and files and directories with the prefix \".\" are "+
-					"allowed); found existing file %q", strings.Join(allowedFiles, ", "), path)
+				"target directory is not empty (only %s, files and directories with the prefix \".\", "+
+					"files with the suffix \".md\" or capitalized files name are allowed); "+
+					"found existing file %q", strings.Join(allowedFiles, ", "), path)
 		})
 	if err != nil {
 		return err
