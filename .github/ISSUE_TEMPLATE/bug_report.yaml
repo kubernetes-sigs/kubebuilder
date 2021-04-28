@@ -1,5 +1,5 @@
 name: Bug Report
-about: Problems and issues with code or docs
+description: Problems and issues with code or docs
 labels:
 - kind/bug
 body: 
@@ -126,7 +126,7 @@ body:
 
 - type: dropdown
   attributes: 
-    label: " "
+    label: "Extra Labels"
     description: |
       If this is *also* a documentation request, etc, please select that below.
     multiple: true

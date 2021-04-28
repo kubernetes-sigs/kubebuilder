@@ -88,7 +88,7 @@ golangci-lint:
 ##@ Tests
 
 .PHONY: test
-test: test-unit test-integration test-testdata ## Run the unit and integration tests (used in the CI)
+test: test-unit test-integration test-testdata test-book ## Run the unit and integration tests (used in the CI)
 
 .PHONY: test-unit
 test-unit: ## Run the unit tests
@@ -119,3 +119,7 @@ test-e2e-local: ## Run the end-to-end tests locally
 .PHONY: test-e2e-ci
 test-e2e-ci: ## Run the end-to-end tests (used in the CI)`
 	./test/e2e/ci.sh
+
+.PHONY: test-book
+test-book: ## Run the cronjob tutorial's unit tests to make sure we don't break it
+	cd ./docs/book/src/cronjob-tutorial/testdata/project && make test

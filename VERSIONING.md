@@ -34,7 +34,7 @@ the latest controller-tools release.  That info is stored in
 ## Book Releases
 
 The book's main version (https://book.kubebuilder.io) is published off of
-the [book-v2][book-branch] (a version built off the main branch can be
+the [book-v3][book-branch] (a version built off the main branch can be
 found at https://master.book.kubebuilder.io).
 
 Docs changes that aren't specific to a new feature should be
@@ -43,7 +43,7 @@ The cherry-picks will automatically be published to the book once their PR
 merges.
 
 **When you publish a KubeBuilder release**, be sure to also submit a PR
-that merges the main branch into [book-v2][book-branch], so that it
+that merges the main branch into [book-v3][book-branch], so that it
 describes the latest changes in the new release.
 
 [book-branch]: https://github.com/kubernetes-sigs/kubebuilder/tree/tools-releases
@@ -57,7 +57,7 @@ the desired next version.  Once the PR is merged, Google Cloud Build will
 take care of building and publishing the artifacts.
 
 [envtest-ref]: https://book.kubebuilder.io/reference/artifacts.html
-[tools-branch]: https://github.com/kubernetes-sigs/kubebuilder/tree/tools-releases)
+[tools-branch]: https://github.com/kubernetes-sigs/kubebuilder/tree/tools-releases
 
 ## Versioning
 
