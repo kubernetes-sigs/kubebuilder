@@ -95,8 +95,8 @@ separately.
 
 The docs are published off of three branches:
 
-- `book-v2`: [book.kubebuilder.io](https://book.kubebuilder.io) -- current
-  docs
+- `book-v3`: [book.kubebuilder.io](https://book.kubebuilder.io) -- current docs
+- `book-v2`: [book-v2.kubebuilder.io](https://book.kubebuilder.io) -- legacy docs
 - `book-v1`:
   [book-v1.book.kubebuilder.io](https://book-v1.book.kubebuilder.io) --
   legacy docs
