@@ -13,7 +13,8 @@ function redirectToDownload(version, file) {
     const loc = `https://github.com/kubernetes-sigs/kubebuilder/releases/download/v${version}/${file}`;
     return {
         statusCode: 302,
-        headers: {'location': loc},
+        headers: {'location': loc, 'content-type': 'text/plain'},
+        body: `Redirecting to ${loc}`,
     };
 }
 
@@ -22,7 +23,7 @@ exports.handler = async function(evt, ctx) {
     // grab the prefix too to check for coherence
     const [prefix, version, os, arch] = evt.path.split("/").slice(-4);
     if (prefix !== 'releases' || !version || !os || !arch) {
-        return notFound({version: version, os: os, arch: arch, prefix: constPrefix, rawPath: evt.path});
+        return notFound({version: version, os: os, arch: arch, prefix: prefix, rawPath: evt.path});
     }
 
     switch(version[0]) {
