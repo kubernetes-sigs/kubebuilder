@@ -2,9 +2,15 @@
     base = "docs/book"
     command = "./install-and-build.sh"
     publish = "docs/book/book"
+    functions = "docs/book/functions"
+
+# TODO(directxman12): I don't know why, but this (functions) stanza is in the
+# docs and local `netlify dev`, but the above one (under build) is used by the
+# online version :-/
 
 # used to handle the split between v2 and v3+ download links
 [functions]
+    # relative to base directory
     directory = "functions"
 
 # Standard Netlify redirects
