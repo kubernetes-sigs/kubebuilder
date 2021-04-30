@@ -31,6 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
+	corev1 "sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/apis/core/v1"
 	crewv1 "sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/apis/crew/v1"
 	foopolicyv1 "sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/apis/foo.policy/v1"
 	seacreaturesv1beta1 "sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/apis/sea-creatures/v1beta1"
@@ -97,6 +98,20 @@ func main() {
 		os.Exit(1)
 	}
 
+	if err = (&corev1.PodDefaulter{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("apis").WithName("Pod"),
+	}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "Pod")
+		os.Exit(1)
+	}
+	if err = (&corev1.PodValidator{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("apis").WithName("Pod"),
+	}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "Pod")
+		os.Exit(1)
+	}
 	if err = (&crewcontrollers.CaptainReconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("crew").WithName("Captain"),
