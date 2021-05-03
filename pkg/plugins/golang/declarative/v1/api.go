@@ -35,7 +35,7 @@ import (
 const (
 	// kbDeclarativePattern is the sigs.k8s.io/kubebuilder-declarative-pattern version
 	kbDeclarativePatternForV2 = "v0.0.0-20200522144838-848d48e5b073"
-	kbDeclarativePatternForV3 = "v0.0.0-20210113160450-b84d99da0217"
+	kbDeclarativePatternForV3 = "4ba4cadcd4ca182c7b29c0569c85fbbd2996c762"
 
 	exampleManifestVersion = "0.0.1"
 )
