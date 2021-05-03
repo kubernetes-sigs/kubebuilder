@@ -42,7 +42,7 @@ Projects scaffolded with Kubebuilder v3 will use the `go.kubebuilder.io/v3` plug
   * Manager manifests now use `SecurityContext` to address security concerns. More info: [#1637][issue-1637] 
 - Misc:
   * Support for [controller-tools][controller-tools] `v0.4.1` (for `go/v2` it is `v0.3.0` and previously it was `v0.2.5`) 
-  * Support for [controller-runtime][controller-runtime] `v0.7.0` (for `go/v2` it is `v0.6.4` and previously it was `v0.5.0`)
+  * Support for [controller-runtime][controller-runtime] `v0.8.3` (for `go/v2` it is `v0.6.4` and previously it was `v0.5.0`)
   * Support for [kustomize][kustomize] `v3.8.7` (for `go/v2` it is `v3.5.4` and previously it was `v3.1.0`)
   * Required Envtest binaries are automatically downloaded
   * The minimum Go version is now `1.15` (previously it was `1.13).
