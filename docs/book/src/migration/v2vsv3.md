@@ -9,7 +9,7 @@ and [kb-releases][kb-releases] release notes.
 
 ## Common changes
 
-v3 projects use Go modules and request Go 1.15+. Dep is no longer supported for dependency management.
+v3 projects use Go modules and request Go 1.16+. Dep is no longer supported for dependency management.
 
 ## Kubebuilder
 
