@@ -353,7 +353,7 @@ Ensure that your `go.mod` is using Go version `1.15` and the following dependenc
 ```go
 module example
 
-go 1.15
+go 1.16
 
 require (
 	github.com/go-logr/logr v0.3.0
@@ -377,7 +377,7 @@ FROM golang:1.13 as builder
 With:
 ```
 # Build the manager binary
-FROM golang:1.15 as builder
+FROM golang:1.16 as builder
 ```
 
 ####  Update your Makefile
