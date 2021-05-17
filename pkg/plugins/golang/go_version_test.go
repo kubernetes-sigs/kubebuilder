@@ -182,8 +182,5 @@ var _ = Describe("checkGoVersion", func() {
 		Entry("for go 1.13beta1", "go1.13beta1"),
 		Entry("for go 1.13rc1", "go1.13rc1"),
 		Entry("for go 1.13rc2", "go1.13rc2"),
-		Entry("for go 1.16beta1", "go1.16beta1"),
-		Entry("for go 1.16rc1", "go1.16rc1"),
-		Entry("for go 1.16", "go1.16"),
 	)
 })

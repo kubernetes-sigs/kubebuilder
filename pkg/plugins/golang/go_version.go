@@ -33,11 +33,6 @@ var (
 		major: 1,
 		minor: 13,
 	}
-	go116alpha1 = goVersion{
-		major:      1,
-		minor:      16,
-		prerelease: "alpha1",
-	}
 
 	goVerRegexp = regexp.MustCompile(goVerPattern)
 )
@@ -149,8 +144,8 @@ func checkGoVersion(verStr string) error {
 		return err
 	}
 
-	if version.compare(go113) < 0 || version.compare(go116alpha1) >= 0 {
-		return fmt.Errorf("requires 1.13 <= version < 1.16")
+	if version.compare(go113) < 0 {
+		return fmt.Errorf("requires 1.13 <= version")
 	}
 
 	return nil
