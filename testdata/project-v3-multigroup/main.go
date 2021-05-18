@@ -99,7 +99,6 @@ func main() {
 
 	if err = (&crewcontrollers.CaptainReconciler{
 		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("crew").WithName("Captain"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Captain")
@@ -111,7 +110,6 @@ func main() {
 	}
 	if err = (&shipcontrollers.FrigateReconciler{
 		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("ship").WithName("Frigate"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Frigate")
@@ -123,7 +121,6 @@ func main() {
 	}
 	if err = (&shipcontrollers.DestroyerReconciler{
 		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("ship").WithName("Destroyer"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Destroyer")
@@ -135,7 +132,6 @@ func main() {
 	}
 	if err = (&shipcontrollers.CruiserReconciler{
 		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("ship").WithName("Cruiser"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Cruiser")
@@ -147,7 +143,6 @@ func main() {
 	}
 	if err = (&seacreaturescontrollers.KrakenReconciler{
 		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("sea-creatures").WithName("Kraken"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Kraken")
@@ -155,7 +150,6 @@ func main() {
 	}
 	if err = (&seacreaturescontrollers.LeviathanReconciler{
 		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("sea-creatures").WithName("Leviathan"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Leviathan")
@@ -163,7 +157,6 @@ func main() {
 	}
 	if err = (&foopolicycontrollers.HealthCheckPolicyReconciler{
 		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("foo.policy").WithName("HealthCheckPolicy"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "HealthCheckPolicy")
@@ -171,7 +164,6 @@ func main() {
 	}
 	if err = (&appscontrollers.DeploymentReconciler{
 		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("apps").WithName("Deployment"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Deployment")
@@ -179,7 +171,6 @@ func main() {
 	}
 	if err = (&controllers.LakersReconciler{
 		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Lakers"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Lakers")
