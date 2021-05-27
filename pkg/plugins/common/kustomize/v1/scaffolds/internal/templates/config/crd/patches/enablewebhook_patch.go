@@ -66,5 +66,7 @@ spec:
           namespace: system
           name: webhook-service
           path: /convert
+      conversionReviewVersions:
+      - {{ .Resource.API.CRDVersion }}
     {{- end }}
 `

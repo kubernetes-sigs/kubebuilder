@@ -99,7 +99,6 @@ const (
 `
 	reconcilerSetupCodeFragment = `if err = (&controllers.%sReconciler{
 		Client: mgr.GetClient(),
-		Log: ctrl.Log.WithName("controllers").WithName("%s"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "%s")
@@ -108,7 +107,6 @@ const (
 `
 	multiGroupReconcilerSetupCodeFragment = `if err = (&%scontrollers.%sReconciler{
 		Client: mgr.GetClient(),
-		Log: ctrl.Log.WithName("controllers").WithName("%s").WithName("%s"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "%s")
@@ -157,10 +155,10 @@ func (f *MainUpdater) GetCodeFragments() machinery.CodeFragmentsMap {
 	if f.WireController {
 		if !f.MultiGroup || f.Resource.Group == "" {
 			setup = append(setup, fmt.Sprintf(reconcilerSetupCodeFragment,
-				f.Resource.Kind, f.Resource.Kind, f.Resource.Kind))
+				f.Resource.Kind, f.Resource.Kind))
 		} else {
 			setup = append(setup, fmt.Sprintf(multiGroupReconcilerSetupCodeFragment,
-				f.Resource.PackageName(), f.Resource.Kind, f.Resource.Group, f.Resource.Kind, f.Resource.Kind))
+				f.Resource.PackageName(), f.Resource.Kind, f.Resource.Kind))
 		}
 	}
 	if f.WireWebhook {

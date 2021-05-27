@@ -2,7 +2,16 @@
     base = "docs/book"
     command = "./install-and-build.sh"
     publish = "docs/book/book"
+    functions = "docs/book/functions"
 
+# TODO(directxman12): I don't know why, but this (functions) stanza is in the
+# docs and local `netlify dev`, but the above one (under build) is used by the
+# online version :-/
+
+# used to handle the split between v2 and v3+ download links
+[functions]
+    # relative to base directory
+    directory = "functions"
 
 # Standard Netlify redirects
 [[redirects]]
@@ -63,21 +72,7 @@
     status = 302
     force = true
 
-# v1 redirects.
-[[redirects]]
-    from = "https://go.kubebuilder.io/releases/1.:minorpatch/:os/:arch"
-    to = "https://github.com/kubernetes-sigs/kubebuilder/releases/download/v1.:minorpatch/kubebuilder_1.:minorpatch_:os_:arch.tar.gz"
-    status = 302
-    force = true
-
-# v2 redirects.
-[[redirects]]
-    from = "https://go.kubebuilder.io/releases/2.:minorpatch/:os/:arch"
-    to = "https://github.com/kubernetes-sigs/kubebuilder/releases/download/v2.:minorpatch/kubebuilder_2.:minorpatch_:os_:arch.tar.gz"
-    status = 302
-    force = true
-
-# v3+ redirects.
+# general release redirects
 [[redirects]]
     from = "https://go.kubebuilder.io/releases/:version"
     to = "https://github.com/kubernetes-sigs/kubebuilder/releases/v:version"
@@ -90,10 +85,15 @@
     status = 302
     force = true
 
+# release download redirect
 [[redirects]]
     from = "https://go.kubebuilder.io/releases/:version/:os/:arch"
-    to = "https://github.com/kubernetes-sigs/kubebuilder/releases/download/v:version/kubebuilder_:os_:arch"
-    status = 302
+    # I don't quite know why, but netlify (or at least the dev mode) *insists*
+    # on eating every other query parameter, so just use paths instead
+    to = "/.netlify/functions/handle-version/:version/:os/:arch"
+    # 200 --> don't redirect to the the function then to whereever it says,
+    # just pretend like the function is mounted directly here
+    status = 200
     force = true
 
 # Tools redirects.
