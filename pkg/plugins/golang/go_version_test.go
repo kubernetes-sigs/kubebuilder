@@ -174,6 +174,11 @@ var _ = Describe("checkGoVersion", func() {
 		Entry("for go 1.15.6", "go1.15.6"),
 		Entry("for go 1.15.7", "go1.15.7"),
 		Entry("for go 1.15.8", "go1.15.8"),
+		Entry("for go 1.16", "go1.16"),
+		Entry("for go 1.16.1", "go1.16.1"),
+		Entry("for go 1.16.2", "go1.16.2"),
+		Entry("for go 1.16.3", "go1.16.3"),
+		Entry("for go 1.16.4", "go1.16.4"),
 	)
 
 	DescribeTable("should return false for non-supported go versions",
@@ -182,8 +187,5 @@ var _ = Describe("checkGoVersion", func() {
 		Entry("for go 1.13beta1", "go1.13beta1"),
 		Entry("for go 1.13rc1", "go1.13rc1"),
 		Entry("for go 1.13rc2", "go1.13rc2"),
-		Entry("for go 1.16beta1", "go1.16beta1"),
-		Entry("for go 1.16rc1", "go1.16rc1"),
-		Entry("for go 1.16", "go1.16"),
 	)
 })

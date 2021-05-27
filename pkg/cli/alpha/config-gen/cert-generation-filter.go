@@ -38,6 +38,7 @@ type CertFilter struct {
 }
 
 // Filter implements kio.Filter
+// TODO: when v1 CRDs are supported, scaffold conversion webhook versions.
 func (c CertFilter) Filter(input []*yaml.RNode) ([]*yaml.RNode, error) {
 
 	if c.Spec.Webhooks.CertificateSource.Type != "dev" {

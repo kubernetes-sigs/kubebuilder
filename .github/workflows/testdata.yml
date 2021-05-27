@@ -18,7 +18,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
-          go-version: '1.15'
+          go-version: '1.16'
       - name: Remove pre-installed kustomize
         # This step is needed as the following one tries to remove
         # kustomize for each test but has no permission to do so

@@ -19,10 +19,10 @@ package ship
 import (
 	"context"
 
-	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	shipv2alpha1 "sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/apis/ship/v2alpha1"
 )
@@ -30,7 +30,6 @@ import (
 // CruiserReconciler reconciles a Cruiser object
 type CruiserReconciler struct {
 	client.Client
-	Log    logr.Logger
 	Scheme *runtime.Scheme
 }
 
@@ -46,9 +45,9 @@ type CruiserReconciler struct {
 // the user.
 //
 // For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.7.2/pkg/reconcile
+// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.8.3/pkg/reconcile
 func (r *CruiserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = r.Log.WithValues("cruiser", req.NamespacedName)
+	_ = log.FromContext(ctx)
 
 	// your logic here
 
