@@ -17,7 +17,7 @@ machines.  You've probably noticed them when specifying resources requests
 and limits on pods in Kubernetes.
 
 They conceptually work similar to floating point numbers: they have
-a significand, base, and exponent. Their serializable and human readable format
+a significant, base, and exponent. Their serializable and human readable format
 uses whole numbers and suffixes to specify values much the way we describe
 computer storage.
 
