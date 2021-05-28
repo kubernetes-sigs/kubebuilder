@@ -23,8 +23,10 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
-var _ machinery.Template = &Kustomization{}
-var _ machinery.Inserter = &Kustomization{}
+var (
+	_ machinery.Template = &Kustomization{}
+	_ machinery.Inserter = &Kustomization{}
+)
 
 // Kustomization scaffolds a file that defines the kustomization scheme for the crd folder
 type Kustomization struct {
@@ -113,7 +115,7 @@ patchesStrategicMerge:
 # patches here are for enabling the conversion webhook for each CRD
 %s
 
-# [CERTMANAGER] To enable webhook, uncomment all the sections with [CERTMANAGER] prefix.
+# [CERTMANAGER] To enable cert-manager, uncomment all the sections with [CERTMANAGER] prefix.
 # patches here are for enabling the CA injection for each CRD
 %s
 
