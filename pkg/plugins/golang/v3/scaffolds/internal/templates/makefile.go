@@ -76,6 +76,10 @@ endif
 SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
+# PLATFORM is the argument to the make 'build' target command.
+# It defines the target platform for which the cross-compilation build is supposed to be.
+PLATFORM ?= local
+
 all: build
 
 ##@ General
@@ -123,7 +127,7 @@ run: manifests generate fmt vet ## Run a controller from your host.
 	go run ./main.go
 
 docker-build: test ## Build docker image with the manager.
-	docker build -t ${IMG} .
+	docker build --platform ${PLATFORM} -t ${IMG} .
 
 docker-push: ## Push docker image with the manager.
 	docker push ${IMG}
