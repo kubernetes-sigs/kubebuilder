@@ -76,9 +76,10 @@ endif
 SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
+DOCKER_BUILDKIT=1
 # PLATFORM is the argument to the make 'build' target command.
 # It defines the target platform for which the cross-compilation build is supposed to be.
-PLATFORM ?= local
+PLATFORM ?= linux/amd64
 
 all: build
 
