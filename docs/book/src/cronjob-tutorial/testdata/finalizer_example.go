@@ -66,11 +66,9 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		// The object is not being deleted, so if it does not have our finalizer,
 		// then lets add the finalizer and update the object. This is equivalent
 		// registering our finalizer.
-		if !containsString(cronJob.GetFinalizers(), myFinalizerName) {
-			controllerutil.AddFinalizer(cronJob, myFinalizerName)
-			if err := r.Update(ctx, cronJob); err != nil {
-				return ctrl.Result{}, err
-			}
+		controllerutil.AddFinalizer(cronJob, myFinalizerName)
+		if err := r.Update(ctx, cronJob); err != nil {
+			return ctrl.Result{}, err
 		}
 	} else {
 		// The object is being deleted
