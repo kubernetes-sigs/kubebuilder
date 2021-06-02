@@ -39,7 +39,7 @@ go mod init tutorial.kubebuilder.io/migration-project
 <aside class="note warning">
 <h1> Migrating to Kubebuilder v3 while staying on the go/v2 plugin </h1>
 
-You can use `--plugins=go/v2` if you wish to continue using "`Kubebuilder 2.x`" layout and avoid dealing with the breaking changes that will be faced because of the default upper versions which will be used now. See that the [controller-tools][controller-tools] `v0.4.1` & [controller-runtime][controller-runtime] `v0.8.3` are just used by default with the `go/v3` plugin layout. 
+You can use `--plugins=go/v2` if you wish to continue using "`Kubebuilder 2.x`" layout and avoid dealing with the breaking changes that will be faced because of the default upper versions which will be used now. See that the [controller-tools][controller-tools] `v0.5.0` & [controller-runtime][controller-runtime] `v0.8.3` are just used by default with the `go/v3` plugin layout. 
 </aside>
 
 <aside class="note">

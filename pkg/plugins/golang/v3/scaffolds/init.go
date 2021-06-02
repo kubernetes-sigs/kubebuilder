@@ -32,7 +32,7 @@ const (
 	// ControllerRuntimeVersion is the kubernetes-sigs/controller-runtime version to be used in the project
 	ControllerRuntimeVersion = "v0.8.3"
 	// ControllerToolsVersion is the kubernetes-sigs/controller-tools version to be used in the project
-	ControllerToolsVersion = "v0.4.1"
+	ControllerToolsVersion = "v0.5.0"
 	// KustomizeVersion is the kubernetes-sigs/kustomize version to be used in the project
 	KustomizeVersion = "v3.8.7"
 
