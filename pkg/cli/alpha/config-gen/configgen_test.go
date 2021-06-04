@@ -24,7 +24,7 @@ import (
 )
 
 func TestNewCommand(t *testing.T) {
-	test := frameworktestutil.ResultsChecker{
+	test := frameworktestutil.CommandResultsChecker{
 		Command: configgen.NewCommand,
 		// Uncomment this line to update the testdata directory
 		// UpdateExpectedFromActual: true,

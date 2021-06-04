@@ -19,9 +19,10 @@ package main
 import (
 	"fmt"
 	"os"
-	"text/template"
 
 	"sigs.k8s.io/kustomize/kyaml/fn/framework"
+	"sigs.k8s.io/kustomize/kyaml/fn/framework/command"
+	"sigs.k8s.io/kustomize/kyaml/fn/framework/parser"
 )
 
 type API struct {
@@ -31,29 +32,22 @@ type API struct {
 // Simple function for transforming kubebuilder output by patching the replicas field.
 // This is a very basic example that applies patches statically based on the input
 func main() {
-	api := &API{}
-
-	// setup command to apply patches
-	c := framework.TemplateCommand{
-		API: api,
-		PatchTemplatesFn: func(*framework.ResourceList) ([]framework.PatchTemplate, error) {
-			// Configure patches using the API input
-			return []framework.PatchTemplate{
-				{
-					Template: template.Must(template.New("").Parse(`
+	c := framework.TemplateProcessor{
+		TemplateData: &API{},
+		PatchTemplates: []framework.PatchTemplate{&framework.ResourcePatchTemplate{
+			Selector: &framework.Selector{
+				Kinds: []string{"Deployment"},
+				Names: []string{"controller-manager"},
+			},
+			Templates: parser.TemplateStrings(`
 spec:
   replicas: {{.Replicas}}
-`)),
-					Selector: &framework.Selector{
-						Kinds: []string{"Deployment"},
-						Names: []string{"controller-manager"},
-					},
-				},
-			}, nil
-		},
+`),
+		}},
 	}
 
-	if err := c.GetCommand().Execute(); err != nil {
+	cmd := command.Build(&c, command.StandaloneEnabled, false)
+	if err := cmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
 		os.Exit(1)
 	}

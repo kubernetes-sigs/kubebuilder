@@ -54,7 +54,7 @@ func (c CertFilter) Filter(input []*yaml.RNode) ([]*yaml.RNode, error) {
 			"MutatingWebhookConfiguration",
 		},
 	}
-	matches, err := s.GetMatches(&framework.ResourceList{Items: input})
+	matches, err := s.Filter(input)
 	if err != nil {
 		return nil, err
 	}
@@ -82,19 +82,16 @@ func (c CertFilter) Filter(input []*yaml.RNode) ([]*yaml.RNode, error) {
 		}
 	}
 
-	s = &framework.Selector{
-		Filter: func(n *yaml.RNode) bool {
-			// Allow-list conversion webhooks
-			m, _ := n.GetMeta()
-			if m.Kind != "CustomResourceDefinition" {
-				return true
-			}
-			return c.Spec.Webhooks.Conversions[m.Name]
-		},
-	}
-	matches, err = s.GetMatches(&framework.ResourceList{Items: input})
-	if err != nil {
-		return nil, err
+	matches = nil
+	for i := range input {
+		m, _ := input[i].GetMeta()
+		if m.Kind != "CustomResourceDefinition" {
+			continue
+		}
+		if !c.Spec.Webhooks.Conversions[m.Name] {
+			continue
+		}
+		matches = append(matches, input[i])
 	}
 	for i := range matches {
 		err := matches[i].PipeE(yaml.LookupCreate(yaml.ScalarNode, "spec", "conversion", "strategy"),
