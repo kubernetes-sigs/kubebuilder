@@ -231,7 +231,7 @@ spec:
         - command:
             - /manager
           args:
-            - --enable-leader-election
+            - --leader-elect
           image: example/simple:latest
           name: manager
           resources:
