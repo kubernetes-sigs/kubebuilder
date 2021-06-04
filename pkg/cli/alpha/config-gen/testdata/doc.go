@@ -25,3 +25,8 @@ limitations under the License.
 // To update the testdata automatically modify ../configgen_test.go by uncommenting
 // the corresponding line.
 package testdata
+
+import (
+	_ "sigs.k8s.io/controller-runtime"
+	_ "sigs.k8s.io/controller-runtime/pkg/scheme"
+)
