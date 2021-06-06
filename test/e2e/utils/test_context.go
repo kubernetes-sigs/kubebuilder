@@ -220,6 +220,14 @@ func (t *TestContext) Make(makeOptions ...string) error {
 	return err
 }
 
+// Tidy runs `go mod tidy` so that go 1.16 build doesn't fail.
+// See https://blog.golang.org/go116-module-changes#TOC_3.
+func (t *TestContext) Tidy() error {
+	cmd := exec.Command("go", "mod", "tidy")
+	_, err := t.Run(cmd)
+	return err
+}
+
 // Destroy is for cleaning up the docker images for testing
 func (t *TestContext) Destroy() {
 	//nolint:gosec
