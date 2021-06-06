@@ -50,6 +50,7 @@ COPY go.sum go.sum
 RUN go mod download
 
 # Copy the go source
+RUN go mod tidy
 COPY main.go main.go
 COPY api/ api/
 COPY controllers/ controllers/
