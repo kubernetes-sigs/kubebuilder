@@ -117,6 +117,10 @@ func Run(kbc *utils.TestContext) {
 	var controllerPodName string
 	var err error
 
+	By("updating the go.mod")
+	err = kbc.Tidy()
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+
 	By("building the controller image")
 	err = kbc.Make("docker-build", "IMG="+kbc.ImageName)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())

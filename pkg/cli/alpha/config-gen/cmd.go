@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	// TODO: switch to embed
 	"github.com/markbates/pkger"
 	"github.com/spf13/cobra"
 
