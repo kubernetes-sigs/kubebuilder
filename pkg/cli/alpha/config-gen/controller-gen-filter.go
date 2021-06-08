@@ -58,8 +58,10 @@ func (cgr ControllerGenFilter) Filter(input []*yaml.RNode) ([]*yaml.RNode, error
 	gens = append(gens, &rbacGen)
 
 	// generate Webhook definitions
-	webhookGen := genall.Generator(webhook.Generator{})
-	gens = append(gens, &webhookGen)
+	if cgr.Spec.Webhooks.Enable {
+		webhookGen := genall.Generator(webhook.Generator{})
+		gens = append(gens, &webhookGen)
+	}
 
 	// set the directory
 	b := bufferedGenerator{}
