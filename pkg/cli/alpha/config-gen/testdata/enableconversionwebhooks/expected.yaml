@@ -5,7 +5,7 @@ metadata:
     control-plane: controller-manager
   name: simple-system
 ---
-apiVersion: apiextensions.k8s.io/v1beta1
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
@@ -19,32 +19,31 @@ spec:
     plural: bars
     singular: bar
   scope: Namespaced
-  validation:
-    openAPIV3Schema:
-      description: Bar is the Schema for the bars API
-      properties:
-        apiVersion:
-          description: 'APIVersion defines the versioned schema '
-          type: string
-        kind:
-          description: 'Kind is a string value representing the '
-          type: string
-        metadata:
-          type: object
-        spec:
-          description: BarSpec defines the desired state of Bar
-          properties:
-            foo:
-              description: Foo is an example field of Bar.
-              type: string
-          type: object
-        status:
-          description: 'BarStatus defines the observed state of '
-          type: object
-      type: object
-  version: v1beta1
   versions:
     - name: v1beta1
+      schema:
+        openAPIV3Schema:
+          description: Bar is the Schema for the bars API
+          properties:
+            apiVersion:
+              description: 'APIVersion defines the versioned schema '
+              type: string
+            kind:
+              description: 'Kind is a string value representing the '
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: BarSpec defines the desired state of Bar
+              properties:
+                foo:
+                  description: Foo is an example field of Bar.
+                  type: string
+              type: object
+            status:
+              description: 'BarStatus defines the observed state of '
+              type: object
+          type: object
       served: true
       storage: true
   conversion:
@@ -64,7 +63,7 @@ status:
   conditions: []
   storedVersions: []
 ---
-apiVersion: apiextensions.k8s.io/v1beta1
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
@@ -79,32 +78,31 @@ spec:
     plural: foos
     singular: foo
   scope: Namespaced
-  validation:
-    openAPIV3Schema:
-      description: Foo is the Schema for the foos API
-      properties:
-        apiVersion:
-          description: 'APIVersion defines the versioned schema '
-          type: string
-        kind:
-          description: 'Kind is a string value representing the '
-          type: string
-        metadata:
-          type: object
-        spec:
-          description: FooSpec defines the desired state of Foo
-          properties:
-            foo:
-              description: Foo is an example field of Foo.
-              type: string
-          type: object
-        status:
-          description: 'FooStatus defines the observed state of '
-          type: object
-      type: object
-  version: v1alpha1
   versions:
     - name: v1alpha1
+      schema:
+        openAPIV3Schema:
+          description: Foo is the Schema for the foos API
+          properties:
+            apiVersion:
+              description: 'APIVersion defines the versioned schema '
+              type: string
+            kind:
+              description: 'Kind is a string value representing the '
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: FooSpec defines the desired state of Foo
+              properties:
+                foo:
+                  description: Foo is an example field of Foo.
+                  type: string
+              type: object
+            status:
+              description: 'FooStatus defines the observed state of '
+              type: object
+          type: object
       served: true
       storage: true
 status:
@@ -298,8 +296,8 @@ spec:
         - command:
             - /manager
           args:
-            - "--metrics-addr=127.0.0.1:8080"
-            - "--enable-leader-election"
+            - "--metrics-bind-address=127.0.0.1:8080"
+            - "--leader-elect"
           image: example/simple:latest
           name: manager
           resources:
@@ -333,3 +331,30 @@ spec:
           secret:
             defaultMode: 420
             secretName: webhook-server-cert
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  creationTimestamp: null
+  name: mutating-webhook-configuration
+webhooks:
+  - admissionReviewVersions:
+      - v1
+    clientConfig:
+      service:
+        name: webhook-service
+        namespace: system
+        path: /mutate-pod
+    failurePolicy: Ignore
+    name: example.m.pod
+    rules:
+      - apiGroups:
+          - ""
+        apiVersions:
+          - v1
+        operations:
+          - CREATE
+          - UPDATE
+        resources:
+          - pods
+    sideEffects: None
