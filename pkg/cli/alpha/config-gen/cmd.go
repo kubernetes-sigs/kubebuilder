@@ -265,7 +265,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 transformers:
 - |-
-  apiVersion: kubebuilder.sigs.k8s.io
+  apiVersion: kubebuilder.sigs.k8s.io/v1alpha1
   kind: KubebuilderConfigGen
   metadata:
     name: my-project
