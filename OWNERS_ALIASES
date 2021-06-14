@@ -6,7 +6,6 @@ aliases:
   kubebuilder-admins:
     - droot
     - mengqiy
-    - directxman12
     - pwittrock
 
   # non-admin folks who can approve any PRs in the repo
@@ -22,4 +21,5 @@ aliases:
 
   # folks who may have context on ancient history,
   # but are no longer directly involved
-  # kubebuilder-emeritus-approvers:
+  kubebuilder-emeritus-approvers:
+  - directxman12
