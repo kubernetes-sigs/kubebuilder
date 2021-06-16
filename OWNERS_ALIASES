@@ -8,10 +8,10 @@ aliases:
     - mengqiy
     - directxman12
     - pwittrock
+    - camilamacedo86
 
   # non-admin folks who can approve any PRs in the repo
   kubebuilder-approvers:
-    - camilamacedo86
     - estroz
 
   # folks who can review and LGTM any PRs in the repo (doesn't include
