@@ -1,0 +1,138 @@
+name: Bug Report
+description: Problems and issues with code or docs
+labels:
+- kind/bug
+body: 
+- type: markdown
+  attributes:
+    value: |
+      :warning: **Stop!** :warning:
+
+      * If this is an issue with some sort of **runtime mechanics**,
+        it probably belongs in [controller-runtime][cr-issue] instead
+
+      * If this is an issue with **CRD generation**, webhook config generation,
+        or deepcopy generation, it probably belongs in [controller-tools][ct-issue].
+
+      * If this is an issue with **scaffolding**, or is definitely a
+        cross-repository effort, it probably belongs here.  Feel free to continue :wink:
+
+      [cr-issue]: https://github.com/kubernetes-sigs/controller-runtime/issues/new
+      [cr-issue]: https://github.com/kubernetes-sigs/controller-tools/issues/new
+
+- type: markdown
+  attributes:
+    value: |
+      # Hiya!  Welcome to Kubebuilder!
+      
+      For a smooth issue process, try to answer the following questions.
+      Don't worry if they're not all applicable; just try to include what you can :smile:
+
+      If you need to include code snippets or logs, please put them in fenced code
+      blocks, and if they're really long, use the [`<details>` tag][mdn-details], like:
+
+      <details>
+
+      <summary>Code & details examples</summary>
+      
+      `````markdown
+      Some code code written in Go:
+
+      ```go
+      type Manager struct {
+        // FixTheBug removes all bugs from controller-runtime
+        FixTheBug bool
+      }
+      ```
+
+      <details>
+
+      <summary>Some really long logs</summary>
+
+      ```
+      ok
+      ok
+      ok
+      SHOOT A BUG HAPPENS HERE OH NO
+      ok
+      ok
+      done
+      ```
+
+      </details>
+
+      `````
+
+      [mdn-details]: ://developer.mozilla.org/en-US/docs/Web/HTML/Element/details 
+
+- type: textarea
+  attributes:
+    label: What broke? What's expected?
+    description: |
+      Describe what didn't go the way you thought it would.
+      Please include *full* & *exact* error messages if you can!
+
+      If you have an idea of what went wrong, feel free to include that
+      as well.
+  validations: {required: true}
+ 
+- type: textarea
+  attributes:
+    label: Reproducing this issue
+    description:
+      If you have simple reproduction steps, or a minimal reproducer code
+      snippet, please include it here.
+
+      If they're already described above, no need to duplicate it here :smile:.
+
+- type: markdown
+  attributes:
+    value: |
+      ## What versions are you using?
+      
+      Please specify the relevant versions and sources for the pieces of
+      kubebuilder that you're using.  The more details you can provide, the
+      better.
+
+- type: input
+  id: cli-version
+  attributes:
+    label: KubeBuilder (CLI) Version
+    description: "use `kubebuilder --version` to find this out"
+  validations:
+    required: true
+
+# project-version & plugin versions are not required for issues with initial scaffolding
+- type: input
+  id: project-version
+  attributes:
+    label: PROJECT version
+    description: "look for the `version` field in your PROJECT file to find this"
+
+- type: textarea
+  attributes:
+    label: Plugin versions
+    description: "list the values of the `layout` field in your PROJECT file, if on KubeBuilder v3+"
+    render: yaml
+
+- type: textarea
+  attributes:
+    label: Other versions
+    description: |
+      Often times, the following pieces of information are relevant:
+      - Go version (`go version`)
+      - controller-runtime & controller-tools version (check your `go.mod` file)
+      - Kubernetes & kubectl versions (run `kubectl version` against your api server)
+
+- type: dropdown
+  attributes: 
+    label: "Extra Labels"
+    description: |
+      If this is *also* a documentation request, etc, please select that below.
+    multiple: true
+    options:
+    - "/kind documentation"
+    - "/kind feature"
+    - "/kind regression"
+    - "/kind deprecation"
+    - "/kind cleanup"

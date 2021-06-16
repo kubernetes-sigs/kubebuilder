@@ -20,20 +20,20 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
 const defaultMainPath = "main.go"
 
-var _ file.Template = &Main{}
+var _ machinery.Template = &Main{}
 
 // Main scaffolds a file that defines the controller manager entry point
 type Main struct {
-	file.TemplateMixin
-	file.BoilerplateMixin
-	file.DomainMixin
-	file.RepositoryMixin
-	file.ComponentConfigMixin
+	machinery.TemplateMixin
+	machinery.BoilerplateMixin
+	machinery.DomainMixin
+	machinery.RepositoryMixin
+	machinery.ComponentConfigMixin
 }
 
 // SetTemplateDefaults implements file.Template
@@ -43,21 +43,21 @@ func (f *Main) SetTemplateDefaults() error {
 	}
 
 	f.TemplateBody = fmt.Sprintf(mainTemplate,
-		file.NewMarkerFor(f.Path, importMarker),
-		file.NewMarkerFor(f.Path, addSchemeMarker),
-		file.NewMarkerFor(f.Path, setupMarker),
+		machinery.NewMarkerFor(f.Path, importMarker),
+		machinery.NewMarkerFor(f.Path, addSchemeMarker),
+		machinery.NewMarkerFor(f.Path, setupMarker),
 	)
 
 	return nil
 }
 
-var _ file.Inserter = &MainUpdater{}
+var _ machinery.Inserter = &MainUpdater{}
 
 // MainUpdater updates main.go to run Controllers
 type MainUpdater struct { //nolint:maligned
-	file.RepositoryMixin
-	file.MultiGroupMixin
-	file.ResourceMixin
+	machinery.RepositoryMixin
+	machinery.MultiGroupMixin
+	machinery.ResourceMixin
 
 	// Flags to indicate which parts need to be included when updating the file
 	WireResource, WireController, WireWebhook bool
@@ -69,8 +69,8 @@ func (*MainUpdater) GetPath() string {
 }
 
 // GetIfExistsAction implements file.Builder
-func (*MainUpdater) GetIfExistsAction() file.IfExistsAction {
-	return file.Overwrite
+func (*MainUpdater) GetIfExistsAction() machinery.IfExistsAction {
+	return machinery.OverwriteFile
 }
 
 const (
@@ -80,11 +80,11 @@ const (
 )
 
 // GetMarkers implements file.Inserter
-func (f *MainUpdater) GetMarkers() []file.Marker {
-	return []file.Marker{
-		file.NewMarkerFor(defaultMainPath, importMarker),
-		file.NewMarkerFor(defaultMainPath, addSchemeMarker),
-		file.NewMarkerFor(defaultMainPath, setupMarker),
+func (f *MainUpdater) GetMarkers() []machinery.Marker {
+	return []machinery.Marker{
+		machinery.NewMarkerFor(defaultMainPath, importMarker),
+		machinery.NewMarkerFor(defaultMainPath, addSchemeMarker),
+		machinery.NewMarkerFor(defaultMainPath, setupMarker),
 	}
 }
 
@@ -99,7 +99,6 @@ const (
 `
 	reconcilerSetupCodeFragment = `if err = (&controllers.%sReconciler{
 		Client: mgr.GetClient(),
-		Log: ctrl.Log.WithName("controllers").WithName("%s"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "%s")
@@ -108,7 +107,6 @@ const (
 `
 	multiGroupReconcilerSetupCodeFragment = `if err = (&%scontrollers.%sReconciler{
 		Client: mgr.GetClient(),
-		Log: ctrl.Log.WithName("controllers").WithName("%s").WithName("%s"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "%s")
@@ -123,8 +121,8 @@ const (
 )
 
 // GetCodeFragments implements file.Inserter
-func (f *MainUpdater) GetCodeFragments() file.CodeFragmentsMap {
-	fragments := make(file.CodeFragmentsMap, 3)
+func (f *MainUpdater) GetCodeFragments() machinery.CodeFragmentsMap {
+	fragments := make(machinery.CodeFragmentsMap, 3)
 
 	// If resource is not being provided we are creating the file, not updating it
 	if f.Resource == nil {
@@ -157,10 +155,10 @@ func (f *MainUpdater) GetCodeFragments() file.CodeFragmentsMap {
 	if f.WireController {
 		if !f.MultiGroup || f.Resource.Group == "" {
 			setup = append(setup, fmt.Sprintf(reconcilerSetupCodeFragment,
-				f.Resource.Kind, f.Resource.Kind, f.Resource.Kind))
+				f.Resource.Kind, f.Resource.Kind))
 		} else {
 			setup = append(setup, fmt.Sprintf(multiGroupReconcilerSetupCodeFragment,
-				f.Resource.PackageName(), f.Resource.Kind, f.Resource.Group, f.Resource.Kind, f.Resource.Kind))
+				f.Resource.PackageName(), f.Resource.Kind, f.Resource.Kind))
 		}
 	}
 	if f.WireWebhook {
@@ -170,13 +168,13 @@ func (f *MainUpdater) GetCodeFragments() file.CodeFragmentsMap {
 
 	// Only store code fragments in the map if the slices are non-empty
 	if len(imports) != 0 {
-		fragments[file.NewMarkerFor(defaultMainPath, importMarker)] = imports
+		fragments[machinery.NewMarkerFor(defaultMainPath, importMarker)] = imports
 	}
 	if len(addScheme) != 0 {
-		fragments[file.NewMarkerFor(defaultMainPath, addSchemeMarker)] = addScheme
+		fragments[machinery.NewMarkerFor(defaultMainPath, addSchemeMarker)] = addScheme
 	}
 	if len(setup) != 0 {
-		fragments[file.NewMarkerFor(defaultMainPath, setupMarker)] = setup
+		fragments[machinery.NewMarkerFor(defaultMainPath, setupMarker)] = setup
 	}
 
 	return fragments

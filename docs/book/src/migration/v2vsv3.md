@@ -13,7 +13,7 @@ v3 projects use Go modules and request Go 1.15+. Dep is no longer supported for 
 
 ## Kubebuilder
 
-- Preliminary support for plugins was added. For more info see the [Extensible CLI and Scaffolding Plugins][plugins-phase1-design-doc].
+- Preliminary support for plugins was added. For more info see the [Extensible CLI and Scaffolding Plugins: phase 1][plugins-phase1-design-doc] and [Extensible CLI and Scaffolding Plugins: phase 1.5][plugins-phase1-design-doc-1.5] 
 
 - The `PROJECT` file now has a new layout.  It stores more information about what resources are in use, to better enable plugins to make useful decisions when scaffolding.
     
@@ -42,7 +42,7 @@ Projects scaffolded with Kubebuilder v3 will use the `go.kubebuilder.io/v3` plug
   * Manager manifests now use `SecurityContext` to address security concerns. More info: [#1637][issue-1637] 
 - Misc:
   * Support for [controller-tools][controller-tools] `v0.4.1` (for `go/v2` it is `v0.3.0` and previously it was `v0.2.5`) 
-  * Support for [controller-runtime][controller-runtime] `v0.7.0` (for `go/v2` it is `v0.6.4` and previously it was `v0.5.0`)
+  * Support for [controller-runtime][controller-runtime] `v0.8.3` (for `go/v2` it is `v0.6.4` and previously it was `v0.5.0`)
   * Support for [kustomize][kustomize] `v3.8.7` (for `go/v2` it is `v3.5.4` and previously it was `v3.1.0`)
   * Required Envtest binaries are automatically downloaded
   * The minimum Go version is now `1.15` (previously it was `1.13).
@@ -73,6 +73,7 @@ You will check that you can still using the previous layout by using the `go/v2`
 - [Migrating to Kubebuilder v3 by updating the files manually][manually-upgrade]
 
 [plugins-phase1-design-doc]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/designs/extensible-cli-and-scaffolding-plugins-phase-1.md
+[plugins-phase1-design-doc-1.5]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/designs/extensible-cli-and-scaffolding-plugins-phase-1-5.md
 [manually-upgrade]: manually_migration_guide_v2_v3.md
 [component-config-tutorial]: ../component-config-tutorial/tutorial.md
 [issue-1893]: https://github.com/kubernetes-sigs/kubebuilder/issues/1839

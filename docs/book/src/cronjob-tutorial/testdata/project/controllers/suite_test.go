@@ -6,6 +6,7 @@ First, it will contain the necessary imports.
 */
 
 /*
+Copyright 2021 The Kubernetes authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -25,8 +26,9 @@ package controllers
 
 import (
 	"path/filepath"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"testing"
+
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -71,7 +73,8 @@ var _ = BeforeSuite(func() {
 	*/
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths: []string{filepath.Join("..", "config", "crd", "bases")},
+		CRDDirectoryPaths:     []string{filepath.Join("..", "config", "crd", "bases")},
+		ErrorIfCRDPathMissing: true,
 	}
 
 	/*
@@ -112,8 +115,16 @@ var _ = BeforeSuite(func() {
 		The only difference is that the manager is started in a separate goroutine so it does not block the cleanup of envtest
 		when you’re done running your tests.
 
-		Once you've added the code below, you can actually delete the k8sClient above, because you can get k8sClient from the manager
-		(as shown below).
+		Note that we set up both a "live" k8s client, separate from the manager.  This is because when making assertions in
+		tests, you generally want to assert against the live state of the API server.  If you used the client from the
+		manager (`k8sManager.GetClient`), you'd end up asserting against the contents of the cache instead, which is slower
+		and can introduce flakiness into your tests.  We could use the manager's `APIReader` to accomplish the same thing,
+		but that would leave us with two clients in our test assertions and setup (one for reading, one for writing), and
+		it'd be easy to make mistakes.
+
+		Note that we keep the reconciler running against the manager's cache client, though -- we want our controller to
+		behave as it would in production, and we use features of the cache (like indicies) in our controller which aren't
+		available when talking directly to the API server.
 	*/
 
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
@@ -132,10 +143,6 @@ var _ = BeforeSuite(func() {
 		err = k8sManager.Start(ctrl.SetupSignalHandler())
 		Expect(err).ToNot(HaveOccurred())
 	}()
-
-	k8sClient = k8sManager.GetClient()
-	Expect(k8sClient).ToNot(BeNil())
-
 }, 60)
 
 /*

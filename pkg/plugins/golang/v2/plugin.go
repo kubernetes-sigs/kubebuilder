@@ -24,11 +24,11 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins"
 )
 
-const pluginName = "go" + plugins.DefaultNameQualifier
+const pluginName = "go." + plugins.DefaultNameQualifier
 
 var (
-	supportedProjectVersions = []config.Version{cfgv2.Version, cfgv3.Version}
 	pluginVersion            = plugin.Version{Number: 2}
+	supportedProjectVersions = []config.Version{cfgv2.Version, cfgv3.Version}
 )
 
 var _ plugin.Full = Plugin{}

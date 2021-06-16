@@ -24,41 +24,37 @@ import (
 	. "github.com/onsi/gomega"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
+	cfgv2 "sigs.k8s.io/kubebuilder/v3/pkg/config/v2"
 	cfgv3 "sigs.k8s.io/kubebuilder/v3/pkg/config/v3"
+	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 )
 
 var _ = Describe("Options", func() {
-	Context("Validate", func() {
-		DescribeTable("should succeed for valid options",
-			func(options Options) { Expect(options.Validate()).To(Succeed()) },
-			Entry("full GVK", Options{Group: "crew", Domain: "test.io", Version: "v1", Kind: "FirstMate"}),
-			Entry("missing domain", Options{Group: "crew", Version: "v1", Kind: "FirstMate"}),
-			Entry("missing group", Options{Domain: "test.io", Version: "v1", Kind: "FirstMate"}),
+	Context("UpdateResource", func() {
+		const (
+			group   = "crew"
+			domain  = "test.io"
+			version = "v1"
+			kind    = "FirstMate"
 		)
+		var (
+			gvk = resource.GVK{
+				Group:   group,
+				Domain:  domain,
+				Version: version,
+				Kind:    kind,
+			}
 
-		DescribeTable("should fail for invalid options",
-			func(options Options) { Expect(options.Validate()).NotTo(Succeed()) },
-			Entry("group flag captured another flag", Options{Group: "--version"}),
-			Entry("version flag captured another flag", Options{Version: "--kind"}),
-			Entry("kind flag captured another flag", Options{Kind: "--group"}),
-			Entry("missing group and domain", Options{Version: "v1", Kind: "FirstMate"}),
-			Entry("missing version", Options{Group: "crew", Domain: "test.io", Kind: "FirstMate"}),
-			Entry("missing kind", Options{Group: "crew", Domain: "test.io", Version: "v1"}),
+			cfg config.Config
 		)
-	})
-
-	Context("NewResource", func() {
-		var cfg config.Config
 
 		BeforeEach(func() {
 			cfg = cfgv3.New()
 			_ = cfg.SetRepository("test")
 		})
 
-		DescribeTable("should succeed if the Resource is valid",
+		DescribeTable("should succeed",
 			func(options Options) {
-				Expect(options.Validate()).To(Succeed())
-
 				for _, multiGroup := range []bool{false, true} {
 					if multiGroup {
 						Expect(cfg.SetMultiGroup()).To(Succeed())
@@ -66,187 +62,65 @@ var _ = Describe("Options", func() {
 						Expect(cfg.ClearMultiGroup()).To(Succeed())
 					}
 
-					resource := options.NewResource(cfg)
-					Expect(resource.Validate()).To(Succeed())
-					Expect(resource.Group).To(Equal(options.Group))
-					Expect(resource.Domain).To(Equal(options.Domain))
-					Expect(resource.Version).To(Equal(options.Version))
-					Expect(resource.Kind).To(Equal(options.Kind))
-					Expect(resource.API).NotTo(BeNil())
+					res := resource.Resource{
+						GVK:      gvk,
+						Plural:   "firstmates",
+						API:      &resource.API{},
+						Webhooks: &resource.Webhooks{},
+					}
+
+					options.UpdateResource(&res, cfg)
+					Expect(res.Validate()).To(Succeed())
+					Expect(res.GVK.IsEqualTo(gvk)).To(BeTrue())
+					if options.Plural != "" {
+						Expect(res.Plural).To(Equal(options.Plural))
+					}
 					if options.DoAPI || options.DoDefaulting || options.DoValidation || options.DoConversion {
 						if multiGroup {
-							Expect(resource.Path).To(Equal(
-								path.Join(cfg.GetRepository(), "apis", options.Group, options.Version)))
+							Expect(res.Path).To(Equal(
+								path.Join(cfg.GetRepository(), "apis", gvk.Group, gvk.Version)))
 						} else {
-							Expect(resource.Path).To(Equal(path.Join(cfg.GetRepository(), "api", options.Version)))
+							Expect(res.Path).To(Equal(path.Join(cfg.GetRepository(), "api", gvk.Version)))
 						}
 					} else {
 						// Core-resources have a path despite not having an API/Webhook but they are not tested here
-						Expect(resource.Path).To(Equal(""))
+						Expect(res.Path).To(Equal(""))
 					}
+					Expect(res.API).NotTo(BeNil())
 					if options.DoAPI {
-						Expect(resource.API.CRDVersion).To(Equal(options.CRDVersion))
-						Expect(resource.API.Namespaced).To(Equal(options.Namespaced))
-						Expect(resource.API.IsEmpty()).To(BeFalse())
+						Expect(res.API.CRDVersion).To(Equal(options.CRDVersion))
+						Expect(res.API.Namespaced).To(Equal(options.Namespaced))
+						Expect(res.API.IsEmpty()).To(BeFalse())
 					} else {
-						Expect(resource.API.IsEmpty()).To(BeTrue())
+						Expect(res.API.IsEmpty()).To(BeTrue())
 					}
-					Expect(resource.Controller).To(Equal(options.DoController))
-					Expect(resource.Webhooks).NotTo(BeNil())
+					Expect(res.Controller).To(Equal(options.DoController))
+					Expect(res.Webhooks).NotTo(BeNil())
 					if options.DoDefaulting || options.DoValidation || options.DoConversion {
-						Expect(resource.Webhooks.WebhookVersion).To(Equal(options.WebhookVersion))
-						Expect(resource.Webhooks.Defaulting).To(Equal(options.DoDefaulting))
-						Expect(resource.Webhooks.Validation).To(Equal(options.DoValidation))
-						Expect(resource.Webhooks.Conversion).To(Equal(options.DoConversion))
-						Expect(resource.Webhooks.IsEmpty()).To(BeFalse())
+						Expect(res.Webhooks.WebhookVersion).To(Equal(options.WebhookVersion))
+						Expect(res.Webhooks.Defaulting).To(Equal(options.DoDefaulting))
+						Expect(res.Webhooks.Validation).To(Equal(options.DoValidation))
+						Expect(res.Webhooks.Conversion).To(Equal(options.DoConversion))
+						Expect(res.Webhooks.IsEmpty()).To(BeFalse())
 					} else {
-						Expect(resource.Webhooks.IsEmpty()).To(BeTrue())
+						Expect(res.Webhooks.IsEmpty()).To(BeTrue())
 					}
-					Expect(resource.QualifiedGroup()).To(Equal(options.Group + "." + options.Domain))
-					Expect(resource.PackageName()).To(Equal(options.Group))
-					Expect(resource.ImportAlias()).To(Equal(options.Group + options.Version))
+					Expect(res.QualifiedGroup()).To(Equal(gvk.Group + "." + gvk.Domain))
+					Expect(res.PackageName()).To(Equal(gvk.Group))
+					Expect(res.ImportAlias()).To(Equal(gvk.Group + gvk.Version))
 				}
 			},
-			Entry("basic", Options{
-				Group:   "crew",
-				Domain:  "test.io",
-				Version: "v1",
-				Kind:    "FirstMate",
-			}),
-			Entry("API", Options{
-				Group:      "crew",
-				Domain:     "test.io",
-				Version:    "v1",
-				Kind:       "FirstMate",
-				DoAPI:      true,
-				CRDVersion: "v1",
-				Namespaced: true,
-			}),
-			Entry("Controller", Options{
-				Group:        "crew",
-				Domain:       "test.io",
-				Version:      "v1",
-				Kind:         "FirstMate",
-				DoController: true,
-			}),
-			Entry("Webhooks", Options{
-				Group:          "crew",
-				Domain:         "test.io",
-				Version:        "v1",
-				Kind:           "FirstMate",
-				WebhookVersion: "v1",
-				DoDefaulting:   true,
-				DoValidation:   true,
-				DoConversion:   true,
-			}),
+			Entry("when updating nothing", Options{}),
+			Entry("when updating the plural", Options{Plural: "mates"}),
+			Entry("when updating the API", Options{DoAPI: true, CRDVersion: "v1", Namespaced: true}),
+			Entry("when updating the Controller", Options{DoController: true}),
+			Entry("when updating Webhooks",
+				Options{WebhookVersion: "v1", DoDefaulting: true, DoValidation: true, DoConversion: true}),
 		)
-
-		DescribeTable("should default the Plural by pluralizing the Kind",
-			func(kind, plural string) {
-				options := Options{Group: "crew", Version: "v1", Kind: kind}
-				Expect(options.Validate()).To(Succeed())
-
-				for _, multiGroup := range []bool{false, true} {
-					if multiGroup {
-						Expect(cfg.SetMultiGroup()).To(Succeed())
-					} else {
-						Expect(cfg.ClearMultiGroup()).To(Succeed())
-					}
-
-					resource := options.NewResource(cfg)
-					Expect(resource.Validate()).To(Succeed())
-					Expect(resource.Plural).To(Equal(plural))
-				}
-			},
-			Entry("for `FirstMate`", "FirstMate", "firstmates"),
-			Entry("for `Fish`", "Fish", "fish"),
-			Entry("for `Helmswoman`", "Helmswoman", "helmswomen"),
-		)
-
-		DescribeTable("should keep the Plural if specified",
-			func(kind, plural string) {
-				options := Options{Group: "crew", Version: "v1", Kind: kind, Plural: plural}
-				Expect(options.Validate()).To(Succeed())
-
-				for _, multiGroup := range []bool{false, true} {
-					if multiGroup {
-						Expect(cfg.SetMultiGroup()).To(Succeed())
-					} else {
-						Expect(cfg.ClearMultiGroup()).To(Succeed())
-					}
-
-					resource := options.NewResource(cfg)
-					Expect(resource.Validate()).To(Succeed())
-					Expect(resource.Plural).To(Equal(plural))
-				}
-			},
-			Entry("for `FirstMate`", "FirstMate", "mates"),
-			Entry("for `Fish`", "Fish", "shoal"),
-		)
-
-		DescribeTable("should allow hyphens and dots in group names",
-			func(group, safeGroup string) {
-				options := Options{
-					Group:   group,
-					Domain:  "test.io",
-					Version: "v1",
-					Kind:    "FirstMate",
-					DoAPI:   true, // Scaffold the API so that the path is saved
-				}
-				Expect(options.Validate()).To(Succeed())
-
-				for _, multiGroup := range []bool{false, true} {
-					if multiGroup {
-						Expect(cfg.SetMultiGroup()).To(Succeed())
-					} else {
-						Expect(cfg.ClearMultiGroup()).To(Succeed())
-					}
-
-					resource := options.NewResource(cfg)
-					Expect(resource.Validate()).To(Succeed())
-					Expect(resource.Group).To(Equal(options.Group))
-					if multiGroup {
-						Expect(resource.Path).To(Equal(
-							path.Join(cfg.GetRepository(), "apis", options.Group, options.Version)))
-					} else {
-						Expect(resource.Path).To(Equal(path.Join(cfg.GetRepository(), "api", options.Version)))
-					}
-					Expect(resource.QualifiedGroup()).To(Equal(options.Group + "." + options.Domain))
-					Expect(resource.PackageName()).To(Equal(safeGroup))
-					Expect(resource.ImportAlias()).To(Equal(safeGroup + options.Version))
-				}
-			},
-			Entry("for hyphen-containing group", "my-project", "myproject"),
-			Entry("for dot-containing group", "my.project", "myproject"),
-		)
-
-		It("should not append '.' if provided an empty domain", func() {
-			options := Options{Group: "crew", Version: "v1", Kind: "FirstMate"}
-			Expect(options.Validate()).To(Succeed())
-
-			for _, multiGroup := range []bool{false, true} {
-				if multiGroup {
-					Expect(cfg.SetMultiGroup()).To(Succeed())
-				} else {
-					Expect(cfg.ClearMultiGroup()).To(Succeed())
-				}
-
-				resource := options.NewResource(cfg)
-				Expect(resource.Validate()).To(Succeed())
-				Expect(resource.QualifiedGroup()).To(Equal(options.Group))
-			}
-		})
 
 		DescribeTable("should use core apis",
 			func(group, qualified string) {
-				options := Options{
-					Group:   group,
-					Domain:  "test.io",
-					Version: "v1",
-					Kind:    "FirstMate",
-				}
-				Expect(options.Validate()).To(Succeed())
-
+				options := Options{}
 				for _, multiGroup := range []bool{false, true} {
 					if multiGroup {
 						Expect(cfg.SetMultiGroup()).To(Succeed())
@@ -254,48 +128,68 @@ var _ = Describe("Options", func() {
 						Expect(cfg.ClearMultiGroup()).To(Succeed())
 					}
 
-					resource := options.NewResource(cfg)
-					Expect(resource.Validate()).To(Succeed())
-					Expect(resource.Path).To(Equal(path.Join("k8s.io", "api", options.Group, options.Version)))
-					Expect(resource.API).NotTo(BeNil())
-					Expect(resource.API.IsEmpty()).To(BeTrue())
-					Expect(resource.QualifiedGroup()).To(Equal(qualified))
+					res := resource.Resource{
+						GVK: resource.GVK{
+							Group:   group,
+							Domain:  domain,
+							Version: version,
+							Kind:    kind,
+						},
+						Plural:   "firstmates",
+						API:      &resource.API{},
+						Webhooks: &resource.Webhooks{},
+					}
+
+					options.UpdateResource(&res, cfg)
+					Expect(res.Validate()).To(Succeed())
+
+					Expect(res.Path).To(Equal(path.Join("k8s.io", "api", group, version)))
+					Expect(res.HasAPI()).To(BeFalse())
+					Expect(res.QualifiedGroup()).To(Equal(qualified))
 				}
 			},
 			Entry("for `apps`", "apps", "apps"),
 			Entry("for `authentication`", "authentication", "authentication.k8s.io"),
 		)
 
-		It("should use domain if the group is empty", func() {
-			safeDomain := "testio"
+		DescribeTable("should use core apis with project version 2",
+			// This needs a separate test because project version 2 didn't store API and therefore
+			// the `HasAPI` method of the resource obtained with `GetResource` will always return false.
+			// Instead, the existence of a resource in the list means the API was scaffolded.
+			func(group, qualified string) {
+				cfg = cfgv2.New()
+				_ = cfg.SetRepository("test")
 
-			options := Options{
-				Domain:  "test.io",
-				Version: "v1",
-				Kind:    "FirstMate",
-				DoAPI:   true, // Scaffold the API so that the path is saved
-			}
-			Expect(options.Validate()).To(Succeed())
+				options := Options{}
+				for _, multiGroup := range []bool{false, true} {
+					if multiGroup {
+						Expect(cfg.SetMultiGroup()).To(Succeed())
+					} else {
+						Expect(cfg.ClearMultiGroup()).To(Succeed())
+					}
 
-			for _, multiGroup := range []bool{false, true} {
-				if multiGroup {
-					Expect(cfg.SetMultiGroup()).To(Succeed())
-				} else {
-					Expect(cfg.ClearMultiGroup()).To(Succeed())
+					res := resource.Resource{
+						GVK: resource.GVK{
+							Group:   group,
+							Domain:  domain,
+							Version: version,
+							Kind:    kind,
+						},
+						Plural:   "firstmates",
+						API:      &resource.API{},
+						Webhooks: &resource.Webhooks{},
+					}
+
+					options.UpdateResource(&res, cfg)
+					Expect(res.Validate()).To(Succeed())
+
+					Expect(res.Path).To(Equal(path.Join("k8s.io", "api", group, version)))
+					Expect(res.HasAPI()).To(BeFalse())
+					Expect(res.QualifiedGroup()).To(Equal(qualified))
 				}
-
-				resource := options.NewResource(cfg)
-				Expect(resource.Validate()).To(Succeed())
-				Expect(resource.Group).To(Equal(""))
-				if multiGroup {
-					Expect(resource.Path).To(Equal(path.Join(cfg.GetRepository(), "apis", options.Version)))
-				} else {
-					Expect(resource.Path).To(Equal(path.Join(cfg.GetRepository(), "api", options.Version)))
-				}
-				Expect(resource.QualifiedGroup()).To(Equal(options.Domain))
-				Expect(resource.PackageName()).To(Equal(safeDomain))
-				Expect(resource.ImportAlias()).To(Equal(safeDomain + options.Version))
-			}
-		})
+			},
+			Entry("for `apps`", "apps", "apps"),
+			Entry("for `authentication`", "authentication", "authentication.k8s.io"),
+		)
 	})
 })

@@ -18,59 +18,51 @@ package v2
 
 import (
 	"fmt"
-	"io/ioutil"
-	"path/filepath"
 
 	"github.com/spf13/pflag"
 
-	newconfig "sigs.k8s.io/kubebuilder/v3/pkg/config"
+	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	cfgv2 "sigs.k8s.io/kubebuilder/v3/pkg/config/v2"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
+	goPlugin "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/cmdutil"
 )
 
+var _ plugin.CreateWebhookSubcommand = &createWebhookSubcommand{}
+
 type createWebhookSubcommand struct {
-	config newconfig.Config
+	config config.Config
 	// For help text.
 	commandName string
 
-	options *Options
+	options *goPlugin.Options
 
-	resource resource.Resource
+	resource *resource.Resource
 }
 
-var (
-	_ plugin.CreateWebhookSubcommand = &createWebhookSubcommand{}
-	_ cmdutil.RunOptions             = &createWebhookSubcommand{}
-)
+func (p *createWebhookSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
+	p.commandName = cliMeta.CommandName
 
-func (p *createWebhookSubcommand) UpdateContext(ctx *plugin.Context) {
-	ctx.Description = `Scaffold a webhook for an API resource. You can choose to scaffold defaulting,
-validating and (or) conversion webhooks.
+	subcmdMeta.Description = `Scaffold a webhook for an API resource. You can choose to scaffold defaulting,
+validating and/or conversion webhooks.
 `
-	ctx.Examples = fmt.Sprintf(`  # Create defaulting and validating webhooks for CRD of group ship, version v1beta1
-  # and kind Frigate.
-  %s create webhook --group ship --version v1beta1 --kind Frigate --defaulting --programmatic-validation
+	subcmdMeta.Examples = fmt.Sprintf(`  # Create defaulting and validating webhooks for Group: ship, Version: v1beta1
+  # and Kind: Frigate
+  %[1]s create webhook --group ship --version v1beta1 --kind Frigate --defaulting --programmatic-validation
 
-  # Create conversion webhook for CRD of group shio, version v1beta1 and kind Frigate.
-  %s create webhook --group ship --version v1beta1 --kind Frigate --conversion
-`,
-		ctx.CommandName, ctx.CommandName)
-
-	p.commandName = ctx.CommandName
+  # Create conversion webhook for Group: ship, Version: v1beta1
+  # and Kind: Frigate
+  %[1]s create webhook --group ship --version v1beta1 --kind Frigate --conversion
+`, cliMeta.CommandName)
 }
 
 func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
-	p.options = &Options{}
-	fs.StringVar(&p.options.Group, "group", "", "resource Group")
-	p.options.Domain = p.config.GetDomain()
-	fs.StringVar(&p.options.Version, "version", "", "resource Version")
-	fs.StringVar(&p.options.Kind, "kind", "", "resource Kind")
+	p.options = &goPlugin.Options{WebhookVersion: "v1beta1"}
+
 	fs.StringVar(&p.options.Plural, "resource", "", "resource irregular plural form")
 
-	p.options.WebhookVersion = "v1beta1"
 	fs.BoolVar(&p.options.DoDefaulting, "defaulting", false,
 		"if set, scaffold the defaulting webhook")
 	fs.BoolVar(&p.options.DoValidation, "programmatic-validation", false,
@@ -79,21 +71,20 @@ func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
 		"if set, scaffold the conversion webhook")
 }
 
-func (p *createWebhookSubcommand) InjectConfig(c newconfig.Config) {
+func (p *createWebhookSubcommand) InjectConfig(c config.Config) error {
 	p.config = c
+
+	return nil
 }
 
-func (p *createWebhookSubcommand) Run() error {
-	// Create the resource from the options
-	p.resource = p.options.NewResource(p.config)
+func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
+	p.resource = res
 
-	return cmdutil.Run(p)
-}
-
-func (p *createWebhookSubcommand) Validate() error {
-	if err := p.options.Validate(); err != nil {
-		return err
+	if p.resource.Group == "" {
+		return fmt.Errorf("group cannot be empty")
 	}
+
+	p.options.UpdateResource(p.resource, p.config)
 
 	if err := p.resource.Validate(); err != nil {
 		return err
@@ -120,16 +111,8 @@ func (p *createWebhookSubcommand) Validate() error {
 	return nil
 }
 
-func (p *createWebhookSubcommand) GetScaffolder() (cmdutil.Scaffolder, error) {
-	// Load the boilerplate
-	bp, err := ioutil.ReadFile(filepath.Join("hack", "boilerplate.go.txt")) // nolint:gosec
-	if err != nil {
-		return nil, fmt.Errorf("unable to load boilerplate: %v", err)
-	}
-
-	return scaffolds.NewWebhookScaffolder(p.config, string(bp), p.resource), nil
-}
-
-func (p *createWebhookSubcommand) PostScaffold() error {
-	return nil
+func (p *createWebhookSubcommand) Scaffold(fs machinery.Filesystem) error {
+	scaffolder := scaffolds.NewWebhookScaffolder(p.config, *p.resource)
+	scaffolder.InjectFS(fs)
+	return scaffolder.Scaffold()
 }

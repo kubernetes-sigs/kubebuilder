@@ -1,0 +1,92 @@
+name: Feature request
+description: Suggest an idea for this project or its docs
+labels:
+- kind/feature
+body:
+- type: markdown
+  attributes:
+    value: |
+      :warning: **Stop!** :warning:
+
+      * If this is an issue with some sort of **runtime mechanics**,
+        it probably belongs in [controller-runtime][cr-issue] instead
+
+      * If this is an issue with **CRD generation**, webhook config generation,
+        or deepcopy generation, it probably belongs in [controller-tools][ct-issue].
+
+      * If this is an issue with **scaffolding**, or is definitely a
+        cross-repository effort, it probably belongs here.  Feel free to continue :wink:
+
+      [cr-issue]: https://github.com/kubernetes-sigs/controller-runtime/issues/new
+      [cr-issue]: https://github.com/kubernetes-sigs/controller-tools/issues/new
+
+- type: markdown
+  attributes:
+    value: |
+      # Hiya!  Welcome to Kubebuilder!
+      
+      For a smooth issue process, try to answer the following questions.
+      Don't worry if they're not all applicable; just try to include what you can :smile:
+
+      If you need to include code snippets or logs, please put them in fenced code
+      blocks, and if they're really long, use the [`<details>` tag][mdn-details], like:
+
+      <details>
+
+      <summary>Code & details examples</summary>
+      
+      `````markdown
+      Some code code written in Go:
+
+      ```go
+      type Manager struct {
+        // FixTheBug removes all bugs from controller-runtime
+        FixTheBug bool
+      }
+      ```
+
+      <details>
+
+      <summary>Some really long logs</summary>
+
+      ```
+      ok
+      ok
+      ok
+      SHOOT A BUG HAPPENS HERE OH NO
+      ok
+      ok
+      done
+      ```
+
+      </details>
+
+      `````
+
+      [mdn-details]: ://developer.mozilla.org/en-US/docs/Web/HTML/Element/details 
+
+- type: textarea
+  attributes:
+    label: What do you want to happen?
+    description: |
+      Describe the feature you want, and what the motivation is.
+
+      What are your use cases?  Why should we do this?
+
+      Does it require a particular Kubernetes version?
+
+      Is there currently another isssue associated with this (use github syntax
+      like `#xyz` to link to it)?
+  validations: {required: true}
+
+- type: dropdown
+  attributes: 
+    label: "Extra Labels"
+    description: |
+      If this is *also* a documentation request, etc, please select that below.
+    multiple: true
+    options:
+    - "/kind documentation"
+    - "/kind regression"
+    - "/kind deprecation"
+    - "/kind cleanup"

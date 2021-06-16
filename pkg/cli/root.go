@@ -29,33 +29,33 @@ const (
 	projectVersionsHeader = "Supported project versions"
 )
 
-func (c cli) newRootCmd() *cobra.Command {
+func (c CLI) newRootCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use: c.commandName,
-		Long: `CLI tool for building Kubernetes extensions and tools.
-`,
+		Use:     c.commandName,
+		Long:    c.description,
 		Example: c.rootExamples(),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cmd.Help()
 		},
 	}
 
-	// Global flags for all subcommands
-	// NOTE: the current plugin resolution doesn't allow to provide values to this flag different to those configured
-	//       for the project, so default values need to be empty and considered when these two sources are compared.
-	//       Another approach would be to allow users to overwrite the project configuration values. In this case, flags
-	//       would take precedence over project configuration, which would take precedence over cli defaults.
-	fs := cmd.PersistentFlags()
-	fs.String(projectVersionFlag, "", "project version")
-	fs.StringSlice(pluginsFlag, nil, "plugin keys of the plugin to initialize the project with")
+	// Global flags for all subcommands.
+	cmd.PersistentFlags().StringSlice(pluginsFlag, nil, "plugin keys to be used for this subcommand execution")
+
+	// Register --project-version on the root command so that it shows up in help.
+	cmd.Flags().String(projectVersionFlag, c.defaultProjectVersion.String(), "project version")
+
+	// As the root command will be used to shot the help message under some error conditions,
+	// like during plugin resolving, we need to allow unknown flags to prevent parsing errors.
+	cmd.FParseErrWhitelist = cobra.FParseErrWhitelist{UnknownFlags: true}
 
 	return cmd
 }
 
-// rootExamples builds the examples string for the root command
-func (c cli) rootExamples() string {
+// rootExamples builds the examples string for the root command before resolving plugins
+func (c CLI) rootExamples() string {
 	str := fmt.Sprintf(`The first step is to initialize your project:
-    %[1]s init --project-version=<PROJECT VERSION> --plugins=<PLUGIN KEYS>
+    %[1]s init [--plugins=<PLUGIN KEYS> [--project-version=<PROJECT VERSION>]]
 
 <PLUGIN KEYS> is a comma-separated list of plugin keys from the following table
 and <PROJECT VERSION> a supported project version for these plugins.
@@ -64,27 +64,25 @@ and <PROJECT VERSION> a supported project version for these plugins.
 
 For more specific help for the init command of a certain plugins and project version
 configuration please run:
-    %[1]s init --help --project-version=<PROJECT VERSION> --plugins=<PLUGIN KEYS>
+    %[1]s init --help --plugins=<PLUGIN KEYS> [--project-version=<PROJECT VERSION>]
 `,
 		c.commandName, c.getPluginTable())
 
-	str += fmt.Sprintf("\nDefault project version: %s\n", c.defaultProjectVersion)
-
-	if defaultPlugins, hasDefaultPlugins := c.defaultPlugins[c.defaultProjectVersion]; hasDefaultPlugins {
-		str += fmt.Sprintf("Default plugin keys: %q\n", strings.Join(defaultPlugins, ","))
+	if len(c.defaultPlugins) != 0 {
+		if defaultPlugins, found := c.defaultPlugins[c.defaultProjectVersion]; found {
+			str += fmt.Sprintf("\nDefault plugin keys: %q\n", strings.Join(defaultPlugins, ","))
+		}
 	}
 
-	str += fmt.Sprintf(`
-After the project has been initialized, run
-    %[1]s --help
-to obtain further info about available commands.`,
-		c.commandName)
+	if c.defaultProjectVersion.Validate() == nil {
+		str += fmt.Sprintf("Default project version: %q\n", c.defaultProjectVersion)
+	}
 
 	return str
 }
 
 // getPluginTable returns an ASCII table of the available plugins and their supported project versions.
-func (c cli) getPluginTable() string {
+func (c CLI) getPluginTable() string {
 	var (
 		maxPluginKeyLength      = len(pluginKeysHeader)
 		pluginKeys              = make([]string, 0, len(c.plugins))

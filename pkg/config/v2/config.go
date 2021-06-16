@@ -28,8 +28,6 @@ import (
 // Version is the config.Version for project configuration 2
 var Version = config.Version{Number: 2}
 
-const apiVersion = "v1beta1"
-
 type cfg struct {
 	// Version
 	Version config.Version `json:"version"`
@@ -94,16 +92,16 @@ func (c *cfg) SetProjectName(string) error {
 	}
 }
 
-// GetLayout implements config.Config
-func (c cfg) GetLayout() string {
-	return ""
+// GetPluginChain implements config.Config
+func (c cfg) GetPluginChain() []string {
+	return []string{"go.kubebuilder.io/v2"}
 }
 
-// SetLayout implements config.Config
-func (c *cfg) SetLayout(string) error {
+// SetPluginChain implements config.Config
+func (c *cfg) SetPluginChain([]string) error {
 	return config.UnsupportedFieldError{
 		Version: Version,
-		Field:   "layout",
+		Field:   "plugin chain",
 	}
 }
 
@@ -222,14 +220,14 @@ func (c cfg) HasGroup(group string) bool {
 	return false
 }
 
-// IsCRDVersionCompatible implements config.Config
-func (c cfg) IsCRDVersionCompatible(crdVersion string) bool {
-	return crdVersion == apiVersion
+// ListCRDVersions implements config.Config
+func (c cfg) ListCRDVersions() []string {
+	return make([]string, 0)
 }
 
-// IsWebhookVersionCompatible implements config.Config
-func (c cfg) IsWebhookVersionCompatible(webhookVersion string) bool {
-	return webhookVersion == apiVersion
+// ListWebhookVersions implements config.Config
+func (c cfg) ListWebhookVersions() []string {
+	return make([]string, 0)
 }
 
 // DecodePluginConfig implements config.Config
@@ -249,7 +247,7 @@ func (c cfg) EncodePluginConfig(string, interface{}) error {
 }
 
 // Marshal implements config.Config
-func (c cfg) Marshal() ([]byte, error) {
+func (c cfg) MarshalYAML() ([]byte, error) {
 	content, err := yaml.Marshal(c)
 	if err != nil {
 		return nil, config.MarshalError{Err: err}
@@ -259,7 +257,7 @@ func (c cfg) Marshal() ([]byte, error) {
 }
 
 // Unmarshal implements config.Config
-func (c *cfg) Unmarshal(b []byte) error {
+func (c *cfg) UnmarshalYAML(b []byte) error {
 	if err := yaml.UnmarshalStrict(b, c); err != nil {
 		return config.UnmarshalError{Err: err}
 	}

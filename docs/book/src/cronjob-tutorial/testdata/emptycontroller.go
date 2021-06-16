@@ -77,8 +77,7 @@ logging works by attaching key-value pairs to a static message.  We can pre-assi
 some pairs at the top of our reconcile method to have those attached to all log
 lines in this reconciler.
 */
-func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	_ = context.Background()
+func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = r.Log.WithValues("cronjob", req.NamespacedName)
 
 	// your logic here

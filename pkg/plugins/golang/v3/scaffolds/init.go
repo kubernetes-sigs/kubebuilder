@@ -18,25 +18,19 @@ package scaffolds
 
 import (
 	"fmt"
-	"io/ioutil"
-	"path/filepath"
+
+	"github.com/spf13/afero"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/config/certmanager"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/config/kdefault"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/config/manager"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/config/prometheus"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/config/rbac"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/hack"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/cmdutil"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/internal/machinery"
 )
 
 const (
 	// ControllerRuntimeVersion is the kubernetes-sigs/controller-runtime version to be used in the project
-	ControllerRuntimeVersion = "v0.7.0"
+	ControllerRuntimeVersion = "v0.8.3"
 	// ControllerToolsVersion is the kubernetes-sigs/controller-tools version to be used in the project
 	ControllerToolsVersion = "v0.4.1"
 	// KustomizeVersion is the kubernetes-sigs/kustomize version to be used in the project
@@ -45,69 +39,65 @@ const (
 	imageName = "controller:latest"
 )
 
-var _ cmdutil.Scaffolder = &initScaffolder{}
+var _ plugins.Scaffolder = &initScaffolder{}
 
 type initScaffolder struct {
 	config          config.Config
 	boilerplatePath string
 	license         string
 	owner           string
+
+	// fs is the filesystem that will be used by the scaffolder
+	fs machinery.Filesystem
 }
 
 // NewInitScaffolder returns a new Scaffolder for project initialization operations
-func NewInitScaffolder(config config.Config, license, owner string) cmdutil.Scaffolder {
+func NewInitScaffolder(config config.Config, license, owner string) plugins.Scaffolder {
 	return &initScaffolder{
 		config:          config,
-		boilerplatePath: filepath.Join("hack", "boilerplate.go.txt"),
+		boilerplatePath: hack.DefaultBoilerplatePath,
 		license:         license,
 		owner:           owner,
 	}
 }
 
-func (s *initScaffolder) newUniverse(boilerplate string) *model.Universe {
-	return model.NewUniverse(
-		model.WithConfig(s.config),
-		model.WithBoilerplate(boilerplate),
-	)
+// InjectFS implements cmdutil.Scaffolder
+func (s *initScaffolder) InjectFS(fs machinery.Filesystem) {
+	s.fs = fs
 }
 
-// Scaffold implements Scaffolder
+// Scaffold implements cmdutil.Scaffolder
 func (s *initScaffolder) Scaffold() error {
 	fmt.Println("Writing scaffold for you to edit...")
-	return s.scaffold()
-}
 
-// TODO: re-use universe created by s.newUniverse() if possible.
-func (s *initScaffolder) scaffold() error {
-	bpFile := &hack.Boilerplate{}
+	// Initialize the machinery.Scaffold that will write the boilerplate file to disk
+	// The boilerplate file needs to be scaffolded as a separate step as it is going to
+	// be used by the rest of the files, even those scaffolded in this command call.
+	scaffold := machinery.NewScaffold(s.fs,
+		machinery.WithConfig(s.config),
+	)
+
+	bpFile := &hack.Boilerplate{
+		License: s.license,
+		Owner:   s.owner,
+	}
 	bpFile.Path = s.boilerplatePath
-	bpFile.License = s.license
-	bpFile.Owner = s.owner
-	if err := machinery.NewScaffold().Execute(
-		s.newUniverse(""),
-		bpFile,
-	); err != nil {
+	if err := scaffold.Execute(bpFile); err != nil {
 		return err
 	}
 
-	boilerplate, err := ioutil.ReadFile(s.boilerplatePath) //nolint:gosec
+	boilerplate, err := afero.ReadFile(s.fs.FS, s.boilerplatePath)
 	if err != nil {
 		return err
 	}
 
-	return machinery.NewScaffold().Execute(
-		s.newUniverse(string(boilerplate)),
-		&rbac.Kustomization{},
-		&rbac.AuthProxyRole{},
-		&rbac.AuthProxyRoleBinding{},
-		&rbac.AuthProxyService{},
-		&rbac.AuthProxyClientRole{},
-		&rbac.RoleBinding{},
-		&rbac.LeaderElectionRole{},
-		&rbac.LeaderElectionRoleBinding{},
-		&manager.Kustomization{},
-		&manager.Config{Image: imageName},
-		&manager.ControllerManagerConfig{},
+	// Initialize the machinery.Scaffold that will write the files to disk
+	scaffold = machinery.NewScaffold(s.fs,
+		machinery.WithConfig(s.config),
+		machinery.WithBoilerplate(string(boilerplate)),
+	)
+
+	return scaffold.Execute(
 		&templates.Main{},
 		&templates.GoMod{ControllerRuntimeVersion: ControllerRuntimeVersion},
 		&templates.GitIgnore{},
@@ -120,13 +110,5 @@ func (s *initScaffolder) scaffold() error {
 		},
 		&templates.Dockerfile{},
 		&templates.DockerIgnore{},
-		&kdefault.Kustomization{},
-		&kdefault.ManagerAuthProxyPatch{},
-		&kdefault.ManagerConfigPatch{},
-		&prometheus.Kustomization{},
-		&prometheus.Monitor{},
-		&certmanager.Certificate{},
-		&certmanager.Kustomization{},
-		&certmanager.KustomizeConfig{},
 	)
 }

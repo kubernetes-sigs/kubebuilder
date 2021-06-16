@@ -1,0 +1,16 @@
+# allow free form issues as an escape hatch.  This can be taken away if people abuse it ;-)
+blank_issues_enabled: true
+
+# link to CR and CT for easier access
+contact_links:
+- name: Runtime Issues
+  url: https://github.com/kubernetes-sigs/controller-runtime/issues/new
+  about: Runtime issues generally belong in the controller-runtime repository
+
+- name: CRD/Webhook/Deepcopy Generation Issues
+  url: https://github.com/kubernetes-sigs/controller-tools/issues/new
+  about: YAML & Go generation issues generally belong in the controller-tools repository
+
+- name: Support Questions
+  url: https://github.com/kubernetes-sigs/kubebuilder/discussions/new
+  about: Need support & not sure if this a bug?  You can ask questions in Slack or GitHub discussions.

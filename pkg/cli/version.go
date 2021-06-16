@@ -22,7 +22,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func (c cli) newVersionCmd() *cobra.Command {
+func (c CLI) newVersionCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:     "version",
 		Short:   fmt.Sprintf("Print the %s version", c.commandName),

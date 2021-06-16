@@ -1,6 +1,6 @@
 module tutorial.kubebuilder.io/project
 
-go 1.15
+go 1.16
 
 require (
 	github.com/go-logr/logr v0.2.1

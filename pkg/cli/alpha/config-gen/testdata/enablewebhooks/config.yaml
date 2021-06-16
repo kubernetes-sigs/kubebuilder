@@ -1,0 +1,13 @@
+apiVersion: kubebuilder.sigs.k8s.io/v1alpha1
+kind: KubebuilderConfigGen
+metadata:
+  name: simple
+spec:
+  crds:
+    sourceDirectory: ../project/...
+
+  controllerManager:
+    image: example/simple:latest
+
+  webhooks:
+    enable: true

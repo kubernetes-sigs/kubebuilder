@@ -20,16 +20,16 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
-var _ file.Template = &Kustomization{}
-var _ file.Inserter = &Kustomization{}
+var _ machinery.Template = &Kustomization{}
+var _ machinery.Inserter = &Kustomization{}
 
 // Kustomization scaffolds a file that defines the kustomization scheme for the crd folder
 type Kustomization struct {
-	file.TemplateMixin
-	file.ResourceMixin
+	machinery.TemplateMixin
+	machinery.ResourceMixin
 }
 
 // SetTemplateDefaults implements file.Template
@@ -40,9 +40,9 @@ func (f *Kustomization) SetTemplateDefaults() error {
 	f.Path = f.Resource.Replacer().Replace(f.Path)
 
 	f.TemplateBody = fmt.Sprintf(kustomizationTemplate,
-		file.NewMarkerFor(f.Path, resourceMarker),
-		file.NewMarkerFor(f.Path, webhookPatchMarker),
-		file.NewMarkerFor(f.Path, caInjectionPatchMarker),
+		machinery.NewMarkerFor(f.Path, resourceMarker),
+		machinery.NewMarkerFor(f.Path, webhookPatchMarker),
+		machinery.NewMarkerFor(f.Path, caInjectionPatchMarker),
 	)
 
 	return nil
@@ -55,11 +55,11 @@ const (
 )
 
 // GetMarkers implements file.Inserter
-func (f *Kustomization) GetMarkers() []file.Marker {
-	return []file.Marker{
-		file.NewMarkerFor(f.Path, resourceMarker),
-		file.NewMarkerFor(f.Path, webhookPatchMarker),
-		file.NewMarkerFor(f.Path, caInjectionPatchMarker),
+func (f *Kustomization) GetMarkers() []machinery.Marker {
+	return []machinery.Marker{
+		machinery.NewMarkerFor(f.Path, resourceMarker),
+		machinery.NewMarkerFor(f.Path, webhookPatchMarker),
+		machinery.NewMarkerFor(f.Path, caInjectionPatchMarker),
 	}
 }
 
@@ -73,8 +73,8 @@ const (
 )
 
 // GetCodeFragments implements file.Inserter
-func (f *Kustomization) GetCodeFragments() file.CodeFragmentsMap {
-	fragments := make(file.CodeFragmentsMap, 3)
+func (f *Kustomization) GetCodeFragments() machinery.CodeFragmentsMap {
+	fragments := make(machinery.CodeFragmentsMap, 3)
 
 	// Generate resource code fragments
 	res := make([]string, 0)
@@ -90,13 +90,13 @@ func (f *Kustomization) GetCodeFragments() file.CodeFragmentsMap {
 
 	// Only store code fragments in the map if the slices are non-empty
 	if len(res) != 0 {
-		fragments[file.NewMarkerFor(f.Path, resourceMarker)] = res
+		fragments[machinery.NewMarkerFor(f.Path, resourceMarker)] = res
 	}
 	if len(webhookPatch) != 0 {
-		fragments[file.NewMarkerFor(f.Path, webhookPatchMarker)] = webhookPatch
+		fragments[machinery.NewMarkerFor(f.Path, webhookPatchMarker)] = webhookPatch
 	}
 	if len(caInjectionPatch) != 0 {
-		fragments[file.NewMarkerFor(f.Path, caInjectionPatchMarker)] = caInjectionPatch
+		fragments[machinery.NewMarkerFor(f.Path, caInjectionPatchMarker)] = caInjectionPatch
 	}
 
 	return fragments

@@ -9,7 +9,7 @@ This Quick Start guide will cover:
 
 ## Prerequisites
 
-- [go](https://golang.org/dl/) version v1.15+.
+- [go](https://golang.org/dl/) version v1.15+ and < 1.16.
 - [docker](https://docs.docker.com/install/) version 17.03+.
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) version v1.11.3+.
 - Access to a Kubernetes v1.11.3+ cluster.
@@ -22,7 +22,7 @@ Projects created by Kubebuilder contain a Makefile that will install tools at ve
 - [controller-gen](https://github.com/kubernetes-sigs/controller-tools)
 
 The versions which are defined in the `Makefile` and `go.mod` files are the versions tested and therefore is recommend to use the specified versions.
- 
+
 </aside>
 
 ## Installation
@@ -30,26 +30,15 @@ The versions which are defined in the `Makefile` and `go.mod` files are the vers
 Install [kubebuilder](https://sigs.k8s.io/kubebuilder):
 
 ```bash
-os=$(go env GOOS)
-arch=$(go env GOARCH)
-
-# download kubebuilder and extract it to tmp
-curl -L https://go.kubebuilder.io/dl/2.3.1/${os}/${arch} | tar -xz -C /tmp/
-```
-
-If you are using a Kubebuilder plugin version less than version `v3+`, you must configure the Kubernetes binaries required for the [envtest][envtest], run: 
-
-```bash
-# move to a long-term location and put it on your path
-# (you'll need to set the KUBEBUILDER_ASSETS env var if you put it somewhere else)
-sudo mv /tmp/kubebuilder_2.3.1_${os}_${arch} /usr/local/kubebuilder
-export PATH=$PATH:/usr/local/kubebuilder/bin
+# download kubebuilder and install locally.
+curl -L -o kubebuilder https://go.kubebuilder.io/dl/latest/$(go env GOOS)/$(go env GOARCH)
+chmod +x kubebuilder && mv kubebuilder /usr/local/bin/
 ```
 
 <aside class="note">
 <h1>Using master branch</h1>
 
-Also, you can install a master snapshot from `https://go.kubebuilder.io/dl/latest/${os}/${arch}`.
+You can work with a master snapshot by installing from `https://go.kubebuilder.io/dl/master/$(go env GOOS)/$(go env GOARCH)`.
 
 </aside>
 
@@ -65,25 +54,18 @@ Kubebuilder provides autocompletion support for Bash and Zsh via the command `ku
 Create a directory, and then run the init command inside of it to initialize a new project. Follows an example.
 
 ```bash
-mkdir $GOPATH/src/example
-cd $GOPATH/src/example
-kubebuilder init --domain my.domain
+mkdir -p ~/projects/guestbook
+cd ~/projects/guestbook
+kubebuilder init --domain my.domain --repo my.domain/guestbook
 ```
 
 <aside class="note">
-<h1>Not in $GOPATH</h1>
+<h1>Developing in $GOPATH</h1>
 
-If you're not in `GOPATH`, you'll need to run `go mod init <modulename>` in order to tell kubebuilder and Go the base import path of your module. 
+If your project is initialized within [`GOPATH`][GOPATH-golang-docs], the implicitly called `go mod init` will interpolate the module path for you.
+Otherwise `--repo=<module path>` must be set.
 
-For a further understanding of `GOPATH` see [The GOPATH environment variable][GOPATH-golang-docs] in the [How to Write Go Code][how-to-write-go-code-golang-docs] golang page doc.   
-
-</aside>
-
-<aside class="note">
-<h1>Go package issues</h1>
-
-Ensure that you activate the module support by running `$ export GO111MODULE=on` 
-to solve issues as `cannot find package ... (from $GOROOT)`.
+Read the [Go modules blogpost][go-modules-blogpost] if unfamiliar with the module system.
 
 </aside>
 
@@ -99,7 +81,7 @@ kubebuilder create api --group webapp --version v1 --kind Guestbook
 <aside class="note">
 <h1>Press Options</h1>
 
-If you press `y` for Create Resource [y/n] and for Create Controller [y/n] then this will create the files `api/v1/guestbook_types.go` where the API is defined 
+If you press `y` for Create Resource [y/n] and for Create Controller [y/n] then this will create the files `api/v1/guestbook_types.go` where the API is defined
 and the `controllers/guestbook_controller.go` where the reconciliation business logic is implemented for this Kind(CRD).
 
 </aside>
@@ -162,7 +144,7 @@ type Guestbook struct {
 </details>
 
 
-## Test It Out 
+## Test It Out
 
 You'll need a Kubernetes cluster to run against.  You can use
 [KIND](https://sigs.k8s.io/kind) to get a local cluster for testing, or
@@ -174,7 +156,7 @@ run against a remote cluster.
 Your controller will automatically use the current context in your
 kubeconfig file (i.e. whatever cluster `kubectl cluster-info` shows).
 
-</aside> 
+</aside>
 
 Install the CRDs into the cluster:
 ```bash
@@ -216,7 +198,7 @@ make deploy IMG=<some-registry>/<project-name>:tag
 If you encounter RBAC errors, you may need to grant yourself cluster-admin
 privileges or be logged in as admin. See [Prerequisites for using Kubernetes RBAC on GKE cluster v1.11.x and older][pre-rbc-gke] which may be your case.  
 
-</aside> 
+</aside>
 
 ## Uninstall CRDs
 
@@ -234,13 +216,13 @@ UnDeploy the controller to the cluster:
 make undeploy
 ```
 
-## Next Step 
+## Next Step
 
-Now, see the [architecture concept diagram][architecture-concept-diagram] for a better overview and follow up the [CronJob tutorial][cronjob-tutorial] to better understand how it works by developing a demo example project. 
+Now, see the [architecture concept diagram][architecture-concept-diagram] for a better overview and follow up the [CronJob tutorial][cronjob-tutorial] to better understand how it works by developing a demo example project.
 
 [pre-rbc-gke]: https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#iam-rolebinding-bootstrap
 [cronjob-tutorial]: https://book.kubebuilder.io/cronjob-tutorial/cronjob-tutorial.html
 [GOPATH-golang-docs]: https://golang.org/doc/code.html#GOPATH
-[how-to-write-go-code-golang-docs]: https://golang.org/doc/code.html 
+[go-module-blogpost]:https://blog.golang.org/using-go-modules
 [envtest]: https://book.kubebuilder.io/reference/testing/envtest.html
 [architecture-concept-diagram]: architecture.md

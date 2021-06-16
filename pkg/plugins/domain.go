@@ -17,4 +17,4 @@ limitations under the License.
 package plugins
 
 // DefaultNameQualifier is the suffix appended to all kubebuilder plugin names.
-const DefaultNameQualifier = ".kubebuilder.io"
+const DefaultNameQualifier = "kubebuilder.io"

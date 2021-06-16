@@ -17,15 +17,15 @@ limitations under the License.
 package templates
 
 import (
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/file"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
-var _ file.Template = &Makefile{}
+var _ machinery.Template = &Makefile{}
 
 // Makefile scaffolds a file that defines project management CLI commands
 type Makefile struct {
-	file.TemplateMixin
-	file.ComponentConfigMixin
+	machinery.TemplateMixin
+	machinery.ComponentConfigMixin
 
 	// Image is controller manager image name
 	Image string
@@ -47,7 +47,7 @@ func (f *Makefile) SetTemplateDefaults() error {
 
 	f.TemplateBody = makefileTemplate
 
-	f.IfExistsAction = file.Error
+	f.IfExistsAction = machinery.Error
 
 	if f.Image == "" {
 		f.Image = "controller:latest"
@@ -69,6 +69,12 @@ GOBIN=$(shell go env GOPATH)/bin
 else
 GOBIN=$(shell go env GOBIN)
 endif
+
+# Setting SHELL to bash allows bash commands to be executed by recipes.
+# This is a requirement for 'setup-envtest.sh' in the test target.
+# Options are set to exit when a recipe line exits non-zero or a piped command fails.
+SHELL = /usr/bin/env bash -o pipefail
+.SHELLFLAGS = -ec
 
 all: build
 
