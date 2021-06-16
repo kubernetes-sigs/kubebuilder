@@ -65,3 +65,5 @@ mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), options)
 ```
 
 With that out of the way, we can get on to defining our new config!
+
+[tutorial-source]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/docs/book/src/component-config-tutorial/testdata/project
