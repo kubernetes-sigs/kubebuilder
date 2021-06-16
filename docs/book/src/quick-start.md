@@ -65,8 +65,7 @@ kubebuilder init --domain my.domain --repo my.domain/guestbook
 If your project is initialized within [`GOPATH`][GOPATH-golang-docs], the implicitly called `go mod init` will interpolate the module path for you.
 Otherwise `--repo=<module path>` must be set.
 
-Read the [go-module-blogpost]: https://blog.golang.org/using-go-modules
- if unfamiliar with the module system.
+Read the [Go modules blogpost][go-modules-blogpost] if unfamiliar with the module system.
 
 </aside>
 
@@ -224,6 +223,6 @@ Now, see the [architecture concept diagram][architecture-concept-diagram] for a 
 [pre-rbc-gke]: https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#iam-rolebinding-bootstrap
 [cronjob-tutorial]: https://book.kubebuilder.io/cronjob-tutorial/cronjob-tutorial.html
 [GOPATH-golang-docs]: https://golang.org/doc/code.html#GOPATH
-[go-module-blogpost]:https://blog.golang.org/using-go-modules
+[go-module-blogpost]: https://blog.golang.org/using-go-modules
 [envtest]: https://book.kubebuilder.io/reference/testing/envtest.html
 [architecture-concept-diagram]: architecture.md
