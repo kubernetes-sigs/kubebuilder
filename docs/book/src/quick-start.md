@@ -223,6 +223,6 @@ Now, see the [architecture concept diagram][architecture-concept-diagram] for a 
 [pre-rbc-gke]: https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#iam-rolebinding-bootstrap
 [cronjob-tutorial]: https://book.kubebuilder.io/cronjob-tutorial/cronjob-tutorial.html
 [GOPATH-golang-docs]: https://golang.org/doc/code.html#GOPATH
-[go-module-blogpost]:https://blog.golang.org/using-go-modules
+[go-modules-blogpost]: https://blog.golang.org/using-go-modules
 [envtest]: https://book.kubebuilder.io/reference/testing/envtest.html
 [architecture-concept-diagram]: architecture.md
