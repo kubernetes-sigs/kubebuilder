@@ -65,7 +65,8 @@ kubebuilder init --domain my.domain --repo my.domain/guestbook
 If your project is initialized within [`GOPATH`][GOPATH-golang-docs], the implicitly called `go mod init` will interpolate the module path for you.
 Otherwise `--repo=<module path>` must be set.
 
-Read the [Go modules blogpost](https://blog.golang.org/using-go-modules) if unfamiliar with the module system.
+Read the [go-module-blogpost]: https://blog.golang.org/using-go-modules
+ if unfamiliar with the module system.
 
 </aside>
 
