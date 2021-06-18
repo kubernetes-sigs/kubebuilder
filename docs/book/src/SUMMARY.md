@@ -103,8 +103,13 @@
   - [Extending the CLI](./plugins/extending-cli.md)
   - [Creating your own plugins](./plugins/creating-plugins.md)
 
+---
+
+- [FAQ][faq]
+
 ---  
 [Appendix: The TODO Landing Page](./TODO.md)
 
 
 [plugins]: ./plugins/plugins.md
+[faq]: ./faq/faq.md
