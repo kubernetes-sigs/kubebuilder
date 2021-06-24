@@ -184,10 +184,7 @@ func (p *createAPISubcommand) PostScaffold() error {
 		return err
 	}
 	if p.runMake && p.resource.HasAPI() {
-		err = util.RunCmd("Running make", "make", "generate")
-		if err != nil {
-			return err
-		}
+		fmt.Printf("Next: generate targets with:\n$ make generate\n")
 	}
 
 	return nil
