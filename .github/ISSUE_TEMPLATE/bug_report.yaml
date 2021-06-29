@@ -98,7 +98,7 @@ body:
   id: cli-version
   attributes:
     label: KubeBuilder (CLI) Version
-    description: "use `kubebuilder --version` to find this out"
+    description: "use `kubebuilder version` to find this out"
   validations:
     required: true
 
