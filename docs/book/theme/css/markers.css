@@ -15,13 +15,8 @@
     margin-bottom: 0.25em;
 }
 
-/* the marker name */
-.marker > dt.name::before {
-    content: '// +';
-}
 .marker > dt.name {
     font-weight: bold;
-    order: 0; /* hack around the ::before's positioning to get it after the line */
 }
 
 /* the target blob */
