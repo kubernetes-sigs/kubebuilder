@@ -27,6 +27,10 @@ The versions which are defined in the `Makefile` and `go.mod` files are the vers
 
 ## Installation
 
+### MAC users:
+```bash
+brew install kubebuilder
+```
 Install [kubebuilder](https://sigs.k8s.io/kubebuilder):
 
 ```bash
