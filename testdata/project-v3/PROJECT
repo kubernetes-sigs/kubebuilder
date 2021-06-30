@@ -1,6 +1,13 @@
 domain: testproject.org
 layout:
 - go.kubebuilder.io/v3
+plugins:
+  declarative.go.kubebuilder.io/v1:
+    resources:
+    - domain: testproject.org
+      group: crew
+      kind: FirstMate
+      version: v1
 projectName: project-v3
 repo: sigs.k8s.io/kubebuilder/testdata/project-v3
 resources:
