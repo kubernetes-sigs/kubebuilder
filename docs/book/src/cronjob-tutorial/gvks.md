@@ -56,7 +56,7 @@ The goal of this command is to create Custom Resource (CR) and Custom Resource D
 
 New APIs are how we teach Kubernetes about our custom objects. The Go structs are used to generate a Custom Resource Definition (CRD) which includes the schema for our data as well as tracking data like what our new type is called. We can then create instances of our custom objects which will be managed by our [controllers][controllers].
 
-Our APIs and resouces represent our solutions on the clusters. Basically, the CRDs are a definition of our customized Objects, and the CRs are an instance of it.
+Our APIs and resources represent our solutions on the clusters. Basically, the CRDs are a definition of our customized Objects, and the CRs are an instance of it.
 
 ## Ah, do you have an example? 
 
