@@ -44,9 +44,12 @@ Kubebuilder](../quick-start.md#installation), then scaffold out a new
 project:
 
 ```bash
+# create a project directory, and then run the init command.
+mkdir project
+cd project
 # we'll use a domain of tutorial.kubebuilder.io,
 # so all API groups will be <group>.tutorial.kubebuilder.io.
-kubebuilder init --domain tutorial.kubebuilder.io
+kubebuilder init --domain tutorial.kubebuilder.io --repo tutorial.kubebuilder.io/project
 ```
 
 <aside class="note">
