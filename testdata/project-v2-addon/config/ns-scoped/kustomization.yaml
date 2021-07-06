@@ -1,0 +1,34 @@
+patchesStrategicMerge:
+- manager_patch.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+patchesJson6902:
+- patch: |-
+    - op: replace
+      path: /kind
+      value: RoleBinding
+    - op: add
+      path: /metadata/namespace
+      value: 
+        <NAMESPACE>
+  target:
+    group: rbac.authorization.k8s.io
+    kind: ClusterRoleBinding
+    name: manager-rolebinding
+    version: v1
+- patch: |-
+    - op: replace
+      path: /kind
+      value: RoleBinding
+    - op: add
+      path: /metadata/namespace
+      value: 
+        <NAMESPACE>
+  target:
+    group: rbac.authorization.k8s.io
+    kind: ClusterRoleBinding
+    name: proxy-rolebinding
+    version: v1
+resources:
+- ../default
+namespace: <NAMESPACE>
