@@ -63,6 +63,7 @@ spec:
         - "--v=10"
         ports:
         - containerPort: 8443
+          protocol: TCP
           name: https
 {{- if not .ComponentConfig }}
       - name: manager
