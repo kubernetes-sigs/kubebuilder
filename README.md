@@ -63,7 +63,7 @@ Building APIs using CRDs, Controllers and Admission Webhooks.
 
 ## Philosophy
 
-See [DESIGN.md](DESIGN.md) for the guiding principals of the various KubeBuilder projects.
+See [DESIGN.md](DESIGN.md) for the guiding principles of the various KubeBuilder projects.
 
 TL;DR:
 
