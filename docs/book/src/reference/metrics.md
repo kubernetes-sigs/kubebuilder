@@ -5,7 +5,7 @@ publishes a collection of performance metrics for each controller.
 
 ## Protecting the Metrics
 
-These metrics are protected by [kube-auth-proxy](https://github.com/brancz/kube-rbac-proxy)
+These metrics are protected by [kube-rbac-proxy](https://github.com/brancz/kube-rbac-proxy)
 by default if using kubebuilder. Kubebuilder v2.2.0+ scaffold a clusterrole which
 can be found at `config/rbac/auth_proxy_client_clusterrole.yaml`.
 
