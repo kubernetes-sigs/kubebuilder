@@ -91,7 +91,7 @@ curl -L "$URL"| tar xz -C $TMP_DIR
 echo "Downloaded executable files"
 ls "${KUBEBUILDER_VERSION_NAME}_${OSEXT}_${ARCH}/bin"
 
-if [[ -z "${PROW}" ]]; then 
+if [[ -z "${PROW}" ]]; then
   MOVE="sudo mv"
 else
   MOVE="mv"
