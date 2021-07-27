@@ -19,6 +19,7 @@ package v3
 import (
 	"encoding/base64"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -231,6 +232,21 @@ func Run(kbc *utils.TestContext) {
 	// we can change it to probe the readiness endpoint after CR supports it.
 	sampleFile := filepath.Join("config", "samples",
 		fmt.Sprintf("%s_%s_%s.yaml", kbc.Group, kbc.Version, strings.ToLower(kbc.Kind)))
+
+	sampleFilePath, err := filepath.Abs(filepath.Join(fmt.Sprintf("e2e-%s", kbc.TestSuffix), sampleFile))
+	Expect(err).To(Not(HaveOccurred()))
+
+	f, err := os.OpenFile(sampleFilePath, os.O_APPEND|os.O_WRONLY, 0644)
+	Expect(err).To(Not(HaveOccurred()))
+
+	defer func() {
+		err = f.Close()
+		Expect(err).To(Not(HaveOccurred()))
+	}()
+
+	_, err = f.WriteString("  foo: bar")
+	Expect(err).To(Not(HaveOccurred()))
+
 	EventuallyWithOffset(1, func() error {
 		_, err = kbc.Kubectl.Apply(true, "-f", sampleFile)
 		return err

@@ -4,4 +4,3 @@ metadata:
   name: healthcheckpolicy-sample
 spec:
   # Add fields here
-  foo: bar
