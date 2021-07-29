@@ -148,18 +148,19 @@ func (r *Resource) Update(other Resource) error {
 
 	// Make sure we are not merging resources for different GVKs.
 	if !r.GVK.IsEqualTo(other.GVK) {
-		return fmt.Errorf("unable to update a Resource with another with non-matching GVK")
+		return fmt.Errorf("unable to update a Resource (GVK %+v) with another with non-matching GVK %+v", r.GVK, other.GVK)
 	}
 
 	if r.Plural != other.Plural {
-		return fmt.Errorf("unable to update Resource with another with non-matching Plural")
+		return fmt.Errorf("unable to update Resource (Plural %q) with another with non-matching Plural %q",
+			r.Plural, other.Plural)
 	}
 
 	if other.Path != "" && r.Path != other.Path {
 		if r.Path == "" {
 			r.Path = other.Path
 		} else {
-			return fmt.Errorf("unable to update Resource with another with non-matching Path")
+			return fmt.Errorf("unable to update Resource (Path %q) with another with non-matching Path %q", r.Path, other.Path)
 		}
 	}
 
