@@ -3,7 +3,7 @@
 This tutorial will show you how to create a custom configuration file for your
 project by modifying a project generated with the `--component-config` flag
 passed to the `init` command. The full tutorial's source can be found 
-[here][tutorial-source]. Make sure you've gone through the [installation 
+[here](https://github.com/kubernetes-sigs/kubebuilder/tree/master/docs/book/src/component-config-tutorial/testdata/project). Make sure you've gone through the [installation 
 steps](/quick-start.md#installation) before continuing.
 
 ## New project:
