@@ -64,6 +64,9 @@ make generate will be run.
   # Edit the Controller Test
   nano controllers/frigate/frigate_controller_test.go
 
+  # Generate the manifests
+  make manifests
+
   # Install CRDs into the Kubernetes cluster using kubectl apply
   make install
 

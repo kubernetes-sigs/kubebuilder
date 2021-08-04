@@ -82,6 +82,9 @@ make generate will be run.
   # Edit the Controller Test
   nano controllers/frigate/frigate_controller_test.go
 
+  # Generate the manifests
+  make manifests
+
   # Install CRDs into the Kubernetes cluster using kubectl apply
   make install
 
@@ -188,6 +191,7 @@ func (p *createAPISubcommand) PostScaffold() error {
 		if err != nil {
 			return err
 		}
+		fmt.Print("Next: implement your new API and generate the manifests (e.g. CRDs,CRs) with:\n$ make manifests\n")
 	}
 
 	return nil

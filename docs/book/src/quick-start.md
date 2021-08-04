@@ -91,6 +91,11 @@ and the `controllers/guestbook_controller.go` where the reconciliation business 
 logic. For more info see [Designing an API](/cronjob-tutorial/api-design.md) and [What's in
 a Controller](cronjob-tutorial/controller-overview.md).
 
+If you are editing the API definitions, generate the manifests such as CRs or CRDs using 
+```bash
+make manifests
+```
+
 <details><summary>Click here to see an example. `(api/v1/guestbook_types.go)` </summary>
 <p>
 

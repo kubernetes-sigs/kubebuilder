@@ -56,5 +56,4 @@ metadata:
   name: {{ lower .Resource.Kind }}-sample
 spec:
   # Add fields here
-  foo: bar
 `
