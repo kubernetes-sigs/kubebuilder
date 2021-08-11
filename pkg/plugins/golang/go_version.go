@@ -29,25 +29,34 @@ const (
 )
 
 var (
-	go113 = goVersion{
-		major: 1,
-		minor: 13,
-	}
-	goVerMax = goVersion{
-		major:      1,
-		minor:      17,
-		prerelease: "alpha1",
-	}
-
 	goVerRegexp = regexp.MustCompile(goVerPattern)
 )
 
-type goVersion struct {
+// GoVersion describes a Go version.
+type GoVersion struct {
 	major, minor, patch int
 	prerelease          string
 }
 
-func (v *goVersion) parse(verStr string) error {
+func (v GoVersion) String() string {
+	switch {
+	case v.patch != 0:
+		return fmt.Sprintf("go%d.%d.%d", v.major, v.minor, v.patch)
+	case v.prerelease != "":
+		return fmt.Sprintf("go%d.%d%s", v.major, v.minor, v.prerelease)
+	}
+	return fmt.Sprintf("go%d.%d", v.major, v.minor)
+}
+
+// MustParse will panic if verStr does not match the expected Go version string spec.
+func MustParse(verStr string) (v GoVersion) {
+	if err := v.parse(verStr); err != nil {
+		panic(err)
+	}
+	return v
+}
+
+func (v *GoVersion) parse(verStr string) error {
 	m := goVerRegexp.FindStringSubmatch(verStr)
 	if m == nil {
 		return fmt.Errorf("invalid version string")
@@ -77,7 +86,8 @@ func (v *goVersion) parse(verStr string) error {
 	return nil
 }
 
-func (v goVersion) compare(other goVersion) int {
+// Compare returns -1, 0, or 1 if v < other, v == other, or v > other, respectively.
+func (v GoVersion) Compare(other GoVersion) int {
 	if v.major > other.major {
 		return 1
 	}
@@ -114,16 +124,16 @@ func (v goVersion) compare(other goVersion) int {
 	return -1
 }
 
-// ValidateGoVersion verifies that Go is installed and the current go version is supported by kubebuilder
-func ValidateGoVersion() error {
-	err := fetchAndCheckGoVersion()
+// ValidateGoVersion verifies that Go is installed and the current go version is supported by a plugin.
+func ValidateGoVersion(min, max GoVersion) error {
+	err := fetchAndCheckGoVersion(min, max)
 	if err != nil {
 		return fmt.Errorf("%s. You can skip this check using the --skip-go-version-check flag", err)
 	}
 	return nil
 }
 
-func fetchAndCheckGoVersion() error {
+func fetchAndCheckGoVersion(min, max GoVersion) error {
 	cmd := exec.Command("go", "version")
 	out, err := cmd.Output()
 	if err != nil {
@@ -135,22 +145,20 @@ func fetchAndCheckGoVersion() error {
 		return fmt.Errorf("found invalid Go version: %q", string(out))
 	}
 	goVer := split[2]
-	if err := checkGoVersion(goVer); err != nil {
+	if err := checkGoVersion(goVer, min, max); err != nil {
 		return fmt.Errorf("go version '%s' is incompatible because '%s'", goVer, err)
 	}
 	return nil
 }
 
-// checkGoVersion should only ever check if the Go version >= 1.13, since the kubebuilder binary only cares
-// that the go binary supports go modules which were stabilized in that version (i.e. in go 1.13) by default
-func checkGoVersion(verStr string) error {
-	var version goVersion
+func checkGoVersion(verStr string, min, max GoVersion) error {
+	var version GoVersion
 	if err := version.parse(verStr); err != nil {
 		return err
 	}
 
-	if version.compare(go113) < 0 || version.compare(goVerMax) >= 0 {
-		return fmt.Errorf("requires 1.13 <= version < 1.17")
+	if version.Compare(min) < 0 || version.Compare(max) >= 0 {
+		return fmt.Errorf("plugin requires %s <= version < %s", min, max)
 	}
 
 	return nil

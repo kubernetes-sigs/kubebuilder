@@ -34,6 +34,12 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds"
 )
 
+// Variables and function to check Go version requirements.
+var (
+	goVerMin = golang.MustParse("go1.13")
+	goVerMax = golang.MustParse("go2.0alpha1")
+)
+
 var _ plugin.InitSubcommand = &initSubcommand{}
 
 type initSubcommand struct {
@@ -134,9 +140,9 @@ func (p *initSubcommand) InjectConfig(c config.Config) error {
 }
 
 func (p *initSubcommand) PreScaffold(machinery.Filesystem) error {
-	// Validate the supported go versions
+	// Ensure Go version is in the allowed range if check not turned off.
 	if !p.skipGoVersionCheck {
-		if err := golang.ValidateGoVersion(); err != nil {
+		if err := golang.ValidateGoVersion(goVerMin, goVerMax); err != nil {
 			return err
 		}
 	}
