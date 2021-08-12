@@ -9,8 +9,8 @@ This Quick Start guide will cover:
 
 ## Prerequisites
 
-- [go](https://golang.org/dl/) version v1.15+ and < 1.16(kubebuilder v3.0).
-- [go](https://golang.org/dl/) version v1.16+ and < 1.17(kubebuilder v3.1).
+- [go](https://golang.org/dl/) version v1.15+(kubebuilder v3.0).
+- [go](https://golang.org/dl/) version v1.16+(kubebuilder v3.1).
 - [docker](https://docs.docker.com/install/) version 17.03+.
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) version v1.11.3+.
 - Access to a Kubernetes v1.11.3+ cluster.
