@@ -1,5 +1,5 @@
 {
-  "plugins": ["theme-api", "panel", "sequence-diagrams", "ga"],
+  "plugins": ["theme-api", "panel", "sequence-diagrams", "ga", "kubebuilder-legacy-docs@git+https://github.com/hickeyma/gitbook-plugin-kubebuilder-legacy-docs#0.1.1"],
   "pluginsConfig": {
     "theme-api": {
       "split": true
