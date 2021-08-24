@@ -35,59 +35,59 @@
 
 # kubebuilder binary (v3+) and tarball (< v3) redirects.
 [[redirects]]
-    from = "https://go.kubebuilder.io/dl/*"
-    to = "https://go.kubebuilder.io/releases/:splat"
+    from = "/dl/*"
+    to = "/releases/:splat"
     status = 301
     force = true
 
 [[redirects]]
-    from = "https://go.kubebuilder.io/releases"
+    from = "/releases"
     to = "https://github.com/kubernetes-sigs/kubebuilder/releases"
     status = 302
     force = true
 
 # Development branch redirect.
 [[redirects]]
-    from = "https://go.kubebuilder.io/releases/master/:os/:arch"
+    from = "/releases/master/:os/:arch"
     to = "https://storage.googleapis.com/kubebuilder-release/kubebuilder_master_:os_:arch.tar.gz"
     status = 302
     force = true
 
 # Latest redirects.
 [[redirects]]
-    from = "https://go.kubebuilder.io/releases/latest"
+    from = "/releases/latest"
     to = "https://github.com/kubernetes-sigs/kubebuilder/releases/latest"
     status = 302
     force = true
 
 [[redirects]]
-    from = "https://go.kubebuilder.io/releases/latest/:os"
-    to = "https://go.kubebuilder.io/releases/latest/:os/amd64"
+    from = "/releases/latest/:os"
+    to = "/releases/latest/:os/amd64"
     status = 302
     force = true
 
 [[redirects]]
-    from = "https://go.kubebuilder.io/releases/latest/:os/:arch"
+    from = "/releases/latest/:os/:arch"
     to = "https://github.com/kubernetes-sigs/kubebuilder/releases/latest/download/kubebuilder_:os_:arch"
     status = 302
     force = true
 
 # general release redirects
 [[redirects]]
-    from = "https://go.kubebuilder.io/releases/:version"
+    from = "/releases/:version"
     to = "https://github.com/kubernetes-sigs/kubebuilder/releases/v:version"
     status = 302
     force = true
 
 [[redirects]]
-    from = "https://go.kubebuilder.io/releases/:version/:os"
-    to = "https://go.kubebuilder.io/releases/:version/:os/amd64"
+    from = "/releases/:version/:os"
+    to = "/releases/:version/:os/amd64"
     status = 302
     force = true
 
 # release download redirect
 [[redirects]]
-    from = "https://go.kubebuilder.io/releases/:version/:os/:arch"
+    from = "/releases/:version/:os/:arch"
     # I don't quite know why, but netlify (or at least the dev mode) *insists*
     # on eating every other query parameter, so just use paths instead
     to = "/.netlify/functions/handle-version/:version/:os/:arch"
@@ -98,50 +98,50 @@
 
 # Tools redirects.
 [[redirects]]
-    from = "https://go.kubebuilder.io/test-tools"
+    from = "/test-tools"
     to = "https://storage.googleapis.com/kubebuilder-tools"
     status = 302
     force = true
 
 [[redirects]]
-    from = "https://go.kubebuilder.io/test-tools/:k8sversion"
+    from = "/test-tools/:k8sversion"
     to = "https://storage.googleapis.com/kubebuilder-tools/?prefix=kubebuilder-tools-:k8sversion"
     status = 302
     force = true
 
 [[redirects]]
-    from = "https://go.kubebuilder.io/test-tools/:k8sversion/:os"
+    from = "/test-tools/:k8sversion/:os"
     to = "https://storage.googleapis.com/kubebuilder-tools/kubebuilder-tools-:k8sversion-:os-amd64.tar.gz"
     status = 302
     force = true
 
 [[redirects]]
-    from = "https://go.kubebuilder.io/test-tools/:k8sversion/:os/:arch"
+    from = "/test-tools/:k8sversion/:os/:arch"
     to = "https://storage.googleapis.com/kubebuilder-tools/kubebuilder-tools-:k8sversion-:os-:arch.tar.gz"
     status = 302
     force = true
 
 # Image redirects.
 [[redirects]]
-    from = "https://go.kubebuilder.io/images"
+    from = "/images"
     to = "gcr.io/kubebuilder"
     status = 302
     force = true
 
 [[redirects]]
-    from = "https://go.kubebuilder.io/images/:os"
-    to = "https://go.kubebuilder.io/images/:os/amd64"
+    from = "/images/:os"
+    to = "/images/:os/amd64"
     status = 302
     force = true
 
 [[redirects]]
-    from = "https://go.kubebuilder.io/images/:os/:arch"
+    from = "/images/:os/:arch"
     to = "gcr.io/kubebuilder/thirdparty-:os-:arch"
     status = 302
     force = true
 
 [[redirects]]
-    from = "https://go.kubebuilder.io/images/:os/:arch/:k8sversion"
+    from = "/images/:os/:arch/:k8sversion"
     to = "gcr.io/kubebuilder/thirdparty-:os-:arch::k8sversion"
     status = 302
     force = true
