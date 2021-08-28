@@ -25,8 +25,12 @@ import (
 	"strings"
 	"time"
 
-	. "github.com/onsi/ginkgo" //nolint:golint
-	. "github.com/onsi/gomega" //nolint:golint
+	//nolint:golint
+	//nolint:revive
+	. "github.com/onsi/ginkgo"
+	//nolint:golint
+	//nolint:revive
+	. "github.com/onsi/gomega"
 
 	"sigs.k8s.io/kubebuilder/v3/test/e2e/utils"
 )

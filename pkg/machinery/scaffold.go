@@ -370,10 +370,7 @@ func filterExistingValues(content string, codeFragmentsMap CodeFragmentsMap) err
 			}
 		}
 	}
-	if err := scanner.Err(); err != nil {
-		return err
-	}
-	return nil
+	return scanner.Err()
 }
 
 func insertStrings(content string, codeFragmentsMap CodeFragmentsMap) ([]byte, error) {

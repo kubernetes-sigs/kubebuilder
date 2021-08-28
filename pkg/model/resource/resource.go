@@ -179,11 +179,8 @@ func (r *Resource) Update(other Resource) error {
 	if r.Webhooks == nil && other.Webhooks != nil {
 		r.Webhooks = &Webhooks{}
 	}
-	if err := r.Webhooks.Update(other.Webhooks); err != nil {
-		return err
-	}
 
-	return nil
+	return r.Webhooks.Update(other.Webhooks)
 }
 
 func wrapKey(key string) string {
