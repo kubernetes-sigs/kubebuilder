@@ -55,9 +55,9 @@ function scaffold_test_project {
     fi
 
     if [ $project == "project-v2" ]; then
-      $kb create api --plugins="go/v2,declarative" --group crew --version v1 --kind FirstMate --controller=true --resource=true --make=false
+      $kb create api --group crew --version v1 --kind FirstMate --controller=true --resource=true --make=false
     else
-      $kb create api --plugins="go/v3,declarative" --group crew --version v1 --kind FirstMate --controller=true --resource=true --make=false
+      $kb create api --group crew --version v1 --kind FirstMate --controller=true --resource=true --make=false
     fi
     $kb create webhook --group crew --version v1 --kind FirstMate --conversion
 
