@@ -37,6 +37,7 @@ var _ plugin.CreateAPI = Plugin{}
 
 // Plugin implements the plugin.Full interface
 type Plugin struct {
+	initSubcommand
 	createAPISubcommand
 }
 
@@ -48,6 +49,9 @@ func (Plugin) Version() plugin.Version { return pluginVersion }
 
 // SupportedProjectVersions returns an array with all project versions supported by the plugin
 func (Plugin) SupportedProjectVersions() []config.Version { return supportedProjectVersions }
+
+// GetInitSubcommand will return the subcommand which is responsible for initializing and common scaffolding
+func (p Plugin) GetInitSubcommand() plugin.InitSubcommand { return &p.initSubcommand }
 
 // GetCreateAPISubcommand will return the subcommand which is responsible for scaffolding apis
 func (p Plugin) GetCreateAPISubcommand() plugin.CreateAPISubcommand { return &p.createAPISubcommand }
