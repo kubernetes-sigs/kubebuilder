@@ -24,7 +24,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	. "github.com/onsi/ginkgo" //nolint:golint
+	. "github.com/onsi/ginkgo" //nolint:golint,revive
 )
 
 // TestContext specified to run e2e tests

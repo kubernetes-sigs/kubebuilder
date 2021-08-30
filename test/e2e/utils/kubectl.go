@@ -131,10 +131,7 @@ func (v *KubernetesVersion) prepare() (err error) {
 	if err = v.ClientVersion.parseVersionInts(); err != nil {
 		return err
 	}
-	if err = v.ServerVersion.parseVersionInts(); err != nil {
-		return err
-	}
-	return nil
+	return v.ServerVersion.parseVersionInts()
 }
 
 // Version is a func to run kubectl version command

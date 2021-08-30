@@ -104,11 +104,8 @@ func (p *initSubcommand) InjectConfig(c config.Config) error {
 		}
 		p.repo = repoPath
 	}
-	if err := p.config.SetRepository(p.repo); err != nil {
-		return err
-	}
 
-	return nil
+	return p.config.SetRepository(p.repo)
 }
 
 func (p *initSubcommand) PreScaffold(machinery.Filesystem) error {
@@ -120,11 +117,7 @@ func (p *initSubcommand) PreScaffold(machinery.Filesystem) error {
 	}
 
 	// Check if the current directory has not files or directories which does not allow to init the project
-	if err := checkDir(); err != nil {
-		return err
-	}
-
-	return nil
+	return checkDir()
 }
 
 func (p *initSubcommand) Scaffold(fs machinery.Filesystem) error {

@@ -97,9 +97,5 @@ func (p *initSubcommand) InjectConfig(c config.Config) error {
 func (p *initSubcommand) Scaffold(fs machinery.Filesystem) error {
 	scaffolder := scaffolds.NewInitScaffolder(p.config)
 	scaffolder.InjectFS(fs)
-	if err := scaffolder.Scaffold(); err != nil {
-		return err
-	}
-
-	return nil
+	return scaffolder.Scaffold()
 }
