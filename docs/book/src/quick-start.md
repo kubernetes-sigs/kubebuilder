@@ -33,7 +33,7 @@ Install [kubebuilder](https://sigs.k8s.io/kubebuilder):
 ```bash
 # download kubebuilder and install locally.
 export KUBEBUILDER_VERSION=3.1.0
-curl -L -o kubebuilder https://github.com/kubernetes-sigs/kubebuilder/releases/download/v${KUBEBUILDER_VERSION}/kubebuilder_$(go env GOOS)_$(go env GOARCH)
+curl -L -o kubebuilder https://github.com/kubernetes-sigs/kubebuilder/releases/latest/download/kubebuilder_$(go env GOOS)_$(go env GOARCH)
 chmod +x kubebuilder && mv kubebuilder /usr/local/bin/
 ```
 
