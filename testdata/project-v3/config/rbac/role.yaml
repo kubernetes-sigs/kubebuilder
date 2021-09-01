@@ -73,6 +73,12 @@ rules:
 - apiGroups:
   - crew.testproject.org
   resources:
+  - firstmates/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - crew.testproject.org
+  resources:
   - firstmates/status
   verbs:
   - get
