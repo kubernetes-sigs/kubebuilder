@@ -8,20 +8,20 @@ to install the required components.
 
 The following guide describes the manual steps required to upgrade your config version and start using the plugin-enabled version.
 
-This way is more complex, susceptible to errors, and success cannot be assured. Also, by following these steps you will not get the improvements and bug fixes in the default generated project files. 
+This way is more complex, susceptible to errors, and success cannot be assured. Also, by following these steps you will not get the improvements and bug fixes in the default generated project files.
 
 Usually you will only try to do it manually if you customized your project and deviated too much from the proposed scaffold. Before continuing, ensure that you understand the note about [project customizations][project-customizations]. Note that you might need to spend more effort to do this process manually than organize your project customizations to follow up the proposed layout and keep your project maintainable and upgradable with less effort in the future.
 
 The recommended upgrade approach is to follow the [Migration Guide v2 to V3][migration-guide-v2-to-v3] instead.
 
-## Migration from project config version "2" to "3" 
+## Migration from project config version "2" to "3"
 
 Migrating between project configuration versions involves additions, removals, and/or changes
 to fields in your project's `PROJECT` file, which is created by running the `init` command.
 
 The `PROJECT` file now has a new layout. It stores more information about what resources are in use, to better enable plugins to make useful decisions when scaffolding.
-    
-Furthermore, the `PROJECT` file itself is now versioned. The `version` field corresponds to the version of the `PROJECT` file itself, while the `layout` field indicates the scaffolding and the primary plugin version in use. 
+
+Furthermore, the `PROJECT` file itself is now versioned. The `version` field corresponds to the version of the `PROJECT` file itself, while the `layout` field indicates the scaffolding and the primary plugin version in use.
 
 ### Steps to migrate
 
@@ -43,7 +43,7 @@ The default plugin layout which is equivalent to the previous version is `go.kub
 
 ```yaml
 ...
-layout: 
+layout:
 - go.kubebuilder.io/v2
 ...
 ```
@@ -59,12 +59,12 @@ version: "3"
 ```
 
 #### Add the resource data
- 
+
 The attribute `resources` represents the list of resources scaffolded in your project.
 
 You will need to add the following data for each resource added to the project.
 
-##### Add the Kubernetes API version by adding `resources[entry].api.crdVersion: v1beta1`: 
+##### Add the Kubernetes API version by adding `resources[entry].api.crdVersion: v1beta1`:
 
 ```yaml
 ...
@@ -77,7 +77,7 @@ resources:
   kind: Guestbook
   ...
 ```
- 
+
 ##### Add the scope used do scaffold the CRDs by adding `resources[entry].api.namespaced: true` unless they were cluster-scoped:
 
 ```yaml
@@ -98,7 +98,7 @@ resources:
 resources:
 - api:
     ...
-  controller: true  
+  controller: true
   group: webapp
   kind: Guestbook
 ```
@@ -118,19 +118,19 @@ resources:
 <aside class="note">
 <h1>Supportability</h1>
 
-Kubebuilder only supports core types and the APIs scaffolded in the project by default unless you manually change the files you will be unable to work with external-types. 
+Kubebuilder only supports core types and the APIs scaffolded in the project by default unless you manually change the files you will be unable to work with external-types.
 
   For core types, the domain value will be `k8s.io` or empty.
-  
+
   However, for an external-type you might leave this attribute empty. We cannot suggest what would be the best approach in this case until it become officially supported by the tool. For further information check the issue [#1999][issue-1999].
 
 </aside>
 
 Note that you will only need to add the `domain` if your project has a scaffold for a core type API which the `Domain` value is not empty in Kubernetes API group qualified scheme definition. (For example, see [here](https://github.com/kubernetes/api/blob/v0.19.7/apps/v1/register.go#L26) that for Kinds from the API `apps` it has not a domain when see [here](https://github.com/kubernetes/api/blob/v0.19.7/authentication/v1/register.go#L26) that for Kinds from the API `authentication` its domain is `k8s.io` )
- 
+
  Check the following the list to know the core types supported and its domain:
 
-| Core Type | Domain | 
+| Core Type | Domain |
 |----------|:-------------:|
 | admission | "k8s.io" |
 | admissionregistration | "k8s.io" |
@@ -173,7 +173,7 @@ Following an example where a controller was scaffold for the core type Kind Depl
 
 If you did not scaffold an API but only generate a controller for the API(GKV) informed then, you do not need to add the path. Note, that it usually happens when you add a controller for an external or core type.
 
-Kubebuilder only supports core types and the APIs scaffolded in the project by default unless you manually change the files you will be unable to work with external-types.  
+Kubebuilder only supports core types and the APIs scaffolded in the project by default unless you manually change the files you will be unable to work with external-types.
 
 The path will always be the import path used in your Go files to use the API.
 
@@ -188,7 +188,7 @@ resources:
   group: webapp
   kind: Guestbook
   path: example/api/v1
-``` 
+```
 
 ##### If your project is using webhooks then, add `resources[entry].webhooks.[type]: true` for each type generated and then, add `resources[entry].webhooks.webhookVersion: v1beta1`:
 
@@ -197,7 +197,7 @@ resources:
 
 The valid types are: `defaulting`, `validation` and `conversion`. Use the webhook type used to scaffold the project.
 
-The Kubernetes API version used to do the webhooks scaffolds in `Kubebuilder v2` is `v1beta1`. Then, you will add the `webhookVersion: v1beta1` for all cases. 
+The Kubernetes API version used to do the webhooks scaffolds in `Kubebuilder v2` is `v1beta1`. Then, you will add the `webhookVersion: v1beta1` for all cases.
 
 </aside>
 
@@ -215,14 +215,14 @@ resources:
 ```
 
 #### Check your PROJECT file
- 
+
 Now ensure that your `PROJECT` file has the same information when the manifests are generated via Kubebuilder V3 CLI.
 
 For the QuickStart example, the `PROJECT` file manually updated to use `go.kubebuilder.io/v2` would look like:
 
 ```yaml
 domain: my.domain
-layout: 
+layout:
 - go.kubebuilder.io/v2
 projectName: example
 repo: example
@@ -263,7 +263,7 @@ version: "2"
 
 ```yaml
 domain: testproject.org
-layout: 
+layout:
 - go.kubebuilder.io/v2
 projectName: example
 repo: sigs.k8s.io/kubebuilder/example
@@ -312,7 +312,7 @@ version: "3"
 
 In the steps above, you updated only the `PROJECT` file which represents the project configuration. This configuration is useful only for the CLI tool. It should not affect how your project behaves.
 
-There is no option to verify that you properly updated the configuration file. The best way to ensure the configuration file has the correct `V3+` fields is to initialize a project with the same API(s), controller(s), and webhook(s) in order to compare generated configuration with the manually changed configuration. 
+There is no option to verify that you properly updated the configuration file. The best way to ensure the configuration file has the correct `V3+` fields is to initialize a project with the same API(s), controller(s), and webhook(s) in order to compare generated configuration with the manually changed configuration.
 
 If you made mistakes in the above process, you will likely face issues using the CLI.
 
@@ -324,12 +324,12 @@ to files created by any plugin-supported command, e.g. `init` and `create`. A pl
 one or more project config versions; make sure you upgrade your project's
 config version to the latest supported by your target plugin version before upgrading plugin versions.
 
-The following steps describe the manual changes required to modify the project's layout enabling your project to use the `go/v3` plugin. These steps will not help you address all the bug fixes of the already generated scaffolds. 
+The following steps describe the manual changes required to modify the project's layout enabling your project to use the `go/v3` plugin. These steps will not help you address all the bug fixes of the already generated scaffolds.
 
 <aside class="note warning">
 <h1> Deprecated APIs </h1>
 
-The following steps will not migrate the API versions which are deprecated `apiextensions.k8s.io/v1beta1`, `admissionregistration.k8s.io/v1beta1`, `cert-manager.io/v1alpha2`. 
+The following steps will not migrate the API versions which are deprecated `apiextensions.k8s.io/v1beta1`, `admissionregistration.k8s.io/v1beta1`, `cert-manager.io/v1alpha2`.
 
 </aside>
 
@@ -341,12 +341,12 @@ Before updating the `layout`, please ensure you have followed the above steps to
 
 ```yaml
 domain: my.domain
-layout: 
+layout:
 - go.kubebuilder.io/v3
 ...
 ```
 
-#### Upgrade the Go version and its dependencies:  
+#### Upgrade the Go version and its dependencies:
 
 Ensure that your `go.mod` is using Go version `1.15` and the following dependency versions:
 
@@ -365,7 +365,7 @@ require (
 )
 ```
 
-#### Update the golang image 
+#### Update the golang image
 
 In the Dockerfile, replace:
 
@@ -425,14 +425,14 @@ test: manifests generate fmt vet ## Run tests.
 <aside class="note">
 <h1>Envtest binaries</h1>
 
-The Kubernetes binaries that are required for the Envtest were upgraded from `1.16.4` to `1.19.2`.
+The Kubernetes binaries that are required for the Envtest were upgraded from `1.16.4` to `1.21.1`.
 You can still install them globally by following [these installation instructions][doc-envtest].
 
 </aside>
 
 ##### To upgrade `controller-gen` and `kustomize` dependencies versions used
 
-To upgrade the `controller-gen` and `kustomize` version used to generate the manifests replace: 
+To upgrade the `controller-gen` and `kustomize` version used to generate the manifests replace:
 
 ```
 # find or download controller-gen
@@ -484,7 +484,7 @@ And then, to make your project use the `kustomize` version defined in the Makefi
 <aside class="note">
 <h1>Makefile</h1>
 
-You can check all changes applied to the Makefile by looking in the samples projects generated in the `testdata` directory of the Kubebuilder repository or by just by creating a new project with the Kubebuilder CLI. 
+You can check all changes applied to the Makefile by looking in the samples projects generated in the `testdata` directory of the Kubebuilder repository or by just by creating a new project with the Kubebuilder CLI.
 
 </aside>
 
@@ -499,22 +499,22 @@ Check [sigs.k8s.io/controller-runtime release docs from 0.7.0+ version][controll
 
 Replace:
 
-```go 
+```go
 func (r *<MyKind>Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-    ctx := context.Background() 
+    ctx := context.Background()
     log := r.Log.WithValues("cronjob", req.NamespacedName)
 ```
 
 With:
 
-```go 
+```go
 func (r *<MyKind>Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
     log := r.Log.WithValues("cronjob", req.NamespacedName)
 ```
 
 #### Change Logger to use flag options
 
-In the `main.go` file replace: 
+In the `main.go` file replace:
 
 ```go
 flag.Parse()
@@ -531,14 +531,14 @@ opts := zap.Options{
 opts.BindFlags(flag.CommandLine)
 flag.Parse()
 
-ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts))) 
+ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 ```
 
 #### Rename the manager flags
 
-The manager flags `--metrics-addr` and `enable-leader-election` were renamed to `--metrics-bind-address` and `--leader-elect` to be more aligned with core Kubernetes Components. More info: [#1839][issue-1893]. 
+The manager flags `--metrics-addr` and `enable-leader-election` were renamed to `--metrics-bind-address` and `--leader-elect` to be more aligned with core Kubernetes Components. More info: [#1839][issue-1893].
 
-In your `main.go` file replace: 
+In your `main.go` file replace:
 
 
 ```go
@@ -551,7 +551,7 @@ func main() {
 			"Enabling this will ensure there is only one active controller manager.")
 ```
 
-With: 
+With:
 
 ```go
 func main() {
@@ -595,11 +595,11 @@ The Kubebuilder CLI tool does not support scaffolded resources for both Kubernet
 <aside class="note">
 <h1>Cert Manager API</h1>
 
-If you scaffold a webhook using the Kubernetes API `admissionregistration.k8s.io/v1` then, by default, it will use the API `cert-manager.io/v1` in the manifests. 
+If you scaffold a webhook using the Kubernetes API `admissionregistration.k8s.io/v1` then, by default, it will use the API `cert-manager.io/v1` in the manifests.
 
 </aside>
 
-The first step is to update your `PROJECT` file by replacing the `api.crdVersion:v1beta` and `webhooks.WebhookVersion:v1beta` with `api.crdVersion:v1` and `webhooks.WebhookVersion:v1` which would look like: 
+The first step is to update your `PROJECT` file by replacing the `api.crdVersion:v1beta` and `webhooks.WebhookVersion:v1beta` with `api.crdVersion:v1` and `webhooks.WebhookVersion:v1` which would look like:
 
 ```yaml
 domain: my.domain
@@ -624,7 +624,7 @@ You can try to re-create the APIS(CRDs) and Webhooks manifests by using the `--f
 <aside class="note warning">
 <h1>Before re-create</h1>
 
-Note, however, that the tool will re-scaffold the files which means that you will lose their content. 
+Note, however, that the tool will re-scaffold the files which means that you will lose their content.
 
 Before executing the commands ensure that you have the files content stored in another place. An easy option is to use `git` to compare your local change with the previous version to recover the contents.
 
@@ -634,7 +634,7 @@ Now, re-create the APIS(CRDs) and Webhooks manifests by running the  `kubebuilde
 
 
 [migration-guide-v2-to-v3]: migration_guide_v2tov3.md
-[envtest]: https://book.kubebuilder.io/reference/testing/envtest.html 
+[envtest]: https://book.kubebuilder.io/reference/testing/envtest.html
 [controller-releases]: https://github.com/kubernetes-sigs/controller-runtime/releases
 [issue-1893]: https://github.com/kubernetes-sigs/kubebuilder/issues/1839
 [plugins-doc]: /reference/cli-plugins.md
