@@ -12,10 +12,10 @@ although it does require `bash` to run.
 
 If you would like to download the tarball containing these binaries,
 to use in a disconnected environment for example,
-run the following (Kubernetes version 1.21.2 is an example version):
+run the following (Kubernetes version 1.22.1 is an example version):
 
 ```sh
-export K8S_VERSION=1.21.2
+export K8S_VERSION=1.22.1
 curl -sSLo envtest-bins.tar.gz "https://go.kubebuilder.io/test-tools/${K8S_VERSION}/$(go env GOOS)/$(go env GOARCH)"
 ```
 

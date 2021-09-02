@@ -43,7 +43,7 @@ builds:
       - linux_ppc64le
       - darwin_amd64
     env:
-      - KUBERNETES_VERSION=1.21.1
+      - KUBERNETES_VERSION=1.22.1
       - CGO_ENABLED=0
 
 # Only binaries of the form "kubebuilder_${goos}_${goarch}" will be released.
