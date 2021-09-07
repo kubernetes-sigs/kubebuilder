@@ -1,0 +1,7 @@
+domain: testproject.org
+layout:
+- go.kubebuilder.io/v3
+- klogr.go.kubebuilder.io/v2
+projectName: project-v3-klogr
+repo: sigs.k8s.io/kubebuilder/testdata/project-v3-klogr
+version: "3"
