@@ -26,11 +26,13 @@ package controllers
 import (
 	"path/filepath"
 	"testing"
+	"time"
 
-	//ctrl "sigs.k8s.io/controller-runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gexec"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -52,9 +54,11 @@ import (
 Now, let's go through the code generated.
 */
 
-var cfg *rest.Config
-var k8sClient client.Client // You'll be using this client in your tests.
-var testEnv *envtest.Environment
+var (
+	cfg       *rest.Config
+	k8sClient client.Client // You'll be using this client in your tests.
+	testEnv   *envtest.Environment
+)
 
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -125,10 +129,7 @@ var _ = BeforeSuite(func() {
 		behave as it would in production, and we use features of the cache (like indicies) in our controller which aren't
 		available when talking directly to the API server.
 	*/
-
-	//TODO: Fix this as it is disabled because following error when tearing down:
-	// timeout waiting for process kube-apiserver to stop
-	/*k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
+	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
 		Scheme: scheme.Scheme,
 	})
 	Expect(err).ToNot(HaveOccurred())
@@ -140,9 +141,17 @@ var _ = BeforeSuite(func() {
 	Expect(err).ToNot(HaveOccurred())
 
 	go func() {
+		defer GinkgoRecover()
 		err = k8sManager.Start(ctrl.SetupSignalHandler())
+		Expect(err).ToNot(HaveOccurred(), "failed to run manager")
+		gexec.KillAndWait(4 * time.Second)
+
+		// Teardown the test environment once controller is fnished.
+		// Otherwise from Kubernetes 1.21+, teardon timeouts waiting on
+		// kube-apiserver to return
+		err := testEnv.Stop()
 		Expect(err).ToNot(HaveOccurred())
-	}()*/
+	}()
 
 }, 60)
 
@@ -152,9 +161,19 @@ You won't need to touch these.
 */
 
 var _ = AfterSuite(func() {
-	By("tearing down the test environment")
-	err := testEnv.Stop()
-	Expect(err).NotTo(HaveOccurred())
+	/*
+			From Kubernetes 1.21+, when it tries to cleanup the test environment, there is
+			a clash if a custom controller is created during testing. It would seem that
+			the controller is still running and kube-apiserver will not respond to shutdown.
+			This is the reason why teardown happens in BeforeSuite() after controller has stopped.
+			The error shown is as documented in:
+			https://github.com/kubernetes-sigs/controller-runtime/issues/1571
+		/*
+		/*
+			By("tearing down the test environment")
+			err := testEnv.Stop()
+			Expect(err).NotTo(HaveOccurred())
+	*/
 })
 
 /*
