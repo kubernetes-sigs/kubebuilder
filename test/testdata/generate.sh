@@ -122,4 +122,6 @@ scaffold_test_project project-v2-addon --project-version=3 --plugins="go/v2,decl
 scaffold_test_project project-v3
 scaffold_test_project project-v3-multigroup
 scaffold_test_project project-v3-addon --plugins="go/v3,declarative"
+scaffold_test_project project-v3-klogr --plugins="go/v3,klogr"
+scaffold_test_project project-v3-addon-klogr --plugins="go/v3,declarative,klogr"
 scaffold_test_project project-v3-config --component-config
