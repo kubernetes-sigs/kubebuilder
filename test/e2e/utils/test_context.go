@@ -19,10 +19,13 @@ package utils
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
 
 	. "github.com/onsi/ginkgo" //nolint:golint,revive
 )
@@ -45,7 +48,7 @@ type TestContext struct {
 // NewTestContext init with a random suffix for test TestContext stuff,
 // to avoid conflict when running tests synchronously.
 func NewTestContext(binaryName string, env ...string) (*TestContext, error) {
-	testSuffix, err := RandomSuffix()
+	testSuffix, err := util.RandomSuffix()
 	if err != nil {
 		return nil, err
 	}
@@ -273,4 +276,22 @@ func (cc *CmdContext) Run(cmd *exec.Cmd) ([]byte, error) {
 	}
 
 	return output, nil
+}
+
+// AllowProjectBeMultiGroup will update the PROJECT file with the information to allow we scaffold
+// apis with different groups. be available.
+func (t *TestContext) AllowProjectBeMultiGroup() error {
+	const multiGroup = `multigroup: true
+`
+	projectBytes, err := ioutil.ReadFile(filepath.Join(t.Dir, "PROJECT"))
+	if err != nil {
+		return err
+	}
+
+	projectBytes = append([]byte(multiGroup), projectBytes...)
+	err = ioutil.WriteFile(filepath.Join(t.Dir, "PROJECT"), projectBytes, 0644)
+	if err != nil {
+		return err
+	}
+	return nil
 }

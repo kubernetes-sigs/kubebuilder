@@ -25,6 +25,8 @@ import (
 	"strings"
 	"time"
 
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
+
 	//nolint:golint
 	//nolint:revive
 	. "github.com/onsi/ginkgo"
@@ -44,7 +46,7 @@ var _ = Describe("kubebuilder", func() {
 
 		BeforeEach(func() {
 			var err error
-			kbc, err = utils.NewTestContext(utils.KubebuilderBinName, "GO111MODULE=on")
+			kbc, err = utils.NewTestContext(util.KubebuilderBinName, "GO111MODULE=on")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(kbc.Prepare()).To(Succeed())
 
@@ -98,7 +100,7 @@ var _ = Describe("kubebuilder", func() {
 
 			It("should generate a runnable project", func() {
 				// Skip if cluster version < 1.16, when v1 CRDs and webhooks did not exist.
-				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() < 16 {
+				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() < 17 {
 					Skip(fmt.Sprintf("cluster version %s does not support v1 CRDs or webhooks", srvVer.GitVersion))
 				}
 
@@ -107,7 +109,7 @@ var _ = Describe("kubebuilder", func() {
 			})
 			It("should generate a runnable project with v1beta1 CRDs and Webhooks", func() {
 				// Skip if cluster version < 1.15, when `.spec.preserveUnknownFields` was not a v1beta1 CRD field.
-				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() < 15 {
+				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() < 16 {
 					Skip(fmt.Sprintf("cluster version %s does not support project defaults", srvVer.GitVersion))
 				}
 
@@ -153,7 +155,7 @@ func Run(kbc *utils.TestContext) {
 			"-o", "go-template={{ range .items }}{{ if not .metadata.deletionTimestamp }}{{ .metadata.name }}"+
 				"{{ \"\\n\" }}{{ end }}{{ end }}")
 		ExpectWithOffset(2, err).NotTo(HaveOccurred())
-		podNames := utils.GetNonEmptyLines(podOutput)
+		podNames := util.GetNonEmptyLines(podOutput)
 		if len(podNames) != 1 {
 			return fmt.Errorf("expect 1 controller pods running, but got %d", len(podNames))
 		}
