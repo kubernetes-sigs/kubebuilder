@@ -20,6 +20,7 @@ spec:
   dnsNames:
   - webhook-service.{{ .Namespace }}.svc
   - webhook-service.{{ .Namespace }}.svc.cluster.local
+  isCA: true
   issuerRef:
     kind: Issuer
     name: selfsigned-issuer

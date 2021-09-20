@@ -64,6 +64,7 @@ spec:
   dnsNames:
   - $(SERVICE_NAME).$(SERVICE_NAMESPACE).svc
   - $(SERVICE_NAME).$(SERVICE_NAMESPACE).svc.cluster.local
+  isCA: true
   issuerRef:
     kind: Issuer
     name: selfsigned-issuer

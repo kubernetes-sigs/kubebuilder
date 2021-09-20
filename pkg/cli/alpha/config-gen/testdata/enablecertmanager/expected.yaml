@@ -372,6 +372,7 @@ spec:
   dnsNames:
     - webhook-service.simple-system.svc
     - webhook-service.simple-system.svc.cluster.local
+  isCA: true
   issuerRef:
     kind: Issuer
     name: selfsigned-issuer
