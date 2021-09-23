@@ -18,13 +18,13 @@ body:
         cross-repository effort, it probably belongs here.  Feel free to continue :wink:
 
       [cr-issue]: https://github.com/kubernetes-sigs/controller-runtime/issues/new
-      [cr-issue]: https://github.com/kubernetes-sigs/controller-tools/issues/new
+      [ct-issue]: https://github.com/kubernetes-sigs/controller-tools/issues/new
 
 - type: markdown
   attributes:
     value: |
       # Hiya!  Welcome to Kubebuilder!
-      
+
       For a smooth issue process, try to answer the following questions.
       Don't worry if they're not all applicable; just try to include what you can :smile:
 
@@ -34,7 +34,7 @@ body:
       <details>
 
       <summary>Code & details examples</summary>
-      
+
       `````markdown
       Some code code written in Go:
 
@@ -63,7 +63,7 @@ body:
 
       `````
 
-      [mdn-details]: ://developer.mozilla.org/en-US/docs/Web/HTML/Element/details 
+      [mdn-details]: ://developer.mozilla.org/en-US/docs/Web/HTML/Element/details
 
 - type: textarea
   attributes:
@@ -80,7 +80,7 @@ body:
   validations: {required: true}
 
 - type: dropdown
-  attributes: 
+  attributes:
     label: "Extra Labels"
     description: |
       If this is *also* a documentation request, etc, please select that below.
