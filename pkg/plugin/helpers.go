@@ -18,7 +18,6 @@ package plugin
 
 import (
 	"fmt"
-	"path"
 	"sort"
 	"strings"
 
@@ -28,7 +27,7 @@ import (
 
 // KeyFor returns a Plugin's unique identifying string.
 func KeyFor(p Plugin) string {
-	return path.Join(p.Name(), p.Version().String())
+	return fmt.Sprintf("%s/%s", p.Name(), p.Version())
 }
 
 // SplitKey returns a name and version for a plugin key.
