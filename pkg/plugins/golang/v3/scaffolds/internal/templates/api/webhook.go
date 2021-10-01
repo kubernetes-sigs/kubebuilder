@@ -36,6 +36,9 @@ type Webhook struct { // nolint:maligned
 	// Is the Group domain for the Resource replacing '.' with '-'
 	QualifiedGroupWithDash string
 
+	// Define value for AdmissionReviewVersions marker
+	AdmissionReviewVersions string
+
 	Force bool
 }
 
@@ -68,6 +71,11 @@ func (f *Webhook) SetTemplateDefaults() error {
 		f.IfExistsAction = machinery.OverwriteFile
 	} else {
 		f.IfExistsAction = machinery.Error
+	}
+
+	f.AdmissionReviewVersions = "v1"
+	if f.Resource.Webhooks.WebhookVersion == "v1beta1" {
+		f.AdmissionReviewVersions = "{v1,v1beta1}"
 	}
 
 	f.QualifiedGroupWithDash = strings.Replace(f.Resource.QualifiedGroup(), ".", "-", -1)
@@ -103,10 +111,9 @@ func (r *{{ .Resource.Kind }}) SetupWebhookWithManager(mgr ctrl.Manager) error {
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 `
 
-	// TODO(estroz): update admissionReviewVersions to include v1 when controller-runtime supports that version.
 	//nolint:lll
 	defaultingWebhookTemplate = `
-//+kubebuilder:webhook:{{ if ne .Resource.Webhooks.WebhookVersion "v1" }}webhookVersions={{"{"}}{{ .Resource.Webhooks.WebhookVersion }}{{"}"}},{{ end }}path=/mutate-{{ .QualifiedGroupWithDash }}-{{ .Resource.Version }}-{{ lower .Resource.Kind }},mutating=true,failurePolicy=fail,sideEffects=None,groups={{ .Resource.QualifiedGroup }},resources={{ .Resource.Plural }},verbs=create;update,versions={{ .Resource.Version }},name=m{{ lower .Resource.Kind }}.kb.io,admissionReviewVersions={v1,v1beta1}
+//+kubebuilder:webhook:{{ if ne .Resource.Webhooks.WebhookVersion "v1" }}webhookVersions={{"{"}}{{ .Resource.Webhooks.WebhookVersion }}{{"}"}},{{ end }}path=/mutate-{{ .QualifiedGroupWithDash }}-{{ .Resource.Version }}-{{ lower .Resource.Kind }},mutating=true,failurePolicy=fail,sideEffects=None,groups={{ .Resource.QualifiedGroup }},resources={{ .Resource.Plural }},verbs=create;update,versions={{ .Resource.Version }},name=m{{ lower .Resource.Kind }}.kb.io,admissionReviewVersions={{ .AdmissionReviewVersions }}
 
 var _ webhook.Defaulter = &{{ .Resource.Kind }}{}
 
@@ -118,11 +125,10 @@ func (r *{{ .Resource.Kind }}) Default() {
 }
 `
 
-	// TODO(estroz): update admissionReviewVersions to include v1 when controller-runtime supports that version.
 	//nolint:lll
 	validatingWebhookTemplate = `
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-//+kubebuilder:webhook:{{ if ne .Resource.Webhooks.WebhookVersion "v1" }}webhookVersions={{"{"}}{{ .Resource.Webhooks.WebhookVersion }}{{"}"}},{{ end }}path=/validate-{{ .QualifiedGroupWithDash }}-{{ .Resource.Version }}-{{ lower .Resource.Kind }},mutating=false,failurePolicy=fail,sideEffects=None,groups={{ .Resource.QualifiedGroup }},resources={{ .Resource.Plural }},verbs=create;update,versions={{ .Resource.Version }},name=v{{ lower .Resource.Kind }}.kb.io,admissionReviewVersions={v1,v1beta1}
+//+kubebuilder:webhook:{{ if ne .Resource.Webhooks.WebhookVersion "v1" }}webhookVersions={{"{"}}{{ .Resource.Webhooks.WebhookVersion }}{{"}"}},{{ end }}path=/validate-{{ .QualifiedGroupWithDash }}-{{ .Resource.Version }}-{{ lower .Resource.Kind }},mutating=false,failurePolicy=fail,sideEffects=None,groups={{ .Resource.QualifiedGroup }},resources={{ .Resource.Plural }},verbs=create;update,versions={{ .Resource.Version }},name=v{{ lower .Resource.Kind }}.kb.io,admissionReviewVersions={{ .AdmissionReviewVersions }}
 
 var _ webhook.Validator = &{{ .Resource.Kind }}{}
 

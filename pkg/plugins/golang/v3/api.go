@@ -113,6 +113,10 @@ func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.options.DoController, "controller", true,
 		"if set, generate the controller without prompting the user")
 	p.controllerFlag = fs.Lookup("controller")
+
+	// (not required raise an error in this case)
+	// nolint:errcheck,gosec
+	fs.MarkDeprecated("crd-version", deprecateMsg)
 }
 
 func (p *createAPISubcommand) InjectConfig(c config.Config) error {
@@ -182,6 +186,16 @@ func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
 }
 
 func (p *createAPISubcommand) PostScaffold() error {
+
+	// Update the makefile to allow generate Webhooks to ensure backwards compatibility
+	// todo: it should be removed for go/v4
+	// nolint:lll,gosec
+	if p.resource.API.CRDVersion == "v1beta1" {
+		if err := applyScaffoldCustomizationsForVbeta1(); err != nil {
+			return err
+		}
+	}
+
 	err := util.RunCmd("Update dependencies", "go", "mod", "tidy")
 	if err != nil {
 		return err

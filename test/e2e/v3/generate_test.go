@@ -18,9 +18,10 @@ package v3
 
 import (
 	"fmt"
-	"io/ioutil"
 	"path/filepath"
 	"strings"
+
+	pluginutil "sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
 
 	//nolint:golint
 	//nolint:revive
@@ -59,7 +60,7 @@ func GenerateV2(kbc *utils.TestContext) {
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
 	By("implementing the API")
-	ExpectWithOffset(1, utils.InsertCode(
+	ExpectWithOffset(1, pluginutil.InsertCode(
 		filepath.Join(kbc.Dir, "api", kbc.Version, fmt.Sprintf("%s_types.go", strings.ToLower(kbc.Kind))),
 		fmt.Sprintf(`type %sSpec struct {
 `, kbc.Kind),
@@ -78,28 +79,28 @@ Count int `+"`"+`json:"count,omitempty"`+"`"+`
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
 	By("implementing the mutating and validating webhooks")
-	err = utils.ImplementWebhooks(filepath.Join(
+	err = pluginutil.ImplementWebhooks(filepath.Join(
 		kbc.Dir, "api", kbc.Version,
 		fmt.Sprintf("%s_webhook.go", strings.ToLower(kbc.Kind))))
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
 	By("uncomment kustomization.yaml to enable webhook and ca injection")
-	ExpectWithOffset(1, utils.UncommentCode(
+	ExpectWithOffset(1, pluginutil.UncommentCode(
 		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 		"#- ../webhook", "#")).To(Succeed())
-	ExpectWithOffset(1, utils.UncommentCode(
+	ExpectWithOffset(1, pluginutil.UncommentCode(
 		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 		"#- ../certmanager", "#")).To(Succeed())
-	ExpectWithOffset(1, utils.UncommentCode(
+	ExpectWithOffset(1, pluginutil.UncommentCode(
 		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 		"#- ../prometheus", "#")).To(Succeed())
-	ExpectWithOffset(1, utils.UncommentCode(
+	ExpectWithOffset(1, pluginutil.UncommentCode(
 		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 		"#- manager_webhook_patch.yaml", "#")).To(Succeed())
-	ExpectWithOffset(1, utils.UncommentCode(
+	ExpectWithOffset(1, pluginutil.UncommentCode(
 		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 		"#- webhookcainjection_patch.yaml", "#")).To(Succeed())
-	ExpectWithOffset(1, utils.UncommentCode(filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+	ExpectWithOffset(1, pluginutil.UncommentCode(filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 		`#- name: CERTIFICATE_NAMESPACE # namespace of the certificate CR
 #  objref:
 #    kind: Certificate
@@ -141,22 +142,6 @@ func GenerateV3(kbc *utils.TestContext, crdAndWebhookVersion string) {
 	)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
-	// Users have to manually add "crdVersions={non-default-version}" to their Makefile
-	// if using a non-default CRD version.
-	if crdAndWebhookVersion != "v1" {
-		makefilePath := filepath.Join(kbc.Dir, "Makefile")
-		bs, err := ioutil.ReadFile(makefilePath)
-		ExpectWithOffset(1, err).NotTo(HaveOccurred())
-		content, err := utils.EnsureExistAndReplace(
-			string(bs),
-			`CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"`,
-			fmt.Sprintf(`CRD_OPTIONS ?= "crd:crdVersions={%s},trivialVersions=true,preserveUnknownFields=false"`,
-				crdAndWebhookVersion),
-		)
-		ExpectWithOffset(1, err).NotTo(HaveOccurred())
-		ExpectWithOffset(1, ioutil.WriteFile(makefilePath, []byte(content), 0600)).To(Succeed())
-	}
-
 	By("creating API definition")
 	err = kbc.CreateAPI(
 		"--group", kbc.Group,
@@ -171,7 +156,7 @@ func GenerateV3(kbc *utils.TestContext, crdAndWebhookVersion string) {
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
 	By("implementing the API")
-	ExpectWithOffset(1, utils.InsertCode(
+	ExpectWithOffset(1, pluginutil.InsertCode(
 		filepath.Join(kbc.Dir, "api", kbc.Version, fmt.Sprintf("%s_types.go", strings.ToLower(kbc.Kind))),
 		fmt.Sprintf(`type %sSpec struct {
 `, kbc.Kind),
@@ -191,28 +176,28 @@ Count int `+"`"+`json:"count,omitempty"`+"`"+`
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
 	By("implementing the mutating and validating webhooks")
-	err = utils.ImplementWebhooks(filepath.Join(
+	err = pluginutil.ImplementWebhooks(filepath.Join(
 		kbc.Dir, "api", kbc.Version,
 		fmt.Sprintf("%s_webhook.go", strings.ToLower(kbc.Kind))))
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
 	By("uncomment kustomization.yaml to enable webhook and ca injection")
-	ExpectWithOffset(1, utils.UncommentCode(
+	ExpectWithOffset(1, pluginutil.UncommentCode(
 		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 		"#- ../webhook", "#")).To(Succeed())
-	ExpectWithOffset(1, utils.UncommentCode(
+	ExpectWithOffset(1, pluginutil.UncommentCode(
 		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 		"#- ../certmanager", "#")).To(Succeed())
-	ExpectWithOffset(1, utils.UncommentCode(
+	ExpectWithOffset(1, pluginutil.UncommentCode(
 		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 		"#- ../prometheus", "#")).To(Succeed())
-	ExpectWithOffset(1, utils.UncommentCode(
+	ExpectWithOffset(1, pluginutil.UncommentCode(
 		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 		"#- manager_webhook_patch.yaml", "#")).To(Succeed())
-	ExpectWithOffset(1, utils.UncommentCode(
+	ExpectWithOffset(1, pluginutil.UncommentCode(
 		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 		"#- webhookcainjection_patch.yaml", "#")).To(Succeed())
-	ExpectWithOffset(1, utils.UncommentCode(filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+	ExpectWithOffset(1, pluginutil.UncommentCode(filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 		`#- name: CERTIFICATE_NAMESPACE # namespace of the certificate CR
 #  objref:
 #    kind: Certificate
@@ -239,4 +224,8 @@ Count int `+"`"+`json:"count,omitempty"`+"`"+`
 #    kind: Service
 #    version: v1
 #    name: webhook-service`, "#")).To(Succeed())
+
+	if crdAndWebhookVersion == "v1beta1" {
+		_ = pluginutil.RunCmd("Update dependencies", "go", "mod", "tidy")
+	}
 }

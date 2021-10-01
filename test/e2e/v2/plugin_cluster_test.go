@@ -25,6 +25,8 @@ import (
 	"strings"
 	"time"
 
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
+
 	//nolint:golint
 	//nolint:revive
 	. "github.com/onsi/ginkgo"
@@ -40,7 +42,7 @@ var _ = Describe("kubebuilder", func() {
 		var kbc *utils.TestContext
 		BeforeEach(func() {
 			var err error
-			kbc, err = utils.NewTestContext(utils.KubebuilderBinName, "GO111MODULE=on")
+			kbc, err = utils.NewTestContext(util.KubebuilderBinName, "GO111MODULE=on")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(kbc.Prepare()).To(Succeed())
 
@@ -89,7 +91,7 @@ var _ = Describe("kubebuilder", func() {
 			Expect(err).Should(Succeed())
 
 			By("implementing the API")
-			Expect(utils.InsertCode(
+			Expect(util.InsertCode(
 				filepath.Join(kbc.Dir, "api", kbc.Version, fmt.Sprintf("%s_types.go", strings.ToLower(kbc.Kind))),
 				fmt.Sprintf(`type %sSpec struct {
 `, kbc.Kind),
@@ -107,28 +109,28 @@ var _ = Describe("kubebuilder", func() {
 			Expect(err).Should(Succeed())
 
 			By("implementing the mutating and validating webhooks")
-			err = utils.ImplementWebhooks(filepath.Join(
+			err = util.ImplementWebhooks(filepath.Join(
 				kbc.Dir, "api", kbc.Version,
 				fmt.Sprintf("%s_webhook.go", strings.ToLower(kbc.Kind))))
 			Expect(err).Should(Succeed())
 
 			By("uncomment kustomization.yaml to enable webhook and ca injection")
-			Expect(utils.UncommentCode(
+			Expect(util.UncommentCode(
 				filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 				"#- ../webhook", "#")).To(Succeed())
-			Expect(utils.UncommentCode(
+			Expect(util.UncommentCode(
 				filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 				"#- ../certmanager", "#")).To(Succeed())
-			Expect(utils.UncommentCode(
+			Expect(util.UncommentCode(
 				filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 				"#- ../prometheus", "#")).To(Succeed())
-			Expect(utils.UncommentCode(
+			Expect(util.UncommentCode(
 				filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 				"#- manager_webhook_patch.yaml", "#")).To(Succeed())
-			Expect(utils.UncommentCode(
+			Expect(util.UncommentCode(
 				filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 				"#- webhookcainjection_patch.yaml", "#")).To(Succeed())
-			Expect(utils.UncommentCode(filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+			Expect(util.UncommentCode(filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 				`#- name: CERTIFICATE_NAMESPACE # namespace of the certificate CR
 #  objref:
 #    kind: Certificate
@@ -182,7 +184,7 @@ var _ = Describe("kubebuilder", func() {
 					"-o", "go-template={{ range .items }}{{ if not .metadata.deletionTimestamp }}{{ .metadata.name }}"+
 						"{{ \"\\n\" }}{{ end }}{{ end }}")
 				Expect(err).NotTo(HaveOccurred())
-				podNames := utils.GetNonEmptyLines(podOutput)
+				podNames := util.GetNonEmptyLines(podOutput)
 				if len(podNames) != 1 {
 					return fmt.Errorf("expect 1 controller pods running, but got %d", len(podNames))
 				}

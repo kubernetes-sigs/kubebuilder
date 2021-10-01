@@ -24,10 +24,13 @@ import (
 	"github.com/gobuffalo/flect"
 )
 
+const V1beta1 = "v1beta1"
+const V1 = "v1"
+
 // validateAPIVersion validates CRD or Webhook versions
 func validateAPIVersion(version string) error {
 	switch version {
-	case "v1beta1", "v1":
+	case V1beta1, V1:
 		return nil
 	default:
 		return fmt.Errorf("API version must be one of: v1beta1, v1")

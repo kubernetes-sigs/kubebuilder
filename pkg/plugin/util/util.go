@@ -14,14 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package utils
+package util
 
 import (
+	"bufio"
 	"bytes"
 	"crypto/rand"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"math/big"
+	"os"
+	"regexp"
 	"strings"
 )
 
@@ -61,6 +65,8 @@ func GetNonEmptyLines(output string) []string {
 
 // InsertCode searches target content in the file and insert `toInsert` after the target.
 func InsertCode(filename, target, code string) error {
+	// false positive
+	// nolint:gosec
 	contents, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return err
@@ -75,6 +81,8 @@ func InsertCode(filename, target, code string) error {
 // UncommentCode searches for target in the file and remove the comment prefix
 // of the target content. The target content may span multiple lines.
 func UncommentCode(filename, target, prefix string) error {
+	// false positive
+	// nolint:gosec
 	content, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return err
@@ -83,7 +91,7 @@ func UncommentCode(filename, target, prefix string) error {
 
 	idx := strings.Index(strContent, target)
 	if idx < 0 {
-		return nil
+		return fmt.Errorf("unable to find the code %s to be uncomment", target)
 	}
 
 	out := new(bytes.Buffer)
@@ -92,10 +100,20 @@ func UncommentCode(filename, target, prefix string) error {
 		return err
 	}
 
-	strs := strings.Split(target, "\n")
-	for _, str := range strs {
-		_, err := out.WriteString(strings.TrimPrefix(str, prefix) + "\n")
+	scanner := bufio.NewScanner(bytes.NewBufferString(target))
+	if !scanner.Scan() {
+		return nil
+	}
+	for {
+		_, err := out.WriteString(strings.TrimPrefix(scanner.Text(), prefix))
 		if err != nil {
+			return err
+		}
+		// Avoid writing a newline in case the previous line was the last in target.
+		if !scanner.Scan() {
+			break
+		}
+		if _, err := out.WriteString("\n"); err != nil {
 			return err
 		}
 	}
@@ -111,6 +129,8 @@ func UncommentCode(filename, target, prefix string) error {
 
 // ImplementWebhooks will mock an webhook data
 func ImplementWebhooks(filename string) error {
+	// false positive
+	// nolint:gosec
 	bs, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return err
@@ -167,4 +187,55 @@ func EnsureExistAndReplace(input, match, replace string) (string, error) {
 		return "", fmt.Errorf("can't find %q", match)
 	}
 	return strings.Replace(input, match, replace, -1), nil
+}
+
+// ReplaceInFile replaces all instances of old with new in the file at path.
+func ReplaceInFile(path, old, new string) error {
+	info, err := os.Stat(path)
+	if err != nil {
+		return err
+	}
+	// false positive
+	// nolint:gosec
+	b, err := ioutil.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	if !strings.Contains(string(b), old) {
+		return errors.New("unable to find the content to be replaced")
+	}
+	s := strings.Replace(string(b), old, new, -1)
+	err = ioutil.WriteFile(path, []byte(s), info.Mode())
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// ReplaceRegexInFile finds all strings that match `match` and replaces them
+// with `replace` in the file at path.
+func ReplaceRegexInFile(path, match, replace string) error {
+	matcher, err := regexp.Compile(match)
+	if err != nil {
+		return err
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		return err
+	}
+	// false positive
+	// nolint:gosec
+	b, err := ioutil.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	s := matcher.ReplaceAllString(string(b), replace)
+	if s == string(b) {
+		return errors.New("unable to find the content to be replaced")
+	}
+	err = ioutil.WriteFile(path, []byte(s), info.Mode())
+	if err != nil {
+		return err
+	}
+	return nil
 }
