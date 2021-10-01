@@ -120,7 +120,7 @@ func main() {
 		Note that the Manager can restrict the namespace that all controllers will watch for resources by:
 	*/
 
-	mgr, err = ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
 		Namespace:              namespace,
 		MetricsBindAddress:     metricsAddr,
