@@ -141,7 +141,7 @@ func main() {
 
 	var namespaces []string // List of Namespaces
 
-	mgr, err = ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
 		NewCache:               cache.MultiNamespacedCacheBuilder(namespaces),
 		MetricsBindAddress:     fmt.Sprintf("%s:%d", metricsHost, metricsPort),
