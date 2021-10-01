@@ -51,5 +51,5 @@ function test_cluster {
   local flags="$@"
 
   go test $(dirname "$0")/v2 $flags
-  go test $(dirname "$0")/v3 $flags -timeout 20m
+  go test $(dirname "$0")/v3 $flags -timeout 30m
 }
