@@ -347,6 +347,35 @@ var b int
 					},
 				},
 			),
+			Entry("should filter already existing multi-line indented code fragments",
+				pathGo,
+				`package test
+
+func init() {
+	if err := something(); err != nil {
+		return err
+	}
+	
+	//+kubebuilder:scaffold:-
+}
+`,
+				`package test
+
+func init() {
+	if err := something(); err != nil {
+		return err
+	}
+	
+	//+kubebuilder:scaffold:-
+}
+`,
+				fakeInserter{
+					fakeBuilder: fakeBuilder{path: pathGo},
+					codeFragments: CodeFragmentsMap{
+						NewMarkerFor(pathGo, "-"): {"if err := something(); err != nil {\n\treturn err\n}\n\n"},
+					},
+				},
+			),
 			Entry("should not insert anything if no code fragment",
 				pathYaml,
 				`
