@@ -6,10 +6,10 @@ aliases:
   kubebuilder-admins:
     - pwittrock
     - estroz
+    - camilamacedo86
 
   # non-admin folks who can approve any PRs in the repo
   kubebuilder-approvers:
-    - camilamacedo86
     - adirio
 
   # folks who can review and LGTM any PRs in the repo (doesn't include
