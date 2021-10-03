@@ -3,4 +3,4 @@ kind: HealthCheckPolicy
 metadata:
   name: healthcheckpolicy-sample
 spec:
-  # Add fields here
+  # TODO(user): Add fields here

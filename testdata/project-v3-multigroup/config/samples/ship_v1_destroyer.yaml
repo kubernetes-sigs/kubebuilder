@@ -3,4 +3,4 @@ kind: Destroyer
 metadata:
   name: destroyer-sample
 spec:
-  # Add fields here
+  # TODO(user): Add fields here
