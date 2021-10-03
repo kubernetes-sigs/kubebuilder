@@ -93,6 +93,8 @@ spec:
             port: 8081
           initialDelaySeconds: 5
           periodSeconds: 10
+        # TODO(user): Configure the resources accordingly to the project requirements.
+        # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
         resources:
           limits:
             cpu: 200m
