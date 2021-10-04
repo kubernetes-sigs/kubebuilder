@@ -46,6 +46,12 @@ var _ = Describe("kubebuilder", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(kbc.Prepare()).To(Succeed())
 
+			// Skip if cluster version >= 1.22 because pre v1 CRDs and webhooks no longer exist.
+			if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() >= 1 && srvVer.GetMinorInt() >= 22 {
+				Skip(fmt.Sprintf("cluster version %s does not support "+
+					"pre v1 CRDs or webhooks", srvVer.GitVersion))
+			}
+
 			// Install cert-manager with v1beta2 CRs.
 			By("installing cert manager bundle")
 			Expect(kbc.InstallCertManager(true)).To(Succeed())
@@ -58,12 +64,15 @@ var _ = Describe("kubebuilder", func() {
 			By("clean up created API objects during test process")
 			kbc.CleanupManifests(filepath.Join("config", "default"))
 
-			By("uninstalling prometheus manager bundle")
-			kbc.UninstallPrometheusOperManager()
+			// Skip if cluster version >= 1.22 because pre v1 CRDs and webhooks no longer exist.
+			if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() < 22 {
+				By("uninstalling prometheus manager bundle")
+				kbc.UninstallPrometheusOperManager()
 
-			// Uninstall cert-manager with v1beta2 CRs.
-			By("uninstalling cert manager bundle")
-			kbc.UninstallCertManager(true)
+				// Uninstall cert-manager with v1beta2 CRs.
+				By("uninstalling cert manager bundle")
+				kbc.UninstallCertManager(true)
+			}
 
 			By("remove container image and work dir")
 			kbc.Destroy()
@@ -218,8 +227,9 @@ var _ = Describe("kubebuilder", func() {
 
 			By("creating a pod with curl image")
 			cmdOpts := []string{
-				"run", "--generator=run-pod/v1", "curl", "--image=curlimages/curl:7.68.0", "--restart=OnFailure", "--",
-				"curl", "-v", "-k", "-H", fmt.Sprintf(`Authorization: Bearer %s`, token),
+				"run", "curl", "--image=curlimages/curl:7.68.0", "--restart=OnFailure", "--",
+				"curl", "-v", "-k", "-H",
+				fmt.Sprintf(`Authorization: Bearer %s`, token),
 				fmt.Sprintf("https://e2e-%v-controller-manager-metrics-service.e2e-%v-system.svc:8443/metrics",
 					kbc.TestSuffix, kbc.TestSuffix),
 			}
