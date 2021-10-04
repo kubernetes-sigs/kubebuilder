@@ -49,7 +49,7 @@ type HealthCheckPolicyReconciler struct {
 func (r *HealthCheckPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
 
-	// your logic here
+	// TODO(user): your logic here
 
 	return ctrl.Result{}, nil
 }

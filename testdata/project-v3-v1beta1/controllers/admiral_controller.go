@@ -49,7 +49,7 @@ type AdmiralReconciler struct {
 func (r *AdmiralReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
 
-	// your logic here
+	// TODO(user): your logic here
 
 	return ctrl.Result{}, nil
 }

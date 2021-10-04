@@ -55,5 +55,5 @@ kind: {{ .Resource.Kind }}
 metadata:
   name: {{ lower .Resource.Kind }}-sample
 spec:
-  # Add fields here
+  # TODO(user): Add fields here
 `

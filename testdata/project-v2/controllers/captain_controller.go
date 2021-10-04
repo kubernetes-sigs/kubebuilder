@@ -50,7 +50,7 @@ func (r *CaptainReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()
 	_ = r.Log.WithValues("captain", req.NamespacedName)
 
-	// your logic here
+	// TODO(user): your logic here
 
 	return ctrl.Result{}, nil
 }
