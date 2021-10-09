@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubernetes authors.
+Copyright 2021 The Kubernetes authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,10 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package v1 contains API Schema definitions for the batch v1 API group
-// +kubebuilder:object:generate=true
-// +groupName=batch.tutorial.kubebuilder.io
-package v1
+// Package v2 contains API Schema definitions for the config v2 API group
+//+kubebuilder:object:generate=true
+//+groupName=config.tutorial.kubebuilder.io
+package v2
 
 import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -26,7 +26,7 @@ import (
 
 var (
 	// GroupVersion is group version used to register these objects
-	GroupVersion = schema.GroupVersion{Group: "batch.tutorial.kubebuilder.io", Version: "v1"}
+	GroupVersion = schema.GroupVersion{Group: "config.tutorial.kubebuilder.io", Version: "v2"}
 
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
 	SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}
