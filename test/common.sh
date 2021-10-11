@@ -27,7 +27,8 @@ if [ -n "$TRACE" ]; then
   set -x
 fi
 
-k8s_version=1.16.4
+k8s_version=1.19.2
+kind_version=0.11.1
 goarch=amd64
 
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
@@ -105,14 +106,31 @@ function fetch_tools {
   export KUBEBUILDER_ASSETS=$kb_root_dir/bin/
 }
 
+# Check if version of tool is less than or equal a required version
+function is_ver_lessthanequal {
+    [  "$1" = "`echo -e \"$1\n$2\" | sort -V | head -n1`" ]
+}
+
+# Check if version of tool is less than a required version
+function is_ver_lessthan {
+    [ "$1" = "$2" ] && return 1 || is_ver_lessthanequal $1 $2
+}
+
 # Installing kind in a temporal dir if no previously installed
 function install_kind {
   header_text "Checking if kind is installed"
   if ! is_installed kind ; then
     header_text "Kind not found, installing kind"
     pushd $(mktemp -d)
-    GO111MODULE=on go get sigs.k8s.io/kind@v0.7.0
+    GO111MODULE=on go get sigs.k8s.io/kind@v$kind_version
     popd
+  else
+    if is_ver_lessthan `kind version -q` $kind_version ; then
+      header_text "Kind version less than v$kind_version, updating kind"
+      pushd $(mktemp -d)
+      GO111MODULE=on go get sigs.k8s.io/kind@v$kind_version
+      popd
+    fi
   fi
 }
 
@@ -123,3 +141,4 @@ function is_installed {
   fi
   return 1
 }
+

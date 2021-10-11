@@ -106,7 +106,8 @@ func (t *TestContext) Prepare() error {
 
 const (
 	certmanagerVersionWithv1beta2CRs = "v0.11.0"
-	certmanagerVersion               = "v1.0.4"
+	certmanagerLegacyVersion         = "v1.0.4"
+	certmanagerVersion               = "v1.5.3"
 
 	certmanagerURLTmplLegacy = "https://github.com/jetstack/cert-manager/releases/download/%s/cert-manager-legacy.yaml"
 	certmanagerURLTmpl       = "https://github.com/jetstack/cert-manager/releases/download/%s/cert-manager.yaml"
@@ -122,7 +123,7 @@ func (t *TestContext) makeCertManagerURL(hasv1beta1CRs bool) string {
 	// Determine which URL to use for a manifest bundle with v1 CRs.
 	// The most up-to-date bundle uses v1 CRDs, which were introduced in k8s v1.16.
 	if ver := t.K8sVersion.ServerVersion; ver.GetMajorInt() <= 1 && ver.GetMinorInt() < 16 {
-		return fmt.Sprintf(certmanagerURLTmplLegacy, certmanagerVersion)
+		return fmt.Sprintf(certmanagerURLTmplLegacy, certmanagerLegacyVersion)
 	}
 	return fmt.Sprintf(certmanagerURLTmpl, certmanagerVersion)
 }
@@ -158,20 +159,33 @@ func (t *TestContext) UninstallCertManager(hasv1beta1CRs bool) {
 }
 
 const (
-	prometheusOperatorVersion = "0.33"
-	prometheusOperatorURL     = "https://raw.githubusercontent.com/coreos/prometheus-operator/release-%s/bundle.yaml"
+	prometheusOperatorLegacyVersion = "0.33"
+	prometheusOperatorLegacyURL     = "https://raw.githubusercontent.com/coreos/prometheus-operator/release-%s/bundle.yaml"
+	prometheusOperatorVersion       = "0.51"
+	prometheusOperatorURL           = "https://raw.githubusercontent.com/prometheus-operator/" +
+		"prometheus-operator/release-%s/bundle.yaml"
 )
 
 // InstallPrometheusOperManager installs the prometheus manager bundle.
 func (t *TestContext) InstallPrometheusOperManager() error {
-	url := fmt.Sprintf(prometheusOperatorURL, prometheusOperatorVersion)
+	var url string
+	if ver := t.K8sVersion.ServerVersion; ver.GetMajorInt() <= 1 && ver.GetMinorInt() < 16 {
+		url = fmt.Sprintf(prometheusOperatorLegacyURL, prometheusOperatorLegacyVersion)
+	} else {
+		url = fmt.Sprintf(prometheusOperatorURL, prometheusOperatorVersion)
+	}
 	_, err := t.Kubectl.Apply(false, "-f", url)
 	return err
 }
 
 // UninstallPrometheusOperManager uninstalls the prometheus manager bundle.
 func (t *TestContext) UninstallPrometheusOperManager() {
-	url := fmt.Sprintf(prometheusOperatorURL, prometheusOperatorVersion)
+	var url string
+	if ver := t.K8sVersion.ServerVersion; ver.GetMajorInt() <= 1 && ver.GetMinorInt() < 16 {
+		url = fmt.Sprintf(prometheusOperatorLegacyURL, prometheusOperatorLegacyVersion)
+	} else {
+		url = fmt.Sprintf(prometheusOperatorURL, prometheusOperatorVersion)
+	}
 	if _, err := t.Kubectl.Delete(false, "-f", url); err != nil {
 		fmt.Fprintf(GinkgoWriter, "error when running kubectl delete during cleaning up prometheus bundle: %v\n", err)
 	}

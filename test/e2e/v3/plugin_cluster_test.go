@@ -68,10 +68,18 @@ var _ = Describe("kubebuilder", func() {
 		Context("plugin go.kubebuilder.io/v2", func() {
 			// Use cert-manager with v1beta2 CRs.
 			BeforeEach(func() {
+				// Skip if cluster version >= 1.22 because pre v1 CRDs and webhooks no longer exist.
+				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() >= 1 && srvVer.GetMinorInt() >= 22 {
+					Skip(fmt.Sprintf("cluster version %s does not support pre v1 CRDs or webhooks", srvVer.GitVersion))
+				}
 				By("installing the v1beta2 cert-manager bundle")
 				Expect(kbc.InstallCertManager(true)).To(Succeed())
 			})
 			AfterEach(func() {
+				// Skip if cluster version >= 1.22 because pre v1 CRDs and webhooks no longer exist.
+				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() >= 1 && srvVer.GetMinorInt() >= 22 {
+					Skip(fmt.Sprintf("cluster version %s does not support pre v1 CRDs or webhooks", srvVer.GitVersion))
+				}
 				By("uninstalling the v1beta2 cert-manager bundle")
 				kbc.UninstallCertManager(true)
 			})
@@ -109,7 +117,9 @@ var _ = Describe("kubebuilder", func() {
 			})
 			It("should generate a runnable project with v1beta1 CRDs and Webhooks", func() {
 				// Skip if cluster version < 1.15, when `.spec.preserveUnknownFields` was not a v1beta1 CRD field.
-				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() < 16 {
+				// Skip if cluster version >= 1.22 because pre v1 CRDs and webhooks no longer exist.
+				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() < 16 ||
+					srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() >= 22 {
 					Skip(fmt.Sprintf("cluster version %s does not support project defaults", srvVer.GitVersion))
 				}
 
@@ -307,7 +317,7 @@ func curlMetrics(kbc *utils.TestContext) string {
 
 	By("creating a curl pod")
 	cmdOpts := []string{
-		"run", "--generator=run-pod/v1", "curl", "--image=curlimages/curl:7.68.0", "--restart=OnFailure",
+		"run", "curl", "--image=curlimages/curl:7.68.0", "--restart=OnFailure",
 		"--serviceaccount=" + kbc.Kubectl.ServiceAccount, "--",
 		"curl", "-v", "-k", "-H", fmt.Sprintf(`Authorization: Bearer %s`, token),
 		fmt.Sprintf("https://e2e-%s-controller-manager-metrics-service.%s.svc:8443/metrics",
@@ -328,7 +338,7 @@ func curlMetrics(kbc *utils.TestContext) string {
 		}
 		return nil
 	}
-	EventuallyWithOffset(2, verifyCurlUp, 30*time.Second, time.Second).Should(Succeed())
+	EventuallyWithOffset(2, verifyCurlUp, 240*time.Second, time.Second).Should(Succeed())
 
 	By("validating that the metrics endpoint is serving as expected")
 	var metricsOutput string
