@@ -101,13 +101,14 @@ go-apidiff:
 test: test-unit test-integration test-testdata test-book ## Run the unit and integration tests (used in the CI)
 
 .PHONY: test-unit
+TEST_PKGS := ./pkg/... ./test/e2e/utils/...
 test-unit: ## Run the unit tests
-	go test -race -v ./pkg/...
+	go test -race $(TEST_PKGS)
 
 .PHONY: test-coverage
 test-coverage: ## Run unit tests creating the output to report coverage
 	- rm -rf *.out  # Remove all coverage files if exists
-	go test -race -failfast -tags=integration -coverprofile=coverage-all.out -coverpkg="./pkg/cli/...,./pkg/config/...,./pkg/internal/...,./pkg/machinery/...,./pkg/model/...,./pkg/plugin/...,./pkg/plugins/golang" ./pkg/...
+	go test -race -failfast -tags=integration -coverprofile=coverage-all.out -coverpkg="./pkg/cli/...,./pkg/config/...,./pkg/internal/...,./pkg/machinery/...,./pkg/model/...,./pkg/plugin/...,./pkg/plugins/golang" $(TEST_PKGS)
 
 .PHONY: test-integration
 test-integration: ## Run the integration tests

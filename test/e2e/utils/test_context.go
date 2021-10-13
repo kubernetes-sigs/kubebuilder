@@ -88,10 +88,14 @@ func NewTestContext(binaryName string, env ...string) (*TestContext, error) {
 	}, nil
 }
 
+func warnError(err error) {
+	fmt.Fprintf(GinkgoWriter, "warning: %v\n", err)
+}
+
 // Prepare prepares the test environment.
 func (t *TestContext) Prepare() error {
 	// Remove tools used by projects in the environment so the correct version is downloaded for each test.
-	fmt.Fprintf(GinkgoWriter, "cleaning up tools")
+	fmt.Fprintln(GinkgoWriter, "cleaning up tools")
 	for _, toolName := range []string{"controller-gen", "kustomize"} {
 		if toolPath, err := exec.LookPath(toolName); err == nil {
 			if err := os.RemoveAll(toolPath); err != nil {
@@ -150,11 +154,7 @@ func (t *TestContext) InstallCertManager(hasv1beta1CRs bool) error {
 func (t *TestContext) UninstallCertManager(hasv1beta1CRs bool) {
 	url := t.makeCertManagerURL(hasv1beta1CRs)
 	if _, err := t.Kubectl.Delete(false, "-f", url); err != nil {
-		fmt.Fprintf(GinkgoWriter,
-			"warning: error when running kubectl delete during cleaning up cert manager: %v\n", err)
-	}
-	if _, err := t.Kubectl.Delete(false, "namespace", "cert-manager"); err != nil {
-		fmt.Fprintf(GinkgoWriter, "warning: error when cleaning up the cert manager namespace: %v\n", err)
+		warnError(err)
 	}
 }
 
@@ -187,19 +187,24 @@ func (t *TestContext) UninstallPrometheusOperManager() {
 		url = fmt.Sprintf(prometheusOperatorURL, prometheusOperatorVersion)
 	}
 	if _, err := t.Kubectl.Delete(false, "-f", url); err != nil {
-		fmt.Fprintf(GinkgoWriter, "error when running kubectl delete during cleaning up prometheus bundle: %v\n", err)
+		warnError(err)
 	}
 }
 
 // CleanupManifests is a helper func to run kustomize build and pipe the output to kubectl delete -f -
 func (t *TestContext) CleanupManifests(dir string) {
-	cmd := exec.Command("kustomize", "build", dir)
+	kustomizePath := filepath.Join(t.Dir, "bin", "kustomize")
+	if _, err := os.Stat(kustomizePath); err != nil {
+		// Just fail below with an error about kustomize not being installed globally.
+		kustomizePath = "kustomize"
+	}
+	cmd := exec.Command(kustomizePath, "build", dir)
 	output, err := t.Run(cmd)
 	if err != nil {
-		fmt.Fprintf(GinkgoWriter, "warning: error when running kustomize build: %v\n", err)
+		warnError(err)
 	}
 	if _, err := t.Kubectl.WithInput(string(output)).Command("delete", "-f", "-"); err != nil {
-		fmt.Fprintf(GinkgoWriter, "warning: error when running kubectl delete -f -: %v\n", err)
+		warnError(err)
 	}
 }
 
@@ -250,10 +255,10 @@ func (t *TestContext) Destroy() {
 	//nolint:gosec
 	cmd := exec.Command("docker", "rmi", "-f", t.ImageName)
 	if _, err := t.Run(cmd); err != nil {
-		fmt.Fprintf(GinkgoWriter, "warning: error when removing the local image: %v\n", err)
+		warnError(err)
 	}
 	if err := os.RemoveAll(t.Dir); err != nil {
-		fmt.Fprintf(GinkgoWriter, "warning: error when removing the word dir: %v\n", err)
+		warnError(err)
 	}
 }
 

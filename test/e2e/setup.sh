@@ -15,7 +15,6 @@
 # limitations under the License.
 
 build_kb
-export PATH=$kb_root_dir/bin:$PATH
 fetch_tools
 install_kind
 
