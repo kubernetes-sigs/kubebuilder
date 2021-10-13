@@ -24,15 +24,14 @@ limitations under the License.
 package controllers
 
 import (
+	"context"
 	"path/filepath"
 	"testing"
-	"time"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/gexec"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -58,6 +57,8 @@ var (
 	cfg       *rest.Config
 	k8sClient client.Client // You'll be using this client in your tests.
 	testEnv   *envtest.Environment
+	ctx       context.Context
+	cancel    context.CancelFunc
 )
 
 func TestAPIs(t *testing.T) {
@@ -70,6 +71,8 @@ func TestAPIs(t *testing.T) {
 
 var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
+
+	ctx, cancel = context.WithCancel(context.TODO())
 
 	/*
 		First, the envtest cluster is configured to read CRDs from the CRD directory Kubebuilder scaffolds for you.
@@ -142,15 +145,8 @@ var _ = BeforeSuite(func() {
 
 	go func() {
 		defer GinkgoRecover()
-		err = k8sManager.Start(ctrl.SetupSignalHandler())
+		err = k8sManager.Start(ctx)
 		Expect(err).ToNot(HaveOccurred(), "failed to run manager")
-		gexec.KillAndWait(4 * time.Second)
-
-		// Teardown the test environment once controller is fnished.
-		// Otherwise from Kubernetes 1.21+, teardon timeouts waiting on
-		// kube-apiserver to return
-		err := testEnv.Stop()
-		Expect(err).ToNot(HaveOccurred())
 	}()
 
 }, 60)
@@ -161,19 +157,10 @@ You won't need to touch these.
 */
 
 var _ = AfterSuite(func() {
-	/*
-			From Kubernetes 1.21+, when it tries to cleanup the test environment, there is
-			a clash if a custom controller is created during testing. It would seem that
-			the controller is still running and kube-apiserver will not respond to shutdown.
-			This is the reason why teardown happens in BeforeSuite() after controller has stopped.
-			The error shown is as documented in:
-			https://github.com/kubernetes-sigs/controller-runtime/issues/1571
-		/*
-		/*
-			By("tearing down the test environment")
-			err := testEnv.Stop()
-			Expect(err).NotTo(HaveOccurred())
-	*/
+	cancel()
+	By("tearing down the test environment")
+	err := testEnv.Stop()
+	Expect(err).NotTo(HaveOccurred())
 })
 
 /*
