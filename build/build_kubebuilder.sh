@@ -64,13 +64,8 @@ done
 
 # install_notes installs kubebuilder's release notes generator globally with name "notes".
 function install_notes() {
-  local tmp=$(mktemp -d)
-  pushd "$tmp"
-  go mod init tmp
-  # Get by commit because v0.1.1 cannot be retrieved via `go get`.
-  go get sigs.k8s.io/kubebuilder-release-tools/notes@4777888c377a26956f1831d5b9207eea1fa3bf29
-  popd
-  rm -rf "$tmp"
+  # Get by commit because v0.1.1 cannot be retrieved via `go install`.
+  go install sigs.k8s.io/kubebuilder-release-tools/notes@4777888c377a26956f1831d5b9207eea1fa3bf29
 }
 
 set -o errexit

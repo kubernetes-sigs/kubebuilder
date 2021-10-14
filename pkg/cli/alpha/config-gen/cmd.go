@@ -254,7 +254,7 @@ kubebuilder alpha config-gen kubebuilderconfiggen.yaml patch1.yaml patch2.yaml
 #
 
 # install the latest kustomize
-GO111MODULE=on go get sigs.k8s.io/kustomize/kustomize/v4
+go install sigs.k8s.io/kustomize/kustomize/v4@latest
 
 # install the command as a kustomize plugin
 kubebuilder alpha config-gen install-as-plugin

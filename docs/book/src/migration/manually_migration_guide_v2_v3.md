@@ -348,7 +348,7 @@ layout:
 
 #### Upgrade the Go version and its dependencies:
 
-Ensure that your `go.mod` is using Go version `1.15` and the following dependency versions:
+Ensure that your `go.mod` is using Go version `1.16` and the following dependency versions:
 
 ```go
 module example
@@ -398,7 +398,7 @@ CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
 
 ##### To allow automatic downloads
 
-To allow downloading the newer versions of the Kubernetes binaries required by Envtest into the `testbin/` directory of your project instead of the global setup, replace:
+To allow downloading the newer versions of the Kubernetes binaries required by Envtest into the `bin/` directory of your project instead of the global setup, replace:
 
 ```makefile
 # Run tests
@@ -409,17 +409,20 @@ test: generate fmt vet manifests
 With:
 
 ```makefile
+# LOCAL_BIN is where per-project binaries, typically those with version requirements, are installed to.
+LOCAL_BIN = $(shell pwd)/bin
+
 # Setting SHELL to bash allows bash commands to be executed by recipes.
-# This is a requirement for 'setup-envtest.sh' in the test target.
 # Options are set to exit when a recipe line exits non-zero or a piped command fails.
 SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
-ENVTEST_ASSETS_DIR=$(shell pwd)/testbin
-test: manifests generate fmt vet ## Run tests.
-	mkdir -p ${ENVTEST_ASSETS_DIR}
-	test -f ${ENVTEST_ASSETS_DIR}/setup-envtest.sh || curl -sSLo ${ENVTEST_ASSETS_DIR}/setup-envtest.sh https://raw.githubusercontent.com/kubernetes-sigs/controller-runtime/v0.8.3/hack/setup-envtest.sh
-	source ${ENVTEST_ASSETS_DIR}/setup-envtest.sh; fetch_envtest_tools $(ENVTEST_ASSETS_DIR); setup_envtest_env $(ENVTEST_ASSETS_DIR); go test ./... -coverprofile cover.out
+test: manifests generate fmt vet setup-envtest ## Run tests.
+	KUBEBUILDER_ASSETS="$(shell $(SETUP_ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
+
+SETUP_ENVTEST = $(LOCAL_BIN)/setup-envtest
+setup-envtest: ## Download envtest-setup locally if necessary.
+	GOBIN=$(LOCAL_BIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
 ```
 
 <aside class="note">
@@ -434,7 +437,7 @@ You can still install them globally by following [these installation instruction
 
 To upgrade the `controller-gen` and `kustomize` version used to generate the manifests replace:
 
-```
+```makefile
 # find or download controller-gen
 # download controller-gen if necessary
 controller-gen:
@@ -455,28 +458,14 @@ endif
 
 With:
 
-```
-CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
+```makefile
+CONTROLLER_GEN = $(LOCAL_BIN)/controller-gen
 controller-gen: ## Download controller-gen locally if necessary.
-	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.5.0)
+	GOBIN=$(LOCAL_BIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.7.0
 
-KUSTOMIZE = $(shell pwd)/bin/kustomize
+KUSTOMIZE = $(LOCAL_BIN)/kustomize
 kustomize: ## Download kustomize locally if necessary.
-	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v3@v3.8.7)
-
-# go-get-tool will 'go get' any package $2 and install it to $1.
-PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
-define go-get-tool
-@[ -f $(1) ] || { \
-set -e ;\
-TMP_DIR=$$(mktemp -d) ;\
-cd $$TMP_DIR ;\
-go mod init tmp ;\
-echo "Downloading $(2)" ;\
-GOBIN=$(PROJECT_DIR)/bin go get $(2) ;\
-rm -rf $$TMP_DIR ;\
-}
-endef
+	GOBIN=$(LOCAL_BIN) go install sigs.k8s.io/kustomize/kustomize/v3@v3.8.7
 ```
 
 And then, to make your project use the `kustomize` version defined in the Makefile, replace all usage of `kustomize` with `$(KUSTOMIZE)`

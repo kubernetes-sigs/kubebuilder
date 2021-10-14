@@ -195,7 +195,7 @@ to `CRD_OPTIONS ?= crd:trivialVersions=true`
 
 KubeBuilder scaffolds out make rules to run `controller-gen`.  The rules
 will automatically install controller-gen if it's not on your path using
-`go get` with Go modules.
+`go install`.
 
 You can also run `controller-gen` directly, if you want to see what it's
 doing.

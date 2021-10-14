@@ -19,7 +19,7 @@ generated are provided as `resources` input, the inputs will be modified by the 
 Install the latest version of `kustomize`.
 
 ```sh
-GO111MODULE=on go get sigs.k8s.io/kustomize/kustomize/v4
+go install sigs.k8s.io/kustomize/kustomize/v4@latest
 ```
 
 ## Configure `kubebuilder alpha config-gen` as a plugin
