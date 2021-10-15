@@ -14,6 +14,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Not every exact cluster version has an equal tools version, and visa versa.
+# This function returns the exact tools version for a k8s version based on its minor.
+function convert_to_tools_ver {
+  local k8s_ver=${1:?"k8s version must be set to arg 1"}
+  local maj_min=$(echo $k8s_ver | grep -oE '^[0-9]+\.[0-9]+')
+  case $maj_min in
+  # 1.14-1.19 work with the 1.19 server bins and kubectl.
+  "1.14"|"1.15"|"1.16"|"1.17"|"1.18"|"1.19") echo "1.19.2";;
+  # Tests in 1.20 and 1.21 with their counterpart version's apiserver.
+  "1.20"|"1.21") echo "1.19.2";;
+  "1.22") echo "1.22.1";;
+  *)
+    echo "k8s version $k8s_ver not supported"
+    exit 1
+  esac
+}
+
 set -o errexit
 set -o nounset
 set -o pipefail
@@ -27,7 +44,8 @@ if [ -n "$TRACE" ]; then
   set -x
 fi
 
-tools_k8s_version=1.19.2
+export KIND_K8S_VERSION="${KIND_K8S_VERSION:-"v1.22.1"}"
+tools_k8s_version=$(convert_to_tools_ver "${KIND_K8S_VERSION#v*}")
 kind_version=0.11.1
 goarch=amd64
 
@@ -121,4 +139,3 @@ function is_installed {
   fi
   return 1
 }
-

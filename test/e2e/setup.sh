@@ -28,6 +28,7 @@ install_kind
 #   create_cluster <k8s version>
 function create_cluster {
   : ${KIND_CLUSTER:?"KIND_CLUSTER must be set"}
+  : ${1:?"k8s version must be set as arg 1"}
   if ! kind get clusters | grep -q $KIND_CLUSTER ; then
     kind create cluster -v 4 --name $KIND_CLUSTER --retain --wait=1m --config $(dirname "$0")/kind-config.yaml --image=kindest/node:$1
   fi

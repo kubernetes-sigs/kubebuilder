@@ -39,6 +39,15 @@ Or configure the existing target to skip the download and point to a [custom loc
 make test SKIP_FETCH_TOOLS=1 KUBEBUILDER_ASSETS=/opt/kubebuilder/testbin
 ```
 
+### Kubernetes 1.20 and 1.21 binary issues
+
+There have been many reports of the `kube-apiserver` or `etcd` binary [hanging during cleanup][cr-1571]
+or misbehaving in other ways. We recommend using the 1.19.2 tools version to circumvent such issues,
+which do not seem to arise in 1.22+. This is likely NOT the cause of a `fork/exec: permission denied`
+or `fork/exec: not found` error, which is caused by improper tools installation.
+
+[cr-1571]:https://github.com/kubernetes-sigs/controller-runtime/issues/1571
+
 ## Writing tests
 
 Using `envtest` in integration tests follows the general flow of:

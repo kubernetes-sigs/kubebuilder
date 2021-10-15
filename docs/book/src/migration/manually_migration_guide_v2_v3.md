@@ -425,7 +425,7 @@ test: manifests generate fmt vet ## Run tests.
 <aside class="note">
 <h1>Envtest binaries</h1>
 
-The Kubernetes binaries that are required for the Envtest were upgraded from `1.16.4` to `1.21.1`.
+The Kubernetes binaries that are required for the Envtest were upgraded from `1.16.4` to `1.22.1`.
 You can still install them globally by following [these installation instructions][doc-envtest].
 
 </aside>
