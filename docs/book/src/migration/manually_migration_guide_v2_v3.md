@@ -393,7 +393,7 @@ CRD_OPTIONS ?= "crd:trivialVersions=true"
 With:
 
 ```
-CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
+CRD_OPTIONS ?= "crd"
 ```
 
 ##### To allow automatic downloads
