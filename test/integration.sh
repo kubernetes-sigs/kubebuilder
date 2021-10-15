@@ -19,6 +19,8 @@ source $(dirname "$0")/common.sh
 header_text "Running kubebuilder integration tests"
 
 build_kb
+fetch_tools
+
 pushd .
 
 kb_test_dir=$kb_root_dir/test
