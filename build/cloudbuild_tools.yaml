@@ -13,7 +13,7 @@
 #  limitations under the License.
 
 substitutions:
-  _KUBERNETES_VERSION: 1.21.4
+  _KUBERNETES_VERSION: 1.22.1
 steps:
 - name: "gcr.io/cloud-builders/docker"
   args: [
