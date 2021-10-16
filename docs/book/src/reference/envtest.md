@@ -22,8 +22,8 @@ curl -sSLo envtest-bins.tar.gz "https://go.kubebuilder.io/test-tools/${K8S_VERSI
 Then install them:
 
 ```sh
-mkdir /opt/kubebuilder/testbin
-tar -C /opt/kubebuilder/testbin --strip-components=1 -zvxf envtest-bins.tar.gz
+mkdir /usr/local/kubebuilder
+tar -C /usr/local/kubebuilder --strip-components=1 -zvxf envtest-bins.tar.gz
 ```
 
 Once these binaries are installed, you can either change the `test` target to:
@@ -36,7 +36,7 @@ test: manifests generate fmt vet
 Or configure the existing target to skip the download and point to a [custom location](#environment-variables):
 
 ```sh
-make test SKIP_FETCH_TOOLS=1 KUBEBUILDER_ASSETS=/opt/kubebuilder/testbin
+make test SKIP_FETCH_TOOLS=1 KUBEBUILDER_ASSETS=/usr/local/kubebuilder
 ```
 
 ### Kubernetes 1.20 and 1.21 binary issues
