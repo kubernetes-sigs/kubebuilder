@@ -15,7 +15,6 @@
 # limitations under the License.
 
 build_kb
-export PATH=$kb_root_dir/bin:$PATH
 fetch_tools
 install_kind
 
@@ -29,6 +28,7 @@ install_kind
 #   create_cluster <k8s version>
 function create_cluster {
   : ${KIND_CLUSTER:?"KIND_CLUSTER must be set"}
+  : ${1:?"k8s version must be set as arg 1"}
   if ! kind get clusters | grep -q $KIND_CLUSTER ; then
     kind create cluster -v 4 --name $KIND_CLUSTER --retain --wait=1m --config $(dirname "$0")/kind-config.yaml --image=kindest/node:$1
   fi
@@ -51,5 +51,5 @@ function test_cluster {
   local flags="$@"
 
   go test $(dirname "$0")/v2 $flags
-  go test $(dirname "$0")/v3 $flags -timeout 20m
+  go test $(dirname "$0")/v3 $flags -timeout 30m
 }

@@ -46,9 +46,9 @@ a package.
 Now that we have our terminology straight, we can *actually* create our
 API!
 
-## So, how can we create our API? 
+## So, how can we create our API?
 
-In the next section, [Adding a new API](./cronjob-tutorial/new-api.html) we will check how the tool help us to create our own API's with the command `kubebuilder create api`.
+In the next section, [Adding a new API](../cronjob-tutorial/new-api.html) we will check how the tool help us to create our own API's with the command `kubebuilder create api`.
 
 The goal of this command is to create Custom Resource (CR) and Custom Resource Definition (CRD) for our Kind(s). To check it further see; [Extend the Kubernetes API with CustomResourceDefinitions][kubernetes-extend-api].
 
@@ -56,7 +56,7 @@ The goal of this command is to create Custom Resource (CR) and Custom Resource D
 
 New APIs are how we teach Kubernetes about our custom objects. The Go structs are used to generate a Custom Resource Definition (CRD) which includes the schema for our data as well as tracking data like what our new type is called. We can then create instances of our custom objects which will be managed by our [controllers][controllers].
 
-Our APIs and resouces represent our solutions on the clusters. Basically, the CRDs are a definition of our customized Objects, and the CRs are an instance of it.
+Our APIs and resources represent our solutions on the clusters. Basically, the CRDs are a definition of our customized Objects, and the CRs are an instance of it.
 
 ## Ah, do you have an example? 
 

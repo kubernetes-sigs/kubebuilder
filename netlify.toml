@@ -90,7 +90,7 @@
     from = "https://go.kubebuilder.io/releases/:version/:os/:arch"
     # I don't quite know why, but netlify (or at least the dev mode) *insists*
     # on eating every other query parameter, so just use paths instead
-    to = "/.netlify/functions/handle-version/:version/:os/:arch"
+    to = "/.netlify/functions/handle-version/releases/:version/:os/:arch"
     # 200 --> don't redirect to the the function then to whereever it says,
     # just pretend like the function is mounted directly here
     status = 200

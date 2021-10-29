@@ -12,5 +12,5 @@ You can find a test binary tarball for a particular Kubernetes version and host 
 
 You can find all container image versions for a particular platform at `https://go.kubebuilder.io/images/${os}/${arch}`
 or at `gcr.io/kubebuilder/thirdparty-${os}-${arch}`.
-You can find the container image for a particular version and platform at `https://go.kubebuilder.io/images/${os}/${arch}/${version}`
+You can find the container image for a particular Kubernetes version and host platform at `https://go.kubebuilder.io/images/${os}/${arch}/${version}`
 or at `gcr.io/kubebuilder/thirdparty-${os}-${arch}:${version}`.

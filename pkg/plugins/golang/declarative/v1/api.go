@@ -35,7 +35,7 @@ import (
 const (
 	// kbDeclarativePattern is the sigs.k8s.io/kubebuilder-declarative-pattern version
 	kbDeclarativePatternForV2 = "v0.0.0-20200522144838-848d48e5b073"
-	kbDeclarativePatternForV3 = "4ba4cadcd4ca182c7b29c0569c85fbbd2996c762"
+	kbDeclarativePatternForV3 = "f77bb4933dfbae404f03e34b01c84e268cc4b966"
 
 	exampleManifestVersion = "0.0.1"
 )
@@ -63,6 +63,9 @@ make generate will be run.
 
   # Edit the Controller Test
   nano controllers/frigate/frigate_controller_test.go
+
+  # Generate the manifests
+  make manifests
 
   # Install CRDs into the Kubernetes cluster using kubectl apply
   make install

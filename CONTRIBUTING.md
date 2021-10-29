@@ -10,7 +10,7 @@ Please see https://git.k8s.io/community/CLA.md for more info.
 
 ## Prerequisites
 
-- [go](https://golang.org/dl/) version v1.15+.
+- [go](https://golang.org/dl/) version v1.16+.
 - [docker](https://docs.docker.com/install/) version 17.03+.
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) version v1.11.3+.
 - [kustomize](https://sigs.k8s.io/kustomize/docs/INSTALL.md) v3.1.0+
@@ -35,13 +35,15 @@ $ git clone git@github.com:<user>/kubebuilder.git $GOPATH/src/sigs.k8s.io/kubebu
 ```
 
 1. Ensure you activate module support before continue (`$ export GO111MODULE=on`)
-1. Run the command `make install` to create a bin with the source code 
+1. Run the command `make install` to create a bin with the source code
 
 **NOTE** In order to check the local environment run `make test-unit`.
 
-## What to do before submitting a pull request 
+## What to do before submitting a pull request
 
-1. Run the script `make generate` to update/generate the mock data used in the e2e test in `$GOPATH/src/sigs.k8s.io/kubebuilder/testdata/` 
+1. Run the script `make generate` to update/generate the mock data used in the e2e test in `$GOPATH/src/sigs.k8s.io/kubebuilder/testdata/`
+1. Run `make test-unit test-e2e-local`
+  - e2e tests use [`kind`][kind] and [`setup-envtest`][setup-envtest]. If you want to bring your own binaries, place them in `$(go env GOPATH)/bin`.
 
 **IMPORTANT:** The `make generate` is very helpful. By using it, you can check if good part of the commands still working successfully after the changes. Also, note that its usage is a pre-requirement to submit a PR.
 
@@ -87,9 +89,9 @@ separately.
 
 ## Where the CI Tests are configured
 
-1. See the [action files](.github/workflows) to check its tests, and the scripts used on it. 
-1. Note that the prow tests used in the CI are configured in [kubernetes-sigs/kubebuilder/kubebuilder-presubmits.yaml](https://github.com/kubernetes/test-infra/blob/master/config/jobs/kubernetes-sigs/kubebuilder/kubebuilder-presubmits.yaml). 
-1. Check that all scripts used by the CI are defined in the project.  
+1. See the [action files](.github/workflows) to check its tests, and the scripts used on it.
+1. Note that the prow tests used in the CI are configured in [kubernetes-sigs/kubebuilder/kubebuilder-presubmits.yaml](https://github.com/kubernetes/test-infra/blob/master/config/jobs/kubernetes-sigs/kubebuilder/kubebuilder-presubmits.yaml).
+1. Check that all scripts used by the CI are defined in the project.
 
 ## How to contribute to docs
 
@@ -102,7 +104,7 @@ The docs are published off of three branches:
   legacy docs
 - `master`:
   [master.book.kubebuilder.io](https://master.book.kubebuilder.io) --
-  "nightly" docs 
+  "nightly" docs
 
 See [VERSIONING.md](VERSIONING.md#book-releases) for more information.
 
@@ -129,3 +131,5 @@ KubeBuilder and the related repositories.  See
 Participation in the Kubernetes community is governed by the [Kubernetes Code of Conduct](code-of-conduct.md).
 
 [golangci]:https://github.com/golangci/golangci-lint
+[kind]:https://kind.sigs.k8s.io/#installation-and-usage
+[setup-envtest]:https://book.kubebuilder.io/reference/envtest

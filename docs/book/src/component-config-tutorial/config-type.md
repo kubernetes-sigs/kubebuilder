@@ -17,7 +17,7 @@ intended to be an API extension and cannot be reconciled.
 
 </aside>
 
-This will create a new type file in `apis/config/v2/` for the `ProjectConfig`
+This will create a new type file in `api/config/v2/` for the `ProjectConfig`
 kind. We'll need to change this file to embed the 
 [v1alpha1.ControllerManagerConfigurationSpec](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/config/v1alpha1/#ControllerManagerConfigurationSpec)
 

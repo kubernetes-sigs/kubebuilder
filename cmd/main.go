@@ -43,6 +43,7 @@ func main() {
 		cli.WithVersion(versionString()),
 		cli.WithPlugins(
 			golangv2.Plugin{},
+			golangv3.Plugin{},
 			gov3Bundle,
 			&kustomizecommonv1.Plugin{},
 			&declarativev1.Plugin{},

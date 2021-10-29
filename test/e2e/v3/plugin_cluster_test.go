@@ -19,13 +19,21 @@ package v3
 import (
 	"encoding/base64"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
-	. "github.com/onsi/ginkgo" //nolint:golint
-	. "github.com/onsi/gomega" //nolint:golint
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
+
+	//nolint:golint
+	//nolint:revive
+	. "github.com/onsi/ginkgo"
+
+	//nolint:golint
+	//nolint:revive
+	. "github.com/onsi/gomega"
 
 	"sigs.k8s.io/kubebuilder/v3/test/e2e/utils"
 )
@@ -38,7 +46,7 @@ var _ = Describe("kubebuilder", func() {
 
 		BeforeEach(func() {
 			var err error
-			kbc, err = utils.NewTestContext(utils.KubebuilderBinName, "GO111MODULE=on")
+			kbc, err = utils.NewTestContext(util.KubebuilderBinName, "GO111MODULE=on")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(kbc.Prepare()).To(Succeed())
 
@@ -60,10 +68,18 @@ var _ = Describe("kubebuilder", func() {
 		Context("plugin go.kubebuilder.io/v2", func() {
 			// Use cert-manager with v1beta2 CRs.
 			BeforeEach(func() {
+				// Skip if cluster version >= 1.22 because pre v1 CRDs and webhooks no longer exist.
+				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() >= 1 && srvVer.GetMinorInt() >= 22 {
+					Skip(fmt.Sprintf("cluster version %s does not support pre v1 CRDs or webhooks", srvVer.GitVersion))
+				}
 				By("installing the v1beta2 cert-manager bundle")
 				Expect(kbc.InstallCertManager(true)).To(Succeed())
 			})
 			AfterEach(func() {
+				// Skip if cluster version >= 1.22 because pre v1 CRDs and webhooks no longer exist.
+				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() >= 1 && srvVer.GetMinorInt() >= 22 {
+					Skip(fmt.Sprintf("cluster version %s does not support pre v1 CRDs or webhooks", srvVer.GitVersion))
+				}
 				By("uninstalling the v1beta2 cert-manager bundle")
 				kbc.UninstallCertManager(true)
 			})
@@ -92,7 +108,7 @@ var _ = Describe("kubebuilder", func() {
 
 			It("should generate a runnable project", func() {
 				// Skip if cluster version < 1.16, when v1 CRDs and webhooks did not exist.
-				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() < 16 {
+				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() < 17 {
 					Skip(fmt.Sprintf("cluster version %s does not support v1 CRDs or webhooks", srvVer.GitVersion))
 				}
 
@@ -101,7 +117,9 @@ var _ = Describe("kubebuilder", func() {
 			})
 			It("should generate a runnable project with v1beta1 CRDs and Webhooks", func() {
 				// Skip if cluster version < 1.15, when `.spec.preserveUnknownFields` was not a v1beta1 CRD field.
-				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() < 15 {
+				// Skip if cluster version >= 1.22 because pre v1 CRDs and webhooks no longer exist.
+				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() < 16 ||
+					srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() >= 22 {
 					Skip(fmt.Sprintf("cluster version %s does not support project defaults", srvVer.GitVersion))
 				}
 
@@ -116,6 +134,10 @@ var _ = Describe("kubebuilder", func() {
 func Run(kbc *utils.TestContext) {
 	var controllerPodName string
 	var err error
+
+	By("updating the go.mod")
+	err = kbc.Tidy()
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
 	By("building the controller image")
 	err = kbc.Make("docker-build", "IMG="+kbc.ImageName)
@@ -143,7 +165,7 @@ func Run(kbc *utils.TestContext) {
 			"-o", "go-template={{ range .items }}{{ if not .metadata.deletionTimestamp }}{{ .metadata.name }}"+
 				"{{ \"\\n\" }}{{ end }}{{ end }}")
 		ExpectWithOffset(2, err).NotTo(HaveOccurred())
-		podNames := utils.GetNonEmptyLines(podOutput)
+		podNames := util.GetNonEmptyLines(podOutput)
 		if len(podNames) != 1 {
 			return fmt.Errorf("expect 1 controller pods running, but got %d", len(podNames))
 		}
@@ -227,6 +249,21 @@ func Run(kbc *utils.TestContext) {
 	// we can change it to probe the readiness endpoint after CR supports it.
 	sampleFile := filepath.Join("config", "samples",
 		fmt.Sprintf("%s_%s_%s.yaml", kbc.Group, kbc.Version, strings.ToLower(kbc.Kind)))
+
+	sampleFilePath, err := filepath.Abs(filepath.Join(fmt.Sprintf("e2e-%s", kbc.TestSuffix), sampleFile))
+	Expect(err).To(Not(HaveOccurred()))
+
+	f, err := os.OpenFile(sampleFilePath, os.O_APPEND|os.O_WRONLY, 0644)
+	Expect(err).To(Not(HaveOccurred()))
+
+	defer func() {
+		err = f.Close()
+		Expect(err).To(Not(HaveOccurred()))
+	}()
+
+	_, err = f.WriteString("  foo: bar")
+	Expect(err).To(Not(HaveOccurred()))
+
 	EventuallyWithOffset(1, func() error {
 		_, err = kbc.Kubectl.Apply(true, "-f", sampleFile)
 		return err
@@ -280,7 +317,7 @@ func curlMetrics(kbc *utils.TestContext) string {
 
 	By("creating a curl pod")
 	cmdOpts := []string{
-		"run", "--generator=run-pod/v1", "curl", "--image=curlimages/curl:7.68.0", "--restart=OnFailure",
+		"run", "curl", "--image=curlimages/curl:7.68.0", "--restart=OnFailure",
 		"--serviceaccount=" + kbc.Kubectl.ServiceAccount, "--",
 		"curl", "-v", "-k", "-H", fmt.Sprintf(`Authorization: Bearer %s`, token),
 		fmt.Sprintf("https://e2e-%s-controller-manager-metrics-service.%s.svc:8443/metrics",
@@ -301,7 +338,7 @@ func curlMetrics(kbc *utils.TestContext) string {
 		}
 		return nil
 	}
-	EventuallyWithOffset(2, verifyCurlUp, 30*time.Second, time.Second).Should(Succeed())
+	EventuallyWithOffset(2, verifyCurlUp, 240*time.Second, time.Second).Should(Succeed())
 
 	By("validating that the metrics endpoint is serving as expected")
 	var metricsOutput string

@@ -5,7 +5,7 @@ publishes a collection of performance metrics for each controller.
 
 ## Protecting the Metrics
 
-These metrics are protected by [kube-auth-proxy](https://github.com/brancz/kube-rbac-proxy)
+These metrics are protected by [kube-rbac-proxy](https://github.com/brancz/kube-rbac-proxy)
 by default if using kubebuilder. Kubebuilder v2.2.0+ scaffold a clusterrole which
 can be found at `config/rbac/auth_proxy_client_clusterrole.yaml`.
 
@@ -14,12 +14,32 @@ scrape the protected metrics. To achieve that, you can create a
 `clusterRoleBinding` to bind the `clusterRole` to the service account that your
 Prometheus server uses. If you are using `kube-prometheus`, this cluster binding already exists.
 
-You can run the following kubectl command to create it. If using kubebuilder
+You can either run the following command, or apply the example yaml file provided below to create `clusterRoleBinding`. 
+
+If using kubebuilder
 `<project-prefix>` is the `namePrefix` field in `config/default/kustomization.yaml`.
 
 ```bash
 kubectl create clusterrolebinding metrics --clusterrole=<project-prefix>-metrics-reader --serviceaccount=<namespace>:<service-account-name>
 ```
+
+You can also apply the following `ClusterRoleBinding`:
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus-k8s-rolebinding
+  namespace: <operator-namespace>
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: prometheus-k8s-role
+subjects:
+  - kind: ServiceAccount
+    name: <prometheus-service-account>
+    namespace: <prometheus-service-account-namespace>
+```
+The `prometheus-k8s-role` referenced here should provide the necessary permissions to allow prometheus scrape metrics from operator pods.
 
 ## Exporting Metrics for Prometheus
 
@@ -60,7 +80,7 @@ If you wish to publish additional metrics from your controllers, this
 can be easily achieved by using the global registry from
 `controller-runtime/pkg/metrics`.
 
-One way to achieve this is to declare your collectors as global variables and then register them using `init()`.
+One way to achieve this is to declare your collectors as global variables and then register them using `init()` in the controller's package.
 
 For example:
 
@@ -92,5 +112,18 @@ func init() {
 ```
 
 You may then record metrics to those collectors from any part of your
-reconcile loop, and those metrics will be available for prometheus or
+reconcile loop. These metrics can be evaluated from anywhere in the operator code.
+
+<aside class="note">
+<h2>Enabling metrics in Prometheus UI</h1>
+  
+In order to publish metrics and view them on the Prometheus UI, the Prometheus instance would have to be configured to select the Service Monitor instance based on its labels. 
+
+</aside>
+
+Those metrics will be available for prometheus or
 other openmetrics systems to scrape.
+
+![Screen Shot 2021-06-14 at 10 15 59 AM](https://user-images.githubusercontent.com/37827279/121932262-8843cd80-ccf9-11eb-9c8e-98d0eda80169.png)
+
+

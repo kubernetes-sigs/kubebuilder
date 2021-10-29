@@ -6,7 +6,7 @@ By default, the projects are scaffolded with a `Makefile`. You can customize and
 
 The projects are built with Go and you have a lot of ways to do that. One of the options would be use [go-delve](https://github.com/go-delve/delve) for it:
 
-```sh
+```makefile
 # Run with Delve for development purposes against the configured Kubernetes cluster in ~/.kube/config
 # Delve is a debugger for the Go programming language. More info: https://github.com/go-delve/delve
 run-delve: generate fmt vet manifests
@@ -19,17 +19,20 @@ run-delve: generate fmt vet manifests
 The `controller-gen` program (from [controller-tools](https://github.com/kubernetes-sigs/controller-tools))
 generates CRDs for kubebuilder projects, wrapped in the following `make` rule:
 
-```sh
+```makefile
 manifests: controller-gen
-	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 ```
 
 `controller-gen` lets you specify what CRD API version to generate (either "v1", the default, or "v1beta1").
 You can direct it to generate a specific version by adding `crd:crdVersions={<version>}` to your `CRD_OPTIONS`,
 found at the top of your Makefile:
 
-```sh
-CRD_OPTIONS ?= "crd:crdVersions={v1beta1},trivialVersions=true,preserveUnknownFields=false"
+```makefile
+CRD_OPTIONS ?= "crd:crdVersions={v1beta1},preserveUnknownFields=false"
+
+manifests: controller-gen
+	$(CONTROLLER_GEN) rbac:roleName=manager-role $(CRD_OPTIONS) webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 ```
 
 ## To get all the manifests without deploying
@@ -38,9 +41,9 @@ By adding `make dry-run` you can get the patched manifests in the dry-run folder
 
 To accomplish this, add the following lines to the Makefile:
 
-```make
+```makefile
 dry-run: manifests
-	cd config/manager && kustomize edit set image controller=${IMG}
+	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 	mkdir -p dry-run
-	kustomize build config/default > dry-run/manifests.yaml
+	$(KUSTOMIZE) build config/default > dry-run/manifests.yaml
 ```
