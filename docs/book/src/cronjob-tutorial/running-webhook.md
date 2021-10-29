@@ -38,6 +38,12 @@ You need to enable the webhook and cert manager configuration through kustomize.
 {{#include ./testdata/project/config/default/kustomization.yaml}}
 ```
 
+And `config/crd/kustomization.yaml` should now look like the following:
+
+```yaml
+{{#include ./testdata/project/config/crd/kustomization.yaml}}
+```
+
 Now you can deploy it to your cluster by
 
 ```bash

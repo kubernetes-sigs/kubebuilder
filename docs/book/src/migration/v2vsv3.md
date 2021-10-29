@@ -41,7 +41,7 @@ Projects scaffolded with Kubebuilder v3 will use the `go.kubebuilder.io/v3` plug
   * A new option to create the projects using ComponentConfig is introduced. For more info see its [enhancement proposal][enhancement proposal] and the [Component config tutorial][component-config-tutorial]
   * Manager manifests now use `SecurityContext` to address security concerns. More info: [#1637][issue-1637] 
 - Misc:
-  * Support for [controller-tools][controller-tools] `v0.4.1` (for `go/v2` it is `v0.3.0` and previously it was `v0.2.5`) 
+  * Support for [controller-tools][controller-tools] `v0.5.0` (for `go/v2` it is `v0.3.0` and previously it was `v0.2.5`) 
   * Support for [controller-runtime][controller-runtime] `v0.8.3` (for `go/v2` it is `v0.6.4` and previously it was `v0.5.0`)
   * Support for [kustomize][kustomize] `v3.8.7` (for `go/v2` it is `v3.5.4` and previously it was `v3.1.0`)
   * Required Envtest binaries are automatically downloaded

@@ -19,7 +19,7 @@ spec:
       - command:
         - /manager
         args:
-        - --enable-leader-election
+        - --leader-elect
         image: {{ .Spec.ControllerManager.Image }}
         name: manager
         resources:

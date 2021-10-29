@@ -89,5 +89,5 @@ each key and value is separated by a colon (`:`), and each key-value
 pair is separated by a comma:
 
 ```go
-// +kubebuilder:validation:Default={magic: {numero: 42, stringified: forty-two}}
+// +kubebuilder:default={magic: {numero: 42, stringified: forty-two}}
 ```

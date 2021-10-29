@@ -3,5 +3,4 @@ kind: Lakers
 metadata:
   name: lakers-sample
 spec:
-  # Add fields here
-  foo: bar
+  # TODO(user): Add fields here

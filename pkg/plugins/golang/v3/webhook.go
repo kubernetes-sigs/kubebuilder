@@ -80,6 +80,10 @@ func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
 
 	fs.BoolVar(&p.force, "force", false,
 		"attempt to create resource even if it already exists")
+
+	// (not required raise an error in this case)
+	// nolint:errcheck,gosec
+	fs.MarkDeprecated("webhook-version", deprecateMsg)
 }
 
 func (p *createWebhookSubcommand) InjectConfig(c config.Config) error {
@@ -121,4 +125,25 @@ func (p *createWebhookSubcommand) Scaffold(fs machinery.Filesystem) error {
 	scaffolder := scaffolds.NewWebhookScaffolder(p.config, *p.resource, p.force)
 	scaffolder.InjectFS(fs)
 	return scaffolder.Scaffold()
+}
+
+func (p *createWebhookSubcommand) PostScaffold() error {
+	if p.resource.Webhooks.WebhookVersion == "v1beta1" {
+		if err := applyScaffoldCustomizationsForVbeta1(); err != nil {
+			return err
+		}
+	}
+
+	err := pluginutil.RunCmd("Update dependencies", "go", "mod", "tidy")
+	if err != nil {
+		return err
+	}
+
+	err = pluginutil.RunCmd("Running make", "make", "generate")
+	if err != nil {
+		return err
+	}
+	fmt.Print("Next: implement your new Webhook and generate the manifests with:\n$ make manifests\n")
+
+	return nil
 }

@@ -21,6 +21,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"unicode"
 
 	"github.com/spf13/pflag"
 
@@ -30,6 +31,12 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds"
+)
+
+// Variables and function to check Go version requirements.
+var (
+	goVerMin = golang.MustParse("go1.16")
+	goVerMax = golang.MustParse("go2.0alpha1")
 )
 
 var _ plugin.InitSubcommand = &initSubcommand{}
@@ -97,27 +104,20 @@ func (p *initSubcommand) InjectConfig(c config.Config) error {
 		}
 		p.repo = repoPath
 	}
-	if err := p.config.SetRepository(p.repo); err != nil {
-		return err
-	}
 
-	return nil
+	return p.config.SetRepository(p.repo)
 }
 
 func (p *initSubcommand) PreScaffold(machinery.Filesystem) error {
-	// Requires go1.11+
+	// Ensure Go version is in the allowed range if check not turned off.
 	if !p.skipGoVersionCheck {
-		if err := golang.ValidateGoVersion(); err != nil {
+		if err := golang.ValidateGoVersion(goVerMin, goVerMax); err != nil {
 			return err
 		}
 	}
 
 	// Check if the current directory has not files or directories which does not allow to init the project
-	if err := checkDir(); err != nil {
-		return err
-	}
-
-	return nil
+	return checkDir()
 }
 
 func (p *initSubcommand) Scaffold(fs machinery.Filesystem) error {
@@ -171,12 +171,25 @@ func checkDir() error {
 			if strings.HasPrefix(info.Name(), ".") {
 				return nil
 			}
+			// Allow files ending with '.md' extension
+			if strings.HasSuffix(info.Name(), ".md") && !info.IsDir() {
+				return nil
+			}
+			// Allow capitalized files except PROJECT
+			isCapitalized := true
+			for _, l := range info.Name() {
+				if !unicode.IsUpper(l) {
+					isCapitalized = false
+					break
+				}
+			}
+			if isCapitalized && info.Name() != "PROJECT" {
+				return nil
+			}
 			// Allow files in the following list
 			allowedFiles := []string{
-				"go.mod",    // user might run `go mod init` instead of providing the `--flag` at init
-				"go.sum",    // auto-generated file related to go.mod
-				"LICENSE",   // can be generated when initializing a GitHub project
-				"README.md", // can be generated when initializing a GitHub project
+				"go.mod", // user might run `go mod init` instead of providing the `--flag` at init
+				"go.sum", // auto-generated file related to go.mod
 			}
 			for _, allowedFile := range allowedFiles {
 				if info.Name() == allowedFile {
@@ -185,8 +198,9 @@ func checkDir() error {
 			}
 			// Do not allow any other file
 			return fmt.Errorf(
-				"target directory is not empty (only %s, and files and directories with the prefix \".\" are "+
-					"allowed); found existing file %q", strings.Join(allowedFiles, ", "), path)
+				"target directory is not empty (only %s, files and directories with the prefix \".\", "+
+					"files with the suffix \".md\" or capitalized files name are allowed); "+
+					"found existing file %q", strings.Join(allowedFiles, ", "), path)
 		})
 	if err != nil {
 		return err
