@@ -24,42 +24,42 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("goVersion", func() {
+var _ = Describe("GoVersion", func() {
 	Context("parse", func() {
-		var v goVersion
+		var v GoVersion
 
 		BeforeEach(func() {
-			v = goVersion{}
+			v = GoVersion{}
 		})
 
 		DescribeTable("should succeed for valid versions",
-			func(version string, expected goVersion) {
+			func(version string, expected GoVersion) {
 				Expect(v.parse(version)).NotTo(HaveOccurred())
 				Expect(v.major).To(Equal(expected.major))
 				Expect(v.minor).To(Equal(expected.minor))
 				Expect(v.patch).To(Equal(expected.patch))
 				Expect(v.prerelease).To(Equal(expected.prerelease))
 			},
-			Entry("for minor release", "go1.15", goVersion{
+			Entry("for minor release", "go1.15", GoVersion{
 				major: 1,
 				minor: 15,
 			}),
-			Entry("for patch release", "go1.15.1", goVersion{
+			Entry("for patch release", "go1.15.1", GoVersion{
 				major: 1,
 				minor: 15,
 				patch: 1,
 			}),
-			Entry("for alpha release", "go1.15alpha1", goVersion{
+			Entry("for alpha release", "go1.15alpha1", GoVersion{
 				major:      1,
 				minor:      15,
 				prerelease: "alpha1",
 			}),
-			Entry("for beta release", "go1.15beta1", goVersion{
+			Entry("for beta release", "go1.15beta1", GoVersion{
 				major:      1,
 				minor:      15,
 				prerelease: "beta1",
 			}),
-			Entry("for release candidate", "go1.15rc1", goVersion{
+			Entry("for release candidate", "go1.15rc1", GoVersion{
 				major:      1,
 				minor:      15,
 				prerelease: "rc1",
@@ -78,10 +78,10 @@ var _ = Describe("goVersion", func() {
 		)
 	})
 
-	Context("compare", func() {
-		// Test compare() by sorting a list.
+	Context("Compare", func() {
+		// Test Compare() by sorting a list.
 		var (
-			versions = []goVersion{
+			versions = []GoVersion{
 				{major: 1, minor: 15, prerelease: "rc2"},
 				{major: 1, minor: 15, patch: 1},
 				{major: 1, minor: 16},
@@ -98,7 +98,7 @@ var _ = Describe("goVersion", func() {
 				{major: 0, minor: 123},
 			}
 
-			sortedVersions = []goVersion{
+			sortedVersions = []GoVersion{
 				{major: 0, minor: 123},
 				{major: 1, minor: 13},
 				{major: 1, minor: 14},
@@ -118,7 +118,7 @@ var _ = Describe("goVersion", func() {
 
 		It("sorts a valid list of versions correctly", func() {
 			sort.Slice(versions, func(i int, j int) bool {
-				return versions[i].compare(versions[j]) == -1
+				return versions[i].Compare(versions[j]) == -1
 			})
 			Expect(versions).To(Equal(sortedVersions))
 		})
@@ -126,8 +126,11 @@ var _ = Describe("goVersion", func() {
 })
 
 var _ = Describe("checkGoVersion", func() {
-	DescribeTable("should return true for supported go versions",
-		func(version string) { Expect(checkGoVersion(version)).NotTo(HaveOccurred()) },
+	goVerMin := MustParse("go1.13")
+	goVerMax := MustParse("go2.0alpha1")
+
+	DescribeTable("should return no error for supported go versions",
+		func(version string) { Expect(checkGoVersion(version, goVerMin, goVerMax)).To(Succeed()) },
 		Entry("for go 1.13", "go1.13"),
 		Entry("for go 1.13.1", "go1.13.1"),
 		Entry("for go 1.13.2", "go1.13.2"),
@@ -181,11 +184,13 @@ var _ = Describe("checkGoVersion", func() {
 		Entry("for go 1.16.4", "go1.16.4"),
 	)
 
-	DescribeTable("should return false for non-supported go versions",
-		func(version string) { Expect(checkGoVersion(version)).To(HaveOccurred()) },
+	DescribeTable("should return an error for non-supported go versions",
+		func(version string) { Expect(checkGoVersion(version, goVerMin, goVerMax)).NotTo(Succeed()) },
 		Entry("for invalid go versions", "go"),
 		Entry("for go 1.13beta1", "go1.13beta1"),
 		Entry("for go 1.13rc1", "go1.13rc1"),
 		Entry("for go 1.13rc2", "go1.13rc2"),
+		Entry("for go 2.0alpha1", "go2.0alpha1"),
+		Entry("for go 2.0.0", "go2.0.0"),
 	)
 })

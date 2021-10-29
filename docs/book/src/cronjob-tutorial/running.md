@@ -1,5 +1,12 @@
 # Running and deploying the controller
 
+### Optional
+If opting to make any changes to the API definitions, then before proceeding,
+generate the manifests like CRs or CRDs with 
+```bash
+make manifests
+```
+
 To test out the controller, we can run it locally against the cluster.
 Before we do so, though, we'll need to install our CRDs, as per the [quick
 start](/quick-start.md).  This will automatically update the YAML

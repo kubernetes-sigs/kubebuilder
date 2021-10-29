@@ -48,7 +48,7 @@ func (p *initSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *
   - several YAML files for project deployment under the "config" directory
 `
 	subcmdMeta.Examples = fmt.Sprintf(`  # Initialize a common project with your domain and name in copyright
-  %[1]s init --plugins common/v3 --domain example.org 
+  %[1]s init --plugins common/v3 --domain example.org
 
   # Initialize a common project defining an specific project version
   %[1]s init --plugins common/v3 --project-version 3
@@ -97,9 +97,5 @@ func (p *initSubcommand) InjectConfig(c config.Config) error {
 func (p *initSubcommand) Scaffold(fs machinery.Filesystem) error {
 	scaffolder := scaffolds.NewInitScaffolder(p.config)
 	scaffolder.InjectFS(fs)
-	if err := scaffolder.Scaffold(); err != nil {
-		return err
-	}
-
-	return nil
+	return scaffolder.Scaffold()
 }

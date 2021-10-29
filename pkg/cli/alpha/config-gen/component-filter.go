@@ -40,7 +40,7 @@ func (cf ComponentFilter) Filter(input []*yaml.RNode) ([]*yaml.RNode, error) {
 		Names:       []string{"manager-config"},
 		Namespaces:  []string{cf.Namespace},
 	}
-	matches, err := s.GetMatches(&framework.ResourceList{Items: input})
+	matches, err := s.Filter(input)
 	if err != nil {
 		return nil, err
 	}

@@ -92,6 +92,11 @@ and the `controllers/guestbook_controller.go` where the reconciliation business 
 logic. For more info see [Designing an API](/cronjob-tutorial/api-design.md) and [What's in
 a Controller](cronjob-tutorial/controller-overview.md).
 
+If you are editing the API definitions, generate the manifests such as CRs or CRDs using 
+```bash
+make manifests
+```
+
 <details><summary>Click here to see an example. `(api/v1/guestbook_types.go)` </summary>
 <p>
 
@@ -224,6 +229,6 @@ Now, see the [architecture concept diagram][architecture-concept-diagram] for a 
 [pre-rbc-gke]: https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#iam-rolebinding-bootstrap
 [cronjob-tutorial]: https://book.kubebuilder.io/cronjob-tutorial/cronjob-tutorial.html
 [GOPATH-golang-docs]: https://golang.org/doc/code.html#GOPATH
-[go-module-blogpost]:https://blog.golang.org/using-go-modules
+[go-modules-blogpost]: https://blog.golang.org/using-go-modules
 [envtest]: https://book.kubebuilder.io/reference/testing/envtest.html
 [architecture-concept-diagram]: architecture.md

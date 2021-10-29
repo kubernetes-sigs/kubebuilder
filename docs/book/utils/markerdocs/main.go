@@ -58,7 +58,7 @@ func markerTemplate(marker *MarkerDoc) toHTML {
 
 	// the marker name
 	term := dt(classes{"literal", "name"},
-		Text(marker.Name))
+		Text("// +"+marker.Name))
 
 	// the args summary (displayed in summary mode)
 	var fields []toHTML

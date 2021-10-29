@@ -7,28 +7,35 @@ issues:
   exclude-rules:
     - linters: [gosec]
       path: "test/e2e/*"
+
+linters-settings:
+  govet:
+    enable=fieldalignment: true
+  revive:
+    rules:
+    - name: if-return
+      disabled: true
+
 linters:
   disable-all: true
   enable:
     - deadcode
     - dupl
     - errcheck
+    - exportloopref
     - goconst
     - gocyclo
     - gofmt
     - goimports
-    - golint
     - gosec
     - gosimple
     - govet
     - ineffassign
-    - interfacer
     - lll
-    - maligned
     - misspell
     - nakedret
     - prealloc
-    - scopelint
+    - revive
     - staticcheck
     - structcheck
     - typecheck

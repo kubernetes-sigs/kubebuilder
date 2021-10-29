@@ -18,7 +18,7 @@ body:
         cross-repository effort, it probably belongs here.  Feel free to continue :wink:
 
       [cr-issue]: https://github.com/kubernetes-sigs/controller-runtime/issues/new
-      [cr-issue]: https://github.com/kubernetes-sigs/controller-tools/issues/new
+      [ct-issue]: https://github.com/kubernetes-sigs/controller-tools/issues/new
 
 - type: markdown
   attributes:
@@ -98,7 +98,7 @@ body:
   id: cli-version
   attributes:
     label: KubeBuilder (CLI) Version
-    description: "use `kubebuilder --version` to find this out"
+    description: "use `kubebuilder version` to find this out"
   validations:
     required: true
 

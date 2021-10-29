@@ -17,6 +17,10 @@ limitations under the License.
 package configgen
 
 import (
+	// required to make sure the controller-tools is initialized fully
+	_ "sigs.k8s.io/controller-runtime/pkg/scheme"
+
+	"embed"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -24,18 +28,74 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/markbates/pkger"
 	"github.com/spf13/cobra"
-
-	// import pkged files
-	_ "sigs.k8s.io/kubebuilder/v3"
 	"sigs.k8s.io/kustomize/kyaml/fn/framework"
+	"sigs.k8s.io/kustomize/kyaml/fn/framework/command"
+	"sigs.k8s.io/kustomize/kyaml/fn/framework/parser"
 	"sigs.k8s.io/kustomize/kyaml/kio"
 	"sigs.k8s.io/kustomize/kyaml/yaml"
 )
 
-// NewCommand returns a new cobra command
-func NewCommand() *cobra.Command {
+// TemplateFS contains the templates used by config-gen
+//go:embed templates/resources/* templates/patches/*
+var TemplateFS embed.FS
+
+func buildProcessor(value *KubebuilderConfigGen) framework.ResourceListProcessor {
+	return framework.TemplateProcessor{
+		MergeResources: true,
+
+		PreProcessFilters: []kio.Filter{
+			// run controller-gen libraries to generate configuration from code
+			ControllerGenFilter{KubebuilderConfigGen: value},
+			// inject generated certificates
+			CertFilter{KubebuilderConfigGen: value},
+		},
+
+		ResourceTemplates: []framework.ResourceTemplate{{
+			Templates: parser.TemplateFiles(filepath.Join("templates", "resources")).FromFS(TemplateFS),
+		}},
+		PatchTemplates: []framework.PatchTemplate{
+			&framework.ResourcePatchTemplate{
+				Selector: &framework.Selector{
+					Kinds: []string{"CustomResourceDefinition"},
+					ResourceMatcher: func(m *yaml.RNode) bool {
+						meta, _ := m.GetMeta()
+						return value.Spec.Webhooks.Conversions[meta.Name]
+					},
+				},
+				Templates: parser.TemplateFiles(filepath.Join("templates", "patches", "crd")).FromFS(TemplateFS),
+			},
+			&framework.ResourcePatchTemplate{
+				Selector: &framework.Selector{
+					TemplateData: value,
+					Kinds:        []string{"Deployment"},
+					Names:        []string{"controller-manager"},
+					Namespaces:   []string{"{{ .Namespace }}"},
+					Labels:       map[string]string{"control-plane": "controller-manager"},
+				},
+				Templates: parser.TemplateFiles(filepath.Join("templates", "patches", "controller-manager")).FromFS(TemplateFS),
+			},
+			&framework.ResourcePatchTemplate{
+				Selector: &framework.Selector{
+					Kinds: []string{
+						"CustomResourceDefinition",
+						"ValidatingWebhookConfiguration",
+						"MutatingWebhookConfiguration",
+					},
+				},
+				Templates: parser.TemplateFiles(filepath.Join("templates", "patches", "cert-manager")).FromFS(TemplateFS),
+			},
+		},
+
+		PostProcessFilters: []kio.Filter{
+			ComponentFilter{KubebuilderConfigGen: value},
+			SortFilter{KubebuilderConfigGen: value},
+		},
+		TemplateData: value,
+	}
+}
+
+func buildCmd() *cobra.Command {
 	kp := &KubebuilderConfigGen{}
 
 	// legacy kustomize function support
@@ -45,46 +105,13 @@ func NewCommand() *cobra.Command {
 		log.Fatal(err)
 	}
 
-	// Eager check to make sure pkged templates are found.
-	err = pkger.Walk("/pkg/cli/alpha/config-gen/templates/resources", func(_ string, _ os.FileInfo, err error) error {
-		return err
-	})
-	if err != nil {
-		// this shouldn't fail if it was compiled correctly
-		log.Fatal(err)
-	}
+	cmd := command.Build(buildProcessor(kp), command.StandaloneEnabled, false)
+	return cmd
+}
 
-	c := framework.TemplateCommand{
-		API: kp,
-
-		MergeResources: true, // apply additional inputs as patches
-
-		// these are run before the templates
-		PreProcessFilters: []kio.Filter{
-			// run controller-gen libraries to generate configuration from code
-			ControllerGenFilter{KubebuilderConfigGen: kp},
-			// inject generated certificates
-			CertFilter{KubebuilderConfigGen: kp},
-		},
-
-		// generate resources
-		// keep casting -- required by pkger to find the directory
-		TemplatesFn: framework.TemplatesFromDir(pkger.Dir("/pkg/cli/alpha/config-gen/templates/resources")),
-
-		// patch resources
-		PatchTemplatesFn: framework.PatchTemplatesFromDir(
-			CRDPatchTemplate(kp),
-			CertManagerPatchTemplate(kp),
-			ControllerManagerPatchTemplate(kp),
-		),
-
-		// perform final modifications
-		PostProcessFilters: []kio.Filter{
-			// sort the resources
-			ComponentFilter{KubebuilderConfigGen: kp},
-			SortFilter{KubebuilderConfigGen: kp},
-		},
-	}.GetCommand()
+// NewCommand returns a new cobra command
+func NewCommand() *cobra.Command {
+	c := buildCmd()
 
 	if os.Getenv("KUSTOMIZE_FUNCTION") == "true" {
 		// run as part of kustomize -- read from stdin
@@ -238,7 +265,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 transformers:
 - |-
-  apiVersion: kubebuilder.sigs.k8s.io
+  apiVersion: kubebuilder.sigs.k8s.io/v1alpha1
   kind: KubebuilderConfigGen
   metadata:
     name: my-project

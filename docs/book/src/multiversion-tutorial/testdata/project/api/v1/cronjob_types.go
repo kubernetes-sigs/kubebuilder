@@ -113,15 +113,15 @@ type CronJobStatus struct {
 // +kubebuilder:docs-gen:collapse=old stuff
 
 /*
-Since we'll have more than one version, we'll need to mark a storage version.
-This is the version that the Kubernetes API server uses to store our data.
-We'll chose the v1 version for our project.
+ Since we'll have more than one version, we'll need to mark a storage version.
+ This is the version that the Kubernetes API server uses to store our data.
+ We'll chose the v1 version for our project.
 
-We'll use the [`+kubebuilder:storageversion`](/reference/markers/crd.md) to do this.
+ We'll use the [`+kubebuilder:storageversion`](/reference/markers/crd.md) to do this.
 
-Note that multiple versions may exist in storage if they were written before
-the storage version changes -- changing the storage version only affects how
-objects are created/updated after the change.
+ Note that multiple versions may exist in storage if they were written before
+ the storage version changes -- changing the storage version only affects how
+ objects are created/updated after the change.
 */
 
 //+kubebuilder:object:root=true

@@ -19,13 +19,20 @@ package v2
 import (
 	"encoding/base64"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
-	. "github.com/onsi/ginkgo" //nolint:golint
-	. "github.com/onsi/gomega" //nolint:golint
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
+
+	//nolint:golint
+	//nolint:revive
+	. "github.com/onsi/ginkgo"
+	//nolint:golint
+	//nolint:revive
+	. "github.com/onsi/gomega"
 
 	"sigs.k8s.io/kubebuilder/v3/test/e2e/utils"
 )
@@ -35,9 +42,15 @@ var _ = Describe("kubebuilder", func() {
 		var kbc *utils.TestContext
 		BeforeEach(func() {
 			var err error
-			kbc, err = utils.NewTestContext(utils.KubebuilderBinName, "GO111MODULE=on")
+			kbc, err = utils.NewTestContext(util.KubebuilderBinName, "GO111MODULE=on")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(kbc.Prepare()).To(Succeed())
+
+			// Skip if cluster version >= 1.22 because pre v1 CRDs and webhooks no longer exist.
+			if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() >= 1 && srvVer.GetMinorInt() >= 22 {
+				Skip(fmt.Sprintf("cluster version %s does not support "+
+					"pre v1 CRDs or webhooks", srvVer.GitVersion))
+			}
 
 			// Install cert-manager with v1beta2 CRs.
 			By("installing cert manager bundle")
@@ -51,12 +64,15 @@ var _ = Describe("kubebuilder", func() {
 			By("clean up created API objects during test process")
 			kbc.CleanupManifests(filepath.Join("config", "default"))
 
-			By("uninstalling prometheus manager bundle")
-			kbc.UninstallPrometheusOperManager()
+			// Skip if cluster version >= 1.22 because pre v1 CRDs and webhooks no longer exist.
+			if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() < 22 {
+				By("uninstalling prometheus manager bundle")
+				kbc.UninstallPrometheusOperManager()
 
-			// Uninstall cert-manager with v1beta2 CRs.
-			By("uninstalling cert manager bundle")
-			kbc.UninstallCertManager(true)
+				// Uninstall cert-manager with v1beta2 CRs.
+				By("uninstalling cert manager bundle")
+				kbc.UninstallCertManager(true)
+			}
 
 			By("remove container image and work dir")
 			kbc.Destroy()
@@ -84,7 +100,7 @@ var _ = Describe("kubebuilder", func() {
 			Expect(err).Should(Succeed())
 
 			By("implementing the API")
-			Expect(utils.InsertCode(
+			Expect(util.InsertCode(
 				filepath.Join(kbc.Dir, "api", kbc.Version, fmt.Sprintf("%s_types.go", strings.ToLower(kbc.Kind))),
 				fmt.Sprintf(`type %sSpec struct {
 `, kbc.Kind),
@@ -102,28 +118,28 @@ var _ = Describe("kubebuilder", func() {
 			Expect(err).Should(Succeed())
 
 			By("implementing the mutating and validating webhooks")
-			err = utils.ImplementWebhooks(filepath.Join(
+			err = util.ImplementWebhooks(filepath.Join(
 				kbc.Dir, "api", kbc.Version,
 				fmt.Sprintf("%s_webhook.go", strings.ToLower(kbc.Kind))))
 			Expect(err).Should(Succeed())
 
 			By("uncomment kustomization.yaml to enable webhook and ca injection")
-			Expect(utils.UncommentCode(
+			Expect(util.UncommentCode(
 				filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 				"#- ../webhook", "#")).To(Succeed())
-			Expect(utils.UncommentCode(
+			Expect(util.UncommentCode(
 				filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 				"#- ../certmanager", "#")).To(Succeed())
-			Expect(utils.UncommentCode(
+			Expect(util.UncommentCode(
 				filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 				"#- ../prometheus", "#")).To(Succeed())
-			Expect(utils.UncommentCode(
+			Expect(util.UncommentCode(
 				filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 				"#- manager_webhook_patch.yaml", "#")).To(Succeed())
-			Expect(utils.UncommentCode(
+			Expect(util.UncommentCode(
 				filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 				"#- webhookcainjection_patch.yaml", "#")).To(Succeed())
-			Expect(utils.UncommentCode(filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+			Expect(util.UncommentCode(filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 				`#- name: CERTIFICATE_NAMESPACE # namespace of the certificate CR
 #  objref:
 #    kind: Certificate
@@ -177,7 +193,7 @@ var _ = Describe("kubebuilder", func() {
 					"-o", "go-template={{ range .items }}{{ if not .metadata.deletionTimestamp }}{{ .metadata.name }}"+
 						"{{ \"\\n\" }}{{ end }}{{ end }}")
 				Expect(err).NotTo(HaveOccurred())
-				podNames := utils.GetNonEmptyLines(podOutput)
+				podNames := util.GetNonEmptyLines(podOutput)
 				if len(podNames) != 1 {
 					return fmt.Errorf("expect 1 controller pods running, but got %d", len(podNames))
 				}
@@ -211,8 +227,9 @@ var _ = Describe("kubebuilder", func() {
 
 			By("creating a pod with curl image")
 			cmdOpts := []string{
-				"run", "--generator=run-pod/v1", "curl", "--image=curlimages/curl:7.68.0", "--restart=OnFailure", "--",
-				"curl", "-v", "-k", "-H", fmt.Sprintf(`Authorization: Bearer %s`, token),
+				"run", "curl", "--image=curlimages/curl:7.68.0", "--restart=OnFailure", "--",
+				"curl", "-v", "-k", "-H",
+				fmt.Sprintf(`Authorization: Bearer %s`, token),
 				fmt.Sprintf("https://e2e-%v-controller-manager-metrics-service.e2e-%v-system.svc:8443/metrics",
 					kbc.TestSuffix, kbc.TestSuffix),
 			}
@@ -292,6 +309,21 @@ var _ = Describe("kubebuilder", func() {
 			// we can change it to probe the readiness endpoint after CR supports it.
 			sampleFile := filepath.Join("config", "samples",
 				fmt.Sprintf("%s_%s_%s.yaml", kbc.Group, kbc.Version, strings.ToLower(kbc.Kind)))
+
+			sampleFilePath, err := filepath.Abs(filepath.Join(fmt.Sprintf("e2e-%s", kbc.TestSuffix), sampleFile))
+			Expect(err).To(Not(HaveOccurred()))
+
+			f, err := os.OpenFile(sampleFilePath, os.O_APPEND|os.O_WRONLY, 0644)
+			Expect(err).To(Not(HaveOccurred()))
+
+			defer func() {
+				err = f.Close()
+				Expect(err).To(Not(HaveOccurred()))
+			}()
+
+			_, err = f.WriteString("  foo: bar")
+			Expect(err).To(Not(HaveOccurred()))
+
 			Eventually(func() error {
 				_, err = kbc.Kubectl.Apply(true, "-f", sampleFile)
 				return err
