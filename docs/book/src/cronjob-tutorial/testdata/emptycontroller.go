@@ -1,4 +1,5 @@
 /*
+Copyright 2021.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -24,10 +25,10 @@ package controllers
 import (
 	"context"
 
-	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	batchv1 "tutorial.kubebuilder.io/project/api/v1"
 )
@@ -41,7 +42,6 @@ objects, so these are added out of the box.
 // CronJobReconciler reconciles a CronJob object
 type CronJobReconciler struct {
 	client.Client
-	Log    logr.Logger
 	Scheme *runtime.Scheme
 }
 
@@ -78,7 +78,7 @@ some pairs at the top of our reconcile method to have those attached to all log
 lines in this reconciler.
 */
 func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = r.Log.WithValues("cronjob", req.NamespacedName)
+	_ = log.FromContext(ctx)
 
 	// your logic here
 

@@ -20,6 +20,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
+// +kubebuilder:webhook:failurePolicy="ignore",groups="",resources=pods,verbs=create;update,versions=v1,name=example.m.pod,path=/mutate-pod,mutating=true,sideEffects=None,admissionReviewVersions=v1
+
 // FooReconciler reconciles a Foo object
 type FooReconciler struct{}
 

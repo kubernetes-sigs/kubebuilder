@@ -353,27 +353,95 @@ func getValidCodeFragments(i Inserter) CodeFragmentsMap {
 	return codeFragments
 }
 
-// filterExistingValues removes the single-line values that already exists
-// TODO: Add support for multi-line duplicate values
+// filterExistingValues removes code fragments that already exist in the content.
 func filterExistingValues(content string, codeFragmentsMap CodeFragmentsMap) error {
-	scanner := bufio.NewScanner(strings.NewReader(content))
-	for scanner.Scan() {
-		line := scanner.Text()
-		for marker, codeFragments := range codeFragmentsMap {
-			for i, codeFragment := range codeFragments {
-				if strings.TrimSpace(line) == strings.TrimSpace(codeFragment) {
-					codeFragmentsMap[marker] = append(codeFragments[:i], codeFragments[i+1:]...)
-				}
+	for marker, codeFragments := range codeFragmentsMap {
+		codeFragmentsOut := codeFragments[:0]
+
+		for _, codeFragment := range codeFragments {
+			exists, err := codeFragmentExists(content, codeFragment)
+			if err != nil {
+				return err
 			}
-			if len(codeFragmentsMap[marker]) == 0 {
-				delete(codeFragmentsMap, marker)
+			if !exists {
+				codeFragmentsOut = append(codeFragmentsOut, codeFragment)
 			}
 		}
+
+		if len(codeFragmentsOut) == 0 {
+			delete(codeFragmentsMap, marker)
+		} else {
+			codeFragmentsMap[marker] = codeFragmentsOut
+		}
 	}
-	if err := scanner.Err(); err != nil {
-		return err
-	}
+
 	return nil
+}
+
+// codeFragmentExists checks if the codeFragment exists in the content.
+func codeFragmentExists(content, codeFragment string) (exists bool, err error) {
+	// Trim space on each line in order to match different levels of indentation.
+	var sb strings.Builder
+	for _, line := range strings.Split(codeFragment, "\n") {
+		_, _ = sb.WriteString(strings.TrimSpace(line))
+		_ = sb.WriteByte('\n')
+	}
+
+	codeFragmentTrimmed := strings.TrimSpace(sb.String())
+	scanLines := 1 + strings.Count(codeFragmentTrimmed, "\n")
+	scanFunc := func(contentGroup string) bool {
+		if contentGroup == codeFragmentTrimmed {
+			exists = true
+			return false
+		}
+		return true
+	}
+
+	if err := scanMultiline(content, scanLines, scanFunc); err != nil {
+		return false, err
+	}
+
+	return exists, nil
+}
+
+// scanMultiline scans a string while buffering the specified number of scanLines. It calls scanFunc
+// for every group of lines. The content passed to scanFunc will have trimmed whitespace. It
+// continues scanning the content as long as scanFunc returns true.
+func scanMultiline(content string, scanLines int, scanFunc func(contentGroup string) bool) error {
+	scanner := bufio.NewScanner(strings.NewReader(content))
+
+	// Optimized simple case.
+	if scanLines == 1 {
+		for scanner.Scan() {
+			if !scanFunc(strings.TrimSpace(scanner.Text())) {
+				return scanner.Err()
+			}
+		}
+		return scanner.Err()
+	}
+
+	// Complex case.
+	bufferedLines := make([]string, scanLines)
+	bufferedLinesIndex := 0
+	var sb strings.Builder
+
+	for scanner.Scan() {
+		// Trim space on each line in order to match different levels of indentation.
+		bufferedLines[bufferedLinesIndex] = strings.TrimSpace(scanner.Text())
+		bufferedLinesIndex = (bufferedLinesIndex + 1) % scanLines
+
+		sb.Reset()
+		for i := 0; i < scanLines; i++ {
+			_, _ = sb.WriteString(bufferedLines[(bufferedLinesIndex+i)%scanLines])
+			_ = sb.WriteByte('\n')
+		}
+
+		if !scanFunc(strings.TrimSpace(sb.String())) {
+			return scanner.Err()
+		}
+	}
+
+	return scanner.Err()
 }
 
 func insertStrings(content string, codeFragmentsMap CodeFragmentsMap) ([]byte, error) {

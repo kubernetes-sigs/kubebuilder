@@ -285,6 +285,7 @@ func (factory *executionHooksFactory) preRunEFunc(
 		}
 
 		// Pre-scaffold hook.
+		// nolint:revive
 		if err := factory.forEach(func(subcommand plugin.Subcommand) error {
 			if subcommand, hasPreScaffold := subcommand.(plugin.HasPreScaffold); hasPreScaffold {
 				return subcommand.PreScaffold(factory.fs)
@@ -302,6 +303,7 @@ func (factory *executionHooksFactory) preRunEFunc(
 func (factory *executionHooksFactory) runEFunc() func(*cobra.Command, []string) error {
 	return func(*cobra.Command, []string) error {
 		// Scaffold hook.
+		// nolint:revive
 		if err := factory.forEach(func(subcommand plugin.Subcommand) error {
 			return subcommand.Scaffold(factory.fs)
 		}, "unable to scaffold with"); err != nil {
@@ -321,6 +323,7 @@ func (factory *executionHooksFactory) postRunEFunc() func(*cobra.Command, []stri
 		}
 
 		// Post-scaffold hook.
+		// nolint:revive
 		if err := factory.forEach(func(subcommand plugin.Subcommand) error {
 			if subcommand, hasPostScaffold := subcommand.(plugin.HasPostScaffold); hasPostScaffold {
 				return subcommand.PostScaffold()

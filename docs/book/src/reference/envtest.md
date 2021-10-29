@@ -12,18 +12,18 @@ although it does require `bash` to run.
 
 If you would like to download the tarball containing these binaries,
 to use in a disconnected environment for example,
-run the following (Kubernetes version 1.19.2 is an example version):
+run the following (Kubernetes version 1.21.2 is an example version):
 
 ```sh
-K8S_VERSION=1.19.2
-curl -sSLo envtest-bins.tar.gz "https://storage.googleapis.com/kubebuilder-tools/kubebuilder-tools-${K8S_VERSION}-$(go env GOOS)-$(go env GOARCH).tar.gz"
+export K8S_VERSION=1.21.2
+curl -sSLo envtest-bins.tar.gz "https://go.kubebuilder.io/test-tools/${K8S_VERSION}/$(go env GOOS)/$(go env GOARCH)"
 ```
 
 Then install them:
 
 ```sh
-mkdir /opt/kubebuilder/testbin
-tar -C /opt/kubebuilder/testbin --strip-components=1 -zvxf envtest-bins.tar.gz
+mkdir /usr/local/kubebuilder
+tar -C /usr/local/kubebuilder --strip-components=1 -zvxf envtest-bins.tar.gz
 ```
 
 Once these binaries are installed, you can either change the `test` target to:
@@ -36,8 +36,17 @@ test: manifests generate fmt vet
 Or configure the existing target to skip the download and point to a [custom location](#environment-variables):
 
 ```sh
-make test SKIP_FETCH_TOOLS=1 KUBEBUILDER_ASSETS=/opt/kubebuilder/testbin
+make test SKIP_FETCH_TOOLS=1 KUBEBUILDER_ASSETS=/usr/local/kubebuilder
 ```
+
+### Kubernetes 1.20 and 1.21 binary issues
+
+There have been many reports of the `kube-apiserver` or `etcd` binary [hanging during cleanup][cr-1571]
+or misbehaving in other ways. We recommend using the 1.19.2 tools version to circumvent such issues,
+which do not seem to arise in 1.22+. This is likely NOT the cause of a `fork/exec: permission denied`
+or `fork/exec: not found` error, which is caused by improper tools installation.
+
+[cr-1571]:https://github.com/kubernetes-sigs/controller-runtime/issues/1571
 
 ## Writing tests
 
@@ -66,9 +75,9 @@ Logs from the test runs are prefixed with `test-env`.
 
 ### Configuring your test control plane
 
-Controller-runtime’s [envtest](https://godoc.org/sigs.k8s.io/controller-runtime/pkg/envtest) framework requires `kubectl`, `kube-apiserver`, and `etcd` binaries be present locally to simulate the API portions of a real cluster. 
+Controller-runtime’s [envtest][envtest] framework requires `kubectl`, `kube-apiserver`, and `etcd` binaries be present locally to simulate the API portions of a real cluster.
 
-For projects built with plugin v3+ (see your PROJECT file's `layout` key), the `make test` command will install these binaries to the `testbin/` directory and use them when running tests that use `envtest`.  
+For projects built with plugin v3+ (see your PROJECT file's `layout` key), the `make test` command will install these binaries to the `testbin/` directory and use them when running tests that use `envtest`.
 
 You can use environment variables and/or flags to specify the `kubectl`,`api-server` and `etcd` setup within your integration tests.
 
@@ -84,7 +93,7 @@ You can use environment variables and/or flags to specify the `kubectl`,`api-ser
 
 See that the `test` makefile target will ensure that all is properly setup when you are using it. However, if you would like to run the tests without use the Makefile targets, for example via an IDE, then you can set the environment variables directly in the code of your `suite_test.go`:
 
-```go 
+```go
 var _ = BeforeSuite(func(done Done) {
 	Expect(os.Setenv("TEST_ASSET_KUBE_APISERVER", "../testbin/bin/kube-apiserver")).To(Succeed())
 	Expect(os.Setenv("TEST_ASSET_ETCD", "../testbin/bin/etcd")).To(Succeed())
@@ -107,7 +116,7 @@ var _ = AfterSuite(func() {
 	Expect(os.Unsetenv("TEST_ASSET_KUBECTL")).To(Succeed())
 
 })
-```  
+```
 
 ### Flags
 Here's an example of modifying the flags with which to start the API server in your integration tests, compared to the default values in `envtest.DefaultKubeAPIServerFlags`:
@@ -144,4 +153,4 @@ Expect(deployment.ObjectMeta.OwnerReferences).To(ContainElement(expectedOwnerRef
 ```
 
 [envtest]:https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/envtest
-[setup-envtest]:https://github.com/kubernetes-sigs/controller-runtime/blob/master/hack/setup-envtest.sh
+[setup-envtest]:https://pkg.go.dev/sigs.k8s.io/controller-runtime/tools/setup-envtest

@@ -55,9 +55,9 @@ function scaffold_test_project {
     fi
 
     if [ $project == "project-v2" ]; then
-      $kb create api --plugins="go/v2,declarative" --group crew --version v1 --kind FirstMate --controller=true --resource=true --make=false
+      $kb create api --group crew --version v1 --kind FirstMate --controller=true --resource=true --make=false
     else
-      $kb create api --plugins="go/v3,declarative" --group crew --version v1 --kind FirstMate --controller=true --resource=true --make=false
+      $kb create api --group crew --version v1 --kind FirstMate --controller=true --resource=true --make=false
     fi
     $kb create webhook --group crew --version v1 --kind FirstMate --conversion
 
@@ -104,6 +104,10 @@ function scaffold_test_project {
     $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false
     $kb create api --group crew --version v1 --kind FirstMate --controller=true --resource=true --make=false
     $kb create api --group crew --version v1 --kind Admiral --controller=true --resource=true --namespaced=false --make=false
+  elif [[ $project =~ v1beta1 ]]; then
+    header_text 'Creating APIs ...'
+    $kb create api --group crew --version v1 --kind Admiral --controller=true --resource=true --namespaced=false --make=false --crd-version=v1beta1
+    $kb create webhook --group crew --version v1 --kind Admiral --defaulting --webhook-version=v1beta1
   fi
 
   make generate manifests
@@ -123,3 +127,4 @@ scaffold_test_project project-v3
 scaffold_test_project project-v3-multigroup
 scaffold_test_project project-v3-addon --plugins="go/v3,declarative"
 scaffold_test_project project-v3-config --component-config
+scaffold_test_project project-v3-v1beta1

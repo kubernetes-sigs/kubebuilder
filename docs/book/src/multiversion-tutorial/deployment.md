@@ -3,7 +3,7 @@
 Before we can test out our conversion, we'll need to enable them conversion in our CRD:
 
 Kubebuilder generates Kubernetes manifests under the `config` directory with webhook
-bits disabled.  To enable them, we need to:
+bits disabled. To enable them, we need to:
 
 - Enable `patches/webhook_in_<kind>.yaml` and
   `patches/cainjection_in_<kind>.yaml` in
@@ -18,7 +18,7 @@ bits disabled.  To enable them, we need to:
 - Enable all the vars under the `CERTMANAGER` section in
   `config/default/kustomization.yaml` file.
 
-Additionally, we'll need to set the `CRD_OPTIONS` variable to just
+Additionally, if present in our Makefile, we'll need to set the `CRD_OPTIONS` variable to just
 `"crd"`, removing the `trivialVersions` option (this ensures that we
 actually [generate validation for each version][ref-multiver], instead of
 telling Kubernetes that they're the same):
@@ -52,7 +52,7 @@ We'll make a v2 version based on our v1 version (put it under `config/samples`)
 {{#include ./testdata/project/config/samples/batch_v2_cronjob.yaml}}
 ```
 
-Then, we can create it on the cluster: 
+Then, we can create it on the cluster:
 
 ```shell
 kubectl apply -f config/samples/batch_v2_cronjob.yaml
@@ -114,10 +114,8 @@ resource.version.group` is for everything else.
 
 </aside>
 
-## Troubleshooting 
+## Troubleshooting
 
 [steps for troubleshooting](/TODO.md)
 
 [ref-multiver]: /reference/generating-crd.md#multiple-versions "Generating CRDs: Multiple Versions"
-
-[crd-version-pref]: https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definition-versioning/#version-priority "Versions in CustomResourceDefinitions"

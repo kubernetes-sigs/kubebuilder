@@ -5,6 +5,11 @@
     Finalizers are a mechanism to
     execute any custom logic related to a resource before it gets deleted from
     Kubernetes cluster.
+  - [Watching Resources](watching-resources.md)
+    Watch resources in the Kubernetes cluster to be informed and take actions on changes.
+      - [Resources Managed by the Operator](watching-resources/operator-managed.md)
+      - [Externally Managed Resources](watching-resources/externally-managed.md)
+        Controller Runtime provides the ability to watch additional resources relevant to the controlled ones.
   - [Kind cluster](kind.md)
   - [What's a webhook?](webhook-overview.md)
     Webhooks are HTTP callbacks, there are 3

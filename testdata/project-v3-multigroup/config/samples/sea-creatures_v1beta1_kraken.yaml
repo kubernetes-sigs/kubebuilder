@@ -3,5 +3,4 @@ kind: Kraken
 metadata:
   name: kraken-sample
 spec:
-  # Add fields here
-  foo: bar
+  # TODO(user): Add fields here

@@ -44,9 +44,12 @@ Kubebuilder](../quick-start.md#installation), then scaffold out a new
 project:
 
 ```bash
+# create a project directory, and then run the init command.
+mkdir project
+cd project
 # we'll use a domain of tutorial.kubebuilder.io,
 # so all API groups will be <group>.tutorial.kubebuilder.io.
-kubebuilder init --domain tutorial.kubebuilder.io
+kubebuilder init --domain tutorial.kubebuilder.io --repo tutorial.kubebuilder.io/project
 ```
 
 <aside class="note">
@@ -56,3 +59,13 @@ You can pass `--project-name=<dns1123-label-string>` to set a different project 
 
 Now that we've got a project in place, let's take a look at what
 Kubebuilder has scaffolded for us so far...
+
+<aside class="note">
+<h1>Developing in $GOPATH</h1>
+
+If your project is initialized within [`GOPATH`][GOPATH-golang-docs], the implicitly called `go mod init` will interpolate the module path for you.
+Otherwise `--repo=<module path>` must be set.
+
+Read the [Go modules blogpost][go-modules-blogpost] if unfamiliar with the module system.
+
+</aside>

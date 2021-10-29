@@ -163,7 +163,8 @@ Kubernetes versions.
 
 You'll need to enable this by switching the line in your makefile that
 says `CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false`
-to `CRD_OPTIONS ?= crd:preserveUnknownFields=false`
+to `CRD_OPTIONS ?= crd:preserveUnknownFields=false` if using v1beta CRDs,
+and `CRD_OPTIONS ?= crd` if using v1 (recommended).
 
 Then, you can use the `+kubebuilder:storageversion` [marker][crd-markers]
 to indicate the [GVK](/cronjob-tutorial/gvks.md "Group-Version-Kind") that
@@ -187,7 +188,7 @@ to `CRD_OPTIONS ?= crd:trivialVersions=true`
 
 <aside class="note">
 
-`v1beta1` is deprecated and will be removed in Kubernetes v1.22, so upgrading is recommended.
+`v1beta1` is deprecated and was removed in Kubernetes v1.22, so upgrading is essential.
 
 </aside>
 
@@ -201,25 +202,21 @@ You can also run `controller-gen` directly, if you want to see what it's
 doing.
 
 Each controller-gen "generator" is controlled by an option to
-controller-gen, using the same syntax as markers.  For instance, to
-generate CRDs with "trivial versions" (no version conversion webhooks), we
-call `controller-gen crd:trivialVersions=true paths=./api/...`.
-
-controller-gen also supports different output "rules" to control how
-and where output goes.  Notice the `manifests` make rule (condensed
-slightly to only generate CRDs):
+controller-gen, using the same syntax as markers. controller-gen
+also supports different output "rules" to control how and where output goes.
+Notice the `manifests` make rule (condensed slightly to only generate CRDs):
 
 ```makefile
 # Generate manifests for CRDs
 manifests: controller-gen
-	$(CONTROLLER_GEN) crd:trivialVersions=true paths="./..." output:crd:artifacts:config=config/crd/bases
+	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 ```
 
 It uses the `output:crd:artifacts` output rule to indicate that
 CRD-related config (non-code) artifacts should end up in
 `config/crd/bases` instead of `config/crd`.
 
-To see all the options for `controller-gen`, run
+To see all the options including generators for `controller-gen`, run
 
 ```shell
 $ controller-gen -h
@@ -237,7 +234,7 @@ $ controller-gen -hhh
 
 [openapi-schema]: https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.0.md#schemaObject "OpenAPI v3"
 
-[kube-additional-printer-colums]: https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#additional-printer-columns "Custom Resource Definitions: Additional Printer Columns"
+[kube-additional-printer-columns]: https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#additional-printer-columns "Custom Resource Definitions: Additional Printer Columns"
 
 [kube-subresources]: https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/#status-subresource "Custom Resource Definitions: Status Subresource"
 

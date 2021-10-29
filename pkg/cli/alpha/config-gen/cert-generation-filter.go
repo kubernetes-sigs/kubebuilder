@@ -48,13 +48,12 @@ func (c CertFilter) Filter(input []*yaml.RNode) ([]*yaml.RNode, error) {
 		return nil, err
 	}
 
-	s := &framework.Selector{
+	matches, err := (&framework.Selector{
 		Kinds: []string{
 			"ValidatingWebhookConfiguration",
 			"MutatingWebhookConfiguration",
 		},
-	}
-	matches, err := s.GetMatches(&framework.ResourceList{Items: input})
+	}).Filter(input)
 	if err != nil {
 		return nil, err
 	}
@@ -82,17 +81,13 @@ func (c CertFilter) Filter(input []*yaml.RNode) ([]*yaml.RNode, error) {
 		}
 	}
 
-	s = &framework.Selector{
-		Filter: func(n *yaml.RNode) bool {
-			// Allow-list conversion webhooks
-			m, _ := n.GetMeta()
-			if m.Kind != "CustomResourceDefinition" {
-				return true
-			}
-			return c.Spec.Webhooks.Conversions[m.Name]
+	matches, err = (&framework.Selector{
+		Kinds: []string{"CustomResourceDefinition"},
+		ResourceMatcher: func(m *yaml.RNode) bool {
+			meta, _ := m.GetMeta()
+			return c.Spec.Webhooks.Conversions[meta.Name]
 		},
-	}
-	matches, err = s.GetMatches(&framework.ResourceList{Items: input})
+	}).Filter(input)
 	if err != nil {
 		return nil, err
 	}

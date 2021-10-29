@@ -19,12 +19,15 @@ package utils
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 
-	. "github.com/onsi/ginkgo" //nolint:golint
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
+
+	. "github.com/onsi/ginkgo" //nolint:golint,revive
 )
 
 // TestContext specified to run e2e tests
@@ -45,7 +48,7 @@ type TestContext struct {
 // NewTestContext init with a random suffix for test TestContext stuff,
 // to avoid conflict when running tests synchronously.
 func NewTestContext(binaryName string, env ...string) (*TestContext, error) {
-	testSuffix, err := RandomSuffix()
+	testSuffix, err := util.RandomSuffix()
 	if err != nil {
 		return nil, err
 	}
@@ -85,10 +88,14 @@ func NewTestContext(binaryName string, env ...string) (*TestContext, error) {
 	}, nil
 }
 
+func warnError(err error) {
+	fmt.Fprintf(GinkgoWriter, "warning: %v\n", err)
+}
+
 // Prepare prepares the test environment.
 func (t *TestContext) Prepare() error {
 	// Remove tools used by projects in the environment so the correct version is downloaded for each test.
-	fmt.Fprintf(GinkgoWriter, "cleaning up tools")
+	fmt.Fprintln(GinkgoWriter, "cleaning up tools")
 	for _, toolName := range []string{"controller-gen", "kustomize"} {
 		if toolPath, err := exec.LookPath(toolName); err == nil {
 			if err := os.RemoveAll(toolPath); err != nil {
@@ -103,7 +110,8 @@ func (t *TestContext) Prepare() error {
 
 const (
 	certmanagerVersionWithv1beta2CRs = "v0.11.0"
-	certmanagerVersion               = "v1.0.4"
+	certmanagerLegacyVersion         = "v1.0.4"
+	certmanagerVersion               = "v1.5.3"
 
 	certmanagerURLTmplLegacy = "https://github.com/jetstack/cert-manager/releases/download/%s/cert-manager-legacy.yaml"
 	certmanagerURLTmpl       = "https://github.com/jetstack/cert-manager/releases/download/%s/cert-manager.yaml"
@@ -119,7 +127,7 @@ func (t *TestContext) makeCertManagerURL(hasv1beta1CRs bool) string {
 	// Determine which URL to use for a manifest bundle with v1 CRs.
 	// The most up-to-date bundle uses v1 CRDs, which were introduced in k8s v1.16.
 	if ver := t.K8sVersion.ServerVersion; ver.GetMajorInt() <= 1 && ver.GetMinorInt() < 16 {
-		return fmt.Sprintf(certmanagerURLTmplLegacy, certmanagerVersion)
+		return fmt.Sprintf(certmanagerURLTmplLegacy, certmanagerLegacyVersion)
 	}
 	return fmt.Sprintf(certmanagerURLTmpl, certmanagerVersion)
 }
@@ -146,43 +154,57 @@ func (t *TestContext) InstallCertManager(hasv1beta1CRs bool) error {
 func (t *TestContext) UninstallCertManager(hasv1beta1CRs bool) {
 	url := t.makeCertManagerURL(hasv1beta1CRs)
 	if _, err := t.Kubectl.Delete(false, "-f", url); err != nil {
-		fmt.Fprintf(GinkgoWriter,
-			"warning: error when running kubectl delete during cleaning up cert manager: %v\n", err)
-	}
-	if _, err := t.Kubectl.Delete(false, "namespace", "cert-manager"); err != nil {
-		fmt.Fprintf(GinkgoWriter, "warning: error when cleaning up the cert manager namespace: %v\n", err)
+		warnError(err)
 	}
 }
 
 const (
-	prometheusOperatorVersion = "0.33"
-	prometheusOperatorURL     = "https://raw.githubusercontent.com/coreos/prometheus-operator/release-%s/bundle.yaml"
+	prometheusOperatorLegacyVersion = "0.33"
+	prometheusOperatorLegacyURL     = "https://raw.githubusercontent.com/coreos/prometheus-operator/release-%s/bundle.yaml"
+	prometheusOperatorVersion       = "0.51"
+	prometheusOperatorURL           = "https://raw.githubusercontent.com/prometheus-operator/" +
+		"prometheus-operator/release-%s/bundle.yaml"
 )
 
 // InstallPrometheusOperManager installs the prometheus manager bundle.
 func (t *TestContext) InstallPrometheusOperManager() error {
-	url := fmt.Sprintf(prometheusOperatorURL, prometheusOperatorVersion)
+	var url string
+	if ver := t.K8sVersion.ServerVersion; ver.GetMajorInt() <= 1 && ver.GetMinorInt() < 16 {
+		url = fmt.Sprintf(prometheusOperatorLegacyURL, prometheusOperatorLegacyVersion)
+	} else {
+		url = fmt.Sprintf(prometheusOperatorURL, prometheusOperatorVersion)
+	}
 	_, err := t.Kubectl.Apply(false, "-f", url)
 	return err
 }
 
 // UninstallPrometheusOperManager uninstalls the prometheus manager bundle.
 func (t *TestContext) UninstallPrometheusOperManager() {
-	url := fmt.Sprintf(prometheusOperatorURL, prometheusOperatorVersion)
+	var url string
+	if ver := t.K8sVersion.ServerVersion; ver.GetMajorInt() <= 1 && ver.GetMinorInt() < 16 {
+		url = fmt.Sprintf(prometheusOperatorLegacyURL, prometheusOperatorLegacyVersion)
+	} else {
+		url = fmt.Sprintf(prometheusOperatorURL, prometheusOperatorVersion)
+	}
 	if _, err := t.Kubectl.Delete(false, "-f", url); err != nil {
-		fmt.Fprintf(GinkgoWriter, "error when running kubectl delete during cleaning up prometheus bundle: %v\n", err)
+		warnError(err)
 	}
 }
 
 // CleanupManifests is a helper func to run kustomize build and pipe the output to kubectl delete -f -
 func (t *TestContext) CleanupManifests(dir string) {
-	cmd := exec.Command("kustomize", "build", dir)
+	kustomizePath := filepath.Join(t.Dir, "bin", "kustomize")
+	if _, err := os.Stat(kustomizePath); err != nil {
+		// Just fail below with an error about kustomize not being installed globally.
+		kustomizePath = "kustomize"
+	}
+	cmd := exec.Command(kustomizePath, "build", dir)
 	output, err := t.Run(cmd)
 	if err != nil {
-		fmt.Fprintf(GinkgoWriter, "warning: error when running kustomize build: %v\n", err)
+		warnError(err)
 	}
 	if _, err := t.Kubectl.WithInput(string(output)).Command("delete", "-f", "-"); err != nil {
-		fmt.Fprintf(GinkgoWriter, "warning: error when running kubectl delete -f -: %v\n", err)
+		warnError(err)
 	}
 }
 
@@ -220,15 +242,23 @@ func (t *TestContext) Make(makeOptions ...string) error {
 	return err
 }
 
+// Tidy runs `go mod tidy` so that go 1.16 build doesn't fail.
+// See https://blog.golang.org/go116-module-changes#TOC_3.
+func (t *TestContext) Tidy() error {
+	cmd := exec.Command("go", "mod", "tidy")
+	_, err := t.Run(cmd)
+	return err
+}
+
 // Destroy is for cleaning up the docker images for testing
 func (t *TestContext) Destroy() {
 	//nolint:gosec
 	cmd := exec.Command("docker", "rmi", "-f", t.ImageName)
 	if _, err := t.Run(cmd); err != nil {
-		fmt.Fprintf(GinkgoWriter, "warning: error when removing the local image: %v\n", err)
+		warnError(err)
 	}
 	if err := os.RemoveAll(t.Dir); err != nil {
-		fmt.Fprintf(GinkgoWriter, "warning: error when removing the word dir: %v\n", err)
+		warnError(err)
 	}
 }
 
@@ -265,4 +295,22 @@ func (cc *CmdContext) Run(cmd *exec.Cmd) ([]byte, error) {
 	}
 
 	return output, nil
+}
+
+// AllowProjectBeMultiGroup will update the PROJECT file with the information to allow we scaffold
+// apis with different groups. be available.
+func (t *TestContext) AllowProjectBeMultiGroup() error {
+	const multiGroup = `multigroup: true
+`
+	projectBytes, err := ioutil.ReadFile(filepath.Join(t.Dir, "PROJECT"))
+	if err != nil {
+		return err
+	}
+
+	projectBytes = append([]byte(multiGroup), projectBytes...)
+	err = ioutil.WriteFile(filepath.Join(t.Dir, "PROJECT"), projectBytes, 0644)
+	if err != nil {
+		return err
+	}
+	return nil
 }
