@@ -5,7 +5,7 @@ provisioning the certificates for the webhook server. Other solutions should
 also work as long as they put the certificates in the desired location.
 
 You can follow
-[the cert manager documentation](https://docs.cert-manager.io/en/latest/getting-started/install/kubernetes.html)
+[the cert manager documentation](https://cert-manager.io/docs/installation/)
 to install it.
 
 Cert manager also has a component called CA injector, which is responsible for
