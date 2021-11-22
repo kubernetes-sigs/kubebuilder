@@ -50,7 +50,7 @@ Now you can deploy it to your cluster by
 make deploy IMG=<some-registry>/<project-name>:tag
 ```
 
-Wait a while til the webhook pod comes up and the certificates are provisioned.
+Wait a while till the webhook pod comes up and the certificates are provisioned.
 It usually completes within 1 minute.
 
 Now you can create a valid CronJob to test your webhooks. The creation should
