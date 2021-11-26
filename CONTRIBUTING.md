@@ -108,6 +108,8 @@ The docs are published off of three branches:
 
 See [VERSIONING.md](VERSIONING.md#book-releases) for more information.
 
+There are certain writing style guidelines for Kubernetes documentation, checkout [style guide](https://kubernetes.io/docs/contribute/style/style-guide/) for more information.
+
 ### How to preview the changes performed in the docs
 
 Check the CI job after to do the Pull Request and then, click on in the `Details` of `netlify/kubebuilder/deploy-preview`
