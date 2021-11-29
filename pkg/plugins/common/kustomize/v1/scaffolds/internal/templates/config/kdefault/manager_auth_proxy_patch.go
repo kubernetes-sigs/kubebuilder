@@ -65,6 +65,13 @@ spec:
         - containerPort: 8443
           protocol: TCP
           name: https
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 5m
+            memory: 64Mi
 {{- if not .ComponentConfig }}
       - name: manager
         args:
