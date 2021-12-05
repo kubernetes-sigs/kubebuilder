@@ -12,6 +12,7 @@ require (
 	github.com/spf13/afero v1.6.0
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/pflag v1.0.5
+	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/tools v0.1.5
 	k8s.io/apimachinery v0.22.2 // for `kubebuilder alpha config-gen`
 	sigs.k8s.io/controller-runtime v0.10.0
