@@ -19,14 +19,14 @@ You need to follow [this](./cert-manager.md) to install the cert manager bundle.
 Run the following command to build your image locally.
 
 ```bash
-make docker-build
+make docker-build <project-name>:tag
 ```
 
 You don't need to push the image to a remote container registry if you are using
-a kind cluster. You can directly load your local image to your kind cluster:
+a kind cluster. You can directly load your local image to your specified kind cluster:
 
 ```bash
-kind load docker-image your-image-name:your-tag
+kind load docker-image <your-image-name>:tag --name <your-kind-cluster-name>
 ```
 
 ## Deploy Webhooks
