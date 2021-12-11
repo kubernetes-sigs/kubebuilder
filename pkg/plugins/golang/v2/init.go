@@ -75,7 +75,7 @@ func (p *initSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *
 	subcmdMeta.Examples = fmt.Sprintf(`  # Initialize a new project with your domain and name in copyright
   %[1]s init --plugins go/v2 --domain example.org --owner "Your name"
 
-  # Initialize a new project defining an specific project version
+  # Initialize a new project defining a specific project version
   %[1]s init --plugins go/v2 --project-version 2
 `, cliMeta.CommandName)
 }
