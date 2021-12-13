@@ -19,7 +19,7 @@ You need to follow [this](./cert-manager.md) to install the cert manager bundle.
 Run the following command to build your image locally.
 
 ```bash
-make docker-build <project-name>:tag
+make docker-build docker-push IMG=<some-registry>/<project-name>:tag
 ```
 
 You don't need to push the image to a remote container registry if you are using
