@@ -75,12 +75,22 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		// The object is being deleted
 		if controllerutil.ContainsFinalizer(cronJob, myFinalizerName) {
 			// our finalizer is present, so lets handle any external dependency
-			if err := r.delete(ctx, cronJob); err != nil {
-				// if fail to delete the external dependency here, return with error
-				// so that it can be retried
+			// The following method ilustrate that by using the Finalizer
+			// before we allow the removal of the CronJob
+			// we can perform all required operations.
+			// e.g do a HTTP request or update any other required
+			// resource
+			if err := r.deleteExternalResources(); err != nil {
 				return ctrl.Result{}, err
 			}
-
+			// After we do all required operations
+			// and ensure that the required criteria
+			// to delete is succffuly achieved then,
+			// we can remove the finalizer and delete it.
+			// Note that you do not need to use the finalizer
+			// to remove any resource which is owned by the
+			// kind. Remember that we use by controllerutil.<method to set the ownership>
+			// More info: <add here the link for the k8s docs that explain the cascate delation>
 			// remove our finalizer from the list and update it.
 			controllerutil.RemoveFinalizer(cronJob, myFinalizerName)
 			if err := r.Update(ctx, cronJob); err != nil {
@@ -95,4 +105,12 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	// Your reconcile logic
 
 	return ctrl.Result{}, nil
+}
+
+func (r *Reconciler) deleteExternalResources() error {
+	//
+	// delete any external resources associated with the cronJob
+	//
+	// Ensure that delete implementation is idempotent and safe to invoke
+	// multiple times for same object.
 }
