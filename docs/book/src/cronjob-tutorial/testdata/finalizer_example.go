@@ -107,7 +107,7 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	return ctrl.Result{}, nil
 }
 
-func (r *Reconciler) deleteExternalResources() error {
+func (r *CronJobReconciler) deleteExternalResources() error {
 	//
 	// delete any external resources associated with the cronJob
 	//
