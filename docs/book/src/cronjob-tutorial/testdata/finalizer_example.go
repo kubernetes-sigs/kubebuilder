@@ -89,7 +89,7 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			// we can remove the finalizer and delete it.
 			// Note that you do not need to use the finalizer
 			// to remove any resource which is owned by the
-			// kind. Remember that we use by controllerutil.RemoveFinalizer
+			// kind. Remember that we use by  it is not the method that we set the ownership
 			// More info: https://v1-20.docs.kubernetes.io/docs/concepts/workloads/controllers/garbage-collection/
 			// remove our finalizer from the list and update it.
 			controllerutil.RemoveFinalizer(cronJob, myFinalizerName)
