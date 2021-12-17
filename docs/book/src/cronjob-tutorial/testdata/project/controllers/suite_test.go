@@ -1,11 +1,4 @@
 /*
-When we created the CronJob API with `kubebuilder create api` in a [previous chapter](/cronjob-tutorial/new-api.md), Kubebuilder already did some test work for you.
-Kubebuilder scaffolded a `controllers/suite_test.go` file that does the bare bones of setting up a test environment.
-
-First, it will contain the necessary imports.
-*/
-
-/*
 Copyright 2022 The Kubernetes authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,6 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 // +kubebuilder:docs-gen:collapse=Apache License
+
+/*
+When we created the CronJob API with `kubebuilder create api` in a [previous chapter](/cronjob-tutorial/new-api.md), Kubebuilder already did some test work for you.
+Kubebuilder scaffolded a `controllers/suite_test.go` file that does the bare bones of setting up a test environment.
+
+First, it will contain the necessary imports.
+*/
+
 package controllers
 
 import (
