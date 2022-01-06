@@ -27,7 +27,7 @@ var configFile string
 flag.StringVar(&configFile, "config", "",
     "The controller will load its initial configuration from this file. "+
         "Omit this flag to use the default configuration values. "+
-        "Command-line flags override configuration from this file."
+            "Command-line flags override configuration from this file.")
 ```
 
 Now, we can setup the `Options` struct and check if the `configFile` is set,
