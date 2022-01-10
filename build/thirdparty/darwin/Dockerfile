@@ -17,7 +17,7 @@
 # - kubectl (fetch)
 # - etcd (fetch)
 
-FROM golang:1.16 as builder
+FROM golang:1.17 as builder
 
 # Version and platform args.
 ARG KUBERNETES_VERSION
