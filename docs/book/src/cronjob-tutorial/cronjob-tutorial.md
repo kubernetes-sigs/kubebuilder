@@ -69,3 +69,6 @@ Otherwise `--repo=<module path>` must be set.
 Read the [Go modules blogpost][go-modules-blogpost] if unfamiliar with the module system.
 
 </aside>
+
+[GOPATH-golang-docs]: https://golang.org/doc/code.html#GOPATH
+[go-modules-blogpost]: https://blog.golang.org/using-go-modules

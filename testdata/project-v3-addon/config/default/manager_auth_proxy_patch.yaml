@@ -15,11 +15,18 @@ spec:
         - "--secure-listen-address=0.0.0.0:8443"
         - "--upstream=http://127.0.0.1:8080/"
         - "--logtostderr=true"
-        - "--v=10"
+        - "--v=0"
         ports:
         - containerPort: 8443
           protocol: TCP
           name: https
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 5m
+            memory: 64Mi
       - name: manager
         args:
         - "--health-probe-bind-address=:8081"

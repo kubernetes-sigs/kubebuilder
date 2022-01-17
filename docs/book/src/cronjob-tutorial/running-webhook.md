@@ -19,14 +19,14 @@ You need to follow [this](./cert-manager.md) to install the cert manager bundle.
 Run the following command to build your image locally.
 
 ```bash
-make docker-build
+make docker-build docker-push IMG=<some-registry>/<project-name>:tag
 ```
 
 You don't need to push the image to a remote container registry if you are using
-a kind cluster. You can directly load your local image to your kind cluster:
+a kind cluster. You can directly load your local image to your specified kind cluster:
 
 ```bash
-kind load docker-image your-image-name:your-tag
+kind load docker-image <your-image-name>:tag --name <your-kind-cluster-name>
 ```
 
 ## Deploy Webhooks
@@ -50,7 +50,7 @@ Now you can deploy it to your cluster by
 make deploy IMG=<some-registry>/<project-name>:tag
 ```
 
-Wait a while til the webhook pod comes up and the certificates are provisioned.
+Wait a while till the webhook pod comes up and the certificates are provisioned.
 It usually completes within 1 minute.
 
 Now you can create a valid CronJob to test your webhooks. The creation should

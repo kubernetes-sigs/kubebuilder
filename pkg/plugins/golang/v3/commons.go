@@ -1,5 +1,5 @@
 /*
-Copyright 2021 The Kubernetes Authors.
+Copyright 2022 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -79,7 +79,7 @@ manifests: controller-gen`
 		}
 
 		if err := util.ReplaceInFile("Makefile",
-			"ENVTEST_K8S_VERSION = 1.22",
+			"ENVTEST_K8S_VERSION = 1.23",
 			"ENVTEST_K8S_VERSION = 1.21"); err != nil {
 			log.Warnf("unable to update the Makefile with %s: %s", "ENVTEST_K8S_VERSION = 1.21", err)
 		}
@@ -95,21 +95,60 @@ manifests: controller-gen`
 		}
 
 		if err := util.ReplaceInFile("go.mod",
-			"k8s.io/api v0.22.1",
+			"k8s.io/api v0.23.0",
 			"k8s.io/api v0.21.2"); err != nil {
 			log.Warnf("unable to update the go.mod with k8s.io/api v0.21.2: %s", err)
 		}
 
 		if err := util.ReplaceInFile("go.mod",
-			"k8s.io/apimachinery v0.22.1",
+			"k8s.io/apimachinery v0.23.0",
 			"k8s.io/apimachinery v0.21.2"); err != nil {
 			log.Warnf("unable to update the go.mod with k8s.io/apimachinery v0.21.2: %s", err)
 		}
 
 		if err := util.ReplaceInFile("go.mod",
-			"k8s.io/apimachinery v0.22.1",
-			"k8s.io/apimachinery v0.21.2"); err != nil {
-			log.Warnf("unable to update the go.mod with k8s.io/apimachinery v0.21.2: %s", err)
+			"k8s.io/client-go v0.23.0",
+			"k8s.io/client-go v0.21.2"); err != nil {
+			log.Warnf("unable to update the go.mod with k8s.io/client-go v0.21.2: %s", err)
+		}
+
+		// During the scaffolding phase, this gets added to go.mod file, running go mod tidy bumps back
+		// the version from 21.2 to the latest
+		if err := util.ReplaceInFile("go.mod",
+			"k8s.io/api v0.23.0",
+			"k8s.io/api v0.21.2"); err != nil {
+			log.Warnf("unable to update the go.mod with k8s.io/api v0.21.2: %s", err)
+		}
+
+		if err := util.ReplaceInFile("go.mod",
+			"k8s.io/apiextensions-apiserver v0.23.0",
+			"k8s.io/apiextensions-apiserver v0.21.2"); err != nil {
+			log.Warnf("unable to update the go.mod with k8s.io/apiextensions-apiserver v0.21.2: %s", err)
+		}
+
+		if err := util.ReplaceInFile("go.mod",
+			"k8s.io/component-base v0.23.0",
+			"k8s.io/component-base v0.21.2"); err != nil {
+			log.Warnf("unable to update the go.mod with k8s.io/component-base v0.21.2: %s", err)
+		}
+
+		// Cannot use v1+ unless controller runtime is v0.11
+		if err := util.ReplaceInFile("go.mod",
+			"github.com/go-logr/logr v1.2.0",
+			"github.com/go-logr/logr v0.4.0"); err != nil {
+			log.Warnf("unable to update the go.mod with github.com/go-logr/logr v0.4.0: %s", err)
+		}
+
+		if err := util.ReplaceInFile("go.mod",
+			"github.com/go-logr/zapr v1.2.0",
+			"github.com/go-logr/zapr v0.4.0"); err != nil {
+			log.Warnf("unable to update the go.mod with github.com/go-logr/zapr v0.4.0: %s", err)
+		}
+
+		if err := util.ReplaceInFile("go.mod",
+			"k8s.io/klog/v2 v2.30.0",
+			"k8s.io/klog/v2 v2.9.0"); err != nil {
+			log.Warnf("unable to update the go.mod with k8s.io/klog/v2 v2.9.0: %s", err)
 		}
 
 		err = util.RunCmd("Update dependencies", "go", "mod", "tidy")

@@ -1,5 +1,5 @@
 /*
-Copyright 2021 The Kubernetes Authors.
+Copyright 2022 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ func (p *initSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *
 	subcmdMeta.Examples = fmt.Sprintf(`  # Initialize a common project with your domain and name in copyright
   %[1]s init --plugins common/v3 --domain example.org
 
-  # Initialize a common project defining an specific project version
+  # Initialize a common project defining a specific project version
   %[1]s init --plugins common/v3 --project-version 3
 `, cliMeta.CommandName)
 }

@@ -23,7 +23,7 @@ Including:
 
 #### Kubernetes API extension developers
 
-API extension developers will learn the principals and concepts behind implementing canonical
+API extension developers will learn the principles and concepts behind implementing canonical
 Kubernetes APIs, as well as simple tools and libraries for rapid execution.  This
 book covers pitfalls and misconceptions that extension developers commonly encounter.
 
