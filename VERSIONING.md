@@ -103,4 +103,4 @@ to plugin `go.kubebuilder.io`, and can only be merged into plugin version `v3-al
 This plugin's package should exist already.
 
 [kb-releases]:https://github.com/kubernetes-sigs/kubebuilder/releases
-[cli-plugins-versioning]:docs/book/src/plugins/cli-plugins.md
+[cli-plugins-versioning]:docs/book/src/plugins/extending-cli.md#plugin-versioning
