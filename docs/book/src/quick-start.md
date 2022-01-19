@@ -9,7 +9,13 @@ This Quick Start guide will cover:
 
 ## Prerequisites
 
+<<<<<<< HEAD
 - [go](https://golang.org/dl/) version v1.19.0+
+=======
+- [go](https://golang.org/dl/) version v1.15+ (kubebuilder v3.0 < v3.1).
+- [go](https://golang.org/dl/) version v1.16+ (kubebuilder v3.1 < v3.3).
+- [go](https://golang.org/dl/) version v1.17+ (kubebuilder v3.3+).
+>>>>>>> 1b016c51 (Update go prerequisites for the 3.3 release)
 - [docker](https://docs.docker.com/install/) version 17.03+.
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) version v1.11.3+.
 - Access to a Kubernetes v1.11.3+ cluster.
@@ -105,7 +111,11 @@ and the `controllers/guestbook_controller.go` where the reconciliation business 
 logic. For more info see [Designing an API](/cronjob-tutorial/api-design.md) and [What's in
 a Controller](cronjob-tutorial/controller-overview.md).
 
+<<<<<<< HEAD
 If you are editing the API definitions, generate the manifests such as Custom Resources (CRs) or Custom Resource Defintions (CRDs) using
+=======
+If you are editing the API definitions, generate the manifests such as CRs or CRDs using
+>>>>>>> 1b016c51 (Update go prerequisites for the 3.3 release)
 ```bash
 make manifests
 ```
