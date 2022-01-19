@@ -199,6 +199,11 @@ make deploy IMG=<some-registry>/<project-name>:tag
 ```
 
 <aside class="note">
+<h1>registry permission</h1>
+
+This image ought to be published in the personal registry you specified. And it is required to have access to pull the image from the working environment. 
+Make sure you have the proper permission to the registry if the above commands don't work.
+
 <h1>RBAC errors</h1>
 
 If you encounter RBAC errors, you may need to grant yourself cluster-admin
