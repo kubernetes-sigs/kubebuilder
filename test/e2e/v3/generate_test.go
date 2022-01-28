@@ -198,32 +198,95 @@ Count int `+"`"+`json:"count,omitempty"`+"`"+`
 		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 		"#- webhookcainjection_patch.yaml", "#")).To(Succeed())
 	ExpectWithOffset(1, pluginutil.UncommentCode(filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
-		`#- name: CERTIFICATE_NAMESPACE # namespace of the certificate CR
-#  objref:
-#    kind: Certificate
-#    group: cert-manager.io
-#    version: v1
-#    name: serving-cert # this name should match the one in certificate.yaml
-#  fieldref:
-#    fieldpath: metadata.namespace
-#- name: CERTIFICATE_NAME
-#  objref:
-#    kind: Certificate
-#    group: cert-manager.io
-#    version: v1
-#    name: serving-cert # this name should match the one in certificate.yaml
-#- name: SERVICE_NAMESPACE # namespace of the service
-#  objref:
-#    kind: Service
-#    version: v1
-#    name: webhook-service
-#  fieldref:
-#    fieldpath: metadata.namespace
-#- name: SERVICE_NAME
-#  objref:
-#    kind: Service
-#    version: v1
-#    name: webhook-service`, "#")).To(Succeed())
+		`#replacements:
+#  - source: # Add cert-manager annotation to ValidatingWebhookConfiguration, MutatingWebhookConfiguration and CRDs
+#      kind: Certificate
+#      group: cert-manager.io
+#      version: v1
+#      name: serving-cert # this name should match the one in certificate.yaml
+#      fieldPath: .metadata.namespace # namespace of the certificate CR
+#    targets:
+#      - select:
+#          kind: ValidatingWebhookConfiguration
+#        fieldPaths:
+#          - .metadata.annotations.[cert-manager.io/inject-ca-from]
+#        options:
+#          delimiter: '/'
+#          index: 0
+#      - select:
+#          kind: MutatingWebhookConfiguration
+#        fieldPaths:
+#          - .metadata.annotations.[cert-manager.io/inject-ca-from]
+#        options:
+#          delimiter: '/'
+#          index: 0
+#      - select:
+#          kind: CustomResourceDefinition
+#        fieldPaths:
+#          - .metadata.annotations.[cert-manager.io/inject-ca-from]
+#        options:
+#          delimiter: '/'
+#          index: 0
+#  - source:
+#      kind: Certificate
+#      group: cert-manager.io
+#      version: v1
+#      name: serving-cert # this name should match the one in certificate.yaml
+#      fieldPath: .metadata.name
+#    targets:
+#      - select:
+#          kind: ValidatingWebhookConfiguration
+#        fieldPaths:
+#          - .metadata.annotations.[cert-manager.io/inject-ca-from]
+#        options:
+#          delimiter: '/'
+#          index: 1
+#      - select:
+#          kind: MutatingWebhookConfiguration
+#        fieldPaths:
+#          - .metadata.annotations.[cert-manager.io/inject-ca-from]
+#        options:
+#          delimiter: '/'
+#          index: 1
+#      - select:
+#          kind: CustomResourceDefinition
+#        fieldPaths:
+#          - .metadata.annotations.[cert-manager.io/inject-ca-from]
+#        options:
+#          delimiter: '/'
+#          index: 1
+#  - source: # Add cert-manager annotation to the webhook Service
+#      kind: Service
+#      version: v1
+#      name: webhook-service
+#      fieldPath: .metadata.name # namespace of the service
+#    targets:
+#      - select:
+#          kind: Certificate
+#          group: cert-manager.io
+#          version: v1
+#        fieldPaths:
+#          - .spec.dnsNames.0
+#          - .spec.dnsNames.1
+#        options:
+#          delimiter: '.'
+#          index: 0
+#  - source:
+#      kind: Service
+#      version: v1
+#      name: webhook-service
+#      fieldPath: .metadata.namespace # namespace of the service
+#    targets:
+#      - select:
+#          kind: Certificate
+#          group: cert-manager.io
+#          version: v1
+#        fieldPaths:
+#          - .spec.dnsNames.0
+#          - .spec.dnsNames.1
+#        options:
+#          delimiter: '.'
+#          index: 1`, "#")).To(Succeed())
 
 	if crdAndWebhookVersion == "v1beta1" {
 		_ = pluginutil.RunCmd("Update dependencies", "go", "mod", "tidy")
