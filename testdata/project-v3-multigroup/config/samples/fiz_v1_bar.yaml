@@ -1,0 +1,6 @@
+apiVersion: fiz.testproject.org/v1
+kind: Bar
+metadata:
+  name: bar-sample
+spec:
+  # TODO(user): Add fields here
