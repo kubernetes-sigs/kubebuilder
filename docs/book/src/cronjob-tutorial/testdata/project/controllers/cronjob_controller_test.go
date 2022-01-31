@@ -1,9 +1,4 @@
 /*
-Ideally, we should have one `<kind>_controller_test.go` for each controller scaffolded and called in the `suite_test.go`.
-So, let's write our example test for the CronJob controller (`cronjob_controller_test.go.`)
-*/
-
-/*
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,6 +13,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 // +kubebuilder:docs-gen:collapse=Apache License
+
+/*
+Ideally, we should have one `<kind>_controller_test.go` for each controller scaffolded and called in the `suite_test.go`.
+So, let's write our example test for the CronJob controller (`cronjob_controller_test.go.`)
+*/
 
 /*
 As usual, we start with the necessary imports. We also define some utility variables.

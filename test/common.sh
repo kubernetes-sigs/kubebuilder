@@ -140,3 +140,13 @@ function is_installed {
   fi
   return 1
 }
+
+function listPkgDirs() {
+	go list -f '{{.Dir}}' ./... | grep -v generated
+}
+
+#Lists all go files
+function listFiles() {
+	# pipeline is much faster than for loop
+	listPkgDirs | xargs -I {} find {} \( -name '*.go' -o -name '*.sh' \)  | grep -v generated
+}
