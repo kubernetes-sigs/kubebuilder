@@ -94,6 +94,9 @@ function scaffold_test_project {
     $kb create api --group foo.policy --version v1 --kind HealthCheckPolicy --controller=true --resource=true --make=false
 
     $kb create api --group apps --version v1 --kind Deployment --controller=true --resource=false --make=false
+    
+    $kb create api --group foo --version v1 --kind Bar --controller=true --resource=true --make=false
+    $kb create api --group fiz --version v1 --kind Bar --controller=true --resource=true --make=false
 
     if [ $project == "project-v3-multigroup" ]; then
       $kb create api --version v1 --kind Lakers --controller=true --resource=true --make=false

@@ -47,6 +47,26 @@ rules:
   - patch
   - update
 - apiGroups:
+  - fiz.testproject.org
+  resources:
+  - bars
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - fiz.testproject.org
+  resources:
+  - bars/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - foo.policy.testproject.org
   resources:
   - healthcheckpolicies
@@ -62,6 +82,26 @@ rules:
   - foo.policy.testproject.org
   resources:
   - healthcheckpolicies/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - foo.testproject.org
+  resources:
+  - bars
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - foo.testproject.org
+  resources:
+  - bars/status
   verbs:
   - get
   - patch

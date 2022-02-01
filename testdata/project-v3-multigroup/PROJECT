@@ -89,6 +89,24 @@ resources:
     namespaced: true
   controller: true
   domain: testproject.org
+  group: foo
+  kind: Bar
+  path: sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/apis/foo/v1
+  version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: testproject.org
+  group: fiz
+  kind: Bar
+  path: sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/apis/fiz/v1
+  version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: testproject.org
   kind: Lakers
   path: sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/apis/v1
   version: v1

@@ -23,4 +23,10 @@ resources:
 - group: foo.policy
   kind: HealthCheckPolicy
   version: v1
+- group: foo
+  kind: Bar
+  version: v1
+- group: fiz
+  kind: Bar
+  version: v1
 version: "2"
