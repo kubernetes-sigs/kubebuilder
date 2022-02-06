@@ -21,7 +21,7 @@ jobs:
         with:
           go-version: '1.17'
       - name: Execute go-apidiff
-        uses: joelanford/go-apidiff@v0.1.0
+        uses: joelanford/go-apidiff@v0.2.0
         with:
           compare-imports: true
           print-compatible: true
