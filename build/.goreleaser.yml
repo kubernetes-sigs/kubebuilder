@@ -42,6 +42,7 @@ builds:
       - linux_arm64
       - linux_ppc64le
       - darwin_amd64
+      - darwin_arm64
     env:
       - KUBERNETES_VERSION=1.23.1
       - CGO_ENABLED=0
