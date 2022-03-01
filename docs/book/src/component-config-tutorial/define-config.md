@@ -7,6 +7,6 @@ values that are passed into the controller, to do this we can take a look at
 {{#literatego ./testdata/controller_manager_config.yaml}}
 
 To see all the available fields you can look at the `v1alpha` Controller
-Runtime config [ControllerManagerConfiguration](configtype)
+Runtime config [ControllerManagerConfiguration][configtype]
 
 [configtype]: https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/config/v1alpha1#ControllerManagerConfigurationSpec
