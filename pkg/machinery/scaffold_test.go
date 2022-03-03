@@ -18,8 +18,7 @@ import (
 	"errors"
 	"os"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/extensions/table"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
 
@@ -355,7 +354,7 @@ func init() {
 	if err := something(); err != nil {
 		return err
 	}
-	
+
 	//+kubebuilder:scaffold:-
 }
 `,
@@ -365,7 +364,7 @@ func init() {
 	if err := something(); err != nil {
 		return err
 	}
-	
+
 	//+kubebuilder:scaffold:-
 }
 `,

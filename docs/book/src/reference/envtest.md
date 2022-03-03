@@ -94,7 +94,7 @@ You can use environment variables and/or flags to specify the `kubectl`,`api-ser
 See that the `test` makefile target will ensure that all is properly setup when you are using it. However, if you would like to run the tests without use the Makefile targets, for example via an IDE, then you can set the environment variables directly in the code of your `suite_test.go`:
 
 ```go
-var _ = BeforeSuite(func(done Done) {
+var _ = BeforeSuite(func() {
 	Expect(os.Setenv("TEST_ASSET_KUBE_APISERVER", "../testbin/bin/kube-apiserver")).To(Succeed())
 	Expect(os.Setenv("TEST_ASSET_ETCD", "../testbin/bin/etcd")).To(Succeed())
 	Expect(os.Setenv("TEST_ASSET_KUBECTL", "../testbin/bin/kubectl")).To(Succeed())
@@ -104,9 +104,7 @@ var _ = BeforeSuite(func(done Done) {
 
 	_, err := testenv.Start()
 	Expect(err).NotTo(HaveOccurred())
-
-	close(done)
-}, 60)
+})
 
 var _ = AfterSuite(func() {
 	Expect(testenv.Stop()).To(Succeed())

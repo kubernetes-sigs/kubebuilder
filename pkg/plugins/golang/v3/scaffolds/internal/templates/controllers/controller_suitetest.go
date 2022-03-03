@@ -130,7 +130,9 @@ package controllers
 import (
 	"path/filepath"
 	"testing"
-	. "github.com/onsi/ginkgo"
+{{ if eq .Resource.API.CRDVersion "v1beta1" }}
+	. "github.com/onsi/ginkgo"{{ else }}
+	. "github.com/onsi/ginkgo/v2"{{ end }}
 	. "github.com/onsi/gomega"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -152,9 +154,11 @@ var testEnv *envtest.Environment
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
 
+{{ if eq .Resource.API.CRDVersion "v1beta1" }}
 	RunSpecsWithDefaultAndCustomReporters(t,
 	"Controller Suite",
-	[]Reporter{printer.NewlineReporter{}})
+	[]Reporter{printer.NewlineReporter{}}){{ else }}
+	RunSpecs(t, "Controller Suite"){{ end }}
 }
 
 var _ = BeforeSuite(func() {
@@ -176,7 +180,11 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
+{{ if eq .Resource.API.CRDVersion "v1beta1" }}
 }, 60)
+{{ else }}
+})
+{{ end }}
 
 var _ = AfterSuite(func() {
 	By("tearing down the test environment")

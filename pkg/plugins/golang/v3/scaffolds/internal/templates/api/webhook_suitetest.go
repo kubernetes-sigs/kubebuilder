@@ -143,7 +143,9 @@ import (
 	"testing"
 	"fmt"
 
-	. "github.com/onsi/ginkgo"
+{{ if eq .Resource.Webhooks.WebhookVersion "v1beta1" }}
+	. "github.com/onsi/ginkgo"{{ else }}
+	. "github.com/onsi/ginkgo/v2"{{ end }}
 	. "github.com/onsi/gomega"
 	%s
 	"k8s.io/client-go/kubernetes/scheme"
@@ -169,9 +171,11 @@ var cancel context.CancelFunc
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
 
+{{ if eq .Resource.Webhooks.WebhookVersion "v1beta1" }}
 	RunSpecsWithDefaultAndCustomReporters(t,
 	"Webhook Suite",
-	[]Reporter{printer.NewlineReporter{}})
+	[]Reporter{printer.NewlineReporter{}}){{ else }}
+	RunSpecs(t, "Webhook Suite"){{ end }}
 }
 
 var _ = BeforeSuite(func() {
@@ -234,7 +238,11 @@ var _ = BeforeSuite(func() {
 		return nil
 	}).Should(Succeed())
 
+{{ if eq .Resource.Webhooks.WebhookVersion "v1beta1" }}
 }, 60)
+{{ else }}
+})
+{{ end }}
 
 var _ = AfterSuite(func() {
 	cancel()
