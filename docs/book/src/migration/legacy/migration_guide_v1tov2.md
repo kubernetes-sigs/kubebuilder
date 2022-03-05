@@ -96,7 +96,7 @@ We can replace the `+k8s:deepcopy-gen:interfaces=...` marker (which is
 `+kubebuilder:object:root=true`.
 
 We don't need the following markers any more (they're not used anymore, and are
-relics from much older versions of KubeBuilder):
+relics from much older versions of Kubebuilder):
 
 ```go
 // +genclient

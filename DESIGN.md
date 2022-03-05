@@ -1,6 +1,6 @@
-# KubeBuilder Design Principles
+# Kubebuilder Design Principles
 
-This lays out some of the guiding design principles behind the KubeBuilder
+This lays out some of the guiding design principles behind the Kubebuilder
 project and its various components.
 
 ## Overarching
@@ -26,15 +26,15 @@ project and its various components.
   coding, and it may involve interoperating with lower-level components,
   but it should be possible without unreasonable friction.
 
-## KubeBuilder
+## Kubebuilder
 
-* **KubeBuilder Has Opinions**: KubeBuilder exists as an opinionated
+* **Kubebuilder Has Opinions**: Kubebuilder exists as an opinionated
   project generator.  It should strive to give users a reasonable project
   layout that's simple enough to understand when getting started, but
   provides room to grow.  It might not match everyone's opinions, but it
   should strive to be useful to most.
 
-* **Batteries Included**: KubeBuilder projects should contain enough
+* **Batteries Included**: Kubebuilder projects should contain enough
   deployment information to reasonably develop and run the scaffolded
   project.  This includes testing, deployment files, and development
   infrastructure to go from code to running containers.
