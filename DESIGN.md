@@ -99,7 +99,7 @@ project and its various components.
 
 * **Well-commented code**: Code should be commented and given Godocs, even
   private methods and functions. It may *seem* obvious what they do at the
-  time and why, but you might forget, and other will certainly come along.
+  time and why, but you might forget, and others will certainly come along.
 
 * **Test Behaviors**: Test cases should be comprehensible as sets of
   expected behaviors.  Test cases read without code (e.g. just using `It`,
