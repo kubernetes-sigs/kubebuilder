@@ -25,7 +25,7 @@ function convert_to_tools_ver {
   # Tests in 1.20 and 1.21 with their counterpart version's apiserver.
   "1.20"|"1.21") echo "1.19.2";;
   "1.22") echo "1.22.1";;
-  "1.23") echo "1.23.1";;
+  "1.23") echo "1.23.3";;
   *)
     echo "k8s version $k8s_ver not supported"
     exit 1
@@ -45,7 +45,7 @@ if [ -n "$TRACE" ]; then
   set -x
 fi
 
-export KIND_K8S_VERSION="${KIND_K8S_VERSION:-"v1.23.1"}"
+export KIND_K8S_VERSION="${KIND_K8S_VERSION:-"v1.23.3"}"
 tools_k8s_version=$(convert_to_tools_ver "${KIND_K8S_VERSION#v*}")
 kind_version=0.11.1
 goarch=amd64
