@@ -7,7 +7,7 @@ Supports:
 - Generating CRDs and RBAC from code
 - Generating webhook certificates for development
 - Selectively enabling / disabling components such as prometheus and webhooks
-  - See [types.go](apis/v1alpha1/types.go) for a list of components
+  - See [types.go](types.go) for a list of components
 
 ## Usage
 

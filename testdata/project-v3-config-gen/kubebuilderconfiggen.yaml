@@ -1,0 +1,69 @@
+apiVersion: kubebuilder.sigs.k8s.io/v1alpha1
+kind: KubebuilderConfigGen
+
+metadata:
+  # name of the project.  used in various resource names.
+  # required
+  name: project-v3-config-gen-controller-manager
+
+  # namespace for the project
+  # optional -- defaults to "${metadata.name}-system"
+  namespace: project-v3-config-gen-system
+
+spec:
+  # configure how CRDs are generated
+  crds:
+    # path to go module source directory provided to controller-gen libraries
+    # optional -- defaults to '.'
+    sourceDirectory: ./api/...
+
+  # configure how the controller-manager is generated
+  controllerManager:
+    # image to run
+    image: testproject.org/project-v3-config-gen:v0.1.0
+
+    # if set, use component config for the controller-manager
+    # optional -- defaults to "enable: false"
+    componentConfig:
+      # use component config
+      enable: false
+
+      # path to component config to put into a ConfigMap
+      configFilepath: controller_manager_config.yaml
+
+    # configure how metrics are exposed
+    # uncomment to expose metrics configuration
+    # optional -- defaults to not generating metrics configuration
+    #metrics:
+    #  # disable the auth proxy required for scraping metrics
+    #  disable: false
+    #
+    #  # generate prometheus ServiceMonitor resource
+    #  enableServiceMonitor: true
+
+  # configure how webhooks are generated
+  # uncomment to expose webhook configuration
+  # optional -- defaults to not generating webhook configuration
+  #webhooks:
+  #  # enable will cause webhook config to be generated
+  #  enable: true
+  #
+  #  # configures crds which use conversion webhooks
+  #  enableConversion:
+  #    # key is the name of the CRD. For example:
+  #    # bars.example.my.domain: false
+  #    #+kubebuilder:scaffold:crdName
+  #
+  #  # configures where to get the certificate used for webhooks
+  #  # discriminated union
+  #  certificateSource:
+  #    # type of certificate source
+  #    # one of ["certManager", "dev", "manual"] -- defaults to "manual"
+  #    # certManager: certmanager is used to manage certificates -- requires CertManager to be installed
+  #    # dev: certificate is generated and wired into resources
+  #    # manual: no certificate is generated or wired into resources
+  #    type: "dev"
+  #
+  #    # options for a dev certificate -- requires "dev" as the type
+  #    devCertificate:
+  #      duration: 1h

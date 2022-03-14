@@ -22,8 +22,10 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/cli"
 	cfgv2 "sigs.k8s.io/kubebuilder/v3/pkg/config/v2"
 	cfgv3 "sigs.k8s.io/kubebuilder/v3/pkg/config/v3"
+	"sigs.k8s.io/kubebuilder/v3/pkg/model/stage"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	kustomizecommonv1 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v1"
+	configgenv1alpha "sigs.k8s.io/kubebuilder/v3/pkg/plugins/config-gen/v1alpha"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang"
 	declarativev1 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/declarative/v1"
 	golangv2 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2"
@@ -38,6 +40,11 @@ func main() {
 		golangv3.Plugin{},
 	)
 
+	goConfigGenv3Bundle, _ := plugin.NewBundle("go.config-gen", plugin.Version{Number: 1, Stage: stage.Alpha},
+		golangv3.Plugin{},
+		configgenv1alpha.Plugin{},
+	)
+
 	c, err := cli.New(
 		cli.WithCommandName("kubebuilder"),
 		cli.WithVersion(versionString()),
@@ -45,8 +52,10 @@ func main() {
 			golangv2.Plugin{},
 			golangv3.Plugin{},
 			gov3Bundle,
+			goConfigGenv3Bundle,
 			&kustomizecommonv1.Plugin{},
 			&declarativev1.Plugin{},
+			&configgenv1alpha.Plugin{},
 		),
 		cli.WithDefaultPlugins(cfgv2.Version, golangv2.Plugin{}),
 		cli.WithDefaultPlugins(cfgv3.Version, gov3Bundle),

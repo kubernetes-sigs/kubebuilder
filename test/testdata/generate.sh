@@ -70,6 +70,12 @@ function scaffold_test_project {
     fi
 
     $kb create api --group crew --version v1 --kind Laker --controller=true --resource=false --make=false
+  elif [ $project == "project-v3-config-gen" ]; then
+    header_text 'Creating APIs ...'
+    $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false
+    $kb create webhook --group crew --version v1 --kind Captain --defaulting --programmatic-validation
+    $kb create api --group crew --version v1 --kind Admiral --plural=admirales --controller=true --resource=true --namespaced=false --make=false
+    $kb create webhook --group crew --version v1 --kind Admiral --plural=admirales --defaulting
   elif [[ $project =~ multigroup ]]; then
     header_text 'Switching to multigroup layout ...'
     $kb edit --multigroup=true
@@ -113,7 +119,12 @@ function scaffold_test_project {
     $kb create webhook --group crew --version v1 --kind Admiral --defaulting --webhook-version=v1beta1
   fi
 
-  make generate manifests
+  if [ $project == "project-v3-config-gen" ]; then
+    $kb alpha config-gen ./kubebuilderconfiggen.yaml > project.yaml
+  else
+    make generate manifests
+  fi
+
   rm -f go.sum
 
   popd
@@ -131,3 +142,4 @@ scaffold_test_project project-v3-multigroup
 scaffold_test_project project-v3-addon --plugins="go/v3,declarative"
 scaffold_test_project project-v3-config --component-config
 scaffold_test_project project-v3-v1beta1
+scaffold_test_project project-v3-config-gen --plugins="go.config-gen/v1-alpha"
