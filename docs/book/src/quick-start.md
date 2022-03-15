@@ -93,7 +93,7 @@ and the `controllers/guestbook_controller.go` where the reconciliation business 
 logic. For more info see [Designing an API](/cronjob-tutorial/api-design.md) and [What's in
 a Controller](cronjob-tutorial/controller-overview.md).
 
-If you are editing the API definitions, generate the manifests such as CRs or CRDs using
+If you are editing the API definitions, generate the manifests such as Custom Resources (CRs) or Custom Resource Defintions (CRDs) using
 ```bash
 make manifests
 ```
@@ -178,7 +178,7 @@ make run
 
 ## Install Instances of Custom Resources
 
-If you pressed `y` for Create Resource [y/n] then you created an (CR)Custom Resource for your (CRD)Custom Resource Definition in your samples (make sure to edit them first if you've changed the
+If you pressed `y` for Create Resource [y/n] then you created a CR for your CRD in your samples (make sure to edit them first if you've changed the
 API definition):
 
 ```bash
