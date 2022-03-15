@@ -92,8 +92,7 @@ This marker is responsible for generating a validating webhook manifest.
 //+kubebuilder:webhook:verbs=create;update;delete,path=/validate-batch-tutorial-kubebuilder-io-v1-cronjob,mutating=false,failurePolicy=fail,groups=batch.tutorial.kubebuilder.io,resources=cronjobs,versions=v1,name=vcronjob.kb.io,sideEffects=None,admissionReviewVersions=v1
 
 /*
-Now let's see how to validate our CRD beyond what's possible with declarative
-validation.
+To validate our CRD beyond what's possible with declarative validation.
 Generally, declarative validation should be sufficient, but sometimes more
 advanced use cases call for complex validation.
 

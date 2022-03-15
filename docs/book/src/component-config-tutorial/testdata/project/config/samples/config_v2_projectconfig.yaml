@@ -3,4 +3,4 @@ kind: ProjectConfig
 metadata:
   name: projectconfig-sample
 spec:
-  # Add fields here
+  # TODO(user): Add fields here
