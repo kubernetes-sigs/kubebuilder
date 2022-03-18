@@ -1,6 +1,6 @@
 # Markers for Config/Code Generation
 
-KubeBuilder makes use of a tool called
+Kubebuilder makes use of a tool called
 [controller-gen](/reference/controller-gen.md) for
 generating utility code and Kubernetes YAML.  This code and config
 generation is controlled by the presence of special "marker comments" in
@@ -31,9 +31,9 @@ a marker name, optionally followed by some marker specific configuration:
 See each subsection for information about different types of code and YAML
 generation.
 
-## Generating Code & Artifacts in KubeBuilder
+## Generating Code & Artifacts in Kubebuilder
 
-KubeBuilder projects have two `make` targets that make use of
+Kubebuilder projects have two `make` targets that make use of
 controller-gen:
 
 - `make manifests` generates Kubernetes object YAML, like

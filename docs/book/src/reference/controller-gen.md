@@ -1,6 +1,6 @@
 # controller-gen CLI
 
-KubeBuilder makes use of a tool called
+Kubebuilder makes use of a tool called
 [controller-gen](https://sigs.k8s.io/controller-tools/cmd/controller-gen)
 for generating utility code and Kubernetes YAML.  This code and config
 generation is controlled by the presence of special ["marker

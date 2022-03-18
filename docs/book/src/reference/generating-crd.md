@@ -1,6 +1,6 @@
 # Generating CRDs
 
-KubeBuilder uses a tool called [`controller-gen`][controller-tools] to
+Kubebuilder uses a tool called [`controller-gen`][controller-tools] to
 generate utility code and Kubernetes object YAML, like
 CustomResourceDefinitions.
 
@@ -10,7 +10,7 @@ packages.  In the case of CRDs, these are generally pulled from your
 `_types.go` files.  For more information on markers, see the [marker
 reference docs][marker-ref].
 
-KubeBuilder provides a `make` target to run controller-gen and generate
+Kubebuilder provides a `make` target to run controller-gen and generate
 CRDs: `make manifests`.
 
 When you run `make manifests`, you should see CRDs generated under the
@@ -157,7 +157,7 @@ in your CRD, and use a webhook to convert between them.
 For more details on this process, see the [multiversion
 tutorial](/multiversion-tutorial/tutorial.md).
 
-By default, KubeBuilder disables generating different validation for
+By default, Kubebuilder disables generating different validation for
 different versions of the Kind in your CRD, to be compatible with older
 Kubernetes versions.
 
@@ -194,7 +194,7 @@ to `CRD_OPTIONS ?= crd:trivialVersions=true`
 
 ## Under the hood
 
-KubeBuilder scaffolds out make rules to run `controller-gen`.  The rules
+Kubebuilder scaffolds out make rules to run `controller-gen`.  The rules
 will automatically install controller-gen if it's not on your path using
 `go install` with Go modules.
 

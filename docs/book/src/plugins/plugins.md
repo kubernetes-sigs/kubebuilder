@@ -1,6 +1,6 @@
 # Plugins
 
-Since the `3.0.0` KubeBuilder version, preliminary support for plugins was added. You can [Extend the CLI and Scaffolds][extending-cli] as well. See that when users run the CLI commands to perform the scaffolds, the plugins are used:
+Since the `3.0.0` Kubebuilder version, preliminary support for plugins was added. You can [Extend the CLI and Scaffolds][extending-cli] as well. See that when users run the CLI commands to perform the scaffolds, the plugins are used:
 
 - To initialize a project with a chain of global plugins:
 

@@ -1,6 +1,6 @@
 <!--
 
-Hiya!  Welcome to KubeBuilder!  For a smooth PR process, please ensure
+Hiya!  Welcome to Kubebuilder!  For a smooth PR process, please ensure
 that you include the following information:
 
 * a description of the change

@@ -12,7 +12,7 @@ Kubebuilder increases velocity and reduces the complexity managed by
 developers for rapidly building and publishing Kubernetes APIs in Go.
 It builds on top of the canonical techniques used to build the core Kubernetes APIs to provide simple abstractions that reduce boilerplate and toil.
 
-**Note:** kubebuilder does not exist as an example to *copy-paste*, but instead provides powerful libraries and tools
+**Note:** Kubebuilder does not exist as an example to *copy-paste*, but instead provides powerful libraries and tools
 to simplify building and publishing Kubernetes APIs from scratch.
 
 Kubebuilder is developed on top of the controller-runtime and controller-tools libraries.
@@ -63,7 +63,7 @@ Building APIs using CRDs, Controllers and Admission Webhooks.
 
 ## Philosophy
 
-See [DESIGN.md](DESIGN.md) for the guiding principles of the various KubeBuilder projects.
+See [DESIGN.md](DESIGN.md) for the guiding principles of the various Kubebuilder projects.
 
 TL;DR:
 

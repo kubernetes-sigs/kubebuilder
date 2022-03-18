@@ -52,7 +52,7 @@ the version stored by the API server.
 In that case, the API server needs to know how to convert between the
 desired version and the stored version.  Since the conversions aren't
 built in for CRDs, the Kubernetes API server calls out to a webhook to do
-the conversion instead.  For KubeBuilder, this webhook is implemented by
+the conversion instead.  For Kubebuilder, this webhook is implemented by
 controller-runtime, and performs the hub-and-spoke conversions that we
 discussed above.
 
