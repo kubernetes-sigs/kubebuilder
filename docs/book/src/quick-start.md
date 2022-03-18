@@ -222,7 +222,7 @@ make uninstall
 
 ## Undeploy controller
 
-UnDeploy the controller to the cluster:
+Undeploy the controller to the cluster:
 
 ```bash
 make undeploy

@@ -54,7 +54,7 @@ The goal of this command is to create Custom Resource (CR) and Custom Resource D
 
 ## But, why create APIs at all?
 
-New APIs are how we teach Kubernetes about our custom objects. The Go structs are used to generate a Custom Resource Definition (CRD) which includes the schema for our data as well as tracking data like what our new type is called. We can then create instances of our custom objects which will be managed by our [controllers][controllers].
+New APIs are how we teach Kubernetes about our custom objects. The Go structs are used to generate a CRD which includes the schema for our data as well as tracking data like what our new type is called. We can then create instances of our custom objects which will be managed by our [controllers][controllers].
 
 Our APIs and resources represent our solutions on the clusters. Basically, the CRDs are a definition of our customized Objects, and the CRs are an instance of it.
 
@@ -70,7 +70,7 @@ The `Scheme` we saw before is simply a way to keep track of what Go type
 corresponds to a given GVK (don't be overwhelmed by its
 [godocs](https://pkg.go.dev/k8s.io/apimachinery/pkg/runtime?tab=doc#Scheme)).
 
-For instance, suppose we mark that the
+For instance, suppose we mark the
 `"tutorial.kubebuilder.io/api/v1".CronJob{}` type as being in the
 `batch.tutorial.kubebuilder.io/v1` API group (implicitly saying it has the
 Kind `CronJob`).
