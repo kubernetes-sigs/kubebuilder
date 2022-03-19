@@ -92,9 +92,9 @@ This marker is responsible for generating a validating webhook manifest.
 //+kubebuilder:webhook:verbs=create;update;delete,path=/validate-batch-tutorial-kubebuilder-io-v1-cronjob,mutating=false,failurePolicy=fail,groups=batch.tutorial.kubebuilder.io,resources=cronjobs,versions=v1,name=vcronjob.kb.io,sideEffects=None,admissionReviewVersions=v1
 
 /*
-To validate our CRD beyond what's possible with declarative validation.
-Generally, declarative validation should be sufficient, but sometimes more
-advanced use cases call for complex validation.
+We can validate our CRD beyond what's possible with declarative
+validation. Generally, declarative validation should be sufficient, but
+sometimes more advanced use cases call for complex validation.
 
 For instance, we'll see below that we use this to validate a well-formed cron
 schedule without making up a long regular expression.
@@ -103,7 +103,7 @@ If `webhook.Validator` interface is implemented, a webhook will automatically be
 served that calls the validation.
 
 The `ValidateCreate`, `ValidateUpdate` and `ValidateDelete` methods are expected
-to validate that its receiver upon creation, update and deletion respectively.
+to validate its receiver upon creation, update and deletion respectively.
 We separate out ValidateCreate from ValidateUpdate to allow behavior like making
 certain fields immutable, so that they can only be set on creation.
 ValidateDelete is also separated from ValidateUpdate to allow different
