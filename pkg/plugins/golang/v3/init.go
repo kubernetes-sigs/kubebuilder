@@ -35,8 +35,8 @@ import (
 
 // Variables and function to check Go version requirements.
 var (
-	goVerMin = golang.MustParse("go1.16")
-	goVerMax = golang.MustParse("go2.0alpha1")
+	goVerMin = golang.MustParse("go1.17")
+	goVerMax = golang.MustParse("go1.18")
 )
 
 var _ plugin.InitSubcommand = &initSubcommand{}
