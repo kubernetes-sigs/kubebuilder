@@ -122,12 +122,12 @@ var _ = BeforeSuite(func() {
 		The only difference is that the manager is started in a separate goroutine so it does not block the cleanup of envtest
 		when you’re done running your tests.
 
-		Note that we set up both a "live" k8s client, separate from the manager.  This is because when making assertions in
-		tests, you generally want to assert against the live state of the API server.  If you used the client from the
-		manager (`k8sManager.GetClient`), you'd end up asserting against the contents of the cache instead, which is slower
-		and can introduce flakiness into your tests.  We could use the manager's `APIReader` to accomplish the same thing,
-		but that would leave us with two clients in our test assertions and setup (one for reading, one for writing), and
-		it'd be easy to make mistakes.
+		Note that we set up both a "live" k8s client and a separate client from the manager. This is because when making
+		assertions in tests, you generally want to assert against the live state of the API server. If you use the client
+		from the manager (`k8sManager.GetClient`), you'd end up asserting against the contents of the cache instead, which is
+		slower and can introduce flakiness into your tests. We could use the manager's `APIReader` to accomplish the same
+		thing, but that would leave us with two clients in our test assertions and setup (one for reading, one for writing),
+		and it'd be easy to make mistakes.
 
 		Note that we keep the reconciler running against the manager's cache client, though -- we want our controller to
 		behave as it would in production, and we use features of the cache (like indicies) in our controller which aren't
