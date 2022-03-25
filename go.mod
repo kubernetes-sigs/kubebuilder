@@ -1,6 +1,6 @@
 module sigs.k8s.io/kubebuilder/v3
 
-go 1.17
+go 1.18
 
 require (
 	github.com/cloudflare/cfssl v1.5.0 // for `kubebuilder alpha config-gen`

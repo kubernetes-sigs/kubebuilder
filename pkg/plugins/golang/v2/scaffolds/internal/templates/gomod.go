@@ -50,5 +50,6 @@ go 1.13
 
 require (
 	sigs.k8s.io/controller-runtime {{ .ControllerRuntimeVersion }}
+	golang.org/x/sys v0.0.0-20220330033206-e17cdc41300f // indirect; we enforce this version to supports go 1.18+
 )
 `
