@@ -45,7 +45,7 @@ Projects scaffolded with Kubebuilder v3 will use the `go.kubebuilder.io/v3` plug
   * Support for [controller-runtime][controller-runtime] `v0.8.3` (for `go/v2` it is `v0.6.4` and previously it was `v0.5.0`)
   * Support for [kustomize][kustomize] `v3.8.7` (for `go/v2` it is `v3.5.4` and previously it was `v3.1.0`)
   * Required Envtest binaries are automatically downloaded
-  * The minimum Go version is now `1.15` (previously it was `1.13).
+  * The minimum Go version is now `1.17` (previously it was `1.13).
 
 <aside class="note warning">
 <h1>Project customizations</h1>
