@@ -44,7 +44,7 @@ builds:
       - darwin_amd64
       - darwin_arm64
     env:
-      - KUBERNETES_VERSION=1.23.1
+      - KUBERNETES_VERSION=1.23.5
       - CGO_ENABLED=0
 
 # Only binaries of the form "kubebuilder_${goos}_${goarch}" will be released.
