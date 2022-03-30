@@ -63,10 +63,13 @@ func NewTestContext(binaryName string, env ...string) (*TestContext, error) {
 		ServiceAccount: fmt.Sprintf("e2e-%s-controller-manager", testSuffix),
 		CmdContext:     cc,
 	}
-	k8sVersion, err := kubectl.Version()
-	if err != nil {
-		return nil, err
-	}
+
+	// Try to populate the k8sVersion and ignore any error that might be faced.
+	// Note that, the k8sVersion is not an mandatory info and it is
+	// not required for ANY context of tests. For example, the testContext
+	// might be used to run a test outside of the cluster where this info is not
+	// available and not required at all.
+	k8sVersion, _ := kubectl.Version()
 
 	// Set CmdContext.Dir after running Kubectl.Version() because dir does not exist yet.
 	if cc.Dir, err = filepath.Abs("e2e-" + testSuffix); err != nil {
@@ -124,11 +127,14 @@ func (t *TestContext) makeCertManagerURL(hasv1beta1CRs bool) string {
 		return fmt.Sprintf(certmanagerURLTmpl, certmanagerVersionWithv1beta2CRs)
 	}
 
-	// Determine which URL to use for a manifest bundle with v1 CRs.
-	// The most up-to-date bundle uses v1 CRDs, which were introduced in k8s v1.16.
-	if ver := t.K8sVersion.ServerVersion; ver.GetMajorInt() <= 1 && ver.GetMinorInt() < 16 {
-		return fmt.Sprintf(certmanagerURLTmplLegacy, certmanagerLegacyVersion)
+	if err := t.RequiresK8SVersion(); err == nil {
+		// Determine which URL to use for a manifest bundle with v1 CRs.
+		// The most up-to-date bundle uses v1 CRDs, which were introduced in k8s v1.16.
+		if ver := t.K8sVersion.ServerVersion; ver.GetMajorInt() <= 1 && ver.GetMinorInt() < 16 {
+			return fmt.Sprintf(certmanagerURLTmplLegacy, certmanagerLegacyVersion)
+		}
 	}
+
 	return fmt.Sprintf(certmanagerURLTmpl, certmanagerVersion)
 }
 
@@ -176,6 +182,29 @@ func (t *TestContext) InstallPrometheusOperManager() error {
 	}
 	_, err := t.Kubectl.Apply(false, "-f", url)
 	return err
+}
+
+// RequiresK8SVersion will ensure that the textContext has the k8s version or return an error
+func (t *TestContext) RequiresK8SVersion() error {
+	if t.K8sVersion == nil {
+		// Use kubectl to get Kubernetes client and cluster version.
+		kubectl := &Kubectl{
+			Namespace:      fmt.Sprintf("e2e-%s-system", t.TestSuffix),
+			ServiceAccount: fmt.Sprintf("e2e-%s-controller-manager", t.TestSuffix),
+			CmdContext:     t.CmdContext,
+		}
+		k8sVersion, err := kubectl.Version()
+		if err != nil {
+			return err
+		}
+		t.K8sVersion = &k8sVersion
+	}
+
+	if t.K8sVersion == nil {
+		return fmt.Errorf("unable to obtain the k8s version")
+	}
+
+	return nil
 }
 
 // UninstallPrometheusOperManager uninstalls the prometheus manager bundle.

@@ -52,4 +52,5 @@ function test_cluster {
 
   go test $(dirname "$0")/v2 $flags
   go test $(dirname "$0")/v3 $flags -timeout 30m
+  go test $(dirname "$0")/common $flags
 }

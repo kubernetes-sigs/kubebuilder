@@ -46,6 +46,9 @@ var _ = Describe("kubebuilder", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(kbc.Prepare()).To(Succeed())
 
+			By("ensuring that was possible get the k8s version")
+			Expect(kbc.RequiresK8SVersion()).To(Succeed())
+
 			// Skip if cluster version >= 1.22 because pre v1 CRDs and webhooks no longer exist.
 			if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() >= 1 && srvVer.GetMinorInt() >= 22 {
 				Skip(fmt.Sprintf("cluster version %s does not support "+

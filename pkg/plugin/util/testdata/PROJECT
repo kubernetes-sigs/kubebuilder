@@ -1,0 +1,49 @@
+domain: testproject.org
+layout:
+- go.kubebuilder.io/v3
+projectName: project-v3
+repo: sigs.k8s.io/kubebuilder/testdata/project-v3
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: testproject.org
+  group: crew
+  kind: Captain
+  path: sigs.k8s.io/kubebuilder/testdata/project-v3/api/v1
+  version: v1
+  webhooks:
+    defaulting: true
+    validation: true
+    webhookVersion: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: testproject.org
+  group: crew
+  kind: FirstMate
+  path: sigs.k8s.io/kubebuilder/testdata/project-v3/api/v1
+  version: v1
+  webhooks:
+    conversion: true
+    webhookVersion: v1
+- api:
+    crdVersion: v1
+  controller: true
+  domain: testproject.org
+  group: crew
+  kind: Admiral
+  path: sigs.k8s.io/kubebuilder/testdata/project-v3/api/v1
+  plural: admirales
+  version: v1
+  webhooks:
+    defaulting: true
+    webhookVersion: v1
+- controller: true
+  domain: testproject.org
+  group: crew
+  kind: Laker
+  version: v1
+version: "3"

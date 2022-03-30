@@ -78,6 +78,17 @@ func InsertCode(filename, target, code string) error {
 	return ioutil.WriteFile(filename, []byte(out), 0644)
 }
 
+// FoundInFile searches target content in the file and return true when found it
+func FoundInFile(filename, target string) (bool, error) {
+	// false positive
+	// nolint:gosec
+	contents, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return false, err
+	}
+	return strings.Contains(string(contents), target), nil
+}
+
 // UncommentCode searches for target in the file and remove the comment prefix
 // of the target content. The target content may span multiple lines.
 func UncommentCode(filename, target, prefix string) error {
