@@ -94,19 +94,19 @@ manifests: controller-gen`
 		}
 
 		if err := util.ReplaceInFile("go.mod",
-			"k8s.io/api v0.23.0",
+			"k8s.io/api v0.23.5",
 			"k8s.io/api v0.21.2"); err != nil {
 			log.Warnf("unable to update the go.mod with k8s.io/api v0.21.2: %s", err)
 		}
 
 		if err := util.ReplaceInFile("go.mod",
-			"k8s.io/apimachinery v0.23.0",
+			"k8s.io/apimachinery v0.23.5",
 			"k8s.io/apimachinery v0.21.2"); err != nil {
 			log.Warnf("unable to update the go.mod with k8s.io/apimachinery v0.21.2: %s", err)
 		}
 
 		if err := util.ReplaceInFile("go.mod",
-			"k8s.io/client-go v0.23.0",
+			"k8s.io/client-go v0.23.5",
 			"k8s.io/client-go v0.21.2"); err != nil {
 			log.Warnf("unable to update the go.mod with k8s.io/client-go v0.21.2: %s", err)
 		}
@@ -114,19 +114,19 @@ manifests: controller-gen`
 		// During the scaffolding phase, this gets added to go.mod file, running go mod tidy bumps back
 		// the version from 21.2 to the latest
 		if err := util.ReplaceInFile("go.mod",
-			"k8s.io/api v0.23.0",
+			"k8s.io/api v0.23.5",
 			"k8s.io/api v0.21.2"); err != nil {
 			log.Warnf("unable to update the go.mod with k8s.io/api v0.21.2: %s", err)
 		}
 
 		if err := util.ReplaceInFile("go.mod",
-			"k8s.io/apiextensions-apiserver v0.23.0",
+			"k8s.io/apiextensions-apiserver v0.23.5",
 			"k8s.io/apiextensions-apiserver v0.21.2"); err != nil {
 			log.Warnf("unable to update the go.mod with k8s.io/apiextensions-apiserver v0.21.2: %s", err)
 		}
 
 		if err := util.ReplaceInFile("go.mod",
-			"k8s.io/component-base v0.23.0",
+			"k8s.io/component-base v0.23.5",
 			"k8s.io/component-base v0.21.2"); err != nil {
 			log.Warnf("unable to update the go.mod with k8s.io/component-base v0.21.2: %s", err)
 		}
