@@ -110,6 +110,7 @@
   - [Creating your own plugins](./plugins/creating-plugins.md)
   - [Available Plugins](./plugins/available-plugins.md)
     - [Declarative V1](./plugins/declarative-v1.md)
+  - [Plugins Versioning](./plugins/plugins-versioning.md)
 
 ---  
 [Appendix: The TODO Landing Page](./TODO.md)
