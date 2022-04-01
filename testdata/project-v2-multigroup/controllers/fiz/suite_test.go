@@ -58,6 +58,7 @@ var _ = BeforeSuite(func(done Done) {
 	}
 
 	var err error
+	// cfg is defined in this file globally.
 	cfg, err = testEnv.Start()
 	Expect(err).ToNot(HaveOccurred())
 	Expect(cfg).ToNot(BeNil())
