@@ -19,4 +19,5 @@ limitations under the License.
 package tools
 import (
 	_ "github.com/joelanford/go-apidiff"
+	_ "sigs.k8s.io/controller-runtime/tools/setup-envtest"
 )

@@ -1,0 +1,40 @@
+name: 'go-apidiff'
+description: 'Test API compatibility of changes in your Go library'
+branding:
+  icon: 'code'  
+  color: 'blue'
+inputs:
+  base-ref:
+    description: 'Base reference for API compatibility comparison (default: base branch)'
+    required: false
+    default: "origin/${GITHUB_BASE_REF}"
+  version:
+    description: 'Version of go-apidiff to use'
+    required: false
+    default: "latest"
+  compare-imports:
+    description: 'Compare exported API differences in the imports of the repo.'
+    required: false
+    default: 'false'
+  print-compatible:
+    description: 'Print compatible API changes'
+    required: false
+    default: 'true'
+  repo-path:
+    description: 'Path to root of git repository to compare'
+    required: false
+    default: '.'
+runs:
+  using: 'composite'
+  steps:
+    - shell: bash
+      run: |
+        if [[ "${{ github.repository }}" == "joelanford/go-apidiff" && "${{ inputs.version }}" == "latest" ]]; then
+          echo "*** Installing go-apidiff from source ***"
+          go install .
+        else
+          DIR=$(mktemp -d)
+          (cd ${DIR} && GO111MODULE=on go get github.com/joelanford/go-apidiff@${{ inputs.version }}) && rmdir ${DIR}
+        fi
+        set -x
+        $(go env GOPATH)/bin/go-apidiff ${{ inputs.base-ref }} --compare-imports=${{ inputs.compare-imports }} --print-compatible=${{ inputs.print-compatible }} --repo-path=${{ inputs.repo-path }}

@@ -15,6 +15,7 @@ require (
 	golang.org/x/tools v0.1.6-0.20210820212750-d4cc65f0b2ff
 	k8s.io/apimachinery v0.23.5 // for `kubebuilder alpha config-gen`
 	sigs.k8s.io/controller-runtime v0.11.2
+	sigs.k8s.io/controller-runtime/tools/setup-envtest v0.0.0-20220330152626-b9219528d959
 	sigs.k8s.io/controller-tools v0.7.0 // for `kubebuilder alpha config-gen`
 	sigs.k8s.io/kustomize/kyaml v0.10.21 // for `kubebuilder alpha config-gen`
 	sigs.k8s.io/yaml v1.3.0
@@ -28,6 +29,7 @@ require (
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/go-errors/errors v1.0.1 // indirect
 	github.com/go-logr/logr v1.2.0 // indirect
+	github.com/go-logr/zapr v1.2.0 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/jsonreference v0.19.5 // indirect
 	github.com/go-openapi/swag v0.19.14 // indirect
@@ -57,6 +59,9 @@ require (
 	github.com/xlab/treeprint v0.0.0-20181112141820-a009c3971eca // indirect
 	github.com/zmap/zcrypto v0.0.0-20200911161511-43ff0ea04f21 // indirect
 	github.com/zmap/zlint/v2 v2.2.1 // indirect
+	go.uber.org/atomic v1.7.0 // indirect
+	go.uber.org/multierr v1.6.0 // indirect
+	go.uber.org/zap v1.19.1 // indirect
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 // indirect
 	golang.org/x/exp v0.0.0-20200224162631-6cc2880d07d6 // indirect
 	golang.org/x/mod v0.4.2 // indirect
