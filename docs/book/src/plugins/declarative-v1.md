@@ -48,7 +48,7 @@ The following scaffolds will be created or updated by this plugin:
 * `channels/stable`
 * `Dockerfile`
 
-## Further ressources
+## Further resources
 
 * Read more about the [declarative pattern][kubebuilder-declarative-pattern]
 * Watch the KubeCon 2018 Video [Managing Addons with Operators][kubecon-video]
