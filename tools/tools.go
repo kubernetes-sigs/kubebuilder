@@ -16,7 +16,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// This module was added only to allow we have the make target
+// apidiff locally. So that, we can perform the ci check locally
+// to ensure that the changes does not introduce breaking changes
+// into the API.
 package tools
+
 import (
 	_ "github.com/joelanford/go-apidiff"
 )
