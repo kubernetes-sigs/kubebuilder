@@ -112,5 +112,6 @@ func (s *initScaffolder) Scaffold() error {
 		},
 		&templates.Dockerfile{},
 		&templates.DockerIgnore{},
+		&templates.Readme{},
 	)
 }
