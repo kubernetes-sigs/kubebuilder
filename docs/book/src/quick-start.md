@@ -62,6 +62,14 @@ kubebuilder init --domain my.domain --repo my.domain/guestbook
 ```
 
 <aside class="note">
+<h1>Supportability (Apple Silicon `arm64`)</h1>
+
+If you are using Apple Silicon (`arm64`) you probably want try initialize the project with
+`kubebuilder init --plugins=kustomize/v2-alpha,base.go.kubebuilder.io/v3` instead. [More Info][more-info]
+
+</aside>
+
+<aside class="note">
 <h1>Developing in $GOPATH</h1>
 
 If your project is initialized within [`GOPATH`][GOPATH-golang-docs], the implicitly called `go mod init` will interpolate the module path for you.
@@ -238,3 +246,4 @@ Now, see the [architecture concept diagram][architecture-concept-diagram] for a 
 [go-modules-blogpost]: https://blog.golang.org/using-go-modules
 [envtest]: https://book.kubebuilder.io/reference/testing/envtest.html
 [architecture-concept-diagram]: architecture.md
+[more-info]: plugins/kustomize-v2-alpha.md

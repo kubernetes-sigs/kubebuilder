@@ -115,6 +115,15 @@ var _ = Describe("kubebuilder", func() {
 				GenerateV3(kbc, "v1")
 				Run(kbc)
 			})
+			It("should generate a runnable project with the golang base plugin v3 and kustomize v4-alpha", func() {
+				// Skip if cluster version < 1.16, when v1 CRDs and webhooks did not exist.
+				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() < 17 {
+					Skip(fmt.Sprintf("cluster version %s does not support v1 CRDs or webhooks", srvVer.GitVersion))
+				}
+
+				GenerateV3WithKustomizeV2(kbc, "v1")
+				Run(kbc)
+			})
 			It("should generate a runnable project with v1beta1 CRDs and Webhooks", func() {
 				// Skip if cluster version < 1.15, when `.spec.preserveUnknownFields` was not a v1beta1 CRD field.
 				// Skip if cluster version >= 1.22 because pre v1 CRDs and webhooks no longer exist.
