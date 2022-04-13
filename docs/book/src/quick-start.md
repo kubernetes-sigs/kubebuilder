@@ -20,7 +20,7 @@ This Quick Start guide will cover:
 <h1>Versions and Supportability</h1>
 
 Projects created by Kubebuilder contain a Makefile that will install tools at versions defined at creation time. Those tools are:
-- [kustomize](https://kubernetes-sigs.github.io/kustomize/)
+- [kustomize](https://github.com/kubernetes-sigs/kustomize)
 - [controller-gen](https://github.com/kubernetes-sigs/controller-tools)
 
 The versions which are defined in the `Makefile` and `go.mod` files are the versions tested and therefore is recommend to use the specified versions.

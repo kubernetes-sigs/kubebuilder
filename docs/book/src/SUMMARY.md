@@ -109,7 +109,10 @@
   - [Extending the CLI](./plugins/extending-cli.md)
   - [Creating your own plugins](./plugins/creating-plugins.md)
   - [Available Plugins](./plugins/available-plugins.md)
+    - [go/v3 plugin](./plugins/go-v3-plugin.md)
+    - [go/v2 plugin](./plugins/go-v2-plugin.md)
     - [Declarative V1](./plugins/declarative-v1.md)
+  - [Plugins Versioning](./plugins/plugins-versioning.md)
 
 ---  
 [Appendix: The TODO Landing Page](./TODO.md)
