@@ -2,6 +2,9 @@
 
 This section describes the plugins supported and shipped in with the Kubebuilder project.
 
+  - [Declarative V1](declarative-v1.md)
+  - [Kustomize V1](kustomize-v1.md)
+
 <aside class="note">
 
 <h1>But you can create your own plugins, see:</h1>
