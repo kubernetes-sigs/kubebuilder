@@ -1,4 +1,4 @@
-# Kustomize Plugin
+# Kustomize (kustomize/v1)
 
 The kustomize plugin allows you to scaffold all kustomize manifests used to work with the language plugins such as `go/v2` and `go/v3`. 
 By using the kustomize plugin, you can create your own language plugins and ensure that you will have the same configurations 
@@ -20,11 +20,11 @@ directory of the Kubebuilder project.
 </aside> 
 
 
-## When to use it
+## When to use it ?
 
-- If you are looking to scaffold the kustomize configuration manifests for your own language plugin 
+If you are looking to scaffold the kustomize configuration manifests for your own language plugin 
 
-## How to use it
+## How to use it ?
 
 If you are looking to define that your language plugin should use kustomize use the [Bundle Plugin][bundle]
 to specify that your language plugin is a composition with your plugin responsable for scaffold

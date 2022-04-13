@@ -1,4 +1,4 @@
-# go/v3
+# go/v3 (go.kubebuilder.io/v3)
 
 Kubebuilder tool will scaffold the go/v3 plugin by default. This plugin is a composition of the plugins ` kustomize.common.kubebuilder.io/v1` and `base.go.kubebuilder.io/v3`. By using you can scaffold the default project which is a helper to construct sets of [controllers][controller-runtime]. 
 
@@ -12,9 +12,9 @@ Samples are provided under the [testdata][testdata] directory of the Kubebuilder
 
 </aside>
 
-## When to use it
+## When to use it ?
 
-- If you are looking to scaffold Golang projects to develop projects using [controllers][controller-runtime]
+If you are looking to scaffold Golang projects to develop projects using [controllers][controller-runtime]
 
 ## How to use it ?
 
