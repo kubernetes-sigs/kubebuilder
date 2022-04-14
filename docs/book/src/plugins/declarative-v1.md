@@ -11,12 +11,12 @@ You can check samples using this plugin by looking at the "addon" samples inside
 </aside> 
 
 
-## When to use it
+## When to use it ?
 
 - If you are looking to scaffold one or more [controllers][controller-runtime] following [the pattern][kubebuilder-declarative-pattern] ( See an e.g. of the reconcile method implemented [here][addon-v3-controller]) 
 - If you want to have manifests shipped inside your Manager container. The declarative plugin works with channels, which allow you to push manifests. [More info][addon-channels-info]
 
-## How to use it
+## How to use it ?
 
 The declarative plugin requires to be used with one of the available Golang plugins
 If you want that any API(s) and its respective controller(s) generate to reconcile them of your project adopt this partner then:  

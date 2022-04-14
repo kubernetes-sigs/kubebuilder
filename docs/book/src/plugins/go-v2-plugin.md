@@ -1,4 +1,4 @@
-# go/v2 plugin
+# go/v2 (go.kubebuilder.io/v2)
 
 The `go/v2` plugin has the purpose to scaffold Golang projects to help users to build projects with [controllers][controller-runtime] and keep the backwards compatibility with the default scaffold made using Kubebuilder CLI `2.x.z` releases.   
 
@@ -8,7 +8,7 @@ You can check samples using this plugin by looking at the `project-v2-<options>`
 
 </node>  
 
-## When should I use this plugin
+## When should I use this plugin ?
 
 Only if you are looking to scaffold a project with the legacy layout. Otherwise, it is recommended you to use the default Golang version plugin. 
 
@@ -35,7 +35,7 @@ By creating a project with this plugin, the PROJECT file scaffold will be using 
 
 </aside>
 
-## Subcommands supported by the plugin
+## Subcommands supported by the plugin ?
 
 -  Init -  `kubebuilder init [OPTIONS]`
 -  Edit -  `kubebuilder edit [OPTIONS]`
