@@ -41,18 +41,18 @@ func (f *Readme) SetTemplateDefaults() error {
 	}
 
 	f.License = strings.Replace(
-		strings.Replace(string(f.Boilerplate), "/*", "", 1),
+		strings.Replace(f.Boilerplate, "/*", "", 1),
 		"*/", "", 1)
 
 	f.TemplateBody = fmt.Sprintf(readmeFileTemplate,
-		codeFence("sh", "kubectl apply -f config/samples/"),
-		codeFence("sh", "make docker-build docker-push IMG=<some-registry>/{{ .ProjectName }}:tag"),
-		codeFence("sh", "make deploy IMG=<some-registry>/{{ .ProjectName }}:tag"),
-		codeFence("sh", "make uninstall"),
-		codeFence("sh", "make undeploy"),
-		codeFence("sh", "make install"),
-		codeFence("sh", "make run"),
-		codeFence("sh", "make manifests"))
+		codeFence("kubectl apply -f config/samples/"),
+		codeFence("make docker-build docker-push IMG=<some-registry>/{{ .ProjectName }}:tag"),
+		codeFence("make deploy IMG=<some-registry>/{{ .ProjectName }}:tag"),
+		codeFence("make uninstall"),
+		codeFence("make undeploy"),
+		codeFence("make install"),
+		codeFence("make run"),
+		codeFence("make manifests"))
 
 	return nil
 }
@@ -124,6 +124,6 @@ More information can be found via the [Kubebuilder Documentation](https://book.k
 {{ .License }}
 `
 
-func codeFence(syntax string, code string) string {
-	return "```" + syntax + "\n" + code + "\n" + "```"
+func codeFence(code string) string {
+	return "```sh" + "\n" + code + "\n" + "```"
 }
