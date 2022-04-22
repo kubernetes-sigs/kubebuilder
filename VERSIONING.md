@@ -9,7 +9,7 @@ a "CLI project".
 
 [guidelines]: https://sigs.k8s.io/kubebuilder-release-tools/VERSIONING.md
 
-## Compability
+## Compatibility
 
 Note that we generally do not support older release branches, except in
 extreme circumstances.
