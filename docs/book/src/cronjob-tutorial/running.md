@@ -72,6 +72,8 @@ make docker-build docker-push IMG=<some-registry>/<project-name>:tag
 make deploy IMG=<some-registry>/<project-name>:tag
 ```
 
+If you are using an Apple Sillicon M1 Mac, you need to follow the instructions [here](/reference/envtest.md#installation).
+
 <aside class="note">
 <h1>registry permission</h1>
 

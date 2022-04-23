@@ -19,7 +19,7 @@ export K8S_VERSION=1.21.2
 curl -sSLo envtest-bins.tar.gz "https://go.kubebuilder.io/test-tools/${K8S_VERSION}/$(go env GOOS)/$(go env GOARCH)"
 ```
 
-However, in the case of m1 mac using AppleSillicon, the arm64 binary is not yet available, so the test in the Makefile must be changed.
+However, in the case of M1 Mac using AppleSillicon, the arm64 binary is not yet available, so the test in the Makefile must be changed.
 ```makefile
 test: manifests generate fmt vet envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) --arch=amd64 use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
