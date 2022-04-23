@@ -12,12 +12,20 @@ although it does require `bash` to run.
 
 If you would like to download the tarball containing these binaries,
 to use in a disconnected environment for example,
-run the following (Kubernetes version 1.21.3 is an example version):
+run the following (Kubernetes version 1.21.2 is an example version):
 
 ```sh
-export K8S_VERSION=1.21.3
+export K8S_VERSION=1.21.2
 curl -sSLo envtest-bins.tar.gz "https://go.kubebuilder.io/test-tools/${K8S_VERSION}/$(go env GOOS)/$(go env GOARCH)"
 ```
+
+However, in the case of m1 mac using AppleSillicon, the arm64 binary is not yet available, so the test in the Makefile must be changed.
+```makefile
+test: manifests generate fmt vet envtest ## Run tests.
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) --arch=amd64 use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
+```
+
+This way, you can use intel binaries. downloaded intel binaries are executed via Rosseta2.
 
 Then install them:
 
