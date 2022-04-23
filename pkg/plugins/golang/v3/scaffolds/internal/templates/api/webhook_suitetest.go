@@ -19,6 +19,7 @@ package api
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
@@ -32,6 +33,7 @@ type WebhookSuite struct { //nolint:maligned
 	machinery.MultiGroupMixin
 	machinery.BoilerplateMixin
 	machinery.ResourceMixin
+	machinery.RepositoryMixin
 
 	// todo: currently is not possible to know if an API was or not scaffolded. We can fix it when #1826 be addressed
 	WireResource bool
@@ -43,7 +45,13 @@ type WebhookSuite struct { //nolint:maligned
 // SetTemplateDefaults implements file.Template
 func (f *WebhookSuite) SetTemplateDefaults() error {
 	if f.Path == "" {
-		if f.MultiGroup {
+		if f.Resource.Path != "" {
+			baseDir := strings.TrimPrefix(f.Resource.Path, f.Repo)
+			if baseDir[0] == '/' {
+				baseDir = baseDir[1:]
+			}
+			f.Path = filepath.Join(baseDir, "webhook_suite_test.go")
+		} else if f.MultiGroup {
 			if f.Resource.Group != "" {
 				f.Path = filepath.Join("apis", "%[group]", "%[version]", "webhook_suite_test.go")
 			} else {

@@ -32,6 +32,7 @@ type Webhook struct { // nolint:maligned
 	machinery.MultiGroupMixin
 	machinery.BoilerplateMixin
 	machinery.ResourceMixin
+	machinery.RepositoryMixin
 
 	// Is the Group domain for the Resource replacing '.' with '-'
 	QualifiedGroupWithDash string
@@ -45,7 +46,13 @@ type Webhook struct { // nolint:maligned
 // SetTemplateDefaults implements file.Template
 func (f *Webhook) SetTemplateDefaults() error {
 	if f.Path == "" {
-		if f.MultiGroup {
+		if f.Resource.Path != "" {
+			baseDir := strings.TrimPrefix(f.Resource.Path, f.Repo)
+			if baseDir[0] == '/' {
+				baseDir = baseDir[1:]
+			}
+			f.Path = filepath.Join(baseDir, "%[kind]_webhook.go")
+		} else if f.MultiGroup {
 			if f.Resource.Group != "" {
 				f.Path = filepath.Join("apis", "%[group]", "%[version]", "%[kind]_webhook.go")
 			} else {

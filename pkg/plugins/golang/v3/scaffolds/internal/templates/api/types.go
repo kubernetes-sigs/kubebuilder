@@ -19,6 +19,7 @@ package api
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
@@ -32,6 +33,7 @@ type Types struct {
 	machinery.MultiGroupMixin
 	machinery.BoilerplateMixin
 	machinery.ResourceMixin
+	machinery.RepositoryMixin
 
 	Force bool
 }
@@ -39,7 +41,13 @@ type Types struct {
 // SetTemplateDefaults implements file.Template
 func (f *Types) SetTemplateDefaults() error {
 	if f.Path == "" {
-		if f.MultiGroup {
+		if f.Resource.Path != "" {
+			baseDir := strings.TrimPrefix(f.Resource.Path, f.Repo)
+			if baseDir[0] == '/' {
+				baseDir = baseDir[1:]
+			}
+			f.Path = filepath.Join(baseDir, "%[kind]_types.go")
+		} else if f.MultiGroup {
 			if f.Resource.Group != "" {
 				f.Path = filepath.Join("apis", "%[group]", "%[version]", "%[kind]_types.go")
 			} else {

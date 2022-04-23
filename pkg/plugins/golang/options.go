@@ -119,10 +119,15 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 			loadedRes, err := c.GetResource(res.GVK)
 			alreadyHasAPI = err == nil && loadedRes.HasAPI()
 		}
+
 		if !alreadyHasAPI {
 			if domain, found := coreGroups[res.Group]; found {
 				res.Domain = domain
 				res.Path = path.Join("k8s.io", "api", res.Group, res.Version)
+			}
+		} else {
+			if r, err := c.GetResource(res.GVK); err == nil {
+				res.Path = r.Path
 			}
 		}
 	}
