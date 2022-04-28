@@ -57,8 +57,7 @@ func applyScaffoldCustomizationsForVbeta1() error {
 			fmt.Printf("unable to update the makefile to allow the usage of v1beta1: %s", err)
 		}
 
-		const makegentarget = `
-manifests: controller-gen`
+		const makegentarget = `manifests: controller-gen`
 		const makegenV1beta1Options = `# Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:crdVersions={v1beta1},trivialVersions=true,preserveUnknownFields=false"
 manifests: controller-gen`
@@ -70,9 +69,9 @@ manifests: controller-gen`
 		// latest version of controller-tools where v1beta1 is supported
 		const controllerToolsVersionForVBeta1 = "v0.6.2"
 		if err := util.ReplaceInFile("Makefile",
-			fmt.Sprintf("controller-gen@%s",
+			fmt.Sprintf("CONTROLLER_TOOLS_VERSION ?= %s",
 				scaffolds.ControllerToolsVersion),
-			fmt.Sprintf("controller-gen@%s",
+			fmt.Sprintf("CONTROLLER_TOOLS_VERSION ?= %s",
 				controllerToolsVersionForVBeta1)); err != nil {
 			log.Warnf("unable to update the Makefile with %s: %s", fmt.Sprintf("controller-gen@%s",
 				controllerToolsVersionForVBeta1), err)
@@ -95,19 +94,19 @@ manifests: controller-gen`
 		}
 
 		if err := util.ReplaceInFile("go.mod",
-			"k8s.io/api v0.23.0",
+			"k8s.io/api v0.23.5",
 			"k8s.io/api v0.21.2"); err != nil {
 			log.Warnf("unable to update the go.mod with k8s.io/api v0.21.2: %s", err)
 		}
 
 		if err := util.ReplaceInFile("go.mod",
-			"k8s.io/apimachinery v0.23.0",
+			"k8s.io/apimachinery v0.23.5",
 			"k8s.io/apimachinery v0.21.2"); err != nil {
 			log.Warnf("unable to update the go.mod with k8s.io/apimachinery v0.21.2: %s", err)
 		}
 
 		if err := util.ReplaceInFile("go.mod",
-			"k8s.io/client-go v0.23.0",
+			"k8s.io/client-go v0.23.5",
 			"k8s.io/client-go v0.21.2"); err != nil {
 			log.Warnf("unable to update the go.mod with k8s.io/client-go v0.21.2: %s", err)
 		}
@@ -115,19 +114,19 @@ manifests: controller-gen`
 		// During the scaffolding phase, this gets added to go.mod file, running go mod tidy bumps back
 		// the version from 21.2 to the latest
 		if err := util.ReplaceInFile("go.mod",
-			"k8s.io/api v0.23.0",
+			"k8s.io/api v0.23.5",
 			"k8s.io/api v0.21.2"); err != nil {
 			log.Warnf("unable to update the go.mod with k8s.io/api v0.21.2: %s", err)
 		}
 
 		if err := util.ReplaceInFile("go.mod",
-			"k8s.io/apiextensions-apiserver v0.23.0",
+			"k8s.io/apiextensions-apiserver v0.23.5",
 			"k8s.io/apiextensions-apiserver v0.21.2"); err != nil {
 			log.Warnf("unable to update the go.mod with k8s.io/apiextensions-apiserver v0.21.2: %s", err)
 		}
 
 		if err := util.ReplaceInFile("go.mod",
-			"k8s.io/component-base v0.23.0",
+			"k8s.io/component-base v0.23.5",
 			"k8s.io/component-base v0.21.2"); err != nil {
 			log.Warnf("unable to update the go.mod with k8s.io/component-base v0.21.2: %s", err)
 		}

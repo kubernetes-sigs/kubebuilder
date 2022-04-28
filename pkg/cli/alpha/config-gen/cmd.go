@@ -223,6 +223,7 @@ The KubebuilderConfigGen resource has the following fields:
         devCertificate:
           duration: 1h
 `)
+	//nolint:lll
 	c.Example = strings.TrimSpace(`
 #
 # As command
@@ -253,8 +254,9 @@ kubebuilder alpha config-gen kubebuilderconfiggen.yaml patch1.yaml patch2.yaml
 # commonAnnotations, resources, configMapGenerator and other transformer plugins.
 #
 
-# install the latest kustomize
-GO111MODULE=on go get sigs.k8s.io/kustomize/kustomize/v4
+# install the kustomize version used in the v3 plugin
+# set VERSION to install a different version
+curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/kustomize/v${VERSION:-3.8.9}/hack/install_kustomize.sh" | bash -s -- "${VERSION:-3.8.9}"
 
 # install the command as a kustomize plugin
 kubebuilder alpha config-gen install-as-plugin

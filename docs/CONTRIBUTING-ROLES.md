@@ -4,7 +4,7 @@ Contributing Roles
 ## Direct Code-Related Roles
 
 While anyone (who's signed the [CLA and follows the code of
-conduct](../CONTRIBUTING.md)) is welcome to contribute to the KubeBuilder
+conduct](../CONTRIBUTING.md)) is welcome to contribute to the Kubebuilder
 project, we've got two "formal" roles that carry additional privileges and
 responsibilities: *reviewer* and *approver*.
 
@@ -25,10 +25,10 @@ kubebuilder-admins in the `OWNERS_ALIASES` file).
 Anyone who wants to become a reviewer or approver must first be a [member
 of the Kubernetes project][kube-member].  The aforementioned doc has more
 details, but the gist is that you must have made a couple contributions to
-some part of the Kubernetes project -- *this includes KubeBuilder and
+some part of the Kubernetes project -- *this includes Kubebuilder and
 related repos*.  Then, you need two existing members to sponsor you.
 
-**If you've contributed a few times to KubeBuilder, we'll be happy to
+**If you've contributed a few times to Kubebuilder, we'll be happy to
 sponsor you, just ping us on Slack :-)**
 
 ## Reviewers

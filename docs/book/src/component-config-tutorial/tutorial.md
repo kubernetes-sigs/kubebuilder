@@ -20,7 +20,7 @@ type so that you can extend this capability.
 
 Note that most of this tutorial is generated from literate Go files that
 form a runnable project, and live in the book source directory:
-[docs/book/src/componentconfig-tutorial/testdata/project][tutorial-source].
+[docs/book/src/component-config-tutorial/testdata/project][tutorial-source].
 
 [tutorial-source]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/docs/book/src/component-config-tutorial/testdata/project
 

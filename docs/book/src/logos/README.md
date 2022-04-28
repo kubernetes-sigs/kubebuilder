@@ -1,4 +1,4 @@
-# KubeBuilder Logos
+# Kubebuilder Logos
 
 The official location for the logos is in a [public GCS
 bucket][kb-logos-gcs] (or if you like GCS XML listings,

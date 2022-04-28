@@ -82,7 +82,7 @@ GOLANGCI_LINT = $(shell pwd)/bin/golangci-lint
 golangci-lint:
 	@[ -f $(GOLANGCI_LINT) ] || { \
 	set -e ;\
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell dirname $(GOLANGCI_LINT)) v1.41.1 ;\
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell dirname $(GOLANGCI_LINT)) v1.45.2 ;\
 	}
 
 .PHONY: apidiff
@@ -98,7 +98,7 @@ go-apidiff:
 ##@ Tests
 
 .PHONY: test
-test: test-unit test-integration test-testdata test-book ## Run the unit and integration tests (used in the CI)
+test: test-unit test-integration test-testdata test-book test-license ## Run the unit and integration tests (used in the CI)
 
 .PHONY: test-unit
 TEST_PKGS := ./pkg/... ./test/e2e/utils/...
@@ -134,3 +134,7 @@ test-e2e-ci: ## Run the end-to-end tests (used in the CI)`
 .PHONY: test-book
 test-book: ## Run the cronjob tutorial's unit tests to make sure we don't break it
 	cd ./docs/book/src/cronjob-tutorial/testdata/project && make test
+
+.PHONY: test-license
+test-license:  ## Run the license check
+	./test/check-license.sh
