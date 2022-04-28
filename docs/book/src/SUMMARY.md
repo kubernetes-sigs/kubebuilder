@@ -112,6 +112,7 @@
     - [go/v3 plugin](./plugins/go-v3-plugin.md)
     - [go/v2 plugin](./plugins/go-v2-plugin.md)
     - [Declarative V1](./plugins/declarative-v1.md)
+    - [Kustomize V1](./plugins/kustomize-v1.md)
   - [Plugins Versioning](./plugins/plugins-versioning.md)
 
 ---  
