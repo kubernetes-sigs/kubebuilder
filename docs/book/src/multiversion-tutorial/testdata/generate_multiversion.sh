@@ -57,6 +57,8 @@ function gen_cronjob_tutorial {
   kubebuilder create api --group batch --version v2 --kind CronJob --resource=true --controller=false
   kubebuilder create webhook --group batch --version v2 --kind CronJob --defaulting --programmatic-validation
   kubebuilder create webhook --group batch --version v2 --kind CronJob --conversion --force
+  go mod tidy
+  make
 }
 
 

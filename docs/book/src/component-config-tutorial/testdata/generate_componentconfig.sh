@@ -54,6 +54,8 @@ function gen_component_config_tutorial {
   header_text "creating tutorial.kubebuilder.io base  ..."
   kubebuilder init --domain tutorial.kubebuilder.io --repo tutorial.kubebuilder.io/project --component-config --license apache2 --owner "The Kubernetes authors"
   kubebuilder create api --group config --version v2 --kind ProjectConfig --resource --controller=false --make=false
+  go mod tidy
+  make
 }
 
 gen_component_config_tutorial

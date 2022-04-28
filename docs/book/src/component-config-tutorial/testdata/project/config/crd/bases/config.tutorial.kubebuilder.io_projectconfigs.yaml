@@ -143,6 +143,17 @@ spec:
                   disable the metrics serving.
                 type: string
             type: object
+          spec:
+            description: ProjectConfigSpec defines the desired state of ProjectConfig
+            properties:
+              foo:
+                description: Foo is an example field of ProjectConfig. Edit projectconfig_types.go
+                  to remove/update
+                type: string
+            type: object
+          status:
+            description: ProjectConfigStatus defines the observed state of ProjectConfig
+            type: object
           syncPeriod:
             description: SyncPeriod determines the minimum frequency at which watched
               resources are reconciled. A lower period will correct entropy more quickly,
@@ -174,6 +185,8 @@ spec:
         type: object
     served: true
     storage: true
+    subresources:
+      status: {}
 status:
   acceptedNames:
     kind: ""
