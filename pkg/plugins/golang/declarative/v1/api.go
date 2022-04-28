@@ -19,16 +19,13 @@ package v1
 import (
 	"errors"
 	"fmt"
-	"path/filepath"
-
-	"github.com/spf13/afero"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/declarative/v1/internal/templates"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/declarative/v1/scaffolds"
 	goPluginV2 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2"
 )
 
@@ -36,8 +33,6 @@ const (
 	// kbDeclarativePattern is the sigs.k8s.io/kubebuilder-declarative-pattern version
 	kbDeclarativePatternForV2 = "v0.0.0-20200522144838-848d48e5b073"
 	kbDeclarativePatternForV3 = "fea7e5cc701290589ec20ef4d9c0629d08b5307d"
-
-	exampleManifestVersion = "0.0.1"
 )
 
 var _ plugin.CreateAPISubcommand = &createAPISubcommand{}
@@ -97,27 +92,17 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
 	fmt.Println("updating scaffold with declarative pattern...")
 
-	// Load the boilerplate
-	bp, err := afero.ReadFile(fs.FS, filepath.Join("hack", "boilerplate.go.txt"))
+	scaffolder := scaffolds.NewAPIScaffolder(p.config, *p.resource)
+	scaffolder.InjectFS(fs)
+	err := scaffolder.Scaffold()
 	if err != nil {
-		return fmt.Errorf("error updating scaffold: unable to load boilerplate: %w", err)
+		return err
 	}
-	boilerplate := string(bp)
 
-	// Initialize the machinery.Scaffold that will write the files to disk
-	scaffold := machinery.NewScaffold(fs,
-		machinery.WithConfig(p.config),
-		machinery.WithBoilerplate(boilerplate),
-		machinery.WithResource(p.resource),
-	)
-
-	if err := scaffold.Execute(
-		&templates.Types{},
-		&templates.Controller{},
-		&templates.Channel{ManifestVersion: exampleManifestVersion},
-		&templates.Manifest{ManifestVersion: exampleManifestVersion},
-	); err != nil {
-		return fmt.Errorf("error updating scaffold: %w", err)
+	// Update Dockerfile
+	err = updateDockerfile()
+	if err != nil {
+		return err
 	}
 
 	// Track the resources following a declarative approach

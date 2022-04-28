@@ -97,19 +97,19 @@ $ tree ./test/project/pkg/controller
 
 ## Motivation
 
-The current scaffolding in KubeBuilder has two main problems:
+The current scaffolding in Kubebuilder has two main problems:
 comprehensibility and dependency passing.
 
 ### Complicated Initial Structure
 
-While the structure of KubeBuilder projects will likely feel at home for
+While the structure of Kubebuilder projects will likely feel at home for
 existing Kubernetes contributors (since it matches the structure of
 Kubernetes itself quite closely), it provides a fairly convoluted
 experience out of the box.
 
 Even for a single controller and API type (without a webhook), it
 generates 8 API-related files and 5 controller-related files.  Of those
-files, 6 are KubeBuilder-specific glue code, 4 are test setup, and
+files, 6 are Kubebuilder-specific glue code, 4 are test setup, and
 1 contains standard Kubernetes glue code, leaving only 2 with actual
 user-edited code.
 
@@ -117,7 +117,7 @@ This proliferation of files makes it difficult for users to understand how
 their code relates to the library, posing some barrier for initial adoption
 and moving beyond a basic knowledge of functionality to actual
 understanding of the structure.  A common line of questioning amongst
-newcomers to KubeBuilder includes "where should I put my code that adds
+newcomers to Kubebuilder includes "where should I put my code that adds
 new types to a scheme" (and similar questions), which indicates that it's
 not immediately obvious to these users why the project is structured the
 way it is.
@@ -148,13 +148,13 @@ construction of controllers (e.g. this [one file
 controller](https://github.com/DirectXMan12/sample-controller/blob/workshop/main.go)
 used as a getting started example for a workshop).
 
-Current KubeBuilder scaffolding does not take advantage of the builder,
+Current Kubebuilder scaffolding does not take advantage of the builder,
 leaving generated code using the lower-level constructs which require more
 understanding of the internals of controller-runtime to comprehend.
 
 ### Dependency Passing Woes
 
-Another common line of questioning amongst KubeBuilder users is "how to
+Another common line of questioning amongst Kubebuilder users is "how to
 I pass dependencies to my controllers?".  This ranges from "how to I pass
 custom clients for the software I'm running" to "how to I pass
 configuration from files and flags down to my controllers" (e.g.
@@ -300,7 +300,7 @@ There are three options here:
    bury types deeper in a directory structure.
 
 2. Try to move things and rename references.  This takes a lot more effort
-   on the KubeBuilder maintainers' part if we try to rename references
+   on the Kubebuilder maintainers' part if we try to rename references
    across the codebase.  Not so much if we force the user to, but that's
    a poorer experience.
 
@@ -332,9 +332,9 @@ registering types to the scheme, and we can always fall back to emitting
 code for the user to place in manually if we can't find the correct
 comment.
 
-### Making this work with Existing KubeBuilder Installations
+### Making this work with Existing Kubebuilder Installations
 
-KubeBuilder projects currently have a `PROJECT` file that can be used to
+Kubebuilder projects currently have a `PROJECT` file that can be used to
 store information about project settings.  We can make use of this to
 store a "scaffolding version", where we increment versions when making
 incompatible changes to how the scaffolding works.

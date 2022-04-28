@@ -1,4 +1,4 @@
-This directory contains scripts to run a quick demo of KubeBuilder.
+This directory contains scripts to run a quick demo of Kubebuilder.
 
 Steps to run demo:
 

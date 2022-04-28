@@ -9,6 +9,8 @@ resources:
 - bases/sea-creatures.testproject.org_krakens.yaml
 - bases/sea-creatures.testproject.org_leviathans.yaml
 - bases/foo.policy.testproject.org_healthcheckpolicies.yaml
+- bases/foo.testproject.org_bars.yaml
+- bases/fiz.testproject.org_bars.yaml
 - bases/testproject.org_lakers.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
@@ -22,6 +24,7 @@ patchesStrategicMerge:
 #- patches/webhook_in_krakens.yaml
 #- patches/webhook_in_leviathans.yaml
 #- patches/webhook_in_healthcheckpolicies.yaml
+#- patches/webhook_in_bars.yaml
 #- patches/webhook_in_lakers.yaml
 #+kubebuilder:scaffold:crdkustomizewebhookpatch
 
@@ -34,6 +37,7 @@ patchesStrategicMerge:
 #- patches/cainjection_in_krakens.yaml
 #- patches/cainjection_in_leviathans.yaml
 #- patches/cainjection_in_healthcheckpolicies.yaml
+#- patches/cainjection_in_bars.yaml
 #- patches/cainjection_in_lakers.yaml
 #+kubebuilder:scaffold:crdkustomizecainjectionpatch
 

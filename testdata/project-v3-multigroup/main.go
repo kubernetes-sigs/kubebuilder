@@ -32,7 +32,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	crewv1 "sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/apis/crew/v1"
+	fizv1 "sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/apis/fiz/v1"
 	foopolicyv1 "sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/apis/foo.policy/v1"
+	foov1 "sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/apis/foo/v1"
 	seacreaturesv1beta1 "sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/apis/sea-creatures/v1beta1"
 	seacreaturesv1beta2 "sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/apis/sea-creatures/v1beta2"
 	shipv1 "sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/apis/ship/v1"
@@ -42,6 +44,8 @@ import (
 	"sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/controllers"
 	appscontrollers "sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/controllers/apps"
 	crewcontrollers "sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/controllers/crew"
+	fizcontrollers "sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/controllers/fiz"
+	foocontrollers "sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/controllers/foo"
 	foopolicycontrollers "sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/controllers/foo.policy"
 	seacreaturescontrollers "sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/controllers/sea-creatures"
 	shipcontrollers "sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/controllers/ship"
@@ -63,6 +67,8 @@ func init() {
 	utilruntime.Must(seacreaturesv1beta1.AddToScheme(scheme))
 	utilruntime.Must(seacreaturesv1beta2.AddToScheme(scheme))
 	utilruntime.Must(foopolicyv1.AddToScheme(scheme))
+	utilruntime.Must(foov1.AddToScheme(scheme))
+	utilruntime.Must(fizv1.AddToScheme(scheme))
 	utilruntime.Must(testprojectorgv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
@@ -167,6 +173,20 @@ func main() {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Deployment")
+		os.Exit(1)
+	}
+	if err = (&foocontrollers.BarReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Bar")
+		os.Exit(1)
+	}
+	if err = (&fizcontrollers.BarReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Bar")
 		os.Exit(1)
 	}
 	if err = (&controllers.LakersReconciler{

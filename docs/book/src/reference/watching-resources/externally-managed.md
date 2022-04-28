@@ -12,7 +12,7 @@ There are many examples of Resource Specs that allow users to reference external
 - Deployments and Services have references to Pods
 
 This same functionality can be added to CRDs and custom controllers.
-This will allow for resources to be reconciled when another resources it references is changed.
+This will allow for resources to be reconciled when another resource it references is changed.
 
 As an example, we are going to create a `ConfigDeployment` resource.
 The `ConfigDeployment`'s purpose is to manage a `Deployment` whose pods are always using the latest version of a `ConfigMap`.

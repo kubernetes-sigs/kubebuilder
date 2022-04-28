@@ -125,7 +125,7 @@ You can reach the maintainers of this project at:
 ## Becoming a reviewer or approver
 
 Contributors may eventually become official reviewers or approvers in
-KubeBuilder and the related repositories.  See
+Kubebuilder and the related repositories.  See
 [CONTRIBUTING-ROLES.md](docs/CONTRIBUTING-ROLES.md) for more information.
 
 ## Code of conduct

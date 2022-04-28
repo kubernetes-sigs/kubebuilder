@@ -1,11 +1,4 @@
 /*
-When we created the CronJob API with `kubebuilder create api` in a [previous chapter](/cronjob-tutorial/new-api.md), Kubebuilder already did some test work for you.
-Kubebuilder scaffolded a `controllers/suite_test.go` file that does the bare bones of setting up a test environment.
-
-First, it will contain the necessary imports.
-*/
-
-/*
 Copyright 2022 The Kubernetes authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,6 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 // +kubebuilder:docs-gen:collapse=Apache License
+
+/*
+When we created the CronJob API with `kubebuilder create api` in a [previous chapter](/cronjob-tutorial/new-api.md), Kubebuilder already did some test work for you.
+Kubebuilder scaffolded a `controllers/suite_test.go` file that does the bare bones of setting up a test environment.
+
+First, it will contain the necessary imports.
+*/
+
 package controllers
 
 import (
@@ -86,7 +87,9 @@ var _ = BeforeSuite(func() {
 	/*
 		Then, we start the envtest cluster.
 	*/
-	cfg, err := testEnv.Start()
+	var err error
+	// cfg is defined in this file globally.
+	cfg, err = testEnv.Start()
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
@@ -121,12 +124,12 @@ var _ = BeforeSuite(func() {
 		The only difference is that the manager is started in a separate goroutine so it does not block the cleanup of envtest
 		when you’re done running your tests.
 
-		Note that we set up both a "live" k8s client, separate from the manager.  This is because when making assertions in
-		tests, you generally want to assert against the live state of the API server.  If you used the client from the
-		manager (`k8sManager.GetClient`), you'd end up asserting against the contents of the cache instead, which is slower
-		and can introduce flakiness into your tests.  We could use the manager's `APIReader` to accomplish the same thing,
-		but that would leave us with two clients in our test assertions and setup (one for reading, one for writing), and
-		it'd be easy to make mistakes.
+		Note that we set up both a "live" k8s client and a separate client from the manager. This is because when making
+		assertions in tests, you generally want to assert against the live state of the API server. If you use the client
+		from the manager (`k8sManager.GetClient`), you'd end up asserting against the contents of the cache instead, which is
+		slower and can introduce flakiness into your tests. We could use the manager's `APIReader` to accomplish the same
+		thing, but that would leave us with two clients in our test assertions and setup (one for reading, one for writing),
+		and it'd be easy to make mistakes.
 
 		Note that we keep the reconciler running against the manager's cache client, though -- we want our controller to
 		behave as it would in production, and we use features of the cache (like indicies) in our controller which aren't

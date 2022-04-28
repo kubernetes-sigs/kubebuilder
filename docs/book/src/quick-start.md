@@ -11,7 +11,7 @@ This Quick Start guide will cover:
 
 - [go](https://golang.org/dl/) version v1.15+ (kubebuilder v3.0 < v3.1).
 - [go](https://golang.org/dl/) version v1.16+ (kubebuilder v3.1 < v3.3).
-- [go](https://golang.org/dl/) version v1.17+ (kubebuilder v3.3+).
+- [go](https://golang.org/dl/) version v1.17+ < v1.18 (kubebuilder v3.3+).
 - [docker](https://docs.docker.com/install/) version 17.03+.
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) version v1.11.3+.
 - Access to a Kubernetes v1.11.3+ cluster.
@@ -20,7 +20,7 @@ This Quick Start guide will cover:
 <h1>Versions and Supportability</h1>
 
 Projects created by Kubebuilder contain a Makefile that will install tools at versions defined at creation time. Those tools are:
-- [kustomize](https://kubernetes-sigs.github.io/kustomize/)
+- [kustomize](https://github.com/kubernetes-sigs/kustomize)
 - [controller-gen](https://github.com/kubernetes-sigs/controller-tools)
 
 The versions which are defined in the `Makefile` and `go.mod` files are the versions tested and therefore is recommend to use the specified versions.
@@ -93,7 +93,8 @@ and the `controllers/guestbook_controller.go` where the reconciliation business 
 logic. For more info see [Designing an API](/cronjob-tutorial/api-design.md) and [What's in
 a Controller](cronjob-tutorial/controller-overview.md).
 
-If you are editing the API definitions, generate the manifests such as CRs or CRDs using
+If you are editing the API definitions, generate the manifests such as Custom Resources (CRs) or Custom Resource Defintions (CRDs) using
+
 ```bash
 make manifests
 ```
@@ -178,7 +179,7 @@ make run
 
 ## Install Instances of Custom Resources
 
-If you pressed `y` for Create Resource [y/n] then you created an (CR)Custom Resource for your (CRD)Custom Resource Definition in your samples (make sure to edit them first if you've changed the
+If you pressed `y` for Create Resource [y/n] then you created a CR for your CRD in your samples (make sure to edit them first if you've changed the
 API definition):
 
 ```bash
@@ -222,7 +223,7 @@ make uninstall
 
 ## Undeploy controller
 
-UnDeploy the controller to the cluster:
+Undeploy the controller to the cluster:
 
 ```bash
 make undeploy

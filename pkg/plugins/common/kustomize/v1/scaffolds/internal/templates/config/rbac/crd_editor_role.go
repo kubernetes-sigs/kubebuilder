@@ -27,13 +27,19 @@ var _ machinery.Template = &CRDEditorRole{}
 // CRDEditorRole scaffolds a file that defines the role that allows to edit plurals
 type CRDEditorRole struct {
 	machinery.TemplateMixin
+	machinery.MultiGroupMixin
 	machinery.ResourceMixin
 }
 
 // SetTemplateDefaults implements file.Template
 func (f *CRDEditorRole) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = filepath.Join("config", "rbac", "%[kind]_editor_role.yaml")
+		if f.MultiGroup {
+			f.Path = filepath.Join("config", "rbac", "%[group]_%[kind]_editor_role.yaml")
+		} else {
+			f.Path = filepath.Join("config", "rbac", "%[kind]_editor_role.yaml")
+		}
+
 	}
 	f.Path = f.Resource.Replacer().Replace(f.Path)
 
