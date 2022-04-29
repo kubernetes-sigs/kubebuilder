@@ -57,6 +57,7 @@ func (f *WebhookSuite) SetTemplateDefaults() error {
 
 	f.TemplateBody = fmt.Sprintf(webhookTestSuiteTemplate,
 		machinery.NewMarkerFor(f.Path, importMarker),
+		admissionImportAlias,
 		machinery.NewMarkerFor(f.Path, addSchemeMarker),
 		machinery.NewMarkerFor(f.Path, addWebhookManagerMarker),
 		"%s",
@@ -113,7 +114,6 @@ func (f *WebhookSuite) GetCodeFragments() machinery.CodeFragmentsMap {
 
 	// Generate add scheme code fragments
 	addScheme := make([]string, 0)
-	addScheme = append(addScheme, fmt.Sprintf(addschemeCodeFragment, admissionImportAlias))
 
 	// Generate add webhookManager code fragments
 	addWebhookManager := make([]string, 0)
@@ -196,6 +196,9 @@ var _ = BeforeSuite(func() {
 
 	scheme := runtime.NewScheme()
 	err = AddToScheme(scheme)
+	Expect(err).NotTo(HaveOccurred())
+
+	err = %s.AddToScheme(scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	%s
