@@ -94,10 +94,7 @@ func (f *WebhookSuite) GetMarkers() []machinery.Marker {
 const (
 	apiImportCodeFragment = `%s "%s"
 `
-	addschemeCodeFragment = `err = %s.AddToScheme(scheme	)
-Expect(err).NotTo(HaveOccurred())
 
-`
 	addWebhookManagerCodeFragment = `err = (&%s{}).SetupWebhookWithManager(mgr)
 Expect(err).NotTo(HaveOccurred())
 
