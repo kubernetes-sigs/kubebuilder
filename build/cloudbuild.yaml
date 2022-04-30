@@ -48,4 +48,4 @@ steps:
 secrets:
 - kmsKeyName: projects/kubebuilder/locations/global/keyRings/kubebuilder-gh-tokens/cryptoKeys/gh-release-token
   secretEnv:
-    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    GITHUB_TOKEN: CiQAChsKTruEiSo6yBI+xg75jyr4f8yM93R2e9QbpeRX3jF3VAwSUQDQuYkCiUd+6e/1wKQAyHnf6BYv0GNGMghyNzYbXT0owBzQqmIQJeu/VDGZcEVabIWErNXjbPqPiysIu0uAiKAAUTUK0VYMr9E6GdTJ0+hVmg==
