@@ -72,6 +72,9 @@ func InsertCode(filename, target, code string) error {
 		return err
 	}
 	idx := strings.Index(string(contents), target)
+	if idx == -1 {
+		return fmt.Errorf("string %s not found in %s", target, string(contents))
+	}
 	out := string(contents[:idx+len(target)]) + code + string(contents[idx+len(target):])
 	// false positive
 	// nolint:gosec
