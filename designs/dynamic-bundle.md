@@ -13,12 +13,12 @@ gov3Bundle, _ := plugin.NewBundle(golang.DefaultNameQualifier, plugin.Version{Nu
 )
 ```
 
-In the above example a plugin `Bundle` is created that ensures that the `kustomize/v1` plugin is run before the `go/v3` plugin.
- 
-With the addition of Phase 2 Plugins on the way, users using the `--plugins` flag to utilize external plugins will not get the benefits of using some default functionality that previous Kubebuilder users using the default `go/v3` plugin gained via the `kustomize/v1` plugin.
+The problem here is that this results in a 1 -> 1 relationship of bundles to plugins.
 
 ## Proposal
 The proposed solution is to create a new form of `Bundle` that is more dynamic and can be used to create a default bundle that contains sensible default plugins that can be used with all plugins. This could be overriden by a command line flag.
+
+The goal is to create a form of bundle that would allow a relationship of 1 -> many relationship of bundles to plugins
 
 ## User Stories
 - As a Kubebuilder maintainer I would like to have Kubebuilder implement sane default plugins that always run before and/or after plugins, specifying this once and it applying to all uses
