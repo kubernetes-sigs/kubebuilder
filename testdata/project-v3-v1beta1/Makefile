@@ -61,6 +61,14 @@ vet: ## Run go vet against code.
 test: manifests generate fmt vet envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
 
+.PHONY: test-coverage
+test-coverage: ## Run unit tests creating the output to report coverage
+	- rm -rf *.out  # Remove all coverage files if exists
+	go test -race -failfast -tags=integration -coverprofile=cover.out.tmp
+	cat cover.out.tmp | grep -v "zz_generated.deepcopy.go" > cover.out
+	go tool cover -func cover.out
+	rm cover.out.tmp
+	
 ##@ Build
 
 .PHONY: build
