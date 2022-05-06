@@ -90,7 +90,10 @@ if [ -z "$SNAPSHOT" ]; then
       [[ "${TAG_NAME}" == "v"*"-beta."* ]] && NOTES_FLAGS+=" -r beta"
       [[ "${TAG_NAME}" == "v"*"-rc."* ]] && NOTES_FLAGS+=" -r rc"
   fi
-  notes $NOTES_FLAGS | tee "$tmp_notes"
+  # TODO(cmacedo): figure out how to download the release notes and let it available in the cloud build
+  # Currently it does not work: https://github.com/kubernetes-sigs/kubebuilder/issues/2667
+  # notes $NOTES_FLAGS | tee "$tmp_notes"
+  notes="Mock Release Notes for $(git describe --tags --always --broken)"
   # we need to delete the tag for the release notes script, so restore it when done so that
   # go releaser can find the right tag
   if [[ -n "${TAG_NAME}" ]]; then
