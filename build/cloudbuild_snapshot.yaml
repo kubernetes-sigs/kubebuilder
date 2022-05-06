@@ -24,7 +24,7 @@ steps:
   env: ["SNAPSHOT=1"]
   args: ["build/build_kubebuilder.sh"]
 - name: "ubuntu"
-  args: ["tar", "-zcvf", "kubebuilder_linux_amd64.tar.gz", "-C", "dist/kubebuilder_linux_amd64", "kubebuilder"]
+  args: ["tar", "-zcvf", "kubebuilder_linux_amd64.tar.gz", "-C", "dist/kubebuilder_linux_amd64_v1", "kubebuilder"]
 - name: "gcr.io/cloud-builders/gsutil"
   args: ["-h", "Content-Type:application/gzip", "cp", "kubebuilder_linux_amd64.tar.gz", "gs://kubebuilder-release/kubebuilder_master_linux_amd64.tar.gz"]
 - name: "ubuntu"
@@ -36,7 +36,7 @@ steps:
 - name: "gcr.io/cloud-builders/gsutil"
   args: ["-h", "Content-Type:application/gzip", "cp", "kubebuilder_linux_ppc64le.tar.gz", "gs://kubebuilder-release/kubebuilder_master_linux_ppc64le.tar.gz"]
 - name: "ubuntu"
-  args: ["tar", "-zcvf", "kubebuilder_darwin_amd64.tar.gz", "-C", "dist/kubebuilder_darwin_amd64", "kubebuilder"]
+  args: ["tar", "-zcvf", "kubebuilder_darwin_amd64.tar.gz", "-C", "dist/kubebuilder_darwin_amd64_v1", "kubebuilder"]
 - name: "gcr.io/cloud-builders/gsutil"
   args: ["-h", "Content-Type:application/gzip", "cp", "kubebuilder_darwin_amd64.tar.gz", "gs://kubebuilder-release/kubebuilder_master_darwin_amd64.tar.gz"]
 - name: "ubuntu"
