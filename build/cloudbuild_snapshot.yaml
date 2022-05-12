@@ -23,6 +23,7 @@ steps:
   entrypoint: "bash"
   env: ["SNAPSHOT=1"]
   args: ["build/build_kubebuilder.sh"]
+  timeout: 30m
 - name: "ubuntu"
   args: ["tar", "-zcvf", "kubebuilder_linux_amd64.tar.gz", "-C", "dist/kubebuilder_linux_amd64_v1", "kubebuilder"]
 - name: "gcr.io/cloud-builders/gsutil"
@@ -43,4 +44,5 @@ steps:
   args: ["tar", "-zcvf", "kubebuilder_darwin_arm64.tar.gz", "-C", "dist/kubebuilder_darwin_arm64", "kubebuilder"]
 - name: "gcr.io/cloud-builders/gsutil"
   args: ["-h", "Content-Type:application/gzip", "cp", "kubebuilder_darwin_arm64.tar.gz", "gs://kubebuilder-release/kubebuilder_master_darwin_arm64.tar.gz"]
-timeout: '3600s'
+
+
