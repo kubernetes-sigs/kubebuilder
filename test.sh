@@ -16,4 +16,9 @@
 
 # prow calls this file currently, but we can just use `make test` to test
 # the set of things we want.
-make test
+CHECK_DOCS_ONLY=$("test/check-docs-only.sh")
+if [ -z "$CHECK_DOCS_ONLY" ]; then
+    make test
+    exit 0
+fi
+echo "WARNING: The tests were skipped because only changes on the docs were faced"
