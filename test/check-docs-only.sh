@@ -35,6 +35,7 @@ DOC_PATTERNS=(
   "(OWNERS_ALIASES)"
   "(LICENSE)"
   "(docs/)"
+  "(\.sh)"
 )
 
 if ! git diff --name-only $1 | grep -qvE "$(IFS="|"; echo "${DOC_PATTERNS[*]}")"; then
