@@ -27,6 +27,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	kustomizecommonv1 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v1"
+	kustomizecommonv2 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v2"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang"
 	declarativev1 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/declarative/v1"
 	golangv2 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2"
@@ -57,6 +58,7 @@ func main() {
 			golangv3.Plugin{},
 			gov3Bundle,
 			&kustomizecommonv1.Plugin{},
+			&kustomizecommonv2.Plugin{},
 			&declarativev1.Plugin{},
 		),
 		cli.WithPlugins(externalPlugins...),

@@ -19,11 +19,15 @@ package scaffolds
 import (
 	"fmt"
 
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
+
 	"github.com/spf13/afero"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins"
+	kustomizecommonv1 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v1"
+	kustomizecommonv2 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v2"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds/internal/templates/hack"
 )
@@ -34,12 +38,22 @@ const (
 	// ControllerToolsVersion is the kubernetes-sigs/controller-tools version to be used in the project
 	ControllerToolsVersion = "v0.8.0"
 	// KustomizeVersion is the kubernetes-sigs/kustomize version to be used in the project
+	// @Deprecated. This information ought to come from kustomize plugin
+	// Note that by updating the following value nothing will change for the go/3 plugin
+	// it is no longer used and it was not removed only because it would be a breaking
+	// change for the API. (api-diff check)
+	//
+	// NOTE: If you want to update the kustomize version used by this plugin
+	// then you need to update it in pkg/plugins/common/kustomize/v1/plugin.go
+	// Todo: we should remove it for the next go/v4 plugin
 	KustomizeVersion = "v3.8.7"
 
 	imageName = "controller:latest"
 )
 
 var _ plugins.Scaffolder = &initScaffolder{}
+
+var kustomizeVersion string
 
 type initScaffolder struct {
 	config          config.Config
@@ -97,6 +111,20 @@ func (s *initScaffolder) Scaffold() error {
 		machinery.WithBoilerplate(string(boilerplate)),
 	)
 
+	// If the KustomizeV2 was used to do the scaffold then
+	// we need to ensure that we use its supported Kustomize Version
+	// in order to support it
+	kustomizeVersion = kustomizecommonv1.KustomizeVersion
+	kustomizev2 := kustomizecommonv2.Plugin{}
+	pluginKeyForKustomizeV2 := plugin.KeyFor(kustomizev2)
+
+	for _, pluginKey := range s.config.GetPluginChain() {
+		if pluginKey == pluginKeyForKustomizeV2 {
+			kustomizeVersion = kustomizecommonv2.KustomizeVersion
+			break
+		}
+	}
+
 	return scaffold.Execute(
 		&templates.Main{},
 		&templates.GoMod{
@@ -107,7 +135,7 @@ func (s *initScaffolder) Scaffold() error {
 			Image:                    imageName,
 			BoilerplatePath:          s.boilerplatePath,
 			ControllerToolsVersion:   ControllerToolsVersion,
-			KustomizeVersion:         KustomizeVersion,
+			KustomizeVersion:         kustomizeVersion,
 			ControllerRuntimeVersion: ControllerRuntimeVersion,
 		},
 		&templates.Dockerfile{},
