@@ -16,7 +16,8 @@
 
 # prow calls this file currently, but we can just use `make test` to test
 # the set of things we want.
-CHECK_DOCS_ONLY=$("test/check-docs-only.sh")
+REF="HEAD^"
+CHECK_DOCS_ONLY=$("test/check-docs-only.sh $REF")
 if [ -z "$CHECK_DOCS_ONLY" ]; then
     make test
     exit 0
