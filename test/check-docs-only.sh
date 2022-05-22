@@ -36,6 +36,7 @@ DOC_PATTERNS=(
   "(LICENSE)"
   "(docs/)"
   "(\.sh)"
+  "(Makefile)"
 )
 
 if ! git diff --name-only $1 | grep -qvE "$(IFS="|"; echo "${DOC_PATTERNS[*]}")"; then

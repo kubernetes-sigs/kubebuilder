@@ -138,3 +138,7 @@ test-book: ## Run the cronjob tutorial's unit tests to make sure we don't break 
 .PHONY: test-license
 test-license:  ## Run the license check
 	./test/check-license.sh
+
+.PHONY: test-docs-only
+test-license:  ## Run the script to check whether the changes in a PR only in docs or not
+	./test/check-docs-only.sh

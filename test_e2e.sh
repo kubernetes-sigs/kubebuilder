@@ -13,8 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-REF="HEAD^"
-CHECK_DOCS_ONLY=$("test/check-docs-only.sh $REF")
+CHECK_DOCS_ONLY=$(make test-docs-only)
 if [ -z "$CHECK_DOCS_ONLY" ]; then
     ./test/e2e/ci.sh
     exit 0
