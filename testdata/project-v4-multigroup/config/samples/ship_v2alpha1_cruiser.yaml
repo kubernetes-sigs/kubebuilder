@@ -1,0 +1,6 @@
+apiVersion: ship.testproject.org/v2alpha1
+kind: Cruiser
+metadata:
+  name: cruiser-sample
+spec:
+  # TODO(user): Add fields here

@@ -1,0 +1,6 @@
+apiVersion: ship.testproject.org/v1beta1
+kind: Frigate
+metadata:
+  name: frigate-sample
+spec:
+  # TODO(user): Add fields here

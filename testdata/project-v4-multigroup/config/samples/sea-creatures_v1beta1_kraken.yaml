@@ -1,0 +1,6 @@
+apiVersion: sea-creatures.testproject.org/v1beta1
+kind: Kraken
+metadata:
+  name: kraken-sample
+spec:
+  # TODO(user): Add fields here

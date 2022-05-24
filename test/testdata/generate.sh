@@ -45,7 +45,7 @@ function scaffold_test_project {
   header_text "Initializing project ..."
   $kb init $init_flags --domain testproject.org --license apache2 --owner "The Kubernetes authors"
 
-  if [ $project == "project-v2" ] || [ $project == "project-v3" ] || [ $project == "project-v3-config" ] || [ $project == "project-v3-with-kustomize-v2" ]; then
+  if [ $project == "project-v2" ] || [ $project == "project-v3" ] || [ $project == "project-v3-config" ] || [ $project == "project-v3-with-kustomize-v2" ] || [ $project == "project-v4" ] || [ $project == "project-v4-config" ]; then
     header_text 'Creating APIs ...'
     $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false
     $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false --force
@@ -61,7 +61,7 @@ function scaffold_test_project {
     fi
     $kb create webhook --group crew --version v1 --kind FirstMate --conversion
 
-    if [ $project == "project-v3" ]; then
+    if [ $project == "project-v3" ] || [ $project == "project-v4" ]; then
       $kb create api --group crew --version v1 --kind Admiral --plural=admirales --controller=true --resource=true --namespaced=false --make=false
       $kb create webhook --group crew --version v1 --kind Admiral --plural=admirales --defaulting
     else
@@ -94,11 +94,11 @@ function scaffold_test_project {
     $kb create api --group foo.policy --version v1 --kind HealthCheckPolicy --controller=true --resource=true --make=false
 
     $kb create api --group apps --version v1 --kind Deployment --controller=true --resource=false --make=false
-    
+
     $kb create api --group foo --version v1 --kind Bar --controller=true --resource=true --make=false
     $kb create api --group fiz --version v1 --kind Bar --controller=true --resource=true --make=false
 
-    if [ $project == "project-v3-multigroup" ]; then
+    if [ $project == "project-v3-multigroup" ] || [ $project == "project-v4-multigroup" ]; then
       $kb create api --version v1 --kind Lakers --controller=true --resource=true --make=false
       $kb create webhook --version v1 --kind Lakers --defaulting --programmatic-validation
     fi
@@ -132,3 +132,8 @@ scaffold_test_project project-v3-addon --plugins="go/v3,declarative"
 scaffold_test_project project-v3-config --component-config
 scaffold_test_project project-v3-v1beta1
 scaffold_test_project project-v3-with-kustomize-v2 --plugins="kustomize/v2-alpha,base.go.kubebuilder.io/v3"
+# Project version 4 (default) uses plugin go/v4 (default).
+scaffold_test_project project-v4
+scaffold_test_project project-v4-multigroup
+scaffold_test_project project-v4-addon --plugins="go/v4-alpha,declarative"
+scaffold_test_project project-v4-config --component-config

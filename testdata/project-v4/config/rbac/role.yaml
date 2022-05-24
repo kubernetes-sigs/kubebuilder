@@ -1,0 +1,111 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+- apiGroups:
+  - crew.testproject.org
+  resources:
+  - admirales
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - crew.testproject.org
+  resources:
+  - admirales/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - crew.testproject.org
+  resources:
+  - admirales/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - crew.testproject.org
+  resources:
+  - captains
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - crew.testproject.org
+  resources:
+  - captains/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - crew.testproject.org
+  resources:
+  - captains/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - crew.testproject.org
+  resources:
+  - firstmates
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - crew.testproject.org
+  resources:
+  - firstmates/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - crew.testproject.org
+  resources:
+  - firstmates/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - crew.testproject.org
+  resources:
+  - lakers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - crew.testproject.org
+  resources:
+  - lakers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - crew.testproject.org
+  resources:
+  - lakers/status
+  verbs:
+  - get
+  - patch
+  - update
