@@ -60,6 +60,21 @@ For example, you should refrain from moving the scaffolded files, doing so will 
 
 So you want to upgrade your scaffolding to use the latest and greatest features then, follow up the following guide which will cover the steps in the most straightforward way to allow you to upgrade your project to get all latest changes and improvements.
 
+<aside class="note warning">
+<h1> Apple Silicon (M1) </h1>
+
+The current scaffold done by the CLI (`go/v3`) uses [kubernetes-sigs/kustomize][kustomize] v3 which does not provide
+a valid binary for Apple Silicon (`darwin/arm64`). Therefore, you can use the `go/v4-alpha` plugin
+instead which provides support for this platform:
+
+```bash
+kubebuilder init --domain my.domain --repo my.domain/guestbook --plugins=go/v4-alpha
+```
+
+**Note**: The `go/v4-alpha` plugin is an unstable version and can have breaking changes in future releases.
+The steps to migrate your project from v2 to v3 using the `alpha` scaffold are the same.
+</aside>
+
 - [Migration Guide v2 to V3][migration-guide-v2-to-v3] **(Recommended)**
               
 ### By updating the files manually
@@ -88,3 +103,4 @@ You will check that you can still using the previous layout by using the `go/v2`
 [kb-releases]: https://github.com/kubernetes-sigs/kubebuilder/releases
 [kube-rbac-proxy]: https://github.com/brancz/kube-rbac-proxy/releases
 [basic-project-doc]: ../cronjob-tutorial/basic-project.md
+[kustomize]: https://github.com/kubernetes-sigs/kustomize

@@ -36,14 +36,6 @@ not needed inside `GOPATH`, it is still recommended.
 ```bash
 go mod init tutorial.kubebuilder.io/migration-project
 ```
-<aside class="note warning">
-<h1> Migrating to Kubebuilder v3 while staying on the go/v2 plugin </h1>
-
-You can use `--plugins=go/v2` if you wish to continue using "`Kubebuilder 2.x`" layout.
-However, with the legacy layout you are unable to produce projects supported
-on Kubernetes versions >= `1.22`. Therefore, it is not recommended.
-
-</aside>
 
 <aside class="note">
 <h1>The module of your project can found in the in the `go.mod` file at the root of your project:</h1>

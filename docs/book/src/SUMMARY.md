@@ -111,9 +111,12 @@
   - [Available Plugins](./plugins/available-plugins.md)
     - [go/v2 plugin (Deprecated)](./plugins/go-v2-plugin.md)
     - [go/v3 plugin](./plugins/go-v3-plugin.md)
-    - [Declarative V1](./plugins/declarative-v1.md)
-    - [grafana/v1-alpha](./plugins/grafana-v1-alpha.md)
+    - [go/v4-alpha plugin](./plugins/go-v4-plugin.md)
     - [Kustomize V1](./plugins/kustomize-v1.md)
+    - [Kustomize v2 Alpha](./plugins/kustomize-v2-alpha.md)
+    - [Declarative V1 (Optional Feature)](./plugins/declarative-v1.md)
+    - [Grafana V1 Alpha (Optional Feature)](./plugins/grafana-v1-alpha.md)
+    - [Deploy Image V1 Alpha (Optional Feature)](./plugins/deploy-image-plugin-v1-alpha.md)
   - [Plugins Versioning](./plugins/plugins-versioning.md)
 
 ---  

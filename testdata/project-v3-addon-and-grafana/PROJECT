@@ -1,0 +1,51 @@
+domain: testproject.org
+layout:
+- go.kubebuilder.io/v3
+- declarative.go.kubebuilder.io/v1
+- grafana.kubebuilder.io/v1-alpha
+plugins:
+  declarative.go.kubebuilder.io/v1:
+    resources:
+    - domain: testproject.org
+      group: crew
+      kind: Captain
+      version: v1
+    - domain: testproject.org
+      group: crew
+      kind: FirstMate
+      version: v1
+    - domain: testproject.org
+      group: crew
+      kind: Admiral
+      version: v1
+  grafana.kubebuilder.io/v1-alpha: {}
+projectName: project-v3-addon-and-grafana
+repo: sigs.k8s.io/kubebuilder/testdata/project-v3-addon-and-grafana
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: testproject.org
+  group: crew
+  kind: Captain
+  path: sigs.k8s.io/kubebuilder/testdata/project-v3-addon-and-grafana/api/v1
+  version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: testproject.org
+  group: crew
+  kind: FirstMate
+  path: sigs.k8s.io/kubebuilder/testdata/project-v3-addon-and-grafana/api/v1
+  version: v1
+- api:
+    crdVersion: v1
+  controller: true
+  domain: testproject.org
+  group: crew
+  kind: Admiral
+  path: sigs.k8s.io/kubebuilder/testdata/project-v3-addon-and-grafana/api/v1
+  version: v1
+version: "3"

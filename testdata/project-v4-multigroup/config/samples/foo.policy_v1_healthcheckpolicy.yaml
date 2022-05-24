@@ -1,0 +1,6 @@
+apiVersion: foo.policy.testproject.org/v1
+kind: HealthCheckPolicy
+metadata:
+  name: healthcheckpolicy-sample
+spec:
+  # TODO(user): Add fields here
