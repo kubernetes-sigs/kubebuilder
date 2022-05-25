@@ -48,8 +48,17 @@ metadata:
 spec:
   template:
     spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       containers:
       - name: manager
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
         args:
         - "--config=controller_manager_config.yaml"
         volumeMounts:
@@ -58,6 +67,11 @@ spec:
           subPath: controller_manager_config.yaml
       volumes:
       - name: manager-config
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
         configMap:
           name: manager-config
 `
