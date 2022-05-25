@@ -53,10 +53,6 @@ metadata:
 spec:
   template:
     spec:
-      securityContext:
-        runAsNonRoot: true
-        seccompProfile:
-          type: RuntimeDefault		
       containers:
       - name: kube-rbac-proxy
         securityContext:

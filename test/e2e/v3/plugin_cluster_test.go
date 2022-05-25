@@ -84,7 +84,7 @@ var _ = Describe("kubebuilder", func() {
 				kbc.UninstallCertManager(true)
 			})
 
-			It("should generate a runnable project", func() {
+			It("should generate a runnable project go/v2 with default SA", func() {
 				// go/v3 uses a unqiue-per-project service account name,
 				// while go/v2 still uses "default".
 				tmp := kbc.Kubectl.ServiceAccount
@@ -106,10 +106,13 @@ var _ = Describe("kubebuilder", func() {
 				kbc.UninstallCertManager(false)
 			})
 
-			It("should generate a runnable project", func() {
+			It("should generate a runnable project go/v3 with v1 CRDs and Webhooks", func() {
 				// Skip if cluster version < 1.16, when v1 CRDs and webhooks did not exist.
-				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() < 17 {
-					Skip(fmt.Sprintf("cluster version %s does not support v1 CRDs or webhooks", srvVer.GitVersion))
+				// Skip if cluster version < 1.19, because securityContext.seccompProfile only works from 1.19
+				// Otherwise, unknown field "seccompProfile" in io.k8s.api.core.v1.PodSecurityContext will be faced
+				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() < 19 {
+					Skip(fmt.Sprintf("cluster version %s does not support v1 CRDs or webhooks"+
+						"and securityContext.seccompProfile", srvVer.GitVersion))
 				}
 
 				GenerateV3(kbc, "v1")
@@ -117,8 +120,11 @@ var _ = Describe("kubebuilder", func() {
 			})
 			It("should generate a runnable project with the golang base plugin v3 and kustomize v4-alpha", func() {
 				// Skip if cluster version < 1.16, when v1 CRDs and webhooks did not exist.
-				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() < 17 {
-					Skip(fmt.Sprintf("cluster version %s does not support v1 CRDs or webhooks", srvVer.GitVersion))
+				// Skip if cluster version < 1.19, because securityContext.seccompProfile only works from 1.19
+				// Otherwise, unknown field "seccompProfile" in io.k8s.api.core.v1.PodSecurityContext will be faced
+				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() < 19 {
+					Skip(fmt.Sprintf("cluster version %s does not support v1 CRDs or webhooks "+
+						"and securityContext.seccompProfile", srvVer.GitVersion))
 				}
 
 				GenerateV3WithKustomizeV2(kbc, "v1")
@@ -126,10 +132,13 @@ var _ = Describe("kubebuilder", func() {
 			})
 			It("should generate a runnable project with v1beta1 CRDs and Webhooks", func() {
 				// Skip if cluster version < 1.15, when `.spec.preserveUnknownFields` was not a v1beta1 CRD field.
+				// Skip if cluster version < 1.19, because securityContext.seccompProfile only works from 1.19
+				// Otherwise, unknown field "seccompProfile" in io.k8s.api.core.v1.PodSecurityContext will be faced
 				// Skip if cluster version >= 1.22 because pre v1 CRDs and webhooks no longer exist.
-				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() < 16 ||
+				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() < 19 ||
 					srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() >= 22 {
-					Skip(fmt.Sprintf("cluster version %s does not support project defaults", srvVer.GitVersion))
+					Skip(fmt.Sprintf("cluster version %s does not support project defaults "+
+						"and securityContext.seccompProfile", srvVer.GitVersion))
 				}
 
 				GenerateV3(kbc, "v1beta1")
