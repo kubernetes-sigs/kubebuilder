@@ -11,7 +11,7 @@ echo "Building kustomize $KUSTOMIZE_VERSION locally for $OS/$ARCH"
 
 TEMP_DIR=$(mktemp -d)
 cd $TEMP_DIR
-git clone --depth 1 --branch $KUSTOMIZE_VERSION https://github.com/kubernetes-sigs/kustomize.git
+git clone --depth 1 --branch kustomize/$KUSTOMIZE_VERSION https://github.com/kubernetes-sigs/kustomize.git
 cd kustomize/kustomize
 GOBIN=$INSTALL_PATH go install .
 cd ../../..
