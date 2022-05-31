@@ -63,6 +63,12 @@ IMG ?= {{ .Image }}
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.24.2
 
+# TARGET_GOOS and TARGET_GOARCH define respectively the OS and architecture used to build
+# the GO Operator manager binary and image.
+# Update these values to generate Operator manager binary/image for another environment.
+TARGET_GOOS   ?= linux
+TARGET_GOARCH ?= amd64
+
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
@@ -129,7 +135,7 @@ run: manifests generate fmt vet ## Run a controller from your host.
 
 .PHONY: docker-build
 docker-build: test ## Build docker image with the manager.
-	docker build -t ${IMG} --build-arg GOARCH=$(shell go env GOARCH) .
+	docker build -t ${IMG} --build-arg TARGET_GOOS=${TARGET_GOOS} --build-arg TARGET_GOARCH=${TARGET_GOARCH} .
 
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager.

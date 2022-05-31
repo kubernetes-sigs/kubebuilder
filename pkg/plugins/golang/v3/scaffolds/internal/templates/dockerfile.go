@@ -41,7 +41,10 @@ func (f *Dockerfile) SetTemplateDefaults() error {
 const dockerfileTemplate = `# Build the manager binary
 FROM golang:1.18 as builder
 
-ARG GOARCH=amd64
+# TARGET_GOOS and TARGET_GOARCH are passed as build argument
+# set by default respectivelly to linux and amd64
+ARG TARGET_GOOS=linux
+ARG TARGET_GOARCH=amd64
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
@@ -57,7 +60,8 @@ COPY api/ api/
 COPY controllers/ controllers/
 
 # Build
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=$GOARCH go build -a -o manager main.go
+RUN CGO_ENABLED=0 GOOS=${TARGET_GOOS} GOARCH=${TARGET_GOARCH} \
+	go build -a -o manager main.go
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
