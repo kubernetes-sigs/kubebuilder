@@ -122,7 +122,13 @@ KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/k
 .PHONY: kustomize
 kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary.
 $(KUSTOMIZE): $(LOCALBIN)
+ifeq "$(uname -s)" "Darwin"
+ifeq "$(uname -m)" "aarch64"
+	curl -s "https://raw.githubusercontent.com/everettraven/kubebuilder/feat/temp-arm-support/scripts/build-kustomize.sh" | bash -s -- $(KUSTOMIZE_VERSION) $(LOCALBIN)
+endif
+else
 	curl -s $(KUSTOMIZE_INSTALL_SCRIPT) | bash -s -- $(subst v,,$(KUSTOMIZE_VERSION)) $(LOCALBIN)
+endif
 
 .PHONY: controller-gen
 controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary.
@@ -133,3 +139,9 @@ $(CONTROLLER_GEN): $(LOCALBIN)
 envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
 $(ENVTEST): $(LOCALBIN)
 	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+
+
+ETCD_SCRIPT ?= "https://raw.githubusercontent.com/everettraven/kubebuilder/feat/temp-arm-support/scripts/build-etcd.sh"
+.PHONY: etcd
+etcd: ## build etcd locally
+	curl -s $(ETCD_SCRIPT) | bash -s
