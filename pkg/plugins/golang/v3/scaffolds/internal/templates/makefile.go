@@ -193,13 +193,21 @@ $(CONTROLLER_GEN): $(LOCALBIN)
 	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_TOOLS_VERSION)
 
 .PHONY: envtest
-envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
+envtest: $(ENVTEST) get-etcd ## Download envtest-setup locally if necessary.
 $(ENVTEST): $(LOCALBIN)
 	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
 
-
 ETCD_SCRIPT ?= "https://raw.githubusercontent.com/everettraven/kubebuilder/feat/temp-arm-support/scripts/build-etcd.sh"
-.PHONY: etcd
-etcd: ## build etcd locally
+.PHONY: build-etcd
+build-etcd: ## build etcd locally
 	curl -s $(ETCD_SCRIPT) | bash -s
+
+.PHONY: get-etcd
+get-etcd: ## runs the build-etcd target only if the platform is darwin/arm64
+## if M1 Mac, build etcd locally if it doesn't already exist
+ifeq "$(uname -s)" "Darwin"
+ifeq "$(uname -m)" "aarch64"
+	etcd --version &> /dev/null || make build-etcd
+endif
+endif
 `
