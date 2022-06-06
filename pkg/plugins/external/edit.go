@@ -17,6 +17,8 @@ limitations under the License.
 package external
 
 import (
+	"github.com/spf13/pflag"
+
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/external"
@@ -27,6 +29,10 @@ var _ plugin.EditSubcommand = &editSubcommand{}
 type editSubcommand struct {
 	Path string
 	Args []string
+}
+
+func (p *editSubcommand) BindFlags(fs *pflag.FlagSet) {
+	bindExternalPluginFlags(fs, "edit", p.Path, p.Args)
 }
 
 func (p *editSubcommand) Scaffold(fs machinery.Filesystem) error {

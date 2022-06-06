@@ -17,6 +17,7 @@ limitations under the License.
 package external
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -25,7 +26,10 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
+	"github.com/spf13/pflag"
+
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/external"
 )
 
 func TestExternalPlugin(t *testing.T) {
@@ -69,6 +73,21 @@ var _ OsWdGetter = &mockInValidOsWdGetter{}
 func (m *mockInValidOsWdGetter) GetCurrentDir() (string, error) {
 	return "", fmt.Errorf("error getting current directory")
 }
+
+type mockValidFlagOutputGetter struct{}
+
+func (m *mockValidFlagOutputGetter) GetExecOutput(req []byte, path string) ([]byte, error) {
+	response := external.PluginResponse{
+		Command:  "flag",
+		Error:    false,
+		Universe: nil,
+		Flags:    getFlags(),
+	}
+	return json.Marshal(response)
+}
+
+const externalPlugin = "myexternalplugin.sh"
+const floatVal = "float"
 
 var _ = Describe("Run external plugin using Scaffold", func() {
 	Context("with valid mock values", func() {
@@ -169,7 +188,7 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 				FS: afero.NewMemMapFs(),
 			}
 
-			pluginFileName = "myexternalplugin.sh"
+			pluginFileName = externalPlugin
 			args = []string{"--domain", "example.com"}
 
 		})
@@ -248,4 +267,252 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 
 		})
 	})
+
+	Context("with successfully getting flags from external plugin", func() {
+		var (
+			pluginFileName string
+			args           []string
+			flagset        *pflag.FlagSet
+
+			// Make an array of flags to represent the ones that should be returned in these tests
+			flags = getFlags()
+
+			checkFlagset func()
+		)
+		BeforeEach(func() {
+			outputGetter = &mockValidFlagOutputGetter{}
+			currentDirGetter = &mockValidOsWdGetter{}
+
+			pluginFileName = externalPlugin
+			args = []string{"--captain", "black-beard", "--sail"}
+			flagset = pflag.NewFlagSet("test", pflag.ContinueOnError)
+
+			checkFlagset = func() {
+				Expect(flagset.HasFlags()).To(BeTrue())
+
+				for _, flag := range flags {
+					Expect(flagset.Lookup(flag.Name)).NotTo(BeNil())
+					// we parse floats as float64 Go type so this check will account for that
+					if flag.Type != floatVal {
+						Expect(flagset.Lookup(flag.Name).Value.Type()).To(Equal(flag.Type))
+					} else {
+						Expect(flagset.Lookup(flag.Name).Value.Type()).To(Equal("float64"))
+					}
+					Expect(flagset.Lookup(flag.Name).Usage).To(Equal(flag.Usage))
+					Expect(flagset.Lookup(flag.Name).DefValue).To(Equal(flag.Default))
+				}
+			}
+		})
+
+		It("should successfully bind external plugin specified flags for `init` subcommand", func() {
+			sc := initSubcommand{
+				Path: pluginFileName,
+				Args: args,
+			}
+
+			sc.BindFlags(flagset)
+
+			checkFlagset()
+		})
+
+		It("should successfully bind external plugin specified flags for `create api` subcommand", func() {
+			sc := createAPISubcommand{
+				Path: pluginFileName,
+				Args: args,
+			}
+
+			sc.BindFlags(flagset)
+
+			checkFlagset()
+		})
+
+		It("should successfully bind external plugin specified  flags for `create webhook` subcommand", func() {
+			sc := createWebhookSubcommand{
+				Path: pluginFileName,
+				Args: args,
+			}
+
+			sc.BindFlags(flagset)
+
+			checkFlagset()
+		})
+
+		It("should successfully bind external plugin specified flags for `edit` subcommand", func() {
+			sc := editSubcommand{
+				Path: pluginFileName,
+				Args: args,
+			}
+
+			sc.BindFlags(flagset)
+
+			checkFlagset()
+		})
+	})
+
+	Context("with failure to get flags from external plugin", func() {
+		var (
+			pluginFileName string
+			args           []string
+			flagset        *pflag.FlagSet
+			usage          string
+			checkFlagset   func()
+		)
+		BeforeEach(func() {
+			outputGetter = &mockInValidOutputGetter{}
+			currentDirGetter = &mockValidOsWdGetter{}
+
+			pluginFileName = externalPlugin
+			args = []string{"--captain", "black-beard", "--sail"}
+			flagset = pflag.NewFlagSet("test", pflag.ContinueOnError)
+			usage = "Kubebuilder could not validate this flag with the external plugin. " +
+				"Consult the external plugin documentation for more information."
+
+			checkFlagset = func() {
+				Expect(flagset.HasFlags()).To(BeTrue())
+
+				Expect(flagset.Lookup("captain")).NotTo(BeNil())
+				Expect(flagset.Lookup("captain").Value.Type()).To(Equal("string"))
+				Expect(flagset.Lookup("captain").Usage).To(Equal(usage))
+
+				Expect(flagset.Lookup("sail")).NotTo(BeNil())
+				Expect(flagset.Lookup("sail").Value.Type()).To(Equal("bool"))
+				Expect(flagset.Lookup("sail").Usage).To(Equal(usage))
+			}
+		})
+
+		It("should successfully bind all user passed flags for `init` subcommand", func() {
+			sc := initSubcommand{
+				Path: pluginFileName,
+				Args: args,
+			}
+
+			sc.BindFlags(flagset)
+
+			checkFlagset()
+		})
+
+		It("should successfully bind all user passed flags for `create api` subcommand", func() {
+			sc := createAPISubcommand{
+				Path: pluginFileName,
+				Args: args,
+			}
+
+			sc.BindFlags(flagset)
+
+			checkFlagset()
+		})
+
+		It("should successfully bind all user passed flags for `create webhook` subcommand", func() {
+			sc := createWebhookSubcommand{
+				Path: pluginFileName,
+				Args: args,
+			}
+
+			sc.BindFlags(flagset)
+
+			checkFlagset()
+		})
+
+		It("should successfully bind all user passed flags for `edit` subcommand", func() {
+			sc := editSubcommand{
+				Path: pluginFileName,
+				Args: args,
+			}
+
+			sc.BindFlags(flagset)
+
+			checkFlagset()
+		})
+
+	})
+
+	Context("Flag Parsing Helper Functions", func() {
+		var (
+			fs    *pflag.FlagSet
+			args  = []string{"--domain", "something.com", "--boolean", "--another", "flag", "--help"}
+			flags []external.Flag
+		)
+
+		BeforeEach(func() {
+			fs = pflag.NewFlagSet("test", pflag.ContinueOnError)
+
+			flagsToAppend := getFlags()
+
+			flags = make([]external.Flag, len(flagsToAppend))
+			copy(flags, flagsToAppend)
+		})
+
+		It("isBooleanFlag should return true if boolean flag provided at index", func() {
+			Expect(isBooleanFlag(2, args)).To(BeTrue())
+		})
+
+		It("isBooleanFlag should return false if boolean flag not provided at index", func() {
+			Expect(isBooleanFlag(0, args)).To(BeFalse())
+		})
+
+		It("bindAllFlags should bind all flags except for `--help`", func() {
+			usage := "Kubebuilder could not validate this flag with the external plugin. " +
+				"Consult the external plugin documentation for more information."
+
+			bindAllFlags(fs, args)
+			Expect(fs.HasFlags()).To(BeTrue())
+			Expect(fs.Lookup("domain")).NotTo(BeNil())
+			Expect(fs.Lookup("domain").Value.Type()).To(Equal("string"))
+			Expect(fs.Lookup("domain").Usage).To(Equal(usage))
+			Expect(fs.Lookup("boolean")).NotTo(BeNil())
+			Expect(fs.Lookup("boolean").Value.Type()).To(Equal("bool"))
+			Expect(fs.Lookup("boolean").Usage).To(Equal(usage))
+			Expect(fs.Lookup("another")).NotTo(BeNil())
+			Expect(fs.Lookup("another").Value.Type()).To(Equal("string"))
+			Expect(fs.Lookup("another").Usage).To(Equal(usage))
+			Expect(fs.Lookup("help")).To(BeNil())
+		})
+
+		It("bindSpecificFlags should bind all flags in given []Flag", func() {
+			bindSpecificFlags(fs, flags)
+
+			Expect(fs.HasFlags()).To(BeTrue())
+
+			for _, flag := range flags {
+				Expect(fs.Lookup(flag.Name)).NotTo(BeNil())
+				// we parse floats as float64 Go type so this check will account for that
+				if flag.Type != floatVal {
+					Expect(fs.Lookup(flag.Name).Value.Type()).To(Equal(flag.Type))
+				} else {
+					Expect(fs.Lookup(flag.Name).Value.Type()).To(Equal("float64"))
+				}
+				Expect(fs.Lookup(flag.Name).Usage).To(Equal(flag.Usage))
+				Expect(fs.Lookup(flag.Name).DefValue).To(Equal(flag.Default))
+			}
+		})
+	})
 })
+
+func getFlags() []external.Flag {
+	return []external.Flag{
+		{
+			Name:    "captain",
+			Type:    "string",
+			Usage:   "specify the ship captain",
+			Default: "jack-sparrow",
+		},
+		{
+			Name:    "sail",
+			Type:    "bool",
+			Usage:   "deploy the sail",
+			Default: "false",
+		},
+		{
+			Name:    "crew-count",
+			Type:    "int",
+			Usage:   "number of crew members",
+			Default: "123",
+		},
+		{
+			Name:    "treasure-value",
+			Type:    "float",
+			Usage:   "value of treasure on board the ship",
+			Default: "123.45",
+		},
+	}
+}

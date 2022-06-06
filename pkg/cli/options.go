@@ -155,8 +155,18 @@ func WithCompletion() Option {
 
 // parseExternalPluginArgs returns the program arguments.
 func parseExternalPluginArgs() (args []string) {
-	args = make([]string, len(os.Args)-1)
-	copy(args, os.Args[1:])
+	// Loop through os.Args and only get flags and their values that should be passed to the plugins
+	// this also removes the --plugins flag and its values from the list passed to the external plugin
+	for i := range os.Args {
+		if strings.Contains(os.Args[i], "--") && !strings.Contains(os.Args[i], "--plugins") {
+			args = append(args, os.Args[i])
+
+			// Don't go out of bounds and don't append the next value if it is a flag
+			if i+1 < len(os.Args) && !strings.Contains(os.Args[i+1], "--") {
+				args = append(args, os.Args[i+1])
+			}
+		}
+	}
 
 	return args
 }

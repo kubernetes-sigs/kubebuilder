@@ -17,6 +17,8 @@ limitations under the License.
 package external
 
 import (
+	"github.com/spf13/pflag"
+
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
@@ -33,6 +35,10 @@ type createWebhookSubcommand struct {
 func (p *createWebhookSubcommand) InjectResource(*resource.Resource) error {
 	// Do nothing since resource flags are passed to the external plugin directly.
 	return nil
+}
+
+func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
+	bindExternalPluginFlags(fs, "webhook", p.Path, p.Args)
 }
 
 func (p *createWebhookSubcommand) Scaffold(fs machinery.Filesystem) error {

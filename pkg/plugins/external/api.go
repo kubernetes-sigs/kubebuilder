@@ -17,6 +17,8 @@ limitations under the License.
 package external
 
 import (
+	"github.com/spf13/pflag"
+
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
@@ -37,6 +39,10 @@ type createAPISubcommand struct {
 func (p *createAPISubcommand) InjectResource(*resource.Resource) error {
 	// Do nothing since resource flags are passed to the external plugin directly.
 	return nil
+}
+
+func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
+	bindExternalPluginFlags(fs, "api", p.Path, p.Args)
 }
 
 func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
