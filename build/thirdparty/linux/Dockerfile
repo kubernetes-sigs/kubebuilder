@@ -18,11 +18,11 @@
 # - etcd (fetch)
 
 # no need for anything fancy
-FROM alpine:3.8 as builder
+FROM alpine:3.16 as builder
 
 # Version and platform args.
 ARG KUBERNETES_VERSION
-ARG ETCD_VERSION=v3.5.1
+ARG ETCD_VERSION=v3.5.4
 ARG OS=linux
 ARG ARCH
 

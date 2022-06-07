@@ -17,11 +17,11 @@
 # - kubectl (fetch)
 # - etcd (fetch)
 
-FROM golang:1.17 as builder
+FROM golang:1.18 as builder
 
 # Version and platform args.
 ARG KUBERNETES_VERSION
-ARG ETCD_VERSION=v3.5.1
+ARG ETCD_VERSION=v3.5.4
 ARG OS=darwin
 ARG ARCH
 
@@ -57,7 +57,7 @@ WORKDIR /usr/local
 RUN tar -czvf /kubebuilder_${OS}_${ARCH}.tar.gz kubebuilder/
 
 # Copy tarball to final image.
-FROM alpine:3.8
+FROM alpine:3.16
 
 # Platform args.
 ARG OS=darwin
