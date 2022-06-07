@@ -35,7 +35,7 @@ import (
 
 // Variables and function to check Go version requirements.
 var (
-	goVerMin = golang.MustParse("go1.17")
+	goVerMin = golang.MustParse("go1.17.9")
 	goVerMax = golang.MustParse("go2.0alpha1")
 )
 

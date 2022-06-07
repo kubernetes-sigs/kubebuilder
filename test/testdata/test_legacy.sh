@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-
+# todo: remove this file when go/v2 be removed
 # Copyright 2018 The Kubernetes Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,9 +30,9 @@ function test_project {
 
 build_kb
 
-# Test project v3
-test_project project-v3
-test_project project-v3-multigroup
-test_project project-v3-addon
-test_project project-v3-config
-
+# Test project v2, which relies on pre-installed envtest tools to run 'make test'.
+tools_k8s_version="1.19.2"
+fetch_tools
+test_project project-v2
+test_project project-v2-multigroup
+test_project project-v2-addon

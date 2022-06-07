@@ -122,6 +122,12 @@ check-testdata: ## Run the script to ensure that the testdata is updated
 test-testdata: ## Run the tests of the testdata directory
 	./test/testdata/test.sh
 
+#todo(remove the test-legacy whne the go/v2 be removed from kubebuilder)
+
+.PHONY: test-legacy
+test-legacy: ## Run the legacy tests (go/v2) of the testdata directory
+	./test/testdata/test_legacy.sh
+
 .PHONY: test-e2e-local
 test-e2e-local: ## Run the end-to-end tests locally
 	## To keep the same kind cluster between test runs, use `SKIP_KIND_CLEANUP=1 make test-e2e-local`

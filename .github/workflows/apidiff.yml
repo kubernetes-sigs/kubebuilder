@@ -37,7 +37,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
-          go-version: "1.17"
+          go-version: "1.18"
       - name: Execute go-apidiff
         uses: joelanford/go-apidiff@v0.2.0
         with:

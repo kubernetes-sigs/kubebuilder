@@ -19,7 +19,7 @@
 # Release tar will be in ./cloudbuild
 
 steps:
-- name: "goreleaser/goreleaser:v1.8.3"
+- name: "goreleaser/goreleaser:v1.9.2"
   entrypoint: "bash"
   env: ["SNAPSHOT=1"]
   args: ["build/build_kubebuilder.sh"]
