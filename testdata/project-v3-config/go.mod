@@ -1,6 +1,6 @@
 module sigs.k8s.io/kubebuilder/testdata/project-v3-config
 
-go 1.17
+go 1.18
 
 require (
 	github.com/onsi/ginkgo v1.16.5

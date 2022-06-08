@@ -1,0 +1,50 @@
+# todo: remove this file when go/v2 be removed
+name: Unit tests Legacy (go/v2)
+
+# Trigger the workflow on pull requests and direct pushes to any branch
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+    # Pull requests from the same repository won't trigger this checks as they were already triggered by the push
+    if: (github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository)
+    steps:
+      - name: Clone the code
+        uses: actions/checkout@v2
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          # the go/v2 cannot be updated and is scaffold with golang 1.13
+          # (version used by its dep version of the controller-runtime)
+          # however, we are unable to downgrade the version here
+          # because we will face errors
+          # So we are keeping the latest version where it works
+          # and highlighting that must be fixed
+          # Therefore, we probably will deprecate go/v2 soon since we cannot upgrade it
+          # to use the versions of controller-runtime > v0.9
+          # and controller-tools > v0.6 as k8s > 1.21 then it might not be valid we spend effort on this fix
+          go-version: "1.17"
+      # This step is needed as the following one tries to remove
+      # kustomize for each test but has no permission to do so
+      - name: Remove pre-installed kustomize
+        run: sudo rm -f /usr/local/bin/kustomize
+      - name: Perform the test
+        run: make test-legacy
+      - name: Report failure
+        uses: nashmaniac/create-issue-action@v1.1
+        # Only report failures of pushes (PRs have are visible through the Checks section) to the default branch
+        if: failure() && github.event_name == 'push' && github.ref == 'refs/heads/master'
+        with:
+          title: 🐛 Unit tests failed on ${{ matrix.os }} for ${{ github.sha }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          labels: kind/bug
+          body: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}

@@ -46,7 +46,7 @@ if [ -n "$TRACE" ]; then
   set -x
 fi
 
-export KIND_K8S_VERSION="${KIND_K8S_VERSION:-"v1.23.3"}"
+export KIND_K8S_VERSION="${KIND_K8S_VERSION:-"v1.24.1"}"
 tools_k8s_version=$(convert_to_tools_ver "${KIND_K8S_VERSION#v*}")
 kind_version=0.11.1
 goarch=amd64
