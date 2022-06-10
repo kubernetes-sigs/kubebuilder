@@ -112,6 +112,7 @@
     - [go/v2 plugin (Deprecated)](./plugins/go-v2-plugin.md)
     - [go/v3 plugin](./plugins/go-v3-plugin.md)
     - [Declarative V1](./plugins/declarative-v1.md)
+    - [grafana/v1-alpha](./plugins/grafana-v1-alpha.md)
     - [Kustomize V1](./plugins/kustomize-v1.md)
   - [Plugins Versioning](./plugins/plugins-versioning.md)
 

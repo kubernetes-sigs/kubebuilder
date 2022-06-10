@@ -114,6 +114,10 @@ function scaffold_test_project {
       $kb create webhook --group example.com --version v1alpha1 --kind Memcached --programmatic-validation
   fi
 
+  if [[ $project == 'project-v3' ]]; then
+      $kb edit --plugins=grafana.kubebuilder.io/v1-alpha
+  fi
+
   make generate manifests
   rm -f go.sum
 
@@ -131,3 +135,4 @@ scaffold_test_project project-v3-addon --plugins="go/v3,declarative"
 scaffold_test_project project-v3-config --component-config
 scaffold_test_project project-v3-with-kustomize-v2 --plugins="kustomize/v2-alpha,base.go.kubebuilder.io/v3"
 scaffold_test_project project-v3-with-deploy-image
+scaffold_test_project project-v3-with-grafana --plugins="go/v3,grafana.kubebuilder.io/v1-alpha"
