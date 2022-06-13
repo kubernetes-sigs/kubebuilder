@@ -12,9 +12,10 @@ spec:
       - name: kube-rbac-proxy
         securityContext:
           allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-              - ALL
+        # TODO(user): uncomment for common cases that do not require escalating privileges
+        # capabilities:
+        #   drop:
+        #     - "ALL"
         image: gcr.io/kubebuilder/kube-rbac-proxy:v0.11.0
         args:
         - "--secure-listen-address=0.0.0.0:8443"

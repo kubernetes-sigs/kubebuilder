@@ -48,7 +48,7 @@ fi
 
 export KIND_K8S_VERSION="${KIND_K8S_VERSION:-"v1.24.1"}"
 tools_k8s_version=$(convert_to_tools_ver "${KIND_K8S_VERSION#v*}")
-kind_version=0.11.1
+kind_version=0.14.0
 goarch=amd64
 
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
