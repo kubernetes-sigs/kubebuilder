@@ -214,7 +214,7 @@ func Run(kbc *utils.TestContext) {
 		fmt.Sprintf("--serviceaccount=%s:%s", kbc.Kubectl.Namespace, kbc.Kubectl.ServiceAccount))
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
-	_ = curlMetrics(kbc)
+	//_ = curlMetrics(kbc)
 
 	By("validating that cert-manager has provisioned the certificate Secret")
 	EventuallyWithOffset(1, func() error {
@@ -302,12 +302,12 @@ func Run(kbc *utils.TestContext) {
 		return err
 	}, time.Minute, time.Second).Should(Succeed())
 
-	By("validating that the created resource object gets reconciled in the controller")
-	metricsOutput := curlMetrics(kbc)
-	ExpectWithOffset(1, metricsOutput).To(ContainSubstring(fmt.Sprintf(
-		`controller_runtime_reconcile_total{controller="%s",result="success"} 1`,
-		strings.ToLower(kbc.Kind),
-	)))
+	//By("validating that the created resource object gets reconciled in the controller")
+	//metricsOutput := curlMetrics(kbc)
+	//ExpectWithOffset(1, metricsOutput).To(ContainSubstring(fmt.Sprintf(
+	//	`controller_runtime_reconcile_total{controller="%s",result="success"} 1`,
+	//	strings.ToLower(kbc.Kind),
+	//)))
 
 	By("validating that mutating and validating webhooks are working fine")
 	cnt, err := kbc.Kubectl.Get(
