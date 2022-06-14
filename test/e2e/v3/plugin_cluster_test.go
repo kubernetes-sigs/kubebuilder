@@ -42,6 +42,9 @@ var _ = Describe("kubebuilder", func() {
 	Context("project version 3", func() {
 		var (
 			kbc *utils.TestContext
+
+			// required for tests from 1.24
+			createAccountServiceToken bool
 		)
 
 		BeforeEach(func() {
@@ -52,6 +55,10 @@ var _ = Describe("kubebuilder", func() {
 
 			By("installing the Prometheus operator")
 			Expect(kbc.InstallPrometheusOperManager()).To(Succeed())
+
+			if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() >= 1 && srvVer.GetMinorInt() >= 24 {
+				createAccountServiceToken = true
+			}
 		})
 
 		AfterEach(func() {
@@ -70,86 +77,137 @@ var _ = Describe("kubebuilder", func() {
 			BeforeEach(func() {
 				// Skip if cluster version >= 1.22 because pre v1 CRDs and webhooks no longer exist.
 				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() >= 1 && srvVer.GetMinorInt() >= 22 {
-					Skip(fmt.Sprintf("cluster version %s does not support pre v1 CRDs or webhooks", srvVer.GitVersion))
+					By("installing the latest version of cert-manager bundle")
+					Expect(kbc.InstallCertManager(false)).To(Succeed())
+				} else {
+					By("installing the v1beta2 cert-manager bundle")
+					Expect(kbc.InstallCertManager(true)).To(Succeed())
 				}
-				By("installing the v1beta2 cert-manager bundle")
-				Expect(kbc.InstallCertManager(true)).To(Succeed())
+
 			})
 			AfterEach(func() {
 				// Skip if cluster version >= 1.22 because pre v1 CRDs and webhooks no longer exist.
 				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() >= 1 && srvVer.GetMinorInt() >= 22 {
-					Skip(fmt.Sprintf("cluster version %s does not support pre v1 CRDs or webhooks", srvVer.GitVersion))
+					By("installing the latest version of cert-manager bundle")
+					Expect(kbc.InstallCertManager(false)).To(Succeed())
+				} else {
+					By("uninstalling the v1beta2 cert-manager bundle")
+					kbc.UninstallCertManager(true)
 				}
-				By("uninstalling the v1beta2 cert-manager bundle")
-				kbc.UninstallCertManager(true)
 			})
 
 			It("should generate a runnable project go/v2 with default SA", func() {
-				// go/v3 uses a unqiue-per-project service account name,
-				// while go/v2 still uses "default".
-				tmp := kbc.Kubectl.ServiceAccount
-				kbc.Kubectl.ServiceAccount = "default"
-				defer func() { kbc.Kubectl.ServiceAccount = tmp }()
-				GenerateV2(kbc)
-				Run(kbc)
+				// Skip if cluster version >= 1.24 because of the required token to verify the metrics
+				// This plugin is a legacy version and cannot be updated so has no need for we still
+				// test this project on k8s versions >= 24
+				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() >= 1 && srvVer.GetMinorInt() >= 24 {
+					// go/v3 uses a unqiue-per-project service account name,
+					// while go/v2 still uses "default".
+					tmp := kbc.Kubectl.ServiceAccount
+					kbc.Kubectl.ServiceAccount = "default"
+					defer func() { kbc.Kubectl.ServiceAccount = tmp }()
+					GenerateV2(kbc)
+					Run(kbc, createAccountServiceToken)
+				}
 			})
 		})
 
 		Context("plugin go.kubebuilder.io/v3", func() {
-			// Use cert-manager with v1 CRs.
+			// Use cert-manager with v1beta2 CRs.
 			BeforeEach(func() {
-				By("installing the cert-manager bundle")
-				Expect(kbc.InstallCertManager(false)).To(Succeed())
+				// Skip if cluster version >= 1.22 because pre v1 CRDs and webhooks no longer exist.
+				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() >= 1 && srvVer.GetMinorInt() >= 22 {
+					By("installing the latest version of cert-manager bundle")
+					Expect(kbc.InstallCertManager(false)).To(Succeed())
+				} else {
+					By("installing the v1beta2 cert-manager bundle")
+					Expect(kbc.InstallCertManager(true)).To(Succeed())
+				}
+
 			})
 			AfterEach(func() {
-				By("uninstalling the cert-manager bundle")
-				kbc.UninstallCertManager(false)
+				// Skip if cluster version >= 1.22 because pre v1 CRDs and webhooks no longer exist.
+				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() >= 1 && srvVer.GetMinorInt() >= 22 {
+					By("installing the latest version of cert-manager bundle")
+					Expect(kbc.InstallCertManager(false)).To(Succeed())
+				} else {
+					By("uninstalling the v1beta2 cert-manager bundle")
+					kbc.UninstallCertManager(true)
+				}
 			})
 
 			It("should generate a runnable project go/v3 with v1 CRDs and Webhooks", func() {
 				// Skip if cluster version < 1.16, when v1 CRDs and webhooks did not exist.
-				// Skip if cluster version < 1.19, because securityContext.seccompProfile only works from 1.19
-				// Otherwise, unknown field "seccompProfile" in io.k8s.api.core.v1.PodSecurityContext will be faced
+				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() < 16 {
+					Skip(fmt.Sprintf("cluster version %s does not support v1 CRDs or webhooks", srvVer.GitVersion))
+				}
+
+				GenerateV3(kbc, "v1", false)
+				Run(kbc, createAccountServiceToken)
+			})
+
+			It("should generate a runnable project go/v3 with v1 CRDs and Webhooks with restricted Pod Standards", func() {
+				// Skip if cluster version < 1.16, when v1 CRDs and webhooks did not exist.
 				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() < 19 {
 					Skip(fmt.Sprintf("cluster version %s does not support v1 CRDs or webhooks"+
 						"and securityContext.seccompProfile", srvVer.GitVersion))
 				}
 
-				GenerateV3(kbc, "v1")
-				Run(kbc)
+				GenerateV3(kbc, "v1", true)
+				Run(kbc, createAccountServiceToken)
 			})
+
 			It("should generate a runnable project with the golang base plugin v3 and kustomize v4-alpha", func() {
 				// Skip if cluster version < 1.16, when v1 CRDs and webhooks did not exist.
-				// Skip if cluster version < 1.19, because securityContext.seccompProfile only works from 1.19
-				// Otherwise, unknown field "seccompProfile" in io.k8s.api.core.v1.PodSecurityContext will be faced
+				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() < 16 {
+					Skip(fmt.Sprintf("cluster version %s does not support v1 CRDs or webhooks ", srvVer.GitVersion))
+				}
+
+				GenerateV3WithKustomizeV2(kbc, "v1", false)
+				Run(kbc, createAccountServiceToken)
+			})
+			It("should generate a runnable project with the golang base plugin v3 and kustomize v4-alpha "+
+				"with restricted Pod Standards", func() {
+				// Skip if cluster version < 1.16, when v1 CRDs and webhooks did not exist.
+				// Skip tests < 1.19 because the securityContext.seccompProfile does not exist before that
 				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() < 19 {
 					Skip(fmt.Sprintf("cluster version %s does not support v1 CRDs or webhooks "+
 						"and securityContext.seccompProfile", srvVer.GitVersion))
 				}
 
-				GenerateV3WithKustomizeV2(kbc, "v1")
-				Run(kbc)
+				GenerateV3WithKustomizeV2(kbc, "v1", true)
+				Run(kbc, createAccountServiceToken)
 			})
 			It("should generate a runnable project with v1beta1 CRDs and Webhooks", func() {
 				// Skip if cluster version < 1.15, when `.spec.preserveUnknownFields` was not a v1beta1 CRD field.
-				// Skip if cluster version < 1.19, because securityContext.seccompProfile only works from 1.19
-				// Otherwise, unknown field "seccompProfile" in io.k8s.api.core.v1.PodSecurityContext will be faced
 				// Skip if cluster version >= 1.22 because pre v1 CRDs and webhooks no longer exist.
+				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() < 15 ||
+					srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() >= 22 {
+					Skip(fmt.Sprintf("cluster version %s does not support project defaults ", srvVer.GitVersion))
+				}
+
+				GenerateV3(kbc, "v1beta1", false)
+				Run(kbc, createAccountServiceToken)
+			})
+			It("should generate a runnable project with v1beta1 CRDs and Webhooks with restricted Pod Standards", func() {
+				// Skip if cluster version < 1.15, when `.spec.preserveUnknownFields` was not a v1beta1 CRD field.
+				// Skip if cluster version >= 1.22 because pre v1 CRDs and webhooks no longer exist.
+				// Skip tests < 1.19 because the securityContext.seccompProfile does not exist before that
 				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() < 19 ||
 					srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() >= 22 {
 					Skip(fmt.Sprintf("cluster version %s does not support project defaults "+
 						"and securityContext.seccompProfile", srvVer.GitVersion))
 				}
 
-				GenerateV3(kbc, "v1beta1")
-				Run(kbc)
+				GenerateV3(kbc, "v1beta1", true)
+				Run(kbc, createAccountServiceToken)
 			})
 		})
 	})
 })
 
 // Run runs a set of e2e tests for a scaffolded project defined by a TestContext.
-func Run(kbc *utils.TestContext) {
+func Run(kbc *utils.TestContext, createAccountServiceToken bool) {
 	var controllerPodName string
 	var err error
 
@@ -164,6 +222,15 @@ func Run(kbc *utils.TestContext) {
 	By("loading the controller docker image into the kind cluster")
 	err = kbc.LoadImageToKindCluster()
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+
+	if createAccountServiceToken {
+		// Scaffold token when the k8s version is > 1.24
+		// The token is only required because of the curl that is made to check the metrics
+		// As of Kubernetes 1.24 a ServiceAccount no longer has a ServiceAccount token
+		// secret autogenerated. We have to create it manually here
+		By("Creating the ServiceAccount token")
+		ServiceAccountToken(kbc)
+	}
 
 	// NOTE: If you want to run the test against a GKE cluster, you will need to grant yourself permission.
 	// Otherwise, you may see "... is forbidden: attempt to grant extra privileges"
@@ -372,4 +439,43 @@ func curlMetrics(kbc *utils.TestContext) string {
 	ExpectWithOffset(3, err).NotTo(HaveOccurred())
 
 	return metricsOutput
+}
+
+// ServiceAccountToken creates the ServiceAccount token Secret.
+// This is to be used when Kubernetes cluster version is >= 1.24.
+// In k8s 1.24+ a ServiceAccount token Secret is no longer
+// automatically generated
+func ServiceAccountToken(kbc *utils.TestContext) {
+	// As of Kubernetes 1.24 a ServiceAccount no longer has a ServiceAccount token
+	// secret autogenerated. We have to create it manually here
+	By("Creating the ServiceAccount token")
+	secretFile, err := createServiceAccountToken(kbc.Kubectl.ServiceAccount, kbc.Dir)
+	Expect(err).NotTo(HaveOccurred())
+	Eventually(func() error {
+		_, err = kbc.Kubectl.Apply(true, "-f", secretFile)
+		return err
+	}, time.Minute, time.Second).Should(Succeed())
+}
+
+var saSecretTemplate = `---
+apiVersion: v1
+kind: Secret
+type: kubernetes.io/service-account-token
+metadata:
+  name: %s
+  annotations:
+    kubernetes.io/service-account.name: "%s"
+`
+
+// createServiceAccountToken writes a service account token secret to a file.
+// It returns a string to the file or an error if it fails to write the file
+func createServiceAccountToken(name string, dir string) (string, error) {
+	secretName := name + "-secret"
+	fileName := dir + "/" + secretName + ".yaml"
+	err := os.WriteFile(fileName, []byte(fmt.Sprintf(saSecretTemplate, secretName, name)), 0777)
+	if err != nil {
+		return "", err
+	}
+
+	return fileName, nil
 }

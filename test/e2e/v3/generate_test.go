@@ -130,7 +130,7 @@ Count int `+"`"+`json:"count,omitempty"`+"`"+`
 }
 
 // GenerateV3 implements a go/v3(-alpha) plugin project defined by a TestContext.
-func GenerateV3(kbc *utils.TestContext, crdAndWebhookVersion string) {
+func GenerateV3(kbc *utils.TestContext, crdAndWebhookVersion string, restrictived bool) {
 	var err error
 
 	By("initializing a project")
@@ -228,10 +228,48 @@ Count int `+"`"+`json:"count,omitempty"`+"`"+`
 	if crdAndWebhookVersion == "v1beta1" {
 		_ = pluginutil.RunCmd("Update dependencies", "go", "mod", "tidy")
 	}
+
+	if restrictived {
+		By("uncomment kustomize files to ensure that pods are restricted")
+		configManager := filepath.Join(kbc.Dir, "config", "manager", "manager.yaml")
+		managerAuth := filepath.Join(kbc.Dir, "config", "default", "manager_auth_proxy_patch.yaml")
+
+		//nolint:lll
+		if err := pluginutil.ReplaceInFile(configManager, `# TODO(user): uncomment for common cases that do not require escalating privileges
+        # capabilities:
+        #   drop:
+        #     - "ALL"`, `  capabilities:
+            drop:
+              - "ALL"`); err != nil {
+			ExpectWithOffset(1, err).NotTo(HaveOccurred())
+		}
+
+		//nolint:lll
+		if err := pluginutil.ReplaceInFile(managerAuth, `# TODO(user): uncomment for common cases that do not require escalating privileges
+        # capabilities:
+        #   drop:
+        #     - "ALL"`, `  capabilities:
+            drop:
+              - "ALL"`); err != nil {
+			ExpectWithOffset(1, err).NotTo(HaveOccurred())
+		}
+
+		//nolint:lll
+		if err := pluginutil.ReplaceInFile(configManager, `# TODO(user): For common cases that do not require escalating privileges
+        # it is recommended to ensure that all your Pods/Containers are restrictive.
+        # More info: https://kubernetes.io/docs/concepts/security/pod-security-standards/#restricted
+        # Please uncomment the following code if your project does NOT have to work on old Kubernetes
+        # versions < 1.19 or on vendors versions which do NOT support this field by default (i.e. Openshift < 4.11 ).
+        # seccompProfile:
+        #   type: RuntimeDefault`, `seccompProfile:
+          type: RuntimeDefault`); err == nil {
+			ExpectWithOffset(1, err).NotTo(HaveOccurred())
+		}
+	}
 }
 
 // GenerateV3 implements a go/v3(-alpha) plugin project defined by a TestContext.
-func GenerateV3WithKustomizeV2(kbc *utils.TestContext, crdAndWebhookVersion string) {
+func GenerateV3WithKustomizeV2(kbc *utils.TestContext, crdAndWebhookVersion string, restrictived bool) {
 	var err error
 
 	By("initializing a project")
@@ -397,4 +435,41 @@ Count int `+"`"+`json:"count,omitempty"`+"`"+`
 #          index: 1
 #          create: true`, "#")).To(Succeed())
 
+	if restrictived {
+		By("uncomment kustomize files to ensure that pods are restricted")
+		configManager := filepath.Join(kbc.Dir, "config", "manager", "manager.yaml")
+		managerAuth := filepath.Join(kbc.Dir, "config", "default", "manager_auth_proxy_patch.yaml")
+
+		//nolint:lll
+		if err := pluginutil.ReplaceInFile(configManager, `# TODO(user): uncomment for common cases that do not require escalating privileges
+        # capabilities:
+        #   drop:
+        #     - "ALL"`, `  capabilities:
+            drop:
+              - "ALL"`); err != nil {
+			ExpectWithOffset(1, err).NotTo(HaveOccurred())
+		}
+
+		//nolint:lll
+		if err := pluginutil.ReplaceInFile(managerAuth, `# TODO(user): uncomment for common cases that do not require escalating privileges
+        # capabilities:
+        #   drop:
+        #     - "ALL"`, `  capabilities:
+            drop:
+              - "ALL"`); err != nil {
+			ExpectWithOffset(1, err).NotTo(HaveOccurred())
+		}
+
+		//nolint:lll
+		if err := pluginutil.ReplaceInFile(configManager, `# TODO(user): For common cases that do not require escalating privileges
+        # it is recommended to ensure that all your Pods/Containers are restrictive.
+        # More info: https://kubernetes.io/docs/concepts/security/pod-security-standards/#restricted
+        # Please uncomment the following code if your project does NOT have to work on old Kubernetes
+        # versions < 1.19 or on vendors versions which do NOT support this field by default (i.e. Openshift < 4.11 ).
+        # seccompProfile:
+        #   type: RuntimeDefault`, `seccompProfile:
+          type: RuntimeDefault`); err == nil {
+			ExpectWithOffset(1, err).NotTo(HaveOccurred())
+		}
+	}
 }
