@@ -77,6 +77,8 @@ var _ = Describe("kubebuilder", func() {
 			kbc.Destroy()
 		})
 
+		//TODO: remove me when the plugin go/v2 be removed
+		//go:deprecated this plugin is deprecated
 		Context("plugin go.kubebuilder.io/v2", func() {
 			// Use cert-manager with v1beta2 CRs.
 			BeforeEach(func() {
