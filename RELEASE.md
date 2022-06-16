@@ -2,17 +2,47 @@
 
 The Kubebuilder Project is released on an as-needed basis. The process is as follows:
 
-1. An issue is proposing a new release with a changelog since the last release. You will need to use the [kubebuilder-release-tools][kubebuilder-release-tools] to generate the notes. See [here][release-notes-generation]
-1. All [OWNERS](OWNERS) must LGTM this release
-1. An OWNER runs `git tag -s $VERSION` and pushes the tag with `git push $VERSION`. Note that after the OWNER push the tag the CI will automatically add the release notes and the assets.
-1. A PR needs to be created to merge `master` branch into `book-v3` to pick up the new docs. 
-1. The release issue is closed
-1. An announcement email is sent to `kubebuilder@googlegroups.com` with the subject `[ANNOUNCE] kubebuilder $VERSION is released`
+**Note:** Releases are done from the `release-MAJOR.MINOR` branches. For PATCH releases it is not required
+to create a new branch. Instead, you will just need to ensure that all major fixes are cherry-picked into the respective
+`release-MAJOR.MINOR` branch. To know more about versioning check https://semver.org/.
 
-**Notes:** This process does not apply to EAP or alpha (pre-)releases which may be cut at any time for development
-and testing.
+**Note:** Before `3.5.*` release this project was released based on `MAJOR`. A change to the
+the process was done to ensure that we have an aligned process under the org (similar to `controller-runtime` and
+`controller-tools`) and to make it easier to produce patch releases.
 
-For further information about versioning and update the Kubebuilder binaries check the [versioning][release-process] doc.
+## How to do a release
+
+### Create the new branch and the release tag
+
+1. Create a new branch `git checkout -b release-<MAJOR.MINOR>` from master
+2. Push the new branch to the remote repository
+
+### Now, let's generate the changelog
+
+1. Create the changelog from the new branch `release-<MAJOR.MINOR>` (`git checkout release-<MAJOR.MINOR>`).
+   You will need to use the [kubebuilder-release-tools][kubebuilder-release-tools] to generate release notes. See [here][release-notes-generation]
+
+> **Note**
+> - You will need to have checkout locally from the remote repository the previous branch
+> - Also, ensure that you fetch all tags from the remote `git fetch --all --tags`
+
+### Draft a new release from GitHub
+
+1. Create a new tag with the correct version from the new `release-<MAJOR.MINOR>` branch
+2. Add the changelog on it and publish. Now, the code source is released !
+
+### Announce the new release:
+
+1. Publish the new release on the Slack channel, i.e:
+
+````
+:announce: Kubebuilder v3.5.0 has been released!
+This release includes a Kubernetes dependency bump to v1.24.
+For more info, see the release page: https://github.com/kubernetes-sigs/kubebuilder/releases/tag/v3.5.0
+ :tada:  Thanks to all our contributors!
+````
+
+2. An announcement email is sent to `kubebuilder@googlegroups.com` with the subject `[ANNOUNCE] Kubebuilder $VERSION is released`
 
 ## HEAD releases
 
