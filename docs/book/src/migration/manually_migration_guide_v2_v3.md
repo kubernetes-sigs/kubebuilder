@@ -353,16 +353,17 @@ Ensure that your `go.mod` is using Go version `1.15` and the following dependenc
 ```go
 module example
 
-go 1.16
+go 1.18
 
 require (
-	github.com/go-logr/logr v0.3.0
-	github.com/onsi/ginkgo v1.14.1
-	github.com/onsi/gomega v1.10.2
-	k8s.io/apimachinery v0.20.2
-	k8s.io/client-go v0.20.2
-	sigs.k8s.io/controller-runtime v0.8.3
+    github.com/onsi/ginkgo v1.16.5
+    github.com/onsi/gomega v1.18.1
+    k8s.io/api v0.24.0
+    k8s.io/apimachinery v0.24.0
+    k8s.io/client-go v0.24.0
+    sigs.k8s.io/controller-runtime v0.12.1
 )
+
 ```
 
 #### Update the golang image
@@ -460,27 +461,33 @@ With:
 
 ## Location to install dependencies to
 LOCALBIN ?= $(shell pwd)/bin
-$(LOCALBIN): ## Ensure that the directory exists
+$(LOCALBIN):
 	mkdir -p $(LOCALBIN)
 
 ## Tool Binaries
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
+ENVTEST ?= $(LOCALBIN)/setup-envtest
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v3.8.7
-CONTROLLER_TOOLS_VERSION ?= v0.8.0
+CONTROLLER_TOOLS_VERSION ?= v0.9.0
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
 .PHONY: kustomize
 kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary.
-$(KUSTOMIZE):
+$(KUSTOMIZE): $(LOCALBIN)
 	curl -s $(KUSTOMIZE_INSTALL_SCRIPT) | bash -s -- $(subst v,,$(KUSTOMIZE_VERSION)) $(LOCALBIN)
 
 .PHONY: controller-gen
 controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary.
-$(CONTROLLER_GEN):
+$(CONTROLLER_GEN): $(LOCALBIN)
 	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_TOOLS_VERSION)
+
+.PHONY: envtest
+envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
+$(ENVTEST): $(LOCALBIN)
+	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
 ```
 
 And then, to make your project use the `kustomize` version defined in the Makefile, replace all usage of `kustomize` with `$(KUSTOMIZE)`
