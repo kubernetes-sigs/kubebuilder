@@ -130,7 +130,7 @@ Count int `+"`"+`json:"count,omitempty"`+"`"+`
 }
 
 // GenerateV3 implements a go/v3(-alpha) plugin project defined by a TestContext.
-func GenerateV3(kbc *utils.TestContext, crdAndWebhookVersion string, isWithDeployImagePlugin bool) {
+func GenerateV3(kbc *utils.TestContext, crdAndWebhookVersion string) {
 	var err error
 
 	By("initializing a project")
@@ -143,31 +143,16 @@ func GenerateV3(kbc *utils.TestContext, crdAndWebhookVersion string, isWithDeplo
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
 	By("creating API definition")
-	if isWithDeployImagePlugin {
-		err = kbc.CreateAPI(
-			"--plugins", "go/v3,deploy-image/v1-alpha",
-			"--group", kbc.Group,
-			"--version", kbc.Version,
-			"--kind", kbc.Kind,
-			"--image=memcached:1.6.15-alpine",
-			"--namespaced",
-			"--resource",
-			"--controller",
-			"--make=false",
-			"--crd-version", crdAndWebhookVersion,
-		)
-	} else {
-		err = kbc.CreateAPI(
-			"--group", kbc.Group,
-			"--version", kbc.Version,
-			"--kind", kbc.Kind,
-			"--namespaced",
-			"--resource",
-			"--controller",
-			"--make=false",
-			"--crd-version", crdAndWebhookVersion,
-		)
-	}
+	err = kbc.CreateAPI(
+		"--group", kbc.Group,
+		"--version", kbc.Version,
+		"--kind", kbc.Kind,
+		"--namespaced",
+		"--resource",
+		"--controller",
+		"--make=false",
+		"--crd-version", crdAndWebhookVersion,
+	)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
 	By("implementing the API")
@@ -245,8 +230,102 @@ Count int `+"`"+`json:"count,omitempty"`+"`"+`
 	}
 }
 
+
 // GenerateV3 implements a go/v3(-alpha) plugin project defined by a TestContext.
-func GenerateV3WithKustomizeV2(kbc *utils.TestContext, crdAndWebhookVersion string, isWithDeployImagePlugin bool) {
+func GenerateV3WithDeployImage(kbc *utils.TestContext) {
+	var err error
+
+	By("initializing a project")
+	err = kbc.Init(
+		"--plugins", "go/v3",
+		"--project-version", "3",
+		"--domain", kbc.Domain,
+		"--fetch-deps=false",
+	)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+
+	By("creating API definition with deploy-image/v1-alpha plugin")
+	err = kbc.CreateAPI(
+		"--group", kbc.Group,
+		"--version", kbc.Version,
+		"--kind", kbc.Kind,
+		"--plugins", "deploy-image/v1-alpha",
+		"--image", "memcached:1.6.15-alpine",
+	)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+
+	By("implementing the API")
+	ExpectWithOffset(1, pluginutil.InsertCode(
+		filepath.Join(kbc.Dir, "api", kbc.Version, fmt.Sprintf("%s_types.go", strings.ToLower(kbc.Kind))),
+		fmt.Sprintf(`type %sSpec struct {
+`, kbc.Kind),
+		`	// +optional
+Count int `+"`"+`json:"count,omitempty"`+"`"+`
+`)).Should(Succeed())
+
+	By("scaffolding mutating and validating webhooks")
+	err = kbc.CreateWebhook(
+		"--group", kbc.Group,
+		"--version", kbc.Version,
+		"--kind", kbc.Kind,
+		"--defaulting",
+		"--programmatic-validation",
+	)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+
+	By("implementing the mutating and validating webhooks")
+	err = pluginutil.ImplementWebhooks(filepath.Join(
+		kbc.Dir, "api", kbc.Version,
+		fmt.Sprintf("%s_webhook.go", strings.ToLower(kbc.Kind))))
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+
+	By("uncomment kustomization.yaml to enable webhook and ca injection")
+	ExpectWithOffset(1, pluginutil.UncommentCode(
+		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+		"#- ../webhook", "#")).To(Succeed())
+	ExpectWithOffset(1, pluginutil.UncommentCode(
+		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+		"#- ../certmanager", "#")).To(Succeed())
+	ExpectWithOffset(1, pluginutil.UncommentCode(
+		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+		"#- ../prometheus", "#")).To(Succeed())
+	ExpectWithOffset(1, pluginutil.UncommentCode(
+		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+		"#- manager_webhook_patch.yaml", "#")).To(Succeed())
+	ExpectWithOffset(1, pluginutil.UncommentCode(
+		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+		"#- webhookcainjection_patch.yaml", "#")).To(Succeed())
+	ExpectWithOffset(1, pluginutil.UncommentCode(filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+		`#- name: CERTIFICATE_NAMESPACE # namespace of the certificate CR
+#  objref:
+#    kind: Certificate
+#    group: cert-manager.io
+#    version: v1
+#    name: serving-cert # this name should match the one in certificate.yaml
+#  fieldref:
+#    fieldpath: metadata.namespace
+#- name: CERTIFICATE_NAME
+#  objref:
+#    kind: Certificate
+#    group: cert-manager.io
+#    version: v1
+#    name: serving-cert # this name should match the one in certificate.yaml
+#- name: SERVICE_NAMESPACE # namespace of the service
+#  objref:
+#    kind: Service
+#    version: v1
+#    name: webhook-service
+#  fieldref:
+#    fieldpath: metadata.namespace
+#- name: SERVICE_NAME
+#  objref:
+#    kind: Service
+#    version: v1
+#    name: webhook-service`, "#")).To(Succeed())
+}
+
+// GenerateV3 implements a go/v3(-alpha) plugin project defined by a TestContext.
+func GenerateV3WithKustomizeV2(kbc *utils.TestContext, crdAndWebhookVersion string) {
 	var err error
 
 	By("initializing a project")
@@ -259,31 +338,16 @@ func GenerateV3WithKustomizeV2(kbc *utils.TestContext, crdAndWebhookVersion stri
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
 	By("creating API definition")
-	if isWithDeployImagePlugin {
-		err = kbc.CreateAPI(
-			"--plugins", "go/v3,deploy-image/v1-alpha",
-			"--group", kbc.Group,
-			"--version", kbc.Version,
-			"--kind", kbc.Kind,
-			"--image=memcached:1.6.15-alpine",
-			"--namespaced",
-			"--resource",
-			"--controller",
-			"--make=false",
-			"--crd-version", crdAndWebhookVersion,
-		)
-	} else {
-		err = kbc.CreateAPI(
-			"--group", kbc.Group,
-			"--version", kbc.Version,
-			"--kind", kbc.Kind,
-			"--namespaced",
-			"--resource",
-			"--controller",
-			"--make=false",
-			"--crd-version", crdAndWebhookVersion,
-		)
-	}
+	err = kbc.CreateAPI(
+		"--group", kbc.Group,
+		"--version", kbc.Version,
+		"--kind", kbc.Kind,
+		"--namespaced",
+		"--resource",
+		"--controller",
+		"--make=false",
+		"--crd-version", crdAndWebhookVersion,
+	)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
 	By("implementing the API")
