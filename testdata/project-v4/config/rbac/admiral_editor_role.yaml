@@ -1,0 +1,24 @@
+# permissions for end users to edit admirales.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: admiral-editor-role
+rules:
+- apiGroups:
+  - crew.testproject.org
+  resources:
+  - admirales
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - crew.testproject.org
+  resources:
+  - admirales/status
+  verbs:
+  - get

@@ -1,0 +1,75 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.8.0
+  creationTimestamp: null
+  name: captains.crew.testproject.org
+spec:
+  group: crew.testproject.org
+  names:
+    kind: Captain
+    listKind: CaptainList
+    plural: captains
+    singular: captain
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: Captain is the Schema for the captains API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: CaptainSpec defines the desired state of Captain
+            properties:
+              channel:
+                description: 'Channel specifies a channel that can be used to resolve
+                  a specific addon, eg: stable It will be ignored if Version is specified'
+                type: string
+              patches:
+                items:
+                  type: object
+                type: array
+              version:
+                description: Version specifies the exact addon version to be deployed,
+                  eg 1.2.3 It should not be specified if Channel is specified
+                type: string
+            type: object
+          status:
+            description: CaptainStatus defines the observed state of Captain
+            properties:
+              errors:
+                items:
+                  type: string
+                type: array
+              healthy:
+                type: boolean
+              phase:
+                type: string
+            required:
+            - healthy
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

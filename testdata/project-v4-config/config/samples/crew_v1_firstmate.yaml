@@ -1,0 +1,6 @@
+apiVersion: crew.testproject.org/v1
+kind: FirstMate
+metadata:
+  name: firstmate-sample
+spec:
+  # TODO(user): Add fields here

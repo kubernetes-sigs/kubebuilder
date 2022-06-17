@@ -25,6 +25,7 @@ import (
 	cfgv2 "sigs.k8s.io/kubebuilder/v3/pkg/config/v2"
 	cfgv3 "sigs.k8s.io/kubebuilder/v3/pkg/config/v3"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v3/pkg/model/stage"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	kustomizecommonv1 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v1"
 	kustomizecommonv2 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v2"
@@ -39,6 +40,11 @@ func main() {
 	// Bundle plugin which built the golang projects scaffold by Kubebuilder go/v3
 	gov3Bundle, _ := plugin.NewBundle(golang.DefaultNameQualifier, plugin.Version{Number: 3},
 		kustomizecommonv1.Plugin{},
+		golangv3.Plugin{},
+	)
+	// Bundle plugin which built the golang projects scaffold by Kubebuilder go/v3 with kustomize alpha-v2
+	gov4Bundle, _ := plugin.NewBundle(golang.DefaultNameQualifier, plugin.Version{Number: 4, Stage: stage.Alpha},
+		kustomizecommonv2.Plugin{},
 		golangv3.Plugin{},
 	)
 
@@ -57,6 +63,7 @@ func main() {
 			golangv2.Plugin{},
 			golangv3.Plugin{},
 			gov3Bundle,
+			gov4Bundle,
 			&kustomizecommonv1.Plugin{},
 			&kustomizecommonv2.Plugin{},
 			&declarativev1.Plugin{},
