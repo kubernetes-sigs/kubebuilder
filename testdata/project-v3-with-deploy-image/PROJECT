@@ -1,0 +1,18 @@
+domain: testproject.org
+layout:
+- go.kubebuilder.io/v3
+projectName: project-v3-with-deploy-image
+repo: sigs.k8s.io/kubebuilder/testdata/project-v3-with-deploy-image
+resources:
+- api:
+    crdVersion: v1
+  controller: true
+  domain: testproject.org
+  group: example.com
+  kind: Memcached
+  path: sigs.k8s.io/kubebuilder/testdata/project-v3-with-deploy-image/api/v1alpha1
+  version: v1alpha1
+  webhooks:
+    validation: true
+    webhookVersion: v1
+version: "3"
