@@ -89,6 +89,6 @@ func (s *apiScaffolder) Scaffold() error {
 	); err != nil {
 		return fmt.Errorf("error scaffolding controller: %v", err)
 	}
-
+	
 	return nil
 }

@@ -24,6 +24,7 @@ import (
 )
 
 var _ machinery.Template = &Controller{}
+var _ machinery.Inserter = &Controller{}
 
 // Controller scaffolds the file that defines the controller for a CRD or a builtin resource
 // nolint:maligned
@@ -48,14 +49,47 @@ func (f *Controller) SetTemplateDefaults() error {
 		}
 	}
 	f.Path = f.Resource.Replacer().Replace(f.Path)
-	fmt.Println(f.Path)
 
-	f.TemplateBody = controllerTemplate
+	f.TemplateBody = fmt.Sprintf(controllerTemplate,
+		machinery.NewMarkerFor(f.Path, importMarker),
+	)
+
+	// Generate import code fragments
+	imports := make([]string, 0)
+	if f.Resource.Path != "" {
+		imports = append(imports, fmt.Sprintf(apiImportCodeFragment, f.Resource.ImportAlias(), f.Resource.Path))
+	}
 
 	// This one is to overwrite the controller if it exist
 	f.IfExistsAction = machinery.OverwriteFile
 
 	return nil
+}
+
+
+// GetMarkers implements file.Inserter
+func (f *Controller) GetMarkers() []machinery.Marker {
+	return []machinery.Marker{
+		machinery.NewMarkerFor(f.Path, importMarker),
+	}
+}
+
+// GetCodeFragments implements file.Inserter
+func (f *Controller) GetCodeFragments() machinery.CodeFragmentsMap {
+	fragments := make(machinery.CodeFragmentsMap, 1)
+
+	// Generate import code fragments
+	imports := make([]string, 0)
+	if f.Resource.Path != "" {
+		imports = append(imports, fmt.Sprintf(apiImportCodeFragment, f.Resource.ImportAlias(), f.Resource.Path))
+	}
+
+	// Only store code fragments in the map if the slices are non-empty
+	if len(imports) != 0 {
+		fragments[machinery.NewMarkerFor(f.Path, importMarker)] = imports
+	}
+
+	return fragments
 }
 
 //nolint:lll
@@ -75,10 +109,12 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	log "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/log"
+	
 	{{ if not (isEmptyStr .Resource.Path) -}}
 	{{ .Resource.ImportAlias }} "{{ .Resource.Path }}"
 	{{- end }}
+	%s
 )
 
 // {{ .Resource.Kind }}Reconciler reconciles a {{ .Resource.Kind }} object
