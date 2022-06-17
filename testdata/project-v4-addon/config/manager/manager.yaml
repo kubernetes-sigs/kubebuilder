@@ -26,6 +26,13 @@ spec:
     spec:
       securityContext:
         runAsNonRoot: true
+        # TODO(user): For common cases that do not require escalating privileges
+        # it is recommended to ensure that all your Pods/Containers are restrictive.
+        # More info: https://kubernetes.io/docs/concepts/security/pod-security-standards/#restricted
+        # Please uncomment the following code if your project does NOT have to work on old Kubernetes
+        # versions < 1.19 or on vendors versions which do NOT support this field by default (i.e. Openshift < 4.11 ).
+        # seccompProfile:
+        #   type: RuntimeDefault
       containers:
       - command:
         - /manager
@@ -35,6 +42,10 @@ spec:
         name: manager
         securityContext:
           allowPrivilegeEscalation: false
+        # TODO(user): uncomment for common cases that do not require escalating privileges
+        # capabilities:
+        #   drop:
+        #     - "ALL"
         livenessProbe:
           httpGet:
             path: /healthz
