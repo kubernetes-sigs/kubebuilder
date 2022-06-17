@@ -182,6 +182,11 @@ var _ = Describe("kubebuilder", func() {
 					sat = true
 				}
 
+				// THe following command will test/check if the Operator itself is deployed
+				// TODO: we need have a test here where we check if the Deployment with the
+				// image will work well as when we change the CR spec from 1 to 3 for example
+				// that will scale more instances of the Deployment/Pod created for the
+				// Operand image will work as should be
 				Run(kbc, sat)
 			})
 		})
