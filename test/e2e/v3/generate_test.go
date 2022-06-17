@@ -130,7 +130,7 @@ Count int `+"`"+`json:"count,omitempty"`+"`"+`
 }
 
 // GenerateV3 implements a go/v3(-alpha) plugin project defined by a TestContext.
-func GenerateV3(kbc *utils.TestContext, crdAndWebhookVersion string) {
+func GenerateV3(kbc *utils.TestContext, crdAndWebhookVersion string, isWithDeployImagePlugin bool) {
 	var err error
 
 	By("initializing a project")
@@ -143,16 +143,31 @@ func GenerateV3(kbc *utils.TestContext, crdAndWebhookVersion string) {
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
 	By("creating API definition")
-	err = kbc.CreateAPI(
-		"--group", kbc.Group,
-		"--version", kbc.Version,
-		"--kind", kbc.Kind,
-		"--namespaced",
-		"--resource",
-		"--controller",
-		"--make=false",
-		"--crd-version", crdAndWebhookVersion,
-	)
+	if isWithDeployImagePlugin {
+		err = kbc.CreateAPI(
+			"--plugins", "go/v3,deploy-image/v1-alpha",
+			"--group", kbc.Group,
+			"--version", kbc.Version,
+			"--kind", kbc.Kind,
+			"--image=memcached:1.6.15-alpine",
+			"--namespaced",
+			"--resource",
+			"--controller",
+			"--make=false",
+			"--crd-version", crdAndWebhookVersion,
+		)
+	} else {
+		err = kbc.CreateAPI(
+			"--group", kbc.Group,
+			"--version", kbc.Version,
+			"--kind", kbc.Kind,
+			"--namespaced",
+			"--resource",
+			"--controller",
+			"--make=false",
+			"--crd-version", crdAndWebhookVersion,
+		)
+	}
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
 	By("implementing the API")
@@ -231,7 +246,7 @@ Count int `+"`"+`json:"count,omitempty"`+"`"+`
 }
 
 // GenerateV3 implements a go/v3(-alpha) plugin project defined by a TestContext.
-func GenerateV3WithKustomizeV2(kbc *utils.TestContext, crdAndWebhookVersion string) {
+func GenerateV3WithKustomizeV2(kbc *utils.TestContext, crdAndWebhookVersion string, isWithDeployImagePlugin bool) {
 	var err error
 
 	By("initializing a project")
@@ -244,16 +259,31 @@ func GenerateV3WithKustomizeV2(kbc *utils.TestContext, crdAndWebhookVersion stri
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
 	By("creating API definition")
-	err = kbc.CreateAPI(
-		"--group", kbc.Group,
-		"--version", kbc.Version,
-		"--kind", kbc.Kind,
-		"--namespaced",
-		"--resource",
-		"--controller",
-		"--make=false",
-		"--crd-version", crdAndWebhookVersion,
-	)
+	if isWithDeployImagePlugin {
+		err = kbc.CreateAPI(
+			"--plugins", "go/v3,deploy-image/v1-alpha",
+			"--group", kbc.Group,
+			"--version", kbc.Version,
+			"--kind", kbc.Kind,
+			"--image=memcached:1.6.15-alpine",
+			"--namespaced",
+			"--resource",
+			"--controller",
+			"--make=false",
+			"--crd-version", crdAndWebhookVersion,
+		)
+	} else {
+		err = kbc.CreateAPI(
+			"--group", kbc.Group,
+			"--version", kbc.Version,
+			"--kind", kbc.Kind,
+			"--namespaced",
+			"--resource",
+			"--controller",
+			"--make=false",
+			"--crd-version", crdAndWebhookVersion,
+		)
+	}
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
 	By("implementing the API")

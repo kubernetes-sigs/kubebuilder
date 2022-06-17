@@ -1,0 +1,13 @@
+domain: testproject.org
+layout:
+- go.kubebuilder.io/v3
+plugins:
+  deploy-image.go.kubebuilder.io/v1-alpha:
+    resources:
+    - domain: testproject.org
+      group: example.com
+      kind: Memcached
+      version: v1alpha1
+projectName: project-v3-with-deploy-image
+repo: sigs.k8s.io/kubebuilder/testdata/project-v3-with-deploy-image
+version: "3"
