@@ -29,6 +29,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	examplecomv1alpha1 "sigs.k8s.io/kubebuilder/testdata/project-v3-with-deploy-image/api/v1alpha1"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -53,7 +55,7 @@ var _ = BeforeSuite(func() {
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths:     []string{filepath.Join("..", "config", "crd", "bases")},
-		ErrorIfCRDPathMissing: false,
+		ErrorIfCRDPathMissing: true,
 	}
 
 	var err error
@@ -61,6 +63,9 @@ var _ = BeforeSuite(func() {
 	cfg, err = testEnv.Start()
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
+
+	err = examplecomv1alpha1.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
 
 	//+kubebuilder:scaffold:scheme
 

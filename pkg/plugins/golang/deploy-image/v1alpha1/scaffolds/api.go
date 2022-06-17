@@ -18,6 +18,8 @@ package scaffolds
 
 import (
 	"fmt"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/deploy-image/v1alpha1/scaffolds/internal/templates/config/samples"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds"
 
 	"github.com/spf13/afero"
 
@@ -26,10 +28,8 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/deploy-image/v1alpha1/scaffolds/internal/templates/api"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/deploy-image/v1alpha1/scaffolds/internal/templates/config/samples"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/deploy-image/v1alpha1/scaffolds/internal/templates/controllers"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/deploy-image/v1alpha1/scaffolds/internal/templates/hack"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds"
 )
 
 var _ plugins.Scaffolder = &apiScaffolder{}
@@ -46,7 +46,7 @@ type apiScaffolder struct {
 }
 
 // NewAPIScaffolder returns a new Scaffolder for declarative
-func NewAPIScaffolder(config config.Config, res resource.Resource, image string) plugins.Scaffolder {
+func NewDeployImageScaffolder(config config.Config, res resource.Resource, image string) plugins.Scaffolder {
 	return &apiScaffolder{
 		config:   config,
 		resource: res,
@@ -69,6 +69,10 @@ func (s *apiScaffolder) Scaffold() error {
 		return fmt.Errorf("error scaffolding API/controller: unable to load boilerplate: %w", err)
 	}
 
+	if err := s.config.UpdateResource(s.resource); err != nil {
+		return fmt.Errorf("error updating resource: %w", err)
+	}
+
 	// Initialize the machinery.Scaffold that will write the files to disk
 	scaffold := machinery.NewScaffold(s.fs,
 		machinery.WithConfig(s.config),
@@ -76,19 +80,26 @@ func (s *apiScaffolder) Scaffold() error {
 		machinery.WithResource(&s.resource),
 	)
 
-	if err := s.config.UpdateResource(s.resource); err != nil {
-		return fmt.Errorf("error updating resource: %w", err)
-	}
-
 	if err := scaffold.Execute(
 		&api.Types{},
 		&api.Group{},
+	); err != nil {
+		return fmt.Errorf("error scaffolding APIs: %v", err)
+	}
+
+	if err := scaffold.Execute(
 		&controllers.SuiteTest{},
-		&samples.CRDSample{},
-		&controllers.Controller{ControllerRuntimeVersion: scaffolds.ControllerRuntimeVersion, Image: s.image},
+		&controllers.Controller{ControllerRuntimeVersion: scaffolds.ControllerRuntimeVersion,
+			Image: s.image},
 	); err != nil {
 		return fmt.Errorf("error scaffolding controller: %v", err)
 	}
-	
+
+	if err := scaffold.Execute(
+		&samples.CRDSample{},
+	); err != nil {
+		return fmt.Errorf("error updating config/samples: %v", err)
+	}
+
 	return nil
 }

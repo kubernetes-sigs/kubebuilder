@@ -29,7 +29,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	//+kubebuilder:scaffold:imports
+
+	examplecomv1alpha1 "sigs.k8s.io/kubebuilder/testdata/project-v3-with-deploy-image/api/v1alpha1"
 )
 
 // MemcachedReconciler reconciles a Memcached object
@@ -194,8 +195,7 @@ func labelsForMemcached(name string) map[string]string {
 // be created/edit/delete.
 func (r *MemcachedReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		// Uncomment the following line adding a pointer to an instance of the controlled resource as an argument
-		// For().
+		For(&examplecomv1alpha1.Memcached{}).
 		Owns(&appsv1.Deployment{}).
 		Complete(r)
 }

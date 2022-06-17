@@ -19,9 +19,9 @@ package v1alpha1
 import (
 	"fmt"
 	"os"
+	goPlugin "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
-	goPlugin "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang"
 
 	"github.com/spf13/pflag"
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
@@ -31,7 +31,15 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/deploy-image/v1alpha1/scaffolds"
 )
 
-var _ plugin.CreateAPISubcommand = &createAPISubcommand{}
+const (
+	// defaultCRDVersion is the default CRD API version to scaffold.
+	defaultCRDVersion = "v1"
+)
+
+const deprecateMsg = "The v1beta1 API version for CRDs and Webhooks are deprecated and are no longer supported since " +
+	"the Kubernetes release 1.22. This flag no longer required to exist in future releases. Also, we would like to " +
+	"recommend you no longer use these API versions." +
+	"More info: https://kubernetes.io/docs/reference/using-api/deprecation-guide/#v1-22"
 
 // DefaultMainPath is default file path of main.go
 const DefaultMainPath = "main.go"
@@ -89,9 +97,15 @@ func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 
 	p.options = &goPlugin.Options{}
 
+	fs.StringVar(&p.options.CRDVersion, "crd-version", defaultCRDVersion,
+		"version of CustomResourceDefinition to scaffold. Options: [v1, v1beta1]")
+
 	fs.StringVar(&p.options.Plural, "plural", "", "resource irregular plural form")
 	fs.BoolVar(&p.options.Namespaced, "namespaced", true, "resource is namespaced")
 
+	// (not required raise an error in this case)
+	// nolint:errcheck,gosec
+	fs.MarkDeprecated("crd-version", deprecateMsg)
 }
 
 func (p *createAPISubcommand) InjectConfig(c config.Config) error {
@@ -103,6 +117,8 @@ func (p *createAPISubcommand) InjectConfig(c config.Config) error {
 func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 	p.resource = res
 
+	p.options.DoAPI = true
+	p.options.DoController = true
 	p.options.UpdateResource(p.resource, p.config)
 
 	if err := p.resource.Validate(); err != nil {
@@ -113,6 +129,12 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 	if !p.config.IsMultiGroup() && p.config.ResourcesLength() != 0 && !p.config.HasGroup(p.resource.Group) {
 		return fmt.Errorf("multiple groups are not allowed by default, " +
 			"to enable multi-group visit https://kubebuilder.io/migration/multi-group.html")
+	}
+
+	// Check CRDVersion against all other CRDVersions in p.config for compatibility.
+	if util.HasDifferentCRDVersion(p.config, p.resource.API.CRDVersion) {
+		return fmt.Errorf("only one CRD version can be used for all resources, cannot add %q",
+			p.resource.API.CRDVersion)
 	}
 
 	// Check CRDVersion against all other CRDVersions in p.config for compatibility.
@@ -140,14 +162,9 @@ func (p *createAPISubcommand) PreScaffold(machinery.Filesystem) error {
 func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
 	fmt.Println("updating scaffold with deploy-image/v1alpha1 plugin...")
 
-	scaffolder := scaffolds.NewAPIScaffolder(p.config, *p.resource, p.image)
+	scaffolder := scaffolds.NewDeployImageScaffolder(p.config, *p.resource, p.image)
 	scaffolder.InjectFS(fs)
-	err := scaffolder.Scaffold()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return scaffolder.Scaffold()
 }
 
 func (p *createAPISubcommand) PostScaffold() error {
