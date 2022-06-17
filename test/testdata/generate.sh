@@ -44,11 +44,8 @@ function scaffold_test_project {
 
   header_text "Initializing project ..."
   $kb init $init_flags --domain testproject.org --license apache2 --owner "The Kubernetes authors"
-  
-  if [[ $project == "project-v3-with-deploy-image" ]]; then
-    header_text 'Creating Memcached API with deploy-image plugin ...'
-    $kb create api --group example.com --version v1alpha1 --kind Memcached --image=memcached:1.6.15-alpine --plugins="deploy-image/v1-alpha"
-  elif [ $project == "project-v2" ] || [ $project == "project-v3" ] || [ $project == "project-v3-config" ] || [ $project == "project-v3-with-kustomize-v2" ]; then
+
+  if [ $project == "project-v2" ] || [ $project == "project-v3" ] || [ $project == "project-v3-config" ] || [ $project == "project-v3-with-kustomize-v2" ]; then
     header_text 'Creating APIs ...'
     $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false
     $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false --force
@@ -114,6 +111,12 @@ function scaffold_test_project {
     header_text 'Creating APIs ...'
     $kb create api --group crew --version v1 --kind Admiral --controller=true --resource=true --namespaced=false --make=false --crd-version=v1beta1
     $kb create webhook --group crew --version v1 --kind Admiral --defaulting --webhook-version=v1beta1
+
+  elif [[ $project == "project-v3-with-deploy-image" ]]; then
+      header_text 'Creating Memcached API with deploy-image plugin ...'
+      $kb create api --group example.com --version v1alpha1 --kind Memcached --image=memcached:1.6.15-alpine --plugins="deploy-image/v1-alpha" --make=false --namespaced=false
+      header_text 'Creating Memcached webhook ...'
+      $kb create webhook --group example.com --version v1alpha1 --kind Memcached --programmatic-validation
   fi
 
   make generate manifests
@@ -124,11 +127,11 @@ function scaffold_test_project {
 
 build_kb
 
-# Project version 2 uses plugin go/v2 (default).
+## Project version 2 uses plugin go/v2 (default).
 scaffold_test_project project-v2 --project-version=2
 scaffold_test_project project-v2-multigroup --project-version=2
 scaffold_test_project project-v2-addon --project-version=3 --plugins="go/v2,declarative"
-# Project version 3 (default) uses plugin go/v3 (default).
+## Project version 3 (default) uses plugin go/v3 (default).
 scaffold_test_project project-v3
 scaffold_test_project project-v3-multigroup
 scaffold_test_project project-v3-addon --plugins="go/v3,declarative"

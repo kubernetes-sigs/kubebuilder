@@ -34,6 +34,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/test/e2e/utils"
 )
 
+//nolint:dupl
 // GenerateV2 implements a go/v2 plugin project defined by a TestContext.
 func GenerateV2(kbc *utils.TestContext) {
 	var err error
@@ -129,6 +130,7 @@ Count int `+"`"+`json:"count,omitempty"`+"`"+`
 #    name: webhook-service`, "#")).To(Succeed())
 }
 
+//nolint:dupl
 // GenerateV3 implements a go/v3(-alpha) plugin project defined by a TestContext.
 func GenerateV3(kbc *utils.TestContext, crdAndWebhookVersion string) {
 	var err error
@@ -230,12 +232,12 @@ Count int `+"`"+`json:"count,omitempty"`+"`"+`
 	}
 }
 
-
-// GenerateV3 implements a go/v3(-alpha) plugin project defined by a TestContext.
+//nolint:dupl
+// GenerateV3WithDeployImage implements a go/v3 plugin and the deployImage one
 func GenerateV3WithDeployImage(kbc *utils.TestContext) {
 	var err error
 
-	By("initializing a project")
+	By("initializing a project with go/v3")
 	err = kbc.Init(
 		"--plugins", "go/v3",
 		"--project-version", "3",
@@ -254,7 +256,7 @@ func GenerateV3WithDeployImage(kbc *utils.TestContext) {
 	)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
-	By("implementing the API")
+	By("implementing the API without the plugin")
 	ExpectWithOffset(1, pluginutil.InsertCode(
 		filepath.Join(kbc.Dir, "api", kbc.Version, fmt.Sprintf("%s_types.go", strings.ToLower(kbc.Kind))),
 		fmt.Sprintf(`type %sSpec struct {
@@ -322,6 +324,7 @@ Count int `+"`"+`json:"count,omitempty"`+"`"+`
 #    kind: Service
 #    version: v1
 #    name: webhook-service`, "#")).To(Succeed())
+
 }
 
 // GenerateV3 implements a go/v3(-alpha) plugin project defined by a TestContext.

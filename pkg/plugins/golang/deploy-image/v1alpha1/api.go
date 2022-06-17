@@ -17,8 +17,11 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"errors"
 	"fmt"
+	"os"
+
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
+	goPlugin "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang"
 
 	"github.com/spf13/pflag"
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
@@ -30,24 +33,40 @@ import (
 
 var _ plugin.CreateAPISubcommand = &createAPISubcommand{}
 
+// DefaultMainPath is default file path of main.go
+const DefaultMainPath = "main.go"
+
+var _ plugin.CreateAPISubcommand = &createAPISubcommand{}
+
 type createAPISubcommand struct {
-	config   config.Config
+	config config.Config
+
+	options *goPlugin.Options
+
 	resource *resource.Resource
-	image    string
+
+	// image indicates the image that will be used to scaffold the deployment
+	image string
+
+	// runMake indicates whether to run make or not after scaffolding APIs
+	runMake bool
+
+	// runManifests indicates whether to run manifests or not after scaffolding APIs
+	runManifests bool
 }
 
 func (p *createAPISubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
 	//nolint: lll
-	subcmdMeta.Description = `Scaffold the code implementation to deploy and manage your Operand which is represented by the API 
-	informed and will be reconciled by its controller. This plugin will generate the code implementation to help you out.
+	subcmdMeta.Description = `Scaffold the code implementation to deploy and manage your Operand which is represented by the API informed and will be reconciled by its controller. This plugin will generate the code implementation to help you out.
 	
-	Note: In general, it’s recommended to have one controller responsible for managing each API created for the project to properly 
-	follow the design goals set by Controller Runtime(https://github.com/kubernetes-sigs/controller-runtime).
+	Note: In general, it’s recommended to have one controller responsible for managing each API created for the project to properly follow the design goals set by Controller Runtime(https://github.com/kubernetes-sigs/controller-runtime).
+
+	This plugin will work as the common behaviour of the flag --force and will scaffold the API and controller always. Use core types or external APIs is not officially support by default with.
 `
 	//nolint: lll
 	subcmdMeta.Examples = fmt.Sprintf(`  # Create a frigates API with Group: ship, Version: v1beta1, Kind: Frigate to represent the 
 	Image: example.com/frigate:v0.0.1 and its controller with a code to deploy and manage this Operand.
-  %[1]s create api --group ship --version v1beta1 --kind Frigate --image example.com/frigate:v0.0.1
+  %[1]s create api --group ship --version v1beta1 --kind Frigate --image=example.com/frigate:v0.0.1 --plugins=deploy-image/v1-alpha
 
   # Generate the manifests
   make manifests
@@ -60,22 +79,59 @@ func (p *createAPISubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdM
 `, cliMeta.CommandName)
 }
 
+func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
+	fs.StringVar(&p.image, "image", "", "inform the Operand image. "+
+		"The controller will be scaffolded with an example code to deploy and manage this image.")
+
+	fs.BoolVar(&p.runMake, "make", true, "if true, run `make generate` after generating files")
+
+	fs.BoolVar(&p.runManifests, "manifests", true, "if true, run `make manifests` after generating files")
+
+	p.options = &goPlugin.Options{}
+
+	fs.StringVar(&p.options.Plural, "plural", "", "resource irregular plural form")
+	fs.BoolVar(&p.options.Namespaced, "namespaced", true, "resource is namespaced")
+
+}
+
 func (p *createAPISubcommand) InjectConfig(c config.Config) error {
 	p.config = c
 
 	return nil
 }
 
-func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
-	//nolint: lll
-	fs.StringVar(&p.image, "image", "", "inform the Operand image. The controller will be scaffolded with an example code to deploy and manage this image.")
-}
-
 func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 	p.resource = res
 
+	p.options.UpdateResource(p.resource, p.config)
+
+	if err := p.resource.Validate(); err != nil {
+		return err
+	}
+
+	// Check that the provided group can be added to the project
+	if !p.config.IsMultiGroup() && p.config.ResourcesLength() != 0 && !p.config.HasGroup(p.resource.Group) {
+		return fmt.Errorf("multiple groups are not allowed by default, " +
+			"to enable multi-group visit https://kubebuilder.io/migration/multi-group.html")
+	}
+
+	// Check CRDVersion against all other CRDVersions in p.config for compatibility.
+	if util.HasDifferentCRDVersion(p.config, p.resource.API.CRDVersion) {
+		return fmt.Errorf("only one CRD version can be used for all resources, cannot add %q",
+			p.resource.API.CRDVersion)
+	}
+
+	return nil
+}
+
+func (p *createAPISubcommand) PreScaffold(machinery.Filesystem) error {
 	if len(p.image) == 0 {
-		return fmt.Errorf("you must inform the image ")
+		return fmt.Errorf("you MUST inform the image that will be used in the reconciliation")
+	}
+
+	// check if main.go is present in the root directory
+	if _, err := os.Stat(DefaultMainPath); os.IsNotExist(err) {
+		return fmt.Errorf("%s file should present in the root directory", DefaultMainPath)
 	}
 
 	return nil
@@ -91,25 +147,30 @@ func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
 		return err
 	}
 
-	// Track the resources following a declarative approach
-	cfg := pluginConfig{}
-	if err := p.config.DecodePluginConfig(pluginKey, &cfg); errors.As(err, &config.UnsupportedFieldError{}) {
-		// Config doesn't support per-plugin configuration, so we can't track them
-	} else {
-		// Fail unless they key wasn't found, which just means it is the first resource tracked
-		if err != nil && !errors.As(err, &config.PluginKeyNotFoundError{}) {
-			return err
-		}
+	return nil
+}
 
-		cfg.Resources = append(cfg.Resources, p.resource.GVK)
-		if err := p.config.EncodePluginConfig(pluginKey, cfg); err != nil {
-			return err
-		}
-	}
-
+func (p *createAPISubcommand) PostScaffold() error {
+	err := util.RunCmd("Update dependencies", "go", "mod", "tidy")
 	if err != nil {
 		return err
 	}
+	if p.runMake {
+		err = util.RunCmd("Running make", "make", "generate")
+		if err != nil {
+			return err
+		}
+	}
+
+	if p.runManifests {
+		err = util.RunCmd("Running make", "make", "manifests")
+		if err != nil {
+			return err
+		}
+	}
+
+	fmt.Print("Next: check the implementation of your new API and controller. " +
+		"If you do changes in the API run the manifests with:\n$ make manifests\n")
 
 	return nil
 }
