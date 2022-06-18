@@ -68,6 +68,7 @@ generate: generate-testdata ## Update/generate all mock data. You should run thi
 
 .PHONY: generate-testdata
 generate-testdata: ## Update/generate the testdata in $GOPATH/src/sigs.k8s.io/kubebuilder
+	rm -rf testdata/
 	./test/testdata/generate.sh
 
 .PHONY: lint
