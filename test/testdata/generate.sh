@@ -50,7 +50,7 @@ function scaffold_test_project {
     $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false
     $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false --force
     $kb create webhook --group crew --version v1 --kind Captain --defaulting --programmatic-validation
-    if [ $project == "project-v3" ]; then
+    if [ $project == "project-v3" ] || [ $project == "project-v3-with-kustomize-v2" ]; then
       $kb create webhook --group crew --version v1 --kind Captain --defaulting --programmatic-validation --force
     fi
 
@@ -61,7 +61,7 @@ function scaffold_test_project {
     fi
     $kb create webhook --group crew --version v1 --kind FirstMate --conversion
 
-    if [ $project == "project-v3" ]; then
+    if [ $project == "project-v3" ] || [ $project == "project-v3-with-kustomize-v2" ]; then
       $kb create api --group crew --version v1 --kind Admiral --plural=admirales --controller=true --resource=true --namespaced=false --make=false
       $kb create webhook --group crew --version v1 --kind Admiral --plural=admirales --defaulting
     else
