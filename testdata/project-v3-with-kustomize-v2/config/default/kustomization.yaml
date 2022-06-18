@@ -9,10 +9,12 @@ namespace: project-v3-with-kustomize-v2-system
 namePrefix: project-v3-with-kustomize-v2-
 
 # Labels to add to all resources and selectors.
-#commonLabels:
-#  someName: someValue
+#labels:
+#- includeSelectors: true
+#  pairs:
+#    someName: someValue
 
-bases:
+resources:
 - ../crd
 - ../rbac
 - ../manager
