@@ -20,10 +20,11 @@ directory of the Kubebuilder project.
 ## When to use it
 
 - If you are looking to scaffold the kustomize configuration manifests for your own language plugin
-- If you are looking for support on Apple silicon (`arm64`)
+- If you are looking for support on Apple Silicon (`darwin/arm64`). (_Before kustomize `4.x` the binary for this plataform is not provided_)
 - If you are looking for to begin to try out the new syntax and features provide by kustomize v4
 - If you are NOT looking to build projects which will be used on Kubernetes cluster versions < `1.22` (_The new features provides by kustomize v4 are not officially supported and might not work with kubectl < `1.22`_)
 - If you are NOT looking to rely on special URLs in resource fields
+- If you want to use [replacements][https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/replacements/] since [vars][https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/vars/] are deprecated and might be removed soon
 
 <aside class="note">
 <h1>Supportability</h1>
