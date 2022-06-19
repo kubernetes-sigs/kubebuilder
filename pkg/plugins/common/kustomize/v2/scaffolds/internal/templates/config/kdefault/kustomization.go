@@ -55,10 +55,12 @@ namespace: {{ .ProjectName }}-system
 namePrefix: {{ .ProjectName }}-
 
 # Labels to add to all resources and selectors.
-#commonLabels:
-#  someName: someValue
+#labels:
+#- includeSelectors: true
+#  pairs:
+#    someName: someValue
 
-bases:
+resources:
 - ../crd
 - ../rbac
 - ../manager
