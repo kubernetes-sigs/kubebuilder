@@ -13,7 +13,7 @@ Please see https://git.k8s.io/community/CLA.md for more info.
 - [go](https://golang.org/dl/) version v1.16+.
 - [docker](https://docs.docker.com/install/) version 17.03+.
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) version v1.11.3+.
-- [kustomize](https://sigs.k8s.io/kustomize/docs/INSTALL.md) v3.1.0+
+- [kustomize](https://github.com/kubernetes-sigs/kustomize/blob/master/site/content/en/docs/Getting%20started/installation.md) v3.1.0+
 - Access to a Kubernetes v1.11.3+ cluster.
 
 ## Contributing steps
