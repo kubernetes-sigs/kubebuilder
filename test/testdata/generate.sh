@@ -109,7 +109,7 @@ function scaffold_test_project {
     $kb create api --group crew --version v1 --kind Admiral --controller=true --resource=true --namespaced=false --make=false
   elif [[ $project == "project-v3-with-deploy-image" ]]; then
       header_text 'Creating Memcached API with deploy-image plugin ...'
-      $kb create api --group example.com --version v1alpha1 --kind Memcached --image=memcached:1.6.15-alpine --plugins="deploy-image/v1-alpha" --make=false --namespaced=false
+      $kb create api --group example.com --version v1alpha1 --kind Memcached --image=memcached:1.6.15-alpine --image-container-command="memcached -m=64 modern -v" --image-container-port="11211" --plugins="deploy-image/v1-alpha" --make=false --namespaced=false
       header_text 'Creating Memcached webhook ...'
       $kb create webhook --group example.com --version v1alpha1 --kind Memcached --programmatic-validation
   fi

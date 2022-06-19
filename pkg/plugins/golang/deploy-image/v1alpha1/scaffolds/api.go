@@ -42,17 +42,21 @@ type apiScaffolder struct {
 	config   config.Config
 	resource resource.Resource
 	image    string
+	command string
+	port string
 
 	// fs is the filesystem that will be used by the scaffolder
 	fs machinery.Filesystem
 }
 
 // NewAPIScaffolder returns a new Scaffolder for declarative
-func NewDeployImageScaffolder(config config.Config, res resource.Resource, image string) plugins.Scaffolder {
+func NewDeployImageScaffolder(config config.Config, res resource.Resource, image, command, port string) plugins.Scaffolder {
 	return &apiScaffolder{
 		config:   config,
 		resource: res,
 		image:    image,
+		command: command,
+		port: port,
 	}
 }
 
@@ -83,7 +87,7 @@ func (s *apiScaffolder) Scaffold() error {
 	)
 
 	if err := scaffold.Execute(
-		&api.Types{},
+		&api.Types{Command: s.command,Port: s.port},
 		&api.Group{},
 	); err != nil {
 		return fmt.Errorf("error scaffolding APIs: %v", err)
@@ -107,8 +111,34 @@ func (s *apiScaffolder) Scaffold() error {
 		return fmt.Errorf("error scaffolding container in the controller: %v", err)
 	}
 
+	// Scaffold the command if informed
+	if len(s.command) > 0 {
+		util.InsertCode(controllerPath,`SecurityContext: &corev1.SecurityContext{
+							RunAsNonRoot:             &[]bool{true}[0],
+							AllowPrivilegeEscalation: &[]bool{false}[0],
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{
+									"ALL",
+								},
+							},
+						},`, commandTemplate )
+	}
+
+	// Scaffold the port if informed
+	if len(s.port) > 0 {
+		util.InsertCode(controllerPath,`SecurityContext: &corev1.SecurityContext{
+							RunAsNonRoot:             &[]bool{true}[0],
+							AllowPrivilegeEscalation: &[]bool{false}[0],
+							Capabilities: &corev1.Capabilities{
+								Drop: []corev1.Capability{
+									"ALL",
+								},
+							},
+						},`, fmt.Sprintf(portTemplate,strings.ToLower(s.resource.Kind)) )
+	}
+
 	if err := scaffold.Execute(
-		&samples.CRDSample{},
+		&samples.CRDSample{Command: s.command,Port: s.port},
 	); err != nil {
 		return fmt.Errorf("error updating config/samples: %v", err)
 	}
@@ -119,6 +149,7 @@ func (s *apiScaffolder) Scaffold() error {
 const containerTemplate = `Containers: []corev1.Container{{
 						Image: "%s",
 						Name:  "%s",
+						ImagePullPolicy: corev1.PullAlways,
 						// Ensure restrictive context for the container
 						// More info: https://kubernetes.io/docs/concepts/security/pod-security-standards/#restricted
 						SecurityContext: &corev1.SecurityContext{
@@ -131,3 +162,12 @@ const containerTemplate = `Containers: []corev1.Container{{
 							},
 						},
 					}}`
+
+const commandTemplate = `
+						Command:         []string{m.Spec.ContainerCommand},`
+
+const portTemplate = `
+						Ports: []corev1.ContainerPort{{
+							ContainerPort: m.Spec.ContainerPort,
+							Name:          "%s",
+						}},`

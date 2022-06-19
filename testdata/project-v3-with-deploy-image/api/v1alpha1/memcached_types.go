@@ -30,6 +30,13 @@ type MemcachedSpec struct {
 
 	// Size defines the number of Memcached instances
 	Size int32 `json:"size,omitempty"`
+
+	// ContainerCommand defines the command that will be used to init the container with the image
+	// (i.e. mycontainer -m=64 -o modern -v})
+	ContainerCommand string `json:"containerCommand,omitempty"`
+
+	// Port defines the port that will be used to init the container with the image
+	ContainerPort int32 `json:"containerPort,omitempty"`
 }
 
 // MemcachedStatus defines the observed state of Memcached

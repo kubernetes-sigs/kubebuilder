@@ -154,6 +154,7 @@ func (r *MemcachedReconciler) deploymentForMemcached(m *examplecomv1alpha1.Memca
 					Containers: []corev1.Container{{
 						Image: "memcached:1.6.15-alpine",
 						Name:  "memcached",
+						ImagePullPolicy: corev1.PullAlways,
 						// Ensure restrictive context for the container
 						// More info: https://kubernetes.io/docs/concepts/security/pod-security-standards/#restricted
 						SecurityContext: &corev1.SecurityContext{
@@ -165,6 +166,11 @@ func (r *MemcachedReconciler) deploymentForMemcached(m *examplecomv1alpha1.Memca
 								},
 							},
 						},
+						Ports: []corev1.ContainerPort{{
+							ContainerPort: m.Spec.ContainerPort,
+							Name:          "memcached",
+						}},
+						Command:         []string{m.Spec.ContainerCommand},
 					}},
 				},
 			},

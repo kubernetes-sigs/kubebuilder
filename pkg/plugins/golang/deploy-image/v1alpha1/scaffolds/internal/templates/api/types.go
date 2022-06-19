@@ -32,6 +32,12 @@ type Types struct {
 	machinery.MultiGroupMixin
 	machinery.BoilerplateMixin
 	machinery.ResourceMixin
+
+	// Command if informed we will create the scaffold with this spec
+	Command string
+
+	// Port if informed we will create the scaffold with this spec
+	Port string
 }
 
 // SetTemplateDefaults implements file.Template
@@ -75,6 +81,17 @@ type {{ .Resource.Kind }}Spec struct {
 
 	// Size defines the number of {{ .Resource.Kind }} instances
 	Size int32 ` + "`" + `json:"size,omitempty"` + "`" + `
+
+	{{ if not (isEmptyStr .Command) -}}
+	// ContainerCommand defines the command that will be used to init the container with the image
+	// (i.e. mycontainer -m=64 -o modern -v})
+	ContainerCommand string ` + "`" + `json:"containerCommand,omitempty"` + "`" + `
+	{{- end }}
+
+	{{ if not (isEmptyStr .Port) -}}
+	// Port defines the port that will be used to init the container with the image
+	ContainerPort int32 ` + "`" + `json:"containerPort,omitempty"` + "`" + `
+	{{- end }}
 }
 
 // {{ .Resource.Kind }}Status defines the observed state of {{ .Resource.Kind }}

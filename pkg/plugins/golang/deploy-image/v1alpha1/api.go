@@ -61,6 +61,12 @@ type createAPISubcommand struct {
 
 	// runManifests indicates whether to run manifests or not after scaffolding APIs
 	runManifests bool
+
+	// imageCommand indicates the command that we should use to init the deployment
+	imageContainerCommand string
+
+	// imageContainerPort indicates the port that we should use in the scaffold
+	imageContainerPort string
 }
 
 func (p *createAPISubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
@@ -74,7 +80,23 @@ func (p *createAPISubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdM
 	//nolint: lll
 	subcmdMeta.Examples = fmt.Sprintf(`  # Create a frigates API with Group: ship, Version: v1beta1, Kind: Frigate to represent the 
 	Image: example.com/frigate:v0.0.1 and its controller with a code to deploy and manage this Operand.
-  %[1]s create api --group ship --version v1beta1 --kind Frigate --image=example.com/frigate:v0.0.1 --plugins=deploy-image/v1-alpha
+	
+	Note that in the following example we are also adding the optional options to let you inform the command which should be used to create the container and initialize itvia the flag --image-container-command as the Port that should be used
+
+	- By informing the command (--image-container-command) your deployment will be scaffold with, i.e.:
+
+		Command: []string{ Memcached.Spec.ContainerCommand},
+
+	- By informing the Port (--image-container-port) will deployment will be scaffold with, i.e: 
+
+		Ports: []corev1.ContainerPort{
+			ContainerPort: Memcached.Spec.ContainerPort,
+			Name:          "Memcached",
+		},
+
+	Therefore, the default values informed will be used to scaffold specs for the API. 
+
+  %[1]s create api --group example.com --version v1alpha1 --kind Memcached --image=memcached:1.6.15-alpine --image-container-command="memcached -m=64 modern -v" --image-container-port="11211" --plugins="deploy-image/v1-alpha" --make=false --namespaced=false
 
   # Generate the manifests
   make manifests
@@ -91,8 +113,14 @@ func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&p.image, "image", "", "inform the Operand image. "+
 		"The controller will be scaffolded with an example code to deploy and manage this image.")
 
-	fs.BoolVar(&p.runMake, "make", true, "if true, run `make generate` after generating files")
+	fs.StringVar(&p.imageContainerCommand, "image-container-command", "", "[Optional] if informed, "+
+		"will be used to scaffold the container command that should be used to init a container to run the image in " +
+		"the controller and its spec in the API (CRD/CR).")
+	fs.StringVar(&p.imageContainerPort, "image-container-port", "", "[Optional] if informed, "+
+		"will be used to scaffold the container port that should be used by container image in " +
+		"the controller and its spec in the API (CRD/CR)")
 
+	fs.BoolVar(&p.runMake, "make", true, "if true, run `make generate` after generating files")
 	fs.BoolVar(&p.runManifests, "manifests", true, "if true, run `make manifests` after generating files")
 
 	p.options = &goPlugin.Options{}
@@ -162,7 +190,11 @@ func (p *createAPISubcommand) PreScaffold(machinery.Filesystem) error {
 func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
 	fmt.Println("updating scaffold with deploy-image/v1alpha1 plugin...")
 
-	scaffolder := scaffolds.NewDeployImageScaffolder(p.config, *p.resource, p.image)
+	scaffolder := scaffolds.NewDeployImageScaffolder(p.config,
+		*p.resource,
+		p.image,
+		p.imageContainerCommand,
+		p.imageContainerPort)
 	scaffolder.InjectFS(fs)
 	return scaffolder.Scaffold()
 }

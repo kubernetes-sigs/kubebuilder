@@ -25,6 +25,12 @@ var _ machinery.Template = &CRDSample{}
 type CRDSample struct {
 	machinery.TemplateMixin
 	machinery.ResourceMixin
+
+	// Command if informed we will create the scaffold with this spec
+	Command string
+
+	// Port if informed we will create the scaffold with this spec
+	Port string
 }
 
 // SetTemplateDefaults implements file.Template
@@ -48,5 +54,16 @@ metadata:
 spec:
   # TODO(user): edit the following value to ensure the number 
   # of Pods/Instances your Operand must have on cluster        
-  size: 3
+  size: 1
+
+  {{ if not (isEmptyStr .Command) -}}
+  # TODO(user): edit the following value to ensure the the container has the right command
+  # and parameters to be initialized 
+  containerCommand: '{{ .Command }}'	
+  {{- end }}
+
+  {{ if not (isEmptyStr .Port) -}}
+  # TODO(user): edit the following value to ensure the the container has the right port to be initialized 
+  containerPort: {{ .Port }}	
+  {{- end }}
 `
