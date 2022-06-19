@@ -122,6 +122,7 @@ check-testdata: ## Run the script to ensure that the testdata is updated
 .PHONY: test-testdata
 test-testdata: ## Run the tests of the testdata directory
 	./test/testdata/test.sh
+	./test/testdata/test_bk_compatibility_with_3x.sh
 
 #todo(remove the test-legacy whne the go/v2 be removed from kubebuilder)
 

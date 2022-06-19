@@ -25,8 +25,6 @@ import (
 	"strings"
 	"time"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
-
 	//nolint:golint
 	//nolint:revive
 	. "github.com/onsi/ginkgo"
@@ -35,6 +33,8 @@ import (
 	//nolint:revive
 	. "github.com/onsi/gomega"
 
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
+	kustomizecommonv1 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v1"
 	"sigs.k8s.io/kubebuilder/v3/test/e2e/utils"
 )
 
@@ -118,6 +118,24 @@ var _ = Describe("kubebuilder", func() {
 			AfterEach(func() {
 				By("uninstalling the cert-manager bundle")
 				kbc.UninstallCertManager(false)
+			})
+
+			It("should generate a runnable project go/v3 using kustomize 3.x", func() {
+				// Skip if cluster version < 1.16, when v1 CRDs and webhooks did not exist.
+				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() < 16 {
+					Skip(fmt.Sprintf("cluster version %s does not support v1 CRDs or webhooks",
+						srvVer.GitVersion))
+				}
+
+				GenerateV3(kbc, "v1", false)
+
+				// replace the version to 3x
+				makefile := filepath.Join(kbc.Dir, "Makefile")
+				if err := util.ReplaceInFile(makefile, kustomizecommonv1.KustomizeVersion, `v3.8.7`); err != nil {
+					ExpectWithOffset(1, err).NotTo(HaveOccurred())
+				}
+
+				Run(kbc)
 			})
 
 			It("should generate a runnable project go/v3 with v1 CRDs and Webhooks", func() {
