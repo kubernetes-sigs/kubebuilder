@@ -40,9 +40,9 @@ type AdmiralStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-//+kubebuilder:resource:scope=Cluster
+//+kubebuilder:resource:path=admirales,scope=Cluster
 
-// Admiral is the Schema for the admirals API
+// Admiral is the Schema for the admirales API
 type Admiral struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

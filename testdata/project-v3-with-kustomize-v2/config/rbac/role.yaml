@@ -8,7 +8,7 @@ rules:
 - apiGroups:
   - crew.testproject.org
   resources:
-  - admirals
+  - admirales
   verbs:
   - create
   - delete
@@ -20,13 +20,13 @@ rules:
 - apiGroups:
   - crew.testproject.org
   resources:
-  - admirals/finalizers
+  - admirales/finalizers
   verbs:
   - update
 - apiGroups:
   - crew.testproject.org
   resources:
-  - admirals/status
+  - admirales/status
   verbs:
   - get
   - patch

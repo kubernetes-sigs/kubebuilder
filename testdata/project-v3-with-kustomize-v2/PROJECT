@@ -37,6 +37,7 @@ resources:
   group: crew
   kind: Admiral
   path: sigs.k8s.io/kubebuilder/testdata/project-v3-with-kustomize-v2/api/v1
+  plural: admirales
   version: v1
   webhooks:
     defaulting: true

@@ -23,7 +23,7 @@ webhooks:
     - CREATE
     - UPDATE
     resources:
-    - admirals
+    - admirales
   sideEffects: None
 - admissionReviewVersions:
   - v1
