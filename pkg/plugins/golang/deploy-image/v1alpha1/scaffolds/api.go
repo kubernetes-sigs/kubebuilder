@@ -19,6 +19,7 @@ package scaffolds
 import (
 	"fmt"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/deploy-image/v1alpha1/scaffolds/internal/templates"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/deploy-image/v1alpha1/scaffolds/internal/templates/config/samples"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds"
 	"strings"
@@ -141,6 +142,12 @@ func (s *apiScaffolder) Scaffold() error {
 		&samples.CRDSample{Command: s.command,Port: s.port},
 	); err != nil {
 		return fmt.Errorf("error updating config/samples: %v", err)
+	}
+
+	if err := scaffold.Execute(
+		&templates.MainUpdater{WireResource: true, WireController: true},
+	); err != nil {
+		return fmt.Errorf("error updating main.go: %v", err)
 	}
 
 	return nil
