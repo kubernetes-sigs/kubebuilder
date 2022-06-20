@@ -17,7 +17,7 @@ limitations under the License.
 package v3
 
 import (
-	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -38,11 +38,22 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/test/e2e/utils"
 )
 
+const (
+	tokenRequestRawString = `{"apiVersion": "authentication.k8s.io/v1", "kind": "TokenRequest"}`
+)
+
+// tokenRequest is a trimmed down version of the authentication.k8s.io/v1/TokenRequest Type
+// that we want to use for extracting the token.
+type tokenRequest struct {
+	Status struct {
+		Token string `json:"token"`
+	} `json:"status"`
+}
+
 var _ = Describe("kubebuilder", func() {
 	Context("project version 3", func() {
 		var (
 			kbc *utils.TestContext
-			sat bool
 		)
 
 		BeforeEach(func() {
@@ -53,8 +64,6 @@ var _ = Describe("kubebuilder", func() {
 
 			By("installing the Prometheus operator")
 			Expect(kbc.InstallPrometheusOperManager()).To(Succeed())
-
-			sat = false
 		})
 
 		AfterEach(func() {
@@ -94,7 +103,7 @@ var _ = Describe("kubebuilder", func() {
 				kbc.Kubectl.ServiceAccount = "default"
 				defer func() { kbc.Kubectl.ServiceAccount = tmp }()
 				GenerateV2(kbc)
-				Run(kbc, sat)
+				Run(kbc)
 			})
 		})
 
@@ -119,15 +128,7 @@ var _ = Describe("kubebuilder", func() {
 				}
 
 				GenerateV3(kbc, "v1")
-
-				// only if running on Kubernetes >= 1.24 do we need to generate the ServiceAccount token Secret
-				// TODO: Remove this once a better implementation using something like the TokenRequest API
-				// is used in the e2e tests
-				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() == 1 && srvVer.GetMinorInt() >= 24 {
-					sat = true
-				}
-
-				Run(kbc, sat)
+				Run(kbc)
 			})
 			It("should generate a runnable project with the golang base plugin v3 and kustomize v4-alpha", func() {
 				// Skip if cluster version < 1.16, when v1 CRDs and webhooks did not exist.
@@ -139,15 +140,7 @@ var _ = Describe("kubebuilder", func() {
 				}
 
 				GenerateV3WithKustomizeV2(kbc, "v1")
-
-				// only if running on Kubernetes >= 1.24 do we need to generate the ServiceAccount token Secret
-				// TODO: Remove this once a better implementation using something like the TokenRequest API
-				// is used in the e2e tests
-				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() == 1 && srvVer.GetMinorInt() >= 24 {
-					sat = true
-				}
-
-				Run(kbc, sat)
+				Run(kbc)
 			})
 			It("should generate a runnable project with v1beta1 CRDs and Webhooks", func() {
 				// Skip if cluster version < 1.15, when `.spec.preserveUnknownFields` was not a v1beta1 CRD field.
@@ -161,14 +154,14 @@ var _ = Describe("kubebuilder", func() {
 				}
 
 				GenerateV3(kbc, "v1beta1")
-				Run(kbc, sat)
+				Run(kbc)
 			})
 		})
 	})
 })
 
 // Run runs a set of e2e tests for a scaffolded project defined by a TestContext.
-func Run(kbc *utils.TestContext, sat bool) {
+func Run(kbc *utils.TestContext) {
 	var controllerPodName string
 	var err error
 
@@ -232,10 +225,6 @@ func Run(kbc *utils.TestContext, sat bool) {
 		fmt.Sprintf("--clusterrole=e2e-%s-metrics-reader", kbc.TestSuffix),
 		fmt.Sprintf("--serviceaccount=%s:%s", kbc.Kubectl.Namespace, kbc.Kubectl.ServiceAccount))
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
-
-	if sat {
-		ServiceAccountToken(kbc)
-	}
 
 	_ = curlMetrics(kbc)
 
@@ -347,21 +336,14 @@ func Run(kbc *utils.TestContext, sat bool) {
 func curlMetrics(kbc *utils.TestContext) string {
 	By("reading the metrics token")
 	// Filter token query by service account in case more than one exists in a namespace.
-	// TODO: Parsing a token this way is not ideal or best practice and should not be used.
-	// Instead, a TokenRequest should be created to get a token to use for this step.
-	query := fmt.Sprintf(`{.items[?(@.metadata.annotations.kubernetes\.io/service-account\.name=="%s")].data.token}`,
-		kbc.Kubectl.ServiceAccount,
-	)
-	b64Token, err := kbc.Kubectl.Get(true, "secrets", "-o=jsonpath="+query)
-	ExpectWithOffset(2, err).NotTo(HaveOccurred())
-	token, err := base64.StdEncoding.DecodeString(strings.TrimSpace(b64Token))
+	token, err := ServiceAccountToken(kbc)
 	ExpectWithOffset(2, err).NotTo(HaveOccurred())
 	ExpectWithOffset(2, len(token)).To(BeNumerically(">", 0))
 
 	By("creating a curl pod")
 	cmdOpts := []string{
 		"run", "curl", "--image=curlimages/curl:7.68.0", "--restart=OnFailure", "--",
-		"curl", "-v", "-k", "-H", fmt.Sprintf(`Authorization: Bearer %s`, token),
+		"curl", "-v", "-k", "-H", fmt.Sprintf(`Authorization: Bearer %s`, strings.TrimSpace(token)),
 		fmt.Sprintf("https://e2e-%s-controller-manager-metrics-service.%s.svc:8443/metrics",
 			kbc.TestSuffix, kbc.Kubectl.Namespace),
 	}
@@ -398,43 +380,42 @@ func curlMetrics(kbc *utils.TestContext) string {
 	return metricsOutput
 }
 
-// TODO: Remove this when and other related functions when
-// tests have been changed to use a better implementation.
-// ServiceAccountToken creates the ServiceAccount token Secret.
-// This is to be used when Kubernetes cluster version is >= 1.24.
-// In k8s 1.24+ a ServiceAccount token Secret is no longer
-// automatically generated
-func ServiceAccountToken(kbc *utils.TestContext) {
-	// As of Kubernetes 1.24 a ServiceAccount no longer has a ServiceAccount token
-	// secret autogenerated. We have to create it manually here
+// ServiceAccountToken provides a helper function that can provide you with a service account
+// token that you can use to interact with the service. This function leverages the k8s'
+// TokenRequest API in raw format in order to make it generic for all version of the k8s that
+// is currently being supported in kubebuilder test infra.
+// TokenRequest API returns the token in raw JWT format itself. There is no conversion required.
+func ServiceAccountToken(kbc *utils.TestContext) (out string, err error) {
 	By("Creating the ServiceAccount token")
-	secretFile, err := createServiceAccountToken(kbc.Kubectl.ServiceAccount, kbc.Dir)
-	Expect(err).NotTo(HaveOccurred())
-	Eventually(func() error {
-		_, err = kbc.Kubectl.Apply(true, "-f", secretFile)
-		return err
-	}, time.Minute, time.Second).Should(Succeed())
-}
-
-var saSecretTemplate = `---
-apiVersion: v1
-kind: Secret
-type: kubernetes.io/service-account-token
-metadata:
-  name: %s
-  annotations:
-    kubernetes.io/service-account.name: "%s"
-`
-
-// createServiceAccountToken writes a service account token secret to a file.
-// It returns a string to the file or an error if it fails to write the file
-func createServiceAccountToken(name string, dir string) (string, error) {
-	secretName := name + "-secret"
-	fileName := dir + "/" + secretName + ".yaml"
-	err := os.WriteFile(fileName, []byte(fmt.Sprintf(saSecretTemplate, secretName, name)), 0777)
+	secretName := fmt.Sprintf("%s-token-request", kbc.Kubectl.ServiceAccount)
+	tokenRequestFile := filepath.Join(kbc.Dir, secretName)
+	err = os.WriteFile(tokenRequestFile, []byte(tokenRequestRawString), os.FileMode(0755))
 	if err != nil {
-		return "", err
+		return out, err
 	}
+	var rawJson string
+	Eventually(func() error {
+		// Output of this is already a valid JWT token. No need to covert this from base64 to string format
+		rawJson, err = kbc.Kubectl.Command(
+			"create",
+			"--raw", fmt.Sprintf(
+				"/api/v1/namespaces/%s/serviceaccounts/%s/token",
+				kbc.Kubectl.Namespace,
+				kbc.Kubectl.ServiceAccount,
+			),
+			"-f", tokenRequestFile,
+		)
+		if err != nil {
+			return err
+		}
+		var token tokenRequest
+		err = json.Unmarshal([]byte(rawJson), &token)
+		if err != nil {
+			return err
+		}
+		out = token.Status.Token
+		return nil
+	}, time.Minute, time.Second).Should(Succeed())
 
-	return fileName, nil
+	return out, err
 }
