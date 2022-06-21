@@ -56,6 +56,7 @@ function delete_cluster {
 function test_cluster {
   local flags="$@"
 
+  go test $(dirname "$0")/deployimage $flags
   go test $(dirname "$0")/v2 $flags
   go test $(dirname "$0")/v3 $flags -timeout 30m
 }

@@ -30,6 +30,7 @@ import (
 	kustomizecommonv2alpha "sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v2-alpha"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang"
 	declarativev1 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/declarative/v1"
+	deployimagev1alpha1 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/deploy-image/v1alpha1"
 	golangv2 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2"
 	golangv3 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3"
 )
@@ -60,6 +61,7 @@ func main() {
 			&kustomizecommonv1.Plugin{},
 			&kustomizecommonv2alpha.Plugin{},
 			&declarativev1.Plugin{},
+			&deployimagev1alpha1.Plugin{},
 		),
 		cli.WithPlugins(externalPlugins...),
 		cli.WithDefaultPlugins(cfgv2.Version, golangv2.Plugin{}),
