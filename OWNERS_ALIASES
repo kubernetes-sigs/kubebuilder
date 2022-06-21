@@ -15,6 +15,7 @@ aliases:
   kubebuilder-reviewers:
     - jmrodri
     - joelanford
+    - rashmigottipati
 
   # folks who may have context on ancient history,
   # but are no longer directly involved
