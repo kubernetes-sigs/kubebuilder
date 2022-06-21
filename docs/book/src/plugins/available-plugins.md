@@ -4,11 +4,11 @@ This section describes the plugins supported and shipped in with the Kubebuilder
 
 | Plugin   | Key | Description | 
 |---|---|---|
-| [go.kubebuilder.io/v3](go-v3-plugin.md)  | `go/v3` | Default scaffold to create the projects when none plugin(s) are informed. Responsible for scaffold the Golang project and its configurations. |
-| [go.kubebuilder.io/v2](go-v2-plugin.md)    | `go/v2` | Golang plugin responsible for scaffold the legacy layout provided with Kubebuilder CLI >= `2.0.0` and < `3.0.0`.  |
+| [go.kubebuilder.io/v2 - (Deprecated)](go-v2-plugin.md)    | `go/v2` | Golang plugin responsible for scaffolding the legacy layout provided with Kubebuilder CLI >= `2.0.0` and < `3.0.0`.  |
+| [go.kubebuilder.io/v3 - (Default scaffold with Kubebuilder init)](go-v3-plugin.md)  | `go/v3` | Default scaffold used for creating a project when no plugin(s) are provided. Responsible for scaffolding Golang projects and its configurations. |
 | [declarative.go.kubebuilder.io/v1](declarative-v1.md)  | `declarative/v1`  | Optional plugin used to scaffold APIs/controllers using the [kubebuilder-declarative-pattern][kubebuilder-declarative-pattern] project. |
 | [kustomize.common.kubebuilder.io/v1](kustomize-v1.md)  | `kustomize/v1`  | Responsible for scaffold all manifests to configure the projects with [kustomize(v3)][kustomize]. (create and update the the `config/` directory). This plugin is used in the composition to create the plugin (`go/v3`). |
-| [kustomize.common.kubebuilder.io/v1](kustomize-v2-alpha.md)  | `kustomize/v2-alpha`  | It has the same purpose of  `kustomize/v1`. However, it works with [kustomize][kustomize] version `v4` and address the required changes for the future kustomize configurations. It will probably be used with the future `go/v4-alpha` plugin. |
+| [kustomize.common.kubebuilder.io/v2-alpha](kustomize-v2-alpha.md)  | `kustomize/v2-alpha`  | It has the same purpose of  `kustomize/v1`. However, it works with [kustomize][kustomize] version `v4` and addresses the required changes for future kustomize configurations. It will probably be used with the future `go/v4-alpha` plugin. |
 | `base.go.kubebuilder.io/v3`  | `base/v3` | Responsible for scaffold all files which specific requires Golang. This plugin is used in the composition to create the plugin (`go/v3`) |
 
 <aside class="note">

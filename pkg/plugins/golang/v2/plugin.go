@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+//go:deprecated This package has been deprecated
 package v2
 
 import (
@@ -63,3 +64,12 @@ func (p Plugin) GetCreateWebhookSubcommand() plugin.CreateWebhookSubcommand {
 
 // GetEditSubcommand will return the subcommand which is responsible for editing the scaffold of the project
 func (p Plugin) GetEditSubcommand() plugin.EditSubcommand { return &p.editSubcommand }
+
+func (p Plugin) DeprecationWarning() string {
+	return "This version is deprecated and is no longer scaffolded by default since `28 Apr 2021`." +
+		"The `go/v2` plugin cannot scaffold projects in which CRDs and/or Webhooks have a `v1` API version." +
+		"Be aware that v1beta1 API for CRDs and Webhooks was deprecated on Kubernetes 1.16 and are" +
+		"removed as of the Kubernetes 1.22 release. Therefore, since this plugin cannot produce projects that" +
+		"work on Kubernetes versions >= 1.22, it is recommended to upgrade your project " +
+		"to the latest versions available."
+}
