@@ -23,8 +23,10 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 
+	"github.com/spf13/pflag"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/external"
 )
@@ -114,5 +116,98 @@ func handlePluginResponse(fs machinery.Filesystem, req external.PluginRequest, p
 	}
 
 	return nil
+}
 
+// getExternalPluginFlags is a helper function that is used to get a list of flags from an external plugin.
+// It will return []Flag if successful or an error if there is an issue attempting to get the list of flags.
+func getExternalPluginFlags(req external.PluginRequest, path string) ([]external.Flag, error) {
+	req.Universe = map[string]string{}
+
+	reqBytes, err := json.Marshal(req)
+	if err != nil {
+		return nil, err
+	}
+
+	out, err := outputGetter.GetExecOutput(reqBytes, path)
+	if err != nil {
+		return nil, err
+	}
+
+	res := external.PluginResponse{}
+	if err := json.Unmarshal(out, &res); err != nil {
+		return nil, err
+	}
+
+	if res.Error {
+		return nil, fmt.Errorf(strings.Join(res.ErrorMsgs, "\n"))
+	}
+
+	return res.Flags, nil
+}
+
+// isBooleanFlag is a helper function to determine if an argument flag is a boolean flag
+func isBooleanFlag(argIndex int, args []string) bool {
+	return argIndex+1 < len(args) &&
+		strings.Contains(args[argIndex+1], "--") ||
+		argIndex+1 >= len(args)
+}
+
+// bindAllFlags will bind all flags passed into the subcommand by a user
+func bindAllFlags(fs *pflag.FlagSet, args []string) {
+	defaultFlagDescription := "Kubebuilder could not validate this flag with the external plugin. " +
+		"Consult the external plugin documentation for more information."
+
+	// Bind all flags passed in
+	for i := range args {
+		if strings.Contains(args[i], "--") {
+			flag := strings.Replace(args[i], "--", "", 1)
+			// Check if the flag is a boolean flag
+			if isBooleanFlag(i, args) {
+				// --help is already a defined flag in the kubebuilder commands and has a description so we skip parsing it again
+				if flag != "help" {
+					_ = fs.Bool(flag, false, defaultFlagDescription)
+				}
+			} else {
+				_ = fs.String(flag, "", defaultFlagDescription)
+			}
+		}
+	}
+}
+
+// bindSpecificFlags with bind flags that are specified by an external plugin as an allowed flag
+func bindSpecificFlags(fs *pflag.FlagSet, flags []external.Flag) {
+	// Only bind flags returned by the external plugin
+	for _, flag := range flags {
+		switch flag.Type {
+		case "bool":
+			defaultValue, _ := strconv.ParseBool(flag.Default)
+			_ = fs.Bool(flag.Name, defaultValue, flag.Usage)
+		case "int":
+			defaultValue, _ := strconv.Atoi(flag.Default)
+			_ = fs.Int(flag.Name, defaultValue, flag.Usage)
+		case "float":
+			defaultValue, _ := strconv.ParseFloat(flag.Default, 64)
+			_ = fs.Float64(flag.Name, defaultValue, flag.Usage)
+		default:
+			_ = fs.String(flag.Name, flag.Default, flag.Usage)
+		}
+	}
+}
+
+func bindExternalPluginFlags(fs *pflag.FlagSet, subcommand string, path string, args []string) {
+	req := external.PluginRequest{
+		APIVersion: defaultAPIVersion,
+		Command:    "flags",
+		Args:       []string{"--" + subcommand},
+	}
+
+	// Get a list of flags for the init subcommand of the external plugin
+	// If it returns an error, parse all flags passed by the user and let
+	// the external plugin return an unknown flag error.
+	flags, err := getExternalPluginFlags(req, path)
+	if err != nil {
+		bindAllFlags(fs, args)
+	} else {
+		bindSpecificFlags(fs, flags)
+	}
 }

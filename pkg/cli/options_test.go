@@ -283,6 +283,43 @@ var _ = Describe("Discover external plugins", func() {
 
 		})
 	})
+
+	Context("parsing flags for external plugins", func() {
+		It("should only parse flags excluding the `--plugins` flag", func() {
+			// change the os.Args for this test and set them back after
+			oldArgs := os.Args
+			defer func() { os.Args = oldArgs }()
+			os.Args = []string{
+				"kubebuilder",
+				"init",
+				"--plugins",
+				"myexternalplugin/v1",
+				"--domain",
+				"example.com",
+				"--binary-flag",
+				"--license",
+				"apache2",
+				"--another-binary",
+			}
+
+			args := parseExternalPluginArgs()
+			Expect(args).Should(ContainElements(
+				"--domain",
+				"example.com",
+				"--binary-flag",
+				"--license",
+				"apache2",
+				"--another-binary",
+			))
+
+			Expect(args).ShouldNot(ContainElements(
+				"kubebuilder",
+				"init",
+				"--plugins",
+				"myexternalplugin/v1",
+			))
+		})
+	})
 })
 
 var _ = Describe("CLI options", func() {
