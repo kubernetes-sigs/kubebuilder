@@ -42,15 +42,24 @@ RUN make WHAT=cmd/kube-apiserver && \
     cp _output/local/bin/${KUBE_BUILD_PLATFORMS}/kube-apiserver $DEST
 
 # kubectl
-RUN curl -sLO https://storage.googleapis.com/kubernetes-release/release/${KUBERNETES_VERSION}/bin/${OS}/${ARCH}/kubectl && \
-    chmod +x kubectl && \
-    cp kubectl $DEST
+RUN /bin/bash -x -c ' \
+    { curl -sLO https://storage.googleapis.com/kubernetes-release/release/${KUBERNETES_VERSION}/bin/${OS}/${ARCH}/kubectl && \
+      chmod +x kubectl && \
+      cp kubectl $DEST; } || \
+    { make WHAT=cmd/kubectl && \
+      cp _output/local/bin/${KUBE_BUILD_PLATFORMS}/kubectl $DEST; }'
 
 # etcd
+WORKDIR /etcd
 ENV ETCD_BASE_NAME=etcd-${ETCD_VERSION}-${OS}-${ARCH}
-RUN curl -sLO https://github.com/coreos/etcd/releases/download/${ETCD_VERSION}/${ETCD_BASE_NAME}.zip && \
-    unzip -o ${ETCD_BASE_NAME}.zip && \
-    cp ${ETCD_BASE_NAME}/etcd $DEST
+RUN /bin/bash -x -c ' \
+    { curl -sLO https://github.com/coreos/etcd/releases/download/${ETCD_VERSION}/${ETCD_BASE_NAME}.zip && \
+      unzip -o ${ETCD_BASE_NAME}.zip && \
+      cp ${ETCD_BASE_NAME}/etcd $DEST; } || \
+    { rm -fr * && \
+      git clone https://github.com/etcd-io/etcd . --depth=1 -b ${ETCD_VERSION} && \
+      GOOS=${OS} GOARCH=${ARCH} ./build.sh && \
+      cp ./bin/etcd $DEST; }'
 
 # Package into tarball.
 WORKDIR /usr/local
