@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v2
+package v2_alpha
 
 import (
 	"fmt"
@@ -28,7 +28,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/internal/validation"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v2/scaffolds"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v2-alpha/scaffolds"
 )
 
 var _ plugin.InitSubcommand = &initSubcommand{}
