@@ -237,27 +237,6 @@ Count int `+"`"+`json:"count,omitempty"`+"`"+`
 
 func uncommentPodStandards(kbc *utils.TestContext) {
 	configManager := filepath.Join(kbc.Dir, "config", "manager", "manager.yaml")
-	managerAuth := filepath.Join(kbc.Dir, "config", "default", "manager_auth_proxy_patch.yaml")
-
-	//nolint:lll
-	if err := pluginutil.ReplaceInFile(configManager, `# TODO(user): uncomment for common cases that do not require escalating privileges
-        # capabilities:
-        #   drop:
-        #     - "ALL"`, `  capabilities:
-            drop:
-              - "ALL"`); err != nil {
-		ExpectWithOffset(1, err).NotTo(HaveOccurred())
-	}
-
-	//nolint:lll
-	if err := pluginutil.ReplaceInFile(managerAuth, `# TODO(user): uncomment for common cases that do not require escalating privileges
-        # capabilities:
-        #   drop:
-        #     - "ALL"`, `  capabilities:
-            drop:
-              - "ALL"`); err != nil {
-		ExpectWithOffset(1, err).NotTo(HaveOccurred())
-	}
 
 	//nolint:lll
 	if err := pluginutil.ReplaceInFile(configManager, `# TODO(user): For common cases that do not require escalating privileges
