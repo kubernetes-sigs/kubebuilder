@@ -39,7 +39,10 @@ go mod init tutorial.kubebuilder.io/migration-project
 <aside class="note warning">
 <h1> Migrating to Kubebuilder v3 while staying on the go/v2 plugin </h1>
 
-You can use `--plugins=go/v2` if you wish to continue using "`Kubebuilder 2.x`" layout and avoid dealing with the breaking changes that will be faced because of the default upper versions which will be used now. See that the [controller-tools][controller-tools] `v0.5.0` & [controller-runtime][controller-runtime] `v0.8.3` are just used by default with the `go/v3` plugin layout. 
+You can use `--plugins=go/v2` if you wish to continue using "`Kubebuilder 2.x`" layout.
+However, with the legacy layout you are unable to produce projects supported
+on Kubernetes versions >= `1.22`. Therefore, it is not recommended.
+
 </aside>
 
 <aside class="note">
@@ -87,9 +90,10 @@ kubebuilder create api --group batch --version v1 --kind CronJob
 
 From now on, the CRDs that will be created by controller-gen will be using the Kubernetes API version `apiextensions.k8s.io/v1`  by default, instead of `apiextensions.k8s.io/v1beta1`. 
 
-The `apiextensions.k8s.io/v1beta1` was deprecated in Kubernetes `1.16` and will be removed in Kubernetes `1.22`.
+The `apiextensions.k8s.io/v1beta1` was deprecated in Kubernetes `1.16` and was removed in Kubernetes `1.22`.
 
 So, if you would like to keep using the previous version use the flag `--crd-version=v1beta1` in the above command which is only needed if you want your operator to support Kubernetes `1.15` and earlier.
+However, it is no longer recommended.
 
 </aside>
 

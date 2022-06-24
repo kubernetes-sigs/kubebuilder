@@ -23,6 +23,9 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins"
 )
 
+// KustomizeVersion is the kubernetes-sigs/kustomize version to be used in the project
+const KustomizeVersion = "v3.8.7"
+
 const pluginName = "kustomize.common." + plugins.DefaultNameQualifier
 
 var (

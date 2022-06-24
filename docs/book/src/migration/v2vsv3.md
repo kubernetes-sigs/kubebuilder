@@ -9,7 +9,7 @@ and [kb-releases][kb-releases] release notes.
 
 ## Common changes
 
-v3 projects use Go modules and request Go 1.15+. Dep is no longer supported for dependency management.
+v3 projects use Go modules and request Go 1.18+. Dep is no longer supported for dependency management.
 
 ## Kubebuilder
 
@@ -19,7 +19,7 @@ v3 projects use Go modules and request Go 1.15+. Dep is no longer supported for 
     
     Furthermore, the PROJECT file itself is now versioned: the `version` field corresponds to the version of the PROJECT file itself, while the `layout` field indicates the scaffolding & primary plugin version in use. 
     
-- The version of the image `gcr.io/kubebuilder/kube-rbac-proxy`, which is an optional component enabled by default to secure the request made against the manager, was updated from `0.5.0` to `0.8.0` to address security concerns. The details of all changes can be found in [kube-rbac-proxy][kube-rbac-proxy].
+- The version of the image `gcr.io/kubebuilder/kube-rbac-proxy`, which is an optional component enabled by default to secure the request made against the manager, was updated from `0.5.0` to `0.11.0` to address security concerns. The details of all changes can be found in [kube-rbac-proxy][kube-rbac-proxy].
  
 ## TL;DR of the New `go/v3` Plugin
 
@@ -41,11 +41,11 @@ Projects scaffolded with Kubebuilder v3 will use the `go.kubebuilder.io/v3` plug
   * A new option to create the projects using ComponentConfig is introduced. For more info see its [enhancement proposal][enhancement proposal] and the [Component config tutorial][component-config-tutorial]
   * Manager manifests now use `SecurityContext` to address security concerns. More info: [#1637][issue-1637] 
 - Misc:
-  * Support for [controller-tools][controller-tools] `v0.5.0` (for `go/v2` it is `v0.3.0` and previously it was `v0.2.5`) 
-  * Support for [controller-runtime][controller-runtime] `v0.8.3` (for `go/v2` it is `v0.6.4` and previously it was `v0.5.0`)
+  * Support for [controller-tools][controller-tools] `v0.9.0` (for `go/v2` it is `v0.3.0` and previously it was `v0.2.5`) 
+  * Support for [controller-runtime][controller-runtime] `v0.12.1` (for `go/v2` it is `v0.6.4` and previously it was `v0.5.0`)
   * Support for [kustomize][kustomize] `v3.8.7` (for `go/v2` it is `v3.5.4` and previously it was `v3.1.0`)
   * Required Envtest binaries are automatically downloaded
-  * The minimum Go version is now `1.15` (previously it was `1.13).
+  * The minimum Go version is now `1.18` (previously it was `1.13`).
 
 <aside class="note warning">
 <h1>Project customizations</h1>

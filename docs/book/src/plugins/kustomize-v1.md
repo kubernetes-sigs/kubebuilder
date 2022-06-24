@@ -4,6 +4,19 @@ The kustomize plugin allows you to scaffold all kustomize manifests used to work
 By using the kustomize plugin, you can create your own language plugins and ensure that you will have the same configurations 
 and features provided by it. 
 
+<aside class="note">
+<h1>Supportability</h1>
+
+This plugin uses [kubernetes-sigs/kustomize](https://github.com/kubernetes-sigs/kustomize) v3 and the architectures supported are: 
+- linux/amd64
+- linux/arm64
+- darwin/amd64
+
+You might want to consider using [kustomize/v2-alpha](./kustomize-v2-alpha.md) if you are looking to scaffold projects in
+other architecture environments. (i.e. if you are looking to scaffold projects with Apple Silicon/M1 (`darwin/arm64`) this plugin 
+will not work, more info: [kubernetes-sigs/kustomize#4612](https://github.com/kubernetes-sigs/kustomize/issues/4612)).
+</aside> 
+
 Note that projects such as [Operator-sdk][sdk] consume the Kubebuilder project as a lib and provide options to work with other languages
 like Ansible and Helm. The kustomize plugin allows them to easily keep a maintained configuration and ensure that all languages have
 the same configuration. It is also helpful if you are looking to provide nice plugins which will perform changes on top of
@@ -27,7 +40,7 @@ If you are looking to scaffold the kustomize configuration manifests for your ow
 ## How to use it ?
 
 If you are looking to define that your language plugin should use kustomize use the [Bundle Plugin][bundle]
-to specify that your language plugin is a composition with your plugin responsable for scaffold
+to specify that your language plugin is a composition with your plugin responsible for scaffold
 all that is laguage specific and kustomize for its configuration, see: 
 
 ```go

@@ -48,7 +48,8 @@ API!
 
 ## So, how can we create our API?
 
-In the next section, [Adding a new API](../cronjob-tutorial/new-api.html) we will check how the tool help us to create our own API's with the command `kubebuilder create api`.
+In the next section, [Adding a new API](../cronjob-tutorial/new-api.html), we will check how the tool helps us to 
+create our own APIs with the command `kubebuilder create api`.
 
 The goal of this command is to create Custom Resource (CR) and Custom Resource Definition (CRD) for our Kind(s). To check it further see; [Extend the Kubernetes API with CustomResourceDefinitions][kubernetes-extend-api].
 

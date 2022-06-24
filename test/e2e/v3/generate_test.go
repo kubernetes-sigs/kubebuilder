@@ -130,7 +130,7 @@ Count int `+"`"+`json:"count,omitempty"`+"`"+`
 }
 
 // GenerateV3 implements a go/v3(-alpha) plugin project defined by a TestContext.
-func GenerateV3(kbc *utils.TestContext, crdAndWebhookVersion string) {
+func GenerateV3(kbc *utils.TestContext, crdAndWebhookVersion string, restrictive bool) {
 	var err error
 
 	By("initializing a project")
@@ -228,4 +228,194 @@ Count int `+"`"+`json:"count,omitempty"`+"`"+`
 	if crdAndWebhookVersion == "v1beta1" {
 		_ = pluginutil.RunCmd("Update dependencies", "go", "mod", "tidy")
 	}
+
+	if restrictive {
+		By("uncomment kustomize files to ensure that pods are restricted")
+		uncommentPodStandards(kbc)
+	}
+}
+
+func uncommentPodStandards(kbc *utils.TestContext) {
+	configManager := filepath.Join(kbc.Dir, "config", "manager", "manager.yaml")
+
+	//nolint:lll
+	if err := pluginutil.ReplaceInFile(configManager, `# TODO(user): For common cases that do not require escalating privileges
+        # it is recommended to ensure that all your Pods/Containers are restrictive.
+        # More info: https://kubernetes.io/docs/concepts/security/pod-security-standards/#restricted
+        # Please uncomment the following code if your project does NOT have to work on old Kubernetes
+        # versions < 1.19 or on vendors versions which do NOT support this field by default (i.e. Openshift < 4.11 ).
+        # seccompProfile:
+        #   type: RuntimeDefault`, `seccompProfile:
+          type: RuntimeDefault`); err == nil {
+		ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	}
+}
+
+// GenerateV3 implements a go/v3(-alpha) plugin project defined by a TestContext.
+func GenerateV3WithKustomizeV2(kbc *utils.TestContext, crdAndWebhookVersion string, restrictive bool) {
+	var err error
+
+	By("initializing a project")
+	err = kbc.Init(
+		"--plugins", "kustomize/v2-alpha,base.go.kubebuilder.io/v3",
+		"--project-version", "3",
+		"--domain", kbc.Domain,
+		"--fetch-deps=false",
+	)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+
+	By("creating API definition")
+	err = kbc.CreateAPI(
+		"--group", kbc.Group,
+		"--version", kbc.Version,
+		"--kind", kbc.Kind,
+		"--namespaced",
+		"--resource",
+		"--controller",
+		"--make=false",
+		"--crd-version", crdAndWebhookVersion,
+	)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+
+	By("implementing the API")
+	ExpectWithOffset(1, pluginutil.InsertCode(
+		filepath.Join(kbc.Dir, "api", kbc.Version, fmt.Sprintf("%s_types.go", strings.ToLower(kbc.Kind))),
+		fmt.Sprintf(`type %sSpec struct {
+`, kbc.Kind),
+		`	// +optional
+Count int `+"`"+`json:"count,omitempty"`+"`"+`
+`)).Should(Succeed())
+
+	By("scaffolding mutating and validating webhooks")
+	err = kbc.CreateWebhook(
+		"--group", kbc.Group,
+		"--version", kbc.Version,
+		"--kind", kbc.Kind,
+		"--defaulting",
+		"--programmatic-validation",
+		"--webhook-version", crdAndWebhookVersion,
+	)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+
+	By("implementing the mutating and validating webhooks")
+	err = pluginutil.ImplementWebhooks(filepath.Join(
+		kbc.Dir, "api", kbc.Version,
+		fmt.Sprintf("%s_webhook.go", strings.ToLower(kbc.Kind))))
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+
+	By("uncomment kustomization.yaml to enable webhook and ca injection")
+	ExpectWithOffset(1, pluginutil.UncommentCode(
+		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+		"#- ../webhook", "#")).To(Succeed())
+	ExpectWithOffset(1, pluginutil.UncommentCode(
+		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+		"#- ../certmanager", "#")).To(Succeed())
+	ExpectWithOffset(1, pluginutil.UncommentCode(
+		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+		"#- ../prometheus", "#")).To(Succeed())
+	ExpectWithOffset(1, pluginutil.UncommentCode(
+		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+		"#- manager_webhook_patch.yaml", "#")).To(Succeed())
+	ExpectWithOffset(1, pluginutil.UncommentCode(
+		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+		"#- webhookcainjection_patch.yaml", "#")).To(Succeed())
+	ExpectWithOffset(1, pluginutil.UncommentCode(filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+		`#replacements:
+#  - source: # Add cert-manager annotation to ValidatingWebhookConfiguration, MutatingWebhookConfiguration and CRDs
+#      kind: Certificate
+#      group: cert-manager.io
+#      version: v1
+#      name: serving-cert # this name should match the one in certificate.yaml
+#      fieldPath: .metadata.namespace # namespace of the certificate CR
+#    targets:
+#      - select:
+#          kind: ValidatingWebhookConfiguration
+#        fieldPaths:
+#          - .metadata.annotations.[cert-manager.io/inject-ca-from]
+#        options:
+#          delimiter: '/'
+#          index: 0
+#          create: true
+#      - select:
+#          kind: MutatingWebhookConfiguration
+#        fieldPaths:
+#          - .metadata.annotations.[cert-manager.io/inject-ca-from]
+#        options:
+#          delimiter: '/'
+#          index: 0
+#          create: true
+#      - select:
+#          kind: CustomResourceDefinition
+#        fieldPaths:
+#          - .metadata.annotations.[cert-manager.io/inject-ca-from]
+#        options:
+#          delimiter: '/'
+#          index: 0
+#          create: true
+#  - source:
+#      kind: Certificate
+#      group: cert-manager.io
+#      version: v1
+#      name: serving-cert # this name should match the one in certificate.yaml
+#      fieldPath: .metadata.name
+#    targets:
+#      - select:
+#          kind: ValidatingWebhookConfiguration
+#        fieldPaths:
+#          - .metadata.annotations.[cert-manager.io/inject-ca-from]
+#        options:
+#          delimiter: '/'
+#          index: 1
+#          create: true
+#      - select:
+#          kind: MutatingWebhookConfiguration
+#        fieldPaths:
+#          - .metadata.annotations.[cert-manager.io/inject-ca-from]
+#        options:
+#          delimiter: '/'
+#          index: 1
+#          create: true
+#      - select:
+#          kind: CustomResourceDefinition
+#        fieldPaths:
+#          - .metadata.annotations.[cert-manager.io/inject-ca-from]
+#        options:
+#          delimiter: '/'
+#          index: 1
+#          create: true
+#  - source: # Add cert-manager annotation to the webhook Service
+#      kind: Service
+#      version: v1
+#      name: webhook-service
+#      fieldPath: .metadata.name # namespace of the service
+#    targets:
+#      - select:
+#          kind: Certificate
+#          group: cert-manager.io
+#          version: v1
+#        fieldPaths:
+#          - .spec.dnsNames.0
+#          - .spec.dnsNames.1
+#        options:
+#          delimiter: '.'
+#          index: 0
+#          create: true
+#  - source:
+#      kind: Service
+#      version: v1
+#      name: webhook-service
+#      fieldPath: .metadata.namespace # namespace of the service
+#    targets:
+#      - select:
+#          kind: Certificate
+#          group: cert-manager.io
+#          version: v1
+#        fieldPaths:
+#          - .spec.dnsNames.0
+#          - .spec.dnsNames.1
+#        options:
+#          delimiter: '.'
+#          index: 1
+#          create: true`, "#")).To(Succeed())
+
 }

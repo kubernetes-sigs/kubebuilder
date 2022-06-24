@@ -20,8 +20,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
@@ -33,6 +35,11 @@ import (
 
 var _ plugin.InitSubcommand = &initSubcommand{}
 
+// Verify if the local environment is supported by this plugin
+var supportedArchs = []string{"linux/amd64",
+	"linux/arm64",
+	"darwin/amd64"}
+
 type initSubcommand struct {
 	config config.Config
 
@@ -43,10 +50,17 @@ type initSubcommand struct {
 }
 
 func (p *initSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
-	subcmdMeta.Description = `Initialize a common project including the following files:
+	subcmdMeta.Description = fmt.Sprintf(`Initialize a common project including the following files:
   - a "PROJECT" file that stores project configuration
   - several YAML files for project deployment under the "config" directory
-`
+
+  NOTE: The kustomize/v1 plugin used to do this scaffold uses the v3 release (%s).
+Therefore, darwin/arm64 is not supported since Kustomize does not provide v3
+binaries for this architecture. The currently supported architectures are %q. 
+More info: https://github.com/kubernetes-sigs/kustomize/issues/4612.
+
+`, KustomizeVersion, supportedArchs)
+
 	subcmdMeta.Examples = fmt.Sprintf(`  # Initialize a common project with your domain and name in copyright
   %[1]s init --plugins common/v3 --domain example.org
 
@@ -92,6 +106,37 @@ func (p *initSubcommand) InjectConfig(c config.Config) error {
 	}
 
 	return nil
+}
+
+func (p *initSubcommand) PreScaffold(machinery.Filesystem) error {
+	arch := runtime.GOARCH
+	// It probably will never return x86_64. However, we are here checking the support for the binaries
+	// So that, x86_64 means getting the Linux/amd64 binary. Then, we just keep this line to ensure
+	// that it complies with the same code implementation that we have in the targets. In case someone
+	// call the command inform the GOARCH=x86_64 then, we will properly handle the scenario
+	// since it will work successfully and will instal the Linux/amd64 binary via the Makefile target.
+	arch = strings.Replace(arch, "x86_64", "amd64", -1)
+	localPlatform := fmt.Sprintf("%s/%s", strings.TrimSpace(runtime.GOOS), strings.TrimSpace(arch))
+
+	if !hasSupportFor(localPlatform) {
+		log.Warnf("the platform of this environment (%s) is not suppported by kustomize v3 (%s) which is "+
+			"used in this scaffold. You will be unable to download a binary for the kustomize version supported "+
+			"and used by this plugin. The currently supported platforms are: %q",
+			localPlatform,
+			KustomizeVersion,
+			supportedArchs)
+	}
+
+	return nil
+}
+
+func hasSupportFor(localPlatform string) bool {
+	for _, value := range supportedArchs {
+		if value == localPlatform {
+			return true
+		}
+	}
+	return false
 }
 
 func (p *initSubcommand) Scaffold(fs machinery.Filesystem) error {

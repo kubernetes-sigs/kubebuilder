@@ -57,4 +57,29 @@ type PluginResponse struct {
 
 	// ErrorMsgs contains the specific error messages of the plugin failures.
 	ErrorMsgs []string `json:"errorMsgs,omitempty"`
+
+	// Flags contains the plugin specific flags that the plugin returns to Kubebuilder when it receives
+	// a request for a list of supported flags from Kubebuilder
+	Flags []Flag `json:"flags,omitempty"`
+}
+
+// Flag is meant to represent a CLI flag that is used by Kubebuilder to define flags that are parsed
+// for use with an external plugin
+type Flag struct {
+	// Name is the name that should be used when creating the flag.
+	// i.e a name of "domain" would become the CLI flag "--domain"
+	Name string
+
+	// Type is the type of flag that should be created. The types that
+	// Kubebuilder supports are: string, bool, int, and float.
+	// any value other than the supported will be defaulted to be a string
+	Type string
+
+	// Default is the default value that should be used for a flag.
+	// Kubebuilder will attempt to convert this value to the defined
+	// type for this flag.
+	Default string
+
+	// Usage is a description of the flag and when/why/what it is used for.
+	Usage string
 }

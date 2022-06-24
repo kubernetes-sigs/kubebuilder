@@ -19,11 +19,15 @@ package main
 import (
 	"log"
 
+	"github.com/sirupsen/logrus"
+	"github.com/spf13/afero"
 	"sigs.k8s.io/kubebuilder/v3/pkg/cli"
 	cfgv2 "sigs.k8s.io/kubebuilder/v3/pkg/config/v2"
 	cfgv3 "sigs.k8s.io/kubebuilder/v3/pkg/config/v3"
+	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	kustomizecommonv1 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v1"
+	kustomizecommonv2alpha "sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v2-alpha"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang"
 	declarativev1 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/declarative/v1"
 	golangv2 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2"
@@ -38,6 +42,14 @@ func main() {
 		golangv3.Plugin{},
 	)
 
+	fs := machinery.Filesystem{
+		FS: afero.NewOsFs(),
+	}
+	externalPlugins, err := cli.DiscoverExternalPlugins(fs.FS)
+	if err != nil {
+		logrus.Error(err)
+	}
+
 	c, err := cli.New(
 		cli.WithCommandName("kubebuilder"),
 		cli.WithVersion(versionString()),
@@ -46,8 +58,10 @@ func main() {
 			golangv3.Plugin{},
 			gov3Bundle,
 			&kustomizecommonv1.Plugin{},
+			&kustomizecommonv2alpha.Plugin{},
 			&declarativev1.Plugin{},
 		),
+		cli.WithPlugins(externalPlugins...),
 		cli.WithDefaultPlugins(cfgv2.Version, golangv2.Plugin{}),
 		cli.WithDefaultPlugins(cfgv3.Version, gov3Bundle),
 		cli.WithDefaultProjectVersion(cfgv3.Version),

@@ -17,7 +17,7 @@ limitations under the License.
 package v3
 
 import (
-	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -37,6 +37,18 @@ import (
 
 	"sigs.k8s.io/kubebuilder/v3/test/e2e/utils"
 )
+
+const (
+	tokenRequestRawString = `{"apiVersion": "authentication.k8s.io/v1", "kind": "TokenRequest"}`
+)
+
+// tokenRequest is a trimmed down version of the authentication.k8s.io/v1/TokenRequest Type
+// that we want to use for extracting the token.
+type tokenRequest struct {
+	Status struct {
+		Token string `json:"token"`
+	} `json:"status"`
+}
 
 var _ = Describe("kubebuilder", func() {
 	Context("project version 3", func() {
@@ -65,6 +77,8 @@ var _ = Describe("kubebuilder", func() {
 			kbc.Destroy()
 		})
 
+		//TODO: remove me when the plugin go/v2 be removed
+		//go:deprecated this plugin is deprecated
 		Context("plugin go.kubebuilder.io/v2", func() {
 			// Use cert-manager with v1beta2 CRs.
 			BeforeEach(func() {
@@ -84,7 +98,7 @@ var _ = Describe("kubebuilder", func() {
 				kbc.UninstallCertManager(true)
 			})
 
-			It("should generate a runnable project", func() {
+			It("should generate a runnable project go/v2 with default SA", func() {
 				// go/v3 uses a unqiue-per-project service account name,
 				// while go/v2 still uses "default".
 				tmp := kbc.Kubectl.ServiceAccount
@@ -106,24 +120,75 @@ var _ = Describe("kubebuilder", func() {
 				kbc.UninstallCertManager(false)
 			})
 
-			It("should generate a runnable project", func() {
+			It("should generate a runnable project go/v3 with v1 CRDs and Webhooks", func() {
 				// Skip if cluster version < 1.16, when v1 CRDs and webhooks did not exist.
-				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() < 17 {
-					Skip(fmt.Sprintf("cluster version %s does not support v1 CRDs or webhooks", srvVer.GitVersion))
+				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() < 16 {
+					Skip(fmt.Sprintf("cluster version %s does not support v1 CRDs or webhooks",
+						srvVer.GitVersion))
 				}
 
-				GenerateV3(kbc, "v1")
+				GenerateV3(kbc, "v1", false)
+				Run(kbc)
+			})
+			It("should generate a runnable project with the golang base plugin v3 and kustomize v4-alpha", func() {
+				// Skip if cluster version < 1.16, when v1 CRDs and webhooks did not exist.
+				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() < 16 {
+					Skip(fmt.Sprintf("cluster version %s does not support v1 CRDs or webhooks",
+						srvVer.GitVersion))
+				}
+				GenerateV3WithKustomizeV2(kbc, "v1", false)
 				Run(kbc)
 			})
 			It("should generate a runnable project with v1beta1 CRDs and Webhooks", func() {
 				// Skip if cluster version < 1.15, when `.spec.preserveUnknownFields` was not a v1beta1 CRD field.
 				// Skip if cluster version >= 1.22 because pre v1 CRDs and webhooks no longer exist.
-				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() < 16 ||
+				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() < 15 ||
 					srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() >= 22 {
-					Skip(fmt.Sprintf("cluster version %s does not support project defaults", srvVer.GitVersion))
+					Skip(fmt.Sprintf("cluster version %s does not support project defaults ",
+						srvVer.GitVersion))
 				}
 
-				GenerateV3(kbc, "v1beta1")
+				GenerateV3(kbc, "v1beta1", false)
+				Run(kbc)
+			})
+
+			It("should generate a runnable project go/v3 with v1 CRDs and Webhooks with restricted pods", func() {
+				// Skip if cluster version < 1.16, when v1 CRDs and webhooks did not exist.
+				// Skip if cluster version < 1.19, because securityContext.seccompProfile only works from 1.19
+				// Otherwise, unknown field "seccompProfile" in io.k8s.api.core.v1.PodSecurityContext will be faced
+				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() < 19 {
+					Skip(fmt.Sprintf("cluster version %s does not support v1 CRDs or webhooks"+
+						"and securityContext.seccompProfile", srvVer.GitVersion))
+				}
+
+				GenerateV3(kbc, "v1", true)
+				Run(kbc)
+			})
+			It("should generate a runnable project with the golang base plugin v3 and kustomize v4-alpha"+
+				" with restricted pods", func() {
+				// Skip if cluster version < 1.16, when v1 CRDs and webhooks did not exist.
+				// Skip if cluster version < 1.19, because securityContext.seccompProfile only works from 1.19
+				// Otherwise, unknown field "seccompProfile" in io.k8s.api.core.v1.PodSecurityContext will be faced
+				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() < 19 {
+					Skip(fmt.Sprintf("cluster version %s does not support v1 CRDs or webhooks "+
+						"and securityContext.seccompProfile", srvVer.GitVersion))
+				}
+
+				GenerateV3WithKustomizeV2(kbc, "v1", true)
+				Run(kbc)
+			})
+			It("should generate a runnable project with v1beta1 CRDs and Webhooks with restricted pods", func() {
+				// Skip if cluster version < 1.15, when `.spec.preserveUnknownFields` was not a v1beta1 CRD field.
+				// Skip if cluster version < 1.19, because securityContext.seccompProfile only works from 1.19
+				// Otherwise, unknown field "seccompProfile" in io.k8s.api.core.v1.PodSecurityContext will be faced
+				// Skip if cluster version >= 1.22 because pre v1 CRDs and webhooks no longer exist.
+				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() < 19 ||
+					srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() >= 22 {
+					Skip(fmt.Sprintf("cluster version %s does not support project defaults "+
+						"and securityContext.seccompProfile", srvVer.GitVersion))
+				}
+
+				GenerateV3(kbc, "v1beta1", true)
 				Run(kbc)
 			})
 		})
@@ -306,20 +371,14 @@ func Run(kbc *utils.TestContext) {
 func curlMetrics(kbc *utils.TestContext) string {
 	By("reading the metrics token")
 	// Filter token query by service account in case more than one exists in a namespace.
-	query := fmt.Sprintf(`{.items[?(@.metadata.annotations.kubernetes\.io/service-account\.name=="%s")].data.token}`,
-		kbc.Kubectl.ServiceAccount,
-	)
-	b64Token, err := kbc.Kubectl.Get(true, "secrets", "-o=jsonpath="+query)
-	ExpectWithOffset(2, err).NotTo(HaveOccurred())
-	token, err := base64.StdEncoding.DecodeString(strings.TrimSpace(b64Token))
+	token, err := ServiceAccountToken(kbc)
 	ExpectWithOffset(2, err).NotTo(HaveOccurred())
 	ExpectWithOffset(2, len(token)).To(BeNumerically(">", 0))
 
 	By("creating a curl pod")
 	cmdOpts := []string{
-		"run", "curl", "--image=curlimages/curl:7.68.0", "--restart=OnFailure",
-		"--serviceaccount=" + kbc.Kubectl.ServiceAccount, "--",
-		"curl", "-v", "-k", "-H", fmt.Sprintf(`Authorization: Bearer %s`, token),
+		"run", "curl", "--image=curlimages/curl:7.68.0", "--restart=OnFailure", "--",
+		"curl", "-v", "-k", "-H", fmt.Sprintf(`Authorization: Bearer %s`, strings.TrimSpace(token)),
 		fmt.Sprintf("https://e2e-%s-controller-manager-metrics-service.%s.svc:8443/metrics",
 			kbc.TestSuffix, kbc.Kubectl.Namespace),
 	}
@@ -354,4 +413,44 @@ func curlMetrics(kbc *utils.TestContext) string {
 	ExpectWithOffset(3, err).NotTo(HaveOccurred())
 
 	return metricsOutput
+}
+
+// ServiceAccountToken provides a helper function that can provide you with a service account
+// token that you can use to interact with the service. This function leverages the k8s'
+// TokenRequest API in raw format in order to make it generic for all version of the k8s that
+// is currently being supported in kubebuilder test infra.
+// TokenRequest API returns the token in raw JWT format itself. There is no conversion required.
+func ServiceAccountToken(kbc *utils.TestContext) (out string, err error) {
+	By("Creating the ServiceAccount token")
+	secretName := fmt.Sprintf("%s-token-request", kbc.Kubectl.ServiceAccount)
+	tokenRequestFile := filepath.Join(kbc.Dir, secretName)
+	err = os.WriteFile(tokenRequestFile, []byte(tokenRequestRawString), os.FileMode(0755))
+	if err != nil {
+		return out, err
+	}
+	var rawJson string
+	Eventually(func() error {
+		// Output of this is already a valid JWT token. No need to covert this from base64 to string format
+		rawJson, err = kbc.Kubectl.Command(
+			"create",
+			"--raw", fmt.Sprintf(
+				"/api/v1/namespaces/%s/serviceaccounts/%s/token",
+				kbc.Kubectl.Namespace,
+				kbc.Kubectl.ServiceAccount,
+			),
+			"-f", tokenRequestFile,
+		)
+		if err != nil {
+			return err
+		}
+		var token tokenRequest
+		err = json.Unmarshal([]byte(rawJson), &token)
+		if err != nil {
+			return err
+		}
+		out = token.Status.Token
+		return nil
+	}, time.Minute, time.Second).Should(Succeed())
+
+	return out, err
 }
