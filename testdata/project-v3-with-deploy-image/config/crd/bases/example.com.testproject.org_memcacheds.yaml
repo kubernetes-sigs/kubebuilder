@@ -35,11 +35,6 @@ spec:
           spec:
             description: MemcachedSpec defines the desired state of Memcached
             properties:
-              containerCommand:
-                description: ContainerCommand defines the command that will be used
-                  to init the container with the image (i.e. mycontainer -m=64 -o
-                  modern -v})
-                type: string
               containerPort:
                 description: Port defines the port that will be used to init the container
                   with the image

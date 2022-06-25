@@ -3,9 +3,9 @@ layout:
 - go.kubebuilder.io/v3
 plugins:
   deploy-image.go.kubebuilder.io/v1-alpha:
-    containerCommand: memcached -m=64 modern -v
+    containerCommand: memcached,-m=64,-o,modern,-v
     containerPort: "11211"
-    image: memcached:1.6.15-alpine
+    image: memcached:1.4.36-alpine
     resources:
     - domain: testproject.org
       group: example.com

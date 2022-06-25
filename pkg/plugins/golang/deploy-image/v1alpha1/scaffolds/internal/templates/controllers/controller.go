@@ -34,6 +34,8 @@ type Controller struct {
 	machinery.ResourceMixin
 
 	ControllerRuntimeVersion string
+
+	Image string
 }
 
 // SetTemplateDefaults implements file.Template
@@ -69,6 +71,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	"context"
+	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -113,27 +116,27 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 	// Fetch the {{ .Resource.Kind }} instance
 	// The purpose is check if the Custom Resource for the Kind {{ .Resource.Kind }}
 	// is applied on the cluster if not we return nill to stop the reconciliation
-	{{ .Resource.Kind }} := &{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{}
-	err := r.Get(ctx, req.NamespacedName, {{ .Resource.Kind }})
+	{{ lower .Resource.Kind }} := &{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{}
+	err := r.Get(ctx, req.NamespacedName, {{ lower .Resource.Kind }})
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
-			log.Info("{{ .Resource.Kind }} resource not found. Ignoring since object must be deleted")
+			log.Info("{{ lower .Resource.Kind }} resource not found. Ignoring since object must be deleted")
 			return ctrl.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
-		log.Error(err, "Failed to get .Resource.Kind }}")
+		log.Error(err, "Failed to get {{ lower .Resource.Kind }} }}")
 		return ctrl.Result{}, err
 	}
 
 	// Check if the deployment already exists, if not create a new one
 	found := &appsv1.Deployment{}
-	err = r.Get(ctx, types.NamespacedName{Name: {{ .Resource.Kind }}.Name, Namespace: {{ .Resource.Kind }}.Namespace}, found)
+	err = r.Get(ctx, types.NamespacedName{Name: {{ lower .Resource.Kind }}.Name, Namespace: {{ lower .Resource.Kind }}.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new deployment
-		dep := r.deploymentFor{{ .Resource.Kind }}({{ .Resource.Kind }})
+		dep := r.deploymentFor{{ .Resource.Kind }}({{ lower .Resource.Kind }})
 		log.Info("Creating a new Deployment", "Deployment.Namespace", dep.Namespace, "Deployment.Name", dep.Name)
 		err = r.Create(ctx, dep)
 		if err != nil {
@@ -143,7 +146,7 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 		// Deployment created successfully 
 		// We will requeue the reconciliation so that we can ensure the state
 		// and move forward for the next operations
-		return ctrl.Result{Requeue: true}, nil
+		return ctrl.Result{RequeueAfter: time.Minute}, nil
 	} else if err != nil {
 		log.Error(err, "Failed to get Deployment")
 		// Let's return the error for the reconciliation be re-trigged again 
@@ -152,7 +155,7 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 
 	// The API is defining that the {{ .Resource.Kind }} type, have a {{ .Resource.Kind }}Spec.Size field to set the quantity of {{ .Resource.Kind }} instances (CRs) to be deployed. 
 	// The following code ensure the deployment size is the same as the spec
-	size := {{ .Resource.Kind }}.Spec.Size
+	size := {{ lower .Resource.Kind }}.Spec.Size
 	if *found.Spec.Replicas != size {
 		found.Spec.Replicas = &size
 		err = r.Update(ctx, found)
@@ -188,6 +191,7 @@ func (r *{{ .Resource.Kind }}Reconciler) deploymentFor{{ .Resource.Kind }}(m *{{
 					Labels: ls,
 				},
 				Spec: corev1.PodSpec{
+					RestartPolicy: corev1.RestartPolicyAlways,
 					SecurityContext: &corev1.PodSecurityContext{
 						RunAsNonRoot: &[]bool{true}[0],
 						// IMPORTANT: seccomProfile was introduced with Kubernetes 1.19
@@ -213,8 +217,16 @@ func (r *{{ .Resource.Kind }}Reconciler) deploymentFor{{ .Resource.Kind }}(m *{{
 
 // labelsFor{{ .Resource.Kind }} returns the labels for selecting the resources
 // belonging to the given  {{ .Resource.Kind }} CR name.
+// Note that the labels follows the standards defined in: https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/
 func labelsFor{{ .Resource.Kind }}(name string) map[string]string {
-	return map[string]string{"type": "{{ lower .Resource.Kind }}", "{{ lower .Resource.Kind }}_cr": name}
+	return map[string]string{"app.kubernetes.io/name": "{{ lower .Resource.Kind }}",
+		"app.kubernetes.io/instance": name,
+		"app.kubernetes.io/version": "",
+		"app.kubernetes.io/component": "{{ .Image }}",
+		"app.kubernetes.io/part-of": "",
+		"app.kubernetes.io/managed-by": "kubebuilder",
+		"app.kubernetes.io/created-by": "",
+	}
 }
 
 // SetupWithManager sets up the controller with the Manager.

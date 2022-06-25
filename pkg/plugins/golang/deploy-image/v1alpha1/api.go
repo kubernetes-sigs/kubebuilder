@@ -85,9 +85,9 @@ func (p *createAPISubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdM
 	
 	Note that in the following example we are also adding the optional options to let you inform the command which should be used to create the container and initialize itvia the flag --image-container-command as the Port that should be used
 
-	- By informing the command (--image-container-command) your deployment will be scaffold with, i.e.:
+	- By informing the command (--image-container-command="memcached,-m=64,-o,modern,-v") your deployment will be scaffold with, i.e.:
 
-		Command: []string{ Memcached.Spec.ContainerCommand},
+		Command: []string{"memcached","-m=64","-o","modern","-v"},
 
 	- By informing the Port (--image-container-port) will deployment will be scaffold with, i.e: 
 
@@ -117,10 +117,10 @@ func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 
 	fs.StringVar(&p.imageContainerCommand, "image-container-command", "", "[Optional] if informed, "+
 		"will be used to scaffold the container command that should be used to init a container to run the image in "+
-		"the controller and its spec in the API (CRD/CR).")
+		"the controller and its spec in the API (CRD/CR). (i.e. --image-container-command=\"memcached,-m=64,modern,-o,-v\")")
 	fs.StringVar(&p.imageContainerPort, "image-container-port", "", "[Optional] if informed, "+
 		"will be used to scaffold the container port that should be used by container image in "+
-		"the controller and its spec in the API (CRD/CR)")
+		"the controller and its spec in the API (CRD/CR). (i.e --image-container-port=\"11211\") ")
 
 	fs.BoolVar(&p.runMake, "make", true, "if true, run `make generate` after generating files")
 	fs.BoolVar(&p.runManifests, "manifests", true, "if true, run `make manifests` after generating files")
@@ -229,14 +229,14 @@ func (p *createAPISubcommand) PostScaffold() error {
 	if err != nil {
 		return err
 	}
-	if p.runMake {
+	if p.runMake && p.resource.HasAPI() {
 		err = util.RunCmd("Running make", "make", "generate")
 		if err != nil {
 			return err
 		}
 	}
 
-	if p.runManifests {
+	if p.runManifests && p.resource.HasAPI() {
 		err = util.RunCmd("Running make", "make", "manifests")
 		if err != nil {
 			return err

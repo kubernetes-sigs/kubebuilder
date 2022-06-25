@@ -262,6 +262,22 @@ func (t *TestContext) Destroy() {
 	}
 }
 
+// CreateManagerNamespace will create the namespace where the manager is deployed
+func (t *TestContext) CreateManagerNamespace() error {
+	_, err := t.Kubectl.Command("create", "ns", t.Kubectl.Namespace)
+	return err
+}
+
+// LabelAllNamespacesToWarnAboutRestricted will label all namespaces so that we can verify
+// if a warning with `Warning: would violate PodSecurity` will be raised when the manifests are applied
+func (t *TestContext) LabelAllNamespacesToWarnAboutRestricted() error {
+	_, err := t.Kubectl.Command("label", "--overwrite", "ns", "--all",
+		"pod-security.kubernetes.io/audit=restricted",
+		"pod-security.kubernetes.io/enforce-version=v1.24",
+		"pod-security.kubernetes.io/warn=restricted")
+	return err
+}
+
 // LoadImageToKindCluster loads a local docker image to the kind cluster
 func (t *TestContext) LoadImageToKindCluster() error {
 	cluster := "kind"
@@ -271,6 +287,23 @@ func (t *TestContext) LoadImageToKindCluster() error {
 	kindOptions := []string{"load", "docker-image", t.ImageName, "--name", cluster}
 	cmd := exec.Command("kind", kindOptions...)
 	_, err := t.Run(cmd)
+	return err
+}
+
+// LoadImageToKindClusterWithName loads a local docker image with the name informed to the kind cluster
+func (tc TestContext) LoadImageToKindClusterWithName(image string) error {
+	cmd := exec.Command("docker", "pull", image)
+	_, err := tc.Run(cmd)
+	if err != nil {
+		return err
+	}
+	cluster := "kind"
+	if v, ok := os.LookupEnv("KIND_CLUSTER"); ok {
+		cluster = v
+	}
+	kindOptions := []string{"load", "docker-image", "--name", cluster, image}
+	cmd = exec.Command("kind", kindOptions...)
+	_, err = tc.Run(cmd)
 	return err
 }
 

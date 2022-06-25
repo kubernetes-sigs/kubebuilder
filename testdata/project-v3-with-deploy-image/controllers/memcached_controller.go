@@ -24,6 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	"context"
+	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -67,27 +68,27 @@ func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	// Fetch the Memcached instance
 	// The purpose is check if the Custom Resource for the Kind Memcached
 	// is applied on the cluster if not we return nill to stop the reconciliation
-	Memcached := &examplecomv1alpha1.Memcached{}
-	err := r.Get(ctx, req.NamespacedName, Memcached)
+	memcached := &examplecomv1alpha1.Memcached{}
+	err := r.Get(ctx, req.NamespacedName, memcached)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
-			log.Info("Memcached resource not found. Ignoring since object must be deleted")
+			log.Info("memcached resource not found. Ignoring since object must be deleted")
 			return ctrl.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
-		log.Error(err, "Failed to get .Resource.Kind }}")
+		log.Error(err, "Failed to get memcached }}")
 		return ctrl.Result{}, err
 	}
 
 	// Check if the deployment already exists, if not create a new one
 	found := &appsv1.Deployment{}
-	err = r.Get(ctx, types.NamespacedName{Name: Memcached.Name, Namespace: Memcached.Namespace}, found)
+	err = r.Get(ctx, types.NamespacedName{Name: memcached.Name, Namespace: memcached.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new deployment
-		dep := r.deploymentForMemcached(Memcached)
+		dep := r.deploymentForMemcached(memcached)
 		log.Info("Creating a new Deployment", "Deployment.Namespace", dep.Namespace, "Deployment.Name", dep.Name)
 		err = r.Create(ctx, dep)
 		if err != nil {
@@ -97,7 +98,7 @@ func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		// Deployment created successfully
 		// We will requeue the reconciliation so that we can ensure the state
 		// and move forward for the next operations
-		return ctrl.Result{Requeue: true}, nil
+		return ctrl.Result{RequeueAfter: time.Minute}, nil
 	} else if err != nil {
 		log.Error(err, "Failed to get Deployment")
 		// Let's return the error for the reconciliation be re-trigged again
@@ -106,7 +107,7 @@ func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	// The API is defining that the Memcached type, have a MemcachedSpec.Size field to set the quantity of Memcached instances (CRs) to be deployed.
 	// The following code ensure the deployment size is the same as the spec
-	size := Memcached.Spec.Size
+	size := memcached.Spec.Size
 	if *found.Spec.Replicas != size {
 		found.Spec.Replicas = &size
 		err = r.Update(ctx, found)
@@ -142,6 +143,7 @@ func (r *MemcachedReconciler) deploymentForMemcached(m *examplecomv1alpha1.Memca
 					Labels: ls,
 				},
 				Spec: corev1.PodSpec{
+					RestartPolicy: corev1.RestartPolicyAlways,
 					SecurityContext: &corev1.PodSecurityContext{
 						RunAsNonRoot: &[]bool{true}[0],
 						// IMPORTANT: seccomProfile was introduced with Kubernetes 1.19
@@ -152,13 +154,14 @@ func (r *MemcachedReconciler) deploymentForMemcached(m *examplecomv1alpha1.Memca
 						},
 					},
 					Containers: []corev1.Container{{
-						Image: "memcached:1.6.15-alpine",
+						Image: "memcached:1.4.36-alpine",
 						Name:  "memcached",
 						ImagePullPolicy: corev1.PullAlways,
 						// Ensure restrictive context for the container
 						// More info: https://kubernetes.io/docs/concepts/security/pod-security-standards/#restricted
 						SecurityContext: &corev1.SecurityContext{
 							RunAsNonRoot:             &[]bool{true}[0],
+							RunAsUser: &[]int64{1000}[0],
 							AllowPrivilegeEscalation: &[]bool{false}[0],
 							Capabilities: &corev1.Capabilities{
 								Drop: []corev1.Capability{
@@ -170,7 +173,7 @@ func (r *MemcachedReconciler) deploymentForMemcached(m *examplecomv1alpha1.Memca
 							ContainerPort: m.Spec.ContainerPort,
 							Name:          "memcached",
 						}},
-						Command:         []string{m.Spec.ContainerCommand},
+						Command:         []string{"memcached","-m=64","-o","modern","-v"},
 					}},
 				},
 			},
@@ -187,8 +190,16 @@ func (r *MemcachedReconciler) deploymentForMemcached(m *examplecomv1alpha1.Memca
 
 // labelsForMemcached returns the labels for selecting the resources
 // belonging to the given  Memcached CR name.
+// Note that the labels follows the standards defined in: https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/
 func labelsForMemcached(name string) map[string]string {
-	return map[string]string{"type": "memcached", "memcached_cr": name}
+	return map[string]string{"app.kubernetes.io/name": "memcached",
+		"app.kubernetes.io/instance":   name,
+		"app.kubernetes.io/version":    "",
+		"app.kubernetes.io/component":  "memcached:1.4.36-alpine",
+		"app.kubernetes.io/part-of":    "",
+		"app.kubernetes.io/managed-by": "kubebuilder",
+		"app.kubernetes.io/created-by": "",
+	}
 }
 
 // SetupWithManager sets up the controller with the Manager.
