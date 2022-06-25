@@ -33,16 +33,17 @@ import (
 // TestContext specified to run e2e tests
 type TestContext struct {
 	*CmdContext
-	TestSuffix string
-	Domain     string
-	Group      string
-	Version    string
-	Kind       string
-	Resources  string
-	ImageName  string
-	BinaryName string
-	Kubectl    *Kubectl
-	K8sVersion *KubernetesVersion
+	TestSuffix   string
+	Domain       string
+	Group        string
+	Version      string
+	Kind         string
+	Resources    string
+	ImageName    string
+	BinaryName   string
+	Kubectl      *Kubectl
+	K8sVersion   *KubernetesVersion
+	IsRestricted bool
 }
 
 // NewTestContext init with a random suffix for test TestContext stuff,
@@ -260,6 +261,22 @@ func (t *TestContext) Destroy() {
 	if err := os.RemoveAll(t.Dir); err != nil {
 		warnError(err)
 	}
+}
+
+// CreateManagerNamespace will create the namespace where the manager is deployed
+func (t *TestContext) CreateManagerNamespace() error {
+	_, err := t.Kubectl.Command("create", "ns", t.Kubectl.Namespace)
+	return err
+}
+
+// LabelAllNamespacesToWarnAboutRestricted will label all namespaces so that we can verify
+// if a warning with `Warning: would violate PodSecurity` will be raised when the manifests are applied
+func (t *TestContext) LabelAllNamespacesToWarnAboutRestricted() error {
+	_, err := t.Kubectl.Command("label", "--overwrite", "ns", "--all",
+		"pod-security.kubernetes.io/audit=restricted",
+		"pod-security.kubernetes.io/enforce-version=v1.24",
+		"pod-security.kubernetes.io/warn=restricted")
+	return err
 }
 
 // LoadImageToKindCluster loads a local docker image to the kind cluster
