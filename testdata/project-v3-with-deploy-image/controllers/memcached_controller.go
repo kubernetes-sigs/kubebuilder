@@ -143,7 +143,6 @@ func (r *MemcachedReconciler) deploymentForMemcached(m *examplecomv1alpha1.Memca
 					Labels: ls,
 				},
 				Spec: corev1.PodSpec{
-					RestartPolicy: corev1.RestartPolicyAlways,
 					SecurityContext: &corev1.PodSecurityContext{
 						RunAsNonRoot: &[]bool{true}[0],
 						// IMPORTANT: seccomProfile was introduced with Kubernetes 1.19
@@ -156,7 +155,7 @@ func (r *MemcachedReconciler) deploymentForMemcached(m *examplecomv1alpha1.Memca
 					Containers: []corev1.Container{{
 						Image: "memcached:1.4.36-alpine",
 						Name:  "memcached",
-						ImagePullPolicy: corev1.PullAlways,
+						ImagePullPolicy: corev1.PullIfNotPresent,
 						// Ensure restrictive context for the container
 						// More info: https://kubernetes.io/docs/concepts/security/pod-security-standards/#restricted
 						SecurityContext: &corev1.SecurityContext{

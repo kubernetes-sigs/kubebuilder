@@ -202,7 +202,7 @@ func (s *apiScaffolder) scaffoldCreateAPIFromGolang() error {
 const containerTemplate = `Containers: []corev1.Container{{
 						Image: "%s",
 						Name:  "%s",
-						ImagePullPolicy: corev1.PullAlways,
+						ImagePullPolicy: corev1.PullIfNotPresent,
 						// Ensure restrictive context for the container
 						// More info: https://kubernetes.io/docs/concepts/security/pod-security-standards/#restricted
 						SecurityContext: &corev1.SecurityContext{

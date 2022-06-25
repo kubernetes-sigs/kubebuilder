@@ -51,6 +51,21 @@ var _ = Describe("kubebuilder", func() {
 
 			By("installing prometheus operator")
 			Expect(kbc.InstallPrometheusOperManager()).To(Succeed())
+
+			By("creating manager namespace")
+			err = kbc.CreateManagerNamespace()
+			ExpectWithOffset(1, err).NotTo(HaveOccurred())
+
+			By("labeling all namespaces to warn about restricted")
+			err = kbc.LabelAllNamespacesToWarnAboutRestricted()
+			ExpectWithOffset(1, err).NotTo(HaveOccurred())
+
+			By("enforce that namespace where the sample will be applied can only run restricted containers")
+			_, err = kbc.Kubectl.Command("label", "--overwrite", "ns", kbc.Kubectl.Namespace,
+				"pod-security.kubernetes.io/audit=restricted",
+				"pod-security.kubernetes.io/enforce-version=v1.24",
+				"pod-security.kubernetes.io/enforce=restricted")
+			Expect(err).To(Not(HaveOccurred()))
 		})
 
 		AfterEach(func() {
@@ -80,7 +95,6 @@ var _ = Describe("kubebuilder", func() {
 				"--plugins", "go/v3",
 				"--project-version", "3",
 				"--domain", kbc.Domain,
-				"--fetch-deps=false",
 			)
 			ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
@@ -125,7 +139,6 @@ var _ = Describe("kubebuilder", func() {
 				"--plugins", "go/v3",
 				"--project-version", "3",
 				"--domain", kbc.Domain,
-				"--fetch-deps=false",
 			)
 			ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
@@ -163,23 +176,24 @@ func Run(kbc *utils.TestContext, imageCR string) {
 	err = kbc.Tidy()
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
-	By("creating manager namespace")
-	err = kbc.CreateManagerNamespace()
+	By("run make all")
+	err = kbc.Make("all")
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
-	By("labeling all namespaces to warn about restricted")
-	err = kbc.LabelAllNamespacesToWarnAboutRestricted()
+	By("run make manifests")
+	err = kbc.Make("manifests")
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
-	By("enforce that namespace where the sample will be applied can only run restricted containers")
-	_, err = kbc.Kubectl.Command("label", "--overwrite", "ns", kbc.Kubectl.Namespace,
-		"pod-security.kubernetes.io/audit=restricted",
-		"pod-security.kubernetes.io/enforce-version=v1.24",
-		"pod-security.kubernetes.io/enforce=restricted")
-	Expect(err).To(Not(HaveOccurred()))
+	By("run make install")
+	err = kbc.Make("install")
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
 	By("building the controller image")
 	err = kbc.Make("docker-build", "IMG="+kbc.ImageName)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+
+	By("loading the controller docker image into the kind cluster")
+	err = kbc.LoadImageToKindCluster()
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
 	By("deploying the controller-manager")
@@ -189,23 +203,6 @@ func Run(kbc *utils.TestContext, imageCR string) {
 
 	By("validating that manager Pod/container(s) are restricted")
 	ExpectWithOffset(1, outputMake).NotTo(ContainSubstring("Warning: would violate PodSecurity"))
-
-	By("loading the controller docker image into the kind cluster")
-	err = kbc.LoadImageToKindCluster()
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
-
-	By("pulling image")
-	err = kbc.LoadImageToKindClusterWithName(imageCR)
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
-
-	// NOTE: If you want to run the test against a GKE cluster, you will need to grant yourself permission.
-	// Otherwise, you may see "... is forbidden: attempt to grant extra privileges"
-	// $ kubectl create clusterrolebinding myname-cluster-admin-binding \
-	// --clusterrole=cluster-admin --user=myname@mycompany.com
-	// https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control
-	By("deploying the controller-manager")
-	err = kbc.Make("deploy", "IMG="+kbc.ImageName)
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
 	By("validating that the controller-manager pod is running as expected")
 	verifyControllerUp := func() error {
@@ -278,7 +275,7 @@ func Run(kbc *utils.TestContext, imageCR string) {
 
 		return err
 	}
-	Eventually(getPods, 3*time.Minute, time.Second).Should(Succeed())
+	Eventually(getPods, 5*time.Minute, time.Second).Should(Succeed())
 	podSlice := strings.Split(strings.TrimSpace(podsOutput), " ")
 	Expect(len(podSlice)).To(BeNumerically(">", 0))
 	for _, pod := range podSlice {
