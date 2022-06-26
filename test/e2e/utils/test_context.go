@@ -291,6 +291,23 @@ func (t *TestContext) LoadImageToKindCluster() error {
 	return err
 }
 
+// LoadImageToKindClusterWithName loads a local docker image with the name informed to the kind cluster
+func (tc TestContext) LoadImageToKindClusterWithName(image string) error {
+	cmd := exec.Command("docker", "pull", image)
+	_, err := tc.Run(cmd)
+	if err != nil {
+		return err
+	}
+	cluster := "kind"
+	if v, ok := os.LookupEnv("KIND_CLUSTER"); ok {
+		cluster = v
+	}
+	kindOptions := []string{"load", "docker-image", "--name", cluster, image}
+	cmd = exec.Command("kind", kindOptions...)
+	_, err = tc.Run(cmd)
+	return err
+}
+
 // CmdContext provides context for command execution
 type CmdContext struct {
 	// environment variables in k=v format.
