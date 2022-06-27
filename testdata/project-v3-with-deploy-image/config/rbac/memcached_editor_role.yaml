@@ -1,0 +1,24 @@
+# permissions for end users to edit memcacheds.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: memcached-editor-role
+rules:
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - memcacheds
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - memcacheds/status
+  verbs:
+  - get
