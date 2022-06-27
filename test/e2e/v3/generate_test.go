@@ -130,7 +130,7 @@ Count int `+"`"+`json:"count,omitempty"`+"`"+`
 }
 
 // GenerateV3 implements a go/v3(-alpha) plugin project defined by a TestContext.
-func GenerateV3(kbc *utils.TestContext, crdAndWebhookVersion string, restrictive bool) {
+func GenerateV3(kbc *utils.TestContext, crdAndWebhookVersion string) {
 	var err error
 
 	By("initializing a project")
@@ -229,7 +229,7 @@ Count int `+"`"+`json:"count,omitempty"`+"`"+`
 		_ = pluginutil.RunCmd("Update dependencies", "go", "mod", "tidy")
 	}
 
-	if restrictive {
+	if kbc.IsRestricted {
 		By("uncomment kustomize files to ensure that pods are restricted")
 		uncommentPodStandards(kbc)
 	}
@@ -252,7 +252,7 @@ func uncommentPodStandards(kbc *utils.TestContext) {
 }
 
 // GenerateV3 implements a go/v3(-alpha) plugin project defined by a TestContext.
-func GenerateV3WithKustomizeV2(kbc *utils.TestContext, crdAndWebhookVersion string, restrictive bool) {
+func GenerateV3WithKustomizeV2(kbc *utils.TestContext, crdAndWebhookVersion string) {
 	var err error
 
 	By("initializing a project")
@@ -418,4 +418,8 @@ Count int `+"`"+`json:"count,omitempty"`+"`"+`
 #          index: 1
 #          create: true`, "#")).To(Succeed())
 
+	if kbc.IsRestricted {
+		By("uncomment kustomize files to ensure that pods are restricted")
+		uncommentPodStandards(kbc)
+	}
 }
