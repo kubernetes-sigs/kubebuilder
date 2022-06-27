@@ -107,6 +107,11 @@ function scaffold_test_project {
     $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false
     $kb create api --group crew --version v1 --kind FirstMate --controller=true --resource=true --make=false
     $kb create api --group crew --version v1 --kind Admiral --controller=true --resource=true --namespaced=false --make=false
+  elif [[ $project == "project-v3-with-deploy-image" ]]; then
+      header_text 'Creating Memcached API with deploy-image plugin ...'
+      $kb create api --group example.com --version v1alpha1 --kind Memcached --image=memcached:1.4.36-alpine --image-container-command="memcached,-m=64,-o,modern,-v" --image-container-port="11211" --plugins="deploy-image/v1-alpha" --make=false --namespaced=false
+      header_text 'Creating Memcached webhook ...'
+      $kb create webhook --group example.com --version v1alpha1 --kind Memcached --programmatic-validation
   fi
 
   make generate manifests
@@ -125,3 +130,4 @@ scaffold_test_project project-v3-multigroup
 scaffold_test_project project-v3-addon --plugins="go/v3,declarative"
 scaffold_test_project project-v3-config --component-config
 scaffold_test_project project-v3-with-kustomize-v2 --plugins="kustomize/v2-alpha,base.go.kubebuilder.io/v3"
+scaffold_test_project project-v3-with-deploy-image

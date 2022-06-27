@@ -1,0 +1,55 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.9.0
+  creationTimestamp: null
+  name: memcacheds.example.com.testproject.org
+spec:
+  group: example.com.testproject.org
+  names:
+    kind: Memcached
+    listKind: MemcachedList
+    plural: memcacheds
+    singular: memcached
+  scope: Cluster
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Memcached is the Schema for the memcacheds API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: MemcachedSpec defines the desired state of Memcached
+            properties:
+              containerPort:
+                description: Port defines the port that will be used to init the container
+                  with the image
+                format: int32
+                type: integer
+              size:
+                description: Size defines the number of Memcached instances
+                format: int32
+                type: integer
+            type: object
+          status:
+            description: MemcachedStatus defines the observed state of Memcached
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
