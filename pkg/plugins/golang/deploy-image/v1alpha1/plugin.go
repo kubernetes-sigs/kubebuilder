@@ -19,7 +19,6 @@ package v1alpha1
 import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	cfgv3 "sigs.k8s.io/kubebuilder/v3/pkg/config/v3"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/stage"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang"
@@ -53,8 +52,18 @@ func (Plugin) SupportedProjectVersions() []config.Version { return supportedProj
 func (p Plugin) GetCreateAPISubcommand() plugin.CreateAPISubcommand { return &p.createAPISubcommand }
 
 type pluginConfig struct {
-	Resources []resource.GVK `json:"resources,omitempty"`
-	// image indicates the image that will be used to scaffold the deployment
+	Resources []resourceData `json:"resources,omitempty"`
+}
+
+type resourceData struct {
+	Group   string  `json:"group,omitempty"`
+	Domain  string  `json:"domain,omitempty"`
+	Version string  `json:"version"`
+	Kind    string  `json:"kind"`
+	Options options `json:"options,omitempty"`
+}
+
+type options struct {
 	Image            string `json:"image,omitempty"`
 	ContainerCommand string `json:"containerCommand,omitempty"`
 	ContainerPort    string `json:"containerPort,omitempty"`
