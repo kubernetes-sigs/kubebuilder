@@ -69,6 +69,9 @@ type createAPISubcommand struct {
 
 	// imageContainerPort indicates the port that we should use in the scaffold
 	imageContainerPort string
+
+	// runAsUser indicates the user-id used for running the container
+	runAsUser string
 }
 
 func (p *createAPISubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
@@ -121,6 +124,7 @@ func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&p.imageContainerPort, "image-container-port", "", "[Optional] if informed, "+
 		"will be used to scaffold the container port that should be used by container image in "+
 		"the controller and its spec in the API (CRD/CR). (i.e --image-container-port=\"11211\") ")
+	fs.StringVar(&p.runAsUser, "run-as-user", "", "User-Id for the container formed will be set to this value")
 
 	fs.BoolVar(&p.runMake, "make", true, "if true, run `make generate` after generating files")
 	fs.BoolVar(&p.runManifests, "manifests", true, "if true, run `make manifests` after generating files")
@@ -195,7 +199,8 @@ func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
 		*p.resource,
 		p.image,
 		p.imageContainerCommand,
-		p.imageContainerPort)
+		p.imageContainerPort,
+		p.runAsUser)
 	scaffolder.InjectFS(fs)
 	err := scaffolder.Scaffold()
 	if err != nil {
@@ -215,6 +220,7 @@ func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
 			Image:            p.image,
 			ContainerCommand: p.imageContainerCommand,
 			ContainerPort:    p.imageContainerPort,
+			RunAsUser:        p.runAsUser,
 		}
 		cfg.Resources = append(cfg.Resources, resourceData{
 			Group:   p.resource.GVK.Group,

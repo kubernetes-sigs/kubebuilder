@@ -28,6 +28,32 @@ rules:
 - apiGroups:
   - example.com.testproject.org
   resources:
+  - busyboxes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - busyboxes/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - busyboxes/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - example.com.testproject.org
+  resources:
   - memcacheds
   verbs:
   - create
