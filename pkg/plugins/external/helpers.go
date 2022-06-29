@@ -28,10 +28,18 @@ import (
 
 	"github.com/spf13/pflag"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/external"
 )
 
 var outputGetter ExecOutputGetter = &execOutputGetter{}
+
+const defaultMetadataTemplate = `
+%s is an external plugin for scaffolding files to help with your Operator development.
+
+For more information on how to use this external plugin, it is recommended to 
+consult the external plugin's documentation.
+`
 
 // ExecOutputGetter is an interface that implements the exec output method.
 type ExecOutputGetter interface {
@@ -70,27 +78,36 @@ func (o *osWdGetter) GetCurrentDir() (string, error) {
 	return currentDir, nil
 }
 
-func handlePluginResponse(fs machinery.Filesystem, req external.PluginRequest, path string) error {
-	req.Universe = map[string]string{}
-
+func makePluginRequest(req external.PluginRequest, path string) (*external.PluginResponse, error) {
 	reqBytes, err := json.Marshal(req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	out, err := outputGetter.GetExecOutput(reqBytes, path)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	res := external.PluginResponse{}
 	if err := json.Unmarshal(out, &res); err != nil {
-		return err
+		return nil, err
 	}
 
 	// Error if the plugin failed.
 	if res.Error {
-		return fmt.Errorf(strings.Join(res.ErrorMsgs, "\n"))
+		return nil, fmt.Errorf(strings.Join(res.ErrorMsgs, "\n"))
+	}
+
+	return &res, nil
+}
+
+func handlePluginResponse(fs machinery.Filesystem, req external.PluginRequest, path string) error {
+	req.Universe = map[string]string{}
+
+	res, err := makePluginRequest(req, path)
+	if err != nil {
+		return fmt.Errorf("error making request to external plugin: %w", err)
 	}
 
 	currentDir, err := currentDirGetter.GetCurrentDir()
@@ -123,23 +140,9 @@ func handlePluginResponse(fs machinery.Filesystem, req external.PluginRequest, p
 func getExternalPluginFlags(req external.PluginRequest, path string) ([]external.Flag, error) {
 	req.Universe = map[string]string{}
 
-	reqBytes, err := json.Marshal(req)
+	res, err := makePluginRequest(req, path)
 	if err != nil {
-		return nil, err
-	}
-
-	out, err := outputGetter.GetExecOutput(reqBytes, path)
-	if err != nil {
-		return nil, err
-	}
-
-	res := external.PluginResponse{}
-	if err := json.Unmarshal(out, &res); err != nil {
-		return nil, err
-	}
-
-	if res.Error {
-		return nil, fmt.Errorf(strings.Join(res.ErrorMsgs, "\n"))
+		return nil, fmt.Errorf("error making request to external plugin: %w", err)
 	}
 
 	return res.Flags, nil
@@ -210,4 +213,44 @@ func bindExternalPluginFlags(fs *pflag.FlagSet, subcommand string, path string, 
 	} else {
 		bindSpecificFlags(fs, flags)
 	}
+}
+
+// setExternalPluginMetadata is a helper function that sets the subcommand
+// metadata that is used when the help text is shown for a subcommand.
+// It will attempt to get the Metadata from the external plugin. If the
+// external plugin returns no Metadata or an error, a default will be used.
+func setExternalPluginMetadata(subcommand, path string, subcmdMeta *plugin.SubcommandMetadata) {
+	fileName := filepath.Base(path)
+	subcmdMeta.Description = fmt.Sprintf(defaultMetadataTemplate, fileName[:len(fileName)-len(filepath.Ext(fileName))])
+
+	res, _ := getExternalPluginMetadata(subcommand, path)
+
+	if res != nil {
+		if res.Description != "" {
+			subcmdMeta.Description = res.Description
+		}
+
+		if res.Examples != "" {
+			subcmdMeta.Examples = res.Examples
+		}
+	}
+}
+
+// fetchExternalPluginMetadata performs the actual request to the
+// external plugin to get the metadata. It returns the metadata
+// or an error if an error occurs during the fetch process.
+func getExternalPluginMetadata(subcommand, path string) (*plugin.SubcommandMetadata, error) {
+	req := external.PluginRequest{
+		APIVersion: defaultAPIVersion,
+		Command:    "metadata",
+		Args:       []string{"--" + subcommand},
+		Universe:   map[string]string{},
+	}
+
+	res, err := makePluginRequest(req, path)
+	if err != nil {
+		return nil, fmt.Errorf("error making request to external plugin: %w", err)
+	}
+
+	return &res.Metadata, nil
 }
