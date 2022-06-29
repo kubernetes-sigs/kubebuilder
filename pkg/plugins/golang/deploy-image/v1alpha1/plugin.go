@@ -67,4 +67,5 @@ type options struct {
 	Image            string `json:"image,omitempty"`
 	ContainerCommand string `json:"containerCommand,omitempty"`
 	ContainerPort    string `json:"containerPort,omitempty"`
+	RunAsUser        string `json:"runAsUser,omitempty"`
 }

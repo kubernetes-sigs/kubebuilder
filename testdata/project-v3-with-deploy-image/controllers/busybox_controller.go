@@ -34,8 +34,8 @@ import (
 	examplecomv1alpha1 "sigs.k8s.io/kubebuilder/testdata/project-v3-with-deploy-image/api/v1alpha1"
 )
 
-// MemcachedReconciler reconciles a Memcached object
-type MemcachedReconciler struct {
+// BusyboxReconciler reconciles a Busybox object
+type BusyboxReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
@@ -44,9 +44,9 @@ type MemcachedReconciler struct {
 // when the command <make manifests> is executed.
 // To know more about markers see: https://book.kubebuilder.io/reference/markers.html
 
-//+kubebuilder:rbac:groups=example.com.testproject.org,resources=memcacheds,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=example.com.testproject.org,resources=memcacheds/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=example.com.testproject.org,resources=memcacheds/finalizers,verbs=update
+//+kubebuilder:rbac:groups=example.com.testproject.org,resources=busyboxes,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=example.com.testproject.org,resources=busyboxes/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=example.com.testproject.org,resources=busyboxes/finalizers,verbs=update
 //+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch
 
@@ -62,33 +62,33 @@ type MemcachedReconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.1/pkg/reconcile
-func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 
-	// Fetch the Memcached instance
-	// The purpose is check if the Custom Resource for the Kind Memcached
+	// Fetch the Busybox instance
+	// The purpose is check if the Custom Resource for the Kind Busybox
 	// is applied on the cluster if not we return nill to stop the reconciliation
-	memcached := &examplecomv1alpha1.Memcached{}
-	err := r.Get(ctx, req.NamespacedName, memcached)
+	busybox := &examplecomv1alpha1.Busybox{}
+	err := r.Get(ctx, req.NamespacedName, busybox)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
-			log.Info("memcached resource not found. Ignoring since object must be deleted")
+			log.Info("busybox resource not found. Ignoring since object must be deleted")
 			return ctrl.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
-		log.Error(err, "Failed to get memcached }}")
+		log.Error(err, "Failed to get busybox }}")
 		return ctrl.Result{}, err
 	}
 
 	// Check if the deployment already exists, if not create a new one
 	found := &appsv1.Deployment{}
-	err = r.Get(ctx, types.NamespacedName{Name: memcached.Name, Namespace: memcached.Namespace}, found)
+	err = r.Get(ctx, types.NamespacedName{Name: busybox.Name, Namespace: busybox.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new deployment
-		dep := r.deploymentForMemcached(memcached)
+		dep := r.deploymentForBusybox(busybox)
 		log.Info("Creating a new Deployment", "Deployment.Namespace", dep.Namespace, "Deployment.Name", dep.Name)
 		err = r.Create(ctx, dep)
 		if err != nil {
@@ -105,9 +105,9 @@ func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, err
 	}
 
-	// The API is defining that the Memcached type, have a MemcachedSpec.Size field to set the quantity of Memcached instances (CRs) to be deployed.
+	// The API is defining that the Busybox type, have a BusyboxSpec.Size field to set the quantity of Busybox instances (CRs) to be deployed.
 	// The following code ensure the deployment size is the same as the spec
-	size := memcached.Spec.Size
+	size := busybox.Spec.Size
 	if *found.Spec.Replicas != size {
 		found.Spec.Replicas = &size
 		err = r.Update(ctx, found)
@@ -123,9 +123,9 @@ func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	return ctrl.Result{}, nil
 }
 
-// deploymentForMemcached returns a Memcached Deployment object
-func (r *MemcachedReconciler) deploymentForMemcached(m *examplecomv1alpha1.Memcached) *appsv1.Deployment {
-	ls := labelsForMemcached(m.Name)
+// deploymentForBusybox returns a Busybox Deployment object
+func (r *BusyboxReconciler) deploymentForBusybox(m *examplecomv1alpha1.Busybox) *appsv1.Deployment {
+	ls := labelsForBusybox(m.Name)
 	replicas := m.Spec.Size
 
 	dep := &appsv1.Deployment{
@@ -153,14 +153,13 @@ func (r *MemcachedReconciler) deploymentForMemcached(m *examplecomv1alpha1.Memca
 						},
 					},
 					Containers: []corev1.Container{{
-						Image: "memcached:1.4.36-alpine",
-						Name:  "memcached",
+						Image: "busybox:1.28",
+						Name:  "busybox",
 						ImagePullPolicy: corev1.PullIfNotPresent,
 						// Ensure restrictive context for the container
 						// More info: https://kubernetes.io/docs/concepts/security/pod-security-standards/#restricted
 						SecurityContext: &corev1.SecurityContext{
 							RunAsNonRoot:             &[]bool{true}[0],
-							RunAsUser: &[]int64{1001}[0],
 							AllowPrivilegeEscalation: &[]bool{false}[0],
 							Capabilities: &corev1.Capabilities{
 								Drop: []corev1.Capability{
@@ -168,17 +167,12 @@ func (r *MemcachedReconciler) deploymentForMemcached(m *examplecomv1alpha1.Memca
 								},
 							},
 						},
-						Ports: []corev1.ContainerPort{{
-							ContainerPort: m.Spec.ContainerPort,
-							Name:          "memcached",
-						}},
-						Command:         []string{"memcached","-m=64","-o","modern","-v"},
 					}},
 				},
 			},
 		},
 	}
-	// Set Memcached instance as the owner and controller
+	// Set Busybox instance as the owner and controller
 	// You should use the method ctrl.SetControllerReference for all resources
 	// which are created by your controller so that when the Custom Resource be deleted
 	// all resources owned by it (child) will also be deleted.
@@ -187,10 +181,10 @@ func (r *MemcachedReconciler) deploymentForMemcached(m *examplecomv1alpha1.Memca
 	return dep
 }
 
-// labelsForMemcached returns the labels for selecting the resources
-// belonging to the given  Memcached CR name.
-func labelsForMemcached(name string) map[string]string {
-	return map[string]string{"type": "memcached", "memcached_cr": name}
+// labelsForBusybox returns the labels for selecting the resources
+// belonging to the given  Busybox CR name.
+func labelsForBusybox(name string) map[string]string {
+	return map[string]string{"type": "busybox", "busybox_cr": name}
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -198,9 +192,9 @@ func labelsForMemcached(name string) map[string]string {
 // and other resources that are owned and managed by that controller.
 // In this way, the reconciliation can be re-trigged when the CR and/or the Deployment
 // be created/edit/delete.
-func (r *MemcachedReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *BusyboxReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&examplecomv1alpha1.Memcached{}).
+		For(&examplecomv1alpha1.Busybox{}).
 		Owns(&appsv1.Deployment{}).
 		Complete(r)
 }

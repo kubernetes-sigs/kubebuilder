@@ -106,6 +106,7 @@ var _ = Describe("kubebuilder", func() {
 				"--image", "memcached:1.4.36-alpine",
 				"--image-container-port", "11211",
 				"--image-container-command", "memcached,-m=64,-o,modern,-v",
+				"--run-as-user", "1001",
 				"--make=false",
 				"--manifests=false",
 			)
