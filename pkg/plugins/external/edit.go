@@ -31,6 +31,10 @@ type editSubcommand struct {
 	Args []string
 }
 
+func (p *editSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
+	setExternalPluginMetadata("edit", p.Path, subcmdMeta)
+}
+
 func (p *editSubcommand) BindFlags(fs *pflag.FlagSet) {
 	bindExternalPluginFlags(fs, "edit", p.Path, p.Args)
 }

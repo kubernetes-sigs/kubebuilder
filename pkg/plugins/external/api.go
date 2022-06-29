@@ -41,6 +41,10 @@ func (p *createAPISubcommand) InjectResource(*resource.Resource) error {
 	return nil
 }
 
+func (p *createAPISubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
+	setExternalPluginMetadata("api", p.Path, subcmdMeta)
+}
+
 func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 	bindExternalPluginFlags(fs, "api", p.Path, p.Args)
 }

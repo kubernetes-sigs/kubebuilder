@@ -29,6 +29,7 @@ import (
 	"github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/external"
 )
 
@@ -83,6 +84,19 @@ func (m *mockValidFlagOutputGetter) GetExecOutput(req []byte, path string) ([]by
 		Universe: nil,
 		Flags:    getFlags(),
 	}
+	return json.Marshal(response)
+}
+
+type mockValidMEOutputGetter struct{}
+
+func (m *mockValidMEOutputGetter) GetExecOutput(req []byte, path string) ([]byte, error) {
+	response := external.PluginResponse{
+		Command:  "metadata",
+		Error:    false,
+		Universe: nil,
+		Metadata: getMetadata(),
+	}
+
 	return json.Marshal(response)
 }
 
@@ -486,6 +500,136 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 			}
 		})
 	})
+
+	// TODO(everettraven): Add tests for an external plugin setting the Metadata and Examples
+	Context("Successfully retrieving metadata and examples from external plugin", func() {
+		var (
+			pluginFileName string
+			metadata       *plugin.SubcommandMetadata
+			checkMetadata  func()
+		)
+		BeforeEach(func() {
+			outputGetter = &mockValidMEOutputGetter{}
+			currentDirGetter = &mockValidOsWdGetter{}
+
+			pluginFileName = externalPlugin
+			metadata = &plugin.SubcommandMetadata{}
+
+			checkMetadata = func() {
+				Expect(metadata.Description).Should(Equal(getMetadata().Description))
+				Expect(metadata.Examples).Should(Equal(getMetadata().Examples))
+			}
+		})
+
+		It("should use the external plugin's metadata and examples for `init` subcommand", func() {
+			sc := initSubcommand{
+				Path: pluginFileName,
+				Args: nil,
+			}
+
+			sc.UpdateMetadata(plugin.CLIMetadata{}, metadata)
+
+			checkMetadata()
+		})
+
+		It("should use the external plugin's metadata and examples for `create api` subcommand", func() {
+			sc := createAPISubcommand{
+				Path: pluginFileName,
+				Args: nil,
+			}
+
+			sc.UpdateMetadata(plugin.CLIMetadata{}, metadata)
+
+			checkMetadata()
+		})
+
+		It("should use the external plugin's metadata and examples for `create webhook` subcommand", func() {
+			sc := createWebhookSubcommand{
+				Path: pluginFileName,
+				Args: nil,
+			}
+
+			sc.UpdateMetadata(plugin.CLIMetadata{}, metadata)
+
+			checkMetadata()
+		})
+
+		It("should use the external plugin's metadata and examples for `edit` subcommand", func() {
+			sc := editSubcommand{
+				Path: pluginFileName,
+				Args: nil,
+			}
+
+			sc.UpdateMetadata(plugin.CLIMetadata{}, metadata)
+
+			checkMetadata()
+		})
+	})
+
+	Context("Failing to retrieve metadata and examples from external plugin", func() {
+		var (
+			pluginFileName string
+			metadata       *plugin.SubcommandMetadata
+			checkMetadata  func()
+		)
+		BeforeEach(func() {
+			outputGetter = &mockInValidOutputGetter{}
+			currentDirGetter = &mockValidOsWdGetter{}
+
+			pluginFileName = externalPlugin
+			metadata = &plugin.SubcommandMetadata{}
+
+			checkMetadata = func() {
+				Expect(metadata.Description).Should(Equal(fmt.Sprintf(defaultMetadataTemplate, "myexternalplugin")))
+				Expect(metadata.Examples).Should(BeEmpty())
+			}
+		})
+
+		It("should use the default metadata and examples for `init` subcommand", func() {
+			sc := initSubcommand{
+				Path: pluginFileName,
+				Args: nil,
+			}
+
+			sc.UpdateMetadata(plugin.CLIMetadata{}, metadata)
+
+			checkMetadata()
+		})
+
+		It("should use the default metadata and examples for `create api` subcommand", func() {
+			sc := createAPISubcommand{
+				Path: pluginFileName,
+				Args: nil,
+			}
+
+			sc.UpdateMetadata(plugin.CLIMetadata{}, metadata)
+
+			checkMetadata()
+		})
+
+		It("should use the default metadata and examples for `create webhook` subcommand", func() {
+			sc := createWebhookSubcommand{
+				Path: pluginFileName,
+				Args: nil,
+			}
+
+			sc.UpdateMetadata(plugin.CLIMetadata{}, metadata)
+
+			checkMetadata()
+		})
+
+		It("should use the default metadata and examples for `edit` subcommand", func() {
+			sc := editSubcommand{
+				Path: pluginFileName,
+				Args: nil,
+			}
+
+			sc.UpdateMetadata(plugin.CLIMetadata{}, metadata)
+
+			checkMetadata()
+		})
+	})
+
 })
 
 func getFlags() []external.Flag {
@@ -514,5 +658,12 @@ func getFlags() []external.Flag {
 			Usage:   "value of treasure on board the ship",
 			Default: "123.45",
 		},
+	}
+}
+
+func getMetadata() plugin.SubcommandMetadata {
+	return plugin.SubcommandMetadata{
+		Description: "Test description",
+		Examples:    "Test examples",
 	}
 }
