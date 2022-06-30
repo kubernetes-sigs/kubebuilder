@@ -12,7 +12,7 @@ jobs:
     outputs:
       skip: ${{ steps.check_docs_only.outputs.skip }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
       - id: check_docs_only
@@ -31,11 +31,11 @@ jobs:
     if: (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository) && needs.check_docs_only.outputs.skip != 'true'
     steps:
       - name: Clone the code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
       - name: Setup Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: "1.18"
       - name: Execute go-apidiff
