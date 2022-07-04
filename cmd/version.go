@@ -18,6 +18,7 @@ package main
 
 import (
 	"fmt"
+	"runtime"
 )
 
 // var needs to be used instead of const as ldflags is used to fill this
@@ -25,8 +26,8 @@ import (
 var (
 	kubeBuilderVersion      = "unknown"
 	kubernetesVendorVersion = "unknown"
-	goos                    = "unknown"
-	goarch                  = "unknown"
+	goos                    = runtime.GOOS
+	goarch                  = runtime.GOARCH
 	gitCommit               = "$Format:%H$" // sha1 from git, output of $(git rev-parse HEAD)
 
 	buildDate = "1970-01-01T00:00:00Z" // build date in ISO8601 format, output of $(date -u +'%Y-%m-%dT%H:%M:%SZ')
