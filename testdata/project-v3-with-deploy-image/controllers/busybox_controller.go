@@ -153,8 +153,8 @@ func (r *BusyboxReconciler) deploymentForBusybox(m *examplecomv1alpha1.Busybox) 
 						},
 					},
 					Containers: []corev1.Container{{
-						Image: "busybox:1.28",
-						Name:  "busybox",
+						Image:           "busybox:1.28",
+						Name:            "busybox",
 						ImagePullPolicy: corev1.PullIfNotPresent,
 						// Ensure restrictive context for the container
 						// More info: https://kubernetes.io/docs/concepts/security/pod-security-standards/#restricted

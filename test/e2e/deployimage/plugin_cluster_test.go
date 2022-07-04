@@ -189,7 +189,8 @@ func Run(kbc *utils.TestContext, imageCR string) {
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
 	By("building the controller image")
-	err = kbc.Make("docker-build", "IMG="+kbc.ImageName)
+	cmd := exec.Command("docker", "build", "-t", kbc.ImageName, ".")
+	_, err = kbc.Run(cmd)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
 	By("loading the controller docker image into the kind cluster")
@@ -197,7 +198,7 @@ func Run(kbc *utils.TestContext, imageCR string) {
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
 	By("deploying the controller-manager")
-	cmd := exec.Command("make", "deploy", "IMG="+kbc.ImageName)
+	cmd = exec.Command("make", "deploy", "IMG="+kbc.ImageName)
 	outputMake, err := kbc.Run(cmd)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 

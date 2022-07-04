@@ -111,6 +111,12 @@ func (s *apiScaffolder) Scaffold() error {
 		return fmt.Errorf("error updating config/samples: %v", err)
 	}
 
+	if err := scaffold.Execute(
+		&controllers.ControllerTest{},
+	); err != nil {
+		return fmt.Errorf("error creating controllers/**_controller_test.go: %v", err)
+	}
+
 	return nil
 }
 
@@ -140,9 +146,13 @@ func (s *apiScaffolder) scafffoldControllerWithImage(scaffold *machinery.Scaffol
 		// users can change the values
 		var res string
 		for _, value := range strings.Split(s.command, ",") {
-			res += fmt.Sprintf("\"%s\",", strings.TrimSpace(value))
+			res += fmt.Sprintf(" \"%s\",", strings.TrimSpace(value))
 		}
+		// remove the latest ,
 		res = res[:len(res)-1]
+		// remove the first space to not fail in the go fmt ./...
+		res = strings.TrimLeft(res, " ")
+
 		err := util.InsertCode(controllerPath, `SecurityContext: &corev1.SecurityContext{
 							RunAsNonRoot:             &[]bool{true}[0],
 							AllowPrivilegeEscalation: &[]bool{false}[0],
@@ -208,8 +218,8 @@ func (s *apiScaffolder) scaffoldCreateAPIFromGolang() error {
 }
 
 const containerTemplate = `Containers: []corev1.Container{{
-						Image: "%s",
-						Name:  "%s",
+						Image:           "%s",
+						Name:            "%s",
 						ImagePullPolicy: corev1.PullIfNotPresent,
 						// Ensure restrictive context for the container
 						// More info: https://kubernetes.io/docs/concepts/security/pod-security-standards/#restricted
@@ -225,10 +235,10 @@ const containerTemplate = `Containers: []corev1.Container{{
 					}}`
 
 const runAsUserTemplate = `
-							RunAsUser: &[]int64{%s}[0],`
+							RunAsUser:                &[]int64{%s}[0],`
 
 const commandTemplate = `
-						Command:         []string{%s},`
+						Command: []string{%s},`
 
 const portTemplate = `
 						Ports: []corev1.ContainerPort{{
