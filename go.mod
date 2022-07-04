@@ -13,9 +13,9 @@ require (
 	github.com/spf13/pflag v1.0.5
 	golang.org/x/text v0.3.7
 	golang.org/x/tools v0.1.10-0.20220218145154-897bd77cd717
-	k8s.io/apimachinery v0.24.0 // for `kubebuilder alpha config-gen`
-	sigs.k8s.io/controller-runtime v0.12.1
-	sigs.k8s.io/controller-tools v0.9.0 // for `kubebuilder alpha config-gen`
+	k8s.io/apimachinery v0.24.2 // for `kubebuilder alpha config-gen`
+	sigs.k8s.io/controller-runtime v0.12.2 // for `kubebuilder alpha config-gen`
+	sigs.k8s.io/controller-tools v0.9.2 // for `kubebuilder alpha config-gen`
 	sigs.k8s.io/kustomize/kyaml v0.13.6 // for `kubebuilder alpha config-gen`
 	sigs.k8s.io/yaml v1.3.0
 )
@@ -62,8 +62,8 @@ require (
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
-	k8s.io/api v0.24.0 // indirect
-	k8s.io/apiextensions-apiserver v0.24.0 // indirect
+	k8s.io/api v0.24.2 // indirect
+	k8s.io/apiextensions-apiserver v0.24.2 // indirect
 	k8s.io/klog/v2 v2.60.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20220328201542-3ee0da9b0b42 // indirect
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9 // indirect
