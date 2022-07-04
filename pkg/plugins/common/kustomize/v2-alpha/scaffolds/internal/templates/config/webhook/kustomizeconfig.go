@@ -44,7 +44,7 @@ func (f *KustomizeConfig) SetTemplateDefaults() error {
 }
 
 //nolint:lll
-const kustomizeConfigWebhookTemplate = `# the following config is for teaching kustomize where to look at when substituting vars.
+const kustomizeConfigWebhookTemplate = `# the following config is for teaching kustomize where to look at when substituting nameReference.
 # It requires kustomize v2.1.0 or newer to work properly.
 nameReference:
 - kind: Service
@@ -66,7 +66,4 @@ namespace:
   group: admissionregistration.k8s.io
   path: webhooks/clientConfig/service/namespace
   create: true
-
-varReference:
-- path: metadata/annotations
 `
