@@ -37,16 +37,6 @@ const (
 	ControllerRuntimeVersion = "v0.12.1"
 	// ControllerToolsVersion is the kubernetes-sigs/controller-tools version to be used in the project
 	ControllerToolsVersion = "v0.9.0"
-	// KustomizeVersion is the kubernetes-sigs/kustomize version to be used in the project
-	// @Deprecated. This information ought to come from kustomize plugin
-	// Note that by updating the following value nothing will change for the go/3 plugin
-	// it is no longer used and it was not removed only because it would be a breaking
-	// change for the API. (api-diff check)
-	//
-	// NOTE: If you want to update the kustomize version used by this plugin
-	// then you need to update it in pkg/plugins/common/kustomize/v1/plugin.go
-	// Todo: we should remove it for the next go/v4 plugin
-	KustomizeVersion = "v3.8.7"
 
 	imageName = "controller:latest"
 )
