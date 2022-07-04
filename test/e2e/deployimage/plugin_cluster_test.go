@@ -120,7 +120,7 @@ var _ = Describe("kubebuilder", func() {
 			By("uncomment kustomize files to ensure that pods are restricted")
 			uncommentPodStandards(kbc)
 
-			Run(kbc, "memcached:1.4.36-alpine")
+			Run(kbc)
 		})
 
 		It("should generate a runnable project with deploy-image/v1-alpha without options ", func() {
@@ -162,13 +162,13 @@ var _ = Describe("kubebuilder", func() {
 			By("uncomment kustomize files to ensure that pods are restricted")
 			uncommentPodStandards(kbc)
 
-			Run(kbc, "busybox:1.28")
+			Run(kbc)
 		})
 	})
 })
 
 // Run runs a set of e2e tests for a scaffolded project defined by a TestContext.
-func Run(kbc *utils.TestContext, imageCR string) {
+func Run(kbc *utils.TestContext) {
 	var controllerPodName string
 	var err error
 
@@ -249,42 +249,19 @@ func Run(kbc *utils.TestContext, imageCR string) {
 		return err
 	}, time.Minute, time.Second).Should(Succeed())
 
-	By("applying the CRD Editor Role")
-	crdEditorRole := filepath.Join("config", "rbac",
-		fmt.Sprintf("%s_editor_role.yaml", strings.ToLower(kbc.Kind)))
-	EventuallyWithOffset(1, func() error {
-		_, err = kbc.Kubectl.Apply(true, "-f", crdEditorRole)
-		return err
-	}, time.Minute, time.Second).Should(Succeed())
-
-	By("applying the CRD Viewer Role")
-	crdViewerRole := filepath.Join("config", "rbac", fmt.Sprintf("%s_viewer_role.yaml", strings.ToLower(kbc.Kind)))
-	EventuallyWithOffset(1, func() error {
-		_, err = kbc.Kubectl.Apply(true, "-f", crdViewerRole)
-		return err
-	}, time.Minute, time.Second).Should(Succeed())
-
-	//TODO: We need to understand why it is not passing in the prow but is passing locally
-	// By("validating that pod(s) status.phase=Running")
-	// var podsOutput string
-	// getPods := func() error {
-	// 	podsOutput, err = kbc.Kubectl.Get(true, "pods", "-o",
-	// 		"jsonpath={range .items[*]}{.metadata.name},{.status.phase} {end}")
-	// 	if err == nil && strings.TrimSpace(podsOutput) == "" {
-	// 		err = errors.New("empty pod output, continue")
-	// 	}
-
-	// 	return err
-	// }
-	// Eventually(getPods, 5*time.Minute, time.Second).Should(Succeed())
-	// podSlice := strings.Split(strings.TrimSpace(podsOutput), " ")
-	// Expect(len(podSlice)).To(BeNumerically(">", 0))
-	// for _, pod := range podSlice {
-	// 	// make sure any pod that contains the substring "memcached" is in the running state
-	// 	if strings.Contains(pod, fmt.Sprintf("%s-sample", strings.ToLower(kbc.Kind))) {
-	// 		Expect(pod).To(ContainSubstring(",Running"))
-	// 	}
-	// }
+	By("validating that pod(s) status.phase=Running")
+	getMemcachedPodStatus := func() error {
+		status, err := kbc.Kubectl.Get(true, "pods", "-l",
+			fmt.Sprintf("type=%s", strings.ToLower(kbc.Kind)),
+			"-o", "jsonpath={.items[*].status}",
+		)
+		ExpectWithOffset(2, err).NotTo(HaveOccurred())
+		if !strings.Contains(status, "\"phase\":\"Running\"") {
+			return err
+		}
+		return nil
+	}
+	EventuallyWithOffset(1, getMemcachedPodStatus, time.Minute, time.Second).Should(Succeed())
 }
 
 func uncommentPodStandards(kbc *utils.TestContext) {
