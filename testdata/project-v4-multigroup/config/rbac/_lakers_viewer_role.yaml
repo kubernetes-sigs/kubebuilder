@@ -1,0 +1,20 @@
+# permissions for end users to view lakers.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: lakers-viewer-role
+rules:
+- apiGroups:
+  - testproject.org
+  resources:
+  - lakers
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - testproject.org
+  resources:
+  - lakers/status
+  verbs:
+  - get

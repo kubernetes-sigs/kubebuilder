@@ -53,6 +53,20 @@ Kubebuilder provides autocompletion support for Bash and Zsh via the command `ku
 
 Create a directory, and then run the init command inside of it to initialize a new project. Follows an example.
 
+<aside class="note warning">
+<h1> Apple Silicon (M1) </h1>
+
+The current scaffold done by the CLI (`go/v3`) uses [kubernetes-sigs/kustomize][kustomize] v3 which does not provide
+a valid binary for Apple Silicon (`darwin/arm64`). Therefore, you can use the `go/v4-alpha` plugin
+instead which provides support for this platform:
+
+```bash
+kubebuilder init --domain my.domain --repo my.domain/guestbook --plugins=go/v4-alpha
+```
+
+**Note**: The `go/v4-alpha` plugin is an unstable version and can have breaking changes in future releases.
+</aside>
+
 ```bash
 mkdir -p ~/projects/guestbook
 cd ~/projects/guestbook
@@ -236,3 +250,4 @@ Now, see the [architecture concept diagram][architecture-concept-diagram] for a 
 [go-modules-blogpost]: https://blog.golang.org/using-go-modules
 [envtest]: https://book.kubebuilder.io/reference/testing/envtest.html
 [architecture-concept-diagram]: architecture.md
+[kustomize]: https://github.com/kubernetes-sigs/kustomize

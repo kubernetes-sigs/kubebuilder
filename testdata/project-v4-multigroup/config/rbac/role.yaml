@@ -1,0 +1,293 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - apps
+  resources:
+  - deployments/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - crew.testproject.org
+  resources:
+  - captains
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - crew.testproject.org
+  resources:
+  - captains/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - crew.testproject.org
+  resources:
+  - captains/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - fiz.testproject.org
+  resources:
+  - bars
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - fiz.testproject.org
+  resources:
+  - bars/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - fiz.testproject.org
+  resources:
+  - bars/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - foo.policy.testproject.org
+  resources:
+  - healthcheckpolicies
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - foo.policy.testproject.org
+  resources:
+  - healthcheckpolicies/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - foo.policy.testproject.org
+  resources:
+  - healthcheckpolicies/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - foo.testproject.org
+  resources:
+  - bars
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - foo.testproject.org
+  resources:
+  - bars/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - foo.testproject.org
+  resources:
+  - bars/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - sea-creatures.testproject.org
+  resources:
+  - krakens
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - sea-creatures.testproject.org
+  resources:
+  - krakens/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - sea-creatures.testproject.org
+  resources:
+  - krakens/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - sea-creatures.testproject.org
+  resources:
+  - leviathans
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - sea-creatures.testproject.org
+  resources:
+  - leviathans/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - sea-creatures.testproject.org
+  resources:
+  - leviathans/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ship.testproject.org
+  resources:
+  - cruisers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ship.testproject.org
+  resources:
+  - cruisers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - ship.testproject.org
+  resources:
+  - cruisers/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ship.testproject.org
+  resources:
+  - destroyers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ship.testproject.org
+  resources:
+  - destroyers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - ship.testproject.org
+  resources:
+  - destroyers/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ship.testproject.org
+  resources:
+  - frigates
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ship.testproject.org
+  resources:
+  - frigates/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - ship.testproject.org
+  resources:
+  - frigates/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - testproject.org
+  resources:
+  - lakers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - testproject.org
+  resources:
+  - lakers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - testproject.org
+  resources:
+  - lakers/status
+  verbs:
+  - get
+  - patch
+  - update

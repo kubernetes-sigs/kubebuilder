@@ -1,0 +1,6 @@
+apiVersion: testproject.org/v1
+kind: Lakers
+metadata:
+  name: lakers-sample
+spec:
+  # TODO(user): Add fields here
