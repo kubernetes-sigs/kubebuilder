@@ -44,7 +44,7 @@ func (f *KustomizeConfig) SetTemplateDefaults() error {
 }
 
 //nolint:lll
-const kustomizeConfigTemplate = `# This configuration is for teaching kustomize how to update name ref and var substitution 
+const kustomizeConfigTemplate = `# This configuration is for teaching kustomize how to update name ref substitution 
 nameReference:
 - kind: Issuer
   group: cert-manager.io
@@ -52,12 +52,4 @@ nameReference:
   - kind: Certificate
     group: cert-manager.io
     path: spec/issuerRef/name
-
-varReference:
-- kind: Certificate
-  group: cert-manager.io
-  path: spec/commonName
-- kind: Certificate
-  group: cert-manager.io
-  path: spec/dnsNames
 `
