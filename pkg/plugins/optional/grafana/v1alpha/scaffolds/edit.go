@@ -50,5 +50,6 @@ func (s *editScaffolder) Scaffold() error {
 
 	return scaffold.Execute(
 		&templates.RuntimeManifest{},
+		&templates.ResourcesManifest{},
 	)
 }

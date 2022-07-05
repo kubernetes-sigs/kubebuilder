@@ -77,8 +77,20 @@ See an example of how to use the plugin in your project:
 - Description:
   - Per-second rate of total reconciliation as measured over the last 5 minutes
   - Per-second rate of reconciliation errors as measured over the last 5 minutes
+- Sample: <img width="1430" src="https://user-images.githubusercontent.com/18136486/176122555-f3493658-6c99-4ad6-a9b7-63d85620d370.png">
 
-<img width="1430" alt="Screen Shot 2022-06-28 at 3 43 10 AM" src="https://user-images.githubusercontent.com/18136486/176122555-f3493658-6c99-4ad6-a9b7-63d85620d370.png">
+#### CPU & Memory Usage
+
+- Metrics:
+  - process_cpu_seconds_total
+  - process_resident_memory_bytes
+- Query:
+  - rate(process_cpu_seconds_total{job="$job", namespace="$namespace", pod="$pod"}[5m]) \* 100
+  - process_resident_memory_bytes{job="$job", namespace="$namespace", pod="$pod"}
+- Description:
+  - Per-second rate of CPU usage as measured over the last 5 minutes
+  - Allocated Memory for the running controller
+- Sample: <img width="1381" src="https://user-images.githubusercontent.com/18136486/177239808-7d94b17d-692c-4166-8875-6d9332e05bcb.png">
 
 ## Subcommands
 
