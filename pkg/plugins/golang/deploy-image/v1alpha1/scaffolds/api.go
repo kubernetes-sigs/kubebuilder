@@ -177,7 +177,7 @@ func (s *apiScaffolder) scafffoldControllerWithImage(scaffold *machinery.Scaffol
 									"ALL",
 								},
 							},
-						},`, fmt.Sprintf(portTemplate, strings.ToLower(s.resource.Kind)))
+						},`, fmt.Sprintf(portTemplate, strings.ToLower(s.resource.Kind), strings.ToLower(s.resource.Kind)))
 		if err != nil {
 			return fmt.Errorf("error scaffolding container port in the controller: %v", err)
 		}
@@ -242,6 +242,6 @@ const commandTemplate = `
 
 const portTemplate = `
 						Ports: []corev1.ContainerPort{{
-							ContainerPort: m.Spec.ContainerPort,
+							ContainerPort: %s.Spec.ContainerPort,
 							Name:          "%s",
 						}},`

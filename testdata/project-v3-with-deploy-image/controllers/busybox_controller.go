@@ -124,14 +124,14 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 }
 
 // deploymentForBusybox returns a Busybox Deployment object
-func (r *BusyboxReconciler) deploymentForBusybox(m *examplecomv1alpha1.Busybox) *appsv1.Deployment {
-	ls := labelsForBusybox(m.Name)
-	replicas := m.Spec.Size
+func (r *BusyboxReconciler) deploymentForBusybox(busybox *examplecomv1alpha1.Busybox) *appsv1.Deployment {
+	ls := labelsForBusybox(busybox.Name)
+	replicas := busybox.Spec.Size
 
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      m.Name,
-			Namespace: m.Namespace,
+			Name:      busybox.Name,
+			Namespace: busybox.Namespace,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicas,
@@ -177,7 +177,7 @@ func (r *BusyboxReconciler) deploymentForBusybox(m *examplecomv1alpha1.Busybox) 
 	// which are created by your controller so that when the Custom Resource be deleted
 	// all resources owned by it (child) will also be deleted.
 	// To know more about it see: https://kubernetes.io/docs/tasks/administer-cluster/use-cascading-deletion/
-	ctrl.SetControllerReference(m, dep, r.Scheme)
+	ctrl.SetControllerReference(busybox, dep, r.Scheme)
 	return dep
 }
 

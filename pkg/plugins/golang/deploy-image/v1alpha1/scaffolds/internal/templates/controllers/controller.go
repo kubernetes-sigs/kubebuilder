@@ -172,14 +172,14 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 }
 
 // deploymentFor{{ .Resource.Kind }} returns a {{ .Resource.Kind }} Deployment object
-func (r *{{ .Resource.Kind }}Reconciler) deploymentFor{{ .Resource.Kind }}(m *{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}) *appsv1.Deployment {
-	ls := labelsFor{{ .Resource.Kind }}(m.Name)
-	replicas := m.Spec.Size
+func (r *{{ .Resource.Kind }}Reconciler) deploymentFor{{ .Resource.Kind }}({{ lower .Resource.Kind }} *{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}) *appsv1.Deployment {
+	ls := labelsFor{{ .Resource.Kind }}({{ lower .Resource.Kind }}.Name)
+	replicas := {{ lower .Resource.Kind }}.Spec.Size
 
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      m.Name,
-			Namespace: m.Namespace,
+			Name:      {{ lower .Resource.Kind }}.Name,
+			Namespace: {{ lower .Resource.Kind }}.Namespace,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicas,
@@ -210,7 +210,7 @@ func (r *{{ .Resource.Kind }}Reconciler) deploymentFor{{ .Resource.Kind }}(m *{{
 	// which are created by your controller so that when the Custom Resource be deleted
 	// all resources owned by it (child) will also be deleted.
 	// To know more about it see: https://kubernetes.io/docs/tasks/administer-cluster/use-cascading-deletion/
-	ctrl.SetControllerReference(m, dep, r.Scheme)
+	ctrl.SetControllerReference({{ lower .Resource.Kind }}, dep, r.Scheme)
 	return dep
 }
 
