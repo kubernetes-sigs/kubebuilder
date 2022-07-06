@@ -124,14 +124,14 @@ func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 }
 
 // deploymentForMemcached returns a Memcached Deployment object
-func (r *MemcachedReconciler) deploymentForMemcached(m *examplecomv1alpha1.Memcached) *appsv1.Deployment {
-	ls := labelsForMemcached(m.Name)
-	replicas := m.Spec.Size
+func (r *MemcachedReconciler) deploymentForMemcached(memcached *examplecomv1alpha1.Memcached) *appsv1.Deployment {
+	ls := labelsForMemcached(memcached.Name)
+	replicas := memcached.Spec.Size
 
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      m.Name,
-			Namespace: m.Namespace,
+			Name:      memcached.Name,
+			Namespace: memcached.Namespace,
 		},
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicas,
@@ -169,7 +169,7 @@ func (r *MemcachedReconciler) deploymentForMemcached(m *examplecomv1alpha1.Memca
 							},
 						},
 						Ports: []corev1.ContainerPort{{
-							ContainerPort: m.Spec.ContainerPort,
+							ContainerPort: memcached.Spec.ContainerPort,
 							Name:          "memcached",
 						}},
 						Command: []string{"memcached", "-m=64", "-o", "modern", "-v"},
@@ -183,7 +183,7 @@ func (r *MemcachedReconciler) deploymentForMemcached(m *examplecomv1alpha1.Memca
 	// which are created by your controller so that when the Custom Resource be deleted
 	// all resources owned by it (child) will also be deleted.
 	// To know more about it see: https://kubernetes.io/docs/tasks/administer-cluster/use-cascading-deletion/
-	ctrl.SetControllerReference(m, dep, r.Scheme)
+	ctrl.SetControllerReference(memcached, dep, r.Scheme)
 	return dep
 }
 
