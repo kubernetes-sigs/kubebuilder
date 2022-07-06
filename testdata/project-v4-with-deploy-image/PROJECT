@@ -24,6 +24,7 @@ repo: sigs.k8s.io/kubebuilder/testdata/project-v4-with-deploy-image
 resources:
 - api:
     crdVersion: v1
+    namespaced: true
   controller: true
   domain: testproject.org
   group: example.com
@@ -35,6 +36,7 @@ resources:
     webhookVersion: v1
 - api:
     crdVersion: v1
+    namespaced: true
   controller: true
   domain: testproject.org
   group: example.com

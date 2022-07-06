@@ -37,7 +37,7 @@ var _ = Describe("Busybox controller", func() {
 	// Define utility constants for object names and testing timeouts/durations and intervals.
 	const (
 		BusyboxName      = "test-busybox"
-		BusyboxNamespace = "test-busybox"
+		BusyboxNamespace = "default"
 	)
 
 	Context("Busybox controller test", func() {

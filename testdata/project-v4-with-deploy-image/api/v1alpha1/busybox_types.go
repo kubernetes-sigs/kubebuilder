@@ -40,7 +40,6 @@ type BusyboxStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-//+kubebuilder:resource:scope=Cluster
 
 // Busybox is the Schema for the busyboxes API
 type Busybox struct {
