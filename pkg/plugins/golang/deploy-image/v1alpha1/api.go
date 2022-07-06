@@ -135,7 +135,6 @@ func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 		"version of CustomResourceDefinition to scaffold. Options: [v1, v1beta1]")
 
 	fs.StringVar(&p.options.Plural, "plural", "", "resource irregular plural form")
-	fs.BoolVar(&p.options.Namespaced, "namespaced", true, "resource is namespaced")
 
 	// (not required raise an error in this case)
 	// nolint:errcheck,gosec
@@ -152,6 +151,7 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 	p.resource = res
 	p.options.DoAPI = true
 	p.options.DoController = true
+	p.options.Namespaced = true
 	p.options.UpdateResource(p.resource, p.config)
 
 	if err := p.resource.Validate(); err != nil {

@@ -13,7 +13,7 @@ spec:
     listKind: BusyboxList
     plural: busyboxes
     singular: busybox
-  scope: Cluster
+  scope: Namespaced
   versions:
   - name: v1alpha1
     schema:

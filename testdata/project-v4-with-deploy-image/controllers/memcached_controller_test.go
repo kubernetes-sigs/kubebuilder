@@ -37,7 +37,7 @@ var _ = Describe("Memcached controller", func() {
 	// Define utility constants for object names and testing timeouts/durations and intervals.
 	const (
 		MemcachedName      = "test-memcached"
-		MemcachedNamespace = "test-memcached"
+		MemcachedNamespace = "default"
 	)
 
 	Context("Memcached controller test", func() {

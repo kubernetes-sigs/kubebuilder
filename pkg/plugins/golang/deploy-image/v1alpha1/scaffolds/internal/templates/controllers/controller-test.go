@@ -80,7 +80,7 @@ var _ = Describe("{{ .Resource.Kind }} controller", func() {
 	// Define utility constants for object names and testing timeouts/durations and intervals.
 	const (
 		{{ .Resource.Kind }}Name      = "test-{{ lower .Resource.Kind }}"
-		{{ .Resource.Kind }}Namespace = "test-{{ lower .Resource.Kind }}"
+		{{ .Resource.Kind }}Namespace = "default"
 	)
 
 	Context("{{ .Resource.Kind }} controller test", func() {
