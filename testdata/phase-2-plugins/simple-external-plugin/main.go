@@ -12,8 +12,6 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/external"
 )
 
-// TODO(everettraven): clean this up a bit and add detailed comments discussing how this works with the Phase 2 Plugins
-
 func main() {
 	// In this sample we will implement all the plugin operations in the run function
 	run()
