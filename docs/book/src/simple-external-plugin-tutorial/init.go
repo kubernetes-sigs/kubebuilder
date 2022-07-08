@@ -1,0 +1,31 @@
+package main
+
+import (
+	"fmt"
+
+	"github.com/spf13/pflag"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/external"
+)
+
+// initCmd handles all the logic for the `init` subcommand of this sample external plugin
+func initCmd(pr *external.PluginRequest) external.PluginResponse {
+	pluginResponse := external.PluginResponse{
+		APIVersion: "v1alpha1",
+		Command:    "init",
+		Universe:   pr.Universe,
+	}
+
+	// Here is an example of parsing a flag from a Kubebuilder external plugin request
+	flags := pflag.NewFlagSet("initFlags", pflag.ContinueOnError)
+	flags.String("domain", "example.domain.com", "sets the domain added in the scaffolded initFile.txt")
+	flags.Parse(pr.Args)
+	domain, _ := flags.GetString("domain")
+
+	// Phase 2 Plugins uses the concept of a "universe" to represent the filesystem for a plugin.
+	// This universe is a key:value mapping of filename:contents. Here we are adding the file
+	// "initFile.txt" to the universe with some content. When this is returned Kubebuilder will
+	// take all values within the "universe" and write them to the user's filesystem.
+	pluginResponse.Universe["initFile.txt"] = fmt.Sprintf("A simple text file created with the `init` subcommand\nDOMAIN: %s", domain)
+
+	return pluginResponse
+}
