@@ -19,25 +19,31 @@ package controllers
 import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
 	"context"
+	"fmt"
 	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	examplecomv1alpha1 "sigs.k8s.io/kubebuilder/testdata/project-v4-with-deploy-image/api/v1alpha1"
 )
 
+const busyboxFinalizer = "example.com.testproject.org/finalizer"
+
 // BusyboxReconciler reconciles a Busybox object
 type BusyboxReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme   *runtime.Scheme
+	Recorder record.EventRecorder
 }
 
 // The following markers are used to generate the rules permissions on config/rbac using controller-gen
@@ -47,6 +53,7 @@ type BusyboxReconciler struct {
 //+kubebuilder:rbac:groups=example.com.testproject.org,resources=busyboxes,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=example.com.testproject.org,resources=busyboxes/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=example.com.testproject.org,resources=busyboxes/finalizers,verbs=update
+//+kubebuilder:rbac:groups=core,resources=events,verbs=create;patch
 //+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch
 
@@ -71,7 +78,7 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	busybox := &examplecomv1alpha1.Busybox{}
 	err := r.Get(ctx, req.NamespacedName, busybox)
 	if err != nil {
-		if errors.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
@@ -83,10 +90,52 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, err
 	}
 
+	// Let's add a finalizer. Then, we can define some operations which should
+	// occurs before the custom resource to be deleted.
+	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers/
+	// NOTE: You should not use finalizer to delete the resources that are
+	// created in this reconciliation and have the ownerRef set by ctrl.SetControllerReference
+	// because these will get deleted via k8s api
+	if !controllerutil.ContainsFinalizer(busybox, busyboxFinalizer) {
+		log.Info("Adding Finalizer for Busybox")
+		controllerutil.AddFinalizer(busybox, busyboxFinalizer)
+		err = r.Update(ctx, busybox)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
+	// Check if the Busybox instance is marked to be deleted, which is
+	// indicated by the deletion timestamp being set.
+	isBusyboxMarkedToBeDeleted := busybox.GetDeletionTimestamp() != nil
+	if isBusyboxMarkedToBeDeleted {
+		if controllerutil.ContainsFinalizer(busybox, busyboxFinalizer) {
+			// Run finalization logic for memcachedFinalizer. If the
+			// finalization logic fails, don't remove the finalizer so
+			// that we can retry during the next reconciliation.
+			log.Info("Performing Finalizer Operations for Busybox before delete CR")
+			r.doFinalizerOperationsForBusybox(busybox)
+
+			// Remove memcachedFinalizer. Once all finalizers have been
+			// removed, the object will be deleted.
+			if ok := controllerutil.RemoveFinalizer(busybox, busyboxFinalizer); !ok {
+				if err != nil {
+					log.Error(err, "Failed to remove finalizer for Busybox")
+					return ctrl.Result{}, err
+				}
+			}
+			err := r.Update(ctx, busybox)
+			if err != nil {
+				log.Error(err, "Failed to remove finalizer for Busybox")
+			}
+		}
+		return ctrl.Result{}, nil
+	}
+
 	// Check if the deployment already exists, if not create a new one
 	found := &appsv1.Deployment{}
 	err = r.Get(ctx, types.NamespacedName{Name: busybox.Name, Namespace: busybox.Namespace}, found)
-	if err != nil && errors.IsNotFound(err) {
+	if err != nil && apierrors.IsNotFound(err) {
 		// Define a new deployment
 		dep := r.deploymentForBusybox(busybox)
 		log.Info("Creating a new Deployment", "Deployment.Namespace", dep.Namespace, "Deployment.Name", dep.Name)
@@ -120,7 +169,21 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		// the desired state on the cluster
 		return ctrl.Result{Requeue: true}, nil
 	}
+
 	return ctrl.Result{}, nil
+}
+
+// finalizeBusybox will perform the required operations before delete the CR.
+func (r *BusyboxReconciler) doFinalizerOperationsForBusybox(cr *examplecomv1alpha1.Busybox) {
+	// TODO(user): Add the cleanup steps that the operator
+	// needs to do before the CR can be deleted. Examples
+	// of finalizers include performing backups and deleting
+	// resources that are not owned by this CR, like a PVC.
+	// The following implementation will raise an event
+	r.Recorder.Event(cr, "Warning", "Deleting",
+		fmt.Sprintf("Custom Resource %s is being deleted from the namespace %s",
+			cr.Name,
+			cr.Namespace))
 }
 
 // deploymentForBusybox returns a Busybox Deployment object
