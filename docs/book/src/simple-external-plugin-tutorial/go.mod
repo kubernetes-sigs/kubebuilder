@@ -1,4 +1,4 @@
-module simple-external-plugin
+module simple-external-plugin-tutorial
 
 go 1.18
 
