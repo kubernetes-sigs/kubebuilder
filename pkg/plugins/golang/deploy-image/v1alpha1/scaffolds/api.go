@@ -105,6 +105,10 @@ func (s *apiScaffolder) Scaffold() error {
 		return fmt.Errorf("error updating controller: %v", err)
 	}
 
+	if err := s.updateMainEventRecorder(); err != nil {
+		return fmt.Errorf("error updating main.go: %v", err)
+	}
+
 	if err := scaffold.Execute(
 		&samples.CRDSample{Port: s.port},
 	); err != nil {
@@ -117,6 +121,18 @@ func (s *apiScaffolder) Scaffold() error {
 		return fmt.Errorf("error creating controllers/**_controller_test.go: %v", err)
 	}
 
+	return nil
+}
+
+// TODO: replace this implementation by creating its own MainUpdater
+// which will have its own controller template which set the recorder
+func (s *apiScaffolder) updateMainEventRecorder() error {
+	defaultMainPath := "main.go"
+	err := util.InsertCode(defaultMainPath, `Scheme: mgr.GetScheme(),`,
+		fmt.Sprintf(recorderTemplate, strings.ToLower(s.resource.Kind)))
+	if err != nil {
+		return fmt.Errorf("error scaffolding event recorder while creating the controller in main.go: %v", err)
+	}
 	return nil
 }
 
@@ -245,3 +261,7 @@ const portTemplate = `
 							ContainerPort: %s.Spec.ContainerPort,
 							Name:          "%s",
 						}},`
+
+const recorderTemplate = `
+		Recorder: mgr.GetEventRecorderFor("%s-controller"),
+	`
