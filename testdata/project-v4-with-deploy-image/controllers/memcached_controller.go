@@ -26,6 +26,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -258,8 +259,19 @@ func (r *MemcachedReconciler) deploymentForMemcached(ctx context.Context, memcac
 
 // labelsForMemcached returns the labels for selecting the resources
 // belonging to the given  Memcached CR name.
+// Note that the labels follows the standards defined in: https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/
 func labelsForMemcached(name string) map[string]string {
-	return map[string]string{"type": "memcached", "memcached_cr": name}
+	var imageTag string
+	image, err := imageForMemcached()
+	if err == nil {
+		imageTag = strings.Split(image, ":")[1]
+	}
+	return map[string]string{"app.kubernetes.io/name": "Memcached",
+		"app.kubernetes.io/instance":   name,
+		"app.kubernetes.io/version":    imageTag,
+		"app.kubernetes.io/part-of":    "project-v4-with-deploy-image",
+		"app.kubernetes.io/created-by": "controller-manager",
+	}
 }
 
 // imageForMemcached gets the image for the resources belonging to the given Memcached CR,

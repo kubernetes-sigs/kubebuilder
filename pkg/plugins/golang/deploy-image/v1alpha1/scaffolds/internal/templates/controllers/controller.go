@@ -32,6 +32,7 @@ type Controller struct {
 	machinery.MultiGroupMixin
 	machinery.BoilerplateMixin
 	machinery.ResourceMixin
+	machinery.ProjectNameMixin
 
 	ControllerRuntimeVersion string
 
@@ -71,6 +72,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	"context"
+	"strings"
 	"time"
 	"fmt"
 	"os"
@@ -285,8 +287,19 @@ func (r *{{ .Resource.Kind }}Reconciler) deploymentFor{{ .Resource.Kind }}(ctx c
 
 // labelsFor{{ .Resource.Kind }} returns the labels for selecting the resources
 // belonging to the given  {{ .Resource.Kind }} CR name.
+// Note that the labels follows the standards defined in: https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/
 func labelsFor{{ .Resource.Kind }}(name string) map[string]string {
-	return map[string]string{"type": "{{ lower .Resource.Kind }}", "{{ lower .Resource.Kind }}_cr": name}
+	var imageTag string
+	image, err := imageFor{{ .Resource.Kind }}()
+	if err == nil {
+		imageTag = strings.Split(image, ":")[1]
+	}
+	return map[string]string{"app.kubernetes.io/name": "{{ .Resource.Kind }}",
+		"app.kubernetes.io/instance": name,
+		"app.kubernetes.io/version": imageTag,
+		"app.kubernetes.io/part-of": "{{ .ProjectName }}",
+		"app.kubernetes.io/created-by": "controller-manager",
+	}
 }
 
 // imageFor{{ .Resource.Kind }} gets the image for the resources belonging to the given {{ .Resource.Kind }} CR,
