@@ -30,6 +30,7 @@ func DefaultFuncMap() template.FuncMap {
 	return template.FuncMap{
 		"title":      cases.Title,
 		"lower":      strings.ToLower,
+		"upper":      strings.ToUpper,
 		"isEmptyStr": isEmptyString,
 		"hashFNV":    hashFNV,
 	}

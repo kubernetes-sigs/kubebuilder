@@ -109,6 +109,14 @@ func (s *apiScaffolder) Scaffold() error {
 		return fmt.Errorf("error updating main.go: %v", err)
 	}
 
+	if err := s.updateManagerWithNewEnvKey(); err != nil {
+		return fmt.Errorf("error updating config/manager/manager.yaml with env key: %v", err)
+	}
+
+	if err := s.updateManagerWithNewEnvVar(); err != nil {
+		return fmt.Errorf("error updating config/manager/manager.yaml with env var: %v", err)
+	}
+
 	if err := scaffold.Execute(
 		&samples.CRDSample{Port: s.port},
 	); err != nil {
@@ -121,6 +129,30 @@ func (s *apiScaffolder) Scaffold() error {
 		return fmt.Errorf("error creating controllers/**_controller_test.go: %v", err)
 	}
 
+	return nil
+}
+
+func (s *apiScaffolder) updateManagerWithNewEnvKey() error {
+	managerPath := filepath.Join("config", "manager", "manager.yaml")
+	err := util.ReplaceInFile(managerPath, `env:`, `env:`)
+	if err != nil {
+		err := util.InsertCode(managerPath, `name: manager`, `
+        env:`)
+		if err != nil {
+			return fmt.Errorf("error scaffolding env key in config/manager/manager.yaml")
+		}
+	}
+
+	return nil
+}
+
+func (s *apiScaffolder) updateManagerWithNewEnvVar() error {
+	managerPath := filepath.Join("config", "manager", "manager.yaml")
+	err := util.InsertCode(managerPath, `env:`,
+		fmt.Sprintf(envVarTemplate, strings.ToUpper(s.resource.Kind), s.image))
+	if err != nil {
+		return fmt.Errorf("error scaffolding env key in config/manager/manager.yaml")
+	}
 	return nil
 }
 
@@ -148,8 +180,7 @@ func (s *apiScaffolder) scafffoldControllerWithImage(scaffold *machinery.Scaffol
 
 	controllerPath := controller.Path
 	if err := util.ReplaceInFile(controllerPath, "//TODO: scaffold container",
-		fmt.Sprintf(containerTemplate,
-			s.image,                          // value for the image
+		fmt.Sprintf(containerTemplate, // value for the image
 			strings.ToLower(s.resource.Kind), // value for the name of the container
 		),
 	); err != nil {
@@ -234,7 +265,7 @@ func (s *apiScaffolder) scaffoldCreateAPIFromGolang() error {
 }
 
 const containerTemplate = `Containers: []corev1.Container{{
-						Image:           "%s",
+						Image:           image,
 						Name:            "%s",
 						ImagePullPolicy: corev1.PullIfNotPresent,
 						// Ensure restrictive context for the container
@@ -265,3 +296,7 @@ const portTemplate = `
 const recorderTemplate = `
 		Recorder: mgr.GetEventRecorderFor("%s-controller"),
 	`
+
+const envVarTemplate = `
+        - name: %s_IMAGE 
+          value: %s`

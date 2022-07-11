@@ -25,6 +25,7 @@ import (
 
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -137,7 +138,7 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	err = r.Get(ctx, types.NamespacedName{Name: busybox.Name, Namespace: busybox.Namespace}, found)
 	if err != nil && apierrors.IsNotFound(err) {
 		// Define a new deployment
-		dep := r.deploymentForBusybox(busybox)
+		dep := r.deploymentForBusybox(ctx, busybox)
 		log.Info("Creating a new Deployment", "Deployment.Namespace", dep.Namespace, "Deployment.Name", dep.Name)
 		err = r.Create(ctx, dep)
 		if err != nil {
@@ -187,9 +188,14 @@ func (r *BusyboxReconciler) doFinalizerOperationsForBusybox(cr *examplecomv1alph
 }
 
 // deploymentForBusybox returns a Busybox Deployment object
-func (r *BusyboxReconciler) deploymentForBusybox(busybox *examplecomv1alpha1.Busybox) *appsv1.Deployment {
+func (r *BusyboxReconciler) deploymentForBusybox(ctx context.Context, busybox *examplecomv1alpha1.Busybox) *appsv1.Deployment {
 	ls := labelsForBusybox(busybox.Name)
 	replicas := busybox.Spec.Size
+	log := log.FromContext(ctx)
+	image, err := imageForBusybox()
+	if err != nil {
+		log.Error(err, "unable to get image for Busybox")
+	}
 
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -216,7 +222,7 @@ func (r *BusyboxReconciler) deploymentForBusybox(busybox *examplecomv1alpha1.Bus
 						},
 					},
 					Containers: []corev1.Container{{
-						Image:           "busybox:1.28",
+						Image:           image,
 						Name:            "busybox",
 						ImagePullPolicy: corev1.PullIfNotPresent,
 						// Ensure restrictive context for the container
@@ -248,6 +254,17 @@ func (r *BusyboxReconciler) deploymentForBusybox(busybox *examplecomv1alpha1.Bus
 // belonging to the given  Busybox CR name.
 func labelsForBusybox(name string) map[string]string {
 	return map[string]string{"type": "busybox", "busybox_cr": name}
+}
+
+// imageForBusybox gets the image for the resources belonging to the given Busybox CR,
+// from the BUSYBOX_IMAGE ENV VAR defined in the config/manager/manager.yaml
+func imageForBusybox() (string, error) {
+	var imageEnvVar = "BUSYBOX_IMAGE"
+	image, found := os.LookupEnv(imageEnvVar)
+	if !found {
+		return "", fmt.Errorf("%s must be set", imageEnvVar)
+	}
+	return image, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

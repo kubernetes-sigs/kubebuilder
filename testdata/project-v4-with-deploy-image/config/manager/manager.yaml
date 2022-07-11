@@ -40,6 +40,11 @@ spec:
         - --leader-elect
         image: controller:latest
         name: manager
+        env:
+        - name: BUSYBOX_IMAGE 
+          value: busybox:1.28
+        - name: MEMCACHED_IMAGE 
+          value: memcached:1.4.36-alpine
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
