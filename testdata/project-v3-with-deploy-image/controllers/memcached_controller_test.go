@@ -59,7 +59,8 @@ var _ = Describe("Memcached controller", func() {
 						Namespace: MemcachedNamespace,
 					},
 					Spec: examplecomv1alpha1.MemcachedSpec{
-						Size: 1,
+						Size:          1,
+						ContainerPort: 11211,
 					},
 				}
 				fmt.Fprintf(GinkgoWriter, fmt.Sprintf("Creating a new custom resource in the namespace: %s with the name %s\n", memcached.Namespace, memcached.Name))

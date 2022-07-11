@@ -35,8 +35,6 @@ type Controller struct {
 	machinery.ProjectNameMixin
 
 	ControllerRuntimeVersion string
-
-	Image string
 }
 
 // SetTemplateDefaults implements file.Template

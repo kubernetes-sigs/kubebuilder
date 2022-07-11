@@ -105,7 +105,6 @@ func (s *apiScaffolder) Scaffold() error {
 
 	controller := &controllers.Controller{
 		ControllerRuntimeVersion: golangv3scaffolds.ControllerRuntimeVersion,
-		Image:                    s.image,
 	}
 	if err := scaffold.Execute(
 		controller,
@@ -122,7 +121,7 @@ func (s *apiScaffolder) Scaffold() error {
 	}
 
 	if err := scaffold.Execute(
-		&controllers.ControllerTest{},
+		&controllers.ControllerTest{Port: s.port},
 	); err != nil {
 		return fmt.Errorf("error creating controllers/**_controller_test.go: %v", err)
 	}
