@@ -73,6 +73,7 @@ import (
 	"context"
 	"time"
 	"fmt"
+	"os"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
@@ -185,7 +186,7 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 	err = r.Get(ctx, types.NamespacedName{Name: {{ lower .Resource.Kind }}.Name, Namespace: {{ lower .Resource.Kind }}.Namespace}, found)
 	if err != nil && apierrors.IsNotFound(err) {
 		// Define a new deployment
-		dep := r.deploymentFor{{ .Resource.Kind }}({{ lower .Resource.Kind }})
+		dep := r.deploymentFor{{ .Resource.Kind }}(ctx, {{ lower .Resource.Kind }})
 		log.Info("Creating a new Deployment", "Deployment.Namespace", dep.Namespace, "Deployment.Name", dep.Name)
 		err = r.Create(ctx, dep)
 		if err != nil {
@@ -235,9 +236,14 @@ func (r *{{ .Resource.Kind }}Reconciler) doFinalizerOperationsFor{{ .Resource.Ki
 }
 
 // deploymentFor{{ .Resource.Kind }} returns a {{ .Resource.Kind }} Deployment object
-func (r *{{ .Resource.Kind }}Reconciler) deploymentFor{{ .Resource.Kind }}({{ lower .Resource.Kind }} *{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}) *appsv1.Deployment {
+func (r *{{ .Resource.Kind }}Reconciler) deploymentFor{{ .Resource.Kind }}(ctx context.Context, {{ lower .Resource.Kind }} *{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}) *appsv1.Deployment {
 	ls := labelsFor{{ .Resource.Kind }}({{ lower .Resource.Kind }}.Name)
 	replicas := {{ lower .Resource.Kind }}.Spec.Size
+	log := log.FromContext(ctx)
+	image, err := imageFor{{ .Resource.Kind }}()
+	if err != nil {
+    	log.Error(err, "unable to get image for {{ .Resource.Kind }}")
+	}
 
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -281,6 +287,17 @@ func (r *{{ .Resource.Kind }}Reconciler) deploymentFor{{ .Resource.Kind }}({{ lo
 // belonging to the given  {{ .Resource.Kind }} CR name.
 func labelsFor{{ .Resource.Kind }}(name string) map[string]string {
 	return map[string]string{"type": "{{ lower .Resource.Kind }}", "{{ lower .Resource.Kind }}_cr": name}
+}
+
+// imageFor{{ .Resource.Kind }} gets the image for the resources belonging to the given {{ .Resource.Kind }} CR,
+// from the {{ upper .Resource.Kind }}_IMAGE ENV VAR defined in the config/manager/manager.yaml
+func imageFor{{ .Resource.Kind }}() (string, error) {
+	var imageEnvVar = "{{ upper .Resource.Kind }}_IMAGE"
+    image, found := os.LookupEnv(imageEnvVar)
+    if !found {
+        return "", fmt.Errorf("%s must be set", imageEnvVar)
+    }
+    return image, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

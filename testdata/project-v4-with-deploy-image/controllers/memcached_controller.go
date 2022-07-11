@@ -25,6 +25,7 @@ import (
 
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -137,7 +138,7 @@ func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	err = r.Get(ctx, types.NamespacedName{Name: memcached.Name, Namespace: memcached.Namespace}, found)
 	if err != nil && apierrors.IsNotFound(err) {
 		// Define a new deployment
-		dep := r.deploymentForMemcached(memcached)
+		dep := r.deploymentForMemcached(ctx, memcached)
 		log.Info("Creating a new Deployment", "Deployment.Namespace", dep.Namespace, "Deployment.Name", dep.Name)
 		err = r.Create(ctx, dep)
 		if err != nil {
@@ -187,9 +188,14 @@ func (r *MemcachedReconciler) doFinalizerOperationsForMemcached(cr *examplecomv1
 }
 
 // deploymentForMemcached returns a Memcached Deployment object
-func (r *MemcachedReconciler) deploymentForMemcached(memcached *examplecomv1alpha1.Memcached) *appsv1.Deployment {
+func (r *MemcachedReconciler) deploymentForMemcached(ctx context.Context, memcached *examplecomv1alpha1.Memcached) *appsv1.Deployment {
 	ls := labelsForMemcached(memcached.Name)
 	replicas := memcached.Spec.Size
+	log := log.FromContext(ctx)
+	image, err := imageForMemcached()
+	if err != nil {
+		log.Error(err, "unable to get image for Memcached")
+	}
 
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -216,7 +222,7 @@ func (r *MemcachedReconciler) deploymentForMemcached(memcached *examplecomv1alph
 						},
 					},
 					Containers: []corev1.Container{{
-						Image:           "memcached:1.4.36-alpine",
+						Image:           image,
 						Name:            "memcached",
 						ImagePullPolicy: corev1.PullIfNotPresent,
 						// Ensure restrictive context for the container
@@ -254,6 +260,17 @@ func (r *MemcachedReconciler) deploymentForMemcached(memcached *examplecomv1alph
 // belonging to the given  Memcached CR name.
 func labelsForMemcached(name string) map[string]string {
 	return map[string]string{"type": "memcached", "memcached_cr": name}
+}
+
+// imageForMemcached gets the image for the resources belonging to the given Memcached CR,
+// from the MEMCACHED_IMAGE ENV VAR defined in the config/manager/manager.yaml
+func imageForMemcached() (string, error) {
+	var imageEnvVar = "MEMCACHED_IMAGE"
+	image, found := os.LookupEnv(imageEnvVar)
+	if !found {
+		return "", fmt.Errorf("%s must be set", imageEnvVar)
+	}
+	return image, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
