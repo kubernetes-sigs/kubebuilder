@@ -74,12 +74,8 @@ func (s *apiScaffolder) InjectFS(fs machinery.Filesystem) {
 func (s *apiScaffolder) Scaffold() error {
 	fmt.Println("Writing scaffold for you to edit...")
 
-	if err := s.scaffoldCreateAPIFromGolang(); err != nil {
-		return fmt.Errorf("error scaffolding APIs: %v", err)
-	}
-
-	if err := s.scaffoldCreateAPIFromKustomize(); err != nil {
-		return fmt.Errorf("error scaffolding kustomize file for the new APIs: %v", err)
+	if err := s.scaffoldCreateAPIFromPlugins(); err != nil {
+		return err
 	}
 
 	// Load the boilerplate
@@ -101,26 +97,28 @@ func (s *apiScaffolder) Scaffold() error {
 		return fmt.Errorf("error updating APIs: %v", err)
 	}
 
-	if err := s.scafffoldControllerWithImage(scaffold); err != nil {
-		return fmt.Errorf("error updating controller: %v", err)
-	}
-
-	if err := s.updateMainEventRecorder(); err != nil {
-		return fmt.Errorf("error updating main.go: %v", err)
-	}
-
-	if err := s.updateManagerWithNewEnvKey(); err != nil {
-		return fmt.Errorf("error updating config/manager/manager.yaml with env key: %v", err)
-	}
-
-	if err := s.updateManagerWithNewEnvVar(); err != nil {
-		return fmt.Errorf("error updating config/manager/manager.yaml with env var: %v", err)
-	}
-
 	if err := scaffold.Execute(
 		&samples.CRDSample{Port: s.port},
 	); err != nil {
 		return fmt.Errorf("error updating config/samples: %v", err)
+	}
+
+	controller := &controllers.Controller{
+		ControllerRuntimeVersion: golangv3scaffolds.ControllerRuntimeVersion,
+		Image:                    s.image,
+	}
+	if err := scaffold.Execute(
+		controller,
+	); err != nil {
+		return fmt.Errorf("error scaffolding controller: %v", err)
+	}
+
+	if err := s.updateControllerCode(*controller); err != nil {
+		return fmt.Errorf("error updating controller: %v", err)
+	}
+
+	if err := s.updateMainByAddingEventRecorder(); err != nil {
+		return fmt.Errorf("error updating main.go: %v", err)
 	}
 
 	if err := scaffold.Execute(
@@ -129,62 +127,75 @@ func (s *apiScaffolder) Scaffold() error {
 		return fmt.Errorf("error creating controllers/**_controller_test.go: %v", err)
 	}
 
-	return nil
-}
-
-func (s *apiScaffolder) updateManagerWithNewEnvKey() error {
-	managerPath := filepath.Join("config", "manager", "manager.yaml")
-	err := util.ReplaceInFile(managerPath, `env:`, `env:`)
-	if err != nil {
-		err := util.InsertCode(managerPath, `name: manager`, `
-        env:`)
-		if err != nil {
-			return fmt.Errorf("error scaffolding env key in config/manager/manager.yaml")
-		}
+	if err := s.addEnvVarIntoManager(); err != nil {
+		return err
 	}
 
 	return nil
 }
 
-func (s *apiScaffolder) updateManagerWithNewEnvVar() error {
+// addEnvVarIntoManager will update the config/manager/manager.yaml by adding
+// a new ENV VAR for to store the image informed which will be used in the
+// controller to create the Pod for the Kind
+func (s *apiScaffolder) addEnvVarIntoManager() error {
 	managerPath := filepath.Join("config", "manager", "manager.yaml")
-	err := util.InsertCode(managerPath, `env:`,
-		fmt.Sprintf(envVarTemplate, strings.ToUpper(s.resource.Kind), s.image))
+	err := util.ReplaceInFile(managerPath, `env:`, `env:`)
 	if err != nil {
+		if err := util.InsertCode(managerPath, `name: manager`, `
+        env:`); err != nil {
+			return fmt.Errorf("error scaffolding env key in config/manager/manager.yaml")
+		}
+	}
+
+	if err = util.InsertCode(managerPath, `env:`,
+		fmt.Sprintf(envVarTemplate, strings.ToUpper(s.resource.Kind), s.image)); err != nil {
 		return fmt.Errorf("error scaffolding env key in config/manager/manager.yaml")
+	}
+
+	return nil
+}
+
+// scaffoldCreateAPIFromPlugins will reuse the code from the kustomize and base golang
+// plugins to do the default scaffolds which an API is created
+func (s *apiScaffolder) scaffoldCreateAPIFromPlugins() error {
+	if err := s.scaffoldCreateAPIFromGolang(); err != nil {
+		return fmt.Errorf("error scaffolding golang files for the new API: %v", err)
+	}
+
+	if err := s.scaffoldCreateAPIFromKustomize(); err != nil {
+		return fmt.Errorf("error scaffolding kustomize manifests for the new API: %v", err)
 	}
 	return nil
 }
 
 // TODO: replace this implementation by creating its own MainUpdater
-// which will have its own controller template which set the recorder
-func (s *apiScaffolder) updateMainEventRecorder() error {
+// which will have its own controller template which set the recorder so that we can use it
+// in the reconciliation to create an event inside for the finalizer
+func (s *apiScaffolder) updateMainByAddingEventRecorder() error {
 	defaultMainPath := "main.go"
-	err := util.InsertCode(defaultMainPath, `Scheme: mgr.GetScheme(),`,
-		fmt.Sprintf(recorderTemplate, strings.ToLower(s.resource.Kind)))
-	if err != nil {
-		return fmt.Errorf("error scaffolding event recorder while creating the controller in main.go: %v", err)
+
+	if err := util.InsertCode(
+		defaultMainPath,
+		`Scheme: mgr.GetScheme(),`,
+		fmt.Sprintf(recorderTemplate, strings.ToLower(s.resource.Kind)),
+	); err != nil {
+		return fmt.Errorf("error scaffolding event recorder in %s: %v", defaultMainPath, err)
 	}
+
 	return nil
 }
 
-func (s *apiScaffolder) scafffoldControllerWithImage(scaffold *machinery.Scaffold) error {
-	controller := &controllers.Controller{ControllerRuntimeVersion: golangv3scaffolds.ControllerRuntimeVersion,
-		Image: s.image,
-	}
-	if err := scaffold.Execute(
-		controller,
-	); err != nil {
-		return fmt.Errorf("error scaffolding controller: %v", err)
-	}
-
-	controllerPath := controller.Path
-	if err := util.ReplaceInFile(controllerPath, "//TODO: scaffold container",
+// updateControllerCode will update the code generate on the template to add the Container information
+func (s *apiScaffolder) updateControllerCode(controller controllers.Controller) error {
+	if err := util.ReplaceInFile(
+		controller.Path,
+		"//TODO: scaffold container",
 		fmt.Sprintf(containerTemplate, // value for the image
 			strings.ToLower(s.resource.Kind), // value for the name of the container
 		),
 	); err != nil {
-		return fmt.Errorf("error scaffolding container in the controller: %v", err)
+		return fmt.Errorf("error scaffolding container in the controller path (%s): %v",
+			controller.Path, err)
 	}
 
 	// Scaffold the command if informed
@@ -200,7 +211,7 @@ func (s *apiScaffolder) scafffoldControllerWithImage(scaffold *machinery.Scaffol
 		// remove the first space to not fail in the go fmt ./...
 		res = strings.TrimLeft(res, " ")
 
-		err := util.InsertCode(controllerPath, `SecurityContext: &corev1.SecurityContext{
+		if err := util.InsertCode(controller.Path, `SecurityContext: &corev1.SecurityContext{
 							RunAsNonRoot:             &[]bool{true}[0],
 							AllowPrivilegeEscalation: &[]bool{false}[0],
 							Capabilities: &corev1.Capabilities{
@@ -208,15 +219,17 @@ func (s *apiScaffolder) scafffoldControllerWithImage(scaffold *machinery.Scaffol
 									"ALL",
 								},
 							},
-						},`, fmt.Sprintf(commandTemplate, res))
-		if err != nil {
-			return fmt.Errorf("error scaffolding command in the controller: %v", err)
+						},`, fmt.Sprintf(commandTemplate, res)); err != nil {
+			return fmt.Errorf("error scaffolding command in the  controller path (%s): %v",
+				controller.Path, err)
 		}
 	}
 
 	// Scaffold the port if informed
 	if len(s.port) > 0 {
-		err := util.InsertCode(controllerPath, `SecurityContext: &corev1.SecurityContext{
+		if err := util.InsertCode(
+			controller.Path,
+			`SecurityContext: &corev1.SecurityContext{
 							RunAsNonRoot:             &[]bool{true}[0],
 							AllowPrivilegeEscalation: &[]bool{false}[0],
 							Capabilities: &corev1.Capabilities{
@@ -224,19 +237,29 @@ func (s *apiScaffolder) scafffoldControllerWithImage(scaffold *machinery.Scaffol
 									"ALL",
 								},
 							},
-						},`, fmt.Sprintf(portTemplate, strings.ToLower(s.resource.Kind), strings.ToLower(s.resource.Kind)))
-		if err != nil {
-			return fmt.Errorf("error scaffolding container port in the controller: %v", err)
+						},`,
+			fmt.Sprintf(
+				portTemplate,
+				strings.ToLower(s.resource.Kind),
+				strings.ToLower(s.resource.Kind)),
+		); err != nil {
+			return fmt.Errorf("error scaffolding container port in the controller path (%s): %v",
+				controller.Path,
+				err)
 		}
 	}
 
 	if len(s.runAsUser) > 0 {
-		if err := util.InsertCode(controllerPath, `RunAsNonRoot:             &[]bool{true}[0],`,
+		if err := util.InsertCode(
+			controller.Path,
+			`RunAsNonRoot:             &[]bool{true}[0],`,
 			fmt.Sprintf(runAsUserTemplate, s.runAsUser),
 		); err != nil {
-			return fmt.Errorf("error scaffolding user-id in the controller: %v", err)
+			return fmt.Errorf("error scaffolding user-id in the controller path (%s): %v",
+				controller.Path, err)
 		}
 	}
+
 	return nil
 }
 
@@ -244,9 +267,13 @@ func (s *apiScaffolder) scaffoldCreateAPIFromKustomize() error {
 	// Now we need call the kustomize/v1 plugin to do its scaffolds when we create a new API
 	// todo: when we have the go/v4-alpha plugin we will also need to check what is the plugin used
 	// in the Project layout to know if we should use kustomize/v1 OR kustomize/v2-alpha
-	kustomizeV1Scaffolder := kustomizev1scaffolds.NewAPIScaffolder(s.config,
-		s.resource, true)
+	kustomizeV1Scaffolder := kustomizev1scaffolds.NewAPIScaffolder(
+		s.config,
+		s.resource,
+		true,
+	)
 	kustomizeV1Scaffolder.InjectFS(s.fs)
+
 	if err := kustomizeV1Scaffolder.Scaffold(); err != nil {
 		return fmt.Errorf("error scaffolding kustomize files for the APIs: %v", err)
 	}
