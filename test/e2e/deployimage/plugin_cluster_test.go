@@ -252,7 +252,7 @@ func Run(kbc *utils.TestContext) {
 	By("validating that pod(s) status.phase=Running")
 	getMemcachedPodStatus := func() error {
 		status, err := kbc.Kubectl.Get(true, "pods", "-l",
-			fmt.Sprintf("type=%s", strings.ToLower(kbc.Kind)),
+			fmt.Sprintf("app.kubernetes.io/name=%s", strings.ToLower(kbc.Kind)),
 			"-o", "jsonpath={.items[*].status}",
 		)
 		ExpectWithOffset(2, err).NotTo(HaveOccurred())
