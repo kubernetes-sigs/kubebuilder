@@ -34,6 +34,7 @@ type ControllerTest struct {
 	machinery.ResourceMixin
 
 	Image string
+	Port  string
 }
 
 // SetTemplateDefaults implements file.Template
@@ -103,6 +104,9 @@ var _ = Describe("{{ .Resource.Kind }} controller", func() {
 					},
 					Spec: {{ .Resource.ImportAlias }}.{{ .Resource.Kind }}Spec{
 						Size: 1,
+						{{ if not (isEmptyStr .Port) -}}
+						ContainerPort: {{ .Port }},
+						{{- end }}
 					},
 				}
 				fmt.Fprintf(GinkgoWriter, fmt.Sprintf("Creating a new custom resource in the namespace: %s with the name %s\n", {{ lower .Resource.Kind }}.Namespace, {{ lower .Resource.Kind }}.Name))
