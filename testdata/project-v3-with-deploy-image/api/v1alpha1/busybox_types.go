@@ -29,6 +29,11 @@ type BusyboxSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Size defines the number of Busybox instances
+	// The following markers will use OpenAPI v3 schema to validate the value
+	// More info: https://book.kubebuilder.io/reference/markers/crd-validation.html
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Maximum=3
+	// +kubebuilder:validation:ExclusiveMaximum=false
 	Size int32 `json:"size,omitempty"`
 }
 
