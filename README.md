@@ -13,25 +13,19 @@ developers for rapidly building and publishing Kubernetes APIs in Go.
 It builds on top of the canonical techniques used to build the core Kubernetes APIs to provide simple abstractions that reduce boilerplate and toil.
 
 Kubebuilder does **not** exist as an example to *copy-paste*, but instead provides powerful libraries and tools
-to simplify building and publishing Kubernetes APIs from scratch. On to of that, it 
-provides an plugin architecture which allows users take advantage of optional helpers
-and features. To know more about see the [Plugin section][plugin-section].
+to simplify building and publishing Kubernetes APIs from scratch. It
+provides a plugin architecture allowing users to take advantage of optional helpers
+and features. To learn more about this see the [Plugin section][plugin-section].
 
 Kubebuilder is developed on top of the [controller-runtime][controller-runtime] and [controller-tools][controller-tools] libraries.
 
-### Kubebuilder is also a framework for other tools
+### Kubebuilder is also a framework
 
-Kubebuilder is extensible and can be imported to be used as a library in other projects.
-Specifically, for those which are looking for a way to use Kubebuilder's existing CLI and scaffolding the projects and re-use its plugins, 
-but to also be able to augment the Kubebuilder project structure with other custom project types so that it is possible to support the Kubebuilder 
-workflow with non-Go operators. 
+Kubebuilder is extensible and can be used as a library in other projects.
+[Operator-SDK][operator-sdk] is a good example of a project that uses Kubebuilder as a library. 
+[Operator-SDK][operator-sdk] uses the plugin feature to include non-Go operators _e.g. operator-sdk's Ansible and Helm-based language Operators_.
 
-A good example of its usage is the project [Operator-SDK][operator-sdk]
-that uses Kubebuilder as lib to generate the scaffolds and create its own helper plugins 
-to provide additional features and options on top. [Operator-SDK][operator-sdk] also uses Kubebuilder
-to support their workflow with non-Go operators (_e.g. operator-sdk's Ansible and Helm-based language Operators_)
-
-To know more about see [how to create your own plugins][your-own-plugins]. 
+To learn more see [how to create your own plugins][your-own-plugins]. 
 
 ### Installation
 
@@ -127,15 +121,16 @@ supporting Windows are welcome.
 
 ### Apple Silicon
 
-The current scaffold done by the CLI (`go/v3`) when we run `kubebuilder init` uses [kubernetes-sigs/kustomize][kustomize] v3 which does not provide
-a valid binary for Apple Silicon (`darwin/arm64`). Therefore, you can use the `go/v4-alpha` plugin
-instead which provides support for this platform:
+Apple Silicon (`darwin/arm64`) is supported using the `go/v4-alpha` plugin which provides support for this platform. 
 
 ```bash
 kubebuilder init --domain my.domain --repo my.domain/guestbook --plugins=go/v4-alpha
 ```
 
-**Note**: The `go/v4-alpha` plugin is an unstable version and can have breaking changes in future releases.
+**Note**: The `go/v4-alpha` plugin is an unstable version and can have breaking changes in future releases. The previous kustomize 
+version (`v3.Y.Z`) used in the `go/v3` has no available binaries for this 
+platform [kubernetes-sigs/kustomize/issues/4612](https://github.com/kubernetes-sigs/kustomize/issues/4612)
+Because of this, we cannot support this `darwin/arm64` on the stable scaffold done  by default with the Kubebuilder with the `go/v3` plugin.
 
 ## Community Meetings
  
