@@ -174,6 +174,17 @@ var _ = Describe("kubebuilder", func() {
 				GenerateV3(kbc, "v1beta1")
 				Run(kbc)
 			})
+			It("should generate a runnable project go/v3 with v1 CRDs and Webhooks"+
+				"with --component-config flag enabled", func() {
+				// Skip if cluster version < 1.16, when v1 CRDs and webhooks did not exist.
+				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() < 16 {
+					Skip(fmt.Sprintf("cluster version %s does not support v1 CRDs or webhooks",
+						srvVer.GitVersion))
+				}
+
+				GenerateV3ComponentConfig(kbc, "v1")
+				Run(kbc)
+			})
 		})
 	})
 })
