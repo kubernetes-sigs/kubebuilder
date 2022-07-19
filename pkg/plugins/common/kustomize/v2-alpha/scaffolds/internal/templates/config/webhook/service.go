@@ -27,6 +27,7 @@ var _ machinery.Template = &Service{}
 // Service scaffolds a file that defines the webhook service
 type Service struct {
 	machinery.TemplateMixin
+	machinery.ProjectNameMixin
 }
 
 // SetTemplateDefaults implements file.Template
@@ -47,6 +48,13 @@ const serviceTemplate = `
 apiVersion: v1
 kind: Service
 metadata:
+  labels:
+    app.kubernetes.io/name: service
+    app.kubernetes.io/instance: webhook-service
+    app.kubernetes.io/component: webhook
+    app.kubernetes.io/created-by: {{ .ProjectName }}
+    app.kubernetes.io/part-of: {{ .ProjectName }}
+    app.kubernetes.io/managed-by: kustomize
   name: webhook-service
   namespace: system
 spec:

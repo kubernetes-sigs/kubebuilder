@@ -27,6 +27,7 @@ var _ machinery.Template = &AuthProxyClientRole{}
 // AuthProxyClientRole scaffolds a file that defines the role for the metrics reader
 type AuthProxyClientRole struct {
 	machinery.TemplateMixin
+	machinery.ProjectNameMixin
 }
 
 // SetTemplateDefaults implements file.Template
@@ -43,6 +44,13 @@ func (f *AuthProxyClientRole) SetTemplateDefaults() error {
 const clientClusterRoleTemplate = `apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: metrics-reader
+    app.kubernetes.io/component: kube-rbac-proxy
+    app.kubernetes.io/created-by: {{ .ProjectName }}
+    app.kubernetes.io/part-of: {{ .ProjectName }}
+    app.kubernetes.io/managed-by: kustomize
   name: metrics-reader
 rules:
 - nonResourceURLs:

@@ -2,6 +2,13 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: admiral-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: project-v4-config
+    app.kubernetes.io/part-of: project-v4-config
+    app.kubernetes.io/managed-by: kustomize
   name: admiral-viewer-role
 rules:
 - apiGroups:
