@@ -63,18 +63,17 @@ const controllerTemplate = `{{ .Boilerplate }}
 package {{ if and .MultiGroup .Resource.Group }}{{ .Resource.PackageName }}{{ else }}controllers{{ end }}
 
 import (
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-
 	"context"
 	"strings"
 	"time"
 	"fmt"
 	"os"
 
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -95,7 +94,8 @@ type {{ .Resource.Kind }}Reconciler struct {
 	Scheme *runtime.Scheme
 	Recorder record.EventRecorder
 }
-// The following markers are used to generate the rules permissions on config/rbac using controller-gen
+
+// The following markers are used to generate the rules permissions (RBAC) on config/rbac using controller-gen
 // when the command <make manifests> is executed. 
 // To know more about markers see: https://book.kubebuilder.io/reference/markers.html
 
@@ -109,28 +109,27 @@ type {{ .Resource.Kind }}Reconciler struct {
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 
-// Note: It is essential for the controller's reconciliation loop to be idempotent. By following the Operator 
-// pattern(https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) you will create
-// Controllers(https://kubernetes.io/docs/concepts/architecture/controller/) which provide a reconcile function
-// responsible for synchronizing resources until the desired state is reached on the cluster. Breaking this
-// recommendation goes against the design principles of Controller-runtime(https://github.com/kubernetes-sigs/controller-runtime) 
+// It is essential for the controller's reconciliation loop to be idempotent. By following the Operator 
+// pattern you will create Controllers which provide a reconcile function
+// responsible for synchronizing resources until the desired state is reached on the cluster. 
+// Breaking this recommendation goes against the design principles of controller-runtime. 
 // and may lead to unforeseen consequences such as resources becoming stuck and requiring manual intervention.
-//
-// For more details, check Reconcile and its Result here:
+// For further info:
+// - About Operator Pattern: https://kubernetes.io/docs/concepts/extend-kubernetes/operator/
+// - About Controllers: https://kubernetes.io/docs/concepts/architecture/controller/
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@{{ .ControllerRuntimeVersion }}/pkg/reconcile
 func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 
 	// Fetch the {{ .Resource.Kind }} instance
 	// The purpose is check if the Custom Resource for the Kind {{ .Resource.Kind }}
-	// is applied on the cluster if not we return nill to stop the reconciliation
+	// is applied on the cluster if not we return nil to stop the reconciliation
 	{{ lower .Resource.Kind }} := &{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{}
 	err := r.Get(ctx, req.NamespacedName, {{ lower .Resource.Kind }})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			// Request object not found, could have been deleted after reconcile request.
-			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
-			// Return and don't requeue
+			// If the custom resource is not found then, it usually means that it was deleted or not created
+			// In this way, we will stop the reconciliation 
 			log.Info("{{ lower .Resource.Kind }} resource not found. Ignoring since object must be deleted")
 			return ctrl.Result{}, nil
 		}
@@ -141,15 +140,16 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 
 	// Let's add a finalizer. Then, we can define some operations which should
 	// occurs before the custom resource to be deleted.
-	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers/
-	// NOTE: You should not use finalizer to delete the resources that are
-	// created in this reconciliation and have the ownerRef set by ctrl.SetControllerReference
-	// because these will get deleted via k8s api
+	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers
 	if !controllerutil.ContainsFinalizer({{ lower .Resource.Kind }}, {{ lower .Resource.Kind }}Finalizer) {
 		log.Info("Adding Finalizer for {{ .Resource.Kind }}")
-		controllerutil.AddFinalizer({{ lower .Resource.Kind }}, {{ lower .Resource.Kind }}Finalizer)
-		err = r.Update(ctx, {{ lower .Resource.Kind }})
-		if err != nil {
+		if ok := controllerutil.AddFinalizer({{ lower .Resource.Kind }}, {{ lower .Resource.Kind }}Finalizer); !ok {
+			log.Error(err, "Failed to add finalizer into the custom resource")
+			return ctrl.Result{Requeue: true}, nil
+		}
+		
+		if err = r.Update(ctx, {{ lower .Resource.Kind }}); err != nil {
+			log.Error(err, "Failed to update custom resource to add finalizer")
 			return ctrl.Result{}, err
 		}
 	}
@@ -159,23 +159,18 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 	is{{ .Resource.Kind }}MarkedToBeDeleted := {{ lower .Resource.Kind }}.GetDeletionTimestamp() != nil
 	if is{{ .Resource.Kind }}MarkedToBeDeleted {
 		if controllerutil.ContainsFinalizer({{ lower .Resource.Kind }}, {{ lower .Resource.Kind }}Finalizer) {
-			// Run finalization logic for memcachedFinalizer. If the
-			// finalization logic fails, don't remove the finalizer so
-			// that we can retry during the next reconciliation.
 			log.Info("Performing Finalizer Operations for {{ .Resource.Kind }} before delete CR")
 			r.doFinalizerOperationsFor{{ .Resource.Kind }}({{ lower .Resource.Kind }})
 
-			// Remove memcachedFinalizer. Once all finalizers have been
-			// removed, the object will be deleted.
+			log.Info("Removing Finalizer for {{ .Resource.Kind }} after successfully perform the operations")
 			if ok:= controllerutil.RemoveFinalizer({{ lower .Resource.Kind }}, {{ lower .Resource.Kind }}Finalizer); !ok{
-				if err != nil {
-					log.Error(err, "Failed to remove finalizer for {{ .Resource.Kind }}")
-					return ctrl.Result{}, err
-				}
-			}
-			err := r.Update(ctx, {{ lower .Resource.Kind }})
-			if err != nil {
 				log.Error(err, "Failed to remove finalizer for {{ .Resource.Kind }}")
+				return ctrl.Result{Requeue: true}, nil
+			}
+
+			if err := r.Update(ctx, {{ lower .Resource.Kind }}); err != nil {
+				log.Error(err, "Failed to remove finalizer for {{ .Resource.Kind }}")
+				return ctrl.Result{}, err
 			}
 		}
 		return ctrl.Result{}, nil
@@ -186,13 +181,20 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 	err = r.Get(ctx, types.NamespacedName{Name: {{ lower .Resource.Kind }}.Name, Namespace: {{ lower .Resource.Kind }}.Namespace}, found)
 	if err != nil && apierrors.IsNotFound(err) {
 		// Define a new deployment
-		dep := r.deploymentFor{{ .Resource.Kind }}(ctx, {{ lower .Resource.Kind }})
-		log.Info("Creating a new Deployment", "Deployment.Namespace", dep.Namespace, "Deployment.Name", dep.Name)
-		err = r.Create(ctx, dep)
+		dep, err := r.deploymentFor{{ .Resource.Kind }}({{ lower .Resource.Kind }})
 		if err != nil {
-			log.Error(err, "Failed to create new Deployment", "Deployment.Namespace", dep.Namespace, "Deployment.Name", dep.Name)
+			log.Error(err, "Failed to define new Deployment resource for {{ .Resource.Kind }}")
 			return ctrl.Result{}, err
 		}
+
+		log.Info("Creating a new Deployment", 
+			"Deployment.Namespace", dep.Namespace, "Deployment.Name", dep.Name)
+		if err = r.Create(ctx, dep); err != nil {
+			log.Error(err, "Failed to create new Deployment",
+				"Deployment.Namespace", dep.Namespace, "Deployment.Name", dep.Name)
+			return ctrl.Result{}, err
+		}
+
 		// Deployment created successfully 
 		// We will requeue the reconciliation so that we can ensure the state
 		// and move forward for the next operations
@@ -203,16 +205,19 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 		return ctrl.Result{}, err
 	}
 
-	// The API is defining that the {{ .Resource.Kind }} type, have a {{ .Resource.Kind }}Spec.Size field to set the quantity of {{ .Resource.Kind }} instances (CRs) to be deployed. 
-	// The following code ensure the deployment size is the same as the spec
+	// The CRD API is defining that the {{ .Resource.Kind }} type, have a {{ .Resource.Kind }}Spec.Size field 
+	// to set the quantity of Deployment instances is the desired state on the cluster. 
+	// Therefore, the following code will ensure the Deployment size is the same as defined 
+	// via the Size spec of the Custom Resource which we are reconciling.
 	size := {{ lower .Resource.Kind }}.Spec.Size
 	if *found.Spec.Replicas != size {
 		found.Spec.Replicas = &size
-		err = r.Update(ctx, found)
-		if err != nil {
-			log.Error(err, "Failed to update Deployment", "Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
+		if err = r.Update(ctx, found); err != nil {
+			log.Error(err, "Failed to update Deployment", 
+				"Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
 			return ctrl.Result{}, err
 		}
+
 		// Since it fails we want to re-queue the reconciliation
 		// The reconciliation will only stop when we be able to ensure 
 		// the desired state on the cluster
@@ -228,6 +233,13 @@ func (r *{{ .Resource.Kind }}Reconciler) doFinalizerOperationsFor{{ .Resource.Ki
 	// needs to do before the CR can be deleted. Examples
 	// of finalizers include performing backups and deleting
 	// resources that are not owned by this CR, like a PVC.
+
+	// Note: It is not recommended to use finalizers with the purpose of delete resources which are
+	// created and managed in the reconciliation. These ones, such as the Deployment created on this reconcile, 
+	// are defined as depended of the custom resource. See that we use the method ctrl.SetControllerReference.
+	// to set the ownerRef which means that the Deployment will be deleted by the Kubernetes API.
+	// More info: https://kubernetes.io/docs/tasks/administer-cluster/use-cascading-deletion/
+
 	// The following implementation will raise an event
 	r.Recorder.Event(cr, "Warning", "Deleting",
 		fmt.Sprintf("Custom Resource %s is being deleted from the namespace %s",
@@ -236,13 +248,15 @@ func (r *{{ .Resource.Kind }}Reconciler) doFinalizerOperationsFor{{ .Resource.Ki
 }
 
 // deploymentFor{{ .Resource.Kind }} returns a {{ .Resource.Kind }} Deployment object
-func (r *{{ .Resource.Kind }}Reconciler) deploymentFor{{ .Resource.Kind }}(ctx context.Context, {{ lower .Resource.Kind }} *{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}) *appsv1.Deployment {
+func (r *{{ .Resource.Kind }}Reconciler) deploymentFor{{ .Resource.Kind }}(
+	{{ lower .Resource.Kind }} *{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}) (*appsv1.Deployment, error) {
 	ls := labelsFor{{ .Resource.Kind }}({{ lower .Resource.Kind }}.Name)
 	replicas := {{ lower .Resource.Kind }}.Spec.Size
-	log := log.FromContext(ctx)
+	
+	// Get the Operand image
 	image, err := imageFor{{ .Resource.Kind }}()
 	if err != nil {
-    	log.Error(err, "unable to get image for {{ .Resource.Kind }}")
+    	return nil, err
 	}
 
 	dep := &appsv1.Deployment{
@@ -274,18 +288,17 @@ func (r *{{ .Resource.Kind }}Reconciler) deploymentFor{{ .Resource.Kind }}(ctx c
 			},
 		},
 	}
-	// Set {{ .Resource.Kind }} instance as the owner and controller
-	// You should use the method ctrl.SetControllerReference for all resources
-	// which are created by your controller so that when the Custom Resource be deleted
-	// all resources owned by it (child) will also be deleted.
-	// To know more about it see: https://kubernetes.io/docs/tasks/administer-cluster/use-cascading-deletion/
-	ctrl.SetControllerReference({{ lower .Resource.Kind }}, dep, r.Scheme)
-	return dep
+	
+	// Set the ownerRef for the Deployment
+	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/owners-dependents/
+	if err := ctrl.SetControllerReference({{ lower .Resource.Kind }}, dep, r.Scheme); err != nil {
+		return nil, err
+	}
+	return dep, nil
 }
 
 // labelsFor{{ .Resource.Kind }} returns the labels for selecting the resources
-// belonging to the given  {{ .Resource.Kind }} CR name.
-// Note that the labels follows the standards defined in: https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/
+// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/
 func labelsFor{{ .Resource.Kind }}(name string) map[string]string {
 	var imageTag string
 	image, err := imageFor{{ .Resource.Kind }}()
@@ -300,22 +313,20 @@ func labelsFor{{ .Resource.Kind }}(name string) map[string]string {
 	}
 }
 
-// imageFor{{ .Resource.Kind }} gets the image for the resources belonging to the given {{ .Resource.Kind }} CR,
-// from the {{ upper .Resource.Kind }}_IMAGE ENV VAR defined in the config/manager/manager.yaml
+// imageFor{{ .Resource.Kind }} gets the Operand image which is managed by this controller
+// from the {{ upper .Resource.Kind }}_IMAGE environment variable defined in the config/manager/manager.yaml
 func imageFor{{ .Resource.Kind }}() (string, error) {
 	var imageEnvVar = "{{ upper .Resource.Kind }}_IMAGE"
     image, found := os.LookupEnv(imageEnvVar)
     if !found {
-        return "", fmt.Errorf("%s must be set", imageEnvVar)
+        return "", fmt.Errorf("Unable to find %s environment variable with the image", imageEnvVar)
     }
     return image, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
-// The following code specifies how the controller is built to watch a CR 
-// and other resources that are owned and managed by that controller.
-// In this way, the reconciliation can be re-trigged when the CR and/or the Deployment
-// be created/edit/delete.
+// Note that the Deployment will be also watched in order to ensure its 
+// desirable state on the cluster
 func (r *{{ .Resource.Kind }}Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		{{ if not (isEmptyStr .Resource.Path) -}}
