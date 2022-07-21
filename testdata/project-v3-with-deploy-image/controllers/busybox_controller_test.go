@@ -17,62 +17,104 @@ limitations under the License.
 package controllers
 
 import (
-	"fmt"
-
-	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-
 	"context"
+	"os"
 	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	examplecomv1alpha1 "sigs.k8s.io/kubebuilder/testdata/project-v3-with-deploy-image/api/v1alpha1"
 )
 
 var _ = Describe("Busybox controller", func() {
-
-	// Define utility constants for object names and testing timeouts/durations and intervals.
-	const (
-		BusyboxName      = "test-busybox"
-		BusyboxNamespace = "default"
-	)
-
 	Context("Busybox controller test", func() {
-		It("should create successfully the custom resource for the Busybox", func() {
-			ctx := context.Background()
 
+		const BusyboxName = "test-busybox"
+
+		ctx := context.Background()
+
+		namespace := &corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      BusyboxName,
+				Namespace: BusyboxName,
+			},
+		}
+
+		typeNamespaceName := types.NamespacedName{Name: BusyboxName, Namespace: BusyboxName}
+
+		BeforeEach(func() {
+			By("Creating the Namespace to perform the tests")
+			err := k8sClient.Create(ctx, namespace)
+			Expect(err).To(Not(HaveOccurred()))
+
+			By("Setting the Image ENV VAR which stores the Operand image")
+			err = os.Setenv("BUSYBOX_IMAGE", "example.com/image:test")
+			Expect(err).To(Not(HaveOccurred()))
+		})
+
+		AfterEach(func() {
+			By("Deleting the Namespace to perform the tests")
+			_ = k8sClient.Delete(ctx, namespace)
+
+			By("Removing the Image ENV VAR which stores the Operand image")
+			_ = os.Unsetenv("BUSYBOX_IMAGE")
+		})
+
+		It("should successfully reconcile a custom resource for Busybox", func() {
 			By("Creating the custom resource for the Kind Busybox")
 			busybox := &examplecomv1alpha1.Busybox{}
-			err := k8sClient.Get(ctx, types.NamespacedName{Name: BusyboxName, Namespace: BusyboxNamespace}, busybox)
+			err := k8sClient.Get(ctx, typeNamespaceName, busybox)
 			if err != nil && errors.IsNotFound(err) {
-				// Define a new custom resource
+				// Let's mock our custom resource at the same way that we would
+				// apply on the cluster the manifest under config/samples
 				busybox := &examplecomv1alpha1.Busybox{
-					TypeMeta: metav1.TypeMeta{
-						APIVersion: "example.com.testproject.org/v1alpha1",
-						Kind:       "Busybox",
-					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      BusyboxName,
-						Namespace: BusyboxNamespace,
+						Namespace: namespace.Name,
 					},
 					Spec: examplecomv1alpha1.BusyboxSpec{
 						Size: 1,
 					},
 				}
-				fmt.Fprintf(GinkgoWriter, fmt.Sprintf("Creating a new custom resource in the namespace: %s with the name %s\n", busybox.Namespace, busybox.Name))
+
 				err = k8sClient.Create(ctx, busybox)
 				if err != nil {
 					Expect(err).To(Not(HaveOccurred()))
 				}
 			}
 
-			By("Checking with Busybox Kind exist")
+			By("Checking if the custom resource was successfully crated")
 			Eventually(func() error {
 				found := &examplecomv1alpha1.Busybox{}
-				err = k8sClient.Get(ctx, types.NamespacedName{Name: BusyboxName, Namespace: BusyboxNamespace}, found)
+				err = k8sClient.Get(ctx, typeNamespaceName, found)
+				if err != nil {
+					return err
+				}
+				return nil
+			}, time.Minute, time.Second).Should(Succeed())
+
+			By("Reconciling the custom resource created")
+			busyboxReconciler := &BusyboxReconciler{
+				Client: k8sClient,
+				Scheme: k8sClient.Scheme(),
+			}
+
+			_, err = busyboxReconciler.Reconcile(ctx, reconcile.Request{
+				NamespacedName: typeNamespaceName,
+			})
+			Expect(err).To(Not(HaveOccurred()))
+
+			By("Checking if Deployment was successfully crated in the reconciliation")
+			Eventually(func() error {
+				found := &appsv1.Deployment{}
+				err = k8sClient.Get(ctx, typeNamespaceName, found)
 				if err != nil {
 					return err
 				}
@@ -80,5 +122,4 @@ var _ = Describe("Busybox controller", func() {
 			}, time.Minute, time.Second).Should(Succeed())
 		})
 	})
-
 })
