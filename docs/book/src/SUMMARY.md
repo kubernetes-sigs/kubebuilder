@@ -106,17 +106,17 @@
 
 - [Plugins][plugins]
 
+  - [Available Plugins](./plugins/available-plugins.md)
+      - [go/v2 (Deprecated)](./plugins/go-v2-plugin.md)
+      - [go/v3 (Default init scaffold)](./plugins/go-v3-plugin.md)
+      - [go/v4-alpha](./plugins/go-v4-plugin.md)
+      - [kustomize/v1](./plugins/kustomize-v1.md)
+      - [kustomize/v2-alpha](./plugins/kustomize-v2-alpha.md)
+      - [declarative/v1](./plugins/declarative-v1.md)
+      - [grafana/v1-alpha](./plugins/grafana-v1-alpha.md)
+      - [deploy-image/v1-alpha](./plugins/deploy-image-plugin-v1-alpha.md)
   - [Extending the CLI](./plugins/extending-cli.md)
   - [Creating your own plugins](./plugins/creating-plugins.md)
-  - [Available Plugins](./plugins/available-plugins.md)
-    - [go/v2 plugin (Deprecated)](./plugins/go-v2-plugin.md)
-    - [go/v3 plugin](./plugins/go-v3-plugin.md)
-    - [go/v4-alpha plugin](./plugins/go-v4-plugin.md)
-    - [Kustomize V1](./plugins/kustomize-v1.md)
-    - [Kustomize v2 Alpha](./plugins/kustomize-v2-alpha.md)
-    - [Declarative V1 (Optional Feature)](./plugins/declarative-v1.md)
-    - [Grafana V1 Alpha (Optional Feature)](./plugins/grafana-v1-alpha.md)
-    - [Deploy Image V1 Alpha (Optional Feature)](./plugins/deploy-image-plugin-v1-alpha.md)
   - [Plugins Versioning](./plugins/plugins-versioning.md)
 
 ---  
