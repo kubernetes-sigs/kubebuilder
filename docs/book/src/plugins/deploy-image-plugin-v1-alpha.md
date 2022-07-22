@@ -3,6 +3,12 @@
 The deploy-image plugin allows users to create [controllers][controller-runtime] and custom resources which will deploy and manage an image on the cluster following
 the guidelines and best practices. It abstracts the complexities to achieve this goal while allowing users to improve and customize their projects.
 
+By using this plugin you will have:
+- a controller implementation to Deploy and manage an Operand(image) on the cluster
+- tests to check the reconciliation implemented using [ENVTEST][envtest]
+- the custom resources samples updated with the specs used
+- you will check that the Operand(image) will be added on the manager via environment variables
+
 <aside class="note">
 <h1>Examples</h1>
 
@@ -12,8 +18,9 @@ See the "project-v3-with-deploy-image" directory under the [testdata][testdata] 
 
 ## When to use it ?
 
-- This plugin is helpful for beginners who are getting started with scaffolding and using operators.
+- This plugin is helpful for those who are getting started.
 - If you are looking to Deploy and Manage an image (Operand) using [Operator pattern](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) and the tool the plugin will create an API/controller to be reconciled to achieve this goal
+- If you are looking to speed up
 
 ## How to use it ?
 
@@ -35,19 +42,14 @@ The deploy-image plugin implements the following subcommands:
 
 With the `create api` command of this plugin, in addition to the existing scaffolding, the following files are affected:
 
-**When multigroup is not enabled**
-
-- `controllers/*_controller.go`
-- `controllers/*_suite_test.go`
+- `controllers/*_controller.go` (scaffold controller with reconciliation implemented)
+- `controllers/*_controller_test.go` (scaffold the tests for the controller)
+- `controllers/*_suite_test.go` (scaffold/update the suite of tests)
 - `api/<version>/*_types.go` (scaffold the specs for the new api)
 - `config/samples/*_.yaml` (scaffold default values for its CR)
-
-**When multigroup is enabled**
-
-- `controllers/<group>/*_controller.go`
-- `controllers/<group>/*_suite_test.go`
-- `apis/<group>/<version>/*_types.go` (scaffold the specs for the new api)
-- `config/samples/*_.yaml` (scaffold default values for its CR)
+- `main.go` (update to add controller setup)
+- `config/manager.yaml` (update with envvar to store the image)
 
 [controller-runtime]: https://github.com/kubernetes-sigs/controller-runtime
 [testdata]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/testdata/
+[envtest]: ../reference/envtest.md
