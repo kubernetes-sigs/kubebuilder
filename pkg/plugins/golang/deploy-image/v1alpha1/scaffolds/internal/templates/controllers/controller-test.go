@@ -60,14 +60,18 @@ const controllerTestTemplate = `{{ .Boilerplate }}
 package {{ if and .MultiGroup .Resource.Group }}{{ .Resource.PackageName }}{{ else }}controllers{{ end }}
 
 import (
-	"fmt"
+	"context"
+	"os"
+	"time"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-
-	"time"
-	"context"
-
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	
@@ -77,30 +81,50 @@ import (
 )
 
 var _ = Describe("{{ .Resource.Kind }} controller", func() {
-
-	// Define utility constants for object names and testing timeouts/durations and intervals.
-	const (
-		{{ .Resource.Kind }}Name      = "test-{{ lower .Resource.Kind }}"
-		{{ .Resource.Kind }}Namespace = "default"
-	)
-
 	Context("{{ .Resource.Kind }} controller test", func() {
-		It("should create successfully the custom resource for the {{ .Resource.Kind }}", func() {
-			ctx := context.Background()
 
+		const {{ .Resource.Kind }}Name = "test-{{ lower .Resource.Kind }}"
+
+		ctx := context.Background()
+
+		namespace := &corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      {{ .Resource.Kind }}Name,
+				Namespace: {{ .Resource.Kind }}Name,
+			},
+		}
+
+		typeNamespaceName := types.NamespacedName{Name: {{ .Resource.Kind }}Name, Namespace: {{ .Resource.Kind }}Name}
+
+		BeforeEach(func() {
+			By("Creating the Namespace to perform the tests")
+			err := k8sClient.Create(ctx, namespace);
+			Expect(err).To(Not(HaveOccurred()))
+
+			By("Setting the Image ENV VAR which stores the Operand image")
+			err= os.Setenv("{{ upper .Resource.Kind }}_IMAGE", "example.com/image:test")
+			Expect(err).To(Not(HaveOccurred()))
+		})
+
+		AfterEach(func() {
+			By("Deleting the Namespace to perform the tests")
+			_ = k8sClient.Delete(ctx, namespace);
+	
+			By("Removing the Image ENV VAR which stores the Operand image")
+			_ = os.Unsetenv("{{ upper .Resource.Kind }}_IMAGE")
+		})
+
+		It("should successfully reconcile a custom resource for {{ .Resource.Kind }}", func() {
 			By("Creating the custom resource for the Kind {{ .Resource.Kind }}")
 			{{ lower .Resource.Kind }} := &{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{}
-			err := k8sClient.Get(ctx, types.NamespacedName{Name: {{ .Resource.Kind }}Name, Namespace: {{ .Resource.Kind }}Namespace}, {{ lower .Resource.Kind }})
+			err := k8sClient.Get(ctx, typeNamespaceName, {{ lower .Resource.Kind }})
 			if err != nil && errors.IsNotFound(err) {
-				// Define a new custom resource
+				// Let's mock our custom resource at the same way that we would
+				// apply on the cluster the manifest under config/samples
 				{{ lower .Resource.Kind }} := &{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{
-					TypeMeta: metav1.TypeMeta{
-						APIVersion: "{{ .Resource.Group }}.{{ .Resource.Domain }}/{{ .Resource.Version }}",
-						Kind:       "{{ .Resource.Kind }}",
-					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      {{ .Resource.Kind }}Name,
-						Namespace: {{ .Resource.Kind }}Namespace,
+						Namespace: namespace.Name,
 					},
 					Spec: {{ .Resource.ImportAlias }}.{{ .Resource.Kind }}Spec{
 						Size: 1,
@@ -109,17 +133,38 @@ var _ = Describe("{{ .Resource.Kind }} controller", func() {
 						{{- end }}
 					},
 				}
-				fmt.Fprintf(GinkgoWriter, fmt.Sprintf("Creating a new custom resource in the namespace: %s with the name %s\n", {{ lower .Resource.Kind }}.Namespace, {{ lower .Resource.Kind }}.Name))
+				
 				err = k8sClient.Create(ctx, {{ lower .Resource.Kind }})
 				if err != nil {
 					Expect(err).To(Not(HaveOccurred()))
 				}
 			} 
 
-			By("Checking with {{ .Resource.Kind }} Kind exist")
+			By("Checking if the custom resource was successfully crated")
 			Eventually(func() error {
 				found := &{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{}
-				err = k8sClient.Get(ctx, types.NamespacedName{Name: {{ .Resource.Kind }}Name, Namespace: {{ .Resource.Kind }}Namespace}, found)
+				err = k8sClient.Get(ctx, typeNamespaceName, found)
+				if err != nil {
+					return err
+				}
+				return nil
+			}, time.Minute, time.Second).Should(Succeed())
+
+			By("Reconciling the custom resource created")
+			{{ lower .Resource.Kind }}Reconciler := &{{ .Resource.Kind }}Reconciler{
+				Client: k8sClient,
+				Scheme: k8sClient.Scheme(),
+			}
+
+			_, err = {{ lower .Resource.Kind }}Reconciler.Reconcile(ctx, reconcile.Request{
+				NamespacedName: typeNamespaceName,
+			})
+			Expect(err).To(Not(HaveOccurred()))
+
+			By("Checking if Deployment was successfully crated in the reconciliation")
+			Eventually(func() error {
+				found := &appsv1.Deployment{}
+				err = k8sClient.Get(ctx, typeNamespaceName, found)
 				if err != nil {
 					return err
 				}
@@ -127,6 +172,5 @@ var _ = Describe("{{ .Resource.Kind }} controller", func() {
 			}, time.Minute, time.Second).Should(Succeed())
 		})
 	})
-
 })
 `

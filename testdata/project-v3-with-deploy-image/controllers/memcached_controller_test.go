@@ -17,63 +17,105 @@ limitations under the License.
 package controllers
 
 import (
-	"fmt"
-
-	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-
 	"context"
+	"os"
 	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	examplecomv1alpha1 "sigs.k8s.io/kubebuilder/testdata/project-v3-with-deploy-image/api/v1alpha1"
 )
 
 var _ = Describe("Memcached controller", func() {
-
-	// Define utility constants for object names and testing timeouts/durations and intervals.
-	const (
-		MemcachedName      = "test-memcached"
-		MemcachedNamespace = "default"
-	)
-
 	Context("Memcached controller test", func() {
-		It("should create successfully the custom resource for the Memcached", func() {
-			ctx := context.Background()
 
+		const MemcachedName = "test-memcached"
+
+		ctx := context.Background()
+
+		namespace := &corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      MemcachedName,
+				Namespace: MemcachedName,
+			},
+		}
+
+		typeNamespaceName := types.NamespacedName{Name: MemcachedName, Namespace: MemcachedName}
+
+		BeforeEach(func() {
+			By("Creating the Namespace to perform the tests")
+			err := k8sClient.Create(ctx, namespace)
+			Expect(err).To(Not(HaveOccurred()))
+
+			By("Setting the Image ENV VAR which stores the Operand image")
+			err = os.Setenv("MEMCACHED_IMAGE", "example.com/image:test")
+			Expect(err).To(Not(HaveOccurred()))
+		})
+
+		AfterEach(func() {
+			By("Deleting the Namespace to perform the tests")
+			_ = k8sClient.Delete(ctx, namespace)
+
+			By("Removing the Image ENV VAR which stores the Operand image")
+			_ = os.Unsetenv("MEMCACHED_IMAGE")
+		})
+
+		It("should successfully reconcile a custom resource for Memcached", func() {
 			By("Creating the custom resource for the Kind Memcached")
 			memcached := &examplecomv1alpha1.Memcached{}
-			err := k8sClient.Get(ctx, types.NamespacedName{Name: MemcachedName, Namespace: MemcachedNamespace}, memcached)
+			err := k8sClient.Get(ctx, typeNamespaceName, memcached)
 			if err != nil && errors.IsNotFound(err) {
-				// Define a new custom resource
+				// Let's mock our custom resource at the same way that we would
+				// apply on the cluster the manifest under config/samples
 				memcached := &examplecomv1alpha1.Memcached{
-					TypeMeta: metav1.TypeMeta{
-						APIVersion: "example.com.testproject.org/v1alpha1",
-						Kind:       "Memcached",
-					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      MemcachedName,
-						Namespace: MemcachedNamespace,
+						Namespace: namespace.Name,
 					},
 					Spec: examplecomv1alpha1.MemcachedSpec{
 						Size:          1,
 						ContainerPort: 11211,
 					},
 				}
-				fmt.Fprintf(GinkgoWriter, fmt.Sprintf("Creating a new custom resource in the namespace: %s with the name %s\n", memcached.Namespace, memcached.Name))
+
 				err = k8sClient.Create(ctx, memcached)
 				if err != nil {
 					Expect(err).To(Not(HaveOccurred()))
 				}
 			}
 
-			By("Checking with Memcached Kind exist")
+			By("Checking if the custom resource was successfully crated")
 			Eventually(func() error {
 				found := &examplecomv1alpha1.Memcached{}
-				err = k8sClient.Get(ctx, types.NamespacedName{Name: MemcachedName, Namespace: MemcachedNamespace}, found)
+				err = k8sClient.Get(ctx, typeNamespaceName, found)
+				if err != nil {
+					return err
+				}
+				return nil
+			}, time.Minute, time.Second).Should(Succeed())
+
+			By("Reconciling the custom resource created")
+			memcachedReconciler := &MemcachedReconciler{
+				Client: k8sClient,
+				Scheme: k8sClient.Scheme(),
+			}
+
+			_, err = memcachedReconciler.Reconcile(ctx, reconcile.Request{
+				NamespacedName: typeNamespaceName,
+			})
+			Expect(err).To(Not(HaveOccurred()))
+
+			By("Checking if Deployment was successfully crated in the reconciliation")
+			Eventually(func() error {
+				found := &appsv1.Deployment{}
+				err = k8sClient.Get(ctx, typeNamespaceName, found)
 				if err != nil {
 					return err
 				}
@@ -81,5 +123,4 @@ var _ = Describe("Memcached controller", func() {
 			}, time.Minute, time.Second).Should(Succeed())
 		})
 	})
-
 })
