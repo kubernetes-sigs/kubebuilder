@@ -134,7 +134,7 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 			return ctrl.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
-		log.Error(err, "Failed to get {{ lower .Resource.Kind }} }}")
+		log.Error(err, "Failed to get {{ lower .Resource.Kind }}")
 		return ctrl.Result{}, err
 	}
 

@@ -90,7 +90,7 @@ var _ = Describe("Busybox controller", func() {
 				}
 			}
 
-			By("Checking if the custom resource was successfully crated")
+			By("Checking if the custom resource was successfully created")
 			Eventually(func() error {
 				found := &examplecomv1alpha1.Busybox{}
 				err = k8sClient.Get(ctx, typeNamespaceName, found)
@@ -111,7 +111,7 @@ var _ = Describe("Busybox controller", func() {
 			})
 			Expect(err).To(Not(HaveOccurred()))
 
-			By("Checking if Deployment was successfully crated in the reconciliation")
+			By("Checking if Deployment was successfully created in the reconciliation")
 			Eventually(func() error {
 				found := &appsv1.Deployment{}
 				err = k8sClient.Get(ctx, typeNamespaceName, found)

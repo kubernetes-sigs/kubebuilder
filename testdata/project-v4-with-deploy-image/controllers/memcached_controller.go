@@ -86,7 +86,7 @@ func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			return ctrl.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
-		log.Error(err, "Failed to get memcached }}")
+		log.Error(err, "Failed to get memcached")
 		return ctrl.Result{}, err
 	}
 
