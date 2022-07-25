@@ -86,7 +86,7 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			return ctrl.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
-		log.Error(err, "Failed to get busybox }}")
+		log.Error(err, "Failed to get busybox")
 		return ctrl.Result{}, err
 	}
 

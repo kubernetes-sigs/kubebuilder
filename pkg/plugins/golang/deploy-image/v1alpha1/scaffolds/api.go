@@ -175,7 +175,10 @@ func (s *apiScaffolder) updateMainByAddingEventRecorder() error {
 
 	if err := util.InsertCode(
 		defaultMainPath,
-		`Scheme: mgr.GetScheme(),`,
+		fmt.Sprintf(
+			`if err = (&controllers.%sReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),`, s.resource.Kind),
 		fmt.Sprintf(recorderTemplate, strings.ToLower(s.resource.Kind)),
 	); err != nil {
 		return fmt.Errorf("error scaffolding event recorder in %s: %v", defaultMainPath, err)
@@ -320,8 +323,7 @@ const portTemplate = `
 						}},`
 
 const recorderTemplate = `
-		Recorder: mgr.GetEventRecorderFor("%s-controller"),
-	`
+		Recorder: mgr.GetEventRecorderFor("%s-controller"),`
 
 const envVarTemplate = `
         - name: %s_IMAGE 
