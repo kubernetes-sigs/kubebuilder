@@ -17,6 +17,7 @@ limitations under the License.
 package deployimage
 
 import (
+	"errors"
 	"fmt"
 	"os/exec"
 	"path/filepath"
@@ -262,6 +263,20 @@ func Run(kbc *utils.TestContext) {
 		return nil
 	}
 	EventuallyWithOffset(1, getMemcachedPodStatus, time.Minute, time.Second).Should(Succeed())
+
+	By("validating that the status of the custom resource created is updated or not")
+	var status string
+	getStatus := func() error {
+		status, err = kbc.Kubectl.Get(true, strings.ToLower(kbc.Kind),
+			strings.ToLower(kbc.Kind)+"-sample",
+			"-o", "jsonpath={.status.conditions}")
+		ExpectWithOffset(2, err).NotTo(HaveOccurred())
+		if !strings.Contains(status, "Available") {
+			return errors.New(`status condition with type "Available" should be set`)
+		}
+		return nil
+	}
+	Eventually(getStatus, time.Minute, time.Second).Should(Succeed())
 
 	//Testing the finalizer
 	EventuallyWithOffset(1, func() error {

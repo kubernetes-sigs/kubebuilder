@@ -26,6 +26,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -39,6 +40,14 @@ import (
 )
 
 const busyboxFinalizer = "example.com.testproject.org/finalizer"
+
+// Definitions to manage status conditions
+const (
+	// typeAvailableBusybox represents the status of the Deployment reconciliation
+	typeAvailableBusybox = "Available"
+	// typeDegradedBusybox represents the status used when the custom resource is deleted and the finalizer operations are must to occur.
+	typeDegradedBusybox = "Degraded"
+)
 
 // BusyboxReconciler reconciles a Busybox object
 type BusyboxReconciler struct {
@@ -90,6 +99,25 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, err
 	}
 
+	// Let's just set the status as Unknown when no status are available
+	if busybox.Status.Conditions == nil || len(busybox.Status.Conditions) == 0 {
+		meta.SetStatusCondition(&busybox.Status.Conditions, metav1.Condition{Type: typeAvailableBusybox, Status: metav1.ConditionUnknown, Reason: "Reconciling", Message: "Starting reconciliation"})
+		if err = r.Status().Update(ctx, busybox); err != nil {
+			log.Error(err, "Failed to update Busybox status")
+			return ctrl.Result{}, err
+		}
+
+		// Let's re-fetch the busybox Custom Resource after update the status
+		// so that we have the latest state of the resource on the cluster and we will avoid
+		// raise the issue "the object has been modified, please apply
+		// your changes to the latest version and try again" which would re-trigger the reconciliation
+		// if we try to update it again in the following operations
+		if err := r.Get(ctx, req.NamespacedName, busybox); err != nil {
+			log.Error(err, "Failed to re-fetch busybox")
+			return ctrl.Result{}, err
+		}
+	}
+
 	// Let's add a finalizer. Then, we can define some operations which should
 	// occurs before the custom resource to be deleted.
 	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers
@@ -112,7 +140,42 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	if isBusyboxMarkedToBeDeleted {
 		if controllerutil.ContainsFinalizer(busybox, busyboxFinalizer) {
 			log.Info("Performing Finalizer Operations for Busybox before delete CR")
+
+			// Let's add here an status "Downgrade" to define that this resource begin its process to be terminated.
+			meta.SetStatusCondition(&busybox.Status.Conditions, metav1.Condition{Type: typeDegradedBusybox,
+				Status: metav1.ConditionUnknown, Reason: "Finalizing",
+				Message: fmt.Sprintf("Performing finalizer operations for the custom resource: %s ", busybox.Name)})
+
+			if err := r.Status().Update(ctx, busybox); err != nil {
+				log.Error(err, "Failed to update Busybox status")
+				return ctrl.Result{}, err
+			}
+
+			// Perform all operations required before remove the finalizer and allow
+			// the Kubernetes API to remove the custom custom resource.
 			r.doFinalizerOperationsForBusybox(busybox)
+
+			// TODO(user): If you add operations to the doFinalizerOperationsForBusybox method
+			// then you need to ensure that all worked fine before deleting and updating the Downgrade status
+			// otherwise, you should requeue here.
+
+			// Re-fetch the busybox Custom Resource before update the status
+			// so that we have the latest state of the resource on the cluster and we will avoid
+			// raise the issue "the object has been modified, please apply
+			// your changes to the latest version and try again" which would re-trigger the reconciliation
+			if err := r.Get(ctx, req.NamespacedName, busybox); err != nil {
+				log.Error(err, "Failed to re-fetch busybox")
+				return ctrl.Result{}, err
+			}
+
+			meta.SetStatusCondition(&busybox.Status.Conditions, metav1.Condition{Type: typeDegradedBusybox,
+				Status: metav1.ConditionTrue, Reason: "Finalizing",
+				Message: fmt.Sprintf("Finalizer operations for custom resource %s name were successfully accomplished", busybox.Name)})
+
+			if err := r.Status().Update(ctx, busybox); err != nil {
+				log.Error(err, "Failed to update Busybox status")
+				return ctrl.Result{}, err
+			}
 
 			log.Info("Removing Finalizer for Busybox after successfully perform the operations")
 			if ok := controllerutil.RemoveFinalizer(busybox, busyboxFinalizer); !ok {
@@ -136,6 +199,17 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		dep, err := r.deploymentForBusybox(busybox)
 		if err != nil {
 			log.Error(err, "Failed to define new Deployment resource for Busybox")
+
+			// The following implementation will update the status
+			meta.SetStatusCondition(&busybox.Status.Conditions, metav1.Condition{Type: typeAvailableBusybox,
+				Status: metav1.ConditionFalse, Reason: "Reconciling",
+				Message: fmt.Sprintf("Failed to create Deployment for the custom resource (%s): (%s)", busybox.Name, err)})
+
+			if err := r.Status().Update(ctx, busybox); err != nil {
+				log.Error(err, "Failed to update Busybox status")
+				return ctrl.Result{}, err
+			}
+
 			return ctrl.Result{}, err
 		}
 
@@ -167,13 +241,43 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		if err = r.Update(ctx, found); err != nil {
 			log.Error(err, "Failed to update Deployment",
 				"Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
+
+			// Re-fetch the busybox Custom Resource before update the status
+			// so that we have the latest state of the resource on the cluster and we will avoid
+			// raise the issue "the object has been modified, please apply
+			// your changes to the latest version and try again" which would re-trigger the reconciliation
+			if err := r.Get(ctx, req.NamespacedName, busybox); err != nil {
+				log.Error(err, "Failed to re-fetch busybox")
+				return ctrl.Result{}, err
+			}
+
+			// The following implementation will update the status
+			meta.SetStatusCondition(&busybox.Status.Conditions, metav1.Condition{Type: typeAvailableBusybox,
+				Status: metav1.ConditionFalse, Reason: "Resizing",
+				Message: fmt.Sprintf("Failed to update the size for the custom resource (%s): (%s)", busybox.Name, err)})
+
+			if err := r.Status().Update(ctx, busybox); err != nil {
+				log.Error(err, "Failed to update Busybox status")
+				return ctrl.Result{}, err
+			}
+
 			return ctrl.Result{}, err
 		}
 
-		// Since it fails we want to re-queue the reconciliation
-		// The reconciliation will only stop when we be able to ensure
-		// the desired state on the cluster
+		// Now, that we update the size we want to requeue the reconciliation
+		// so that we can ensure that we have the latest state of the resource before
+		// update. Also, it will help ensure the desired state on the cluster
 		return ctrl.Result{Requeue: true}, nil
+	}
+
+	// The following implementation will update the status
+	meta.SetStatusCondition(&busybox.Status.Conditions, metav1.Condition{Type: typeAvailableBusybox,
+		Status: metav1.ConditionTrue, Reason: "Reconciling",
+		Message: fmt.Sprintf("Deployment for custom resource (%s) with %d replicas created successfully", busybox.Name, size)})
+
+	if err := r.Status().Update(ctx, busybox); err != nil {
+		log.Error(err, "Failed to update Busybox status")
+		return ctrl.Result{}, err
 	}
 
 	return ctrl.Result{}, nil
