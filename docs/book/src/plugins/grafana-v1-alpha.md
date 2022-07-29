@@ -79,7 +79,7 @@ See an example of how to use the plugin in your project:
   - Per-second rate of reconciliation errors as measured over the last 5 minutes
 - Sample: <img width="1430" src="https://user-images.githubusercontent.com/18136486/176122555-f3493658-6c99-4ad6-a9b7-63d85620d370.png">
 
-#### CPU & Memory Usage
+#### Controller CPU & Memory Usage
 
 - Metrics:
   - process_cpu_seconds_total
@@ -91,6 +91,46 @@ See an example of how to use the plugin in your project:
   - Per-second rate of CPU usage as measured over the last 5 minutes
   - Allocated Memory for the running controller
 - Sample: <img width="1381" src="https://user-images.githubusercontent.com/18136486/177239808-7d94b17d-692c-4166-8875-6d9332e05bcb.png">
+
+#### Seconds of P50/90/99 Items Stay in Work Queue
+
+- Metrics
+  - workqueue_queue_duration_seconds_bucket
+- Query:
+  - histogram_quantile(0.50, sum(rate(workqueue_queue_duration_seconds_bucket{job="$job", namespace="$namespace"}[5m])) by (instance, name, le))
+- Description
+  - Seconds an item stays in workqueue before being requested.
+- Sample: <img width="920" src="https://user-images.githubusercontent.com/18136486/180359126-452b2a0f-a511-4ae3-844f-231d13cd27f8.png">
+
+#### Seconds of P50/90/99 Items Processed in Work Queue
+
+- Metrics
+  - workqueue_work_duration_seconds_bucket
+- Query:
+  - histogram_quantile(0.50, sum(rate(workqueue_work_duration_seconds_bucket{job="$job", namespace="$namespace"}[5m])) by (instance, name, le))
+- Description
+  - Seconds of processing an item from workqueue takes.
+- Sample: <img width="912" src="https://user-images.githubusercontent.com/18136486/180359617-b7a59552-1e40-44f9-999f-4feb2584b2dd.png">
+
+#### Add Rate in Work Queue
+
+- Metrics
+  - workqueue_adds_total
+- Query:
+  - sum(rate(workqueue_adds_total{job="$job", namespace="$namespace"}[5m])) by (instance, name)
+- Description
+  - Per-second rate of items added to work queue
+- Sample: <img width="913" src="https://user-images.githubusercontent.com/18136486/180360073-698b6f77-a2c4-4a95-8313-fd8745ad472f.png">
+
+#### Retries Rate in Work Queue
+
+- Metrics
+  - workqueue_retries_total
+- Query:
+  - sum(rate(workqueue_retries_total{job="$job", namespace="$namespace"}[5m])) by (instance, name)
+- Description
+  - Per-second rate of retries handled by workqueue
+- Sample: <img width="914" src="https://user-images.githubusercontent.com/18136486/180360101-411c81e9-d54e-4b21-bbb0-e3f94fcf48cb.png">
 
 ## Subcommands
 
