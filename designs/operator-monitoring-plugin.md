@@ -87,6 +87,7 @@ It would be great if we can provide a unified and comprehensive approach so that
 
 - Provide manifests that can display operator status for common needs.
 - Add a plugin ~~or enhance the current kustomize plugin~~ that scaffolds Grafana manifests.
+- Enable dashboards to display panels of user-defined metrics.
 
 ### Non-Goals
 
@@ -108,13 +109,8 @@ As a result, the layout given by the plugin can be a folder of `grafana/`:
 
 ```shell
 grafana/
-├── controller-dashboard.json # The main dashboard raw json file for the simplest usage(copy/paste)
-├── options
-│  ├── performance.json       # CPU/Memory usaage, restful api performance
-│  ├── reconcilier.json       # Reconciliation instruments
-│  ├── webhook.jon            # Webhook Ops
-│  └── workqueue.json         # Work queue status
-└── README.md                 # Docs for the usage
+├── controller-runtime-metrics.json # Reconciliation and workqueue status
+└── controller-resources-metrics.json # Recources usage such as CPU & Memory
 ```
 
 The plugin is triggered to do the scaffolding work for the layout above when the following commands are executed:
@@ -168,7 +164,7 @@ in consistent with [other plugins](https://github.com/kubernetes-sigs/kubebuilde
 
 In this early stage, the plugin will assume the default controller-runtime metrics are exposed.
 
-Once triggered, the plugin will scaffold a `grafana/` directory that contains the Grafana manifest. For instance, `controller-dashboard.json`.
+Once triggered, the plugin will scaffold a `grafana/` directory that contains the Grafana manifest. For instance, `controller-runtime-metrics.json`.
 
 The operator author should be able to directly load the content of the manifest in his/her Grafana Web UI.
 
@@ -178,7 +174,23 @@ So the prerequisites to make the plugin available are:
 - Enabling Prometheus
 - Having the metrics exposed in the /metrics endpoint
 
-#### Phase 2
+#### Phase 2 (experimental)
+
+It's common that users have their own defined metrics for certain use cases. Custom metrics are introduced in [docs](https://master.book.kubebuilder.io/reference/metrics.html?highlight=metrics#publishing-additional-metrics).
+It can be a nice try to let the plugin also scaffold out the dashboard to visualize these user-defined metrics.
+A new `grafana/custom_metrics` directory can be placed:
+
+```shell
+grafana/custom_metrics/
+├── dashboard.json # The manifest to display custom metrics
+└── config.yaml # Entry of user input to define the dashboard
+```
+
+Initially, the `config.yaml` is empty.
+Users can add values in `config.yaml` to tell the `custom metrics` with the `type` of the panel to display in the dashboard.
+Then, when running `kubebuilder edit -–plugins=grafana.kubebuilder.io/v1-alpha`, the plugin will read `config.yaml` and generate `dashboard.json`.
+
+#### Phase 3 (TBD)
 
 If the approach and the manifest are welcomed by the community/users, it maybe good to provide more manifests.
 The plugin can be enhanced to scaffold additional manifests according to user preference.
@@ -197,7 +209,7 @@ grafana/
 └── README.md                 # Docs for the usage
 ```
 
-#### Phase 3 (TBD)
+#### Phase 4 (TBD)
 
 This can be an alternative of **Phase 2** if multiple dashboards are considered not necessary or in a lower priority.
 
@@ -212,7 +224,7 @@ There are two challenges:
 1. How should the plugin behave when it is used with/without `kustomize` being triggered? Would there be any duplications or coverings on the same path of the layout? Or if it maybe some contridictions when using both of them?
 2. The current metrics are exposed with restriction so that when the user want to query these metrics on his/her Grafana Dashboard, will it be possible to have authentication/authorization issue?
 
-#### Phase 4 (TBD)
+#### Phase 5 (TBD)
 
 This is optional and is necessary to be determined by the community.
 
