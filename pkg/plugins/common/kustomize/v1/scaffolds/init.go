@@ -25,6 +25,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v1/scaffolds/internal/templates/config/kdefault"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v1/scaffolds/internal/templates/config/manager"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v1/scaffolds/internal/templates/config/prometheus"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v1/scaffolds/internal/templates/config/prometheus_rbac"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v1/scaffolds/internal/templates/config/rbac"
 )
 
@@ -80,5 +81,8 @@ func (s *initScaffolder) Scaffold() error {
 		&kdefault.ManagerConfigPatch{},
 		&prometheus.Kustomization{},
 		&prometheus.Monitor{},
+		&prometheus_rbac.Kustomization{},
+		&prometheus_rbac.Role{},
+		&prometheus_rbac.RoleBinding{},
 	)
 }

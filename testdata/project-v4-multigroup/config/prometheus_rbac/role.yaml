@@ -1,0 +1,13 @@
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: controller-manager-cluster-role
+  namespace: system
+rules:
+  - apiGroups: [""]
+    resources:
+      - services
+      - endpoints
+      - pods
+    verbs: ["get", "list"]

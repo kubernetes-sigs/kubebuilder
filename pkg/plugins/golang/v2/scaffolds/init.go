@@ -29,6 +29,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates/config/kdefault"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates/config/manager"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates/config/prometheus"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates/config/prometheus_rbac"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates/config/rbac"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates/config/webhook"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds/internal/templates/hack"
@@ -139,6 +140,9 @@ func (s *initScaffolder) Scaffold() error {
 		&webhook.Service{},
 		&prometheus.Kustomization{},
 		&prometheus.Monitor{},
+		&prometheus_rbac.Kustomization{},
+		&prometheus_rbac.Role{},
+		&prometheus_rbac.RoleBinding{},
 		&certmanager.Certificate{},
 		&certmanager.Kustomization{},
 		&certmanager.KustomizeConfig{},

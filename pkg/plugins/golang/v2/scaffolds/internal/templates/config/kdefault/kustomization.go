@@ -79,6 +79,8 @@ bases:
 #- ../certmanager
 # [PROMETHEUS] To enable prometheus monitor, uncomment all sections with 'PROMETHEUS'.
 #- ../prometheus
+# [PROMETHEUS RBAC] To give Prometheus service account necessary permissions, uncomment all sections with 'PROMETHEUS RBAC'.
+#- ../prometheus_rbac
 
 patchesStrategicMerge:
   # Protect the /metrics endpoint by putting it behind auth.
