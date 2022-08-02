@@ -85,19 +85,13 @@ var _ = Describe("Busybox controller", func() {
 				}
 
 				err = k8sClient.Create(ctx, busybox)
-				if err != nil {
-					Expect(err).To(Not(HaveOccurred()))
-				}
+				Expect(err).To(Not(HaveOccurred()))
 			}
 
 			By("Checking if the custom resource was successfully created")
 			Eventually(func() error {
 				found := &examplecomv1alpha1.Busybox{}
-				err = k8sClient.Get(ctx, typeNamespaceName, found)
-				if err != nil {
-					return err
-				}
-				return nil
+				return k8sClient.Get(ctx, typeNamespaceName, found)
 			}, time.Minute, time.Second).Should(Succeed())
 
 			By("Reconciling the custom resource created")
@@ -114,11 +108,7 @@ var _ = Describe("Busybox controller", func() {
 			By("Checking if Deployment was successfully created in the reconciliation")
 			Eventually(func() error {
 				found := &appsv1.Deployment{}
-				err = k8sClient.Get(ctx, typeNamespaceName, found)
-				if err != nil {
-					return err
-				}
-				return nil
+				return k8sClient.Get(ctx, typeNamespaceName, found)
 			}, time.Minute, time.Second).Should(Succeed())
 		})
 	})
