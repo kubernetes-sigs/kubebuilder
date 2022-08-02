@@ -51,6 +51,7 @@ Follow the steps below to export the metrics using the Prometheus Operator:
    We recommend using [kube-prometheus](https://github.com/coreos/kube-prometheus#installing)
    in production if you don't have your own monitoring system.
    If you are just experimenting, you can only install Prometheus and Prometheus Operator.
+
 2. Uncomment the line `- ../prometheus` in the `config/default/kustomization.yaml`.
    It creates the `ServiceMonitor` resource which enables exporting the metrics.
 
@@ -68,6 +69,22 @@ $ kubectl get ServiceMonitor -n monitor-system
 NAME                                         AGE
 monitor-controller-manager-metrics-monitor   2m8s
 ```
+
+<aside class="warning">
+<h2>If you are using Prometheus Operator ensure that you have the required
+permissions</h2>
+
+If you are using Prometheus Operator then be aware that by default, its RBAC
+rules are only enabled for the `default` and `kube-system namespaces`. See its
+guide to know how to configure the
+[kube-prometheus](https://github.com/prometheus-operator/kube-prometheus/blob/main/docs/monitoring-other-namespaces.md)
+to monitor other namespaces with `.jsonnet`.
+
+However, you can also enable it using RBAC. See the Prometheus Operator
+[Enable RBAC rules for Prometheus pods](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/user-guides/getting-started.md#enable-rbac-rules-for-prometheus-pods)
+documentation to know how to enable the permissions on the namespace where the
+`ServiceMonitor` and manager are applied.
+</aside>
 
 Also, notice that the metrics are exported by default through port `8443`. In this way,
 you are able to check the Prometheus metrics in its dashboard. To verify it, search
