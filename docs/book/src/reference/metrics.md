@@ -51,12 +51,23 @@ Follow the steps below to export the metrics using the Prometheus Operator:
    We recommend using [kube-prometheus](https://github.com/coreos/kube-prometheus#installing)
    in production if you don't have your own monitoring system.
    If you are just experimenting, you can only install Prometheus and Prometheus Operator.
+
 2. Uncomment the line `- ../prometheus` in the `config/default/kustomization.yaml`.
    It creates the `ServiceMonitor` resource which enables exporting the metrics.
 
 ```yaml
 # [PROMETHEUS] To enable prometheus monitor, uncomment all sections with 'PROMETHEUS'.
 - ../prometheus
+```
+
+3. To apply the necessary RBAC resource for Prometheus operator, uncomment the
+line `- ../prometheus_rbac` in the `config/default/kustomization.yaml`. This
+will create a `Role` and `RoleBinding` resources which enables access to the
+metrics.
+
+```yaml
+# [PROMETHEUS RBAC] To give Prometheus service account necessary permissions, uncomment all sections with 'PROMETHEUS RBAC'.
+- ../prometheus_rbac
 ```
 
 Note that, when you install your project in the cluster, it will create the
