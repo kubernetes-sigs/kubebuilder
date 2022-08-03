@@ -105,7 +105,7 @@ const controllerRuntimeTemplate = `{
     },
     {
       "datasource": "${DS_PROMETHEUS}",
-      "description": "Total number of reconciliation per controller",
+      "description": "Total number of reconciliations per controller",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -187,7 +187,7 @@ const controllerRuntimeTemplate = `{
           "refId": "A"
         }
       ],
-      "title": "Reconciliation Total Count Per Controller",
+      "title": "Total Reconciliation Count Per Controller",
       "type": "timeseries"
     },
     {
