@@ -184,9 +184,16 @@ expectedOwnerReference := v1.OwnerReference{
 Expect(deployment.ObjectMeta.OwnerReferences).To(ContainElement(expectedOwnerReference))
 ```
 
+<<<<<<< HEAD
 <aside class="warning">
 
 <h2>Namespace usage limitation</h2>
+=======
+
+<aside class="warning">
+
+<h2>Namesapce usage limitation</h2>
+>>>>>>> 33c275b6 (Adds section on envtest limitations)
 
 EnvTest does not support namespace deletion. Deleting a namespace will seem to succeed, but the namespace will just be put in a Terminating state, and never actually be reclaimed. Trying to recreate the namespace will fail. This will cause your reconciler to continue reconciling any objects left behind, unless they are deleted.
 
@@ -198,13 +205,21 @@ type MyCoolReconciler struct {
 	...
 	Namespace     string  // restrict namespaces to reconcile
 }
+<<<<<<< HEAD
 func (r *MyCoolReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = r.Log.WithValues("myreconciler", req.NamespacedName)
+=======
+
+func (r *MyCoolReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	_ = r.Log.WithValues("myreconciler", req.NamespacedName)
+
+>>>>>>> 33c275b6 (Adds section on envtest limitations)
 	// Ignore requests for other namespaces, if specified
 	if r.Namespace != "" && req.Namespace != r.Namespace {
 		return ctrl.Result{}, nil
 	}
 ```
+<<<<<<< HEAD
 Whenever your tests create a new namespace, it can modify the value of reconciler.Namespace. The reconciler will effectively ignore the previous namespace.
 For further information see the issue raised in the controller-runtime [controller-runtime/issues/880](https://github.com/kubernetes-sigs/controller-runtime/issues/880) to add this support.
 </aside>
@@ -324,3 +339,14 @@ testEnv = &envtest.Environment{
 [cert-manager]: https://book.kubebuilder.io/cronjob-tutorial/cert-manager.html
 [sdk-e2e-sample-example]: https://github.com/operator-framework/operator-sdk/tree/master/testdata/go/v3/memcached-operator/test/e2e
 [sdk]: https://github.com/operator-framework/operator-sdk
+=======
+
+Whenever your tests create a new namespace, it can modify the value of reconciler.Namespace. The reconciler will effectively ignore the previous namespace.
+
+For further information see the issue raised in the controller-runtime [controller-runtime/issues/880](https://github.com/kubernetes-sigs/controller-runtime/issues/880) to add this support.
+
+</aside>
+
+[envtest]:https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/envtest
+[setup-envtest]:https://pkg.go.dev/sigs.k8s.io/controller-runtime/tools/setup-envtest
+>>>>>>> 33c275b6 (Adds section on envtest limitations)
