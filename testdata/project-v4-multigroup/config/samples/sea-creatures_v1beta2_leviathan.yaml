@@ -1,0 +1,6 @@
+apiVersion: sea-creatures.testproject.org/v1beta2
+kind: Leviathan
+metadata:
+  name: leviathan-sample
+spec:
+  # TODO(user): Add fields here

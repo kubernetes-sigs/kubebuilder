@@ -1,0 +1,24 @@
+# permissions for end users to edit captains.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: captain-editor-role
+rules:
+- apiGroups:
+  - crew.testproject.org
+  resources:
+  - captains
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - crew.testproject.org
+  resources:
+  - captains/status
+  verbs:
+  - get

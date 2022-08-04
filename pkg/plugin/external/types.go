@@ -16,6 +16,8 @@ limitations under the License.
 
 package external
 
+import "sigs.k8s.io/kubebuilder/v3/pkg/plugin"
+
 // PluginRequest contains all information kubebuilder received from the CLI
 // and plugins executed before it.
 type PluginRequest struct {
@@ -47,7 +49,7 @@ type PluginResponse struct {
 
 	// Help contains the plugin specific help text that the plugin returns to Kubebuilder when it receives
 	// `--help` flag from Kubebuilder.
-	Help string `json:"help"`
+	Metadata plugin.SubcommandMetadata `json:"metadata"`
 
 	// Universe in the PluginResponse represents the updated file contents that was written by the plugin.
 	Universe map[string]string `json:"universe"`

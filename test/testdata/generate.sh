@@ -45,7 +45,7 @@ function scaffold_test_project {
   header_text "Initializing project ..."
   $kb init $init_flags --domain testproject.org --license apache2 --owner "The Kubernetes authors"
 
-  if [ $project == "project-v2" ] || [ $project == "project-v3" ] || [ $project == "project-v3-config" ] || [ $project == "project-v3-with-kustomize-v2" ]; then
+  if [ $project == "project-v2" ] || [ $project == "project-v3" ] || [ $project == "project-v3-config" ] || [ $project == "project-v4" ] || [ $project == "project-v4-config" ]; then
     header_text 'Creating APIs ...'
     $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false
     $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false --force
@@ -61,7 +61,7 @@ function scaffold_test_project {
     fi
     $kb create webhook --group crew --version v1 --kind FirstMate --conversion
 
-    if [ $project == "project-v3" ] || [ $project == "project-v3-with-kustomize-v2" ]; then
+    if [ $project == "project-v3" ] || [ $project == "project-v4" ]; then
       $kb create api --group crew --version v1 --kind Admiral --plural=admirales --controller=true --resource=true --namespaced=false --make=false
       $kb create webhook --group crew --version v1 --kind Admiral --plural=admirales --defaulting
     else
@@ -94,11 +94,11 @@ function scaffold_test_project {
     $kb create api --group foo.policy --version v1 --kind HealthCheckPolicy --controller=true --resource=true --make=false
 
     $kb create api --group apps --version v1 --kind Deployment --controller=true --resource=false --make=false
-    
+
     $kb create api --group foo --version v1 --kind Bar --controller=true --resource=true --make=false
     $kb create api --group fiz --version v1 --kind Bar --controller=true --resource=true --make=false
 
-    if [ $project == "project-v3-multigroup" ]; then
+    if [ $project == "project-v3-multigroup" ] || [ $project == "project-v4-multigroup" ]; then
       $kb create api --version v1 --kind Lakers --controller=true --resource=true --make=false
       $kb create webhook --version v1 --kind Lakers --defaulting --programmatic-validation
     fi
@@ -107,6 +107,15 @@ function scaffold_test_project {
     $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false
     $kb create api --group crew --version v1 --kind FirstMate --controller=true --resource=true --make=false
     $kb create api --group crew --version v1 --kind Admiral --controller=true --resource=true --namespaced=false --make=false
+  elif [[ $project =~ deploy-image ]]; then
+      header_text 'Creating Memcached API with deploy-image plugin ...'
+      $kb create api --group example.com --version v1alpha1 --kind Memcached --image=memcached:1.4.36-alpine --image-container-command="memcached,-m=64,-o,modern,-v" --image-container-port="11211" --run-as-user="1001" --plugins="deploy-image/v1-alpha" --make=false
+      $kb create api --group example.com --version v1alpha1 --kind Busybox --image=busybox:1.28 --plugins="deploy-image/v1-alpha" --make=false
+      header_text 'Creating Memcached webhook ...'
+      $kb create webhook --group example.com --version v1alpha1 --kind Memcached --programmatic-validation
+  elif [[ $project == "project-v3" || $project == "project-v4" ]]; then
+     header_text 'Editing project with Grafana plugin ...'
+      $kb edit --plugins=grafana.kubebuilder.io/v1-alpha
   fi
 
   make generate manifests
@@ -117,11 +126,20 @@ function scaffold_test_project {
 
 build_kb
 
-# Project version 2 uses plugin go/v2 (default).
+# [Deprecated] - Project version 2 uses plugin go/v2 (default).
 scaffold_test_project project-v2 --project-version=2
-# Project version 3 (default) uses plugin go/v3 (default).
+
+# [Currently, default CLI plugin] - Project version 3 (default) uses plugin go/v3 (default).
 scaffold_test_project project-v3
 scaffold_test_project project-v3-multigroup
-scaffold_test_project project-v3-addon --plugins="go/v3,declarative"
+scaffold_test_project project-v3-addon-and-grafana --plugins="go/v3,declarative,grafana/v1-alpha"
 scaffold_test_project project-v3-config --component-config
-scaffold_test_project project-v3-with-kustomize-v2 --plugins="kustomize/v2-alpha,base.go.kubebuilder.io/v3"
+scaffold_test_project project-v3-with-deploy-image
+
+# [Next version, alpha] Project version v4-alpha
+scaffold_test_project project-v4 --plugins="go/v4-alpha"
+scaffold_test_project project-v4-multigroup --plugins="go/v4-alpha"
+scaffold_test_project project-v4-addon-and-grafana --plugins="go/v4-alpha,declarative,grafana/v1-alpha"
+scaffold_test_project project-v4-config --component-config --plugins="go/v4-alpha"
+scaffold_test_project project-v4-with-deploy-image --plugins="go/v4-alpha"
+

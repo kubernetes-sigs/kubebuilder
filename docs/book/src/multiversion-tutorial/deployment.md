@@ -43,7 +43,7 @@ controller-manager deployment) onto the cluster.
 
 ## Testing
 
-Once all of the bits are up an running on the cluster with conversion enabled, we can test out our
+Once all of the bits are up and running on the cluster with conversion enabled, we can test out our
 conversion by requesting different versions.
 
 We'll make a v2 version based on our v1 version (put it under `config/samples`)

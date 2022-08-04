@@ -98,13 +98,9 @@ separately.
 The docs are published off of three branches:
 
 - `book-v3`: [book.kubebuilder.io](https://book.kubebuilder.io) -- current docs
-- `book-v2`: [book-v2.kubebuilder.io](https://book.kubebuilder.io) -- legacy docs
-- `book-v1`:
-  [book-v1.book.kubebuilder.io](https://book-v1.book.kubebuilder.io) --
-  legacy docs
-- `master`:
-  [master.book.kubebuilder.io](https://master.book.kubebuilder.io) --
-  "nightly" docs
+- `book-v2`: [book-v2.book.kubebuilder.io](https://book-v2.book.kubebuilder.io) -- legacy docs
+- `book-v1`: [book-v1.book.kubebuilder.io](https://book-v1.book.kubebuilder.io) -- legacy docs
+- `master`: [master.book.kubebuilder.io](https://master.book.kubebuilder.io) -- "nightly" docs
 
 See [VERSIONING.md](VERSIONING.md#book-releases) for more information.
 

@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -51,6 +52,8 @@ type tokenRequest struct {
 }
 
 var _ = Describe("kubebuilder", func() {
+	// project version 3 means ("--project-version") the schema
+	// version used to track the info in the PROJECT file.
 	Context("project version 3", func() {
 		var (
 			kbc *utils.TestContext
@@ -127,16 +130,7 @@ var _ = Describe("kubebuilder", func() {
 						srvVer.GitVersion))
 				}
 
-				GenerateV3(kbc, "v1", false)
-				Run(kbc)
-			})
-			It("should generate a runnable project with the golang base plugin v3 and kustomize v4-alpha", func() {
-				// Skip if cluster version < 1.16, when v1 CRDs and webhooks did not exist.
-				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() < 16 {
-					Skip(fmt.Sprintf("cluster version %s does not support v1 CRDs or webhooks",
-						srvVer.GitVersion))
-				}
-				GenerateV3WithKustomizeV2(kbc, "v1", false)
+				GenerateV3(kbc, "v1")
 				Run(kbc)
 			})
 			It("should generate a runnable project with v1beta1 CRDs and Webhooks", func() {
@@ -148,7 +142,7 @@ var _ = Describe("kubebuilder", func() {
 						srvVer.GitVersion))
 				}
 
-				GenerateV3(kbc, "v1beta1", false)
+				GenerateV3(kbc, "v1beta1")
 				Run(kbc)
 			})
 
@@ -161,20 +155,8 @@ var _ = Describe("kubebuilder", func() {
 						"and securityContext.seccompProfile", srvVer.GitVersion))
 				}
 
-				GenerateV3(kbc, "v1", true)
-				Run(kbc)
-			})
-			It("should generate a runnable project with the golang base plugin v3 and kustomize v4-alpha"+
-				" with restricted pods", func() {
-				// Skip if cluster version < 1.16, when v1 CRDs and webhooks did not exist.
-				// Skip if cluster version < 1.19, because securityContext.seccompProfile only works from 1.19
-				// Otherwise, unknown field "seccompProfile" in io.k8s.api.core.v1.PodSecurityContext will be faced
-				if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() < 19 {
-					Skip(fmt.Sprintf("cluster version %s does not support v1 CRDs or webhooks "+
-						"and securityContext.seccompProfile", srvVer.GitVersion))
-				}
-
-				GenerateV3WithKustomizeV2(kbc, "v1", true)
+				kbc.IsRestricted = true
+				GenerateV3(kbc, "v1")
 				Run(kbc)
 			})
 			It("should generate a runnable project with v1beta1 CRDs and Webhooks with restricted pods", func() {
@@ -188,7 +170,8 @@ var _ = Describe("kubebuilder", func() {
 						"and securityContext.seccompProfile", srvVer.GitVersion))
 				}
 
-				GenerateV3(kbc, "v1beta1", true)
+				kbc.IsRestricted = true
+				GenerateV3(kbc, "v1beta1")
 				Run(kbc)
 			})
 		})
@@ -199,6 +182,14 @@ var _ = Describe("kubebuilder", func() {
 func Run(kbc *utils.TestContext) {
 	var controllerPodName string
 	var err error
+
+	By("creating manager namespace")
+	err = kbc.CreateManagerNamespace()
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+
+	By("labeling all namespaces to warn about restricted")
+	err = kbc.LabelAllNamespacesToWarnAboutRestricted()
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
 	By("updating the go.mod")
 	err = kbc.Tidy()
@@ -218,8 +209,15 @@ func Run(kbc *utils.TestContext) {
 	// --clusterrole=cluster-admin --user=myname@mycompany.com
 	// https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control
 	By("deploying the controller-manager")
-	err = kbc.Make("deploy", "IMG="+kbc.ImageName)
+
+	cmd := exec.Command("make", "deploy", "IMG="+kbc.ImageName)
+	output, err := kbc.Run(cmd)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+
+	if kbc.IsRestricted {
+		By("validating that manager Pod/container(s) are restricted")
+		ExpectWithOffset(1, output).NotTo(ContainSubstring("Warning: would violate PodSecurity"))
+	}
 
 	By("validating that the controller-manager pod is running as expected")
 	verifyControllerUp := func() error {

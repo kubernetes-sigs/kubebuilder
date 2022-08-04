@@ -41,11 +41,7 @@ steps:
 - name: "goreleaser/goreleaser:v1.9.2"
   entrypoint: "bash"
   args: ["build/build_kubebuilder.sh"]
-  secretEnv: ["GITHUB_TOKEN"]
   env:
   - 'TAG_NAME=$TAG_NAME'
   - 'CLOUD_BUILD=true'
-secrets:
-- kmsKeyName: projects/kubebuilder/locations/global/keyRings/kubebuilder-gh-tokens/cryptoKeys/gh-release-token
-  secretEnv:
-    GITHUB_TOKEN: CiQAChsKTruEiSo6yBI+xg75jyr4f8yM93R2e9QbpeRX3jF3VAwSUQDQuYkCiUd+6e/1wKQAyHnf6BYv0GNGMghyNzYbXT0owBzQqmIQJeu/VDGZcEVabIWErNXjbPqPiysIu0uAiKAAUTUK0VYMr9E6GdTJ0+hVmg==
+  - 'GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}'

@@ -12,10 +12,20 @@ Kubebuilder increases velocity and reduces the complexity managed by
 developers for rapidly building and publishing Kubernetes APIs in Go.
 It builds on top of the canonical techniques used to build the core Kubernetes APIs to provide simple abstractions that reduce boilerplate and toil.
 
-**Note:** Kubebuilder does not exist as an example to *copy-paste*, but instead provides powerful libraries and tools
-to simplify building and publishing Kubernetes APIs from scratch.
+Kubebuilder does **not** exist as an example to *copy-paste*, but instead provides powerful libraries and tools
+to simplify building and publishing Kubernetes APIs from scratch. It
+provides a plugin architecture allowing users to take advantage of optional helpers
+and features. To learn more about this see the [Plugin section][plugin-section].
 
-Kubebuilder is developed on top of the controller-runtime and controller-tools libraries.
+Kubebuilder is developed on top of the [controller-runtime][controller-runtime] and [controller-tools][controller-tools] libraries.
+
+### Kubebuilder is also a framework
+
+Kubebuilder is extensible and can be used as a library in other projects.
+[Operator-SDK][operator-sdk] is a good example of a project that uses Kubebuilder as a library. 
+[Operator-SDK][operator-sdk] uses the plugin feature to include non-Go operators _e.g. operator-sdk's Ansible and Helm-based language Operators_.
+
+To learn more see [how to create your own plugins][your-own-plugins]. 
 
 ### Installation
 
@@ -38,8 +48,8 @@ Check out the Kubebuilder [book](https://book.kubebuilder.io).
 - GitHub Repo: [kubernetes-sigs/kubebuilder](https://github.com/kubernetes-sigs/kubebuilder)
 - Slack channel: [#kubebuilder](https://slack.k8s.io/#kubebuilder)
 - Google Group: [kubebuilder@googlegroups.com](https://groups.google.com/forum/#!forum/kubebuilder)
-- Planned Work: [Sprint Dashboard](https://github.com/kubernetes-sigs/kubebuilder/projects/1)
 - Design Documents: [designs](designs/).
+- Plugin: [plugins][plugin-section]
 
 ## Motivation
 
@@ -105,7 +115,22 @@ Before starting any work, please either comment on an existing issue, or file a 
 
 ## Supportability
 
-Currently, Kubebuilder officially supports OSX and Linux platforms. So, if you are using a Windows OS you may find issues. Contributions towards supporting Windows are welcome.
+Currently, Kubebuilder officially supports OSX and Linux platforms. 
+So, if you are using a Windows OS you may find issues. Contributions towards 
+supporting Windows are welcome.
+
+### Apple Silicon
+
+Apple Silicon (`darwin/arm64`) is supported using the `go/v4-alpha` plugin which provides support for this platform. 
+
+```bash
+kubebuilder init --domain my.domain --repo my.domain/guestbook --plugins=go/v4-alpha
+```
+
+**Note**: The `go/v4-alpha` plugin is an unstable version and can have breaking changes in future releases. The previous kustomize 
+version (`v3.Y.Z`) used in the `go/v3` has no available binaries for this 
+platform [kubernetes-sigs/kustomize/issues/4612](https://github.com/kubernetes-sigs/kustomize/issues/4612)
+Because of this, we cannot support this `darwin/arm64` on the stable scaffold done  by default with the Kubebuilder with the `go/v3` plugin.
 
 ## Community Meetings
  
@@ -116,3 +141,8 @@ The following meetings happen biweekly:
 
 You are more than welcome to attend. For further info join to [kubebuilder@googlegroups.com](https://groups.google.com/g/kubebuilder).
 
+[operator-sdk]: https://github.com/operator-framework/operator-sdk
+[plugin-section]: https://book.kubebuilder.io/plugins/plugins.html
+[controller-runtime]: https://github.com/kubernetes-sigs/controller-runtime
+[your-own-plugins]: https://book.kubebuilder.io/plugins/creating-plugins.html
+[controller-tools]: https://github.com/kubernetes-sigs/controller-tools
