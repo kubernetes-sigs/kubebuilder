@@ -132,6 +132,48 @@ See an example of how to use the plugin in your project:
   - Per-second rate of retries handled by workqueue
 - Sample: <img width="914" src="https://user-images.githubusercontent.com/18136486/180360101-411c81e9-d54e-4b21-bbb0-e3f94fcf48cb.png">
 
+### Visualize Custom Metrics
+
+The Grafana plugin supports scaffolding manifests for custom metrics.
+
+#### Generate Config Template
+
+When the plugin is triggered for the first time, `grafana/custom-metrics/config.yaml` is generated.
+
+```yaml
+---
+customMetrics:
+#  - metric: # Raw custom metric (required)
+#    type:   # Metric type: counter/gauge/histogram (required)
+#    expr:   # Prom_ql for the metric (optional)
+```
+
+#### Add Custom Metrics to Config
+
+You can enter multiple custom metrics in the file. For each element, you need to specify the `metric` and its `type`.
+The Grafana plugin can automatically generate `expr` for visualization.
+Alternatively, you can provide `expr` and the plugin will use the specified one directly.
+
+```yaml
+---
+customMetrics:
+  - metric: memcached_operator_reconcile_total # Raw custom metric (required)
+    type: counter # Metric type: counter/gauge/histogram (required)
+  - metric: memcached_operator_reconcile_time_seconds_bucket
+    type: histogram
+```
+
+#### Scaffold Manifest
+
+Once `config.yaml` is configured, you can run `kubebuilder edit --plugins grafana.kubebuilder.io/v1-alpha` again.
+This time, the plugin will generate `grafana/custom-metrics/custom-metrics-dashboard.json`, which can be imported to Grafana UI.
+
+#### Show case:
+
+See an example of how to visualize your custom metrics:
+
+![output2](https://user-images.githubusercontent.com/18136486/186933170-d2e0de71-e079-4d1b-906a-99a549d66ebf.gif)
+
 ## Subcommands
 
 The Grafana plugin implements the following subcommands:
