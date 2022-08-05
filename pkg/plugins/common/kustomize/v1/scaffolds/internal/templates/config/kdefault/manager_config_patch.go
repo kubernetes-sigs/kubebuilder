@@ -27,6 +27,7 @@ var _ machinery.Template = &ManagerConfigPatch{}
 // ManagerConfigPatch scaffolds a ManagerConfigPatch for a Resource
 type ManagerConfigPatch struct {
 	machinery.TemplateMixin
+	machinery.ComponentConfigMixin
 }
 
 // SetTemplateDefaults implements input.Template
@@ -50,6 +51,7 @@ spec:
     spec:
       containers:
       - name: manager
+{{- if .ComponentConfig }}
         args:
         - "--config=controller_manager_config.yaml"
         volumeMounts:
@@ -60,4 +62,5 @@ spec:
       - name: manager-config
         configMap:
           name: manager-config
+{{- end }}
 `

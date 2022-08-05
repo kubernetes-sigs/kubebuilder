@@ -27,6 +27,7 @@ var _ machinery.Template = &Kustomization{}
 // Kustomization scaffolds a file that defines the kustomization scheme for the manager folder
 type Kustomization struct {
 	machinery.TemplateMixin
+	machinery.ComponentConfigMixin
 }
 
 // SetTemplateDefaults implements file.Template
@@ -45,6 +46,8 @@ func (f *Kustomization) SetTemplateDefaults() error {
 const kustomizeManagerTemplate = `resources:
 - manager.yaml
 
+{{- if .ComponentConfig }}
+
 generatorOptions:
   disableNameSuffixHash: true
 
@@ -52,4 +55,5 @@ configMapGenerator:
 - name: manager-config
   files:
   - controller_manager_config.yaml
+{{- end }}
 `

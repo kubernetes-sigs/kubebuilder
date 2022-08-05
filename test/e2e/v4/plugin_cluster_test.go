@@ -97,6 +97,21 @@ var _ = Describe("kubebuilder", func() {
 			GenerateV4(kbc)
 			Run(kbc)
 		})
+
+		It("should generate a runnable project"+
+			" with restricted pods and with --component-config field enabled", func() {
+			// Skip if cluster version < 1.16, when v1 CRDs and webhooks did not exist.
+			// Skip if cluster version < 1.19, because securityContext.seccompProfile only works from 1.19
+			// Otherwise, unknown field "seccompProfile" in io.k8s.api.core.v1.PodSecurityContext will be faced
+			if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() < 19 {
+				Skip(fmt.Sprintf("cluster version %s does not support v1 CRDs or webhooks "+
+					"and securityContext.seccompProfile", srvVer.GitVersion))
+			}
+
+			kbc.IsRestricted = true
+			GenerateV4ComponentConfig(kbc)
+			Run(kbc)
+		})
 	})
 })
 

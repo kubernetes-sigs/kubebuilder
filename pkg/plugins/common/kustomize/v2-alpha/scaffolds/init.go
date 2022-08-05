@@ -62,7 +62,7 @@ func (s *initScaffolder) Scaffold() error {
 		machinery.WithConfig(s.config),
 	)
 
-	return scaffold.Execute(
+	templates := []machinery.Builder{
 		&rbac.Kustomization{},
 		&rbac.AuthProxyRole{},
 		&rbac.AuthProxyRoleBinding{},
@@ -74,11 +74,16 @@ func (s *initScaffolder) Scaffold() error {
 		&rbac.ServiceAccount{},
 		&manager.Kustomization{},
 		&manager.Config{Image: imageName},
-		&manager.ControllerManagerConfig{},
 		&kdefault.Kustomization{},
 		&kdefault.ManagerAuthProxyPatch{},
 		&kdefault.ManagerConfigPatch{},
 		&prometheus.Kustomization{},
 		&prometheus.Monitor{},
-	)
+	}
+
+	if s.config.IsComponentConfig() {
+		templates = append(templates, &manager.ControllerManagerConfig{})
+	}
+
+	return scaffold.Execute(templates...)
 }
