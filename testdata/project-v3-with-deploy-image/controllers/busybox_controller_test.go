@@ -60,6 +60,8 @@ var _ = Describe("Busybox controller", func() {
 		})
 
 		AfterEach(func() {
+			// TODO(user): Attention if you improve this code by adding other context test you MUST
+			// be aware of the current delete namespace limitations. More info: https://book.kubebuilder.io/reference/envtest.html#testing-considerations
 			By("Deleting the Namespace to perform the tests")
 			_ = k8sClient.Delete(ctx, namespace)
 
