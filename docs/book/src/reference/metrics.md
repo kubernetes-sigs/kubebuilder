@@ -74,16 +74,14 @@ monitor-controller-manager-metrics-monitor   2m8s
 <h2>If you are using Prometheus Operator ensure that you have the required
 permissions</h2>
 
-If you are using Prometheus Operator then be aware that by default, its RBAC
+If you are using Prometheus Operator, be aware that, by default, its RBAC
 rules are only enabled for the `default` and `kube-system namespaces`. See its
-guide to know how to configure the
-[kube-prometheus](https://github.com/prometheus-operator/kube-prometheus/blob/main/docs/monitoring-other-namespaces.md)
-to monitor other namespaces with `.jsonnet`.
+guide to know [how to configure kube-prometheus to monitor other namespaces using the `.jsonnet` file](https://github.com/prometheus-operator/kube-prometheus/blob/main/docs/monitoring-other-namespaces.md).
 
-However, you can also enable it using RBAC. See the Prometheus Operator
+Alternatively, you can give the Prometheus Operator permissions to monitor other namespaces using RBAC. See the Prometheus Operator
 [Enable RBAC rules for Prometheus pods](https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/user-guides/getting-started.md#enable-rbac-rules-for-prometheus-pods)
 documentation to know how to enable the permissions on the namespace where the
-`ServiceMonitor` and manager are applied.
+`ServiceMonitor` and manager exist.
 </aside>
 
 Also, notice that the metrics are exported by default through port `8443`. In this way,
