@@ -155,7 +155,7 @@ Expect(deployment.ObjectMeta.OwnerReferences).To(ContainElement(expectedOwnerRef
 
 <aside class="warning">
 
-<h2>Namesapce usage limitation</h2>
+<h2>Namespace usage limitation</h2>
 
 EnvTest does not support namespace deletion. Deleting a namespace will seem to succeed, but the namespace will just be put in a Terminating state, and never actually be reclaimed. Trying to recreate the namespace will fail. This will cause your reconciler to continue reconciling any objects left behind, unless they are deleted.
 
