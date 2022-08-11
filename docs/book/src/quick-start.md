@@ -9,13 +9,7 @@ This Quick Start guide will cover:
 
 ## Prerequisites
 
-<<<<<<< HEAD
 - [go](https://golang.org/dl/) version v1.19.0+
-=======
-- [go](https://golang.org/dl/) version v1.15+ (kubebuilder v3.0 < v3.1).
-- [go](https://golang.org/dl/) version v1.16+ (kubebuilder v3.1 < v3.3).
-- [go](https://golang.org/dl/) version v1.17+ (kubebuilder v3.3+).
->>>>>>> 1b016c51 (Update go prerequisites for the 3.3 release)
 - [docker](https://docs.docker.com/install/) version 17.03+.
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) version v1.11.3+.
 - Access to a Kubernetes v1.11.3+ cluster.
@@ -111,11 +105,7 @@ and the `controllers/guestbook_controller.go` where the reconciliation business 
 logic. For more info see [Designing an API](/cronjob-tutorial/api-design.md) and [What's in
 a Controller](cronjob-tutorial/controller-overview.md).
 
-<<<<<<< HEAD
 If you are editing the API definitions, generate the manifests such as Custom Resources (CRs) or Custom Resource Defintions (CRDs) using
-=======
-If you are editing the API definitions, generate the manifests such as CRs or CRDs using
->>>>>>> 1b016c51 (Update go prerequisites for the 3.3 release)
 ```bash
 make manifests
 ```
@@ -126,33 +116,33 @@ make manifests
 ```go
 // GuestbookSpec defines the desired state of Guestbook
 type GuestbookSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+// Important: Run "make" to regenerate code after modifying this file
 
-	// Quantity of instances
-	// +kubebuilder:validation:Minimum=1
-	// +kubebuilder:validation:Maximum=10
-	Size int32 `json:"size"`
+// Quantity of instances
+// +kubebuilder:validation:Minimum=1
+// +kubebuilder:validation:Maximum=10
+Size int32 `json:"size"`
 
-	// Name of the ConfigMap for GuestbookSpec's configuration
-	// +kubebuilder:validation:MaxLength=15
-	// +kubebuilder:validation:MinLength=1
-	ConfigMapName string `json:"configMapName"`
+// Name of the ConfigMap for GuestbookSpec's configuration
+// +kubebuilder:validation:MaxLength=15
+// +kubebuilder:validation:MinLength=1
+ConfigMapName string `json:"configMapName"`
 
-	// +kubebuilder:validation:Enum=Phone;Address;Name
-	Type string `json:"alias,omitempty"`
+// +kubebuilder:validation:Enum=Phone;Address;Name
+Type string `json:"alias,omitempty"`
 }
 
 // GuestbookStatus defines the observed state of Guestbook
 type GuestbookStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
+// Important: Run "make" to regenerate code after modifying this file
 
-	// PodName of the active Guestbook node.
-	Active string `json:"active"`
+// PodName of the active Guestbook node.
+Active string `json:"active"`
 
-	// PodNames of the standby Guestbook nodes.
-	Standby []string `json:"standby"`
+// PodNames of the standby Guestbook nodes.
+Standby []string `json:"standby"`
 }
 
 // +kubebuilder:object:root=true
@@ -161,11 +151,11 @@ type GuestbookStatus struct {
 
 // Guestbook is the Schema for the guestbooks API
 type Guestbook struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+metav1.TypeMeta   `json:",inline"`
+metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   GuestbookSpec   `json:"spec,omitempty"`
-	Status GuestbookStatus `json:"status,omitempty"`
+Spec   GuestbookSpec   `json:"spec,omitempty"`
+Status GuestbookStatus `json:"status,omitempty"`
 }
 ```
 
@@ -253,7 +243,7 @@ make undeploy
 ## Next Step
 
 Now, see the [architecture concept diagram][architecture-concept-diagram] for a better overview and follow up the
-[CronJob tutorial][cronjob-tutorial] to better understand how it works by developing a 
+[CronJob tutorial][cronjob-tutorial] to better understand how it works by developing a
 demo example project.
 
 <aside class="note">
