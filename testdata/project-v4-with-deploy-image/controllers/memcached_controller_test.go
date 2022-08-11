@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"time"
 
@@ -112,6 +113,20 @@ var _ = Describe("Memcached controller", func() {
 			Eventually(func() error {
 				found := &appsv1.Deployment{}
 				return k8sClient.Get(ctx, typeNamespaceName, found)
+			}, time.Minute, time.Second).Should(Succeed())
+
+			By("Checking the latest Status Condition added to the Memcached instance")
+			Eventually(func() error {
+				if memcached.Status.Conditions != nil && len(memcached.Status.Conditions) != 0 {
+					latestStatusCondition := memcached.Status.Conditions[len(memcached.Status.Conditions)-1]
+					expectedLatestStatusCondition := metav1.Condition{Type: typeAvailableMemcached,
+						Status: metav1.ConditionTrue, Reason: "Reconciling",
+						Message: fmt.Sprintf("Deployment for custom resource (%s) with %d replicas created successfully", memcached.Name, memcached.Spec.Size)}
+					if latestStatusCondition != expectedLatestStatusCondition {
+						return fmt.Errorf("The latest status condition added to the memcached instance is not as expected")
+					}
+				}
+				return nil
 			}, time.Minute, time.Second).Should(Succeed())
 		})
 	})
