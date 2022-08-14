@@ -37,6 +37,7 @@ import (
 )
 
 // TemplateFS contains the templates used by config-gen
+//
 //go:embed templates/resources/* templates/patches/*
 var TemplateFS embed.FS
 
@@ -124,7 +125,7 @@ func NewCommand() *cobra.Command {
 	c.Version = `v0.1.0`
 	c.Short = `Generate configuration for controller-runtime based projects`
 	c.Long = strings.TrimSpace(`
-config-gen programatically generates configuration for a controller-runtime based
+config-gen programmatically generates configuration for a controller-runtime based
 project using the project source code (golang) and a KubebuilderConfigGen resource file.
 
 This is an alternative to expressing configuration as a static set of kustomize patches

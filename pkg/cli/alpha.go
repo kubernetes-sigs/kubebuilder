@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+
 	configgen "sigs.k8s.io/kubebuilder/v3/pkg/cli/alpha/config-gen"
 )
 
@@ -47,6 +48,7 @@ Alpha subcommands are for unstable features.
 	for i := range alphaCommands {
 		alpha.AddCommand(alphaCommands[i])
 	}
+	alpha.AddCommand(c.newScaffoldCmd())
 	return alpha
 }
 

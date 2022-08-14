@@ -70,6 +70,8 @@ type CLI struct { //nolint:maligned
 	pluginKeys []string
 	// Project version to scaffold.
 	projectVersion config.Version
+	// projectName name of project
+	projectName string
 
 	// A filtered set of plugins that should be used by command constructors.
 	resolvedPlugins []plugin.Plugin
@@ -214,11 +216,25 @@ func (c *CLI) getInfoFromConfigFile() error {
 	return c.getInfoFromConfig(cfg.Config())
 }
 
+// getInfoFromConfigFilePath obtains the project version and plugin keys from the project config file via a path.
+func (c *CLI) getInfoFromConfigFilePath(path string) error {
+	if path == "" {
+		return c.getInfoFromConfigFile()
+	}
+	cfg := yamlstore.New(c.fs)
+	if err := cfg.LoadFrom(path); err != nil {
+		return err
+	}
+
+	return c.getInfoFromConfig(cfg.Config())
+}
+
 // getInfoFromConfig obtains the project version and plugin keys from the project config.
 // It is extracted from getInfoFromConfigFile for testing purposes.
 func (c *CLI) getInfoFromConfig(projectConfig config.Config) error {
 	c.pluginKeys = projectConfig.GetPluginChain()
 	c.projectVersion = projectConfig.GetVersion()
+	c.projectName = projectConfig.GetProjectName()
 
 	for _, pluginKey := range c.pluginKeys {
 		if err := plugin.ValidateKey(pluginKey); err != nil {
