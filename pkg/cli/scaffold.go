@@ -29,7 +29,8 @@ func (c *CLI) newScaffoldCmd() *cobra.Command {
 	scaffoldCmd := &cobra.Command{
 		Use:   "scaffold",
 		Short: "Re-scaffold an existing kuberbuilder project",
-		Long:  `TODO`,
+		// TODO: Better description
+		Long: `TODO`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// grab project file
 			if err := c.getInfoFromConfigFilePath(projectConfig); err != nil {
@@ -61,7 +62,8 @@ func (c *CLI) newScaffoldCmd() *cobra.Command {
 			if err = c.newEditCmd().Execute(); err != nil {
 				return err
 			}
-			// call create apis and check if they were created with specific plugins
+			// call create apis
+			// TODO: check if they were created with specific plugins
 			if err = c.newCreateAPICmd().Execute(); err != nil {
 				return err
 			}
