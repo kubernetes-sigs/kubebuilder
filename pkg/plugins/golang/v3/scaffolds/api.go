@@ -44,14 +44,18 @@ type apiScaffolder struct {
 
 	// force indicates whether to scaffold controller files even if it exists or not
 	force bool
+
+	// useWorkspaces indicates whether to use go.work style workspaces instead of a go module
+	useWorkspaces bool
 }
 
 // NewAPIScaffolder returns a new Scaffolder for API/controller creation operations
-func NewAPIScaffolder(config config.Config, res resource.Resource, force bool) plugins.Scaffolder {
+func NewAPIScaffolder(config config.Config, res resource.Resource, force, useWorkspaces bool) plugins.Scaffolder {
 	return &apiScaffolder{
-		config:   config,
-		resource: res,
-		force:    force,
+		config:        config,
+		resource:      res,
+		force:         force,
+		useWorkspaces: useWorkspaces,
 	}
 }
 
@@ -89,6 +93,7 @@ func (s *apiScaffolder) Scaffold() error {
 		if err := scaffold.Execute(
 			&api.Types{Force: s.force},
 			&api.Group{},
+			&api.GoMod{ControllerRuntimeVersion: ControllerRuntimeVersion},
 		); err != nil {
 			return fmt.Errorf("error scaffolding APIs: %v", err)
 		}
@@ -100,6 +105,16 @@ func (s *apiScaffolder) Scaffold() error {
 			&controllers.Controller{ControllerRuntimeVersion: ControllerRuntimeVersion, Force: s.force},
 		); err != nil {
 			return fmt.Errorf("error scaffolding controller: %v", err)
+		}
+	}
+
+	if s.useWorkspaces {
+		if err := scaffold.Execute(
+			&templates.GoWorkUpdater{
+				WireUses: true,
+			},
+		); err != nil {
+			return fmt.Errorf("error updating go.work: %v", err)
 		}
 	}
 

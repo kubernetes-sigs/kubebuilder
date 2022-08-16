@@ -52,9 +52,10 @@ type apiScaffolder struct {
 }
 
 // NewAPIScaffolder returns a new Scaffolder for declarative
-//nolint: lll
+// nolint: lll
 func NewDeployImageScaffolder(config config.Config, res resource.Resource, image,
-	command, port, runAsUser string) plugins.Scaffolder {
+	command, port, runAsUser string,
+) plugins.Scaffolder {
 	return &apiScaffolder{
 		config:    config,
 		resource:  res,
@@ -288,7 +289,7 @@ func (s *apiScaffolder) scaffoldCreateAPIFromGolang() error {
 	// in the Project layout to know if we should use kustomize/v1 OR kustomize/v2-alpha
 
 	golangV3Scaffolder := golangv3scaffolds.NewAPIScaffolder(s.config,
-		s.resource, true)
+		s.resource, true, true)
 	golangV3Scaffolder.InjectFS(s.fs)
 	return golangV3Scaffolder.Scaffold()
 }

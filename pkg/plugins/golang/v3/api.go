@@ -59,6 +59,9 @@ type createAPISubcommand struct {
 
 	// runMake indicates whether to run make or not after scaffolding APIs
 	runMake bool
+
+	// useWorkspaces indicates whether to use go.work style workspaces instead of a go module
+	useWorkspaces bool
 }
 
 func (p *createAPISubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
@@ -95,6 +98,8 @@ make generate will be run.
 
 func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.runMake, "make", true, "if true, run `make generate` after generating files")
+	fs.BoolVar(&p.useWorkspaces, "workspace", true, "if true, scaffolds apis with `go.work` workspace differentiation, "+
+		"creating a go.mod file for each generated api.")
 
 	fs.BoolVar(&p.force, "force", false,
 		"attempt to create resource even if it already exists")
@@ -180,13 +185,12 @@ func (p *createAPISubcommand) PreScaffold(machinery.Filesystem) error {
 }
 
 func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
-	scaffolder := scaffolds.NewAPIScaffolder(p.config, *p.resource, p.force)
+	scaffolder := scaffolds.NewAPIScaffolder(p.config, *p.resource, p.force, p.useWorkspaces)
 	scaffolder.InjectFS(fs)
 	return scaffolder.Scaffold()
 }
 
 func (p *createAPISubcommand) PostScaffold() error {
-
 	// Update the makefile to allow generate Webhooks to ensure backwards compatibility
 	// todo: it should be removed for go/v4
 	// nolint:lll,gosec
@@ -196,12 +200,18 @@ func (p *createAPISubcommand) PostScaffold() error {
 		}
 	}
 
-	err := util.RunCmd("Update dependencies", "go", "mod", "tidy")
-	if err != nil {
-		return err
+	if p.useWorkspaces {
+		if err := util.RunCmd("Update workspace", "go", "work", "sync"); err != nil {
+			return err
+		}
+	} else {
+		if err := util.RunCmd("Update dependencies", "go", "mod", "tidy"); err != nil {
+			return err
+		}
 	}
+
 	if p.runMake && p.resource.HasAPI() {
-		err = util.RunCmd("Running make", "make", "generate")
+		err := util.RunCmd("Running make", "make", "generate")
 		if err != nil {
 			return err
 		}
