@@ -98,6 +98,8 @@ make generate will be run.
 
 func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.runMake, "make", true, "if true, run `make generate` after generating files")
+
+	// TODO Evaluate if we put that in goPlugin
 	fs.BoolVar(&p.useWorkspaces, "workspace", true, "if true, scaffolds apis with `go.work` workspace differentiation, "+
 		"creating a go.mod file for each generated api.")
 
@@ -200,6 +202,8 @@ func (p *createAPISubcommand) PostScaffold() error {
 		}
 	}
 
+	// for workspace support, we use go mod sync to make sure all modules are considered, not just the root.
+	// this automatically also triggers go mod tidy for all modules and creates go.sum files.
 	if p.useWorkspaces {
 		if err := util.RunCmd("Update workspace", "go", "work", "sync"); err != nil {
 			return err

@@ -90,11 +90,15 @@ func (s *apiScaffolder) Scaffold() error {
 	}
 
 	if doAPI {
-		if err := scaffold.Execute(
+		apiBuilders := []machinery.Builder{
 			&api.Types{Force: s.force},
 			&api.Group{},
-			&api.GoMod{ControllerRuntimeVersion: ControllerRuntimeVersion},
-		); err != nil {
+		}
+		// in case we use workspaces, every API gets its own module
+		if s.useWorkspaces {
+			apiBuilders = append(apiBuilders, &api.GoMod{ControllerRuntimeVersion: ControllerRuntimeVersion})
+		}
+		if err := scaffold.Execute(apiBuilders...); err != nil {
 			return fmt.Errorf("error scaffolding APIs: %v", err)
 		}
 	}
@@ -108,6 +112,7 @@ func (s *apiScaffolder) Scaffold() error {
 		}
 	}
 
+	// if we use workspaces, we have to update the central go.work file with all available references
 	if s.useWorkspaces {
 		if err := scaffold.Execute(
 			&templates.GoWorkUpdater{
