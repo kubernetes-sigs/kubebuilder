@@ -100,7 +100,7 @@ func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.runMake, "make", true, "if true, run `make generate` after generating files")
 
 	// TODO Evaluate if we put that in goPlugin
-	fs.BoolVar(&p.useWorkspaces, "workspace", true, "if true, scaffolds apis with `go.work` workspace differentiation, "+
+	fs.BoolVar(&p.useWorkspaces, "workspace", false, "if true, scaffolds apis with `go.work` workspace differentiation, "+
 		"creating a go.mod file for each generated api.")
 
 	fs.BoolVar(&p.force, "force", false,

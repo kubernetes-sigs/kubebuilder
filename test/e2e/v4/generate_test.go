@@ -55,6 +55,7 @@ func GenerateV4(kbc *utils.TestContext) {
 		"--resource",
 		"--controller",
 		"--make=false",
+		"--workspace",
 	)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 

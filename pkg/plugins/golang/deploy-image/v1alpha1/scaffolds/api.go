@@ -289,7 +289,7 @@ func (s *apiScaffolder) scaffoldCreateAPIFromGolang() error {
 	// in the Project layout to know if we should use kustomize/v1 OR kustomize/v2-alpha
 
 	golangV3Scaffolder := golangv3scaffolds.NewAPIScaffolder(s.config,
-		s.resource, true, true)
+		s.resource, true, false)
 	golangV3Scaffolder.InjectFS(s.fs)
 	return golangV3Scaffolder.Scaffold()
 }
