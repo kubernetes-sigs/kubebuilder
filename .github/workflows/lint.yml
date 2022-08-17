@@ -30,12 +30,16 @@ jobs:
     # Pull requests from the same repository won't trigger this checks as they were already triggered by the push
     if: (github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository) && needs.check_docs_only.outputs.skip != 'true'
     steps:
+      - name: Setup Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.18
       - name: Clone the code
         uses: actions/checkout@v3
       - name: Run linter
-        uses: golangci/golangci-lint-action@v2
+        uses: golangci/golangci-lint-action@v3
         with:
-          version: v1.45.2 # Always uses the latest patch version.
+          version: v1.48 # Always uses the latest patch version.
           only-new-issues: true # Show only new issues if it's a pull request
       - name: Report failure
         uses: nashmaniac/create-issue-action@v1.1
