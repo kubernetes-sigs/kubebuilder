@@ -35,6 +35,9 @@ func (f *ResourcesManifest) SetTemplateDefaults() error {
 		f.Path = filepath.Join("grafana", "controller-resources-metrics.json")
 	}
 
+	// Grafana syntax use {{ }} quite often, which is collided with default delimiter for go template parsing.
+	// Provide an alternative delimiter here to avoid overlaps.
+	f.SetDelim("[[", "]]")
 	f.TemplateBody = controllerResourcesTemplate
 
 	f.IfExistsAction = machinery.OverwriteFile
@@ -169,7 +172,7 @@ const controllerResourcesTemplate = `{
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
-					"legendFormat": "Pod: {{"{{pod}}"}} | Container: {{"{{container}}"}}",
+          "legendFormat": "Pod: {{pod}} | Container: {{container}}",
           "refId": "A",
           "step": 10
         }
@@ -259,7 +262,7 @@ const controllerResourcesTemplate = `{
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
-					"legendFormat": "Pod: {{"{{pod}}"}} | Container: {{"{{container}}"}}",
+          "legendFormat": "Pod: {{pod}} | Container: {{container}}",
           "refId": "A",
           "step": 10
         }
