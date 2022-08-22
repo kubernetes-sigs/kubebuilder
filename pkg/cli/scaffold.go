@@ -19,8 +19,11 @@ package cli
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
+
+	"sigs.k8s.io/kubebuilder/v3/pkg/config/store/yaml"
 )
 
 // NewCommand return a new scaffold command
@@ -31,23 +34,37 @@ func (c *CLI) newScaffoldCmd() *cobra.Command {
 		Short: "Re-scaffold an existing kuberbuilder project",
 		// TODO: Better description
 		Long: `TODO`,
+		PreRunE: func(cmd *cobra.Command, _ []string) error {
+			if outputPath != "" {
+				if _, err := os.Stat(outputPath); os.IsNotExist(err) {
+					return fmt.Errorf("output path: %s does not exist. %v", outputPath, err)
+				}
+			}
+			if projectConfig != "" {
+				if _, err := os.Stat(projectConfig); os.IsNotExist(err) {
+					return fmt.Errorf("project path: %s does not exist. %v", projectConfig, err)
+				}
+			}
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// grab project file
-			if err := c.getInfoFromConfigFilePath(projectConfig); err != nil {
-				return err
-			}
-			// add the project name to the output path
-			path := fmt.Sprintf("%s/%s", outputPath, c.projectName)
-			// create output directory
-			if err := os.MkdirAll(path, os.ModePerm); err != nil {
-				return err
-			}
 			cwd, err := os.Getwd()
 			if err != nil {
 				return err
 			}
-			// use the new directory to setup the new project
-			if err = os.Chdir(path); err != nil {
+
+			projectPath := getProjectPath(cwd, projectConfig)
+			if err := c.getInfoFromConfigFilePath(projectPath); err != nil {
+				return err
+			}
+
+			outputDirectory := getDefaultOutputPath(cwd, c.projectName, outputPath)
+			// create output directory
+			if err := os.MkdirAll(outputDirectory, os.ModePerm); err != nil {
+				return err
+			}
+			// use the new directory to set up the new project
+			if err = os.Chdir(outputDirectory); err != nil {
 				return err
 			}
 			// change back to the cwd after completion
@@ -55,8 +72,11 @@ func (c *CLI) newScaffoldCmd() *cobra.Command {
 				_ = os.Chdir(cwd)
 			}()
 			// init project with plugins
-			if err = c.newInitCmd().Execute(); err != nil {
-				return err
+			initCmd := c.newInitCmd()
+			c.newRootCmd().AddCommand(initCmd)
+			initCmd.SetArgs([]string{"--plugins", strings.Join(c.pluginKeys, ",")})
+			if err = initCmd.Execute(); err != nil {
+				return initCmd.Usage()
 			}
 			// call edit subcommands
 			if err = c.newEditCmd().Execute(); err != nil {
@@ -81,4 +101,22 @@ func (c *CLI) newScaffoldCmd() *cobra.Command {
 		"path to output the scaffolding. defaults to current working directory")
 
 	return scaffoldCmd
+}
+
+func getProjectPath(cwd string, overrideProjectPath string) string {
+	// By default use the cwd
+	if overrideProjectPath == "" {
+		return fmt.Sprintf("%s/%s", cwd, yaml.DefaultPath)
+	}
+	// use the override
+	return overrideProjectPath
+}
+
+func getDefaultOutputPath(cwd, projectName, overridePath string) string {
+	// By default use the cwd
+	if overridePath == "" {
+		return fmt.Sprintf("%s/%s", cwd, projectName)
+	}
+	// use the override
+	return fmt.Sprintf("%s/%s", overridePath, projectName)
 }
