@@ -43,6 +43,7 @@ func GenerateV4(kbc *utils.TestContext) {
 		"--plugins", "go/v4-alpha",
 		"--project-version", "3",
 		"--domain", kbc.Domain,
+		"--workspace",
 	)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
@@ -55,7 +56,6 @@ func GenerateV4(kbc *utils.TestContext) {
 		"--resource",
 		"--controller",
 		"--make=false",
-		"--workspace",
 	)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
