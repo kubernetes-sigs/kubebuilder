@@ -52,7 +52,11 @@ function dump_project {
 function test_init_project {
   header_text "Init project"
   go mod init kubebuilder.io/test
-  $kb init --domain example.com <<< "n"
+  if [ "go.work" == "$1" ]; then
+    $kb init --domain example.com --workspace <<< "n"
+  else
+    $kb init --domain example.com <<< "n"
+  fi
 }
 
 function test_make_project {
@@ -84,14 +88,6 @@ n
 EOF
 }
 
-function test_create_api_with_go_work_support_only {
-  header_text "Creating api only"
-  $kb create api --group insect --version v1beta1 --kind Bee --namespaced false --workspace <<EOF
-y
-n
-EOF
-}
-
 function test_create_namespaced_api_only {
   header_text "Creating namespaced api only"
   $kb create api --group insect --version v1beta1 --kind Bee --namespaced true <<EOF
@@ -110,7 +106,7 @@ EOF
 
 
 prepare_test_dir
-test_init_project
+test_init_project "go.mod"
 cache_project "init"
 test_make_project
 
@@ -128,14 +124,35 @@ test_create_api_only
 
 prepare_test_dir
 dump_project "init"
-test_create_api_with_go_work_support_only
-
-prepare_test_dir
-dump_project "init"
 test_create_namespaced_api_only
 
 prepare_test_dir
 dump_project "init"
+test_create_core_type_controller
+
+prepare_test_dir
+test_init_project "go.work"
+cache_project "init-workspace"
+test_make_project
+
+prepare_test_dir
+dump_project "init-workspace"
+test_create_api_controller
+
+prepare_test_dir
+dump_project "init-workspace"
+test_create_namespaced_api_controller
+
+prepare_test_dir
+dump_project "init-workspace"
+test_create_api_only
+
+prepare_test_dir
+dump_project "init-workspace"
+test_create_namespaced_api_only
+
+prepare_test_dir
+dump_project "init-workspace"
 test_create_core_type_controller
 
 popd

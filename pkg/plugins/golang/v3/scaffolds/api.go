@@ -114,10 +114,10 @@ func (s *apiScaffolder) Scaffold() error {
 
 	// if we use workspaces, we have to update the central go.work file with all available references
 	if s.useWorkspaces {
-		fmt.Println("detected go.work in root, using workspace scaffolding...")
+		fmt.Println("detected go.work, using workspace scaffolding")
 		if err := scaffold.Execute(
 			&templates.GoWorkUpdater{
-				WireUses: true,
+				WireUses: doAPI,
 			},
 		); err != nil {
 			return fmt.Errorf("error updating go.work: %v", err)
