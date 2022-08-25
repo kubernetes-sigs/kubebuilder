@@ -106,7 +106,7 @@ func (t *TestContext) Prepare() error {
 	}
 
 	fmt.Fprintf(GinkgoWriter, "preparing testing directory: %s\n", t.Dir)
-	return os.MkdirAll(t.Dir, 0755)
+	return os.MkdirAll(t.Dir, 0o755)
 }
 
 const (
@@ -251,6 +251,23 @@ func (t *TestContext) Tidy() error {
 	return err
 }
 
+// Tidy runs `go work sync` so that go 1.16 build doesn't fail.
+func (t *TestContext) WorkSync() error {
+	cmd := exec.Command("go", "work", "sync")
+	_, err := t.Run(cmd)
+	return err
+}
+
+// Tidy runs `go mod tidy` or `go work sync` so that go 1.16 build doesn't fail.
+// See https://blog.golang.org/go116-module-changes#TOC_3.
+func (t *TestContext) TidyOrWorkSync() error {
+	_, err := os.Stat(filepath.Join(t.Dir, "go.mod"))
+	if err != nil {
+		return t.Tidy()
+	}
+	return t.WorkSync()
+}
+
 // Destroy is for cleaning up the docker images for testing
 func (t *TestContext) Destroy() {
 	//nolint:gosec
@@ -337,7 +354,7 @@ func (t *TestContext) AllowProjectBeMultiGroup() error {
 	}
 
 	projectBytes = append([]byte(multiGroup), projectBytes...)
-	err = ioutil.WriteFile(filepath.Join(t.Dir, "PROJECT"), projectBytes, 0644)
+	err = ioutil.WriteFile(filepath.Join(t.Dir, "PROJECT"), projectBytes, 0o644)
 	if err != nil {
 		return err
 	}

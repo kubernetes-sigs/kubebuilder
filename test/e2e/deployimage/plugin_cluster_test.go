@@ -39,9 +39,7 @@ import (
 
 var _ = Describe("kubebuilder", func() {
 	Context("deploy image plugin 3", func() {
-		var (
-			kbc *utils.TestContext
-		)
+		var kbc *utils.TestContext
 
 		BeforeEach(func() {
 			var err error
@@ -173,8 +171,8 @@ func Run(kbc *utils.TestContext) {
 	var controllerPodName string
 	var err error
 
-	By("updating the go.mod")
-	err = kbc.Tidy()
+	By("updating the go.mod or go.work")
+	err = kbc.TidyOrWorkSync()
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
 	By("run make all")
@@ -278,7 +276,7 @@ func Run(kbc *utils.TestContext) {
 	}
 	Eventually(getStatus, time.Minute, time.Second).Should(Succeed())
 
-	//Testing the finalizer
+	// Testing the finalizer
 	EventuallyWithOffset(1, func() error {
 		_, err = kbc.Kubectl.Delete(true, "-f", sampleFilePath)
 		return err
