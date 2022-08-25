@@ -60,7 +60,6 @@ type createAPISubcommand struct {
 	// runMake indicates whether to run make or not after scaffolding APIs
 	runMake bool
 
-	// useWorkspaces indicates whether to use go.work style workspaces instead of a go module
 	useWorkspaces bool
 }
 
@@ -98,10 +97,6 @@ make generate will be run.
 
 func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.runMake, "make", true, "if true, run `make generate` after generating files")
-
-	// TODO Evaluate if we put that in goPlugin
-	fs.BoolVar(&p.useWorkspaces, "workspace", false, "if true, scaffolds apis with `go.work` workspace differentiation, "+
-		"creating a go.mod file for each generated api.")
 
 	fs.BoolVar(&p.force, "force", false,
 		"attempt to create resource even if it already exists")
@@ -177,10 +172,16 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 	return nil
 }
 
-func (p *createAPISubcommand) PreScaffold(machinery.Filesystem) error {
+func (p *createAPISubcommand) PreScaffold(fs machinery.Filesystem) error {
 	// check if main.go is present in the root directory
 	if _, err := os.Stat(DefaultMainPath); os.IsNotExist(err) {
 		return fmt.Errorf("%s file should present in the root directory", DefaultMainPath)
+	}
+
+	// Check if we use workspaces by presence of go.work, fallback to go.mod otherwise
+	p.useWorkspaces = true
+	if _, err := fs.FS.Stat("go.work"); err != nil {
+		p.useWorkspaces = false
 	}
 
 	return nil

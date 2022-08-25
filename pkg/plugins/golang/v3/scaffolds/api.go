@@ -50,7 +50,7 @@ type apiScaffolder struct {
 }
 
 // NewAPIScaffolder returns a new Scaffolder for API/controller creation operations
-func NewAPIScaffolder(config config.Config, res resource.Resource, force, useWorkspaces bool) plugins.Scaffolder {
+func NewAPIScaffolder(config config.Config, res resource.Resource, force bool, useWorkspaces bool) plugins.Scaffolder {
 	return &apiScaffolder{
 		config:        config,
 		resource:      res,
@@ -114,6 +114,7 @@ func (s *apiScaffolder) Scaffold() error {
 
 	// if we use workspaces, we have to update the central go.work file with all available references
 	if s.useWorkspaces {
+		fmt.Println("detected go.work in root, using workspace scaffolding...")
 		if err := scaffold.Execute(
 			&templates.GoWorkUpdater{
 				WireUses: true,

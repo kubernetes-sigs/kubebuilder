@@ -56,6 +56,7 @@ type initSubcommand struct {
 	// flags
 	fetchDeps          bool
 	skipGoVersionCheck bool
+	useWorkspaces      bool
 }
 
 func (p *initSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
@@ -87,6 +88,9 @@ func (p *initSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&p.license, "license", "apache2",
 		"license to use to boilerplate, may be one of 'apache2', 'none'")
 	fs.StringVar(&p.owner, "owner", "", "owner to add to the copyright")
+
+	fs.BoolVar(&p.useWorkspaces, "workspace", false, "if true, scaffolds apis with `go.work` workspace differentiation, "+
+		"creating a go.mod file for each generated api and a go.work in the root.")
 
 	// project args
 	fs.StringVar(&p.repo, "repo", "", "name to use for go module (e.g., github.com/user/repo), "+
@@ -121,10 +125,10 @@ func (p *initSubcommand) PreScaffold(machinery.Filesystem) error {
 }
 
 func (p *initSubcommand) Scaffold(fs machinery.Filesystem) error {
-	scaffolder := scaffolds.NewInitScaffolder(p.config, p.license, p.owner)
+	scaffolder := scaffolds.NewInitScaffolder(
+		p.config, p.license, p.owner, p.useWorkspaces)
 	scaffolder.InjectFS(fs)
-	err := scaffolder.Scaffold()
-	if err != nil {
+	if err := scaffolder.Scaffold(); err != nil {
 		return err
 	}
 
@@ -135,9 +139,9 @@ func (p *initSubcommand) Scaffold(fs machinery.Filesystem) error {
 
 	// Ensure that we are pinning controller-runtime version
 	// xref: https://github.com/kubernetes-sigs/kubebuilder/issues/997
-	err = util.RunCmd("Get controller runtime", "go", "get",
-		"sigs.k8s.io/controller-runtime@"+scaffolds.ControllerRuntimeVersion)
-	if err != nil {
+
+	if err := util.RunCmd("Get controller runtime", "go", "get",
+		"sigs.k8s.io/controller-runtime@"+scaffolds.ControllerRuntimeVersion); err != nil {
 		return err
 	}
 
@@ -145,9 +149,16 @@ func (p *initSubcommand) Scaffold(fs machinery.Filesystem) error {
 }
 
 func (p *initSubcommand) PostScaffold() error {
-	err := util.RunCmd("Update dependencies", "go", "mod", "tidy")
-	if err != nil {
-		return err
+	if p.useWorkspaces {
+		err := util.RunCmd("Update workspace", "go", "work", "sync")
+		if err != nil {
+			return err
+		}
+	} else {
+		err := util.RunCmd("Update dependencies", "go", "mod", "tidy")
+		if err != nil {
+			return err
+		}
 	}
 
 	fmt.Printf("Next: define a resource with:\n$ %s create api\n", p.commandName)
@@ -188,8 +199,10 @@ func checkDir() error {
 			}
 			// Allow files in the following list
 			allowedFiles := []string{
-				"go.mod", // user might run `go mod init` instead of providing the `--flag` at init
-				"go.sum", // auto-generated file related to go.mod
+				"go.mod",      // user might run `go mod init` instead of providing the `--flag` at init
+				"go.sum",      // auto-generated file related to go.mod
+				"go.work",     // user might run `go work init` instead of providing the `--flag` at init
+				"go.work.sum", // auto-generated file related to go.sum
 			}
 			for _, allowedFile := range allowedFiles {
 				if info.Name() == allowedFile {

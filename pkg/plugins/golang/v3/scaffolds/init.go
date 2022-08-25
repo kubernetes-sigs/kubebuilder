@@ -53,15 +53,19 @@ type initScaffolder struct {
 
 	// fs is the filesystem that will be used by the scaffolder
 	fs machinery.Filesystem
+
+	// useWorkspaces indicates whether to use go.work style workspaces instead of a go module
+	useWorkspaces bool
 }
 
 // NewInitScaffolder returns a new Scaffolder for project initialization operations
-func NewInitScaffolder(config config.Config, license, owner string) plugins.Scaffolder {
+func NewInitScaffolder(config config.Config, license, owner string, useWorkspaces bool) plugins.Scaffolder {
 	return &initScaffolder{
 		config:          config,
 		boilerplatePath: hack.DefaultBoilerplatePath,
 		license:         license,
 		owner:           owner,
+		useWorkspaces:   useWorkspaces,
 	}
 }
 
@@ -116,7 +120,7 @@ func (s *initScaffolder) Scaffold() error {
 		}
 	}
 
-	return scaffold.Execute(
+	builders := []machinery.Builder{
 		&templates.Main{},
 		&templates.GoMod{
 			ControllerRuntimeVersion: ControllerRuntimeVersion,
@@ -132,5 +136,11 @@ func (s *initScaffolder) Scaffold() error {
 		&templates.Dockerfile{},
 		&templates.DockerIgnore{},
 		&templates.Readme{},
-	)
+	}
+
+	if s.useWorkspaces {
+		builders = append(builders, &templates.GoWork{})
+	}
+
+	return scaffold.Execute(builders...)
 }
