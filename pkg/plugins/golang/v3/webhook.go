@@ -46,6 +46,9 @@ type createWebhookSubcommand struct {
 
 	// force indicates that the resource should be created even if it already exists
 	force bool
+
+	// useWorkspaces indicates whether to use go.work style workspaces instead of a go module
+	useWorkspaces bool
 }
 
 func (p *createWebhookSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
@@ -127,6 +130,16 @@ func (p *createWebhookSubcommand) Scaffold(fs machinery.Filesystem) error {
 	return scaffolder.Scaffold()
 }
 
+func (p *createWebhookSubcommand) PreScaffold(fs machinery.Filesystem) error {
+	// Check if we use workspaces by presence of go.work, fallback to go.mod otherwise
+	p.useWorkspaces = true
+	if _, err := fs.FS.Stat("go.work"); err != nil {
+		p.useWorkspaces = false
+	}
+
+	return nil
+}
+
 func (p *createWebhookSubcommand) PostScaffold() error {
 	if p.resource.Webhooks.WebhookVersion == "v1beta1" {
 		if err := applyScaffoldCustomizationsForVbeta1(); err != nil {
@@ -134,15 +147,22 @@ func (p *createWebhookSubcommand) PostScaffold() error {
 		}
 	}
 
-	err := pluginutil.RunCmd("Update dependencies", "go", "mod", "tidy")
-	if err != nil {
+	// for workspace support, we use go mod sync to make sure all modules are considered, not just the root.
+	// this automatically also triggers go mod tidy for all modules and creates go.sum files.
+	if p.useWorkspaces {
+		if err := pluginutil.RunCmd("Update workspace", "go", "work", "sync"); err != nil {
+			return err
+		}
+	} else {
+		if err := pluginutil.RunCmd("Update dependencies", "go", "mod", "tidy"); err != nil {
+			return err
+		}
+	}
+
+	if err := pluginutil.RunCmd("Running make", "make", "generate"); err != nil {
 		return err
 	}
 
-	err = pluginutil.RunCmd("Running make", "make", "generate")
-	if err != nil {
-		return err
-	}
 	fmt.Print("Next: implement your new Webhook and generate the manifests with:\n$ make manifests\n")
 
 	return nil
