@@ -125,7 +125,7 @@ func (p *initSubcommand) PreScaffold(machinery.Filesystem) error {
 }
 
 func (p *initSubcommand) Scaffold(fs machinery.Filesystem) error {
-	scaffolder := scaffolds.NewInitScaffolder(
+	scaffolder := scaffolds.NewWorkspaceInitScaffolder(
 		p.config, p.license, p.owner, p.useWorkspaces)
 	scaffolder.InjectFS(fs)
 	if err := scaffolder.Scaffold(); err != nil {

@@ -188,7 +188,7 @@ func (p *createAPISubcommand) PreScaffold(fs machinery.Filesystem) error {
 }
 
 func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
-	scaffolder := scaffolds.NewAPIScaffolder(p.config, *p.resource, p.force, p.useWorkspaces)
+	scaffolder := scaffolds.NewWorkspaceAPIScaffolder(p.config, *p.resource, p.force, p.useWorkspaces)
 	scaffolder.InjectFS(fs)
 	return scaffolder.Scaffold()
 }

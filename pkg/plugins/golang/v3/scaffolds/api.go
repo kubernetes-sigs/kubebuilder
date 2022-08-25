@@ -50,7 +50,20 @@ type apiScaffolder struct {
 }
 
 // NewAPIScaffolder returns a new Scaffolder for API/controller creation operations
-func NewAPIScaffolder(config config.Config, res resource.Resource, force bool, useWorkspaces bool) plugins.Scaffolder {
+// Deprecated: use NewWorkspaceInitScaffolder
+func NewAPIScaffolder(config config.Config, res resource.Resource, force bool) plugins.Scaffolder {
+	return &apiScaffolder{
+		config:   config,
+		resource: res,
+		force:    force,
+	}
+}
+
+// NewWorkspaceAPIScaffolder returns a new Scaffolder for API/controller creation operations.
+// Compared to NewAPIScaffolder it can take an additional flag to use go.work style workspaces.
+func NewWorkspaceAPIScaffolder(
+	config config.Config, res resource.Resource, force bool, useWorkspaces bool,
+) plugins.Scaffolder {
 	return &apiScaffolder{
 		config:        config,
 		resource:      res,

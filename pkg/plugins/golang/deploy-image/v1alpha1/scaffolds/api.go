@@ -288,7 +288,7 @@ func (s *apiScaffolder) scaffoldCreateAPIFromGolang() error {
 	// todo: when we have the go/v4-alpha plugin we will also need to check what is the plugin used
 	// in the Project layout to know if we should use kustomize/v1 OR kustomize/v2-alpha
 
-	golangV3Scaffolder := golangv3scaffolds.NewAPIScaffolder(s.config,
+	golangV3Scaffolder := golangv3scaffolds.NewWorkspaceAPIScaffolder(s.config,
 		s.resource, true, false)
 	golangV3Scaffolder.InjectFS(s.fs)
 	return golangV3Scaffolder.Scaffold()

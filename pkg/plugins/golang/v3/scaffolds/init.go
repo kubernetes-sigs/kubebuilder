@@ -59,7 +59,19 @@ type initScaffolder struct {
 }
 
 // NewInitScaffolder returns a new Scaffolder for project initialization operations
-func NewInitScaffolder(config config.Config, license, owner string, useWorkspaces bool) plugins.Scaffolder {
+// Deprecated: use NewWorkspaceInitScaffolder
+func NewInitScaffolder(config config.Config, license, owner string) plugins.Scaffolder {
+	return &initScaffolder{
+		config:          config,
+		boilerplatePath: hack.DefaultBoilerplatePath,
+		license:         license,
+		owner:           owner,
+	}
+}
+
+// NewWorkspaceInitScaffolder returns a new Scaffolder for project initialization operations.
+// Compared to NewInitScaffolder it can take an additional flag to use go.work style workspaces.
+func NewWorkspaceInitScaffolder(config config.Config, license, owner string, useWorkspaces bool) plugins.Scaffolder {
 	return &initScaffolder{
 		config:          config,
 		boilerplatePath: hack.DefaultBoilerplatePath,
