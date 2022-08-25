@@ -24,7 +24,7 @@ For example, the following is a sample `kind` configuration.
 ```
 
 Using the configuration above, run the following command will give you a k8s
-v1.17.2 cluster with 1 master and 3 workers.
+v1.17.2 cluster with 1 control-plane node and 3 worker nodes.
 
 ```bash
 kind create cluster --config hack/kind-config.yaml --image=kindest/node:v1.17.2
