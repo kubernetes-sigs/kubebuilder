@@ -26,7 +26,6 @@ const prefix = "+kubebuilder:scaffold:"
 
 var commentsByExt = map[string]string{
 	".go":   "//",
-	".mod":  "//",
 	".work": "//",
 	".yaml": "#",
 	".yml":  "#",
@@ -40,7 +39,7 @@ type Marker struct {
 }
 
 // NewMarkerFor creates a new marker customized for the specific file
-// Supported file extensions: .go, .mod, .work, .yaml, .yml
+// Supported file extensions: .go, .work, .yaml, .yml
 func NewMarkerFor(path string, value string) Marker {
 	ext := filepath.Ext(path)
 	if comment, found := commentsByExt[ext]; found {
