@@ -126,6 +126,7 @@ func (s *apiScaffolder) Scaffold() error {
 	}
 
 	// if we use workspaces, we have to update the central go.work file with all available references
+	// we also have to update the image building process
 	if s.useWorkspaces {
 		fmt.Println("detected go.work, using workspace scaffolding")
 		if err := scaffold.Execute(
@@ -134,6 +135,12 @@ func (s *apiScaffolder) Scaffold() error {
 			},
 		); err != nil {
 			return fmt.Errorf("error updating go.work: %v", err)
+		}
+
+		if err := scaffold.Execute(
+			&templates.DockerfileUpdater{UseWorkspaces: s.useWorkspaces},
+		); err != nil {
+			return fmt.Errorf("error updating Dockerfile: %v", err)
 		}
 	}
 

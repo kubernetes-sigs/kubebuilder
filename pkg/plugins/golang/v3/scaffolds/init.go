@@ -145,7 +145,7 @@ func (s *initScaffolder) Scaffold() error {
 			KustomizeVersion:         kustomizeVersion,
 			ControllerRuntimeVersion: ControllerRuntimeVersion,
 		},
-		&templates.Dockerfile{},
+		&templates.Dockerfile{UseWorkspaces: s.useWorkspaces},
 		&templates.DockerIgnore{},
 		&templates.Readme{},
 	}

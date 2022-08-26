@@ -25,10 +25,11 @@ import (
 const prefix = "+kubebuilder:scaffold:"
 
 var commentsByExt = map[string]string{
-	".go":   "//",
-	".work": "//",
-	".yaml": "#",
-	".yml":  "#",
+	".go":        "//",
+	".work":      "//",
+	".yaml":      "#",
+	".yml":       "#",
+	"Dockerfile": "#",
 	// When adding additional file extensions, update also the NewMarkerFor documentation and error
 }
 
@@ -39,10 +40,13 @@ type Marker struct {
 }
 
 // NewMarkerFor creates a new marker customized for the specific file
-// Supported file extensions: .go, .work, .yaml, .yml
+// Supported file extensions: .go, .work, .yaml, .yml, Dockerfile
 func NewMarkerFor(path string, value string) Marker {
-	ext := filepath.Ext(path)
-	if comment, found := commentsByExt[ext]; found {
+	extOrFilename := filepath.Ext(path)
+	if extOrFilename == "" {
+		_, extOrFilename = filepath.Split(path)
+	}
+	if comment, found := commentsByExt[extOrFilename]; found {
 		return Marker{comment, value}
 	}
 
@@ -50,7 +54,7 @@ func NewMarkerFor(path string, value string) Marker {
 	for extension := range commentsByExt {
 		extensions = append(extensions, fmt.Sprintf("%q", extension))
 	}
-	panic(fmt.Errorf("unknown file extension: '%s', expected one of: %s", ext, strings.Join(extensions, ", ")))
+	panic(fmt.Errorf("unknown file extension: '%s', expected one of: %s", extOrFilename, strings.Join(extensions, ", ")))
 }
 
 // String implements Stringer
