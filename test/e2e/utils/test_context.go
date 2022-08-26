@@ -261,7 +261,7 @@ func (t *TestContext) WorkSync() error {
 // Tidy runs `go mod tidy` or `go work sync` so that go 1.16 build doesn't fail.
 // See https://blog.golang.org/go116-module-changes#TOC_3.
 func (t *TestContext) TidyOrWorkSync() error {
-	_, err := os.Stat(filepath.Join(t.Dir, "go.mod"))
+	_, err := os.Stat(filepath.Join(t.Dir, "go.work"))
 	if err != nil {
 		return t.Tidy()
 	}
