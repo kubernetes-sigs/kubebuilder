@@ -93,6 +93,10 @@ spec:
           capabilities:
             drop:
               - "ALL"
+
+          # Match user/group specified in Dockerfile, do not run as root
+          runAsUser: 65532
+          runAsGroup: 65532
         livenessProbe:
           httpGet:
             path: /healthz
