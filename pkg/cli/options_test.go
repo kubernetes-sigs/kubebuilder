@@ -22,8 +22,7 @@ import (
 	"path/filepath"
 	"runtime"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/extensions/table"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
@@ -63,7 +62,7 @@ var _ = Describe("Discover external plugins", func() {
 			pluginFileName = "externalPlugin.sh"
 			pluginFilePath = filepath.Join(pluginPath, "externalPlugin", "v1", pluginFileName)
 
-			err = fs.FS.MkdirAll(filepath.Dir(pluginFilePath), 0700)
+			err = fs.FS.MkdirAll(filepath.Dir(pluginFilePath), 0o700)
 			Expect(err).To(BeNil())
 
 			f, err = fs.FS.Create(pluginFilePath)
@@ -125,7 +124,6 @@ var _ = Describe("Discover external plugins", func() {
 
 			Expect(ps[0].Name()).To(Equal("externalPlugin"))
 			Expect(ps[1].Name()).To(Equal("myotherexternalPlugin"))
-
 		})
 
 		Context("that are invalid", func() {
@@ -136,14 +134,13 @@ var _ = Describe("Discover external plugins", func() {
 
 				pluginPath, err = getPluginsRoot(runtime.GOOS)
 				Expect(err).To(BeNil())
-
 			})
 
 			It("should error if the plugin found is not an executable", func() {
 				pluginFileName = "externalPlugin.sh"
 				pluginFilePath = filepath.Join(pluginPath, "externalPlugin", "v1", pluginFileName)
 
-				err = fs.FS.MkdirAll(filepath.Dir(pluginFilePath), 0700)
+				err = fs.FS.MkdirAll(filepath.Dir(pluginFilePath), 0o700)
 				Expect(err).To(BeNil())
 
 				f, err := fs.FS.Create(pluginFilePath)
@@ -154,21 +151,20 @@ var _ = Describe("Discover external plugins", func() {
 				Expect(err).To(BeNil())
 
 				// set the plugin file permissions to read-only
-				err = fs.FS.Chmod(pluginFilePath, 0444)
+				err = fs.FS.Chmod(pluginFilePath, 0o444)
 				Expect(err).To(Not(HaveOccurred()))
 
 				ps, err := DiscoverExternalPlugins(fs.FS)
 				Expect(err).NotTo(BeNil())
 				Expect(err.Error()).To(ContainSubstring("not an executable"))
 				Expect(len(ps)).To(Equal(0))
-
 			})
 
 			It("should error if the plugin found has an invalid plugin name", func() {
 				pluginFileName = ".sh"
 				pluginFilePath = filepath.Join(pluginPath, "externalPlugin", "v1", pluginFileName)
 
-				err = fs.FS.MkdirAll(filepath.Dir(pluginFilePath), 0700)
+				err = fs.FS.MkdirAll(filepath.Dir(pluginFilePath), 0o700)
 				Expect(err).To(BeNil())
 
 				f, err = fs.FS.Create(pluginFilePath)
@@ -179,7 +175,6 @@ var _ = Describe("Discover external plugins", func() {
 				Expect(err).NotTo(BeNil())
 				Expect(err.Error()).To(ContainSubstring("Invalid plugin name found"))
 				Expect(len(ps)).To(Equal(0))
-
 			})
 		})
 
@@ -191,14 +186,13 @@ var _ = Describe("Discover external plugins", func() {
 
 				pluginPath, err = getPluginsRoot(runtime.GOOS)
 				Expect(err).To(BeNil())
-
 			})
 
 			It("should skip adding the external plugin and not return any errors", func() {
 				pluginFileName = "random.sh"
 				pluginFilePath = filepath.Join(pluginPath, "externalPlugin", "v1", pluginFileName)
 
-				err = fs.FS.MkdirAll(filepath.Dir(pluginFilePath), 0700)
+				err = fs.FS.MkdirAll(filepath.Dir(pluginFilePath), 0o700)
 				Expect(err).To(BeNil())
 
 				f, err = fs.FS.Create(pluginFilePath)
@@ -211,11 +205,10 @@ var _ = Describe("Discover external plugins", func() {
 				ps, err := DiscoverExternalPlugins(fs.FS)
 				Expect(err).To(BeNil())
 				Expect(len(ps)).To(Equal(0))
-
 			})
 
 			It("should fail if pluginsroot is empty", func() {
-				var errPluginsRoot = errors.New("could not retrieve plugins root")
+				errPluginsRoot := errors.New("could not retrieve plugins root")
 				retrievePluginsRoot = func(host string) (string, error) {
 					return "", errPluginsRoot
 				}
@@ -224,7 +217,6 @@ var _ = Describe("Discover external plugins", func() {
 				Expect(err).NotTo(BeNil())
 
 				Expect(err).To(Equal(errPluginsRoot))
-
 			})
 
 			It("should fail for any other host that is not supported", func() {
@@ -280,7 +272,6 @@ var _ = Describe("Discover external plugins", func() {
 				Expect(pluginsroot).To(Equal(""))
 				Expect(err.Error()).To(ContainSubstring("error retrieving home dir"))
 			})
-
 		})
 	})
 
@@ -323,7 +314,6 @@ var _ = Describe("Discover external plugins", func() {
 })
 
 var _ = Describe("CLI options", func() {
-
 	const (
 		pluginName    = "plugin"
 		pluginVersion = "v1"
@@ -549,5 +539,4 @@ var _ = Describe("CLI options", func() {
 			Expect(c.completionCommand).To(BeTrue())
 		})
 	})
-
 })

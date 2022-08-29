@@ -17,12 +17,12 @@ limitations under the License.
 package plugin
 
 import (
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("PluginKeyNotFoundError", func() {
-	var err = ExitError{
+	err := ExitError{
 		Plugin: "go.kubebuilder.io/v1",
 		Reason: "skipping plugin",
 	}

@@ -19,14 +19,14 @@ package config
 import (
 	"fmt"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 )
 
 var _ = Describe("UnsupportedVersionError", func() {
-	var err = UnsupportedVersionError{
+	err := UnsupportedVersionError{
 		Version: Version{Number: 1},
 	}
 
@@ -38,7 +38,7 @@ var _ = Describe("UnsupportedVersionError", func() {
 })
 
 var _ = Describe("UnsupportedFieldError", func() {
-	var err = UnsupportedFieldError{
+	err := UnsupportedFieldError{
 		Version: Version{Number: 1},
 		Field:   "name",
 	}
@@ -51,7 +51,7 @@ var _ = Describe("UnsupportedFieldError", func() {
 })
 
 var _ = Describe("ResourceNotFoundError", func() {
-	var err = ResourceNotFoundError{
+	err := ResourceNotFoundError{
 		GVK: resource.GVK{
 			Group:   "group",
 			Domain:  "my.domain",
@@ -68,7 +68,7 @@ var _ = Describe("ResourceNotFoundError", func() {
 })
 
 var _ = Describe("PluginKeyNotFoundError", func() {
-	var err = PluginKeyNotFoundError{
+	err := PluginKeyNotFoundError{
 		Key: "go.kubebuilder.io/v1",
 	}
 
