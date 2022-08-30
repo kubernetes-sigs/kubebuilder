@@ -31,3 +31,22 @@ func RunCmd(msg, cmd string, args ...string) error {
 	fmt.Println(msg + ":\n$ " + strings.Join(c.Args, " "))
 	return c.Run()
 }
+
+func RunInDir(dir string, runInDir func() error) error {
+	original, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	if err := os.Chdir(dir); err != nil {
+		return err
+	}
+	fmt.Println("working in: " + dir)
+	if err := runInDir(); err != nil {
+		return err
+	}
+	fmt.Println("stopped working in: " + dir)
+	if err := os.Chdir(original); err != nil {
+		return err
+	}
+	return nil
+}

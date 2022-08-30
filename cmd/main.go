@@ -32,13 +32,13 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang"
 	declarativev1 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/declarative/v1"
 	deployimagev1alpha1 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/deploy-image/v1alpha1"
+	multimodulev1alpha1 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/multi-module/v1alpha1"
 	golangv2 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2"
 	golangv3 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3"
 	grafanav1alpha1 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/optional/grafana/v1alpha"
 )
 
 func main() {
-
 	// Bundle plugin which built the golang projects scaffold by Kubebuilder go/v3
 	gov3Bundle, _ := plugin.NewBundle(golang.DefaultNameQualifier, plugin.Version{Number: 3},
 		kustomizecommonv1.Plugin{},
@@ -71,6 +71,7 @@ func main() {
 			&declarativev1.Plugin{},
 			&deployimagev1alpha1.Plugin{},
 			&grafanav1alpha1.Plugin{},
+			&multimodulev1alpha1.Plugin{},
 		),
 		cli.WithPlugins(externalPlugins...),
 		cli.WithDefaultPlugins(cfgv2.Version, golangv2.Plugin{}),
