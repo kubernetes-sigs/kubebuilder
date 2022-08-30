@@ -28,6 +28,7 @@ var _ machinery.Template = &WebhookCAInjectionPatch{}
 type WebhookCAInjectionPatch struct {
 	machinery.TemplateMixin
 	machinery.ResourceMixin
+	machinery.ProjectNameMixin
 }
 
 // SetTemplateDefaults implements file.Template
@@ -49,6 +50,13 @@ const injectCAPatchTemplate = `# This patch add annotation to admission webhook 
 apiVersion: admissionregistration.k8s.io/{{ .Resource.Webhooks.WebhookVersion }}
 kind: MutatingWebhookConfiguration
 metadata:
+  labels:
+    app.kubernetes.io/name: mutatingwebhookconfiguration
+    app.kubernetes.io/instance: mutating-webhook-configuration
+    app.kubernetes.io/component: webhook
+    app.kubernetes.io/created-by: {{ .ProjectName }}
+    app.kubernetes.io/part-of: {{ .ProjectName }}
+    app.kubernetes.io/managed-by: kustomize
   name: mutating-webhook-configuration
   annotations:
     cert-manager.io/inject-ca-from: CERTIFICATE_NAMESPACE/CERTIFICATE_NAME
@@ -56,6 +64,13 @@ metadata:
 apiVersion: admissionregistration.k8s.io/{{ .Resource.Webhooks.WebhookVersion }}
 kind: ValidatingWebhookConfiguration
 metadata:
+  labels:
+    app.kubernetes.io/name: validatingwebhookconfiguration
+    app.kubernetes.io/instance: validating-webhook-configuration
+    app.kubernetes.io/component: webhook
+    app.kubernetes.io/created-by: {{ .ProjectName }}
+    app.kubernetes.io/part-of: {{ .ProjectName }}
+    app.kubernetes.io/managed-by: kustomize
   name: validating-webhook-configuration
   annotations:
     cert-manager.io/inject-ca-from: CERTIFICATE_NAMESPACE/CERTIFICATE_NAME

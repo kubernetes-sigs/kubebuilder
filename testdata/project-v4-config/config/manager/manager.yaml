@@ -3,6 +3,12 @@ kind: Namespace
 metadata:
   labels:
     control-plane: controller-manager
+    app.kubernetes.io/name: namespace
+    app.kubernetes.io/instance: system
+    app.kubernetes.io/component: manager
+    app.kubernetes.io/created-by: project-v4-config
+    app.kubernetes.io/part-of: project-v4-config
+    app.kubernetes.io/managed-by: kustomize
   name: system
 ---
 apiVersion: apps/v1
@@ -12,6 +18,12 @@ metadata:
   namespace: system
   labels:
     control-plane: controller-manager
+    app.kubernetes.io/name: deployment
+    app.kubernetes.io/instance: controller-manager
+    app.kubernetes.io/component: manager
+    app.kubernetes.io/created-by: project-v4-config
+    app.kubernetes.io/part-of: project-v4-config
+    app.kubernetes.io/managed-by: kustomize
 spec:
   selector:
     matchLabels:
