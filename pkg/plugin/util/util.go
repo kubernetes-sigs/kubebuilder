@@ -34,6 +34,8 @@ const (
 	KubebuilderBinName = "kubebuilder"
 )
 
+var ErrContentNotFound = errors.New("unable to find the content to be replaced")
+
 // RandomSuffix returns a 4-letter string.
 func RandomSuffix() (string, error) {
 	source := []rune("abcdefghijklmnopqrstuvwxyz")
@@ -78,7 +80,7 @@ func InsertCode(filename, target, code string) error {
 	out := string(contents[:idx+len(target)]) + code + string(contents[idx+len(target):])
 	// false positive
 	// nolint:gosec
-	return ioutil.WriteFile(filename, []byte(out), 0644)
+	return ioutil.WriteFile(filename, []byte(out), 0o644)
 }
 
 // UncommentCode searches for target in the file and remove the comment prefix
@@ -127,7 +129,7 @@ func UncommentCode(filename, target, prefix string) error {
 	}
 	// false positive
 	// nolint:gosec
-	return ioutil.WriteFile(filename, out.Bytes(), 0644)
+	return ioutil.WriteFile(filename, out.Bytes(), 0o644)
 }
 
 // ImplementWebhooks will mock an webhook data
@@ -181,7 +183,7 @@ func ImplementWebhooks(filename string) error {
 	}
 	// false positive
 	// nolint:gosec
-	return ioutil.WriteFile(filename, []byte(str), 0644)
+	return ioutil.WriteFile(filename, []byte(str), 0o644)
 }
 
 // EnsureExistAndReplace check if the content exists and then do the replace
@@ -205,7 +207,7 @@ func ReplaceInFile(path, old, new string) error {
 		return err
 	}
 	if !strings.Contains(string(b), old) {
-		return errors.New("unable to find the content to be replaced")
+		return ErrContentNotFound
 	}
 	s := strings.Replace(string(b), old, new, -1)
 	err = ioutil.WriteFile(path, []byte(s), info.Mode())
@@ -234,7 +236,7 @@ func ReplaceRegexInFile(path, match, replace string) error {
 	}
 	s := matcher.ReplaceAllString(string(b), replace)
 	if s == string(b) {
-		return errors.New("unable to find the content to be replaced")
+		return ErrContentNotFound
 	}
 	err = ioutil.WriteFile(path, []byte(s), info.Mode())
 	if err != nil {

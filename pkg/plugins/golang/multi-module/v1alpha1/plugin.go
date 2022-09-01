@@ -38,6 +38,7 @@ var _ plugin.Init = Plugin{}
 type Plugin struct {
 	initSubcommand
 	createAPISubcommand
+	editSubcommand
 }
 
 // Name returns the name of the plugin
@@ -55,13 +56,7 @@ func (p Plugin) GetInitSubcommand() plugin.InitSubcommand { return &p.initSubcom
 // GetCreateAPISubcommand will return the subcommand which is responsible for scaffolding apis
 func (p Plugin) GetCreateAPISubcommand() plugin.CreateAPISubcommand { return &p.createAPISubcommand }
 
-type pluginConfig struct {
-	Resources []resourceData `json:"resources,omitempty"`
-}
+// GetEditSubcommand will return the subcommand which is responsible for editing
+func (p Plugin) GetEditSubcommand() plugin.EditSubcommand { return &p.editSubcommand }
 
-type resourceData struct {
-	Group   string `json:"group,omitempty"`
-	Domain  string `json:"domain,omitempty"`
-	Version string `json:"version"`
-	Kind    string `json:"kind"`
-}
+type pluginConfig struct{}

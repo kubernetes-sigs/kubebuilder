@@ -74,6 +74,24 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 	return nil
 }
 
+func (p *createAPISubcommand) PreScaffold(fs machinery.Filesystem) error {
+	// Track the config and ensure it exists and can be parsed
+	cfg := pluginConfig{}
+	if err := p.config.DecodePluginConfig(pluginKey, &cfg); errors.As(err, &config.UnsupportedFieldError{}) {
+		// Config doesn't support per-plugin configuration, so we can't track them
+	} else {
+		// Fail unless they key wasn't found, which just means it is the first resource tracked
+		if err != nil && !errors.As(err, &config.PluginKeyNotFoundError{}) {
+			return err
+		}
+
+		if err := p.config.EncodePluginConfig(pluginKey, cfg); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
 	fmt.Println("updating scaffold with multi-module support...")
 
@@ -101,7 +119,7 @@ func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
 	}
 
 	if err := util.RunCmd("Add require directive of API module", "go", "mod", "edit", "-require",
-		p.resource.Path+"@v0.0.0-v1alpha1"); err != nil {
+		p.resource.Path+"@v0.0.0-"+p.resource.Version); err != nil {
 		return err
 	}
 
@@ -111,33 +129,10 @@ func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
 	}
 
 	// Update Dockerfile
-	err = updateDockerfile(apiPath)
+	err = insertModUpdatesInDockerfile(apiPath)
 	if err != nil {
 		return err
 	}
-
-	// Track the resources following a declarative approach
-	cfg := pluginConfig{}
-	if err := p.config.DecodePluginConfig(pluginKey, &cfg); errors.As(err, &config.UnsupportedFieldError{}) {
-		// Config doesn't support per-plugin configuration, so we can't track them
-	} else {
-		// Fail unless they key wasn't found, which just means it is the first resource tracked
-		if err != nil && !errors.As(err, &config.PluginKeyNotFoundError{}) {
-			return err
-		}
-
-		cfg.Resources = append(cfg.Resources, resourceData{
-			Group:   p.resource.GVK.Group,
-			Domain:  p.resource.GVK.Domain,
-			Version: p.resource.GVK.Version,
-			Kind:    p.resource.GVK.Kind,
-		})
-
-		if err := p.config.EncodePluginConfig(pluginKey, cfg); err != nil {
-			return err
-		}
-	}
-
 	return nil
 }
 
