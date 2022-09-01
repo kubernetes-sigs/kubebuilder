@@ -59,4 +59,6 @@ func (p Plugin) GetCreateAPISubcommand() plugin.CreateAPISubcommand { return &p.
 // GetEditSubcommand will return the subcommand which is responsible for editing
 func (p Plugin) GetEditSubcommand() plugin.EditSubcommand { return &p.editSubcommand }
 
-type pluginConfig struct{}
+type pluginConfig struct {
+	ApiGoModCreated bool
+}

@@ -18,15 +18,12 @@ package v1alpha1
 
 import (
 	"errors"
-	"fmt"
-	"path/filepath"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/multi-module/v1alpha1/scaffolds"
 )
 
 var _ plugin.CreateAPISubcommand = &createAPISubcommand{}
@@ -38,14 +35,7 @@ type createAPISubcommand struct {
 }
 
 func (p *createAPISubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
-	subcmdMeta.Description = `Scaffold a Kubernetes API by writing a Resource definition and/or a Controller.
-
-If information about whether the resource and controller should be scaffolded
-was not explicitly provided, it will prompt the user if they should be.
-
-After the scaffold is written, the dependencies will be updated and
-make generate will be run.
-
+	subcmdMeta.Description = subcmdMeta.Description + `
 Warning: This will also create multiple go.mod files. If you are not careful, you can break your dependency chain.
 The multi-module extension will create replace directives for local development, 
 which you might want to drop after creating your first stable API.
@@ -74,62 +64,28 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 	return nil
 }
 
-func (p *createAPISubcommand) PreScaffold(fs machinery.Filesystem) error {
+func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
 	// Track the config and ensure it exists and can be parsed
 	cfg := pluginConfig{}
 	if err := p.config.DecodePluginConfig(pluginKey, &cfg); errors.As(err, &config.UnsupportedFieldError{}) {
 		// Config doesn't support per-plugin configuration, so we can't track them
 	} else {
 		// Fail unless they key wasn't found, which just means it is the first resource tracked
-		if err != nil {
+		if err != nil && !errors.As(err, &config.PluginKeyNotFoundError{}) {
 			return err
 		}
 	}
-	return nil
-}
 
-func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
-	fmt.Println("updating scaffold with multi-module support...")
-
-	fmt.Println("using gvk:", p.resource.Group, p.resource.Domain, p.resource.Version)
-	apiPath := GetAPIPath(p.config.IsMultiGroup(), p.resource)
-	goModPath := filepath.Join(apiPath, "go.mod")
-
-	fmt.Println("using go.mod path: " + goModPath)
-	scaffolder := scaffolds.NewAPIScaffolder(p.config, *p.resource, goModPath)
-	scaffolder.InjectFS(fs)
-	err := scaffolder.Scaffold()
-	if err != nil {
-		return err
-	}
-
-	if err := util.RunInDir(apiPath, func() error {
-		err = util.RunCmd("Update dependencies in "+apiPath, "go", "mod", "tidy")
-		if err != nil {
-			return err
-		}
-
+	if cfg.ApiGoModCreated {
 		return nil
-	}); err != nil {
+	}
+
+	if err := CreateGoModForAPI(fs, p.config); err != nil {
 		return err
 	}
 
-	if err := util.RunCmd("Add require directive of API module", "go", "mod", "edit", "-require",
-		p.resource.Path+"@v0.0.0-"+p.resource.Version); err != nil {
-		return err
-	}
-
-	if err := util.RunCmd("Update dependencies", "go", "mod", "edit", "-replace",
-		p.resource.Path+"="+"."+string(filepath.Separator)+apiPath); err != nil {
-		return err
-	}
-
-	// Update Dockerfile
-	err = insertModUpdatesInDockerfile(apiPath)
-	if err != nil {
-		return err
-	}
-	return nil
+	cfg.ApiGoModCreated = true
+	return p.config.EncodePluginConfig(pluginKey, cfg)
 }
 
 func (p *createAPISubcommand) PostScaffold() error {

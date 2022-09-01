@@ -21,7 +21,6 @@ import (
 	"path/filepath"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 )
 
 func InsertPluginMetaToConfig(target config.Config, cfg pluginConfig) error {
@@ -41,16 +40,12 @@ func InsertPluginMetaToConfig(target config.Config, cfg pluginConfig) error {
 	return nil
 }
 
-func GetAPIPath(isMultiGroup bool, resource *resource.Resource) string {
+func GetAPIPath(isMultiGroup bool) string {
 	path := ""
 	if isMultiGroup {
-		if resource.Group != "" {
-			path = filepath.Join("apis", "%[group]", "%[version]")
-		} else {
-			path = filepath.Join("apis", "%[version]")
-		}
+		path = filepath.Join("apis")
 	} else {
-		path = filepath.Join("api", "%[version]")
+		path = filepath.Join("api")
 	}
-	return resource.Replacer().Replace(path)
+	return path
 }

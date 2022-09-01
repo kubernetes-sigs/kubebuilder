@@ -28,13 +28,27 @@ type initSubcommand struct {
 	config config.Config
 }
 
+func (p *initSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
+	subcmdMeta.Description = subcmdMeta.Description + `
+Warning: This will also create multiple go.mod files when creating APIs. 
+If you are not careful, you can break your dependency chain.
+The multi-module extension will create replace directives for local development, 
+which you might want to drop after creating your first stable API.
+
+For more information, visit 
+https://github.com/golang/go/wiki/Modules#should-i-have-multiple-modules-in-a-single-repository
+`
+}
+
 func (p *initSubcommand) InjectConfig(c config.Config) error {
 	p.config = c
 	return nil
 }
 
 func (p *initSubcommand) Scaffold(fs machinery.Filesystem) error {
-	if err := InsertPluginMetaToConfig(p.config, pluginConfig{}); err != nil {
+	if err := InsertPluginMetaToConfig(p.config, pluginConfig{
+		ApiGoModCreated: false,
+	}); err != nil {
 		return err
 	}
 	return nil
