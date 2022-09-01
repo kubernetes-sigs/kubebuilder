@@ -1,6 +1,12 @@
 apiVersion: ship.testproject.org/v2alpha1
 kind: Cruiser
 metadata:
+  labels:
+    app.kubernetes.io/name: cruiser
+    app.kubernetes.io/instance: cruiser-sample
+    app.kubernetes.io/part-of: project-v3-multimodule
+    app.kuberentes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: project-v3-multimodule
   name: cruiser-sample
 spec:
   # TODO(user): Add fields here
