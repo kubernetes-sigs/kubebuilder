@@ -81,11 +81,7 @@ func (p *createAPISubcommand) PreScaffold(fs machinery.Filesystem) error {
 		// Config doesn't support per-plugin configuration, so we can't track them
 	} else {
 		// Fail unless they key wasn't found, which just means it is the first resource tracked
-		if err != nil && !errors.As(err, &config.PluginKeyNotFoundError{}) {
-			return err
-		}
-
-		if err := p.config.EncodePluginConfig(pluginKey, cfg); err != nil {
+		if err != nil {
 			return err
 		}
 	}
