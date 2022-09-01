@@ -12,6 +12,13 @@ import (
 	v3scaffolds "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds"
 )
 
+const (
+	ControllerRuntime        = "sigs.k8s.io/controller-runtime"
+	ControllerRuntimeVersion = v3scaffolds.ControllerRuntimeVersion
+	GoVersion                = "1.18"
+	DefaultRequireVersion    = "v0.0.0"
+)
+
 func CreateGoModForAPI(fs machinery.Filesystem, config config.Config) error {
 	apiPath := GetAPIPath(config.IsMultiGroup())
 	goModPath := filepath.Join(apiPath, "go.mod")
@@ -26,8 +33,12 @@ func CreateGoModForAPI(fs machinery.Filesystem, config config.Config) error {
 				"Create go.mod in "+apiPath, "go", "mod", "init", module); err != nil {
 				return err
 			}
-			if err := util.RunCmd("add require directive of sigs.k8s.io/controller-runtime", "go", "mod", "edit", "-require",
-				"sigs.k8s.io/controller-runtime"+"@"+v3scaffolds.ControllerRuntimeVersion); err != nil {
+			if err := util.RunCmd("pin go version to "+GoVersion, "go", "mod", "edit", "-go",
+				GoVersion); err != nil {
+				return err
+			}
+			if err := util.RunCmd("add require directive of "+ControllerRuntime, "go", "mod", "edit", "-require",
+				ControllerRuntime+"@"+ControllerRuntimeVersion); err != nil {
 				return err
 			}
 		}
@@ -41,7 +52,7 @@ func CreateGoModForAPI(fs machinery.Filesystem, config config.Config) error {
 	}
 
 	if err := util.RunCmd("Add require directive of API module", "go", "mod", "edit", "-require",
-		module+"@v0.0.0"); err != nil {
+		module+"@"+DefaultRequireVersion); err != nil {
 		return err
 	}
 
