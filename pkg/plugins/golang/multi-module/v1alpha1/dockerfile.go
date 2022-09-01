@@ -42,12 +42,6 @@ func insertModUpdatesInDockerfile(apiPath string) error {
 		return err
 	}
 
-	err = insertCodeIfDoesNotExist(dockerfile,
-		"COPY --from=builder /workspace/manager .",
-		"\n# copy channels\nCOPY --from=builder /channels /channels\n")
-	if err != nil {
-		return err
-	}
 	return nil
 }
 
