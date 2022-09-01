@@ -27,6 +27,7 @@ var _ machinery.Template = &AuthProxyService{}
 // AuthProxyService scaffolds a file that defines the service for the auth proxy
 type AuthProxyService struct {
 	machinery.TemplateMixin
+	machinery.ProjectNameMixin
 }
 
 // SetTemplateDefaults implements file.Template
@@ -45,6 +46,12 @@ kind: Service
 metadata:
   labels:
     control-plane: controller-manager
+    app.kubernetes.io/name: service
+    app.kubernetes.io/instance: controller-manager-metrics-service
+    app.kubernetes.io/component: kube-rbac-proxy
+    app.kubernetes.io/created-by: {{ .ProjectName }}
+    app.kubernetes.io/part-of: {{ .ProjectName }}
+    app.kubernetes.io/managed-by: kustomize
   name: controller-manager-metrics-service
   namespace: system
 spec:

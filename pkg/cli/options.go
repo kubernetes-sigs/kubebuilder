@@ -176,7 +176,7 @@ func getPluginsRoot(host string) (pluginsRoot string, err error) {
 	switch host {
 	case "darwin":
 		logrus.Debugf("Detected host is macOS.")
-		pluginsRoot = filepath.Join("Library", "ApplicationSupport", "kubebuilder", "plugins")
+		pluginsRoot = filepath.Join("Library", "Application Support", "kubebuilder", "plugins")
 	case "linux":
 		logrus.Debugf("Detected host is Linux.")
 		pluginsRoot = filepath.Join(".config", "kubebuilder", "plugins")

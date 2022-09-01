@@ -27,6 +27,7 @@ var _ machinery.Template = &Certificate{}
 // Certificate scaffolds a file that defines the issuer CR and the certificate CR
 type Certificate struct {
 	machinery.TemplateMixin
+	machinery.ProjectNameMixin
 }
 
 // SetTemplateDefaults implements file.Template
@@ -49,6 +50,13 @@ const certManagerTemplate = `# The following manifests contain a self-signed iss
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
+  labels:
+    app.kuberentes.io/name: issuer
+    app.kubernetes.io/instance: selfsigned-issuer
+    app.kubernetes.io/component: certificate
+    app.kubernetes.io/created-by: {{ .ProjectName }}
+    app.kubernetes.io/part-of: {{ .ProjectName }}
+    app.kubernetes.io/managed-by: kustomize
   name: selfsigned-issuer
   namespace: system
 spec:
@@ -57,6 +65,13 @@ spec:
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
+  labels:
+    app.kubernetes.io/name: certificate
+    app.kubernetes.io/instance: serving-cert
+    app.kubernetes.io/component: certificate
+    app.kubernetes.io/created-by: {{ .ProjectName }}
+    app.kubernetes.io/part-of: {{ .ProjectName }}
+    app.kubernetes.io/managed-by: kustomize
   name: serving-cert  # this name should match the one appeared in kustomizeconfig.yaml
   namespace: system
 spec:

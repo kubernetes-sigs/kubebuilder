@@ -63,6 +63,7 @@ import (
 	"context"
 	"os"
 	"time"
+	"fmt"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -107,6 +108,8 @@ var _ = Describe("{{ .Resource.Kind }} controller", func() {
 		})
 
 		AfterEach(func() {
+			// TODO(user): Attention if you improve this code by adding other context test you MUST
+			// be aware of the current delete namespace limitations. More info: https://book.kubebuilder.io/reference/envtest.html#testing-considerations
 			By("Deleting the Namespace to perform the tests")
 			_ = k8sClient.Delete(ctx, namespace);
 	
@@ -159,6 +162,20 @@ var _ = Describe("{{ .Resource.Kind }} controller", func() {
 			Eventually(func() error {
 				found := &appsv1.Deployment{}
 				return k8sClient.Get(ctx, typeNamespaceName, found)
+			}, time.Minute, time.Second).Should(Succeed())
+
+			By("Checking the latest Status Condition added to the {{ .Resource.Kind }} instance")
+			Eventually(func() error {
+				if {{ lower .Resource.Kind }}.Status.Conditions != nil && len({{ lower .Resource.Kind }}.Status.Conditions) != 0 {
+					latestStatusCondition := {{ lower .Resource.Kind }}.Status.Conditions[len({{ lower .Resource.Kind }}.Status.Conditions)-1]
+					expectedLatestStatusCondition := metav1.Condition{Type: typeAvailable{{ .Resource.Kind }},
+						Status: metav1.ConditionTrue, Reason: "Reconciling",
+						Message: fmt.Sprintf("Deployment for custom resource (%s) with %d replicas created successfully", {{ lower .Resource.Kind }}.Name, {{ lower .Resource.Kind }}.Spec.Size)}
+					if latestStatusCondition != expectedLatestStatusCondition {
+						return fmt.Errorf("The latest status condition added to the {{ lower .Resource.Kind }} instance is not as expected")
+					}
+				}
+				return nil
 			}, time.Minute, time.Second).Should(Succeed())
 		})
 	})

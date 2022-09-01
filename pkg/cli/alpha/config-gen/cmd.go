@@ -17,9 +17,6 @@ limitations under the License.
 package configgen
 
 import (
-	// required to make sure the controller-tools is initialized fully
-	_ "sigs.k8s.io/controller-runtime/pkg/scheme"
-
 	"embed"
 	"fmt"
 	"io/ioutil"
@@ -27,6 +24,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	// required to make sure the controller-tools is initialized fully
+	_ "sigs.k8s.io/controller-runtime/pkg/scheme"
 
 	"github.com/spf13/cobra"
 	"sigs.k8s.io/kustomize/kyaml/fn/framework"
@@ -37,6 +37,7 @@ import (
 )
 
 // TemplateFS contains the templates used by config-gen
+//
 //go:embed templates/resources/* templates/patches/*
 var TemplateFS embed.FS
 
@@ -256,7 +257,7 @@ kubebuilder alpha config-gen kubebuilderconfiggen.yaml patch1.yaml patch2.yaml
 
 # install the kustomize version used in the v3 plugin
 # set VERSION to install a different version
-curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/kustomize/v${VERSION:-3.8.9}/hack/install_kustomize.sh" | bash -s -- "${VERSION:-3.8.9}"
+curl -Ss "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/kustomize/v${VERSION:-3.8.9}/hack/install_kustomize.sh" | bash -s -- "${VERSION:-3.8.9}"
 
 # install the command as a kustomize plugin
 kubebuilder alpha config-gen install-as-plugin
@@ -310,12 +311,12 @@ kubebuilder alpha config-gen install-as-plugin
 			fmt.Fprintf(cmd.OutOrStdout(), "writing kustomize plugin file at %s\n", fullScriptPath)
 
 			dir, _ := filepath.Split(fullScriptPath)
-			if err = os.MkdirAll(dir, 0700); err != nil {
+			if err = os.MkdirAll(dir, 0o700); err != nil {
 				return err
 			}
 
 			// r-x perms to prevent overwrite vulnerability since the script will be executed out-of-tree.
-			return ioutil.WriteFile(fullScriptPath, []byte(pluginScript), 0500)
+			return ioutil.WriteFile(fullScriptPath, []byte(pluginScript), 0o500)
 		},
 	}
 	c.AddCommand(install)

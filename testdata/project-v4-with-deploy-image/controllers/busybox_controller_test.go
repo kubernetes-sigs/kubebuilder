@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"time"
 
@@ -60,6 +61,8 @@ var _ = Describe("Busybox controller", func() {
 		})
 
 		AfterEach(func() {
+			// TODO(user): Attention if you improve this code by adding other context test you MUST
+			// be aware of the current delete namespace limitations. More info: https://book.kubebuilder.io/reference/envtest.html#testing-considerations
 			By("Deleting the Namespace to perform the tests")
 			_ = k8sClient.Delete(ctx, namespace)
 
@@ -109,6 +112,20 @@ var _ = Describe("Busybox controller", func() {
 			Eventually(func() error {
 				found := &appsv1.Deployment{}
 				return k8sClient.Get(ctx, typeNamespaceName, found)
+			}, time.Minute, time.Second).Should(Succeed())
+
+			By("Checking the latest Status Condition added to the Busybox instance")
+			Eventually(func() error {
+				if busybox.Status.Conditions != nil && len(busybox.Status.Conditions) != 0 {
+					latestStatusCondition := busybox.Status.Conditions[len(busybox.Status.Conditions)-1]
+					expectedLatestStatusCondition := metav1.Condition{Type: typeAvailableBusybox,
+						Status: metav1.ConditionTrue, Reason: "Reconciling",
+						Message: fmt.Sprintf("Deployment for custom resource (%s) with %d replicas created successfully", busybox.Name, busybox.Spec.Size)}
+					if latestStatusCondition != expectedLatestStatusCondition {
+						return fmt.Errorf("The latest status condition added to the busybox instance is not as expected")
+					}
+				}
+				return nil
 			}, time.Minute, time.Second).Should(Succeed())
 		})
 	})

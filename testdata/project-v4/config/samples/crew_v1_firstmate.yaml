@@ -1,6 +1,12 @@
 apiVersion: crew.testproject.org/v1
 kind: FirstMate
 metadata:
+  labels:
+    app.kubernetes.io/name: firstmate
+    app.kubernetes.io/instance: firstmate-sample
+    app.kubernetes.io/part-of: project-v4
+    app.kuberentes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: project-v4
   name: firstmate-sample
 spec:
   # TODO(user): Add fields here
