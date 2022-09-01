@@ -32,9 +32,6 @@ COPY --from=builder /workspace/manager .
 # copy channels
 COPY --from=builder /channels /channels
 
-# copy channels
-COPY --from=builder /channels /channels
-
 USER 65532:65532
 
 ENTRYPOINT ["/manager"]
