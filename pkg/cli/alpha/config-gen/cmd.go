@@ -257,7 +257,7 @@ kubebuilder alpha config-gen kubebuilderconfiggen.yaml patch1.yaml patch2.yaml
 
 # install the kustomize version used in the v3 plugin
 # set VERSION to install a different version
-curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/kustomize/v${VERSION:-3.8.9}/hack/install_kustomize.sh" | bash -s -- "${VERSION:-3.8.9}"
+curl -Ss "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/kustomize/v${VERSION:-3.8.9}/hack/install_kustomize.sh" | bash -s -- "${VERSION:-3.8.9}"
 
 # install the command as a kustomize plugin
 kubebuilder alpha config-gen install-as-plugin
