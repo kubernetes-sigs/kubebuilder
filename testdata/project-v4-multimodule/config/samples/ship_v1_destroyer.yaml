@@ -1,0 +1,6 @@
+apiVersion: ship.testproject.org/v1
+kind: Destroyer
+metadata:
+  name: destroyer-sample
+spec:
+  # TODO(user): Add fields here

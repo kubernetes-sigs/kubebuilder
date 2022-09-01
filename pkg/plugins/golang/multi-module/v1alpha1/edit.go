@@ -8,7 +8,6 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
 )
 
 var _ plugin.EditSubcommand = &editSubcommand{}
@@ -16,7 +15,9 @@ var _ plugin.EditSubcommand = &editSubcommand{}
 type editSubcommand struct {
 	config config.Config
 
-	multimodule bool
+	multimodule     bool
+	canUseAPIModule bool
+	pluginConfig
 }
 
 func (p *editSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
@@ -39,27 +40,6 @@ func (p *editSubcommand) BindFlags(fs *pflag.FlagSet) {
 func (p *editSubcommand) InjectConfig(c config.Config) error {
 	p.config = c
 
-	return nil
-}
-
-func (p *editSubcommand) Scaffold(fs machinery.Filesystem) error {
-	if res, err := p.config.GetResources(); err != nil {
-		return err
-	} else if len(res) == 0 {
-		return nil
-	} else {
-		foundAtLeastOneAPI := false
-		for i := range res {
-			if res[i].HasAPI() {
-				foundAtLeastOneAPI = true
-				break
-			}
-		}
-		if !foundAtLeastOneAPI {
-			return nil
-		}
-	}
-
 	// Track the config and ensure it exists and can be parsed
 	cfg := pluginConfig{}
 	if err := p.config.DecodePluginConfig(pluginKey, &cfg); errors.As(err, &config.UnsupportedFieldError{}) {
@@ -70,9 +50,33 @@ func (p *editSubcommand) Scaffold(fs machinery.Filesystem) error {
 			return err
 		}
 	}
+	p.pluginConfig = cfg
+
+	if res, err := p.config.GetResources(); err != nil {
+		return err
+	} else if len(res) == 0 {
+		p.canUseAPIModule = false
+	} else {
+		foundAtLeastOneAPI := false
+		for i := range res {
+			if res[i].HasAPI() {
+				foundAtLeastOneAPI = true
+				break
+			}
+		}
+		p.canUseAPIModule = foundAtLeastOneAPI
+	}
+
+	return nil
+}
+
+func (p *editSubcommand) Scaffold(fs machinery.Filesystem) error {
+	if !p.canUseAPIModule {
+		return nil
+	}
 
 	if p.multimodule {
-		if cfg.ApiGoModCreated {
+		if p.pluginConfig.ApiGoModCreated {
 			return nil
 		}
 
@@ -80,9 +84,13 @@ func (p *editSubcommand) Scaffold(fs machinery.Filesystem) error {
 			return err
 		}
 
-		cfg.ApiGoModCreated = true
+		if err := TidyGoModForAPI(p.config.IsMultiGroup()); err != nil {
+			return err
+		}
+
+		p.pluginConfig.ApiGoModCreated = true
 	} else {
-		if !cfg.ApiGoModCreated {
+		if !p.pluginConfig.ApiGoModCreated {
 			return nil
 		}
 
@@ -90,17 +98,8 @@ func (p *editSubcommand) Scaffold(fs machinery.Filesystem) error {
 			return err
 		}
 
-		cfg.ApiGoModCreated = false
+		p.pluginConfig.ApiGoModCreated = false
 	}
 
-	return p.config.EncodePluginConfig(pluginKey, cfg)
-}
-
-func (p *editSubcommand) PostScaffold() error {
-	err := util.RunCmd("Update dependencies", "go", "mod", "tidy")
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return p.config.EncodePluginConfig(pluginKey, p.pluginConfig)
 }

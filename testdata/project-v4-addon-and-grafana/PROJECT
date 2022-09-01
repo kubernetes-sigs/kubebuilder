@@ -2,7 +2,6 @@ domain: testproject.org
 layout:
 - go.kubebuilder.io/v4-alpha
 - declarative.go.kubebuilder.io/v1
-- multi-module.go.kubebuilder.io/v1-alpha
 - grafana.kubebuilder.io/v1-alpha
 plugins:
   declarative.go.kubebuilder.io/v1:
@@ -20,8 +19,6 @@ plugins:
       kind: Admiral
       version: v1
   grafana.kubebuilder.io/v1-alpha: {}
-  multi-module.go.kubebuilder.io/v1-alpha:
-    ApiGoModCreated: true
 projectName: project-v4-addon-and-grafana
 repo: sigs.k8s.io/kubebuilder/testdata/project-v4-addon-and-grafana
 resources:

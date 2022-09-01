@@ -40,11 +40,11 @@ func RunInDir(dir string, runInDir func() error) error {
 	if err := os.Chdir(dir); err != nil {
 		return err
 	}
-	fmt.Println("working in: " + dir)
+	fmt.Println("working in " + dir)
 	if err := runInDir(); err != nil {
 		return err
 	}
-	fmt.Println("stopped working in: " + dir)
+	fmt.Println("stopped working in " + dir)
 	if err := os.Chdir(original); err != nil {
 		return err
 	}

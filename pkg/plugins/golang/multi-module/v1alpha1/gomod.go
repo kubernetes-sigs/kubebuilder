@@ -30,33 +30,29 @@ func CreateGoModForAPI(fs machinery.Filesystem, config config.Config) error {
 			return err
 		} else if !exists {
 			if err := util.RunCmd(
-				"Create go.mod in "+apiPath, "go", "mod", "init", module); err != nil {
+				"create go.mod in "+apiPath, "go", "mod", "init", module); err != nil {
 				return err
 			}
 			if err := util.RunCmd("pin go version to "+GoVersion, "go", "mod", "edit", "-go",
 				GoVersion); err != nil {
 				return err
 			}
-			if err := util.RunCmd("add require directive of "+ControllerRuntime, "go", "mod", "edit", "-require",
+			if err := util.RunCmd("require directive for "+ControllerRuntime, "go", "mod", "edit", "-require",
 				ControllerRuntime+"@"+ControllerRuntimeVersion); err != nil {
 				return err
 			}
-		}
-		if err := util.RunCmd(
-			"Update dependencies in "+apiPath, "go", "mod", "tidy"); err != nil {
-			return err
 		}
 		return nil
 	}); err != nil {
 		return err
 	}
 
-	if err := util.RunCmd("Add require directive of API module", "go", "mod", "edit", "-require",
+	if err := util.RunCmd("require directive for new module", "go", "mod", "edit", "-require",
 		module+"@"+DefaultRequireVersion); err != nil {
 		return err
 	}
 
-	if err := util.RunCmd("Update dependencies", "go", "mod", "edit", "-replace",
+	if err := util.RunCmd("replace directive for local folder", "go", "mod", "edit", "-replace",
 		module+"="+"."+string(filepath.Separator)+apiPath); err != nil {
 		return err
 	}
@@ -78,12 +74,12 @@ func CleanUpGoModForAPI(fs machinery.Filesystem, config config.Config) error {
 		return err
 	}
 
-	if err := util.RunCmd("Remove require directive of API module", "go", "mod", "edit", "-droprequire",
+	if err := util.RunCmd("drop require directive", "go", "mod", "edit", "-droprequire",
 		module); err != nil {
 		return err
 	}
 
-	if err := util.RunCmd("Update dependencies", "go", "mod", "edit", "-dropreplace",
+	if err := util.RunCmd("drop replace statement", "go", "mod", "edit", "-dropreplace",
 		module); err != nil {
 		return err
 	}

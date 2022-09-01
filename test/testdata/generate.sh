@@ -102,6 +102,34 @@ function scaffold_test_project {
       $kb create api --version v1 --kind Lakers --controller=true --resource=true --make=false
       $kb create webhook --version v1 --kind Lakers --defaulting --programmatic-validation
     fi
+  elif [[ $project =~ multimodule ]]; then
+    header_text 'Switching to multimodule & multigroup layout ...'
+    $kb edit --multimodule=true --multigroup=true
+
+    header_text 'Creating APIs ...'
+    $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false
+    $kb create webhook --group crew --version v1 --kind Captain --defaulting --programmatic-validation
+
+    $kb create api --group ship --version v1beta1 --kind Frigate --controller=true --resource=true --make=false
+    $kb create webhook --group ship --version v1beta1 --kind Frigate --conversion
+
+    $kb create api --group ship --version v1 --kind Destroyer --controller=true --resource=true --namespaced=false --make=false
+    $kb create webhook --group ship --version v1 --kind Destroyer --defaulting
+
+    $kb create api --group ship --version v2alpha1 --kind Cruiser --controller=true --resource=true --namespaced=false --make=false
+    $kb create webhook --group ship --version v2alpha1 --kind Cruiser --programmatic-validation
+
+    $kb create api --group sea-creatures --version v1beta1 --kind Kraken --controller=true --resource=true --make=false
+
+    $kb create api --group sea-creatures --version v1beta2 --kind Leviathan --controller=true --resource=true --make=false
+
+    $kb create api --group foo.policy --version v1 --kind HealthCheckPolicy --controller=true --resource=true --make=false
+
+    $kb create api --group apps --version v1 --kind Deployment --controller=true --resource=false --make=false
+
+    $kb create api --group foo --version v1 --kind Bar --controller=true --resource=true --make=false
+    $kb create api --group fiz --version v1 --kind Bar --controller=true --resource=true --make=false
+
   elif [[ $project =~ addon ]]; then
     header_text 'Creating APIs ...'
     $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false
@@ -130,16 +158,18 @@ build_kb
 scaffold_test_project project-v2 --project-version=2
 
 # [Currently, default CLI plugin] - Project version 3 (default) uses plugin go/v3 (default).
+scaffold_test_project project-v3-multimodule --plugins="go/v3,multi-module/v1-alpha"
 scaffold_test_project project-v3
 scaffold_test_project project-v3-multigroup
-scaffold_test_project project-v3-addon-and-grafana --plugins="go/v3,declarative,multi-module,grafana/v1-alpha"
+scaffold_test_project project-v3-addon-and-grafana --plugins="go/v3,declarative,grafana/v1-alpha"
 scaffold_test_project project-v3-config --component-config
 scaffold_test_project project-v3-with-deploy-image
 
 # [Next version, alpha] Project version v4-alpha
+scaffold_test_project project-v4-multimodule --plugins="go/v4-alpha,multi-module/v1-alpha"
 scaffold_test_project project-v4 --plugins="go/v4-alpha"
 scaffold_test_project project-v4-multigroup --plugins="go/v4-alpha"
-scaffold_test_project project-v4-addon-and-grafana --plugins="go/v4-alpha,declarative,multi-module,grafana/v1-alpha"
+scaffold_test_project project-v4-addon-and-grafana --plugins="go/v4-alpha,declarative,grafana/v1-alpha"
 scaffold_test_project project-v4-config --component-config --plugins="go/v4-alpha"
 scaffold_test_project project-v4-with-deploy-image --plugins="go/v4-alpha"
 

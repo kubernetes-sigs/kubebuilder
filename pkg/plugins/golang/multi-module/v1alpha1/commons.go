@@ -21,6 +21,7 @@ import (
 	"path/filepath"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
 )
 
 func InsertPluginMetaToConfig(target config.Config, cfg pluginConfig) error {
@@ -48,4 +49,15 @@ func GetAPIPath(isMultiGroup bool) string {
 		path = filepath.Join("api")
 	}
 	return path
+}
+
+func TidyGoModForAPI(isMultiGroup bool) error {
+	apiPath := GetAPIPath(isMultiGroup)
+	return util.RunInDir(apiPath, func() error {
+		if err := util.RunCmd(
+			"Update dependencies in "+apiPath, "go", "mod", "tidy"); err != nil {
+			return err
+		}
+		return nil
+	})
 }

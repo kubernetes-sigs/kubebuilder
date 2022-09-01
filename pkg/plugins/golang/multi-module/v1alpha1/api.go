@@ -18,12 +18,13 @@ package v1alpha1
 
 import (
 	"errors"
+	"fmt"
 
+	"github.com/spf13/pflag"
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
 )
 
 var _ plugin.CreateAPISubcommand = &createAPISubcommand{}
@@ -32,6 +33,15 @@ type createAPISubcommand struct {
 	config config.Config
 
 	resource *resource.Resource
+
+	pluginConfig
+
+	// runMake indicates whether to run make or not after scaffolding APIs
+	runMake bool
+}
+
+func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
+	p.runMake, _ = fs.GetBool("make")
 }
 
 func (p *createAPISubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
@@ -47,6 +57,18 @@ https://github.com/golang/go/wiki/Modules#should-i-have-multiple-modules-in-a-si
 
 func (p *createAPISubcommand) InjectConfig(c config.Config) error {
 	p.config = c
+
+	// Track the config and ensure it exists and can be parsed
+	cfg := pluginConfig{}
+	if err := p.config.DecodePluginConfig(pluginKey, &cfg); errors.As(err, &config.UnsupportedFieldError{}) {
+		// Config doesn't support per-plugin configuration, so we can't track them
+	} else {
+		// Fail unless they key wasn't found, which just means it is the first resource tracked
+		if err != nil && !errors.As(err, &config.PluginKeyNotFoundError{}) {
+			return err
+		}
+	}
+	p.pluginConfig = cfg
 
 	return nil
 }
@@ -65,34 +87,19 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 }
 
 func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
-	// Track the config and ensure it exists and can be parsed
-	cfg := pluginConfig{}
-	if err := p.config.DecodePluginConfig(pluginKey, &cfg); errors.As(err, &config.UnsupportedFieldError{}) {
-		// Config doesn't support per-plugin configuration, so we can't track them
-	} else {
-		// Fail unless they key wasn't found, which just means it is the first resource tracked
-		if err != nil && !errors.As(err, &config.PluginKeyNotFoundError{}) {
-			return err
-		}
-	}
-
-	if cfg.ApiGoModCreated {
-		return nil
+	if p.pluginConfig.ApiGoModCreated {
+		fmt.Println("using existing multi-module layout, updating submodules...")
+		return TidyGoModForAPI(p.config.IsMultiGroup())
 	}
 
 	if err := CreateGoModForAPI(fs, p.config); err != nil {
 		return err
 	}
-
-	cfg.ApiGoModCreated = true
-	return p.config.EncodePluginConfig(pluginKey, cfg)
-}
-
-func (p *createAPISubcommand) PostScaffold() error {
-	err := util.RunCmd("Update dependencies", "go", "mod", "tidy")
-	if err != nil {
+	if err := TidyGoModForAPI(p.config.IsMultiGroup()); err != nil {
 		return err
 	}
 
-	return nil
+	p.pluginConfig.ApiGoModCreated = true
+
+	return p.config.EncodePluginConfig(pluginKey, p.pluginConfig)
 }
