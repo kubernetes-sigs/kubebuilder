@@ -77,11 +77,13 @@ func (p *createWebhookSubcommand) Scaffold(fs machinery.Filesystem) error {
 		return err
 	}
 
+	// we are not doing this in PostScaffold in order to avoid a wrong tidy order with other plugins relaying on tidying up
+	// the main module, e.g. declarative
+	if err := tidyGoModForAPI(p.apiPath); err != nil {
+		return err
+	}
+
 	p.pluginConfig.ApiGoModCreated = true
 
 	return p.config.EncodePluginConfig(pluginKey, p.pluginConfig)
-}
-
-func (p *createWebhookSubcommand) PostScaffold() error {
-	return tidyGoModForAPI(p.apiPath)
 }

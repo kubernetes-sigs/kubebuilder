@@ -121,6 +121,10 @@ func Run(kbc *utils.TestContext) {
 	var controllerPodName string
 	var err error
 
+	err = util.RunInDir(filepath.Join(kbc.Dir, "api"), func() error {
+		return kbc.Tidy()
+	})
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 	By("updating the go.mod")
 	err = kbc.Tidy()
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())

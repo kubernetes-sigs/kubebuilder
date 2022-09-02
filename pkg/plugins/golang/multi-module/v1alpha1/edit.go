@@ -92,23 +92,14 @@ func (p *editSubcommand) Scaffold(fs machinery.Filesystem) error {
 	if err := scaffolder.Scaffold(); err != nil {
 		return err
 	}
+
+	// we are not doing this in PostScaffold in order to avoid a wrong tidy order with other plugins relaying on tidying up
+	// the main module, e.g. declarative
+	if err := tidyGoModForAPI(p.apiPath); err != nil {
+		return err
+	}
+
 	p.pluginConfig.ApiGoModCreated = p.multimodule
 
 	return p.config.EncodePluginConfig(pluginKey, p.pluginConfig)
-}
-
-func (p *editSubcommand) PostScaffold() error {
-	if !p.canUseAPIModule {
-		return nil
-	}
-
-	if p.multimodule && p.pluginConfig.ApiGoModCreated {
-		return nil
-	}
-
-	if !p.multimodule && !p.pluginConfig.ApiGoModCreated {
-		return nil
-	}
-
-	return tidyGoModForAPI(p.apiPath)
 }
