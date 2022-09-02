@@ -102,11 +102,11 @@ func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
 	if err := scaffolder.Scaffold(); err != nil {
 		return err
 	}
-	if err := tidyGoModForAPI(p.apiPath); err != nil {
-		return err
-	}
-
 	p.pluginConfig.ApiGoModCreated = true
 
 	return p.config.EncodePluginConfig(pluginKey, p.pluginConfig)
+}
+
+func (p *createAPISubcommand) PostScaffold() error {
+	return tidyGoModForAPI(p.apiPath)
 }

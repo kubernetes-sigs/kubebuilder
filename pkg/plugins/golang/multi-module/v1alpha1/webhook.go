@@ -71,15 +71,17 @@ func (p *createWebhookSubcommand) Scaffold(fs machinery.Filesystem) error {
 		return tidyGoModForAPI(p.apiPath)
 	}
 
-	scaffolder := scaffolds.NewAPIScaffolder(p.config, getAPIPath(p.config.IsMultiGroup()), true)
+	scaffolder := scaffolds.NewAPIScaffolder(p.config, p.apiPath, true)
 	scaffolder.InjectFS(fs)
 	if err := scaffolder.Scaffold(); err != nil {
 		return err
 	}
-	if err := tidyGoModForAPI(p.apiPath); err != nil {
-		return err
-	}
+
 	p.pluginConfig.ApiGoModCreated = true
 
 	return p.config.EncodePluginConfig(pluginKey, p.pluginConfig)
+}
+
+func (p *createWebhookSubcommand) PostScaffold() error {
+	return tidyGoModForAPI(p.apiPath)
 }

@@ -92,11 +92,23 @@ func (p *editSubcommand) Scaffold(fs machinery.Filesystem) error {
 	if err := scaffolder.Scaffold(); err != nil {
 		return err
 	}
-
-	if err := tidyGoModForAPI(p.apiPath); err != nil {
-		return err
-	}
 	p.pluginConfig.ApiGoModCreated = p.multimodule
 
 	return p.config.EncodePluginConfig(pluginKey, p.pluginConfig)
+}
+
+func (p *editSubcommand) PostScaffold() error {
+	if !p.canUseAPIModule {
+		return nil
+	}
+
+	if p.multimodule && p.pluginConfig.ApiGoModCreated {
+		return nil
+	}
+
+	if !p.multimodule && !p.pluginConfig.ApiGoModCreated {
+		return nil
+	}
+
+	return tidyGoModForAPI(p.apiPath)
 }
