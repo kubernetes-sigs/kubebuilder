@@ -18,6 +18,7 @@ package v1alpha1
 
 import (
 	"errors"
+	"fmt"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
@@ -53,6 +54,7 @@ func (p *initSubcommand) Scaffold(fs machinery.Filesystem) error {
 	}); err != nil {
 		return err
 	}
+	fmt.Println("initialized project with multi-module configuration, your api will be based on its own module")
 	return nil
 }
 

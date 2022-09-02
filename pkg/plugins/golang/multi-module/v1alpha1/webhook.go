@@ -24,6 +24,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/multi-module/v1alpha1/scaffolds"
 )
 
 var _ plugin.CreateWebhookSubcommand = &createWebhookSubcommand{}
@@ -34,6 +35,8 @@ type createWebhookSubcommand struct {
 	resource *resource.Resource
 
 	pluginConfig
+
+	apiPath string
 }
 
 func (p *createWebhookSubcommand) InjectConfig(c config.Config) error {
@@ -52,6 +55,8 @@ func (p *createWebhookSubcommand) InjectConfig(c config.Config) error {
 
 	p.pluginConfig = cfg
 
+	p.apiPath = getAPIPath(p.config.IsMultiGroup())
+
 	return nil
 }
 
@@ -63,17 +68,17 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 func (p *createWebhookSubcommand) Scaffold(fs machinery.Filesystem) error {
 	if p.pluginConfig.ApiGoModCreated {
 		fmt.Println("using existing multi-module layout, updating submodules...")
-		return tidyGoModForAPI(p.config.IsMultiGroup())
+		return tidyGoModForAPI(p.apiPath)
 	}
 
-	if err := createGoModForAPI(fs, p.config); err != nil {
+	scaffolder := scaffolds.NewAPIScaffolder(p.config, getAPIPath(p.config.IsMultiGroup()), true)
+	scaffolder.InjectFS(fs)
+	if err := scaffolder.Scaffold(); err != nil {
 		return err
 	}
-
-	if err := tidyGoModForAPI(p.config.IsMultiGroup()); err != nil {
+	if err := tidyGoModForAPI(p.apiPath); err != nil {
 		return err
 	}
-
 	p.pluginConfig.ApiGoModCreated = true
 
 	return p.config.EncodePluginConfig(pluginKey, p.pluginConfig)

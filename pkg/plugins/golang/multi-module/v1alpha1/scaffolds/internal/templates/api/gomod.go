@@ -17,6 +17,8 @@ limitations under the License.
 package api
 
 import (
+	"fmt"
+
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
@@ -28,7 +30,7 @@ type GoMod struct {
 	machinery.MultiGroupMixin
 	machinery.RepositoryMixin
 
-	Path                     string
+	ModuleName               string
 	ControllerRuntimeVersion string
 }
 
@@ -36,11 +38,12 @@ type GoMod struct {
 func (f *GoMod) SetTemplateDefaults() error {
 	f.TemplateBody = goModTemplate
 	f.IfExistsAction = machinery.SkipFile
+	fmt.Printf("using module name %s\n", f.ModuleName)
 	return nil
 }
 
 const goModTemplate = `
-module {{ .Repo }}/{{ .Path }}
+module {{ .ModuleName }}
 
 go 1.18
 

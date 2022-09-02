@@ -31,22 +31,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	crewv1 "sigs.k8s.io/kubebuilder/testdata/project-v3-multimodule/apis/crew/v1"
-	fizv1 "sigs.k8s.io/kubebuilder/testdata/project-v3-multimodule/apis/fiz/v1"
-	foopolicyv1 "sigs.k8s.io/kubebuilder/testdata/project-v3-multimodule/apis/foo.policy/v1"
-	foov1 "sigs.k8s.io/kubebuilder/testdata/project-v3-multimodule/apis/foo/v1"
-	seacreaturesv1beta1 "sigs.k8s.io/kubebuilder/testdata/project-v3-multimodule/apis/sea-creatures/v1beta1"
-	seacreaturesv1beta2 "sigs.k8s.io/kubebuilder/testdata/project-v3-multimodule/apis/sea-creatures/v1beta2"
-	shipv1 "sigs.k8s.io/kubebuilder/testdata/project-v3-multimodule/apis/ship/v1"
-	shipv1beta1 "sigs.k8s.io/kubebuilder/testdata/project-v3-multimodule/apis/ship/v1beta1"
-	shipv2alpha1 "sigs.k8s.io/kubebuilder/testdata/project-v3-multimodule/apis/ship/v2alpha1"
-	appscontrollers "sigs.k8s.io/kubebuilder/testdata/project-v3-multimodule/controllers/apps"
-	crewcontrollers "sigs.k8s.io/kubebuilder/testdata/project-v3-multimodule/controllers/crew"
-	fizcontrollers "sigs.k8s.io/kubebuilder/testdata/project-v3-multimodule/controllers/fiz"
-	foocontrollers "sigs.k8s.io/kubebuilder/testdata/project-v3-multimodule/controllers/foo"
-	foopolicycontrollers "sigs.k8s.io/kubebuilder/testdata/project-v3-multimodule/controllers/foo.policy"
-	seacreaturescontrollers "sigs.k8s.io/kubebuilder/testdata/project-v3-multimodule/controllers/sea-creatures"
-	shipcontrollers "sigs.k8s.io/kubebuilder/testdata/project-v3-multimodule/controllers/ship"
+	crewv1 "sigs.k8s.io/kubebuilder/testdata/project-v3-multimodule/api/v1"
+	"sigs.k8s.io/kubebuilder/testdata/project-v3-multimodule/controllers"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -59,14 +45,6 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(crewv1.AddToScheme(scheme))
-	utilruntime.Must(shipv1beta1.AddToScheme(scheme))
-	utilruntime.Must(shipv1.AddToScheme(scheme))
-	utilruntime.Must(shipv2alpha1.AddToScheme(scheme))
-	utilruntime.Must(seacreaturesv1beta1.AddToScheme(scheme))
-	utilruntime.Must(seacreaturesv1beta2.AddToScheme(scheme))
-	utilruntime.Must(foopolicyv1.AddToScheme(scheme))
-	utilruntime.Must(foov1.AddToScheme(scheme))
-	utilruntime.Must(fizv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -111,7 +89,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&crewcontrollers.CaptainReconciler{
+	if err = (&controllers.CaptainReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
@@ -122,79 +100,33 @@ func main() {
 		setupLog.Error(err, "unable to create webhook", "webhook", "Captain")
 		os.Exit(1)
 	}
-	if err = (&shipcontrollers.FrigateReconciler{
+	if err = (&controllers.FirstMateReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Frigate")
+		setupLog.Error(err, "unable to create controller", "controller", "FirstMate")
 		os.Exit(1)
 	}
-	if err = (&shipv1beta1.Frigate{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "Frigate")
+	if err = (&crewv1.FirstMate{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "FirstMate")
 		os.Exit(1)
 	}
-	if err = (&shipcontrollers.DestroyerReconciler{
+	if err = (&controllers.AdmiralReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Destroyer")
+		setupLog.Error(err, "unable to create controller", "controller", "Admiral")
 		os.Exit(1)
 	}
-	if err = (&shipv1.Destroyer{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "Destroyer")
+	if err = (&crewv1.Admiral{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "Admiral")
 		os.Exit(1)
 	}
-	if err = (&shipcontrollers.CruiserReconciler{
+	if err = (&controllers.LakerReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Cruiser")
-		os.Exit(1)
-	}
-	if err = (&shipv2alpha1.Cruiser{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "Cruiser")
-		os.Exit(1)
-	}
-	if err = (&seacreaturescontrollers.KrakenReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Kraken")
-		os.Exit(1)
-	}
-	if err = (&seacreaturescontrollers.LeviathanReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Leviathan")
-		os.Exit(1)
-	}
-	if err = (&foopolicycontrollers.HealthCheckPolicyReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "HealthCheckPolicy")
-		os.Exit(1)
-	}
-	if err = (&appscontrollers.DeploymentReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Deployment")
-		os.Exit(1)
-	}
-	if err = (&foocontrollers.BarReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Bar")
-		os.Exit(1)
-	}
-	if err = (&fizcontrollers.BarReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Bar")
+		setupLog.Error(err, "unable to create controller", "controller", "Laker")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

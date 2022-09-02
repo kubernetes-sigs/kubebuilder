@@ -6,9 +6,9 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
-  - apps
+  - crew.testproject.org
   resources:
-  - deployments
+  - admirals
   verbs:
   - create
   - delete
@@ -18,15 +18,15 @@ rules:
   - update
   - watch
 - apiGroups:
-  - apps
+  - crew.testproject.org
   resources:
-  - deployments/finalizers
+  - admirals/finalizers
   verbs:
   - update
 - apiGroups:
-  - apps
+  - crew.testproject.org
   resources:
-  - deployments/status
+  - admirals/status
   verbs:
   - get
   - patch
@@ -58,9 +58,9 @@ rules:
   - patch
   - update
 - apiGroups:
-  - fiz.testproject.org
+  - crew.testproject.org
   resources:
-  - bars
+  - firstmates
   verbs:
   - create
   - delete
@@ -70,23 +70,23 @@ rules:
   - update
   - watch
 - apiGroups:
-  - fiz.testproject.org
+  - crew.testproject.org
   resources:
-  - bars/finalizers
+  - firstmates/finalizers
   verbs:
   - update
 - apiGroups:
-  - fiz.testproject.org
+  - crew.testproject.org
   resources:
-  - bars/status
+  - firstmates/status
   verbs:
   - get
   - patch
   - update
 - apiGroups:
-  - foo.policy.testproject.org
+  - crew.testproject.org
   resources:
-  - healthcheckpolicies
+  - lakers
   verbs:
   - create
   - delete
@@ -96,171 +96,15 @@ rules:
   - update
   - watch
 - apiGroups:
-  - foo.policy.testproject.org
+  - crew.testproject.org
   resources:
-  - healthcheckpolicies/finalizers
+  - lakers/finalizers
   verbs:
   - update
 - apiGroups:
-  - foo.policy.testproject.org
+  - crew.testproject.org
   resources:
-  - healthcheckpolicies/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - foo.testproject.org
-  resources:
-  - bars
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - foo.testproject.org
-  resources:
-  - bars/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - foo.testproject.org
-  resources:
-  - bars/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - sea-creatures.testproject.org
-  resources:
-  - krakens
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - sea-creatures.testproject.org
-  resources:
-  - krakens/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - sea-creatures.testproject.org
-  resources:
-  - krakens/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - sea-creatures.testproject.org
-  resources:
-  - leviathans
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - sea-creatures.testproject.org
-  resources:
-  - leviathans/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - sea-creatures.testproject.org
-  resources:
-  - leviathans/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - ship.testproject.org
-  resources:
-  - cruisers
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ship.testproject.org
-  resources:
-  - cruisers/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - ship.testproject.org
-  resources:
-  - cruisers/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - ship.testproject.org
-  resources:
-  - destroyers
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ship.testproject.org
-  resources:
-  - destroyers/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - ship.testproject.org
-  resources:
-  - destroyers/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - ship.testproject.org
-  resources:
-  - frigates
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ship.testproject.org
-  resources:
-  - frigates/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - ship.testproject.org
-  resources:
-  - frigates/status
+  - lakers/status
   verbs:
   - get
   - patch

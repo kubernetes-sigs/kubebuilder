@@ -25,6 +25,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/multi-module/v1alpha1/scaffolds"
 )
 
 var _ plugin.CreateAPISubcommand = &createAPISubcommand{}
@@ -38,6 +39,8 @@ type createAPISubcommand struct {
 
 	// runMake indicates whether to run make or not after scaffolding APIs
 	runMake bool
+
+	apiPath string
 }
 
 func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
@@ -70,6 +73,8 @@ func (p *createAPISubcommand) InjectConfig(c config.Config) error {
 	}
 	p.pluginConfig = cfg
 
+	p.apiPath = getAPIPath(p.config.IsMultiGroup())
+
 	return nil
 }
 
@@ -89,13 +94,15 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
 	if p.pluginConfig.ApiGoModCreated {
 		fmt.Println("using existing multi-module layout, updating submodules...")
-		return tidyGoModForAPI(p.config.IsMultiGroup())
+		return tidyGoModForAPI(p.apiPath)
 	}
 
-	if err := createGoModForAPI(fs, p.config); err != nil {
+	scaffolder := scaffolds.NewAPIScaffolder(p.config, p.apiPath, true)
+	scaffolder.InjectFS(fs)
+	if err := scaffolder.Scaffold(); err != nil {
 		return err
 	}
-	if err := tidyGoModForAPI(p.config.IsMultiGroup()); err != nil {
+	if err := tidyGoModForAPI(p.apiPath); err != nil {
 		return err
 	}
 

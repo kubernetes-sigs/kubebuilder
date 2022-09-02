@@ -8,6 +8,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/multi-module/v1alpha1/scaffolds"
 )
 
 var _ plugin.EditSubcommand = &editSubcommand{}
@@ -18,6 +19,7 @@ type editSubcommand struct {
 	multimodule     bool
 	canUseAPIModule bool
 	pluginConfig
+	apiPath string
 }
 
 func (p *editSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
@@ -67,6 +69,8 @@ func (p *editSubcommand) InjectConfig(c config.Config) error {
 		p.canUseAPIModule = foundAtLeastOneAPI
 	}
 
+	p.apiPath = getAPIPath(p.config.IsMultiGroup())
+
 	return nil
 }
 
@@ -75,31 +79,24 @@ func (p *editSubcommand) Scaffold(fs machinery.Filesystem) error {
 		return nil
 	}
 
-	if p.multimodule {
-		if p.pluginConfig.ApiGoModCreated {
-			return nil
-		}
-
-		if err := createGoModForAPI(fs, p.config); err != nil {
-			return err
-		}
-
-		if err := tidyGoModForAPI(p.config.IsMultiGroup()); err != nil {
-			return err
-		}
-
-		p.pluginConfig.ApiGoModCreated = true
-	} else {
-		if !p.pluginConfig.ApiGoModCreated {
-			return nil
-		}
-
-		if err := cleanUpGoModForAPI(fs, p.config); err != nil {
-			return err
-		}
-
-		p.pluginConfig.ApiGoModCreated = false
+	if p.multimodule && p.pluginConfig.ApiGoModCreated {
+		return nil
 	}
+
+	if !p.multimodule && !p.pluginConfig.ApiGoModCreated {
+		return nil
+	}
+
+	scaffolder := scaffolds.NewAPIScaffolder(p.config, p.apiPath, p.multimodule)
+	scaffolder.InjectFS(fs)
+	if err := scaffolder.Scaffold(); err != nil {
+		return err
+	}
+
+	if err := tidyGoModForAPI(p.apiPath); err != nil {
+		return err
+	}
+	p.pluginConfig.ApiGoModCreated = p.multimodule
 
 	return p.config.EncodePluginConfig(pluginKey, p.pluginConfig)
 }

@@ -2,7 +2,6 @@ domain: testproject.org
 layout:
 - go.kubebuilder.io/v3
 - multi-module.go.kubebuilder.io/v1-alpha
-multigroup: true
 plugins:
   multi-module.go.kubebuilder.io/v1-alpha:
     ApiGoModCreated: true
@@ -16,7 +15,7 @@ resources:
   domain: testproject.org
   group: crew
   kind: Captain
-  path: sigs.k8s.io/kubebuilder/testdata/project-v3-multimodule/apis/crew/v1
+  path: sigs.k8s.io/kubebuilder/testdata/project-v3-multimodule/api/v1
   version: v1
   webhooks:
     defaulting: true
@@ -27,10 +26,10 @@ resources:
     namespaced: true
   controller: true
   domain: testproject.org
-  group: ship
-  kind: Frigate
-  path: sigs.k8s.io/kubebuilder/testdata/project-v3-multimodule/apis/ship/v1beta1
-  version: v1beta1
+  group: crew
+  kind: FirstMate
+  path: sigs.k8s.io/kubebuilder/testdata/project-v3-multimodule/api/v1
+  version: v1
   webhooks:
     conversion: true
     webhookVersion: v1
@@ -38,72 +37,16 @@ resources:
     crdVersion: v1
   controller: true
   domain: testproject.org
-  group: ship
-  kind: Destroyer
-  path: sigs.k8s.io/kubebuilder/testdata/project-v3-multimodule/apis/ship/v1
+  group: crew
+  kind: Admiral
+  path: sigs.k8s.io/kubebuilder/testdata/project-v3-multimodule/api/v1
   version: v1
   webhooks:
     defaulting: true
     webhookVersion: v1
-- api:
-    crdVersion: v1
-  controller: true
-  domain: testproject.org
-  group: ship
-  kind: Cruiser
-  path: sigs.k8s.io/kubebuilder/testdata/project-v3-multimodule/apis/ship/v2alpha1
-  version: v2alpha1
-  webhooks:
-    validation: true
-    webhookVersion: v1
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: testproject.org
-  group: sea-creatures
-  kind: Kraken
-  path: sigs.k8s.io/kubebuilder/testdata/project-v3-multimodule/apis/sea-creatures/v1beta1
-  version: v1beta1
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: testproject.org
-  group: sea-creatures
-  kind: Leviathan
-  path: sigs.k8s.io/kubebuilder/testdata/project-v3-multimodule/apis/sea-creatures/v1beta2
-  version: v1beta2
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: testproject.org
-  group: foo.policy
-  kind: HealthCheckPolicy
-  path: sigs.k8s.io/kubebuilder/testdata/project-v3-multimodule/apis/foo.policy/v1
-  version: v1
 - controller: true
-  group: apps
-  kind: Deployment
-  path: k8s.io/api/apps/v1
-  version: v1
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
   domain: testproject.org
-  group: foo
-  kind: Bar
-  path: sigs.k8s.io/kubebuilder/testdata/project-v3-multimodule/apis/foo/v1
-  version: v1
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: testproject.org
-  group: fiz
-  kind: Bar
-  path: sigs.k8s.io/kubebuilder/testdata/project-v3-multimodule/apis/fiz/v1
+  group: crew
+  kind: Laker
   version: v1
 version: "3"
