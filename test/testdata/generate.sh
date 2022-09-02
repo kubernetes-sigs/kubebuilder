@@ -45,7 +45,7 @@ function scaffold_test_project {
   header_text "Initializing project ..."
   $kb init $init_flags --domain testproject.org --license apache2 --owner "The Kubernetes authors"
 
-  if [ $project == "project-v2" ] || [ $project == "project-v3" ] || [ $project == "project-v3-config" ] || [ $project == "project-v4" ] || [ $project == "project-v4-config" ]; then
+  if [ $project == "project-v2" ] || [ $project == "project-v3" ] || [ $project == "project-v3-config" ] || [ $project == "project-v4" ] || [ $project == "project-v4-config" ] || [ $project == "project-v3-multimodule" ] || [ $project == "project-v4-multimodule" ]; then
     header_text 'Creating APIs ...'
     $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false
     $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false --force
@@ -102,34 +102,6 @@ function scaffold_test_project {
       $kb create api --version v1 --kind Lakers --controller=true --resource=true --make=false
       $kb create webhook --version v1 --kind Lakers --defaulting --programmatic-validation
     fi
-  elif [[ $project =~ multimodule ]]; then
-    header_text 'Switching to multimodule & multigroup layout ...'
-    $kb edit --multimodule=true --multigroup=true
-
-    header_text 'Creating APIs ...'
-    $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false
-    $kb create webhook --group crew --version v1 --kind Captain --defaulting --programmatic-validation
-
-    $kb create api --group ship --version v1beta1 --kind Frigate --controller=true --resource=true --make=false
-    $kb create webhook --group ship --version v1beta1 --kind Frigate --conversion
-
-    $kb create api --group ship --version v1 --kind Destroyer --controller=true --resource=true --namespaced=false --make=false
-    $kb create webhook --group ship --version v1 --kind Destroyer --defaulting
-
-    $kb create api --group ship --version v2alpha1 --kind Cruiser --controller=true --resource=true --namespaced=false --make=false
-    $kb create webhook --group ship --version v2alpha1 --kind Cruiser --programmatic-validation
-
-    $kb create api --group sea-creatures --version v1beta1 --kind Kraken --controller=true --resource=true --make=false
-
-    $kb create api --group sea-creatures --version v1beta2 --kind Leviathan --controller=true --resource=true --make=false
-
-    $kb create api --group foo.policy --version v1 --kind HealthCheckPolicy --controller=true --resource=true --make=false
-
-    $kb create api --group apps --version v1 --kind Deployment --controller=true --resource=false --make=false
-
-    $kb create api --group foo --version v1 --kind Bar --controller=true --resource=true --make=false
-    $kb create api --group fiz --version v1 --kind Bar --controller=true --resource=true --make=false
-
   elif [[ $project =~ addon ]]; then
     header_text 'Creating APIs ...'
     $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false

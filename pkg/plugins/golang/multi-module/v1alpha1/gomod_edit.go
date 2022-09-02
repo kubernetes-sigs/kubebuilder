@@ -5,10 +5,10 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/spf13/afero"
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/multi-module/v1alpha1/scaffolds"
 	v3scaffolds "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds"
 )
 
@@ -19,31 +19,16 @@ const (
 	DefaultRequireVersion    = "v0.0.0"
 )
 
-func CreateGoModForAPI(fs machinery.Filesystem, config config.Config) error {
-	apiPath := GetAPIPath(config.IsMultiGroup())
+func createGoModForAPI(fs machinery.Filesystem, config config.Config) error {
+	apiPath := getAPIPath(config.IsMultiGroup())
 	goModPath := filepath.Join(apiPath, "go.mod")
 	module := config.GetRepository() + "/" + apiPath
 	fmt.Println("resolved module: " + module)
 
-	if err := util.RunInDir(apiPath, func() error {
-		if exists, err := afero.Exists(fs.FS, goModPath); err != nil {
-			return err
-		} else if !exists {
-			if err := util.RunCmd(
-				"create go.mod in "+apiPath, "go", "mod", "init", module); err != nil {
-				return err
-			}
-			if err := util.RunCmd("pin go version to "+GoVersion, "go", "mod", "edit", "-go",
-				GoVersion); err != nil {
-				return err
-			}
-			if err := util.RunCmd("require directive for "+ControllerRuntime, "go", "mod", "edit", "-require",
-				ControllerRuntime+"@"+ControllerRuntimeVersion); err != nil {
-				return err
-			}
-		}
-		return nil
-	}); err != nil {
+	scaffolder := scaffolds.NewAPIScaffolder(config, goModPath)
+	scaffolder.InjectFS(fs)
+	err := scaffolder.Scaffold()
+	if err != nil {
 		return err
 	}
 
@@ -61,8 +46,8 @@ func CreateGoModForAPI(fs machinery.Filesystem, config config.Config) error {
 	return insertModUpdatesInDockerfile(apiPath)
 }
 
-func CleanUpGoModForAPI(fs machinery.Filesystem, config config.Config) error {
-	apiPath := GetAPIPath(config.IsMultiGroup())
+func cleanUpGoModForAPI(fs machinery.Filesystem, config config.Config) error {
+	apiPath := getAPIPath(config.IsMultiGroup())
 	goModPath := filepath.Join(apiPath, "go.mod")
 	module := config.GetRepository() + "/" + apiPath
 	fmt.Println("resolved module: " + module)
@@ -89,4 +74,25 @@ func CleanUpGoModForAPI(fs machinery.Filesystem, config config.Config) error {
 	}
 
 	return nil
+}
+
+func tidyGoModForAPI(isMultiGroup bool) error {
+	apiPath := getAPIPath(isMultiGroup)
+	return util.RunInDir(apiPath, func() error {
+		if err := util.RunCmd(
+			"Update dependencies in "+apiPath, "go", "mod", "tidy"); err != nil {
+			return err
+		}
+		return nil
+	})
+}
+
+func getAPIPath(isMultiGroup bool) string {
+	path := ""
+	if isMultiGroup {
+		path = filepath.Join("apis")
+	} else {
+		path = filepath.Join("api")
+	}
+	return path
 }

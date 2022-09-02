@@ -17,6 +17,8 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"errors"
+
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
@@ -46,10 +48,27 @@ func (p *initSubcommand) InjectConfig(c config.Config) error {
 }
 
 func (p *initSubcommand) Scaffold(fs machinery.Filesystem) error {
-	if err := InsertPluginMetaToConfig(p.config, pluginConfig{
+	if err := insertPluginMetaToConfig(p.config, pluginConfig{
 		ApiGoModCreated: false,
 	}); err != nil {
 		return err
 	}
+	return nil
+}
+
+func insertPluginMetaToConfig(target config.Config, cfg pluginConfig) error {
+	err := target.DecodePluginConfig(pluginKey, cfg)
+	if !errors.As(err, &config.UnsupportedFieldError{}) {
+
+		if err != nil && !errors.As(err, &config.PluginKeyNotFoundError{}) {
+			return err
+		}
+
+		if err = target.EncodePluginConfig(pluginKey, cfg); err != nil {
+			return err
+		}
+
+	}
+
 	return nil
 }

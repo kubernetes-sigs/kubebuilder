@@ -32,13 +32,13 @@ func insertModUpdatesInDockerfile(apiPath string) error {
 	goSumPath := filepath.Join(apiPath, "go.sum")
 
 	// nolint:lll
-	err := insertCodeIfDoesNotExist(dockerfile,
+
+	if err := util.InsertCode(dockerfile,
 		"COPY go.sum go.sum",
 		fmt.Sprintf("\n# Copy the Go Sub-Module manifests"+
 			"\nCOPY %s %s"+
 			"\nCOPY %s %s",
-			goModPath, goModPath, goSumPath, goSumPath))
-	if err != nil {
+			goModPath, goModPath, goSumPath, goSumPath)); err != nil && err != util.ErrContentNotFound {
 		return err
 	}
 
@@ -52,26 +52,12 @@ func removeModUpdatesInDockerfile(apiPath string) error {
 	goModPath := filepath.Join(apiPath, "go.mod")
 	goSumPath := filepath.Join(apiPath, "go.sum")
 
-	toRemove := fmt.Sprintf("# Copy the Go Sub-Module manifests"+
+	if err := util.ReplaceInFile(dockerfile, fmt.Sprintf("# Copy the Go Sub-Module manifests"+
 		"\nCOPY %s %s"+
 		"\nCOPY %s %s",
-		goModPath, goModPath, goSumPath, goSumPath)
-
-	return removeCodeIfExist(dockerfile, toRemove)
-}
-
-// insertCodeIfDoesNotExist insert code if it does not already exists
-func insertCodeIfDoesNotExist(filename, target, code string) error {
-	if err := util.InsertCode(filename, target, code); err != nil && err != util.ErrContentNotFound {
+		goModPath, goModPath, goSumPath, goSumPath), ""); err != nil && err != util.ErrContentNotFound {
 		return err
 	}
-	return nil
-}
 
-// removeCodeIfExist removes code if it already exists
-func removeCodeIfExist(filename, target string) error {
-	if err := util.ReplaceInFile(filename, target, ""); err != nil && err != util.ErrContentNotFound {
-		return err
-	}
 	return nil
 }

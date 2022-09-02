@@ -32,7 +32,8 @@ build_kb
 
 # Test project v3
 test_project project-v3
-test_project project-v3-multigroup
+test_project project-v3-multigroup 
+test_project project-v3-multimodule
 test_project project-v3-addon-and-grafana
 test_project project-v3-config
 test_project project-v3-with-deploy-image
@@ -40,6 +41,7 @@ test_project project-v3-with-deploy-image
 # Project version v4-alpha
 test_project project-v4
 test_project project-v4-multigroup
+test_project project-v4-multimodule
 test_project project-v4-addon-and-grafana
 test_project project-v4-config
 test_project project-v4-with-deploy-image

@@ -89,13 +89,13 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
 	if p.pluginConfig.ApiGoModCreated {
 		fmt.Println("using existing multi-module layout, updating submodules...")
-		return TidyGoModForAPI(p.config.IsMultiGroup())
+		return tidyGoModForAPI(p.config.IsMultiGroup())
 	}
 
-	if err := CreateGoModForAPI(fs, p.config); err != nil {
+	if err := createGoModForAPI(fs, p.config); err != nil {
 		return err
 	}
-	if err := TidyGoModForAPI(p.config.IsMultiGroup()); err != nil {
+	if err := tidyGoModForAPI(p.config.IsMultiGroup()); err != nil {
 		return err
 	}
 

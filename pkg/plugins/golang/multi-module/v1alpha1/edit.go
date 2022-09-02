@@ -80,11 +80,11 @@ func (p *editSubcommand) Scaffold(fs machinery.Filesystem) error {
 			return nil
 		}
 
-		if err := CreateGoModForAPI(fs, p.config); err != nil {
+		if err := createGoModForAPI(fs, p.config); err != nil {
 			return err
 		}
 
-		if err := TidyGoModForAPI(p.config.IsMultiGroup()); err != nil {
+		if err := tidyGoModForAPI(p.config.IsMultiGroup()); err != nil {
 			return err
 		}
 
@@ -94,7 +94,7 @@ func (p *editSubcommand) Scaffold(fs machinery.Filesystem) error {
 			return nil
 		}
 
-		if err := CleanUpGoModForAPI(fs, p.config); err != nil {
+		if err := cleanUpGoModForAPI(fs, p.config); err != nil {
 			return err
 		}
 
