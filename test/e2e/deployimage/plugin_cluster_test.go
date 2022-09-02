@@ -28,7 +28,7 @@ import (
 
 	//nolint:golint
 	//nolint:revive
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 
 	//nolint:golint
 	//nolint:revive
@@ -39,9 +39,7 @@ import (
 
 var _ = Describe("kubebuilder", func() {
 	Context("deploy image plugin 3", func() {
-		var (
-			kbc *utils.TestContext
-		)
+		var kbc *utils.TestContext
 
 		BeforeEach(func() {
 			var err error
@@ -278,7 +276,7 @@ func Run(kbc *utils.TestContext) {
 	}
 	Eventually(getStatus, time.Minute, time.Second).Should(Succeed())
 
-	//Testing the finalizer
+	// Testing the finalizer
 	EventuallyWithOffset(1, func() error {
 		_, err = kbc.Kubectl.Delete(true, "-f", sampleFilePath)
 		return err

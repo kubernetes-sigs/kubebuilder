@@ -27,7 +27,7 @@ import (
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
 
-	. "github.com/onsi/ginkgo" //nolint:golint,revive
+	. "github.com/onsi/ginkgo/v2" //nolint:golint,revive
 )
 
 // TestContext specified to run e2e tests
@@ -106,7 +106,7 @@ func (t *TestContext) Prepare() error {
 	}
 
 	fmt.Fprintf(GinkgoWriter, "preparing testing directory: %s\n", t.Dir)
-	return os.MkdirAll(t.Dir, 0755)
+	return os.MkdirAll(t.Dir, 0o755)
 }
 
 const (
@@ -337,7 +337,7 @@ func (t *TestContext) AllowProjectBeMultiGroup() error {
 	}
 
 	projectBytes = append([]byte(multiGroup), projectBytes...)
-	err = ioutil.WriteFile(filepath.Join(t.Dir, "PROJECT"), projectBytes, 0644)
+	err = ioutil.WriteFile(filepath.Join(t.Dir, "PROJECT"), projectBytes, 0o644)
 	if err != nil {
 		return err
 	}

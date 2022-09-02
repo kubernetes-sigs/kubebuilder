@@ -18,8 +18,7 @@ import (
 	"errors"
 	"os"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/extensions/table"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
 
@@ -40,7 +39,7 @@ var _ = Describe("Scaffold", func() {
 		})
 
 		It("should succeed with directory permissions option", func() {
-			const dirPermissions os.FileMode = 0755
+			const dirPermissions os.FileMode = 0o755
 
 			s := NewScaffold(Filesystem{FS: afero.NewMemMapFs()}, WithDirectoryPermissions(dirPermissions))
 			Expect(s.fs).NotTo(BeNil())
@@ -52,7 +51,7 @@ var _ = Describe("Scaffold", func() {
 		})
 
 		It("should succeed with file permissions option", func() {
-			const filePermissions os.FileMode = 0755
+			const filePermissions os.FileMode = 0o755
 
 			s := NewScaffold(Filesystem{FS: afero.NewMemMapFs()}, WithFilePermissions(filePermissions))
 			Expect(s.fs).NotTo(BeNil())
@@ -89,7 +88,7 @@ var _ = Describe("Scaffold", func() {
 		})
 
 		It("should succeed with resource option", func() {
-			var res = &resource.Resource{GVK: resource.GVK{
+			res := &resource.Resource{GVK: resource.GVK{
 				Group:   "group",
 				Domain:  "my.domain",
 				Version: "v1",
@@ -202,7 +201,7 @@ var _ = Describe("Scaffold", func() {
 
 		DescribeTable("insert strings",
 			func(path, input, expected string, files ...Builder) {
-				Expect(afero.WriteFile(s.fs, path, []byte(input), 0666)).To(Succeed())
+				Expect(afero.WriteFile(s.fs, path, []byte(input), 0o666)).To(Succeed())
 
 				Expect(s.Execute(files...)).To(Succeed())
 
@@ -395,7 +394,7 @@ func init() {
 
 		DescribeTable("insert strings related errors",
 			func(errType interface{}, files ...Builder) {
-				Expect(afero.WriteFile(s.fs, path, []byte{}, 0666)).To(Succeed())
+				Expect(afero.WriteFile(s.fs, path, []byte{}, 0o666)).To(Succeed())
 
 				err := s.Execute(files...)
 				Expect(err).To(HaveOccurred())
@@ -415,7 +414,7 @@ func init() {
 
 		Context("write when the file already exists", func() {
 			BeforeEach(func() {
-				_ = afero.WriteFile(s.fs, path, []byte{}, 0666)
+				_ = afero.WriteFile(s.fs, path, []byte{}, 0o666)
 			})
 
 			It("should skip the file by default", func() {
