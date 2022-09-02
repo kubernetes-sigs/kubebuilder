@@ -23,6 +23,11 @@ function test_project {
 
   header_text "Performing tests in dir $1"
   pushd "$(dirname "$0")/../../testdata/$1"
+  if test -f "api/go.mod"; then
+    cd api && go mod tidy && cd ..
+  elif test -f "apis/go.mod"; then
+    cd apis && go mod tidy && cd ..
+  fi
   go mod tidy
   make test
   popd
