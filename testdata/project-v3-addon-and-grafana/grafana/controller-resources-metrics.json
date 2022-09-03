@@ -124,7 +124,7 @@
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
-					"legendFormat": "Pod: {{pod}} | Container: {{container}}",
+          "legendFormat": "Pod: {{pod}} | Container: {{container}}",
           "refId": "A",
           "step": 10
         }
@@ -214,7 +214,7 @@
           "format": "time_series",
           "interval": "",
           "intervalFactor": 2,
-					"legendFormat": "Pod: {{pod}} | Container: {{container}}",
+          "legendFormat": "Pod: {{pod}} | Container: {{container}}",
           "refId": "A",
           "step": 10
         }

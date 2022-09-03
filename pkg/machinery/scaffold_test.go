@@ -134,21 +134,32 @@ var _ = Describe("Scaffold", func() {
 			},
 			Entry("should write the file",
 				path, content,
-				fakeTemplate{fakeBuilder: fakeBuilder{path: path}, body: content},
+				&fakeTemplate{fakeBuilder: fakeBuilder{path: path}, body: content},
 			),
 			Entry("should skip optional models if already have one",
 				path, content,
-				fakeTemplate{fakeBuilder: fakeBuilder{path: path}, body: content},
-				fakeTemplate{fakeBuilder: fakeBuilder{path: path}},
+				&fakeTemplate{fakeBuilder: fakeBuilder{path: path}, body: content},
+				&fakeTemplate{fakeBuilder: fakeBuilder{path: path}},
 			),
 			Entry("should overwrite required models if already have one",
 				path, content,
-				fakeTemplate{fakeBuilder: fakeBuilder{path: path}},
-				fakeTemplate{fakeBuilder: fakeBuilder{path: path, ifExistsAction: OverwriteFile}, body: content},
+				&fakeTemplate{fakeBuilder: fakeBuilder{path: path}},
+				&fakeTemplate{fakeBuilder: fakeBuilder{path: path, ifExistsAction: OverwriteFile}, body: content},
 			),
 			Entry("should format a go file",
 				pathGo, "package file\n",
-				fakeTemplate{fakeBuilder: fakeBuilder{path: pathGo}, body: "package    file"},
+				&fakeTemplate{fakeBuilder: fakeBuilder{path: pathGo}, body: "package    file"},
+			),
+
+			Entry("should render actions correctly",
+				path, "package testValue",
+				&fakeTemplate{fakeBuilder: fakeBuilder{path: path, TestField: "testValue"}, body: "package {{.TestField}}"},
+			),
+
+			Entry("should render actions with alternative delimiters correctly",
+				path, "package testValue",
+				&fakeTemplate{fakeBuilder: fakeBuilder{path: path, TestField: "testValue"},
+					body: "package [[.TestField]]", parseDelimLeft: "[[", parseDelimRight: "]]"},
 			),
 		)
 
@@ -164,17 +175,17 @@ var _ = Describe("Scaffold", func() {
 			),
 			Entry("should fail if unable to set default values for a template",
 				&SetTemplateDefaultsError{},
-				fakeTemplate{err: testErr},
+				&fakeTemplate{err: testErr},
 			),
 			Entry("should fail if an unexpected previous model is found",
 				&ModelAlreadyExistsError{},
-				fakeTemplate{fakeBuilder: fakeBuilder{path: path}},
-				fakeTemplate{fakeBuilder: fakeBuilder{path: path, ifExistsAction: Error}},
+				&fakeTemplate{fakeBuilder: fakeBuilder{path: path}},
+				&fakeTemplate{fakeBuilder: fakeBuilder{path: path, ifExistsAction: Error}},
 			),
 			Entry("should fail if behavior if-exists-action is not defined",
 				&UnknownIfExistsActionError{},
-				fakeTemplate{fakeBuilder: fakeBuilder{path: path}},
-				fakeTemplate{fakeBuilder: fakeBuilder{path: path, ifExistsAction: -1}},
+				&fakeTemplate{fakeBuilder: fakeBuilder{path: path}},
+				&fakeTemplate{fakeBuilder: fakeBuilder{path: path, ifExistsAction: -1}},
 			),
 		)
 
@@ -187,15 +198,15 @@ var _ = Describe("Scaffold", func() {
 			},
 			Entry("should fail if a template is broken",
 				"template: ",
-				fakeTemplate{body: "{{ .Field }"},
+				&fakeTemplate{body: "{{ .Field }"},
 			),
 			Entry("should fail if a template params aren't provided",
 				"template: ",
-				fakeTemplate{body: "{{ .Field }}"},
+				&fakeTemplate{body: "{{ .Field }}"},
 			),
 			Entry("should fail if unable to format a go file",
 				"expected 'package', found ",
-				fakeTemplate{fakeBuilder: fakeBuilder{path: pathGo}, body: content},
+				&fakeTemplate{fakeBuilder: fakeBuilder{path: pathGo}, body: content},
 			),
 		)
 
@@ -254,7 +265,7 @@ var b int
 2
 #+kubebuilder:scaffold:-
 `,
-				fakeTemplate{fakeBuilder: fakeBuilder{path: pathYaml, ifExistsAction: OverwriteFile}, body: `
+				&fakeTemplate{fakeBuilder: fakeBuilder{path: pathYaml, ifExistsAction: OverwriteFile}, body: `
 #+kubebuilder:scaffold:-
 `},
 				fakeInserter{
@@ -272,7 +283,7 @@ var b int
 2
 #+kubebuilder:scaffold:-
 `,
-				fakeTemplate{fakeBuilder: fakeBuilder{path: pathYaml, ifExistsAction: OverwriteFile}, body: `
+				&fakeTemplate{fakeBuilder: fakeBuilder{path: pathYaml, ifExistsAction: OverwriteFile}, body: `
 #+kubebuilder:scaffold:-
 `},
 				fakeInserter{
@@ -292,7 +303,7 @@ var b int
 2
 #+kubebuilder:scaffold:-
 `,
-				fakeTemplate{fakeBuilder: fakeBuilder{path: pathYaml}, body: content},
+				&fakeTemplate{fakeBuilder: fakeBuilder{path: pathYaml}, body: content},
 				fakeInserter{
 					fakeBuilder: fakeBuilder{path: pathYaml},
 					codeFragments: CodeFragmentsMap{
@@ -402,12 +413,12 @@ func init() {
 			},
 			Entry("should fail if inserting into a model that fails when a file exists and it does exist",
 				&FileAlreadyExistsError{},
-				fakeTemplate{fakeBuilder: fakeBuilder{path: "filename", ifExistsAction: Error}},
+				&fakeTemplate{fakeBuilder: fakeBuilder{path: "filename", ifExistsAction: Error}},
 				fakeInserter{fakeBuilder: fakeBuilder{path: "filename"}},
 			),
 			Entry("should fail if inserting into a model with unknown behavior if the file exists and it does exist",
 				&UnknownIfExistsActionError{},
-				fakeTemplate{fakeBuilder: fakeBuilder{path: "filename", ifExistsAction: -1}},
+				&fakeTemplate{fakeBuilder: fakeBuilder{path: "filename", ifExistsAction: -1}},
 				fakeInserter{fakeBuilder: fakeBuilder{path: "filename"}},
 			),
 		)
@@ -418,7 +429,7 @@ func init() {
 			})
 
 			It("should skip the file by default", func() {
-				Expect(s.Execute(fakeTemplate{
+				Expect(s.Execute(&fakeTemplate{
 					fakeBuilder: fakeBuilder{path: path},
 					body:        content,
 				})).To(Succeed())
@@ -429,7 +440,7 @@ func init() {
 			})
 
 			It("should write the file if configured to do so", func() {
-				Expect(s.Execute(fakeTemplate{
+				Expect(s.Execute(&fakeTemplate{
 					fakeBuilder: fakeBuilder{path: path, ifExistsAction: OverwriteFile},
 					body:        content,
 				})).To(Succeed())
@@ -440,7 +451,7 @@ func init() {
 			})
 
 			It("should error if configured to do so", func() {
-				err := s.Execute(fakeTemplate{
+				err := s.Execute(&fakeTemplate{
 					fakeBuilder: fakeBuilder{path: path, ifExistsAction: Error},
 					body:        content,
 				})
@@ -457,6 +468,7 @@ var _ Builder = fakeBuilder{}
 type fakeBuilder struct {
 	path           string
 	ifExistsAction IfExistsAction
+	TestField      string // test go template actions
 }
 
 // GetPath implements Builder
@@ -483,23 +495,34 @@ func (f fakeRequiresValidation) Validate() error {
 	return f.validateErr
 }
 
-var _ Template = fakeTemplate{}
+var _ Template = &fakeTemplate{}
 
 // fakeTemplate is used to mock a File in order to test Scaffold
 type fakeTemplate struct {
 	fakeBuilder
 
-	body string
-	err  error
+	body            string
+	err             error
+	parseDelimLeft  string
+	parseDelimRight string
+}
+
+func (f *fakeTemplate) SetDelim(left, right string) {
+	f.parseDelimLeft = left
+	f.parseDelimRight = right
+}
+
+func (f *fakeTemplate) GetDelim() (string, string) {
+	return f.parseDelimLeft, f.parseDelimRight
 }
 
 // GetBody implements Template
-func (f fakeTemplate) GetBody() string {
+func (f *fakeTemplate) GetBody() string {
 	return f.body
 }
 
 // SetTemplateDefaults implements Template
-func (f fakeTemplate) SetTemplateDefaults() error {
+func (f *fakeTemplate) SetTemplateDefaults() error {
 	if f.err != nil {
 		return f.err
 	}

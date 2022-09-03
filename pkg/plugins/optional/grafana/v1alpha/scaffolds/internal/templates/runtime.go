@@ -35,8 +35,10 @@ func (f *RuntimeManifest) SetTemplateDefaults() error {
 		f.Path = filepath.Join("grafana", "controller-runtime-metrics.json")
 	}
 
+	// Grafana syntax use {{ }} quite often, which is collided with default delimiter for go template parsing.
+	// Provide an alternative delimiter here to avoid overlaps.
+	f.SetDelim("[[", "]]")
 	f.TemplateBody = controllerRuntimeTemplate
-
 	f.IfExistsAction = machinery.OverwriteFile
 
 	return nil
@@ -182,7 +184,7 @@ const controllerRuntimeTemplate = `{
           "exemplar": true,
           "expr": "sum(rate(controller_runtime_reconcile_total{job=\"$job\", namespace=\"$namespace\"}[5m])) by (instance, pod)",
           "interval": "",
-          "legendFormat": "{{"{{instance}}"}} {{"{{pod}}"}}",
+          "legendFormat": "{{instance}} {{pod}}",
           "range": true,
           "refId": "A"
         }
@@ -269,7 +271,7 @@ const controllerRuntimeTemplate = `{
           "exemplar": true,
           "expr": "sum(rate(controller_runtime_reconcile_errors_total{job=\"$job\", namespace=\"$namespace\"}[5m])) by (instance, pod)",
           "interval": "",
-          "legendFormat": "{{"{{instance}}"}} {{"{{pod}}"}}",
+          "legendFormat": "{{instance}} {{pod}}",
           "range": true,
           "refId": "A"
         }
@@ -371,7 +373,7 @@ const controllerRuntimeTemplate = `{
           "exemplar": true,
           "expr": "histogram_quantile(0.50, sum(rate(workqueue_queue_duration_seconds_bucket{job=\"$job\", namespace=\"$namespace\"}[5m])) by (instance, name, le))",
           "interval": "",
-          "legendFormat": "P50 {{"{{name}}"}} {{"{{instance}}"}} ",
+          "legendFormat": "P50 {{name}} {{instance}} ",
           "refId": "A"
         },
         {
@@ -380,7 +382,7 @@ const controllerRuntimeTemplate = `{
           "expr": "histogram_quantile(0.90, sum(rate(workqueue_queue_duration_seconds_bucket{job=\"$job\", namespace=\"$namespace\"}[5m])) by (instance, name, le))",
           "hide": false,
           "interval": "",
-          "legendFormat": "P90 {{"{{name}}"}} {{"{{instance}}"}} ",
+          "legendFormat": "P90 {{name}} {{instance}} ",
           "refId": "B"
         },
         {
@@ -389,7 +391,7 @@ const controllerRuntimeTemplate = `{
           "expr": "histogram_quantile(0.99, sum(rate(workqueue_queue_duration_seconds_bucket{job=\"$job\", namespace=\"$namespace\"}[5m])) by (instance, name, le))",
           "hide": false,
           "interval": "",
-          "legendFormat": "P99 {{"{{name}}"}} {{"{{instance}}"}} ",
+          "legendFormat": "P99 {{name}} {{instance}} ",
           "refId": "C"
         }
       ],
@@ -474,7 +476,7 @@ const controllerRuntimeTemplate = `{
           "exemplar": true,
           "expr": "sum(rate(workqueue_adds_total{job=\"$job\", namespace=\"$namespace\"}[5m])) by (instance, name)",
           "interval": "",
-          "legendFormat": "{{"{{name}}"}} {{"{{instance}}"}}",
+          "legendFormat": "{{name}} {{instance}}",
           "refId": "A"
         }
       ],
@@ -562,7 +564,7 @@ const controllerRuntimeTemplate = `{
           "exemplar": true,
           "expr": "histogram_quantile(0.50, sum(rate(workqueue_work_duration_seconds_bucket{job=\"$job\", namespace=\"$namespace\"}[5m])) by (instance, name, le))",
           "interval": "",
-          "legendFormat": "P50 {{"{{name}}"}} {{"{{instance}}"}} ",
+          "legendFormat": "P50 {{name}} {{instance}} ",
           "refId": "A"
         },
         {
@@ -571,7 +573,7 @@ const controllerRuntimeTemplate = `{
           "expr": "histogram_quantile(0.90, sum(rate(workqueue_work_duration_seconds_bucket{job=\"$job\", namespace=\"$namespace\"}[5m])) by (instance, name, le))",
           "hide": false,
           "interval": "",
-          "legendFormat": "P90 {{"{{name}}"}} {{"{{instance}}"}} ",
+          "legendFormat": "P90 {{name}} {{instance}} ",
           "refId": "B"
         },
         {
@@ -580,7 +582,7 @@ const controllerRuntimeTemplate = `{
           "expr": "histogram_quantile(0.99, sum(rate(workqueue_work_duration_seconds_bucket{job=\"$job\", namespace=\"$namespace\"}[5m])) by (instance, name, le))",
           "hide": false,
           "interval": "",
-          "legendFormat": "P99 {{"{{name}}"}} {{"{{instance}}"}} ",
+          "legendFormat": "P99 {{name}} {{instance}} ",
           "refId": "C"
         }
       ],
@@ -665,7 +667,7 @@ const controllerRuntimeTemplate = `{
           "exemplar": true,
           "expr": "sum(rate(workqueue_retries_total{job=\"$job\", namespace=\"$namespace\"}[5m])) by (instance, name)",
           "interval": "",
-          "legendFormat": "{{"{{name}}"}} {{"{{instance}}"}} ",
+          "legendFormat": "{{name}} {{instance}} ",
           "refId": "A"
         }
       ],

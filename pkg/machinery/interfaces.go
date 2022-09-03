@@ -44,6 +44,10 @@ type Template interface {
 	GetBody() string
 	// SetTemplateDefaults sets the default values for templates
 	SetTemplateDefaults() error
+	// SetDelim sets an action delimiters to replace default delimiters: {{ }}
+	SetDelim(left, right string)
+	// GetDelim returns the alternative delimiters
+	GetDelim() (string, string)
 }
 
 // Inserter is a file builder that inserts code fragments in marked positions
