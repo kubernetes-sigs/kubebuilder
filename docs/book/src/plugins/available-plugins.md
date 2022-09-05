@@ -13,6 +13,7 @@ This section describes the plugins supported and shipped in with the Kubebuilder
 | `base.go.kubebuilder.io/v3`                                                        | `base/v3`            | Responsible for scaffold all files which specific requires Golang. This plugin is used in the composition to create the plugin (`go/v3`)                                                                                                     |
 | [grafana.kubebuilder.io/v1-alpha](grafana-v1-alpha.md)                             | `grafana/v1-alpha`   | Optional helper plugin which can be used to scaffold Grafana Manifests Dashboards for the default metrics which are exported by controller-runtime.                                                                                                 |
 | [deploy-image.go.kubebuilder.io/v1-alpha](deploy-image-plugin-v1-alpha)            | `deploy-image/v1-alpha`   | Optional helper plugin which can be used to scaffold APIs and controller with code implementation to Deploy and Manage an Operand(image).                                                                                                 |
+| [multi-module.go.kubebuilder.io/v1-alpha](multi-module-v1-alpha)            | `multi-module/v1-alpha`   | Optional helper plugin which can be used to scaffold APIs and controller with separate `go.mod` files to introduce Monorepo support.
 
 > Note: **ALPHA** plugins can introduce breaking changes. For further info see [Plugins Versioning](./plugins/plugins-versioning.md).
 

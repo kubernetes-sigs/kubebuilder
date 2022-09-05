@@ -16,7 +16,7 @@
   - [Adding a new API](./cronjob-tutorial/new-api.md)
   - [Designing an API](./cronjob-tutorial/api-design.md)
 
-      - [A Brief Aside: What's the rest of this stuff?](./cronjob-tutorial/other-api-files.md)
+    - [A Brief Aside: What's the rest of this stuff?](./cronjob-tutorial/other-api-files.md)
 
   - [What's in a controller?](./cronjob-tutorial/controller-overview.md)
   - [Implementing a controller](./cronjob-tutorial/controller-implementation.md)
@@ -39,7 +39,7 @@
   - [Hubs, spokes, and other wheel metaphors](./multiversion-tutorial/conversion-concepts.md)
   - [Implementing conversion](./multiversion-tutorial/conversion.md)
 
-      - [and setting up the webhooks](./multiversion-tutorial/webhooks.md)
+    - [and setting up the webhooks](./multiversion-tutorial/webhooks.md)
 
   - [Deployment and Testing](./multiversion-tutorial/deployment.md)
 
@@ -50,20 +50,22 @@
 
   - [Using a custom type](./component-config-tutorial/custom-type.md)
 
-      - [Adding a new Config Type](./component-config-tutorial/config-type.md)
-      - [Updating main](./component-config-tutorial/updating-main.md)
-      - [Defining your Custom Config](./component-config-tutorial/define-custom-config.md)
+    - [Adding a new Config Type](./component-config-tutorial/config-type.md)
+    - [Updating main](./component-config-tutorial/updating-main.md)
+    - [Defining your Custom Config](./component-config-tutorial/define-custom-config.md)
+
 ---
 
 - [Migrations](./migrations.md)
 
   - [Kubebuilder v1 vs v2](./migration/v1vsv2.md)
 
-      - [Migration Guide](./migration/legacy/migration_guide_v1tov2.md)
+    - [Migration Guide](./migration/legacy/migration_guide_v1tov2.md)
 
   - [Kubebuilder v2 vs v3](./migration/v2vsv3.md)
-      - [Migration Guide](./migration/migration_guide_v2tov3.md)
-      - [Migration by updating the files](./migration/manually_migration_guide_v2_v3.md)
+
+    - [Migration Guide](./migration/migration_guide_v2tov3.md)
+    - [Migration by updating the files](./migration/manually_migration_guide_v2_v3.md)
 
   - [Single Group to Multi-Group](./migration/multi-group.md)
 
@@ -82,12 +84,12 @@
     - [Webhooks for Core Types](reference/webhook-for-core-types.md)
   - [Markers for Config/Code Generation](./reference/markers.md)
 
-      - [CRD Generation](./reference/markers/crd.md)
-      - [CRD Validation](./reference/markers/crd-validation.md)
-      - [CRD Processing](./reference/markers/crd-processing.md)
-      - [Webhook](./reference/markers/webhook.md)
-      - [Object/DeepCopy](./reference/markers/object.md)
-      - [RBAC](./reference/markers/rbac.md)
+    - [CRD Generation](./reference/markers/crd.md)
+    - [CRD Validation](./reference/markers/crd-validation.md)
+    - [CRD Processing](./reference/markers/crd-processing.md)
+    - [Webhook](./reference/markers/webhook.md)
+    - [Object/DeepCopy](./reference/markers/object.md)
+    - [RBAC](./reference/markers/rbac.md)
 
   - [controller-gen CLI](./reference/controller-gen.md)
   - [completion](./reference/completion.md)
@@ -97,7 +99,7 @@
 
   - [Metrics](./reference/metrics.md)
 
-      - [Reference](./reference/metrics-reference.md)
+    - [Reference](./reference/metrics-reference.md)
 
   - [Makefile Helpers](./reference/makefile-helpers.md)
   - [Project config](./reference/project-config.md)
@@ -107,20 +109,21 @@
 - [Plugins][plugins]
 
   - [Available Plugins](./plugins/available-plugins.md)
-      - [go/v2 (Deprecated)](./plugins/go-v2-plugin.md)
-      - [go/v3 (Default init scaffold)](./plugins/go-v3-plugin.md)
-      - [go/v4-alpha](./plugins/go-v4-plugin.md)
-      - [kustomize/v1](./plugins/kustomize-v1.md)
-      - [kustomize/v2-alpha](./plugins/kustomize-v2-alpha.md)
-      - [declarative/v1](./plugins/declarative-v1.md)
-      - [grafana/v1-alpha](./plugins/grafana-v1-alpha.md)
-      - [deploy-image/v1-alpha](./plugins/deploy-image-plugin-v1-alpha.md)
+    - [go/v2 (Deprecated)](./plugins/go-v2-plugin.md)
+    - [go/v3 (Default init scaffold)](./plugins/go-v3-plugin.md)
+    - [go/v4-alpha](./plugins/go-v4-plugin.md)
+    - [kustomize/v1](./plugins/kustomize-v1.md)
+    - [kustomize/v2-alpha](./plugins/kustomize-v2-alpha.md)
+    - [declarative/v1](./plugins/declarative-v1.md)
+    - [grafana/v1-alpha](./plugins/grafana-v1-alpha.md)
+    - [deploy-image/v1-alpha](./plugins/deploy-image-plugin-v1-alpha.md)
+    - [multi-module/v1-alpha](./plugins/multi-module-v1-alpha.md)
   - [Extending the CLI](./plugins/extending-cli.md)
   - [Creating your own plugins](./plugins/creating-plugins.md)
   - [Plugins Versioning](./plugins/plugins-versioning.md)
 
----  
-[Appendix: The TODO Landing Page](./TODO.md)
+---
 
+[Appendix: The TODO Landing Page](./TODO.md)
 
 [plugins]: ./plugins/plugins.md
