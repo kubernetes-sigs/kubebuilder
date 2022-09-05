@@ -27,7 +27,7 @@ import (
 
 	//nolint:golint
 	//nolint:revive
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 
 	//nolint:golint
 	//nolint:revive
@@ -100,6 +100,8 @@ var _ = Describe("kubebuilder", func() {
 				"--group", kbc.Group,
 				"--version", kbc.Version,
 				"--kind", kbc.Kind,
+				"--controller",
+				"--resource",
 			)
 			ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
