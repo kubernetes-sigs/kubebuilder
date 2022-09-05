@@ -87,9 +87,9 @@ var _ = Describe("kubebuilder", func() {
 
 			var err error
 
-			By("initializing a project with multi-module.go/v1alpha1")
+			By("initializing a project with multi-module.go/v1alpha")
 			err = kbc.Init(
-				"--plugins", "multi-module.go/v1alpha1",
+				"--plugins", "multi-module.go/v1alpha",
 				"--project-version", "3",
 				"--domain", kbc.Domain,
 			)
