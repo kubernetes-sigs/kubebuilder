@@ -30,7 +30,7 @@ import (
 
 	//nolint:golint
 	//nolint:revive
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 
 	//nolint:golint
 	//nolint:revive
@@ -55,9 +55,7 @@ var _ = Describe("kubebuilder", func() {
 	// project version 3 means ("--project-version") the schema
 	// version used to track the info in the PROJECT file.
 	Context("project version 3", func() {
-		var (
-			kbc *utils.TestContext
-		)
+		var kbc *utils.TestContext
 
 		BeforeEach(func() {
 			var err error
@@ -327,7 +325,7 @@ func Run(kbc *utils.TestContext) {
 	sampleFilePath, err := filepath.Abs(filepath.Join(fmt.Sprintf("e2e-%s", kbc.TestSuffix), sampleFile))
 	Expect(err).To(Not(HaveOccurred()))
 
-	f, err := os.OpenFile(sampleFilePath, os.O_APPEND|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(sampleFilePath, os.O_APPEND|os.O_WRONLY, 0o644)
 	Expect(err).To(Not(HaveOccurred()))
 
 	defer func() {
@@ -433,7 +431,7 @@ func ServiceAccountToken(kbc *utils.TestContext) (out string, err error) {
 	By("Creating the ServiceAccount token")
 	secretName := fmt.Sprintf("%s-token-request", kbc.Kubectl.ServiceAccount)
 	tokenRequestFile := filepath.Join(kbc.Dir, secretName)
-	err = os.WriteFile(tokenRequestFile, []byte(tokenRequestRawString), os.FileMode(0755))
+	err = os.WriteFile(tokenRequestFile, []byte(tokenRequestRawString), os.FileMode(0o755))
 	if err != nil {
 		return out, err
 	}

@@ -19,8 +19,7 @@ package resource
 import (
 	"strings"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/extensions/table"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
@@ -32,7 +31,7 @@ var _ = Describe("GVK", func() {
 		kind    = "Kind"
 	)
 
-	var gvk = GVK{Group: group, Domain: domain, Version: version, Kind: kind}
+	gvk := GVK{Group: group, Domain: domain, Version: version, Kind: kind}
 
 	Context("Validate", func() {
 		It("should succeed for a valid GVK", func() {

@@ -17,7 +17,7 @@ limitations under the License.
 package machinery
 
 import (
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
@@ -102,7 +102,7 @@ func (t *templateWithResource) InjectResource(res *resource.Resource) {
 }
 
 var _ = Describe("injector", func() {
-	var tmp = templateBase{
+	tmp := templateBase{
 		path:           "my/path/to/file",
 		ifExistsAction: Error,
 	}
@@ -277,7 +277,7 @@ var _ = Describe("injector", func() {
 			})
 
 			It("should inject if the config has a domain set", func() {
-				var res = &resource.Resource{
+				res := &resource.Resource{
 					GVK: resource.GVK{
 						Group:   "group",
 						Domain:  "my.domain",
@@ -289,7 +289,6 @@ var _ = Describe("injector", func() {
 				injector{resource: res}.injectInto(template)
 				Expect(template.resource).To(Equal(res))
 			})
-
 		})
 	})
 })

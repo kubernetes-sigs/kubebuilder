@@ -19,8 +19,7 @@ package config
 import (
 	"sort"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/extensions/table"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/stage"
@@ -65,7 +64,6 @@ var _ = Describe("Version", func() {
 			})
 			Expect(versions).To(Equal(sortedVersions))
 		})
-
 	})
 
 	Context("IsStable", func() {
