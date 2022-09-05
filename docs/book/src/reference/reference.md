@@ -30,6 +30,7 @@
   - [controller-gen CLI](controller-gen.md)
   - [completion](completion.md)
   - [Artifacts](artifacts.md)
+  - [Platform Support](platform.md)
   - [Writing controller tests](writing-tests.md)
   - [Metrics](metrics.md)
 
