@@ -218,6 +218,15 @@ func (t *TestContext) Init(initOptions ...string) error {
 	return err
 }
 
+// Edit is for running `kubebuilder edit`
+func (t *TestContext) Edit(editOptions ...string) error {
+	editOptions = append([]string{"edit"}, editOptions...)
+	//nolint:gosec
+	cmd := exec.Command(t.BinaryName, editOptions...)
+	_, err := t.Run(cmd)
+	return err
+}
+
 // CreateAPI is for running `kubebuilder create api`
 func (t *TestContext) CreateAPI(resourceOptions ...string) error {
 	resourceOptions = append([]string{"create", "api"}, resourceOptions...)

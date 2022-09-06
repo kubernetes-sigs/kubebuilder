@@ -19,7 +19,6 @@ linters-settings:
 linters:
   disable-all: true
   enable:
-    - deadcode
     - dupl
     - errcheck
     - exportloopref
@@ -37,12 +36,10 @@ linters:
     - prealloc
     - revive
     - staticcheck
-    - structcheck
     - typecheck
     - unconvert
     - unparam
     - unused
-    - varcheck
 
 run:
   deadline: 5m

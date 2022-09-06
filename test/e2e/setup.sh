@@ -63,6 +63,7 @@ function test_cluster {
   kind load docker-image --name $KIND_CLUSTER busybox:1.28
 
   go test $(dirname "$0")/multimodule $flags -timeout 30m
+  go test $(dirname "$0")/grafana $flags -timeout 30m
   go test $(dirname "$0")/deployimage $flags -timeout 30m
   go test $(dirname "$0")/v3 $flags -timeout 30m
   go test $(dirname "$0")/v4 $flags -timeout 30m
