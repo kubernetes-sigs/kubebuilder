@@ -1,6 +1,6 @@
 module sigs.k8s.io/kubebuilder/testdata/project-v4-addon-and-grafana
 
-go 1.18
+go 1.19
 
 require (
 	github.com/go-logr/logr v1.2.0
