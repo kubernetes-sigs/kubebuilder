@@ -242,3 +242,14 @@ func ReplaceRegexInFile(path, match, replace string) error {
 	}
 	return nil
 }
+
+// HasFileContentWith check if given `text` can be found in file
+func HasFileContentWith(path, text string) (bool, error) {
+	// nolint:gosec
+	contents, err := ioutil.ReadFile(path)
+	if err != nil {
+		return false, err
+	}
+
+	return strings.Contains(string(contents), text), nil
+}
