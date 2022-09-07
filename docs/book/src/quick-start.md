@@ -9,7 +9,7 @@ This Quick Start guide will cover:
 
 ## Prerequisites
 
-- [go](https://golang.org/dl/) version v1.17.9+ 
+- [go](https://golang.org/dl/) version v1.18.0+
 - [docker](https://docs.docker.com/install/) version 17.03+.
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) version v1.11.3+.
 - Access to a Kubernetes v1.11.3+ cluster.
