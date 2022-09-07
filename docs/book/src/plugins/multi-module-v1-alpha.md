@@ -54,7 +54,8 @@ git push origin main v1.0.0 api/v1.0.0
 
 ## Subcommands
 
-The deploy-image plugin implements the following subcommands:
+The multi-module plugin implements the following subcommands:
+
 
 - init (`$ kubebuilder init [OPTIONS]`)
 - create api (`$ kubebuilder create api [OPTIONS]`)
