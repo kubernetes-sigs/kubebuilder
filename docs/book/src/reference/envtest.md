@@ -84,7 +84,7 @@ The `make test` command will install these binaries to the `bin/` directory and 
 Ie,
 ```shell             
 ./bin/k8s/
-└── 1.24.2-darwin-amd64
+└── 1.25.0-darwin-amd64
     ├── etcd
     ├── kube-apiserver
     └── kubectl
@@ -108,11 +108,11 @@ See that the `test` makefile target will ensure that all is properly setup when 
 
 ```go
 var _ = BeforeSuite(func(done Done) {
-	Expect(os.Setenv("TEST_ASSET_KUBE_APISERVER", "../bin/k8s/1.24.2-darwin-amd64/kube-apiserver")).To(Succeed())
-	Expect(os.Setenv("TEST_ASSET_ETCD", "../bin/k8s/1.24.2-darwin-amd64/etcd")).To(Succeed())
-	Expect(os.Setenv("TEST_ASSET_KUBECTL", "../bin/k8s/1.24.2-darwin-amd64/kubectl")).To(Succeed())
+	Expect(os.Setenv("TEST_ASSET_KUBE_APISERVER", "../bin/k8s/1.25.0-darwin-amd64/kube-apiserver")).To(Succeed())
+	Expect(os.Setenv("TEST_ASSET_ETCD", "../bin/k8s/1.25.0-darwin-amd64/etcd")).To(Succeed())
+	Expect(os.Setenv("TEST_ASSET_KUBECTL", "../bin/k8s/1.25.0-darwin-amd64/kubectl")).To(Succeed())
 	// OR
-	Expect(os.Setenv("KUBEBUILDER_ASSETS", "../bin/k8s/1.24.2-darwin-amd64")).To(Succeed())
+	Expect(os.Setenv("KUBEBUILDER_ASSETS", "../bin/k8s/1.25.0-darwin-amd64")).To(Succeed())
 
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 	testenv = &envtest.Environment{}

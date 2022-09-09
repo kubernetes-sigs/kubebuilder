@@ -78,7 +78,7 @@ manifests: controller-gen`
 		}
 
 		if err := util.ReplaceInFile("Makefile",
-			"ENVTEST_K8S_VERSION = 1.24.2",
+			"ENVTEST_K8S_VERSION = 1.25.0",
 			"ENVTEST_K8S_VERSION = 1.21"); err != nil {
 			log.Warnf("unable to update the Makefile with %s: %s", "ENVTEST_K8S_VERSION = 1.21", err)
 		}
