@@ -15,8 +15,8 @@ limitations under the License.
 */
 
 // Package v1alpha1 contains API Schema definitions for the example.com v1alpha1 API group
-//+kubebuilder:object:generate=true
-//+groupName=example.com.testproject.org
+// +kubebuilder:object:generate=true
+// +groupName=example.com.testproject.org
 package v1alpha1
 
 import (
