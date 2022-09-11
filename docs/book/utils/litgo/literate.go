@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"go/scanner"
 	"go/token"
-	"io/ioutil"
 	"log"
 	"net/url"
 	"os"
@@ -61,7 +60,7 @@ func (l Literate) Process(input *plugin.Input) error {
 		path := pathInfo.FullPath()
 
 		// TODO(directxman12): don't escape root?
-		contents, err := ioutil.ReadFile(path)
+		contents, err := os.ReadFile(path)
 		if err != nil {
 			return "", fmt.Errorf("unable to import %q: %v", path, err)
 		}

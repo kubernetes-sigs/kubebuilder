@@ -18,7 +18,7 @@ package cli
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"strings"
 
@@ -590,7 +590,7 @@ plugins:
 				_ = w.Close()
 
 				Expect(err).NotTo(HaveOccurred())
-				printed, _ := ioutil.ReadAll(r)
+				printed, _ := io.ReadAll(r)
 				Expect(string(printed)).To(Equal(
 					fmt.Sprintf(noticeColor, fmt.Sprintf(deprecationFmt, deprecationWarning))))
 			})

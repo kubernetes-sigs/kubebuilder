@@ -19,7 +19,6 @@ package scaffolds
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -77,7 +76,7 @@ func loadConfig(configPath string) ([]templates.CustomMetricItem, error) {
 }
 
 func configReader(reader io.Reader) ([]templates.CustomMetricItem, error) {
-	yamlFile, err := ioutil.ReadAll(reader)
+	yamlFile, err := io.ReadAll(reader)
 	if err != nil {
 		return nil, err
 	}

@@ -18,7 +18,7 @@ package v1
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -74,7 +74,7 @@ func updateDockerfile() error {
 func insertCodeIfDoesNotExist(filename, target, code string) error {
 	// false positive
 	// nolint:gosec
-	contents, err := ioutil.ReadFile(filename)
+	contents, err := os.ReadFile(filename)
 	if err != nil {
 		return err
 	}
