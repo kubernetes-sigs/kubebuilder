@@ -19,7 +19,6 @@ package configgen
 import (
 	"embed"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -316,7 +315,7 @@ kubebuilder alpha config-gen install-as-plugin
 			}
 
 			// r-x perms to prevent overwrite vulnerability since the script will be executed out-of-tree.
-			return ioutil.WriteFile(fullScriptPath, []byte(pluginScript), 0o500)
+			return os.WriteFile(fullScriptPath, []byte(pluginScript), 0o500)
 		},
 	}
 	c.AddCommand(install)

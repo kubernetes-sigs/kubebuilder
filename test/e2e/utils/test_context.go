@@ -19,7 +19,6 @@ package utils
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -340,13 +339,13 @@ func (cc *CmdContext) Run(cmd *exec.Cmd) ([]byte, error) {
 func (t *TestContext) AllowProjectBeMultiGroup() error {
 	const multiGroup = `multigroup: true
 `
-	projectBytes, err := ioutil.ReadFile(filepath.Join(t.Dir, "PROJECT"))
+	projectBytes, err := os.ReadFile(filepath.Join(t.Dir, "PROJECT"))
 	if err != nil {
 		return err
 	}
 
 	projectBytes = append([]byte(multiGroup), projectBytes...)
-	err = ioutil.WriteFile(filepath.Join(t.Dir, "PROJECT"), projectBytes, 0o644)
+	err = os.WriteFile(filepath.Join(t.Dir, "PROJECT"), projectBytes, 0o644)
 	if err != nil {
 		return err
 	}

@@ -22,7 +22,6 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"math/big"
 	"os"
 	"regexp"
@@ -67,7 +66,7 @@ func GetNonEmptyLines(output string) []string {
 func InsertCode(filename, target, code string) error {
 	// false positive
 	// nolint:gosec
-	contents, err := ioutil.ReadFile(filename)
+	contents, err := os.ReadFile(filename)
 	if err != nil {
 		return err
 	}
@@ -78,7 +77,7 @@ func InsertCode(filename, target, code string) error {
 	out := string(contents[:idx+len(target)]) + code + string(contents[idx+len(target):])
 	// false positive
 	// nolint:gosec
-	return ioutil.WriteFile(filename, []byte(out), 0644)
+	return os.WriteFile(filename, []byte(out), 0644)
 }
 
 // UncommentCode searches for target in the file and remove the comment prefix
@@ -86,7 +85,7 @@ func InsertCode(filename, target, code string) error {
 func UncommentCode(filename, target, prefix string) error {
 	// false positive
 	// nolint:gosec
-	content, err := ioutil.ReadFile(filename)
+	content, err := os.ReadFile(filename)
 	if err != nil {
 		return err
 	}
@@ -127,14 +126,14 @@ func UncommentCode(filename, target, prefix string) error {
 	}
 	// false positive
 	// nolint:gosec
-	return ioutil.WriteFile(filename, out.Bytes(), 0644)
+	return os.WriteFile(filename, out.Bytes(), 0644)
 }
 
 // ImplementWebhooks will mock an webhook data
 func ImplementWebhooks(filename string) error {
 	// false positive
 	// nolint:gosec
-	bs, err := ioutil.ReadFile(filename)
+	bs, err := os.ReadFile(filename)
 	if err != nil {
 		return err
 	}
@@ -181,7 +180,7 @@ func ImplementWebhooks(filename string) error {
 	}
 	// false positive
 	// nolint:gosec
-	return ioutil.WriteFile(filename, []byte(str), 0644)
+	return os.WriteFile(filename, []byte(str), 0644)
 }
 
 // EnsureExistAndReplace check if the content exists and then do the replace
@@ -200,7 +199,7 @@ func ReplaceInFile(path, old, new string) error {
 	}
 	// false positive
 	// nolint:gosec
-	b, err := ioutil.ReadFile(path)
+	b, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
@@ -208,7 +207,7 @@ func ReplaceInFile(path, old, new string) error {
 		return errors.New("unable to find the content to be replaced")
 	}
 	s := strings.Replace(string(b), old, new, -1)
-	err = ioutil.WriteFile(path, []byte(s), info.Mode())
+	err = os.WriteFile(path, []byte(s), info.Mode())
 	if err != nil {
 		return err
 	}
@@ -228,7 +227,7 @@ func ReplaceRegexInFile(path, match, replace string) error {
 	}
 	// false positive
 	// nolint:gosec
-	b, err := ioutil.ReadFile(path)
+	b, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
@@ -236,7 +235,7 @@ func ReplaceRegexInFile(path, match, replace string) error {
 	if s == string(b) {
 		return errors.New("unable to find the content to be replaced")
 	}
-	err = ioutil.WriteFile(path, []byte(s), info.Mode())
+	err = os.WriteFile(path, []byte(s), info.Mode())
 	if err != nil {
 		return err
 	}
@@ -246,7 +245,7 @@ func ReplaceRegexInFile(path, match, replace string) error {
 // HasFileContentWith check if given `text` can be found in file
 func HasFileContentWith(path, text string) (bool, error) {
 	// nolint:gosec
-	contents, err := ioutil.ReadFile(path)
+	contents, err := os.ReadFile(path)
 	if err != nil {
 		return false, err
 	}

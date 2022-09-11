@@ -18,7 +18,7 @@ package v3
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -37,7 +37,7 @@ const deprecateMsg = "The v1beta1 API version for CRDs and Webhooks are deprecat
 // nolint:lll,gosec
 func applyScaffoldCustomizationsForVbeta1() error {
 	makefilePath := filepath.Join("Makefile")
-	bs, err := ioutil.ReadFile(makefilePath)
+	bs, err := os.ReadFile(makefilePath)
 	if err != nil {
 		return err
 	}
