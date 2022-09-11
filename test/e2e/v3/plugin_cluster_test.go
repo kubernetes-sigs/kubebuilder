@@ -90,19 +90,19 @@ var _ = Describe("kubebuilder", func() {
 			})
 
 			It("should generate a runnable project go/v3 with v1 CRDs and Webhooks", func() {
-				GenerateV3(kbc, "v1")
+				GenerateV3(kbc)
 				Run(kbc)
 			})
 
 			It("should generate a runnable project go/v3 with v1 CRDs and Webhooks with restricted pods", func() {
 				kbc.IsRestricted = true
-				GenerateV3(kbc, "v1")
+				GenerateV3(kbc)
 				Run(kbc)
 			})
 
 			It("should generate a runnable project go/v3 with v1 CRDs and Webhooks"+
 				"with --component-config flag enabled", func() {
-				GenerateV3ComponentConfig(kbc, "v1")
+				GenerateV3ComponentConfig(kbc)
 				Run(kbc)
 			})
 		})

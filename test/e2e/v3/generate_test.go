@@ -130,7 +130,7 @@ Count int `+"`"+`json:"count,omitempty"`+"`"+`
 }
 
 // GenerateV3 implements a go/v3(-alpha) plugin project defined by a TestContext.
-func GenerateV3(kbc *utils.TestContext, crdAndWebhookVersion string) {
+func GenerateV3(kbc *utils.TestContext) {
 	var err error
 
 	By("initializing a project")
@@ -151,7 +151,6 @@ func GenerateV3(kbc *utils.TestContext, crdAndWebhookVersion string) {
 		"--resource",
 		"--controller",
 		"--make=false",
-		"--crd-version", crdAndWebhookVersion,
 	)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
@@ -171,7 +170,6 @@ Count int `+"`"+`json:"count,omitempty"`+"`"+`
 		"--kind", kbc.Kind,
 		"--defaulting",
 		"--programmatic-validation",
-		"--webhook-version", crdAndWebhookVersion,
 	)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
@@ -225,18 +223,14 @@ Count int `+"`"+`json:"count,omitempty"`+"`"+`
 #    version: v1
 #    name: webhook-service`, "#")).To(Succeed())
 
-	if crdAndWebhookVersion == "v1beta1" {
-		_ = pluginutil.RunCmd("Update dependencies", "go", "mod", "tidy")
-	}
-
 	if kbc.IsRestricted {
 		By("uncomment kustomize files to ensure that pods are restricted")
 		uncommentPodStandards(kbc)
 	}
 }
 
-// GenerateV3 implements a go/v3(-alpha) plugin project defined by a TestContext.
-func GenerateV3ComponentConfig(kbc *utils.TestContext, crdAndWebhookVersion string) {
+// GenerateV3ComponentConfig implements a go/v3(-alpha) plugin project defined by a TestContext with component config.
+func GenerateV3ComponentConfig(kbc *utils.TestContext) {
 	var err error
 
 	By("initializing a project")
@@ -258,7 +252,6 @@ func GenerateV3ComponentConfig(kbc *utils.TestContext, crdAndWebhookVersion stri
 		"--resource",
 		"--controller",
 		"--make=false",
-		"--crd-version", crdAndWebhookVersion,
 	)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
@@ -278,7 +271,6 @@ Count int `+"`"+`json:"count,omitempty"`+"`"+`
 		"--kind", kbc.Kind,
 		"--defaulting",
 		"--programmatic-validation",
-		"--webhook-version", crdAndWebhookVersion,
 	)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
@@ -331,10 +323,6 @@ Count int `+"`"+`json:"count,omitempty"`+"`"+`
 #    kind: Service
 #    version: v1
 #    name: webhook-service`, "#")).To(Succeed())
-
-	if crdAndWebhookVersion == "v1beta1" {
-		_ = pluginutil.RunCmd("Update dependencies", "go", "mod", "tidy")
-	}
 
 	if kbc.IsRestricted {
 		By("uncomment kustomize files to ensure that pods are restricted")
