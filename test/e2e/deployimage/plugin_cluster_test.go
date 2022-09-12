@@ -78,14 +78,6 @@ var _ = Describe("kubebuilder", func() {
 		})
 
 		It("should generate a runnable project with deploy-image/v1-alpha options ", func() {
-			// Skip if cluster version < 1.16, when v1 CRDs and webhooks did not exist.
-			// Skip if cluster version < 1.19, because securityContext.seccompProfile only works from 1.19
-			// Otherwise, unknown field "seccompProfile" in io.k8s.api.core.v1.PodSecurityContext will be faced
-			if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() < 19 {
-				Skip(fmt.Sprintf("cluster version %s does not support "+
-					"securityContext.seccompProfile", srvVer.GitVersion))
-			}
-
 			var err error
 
 			By("initializing a project with go/v3")
@@ -123,14 +115,6 @@ var _ = Describe("kubebuilder", func() {
 		})
 
 		It("should generate a runnable project with deploy-image/v1-alpha without options ", func() {
-			// Skip if cluster version < 1.16, when v1 CRDs and webhooks did not exist.
-			// Skip if cluster version < 1.19, because securityContext.seccompProfile only works from 1.19
-			// Otherwise, unknown field "seccompProfile" in io.k8s.api.core.v1.PodSecurityContext will be faced
-			if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() < 19 {
-				Skip(fmt.Sprintf("cluster version %s does not support "+
-					"securityContext.seccompProfile", srvVer.GitVersion))
-			}
-
 			var err error
 
 			By("initializing a project with go/v3")
