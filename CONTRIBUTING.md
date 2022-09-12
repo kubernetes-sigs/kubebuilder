@@ -62,6 +62,63 @@ Following the targets that can be used to test your changes locally.
 
 **NOTE** To use the `make lint` is required to install `golangci-lint` locally. More info: https://github.com/golangci/golangci-lint#install
 
+### Test Plugin
+
+If your intended PR creates a new plugin, make sure the PR also provides test cases. Testing should include:
+
+1. `e2e tests` to validate the behavior of the proposed plugin.
+2. `sample projects` to verify the scaffolded output from the plugin.
+
+#### 1. Plugin E2E Tests
+
+All the plugins provided by Kubebuilder should be validated through `e2e-tests` across multiple platforms.
+
+Current Kubebuilder provides the testing framework that includes testing code based on [ginkgo](https://github.com/onsi/ginkgo), [Github Actions](https://github.com/Kavinjsir/kubebuilder/blob/docs%2Ftest-plugin/.github/workflows/testdata.yml) for unit tests, and multiple env tests driven by [test-infra](https://github.com/kubernetes/test-infra/blob/master/config/jobs/kubernetes-sigs/kubebuilder/kubebuilder-presubmits.yaml).
+
+To fully test the proposed plugin:
+
+1. Create a new package(folder) under `test/e2e/<your-plugin>`.
+2. Create [e2e_suite_test.go](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.7.0/test/e2e/v4/e2e_suite_test.go), which imports the necessary testing framework.
+3. Create `generate_test.go` ([ref](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.7.0/test/e2e/v4/generate_test.go)). That should:
+   - Introduce/Receive a `TextContext` instance
+   - Trigger the plugin's bound subcommands. See [Init](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.7.0/test/e2e/utils/test_context.go#L213), [CreateAPI](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.6.0/test/e2e/utils/test_context.go#L222)
+   - Use [PluginUtil](https://pkg.go.dev/sigs.k8s.io/kubebuilder/v3/pkg/plugin/util) to verify the scaffolded outputs. See [InsertCode](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.7.0/pkg/plugin/util/util.go#L67), [ReplaceInFile](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.6.0/pkg/plugin/util/util.go#L196), [UncommendCode](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.6.0/pkg/plugin/util/util.go#L86)
+4. Create `plugin_cluster_test.go` ([ref](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.7.0/test/e2e/v4/plugin_cluster_test.go)). That should:
+
+   - 4.1. Setup testing environment, e.g:
+
+     - Cleanup environment, create temp dir. See [Prepare](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.7.0/test/e2e/utils/test_context.go#L97)
+     - If your test will cover the provided features then, ensure that you install prerequisites CRDs: See [InstallCertManager](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.7.0/test/e2e/utils/test_context.go#L138), [InstallPrometheusManager](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.6.0/test/e2e/utils/test_context.go#L171)
+
+   - 4.2. Run the function from `generate_test.go`.
+
+   - 4.3. Further make sure the scaffolded output works, e.g:
+
+     - Execute commands in your `Makefile`. See [Make](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.7.0/test/e2e/utils/test_context.go#L240)
+     - Temporary load image of the testing controller. See [LoadImageToKindCluster](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.7.0/test/e2e/utils/test_context.go#L283)
+     - Call Kubectl to validate running resources. See [utils.Kubectl](https://pkg.go.dev/sigs.k8s.io/kubebuilder/v3/test/e2e/utils#Kubectl)
+
+   - 4.4. Delete temporary resources after testing exited, e.g:
+     - Uninstall prerequisites CRDs: See [UninstallPrometheusOperManager](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.7.0/test/e2e/utils/test_context.go#L183)
+     - Delete temp dir. See [Destroy](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.7.0/test/e2e/utils/test_context.go#L255)
+
+5. Add the command in [test/e2e/plugin](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.7.0/test/e2e/setup.sh#L65) to run your testing code:
+
+```shell
+go test $(dirname "$0")/<your-plugin-test-folder> $flags -timeout 30m
+```
+
+#### 2. Sample Projects from the Plugin
+
+It is also necessary to test consistency of the proposed plugin across different env and the integration with other plugins.
+
+This is performed by generating sample projects based on the plugins. The CI workflow defined in Github Action would validate the availability and the consistency.
+
+See:
+
+- [test/testdata/generated.sh](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.7.0/test/testdata/generate.sh#L144)
+- [make generate](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.7.0/Makefile#L70)
+
 ## PR Process
 
 See [VERSIONING.md](VERSIONING.md) for a full description. TL;DR:
