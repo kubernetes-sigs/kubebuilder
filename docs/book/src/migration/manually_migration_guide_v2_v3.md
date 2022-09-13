@@ -356,8 +356,8 @@ module example
 go 1.18
 
 require (
-    github.com/onsi/ginkgo v1.16.5
-    github.com/onsi/gomega v1.18.1
+    github.com/onsi/ginkgo/v2 v2.1.4
+    github.com/onsi/gomega v1.19.0
     k8s.io/api v0.24.0
     k8s.io/apimachinery v0.24.0
     k8s.io/client-go v0.24.0
@@ -521,6 +521,78 @@ With:
 func (r *<MyKind>Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
     log := r.Log.WithValues("cronjob", req.NamespacedName)
 ```
+
+#### Update your controller adn webhook test suite
+
+<aside class="note warning">
+<h1>Ginkgo V2 version update has breaking changes</h1>
+
+Check [https://onsi.github.io/ginkgo/MIGRATING_TO_V2][Ginkgo V2 Migration] for breaking changes.
+
+</aside>
+
+Replace:
+
+```go
+	. "github.com/onsi/ginkgo"
+```
+
+With:
+
+```go
+	. "github.com/onsi/ginkgo/v2"
+```
+
+Also, adjust your test suite.
+
+For Controller Suite:
+
+```go
+	RunSpecsWithDefaultAndCustomReporters(t,
+		"Controller Suite",
+		[]Reporter{printer.NewlineReporter{}})
+```
+
+With:
+
+```go
+	RunSpecs(t, "Controller Suite")
+```
+
+For Webhook Suite:
+
+```go
+	RunSpecsWithDefaultAndCustomReporters(t,
+		"Webhook Suite",
+		[]Reporter{printer.NewlineReporter{}})
+```
+
+With:
+
+```go
+	RunSpecs(t, "Webhook Suite")
+```
+
+Last but not least, remove the timeout variable from the `BeforeSuite` blocks:
+
+Replace:
+
+```go
+var _ = BeforeSuite(func(done Done) {
+	....
+}, 60)
+```
+
+With
+
+
+```go
+var _ = BeforeSuite(func(done Done) {
+	....
+})
+```
+
+
 
 #### Change Logger to use flag options
 
