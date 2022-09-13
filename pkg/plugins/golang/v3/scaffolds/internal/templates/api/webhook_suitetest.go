@@ -140,7 +140,7 @@ import (
 	"testing"
 	"fmt"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	%s
 	"k8s.io/client-go/kubernetes/scheme"
@@ -166,9 +166,7 @@ var cancel context.CancelFunc
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
 
-	RunSpecsWithDefaultAndCustomReporters(t,
-	"Webhook Suite",
-	[]Reporter{printer.NewlineReporter{}})
+	RunSpecs(t, "Webhook Suite")
 }
 
 var _ = BeforeSuite(func() {
@@ -236,7 +234,7 @@ var _ = BeforeSuite(func() {
 		return nil
 	}).Should(Succeed())
 
-}, 60)
+})
 
 var _ = AfterSuite(func() {
 	cancel()
