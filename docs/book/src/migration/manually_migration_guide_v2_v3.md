@@ -522,7 +522,7 @@ func (r *<MyKind>Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
     log := r.Log.WithValues("cronjob", req.NamespacedName)
 ```
 
-#### Update your controller adn webhook test suite
+#### Update your controller and webhook test suite
 
 <aside class="note warning">
 <h1>Ginkgo V2 version update has breaking changes</h1>
