@@ -35,7 +35,10 @@ type createSubcommand struct {
 	force bool
 }
 
-func (p *createSubcommand) BindFlags(fs *pflag.FlagSet) { p.flagSet = fs }
+func (p *createSubcommand) BindFlags(fs *pflag.FlagSet) {
+	p.flagSet = fs
+	_ = fs.MarkDeprecated("component-config", "component-config flag will be deprecated in upcoming releases")
+}
 
 func (p *createSubcommand) InjectConfig(c config.Config) error {
 	p.config = c
