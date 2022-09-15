@@ -17,6 +17,7 @@ See the "project-v3-with-deploy-image" directory under the [testdata][testdata] 
 
 </aside>
 
+
 ## When to use it ?
 
 - This plugin is helpful for those who are getting started.
@@ -63,6 +64,11 @@ With the `create api` command of this plugin, in addition to the existing scaffo
 - `config/samples/*_.yaml` (scaffold default values for its CR)
 - `main.go` (update to add controller setup)
 - `config/manager/manager.yaml` (update with envvar to store the image)
+
+## Further Resources:
+
+- Check out [video to show how it works](https://youtu.be/UwPuRjjnMjY)
+- See the [desing proposal documentation](../../../../designs/code-generate-image-plugin.md)
 
 [controller-runtime]: https://github.com/kubernetes-sigs/controller-runtime
 [testdata]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/testdata/
