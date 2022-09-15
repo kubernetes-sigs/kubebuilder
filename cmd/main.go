@@ -34,6 +34,7 @@ import (
 	deployimagev1alpha1 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/deploy-image/v1alpha1"
 	golangv2 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2"
 	golangv3 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3"
+	configv1alpha1 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/optional/config/v1alpha"
 	grafanav1alpha1 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/optional/grafana/v1alpha"
 )
 
@@ -71,6 +72,7 @@ func main() {
 			&declarativev1.Plugin{},
 			&deployimagev1alpha1.Plugin{},
 			&grafanav1alpha1.Plugin{},
+			&configv1alpha1.Plugin{},
 		),
 		cli.WithPlugins(externalPlugins...),
 		cli.WithDefaultPlugins(cfgv2.Version, golangv2.Plugin{}),
