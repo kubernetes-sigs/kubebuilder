@@ -92,7 +92,7 @@
   - [controller-gen CLI](./reference/controller-gen.md)
   - [completion](./reference/completion.md)
   - [Artifacts](./reference/artifacts.md)
-
+  - [Platform Support](platform.md)
   - [Configuring EnvTest](./reference/envtest.md)
 
   - [Metrics](./reference/metrics.md)

@@ -47,6 +47,7 @@ const gitignoreTemplate = `
 *.dylib
 bin
 testbin/*
+Dockerfile.cross
 
 # Test binary, build with ` + "`go test -c`" + `
 *.test
