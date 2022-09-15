@@ -190,6 +190,8 @@ The following scaffolds will be created or updated by this plugin:
 
 ## Further resources
 
+- Check out [video to show how it works](https://youtu.be/-w_JjcV8jXc)
+- Checkout the [video to show how the custom metrics feature works](https://youtu.be/x_0FHta2HXc)
 - Refer to a sample of `servicemonitor` provided by [kustomize plugin][kustomize-plugin]
 - Check the [plugin implementation][plugin-implementation]
 - [Grafana Docs][grafana-docs] of importing JSON file
