@@ -62,9 +62,9 @@ Now let's check its layout fields definition:
 | `resources.path` | The import path for the API resource. It will be `<repo>/api/<kind>` unless the API added to the project is an external or core-type. For the core-types scenarios, the paths used are mapped [here][core-types]. |
 | `resources.webhooks`| Store the webhooks data when the sub-command `create webhook` is used. |
 | `resources.webhooks.webhookVersion` | The Kubernetes API version (`apiVersion`) used to scaffold the webhook resource. |
-| `resources.webhooks.conversion` | It is `true` when the the webhook was scaffold with the `--conversion` flag which means that is a conversion webhook. |
-| `resources.webhooks.defaulting` | It is `true` when the the webhook was scaffold with the `--defaulting` flag which means that is a defaulting webhook. |
-| `resources.webhooks.validation` | It is `true` when the the webhook was scaffold with the `--programmatic-validation` flag which means that is a validation webhook. |
+| `resources.webhooks.conversion` | It is `true` when the webhook was scaffold with the `--conversion` flag which means that is a conversion webhook. |
+| `resources.webhooks.defaulting` | It is `true` when the webhook was scaffold with the `--defaulting` flag which means that is a defaulting webhook. |
+| `resources.webhooks.validation` | It is `true` when the webhook was scaffold with the `--programmatic-validation` flag which means that is a validation webhook. |
 
 [project]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/testdata/project-v3/PROJECT
 [versioning]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/VERSIONING.md#Versioning
