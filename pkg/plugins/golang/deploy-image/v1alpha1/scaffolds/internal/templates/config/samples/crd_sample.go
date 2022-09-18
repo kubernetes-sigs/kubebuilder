@@ -54,7 +54,7 @@ spec:
   size: 1
 
   {{ if not (isEmptyStr .Port) -}}
-  # TODO(user): edit the following value to ensure the the container has the right port to be initialized 
+  # TODO(user): edit the following value to ensure the container has the right port to be initialized
   containerPort: {{ .Port }}	
   {{- end }}
 `

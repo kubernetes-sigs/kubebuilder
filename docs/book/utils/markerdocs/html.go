@@ -100,7 +100,7 @@ type classes []string
 // ToAttrs implements Attrs
 func (c classes) ToAttrs() string { return fmt.Sprintf("class=%q", strings.Join(c, " ")) }
 
-// optionalClasses sets the the class attribute to these class names, if their values are true.
+// optionalClasses sets the class attribute to these class names, if their values are true.
 type optionalClasses map[string]bool
 
 // ToAttrs implements Attrs
