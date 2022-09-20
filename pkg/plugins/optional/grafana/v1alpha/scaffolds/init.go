@@ -51,5 +51,6 @@ func (s *initScaffolder) Scaffold() error {
 	return scaffold.Execute(
 		&templates.RuntimeManifest{},
 		&templates.ResourcesManifest{},
+		&templates.CustomMetricsConfigManifest{ConfigPath: string(configFilePath)},
 	)
 }

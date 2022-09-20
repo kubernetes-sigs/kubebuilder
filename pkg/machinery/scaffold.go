@@ -196,6 +196,10 @@ func (Scaffold) buildFileModel(t Template, models map[string]*File) error {
 func doTemplate(t Template) ([]byte, error) {
 	// Create a new template.Template using the type of the Template as the name
 	temp := template.New(fmt.Sprintf("%T", t))
+	leftDelim, rightDelim := t.GetDelim()
+	if leftDelim != "" && rightDelim != "" {
+		temp.Delims(leftDelim, rightDelim)
+	}
 
 	// Set the function map to be used
 	fm := DefaultFuncMap()

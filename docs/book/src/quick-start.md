@@ -9,7 +9,7 @@ This Quick Start guide will cover:
 
 ## Prerequisites
 
-- [go](https://golang.org/dl/) version v1.17.9+ 
+- [go](https://golang.org/dl/) version v1.19.0+
 - [docker](https://docs.docker.com/install/) version 17.03+.
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) version v1.11.3+.
 - Access to a Kubernetes v1.11.3+ cluster.
@@ -243,7 +243,19 @@ make undeploy
 
 ## Next Step
 
-Now, see the [architecture concept diagram][architecture-concept-diagram] for a better overview and follow up the [CronJob tutorial][cronjob-tutorial] to better understand how it works by developing a demo example project.
+Now, see the [architecture concept diagram][architecture-concept-diagram] for a better overview and follow up the
+[CronJob tutorial][cronjob-tutorial] to better understand how it works by developing a 
+demo example project.
+
+<aside class="note">
+<h1> Using Deploy Image plugin to generate APIs and controllers code </h1>
+
+Ensure that you check out the [Deploy Image](https://book.kubebuilder.io/plugins/deploy-image-plugin-v1-alpha.html)
+Plugin. This plugin allows users to scaffold API/Controllers to deploy and manage an
+Operand (image) on the cluster following the guidelines and best practices. It abstracts the
+complexities of achieving this goal while allowing users to customize the generated code.
+
+</aside>
 
 [pre-rbc-gke]: https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#iam-rolebinding-bootstrap
 [cronjob-tutorial]: https://book.kubebuilder.io/cronjob-tutorial/cronjob-tutorial.html

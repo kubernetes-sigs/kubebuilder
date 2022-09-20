@@ -27,6 +27,7 @@ var _ machinery.Template = &AuthProxyRoleBinding{}
 // AuthProxyRoleBinding scaffolds a file that defines the role binding for the auth proxy
 type AuthProxyRoleBinding struct {
 	machinery.TemplateMixin
+	machinery.ProjectNameMixin
 }
 
 // SetTemplateDefaults implements file.Template
@@ -43,6 +44,13 @@ func (f *AuthProxyRoleBinding) SetTemplateDefaults() error {
 const proxyRoleBindinggTemplate = `apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
+  labels:
+    app.kubernetes.io/name: clusterrolebinding
+    app.kubernetes.io/instance: proxy-rolebinding
+    app.kubernetes.io/component: kube-rbac-proxy
+    app.kubernetes.io/created-by: {{ .ProjectName }}
+    app.kubernetes.io/part-of: {{ .ProjectName }}
+    app.kubernetes.io/managed-by: kustomize
   name: proxy-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io

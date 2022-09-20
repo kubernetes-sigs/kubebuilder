@@ -18,7 +18,7 @@ package v3
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -37,7 +37,7 @@ const deprecateMsg = "The v1beta1 API version for CRDs and Webhooks are deprecat
 // nolint:lll,gosec
 func applyScaffoldCustomizationsForVbeta1() error {
 	makefilePath := filepath.Join("Makefile")
-	bs, err := ioutil.ReadFile(makefilePath)
+	bs, err := os.ReadFile(makefilePath)
 	if err != nil {
 		return err
 	}
@@ -78,12 +78,18 @@ manifests: controller-gen`
 		}
 
 		if err := util.ReplaceInFile("Makefile",
-			"ENVTEST_K8S_VERSION = 1.24.2",
+			"ENVTEST_K8S_VERSION = 1.25.0",
 			"ENVTEST_K8S_VERSION = 1.21"); err != nil {
 			log.Warnf("unable to update the Makefile with %s: %s", "ENVTEST_K8S_VERSION = 1.21", err)
 		}
 
-		// latest version of controller-runtime where v1beta1 is supported
+		// DO NOT UPDATE THIS VERSION
+		// Note that this implementation will update the go.mod to downgrade the versions for those that are
+		// compatible v1beta1 CRD/Webhooks k8s core APIs if/when a user tries to create an API with
+		// create api [options] crd-version=v1beta1. The flag/feature is deprecated. however, to ensure that backwards
+		// compatible we must introduce this logic. Also, note that when we bump the k8s dependencies we need to
+		// ensure that the following replacements will be done accordingly to downgrade the versions.
+		// The next version of the Golang base plugin (go/v4-alpha) no longer provide this feature.
 		const controllerRuntimeVersionForVBeta1 = "v0.9.2"
 
 		if err := util.ReplaceInFile("go.mod",

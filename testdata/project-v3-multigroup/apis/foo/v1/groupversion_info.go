@@ -15,8 +15,8 @@ limitations under the License.
 */
 
 // Package v1 contains API Schema definitions for the foo v1 API group
-//+kubebuilder:object:generate=true
-//+groupName=foo.testproject.org
+// +kubebuilder:object:generate=true
+// +groupName=foo.testproject.org
 package v1
 
 import (

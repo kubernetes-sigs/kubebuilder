@@ -18,12 +18,11 @@ package cli
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"strings"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/extensions/table"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
@@ -123,7 +122,8 @@ plugins:
 				Expect(c.projectVersion.Compare(
 					config.Version{
 						Number: 3,
-						Stage:  stage.Stable})).To(Equal(0))
+						Stage:  stage.Stable,
+					})).To(Equal(0))
 			})
 			It("should fail when stable is not registered ", func() {
 				// overwrite project file with fake 4-alpha
@@ -312,9 +312,7 @@ plugins:
 	})
 
 	Context("getInfoFromDefaults", func() {
-		var (
-			pluginKeys = []string{"go.kubebuilder.io/v2"}
-		)
+		pluginKeys := []string{"go.kubebuilder.io/v2"}
 
 		It("should be a no-op if already have plugin keys", func() {
 			c.pluginKeys = pluginKeys
@@ -352,17 +350,15 @@ plugins:
 	})
 
 	Context("resolvePlugins", func() {
-		var (
-			pluginKeys = []string{
-				"foo.example.com/v1",
-				"bar.example.com/v1",
-				"baz.example.com/v1",
-				"foo.kubebuilder.io/v1",
-				"foo.kubebuilder.io/v2",
-				"bar.kubebuilder.io/v1",
-				"bar.kubebuilder.io/v2",
-			}
-		)
+		pluginKeys := []string{
+			"foo.example.com/v1",
+			"bar.example.com/v1",
+			"baz.example.com/v1",
+			"foo.kubebuilder.io/v1",
+			"foo.kubebuilder.io/v2",
+			"bar.kubebuilder.io/v1",
+			"bar.kubebuilder.io/v2",
+		}
 
 		plugins := makeMockPluginsFor(projectVersion, pluginKeys...)
 		plugins = append(plugins,
@@ -575,9 +571,7 @@ plugins:
 				const (
 					deprecationWarning = "DEPRECATED"
 				)
-				var (
-					deprecatedPlugin = newMockDeprecatedPlugin("deprecated", "v1", deprecationWarning, projectVersion)
-				)
+				deprecatedPlugin := newMockDeprecatedPlugin("deprecated", "v1", deprecationWarning, projectVersion)
 
 				// Overwrite stdout to read the output and reset it afterwards
 				r, w, _ := os.Pipe()
@@ -596,11 +590,10 @@ plugins:
 				_ = w.Close()
 
 				Expect(err).NotTo(HaveOccurred())
-				printed, _ := ioutil.ReadAll(r)
+				printed, _ := io.ReadAll(r)
 				Expect(string(printed)).To(Equal(
 					fmt.Sprintf(noticeColor, fmt.Sprintf(deprecationFmt, deprecationWarning))))
 			})
 		})
 	})
-
 })

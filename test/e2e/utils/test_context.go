@@ -19,7 +19,6 @@ package utils
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -27,7 +26,7 @@ import (
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
 
-	. "github.com/onsi/ginkgo" //nolint:golint,revive
+	. "github.com/onsi/ginkgo/v2" //nolint:golint,revive
 )
 
 // TestContext specified to run e2e tests
@@ -106,7 +105,7 @@ func (t *TestContext) Prepare() error {
 	}
 
 	fmt.Fprintf(GinkgoWriter, "preparing testing directory: %s\n", t.Dir)
-	return os.MkdirAll(t.Dir, 0755)
+	return os.MkdirAll(t.Dir, 0o755)
 }
 
 const (
@@ -214,6 +213,15 @@ func (t *TestContext) Init(initOptions ...string) error {
 	initOptions = append([]string{"init"}, initOptions...)
 	//nolint:gosec
 	cmd := exec.Command(t.BinaryName, initOptions...)
+	_, err := t.Run(cmd)
+	return err
+}
+
+// Edit is for running `kubebuilder edit`
+func (t *TestContext) Edit(editOptions ...string) error {
+	editOptions = append([]string{"edit"}, editOptions...)
+	//nolint:gosec
+	cmd := exec.Command(t.BinaryName, editOptions...)
 	_, err := t.Run(cmd)
 	return err
 }
@@ -331,13 +339,13 @@ func (cc *CmdContext) Run(cmd *exec.Cmd) ([]byte, error) {
 func (t *TestContext) AllowProjectBeMultiGroup() error {
 	const multiGroup = `multigroup: true
 `
-	projectBytes, err := ioutil.ReadFile(filepath.Join(t.Dir, "PROJECT"))
+	projectBytes, err := os.ReadFile(filepath.Join(t.Dir, "PROJECT"))
 	if err != nil {
 		return err
 	}
 
 	projectBytes = append([]byte(multiGroup), projectBytes...)
-	err = ioutil.WriteFile(filepath.Join(t.Dir, "PROJECT"), projectBytes, 0644)
+	err = os.WriteFile(filepath.Join(t.Dir, "PROJECT"), projectBytes, 0o644)
 	if err != nil {
 		return err
 	}

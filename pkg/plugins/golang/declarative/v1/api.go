@@ -32,7 +32,7 @@ import (
 const (
 	// kbDeclarativePattern is the sigs.k8s.io/kubebuilder-declarative-pattern version
 	kbDeclarativePatternForV2 = "v0.0.0-20200522144838-848d48e5b073"
-	kbDeclarativePatternForV3 = "fe5be9431eae158f86f9de23000a9a2ec06745fc"
+	kbDeclarativePatternForV3 = "e0605f0e1a40f97293cb3773f57de695c8bc76af"
 )
 
 var _ plugin.CreateAPISubcommand = &createAPISubcommand{}

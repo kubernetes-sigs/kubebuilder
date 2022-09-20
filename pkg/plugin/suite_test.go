@@ -19,7 +19,7 @@ package plugin
 import (
 	"testing"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"

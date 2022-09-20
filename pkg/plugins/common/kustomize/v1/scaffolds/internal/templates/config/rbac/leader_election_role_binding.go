@@ -27,6 +27,7 @@ var _ machinery.Template = &LeaderElectionRoleBinding{}
 // LeaderElectionRoleBinding scaffolds a file that defines the role binding that allows leader election
 type LeaderElectionRoleBinding struct {
 	machinery.TemplateMixin
+	machinery.ProjectNameMixin
 }
 
 // SetTemplateDefaults implements file.Template
@@ -43,6 +44,13 @@ func (f *LeaderElectionRoleBinding) SetTemplateDefaults() error {
 const leaderElectionRoleBindingTemplate = `apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
+  labels:
+    app.kubernetes.io/name: rolebinding
+    app.kubernetes.io/instance: leader-election-rolebinding
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: {{ .ProjectName }}
+    app.kubernetes.io/part-of: {{ .ProjectName }}
+    app.kubernetes.io/managed-by: kustomize
   name: leader-election-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io

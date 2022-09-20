@@ -28,6 +28,7 @@ var _ machinery.Template = &CRDSample{}
 type CRDSample struct {
 	machinery.TemplateMixin
 	machinery.ResourceMixin
+	machinery.ProjectNameMixin
 
 	Force bool
 }
@@ -53,6 +54,12 @@ func (f *CRDSample) SetTemplateDefaults() error {
 const crdSampleTemplate = `apiVersion: {{ .Resource.QualifiedGroup }}/{{ .Resource.Version }}
 kind: {{ .Resource.Kind }}
 metadata:
+  labels:
+    app.kubernetes.io/name: {{ lower .Resource.Kind }}
+    app.kubernetes.io/instance: {{ lower .Resource.Kind }}-sample
+    app.kubernetes.io/part-of: {{ .ProjectName }}
+    app.kuberentes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: {{ .ProjectName }}
   name: {{ lower .Resource.Kind }}-sample
 spec:
   # TODO(user): Add fields here

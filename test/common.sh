@@ -27,6 +27,7 @@ function convert_to_tools_ver {
   "1.22") echo "1.22.1";;
   "1.23") echo "1.23.3";;
   "1.24") echo "1.24.1";;
+  "1.25") echo "1.25.0";;
   *)
     echo "k8s version $k8s_ver not supported"
     exit 1
@@ -46,9 +47,9 @@ if [ -n "$TRACE" ]; then
   set -x
 fi
 
-export KIND_K8S_VERSION="${KIND_K8S_VERSION:-"v1.24.1"}"
+export KIND_K8S_VERSION="${KIND_K8S_VERSION:-"v1.25.0"}"
 tools_k8s_version=$(convert_to_tools_ver "${KIND_K8S_VERSION#v*}")
-kind_version=0.14.0
+kind_version=0.15.0
 goarch=amd64
 
 if [[ "$OSTYPE" == "linux-gnu" ]]; then

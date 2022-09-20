@@ -21,7 +21,7 @@ import (
 	"os"
 	"testing"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
 
@@ -169,7 +169,6 @@ layout: ""
 	})
 
 	Context("Save", func() {
-
 		It("should succeed for a valid config", func() {
 			s.cfg = cfgv2.New()
 			Expect(s.Save()).To(Succeed())

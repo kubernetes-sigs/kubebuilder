@@ -1,6 +1,12 @@
 apiVersion: foo.testproject.org/v1
 kind: Bar
 metadata:
+  labels:
+    app.kubernetes.io/name: bar
+    app.kubernetes.io/instance: bar-sample
+    app.kubernetes.io/part-of: project-v4-multigroup
+    app.kuberentes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: project-v4-multigroup
   name: bar-sample
 spec:
   # TODO(user): Add fields here

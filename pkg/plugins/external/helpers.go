@@ -166,10 +166,7 @@ func bindAllFlags(fs *pflag.FlagSet, args []string) {
 			flag := strings.Replace(args[i], "--", "", 1)
 			// Check if the flag is a boolean flag
 			if isBooleanFlag(i, args) {
-				// --help is already a defined flag in the kubebuilder commands and has a description so we skip parsing it again
-				if flag != "help" {
-					_ = fs.Bool(flag, false, defaultFlagDescription)
-				}
+				_ = fs.Bool(flag, false, defaultFlagDescription)
 			} else {
 				_ = fs.String(flag, "", defaultFlagDescription)
 			}
@@ -197,6 +194,75 @@ func bindSpecificFlags(fs *pflag.FlagSet, flags []external.Flag) {
 	}
 }
 
+func filterFlags(flags []external.Flag, externalFlagFilters []externalFlagFilterFunc) []external.Flag {
+	filteredFlags := []external.Flag{}
+	for _, flag := range flags {
+		ok := true
+		for _, filter := range externalFlagFilters {
+			if !filter(flag) {
+				ok = false
+				break
+			}
+		}
+		if ok {
+			filteredFlags = append(filteredFlags, flag)
+		}
+	}
+	return filteredFlags
+}
+
+func filterArgs(args []string, argFilters []argFilterFunc) []string {
+	filteredArgs := []string{}
+	for _, arg := range args {
+		ok := true
+		for _, filter := range argFilters {
+			if !filter(arg) {
+				ok = false
+				break
+			}
+		}
+		if ok {
+			filteredArgs = append(filteredArgs, arg)
+		}
+	}
+	return filteredArgs
+}
+
+type (
+	externalFlagFilterFunc func(flag external.Flag) bool
+	argFilterFunc          func(arg string) bool
+)
+
+var (
+	// see gvkArgFilter
+	gvkFlagFilter = func(flag external.Flag) bool {
+		return gvkArgFilter(flag.Name)
+	}
+	// gvkFlagFilter filters out any flag named "group", "version", "kind" as
+	// they are already bound by kubebuilder
+	gvkArgFilter = func(arg string) bool {
+		arg = strings.Replace(arg, "--", "", 1)
+		for _, invalidFlagName := range []string{
+			"group", "version", "kind",
+		} {
+			if arg == invalidFlagName {
+				return false
+			}
+		}
+		return true
+	}
+
+	// see helpArgFilter
+	helpFlagFilter = func(flag external.Flag) bool {
+		return helpArgFilter(flag.Name)
+	}
+	// helpArgFilter filters out any flag named "help" as its already bound
+	helpArgFilter = func(arg string) bool {
+		arg = strings.Replace(arg, "--", "", 1)
+		return !(arg == "help")
+	}
+)
+
 func bindExternalPluginFlags(fs *pflag.FlagSet, subcommand string, path string, args []string) {
 	req := external.PluginRequest{
 		APIVersion: defaultAPIVersion,
@@ -208,10 +274,20 @@ func bindExternalPluginFlags(fs *pflag.FlagSet, subcommand string, path string, 
 	// If it returns an error, parse all flags passed by the user and let
 	// the external plugin return an unknown flag error.
 	flags, err := getExternalPluginFlags(req, path)
+
+	// Filter Flags based on a set of filters that we do not want.
+	// can be used to filter out non-overridable flags or other
+	// criteria by creating your own filterFlagFunc
 	if err != nil {
-		bindAllFlags(fs, args)
+		bindAllFlags(fs, filterArgs(args, []argFilterFunc{
+			gvkArgFilter,
+			helpArgFilter,
+		}))
 	} else {
-		bindSpecificFlags(fs, flags)
+		bindSpecificFlags(fs, filterFlags(flags, []externalFlagFilterFunc{
+			gvkFlagFilter,
+			helpFlagFilter,
+		}))
 	}
 }
 

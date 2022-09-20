@@ -1,45 +1,48 @@
 # Configuring envtest for integration tests
 
-The [`controller-runtime/pkg/envtest`][envtest] Go library helps write integration tests for your controllers by setting up and starting an instance of etcd and the Kubernetes API server, without kubelet, controller-manager or other components.
+The [`controller-runtime/pkg/envtest`][envtest] Go library helps write integration tests for your controllers by setting up and starting an instance of etcd and the 
+Kubernetes API server, without kubelet, controller-manager or other components.
 
 ## Installation
 
-The `test` make target, also called by the `docker-build` target,
-[downloads][setup-envtest] a set of envtest binaries (described above) to run tests with.
-Typically nothing needs to be done on your part,
-as the download and install script is fully automated,
-although it does require `bash` to run.
+Installing the binaries is as a simple as running `make envtest`. `envtest` will download the Kubernetes API server binaries to the `bin/` folder in your project
+by default. `make test` is the one-stop shop for downloading the binaries, setting up the test environment, and running the tests. 
 
-If you would like to download the tarball containing these binaries,
-to use in a disconnected environment for example,
-run the following (Kubernetes version 1.21.2 is an example version):
+The make targets require `bash` to run. 
 
-```sh
-export K8S_VERSION=1.21.2
-curl -sSLo envtest-bins.tar.gz "https://go.kubebuilder.io/test-tools/${K8S_VERSION}/$(go env GOOS)/$(go env GOARCH)"
+## Installation in Air Gaped/disconnected environments
+If you would like to download the tarball containing the binaries, to use in a disconnected environment you can use 
+`setup-envtest` to download the required binaries locally. There are a lot of ways to configure `setup-envtest` to avoid talking to 
+the internet you can read about them [here](https://github.com/kubernetes-sigs/controller-runtime/tree/master/tools/setup-envtest#what-if-i-dont-want-to-talk-to-the-internet). 
+The examples below will show how to install the Kubernetes API binaries using mostly defaults set by `setup-envtest`. 
+
+### Download the binaries
+`make envtest` will download the `setup-envtest` binary to `./bin/`. 
+```shell
+make envtest
 ```
 
-Then install them:
-
+Installing the binaries using `setup-envtest` stores the binary in OS specific locations, you can read more about them 
+[here](https://github.com/kubernetes-sigs/controller-runtime/tree/master/tools/setup-envtest#where-does-it-put-all-those-binaries)
 ```sh
-mkdir /usr/local/kubebuilder
-tar -C /usr/local/kubebuilder --strip-components=1 -zvxf envtest-bins.tar.gz
+./bin/setup-envtest use 1.21.2
 ```
 
-Once these binaries are installed, you can either change the `test` target to:
+### Update the test make target
+Once these binaries are installed, change the `test` make target to include a `-i` like below. `-i` will only check for locally installed
+binaries and not reach out to remote resources. You could also set the `ENVTEST_INSTALLED_ONLY` env variable. 
 
 ```makefile
 test: manifests generate fmt vet
-	go test ./... -coverprofile cover.out
+    KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -i --bin-dir $(LOCALBIN) -p path)" go test ./... -coverprofile cover.out
 ```
 
-Or configure the existing target to skip the download and point to a [custom location](#environment-variables):
-
+NOTE: The `ENVTEST_K8S_VERSION` needs to match the `setup-envtest` you downloaded above. Otherwise, you will see an error like the below
 ```sh
-make test SKIP_FETCH_TOOLS=1 KUBEBUILDER_ASSETS=/usr/local/kubebuilder
+no such version (1.24.5) exists on disk for this architecture (darwin/amd64) -- try running `list -i` to see what's on disk
 ```
 
-### Kubernetes 1.20 and 1.21 binary issues
+## Kubernetes 1.20 and 1.21 binary issues
 
 There have been many reports of the `kube-apiserver` or `etcd` binary [hanging during cleanup][cr-1571]
 or misbehaving in other ways. We recommend using the 1.19.2 tools version to circumvent such issues,
@@ -77,7 +80,17 @@ Logs from the test runs are prefixed with `test-env`.
 
 Controller-runtime’s [envtest][envtest] framework requires `kubectl`, `kube-apiserver`, and `etcd` binaries be present locally to simulate the API portions of a real cluster.
 
-For projects built with plugin v3+ (see your PROJECT file's `layout` key), the `make test` command will install these binaries to the `testbin/` directory and use them when running tests that use `envtest`.
+The `make test` command will install these binaries to the `bin/` directory and use them when running tests that use `envtest`.
+Ie,
+```shell             
+./bin/k8s/
+└── 1.25.0-darwin-amd64
+    ├── etcd
+    ├── kube-apiserver
+    └── kubectl
+
+1 directory, 3 files
+```
 
 You can use environment variables and/or flags to specify the `kubectl`,`api-server` and `etcd` setup within your integration tests.
 
@@ -95,9 +108,11 @@ See that the `test` makefile target will ensure that all is properly setup when 
 
 ```go
 var _ = BeforeSuite(func(done Done) {
-	Expect(os.Setenv("TEST_ASSET_KUBE_APISERVER", "../testbin/bin/kube-apiserver")).To(Succeed())
-	Expect(os.Setenv("TEST_ASSET_ETCD", "../testbin/bin/etcd")).To(Succeed())
-	Expect(os.Setenv("TEST_ASSET_KUBECTL", "../testbin/bin/kubectl")).To(Succeed())
+	Expect(os.Setenv("TEST_ASSET_KUBE_APISERVER", "../bin/k8s/1.25.0-darwin-amd64/kube-apiserver")).To(Succeed())
+	Expect(os.Setenv("TEST_ASSET_ETCD", "../bin/k8s/1.25.0-darwin-amd64/etcd")).To(Succeed())
+	Expect(os.Setenv("TEST_ASSET_KUBECTL", "../bin/k8s/1.25.0-darwin-amd64/kubectl")).To(Succeed())
+	// OR
+	Expect(os.Setenv("KUBEBUILDER_ASSETS", "../bin/k8s/1.25.0-darwin-amd64")).To(Succeed())
 
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 	testenv = &envtest.Environment{}

@@ -43,27 +43,28 @@ $ git clone git@github.com:<user>/kubebuilder.git $GOPATH/src/sigs.k8s.io/kubebu
 
 1. Run the script `make generate` to update/generate the mock data used in the e2e test in `$GOPATH/src/sigs.k8s.io/kubebuilder/testdata/`
 1. Run `make test-unit test-e2e-local`
-  - e2e tests use [`kind`][kind] and [`setup-envtest`][setup-envtest]. If you want to bring your own binaries, place them in `$(go env GOPATH)/bin`.
+
+- e2e tests use [`kind`][kind] and [`setup-envtest`][setup-envtest]. If you want to bring your own binaries, place them in `$(go env GOPATH)/bin`.
 
 **IMPORTANT:** The `make generate` is very helpful. By using it, you can check if good part of the commands still working successfully after the changes. Also, note that its usage is a pre-requirement to submit a PR.
 
 Following the targets that can be used to test your changes locally.
 
-|   Command	|   Description	|  Is called in the CI?  	|
-|---	|---	|---	|
-| make test-unit |  Runs go tests | no   	|
-| make test| Runs tests in shell (`./test.sh`)	|  yes 	|
-| make lint |  Run [golangci][golangci] lint checks | yes   |
-| make lint-fix |   Run [golangci][golangci] to automatically perform fixes | no   |
-| make test-coverage |  Run coveralls to check the % of code covered by tests | yes   |
-| make check-testdata |  Checks if the testdata dir is updated with the latest changes | yes   |
-| make test-e2e-local |  Runs the CI e2e tests locally | no   |
+| Command             | Description                                                   | Is called in the CI? |
+| ------------------- | ------------------------------------------------------------- | -------------------- |
+| make test-unit      | Runs go tests                                                 | no                   |
+| make test           | Runs tests in shell (`./test.sh`)                             | yes                  |
+| make lint           | Run [golangci][golangci] lint checks                          | yes                  |
+| make lint-fix       | Run [golangci][golangci] to automatically perform fixes       | no                   |
+| make test-coverage  | Run coveralls to check the % of code covered by tests         | yes                  |
+| make check-testdata | Checks if the testdata dir is updated with the latest changes | yes                  |
+| make test-e2e-local | Runs the CI e2e tests locally                                 | no                   |
 
 **NOTE** To use the `make lint` is required to install `golangci-lint` locally. More info: https://github.com/golangci/golangci-lint#install
 
 ## PR Process
 
-See [VERSIONING.md](VERSIONING.md) for a full description.  TL;DR:
+See [VERSIONING.md](VERSIONING.md) for a full description. TL;DR:
 
 Every PR should be annotated with an icon indicating whether it's
 a:
@@ -90,8 +91,9 @@ separately.
 ## Where the CI Tests are configured
 
 1. See the [action files](.github/workflows) to check its tests, and the scripts used on it.
-1. Note that the prow tests used in the CI are configured in [kubernetes-sigs/kubebuilder/kubebuilder-presubmits.yaml](https://github.com/kubernetes/test-infra/blob/master/config/jobs/kubernetes-sigs/kubebuilder/kubebuilder-presubmits.yaml).
-1. Check that all scripts used by the CI are defined in the project.
+2. Note that the prow tests used in the CI are configured in [kubernetes-sigs/kubebuilder/kubebuilder-presubmits.yaml](https://github.com/kubernetes/test-infra/blob/master/config/jobs/kubernetes-sigs/kubebuilder/kubebuilder-presubmits.yaml).
+3. Check that all scripts used by the CI are defined in the project.
+4. Notice that our policy to test the project is to run against k8s version N-2. So that the old version should be removed when there is a new k8s version available.
 
 ## How to contribute to docs
 
@@ -115,19 +117,20 @@ Check the CI job after to do the Pull Request and then, click on in the `Details
 Learn how to engage with the Kubernetes community on the [community page](http://kubernetes.io/community/).
 
 You can reach the maintainers of this project at:
+
 - [Slack](http://slack.k8s.io/)
 - [Mailing List](https://groups.google.com/forum/#!forum/kubebuilder)
 
 ## Becoming a reviewer or approver
 
 Contributors may eventually become official reviewers or approvers in
-Kubebuilder and the related repositories.  See
+Kubebuilder and the related repositories. See
 [CONTRIBUTING-ROLES.md](docs/CONTRIBUTING-ROLES.md) for more information.
 
 ## Code of conduct
 
 Participation in the Kubernetes community is governed by the [Kubernetes Code of Conduct](code-of-conduct.md).
 
-[golangci]:https://github.com/golangci/golangci-lint
-[kind]:https://kind.sigs.k8s.io/#installation-and-usage
-[setup-envtest]:https://book.kubebuilder.io/reference/envtest
+[golangci]: https://github.com/golangci/golangci-lint
+[kind]: https://kind.sigs.k8s.io/#installation-and-usage
+[setup-envtest]: https://book.kubebuilder.io/reference/envtest

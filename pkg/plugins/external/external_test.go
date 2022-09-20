@@ -23,7 +23,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
@@ -100,8 +100,10 @@ func (m *mockValidMEOutputGetter) GetExecOutput(req []byte, path string) ([]byte
 	return json.Marshal(response)
 }
 
-const externalPlugin = "myexternalplugin.sh"
-const floatVal = "float"
+const (
+	externalPlugin = "myexternalplugin.sh"
+	floatVal       = "float"
+)
 
 var _ = Describe("Run external plugin using Scaffold", func() {
 	Context("with valid mock values", func() {
@@ -136,7 +138,6 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 			Expect(err).To(BeNil())
 
 			args = []string{"--domain", "example.com"}
-
 		})
 
 		AfterEach(func() {
@@ -185,7 +186,6 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 			err = c.Scaffold(fs)
 			Expect(err).To(BeNil())
 		})
-
 	})
 
 	Context("with invalid mock values of GetExecOutput() and GetCurrentDir()", func() {
@@ -204,7 +204,6 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 
 			pluginFileName = externalPlugin
 			args = []string{"--domain", "example.com"}
-
 		})
 
 		It("should return error upon running init subcommand on the external plugin", func() {
@@ -241,7 +240,6 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 			err = e.Scaffold(fs)
 			Expect(err).NotTo(BeNil())
 			Expect(err.Error()).To(ContainSubstring("error getting current directory"))
-
 		})
 
 		It("should return error upon running create api subcommand on the external plugin", func() {
@@ -278,7 +276,6 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 			err = c.Scaffold(fs)
 			Expect(err).NotTo(BeNil())
 			Expect(err.Error()).To(ContainSubstring("error getting current directory"))
-
 		})
 	})
 
@@ -437,14 +434,50 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 
 			checkFlagset()
 		})
+	})
 
+	Context("Flag Parsing Filter Functions", func() {
+		It("gvk(Arg/Flag)Filter should filter out (--)group, (--)version, (--)kind", func() {
+			for _, toBeFiltered := range []string{
+				"group", "version", "kind",
+			} {
+				Expect(gvkArgFilter("--" + toBeFiltered)).To(BeFalse())
+				Expect(gvkArgFilter(toBeFiltered)).To(BeFalse())
+				Expect(gvkFlagFilter(external.Flag{Name: "--" + toBeFiltered})).To(BeFalse())
+				Expect(gvkFlagFilter(external.Flag{Name: "--" + toBeFiltered})).To(BeFalse())
+			}
+			Expect(gvkArgFilter("somerandomflag")).To(BeTrue())
+			Expect(gvkFlagFilter(external.Flag{Name: "somerandomflag"})).To(BeTrue())
+		})
+
+		It("helpArgFilter should filter out (--)help", func() {
+			Expect(helpArgFilter("--help")).To(BeFalse())
+			Expect(helpArgFilter("help")).To(BeFalse())
+			Expect(helpArgFilter("somerandomflag")).To(BeTrue())
+			Expect(helpFlagFilter(external.Flag{Name: "--help"})).To(BeFalse())
+			Expect(helpFlagFilter(external.Flag{Name: "help"})).To(BeFalse())
+			Expect(helpFlagFilter(external.Flag{Name: "somerandomflag"})).To(BeTrue())
+		})
 	})
 
 	Context("Flag Parsing Helper Functions", func() {
 		var (
-			fs    *pflag.FlagSet
-			args  = []string{"--domain", "something.com", "--boolean", "--another", "flag", "--help"}
-			flags []external.Flag
+			fs   *pflag.FlagSet
+			args = []string{
+				"--domain", "something.com",
+				"--boolean",
+				"--another", "flag",
+				"--help",
+				"--group", "somegroup",
+				"--kind", "somekind",
+				"--version", "someversion",
+			}
+			forbidden = []string{
+				"help", "group", "kind", "version",
+			}
+			flags               []external.Flag
+			argFilters          []argFilterFunc
+			externalFlagFilters []externalFlagFilterFunc
 		)
 
 		BeforeEach(func() {
@@ -454,6 +487,13 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 
 			flags = make([]external.Flag, len(flagsToAppend))
 			copy(flags, flagsToAppend)
+
+			argFilters = []argFilterFunc{
+				gvkArgFilter, helpArgFilter,
+			}
+			externalFlagFilters = []externalFlagFilterFunc{
+				gvkFlagFilter, helpFlagFilter,
+			}
 		})
 
 		It("isBooleanFlag should return true if boolean flag provided at index", func() {
@@ -464,11 +504,11 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 			Expect(isBooleanFlag(0, args)).To(BeFalse())
 		})
 
-		It("bindAllFlags should bind all flags except for `--help`", func() {
+		It("bindAllFlags should bind all flags", func() {
 			usage := "Kubebuilder could not validate this flag with the external plugin. " +
 				"Consult the external plugin documentation for more information."
 
-			bindAllFlags(fs, args)
+			bindAllFlags(fs, filterArgs(args, argFilters))
 			Expect(fs.HasFlags()).To(BeTrue())
 			Expect(fs.Lookup("domain")).NotTo(BeNil())
 			Expect(fs.Lookup("domain").Value.Type()).To(Equal("string"))
@@ -479,15 +519,20 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 			Expect(fs.Lookup("another")).NotTo(BeNil())
 			Expect(fs.Lookup("another").Value.Type()).To(Equal("string"))
 			Expect(fs.Lookup("another").Usage).To(Equal(usage))
-			Expect(fs.Lookup("help")).To(BeNil())
+
+			By("bindAllFlags not have bound any forbidden flag after filtering")
+			for i := range forbidden {
+				Expect(fs.Lookup(forbidden[i])).To(BeNil())
+			}
 		})
 
 		It("bindSpecificFlags should bind all flags in given []Flag", func() {
-			bindSpecificFlags(fs, flags)
+			filteredFlags := filterFlags(flags, externalFlagFilters)
+			bindSpecificFlags(fs, filteredFlags)
 
 			Expect(fs.HasFlags()).To(BeTrue())
 
-			for _, flag := range flags {
+			for _, flag := range filteredFlags {
 				Expect(fs.Lookup(flag.Name)).NotTo(BeNil())
 				// we parse floats as float64 Go type so this check will account for that
 				if flag.Type != floatVal {
@@ -497,6 +542,11 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 				}
 				Expect(fs.Lookup(flag.Name).Usage).To(Equal(flag.Usage))
 				Expect(fs.Lookup(flag.Name).DefValue).To(Equal(flag.Default))
+			}
+
+			By("bindSpecificFlags not have bound any forbidden flag after filtering")
+			for i := range forbidden {
+				Expect(fs.Lookup(forbidden[i])).To(BeNil())
 			}
 		})
 	})
@@ -629,7 +679,6 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 			checkMetadata()
 		})
 	})
-
 })
 
 func getFlags() []external.Flag {

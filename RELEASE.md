@@ -29,7 +29,8 @@ the process was done to ensure that we have an aligned process under the org (si
 ### Draft a new release from GitHub
 
 1. Create a new tag with the correct version from the new `release-<MAJOR.MINOR>` branch
-2. Add the changelog on it and publish. Now, the code source is released !
+2. Verify the Release Github Action. It should build the assets and publish in the draft release 
+3. You also need to manually add the changelog generated above on the release page and publish it. Now, the code source is released !
 
 ### Update the website docs (https://book.kubebuilder.io/quick-start.html)
 
@@ -38,7 +39,7 @@ the process was done to ensure that we have an aligned process under the org (si
 
 ### When the release be done and the website update: Announce the new release:
 
-1. Publish the new release on the Slack channel, i.e:
+1. Announce the new release on the Slack channel, i.e:
 
 ````
 :announce: Kubebuilder v3.5.0 has been released!
@@ -47,11 +48,13 @@ For more info, see the release page: https://github.com/kubernetes-sigs/kubebuil
  :tada:  Thanks to all our contributors!
 ````
 
-2. An announcement email is sent to `kubebuilder@googlegroups.com` with the subject `[ANNOUNCE] Kubebuilder $VERSION is released`
+2. Announce the new release via email is sent to `kubebuilder@googlegroups.com` with the subject `[ANNOUNCE] Kubebuilder $VERSION is released`
 
 ## What to do if things goes wrong? How to release from my local env as a workaround?
 
-As a workaround we can release from locally by:
+As a workaround we can release from locally by: 
+
+PS.: _This workaround uses the google cloud. Note that we move the binary CLI release from google cloud to use Github Actions instead_
 
 1. Download google container builder: https://github.com/GoogleCloudPlatform/cloud-build-local
 2. Verify that you can use the cloud-build-local CLI tool

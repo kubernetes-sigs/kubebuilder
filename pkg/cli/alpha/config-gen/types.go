@@ -17,7 +17,7 @@ limitations under the License.
 package configgen
 
 import (
-	"io/ioutil"
+	"os"
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -210,7 +210,7 @@ func (kp *KubebuilderConfigGen) Default() error {
 	}
 
 	if kp.Spec.ControllerManager.ComponentConfig.ConfigFilepath != "" {
-		b, err := ioutil.ReadFile(kp.Spec.ControllerManager.ComponentConfig.ConfigFilepath)
+		b, err := os.ReadFile(kp.Spec.ControllerManager.ComponentConfig.ConfigFilepath)
 		if err != nil {
 			return err
 		}

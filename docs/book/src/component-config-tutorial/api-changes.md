@@ -67,3 +67,68 @@ mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), options)
 With that out of the way, we can get on to defining our new config!
 
 [tutorial-source]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/docs/book/src/component-config-tutorial/testdata/project
+
+Create the file `/config/manager/controller_manager_config.yaml` with the following content:
+
+```yaml
+apiVersion: controller-runtime.sigs.k8s.io/v1alpha1
+kind: ControllerManagerConfig
+health:
+  healthProbeBindAddress: :8081
+metrics:
+  bindAddress: 127.0.0.1:8080
+webhook:
+  port: 9443
+leaderElection:
+  leaderElect: true
+  resourceName: ecaf1259.tutorial.kubebuilder.io
+# leaderElectionReleaseOnCancel defines if the leader should step down volume
+# when the Manager ends. This requires the binary to immediately end when the
+# Manager is stopped, otherwise, this setting is unsafe. Setting this significantly
+# speeds up voluntary leader transitions as the new leader don't have to wait
+# LeaseDuration time first.
+# In the default scaffold provided, the program ends immediately after
+# the manager stops, so would be fine to enable this option. However,
+# if you are doing or is intended to do any operation such as perform cleanups
+# after the manager stops then its usage might be unsafe.
+# leaderElectionReleaseOnCancel: true
+```
+
+Update the file `/config/manager/kustomization.yaml` by adding at the bottom the following content:
+
+```yaml
+generatorOptions:
+  disableNameSuffixHash: true
+
+configMapGenerator:
+- name: manager-config
+  files:
+  - controller_manager_config.yaml
+```
+
+Update the file `default/kustomization.yaml` by adding under the patchesStrategicMerge: the following patch:
+
+# Mount the controller config file for loading manager configurations
+# through a ComponentConfig type
+- manager_config_patch.yaml
+
+Update the file `default/manager_config_patch.yaml` by adding under the spec: the following patch:
+
+```yaml
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        args:
+        - "--config=controller_manager_config.yaml"
+        volumeMounts:
+        - name: manager-config
+          mountPath: /controller_manager_config.yaml
+          subPath: controller_manager_config.yaml
+      volumes:
+      - name: manager-config
+        configMap:
+          name: manager-config
+```
+

@@ -78,7 +78,7 @@ type MemcachedReconciler struct {
 // For further info:
 // - About Operator Pattern: https://kubernetes.io/docs/concepts/extend-kubernetes/operator/
 // - About Controllers: https://kubernetes.io/docs/concepts/architecture/controller/
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
+// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.13.0/pkg/reconcile
 func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 
@@ -330,6 +330,34 @@ func (r *MemcachedReconciler) deploymentForMemcached(
 					Labels: ls,
 				},
 				Spec: corev1.PodSpec{
+					// TODO(user): Uncomment the following code to configure the nodeAffinity expression
+					// according to the platforms which are supported by your solution. It is considered
+					// best practice to support multiple architectures. build your manager image using the
+					// makefile target docker-buildx. Also, you can use docker manifest inspect <image>
+					// to check what are the platforms supported.
+					// More info: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity
+					//Affinity: &corev1.Affinity{
+					//	NodeAffinity: &corev1.NodeAffinity{
+					//		RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+					//			NodeSelectorTerms: []corev1.NodeSelectorTerm{
+					//				{
+					//					MatchExpressions: []corev1.NodeSelectorRequirement{
+					//						{
+					//							Key:      "kubernetes.io/arch",
+					//							Operator: "In",
+					//							Values:   []string{"amd64", "arm64", "ppc64le", "s390x"},
+					//						},
+					//						{
+					//							Key:      "kubernetes.io/os",
+					//							Operator: "In",
+					//							Values:   []string{"linux"},
+					//						},
+					//					},
+					//				},
+					//			},
+					//		},
+					//	},
+					//},
 					SecurityContext: &corev1.PodSecurityContext{
 						RunAsNonRoot: &[]bool{true}[0],
 						// IMPORTANT: seccomProfile was introduced with Kubernetes 1.19

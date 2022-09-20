@@ -29,6 +29,7 @@ type CRDEditorRole struct {
 	machinery.TemplateMixin
 	machinery.MultiGroupMixin
 	machinery.ResourceMixin
+	machinery.ProjectNameMixin
 }
 
 // SetTemplateDefaults implements file.Template
@@ -52,6 +53,13 @@ const crdRoleEditorTemplate = `# permissions for end users to edit {{ .Resource.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: {{ lower .Resource.Kind }}-editor-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: {{ .ProjectName }}
+    app.kubernetes.io/part-of: {{ .ProjectName }}
+    app.kubernetes.io/managed-by: kustomize
   name: {{ lower .Resource.Kind }}-editor-role
 rules:
 - apiGroups:

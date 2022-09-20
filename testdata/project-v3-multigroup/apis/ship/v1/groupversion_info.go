@@ -15,8 +15,8 @@ limitations under the License.
 */
 
 // Package v1 contains API Schema definitions for the ship v1 API group
-//+kubebuilder:object:generate=true
-//+groupName=ship.testproject.org
+// +kubebuilder:object:generate=true
+// +groupName=ship.testproject.org
 package v1
 
 import (

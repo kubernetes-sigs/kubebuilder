@@ -28,7 +28,7 @@ import (
 
 	//nolint:golint
 	//nolint:revive
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 
 	//nolint:golint
 	//nolint:revive
@@ -39,9 +39,7 @@ import (
 
 var _ = Describe("kubebuilder", func() {
 	Context("deploy image plugin 3", func() {
-		var (
-			kbc *utils.TestContext
-		)
+		var kbc *utils.TestContext
 
 		BeforeEach(func() {
 			var err error
@@ -80,14 +78,6 @@ var _ = Describe("kubebuilder", func() {
 		})
 
 		It("should generate a runnable project with deploy-image/v1-alpha options ", func() {
-			// Skip if cluster version < 1.16, when v1 CRDs and webhooks did not exist.
-			// Skip if cluster version < 1.19, because securityContext.seccompProfile only works from 1.19
-			// Otherwise, unknown field "seccompProfile" in io.k8s.api.core.v1.PodSecurityContext will be faced
-			if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() < 19 {
-				Skip(fmt.Sprintf("cluster version %s does not support "+
-					"securityContext.seccompProfile", srvVer.GitVersion))
-			}
-
 			var err error
 
 			By("initializing a project with go/v3")
@@ -125,14 +115,6 @@ var _ = Describe("kubebuilder", func() {
 		})
 
 		It("should generate a runnable project with deploy-image/v1-alpha without options ", func() {
-			// Skip if cluster version < 1.16, when v1 CRDs and webhooks did not exist.
-			// Skip if cluster version < 1.19, because securityContext.seccompProfile only works from 1.19
-			// Otherwise, unknown field "seccompProfile" in io.k8s.api.core.v1.PodSecurityContext will be faced
-			if srvVer := kbc.K8sVersion.ServerVersion; srvVer.GetMajorInt() <= 1 && srvVer.GetMinorInt() < 19 {
-				Skip(fmt.Sprintf("cluster version %s does not support "+
-					"securityContext.seccompProfile", srvVer.GitVersion))
-			}
-
 			var err error
 
 			By("initializing a project with go/v3")
@@ -190,8 +172,7 @@ func Run(kbc *utils.TestContext) {
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
 	By("building the controller image")
-	cmd := exec.Command("docker", "build", "-t", kbc.ImageName, ".")
-	_, err = kbc.Run(cmd)
+	err = kbc.Make("docker-build", "IMG="+kbc.ImageName)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
 	By("loading the controller docker image into the kind cluster")
@@ -199,7 +180,7 @@ func Run(kbc *utils.TestContext) {
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
 	By("deploying the controller-manager")
-	cmd = exec.Command("make", "deploy", "IMG="+kbc.ImageName)
+	cmd := exec.Command("make", "deploy", "IMG="+kbc.ImageName)
 	outputMake, err := kbc.Run(cmd)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
@@ -253,7 +234,7 @@ func Run(kbc *utils.TestContext) {
 	By("validating that pod(s) status.phase=Running")
 	getMemcachedPodStatus := func() error {
 		status, err := kbc.Kubectl.Get(true, "pods", "-l",
-			fmt.Sprintf("app.kubernetes.io/name=%s", strings.ToLower(kbc.Kind)),
+			fmt.Sprintf("app.kubernetes.io/name=%s", kbc.Kind),
 			"-o", "jsonpath={.items[*].status}",
 		)
 		ExpectWithOffset(2, err).NotTo(HaveOccurred())
@@ -278,7 +259,7 @@ func Run(kbc *utils.TestContext) {
 	}
 	Eventually(getStatus, time.Minute, time.Second).Should(Succeed())
 
-	//Testing the finalizer
+	// Testing the finalizer
 	EventuallyWithOffset(1, func() error {
 		_, err = kbc.Kubectl.Delete(true, "-f", sampleFilePath)
 		return err

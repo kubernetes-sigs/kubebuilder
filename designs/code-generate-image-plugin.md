@@ -16,7 +16,7 @@ status: implementable
 ## Summary
 
 This proposal defines a new plugin which allow users get the scaffold with the
- required code to have a project that will deploy and manage an image on the cluster following the the guidelines and what have been considered as good practices.
+ required code to have a project that will deploy and manage an image on the cluster following the guidelines and what have been considered as good practices.
  
 ## Motivation
 

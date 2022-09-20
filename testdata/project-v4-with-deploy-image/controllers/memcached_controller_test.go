@@ -18,10 +18,11 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"time"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -60,6 +61,8 @@ var _ = Describe("Memcached controller", func() {
 		})
 
 		AfterEach(func() {
+			// TODO(user): Attention if you improve this code by adding other context test you MUST
+			// be aware of the current delete namespace limitations. More info: https://book.kubebuilder.io/reference/envtest.html#testing-considerations
 			By("Deleting the Namespace to perform the tests")
 			_ = k8sClient.Delete(ctx, namespace)
 
@@ -110,6 +113,20 @@ var _ = Describe("Memcached controller", func() {
 			Eventually(func() error {
 				found := &appsv1.Deployment{}
 				return k8sClient.Get(ctx, typeNamespaceName, found)
+			}, time.Minute, time.Second).Should(Succeed())
+
+			By("Checking the latest Status Condition added to the Memcached instance")
+			Eventually(func() error {
+				if memcached.Status.Conditions != nil && len(memcached.Status.Conditions) != 0 {
+					latestStatusCondition := memcached.Status.Conditions[len(memcached.Status.Conditions)-1]
+					expectedLatestStatusCondition := metav1.Condition{Type: typeAvailableMemcached,
+						Status: metav1.ConditionTrue, Reason: "Reconciling",
+						Message: fmt.Sprintf("Deployment for custom resource (%s) with %d replicas created successfully", memcached.Name, memcached.Spec.Size)}
+					if latestStatusCondition != expectedLatestStatusCondition {
+						return fmt.Errorf("The latest status condition added to the memcached instance is not as expected")
+					}
+				}
+				return nil
 			}, time.Minute, time.Second).Should(Succeed())
 		})
 	})

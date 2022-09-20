@@ -1,4 +1,4 @@
-# Kustomize v2-alpha 
+# Kustomize v2-alpha
 
 The kustomize plugin allows you to scaffold all kustomize manifests used to work with the language base plugin `base.go.kubebuilder.io/v3`.
 
@@ -15,7 +15,7 @@ able to create "helper" plugins which can work with many projects and languages.
 You can check the kustomize content by looking at the `config/` directory provide on the sample `project-v3-with-kustomize-v2` under the [testdata][testdata]
 directory of the Kubebuilder project.
 
-</aside> 
+</aside>
 
 ## When to use it
 
@@ -24,15 +24,15 @@ directory of the Kubebuilder project.
 - If you are looking for to begin to try out the new syntax and features provide by kustomize v4
 - If you are NOT looking to build projects which will be used on Kubernetes cluster versions < `1.22` (_The new features provides by kustomize v4 are not officially supported and might not work with kubectl < `1.22`_)
 - If you are NOT looking to rely on special URLs in resource fields
-- If you want to use [replacements][https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/replacements/] since [vars][https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/vars/] are deprecated and might be removed soon
+- If you want to use [replacements][kustomize-replacements] since [vars][kustomize-vars] are deprecated and might be removed soon
 
 <aside class="note">
 <h1>Supportability</h1>
 
 You can use `kustomize/v1` plugin which is the default configuration adopted by the `go/v3` plugin if you are not prepared to began to experiment kustomize `v4`.
-Also, be aware that the `base.go.kubebuilder.io/v3` is prepared to work with this plugin. 
+Also, be aware that the `base.go.kubebuilder.io/v3` is prepared to work with this plugin.
 
-</aside> 
+</aside>
 
 
 ## How to use it
@@ -61,8 +61,8 @@ import (
 Also, with Kubebuilder, you can use kustomize/v2-alpha alone via:
 
 ```sh
-kubebuilder init --plugins=kustomize/v2-alpha 
-$ ls -la 
+kubebuilder init --plugins=kustomize/v2-alpha
+$ ls -la
 total 24
 drwxr-xr-x   6 camilamacedo86  staff  192 31 Mar 09:56 .
 drwxr-xr-x  11 camilamacedo86  staff  352 29 Mar 21:23 ..
@@ -75,8 +75,8 @@ drwx------   6 camilamacedo86  staff  192 31 Mar 09:56 config
 Or combined with the base language plugins:
 
 ```sh
-# Provides the same scaffold of go/v3 plugin which is composition but with kustomize/v2-alpha 
-kubebuilder init --plugins=kustomize/v2-alpha,base.go.kubebuilder.io/v3 --domain example.org --repo example.org/guestbook-operator 
+# Provides the same scaffold of go/v3 plugin which is composition but with kustomize/v2-alpha
+kubebuilder init --plugins=kustomize/v2-alpha,base.go.kubebuilder.io/v3 --domain example.org --repo example.org/guestbook-operator
 ```
 
 ## Subcommands
@@ -94,7 +94,7 @@ Its implementation for the subcommand create api will scaffold the kustomize man
 which are specific for each API, see [here][kustomize-create-api]. The same applies
 to its implementation for create webhook.
 
-</aside> 
+</aside>
 
 ## Affected files
 
@@ -116,4 +116,6 @@ The following scaffolds will be created or updated by this plugin:
 [kustomize-create-api]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/pkg/plugins/common/kustomize/v2/scaffolds/api.go#L72-L84
 [kustomize-docs]: https://kustomize.io/
 [kustomize-github]: https://github.com/kubernetes-sigs/kustomize
+[kustomize-replacements]: https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/replacements/
+[kustomize-vars]: https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/vars/
 [release-notes]: https://github.com/kubernetes-sigs/kustomize/releases/tag/kustomize%2Fv4.0.0

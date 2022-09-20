@@ -28,6 +28,7 @@ var _ machinery.Template = &Config{}
 type Config struct {
 	machinery.TemplateMixin
 	machinery.ComponentConfigMixin
+	machinery.ProjectNameMixin
 
 	// Image is controller manager image name
 	Image string
@@ -49,6 +50,12 @@ kind: Namespace
 metadata:
   labels:
     control-plane: controller-manager
+    app.kubernetes.io/name: namespace
+    app.kubernetes.io/instance: system
+    app.kubernetes.io/component: manager
+    app.kubernetes.io/created-by: {{ .ProjectName }}
+    app.kubernetes.io/part-of: {{ .ProjectName }}
+    app.kubernetes.io/managed-by: kustomize
   name: system
 ---
 apiVersion: apps/v1
@@ -58,6 +65,12 @@ metadata:
   namespace: system
   labels:
     control-plane: controller-manager
+    app.kubernetes.io/name: deployment
+    app.kubernetes.io/instance: controller-manager
+    app.kubernetes.io/component: manager
+    app.kubernetes.io/created-by: {{ .ProjectName }}
+    app.kubernetes.io/part-of: {{ .ProjectName }}
+    app.kubernetes.io/managed-by: kustomize
 spec:
   selector:
     matchLabels:
@@ -70,6 +83,26 @@ spec:
       labels:
         control-plane: controller-manager
     spec:
+      # TODO(user): Uncomment the following code to configure the nodeAffinity expression
+      # according to the platforms which are supported by your solution. 
+      # It is considered best practice to support multiple architectures. You can
+      # build your manager image using the makefile target docker-buildx.
+      # affinity:
+      #   nodeAffinity:
+      #     requiredDuringSchedulingIgnoredDuringExecution:
+      #       nodeSelectorTerms:
+      #         - matchExpressions:
+      #           - key: kubernetes.io/arch
+      #             operator: In
+      #             values:
+      #               - amd64
+      #               - arm64
+      #               - ppc64le
+      #               - s390x
+      #           - key: kubernetes.io/os
+      #             operator: In
+      #             values:
+      #               - linux
       securityContext:
         runAsNonRoot: true
         # TODO(user): For common cases that do not require escalating privileges
