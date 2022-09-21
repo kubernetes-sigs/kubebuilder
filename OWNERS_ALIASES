@@ -7,6 +7,8 @@ aliases:
     - pwittrock
     - estroz
     - camilamacedo86
+    - jmrodri
+    - varshaprasad96
 
   # non-admin folks who can approve any PRs in the repo
   kubebuilder-approvers:
