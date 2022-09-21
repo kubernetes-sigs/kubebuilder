@@ -15,7 +15,7 @@ require (
 	golang.org/x/tools v0.1.12
 	k8s.io/apimachinery v0.25.0 // for `kubebuilder alpha config-gen`
 	sigs.k8s.io/controller-runtime v0.13.0 // for `kubebuilder alpha config-gen`
-	sigs.k8s.io/controller-tools v0.9.2 // for `kubebuilder alpha config-gen`
+	sigs.k8s.io/controller-tools v0.10.0 // for `kubebuilder alpha config-gen`
 	sigs.k8s.io/kustomize/kyaml v0.13.9 // for `kubebuilder alpha config-gen`
 	sigs.k8s.io/yaml v1.3.0
 )
