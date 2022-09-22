@@ -49,7 +49,7 @@ The code snippet below shows skeleton code for implementing a finalizer.
 func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("cronjob", req.NamespacedName)
 
-	var cronJob *batchv1.CronJob
+	cronJob := &batchv1.CronJob{}
 	if err := r.Get(ctx, req.NamespacedName, cronJob); err != nil {
 		log.Error(err, "unable to fetch CronJob")
 		// we'll ignore not-found errors, since they can't be fixed by an immediate
