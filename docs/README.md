@@ -3,10 +3,11 @@
 The kubebuilder book is served using [mdBook](https://github.com/rust-lang-nursery/mdBook). If you want to test changes to the book locally, follow these directions:
 
 1. Follow the instructions at [https://github.com/rust-lang-nursery/mdBook#installation](https://github.com/rust-lang-nursery/mdBook#installation) to
-  install mdBook.
-1. cd into the `docs/book` directory
-1. Run `mdbook serve`
-1. Visit [http://localhost:3000](http://localhost:3000)
+   install mdBook.
+2. Make sure [controller-gen](https://pkg.go.dev/sigs.k8s.io/controller-tools/cmd/controller-gen) is install in `$GOPATH`.
+3. cd into the `docs/book` directory
+4. Run `mdbook serve`
+5. Visit [http://localhost:3000](http://localhost:3000)
 
 # Steps to deploy
 
