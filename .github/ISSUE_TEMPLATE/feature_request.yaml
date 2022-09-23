@@ -75,7 +75,7 @@ body:
 
       Does it require a particular Kubernetes version?
 
-      Is there currently another isssue associated with this (use github syntax
+      Is there currently another issue associated with this (use github syntax
       like `#xyz` to link to it)?
   validations: {required: true}
 
