@@ -5,7 +5,7 @@ metadata:
     app.kubernetes.io/name: cruiser
     app.kubernetes.io/instance: cruiser-sample
     app.kubernetes.io/part-of: project-v3-multigroup
-    app.kuberentes.io/managed-by: kustomize
+    app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: project-v3-multigroup
   name: cruiser-sample
 spec:

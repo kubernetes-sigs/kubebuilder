@@ -46,7 +46,7 @@ kind: ServiceAccount
 metadata:
   labels:
     app.kubernetes.io/name: serviceaccount
-    app.kuberentes.io/instance: controller-manager
+    app.kubernetes.io/instance: controller-manager
     app.kubernetes.io/component: rbac
     app.kubernetes.io/created-by: {{ .ProjectName }}
     app.kubernetes.io/part-of: {{ .ProjectName }}

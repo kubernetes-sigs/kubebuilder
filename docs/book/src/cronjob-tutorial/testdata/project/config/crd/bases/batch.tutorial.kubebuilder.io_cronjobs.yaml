@@ -4223,7 +4223,7 @@ spec:
                                   of an init container are taken into account during
                                   scheduling by finding the highest request/limit
                                   for each resource type, and then using the max of
-                                  of that value or the sum of the normal containers.
+                                  that value or the sum of the normal containers.
                                   Limits are applied to init containers in a similar
                                   fashion. Init containers cannot currently be added
                                   or removed. Cannot be updated. More info: https://kubernetes.io/docs/concepts/workloads/pods/init-containers/'

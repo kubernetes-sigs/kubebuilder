@@ -36,7 +36,7 @@ body:
       <summary>Code & details examples</summary>
       
       `````markdown
-      Some code code written in Go:
+      Some code written in Go:
 
       ```go
       type Manager struct {

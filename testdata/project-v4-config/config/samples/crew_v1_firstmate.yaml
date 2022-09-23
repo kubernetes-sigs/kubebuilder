@@ -5,7 +5,7 @@ metadata:
     app.kubernetes.io/name: firstmate
     app.kubernetes.io/instance: firstmate-sample
     app.kubernetes.io/part-of: project-v4-config
-    app.kuberentes.io/managed-by: kustomize
+    app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: project-v4-config
   name: firstmate-sample
 spec:
