@@ -7,7 +7,7 @@ to create a new branch. Instead, you will just need to ensure that all major fix
 `release-MAJOR.MINOR` branch. To know more about versioning check https://semver.org/.
 
 **Note:** Before `3.5.*` release this project was released based on `MAJOR`. A change to the
-the process was done to ensure that we have an aligned process under the org (similar to `controller-runtime` and
+process was done to ensure that we have an aligned process under the org (similar to `controller-runtime` and
 `controller-tools`) and to make it easier to produce patch releases.
 
 ## How to do a release

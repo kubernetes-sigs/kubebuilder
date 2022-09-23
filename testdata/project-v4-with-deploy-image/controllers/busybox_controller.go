@@ -152,7 +152,7 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			}
 
 			// Perform all operations required before remove the finalizer and allow
-			// the Kubernetes API to remove the custom custom resource.
+			// the Kubernetes API to remove the custom resource.
 			r.doFinalizerOperationsForBusybox(busybox)
 
 			// TODO(user): If you add operations to the doFinalizerOperationsForBusybox method

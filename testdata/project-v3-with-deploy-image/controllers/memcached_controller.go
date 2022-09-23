@@ -152,7 +152,7 @@ func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			}
 
 			// Perform all operations required before remove the finalizer and allow
-			// the Kubernetes API to remove the custom custom resource.
+			// the Kubernetes API to remove the custom resource.
 			r.doFinalizerOperationsForMemcached(memcached)
 
 			// TODO(user): If you add operations to the doFinalizerOperationsForMemcached method
