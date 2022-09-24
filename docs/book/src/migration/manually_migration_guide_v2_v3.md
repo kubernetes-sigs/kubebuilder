@@ -527,7 +527,7 @@ func (r *<MyKind>Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 <aside class="note warning">
 <h1>Ginkgo V2 version update has breaking changes</h1>
 
-Check [https://onsi.github.io/ginkgo/MIGRATING_TO_V2][Ginkgo V2 Migration] for breaking changes.
+Check [Ginkgo V2 Migration Guide](https://onsi.github.io/ginkgo/MIGRATING_TO_V2) for breaking changes.
 
 </aside>
 

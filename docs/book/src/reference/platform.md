@@ -224,7 +224,7 @@ end up labeled with ` kubernetes.io/os=linux`
 A workload will be created to run the image [gcr.io/kubebuilder/kube-rbac-proxy:<tag>][proxy-images] which is 
 configured in the `config/default/manager_auth_proxy_patch.yaml` manifest. It is a side-car proxy whose purpose 
 is to protect the manager from malicious attacks. You can learn more about its motivations by looking at 
-the README of this project [github.com/brancz/kube-rbac-proxy][https://github.com/brancz/kube-rbac-proxy].
+the README of this project [github.com/brancz/kube-rbac-proxy](https://github.com/brancz/kube-rbac-proxy).
 
 Kubebuilder has been building this image with support for multiple architectures by default.( Check it [here][proxy-images] ). 
 If you need to address any edge case scenario where you want to produce a project that 
