@@ -39,7 +39,8 @@ your local code-run-test cycle, as we do below.
 In a separate terminal, run
 
 ```bash
-make run ENABLE_WEBHOOKS=false
+export ENABLE_WEBHOOKS=false
+make run
 ```
 
 You should see logs from the controller about starting up, but it won't do
