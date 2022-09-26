@@ -54,11 +54,10 @@ The following scaffolds will be created or updated by this plugin:
 * Watch the KubeCon 2018 Video [Managing Addons with Operators][kubecon-video]
 * Check the [plugin implementation][plugin-implementation]
 
-[dockerfile-addon]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/testdata/project-v3-addon/Dockerfile#L16-L19
 [addon-channels-info]: https://github.com/kubernetes-sigs/kubebuilder-declarative-pattern/blob/master/docs/addon/walkthrough/README.md#adding-a-manifest
 [controller-runtime]: https://github.com/kubernetes-sigs/controller-runtime
 [kubebuilder-declarative-pattern]: https://github.com/kubernetes-sigs/kubebuilder-declarative-pattern
 [testdata]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/testdata/
 [kubecon-video]: https://www.youtube.com/watch?v=LPejvfBR5_w
 [plugin-implementation]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/pkg/plugins/golang/declarative
-[addon-v3-controller]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/testdata/project-v3-addon
+[addon-v3-controller]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/testdata/project-v3-addon-and-grafana
