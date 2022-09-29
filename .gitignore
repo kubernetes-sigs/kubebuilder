@@ -1,5 +1,6 @@
 .idea/
 .vscode/
+WORKSPACE
 
 # don't check in the build output of the book
 docs/book/book/
