@@ -18,6 +18,7 @@ GCP Cloud Build watches this branch.  On every push, it runs the pipeline define
 - `_GOARCH=arm64 _GOOS=linux`
 - `_GOARCH=arm64 _GOOS=darwin`
 - `_GOARCH=ppc64le _GOOS=linux`
+- `_GOARCH=amd64 _GOOS=windows`
 
 (we may add more the in the future).
 
@@ -28,7 +29,7 @@ Each platform has a Dockerfile in [build/thirdparty](build/thirdparty) to assist
 - For Linux, this involves simply downloading the canonical releases from the
   offically Kubernetes and etcd releases & taring them up.
 
-- For Darwin, since the official Kubernetes releases don't build the control
+- For Darwin/Windows, since the official Kubernetes releases don't build the control
   plane, we instead build kube-apiserver ourselves, but use etcd & kubectl from
   official releases.
 
