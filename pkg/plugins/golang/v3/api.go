@@ -141,7 +141,7 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 		p.options.DoController = util.YesNo(reader)
 	}
 
-	p.options.UpdateResource(p.resource, p.config)
+	p.options.UpdateResource(p.resource, p.config, true)
 
 	if err := p.resource.Validate(); err != nil {
 		return err

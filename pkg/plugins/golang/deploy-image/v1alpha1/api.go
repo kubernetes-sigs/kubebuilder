@@ -19,11 +19,11 @@ package v1alpha1
 import (
 	"errors"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"os"
-
-	goPlugin "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang"
-
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
+	goPlugin "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang"
+	"strings"
 
 	"github.com/spf13/pflag"
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
@@ -152,7 +152,17 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 	p.options.DoAPI = true
 	p.options.DoController = true
 	p.options.Namespaced = true
-	p.options.UpdateResource(p.resource, p.config)
+
+	isLegacyLayout := false
+	for _, pluginKey := range p.config.GetPluginChain() {
+		if strings.Contains(pluginKey, "go.kubebuilder.io/v3") {
+			isLegacyLayout = true
+			logrus.Warnf("isLegacyLayout %s", isLegacyLayout)
+		}
+	}
+
+	logrus.Warnf("isLegacyLayout %s", isLegacyLayout)
+	p.options.UpdateResource(p.resource, p.config, isLegacyLayout)
 
 	if err := p.resource.Validate(); err != nil {
 		return err

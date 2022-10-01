@@ -35,18 +35,28 @@ type Controller struct {
 	machinery.ProjectNameMixin
 
 	ControllerRuntimeVersion string
+	IsLegacyLayout           bool
 }
 
 // SetTemplateDefaults implements file.Template
 func (f *Controller) SetTemplateDefaults() error {
 	if f.Path == "" {
 		if f.MultiGroup && f.Resource.Group != "" {
-			f.Path = filepath.Join("controllers", "%[group]", "%[kind]_controller.go")
+			if f.IsLegacyLayout {
+				f.Path = filepath.Join("controllers", "%[group]", "%[kind]_controller.go")
+			} else {
+				f.Path = filepath.Join("pkg", "controllers", "%[group]", "%[kind]_controller.go")
+			}
 		} else {
-			f.Path = filepath.Join("controllers", "%[kind]_controller.go")
+			if f.IsLegacyLayout {
+				f.Path = filepath.Join("controllers", "%[kind]_controller.go")
+			} else {
+				f.Path = filepath.Join("pkg", "controllers", "%[kind]_controller.go")
+			}
 		}
 	}
 	f.Path = f.Resource.Replacer().Replace(f.Path)
+	fmt.Println(f.Path)
 
 	fmt.Println("creating import for %", f.Resource.Path)
 	f.TemplateBody = controllerTemplate

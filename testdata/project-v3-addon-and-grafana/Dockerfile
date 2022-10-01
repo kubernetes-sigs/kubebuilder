@@ -19,6 +19,18 @@ COPY controllers/ controllers/
 # Stage channels and make readable
 COPY channels/ /channels/
 RUN chmod -R a+rx /channels/
+# https://github.com/kubernetes-sigs/kubebuilder-declarative-pattern/blob/master/docs/addon/walkthrough/README.md#adding-a-manifest
+# Stage channels and make readable
+COPY channels/ /channels/
+RUN chmod -R a+rx /channels/
+# https://github.com/kubernetes-sigs/kubebuilder-declarative-pattern/blob/master/docs/addon/walkthrough/README.md#adding-a-manifest
+# Stage channels and make readable
+COPY channels/ /channels/
+RUN chmod -R a+rx /channels/
+# https://github.com/kubernetes-sigs/kubebuilder-declarative-pattern/blob/master/docs/addon/walkthrough/README.md#adding-a-manifest
+# Stage channels and make readable
+COPY channels/ /channels/
+RUN chmod -R a+rx /channels/
 
 # Build
 # the GOARCH has not a default value to allow the binary be built according to the host where the command
@@ -32,9 +44,6 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o ma
 FROM gcr.io/distroless/static:nonroot
 WORKDIR /
 COPY --from=builder /workspace/manager .
-# copy channels
-COPY --from=builder /channels /channels
-
 USER 65532:65532
 
 ENTRYPOINT ["/manager"]

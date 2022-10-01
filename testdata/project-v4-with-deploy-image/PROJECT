@@ -29,7 +29,7 @@ resources:
   domain: testproject.org
   group: example.com
   kind: Memcached
-  path: sigs.k8s.io/kubebuilder/testdata/project-v4-with-deploy-image/api/v1alpha1
+  path: sigs.k8s.io/kubebuilder/testdata/project-v4-with-deploy-image/pkg/api/v1alpha1
   version: v1alpha1
   webhooks:
     validation: true
@@ -41,6 +41,6 @@ resources:
   domain: testproject.org
   group: example.com
   kind: Busybox
-  path: sigs.k8s.io/kubebuilder/testdata/project-v4-with-deploy-image/api/v1alpha1
+  path: sigs.k8s.io/kubebuilder/testdata/project-v4-with-deploy-image/pkg/api/v1alpha1
   version: v1alpha1
 version: "3"

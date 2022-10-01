@@ -11,7 +11,7 @@ resources:
   domain: testproject.org
   group: crew
   kind: Captain
-  path: sigs.k8s.io/kubebuilder/testdata/project-v4/api/v1
+  path: sigs.k8s.io/kubebuilder/testdata/project-v4/pkg/api/v1
   version: v1
   webhooks:
     defaulting: true
@@ -24,7 +24,7 @@ resources:
   domain: testproject.org
   group: crew
   kind: FirstMate
-  path: sigs.k8s.io/kubebuilder/testdata/project-v4/api/v1
+  path: sigs.k8s.io/kubebuilder/testdata/project-v4/pkg/api/v1
   version: v1
   webhooks:
     conversion: true
@@ -35,7 +35,7 @@ resources:
   domain: testproject.org
   group: crew
   kind: Admiral
-  path: sigs.k8s.io/kubebuilder/testdata/project-v4/api/v1
+  path: sigs.k8s.io/kubebuilder/testdata/project-v4/pkg/api/v1
   plural: admirales
   version: v1
   webhooks:

@@ -45,7 +45,8 @@ func (f *Types) SetTemplateDefaults() error {
 		}
 	}
 	f.Path = f.Resource.Replacer().Replace(f.Path)
-
+	fmt.Println(f.Path)
+	
 	f.TemplateBody = typesTemplate
 
 	f.IfExistsAction = machinery.OverwriteFile

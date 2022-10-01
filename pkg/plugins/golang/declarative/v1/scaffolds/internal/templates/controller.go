@@ -17,6 +17,7 @@ limitations under the License.
 package templates
 
 import (
+	"fmt"
 	"path/filepath"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
@@ -43,6 +44,7 @@ func (f *Controller) SetTemplateDefaults() error {
 		}
 	}
 	f.Path = f.Resource.Replacer().Replace(f.Path)
+	fmt.Println(f.Path)
 
 	f.TemplateBody = controllerTemplate
 

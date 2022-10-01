@@ -18,10 +18,7 @@ package v1
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
-	"strings"
-
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
@@ -41,48 +38,34 @@ func (p *initSubcommand) InjectConfig(c config.Config) error {
 }
 
 func (p *initSubcommand) Scaffold(fs machinery.Filesystem) error {
-	err := updateDockerfile()
-	if err != nil {
-		return err
-	}
-	return nil
+	return updateDockerfile()
 }
 
 // updateDockerfile will add channels staging required for declarative plugin
 func updateDockerfile() error {
 	fmt.Println("updating Dockerfile to add channels/ directory in the image")
-	managerFile := filepath.Join("Dockerfile")
+	dokerfile := filepath.Join("Dockerfile")
 
-	// nolint:lll
-	err := insertCodeIfDoesNotExist(managerFile,
-		"COPY controllers/ controllers/",
-		"\n# https://github.com/kubernetes-sigs/kubebuilder-declarative-pattern/blob/master/docs/addon/walkthrough/README.md#adding-a-manifest\n# Stage channels and make readable\nCOPY channels/ /channels/\nRUN chmod -R a+rx /channels/")
+	isLegacyLayout, err := util.HasFragment(dokerfile, "COPY controllers/ controllers/")
 	if err != nil {
 		return err
 	}
-
-	err = insertCodeIfDoesNotExist(managerFile,
-		"COPY --from=builder /workspace/manager .",
-		"\n# copy channels\nCOPY --from=builder /channels /channels\n")
-	if err != nil {
-		return err
+	if isLegacyLayout {
+		// nolint:lll
+		err := util.InsertCode(dokerfile, "COPY controllers/ controllers/",
+			"\n# https://github.com/kubernetes-sigs/kubebuilder-declarative-pattern/blob/master/docs/addon/walkthrough/README.md#adding-a-manifest\n# Stage channels and make readable\nCOPY channels/ /channels/\nRUN chmod -R a+rx /channels/")
+		if err != nil {
+			return err
+		}
+	} else {
+		// nolint:lll
+		err := util.InsertCode(dokerfile,
+			"COPY pkg/controllers/ pkg/controllers/",
+			"\n# https://github.com/kubernetes-sigs/kubebuilder-declarative-pattern/blob/master/docs/addon/walkthrough/README.md#adding-a-manifest\n# Stage channels and make readable\nCOPY channels/ /channels/\nRUN chmod -R a+rx /channels/")
+		if err != nil {
+			return err
+		}
 	}
+
 	return nil
-}
-
-// insertCodeIfDoesNotExist insert code if it does not already exists
-func insertCodeIfDoesNotExist(filename, target, code string) error {
-	// false positive
-	// nolint:gosec
-	contents, err := os.ReadFile(filename)
-	if err != nil {
-		return err
-	}
-
-	idx := strings.Index(string(contents), code)
-	if idx != -1 {
-		return nil
-	}
-
-	return util.InsertCode(filename, target, code)
 }

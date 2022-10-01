@@ -21,9 +21,8 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"os"
-
 	"github.com/spf13/pflag"
+	"os"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
@@ -129,7 +128,7 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 		p.options.DoController = util.YesNo(reader)
 	}
 
-	p.options.UpdateResource(p.resource, p.config)
+	p.options.UpdateResource(p.resource, p.config, true)
 
 	if err := p.resource.Validate(); err != nil {
 		return err

@@ -17,7 +17,9 @@ limitations under the License.
 package golang
 
 import (
+	"github.com/sirupsen/logrus"
 	"path"
+	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -68,7 +70,15 @@ var _ = Describe("Options", func() {
 						Webhooks: &resource.Webhooks{},
 					}
 
-					options.UpdateResource(&res, cfg)
+					isLegacyLayout := false
+					for _, pluginKey := range cfg.GetPluginChain() {
+						if strings.Contains(pluginKey, "go.kubebuilder.io/v3") {
+							isLegacyLayout = true
+							logrus.Warnf("isLegacyLayout %s", isLegacyLayout)
+						}
+					}
+
+					options.UpdateResource(&res, cfg, isLegacyLayout)
 					Expect(res.Validate()).To(Succeed())
 					Expect(res.GVK.IsEqualTo(gvk)).To(BeTrue())
 					if options.Plural != "" {
@@ -139,7 +149,15 @@ var _ = Describe("Options", func() {
 						Webhooks: &resource.Webhooks{},
 					}
 
-					options.UpdateResource(&res, cfg)
+					isLegacyLayout := false
+					for _, pluginKey := range cfg.GetPluginChain() {
+						if strings.Contains(pluginKey, "go.kubebuilder.io/v3") {
+							isLegacyLayout = true
+							logrus.Warnf("isLegacyLayout %s", isLegacyLayout)
+						}
+					}
+
+					options.UpdateResource(&res, cfg, isLegacyLayout)
 					Expect(res.Validate()).To(Succeed())
 
 					Expect(res.Path).To(Equal(path.Join("k8s.io", "api", group, version)))
@@ -179,7 +197,15 @@ var _ = Describe("Options", func() {
 						Webhooks: &resource.Webhooks{},
 					}
 
-					options.UpdateResource(&res, cfg)
+					isLegacyLayout := false
+					for _, pluginKey := range cfg.GetPluginChain() {
+						if strings.Contains(pluginKey, "go.kubebuilder.io/v3") {
+							isLegacyLayout = true
+							logrus.Warnf("isLegacyLayout %s", isLegacyLayout)
+						}
+					}
+
+					options.UpdateResource(&res, cfg, isLegacyLayout)
 					Expect(res.Validate()).To(Succeed())
 
 					Expect(res.Path).To(Equal(path.Join("k8s.io", "api", group, version)))

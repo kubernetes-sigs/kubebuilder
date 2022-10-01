@@ -35,33 +35,13 @@ spec:
           spec:
             description: CaptainSpec defines the desired state of Captain
             properties:
-              channel:
-                description: 'Channel specifies a channel that can be used to resolve
-                  a specific addon, eg: stable It will be ignored if Version is specified'
-                type: string
-              patches:
-                items:
-                  type: object
-                  x-kubernetes-preserve-unknown-fields: true
-                type: array
-              version:
-                description: Version specifies the exact addon version to be deployed,
-                  eg 1.2.3 It should not be specified if Channel is specified
+              foo:
+                description: Foo is an example field of Captain. Edit captain_types.go
+                  to remove/update
                 type: string
             type: object
           status:
             description: CaptainStatus defines the observed state of Captain
-            properties:
-              errors:
-                items:
-                  type: string
-                type: array
-              healthy:
-                type: boolean
-              phase:
-                type: string
-            required:
-            - healthy
             type: object
         type: object
     served: true

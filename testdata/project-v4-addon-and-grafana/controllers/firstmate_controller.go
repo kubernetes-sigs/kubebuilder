@@ -29,7 +29,7 @@ import (
 	"sigs.k8s.io/kubebuilder-declarative-pattern/pkg/patterns/addon/pkg/status"
 	"sigs.k8s.io/kubebuilder-declarative-pattern/pkg/patterns/declarative"
 
-	crewv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-addon-and-grafana/api/v1"
+	crewv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-addon-and-grafana/pkg/api/v1"
 )
 
 var _ reconcile.Reconciler = &FirstMateReconciler{}

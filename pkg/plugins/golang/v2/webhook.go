@@ -19,7 +19,6 @@ package v2
 
 import (
 	"fmt"
-
 	"github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
@@ -85,7 +84,7 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 		return fmt.Errorf("group cannot be empty")
 	}
 
-	p.options.UpdateResource(p.resource, p.config)
+	p.options.UpdateResource(p.resource, p.config, true)
 
 	if err := p.resource.Validate(); err != nil {
 		return err

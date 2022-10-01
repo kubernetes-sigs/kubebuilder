@@ -95,7 +95,7 @@ func (p *createWebhookSubcommand) InjectConfig(c config.Config) error {
 func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 	p.resource = res
 
-	p.options.UpdateResource(p.resource, p.config)
+	p.options.UpdateResource(p.resource, p.config, true)
 
 	if err := p.resource.Validate(); err != nil {
 		return err

@@ -31,8 +31,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	examplecomv1alpha1 "sigs.k8s.io/kubebuilder/testdata/project-v4-with-deploy-image/api/v1alpha1"
-	"sigs.k8s.io/kubebuilder/testdata/project-v4-with-deploy-image/controllers"
+	examplecomv1alpha1 "sigs.k8s.io/kubebuilder/testdata/project-v4-with-deploy-image/pkg/api/v1alpha1"
+	"sigs.k8s.io/kubebuilder/testdata/project-v4-with-deploy-image/pkg/controllers"
 	//+kubebuilder:scaffold:imports
 )
 

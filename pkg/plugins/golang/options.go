@@ -18,7 +18,6 @@ package golang
 
 import (
 	"path"
-
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	cfgv2 "sigs.k8s.io/kubebuilder/v3/pkg/config/v2"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
@@ -74,17 +73,26 @@ type Options struct {
 }
 
 // UpdateResource updates the provided resource with the options
-func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
+func (opts Options) UpdateResource(res *resource.Resource, c config.Config, isLegacyLayout bool) {
 	if opts.Plural != "" {
 		res.Plural = opts.Plural
 	}
 
 	if opts.DoAPI {
-		res.Path = resource.APIPackagePath(c.GetRepository(), res.Group, res.Version, c.IsMultiGroup())
-		res.API = &resource.API{
-			CRDVersion: opts.CRDVersion,
-			Namespaced: opts.Namespaced,
+		if isLegacyLayout {
+			res.Path = resource.APIPackagePathLegacy(c.GetRepository(), res.Group, res.Version, c.IsMultiGroup())
+			res.API = &resource.API{
+				CRDVersion: opts.CRDVersion,
+				Namespaced: opts.Namespaced,
+			}
+		} else {
+			res.Path = resource.APIPackagePath(c.GetRepository(), res.Group, res.Version, c.IsMultiGroup())
+			res.API = &resource.API{
+				CRDVersion: opts.CRDVersion,
+				Namespaced: opts.Namespaced,
+			}
 		}
+
 	}
 
 	if opts.DoController {
@@ -92,7 +100,11 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 	}
 
 	if opts.DoDefaulting || opts.DoValidation || opts.DoConversion {
-		res.Path = resource.APIPackagePath(c.GetRepository(), res.Group, res.Version, c.IsMultiGroup())
+		if isLegacyLayout {
+			res.Path = resource.APIPackagePathLegacy(c.GetRepository(), res.Group, res.Version, c.IsMultiGroup())
+		} else {
+			res.Path = resource.APIPackagePath(c.GetRepository(), res.Group, res.Version, c.IsMultiGroup())
+		}
 		res.Webhooks.WebhookVersion = opts.WebhookVersion
 		if opts.DoDefaulting {
 			res.Webhooks.Defaulting = true

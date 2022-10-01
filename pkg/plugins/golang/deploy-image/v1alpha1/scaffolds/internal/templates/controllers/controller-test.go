@@ -33,20 +33,29 @@ type ControllerTest struct {
 	machinery.BoilerplateMixin
 	machinery.ResourceMixin
 
-	Image string
-	Port  string
+	Port           string
+	IsLegacyLayout bool
 }
 
 // SetTemplateDefaults implements file.Template
 func (f *ControllerTest) SetTemplateDefaults() error {
 	if f.Path == "" {
 		if f.MultiGroup && f.Resource.Group != "" {
-			f.Path = filepath.Join("controllers", "%[group]", "%[kind]_controller_test.go")
+			if f.IsLegacyLayout {
+				f.Path = filepath.Join("controllers", "%[group]", "%[kind]_controller_test.go")
+			} else {
+				f.Path = filepath.Join("pkg", "controllers", "%[group]", "%[kind]_controller_test.go")
+			}
 		} else {
-			f.Path = filepath.Join("controllers", "%[kind]_controller_test.go")
+			if f.IsLegacyLayout {
+				f.Path = filepath.Join("controllers", "%[kind]_controller_test.go")
+			} else {
+				f.Path = filepath.Join("pkg", "controllers", "%[kind]_controller_test.go")
+			}
 		}
 	}
 	f.Path = f.Resource.Replacer().Replace(f.Path)
+	fmt.Println(f.Path)
 
 	fmt.Println("creating import for %", f.Resource.Path)
 	f.TemplateBody = controllerTestTemplate
