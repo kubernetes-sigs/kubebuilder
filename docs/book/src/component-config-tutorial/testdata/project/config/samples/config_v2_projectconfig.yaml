@@ -1,6 +1,12 @@
 apiVersion: config.tutorial.kubebuilder.io/v2
 kind: ProjectConfig
 metadata:
+  labels:
+    app.kubernetes.io/name: projectconfig
+    app.kubernetes.io/instance: projectconfig-sample
+    app.kubernetes.io/part-of: project
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: project
   name: projectconfig-sample
 spec:
   # TODO(user): Add fields here
