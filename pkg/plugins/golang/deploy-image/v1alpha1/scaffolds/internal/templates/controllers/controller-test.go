@@ -33,8 +33,7 @@ type ControllerTest struct {
 	machinery.BoilerplateMixin
 	machinery.ResourceMixin
 
-	Image string
-	Port  string
+	Port string
 }
 
 // SetTemplateDefaults implements file.Template
