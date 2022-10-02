@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.9.0
+    controller-gen.kubebuilder.io/version: v0.10.0
   creationTimestamp: null
   name: cronjobs.batch.tutorial.kubebuilder.io
 spec:
@@ -128,6 +128,134 @@ spec:
                           More info: https://kubernetes.io/docs/concepts/workloads/controllers/jobs-run-to-completion/'
                         format: int32
                         type: integer
+                      podFailurePolicy:
+                        description: "Specifies the policy of handling failed pods.
+                          In particular, it allows to specify the set of actions and
+                          conditions which need to be satisfied to take the associated
+                          action. If empty, the default behaviour applies - the counter
+                          of failed pods, represented by the jobs's .status.failed
+                          field, is incremented and it is checked against the backoffLimit.
+                          This field cannot be used in combination with restartPolicy=OnFailure.
+                          \n This field is alpha-level. To use this field, you must
+                          enable the `JobPodFailurePolicy` feature gate (disabled
+                          by default)."
+                        properties:
+                          rules:
+                            description: A list of pod failure policy rules. The rules
+                              are evaluated in order. Once a rule matches a Pod failure,
+                              the remaining of the rules are ignored. When no rule
+                              matches the Pod failure, the default handling applies
+                              - the counter of pod failures is incremented and it
+                              is checked against the backoffLimit. At most 20 elements
+                              are allowed.
+                            items:
+                              description: PodFailurePolicyRule describes how a pod
+                                failure is handled when the requirements are met.
+                                One of OnExitCodes and onPodConditions, but not both,
+                                can be used in each rule.
+                              properties:
+                                action:
+                                  description: 'Specifies the action taken on a pod
+                                    failure when the requirements are satisfied. Possible
+                                    values are: - FailJob: indicates that the pod''s
+                                    job is marked as Failed and all running pods are
+                                    terminated. - Ignore: indicates that the counter
+                                    towards the .backoffLimit is not incremented and
+                                    a replacement pod is created. - Count: indicates
+                                    that the pod is handled in the default way - the
+                                    counter towards the .backoffLimit is incremented.
+                                    Additional values are considered to be added in
+                                    the future. Clients should react to an unknown
+                                    action by skipping the rule.'
+                                  type: string
+                                onExitCodes:
+                                  description: Represents the requirement on the container
+                                    exit codes.
+                                  properties:
+                                    containerName:
+                                      description: Restricts the check for exit codes
+                                        to the container with the specified name.
+                                        When null, the rule applies to all containers.
+                                        When specified, it should match one the container
+                                        or initContainer names in the pod template.
+                                      type: string
+                                    operator:
+                                      description: 'Represents the relationship between
+                                        the container exit code(s) and the specified
+                                        values. Containers completed with success
+                                        (exit code 0) are excluded from the requirement
+                                        check. Possible values are: - In: the requirement
+                                        is satisfied if at least one container exit
+                                        code (might be multiple if there are multiple
+                                        containers not restricted by the ''containerName''
+                                        field) is in the set of specified values.
+                                        - NotIn: the requirement is satisfied if at
+                                        least one container exit code (might be multiple
+                                        if there are multiple containers not restricted
+                                        by the ''containerName'' field) is not in
+                                        the set of specified values. Additional values
+                                        are considered to be added in the future.
+                                        Clients should react to an unknown operator
+                                        by assuming the requirement is not satisfied.'
+                                      type: string
+                                    values:
+                                      description: Specifies the set of values. Each
+                                        returned container exit code (might be multiple
+                                        in case of multiple containers) is checked
+                                        against this set of values with respect to
+                                        the operator. The list of values must be ordered
+                                        and must not contain duplicates. Value '0'
+                                        cannot be used for the In operator. At least
+                                        one element is required. At most 255 elements
+                                        are allowed.
+                                      items:
+                                        format: int32
+                                        type: integer
+                                      type: array
+                                      x-kubernetes-list-type: set
+                                  required:
+                                  - operator
+                                  - values
+                                  type: object
+                                onPodConditions:
+                                  description: Represents the requirement on the pod
+                                    conditions. The requirement is represented as
+                                    a list of pod condition patterns. The requirement
+                                    is satisfied if at least one pattern matches an
+                                    actual pod condition. At most 20 elements are
+                                    allowed.
+                                  items:
+                                    description: PodFailurePolicyOnPodConditionsPattern
+                                      describes a pattern for matching an actual pod
+                                      condition type.
+                                    properties:
+                                      status:
+                                        description: Specifies the required Pod condition
+                                          status. To match a pod condition it is required
+                                          that the specified status equals the pod
+                                          condition status. Defaults to True.
+                                        type: string
+                                      type:
+                                        description: Specifies the required Pod condition
+                                          type. To match a pod condition it is required
+                                          that specified type equals the pod condition
+                                          type.
+                                        type: string
+                                    required:
+                                    - status
+                                    - type
+                                    type: object
+                                  type: array
+                                  x-kubernetes-list-type: atomic
+                              required:
+                              - action
+                              - onPodConditions
+                              type: object
+                            type: array
+                            x-kubernetes-list-type: atomic
+                        required:
+                        - rules
+                        type: object
                       selector:
                         description: 'A label query over pods that should match the
                           pod count. Normally, the system sets this field for you.
@@ -175,6 +303,7 @@ spec:
                               only "value". The requirements are ANDed.
                             type: object
                         type: object
+                        x-kubernetes-map-type: atomic
                       suspend:
                         description: Suspend specifies whether the Job controller
                           should create Pods or not. If a Job is created with suspend
@@ -329,6 +458,7 @@ spec:
                                                     type: object
                                                   type: array
                                               type: object
+                                              x-kubernetes-map-type: atomic
                                             weight:
                                               description: Weight associated with
                                                 matching the corresponding nodeSelectorTerm,
@@ -448,10 +578,12 @@ spec:
                                                     type: object
                                                   type: array
                                               type: object
+                                              x-kubernetes-map-type: atomic
                                             type: array
                                         required:
                                         - nodeSelectorTerms
                                         type: object
+                                        x-kubernetes-map-type: atomic
                                     type: object
                                   podAffinity:
                                     description: Describes pod affinity scheduling
@@ -549,6 +681,7 @@ spec:
                                                         are ANDed.
                                                       type: object
                                                   type: object
+                                                  x-kubernetes-map-type: atomic
                                                 namespaceSelector:
                                                   description: A label query over
                                                     the set of namespaces that the
@@ -621,6 +754,7 @@ spec:
                                                         are ANDed.
                                                       type: object
                                                   type: object
+                                                  x-kubernetes-map-type: atomic
                                                 namespaces:
                                                   description: namespaces specifies
                                                     a static list of namespace names
@@ -745,6 +879,7 @@ spec:
                                                     are ANDed.
                                                   type: object
                                               type: object
+                                              x-kubernetes-map-type: atomic
                                             namespaceSelector:
                                               description: A label query over the
                                                 set of namespaces that the term applies
@@ -812,6 +947,7 @@ spec:
                                                     are ANDed.
                                                   type: object
                                               type: object
+                                              x-kubernetes-map-type: atomic
                                             namespaces:
                                               description: namespaces specifies a
                                                 static list of namespace names that
@@ -937,6 +1073,7 @@ spec:
                                                         are ANDed.
                                                       type: object
                                                   type: object
+                                                  x-kubernetes-map-type: atomic
                                                 namespaceSelector:
                                                   description: A label query over
                                                     the set of namespaces that the
@@ -1009,6 +1146,7 @@ spec:
                                                         are ANDed.
                                                       type: object
                                                   type: object
+                                                  x-kubernetes-map-type: atomic
                                                 namespaces:
                                                   description: namespaces specifies
                                                     a static list of namespace names
@@ -1133,6 +1271,7 @@ spec:
                                                     are ANDed.
                                                   type: object
                                               type: object
+                                              x-kubernetes-map-type: atomic
                                             namespaceSelector:
                                               description: A label query over the
                                                 set of namespaces that the term applies
@@ -1200,6 +1339,7 @@ spec:
                                                     are ANDed.
                                                   type: object
                                               type: object
+                                              x-kubernetes-map-type: atomic
                                             namespaces:
                                               description: namespaces specifies a
                                                 static list of namespace names that
@@ -1329,6 +1469,7 @@ spec:
                                                 required:
                                                 - key
                                                 type: object
+                                                x-kubernetes-map-type: atomic
                                               fieldRef:
                                                 description: 'Selects a field of the
                                                   pod: supports metadata.name, metadata.namespace,
@@ -1349,6 +1490,7 @@ spec:
                                                 required:
                                                 - fieldPath
                                                 type: object
+                                                x-kubernetes-map-type: atomic
                                               resourceFieldRef:
                                                 description: 'Selects a resource of
                                                   the container: only resources limits
@@ -1378,6 +1520,7 @@ spec:
                                                 required:
                                                 - resource
                                                 type: object
+                                                x-kubernetes-map-type: atomic
                                               secretKeyRef:
                                                 description: Selects a key of a secret
                                                   in the pod's namespace
@@ -1400,6 +1543,7 @@ spec:
                                                 required:
                                                 - key
                                                 type: object
+                                                x-kubernetes-map-type: atomic
                                             type: object
                                         required:
                                         - name
@@ -1433,6 +1577,7 @@ spec:
                                                   must be defined
                                                 type: boolean
                                             type: object
+                                            x-kubernetes-map-type: atomic
                                           prefix:
                                             description: An optional identifier to
                                               prepend to each key in the ConfigMap.
@@ -1452,6 +1597,7 @@ spec:
                                                   must be defined
                                                 type: boolean
                                             type: object
+                                            x-kubernetes-map-type: atomic
                                         type: object
                                       type: array
                                     image:
@@ -1883,15 +2029,15 @@ spec:
                                       type: string
                                     ports:
                                       description: List of ports to expose from the
-                                        container. Exposing a port here gives the
-                                        system additional information about the network
-                                        connections a container uses, but is primarily
-                                        informational. Not specifying a port here
-                                        DOES NOT prevent that port from being exposed.
+                                        container. Not specifying a port here DOES
+                                        NOT prevent that port from being exposed.
                                         Any port which is listening on the default
                                         "0.0.0.0" address inside a container will
-                                        be accessible from the network. Cannot be
-                                        updated.
+                                        be accessible from the network. Modifying
+                                        this array with strategic merge patch may
+                                        corrupt the data. For more information See
+                                        https://github.com/kubernetes/kubernetes/issues/108255.
+                                        Cannot be updated.
                                       items:
                                         description: ContainerPort represents a network
                                           port in a single container.
@@ -2726,9 +2872,6 @@ spec:
                                   and it cannot be modified by updating the pod spec.
                                   In order to add an ephemeral container to an existing
                                   pod, use the pod's ephemeralcontainers subresource.
-                                  This field is beta-level and available on clusters
-                                  that haven't disabled the EphemeralContainers feature
-                                  gate.
                                 items:
                                   description: "An EphemeralContainer is a temporary
                                     container that you may add to an existing Pod
@@ -2740,9 +2883,7 @@ spec:
                                     causes the Pod to exceed its resource allocation.
                                     \n To add an ephemeral container, use the ephemeralcontainers
                                     subresource of an existing Pod. Ephemeral containers
-                                    may not be removed or restarted. \n This is a
-                                    beta feature available on clusters that haven't
-                                    disabled the EphemeralContainers feature gate."
+                                    may not be removed or restarted."
                                   properties:
                                     args:
                                       description: 'Arguments to the entrypoint. The
@@ -2828,6 +2969,7 @@ spec:
                                                 required:
                                                 - key
                                                 type: object
+                                                x-kubernetes-map-type: atomic
                                               fieldRef:
                                                 description: 'Selects a field of the
                                                   pod: supports metadata.name, metadata.namespace,
@@ -2848,6 +2990,7 @@ spec:
                                                 required:
                                                 - fieldPath
                                                 type: object
+                                                x-kubernetes-map-type: atomic
                                               resourceFieldRef:
                                                 description: 'Selects a resource of
                                                   the container: only resources limits
@@ -2877,6 +3020,7 @@ spec:
                                                 required:
                                                 - resource
                                                 type: object
+                                                x-kubernetes-map-type: atomic
                                               secretKeyRef:
                                                 description: Selects a key of a secret
                                                   in the pod's namespace
@@ -2899,6 +3043,7 @@ spec:
                                                 required:
                                                 - key
                                                 type: object
+                                                x-kubernetes-map-type: atomic
                                             type: object
                                         required:
                                         - name
@@ -2932,6 +3077,7 @@ spec:
                                                   must be defined
                                                 type: boolean
                                             type: object
+                                            x-kubernetes-map-type: atomic
                                           prefix:
                                             description: An optional identifier to
                                               prepend to each key in the ConfigMap.
@@ -2951,6 +3097,7 @@ spec:
                                                   must be defined
                                                 type: boolean
                                             type: object
+                                            x-kubernetes-map-type: atomic
                                         type: object
                                       type: array
                                     image:
@@ -4185,6 +4332,20 @@ spec:
                                 description: 'Use the host''s pid namespace. Optional:
                                   Default to false.'
                                 type: boolean
+                              hostUsers:
+                                description: 'Use the host''s user namespace. Optional:
+                                  Default to true. If set to true or not present,
+                                  the pod will be run in the host user namespace,
+                                  useful for when the pod needs a feature only available
+                                  to the host user namespace, such as loading a kernel
+                                  module with CAP_SYS_MODULE. When set to false, a
+                                  new userns is created for the pod. Setting false
+                                  is useful for mitigating container breakout vulnerabilities
+                                  even allowing users to run their containers as root
+                                  without actually having root privileges on the host.
+                                  This field is alpha-level and is only honored by
+                                  servers that enable the UserNamespacesSupport feature.'
+                                type: boolean
                               hostname:
                                 description: Specifies the hostname of the Pod If
                                   not specified, the pod's hostname will be set to
@@ -4209,6 +4370,7 @@ spec:
                                         kind, uid?'
                                       type: string
                                   type: object
+                                  x-kubernetes-map-type: atomic
                                 type: array
                               initContainers:
                                 description: 'List of initialization containers belonging
@@ -4223,7 +4385,7 @@ spec:
                                   of an init container are taken into account during
                                   scheduling by finding the highest request/limit
                                   for each resource type, and then using the max of
-                                  that value or the sum of the normal containers.
+                                  of that value or the sum of the normal containers.
                                   Limits are applied to init containers in a similar
                                   fashion. Init containers cannot currently be added
                                   or removed. Cannot be updated. More info: https://kubernetes.io/docs/concepts/workloads/pods/init-containers/'
@@ -4316,6 +4478,7 @@ spec:
                                                 required:
                                                 - key
                                                 type: object
+                                                x-kubernetes-map-type: atomic
                                               fieldRef:
                                                 description: 'Selects a field of the
                                                   pod: supports metadata.name, metadata.namespace,
@@ -4336,6 +4499,7 @@ spec:
                                                 required:
                                                 - fieldPath
                                                 type: object
+                                                x-kubernetes-map-type: atomic
                                               resourceFieldRef:
                                                 description: 'Selects a resource of
                                                   the container: only resources limits
@@ -4365,6 +4529,7 @@ spec:
                                                 required:
                                                 - resource
                                                 type: object
+                                                x-kubernetes-map-type: atomic
                                               secretKeyRef:
                                                 description: Selects a key of a secret
                                                   in the pod's namespace
@@ -4387,6 +4552,7 @@ spec:
                                                 required:
                                                 - key
                                                 type: object
+                                                x-kubernetes-map-type: atomic
                                             type: object
                                         required:
                                         - name
@@ -4420,6 +4586,7 @@ spec:
                                                   must be defined
                                                 type: boolean
                                             type: object
+                                            x-kubernetes-map-type: atomic
                                           prefix:
                                             description: An optional identifier to
                                               prepend to each key in the ConfigMap.
@@ -4439,6 +4606,7 @@ spec:
                                                   must be defined
                                                 type: boolean
                                             type: object
+                                            x-kubernetes-map-type: atomic
                                         type: object
                                       type: array
                                     image:
@@ -4870,15 +5038,15 @@ spec:
                                       type: string
                                     ports:
                                       description: List of ports to expose from the
-                                        container. Exposing a port here gives the
-                                        system additional information about the network
-                                        connections a container uses, but is primarily
-                                        informational. Not specifying a port here
-                                        DOES NOT prevent that port from being exposed.
+                                        container. Not specifying a port here DOES
+                                        NOT prevent that port from being exposed.
                                         Any port which is listening on the default
                                         "0.0.0.0" address inside a container will
-                                        be accessible from the network. Cannot be
-                                        updated.
+                                        be accessible from the network. Modifying
+                                        this array with strategic merge patch may
+                                        corrupt the data. For more information See
+                                        https://github.com/kubernetes/kubernetes/issues/108255.
+                                        Cannot be updated.
                                       items:
                                         description: ContainerPort represents a network
                                           port in a single container.
@@ -5673,20 +5841,19 @@ spec:
                                   the following fields must be unset: -securityContext.windowsOptions
                                   \n If the OS field is set to windows, following
                                   fields must be unset: - spec.hostPID - spec.hostIPC
-                                  - spec.securityContext.seLinuxOptions - spec.securityContext.seccompProfile
-                                  - spec.securityContext.fsGroup - spec.securityContext.fsGroupChangePolicy
-                                  - spec.securityContext.sysctls - spec.shareProcessNamespace
-                                  - spec.securityContext.runAsUser - spec.securityContext.runAsGroup
-                                  - spec.securityContext.supplementalGroups - spec.containers[*].securityContext.seLinuxOptions
+                                  - spec.hostUsers - spec.securityContext.seLinuxOptions
+                                  - spec.securityContext.seccompProfile - spec.securityContext.fsGroup
+                                  - spec.securityContext.fsGroupChangePolicy - spec.securityContext.sysctls
+                                  - spec.shareProcessNamespace - spec.securityContext.runAsUser
+                                  - spec.securityContext.runAsGroup - spec.securityContext.supplementalGroups
+                                  - spec.containers[*].securityContext.seLinuxOptions
                                   - spec.containers[*].securityContext.seccompProfile
                                   - spec.containers[*].securityContext.capabilities
                                   - spec.containers[*].securityContext.readOnlyRootFilesystem
                                   - spec.containers[*].securityContext.privileged
                                   - spec.containers[*].securityContext.allowPrivilegeEscalation
                                   - spec.containers[*].securityContext.procMount -
-                                  spec.containers[*].securityContext.runAsUser - spec.containers[*].securityContext.runAsGroup
-                                  This is a beta field and requires the IdentifyPodOS
-                                  feature"
+                                  spec.containers[*].securityContext.runAsUser - spec.containers[*].securityContext.runAsGroup"
                                 properties:
                                   name:
                                     description: 'Name is the name of the operating
@@ -6141,6 +6308,22 @@ spec:
                                             only "value". The requirements are ANDed.
                                           type: object
                                       type: object
+                                      x-kubernetes-map-type: atomic
+                                    matchLabelKeys:
+                                      description: MatchLabelKeys is a set of pod
+                                        label keys to select the pods over which spreading
+                                        will be calculated. The keys are used to lookup
+                                        values from the incoming pod labels, those
+                                        key-value labels are ANDed with labelSelector
+                                        to select the group of existing pods over
+                                        which spreading will be calculated for the
+                                        incoming pod. Keys that don't exist in the
+                                        incoming pod labels will be ignored. A null
+                                        or empty list means only match against labelSelector.
+                                      items:
+                                        type: string
+                                      type: array
+                                      x-kubernetes-list-type: atomic
                                     maxSkew:
                                       description: 'MaxSkew describes the degree to
                                         which pods may be unevenly distributed. When
@@ -6193,11 +6376,38 @@ spec:
                                         same labelSelector cannot be scheduled, because
                                         computed skew will be 3(3 - 0) if new Pod
                                         is scheduled to any of the three zones, it
-                                        will violate MaxSkew. \n This is an alpha
-                                        field and requires enabling MinDomainsInPodTopologySpread
-                                        feature gate."
+                                        will violate MaxSkew. \n This is a beta field
+                                        and requires the MinDomainsInPodTopologySpread
+                                        feature gate to be enabled (enabled by default)."
                                       format: int32
                                       type: integer
+                                    nodeAffinityPolicy:
+                                      description: "NodeAffinityPolicy indicates how
+                                        we will treat Pod's nodeAffinity/nodeSelector
+                                        when calculating pod topology spread skew.
+                                        Options are: - Honor: only nodes matching
+                                        nodeAffinity/nodeSelector are included in
+                                        the calculations. - Ignore: nodeAffinity/nodeSelector
+                                        are ignored. All nodes are included in the
+                                        calculations. \n If this value is nil, the
+                                        behavior is equivalent to the Honor policy.
+                                        This is a alpha-level feature enabled by the
+                                        NodeInclusionPolicyInPodTopologySpread feature
+                                        flag."
+                                      type: string
+                                    nodeTaintsPolicy:
+                                      description: "NodeTaintsPolicy indicates how
+                                        we will treat node taints when calculating
+                                        pod topology spread skew. Options are: - Honor:
+                                        nodes without taints, along with tainted nodes
+                                        for which the incoming pod has a toleration,
+                                        are included. - Ignore: node taints are ignored.
+                                        All nodes are included. \n If this value is
+                                        nil, the behavior is equivalent to the Ignore
+                                        policy. This is a alpha-level feature enabled
+                                        by the NodeInclusionPolicyInPodTopologySpread
+                                        feature flag."
+                                      type: string
                                     topologyKey:
                                       description: TopologyKey is the key of node
                                         labels. Nodes that have a label with this
@@ -6207,8 +6417,9 @@ spec:
                                         balanced number of pods into each bucket.
                                         We define a domain as a particular instance
                                         of a topology. Also, we define an eligible
-                                        domain as a domain whose nodes match the node
-                                        selector. e.g. If TopologyKey is "kubernetes.io/hostname",
+                                        domain as a domain whose nodes meet the requirements
+                                        of nodeAffinityPolicy and nodeTaintsPolicy.
+                                        e.g. If TopologyKey is "kubernetes.io/hostname",
                                         each Node is a domain of that topology. And,
                                         if TopologyKey is "topology.kubernetes.io/zone",
                                         each zone is a domain of that topology. It's
@@ -6398,6 +6609,7 @@ spec:
                                                 kind, uid?'
                                               type: string
                                           type: object
+                                          x-kubernetes-map-type: atomic
                                         user:
                                           description: 'user is optional: User is
                                             the rados user name, default is admin
@@ -6437,6 +6649,7 @@ spec:
                                                 kind, uid?'
                                               type: string
                                           type: object
+                                          x-kubernetes-map-type: atomic
                                         volumeID:
                                           description: 'volumeID used to identify
                                             the volume in cinder. More info: https://examples.k8s.io/mysql-cinder-pd/README.md'
@@ -6524,6 +6737,7 @@ spec:
                                             ConfigMap or its keys must be defined
                                           type: boolean
                                       type: object
+                                      x-kubernetes-map-type: atomic
                                     csi:
                                       description: csi (Container Storage Interface)
                                         represents ephemeral storage that is handled
@@ -6560,6 +6774,7 @@ spec:
                                                 kind, uid?'
                                               type: string
                                           type: object
+                                          x-kubernetes-map-type: atomic
                                         readOnly:
                                           description: readOnly specifies a read-only
                                             configuration for the volume. Defaults
@@ -6624,6 +6839,7 @@ spec:
                                                 required:
                                                 - fieldPath
                                                 type: object
+                                                x-kubernetes-map-type: atomic
                                               mode:
                                                 description: 'Optional: mode bits
                                                   used to set permissions on this
@@ -6677,6 +6893,7 @@ spec:
                                                 required:
                                                 - resource
                                                 type: object
+                                                x-kubernetes-map-type: atomic
                                             required:
                                             - path
                                             type: object
@@ -6824,6 +7041,7 @@ spec:
                                                   - kind
                                                   - name
                                                   type: object
+                                                  x-kubernetes-map-type: atomic
                                                 dataSourceRef:
                                                   description: 'dataSourceRef specifies
                                                     the object from which to populate
@@ -6881,6 +7099,7 @@ spec:
                                                   - kind
                                                   - name
                                                   type: object
+                                                  x-kubernetes-map-type: atomic
                                                 resources:
                                                   description: 'resources represents
                                                     the minimum resources the volume
@@ -6987,6 +7206,7 @@ spec:
                                                         are ANDed.
                                                       type: object
                                                   type: object
+                                                  x-kubernetes-map-type: atomic
                                                 storageClassName:
                                                   description: 'storageClassName is
                                                     the name of the StorageClass required
@@ -7091,6 +7311,7 @@ spec:
                                                 kind, uid?'
                                               type: string
                                           type: object
+                                          x-kubernetes-map-type: atomic
                                       required:
                                       - driver
                                       type: object
@@ -7299,6 +7520,7 @@ spec:
                                                 kind, uid?'
                                               type: string
                                           type: object
+                                          x-kubernetes-map-type: atomic
                                         targetPortal:
                                           description: targetPortal is iSCSI Target
                                             Portal. The Portal is either an IP or
@@ -7505,6 +7727,7 @@ spec:
                                                       keys must be defined
                                                     type: boolean
                                                 type: object
+                                                x-kubernetes-map-type: atomic
                                               downwardAPI:
                                                 description: downwardAPI information
                                                   about the downwardAPI data to project
@@ -7541,6 +7764,7 @@ spec:
                                                           required:
                                                           - fieldPath
                                                           type: object
+                                                          x-kubernetes-map-type: atomic
                                                         mode:
                                                           description: 'Optional:
                                                             mode bits used to set
@@ -7606,6 +7830,7 @@ spec:
                                                           required:
                                                           - resource
                                                           type: object
+                                                          x-kubernetes-map-type: atomic
                                                       required:
                                                       - path
                                                       type: object
@@ -7688,6 +7913,7 @@ spec:
                                                       must be defined
                                                     type: boolean
                                                 type: object
+                                                x-kubernetes-map-type: atomic
                                               serviceAccountToken:
                                                 description: serviceAccountToken is
                                                   information about the serviceAccountToken
@@ -7823,6 +8049,7 @@ spec:
                                                 kind, uid?'
                                               type: string
                                           type: object
+                                          x-kubernetes-map-type: atomic
                                         user:
                                           description: 'user is the rados user name.
                                             Default is admin. More info: https://examples.k8s.io/volumes/rbd/README.md#how-to-use-it'
@@ -7869,6 +8096,7 @@ spec:
                                                 kind, uid?'
                                               type: string
                                           type: object
+                                          x-kubernetes-map-type: atomic
                                         sslEnabled:
                                           description: sslEnabled Flag enable/disable
                                             SSL communication with Gateway, default
@@ -8008,6 +8236,7 @@ spec:
                                                 kind, uid?'
                                               type: string
                                           type: object
+                                          x-kubernetes-map-type: atomic
                                         volumeName:
                                           description: volumeName is the human-readable
                                             name of the StorageOS volume.  Volume
@@ -8112,7 +8341,7 @@ spec:
               active:
                 description: A list of pointers to currently running jobs.
                 items:
-                  description: 'ObjectReference contains enough information to let
+                  description: "ObjectReference contains enough information to let
                     you inspect or modify the referred object. --- New uses of this
                     type are discouraged because of difficulty describing its usage
                     when embedded in APIs. 1. Ignored fields.  It includes many fields
@@ -8120,10 +8349,10 @@ spec:
                     and FieldPath are both very rarely valid in actual usage. 2. Invalid
                     usage help.  It is impossible to add specific help for individual
                     usage.  In most embedded usages, there are particular restrictions
-                    like, "must refer only to types A and B" or "UID not honored"
-                    or "name must be restricted". Those cannot be well described when
-                    embedded. 3. Inconsistent validation.  Because the usages are
-                    different, the validation rules are different by usage, which
+                    like, \"must refer only to types A and B\" or \"UID not honored\"
+                    or \"name must be restricted\". Those cannot be well described
+                    when embedded. 3. Inconsistent validation.  Because the usages
+                    are different, the validation rules are different by usage, which
                     makes it hard for users to predict what will happen. 4. The fields
                     are both imprecise and overly precise.  Kind is not a precise
                     mapping to a URL. This can produce ambiguity during interpretation
@@ -8131,12 +8360,12 @@ spec:
                     on the group,resource tuple and the version of the actual struct
                     is irrelevant. 5. We cannot easily change it.  Because this type
                     is embedded in many locations, updates to this type will affect
-                    numerous schemas.  Don''t make new APIs embed an underspecified
-                    API type they do not control. Instead of using this type, create
+                    numerous schemas.  Don't make new APIs embed an underspecified
+                    API type they do not control. \n Instead of using this type, create
                     a locally provided and used type that is well-focused on your
                     reference. For example, ServiceReferences for admission registration:
                     https://github.com/kubernetes/api/blob/release-1.17/admissionregistration/v1/types.go#L533
-                    .'
+                    ."
                   properties:
                     apiVersion:
                       description: API version of the referent.
@@ -8171,6 +8400,7 @@ spec:
                       description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
                       type: string
                   type: object
+                  x-kubernetes-map-type: atomic
                 type: array
               lastScheduleTime:
                 description: Information when was the last time the job was successfully
