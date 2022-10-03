@@ -9,7 +9,7 @@ require (
 	github.com/onsi/gomega v1.20.2
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/afero v1.9.2
-	github.com/spf13/cobra v1.4.0
+	github.com/spf13/cobra v1.5.0
 	github.com/spf13/pflag v1.0.5
 	golang.org/x/text v0.3.7
 	golang.org/x/tools v0.1.12
