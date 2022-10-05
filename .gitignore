@@ -22,3 +22,4 @@ docs/book/book/
 # skip testdata go.sum, since it may have
 # different result depending on go version
 /testdata/**/go.sum
+/docs/book/src/simple-external-plugin-tutorial/testdata/sampleexternalplugin/v1/bin
