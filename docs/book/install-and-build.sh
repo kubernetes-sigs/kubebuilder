@@ -60,14 +60,14 @@ esac
 
 # grab mdbook
 # we hardcode linux/amd64 since rust uses a different naming scheme and it's a pain to tran
-echo "downloading mdBook-v0.4.2-${arch}-${target}.${ext}"
+echo "downloading mdBook-v0.4.21-${arch}-${target}.${ext}"
 set -x
 curl -sL -o /tmp/mdbook.${ext} https://github.com/rust-lang-nursery/mdBook/releases/download/v0.4.2/mdBook-v0.4.2-${arch}-${target}.${ext}
 ${cmd} /tmp/mdbook.${ext}
 chmod +x /tmp/mdbook
 
 echo "grabbing the latest released controller-gen"
-go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.8.0
+go install sigs.k8s.io/controller-tools/cmd/controller-gen@v0.10.0
 
 # make sure we add the go bin directory to our path
 gobin=$(go env GOBIN)
