@@ -15,8 +15,8 @@ limitations under the License.
 */
 
 // Package v2 contains API Schema definitions for the config v2 API group
-//+kubebuilder:object:generate=true
-//+groupName=config.tutorial.kubebuilder.io
+// +kubebuilder:object:generate=true
+// +groupName=config.tutorial.kubebuilder.io
 package v2
 
 import (
