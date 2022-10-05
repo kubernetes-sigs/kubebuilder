@@ -1,5 +1,0 @@
-{{ if eq .Spec.Webhooks.CertificateSource.Type "certManager" }}
-metadata:
-  annotations:
-    cert-manager.io/inject-ca-from:  {{ .Namespace }}/{{ .Name }}-serving-cert
-{{ end }}

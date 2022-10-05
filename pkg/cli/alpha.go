@@ -21,7 +21,6 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	configgen "sigs.k8s.io/kubebuilder/v3/pkg/cli/alpha/config-gen"
 )
 
 const (
@@ -29,7 +28,14 @@ const (
 )
 
 var alphaCommands = []*cobra.Command{
-	configgen.NewCommand(),
+	newAlphaCommand(),
+}
+
+func newAlphaCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		//TODO: If we need to create alpha commands please add a new file for each command
+	}
+	return cmd
 }
 
 func (c *CLI) newAlphaCmd() *cobra.Command {
@@ -44,6 +50,7 @@ Alpha subcommands are for unstable features.
 - No backwards compatibility is provided for any alpha subcommands.
 `),
 	}
+	// TODO: Add alpha commands here if we need to have them
 	for i := range alphaCommands {
 		alpha.AddCommand(alphaCommands[i])
 	}
