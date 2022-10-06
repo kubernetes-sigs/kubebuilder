@@ -29,6 +29,14 @@ import (
 	. "github.com/onsi/ginkgo/v2" //nolint:golint,revive
 )
 
+const (
+	certmanagerVersion        = "v1.9.1"
+	certmanagerURLTmpl        = "https://github.com/jetstack/cert-manager/releases/download/%s/cert-manager.yaml"
+	prometheusOperatorVersion = "0.51"
+	prometheusOperatorURL     = "https://raw.githubusercontent.com/prometheus-operator/" +
+		"prometheus-operator/release-%s/bundle.yaml"
+)
+
 // TestContext specified to run e2e tests
 type TestContext struct {
 	*CmdContext
@@ -108,34 +116,15 @@ func (t *TestContext) Prepare() error {
 	return os.MkdirAll(t.Dir, 0o755)
 }
 
-const (
-	certmanagerVersionWithv1beta2CRs = "v0.11.0"
-	certmanagerLegacyVersion         = "v1.0.4"
-	certmanagerVersion               = "v1.5.3"
-
-	certmanagerURLTmplLegacy = "https://github.com/jetstack/cert-manager/releases/download/%s/cert-manager-legacy.yaml"
-	certmanagerURLTmpl       = "https://github.com/jetstack/cert-manager/releases/download/%s/cert-manager.yaml"
-)
-
 // makeCertManagerURL returns a kubectl-able URL for the cert-manager bundle.
-func (t *TestContext) makeCertManagerURL(hasv1beta1CRs bool) string {
-	// Return a URL for the manifest bundle with v1beta1 CRs.
-	if hasv1beta1CRs {
-		return fmt.Sprintf(certmanagerURLTmpl, certmanagerVersionWithv1beta2CRs)
-	}
-
-	// Determine which URL to use for a manifest bundle with v1 CRs.
-	// The most up-to-date bundle uses v1 CRDs, which were introduced in k8s v1.16.
-	if ver := t.K8sVersion.ServerVersion; ver.GetMajorInt() <= 1 && ver.GetMinorInt() < 16 {
-		return fmt.Sprintf(certmanagerURLTmplLegacy, certmanagerLegacyVersion)
-	}
+func (t *TestContext) makeCertManagerURL() string {
 	return fmt.Sprintf(certmanagerURLTmpl, certmanagerVersion)
 }
 
 // InstallCertManager installs the cert manager bundle. If hasv1beta1CRs is true,
 // the legacy version (which uses v1alpha2 CRs) is installed.
-func (t *TestContext) InstallCertManager(hasv1beta1CRs bool) error {
-	url := t.makeCertManagerURL(hasv1beta1CRs)
+func (t *TestContext) InstallCertManager() error {
+	url := t.makeCertManagerURL()
 	if _, err := t.Kubectl.Apply(false, "-f", url, "--validate=false"); err != nil {
 		return err
 	}
@@ -149,43 +138,24 @@ func (t *TestContext) InstallCertManager(hasv1beta1CRs bool) error {
 	return err
 }
 
-// UninstallCertManager uninstalls the cert manager bundle. If hasv1beta1CRs is true,
-// the legacy version (which uses v1alpha2 CRs) is installed.
-func (t *TestContext) UninstallCertManager(hasv1beta1CRs bool) {
-	url := t.makeCertManagerURL(hasv1beta1CRs)
+// UninstallCertManager uninstalls the cert manager bundle.
+func (t *TestContext) UninstallCertManager() {
+	url := t.makeCertManagerURL()
 	if _, err := t.Kubectl.Delete(false, "-f", url); err != nil {
 		warnError(err)
 	}
 }
 
-const (
-	prometheusOperatorLegacyVersion = "0.33"
-	prometheusOperatorLegacyURL     = "https://raw.githubusercontent.com/coreos/prometheus-operator/release-%s/bundle.yaml"
-	prometheusOperatorVersion       = "0.51"
-	prometheusOperatorURL           = "https://raw.githubusercontent.com/prometheus-operator/" +
-		"prometheus-operator/release-%s/bundle.yaml"
-)
-
 // InstallPrometheusOperManager installs the prometheus manager bundle.
 func (t *TestContext) InstallPrometheusOperManager() error {
-	var url string
-	if ver := t.K8sVersion.ServerVersion; ver.GetMajorInt() <= 1 && ver.GetMinorInt() < 16 {
-		url = fmt.Sprintf(prometheusOperatorLegacyURL, prometheusOperatorLegacyVersion)
-	} else {
-		url = fmt.Sprintf(prometheusOperatorURL, prometheusOperatorVersion)
-	}
+	url := fmt.Sprintf(prometheusOperatorURL, prometheusOperatorVersion)
 	_, err := t.Kubectl.Apply(false, "-f", url)
 	return err
 }
 
 // UninstallPrometheusOperManager uninstalls the prometheus manager bundle.
 func (t *TestContext) UninstallPrometheusOperManager() {
-	var url string
-	if ver := t.K8sVersion.ServerVersion; ver.GetMajorInt() <= 1 && ver.GetMinorInt() < 16 {
-		url = fmt.Sprintf(prometheusOperatorLegacyURL, prometheusOperatorLegacyVersion)
-	} else {
-		url = fmt.Sprintf(prometheusOperatorURL, prometheusOperatorVersion)
-	}
+	url := fmt.Sprintf(prometheusOperatorURL, prometheusOperatorVersion)
 	if _, err := t.Kubectl.Delete(false, "-f", url); err != nil {
 		warnError(err)
 	}
