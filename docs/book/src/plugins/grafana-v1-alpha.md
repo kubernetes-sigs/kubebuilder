@@ -146,6 +146,7 @@ customMetrics:
 #  - metric: # Raw custom metric (required)
 #    type:   # Metric type: counter/gauge/histogram (required)
 #    expr:   # Prom_ql for the metric (optional)
+#    unit:   # Unit of measurement, examples: s,none,bytes,percent,etc. (optional)
 ```
 
 #### Add Custom Metrics to Config
@@ -159,6 +160,7 @@ Alternatively, you can provide `expr` and the plugin will use the specified one 
 customMetrics:
   - metric: memcached_operator_reconcile_total # Raw custom metric (required)
     type: counter # Metric type: counter/gauge/histogram (required)
+    unit: none
   - metric: memcached_operator_reconcile_time_seconds_bucket
     type: histogram
 ```
