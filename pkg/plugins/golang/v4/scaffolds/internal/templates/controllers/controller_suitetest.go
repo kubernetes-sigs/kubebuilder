@@ -44,9 +44,9 @@ type SuiteTest struct {
 func (f *SuiteTest) SetTemplateDefaults() error {
 	if f.Path == "" {
 		if f.MultiGroup && f.Resource.Group != "" {
-			f.Path = filepath.Join("controllers", "%[group]", "suite_test.go")
+			f.Path = filepath.Join("internal", "controller", "%[group]", "suite_test.go")
 		} else {
-			f.Path = filepath.Join("controllers", "suite_test.go")
+			f.Path = filepath.Join("internal", "controller", "suite_test.go")
 		}
 	}
 
@@ -60,9 +60,9 @@ func (f *SuiteTest) SetTemplateDefaults() error {
 
 	// If is multigroup the path needs to be ../../ since it has
 	// the group dir.
-	f.CRDDirectoryRelativePath = `".."`
+	f.CRDDirectoryRelativePath = `"..",".."`
 	if f.MultiGroup && f.Resource.Group != "" {
-		f.CRDDirectoryRelativePath = `"..", ".."`
+		f.CRDDirectoryRelativePath = `"..", "..",".."`
 	}
 
 	if f.Force {
@@ -126,7 +126,7 @@ const controllerSuiteTestTemplate = `{{ .Boilerplate }}
 {{if and .MultiGroup .Resource.Group }}
 package {{ .Resource.PackageName }}
 {{else}}
-package controllers
+package controller
 {{end}}
 
 import (

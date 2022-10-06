@@ -21,6 +21,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
+
 	"github.com/spf13/afero"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
@@ -77,13 +79,8 @@ func (s *apiScaffolder) InjectFS(fs machinery.Filesystem) {
 func (s *apiScaffolder) Scaffold() error {
 	fmt.Println("Writing scaffold for you to edit...")
 
-	//nolint:staticcheck
-	isGoV3 := false
-	for _, pluginKey := range s.config.GetPluginChain() {
-		if strings.Contains(pluginKey, "go.kubebuilder.io/v3") {
-			isGoV3 = true
-		}
-	}
+	//nolint: staticcheck
+	isGoV3 := plugin.IsLegacyLayout(s.config)
 
 	if err := s.scaffoldCreateAPIFromPlugins(isGoV3); err != nil {
 		return err
@@ -103,7 +100,7 @@ func (s *apiScaffolder) Scaffold() error {
 	)
 
 	if err := scaffold.Execute(
-		&api.Types{Port: s.port},
+		&api.Types{Port: s.port, IsLegacyLayout: isGoV3},
 	); err != nil {
 		return fmt.Errorf("error updating APIs: %v", err)
 	}
@@ -116,7 +113,13 @@ func (s *apiScaffolder) Scaffold() error {
 
 	controller := &controllers.Controller{
 		ControllerRuntimeVersion: golangv3scaffolds.ControllerRuntimeVersion,
+		IsLegacyLayout:           isGoV3,
 	}
+
+	if !isGoV3 {
+		controller.ControllerRuntimeVersion = golangv4scaffolds.ControllerRuntimeVersion
+	}
+
 	if err := scaffold.Execute(
 		controller,
 	); err != nil {
@@ -127,14 +130,18 @@ func (s *apiScaffolder) Scaffold() error {
 		return fmt.Errorf("error updating controller: %v", err)
 	}
 
-	if err := s.updateMainByAddingEventRecorder(); err != nil {
+	defaultMainPath := "cmd/main.go"
+	if isGoV3 {
+		defaultMainPath = "main.go"
+	}
+	if err := s.updateMainByAddingEventRecorder(isGoV3, defaultMainPath); err != nil {
 		return fmt.Errorf("error updating main.go: %v", err)
 	}
 
 	if err := scaffold.Execute(
-		&controllers.ControllerTest{Port: s.port},
+		&controllers.ControllerTest{Port: s.port, IsLegacyLayout: isGoV3},
 	); err != nil {
-		return fmt.Errorf("error creating controllers/**_controller_test.go: %v", err)
+		return fmt.Errorf("error creating controller/**_controller_test.go: %v", err)
 	}
 
 	if err := s.addEnvVarIntoManager(); err != nil {
@@ -181,18 +188,29 @@ func (s *apiScaffolder) scaffoldCreateAPIFromPlugins(isLegacyLayout bool) error 
 // TODO: replace this implementation by creating its own MainUpdater
 // which will have its own controller template which set the recorder so that we can use it
 // in the reconciliation to create an event inside for the finalizer
-func (s *apiScaffolder) updateMainByAddingEventRecorder() error {
-	defaultMainPath := "main.go"
-
-	if err := util.InsertCode(
-		defaultMainPath,
-		fmt.Sprintf(
-			`if err = (&controllers.%sReconciler{
+func (s *apiScaffolder) updateMainByAddingEventRecorder(isGoV3 bool, defaultMainPath string) error {
+	if isGoV3 {
+		if err := util.InsertCode(
+			defaultMainPath,
+			fmt.Sprintf(
+				`if err = (&controllers.%sReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),`, s.resource.Kind),
-		fmt.Sprintf(recorderTemplate, strings.ToLower(s.resource.Kind)),
-	); err != nil {
-		return fmt.Errorf("error scaffolding event recorder in %s: %v", defaultMainPath, err)
+			fmt.Sprintf(recorderTemplate, strings.ToLower(s.resource.Kind)),
+		); err != nil {
+			return fmt.Errorf("error scaffolding event recorder in %s: %v", defaultMainPath, err)
+		}
+	} else {
+		if err := util.InsertCode(
+			defaultMainPath,
+			fmt.Sprintf(
+				`if err = (&controller.%sReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),`, s.resource.Kind),
+			fmt.Sprintf(recorderTemplate, strings.ToLower(s.resource.Kind)),
+		); err != nil {
+			return fmt.Errorf("error scaffolding event recorder in %s: %v", defaultMainPath, err)
+		}
 	}
 
 	return nil
@@ -276,13 +294,13 @@ func (s *apiScaffolder) updateControllerCode(controller controllers.Controller) 
 	return nil
 }
 
-func (s *apiScaffolder) scaffoldCreateAPIFromKustomize(isGoV3 bool) error {
+func (s *apiScaffolder) scaffoldCreateAPIFromKustomize(isLegacyLayout bool) error {
 	// Now we need call the kustomize/v1 plugin to do its scaffolds when we create a new API
 	// todo: when we have the go/v4-alpha plugin we will also need to check what is the plugin used
 	// in the Project layout to know if we should use kustomize/v1 OR kustomize/v2-alpha
 	var kustomizeScaffolder plugins.Scaffolder
 
-	if isGoV3 {
+	if isLegacyLayout {
 		kustomizeScaffolder = kustomizev1scaffolds.NewAPIScaffolder(
 			s.config,
 			s.resource,
@@ -305,11 +323,11 @@ func (s *apiScaffolder) scaffoldCreateAPIFromKustomize(isGoV3 bool) error {
 	return nil
 }
 
-func (s *apiScaffolder) scaffoldCreateAPIFromGolang(isGoV3 bool) error {
+func (s *apiScaffolder) scaffoldCreateAPIFromGolang(isLegacyLayout bool) error {
 	// Now we need call the kustomize/v1 plugin to do its scaffolds when we create a new API
 	// todo: when we have the go/v4-alpha plugin we will also need to check what is the plugin used
 	// in the Project layout to know if we should use kustomize/v1 OR kustomize/v2-alpha
-	if isGoV3 {
+	if isLegacyLayout {
 		golangV3Scaffolder := golangv3scaffolds.NewAPIScaffolder(s.config,
 			s.resource, true)
 		golangV3Scaffolder.InjectFS(s.fs)

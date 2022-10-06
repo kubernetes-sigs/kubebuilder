@@ -77,7 +77,7 @@ var _ = Describe("Options", func() {
 					if options.DoAPI || options.DoDefaulting || options.DoValidation || options.DoConversion {
 						if multiGroup {
 							Expect(res.Path).To(Equal(
-								path.Join(cfg.GetRepository(), "apis", gvk.Group, gvk.Version)))
+								path.Join(cfg.GetRepository(), "api", gvk.Group, gvk.Version)))
 						} else {
 							Expect(res.Path).To(Equal(path.Join(cfg.GetRepository(), "api", gvk.Version)))
 						}

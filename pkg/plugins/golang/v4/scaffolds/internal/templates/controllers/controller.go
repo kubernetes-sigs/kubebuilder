@@ -42,9 +42,9 @@ type Controller struct {
 func (f *Controller) SetTemplateDefaults() error {
 	if f.Path == "" {
 		if f.MultiGroup && f.Resource.Group != "" {
-			f.Path = filepath.Join("controllers", "%[group]", "%[kind]_controller.go")
+			f.Path = filepath.Join("internal", "controller", "%[group]", "%[kind]_controller.go")
 		} else {
-			f.Path = filepath.Join("controllers", "%[kind]_controller.go")
+			f.Path = filepath.Join("internal", "controller", "%[kind]_controller.go")
 		}
 	}
 
@@ -65,7 +65,7 @@ func (f *Controller) SetTemplateDefaults() error {
 //nolint:lll
 const controllerTemplate = `{{ .Boilerplate }}
 
-package {{ if and .MultiGroup .Resource.Group }}{{ .Resource.PackageName }}{{ else }}controllers{{ end }}
+package {{ if and .MultiGroup .Resource.Group }}{{ .Resource.PackageName }}{{ else }}controller{{ end }}
 
 import (
 	"context"
