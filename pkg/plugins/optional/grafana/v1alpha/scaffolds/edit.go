@@ -102,10 +102,11 @@ func validateCustomMetricItems(rawItems []templates.CustomMetricItem) []template
 		}
 	}
 
-	// 2. Fill Expr if missing
+	// 2. Fill Expr and Unit if missing
 	validatedItems := make([]templates.CustomMetricItem, len(filterResult))
 	for i, item := range filterResult {
-		validatedItems[i] = fillMissingExpr(item)
+		item = fillMissingExpr(item)
+		validatedItems[i] = fillMissingUnit(item)
 	}
 
 	return validatedItems
@@ -137,6 +138,21 @@ func fillMissingExpr(item templates.CustomMetricItem) templates.CustomMetricItem
 			item.Expr = "histogram_quantile(0.90, sum by(instance, le) (rate(" + item.Metric + `{job=\"$job\", namespace=\"$namespace\"}[5m])))`
 		default: // gauge
 			item.Expr = item.Metric
+		}
+	}
+	return item
+}
+
+func fillMissingUnit(item templates.CustomMetricItem) templates.CustomMetricItem {
+	if item.Unit == "" {
+		name := strings.ToLower(item.Metric)
+		item.Unit = "none"
+		if strings.Contains(name, "second") || strings.Contains(name, "duration") {
+			item.Unit = "s"
+		} else if strings.Contains(name, "byte") {
+			item.Unit = "bytes"
+		} else if strings.Contains(name, "ratio") {
+			item.Unit = "percent"
 		}
 	}
 	return item
