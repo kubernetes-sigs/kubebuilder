@@ -20,6 +20,16 @@ to modify the default project structure to support it.
 
 Let's migrate the [CronJob example][cronjob-tutorial].
 
+<aside class="note warning">
+<h1>Using go/v4-alpha</h1>
+
+If you create your project using go/v4-alpha plugin (you can verify it by looking at the PROJECT file )
+then, all steps are the same but you need to keep in mind that the api/controllers directory
+path is now under the `pkg` directory instead. So, you need ensure that you update the
+paths accordingly.
+
+</aside>
+
 Generally, we use the prefix for the API group as the directory name. We
 can check `api/v1/groupversion_info.go` to find that out:
 
@@ -45,6 +55,8 @@ After moving the APIs to a new directory, the same needs to be applied to the co
 mkdir controllers/batch
 mv controllers/* controllers/batch/
 ```
+
+
 
 Next, we'll need to update all the references to the old package name. 
 For CronJob, that'll be `main.go` and `controllers/batch/cronjob_controller.go`. 
