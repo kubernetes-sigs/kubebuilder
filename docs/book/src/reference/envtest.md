@@ -298,7 +298,7 @@ func GetNonEmptyLines(output string) []string {
 	return res
 }
 ```
-However, see that tests for the metrics and cert-manager might fit better well as e2e tests and not under the tests done using ENV TEST for the controllers. You might want to give a look at the [sample example][sdk-e2e-sample-example] implemented into [Operator-SDK][sdk] repository to know how can you can write your e2e tests to ensure the basic workflows of your project.
+However, see that tests for the metrics and cert-manager might fit better well as e2e tests and not under the tests done using ENV TEST for the controllers. You might want to give a look at the [sample example][sdk-e2e-sample-example] implemented into [Operator-SDK][sdk] repository to know how you can write your e2e tests to ensure the basic workflows of your project.
 Also, see that you can run the tests against a cluster where you have some configurations in place they can use the option to test using an existing cluster:
 
 ```go
