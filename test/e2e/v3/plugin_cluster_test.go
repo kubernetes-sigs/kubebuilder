@@ -82,11 +82,11 @@ var _ = Describe("kubebuilder", func() {
 			// Use cert-manager with v1 CRs.
 			BeforeEach(func() {
 				By("installing the cert-manager bundle")
-				Expect(kbc.InstallCertManager(false)).To(Succeed())
+				Expect(kbc.InstallCertManager()).To(Succeed())
 			})
 			AfterEach(func() {
 				By("uninstalling the cert-manager bundle")
-				kbc.UninstallCertManager(false)
+				kbc.UninstallCertManager()
 			})
 
 			It("should generate a runnable project go/v3 with v1 CRDs and Webhooks", func() {
