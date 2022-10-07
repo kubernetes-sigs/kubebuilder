@@ -18,6 +18,7 @@ package cli
 
 import (
 	"fmt"
+	"sigs.k8s.io/kubebuilder/v3/pkg/cli/alpha/regen"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -30,6 +31,7 @@ const (
 
 var alphaCommands = []*cobra.Command{
 	configgen.NewCommand(),
+	regen.NewCmd(),
 }
 
 func (c *CLI) newAlphaCmd() *cobra.Command {
