@@ -115,7 +115,7 @@ spec:
       containers:
       - command:
         - /manager
-{{- if .ComponentConfig }}
+{{- if not .ComponentConfig }}
         args:
         - --leader-elect
 {{- end }}

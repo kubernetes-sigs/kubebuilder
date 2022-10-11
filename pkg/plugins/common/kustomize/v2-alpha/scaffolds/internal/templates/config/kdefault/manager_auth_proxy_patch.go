@@ -93,7 +93,7 @@ spec:
           requests:
             cpu: 5m
             memory: 64Mi
-{{- if .ComponentConfig }}
+{{- if not .ComponentConfig }}
       - name: manager
         args:
         - "--health-probe-bind-address=:8081"
