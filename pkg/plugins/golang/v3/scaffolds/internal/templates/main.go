@@ -213,7 +213,7 @@ func init() {
 }
 
 func main() {
-{{- if .ComponentConfig }}
+{{- if not .ComponentConfig }}
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string
@@ -237,7 +237,7 @@ func main() {
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
-{{ if .ComponentConfig }}
+{{ if not .ComponentConfig }}
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
 		MetricsBindAddress:     metricsAddr,
