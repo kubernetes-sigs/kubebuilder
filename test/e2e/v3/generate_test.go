@@ -44,7 +44,6 @@ func GenerateV3(kbc *utils.TestContext) {
 		"--project-version", "3",
 		"--domain", kbc.Domain,
 		"--fetch-deps=false",
-		"--component-config=true",
 	)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
