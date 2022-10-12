@@ -40,17 +40,18 @@ const (
 // TestContext specified to run e2e tests
 type TestContext struct {
 	*CmdContext
-	TestSuffix   string
-	Domain       string
-	Group        string
-	Version      string
-	Kind         string
-	Resources    string
-	ImageName    string
-	BinaryName   string
-	Kubectl      *Kubectl
-	K8sVersion   *KubernetesVersion
-	IsRestricted bool
+	TestSuffix        string
+	Domain            string
+	Group             string
+	Version           string
+	Kind              string
+	Resources         string
+	ImageName         string
+	BinaryName        string
+	Kubectl           *Kubectl
+	K8sVersion        *KubernetesVersion
+	IsRestricted      bool
+	IsComponentConfig bool
 }
 
 // NewTestContext init with a random suffix for test TestContext stuff,
@@ -82,17 +83,18 @@ func NewTestContext(binaryName string, env ...string) (*TestContext, error) {
 	}
 
 	return &TestContext{
-		TestSuffix: testSuffix,
-		Domain:     "example.com" + testSuffix,
-		Group:      "bar" + testSuffix,
-		Version:    "v1alpha1",
-		Kind:       "Foo" + testSuffix,
-		Resources:  "foo" + testSuffix + "s",
-		ImageName:  "e2e-test/controller-manager:" + testSuffix,
-		CmdContext: cc,
-		Kubectl:    kubectl,
-		K8sVersion: &k8sVersion,
-		BinaryName: binaryName,
+		TestSuffix:        testSuffix,
+		Domain:            "example.com" + testSuffix,
+		Group:             "bar" + testSuffix,
+		Version:           "v1alpha1",
+		Kind:              "Foo" + testSuffix,
+		Resources:         "foo" + testSuffix + "s",
+		ImageName:         "e2e-test/controller-manager:" + testSuffix,
+		CmdContext:        cc,
+		Kubectl:           kubectl,
+		K8sVersion:        &k8sVersion,
+		BinaryName:        binaryName,
+		IsComponentConfig: true,
 	}, nil
 }
 
