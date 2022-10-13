@@ -58,6 +58,8 @@ spec:
       #               - linux
       securityContext:
         runAsNonRoot: true
+        # if your K8s version <= 1.21, may need to uncomment the follow fsGroup to get SA token file access.
+        # fsGroup: 65532
         # TODO(user): For common cases that do not require escalating privileges
         # it is recommended to ensure that all your Pods/Containers are restrictive.
         # More info: https://kubernetes.io/docs/concepts/security/pod-security-standards/#restricted
