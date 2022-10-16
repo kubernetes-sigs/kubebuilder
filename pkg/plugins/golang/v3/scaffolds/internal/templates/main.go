@@ -245,6 +245,10 @@ func main() {
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "{{ hashFNV .Repo }}.{{ .Domain }}",
+		// If you set "leader-elect = true" then "make run" to test the project outside of
+		// the cluster, should uncomment the following to set the leader-election namespace.
+		// LeaderElectionNamespace: "your-ns",
+		//
 		// LeaderElectionReleaseOnCancel defines if the leader should step down voluntarily
 		// when the Manager ends. This requires the binary to immediately end when the
 		// Manager is stopped, otherwise, this setting is unsafe. Setting this significantly
