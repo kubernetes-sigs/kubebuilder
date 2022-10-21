@@ -297,15 +297,6 @@ version: "2"
 			Entry("for a basic configuration", c1, s1),
 			Entry("for a full configuration", c2, s2),
 		)
-
-		DescribeTable("MarshalYAML should fail",
-			func(c cfg) {
-				_, err := c.MarshalYAML()
-				Expect(err).To(HaveOccurred())
-			},
-			// TODO (coverage): add cases where yaml.Marshal returns an error
-		)
-
 		DescribeTable("UnmarshalYAML should succeed",
 			func(content string, c cfg) {
 				var unmarshalled cfg
