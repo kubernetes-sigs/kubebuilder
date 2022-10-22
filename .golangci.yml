@@ -1,3 +1,7 @@
+run:
+  deadline: 5m
+  allow-parallel-runners: true
+
 issues:
   # don't skip warning about doc comments
   # don't exclude the default set of lint
@@ -13,8 +17,42 @@ linters-settings:
     enable=fieldalignment: true
   revive:
     rules:
-    - name: if-return
-      disabled: true
+      # The following rules are recommended https://github.com/mgechev/revive#recommended-configuration
+      - name: blank-imports
+      - name: context-as-argument
+      - name: context-keys-type
+      - name: dot-imports
+      - name: error-return
+      - name: error-strings
+      - name: error-naming
+      - name: exported
+        disabled: true  # TODO: Investigate if it should be enabled. Disabled for now due to many findings.
+      - name: if-return
+        disabled: true  # TODO: Investigate if it should be enabled. Disabled for now due to many findings.
+      - name: increment-decrement
+      - name: var-naming
+        disabled: true   # TODO: Investigate if it should be enabled. Disabled for now due to many findings.
+      - name: var-declaration
+      - name: package-comments
+        disabled: true  # TODO: Investigate if it should be enabled. Disabled for now due to many findings.
+      - name: range
+      - name: receiver-naming
+      - name: time-naming
+      - name: unexported-return
+      - name: indent-error-flow
+      - name: errorf
+      - name: empty-block
+        disabled: true  # TODO: Investigate if it should be enabled. Disabled for now due to many findings.
+      - name: superfluous-else
+      - name: unused-parameter
+        disabled: true  # TODO: Investigate if it should be enabled. Disabled for now due to many findings.
+      - name: unreachable-code
+      - name: redefines-builtin-id
+      #
+      # Rules in addition to the recommended configuration above.
+      #
+      - name: bool-literal-in-expr
+      - name: constant-logical-expr
 
 linters:
   disable-all: true
@@ -40,6 +78,3 @@ linters:
     - unconvert
     - unparam
     - unused
-
-run:
-  deadline: 5m
