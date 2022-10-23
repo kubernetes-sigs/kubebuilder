@@ -20,7 +20,7 @@ limitations under the License.
 Our package starts out with some basic imports.  Particularly:
 
 - The core [controller-runtime](https://pkg.go.dev/sigs.k8s.io/controller-runtime?tab=doc) library
-- The default controller-runtime logging, Zap (more on that a bit later)
+- The default controller-runtime logging, [Zap](https://pkg.go.dev/go.uber.org/zap) (more on that a bit later)
 
 */
 
@@ -117,7 +117,7 @@ func main() {
 	}
 
 	/*
-		Note that the Manager can restrict the namespace that all controllers will watch for resources by:
+		Note that the `Manager` can restrict the namespace that all controllers will watch for resources by:
 	*/
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
@@ -131,12 +131,13 @@ func main() {
 	})
 
 	/*
-		The above example will change the scope of your project to a single Namespace. In this scenario,
+		The above example will change the scope of your project to a single `Namespace`. In this scenario,
 		it is also suggested to restrict the provided authorization to this namespace by replacing the default
-		ClusterRole and ClusterRoleBinding to Role and RoleBinding respectively.
-		For further information see the kubernetes documentation about Using [RBAC Authorization](https://kubernetes.io/docs/reference/access-authn-authz/rbac/).
+		`ClusterRole` and `ClusterRoleBinding` to `Role` and `RoleBinding` respectively.
+		For further information see the Kubernetes documentation about Using [RBAC Authorization](https://kubernetes.io/docs/reference/access-authn-authz/rbac/).
 
-		Also, it is possible to use the MultiNamespacedCacheBuilder to watch a specific set of namespaces:
+		Also, it is possible to use the [`MultiNamespacedCacheBuilder`](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/cache#MultiNamespacedCacheBuilder)
+		to watch a specific set of namespaces:
 	*/
 
 	var namespaces []string // List of Namespaces
@@ -152,7 +153,7 @@ func main() {
 	})
 
 	/*
-		For further information see [MultiNamespacedCacheBuilder](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/cache?tab=doc#MultiNamespacedCacheBuilder)
+		For further information see [`MultiNamespacedCacheBuilder`](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/cache?tab=doc#MultiNamespacedCacheBuilder)
 	*/
 
 	// +kubebuilder:scaffold:builder

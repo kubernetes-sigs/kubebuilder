@@ -13,7 +13,7 @@ results).
 Both are configured through command line options specified in [marker
 format](/reference/markers.md).
 
-For instance,
+For instance, the following command:
 
 ```shell
 controller-gen paths=./... crd:trivialVersions=true rbac:roleName=controller-perms output:crd:artifacts:config=config/crd/bases

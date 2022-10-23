@@ -25,20 +25,18 @@ import (
 
 	"github.com/go-logr/logr"
 	kapps "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/api/meta/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	appsv1 "tutorial.kubebuilder.io/project/api/v1"
 )
 
 /*
-*/
+ */
 
 // SimpleDeploymentReconciler reconciles a SimpleDeployment object
 type SimpleDeploymentReconciler struct {
@@ -46,10 +44,11 @@ type SimpleDeploymentReconciler struct {
 	Log    logr.Logger
 	Scheme *runtime.Scheme
 }
+
 // +kubebuilder:docs-gen:collapse=Reconciler Declaration
 
 /*
-In addition to the SimpleDeployment permissions, we will also need permissions to manage Deployments.
+In addition to the `SimpleDeployment` permissions, we will also need permissions to manage `Deployments`.
 In order to fully manage the workflow of deployments, our app will need to be able to use all verbs on a deployment as well as "get" it's status.
 */
 
@@ -60,9 +59,9 @@ In order to fully manage the workflow of deployments, our app will need to be ab
 //+kubebuilder:rbac:groups=apps,resources=deployments/status,verbs=get
 
 /*
-`Reconcile` will be in charge of reconciling the state of SimpleDeployments.
+`Reconcile` will be in charge of reconciling the state of `SimpleDeployments`.
 
-In this basic example, SimpleDeployments are used to create and manage simple Deployments that can be configured through the SimpleDeployment Spec.
+In this basic example, `SimpleDeployments` are used to create and manage simple `Deployments` that can be configured through the `SimpleDeployment` Spec.
 */
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -81,8 +80,8 @@ func (r *SimpleDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	// +kubebuilder:docs-gen:collapse=Begin the Reconcile
 
 	/*
-	Build the deployment that we want to see exist within the cluster
-	 */
+		Build the deployment that we want to see exist within the cluster
+	*/
 
 	deployment := &kapps.Deployment{}
 
@@ -90,19 +89,19 @@ func (r *SimpleDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	deployment.Spec.Replicas = simpleDeployment.Spec.Replicas
 
 	/*
-	Set the controller reference, specifying that this Deployment is controlled by the SimpleDeployment being reconciled.
+		Set the controller reference, specifying that this `Deployment` is controlled by the `SimpleDeployment` being reconciled.
 
-	This will allow for the SimpleDeployment to be reconciled when changes to the Deployment are noticed.
-	 */
+		This will allow for the `SimpleDeployment` to be reconciled when changes to the `Deployment` are noticed.
+	*/
 	if err := controllerutil.SetControllerReference(simpleDeployment, deployment, r.scheme); err != nil {
 		return ctrl.Result{}, err
 	}
 
 	/*
-	Manage your Deployment.
+		Manage your `Deployment`.
 
-	- Create it if it doesn't exist.
-	- Update it if it is configured incorrectly.
+		- Create it if it doesn't exist.
+		- Update it if it is configured incorrectly.
 	*/
 	foundDeployment := &kapps.Deployment{}
 	err := r.Get(ctx, types.NamespacedName{Name: deployment.Name, Namespace: deployment.Namespace}, foundDeployment)
@@ -124,8 +123,8 @@ func (r *SimpleDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Req
 Finally, we add this reconciler to the manager, so that it gets started
 when the manager is started.
 
-Since we create dependency Deployments during the reconcile, we can specify that the controller `Owns` Deployments.
-This will tell the manager that if a Deployment, or its status, is updated, then the SimpleDeployment in its ownerRef field should be reconciled.
+Since we create dependency `Deployments` during the reconcile, we can specify that the controller `Owns` `Deployments`.
+This will tell the manager that if a `Deployment`, or its status, is updated, then the `SimpleDeployment` in its ownerRef field should be reconciled.
 */
 
 // SetupWithManager sets up the controller with the Manager.
