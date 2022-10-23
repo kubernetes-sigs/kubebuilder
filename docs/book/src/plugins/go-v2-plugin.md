@@ -3,22 +3,22 @@
 <aside class="note warning">
 <h1>Deprecated</h1>
 
-The `go/v2` plugin cannot scaffold projects in which CRDs and/or Webhooks have a `v1` API version. 
-The `go/v2` plugin scaffolds with the `v1beta1` API version which was deprecated in Kubernetes `1.16` and removed in `1.22`. 
+The `go/v2` plugin cannot scaffold projects in which CRDs and/or Webhooks have a `v1` API version.
+The `go/v2` plugin scaffolds with the `v1beta1` API version which was deprecated in Kubernetes `1.16` and removed in `1.22`.
 This plugin was kept to ensure backwards compatibility with projects that were scaffolded with the old `"Kubebuilder 2.x"` layout and does not work with the new plugin ecosystem that was introduced with Kubebuilder `3.0.0` [More info](plugins.md)
 
-Since `28 Apr 2021`, the default layout produced by Kubebuilder changed and is done via the `go/v3`. 
+Since `28 Apr 2021`, the default layout produced by Kubebuilder changed and is done via the `go/v3`.
 We encourage you migrate your project to the latest version if your project was built with a Kubebuilder
-versions < `3.0.0`. 
+versions < `3.0.0`.
 
-The recommended way to migrate a `v2` project is to create a new `v3` project and copy over the API 
+The recommended way to migrate a `v2` project is to create a new `v3` project and copy over the API
 and the reconciliation code. The conversion will end up with a project that looks like a native `v3` project.
 For further information check the [Migration guide](./../migration/manually_migration_guide_v2_v3.md)
 
 </aside>
 
-The `go/v2` plugin has the purpose to scaffold Golang projects to help users 
-to build projects with [controllers][controller-runtime] and keep the backwards compatibility 
+The `go/v2` plugin has the purpose to scaffold Golang projects to help users
+to build projects with [controllers][controller-runtime] and keep the backwards compatibility
 with the default scaffold made using Kubebuilder CLI `2.x.z` releases.
 
 <aside class="note">
@@ -29,13 +29,13 @@ You can check samples using this plugin by looking at the `project-v2-<options>`
 
 ## When should I use this plugin ?
 
-Only if you are looking to scaffold a project with the legacy layout. Otherwise, it is recommended you to use the default Golang version plugin. 
+Only if you are looking to scaffold a project with the legacy layout. Otherwise, it is recommended you to use the default Golang version plugin.
 
 <aside class="note warning">
 
-<h1> Note </h1>
+<h1>Note</h1>
 
-Be aware that this plugin version does not provide a scaffold compatible with the latest versions of the dependencies used in order to keep its backwards compatibility. 
+Be aware that this plugin version does not provide a scaffold compatible with the latest versions of the dependencies used in order to keep its backwards compatibility.
 
 </aside>
 
@@ -48,9 +48,14 @@ kubebuilder init --domain tutorial.kubebuilder.io --repo tutorial.kubebuilder.io
 ```
 <aside class="note">
 
-<h1> Note </h1>
+<h1>Note</h1>
 
-By creating a project with this plugin, the PROJECT file scaffold will be using the previous schema (_project version 2_).  So that Kubebuilder CLI knows what plugin version was used and will call its subcommands such as `create api` and `create webhooks`.  Note that further Golang plugins versions use the new Project file schema, which tracks the information about what plugins and versions have been used so far. 
+By creating a project with this plugin, the `PROJECT` file scaffold will be using the previous
+schema (_project version 2_), so that Kubebuilder CLI knows what plugin version was used and will
+call its subcommands such as `create api` and `create webhooks`.
+
+Note that further Golang plugins versions use the new Project file schema, which tracks the
+information about what plugins and versions have been used so far.
 
 </aside>
 

@@ -31,5 +31,7 @@ fi
 
 <aside class="note">
 <h1>Zsh</h1>
+
 Follow a similar protocol for `zsh` completion.
+
 </aside>

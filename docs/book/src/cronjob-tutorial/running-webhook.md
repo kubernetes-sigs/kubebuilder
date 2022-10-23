@@ -10,9 +10,9 @@ Why?
 - You can tear it down in seconds.
 - You don't need to push your images to remote registry.
 
-## Cert Manager
+## cert-manager
 
-You need to follow [this](./cert-manager.md) to install the cert manager bundle.
+You need to follow [this](./cert-manager.md) to install the cert-manager bundle.
 
 ## Build your image
 

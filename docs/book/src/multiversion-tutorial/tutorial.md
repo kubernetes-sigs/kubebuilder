@@ -34,7 +34,7 @@ a [feature gate][kube-feature-gates]), and became beta in Kubernetes 1.15
 
 If you're on Kubernetes 1.13-1.14, make sure to enable the feature gate.
 If you're on Kubernetes 1.12 or below, you'll need a new cluster to use
-conversion. Check out the [KinD instructions](/reference/kind.md) for
+conversion. Check out the [kind instructions](/reference/kind.md) for
 instructions on how to set up a all-in-one cluster.
 
 </aside>
