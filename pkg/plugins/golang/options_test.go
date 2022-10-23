@@ -23,7 +23,6 @@ import (
 	. "github.com/onsi/gomega"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	cfgv2 "sigs.k8s.io/kubebuilder/v3/pkg/config/v2"
 	cfgv3 "sigs.k8s.io/kubebuilder/v3/pkg/config/v3"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 )
@@ -119,46 +118,6 @@ var _ = Describe("Options", func() {
 
 		DescribeTable("should use core apis",
 			func(group, qualified string) {
-				options := Options{}
-				for _, multiGroup := range []bool{false, true} {
-					if multiGroup {
-						Expect(cfg.SetMultiGroup()).To(Succeed())
-					} else {
-						Expect(cfg.ClearMultiGroup()).To(Succeed())
-					}
-
-					res := resource.Resource{
-						GVK: resource.GVK{
-							Group:   group,
-							Domain:  domain,
-							Version: version,
-							Kind:    kind,
-						},
-						Plural:   "firstmates",
-						API:      &resource.API{},
-						Webhooks: &resource.Webhooks{},
-					}
-
-					options.UpdateResource(&res, cfg)
-					Expect(res.Validate()).To(Succeed())
-
-					Expect(res.Path).To(Equal(path.Join("k8s.io", "api", group, version)))
-					Expect(res.HasAPI()).To(BeFalse())
-					Expect(res.QualifiedGroup()).To(Equal(qualified))
-				}
-			},
-			Entry("for `apps`", "apps", "apps"),
-			Entry("for `authentication`", "authentication", "authentication.k8s.io"),
-		)
-
-		DescribeTable("should use core apis with project version 2",
-			// This needs a separate test because project version 2 didn't store API and therefore
-			// the `HasAPI` method of the resource obtained with `GetResource` will always return false.
-			// Instead, the existence of a resource in the list means the API was scaffolded.
-			func(group, qualified string) {
-				cfg = cfgv2.New()
-				_ = cfg.SetRepository("test")
-
 				options := Options{}
 				for _, multiGroup := range []bool{false, true} {
 					if multiGroup {

@@ -20,7 +20,6 @@ import (
 	"path"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	cfgv2 "sigs.k8s.io/kubebuilder/v3/pkg/config/v2"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 )
 
@@ -113,12 +112,8 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 	// TODO: need to support '--resource-pkg-path' flag for specifying resourcePath
 	if !opts.DoAPI {
 		var alreadyHasAPI bool
-		if c.GetVersion().Compare(cfgv2.Version) == 0 {
-			alreadyHasAPI = c.HasResource(res.GVK)
-		} else {
-			loadedRes, err := c.GetResource(res.GVK)
-			alreadyHasAPI = err == nil && loadedRes.HasAPI()
-		}
+		loadedRes, err := c.GetResource(res.GVK)
+		alreadyHasAPI = err == nil && loadedRes.HasAPI()
 		if !alreadyHasAPI {
 			if domain, found := coreGroups[res.Group]; found {
 				res.Domain = domain

@@ -22,7 +22,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 	"sigs.k8s.io/kubebuilder/v3/pkg/cli"
-	cfgv2 "sigs.k8s.io/kubebuilder/v3/pkg/config/v2"
 	cfgv3 "sigs.k8s.io/kubebuilder/v3/pkg/config/v3"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/stage"
@@ -32,7 +31,6 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang"
 	declarativev1 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/declarative/v1"
 	deployimagev1alpha1 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/deploy-image/v1alpha1"
-	golangv2 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2"
 	golangv3 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3"
 	golangv4 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v4"
 	grafanav1alpha1 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/optional/grafana/v1alpha"
@@ -63,7 +61,6 @@ func main() {
 		cli.WithCommandName("kubebuilder"),
 		cli.WithVersion(versionString()),
 		cli.WithPlugins(
-			golangv2.Plugin{},
 			golangv3.Plugin{},
 			golangv4.Plugin{},
 			gov3Bundle,
@@ -75,7 +72,6 @@ func main() {
 			&grafanav1alpha1.Plugin{},
 		),
 		cli.WithPlugins(externalPlugins...),
-		cli.WithDefaultPlugins(cfgv2.Version, golangv2.Plugin{}),
 		cli.WithDefaultPlugins(cfgv3.Version, gov3Bundle),
 		cli.WithDefaultProjectVersion(cfgv3.Version),
 		cli.WithCompletion(),

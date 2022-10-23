@@ -21,13 +21,14 @@ import (
 	"os"
 	"testing"
 
+	cfgv3 "sigs.k8s.io/kubebuilder/v3/pkg/config/v3"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/config/store"
-	cfgv2 "sigs.k8s.io/kubebuilder/v3/pkg/config/v2"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
@@ -49,7 +50,7 @@ var _ = Describe("New", func() {
 
 var _ = Describe("yamlStore", func() {
 	const (
-		v2File = `version: "2"
+		v3File = `version: "3"
 `
 		unversionedFile = `version:
 `
@@ -72,11 +73,11 @@ layout: ""
 
 	Context("New", func() {
 		It("should initialize a new Config backend for the provided version", func() {
-			Expect(s.New(cfgv2.Version)).To(Succeed())
+			Expect(s.New(cfgv3.Version)).To(Succeed())
 			Expect(s.fs).NotTo(BeNil())
 			Expect(s.mustNotExist).To(BeTrue())
 			Expect(s.Config()).NotTo(BeNil())
-			Expect(s.Config().GetVersion().Compare(cfgv2.Version)).To(Equal(0))
+			Expect(s.Config().GetVersion().Compare(cfgv3.Version)).To(Equal(0))
 		})
 
 		It("should fail for an unregistered config version", func() {
@@ -86,13 +87,13 @@ layout: ""
 
 	Context("Load", func() {
 		It("should load the Config from an existing file at the default path", func() {
-			Expect(afero.WriteFile(s.fs, DefaultPath, []byte(v2File), os.ModePerm)).To(Succeed())
+			Expect(afero.WriteFile(s.fs, DefaultPath, []byte(v3File), os.ModePerm)).To(Succeed())
 
 			Expect(s.Load()).To(Succeed())
 			Expect(s.fs).NotTo(BeNil())
 			Expect(s.mustNotExist).To(BeFalse())
 			Expect(s.Config()).NotTo(BeNil())
-			Expect(s.Config().GetVersion().Compare(cfgv2.Version)).To(Equal(0))
+			Expect(s.Config().GetVersion().Compare(cfgv3.Version)).To(Equal(0))
 		})
 
 		It("should fail if no file exists at the default path", func() {
@@ -128,13 +129,13 @@ layout: ""
 
 	Context("LoadFrom", func() {
 		It("should load the Config from an existing file from the specified path", func() {
-			Expect(afero.WriteFile(s.fs, path, []byte(v2File), os.ModePerm)).To(Succeed())
+			Expect(afero.WriteFile(s.fs, path, []byte(v3File), os.ModePerm)).To(Succeed())
 
 			Expect(s.LoadFrom(path)).To(Succeed())
 			Expect(s.fs).NotTo(BeNil())
 			Expect(s.mustNotExist).To(BeFalse())
 			Expect(s.Config()).NotTo(BeNil())
-			Expect(s.Config().GetVersion().Compare(cfgv2.Version)).To(Equal(0))
+			Expect(s.Config().GetVersion().Compare(cfgv3.Version)).To(Equal(0))
 		})
 
 		It("should fail if no file exists at the specified path", func() {
@@ -170,22 +171,22 @@ layout: ""
 
 	Context("Save", func() {
 		It("should succeed for a valid config", func() {
-			s.cfg = cfgv2.New()
+			s.cfg = cfgv3.New()
 			Expect(s.Save()).To(Succeed())
 
 			cfgBytes, err := afero.ReadFile(s.fs, DefaultPath)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(string(cfgBytes)).To(Equal(v2File))
+			Expect(string(cfgBytes)).To(Equal(v3File))
 		})
 
 		It("should succeed for a valid config that must not exist", func() {
-			s.cfg = cfgv2.New()
+			s.cfg = cfgv3.New()
 			s.mustNotExist = true
 			Expect(s.Save()).To(Succeed())
 
 			cfgBytes, err := afero.ReadFile(s.fs, DefaultPath)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(string(cfgBytes)).To(Equal(v2File))
+			Expect(string(cfgBytes)).To(Equal(v3File))
 		})
 
 		It("should fail for an empty config", func() {
@@ -195,9 +196,9 @@ layout: ""
 		})
 
 		It("should fail for a pre-existent file that must not exist", func() {
-			s.cfg = cfgv2.New()
+			s.cfg = cfgv3.New()
 			s.mustNotExist = true
-			Expect(afero.WriteFile(s.fs, DefaultPath, []byte(v2File), os.ModePerm)).To(Succeed())
+			Expect(afero.WriteFile(s.fs, DefaultPath, []byte(v3File), os.ModePerm)).To(Succeed())
 
 			err := s.Save()
 			Expect(err).To(HaveOccurred())
@@ -207,23 +208,23 @@ layout: ""
 
 	Context("SaveTo", func() {
 		It("should success for valid configs", func() {
-			s.cfg = cfgv2.New()
+			s.cfg = cfgv3.New()
 			Expect(s.SaveTo(path)).To(Succeed())
 
 			cfgBytes, err := afero.ReadFile(s.fs, path)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(string(cfgBytes)).To(Equal(`version: "2"
+			Expect(string(cfgBytes)).To(Equal(`version: "3"
 `))
 		})
 
 		It("should succeed for a valid config that must not exist", func() {
-			s.cfg = cfgv2.New()
+			s.cfg = cfgv3.New()
 			s.mustNotExist = true
 			Expect(s.SaveTo(path)).To(Succeed())
 
 			cfgBytes, err := afero.ReadFile(s.fs, path)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(string(cfgBytes)).To(Equal(v2File))
+			Expect(string(cfgBytes)).To(Equal(v3File))
 		})
 
 		It("should fail for an empty config", func() {
@@ -233,9 +234,9 @@ layout: ""
 		})
 
 		It("should fail for a pre-existent file that must not exist", func() {
-			s.cfg = cfgv2.New()
+			s.cfg = cfgv3.New()
 			s.mustNotExist = true
-			Expect(afero.WriteFile(s.fs, path, []byte(v2File), os.ModePerm)).To(Succeed())
+			Expect(afero.WriteFile(s.fs, path, []byte(v3File), os.ModePerm)).To(Succeed())
 
 			err := s.SaveTo(path)
 			Expect(err).To(HaveOccurred())

@@ -45,7 +45,7 @@ function scaffold_test_project {
   header_text "Initializing project ..."
   $kb init $init_flags --domain testproject.org --license apache2 --owner "The Kubernetes authors"
 
-  if [ $project == "project-v2" ] || [ $project == "project-v3" ] || [ $project == "project-v3-config" ] || [ $project == "project-v4" ] || [ $project == "project-v4-config" ]; then
+  if [ $project == "project-v3" ] || [ $project == "project-v3-config" ] || [ $project == "project-v4" ] || [ $project == "project-v4-config" ]; then
     header_text 'Creating APIs ...'
     $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false
     $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false --force
@@ -125,9 +125,6 @@ function scaffold_test_project {
 }
 
 build_kb
-
-# [Deprecated] - Project version 2 uses plugin go/v2 (default).
-scaffold_test_project project-v2 --project-version=2
 
 # [Currently, default CLI plugin] - Project version 3 (default) uses plugin go/v3 (default).
 scaffold_test_project project-v3

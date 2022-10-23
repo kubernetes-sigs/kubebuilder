@@ -28,7 +28,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	cfgv2 "sigs.k8s.io/kubebuilder/v3/pkg/config/v2"
 	cfgv3 "sigs.k8s.io/kubebuilder/v3/pkg/config/v3"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/stage"
@@ -142,18 +141,6 @@ plugins:
 	// TODO: test CLI.getInfoFromConfigFile using a mock filesystem
 
 	Context("getInfoFromConfig", func() {
-		When("not having layout field", func() {
-			It("should succeed", func() {
-				pluginChain := []string{"go.kubebuilder.io/v2"}
-
-				projectConfig := cfgv2.New()
-
-				Expect(c.getInfoFromConfig(projectConfig)).To(Succeed())
-				Expect(c.pluginKeys).To(Equal(pluginChain))
-				Expect(c.projectVersion.Compare(projectConfig.GetVersion())).To(Equal(0))
-			})
-		})
-
 		When("having a single plugin in the layout field", func() {
 			It("should succeed", func() {
 				pluginChain := []string{"go.kubebuilder.io/v2"}
