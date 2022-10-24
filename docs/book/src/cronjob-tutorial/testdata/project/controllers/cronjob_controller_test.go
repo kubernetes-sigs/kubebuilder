@@ -32,7 +32,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	batchv1 "k8s.io/api/batch/v1"
-	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -78,7 +77,7 @@ var _ = Describe("CronJob controller", func() {
 				},
 				Spec: cronjobv1.CronJobSpec{
 					Schedule: "1 * * * *",
-					JobTemplate: batchv1beta1.JobTemplateSpec{
+					JobTemplate: batchv1.JobTemplateSpec{
 						Spec: batchv1.JobSpec{
 							// For simplicity, we only fill out the required fields.
 							Template: v1.PodTemplateSpec{
