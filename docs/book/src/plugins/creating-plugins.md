@@ -1,8 +1,16 @@
 # Creating your own plugins
 
+[extending-cli]: extending-cli.md
+[controller-runtime]: https://github.com/kubernetes-sigs/controller-runtime
+[operator-pattern]: https://kubernetes.io/docs/concepts/extend-kubernetes/operator
+[sdk-ansible]: https://sdk.operatorframework.io/docs/building-operators/ansible/
+[sdk-cli-pkg]: https://pkg.go.dev/github.com/operator-framework/operator-sdk/internal/cmd/operator-sdk/cli
+[sdk-helm]: https://sdk.operatorframework.io/docs/building-operators/helm/
+[sdk]: https://github.com/operator-framework/operator-sdk
+
 ## Overview
 
-You can extend the Kubebuilder API to create your own plugins. If [extending the CLI][extending-cli], your plugin will be implemented in your project and registered to the CLI as has been done by the [SDK][sdk] project. See its [cli code][sdk-cli-pkg] as an example.
+You can extend the Kubebuilder API to create your own plugins. If [extending the CLI][extending-cli], your plugin will be implemented in your project and registered to the CLI as has been done by the [SDK][sdk] project. See its [CLI code][sdk-cli-pkg] as an example.
 
 ## Language-based Plugins
 
@@ -44,15 +52,15 @@ And then, you will also be able to use custom plugins and options currently or i
 
 Note that users are also able to use plugins to customize their scaffolds and address specific needs.
 
-See that Kubebuilder provides the [deploy-image][deploy-image] plugin that allows the user to create the controller & CRs which will deploy and manage an image on the cluster:
+See that Kubebuilder provides the [`deploy-image`][deploy-image] plugin that allows the user to create the controller & CRs which will deploy and manage an image on the cluster:
 
 ```sh
 kubebuilder create api --group example.com --version v1alpha1 --kind Memcached --image=memcached:1.6.15-alpine --image-container-command="memcached,-m=64,modern,-v" --image-container-port="11211" --run-as-user="1001" --plugins="deploy-image/v1-alpha"
 ```
 
-This plugin will perform a custom scaffold following the [Operator Pattern](https://kubernetes.io/docs/concepts/extend-kubernetes/operator).
+This plugin will perform a custom scaffold following the [Operator Pattern][operator-pattern].
 
-Another example is the [grafana][grafana] plugin that scaffolds a new folder container manifests to visualize operator status on Grafana Web UI:
+Another example is the [`grafana`][grafana] plugin that scaffolds a new folder container manifests to visualize operator status on Grafana Web UI:
 
 ```sh
 kubebuilder edit --plugins="grafana.kubebuilder.io/v1-alpha"
@@ -60,7 +68,5 @@ kubebuilder edit --plugins="grafana.kubebuilder.io/v1-alpha"
 
 In this way, by [Extending the Kubebuilder CLI][extending-cli], you can also create custom plugins such this one.
 
-Feel free to check the implementation under:
-
-- deploy-image: <https://github.com/kubernetes-sigs/kubebuilder/tree/v3.7.0/pkg/plugins/golang/deploy-image/v1alpha1>
-- grafana: <https://github.com/kubernetes-sigs/kubebuilder/tree/v3.7.0/pkg/plugins/optional/grafana/v1alpha>
+[grafana]: https://github.com/kubernetes-sigs/kubebuilder/tree/v3.7.0/pkg/plugins/optional/grafana/v1alpha
+[deploy-image]: https://github.com/kubernetes-sigs/kubebuilder/tree/v3.7.0/pkg/plugins/golang/deploy-image/v1alpha1

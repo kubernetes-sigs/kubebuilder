@@ -26,7 +26,7 @@
   - [Implementing defaulting/validating webhooks](./cronjob-tutorial/webhook-implementation.md)
   - [Running and deploying the controller](./cronjob-tutorial/running.md)
 
-    - [Deploying the cert manager](./cronjob-tutorial/cert-manager.md)
+    - [Deploying cert-manager](./cronjob-tutorial/cert-manager.md)
     - [Deploying webhooks](./cronjob-tutorial/running-webhook.md)
 
   - [Writing tests](./cronjob-tutorial/writing-tests.md)
@@ -109,15 +109,15 @@
 - [Plugins][plugins]
 
   - [Available Plugins](./plugins/available-plugins.md)
-    - [To create a project](./docs/invalid)
+    - [To scaffold a project](./plugins/to-scaffold-project.md)
       - [go/v2 (Deprecated)](./plugins/go-v2-plugin.md)
       - [go/v3 (Default init scaffold)](./plugins/go-v3-plugin.md)
       - [go/v4-alpha](./plugins/go-v4-plugin.md)
-    - [To add optional features](./docs/invalid)
+    - [To add optional features](./plugins/to-add-optional-features.md)
       - [declarative/v1](./plugins/declarative-v1.md)
       - [grafana/v1-alpha](./plugins/grafana-v1-alpha.md)
       - [deploy-image/v1-alpha](./plugins/deploy-image-plugin-v1-alpha.md)
-    - [To be extended for others tools](./docs/invalid)
+    - [To be extended for others tools](./plugins/to-be-extended.md)
       - [kustomize/v1](./plugins/kustomize-v1.md)
       - [kustomize/v2-alpha](./plugins/kustomize-v2-alpha.md)
   - [Extending the CLI](./plugins/extending-cli.md)
