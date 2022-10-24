@@ -271,7 +271,7 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		around.
 	*/
 
-	// NB: deleting these is "best effort" -- if we fail on a particular one,
+	// NB: deleting these are "best effort" -- if we fail on a particular one,
 	// we won't requeue just to finish the deleting.
 	if cronJob.Spec.FailedJobsHistoryLimit != nil {
 		sort.Slice(failedJobs, func(i, j int) bool {
