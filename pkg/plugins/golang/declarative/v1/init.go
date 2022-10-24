@@ -40,7 +40,7 @@ func (p *initSubcommand) InjectConfig(c config.Config) error {
 	return nil
 }
 
-func (p *initSubcommand) Scaffold(fs machinery.Filesystem) error {
+func (p *initSubcommand) Scaffold(_ machinery.Filesystem) error {
 	err := updateDockerfile()
 	if err != nil {
 		return err
