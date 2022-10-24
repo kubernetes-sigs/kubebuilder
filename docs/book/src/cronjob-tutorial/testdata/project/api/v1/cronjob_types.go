@@ -22,7 +22,7 @@ package v1
 /*
  */
 import (
-	batchv1beta1 "k8s.io/api/batch/v1beta1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -88,7 +88,7 @@ type CronJobSpec struct {
 	Suspend *bool `json:"suspend,omitempty"`
 
 	// Specifies the job that will be created when executing a CronJob.
-	JobTemplate batchv1beta1.JobTemplateSpec `json:"jobTemplate"`
+	JobTemplate batchv1.JobTemplateSpec `json:"jobTemplate"`
 
 	//+kubebuilder:validation:Minimum=0
 
