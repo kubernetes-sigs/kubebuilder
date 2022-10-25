@@ -6,6 +6,8 @@
 
 [Architecture](./architecture.md)
 
+[FAQ](./faq.md)
+
 ---
 
 - [Tutorial: Building CronJob](cronjob-tutorial/cronjob-tutorial.md)
