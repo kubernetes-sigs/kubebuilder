@@ -37,7 +37,7 @@ func (p *createWebhookSubcommand) InjectResource(*resource.Resource) error {
 	return nil
 }
 
-func (p *createWebhookSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
+func (p *createWebhookSubcommand) UpdateMetadata(_ plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
 	setExternalPluginMetadata("webhook", p.Path, subcmdMeta)
 }
 

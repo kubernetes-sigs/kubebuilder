@@ -44,7 +44,7 @@ type mockInValidOutputGetter struct{}
 
 var _ ExecOutputGetter = &mockValidOutputGetter{}
 
-func (m *mockValidOutputGetter) GetExecOutput(request []byte, path string) ([]byte, error) {
+func (m *mockValidOutputGetter) GetExecOutput(_ []byte, _ string) ([]byte, error) {
 	return []byte(`{
 		"command": "init", 
 		"error": false, 
@@ -55,7 +55,7 @@ func (m *mockValidOutputGetter) GetExecOutput(request []byte, path string) ([]by
 
 var _ ExecOutputGetter = &mockInValidOutputGetter{}
 
-func (m *mockInValidOutputGetter) GetExecOutput(request []byte, path string) ([]byte, error) {
+func (m *mockInValidOutputGetter) GetExecOutput(_ []byte, _ string) ([]byte, error) {
 	return nil, fmt.Errorf("error getting exec command output")
 }
 
@@ -77,7 +77,7 @@ func (m *mockInValidOsWdGetter) GetCurrentDir() (string, error) {
 
 type mockValidFlagOutputGetter struct{}
 
-func (m *mockValidFlagOutputGetter) GetExecOutput(req []byte, path string) ([]byte, error) {
+func (m *mockValidFlagOutputGetter) GetExecOutput(_ []byte, _ string) ([]byte, error) {
 	response := external.PluginResponse{
 		Command:  "flag",
 		Error:    false,
@@ -89,7 +89,7 @@ func (m *mockValidFlagOutputGetter) GetExecOutput(req []byte, path string) ([]by
 
 type mockValidMEOutputGetter struct{}
 
-func (m *mockValidMEOutputGetter) GetExecOutput(req []byte, path string) ([]byte, error) {
+func (m *mockValidMEOutputGetter) GetExecOutput(_ []byte, _ string) ([]byte, error) {
 	response := external.PluginResponse{
 		Command:  "metadata",
 		Error:    false,

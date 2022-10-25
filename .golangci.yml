@@ -45,7 +45,6 @@ linters-settings:
         disabled: true  # TODO: Investigate if it should be enabled. Disabled for now due to many findings.
       - name: superfluous-else
       - name: unused-parameter
-        disabled: true  # TODO: Investigate if it should be enabled. Disabled for now due to many findings.
       - name: unreachable-code
       - name: redefines-builtin-id
       #
