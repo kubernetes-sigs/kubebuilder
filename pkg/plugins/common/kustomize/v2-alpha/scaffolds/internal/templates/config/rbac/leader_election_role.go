@@ -51,7 +51,7 @@ metadata:
     app.kubernetes.io/component: rbac
     app.kubernetes.io/created-by: {{ .ProjectName }}
     app.kubernetes.io/part-of: {{ .ProjectName }}
-    app.kubernets.io/managed-by: kustomize
+    app.kubernetes.io/managed-by: kustomize
   name: leader-election-role
 rules:
 - apiGroups:

@@ -8,7 +8,7 @@ metadata:
     app.kubernetes.io/component: rbac
     app.kubernetes.io/created-by: project-v4-addon-and-grafana
     app.kubernetes.io/part-of: project-v4-addon-and-grafana
-    app.kubernets.io/managed-by: kustomize
+    app.kubernetes.io/managed-by: kustomize
   name: leader-election-role
 rules:
 - apiGroups:
