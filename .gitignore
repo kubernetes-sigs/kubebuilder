@@ -4,6 +4,9 @@ WORKSPACE
 # don't check in the build output of the book
 docs/book/book/
 
+# ignore auto-generated dir by `mdbook serve`
+docs/book/src/docs
+
 # Editor temp files
 *~
 \#*#
