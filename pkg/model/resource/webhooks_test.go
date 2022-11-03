@@ -177,6 +177,49 @@ var _ = Describe("Webhooks", func() {
 				Expect(webhook.Update(&other)).To(Succeed())
 				Expect(webhook.Conversion).To(BeFalse())
 			})
+
+			It("should update the spokes in conversion webhook", func() {
+				spokes := []string{"v1", "v2"}
+				v3 := []string{"v3"}
+
+				By("providing spokes by webhook and not providing them by other")
+				webhook = Webhooks{
+					Spokes: spokes,
+				}
+				other = Webhooks{}
+				Expect(webhook.Update(&other)).To(Succeed())
+				Expect(webhook.Spokes).To(Equal(spokes))
+
+				By("not providing spokes by webhook and providing them by other")
+				webhook = Webhooks{}
+				other = Webhooks{
+					Spokes: spokes,
+				}
+				Expect(webhook.Update(&other)).To(Succeed())
+				Expect(webhook.Spokes).To(Equal(spokes))
+
+				By("providing different spokes between webhook and other")
+				webhook = Webhooks{
+					Spokes: v3,
+				}
+				other = Webhooks{
+					Spokes: spokes,
+				}
+				Expect(webhook.Update(&other)).To(Succeed())
+				Expect(webhook.Spokes).To(Equal([]string{"v1", "v2", "v3"}))
+
+				By("providing different spokes between webhook and other, but some are common")
+				merged := append(spokes, v3...)
+				webhook = Webhooks{
+					Spokes: merged,
+				}
+				other = Webhooks{
+					Spokes: spokes,
+				}
+				Expect(webhook.Update(&other)).To(Succeed())
+				Expect(webhook.Spokes).To(Equal([]string{"v1", "v2", "v3"}))
+			})
+
 		})
 	})
 
@@ -200,6 +243,13 @@ var _ = Describe("Webhooks", func() {
 				Defaulting:     false,
 				Validation:     false,
 				Conversion:     true,
+			}
+			conversionConfig = Webhooks{
+				WebhookVersion: "v1",
+				Defaulting:     false,
+				Validation:     false,
+				Conversion:     true,
+				Spokes:         []string{"v1"},
 			}
 			defaultingAndValidation = Webhooks{
 				WebhookVersion: "v1",
@@ -236,6 +286,7 @@ var _ = Describe("Webhooks", func() {
 			Entry("defaulting", defaulting),
 			Entry("validation", validation),
 			Entry("conversion", conversion),
+			Entry("conversion", conversionConfig),
 			Entry("defaulting and validation", defaultingAndValidation),
 			Entry("defaulting and conversion", defaultingAndConversion),
 			Entry("validation and conversion", validationAndConversion),

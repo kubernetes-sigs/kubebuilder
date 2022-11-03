@@ -61,6 +61,9 @@ type Options struct {
 	CRDVersion string
 	// WebhookVersion is the {Validating,Mutating}WebhookConfiguration API version that will be used for the resource.
 	WebhookVersion string
+	// Spoke refers to the spoke version associated with the hub.
+	// TODO: modify this to be slice, to allow multiple spoke versions in the same command.
+	Spoke string
 
 	// Namespaced is true if the resource should be namespaced.
 	Namespaced bool
@@ -91,7 +94,7 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 		res.Controller = true
 	}
 
-	if opts.DoDefaulting || opts.DoValidation || opts.DoConversion {
+	if opts.DoDefaulting || opts.DoValidation || opts.DoConversion || opts.Spoke != "" {
 		res.Path = resource.APIPackagePath(c.GetRepository(), res.Group, res.Version, c.IsMultiGroup())
 		res.Webhooks.WebhookVersion = opts.WebhookVersion
 		if opts.DoDefaulting {

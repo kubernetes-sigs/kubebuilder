@@ -222,6 +222,25 @@ func (c cfg) GetResources() ([]resource.Resource, error) {
 	return resources, nil
 }
 
+// ListResourcesWithGK implements config.Config
+func (c cfg) ListResourcesWithGK(gvk resource.GVK) []resource.Resource {
+	resources := make([]resource.Resource, 0)
+
+	for _, res := range c.Resources {
+		if res.Group == gvk.Group && res.Kind == gvk.Kind {
+			r := res.Copy()
+
+			// Plural is only stored if irregular, so if it is empty recover the regular form
+			if r.Plural == "" {
+				r.Plural = resource.RegularPlural(r.Kind)
+			}
+
+			resources = append(resources, r)
+		}
+	}
+	return resources
+}
+
 // AddResource implements config.Config
 func (c *cfg) AddResource(res resource.Resource) error {
 	// As res is passed by value it is already a shallow copy, but we need to make a deep copy

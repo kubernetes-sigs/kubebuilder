@@ -183,6 +183,21 @@ var _ = Describe("cfg", func() {
 			Expect(resources).To(Equal([]resource.Resource{res, res, res}))
 		})
 
+		It("ListResourcesWithGK should be empty since there are no resources with specified GK", func() {
+			versions := c.ListResourcesWithGK(res.GVK)
+			Expect(versions).To(BeEmpty())
+		})
+
+		It("ListResourcesWithGK should list all the resources with the specified GK", func() {
+			c.Gvks = append(c.Gvks, res.GVK)
+			versions := c.ListResourcesWithGK(resource.GVK{
+				Group: "group",
+				Kind:  "Kind",
+			})
+			Expect(versions).NotTo(BeEmpty())
+			Expect(versions).To(Equal([]resource.Resource{res}))
+		})
+
 		It("AddResource should add the provided resource if non-existent", func() {
 			l := len(c.Gvks)
 			Expect(c.AddResource(res)).To(Succeed())

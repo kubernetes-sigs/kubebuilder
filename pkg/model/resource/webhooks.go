@@ -18,6 +18,7 @@ package resource
 
 import (
 	"fmt"
+	"sort"
 )
 
 // Webhooks contains information about scaffolded webhooks
@@ -33,6 +34,10 @@ type Webhooks struct {
 
 	// Conversion specifies if a conversion webhook is associated to the resource.
 	Conversion bool `json:"conversion,omitempty"`
+
+	// Spoke contains the spoke versions associated with the resource. If this is not
+	// empty, then it means that this resource is the hub
+	Spokes []string `json:"spokes,omitempty"`
 }
 
 // Validate checks that the Webhooks is valid.
@@ -49,7 +54,13 @@ func (webhooks Webhooks) Validate() error {
 func (webhooks Webhooks) Copy() Webhooks {
 	// As this function doesn't use a pointer receiver, webhooks is already a shallow copy.
 	// Any field that is a pointer, slice or map needs to be deep copied.
-	return webhooks
+	copied := webhooks
+
+	spokes := make([]string, len(webhooks.Spokes))
+	copy(spokes, webhooks.Spokes)
+	copied.Spokes = spokes
+
+	return copied
 }
 
 // Update combines fields of the webhooks of two resources.
@@ -77,10 +88,27 @@ func (webhooks *Webhooks) Update(other *Webhooks) error {
 	// Update conversion.
 	webhooks.Conversion = webhooks.Conversion || other.Conversion
 
+	// Update spokes for the resource. Append the spoke versions
+	// to the existing version list.
+	for _, version := range other.Spokes {
+		var found bool
+		for _, existing := range webhooks.Spokes {
+			if version == existing {
+				found = true
+				break
+			}
+		}
+		if found {
+			continue // or return an error
+		}
+		webhooks.Spokes = append(webhooks.Spokes, version)
+	}
+	sort.Strings(webhooks.Spokes)
+
 	return nil
 }
 
 // IsEmpty returns if the Webhooks' fields all contain zero-values.
 func (webhooks Webhooks) IsEmpty() bool {
-	return webhooks.WebhookVersion == "" && !webhooks.Defaulting && !webhooks.Validation && !webhooks.Conversion
+	return webhooks.WebhookVersion == "" && !webhooks.Defaulting && !webhooks.Validation && !webhooks.Conversion && len(webhooks.Spokes) == 0
 }

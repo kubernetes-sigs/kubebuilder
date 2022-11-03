@@ -176,6 +176,7 @@ var _ = Describe("cfg", func() {
 					Defaulting:     true,
 					Validation:     true,
 					Conversion:     true,
+					Spokes:         []string{},
 				},
 			}
 			resWithoutPlural = res.Copy()
@@ -248,6 +249,19 @@ var _ = Describe("cfg", func() {
 			resources, err := c.GetResources()
 			Expect(err).NotTo(HaveOccurred())
 			Expect(resources).To(Equal([]resource.Resource{res, res, res}))
+
+		})
+
+		It("ListResourcesWithGK should be empty since there are no resources with specified GK", func() {
+			versions := c.ListResourcesWithGK(res.GVK)
+			Expect(versions).To(BeEmpty())
+		})
+
+		It("ListResourcesWithGK should list all the resources with the specified GK", func() {
+			c.Resources = append(c.Resources, res)
+			versions := c.ListResourcesWithGK(res.GVK)
+			Expect(versions).NotTo(BeEmpty())
+			Expect(versions).To(Equal([]resource.Resource{res}))
 		})
 
 		It("AddResource should add the provided resource if non-existent", func() {

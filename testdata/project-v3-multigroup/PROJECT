@@ -16,6 +16,8 @@ resources:
   version: v1
   webhooks:
     defaulting: true
+    spokes:
+    - ""
     validation: true
     webhookVersion: v1
 - api:
@@ -29,6 +31,8 @@ resources:
   version: v1beta1
   webhooks:
     conversion: true
+    spokes:
+    - ""
     webhookVersion: v1
 - api:
     crdVersion: v1
@@ -40,6 +44,8 @@ resources:
   version: v1
   webhooks:
     defaulting: true
+    spokes:
+    - ""
     webhookVersion: v1
 - api:
     crdVersion: v1
@@ -50,6 +56,8 @@ resources:
   path: sigs.k8s.io/kubebuilder/testdata/project-v3-multigroup/apis/ship/v2alpha1
   version: v2alpha1
   webhooks:
+    spokes:
+    - ""
     validation: true
     webhookVersion: v1
 - api:
@@ -112,6 +120,8 @@ resources:
   version: v1
   webhooks:
     defaulting: true
+    spokes:
+    - ""
     validation: true
     webhookVersion: v1
 version: "3"

@@ -46,6 +46,11 @@ type createWebhookSubcommand struct {
 
 	// force indicates that the resource should be created even if it already exists
 	force bool
+
+	// doScaffold indicates if the templates for the provided version are to be scaffolded or not.
+	// By default it is set to true. In cases of conversion webhooks, where the convertible template
+	// for the hub version is already scaffolded, this is made false.
+	doScaffold bool
 }
 
 func (p *createWebhookSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
@@ -71,6 +76,8 @@ func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
 
 	fs.StringVar(&p.options.WebhookVersion, "webhook-version", defaultWebhookVersion,
 		"version of {Mutating,Validating}WebhookConfigurations to scaffold. Options: [v1, v1beta1]")
+	fs.StringVar(&p.options.Spoke, "spoke", "",
+		"the spoke version for a conversion webhook")
 	fs.BoolVar(&p.options.DoDefaulting, "defaulting", false,
 		"if set, scaffold the defaulting webhook")
 	fs.BoolVar(&p.options.DoValidation, "programmatic-validation", false,
@@ -95,22 +102,37 @@ func (p *createWebhookSubcommand) InjectConfig(c config.Config) error {
 func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 	p.resource = res
 
+	// by default, since the templates for the API have to be scaffolded, setting this to true.
+	p.doScaffold = true
+
 	p.options.UpdateResource(p.resource, p.config)
 
 	if err := p.resource.Validate(); err != nil {
 		return err
 	}
 
-	if !p.resource.HasDefaultingWebhook() && !p.resource.HasValidationWebhook() && !p.resource.HasConversionWebhook() {
-		return fmt.Errorf("%s create webhook requires at least one of --defaulting,"+
-			" --programmatic-validation and --conversion to be true", p.commandName)
+	// verify conversion webhook configuration
+	if p.options.Spoke != "" {
+		if err := p.verifyConversionWHConfig(); err != nil {
+			return err
+		}
+		p.options.DoConversion = true
 	}
 
-	// check if resource exist to create webhook
-	if r, err := p.config.GetResource(p.resource.GVK); err != nil {
-		return fmt.Errorf("%s create webhook requires a previously created API ", p.commandName)
-	} else if r.Webhooks != nil && !r.Webhooks.IsEmpty() && !p.force {
-		return fmt.Errorf("webhook resource already exists")
+	// Either defaulting, validating or conversion falgs need to be present, or the spoke version can be specified
+	if !p.resource.HasDefaultingWebhook() && !p.resource.HasValidationWebhook() && !p.resource.HasConversionWebhook() {
+		return fmt.Errorf("%s create webhook requires at least one of --defaulting,"+
+			" --programmatic-validation, --conversion, and --spoke to be provided", p.commandName)
+	}
+
+	// check if resource exist to create webhook. Perform this check only when resource with the specified version
+	// is to be scaffolded.
+	if p.doScaffold {
+		if r, err := p.config.GetResource(p.resource.GVK); err != nil {
+			return fmt.Errorf("%s create webhook requires a previously created API ", p.commandName)
+		} else if r.Webhooks != nil && !r.Webhooks.IsEmpty() && !p.force {
+			return fmt.Errorf("webhook resource already exists")
+		}
 	}
 
 	if pluginutil.HasDifferentWebhookVersion(p.config, p.resource.Webhooks.WebhookVersion) {
@@ -122,7 +144,7 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 }
 
 func (p *createWebhookSubcommand) Scaffold(fs machinery.Filesystem) error {
-	scaffolder := scaffolds.NewWebhookScaffolder(p.config, *p.resource, p.force)
+	scaffolder := scaffolds.NewWebhookScaffolder(p.config, *p.resource, p.force, p.doScaffold, p.options.Spoke)
 	scaffolder.InjectFS(fs)
 	return scaffolder.Scaffold()
 }
@@ -145,5 +167,44 @@ func (p *createWebhookSubcommand) PostScaffold() error {
 	}
 	fmt.Print("Next: implement your new Webhook and generate the manifests with:\n$ make manifests\n")
 
+	return nil
+}
+
+// verifyConversionWHConfig verified the following configuration for
+// conversion WHs:
+// 1. checks if a hub has already been created before.
+// 2. checks if spoke has already been scaffolded.
+// 3. checks if API has been scaffolded for the spoke.
+// If the hub has to be scaffolded, it sets the options.DoScaffold
+// to true.
+func (p *createWebhookSubcommand) verifyConversionWHConfig() error {
+	hub, spokes, err := pluginutil.CategorizeHubAndSpokes(p.config, p.resource.GVK)
+	if err != nil {
+		return err
+	}
+
+	if hub != "" {
+		// this also verifies the case where spoke is not a hub.
+		// Currently, we are restricting the project to have single hub version.
+		if hub != p.resource.Version {
+			return fmt.Errorf("hub version %s found. Only one hub version is allowed", hub)
+		}
+		// Since the templates for hub version have already been scaffolded, setting this to
+		// false.
+		p.doScaffold = false
+	}
+
+	for _, sp := range spokes {
+		if sp == p.options.Spoke {
+			return fmt.Errorf("spoke %s has already been scaffolded", p.options.Spoke)
+		}
+	}
+
+	// check if api exists for spoke
+	spokeGVK := p.resource.Copy().GVK
+	spokeGVK.Version = p.options.Spoke
+	if !p.config.HasResource(spokeGVK) {
+		return fmt.Errorf("api needs to exist for spoke %s to be scaffolded", p.options.Spoke)
+	}
 	return nil
 }

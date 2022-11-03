@@ -17,6 +17,7 @@ limitations under the License.
 package util
 
 import (
+	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -27,6 +28,69 @@ func TestPlugin(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Plugin Util Suite")
 }
+
+var _ = Describe("categorizeHubAndSpokes", func() {
+	It("check if the right hub and spoke versions are restured", func() {
+		spokes := []string{"v2", "v3"}
+		res := []resource.Resource{{
+			GVK: resource.GVK{
+				Group:   "group",
+				Version: "v1",
+				Kind:    "kind",
+			},
+			Webhooks: &resource.Webhooks{
+				Spokes: spokes,
+			},
+		}}
+		hub, spoke, err := categorizeHubAndSpokes(res)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(hub).To(Equal("v1"))
+		Expect(spoke).To(Equal(spokes))
+	})
+
+	It("check the case where spoke and hub are nil when not present in resource", func() {
+		res := []resource.Resource{{
+			GVK: resource.GVK{
+				Group:   "group",
+				Version: "v1",
+				Kind:    "kind",
+			},
+		}}
+		hub, spoke, err := categorizeHubAndSpokes(res)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(hub).To(BeEmpty())
+		Expect(spoke).To(BeEmpty())
+	})
+
+	It("check if error occurs when multiple hubs are found", func() {
+		res := []resource.Resource{
+			{
+				GVK: resource.GVK{
+					Group:   "group",
+					Version: "v1",
+					Kind:    "kind",
+				},
+				Webhooks: &resource.Webhooks{
+					Spokes: []string{"v2", "v3"},
+				},
+			},
+			{
+				GVK: resource.GVK{
+					Group:   "group",
+					Version: "v6",
+					Kind:    "kind",
+				},
+				Webhooks: &resource.Webhooks{
+					Spokes: []string{"v4", "v5"},
+				},
+			},
+		}
+		hub, spoke, err := categorizeHubAndSpokes(res)
+		Expect(err).To(HaveOccurred())
+		Expect(hub).To(BeEmpty())
+		Expect(spoke).To(BeEmpty())
+	})
+})
 
 var _ = Describe("hasDifferentAPIVersion", func() {
 	DescribeTable("should return false",

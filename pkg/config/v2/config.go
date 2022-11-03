@@ -189,6 +189,20 @@ func (c cfg) GetResources() ([]resource.Resource, error) {
 	return resources, nil
 }
 
+// ListResourcesWithGK implements config.Config
+func (c cfg) ListResourcesWithGK(gvk resource.GVK) []resource.Resource {
+	resources := make([]resource.Resource, 0)
+
+	for _, r := range c.Gvks {
+		if r.Group == gvk.Group && r.Kind == gvk.Kind {
+			resources = append(resources, resource.Resource{
+				GVK: r,
+			})
+		}
+	}
+	return resources
+}
+
 // AddResource implements config.Config
 func (c *cfg) AddResource(res resource.Resource) error {
 	// As res is passed by value it is already a shallow copy, and we are only using

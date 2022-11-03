@@ -82,6 +82,8 @@ type Config interface {
 	GetResource(gvk resource.GVK) (resource.Resource, error)
 	// GetResources returns all the stored resources.
 	GetResources() ([]resource.Resource, error)
+	// ListResourcesWithGK lists all the resources with the same GK as the GVK provided
+	ListResourcesWithGK(gvk resource.GVK) []resource.Resource
 	// AddResource adds the provided resource if it was not present, no-op if it was already present.
 	AddResource(res resource.Resource) error
 	// UpdateResource adds the provided resource if it was not present, modifies it if it was already present.
