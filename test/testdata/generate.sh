@@ -59,7 +59,7 @@ function scaffold_test_project {
     else
       $kb create api --group crew --version v1 --kind FirstMate --controller=true --resource=true --make=false
     fi
-    if [ $project == "project-v3" ] || [ $project == "project-v3-config" ]; then
+    if [ $project == "project-v3" ] || [ $project == "project-v3-config" ] || [ $project == "project-v4" ] || [ $project == "project-v4-config" ]; then
       header_text 'Creating APIs for conversion webhook ...'
       $kb create api --group crew --version v2 --kind FirstMate --controller=false --resource=true --make=false
       $kb create webhook --group crew --version v1 --kind FirstMate --spoke=v2

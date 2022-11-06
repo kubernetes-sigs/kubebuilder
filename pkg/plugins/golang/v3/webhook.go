@@ -144,7 +144,7 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 }
 
 func (p *createWebhookSubcommand) Scaffold(fs machinery.Filesystem) error {
-	scaffolder := scaffolds.NewWebhookScaffolder(p.config, *p.resource, p.force, p.options.Spoke)
+	scaffolder := scaffolds.NewWebhookScaffolder(p.config, *p.resource, p.force, p.doScaffold, p.options.Spoke)
 	scaffolder.InjectFS(fs)
 	return scaffolder.Scaffold()
 }
