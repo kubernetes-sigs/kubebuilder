@@ -119,7 +119,7 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 		p.options.DoConversion = true
 	}
 
-	// Either defaulting, validating or conversion falgs need to be present, or the spoke version can be specified
+	// Either defaulting, validating or conversion flags need to be present, or the spoke version can be specified
 	if !p.resource.HasDefaultingWebhook() && !p.resource.HasValidationWebhook() && !p.resource.HasConversionWebhook() {
 		return fmt.Errorf("%s create webhook requires at least one of --defaulting,"+
 			" --programmatic-validation, --conversion, and --spoke to be provided", p.commandName)
@@ -144,7 +144,7 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 }
 
 func (p *createWebhookSubcommand) Scaffold(fs machinery.Filesystem) error {
-	scaffolder := scaffolds.NewWebhookScaffolder(p.config, *p.resource, p.force, p.doScaffold, p.options.Spoke)
+	scaffolder := scaffolds.NewWebhookScaffolder(p.config, *p.resource, p.force, p.options.Spoke)
 	scaffolder.InjectFS(fs)
 	return scaffolder.Scaffold()
 }
