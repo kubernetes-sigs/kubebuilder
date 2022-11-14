@@ -327,5 +327,5 @@ const recorderTemplate = `
 		Recorder: mgr.GetEventRecorderFor("%s-controller"),`
 
 const envVarTemplate = `
-        - name: %s_IMAGE 
+        - name: %s_IMAGE
           value: %s`

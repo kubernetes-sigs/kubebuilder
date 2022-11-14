@@ -37,7 +37,7 @@ spec:
         control-plane: controller-manager
     spec:
       # TODO(user): Uncomment the following code to configure the nodeAffinity expression
-      # according to the platforms which are supported by your solution. 
+      # according to the platforms which are supported by your solution.
       # It is considered best practice to support multiple architectures. You can
       # build your manager image using the makefile target docker-buildx.
       # affinity:
@@ -73,9 +73,9 @@ spec:
         image: controller:latest
         name: manager
         env:
-        - name: BUSYBOX_IMAGE 
+        - name: BUSYBOX_IMAGE
           value: busybox:1.28
-        - name: MEMCACHED_IMAGE 
+        - name: MEMCACHED_IMAGE
           value: memcached:1.4.36-alpine
         securityContext:
           allowPrivilegeEscalation: false
