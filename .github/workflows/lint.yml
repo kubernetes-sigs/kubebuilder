@@ -50,3 +50,13 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           labels: kind/bug
           body: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+  yamllint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: yaml-lint
+        uses: ibiqlik/action-yamllint@v3
+        with:
+          file_or_dir: testdata
+          config_data: "{extends: relaxed, rules: {line-length: {max: 120}}}"
