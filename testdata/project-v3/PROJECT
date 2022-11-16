@@ -5,6 +5,8 @@
 domain: testproject.org
 layout:
 - go.kubebuilder.io/v3
+plugins:
+  kube-state-metrics.kubebuilder.io/v1-alpha: {}
 projectName: project-v3
 repo: sigs.k8s.io/kubebuilder/testdata/project-v3
 resources:

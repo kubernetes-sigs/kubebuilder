@@ -36,6 +36,7 @@ import (
 	golangv3 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3"
 	golangv4 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v4"
 	grafanav1alpha1 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/optional/grafana/v1alpha"
+	kubestatemetricsv1alpha1 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/optional/kube-state-metrics/v1alpha"
 )
 
 func main() {
@@ -73,6 +74,7 @@ func main() {
 			&declarativev1.Plugin{},
 			&deployimagev1alpha1.Plugin{},
 			&grafanav1alpha1.Plugin{},
+			&kubestatemetricsv1alpha1.Plugin{},
 		),
 		cli.WithPlugins(externalPlugins...),
 		cli.WithDefaultPlugins(cfgv2.Version, golangv2.Plugin{}),

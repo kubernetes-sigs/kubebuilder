@@ -1,0 +1,96 @@
+---
+kind: CustomResourceStateMetrics
+spec:
+  resources:
+    - groupVersionKind:
+        group: "crew.testproject.org"
+        kind: "Captain"
+        version: "v1"
+      labelsFromPath:
+        name:
+          - metadata
+          - name
+        namespace:
+          - metadata
+          - namespace
+        uid:
+          - metadata
+          - uid
+      metrics:
+        - name: "info"
+          each:
+            type: Info
+            info:
+              labelsFromPath:
+                version:
+                  - spec
+                  - version
+    - groupVersionKind:
+        group: "crew.testproject.org"
+        kind: "FirstMate"
+        version: "v1"
+      labelsFromPath:
+        name:
+          - metadata
+          - name
+        namespace:
+          - metadata
+          - namespace
+        uid:
+          - metadata
+          - uid
+      metrics:
+        - name: "info"
+          each:
+            type: Info
+            info:
+              labelsFromPath:
+                version:
+                  - spec
+                  - version
+    - groupVersionKind:
+        group: "crew.testproject.org"
+        kind: "Admiral"
+        version: "v1"
+      labelsFromPath:
+        name:
+          - metadata
+          - name
+        namespace:
+          - metadata
+          - namespace
+        uid:
+          - metadata
+          - uid
+      metrics:
+        - name: "info"
+          each:
+            type: Info
+            info:
+              labelsFromPath:
+                version:
+                  - spec
+                  - version
+    - groupVersionKind:
+        group: "crew.testproject.org"
+        kind: "Laker"
+        version: "v1"
+      labelsFromPath:
+        name:
+          - metadata
+          - name
+        namespace:
+          - metadata
+          - namespace
+        uid:
+          - metadata
+          - uid
+      metrics:
+        - name: "info"
+          each:
+            type: Info
+            info:
+              labelsFromPath:
+                version:
+                  - spec
+                  - version

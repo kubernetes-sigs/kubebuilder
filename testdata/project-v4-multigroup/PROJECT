@@ -6,6 +6,8 @@ domain: testproject.org
 layout:
 - go.kubebuilder.io/v4-alpha
 multigroup: true
+plugins:
+  kube-state-metrics.kubebuilder.io/v1-alpha: {}
 projectName: project-v4-multigroup
 repo: sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup
 resources:

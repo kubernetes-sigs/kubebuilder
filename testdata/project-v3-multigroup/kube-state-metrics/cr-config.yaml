@@ -1,0 +1,257 @@
+---
+kind: CustomResourceStateMetrics
+spec:
+  resources:
+    - groupVersionKind:
+        group: "crew.testproject.org"
+        kind: "Captain"
+        version: "v1"
+      labelsFromPath:
+        name:
+          - metadata
+          - name
+        namespace:
+          - metadata
+          - namespace
+        uid:
+          - metadata
+          - uid
+      metrics:
+        - name: "info"
+          each:
+            type: Info
+            info:
+              labelsFromPath:
+                version:
+                  - spec
+                  - version
+    - groupVersionKind:
+        group: "ship.testproject.org"
+        kind: "Frigate"
+        version: "v1beta1"
+      labelsFromPath:
+        name:
+          - metadata
+          - name
+        namespace:
+          - metadata
+          - namespace
+        uid:
+          - metadata
+          - uid
+      metrics:
+        - name: "info"
+          each:
+            type: Info
+            info:
+              labelsFromPath:
+                version:
+                  - spec
+                  - version
+    - groupVersionKind:
+        group: "ship.testproject.org"
+        kind: "Destroyer"
+        version: "v1"
+      labelsFromPath:
+        name:
+          - metadata
+          - name
+        namespace:
+          - metadata
+          - namespace
+        uid:
+          - metadata
+          - uid
+      metrics:
+        - name: "info"
+          each:
+            type: Info
+            info:
+              labelsFromPath:
+                version:
+                  - spec
+                  - version
+    - groupVersionKind:
+        group: "ship.testproject.org"
+        kind: "Cruiser"
+        version: "v2alpha1"
+      labelsFromPath:
+        name:
+          - metadata
+          - name
+        namespace:
+          - metadata
+          - namespace
+        uid:
+          - metadata
+          - uid
+      metrics:
+        - name: "info"
+          each:
+            type: Info
+            info:
+              labelsFromPath:
+                version:
+                  - spec
+                  - version
+    - groupVersionKind:
+        group: "sea-creatures.testproject.org"
+        kind: "Kraken"
+        version: "v1beta1"
+      labelsFromPath:
+        name:
+          - metadata
+          - name
+        namespace:
+          - metadata
+          - namespace
+        uid:
+          - metadata
+          - uid
+      metrics:
+        - name: "info"
+          each:
+            type: Info
+            info:
+              labelsFromPath:
+                version:
+                  - spec
+                  - version
+    - groupVersionKind:
+        group: "sea-creatures.testproject.org"
+        kind: "Leviathan"
+        version: "v1beta2"
+      labelsFromPath:
+        name:
+          - metadata
+          - name
+        namespace:
+          - metadata
+          - namespace
+        uid:
+          - metadata
+          - uid
+      metrics:
+        - name: "info"
+          each:
+            type: Info
+            info:
+              labelsFromPath:
+                version:
+                  - spec
+                  - version
+    - groupVersionKind:
+        group: "foo.policy.testproject.org"
+        kind: "HealthCheckPolicy"
+        version: "v1"
+      labelsFromPath:
+        name:
+          - metadata
+          - name
+        namespace:
+          - metadata
+          - namespace
+        uid:
+          - metadata
+          - uid
+      metrics:
+        - name: "info"
+          each:
+            type: Info
+            info:
+              labelsFromPath:
+                version:
+                  - spec
+                  - version
+    - groupVersionKind:
+        group: "apps."
+        kind: "Deployment"
+        version: "v1"
+      labelsFromPath:
+        name:
+          - metadata
+          - name
+        namespace:
+          - metadata
+          - namespace
+        uid:
+          - metadata
+          - uid
+      metrics:
+        - name: "info"
+          each:
+            type: Info
+            info:
+              labelsFromPath:
+                version:
+                  - spec
+                  - version
+    - groupVersionKind:
+        group: "foo.testproject.org"
+        kind: "Bar"
+        version: "v1"
+      labelsFromPath:
+        name:
+          - metadata
+          - name
+        namespace:
+          - metadata
+          - namespace
+        uid:
+          - metadata
+          - uid
+      metrics:
+        - name: "info"
+          each:
+            type: Info
+            info:
+              labelsFromPath:
+                version:
+                  - spec
+                  - version
+    - groupVersionKind:
+        group: "fiz.testproject.org"
+        kind: "Bar"
+        version: "v1"
+      labelsFromPath:
+        name:
+          - metadata
+          - name
+        namespace:
+          - metadata
+          - namespace
+        uid:
+          - metadata
+          - uid
+      metrics:
+        - name: "info"
+          each:
+            type: Info
+            info:
+              labelsFromPath:
+                version:
+                  - spec
+                  - version
+    - groupVersionKind:
+        group: ".testproject.org"
+        kind: "Lakers"
+        version: "v1"
+      labelsFromPath:
+        name:
+          - metadata
+          - name
+        namespace:
+          - metadata
+          - namespace
+        uid:
+          - metadata
+          - uid
+      metrics:
+        - name: "info"
+          each:
+            type: Info
+            info:
+              labelsFromPath:
+                version:
+                  - spec
+                  - version

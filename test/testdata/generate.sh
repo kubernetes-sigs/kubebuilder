@@ -118,6 +118,11 @@ function scaffold_test_project {
       $kb edit --plugins=grafana.kubebuilder.io/v1-alpha
   fi
 
+  if [[ $project == "project-v3" || $project == "project-v4" || $project =~ multigroup ]]; then
+     header_text 'Editing project with kube-state-metrics plugin ...'
+     $kb edit --plugins=kube-state-metrics.kubebuilder.io/v1-alpha
+  fi
+
   make generate manifests
   rm -f go.sum
 
