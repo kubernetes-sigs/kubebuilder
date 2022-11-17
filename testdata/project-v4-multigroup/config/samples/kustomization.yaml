@@ -1,0 +1,13 @@
+---
+resources:
+  - crew_v1_captain.yaml
+  - ship_v1beta1_frigate.yaml
+  - ship_v1_destroyer.yaml
+  - ship_v2alpha1_cruiser.yaml
+  - sea-creatures_v1beta1_kraken.yaml
+  - sea-creatures_v1beta2_leviathan.yaml
+  - foo.policy_v1_healthcheckpolicy.yaml
+  - apps_v1_deployment.yaml
+  - foo_v1_bar.yaml
+  - fiz_v1_bar.yaml
+  - _v1_lakers.yaml

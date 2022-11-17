@@ -1,8 +1,9 @@
-# go/v3 vs go/v4-alpha 
+# go/v3 vs go/v4-alpha
 
 This document covers all breaking changes when migrating from projects built using the plugin go/v3 (default for any scaffold done since `28 Apr 2021`) to the next alpha version of the Golang plugin `go/v4-alpha`.
 
 The details of all changes (breaking or otherwise) can be found in:
+
 - [controller-runtime][controller-runtime]
 - [controller-tools][controller-tools]
 - [kustomize][kustomize-release]
@@ -12,11 +13,12 @@ The details of all changes (breaking or otherwise) can be found in:
 
 - `go/v4-alpha` projects use Kustomize v4x (instead of v3x)
 - note that some manifests under `config/` directory have been changed in order to no longer use the deprecated Kustomize features
-such as env vars. 
+  such as env vars.
+- A `kustomization.yaml` is scaffolded under `config/samples`. This helps simply and flexibly generate sample manifests: `kustomize build config/samples`.
 - adds support for Apple Silicon M1 (darwin/arm64)
 - remove support to CRD/WebHooks Kubernetes API v1beta1 version which are no longer supported since k8s 1.22
 - no longer scaffold webhook test files with `"k8s.io/api/admission/v1beta1"` the k8s API which is no longer served since k8s `1.25`. By default
-webhooks test files are scaffolding using `"k8s.io/api/admission/v1"` which is support from k8s `1.20`
+  webhooks test files are scaffolding using `"k8s.io/api/admission/v1"` which is support from k8s `1.20`
 - no longer provide backwards compatible support with k8s versions < `1.16`
 
 <aside class="note">
@@ -28,7 +30,7 @@ Further details can be found in the [go/v4-alpha plugin section][go/v4-doc]
 
 ## TL;DR of the New `go/v4-alpha` Plugin
 
-***More details on this can be found at [here][kb-releases], but for the highlights, check below***
+**_More details on this can be found at [here][kb-releases], but for the highlights, check below_**
 
 <aside class="note">
 <h1>Default plugin</h1>
@@ -47,7 +49,7 @@ For example, you should refrain from moving the scaffolded files, doing so will 
 
 ## Migrating to Kubebuilder go/v4-alpha
 
-If you want to upgrade your scaffolding to use the latest and greatest features then, follow the guide 
+If you want to upgrade your scaffolding to use the latest and greatest features then, follow the guide
 which will cover the steps in the most straightforward way to allow you to upgrade your project to get all
 latest changes and improvements.
 
@@ -63,6 +65,7 @@ kubebuilder init --domain my.domain --repo my.domain/guestbook --plugins=go/v4-a
 ```
 
 **Note**: The `go/v4-alpha` plugin is an unstable version and can have breaking changes in future releases.
+
 </aside>
 
 - [Migration Guide go/v3 to go/v4][migration-guide-gov3-to-gov4] **(Recommended)**
