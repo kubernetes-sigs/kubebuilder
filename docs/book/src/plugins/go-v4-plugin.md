@@ -23,7 +23,7 @@ under the [testdata][testdata] directory on the root directory of the Kubebuilde
 - If you are looking to use [kubernetes-sigs/kustomize][kustomize] v4
 - If you are looking to have your project update with the latest version available
 - if you are not targeting k8s versions < `1.16` and `1.20` if you are using webhooks
-- If you are looking for to work on with scaffolds which are compatible with k8s `1.25+`
+- If you are looking to work on with scaffolds which are compatible with k8s `1.25+`
 
 <aside class="note">
 
