@@ -1,4 +1,4 @@
-# Kubebuilder v1 vs v2
+# Kubebuilder v1 vs v2 (Legacy v1.0.0+ to v2.0.0 Kubebuilder CLI versions)
 
 This document cover all breaking changes when migrating from v1 to v2.
 

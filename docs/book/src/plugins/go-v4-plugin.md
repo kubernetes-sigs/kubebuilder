@@ -1,7 +1,7 @@
 # go/v4-alpha (go.kubebuilder.io/v4-alpha)
 
-Kubebuilder will scaffold using the go/v4-alpha plugin only if specified when initializing the project. 
-This plugin is a composition of the plugins ` kustomize.common.kubebuilder.io/v2-alpha` and `base.go.kubebuilder.io/v3`. 
+Kubebuilder will scaffold using the `go/v4-alpha` plugin only if specified when initializing the project. 
+This plugin is a composition of the plugins ` kustomize.common.kubebuilder.io/v2-alpha` and `base.go.kubebuilder.io/v4`. 
 It scaffolds a project template that helps in constructing sets of [controllers][controller-runtime]. 
 
 It scaffolds boilerplate code to create and design controllers. 
@@ -21,6 +21,18 @@ under the [testdata][testdata] directory on the root directory of the Kubebuilde
 - If you are looking to experiment with the future default scaffold that will be provided by Kubebuilder CLI
 - If your local environment is Apple Silicon (`darwin/arm64`)
 - If you are looking to use [kubernetes-sigs/kustomize][kustomize] v4
+- If you are looking to have your project update with the latest version available
+- if you are not targeting k8s versions < `1.16` and `1.20` if you are using webhooks
+- If you are looking to work on with scaffolds which are compatible with k8s `1.25+`
+
+<aside class="note">
+
+<h1>Migration from `go/v3`</h1>
+
+If you have a project created with `go/v3` (default layout since `28 Apr 2021` and Kubebuilder release version `3.0.0`) to `go/v4-alpha` then,
+see the migration guide [Migration from go/v3 to go/v4-alpha](./../migration/migration_guide_gov3_to_gov4.md)
+
+</aside>
 
 ## How to use it ?
 

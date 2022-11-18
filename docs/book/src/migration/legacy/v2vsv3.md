@@ -1,4 +1,4 @@
-# Kubebuilder v2 vs v3
+# Kubebuilder v2 vs v3 (Legacy Kubebuilder v2.0.0+ layout to 3.0.0+)
 
 This document covers all breaking changes when migrating from v2 to v3.
 
@@ -13,7 +13,9 @@ v3 projects use Go modules and request Go 1.18+. Dep is no longer supported for 
 
 ## Kubebuilder
 
-- Preliminary support for plugins was added. For more info see the [Extensible CLI and Scaffolding Plugins: phase 1][plugins-phase1-design-doc] and [Extensible CLI and Scaffolding Plugins: phase 1.5][plugins-phase1-design-doc-1.5] 
+- Preliminary support for plugins was added. For more info see the [Extensible CLI and Scaffolding Plugins: phase 1][plugins-phase1-design-doc],
+  the [Extensible CLI and Scaffolding Plugins: phase 1.5][plugins-phase1-design-doc-1.5] and the [Extensible CLI and Scaffolding Plugins - Phase 2][plugins-phase2-design-doc]
+  design docs. Also, you can check the [Plugins section][plugins-section].
 
 - The `PROJECT` file now has a new layout.  It stores more information about what resources are in use, to better enable plugins to make useful decisions when scaffolding.
     
@@ -89,8 +91,10 @@ You will check that you can still using the previous layout by using the `go/v2`
 
 [plugins-phase1-design-doc]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/designs/extensible-cli-and-scaffolding-plugins-phase-1.md
 [plugins-phase1-design-doc-1.5]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/designs/extensible-cli-and-scaffolding-plugins-phase-1-5.md
+[plugins-phase2-design-doc]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/designs/extensible-cli-and-scaffolding-plugins-phase-2.md
+[plugins-section]: ./../../plugins/plugins.md
 [manually-upgrade]: manually_migration_guide_v2_v3.md
-[component-config-tutorial]: ../component-config-tutorial/tutorial.md
+[component-config-tutorial]: ../../component-config-tutorial/tutorial.md
 [issue-1893]: https://github.com/kubernetes-sigs/kubebuilder/issues/1839
 [migration-guide-v2-to-v3]: migration_guide_v2tov3.md
 [healthz-ping]: https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/healthz#CheckHandler 
@@ -102,5 +106,5 @@ You will check that you can still using the previous layout by using the `go/v2`
 [cert-manager-docs]: https://cert-manager.io/docs/installation/upgrading/
 [kb-releases]: https://github.com/kubernetes-sigs/kubebuilder/releases
 [kube-rbac-proxy]: https://github.com/brancz/kube-rbac-proxy/releases
-[basic-project-doc]: ../cronjob-tutorial/basic-project.md
+[basic-project-doc]: ../../cronjob-tutorial/basic-project.md
 [kustomize]: https://github.com/kubernetes-sigs/kustomize

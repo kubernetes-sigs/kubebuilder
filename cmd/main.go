@@ -34,6 +34,7 @@ import (
 	deployimagev1alpha1 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/deploy-image/v1alpha1"
 	golangv2 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2"
 	golangv3 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3"
+	golangv4 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v4"
 	grafanav1alpha1 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/optional/grafana/v1alpha"
 )
 
@@ -44,10 +45,10 @@ func main() {
 		kustomizecommonv1.Plugin{},
 		golangv3.Plugin{},
 	)
-	// Bundle plugin which built the golang projects scaffold by Kubebuilder go/v3 with kustomize alpha-v2
+	// Bundle plugin which built the golang projects scaffold by Kubebuilder go/v4 with kustomize alpha-v2
 	gov4Bundle, _ := plugin.NewBundle(golang.DefaultNameQualifier, plugin.Version{Number: 4, Stage: stage.Alpha},
 		kustomizecommonv2alpha.Plugin{},
-		golangv3.Plugin{},
+		golangv4.Plugin{},
 	)
 
 	fs := machinery.Filesystem{
@@ -64,6 +65,7 @@ func main() {
 		cli.WithPlugins(
 			golangv2.Plugin{},
 			golangv3.Plugin{},
+			golangv4.Plugin{},
 			gov3Bundle,
 			gov4Bundle,
 			&kustomizecommonv1.Plugin{},

@@ -173,7 +173,7 @@ Change the image name in the Makefile if needed.
 Finally, we can run `make` and `make docker-build` to ensure things are working
 fine.
 
-[v2vsv3]: ./v2vsv3.md
+[v2vsv3]: v2vsv3.md
 [quick-start]: /quick-start.md#installation
 [controller-tools]: https://github.com/kubernetes-sigs/controller-tools/releases
 [controller-runtime]: https://github.com/kubernetes-sigs/controller-runtime/releases

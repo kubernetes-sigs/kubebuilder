@@ -13,7 +13,7 @@ versions < `3.0.0`.
 
 The recommended way to migrate a `v2` project is to create a new `v3` project and copy over the API
 and the reconciliation code. The conversion will end up with a project that looks like a native `v3` project.
-For further information check the [Migration guide](./../migration/manually_migration_guide_v2_v3.md)
+For further information check the [Migration guide](../migration/legacy/manually_migration_guide_v2_v3.md)
 
 </aside>
 
