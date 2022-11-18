@@ -1,6 +1,6 @@
 # Migration guides from Legacy versions < 3.0.0
 
-Following the migration guides from the Legacy Kubebuilder versions up its v3x version.
+Follow the migration guides from the legacy Kubebuilder versions up the required latest v3x version.
 Note that from v3, a new ecosystem using plugins is introduced for better maintainability, reusability and user
 experience .
 
