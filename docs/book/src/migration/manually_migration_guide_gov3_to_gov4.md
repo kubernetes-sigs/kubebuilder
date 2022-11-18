@@ -51,7 +51,7 @@ default scaffolds to be applied on your project
 Note that under the `config/` directory you will find scaffolding changes since using
 `go/v4-alpha` you will ensure that you are no longer using Kustomize v3x.
 
-You can mainly compare the `config/` directory from the samples scaffold under the `testdata`directory by 
+You can mainly compare the `config/` directory from the samples scaffolded under the `testdata`directory by 
 checking the differences between the `testdata/project-v3/config/` with `testdata/project-v4/config/` which
 are samples created with the same commands with the only difference being versions.
 
