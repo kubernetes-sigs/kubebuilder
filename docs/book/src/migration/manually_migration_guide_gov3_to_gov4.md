@@ -16,7 +16,7 @@ The recommended upgrade approach is to follow the [Migration Guide go/v3 to go/v
 
 ## Migration from project config version "go/v3" to "go/v4"
 
-Update `PROJECT` file layout which stores the information about what resources are in use, to better enable plugins to make useful decisions when scaffolding.
+Update `PROJECT` file layout which stores the information about the resources are use to enable plugins to make useful decisions when scaffolding.
 
 Furthermore, the `PROJECT` file itself is now versioned. The `version` field corresponds to the version of the `PROJECT` file itself, while the `layout` field indicates the scaffolding and the primary plugin version in use.
 
