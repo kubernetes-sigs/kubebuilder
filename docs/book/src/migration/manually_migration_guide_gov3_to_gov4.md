@@ -6,7 +6,7 @@ before continuing.
 Please ensure you have followed the [installation guide][quick-start]
 to install the required components.
 
-The following guide describes the manual steps required to upgrade your PROJECT config file to began to use go/v4-alpha.
+The following guide describes the manual steps required to upgrade your PROJECT config file to begin using `go/v4-alpha`.
 
 This way is more complex, susceptible to errors, and success cannot be assured. Also, by following these steps you will not get the improvements and bug fixes in the default generated project files.
 
