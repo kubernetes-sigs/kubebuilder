@@ -1,0 +1,8 @@
+domain: testproject.org
+layout:
+- go.kubebuilder.io/v3
+plugins:
+  monitoring.kubebuilder.io/v1-alpha: {}
+projectName: project-v3-with-monitoring
+repo: sigs.k8s.io/kubebuilder/testdata/project-v3-with-monitoring
+version: "3"

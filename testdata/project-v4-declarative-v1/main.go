@@ -33,7 +33,10 @@ import (
 
 	crewv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-declarative-v1/api/v1"
 	"sigs.k8s.io/kubebuilder/testdata/project-v4-declarative-v1/controllers"
+
 	//+kubebuilder:scaffold:imports
+
+	"sigs.k8s.io/kubebuilder/testdata/project-v4-declarative-v1/monitoring/metrics"
 )
 
 var (
@@ -42,6 +45,8 @@ var (
 )
 
 func init() {
+	metrics.RegisterMetrics()
+
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(crewv1.AddToScheme(scheme))

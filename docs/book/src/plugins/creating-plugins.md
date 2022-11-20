@@ -94,6 +94,15 @@ kubebuilder create api --group example.com --version v1alpha1 --kind Memcached -
 
 This plugin will perform a custom scaffold following the [Operator Pattern][operator-pattern].
 
+The [`monitoring`][monitoring] plugin will help setting up Prometheus based monitoring, will provide best practices and tooling for monitoring requirements and help with standardizing the way monitoring is implemented in operators.
+
+```sh
+kubebuilder init --plugins="go/v4-alpha,monitoring/v1-alpha"
+```
+```sh
+kubebuilder edit --plugins="monitoring/v1-alpha"
+```
+
 Another example is the [`grafana`][grafana] plugin that scaffolds a new folder container manifests to visualize operator status on Grafana Web UI:
 
 ```sh
@@ -106,6 +115,7 @@ Feel free to check the implementation under:
 
 - deploy-image: <https://github.com/kubernetes-sigs/kubebuilder/tree/v3.7.0/pkg/plugins/golang/deploy-image/v1alpha1>
 - grafana: <https://github.com/kubernetes-sigs/kubebuilder/tree/v3.7.0/pkg/plugins/optional/grafana/v1alpha>
+- monitoring: <https://github.com/kubernetes-sigs/kubebuilder/tree/v3.7.0/pkg/plugins/optional/monitoring/v1alpha>
 
 ## Plugin Scaffolding
 
@@ -178,6 +188,7 @@ Alternatively, you can create a plugin bundle to include the target plugins. For
 [controller-runtime]: https://github.com/kubernetes-sigs/controller-runtime
 [deploy-image]: https://github.com/kubernetes-sigs/kubebuilder/tree/v3.7.0/pkg/plugins/golang/deploy-image/v1alpha1
 [grafana]: https://github.com/kubernetes-sigs/kubebuilder/tree/v3.7.0/pkg/plugins/optional/grafana/v1alpha
+[monitoring]: https://github.com/kubernetes-sigs/kubebuilder/tree/v3.7.0/pkg/plugins/optional/monitoring/v1alpha
 [extending-cli]: ./extending-cli.md
 [kb-util]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v3/pkg/plugin/util
 [example-of-deploy-image-1]: https://github.com/kubernetes-sigs/kubebuilder/blob/df1ed6ccf19df40bd929157a91eaae6a9215bfc6/pkg/plugins/golang/deploy-image/v1alpha1/scaffolds/internal/templates/api/types.go#L58

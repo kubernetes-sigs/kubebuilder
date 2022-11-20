@@ -155,3 +155,14 @@ $(CONTROLLER_GEN): $(LOCALBIN)
 envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
 $(ENVTEST): $(LOCALBIN)
 	test -s $(LOCALBIN)/setup-envtest || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+
+##@ Create the metrics doc file
+
+.PHONY: generate-metricsdocs
+generate-metricsdocs: build-metricsdocs
+	mkdir -p $(shell pwd)/docs/monitoring
+	_out/metricsdocs > docs/monitoring/metrics.md
+
+.PHONY: build-metricsdocs
+build-metricsdocs:
+	go build -ldflags="${LDFLAGS}" -o _out/metricsdocs ./monitoring/tools/metricsdocs.go

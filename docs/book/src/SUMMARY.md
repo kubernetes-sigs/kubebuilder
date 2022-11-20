@@ -123,6 +123,7 @@
     - [To add optional features](./plugins/to-add-optional-features.md)
       - [declarative/v1](./plugins/declarative-v1.md)
       - [grafana/v1-alpha](./plugins/grafana-v1-alpha.md)
+      - [monitoring/v1-alpha](./plugins/monitoring-v1-alpha.md)
       - [deploy-image/v1-alpha](./plugins/deploy-image-plugin-v1-alpha.md)
     - [To be extended for others tools](./plugins/to-be-extended.md)
       - [kustomize/v1](./plugins/kustomize-v1.md)
