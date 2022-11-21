@@ -139,6 +139,13 @@ changes, which don't deserve a release note. Please don't abuse it.
 You can also use the equivalent emoji directly, since GitHub doesn't
 render the `:xyz:` aliases in PR titles.
 
+If the PR is "plugin" scoped, you may also append the responding plugin names in the prefix.
+[For instance](https://github.com/kubernetes-sigs/kubebuilder/commit/0b36d0c4021bbf52f29d5a990157466761ec180c):
+
+```
+🐛 (kustomize/v2-alpha): Fix typo issue in the labels added to the manifests
+```
+
 Individual commits should not be tagged separately, but will generally be
 assumed to match the PR. For instance, if you have a bugfix in with
 a breaking change, it's generally encouraged to submit the bugfix
