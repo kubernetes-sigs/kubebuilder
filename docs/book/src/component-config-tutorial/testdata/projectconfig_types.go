@@ -38,7 +38,7 @@ we'll embed `cfg.ControllerManagerConfigurationSpec` in `ProjectConfig`.
 type ProjectConfig struct {
 	metav1.TypeMeta `json:",inline"`
 
-	// ControllerManagerConfigurationSpec returns the contfigurations for controllers
+	// ControllerManagerConfigurationSpec returns the configurations for controllers
 	cfg.ControllerManagerConfigurationSpec `json:",inline"`
 
 	ClusterName string `json:"clusterName,omitempty"`
