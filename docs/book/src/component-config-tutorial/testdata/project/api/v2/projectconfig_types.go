@@ -50,7 +50,7 @@ type ProjectConfig struct {
 	Spec   ProjectConfigSpec   `json:"spec,omitempty"`
 	Status ProjectConfigStatus `json:"status,omitempty"`
 
-	// ControllerManagerConfigurationSpec returns the contfigurations for controllers
+	// ControllerManagerConfigurationSpec returns the configurations for controllers
 	cfg.ControllerManagerConfigurationSpec `json:",inline"`
 
 	ClusterName string `json:"clusterName,omitempty"`
