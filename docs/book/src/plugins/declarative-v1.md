@@ -1,31 +1,30 @@
 # Declarative Plugin
 
-The declarative plugin allows you to create [controllers][controller-runtime] using the [kubebuilder-declarative-pattern][kubebuilder-declarative-pattern]. 
-By using the declarative plugin, you can make the required changes on top of what is scaffolded by default when you create a Go project with Kubebuilder and the Golang plugins (i.e. go/v2, go/v3). 
+The declarative plugin allows you to create [controllers][controller-runtime] using the [kubebuilder-declarative-pattern][kubebuilder-declarative-pattern].
+By using the declarative plugin, you can make the required changes on top of what is scaffolded by default when you create a Go project with Kubebuilder and the Golang plugins (i.e. go/v2, go/v3).
 
 <aside class="note">
 <h1>Examples</h1>
 
 You can check samples using this plugin by looking at the "addon" samples inside the [testdata][testdata] directory of the Kubebuilder project.
 
-</aside> 
-
+</aside>
 
 ## When to use it ?
 
-- If you are looking to scaffold one or more [controllers][controller-runtime] following [the pattern][kubebuilder-declarative-pattern] ( See an e.g. of the reconcile method implemented [here][addon-v3-controller]) 
+- If you are looking to scaffold one or more [controllers][controller-runtime] following [the pattern][kubebuilder-declarative-pattern] ( See an e.g. of the reconcile method implemented [here][addon-v3-controller])
 - If you want to have manifests shipped inside your Manager container. The declarative plugin works with channels, which allow you to push manifests. [More info][addon-channels-info]
 
 ## How to use it ?
 
 The declarative plugin requires to be used with one of the available Golang plugins
-If you want that any API(s) and its respective controller(s) generate to reconcile them of your project adopt this partner then:  
+If you want that any API(s) and its respective controller(s) generate to reconcile them of your project adopt this partner then:
 
 ```sh
 kubebuilder init --plugins=go/v3,declarative/v1 --domain example.org --repo example.org/guestbook-operator
 ```
 
-If you want to adopt this pattern for specific API(s) and its respective controller(s) (not for any API/controller scaffold using Kubebuilder CLI) then:  
+If you want to adopt this pattern for specific API(s) and its respective controller(s) (not for any API/controller scaffold using Kubebuilder CLI) then:
 
 ```sh
 kubebuilder create api --plugins=go/v3,declarative/v1 --version v1 --kind Guestbook
@@ -35,24 +34,24 @@ kubebuilder create api --plugins=go/v3,declarative/v1 --version v1 --kind Guestb
 
 The declarative plugin implements the following subcommands:
 
-* init (`$ kubebuilder init [OPTIONS]`)
-* create api (`$ kubebuilder create api [OPTIONS]`)
+- init (`$ kubebuilder init [OPTIONS]`)
+- create api (`$ kubebuilder create api [OPTIONS]`)
 
 ## Affected files
 
 The following scaffolds will be created or updated by this plugin:
 
-* `controllers/*_controller.go`
-* `api/*_types.go`
-* `channels/packages/<packagename>/<version>/manifest.yaml`
-* `channels/stable`
-* `Dockerfile`
+- `controllers/*_controller.go`
+- `api/*_types.go`
+- `channels/packages/<packagename>/<version>/manifest.yaml`
+- `channels/stable`
+- `Dockerfile`
 
 ## Further resources
 
-* Read more about the [declarative pattern][kubebuilder-declarative-pattern]
-* Watch the KubeCon 2018 Video [Managing Addons with Operators][kubecon-video]
-* Check the [plugin implementation][plugin-implementation]
+- Read more about the [declarative pattern][kubebuilder-declarative-pattern]
+- Watch the KubeCon 2018 Video [Managing Addons with Operators][kubecon-video]
+- Check the [plugin implementation][plugin-implementation]
 
 [addon-channels-info]: https://github.com/kubernetes-sigs/kubebuilder-declarative-pattern/blob/master/docs/addon/walkthrough/README.md#adding-a-manifest
 [controller-runtime]: https://github.com/kubernetes-sigs/controller-runtime
@@ -60,4 +59,5 @@ The following scaffolds will be created or updated by this plugin:
 [testdata]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/testdata/
 [kubecon-video]: https://www.youtube.com/watch?v=LPejvfBR5_w
 [plugin-implementation]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/pkg/plugins/golang/declarative
-[addon-v3-controller]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/testdata/project-v3-addon-and-grafana
+[addon-v3-controller]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/testdata/project-v3-declarative-v1
+
