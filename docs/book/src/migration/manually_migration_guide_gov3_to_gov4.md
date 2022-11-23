@@ -43,6 +43,7 @@ layout:
 `go mod tidy` to ensure that you get the latest dependencies and your Golang code has no breaking changes.
 - Update the manifest under `config/` directory with all changes performed in the default scaffold done with `go/v4-alpha` plugin. (see for example `testdata/project-v4/config/`) to get all changes in the 
 default scaffolds to be applied on your project
+- Create `config/samples/kustomization.yaml` with all CR samples specified. (see for example `testdata/project-v4/config/samples/kustomization.yaml`)
 - Replace the import `admissionv1beta1 "k8s.io/api/admission/v1beta1"` with `admissionv1 "k8s.io/api/admission/v1"` in the webhook test files
 
 <aside class="warning">
