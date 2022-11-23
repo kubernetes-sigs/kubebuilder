@@ -55,8 +55,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: yaml-lint
-        uses: ibiqlik/action-yamllint@v3
-        with:
-          file_or_dir: testdata
-          config_data: "{extends: relaxed, rules: {line-length: {max: 120}}}"
+      - name: Run yamllint make target
+        run: make yamllint
