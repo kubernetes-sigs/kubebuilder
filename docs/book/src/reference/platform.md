@@ -156,7 +156,7 @@ Therefore, ensure that you uncomment the following code in the `config/manager/m
 
 ```yaml
       # TODO(user): Uncomment the following code to configure the nodeAffinity expression
-      # according to the platforms which are supported by your solution. 
+      # according to the platforms which are supported by your solution.
       # It is considered best practice to support multiple architectures. You can
       # build your manager image using the makefile target docker-buildx.
       # affinity:
