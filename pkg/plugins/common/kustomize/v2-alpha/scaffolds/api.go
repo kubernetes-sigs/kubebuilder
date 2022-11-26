@@ -18,8 +18,6 @@ package scaffolds
 
 import (
 	"fmt"
-	"strings"
-
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
@@ -69,23 +67,10 @@ func (s *apiScaffolder) Scaffold() error {
 		machinery.WithResource(&s.resource),
 	)
 
-	rs, err := s.config.GetResources()
-	if err != nil {
-		return err
-	}
-
-	crdManifests := []string{}
-	for _, r := range rs {
-		crdManifests = append(crdManifests, s.generateManifestsPath(r))
-	}
-
-	crdManifests = append(crdManifests, s.generateManifestsPath(s.resource))
-
 	// Keep track of these values before the update
 	if s.resource.HasAPI() {
 		if err := scaffold.Execute(
 			&samples.CRDSample{Force: s.force},
-			&samples.Kustomization{CRDManifests: crdManifests},
 			&rbac.CRDEditorRole{},
 			&rbac.CRDViewerRole{},
 			&patches.EnableWebhookPatch{},
@@ -95,12 +80,14 @@ func (s *apiScaffolder) Scaffold() error {
 		); err != nil {
 			return fmt.Errorf("error scaffolding kustomize API manifests: %v", err)
 		}
+
+		// If the gvk is non-empty
+		if s.resource.Group != "" || s.resource.Version != "" || s.resource.Kind != "" {
+			if err := scaffold.Execute(&samples.Kustomization{}); err != nil {
+				return fmt.Errorf("error scaffolding manifests: %v", err)
+			}
+		}
 	}
 
 	return nil
-}
-
-func (s *apiScaffolder) generateManifestsPath(r resource.Resource) string {
-	// nolint: lll
-	return strings.ToLower(r.GVK.Group) + "_" + strings.ToLower(r.GVK.Version) + "_" + strings.ToLower(r.GVK.Kind) + ".yaml"
 }

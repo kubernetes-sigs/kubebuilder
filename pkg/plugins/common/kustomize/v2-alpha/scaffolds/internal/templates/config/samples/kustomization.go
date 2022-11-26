@@ -17,54 +17,58 @@ limitations under the License.
 package samples
 
 import (
-	"bytes"
 	"fmt"
 	"path/filepath"
-	"text/template"
-
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
-var _ machinery.Template = &Kustomization{}
+var (
+	_ machinery.Template = &Kustomization{}
+	_ machinery.Inserter = &Kustomization{}
+)
 
-// Kustomization scaffolds a file that defines the kustomization scheme for the prometheus folder
+// Kustomization scaffolds a kustomization.yaml for the manifests overlay folder.
 type Kustomization struct {
 	machinery.TemplateMixin
-
-	CRDManifests []string
+	machinery.ResourceMixin
 }
 
-// SetTemplateDefaults implements file.Template
+// SetTemplateDefaults implements machinery.Template
 func (f *Kustomization) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "samples", "kustomization.yaml")
 	}
-
-	defaultTemplate, err := f.createTemplate()
-	if err != nil {
-		return err
-	}
-
-	f.TemplateBody = defaultTemplate
-
-	f.IfExistsAction = machinery.OverwriteFile
+	f.TemplateBody = fmt.Sprintf(kustomizationTemplate, machinery.NewMarkerFor(f.Path, samplesMarker))
 
 	return nil
 }
 
-func (f *Kustomization) createTemplate() (string, error) {
-	t := template.Must(template.New("customResourcesConfig").Parse(kustomizationTemplate))
+const (
+	samplesMarker = "manifestskustomizesamples"
+)
 
-	outputTmpl := &bytes.Buffer{}
-	if err := t.Execute(outputTmpl, f.CRDManifests); err != nil {
-		return "", fmt.Errorf("error when generating sample kustomization manifest: %w", err)
-	}
-
-	return outputTmpl.String(), nil
-
+// GetMarkers implements file.Inserter
+func (f *Kustomization) GetMarkers() []machinery.Marker {
+	return []machinery.Marker{machinery.NewMarkerFor(f.Path, samplesMarker)}
 }
 
-const kustomizationTemplate = `---
-resources:{{ range $i ,$e := . }}
-  - {{ . }}{{end}}
+const samplesCodeFragment = `- %s
+`
+
+// makeCRFileName returns a Custom Resource example file name in the same format
+// as kubebuilder's CreateAPI plugin for a gvk.
+func (f Kustomization) makeCRFileName() string {
+	return f.Resource.Replacer().Replace("%[group]_%[version]_%[kind].yaml")
+}
+
+// GetCodeFragments implements file.Inserter
+func (f *Kustomization) GetCodeFragments() machinery.CodeFragmentsMap {
+	return machinery.CodeFragmentsMap{
+		machinery.NewMarkerFor(f.Path, samplesMarker): []string{fmt.Sprintf(samplesCodeFragment, f.makeCRFileName())},
+	}
+}
+
+const kustomizationTemplate = `## Append samples of your project ##
+resources:
+%s
 `
