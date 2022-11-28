@@ -72,12 +72,16 @@ generate-testdata: ## Update/generate the testdata in $GOPATH/src/sigs.k8s.io/ku
 	./test/testdata/generate.sh
 
 .PHONY: lint
-lint: golangci-lint ## Run golangci-lint linter
+lint: golangci-lint yamllint ## Run golangci-lint linter & yamllint
 	$(GOLANGCI_LINT) run
 
 .PHONY: lint-fix
 lint-fix: golangci-lint ## Run golangci-lint linter and perform fixes
 	$(GOLANGCI_LINT) run --fix
+
+.PHONY: yamllint
+yamllint:
+	@docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data cytopia/yamllint:latest testdata -d "{extends: relaxed, rules: {line-length: {max: 120}}}" --no-warnings
 
 GOLANGCI_LINT = $(shell pwd)/bin/golangci-lint
 golangci-lint:
