@@ -3,16 +3,16 @@ kind: ClusterRoleBinding
 metadata:
   labels:
     app.kubernetes.io/name: clusterrolebinding
-    app.kubernetes.io/instance: manager-rolebinding
-    app.kubernetes.io/component: rbac
-    app.kubernetes.io/created-by: project-v4-with-metrics
-    app.kubernetes.io/part-of: project-v4-with-metrics
+    app.kubernetes.io/instance: proxy-rolebinding
+    app.kubernetes.io/component: kube-rbac-proxy
+    app.kubernetes.io/created-by: project-v4-with-grafana
+    app.kubernetes.io/part-of: project-v4-with-grafana
     app.kubernetes.io/managed-by: kustomize
-  name: manager-rolebinding
+  name: proxy-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: manager-role
+  name: proxy-role
 subjects:
 - kind: ServiceAccount
   name: controller-manager
