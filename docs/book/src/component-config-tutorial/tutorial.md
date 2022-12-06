@@ -28,6 +28,6 @@ form a runnable project, and live in the book source directory:
 
 ## Resources
 
-* [Versioned Component Configuration File Design](https://docs.google.com/document/d/1FdaEJUEh091qf5B98HM6_8MS764iXrxxigNIdwHYW9c/)
+* [Versioned Component Configuration File Design](https://github.com/kubernetes/community/blob/master/archive/wg-component-standard/component-config/README.md)
 
 * [Config v1alpha1 Go Docs](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/config/v1alpha1/)

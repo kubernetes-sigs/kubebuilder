@@ -5,7 +5,7 @@ The Grafana plugin is an optional plugin that can be used to scaffold Grafana Da
 <aside class="note">
 <h1>Examples</h1>
 
-You can check its default scaffold by looking at the `project-v3-with-grafana` projects under the [testdata][testdata] directory on the root directory of the Kubebuilder project.
+You can check its default scaffold by looking at the `project-v3-with-metrics` projects under the [testdata][testdata] directory on the root directory of the Kubebuilder project.
 
 </aside>
 
@@ -146,6 +146,7 @@ customMetrics:
 #  - metric: # Raw custom metric (required)
 #    type:   # Metric type: counter/gauge/histogram (required)
 #    expr:   # Prom_ql for the metric (optional)
+#    unit:   # Unit of measurement, examples: s,none,bytes,percent,etc. (optional)
 ```
 
 #### Add Custom Metrics to Config
@@ -159,6 +160,7 @@ Alternatively, you can provide `expr` and the plugin will use the specified one 
 customMetrics:
   - metric: memcached_operator_reconcile_total # Raw custom metric (required)
     type: counter # Metric type: counter/gauge/histogram (required)
+    unit: none
   - metric: memcached_operator_reconcile_time_seconds_bucket
     type: histogram
 ```

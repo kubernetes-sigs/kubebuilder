@@ -94,7 +94,7 @@ var (
 // the user.
 //
 // For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.1/pkg/reconcile
+// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.13.0/pkg/reconcile
 func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 
@@ -271,7 +271,7 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		around.
 	*/
 
-	// NB: deleting these is "best effort" -- if we fail on a particular one,
+	// NB: deleting these are "best effort" -- if we fail on a particular one,
 	// we won't requeue just to finish the deleting.
 	if cronJob.Spec.FailedJobsHistoryLimit != nil {
 		sort.Slice(failedJobs, func(i, j int) bool {

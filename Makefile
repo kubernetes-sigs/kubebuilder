@@ -72,18 +72,22 @@ generate-testdata: ## Update/generate the testdata in $GOPATH/src/sigs.k8s.io/ku
 	./test/testdata/generate.sh
 
 .PHONY: lint
-lint: golangci-lint ## Run golangci-lint linter
+lint: golangci-lint yamllint ## Run golangci-lint linter & yamllint
 	$(GOLANGCI_LINT) run
 
 .PHONY: lint-fix
 lint-fix: golangci-lint ## Run golangci-lint linter and perform fixes
 	$(GOLANGCI_LINT) run --fix
 
+.PHONY: yamllint
+yamllint:
+	@docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data cytopia/yamllint:latest testdata -d "{extends: relaxed, rules: {line-length: {max: 120}}}" --no-warnings
+
 GOLANGCI_LINT = $(shell pwd)/bin/golangci-lint
 golangci-lint:
 	@[ -f $(GOLANGCI_LINT) ] || { \
 	set -e ;\
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell dirname $(GOLANGCI_LINT)) v1.49.0 ;\
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell dirname $(GOLANGCI_LINT)) v1.50.1 ;\
 	}
 
 .PHONY: apidiff
@@ -92,7 +96,7 @@ apidiff: go-apidiff ## Run the go-apidiff to verify any API differences compared
 
 .PHONY: go-apidiff
 go-apidiff:
-	go install github.com/joelanford/go-apidiff@v0.4.0
+	go install github.com/joelanford/go-apidiff@v0.5.0
 
 ##@ Tests
 
@@ -139,6 +143,8 @@ test-e2e-ci: ## Run the end-to-end tests (used in the CI)`
 .PHONY: test-book
 test-book: ## Run the cronjob tutorial's unit tests to make sure we don't break it
 	cd ./docs/book/src/cronjob-tutorial/testdata/project && make test
+	cd ./docs/book/src/component-config-tutorial/testdata/project && make test
+	cd ./docs/book/src/multiversion-tutorial/testdata/project && make test
 
 .PHONY: test-license
 test-license:  ## Run the license check

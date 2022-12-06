@@ -200,7 +200,7 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 			}
 
 			// Perform all operations required before remove the finalizer and allow
-			// the Kubernetes API to remove the custom custom resource.
+			// the Kubernetes API to remove the custom resource.
 			r.doFinalizerOperationsFor{{ .Resource.Kind }}({{ lower .Resource.Kind }})
 
 			// TODO(user): If you add operations to the doFinalizerOperationsFor{{ .Resource.Kind }} method 

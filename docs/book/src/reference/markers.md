@@ -16,15 +16,15 @@ a marker name, optionally followed by some marker specific configuration:
 ```
 
 <aside class="note">
-<h1>difference between `// +optional` and `// +kubebuilder:validation:Optional`</h1>
+<h1>difference between <code>// +optional</code> and <code>// +kubebuilder:validation:Optional</code></h1>
 
- Controller-gen supports both (see the output of `controller-gen crd -www`). `+kubebuilder:validation:Optional` and `+optional` can be applied to fields.
+Controller-gen supports both (see the output of `controller-gen crd -www`). `+kubebuilder:validation:Optional` and `+optional` can be applied to fields.
 
- But `+kubebuilder:validation:Optional` can also be applied at the package level such that it applies to every field in the package.
+But `+kubebuilder:validation:Optional` can also be applied at the package level such that it applies to every field in the package.
 
- If you're using controller-gen only then they're redundant, but if you're using other generators or you want developers that need to  build their own clients for your API, you'll want to also include `+optional`.
+If you're using controller-gen only then they're redundant, but if you're using other generators or you want developers that need to  build their own clients for your API, you'll want to also include `+optional`.
 
- The most reliable way in 1.x to get `+optional` is `omitempty`.
+The most reliable way in 1.x to get `+optional` is `omitempty`.
 
 </aside>
 

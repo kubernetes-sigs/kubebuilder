@@ -186,7 +186,7 @@ Once a plugin is deprecated, have it implement a [Deprecated][deprecate-plugin-d
 Note that it means that when a user of your CLI calls this plugin, the execution of the sub-commands will be sorted by the order to which they were added in a chain:
 
 
-> sub-command of plugin A -> sub-command of plugin B -> sub-command of plugin C 
+> `sub-command` of plugin A ➔ `sub-command` of plugin B ➔ `sub-command` of plugin C
 
 Then, to initialize using this "Plugin Bundle" which will run the chain of plugins:
 
@@ -194,9 +194,9 @@ Then, to initialize using this "Plugin Bundle" which will run the chain of plugi
 kubebuider init --plugins=myplugin.example/v1 
 ```   
 
-- Runs init sub-command of the plugin A
-- And then, runs init sub-command of the plugin B
-- And then, runs init sub-command of the plugin C 
+- Runs init `sub-command` of the plugin A
+- And then, runs init `sub-command` of the plugin B
+- And then, runs init `sub-command` of the plugin C 
 
 [project-file-config]: ../reference/project-config.md
 [plugin-interface]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v3/pkg/plugin#Plugin

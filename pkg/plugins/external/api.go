@@ -41,7 +41,7 @@ func (p *createAPISubcommand) InjectResource(*resource.Resource) error {
 	return nil
 }
 
-func (p *createAPISubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
+func (p *createAPISubcommand) UpdateMetadata(_ plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
 	setExternalPluginMetadata("api", p.Path, subcmdMeta)
 }
 

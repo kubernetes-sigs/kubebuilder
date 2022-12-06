@@ -51,7 +51,7 @@ apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
   labels:
-    app.kuberentes.io/name: issuer
+    app.kubernetes.io/name: issuer
     app.kubernetes.io/instance: selfsigned-issuer
     app.kubernetes.io/component: certificate
     app.kubernetes.io/created-by: {{ .ProjectName }}

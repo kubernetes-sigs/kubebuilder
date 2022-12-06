@@ -5,7 +5,7 @@ metadata:
     app.kubernetes.io/name: captain
     app.kubernetes.io/instance: captain-sample
     app.kubernetes.io/part-of: project-v3-config
-    app.kuberentes.io/managed-by: kustomize
+    app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: project-v3-config
   name: captain-sample
 spec:

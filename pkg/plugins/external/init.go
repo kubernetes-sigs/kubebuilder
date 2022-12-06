@@ -31,7 +31,7 @@ type initSubcommand struct {
 	Args []string
 }
 
-func (p *initSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
+func (p *initSubcommand) UpdateMetadata(_ plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
 	setExternalPluginMetadata("init", p.Path, subcmdMeta)
 }
 

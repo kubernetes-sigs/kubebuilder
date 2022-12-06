@@ -1,6 +1,12 @@
 apiVersion: batch.tutorial.kubebuilder.io/v2
 kind: CronJob
 metadata:
+  labels:
+    app.kubernetes.io/name: cronjob
+    app.kubernetes.io/instance: cronjob-sample
+    app.kubernetes.io/part-of: project
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: project
   name: cronjob-sample
 spec:
   schedule:

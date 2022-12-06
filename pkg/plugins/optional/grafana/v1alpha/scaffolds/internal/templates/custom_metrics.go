@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"fmt"
 	"path/filepath"
+	"strings"
 	"text/template"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
@@ -33,6 +34,7 @@ type CustomMetricItem struct {
 	Metric string `json:"metric"`
 	Type   string `json:"type"`
 	Expr   string `json:"expr,omitempty"`
+	Unit   string `json:"unit,omitempty"`
 }
 
 var _ machinery.Template = &CustomMetricsDashManifest{}
@@ -66,6 +68,7 @@ var fns = template.FuncMap{
 	"plus1": func(x int) int {
 		return x + 1
 	},
+	"hasSuffix": strings.HasSuffix,
 }
 
 func (f *CustomMetricsDashManifest) createTemplate() (string, error) {
@@ -173,7 +176,7 @@ const customMetricsDashTemplate = `{
               }
             ]
           },
-          "unit": "s"
+          "unit": "{{ .Unit }}"
         },
         "overrides": []
       },
@@ -208,7 +211,19 @@ const customMetricsDashTemplate = `{
         }
       ],
       "title": "{{ .Metric }} ({{ .Type }})",
+{{- if hasSuffix .Metric "_info" }}
+      "transformations": [
+        {
+          "id": "labelsToFields",
+          "options": {
+            "mode": "rows"
+          }
+        }
+      ],
+      "type": "table"
+{{- else }}
       "type": "timeseries"
+{{- end }}
     }{{ if ne (plus1 $i) $n }},
 		{{end}}{{end}}
   ],

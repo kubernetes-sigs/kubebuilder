@@ -39,7 +39,7 @@ jobs:
       - name: Run linter
         uses: golangci/golangci-lint-action@v3
         with:
-          version: v1.49 # Always uses the latest patch version.
+          version: v1.50
           only-new-issues: true # Show only new issues if it's a pull request
       - name: Report failure
         uses: nashmaniac/create-issue-action@v1.1
@@ -50,3 +50,10 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           labels: kind/bug
           body: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+  yamllint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run yamllint make target
+        run: make yamllint

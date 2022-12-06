@@ -78,7 +78,7 @@ type MemcachedReconciler struct {
 // For further info:
 // - About Operator Pattern: https://kubernetes.io/docs/concepts/extend-kubernetes/operator/
 // - About Controllers: https://kubernetes.io/docs/concepts/architecture/controller/
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.13.0/pkg/reconcile
+// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.13.1/pkg/reconcile
 func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 
@@ -152,7 +152,7 @@ func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			}
 
 			// Perform all operations required before remove the finalizer and allow
-			// the Kubernetes API to remove the custom custom resource.
+			// the Kubernetes API to remove the custom resource.
 			r.doFinalizerOperationsForMemcached(memcached)
 
 			// TODO(user): If you add operations to the doFinalizerOperationsForMemcached method

@@ -42,7 +42,7 @@ func (f *ManagerAuthProxyPatch) SetTemplateDefaults() error {
 	return nil
 }
 
-const kustomizeAuthProxyPatchTemplate = `# This patch inject a sidecar container which is a HTTP proxy for the 
+const kustomizeAuthProxyPatchTemplate = `# This patch inject a sidecar container which is a HTTP proxy for the
 # controller manager, it performs RBAC authorization against the Kubernetes API using SubjectAccessReviews.
 apiVersion: apps/v1
 kind: Deployment
@@ -54,7 +54,7 @@ spec:
     spec:
       containers:
       - name: kube-rbac-proxy
-        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.13.0
+        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.13.1
         args:
         - "--secure-listen-address=0.0.0.0:8443"
         - "--upstream=http://127.0.0.1:8080/"

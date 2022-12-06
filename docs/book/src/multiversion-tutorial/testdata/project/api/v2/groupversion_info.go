@@ -16,8 +16,8 @@ limitations under the License.
 // +kubebuilder:gen-docs:collapse=Apache License
 
 // Package v2 contains API Schema definitions for the batch v2 API group
-//+kubebuilder:object:generate=true
-//+groupName=batch.tutorial.kubebuilder.io
+// +kubebuilder:object:generate=true
+// +groupName=batch.tutorial.kubebuilder.io
 package v2
 
 import (

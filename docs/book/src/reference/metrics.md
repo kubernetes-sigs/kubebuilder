@@ -132,8 +132,8 @@ You may then record metrics to those collectors from any part of your
 reconcile loop. These metrics can be evaluated from anywhere in the operator code.
 
 <aside class="note">
-<h2>Enabling metrics in Prometheus UI</h1>
-  
+<h1>Enabling metrics in Prometheus UI</h1>
+
 In order to publish metrics and view them on the Prometheus UI, the Prometheus instance would have to be configured to select the Service Monitor instance based on its labels.
 
 </aside>

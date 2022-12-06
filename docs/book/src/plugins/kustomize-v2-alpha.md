@@ -113,7 +113,7 @@ The following scaffolds will be created or updated by this plugin:
 [sdk]:https://github.com/operator-framework/operator-sdk
 [testdata]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/testdata/
 [bundle]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/pkg/plugin/bundle.go
-[kustomize-create-api]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/pkg/plugins/common/kustomize/v2/scaffolds/api.go#L72-L84
+[kustomize-create-api]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/pkg/plugins/common/kustomize/v2-alpha/scaffolds/api.go#L72-L84
 [kustomize-docs]: https://kustomize.io/
 [kustomize-github]: https://github.com/kubernetes-sigs/kustomize
 [kustomize-replacements]: https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/replacements/

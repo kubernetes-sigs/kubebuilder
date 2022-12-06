@@ -18,7 +18,6 @@ package scaffolds
 
 import (
 	"fmt"
-
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
@@ -80,6 +79,13 @@ func (s *apiScaffolder) Scaffold() error {
 			&crd.KustomizeConfig{},
 		); err != nil {
 			return fmt.Errorf("error scaffolding kustomize API manifests: %v", err)
+		}
+
+		// If the gvk is non-empty
+		if s.resource.Group != "" || s.resource.Version != "" || s.resource.Kind != "" {
+			if err := scaffold.Execute(&samples.Kustomization{}); err != nil {
+				return fmt.Errorf("error scaffolding manifests: %v", err)
+			}
 		}
 	}
 

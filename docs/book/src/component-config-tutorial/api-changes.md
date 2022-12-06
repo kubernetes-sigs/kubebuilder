@@ -57,7 +57,7 @@ loading the config from the file.
 
 </aside>
 
-Lastly, we'll change the `NewManager` call to use the `options` varible we
+Lastly, we'll change the `NewManager` call to use the `options` variable we
 defined above.
 
 ```go
@@ -106,13 +106,16 @@ configMapGenerator:
   - controller_manager_config.yaml
 ```
 
-Update the file `default/kustomization.yaml` by adding under the patchesStrategicMerge: the following patch:
+Update the file `default/kustomization.yaml` by adding under the [`patchesStrategicMerge:` key](https://kubectl.docs.kubernetes.io/references/kustomize/builtins/#_patchesstrategicmerge_) the following patch:
 
+```yaml
+patchesStrategicMerge:
 # Mount the controller config file for loading manager configurations
 # through a ComponentConfig type
 - manager_config_patch.yaml
+```
 
-Update the file `default/manager_config_patch.yaml` by adding under the spec: the following patch:
+Update the file `default/manager_config_patch.yaml` by adding under the `spec:` key the following patch:
 
 ```yaml
 spec:
@@ -131,4 +134,3 @@ spec:
         configMap:
           name: manager-config
 ```
-

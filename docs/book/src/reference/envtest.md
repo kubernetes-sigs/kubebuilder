@@ -12,7 +12,7 @@ The make targets require `bash` to run.
 
 ## Installation in Air Gaped/disconnected environments
 If you would like to download the tarball containing the binaries, to use in a disconnected environment you can use 
-`setup-envtest` to download the required binaries locally. There are a lot of ways to configure `setup-envtest` to avoid talking to 
+[`setup-envtest`][setup-envtest] to download the required binaries locally. There are a lot of ways to configure `setup-envtest` to avoid talking to 
 the internet you can read about them [here](https://github.com/kubernetes-sigs/controller-runtime/tree/master/tools/setup-envtest#what-if-i-dont-want-to-talk-to-the-internet). 
 The examples below will show how to install the Kubernetes API binaries using mostly defaults set by `setup-envtest`. 
 
@@ -76,6 +76,15 @@ err = testEnv.Stop()
 
 Logs from the test runs are prefixed with `test-env`.
 
+<aside class="note">
+<h1>Examples</h1>
+
+You can use the plugin [DeployImage](https://book.kubebuilder.io/plugins/deploy-image-plugin-v1-alpha.html) to check examples. This plugin allows users to scaffold API/Controllers to deploy and manage an Operand (image) on the cluster following the guidelines and best practices. It abstracts the complexities of achieving this goal while allowing users to customize the generated code.
+
+Therefore, you can check that a test using ENV TEST will be generated for the controller which has the purpose to ensure that the Deployment is created successfully. You can see an example of its code implementation under the `testdata` directory with the [DeployImage](https://book.kubebuilder.io/plugins/deploy-image-plugin-v1-alpha.html) samples [here](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.7.0/testdata/project-v3-with-deploy-image/controllers/busybox_controller_test.go).
+
+</aside>
+
 ### Configuring your test control plane
 
 Controller-runtime’s [envtest][envtest] framework requires `kubectl`, `kube-apiserver`, and `etcd` binaries be present locally to simulate the API portions of a real cluster.
@@ -97,12 +106,12 @@ You can use environment variables and/or flags to specify the `kubectl`,`api-ser
 ### Environment Variables
 
 | Variable name | Type | When to use |
-| --- | :--- | :--- |
+| --- | :--- | :---                                                                                                                                                                                                                                                    |
 | `USE_EXISTING_CLUSTER` | boolean | Instead of setting up a local control plane, point to the control plane of an existing cluster. |
-| `KUBEBUILDER_ASSETS` | path to directory | Point integration tests to a directory containing all binaries (api-server, etcd and kubectl). |
-| `TEST_ASSET_KUBE_APISERVER`, `TEST_ASSET_ETCD`, `TEST_ASSET_KUBECTL` | paths to, respectively, api-server, etcd and kubectl binaries | Similar to `KUBEBUILDER_ASSETS`, but more granular. Point integration tests to use binaries other than the default ones. These environment variables can also be used to ensure specific tests run with expected versions of these binaries. |
-| `KUBEBUILDER_CONTROLPLANE_START_TIMEOUT` and `KUBEBUILDER_CONTROLPLANE_STOP_TIMEOUT` | durations in format supported by [`time.ParseDuration`](https://golang.org/pkg/time/#ParseDuration) | Specify timeouts different from the default for the test control plane to (respectively) start and stop; any test run that exceeds them will fail. |
-| `KUBEBUILDER_ATTACH_CONTROL_PLANE_OUTPUT` | boolean | Set to `true` to attach the control plane's stdout and stderr to os.Stdout and os.Stderr. This can be useful when debugging test failures, as output will include output from the control plane. |
+| `KUBEBUILDER_ASSETS` | path to directory | Point integration tests to a directory containing all binaries (api-server, etcd and kubectl).                                                                                                                                                          |
+| `TEST_ASSET_KUBE_APISERVER`, `TEST_ASSET_ETCD`, `TEST_ASSET_KUBECTL` | paths to, respectively, api-server, etcd and kubectl binaries | Similar to `KUBEBUILDER_ASSETS`, but more granular. Point integration tests to use binaries other than the default ones. These environment variables can also be used to ensure specific tests run with expected versions of these binaries.            |
+| `KUBEBUILDER_CONTROLPLANE_START_TIMEOUT` and `KUBEBUILDER_CONTROLPLANE_STOP_TIMEOUT` | durations in format supported by [`time.ParseDuration`](https://golang.org/pkg/time/#ParseDuration) | Specify timeouts different from the default for the test control plane to (respectively) start and stop; any test run that exceeds them will fail.                                                                                                      |
+| `KUBEBUILDER_ATTACH_CONTROL_PLANE_OUTPUT` | boolean | Set to `true` to attach the control plane's stdout and stderr to os.Stdout and os.Stderr. This can be useful when debugging test failures, as output will include output from the control plane.                                                        |
 
 See that the `test` makefile target will ensure that all is properly setup when you are using it. However, if you would like to run the tests without use the Makefile targets, for example via an IDE, then you can set the environment variables directly in the code of your `suite_test.go`:
 
@@ -116,7 +125,7 @@ var _ = BeforeSuite(func(done Done) {
 
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 	testenv = &envtest.Environment{}
-
+	
 	_, err := testenv.Start()
 	Expect(err).NotTo(HaveOccurred())
 
@@ -132,6 +141,14 @@ var _ = AfterSuite(func() {
 
 })
 ```
+
+<aside class="note">
+<h1>ENV TEST Config Options</h1>
+
+You can look at the controller-runtime docs to know more about its configuration options, see [here](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/envtest#Environment). On top of that, if you are
+looking to use ENV TEST to test your webhooks then you might want to give a look at its install [options](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/envtest#WebhookInstallOptions).
+
+</aside>
 
 ### Flags
 Here's an example of modifying the flags with which to start the API server in your integration tests, compared to the default values in `envtest.DefaultKubeAPIServerFlags`:
@@ -167,6 +184,114 @@ expectedOwnerReference := v1.OwnerReference{
 Expect(deployment.ObjectMeta.OwnerReferences).To(ContainElement(expectedOwnerReference))
 ```
 
+## Cert-Manager and Prometheus options
+
+Projects scaffolded with Kubebuilder can enable the [`metrics`][metrics] and the [`cert-manager`][cert-manager] options. Note that when we are using the ENV TEST we are looking to test the controllers and their reconciliation. It is considered an integrated test because the ENV TEST API will do the test against a cluster and because of this the binaries are downloaded and used to configure its pre-requirements, however, its purpose is mainly to `unit` test the controllers.
+
+Therefore, to test a reconciliation in common cases you do not need to care about these options. However, if you would like to do tests with the Prometheus and the Cert-manager installed you can add the required steps to install them before running the tests. 
+Following an example.
+
+```go
+    // Add the operations to install the Prometheus operator and the cert-manager 
+    // before the tests. 
+    BeforeEach(func() {
+        By("installing prometheus operator")
+        Expect(utils.InstallPrometheusOperator()).To(Succeed())
+        
+        By("installing the cert-manager")
+        Expect(utils.InstallCertManager()).To(Succeed())
+    }
+    
+    // You can also remove them after the tests::
+    AfterEach(func() {
+        By("uninstalling the Prometheus manager bundle")
+        utils.UninstallPrometheusOperManager()
+        
+        By("uninstalling the cert-manager bundle")
+        utils.UninstallCertManager()
+    })
+```
+
+Check the following example of how you can implement the above operations:
+
+```go
+const (
+	prometheusOperatorVersion = "0.51"
+	prometheusOperatorURL     = "https://raw.githubusercontent.com/prometheus-operator/" + "prometheus-operator/release-%s/bundle.yaml"
+	certmanagerVersion = "v1.5.3"
+	certmanagerURLTmpl = "https://github.com/jetstack/cert-manager/releases/download/%s/cert-manager.yaml"
+)
+
+func warnError(err error) {
+	fmt.Fprintf(GinkgoWriter, "warning: %v\n", err)
+}
+
+// InstallPrometheusOperator installs the prometheus Operator to be used to export the enabled metrics.
+func InstallPrometheusOperator() error {
+	url := fmt.Sprintf(prometheusOperatorURL, prometheusOperatorVersion)
+	cmd := exec.Command("kubectl", "apply", "-f", url)
+	_, err := Run(cmd)
+	return err
+}
+
+// UninstallPrometheusOperator uninstalls the prometheus
+func UninstallPrometheusOperator() {
+	url := fmt.Sprintf(prometheusOperatorURL, prometheusOperatorVersion)
+	cmd := exec.Command("kubectl", "delete", "-f", url)
+	if _, err := Run(cmd); err != nil {
+		warnError(err)
+	}
+}
+
+// UninstallCertManager uninstalls the cert manager
+func UninstallCertManager() {
+	url := fmt.Sprintf(certmanagerURLTmpl, certmanagerVersion)
+	cmd := exec.Command("kubectl", "delete", "-f", url)
+	if _, err := Run(cmd); err != nil {
+		warnError(err)
+	}
+}
+
+// InstallCertManager installs the cert manager bundle.
+func InstallCertManager() error {
+	url := fmt.Sprintf(certmanagerURLTmpl, certmanagerVersion)
+	cmd := exec.Command("kubectl", "apply", "-f", url)
+	if _, err := Run(cmd); err != nil {
+		return err
+	}
+	// Wait for cert-manager-webhook to be ready, which can take time if cert-manager 
+	//was re-installed after uninstalling on a cluster. 
+	cmd = exec.Command("kubectl", "wait", "deployment.apps/cert-manager-webhook", 
+		"--for", "condition=Available", 
+		"--namespace", "cert-manager", 
+		"--timeout", "5m", 
+		)
+	
+	_, err := Run(cmd)
+	return err
+}
+
+// LoadImageToKindCluster loads a local docker image to the kind cluster
+func LoadImageToKindClusterWithName(name string) error {
+	cluster := "kind"
+	if v, ok := os.LookupEnv("KIND_CLUSTER"); ok {
+		cluster = v
+	}
+	
+	kindOptions := []string{"load", "docker-image", name, "--name", cluster}
+	cmd := exec.Command("kind", kindOptions...)
+	_, err := Run(cmd)
+	return err
+}
+```
+However, see that tests for the metrics and cert-manager might fit better well as e2e tests and not under the tests done using ENV TEST for the controllers. You might want to give a look at the [sample example][sdk-e2e-sample-example] implemented into [Operator-SDK][sdk] repository to know how you can write your e2e tests to ensure the basic workflows of your project.
+Also, see that you can run the tests against a cluster where you have some configurations in place they can use the option to test using an existing cluster:
+
+```go
+testEnv = &envtest.Environment{
+	UseExistingCluster: true,
+}
+```
 
 <aside class="warning">
 
@@ -200,3 +325,10 @@ For further information see the issue raised in the controller-runtime [controll
 
 [envtest]:https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/envtest
 [setup-envtest]:https://pkg.go.dev/sigs.k8s.io/controller-runtime/tools/setup-envtest
+[metrics]: https://book.kubebuilder.io/reference/metrics.html
+[envtest]: https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/envtest
+[setup-envtest]: https://pkg.go.dev/sigs.k8s.io/controller-runtime/tools/setup-envtest
+[cert-manager]: https://book.kubebuilder.io/cronjob-tutorial/cert-manager.html
+[sdk-e2e-sample-example]: https://github.com/operator-framework/operator-sdk/tree/master/testdata/go/v3/memcached-operator/test/e2e
+[sdk]: https://github.com/operator-framework/operator-sdk
+

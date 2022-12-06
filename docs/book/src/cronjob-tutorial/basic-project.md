@@ -7,7 +7,7 @@ basic pieces of boilerplate.
 
 First up, basic infrastructure for building your project:
 
-<details> <summary>`go.mod`: A new Go module matching our project, with
+<details><summary><code>go.mod</code>: A new Go module matching our project, with
 basic dependencies</summary>
 
 ```go
@@ -15,14 +15,14 @@ basic dependencies</summary>
 ```
 </details>
 
-<details><summary>`Makefile`: Make targets for building and deploying your controller</summary>
+<details><summary><code>Makefile</code>: Make targets for building and deploying your controller</summary>
 
 ```makefile
 {{#include ./testdata/project/Makefile}}
 ```
 </details>
 
-<details><summary>`PROJECT`: Kubebuilder metadata for scaffolding new components</summary>
+<details><summary><code>PROJECT</code>: Kubebuilder metadata for scaffolding new components</summary>
 
 ```yaml
 {{#include ./testdata/project/PROJECT}}

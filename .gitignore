@@ -1,8 +1,11 @@
 .idea/
 .vscode/
-
+WORKSPACE
 # don't check in the build output of the book
 docs/book/book/
+
+# ignore auto-generated dir by `mdbook serve`
+docs/book/src/docs
 
 # Editor temp files
 *~
@@ -22,3 +25,4 @@ docs/book/book/
 # skip testdata go.sum, since it may have
 # different result depending on go version
 /testdata/**/go.sum
+/docs/book/src/simple-external-plugin-tutorial/testdata/sampleexternalplugin/v1/bin

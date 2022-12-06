@@ -32,22 +32,21 @@ kind create cluster --config hack/kind-config.yaml --image=kindest/node:v1.17.2
 
 You can use `--image` flag to specify the cluster version you want, e.g.
 `--image=kindest/node:v1.17.2`, the supported version are listed
-[here](https://hub.docker.com/r/kindest/node/tags)
+[here](https://hub.docker.com/r/kindest/node/tags).
 
 ## Load Docker Image into the Cluster
 
 When developing with a local kind cluster, loading docker images to the cluster
 is a very useful feature. You can avoid using a container registry.
 
-- [Load a local image into a kind cluster](https://kind.sigs.k8s.io/docs/user/quick-start/#loading-an-image-into-your-cluster).
-
 ```bash
 kind load docker-image your-image-name:your-tag
 ```
 
+See [Load a local image into a kind cluster](https://kind.sigs.k8s.io/docs/user/quick-start/#loading-an-image-into-your-cluster) for more information.
+
 ## Delete a Cluster
 
-- Delete a kind cluster
 ```bash
 kind delete cluster
 ```

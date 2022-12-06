@@ -58,7 +58,7 @@ metadata:
     app.kubernetes.io/name: {{ lower .Resource.Kind }}
     app.kubernetes.io/instance: {{ lower .Resource.Kind }}-sample
     app.kubernetes.io/part-of: {{ .ProjectName }}
-    app.kuberentes.io/managed-by: kustomize
+    app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: {{ .ProjectName }}
   name: {{ lower .Resource.Kind }}-sample
 spec:
