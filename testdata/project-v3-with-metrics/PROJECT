@@ -1,6 +1,0 @@
-domain: testproject.org
-layout:
-- go.kubebuilder.io/v3
-projectName: project-v3-with-metrics
-repo: sigs.k8s.io/kubebuilder/testdata/project-v3-with-metrics
-version: "3"

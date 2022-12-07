@@ -1,4 +1,4 @@
-module sigs.k8s.io/kubebuilder/testdata/project-v3-with-metrics
+module sigs.k8s.io/kubebuilder/testdata/project-v3-with-grafana
 
 go 1.19
 

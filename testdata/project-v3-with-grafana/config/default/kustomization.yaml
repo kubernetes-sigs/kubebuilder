@@ -1,12 +1,12 @@
 # Adds namespace to all resources.
-namespace: project-v3-with-metrics-system
+namespace: project-v3-with-grafana-system
 
 # Value of this field is prepended to the
 # names of all resources, e.g. a deployment named
 # "wordpress" becomes "alices-wordpress".
 # Note that it should also match with the prefix (text before '-') of the namespace
 # field above.
-namePrefix: project-v3-with-metrics-
+namePrefix: project-v3-with-grafana-
 
 # Labels to add to all resources and selectors.
 #commonLabels:

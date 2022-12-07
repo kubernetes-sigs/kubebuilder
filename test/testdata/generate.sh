@@ -135,7 +135,7 @@ scaffold_test_project project-v3-multigroup
 scaffold_test_project project-v3-declarative-v1 --plugins="go/v3,declarative"
 scaffold_test_project project-v3-config --component-config
 scaffold_test_project project-v3-with-deploy-image
-scaffold_test_project project-v3-with-metrics
+scaffold_test_project project-v3-with-grafana
 
 # [Next version, alpha] Project version v4-alpha
 scaffold_test_project project-v4 --plugins="go/v4-alpha"
