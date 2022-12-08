@@ -2,7 +2,6 @@ domain: testproject.org
 layout:
 - go.kubebuilder.io/v3
 - declarative.go.kubebuilder.io/v1
-- grafana.kubebuilder.io/v1-alpha
 plugins:
   declarative.go.kubebuilder.io/v1:
     resources:
@@ -18,7 +17,6 @@ plugins:
       group: crew
       kind: Admiral
       version: v1
-  grafana.kubebuilder.io/v1-alpha: {}
 projectName: project-v3-declarative-v1
 repo: sigs.k8s.io/kubebuilder/testdata/project-v3-declarative-v1
 resources:
