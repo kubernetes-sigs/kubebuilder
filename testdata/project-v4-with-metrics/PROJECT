@@ -1,8 +1,0 @@
-domain: testproject.org
-layout:
-- go.kubebuilder.io/v3
-plugins:
-  grafana.kubebuilder.io/v1-alpha: {}
-projectName: project-v4-with-metrics
-repo: sigs.k8s.io/kubebuilder/testdata/project-v4-with-metrics
-version: "3"

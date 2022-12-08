@@ -1,0 +1,8 @@
+domain: testproject.org
+layout:
+- go.kubebuilder.io/v3
+plugins:
+  grafana.kubebuilder.io/v1-alpha: {}
+projectName: project-v4-with-grafana
+repo: sigs.k8s.io/kubebuilder/testdata/project-v4-with-grafana
+version: "3"
