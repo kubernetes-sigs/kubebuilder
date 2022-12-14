@@ -10,7 +10,7 @@ by default. `make test` is the one-stop shop for downloading the binaries, setti
 
 The make targets require `bash` to run. 
 
-## Installation in Air Gaped/disconnected environments
+## Installation in Air Gapped/disconnected environments
 If you would like to download the tarball containing the binaries, to use in a disconnected environment you can use 
 [`setup-envtest`][setup-envtest] to download the required binaries locally. There are a lot of ways to configure `setup-envtest` to avoid talking to 
 the internet you can read about them [here](https://github.com/kubernetes-sigs/controller-runtime/tree/master/tools/setup-envtest#what-if-i-dont-want-to-talk-to-the-internet). 
