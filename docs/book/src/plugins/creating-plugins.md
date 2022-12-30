@@ -183,7 +183,7 @@ Alternatively, you can create a plugin bundle to include the target plugins. For
 [example-of-deploy-image-1]: https://github.com/kubernetes-sigs/kubebuilder/blob/df1ed6ccf19df40bd929157a91eaae6a9215bfc6/pkg/plugins/golang/deploy-image/v1alpha1/scaffolds/internal/templates/api/types.go#L58
 [example-of-deploy-image-2]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/pkg/plugins/golang/deploy-image/v1alpha1/scaffolds/api.go#L170-L266
 [example-of-deploy-image-3]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/pkg/plugins/golang/deploy-image/v1alpha1/scaffolds/api.go#L77-L98
-[available-plugins]: https://github.com/kubernetes-sigs/kubebuilder/pull/available-plugins.md
+[available-plugins]: ./available-plugins.md
 [operator-sdk-manifest]: https://github.com/operator-framework/operator-sdk/tree/v1.23.0/internal/plugins/manifests/v2
 [operator-sdk-scorecard]: https://github.com/operator-framework/operator-sdk/tree/v1.23.0/internal/plugins/scorecard/v2
 [operator-sdk-plugin-ref]: https://github.com/operator-framework/operator-sdk/blob/v1.23.0/internal/cmd/operator-sdk/cli/cli.go#L78-L160
