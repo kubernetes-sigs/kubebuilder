@@ -30,14 +30,13 @@ ARG ARCH
 ENV DEST=/usr/local/kubebuilder/bin/
 
 # Install dependencies.
-RUN apk add --no-cache curl=7.83.1-r3 && \
+RUN apk add --no-cache curl && \
     mkdir -p $DEST
 
 # kube-apiserver
-ENV K8S_SERVER_BASE_NAME=kubernetes-server-${OS}-${ARCH}
-RUN curl -sLO https://dl.k8s.io/${KUBERNETES_VERSION}/${K8S_SERVER_BASE_NAME}.tar.gz && \
-    tar xzf ${K8S_SERVER_BASE_NAME}.tar.gz && \
-    cp kubernetes/server/bin/kube-apiserver $DEST
+RUN curl -sLO https://dl.k8s.io/${KUBERNETES_VERSION}/bin/${OS}/${ARCH}/kube-apiserver && \
+    chmod +x kube-apiserver && \
+    cp kube-apiserver $DEST
 
 # kubectl
 RUN curl -sLO https://storage.googleapis.com/kubernetes-release/release/${KUBERNETES_VERSION}/bin/${OS}/${ARCH}/kubectl && \
