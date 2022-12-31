@@ -86,7 +86,7 @@ layout: ""
 
 	Context("Load", func() {
 		It("should load the Config from an existing file at the default path", func() {
-			Expect(afero.WriteFile(s.fs, DefaultPath, []byte(v2File), os.ModePerm)).To(Succeed())
+			Expect(afero.WriteFile(s.fs, DefaultPath, []byte(commentStr+v2File), os.ModePerm)).To(Succeed())
 
 			Expect(s.Load()).To(Succeed())
 			Expect(s.fs).NotTo(BeNil())
@@ -102,7 +102,7 @@ layout: ""
 		})
 
 		It("should fail if unable to identify the version of the file at the default path", func() {
-			Expect(afero.WriteFile(s.fs, DefaultPath, []byte(unversionedFile), os.ModePerm)).To(Succeed())
+			Expect(afero.WriteFile(s.fs, DefaultPath, []byte(commentStr+unversionedFile), os.ModePerm)).To(Succeed())
 
 			err := s.Load()
 			Expect(err).To(HaveOccurred())
@@ -110,7 +110,7 @@ layout: ""
 		})
 
 		It("should fail if unable to create a Config for the version of the file at the default path", func() {
-			Expect(afero.WriteFile(s.fs, DefaultPath, []byte(nonexistentVersionFile), os.ModePerm)).To(Succeed())
+			Expect(afero.WriteFile(s.fs, DefaultPath, []byte(commentStr+nonexistentVersionFile), os.ModePerm)).To(Succeed())
 
 			err := s.Load()
 			Expect(err).To(HaveOccurred())
@@ -118,7 +118,7 @@ layout: ""
 		})
 
 		It("should fail if unable to unmarshal the file at the default path", func() {
-			Expect(afero.WriteFile(s.fs, DefaultPath, []byte(wrongFile), os.ModePerm)).To(Succeed())
+			Expect(afero.WriteFile(s.fs, DefaultPath, []byte(commentStr+wrongFile), os.ModePerm)).To(Succeed())
 
 			err := s.Load()
 			Expect(err).To(HaveOccurred())
@@ -128,7 +128,7 @@ layout: ""
 
 	Context("LoadFrom", func() {
 		It("should load the Config from an existing file from the specified path", func() {
-			Expect(afero.WriteFile(s.fs, path, []byte(v2File), os.ModePerm)).To(Succeed())
+			Expect(afero.WriteFile(s.fs, path, []byte(commentStr+v2File), os.ModePerm)).To(Succeed())
 
 			Expect(s.LoadFrom(path)).To(Succeed())
 			Expect(s.fs).NotTo(BeNil())
@@ -144,7 +144,7 @@ layout: ""
 		})
 
 		It("should fail if unable to identify the version of the file at the specified path", func() {
-			Expect(afero.WriteFile(s.fs, path, []byte(unversionedFile), os.ModePerm)).To(Succeed())
+			Expect(afero.WriteFile(s.fs, path, []byte(commentStr+unversionedFile), os.ModePerm)).To(Succeed())
 
 			err := s.LoadFrom(path)
 			Expect(err).To(HaveOccurred())
@@ -152,7 +152,7 @@ layout: ""
 		})
 
 		It("should fail if unable to create a Config for the version of the file at the specified path", func() {
-			Expect(afero.WriteFile(s.fs, path, []byte(nonexistentVersionFile), os.ModePerm)).To(Succeed())
+			Expect(afero.WriteFile(s.fs, path, []byte(commentStr+nonexistentVersionFile), os.ModePerm)).To(Succeed())
 
 			err := s.LoadFrom(path)
 			Expect(err).To(HaveOccurred())
@@ -160,7 +160,7 @@ layout: ""
 		})
 
 		It("should fail if unable to unmarshal the file at the specified path", func() {
-			Expect(afero.WriteFile(s.fs, path, []byte(wrongFile), os.ModePerm)).To(Succeed())
+			Expect(afero.WriteFile(s.fs, path, []byte(commentStr+wrongFile), os.ModePerm)).To(Succeed())
 
 			err := s.LoadFrom(path)
 			Expect(err).To(HaveOccurred())
@@ -175,7 +175,7 @@ layout: ""
 
 			cfgBytes, err := afero.ReadFile(s.fs, DefaultPath)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(string(cfgBytes)).To(Equal(v2File))
+			Expect(string(cfgBytes)).To(Equal(commentStr + v2File))
 		})
 
 		It("should succeed for a valid config that must not exist", func() {
@@ -185,7 +185,7 @@ layout: ""
 
 			cfgBytes, err := afero.ReadFile(s.fs, DefaultPath)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(string(cfgBytes)).To(Equal(v2File))
+			Expect(string(cfgBytes)).To(Equal(commentStr + v2File))
 		})
 
 		It("should fail for an empty config", func() {
@@ -212,8 +212,7 @@ layout: ""
 
 			cfgBytes, err := afero.ReadFile(s.fs, path)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(string(cfgBytes)).To(Equal(`version: "2"
-`))
+			Expect(string(cfgBytes)).To(Equal(commentStr + v2File))
 		})
 
 		It("should succeed for a valid config that must not exist", func() {
@@ -223,7 +222,7 @@ layout: ""
 
 			cfgBytes, err := afero.ReadFile(s.fs, path)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(string(cfgBytes)).To(Equal(v2File))
+			Expect(string(cfgBytes)).To(Equal(commentStr + v2File))
 		})
 
 		It("should fail for an empty config", func() {
