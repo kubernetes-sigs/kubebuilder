@@ -23,7 +23,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
-const defaultMainPath = "main.go"
+const defaultMainPath = "cmd/main.go"
 
 var _ machinery.Template = &Main{}
 
@@ -53,7 +53,7 @@ func (f *Main) SetTemplateDefaults() error {
 
 var _ machinery.Inserter = &MainUpdater{}
 
-// MainUpdater updates main.go to run Controllers
+// MainUpdater updates cmd/main.go to run Controllers
 type MainUpdater struct { //nolint:maligned
 	machinery.RepositoryMixin
 	machinery.MultiGroupMixin
@@ -91,13 +91,13 @@ func (f *MainUpdater) GetMarkers() []machinery.Marker {
 const (
 	apiImportCodeFragment = `%s "%s"
 `
-	controllerImportCodeFragment = `"%s/controllers"
+	controllerImportCodeFragment = `"%s/internal/controller"
 `
-	multiGroupControllerImportCodeFragment = `%scontrollers "%s/controllers/%s"
+	multiGroupControllerImportCodeFragment = `%scontroller "%s/internal/controller/%s"
 `
 	addschemeCodeFragment = `utilruntime.Must(%s.AddToScheme(scheme))
 `
-	reconcilerSetupCodeFragment = `if err = (&controllers.%sReconciler{
+	reconcilerSetupCodeFragment = `if err = (&controller.%sReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
@@ -105,7 +105,7 @@ const (
 		os.Exit(1)
 	}
 `
-	multiGroupReconcilerSetupCodeFragment = `if err = (&%scontrollers.%sReconciler{
+	multiGroupReconcilerSetupCodeFragment = `if err = (&%scontroller.%sReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {

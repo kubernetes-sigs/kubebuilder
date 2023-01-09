@@ -35,18 +35,37 @@ type Controller struct {
 	machinery.ProjectNameMixin
 
 	ControllerRuntimeVersion string
+
+	// IsLegacyLayout is added to ensure backwards compatibility and should
+	// be removed when we remove the go/v3 plugin
+	IsLegacyLayout bool
+	PackageName    string
 }
 
 // SetTemplateDefaults implements file.Template
 func (f *Controller) SetTemplateDefaults() error {
 	if f.Path == "" {
 		if f.MultiGroup && f.Resource.Group != "" {
-			f.Path = filepath.Join("controllers", "%[group]", "%[kind]_controller.go")
+			if f.IsLegacyLayout {
+				f.Path = filepath.Join("controllers", "%[group]", "%[kind]_controller.go")
+			} else {
+				f.Path = filepath.Join("internal", "controller", "%[group]", "%[kind]_controller.go")
+			}
 		} else {
-			f.Path = filepath.Join("controllers", "%[kind]_controller.go")
+			if f.IsLegacyLayout {
+				f.Path = filepath.Join("controllers", "%[kind]_controller.go")
+			} else {
+				f.Path = filepath.Join("internal", "controller", "%[kind]_controller.go")
+			}
 		}
 	}
 	f.Path = f.Resource.Replacer().Replace(f.Path)
+	fmt.Println(f.Path)
+
+	f.PackageName = "controller"
+	if f.IsLegacyLayout {
+		f.PackageName = "controllers"
+	}
 
 	fmt.Println("creating import for %", f.Resource.Path)
 	f.TemplateBody = controllerTemplate
@@ -60,7 +79,7 @@ func (f *Controller) SetTemplateDefaults() error {
 //nolint:lll
 const controllerTemplate = `{{ .Boilerplate }}
 
-package {{ if and .MultiGroup .Resource.Group }}{{ .Resource.PackageName }}{{ else }}controllers{{ end }}
+package {{ if and .MultiGroup .Resource.Group }}{{ .Resource.PackageName }}{{ else }}{{ .PackageName }}{{ end }}
 
 import (
 	"context"

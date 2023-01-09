@@ -33,19 +33,35 @@ type ControllerTest struct {
 	machinery.BoilerplateMixin
 	machinery.ResourceMixin
 
-	Port string
+	Port           string
+	IsLegacyLayout bool
+	PackageName    string
 }
 
 // SetTemplateDefaults implements file.Template
 func (f *ControllerTest) SetTemplateDefaults() error {
 	if f.Path == "" {
 		if f.MultiGroup && f.Resource.Group != "" {
-			f.Path = filepath.Join("controllers", "%[group]", "%[kind]_controller_test.go")
+			if f.IsLegacyLayout {
+				f.Path = filepath.Join("controllers", "%[group]", "%[kind]_controller_test.go")
+			} else {
+				f.Path = filepath.Join("internal", "controller", "%[group]", "%[kind]_controller_test.go")
+			}
 		} else {
-			f.Path = filepath.Join("controllers", "%[kind]_controller_test.go")
+			if f.IsLegacyLayout {
+				f.Path = filepath.Join("controllers", "%[kind]_controller_test.go")
+			} else {
+				f.Path = filepath.Join("internal", "controller", "%[kind]_controller_test.go")
+			}
 		}
 	}
 	f.Path = f.Resource.Replacer().Replace(f.Path)
+	fmt.Println(f.Path)
+
+	f.PackageName = "controller"
+	if f.IsLegacyLayout {
+		f.PackageName = "controllers"
+	}
 
 	fmt.Println("creating import for %", f.Resource.Path)
 	f.TemplateBody = controllerTestTemplate
@@ -56,7 +72,7 @@ func (f *ControllerTest) SetTemplateDefaults() error {
 //nolint:lll
 const controllerTestTemplate = `{{ .Boilerplate }}
 
-package {{ if and .MultiGroup .Resource.Group }}{{ .Resource.PackageName }}{{ else }}controllers{{ end }}
+package {{ if and .MultiGroup .Resource.Group }}{{ .Resource.PackageName }}{{ else }}{{ .PackageName }}{{ end }}
 
 import (
 	"context"

@@ -161,6 +161,7 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 		}
 
 		// Check CRDVersion against all other CRDVersions in p.config for compatibility.
+		// nolint:staticcheck
 		if util.HasDifferentCRDVersion(p.config, p.resource.API.CRDVersion) {
 			return fmt.Errorf("only one CRD version can be used for all resources, cannot add %q",
 				p.resource.API.CRDVersion)

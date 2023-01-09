@@ -100,7 +100,8 @@ func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
 	}
 
 	// Update Dockerfile
-	err = updateDockerfile()
+	// nolint:staticcheck
+	err = updateDockerfile(plugin.IsLegacyLayout(p.config))
 	if err != nil {
 		return err
 	}
