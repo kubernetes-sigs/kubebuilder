@@ -25,7 +25,7 @@ The completion Bash script depends on [bash-completion](https://github.com/scop/
 if [ -f /usr/local/share/bash-completion/bash_completion ]; then
 . /usr/local/share/bash-completion/bash_completion
 fi
-. <(kubebuilder completion)
+. <(kubebuilder completion bash)
 ```
 - Restart terminal for the changes to be reflected.
 
