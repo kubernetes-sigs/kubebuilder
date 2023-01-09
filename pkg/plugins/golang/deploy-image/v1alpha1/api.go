@@ -20,10 +20,10 @@ import (
 	"errors"
 	"fmt"
 	"os"
-
-	goPlugin "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang"
+	"strings"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
+	goPlugin "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang"
 
 	"github.com/spf13/pflag"
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
@@ -42,9 +42,6 @@ const deprecateMsg = "The v1beta1 API version for CRDs and Webhooks are deprecat
 	"the Kubernetes release 1.22. This flag no longer required to exist in future releases. Also, we would like to " +
 	"recommend you no longer use these API versions." +
 	"More info: https://kubernetes.io/docs/reference/using-api/deprecation-guide/#v1-22"
-
-// DefaultMainPath is default file path of main.go
-const DefaultMainPath = "main.go"
 
 var _ plugin.CreateAPISubcommand = &createAPISubcommand{}
 
@@ -152,6 +149,7 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 	p.options.DoAPI = true
 	p.options.DoController = true
 	p.options.Namespaced = true
+
 	p.options.UpdateResource(p.resource, p.config)
 
 	if err := p.resource.Validate(); err != nil {
@@ -165,12 +163,14 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 	}
 
 	// Check CRDVersion against all other CRDVersions in p.config for compatibility.
+	// nolint:staticcheck
 	if util.HasDifferentCRDVersion(p.config, p.resource.API.CRDVersion) {
 		return fmt.Errorf("only one CRD version can be used for all resources, cannot add %q",
 			p.resource.API.CRDVersion)
 	}
 
 	// Check CRDVersion against all other CRDVersions in p.config for compatibility.
+	// nolint:staticcheck
 	if util.HasDifferentCRDVersion(p.config, p.resource.API.CRDVersion) {
 		return fmt.Errorf("only one CRD version can be used for all resources, cannot add %q",
 			p.resource.API.CRDVersion)
@@ -184,9 +184,20 @@ func (p *createAPISubcommand) PreScaffold(machinery.Filesystem) error {
 		return fmt.Errorf("you MUST inform the image that will be used in the reconciliation")
 	}
 
-	// check if main.go is present in the root directory
-	if _, err := os.Stat(DefaultMainPath); os.IsNotExist(err) {
-		return fmt.Errorf("%s file should present in the root directory", DefaultMainPath)
+	isGoV3 := false
+	for _, pluginKey := range p.config.GetPluginChain() {
+		if strings.Contains(pluginKey, "go.kubebuilder.io/v3") {
+			isGoV3 = true
+		}
+	}
+
+	defaultMainPath := "cmd/main.go"
+	if isGoV3 {
+		defaultMainPath = "main.go"
+	}
+	// check if main.go is present in the cmd/ directory
+	if _, err := os.Stat(defaultMainPath); os.IsNotExist(err) {
+		return fmt.Errorf("main.go file should be present in %s", defaultMainPath)
 	}
 
 	return nil

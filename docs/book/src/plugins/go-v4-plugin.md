@@ -1,7 +1,7 @@
 # go/v4-alpha (go.kubebuilder.io/v4-alpha)
 
 Kubebuilder will scaffold using the `go/v4-alpha` plugin only if specified when initializing the project. 
-This plugin is a composition of the plugins ` kustomize.common.kubebuilder.io/v2-alpha` and `base.go.kubebuilder.io/v4`. 
+This plugin is a composition of the plugins ` kustomize.common.kubebuilder.io/v2-alpha` and `base.go.kubebuilder.io/v4-alpha`. 
 It scaffolds a project template that helps in constructing sets of [controllers][controller-runtime]. 
 
 It scaffolds boilerplate code to create and design controllers. 
@@ -24,6 +24,8 @@ under the [testdata][testdata] directory on the root directory of the Kubebuilde
 - If you are looking to have your project update with the latest version available
 - if you are not targeting k8s versions < `1.16` and `1.20` if you are using webhooks
 - If you are looking to work on with scaffolds which are compatible with k8s `1.25+`
+- If you are looking for the new layout following the [Standard Go Project Layout][standard-go-project] where 
+the "api(s)" are scaffold under the `api` directory, "controller(s)" under `internal`, and the `main.go` under `cmd`
 
 <aside class="note">
 
@@ -62,3 +64,4 @@ kubebuilder init --domain tutorial.kubebuilder.io --repo tutorial.kubebuilder.io
 [plugins-main]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/cmd/main.go
 [kustomize-plugin]: ../plugins/kustomize-v2-alpha.md
 [kustomize]: https://github.com/kubernetes-sigs/kustomize
+[standard-go-project]: https://github.com/golang-standards/project-layout
