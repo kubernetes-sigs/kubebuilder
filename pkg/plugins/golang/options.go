@@ -22,6 +22,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	cfgv2 "sigs.k8s.io/kubebuilder/v3/pkg/config/v2"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 )
 
 var (
@@ -80,11 +81,18 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 	}
 
 	if opts.DoAPI {
-		res.Path = resource.APIPackagePath(c.GetRepository(), res.Group, res.Version, c.IsMultiGroup())
+		//nolint:staticcheck
+		if plugin.IsLegacyLayout(c) {
+			res.Path = resource.APIPackagePathLegacy(c.GetRepository(), res.Group, res.Version, c.IsMultiGroup())
+		} else {
+			res.Path = resource.APIPackagePath(c.GetRepository(), res.Group, res.Version, c.IsMultiGroup())
+		}
+
 		res.API = &resource.API{
 			CRDVersion: opts.CRDVersion,
 			Namespaced: opts.Namespaced,
 		}
+
 	}
 
 	if opts.DoController {
@@ -92,7 +100,14 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 	}
 
 	if opts.DoDefaulting || opts.DoValidation || opts.DoConversion {
-		res.Path = resource.APIPackagePath(c.GetRepository(), res.Group, res.Version, c.IsMultiGroup())
+		// IsLegacyLayout is added to ensure backwards compatibility and should
+		// be removed when we remove the go/v3 plugin
+		//nolint:staticcheck
+		if plugin.IsLegacyLayout(c) {
+			res.Path = resource.APIPackagePathLegacy(c.GetRepository(), res.Group, res.Version, c.IsMultiGroup())
+		} else {
+			res.Path = resource.APIPackagePath(c.GetRepository(), res.Group, res.Version, c.IsMultiGroup())
+		}
 		res.Webhooks.WebhookVersion = opts.WebhookVersion
 		if opts.DoDefaulting {
 			res.Webhooks.Defaulting = true
