@@ -50,7 +50,7 @@ module tutorial.kubebuilder.io/migration-project
 Now, we can finish initializing the project with kubebuilder.
 
 ```bash
-kubebuilder init --domain tutorial.kubebuilder.io plugins=go/v4-alpha
+kubebuilder init --domain tutorial.kubebuilder.io --plugins=go/v4-alpha
 ```
 
 <aside class="note">
