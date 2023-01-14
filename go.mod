@@ -3,7 +3,7 @@ module sigs.k8s.io/kubebuilder/v3
 go 1.19
 
 require (
-	github.com/gobuffalo/flect v0.3.0
+	github.com/gobuffalo/flect v1.0.0
 	github.com/onsi/ginkgo/v2 v2.7.0
 	github.com/onsi/gomega v1.24.2
 	github.com/sirupsen/logrus v1.9.0
