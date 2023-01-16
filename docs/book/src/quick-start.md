@@ -116,33 +116,33 @@ make manifests
 ```go
 // GuestbookSpec defines the desired state of Guestbook
 type GuestbookSpec struct {
-// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-// Important: Run "make" to regenerate code after modifying this file
+	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+	// Important: Run "make" to regenerate code after modifying this file
 
-// Quantity of instances
-// +kubebuilder:validation:Minimum=1
-// +kubebuilder:validation:Maximum=10
-Size int32 `json:"size"`
+	// Quantity of instances
+	// +kubebuilder:validation:Minimum=1
+	// +kubebuilder:validation:Maximum=10
+	Size int32 `json:"size"`
 
-// Name of the ConfigMap for GuestbookSpec's configuration
-// +kubebuilder:validation:MaxLength=15
-// +kubebuilder:validation:MinLength=1
-ConfigMapName string `json:"configMapName"`
+	// Name of the ConfigMap for GuestbookSpec's configuration
+	// +kubebuilder:validation:MaxLength=15
+	// +kubebuilder:validation:MinLength=1
+	ConfigMapName string `json:"configMapName"`
 
-// +kubebuilder:validation:Enum=Phone;Address;Name
-Type string `json:"alias,omitempty"`
+	// +kubebuilder:validation:Enum=Phone;Address;Name
+	Type string `json:"alias,omitempty"`
 }
 
 // GuestbookStatus defines the observed state of Guestbook
 type GuestbookStatus struct {
-// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-// Important: Run "make" to regenerate code after modifying this file
+	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
+	// Important: Run "make" to regenerate code after modifying this file
 
-// PodName of the active Guestbook node.
-Active string `json:"active"`
+	// PodName of the active Guestbook node.
+	Active string `json:"active"`
 
-// PodNames of the standby Guestbook nodes.
-Standby []string `json:"standby"`
+	// PodNames of the standby Guestbook nodes.
+	Standby []string `json:"standby"`
 }
 
 // +kubebuilder:object:root=true
@@ -151,11 +151,11 @@ Standby []string `json:"standby"`
 
 // Guestbook is the Schema for the guestbooks API
 type Guestbook struct {
-metav1.TypeMeta   `json:",inline"`
-metav1.ObjectMeta `json:"metadata,omitempty"`
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-Spec   GuestbookSpec   `json:"spec,omitempty"`
-Status GuestbookStatus `json:"status,omitempty"`
+	Spec   GuestbookSpec   `json:"spec,omitempty"`
+	Status GuestbookStatus `json:"status,omitempty"`
 }
 ```
 
@@ -243,7 +243,7 @@ make undeploy
 ## Next Step
 
 Now, see the [architecture concept diagram][architecture-concept-diagram] for a better overview and follow up the
-[CronJob tutorial][cronjob-tutorial] to better understand how it works by developing a
+[CronJob tutorial][cronjob-tutorial] to better understand how it works by developing a 
 demo example project.
 
 <aside class="note">

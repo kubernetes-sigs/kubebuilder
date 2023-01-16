@@ -16,14 +16,14 @@ The recommended upgrade approach is to follow the [Migration Guide go/v3 to go/v
 
 ## Migration from project config version "go/v3" to "go/v4"
 
-Update the `PROJECT` file layout which stores information about the resources that are used to enable plugins make
+Update the `PROJECT` file layout which stores information about the resources that are used to enable plugins make 
 useful decisions while scaffolding. The `layout` field indicates the scaffolding and the primary plugin version in use.
 
 ### Steps to migrate
 
 #### Migrate the layout version into the PROJECT file
 
-The following steps describe the manual changes required to bring the project configuration file (`PROJECT`).
+The following steps describe the manual changes required to bring the project configuration file (`PROJECT`). 
 These change will add the information that Kubebuilder would add when generating the file. This file can be found in the root directory.
 
 Update the PROJECT file by replacing:
@@ -64,7 +64,7 @@ Therefore, you can check the changes in the layout results into:
 
 - Create a new directory `cmd` and move the `main.go` under it.
 - If your project support multi-group the APIs are scaffold under a directory called `apis`. Rename this directory to `api`
-- Move the `controllers` directory under the `internal` and rename it for `controller`
+- Move the `controllers` directory under the `internal` and rename it for `controller` 
 - Now ensure that the imports will be updated accordingly by:
   - Update the `main.go` imports to look for the new path of your controllers under the `pkg` directory
 
@@ -136,17 +136,17 @@ Note that if your project has multiple groups (`multigroup:true`) then the above
 The PROJECT tracks the paths of all APIs used in your project. Ensure that they now point to `api/...` as the following example:
 
 Before update:
-group: crew
-kind: Captain
-path: sigs.k8s.io/kubebuilder/testdata/project-v4/apis/crew/v1
+  group: crew
+  kind: Captain
+  path: sigs.k8s.io/kubebuilder/testdata/project-v4/apis/crew/v1
 ```
 
 After Update:
 
 ```
-group: crew
-kind: Captain
-path: sigs.k8s.io/kubebuilder/testdata/project-v4/api/crew/v1
+  group: crew
+  kind: Captain
+  path: sigs.k8s.io/kubebuilder/testdata/project-v4/api/crew/v1
 ```
 
 ### Update kustomize manifests with the changes made so far

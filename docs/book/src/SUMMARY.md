@@ -69,7 +69,7 @@
       - [Migration by updating the files](migration/legacy/manually_migration_guide_v2_v3.md)
   - [From v3.0.0 with plugins](./migration/v3-plugins.md)
     - [go/v3 vs go/v4-alpha](migration/v3vsv4.md)
-
+    
       - [Migration Guide](migration/migration_guide_gov3_to_gov4.md)
       - [Migration by updating the files](migration/manually_migration_guide_gov3_to_gov4.md)
   - [Single Group to Multi-Group](./migration/multi-group.md)

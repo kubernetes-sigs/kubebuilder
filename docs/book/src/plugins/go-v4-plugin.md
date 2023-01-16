@@ -1,16 +1,16 @@
 # go/v4-alpha (go.kubebuilder.io/v4-alpha)
 
-Kubebuilder will scaffold using the `go/v4-alpha` plugin only if specified when initializing the project.
-This plugin is a composition of the plugins ` kustomize.common.kubebuilder.io/v2-alpha` and `base.go.kubebuilder.io/v4-alpha`.
-It scaffolds a project template that helps in constructing sets of [controllers][controller-runtime].
+Kubebuilder will scaffold using the `go/v4-alpha` plugin only if specified when initializing the project. 
+This plugin is a composition of the plugins ` kustomize.common.kubebuilder.io/v2-alpha` and `base.go.kubebuilder.io/v4-alpha`. 
+It scaffolds a project template that helps in constructing sets of [controllers][controller-runtime]. 
 
-It scaffolds boilerplate code to create and design controllers.
+It scaffolds boilerplate code to create and design controllers. 
 Note that by following the [quickstart][quickstart] you will be using this plugin.
 <aside class="note">
 
 <h1>Examples</h1>
 
-You can check samples using this plugin by looking at the `project-v4-<options>` projects
+You can check samples using this plugin by looking at the `project-v4-<options>` projects 
 under the [testdata][testdata] directory on the root directory of the Kubebuilder project.
 
 </aside>
@@ -24,8 +24,8 @@ under the [testdata][testdata] directory on the root directory of the Kubebuilde
 - If you are looking to have your project update with the latest version available
 - if you are not targeting k8s versions < `1.16` and `1.20` if you are using webhooks
 - If you are looking to work on with scaffolds which are compatible with k8s `1.25+`
-- If you are looking for the new layout following the [Standard Go Project Layout][standard-go-project] where
-  the "api(s)" are scaffold under the `api` directory, "controller(s)" under `internal`, and the `main.go` under `cmd`
+- If you are looking for the new layout following the [Standard Go Project Layout][standard-go-project] where 
+the "api(s)" are scaffold under the `api` directory, "controller(s)" under `internal`, and the `main.go` under `cmd`
 
 <aside class="note">
 

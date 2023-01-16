@@ -20,8 +20,8 @@ The details of all changes (breaking or otherwise) can be found in:
 - no longer scaffold webhook test files with `"k8s.io/api/admission/v1beta1"` the k8s API which is no longer served since k8s `1.25`. By default
   webhooks test files are scaffolding using `"k8s.io/api/admission/v1"` which is support from k8s `1.20`
 - no longer provide backwards compatible support with k8s versions < `1.16`
-- change the layout to accommodate the community request to follow the [Standard Go Project Layout][standard-go-project]
-  by moving the api(s) under a new directory called `api`, controller(s) under a new directory called `internal` and the `main.go` under a new directory named `cmd`
+- change the layout to accommodate the community request to follow the [Standard Go Project Layout][standard-go-project] 
+by moving the api(s) under a new directory called `api`, controller(s) under a new directory called `internal` and the `main.go` under a new directory named `cmd`
 
 <aside class="note">
 <H1> TL;DR of the New `go/v4-alpha` Plugin </H1>
