@@ -24,6 +24,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/declarative/v1/scaffolds/internal/templates"
 )
@@ -70,9 +71,10 @@ func (s *apiScaffolder) Scaffold() error {
 		machinery.WithResource(&s.resource),
 	)
 
+	//nolint:staticcheck
 	err = scaffold.Execute(
-		&templates.Types{},
-		&templates.Controller{},
+		&templates.Types{IsLegacyLayout: plugin.IsLegacyLayout(s.config)},
+		&templates.Controller{IsLegacyLayout: plugin.IsLegacyLayout(s.config)},
 		&templates.Channel{ManifestVersion: exampleManifestVersion},
 		&templates.Manifest{ManifestVersion: exampleManifestVersion},
 	)

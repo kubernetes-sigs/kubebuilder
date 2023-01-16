@@ -16,11 +16,17 @@ The recommended upgrade approach is to follow the [Migration Guide go/v3 to go/v
 
 ## Migration from project config version "go/v3" to "go/v4"
 
-Update `PROJECT` file layout which stores the information about the resources are use to enable plugins to make useful decisions when scaffolding.
+Update the `PROJECT` file layout which stores information about the resources that are used to enable plugins make 
+useful decisions while scaffolding. The `layout` field indicates the scaffolding and the primary plugin version in use.
 
-Furthermore, the `PROJECT` file itself is now versioned. The `version` field corresponds to the version of the `PROJECT` file itself, while the `layout` field indicates the scaffolding and the primary plugin version in use.
+### Steps to migrate
 
-Update: 
+#### Migrate the layout version into the PROJECT file
+
+The following steps describe the manual changes required to bring the project configuration file (`PROJECT`). 
+These change will add the information that Kubebuilder would add when generating the file. This file can be found in the root directory.
+
+Update the PROJECT file by replacing:
 
 ```yaml
 layout:
@@ -35,16 +41,119 @@ layout:
 
 ```
 
-### Steps to migrate
+#### Changes to the layout
 
-- Update the `main.go` with the changes which can be found in the samples under testdata for the release tag used. (see for example `testdata/project-v4/main.go`).
-- Update the Makefile with the changes which can be found in the samples under testdata for the release tag used. (see for example `testdata/project-v4/Makefile`)
-- Update the `go.mod` with the changes which can be found in the samples under `testdata` for the release tag used. (see for example `testdata/project-v4/go.mod`). Then, run
-`go mod tidy` to ensure that you get the latest dependencies and your Golang code has no breaking changes.
-- Update the manifest under `config/` directory with all changes performed in the default scaffold done with `go/v4-alpha` plugin. (see for example `testdata/project-v4/config/`) to get all changes in the 
-default scaffolds to be applied on your project
-- Create `config/samples/kustomization.yaml` with all CR samples specified. (see for example `testdata/project-v4/config/samples/kustomization.yaml`)
-- Replace the import `admissionv1beta1 "k8s.io/api/admission/v1beta1"` with `admissionv1 "k8s.io/api/admission/v1"` in the webhook test files
+##### New layout:
+
+- The directory `apis` was renamed to `api` to follow the standard
+- The `controller(s)` directory has been moved under a new directory called `internal` and renamed to singular as well `controller`
+- The `main.go` previously scaffolded in the root directory has been moved under a new directory  called `cmd`
+
+Therefore, you can check the changes in the layout results into:
+
+```sh
+...
+├── cmd
+│ └── main.go
+├── internal
+│ └── controller
+└── api
+```
+
+##### Migrating to the new layout:
+
+- Create a new directory `cmd` and move the `main.go` under it.
+- If your project support multi-group the APIs are scaffold under a directory called `apis`. Rename this directory to `api`
+- Move the `controllers` directory under the `internal` and rename it for `controller` 
+- Now ensure that the imports will be updated accordingly by:
+  - Update the `main.go` imports to look for the new path of your controllers under the `pkg` directory
+
+**Then, let's update the scaffolds paths**
+
+- Update the Dockerfile to ensure that you will have:
+
+```
+COPY cmd/main.go cmd/main.go
+COPY api/ api/
+COPY internal/controller/ internal/controller/
+```
+
+Then, replace:
+
+```
+RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o manager main.go
+
+```
+
+With:
+
+```
+RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o manager cmd/main.go
+```
+
+- Update the Makefile targets to build and run the manager by replacing:
+
+```
+.PHONY: build
+build: manifests generate fmt vet ## Build manager binary.
+	go build -o bin/manager main.go
+
+.PHONY: run
+run: manifests generate fmt vet ## Run a controller from your host.
+	go run ./main.go
+```
+
+With:
+
+```
+.PHONY: build
+build: manifests generate fmt vet ## Build manager binary.
+	go build -o bin/manager cmd/main.go
+
+.PHONY: run
+run: manifests generate fmt vet ## Run a controller from your host.
+	go run ./cmd/main.go
+```
+
+- Update the `internal/controller/suite_test.go` to set the path for the `CRDDirectoryPaths`:
+
+Replace:
+
+```
+CRDDirectoryPaths:     []string{filepath.Join("..", "config", "crd", "bases")},
+```
+
+With:
+
+```
+CRDDirectoryPaths:     []string{filepath.Join("..", "..", "config", "crd", "bases")},
+```
+
+Note that if your project has multiple groups (`multigroup:true`) then the above update should result into `"..", "..", "..",` instead of `"..",".."`
+
+#### Now, let's update the PATHs in the PROJECT file accordingly
+
+The PROJECT tracks the paths of all APIs used in your project. Ensure that they now point to `api/...` as the following example:
+
+Before update:
+  group: crew
+  kind: Captain
+  path: sigs.k8s.io/kubebuilder/testdata/project-v4/apis/crew/v1
+```
+
+After Update:
+
+```
+  group: crew
+  kind: Captain
+  path: sigs.k8s.io/kubebuilder/testdata/project-v4/api/crew/v1
+```
+
+### Update kustomize manifests with the changes made so far
+
+- Update the manifest under `config/` directory with all changes performed in the default scaffold done with `go/v4-alpha` plugin. (see for example `testdata/project-v4/config/`) to get all changes in the
+  default scaffolds to be applied on your project
+- Create `config/samples/kustomization.yaml` with all Custom Resources samples specified into `config/samples`. _(see for example `testdata/project-v4/config/samples/kustomization.yaml`)_
 
 <aside class="warning">
 <h1>`config/` directory with changes into the scaffold files</h1>
@@ -52,16 +161,29 @@ default scaffolds to be applied on your project
 Note that under the `config/` directory you will find scaffolding changes since using
 `go/v4-alpha` you will ensure that you are no longer using Kustomize v3x.
 
-You can mainly compare the `config/` directory from the samples scaffolded under the `testdata`directory by 
+You can mainly compare the `config/` directory from the samples scaffolded under the `testdata`directory by
 checking the differences between the `testdata/project-v3/config/` with `testdata/project-v4/config/` which
 are samples created with the same commands with the only difference being versions.
 
 However, note that if you create your project with Kubebuilder CLI 3.0.0, its scaffolds
-might change to accommodate changes up to the latest releases using `go/v3` which are not considered 
-breaking for users and/or are forced by the changes introduced in the dependencies 
-used by the project such as [controller-runtime][controller-runtime] and [controller-tools][controller-tools]. 
+might change to accommodate changes up to the latest releases using `go/v3` which are not considered
+breaking for users and/or are forced by the changes introduced in the dependencies
+used by the project such as [controller-runtime][controller-runtime] and [controller-tools][controller-tools].
 
 </aside>
+
+### If you have webhooks:
+
+Replace the import `admissionv1beta1 "k8s.io/api/admission/v1beta1"` with `admissionv1 "k8s.io/api/admission/v1"` in the webhook test files
+
+### Makefile updates
+
+Update the Makefile with the changes which can be found in the samples under testdata for the release tag used. (see for example `testdata/project-v4/Makefile`)
+
+### Update the dependencies
+
+Update the `go.mod` with the changes which can be found in the samples under `testdata` for the release tag used. (see for example `testdata/project-v4/go.mod`). Then, run 
+`go mod tidy` to ensure that you get the latest dependencies and your Golang code has no breaking changes.
 
 ### Verification
 

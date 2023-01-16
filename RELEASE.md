@@ -86,13 +86,8 @@ The releases occur in an account in the Google Cloud (See [here](https://console
 
 ### To build the Kubebuilder CLI binaries:
 
-A trigger `build-kb-release` is configured to call [build/cloudbuild.yaml](build/cloudbuild.yaml).
-This trigger will be executed when any new tag be published. 
-The tags must be built from the release branch (Currently, `release-3`).
-
-Also, we have a trigger to generate snapshots builds from the master branch.
-This trigger will call [build/cloudbuild_snapshot.yaml](build/cloudbuild_snapshot.yaml)
-when any change needs to be performed on master.
+A trigger GitHub action [release](.github/workflows/release.yml) is trigged when a new tag is pushed.
+This action will caall the job [./build/.goreleaser.yml](./build/.goreleaser.yml).
 
 ### To build the Kubebuilder-tools: (Artifacts required to use ENV TEST)
 

@@ -41,7 +41,8 @@ func (p *initSubcommand) InjectConfig(c config.Config) error {
 }
 
 func (p *initSubcommand) Scaffold(_ machinery.Filesystem) error {
-	err := updateDockerfile()
+	//nolint:staticcheck
+	err := updateDockerfile(plugin.IsLegacyLayout(p.config))
 	if err != nil {
 		return err
 	}
@@ -49,19 +50,23 @@ func (p *initSubcommand) Scaffold(_ machinery.Filesystem) error {
 }
 
 // updateDockerfile will add channels staging required for declarative plugin
-func updateDockerfile() error {
+func updateDockerfile(isLegacyLayout bool) error {
 	fmt.Println("updating Dockerfile to add channels/ directory in the image")
-	managerFile := filepath.Join("Dockerfile")
+	dockerfile := filepath.Join("Dockerfile")
 
+	controllerPath := "internal/controller/"
+	if isLegacyLayout {
+		controllerPath = "controllers/"
+	}
 	// nolint:lll
-	err := insertCodeIfDoesNotExist(managerFile,
-		"COPY controllers/ controllers/",
+	err := insertCodeIfDoesNotExist(dockerfile,
+		fmt.Sprintf("COPY %s %s", controllerPath, controllerPath),
 		"\n# https://github.com/kubernetes-sigs/kubebuilder-declarative-pattern/blob/master/docs/addon/walkthrough/README.md#adding-a-manifest\n# Stage channels and make readable\nCOPY channels/ /channels/\nRUN chmod -R a+rx /channels/")
 	if err != nil {
 		return err
 	}
 
-	err = insertCodeIfDoesNotExist(managerFile,
+	err = insertCodeIfDoesNotExist(dockerfile,
 		"COPY --from=builder /workspace/manager .",
 		"\n# copy channels\nCOPY --from=builder /channels /channels\n")
 	if err != nil {

@@ -33,18 +33,30 @@ type Types struct {
 	machinery.MultiGroupMixin
 	machinery.BoilerplateMixin
 	machinery.ResourceMixin
+
+	IsLegacyLayout bool
 }
 
 // SetTemplateDefaults implements file.Template
 func (f *Types) SetTemplateDefaults() error {
 	if f.Path == "" {
-		if f.MultiGroup {
-			f.Path = filepath.Join("apis", "%[group]", "%[version]", "%[kind]_types.go")
+		if f.IsLegacyLayout {
+			if f.MultiGroup {
+				f.Path = filepath.Join("apis", "%[group]", "%[version]", "%[kind]_types.go")
+			} else {
+				f.Path = filepath.Join("api", "%[version]", "%[kind]_types.go")
+			}
 		} else {
-			f.Path = filepath.Join("api", "%[version]", "%[kind]_types.go")
+			if f.MultiGroup {
+				f.Path = filepath.Join("api", "%[group]", "%[version]", "%[kind]_types.go")
+			} else {
+				f.Path = filepath.Join("api", "%[version]", "%[kind]_types.go")
+			}
 		}
+
 	}
 	f.Path = f.Resource.Replacer().Replace(f.Path)
+	fmt.Println(f.Path)
 
 	f.TemplateBody = typesTemplate
 

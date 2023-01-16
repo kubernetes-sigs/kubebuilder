@@ -43,12 +43,8 @@ type WebhookSuite struct { //nolint:maligned
 // SetTemplateDefaults implements file.Template
 func (f *WebhookSuite) SetTemplateDefaults() error {
 	if f.Path == "" {
-		if f.MultiGroup {
-			if f.Resource.Group != "" {
-				f.Path = filepath.Join("apis", "%[group]", "%[version]", "webhook_suite_test.go")
-			} else {
-				f.Path = filepath.Join("apis", "%[version]", "webhook_suite_test.go")
-			}
+		if f.MultiGroup && f.Resource.Group != "" {
+			f.Path = filepath.Join("api", "%[group]", "%[version]", "webhook_suite_test.go")
 		} else {
 			f.Path = filepath.Join("api", "%[version]", "webhook_suite_test.go")
 		}

@@ -113,6 +113,7 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 		return fmt.Errorf("webhook resource already exists")
 	}
 
+	// nolint:staticcheck
 	if pluginutil.HasDifferentWebhookVersion(p.config, p.resource.Webhooks.WebhookVersion) {
 		return fmt.Errorf("only one webhook version can be used for all resources, cannot add %q",
 			p.resource.Webhooks.WebhookVersion)

@@ -74,9 +74,9 @@ You’ll need a Kubernetes cluster to run against. You can use [KIND](https://si
 %s
 
 2. Build and push your image to the location specified by ` + "`IMG`" + `:
-	
+
 %s
-	
+
 3. Deploy the controller to the cluster with the image specified by ` + "`IMG`" + `:
 
 %s
@@ -87,7 +87,7 @@ To delete the CRDs from the cluster:
 %s
 
 ### Undeploy controller
-UnDeploy the controller to the cluster:
+UnDeploy the controller from the cluster:
 
 %s
 
@@ -95,10 +95,10 @@ UnDeploy the controller to the cluster:
 // TODO(user): Add detailed information on how you would like others to contribute to this project
 
 ### How it works
-This project aims to follow the Kubernetes [Operator pattern](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/)
+This project aims to follow the Kubernetes [Operator pattern](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/).
 
-It uses [Controllers](https://kubernetes.io/docs/concepts/architecture/controller/) 
-which provides a reconcile function responsible for synchronizing resources untile the desired state is reached on the cluster 
+It uses [Controllers](https://kubernetes.io/docs/concepts/architecture/controller/),
+which provide a reconcile function responsible for synchronizing resources until the desired state is reached on the cluster.
 
 ### Test It Out
 1. Install the CRDs into the cluster:

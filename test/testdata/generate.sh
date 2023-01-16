@@ -113,7 +113,7 @@ function scaffold_test_project {
       $kb create api --group example.com --version v1alpha1 --kind Busybox --image=busybox:1.28 --plugins="deploy-image/v1-alpha" --make=false
       header_text 'Creating Memcached webhook ...'
       $kb create webhook --group example.com --version v1alpha1 --kind Memcached --programmatic-validation
-  elif [[ $project =~ "with-metrics" ]]; then
+  elif [[ $project =~ "with-grafana" ]]; then
      header_text 'Editing project with Grafana plugin ...'
       $kb edit --plugins=grafana.kubebuilder.io/v1-alpha
   fi
@@ -132,16 +132,15 @@ scaffold_test_project project-v2 --project-version=2
 # [Currently, default CLI plugin] - Project version 3 (default) uses plugin go/v3 (default).
 scaffold_test_project project-v3
 scaffold_test_project project-v3-multigroup
-scaffold_test_project project-v3-declarative-v1 --plugins="go/v3,declarative,grafana/v1-alpha"
+scaffold_test_project project-v3-declarative-v1 --plugins="go/v3,declarative"
 scaffold_test_project project-v3-config --component-config
 scaffold_test_project project-v3-with-deploy-image
-scaffold_test_project project-v3-with-metrics
+scaffold_test_project project-v3-with-grafana
 
 # [Next version, alpha] Project version v4-alpha
 scaffold_test_project project-v4 --plugins="go/v4-alpha"
 scaffold_test_project project-v4-multigroup --plugins="go/v4-alpha"
-scaffold_test_project project-v4-declarative-v1 --plugins="go/v4-alpha,declarative,grafana/v1-alpha"
+scaffold_test_project project-v4-declarative-v1 --plugins="go/v4-alpha,declarative"
 scaffold_test_project project-v4-config --component-config --plugins="go/v4-alpha"
 scaffold_test_project project-v4-with-deploy-image --plugins="go/v4-alpha"
-scaffold_test_project project-v4-with-metrics
-
+scaffold_test_project project-v4-with-grafana

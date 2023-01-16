@@ -31,7 +31,7 @@ Install [kubebuilder](https://sigs.k8s.io/kubebuilder):
 
 ```bash
 # download kubebuilder and install locally.
-curl -L -o kubebuilder https://go.kubebuilder.io/dl/latest/$\(go env GOOS\)/$\(go env GOARCH\)
+curl -L -o kubebuilder https://go.kubebuilder.io/dl/latest/$(go env GOOS)/$(go env GOARCH)
 chmod +x kubebuilder && mv kubebuilder /usr/local/bin/
 ```
 
@@ -106,7 +106,6 @@ logic. For more info see [Designing an API](/cronjob-tutorial/api-design.md) and
 a Controller](cronjob-tutorial/controller-overview.md).
 
 If you are editing the API definitions, generate the manifests such as Custom Resources (CRs) or Custom Resource Defintions (CRDs) using
-
 ```bash
 make manifests
 ```

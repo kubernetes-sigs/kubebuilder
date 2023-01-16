@@ -45,6 +45,23 @@ var _ = Describe("APIPackagePath", func() {
 			Expect(APIPackagePath(repo, group, version, multiGroup)).To(Equal(p))
 		},
 		Entry("single group setup", repo, group, version, false, path.Join(repo, "api", version)),
+		Entry("multiple group setup", repo, group, version, true, path.Join(repo, "api", group, version)),
+		Entry("multiple group setup with empty group", repo, "", version, true, path.Join(repo, "api", version)),
+	)
+})
+
+var _ = Describe("APIPackagePathLegacy", func() {
+	const (
+		repo    = "github.com/kubernetes-sigs/kubebuilder"
+		group   = "group"
+		version = "v1"
+	)
+
+	DescribeTable("should work",
+		func(repo, group, version string, multiGroup bool, p string) {
+			Expect(APIPackagePathLegacy(repo, group, version, multiGroup)).To(Equal(p))
+		},
+		Entry("single group setup", repo, group, version, false, path.Join(repo, "api", version)),
 		Entry("multiple group setup", repo, group, version, true, path.Join(repo, "apis", group, version)),
 		Entry("multiple group setup with empty group", repo, "", version, true, path.Join(repo, "apis", version)),
 	)

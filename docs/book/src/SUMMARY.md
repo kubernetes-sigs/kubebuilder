@@ -6,8 +6,6 @@
 
 [Architecture](./architecture.md)
 
-[FAQ](./faq.md)
-
 ---
 
 - [Tutorial: Building CronJob](cronjob-tutorial/cronjob-tutorial.md)
@@ -133,6 +131,8 @@
   - [Plugins Versioning](./plugins/plugins-versioning.md)
 
 ---
+
+[FAQ](./faq.md)
 
 [Appendix: The TODO Landing Page](./TODO.md)
 
