@@ -10,7 +10,7 @@ by default. `make test` is the one-stop shop for downloading the binaries, setti
 
 The make targets require `bash` to run. 
 
-## Installation in Air Gaped/disconnected environments
+## Installation in Air Gapped/disconnected environments
 If you would like to download the tarball containing the binaries, to use in a disconnected environment you can use 
 [`setup-envtest`][setup-envtest] to download the required binaries locally. There are a lot of ways to configure `setup-envtest` to avoid talking to 
 the internet you can read about them [here](https://github.com/kubernetes-sigs/controller-runtime/tree/master/tools/setup-envtest#what-if-i-dont-want-to-talk-to-the-internet). 
@@ -184,6 +184,31 @@ expectedOwnerReference := v1.OwnerReference{
 Expect(deployment.ObjectMeta.OwnerReferences).To(ContainElement(expectedOwnerReference))
 ```
 
+<aside class="warning">
+
+<h2>Namespace usage limitation</h2>
+
+EnvTest does not support namespace deletion. Deleting a namespace will seem to succeed, but the namespace will just be put in a Terminating state, and never actually be reclaimed. Trying to recreate the namespace will fail. This will cause your reconciler to continue reconciling any objects left behind, unless they are deleted.
+
+To overcome this limitation you can create a new namespace for each test. Even so, when one test completes (e.g. in "namespace-1") and another test starts (e.g. in "namespace-2"), the controller will still be reconciling any active objects from "namespace-1". This can be avoided by ensuring that all tests clean up after themselves as part of the test teardown.  If teardown of a namespace is difficult, it may be possible to wire the reconciler in such a way that it ignores reconcile requests that come from namespaces other than the one being tested:
+
+```go
+type MyCoolReconciler struct {
+	client.Client
+	...
+	Namespace     string  // restrict namespaces to reconcile
+}
+func (r *MyCoolReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	_ = r.Log.WithValues("myreconciler", req.NamespacedName)
+	// Ignore requests for other namespaces, if specified
+	if r.Namespace != "" && req.Namespace != r.Namespace {
+		return ctrl.Result{}, nil
+	}
+```
+Whenever your tests create a new namespace, it can modify the value of reconciler.Namespace. The reconciler will effectively ignore the previous namespace.
+For further information see the issue raised in the controller-runtime [controller-runtime/issues/880](https://github.com/kubernetes-sigs/controller-runtime/issues/880) to add this support.
+</aside>
+
 ## Cert-Manager and Prometheus options
 
 Projects scaffolded with Kubebuilder can enable the [`metrics`][metrics] and the [`cert-manager`][cert-manager] options. Note that when we are using the ENV TEST we are looking to test the controllers and their reconciliation. It is considered an integrated test because the ENV TEST API will do the test against a cluster and because of this the binaries are downloaded and used to configure its pre-requirements, however, its purpose is mainly to `unit` test the controllers.
@@ -293,42 +318,9 @@ testEnv = &envtest.Environment{
 }
 ```
 
-<aside class="warning">
-
-<h2>Namespace usage limitation</h2>
-
-EnvTest does not support namespace deletion. Deleting a namespace will seem to succeed, but the namespace will just be put in a Terminating state, and never actually be reclaimed. Trying to recreate the namespace will fail. This will cause your reconciler to continue reconciling any objects left behind, unless they are deleted.
-
-To overcome this limitation you can create a new namespace for each test. Even so, when one test completes (e.g. in "namespace-1") and another test starts (e.g. in "namespace-2"), the controller will still be reconciling any active objects from "namespace-1". This can be avoided by ensuring that all tests clean up after themselves as part of the test teardown.  If teardown of a namespace is difficult, it may be possible to wire the reconciler in such a way that it ignores reconcile requests that come from namespaces other than the one being tested:
-
-```go
-type MyCoolReconciler struct {
-	client.Client
-	...
-	Namespace     string  // restrict namespaces to reconcile
-}
-
-func (r *MyCoolReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = r.Log.WithValues("myreconciler", req.NamespacedName)
-
-	// Ignore requests for other namespaces, if specified
-	if r.Namespace != "" && req.Namespace != r.Namespace {
-		return ctrl.Result{}, nil
-	}
-```
-
-Whenever your tests create a new namespace, it can modify the value of reconciler.Namespace. The reconciler will effectively ignore the previous namespace.
-
-For further information see the issue raised in the controller-runtime [controller-runtime/issues/880](https://github.com/kubernetes-sigs/controller-runtime/issues/880) to add this support.
-
-</aside>
-
-[envtest]:https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/envtest
-[setup-envtest]:https://pkg.go.dev/sigs.k8s.io/controller-runtime/tools/setup-envtest
 [metrics]: https://book.kubebuilder.io/reference/metrics.html
 [envtest]: https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/envtest
 [setup-envtest]: https://pkg.go.dev/sigs.k8s.io/controller-runtime/tools/setup-envtest
 [cert-manager]: https://book.kubebuilder.io/cronjob-tutorial/cert-manager.html
 [sdk-e2e-sample-example]: https://github.com/operator-framework/operator-sdk/tree/master/testdata/go/v3/memcached-operator/test/e2e
 [sdk]: https://github.com/operator-framework/operator-sdk
-

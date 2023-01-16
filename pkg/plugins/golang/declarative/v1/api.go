@@ -31,8 +31,8 @@ import (
 
 const (
 	// kbDeclarativePattern is the sigs.k8s.io/kubebuilder-declarative-pattern version
-	kbDeclarativePatternForV2 = "v0.0.0-20200522144838-848d48e5b073"
-	kbDeclarativePatternForV3 = "e0605f0e1a40f97293cb3773f57de695c8bc76af"
+	kbDeclarativePatternForV2   = "v0.0.0-20200522144838-848d48e5b073"
+	kbDeclarativePatternForV3V4 = "18dbaf5fcd851e6adc3f2f8a8facb669a1420797"
 )
 
 var _ plugin.CreateAPISubcommand = &createAPISubcommand{}
@@ -100,7 +100,8 @@ func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
 	}
 
 	// Update Dockerfile
-	err = updateDockerfile()
+	// nolint:staticcheck
+	err = updateDockerfile(plugin.IsLegacyLayout(p.config))
 	if err != nil {
 		return err
 	}
@@ -124,7 +125,7 @@ func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
 	// Ensure that we are pinning sigs.k8s.io/kubebuilder-declarative-pattern version
 	// Just pin an old value for go/v2. It shows fine for now. However, we should improve/change it
 	// if we see that more rules based on the plugins version are required.
-	kbDeclarativePattern := kbDeclarativePatternForV3
+	kbDeclarativePattern := kbDeclarativePatternForV3V4
 	for _, pluginKey := range p.config.GetPluginChain() {
 		if pluginKey == plugin.KeyFor(goPluginV2.Plugin{}) {
 			kbDeclarativePattern = kbDeclarativePatternForV2

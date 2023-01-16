@@ -56,6 +56,16 @@ needed to run.  As we add more functionality, we'll need to revisit these.
 // +kubebuilder:rbac:groups=batch.tutorial.kubebuilder.io,resources=cronjobs/status,verbs=get;update;patch
 
 /*
+The `ClusterRole` manifest at `config/rbac/role.yaml` is generated from the above markers via controller-gen with the following command:
+*/
+
+// make manifests
+
+/*
+NOTE: If you receive an error, please run the specified command in the error and re-run `make manifests`.
+*/
+
+/*
 `Reconcile` actually performs the reconciling for a single named object.
 Our [Request](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/reconcile?tab=doc#Request) just has a name, but we can use the client to fetch
 that object from the cache.

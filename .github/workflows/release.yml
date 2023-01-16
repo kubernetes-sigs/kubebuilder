@@ -19,7 +19,7 @@ jobs:
         with:
           go-version: '~1.19'
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v3
+        uses: goreleaser/goreleaser-action@v4
         with:
           version: v1.11.2
           args: release -f ./build/.goreleaser.yml --rm-dist

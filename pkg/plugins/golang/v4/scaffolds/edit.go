@@ -17,9 +17,6 @@ limitations under the License.
 package scaffolds
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/spf13/afero"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
@@ -59,20 +56,6 @@ func (s *editScaffolder) Scaffold() error {
 	}
 	str := string(bs)
 
-	// update dockerfile
-	if s.multigroup {
-		str, err = ensureExistAndReplace(
-			str,
-			"COPY api/ api/",
-			`COPY apis/ apis/`)
-
-	} else {
-		str, err = ensureExistAndReplace(
-			str,
-			"COPY apis/ apis/",
-			`COPY api/ api/`)
-	}
-
 	// Ignore the error encountered, if the file is already in desired format.
 	if err != nil && s.multigroup != s.config.IsMultiGroup() {
 		return err
@@ -92,11 +75,4 @@ func (s *editScaffolder) Scaffold() error {
 	}
 
 	return nil
-}
-
-func ensureExistAndReplace(input, match, replace string) (string, error) {
-	if !strings.Contains(input, match) {
-		return "", fmt.Errorf("can't find %q", match)
-	}
-	return strings.Replace(input, match, replace, -1), nil
 }

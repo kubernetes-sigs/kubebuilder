@@ -106,7 +106,7 @@ func (s *apiScaffolder) Scaffold() error {
 	if err := scaffold.Execute(
 		&templates.MainUpdater{WireResource: doAPI, WireController: doController},
 	); err != nil {
-		return fmt.Errorf("error updating main.go: %v", err)
+		return fmt.Errorf("error updating cmd/main.go: %v", err)
 	}
 
 	return nil

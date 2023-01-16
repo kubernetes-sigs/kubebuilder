@@ -191,6 +191,25 @@ func EnsureExistAndReplace(input, match, replace string) (string, error) {
 	return strings.Replace(input, match, replace, -1), nil
 }
 
+func HasFragment(path, target string) (bool, error) {
+	_, err := os.Stat(path)
+	if err != nil {
+		return false, err
+	}
+
+	// false positive
+	// nolint:gosec
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return false, err
+	}
+
+	if !strings.Contains(string(b), target) {
+		return false, nil
+	}
+	return true, nil
+}
+
 // ReplaceInFile replaces all instances of old with new in the file at path.
 func ReplaceInFile(path, old, new string) error {
 	info, err := os.Stat(path)
