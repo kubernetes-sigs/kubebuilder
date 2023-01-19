@@ -50,28 +50,6 @@ For more info, see the release page: https://github.com/kubernetes-sigs/kubebuil
 
 2. Announce the new release via email is sent to `kubebuilder@googlegroups.com` with the subject `[ANNOUNCE] Kubebuilder $VERSION is released`
 
-## What to do if things goes wrong? How to release from my local env as a workaround?
-
-As a workaround we can release from locally by: 
-
-PS.: _This workaround uses the google cloud. Note that we move the binary CLI release from google cloud to use Github Actions instead_
-
-1. Download google container builder: https://github.com/GoogleCloudPlatform/cloud-build-local
-2. Verify that you can use the cloud-build-local CLI tool
-3. Ensure that you are locally in the branch created for the release (`release-<MAJOR.MINOR>`)
-4. Ensure that it has no changes in the code source ( `git status`)
-5. Create the directory `cloudbuild` (`mkdir cloudbuild`)
-6. Then, update the file `build/cloudbuild_local.yaml` with:
-
-The following change is required for Goreleaser be able to add the binaries in the release page.
-
-```sh
-env: ["SNAPSHOT=1","GITHUB_TOKEN=your github token with access in the repo"]
-```
-**NOTE** You can create a token [here](https://github.com/settings/tokens/new).
-
-7. Then, update the file `build/build_kubebuilder.sh` to remove the flag `--snapshot` (Otherwise, the binaries will be built with snapshot git commit hash instead of the tag version)
-8. Run the command to trigger the release `$ cloud-build-local --config=build/cloudbuild_local.yaml --dryrun=false --write-workspace=./cloudbuild .`
 
 ## HEAD releases
 
