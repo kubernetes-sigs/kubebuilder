@@ -136,19 +136,19 @@ Note that if your project has multiple groups (`multigroup:true`) then the above
 The PROJECT tracks the paths of all APIs used in your project. Ensure that they now point to `api/...` as the following example:
 
 **Before update:**
-
+``` 
   group: crew
   kind: Captain
   path: sigs.k8s.io/kubebuilder/testdata/project-v4/apis/crew/v1
-
+```
 
 **After Update:**
-
+```
 
   group: crew
   kind: Captain
   path: sigs.k8s.io/kubebuilder/testdata/project-v4/api/crew/v1
-
+```
 
 ### Update kustomize manifests with the changes made so far
 
