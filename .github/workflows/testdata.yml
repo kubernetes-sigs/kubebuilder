@@ -25,6 +25,8 @@ jobs:
         run: sudo rm -f /usr/local/bin/kustomize
       - name: Verify testdata directory
         run: make check-testdata
+      - name: Verify docs update
+        run: make check-docs
       - name: Report failure
         uses: nashmaniac/create-issue-action@v1.1
         # Only report failures of pushes (PRs have are visible through the Checks section) to the default branch

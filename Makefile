@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-#  Copyright 2019 The Kubernetes Authors.
+#  Copyright 2023 The Kubernetes Authors.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -63,13 +63,21 @@ install: build ## Build and install the binary with the current source code. Use
 ##@ Development
 
 .PHONY: generate
-generate: generate-testdata ## Update/generate all mock data. You should run this commands to update the mock data after your changes.
+generate: generate-testdata generate-docs ## Update/generate all mock data. You should run this commands to update the mock data after your changes.
 	go mod tidy
 
 .PHONY: generate-testdata
 generate-testdata: ## Update/generate the testdata in $GOPATH/src/sigs.k8s.io/kubebuilder
 	rm -rf testdata/
 	./test/testdata/generate.sh
+
+.PHONY: generate-docs
+generate-docs: ## Update/generate the docs in $GOPATH/src/sigs.k8s.io/kubebuilder
+	go run hack/docs/generate_samples.go
+
+.PHONY: check-docs
+check-docs: ## Run the script to ensure that the docs are updated
+	./hack/docs/check.sh
 
 .PHONY: lint
 lint: golangci-lint yamllint ## Run golangci-lint linter & yamllint
