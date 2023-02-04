@@ -32,6 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	crewv1 "sigs.k8s.io/kubebuilder/testdata/project-v3-config/api/v1"
+	crewv2 "sigs.k8s.io/kubebuilder/testdata/project-v3-config/api/v2"
 	"sigs.k8s.io/kubebuilder/testdata/project-v3-config/controllers"
 	//+kubebuilder:scaffold:imports
 )
@@ -45,6 +46,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(crewv1.AddToScheme(scheme))
+	utilruntime.Must(crewv2.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -97,6 +99,10 @@ func main() {
 		os.Exit(1)
 	}
 	if err = (&crewv1.FirstMate{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "FirstMate")
+		os.Exit(1)
+	}
+	if err = (&crewv2.FirstMate{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create webhook", "webhook", "FirstMate")
 		os.Exit(1)
 	}
