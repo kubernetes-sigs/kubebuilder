@@ -41,14 +41,20 @@ type webhookScaffolder struct {
 
 	// force indicates whether to scaffold controller files even if it exists or not
 	force bool
+	// hub indicates whether to scaffold conversion for hub or not
+	hub bool
+	// spoke indicates whether to scaffold conversion for spoke or not
+	spoke bool
 }
 
 // NewWebhookScaffolder returns a new Scaffolder for v2 webhook creation operations
-func NewWebhookScaffolder(config config.Config, resource resource.Resource, force bool) plugins.Scaffolder {
+func NewWebhookScaffolder(config config.Config, resource resource.Resource, force, hub, spoke bool) plugins.Scaffolder {
 	return &webhookScaffolder{
 		config:   config,
 		resource: resource,
 		force:    force,
+		hub:      hub,
+		spoke:    spoke,
 	}
 }
 
@@ -88,6 +94,22 @@ func (s *webhookScaffolder) Scaffold() error {
 		&templates.MainUpdater{WireWebhook: true},
 	); err != nil {
 		return err
+	}
+
+	if s.hub {
+		if err := scaffold.Execute(
+			&api.Conversion{Force: s.force, Hub: true},
+		); err != nil {
+			return err
+		}
+	}
+
+	if s.spoke {
+		if err := scaffold.Execute(
+			&api.Conversion{Force: s.force, Spoke: true},
+		); err != nil {
+			return err
+		}
 	}
 
 	if doConversion {

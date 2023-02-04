@@ -59,7 +59,20 @@ function scaffold_test_project {
     else
       $kb create api --group crew --version v1 --kind FirstMate --controller=true --resource=true --make=false
     fi
-    $kb create webhook --group crew --version v1 --kind FirstMate --conversion
+    if [ $project == "project-v3" ] || [ $project == "project-v3-config" ] || [ $project == "project-v4" ] || [ $project == "project-v4-config" ]; then
+      $kb create api --group crew --version v2 --kind FirstMate --controller=false --resource=true --make=false
+      $kb create webhook --group crew --version v1 --kind FirstMate --conversion --hub
+      $kb create webhook --group crew --version v2 --kind FirstMate --conversion --spoke
+      if [ "$(go env GOOS)" == "windows" ]; then
+        sed -i '/subresource:status/a \/\/ +kubebuilder:storageversion' api/v1/firstmate_types.go # specify storage version for controller-gen
+      else
+       sed -i '' '/subresource:status/ {a\
+\/\/+kubebuilder:storageversion
+       }' api/v1/firstmate_types.go
+      fi
+    else
+      $kb create webhook --group crew --version v1 --kind FirstMate --conversion
+    fi
 
     if [ $project == "project-v3" ] || [ $project == "project-v4" ]; then
       $kb create api --group crew --version v1 --kind Admiral --plural=admirales --controller=true --resource=true --namespaced=false --make=false

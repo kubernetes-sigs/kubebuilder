@@ -67,11 +67,13 @@ type Options struct {
 	Namespaced bool
 
 	// Flags that define which parts should be scaffolded
-	DoAPI        bool
-	DoController bool
-	DoDefaulting bool
-	DoValidation bool
-	DoConversion bool
+	DoAPI           bool
+	DoController    bool
+	DoDefaulting    bool
+	DoValidation    bool
+	DoConversion    bool
+	DoSpokeScaffold bool
+	DoHubScaffold   bool
 }
 
 // UpdateResource updates the provided resource with the options
@@ -99,7 +101,7 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 		res.Controller = true
 	}
 
-	if opts.DoDefaulting || opts.DoValidation || opts.DoConversion {
+	if opts.DoDefaulting || opts.DoValidation || opts.DoConversion || opts.DoHubScaffold || opts.DoSpokeScaffold {
 		// IsLegacyLayout is added to ensure backwards compatibility and should
 		// be removed when we remove the go/v3 plugin
 		//nolint:staticcheck
