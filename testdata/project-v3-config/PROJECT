@@ -20,6 +20,8 @@ resources:
   version: v1
   webhooks:
     defaulting: true
+    hub: false
+    spoke: false
     validation: true
     webhookVersion: v1
 - api:
@@ -33,6 +35,8 @@ resources:
   version: v1
   webhooks:
     conversion: true
+    hub: true
+    spoke: false
     webhookVersion: v1
 - api:
     crdVersion: v1
@@ -44,6 +48,8 @@ resources:
   version: v2
   webhooks:
     conversion: true
+    hub: false
+    spoke: true
     webhookVersion: v1
 - api:
     crdVersion: v1
@@ -55,6 +61,8 @@ resources:
   version: v1
   webhooks:
     defaulting: true
+    hub: false
+    spoke: false
     webhookVersion: v1
 - controller: true
   domain: testproject.org

@@ -120,6 +120,12 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 		if opts.DoConversion {
 			res.Webhooks.Conversion = true
 		}
+		if opts.DoHubScaffold {
+			res.Webhooks.Hub = true
+		}
+		if opts.DoSpokeScaffold {
+			res.Webhooks.Spoke = true
+		}
 	}
 
 	// domain and path may need to be changed in case we are referring to a builtin core resource:
