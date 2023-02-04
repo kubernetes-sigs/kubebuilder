@@ -47,7 +47,7 @@ func (p *initSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *
   - a "PROJECT" file that stores project configuration
   - several YAML files for project deployment under the "config" directory
 
-NOTE: This plugin requires kustomize version v4 and kubectl >= 1.22.  	
+NOTE: This plugin requires kustomize version v5 and kubectl >= 1.22.
 `
 	subcmdMeta.Examples = fmt.Sprintf(`  # Initialize a common project with your domain and name in copyright
   %[1]s init --plugins common/v3 --domain example.org
