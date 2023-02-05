@@ -78,9 +78,9 @@ func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.options.DoConversion, "conversion", false,
 		"if set, scaffold the conversion webhook")
 	fs.BoolVar(&p.options.DoHubScaffold, "hub", false,
-		"if set, scaffold ConvertTo function for Hub conversion")
+		"if set, scaffold Hub function for conversion")
 	fs.BoolVar(&p.options.DoSpokeScaffold, "spoke", false,
-		"if set, scaffold ConvertFrom function for Spoke conversion")
+		"if set, scaffold ConvertFrom and ConvertTo function for conversion")
 
 	fs.BoolVar(&p.force, "force", false,
 		"attempt to create resource even if it already exists")
