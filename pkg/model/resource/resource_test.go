@@ -182,6 +182,30 @@ var _ = Describe("Resource", func() {
 			)
 		})
 
+		Context("HasHubWebhook", func() {
+			It("should return true if the hub webhook is scaffolded", func() {
+				Expect(Resource{Webhooks: &Webhooks{Hub: true}}.HasHubWebhook()).To(BeTrue())
+			})
+
+			DescribeTable("should return false if the hub webhook is not scaffolded",
+				func(res Resource) { Expect(res.HasHubWebhook()).To(BeFalse()) },
+				Entry("nil webhooks", Resource{Webhooks: nil}),
+				Entry("no hub", Resource{Webhooks: &Webhooks{Hub: false}}),
+			)
+		})
+
+		Context("HasSpokeWebhook", func() {
+			It("should return true if the spoke webhook is scaffolded", func() {
+				Expect(Resource{Webhooks: &Webhooks{Spoke: true}}.HasSpokeWebhook()).To(BeTrue())
+			})
+
+			DescribeTable("should return false if the spoke webhook is not scaffolded",
+				func(res Resource) { Expect(res.HasSpokeWebhook()).To(BeFalse()) },
+				Entry("nil webhooks", Resource{Webhooks: nil}),
+				Entry("no spoke", Resource{Webhooks: &Webhooks{Spoke: false}}),
+			)
+		})
+
 		Context("IsRegularPlural", func() {
 			It("should return true if the regular plural form is used", func() {
 				Expect(res.IsRegularPlural()).To(BeTrue())
