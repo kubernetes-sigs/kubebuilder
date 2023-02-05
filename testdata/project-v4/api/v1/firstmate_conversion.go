@@ -16,5 +16,6 @@ limitations under the License.
 package v1
 
 // Hub marks that a given type is the hub type for conversion. -- only the no-op method 'Hub()' is required.
-// See https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/conversion#Hub.
+// See https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/conversion#Hub
+// or https://book.kubebuilder.io/multiversion-tutorial/conversion.html.
 func (FirstMate) Hub() {}

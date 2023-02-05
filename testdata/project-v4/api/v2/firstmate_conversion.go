@@ -21,6 +21,7 @@ import (
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
+// See https://book.kubebuilder.io/multiversion-tutorial/conversion.html.
 func (src *FirstMate) ConvertTo(dstRaw conversion.Hub) error {
 	// Implement your logic here to convert from hub to spoke version.
 	return nil

@@ -36,8 +36,6 @@ resources:
   path: sigs.k8s.io/kubebuilder/testdata/project-v4-with-deploy-image/api/v1alpha1
   version: v1alpha1
   webhooks:
-    hub: false
-    spoke: false
     validation: true
     webhookVersion: v1
 - api:

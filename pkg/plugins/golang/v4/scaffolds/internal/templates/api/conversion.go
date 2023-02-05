@@ -68,7 +68,8 @@ const conversionTemplate = `{{ .Boilerplate }}
 {{- if .Hub }}
 package {{ .Resource.Version }}
 // Hub marks that a given type is the hub type for conversion. -- only the no-op method 'Hub()' is required.
-// See https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/conversion#Hub or https://book.kubebuilder.io/multiversion-tutorial/conversion.html.
+// See https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/conversion#Hub 
+// or https://book.kubebuilder.io/multiversion-tutorial/conversion.html.
 func ({{ .Resource.Kind }}) Hub() {}
 {{else}}{{- if .Spoke }}
 
@@ -79,6 +80,7 @@ import (
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
+// See https://book.kubebuilder.io/multiversion-tutorial/conversion.html. 
 func (src  *{{ .Resource.Kind }}) ConvertTo(dstRaw conversion.Hub) error {
 	// Implement your logic here to convert from hub to spoke version.
 	return nil
