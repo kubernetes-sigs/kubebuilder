@@ -108,7 +108,7 @@ func (s *webhookScaffolder) Scaffold() error {
 		}
 	}
 
-	if doConversion {
+	if doConversion && !doHubScaffold && !doSpokeScaffold {
 		fmt.Println(`Webhook server has been set up for you.
 You need to implement the conversion.Hub and conversion.Convertible interfaces for your CRD types.`)
 	}
