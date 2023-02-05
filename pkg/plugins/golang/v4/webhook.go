@@ -61,6 +61,14 @@ validating and/or conversion webhooks.
   # Create conversion webhook for Group: ship, Version: v1beta1
   # and Kind: Frigate
   %[1]s create webhook --group ship --version v1beta1 --kind Frigate --conversion
+
+  # Create hub conversion scaffold for Group: ship, Version: v1beta1
+  # and Kind: Frigate
+  %[1]s create webhook --group ship --version v1beta1 --kind Frigate --conversion --hub
+
+  # Create spoke conversion scaffold for Group: ship, Version: v1beta1
+  # and Kind: Frigate
+  %[1]s create webhook --group ship --version v1beta1 --kind Frigate --conversion --spoke
 `, cliMeta.CommandName)
 }
 
