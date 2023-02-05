@@ -120,8 +120,6 @@ func (p *createWebhookSubcommand) Scaffold(fs machinery.Filesystem) error {
 		p.config,
 		*p.resource,
 		p.force,
-		p.options.DoHubScaffold,
-		p.options.DoSpokeScaffold,
 	)
 	scaffolder.InjectFS(fs)
 	return scaffolder.Scaffold()

@@ -41,20 +41,14 @@ type webhookScaffolder struct {
 
 	// force indicates whether to scaffold controller files even if it exists or not
 	force bool
-	// hub indicates whether to scaffold conversion for hub or not
-	hub bool
-	// spoke indicates whether to scaffold conversion for spoke or not
-	spoke bool
 }
 
 // NewWebhookScaffolder returns a new Scaffolder for v2 webhook creation operations
-func NewWebhookScaffolder(config config.Config, resource resource.Resource, force, hub, spoke bool) plugins.Scaffolder {
+func NewWebhookScaffolder(config config.Config, resource resource.Resource, force bool) plugins.Scaffolder {
 	return &webhookScaffolder{
 		config:   config,
 		resource: resource,
 		force:    force,
-		hub:      hub,
-		spoke:    spoke,
 	}
 }
 
@@ -84,6 +78,8 @@ func (s *webhookScaffolder) Scaffold() error {
 	doDefaulting := s.resource.HasDefaultingWebhook()
 	doValidation := s.resource.HasValidationWebhook()
 	doConversion := s.resource.HasConversionWebhook()
+	doHubScaffold := s.resource.HasHubWebhook()
+	doSpokeScaffold := s.resource.HasSpokeWebhook()
 
 	if err := s.config.UpdateResource(s.resource); err != nil {
 		return fmt.Errorf("error updating resource: %w", err)
@@ -96,7 +92,7 @@ func (s *webhookScaffolder) Scaffold() error {
 		return err
 	}
 
-	if s.hub {
+	if doHubScaffold {
 		if err := scaffold.Execute(
 			&api.Conversion{Force: s.force, Hub: true},
 		); err != nil {
@@ -104,7 +100,7 @@ func (s *webhookScaffolder) Scaffold() error {
 		}
 	}
 
-	if s.spoke {
+	if doSpokeScaffold {
 		if err := scaffold.Execute(
 			&api.Conversion{Force: s.force, Spoke: true},
 		); err != nil {

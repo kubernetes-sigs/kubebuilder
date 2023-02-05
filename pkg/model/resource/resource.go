@@ -119,6 +119,16 @@ func (r Resource) HasConversionWebhook() bool {
 	return r.Webhooks != nil && r.Webhooks.Conversion
 }
 
+// HasHubWebhook returns true if the resource has an associated hub webhook.
+func (r Resource) HasHubWebhook() bool {
+	return r.Webhooks != nil && r.Webhooks.Hub
+}
+
+// HasSpokeWebhook returns true if the resource has an associated spoke webhook.
+func (r Resource) HasSpokeWebhook() bool {
+	return r.Webhooks != nil && r.Webhooks.Spoke
+}
+
 // IsRegularPlural returns true if the plural is the regular plural form for the kind.
 func (r Resource) IsRegularPlural() bool {
 	return r.Plural == RegularPlural(r.Kind)
