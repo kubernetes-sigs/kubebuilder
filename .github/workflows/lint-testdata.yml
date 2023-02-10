@@ -1,0 +1,43 @@
+name: Testdata Lint Check
+
+# Trigger the workflow on pull requests and direct pushes to any branch
+on:
+  push:
+  pull_request:
+
+jobs:
+  check-lint-for-project-v4:
+    uses: kubernetes-sigs/kubebuilder/.github/workflows/lint-testdata-template.yml@master
+    with:
+      name: project-v4
+      working-directory: testdata/project-v4
+
+  check-lint-for-project-v4-config:
+    uses: kubernetes-sigs/kubebuilder/.github/workflows/lint-testdata-template.yml@master
+    with:
+      name: project-v4-config
+      working-directory: testdata/project-v4-config
+
+  check-lint-for-project-v4-declarative-v1:
+    uses: kubernetes-sigs/kubebuilder/.github/workflows/lint-testdata-template.yml@master
+    with:
+      name: project-v4-declarative-v1
+      working-directory: testdata/project-v4-declarative-v1
+
+  check-lint-for-project-v4-multigroup:
+    uses: kubernetes-sigs/kubebuilder/.github/workflows/lint-testdata-template.yml@master
+    with:
+      name: project-v4-multigroup
+      working-directory: testdata/project-v4-multigroup
+
+  check-lint-for-project-v4-with-deploy-image:
+    uses: kubernetes-sigs/kubebuilder/.github/workflows/lint-testdata-template.yml@master
+    with:
+      name: project-v4-with-deploy-image
+      working-directory: testdata/project-v4-with-deploy-image
+
+  check-lint-for-project-v4-with-grafana:
+    uses: kubernetes-sigs/kubebuilder/.github/workflows/lint-testdata-template.yml@master
+    with:
+      name: project-v4-with-grafana
+      working-directory: testdata/project-v4-with-grafana
