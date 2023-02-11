@@ -1,7 +1,8 @@
-# API Versioning in Kubebuilder
+| Authors       | Creation Date | Status      | Extra |
+|---------------|---------------|-------------|-------|
+| @droot | 01/30/2019| implementable | -     |
 
-Authors: @droot 
-Last Updated on: 01/30/2019
+# API Versioning in Kubebuilder
 
 This document describes high level design and workflow for supporting multiple versions in an API built using Kubebuilder. Multi-version support was added as an alpha feature in kubernetes project in 1.13 release. Here are links to some recommended reading material.
 

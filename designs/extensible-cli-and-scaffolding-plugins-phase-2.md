@@ -1,3 +1,7 @@
+| Authors       | Creation Date | Status      | Extra                                                           |
+|---------------|---------------|-------------|-----------------------------------------------------------------|
+| @rashmigottipati | Mar 9, 2021  | partial implemented | [Plugins doc](https://book.kubebuilder.io/plugins/plugins.html) |
+
 # Extensible CLI and Scaffolding Plugins - Phase 2
 
 ## Overview

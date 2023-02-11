@@ -1,3 +1,8 @@
+
+| Authors       | Creation Date | Status      | Extra                                                           |
+|---------------|---------------|-------------|-----------------------------------------------------------------|
+| @estroz,@joelanford | Dec 10, 2019  | Implemented | [Plugins doc](https://book.kubebuilder.io/plugins/plugins.html) |
+
 # Extensible CLI and Scaffolding Plugins
 
 ## Overview

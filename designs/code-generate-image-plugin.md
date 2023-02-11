@@ -1,15 +1,6 @@
----
-title: Neat-Enhancement-Idea
-authors:
-  - "@camilamacedo86"
-reviewers:
-  - TBD
-approvers:
-  - TBD
-creation-date: 2020-11-09
-last-updated: 2021-02-14
-status: implementable
----
+| Authors       | Creation Date | Status      | Extra |
+|---------------|---------------|-------------|---|
+| @camilamacedo86 | 2021-02-14 | Implemented | [deploy-image-plugin-v1-alpha](https://book.kubebuilder.io/plugins/deploy-image-plugin-v1-alpha.html) |
 
 # New Plugin (`deploy-image.go.kubebuilder.io/v1beta1`) to generate code
 
