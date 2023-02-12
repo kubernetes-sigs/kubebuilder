@@ -108,7 +108,7 @@ func makePluginRequest(req external.PluginRequest, path string) (*external.Plugi
 // getUniverseMap is a helper function that is used to read the current directory to build
 // the universe map.
 // It will return a map[string]string where the keys are relative paths to files in the directory
-// and values are the contents, or an error if an issue occured while reading one of the files.
+// and values are the contents, or an error if an issue occurred while reading one of the files.
 func getUniverseMap(fs machinery.Filesystem) (map[string]string, error) {
 	universe := map[string]string{}
 
@@ -125,7 +125,12 @@ func getUniverseMap(fs machinery.Filesystem) (map[string]string, error) {
 		if err != nil {
 			return err
 		}
-		defer file.Close()
+
+		defer func() {
+			if err := file.Close(); err != nil {
+				return
+			}
+		}()
 
 		content, err := io.ReadAll(file)
 		if err != nil {

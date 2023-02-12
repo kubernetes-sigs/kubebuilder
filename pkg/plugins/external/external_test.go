@@ -710,15 +710,22 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 
 			// create files in Filesystem
 			for _, file := range files {
-				fs.FS.MkdirAll(file.path, 0o700)
-				f, _ := fs.FS.Create(filepath.Join(file.path, file.name))
-				f.Write([]byte(file.content))
-				f.Close()
+				err := fs.FS.MkdirAll(file.path, 0o700)
+				Expect(err).ToNot(HaveOccurred())
+
+				f, err := fs.FS.Create(filepath.Join(file.path, file.name))
+				Expect(err).ToNot(HaveOccurred())
+
+				_, err = f.Write([]byte(file.content))
+				Expect(err).ToNot(HaveOccurred())
+
+				err = f.Close()
+				Expect(err).ToNot(HaveOccurred())
 			}
 
 			universe, err := getUniverseMap(fs)
 
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(len(universe)).To(Equal(len(files)))
 
 			for _, file := range files {
