@@ -1,3 +1,5 @@
+**Currently, Kubebuilder is upgraded to v3. [These](https://book-v1.book.kubebuilder.io/getting_started/installation_and_setup.html) are legacy documents. You can download v3 Kubebuilder [here](https://book.kubebuilder.io/).**
+
 # Installation and Setup
 
 Kubebuilder requires multiple binaries to be installed and cannot be installed with `go get`.
