@@ -11,7 +11,7 @@ the [PROJECT config][project-config].
 
 ## Example
 
-By running a command like following users would be able to re-scaffold the whole project from the scratch using the
+By running a command like following, users would be able to re-scaffold the whole project from the scratch using the
 current version of KubeBuilder binary available.
 
 ```shell
@@ -24,15 +24,16 @@ N/A
 
 ## Summary
 
-The [PROJECT config][project-config] tracks all configuration and inputs used to create the
-project with the CLI. Therefore, a command could be able to read this information and re-run
-the same commands with the same data used previously to re-generate the project.
+Therefore, a new command can be designed to load user configs from the [PROJECT config][project-config] file, and run the corresponding kubebuilder subcommands to generate the project based on the new kubebuilder version. Thus, it makes it easier for the users to migrate their operator projects to the new scaffolding.
 
 ## Motivation
 
-The recommended straightforward steps to upgrade the projects are re-scaffold all from scract using the upper
-version/plugin and then, re-add all code source on top again. Therefore, this command would help users in
-order to minimize the required effort by automating which shows technically possible of this process.
+A common scenario is to upgrade the project based on the newer Kubebuilder. The recommended (straightforward) steps are:
+
+- a) re-scaffold all files from scratch using the upper version/plugins
+- b) copy user-defined source code to the new layout
+
+The proposed command will automate the process at maximum, therefore helping operator authors with minimizing the manual effort.
 
 The main motivation of this proposal is to provide a helper for upgrades and
 make less painful this process. Examples:
@@ -54,6 +55,7 @@ make less painful this process. Examples:
 - Deal and support external plugins
 - Provides support to [declarative](https://book.kubebuilder.io/plugins/declarative-v1.html) plugin
   since it is desired and planned to decouple this solution and donate this plugin to its own authors [More info](https://github.com/kubernetes-sigs/kubebuilder/issues/3186)
+- Provide support old version prior we have the Project config (Kubebuilder < 3x) and the go/v2 layout which exist to ensure  a backwards compatibility with legacy layout provide by Kubebuilder 2x
 
 ## Proposal
 
@@ -62,35 +64,45 @@ in the example section above, see:
 
 ```shell
 kubebuilder alpha generate \
-    --from-project-file=<path> 
+    --from=<path of the project file> 
     --to=<path where the project should be re-scaffold> 
     --backup=<path-where the current version of the project should be copied as backup>
-    --init-plugins=<chain of plugins key that can be used to create the layout with init sub-command>
+    --plugins=<chain of plugins key that can be used to create the layout with init sub-command>
 ```
 
 Where:
 
-- project-file: If not informed then, the command would check it in the current directory
-- output: If not informed then, it should be the current repository
-- backup: if not informed then, it would be the current path -1 level with the name backup
-- init-plugins: if not informed then, it is the same plugin chain available in the layout field
+- from: [Optional] If not informed then, the command would check it in the current directory
+- to: [Optional] If not informed then, it should be the current repository
+- backup: [Optional] If not informed then, the backup by copying the project to a new directory would not be made
+- plugins:  [Optional] If not informed then, it is the same plugin chain available in the layout field
 
 This command would mainly perform the following operations:
 
-- 1. Make a backup of the current project
-- 2. Ensure that the output path is clean
-- 3. Read the [PROJECT config][project-config]
-- 4. Re-run all commands using the KubeBuilder binary to recreate the project in the output directory
+- 1. Check the flags
+- 2. If the backup flag be used, then check if is a valid path and make a backup of the current project
+- 3. Ensure that the output path is clean
+- 4. Read the [PROJECT config][project-config]
+- 5. Re-run all commands using the KubeBuilder binary to recreate the project in the output directory
 
 ### User Stories
 
-- As a developer I can regenerate my project from the scratch based on all commands that I used the tool to build
-  my project previously, so that I can easily upgrade my current project to new CLI/plugin versions and get the
-  latest changes, bug fixes and features
-- As a developer I can regenerate my project from the scratch based on all commands that I used the tool to build
-  my project previously but informing a new init plugin chain, so that I could upgrade my current project to new
-  layout versions and experiment alpha ones.
-- As a KubeBuilder maintainer, I can leverage on this helper to encourage its users to migrate to upper versions more often, making it easier to maintain the project.
+**As an Operator author:**
+
+- I can re-generate my project from scratch based on the proposed helper, which executes all the 
+commands according to my previous input to the project. That way, I can easily migrate my project to the new layout 
+using the newer CLI/plugin versions, which support the latest changes, bug fixes, and features.
+- I can regenerate my project from the scratch based on all commands that I used the tool to build
+my project previously but informing a new init plugin chain, so that I could upgrade my current project to new
+layout versions and experiment alpha ones.
+- I would like to re-generate the project from the scratch using the same config provide in the PROJECT file and inform
+a path to do a backup of my current directory so that I can also use the backup to compare with the new scaffold and add my custom code 
+on top again without the need to compare my local directory and new scaffold with any outside source.
+
+**As a Kubebuiler maintainer:**
+
+- I can leverage this helper to easily migrate tutorial projects of the Kubebuilder book.
+- I can leverage on this helper to encourage its users to migrate to upper versions more often, making it easier to maintain the project.
 
 ### Implementation Details/Notes/Constraints
 
