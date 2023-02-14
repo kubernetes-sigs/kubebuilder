@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/gobuffalo/flect v1.0.0
-	github.com/onsi/ginkgo/v2 v2.8.0
+	github.com/onsi/ginkgo/v2 v2.8.1
 	github.com/onsi/gomega v1.26.0
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/afero v1.9.3
