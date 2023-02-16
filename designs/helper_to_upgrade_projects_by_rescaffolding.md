@@ -94,7 +94,7 @@ in the example section above, see:
 
 ```shell
 kubebuilder alpha generate \
-    --from=<path of the project file> 
+    --from=<path where the PROJECT file can be found> 
     --to=<path where the project should be re-scaffold> 
     --no-backup
     --backup-path=<path-where the current version of the project should be copied as backup>
