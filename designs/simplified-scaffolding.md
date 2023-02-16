@@ -1,3 +1,7 @@
+| Authors       | Creation Date | Status      | Extra |
+|---------------|---------------|-------------|---|
+| @DirectXMan12 | Mar 6, 2019 | Implemented | - |
+
 Simplified Builder-Based Scaffolding
 ====================================
 
