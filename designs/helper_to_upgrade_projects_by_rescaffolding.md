@@ -37,8 +37,8 @@ provided for the same plugin version. Therefore, you will need to:
 - You will run the command in the root directory of your project: `kubebuilder alpha generate`
 - Then, the command will remove the content of your local directory and re-scaffold the project from the scratch
 - It will allow you to compare your local branch with the remote branch of your project to re-add the code on top OR
-if you do not use the flag `--no-backup` then you can compare the local directory with the copy of your project 
-copied to the path `.backup/project-name/` before the re-scaffold be done.
+  if you do not use the flag `--no-backup` then you can compare the local directory with the copy of your project
+  copied to the path `.backup/project-name/` before the re-scaffold be done.
 - Therefore, you can run make all and test the final result. You will have after all your project updated.
 
 **To update the project with major changes provided**
@@ -99,15 +99,16 @@ kubebuilder alpha generate \
     --no-backup
     --backup-path=<path-where the current version of the project should be copied as backup>
     --plugins=<chain of plugins key that can be used to create the layout with init sub-command>
+```
 
-Where:
+**Where**:
 
 - from: [Optional] If not informed then, by default it is the current directory (project directory). If the `PROJECT` file does not exist then it will fail.
 - to: [Optional] If not informed then, it should be the current repository.
 - no-backup: [Optional] If not informed then, the current directory should be copied to the path `.backup/project-name` 
-- backup: [Optional] If not informed then, the backup will be copied to the the path `.backup/project-name` 
+- backup: [Optional] If not informed then, the backup will be copied to the path `.backup/project-name` 
 - plugins:  [Optional] If not informed then, it is the same plugin chain available in the layout field
-- binary: [Optional] If not infomed then, the command will use KubeBuilder binary installed globaly. 
+- binary: [Optional] If not informed then, the command will use KubeBuilder binary installed globaly. 
 
 > Note that the backup created in the current directory must be prefixed with `.`. Otherwise the tool
 will not able to perform the scaffold to create a new project from the scratch.
@@ -171,7 +172,7 @@ However, initially a more generic design implementation does not appear to be ac
 would be considered out of the scope of this proposal (no goal). It should to be considered
 as a second phase of this implementation.
 
-Therefore, the current achievable mitigation in place is that KubeBuilder's  policy of not providing official 
+Therefore, the current achievable mitigation in place is that KubeBuilder's  policy of not providing official
 support of maintaining and distributing many plugins.
 
 ### Proof of Concept
