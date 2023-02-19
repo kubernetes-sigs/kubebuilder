@@ -20,12 +20,15 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
+	iofs "io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
 
+	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
@@ -102,8 +105,57 @@ func makePluginRequest(req external.PluginRequest, path string) (*external.Plugi
 	return &res, nil
 }
 
+// getUniverseMap is a helper function that is used to read the current directory to build
+// the universe map.
+// It will return a map[string]string where the keys are relative paths to files in the directory
+// and values are the contents, or an error if an issue occurred while reading one of the files.
+func getUniverseMap(fs machinery.Filesystem) (map[string]string, error) {
+	universe := map[string]string{}
+
+	err := afero.Walk(fs.FS, ".", func(path string, info iofs.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if info.IsDir() {
+			return nil
+		}
+
+		file, err := fs.FS.Open(path)
+		if err != nil {
+			return err
+		}
+
+		defer func() {
+			if err := file.Close(); err != nil {
+				return
+			}
+		}()
+
+		content, err := io.ReadAll(file)
+		if err != nil {
+			return err
+		}
+
+		universe[path] = string(content)
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return universe, nil
+}
+
 func handlePluginResponse(fs machinery.Filesystem, req external.PluginRequest, path string) error {
-	req.Universe = map[string]string{}
+	var err error
+
+	req.Universe, err = getUniverseMap(fs)
+	if err != nil {
+		return err
+	}
 
 	res, err := makePluginRequest(req, path)
 	if err != nil {
