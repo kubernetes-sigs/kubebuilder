@@ -65,3 +65,8 @@ func (p Plugin) GetCreateAPISubcommand() plugin.CreateAPISubcommand { return &p.
 func (p Plugin) GetCreateWebhookSubcommand() plugin.CreateWebhookSubcommand {
 	return &p.createWebhookSubcommand
 }
+
+func (p Plugin) DeprecationWarning() string {
+	return "This version is deprecated.The kustomize/v1 plugin used within go/v3 projects uses an old version " +
+		"of kustomize version, v3x. Please, upgrade your project to use go/v4 and kustomize/v2 plugin versions."
+}
