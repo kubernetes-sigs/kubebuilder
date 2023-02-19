@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v2_alpha
+package v2
 
 import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
@@ -30,7 +30,7 @@ const KustomizeVersion = "v5.0.0"
 const pluginName = "kustomize.common." + plugins.DefaultNameQualifier
 
 var (
-	pluginVersion            = plugin.Version{Number: 2, Stage: stage.Alpha}
+	pluginVersion            = plugin.Version{Number: 2, Stage: stage.Stable}
 	supportedProjectVersions = []config.Version{cfgv3.Version}
 )
 

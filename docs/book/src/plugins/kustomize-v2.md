@@ -44,7 +44,7 @@ all that is language specific and kustomize for its configuration, see:
 ```go
 import (
 ...
-   kustomizecommonv2alpha "sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v2-alpha"
+   kustomizecommonv2alpha "sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v2"
    golangv3 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3"
 ...
 )
@@ -58,10 +58,10 @@ import (
 	)
 ```
 
-Also, with Kubebuilder, you can use kustomize/v2-alpha alone via:
+Also, with Kubebuilder, you can use kustomize/v2 alone via:
 
 ```sh
-kubebuilder init --plugins=kustomize/v2-alpha
+kubebuilder init --plugins=kustomize/v2
 $ ls -la
 total 24
 drwxr-xr-x   6 camilamacedo86  staff  192 31 Mar 09:56 .
@@ -75,8 +75,8 @@ drwx------   6 camilamacedo86  staff  192 31 Mar 09:56 config
 Or combined with the base language plugins:
 
 ```sh
-# Provides the same scaffold of go/v3 plugin which is composition but with kustomize/v2-alpha
-kubebuilder init --plugins=kustomize/v2-alpha,base.go.kubebuilder.io/v3 --domain example.org --repo example.org/guestbook-operator
+# Provides the same scaffold of go/v3 plugin which is composition but with kustomize/v2
+kubebuilder init --plugins=kustomize/v2,base.go.kubebuilder.io/v3 --domain example.org --repo example.org/guestbook-operator
 ```
 
 ## Subcommands
@@ -113,7 +113,7 @@ The following scaffolds will be created or updated by this plugin:
 [sdk]:https://github.com/operator-framework/operator-sdk
 [testdata]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/testdata/
 [bundle]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/pkg/plugin/bundle.go
-[kustomize-create-api]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/pkg/plugins/common/kustomize/v2-alpha/scaffolds/api.go#L72-L84
+[kustomize-create-api]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/pkg/plugins/common/kustomize/v2/scaffolds/api.go#L72-L84
 [kustomize-docs]: https://kustomize.io/
 [kustomize-github]: https://github.com/kubernetes-sigs/kustomize
 [kustomize-replacements]: https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/replacements/

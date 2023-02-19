@@ -23,10 +23,10 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v2-alpha/scaffolds/internal/templates/config/crd"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v2-alpha/scaffolds/internal/templates/config/crd/patches"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v2-alpha/scaffolds/internal/templates/config/rbac"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v2-alpha/scaffolds/internal/templates/config/samples"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/crd"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/crd/patches"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/rbac"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/samples"
 )
 
 var _ plugins.Scaffolder = &apiScaffolder{}

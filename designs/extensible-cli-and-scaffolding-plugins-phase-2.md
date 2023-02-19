@@ -138,7 +138,7 @@ plugins:
     - domain: testproject.org
       group: crew
       kind: Captain
-      version: v2-alpha
+      version: v2
   declarative.go.kubebuilder.io/v1:
     resources:
     - domain: testproject.org

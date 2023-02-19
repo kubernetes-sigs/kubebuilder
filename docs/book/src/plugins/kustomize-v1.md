@@ -12,7 +12,7 @@ This plugin uses [kubernetes-sigs/kustomize](https://github.com/kubernetes-sigs/
 - linux/arm64
 - darwin/amd64
 
-You might want to consider using [kustomize/v2-alpha](./kustomize-v2-alpha.md) if you are looking to scaffold projects in
+You might want to consider using [kustomize/v2](./kustomize-v2.md) if you are looking to scaffold projects in
 other architecture environments. (i.e. if you are looking to scaffold projects with Apple Silicon/M1 (`darwin/arm64`) this plugin 
 will not work, more info: [kubernetes-sigs/kustomize#4612](https://github.com/kubernetes-sigs/kustomize/issues/4612)).
 </aside> 
