@@ -3,8 +3,8 @@
 <aside class="note warning">
 <h1>Deprecated</h1>
 
-The plugin kustomize/v1 is deprecated. If you are consuming this one as API it is recommended
-began to consume the kustomize/v2 which uses Kustomize v5x version and provides support for
+The kustomize/v1 plugin is deprecated. If you are using this plugin, it is recommended
+to migrate to the kustomize/v2 plugin which uses Kustomize v5 and provides support for
 Apple Silicon (M1).
 
 If you are using Golang projects scaffolded with `go/v3` which uses this version please, check 
