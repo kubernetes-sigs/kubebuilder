@@ -44,7 +44,7 @@ const (
 	// Go/v2 plugin exist only to ensure the backwards compatibility with the old scaffold
 	// produced with kubebuilder >= 2.0.0 < 3.0.0. It does not take advantage of the plugin system
 	// (see that the PROJECT file does not have the layout of the plugin and uses the old/legacy
-	// version/schema.) This plugin will be deprecated with go/v4-alpha and can be removed
+	// version/schema.) This plugin will be deprecated with go/v4 and can be removed
 	// when go/v4 stable is published.
 	KustomizeVersion = "v3.5.4"
 

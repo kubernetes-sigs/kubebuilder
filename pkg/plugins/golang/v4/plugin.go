@@ -27,7 +27,7 @@ import (
 const pluginName = "base." + golang.DefaultNameQualifier
 
 var (
-	pluginVersion            = plugin.Version{Number: 4, Stage: stage.Alpha}
+	pluginVersion            = plugin.Version{Number: 4, Stage: stage.Stable}
 	supportedProjectVersions = []config.Version{cfgv3.Version}
 )
 

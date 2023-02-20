@@ -8,7 +8,7 @@ After creating a project, usually you will want to extend the Kubernetes APIs an
 The domain is for the group suffix, to explicitly show the resource group category.
 For example, if set `--domain=example.com`:
 ```
-kubebuilder init --domain example.com --repo xxx --plugins=go/v4-alpha
+kubebuilder init --domain example.com --repo xxx --plugins=go/v4
 kubebuilder create api --group mygroup --version v1beta1 --kind Mykind
 ```
 Then the result resource group will be `mygroup.example.com`.

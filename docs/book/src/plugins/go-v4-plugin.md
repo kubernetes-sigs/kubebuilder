@@ -1,7 +1,7 @@
-# go/v4-alpha (go.kubebuilder.io/v4-alpha)
+# go/v4 (go.kubebuilder.io/v4)
 
-Kubebuilder will scaffold using the `go/v4-alpha` plugin only if specified when initializing the project. 
-This plugin is a composition of the plugins ` kustomize.common.kubebuilder.io/v2-alpha` and `base.go.kubebuilder.io/v4-alpha`. 
+Kubebuilder will scaffold using the `go/v4` plugin only if specified when initializing the project. 
+This plugin is a composition of the plugins ` kustomize.common.kubebuilder.io/v2` and `base.go.kubebuilder.io/v4`. 
 It scaffolds a project template that helps in constructing sets of [controllers][controller-runtime]. 
 
 It scaffolds boilerplate code to create and design controllers. 
@@ -31,17 +31,17 @@ the "api(s)" are scaffold under the `api` directory, "controller(s)" under `inte
 
 <h1>Migration from `go/v3`</h1>
 
-If you have a project created with `go/v3` (default layout since `28 Apr 2021` and Kubebuilder release version `3.0.0`) to `go/v4-alpha` then,
-see the migration guide [Migration from go/v3 to go/v4-alpha](./../migration/migration_guide_gov3_to_gov4.md)
+If you have a project created with `go/v3` (default layout since `28 Apr 2021` and Kubebuilder release version `3.0.0`) to `go/v4` then,
+see the migration guide [Migration from go/v3 to go/v4](./../migration/migration_guide_gov3_to_gov4.md)
 
 </aside>
 
 ## How to use it ?
 
-To create a new project with the `go/v4-alpha` plugin the following command can be used:
+To create a new project with the `go/v4` plugin the following command can be used:
 
 ```sh
-kubebuilder init --domain tutorial.kubebuilder.io --repo tutorial.kubebuilder.io/project --plugins=go/v4-alpha
+kubebuilder init --domain tutorial.kubebuilder.io --repo tutorial.kubebuilder.io/project --plugins=go/v4
 ```
 
 ## Subcommands supported by the plugin

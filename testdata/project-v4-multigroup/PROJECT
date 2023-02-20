@@ -4,7 +4,7 @@
 # More info: https://book.kubebuilder.io/reference/project-config.html
 domain: testproject.org
 layout:
-- go.kubebuilder.io/v4-alpha
+- go.kubebuilder.io/v4
 multigroup: true
 projectName: project-v4-multigroup
 repo: sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup
