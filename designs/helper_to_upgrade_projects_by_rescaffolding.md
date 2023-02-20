@@ -95,7 +95,7 @@ in the example section above, see:
 ```shell
 kubebuilder alpha generate \
     --input-dir=<path where the PROJECT file can be found> 
-    --to=<path where the project should be re-scaffold> 
+    --output-dir=<path where the project should be re-scaffold> 
     --no-backup
     --backup-path=<path-where the current version of the project should be copied as backup>
     --plugins=<chain of plugins key that can be used to create the layout with init sub-command>
