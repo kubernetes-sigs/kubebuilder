@@ -8,7 +8,7 @@ to migrate to the kustomize/v2 plugin which uses Kustomize v5 and provides suppo
 Apple Silicon (M1).
 
 If you are using Golang projects scaffolded with `go/v3` which uses this version please, check 
-the [Migration guide](../migration/v3vsv4.md) to know how to upgrade your projetcs.
+the [Migration guide](../migration/v3vsv4.md) to learn how to upgrade your projects.
 
 </aside>
 
