@@ -103,7 +103,7 @@ kubebuilder alpha generate \
 
 **Where**:
 
-- from: [Optional] If not informed then, by default it is the current directory (project directory). If the `PROJECT` file does not exist then it will fail.
+- input-dir: [Optional] If not informed, then, by default, it is the current directory (project directory). If the `PROJECT` file does not exist, it will fail.
 - to: [Optional] If not informed then, it should be the current repository.
 - no-backup: [Optional] If not informed then, the current directory should be copied to the path `.backup/project-name` 
 - backup: [Optional] If not informed then, the backup will be copied to the path `.backup/project-name` 
