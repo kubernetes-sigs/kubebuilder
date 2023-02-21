@@ -1,5 +1,17 @@
 # Kustomize (kustomize/v1)
 
+<aside class="note warning">
+<h1>Deprecated</h1>
+
+The kustomize/v1 plugin is deprecated. If you are using this plugin, it is recommended
+to migrate to the kustomize/v2 plugin which uses Kustomize v5 and provides support for
+Apple Silicon (M1).
+
+If you are using Golang projects scaffolded with `go/v3` which uses this version please, check 
+the [Migration guide](../migration/v3vsv4.md) to learn how to upgrade your projects.
+
+</aside>
+
 The kustomize plugin allows you to scaffold all kustomize manifests used to work with the language plugins such as `go/v2` and `go/v3`. 
 By using the kustomize plugin, you can create your own language plugins and ensure that you will have the same configurations 
 and features provided by it. 
