@@ -30,7 +30,7 @@ const (
 )
 
 var (
-	supportedPlatforms = []string{"linux", "darwin"}
+	supportedPlatforms = []string{"darwin", "linux"}
 )
 
 func (c CLI) newRootCmd() *cobra.Command {
