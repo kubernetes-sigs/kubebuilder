@@ -1,3 +1,9 @@
+note: We bumped kustomize v5 on kustomize/v2-alpha which is used by go/v4-alpha.
+Below changes may affect your current kubernetes operator. So please take a look at it.
+Remove deprecated alpha cfg and fn commands
+Duplicate fields in Kustomization files will now result in an error
+Other than that they have fixed remote urls, Drop support for a very old, legacy style of patches, Drop support for using gh: as a host, Remove a potential build-time side-effect in ConfigMapGenerator and SecretGenerator, etc.
+For detail information kindly take a look on [this](https://github.com/kubernetes-sigs/kustomize/releases) page
 # Kustomize v2-alpha
 
 The kustomize plugin allows you to scaffold all kustomize manifests used to work with the language base plugin `base.go.kubebuilder.io/v3`.
