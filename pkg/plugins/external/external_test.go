@@ -679,6 +679,61 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 			checkMetadata()
 		})
 	})
+
+	Context("Helper functions for Sending request to external plugin and parsing response", func() {
+		It("getUniverseMap should return path to content mapping of all files in Filesystem", func() {
+			fs := machinery.Filesystem{
+				FS: afero.NewMemMapFs(),
+			}
+
+			files := []struct {
+				path    string
+				name    string
+				content string
+			}{
+				{
+					path:    "./",
+					name:    "file",
+					content: "level 0 file",
+				},
+				{
+					path:    "dir/",
+					name:    "file",
+					content: "level 1 file",
+				},
+				{
+					path:    "dir/subdir",
+					name:    "file",
+					content: "level 2 file",
+				},
+			}
+
+			// create files in Filesystem
+			for _, file := range files {
+				err := fs.FS.MkdirAll(file.path, 0o700)
+				Expect(err).ToNot(HaveOccurred())
+
+				f, err := fs.FS.Create(filepath.Join(file.path, file.name))
+				Expect(err).ToNot(HaveOccurred())
+
+				_, err = f.Write([]byte(file.content))
+				Expect(err).ToNot(HaveOccurred())
+
+				err = f.Close()
+				Expect(err).ToNot(HaveOccurred())
+			}
+
+			universe, err := getUniverseMap(fs)
+
+			Expect(err).ToNot(HaveOccurred())
+			Expect(len(universe)).To(Equal(len(files)))
+
+			for _, file := range files {
+				content := universe[filepath.Join(file.path, file.name)]
+				Expect(content).To(Equal(file.content))
+			}
+		})
+	})
 })
 
 func getFlags() []external.Flag {

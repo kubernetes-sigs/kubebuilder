@@ -21,7 +21,7 @@ directory of the Kubebuilder project.
 
 - If you are looking to scaffold the kustomize configuration manifests for your own language plugin
 - If you are looking for support on Apple Silicon (`darwin/arm64`). (_Before kustomize `4.x` the binary for this plataform is not provided_)
-- If you are looking for to begin to try out the new syntax and features provide by kustomize v4
+- If you are looking for to begin to try out the new syntax and features provide by kustomize v5
 - If you are NOT looking to build projects which will be used on Kubernetes cluster versions < `1.22` (_The new features provides by kustomize v4 are not officially supported and might not work with kubectl < `1.22`_)
 - If you are NOT looking to rely on special URLs in resource fields
 - If you want to use [replacements][kustomize-replacements] since [vars][kustomize-vars] are deprecated and might be removed soon
@@ -29,7 +29,7 @@ directory of the Kubebuilder project.
 <aside class="note">
 <h1>Supportability</h1>
 
-You can use `kustomize/v1` plugin which is the default configuration adopted by the `go/v3` plugin if you are not prepared to began to experiment kustomize `v4`.
+You can use `kustomize/v1` plugin which is the default configuration adopted by the `go/v3` plugin if you are not prepared to began to experiment kustomize `v5`.
 Also, be aware that the `base.go.kubebuilder.io/v3` is prepared to work with this plugin.
 
 </aside>
@@ -107,7 +107,7 @@ The following scaffolds will be created or updated by this plugin:
 * Check the kustomize [plugin implementation](https://github.com/kubernetes-sigs/kubebuilder/tree/master/pkg/plugins/common/kustomize)
 * Check the [kustomize documentation][kustomize-docs]
 * Check the [kustomize repository][kustomize-github]
-* To know more about the changes between kustomize v3 and v3 see its [release notes][release-notes]
+* To know more about the changes between kustomize v4 and v5 see its [release notes][release-notes]
 * Also, you can compare the `config/` directory between the samples `project-v3` and `project-v3-with-kustomize-v2` to check the difference in the syntax of the manifests provided by default
 
 [sdk]:https://github.com/operator-framework/operator-sdk
@@ -118,4 +118,4 @@ The following scaffolds will be created or updated by this plugin:
 [kustomize-github]: https://github.com/kubernetes-sigs/kustomize
 [kustomize-replacements]: https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/replacements/
 [kustomize-vars]: https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/vars/
-[release-notes]: https://github.com/kubernetes-sigs/kustomize/releases/tag/kustomize%2Fv4.0.0
+[release-notes]: https://github.com/kubernetes-sigs/kustomize/releases/tag/kustomize%2Fv5.0.0
