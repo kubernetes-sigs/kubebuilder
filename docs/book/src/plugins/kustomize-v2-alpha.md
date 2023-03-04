@@ -21,7 +21,7 @@ directory of the Kubebuilder project.
 ## When to use it
 
 - If you are looking to scaffold the kustomize configuration manifests for your own language plugin
-- If you are looking for support on Apple Silicon (`darwin/arm64`). (_Before kustomize `4.x` the binary for this plataform is not provided_)
+- If you are looking for support on Apple Silicon (`darwin/arm64`). (_Before kustomize `5.x` the binary for this plataform is not provided_)
 - If you are looking for to begin to try out the new syntax and features provide by kustomize v5
 - If you are NOT looking to build projects which will be used on Kubernetes cluster versions < `1.22` (_The new features provides by kustomize v4 are not officially supported and might not work with kubectl < `1.22`_)
 - If you are NOT looking to rely on special URLs in resource fields
@@ -108,6 +108,7 @@ The following scaffolds will be created or updated by this plugin:
 * Check the kustomize [plugin implementation](https://github.com/kubernetes-sigs/kubebuilder/tree/master/pkg/plugins/common/kustomize)
 * Check the [kustomize documentation][kustomize-docs]
 * Check the [kustomize repository][kustomize-github]
+* Check the [kustomize release note](https://github.com/kubernetes-sigs/kustomize/releases)
 * To know more about the changes between kustomize v4 and v5 see its [release notes][release-notes]
 * Also, you can compare the `config/` directory between the samples `project-v3` and `project-v3-with-kustomize-v2` to check the difference in the syntax of the manifests provided by default
 
