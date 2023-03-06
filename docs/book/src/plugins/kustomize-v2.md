@@ -1,4 +1,4 @@
-# Kustomize v2-alpha
+# Kustomize v2 
 
 The kustomize plugin allows you to scaffold all kustomize manifests used to work with the language base plugin `base.go.kubebuilder.io/v3`.
 
@@ -12,7 +12,7 @@ able to create "helper" plugins which can work with many projects and languages.
 <aside class="note">
 <h1>Examples</h1>
 
-You can check the kustomize content by looking at the `config/` directory provide on the sample `project-v3-with-kustomize-v2` under the [testdata][testdata]
+You can check the kustomize content by looking at the `config/` directory provide on the sample `project-v4-*` under the [testdata][testdata]
 directory of the Kubebuilder project.
 
 </aside>
@@ -26,15 +26,6 @@ directory of the Kubebuilder project.
 - If you are NOT looking to rely on special URLs in resource fields
 - If you want to use [replacements][kustomize-replacements] since [vars][kustomize-vars] are deprecated and might be removed soon
 
-<aside class="note">
-<h1>Supportability</h1>
-
-You can use `kustomize/v1` plugin which is the default configuration adopted by the `go/v3` plugin if you are not prepared to began to experiment kustomize `v5`.
-Also, be aware that the `base.go.kubebuilder.io/v3` is prepared to work with this plugin.
-
-</aside>
-
-
 ## How to use it
 
 If you are looking to define that your language plugin should use kustomize use the [Bundle Plugin][bundle]
@@ -44,7 +35,7 @@ all that is language specific and kustomize for its configuration, see:
 ```go
 import (
 ...
-   kustomizecommonv2alpha "sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v2-alpha"
+   kustomizecommonv2alpha "sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v2"
    golangv3 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3"
 ...
 )
@@ -53,15 +44,15 @@ import (
 	// The follow code is creating a new plugin with its name and version via composition
 	// You can define that one plugin is composite by 1 or Many others plugins
 	gov3Bundle, _ := plugin.NewBundle(golang.DefaultNameQualifier, plugin.Version{Number: 3},
-        kustomizecommonv2alpha.Plugin{}, // scaffold the config/ directory and all kustomize files
+        kustomizecommonv2.Plugin{}, // scaffold the config/ directory and all kustomize files
 		golangv3.Plugin{}, // Scaffold the Golang files and all that specific for the language e.g. go.mod, apis, controllers
 	)
 ```
 
-Also, with Kubebuilder, you can use kustomize/v2-alpha alone via:
+Also, with Kubebuilder, you can use kustomize/v2 alone via:
 
 ```sh
-kubebuilder init --plugins=kustomize/v2-alpha
+kubebuilder init --plugins=kustomize/v2
 $ ls -la
 total 24
 drwxr-xr-x   6 camilamacedo86  staff  192 31 Mar 09:56 .
@@ -75,8 +66,8 @@ drwx------   6 camilamacedo86  staff  192 31 Mar 09:56 config
 Or combined with the base language plugins:
 
 ```sh
-# Provides the same scaffold of go/v3 plugin which is composition but with kustomize/v2-alpha
-kubebuilder init --plugins=kustomize/v2-alpha,base.go.kubebuilder.io/v3 --domain example.org --repo example.org/guestbook-operator
+# Provides the same scaffold of go/v3 plugin which is composition but with kustomize/v2
+kubebuilder init --plugins=kustomize/v2,base.go.kubebuilder.io/v4 --domain example.org --repo example.org/guestbook-operator
 ```
 
 ## Subcommands
@@ -108,12 +99,12 @@ The following scaffolds will be created or updated by this plugin:
 * Check the [kustomize documentation][kustomize-docs]
 * Check the [kustomize repository][kustomize-github]
 * To know more about the changes between kustomize v4 and v5 see its [release notes][release-notes]
-* Also, you can compare the `config/` directory between the samples `project-v3` and `project-v3-with-kustomize-v2` to check the difference in the syntax of the manifests provided by default
+* Also, you can compare the `config/` directory between the samples `project-v3` and `project-v4` to check the difference in the syntax of the manifests provided by default
 
 [sdk]:https://github.com/operator-framework/operator-sdk
 [testdata]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/testdata/
 [bundle]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/pkg/plugin/bundle.go
-[kustomize-create-api]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/pkg/plugins/common/kustomize/v2-alpha/scaffolds/api.go#L72-L84
+[kustomize-create-api]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/pkg/plugins/common/kustomize/v2/scaffolds/api.go#L72-L84
 [kustomize-docs]: https://kustomize.io/
 [kustomize-github]: https://github.com/kubernetes-sigs/kustomize
 [kustomize-replacements]: https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/replacements/
