@@ -207,6 +207,6 @@ to be addressed and maintained.
 
 We could use it to do cool future features such as creating a GitHub action which would push-pull requests against the project repositories to help users be updated with, for example, minor changes. By using this command, we might able to git clone the project and to do a new scaffold and then use some [git strategy merge](https://www.geeksforgeeks.org/merge-strategies-in-git/) to result in a PR to purpose the required changes.
 
-We probably need to store the CLI tool tag release used to do the scaffold to persuade this idea. So that we can know if the project requires or not updates.
+We probably need to store the CLI tool tag release used to do the scaffold to persuade this idea. So that we can know if the project requires updates or not.
 
 [project-config]: https://book.kubebuilder.io/reference/project-config.html
