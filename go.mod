@@ -3,11 +3,11 @@ module sigs.k8s.io/kubebuilder/v3
 go 1.19
 
 require (
-	github.com/gobuffalo/flect v1.0.0
-	github.com/onsi/ginkgo/v2 v2.8.3
+	github.com/gobuffalo/flect v1.0.2
+	github.com/onsi/ginkgo/v2 v2.9.0
 	github.com/onsi/gomega v1.27.1
 	github.com/sirupsen/logrus v1.9.0
-	github.com/spf13/afero v1.9.3
+	github.com/spf13/afero v1.9.4
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/pflag v1.0.5
 	golang.org/x/text v0.7.0
