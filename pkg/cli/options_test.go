@@ -228,7 +228,7 @@ var _ = Describe("Discover external plugins", func() {
 
 				_, err = getPluginsRoot("random")
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("Host not supported"))
+				Expect(err.Error()).To(ContainSubstring("host not supported"))
 			})
 
 			It("should skip parsing of directories if plugins root is not a directory", func() {
@@ -249,7 +249,35 @@ var _ = Describe("Discover external plugins", func() {
 
 				_, err = getPluginsRoot("random")
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("Host not supported"))
+				Expect(err.Error()).To(ContainSubstring("host not supported"))
+			})
+
+			It("should return full path to the external plugins without XDG_CONFIG_HOME", func() {
+				if _, ok := os.LookupEnv("XDG_CONFIG_HOME"); ok {
+					err = os.Setenv("XDG_CONFIG_HOME", "")
+					Expect(err).To(BeNil())
+				}
+
+				home := os.Getenv("HOME")
+
+				pluginsRoot, err := getPluginsRoot("darwin")
+				Expect(err).To(BeNil())
+				expected := filepath.Join(home, "Library", "Application Support", "kubebuilder", "plugins")
+				Expect(pluginsRoot).To(Equal(expected))
+
+				pluginsRoot, err = getPluginsRoot("linux")
+				Expect(err).To(BeNil())
+				expected = filepath.Join(home, ".config", "kubebuilder", "plugins")
+				Expect(pluginsRoot).To(Equal(expected))
+			})
+
+			It("should return full path to the external plugins with XDG_CONFIG_HOME", func() {
+				err = os.Setenv("XDG_CONFIG_HOME", "/some/random/path")
+				Expect(err).To(BeNil())
+
+				pluginsRoot, err := getPluginsRoot(runtime.GOOS)
+				Expect(err).To(BeNil())
+				Expect(pluginsRoot).To(Equal("/some/random/path/kubebuilder/plugins"))
 			})
 
 			It("should return error when home directory is set to empty", func() {
