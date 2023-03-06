@@ -126,8 +126,7 @@ supporting Windows are welcome.
 
 ### Apple Silicon
 
-Apple Silicon (`darwin/arm64`) is supported from the `go/v4` plugin which provides support for this platform. Note that
-previous plugin versions to scaffold the projects does not provide this support.
+Apple Silicon (`darwin/arm64`) support begins with the `go/v4` plugin.
 
 ## Community Meetings
  
