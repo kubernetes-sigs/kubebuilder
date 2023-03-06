@@ -1,4 +1,16 @@
-# go/v3 (go.kubebuilder.io/v3)
+# [Deprecated] go/v3 (go.kubebuilder.io/v3)
+
+<aside class="note warning">
+<h1>Deprecated</h1>
+
+The `go/v3` cannot fully support Kubernetes 1.25+ and work with Kustomize versions > v3.
+
+The recommended way to migrate a `v3` project is to create a new `v4` project and copy over the API
+and the reconciliation code. The conversion will end up with a project that looks like a native `v4` project.
+For further information check the [Migration guide](../migration/migration_guide_gov3_to_gov4.md)
+
+</aside>
+
 
 Kubebuilder tool will scaffold the go/v3 plugin by default. This plugin is a composition of the plugins ` kustomize.common.kubebuilder.io/v1` and `base.go.kubebuilder.io/v3`. By using you can scaffold the default project which is a helper to construct sets of [controllers][controller-runtime]. 
 
@@ -23,8 +35,9 @@ As `go/v3` is the default plugin there is no need to explicitly mention to Kubeb
 To create a new project with the `go/v3` plugin the following command can be used:
 
 ```sh
-kubebuilder init --domain tutorial.kubebuilder.io --repo tutorial.kubebuilder.io/project
+kubebuilder init --plugins=`go/v3` --domain tutorial.kubebuilder.io --repo tutorial.kubebuilder.io/project
 ```
+
 All the other subcommands supported by the go/v3 plugin can be executed similarly.
 
 <aside class="note">
