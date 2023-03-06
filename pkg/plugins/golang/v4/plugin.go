@@ -67,7 +67,7 @@ func (p Plugin) GetEditSubcommand() plugin.EditSubcommand { return &p.editSubcom
 func (p Plugin) DeprecationWarning() string {
 	return "This version is deprecated." +
 		"The `go/v3` cannot scaffold projects using kustomize versions v4x+" +
-		" and cannot be whole support on Kubernetes 1.25+." +
+		" and cannot fully support Kubernetes 1.25+." +
 		"It is recommended to upgrade your project to the latest versions available (go/v4)." +
 		"Please, check the migration guide to learn how to upgrade your project"
 }
