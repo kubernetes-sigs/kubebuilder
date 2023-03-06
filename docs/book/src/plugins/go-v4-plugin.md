@@ -55,13 +55,13 @@ kubebuilder init --domain tutorial.kubebuilder.io --repo tutorial.kubebuilder.io
 
 - To see the composition of plugins, you can check the source code for the Kubebuilder [main.go][plugins-main].
 - Check the code implementation of the [base Golang plugin `base.go.kubebuilder.io/v3`][v3-plugin].
-- Check the code implementation of the [Kustomize/v2-alpha plugin][kustomize-plugin].
+- Check the code implementation of the [Kustomize/v2 plugin][kustomize-plugin].
 - Check [controller-runtime][controller-runtime] to know more about controllers.
 
 [controller-runtime]: https://github.com/kubernetes-sigs/controller-runtime
 [quickstart]: ../quick-start.md
 [testdata]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/testdata
 [plugins-main]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/cmd/main.go
-[kustomize-plugin]: ../plugins/kustomize-v2-alpha.md
+[kustomize-plugin]: ../plugins/kustomize-v2.md
 [kustomize]: https://github.com/kubernetes-sigs/kustomize
 [standard-go-project]: https://github.com/golang-standards/project-layout
