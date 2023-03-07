@@ -7,7 +7,7 @@ This Quick Start guide will cover:
 - [Running locally](#test-it-out)
 - [Running in-cluster](#run-it-on-the-cluster)
 
-## Prerequisites
+ ## Prerequisites
 
 - [go](https://golang.org/dl/) version v1.19.0+
 - [docker](https://docs.docker.com/install/) version 17.03+.
