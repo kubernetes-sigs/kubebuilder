@@ -22,7 +22,7 @@ directory of the Kubebuilder project.
 
 - If you are looking to scaffold the kustomize configuration manifests for your own language plugin
 - If you are looking for support on Apple Silicon (`darwin/arm64`). (Apple Silicon is not supported by Kustomize versions < `4.x`._)
-- If you are looking for to begin to try out the new syntax and features provide by kustomize v5
+- If you are looking for to begin to try out the new syntax and features provide by kustomize v4 and/or v5
 - If you are NOT looking to build projects which will be used on Kubernetes cluster versions < `1.22` (_The new features provides by kustomize v4 are not officially supported and might not work with kubectl < `1.22`_)
 - If you are NOT looking to rely on special URLs in resource fields
 - If you want to use [replacements][kustomize-replacements] since [vars][kustomize-vars] are deprecated and might be removed soon
