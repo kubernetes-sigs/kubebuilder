@@ -68,7 +68,7 @@
       - [Migration Guide](migration/legacy/migration_guide_v2tov3.md)
       - [Migration by updating the files](migration/legacy/manually_migration_guide_v2_v3.md)
   - [From v3.0.0 with plugins](./migration/v3-plugins.md)
-    - [go/v3 vs go/v4-alpha](migration/v3vsv4.md)
+    - [go/v3 vs go/v4](migration/v3vsv4.md)
     
       - [Migration Guide](migration/migration_guide_gov3_to_gov4.md)
       - [Migration by updating the files](migration/manually_migration_guide_gov3_to_gov4.md)
@@ -118,7 +118,7 @@
     - [To scaffold a project](./plugins/to-scaffold-project.md)
       - [go/v2 (Deprecated)](./plugins/go-v2-plugin.md)
       - [go/v3 (Default init scaffold)](./plugins/go-v3-plugin.md)
-      - [go/v4-alpha](./plugins/go-v4-plugin.md)
+      - [go/v4](./plugins/go-v4-plugin.md)
     - [To add optional features](./plugins/to-add-optional-features.md)
       - [declarative/v1](./plugins/declarative-v1.md)
       - [grafana/v1-alpha](./plugins/grafana-v1-alpha.md)

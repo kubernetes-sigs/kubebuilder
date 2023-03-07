@@ -1,18 +1,18 @@
-# Migration from go/v3 to go/v4-alpha by updating the files manually
+# Migration from go/v3 to go/v4 by updating the files manually
 
-Make sure you understand the [differences between Kubebuilder go/v3 and go/v4-alpha][v3vsv4]
+Make sure you understand the [differences between Kubebuilder go/v3 and go/v4][v3vsv4]
 before continuing.
 
 Please ensure you have followed the [installation guide][quick-start]
 to install the required components.
 
-The following guide describes the manual steps required to upgrade your PROJECT config file to begin using `go/v4-alpha`.
+The following guide describes the manual steps required to upgrade your PROJECT config file to begin using `go/v4`.
 
 This way is more complex, susceptible to errors, and success cannot be assured. Also, by following these steps you will not get the improvements and bug fixes in the default generated project files.
 
 Usually it is suggested to do it manually if you have customized your project and deviated too much from the proposed scaffold. Before continuing, ensure that you understand the note about [project customizations][project-customizations]. Note that you might need to spend more effort to do this process manually than to organize your project customizations. The proposed layout will keep your project maintainable and upgradable with less effort in the future.
 
-The recommended upgrade approach is to follow the [Migration Guide go/v3 to go/v4-alpha][migration-guide-gov3-to-gov4] instead.
+The recommended upgrade approach is to follow the [Migration Guide go/v3 to go/v4][migration-guide-gov3-to-gov4] instead.
 
 ## Migration from project config version "go/v3" to "go/v4"
 
@@ -37,7 +37,7 @@ With:
 
 ```yaml
 layout:
-- go.kubebuilder.io/v4-alpha
+- go.kubebuilder.io/v4
 
 ```
 
@@ -152,7 +152,7 @@ The PROJECT tracks the paths of all APIs used in your project. Ensure that they 
 
 ### Update kustomize manifests with the changes made so far
 
-- Update the manifest under `config/` directory with all changes performed in the default scaffold done with `go/v4-alpha` plugin. (see for example `testdata/project-v4/config/`) to get all changes in the
+- Update the manifest under `config/` directory with all changes performed in the default scaffold done with `go/v4` plugin. (see for example `testdata/project-v4/config/`) to get all changes in the
   default scaffolds to be applied on your project
 - Create `config/samples/kustomization.yaml` with all Custom Resources samples specified into `config/samples`. _(see for example `testdata/project-v4/config/samples/kustomization.yaml`)_
 
@@ -160,7 +160,7 @@ The PROJECT tracks the paths of all APIs used in your project. Ensure that they 
 <h1>`config/` directory with changes into the scaffold files</h1>
 
 Note that under the `config/` directory you will find scaffolding changes since using
-`go/v4-alpha` you will ensure that you are no longer using Kustomize v3x.
+`go/v4` you will ensure that you are no longer using Kustomize v3x.
 
 You can mainly compare the `config/` directory from the samples scaffolded under the `testdata`directory by
 checking the differences between the `testdata/project-v3/config/` with `testdata/project-v4/config/` which
@@ -189,11 +189,11 @@ Update the `go.mod` with the changes which can be found in the samples under `te
 ### Verification
 
 In the steps above, you updated your project manually with the goal of ensuring that it follows
-the changes in the layout introduced with the `go/v4-alpha` plugin that update the scaffolds.
+the changes in the layout introduced with the `go/v4` plugin that update the scaffolds.
 
 There is no option to verify that you properly updated the `PROJECT` file of your project. 
-The best way to ensure that everything is updated correctly, would be to initialize a project using the `go/v4-alpha` plugin,
-(ie) using `kubebuilder init --domain tutorial.kubebuilder.io plugins=go/v4-alpha` and generating the same API(s),
+The best way to ensure that everything is updated correctly, would be to initialize a project using the `go/v4` plugin,
+(ie) using `kubebuilder init --domain tutorial.kubebuilder.io plugins=go/v4` and generating the same API(s),
 controller(s), and webhook(s) in order to compare the generated configuration with the manually changed configuration.
 
 Also, after all updates you would run the following commands:

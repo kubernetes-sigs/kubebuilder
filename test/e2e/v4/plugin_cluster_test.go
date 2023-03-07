@@ -52,7 +52,7 @@ type tokenRequest struct {
 }
 
 var _ = Describe("kubebuilder", func() {
-	Context("plugin go/v4-alpha", func() {
+	Context("plugin go/v4", func() {
 		var kbc *utils.TestContext
 
 		BeforeEach(func() {

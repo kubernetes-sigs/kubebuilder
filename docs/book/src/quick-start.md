@@ -57,14 +57,13 @@ Create a directory, and then run the init command inside of it to initialize a n
 <h1> Apple Silicon (M1) </h1>
 
 The current scaffold done by the CLI (`go/v3`) uses [kubernetes-sigs/kustomize][kustomize] v3 which does not provide
-a valid binary for Apple Silicon (`darwin/arm64`). Therefore, you can use the `go/v4-alpha` plugin
+a valid binary for Apple Silicon (`darwin/arm64`). Therefore, you can use the `go/v4` plugin
 instead which provides support for this platform:
 
 ```bash
-kubebuilder init --domain my.domain --repo my.domain/guestbook --plugins=go/v4-alpha
+kubebuilder init --domain my.domain --repo my.domain/guestbook --plugins=go/v4
 ```
 
-**Note**: The `go/v4-alpha` plugin is an unstable version and can have breaking changes in future releases.
 </aside>
 
 ```bash

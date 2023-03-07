@@ -1,19 +1,19 @@
-# Migration from go/v3 to go/v4-alpha
+# Migration from go/v3 to go/v4
 
-Make sure you understand the [differences between Kubebuilder go/v3 and go/v4-alpha][v3vsv4]
+Make sure you understand the [differences between Kubebuilder go/v3 and go/v4][v3vsv4]
 before continuing.
 
 Please ensure you have followed the [installation guide][quick-start]
 to install the required components.
 
-The recommended way to migrate a go/v3 project is to create a new go/v4-alpha project and
+The recommended way to migrate a `go/v3` project is to create a new `go/v4` project and
 copy over the API and the reconciliation code. The conversion will end up with a
-project that looks like a native go/v4-alpha project layout (latest version).
+project that looks like a native go/v4 project layout (latest version).
 
 However, in some cases, it's possible to do an in-place upgrade (i.e. reuse the go/v3 project layout, upgrading
-the PROJECT file, and scaffolds manually). For further information see [Migration from go/v3 to go/v4-alpha by updating the files manually][manually-upgrade]
+the PROJECT file, and scaffolds manually). For further information see [Migration from go/v3 to go/v4 by updating the files manually][manually-upgrade]
 
-## Initialize a go/v4-alpha Project
+## Initialize a go/v4 Project
 
 <aside class="note">
 <h1>Project name</h1>
@@ -30,7 +30,7 @@ $ mkdir migration-project-name
 $ cd migration-project-name
 ```
 
-Now, we need to initialize a go/v4-alpha project.  Before we do that, we'll need
+Now, we need to initialize a go/v4 project.  Before we do that, we'll need
 to initialize a new go module if we're not on the `GOPATH`. While technically this is
 not needed inside `GOPATH`, it is still recommended.
 
@@ -50,7 +50,7 @@ module tutorial.kubebuilder.io/migration-project
 Now, we can finish initializing the project with kubebuilder.
 
 ```bash
-kubebuilder init --domain tutorial.kubebuilder.io --plugins=go/v4-alpha
+kubebuilder init --domain tutorial.kubebuilder.io --plugins=go/v4
 ```
 
 <aside class="note">
@@ -119,7 +119,7 @@ Now, let's copy the webhook definition from `api/v1/<kind>_webhook.go` from our 
 If there are any manual updates in `main.go` in v3, we need to port the changes to the new `main.go`. We’ll also need to ensure all of needed controller-runtime `schemes` have been registered.
 
 If there are additional manifests added under config directory, port them as well. Please, be aware that
-the new version go/v4-alpha uses Kustomize v5x and no longer Kustomize v4. Therefore, if added customized
+the new version go/v4 uses Kustomize v5x and no longer Kustomize v4. Therefore, if added customized
 implementations in the config you need to ensure that them can work with Kustomize v5 and/if not
 update/upgrade any breaking change that you might face.
 
