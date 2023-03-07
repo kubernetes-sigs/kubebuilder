@@ -111,7 +111,7 @@ The following scaffolds will be created or updated by this plugin:
 * Check the [kustomize release note](https://github.com/kubernetes-sigs/kustomize/releases)
 * To know more about the changes between kustomize v3 and v4 see its [release notes][release-notes]
 * To know more about the changes between kustomize v4 and v5 see its [release notes][release-notes]
-* Also, you can compare the `config/` directory between the samples `project-v3` and `project-v3-with-kustomize-v2` to check the difference in the syntax of the manifests provided by default
+* Also, you can compare the `config/` directory between the samples `project-v3` and `project-v4` to check the difference in the syntax of the manifests provided by default
 
 [sdk]:https://github.com/operator-framework/operator-sdk
 [testdata]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/testdata/
