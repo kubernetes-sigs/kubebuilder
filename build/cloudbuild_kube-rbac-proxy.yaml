@@ -14,7 +14,7 @@
 
 substitutions:
   # This is the kube-rbac-proxy version, source image tags for which must exist remotely.
-  _KUBE_RBAC_PROXY_VERSION: v0.13.1
+  _KUBE_RBAC_PROXY_VERSION: v0.14.0
 steps:
 - name: "gcr.io/cloud-builders/docker"
   env:
