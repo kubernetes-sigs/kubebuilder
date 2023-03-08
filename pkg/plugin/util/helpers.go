@@ -22,20 +22,23 @@ import (
 
 // HasDifferentCRDVersion returns true if any other CRD version is tracked in the project configuration.
 // Deprecated: v1beta1 CRDs and Webhooks are not supported since k8s 1.22.
-// The features that allow users to scaffold projects using these API versions are deprecated and are no longer supported.
+// The features that allow users to scaffold projects using these API versions are deprecated and
+// are no longer supported.
 func HasDifferentCRDVersion(config config.Config, crdVersion string) bool {
 	return hasDifferentAPIVersion(config.ListCRDVersions(), crdVersion)
 }
 
 // HasDifferentWebhookVersion returns true if any other webhook version is tracked in the project configuration.
 // Deprecated: v1beta1 CRDs and Webhooks are not supported since k8s 1.22.
-// The features that allow users to scaffold projects using these API versions are deprecated and are no longer supported.
+// The features that allow users to scaffold projects using these API versions are deprecated and
+// are no longer supported.
 func HasDifferentWebhookVersion(config config.Config, webhookVersion string) bool {
 	return hasDifferentAPIVersion(config.ListWebhookVersions(), webhookVersion)
 }
 
 // Deprecated: v1beta1 CRDs and Webhooks are not supported since k8s 1.22.
-// The features that allow users to scaffold projects using these API versions are deprecated and are no longer supported.
+// The features that allow users to scaffold projects using these API versions are deprecated and
+// are no longer supported.
 func hasDifferentAPIVersion(versions []string, version string) bool {
 	return !(len(versions) == 0 || (len(versions) == 1 && versions[0] == version))
 }
