@@ -5,8 +5,8 @@ apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:
   labels:
-    app.kubernetes.io/name: issuer
-    app.kubernetes.io/instance: selfsigned-issuer
+    app.kubernetes.io/name: certificate
+    app.kubernetes.io/instance: serving-cert
     app.kubernetes.io/component: certificate
     app.kubernetes.io/created-by: project
     app.kubernetes.io/part-of: project
@@ -29,10 +29,10 @@ metadata:
   name: serving-cert  # this name should match the one appeared in kustomizeconfig.yaml
   namespace: system
 spec:
-  # $(SERVICE_NAME) and $(SERVICE_NAMESPACE) will be substituted by kustomize
+  # SERVICE_NAME and SERVICE_NAMESPACE will be substituted by kustomize
   dnsNames:
-  - $(SERVICE_NAME).$(SERVICE_NAMESPACE).svc
-  - $(SERVICE_NAME).$(SERVICE_NAMESPACE).svc.cluster.local
+  - SERVICE_NAME.SERVICE_NAMESPACE.svc
+  - SERVICE_NAME.SERVICE_NAMESPACE.svc.cluster.local
   issuerRef:
     kind: Issuer
     name: selfsigned-issuer

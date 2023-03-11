@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Kubernetes authors.
+Copyright 2023 The Kubernetes authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ import (
 
 	batchv1 "tutorial.kubebuilder.io/project/api/v1"
 	batchv2 "tutorial.kubebuilder.io/project/api/v2"
-	"tutorial.kubebuilder.io/project/controllers"
+	"tutorial.kubebuilder.io/project/internal/controller"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -104,7 +104,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.CronJobReconciler{
+	if err = (&controller.CronJobReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
