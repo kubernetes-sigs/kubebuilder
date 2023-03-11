@@ -20,6 +20,7 @@ package main
 import (
 	"flag"
 	"os"
+	"tutorial.kubebuilder.io/project/internal/controller"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -33,7 +34,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	batchv1 "tutorial.kubebuilder.io/project/api/v1"
-	"tutorial.kubebuilder.io/project/controllers"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -109,7 +109,7 @@ func main() {
 
 	// +kubebuilder:docs-gen:collapse=old stuff
 
-	if err = (&controllers.CronJobReconciler{
+	if err = (&controller.CronJobReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {

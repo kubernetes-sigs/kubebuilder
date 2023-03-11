@@ -17,12 +17,12 @@ limitations under the License.
 
 /*
 When we created the CronJob API with `kubebuilder create api` in a [previous chapter](/cronjob-tutorial/new-api.md), Kubebuilder already did some test work for you.
-Kubebuilder scaffolded a `controllers/suite_test.go` file that does the bare bones of setting up a test environment.
+Kubebuilder scaffolded a `internal/controller/suite_test.go` file that does the bare bones of setting up a test environment.
 
 First, it will contain the necessary imports.
 */
 
-package controllers
+package controller
 
 import (
 	"context"
@@ -77,7 +77,7 @@ var _ = BeforeSuite(func() {
 	*/
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths:     []string{filepath.Join("..", "config", "crd", "bases")},
+		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "config", "crd", "bases")},
 		ErrorIfCRDPathMissing: true,
 	}
 
