@@ -11,11 +11,11 @@ If you want to tinker with how your envtest cluster is configured, see section [
 
 ## Test Environment Setup
 
-{{#literatego ../cronjob-tutorial/testdata/project/controllers/suite_test.go}}
+{{#literatego ../cronjob-tutorial/testdata/project/internal/controller/suite_test.go}}
 
 ## Testing your Controller's Behavior
 
-{{#literatego ../cronjob-tutorial/testdata/project/controllers/cronjob_controller_test.go}}
+{{#literatego ../cronjob-tutorial/testdata/project/internal/controller/cronjob_controller_test.go}}
 
 This Status update example above demonstrates a general testing strategy for a custom Kind with downstream objects. By this point, you hopefully have learned the following methods for testing your controller behavior:
 

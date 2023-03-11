@@ -18,7 +18,7 @@ The basic logic of our CronJob controller is this:
 7. Requeue when we either see a running job (done automatically) or it's
    time for the next scheduled run.
 
-{{#literatego ./testdata/project/controllers/cronjob_controller.go}}
+{{#literatego ./testdata/project/internal/controller/cronjob_controller.go}}
 
 That was a doozy, but now we've got a working controller.  Let's test
 against the cluster, then, if we don't have any issues, deploy it!
