@@ -28,11 +28,12 @@ type bundle struct {
 	plugins []Plugin
 
 	supportedProjectVersions []config.Version
+	deprecateWarning         string
 }
 
 // NewBundle creates a new Bundle with the provided name and version, and that wraps the provided plugins.
 // The list of supported project versions is computed from the provided plugins.
-func NewBundle(name string, version Version, plugins ...Plugin) (Bundle, error) {
+func NewBundle(name string, version Version, deprecateWarning string, plugins ...Plugin) (Bundle, error) {
 	supportedProjectVersions := CommonSupportedProjectVersions(plugins...)
 	if len(supportedProjectVersions) == 0 {
 		return nil, fmt.Errorf("in order to bundle plugins, they must all support at least one common project version")
@@ -55,6 +56,7 @@ func NewBundle(name string, version Version, plugins ...Plugin) (Bundle, error) 
 		version:                  version,
 		plugins:                  allPlugins,
 		supportedProjectVersions: supportedProjectVersions,
+		deprecateWarning:         deprecateWarning,
 	}, nil
 }
 
@@ -76,4 +78,9 @@ func (b bundle) SupportedProjectVersions() []config.Version {
 // Plugins implements Bundle
 func (b bundle) Plugins() []Plugin {
 	return b.plugins
+}
+
+// Plugins implements Bundle
+func (b bundle) DeprecationWarning() string {
+	return b.deprecateWarning
 }
