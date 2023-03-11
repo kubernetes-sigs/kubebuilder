@@ -72,6 +72,7 @@ func (sp *Sample) GenerateSampleProject() {
 		"--repo", "tutorial.kubebuilder.io/project",
 		"--license", "apache2",
 		"--owner", "The Kubernetes authors",
+		"--plugins=go/v4",
 		"--component-config",
 	)
 	CheckError("Initializing the project", err)
