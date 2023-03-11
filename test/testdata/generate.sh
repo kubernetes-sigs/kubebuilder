@@ -138,4 +138,4 @@ scaffold_test_project project-v4-multigroup --plugins="go/v4"
 scaffold_test_project project-v4-declarative-v1 --plugins="go/v4,declarative"
 scaffold_test_project project-v4-config --component-config --plugins="go/v4"
 scaffold_test_project project-v4-with-deploy-image --plugins="go/v4"
-scaffold_test_project project-v4-with-grafana
+scaffold_test_project project-v4-with-grafana --plugins="go/v4"
