@@ -4,8 +4,7 @@
 
 The Project Config represents the configuration of a Kubebuilder project. All projects that are scaffolded with the CLI will generate the `PROJECT` file in the projects' root directory.
 
-The PROJECT file was introduced since Kubebuilder [release 3.0.0](https://github.com/kubernetes-sigs/kubebuilder/releases/tag/v3.0.0), where the Plugins design was introduced. 
-It tracks all data used to do the scaffolds. It stores more information about what resources and plugins are in use, to better enable plugins to make useful decisions when scaffolding ([see an example PROJECT file](https://github.com/kubernetes-sigs/kubebuilder/blob/6f1f8c43cfbf260c971037ff039cca86a0980006/testdata/project-v3-with-deploy-image/PROJECT#L2-L21)). 
+The PROJECT file was introduced since Kubebuilder [release 3.0.0](https://github.com/kubernetes-sigs/kubebuilder/releases/tag/v3.0.0), where the Plugins design was implemented. When scaffolding an operator, the CLI will generate a PROJECT file in the project's root directory. It tracks all data used to perform scaffolds and stores information on resources and plugins in use. These data enable plugins to make more informed decisions during scaffolding, improving their usefulness ([see an example PROJECT file](https://github.com/kubernetes-sigs/kubebuilder/blob/6f1f8c43cfbf260c971037ff039cca86a0980006/testdata/project-v3-with-deploy-image/PROJECT#L2-L21)). 
 
 ## Versioning
 
