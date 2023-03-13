@@ -60,7 +60,16 @@ resources:
   version: v1alpha1
 version: "3"
 
-The PROJECT file was introduced since Kubebuilder [release 3.0.0](https://github.com/kubernetes-sigs/kubebuilder/releases/tag/v3.0.0), where the Plugins design was implemented. When scaffolding an operator, the CLI will generate a PROJECT file in the project's root directory. It tracks all data used to perform scaffolds and stores information on resources and plugins in use. These data enable plugins to make more informed decisions during scaffolding, improving their usefulness ([see an example PROJECT file](https://github.com/kubernetes-sigs/kubebuilder/blob/6f1f8c43cfbf260c971037ff039cca86a0980006/testdata/project-v3-with-deploy-image/PROJECT#L2-L21)). 
+## Why do we need to store the plugins and data used?
+
+KubeBuilder allows and provides you opt-in to use plugins, indeed optional ones. Track the information required, for example: 
+- we can check if one plugin can or not be used/supported in the scaffold done
+- what operations can or not be done
+- what data can or not be used in the CLI operations
+
+Note that KubeBuilder is not only a CLI tool but can also be used as a lib to allow others to create their plugins/tools and provide helpers and customizations on top of what is done for it, such as it is done by [Operator-SDK](https://sdk.operatorframework.io/). SDK leverages KubeBuilder to create plugins to allow users to work with other languages and provide helpers for their users to integrate their projects with the [Operator Framework solutions/OLM](https://olm.operatorframework.io/). Check [here](https://book.kubebuilder.io/plugins/creating-plugins.html#why-use-the-kubebuilder-style) to know more about the plugin's vision.
+
+On top of that, another motivation for the PROJECT file would help us to create a feature to allow users easier upgrade their projects by providing allowing to automatically re-scaffold the project: Since we scaffold all data used to do the scaffold, we could automate the steps and have a command that would re-create the project in the latest version by re-doing all commands. [More info](https://github.com/kubernetes-sigs/kubebuilder/blob/master/designs/helper_to_upgrade_projects_by_rescaffolding.md)
 
 ## Versioning
 
