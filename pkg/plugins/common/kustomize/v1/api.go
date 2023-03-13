@@ -16,6 +16,8 @@ limitations under the License.
 
 package v1
 
+//test
+
 import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
