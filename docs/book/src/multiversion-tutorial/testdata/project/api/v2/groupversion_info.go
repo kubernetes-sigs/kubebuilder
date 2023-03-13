@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Kubernetes authors.
+Copyright 2023 The Kubernetes authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-// +kubebuilder:gen-docs:collapse=Apache License
 
 // Package v2 contains API Schema definitions for the batch v2 API group
 // +kubebuilder:object:generate=true
