@@ -75,7 +75,7 @@ func main() {
 		),
 		cli.WithPlugins(externalPlugins...),
 		cli.WithDefaultPlugins(cfgv2.Version, golangv2.Plugin{}),
-		cli.WithDefaultPlugins(cfgv3.Version, gov3Bundle),
+		cli.WithDefaultPlugins(cfgv3.Version, gov4Bundle),
 		cli.WithDefaultProjectVersion(cfgv3.Version),
 		cli.WithCompletion(),
 	)
