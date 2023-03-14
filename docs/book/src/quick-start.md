@@ -45,7 +45,7 @@ You can work with a master snapshot by installing from `https://go.kubebuilder.i
 <aside class="note">
 <h1>Enabling shell autocompletion</h1>
 
-Kubebuilder provides autocompletion support for Bash and Zsh via the command `kubebuilder completion <bash|zsh>`, which can save you a lot of typing. For further information see the [completion](./reference/completion.md) document.
+Kubebuilder provides autocompletion support via the command `kubebuilder completion <bash|fish|powershell|zsh>`, which can save you a lot of typing. For further information see the [completion](./reference/completion.md) document.
 
 </aside>
 
