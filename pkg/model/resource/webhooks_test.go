@@ -46,18 +46,24 @@ var _ = Describe("Webhooks", func() {
 			Expect(webhook.Defaulting).To(BeFalse())
 			Expect(webhook.Validation).To(BeFalse())
 			Expect(webhook.Conversion).To(BeFalse())
+			Expect(webhook.Hub).To(BeFalse())
+			Expect(webhook.Spoke).To(BeFalse())
 
 			webhook = Webhooks{
 				WebhookVersion: v1,
 				Defaulting:     true,
 				Validation:     true,
 				Conversion:     true,
+				Hub:            true,
+				Spoke:          true,
 			}
 			Expect(webhook.Update(nil)).To(Succeed())
 			Expect(webhook.WebhookVersion).To(Equal(v1))
 			Expect(webhook.Defaulting).To(BeTrue())
 			Expect(webhook.Validation).To(BeTrue())
 			Expect(webhook.Conversion).To(BeTrue())
+			Expect(webhook.Hub).To(BeTrue())
+			Expect(webhook.Hub).To(BeTrue())
 		})
 
 		Context("webhooks version", func() {
@@ -178,6 +184,66 @@ var _ = Describe("Webhooks", func() {
 				Expect(webhook.Conversion).To(BeFalse())
 			})
 		})
+
+		Context("Hub", func() {
+			It("should set the hub webhook if provided and not previously set", func() {
+				webhook = Webhooks{}
+				other = Webhooks{Hub: true}
+				Expect(webhook.Update(&other)).To(Succeed())
+				Expect(webhook.Hub).To(BeTrue())
+			})
+
+			It("should keep the hub webhook if previously set", func() {
+				webhook = Webhooks{Hub: true}
+
+				By("not providing it")
+				other = Webhooks{}
+				Expect(webhook.Update(&other)).To(Succeed())
+				Expect(webhook.Hub).To(BeTrue())
+
+				By("providing it")
+				other = Webhooks{Hub: true}
+				Expect(webhook.Update(&other)).To(Succeed())
+				Expect(webhook.Hub).To(BeTrue())
+			})
+
+			It("should not set the hub webhook if not provided and not previously set", func() {
+				webhook = Webhooks{}
+				other = Webhooks{}
+				Expect(webhook.Update(&other)).To(Succeed())
+				Expect(webhook.Hub).To(BeFalse())
+			})
+		})
+
+		Context("Spoke", func() {
+			It("should set the spoke webhook if provided and not previously set", func() {
+				webhook = Webhooks{}
+				other = Webhooks{Spoke: true}
+				Expect(webhook.Update(&other)).To(Succeed())
+				Expect(webhook.Spoke).To(BeTrue())
+			})
+
+			It("should keep the spoke webhook if previously set", func() {
+				webhook = Webhooks{Spoke: true}
+
+				By("not providing it")
+				other = Webhooks{}
+				Expect(webhook.Update(&other)).To(Succeed())
+				Expect(webhook.Spoke).To(BeTrue())
+
+				By("providing it")
+				other = Webhooks{Spoke: true}
+				Expect(webhook.Update(&other)).To(Succeed())
+				Expect(webhook.Spoke).To(BeTrue())
+			})
+
+			It("should not set the spoke webhook if not provided and not previously set", func() {
+				webhook = Webhooks{}
+				other = Webhooks{}
+				Expect(webhook.Update(&other)).To(Succeed())
+				Expect(webhook.Spoke).To(BeFalse())
+			})
+		})
 	})
 
 	Context("IsEmpty", func() {
@@ -188,18 +254,40 @@ var _ = Describe("Webhooks", func() {
 				Defaulting:     true,
 				Validation:     false,
 				Conversion:     false,
+				Hub:            false,
+				Spoke:          false,
 			}
 			validation = Webhooks{
 				WebhookVersion: "v1",
 				Defaulting:     false,
 				Validation:     true,
 				Conversion:     false,
+				Hub:            false,
+				Spoke:          false,
 			}
 			conversion = Webhooks{
 				WebhookVersion: "v1",
 				Defaulting:     false,
 				Validation:     false,
 				Conversion:     true,
+				Hub:            false,
+				Spoke:          false,
+			}
+			hub = Webhooks{
+				WebhookVersion: "v1",
+				Defaulting:     false,
+				Validation:     false,
+				Conversion:     false,
+				Hub:            true,
+				Spoke:          false,
+			}
+			spoke = Webhooks{
+				WebhookVersion: "v1",
+				Defaulting:     false,
+				Validation:     false,
+				Conversion:     false,
+				Hub:            false,
+				Spoke:          true,
 			}
 			defaultingAndValidation = Webhooks{
 				WebhookVersion: "v1",
@@ -224,6 +312,8 @@ var _ = Describe("Webhooks", func() {
 				Defaulting:     true,
 				Validation:     true,
 				Conversion:     true,
+				Hub:            true,
+				Spoke:          true,
 			}
 		)
 
@@ -236,10 +326,12 @@ var _ = Describe("Webhooks", func() {
 			Entry("defaulting", defaulting),
 			Entry("validation", validation),
 			Entry("conversion", conversion),
+			Entry("hub", hub),
+			Entry("spoke", spoke),
 			Entry("defaulting and validation", defaultingAndValidation),
 			Entry("defaulting and conversion", defaultingAndConversion),
 			Entry("validation and conversion", validationAndConversion),
-			Entry("defaulting and validation and conversion", all),
+			Entry("defaulting and validation and conversion and hub and spoke", all),
 		)
 	})
 })

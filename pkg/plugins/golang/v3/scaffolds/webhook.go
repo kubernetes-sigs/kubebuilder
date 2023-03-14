@@ -78,6 +78,8 @@ func (s *webhookScaffolder) Scaffold() error {
 	doDefaulting := s.resource.HasDefaultingWebhook()
 	doValidation := s.resource.HasValidationWebhook()
 	doConversion := s.resource.HasConversionWebhook()
+	doHubScaffold := s.resource.HasHubWebhook()
+	doSpokeScaffold := s.resource.HasSpokeWebhook()
 
 	if err := s.config.UpdateResource(s.resource); err != nil {
 		return fmt.Errorf("error updating resource: %w", err)
@@ -90,7 +92,23 @@ func (s *webhookScaffolder) Scaffold() error {
 		return err
 	}
 
-	if doConversion {
+	if doHubScaffold {
+		if err := scaffold.Execute(
+			&api.Conversion{Force: s.force, Hub: true},
+		); err != nil {
+			return err
+		}
+	}
+
+	if doSpokeScaffold {
+		if err := scaffold.Execute(
+			&api.Conversion{Force: s.force, Spoke: true},
+		); err != nil {
+			return err
+		}
+	}
+
+	if doConversion && !doHubScaffold && !doSpokeScaffold {
 		fmt.Println(`Webhook server has been set up for you.
 You need to implement the conversion.Hub and conversion.Convertible interfaces for your CRD types.`)
 	}

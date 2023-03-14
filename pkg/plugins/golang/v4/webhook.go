@@ -61,6 +61,14 @@ validating and/or conversion webhooks.
   # Create conversion webhook for Group: ship, Version: v1beta1
   # and Kind: Frigate
   %[1]s create webhook --group ship --version v1beta1 --kind Frigate --conversion
+
+  # Create hub conversion scaffold for Group: ship, Version: v1beta1
+  # and Kind: Frigate
+  %[1]s create webhook --group ship --version v1beta1 --kind Frigate --conversion --hub
+
+  # Create spoke conversion scaffold for Group: ship, Version: v1beta1
+  # and Kind: Frigate
+  %[1]s create webhook --group ship --version v1beta1 --kind Frigate --conversion --spoke
 `, cliMeta.CommandName)
 }
 
@@ -75,6 +83,10 @@ func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
 		"if set, scaffold the validating webhook")
 	fs.BoolVar(&p.options.DoConversion, "conversion", false,
 		"if set, scaffold the conversion webhook")
+	fs.BoolVar(&p.options.DoHubScaffold, "hub", false,
+		"if set, scaffold Hub function for conversion")
+	fs.BoolVar(&p.options.DoSpokeScaffold, "spoke", false,
+		"if set, scaffold ConvertFrom and ConvertTo function for conversion")
 
 	fs.BoolVar(&p.force, "force", false,
 		"attempt to create resource even if it already exists")
@@ -112,7 +124,11 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 }
 
 func (p *createWebhookSubcommand) Scaffold(fs machinery.Filesystem) error {
-	scaffolder := scaffolds.NewWebhookScaffolder(p.config, *p.resource, p.force)
+	scaffolder := scaffolds.NewWebhookScaffolder(
+		p.config,
+		*p.resource,
+		p.force,
+	)
 	scaffolder.InjectFS(fs)
 	return scaffolder.Scaffold()
 }

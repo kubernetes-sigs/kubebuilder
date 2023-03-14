@@ -95,11 +95,14 @@ var _ = Describe("Options", func() {
 					}
 					Expect(res.Controller).To(Equal(options.DoController))
 					Expect(res.Webhooks).NotTo(BeNil())
-					if options.DoDefaulting || options.DoValidation || options.DoConversion {
+					if options.DoDefaulting || options.DoValidation || options.DoConversion ||
+						options.DoHubScaffold || options.DoSpokeScaffold {
 						Expect(res.Webhooks.WebhookVersion).To(Equal(options.WebhookVersion))
 						Expect(res.Webhooks.Defaulting).To(Equal(options.DoDefaulting))
 						Expect(res.Webhooks.Validation).To(Equal(options.DoValidation))
 						Expect(res.Webhooks.Conversion).To(Equal(options.DoConversion))
+						Expect(res.Webhooks.Hub).To(Equal(options.DoHubScaffold))
+						Expect(res.Webhooks.Spoke).To(Equal(options.DoSpokeScaffold))
 						Expect(res.Webhooks.IsEmpty()).To(BeFalse())
 					} else {
 						Expect(res.Webhooks.IsEmpty()).To(BeTrue())
@@ -114,7 +117,8 @@ var _ = Describe("Options", func() {
 			Entry("when updating the API", Options{DoAPI: true, CRDVersion: "v1", Namespaced: true}),
 			Entry("when updating the Controller", Options{DoController: true}),
 			Entry("when updating Webhooks",
-				Options{WebhookVersion: "v1", DoDefaulting: true, DoValidation: true, DoConversion: true}),
+				Options{WebhookVersion: "v1", DoDefaulting: true, DoValidation: true, DoConversion: true,
+					DoController: true, DoSpokeScaffold: true}),
 		)
 
 		DescribeTable("should use core apis",
