@@ -72,6 +72,7 @@ func (sp *Sample) GenerateSampleProject() {
 		"--repo", "tutorial.kubebuilder.io/project",
 		"--license", "apache2",
 		"--owner", "The Kubernetes authors",
+		"--plugins=go/v4",
 		"--component-config",
 		"--plugins=go/v3",
 	)
@@ -137,14 +138,14 @@ clusterName: example-test
 
 	// 3. fix main
 	err = pluginutil.InsertCode(
-		filepath.Join(sp.ctx.Dir, "main.go"),
+		filepath.Join(sp.ctx.Dir, "cmd/main.go"),
 		`var err error`,
 		`
 	ctrlConfig := configv2.ProjectConfig{}`)
 	CheckError("fixing main.go", err)
 
 	err = pluginutil.InsertCode(
-		filepath.Join(sp.ctx.Dir, "main.go"),
+		filepath.Join(sp.ctx.Dir, "cmd/main.go"),
 		`AtPath(configFile)`,
 		`.OfKind(&ctrlConfig)`)
 	CheckError("fixing main.go", err)
