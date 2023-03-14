@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Project Config represents the configuration of a KubeBuilder project. All projects that are scaffolded with the CLI will generate the `PROJECT` file in the projects' root directory. Therefore, it will store all plugins and input data used to generate the project and APIs to better enable plugins to make useful decisions when scaffolding.
+The Project Config represents the configuration of a KubeBuilder project. All projects that are scaffolded with the CLI (KB version 3.0 and higher) will generate the `PROJECT` file in the projects' root directory. Therefore, it will store all plugins and input data used to generate the project and APIs to better enable plugins to make useful decisions when scaffolding.
 
 ## Example
 
