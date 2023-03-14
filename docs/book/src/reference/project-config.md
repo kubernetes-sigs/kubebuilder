@@ -62,10 +62,10 @@ version: "3"
 ```
 ## Why do we need to store the plugins and data used?
 
-KubeBuilder allows and provides you opt-in to use plugins, indeed optional ones. Track the information required, for example: 
-- we can check if one plugin can or not be used/supported in the scaffold done
-- what operations can or not be done
-- what data can or not be used in the CLI operations
+Kubebuilder allows users to scaffold the project is external plugins and the PROJECT file can track the information required for the same, for example: 
+- we can check if one plugin can or cannot be scaffolded on top of the existing plugin (ie) plugin compatibility.
+- what operations can or cannot be done for ex. can multiple APIs be scaffolded for the current configuration or not.
+- what data can or not be used in the CLI operations for ex. does an API exists in the project before scaffolding webhooks for the same.
 
 Note that KubeBuilder is not only a CLI tool but can also be used as a lib to allow others to create their plugins/tools and provide helpers and customizations on top of what is done for it, such as it is done by [Operator-SDK](https://sdk.operatorframework.io/). SDK leverages KubeBuilder to create plugins to allow users to work with other languages and provide helpers for their users to integrate their projects with the [Operator Framework solutions/OLM](https://olm.operatorframework.io/). You can check the [plugin's vision](https://book.kubebuilder.io/plugins/creating-plugins.html#why-use-the-kubebuilder-style) to know more about.
 
