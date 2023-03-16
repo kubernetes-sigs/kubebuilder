@@ -62,7 +62,7 @@ version: "3"
 ```
 ## Why do we need to store the plugins and data used?
 
-Kubebuilder allows users to scaffold the project is external plugins and the PROJECT file can track the information required for the same, for example: 
+Kubebuilder allows users to scaffold the project with external plugins and the PROJECT file can track the information required for the same, for example: 
 - we can check if one plugin can or cannot be scaffolded on top of the existing plugin (ie) plugin compatibility.
 - what operations can or cannot be done for ex. can multiple APIs be scaffolded for the current configuration or not.
 - what data can or not be used in the CLI operations for ex. does an API exists in the project before scaffolding webhooks for the same.
