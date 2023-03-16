@@ -65,7 +65,7 @@ version: "3"
 Kubebuilder allows users to scaffold the project with external plugins and the PROJECT file can track the information required for the same, for example: 
 - we can check if a plugin can or cannot be scaffolded on top of an existing plugin (ie) plugin compatibility while chaining multiple of them together.
 - what operations can or cannot be done for ex. can multiple APIs be scaffolded for the current configuration or not.
-- what data can or not be used in the CLI operations for ex. does an API exists in the project before scaffolding webhooks for the same.
+- what data can or not be used in the CLI operations for ex. does an API exist in the project before scaffolding webhooks for the same.
 
 Note that KubeBuilder is not only a CLI tool but can also be used as a library to allow users to create their plugins/tools, provide helpers and customizations on top of their existing projects - an example of which is [Operator-SDK](https://sdk.operatorframework.io/). SDK leverages KubeBuilder to create plugins to allow users to work with other languages and provide helpers for their users to integrate their projects with the [Operator Framework solutions/OLM](https://olm.operatorframework.io/). You can check the [plugin's documentation](https://book.kubebuilder.io/plugins/creating-plugins.html#why-use-the-kubebuilder-style) to know more about creating custom plugins.
 
