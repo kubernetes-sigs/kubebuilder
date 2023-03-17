@@ -130,7 +130,7 @@ build_kb
 scaffold_test_project project-v2 --project-version=2
 
 # [Deprecated] - Project version 3 (default) uses plugin go/v3 (default).
-scaffold_test_project project-v3
+scaffold_test_project project-v3 --plugins="go/v3"
 
 # [Currently, default CLI plugin] - [Next version, alpha] Project version v4-alpha
 scaffold_test_project project-v4 --plugins="go/v4"
