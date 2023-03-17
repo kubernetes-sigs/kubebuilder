@@ -74,7 +74,6 @@ func (sp *Sample) GenerateSampleProject() {
 		"--owner", "The Kubernetes authors",
 		"--plugins=go/v4",
 		"--component-config",
-		"--plugins=go/v3",
 	)
 	CheckError("Initializing the project", err)
 
