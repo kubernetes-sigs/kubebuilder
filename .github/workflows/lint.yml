@@ -21,7 +21,7 @@ jobs:
         run: |
           REF="HEAD^"
           [[ -z "${{ github.base_ref }}" ]] || REF=$(git show-ref ${{ github.base_ref }} | head -1 | cut -d' ' -f2)
-          echo "::set-output name=skip::$(test/check-docs-only.sh $REF)"
+          echo "skip=$(test/check-docs-only.sh $REF)" >> $GITHUB_OUTPUT
 
   lint:
     name: golangci-lint
