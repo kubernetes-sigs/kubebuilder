@@ -64,7 +64,7 @@ version: "3"
 
 Following some examples of motivations to track the input used: 
 - check if a plugin can or cannot be scaffolded on top of an existing plugin (i.e.) plugin compatibility while chaining multiple of them together.
-- what operations can or cannot be done for ex. can multiple APIs be scaffolded for the current configuration or not.
+- what operations can or cannot be done such as verify if the layout allow API(s) for different groups to be scaffolded for the current configuration or not.
 - what data can or not be used in the CLI operations for ex. does an API exist in the project before scaffolding webhooks for the same.
 
 Note that KubeBuilder is not only a CLI tool but can also be used as a library to allow users to create their plugins/tools, provide helpers and customizations on top of their existing projects - an example of which is [Operator-SDK][operator-sdk]. SDK leverages KubeBuilder to create plugins to allow users to work with other languages and provide helpers for their users to integrate their projects with, for example, the [Operator Framework solutions/OLM][olm]. You can check the [plugin's documentation][plugins-doc] to know more about creating custom plugins.
