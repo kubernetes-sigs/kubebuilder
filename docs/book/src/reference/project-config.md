@@ -69,7 +69,7 @@ Kubebuilder allows users to scaffold the project with external plugins and the P
 
 Note that KubeBuilder is not only a CLI tool but can also be used as a library to allow users to create their plugins/tools, provide helpers and customizations on top of their existing projects - an example of which is [Operator-SDK][operator-sdk]. SDK leverages KubeBuilder to create plugins to allow users to work with other languages and provide helpers for their users to integrate their projects with, for example, the [Operator Framework solutions/OLM][olm]. You can check the [plugin's documentation][plugins-doc] to know more about creating custom plugins.
 
-Additionally, another motivation for the PROJECT file is to help us to create a feature that allows users to easily upgrade their projects by providing helpers that automatically re-scaffold the project. By having all the required metadata regarding the APIs, their configurations and versions in the PROJECT file, we could automate the process of re-scaffolding while migrating between plugin versions. More info on this, can be found [here] (https://github.com/kubernetes-sigs/kubebuilder/blob/master/designs/helper_to_upgrade_projects_by_rescaffolding.md)
+Additionally, another motivation for the PROJECT file is to help us to create a feature that allows users to easily upgrade their projects by providing helpers that automatically re-scaffold the project. By having all the required metadata regarding the APIs, their configurations and versions in the PROJECT file. For example, it can be used to automate the process of re-scaffolding while migrating between plugin versions. ([More info][doc-design-helper]).
 
 ## Versioning
 
