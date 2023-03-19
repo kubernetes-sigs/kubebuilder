@@ -137,3 +137,7 @@ Now let's check its layout fields definition:
 [versioning]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/VERSIONING.md#Versioning
 [core-types]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/pkg/plugins/golang/options.go
 [deploy-image-plugin]: ../plugins/deploy-image-plugin-v1-alpha.md
+[olm]: https://olm.operatorframework.io/
+[plugins-doc]: ../plugins/creating-plugins.html#why-use-the-kubebuilder-style
+[doc-design-helper]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/designs/helper_to_upgrade_projects_by_rescaffolding.md
+[operator-sdk]: https://sdk.operatorframework.io/
