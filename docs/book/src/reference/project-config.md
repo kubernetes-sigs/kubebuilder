@@ -63,7 +63,7 @@ version: "3"
 ## Why do we need to store the plugins and data used?
 
 Following some examples of motivations to track the input used: 
-- we can check if a plugin can or cannot be scaffolded on top of an existing plugin (ie) plugin compatibility while chaining multiple of them together.
+- check if a plugin can or cannot be scaffolded on top of an existing plugin (i.e.) plugin compatibility while chaining multiple of them together.
 - what operations can or cannot be done for ex. can multiple APIs be scaffolded for the current configuration or not.
 - what data can or not be used in the CLI operations for ex. does an API exist in the project before scaffolding webhooks for the same.
 
