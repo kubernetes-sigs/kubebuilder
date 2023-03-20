@@ -39,13 +39,22 @@ import (
 
 func main() {
 
+	const deprecateMessageGoV3Bundle = "This version is deprecated." +
+		"The `go/v3` cannot scaffold projects using kustomize versions v4x+" +
+		" and cannot fully support Kubernetes 1.25+." +
+		"It is recommended to upgrade your project to the latest versions available (go/v4)." +
+		"Please, check the migration guide to learn how to upgrade your project"
+
 	// Bundle plugin which built the golang projects scaffold by Kubebuilder go/v3
 	gov3Bundle, _ := plugin.NewBundle(golang.DefaultNameQualifier, plugin.Version{Number: 3},
+		deprecateMessageGoV3Bundle,
 		kustomizecommonv1.Plugin{},
 		golangv3.Plugin{},
 	)
+
 	// Bundle plugin which built the golang projects scaffold by Kubebuilder go/v4 with kustomize alpha-v2
 	gov4Bundle, _ := plugin.NewBundle(golang.DefaultNameQualifier, plugin.Version{Number: 4},
+		"",
 		kustomizecommonv2alpha.Plugin{},
 		golangv4.Plugin{},
 	)

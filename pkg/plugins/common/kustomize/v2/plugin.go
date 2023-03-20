@@ -66,3 +66,7 @@ func (p Plugin) GetCreateAPISubcommand() plugin.CreateAPISubcommand { return &p.
 func (p Plugin) GetCreateWebhookSubcommand() plugin.CreateWebhookSubcommand {
 	return &p.createWebhookSubcommand
 }
+
+func (p Plugin) DeprecationWarning() string {
+	return ""
+}

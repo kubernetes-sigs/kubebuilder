@@ -73,3 +73,7 @@ func (p Plugin) GetEditSubcommand() plugin.EditSubcommand {
 		Args: p.Args,
 	}
 }
+
+func (p Plugin) DeprecationWarning() string {
+	return ""
+}

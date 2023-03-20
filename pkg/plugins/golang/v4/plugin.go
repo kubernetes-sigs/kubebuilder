@@ -63,3 +63,7 @@ func (p Plugin) GetCreateWebhookSubcommand() plugin.CreateWebhookSubcommand {
 
 // GetEditSubcommand will return the subcommand which is responsible for editing the scaffold of the project
 func (p Plugin) GetEditSubcommand() plugin.EditSubcommand { return &p.editSubcommand }
+
+func (p Plugin) DeprecationWarning() string {
+	return ""
+}

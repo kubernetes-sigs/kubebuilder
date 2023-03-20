@@ -443,8 +443,8 @@ func (c *CLI) addExtraCommands() error {
 // printDeprecationWarnings prints the deprecation warnings of the resolved plugins.
 func (c CLI) printDeprecationWarnings() {
 	for _, p := range c.resolvedPlugins {
-		if d, isDeprecated := p.(plugin.Deprecated); isDeprecated {
-			fmt.Printf(noticeColor, fmt.Sprintf(deprecationFmt, d.DeprecationWarning()))
+		if p != nil && p.(plugin.Deprecated) != nil && len(p.(plugin.Deprecated).DeprecationWarning()) > 0 {
+			fmt.Printf(noticeColor, fmt.Sprintf(deprecationFmt, p.(plugin.Deprecated).DeprecationWarning()))
 		}
 	}
 }
