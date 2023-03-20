@@ -21,7 +21,7 @@ jobs:
       - name: Clone the code
         uses: actions/checkout@v3
       - name: Setup Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v4
         with:
           # the go/v2 cannot be updated and is scaffold with golang 1.13
           # (version used by its dep version of the controller-runtime)
