@@ -42,9 +42,9 @@ var (
 // GetPluginsCLI returns the plugins based CLI configured to be used in your CLI binary
 func GetPluginsCLI() (*cli.CLI) {
 	// Bundle plugin which built the golang projects scaffold by Kubebuilder go/v3
-	gov3Bundle, _ := plugin.NewBundle(golang.DefaultNameQualifier, plugin.Version{Number: 3},
-		kustomizecommonv1.Plugin{},
-		golangv3.Plugin{},
+	gov3Bundle, _ := plugin.NewBundle(plugin.WithName(golang.DefaultNameQualifier), 
+		plugin.WithVersion(plugin.Version{Number: 3}),
+		plugin.WithPlugins(kustomizecommonv1.Plugin{}, golangv3.Plugin{}),
 	)
 
 
@@ -175,10 +175,9 @@ Once a plugin is deprecated, have it implement a [Deprecated][deprecate-plugin-d
 
 ```go
    // see that will be like myplugin.example/v1`  
-  myPluginBundle, _ := plugin.NewBundle(`<plugin-name>`,`<plugin-version>`,
-		pluginA.Plugin{},
-		pluginB.Plugin{},
-        pluginC.Plugin{},
+  myPluginBundle, _ := plugin.NewBundle(plugin.WithName(`<plugin-name>`),
+  		plugin.WithVersion(`<plugin-version>`),
+		plugin.WithPlugins(pluginA.Plugin{}, pluginB.Plugin{}, pluginC.Plugin{}),
 	)
 
 ```
