@@ -21,7 +21,7 @@ jobs:
         run: |
           REF="HEAD^"
           [[ -z "${{ github.base_ref }}" ]] || REF=$(git show-ref ${{ github.base_ref }} | head -1 | cut -d' ' -f2)
-          echo "skip=$(test/check-docs-only.sh $REF)" >> $GITHUB_OUTPUT
+          echo "::set-output name=skip::$(test/check-docs-only.sh $REF)"
 
   test:
     name: ${{ matrix.os }}
