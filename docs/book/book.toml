@@ -7,7 +7,7 @@ title = "The Kubebuilder Book"
 [output.html]
 google-analytics = "UA-119864590-1"
 curly-quotes = true
-additional-css = ["theme/css/markers.css", "theme/css/custom.css"]
+additional-css = ["theme/css/markers.css", "theme/css/custom.css", "theme/css/version-dropdown.css"]
 git-repository-url = "https://github.com/kubernetes-sigs/kubebuilder"
 edit-url-template = "https://github.com/kubernetes-sigs/kubebuilder/edit/master/docs/book/{path}"
 
