@@ -20,7 +20,7 @@ directory of the Kubebuilder project.
 ## When to use it
 
 - If you are looking to scaffold the kustomize configuration manifests for your own language plugin
-- If you are looking for support on Apple Silicon (`darwin/arm64`). (_Before kustomize `4.x` the binary for this plataform is not provided_)
+- If you are looking for support on Apple Silicon (`darwin/arm64`). (_Before kustomize `4.x` the binary for this platform is not provided_)
 - If you are looking for to begin to try out the new syntax and features provide by kustomize v4
 - If you are NOT looking to build projects which will be used on Kubernetes cluster versions < `1.22` (_The new features provides by kustomize v4 are not officially supported and might not work with kubectl < `1.22`_)
 - If you are NOT looking to rely on special URLs in resource fields
@@ -33,7 +33,6 @@ You can use `kustomize/v1` plugin which is the default configuration adopted by 
 Also, be aware that the `base.go.kubebuilder.io/v3` is prepared to work with this plugin.
 
 </aside>
-
 
 ## How to use it
 

@@ -14,7 +14,7 @@ steps](/quick-start.md#installation) before continuing.
 kubebuilder init --domain tutorial.kubebuilder.io --component-config
 ```
 
-## Setting up an exising project
+## Setting up an existing project
 
 If you've previously generated a project we can add support for parsing the
 config file by making the following changes to `main.go`.
@@ -33,7 +33,6 @@ flag.StringVar(&configFile, "config", "",
 Now, we can setup the `Options` struct and check if the `configFile` is set,
 this allows backwards compatibility, if it's set we'll then use the `AndFrom`
 function on `Options` to parse and populate the `Options` from the config.
-
 
 ```go
 var err error
