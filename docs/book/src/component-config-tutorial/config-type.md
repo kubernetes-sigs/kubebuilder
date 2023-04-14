@@ -13,7 +13,7 @@ Then, run `make build` to implement the interface for your API type, which would
 <h1>Use --controller=false</h1>
 
 You may notice this command from the `CronJob` tutorial although here we
-explicity setting `--controller=false` because `ProjectConfig` is not
+explicitly setting `--controller=false` because `ProjectConfig` is not
 intended to be an API extension and cannot be reconciled.
 
 </aside>

@@ -10,7 +10,7 @@ community has been migrating the core components away from this and toward
 using versioned config files, referred to as "component configs".
 
 The rest of this tutorial will show you how to configure your kubebuilder
-project with the a component config type then moves on to implementing a custom
+project with the component config type then moves on to implementing a custom
 type so that you can extend this capability.
 
 

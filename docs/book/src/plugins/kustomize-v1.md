@@ -53,7 +53,7 @@ If you are looking to scaffold the kustomize configuration manifests for your ow
 
 If you are looking to define that your language plugin should use kustomize use the [Bundle Plugin][bundle]
 to specify that your language plugin is a composition with your plugin responsible for scaffold
-all that is laguage specific and kustomize for its configuration, see: 
+all that is language specific and kustomize for its configuration, see: 
 
 ```go
 	// Bundle plugin which built the golang projects scaffold by Kubebuilder go/v3
