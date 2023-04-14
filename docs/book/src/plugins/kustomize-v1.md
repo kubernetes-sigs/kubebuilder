@@ -44,7 +44,6 @@ directory of the Kubebuilder project.
 
 </aside> 
 
-
 ## When to use it ?
 
 If you are looking to scaffold the kustomize configuration manifests for your own language plugin 
@@ -53,7 +52,11 @@ If you are looking to scaffold the kustomize configuration manifests for your ow
 
 If you are looking to define that your language plugin should use kustomize use the [Bundle Plugin][bundle]
 to specify that your language plugin is a composition with your plugin responsible for scaffold
+<<<<<<< HEAD
 all that is language specific and kustomize for its configuration, see: 
+=======
+all that is language specific and kustomize for its configuration, see:
+>>>>>>> 03c9b253 (📖 : Document update - Fix document spelling mistake (#3324))
 
 ```go
 	// Bundle plugin which built the golang projects scaffold by Kubebuilder go/v3
