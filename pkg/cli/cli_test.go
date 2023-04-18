@@ -464,6 +464,25 @@ plugins:
 				)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(hasSubCommand(c.cmd, "version")).To(BeTrue())
+
+				// Test the version command
+				c.cmd.SetArgs([]string{"version"})
+				// Overwrite stdout to read the output and reset it afterwards
+				r, w, _ := os.Pipe()
+				temp := os.Stdout
+				defer func() {
+					os.Stdout = temp
+				}()
+				os.Stdout = w
+				Expect(c.cmd.Execute()).Should(Succeed())
+
+				_ = w.Close()
+
+				Expect(err).NotTo(HaveOccurred())
+				printed, _ := io.ReadAll(r)
+				Expect(string(printed)).To(Equal(
+					fmt.Sprintf("%s\n", version)))
+
 			})
 		})
 

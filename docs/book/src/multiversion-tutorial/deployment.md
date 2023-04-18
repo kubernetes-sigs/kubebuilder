@@ -12,8 +12,8 @@ bits disabled. To enable them, we need to:
 - Enable `../certmanager` and `../webhook` directories under the
   `bases` section in `config/default/kustomization.yaml` file.
 
-- Enable `manager_webhook_patch.yaml` under the `patches` section
-  in `config/default/kustomization.yaml` file.
+- Enable `manager_webhook_patch.yaml` and `webhookcainjection_patch.yaml`
+  under the `patches` section in `config/default/kustomization.yaml` file.
 
 - Enable all the vars under the `CERTMANAGER` section in
   `config/default/kustomization.yaml` file.

@@ -1,0 +1,5 @@
+## Append samples of your project ##
+resources:
+- batch_v1_cronjob.yaml
+- batch_v2_cronjob.yaml
+#+kubebuilder:scaffold:manifestskustomizesamples

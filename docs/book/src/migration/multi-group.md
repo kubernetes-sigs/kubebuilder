@@ -21,9 +21,9 @@ to modify the default project structure to support it.
 Let's migrate the [CronJob example][cronjob-tutorial].
 
 <aside class="note warning">
-<h1>Using go/v4-alpha</h1>
+<h1>Using go/v4</h1>
 
-If you create your project using go/v4-alpha plugin (you can verify it by looking at the PROJECT file )
+If you create your project using go/v4 plugin (you can verify it by looking at the PROJECT file )
 then, all steps are the same but you need to keep in mind that the api and controllers directory
 path is now under the `pkg` directory instead. So, you need ensure that you update the
 paths accordingly.

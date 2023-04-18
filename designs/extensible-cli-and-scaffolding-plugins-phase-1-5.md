@@ -1,3 +1,7 @@
+| Authors       | Creation Date | Status      | Extra                                                           |
+|---------------|---------------|-------------|-----------------------------------------------------------------|
+| @adirio | Mar 9, 2021  | Implemented | [Plugins doc](https://book.kubebuilder.io/plugins/plugins.html) |
+
 # Extensible CLI and Scaffolding Plugins - Phase 1.5
 
 Continuation of [Extensible CLI and Scaffolding Plugins](./extensible-cli-and-scaffolding-plugins-phase-1.md).

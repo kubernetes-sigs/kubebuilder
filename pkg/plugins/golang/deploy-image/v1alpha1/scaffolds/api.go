@@ -31,7 +31,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins"
 	kustomizev1scaffolds "sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v1/scaffolds"
-	kustomizev2scaffolds "sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v2-alpha/scaffolds"
+	kustomizev2scaffolds "sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v2/scaffolds"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/deploy-image/v1alpha1/scaffolds/internal/templates/api"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/deploy-image/v1alpha1/scaffolds/internal/templates/config/samples"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/deploy-image/v1alpha1/scaffolds/internal/templates/controllers"
@@ -296,7 +296,7 @@ func (s *apiScaffolder) updateControllerCode(controller controllers.Controller) 
 
 func (s *apiScaffolder) scaffoldCreateAPIFromKustomize(isLegacyLayout bool) error {
 	// Now we need call the kustomize/v1 plugin to do its scaffolds when we create a new API
-	// todo: when we have the go/v4-alpha plugin we will also need to check what is the plugin used
+	// todo: when we have the go/v4 plugin we will also need to check what is the plugin used
 	// in the Project layout to know if we should use kustomize/v1 OR kustomize/v2-alpha
 	var kustomizeScaffolder plugins.Scaffolder
 
@@ -325,7 +325,7 @@ func (s *apiScaffolder) scaffoldCreateAPIFromKustomize(isLegacyLayout bool) erro
 
 func (s *apiScaffolder) scaffoldCreateAPIFromGolang(isLegacyLayout bool) error {
 	// Now we need call the kustomize/v1 plugin to do its scaffolds when we create a new API
-	// todo: when we have the go/v4-alpha plugin we will also need to check what is the plugin used
+	// todo: when we have the go/v4 plugin we will also need to check what is the plugin used
 	// in the Project layout to know if we should use kustomize/v1 OR kustomize/v2-alpha
 	if isLegacyLayout {
 		golangV3Scaffolder := golangv3scaffolds.NewAPIScaffolder(s.config,

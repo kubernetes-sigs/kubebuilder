@@ -6,40 +6,22 @@ on:
   pull_request:
 
 jobs:
-  check_docs_only:
-    name: check_docs_only
-    runs-on: ubuntu-18.04
-    outputs:
-      skip: ${{ steps.check_docs_only.outputs.skip }}
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - id: check_docs_only
-        # Since PR's are squashed prior to merging to the branch checked out (default branch),
-        # HEAD^ will resolve to the previous point in history.
-        run: |
-          REF="HEAD^"
-          [[ -z "${{ github.base_ref }}" ]] || REF=$(git show-ref ${{ github.base_ref }} | head -1 | cut -d' ' -f2)
-          echo "::set-output name=skip::$(test/check-docs-only.sh $REF)"
-
   go-apidiff:
     name: Verify API differences
     runs-on: ubuntu-latest
-    needs: check_docs_only
     # Pull requests from different repository only trigger this checks
-    if: (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository) && needs.check_docs_only.outputs.skip != 'true'
+    if: (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository)
     steps:
       - name: Clone the code
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
       - name: Setup Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v4
         with:
           go-version: "1.19"
       - name: Execute go-apidiff
-        uses: joelanford/go-apidiff@v0.5.0
+        uses: joelanford/go-apidiff@v0.6.0
         with:
           compare-imports: true
           print-compatible: true

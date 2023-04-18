@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+//go:deprecated This package has been deprecated in favor of v2
 package v1
 
 import (
@@ -64,4 +65,9 @@ func (p Plugin) GetCreateAPISubcommand() plugin.CreateAPISubcommand { return &p.
 // GetCreateWebhookSubcommand will return the subcommand which is responsible for scaffolding webhooks
 func (p Plugin) GetCreateWebhookSubcommand() plugin.CreateWebhookSubcommand {
 	return &p.createWebhookSubcommand
+}
+
+func (p Plugin) DeprecationWarning() string {
+	return "This version is deprecated.The kustomize/v1 plugin used within go/v3 projects uses an old version " +
+		"of kustomize (v3). It is recommended that you upgrade your project to use the go/v4 and kustomize/v2 plugins."
 }

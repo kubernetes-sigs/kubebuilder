@@ -6,23 +6,6 @@ on:
   pull_request:
 
 jobs:
-  check_docs_only:
-    name: check_docs_only
-    runs-on: ubuntu-18.04
-    outputs:
-      skip: ${{ steps.check_docs_only.outputs.skip }}
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - id: check_docs_only
-        # Since PR's are squashed prior to merging to the branch checked out (default branch),
-        # HEAD^ will resolve to the previous point in history.
-        run: |
-          REF="HEAD^"
-          [[ -z "${{ github.base_ref }}" ]] || REF=$(git show-ref ${{ github.base_ref }} | head -1 | cut -d' ' -f2)
-          echo "::set-output name=skip::$(test/check-docs-only.sh $REF)"
-
   test:
     name: ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
@@ -31,14 +14,13 @@ jobs:
         os:
           - ubuntu-latest
           - macos-latest
-    needs: check_docs_only
     # Pull requests from the same repository won't trigger this checks as they were already triggered by the push
-    if: (github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository) && needs.check_docs_only.outputs.skip != 'true'
+    if: (github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository)
     steps:
       - name: Clone the code
         uses: actions/checkout@v3
       - name: Setup Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v4
         with:
           go-version: "1.19"
       # This step is needed as the following one tries to remove
@@ -61,15 +43,14 @@ jobs:
     name: Code coverage
     needs:
       - test
-      - check_docs_only
     runs-on: ubuntu-latest
     # Pull requests from the same repository won't trigger this checks as they were already triggered by the push
-    if: (github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository) && needs.check_docs_only.outputs.skip != 'true'
+    if: (github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository)
     steps:
       - name: Clone the code
         uses: actions/checkout@v3
       - name: Setup Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v4
         with:
           go-version: "1.19"
       - name: Generate the coverage output

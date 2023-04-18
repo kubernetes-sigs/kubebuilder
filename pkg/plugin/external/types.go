@@ -47,7 +47,7 @@ type PluginResponse struct {
 	// Command holds the command that gets executed by the plugin such as init, create api, etc.
 	Command string `json:"command"`
 
-	// Help contains the plugin specific help text that the plugin returns to Kubebuilder when it receives
+	// Metadata contains the plugin specific help text that the plugin returns to Kubebuilder when it receives
 	// `--help` flag from Kubebuilder.
 	Metadata plugin.SubcommandMetadata `json:"metadata"`
 
