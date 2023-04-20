@@ -13,6 +13,7 @@ The rest of this tutorial will show you how to configure your kubebuilder
 project with the component config type then moves on to implementing a custom
 type so that you can extend this capability.
 
+
 <aside class="note">
 
 <h1>Following Along vs Jumping Ahead</h1>

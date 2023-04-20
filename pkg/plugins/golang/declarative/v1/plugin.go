@@ -59,3 +59,7 @@ func (p Plugin) GetCreateAPISubcommand() plugin.CreateAPISubcommand { return &p.
 type pluginConfig struct {
 	Resources []resource.GVK `json:"resources,omitempty"`
 }
+
+func (p Plugin) DeprecationWarning() string {
+	return ""
+}

@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.10.0
+    controller-gen.kubebuilder.io/version: v0.11.3
   creationTimestamp: null
   name: projectconfigs.config.tutorial.kubebuilder.io
 spec:
@@ -56,6 +56,9 @@ spec:
                   in form with GroupKind.String(), e.g. ReplicaSet in apps group (regardless
                   of version) would be `ReplicaSet.apps`."
                 type: object
+              recoverPanic:
+                description: RecoverPanic indicates if panics should be recovered.
+                type: boolean
             type: object
           gracefulShutDown:
             description: GracefulShutdownTimeout is the duration given to runnable
@@ -69,7 +72,8 @@ spec:
             properties:
               healthProbeBindAddress:
                 description: HealthProbeBindAddress is the TCP address that the controller
-                  should bind to for serving health probes
+                  should bind to for serving health probes It can be set to "0" or
+                  "" to disable serving the health probe.
                 type: string
               livenessEndpointName:
                 description: LivenessEndpointName, defaults to "healthz"

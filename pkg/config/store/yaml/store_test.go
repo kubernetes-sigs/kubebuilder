@@ -54,10 +54,10 @@ var _ = Describe("yamlStore", func() {
 		unversionedFile = `version:
 `
 		nonexistentVersionFile = `version: 1-alpha
-`  // v1-alpha never existed
+` // v1-alpha never existed
 		wrongFile = `version: "2"
 layout: ""
-`  // layout field does not exist in v2
+` // layout field does not exist in v2
 	)
 
 	var (

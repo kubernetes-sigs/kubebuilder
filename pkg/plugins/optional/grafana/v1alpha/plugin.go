@@ -58,3 +58,7 @@ func (p Plugin) GetInitSubcommand() plugin.InitSubcommand { return &p.initSubcom
 func (p Plugin) GetEditSubcommand() plugin.EditSubcommand { return &p.editSubcommand }
 
 type pluginConfig struct{}
+
+func (p Plugin) DeprecationWarning() string {
+	return ""
+}

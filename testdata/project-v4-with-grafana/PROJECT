@@ -4,7 +4,7 @@
 # More info: https://book.kubebuilder.io/reference/project-config.html
 domain: testproject.org
 layout:
-- go.kubebuilder.io/v3
+- go.kubebuilder.io/v4
 plugins:
   grafana.kubebuilder.io/v1-alpha: {}
 projectName: project-v4-with-grafana

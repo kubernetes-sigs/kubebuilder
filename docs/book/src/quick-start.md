@@ -45,27 +45,13 @@ You can work with a master snapshot by installing from `https://go.kubebuilder.i
 <aside class="note">
 <h1>Enabling shell autocompletion</h1>
 
-Kubebuilder provides autocompletion support for Bash and Zsh via the command `kubebuilder completion <bash|zsh>`, which can save you a lot of typing. For further information see the [completion](./reference/completion.md) document.
+Kubebuilder provides autocompletion support via the command `kubebuilder completion <bash|fish|powershell|zsh>`, which can save you a lot of typing. For further information see the [completion](./reference/completion.md) document.
 
 </aside>
 
 ## Create a Project
 
 Create a directory, and then run the init command inside of it to initialize a new project. Follows an example.
-
-<aside class="note warning">
-<h1> Apple Silicon (M1) </h1>
-
-The current scaffold done by the CLI (`go/v3`) uses [kubernetes-sigs/kustomize][kustomize] v3 which does not provide
-a valid binary for Apple Silicon (`darwin/arm64`). Therefore, you can use the `go/v4-alpha` plugin
-instead which provides support for this platform:
-
-```bash
-kubebuilder init --domain my.domain --repo my.domain/guestbook --plugins=go/v4-alpha
-```
-
-**Note**: The `go/v4-alpha` plugin is an unstable version and can have breaking changes in future releases.
-</aside>
 
 ```bash
 mkdir -p ~/projects/guestbook

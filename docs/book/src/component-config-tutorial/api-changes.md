@@ -34,6 +34,7 @@ Now, we can setup the `Options` struct and check if the `configFile` is set,
 this allows backwards compatibility, if it's set we'll then use the `AndFrom`
 function on `Options` to parse and populate the `Options` from the config.
 
+
 ```go
 var err error
 options := ctrl.Options{Scheme: scheme}

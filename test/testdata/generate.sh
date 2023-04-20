@@ -129,18 +129,13 @@ build_kb
 # [Deprecated] - Project version 2 uses plugin go/v2 (default).
 scaffold_test_project project-v2 --project-version=2
 
-# [Currently, default CLI plugin] - Project version 3 (default) uses plugin go/v3 (default).
-scaffold_test_project project-v3
-scaffold_test_project project-v3-multigroup
-scaffold_test_project project-v3-declarative-v1 --plugins="go/v3,declarative"
-scaffold_test_project project-v3-config --component-config
-scaffold_test_project project-v3-with-deploy-image
-scaffold_test_project project-v3-with-grafana
+# [Deprecated] - Project version 3 (default) uses plugin go/v3 (default).
+scaffold_test_project project-v3 --plugins="go/v3"
 
-# [Next version, alpha] Project version v4-alpha
-scaffold_test_project project-v4 --plugins="go/v4-alpha"
-scaffold_test_project project-v4-multigroup --plugins="go/v4-alpha"
-scaffold_test_project project-v4-declarative-v1 --plugins="go/v4-alpha,declarative"
-scaffold_test_project project-v4-config --component-config --plugins="go/v4-alpha"
-scaffold_test_project project-v4-with-deploy-image --plugins="go/v4-alpha"
-scaffold_test_project project-v4-with-grafana
+# [Currently, default CLI plugin] - [Next version, alpha] Project version v4-alpha
+scaffold_test_project project-v4 --plugins="go/v4"
+scaffold_test_project project-v4-multigroup --plugins="go/v4"
+scaffold_test_project project-v4-declarative-v1 --plugins="go/v4,declarative"
+scaffold_test_project project-v4-config --component-config --plugins="go/v4"
+scaffold_test_project project-v4-with-deploy-image --plugins="go/v4"
+scaffold_test_project project-v4-with-grafana --plugins="go/v4"

@@ -1,3 +1,7 @@
+| Authors       | Creation Date | Status      | Extra |
+|---------------|---------------|-------------|-------|
+| @joelanford |  Sep 6, 2019  | implemented | -     |
+
 Integrating Kubebuilder and Operator SDK
 ========================================
 

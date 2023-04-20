@@ -1,3 +1,7 @@
+| Authors       | Creation Date | Status      | Extra                                                           |
+|---------------|---------------|-------------|-----------------------------------------------------------------|
+| @rashmigottipati | Mar 9, 2021  | partial implemented | [Plugins doc](https://book.kubebuilder.io/plugins/plugins.html) |
+
 # Extensible CLI and Scaffolding Plugins - Phase 2
 
 ## Overview
@@ -134,7 +138,7 @@ plugins:
     - domain: testproject.org
       group: crew
       kind: Captain
-      version: v2-alpha
+      version: v2
   declarative.go.kubebuilder.io/v1:
     resources:
     - domain: testproject.org
@@ -173,7 +177,7 @@ The following scenarios shows what `kubebuilder` will send/receive to the extern
 * External plugin to `kubebuilder`:
   * The plugin reads the `PluginRequest` through its `stdin` and processes the request based on the `Command` that was sent. If the `Command` doesn't match what the plugin supports, it writes back an error immediately without any further processing. If the `Command` matches what the plugin supports, it constructs a `PluginResponse` containing the `Command` that was executed by the plugin, and modified `Universe` based on the new files that were scaffolded by the external plugin, `Error` and `ErrorMsg` that add any error information, and writes the `PluginResponse` back to `kubebuilder` through `stdout`.
 
-* Note: If `--help` flag is being passed from `kubebuilder` to the external plugin through `PluginRequest`, the plugin attaches its help text information in the `Help` field of the `PluginResponse`. Both `PluginRequest` and `PluginResponse` also contain `APIVersion` field to have compatible versioned schemas.
+* Note: If `--help` flag is being passed from `kubebuilder` to the external plugin through `PluginRequest`, the plugin attaches its help text information in the `Metadata` field of the `PluginResponse`. Both `PluginRequest` and `PluginResponse` also contain `APIVersion` field to have compatible versioned schemas.
 
 * Handling plugin failures across the chain:
 
@@ -208,9 +212,9 @@ type PluginResponse struct {
   // Command holds the command that gets executed by the plugin such as init, create api, etc.
   Command       string                   `json:"command"`
 
-  // Help contains the plugin specific help text that the plugin returns to kubebuilder when it receives
+  // Metadata contains the plugin specific help text that the plugin returns to Kubebuilder when it receives
   // `--help` flag from Kubebuilder.
-  Help          string                   `json:"help,omitempty"`
+  Metadata plugin.SubcommandMetadata `json:"metadata"`
 
   // APIVersion defines the versioned schema of the PluginResponse that will be written back to kubebuilder.
   // Initially, this will be marked as alpha (v1alpha1).
