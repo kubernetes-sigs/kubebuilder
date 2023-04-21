@@ -2,8 +2,6 @@ package util
 
 import (
 	"bytes"
-	"os"
-	"os/exec"
 	"strings"
 	"testing"
 
@@ -11,34 +9,34 @@ import (
 	"github.com/onsi/gomega"
 )
 
-func TestPlugin(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Plugin Util Suite")
+func TestExecPlugin(t *testing.T) {
+	gomega.RegisterFailHandler(ginkgo.Fail)
+	ginkgo.RunSpecs(t, "Plugin Util Suite")
 }
 
-var _ = Describe("RunCmd", func() {
+var _ = ginkgo.Describe("RunCmd", func() {
 	var (
 		output *bytes.Buffer
 		err    error
 	)
 
-	BeforeEach(func() {
+	ginkgo.BeforeEach(func() {
 		output = &bytes.Buffer{}
 	})
 
-	AfterEach(func() {
+	ginkgo.AfterEach(func() {
 		output.Reset()
 	})
 
-	It("executes the command and redirects output to stdout", func() {
+	ginkgo.It("executes the command and redirects output to stdout", func() {
 		err = RunCmd("echo test", "echo", "test")
-		Expect(err).ToNot(HaveOccurred())
+		gomega.Expect(err).ToNot(gomega.HaveOccurred())
 
-		Expect(strings.TrimSpace(output.String())).To(Equal("test"))
+		gomega.Expect(strings.TrimSpace(output.String())).To(gomega.Equal("test"))
 	})
 
-	It("returns an error if the command fails", func() {
+	ginkgo.It("returns an error if the command fails", func() {
 		err = RunCmd("unknown command", "unknowncommand")
-		Expect(err).To(HaveOccurred())
+		gomega.Expect(err).To(gomega.HaveOccurred())
 	})
 })
