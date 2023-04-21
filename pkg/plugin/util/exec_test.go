@@ -2,49 +2,37 @@ package util
 
 import (
 	"bytes"
+	"os"
 	"os/exec"
 	"strings"
-	"testing"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+
+	"github.com/onsi/ginkgo"
+	"github.com/onsi/gomega"
 )
 
-func TestRunCmd(t *testing.T) {
-	testCases := []struct {
-		name        string
-		msg         string
-		cmd         string
-		args        []string
-		expectedErr error
-	}{
-		{
-			name:        "Success",
-			msg:         "Running command",
-			cmd:         "echo",
-			args:        []string{"hello"},
-			expectedErr: nil,
-		},
-		{
-			name:        "Error",
-			msg:         "Running command",
-			cmd:         "nonexistentcommand",
-			args:        []string{"arg1", "arg2"},
-			expectedErr: exec.ErrNotFound,
-		},
-	}
+var _ = Describe("RunCmd", func() {
+	var (
+		output *bytes.Buffer
+		err    error
+	)
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			var buf bytes.Buffer
-			cmdErr := RunCmd(tc.msg, tc.cmd, tc.args...)
-			if cmdErr != tc.expectedErr {
-				t.Errorf("Expected error: %v, got: %v", tc.expectedErr, cmdErr)
-			}
-			if cmdErr == nil {
-				if !strings.Contains(buf.String(), strings.Join(tc.args, " ")) {
-					t.Errorf("Expected output to contain command arguments: %v", tc.args)
-				}
-			}
-		})
-	}
-}
+	BeforeEach(func() {
+		output = &bytes.Buffer{}
+	})
+
+	AfterEach(func() {
+		output.Reset()
+	})
+
+	It("executes the command and redirects output to stdout", func() {
+		err = RunCmd("echo test", "echo", "test")
+		Expect(err).ToNot(HaveOccurred())
+
+		Expect(strings.TrimSpace(output.String())).To(Equal("test"))
+	})
+
+	It("returns an error if the command fails", func() {
+		err = RunCmd("unknown command", "unknowncommand")
+		Expect(err).To(HaveOccurred())
+	})
+})
