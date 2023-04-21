@@ -72,3 +72,5 @@ This way is more complex, susceptible to errors, and success cannot be assured. 
 [controller-tools]: https://github.com/kubernetes-sigs/controller-tools
 [kustomize-release]: https://github.com/kubernetes-sigs/kustomize/releases/tag/kustomize%2Fv5.0.0
 [kb-releases]: https://github.com/kubernetes-sigs/kubebuilder/releases
+[standard-go-project]: https://github.com/golang-standards/project-layout
+

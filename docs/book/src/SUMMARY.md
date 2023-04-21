@@ -130,8 +130,6 @@
   - [Testing your own plugins](./plugins/testing-plugins.md)
   - [Plugins Versioning](./plugins/plugins-versioning.md)
 
----
-
 [FAQ](./faq.md)
 
 [Appendix: The TODO Landing Page](./TODO.md)

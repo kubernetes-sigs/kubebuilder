@@ -46,7 +46,7 @@ import (
 	// You can define that one plugin is composite by 1 or Many others plugins
 	gov3Bundle, _ := plugin.NewBundle(golang.DefaultNameQualifier, plugin.Version{Number: 3},
         kustomizecommonv2.Plugin{}, // scaffold the config/ directory and all kustomize files
-		golangv4.Plugin{}, // Scaffold the Golang files and all that specific for the language e.g. go.mod, apis, controllers
+        golangv4.Plugin{}, // Scaffold the Golang files and all that specific for the language e.g. go.mod, apis, controllers
 	)
 ```
 
@@ -113,3 +113,4 @@ The following scaffolds will be created or updated by this plugin:
 [kustomize-vars]: https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/vars/
 [release-notes-v5]: https://github.com/kubernetes-sigs/kustomize/releases/tag/kustomize%2Fv5.0.0
 [release-notes-v4]: https://github.com/kubernetes-sigs/kustomize/releases/tag/kustomize%2Fv4.0.0
+
