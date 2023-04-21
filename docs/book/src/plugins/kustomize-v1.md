@@ -1,4 +1,4 @@
-# Kustomize (kustomize/v1)
+# [Deprecated] Kustomize (kustomize/v1)
 
 <aside class="note warning">
 <h1>Deprecated</h1>

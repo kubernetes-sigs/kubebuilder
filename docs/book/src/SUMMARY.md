@@ -124,7 +124,7 @@
       - [deploy-image/v1-alpha](./plugins/deploy-image-plugin-v1-alpha.md)
     - [To be extended for others tools](./plugins/to-be-extended.md)
       - [kustomize/v1 (Deprecated)](./plugins/kustomize-v1.md)
-      - [kustomize/v2-alpha](./plugins/kustomize-v2-alpha.md)
+      - [kustomize/v2](./plugins/kustomize-v2.md)
   - [Extending the CLI](./plugins/extending-cli.md)
   - [Creating your own plugins](./plugins/creating-plugins.md)
   - [Testing your own plugins](./plugins/testing-plugins.md)
