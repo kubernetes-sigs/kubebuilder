@@ -113,3 +113,4 @@ The following scaffolds will be created or updated by this plugin:
 [kustomize-vars]: https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/vars/
 [release-notes-v5]: https://github.com/kubernetes-sigs/kustomize/releases/tag/kustomize%2Fv5.0.0
 [release-notes-v4]: https://github.com/kubernetes-sigs/kustomize/releases/tag/kustomize%2Fv4.0.0
+
