@@ -34,12 +34,6 @@ Further details can be found in the [go/v4 plugin section][go/v4-doc]
 
 **_More details on this can be found at [here][kb-releases], but for the highlights, check below_**
 
-<aside class="note">
-<h1>Default plugin</h1>
-Projects scaffolded with Kubebuilder v3 release still using the `go.kubebuilder.io/v3` plugin by default.
-
-</aside>
-
 <aside class="note warning">
 <h1>Project customizations</h1>
 
@@ -54,21 +48,6 @@ For example, you should refrain from moving the scaffolded files, doing so will 
 If you want to upgrade your scaffolding to use the latest and greatest features then, follow the guide
 which will cover the steps in the most straightforward way to allow you to upgrade your project to get all
 latest changes and improvements.
-
-<aside class="note warning">
-<h1> Apple Silicon (M1) </h1>
-
-The current scaffold done by the CLI (`go/v3`) uses [kubernetes-sigs/kustomize][kustomize] v3 which does not provide
-a valid binary for Apple Silicon (`darwin/arm64`). Therefore, you can use the `go/v4` plugin
-instead which provides support for this platform:
-
-```bash
-kubebuilder init --domain my.domain --repo my.domain/guestbook --plugins=go/v4
-```
-
-**Note**: The `go/v4` plugin is an unstable version and can have breaking changes in future releases.
-
-</aside>
 
 - [Migration Guide go/v3 to go/v4][migration-guide-gov3-to-gov4] **(Recommended)**
 
@@ -89,3 +68,7 @@ This way is more complex, susceptible to errors, and success cannot be assured. 
 [migration-guide-gov3-to-gov4]: migration_guide_gov3_to_gov4.md
 [manually-upgrade]: manually_migration_guide_gov3_to_gov4.md
 [standard-go-project]: https://github.com/golang-standards/project-layout
+[controller-runtime]: https://github.com/kubernetes-sigs/controller-runtime
+[controller-tools]: https://github.com/kubernetes-sigs/controller-tools
+[kustomize-release]: https://github.com/kubernetes-sigs/kustomize/releases/tag/kustomize%2Fv5.0.0
+[kb-releases]: https://github.com/kubernetes-sigs/kubebuilder/releases
