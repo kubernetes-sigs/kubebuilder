@@ -5,6 +5,8 @@ import (
 	"os/exec"
 	"strings"
 	"testing"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
 func TestRunCmd(t *testing.T) {
