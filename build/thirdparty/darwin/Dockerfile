@@ -21,7 +21,7 @@ FROM golang:1.20 as builder
 
 # Version and platform args.
 ARG KUBERNETES_VERSION
-ARG ETCD_VERSION=v3.5.7
+ARG ETCD_VERSION=v3.5.8
 ARG OS=darwin
 ARG ARCH
 
