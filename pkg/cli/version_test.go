@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubernetes Authors.
+Copyright 2022 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,19 +17,19 @@ limitations under the License.
 package cli
 
 import (
-	"fmt"
-
-	"github.com/spf13/cobra"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
-func (c CLI) newVersionCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:     "version",
-		Short:   fmt.Sprintf("Print the %s version", c.commandName),
-		Long:    fmt.Sprintf("Print the %s version", c.commandName),
-		Example: fmt.Sprintf("%s version", c.commandName),
-		RunE: func(_ *cobra.Command, _ []string) error {
-			return fmt.Errorf("%s", c.version)
-		},
-	}
-}
+var _ = Describe("newVersionCmd", func() {
+	It("should print the version number", func() {
+		cli := CLI{version: "1.0.0", commandName: "myapp"}
+		cmd := cli.newVersionCmd()
+
+		// execute the command
+		err := cmd.Execute()
+
+		// verify the output
+		Expect(err.Error()).To(Equal("1.0.0"))
+	})
+})
