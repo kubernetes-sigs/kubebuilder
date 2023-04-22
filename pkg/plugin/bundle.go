@@ -60,6 +60,13 @@ func WithDeprecationMessage(msg string) BundleOption {
 
 // NewBundle creates a new Bundle with the provided name and version, and that wraps the provided plugins.
 // The list of supported project versions is computed from the provided plugins.
+//
+// Deprecated: Use the NewBundle informing the options from now one. Replace its use for as the
+// following example. Example:
+//
+//	 mylanguagev1Bundle, _ := plugin.NewBundle(plugin.WithName(language.DefaultNameQualifier),
+//	   plugin.WithVersion(plugin.Version{Number: 1}),
+//		  plugin.WithPlugins(kustomizecommonv1.Plugin{}, mylanguagev1.Plugin{}),
 func NewBundle(name string, version Version, deprecateWarning string, plugins ...Plugin) (Bundle, error) {
 	supportedProjectVersions := CommonSupportedProjectVersions(plugins...)
 	if len(supportedProjectVersions) == 0 {
