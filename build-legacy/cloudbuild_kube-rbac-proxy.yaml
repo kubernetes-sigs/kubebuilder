@@ -16,14 +16,9 @@ substitutions:
   # This is the kube-rbac-proxy version, source image tags for which must exist remotely.
   _KUBE_RBAC_PROXY_VERSION: v0.14.1
 steps:
-- name: 'gcr.io/k8s-staging-test-infra/gcb-docker-gcloud:v20211118-2f2d816b90'
+- name: "gcr.io/cloud-builders/docker"
   env:
   - "KUBE_RBAC_PROXY_VERSION=${_KUBE_RBAC_PROXY_VERSION}"
   entrypoint: "/usr/bin/env"
-  args:
-    - bash
-    - -c
-    - |
-      gcloud auth configure-docker \
-      && ./build/build.sh
-images: ["gcr.io/k8s-staging-kubebuilder/kube-rbac-proxy:${_KUBE_RBAC_PROXY_VERSION}"]
+  args: ["bash", "-c", "./build-legacy/build.sh"]
+images: ["gcr.io/kubebuilder/kube-rbac-proxy:${_KUBE_RBAC_PROXY_VERSION}"]
