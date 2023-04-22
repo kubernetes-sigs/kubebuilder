@@ -46,17 +46,16 @@ func main() {
 		"Please, check the migration guide to learn how to upgrade your project"
 
 	// Bundle plugin which built the golang projects scaffold by Kubebuilder go/v3
-	gov3Bundle, _ := plugin.NewBundle(golang.DefaultNameQualifier, plugin.Version{Number: 3},
-		deprecateMessageGoV3Bundle,
-		kustomizecommonv1.Plugin{},
-		golangv3.Plugin{},
+	gov3Bundle, _ := plugin.NewBundleWithOptions(plugin.WithName(golang.DefaultNameQualifier),
+		plugin.WithVersion(plugin.Version{Number: 3}),
+		plugin.WithDeprecationMessage(deprecateMessageGoV3Bundle),
+		plugin.WithPlugins(kustomizecommonv1.Plugin{}, golangv3.Plugin{}),
 	)
 
 	// Bundle plugin which built the golang projects scaffold by Kubebuilder go/v4 with kustomize alpha-v2
-	gov4Bundle, _ := plugin.NewBundle(golang.DefaultNameQualifier, plugin.Version{Number: 4},
-		"",
-		kustomizecommonv2alpha.Plugin{},
-		golangv4.Plugin{},
+	gov4Bundle, _ := plugin.NewBundleWithOptions(plugin.WithName(golang.DefaultNameQualifier),
+		plugin.WithVersion(plugin.Version{Number: 4}),
+		plugin.WithPlugins(kustomizecommonv2alpha.Plugin{}, golangv4.Plugin{}),
 	)
 
 	fs := machinery.Filesystem{
