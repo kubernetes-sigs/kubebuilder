@@ -1,6 +1,6 @@
 module tutorial.kubebuilder.io/project
 
-go 1.19
+go 1.20
 
 require (
 	k8s.io/apimachinery v0.26.1
