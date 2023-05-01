@@ -67,7 +67,7 @@ func (s *apiScaffolder) Scaffold() error {
 	// Load the boilerplate
 	boilerplate, err := afero.ReadFile(s.fs.FS, hack.DefaultBoilerplatePath)
 	if err != nil {
-		return fmt.Errorf("error scaffolding API/controller: unable to load boilerplate: %w", err)
+		boilerplate = []byte("")
 	}
 
 	// Initialize the machinery.Scaffold that will write the files to disk
