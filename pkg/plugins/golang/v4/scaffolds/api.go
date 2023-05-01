@@ -17,6 +17,7 @@ limitations under the License.
 package scaffolds
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/spf13/afero"
@@ -67,7 +68,11 @@ func (s *apiScaffolder) Scaffold() error {
 	// Load the boilerplate
 	boilerplate, err := afero.ReadFile(s.fs.FS, hack.DefaultBoilerplatePath)
 	if err != nil {
-		boilerplate = []byte("")
+		if errors.Is(err, afero.ErrFileNotFound) {
+			boilerplate = []byte("")
+		} else {
+			return fmt.Errorf("error scaffolding API/controller: unable to load boilerplate: %w", err)
+		}
 	}
 
 	// Initialize the machinery.Scaffold that will write the files to disk
