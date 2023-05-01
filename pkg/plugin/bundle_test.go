@@ -118,7 +118,7 @@ var _ = Describe("Bundle", func() {
 			}
 		})
 	})
-
+	// nolint:lll
 	Context("NewBundleWithOptions", func() {
 		It("should succeed for plugins with common supported project versions", func() {
 			for _, plugins := range [][]Plugin{
@@ -131,11 +131,8 @@ var _ = Describe("Bundle", func() {
 				{p1, p2, p3},
 				{p1, p3, p4},
 			} {
-				b, err := NewBundleWithOptions(WithName(name),
-					WithVersion(version),
-					WithDeprecationMessage(""),
-					WithPlugins(plugins...),
-				)
+				bp := NewBundlePluginBuilder()
+				b, err := bp.WithName(name).WithVersion(version).WithDeprecationMessage("").WithPlugins(plugins...).Build()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(b.Name()).To(Equal(name))
 				Expect(b.Version().Compare(version)).To(Equal(0))
@@ -156,17 +153,12 @@ var _ = Describe("Bundle", func() {
 			var a, b Bundle
 			var err error
 			plugins := []Plugin{p1, p2, p3}
-			a, err = NewBundleWithOptions(WithName("a"),
-				WithVersion(version),
-				WithDeprecationMessage(""),
-				WithPlugins(p1, p2),
-			)
+			bpa := NewBundlePluginBuilder()
+			a, err = bpa.WithName("a").WithVersion(version).WithDeprecationMessage("").WithPlugins(p1, p2).Build()
+
 			Expect(err).NotTo(HaveOccurred())
-			b, err = NewBundleWithOptions(WithName("b"),
-				WithVersion(version),
-				WithDeprecationMessage(""),
-				WithPlugins(a, p3),
-			)
+			bpb := NewBundlePluginBuilder()
+			b, err = bpb.WithName("b").WithVersion(version).WithDeprecationMessage("").WithPlugins(a, p3).Build()
 			Expect(err).NotTo(HaveOccurred())
 			versions := b.SupportedProjectVersions()
 			sort.Slice(versions, func(i int, j int) bool {
@@ -189,11 +181,8 @@ var _ = Describe("Bundle", func() {
 
 				{p1, p2, p3, p4},
 			} {
-				_, err := NewBundleWithOptions(WithName(name),
-					WithVersion(version),
-					WithDeprecationMessage(""),
-					WithPlugins(plugins...),
-				)
+				bp := NewBundlePluginBuilder()
+				_, err := bp.WithName(name).WithVersion(version).WithDeprecationMessage("").WithPlugins(plugins...).Build()
 				Expect(err).To(HaveOccurred())
 			}
 		})

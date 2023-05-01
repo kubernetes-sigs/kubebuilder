@@ -37,8 +37,8 @@ import (
 	grafanav1alpha1 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/optional/grafana/v1alpha"
 )
 
+// nolint:lll
 func main() {
-
 	const deprecateMessageGoV3Bundle = "This version is deprecated." +
 		"The `go/v3` cannot scaffold projects using kustomize versions v4x+" +
 		" and cannot fully support Kubernetes 1.25+." +
@@ -46,17 +46,12 @@ func main() {
 		"Please, check the migration guide to learn how to upgrade your project"
 
 	// Bundle plugin which built the golang projects scaffold by Kubebuilder go/v3
-	gov3Bundle, _ := plugin.NewBundleWithOptions(plugin.WithName(golang.DefaultNameQualifier),
-		plugin.WithVersion(plugin.Version{Number: 3}),
-		plugin.WithDeprecationMessage(deprecateMessageGoV3Bundle),
-		plugin.WithPlugins(kustomizecommonv1.Plugin{}, golangv3.Plugin{}),
-	)
+	gov3 := plugin.NewBundlePluginBuilder()
+	gov3Bundle, _ := gov3.WithName(golang.DefaultNameQualifier).WithVersion(plugin.Version{Number: 3}).WithDeprecationMessage(deprecateMessageGoV3Bundle).WithPlugins(kustomizecommonv1.Plugin{}, golangv3.Plugin{}).Build()
 
 	// Bundle plugin which built the golang projects scaffold by Kubebuilder go/v4 with kustomize alpha-v2
-	gov4Bundle, _ := plugin.NewBundleWithOptions(plugin.WithName(golang.DefaultNameQualifier),
-		plugin.WithVersion(plugin.Version{Number: 4}),
-		plugin.WithPlugins(kustomizecommonv2alpha.Plugin{}, golangv4.Plugin{}),
-	)
+	gov4 := plugin.NewBundlePluginBuilder()
+	gov4Bundle, _ := gov4.WithName(golang.DefaultNameQualifier).WithVersion(plugin.Version{Number: 4}).WithPlugins(kustomizecommonv2alpha.Plugin{}, golangv4.Plugin{}).Build()
 
 	fs := machinery.Filesystem{
 		FS: afero.NewOsFs(),
