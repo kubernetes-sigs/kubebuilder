@@ -35,4 +35,4 @@ build_kb
 tools_k8s_version="1.19.2"
 fetch_tools
 test_project project-v2
-
+test_project project-v3
