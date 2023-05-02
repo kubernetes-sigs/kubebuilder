@@ -36,7 +36,8 @@ we'll embed `cfg.ControllerManagerConfigurationSpec` in `ProjectConfig`.
 
 // ProjectConfig is the Schema for the projectconfigs API
 type ProjectConfig struct {
-	metav1.TypeMeta `json:",inline"`
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// ControllerManagerConfigurationSpec returns the configurations for controllers
 	cfg.ControllerManagerConfigurationSpec `json:",inline"`
