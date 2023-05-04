@@ -24,13 +24,13 @@ import (
 	"unicode"
 
 	"github.com/spf13/pflag"
-
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v4/scaffolds"
+	"sigs.k8s.io/kubebuilder/v3/pkg/version"
 )
 
 // Variables and function to check Go version requirements.
@@ -104,7 +104,10 @@ func (p *initSubcommand) InjectConfig(c config.Config) error {
 		}
 		p.repo = repoPath
 	}
-
+	err := p.config.SetCLIVersion(version.KubebuilderVersion())
+	if err != nil {
+		return fmt.Errorf("error set CLI version: %v", err)
+	}
 	return p.config.SetRepository(p.repo)
 }
 

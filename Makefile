@@ -46,11 +46,11 @@ help: ## Display this help
 ##@ Build
 
 LD_FLAGS=-ldflags " \
-    -X main.kubeBuilderVersion=$(shell git describe --tags --dirty --broken) \
-    -X main.goos=$(shell go env GOOS) \
-    -X main.goarch=$(shell go env GOARCH) \
-    -X main.gitCommit=$(shell git rev-parse HEAD) \
-    -X main.buildDate=$(shell date -u +'%Y-%m-%dT%H:%M:%SZ') \
+    -X sigs.k8s.io/kubebuilder/v3/pkg/version.kubeBuilderVersion=$(shell git describe --tags --dirty --broken) \
+    -X sigs.k8s.io/kubebuilder/v3/pkg/version.goos=$(shell go env GOOS) \
+    -X sigs.k8s.io/kubebuilder/v3/pkg/version.goarch=$(shell go env GOARCH) \
+    -X sigs.k8s.io/kubebuilder/v3/pkg/version.gitCommit=$(shell git rev-parse HEAD) \
+    -X sigs.k8s.io/kubebuilder/v3/pkg/version.buildDate=$(shell date -u +'%Y-%m-%dT%H:%M:%SZ') \
     "
 .PHONY: build
 build: ## Build the project locally

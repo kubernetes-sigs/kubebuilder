@@ -35,6 +35,7 @@ import (
 	golangv3 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3"
 	golangv4 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v4"
 	grafanav1alpha1 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/optional/grafana/v1alpha"
+	"sigs.k8s.io/kubebuilder/v3/pkg/version"
 )
 
 func main() {
@@ -68,7 +69,7 @@ func main() {
 
 	c, err := cli.New(
 		cli.WithCommandName("kubebuilder"),
-		cli.WithVersion(versionString()),
+		cli.WithVersion(version.VersionString()),
 		cli.WithPlugins(
 			golangv2.Plugin{},
 			golangv3.Plugin{},

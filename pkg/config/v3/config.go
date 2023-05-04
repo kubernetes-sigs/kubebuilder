@@ -61,6 +61,7 @@ type cfg struct {
 	Repository  string      `json:"repo,omitempty"`
 	Name        string      `json:"projectName,omitempty"`
 	PluginChain stringSlice `json:"layout,omitempty"`
+	CLIVersion  string      `json:"kubebuilderVersion,omitempty"`
 
 	// Boolean fields
 	MultiGroup      bool `json:"multigroup,omitempty"`
@@ -123,6 +124,17 @@ func (c cfg) GetProjectName() string {
 // SetProjectName implements config.Config
 func (c *cfg) SetProjectName(name string) error {
 	c.Name = name
+	return nil
+}
+
+// GetCLIVersion implements config.Config
+func (c cfg) GetCLIVersion() string {
+	return c.CLIVersion
+}
+
+// SetCLIVersion implements config.Config
+func (c *cfg) SetCLIVersion(CLIVersion string) error {
+	c.CLIVersion = CLIVersion
 	return nil
 }
 

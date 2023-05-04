@@ -4,6 +4,7 @@
 # More info: https://book.kubebuilder.io/reference/project-config.html
 componentConfig: true
 domain: testproject.org
+kubebuilderVersion: unknown
 layout:
 - go.kubebuilder.io/v4
 projectName: project-v4-config

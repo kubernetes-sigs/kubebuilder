@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package version
 
 import (
 	"fmt"
@@ -43,7 +43,7 @@ type version struct {
 }
 
 // versionString returns the CLI version
-func versionString() string {
+func VersionString() string {
 	return fmt.Sprintf("Version: %#v", version{
 		kubeBuilderVersion,
 		kubernetesVendorVersion,
@@ -52,4 +52,9 @@ func versionString() string {
 		goos,
 		goarch,
 	})
+}
+
+// KubebuilderVersion returns the Kubebuilder version
+func KubebuilderVersion() string {
+	return kubeBuilderVersion
 }

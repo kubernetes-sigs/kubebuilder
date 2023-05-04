@@ -93,6 +93,19 @@ func (c *cfg) SetProjectName(string) error {
 	}
 }
 
+// GetCLIVersion implements config.Config
+func (c cfg) GetCLIVersion() string {
+	return ""
+}
+
+// SetCLIVersion implements config.Config
+func (c *cfg) SetCLIVersion(string) error {
+	return config.UnsupportedFieldError{
+		Version: Version,
+		Field:   "kubebuilder version",
+	}
+}
+
 // GetPluginChain implements config.Config
 func (c cfg) GetPluginChain() []string {
 	return []string{"go.kubebuilder.io/v2"}

@@ -46,6 +46,13 @@ type Config interface {
 	// This method was introduced in project version 3.
 	SetProjectName(name string) error
 
+	// GetCLIVersion returns the Kubebuilder version.
+	// This method was introduced in project version 3.
+	GetCLIVersion() string
+	// SetCLIVersion sets the Kubebuilder version.
+	// This method was introduced in project version 3.
+	SetCLIVersion(CLIVersion string) error
+
 	// GetPluginChain returns the plugin chain.
 	// This method was introduced in project version 3.
 	GetPluginChain() []string

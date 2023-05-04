@@ -3,6 +3,7 @@
 # and allow the plugins properly work.
 # More info: https://book.kubebuilder.io/reference/project-config.html
 domain: testproject.org
+kubebuilderVersion: unknown
 layout:
 - go.kubebuilder.io/v4
 multigroup: true
