@@ -1,5 +1,5 @@
 /*
-Copyright 2023 The Kubernetes authors.
+Copyright 2023 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -13,16 +13,18 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
+package cronjob
+
+const ControllerIntro = `
 // +kubebuilder:docs-gen:collapse=Apache License
 
 /*
 We'll start out with some imports.  You'll see below that we'll need a few more imports
 than those scaffolded for us.  We'll talk about each one when we use it.
-*/
+*/`
 
-package controller
-
-import (
+const ControllerImport = `import (
 	"context"
 	"fmt"
 	"sort"
@@ -44,17 +46,12 @@ import (
 /*
 Next, we'll need a Clock, which will allow us to fake timing in our tests.
 */
+`
 
-// CronJobReconciler reconciles a CronJob object
-type CronJobReconciler struct {
-	client.Client
-	Scheme *runtime.Scheme
-	Clock
-}
-
+const ControllerMockClock = `
 /*
 We'll mock out the clock to make it easier to jump around in time while testing,
-the "real" clock just calls `time.Now`.
+the "real" clock just calls` + " `" + `time.Now` + "`" + `.
 */
 type realClock struct{}
 
@@ -73,10 +70,9 @@ Notice that we need a few more RBAC permissions -- since we're creating and
 managing jobs now, we'll need permissions for those, which means adding
 a couple more [markers](/reference/markers/rbac.md).
 */
+`
 
-//+kubebuilder:rbac:groups=batch.tutorial.kubebuilder.io,resources=cronjobs,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=batch.tutorial.kubebuilder.io,resources=cronjobs/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=batch.tutorial.kubebuilder.io,resources=cronjobs/finalizers,verbs=update
+const ControllerReconcile = `
 //+kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=batch,resources=jobs/status,verbs=get
 
@@ -86,18 +82,9 @@ Now, we get to the heart of the controller -- the reconciler logic.
 var (
 	scheduledTimeAnnotation = "batch.tutorial.kubebuilder.io/scheduled-at"
 )
+`
 
-// Reconcile is part of the main kubernetes reconciliation loop which aims to
-// move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the CronJob object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.4/pkg/reconcile
-func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
+const ControllerReconcileLogic = `log := log.FromContext(ctx)
 
 	/*
 		### 1: Load the CronJob by name
@@ -105,7 +92,7 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		We'll fetch the CronJob using our client.  All client methods take a
 		context (to allow for cancellation) as their first argument, and the object
 		in question as their last.  Get is a bit special, in that it takes a
-		[`NamespacedName`](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/client?tab=doc#ObjectKey)
+		[` + "`" + `NamespacedName` + "`" + `](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/client?tab=doc#ObjectKey)
 		as the middle argument (most don't have a middle argument, as we'll see
 		below).
 
@@ -251,7 +238,7 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	/*
 		Using the data we've gathered, we'll update the status of our CRD.
 		Just like before, we use our client.  To specifically update the status
-		subresource, we'll use the `Status` part of the client, with the `Update`
+		subresource, we'll use the` + " `" + `Status` + "`" + ` part of the client, with the` + " `" + `Update` + "`" + `
 		method.
 
 		The status subresource ignores changes to spec, so it's less likely to conflict
@@ -463,15 +450,15 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	*/
 
 	/*
-		We need to construct a job based on our CronJob's template.  We'll copy over the spec
-		from the template and copy some basic object meta.
+	We need to construct a job based on our CronJob's template.  We'll copy over the spec
+	from the template and copy some basic object meta.
 
-		Then, we'll set the "scheduled time" annotation so that we can reconstitute our
-		`LastScheduleTime` field each reconcile.
+	Then, we'll set the "scheduled time" annotation so that we can reconstitute our
+	` + "`" + `LastScheduleTime` + "`" + ` field each reconcile.
 
-		Finally, we'll need to set an owner reference.  This allows the Kubernetes garbage collector
-		to clean up jobs when we delete the CronJob, and allows controller-runtime to figure out
-		which cronjob needs to be reconciled when a given job changes (is added, deleted, completes, etc).
+	Finally, we'll need to set an owner reference.  This allows the Kubernetes garbage collector
+	to clean up jobs when we delete the CronJob, and allows controller-runtime to figure out
+	which cronjob needs to be reconciled when a given job changes (is added, deleted, completes, etc).
 	*/
 	constructJobForCronJob := func(cronJob *batchv1.CronJob, scheduledTime time.Time) (*kbatch.Job, error) {
 		// We want job names for a given nominal start time to have a deterministic name to avoid the same job being created twice
@@ -547,9 +534,8 @@ var (
 	jobOwnerKey = ".metadata.controller"
 	apiGVStr    = batchv1.GroupVersion.String()
 )
-
-// SetupWithManager sets up the controller with the Manager.
-func (r *CronJobReconciler) SetupWithManager(mgr ctrl.Manager) error {
+`
+const ControllerSetupWithManager = `
 	// set up a real clock, since we're not in a test
 	if r.Clock == nil {
 		r.Clock = realClock{}
@@ -572,9 +558,4 @@ func (r *CronJobReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}); err != nil {
 		return err
 	}
-
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&batchv1.CronJob{}).
-		Owns(&kbatch.Job{}).
-		Complete(r)
-}
+`
