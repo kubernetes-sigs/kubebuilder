@@ -4,7 +4,6 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.12.0
-  creationTimestamp: null
   name: cronjobs.batch.tutorial.kubebuilder.io
 spec:
   group: batch.tutorial.kubebuilder.io
