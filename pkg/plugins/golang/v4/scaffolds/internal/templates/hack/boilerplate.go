@@ -106,8 +106,8 @@ Copyright {{ .Year }}.
 {{ index .Licenses .License }}*/`
 
 var knownLicenses = map[string]string{
-	"apache2": apache2,
-	"none":    "",
+	"apache2":   apache2,
+	"copyright": "",
 }
 
 const apache2 = `
