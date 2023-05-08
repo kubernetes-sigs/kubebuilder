@@ -14,6 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// Deprecated: The declarative plugin has been deprecated.
+// The Declarative plugin is an implementation derived from the kubebuilder-declarative-pattern project.
+// As the project maintainers possess the most comprehensive knowledge about its changes and Kubebuilder
+// allows the creation of custom plugins using its library, it has been decided that this plugin will be
+// better maintained within the kubebuilder-declarative-pattern project
+// itself, which falls under its domain of responsibility. This decision aims to improve the maintainability
+// of both the plugin and Kubebuilder, ultimately providing an enhanced user experience.
+// To follow up on this work, please refer to the Issue #293:
+// https://github.com/kubernetes-sigs/kubebuilder-declarative-pattern/issues/293.
 package v1
 
 import (
@@ -61,5 +70,13 @@ type pluginConfig struct {
 }
 
 func (p Plugin) DeprecationWarning() string {
-	return ""
+	return "The declarative plugin has been deprecated. \n" +
+		"The Declarative plugin is an implementation derived from the kubebuilder-declarative-pattern project. " +
+		"As the project maintainers possess the most comprehensive knowledge about its changes and Kubebuilder " +
+		"allows the creation of custom plugins using its library, it has been decided that this plugin will be  " +
+		"better maintained within the kubebuilder-declarative-pattern project " +
+		"itself, which falls under its domain of responsibility. This decision aims to improve the maintainability " +
+		"of both the plugin and Kubebuilder, ultimately providing an enhanced user experience." +
+		"To follow up on this work, please refer to the Issue #293: " +
+		"https://github.com/kubernetes-sigs/kubebuilder-declarative-pattern/issues/293."
 }

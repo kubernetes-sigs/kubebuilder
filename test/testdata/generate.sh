@@ -112,11 +112,7 @@ function scaffold_test_project {
 
     header_text 'Editing project with Grafana plugin ...'
     $kb edit --plugins=grafana.kubebuilder.io/v1-alpha
-  elif [[ $project =~ declarative ]]; then
-    header_text 'Creating APIs ...'
-    $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false
-    $kb create api --group crew --version v1 --kind FirstMate --controller=true --resource=true --make=false
-    $kb create api --group crew --version v1 --kind Admiral --controller=true --resource=true --namespaced=false --make=false
+
   elif [[ $project =~ deploy-image ]]; then
       header_text 'Creating Memcached API with deploy-image plugin ...'
       $kb create api --group example.com --version v1alpha1 --kind Memcached --image=memcached:1.4.36-alpine --image-container-command="memcached,-m=64,-o,modern,-v" --image-container-port="11211" --run-as-user="1001" --plugins="deploy-image/v1-alpha" --make=false
@@ -145,6 +141,5 @@ scaffold_test_project project-v3 --plugins="go/v3"
 # [Currently, default CLI plugin] - [Next version, alpha] Project version v4-alpha
 scaffold_test_project project-v4 --plugins="go/v4"
 scaffold_test_project project-v4-multigroup --plugins="go/v4"
-scaffold_test_project project-v4-declarative-v1 --plugins="go/v4,declarative"
 scaffold_test_project project-v4-with-deploy-image --plugins="go/v4"
 scaffold_test_project project-v4-with-grafana --plugins="go/v4"
