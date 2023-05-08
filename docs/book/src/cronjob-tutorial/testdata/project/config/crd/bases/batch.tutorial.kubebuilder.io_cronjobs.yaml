@@ -78,7 +78,7 @@ spec:
                         format: int32
                         type: integer
                       completionMode:
-                        description: "CompletionMode specifies how Pod completions
+                        description: "completionMode specifies how Pod completions
                           are tracked. It can be `NonIndexed` (default) or `Indexed`.
                           \n `NonIndexed` means that the Job is considered complete
                           when there have been .spec.completions successfully completed
@@ -99,7 +99,7 @@ spec:
                         type: string
                       completions:
                         description: 'Specifies the desired number of successfully
-                          finished pods the job should be run with.  Setting to nil
+                          finished pods the job should be run with.  Setting to null
                           means that the success of any pod signals the success of
                           all pods, and allows parallelism to have any positive value.  Setting
                           to 1 means that parallelism is limited to 1 and the success
@@ -150,13 +150,13 @@ spec:
                             items:
                               description: PodFailurePolicyRule describes how a pod
                                 failure is handled when the requirements are met.
-                                One of OnExitCodes and onPodConditions, but not both,
+                                One of onExitCodes and onPodConditions, but not both,
                                 can be used in each rule.
                               properties:
                                 action:
-                                  description: 'Specifies the action taken on a pod
+                                  description: "Specifies the action taken on a pod
                                     failure when the requirements are satisfied. Possible
-                                    values are: - FailJob: indicates that the pod''s
+                                    values are: \n - FailJob: indicates that the pod's
                                     job is marked as Failed and all running pods are
                                     terminated. - Ignore: indicates that the counter
                                     towards the .backoffLimit is not incremented and
@@ -165,7 +165,7 @@ spec:
                                     counter towards the .backoffLimit is incremented.
                                     Additional values are considered to be added in
                                     the future. Clients should react to an unknown
-                                    action by skipping the rule.'
+                                    action by skipping the rule."
                                   type: string
                                 onExitCodes:
                                   description: Represents the requirement on the container
@@ -179,23 +179,23 @@ spec:
                                         or initContainer names in the pod template.
                                       type: string
                                     operator:
-                                      description: 'Represents the relationship between
+                                      description: "Represents the relationship between
                                         the container exit code(s) and the specified
                                         values. Containers completed with success
                                         (exit code 0) are excluded from the requirement
-                                        check. Possible values are: - In: the requirement
+                                        check. Possible values are: \n - In: the requirement
                                         is satisfied if at least one container exit
                                         code (might be multiple if there are multiple
-                                        containers not restricted by the ''containerName''
+                                        containers not restricted by the 'containerName'
                                         field) is in the set of specified values.
                                         - NotIn: the requirement is satisfied if at
                                         least one container exit code (might be multiple
                                         if there are multiple containers not restricted
-                                        by the ''containerName'' field) is not in
-                                        the set of specified values. Additional values
+                                        by the 'containerName' field) is not in the
+                                        set of specified values. Additional values
                                         are considered to be added in the future.
                                         Clients should react to an unknown operator
-                                        by assuming the requirement is not satisfied.'
+                                        by assuming the requirement is not satisfied."
                                       type: string
                                     values:
                                       description: Specifies the set of values. Each
@@ -304,7 +304,7 @@ spec:
                         type: object
                         x-kubernetes-map-type: atomic
                       suspend:
-                        description: Suspend specifies whether the Job controller
+                        description: suspend specifies whether the Job controller
                           should create Pods or not. If a Job is created with suspend
                           set to true, no Pods are created by the Job controller.
                           If a Job is suspended after creation (i.e. the flag goes
@@ -316,7 +316,8 @@ spec:
                         type: boolean
                       template:
                         description: 'Describes the pod that will be created when
-                          executing a job. More info: https://kubernetes.io/docs/concepts/workloads/controllers/jobs-run-to-completion/'
+                          executing a job. The only allowed template.spec.restartPolicy
+                          values are "Never" or "OnFailure". More info: https://kubernetes.io/docs/concepts/workloads/controllers/jobs-run-to-completion/'
                         properties:
                           metadata:
                             description: 'Standard object''s metadata. More info:
@@ -1879,9 +1880,7 @@ spec:
                                           type: integer
                                         grpc:
                                           description: GRPC specifies an action involving
-                                            a GRPC port. This is a beta field and
-                                            requires enabling GRPCContainerProbe feature
-                                            gate.
+                                            a GRPC port.
                                           properties:
                                             port:
                                               description: Port number of the gRPC
@@ -2115,9 +2114,7 @@ spec:
                                           type: integer
                                         grpc:
                                           description: GRPC specifies an action involving
-                                            a GRPC port. This is a beta field and
-                                            requires enabling GRPCContainerProbe feature
-                                            gate.
+                                            a GRPC port.
                                           properties:
                                             port:
                                               description: Port number of the gRPC
@@ -2256,6 +2253,29 @@ spec:
                                           format: int32
                                           type: integer
                                       type: object
+                                    resizePolicy:
+                                      description: Resources resize policy for the
+                                        container.
+                                      items:
+                                        description: ContainerResizePolicy represents
+                                          resource resize policy for the container.
+                                        properties:
+                                          resourceName:
+                                            description: 'Name of the resource to
+                                              which this resource resize policy applies.
+                                              Supported values: cpu, memory.'
+                                            type: string
+                                          restartPolicy:
+                                            description: Restart policy to apply when
+                                              specified resource is resized. If not
+                                              specified, it defaults to NotRequired.
+                                            type: string
+                                        required:
+                                        - resourceName
+                                        - restartPolicy
+                                        type: object
+                                      type: array
+                                      x-kubernetes-list-type: atomic
                                     resources:
                                       description: 'Compute Resources required by
                                         this container. Cannot be updated. More info:
@@ -2267,7 +2287,8 @@ spec:
                                             that are used by this container. \n This
                                             is an alpha field and requires enabling
                                             the DynamicResourceAllocation feature
-                                            gate. \n This field is immutable."
+                                            gate. \n This field is immutable. It can
+                                            only be set for containers."
                                           items:
                                             description: ResourceClaim references
                                               one entry in PodSpec.ResourceClaims.
@@ -2309,7 +2330,8 @@ spec:
                                             If Requests is omitted for a container,
                                             it defaults to Limits if that is explicitly
                                             specified, otherwise to an implementation-defined
-                                            value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                                            value. Requests cannot exceed Limits.
+                                            More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                                           type: object
                                       type: object
                                     securityContext:
@@ -2562,9 +2584,7 @@ spec:
                                           type: integer
                                         grpc:
                                           description: GRPC specifies an action involving
-                                            a GRPC port. This is a beta field and
-                                            requires enabling GRPCContainerProbe feature
-                                            gate.
+                                            a GRPC port.
                                           properties:
                                             port:
                                               description: Port number of the gRPC
@@ -3398,9 +3418,7 @@ spec:
                                           type: integer
                                         grpc:
                                           description: GRPC specifies an action involving
-                                            a GRPC port. This is a beta field and
-                                            requires enabling GRPCContainerProbe feature
-                                            gate.
+                                            a GRPC port.
                                           properties:
                                             port:
                                               description: Port number of the gRPC
@@ -3624,9 +3642,7 @@ spec:
                                           type: integer
                                         grpc:
                                           description: GRPC specifies an action involving
-                                            a GRPC port. This is a beta field and
-                                            requires enabling GRPCContainerProbe feature
-                                            gate.
+                                            a GRPC port.
                                           properties:
                                             port:
                                               description: Port number of the gRPC
@@ -3765,6 +3781,29 @@ spec:
                                           format: int32
                                           type: integer
                                       type: object
+                                    resizePolicy:
+                                      description: Resources resize policy for the
+                                        container.
+                                      items:
+                                        description: ContainerResizePolicy represents
+                                          resource resize policy for the container.
+                                        properties:
+                                          resourceName:
+                                            description: 'Name of the resource to
+                                              which this resource resize policy applies.
+                                              Supported values: cpu, memory.'
+                                            type: string
+                                          restartPolicy:
+                                            description: Restart policy to apply when
+                                              specified resource is resized. If not
+                                              specified, it defaults to NotRequired.
+                                            type: string
+                                        required:
+                                        - resourceName
+                                        - restartPolicy
+                                        type: object
+                                      type: array
+                                      x-kubernetes-list-type: atomic
                                     resources:
                                       description: Resources are not allowed for ephemeral
                                         containers. Ephemeral containers use spare
@@ -3776,7 +3815,8 @@ spec:
                                             that are used by this container. \n This
                                             is an alpha field and requires enabling
                                             the DynamicResourceAllocation feature
-                                            gate. \n This field is immutable."
+                                            gate. \n This field is immutable. It can
+                                            only be set for containers."
                                           items:
                                             description: ResourceClaim references
                                               one entry in PodSpec.ResourceClaims.
@@ -3818,7 +3858,8 @@ spec:
                                             If Requests is omitted for a container,
                                             it defaults to Limits if that is explicitly
                                             specified, otherwise to an implementation-defined
-                                            value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                                            value. Requests cannot exceed Limits.
+                                            More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                                           type: object
                                       type: object
                                     securityContext:
@@ -4062,9 +4103,7 @@ spec:
                                           type: integer
                                         grpc:
                                           description: GRPC specifies an action involving
-                                            a GRPC port. This is a beta field and
-                                            requires enabling GRPCContainerProbe feature
-                                            gate.
+                                            a GRPC port.
                                           properties:
                                             port:
                                               description: Port number of the gRPC
@@ -4938,9 +4977,7 @@ spec:
                                           type: integer
                                         grpc:
                                           description: GRPC specifies an action involving
-                                            a GRPC port. This is a beta field and
-                                            requires enabling GRPCContainerProbe feature
-                                            gate.
+                                            a GRPC port.
                                           properties:
                                             port:
                                               description: Port number of the gRPC
@@ -5174,9 +5211,7 @@ spec:
                                           type: integer
                                         grpc:
                                           description: GRPC specifies an action involving
-                                            a GRPC port. This is a beta field and
-                                            requires enabling GRPCContainerProbe feature
-                                            gate.
+                                            a GRPC port.
                                           properties:
                                             port:
                                               description: Port number of the gRPC
@@ -5315,6 +5350,29 @@ spec:
                                           format: int32
                                           type: integer
                                       type: object
+                                    resizePolicy:
+                                      description: Resources resize policy for the
+                                        container.
+                                      items:
+                                        description: ContainerResizePolicy represents
+                                          resource resize policy for the container.
+                                        properties:
+                                          resourceName:
+                                            description: 'Name of the resource to
+                                              which this resource resize policy applies.
+                                              Supported values: cpu, memory.'
+                                            type: string
+                                          restartPolicy:
+                                            description: Restart policy to apply when
+                                              specified resource is resized. If not
+                                              specified, it defaults to NotRequired.
+                                            type: string
+                                        required:
+                                        - resourceName
+                                        - restartPolicy
+                                        type: object
+                                      type: array
+                                      x-kubernetes-list-type: atomic
                                     resources:
                                       description: 'Compute Resources required by
                                         this container. Cannot be updated. More info:
@@ -5326,7 +5384,8 @@ spec:
                                             that are used by this container. \n This
                                             is an alpha field and requires enabling
                                             the DynamicResourceAllocation feature
-                                            gate. \n This field is immutable."
+                                            gate. \n This field is immutable. It can
+                                            only be set for containers."
                                           items:
                                             description: ResourceClaim references
                                               one entry in PodSpec.ResourceClaims.
@@ -5368,7 +5427,8 @@ spec:
                                             If Requests is omitted for a container,
                                             it defaults to Limits if that is explicitly
                                             specified, otherwise to an implementation-defined
-                                            value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                                            value. Requests cannot exceed Limits.
+                                            More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                                           type: object
                                       type: object
                                     securityContext:
@@ -5621,9 +5681,7 @@ spec:
                                           type: integer
                                         grpc:
                                           description: GRPC specifies an action involving
-                                            a GRPC port. This is a beta field and
-                                            requires enabling GRPCContainerProbe feature
-                                            gate.
+                                            a GRPC port.
                                           properties:
                                             port:
                                               description: Port number of the gRPC
@@ -6066,8 +6124,9 @@ spec:
                                 x-kubernetes-list-type: map
                               restartPolicy:
                                 description: 'Restart policy for all containers within
-                                  the pod. One of Always, OnFailure, Never. Default
-                                  to Always. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy'
+                                  the pod. One of Always, OnFailure, Never. In some
+                                  contexts, only a subset of those values may be permitted.
+                                  Default to Always. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy'
                                 type: string
                               runtimeClassName:
                                 description: 'RuntimeClassName refers to a RuntimeClass
@@ -6087,9 +6146,12 @@ spec:
                               schedulingGates:
                                 description: "SchedulingGates is an opaque list of
                                   values that if specified will block scheduling the
-                                  pod. More info:  https://git.k8s.io/enhancements/keps/sig-scheduling/3521-pod-scheduling-readiness.
-                                  \n This is an alpha-level feature enabled by PodSchedulingReadiness
-                                  feature gate."
+                                  pod. If schedulingGates is not empty, the pod will
+                                  stay in the SchedulingGated state and the scheduler
+                                  will not attempt to schedule the pod. \n SchedulingGates
+                                  can only be set at pod creation time, and be removed
+                                  only afterwards. \n This is a beta feature enabled
+                                  by the PodSchedulingReadiness feature gate."
                                 items:
                                   description: PodSchedulingGate is associated to
                                     a Pod to guard its scheduling.
@@ -6471,16 +6533,21 @@ spec:
                                       type: object
                                       x-kubernetes-map-type: atomic
                                     matchLabelKeys:
-                                      description: MatchLabelKeys is a set of pod
+                                      description: "MatchLabelKeys is a set of pod
                                         label keys to select the pods over which spreading
                                         will be calculated. The keys are used to lookup
                                         values from the incoming pod labels, those
                                         key-value labels are ANDed with labelSelector
                                         to select the group of existing pods over
                                         which spreading will be calculated for the
-                                        incoming pod. Keys that don't exist in the
-                                        incoming pod labels will be ignored. A null
-                                        or empty list means only match against labelSelector.
+                                        incoming pod. The same key is forbidden to
+                                        exist in both MatchLabelKeys and LabelSelector.
+                                        MatchLabelKeys cannot be set when LabelSelector
+                                        isn't set. Keys that don't exist in the incoming
+                                        pod labels will be ignored. A null or empty
+                                        list means only match against labelSelector.
+                                        \n This is a beta field and requires the MatchLabelKeysInPodTopologySpread
+                                        feature gate to be enabled (enabled by default)."
                                       items:
                                         type: string
                                       type: array
@@ -7086,7 +7153,7 @@ spec:
                                             here and the sum of memory limits of all
                                             containers in a pod. The default is nil
                                             which means that the limit is undefined.
-                                            More info: http://kubernetes.io/docs/user-guide/volumes#emptydir'
+                                            More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir'
                                           pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                                           x-kubernetes-int-or-string: true
                                       type: object
@@ -7310,7 +7377,8 @@ spec:
                                                         and requires enabling the
                                                         DynamicResourceAllocation
                                                         feature gate. \n This field
-                                                        is immutable."
+                                                        is immutable. It can only
+                                                        be set for containers."
                                                       items:
                                                         description: ResourceClaim
                                                           references one entry in
@@ -7358,7 +7426,8 @@ spec:
                                                         it defaults to Limits if that
                                                         is explicitly specified, otherwise
                                                         to an implementation-defined
-                                                        value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
+                                                        value. Requests cannot exceed
+                                                        Limits. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                                                       type: object
                                                   type: object
                                                 selector:
