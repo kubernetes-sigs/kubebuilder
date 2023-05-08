@@ -81,25 +81,32 @@ func (s *initScaffolder) Scaffold() error {
 		machinery.WithConfig(s.config),
 	)
 
-	bpFile := &hack.Boilerplate{
-		License: s.license,
-		Owner:   s.owner,
-	}
-	bpFile.Path = s.boilerplatePath
-	if err := scaffold.Execute(bpFile); err != nil {
-		return err
-	}
+	if s.license != "none" {
+		bpFile := &hack.Boilerplate{
+			License: s.license,
+			Owner:   s.owner,
+		}
+		bpFile.Path = s.boilerplatePath
+		if err := scaffold.Execute(bpFile); err != nil {
+			return err
+		}
 
-	boilerplate, err := afero.ReadFile(s.fs.FS, s.boilerplatePath)
-	if err != nil {
-		return err
+		boilerplate, err := afero.ReadFile(s.fs.FS, s.boilerplatePath)
+		if err != nil {
+			return err
+		}
+		// Initialize the machinery.Scaffold that will write the files to disk
+		scaffold = machinery.NewScaffold(s.fs,
+			machinery.WithConfig(s.config),
+			machinery.WithBoilerplate(string(boilerplate)),
+		)
+	} else {
+		s.boilerplatePath = ""
+		// Initialize the machinery.Scaffold without boilerplate
+		scaffold = machinery.NewScaffold(s.fs,
+			machinery.WithConfig(s.config),
+		)
 	}
-
-	// Initialize the machinery.Scaffold that will write the files to disk
-	scaffold = machinery.NewScaffold(s.fs,
-		machinery.WithConfig(s.config),
-		machinery.WithBoilerplate(string(boilerplate)),
-	)
 
 	// If the KustomizeV2 was used to do the scaffold then
 	// we need to ensure that we use its supported Kustomize Version
