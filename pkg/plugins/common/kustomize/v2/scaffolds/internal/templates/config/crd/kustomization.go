@@ -110,7 +110,7 @@ var kustomizationTemplate = `# This kustomization.yaml is not intended to be run
 resources:
 %s
 
-patchesStrategicMerge:
+patches:
 # [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix.
 # patches here are for enabling the conversion webhook for each CRD
 %s
