@@ -1,12 +1,10 @@
 name: PR Verifier
 
 on:
-  pull_request_target:
-    types: [opened, edited, reopened]
-
+  push:
+  pull_request:
 
 jobs:
-
   verify:
     name: Verify PR contents
     runs-on: ubuntu-latest
