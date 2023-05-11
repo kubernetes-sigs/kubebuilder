@@ -4,13 +4,15 @@ on:
   pull_request:
     types: [opened, edited, reopened]
 
+
 jobs:
+
   verify:
     name: Verify PR contents
     runs-on: ubuntu-latest
     steps:
-      - name: Verifier action
-        id: verifier
-        uses: kubernetes-sigs/kubebuilder-release-tools@v0.3.0
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+    - name: Verifier action
+      id: verifier
+      uses: kubernetes-sigs/kubebuilder-release-tools@v0.3.0
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
