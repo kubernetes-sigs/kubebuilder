@@ -4,9 +4,7 @@ aliases:
   # active folks who can be contacted to perform admin-related
   # tasks on the repo, or otherwise approve any PRs.
   kubebuilder-admins:
-    - pwittrock
     - camilamacedo86
-    - jmrodri
     - varshaprasad96
 
   # non-admin folks who can approve any PRs in the repo
@@ -28,3 +26,5 @@ aliases:
   - mengqiy
   - estroz
   - adirio
+  - jmrodri
+  - pwittrock
