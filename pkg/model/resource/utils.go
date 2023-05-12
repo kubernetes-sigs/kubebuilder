@@ -20,8 +20,6 @@ import (
 	"fmt"
 	"path"
 	"strings"
-
-	"github.com/gobuffalo/flect"
 )
 
 const V1beta1 = "v1beta1"
@@ -67,7 +65,24 @@ func APIPackagePathLegacy(repo, group, version string, multiGroup bool) string {
 	return path.Join(repo, "api", version)
 }
 
+var unpluralizedSuffixes = []string{
+	"endpoints",
+}
+
 // RegularPlural returns a default plural form when none was specified
+// refer to https://github.com/kubernetes/apimachinery/blob/master/pkg/api/meta/restmapper.go#L126
 func RegularPlural(singular string) string {
-	return flect.Pluralize(strings.ToLower(singular))
+	singularName := strings.ToLower(singular)
+	for _, skip := range unpluralizedSuffixes {
+		if strings.HasSuffix(singularName, skip) {
+			return singular
+		}
+	}
+	switch string(singularName[len(singularName)-1]) {
+	case "s":
+		return singularName + "es"
+	case "y":
+		return strings.TrimSuffix(singularName, "y") + "ies"
+	}
+	return singularName + "s"
 }

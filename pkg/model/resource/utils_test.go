@@ -69,9 +69,10 @@ var _ = Describe("APIPackagePathLegacy", func() {
 
 var _ = DescribeTable("RegularPlural should return the regular plural form",
 	func(singular, plural string) { Expect(RegularPlural(singular)).To(Equal(plural)) },
+	Entry("unpluralized", "endpoints", "endpoints"),
 	Entry("basic singular", "firstmate", "firstmates"),
 	Entry("capitalized singular", "Firstmate", "firstmates"),
 	Entry("camel-cased singular", "FirstMate", "firstmates"),
-	Entry("irregular well-known plurals", "fish", "fish"),
-	Entry("irregular well-known plurals", "helmswoman", "helmswomen"),
+	Entry("basic singular", "fish", "fishs"),
+	Entry("basic singular", "helmswoman", "helmswomans"),
 )
