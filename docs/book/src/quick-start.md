@@ -96,7 +96,7 @@ If you are editing the API definitions, generate the manifests such as Custom Re
 make manifests
 ```
 
-<details><summary>Click here to see an example. `(api/v1/guestbook_types.go)` </summary>
+<details><summary>Click here to see an example. <tt>(api/v1/guestbook_types.go)</tt></summary>
 <p>
 
 ```go
