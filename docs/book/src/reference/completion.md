@@ -35,3 +35,10 @@ fi
 Follow a similar protocol for `zsh` completion.
 
 </aside>
+
+<aside class="note">
+<h1>Fish</h1>
+
+source (kubebuilder completion fish | psub)
+
+</aside>
