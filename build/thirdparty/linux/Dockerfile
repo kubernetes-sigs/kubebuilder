@@ -18,7 +18,7 @@
 # - etcd (fetch)
 
 # no need for anything fancy
-FROM alpine:3.17 as builder
+FROM alpine:3.18 as builder
 
 # Version and platform args.
 ARG KUBERNETES_VERSION
@@ -54,7 +54,7 @@ WORKDIR /usr/local
 RUN tar -czvf /kubebuilder_${OS}_${ARCH}.tar.gz kubebuilder/
 
 # Copy tarball to final image.
-FROM alpine:3.17
+FROM alpine:3.18
 
 # Platform args.
 ARG OS=linux
