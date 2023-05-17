@@ -123,6 +123,18 @@ the new version go/v4 uses Kustomize v5x and no longer Kustomize v4. Therefore, 
 implementations in the config you need to ensure that them can work with Kustomize v5 and/if not
 update/upgrade any breaking change that you might face.
 
+In v4, installation of Kustomize has been changed from bash script to `go get`. Change the `kustomize` dependency in Makefile to 
+```
+.PHONY: kustomize
+kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary. If wrong version is installed, it will be removed before downloading.
+$(KUSTOMIZE): $(LOCALBIN)
+	@if test -x $(LOCALBIN)/kustomize && ! $(LOCALBIN)/kustomize version | grep -q $(KUSTOMIZE_VERSION); then \
+		echo "$(LOCALBIN)/kustomize version is not expected $(KUSTOMIZE_VERSION). Removing it before installing."; \
+		rm -rf $(LOCALBIN)/kustomize; \
+	fi
+	test -s $(LOCALBIN)/kustomize || GOBIN=$(LOCALBIN) GO111MODULE=on go install sigs.k8s.io/kustomize/kustomize/v5@$(KUSTOMIZE_VERSION)
+```
+
 Change the image name in the Makefile if needed.
 
 ## Verification

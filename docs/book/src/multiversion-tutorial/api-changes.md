@@ -40,6 +40,8 @@ We'll need a new API version for this change.  Let's call it v2:
 kubebuilder create api --group batch --version v2 --kind CronJob
 ```
 
+Press `y` for "Create Resource" and `n` for "Create Controller".
+
 Now, let's copy over our existing types, and make the change:
 
 {{#literatego ./testdata/project/api/v2/cronjob_types.go}}

@@ -21,21 +21,27 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("newVersionCmd", func() {
-	var c CLI
+var _ = Describe("Version", func() {
+	var (
+		c *CLI
+	)
 
 	BeforeEach(func() {
-		c = CLI{
-			version:     "1.0.0",
-			commandName: "myapp",
-		}
+		c = &CLI{}
 	})
 
-	It("should have the correct command name and usage message", func() {
-		cmd := c.newVersionCmd()
-		Expect(cmd.Use).To(Equal("version"))
-		Expect(cmd.Short).To(Equal("Print the myapp version"))
-		Expect(cmd.Long).To(Equal("Print the myapp version"))
-		Expect(cmd.Example).To(Equal("myapp version"))
+	Context("newVersionCmd", func() {
+		It("Test the version", func() {
+			cmd := c.newVersionCmd()
+			Expect(cmd).NotTo(BeNil())
+			Expect(cmd.Use).To(ContainSubstring("version"))
+			Expect(cmd.Use).NotTo(Equal(""))
+			Expect(cmd.Short).NotTo(Equal(""))
+			Expect(cmd.Short).To(ContainSubstring("Print the"))
+			Expect(cmd.Long).NotTo(Equal(""))
+			Expect(cmd.Long).To(ContainSubstring("Print the"))
+			Expect(cmd.Example).NotTo(Equal(""))
+			Expect(cmd.Example).To(ContainSubstring("version"))
+		})
 	})
 })

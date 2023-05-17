@@ -9,7 +9,7 @@ This Quick Start guide will cover:
 
 ## Prerequisites
 
-- [go](https://golang.org/dl/) version v1.19.0+
+- [go](https://golang.org/dl/) version v1.20.0+
 - [docker](https://docs.docker.com/install/) version 17.03+.
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) version v1.11.3+.
 - Access to a Kubernetes v1.11.3+ cluster.
@@ -96,7 +96,7 @@ If you are editing the API definitions, generate the manifests such as Custom Re
 make manifests
 ```
 
-<details><summary>Click here to see an example. `(api/v1/guestbook_types.go)` </summary>
+<details><summary>Click here to see an example. <tt>(api/v1/guestbook_types.go)</tt></summary>
 <p>
 
 ```go

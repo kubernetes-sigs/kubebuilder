@@ -19,7 +19,9 @@ package main
 import (
 	"fmt"
 
-	componentconfig "sigs.k8s.io/kubebuilder/v3/hack/docs/internal"
+	componentconfig "sigs.k8s.io/kubebuilder/v3/hack/docs/internal/component-config-tutorial"
+	cronjob "sigs.k8s.io/kubebuilder/v3/hack/docs/internal/cronjob-tutorial"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
 )
 
 func main() {
@@ -28,13 +30,13 @@ func main() {
 	fmt.Println("Generating component-config tutorial...")
 	UpdateComponentConfigTutorial()
 
-	// TODO: Generate cronjob-tutorial
-
+	fmt.Println("Generating cronjob tutorial...")
+	UpdateCronjobTutorial()
 	// TODO: Generate multiversion-tutorial
 }
 
 func UpdateComponentConfigTutorial() {
-	binaryPath := "/tmp/kubebuilder/bin/kubebuilder"
+	binaryPath := util.KubebuilderBinName
 	samplePath := "docs/book/src/component-config-tutorial/testdata/project/"
 
 	sp := componentconfig.NewSample(binaryPath, samplePath)
@@ -46,4 +48,17 @@ func UpdateComponentConfigTutorial() {
 	sp.UpdateTutorial()
 
 	sp.CodeGen()
+}
+
+func UpdateCronjobTutorial() {
+	binaryPath := util.KubebuilderBinName
+	samplePath := "docs/book/src/cronjob-tutorial/testdata/project/"
+
+	sp := cronjob.NewSample(binaryPath, samplePath)
+
+	sp.Prepare()
+
+	sp.GenerateSampleProject()
+
+	sp.UpdateTutorial()
 }

@@ -19,6 +19,7 @@ limitations under the License.
 We'll start out with some imports.  You'll see below that we'll need a few more imports
 than those scaffolded for us.  We'll talk about each one when we use it.
 */
+
 package controller
 
 import (
@@ -547,6 +548,7 @@ var (
 	apiGVStr    = batchv1.GroupVersion.String()
 )
 
+// SetupWithManager sets up the controller with the Manager.
 func (r *CronJobReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	// set up a real clock, since we're not in a test
 	if r.Clock == nil {
