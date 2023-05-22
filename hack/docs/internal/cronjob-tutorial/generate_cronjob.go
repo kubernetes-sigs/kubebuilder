@@ -571,6 +571,11 @@ func updateKustomization(sp *Sample) {
 
 	err = pluginutil.UncommentCode(
 		filepath.Join(sp.ctx.Dir, "config/default/kustomization.yaml"),
+		`#- manager_webhook_patch.yaml`, `#`)
+	CheckError("fixing default/kustomization", err)
+
+	err = pluginutil.UncommentCode(
+		filepath.Join(sp.ctx.Dir, "config/default/kustomization.yaml"),
 		`#- webhookcainjection`, `#`)
 	CheckError("fixing default/kustomization", err)
 
