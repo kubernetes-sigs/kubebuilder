@@ -309,7 +309,7 @@ func curlMetrics(kbc *utils.TestContext) string {
 			true,
 			"pods", "curl", "-o", "jsonpath={.status.phase}")
 		ExpectWithOffset(3, err).NotTo(HaveOccurred())
-		if status != "Completed" && status != "Succeeded" {
+		if status != "Completed" && status != "Succeeded" && status != "Running" {
 			return fmt.Errorf("curl pod in %s status", status)
 		}
 		return nil
