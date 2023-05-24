@@ -67,3 +67,33 @@ function test_cluster {
   go test $(dirname "$0")/v4 $flags -timeout 30m
   go test $(dirname "$0")/externalplugin $flags -timeout 30m
 }
+
+function build_sample_external_plugin {
+  # TODO: Dynamically set exteranl plugin destination based on OS platform
+  # EXTERNAL_PLUGIN_DESTINATION_PREFIX="${HOME}/Library/Application Support/kubebuilder/plugins"
+  # For Linux:
+  XDG_CONFIG_HOME="${HOME}/.config"
+  EXTERNAL_PLUGIN_DESTINATION_PREFIX="$XDG_CONFIG_HOME/kubebuilder/plugins"
+
+  PLUGIN_NAME="sampleexternalplugin"
+  PLUGIN_VERSION="v1"
+  EXTERNAL_PLUGIN_DESTINATION="${EXTERNAL_PLUGIN_DESTINATION_PREFIX}/${PLUGIN_NAME}/${PLUGIN_VERSION}"
+  EXTERNAL_PLUGIN_PATH="${EXTERNAL_PLUGIN_DESTINATION}/${PLUGIN_NAME}"
+
+  if [ -d "$EXTERNAL_PLUGIN_DESTINATION" ]; then
+    echo "$EXTERNAL_PLUGIN_DESTINATION does exist."
+    if [ -e "$EXTERNAL_PLUGIN_PATH" ]; then
+      echo "clean up old binary..."
+      rm "$EXTERNAL_PLUGIN_PATH"
+    fi
+  else
+      mkdir -p "$EXTERNAL_PLUGIN_DESTINATION"
+  fi
+
+  REPO_ROOT_DIR="$(git rev-parse --show-toplevel)"
+  SOURCE_DIR="${REPO_ROOT_DIR}/docs/book/src/simple-external-plugin-tutorial/testdata/sampleexternalplugin/v1"
+
+  cd $SOURCE_DIR && go build -o $PLUGIN_NAME && mv $PLUGIN_NAME "$EXTERNAL_PLUGIN_PATH"
+
+  cd $REPO_ROOT_DIR
+}

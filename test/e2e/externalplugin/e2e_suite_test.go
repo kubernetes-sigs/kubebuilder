@@ -28,5 +28,5 @@ import (
 func TestE2E(t *testing.T) {
 	RegisterFailHandler(Fail)
 	fmt.Fprintf(GinkgoWriter, "Starting sample external plugin kubebuilder suite\n")
-	RunSpecs(t, "Kubebuilder grafana plugin e2e suite")
+	RunSpecs(t, "Kubebuilder sample external plugin e2e suite")
 }
