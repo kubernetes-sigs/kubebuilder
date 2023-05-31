@@ -17,6 +17,8 @@
 source "$(dirname "$0")/../common.sh"
 source "$(dirname "$0")/setup.sh"
 
+build_sample_external_plugin
+
 export KIND_CLUSTER="local-kubebuilder-e2e"
 create_cluster ${KIND_K8S_VERSION}
 if [ -z "${SKIP_KIND_CLEANUP:-}" ]; then
