@@ -20,6 +20,9 @@ import (
 	"flag"
 	"os"
 
+	"sigs.k8s.io/controller-runtime/examples/configfile/custom/v1alpha1"
+	"sigs.k8s.io/controller-runtime/pkg/config"
+
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -65,7 +68,8 @@ func main() {
 	var err error
 	options := ctrl.Options{Scheme: scheme}
 	if configFile != "" {
-		options, err = options.AndFrom(ctrl.ConfigFile().AtPath(configFile))
+		ctrlConfig := v1alpha1.CustomControllerManagerConfiguration{}
+		options, err = options.AndFrom(config.File().AtPath(configFile).OfKind(&ctrlConfig))
 		if err != nil {
 			setupLog.Error(err, "unable to load the config file")
 			os.Exit(1)
