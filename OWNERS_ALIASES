@@ -13,7 +13,6 @@ aliases:
   # folks who can review and LGTM any PRs in the repo (doesn't include
   # approvers & admins -- those count too via the OWNERS file)
   kubebuilder-reviewers:
-    - joelanford
     - rashmigottipati
     - everettraven
     - Kavinjsir
@@ -26,5 +25,6 @@ aliases:
   - droot
   - estroz
   - jmrodri
+  - joelanford
   - mengqiy
   - pwittrock
