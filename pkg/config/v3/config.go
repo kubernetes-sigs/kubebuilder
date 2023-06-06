@@ -126,12 +126,12 @@ func (c *cfg) SetProjectName(name string) error {
 	return nil
 }
 
-// GetLayout implements config.Config
+// GetPluginChain implements config.Config
 func (c cfg) GetPluginChain() []string {
 	return c.PluginChain
 }
 
-// SetLayout implements config.Config
+// SetPluginChain implements config.Config
 func (c *cfg) SetPluginChain(pluginChain []string) error {
 	c.PluginChain = pluginChain
 	return nil
