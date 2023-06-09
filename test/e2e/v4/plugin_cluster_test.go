@@ -87,13 +87,6 @@ var _ = Describe("kubebuilder", func() {
 			GenerateV4(kbc)
 			Run(kbc)
 		})
-
-		It("should generate a runnable project"+
-			" with restricted pods and with --component-config field enabled", func() {
-			kbc.IsRestricted = true
-			GenerateV4ComponentConfig(kbc)
-			Run(kbc)
-		})
 	})
 })
 

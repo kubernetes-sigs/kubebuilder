@@ -1,5 +1,17 @@
 # Tutorial: ComponentConfig
 
+<aside class="note warning">
+<h1>Component Config is deprecated</h1>
+
+The ComponentConfig has been deprecated in the Controller-Runtime since its version 0.15.0.  [More info](https://github.com/kubernetes-sigs/controller-runtime/issues/895) 
+Moreover, it has undergone breaking changes and is no longer functioning as intended. 
+As a result, Kubebuilder, which heavily relies on the Controller Runtime, has also deprecated this feature, 
+no longer guaranteeing its functionality from version 3.11.0 onwards. You can find additional details on this issue [here](https://github.com/kubernetes-sigs/controller-runtime/issues/2370).
+
+Please, be aware that it will force Kubebuilder remove this option in soon future release.
+
+</aside>
+
 Nearly every project that is built for Kubernetes will eventually need to
 support passing in additional configurations into the controller. These could
 be to enable better logging, turn on/off specific feature gates, set the sync
