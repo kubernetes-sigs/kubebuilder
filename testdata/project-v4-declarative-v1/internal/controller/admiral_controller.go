@@ -74,13 +74,13 @@ func (r *AdmiralReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	// Watch for changes to Admiral
-	err = c.Watch(&source.Kind{Type: &crewv1.Admiral{}}, &handler.EnqueueRequestForObject{})
+	err := c.Watch(source.Kind(mgr.GetCache(), &crewv1.Admiral{}), &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
 
 	// Watch for changes to deployed objects
-	_, err = declarative.WatchAll(mgr.GetConfig(), c, r, watchLabels)
+	err := declarative.WatchAll(mgr.GetConfig(), c, r, watchLabels)
 	if err != nil {
 		return err
 	}

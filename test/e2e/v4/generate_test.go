@@ -212,7 +212,6 @@ func GenerateV4ComponentConfig(kbc *utils.TestContext) {
 		"--plugins", "go/v4",
 		"--project-version", "3",
 		"--domain", kbc.Domain,
-		"--component-config=true",
 	)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 

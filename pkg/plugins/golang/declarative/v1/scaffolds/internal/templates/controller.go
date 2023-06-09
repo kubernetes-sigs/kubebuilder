@@ -133,13 +133,13 @@ func (r *{{ .Resource.Kind }}Reconciler) SetupWithManager(mgr ctrl.Manager) erro
 	}
 
 	// Watch for changes to {{ .Resource.Kind }}
-	err = c.Watch(&source.Kind{Type: &{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{}}, &handler.EnqueueRequestForObject{})
+	err := c.Watch(source.Kind(mgr.GetCache(), &{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{}), &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
 
 	// Watch for changes to deployed objects
-	_, err = declarative.WatchAll(mgr.GetConfig(), c, r, watchLabels)
+	err := declarative.WatchAll(mgr.GetConfig(), c, r, watchLabels)
 	if err != nil {
 		return err
 	}

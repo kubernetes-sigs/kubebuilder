@@ -63,7 +63,7 @@ install: build ## Build and install the binary with the current source code. Use
 ##@ Development
 
 .PHONY: generate
-generate: generate-testdata generate-docs ## Update/generate all mock data. You should run this commands to update the mock data after your changes.
+generate: build generate-testdata generate-docs ## Update/generate all mock data. You should run this commands to update the mock data after your changes.
 	go mod tidy
 
 .PHONY: generate-testdata

@@ -73,7 +73,6 @@ func (sp *Sample) GenerateSampleProject() {
 		"--license", "apache2",
 		"--owner", "The Kubernetes authors",
 		"--plugins=go/v4",
-		"--component-config",
 	)
 	CheckError("Initializing the project", err)
 
@@ -134,20 +133,6 @@ clusterName: example-test
 	)
 
 	CheckError("fixing projectconfig_types", err)
-
-	// 3. fix main
-	err = pluginutil.InsertCode(
-		filepath.Join(sp.ctx.Dir, "cmd/main.go"),
-		`var err error`,
-		`
-	ctrlConfig := configv2.ProjectConfig{}`)
-	CheckError("fixing main.go", err)
-
-	err = pluginutil.InsertCode(
-		filepath.Join(sp.ctx.Dir, "cmd/main.go"),
-		`AtPath(configFile)`,
-		`.OfKind(&ctrlConfig)`)
-	CheckError("fixing main.go", err)
 }
 
 func (sp *Sample) CodeGen() {

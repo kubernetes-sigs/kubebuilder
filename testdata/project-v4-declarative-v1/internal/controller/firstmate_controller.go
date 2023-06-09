@@ -74,13 +74,13 @@ func (r *FirstMateReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	// Watch for changes to FirstMate
-	err = c.Watch(&source.Kind{Type: &crewv1.FirstMate{}}, &handler.EnqueueRequestForObject{})
+	err := c.Watch(source.Kind(mgr.GetCache(), &crewv1.FirstMate{}), &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
 
 	// Watch for changes to deployed objects
-	_, err = declarative.WatchAll(mgr.GetConfig(), c, r, watchLabels)
+	err := declarative.WatchAll(mgr.GetConfig(), c, r, watchLabels)
 	if err != nil {
 		return err
 	}
