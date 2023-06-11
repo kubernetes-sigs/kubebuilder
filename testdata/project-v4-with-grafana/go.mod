@@ -1,6 +1,6 @@
 module sigs.k8s.io/kubebuilder/testdata/project-v4-with-grafana
 
-go 1.19
+go 1.20
 
 require (
 	k8s.io/apimachinery v0.26.1

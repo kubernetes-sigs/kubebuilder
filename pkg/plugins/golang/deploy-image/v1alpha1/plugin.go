@@ -69,3 +69,7 @@ type options struct {
 	ContainerPort    string `json:"containerPort,omitempty"`
 	RunAsUser        string `json:"runAsUser,omitempty"`
 }
+
+func (p Plugin) DeprecationWarning() string {
+	return ""
+}

@@ -11,6 +11,10 @@ issues:
   exclude-rules:
     - linters: [gosec]
       path: "test/e2e/*"
+    - path: "hack/docs/*"
+      linters:
+        - lll
+        - gosec
 
 linters-settings:
   govet:

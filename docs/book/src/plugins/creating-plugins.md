@@ -57,9 +57,10 @@ Note that Kubebuilder provides the `kustomize.common.kubebuilder.io` to help in 
 In this way, currently, you can [Extend the CLI][extending-cli] and use the `Bundle Plugin` to create your language plugins such as:
 
 ```go
-  mylanguagev1Bundle, _ := plugin.NewBundle(language.DefaultNameQualifier, plugin.Version{Number: 1},
-		kustomizecommonv1.Plugin{}, // extend the common base from Kubebuilder
-		mylanguagev1.Plugin{}, // your plugin language which will do the scaffolds for the specific language on top of the common base
+  mylanguagev1Bundle, _ := plugin.NewBundle(plugin.WithName(language.DefaultNameQualifier), 
+    plugin.WithVersion(plugin.Version{Number: 1}),
+		plugin.WithPlugins(kustomizecommonv1.Plugin{}, mylanguagev1.Plugin{}), // extend the common base from Kubebuilder
+		// your plugin language which will do the scaffolds for the specific language on top of the common base
 	)
 ```
 
@@ -147,8 +148,8 @@ You might want for example to overwrite a scaffold done by using the option:
 	f.IfExistsAction = machinery.OverwriteFile
 ```
 
-Let's imagine that you would like to have a helper plugin that would be called in a chain with `go/v4-alpha` to add customizations on top.
-Therefore after we generate the code calling the subcommand to `init` from `go/v4-alpha` we would like to overwrite the Makefile to change this scaffold via our plugin.
+Let's imagine that you would like to have a helper plugin that would be called in a chain with `go/v4` to add customizations on top.
+Therefore after we generate the code calling the subcommand to `init` from `go/v4` we would like to overwrite the Makefile to change this scaffold via our plugin.
 In this way, we would implement the Bollerplate for our Makefile and then use this option to ensure that it would be overwritten.
 
 See [example of deploy-image][example-of-deploy-image-1].
@@ -169,9 +170,10 @@ See [example of deploy-image][example-of-deploy-image-3].
 Alternatively, you can create a plugin bundle to include the target plugins. For instance:
 
 ```go
-  mylanguagev1Bundle, _ := plugin.NewBundle(language.DefaultNameQualifier, plugin.Version{Number: 1},
-        kustomizecommonv1.Plugin{}, // extend the common base from Kuebebuilder
-        mylanguagev1.Plugin{}, // your plugin language which will do the scaffolds for the specific language on top of the common base
+  mylanguagev1Bundle, _ := plugin.NewBundle(plugin.WithName(language.DefaultNameQualifier), 
+        plugin.WithVersion(plugin.Version{Number: 1}),
+        plugin.WithPlugins(kustomizecommonv1.Plugin{}, mylanguagev1.Plugin{}), // extend the common base from Kuebebuilder
+        // your plugin language which will do the scaffolds for the specific language on top of the common base
     )
 ```
 

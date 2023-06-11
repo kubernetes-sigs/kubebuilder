@@ -55,7 +55,7 @@ type apiScaffolder struct {
 	fs machinery.Filesystem
 }
 
-// NewAPIScaffolder returns a new Scaffolder for declarative
+// NewDeployImageScaffolder returns a new Scaffolder for declarative
 // nolint: lll
 func NewDeployImageScaffolder(config config.Config, res resource.Resource, image,
 	command, port, runAsUser string,
@@ -296,8 +296,8 @@ func (s *apiScaffolder) updateControllerCode(controller controllers.Controller) 
 
 func (s *apiScaffolder) scaffoldCreateAPIFromKustomize(isLegacyLayout bool) error {
 	// Now we need call the kustomize/v1 plugin to do its scaffolds when we create a new API
-	// todo: when we have the go/v4-alpha plugin we will also need to check what is the plugin used
-	// in the Project layout to know if we should use kustomize/v1 OR kustomize/v2
+	// todo: when we have the go/v4 plugin we will also need to check what is the plugin used
+	// in the Project layout to know if we should use kustomize/v1 OR kustomize/v2-alpha
 	var kustomizeScaffolder plugins.Scaffolder
 
 	if isLegacyLayout {
@@ -325,8 +325,8 @@ func (s *apiScaffolder) scaffoldCreateAPIFromKustomize(isLegacyLayout bool) erro
 
 func (s *apiScaffolder) scaffoldCreateAPIFromGolang(isLegacyLayout bool) error {
 	// Now we need call the kustomize/v1 plugin to do its scaffolds when we create a new API
-	// todo: when we have the go/v4-alpha plugin we will also need to check what is the plugin used
-	// in the Project layout to know if we should use kustomize/v1 OR kustomize/v2
+	// todo: when we have the go/v4 plugin we will also need to check what is the plugin used
+	// in the Project layout to know if we should use kustomize/v1 OR kustomize/v2-alpha
 	if isLegacyLayout {
 		golangV3Scaffolder := golangv3scaffolds.NewAPIScaffolder(s.config,
 			s.resource, true)

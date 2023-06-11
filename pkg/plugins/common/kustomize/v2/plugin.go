@@ -25,7 +25,7 @@ import (
 )
 
 // KustomizeVersion is the kubernetes-sigs/kustomize version to be used in the project
-const KustomizeVersion = "v5.0.0"
+const KustomizeVersion = "v5.0.1"
 
 const pluginName = "kustomize.common." + plugins.DefaultNameQualifier
 
@@ -65,4 +65,8 @@ func (p Plugin) GetCreateAPISubcommand() plugin.CreateAPISubcommand { return &p.
 // GetCreateWebhookSubcommand will return the subcommand which is responsible for scaffolding webhooks
 func (p Plugin) GetCreateWebhookSubcommand() plugin.CreateWebhookSubcommand {
 	return &p.createWebhookSubcommand
+}
+
+func (p Plugin) DeprecationWarning() string {
+	return ""
 }

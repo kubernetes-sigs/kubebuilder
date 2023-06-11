@@ -1,6 +1,6 @@
-# go/v3 vs go/v4-alpha
+# go/v3 vs go/v4
 
-This document covers all breaking changes when migrating from projects built using the plugin go/v3 (default for any scaffold done since `28 Apr 2021`) to the next alpha version of the Golang plugin `go/v4-alpha`.
+This document covers all breaking changes when migrating from projects built using the plugin go/v3 (default for any scaffold done since `28 Apr 2021`) to the next alpha version of the Golang plugin `go/v4`.
 
 The details of all changes (breaking or otherwise) can be found in:
 
@@ -11,7 +11,7 @@ The details of all changes (breaking or otherwise) can be found in:
 
 ## Common changes
 
-- `go/v4-alpha` projects use Kustomize v4x (instead of v3x)
+- `go/v4` projects use Kustomize v5x (instead of v3x)
 - note that some manifests under `config/` directory have been changed in order to no longer use the deprecated Kustomize features
   such as env vars.
 - A `kustomization.yaml` is scaffolded under `config/samples`. This helps simply and flexibly generate sample manifests: `kustomize build config/samples`.
@@ -24,51 +24,30 @@ The details of all changes (breaking or otherwise) can be found in:
 by moving the api(s) under a new directory called `api`, controller(s) under a new directory called `internal` and the `main.go` under a new directory named `cmd`
 
 <aside class="note">
-<H1> TL;DR of the New `go/v4-alpha` Plugin </H1>
+<H1> TL;DR of the New `go/v4` Plugin </H1>
 
-Further details can be found in the [go/v4-alpha plugin section][go/v4-doc]
+Further details can be found in the [go/v4 plugin section][go/v4-doc]
 
 </aside>
 
-## TL;DR of the New `go/v4-alpha` Plugin
+## TL;DR of the New `go/v4` Plugin
 
 **_More details on this can be found at [here][kb-releases], but for the highlights, check below_**
-
-<aside class="note">
-<h1>Default plugin</h1>
-Projects scaffolded with Kubebuilder v3 release still using the `go.kubebuilder.io/v3` plugin by default.
-
-</aside>
 
 <aside class="note warning">
 <h1>Project customizations</h1>
 
-After using the CLI to create your project, you are free to customise how you see fit. Bear in mind, that it is not recommended to deviate from the proposed layout unless you know what you are doing.
+After using the CLI to create your project, you are free to customize how you see fit. Bear in mind, that it is not recommended to deviate from the proposed layout unless you know what you are doing.
 
 For example, you should refrain from moving the scaffolded files, doing so will make it difficult in upgrading your project in the future. You may also lose the ability to use some of the CLI features and helpers. For further information on the project layout, see the doc [What's in a basic project?][basic-project-doc]
 
 </aside>
 
-## Migrating to Kubebuilder go/v4-alpha
+## Migrating to Kubebuilder go/v4
 
 If you want to upgrade your scaffolding to use the latest and greatest features then, follow the guide
 which will cover the steps in the most straightforward way to allow you to upgrade your project to get all
 latest changes and improvements.
-
-<aside class="note warning">
-<h1> Apple Silicon (M1) </h1>
-
-The current scaffold done by the CLI (`go/v3`) uses [kubernetes-sigs/kustomize][kustomize] v3 which does not provide
-a valid binary for Apple Silicon (`darwin/arm64`). Therefore, you can use the `go/v4-alpha` plugin
-instead which provides support for this platform:
-
-```bash
-kubebuilder init --domain my.domain --repo my.domain/guestbook --plugins=go/v4-alpha
-```
-
-**Note**: The `go/v4-alpha` plugin is an unstable version and can have breaking changes in future releases.
-
-</aside>
 
 - [Migration Guide go/v3 to go/v4][migration-guide-gov3-to-gov4] **(Recommended)**
 
@@ -78,7 +57,7 @@ If you want to use the latest version of Kubebuilder CLI without changing your s
 
 This way is more complex, susceptible to errors, and success cannot be assured. Also, by following these steps you will not get the improvements and bug fixes in the default generated project files.
 
-- [Migrating to go/v4-alpha by updating the files manually][manually-upgrade]
+- [Migrating to go/v4 by updating the files manually][manually-upgrade]
 
 [plugins-phase1-design-doc]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/designs/extensible-cli-and-scaffolding-plugins-phase-1.md
 [plugins-phase1-design-doc-1.5]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/designs/extensible-cli-and-scaffolding-plugins-phase-1-5.md
@@ -89,3 +68,7 @@ This way is more complex, susceptible to errors, and success cannot be assured. 
 [migration-guide-gov3-to-gov4]: migration_guide_gov3_to_gov4.md
 [manually-upgrade]: manually_migration_guide_gov3_to_gov4.md
 [standard-go-project]: https://github.com/golang-standards/project-layout
+[controller-runtime]: https://github.com/kubernetes-sigs/controller-runtime
+[controller-tools]: https://github.com/kubernetes-sigs/controller-tools
+[kustomize-release]: https://github.com/kubernetes-sigs/kustomize/releases/tag/kustomize%2Fv5.0.0
+[kb-releases]: https://github.com/kubernetes-sigs/kubebuilder/releases

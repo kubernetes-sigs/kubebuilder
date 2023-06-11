@@ -20,7 +20,7 @@ setup, from when we built our defaulting and validating webhooks!
 
 Similarly, our existing main file is sufficient:
 
-{{#literatego ./testdata/project/main.go}}
+{{#literatego ./testdata/project/cmd/main.go}}
 
 Everything's set up and ready to go!  All that's left now is to test out
 our webhooks.

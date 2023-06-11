@@ -1,5 +1,5 @@
 # Enabling shell autocompletion
-The Kubebuilder completion script can be generated with the command `kubebuilder completion [bash|zsh|powershell]`. 
+The Kubebuilder completion script can be generated with the command `kubebuilder completion [bash|fish|powershell|zsh]`. 
 Note that sourcing the completion script in your shell enables Kubebuilder autocompletion. 
 
 <aside class="note">
@@ -33,5 +33,12 @@ fi
 <h1>Zsh</h1>
 
 Follow a similar protocol for `zsh` completion.
+
+</aside>
+
+<aside class="note">
+<h1>Fish</h1>
+
+source (kubebuilder completion fish | psub)
 
 </aside>

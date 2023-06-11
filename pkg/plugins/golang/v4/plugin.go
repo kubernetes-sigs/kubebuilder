@@ -27,7 +27,7 @@ import (
 const pluginName = "base." + golang.DefaultNameQualifier
 
 var (
-	pluginVersion            = plugin.Version{Number: 4, Stage: stage.Alpha}
+	pluginVersion            = plugin.Version{Number: 4, Stage: stage.Stable}
 	supportedProjectVersions = []config.Version{cfgv3.Version}
 )
 
@@ -65,9 +65,5 @@ func (p Plugin) GetCreateWebhookSubcommand() plugin.CreateWebhookSubcommand {
 func (p Plugin) GetEditSubcommand() plugin.EditSubcommand { return &p.editSubcommand }
 
 func (p Plugin) DeprecationWarning() string {
-	return "This version is deprecated." +
-		"The `go/v3` cannot scaffold projects using kustomize versions v4x+" +
-		" and cannot fully support Kubernetes 1.25+." +
-		"It is recommended to upgrade your project to the latest versions available (go/v4)." +
-		"Please, check the migration guide to learn how to upgrade your project"
+	return ""
 }

@@ -127,16 +127,7 @@ supporting Windows are welcome.
 
 ### Apple Silicon
 
-Apple Silicon (`darwin/arm64`) is supported using the `go/v4-alpha` plugin which provides support for this platform. 
-
-```bash
-kubebuilder init --domain my.domain --repo my.domain/guestbook --plugins=go/v4-alpha
-```
-
-**Note**: The `go/v4-alpha` plugin is an unstable version and can have breaking changes in future releases. The previous kustomize 
-version (`v3.Y.Z`) used in the `go/v3` has no available binaries for this 
-platform [kubernetes-sigs/kustomize/issues/4612](https://github.com/kubernetes-sigs/kustomize/issues/4612)
-Because of this, we cannot support this `darwin/arm64` on the stable scaffold done  by default with the Kubebuilder with the `go/v3` plugin.
+Apple Silicon (`darwin/arm64`) support begins with the `go/v4` plugin.
 
 ## Community Meetings
  

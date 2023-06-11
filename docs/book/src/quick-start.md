@@ -9,7 +9,7 @@ This Quick Start guide will cover:
 
 ## Prerequisites
 
-- [go](https://golang.org/dl/) version v1.19.0+
+- [go](https://golang.org/dl/) version v1.20.0+
 - [docker](https://docs.docker.com/install/) version 17.03+.
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) version v1.11.3+.
 - Access to a Kubernetes v1.11.3+ cluster.
@@ -31,7 +31,7 @@ Install [kubebuilder](https://sigs.k8s.io/kubebuilder):
 
 ```bash
 # download kubebuilder and install locally.
-curl -L -o kubebuilder https://go.kubebuilder.io/dl/latest/$(go env GOOS)/$(go env GOARCH)
+curl -L -o kubebuilder "https://go.kubebuilder.io/dl/latest/$(go env GOOS)/$(go env GOARCH)"
 chmod +x kubebuilder && mv kubebuilder /usr/local/bin/
 ```
 
@@ -45,27 +45,13 @@ You can work with a master snapshot by installing from `https://go.kubebuilder.i
 <aside class="note">
 <h1>Enabling shell autocompletion</h1>
 
-Kubebuilder provides autocompletion support for Bash and Zsh via the command `kubebuilder completion <bash|zsh>`, which can save you a lot of typing. For further information see the [completion](./reference/completion.md) document.
+Kubebuilder provides autocompletion support via the command `kubebuilder completion <bash|fish|powershell|zsh>`, which can save you a lot of typing. For further information see the [completion](./reference/completion.md) document.
 
 </aside>
 
 ## Create a Project
 
 Create a directory, and then run the init command inside of it to initialize a new project. Follows an example.
-
-<aside class="note warning">
-<h1> Apple Silicon (M1) </h1>
-
-The current scaffold done by the CLI (`go/v3`) uses [kubernetes-sigs/kustomize][kustomize] v3 which does not provide
-a valid binary for Apple Silicon (`darwin/arm64`). Therefore, you can use the `go/v4-alpha` plugin
-instead which provides support for this platform:
-
-```bash
-kubebuilder init --domain my.domain --repo my.domain/guestbook --plugins=go/v4-alpha
-```
-
-**Note**: The `go/v4-alpha` plugin is an unstable version and can have breaking changes in future releases.
-</aside>
 
 ```bash
 mkdir -p ~/projects/guestbook
@@ -96,7 +82,7 @@ kubebuilder create api --group webapp --version v1 --kind Guestbook
 <h1>Press Options</h1>
 
 If you press `y` for Create Resource [y/n] and for Create Controller [y/n] then this will create the files `api/v1/guestbook_types.go` where the API is defined
-and the `controllers/guestbook_controller.go` where the reconciliation business logic is implemented for this Kind(CRD).
+and the `internal/controllers/guestbook_controller.go` where the reconciliation business logic is implemented for this Kind(CRD).
 
 </aside>
 
@@ -110,7 +96,7 @@ If you are editing the API definitions, generate the manifests such as Custom Re
 make manifests
 ```
 
-<details><summary>Click here to see an example. `(api/v1/guestbook_types.go)` </summary>
+<details><summary>Click here to see an example. <tt>(api/v1/guestbook_types.go)</tt></summary>
 <p>
 
 ```go

@@ -25,7 +25,6 @@ import (
 	cfgv2 "sigs.k8s.io/kubebuilder/v3/pkg/config/v2"
 	cfgv3 "sigs.k8s.io/kubebuilder/v3/pkg/config/v3"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/stage"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	kustomizecommonv1 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v1"
 	kustomizecommonv2alpha "sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v2"
@@ -40,15 +39,23 @@ import (
 
 func main() {
 
+	const deprecateMessageGoV3Bundle = "This version is deprecated." +
+		"The `go/v3` cannot scaffold projects using kustomize versions v4x+" +
+		" and cannot fully support Kubernetes 1.25+." +
+		"It is recommended to upgrade your project to the latest versions available (go/v4)." +
+		"Please, check the migration guide to learn how to upgrade your project"
+
 	// Bundle plugin which built the golang projects scaffold by Kubebuilder go/v3
-	gov3Bundle, _ := plugin.NewBundle(golang.DefaultNameQualifier, plugin.Version{Number: 3},
-		kustomizecommonv1.Plugin{},
-		golangv3.Plugin{},
+	gov3Bundle, _ := plugin.NewBundleWithOptions(plugin.WithName(golang.DefaultNameQualifier),
+		plugin.WithVersion(plugin.Version{Number: 3}),
+		plugin.WithDeprecationMessage(deprecateMessageGoV3Bundle),
+		plugin.WithPlugins(kustomizecommonv1.Plugin{}, golangv3.Plugin{}),
 	)
+
 	// Bundle plugin which built the golang projects scaffold by Kubebuilder go/v4 with kustomize alpha-v2
-	gov4Bundle, _ := plugin.NewBundle(golang.DefaultNameQualifier, plugin.Version{Number: 4, Stage: stage.Alpha},
-		kustomizecommonv2alpha.Plugin{},
-		golangv4.Plugin{},
+	gov4Bundle, _ := plugin.NewBundleWithOptions(plugin.WithName(golang.DefaultNameQualifier),
+		plugin.WithVersion(plugin.Version{Number: 4}),
+		plugin.WithPlugins(kustomizecommonv2alpha.Plugin{}, golangv4.Plugin{}),
 	)
 
 	fs := machinery.Filesystem{
@@ -76,7 +83,7 @@ func main() {
 		),
 		cli.WithPlugins(externalPlugins...),
 		cli.WithDefaultPlugins(cfgv2.Version, golangv2.Plugin{}),
-		cli.WithDefaultPlugins(cfgv3.Version, gov3Bundle),
+		cli.WithDefaultPlugins(cfgv3.Version, gov4Bundle),
 		cli.WithDefaultProjectVersion(cfgv3.Version),
 		cli.WithCompletion(),
 	)

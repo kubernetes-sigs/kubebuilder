@@ -1,6 +1,7 @@
-# Kustomize v2 
+# [Default Scaffold] Kustomize v2 
 
-The kustomize plugin allows you to scaffold all kustomize manifests used to work with the language base plugin `base.go.kubebuilder.io/v3`.
+The kustomize plugin allows you to scaffold all kustomize manifests used to work with the language base plugin `base.go.kubebuilder.io/v4`.
+This plugin is used to generate the manifest under `config/` directory for the projects build within the go/v4 plugin (default scaffold).
 
 Note that projects such as [Operator-sdk][sdk] consume the Kubebuilder project as a lib and provide options to work with other languages
 like Ansible and Helm. The kustomize plugin allows them to easily keep a maintained configuration and ensure that all languages have
@@ -21,7 +22,7 @@ directory of the Kubebuilder project.
 
 - If you are looking to scaffold the kustomize configuration manifests for your own language plugin
 - If you are looking for support on Apple Silicon (`darwin/arm64`). (_Before kustomize `4.x` the binary for this plataform is not provided_)
-- If you are looking for to begin to try out the new syntax and features provide by kustomize v5
+- If you are looking for to begin to try out the new syntax and features provide by kustomize v4 [(More info)][release-notes-v4] and v5 [(More info)][release-notes-v5]
 - If you are NOT looking to build projects which will be used on Kubernetes cluster versions < `1.22` (_The new features provides by kustomize v4 are not officially supported and might not work with kubectl < `1.22`_)
 - If you are NOT looking to rely on special URLs in resource fields
 - If you want to use [replacements][kustomize-replacements] since [vars][kustomize-vars] are deprecated and might be removed soon
@@ -36,16 +37,17 @@ all that is language specific and kustomize for its configuration, see:
 import (
 ...
    kustomizecommonv2alpha "sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v2"
-   golangv3 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3"
+   golangv4 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v4"
 ...
 )
 
 	// Bundle plugin which built the golang projects scaffold by Kubebuilder go/v3
 	// The follow code is creating a new plugin with its name and version via composition
 	// You can define that one plugin is composite by 1 or Many others plugins
-	gov3Bundle, _ := plugin.NewBundle(golang.DefaultNameQualifier, plugin.Version{Number: 3},
-        kustomizecommonv2.Plugin{}, // scaffold the config/ directory and all kustomize files
-		golangv3.Plugin{}, // Scaffold the Golang files and all that specific for the language e.g. go.mod, apis, controllers
+	gov3Bundle, _ := plugin.NewBundle(plugin.WithName(golang.DefaultNameQualifier), 
+		plugin.WithVersion(plugin.Version{Number: 3}),
+        plugin.WithPlugins(kustomizecommonv2.Plugin{}, golangv3.Plugin{}), // scaffold the config/ directory and all kustomize files
+		// Scaffold the Golang files and all that specific for the language e.g. go.mod, apis, controllers
 	)
 ```
 
@@ -98,7 +100,8 @@ The following scaffolds will be created or updated by this plugin:
 * Check the kustomize [plugin implementation](https://github.com/kubernetes-sigs/kubebuilder/tree/master/pkg/plugins/common/kustomize)
 * Check the [kustomize documentation][kustomize-docs]
 * Check the [kustomize repository][kustomize-github]
-* To know more about the changes between kustomize v4 and v5 see its [release notes][release-notes]
+* Check the [release notes][release-notes-v5] for Kustomize v5.0.0
+* Check the [release notes][release-notes-v4] for Kustomuze v4.0.0
 * Also, you can compare the `config/` directory between the samples `project-v3` and `project-v4` to check the difference in the syntax of the manifests provided by default
 
 [sdk]:https://github.com/operator-framework/operator-sdk
@@ -109,4 +112,5 @@ The following scaffolds will be created or updated by this plugin:
 [kustomize-github]: https://github.com/kubernetes-sigs/kustomize
 [kustomize-replacements]: https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/replacements/
 [kustomize-vars]: https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/vars/
-[release-notes]: https://github.com/kubernetes-sigs/kustomize/releases/tag/kustomize%2Fv5.0.0
+[release-notes-v5]: https://github.com/kubernetes-sigs/kustomize/releases/tag/kustomize%2Fv5.0.0
+[release-notes-v4]: https://github.com/kubernetes-sigs/kustomize/releases/tag/kustomize%2Fv4.0.0

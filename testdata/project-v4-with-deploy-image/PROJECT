@@ -4,7 +4,7 @@
 # More info: https://book.kubebuilder.io/reference/project-config.html
 domain: testproject.org
 layout:
-- go.kubebuilder.io/v4-alpha
+- go.kubebuilder.io/v4
 plugins:
   deploy-image.go.kubebuilder.io/v1-alpha:
     resources:
