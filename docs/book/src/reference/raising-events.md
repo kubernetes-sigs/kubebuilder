@@ -41,10 +41,10 @@ Following is an example of a code implementation that raises an Event.
 
 </aside>
 
-## How to be able to raise Events?
+### How to be able to raise Events?
 
 Following are the steps with examples to help you raise events in your controller's reconciliations. 
-Events are published from a Controller using an [EventRecorder]`type CorrelatorOptions struct`,
+Events are published from a Controller using an [EventRecorder][Events]`type CorrelatorOptions struct`,
 which can be created for a Controller by calling `GetRecorder(name string)` on a Manager. See that we will change the implementation scaffolded in `cmd/main.go`:
 
 ```go
@@ -60,6 +60,7 @@ which can be created for a Controller by calling `GetRecorder(name string)` on a
 ```
 
 ### Allowing usage of EventRecorder on the Controller
+
 To raise an event, you must have access to `record.EventRecorder` in the Controller.  Therefore, firstly let's update the controller implementation: 
 ```go
 import (
@@ -89,6 +90,7 @@ which can be created for a Controller by calling `GetRecorder(name string)` on a
 	}
 ```
 ### Granting the required permissions
+
 You must also grant the RBAC rules permissions to allow your project to create Events. Therefore, ensure that you add the [RBAC][rbac-markers] into your controller:
 ```go
 ...
