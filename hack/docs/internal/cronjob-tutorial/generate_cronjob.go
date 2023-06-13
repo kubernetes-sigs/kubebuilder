@@ -372,7 +372,7 @@ func updateWebhook(sp *Sample) {
 */`,
 		`
 // +kubebuilder:docs-gen:collapse=Apache License`)
-	CheckError("fixing cronjob_webhook.go", err)
+	CheckError("fixing cronjob_webhook.go by adding collapse", err)
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_webhook.go"),
@@ -381,6 +381,7 @@ func updateWebhook(sp *Sample) {
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // log is for logging in this package.
@@ -394,27 +395,27 @@ func updateWebhook(sp *Sample) {
 /*
 Then, we set up the webhook with the manager.
 */`)
-	CheckError("fixing cronjob_webhook.go", err)
+	CheckError("fixing cronjob_webhook.go by setting webhook with manager comment", err)
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_webhook.go"),
 		`// TODO(user): EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!`, WebhookMarker)
-	CheckError("fixing cronjob_webhook.go", err)
+	CheckError("fixing cronjob_webhook.go by replacing TODO", err)
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_webhook.go"),
 		`// TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.`, "")
-	CheckError("fixing cronjob_webhook.go", err)
+	CheckError("fixing cronjob_webhook.go by replace TODO to change verbs", err)
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_webhook.go"),
 		`//+kubebuilder:webhook:path=/mutate-batch-tutorial-kubebuilder-io-v1-cronjob,mutating=true,failurePolicy=fail,sideEffects=None,groups=batch.tutorial.kubebuilder.io,resources=cronjobs,verbs=create;update,versions=v1,name=mcronjob.kb.io,admissionReviewVersions=v1`, "")
-	CheckError("fixing cronjob_webhook.go", err)
+	CheckError("fixing cronjob_webhook.go by replacing marker", err)
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_webhook.go"),
 		`//+kubebuilder:webhook:path=/validate-batch-tutorial-kubebuilder-io-v1-cronjob,mutating=false,failurePolicy=fail,sideEffects=None,groups=batch.tutorial.kubebuilder.io,resources=cronjobs,verbs=create;update,versions=v1,name=vcronjob.kb.io,admissionReviewVersions=v1`, "")
-	CheckError("fixing cronjob_webhook.go", err)
+	CheckError("fixing cronjob_webhook.go validate batch marker", err)
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_webhook.go"),
@@ -422,43 +423,31 @@ Then, we set up the webhook with the manager.
 
 	// TODO(user): fill in your defaulting logic.
 `, WebhookValidate)
-	CheckError("fixing cronjob_webhook.go", err)
+	CheckError("fixing cronjob_webhook.go by adding logic", err)
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_webhook.go"),
-		`func (r *CronJob) ValidateCreate() error {
-	cronjoblog.Info("validate create", "name", r.Name)
-
-	// TODO(user): fill in your validation logic upon object creation.
-	return nil
-}`, `func (r *CronJob) ValidateCreate() error {
-	cronjoblog.Info("validate create", "name", r.Name)
-
-	return r.validateCronJob()
-}`)
-	CheckError("fixing cronjob_webhook.go", err)
+		`// TODO(user): fill in your validation logic upon object creation.
+	return nil, nil`,
+		`
+	return nil, r.validateCronJob()`)
+	CheckError("fixing cronjob_webhook.go by fill in your validation", err)
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_webhook.go"),
-		`func (r *CronJob) ValidateUpdate(old runtime.Object) error {
-	cronjoblog.Info("validate update", "name", r.Name)
-
-	// TODO(user): fill in your validation logic upon object update.
-	return nil
-}`, `func (r *CronJob) ValidateUpdate(old runtime.Object) error {
-	cronjoblog.Info("validate update", "name", r.Name)
-
-	return r.validateCronJob()
-}`)
-	CheckError("fixing cronjob_webhook.go", err)
+		`// TODO(user): fill in your validation logic upon object update.
+	return nil, nil`,
+		`
+	return nil, r.validateCronJob()`)
+	CheckError("fixing cronjob_webhook.go by adding validation logic upon object update", err)
 
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_webhook.go"),
-		`func (r *CronJob) ValidateDelete() error {
+		`func (r *CronJob) ValidateDelete() (admission.Warnings, error) {
 	cronjoblog.Info("validate delete", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.
-	return nil
+	return nil, nil
 }`, WebhookValidateSpec)
 	CheckError("fixing cronjob_webhook.go", err)
 
@@ -468,7 +457,7 @@ Then, we set up the webhook with the manager.
 */
 }`, `validate anything on deletion.
 */`)
-	CheckError("fixing cronjob_webhook.go", err)
+	CheckError("fixing cronjob_webhook.go by adding comments to validate on deletion", err)
 }
 
 func updateSuiteTest(sp *Sample) {
