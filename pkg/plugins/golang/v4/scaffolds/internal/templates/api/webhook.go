@@ -86,10 +86,12 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	{{- if .Resource.HasValidationWebhook }}
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 	{{- end }}
 	{{- if or .Resource.HasValidationWebhook .Resource.HasDefaultingWebhook }}
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	{{- end }}
+
 )
 
 // log is for logging in this package.
@@ -126,27 +128,27 @@ func (r *{{ .Resource.Kind }}) Default() {
 var _ webhook.Validator = &{{ .Resource.Kind }}{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *{{ .Resource.Kind }}) ValidateCreate() error {
+func (r *{{ .Resource.Kind }}) ValidateCreate() (admission.Warnings, error) {
 	{{ lower .Resource.Kind }}log.Info("validate create", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object creation.
-	return nil
+	return nil, nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *{{ .Resource.Kind }}) ValidateUpdate(old runtime.Object) error {
+func (r *{{ .Resource.Kind }}) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
 	{{ lower .Resource.Kind }}log.Info("validate update", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object update.
-	return nil
+	return nil, nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *{{ .Resource.Kind }}) ValidateDelete() error {
+func (r *{{ .Resource.Kind }}) ValidateDelete() (admission.Warnings, error) {
 	{{ lower .Resource.Kind }}log.Info("validate delete", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.
-	return nil
+	return nil,nil
 }
 `
 )
