@@ -80,6 +80,7 @@
 
   - [Generating CRDs](./reference/generating-crd.md)
   - [Using Finalizers](./reference/using-finalizers.md)
+  - [Good Practices](./reference/good-practices.md)
   - [Watching Resources](./reference/watching-resources.md)
     - [Resources Managed by the Operator](./reference/watching-resources/operator-managed.md)
     - [Externally Managed Resources](./reference/watching-resources/externally-managed.md)
