@@ -13,7 +13,7 @@ its upstream quay.io source.
 GCP Cloud Build watches this branch.  On every push, it runs the pipeline
 defined in [build/cloudbuild_kube-rbac-proxy.yaml][cloudbuild-file], which
 grabs the source images from `quay.io/brancz/kube-rbac-proxy` and tags them as
-`gcr.io/kubebuilder/kube-rbac-proxy`, with a tag for each arch as well as
+`gcr.io/k8s-staging-kubebuilder/kube-rbac-proxy`, with a tag for each arch as well as
 a single manifest bundle of:
 
 - amd64
@@ -21,7 +21,15 @@ a single manifest bundle of:
 - ppc64le
 - s390x
 
-There's also a helper script in [build/thirdparty](build/thirdparty) to assist in the process.
+Then, once the image be build it should be promoted via https://github.com/kubernetes/k8s.io/blob/main/k8s.gcr.io/images/k8s-staging-kubebuilder/images.yaml
+and once this gets merged, the images will be available on registry.k8s.io/kubebuilder/image. This Cloudbuild
+manifest is started via prow in https://github.com/kubernetes/test-infra/tree/master/config/jobs/image-pushing.
+
+**NOTE** Previously, the images were rebuilt as gcr.io/kubebuilder/kube-rbac-proxy. The job
+to trigger them were present [here](https://console.cloud.google.com/gcr/images/kubebuilder/global/kube-rbac-proxy)
+which has been kept as legacy until we be able to ensure the transition to the new
+k8s registry.
+
 
 To update, simply update the variable at the top of the [cloudbuild file][cloudbuild-file], 
 then submit a PR against this branch.
