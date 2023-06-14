@@ -138,7 +138,7 @@ spec:
           metadata:
             type: object
           metrics:
-            description: Metrics contains thw controller metrics configuration
+            description: Metrics contains the controller metrics configuration
             properties:
               bindAddress:
                 description: BindAddress is the TCP address that the controller should

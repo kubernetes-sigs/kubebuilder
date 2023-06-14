@@ -4,13 +4,13 @@ go 1.20
 
 require (
 	github.com/gobuffalo/flect v1.0.2
-	github.com/onsi/ginkgo/v2 v2.9.7
-	github.com/onsi/gomega v1.27.7
+	github.com/onsi/ginkgo/v2 v2.10.0
+	github.com/onsi/gomega v1.27.8
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/afero v1.9.5
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/pflag v1.0.5
-	golang.org/x/text v0.9.0
+	golang.org/x/text v0.10.0
 	golang.org/x/tools v0.9.3
 	sigs.k8s.io/yaml v1.3.0
 )
