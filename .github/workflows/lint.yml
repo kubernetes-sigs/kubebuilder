@@ -24,7 +24,7 @@ jobs:
           version: v1.51
           only-new-issues: true # Show only new issues if it's a pull request
       - name: Report failure
-        uses: nashmaniac/create-issue-action@v1.1
+        uses: nashmaniac/create-issue-action@v1.2
         # Only report failures of pushes (PRs have are visible through the Checks section) to the default branch
         if: failure() && github.event_name == 'push' && github.ref == 'refs/heads/master'
         with:
