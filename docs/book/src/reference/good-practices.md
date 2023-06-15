@@ -48,6 +48,7 @@ In conclusion, while it might seem efficient to have a single controller manage 
 ## Why is it recommended to avoid a scenario where multiple controllers are updating the same Custom Resource (CR)?
 
 Managing a single Custom Resource (CR) with multiple controllers can lead to several challenges: 
+
 - **Race conditions**: When multiple controllers attempt to reconcile the same CR concurrently, race conditions can emerge. These conditions can produce inconsistent or unpredictable outcomes. For example, if we try to update the CR to add a status condition, we may encounter a range of errors such as “the object has been modified; please apply your changes to the latest version and try again”, triggering a repetitive reconciliation process.
 - **Concurrency issues**: When controllers have different interpretations of the CR’s state, they may constantly overwrite each other’s changes. This conflict can create a loop, with the controllers ceaselessly disputing the CR’s state.
 - **Maintenance and support difficulties**: Coordinating the logic for multiple controllers operating on the same CR can increase system complexity, making it more challenging to understand or troubleshoot. Typically, a system’s behavior is easier to comprehend when each CR is managed by a single controller.
