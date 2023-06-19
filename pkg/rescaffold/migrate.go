@@ -100,8 +100,23 @@ func getOutputPath(currentWorkingDirectory, outputPath string) (string, error) {
 	return "", err
 }
 
-func kubebuilderInit(_ store.Store) error {
+func kubebuilderInit(store store.Store) error {
 	var args []string
 	args = append(args, "init")
+	args = append(args, getInitArgs(store)...)
 	return util.RunCmd("kubebuilder init", "kubebuilder", args...)
+}
+
+func getInitArgs(store store.Store) []string {
+	var args []string
+	plugins := store.Config().GetPluginChain()
+	if len(plugins) > 0 {
+		args = append(args, "--plugins")
+		args = append(args, plugins...)
+	}
+	domain := store.Config().GetDomain()
+	if domain != "" {
+		args = append(args, "--domain", domain)
+	}
+	return args
 }

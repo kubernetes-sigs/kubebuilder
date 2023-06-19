@@ -66,6 +66,7 @@ function test_cluster {
   go test $(dirname "$0")/deployimage $flags -timeout 30m
   go test $(dirname "$0")/v4 $flags -timeout 30m
   go test $(dirname "$0")/externalplugin $flags -timeout 30m
+  go test $(dirname "$0")/alphagenerate $flags -timeout 30m
 }
 
 function build_sample_external_plugin {
