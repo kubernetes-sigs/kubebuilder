@@ -62,6 +62,11 @@ func (p *initSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&p.name, "project-name", "", "name of this project")
 	fs.BoolVar(&p.componentConfig, "component-config", false,
 		"create a versioned ComponentConfig file, may be 'true' or 'false'")
+	_ = fs.MarkDeprecated("component-config", "the ComponentConfig has been deprecated in the "+
+		"Controller-Runtime since its version 0.15.0. Moreover, it has undergone breaking changes and is no longer "+
+		"functioning as intended. As a result, this tool, which heavily relies on the Controller Runtime, "+
+		"has also deprecated this feature, no longer guaranteeing its functionality from version 3.11.0 onwards. "+
+		"You can find additional details on https://github.com/kubernetes-sigs/controller-runtime/issues/895.")
 }
 
 func (p *initSubcommand) InjectConfig(c config.Config) error {
