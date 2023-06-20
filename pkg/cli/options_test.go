@@ -18,6 +18,7 @@ package cli
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -34,6 +35,179 @@ import (
 )
 
 var _ = Describe("Discover external plugins", func() {
+	Context("with valid plugins root path", func() {
+		var (
+			homePath   string = os.Getenv("HOME")
+			customPath string = "/tmp/myplugins"
+			// store user's original EXTERNAL_PLUGINS_PATH
+			originalPluginPath string
+			xdghome            string
+			// store user's original XDG_CONFIG_HOME
+			originalXdghome string
+		)
+
+		When("XDG_CONFIG_HOME is not set and using the $HOME environment variable", func() {
+			// store and unset the XDG_CONFIG_HOME
+			BeforeEach(func() {
+				originalXdghome = os.Getenv("XDG_CONFIG_HOME")
+				err := os.Unsetenv("XDG_CONFIG_HOME")
+				Expect(err).To(BeNil())
+			})
+
+			AfterEach(func() {
+				if originalXdghome != "" {
+					// restore the original value
+					err := os.Setenv("XDG_CONFIG_HOME", originalXdghome)
+					Expect(err).To(BeNil())
+				}
+			})
+
+			It("should return the correct path for the darwin OS", func() {
+				plgPath, err := getPluginsRoot("darwin")
+				Expect(err).To(BeNil())
+				Expect(plgPath).To(Equal(fmt.Sprintf("%s/Library/Application Support/kubebuilder/plugins", homePath)))
+			})
+
+			It("should return the correct path for the linux OS", func() {
+				plgPath, err := getPluginsRoot("linux")
+				Expect(err).To(BeNil())
+				Expect(plgPath).To(Equal(fmt.Sprintf("%s/.config/kubebuilder/plugins", homePath)))
+			})
+
+			It("should return error when the host is not darwin / linux", func() {
+				plgPath, err := getPluginsRoot("random")
+				Expect(plgPath).To(Equal(""))
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(ContainSubstring("host not supported"))
+			})
+		})
+
+		When("XDG_CONFIG_HOME is set", func() {
+			BeforeEach(func() {
+				// store and set the XDG_CONFIG_HOME
+				originalXdghome = os.Getenv("XDG_CONFIG_HOME")
+				err := os.Setenv("XDG_CONFIG_HOME", fmt.Sprintf("%s/.config", homePath))
+				Expect(err).To(BeNil())
+
+				xdghome = os.Getenv("XDG_CONFIG_HOME")
+			})
+
+			AfterEach(func() {
+				if originalXdghome != "" {
+					// restore the original value
+					err := os.Setenv("XDG_CONFIG_HOME", originalXdghome)
+					Expect(err).To(BeNil())
+				} else {
+					// unset if it was originally unset
+					err := os.Unsetenv("XDG_CONFIG_HOME")
+					Expect(err).To(BeNil())
+				}
+			})
+
+			It("should return the correct path for the darwin OS", func() {
+				plgPath, err := getPluginsRoot("darwin")
+				Expect(err).To(BeNil())
+				Expect(plgPath).To(Equal(fmt.Sprintf("%s/kubebuilder/plugins", xdghome)))
+			})
+
+			It("should return the correct path for the linux OS", func() {
+				plgPath, err := getPluginsRoot("linux")
+				Expect(err).To(BeNil())
+				Expect(plgPath).To(Equal(fmt.Sprintf("%s/kubebuilder/plugins", xdghome)))
+			})
+
+			It("should return error when the host is not darwin / linux", func() {
+				plgPath, err := getPluginsRoot("random")
+				Expect(plgPath).To(Equal(""))
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(ContainSubstring("host not supported"))
+			})
+		})
+
+		When("using the custom path", func() {
+			BeforeEach(func() {
+				err := os.MkdirAll(customPath, 0750)
+				Expect(err).To(BeNil())
+
+				// store and set the EXTERNAL_PLUGINS_PATH
+				originalPluginPath = os.Getenv("EXTERNAL_PLUGINS_PATH")
+				err = os.Setenv("EXTERNAL_PLUGINS_PATH", customPath)
+				Expect(err).To(BeNil())
+			})
+
+			AfterEach(func() {
+				if originalPluginPath != "" {
+					// restore the original value
+					err := os.Setenv("EXTERNAL_PLUGINS_PATH", originalPluginPath)
+					Expect(err).To(BeNil())
+				} else {
+					// unset if it was originally unset
+					err := os.Unsetenv("EXTERNAL_PLUGINS_PATH")
+					Expect(err).To(BeNil())
+				}
+			})
+
+			It("should return the user given path for darwin OS", func() {
+				plgPath, err := getPluginsRoot("darwin")
+				Expect(plgPath).To(Equal(customPath))
+				Expect(err).To(BeNil())
+			})
+
+			It("should return the user given path for linux OS", func() {
+				plgPath, err := getPluginsRoot("linux")
+				Expect(plgPath).To(Equal(customPath))
+				Expect(err).To(BeNil())
+			})
+
+			It("should report error when the host is not darwin / linux", func() {
+				plgPath, err := getPluginsRoot("random")
+				Expect(plgPath).To(Equal(""))
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(ContainSubstring("host not supported"))
+			})
+		})
+	})
+
+	Context("with invalid plugins root path", func() {
+		var originalPluginPath string
+
+		BeforeEach(func() {
+			originalPluginPath = os.Getenv("EXTERNAL_PLUGINS_PATH")
+			err := os.Setenv("EXTERNAL_PLUGINS_PATH", "/non/existent/path")
+			Expect(err).To(BeNil())
+		})
+
+		AfterEach(func() {
+			if originalPluginPath != "" {
+				// restore the original value
+				err := os.Setenv("EXTERNAL_PLUGINS_PATH", originalPluginPath)
+				Expect(err).To(BeNil())
+			} else {
+				// unset if it was originally unset
+				err := os.Unsetenv("EXTERNAL_PLUGINS_PATH")
+				Expect(err).To(BeNil())
+			}
+		})
+
+		It("should return an error for the darwin OS", func() {
+			plgPath, err := getPluginsRoot("darwin")
+			Expect(err).ToNot(BeNil())
+			Expect(plgPath).To(Equal(""))
+		})
+
+		It("should return an error for the linux OS", func() {
+			plgPath, err := getPluginsRoot("linux")
+			Expect(err).ToNot(BeNil())
+			Expect(plgPath).To(Equal(""))
+		})
+
+		It("should return an error when the host is not darwin / linux", func() {
+			plgPath, err := getPluginsRoot("random")
+			Expect(err).ToNot(BeNil())
+			Expect(plgPath).To(Equal(""))
+		})
+	})
+
 	Context("when plugin executables exist in the expected plugin directories", func() {
 		const (
 			filePermissions  os.FileMode = 755
@@ -219,18 +393,6 @@ var _ = Describe("Discover external plugins", func() {
 				Expect(err).To(Equal(errPluginsRoot))
 			})
 
-			It("should fail for any other host that is not supported", func() {
-				_, err := getPluginsRoot("darwin")
-				Expect(err).To(BeNil())
-
-				_, err = getPluginsRoot("linux")
-				Expect(err).To(BeNil())
-
-				_, err = getPluginsRoot("random")
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("host not supported"))
-			})
-
 			It("should skip parsing of directories if plugins root is not a directory", func() {
 				retrievePluginsRoot = func(host string) (string, error) {
 					return "externalplugin.sh", nil
@@ -238,18 +400,6 @@ var _ = Describe("Discover external plugins", func() {
 
 				_, err := DiscoverExternalPlugins(fs.FS)
 				Expect(err).To(BeNil())
-			})
-
-			It("should fail for any other host that is not supported", func() {
-				_, err := getPluginsRoot("darwin")
-				Expect(err).To(BeNil())
-
-				_, err = getPluginsRoot("linux")
-				Expect(err).To(BeNil())
-
-				_, err = getPluginsRoot("random")
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("host not supported"))
 			})
 
 			It("should return full path to the external plugins without XDG_CONFIG_HOME", func() {
