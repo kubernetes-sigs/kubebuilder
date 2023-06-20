@@ -2,7 +2,6 @@
 
 Kubebuilder will scaffold using the `go/v4` plugin only if specified when initializing the project. 
 This plugin is a composition of the plugins ` kustomize.common.kubebuilder.io/v2` and `base.go.kubebuilder.io/v4`. 
-
 It scaffolds a project template that helps in constructing sets of [controllers][controller-runtime]. 
 
 It scaffolds boilerplate code to create and design controllers. 
@@ -59,4 +58,3 @@ kubebuilder init --domain tutorial.kubebuilder.io --repo tutorial.kubebuilder.io
 [kustomize]: https://github.com/kubernetes-sigs/kustomize
 [standard-go-project]: https://github.com/golang-standards/project-layout
 [v4-plugin]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/pkg/plugins/golang/v4
-

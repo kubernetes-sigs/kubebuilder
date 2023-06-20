@@ -22,6 +22,7 @@ Kubebuilder scaffolded a `internal/controller/suite_test.go` file that does the 
 First, it will contain the necessary imports.
 */
 
+
 package controller
 
 import (
@@ -33,6 +34,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -61,7 +63,7 @@ var (
 	cancel    context.CancelFunc
 )
 
-func TestAPIs(t *testing.T) {
+func TestControllers(t *testing.T) {
 	RegisterFailHandler(Fail)
 
 	RunSpecs(t, "Controller Suite")

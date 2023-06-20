@@ -12,18 +12,6 @@ the [Migration guide](../migration/v3vsv4.md) to learn how to upgrade your proje
 
 </aside>
 
-<aside class="note warning">
-<h1>Deprecated</h1>
-
-The kustomize/v1 plugin is deprecated. If you are using this plugin, it is recommended
-to migrate to the kustomize/v2 plugin which uses Kustomize v5 and provides support for
-Apple Silicon (M1).
-
-If you are using Golang projects scaffolded with `go/v3` which uses this version please, check 
-the [Migration guide](../migration/v3vsv4.md) to learn how to upgrade your projects.
-
-</aside>
-
 The kustomize plugin allows you to scaffold all kustomize manifests used to work with the language plugins such as `go/v2` and `go/v3`. 
 By using the kustomize plugin, you can create your own language plugins and ensure that you will have the same configurations 
 and features provided by it. 
@@ -71,9 +59,10 @@ all that is language specific and kustomize for its configuration, see:
 	// Bundle plugin which built the golang projects scaffold by Kubebuilder go/v3
 	// The follow code is creating a new plugin with its name and version via composition
 	// You can define that one plugin is composite by 1 or Many others plugins
-	gov3Bundle, _ := plugin.NewBundle(golang.DefaultNameQualifier, plugin.Version{Number: 3},
-		kustomizecommonv1.Plugin{}, // scaffold the config/ directory and all kustomize files
-		golangv3.Plugin{}, // Scaffold the Golang files and all that specific for the language e.g. go.mod, apis, controllers
+	gov3Bundle, _ := plugin.NewBundle(plugin.WithName(golang.DefaultNameQualifier), 
+		plugin.WithVersion(plugin.Version{Number: 3}),
+		plugin.WithPlugins(kustomizecommonv1.Plugin{}, golangv3.Plugin{}), // scaffold the config/ directory and all kustomize files
+		// Scaffold the Golang files and all that specific for the language e.g. go.mod, apis, controllers
 	)
 ```
 

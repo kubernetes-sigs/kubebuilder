@@ -27,6 +27,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // +kubebuilder:docs-gen:collapse=Go imports
@@ -54,7 +55,7 @@ This marker is responsible for generating a mutating webhook manifest.
 The meaning of each marker can be found [here](/reference/markers/webhook.md).
 */
 
-//+kubebuilder:webhook:path=/mutate-batch-tutorial-kubebuilder-io-v1-cronjob,mutating=true,failurePolicy=fail,sideEffects=None,groups=batch.tutorial.kubebuilder.io,resources=cronjobs,verbs=create;update,versions=v1,name=mcronjob.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/mutate-batch-tutorial-kubebuilder-io-v1-cronjob,mutating=true,failurePolicy=fail,groups=batch.tutorial.kubebuilder.io,resources=cronjobs,verbs=create;update,versions=v1,name=mcronjob.kb.io,sideEffects=None,admissionReviewVersions=v1
 
 /*
 We use the `webhook.Defaulter` interface to set defaults to our CRD.
@@ -116,25 +117,25 @@ validate anything on deletion.
 var _ webhook.Validator = &CronJob{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *CronJob) ValidateCreate() error {
+func (r *CronJob) ValidateCreate() (admission.Warnings, error) {
 	cronjoblog.Info("validate create", "name", r.Name)
 
-	return r.validateCronJob()
+	return nil, r.validateCronJob()
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *CronJob) ValidateUpdate(old runtime.Object) error {
+func (r *CronJob) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
 	cronjoblog.Info("validate update", "name", r.Name)
 
-	return r.validateCronJob()
+	return nil, r.validateCronJob()
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *CronJob) ValidateDelete() error {
+func (r *CronJob) ValidateDelete() (admission.Warnings, error) {
 	cronjoblog.Info("validate delete", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.
-	return nil
+	return nil, nil
 }
 
 /*

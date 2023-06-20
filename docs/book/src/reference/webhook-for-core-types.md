@@ -1,7 +1,7 @@
 # Admission Webhook for Core Types
 
 It is very easy to build admission webhooks for CRDs, which has been covered in
-the CronJob tutorial. Given that kubebuilder doesn't support webhook scaffolding
+the [CronJob tutorial][cronjob-tutorial]. Given that kubebuilder doesn't support webhook scaffolding
 for core types, you have to use the library from controller-runtime to handle it.
 There is an [example](https://github.com/kubernetes-sigs/controller-runtime/tree/master/examples/builtins)
 in controller-runtime.
@@ -71,3 +71,6 @@ Deploying it is just like deploying a webhook server for CRD. You need to
 2) deploy the server
 
 You can follow the [tutorial](/cronjob-tutorial/running.md).
+
+
+[cronjob-tutorial]: /cronjob-tutorial/cronjob-tutorial.md

@@ -30,13 +30,9 @@ function test_project {
 
 build_kb
 
-# Test project v3 [Deprecated]
-test_project project-v3
-
 # Project version v4-alpha
 test_project project-v4
 test_project project-v4-multigroup
 test_project project-v4-declarative-v1
-test_project project-v4-config
 test_project project-v4-with-deploy-image
 test_project project-v4-with-grafana

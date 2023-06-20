@@ -44,9 +44,10 @@ import (
 	// Bundle plugin which built the golang projects scaffold by Kubebuilder go/v3
 	// The follow code is creating a new plugin with its name and version via composition
 	// You can define that one plugin is composite by 1 or Many others plugins
-	gov3Bundle, _ := plugin.NewBundle(golang.DefaultNameQualifier, plugin.Version{Number: 3},
-        kustomizecommonv2.Plugin{}, // scaffold the config/ directory and all kustomize files
-		golangv4.Plugin{}, // Scaffold the Golang files and all that specific for the language e.g. go.mod, apis, controllers
+	gov3Bundle, _ := plugin.NewBundle(plugin.WithName(golang.DefaultNameQualifier), 
+		plugin.WithVersion(plugin.Version{Number: 3}),
+        plugin.WithPlugins(kustomizecommonv2.Plugin{}, golangv3.Plugin{}), // scaffold the config/ directory and all kustomize files
+		// Scaffold the Golang files and all that specific for the language e.g. go.mod, apis, controllers
 	)
 ```
 
@@ -113,4 +114,3 @@ The following scaffolds will be created or updated by this plugin:
 [kustomize-vars]: https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/vars/
 [release-notes-v5]: https://github.com/kubernetes-sigs/kustomize/releases/tag/kustomize%2Fv5.0.0
 [release-notes-v4]: https://github.com/kubernetes-sigs/kustomize/releases/tag/kustomize%2Fv4.0.0
-
