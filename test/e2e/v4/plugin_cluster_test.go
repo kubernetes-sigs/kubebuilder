@@ -107,6 +107,14 @@ func Run(kbc *utils.TestContext) {
 	err = kbc.Tidy()
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
+	By("run make manifests")
+	err = kbc.Make("manifests")
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+
+	By("run make generate")
+	err = kbc.Make("generate")
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+
 	By("building the controller image")
 	err = kbc.Make("docker-build", "IMG="+kbc.ImageName)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
