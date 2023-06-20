@@ -159,12 +159,16 @@ func Run(kbc *utils.TestContext) {
 	err = kbc.Tidy()
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
-	By("run make all")
-	err = kbc.Make("all")
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
-
 	By("run make manifests")
 	err = kbc.Make("manifests")
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+
+	By("run make generate")
+	err = kbc.Make("generate")
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+
+	By("run make all")
+	err = kbc.Make("all")
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
 	By("run make install")
