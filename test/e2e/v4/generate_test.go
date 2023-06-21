@@ -84,6 +84,12 @@ Count int `+"`"+`json:"count,omitempty"`+"`"+`
 
 	By("uncomment kustomization.yaml to enable webhook and ca injection")
 	ExpectWithOffset(1, pluginutil.UncommentCode(
+		filepath.Join(kbc.Dir, "config", "crd", "kustomization.yaml"),
+		fmt.Sprintf("#- patches/webhook_in_%s.yaml", kbc.Resources), "#")).To(Succeed())
+	ExpectWithOffset(1, pluginutil.UncommentCode(
+		filepath.Join(kbc.Dir, "config", "crd", "kustomization.yaml"),
+		fmt.Sprintf("#- patches/cainjection_in_%s.yaml", kbc.Resources), "#")).To(Succeed())
+	ExpectWithOffset(1, pluginutil.UncommentCode(
 		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 		"#- ../webhook", "#")).To(Succeed())
 	ExpectWithOffset(1, pluginutil.UncommentCode(
