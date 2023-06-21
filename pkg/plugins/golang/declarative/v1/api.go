@@ -20,8 +20,6 @@ import (
 	"errors"
 	"fmt"
 
-	goPluginV3 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3"
-
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
@@ -29,6 +27,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/declarative/v1/scaffolds"
 	goPluginV2 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2"
+	goPluginV3 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3"
 )
 
 const (
