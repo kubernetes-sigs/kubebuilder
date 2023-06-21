@@ -444,7 +444,7 @@ func (c *CLI) addExtraCommands() error {
 func (c CLI) printDeprecationWarnings() {
 	for _, p := range c.resolvedPlugins {
 		if p != nil && p.(plugin.Deprecated) != nil && len(p.(plugin.Deprecated).DeprecationWarning()) > 0 {
-			fmt.Printf(noticeColor, fmt.Sprintf(deprecationFmt, p.(plugin.Deprecated).DeprecationWarning()))
+			fmt.Fprintf(os.Stderr, noticeColor, fmt.Sprintf(deprecationFmt, p.(plugin.Deprecated).DeprecationWarning()))
 		}
 	}
 }
