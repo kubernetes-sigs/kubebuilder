@@ -58,7 +58,7 @@ These challenges underline the importance of assigning each controller the singl
 
 ## Why You Should Adopt Status Conditions
 
-We recommend you manage your solutions using Status Conditionals following the [K8s Api conventions][k8s-aoi-convetions] because:
+We recommend you manage your solutions using Status Conditionals following the [K8s Api conventions][k8s-api-convetions] because:
 
 - **Standardization**: Conditions provide a standardized way to represent the state of an Operator's custom resources, making it easier for users and tools to understand and interpret the resource's status.
 - **Readability**: Conditions can clearly express complex states by using a combination of multiple conditions, making it easier for users to understand the current state and progress of the resource.
