@@ -60,6 +60,7 @@ Dockerfile.cross
 
 # editor and IDE paraphernalia
 .idea
+.vscode
 *.swp
 *.swo
 *~
