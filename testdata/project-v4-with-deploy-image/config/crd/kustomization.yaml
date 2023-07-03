@@ -9,14 +9,14 @@ resources:
 patches:
 # [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix.
 # patches here are for enabling the conversion webhook for each CRD
-#- patches/webhook_in_memcacheds.yaml
-#- patches/webhook_in_busyboxes.yaml
+#- path: patches/webhook_in_memcacheds.yaml
+#- path: patches/webhook_in_busyboxes.yaml
 #+kubebuilder:scaffold:crdkustomizewebhookpatch
 
 # [CERTMANAGER] To enable cert-manager, uncomment all the sections with [CERTMANAGER] prefix.
 # patches here are for enabling the CA injection for each CRD
-#- patches/cainjection_in_memcacheds.yaml
-#- patches/cainjection_in_busyboxes.yaml
+#- path: patches/cainjection_in_memcacheds.yaml
+#- path: patches/cainjection_in_busyboxes.yaml
 #+kubebuilder:scaffold:crdkustomizecainjectionpatch
 
 # the following config is for teaching kustomize how to do kustomization for CRDs.
