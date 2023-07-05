@@ -214,6 +214,15 @@ func (t *TestContext) CreateWebhook(resourceOptions ...string) error {
 	return err
 }
 
+// Regenerate is for running `kubebuilder alpha generate`
+func (t *TestContext) Regenerate(resourceOptions ...string) error {
+	resourceOptions = append([]string{"alpha", "generate"}, resourceOptions...)
+	//nolint:gosec
+	cmd := exec.Command(t.BinaryName, resourceOptions...)
+	_, err := t.Run(cmd)
+	return err
+}
+
 // Make is for running `make` with various targets
 func (t *TestContext) Make(makeOptions ...string) error {
 	cmd := exec.Command("make", makeOptions...)
