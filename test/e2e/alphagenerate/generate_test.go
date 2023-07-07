@@ -93,4 +93,24 @@ func ReGenerateProject(kbc *utils.TestContext) {
 		filepath.Join(kbc.Dir, "testdir", "PROJECT"), version)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 	ExpectWithOffset(1, fileContainsExpr).To(BeTrue())
+
+	By("editing a project with multigroup=true")
+	err = kbc.Edit(
+		"--multigroup=true",
+	)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+
+	By("regenerating the project at another output directory")
+	err = kbc.Regenerate(
+		"--input-dir", kbc.Dir,
+		"--output-dir", filepath.Join(kbc.Dir, "testdir2"),
+	)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+
+	By("checking if the project file was generated with the expected multigroup flag")
+	var multiGroup = `multigroup: true`
+	fileContainsExpr, err = pluginutil.HasFileContentWith(
+		filepath.Join(kbc.Dir, "testdir2", "PROJECT"), multiGroup)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	ExpectWithOffset(1, fileContainsExpr).To(BeTrue())
 }

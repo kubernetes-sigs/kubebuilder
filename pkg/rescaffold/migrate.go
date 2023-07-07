@@ -36,20 +36,24 @@ const DefaultOutputDir = "output-dir"
 func (opts *MigrateOptions) Rescaffold() error {
 	config := yaml.New(machinery.Filesystem{FS: afero.NewOsFs()})
 	if err := config.LoadFrom(opts.InputDir); err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to load PROJECT file %v", err)
 	}
 	// create output directory
 	// nolint: gosec
 	if err := os.MkdirAll(opts.OutputDir, 0755); err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to create output directory %v", err)
 	}
 	// use the new directory to set up the new project
 	if err := os.Chdir(opts.OutputDir); err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to change the current working directory %v", err)
 	}
 	// init project with plugins
 	if err := kubebuilderInit(config); err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to run init subcommand %v", err)
+	}
+	// call edit subcommands to enable or disable multigroup layout
+	if err := kubebuilderEdit(config); err != nil {
+		log.Fatalf("Failed to run edit subcommand %v", err)
 	}
 	return nil
 }
@@ -105,6 +109,14 @@ func kubebuilderInit(store store.Store) error {
 	args = append(args, "init")
 	args = append(args, getInitArgs(store)...)
 	return util.RunCmd("kubebuilder init", "kubebuilder", args...)
+}
+
+func kubebuilderEdit(store store.Store) error {
+	if store.Config().IsMultiGroup() {
+		args := []string{"edit", "--multigroup"}
+		return util.RunCmd("kubebuilder edit", "kubebuilder", args...)
+	}
+	return nil
 }
 
 func getInitArgs(store store.Store) []string {
