@@ -465,6 +465,6 @@ honnef.co/go/tools v0.0.1-2020.1.4/go.mod h1:X/FiERA/W4tHapMX5mGpAtMSVEeEUOyHaw9
 rsc.io/binaryregexp v0.2.0/go.mod h1:qTv7/COck+e2FymRvadv62gMdZztPaShugOCi3I+8D8=
 rsc.io/quote/v3 v3.1.0/go.mod h1:yEA65RcK8LyAZtP9Kv3t0HmxON59tX3rD+tICJqUlj0=
 rsc.io/sampler v1.3.0/go.mod h1:T1hPZKmBbMNahiBKFy5HrXp6adAjACjK9JXDnKaTXpA=
-sigs.k8s.io/kubebuilder/v3 v3.11.0 h1:0AoVKnPEmHj1tQ8ya1wZ3495/H0M9XTNwgC3wVukGeI=
-sigs.k8s.io/kubebuilder/v3 v3.11.0/go.mod h1:4Re8w/tE0RsqR2IN5VnwCUgsbaIPk9DcYcZlRVALA2M=
+sigs.k8s.io/kubebuilder/v3 v3.11.1 h1:WbzjgZVIOYXJLRqal+j9YL4SjxjSvUuCas2j3NmzMq0=
+sigs.k8s.io/kubebuilder/v3 v3.11.1/go.mod h1:4Re8w/tE0RsqR2IN5VnwCUgsbaIPk9DcYcZlRVALA2M=
 sigs.k8s.io/yaml v1.3.0 h1:a2VclLzOGrwOHDiV8EfBGhvjHvP46CtW5j6POvhYGGo=
