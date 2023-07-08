@@ -59,6 +59,7 @@ bin
 
 # editor and IDE paraphernalia
 .idea
+.vscode
 *.swp
 *.swo
 *~

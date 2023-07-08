@@ -87,13 +87,6 @@ var _ = Describe("kubebuilder", func() {
 			GenerateV4(kbc)
 			Run(kbc)
 		})
-
-		It("should generate a runnable project"+
-			" with restricted pods and with --component-config field enabled", func() {
-			kbc.IsRestricted = true
-			GenerateV4ComponentConfig(kbc)
-			Run(kbc)
-		})
 	})
 })
 
@@ -112,6 +105,14 @@ func Run(kbc *utils.TestContext) {
 
 	By("updating the go.mod")
 	err = kbc.Tidy()
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+
+	By("run make manifests")
+	err = kbc.Make("manifests")
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+
+	By("run make generate")
+	err = kbc.Make("generate")
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
 	By("building the controller image")

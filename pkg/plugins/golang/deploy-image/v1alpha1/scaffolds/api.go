@@ -55,7 +55,7 @@ type apiScaffolder struct {
 	fs machinery.Filesystem
 }
 
-// NewAPIScaffolder returns a new Scaffolder for declarative
+// NewDeployImageScaffolder returns a new Scaffolder for declarative
 // nolint: lll
 func NewDeployImageScaffolder(config config.Config, res resource.Resource, image,
 	command, port, runAsUser string,

@@ -197,6 +197,7 @@ var _ = Describe("checkGoVersion", func() {
 		Entry("for go 1.18.1", "go1.18.1"),
 		Entry("for go.1.19", "go1.19"),
 		Entry("for go.1.19.1", "go1.19.1"),
+		Entry("for go.1.20", "go1.20"),
 	)
 
 	DescribeTable("should return an error for non-supported go versions",

@@ -20,7 +20,6 @@ package main
 import (
 	"flag"
 	"os"
-	"tutorial.kubebuilder.io/project/internal/controller"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -34,6 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	batchv1 "tutorial.kubebuilder.io/project/api/v1"
+	"tutorial.kubebuilder.io/project/internal/controller"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -47,6 +47,7 @@ objects in our controller.
 If we would be using any other CRD we would have to add their scheme the same way.
 Builtin types such as Job have their scheme added by `clientgoscheme`.
 */
+
 var (
 	scheme   = runtime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup")

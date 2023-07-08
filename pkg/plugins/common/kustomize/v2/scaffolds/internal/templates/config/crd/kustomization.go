@@ -68,9 +68,9 @@ func (f *Kustomization) GetMarkers() []machinery.Marker {
 const (
 	resourceCodeFragment = `- bases/%s_%s.yaml
 `
-	webhookPatchCodeFragment = `#- patches/webhook_in_%s.yaml
+	webhookPatchCodeFragment = `#- path: patches/webhook_in_%s.yaml
 `
-	caInjectionPatchCodeFragment = `#- patches/cainjection_in_%s.yaml
+	caInjectionPatchCodeFragment = `#- path: patches/cainjection_in_%s.yaml
 `
 )
 
@@ -110,7 +110,7 @@ var kustomizationTemplate = `# This kustomization.yaml is not intended to be run
 resources:
 %s
 
-patchesStrategicMerge:
+patches:
 # [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix.
 # patches here are for enabling the conversion webhook for each CRD
 %s

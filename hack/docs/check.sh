@@ -14,6 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+source "$(dirname "$0")/../../test/common.sh"
+
+build_kb
 
 check_directory="$(dirname "$0")/../../docs/book/src/"
 

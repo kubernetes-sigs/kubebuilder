@@ -45,8 +45,7 @@ const gitignoreTemplate = `
 *.dll
 *.so
 *.dylib
-bin
-testbin/*
+bin/*
 Dockerfile.cross
 
 # Test binary, build with ` + "`go test -c`" + `
@@ -61,6 +60,7 @@ Dockerfile.cross
 
 # editor and IDE paraphernalia
 .idea
+.vscode
 *.swp
 *.swo
 *~

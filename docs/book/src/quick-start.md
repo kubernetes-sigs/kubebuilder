@@ -9,7 +9,7 @@ This Quick Start guide will cover:
 
 ## Prerequisites
 
-- [go](https://golang.org/dl/) version v1.19.0+
+- [go](https://golang.org/dl/) version v1.20.0+
 - [docker](https://docs.docker.com/install/) version 17.03+.
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) version v1.11.3+.
 - Access to a Kubernetes v1.11.3+ cluster.
@@ -31,7 +31,7 @@ Install [kubebuilder](https://sigs.k8s.io/kubebuilder):
 
 ```bash
 # download kubebuilder and install locally.
-curl -L -o kubebuilder https://go.kubebuilder.io/dl/latest/$(go env GOOS)/$(go env GOARCH)
+curl -L -o kubebuilder "https://go.kubebuilder.io/dl/latest/$(go env GOOS)/$(go env GOARCH)"
 chmod +x kubebuilder && mv kubebuilder /usr/local/bin/
 ```
 
@@ -82,7 +82,7 @@ kubebuilder create api --group webapp --version v1 --kind Guestbook
 <h1>Press Options</h1>
 
 If you press `y` for Create Resource [y/n] and for Create Controller [y/n] then this will create the files `api/v1/guestbook_types.go` where the API is defined
-and the `controllers/guestbook_controller.go` where the reconciliation business logic is implemented for this Kind(CRD).
+and the `internal/controllers/guestbook_controller.go` where the reconciliation business logic is implemented for this Kind(CRD).
 
 </aside>
 
@@ -96,7 +96,7 @@ If you are editing the API definitions, generate the manifests such as Custom Re
 make manifests
 ```
 
-<details><summary>Click here to see an example. `(api/v1/guestbook_types.go)` </summary>
+<details><summary>Click here to see an example. <tt>(api/v1/guestbook_types.go)</tt></summary>
 <p>
 
 ```go

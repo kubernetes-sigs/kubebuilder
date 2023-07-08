@@ -109,6 +109,7 @@ var _ = Describe("{{ .Resource.Kind }} controller", func() {
 		}
 
 		typeNamespaceName := types.NamespacedName{Name: {{ .Resource.Kind }}Name, Namespace: {{ .Resource.Kind }}Name}
+		{{ lower .Resource.Kind }} := &{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{}
 
 		BeforeEach(func() {
 			By("Creating the Namespace to perform the tests")
@@ -118,22 +119,9 @@ var _ = Describe("{{ .Resource.Kind }} controller", func() {
 			By("Setting the Image ENV VAR which stores the Operand image")
 			err= os.Setenv("{{ upper .Resource.Kind }}_IMAGE", "example.com/image:test")
 			Expect(err).To(Not(HaveOccurred()))
-		})
 
-		AfterEach(func() {
-			// TODO(user): Attention if you improve this code by adding other context test you MUST
-			// be aware of the current delete namespace limitations. More info: https://book.kubebuilder.io/reference/envtest.html#testing-considerations
-			By("Deleting the Namespace to perform the tests")
-			_ = k8sClient.Delete(ctx, namespace);
-	
-			By("Removing the Image ENV VAR which stores the Operand image")
-			_ = os.Unsetenv("{{ upper .Resource.Kind }}_IMAGE")
-		})
-
-		It("should successfully reconcile a custom resource for {{ .Resource.Kind }}", func() {
-			By("Creating the custom resource for the Kind {{ .Resource.Kind }}")
-			{{ lower .Resource.Kind }} := &{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{}
-			err := k8sClient.Get(ctx, typeNamespaceName, {{ lower .Resource.Kind }})
+			By("creating the custom resource for the Kind {{ .Resource.Kind }}")
+			err = k8sClient.Get(ctx, typeNamespaceName, {{ lower .Resource.Kind }})
 			if err != nil && errors.IsNotFound(err) {
 				// Let's mock our custom resource at the same way that we would
 				// apply on the cluster the manifest under config/samples
@@ -152,8 +140,30 @@ var _ = Describe("{{ .Resource.Kind }} controller", func() {
 				
 				err = k8sClient.Create(ctx, {{ lower .Resource.Kind }})
 				Expect(err).To(Not(HaveOccurred()))
-			} 
+			}
+		})
 
+		AfterEach(func() {
+			By("removing the custom resource for the Kind {{ .Resource.Kind }}")
+			found := &{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{}
+			err := k8sClient.Get(ctx, typeNamespaceName, found)
+			Expect(err).To(Not(HaveOccurred()))
+
+			Eventually(func() error {
+				return k8sClient.Delete(context.TODO(), found)
+			}, 2*time.Minute, time.Second).Should(Succeed())
+
+			// TODO(user): Attention if you improve this code by adding other context test you MUST
+			// be aware of the current delete namespace limitations. 
+			// More info: https://book.kubebuilder.io/reference/envtest.html#testing-considerations
+			By("Deleting the Namespace to perform the tests")
+			_ = k8sClient.Delete(ctx, namespace);
+	
+			By("Removing the Image ENV VAR which stores the Operand image")
+			_ = os.Unsetenv("{{ upper .Resource.Kind }}_IMAGE")
+		})
+
+		It("should successfully reconcile a custom resource for {{ .Resource.Kind }}", func() {
 			By("Checking if the custom resource was successfully created")
 			Eventually(func() error {
 				found := &{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{}
@@ -166,7 +176,7 @@ var _ = Describe("{{ .Resource.Kind }} controller", func() {
 				Scheme: k8sClient.Scheme(),
 			}
 
-			_, err = {{ lower .Resource.Kind }}Reconciler.Reconcile(ctx, reconcile.Request{
+			_, err := {{ lower .Resource.Kind }}Reconciler.Reconcile(ctx, reconcile.Request{
 				NamespacedName: typeNamespaceName,
 			})
 			Expect(err).To(Not(HaveOccurred()))

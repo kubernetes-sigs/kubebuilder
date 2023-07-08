@@ -1,4 +1,4 @@
-# Kustomize (kustomize/v1)
+# [Deprecated] Kustomize (kustomize/v1)
 
 <aside class="note warning">
 <h1>Deprecated</h1>
@@ -59,9 +59,10 @@ all that is language specific and kustomize for its configuration, see:
 	// Bundle plugin which built the golang projects scaffold by Kubebuilder go/v3
 	// The follow code is creating a new plugin with its name and version via composition
 	// You can define that one plugin is composite by 1 or Many others plugins
-	gov3Bundle, _ := plugin.NewBundle(golang.DefaultNameQualifier, plugin.Version{Number: 3},
-		kustomizecommonv1.Plugin{}, // scaffold the config/ directory and all kustomize files
-		golangv3.Plugin{}, // Scaffold the Golang files and all that specific for the language e.g. go.mod, apis, controllers
+	gov3Bundle, _ := plugin.NewBundle(plugin.WithName(golang.DefaultNameQualifier), 
+		plugin.WithVersion(plugin.Version{Number: 3}),
+		plugin.WithPlugins(kustomizecommonv1.Plugin{}, golangv3.Plugin{}), // scaffold the config/ directory and all kustomize files
+		// Scaffold the Golang files and all that specific for the language e.g. go.mod, apis, controllers
 	)
 ```
 

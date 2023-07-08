@@ -41,5 +41,4 @@ func (f *DockerIgnore) SetTemplateDefaults() error {
 const dockerignorefileTemplate = `# More info: https://docs.docker.com/engine/reference/builder/#dockerignore-file
 # Ignore build and test binaries.
 bin/
-testbin/
 `

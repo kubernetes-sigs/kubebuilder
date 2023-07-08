@@ -181,13 +181,29 @@ func isHostSupported(host string) bool {
 	return false
 }
 
-// getPluginsRoot detects the host system and gets the plugins root based on the host.
+// getPluginsRoot gets the plugin root path.
 func getPluginsRoot(host string) (pluginsRoot string, err error) {
 	if !isHostSupported(host) {
 		// freebsd, openbsd, windows...
 		return "", fmt.Errorf("host not supported: %v", host)
 	}
 
+	// if user provides specific path, return
+	if pluginsPath := os.Getenv("EXTERNAL_PLUGINS_PATH"); pluginsPath != "" {
+		// verify if the path actually exists
+		if _, err := os.Stat(pluginsPath); err != nil {
+			if os.IsNotExist(err) {
+				// the path does not exist
+				return "", fmt.Errorf("the specified path %s does not exist", pluginsPath)
+			}
+			// some other error
+			return "", fmt.Errorf("error checking the path: %v", err)
+		}
+		// the path exists
+		return pluginsPath, nil
+	}
+
+	// if no specific path, detects the host system and gets the plugins root based on the host.
 	pluginsRelativePath := filepath.Join("kubebuilder", "plugins")
 	if xdgHome := os.Getenv("XDG_CONFIG_HOME"); xdgHome != "" {
 		return filepath.Join(xdgHome, pluginsRelativePath), nil
@@ -206,9 +222,8 @@ func getPluginsRoot(host string) (pluginsRoot string, err error) {
 	if err != nil {
 		return "", fmt.Errorf("error retrieving home dir: %v", err)
 	}
-	pluginsRoot = filepath.Join(userHomeDir, pluginsRoot)
 
-	return
+	return filepath.Join(userHomeDir, pluginsRoot), nil
 }
 
 // DiscoverExternalPlugins discovers the external plugins in the plugins root directory

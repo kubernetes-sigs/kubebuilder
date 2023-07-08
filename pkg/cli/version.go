@@ -23,7 +23,7 @@ import (
 )
 
 func (c CLI) newVersionCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:     "version",
 		Short:   fmt.Sprintf("Print the %s version", c.commandName),
 		Long:    fmt.Sprintf("Print the %s version", c.commandName),
@@ -33,4 +33,5 @@ func (c CLI) newVersionCmd() *cobra.Command {
 			return nil
 		},
 	}
+	return cmd
 }
