@@ -81,3 +81,10 @@ linters:
     - unconvert
     - unparam
     - unused
+    - varcheck
+    - golint
+    - maligned
+    - scopelint
+    - deadcode
+    - structcheck
+    - interfacer
