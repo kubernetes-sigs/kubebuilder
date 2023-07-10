@@ -76,7 +76,6 @@ type MyKindReconciler struct {
 	Recorder record.EventRecorder
 }
 ```
-
 ### Passing the EventRecorder to the Controller
 
 Events are published from a Controller using an [EventRecorder]`type CorrelatorOptions struct`,

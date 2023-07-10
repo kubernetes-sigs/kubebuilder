@@ -6,8 +6,7 @@ build and configure your workloads. This guide aims to help you properly configu
 ## Overview
 
 To provide support on specific or multiple platforms, you must ensure that all images used in workloads are built to 
-support the desired platforms. Note that may not be the same as the platform where you develop your solutions 
-and use KubeBuilder, but instead the platform(s) where your solution should run and be distributed. 
+support the desired platforms. Note that they may not be the same as the platform where you develop your solutions and use KubeBuilder, but instead the platform(s) where your solution should run and be distributed. 
 It is recommended to build solutions that work on multiple platforms so that your project works
 on any Kubernetes cluster regardless of the underlying operating system and architecture.
 
