@@ -100,6 +100,17 @@ func ReGenerateProject(kbc *utils.TestContext) {
 	)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
+	By("create APIs with resource and controller")
+	err = kbc.CreateAPI(
+		"--group", "crew",
+		"--version", "v1",
+		"--kind", "Captain",
+		"--namespaced",
+		"--resource",
+		"--controller",
+	)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+
 	By("regenerating the project at another output directory")
 	err = kbc.Regenerate(
 		"--input-dir", kbc.Dir,
@@ -111,6 +122,41 @@ func ReGenerateProject(kbc *utils.TestContext) {
 	var multiGroup = `multigroup: true`
 	fileContainsExpr, err = pluginutil.HasFileContentWith(
 		filepath.Join(kbc.Dir, "testdir2", "PROJECT"), multiGroup)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	ExpectWithOffset(1, fileContainsExpr).To(BeTrue())
+
+	By("checking if the project file was generated with the expected group")
+	var APIGroup = "group: crew"
+	fileContainsExpr, err = pluginutil.HasFileContentWith(
+		filepath.Join(kbc.Dir, "testdir2", "PROJECT"), APIGroup)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	ExpectWithOffset(1, fileContainsExpr).To(BeTrue())
+
+	By("checking if the project file was generated with the expected kind")
+	var APIKind = "kind: Captain"
+	fileContainsExpr, err = pluginutil.HasFileContentWith(
+		filepath.Join(kbc.Dir, "testdir2", "PROJECT"), APIKind)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	ExpectWithOffset(1, fileContainsExpr).To(BeTrue())
+
+	By("checking if the project file was generated with the expected version")
+	var APIVersion = "version: v1"
+	fileContainsExpr, err = pluginutil.HasFileContentWith(
+		filepath.Join(kbc.Dir, "testdir2", "PROJECT"), APIVersion)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	ExpectWithOffset(1, fileContainsExpr).To(BeTrue())
+
+	By("checking if the project file was generated with the expected namespaced")
+	var namespaced = "namespaced: true"
+	fileContainsExpr, err = pluginutil.HasFileContentWith(
+		filepath.Join(kbc.Dir, "testdir2", "PROJECT"), namespaced)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	ExpectWithOffset(1, fileContainsExpr).To(BeTrue())
+
+	By("checking if the project file was generated with the expected controller")
+	var controller = "controller: true"
+	fileContainsExpr, err = pluginutil.HasFileContentWith(
+		filepath.Join(kbc.Dir, "testdir2", "PROJECT"), controller)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 	ExpectWithOffset(1, fileContainsExpr).To(BeTrue())
 }
