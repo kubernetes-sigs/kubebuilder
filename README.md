@@ -132,9 +132,8 @@ Apple Silicon (`darwin/arm64`) support begins with the `go/v4` plugin.
 ## Community Meetings
  
 The following meetings happen biweekly:
- 
-- Kubebuilder, Controller Runtime, and Controller Tools
-- Kubebuilder Triage
+  
+- Kubebuilder Meeting
 
 You are more than welcome to attend. For further info join to [kubebuilder@googlegroups.com](https://groups.google.com/g/kubebuilder).
 
