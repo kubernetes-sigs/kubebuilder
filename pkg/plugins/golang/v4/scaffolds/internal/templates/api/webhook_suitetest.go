@@ -36,6 +36,10 @@ type WebhookSuite struct { //nolint:maligned
 	// todo: currently is not possible to know if an API was or not scaffolded. We can fix it when #1826 be addressed
 	WireResource bool
 
+	// K8SVersion define the k8s version used to do the scaffold
+	// so that is possible retrieve the binaries
+	K8SVersion string
+
 	// BaseDirectoryRelativePath define the Path for the base directory when it is multigroup
 	BaseDirectoryRelativePath string
 }
@@ -133,16 +137,20 @@ package {{ .Resource.Version }}
 
 import (
 	"context"
+	"crypto/tls"
+	"fmt"
+	"net"
 	"path/filepath"
 	"testing"
-	"fmt"
+	"time"
+	"runtime"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	%s
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
-	"k8s.io/apimachinery/pkg/runtime"
+	apimachineryruntime "k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
@@ -174,6 +182,15 @@ var _ = BeforeSuite(func() {
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths:     []string{filepath.Join({{ .BaseDirectoryRelativePath }}, "config", "crd", "bases")},
 		ErrorIfCRDPathMissing: {{ .WireResource }},
+
+		// The BinaryAssetsDirectory is only required if you want to run the tests directly
+		// without call the makefile target test. If not informed it will look for the
+		// default path defined in controller-runtime which is /usr/local/kubebuilder/.
+		// Note that you must have the required binaries setup under the bin directory to perform
+		// the tests directly. When we run make test it will be setup and used automatically.
+		BinaryAssetsDirectory: filepath.Join({{ .BaseDirectoryRelativePath }}, "bin", "k8s",
+			fmt.Sprintf("{{ .K8SVersion }}-%%s-%%s", runtime.GOOS, runtime.GOARCH)),
+
 		WebhookInstallOptions: envtest.WebhookInstallOptions{
 			Paths: []string{filepath.Join({{ .BaseDirectoryRelativePath }}, "config", "webhook")},
 		},
@@ -185,7 +202,7 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
-	scheme := runtime.NewScheme()
+	scheme := apimachineryruntime.NewScheme()
 	err = AddToScheme(scheme)
 	Expect(err).NotTo(HaveOccurred())
 

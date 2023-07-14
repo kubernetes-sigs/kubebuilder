@@ -477,7 +477,6 @@ func updateSuiteTest(sp *Sample) {
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "internal/controller/suite_test.go"),
 		`
-	"path/filepath"
 	"testing"
 `, `
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -502,11 +501,7 @@ var testEnv *envtest.Environment
 
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "internal/controller/suite_test.go"),
-		`
-	By("bootstrapping test environment")
-	testEnv = &envtest.Environment{
-		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "config", "crd", "bases")},
-		ErrorIfCRDPathMissing: true,
+		`, runtime.GOOS, runtime.GOARCH)),
 	}
 `, `
 	/*
