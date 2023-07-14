@@ -134,6 +134,9 @@ func kubebuilderCreate(store store.Store) error {
 		if err = createAPI(r); err != nil {
 			return err
 		}
+		if err = createWebhook(r); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -153,18 +156,12 @@ func getInitArgs(store store.Store) []string {
 	return args
 }
 
-func createAPI(resource resource.Resource) error {
-	var args []string
-	args = append(args, "create")
-	args = append(args, "api")
-	args = append(args, getAPIGVKFlags(resource)...)
-	args = append(args, getAPIResourceFlags(resource)...)
-	return util.RunCmd("kubebuilder create api", "kubebuilder", args...)
-}
-
-func getAPIGVKFlags(resource resource.Resource) []string {
+func getGVKFlags(resource resource.Resource) []string {
 	var args []string
 
+	if len(resource.Plural) > 0 {
+		args = append(args, "--plural", resource.Plural)
+	}
 	if len(resource.Group) > 0 {
 		args = append(args, "--group", resource.Group)
 	}
@@ -175,6 +172,15 @@ func getAPIGVKFlags(resource resource.Resource) []string {
 		args = append(args, "--kind", resource.Kind)
 	}
 	return args
+}
+
+func createAPI(resource resource.Resource) error {
+	var args []string
+	args = append(args, "create")
+	args = append(args, "api")
+	args = append(args, getGVKFlags(resource)...)
+	args = append(args, getAPIResourceFlags(resource)...)
+	return util.RunCmd("kubebuilder create api", "kubebuilder", args...)
 }
 
 func getAPIResourceFlags(resource resource.Resource) []string {
@@ -193,6 +199,32 @@ func getAPIResourceFlags(resource resource.Resource) []string {
 		args = append(args, "--controller")
 	} else {
 		args = append(args, "--controller=false")
+	}
+	return args
+}
+
+func createWebhook(resource resource.Resource) error {
+	if resource.Webhooks == nil || resource.Webhooks.IsEmpty() {
+		return nil
+	}
+	var args []string
+	args = append(args, "create")
+	args = append(args, "webhook")
+	args = append(args, getGVKFlags(resource)...)
+	args = append(args, getWebhookResourceFlags(resource)...)
+	return util.RunCmd("kubebuilder create webhook", "kubebuilder", args...)
+}
+
+func getWebhookResourceFlags(resource resource.Resource) []string {
+	var args []string
+	if resource.HasConversionWebhook() {
+		args = append(args, "--conversion")
+	}
+	if resource.HasValidationWebhook() {
+		args = append(args, "--programmatic-validation")
+	}
+	if resource.HasDefaultingWebhook() {
+		args = append(args, "--defaulting")
 	}
 	return args
 }

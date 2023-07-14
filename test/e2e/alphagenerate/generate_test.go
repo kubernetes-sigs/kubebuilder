@@ -111,6 +111,16 @@ func ReGenerateProject(kbc *utils.TestContext) {
 	)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
+	By("create Webhooks with conversion and validating webhook")
+	err = kbc.CreateWebhook(
+		"--group", "crew",
+		"--version", "v1",
+		"--kind", "Captain",
+		"--programmatic-validation",
+		"--conversion",
+	)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+
 	By("regenerating the project at another output directory")
 	err = kbc.Regenerate(
 		"--input-dir", kbc.Dir,
@@ -157,6 +167,15 @@ func ReGenerateProject(kbc *utils.TestContext) {
 	var controller = "controller: true"
 	fileContainsExpr, err = pluginutil.HasFileContentWith(
 		filepath.Join(kbc.Dir, "testdir2", "PROJECT"), controller)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	ExpectWithOffset(1, fileContainsExpr).To(BeTrue())
+
+	By("checking if the project file was generated with the expected webhook")
+	var webhook = `webhooks:
+    conversion: true
+    validation: true`
+	fileContainsExpr, err = pluginutil.HasFileContentWith(
+		filepath.Join(kbc.Dir, "testdir2", "PROJECT"), webhook)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 	ExpectWithOffset(1, fileContainsExpr).To(BeTrue())
 }
