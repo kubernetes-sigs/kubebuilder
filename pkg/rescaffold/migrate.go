@@ -14,12 +14,17 @@ limitations under the License.
 package rescaffold
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
 	"os/exec"
+	"strings"
+
+	"golang.org/x/exp/slices"
 
 	"github.com/spf13/afero"
+	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/config/store"
 	"sigs.k8s.io/kubebuilder/v3/pkg/config/store/yaml"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
@@ -33,6 +38,7 @@ type MigrateOptions struct {
 }
 
 const DefaultOutputDir = "output-dir"
+const grafanaPluginKey = "grafana.kubebuilder.io/v1-alpha"
 
 func (opts *MigrateOptions) Rescaffold() error {
 	config := yaml.New(machinery.Filesystem{FS: afero.NewOsFs()})
@@ -56,9 +62,13 @@ func (opts *MigrateOptions) Rescaffold() error {
 	if err := kubebuilderEdit(config); err != nil {
 		log.Fatalf("Failed to run edit subcommand %v", err)
 	}
-	// create APIs
+	// create APIs and Webhooks
 	if err := kubebuilderCreate(config); err != nil {
 		log.Fatalf("Failed to run create API subcommand %v", err)
+	}
+	// plugin specific migration
+	if err := kubebuilderGrafanaPlugin(config); err != nil {
+		log.Fatalf("Failed to run plugin migration %v", err)
 	}
 	return nil
 }
@@ -142,12 +152,31 @@ func kubebuilderCreate(store store.Store) error {
 	return nil
 }
 
+func kubebuilderGrafanaPlugin(store store.Store) error {
+	// If the plugin is already in the plugin chain, we don't need call 'edit' method
+	// Because the plugin is already migrated in the previous step
+	plugins := store.Config().GetPluginChain()
+	if slices.Contains(plugins, grafanaPluginKey) {
+		return nil
+	}
+	// If the plugin is not in the plugin chain, we need to call 'edit' method to add the plugin
+	var grafanaPlugin struct{}
+	err := store.Config().DecodePluginConfig(grafanaPluginKey, grafanaPlugin)
+	// If the grafana plugin is not found, we don't need to migrate
+	if errors.As(err, &config.PluginKeyNotFoundError{}) {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("Failed to Decode Grafana Plugin: %s. %v", grafanaPluginKey, err)
+	}
+	return migrateGrafanaPlugin()
+}
+
 func getInitArgs(store store.Store) []string {
 	var args []string
 	plugins := store.Config().GetPluginChain()
 	if len(plugins) > 0 {
-		args = append(args, "--plugins")
-		args = append(args, plugins...)
+		args = append(args, "--plugins", strings.Join(plugins, ","))
 	}
 	domain := store.Config().GetDomain()
 	if domain != "" {
@@ -227,4 +256,9 @@ func getWebhookResourceFlags(resource resource.Resource) []string {
 		args = append(args, "--defaulting")
 	}
 	return args
+}
+
+func migrateGrafanaPlugin() error {
+	args := []string{"edit", "--plugins", grafanaPluginKey}
+	return util.RunCmd("kubebuilder edit", "kubebuilder", args...)
 }

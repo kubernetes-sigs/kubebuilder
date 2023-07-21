@@ -121,6 +121,12 @@ func ReGenerateProject(kbc *utils.TestContext) {
 	)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
+	By("Enable grafana plugin to an existing project")
+	err = kbc.Edit(
+		"--plugins", "grafana.kubebuilder.io/v1-alpha",
+	)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+
 	By("regenerating the project at another output directory")
 	err = kbc.Regenerate(
 		"--input-dir", kbc.Dir,
@@ -176,6 +182,13 @@ func ReGenerateProject(kbc *utils.TestContext) {
     validation: true`
 	fileContainsExpr, err = pluginutil.HasFileContentWith(
 		filepath.Join(kbc.Dir, "testdir2", "PROJECT"), webhook)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	ExpectWithOffset(1, fileContainsExpr).To(BeTrue())
+
+	By("checking if the project file was generated with the expected controller")
+	var grafanaPlugin = "grafana.kubebuilder.io/v1-alpha"
+	fileContainsExpr, err = pluginutil.HasFileContentWith(
+		filepath.Join(kbc.Dir, "testdir2", "PROJECT"), grafanaPlugin)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 	ExpectWithOffset(1, fileContainsExpr).To(BeTrue())
 }
