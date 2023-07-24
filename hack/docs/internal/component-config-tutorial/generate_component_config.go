@@ -56,8 +56,10 @@ func newSampleContext(binaryPath string, samplePath string, env ...string) utils
 
 // Prepare the Context for the sample project
 func (sp *Sample) Prepare() {
-	log.Infof("destroying directory for sample project")
-	sp.ctx.Destroy()
+	log.Infof("destroying directory to create component config tutorial doc sample")
+	if err := os.RemoveAll(sp.ctx.Dir); err != nil {
+		log.Warning("unable to clean up the directory to generate reate component config tutorial doc sample ", err)
+	}
 
 	log.Infof("refreshing tools and creating directory...")
 	err := sp.ctx.Prepare()

@@ -56,8 +56,10 @@ func newSampleContext(binaryPath string, samplePath string, env ...string) utils
 
 // Prepare the Context for the sample project
 func (sp *Sample) Prepare() {
-	log.Infof("destroying directory for sample project")
-	sp.ctx.Destroy()
+	log.Infof("destroying directory to create CronjobTutorial")
+	if err := os.RemoveAll(sp.ctx.Dir); err != nil {
+		log.Warning("unable to clean up the directory to create CronjobTutoria", err)
+	}
 
 	log.Infof("refreshing tools and creating directory...")
 	err := sp.ctx.Prepare()
@@ -466,13 +468,13 @@ func updateSuiteTest(sp *Sample) {
 		filepath.Join(sp.ctx.Dir, "internal/controller/suite_test.go"),
 		`limitations under the License.
 */`, SuiteTestIntro)
-	CheckError("fixing suite_test.go", err)
+	CheckError("updating suite_test.go to add license intro", err)
 
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "internal/controller/suite_test.go"),
 		`import (`, `
 	"context"`)
-	CheckError("fixing suite_test.go", err)
+	CheckError("updating suite_test.go to add context", err)
 
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "internal/controller/suite_test.go"),
@@ -481,7 +483,7 @@ func updateSuiteTest(sp *Sample) {
 `, `
 	ctrl "sigs.k8s.io/controller-runtime"
 `)
-	CheckError("fixing suite_test.go", err)
+	CheckError("updating suite_test.go to add ctrl import", err)
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, "internal/controller/suite_test.go"),
@@ -490,14 +492,14 @@ var cfg *rest.Config
 var k8sClient client.Client
 var testEnv *envtest.Environment
 `, SuiteTestEnv)
-	CheckError("fixing suite_test.go", err)
+	CheckError("updating suite_test.go to add more variables", err)
 
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "internal/controller/suite_test.go"),
 		`
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 `, SuiteTestReadCRD)
-	CheckError("fixing suite_test.go", err)
+	CheckError("updating suite_test.go to add text about CRD", err)
 
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "internal/controller/suite_test.go"),
@@ -507,7 +509,7 @@ var testEnv *envtest.Environment
 	/*
 		Then, we start the envtest cluster.
 	*/`)
-	CheckError("fixing suite_test.go", err)
+	CheckError("updating suite_test.go to add text to show where envtest cluster start", err)
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, "internal/controller/suite_test.go"),
