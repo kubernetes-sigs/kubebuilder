@@ -21,8 +21,6 @@ import (
 	"os/exec"
 	"strings"
 
-	"golang.org/x/exp/slices"
-
 	"github.com/spf13/afero"
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/config/store"
@@ -42,7 +40,7 @@ const grafanaPluginKey = "grafana.kubebuilder.io/v1-alpha"
 
 func (opts *MigrateOptions) Rescaffold() error {
 	config := yaml.New(machinery.Filesystem{FS: afero.NewOsFs()})
-	if err := config.LoadFrom(opts.InputDir); err != nil {
+	if err := config.LoadFrom(fmt.Sprintf("%s/%s", opts.InputDir, yaml.DefaultPath)); err != nil {
 		log.Fatalf("Failed to load PROJECT file %v", err)
 	}
 	// create output directory
@@ -67,7 +65,7 @@ func (opts *MigrateOptions) Rescaffold() error {
 		log.Fatalf("Failed to run create API subcommand %v", err)
 	}
 	// plugin specific migration
-	if err := kubebuilderGrafanaPlugin(config); err != nil {
+	if err := migrateGrafanaPlugin(config, opts.InputDir, opts.OutputDir); err != nil {
 		log.Fatalf("Failed to run plugin migration %v", err)
 	}
 	return nil
@@ -102,7 +100,7 @@ func getInputPath(currentWorkingDirectory string, inputPath string) (string, err
 	if _, err := os.Stat(projectPath); os.IsNotExist(err) {
 		return "", fmt.Errorf("PROJECT path: %s does not exist. %v", projectPath, err)
 	}
-	return projectPath, nil
+	return inputPath, nil
 }
 
 func getOutputPath(currentWorkingDirectory, outputPath string) (string, error) {
@@ -152,24 +150,26 @@ func kubebuilderCreate(store store.Store) error {
 	return nil
 }
 
-func kubebuilderGrafanaPlugin(store store.Store) error {
-	// If the plugin is already in the plugin chain, we don't need call 'edit' method
-	// Because the plugin is already migrated in the previous step
-	plugins := store.Config().GetPluginChain()
-	if slices.Contains(plugins, grafanaPluginKey) {
-		return nil
-	}
-	// If the plugin is not in the plugin chain, we need to call 'edit' method to add the plugin
+func migrateGrafanaPlugin(store store.Store, src, des string) error {
 	var grafanaPlugin struct{}
 	err := store.Config().DecodePluginConfig(grafanaPluginKey, grafanaPlugin)
 	// If the grafana plugin is not found, we don't need to migrate
-	if errors.As(err, &config.PluginKeyNotFoundError{}) {
-		return nil
-	}
 	if err != nil {
-		return fmt.Errorf("Failed to Decode Grafana Plugin: %s. %v", grafanaPluginKey, err)
+		if errors.As(err, &config.PluginKeyNotFoundError{}) {
+			log.Printf("Grafana plugin is not found, skip the migration")
+			return nil
+		}
+		return fmt.Errorf("failed to decode grafana plugin config %v", err)
 	}
-	return migrateGrafanaPlugin()
+	err = kubebuilderGrafanaEdit()
+	if err != nil {
+		return err
+	}
+	err = grafanaConfigMigrate(src, des)
+	if err != nil {
+		return err
+	}
+	return kubebuilderGrafanaEdit()
 }
 
 func getInitArgs(store store.Store) []string {
@@ -258,7 +258,30 @@ func getWebhookResourceFlags(resource resource.Resource) []string {
 	return args
 }
 
-func migrateGrafanaPlugin() error {
+func copyFile(src, des string) error {
+	// nolint:gosec
+	bytesRead, err := os.ReadFile(src)
+	if err != nil {
+		return fmt.Errorf("Source file path: %s does not exist. %v", src, err)
+	}
+	//Copy all the contents to the desitination file
+	// nolint:gosec
+	return os.WriteFile(des, bytesRead, 0755)
+}
+
+func grafanaConfigMigrate(src, des string) error {
+	grafanaConfig := fmt.Sprintf("%s/%s", src, "grafana/custom-metrics/config.yaml")
+	if _, err := os.Stat(grafanaConfig); os.IsNotExist(err) {
+		return fmt.Errorf("Grafana Config path: %s does not exist. %v", grafanaConfig, err)
+	}
+	return copyFile(grafanaConfig, fmt.Sprintf("%s/%s", des, "grafana/custom-metrics/config.yaml"))
+}
+
+func kubebuilderGrafanaEdit() error {
 	args := []string{"edit", "--plugins", grafanaPluginKey}
-	return util.RunCmd("kubebuilder edit", "kubebuilder", args...)
+	err := util.RunCmd("kubebuilder edit", "kubebuilder", args...)
+	if err != nil {
+		return fmt.Errorf("Failed to run edit subcommand for Grafana Plugin %v", err)
+	}
+	return nil
 }
