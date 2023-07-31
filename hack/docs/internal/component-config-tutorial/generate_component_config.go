@@ -56,7 +56,7 @@ func newSampleContext(binaryPath string, samplePath string, env ...string) utils
 
 // Prepare the Context for the sample project
 func (sp *Sample) Prepare() {
-	log.Infof("destroying directory for sample project")
+	log.Infof("destroying directory for component_config sample project")
 	sp.ctx.Destroy()
 
 	log.Infof("refreshing tools and creating directory...")
@@ -66,7 +66,7 @@ func (sp *Sample) Prepare() {
 }
 
 func (sp *Sample) GenerateSampleProject() {
-	log.Infof("Initializing the project")
+	log.Infof("Initializing the component config project")
 	err := sp.ctx.Init(
 		"--domain", "tutorial.kubebuilder.io",
 		"--repo", "tutorial.kubebuilder.io/project",
@@ -75,7 +75,7 @@ func (sp *Sample) GenerateSampleProject() {
 		"--plugins=go/v4",
 		"--component-config",
 	)
-	CheckError("Initializing the project", err)
+	CheckError("Initializing the component config project", err)
 
 	log.Infof("Adding a new config type")
 	err = sp.ctx.CreateAPI(
