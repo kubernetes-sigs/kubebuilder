@@ -241,9 +241,12 @@ func (t *TestContext) Tidy() error {
 // Destroy is for cleaning up the docker images for testing
 func (t *TestContext) Destroy() {
 	//nolint:gosec
-	cmd := exec.Command("docker", "rmi", "-f", t.ImageName)
-	if _, err := t.Run(cmd); err != nil {
-		warnError(err)
+	// if image name is not present or not provided skip execution of docker command
+	if t.ImageName != "" {
+		cmd := exec.Command("docker", "rmi", "-f", t.ImageName)
+		if _, err := t.Run(cmd); err != nil {
+			warnError(err)
+		}
 	}
 	if err := os.RemoveAll(t.Dir); err != nil {
 		warnError(err)
