@@ -18,6 +18,8 @@ package alphagenerate
 
 import (
 	"fmt"
+	"io"
+	"os"
 	"path/filepath"
 
 	pluginutil "sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
@@ -127,6 +129,16 @@ func ReGenerateProject(kbc *utils.TestContext) {
 	)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
+	By("Edit the grafana config file")
+	grafanaConfig, err := os.OpenFile(filepath.Join(kbc.Dir, "grafana/custom-metrics/config.yaml"),
+		os.O_APPEND|os.O_WRONLY, 0644)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	newLine := "test_new_line"
+	_, err = io.WriteString(grafanaConfig, newLine)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	err = grafanaConfig.Close()
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+
 	By("regenerating the project at another output directory")
 	err = kbc.Regenerate(
 		"--input-dir", kbc.Dir,
@@ -191,4 +203,15 @@ func ReGenerateProject(kbc *utils.TestContext) {
 		filepath.Join(kbc.Dir, "testdir2", "PROJECT"), grafanaPlugin)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 	ExpectWithOffset(1, fileContainsExpr).To(BeTrue())
+
+	By("checking if the generated grafana config file has the same content as the old one")
+	grafanaConfigPath := filepath.Join(kbc.Dir, "grafana/custom-metrics/config.yaml")
+	generatedGrafanaConfigPath := filepath.Join(kbc.Dir, "testdir2", "grafana/custom-metrics/config.yaml")
+	Expect(grafanaConfigPath).Should(BeARegularFile())
+	Expect(generatedGrafanaConfigPath).Should(BeARegularFile())
+	bytesBefore, err := os.ReadFile(grafanaConfigPath)
+	Expect(err).NotTo(HaveOccurred())
+	bytesAfter, err := os.ReadFile(generatedGrafanaConfigPath)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(bytesBefore).Should(Equal(bytesAfter))
 }
