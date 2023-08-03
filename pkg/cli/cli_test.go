@@ -592,13 +592,13 @@ plugins:
 				)
 				deprecatedPlugin := newMockDeprecatedPlugin("deprecated", "v1", deprecationWarning, projectVersion)
 
-				// Overwrite stdout to read the output and reset it afterwards
+				// Overwrite stderr to read the deprecation output and reset it afterwards
 				r, w, _ := os.Pipe()
-				temp := os.Stdout
+				temp := os.Stderr
 				defer func() {
-					os.Stdout = temp
+					os.Stderr = temp
 				}()
-				os.Stdout = w
+				os.Stderr = w
 
 				c, err = New(
 					WithPlugins(deprecatedPlugin),
