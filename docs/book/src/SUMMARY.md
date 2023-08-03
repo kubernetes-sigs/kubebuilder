@@ -130,6 +130,7 @@
   - [Creating your own plugins](./plugins/creating-plugins.md)
   - [Testing your own plugins](./plugins/testing-plugins.md)
   - [Plugins Versioning](./plugins/plugins-versioning.md)
+  - [Extending Kubebuilder with external plugins](./plugins/external-plugins.md)
 
 ---
 
