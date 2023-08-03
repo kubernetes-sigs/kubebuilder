@@ -14,10 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-source "$(dirname "$0")/../../test/common.sh"
-
-build_kb
-
 check_directory="$(dirname "$0")/../../docs/book/src/"
 
 # Check docs directory first. If there are any uncommitted change, fail the test.
@@ -27,7 +23,8 @@ if [[ $(git status ${check_directory} --porcelain) ]]; then
   exit 1
 fi
 
-make generate-docs
+
+$(dirname "$0")/generate.sh
 
 # Check if there are any changes to files under testdata directory.
 if [[ $(git status ${check_directory} --porcelain) ]]; then
