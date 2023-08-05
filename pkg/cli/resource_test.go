@@ -102,8 +102,8 @@ var _ = Describe("resourceOptions", func() {
 				Expect(resource.Plural).To(Equal(plural))
 			},
 			Entry("for `FirstMate`", "FirstMate", "firstmates"),
-			Entry("for `Fish`", "Fish", "fish"),
-			Entry("for `Helmswoman`", "Helmswoman", "helmswomen"),
+			Entry("for `Fish`", "Fish", "fishs"),
+			Entry("for `Helmswoman`", "Helmswoman", "helmswomans"),
 		)
 	})
 })
