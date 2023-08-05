@@ -72,6 +72,6 @@ var _ = DescribeTable("RegularPlural should return the regular plural form",
 	Entry("basic singular", "firstmate", "firstmates"),
 	Entry("capitalized singular", "Firstmate", "firstmates"),
 	Entry("camel-cased singular", "FirstMate", "firstmates"),
-	Entry("irregular well-known plurals", "fish", "fish"),
-	Entry("irregular well-known plurals", "helmswoman", "helmswomen"),
+	Entry("irregular well-known plurals", "fish", "fishs"),
+	Entry("irregular well-known plurals", "helmswoman", "helmswomans"),
 )

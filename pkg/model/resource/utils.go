@@ -21,7 +21,8 @@ import (
 	"path"
 	"strings"
 
-	"github.com/gobuffalo/flect"
+	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 const V1beta1 = "v1beta1"
@@ -68,6 +69,8 @@ func APIPackagePathLegacy(repo, group, version string, multiGroup bool) string {
 }
 
 // RegularPlural returns a default plural form when none was specified
+// TODO: Handle edge cases (https://github.com/kubernetes/gengo/blob/ab3349d207d4/namer/plural_namer.go#L36)
 func RegularPlural(singular string) string {
-	return flect.Pluralize(strings.ToLower(singular))
+	plural, _ := meta.UnsafeGuessKindToResource(schema.GroupVersionKind{Kind: singular})
+	return plural.Resource
 }
