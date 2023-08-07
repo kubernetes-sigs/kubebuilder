@@ -19,6 +19,7 @@ package external
 import (
 	"github.com/spf13/pflag"
 
+	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
@@ -28,8 +29,9 @@ import (
 var _ plugin.CreateWebhookSubcommand = &createWebhookSubcommand{}
 
 type createWebhookSubcommand struct {
-	Path string
-	Args []string
+	Path   string
+	Args   []string
+	config config.Config
 }
 
 func (p *createWebhookSubcommand) InjectResource(*resource.Resource) error {
@@ -52,10 +54,19 @@ func (p *createWebhookSubcommand) Scaffold(fs machinery.Filesystem) error {
 		Args:       p.Args,
 	}
 
-	err := handlePluginResponse(fs, req, p.Path)
+	err := handlePluginResponse(fs, req, p.Path, p)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (p *createWebhookSubcommand) InjectConfig(c config.Config) error {
+	p.config = c
+	return nil
+}
+
+func (p *createWebhookSubcommand) GetConfig() config.Config {
+	return p.config
 }

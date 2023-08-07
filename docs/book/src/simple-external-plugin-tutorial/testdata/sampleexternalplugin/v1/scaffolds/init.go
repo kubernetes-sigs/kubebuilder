@@ -16,12 +16,11 @@ limitations under the License.
 package scaffolds
 
 import (
-	"v1/scaffolds/internal/templates"
-
 	"github.com/spf13/pflag"
-
+	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/external"
+	"v1/scaffolds/internal/templates"
 )
 
 var InitFlags = []external.Flag{
@@ -57,6 +56,31 @@ func InitCmd(pr *external.PluginRequest) external.PluginResponse {
 	flags.String("domain", "example.domain.com", "sets the domain added in the scaffolded initFile.txt")
 	flags.Parse(pr.Args)
 	domain, _ := flags.GetString("domain")
+
+	// Update the project config
+	cfg := pr.Config
+
+	pluginChain := cfg.GetPluginChain()
+	pluginChain = append(pluginChain, pflag.Arg(0))
+	cfg.SetPluginChain(pluginChain)
+
+	if cfg.GetProjectName() == "" {
+		cfg.SetProjectName("externalplugin")
+	}
+
+	rsc := resource.Resource{
+		GVK: resource.GVK{
+			Group:   "group",
+			Version: "v1",
+			Kind:    "Externalpluginsample",
+			Domain:  "my.domain",
+		},
+	}
+
+	cfg.UpdateResource(rsc)
+
+	// Update the PluginResponse with the modified updated config
+	pluginResponse.Config = cfg
 
 	initFile := templates.NewInitFile(templates.WithDomain(domain))
 

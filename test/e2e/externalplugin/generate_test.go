@@ -74,6 +74,14 @@ func GenerateProject(kbc *utils.TestContext) {
 	ExpectWithOffset(1, err).NotTo(HaveOccurred(), "Check initFile.txt should return no error.")
 	ExpectWithOffset(1, initFileContainsExpr).To(BeTrue(), "The init file does not contain the expected expression.")
 
+	var initSubcommandConfigTmpl = "projectName"
+
+	initSubcommandConfigContainsExpr, err := pluginutil.HasFileContentWith(
+		filepath.Join(kbc.Dir, "PROJECT"), initSubcommandConfigTmpl)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred(), "Check PROJECT should return no error.")
+	//nolint:lll
+	ExpectWithOffset(1, initSubcommandConfigContainsExpr).To(BeTrue(), "The PROJECT file does not contain the expected config with the init subcommand.")
+
 	By("creating API definition")
 	err = kbc.CreateAPI(
 		"--plugins", "sampleexternalplugin/v1",
@@ -89,6 +97,19 @@ func GenerateProject(kbc *utils.TestContext) {
 		filepath.Join(kbc.Dir, "apiFile.txt"), apiFileContentsTmpl)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred(), "Check apiFile.txt should return no error.")
 	ExpectWithOffset(1, apiFileContainsExpr).To(BeTrue(), "The api file does not contain the expected expression.")
+
+	var apiSubcommandConfigTmpl = `
+resources:
+- domain: my.domain
+  group: group
+  kind: Externalpluginsample
+  version: v1`
+
+	apiSubcommandConfigContainsExpr, err := pluginutil.HasFileContentWith(
+		filepath.Join(kbc.Dir, "PROJECT"), apiSubcommandConfigTmpl)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred(), "Check PROJECT should return no error.")
+	//nolint:lll
+	ExpectWithOffset(1, apiSubcommandConfigContainsExpr).To(BeTrue(), "The PROJECT file does not contain the expected config with the create api subcommand.")
 
 	By("scaffolding webhook")
 	err = kbc.CreateWebhook(
