@@ -15,6 +15,15 @@ This Quick Start guide will cover:
 - Access to a Kubernetes v1.11.3+ cluster.
 
 <aside class="note">
+<h1>Alternative: Use DevPod to work within a development container</h1>
+
+[![Open in DevPod!](https://devpod.sh/assets/open-in-devpod.svg)](https://devpod.sh/open#https://github.com/loft-sh/devpod-kubebuilder-template)
+
+You can use [DevPod](https://devpod.sh) and the [Kubebuilder template](https://github.com/loft-sh/devpod-kubebuilder-template) to automate the installation process by starting a development container with the needed tooling preinstalled.
+
+</aside>
+
+<aside class="note">
 <h1>Versions and Supportability</h1>
 
 Projects created by Kubebuilder contain a Makefile that will install tools at versions defined at creation time. Those tools are:
