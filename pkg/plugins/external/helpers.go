@@ -168,7 +168,15 @@ func handlePluginResponse(fs machinery.Filesystem, req external.PluginRequest, p
 	}
 
 	for filename, data := range res.Universe {
-		f, err := fs.FS.Create(filepath.Join(currentDir, filename))
+		path := filepath.Join(currentDir, filename)
+		dir := filepath.Dir(path)
+
+		// create the directory if it does not exist
+		if err := os.MkdirAll(dir, 0o750); err != nil {
+			return fmt.Errorf("error creating the directory: %v", err)
+		}
+
+		f, err := fs.FS.Create(path)
 		if err != nil {
 			return err
 		}
