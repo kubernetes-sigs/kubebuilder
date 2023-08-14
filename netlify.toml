@@ -1,6 +1,6 @@
 [build]
     base = "docs/book"
-    command = "./install-and-build.sh"
+    command = "GO_VERSION=1.20 ./install-and-build.sh"
     publish = "docs/book/book"
     functions = "docs/book/functions"
 

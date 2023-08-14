@@ -5,7 +5,6 @@ src = "src"
 title = "The Kubebuilder Book"
 
 [output.html]
-google-analytics = "UA-119864590-1"
 curly-quotes = true
 additional-css = ["theme/css/markers.css", "theme/css/custom.css", "theme/css/version-dropdown.css"]
 git-repository-url = "https://github.com/kubernetes-sigs/kubebuilder"
@@ -16,3 +15,10 @@ command = "./litgo.sh"
 
 [preprocessor.markerdocs]
 command = "./markerdocs.sh"
+
+[context.environment]
+  environment = { GO_VERSION = "1.20" }
+
+[context.deploy-preview.environment]
+  environment = { GO_VERSION = "1.20" }
+
