@@ -243,10 +243,16 @@ func (t *TestContext) Destroy() {
 	//nolint:gosec
 	// if image name is not present or not provided skip execution of docker command
 	if t.ImageName != "" {
-		cmd := exec.Command("docker", "rmi", "-f", t.ImageName)
-		if _, err := t.Run(cmd); err != nil {
-			warnError(err)
+		// Check white space from image name
+		if len(strings.TrimSpace(t.ImageName)) == 0 {
+			fmt.Println("Image not set, skip cleaning up of docker image")
+		} else {
+			cmd := exec.Command("docker", "rmi", "-f", t.ImageName)
+			if _, err := t.Run(cmd); err != nil {
+				warnError(err)
+			}
 		}
+
 	}
 	if err := os.RemoveAll(t.Dir); err != nil {
 		warnError(err)
