@@ -56,7 +56,7 @@ func newSampleContext(binaryPath string, samplePath string, env ...string) utils
 
 // Prepare the Context for the sample project
 func (sp *Sample) Prepare() {
-	log.Infof("destroying directory for sample project")
+	log.Infof("destroying directory for cronjob sample project")
 	sp.ctx.Destroy()
 
 	log.Infof("refreshing tools and creating directory...")
@@ -66,7 +66,7 @@ func (sp *Sample) Prepare() {
 }
 
 func (sp *Sample) GenerateSampleProject() {
-	log.Infof("Initializing the project")
+	log.Infof("Initializing the cronjob project")
 
 	err := sp.ctx.Init(
 		"--plugins", "go/v4",
@@ -75,7 +75,7 @@ func (sp *Sample) GenerateSampleProject() {
 		"--license", "apache2",
 		"--owner", "The Kubernetes authors",
 	)
-	CheckError("Initializing the project", err)
+	CheckError("Initializing the cronjob project", err)
 
 	log.Infof("Adding a new config type")
 	err = sp.ctx.CreateAPI(
@@ -466,13 +466,13 @@ func updateSuiteTest(sp *Sample) {
 		filepath.Join(sp.ctx.Dir, "internal/controller/suite_test.go"),
 		`limitations under the License.
 */`, SuiteTestIntro)
-	CheckError("fixing suite_test.go", err)
+	CheckError("updating suite_test.go to add license intro", err)
 
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "internal/controller/suite_test.go"),
 		`import (`, `
 	"context"`)
-	CheckError("fixing suite_test.go", err)
+	CheckError("updating suite_test.go to add context", err)
 
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "internal/controller/suite_test.go"),
@@ -481,7 +481,7 @@ func updateSuiteTest(sp *Sample) {
 `, `
 	ctrl "sigs.k8s.io/controller-runtime"
 `)
-	CheckError("fixing suite_test.go", err)
+	CheckError("updating suite_test.go to add ctrl import", err)
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, "internal/controller/suite_test.go"),
@@ -490,14 +490,14 @@ var cfg *rest.Config
 var k8sClient client.Client
 var testEnv *envtest.Environment
 `, SuiteTestEnv)
-	CheckError("fixing suite_test.go", err)
+	CheckError("updating suite_test.go to add more variables", err)
 
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "internal/controller/suite_test.go"),
 		`
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 `, SuiteTestReadCRD)
-	CheckError("fixing suite_test.go", err)
+	CheckError("updating suite_test.go to add text about CRD", err)
 
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "internal/controller/suite_test.go"),
@@ -507,7 +507,7 @@ var testEnv *envtest.Environment
 	/*
 		Then, we start the envtest cluster.
 	*/`)
-	CheckError("fixing suite_test.go", err)
+	CheckError("updating suite_test.go to add text to show where envtest cluster start", err)
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, "internal/controller/suite_test.go"),
@@ -517,7 +517,7 @@ var testEnv *envtest.Environment
 
 	//+kubebuilder:scaffold:scheme
 `, SuiteTestAddSchema)
-	CheckError("fixing suite_test.go", err)
+	CheckError("updating suite_test.go to add schema", err)
 
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "internal/controller/suite_test.go"),
@@ -526,7 +526,7 @@ var testEnv *envtest.Environment
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 `, SuiteTestDescription)
-	CheckError("fixing suite_test.go", err)
+	CheckError("updating suite_test.go for test description", err)
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, "internal/controller/suite_test.go"),
@@ -537,7 +537,7 @@ var _ = AfterSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 })
 `, SuiteTestCleanup)
-	CheckError("fixing suite_test.go", err)
+	CheckError("updating suite_test.go to cleanup tests", err)
 }
 
 func updateKustomization(sp *Sample) {
