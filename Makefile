@@ -73,7 +73,7 @@ generate-testdata: ## Update/generate the testdata in $GOPATH/src/sigs.k8s.io/ku
 
 .PHONY: generate-docs
 generate-docs: ## Update/generate the docs in $GOPATH/src/sigs.k8s.io/kubebuilder
-	go run hack/docs/generate_samples.go
+	./hack/docs/generate.sh
 
 .PHONY: check-docs
 check-docs: ## Run the script to ensure that the docs are updated

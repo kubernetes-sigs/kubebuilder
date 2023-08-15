@@ -21,8 +21,10 @@ import (
 
 	componentconfig "sigs.k8s.io/kubebuilder/v3/hack/docs/internal/component-config-tutorial"
 	cronjob "sigs.k8s.io/kubebuilder/v3/hack/docs/internal/cronjob-tutorial"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
 )
+
+// Make sure executing `build_kb` to generate kb executable from the source code
+const KubebuilderBinName = "/tmp/kubebuilder/bin/kubebuilder"
 
 func main() {
 	fmt.Println("Generating documents...")
@@ -36,7 +38,7 @@ func main() {
 }
 
 func UpdateComponentConfigTutorial() {
-	binaryPath := util.KubebuilderBinName
+	binaryPath := KubebuilderBinName
 	samplePath := "docs/book/src/component-config-tutorial/testdata/project/"
 
 	sp := componentconfig.NewSample(binaryPath, samplePath)
@@ -51,7 +53,7 @@ func UpdateComponentConfigTutorial() {
 }
 
 func UpdateCronjobTutorial() {
-	binaryPath := util.KubebuilderBinName
+	binaryPath := KubebuilderBinName
 	samplePath := "docs/book/src/cronjob-tutorial/testdata/project/"
 
 	sp := cronjob.NewSample(binaryPath, samplePath)
