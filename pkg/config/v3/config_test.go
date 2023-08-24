@@ -33,7 +33,7 @@ func TestConfigV3(t *testing.T) {
 	RunSpecs(t, "Config V3 Suite")
 }
 
-var _ = Describe("cfg", func() {
+var _ = Describe("Cfg", func() {
 	const (
 		domain = "my.domain"
 		repo   = "myrepo"
@@ -45,7 +45,7 @@ var _ = Describe("cfg", func() {
 	)
 
 	var (
-		c cfg
+		c Cfg
 
 		pluginChain = []string{"go.kubebuilder.io/v2"}
 
@@ -53,7 +53,7 @@ var _ = Describe("cfg", func() {
 	)
 
 	BeforeEach(func() {
-		c = cfg{
+		c = Cfg{
 			Version:     Version,
 			Domain:      domain,
 			Repository:  repo,
@@ -376,14 +376,14 @@ var _ = Describe("cfg", func() {
 		)
 
 		var (
-			c0 = cfg{
+			c0 = Cfg{
 				Version:     Version,
 				Domain:      domain,
 				Repository:  repo,
 				Name:        name,
 				PluginChain: pluginChain,
 			}
-			c1 = cfg{
+			c1 = Cfg{
 				Version:     Version,
 				Domain:      domain,
 				Repository:  repo,
@@ -395,7 +395,7 @@ var _ = Describe("cfg", func() {
 					},
 				},
 			}
-			c2 = cfg{
+			c2 = Cfg{
 				Version:     Version,
 				Domain:      domain,
 				Repository:  repo,
@@ -429,7 +429,7 @@ var _ = Describe("cfg", func() {
 		})
 
 		DescribeTable("DecodePluginConfig should retrieve the plugin data correctly",
-			func(inputConfig cfg, expectedPluginConfig PluginConfig) {
+			func(inputConfig Cfg, expectedPluginConfig PluginConfig) {
 				var pluginConfig PluginConfig
 				Expect(inputConfig.DecodePluginConfig(key, &pluginConfig)).To(Succeed())
 				Expect(pluginConfig).To(Equal(expectedPluginConfig))
@@ -441,7 +441,7 @@ var _ = Describe("cfg", func() {
 		)
 
 		DescribeTable("EncodePluginConfig should encode the plugin data correctly",
-			func(pluginConfig PluginConfig, expectedConfig cfg) {
+			func(pluginConfig PluginConfig, expectedConfig Cfg) {
 				Expect(c.EncodePluginConfig(key, pluginConfig)).To(Succeed())
 				Expect(c).To(Equal(expectedConfig))
 			},
@@ -455,14 +455,14 @@ var _ = Describe("cfg", func() {
 	Context("Persistence", func() {
 		var (
 			// BeforeEach is called after the entries are evaluated, and therefore, c is not available
-			c1 = cfg{
+			c1 = Cfg{
 				Version:     Version,
 				Domain:      domain,
 				Repository:  repo,
 				Name:        name,
 				PluginChain: pluginChain,
 			}
-			c2 = cfg{
+			c2 = Cfg{
 				Version:         Version,
 				Domain:          otherDomain,
 				Repository:      otherRepo,
@@ -591,7 +591,7 @@ version: "3"
 		)
 
 		DescribeTable("MarshalYAML should succeed",
-			func(c cfg, content string) {
+			func(c Cfg, content string) {
 				b, err := c.MarshalYAML()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(string(b)).To(Equal(content))
@@ -601,8 +601,8 @@ version: "3"
 		)
 
 		DescribeTable("UnmarshalYAML should succeed",
-			func(content string, c cfg) {
-				var unmarshalled cfg
+			func(content string, c Cfg) {
+				var unmarshalled Cfg
 				Expect(unmarshalled.UnmarshalYAML([]byte(content))).To(Succeed())
 				Expect(unmarshalled.Version.Compare(c.Version)).To(Equal(0))
 				Expect(unmarshalled.Domain).To(Equal(c.Domain))
@@ -622,7 +622,7 @@ version: "3"
 
 		DescribeTable("UnmarshalYAML should fail",
 			func(content string) {
-				var c cfg
+				var c Cfg
 				Expect(c.UnmarshalYAML([]byte(content))).NotTo(Succeed())
 			},
 			Entry("for unknown fields", `field: 1
