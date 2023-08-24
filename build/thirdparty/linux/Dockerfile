@@ -22,7 +22,7 @@ FROM alpine:3.18 as builder
 
 # Version and platform args.
 ARG KUBERNETES_VERSION
-ARG ETCD_VERSION=v3.5.8
+ARG ETCD_VERSION=v3.5.9
 ARG OS=linux
 ARG ARCH
 
