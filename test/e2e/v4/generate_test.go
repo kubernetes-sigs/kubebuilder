@@ -87,9 +87,6 @@ Count int `+"`"+`json:"count,omitempty"`+"`"+`
 		filepath.Join(kbc.Dir, "config", "crd", "kustomization.yaml"),
 		fmt.Sprintf("#- path: patches/webhook_in_%s.yaml", kbc.Resources), "#")).To(Succeed())
 	ExpectWithOffset(1, pluginutil.UncommentCode(
-		filepath.Join(kbc.Dir, "config", "crd", "kustomization.yaml"),
-		fmt.Sprintf("#- path: patches/cainjection_in_%s.yaml", kbc.Resources), "#")).To(Succeed())
-	ExpectWithOffset(1, pluginutil.UncommentCode(
 		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 		"#- ../webhook", "#")).To(Succeed())
 	ExpectWithOffset(1, pluginutil.UncommentCode(
@@ -101,9 +98,6 @@ Count int `+"`"+`json:"count,omitempty"`+"`"+`
 	ExpectWithOffset(1, pluginutil.UncommentCode(
 		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 		"#- manager_webhook_patch.yaml", "#")).To(Succeed())
-	ExpectWithOffset(1, pluginutil.UncommentCode(
-		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
-		"#- webhookcainjection_patch.yaml", "#")).To(Succeed())
 	ExpectWithOffset(1, pluginutil.UncommentCode(filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 		`#replacements:
 #  - source: # Add cert-manager annotation to ValidatingWebhookConfiguration, MutatingWebhookConfiguration and CRDs

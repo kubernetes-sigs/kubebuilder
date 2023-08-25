@@ -77,7 +77,6 @@ func (s *apiScaffolder) Scaffold() error {
 			&rbac.CRDEditorRole{},
 			&rbac.CRDViewerRole{},
 			&patches.EnableWebhookPatch{},
-			&patches.EnableCAInjectionPatch{},
 			&crd.Kustomization{},
 			&crd.KustomizeConfig{},
 		); err != nil {

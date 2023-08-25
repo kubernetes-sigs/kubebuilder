@@ -586,11 +586,6 @@ func updateKustomization(sp *Sample) {
 		filepath.Join(sp.ctx.Dir, "config/crd/kustomization.yaml"),
 		`#- path: patches/webhook_in_cronjobs.yaml`, `#`)
 	CheckError("fixing crd/kustomization", err)
-
-	err = pluginutil.UncommentCode(
-		filepath.Join(sp.ctx.Dir, "config/crd/kustomization.yaml"),
-		`#- path: patches/cainjection_in_cronjobs.yaml`, `#`)
-	CheckError("fixing crd/kustomization", err)
 }
 
 func updateExample(sp *Sample) {
