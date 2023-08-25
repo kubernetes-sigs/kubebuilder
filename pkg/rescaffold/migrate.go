@@ -16,11 +16,11 @@ package rescaffold
 import (
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"strings"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/config/store"
@@ -156,7 +156,7 @@ func migrateGrafanaPlugin(store store.Store, src, des string) error {
 	// If the grafana plugin is not found, we don't need to migrate
 	if err != nil {
 		if errors.As(err, &config.PluginKeyNotFoundError{}) {
-			log.Printf("Grafana plugin is not found, skip the migration")
+			log.Info("Grafana plugin is not found, skip the migration")
 			return nil
 		}
 		return fmt.Errorf("failed to decode grafana plugin config %v", err)
