@@ -30,3 +30,5 @@ func TestE2E(t *testing.T) {
 	fmt.Fprintf(GinkgoWriter, "Starting kubebuilder suite\n")
 	RunSpecs(t, "Kubebuilder e2e suite")
 }
+
+//TEST
