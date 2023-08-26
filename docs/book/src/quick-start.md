@@ -180,7 +180,7 @@ If you pressed `y` for Create Resource [y/n] then you created a CR for your CRD 
 API definition):
 
 ```bash
-kubectl apply -f config/samples/
+kubectl apply -k config/samples/
 ```
 
 ## Run It On the Cluster

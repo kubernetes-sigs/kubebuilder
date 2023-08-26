@@ -214,6 +214,15 @@ func (t *TestContext) CreateWebhook(resourceOptions ...string) error {
 	return err
 }
 
+// Regenerate is for running `kubebuilder alpha generate`
+func (t *TestContext) Regenerate(resourceOptions ...string) error {
+	resourceOptions = append([]string{"alpha", "generate"}, resourceOptions...)
+	//nolint:gosec
+	cmd := exec.Command(t.BinaryName, resourceOptions...)
+	_, err := t.Run(cmd)
+	return err
+}
+
 // Make is for running `make` with various targets
 func (t *TestContext) Make(makeOptions ...string) error {
 	cmd := exec.Command("make", makeOptions...)
@@ -232,9 +241,18 @@ func (t *TestContext) Tidy() error {
 // Destroy is for cleaning up the docker images for testing
 func (t *TestContext) Destroy() {
 	//nolint:gosec
-	cmd := exec.Command("docker", "rmi", "-f", t.ImageName)
-	if _, err := t.Run(cmd); err != nil {
-		warnError(err)
+	// if image name is not present or not provided skip execution of docker command
+	if t.ImageName != "" {
+		// Check white space from image name
+		if len(strings.TrimSpace(t.ImageName)) == 0 {
+			fmt.Println("Image not set, skip cleaning up of docker image")
+		} else {
+			cmd := exec.Command("docker", "rmi", "-f", t.ImageName)
+			if _, err := t.Run(cmd); err != nil {
+				warnError(err)
+			}
+		}
+
 	}
 	if err := os.RemoveAll(t.Dir); err != nil {
 		warnError(err)

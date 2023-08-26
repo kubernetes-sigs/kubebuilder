@@ -164,7 +164,7 @@ func ImplementWebhooks(filename string) error {
 		str,
 		"// TODO(user): fill in your validation logic upon object creation.",
 		`if r.Spec.Count < 0 {
-		return errors.New(".spec.count must >= 0")
+		return nil, errors.New(".spec.count must >= 0")
 	}`)
 	if err != nil {
 		return err
@@ -173,7 +173,7 @@ func ImplementWebhooks(filename string) error {
 		str,
 		"// TODO(user): fill in your validation logic upon object update.",
 		`if r.Spec.Count < 0 {
-		return errors.New(".spec.count must >= 0")
+		return nil, errors.New(".spec.count must >= 0")
 	}`)
 	if err != nil {
 		return err

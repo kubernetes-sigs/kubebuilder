@@ -81,6 +81,7 @@
   - [Generating CRDs](./reference/generating-crd.md)
   - [Using Finalizers](./reference/using-finalizers.md)
   - [Good Practices](./reference/good-practices.md)
+  - [Raising Events](./reference/raising-events.md)
   - [Watching Resources](./reference/watching-resources.md)
     - [Resources Managed by the Operator](./reference/watching-resources/operator-managed.md)
     - [Externally Managed Resources](./reference/watching-resources/externally-managed.md)
@@ -130,6 +131,7 @@
   - [Creating your own plugins](./plugins/creating-plugins.md)
   - [Testing your own plugins](./plugins/testing-plugins.md)
   - [Plugins Versioning](./plugins/plugins-versioning.md)
+  - [Extending Kubebuilder with external plugins](./plugins/external-plugins.md)
 
 ---
 

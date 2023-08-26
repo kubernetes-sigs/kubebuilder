@@ -98,7 +98,7 @@ You need to implement the conversion.Hub and conversion.Convertible interfaces f
 	// TODO: Add test suite for conversion webhook after #1664 has been merged & conversion tests supported in envtest.
 	if doDefaulting || doValidation {
 		if err := scaffold.Execute(
-			&api.WebhookSuite{},
+			&api.WebhookSuite{K8SVersion: EnvtestK8SVersion},
 		); err != nil {
 			return err
 		}

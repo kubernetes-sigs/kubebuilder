@@ -66,7 +66,7 @@ Therefore, you can check the changes in the layout results into:
 - If your project support multi-group the APIs are scaffold under a directory called `apis`. Rename this directory to `api`
 - Move the `controllers` directory under the `internal` and rename it for `controller` 
 - Now ensure that the imports will be updated accordingly by:
-  - Update the `main.go` imports to look for the new path of your controllers under the `pkg` directory
+  - Update the `main.go` imports to look for the new path of your controllers under the `internal/controller` directory
 
 **Then, let's update the scaffolds paths**
 

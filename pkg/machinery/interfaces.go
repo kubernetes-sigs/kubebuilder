@@ -83,6 +83,14 @@ type HasMultiGroup interface {
 	InjectMultiGroup(bool)
 }
 
+// Deprecated: The ComponentConfig has been deprecated in the Controller-Runtime since its version 0.15.0.
+// Fur further information see: https://github.com/kubernetes-sigs/controller-runtime/issues/895
+// Moreover, it has undergone breaking changes and is no longer functioning as intended.
+// As a result, Kubebuilder, which heavily relies on the Controller Runtime, has also deprecated this feature,
+// no longer guaranteeing its functionality from version 3.11.0 onwards.
+//
+// Please, be aware that it will force Kubebuilder remove this option soon in future release.
+//
 // HasComponentConfig allows the component-config flag to be used on a template
 type HasComponentConfig interface {
 	// InjectComponentConfig sets the template component-config flag

@@ -45,7 +45,7 @@ func (f *Readme) SetTemplateDefaults() error {
 		"*/", "", 1)
 
 	f.TemplateBody = fmt.Sprintf(readmeFileTemplate,
-		codeFence("kubectl apply -f config/samples/"),
+		codeFence("kubectl apply -k config/samples/"),
 		codeFence("make docker-build docker-push IMG=<some-registry>/{{ .ProjectName }}:tag"),
 		codeFence("make deploy IMG=<some-registry>/{{ .ProjectName }}:tag"),
 		codeFence("make uninstall"),

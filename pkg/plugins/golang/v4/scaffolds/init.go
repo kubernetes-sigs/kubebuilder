@@ -34,9 +34,11 @@ import (
 
 const (
 	// ControllerRuntimeVersion is the kubernetes-sigs/controller-runtime version to be used in the project
-	ControllerRuntimeVersion = "v0.14.4"
+	ControllerRuntimeVersion = "v0.15.0"
 	// ControllerToolsVersion is the kubernetes-sigs/controller-tools version to be used in the project
 	ControllerToolsVersion = "v0.12.0"
+	// EnvtestK8SVersion is the k8s version used to do the scaffold
+	EnvtestK8SVersion = "1.27.1"
 
 	imageName = "controller:latest"
 )

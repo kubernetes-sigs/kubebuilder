@@ -68,9 +68,9 @@ func (f *Kustomization) GetMarkers() []machinery.Marker {
 const (
 	resourceCodeFragment = `- bases/%s_%s.yaml
 `
-	webhookPatchCodeFragment = `#- patches/webhook_in_%s.yaml
+	webhookPatchCodeFragment = `#- path: patches/webhook_in_%s.yaml
 `
-	caInjectionPatchCodeFragment = `#- patches/cainjection_in_%s.yaml
+	caInjectionPatchCodeFragment = `#- path: patches/cainjection_in_%s.yaml
 `
 )
 
