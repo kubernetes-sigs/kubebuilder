@@ -128,9 +128,17 @@ func codeGen(sp *Sample) {
 	_, err := sp.ctx.Run(cmd)
 	CheckError("Failed to get package robfig/cron", err)
 
-	cmd = exec.Command("make", "build")
+	cmd = exec.Command("make", "manifests")
 	_, err = sp.ctx.Run(cmd)
-	CheckError("Failed to generate code in cronjob tutorial", err)
+	CheckError("Failed to run make manifests for cronjob tutorial", err)
+
+	cmd = exec.Command("make", "all")
+	_, err = sp.ctx.Run(cmd)
+	CheckError("Failed to run make all for cronjob tutorial", err)
+
+	cmd = exec.Command("go", "mod", "tidy")
+	_, err = sp.ctx.Run(cmd)
+	CheckError("Failed to run go mod tidy for cronjob tutorial", err)
 }
 
 // insert code to fix docs

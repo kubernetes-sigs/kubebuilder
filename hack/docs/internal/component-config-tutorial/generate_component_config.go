@@ -151,10 +151,18 @@ clusterName: example-test
 }
 
 func (sp *Sample) CodeGen() {
-	cmd := exec.Command("make", "build")
-	_, err := sp.ctx.Run(cmd)
 
-	CheckError("Failed to generate code in componentconfig tutorial", err)
+	cmd := exec.Command("make", "manifests")
+	_, err := sp.ctx.Run(cmd)
+	CheckError("Failed to run make manifests for componentConfig tutorial", err)
+
+	cmd = exec.Command("make", "all")
+	_, err = sp.ctx.Run(cmd)
+	CheckError("Failed to run make all for componentConfig tutorial", err)
+
+	cmd = exec.Command("go", "mod", "tidy")
+	_, err = sp.ctx.Run(cmd)
+	CheckError("Failed to run go mod tidy all for componentConfig tutorial", err)
 }
 
 // CheckError will exit with exit code 1 when err is not nil.
