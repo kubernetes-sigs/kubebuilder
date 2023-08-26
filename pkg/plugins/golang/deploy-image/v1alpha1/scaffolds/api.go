@@ -134,7 +134,7 @@ func (s *apiScaffolder) Scaffold() error {
 	if isGoV3 {
 		defaultMainPath = "main.go"
 	}
-	if err := s.updateMainByAddingEventRecorder(isGoV3, defaultMainPath); err != nil {
+	if err := s.updateMainByAddingEventRecorder(defaultMainPath); err != nil {
 		return fmt.Errorf("error updating main.go: %v", err)
 	}
 
@@ -188,29 +188,16 @@ func (s *apiScaffolder) scaffoldCreateAPIFromPlugins(isLegacyLayout bool) error 
 // TODO: replace this implementation by creating its own MainUpdater
 // which will have its own controller template which set the recorder so that we can use it
 // in the reconciliation to create an event inside for the finalizer
-func (s *apiScaffolder) updateMainByAddingEventRecorder(isGoV3 bool, defaultMainPath string) error {
-	if isGoV3 {
-		if err := util.InsertCode(
-			defaultMainPath,
-			fmt.Sprintf(
-				`if err = (&controllers.%sReconciler{
+func (s *apiScaffolder) updateMainByAddingEventRecorder(defaultMainPath string) error {
+	if err := util.InsertCode(
+		defaultMainPath,
+		fmt.Sprintf(
+			`%sReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),`, s.resource.Kind),
-			fmt.Sprintf(recorderTemplate, strings.ToLower(s.resource.Kind)),
-		); err != nil {
-			return fmt.Errorf("error scaffolding event recorder in %s: %v", defaultMainPath, err)
-		}
-	} else {
-		if err := util.InsertCode(
-			defaultMainPath,
-			fmt.Sprintf(
-				`if err = (&controller.%sReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),`, s.resource.Kind),
-			fmt.Sprintf(recorderTemplate, strings.ToLower(s.resource.Kind)),
-		); err != nil {
-			return fmt.Errorf("error scaffolding event recorder in %s: %v", defaultMainPath, err)
-		}
+		fmt.Sprintf(recorderTemplate, strings.ToLower(s.resource.Kind)),
+	); err != nil {
+		return fmt.Errorf("error scaffolding event recorder in %s: %v", defaultMainPath, err)
 	}
 
 	return nil

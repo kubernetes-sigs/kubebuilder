@@ -102,6 +102,16 @@ function scaffold_test_project {
       $kb create api --version v1 --kind Lakers --controller=true --resource=true --make=false
       $kb create webhook --version v1 --kind Lakers --defaulting --programmatic-validation
     fi
+
+    # Call ALL optional plugins within multigroup layout to ensure that they can work within
+    header_text 'Creating Memcached API with deploy-image plugin ...'
+    $kb create api --group example.com --version v1alpha1 --kind Memcached --image=memcached:1.4.36-alpine --image-container-command="memcached,-m=64,-o,modern,-v" --image-container-port="11211" --run-as-user="1001" --plugins="deploy-image/v1-alpha" --make=false
+    $kb create api --group example.com --version v1alpha1 --kind Busybox --image=busybox:1.28 --plugins="deploy-image/v1-alpha" --make=false
+    header_text 'Creating Memcached webhook ...'
+    $kb create webhook --group example.com --version v1alpha1 --kind Memcached --programmatic-validation
+
+    header_text 'Editing project with Grafana plugin ...'
+    $kb edit --plugins=grafana.kubebuilder.io/v1-alpha
   elif [[ $project =~ declarative ]]; then
     header_text 'Creating APIs ...'
     $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false
@@ -114,7 +124,7 @@ function scaffold_test_project {
       header_text 'Creating Memcached webhook ...'
       $kb create webhook --group example.com --version v1alpha1 --kind Memcached --programmatic-validation
   elif [[ $project =~ "with-grafana" ]]; then
-     header_text 'Editing project with Grafana plugin ...'
+      header_text 'Editing project with Grafana plugin ...'
       $kb edit --plugins=grafana.kubebuilder.io/v1-alpha
   fi
 

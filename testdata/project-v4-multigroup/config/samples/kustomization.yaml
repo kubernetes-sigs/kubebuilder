@@ -10,4 +10,6 @@ resources:
 - foo_v1_bar.yaml
 - fiz_v1_bar.yaml
 - _v1_lakers.yaml
+- example.com_v1alpha1_memcached.yaml
+- example.com_v1alpha1_busybox.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

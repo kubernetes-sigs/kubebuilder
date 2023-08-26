@@ -96,6 +96,26 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
+      path: /validate-example-com-testproject-org-v1alpha1-memcached
+  failurePolicy: Fail
+  name: vmemcached.kb.io
+  rules:
+  - apiGroups:
+    - example.com.testproject.org
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - memcacheds
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
       path: /validate-ship-testproject-org-v2alpha1-cruiser
   failurePolicy: Fail
   name: vcruiser.kb.io
