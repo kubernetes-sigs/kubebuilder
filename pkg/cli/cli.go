@@ -34,7 +34,7 @@ import (
 )
 
 const (
-	noticeColor    = "\033[1;36m%s\033[0m"
+	noticeColor    = "\033[1;33m%s\033[0m"
 	deprecationFmt = "[Deprecation Notice] %s\n\n"
 
 	pluginsFlag        = "plugins"
