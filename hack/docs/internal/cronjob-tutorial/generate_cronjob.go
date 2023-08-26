@@ -533,6 +533,7 @@ var testEnv *envtest.Environment
 		`
 var _ = AfterSuite(func() {
 	By("tearing down the test environment")
+	cancel()
 	err := testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
 })

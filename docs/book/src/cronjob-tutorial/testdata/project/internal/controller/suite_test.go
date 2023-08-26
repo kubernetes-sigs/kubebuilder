@@ -27,6 +27,7 @@ package controller
 
 import (
 	"context"
+	"context"
 	"fmt"
 	"path/filepath"
 	"runtime"
@@ -64,6 +65,7 @@ var (
 	ctx       context.Context
 	cancel    context.CancelFunc
 )
+var cancel context.CancelFunc
 
 func TestControllers(t *testing.T) {
 	RegisterFailHandler(Fail)
