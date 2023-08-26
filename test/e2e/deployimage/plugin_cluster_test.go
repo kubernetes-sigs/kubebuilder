@@ -38,7 +38,7 @@ import (
 )
 
 var _ = Describe("kubebuilder", func() {
-	Context("deploy image plugin 3", func() {
+	Context("deploy image plugin", func() {
 		var kbc *utils.TestContext
 
 		BeforeEach(func() {
@@ -82,7 +82,7 @@ var _ = Describe("kubebuilder", func() {
 
 			By("initializing a project with go/v3")
 			err = kbc.Init(
-				"--plugins", "go/v3",
+				"--plugins", "go/v4",
 				"--project-version", "3",
 				"--domain", kbc.Domain,
 			)
@@ -117,9 +117,9 @@ var _ = Describe("kubebuilder", func() {
 		It("should generate a runnable project with deploy-image/v1-alpha without options ", func() {
 			var err error
 
-			By("initializing a project with go/v3")
+			By("initializing a project with go/v4")
 			err = kbc.Init(
-				"--plugins", "go/v3",
+				"--plugins", "go/v4",
 				"--project-version", "3",
 				"--domain", kbc.Domain,
 			)
