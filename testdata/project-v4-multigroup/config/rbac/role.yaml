@@ -31,6 +31,21 @@ rules:
   - patch
   - update
 - apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - crew.testproject.org
   resources:
   - captains
@@ -52,6 +67,58 @@ rules:
   - crew.testproject.org
   resources:
   - captains/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - busyboxes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - busyboxes/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - busyboxes/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - memcacheds
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - memcacheds/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - memcacheds/status
   verbs:
   - get
   - patch
