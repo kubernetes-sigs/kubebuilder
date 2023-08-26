@@ -1,4 +1,4 @@
-# Extending Kubebuilder with external plugins
+# Creating External Plugins
 
 ## Overview
 
