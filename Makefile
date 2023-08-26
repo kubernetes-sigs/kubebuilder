@@ -104,7 +104,7 @@ apidiff: go-apidiff ## Run the go-apidiff to verify any API differences compared
 
 .PHONY: go-apidiff
 go-apidiff:
-	go install github.com/joelanford/go-apidiff@v0.5.0
+	go install github.com/joelanford/go-apidiff@v0.6.1
 
 ##@ Tests
 
