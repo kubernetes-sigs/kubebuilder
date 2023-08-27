@@ -17,7 +17,7 @@ limitations under the License.
 package main
 
 import (
-	"fmt"
+	log "github.com/sirupsen/logrus"
 
 	componentconfig "sigs.k8s.io/kubebuilder/v3/hack/docs/internal/component-config-tutorial"
 	cronjob "sigs.k8s.io/kubebuilder/v3/hack/docs/internal/cronjob-tutorial"
@@ -27,12 +27,12 @@ import (
 const KubebuilderBinName = "/tmp/kubebuilder/bin/kubebuilder"
 
 func main() {
-	fmt.Println("Generating documents...")
+	log.Println("Generating documents...")
 
-	fmt.Println("Generating component-config tutorial...")
+	log.Println("Generating component-config tutorial...")
 	UpdateComponentConfigTutorial()
 
-	fmt.Println("Generating cronjob tutorial...")
+	log.Println("Generating cronjob tutorial...")
 	UpdateCronjobTutorial()
 	// TODO: Generate multiversion-tutorial
 }

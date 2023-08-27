@@ -17,13 +17,13 @@ limitations under the License.
 package cronjob
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
+
 	pluginutil "sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
 	"sigs.k8s.io/kubebuilder/v3/test/e2e/utils"
 )
@@ -97,7 +97,7 @@ func (sp *Sample) GenerateSampleProject() {
 }
 
 func (sp *Sample) UpdateTutorial() {
-	fmt.Println("TODO: update tutorial")
+	log.Println("TODO: update tutorial")
 	// 1. update specs
 	updateSpec(sp)
 	// 2. update webhook

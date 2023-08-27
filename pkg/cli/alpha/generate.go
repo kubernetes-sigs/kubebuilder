@@ -14,7 +14,7 @@ limitations under the License.
 package alpha
 
 import (
-	"log"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/spf13/cobra"
 	"sigs.k8s.io/kubebuilder/v3/pkg/rescaffold"

@@ -17,10 +17,11 @@ limitations under the License.
 package util
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // RunCmd prints the provided message and command and then executes it binding stdout and stderr
@@ -28,6 +29,6 @@ func RunCmd(msg, cmd string, args ...string) error {
 	c := exec.Command(cmd, args...) //nolint:gosec
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
-	fmt.Println(msg + ":\n$ " + strings.Join(c.Args, " "))
+	log.Println(msg + ":\n$ " + strings.Join(c.Args, " "))
 	return c.Run()
 }

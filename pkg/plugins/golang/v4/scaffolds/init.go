@@ -17,14 +17,12 @@ limitations under the License.
 package scaffolds
 
 import (
-	"fmt"
-
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
-
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins"
 	kustomizecommonv1 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v1"
 	kustomizecommonv2alpha "sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v2"
@@ -74,7 +72,7 @@ func (s *initScaffolder) InjectFS(fs machinery.Filesystem) {
 
 // Scaffold implements cmdutil.Scaffolder
 func (s *initScaffolder) Scaffold() error {
-	fmt.Println("Writing scaffold for you to edit...")
+	log.Println("Writing scaffold for you to edit...")
 
 	// Initialize the machinery.Scaffold that will write the boilerplate file to disk
 	// The boilerplate file needs to be scaffolded as a separate step as it is going to

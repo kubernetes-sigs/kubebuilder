@@ -17,8 +17,6 @@ limitations under the License.
 package main
 
 import (
-	"log"
-
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 	"sigs.k8s.io/kubebuilder/v3/pkg/cli"
@@ -88,9 +86,9 @@ func main() {
 		cli.WithCompletion(),
 	)
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 	if err := c.Run(); err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 }
