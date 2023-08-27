@@ -28,6 +28,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/deploy-image/v1alpha1"
 )
 
 type MigrateOptions struct {
@@ -66,7 +67,10 @@ func (opts *MigrateOptions) Rescaffold() error {
 	}
 	// plugin specific migration
 	if err := migrateGrafanaPlugin(config, opts.InputDir, opts.OutputDir); err != nil {
-		log.Fatalf("Failed to run plugin migration %v", err)
+		log.Fatalf("Failed to run grafana plugin migration %v", err)
+	}
+	if err := migrateDeployImagePlugin(config); err != nil {
+		log.Fatalf("Failed to run deploy-image plugin migration %v", err)
 	}
 	return nil
 }
@@ -172,6 +176,35 @@ func migrateGrafanaPlugin(store store.Store, src, des string) error {
 	return kubebuilderGrafanaEdit()
 }
 
+func migrateDeployImagePlugin(store store.Store) error {
+	deployImagePlugin := v1alpha1.PluginConfig{}
+	err := store.Config().DecodePluginConfig("deploy-image.go.kubebuilder.io/v1-alpha", &deployImagePlugin)
+	// If the deploy-image plugin is not found, we don't need to migrate
+	if err != nil {
+		if errors.As(err, &config.PluginKeyNotFoundError{}) {
+			log.Printf("deploy-image plugin is not found, skip the migration")
+			return nil
+		}
+		return fmt.Errorf("failed to decode deploy-image plugin config %v", err)
+	}
+
+	for _, r := range deployImagePlugin.Resources {
+		if err = createAPIWithDeployImage(r); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func createAPIWithDeployImage(resource v1alpha1.ResourceData) error {
+	var args []string
+	args = append(args, "create")
+	args = append(args, "api")
+	args = append(args, getGVKFlagsFromDeployImage(resource)...)
+	args = append(args, getDeployImageOptions(resource)...)
+	return util.RunCmd("kubebuilder create api", "kubebuilder", args...)
+}
+
 func getInitArgs(store store.Store) []string {
 	var args []string
 	plugins := store.Config().GetPluginChain()
@@ -200,6 +233,38 @@ func getGVKFlags(resource resource.Resource) []string {
 	if len(resource.Kind) > 0 {
 		args = append(args, "--kind", resource.Kind)
 	}
+	return args
+}
+
+func getGVKFlagsFromDeployImage(resource v1alpha1.ResourceData) []string {
+	var args []string
+	if len(resource.Group) > 0 {
+		args = append(args, "--group", resource.Group)
+	}
+	if len(resource.Version) > 0 {
+		args = append(args, "--version", resource.Version)
+	}
+	if len(resource.Kind) > 0 {
+		args = append(args, "--kind", resource.Kind)
+	}
+	return args
+}
+
+func getDeployImageOptions(resource v1alpha1.ResourceData) []string {
+	var args []string
+	if len(resource.Options.Image) > 0 {
+		args = append(args, fmt.Sprintf("--image=%s", resource.Options.Image))
+	}
+	if len(resource.Options.ContainerCommand) > 0 {
+		args = append(args, fmt.Sprintf("--image-container-command=%s", resource.Options.ContainerCommand))
+	}
+	if len(resource.Options.ContainerPort) > 0 {
+		args = append(args, fmt.Sprintf("--image-container-port=%s", resource.Options.ContainerPort))
+	}
+	if len(resource.Options.RunAsUser) > 0 {
+		args = append(args, fmt.Sprintf("--run-as-user=%s", resource.Options.RunAsUser))
+	}
+	args = append(args, fmt.Sprintf("--plugins=\"%s\"", "deploy-image/v1-alpha"))
 	return args
 }
 
