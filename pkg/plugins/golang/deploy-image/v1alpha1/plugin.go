@@ -51,11 +51,11 @@ func (Plugin) SupportedProjectVersions() []config.Version { return supportedProj
 // GetCreateAPISubcommand will return the subcommand which is responsible for scaffolding apis
 func (p Plugin) GetCreateAPISubcommand() plugin.CreateAPISubcommand { return &p.createAPISubcommand }
 
-type pluginConfig struct {
-	Resources []resourceData `json:"resources,omitempty"`
+type PluginConfig struct {
+	Resources []ResourceData `json:"resources,omitempty"`
 }
 
-type resourceData struct {
+type ResourceData struct {
 	Group   string  `json:"group,omitempty"`
 	Domain  string  `json:"domain,omitempty"`
 	Version string  `json:"version"`

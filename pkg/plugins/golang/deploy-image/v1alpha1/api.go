@@ -219,7 +219,7 @@ func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
 	}
 
 	// Track the resources following a declarative approach
-	cfg := pluginConfig{}
+	cfg := PluginConfig{}
 	if err := p.config.DecodePluginConfig(pluginKey, &cfg); errors.As(err, &config.UnsupportedFieldError{}) {
 		// Config doesn't support per-plugin configuration, so we can't track them
 	} else {
@@ -233,7 +233,7 @@ func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
 			ContainerPort:    p.imageContainerPort,
 			RunAsUser:        p.runAsUser,
 		}
-		cfg.Resources = append(cfg.Resources, resourceData{
+		cfg.Resources = append(cfg.Resources, ResourceData{
 			Group:   p.resource.GVK.Group,
 			Domain:  p.resource.GVK.Domain,
 			Version: p.resource.GVK.Version,

@@ -123,6 +123,19 @@ func ReGenerateProject(kbc *utils.TestContext) {
 	)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
+	By("create APIs with deploy-image plugin")
+	err = kbc.CreateAPI(
+		"--group", "crew",
+		"--version", "v1",
+		"--kind", "Memcached",
+		"--image=memcached:1.6.15-alpine",
+		"--image-container-command=memcached,-m=64,modern,-v",
+		"--image-container-port=11211",
+		"--run-as-user=1001",
+		"--plugins=\"deploy-image/v1-alpha\"",
+	)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+
 	By("Enable grafana plugin to an existing project")
 	err = kbc.Edit(
 		"--plugins", "grafana.kubebuilder.io/v1-alpha",
@@ -197,7 +210,24 @@ func ReGenerateProject(kbc *utils.TestContext) {
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 	ExpectWithOffset(1, fileContainsExpr).To(BeTrue())
 
-	By("checking if the project file was generated with the expected controller")
+	By("checking if the project file was generated with the expected deploy-image plugin fields")
+	var deployImagePlugin = "deploy-image.go.kubebuilder.io/v1-alpha"
+	fileContainsExpr, err = pluginutil.HasFileContentWith(
+		filepath.Join(kbc.Dir, "testdir2", "PROJECT"), deployImagePlugin)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(fileContainsExpr).To(BeTrue())
+	var deployImagePluginFields = `kind: Memcached
+      options:
+        containerCommand: memcached,-m=64,modern,-v
+        containerPort: "11211"
+        image: memcached:1.6.15-alpine
+        runAsUser: "1001"`
+	fileContainsExpr, err = pluginutil.HasFileContentWith(
+		filepath.Join(kbc.Dir, "testdir2", "PROJECT"), deployImagePluginFields)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(fileContainsExpr).To(BeTrue())
+
+	By("checking if the project file was generated with the expected grafana plugin fields")
 	var grafanaPlugin = "grafana.kubebuilder.io/v1-alpha"
 	fileContainsExpr, err = pluginutil.HasFileContentWith(
 		filepath.Join(kbc.Dir, "testdir2", "PROJECT"), grafanaPlugin)
