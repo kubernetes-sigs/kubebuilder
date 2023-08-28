@@ -2,11 +2,33 @@
 
 [extending-cli]: extending-cli.md
 [controller-runtime]: https://github.com/kubernetes-sigs/controller-runtime
+[creating-external-plugins]: external-plugins.md
 [operator-pattern]: https://kubernetes.io/docs/concepts/extend-kubernetes/operator
 [sdk-ansible]: https://sdk.operatorframework.io/docs/building-operators/ansible/
 [sdk-cli-pkg]: https://pkg.go.dev/github.com/operator-framework/operator-sdk/internal/cmd/operator-sdk/cli
 [sdk-helm]: https://sdk.operatorframework.io/docs/building-operators/helm/
 [sdk]: https://github.com/operator-framework/operator-sdk
+
+<aside class="note warning">
+
+<h1>Note</h1>
+
+Extending Kubebuilder can be accomplished in two primary ways:
+
+`By re-using the existing plugins`: In this approach, you use Kubebuilder as a library.
+
+This enables you to import existing Kubebuilder plugins and extend them, leveraging their features to build upon.
+
+It is particularly useful if you want to add functionalities that are closely tied with the existing Kubebuilder features.
+
+
+`By Creating an External Plugin`: This method allows you to create an independent, standalone plugin as a binary.
+
+The plugin can be written in any language and should implement an execution pattern that Kubebuilder knows how to interact with.
+
+You can see [Creating external plugins][creating-external-plugins] for more info.
+
+</aside>
 
 ## Overview
 
