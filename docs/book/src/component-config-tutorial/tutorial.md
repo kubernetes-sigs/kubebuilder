@@ -10,6 +10,8 @@ no longer guaranteeing its functionality from version 3.11.0 onwards. You can fi
 
 Please, be aware that it will force Kubebuilder remove this option soon in future release.
 
+Instead of relying on ComponentConfig, you can now directly utilize `manager.Options` to achieve similar configuration capabilities.
+
 </aside>
 
 Nearly every project that is built for Kubernetes will eventually need to
