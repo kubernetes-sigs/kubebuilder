@@ -17,8 +17,9 @@ limitations under the License.
 package templates
 
 import (
-	"fmt"
 	"path/filepath"
+
+	log "github.com/sirupsen/logrus"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
@@ -37,7 +38,7 @@ func (f *Channel) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("channels", "stable")
 	}
-	fmt.Println(f.Path)
+	log.Println(f.Path)
 
 	f.TemplateBody = channelTemplate
 

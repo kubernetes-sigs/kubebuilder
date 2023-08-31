@@ -23,6 +23,7 @@ import (
 	"strings"
 	"unicode"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
@@ -129,7 +130,7 @@ func (p *initSubcommand) Scaffold(fs machinery.Filesystem) error {
 	}
 
 	if !p.fetchDeps {
-		fmt.Println("Skipping fetching dependencies.")
+		log.Println("Skipping fetching dependencies.")
 		return nil
 	}
 

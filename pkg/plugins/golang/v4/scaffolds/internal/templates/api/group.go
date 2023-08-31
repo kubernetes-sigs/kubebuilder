@@ -17,8 +17,9 @@ limitations under the License.
 package api
 
 import (
-	"fmt"
 	"path/filepath"
+
+	log "github.com/sirupsen/logrus"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
@@ -44,7 +45,7 @@ func (f *Group) SetTemplateDefaults() error {
 	}
 
 	f.Path = f.Resource.Replacer().Replace(f.Path)
-	fmt.Println(f.Path)
+	log.Println(f.Path)
 	f.TemplateBody = groupTemplate
 
 	return nil

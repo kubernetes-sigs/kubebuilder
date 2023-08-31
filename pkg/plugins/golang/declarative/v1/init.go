@@ -22,6 +22,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	log "github.com/sirupsen/logrus"
+
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
@@ -51,7 +53,7 @@ func (p *initSubcommand) Scaffold(_ machinery.Filesystem) error {
 
 // updateDockerfile will add channels staging required for declarative plugin
 func updateDockerfile(isLegacyLayout bool) error {
-	fmt.Println("updating Dockerfile to add channels/ directory in the image")
+	log.Println("updating Dockerfile to add channels/ directory in the image")
 	dockerfile := filepath.Join("Dockerfile")
 
 	controllerPath := "internal/controller/"

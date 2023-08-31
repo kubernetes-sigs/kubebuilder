@@ -17,8 +17,7 @@ limitations under the License.
 package scaffolds
 
 import (
-	"fmt"
-
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
@@ -80,7 +79,7 @@ func (s *initScaffolder) InjectFS(fs machinery.Filesystem) {
 
 // Scaffold implements cmdutil.Scaffolder
 func (s *initScaffolder) Scaffold() error {
-	fmt.Println("Writing scaffold for you to edit...")
+	log.Println("Writing scaffold for you to edit...")
 
 	// Initialize the machinery.Scaffold that will write the boilerplate file to disk
 	// The boilerplate file needs to be scaffolded as a separate step as it is going to

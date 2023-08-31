@@ -20,6 +20,8 @@ import (
 	"errors"
 	"fmt"
 
+	log "github.com/sirupsen/logrus"
+
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
@@ -92,7 +94,7 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 }
 
 func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
-	fmt.Println("updating scaffold with declarative pattern...")
+	log.Println("updating scaffold with declarative pattern...")
 
 	scaffolder := scaffolds.NewAPIScaffolder(p.config, *p.resource)
 	scaffolder.InjectFS(fs)

@@ -22,14 +22,15 @@ import (
 	"os"
 	"strings"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
-	goPlugin "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/spf13/pflag"
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
+	goPlugin "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/deploy-image/v1alpha1/scaffolds"
 )
 
@@ -204,7 +205,7 @@ func (p *createAPISubcommand) PreScaffold(machinery.Filesystem) error {
 }
 
 func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
-	fmt.Println("updating scaffold with deploy-image/v1alpha1 plugin...")
+	log.Println("updating scaffold with deploy-image/v1alpha1 plugin...")
 
 	scaffolder := scaffolds.NewDeployImageScaffolder(p.config,
 		*p.resource,

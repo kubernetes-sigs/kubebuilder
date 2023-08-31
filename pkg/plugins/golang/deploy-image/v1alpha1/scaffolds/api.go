@@ -21,13 +21,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
-
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins"
 	kustomizev1scaffolds "sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v1/scaffolds"
@@ -77,7 +77,7 @@ func (s *apiScaffolder) InjectFS(fs machinery.Filesystem) {
 
 // Scaffold implements cmdutil.Scaffolder
 func (s *apiScaffolder) Scaffold() error {
-	fmt.Println("Writing scaffold for you to edit...")
+	log.Println("Writing scaffold for you to edit...")
 
 	//nolint: staticcheck
 	isGoV3 := plugin.IsLegacyLayout(s.config)

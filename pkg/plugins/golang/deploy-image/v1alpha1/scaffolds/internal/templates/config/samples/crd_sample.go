@@ -14,8 +14,9 @@ limitations under the License.
 package samples
 
 import (
-	"fmt"
 	"path/filepath"
+
+	log "github.com/sirupsen/logrus"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
@@ -37,7 +38,7 @@ func (f *CRDSample) SetTemplateDefaults() error {
 		f.Path = filepath.Join("config", "samples", "%[group]_%[version]_%[kind].yaml")
 	}
 	f.Path = f.Resource.Replacer().Replace(f.Path)
-	fmt.Println(f.Path)
+	log.Println(f.Path)
 
 	f.IfExistsAction = machinery.OverwriteFile
 

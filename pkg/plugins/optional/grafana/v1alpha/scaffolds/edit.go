@@ -22,6 +22,8 @@ import (
 	"os"
 	"strings"
 
+	log "github.com/sirupsen/logrus"
+
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/optional/grafana/v1alpha/scaffolds/internal/templates"
@@ -160,7 +162,7 @@ func fillMissingUnit(item templates.CustomMetricItem) templates.CustomMetricItem
 
 // Scaffold implements cmdutil.Scaffolder
 func (s *editScaffolder) Scaffold() error {
-	fmt.Println("Generating Grafana manifests to visualize controller status...")
+	log.Println("Generating Grafana manifests to visualize controller status...")
 
 	// Initialize the machinery.Scaffold that will write the files to disk
 	scaffold := machinery.NewScaffold(s.fs)

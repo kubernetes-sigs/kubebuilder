@@ -19,6 +19,7 @@ package scaffolds
 import (
 	"fmt"
 
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
@@ -55,7 +56,7 @@ func (s *webhookScaffolder) InjectFS(fs machinery.Filesystem) {
 
 // Scaffold implements cmdutil.Scaffolder
 func (s *webhookScaffolder) Scaffold() error {
-	fmt.Println("Writing scaffold for you to edit...")
+	log.Println("Writing scaffold for you to edit...")
 
 	// Load the boilerplate
 	boilerplate, err := afero.ReadFile(s.fs.FS, hack.DefaultBoilerplatePath)
