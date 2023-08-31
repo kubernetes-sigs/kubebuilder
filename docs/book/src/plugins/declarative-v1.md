@@ -1,4 +1,18 @@
-# Declarative Plugin
+# [Deprecated] Declarative Plugin
+
+<aside class="note warning">
+<h1>Notice of Deprecation</h1>
+
+The Declarative plugin is an implementation derived from the [kubebuilder-declarative-pattern][kubebuilder-declarative-pattern] project. 
+As the project maintainers possess the most comprehensive knowledge about its changes and Kubebuilder allows 
+the creation of custom plugins using its library, it has been decided that this plugin will be better 
+maintained within the [kubebuilder-declarative-pattern][kubebuilder-declarative-pattern] project itself, 
+which falls under its domain of responsibility. This decision aims to improve the maintainability of both the 
+plugin and Kubebuilder, ultimately providing an enhanced user experience. To follow up on this work, please refer 
+to [Issue #293](https://github.com/kubernetes-sigs/kubebuilder-declarative-pattern/issues/293) in the 
+kubebuilder-declarative-pattern repository.
+
+</aside>
 
 The declarative plugin allows you to create [controllers][controller-runtime] using the [kubebuilder-declarative-pattern][kubebuilder-declarative-pattern].
 By using the declarative plugin, you can make the required changes on top of what is scaffolded by default when you create a Go project with Kubebuilder and the Golang plugins (i.e. go/v2, go/v3).
