@@ -362,14 +362,6 @@ CronJob controller's`+" `"+`SetupWithManager`+"`"+` method.
 	}`, `
 	// +kubebuilder:docs-gen:collapse=old stuff`)
 	CheckError("fixing main.go", err)
-
-	err = pluginutil.ReplaceInFile(
-		filepath.Join(sp.ctx.Dir, "cmd/main.go"),
-		`	if err = (&batchv1.CronJob{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "CronJob")
-		os.Exit(1)
-	}`, `}`)
-	CheckError("fixing main.go", err)
 }
 
 func updateWebhook(sp *Sample) {

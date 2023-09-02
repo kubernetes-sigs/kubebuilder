@@ -96,9 +96,11 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Captain")
 		os.Exit(1)
 	}
-	if err = (&crewv1.Captain{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "Captain")
-		os.Exit(1)
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err = (&crewv1.Captain{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Captain")
+			os.Exit(1)
+		}
 	}
 	if err = (&controller.FirstMateReconciler{
 		Client: mgr.GetClient(),
@@ -107,9 +109,11 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "FirstMate")
 		os.Exit(1)
 	}
-	if err = (&crewv1.FirstMate{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "FirstMate")
-		os.Exit(1)
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err = (&crewv1.FirstMate{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "FirstMate")
+			os.Exit(1)
+		}
 	}
 	if err = (&controller.AdmiralReconciler{
 		Client: mgr.GetClient(),
@@ -118,9 +122,11 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Admiral")
 		os.Exit(1)
 	}
-	if err = (&crewv1.Admiral{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "Admiral")
-		os.Exit(1)
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err = (&crewv1.Admiral{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Admiral")
+			os.Exit(1)
+		}
 	}
 	if err = (&controller.LakerReconciler{
 		Client: mgr.GetClient(),

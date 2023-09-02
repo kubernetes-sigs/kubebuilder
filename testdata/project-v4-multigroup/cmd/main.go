@@ -124,9 +124,11 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Captain")
 		os.Exit(1)
 	}
-	if err = (&crewv1.Captain{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "Captain")
-		os.Exit(1)
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err = (&crewv1.Captain{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Captain")
+			os.Exit(1)
+		}
 	}
 	if err = (&shipcontroller.FrigateReconciler{
 		Client: mgr.GetClient(),
@@ -135,9 +137,11 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Frigate")
 		os.Exit(1)
 	}
-	if err = (&shipv1beta1.Frigate{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "Frigate")
-		os.Exit(1)
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err = (&shipv1beta1.Frigate{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Frigate")
+			os.Exit(1)
+		}
 	}
 	if err = (&shipcontroller.DestroyerReconciler{
 		Client: mgr.GetClient(),
@@ -146,9 +150,11 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Destroyer")
 		os.Exit(1)
 	}
-	if err = (&shipv1.Destroyer{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "Destroyer")
-		os.Exit(1)
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err = (&shipv1.Destroyer{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Destroyer")
+			os.Exit(1)
+		}
 	}
 	if err = (&shipcontroller.CruiserReconciler{
 		Client: mgr.GetClient(),
@@ -157,9 +163,11 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Cruiser")
 		os.Exit(1)
 	}
-	if err = (&shipv2alpha1.Cruiser{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "Cruiser")
-		os.Exit(1)
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err = (&shipv2alpha1.Cruiser{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Cruiser")
+			os.Exit(1)
+		}
 	}
 	if err = (&seacreaturescontroller.KrakenReconciler{
 		Client: mgr.GetClient(),
@@ -210,9 +218,11 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Lakers")
 		os.Exit(1)
 	}
-	if err = (&testprojectorgv1.Lakers{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "Lakers")
-		os.Exit(1)
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err = (&testprojectorgv1.Lakers{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Lakers")
+			os.Exit(1)
+		}
 	}
 	if err = (&examplecomcontroller.MemcachedReconciler{
 		Client:   mgr.GetClient(),
@@ -230,9 +240,11 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Busybox")
 		os.Exit(1)
 	}
-	if err = (&examplecomv1alpha1.Memcached{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "Memcached")
-		os.Exit(1)
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err = (&examplecomv1alpha1.Memcached{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Memcached")
+			os.Exit(1)
+		}
 	}
 	//+kubebuilder:scaffold:builder
 
