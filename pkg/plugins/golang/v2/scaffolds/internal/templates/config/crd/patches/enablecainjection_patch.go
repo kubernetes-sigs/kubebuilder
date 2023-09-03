@@ -27,13 +27,18 @@ var _ machinery.Template = &EnableCAInjectionPatch{}
 // EnableCAInjectionPatch scaffolds a file that defines the patch that injects CA into the CRD
 type EnableCAInjectionPatch struct {
 	machinery.TemplateMixin
+	machinery.MultiGroupMixin
 	machinery.ResourceMixin
 }
 
 // SetTemplateDefaults implements file.Template
 func (f *EnableCAInjectionPatch) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = filepath.Join("config", "crd", "patches", "cainjection_in_%[plural].yaml")
+		if f.MultiGroup {
+			f.Path = filepath.Join("config", "crd", "patches", "cainjection_in_%[group]_%[plural].yaml")
+		} else {
+			f.Path = filepath.Join("config", "crd", "patches", "cainjection_in_%[plural].yaml")
+		}
 	}
 	f.Path = f.Resource.Replacer().Replace(f.Path)
 
