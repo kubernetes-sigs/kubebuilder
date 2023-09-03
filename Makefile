@@ -68,6 +68,7 @@ generate: generate-testdata generate-docs ## Update/generate all mock data. You 
 
 .PHONY: generate-testdata
 generate-testdata: ## Update/generate the testdata in $GOPATH/src/sigs.k8s.io/kubebuilder
+	chmod -R +w testdata/
 	rm -rf testdata/
 	./test/testdata/generate.sh
 
