@@ -105,9 +105,11 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Busybox")
 		os.Exit(1)
 	}
-	if err = (&examplecomv1alpha1.Memcached{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "Memcached")
-		os.Exit(1)
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err = (&examplecomv1alpha1.Memcached{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Memcached")
+			os.Exit(1)
+		}
 	}
 	//+kubebuilder:scaffold:builder
 

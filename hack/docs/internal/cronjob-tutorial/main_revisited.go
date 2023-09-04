@@ -37,9 +37,4 @@ const MainEnableWebhook = `
 		locally, we'll put them behind an environment variable.
 
 		We'll just make sure to set` + " `" + `ENABLE_WEBHOOKS=false` + "`" + ` when we run locally.
-	*/
-	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = (&batchv1.CronJob{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "CronJob")
-			os.Exit(1)
-		}`
+	*/`
