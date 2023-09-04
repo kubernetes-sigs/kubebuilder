@@ -18,6 +18,10 @@ source "$(dirname "$0")/../../test/common.sh"
 
 build_kb
 
+# ensure that destroy succeed
+chmod -R +w docs/book/src/component-config-tutorial/testdata/project/
+chmod -R +w docs/book/src/cronjob-tutorial/testdata/project/
+
 docs_gen_directory="$(dirname "$0")/../../hack/docs/generate_samples.go"
 go run ${docs_gen_directory}
 
