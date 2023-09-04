@@ -31,6 +31,7 @@ var (
 // Kustomization scaffolds a file that defines the kustomization scheme for the crd folder
 type Kustomization struct {
 	machinery.TemplateMixin
+	machinery.MultiGroupMixin
 	machinery.ResourceMixin
 }
 
@@ -82,13 +83,17 @@ func (f *Kustomization) GetCodeFragments() machinery.CodeFragmentsMap {
 	res := make([]string, 0)
 	res = append(res, fmt.Sprintf(resourceCodeFragment, f.Resource.QualifiedGroup(), f.Resource.Plural))
 
+	suffix := f.Resource.Plural
+	if f.MultiGroup {
+		suffix = f.Resource.Group + "_" + f.Resource.Plural
+	}
 	// Generate resource code fragments
 	webhookPatch := make([]string, 0)
-	webhookPatch = append(webhookPatch, fmt.Sprintf(webhookPatchCodeFragment, f.Resource.Plural))
+	webhookPatch = append(webhookPatch, fmt.Sprintf(webhookPatchCodeFragment, suffix))
 
 	// Generate resource code fragments
 	caInjectionPatch := make([]string, 0)
-	caInjectionPatch = append(caInjectionPatch, fmt.Sprintf(caInjectionPatchCodeFragment, f.Resource.Plural))
+	caInjectionPatch = append(caInjectionPatch, fmt.Sprintf(caInjectionPatchCodeFragment, suffix))
 
 	// Only store code fragments in the map if the slices are non-empty
 	if len(res) != 0 {
