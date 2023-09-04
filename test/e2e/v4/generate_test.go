@@ -90,6 +90,10 @@ Count int `+"`"+`json:"count,omitempty"`+"`"+`
 		filepath.Join(kbc.Dir, "config", "crd", "kustomization.yaml"),
 		fmt.Sprintf("#- path: patches/cainjection_in_%s.yaml", kbc.Resources), "#")).To(Succeed())
 	ExpectWithOffset(1, pluginutil.UncommentCode(
+		filepath.Join(kbc.Dir, "config", "crd", "kustomization.yaml"),
+		`# configurations:
+# - kustomizeconfig.yaml`, "# ")).To(Succeed())
+	ExpectWithOffset(1, pluginutil.UncommentCode(
 		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 		"#- ../webhook", "#")).To(Succeed())
 	ExpectWithOffset(1, pluginutil.UncommentCode(
