@@ -50,6 +50,7 @@ func (f *Kustomization) SetTemplateDefaults() error {
 	return nil
 }
 
+//nolint:gosec to ignore false complain G101: Potential hardcoded credentials (gosec)
 const (
 	resourceMarker         = "crdkustomizeresource"
 	webhookPatchMarker     = "crdkustomizewebhookpatch"
