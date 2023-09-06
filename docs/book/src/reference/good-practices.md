@@ -68,7 +68,7 @@ We recommend you manage your solutions using Status Conditionals following the [
 <aside class="note">
 <h1> Example of Usage </h1>
 
-Check out the [Deploy Image Plugin][deploy-image-plugin]. This plugin allows users to scaffold API/Controllers to deploy and manage an Operand (image) on the cluster following the guidelines and best practices. It abstracts the
+Check out the [Deploy Image Plugin][deploy-image]. This plugin allows users to scaffold API/Controllers to deploy and manage an Operand (image) on the cluster following the guidelines and best practices. It abstracts the
 complexities of achieving this goal while allowing users to customize the generated code.
 
 Therefore, you can check an example of Status Conditional usage by looking at its API(s) scaffolded and code implemented under the Reconciliation into its Controllers. 
@@ -76,16 +76,9 @@ Therefore, you can check an example of Status Conditional usage by looking at it
 </aside>
 
 [docs]: ./cronjob-tutorial/gvks.html
-
-[operator-pattern]: https://kubernetes.io/docs/concepts/extend-kubernetes/operator/ 
-
+[operator-pattern]: https://kubernetes.io/docs/concepts/extend-kubernetes/operator/
 [controllers]: https://kubernetes.io/docs/concepts/architecture/controller/
-
 [controller-runtime-topic]: https://github.com/kubernetes-sigs/controller-runtime/blob/main/FAQ.md#q-how-do-i-have-different-logic-in-my-reconciler-for-different-types-of-events-eg-create-update-delete
-
 [controller-runtime]: https://github.com/kubernetes-sigs/controller-runtime
-
 [deploy-image]: ./plugins/deploy-image-plugin-v1-alpha.md
-
-[controller-runtime-manager]:  https://github.com/kubernetes-sigs/controller-runtime/blob/304027bcbe4b3f6d582180aec5759eb4db3f17fd/pkg/manager/manager.go#L53
-
+[controller-runtime-manager]: https://github.com/kubernetes-sigs/controller-runtime/blob/304027bcbe4b3f6d582180aec5759eb4db3f17fd/pkg/manager/manager.go#L53
