@@ -25,6 +25,9 @@ process was done to ensure that we have an aligned process under the org (simila
 > **Note**
 > - You will need to have checkout locally from the remote repository the previous branch
 > - Also, ensure that you fetch all tags from the remote `git fetch --all --tags`
+> - Also, if you face issues to generate the release notes you might want to able to sort it out by running i.e.: 
+> `go run sigs.k8s.io/kubebuilder-release-tools/notes --use-upstream=false --from=v3.11.0 --branch=release-X`
+
 
 ### Draft a new release from GitHub
 
