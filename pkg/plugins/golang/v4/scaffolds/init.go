@@ -19,6 +19,7 @@ package scaffolds
 import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v4/scaffolds/internal/templates/github"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
@@ -139,5 +140,6 @@ func (s *initScaffolder) Scaffold() error {
 		&templates.Dockerfile{},
 		&templates.DockerIgnore{},
 		&templates.Readme{},
+		&github.UnitTest{},
 	)
 }
