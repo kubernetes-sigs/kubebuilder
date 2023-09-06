@@ -27,6 +27,7 @@ import (
 // log is for logging in this package.
 var lakerslog = logf.Log.WithName("lakers-resource")
 
+// SetupWebhookWithManager will setup the manager to manage the webhooks
 func (r *Lakers) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).

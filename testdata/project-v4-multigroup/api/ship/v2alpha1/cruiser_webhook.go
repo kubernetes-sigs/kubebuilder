@@ -27,6 +27,7 @@ import (
 // log is for logging in this package.
 var cruiserlog = logf.Log.WithName("cruiser-resource")
 
+// SetupWebhookWithManager will setup the manager to manage the webhooks
 func (r *Cruiser) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).

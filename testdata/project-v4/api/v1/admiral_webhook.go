@@ -25,6 +25,7 @@ import (
 // log is for logging in this package.
 var admirallog = logf.Log.WithName("admiral-resource")
 
+// SetupWebhookWithManager will setup the manager to manage the webhooks
 func (r *Admiral) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
