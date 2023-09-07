@@ -74,6 +74,8 @@
       - [Migration by updating the files](migration/manually_migration_guide_gov3_to_gov4.md)
   - [Single Group to Multi-Group](./migration/multi-group.md)
 
+- [Project Upgrade Assistant](./reference/rescaffold.md)
+
 ---
 
 - [Reference](./reference/reference.md)
