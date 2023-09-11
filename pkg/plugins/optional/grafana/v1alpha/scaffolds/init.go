@@ -17,12 +17,13 @@ limitations under the License.
 package scaffolds
 
 import (
-	log "github.com/sirupsen/logrus"
-
+	"sigs.k8s.io/kubebuilder/v3/pkg/cli/utils"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/optional/grafana/v1alpha/scaffolds/internal/templates"
 )
+
+var log = utils.Log()
 
 var _ plugins.Scaffolder = &initScaffolder{}
 

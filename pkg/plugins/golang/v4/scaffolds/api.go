@@ -20,9 +20,9 @@ import (
 	"errors"
 	"fmt"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 
+	"sigs.k8s.io/kubebuilder/v3/pkg/cli/utils"
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
@@ -33,6 +33,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v4/scaffolds/internal/templates/hack"
 )
 
+var log = utils.Log()
 var _ plugins.Scaffolder = &apiScaffolder{}
 
 // apiScaffolder contains configuration for generating scaffolding for Go type

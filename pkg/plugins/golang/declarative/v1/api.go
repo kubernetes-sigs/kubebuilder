@@ -20,13 +20,12 @@ import (
 	"errors"
 	"fmt"
 
-	log "github.com/sirupsen/logrus"
-
+	"sigs.k8s.io/kubebuilder/v3/pkg/cli/utils"
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
+	pluginUtil "sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/declarative/v1/scaffolds"
 	goPluginV2 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2"
 	goPluginV3 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3"
@@ -38,6 +37,8 @@ const (
 	kbDeclarativePatternForV3 = "18dbaf5fcd851e6adc3f2f8a8facb669a1420797"
 	kbDeclarativePatternForV4 = "9a410556b95de526e12acfe0d6f56fd35c0b0135"
 )
+
+var log = utils.Log()
 
 var _ plugin.CreateAPISubcommand = &createAPISubcommand{}
 
@@ -140,7 +141,7 @@ func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
 			break
 		}
 	}
-	err = util.RunCmd("Get declarative pattern", "go", "get",
+	err = pluginUtil.RunCmd("Get declarative pattern", "go", "get",
 		"sigs.k8s.io/kubebuilder-declarative-pattern@"+kbDeclarativePattern)
 	if err != nil {
 		return err

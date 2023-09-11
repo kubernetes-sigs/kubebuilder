@@ -16,8 +16,7 @@ package samples
 import (
 	"path/filepath"
 
-	log "github.com/sirupsen/logrus"
-
+	"sigs.k8s.io/kubebuilder/v3/pkg/cli/utils"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
@@ -34,6 +33,7 @@ type CRDSample struct {
 
 // SetTemplateDefaults implements file.Template
 func (f *CRDSample) SetTemplateDefaults() error {
+	log := utils.Log()
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "samples", "%[group]_%[version]_%[kind].yaml")
 	}

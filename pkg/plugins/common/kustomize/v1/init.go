@@ -24,9 +24,9 @@ import (
 	"runtime"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
 
+	"sigs.k8s.io/kubebuilder/v3/pkg/cli/utils"
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/internal/validation"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
@@ -34,6 +34,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v1/scaffolds"
 )
 
+var log = utils.Log()
 var _ plugin.InitSubcommand = &initSubcommand{}
 
 // Verify if the local environment is supported by this plugin

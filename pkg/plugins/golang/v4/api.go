@@ -22,14 +22,14 @@ import (
 	"fmt"
 	"os"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
 
+	"sigs.k8s.io/kubebuilder/v3/pkg/cli/utils"
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
+	pluginUtil "sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
 	goPlugin "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v4/scaffolds"
 )
@@ -38,6 +38,8 @@ const (
 	// defaultCRDVersion is the default CRD API version to scaffold.
 	defaultCRDVersion = "v1"
 )
+
+var log = utils.Log()
 
 // DefaultMainPath is default file path of main.go
 const DefaultMainPath = "cmd/main.go"
@@ -131,11 +133,11 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 	reader := bufio.NewReader(os.Stdin)
 	if !p.resourceFlag.Changed {
 		log.Println("Create Resource [y/n]")
-		p.options.DoAPI = util.YesNo(reader)
+		p.options.DoAPI = pluginUtil.YesNo(reader)
 	}
 	if !p.controllerFlag.Changed {
 		log.Println("Create Controller [y/n]")
-		p.options.DoController = util.YesNo(reader)
+		p.options.DoController = pluginUtil.YesNo(reader)
 	}
 
 	p.options.UpdateResource(p.resource, p.config)
@@ -177,12 +179,12 @@ func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
 }
 
 func (p *createAPISubcommand) PostScaffold() error {
-	err := util.RunCmd("Update dependencies", "go", "mod", "tidy")
+	err := pluginUtil.RunCmd("Update dependencies", "go", "mod", "tidy")
 	if err != nil {
 		return err
 	}
 	if p.runMake && p.resource.HasAPI() {
-		err = util.RunCmd("Running make", "make", "generate")
+		err = pluginUtil.RunCmd("Running make", "make", "generate")
 		if err != nil {
 			return err
 		}

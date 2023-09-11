@@ -23,15 +23,15 @@ import (
 	"path/filepath"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
 
+	"sigs.k8s.io/kubebuilder/v3/pkg/cli/utils"
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	cfgv2 "sigs.k8s.io/kubebuilder/v3/pkg/config/v2"
 	"sigs.k8s.io/kubebuilder/v3/pkg/internal/validation"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
+	pluginUtil "sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v2/scaffolds"
 )
@@ -40,6 +40,7 @@ import (
 var (
 	goVerMin = golang.MustParse("go1.13")
 	goVerMax = golang.MustParse("go2.0alpha1")
+	log      = utils.Log()
 )
 
 var _ plugin.InitSubcommand = &initSubcommand{}
@@ -167,7 +168,7 @@ func (p *initSubcommand) Scaffold(fs machinery.Filesystem) error {
 
 	// Ensure that we are pinning controller-runtime version
 	// xref: https://github.com/kubernetes-sigs/kubebuilder/issues/997
-	err = util.RunCmd("Get controller runtime", "go", "get",
+	err = pluginUtil.RunCmd("Get controller runtime", "go", "get",
 		"sigs.k8s.io/controller-runtime@"+scaffolds.ControllerRuntimeVersion)
 	if err != nil {
 		return err
@@ -177,7 +178,7 @@ func (p *initSubcommand) Scaffold(fs machinery.Filesystem) error {
 }
 
 func (p *initSubcommand) PostScaffold() error {
-	err := util.RunCmd("Update dependencies", "go", "mod", "tidy")
+	err := pluginUtil.RunCmd("Update dependencies", "go", "mod", "tidy")
 	if err != nil {
 		return err
 	}

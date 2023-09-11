@@ -19,8 +19,7 @@ package scaffolds
 import (
 	"fmt"
 
-	log "github.com/sirupsen/logrus"
-
+	"sigs.k8s.io/kubebuilder/v3/pkg/cli/utils"
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
@@ -31,6 +30,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v1/scaffolds/internal/templates/config/samples"
 )
 
+var log = utils.Log()
 var _ plugins.Scaffolder = &apiScaffolder{}
 
 // apiScaffolder contains configuration for generating scaffolding for Go type

@@ -22,17 +22,18 @@ import (
 	"os"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/spf13/pflag"
+	"sigs.k8s.io/kubebuilder/v3/pkg/cli/utils"
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
+	pluginUtil "sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
 	goPlugin "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/deploy-image/v1alpha1/scaffolds"
 )
+
+var log = utils.Log()
 
 const (
 	// defaultCRDVersion is the default CRD API version to scaffold.
@@ -165,14 +166,14 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 
 	// Check CRDVersion against all other CRDVersions in p.config for compatibility.
 	// nolint:staticcheck
-	if util.HasDifferentCRDVersion(p.config, p.resource.API.CRDVersion) {
+	if pluginUtil.HasDifferentCRDVersion(p.config, p.resource.API.CRDVersion) {
 		return fmt.Errorf("only one CRD version can be used for all resources, cannot add %q",
 			p.resource.API.CRDVersion)
 	}
 
 	// Check CRDVersion against all other CRDVersions in p.config for compatibility.
 	// nolint:staticcheck
-	if util.HasDifferentCRDVersion(p.config, p.resource.API.CRDVersion) {
+	if pluginUtil.HasDifferentCRDVersion(p.config, p.resource.API.CRDVersion) {
 		return fmt.Errorf("only one CRD version can be used for all resources, cannot add %q",
 			p.resource.API.CRDVersion)
 	}
@@ -251,19 +252,19 @@ func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
 }
 
 func (p *createAPISubcommand) PostScaffold() error {
-	err := util.RunCmd("Update dependencies", "go", "mod", "tidy")
+	err := pluginUtil.RunCmd("Update dependencies", "go", "mod", "tidy")
 	if err != nil {
 		return err
 	}
 	if p.runMake && p.resource.HasAPI() {
-		err = util.RunCmd("Running make", "make", "generate")
+		err = pluginUtil.RunCmd("Running make", "make", "generate")
 		if err != nil {
 			return err
 		}
 	}
 
 	if p.runManifests && p.resource.HasAPI() {
-		err = util.RunCmd("Running make", "make", "manifests")
+		err = pluginUtil.RunCmd("Running make", "make", "manifests")
 		if err != nil {
 			return err
 		}

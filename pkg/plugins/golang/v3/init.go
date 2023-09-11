@@ -24,7 +24,6 @@ import (
 	"strings"
 	"unicode"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"

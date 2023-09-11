@@ -19,11 +19,11 @@ package templates
 import (
 	"path/filepath"
 
-	log "github.com/sirupsen/logrus"
-
+	"sigs.k8s.io/kubebuilder/v3/pkg/cli/utils"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
+var log = utils.Log()
 var _ machinery.Template = &Channel{}
 
 // Channel scaffolds the file for the channel

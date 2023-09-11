@@ -21,14 +21,14 @@ import (
 	"path/filepath"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 
+	"sigs.k8s.io/kubebuilder/v3/pkg/cli/utils"
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
+	pluginUtil "sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins"
 	kustomizev1scaffolds "sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v1/scaffolds"
 	kustomizev2scaffolds "sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v2/scaffolds"
@@ -38,6 +38,8 @@ import (
 	golangv3scaffolds "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds"
 	golangv4scaffolds "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v4/scaffolds"
 )
+
+var log = utils.Log()
 
 var _ plugins.Scaffolder = &apiScaffolder{}
 
@@ -156,15 +158,15 @@ func (s *apiScaffolder) Scaffold() error {
 // controller to create the Pod for the Kind
 func (s *apiScaffolder) addEnvVarIntoManager() error {
 	managerPath := filepath.Join("config", "manager", "manager.yaml")
-	err := util.ReplaceInFile(managerPath, `env:`, `env:`)
+	err := pluginUtil.ReplaceInFile(managerPath, `env:`, `env:`)
 	if err != nil {
-		if err := util.InsertCode(managerPath, `name: manager`, `
+		if err := pluginUtil.InsertCode(managerPath, `name: manager`, `
         env:`); err != nil {
 			return fmt.Errorf("error scaffolding env key in config/manager/manager.yaml")
 		}
 	}
 
-	if err = util.InsertCode(managerPath, `env:`,
+	if err = pluginUtil.InsertCode(managerPath, `env:`,
 		fmt.Sprintf(envVarTemplate, strings.ToUpper(s.resource.Kind), s.image)); err != nil {
 		return fmt.Errorf("error scaffolding env key in config/manager/manager.yaml")
 	}
@@ -189,7 +191,7 @@ func (s *apiScaffolder) scaffoldCreateAPIFromPlugins(isLegacyLayout bool) error 
 // which will have its own controller template which set the recorder so that we can use it
 // in the reconciliation to create an event inside for the finalizer
 func (s *apiScaffolder) updateMainByAddingEventRecorder(defaultMainPath string) error {
-	if err := util.InsertCode(
+	if err := pluginUtil.InsertCode(
 		defaultMainPath,
 		fmt.Sprintf(
 			`%sReconciler{
@@ -205,7 +207,7 @@ func (s *apiScaffolder) updateMainByAddingEventRecorder(defaultMainPath string) 
 
 // updateControllerCode will update the code generate on the template to add the Container information
 func (s *apiScaffolder) updateControllerCode(controller controllers.Controller) error {
-	if err := util.ReplaceInFile(
+	if err := pluginUtil.ReplaceInFile(
 		controller.Path,
 		"//TODO: scaffold container",
 		fmt.Sprintf(containerTemplate, // value for the image
@@ -229,7 +231,7 @@ func (s *apiScaffolder) updateControllerCode(controller controllers.Controller) 
 		// remove the first space to not fail in the go fmt ./...
 		res = strings.TrimLeft(res, " ")
 
-		if err := util.InsertCode(controller.Path, `SecurityContext: &corev1.SecurityContext{
+		if err := pluginUtil.InsertCode(controller.Path, `SecurityContext: &corev1.SecurityContext{
 							RunAsNonRoot:             &[]bool{true}[0],
 							AllowPrivilegeEscalation: &[]bool{false}[0],
 							Capabilities: &corev1.Capabilities{
@@ -245,7 +247,7 @@ func (s *apiScaffolder) updateControllerCode(controller controllers.Controller) 
 
 	// Scaffold the port if informed
 	if len(s.port) > 0 {
-		if err := util.InsertCode(
+		if err := pluginUtil.InsertCode(
 			controller.Path,
 			`SecurityContext: &corev1.SecurityContext{
 							RunAsNonRoot:             &[]bool{true}[0],
@@ -268,7 +270,7 @@ func (s *apiScaffolder) updateControllerCode(controller controllers.Controller) 
 	}
 
 	if len(s.runAsUser) > 0 {
-		if err := util.InsertCode(
+		if err := pluginUtil.InsertCode(
 			controller.Path,
 			`RunAsNonRoot:             &[]bool{true}[0],`,
 			fmt.Sprintf(runAsUserTemplate, s.runAsUser),

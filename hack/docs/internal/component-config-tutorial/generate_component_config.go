@@ -21,12 +21,13 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/spf13/afero"
-	pluginutil "sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
+	util "sigs.k8s.io/kubebuilder/v3/pkg/cli/utils"
+	pluginUtil "sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
 	"sigs.k8s.io/kubebuilder/v3/test/e2e/utils"
 )
+
+var log = util.Log()
 
 type Sample struct {
 	ctx *utils.TestContext
@@ -116,14 +117,14 @@ clusterName: example-test
 	CheckError("fixing controller_manager_config", err)
 
 	// 2. fix projectconfig_types.go
-	err = pluginutil.InsertCode(
+	err = pluginUtil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "api/v2/projectconfig_types.go"),
 		`metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"`,
 		`
 	cfg "sigs.k8s.io/controller-runtime/pkg/config/v1alpha1"`)
 	CheckError("fixing projectconfig_types", err)
 
-	err = pluginutil.InsertCode(
+	err = pluginUtil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "api/v2/projectconfig_types.go"),
 		`Status ProjectConfigStatus `+"`"+`json:"status,omitempty"`+"`",
 		`
@@ -136,14 +137,14 @@ clusterName: example-test
 	CheckError("fixing projectconfig_types", err)
 
 	// 3. fix main
-	err = pluginutil.InsertCode(
+	err = pluginUtil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "cmd/main.go"),
 		`var err error`,
 		`
 	ctrlConfig := configv2.ProjectConfig{}`)
 	CheckError("fixing main.go", err)
 
-	err = pluginutil.InsertCode(
+	err = pluginUtil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "cmd/main.go"),
 		`AtPath(configFile)`,
 		`.OfKind(&ctrlConfig)`)

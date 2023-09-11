@@ -19,11 +19,11 @@ package api
 import (
 	"path/filepath"
 
-	log "github.com/sirupsen/logrus"
-
+	"sigs.k8s.io/kubebuilder/v3/pkg/cli/utils"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
+var log = utils.Log()
 var _ machinery.Template = &Group{}
 
 // Group scaffolds the file that defines the registration methods for a certain group and version

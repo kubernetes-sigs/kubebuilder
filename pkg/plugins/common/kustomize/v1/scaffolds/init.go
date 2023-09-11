@@ -17,8 +17,6 @@ limitations under the License.
 package scaffolds
 
 import (
-	log "github.com/sirupsen/logrus"
-
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins"
@@ -55,6 +53,7 @@ func (s *initScaffolder) InjectFS(fs machinery.Filesystem) {
 
 // Scaffold implements cmdutil.Scaffolder
 func (s *initScaffolder) Scaffold() error {
+	//log := util.Log()
 	log.Println("Writing kustomize manifests for you to edit...")
 
 	// Initialize the machinery.Scaffold that will write the files to disk

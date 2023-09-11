@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubernetes Authors.
+Copyright 2022 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,22 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package util
+package utils
 
-import (
-	"os"
-	"os/exec"
-	"strings"
+import "github.com/sirupsen/logrus"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/cli/utils"
-)
+func Log() *logrus.Logger {
+	logger := logrus.New()
+	logger.SetFormatter(&logrus.TextFormatter{
+		DisableTimestamp: true,
+	})
 
-// RunCmd prints the provided message and command and then executes it binding stdout and stderr
-func RunCmd(msg, cmd string, args ...string) error {
-	log := utils.Log()
-	c := exec.Command(cmd, args...) //nolint:gosec
-	c.Stdout = os.Stdout
-	c.Stderr = os.Stderr
-	log.Println(msg + ":\n$ " + strings.Join(c.Args, " "))
-	return c.Run()
+	return logger
 }

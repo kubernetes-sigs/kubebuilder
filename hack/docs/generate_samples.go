@@ -17,16 +17,16 @@ limitations under the License.
 package main
 
 import (
-	log "github.com/sirupsen/logrus"
-
 	componentconfig "sigs.k8s.io/kubebuilder/v3/hack/docs/internal/component-config-tutorial"
 	cronjob "sigs.k8s.io/kubebuilder/v3/hack/docs/internal/cronjob-tutorial"
+	"sigs.k8s.io/kubebuilder/v3/pkg/cli/utils"
 )
 
 // Make sure executing `build_kb` to generate kb executable from the source code
 const KubebuilderBinName = "/tmp/kubebuilder/bin/kubebuilder"
 
 func main() {
+	log := utils.Log()
 	log.Println("Generating documents...")
 
 	log.Println("Generating component-config tutorial...")

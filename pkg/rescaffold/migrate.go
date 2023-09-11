@@ -20,15 +20,14 @@ import (
 	"os/exec"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/spf13/afero"
+	"sigs.k8s.io/kubebuilder/v3/pkg/cli/utils"
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/config/store"
 	"sigs.k8s.io/kubebuilder/v3/pkg/config/store/yaml"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
+	pluginUtil "sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/deploy-image/v1alpha1"
 )
 
@@ -40,7 +39,10 @@ type MigrateOptions struct {
 const DefaultOutputDir = "output-dir"
 const grafanaPluginKey = "grafana.kubebuilder.io/v1-alpha"
 
+var log = utils.Log()
+
 func (opts *MigrateOptions) Rescaffold() error {
+	//log := util.Log()
 	config := yaml.New(machinery.Filesystem{FS: afero.NewOsFs()})
 	if err := config.LoadFrom(fmt.Sprintf("%s/%s", opts.InputDir, yaml.DefaultPath)); err != nil {
 		log.Fatalf("Failed to load PROJECT file %v", err)
@@ -126,13 +128,13 @@ func kubebuilderInit(store store.Store) error {
 	var args []string
 	args = append(args, "init")
 	args = append(args, getInitArgs(store)...)
-	return util.RunCmd("kubebuilder init", "kubebuilder", args...)
+	return pluginUtil.RunCmd("kubebuilder init", "kubebuilder", args...)
 }
 
 func kubebuilderEdit(store store.Store) error {
 	if store.Config().IsMultiGroup() {
 		args := []string{"edit", "--multigroup"}
-		return util.RunCmd("kubebuilder edit", "kubebuilder", args...)
+		return pluginUtil.RunCmd("kubebuilder edit", "kubebuilder", args...)
 	}
 	return nil
 }
@@ -203,7 +205,7 @@ func createAPIWithDeployImage(resource v1alpha1.ResourceData) error {
 	args = append(args, "api")
 	args = append(args, getGVKFlagsFromDeployImage(resource)...)
 	args = append(args, getDeployImageOptions(resource)...)
-	return util.RunCmd("kubebuilder create api", "kubebuilder", args...)
+	return pluginUtil.RunCmd("kubebuilder create api", "kubebuilder", args...)
 }
 
 func getInitArgs(store store.Store) []string {
@@ -275,7 +277,7 @@ func createAPI(resource resource.Resource) error {
 	args = append(args, "api")
 	args = append(args, getGVKFlags(resource)...)
 	args = append(args, getAPIResourceFlags(resource)...)
-	return util.RunCmd("kubebuilder create api", "kubebuilder", args...)
+	return pluginUtil.RunCmd("kubebuilder create api", "kubebuilder", args...)
 }
 
 func getAPIResourceFlags(resource resource.Resource) []string {
@@ -307,7 +309,7 @@ func createWebhook(resource resource.Resource) error {
 	args = append(args, "webhook")
 	args = append(args, getGVKFlags(resource)...)
 	args = append(args, getWebhookResourceFlags(resource)...)
-	return util.RunCmd("kubebuilder create webhook", "kubebuilder", args...)
+	return pluginUtil.RunCmd("kubebuilder create webhook", "kubebuilder", args...)
 }
 
 func getWebhookResourceFlags(resource resource.Resource) []string {
@@ -345,7 +347,7 @@ func grafanaConfigMigrate(src, des string) error {
 
 func kubebuilderGrafanaEdit() error {
 	args := []string{"edit", "--plugins", grafanaPluginKey}
-	err := util.RunCmd("kubebuilder edit", "kubebuilder", args...)
+	err := pluginUtil.RunCmd("kubebuilder edit", "kubebuilder", args...)
 	if err != nil {
 		return fmt.Errorf("Failed to run edit subcommand for Grafana Plugin %v", err)
 	}

@@ -25,10 +25,10 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 
+	"sigs.k8s.io/kubebuilder/v3/pkg/cli/utils"
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	cfgv2 "sigs.k8s.io/kubebuilder/v3/pkg/config/v2"
 	cfgv3 "sigs.k8s.io/kubebuilder/v3/pkg/config/v3"
@@ -37,6 +37,7 @@ import (
 )
 
 var retrievePluginsRoot = getPluginsRoot
+var log = utils.Log()
 
 // Option is a function used as arguments to New in order to configure the resulting CLI.
 type Option func(*CLI) error
@@ -211,10 +212,10 @@ func getPluginsRoot(host string) (pluginsRoot string, err error) {
 
 	switch host {
 	case "darwin":
-		logrus.Debugf("Detected host is macOS.")
+		log.Debugf("Detected host is macOS.")
 		pluginsRoot = filepath.Join("Library", "Application Support", pluginsRelativePath)
 	case "linux":
-		logrus.Debugf("Detected host is Linux.")
+		log.Debugf("Detected host is Linux.")
 		pluginsRoot = filepath.Join(".config", pluginsRelativePath)
 	}
 
@@ -231,20 +232,20 @@ func getPluginsRoot(host string) (pluginsRoot string, err error) {
 func DiscoverExternalPlugins(fs afero.Fs) (ps []plugin.Plugin, err error) {
 	pluginsRoot, err := retrievePluginsRoot(runtime.GOOS)
 	if err != nil {
-		logrus.Errorf("could not get plugins root: %v", err)
+		log.Errorf("could not get plugins root: %v", err)
 		return nil, err
 	}
 
 	rootInfo, err := fs.Stat(pluginsRoot)
 	if err != nil {
 		if errors.Is(err, afero.ErrFileNotFound) {
-			logrus.Debugf("External plugins dir %q does not exist, skipping external plugin parsing", pluginsRoot)
+			log.Debugf("External plugins dir %q does not exist, skipping external plugin parsing", pluginsRoot)
 			return nil, nil
 		}
 		return nil, err
 	}
 	if !rootInfo.IsDir() {
-		logrus.Debugf("External plugins path %q is not a directory, skipping external plugin parsing", pluginsRoot)
+		log.Debugf("External plugins path %q is not a directory, skipping external plugin parsing", pluginsRoot)
 		return nil, nil
 	}
 
@@ -255,7 +256,7 @@ func DiscoverExternalPlugins(fs afero.Fs) (ps []plugin.Plugin, err error) {
 
 	for _, pluginInfo := range pluginInfos {
 		if !pluginInfo.IsDir() {
-			logrus.Debugf("%q is not a directory so skipping parsing", pluginInfo.Name())
+			log.Debugf("%q is not a directory so skipping parsing", pluginInfo.Name())
 			continue
 		}
 
@@ -266,7 +267,7 @@ func DiscoverExternalPlugins(fs afero.Fs) (ps []plugin.Plugin, err error) {
 
 		for _, version := range versions {
 			if !version.IsDir() {
-				logrus.Debugf("%q is not a directory so skipping parsing", version.Name())
+				log.Debugf("%q is not a directory so skipping parsing", version.Name())
 				continue
 			}
 
@@ -302,7 +303,7 @@ func DiscoverExternalPlugins(fs afero.Fs) (ps []plugin.Plugin, err error) {
 						return nil, err
 					}
 
-					logrus.Printf("Adding external plugin: %s", ep.Name())
+					log.Printf("Adding external plugin: %s", ep.Name())
 
 					ps = append(ps, ep)
 

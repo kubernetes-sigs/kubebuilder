@@ -24,8 +24,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
+	"sigs.k8s.io/kubebuilder/v3/pkg/cli/utils"
+	pluginUtil "sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
 
 	. "github.com/onsi/ginkgo/v2" //nolint:golint,revive
 )
@@ -37,6 +37,8 @@ const (
 	prometheusOperatorURL     = "https://raw.githubusercontent.com/prometheus-operator/" +
 		"prometheus-operator/release-%s/bundle.yaml"
 )
+
+var log = utils.Log()
 
 // TestContext specified to run e2e tests
 type TestContext struct {
@@ -57,7 +59,7 @@ type TestContext struct {
 // NewTestContext init with a random suffix for test TestContext stuff,
 // to avoid conflict when running tests synchronously.
 func NewTestContext(binaryName string, env ...string) (*TestContext, error) {
-	testSuffix, err := util.RandomSuffix()
+	testSuffix, err := pluginUtil.RandomSuffix()
 	if err != nil {
 		return nil, err
 	}

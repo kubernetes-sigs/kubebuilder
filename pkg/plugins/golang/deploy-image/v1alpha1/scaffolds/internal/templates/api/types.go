@@ -19,8 +19,7 @@ package api
 import (
 	"path/filepath"
 
-	log "github.com/sirupsen/logrus"
-
+	"sigs.k8s.io/kubebuilder/v3/pkg/cli/utils"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
@@ -42,6 +41,7 @@ type Types struct {
 
 // SetTemplateDefaults implements file.Template
 func (f *Types) SetTemplateDefaults() error {
+	log := utils.Log()
 	if f.Path == "" {
 
 		if f.IsLegacyLayout {

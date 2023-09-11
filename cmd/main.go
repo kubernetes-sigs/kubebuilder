@@ -17,9 +17,9 @@ limitations under the License.
 package main
 
 import (
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 	"sigs.k8s.io/kubebuilder/v3/pkg/cli"
+	"sigs.k8s.io/kubebuilder/v3/pkg/cli/utils"
 	cfgv2 "sigs.k8s.io/kubebuilder/v3/pkg/config/v2"
 	cfgv3 "sigs.k8s.io/kubebuilder/v3/pkg/config/v3"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
@@ -38,6 +38,7 @@ import (
 )
 
 func main() {
+	log := utils.Log()
 
 	const deprecateMessageGoV3Bundle = "This version is deprecated." +
 		"The `go/v3` cannot scaffold projects using kustomize versions v4x+" +
@@ -63,7 +64,7 @@ func main() {
 	}
 	externalPlugins, err := cli.DiscoverExternalPlugins(fs.FS)
 	if err != nil {
-		logrus.Error(err)
+		log.Error(err)
 	}
 
 	c, err := cli.New(
@@ -88,9 +89,9 @@ func main() {
 		cli.WithCompletion(),
 	)
 	if err != nil {
-		logrus.Fatal(err)
+		log.Fatal(err)
 	}
 	if err := c.Run(); err != nil {
-		logrus.Fatal(err)
+		log.Fatal(err)
 	}
 }

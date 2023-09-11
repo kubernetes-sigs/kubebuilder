@@ -14,9 +14,9 @@ limitations under the License.
 package alpha
 
 import (
-	log "github.com/sirupsen/logrus"
-
 	"github.com/spf13/cobra"
+
+	"sigs.k8s.io/kubebuilder/v3/pkg/cli/utils"
 	"sigs.k8s.io/kubebuilder/v3/pkg/rescaffold"
 )
 
@@ -36,6 +36,7 @@ Then we will re-scaffold the project by Kubebuilder in the directory specified b
 			return opts.Validate()
 		},
 		Run: func(cmd *cobra.Command, args []string) {
+			log := utils.Log()
 			if err := opts.Rescaffold(); err != nil {
 				log.Fatalf("Failed to rescaffold %s", err)
 			}

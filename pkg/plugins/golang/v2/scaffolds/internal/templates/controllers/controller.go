@@ -19,11 +19,11 @@ package controllers
 import (
 	"path/filepath"
 
-	log "github.com/sirupsen/logrus"
-
+	"sigs.k8s.io/kubebuilder/v3/pkg/cli/utils"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
+var log = utils.Log()
 var _ machinery.Template = &Controller{}
 
 // Controller scaffolds the file that defines the controller for a CRD or a builtin resource
