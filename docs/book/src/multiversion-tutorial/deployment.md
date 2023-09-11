@@ -34,7 +34,7 @@ You'll need [cert-manager](../cronjob-tutorial/cert-manager.md) installed
 (version `0.9.0+`) unless you've got some other certificate management
 solution.  The Kubebuilder team has tested the instructions in this tutorial
 with
-[0.9.0-alpha.0](https://github.com/jetstack/cert-manager/releases/tag/v0.9.0-alpha.0)
+[0.9.0-alpha.0](https://github.com/cert-manager/cert-manager/releases/tag/v0.9.0-alpha.0)
 release.
 
 Once all our ducks are in a row with certificates, we can run `make

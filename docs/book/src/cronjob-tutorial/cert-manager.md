@@ -1,6 +1,6 @@
 # Deploying cert-manager
 
-We suggest using [cert-manager](https://github.com/jetstack/cert-manager) for
+We suggest using [cert-manager](https://github.com/cert-manager/cert-manager) for
 provisioning the certificates for the webhook server. Other solutions should
 also work as long as they put the certificates in the desired location.
 

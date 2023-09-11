@@ -1,28 +1,28 @@
 # Configuring envtest for integration tests
 
-The [`controller-runtime/pkg/envtest`][envtest] Go library helps write integration tests for your controllers by setting up and starting an instance of etcd and the 
+The [`controller-runtime/pkg/envtest`][envtest] Go library helps write integration tests for your controllers by setting up and starting an instance of etcd and the
 Kubernetes API server, without kubelet, controller-manager or other components.
 
 ## Installation
 
 Installing the binaries is as a simple as running `make envtest`. `envtest` will download the Kubernetes API server binaries to the `bin/` folder in your project
-by default. `make test` is the one-stop shop for downloading the binaries, setting up the test environment, and running the tests. 
+by default. `make test` is the one-stop shop for downloading the binaries, setting up the test environment, and running the tests.
 
-The make targets require `bash` to run. 
+The make targets require `bash` to run.
 
 ## Installation in Air Gapped/disconnected environments
-If you would like to download the tarball containing the binaries, to use in a disconnected environment you can use 
-[`setup-envtest`][setup-envtest] to download the required binaries locally. There are a lot of ways to configure `setup-envtest` to avoid talking to 
-the internet you can read about them [here](https://github.com/kubernetes-sigs/controller-runtime/tree/master/tools/setup-envtest#what-if-i-dont-want-to-talk-to-the-internet). 
-The examples below will show how to install the Kubernetes API binaries using mostly defaults set by `setup-envtest`. 
+If you would like to download the tarball containing the binaries, to use in a disconnected environment you can use
+[`setup-envtest`][setup-envtest] to download the required binaries locally. There are a lot of ways to configure `setup-envtest` to avoid talking to
+the internet you can read about them [here](https://github.com/kubernetes-sigs/controller-runtime/tree/master/tools/setup-envtest#what-if-i-dont-want-to-talk-to-the-internet).
+The examples below will show how to install the Kubernetes API binaries using mostly defaults set by `setup-envtest`.
 
 ### Download the binaries
-`make envtest` will download the `setup-envtest` binary to `./bin/`. 
+`make envtest` will download the `setup-envtest` binary to `./bin/`.
 ```shell
 make envtest
 ```
 
-Installing the binaries using `setup-envtest` stores the binary in OS specific locations, you can read more about them 
+Installing the binaries using `setup-envtest` stores the binary in OS specific locations, you can read more about them
 [here](https://github.com/kubernetes-sigs/controller-runtime/tree/master/tools/setup-envtest#where-does-it-put-all-those-binaries)
 ```sh
 ./bin/setup-envtest use 1.21.2
@@ -30,7 +30,7 @@ Installing the binaries using `setup-envtest` stores the binary in OS specific l
 
 ### Update the test make target
 Once these binaries are installed, change the `test` make target to include a `-i` like below. `-i` will only check for locally installed
-binaries and not reach out to remote resources. You could also set the `ENVTEST_INSTALLED_ONLY` env variable. 
+binaries and not reach out to remote resources. You could also set the `ENVTEST_INSTALLED_ONLY` env variable.
 
 ```makefile
 test: manifests generate fmt vet
@@ -91,7 +91,7 @@ Controller-runtime’s [envtest][envtest] framework requires `kubectl`, `kube-ap
 
 The `make test` command will install these binaries to the `bin/` directory and use them when running tests that use `envtest`.
 Ie,
-```shell             
+```shell
 ./bin/k8s/
 └── 1.25.0-darwin-amd64
     ├── etcd
@@ -125,7 +125,7 @@ var _ = BeforeSuite(func(done Done) {
 
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
 	testenv = &envtest.Environment{}
-	
+
 	_, err := testenv.Start()
 	Expect(err).NotTo(HaveOccurred())
 
@@ -213,25 +213,25 @@ For further information see the issue raised in the controller-runtime [controll
 
 Projects scaffolded with Kubebuilder can enable the [`metrics`][metrics] and the [`cert-manager`][cert-manager] options. Note that when we are using the ENV TEST we are looking to test the controllers and their reconciliation. It is considered an integrated test because the ENV TEST API will do the test against a cluster and because of this the binaries are downloaded and used to configure its pre-requirements, however, its purpose is mainly to `unit` test the controllers.
 
-Therefore, to test a reconciliation in common cases you do not need to care about these options. However, if you would like to do tests with the Prometheus and the Cert-manager installed you can add the required steps to install them before running the tests. 
+Therefore, to test a reconciliation in common cases you do not need to care about these options. However, if you would like to do tests with the Prometheus and the Cert-manager installed you can add the required steps to install them before running the tests.
 Following an example.
 
 ```go
-    // Add the operations to install the Prometheus operator and the cert-manager 
-    // before the tests. 
+    // Add the operations to install the Prometheus operator and the cert-manager
+    // before the tests.
     BeforeEach(func() {
         By("installing prometheus operator")
         Expect(utils.InstallPrometheusOperator()).To(Succeed())
-        
+
         By("installing the cert-manager")
         Expect(utils.InstallCertManager()).To(Succeed())
     }
-    
+
     // You can also remove them after the tests::
     AfterEach(func() {
         By("uninstalling the Prometheus manager bundle")
         utils.UninstallPrometheusOperManager()
-        
+
         By("uninstalling the cert-manager bundle")
         utils.UninstallCertManager()
     })
@@ -244,7 +244,7 @@ const (
 	prometheusOperatorVersion = "0.51"
 	prometheusOperatorURL     = "https://raw.githubusercontent.com/prometheus-operator/" + "prometheus-operator/release-%s/bundle.yaml"
 	certmanagerVersion = "v1.5.3"
-	certmanagerURLTmpl = "https://github.com/jetstack/cert-manager/releases/download/%s/cert-manager.yaml"
+	certmanagerURLTmpl = "https://github.com/cert-manager/cert-manager/releases/download/%s/cert-manager.yaml"
 )
 
 func warnError(err error) {
@@ -284,14 +284,14 @@ func InstallCertManager() error {
 	if _, err := Run(cmd); err != nil {
 		return err
 	}
-	// Wait for cert-manager-webhook to be ready, which can take time if cert-manager 
-	//was re-installed after uninstalling on a cluster. 
-	cmd = exec.Command("kubectl", "wait", "deployment.apps/cert-manager-webhook", 
-		"--for", "condition=Available", 
-		"--namespace", "cert-manager", 
-		"--timeout", "5m", 
+	// Wait for cert-manager-webhook to be ready, which can take time if cert-manager
+	//was re-installed after uninstalling on a cluster.
+	cmd = exec.Command("kubectl", "wait", "deployment.apps/cert-manager-webhook",
+		"--for", "condition=Available",
+		"--namespace", "cert-manager",
+		"--timeout", "5m",
 		)
-	
+
 	_, err := Run(cmd)
 	return err
 }
@@ -302,7 +302,7 @@ func LoadImageToKindClusterWithName(name string) error {
 	if v, ok := os.LookupEnv("KIND_CLUSTER"); ok {
 		cluster = v
 	}
-	
+
 	kindOptions := []string{"load", "docker-image", name, "--name", cluster}
 	cmd := exec.Command("kind", kindOptions...)
 	_, err := Run(cmd)
