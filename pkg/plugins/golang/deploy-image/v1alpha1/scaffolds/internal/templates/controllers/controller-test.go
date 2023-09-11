@@ -81,6 +81,7 @@ import (
 	"time"
 	"fmt"
 
+	//nolint:golint
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
@@ -109,7 +110,10 @@ var _ = Describe("{{ .Resource.Kind }} controller", func() {
 			},
 		}
 
-		typeNamespaceName := types.NamespacedName{Name: {{ .Resource.Kind }}Name, Namespace: {{ .Resource.Kind }}Name}
+		typeNamespaceName := types.NamespacedName{
+			Name:      {{ .Resource.Kind }}Name,
+			Namespace: {{ .Resource.Kind }}Name,
+		}
 		{{ lower .Resource.Kind }} := &{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{}
 
 		BeforeEach(func() {
@@ -190,13 +194,20 @@ var _ = Describe("{{ .Resource.Kind }} controller", func() {
 
 			By("Checking the latest Status Condition added to the {{ .Resource.Kind }} instance")
 			Eventually(func() error {
-				if {{ lower .Resource.Kind }}.Status.Conditions != nil && len({{ lower .Resource.Kind }}.Status.Conditions) != 0 {
+				if {{ lower .Resource.Kind }}.Status.Conditions != nil &&
+					len({{ lower .Resource.Kind }}.Status.Conditions) != 0 {
 					latestStatusCondition := {{ lower .Resource.Kind }}.Status.Conditions[len({{ lower .Resource.Kind }}.Status.Conditions)-1]
-					expectedLatestStatusCondition := metav1.Condition{Type: typeAvailable{{ .Resource.Kind }},
-						Status: metav1.ConditionTrue, Reason: "Reconciling",
-						Message: fmt.Sprintf("Deployment for custom resource (%s) with %d replicas created successfully", {{ lower .Resource.Kind }}.Name, {{ lower .Resource.Kind }}.Spec.Size)}
+					expectedLatestStatusCondition := metav1.Condition{
+						Type:    typeAvailable{{ .Resource.Kind }},
+						Status:  metav1.ConditionTrue,
+						Reason:  "Reconciling",
+						Message: fmt.Sprintf(
+							"Deployment for custom resource (%s) with %d replicas created successfully", 
+							{{ lower .Resource.Kind }}.Name,
+							{{ lower .Resource.Kind }}.Spec.Size),
+					}
 					if latestStatusCondition != expectedLatestStatusCondition {
-						return fmt.Errorf("The latest status condition added to the {{ lower .Resource.Kind }} instance is not as expected")
+						return fmt.Errorf("The latest status condition added to the {{ .Resource.Kind }} instance is not as expected")
 					}
 				}
 				return nil

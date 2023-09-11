@@ -69,7 +69,6 @@ type BusyboxReconciler struct {
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
-
 // It is essential for the controller's reconciliation loop to be idempotent. By following the Operator
 // pattern you will create Controllers which provide a reconcile function
 // responsible for synchronizing resources until the desired state is reached on the cluster.

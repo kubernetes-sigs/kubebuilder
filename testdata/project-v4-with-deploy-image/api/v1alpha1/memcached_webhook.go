@@ -27,6 +27,7 @@ import (
 // log is for logging in this package.
 var memcachedlog = logf.Log.WithName("memcached-resource")
 
+// SetupWebhookWithManager will setup the manager to manage the webhooks
 func (r *Memcached) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).

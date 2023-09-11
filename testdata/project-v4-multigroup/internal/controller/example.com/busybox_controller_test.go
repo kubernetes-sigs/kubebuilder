@@ -22,6 +22,7 @@ import (
 	"os"
 	"time"
 
+	//nolint:golint
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
@@ -48,7 +49,10 @@ var _ = Describe("Busybox controller", func() {
 			},
 		}
 
-		typeNamespaceName := types.NamespacedName{Name: BusyboxName, Namespace: BusyboxName}
+		typeNamespaceName := types.NamespacedName{
+			Name:      BusyboxName,
+			Namespace: BusyboxName,
+		}
 		busybox := &examplecomv1alpha1.Busybox{}
 
 		BeforeEach(func() {
@@ -126,13 +130,20 @@ var _ = Describe("Busybox controller", func() {
 
 			By("Checking the latest Status Condition added to the Busybox instance")
 			Eventually(func() error {
-				if busybox.Status.Conditions != nil && len(busybox.Status.Conditions) != 0 {
+				if busybox.Status.Conditions != nil &&
+					len(busybox.Status.Conditions) != 0 {
 					latestStatusCondition := busybox.Status.Conditions[len(busybox.Status.Conditions)-1]
-					expectedLatestStatusCondition := metav1.Condition{Type: typeAvailableBusybox,
-						Status: metav1.ConditionTrue, Reason: "Reconciling",
-						Message: fmt.Sprintf("Deployment for custom resource (%s) with %d replicas created successfully", busybox.Name, busybox.Spec.Size)}
+					expectedLatestStatusCondition := metav1.Condition{
+						Type:   typeAvailableBusybox,
+						Status: metav1.ConditionTrue,
+						Reason: "Reconciling",
+						Message: fmt.Sprintf(
+							"Deployment for custom resource (%s) with %d replicas created successfully",
+							busybox.Name,
+							busybox.Spec.Size),
+					}
 					if latestStatusCondition != expectedLatestStatusCondition {
-						return fmt.Errorf("The latest status condition added to the busybox instance is not as expected")
+						return fmt.Errorf("The latest status condition added to the Busybox instance is not as expected")
 					}
 				}
 				return nil

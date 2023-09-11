@@ -126,7 +126,7 @@ function scaffold_test_project {
 
   make generate manifests
   rm -f go.sum
-
+  go mod tidy
   popd
 }
 

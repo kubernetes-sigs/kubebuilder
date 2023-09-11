@@ -25,6 +25,7 @@ import (
 // log is for logging in this package.
 var destroyerlog = logf.Log.WithName("destroyer-resource")
 
+// SetupWebhookWithManager will setup the manager to manage the webhooks
 func (r *Destroyer) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).

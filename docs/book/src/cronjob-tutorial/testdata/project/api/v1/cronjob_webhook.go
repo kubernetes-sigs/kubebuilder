@@ -42,6 +42,7 @@ var cronjoblog = logf.Log.WithName("cronjob-resource")
 Then, we set up the webhook with the manager.
 */
 
+// SetupWebhookWithManager will setup the manager to manage the webhooks
 func (r *CronJob) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
