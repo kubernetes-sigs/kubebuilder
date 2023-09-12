@@ -1,0 +1,54 @@
+# Copyright 2023 The Caramello-io Authors.
+
+name: Sample Testdata Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    name: "Testdata - make test"
+    runs-on: ubuntu-latest
+    if: (github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository)
+    steps:
+      - name: Clone the code
+        uses: actions/checkout@v3
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '~1.20'
+      - name: Remove pre-installed kustomize
+        run: sudo rm -f /usr/local/bin/kustomize
+      - name: Run make test for project-v4-with-deploy-image
+        run: cd testdata/project-v4-with-deploy-image && go mod tidy && make all && make test
+      - name: Run make test for project-v4-multigroup-with-deploy-image
+        run: cd testdata/project-v4-multigroup-with-deploy-image && go mod tidy && make all && make test
+
+  lint:
+    name: "Testdata - Lint"
+    runs-on: ubuntu-latest
+    # Pull requests from the same repository won't trigger this checks as they were already triggered by the push
+    if: (github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository)
+    steps:
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '~1.20'
+      - name: Clone the code
+        uses: actions/checkout@v4
+      - name: Run linter
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.54
+          working-directory: testdata/project-v4-with-deploy-image
+          args: --config .golangci.yml ./...
+          skip-cache: true  # first lint action will handle
+      - name: Run linter
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.54
+          working-directory: testdata/project-v4-multigroup-with-deploy-image
+          args: --config .golangci.yml ./...
+          skip-cache: true  # first lint action will handle
+

@@ -1,0 +1,27 @@
+# permissions for end users to view healthcheckpolicies.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: healthcheckpolicy-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: project-v4-multigroup-with-deploy-image
+    app.kubernetes.io/part-of: project-v4-multigroup-with-deploy-image
+    app.kubernetes.io/managed-by: kustomize
+  name: healthcheckpolicy-viewer-role
+rules:
+- apiGroups:
+  - foo.policy.testproject.org
+  resources:
+  - healthcheckpolicies
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - foo.policy.testproject.org
+  resources:
+  - healthcheckpolicies/status
+  verbs:
+  - get
