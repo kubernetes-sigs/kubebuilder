@@ -55,7 +55,7 @@ environment variables to only add this option for development purposes, such as:
 
 ```go
     leaderElectionNS := ""
-	if os.Getenv("ENABLE_LEADER_ELECATION_NAMESPACE") != "false" {
+	if os.Getenv("ENABLE_LEADER_ELECTION_NAMESPACE") != "false" {
 		leaderElectionNS = "<project-name>-system"
 	}
 

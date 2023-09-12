@@ -21,7 +21,7 @@ Projects created by Kubebuilder contain a Makefile that will install tools at ve
 - [kustomize](https://github.com/kubernetes-sigs/kustomize)
 - [controller-gen](https://github.com/kubernetes-sigs/controller-tools)
 
-The versions which are defined in the `Makefile` and `go.mod` files are the versions tested and therefore is recommend to use the specified versions.
+The versions which are defined in the `Makefile` and `go.mod` files are the versions tested and therefore is recommended to use the specified versions.
 
 </aside>
 
@@ -91,7 +91,7 @@ and the `internal/controllers/guestbook_controller.go` where the reconciliation 
 logic. For more info see [Designing an API](/cronjob-tutorial/api-design.md) and [What's in
 a Controller](cronjob-tutorial/controller-overview.md).
 
-If you are editing the API definitions, generate the manifests such as Custom Resources (CRs) or Custom Resource Defintions (CRDs) using
+If you are editing the API definitions, generate the manifests such as Custom Resources (CRs) or Custom Resource Definitions (CRDs) using
 ```bash
 make manifests
 ```
