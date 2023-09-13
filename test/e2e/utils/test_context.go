@@ -122,6 +122,10 @@ func (t *TestContext) makeCertManagerURL() string {
 	return fmt.Sprintf(certmanagerURLTmpl, certmanagerVersion)
 }
 
+func (t *TestContext) makePrometheusOperatorURL() string {
+	return fmt.Sprintf(prometheusOperatorURL, prometheusOperatorVersion)
+}
+
 // InstallCertManager installs the cert manager bundle. If hasv1beta1CRs is true,
 // the legacy version (which uses v1alpha2 CRs) is installed.
 func (t *TestContext) InstallCertManager() error {
@@ -149,14 +153,14 @@ func (t *TestContext) UninstallCertManager() {
 
 // InstallPrometheusOperManager installs the prometheus manager bundle.
 func (t *TestContext) InstallPrometheusOperManager() error {
-	url := fmt.Sprintf(prometheusOperatorURL, prometheusOperatorVersion)
+	url := t.makePrometheusOperatorURL()
 	_, err := t.Kubectl.Apply(false, "-f", url)
 	return err
 }
 
 // UninstallPrometheusOperManager uninstalls the prometheus manager bundle.
 func (t *TestContext) UninstallPrometheusOperManager() {
-	url := fmt.Sprintf(prometheusOperatorURL, prometheusOperatorVersion)
+	url := t.makePrometheusOperatorURL()
 	if _, err := t.Kubectl.Delete(false, "-f", url); err != nil {
 		warnError(err)
 	}
