@@ -58,6 +58,7 @@ build: ## Build the project locally
 
 .PHONY: install
 install: build ## Build and install the binary with the current source code. Use it to test your changes locally.
+	rm -f $(GOBIN)/kubebuilder
 	cp ./bin/kubebuilder $(GOBIN)/kubebuilder
 
 ##@ Development
