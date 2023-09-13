@@ -75,9 +75,13 @@ type MyKindReconciler struct {
 	// See that we added the following code to allow us to pass the record.EventRecorder 
 	Recorder record.EventRecorder
 }
+```
+
 ### Passing the EventRecorder to the Controller
+
 Events are published from a Controller using an [EventRecorder]`type CorrelatorOptions struct`,
 which can be created for a Controller by calling `GetRecorder(name string)` on a Manager. See that we will change the implementation scaffolded in `cmd/main.go`:
+
 ```go
 	if err = (&controller.MyKindReconciler{
 		Client:   mgr.GetClient(),
@@ -89,15 +93,18 @@ which can be created for a Controller by calling `GetRecorder(name string)` on a
 		os.Exit(1)
 	}
 ```
+
 ### Granting the required permissions
 
 You must also grant the RBAC rules permissions to allow your project to create Events. Therefore, ensure that you add the [RBAC][rbac-markers] into your controller:
+
 ```go
 ...
 //+kubebuilder:rbac:groups=core,resources=events,verbs=create;patch
 ...
 func (r *MyKindReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 ```
+
 And then, run `$ make manifests` to update the rules under `config/rbac/rule.yaml`.
   
 [Events]: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#events 

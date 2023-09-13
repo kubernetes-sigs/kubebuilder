@@ -18,9 +18,9 @@ Building your operator commonly involves extending the Kubernetes API itself. It
 
 Additionally, we recommend checking the documentation on [Operator patterns][operator-pattern] from Kubernetes to better understand the purpose of the standard solutions built with KubeBuilder.
 
-## Why you should adhere to the k8s API conventions and standards
+## Why you should adhere to the Kubernetes API conventions and standards
 
-Embracing the [Kubernetes API conventions and standards][k8s-api-convetions] is crucial for maximizing the potential of your applications and deployments. By adhering to these established practices, you can benefit in several ways.
+Embracing the [Kubernetes API conventions and standards][k8s-api-conventions] is crucial for maximizing the potential of your applications and deployments. By adhering to these established practices, you can benefit in several ways.
 
 Firstly, adherence ensures seamless interoperability within the Kubernetes ecosystem. Following conventions allows your applications to work harmoniously with other components, reducing compatibility issues and promoting a consistent user experience.
 
@@ -57,7 +57,7 @@ These challenges underline the importance of assigning each controller the singl
 
 ## Why You Should Adopt Status Conditions
 
-We recommend you manage your solutions using Status Conditionals following the [K8s Api conventions][k8s-aoi-convetions] because:
+We recommend you manage your solutions using Status Conditionals following the [K8s Api conventions][k8s-api-conventions] because:
 
 - **Standardization**: Conditions provide a standardized way to represent the state of an Operator's custom resources, making it easier for users and tools to understand and interpret the resource's status.
 - **Readability**: Conditions can clearly express complex states by using a combination of multiple conditions, making it easier for users to understand the current state and progress of the resource.
@@ -75,10 +75,13 @@ Therefore, you can check an example of Status Conditional usage by looking at it
 
 </aside>
 
-[docs]: ./cronjob-tutorial/gvks.html
+[docs]: /cronjob-tutorial/gvks.html
 [operator-pattern]: https://kubernetes.io/docs/concepts/extend-kubernetes/operator/
 [controllers]: https://kubernetes.io/docs/concepts/architecture/controller/
 [controller-runtime-topic]: https://github.com/kubernetes-sigs/controller-runtime/blob/main/FAQ.md#q-how-do-i-have-different-logic-in-my-reconciler-for-different-types-of-events-eg-create-update-delete
 [controller-runtime]: https://github.com/kubernetes-sigs/controller-runtime
-[deploy-image]: ./plugins/deploy-image-plugin-v1-alpha.md
+[deploy-image]: /plugins/deploy-image-plugin-v1-alpha.md
 [controller-runtime-manager]: https://github.com/kubernetes-sigs/controller-runtime/blob/304027bcbe4b3f6d582180aec5759eb4db3f17fd/pkg/manager/manager.go#L53
+[k8s-api-conventions]: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md
+[k8s-control-loop]: https://kubernetes.io/docs/concepts/architecture/controller/
+[k8s-operator-pattern]: https://kubernetes.io/docs/concepts/extend-kubernetes/operator/
