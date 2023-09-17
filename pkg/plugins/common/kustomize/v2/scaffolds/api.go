@@ -18,6 +18,7 @@ package scaffolds
 
 import (
 	"fmt"
+	pluginutil "sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
 
 	log "github.com/sirupsen/logrus"
 
@@ -88,6 +89,16 @@ func (s *apiScaffolder) Scaffold() error {
 		if s.resource.Group != "" || s.resource.Version != "" || s.resource.Kind != "" {
 			if err := scaffold.Execute(&samples.Kustomization{}); err != nil {
 				return fmt.Errorf("error scaffolding manifests: %v", err)
+			}
+		}
+
+		kustomizeFilePath := "config/default/kustomization.yaml"
+		err := pluginutil.UncommentCode(kustomizeFilePath, "#- ../crd", `#`)
+		if err != nil {
+			hasCRUncommented, err := pluginutil.HasFragment(kustomizeFilePath, "- ../crd")
+			if !hasCRUncommented || err != nil {
+				log.Errorf("Unable to find the target #- ../crd to uncomment in the file "+
+					"%s.", kustomizeFilePath)
 			}
 		}
 	}

@@ -61,7 +61,7 @@ namePrefix: {{ .ProjectName }}-
 #    someName: someValue
 
 resources:
-- ../crd
+#- ../crd
 - ../rbac
 - ../manager
 # [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix including the one in
