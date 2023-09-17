@@ -82,25 +82,12 @@ Count int `+"`"+`json:"count,omitempty"`+"`"+`
 		fmt.Sprintf("%s_webhook.go", strings.ToLower(kbc.Kind))))
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
-	By("uncomment kustomization.yaml to enable webhook and ca injection")
-	ExpectWithOffset(1, pluginutil.UncommentCode(
-		filepath.Join(kbc.Dir, "config", "crd", "kustomization.yaml"),
-		fmt.Sprintf("#- path: patches/webhook_in_%s.yaml", kbc.Resources), "#")).To(Succeed())
-	ExpectWithOffset(1, pluginutil.UncommentCode(
-		filepath.Join(kbc.Dir, "config", "crd", "kustomization.yaml"),
-		fmt.Sprintf("#- path: patches/cainjection_in_%s.yaml", kbc.Resources), "#")).To(Succeed())
-	ExpectWithOffset(1, pluginutil.UncommentCode(
-		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
-		"#- ../webhook", "#")).To(Succeed())
 	ExpectWithOffset(1, pluginutil.UncommentCode(
 		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 		"#- ../certmanager", "#")).To(Succeed())
 	ExpectWithOffset(1, pluginutil.UncommentCode(
 		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 		"#- ../prometheus", "#")).To(Succeed())
-	ExpectWithOffset(1, pluginutil.UncommentCode(
-		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
-		"#- manager_webhook_patch.yaml", "#")).To(Succeed())
 	ExpectWithOffset(1, pluginutil.UncommentCode(
 		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 		"#- webhookcainjection_patch.yaml", "#")).To(Succeed())
