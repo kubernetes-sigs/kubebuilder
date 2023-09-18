@@ -2,9 +2,11 @@
 
 [Introduction](./introduction.md)
 
+[Architecture](./architecture.md)
+
 [Quick Start](./quick-start.md)
 
-[Architecture](./architecture.md)
+[Getting Started](./getting-started.md)
 
 ---
 
