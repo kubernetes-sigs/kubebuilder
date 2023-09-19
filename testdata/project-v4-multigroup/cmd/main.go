@@ -33,7 +33,6 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	crewv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/crew/v1"
-	examplecomv1alpha1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/example.com/v1alpha1"
 	fizv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/fiz/v1"
 	foopolicyv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/foo.policy/v1"
 	foov1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/foo/v1"
@@ -46,7 +45,6 @@ import (
 	"sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/controller"
 	appscontroller "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/controller/apps"
 	crewcontroller "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/controller/crew"
-	examplecomcontroller "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/controller/example.com"
 	fizcontroller "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/controller/fiz"
 	foocontroller "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/controller/foo"
 	foopolicycontroller "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/controller/foo.policy"
@@ -73,7 +71,6 @@ func init() {
 	utilruntime.Must(foov1.AddToScheme(scheme))
 	utilruntime.Must(fizv1.AddToScheme(scheme))
 	utilruntime.Must(testprojectorgv1.AddToScheme(scheme))
-	utilruntime.Must(examplecomv1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -221,28 +218,6 @@ func main() {
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		if err = (&testprojectorgv1.Lakers{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Lakers")
-			os.Exit(1)
-		}
-	}
-	if err = (&examplecomcontroller.MemcachedReconciler{
-		Client:   mgr.GetClient(),
-		Scheme:   mgr.GetScheme(),
-		Recorder: mgr.GetEventRecorderFor("memcached-controller"),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Memcached")
-		os.Exit(1)
-	}
-	if err = (&examplecomcontroller.BusyboxReconciler{
-		Client:   mgr.GetClient(),
-		Scheme:   mgr.GetScheme(),
-		Recorder: mgr.GetEventRecorderFor("busybox-controller"),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Busybox")
-		os.Exit(1)
-	}
-	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = (&examplecomv1alpha1.Memcached{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Memcached")
 			os.Exit(1)
 		}
 	}

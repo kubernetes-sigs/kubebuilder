@@ -1,0 +1,31 @@
+# permissions for end users to edit frigates.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: frigate-editor-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: project-v4-multigroup-with-deploy-image
+    app.kubernetes.io/part-of: project-v4-multigroup-with-deploy-image
+    app.kubernetes.io/managed-by: kustomize
+  name: frigate-editor-role
+rules:
+- apiGroups:
+  - ship.testproject.org
+  resources:
+  - frigates
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ship.testproject.org
+  resources:
+  - frigates/status
+  verbs:
+  - get

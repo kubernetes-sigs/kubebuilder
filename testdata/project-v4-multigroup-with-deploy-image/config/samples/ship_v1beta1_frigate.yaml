@@ -1,0 +1,12 @@
+apiVersion: ship.testproject.org/v1beta1
+kind: Frigate
+metadata:
+  labels:
+    app.kubernetes.io/name: frigate
+    app.kubernetes.io/instance: frigate-sample
+    app.kubernetes.io/part-of: project-v4-multigroup-with-deploy-image
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: project-v4-multigroup-with-deploy-image
+  name: frigate-sample
+spec:
+  # TODO(user): Add fields here
