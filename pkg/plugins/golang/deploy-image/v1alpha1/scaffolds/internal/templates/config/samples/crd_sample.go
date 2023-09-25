@@ -55,8 +55,8 @@ spec:
   # TODO(user): edit the following value to ensure the number
   # of Pods/Instances your Operand must have on cluster
   size: 1
-{{ if not (isEmptyStr .Port) -}}
+{{ if not (isEmptyStr .Port) }}
   # TODO(user): edit the following value to ensure the container has the right port to be initialized
   containerPort: {{ .Port }}
-{{- end }}
+{{ end -}}
 `

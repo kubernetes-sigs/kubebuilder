@@ -78,10 +78,12 @@ patchesStrategicMerge:
 # endpoint w/o any authn/z, please comment the following line.
 - manager_auth_proxy_patch.yaml
 
-{{ if .ComponentConfig }}
+{{ if .ComponentConfig -}}
 # Mount the controller config file for loading manager configurations
 # through a ComponentConfig type
-- manager_config_patch.yaml{{ end }}
+- manager_config_patch.yaml
+
+{{ end -}}
 
 # [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix including the one in
 # crd/kustomization.yaml
