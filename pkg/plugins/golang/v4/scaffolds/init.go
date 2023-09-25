@@ -27,6 +27,8 @@ import (
 	kustomizecommonv2alpha "sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v2"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v4/scaffolds/internal/templates"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v4/scaffolds/internal/templates/hack"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v4/scaffolds/internal/templates/test/e2e"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v4/scaffolds/internal/templates/test/utils"
 )
 
 const (
@@ -139,5 +141,8 @@ func (s *initScaffolder) Scaffold() error {
 		&templates.DockerIgnore{},
 		&templates.Readme{},
 		&templates.Golangci{},
+		&e2e.Test{},
+		&e2e.SuiteTest{},
+		&utils.Utils{},
 	)
 }

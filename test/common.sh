@@ -155,3 +155,25 @@ function listFiles() {
 	# pipeline is much faster than for loop
 	listPkgDirs | xargs -I {} find {} \( -name '*.go' -o -name '*.sh' \)  | grep -v generated
 }
+
+function install_kubectl() {
+  if ! command -v kubectl &> /dev/null; then
+    echo "Installing kubectl..."
+    case "$(uname -s)" in
+      Darwin)
+        brew install kubectl || return 1
+        ;;
+      Linux)
+        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" || return 1
+        chmod +x kubectl
+        sudo mv kubectl /usr/local/bin/ || return 1
+        ;;
+      *)
+        echo "Unsupported operating system"
+        return 1
+    esac
+  else
+    echo "kubectl is already installed."
+  fi
+  return 0
+}
