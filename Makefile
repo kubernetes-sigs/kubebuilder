@@ -91,7 +91,7 @@ lint-fix: golangci-lint ## Run golangci-lint linter and perform fixes
 
 .PHONY: yamllint
 yamllint:
-	@docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data cytopia/yamllint:latest testdata -d "{extends: relaxed, rules: {line-length: {max: 120}}}" --no-warnings
+	@docker run --rm $$(tty -s && echo "-it" || echo) -v $(PWD):/data cytopia/yamllint:latest testdata -d '{extends: relaxed, rules: {line-length: {max: 120}}, ignore: "/testdata/project-v2/\n/testdata/project-v3/"}'
 
 GOLANGCI_LINT = $(shell pwd)/bin/golangci-lint
 golangci-lint:

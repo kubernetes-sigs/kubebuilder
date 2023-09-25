@@ -44,8 +44,7 @@ func (f *Service) SetTemplateDefaults() error {
 	return nil
 }
 
-const serviceTemplate = `
-apiVersion: v1
+const serviceTemplate = `apiVersion: v1
 kind: Service
 metadata:
   labels:

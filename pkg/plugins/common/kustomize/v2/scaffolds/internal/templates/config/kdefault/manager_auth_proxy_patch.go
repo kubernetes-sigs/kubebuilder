@@ -59,7 +59,7 @@ spec:
           allowPrivilegeEscalation: false
           capabilities:
             drop:
-              - "ALL"
+            - "ALL"
         image: gcr.io/kubebuilder/kube-rbac-proxy:v0.14.1
         args:
         - "--secure-listen-address=0.0.0.0:8443"
