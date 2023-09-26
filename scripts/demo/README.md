@@ -20,6 +20,8 @@ cd /tmp/kb-demo
 asciinema rec
 <path-to-KB-repo>/scripts/demo/run.sh
 
+# After each step, press <Enter> to proceed to the next step
+
 <CTRL-C> to terminate the script
 <CTRL-D> to terminate the asciinema recording
 <CTRL-C> to save the recording locally
@@ -27,5 +29,5 @@ asciinema rec
 # Edit the recorded file by editing the controller-gen path
 # Once you are happy with the recording, use svg-term program to generate the svg
 
-svg-term --cast=<movie-id> --out demo.svg --window
+svg-term --in=<cast-file-path> --out demo.svg --window
 ```

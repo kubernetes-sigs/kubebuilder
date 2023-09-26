@@ -32,7 +32,7 @@ run "kubebuilder create api --group batch --version v1 --kind CronJob"
 clear
 
 desc "Let's take a look at the API and Controller files"
-run "tree ./api ./controllers"
+run "tree ./api ./internal/controller"
 clear
 
 desc "Install CRDs in Kubernetes cluster"
