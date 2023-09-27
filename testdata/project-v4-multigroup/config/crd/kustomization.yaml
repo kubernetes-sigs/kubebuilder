@@ -22,7 +22,7 @@ patches:
 - path: patches/webhook_in_ship_destroyers.yaml
 - path: patches/webhook_in_ship_cruisers.yaml
 - path: patches/webhook_in_sea-creatures_krakens.yaml
-- path: patches/webhook_in_sea-creatures_leviathans.yaml
+#- path: patches/webhook_in_sea-creatures_leviathans.yaml
 #- path: patches/webhook_in_foo.policy_healthcheckpolicies.yaml
 #- path: patches/webhook_in_foo_bars.yaml
 #- path: patches/webhook_in_fiz_bars.yaml
