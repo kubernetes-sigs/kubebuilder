@@ -10,9 +10,9 @@ resources:
 patches:
 # [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix.
 # patches here are for enabling the conversion webhook for each CRD
-#- path: patches/webhook_in_captains.yaml
-#- path: patches/webhook_in_firstmates.yaml
-#- path: patches/webhook_in_admirales.yaml
+- path: patches/webhook_in_captains.yaml
+- path: patches/webhook_in_firstmates.yaml
+- path: patches/webhook_in_admirales.yaml
 #+kubebuilder:scaffold:crdkustomizewebhookpatch
 
 # [CERTMANAGER] To enable cert-manager, uncomment all the sections with [CERTMANAGER] prefix.

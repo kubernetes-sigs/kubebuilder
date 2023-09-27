@@ -18,6 +18,7 @@ package scaffolds
 
 import (
 	"fmt"
+	pluginutil "sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
 
 	log "github.com/sirupsen/logrus"
 
@@ -67,6 +68,35 @@ func (s *webhookScaffolder) Scaffold() error {
 
 	if err := s.config.UpdateResource(s.resource); err != nil {
 		return fmt.Errorf("error updating resource: %w", err)
+	}
+
+	kustomizeFilePath := "config/default/kustomization.yaml"
+	err := pluginutil.UncommentCode(kustomizeFilePath, "#- ../webhook", `#`)
+	if err != nil {
+		hasWebHookUncommented, err := pluginutil.HasFragment(kustomizeFilePath, "- ../webhook")
+		if !hasWebHookUncommented || err != nil {
+			log.Errorf("Unable to find the target #- ../webhook to uncomment in the file "+
+				"%s.", kustomizeFilePath)
+		}
+	}
+
+	err = pluginutil.UncommentCode(kustomizeFilePath, "#- manager_webhook_patch.yaml", `#`)
+	if err != nil {
+		hasWebHookUncommented, err := pluginutil.HasFragment(kustomizeFilePath, "- manager_webhook_patch.yaml")
+		if !hasWebHookUncommented || err != nil {
+			log.Errorf("Unable to find the target #- manager_webhook_patch.yaml to uncomment in the file "+
+				"%s.", kustomizeFilePath)
+		}
+	}
+
+	crdKustomizationsFilePath := "config/crd/kustomization.yaml"
+	err = pluginutil.UncommentCode(crdKustomizationsFilePath, "#- path: patches/webhook", `#`)
+	if err != nil {
+		hasWebHookUncommented, err := pluginutil.HasFragment(crdKustomizationsFilePath, "- path: patches/webhook")
+		if !hasWebHookUncommented || err != nil {
+			log.Errorf("Unable to find the target(s) #- path: patches/webhook/* to uncomment in the file "+
+				"%s.", crdKustomizationsFilePath)
+		}
 	}
 
 	if err := scaffold.Execute(
