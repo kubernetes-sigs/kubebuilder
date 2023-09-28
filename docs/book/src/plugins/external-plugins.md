@@ -84,11 +84,17 @@ If you need to include logs or debug messages while developing your plugin, cons
   This can be done by setting the `${EXTERNAL_PLUGINS_PATH}` environment variable, or by placing the plugin in a path that follows a `group-like name and version` scheme:
 ```sh
 # for Linux
-$HOME/.config/kubebuilder/plugins/${name}/${version}
+$HOME/.config/kubebuilder/plugins/${name}/${version}/${name}
 
 # for OSX
-~/Library/Application Support/kubebuilder/plugins/${name}/${version}
+~/Library/Application Support/kubebuilder/plugins/${name}/${version}/${name}
 ```
+As an example, if you're on Linux and you want to use `v2` of an external plugin called `foo.acme.io`, you'd place the executable in the folder `$HOME/.config/kubebuilder/plugins/foo.acme.io/v2/` with a file name that also matches the plugin name up to an (optional) file extension.
+In other words, passing the flag `--plugins=foo.acme.io/v2` to `kubebuilder` would find the plugin at either of these locations
+* `$HOME/.config/kubebuilder/plugins/foo.acme.io/v2/foo.acme.io`
+* `$HOME/.config/kubebuilder/plugins/foo.acme.io/v2/foo.acme.io.sh`
+* `$HOME/.config/kubebuilder/plugins/foo.acme.io/v2/foo.acme.io.py`
+* etc...
 
 ### Subcommands:
 
