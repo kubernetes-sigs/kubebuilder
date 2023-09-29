@@ -60,7 +60,7 @@ If you need a client and/or decoder, just pass them in at struct construction ti
 mgr.GetWebhookServer().Register("/mutate-v1-pod", &webhook.Admission{
 	Handler: &podAnnotator{
 		Client:   mgr.GetClient(),
-		Decoder:  admission.NewDecoder(mgr.GetScheme()),
+		decoder:  admission.NewDecoder(mgr.GetScheme()),
 	},
 })
 ```
