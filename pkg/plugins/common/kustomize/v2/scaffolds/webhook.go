@@ -18,6 +18,7 @@ package scaffolds
 
 import (
 	"fmt"
+
 	pluginutil "sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
 
 	log "github.com/sirupsen/logrus"
