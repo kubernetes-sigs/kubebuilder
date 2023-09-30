@@ -17,11 +17,11 @@ resources:
 patches:
 # [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix.
 # patches here are for enabling the conversion webhook for each CRD
-#- path: patches/webhook_in_crew_captains.yaml
-#- path: patches/webhook_in_ship_frigates.yaml
-#- path: patches/webhook_in_ship_destroyers.yaml
-#- path: patches/webhook_in_ship_cruisers.yaml
-#- path: patches/webhook_in_sea-creatures_krakens.yaml
+- path: patches/webhook_in_crew_captains.yaml
+- path: patches/webhook_in_ship_frigates.yaml
+- path: patches/webhook_in_ship_destroyers.yaml
+- path: patches/webhook_in_ship_cruisers.yaml
+- path: patches/webhook_in_sea-creatures_krakens.yaml
 #- path: patches/webhook_in_sea-creatures_leviathans.yaml
 #- path: patches/webhook_in_foo.policy_healthcheckpolicies.yaml
 #- path: patches/webhook_in_foo_bars.yaml
