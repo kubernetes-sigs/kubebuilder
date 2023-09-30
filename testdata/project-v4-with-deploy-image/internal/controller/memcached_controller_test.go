@@ -22,6 +22,7 @@ import (
 	"os"
 	"time"
 
+	//nolint:golint
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
@@ -48,7 +49,10 @@ var _ = Describe("Memcached controller", func() {
 			},
 		}
 
-		typeNamespaceName := types.NamespacedName{Name: MemcachedName, Namespace: MemcachedName}
+		typeNamespaceName := types.NamespacedName{
+			Name:      MemcachedName,
+			Namespace: MemcachedName,
+		}
 		memcached := &examplecomv1alpha1.Memcached{}
 
 		BeforeEach(func() {
@@ -127,13 +131,20 @@ var _ = Describe("Memcached controller", func() {
 
 			By("Checking the latest Status Condition added to the Memcached instance")
 			Eventually(func() error {
-				if memcached.Status.Conditions != nil && len(memcached.Status.Conditions) != 0 {
+				if memcached.Status.Conditions != nil &&
+					len(memcached.Status.Conditions) != 0 {
 					latestStatusCondition := memcached.Status.Conditions[len(memcached.Status.Conditions)-1]
-					expectedLatestStatusCondition := metav1.Condition{Type: typeAvailableMemcached,
-						Status: metav1.ConditionTrue, Reason: "Reconciling",
-						Message: fmt.Sprintf("Deployment for custom resource (%s) with %d replicas created successfully", memcached.Name, memcached.Spec.Size)}
+					expectedLatestStatusCondition := metav1.Condition{
+						Type:   typeAvailableMemcached,
+						Status: metav1.ConditionTrue,
+						Reason: "Reconciling",
+						Message: fmt.Sprintf(
+							"Deployment for custom resource (%s) with %d replicas created successfully",
+							memcached.Name,
+							memcached.Spec.Size),
+					}
 					if latestStatusCondition != expectedLatestStatusCondition {
-						return fmt.Errorf("The latest status condition added to the memcached instance is not as expected")
+						return fmt.Errorf("The latest status condition added to the Memcached instance is not as expected")
 					}
 				}
 				return nil

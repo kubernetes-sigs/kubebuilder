@@ -542,20 +542,9 @@ var _ = AfterSuite(func() {
 
 func updateKustomization(sp *Sample) {
 	var err error
-	// uncomment default/kustomization
-	err = pluginutil.UncommentCode(
-		filepath.Join(sp.ctx.Dir, "config/default/kustomization.yaml"),
-		`#- ../webhook`, `#`)
-	CheckError("fixing default/kustomization", err)
-
 	err = pluginutil.UncommentCode(
 		filepath.Join(sp.ctx.Dir, "config/default/kustomization.yaml"),
 		`#- ../certmanager`, `#`)
-	CheckError("fixing default/kustomization", err)
-
-	err = pluginutil.UncommentCode(
-		filepath.Join(sp.ctx.Dir, "config/default/kustomization.yaml"),
-		`#- manager_webhook_patch.yaml`, `#`)
 	CheckError("fixing default/kustomization", err)
 
 	err = pluginutil.UncommentCode(
@@ -572,12 +561,6 @@ func updateKustomization(sp *Sample) {
 		filepath.Join(sp.ctx.Dir, "config/default/kustomization.yaml"),
 		DefaultKustomization, `#`)
 	CheckError("fixing default/kustomization", err)
-
-	// uncomment crd/kustomization
-	err = pluginutil.UncommentCode(
-		filepath.Join(sp.ctx.Dir, "config/crd/kustomization.yaml"),
-		`#- path: patches/webhook_in_cronjobs.yaml`, `#`)
-	CheckError("fixing crd/kustomization", err)
 
 	err = pluginutil.UncommentCode(
 		filepath.Join(sp.ctx.Dir, "config/crd/kustomization.yaml"),

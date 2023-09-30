@@ -2,9 +2,11 @@
 
 [Introduction](./introduction.md)
 
+[Architecture](./architecture.md)
+
 [Quick Start](./quick-start.md)
 
-[Architecture](./architecture.md)
+[Getting Started](./getting-started.md)
 
 ---
 
@@ -73,6 +75,8 @@
       - [Migration Guide](migration/migration_guide_gov3_to_gov4.md)
       - [Migration by updating the files](migration/manually_migration_guide_gov3_to_gov4.md)
   - [Single Group to Multi-Group](./migration/multi-group.md)
+
+- [Project Upgrade Assistant](./reference/rescaffold.md)
 
 ---
 

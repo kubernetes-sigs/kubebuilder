@@ -1,0 +1,27 @@
+# permissions for end users to view bars.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: bar-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: project-v4-multigroup-with-deploy-image
+    app.kubernetes.io/part-of: project-v4-multigroup-with-deploy-image
+    app.kubernetes.io/managed-by: kustomize
+  name: bar-viewer-role
+rules:
+- apiGroups:
+  - fiz.testproject.org
+  resources:
+  - bars
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - fiz.testproject.org
+  resources:
+  - bars/status
+  verbs:
+  - get

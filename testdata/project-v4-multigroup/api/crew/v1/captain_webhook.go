@@ -27,6 +27,7 @@ import (
 // log is for logging in this package.
 var captainlog = logf.Log.WithName("captain-resource")
 
+// SetupWebhookWithManager will setup the manager to manage the webhooks
 func (r *Captain) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).

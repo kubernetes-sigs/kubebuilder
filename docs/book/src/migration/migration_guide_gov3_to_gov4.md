@@ -10,6 +10,16 @@ The recommended way to migrate a `go/v3` project is to create a new `go/v4` proj
 copy over the API and the reconciliation code. The conversion will end up with a
 project that looks like a native go/v4 project layout (latest version).
 
+<aside class="note warning">
+<h1>Your Upgrade Assistant: The `alpha generate` command</h1>
+
+To upgrade your project you might want to use the command `kubebuilder alpha generate [OPTIONS]`.
+This command will re-scaffold the project using the current Kubebuilder version. 
+You can run `kubebuilder alpha generate --plugins=go/v4` to regenerate your project using `go/v4` 
+based in your [PROJECT][project-file] file config. 
+
+</aside>
+
 However, in some cases, it's possible to do an in-place upgrade (i.e. reuse the go/v3 project layout, upgrading
 the PROJECT file, and scaffolds manually). For further information see [Migration from go/v3 to go/v4 by updating the files manually][manually-upgrade]
 
@@ -148,3 +158,4 @@ fine.
 [controller-runtime]: https://github.com/kubernetes-sigs/controller-runtime/releases
 [multi-group]: multi-group.md
 [manually-upgrade]: manually_migration_guide_gov3_to_gov4.md
+[project-file]: ../reference/project-config.md

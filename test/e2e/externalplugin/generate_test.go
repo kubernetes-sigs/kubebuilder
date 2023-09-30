@@ -24,9 +24,6 @@ import (
 	//nolint:golint
 	//nolint:revive
 	. "github.com/onsi/ginkgo/v2"
-
-	//nolint:golint
-	//nolint:revive
 	. "github.com/onsi/gomega"
 
 	//nolint:golint

@@ -1,0 +1,27 @@
+# permissions for end users to view krakens.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: kraken-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: project-v4-multigroup-with-deploy-image
+    app.kubernetes.io/part-of: project-v4-multigroup-with-deploy-image
+    app.kubernetes.io/managed-by: kustomize
+  name: kraken-viewer-role
+rules:
+- apiGroups:
+  - sea-creatures.testproject.org
+  resources:
+  - krakens
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - sea-creatures.testproject.org
+  resources:
+  - krakens/status
+  verbs:
+  - get
