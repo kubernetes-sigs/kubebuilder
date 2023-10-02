@@ -69,6 +69,9 @@ func (s *initScaffolder) Scaffold() error {
 		&rbac.AuthProxyService{},
 		&rbac.AuthProxyClientRole{},
 		&rbac.RoleBinding{},
+		// We need to create a Role because if the project
+		// has not CRD define the controller-gen will not generate this file
+		&rbac.Role{},
 		&rbac.LeaderElectionRole{},
 		&rbac.LeaderElectionRoleBinding{},
 		&rbac.ServiceAccount{},
