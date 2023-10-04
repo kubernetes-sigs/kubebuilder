@@ -1,6 +1,6 @@
 # Admission Webhooks
 
-Admission webhooks are HTTP callbacks that receive admission requests, process
+[Admission webhooks][k8s-doc-admission-webhooks] are HTTP callbacks that receive admission requests, process
 them and return admission responses.
 
 Kubernetes provides the following types of admission webhooks:
@@ -99,3 +99,5 @@ spec:
 While certain edge scenarios might allow a mutating webhook to seamlessly modify the status, treading this path isn't a 
 universally acclaimed or recommended strategy. Entrusting the controller logic with status updates remains the 
 most advocated approach.
+
+k8s-doc-admission-webhooks: https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#what-are-admission-webhooks
