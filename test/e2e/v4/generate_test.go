@@ -33,41 +33,13 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/test/e2e/utils"
 )
 
-// GenerateV4 implements a go/v4(-alpha) plugin project defined by a TestContext.
+// GenerateV4 implements a go/v4 plugin project defined by a TestContext.
 func GenerateV4(kbc *utils.TestContext) {
-	var err error
-
-	By("initializing a project")
-	err = kbc.Init(
-		"--plugins", "go/v4",
-		"--project-version", "3",
-		"--domain", kbc.Domain,
-	)
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
-
-	By("creating API definition")
-	err = kbc.CreateAPI(
-		"--group", kbc.Group,
-		"--version", kbc.Version,
-		"--kind", kbc.Kind,
-		"--namespaced",
-		"--resource",
-		"--controller",
-		"--make=false",
-	)
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
-
-	By("implementing the API")
-	ExpectWithOffset(1, pluginutil.InsertCode(
-		filepath.Join(kbc.Dir, "api", kbc.Version, fmt.Sprintf("%s_types.go", strings.ToLower(kbc.Kind))),
-		fmt.Sprintf(`type %sSpec struct {
-`, kbc.Kind),
-		`	// +optional
-Count int `+"`"+`json:"count,omitempty"`+"`"+`
-`)).Should(Succeed())
+	initingTheProject(kbc)
+	creatingAPI(kbc)
 
 	By("scaffolding mutating and validating webhooks")
-	err = kbc.CreateWebhook(
+	err := kbc.CreateWebhook(
 		"--group", kbc.Group,
 		"--version", kbc.Version,
 		"--kind", kbc.Kind,
@@ -92,7 +64,64 @@ Count int `+"`"+`json:"count,omitempty"`+"`"+`
 		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 		"#- webhookcainjection_patch.yaml", "#")).To(Succeed())
 	ExpectWithOffset(1, pluginutil.UncommentCode(filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
-		`#replacements:
+		certManagerTarget, "#")).To(Succeed())
+
+	if kbc.IsRestricted {
+		By("uncomment kustomize files to ensure that pods are restricted")
+		uncommentPodStandards(kbc)
+	}
+}
+
+// GenerateV4WithoutWebhooks implements a go/v4 plugin with APIs and enable Prometheus and CertManager
+func GenerateV4WithoutWebhooks(kbc *utils.TestContext) {
+	initingTheProject(kbc)
+	creatingAPI(kbc)
+
+	ExpectWithOffset(1, pluginutil.UncommentCode(
+		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+		"#- ../prometheus", "#")).To(Succeed())
+
+	if kbc.IsRestricted {
+		By("uncomment kustomize files to ensure that pods are restricted")
+		uncommentPodStandards(kbc)
+	}
+}
+
+func creatingAPI(kbc *utils.TestContext) {
+	By("creating API definition")
+	err := kbc.CreateAPI(
+		"--group", kbc.Group,
+		"--version", kbc.Version,
+		"--kind", kbc.Kind,
+		"--namespaced",
+		"--resource",
+		"--controller",
+		"--make=false",
+	)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+
+	By("implementing the API")
+	ExpectWithOffset(1, pluginutil.InsertCode(
+		filepath.Join(kbc.Dir, "api", kbc.Version, fmt.Sprintf("%s_types.go", strings.ToLower(kbc.Kind))),
+		fmt.Sprintf(`type %sSpec struct {
+`, kbc.Kind),
+		`	// +optional
+Count int `+"`"+`json:"count,omitempty"`+"`"+`
+`)).Should(Succeed())
+}
+
+func initingTheProject(kbc *utils.TestContext) {
+	By("initializing a project")
+	err := kbc.Init(
+		"--plugins", "go/v4",
+		"--project-version", "3",
+		"--domain", kbc.Domain,
+	)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+}
+
+//nolint:lll
+const certManagerTarget = `#replacements:
 #  - source: # Add cert-manager annotation to ValidatingWebhookConfiguration, MutatingWebhookConfiguration and CRDs
 #      kind: Certificate
 #      group: cert-manager.io
@@ -188,13 +217,7 @@ Count int `+"`"+`json:"count,omitempty"`+"`"+`
 #        options:
 #          delimiter: '.'
 #          index: 1
-#          create: true`, "#")).To(Succeed())
-
-	if kbc.IsRestricted {
-		By("uncomment kustomize files to ensure that pods are restricted")
-		uncommentPodStandards(kbc)
-	}
-}
+#          create: true`
 
 func uncommentPodStandards(kbc *utils.TestContext) {
 	configManager := filepath.Join(kbc.Dir, "config", "manager", "manager.yaml")

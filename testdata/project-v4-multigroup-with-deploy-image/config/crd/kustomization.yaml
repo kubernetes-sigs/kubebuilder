@@ -43,6 +43,8 @@ patches:
 #- path: patches/cainjection_in__lakers.yaml
 #+kubebuilder:scaffold:crdkustomizecainjectionpatch
 
+# [WEBHOOK] To enable webhook, uncomment the following section
 # the following config is for teaching kustomize how to do kustomization for CRDs.
+
 configurations:
 - kustomizeconfig.yaml

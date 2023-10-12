@@ -49,23 +49,13 @@ func (f *EnableWebhookPatch) SetTemplateDefaults() error {
 }
 
 const enableWebhookPatchTemplate = `# The following patch enables a conversion webhook for the CRD
-{{- if ne .Resource.API.CRDVersion "v1" }}
-# CRD conversion requires k8s 1.13 or later.
-{{- end }}
-apiVersion: apiextensions.k8s.io/{{ .Resource.API.CRDVersion }}
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   name: {{ .Resource.Plural }}.{{ .Resource.QualifiedGroup }}
 spec:
   conversion:
     strategy: Webhook
-    {{- if ne .Resource.API.CRDVersion "v1" }}
-    webhookClientConfig:
-      service:
-        namespace: system
-        name: webhook-service
-        path: /convert
-    {{- else }}
     webhook:
       clientConfig:
         service:
@@ -73,6 +63,5 @@ spec:
           name: webhook-service
           path: /convert
       conversionReviewVersions:
-      - {{ .Resource.API.CRDVersion }}
-    {{- end }}
+      - v1
 `

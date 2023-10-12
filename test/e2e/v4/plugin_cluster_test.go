@@ -85,13 +85,19 @@ var _ = Describe("kubebuilder", func() {
 			" with restricted pods", func() {
 			kbc.IsRestricted = true
 			GenerateV4(kbc)
-			Run(kbc)
+			Run(kbc, true)
+		})
+		It("should generate a runnable project without webhooks"+
+			" with restricted pods", func() {
+			kbc.IsRestricted = true
+			GenerateV4WithoutWebhooks(kbc)
+			Run(kbc, false)
 		})
 	})
 })
 
 // Run runs a set of e2e tests for a scaffolded project defined by a TestContext.
-func Run(kbc *utils.TestContext) {
+func Run(kbc *utils.TestContext, hasWebhook bool) {
 	var controllerPodName string
 	var err error
 
@@ -181,13 +187,15 @@ func Run(kbc *utils.TestContext) {
 
 	_ = curlMetrics(kbc)
 
-	By("validating that cert-manager has provisioned the certificate Secret")
-	EventuallyWithOffset(1, func() error {
-		_, err := kbc.Kubectl.Get(
-			true,
-			"secrets", "webhook-server-cert")
-		return err
-	}, time.Minute, time.Second).Should(Succeed())
+	if hasWebhook {
+		By("validating that cert-manager has provisioned the certificate Secret")
+		EventuallyWithOffset(1, func() error {
+			_, err := kbc.Kubectl.Get(
+				true,
+				"secrets", "webhook-server-cert")
+			return err
+		}, time.Minute, time.Second).Should(Succeed())
+	}
 
 	By("validating that the Prometheus manager has provisioned the Service")
 	EventuallyWithOffset(1, func() error {
@@ -203,29 +211,31 @@ func Run(kbc *utils.TestContext) {
 		"ServiceMonitor")
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
-	By("validating that the mutating|validating webhooks have the CA injected")
-	verifyCAInjection := func() error {
-		mwhOutput, err := kbc.Kubectl.Get(
-			false,
-			"mutatingwebhookconfigurations.admissionregistration.k8s.io",
-			fmt.Sprintf("e2e-%s-mutating-webhook-configuration", kbc.TestSuffix),
-			"-o", "go-template={{ range .webhooks }}{{ .clientConfig.caBundle }}{{ end }}")
-		ExpectWithOffset(2, err).NotTo(HaveOccurred())
-		// check that ca should be long enough, because there may be a place holder "\n"
-		ExpectWithOffset(2, len(mwhOutput)).To(BeNumerically(">", 10))
+	if hasWebhook {
+		By("validating that the mutating|validating webhooks have the CA injected")
+		verifyCAInjection := func() error {
+			mwhOutput, err := kbc.Kubectl.Get(
+				false,
+				"mutatingwebhookconfigurations.admissionregistration.k8s.io",
+				fmt.Sprintf("e2e-%s-mutating-webhook-configuration", kbc.TestSuffix),
+				"-o", "go-template={{ range .webhooks }}{{ .clientConfig.caBundle }}{{ end }}")
+			ExpectWithOffset(2, err).NotTo(HaveOccurred())
+			// check that ca should be long enough, because there may be a place holder "\n"
+			ExpectWithOffset(2, len(mwhOutput)).To(BeNumerically(">", 10))
 
-		vwhOutput, err := kbc.Kubectl.Get(
-			false,
-			"validatingwebhookconfigurations.admissionregistration.k8s.io",
-			fmt.Sprintf("e2e-%s-validating-webhook-configuration", kbc.TestSuffix),
-			"-o", "go-template={{ range .webhooks }}{{ .clientConfig.caBundle }}{{ end }}")
-		ExpectWithOffset(2, err).NotTo(HaveOccurred())
-		// check that ca should be long enough, because there may be a place holder "\n"
-		ExpectWithOffset(2, len(vwhOutput)).To(BeNumerically(">", 10))
+			vwhOutput, err := kbc.Kubectl.Get(
+				false,
+				"validatingwebhookconfigurations.admissionregistration.k8s.io",
+				fmt.Sprintf("e2e-%s-validating-webhook-configuration", kbc.TestSuffix),
+				"-o", "go-template={{ range .webhooks }}{{ .clientConfig.caBundle }}{{ end }}")
+			ExpectWithOffset(2, err).NotTo(HaveOccurred())
+			// check that ca should be long enough, because there may be a place holder "\n"
+			ExpectWithOffset(2, len(vwhOutput)).To(BeNumerically(">", 10))
 
-		return nil
+			return nil
+		}
+		EventuallyWithOffset(1, verifyCAInjection, time.Minute, time.Second).Should(Succeed())
 	}
-	EventuallyWithOffset(1, verifyCAInjection, time.Minute, time.Second).Should(Succeed())
 
 	By("creating an instance of the CR")
 	// currently controller-runtime doesn't provide a readiness probe, we retry a few times
@@ -274,15 +284,17 @@ func Run(kbc *utils.TestContext) {
 		strings.ToLower(kbc.Kind),
 	)))
 
-	By("validating that mutating and validating webhooks are working fine")
-	cnt, err := kbc.Kubectl.Get(
-		true,
-		"-f", sampleFile,
-		"-o", "go-template={{ .spec.count }}")
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
-	count, err := strconv.Atoi(cnt)
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
-	ExpectWithOffset(1, count).To(BeNumerically("==", 5))
+	if hasWebhook {
+		By("validating that mutating and validating webhooks are working fine")
+		cnt, err := kbc.Kubectl.Get(
+			true,
+			"-f", sampleFile,
+			"-o", "go-template={{ .spec.count }}")
+		ExpectWithOffset(1, err).NotTo(HaveOccurred())
+		count, err := strconv.Atoi(cnt)
+		ExpectWithOffset(1, err).NotTo(HaveOccurred())
+		ExpectWithOffset(1, count).To(BeNumerically("==", 5))
+	}
 }
 
 // curlMetrics curl's the /metrics endpoint, returning all logs once a 200 status is returned.

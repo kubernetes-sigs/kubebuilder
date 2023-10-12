@@ -19,9 +19,9 @@ package scaffolds
 import (
 	"fmt"
 
-	pluginutil "sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
-
 	log "github.com/sirupsen/logrus"
+	pluginutil "sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/crd/patches"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
@@ -71,6 +71,21 @@ func (s *webhookScaffolder) Scaffold() error {
 		return fmt.Errorf("error updating resource: %w", err)
 	}
 
+	if err := scaffold.Execute(
+		&kdefault.WebhookCAInjectionPatch{},
+		&kdefault.ManagerWebhookPatch{},
+		&webhook.Kustomization{Force: s.force},
+		&webhook.KustomizeConfig{},
+		&webhook.Service{},
+		&certmanager.Certificate{},
+		&certmanager.Kustomization{},
+		&certmanager.KustomizeConfig{},
+		&patches.EnableWebhookPatch{},
+		&patches.EnableCAInjectionPatch{},
+	); err != nil {
+		return fmt.Errorf("error scaffolding kustomize webhook manifests: %v", err)
+	}
+
 	kustomizeFilePath := "config/default/kustomization.yaml"
 	err := pluginutil.UncommentCode(kustomizeFilePath, "#- ../webhook", `#`)
 	if err != nil {
@@ -100,17 +115,13 @@ func (s *webhookScaffolder) Scaffold() error {
 		}
 	}
 
-	if err := scaffold.Execute(
-		&kdefault.WebhookCAInjectionPatch{},
-		&kdefault.ManagerWebhookPatch{},
-		&webhook.Kustomization{Force: s.force},
-		&webhook.KustomizeConfig{},
-		&webhook.Service{},
-		&certmanager.Certificate{},
-		&certmanager.Kustomization{},
-		&certmanager.KustomizeConfig{},
-	); err != nil {
-		return fmt.Errorf("error scaffolding kustomize webhook manifests: %v", err)
+	err = pluginutil.UncommentCode(crdKustomizationsFilePath, "#configurations:\n#- kustomizeconfig.yaml", `#`)
+	if err != nil {
+		hasWebHookUncommented, err := pluginutil.HasFragment(crdKustomizationsFilePath, "- kustomizeconfig.yaml")
+		if !hasWebHookUncommented || err != nil {
+			log.Errorf("Unable to find the target(s) #configurations:\n#- kustomizeconfig.yaml to uncomment in the file "+
+				"%s.", crdKustomizationsFilePath)
+		}
 	}
 
 	return nil
