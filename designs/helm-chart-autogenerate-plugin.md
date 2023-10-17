@@ -2,13 +2,31 @@
 |---------------|---------------|-------------|---|
 | @name | date | Implementeble | - |
 
-# Auto-generate Helm Chart Plugin
-===================
+# Allow users package Operator with Helm Charts
 
-The proposal is to add a new alpha command to auto-generate a helm chart for a given kustomize directory created by kubebuilder.
+This proposal aims to introduce an optional mechanism that allows users to generate a Helm Chart from their Kubebuilder-scaffolded project. This will enable them to effectively package and distribute their solutions.
+
+To achieve this goal, we can introduce a Helm Chart plugin (i.e. helm-chart/v1alpha), which will provide the scaffolds. Alternatively, we could implement a command to generate the Helm Chart from a provided Kubebuilder project.
 
 ## Example
 
+**Via a new Optional Plugin**
+
+By running `kubebuilder init --plugins=go/v4,helm-chart/v1alpha` or `kubebuilder edit --plugins=helm-chart/v1alpha`, the scaffolds of Helm Chart to package the Operator would be created in the project.
+
+Example:
+```shell
+$ tree
+.
+..
+├── PROJECT
+...
+├── deploy
+│   └── helm-chart // The helm chart with all values will be scaffold under a directory of the project
+...
+```
+
+**Via a new command (Alternative Option)**
 By running the following command, the plugin will generate a helm chart from the specific kustomize directory and output it to the directory specified by the `--output` flag.
 
 ```shell
@@ -21,35 +39,65 @@ TBF
 
 ## Summary
 
-TBF
+The Helm Chart created by the project should accurately reflect the default values utilized in Kubebuilder. Furthermore, any newly generated CRDs or Webhooks should be seamlessly integrated into the Helm Chart. To accomplish this, the new plugin needs to incorporate all the subCommands available to the [kustomize plugin](https://book.kubebuilder.io/plugins/kustomize-v2). Additionally, the edit feature, similar to what is available in the optional [Grafana plugin](https://book.kubebuilder.io/plugins/grafana-v1-alpha), should be integrated to enable modifications in projects that were previously created.
+
+Thus, the init subCommand should take charge of creating the Helm Chart directory and scaffolding the base of the Helm Chart, based on the default scaffold provided by Kustomize. This means that the same default values, scaffolded to the manager and proxy, along with the options to enable metrics via Prometheus, cert-manager, and webhooks, should be disabled (commented out) by default, as seen in the [config/default/kustomization.yaml](https://github.com/kubernetes-sigs/kubebuilder/blob/f4744670e6fc8ed29f87161d39a8f2f3838c27f4/testdata/project-v4/config/default/kustomization.yaml#L21-L27) file.
+
+Subsequently, if a user decides to scaffold webhooks, we should uncomment the relevant sections. Please refer to PRs https://github.com/kubernetes-sigs/kubebuilder/pull/3627 and https://github.com/kubernetes-sigs/kubebuilder/pull/3629 for examples of this implementation.
+
+Lastly, when new API(s) (CRDs) are introduced, they must be added to the Helm Chart as well. As a result, the Makefile targets make generate and make manifest should be modified when the proposed plugin is in use to ensure that CRDs are accurately copied and pasted into the Helm Chart's respective directory.
+
+To allow users to customize their Helm Charts, we should avoid overwriting files within the Helm Chart, with the exception of CRDs/webhooks, as changes made to these must be mirrored in the Helm Chart. However, what is scaffolded by the init/edit should remain primarily unchanged. We would only uncomment the options as described above.
 
 ## Motivation
 
-Currently, kubebuilder only supports the distribution of the operator by the kustomize. However, many well-known operators contains the distribution of helm charts:
+Kubebuilder users currently face the challenges of lacking an officially supported distribution mechanism for Helm Chart. They seek to:
+
+- Harness the power of Helm Chart as a package manager for the Operator, enabling seamless adaptation to diverse deployment environments.
+- Take advantage of Helm's dependency management capabilities to simplify the installation process of Operator dependencies, such as cert-manager.
+- Seamlessly integrate with Helm's ecosystem, including FluxCD, to efficiently manage the Operator.
+
+However, Kubebuilder does not offer any utilities to facilitate the distribution of projects currently. One could clone the entire project and utilize the Makefile targets to apply the solution on clusters. Consequently, this proposal aims to introduce a method that allows Kubebuilder users to easily distribute their projects through Helm Charts, a strategy that many similar many well-known operators contains the distribution of helm charts:
 
 - [mongodb](https://artifacthub.io/packages/helm/mongodb-helm-charts/community-operator
 )
 - [cert-manager](https://cert-manager.io/v1.6-docs/installation/helm/#1-add-the-jetstack-helm-repository)
 - [prometheus](https://bitnami.com/stack/prometheus-operator/helm)
+- [aws-load-balancer-controller](https://github.com/kubernetes-sigs/aws-load-balancer-controller/tree/main/helm/aws-load-balancer-controller)
 
-The proposed command will auto-generate a helm chart from a kustomize directory created by kubebuilder with minimizing the manual effort. The generated helm chart will cover the frequently-used configurations.
 
-Context:
-
-- See the discussion [Is there a good solution/tool to generate a new helm chart from the manifests?](https://github.com/kubernetes-sigs/kubebuilder/discussions/3074)
+**NOTE** For further context see the [discussion topic](https://github.com/kubernetes-sigs/kubebuilder/discussions/3074) 
 
 ### Goals
 
-- Help developers to generate a helm chart from a kustomize directory.
-- Generate a helm chart without human interactions once the kustomize directory updated.
-- Reserve the ability to customize the helm chart by the developer.
+- Allow Kubebuilder users distribute their projects using Helm easily.
+- Make the best effort to preserve any customizations made to the Helm Charts by the users.
 
 ### Non-Goals
 
-- Generate the helm chart from a kustomize directory not created by kubebuilder.
-- Generate the fine-grained configurations.
+- Converting any Kustomize configuration to Helm Charts like [helmify](https://github.com/arttor/helmify) does.
+- Support the deprecated plugins. This option should be supported from go/v4 and kustomize/v2
+- Introduce support for Helm in addition to Kustomize, or replace Kustomize with Helm entirely, similar to the approach taken by Operator-SDK, thereby allowing users to utilize Helm Charts to build their Operators.
 
 ## Proposal
+
+The new optional plugin will create a new directory, `deploy/helm-chart`, where the scaffolding of the project should be constructed as follows:
+//TODO: We need a better definition 
+// We must create a Helm Chart with the default Kubebuilder scaffold to add here
+```shell
+❯ tree deploy/helm-chart
+helm-chart
+    ├── Chart.yaml
+    ├── crds
+    │   ├── <CRDs YAML files generate under config/crds/>
+    ├── templates
+    │   ├── deployment.yaml 
+    │   ├── _helpers.tpl
+    │   ├── role_binding.yaml
+    │   ├── role.yaml 
+    │   ├── <all under config/rbac less the edit and view roles which are helpers for admins>
+    └── values.yaml
+```
 
 To reduce the user adaptation, the command
 leverage the existing kustomize default directory and create the similar layout of the helm chart from it. The generated `values.yaml` is as follows:
@@ -60,21 +108,24 @@ nameOverride: ""
 
 fullnameOverride: ""
 
+## CRD configuration under the `config/crd` directory
 crd:
-  create: true
+  ## Whether the `resources` field contains `crd` in the `config/default/kustomization.yaml` file
+  create: false
 
-## More info: https://kubernetes.io/docs/admin/authorization/rbac/
+## RBAC configuration under the `config/rbac` directory
 rbac:
+  ## Whether the `resources` field contains `rbac` in the `config/default/kustomization.yaml` file
   create: true
-  serviceAccountName: ""
+  serviceAccountName: "controller-manager"
 
 
-## Configure the manager
+## Manager configuration referent to `config/manager/manager.yaml`
 manager:
   ## The Security Context of the manager Pod.
   ## More info: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod
   podSecurityContext:
-  runAsNonRoot: true
+    runAsNonRoot: true
 
   ## Configure the kubeRbacProxy container.
   kubeRbacProxy:
@@ -147,16 +198,16 @@ manager:
      ## Configure the rbac roles.
      serviceAccountName: ""
 
-## Configure the webhook
+## Webhook configuration under the `config/webhook` directory
 webhook:
+  ## Whether the `resources` field contains `webhook` in the `config/default/kustomization.yaml` file
   enabled: true
   ## More info: https://kubernetes.io/docs/concepts/services-networking/service/
   service:
-    type: ClusterIP
     ports:
-    - port: 443
+    - name: webhook-server
       protocol: TCP
-      targetPort: 9443
+      containerPort: 9443
 
 metrics:
   enabled: true
@@ -166,7 +217,7 @@ metrics:
     - port: 8443
       protocol: TCP
 
-## Configure the cert-manager
+## Configure the cert-manager dependency.
 certmanager:
   enabled: true
   installCRDs: true
@@ -174,8 +225,9 @@ certmanager:
   extraArgs:
   - --enable-certificate-owner-ref=true
 
+## Prometheus configuration under the `config/prometheus` directory
 prometheus:
-  ## Enable the Prometheus Monitor
+  ## Whether the `resources` field contains `prometheus` in the `config/default/kustomization.yaml` file
   enabled: false
 
 ## The domain name of Kubernetes cluster 
@@ -196,7 +248,11 @@ TBF
 
 ### Risks and Mitigations
 
-TBF
+**Difficulty in Maintaining the Solution**
+
+Maintaining the solution may prove challenging in the long term, particularly if it does not gain community adoption and, consequently, collaboration. To mitigate this risk, the proposal aims to introduce an optional alpha plugin or to implement it through an alpha command. This approach provides us with greater flexibility to make adjustments or, if necessary, to deprecate the feature without definitively compromising support.
+
+Additionally, it is crucial to cover the solution with end-to-end tests to ensure that, despite any changes, the Helm Chart remains deployable and continues to function well, as is the practice with our other plugins and solutions.
 
 ### Proof of Concept [optional]
 
@@ -206,7 +262,9 @@ Refer to the open source tool
 
 ## Drawbacks
 
-TBF
+**Generation of Deployable Helm Chart:**
+
+There might be challenges in generating a deployable Helm Chart without human intervention, similar to the current process for Kubebuilder projects.
 
 ## Alternatives
 
