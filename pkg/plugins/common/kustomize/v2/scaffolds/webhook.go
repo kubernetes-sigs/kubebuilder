@@ -96,11 +96,11 @@ func (s *webhookScaffolder) Scaffold() error {
 		}
 	}
 
-	err = pluginutil.UncommentCode(kustomizeFilePath, "#- manager_webhook_patch.yaml", `#`)
+	err = pluginutil.UncommentCode(kustomizeFilePath, "#- path: manager_webhook_patch.yaml", `#`)
 	if err != nil {
-		hasWebHookUncommented, err := pluginutil.HasFragment(kustomizeFilePath, "- manager_webhook_patch.yaml")
+		hasWebHookUncommented, err := pluginutil.HasFragment(kustomizeFilePath, "- path: manager_webhook_patch.yaml")
 		if !hasWebHookUncommented || err != nil {
-			log.Errorf("Unable to find the target #- manager_webhook_patch.yaml to uncomment in the file "+
+			log.Errorf("Unable to find the target #- path: manager_webhook_patch.yaml to uncomment in the file "+
 				"%s.", kustomizeFilePath)
 		}
 	}
