@@ -1,0 +1,51 @@
+name: project-v4-sample
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    name: Run on Ubuntu
+    runs-on: ubuntu-latest
+    env:
+      KIND_K8S_VERSION: v1.28.0
+      tools_k8s_version: 1.28.0
+      kind_version: 0.15.0
+    steps:
+      - name: Clone the code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '~1.20'
+
+      - name: Install Kind
+        run: go install sigs.k8s.io/kind@v$kind_version
+  
+
+      - name: Install setup-envtest
+        run: go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+
+      - name: Install e2e tools with setup-envtest
+        run: setup-envtest use $tools_k8s_version
+
+      - name: Create kind cluster
+        run: kind create cluster
+        
+      - name: Prepare the environment
+        run: |
+          KUSTOMIZATION_FILE_PATH="testdata/project-v4/config/default/kustomization.yaml"
+          sed -i '25s/^#//' $KUSTOMIZATION_FILE_PATH
+          sed -i '27s/^#//' $KUSTOMIZATION_FILE_PATH
+          sed -i '42s/^#//' $KUSTOMIZATION_FILE_PATH
+          sed -i '46,143s/^#//' $KUSTOMIZATION_FILE_PATH
+      
+      - name: Test
+        run: |
+          cd testdata/project-v4
+          go get -u ./...
+          go mod tidy
+          make test-e2e
+          
