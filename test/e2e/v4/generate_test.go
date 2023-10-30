@@ -62,7 +62,7 @@ func GenerateV4(kbc *utils.TestContext) {
 		"#- ../prometheus", "#")).To(Succeed())
 	ExpectWithOffset(1, pluginutil.UncommentCode(
 		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
-		"#- webhookcainjection_patch.yaml", "#")).To(Succeed())
+		"#- path: webhookcainjection_patch.yaml", "#")).To(Succeed())
 	ExpectWithOffset(1, pluginutil.UncommentCode(filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 		certManagerTarget, "#")).To(Succeed())
 
