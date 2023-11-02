@@ -104,6 +104,7 @@ func (s *apiScaffolder) Scaffold() error {
 		if err := scaffold.Execute(
 			&controllers.SuiteTest{Force: s.force, K8SVersion: EnvtestK8SVersion},
 			&controllers.Controller{ControllerRuntimeVersion: ControllerRuntimeVersion, Force: s.force},
+			&controllers.ControllerTest{Force: s.force, DoAPI: doAPI},
 		); err != nil {
 			return fmt.Errorf("error scaffolding controller: %v", err)
 		}
