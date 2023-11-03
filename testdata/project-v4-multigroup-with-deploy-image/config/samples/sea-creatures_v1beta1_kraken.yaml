@@ -1,0 +1,12 @@
+apiVersion: sea-creatures.testproject.org/v1beta1
+kind: Kraken
+metadata:
+  labels:
+    app.kubernetes.io/name: kraken
+    app.kubernetes.io/instance: kraken-sample
+    app.kubernetes.io/part-of: project-v4-multigroup-with-deploy-image
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: project-v4-multigroup-with-deploy-image
+  name: kraken-sample
+spec:
+  # TODO(user): Add fields here

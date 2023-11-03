@@ -2,9 +2,11 @@
 
 [Introduction](./introduction.md)
 
+[Architecture](./architecture.md)
+
 [Quick Start](./quick-start.md)
 
-[Architecture](./architecture.md)
+[Getting Started](./getting-started.md)
 
 ---
 
@@ -74,6 +76,8 @@
       - [Migration by updating the files](migration/manually_migration_guide_gov3_to_gov4.md)
   - [Single Group to Multi-Group](./migration/multi-group.md)
 
+- [Project Upgrade Assistant](./reference/rescaffold.md)
+
 ---
 
 - [Reference](./reference/reference.md)
@@ -121,7 +125,7 @@
       - [go/v3 (Deprecated)](./plugins/go-v3-plugin.md)
       - [go/v4 (Default init scaffold)](./plugins/go-v4-plugin.md)
     - [To add optional features](./plugins/to-add-optional-features.md)
-      - [declarative/v1](./plugins/declarative-v1.md)
+      - [declarative/v1 (Deprecated)](./plugins/declarative-v1.md)
       - [grafana/v1-alpha](./plugins/grafana-v1-alpha.md)
       - [deploy-image/v1-alpha](./plugins/deploy-image-plugin-v1-alpha.md)
     - [To be extended for others tools](./plugins/to-be-extended.md)

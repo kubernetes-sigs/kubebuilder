@@ -31,7 +31,7 @@ information.
 - Automatic certificate generation for webhooks has been removed, and webhooks
 will no longer self-register. Use controller-tools to generate a webhook
 configuration. If you need certificate generation, we recommend using
-[cert-manager](https://github.com/jetstack/cert-manager). Kubebuilder v2 will
+[cert-manager](https://github.com/cert-manager/cert-manager). Kubebuilder v2 will
 scaffold out cert manager configs for you to use -- see the
 [Webhook Tutorial](/cronjob-tutorial/webhook-implementation.md) for more details.
 

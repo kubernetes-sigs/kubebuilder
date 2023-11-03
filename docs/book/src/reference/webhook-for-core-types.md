@@ -38,18 +38,6 @@ func (a *podAnnotator) Handle(ctx context.Context, req admission.Request) admiss
 }
 ```
 
-If you need a client, just pass in the client at struct construction time.
-
-If you add the `InjectDecoder` method for your handler, a decoder will be
-injected for you.
-
-```go
-func (a *podAnnotator) InjectDecoder(d *admission.Decoder) error {
-	a.decoder = d
-	return nil
-}
-```
-
 **Note**: in order to have controller-gen generate the webhook configuration for
 you, you need to add markers. For example,
 `// +kubebuilder:webhook:path=/mutate-v1-pod,mutating=true,failurePolicy=fail,groups="",resources=pods,verbs=create;update,versions=v1,name=mpod.kb.io`
@@ -63,6 +51,19 @@ mgr.GetWebhookServer().Register("/mutate-v1-pod", &webhook.Admission{Handler: &p
 ```
 
 You need to ensure the path here match the path in the marker.
+
+### Client/Decoder
+
+If you need a client and/or decoder, just pass them in at struct construction time.
+
+```go
+mgr.GetWebhookServer().Register("/mutate-v1-pod", &webhook.Admission{
+	Handler: &podAnnotator{
+		Client:   mgr.GetClient(),
+		decoder:  admission.NewDecoder(mgr.GetScheme()),
+	},
+})
+```
 
 ## Deploy
 

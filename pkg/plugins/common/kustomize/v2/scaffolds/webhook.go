@@ -20,6 +20,8 @@ import (
 	"fmt"
 
 	log "github.com/sirupsen/logrus"
+	pluginutil "sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/crd/patches"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
@@ -78,8 +80,48 @@ func (s *webhookScaffolder) Scaffold() error {
 		&certmanager.Certificate{},
 		&certmanager.Kustomization{},
 		&certmanager.KustomizeConfig{},
+		&patches.EnableWebhookPatch{},
+		&patches.EnableCAInjectionPatch{},
 	); err != nil {
 		return fmt.Errorf("error scaffolding kustomize webhook manifests: %v", err)
+	}
+
+	kustomizeFilePath := "config/default/kustomization.yaml"
+	err := pluginutil.UncommentCode(kustomizeFilePath, "#- ../webhook", `#`)
+	if err != nil {
+		hasWebHookUncommented, err := pluginutil.HasFragment(kustomizeFilePath, "- ../webhook")
+		if !hasWebHookUncommented || err != nil {
+			log.Errorf("Unable to find the target #- ../webhook to uncomment in the file "+
+				"%s.", kustomizeFilePath)
+		}
+	}
+
+	err = pluginutil.UncommentCode(kustomizeFilePath, "#- path: manager_webhook_patch.yaml", `#`)
+	if err != nil {
+		hasWebHookUncommented, err := pluginutil.HasFragment(kustomizeFilePath, "- path: manager_webhook_patch.yaml")
+		if !hasWebHookUncommented || err != nil {
+			log.Errorf("Unable to find the target #- path: manager_webhook_patch.yaml to uncomment in the file "+
+				"%s.", kustomizeFilePath)
+		}
+	}
+
+	crdKustomizationsFilePath := "config/crd/kustomization.yaml"
+	err = pluginutil.UncommentCode(crdKustomizationsFilePath, "#- path: patches/webhook", `#`)
+	if err != nil {
+		hasWebHookUncommented, err := pluginutil.HasFragment(crdKustomizationsFilePath, "- path: patches/webhook")
+		if !hasWebHookUncommented || err != nil {
+			log.Errorf("Unable to find the target(s) #- path: patches/webhook/* to uncomment in the file "+
+				"%s.", crdKustomizationsFilePath)
+		}
+	}
+
+	err = pluginutil.UncommentCode(crdKustomizationsFilePath, "#configurations:\n#- kustomizeconfig.yaml", `#`)
+	if err != nil {
+		hasWebHookUncommented, err := pluginutil.HasFragment(crdKustomizationsFilePath, "- kustomizeconfig.yaml")
+		if !hasWebHookUncommented || err != nil {
+			log.Errorf("Unable to find the target(s) #configurations:\n#- kustomizeconfig.yaml to uncomment in the file "+
+				"%s.", crdKustomizationsFilePath)
+		}
 	}
 
 	return nil

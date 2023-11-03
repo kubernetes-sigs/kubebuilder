@@ -125,7 +125,9 @@ patches:
 # patches here are for enabling the CA injection for each CRD
 %s
 
+# [WEBHOOK] To enable webhook, uncomment the following section
 # the following config is for teaching kustomize how to do kustomization for CRDs.
-configurations:
-- kustomizeconfig.yaml
+
+#configurations:
+#- kustomizeconfig.yaml
 `

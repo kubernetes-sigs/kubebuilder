@@ -49,10 +49,7 @@ func (f *EnableCAInjectionPatch) SetTemplateDefaults() error {
 
 //nolint:lll
 const enableCAInjectionPatchTemplate = `# The following patch adds a directive for certmanager to inject CA into the CRD
-{{- if ne .Resource.API.CRDVersion "v1" }}
-# CRD conversion requires k8s 1.13 or later.
-{{- end }}
-apiVersion: apiextensions.k8s.io/{{ .Resource.API.CRDVersion }}
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:

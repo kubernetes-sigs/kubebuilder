@@ -27,6 +27,7 @@ import (
 const KubebuilderBinName = "/tmp/kubebuilder/bin/kubebuilder"
 
 func main() {
+	log.SetFormatter(&log.TextFormatter{DisableTimestamp: true})
 	log.Println("Generating documents...")
 
 	log.Println("Generating component-config tutorial...")

@@ -33,20 +33,63 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/test/e2e/utils"
 )
 
-// GenerateV4 implements a go/v4(-alpha) plugin project defined by a TestContext.
+// GenerateV4 implements a go/v4 plugin project defined by a TestContext.
 func GenerateV4(kbc *utils.TestContext) {
-	var err error
+	initingTheProject(kbc)
+	creatingAPI(kbc)
 
-	By("initializing a project")
-	err = kbc.Init(
-		"--plugins", "go/v4",
-		"--project-version", "3",
-		"--domain", kbc.Domain,
+	By("scaffolding mutating and validating webhooks")
+	err := kbc.CreateWebhook(
+		"--group", kbc.Group,
+		"--version", kbc.Version,
+		"--kind", kbc.Kind,
+		"--defaulting",
+		"--programmatic-validation",
 	)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
+	By("implementing the mutating and validating webhooks")
+	err = pluginutil.ImplementWebhooks(filepath.Join(
+		kbc.Dir, "api", kbc.Version,
+		fmt.Sprintf("%s_webhook.go", strings.ToLower(kbc.Kind))))
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+
+	ExpectWithOffset(1, pluginutil.UncommentCode(
+		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+		"#- ../certmanager", "#")).To(Succeed())
+	ExpectWithOffset(1, pluginutil.UncommentCode(
+		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+		"#- ../prometheus", "#")).To(Succeed())
+	ExpectWithOffset(1, pluginutil.UncommentCode(
+		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+		"#- path: webhookcainjection_patch.yaml", "#")).To(Succeed())
+	ExpectWithOffset(1, pluginutil.UncommentCode(filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+		certManagerTarget, "#")).To(Succeed())
+
+	if kbc.IsRestricted {
+		By("uncomment kustomize files to ensure that pods are restricted")
+		uncommentPodStandards(kbc)
+	}
+}
+
+// GenerateV4WithoutWebhooks implements a go/v4 plugin with APIs and enable Prometheus and CertManager
+func GenerateV4WithoutWebhooks(kbc *utils.TestContext) {
+	initingTheProject(kbc)
+	creatingAPI(kbc)
+
+	ExpectWithOffset(1, pluginutil.UncommentCode(
+		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+		"#- ../prometheus", "#")).To(Succeed())
+
+	if kbc.IsRestricted {
+		By("uncomment kustomize files to ensure that pods are restricted")
+		uncommentPodStandards(kbc)
+	}
+}
+
+func creatingAPI(kbc *utils.TestContext) {
 	By("creating API definition")
-	err = kbc.CreateAPI(
+	err := kbc.CreateAPI(
 		"--group", kbc.Group,
 		"--version", kbc.Version,
 		"--kind", kbc.Kind,
@@ -65,47 +108,20 @@ func GenerateV4(kbc *utils.TestContext) {
 		`	// +optional
 Count int `+"`"+`json:"count,omitempty"`+"`"+`
 `)).Should(Succeed())
+}
 
-	By("scaffolding mutating and validating webhooks")
-	err = kbc.CreateWebhook(
-		"--group", kbc.Group,
-		"--version", kbc.Version,
-		"--kind", kbc.Kind,
-		"--defaulting",
-		"--programmatic-validation",
+func initingTheProject(kbc *utils.TestContext) {
+	By("initializing a project")
+	err := kbc.Init(
+		"--plugins", "go/v4",
+		"--project-version", "3",
+		"--domain", kbc.Domain,
 	)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+}
 
-	By("implementing the mutating and validating webhooks")
-	err = pluginutil.ImplementWebhooks(filepath.Join(
-		kbc.Dir, "api", kbc.Version,
-		fmt.Sprintf("%s_webhook.go", strings.ToLower(kbc.Kind))))
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
-
-	By("uncomment kustomization.yaml to enable webhook and ca injection")
-	ExpectWithOffset(1, pluginutil.UncommentCode(
-		filepath.Join(kbc.Dir, "config", "crd", "kustomization.yaml"),
-		fmt.Sprintf("#- path: patches/webhook_in_%s.yaml", kbc.Resources), "#")).To(Succeed())
-	ExpectWithOffset(1, pluginutil.UncommentCode(
-		filepath.Join(kbc.Dir, "config", "crd", "kustomization.yaml"),
-		fmt.Sprintf("#- path: patches/cainjection_in_%s.yaml", kbc.Resources), "#")).To(Succeed())
-	ExpectWithOffset(1, pluginutil.UncommentCode(
-		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
-		"#- ../webhook", "#")).To(Succeed())
-	ExpectWithOffset(1, pluginutil.UncommentCode(
-		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
-		"#- ../certmanager", "#")).To(Succeed())
-	ExpectWithOffset(1, pluginutil.UncommentCode(
-		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
-		"#- ../prometheus", "#")).To(Succeed())
-	ExpectWithOffset(1, pluginutil.UncommentCode(
-		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
-		"#- manager_webhook_patch.yaml", "#")).To(Succeed())
-	ExpectWithOffset(1, pluginutil.UncommentCode(
-		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
-		"#- webhookcainjection_patch.yaml", "#")).To(Succeed())
-	ExpectWithOffset(1, pluginutil.UncommentCode(filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
-		`#replacements:
+//nolint:lll
+const certManagerTarget = `#replacements:
 #  - source: # Add cert-manager annotation to ValidatingWebhookConfiguration, MutatingWebhookConfiguration and CRDs
 #      kind: Certificate
 #      group: cert-manager.io
@@ -201,13 +217,7 @@ Count int `+"`"+`json:"count,omitempty"`+"`"+`
 #        options:
 #          delimiter: '.'
 #          index: 1
-#          create: true`, "#")).To(Succeed())
-
-	if kbc.IsRestricted {
-		By("uncomment kustomize files to ensure that pods are restricted")
-		uncommentPodStandards(kbc)
-	}
-}
+#          create: true`
 
 func uncommentPodStandards(kbc *utils.TestContext) {
 	configManager := filepath.Join(kbc.Dir, "config", "manager", "manager.yaml")

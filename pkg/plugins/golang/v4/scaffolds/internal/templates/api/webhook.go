@@ -98,6 +98,7 @@ import (
 // log is for logging in this package.
 var {{ lower .Resource.Kind }}log = logf.Log.WithName("{{ lower .Resource.Kind }}-resource")
 
+// SetupWebhookWithManager will setup the manager to manage the webhooks
 func (r *{{ .Resource.Kind }}) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).

@@ -48,23 +48,15 @@ nameReference:
   version: v1
   fieldSpecs:
   - kind: CustomResourceDefinition
-    version: {{ .Resource.API.CRDVersion }}
+    version: v1
     group: apiextensions.k8s.io
-    {{- if ne .Resource.API.CRDVersion "v1" }}
-    path: spec/conversion/webhookClientConfig/service/name
-    {{- else }}
     path: spec/conversion/webhook/clientConfig/service/name
-    {{- end }}
 
 namespace:
 - kind: CustomResourceDefinition
-  version: {{ .Resource.API.CRDVersion }}
+  version: v1
   group: apiextensions.k8s.io
-  {{- if ne .Resource.API.CRDVersion "v1" }}
-  path: spec/conversion/webhookClientConfig/service/namespace
-  {{- else }}
   path: spec/conversion/webhook/clientConfig/service/namespace
-  {{- end }}
   create: false
 
 varReference:

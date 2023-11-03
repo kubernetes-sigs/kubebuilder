@@ -37,6 +37,11 @@ import (
 	grafanav1alpha1 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/optional/grafana/v1alpha"
 )
 
+func init() {
+	// Disable timestamps on the default TextFormatter
+	logrus.SetFormatter(&logrus.TextFormatter{DisableTimestamp: true})
+}
+
 func main() {
 
 	const deprecateMessageGoV3Bundle = "This version is deprecated." +

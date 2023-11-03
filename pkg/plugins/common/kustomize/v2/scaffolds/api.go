@@ -19,14 +19,14 @@ package scaffolds
 import (
 	"fmt"
 
-	log "github.com/sirupsen/logrus"
+	pluginutil "sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/crd"
 
+	log "github.com/sirupsen/logrus"
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/crd"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/crd/patches"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/rbac"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/samples"
 )
@@ -76,8 +76,6 @@ func (s *apiScaffolder) Scaffold() error {
 			&samples.CRDSample{Force: s.force},
 			&rbac.CRDEditorRole{},
 			&rbac.CRDViewerRole{},
-			&patches.EnableWebhookPatch{},
-			&patches.EnableCAInjectionPatch{},
 			&crd.Kustomization{},
 			&crd.KustomizeConfig{},
 		); err != nil {
@@ -88,6 +86,16 @@ func (s *apiScaffolder) Scaffold() error {
 		if s.resource.Group != "" || s.resource.Version != "" || s.resource.Kind != "" {
 			if err := scaffold.Execute(&samples.Kustomization{}); err != nil {
 				return fmt.Errorf("error scaffolding manifests: %v", err)
+			}
+		}
+
+		kustomizeFilePath := "config/default/kustomization.yaml"
+		err := pluginutil.UncommentCode(kustomizeFilePath, "#- ../crd", `#`)
+		if err != nil {
+			hasCRUncommented, err := pluginutil.HasFragment(kustomizeFilePath, "- ../crd")
+			if !hasCRUncommented || err != nil {
+				log.Errorf("Unable to find the target #- ../crd to uncomment in the file "+
+					"%s.", kustomizeFilePath)
 			}
 		}
 	}
