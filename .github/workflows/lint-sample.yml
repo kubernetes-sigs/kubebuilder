@@ -51,4 +51,3 @@ jobs:
           working-directory: testdata/project-v4-multigroup-with-deploy-image
           args: --config .golangci.yml ./...
           skip-cache: true  # first lint action will handle
-
