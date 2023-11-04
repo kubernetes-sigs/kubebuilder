@@ -9,9 +9,8 @@ jobs:
     name: Run on Ubuntu
     runs-on: ubuntu-latest
     env:
-      KIND_K8S_VERSION: v1.28.0
-      tools_k8s_version: 1.28.0
-      kind_version: 0.15.0
+      tools_k8s_version: 1.28.3
+      kind_version: 0.20.0
     steps:
       - name: Clone the code
         uses: actions/checkout@v4
@@ -32,8 +31,8 @@ jobs:
         run: setup-envtest use $tools_k8s_version
 
       - name: Create kind cluster
-        run: kind create cluster
-        
+        run: kind create cluster --image kindest/node:v$tools_k8s_version
+
       - name: Prepare the environment
         run: |
           KUSTOMIZATION_FILE_PATH="testdata/project-v4/config/default/kustomization.yaml"
@@ -48,4 +47,3 @@ jobs:
           go get -u ./...
           go mod tidy
           make test-e2e
-          
