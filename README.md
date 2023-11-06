@@ -20,7 +20,7 @@ and features. To learn more about this see the [Plugin section][plugin-section].
 
 Kubebuilder is developed on top of the [controller-runtime][controller-runtime] and [controller-tools][controller-tools] libraries.
 
-### Kubebuilder is also a framework
+### Kubebuilder is also a library
 
 Kubebuilder is extensible and can be used as a library in other projects.
 [Operator-SDK][operator-sdk] is a good example of a project that uses Kubebuilder as a library. 
@@ -54,7 +54,7 @@ Check out the Kubebuilder [book](https://book.kubebuilder.io).
 - GitHub Repo: [kubernetes-sigs/kubebuilder](https://github.com/kubernetes-sigs/kubebuilder)
 - Slack channel: [#kubebuilder](https://slack.k8s.io/#kubebuilder)
 - Google Group: [kubebuilder@googlegroups.com](https://groups.google.com/forum/#!forum/kubebuilder)
-- Design Documents: [designs](designs/).
+- Design Documents: [designs](designs/)
 - Plugin: [plugins][plugin-section]
 
 ## Motivation
