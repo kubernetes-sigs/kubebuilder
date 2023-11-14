@@ -10,7 +10,10 @@
 - go version v1.20.0+
 - docker version 17.03+.
 - kubectl version v1.11.3+.
-- Access to a Kubernetes v1.11.3+ cluster.
+- Access to a Kubernetes v1.11.3+ cluster. (cluster must have cert-manager and prometheus installed)
+  - [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack)
+  - [cert-manager](https://cert-manager.io/docs/installation/upgrade/#upgrading-using-static-manifests)
+  
 
 ### To Deploy on the cluster
 **Build and push your image to the location specified by `IMG`:**
