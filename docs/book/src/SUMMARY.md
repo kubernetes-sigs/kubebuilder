@@ -106,6 +106,10 @@
   - [completion](./reference/completion.md)
   - [Artifacts](./reference/artifacts.md)
   - [Platform Support](./reference/platform.md)
+
+  - [Sub-Module Layouts](./reference/submodule-layouts.md)
+  - [Using an external Type / API](./reference/using_an_external_type.md)
+
   - [Configuring EnvTest](./reference/envtest.md)
 
   - [Metrics](./reference/metrics.md)
