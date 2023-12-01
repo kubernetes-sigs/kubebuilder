@@ -110,7 +110,7 @@ YOUR_GO_PATH/test-operator imports
 ```
 
 The reason for this is that you may have not pushed your modules into the VCS yet and resolving the main module will fail as it can no longer
-directly access the API types as package but only as module.
+directly access the API types as a package but only as a module.
 
 To solve this issue, we will have to tell the go tooling to properly `replace` the API module with a local reference to your path.
 
@@ -120,8 +120,8 @@ You can do this with 2 different approaches: go modules and go workspaces.
 
 For go modules, you will edit the main `go.mod` file of your project and issue a replace directive.
 
-You can do this by editing the go.mod with
-
+You can do this by editing the `go.mod` with
+``
 ```shell
 go mod edit -require YOUR_GO_PATH/test-operator/api/v1alpha1@v0.0.0 # Only if you didn't already resolve the module
 go mod edit -replace YOUR_GO_PATH/test-operator/api/v1alpha1@v0.0.0=./api/v1alpha1
@@ -148,7 +148,7 @@ go mod tidy
 
 For go workspaces, you will not edit the `go.mod` files yourself, but rely on the workspace support in go.
 
-To initialize a workspace for your project, run ´go work init` in the project root.
+To initialize a workspace for your project, run `go work init` in the project root.
 
 Now let us include both modules in our workspace:
 ```shell
