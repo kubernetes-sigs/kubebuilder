@@ -46,6 +46,9 @@ type createWebhookSubcommand struct {
 
 	// force indicates that the resource should be created even if it already exists
 	force bool
+
+	// Path to refer a boilerplate file
+	boilerplatePath string
 }
 
 func (p *createWebhookSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
@@ -78,6 +81,8 @@ func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
 
 	fs.BoolVar(&p.force, "force", false,
 		"attempt to create resource even if it already exists")
+
+	fs.StringVar(&p.boilerplatePath, "boilerplatePath", scaffolds.DefaultBoilerplatePath, "specifies the boilerplate file path (e.g. license) to prepend to generated files.")
 }
 
 func (p *createWebhookSubcommand) InjectConfig(c config.Config) error {
@@ -112,7 +117,7 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 }
 
 func (p *createWebhookSubcommand) Scaffold(fs machinery.Filesystem) error {
-	scaffolder := scaffolds.NewWebhookScaffolder(p.config, *p.resource, p.force)
+	scaffolder := scaffolds.NewWebhookScaffolder(p.config, *p.resource, p.boilerplatePath, p.force)
 	scaffolder.InjectFS(fs)
 	return scaffolder.Scaffold()
 }

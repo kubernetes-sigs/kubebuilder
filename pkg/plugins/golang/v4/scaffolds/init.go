@@ -17,6 +17,8 @@ limitations under the License.
 package scaffolds
 
 import (
+	"path/filepath"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
@@ -44,6 +46,9 @@ const (
 
 var _ plugins.Scaffolder = &initScaffolder{}
 
+// DefaultBoilerplatePath is the default path to the boilerplate file
+var DefaultBoilerplatePath = filepath.Join("hack", "boilerplate.go.txt")
+
 var kustomizeVersion string
 
 type initScaffolder struct {
@@ -57,10 +62,10 @@ type initScaffolder struct {
 }
 
 // NewInitScaffolder returns a new Scaffolder for project initialization operations
-func NewInitScaffolder(config config.Config, license, owner string) plugins.Scaffolder {
+func NewInitScaffolder(config config.Config, license, owner, boilerplatePath string) plugins.Scaffolder {
 	return &initScaffolder{
 		config:          config,
-		boilerplatePath: hack.DefaultBoilerplatePath,
+		boilerplatePath: boilerplatePath,
 		license:         license,
 		owner:           owner,
 	}

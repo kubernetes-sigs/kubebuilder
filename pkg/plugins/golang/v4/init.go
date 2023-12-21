@@ -57,6 +57,9 @@ type initSubcommand struct {
 	// flags
 	fetchDeps          bool
 	skipGoVersionCheck bool
+
+	// Path to refer a boilerplate file
+	boilerplatePath string
 }
 
 func (p *initSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
@@ -88,6 +91,7 @@ func (p *initSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&p.license, "license", "apache2",
 		"license to use to boilerplate, may be one of 'apache2', 'none'")
 	fs.StringVar(&p.owner, "owner", "", "owner to add to the copyright")
+	fs.StringVar(&p.boilerplatePath, "boilerplatePath", scaffolds.DefaultBoilerplatePath, "specifies the boilerplate file path (e.g. license) to prepend to generated files.")
 
 	// project args
 	fs.StringVar(&p.repo, "repo", "", "name to use for go module (e.g., github.com/user/repo), "+
@@ -122,7 +126,7 @@ func (p *initSubcommand) PreScaffold(machinery.Filesystem) error {
 }
 
 func (p *initSubcommand) Scaffold(fs machinery.Filesystem) error {
-	scaffolder := scaffolds.NewInitScaffolder(p.config, p.license, p.owner)
+	scaffolder := scaffolds.NewInitScaffolder(p.config, p.license, p.owner, p.boilerplatePath)
 	scaffolder.InjectFS(fs)
 	err := scaffolder.Scaffold()
 	if err != nil {

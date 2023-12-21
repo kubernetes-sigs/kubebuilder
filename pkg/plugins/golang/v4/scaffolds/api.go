@@ -30,7 +30,6 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v4/scaffolds/internal/templates"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v4/scaffolds/internal/templates/api"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v4/scaffolds/internal/templates/controllers"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v4/scaffolds/internal/templates/hack"
 )
 
 var _ plugins.Scaffolder = &apiScaffolder{}
@@ -38,8 +37,9 @@ var _ plugins.Scaffolder = &apiScaffolder{}
 // apiScaffolder contains configuration for generating scaffolding for Go type
 // representing the API and controller that implements the behavior for the API.
 type apiScaffolder struct {
-	config   config.Config
-	resource resource.Resource
+	config          config.Config
+	resource        resource.Resource
+	boilerplatePath string
 
 	// fs is the filesystem that will be used by the scaffolder
 	fs machinery.Filesystem
@@ -49,11 +49,12 @@ type apiScaffolder struct {
 }
 
 // NewAPIScaffolder returns a new Scaffolder for API/controller creation operations
-func NewAPIScaffolder(config config.Config, res resource.Resource, force bool) plugins.Scaffolder {
+func NewAPIScaffolder(config config.Config, res resource.Resource, boilerplatePath string, force bool) plugins.Scaffolder {
 	return &apiScaffolder{
-		config:   config,
-		resource: res,
-		force:    force,
+		config:          config,
+		resource:        res,
+		boilerplatePath: boilerplatePath,
+		force:           force,
 	}
 }
 
@@ -67,7 +68,7 @@ func (s *apiScaffolder) Scaffold() error {
 	log.Println("Writing scaffold for you to edit...")
 
 	// Load the boilerplate
-	boilerplate, err := afero.ReadFile(s.fs.FS, hack.DefaultBoilerplatePath)
+	boilerplate, err := afero.ReadFile(s.fs.FS, s.boilerplatePath)
 	if err != nil {
 		if errors.Is(err, afero.ErrFileNotFound) {
 			boilerplate = []byte("")

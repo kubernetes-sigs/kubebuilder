@@ -17,10 +17,15 @@ limitations under the License.
 package templates
 
 import (
+	"path/filepath"
+
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
 var _ machinery.Template = &DockerIgnore{}
+
+// DefaultBoilerplatePath is the default path to the boilerplate file
+var DefaultBoilerplatePath = filepath.Join("hack", "boilerplate.go.txt")
 
 // DockerIgnore scaffolds a file that defines which files should be ignored by the containerized build process
 type DockerIgnore struct {

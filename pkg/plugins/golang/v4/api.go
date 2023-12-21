@@ -37,10 +37,10 @@ import (
 const (
 	// defaultCRDVersion is the default CRD API version to scaffold.
 	defaultCRDVersion = "v1"
-)
 
-// DefaultMainPath is default file path of main.go
-const DefaultMainPath = "cmd/main.go"
+	// DefaultMainPath is default file path of main.go
+	DefaultMainPath = "cmd/main.go"
+)
 
 var _ plugin.CreateAPISubcommand = &createAPISubcommand{}
 
@@ -60,6 +60,9 @@ type createAPISubcommand struct {
 
 	// runMake indicates whether to run make or not after scaffolding APIs
 	runMake bool
+
+	// Path to refer a boilerplate file
+	boilerplatePath string
 }
 
 func (p *createAPISubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
@@ -100,6 +103,8 @@ func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 
 	fs.BoolVar(&p.force, "force", false,
 		"attempt to create resource even if it already exists")
+
+	fs.StringVar(&p.boilerplatePath, "boilerplatePath", scaffolds.DefaultBoilerplatePath, "specifies the boilerplate file path (e.g. license) to prepend to generated files.")
 
 	p.options = &goPlugin.Options{}
 
@@ -171,7 +176,7 @@ func (p *createAPISubcommand) PreScaffold(machinery.Filesystem) error {
 }
 
 func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
-	scaffolder := scaffolds.NewAPIScaffolder(p.config, *p.resource, p.force)
+	scaffolder := scaffolds.NewAPIScaffolder(p.config, *p.resource, p.boilerplatePath, p.force)
 	scaffolder.InjectFS(fs)
 	return scaffolder.Scaffold()
 }

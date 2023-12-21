@@ -321,7 +321,7 @@ func (s *apiScaffolder) scaffoldCreateAPIFromGolang(isLegacyLayout bool) error {
 		return golangV3Scaffolder.Scaffold()
 	}
 	golangV4Scaffolder := golangv4scaffolds.NewAPIScaffolder(s.config,
-		s.resource, true)
+		s.resource, golangv4scaffolds.DefaultBoilerplatePath, true)
 	golangV4Scaffolder.InjectFS(s.fs)
 	return golangV4Scaffolder.Scaffold()
 }

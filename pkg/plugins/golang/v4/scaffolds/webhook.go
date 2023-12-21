@@ -28,7 +28,6 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v4/scaffolds/internal/templates"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v4/scaffolds/internal/templates/api"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v4/scaffolds/internal/templates/hack"
 )
 
 var _ plugins.Scaffolder = &webhookScaffolder{}
@@ -42,14 +41,17 @@ type webhookScaffolder struct {
 
 	// force indicates whether to scaffold controller files even if it exists or not
 	force bool
+
+	boilerplatePath string
 }
 
 // NewWebhookScaffolder returns a new Scaffolder for v2 webhook creation operations
-func NewWebhookScaffolder(config config.Config, resource resource.Resource, force bool) plugins.Scaffolder {
+func NewWebhookScaffolder(config config.Config, resource resource.Resource, boilerplatePath string, force bool) plugins.Scaffolder {
 	return &webhookScaffolder{
-		config:   config,
-		resource: resource,
-		force:    force,
+		config:          config,
+		resource:        resource,
+		boilerplatePath: boilerplatePath,
+		force:           force,
 	}
 }
 
@@ -63,7 +65,7 @@ func (s *webhookScaffolder) Scaffold() error {
 	log.Println("Writing scaffold for you to edit...")
 
 	// Load the boilerplate
-	boilerplate, err := afero.ReadFile(s.fs.FS, hack.DefaultBoilerplatePath)
+	boilerplate, err := afero.ReadFile(s.fs.FS, s.boilerplatePath)
 	if err != nil {
 		return fmt.Errorf("error scaffolding webhook: unable to load boilerplate: %w", err)
 	}
