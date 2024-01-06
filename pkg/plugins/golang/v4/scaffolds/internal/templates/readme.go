@@ -114,7 +114,7 @@ You can apply the samples (examples) from the config/sample:
 ## Contributing
 // TODO(user): Add detailed information on how you would like others to contribute to this project
 
-**NOTE:** Run ` + "`make --help`" + ` for more information on all potential ` + "`make`" + ` targets
+**NOTE:** Run ` + "`make help`" + ` for more information on all potential ` + "`make`" + ` targets
 
 More information can be found via the [Kubebuilder Documentation](https://book.kubebuilder.io/introduction.html)
 
