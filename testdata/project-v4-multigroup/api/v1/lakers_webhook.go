@@ -17,6 +17,8 @@ limitations under the License.
 package v1
 
 import (
+	"context"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -31,6 +33,8 @@ var lakerslog = logf.Log.WithName("lakers-resource")
 func (r *Lakers) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
+		WithValidator(r).
+		WithDefaulter(r).
 		Complete()
 }
 
@@ -38,38 +42,39 @@ func (r *Lakers) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 //+kubebuilder:webhook:path=/mutate-testproject-org-v1-lakers,mutating=true,failurePolicy=fail,sideEffects=None,groups=testproject.org,resources=lakers,verbs=create;update,versions=v1,name=mlakers.kb.io,admissionReviewVersions=v1
 
-var _ webhook.Defaulter = &Lakers{}
+var _ webhook.CustomDefaulter = &Lakers{}
 
-// Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *Lakers) Default() {
+// Default implements webhook.CustomDefaulter so a webhook will be registered for the type
+func (r *Lakers) Default(ctx context.Context, obj runtime.Object) error {
 	lakerslog.Info("default", "name", r.Name)
 
 	// TODO(user): fill in your defaulting logic.
+	return nil
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
 //+kubebuilder:webhook:path=/validate-testproject-org-v1-lakers,mutating=false,failurePolicy=fail,sideEffects=None,groups=testproject.org,resources=lakers,verbs=create;update,versions=v1,name=vlakers.kb.io,admissionReviewVersions=v1
 
-var _ webhook.Validator = &Lakers{}
+var _ webhook.CustomValidator = &Lakers{}
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *Lakers) ValidateCreate() (admission.Warnings, error) {
+// ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type
+func (r *Lakers) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	lakerslog.Info("validate create", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object creation.
 	return nil, nil
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *Lakers) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
+// ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type
+func (r *Lakers) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
 	lakerslog.Info("validate update", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object update.
 	return nil, nil
 }
 
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *Lakers) ValidateDelete() (admission.Warnings, error) {
+// ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type
+func (r *Lakers) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	lakerslog.Info("validate delete", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.

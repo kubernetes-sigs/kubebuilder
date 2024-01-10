@@ -17,6 +17,9 @@ limitations under the License.
 package v1
 
 import (
+	"context"
+
+	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -29,6 +32,7 @@ var destroyerlog = logf.Log.WithName("destroyer-resource")
 func (r *Destroyer) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
+		WithDefaulter(r).
 		Complete()
 }
 
@@ -36,11 +40,12 @@ func (r *Destroyer) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 //+kubebuilder:webhook:path=/mutate-ship-testproject-org-v1-destroyer,mutating=true,failurePolicy=fail,sideEffects=None,groups=ship.testproject.org,resources=destroyers,verbs=create;update,versions=v1,name=mdestroyer.kb.io,admissionReviewVersions=v1
 
-var _ webhook.Defaulter = &Destroyer{}
+var _ webhook.CustomDefaulter = &Destroyer{}
 
-// Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *Destroyer) Default() {
+// Default implements webhook.CustomDefaulter so a webhook will be registered for the type
+func (r *Destroyer) Default(ctx context.Context, obj runtime.Object) error {
 	destroyerlog.Info("default", "name", r.Name)
 
 	// TODO(user): fill in your defaulting logic.
+	return nil
 }

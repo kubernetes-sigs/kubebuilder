@@ -17,6 +17,7 @@ limitations under the License.
 package cronjob
 
 const WebhookIntro = `import (
+	"context"
 	"github.com/robfig/cron"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -47,7 +48,7 @@ The meaning of each marker can be found [here](/reference/markers/webhook.md).
 //+kubebuilder:webhook:path=/mutate-batch-tutorial-kubebuilder-io-v1-cronjob,mutating=true,failurePolicy=fail,groups=batch.tutorial.kubebuilder.io,resources=cronjobs,verbs=create;update,versions=v1,name=mcronjob.kb.io,sideEffects=None,admissionReviewVersions=v1
 
 /*
-We use the` + " `" + `webhook.Defaulter` + "`" + ` interface to set defaults to our CRD.
+We use the` + " `" + `webhook.CustomDefaulter` + "`" + ` interface to set defaults to our CRD.
 A webhook will automatically be served that calls this defaulting.
 
 The` + " `" + `Default` + "`" + ` method is expected to mutate the receiver, setting the defaults.
@@ -70,6 +71,8 @@ const WebhookValidate = `	cronjoblog.Info("default", "name", r.Name)
 		r.Spec.FailedJobsHistoryLimit = new(int32)
 		*r.Spec.FailedJobsHistoryLimit = 1
 	}
+
+	return nil
 }
 
 /*

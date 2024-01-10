@@ -85,12 +85,13 @@ package {{ .Resource.Version }}
 import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	{{- if .Resource.HasValidationWebhook }}
-	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
-	{{- end }}
 	{{- if or .Resource.HasValidationWebhook .Resource.HasDefaultingWebhook }}
+	"context"
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	{{- end }}
+	{{- if .Resource.HasValidationWebhook }}
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 	{{- end }}
 
 )
@@ -102,6 +103,12 @@ var {{ lower .Resource.Kind }}log = logf.Log.WithName("{{ lower .Resource.Kind }
 func (r *{{ .Resource.Kind }}) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
+		{{- if .Resource.HasValidationWebhook }}
+		WithValidator(r).
+		{{- end }}
+		{{- if .Resource.HasDefaultingWebhook }}
+		WithDefaulter(r).
+		{{- end }}
 		Complete()
 }
 
@@ -112,13 +119,14 @@ func (r *{{ .Resource.Kind }}) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	defaultingWebhookTemplate = `
 //+kubebuilder:webhook:{{ if ne .Resource.Webhooks.WebhookVersion "v1" }}webhookVersions={{"{"}}{{ .Resource.Webhooks.WebhookVersion }}{{"}"}},{{ end }}path=/mutate-{{ .QualifiedGroupWithDash }}-{{ .Resource.Version }}-{{ lower .Resource.Kind }},mutating=true,failurePolicy=fail,sideEffects=None,groups={{ .Resource.QualifiedGroup }},resources={{ .Resource.Plural }},verbs=create;update,versions={{ .Resource.Version }},name=m{{ lower .Resource.Kind }}.kb.io,admissionReviewVersions={{ .AdmissionReviewVersions }}
 
-var _ webhook.Defaulter = &{{ .Resource.Kind }}{}
+var _ webhook.CustomDefaulter = &{{ .Resource.Kind }}{}
 
-// Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *{{ .Resource.Kind }}) Default() {
+// Default implements webhook.CustomDefaulter so a webhook will be registered for the type
+func (r *{{ .Resource.Kind }}) Default(ctx context.Context, obj runtime.Object) error {
 	{{ lower .Resource.Kind }}log.Info("default", "name", r.Name)
 
 	// TODO(user): fill in your defaulting logic.
+	return nil
 }
 `
 
@@ -127,26 +135,26 @@ func (r *{{ .Resource.Kind }}) Default() {
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
 //+kubebuilder:webhook:{{ if ne .Resource.Webhooks.WebhookVersion "v1" }}webhookVersions={{"{"}}{{ .Resource.Webhooks.WebhookVersion }}{{"}"}},{{ end }}path=/validate-{{ .QualifiedGroupWithDash }}-{{ .Resource.Version }}-{{ lower .Resource.Kind }},mutating=false,failurePolicy=fail,sideEffects=None,groups={{ .Resource.QualifiedGroup }},resources={{ .Resource.Plural }},verbs=create;update,versions={{ .Resource.Version }},name=v{{ lower .Resource.Kind }}.kb.io,admissionReviewVersions={{ .AdmissionReviewVersions }}
 
-var _ webhook.Validator = &{{ .Resource.Kind }}{}
+var _ webhook.CustomValidator = &{{ .Resource.Kind }}{}
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *{{ .Resource.Kind }}) ValidateCreate() (admission.Warnings, error) {
+// ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type
+func (r *{{ .Resource.Kind }}) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	{{ lower .Resource.Kind }}log.Info("validate create", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object creation.
 	return nil, nil
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *{{ .Resource.Kind }}) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
+// ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type
+func (r *{{ .Resource.Kind }}) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
 	{{ lower .Resource.Kind }}log.Info("validate update", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object update.
 	return nil, nil
 }
 
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *{{ .Resource.Kind }}) ValidateDelete() (admission.Warnings, error) {
+// ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type
+func (r *{{ .Resource.Kind }}) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	{{ lower .Resource.Kind }}log.Info("validate delete", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.
