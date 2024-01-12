@@ -225,7 +225,7 @@ Following an example.
 
         By("installing the cert-manager")
         Expect(utils.InstallCertManager()).To(Succeed())
-    }
+    })
 
     // You can also remove them after the tests::
     AfterEach(func() {
