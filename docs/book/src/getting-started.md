@@ -33,7 +33,7 @@ kubebuilder init --domain=example.com
 Next, we'll create a new API responsible for deploying and managing our Memcached solution. In this instance, we will utilize the [Deploy Image Plugin][deploy-image] to get a comprehensive code implementation for our solution.
 
 ```
-kubebuilder create api --group example.com --version v1alpha1 --kind Memcached --image=memcached:1.4.36-alpine --image-container-command="memcached,-m=64,-o,modern,-v" --image-container-port="11211" --run-as-user="1001" --plugins="deploy-image/v1-alpha" --make=false
+kubebuilder create api --group cache --version v1alpha1 --kind Memcached --image=memcached:1.4.36-alpine --image-container-command="memcached,-m=64,-o,modern,-v" --image-container-port="11211" --run-as-user="1001" --plugins="deploy-image/v1-alpha" --make=false
 ```
 
 ### Understanding APIs
@@ -94,7 +94,7 @@ type MemcachedStatus struct {
 }
 ```
 
-Thus, when we introduce new specifications to this file and execute the `make generate` command, we utilize [controller-gen][controller-gen] to generate the CRD manifest, which is located under the `config/crds` directory.
+Thus, when we introduce new specifications to this file and execute the `make manifests` command, we utilize [controller-gen][controller-gen] to generate the CRD manifest, which is located under the `config/crds` directory.
 
 #### Markers and validations
 
@@ -208,7 +208,7 @@ return ctrl.Result{RequeueAfter: nextRun.Sub(r.Now())}, nil
 
 When a Custom Resource is applied to the cluster, there's a designated controller to manage the Memcached Kind. You can check its reconciliation implemented:
 
-From `testdata/project-v4-with-deploy-image/internal/controller/memcached_controller.go`:
+From `$GOPATH/memcached-operator/internal/controller/memcached_controller.go`:
 
 ```go
 func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -468,7 +468,7 @@ how it is implemented in our example:
 ```
 
 It's important to highlight that if you wish to add or modify RBAC rules, you can do so by updating or adding the respective markers in the controller.
-After making the necessary changes, run the `make generate` command. This will prompt [controller-gen][controller-gen] to refresh the files located under `config/rbac`.
+After making the necessary changes, run the `make manifests` command. This will prompt [controller-gen][controller-gen] to refresh the files located under `config/rbac`.
 
 <aside class="note">
 <h1>RBAC generate under config/rbac</h1>
