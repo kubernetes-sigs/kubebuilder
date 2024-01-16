@@ -24,6 +24,13 @@ Please see https://git.k8s.io/community/CLA.md for more info.
 1. Fork the desired repo, develop and test your code changes.
 1. Submit a pull request.
 
+In addition to the above steps, we adhere to the following best practices to maintain consistency and efficiency in our project:
+
+- **Single Commit per PR:** Each Pull Request (PR) should contain only one commit. This approach simplifies tracking changes and makes the history more readable.
+- **One Issue per PR:** Each PR should address a single specific issue or need. This helps in streamlining our workflow and makes it easier to identify and resolve problems such as revert the changes if required.
+
+For more detailed guidelines, refer to the [Kubernetes Contributor Guide][k8s-contrubutiong-guide].
+
 ## How to build kubebuilder locally
 
 Note that, by building the kubebuilder from the source code we are allowed to test the changes made locally.
@@ -198,3 +205,4 @@ Participation in the Kubernetes community is governed by the [Kubernetes Code of
 [golangci]: https://github.com/golangci/golangci-lint
 [kind]: https://kind.sigs.k8s.io/#installation-and-usage
 [setup-envtest]: https://book.kubebuilder.io/reference/envtest
+[k8s-contrubutiong-guide]: https://www.kubernetes.dev/docs/guide/contributing/
