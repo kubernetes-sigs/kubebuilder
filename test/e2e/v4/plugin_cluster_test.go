@@ -85,19 +85,24 @@ var _ = Describe("kubebuilder", func() {
 			" with restricted pods", func() {
 			kbc.IsRestricted = true
 			GenerateV4(kbc)
-			Run(kbc, true)
+			Run(kbc, true, false)
 		})
 		It("should generate a runnable project without webhooks"+
 			" with restricted pods", func() {
 			kbc.IsRestricted = true
 			GenerateV4WithoutWebhooks(kbc)
-			Run(kbc, false)
+			Run(kbc, false, false)
+		})
+		It("should generate a runnable project"+
+			" with the Installer", func() {
+			GenerateV4(kbc)
+			Run(kbc, false, true)
 		})
 	})
 })
 
 // Run runs a set of e2e tests for a scaffolded project defined by a TestContext.
-func Run(kbc *utils.TestContext, hasWebhook bool) {
+func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller bool) {
 	var controllerPodName string
 	var err error
 
@@ -129,18 +134,35 @@ func Run(kbc *utils.TestContext, hasWebhook bool) {
 	err = kbc.LoadImageToKindCluster()
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
-	// NOTE: If you want to run the test against a GKE cluster, you will need to grant yourself permission.
-	// Otherwise, you may see "... is forbidden: attempt to grant extra privileges"
-	// $ kubectl create clusterrolebinding myname-cluster-admin-binding \
-	// --clusterrole=cluster-admin --user=myname@mycompany.com
-	// https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control
-	By("deploying the controller-manager")
+	var output []byte
+	if !isToUseInstaller {
+		// NOTE: If you want to run the test against a GKE cluster, you will need to grant yourself permission.
+		// Otherwise, you may see "... is forbidden: attempt to grant extra privileges"
+		// $ kubectl create clusterrolebinding myname-cluster-admin-binding \
+		// --clusterrole=cluster-admin --user=myname@mycompany.com
+		// https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control
+		By("deploying the controller-manager")
 
-	cmd := exec.Command("make", "deploy", "IMG="+kbc.ImageName)
-	output, err := kbc.Run(cmd)
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+		cmd := exec.Command("make", "deploy", "IMG="+kbc.ImageName)
+		output, err = kbc.Run(cmd)
+		ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	} else {
+		By("building the installer")
+		err = kbc.Make("build-installer", "IMG="+kbc.ImageName)
+		ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
-	if kbc.IsRestricted {
+		// NOTE: If you want to run the test against a GKE cluster, you will need to grant yourself permission.
+		// Otherwise, you may see "... is forbidden: attempt to grant extra privileges"
+		// $ kubectl create clusterrolebinding myname-cluster-admin-binding \
+		// --clusterrole=cluster-admin --user=myname@mycompany.com
+		// https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control
+		By("deploying the controller-manager with the installer")
+
+		_, err = kbc.Kubectl.Apply(true, "-f", "dist/install.yaml")
+		ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	}
+
+	if kbc.IsRestricted && !isToUseInstaller {
 		By("validating that manager Pod/container(s) are restricted")
 		ExpectWithOffset(1, output).NotTo(ContainSubstring("Warning: would violate PodSecurity"))
 	}

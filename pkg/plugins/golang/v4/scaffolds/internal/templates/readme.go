@@ -51,7 +51,11 @@ func (f *Readme) SetTemplateDefaults() error {
 		codeFence("kubectl apply -k config/samples/"),
 		codeFence("kubectl delete -k config/samples/"),
 		codeFence("make uninstall"),
-		codeFence("make undeploy"))
+		codeFence("make undeploy"),
+		codeFence("make build-installer IMG=<some-registry>/{{ .ProjectName }}:tag"),
+		codeFence("kubectl apply -f https://raw.githubusercontent.com/<org>/{{ .ProjectName }}/"+
+			"<tag or branch>/dist/install.yaml"),
+	)
 
 	return nil
 }
@@ -108,6 +112,25 @@ You can apply the samples (examples) from the config/sample:
 %s
 
 **UnDeploy the controller from the cluster:**
+
+%s
+
+## Project Distribution
+
+Following are the steps to build the installer and distribute this project to users.
+
+1. Build the installer for the image built and published in the registry:
+
+%s
+
+NOTE: The makefile target mentioned above generates an 'install.yaml'
+file in the dist directory. This file contains all the resources built
+with Kustomize, which are necessary to install this project without
+its dependencies.
+
+2. Using the installer
+
+Users can just run kubectl apply -f <URL for YAML BUNDLE> to install the project, i.e.:
 
 %s
 
