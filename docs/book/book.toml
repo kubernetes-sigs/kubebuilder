@@ -17,8 +17,8 @@ command = "./litgo.sh"
 command = "./markerdocs.sh"
 
 [context.environment]
-  environment = { GO_VERSION = "1.20" }
+  environment = { GO_VERSION = "1.21" }
 
 [context.deploy-preview.environment]
-  environment = { GO_VERSION = "1.20" }
+  environment = { GO_VERSION = "1.21" }
 
