@@ -17,7 +17,7 @@
 # - kubectl (fetch)
 # - etcd (fetch)
 
-FROM golang:1.20 as builder
+FROM golang:1.21 as builder
 
 # Version and platform args.
 ARG KUBERNETES_VERSION
@@ -66,7 +66,7 @@ WORKDIR /usr/local
 RUN tar -czvf /kubebuilder_${OS}_${ARCH}.tar.gz kubebuilder/
 
 # Copy tarball to final image.
-FROM alpine:3.18
+FROM alpine:3.19
 
 # Platform args.
 ARG OS=windows
