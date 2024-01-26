@@ -4,24 +4,27 @@ aliases:
   # active folks who can be contacted to perform admin-related
   # tasks on the repo, or otherwise approve any PRs.
   kubebuilder-admins:
-    - droot
-    - mengqiy
-    - pwittrock
+    - camilamacedo86
+    - varshaprasad96
 
   # non-admin folks who can approve any PRs in the repo
   kubebuilder-approvers:
-    - camilamacedo86
-    - estroz
-    - jmrodri
-    - varshaprasad96
 
   # folks who can review and LGTM any PRs in the repo (doesn't include
   # approvers & admins -- those count too via the OWNERS file)
   kubebuilder-reviewers:
-    - joelanford
-    - adirio
+    - rashmigottipati
+    - everettraven
+    - Kavinjsir
 
   # folks who may have context on ancient history,
   # but are no longer directly involved
   kubebuilder-emeritus-approvers:
+  - adirio
   - directxman12
+  - droot
+  - estroz
+  - jmrodri
+  - joelanford
+  - mengqiy
+  - pwittrock
