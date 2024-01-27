@@ -33,9 +33,9 @@ import (
 const (
 	certmanagerVersion        = "v1.5.3"
 	certmanagerURLTmpl        = "https://github.com/cert-manager/cert-manager/releases/download/%s/cert-manager.yaml"
-	prometheusOperatorVersion = "0.51"
-	prometheusOperatorURL     = "https://raw.githubusercontent.com/prometheus-operator/" +
-		"prometheus-operator/release-%s/bundle.yaml"
+	prometheusOperatorVersion = "v0.71.2"
+	prometheusOperatorURL     = "https://github.com/prometheus-operator/prometheus-operator/" +
+		"releases/download/%s/bundle.yaml"
 )
 
 // TestContext specified to run e2e tests
