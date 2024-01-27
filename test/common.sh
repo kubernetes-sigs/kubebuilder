@@ -23,7 +23,7 @@ function convert_to_tools_ver {
   # 1.14-1.19 work with the 1.19 server bins and kubectl.
   "1.14"|"1.15"|"1.16"|"1.17"|"1.18"|"1.19") echo "1.19.2";;
   # Tests in 1.20 and 1.21 with their counterpart version's apiserver.
-  "1.20"|"1.21") echo "1.19.2";;
+  "1.20"|"1.21") echo "1.21.5";;
   "1.22") echo "1.22.1";;
   "1.23") echo "1.23.3";;
   "1.24") echo "1.24.1";;
