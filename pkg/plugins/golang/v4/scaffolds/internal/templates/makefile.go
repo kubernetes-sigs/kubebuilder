@@ -17,8 +17,6 @@ limitations under the License.
 package templates
 
 import (
-	"strings"
-
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
@@ -40,8 +38,8 @@ type Makefile struct {
 	KustomizeVersion string
 	// ControllerRuntimeVersion version to be used to download the envtest setup script
 	ControllerRuntimeVersion string
-	// ControllerRuntimeReleaseBranchName store the name of the branch to be used to install setup-envtest
-	ControllerRuntimeReleaseBranchName string
+	// EnvtestVersion store the name of the verions to be used to install setup-envtest
+	EnvtestVersion string
 }
 
 // SetTemplateDefaults implements file.Template
@@ -58,28 +56,15 @@ func (f *Makefile) SetTemplateDefaults() error {
 		f.Image = "controller:latest"
 	}
 
-	if f.ControllerRuntimeReleaseBranchName == "" {
-		f.ControllerRuntimeReleaseBranchName = getControllerRuntimeReleaseBranch(f.ControllerRuntimeVersion)
+	// TODO: Looking for ways to tag the controller-runtime
+	// release using tag versions. Note that we cannot
+	// relay upon the branch since we cannot ensure that
+	// it will be generated for all releases. We must be
+	// able to use the tag.
+	if f.EnvtestVersion == "" {
+		f.EnvtestVersion = "latest"
 	}
-
 	return nil
-}
-
-func getControllerRuntimeReleaseBranch(version string) string {
-	// Remove the "v" prefix
-	version = strings.TrimPrefix(version, "v")
-
-	// Split the version string into its components
-	parts := strings.SplitN(version, ".", 3)
-
-	// Check if we have at least two components (major and minor)
-	if len(parts) < 2 {
-		// return latest working version as invalid
-		return "latest"
-	}
-
-	// Return the formatted version
-	return "release-" + parts[0] + "." + parts[1]
 }
 
 //nolint:lll
@@ -87,7 +72,7 @@ const makefileTemplate = `
 # Image URL to use all building/pushing image targets
 IMG ?= {{ .Image }}
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
-ENVTEST_K8S_VERSION = 1.28.3
+ENVTEST_K8S_VERSION = 1.29.0
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -254,7 +239,7 @@ GOLANGCI_LINT = $(LOCALBIN)/golangci-lint-$(GOLANGCI_LINT_VERSION)
 ## Tool Versions
 KUSTOMIZE_VERSION ?= {{ .KustomizeVersion }}
 CONTROLLER_TOOLS_VERSION ?= {{ .ControllerToolsVersion }}
-ENVTEST_VERSION ?= {{ .ControllerRuntimeReleaseBranchName }}
+ENVTEST_VERSION ?= {{ .EnvtestVersion }}
 GOLANGCI_LINT_VERSION ?= v1.54.2
 
 .PHONY: kustomize
