@@ -14,14 +14,28 @@ limitations under the License.
 package util
 
 import (
+	"os"
 	"path/filepath"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("InsertCode", func() {
+var _ = Describe("InsertCode", Ordered, func() {
 	path := filepath.Join("testdata", "exampleFile.txt")
+	var originalContent []byte
+
+	BeforeAll(func() {
+		var err error
+		originalContent, err = os.ReadFile(path)
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	AfterAll(func() {
+		err := os.WriteFile(path, originalContent, 0644)
+		Expect(err).NotTo(HaveOccurred())
+	})
+
 	DescribeTable("should not succeed",
 		func(target string) {
 			Expect(InsertCode(path, target, "exampleCode")).ShouldNot(Succeed())
