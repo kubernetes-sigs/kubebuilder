@@ -19,7 +19,6 @@ package main
 import (
 	log "github.com/sirupsen/logrus"
 
-	componentconfig "sigs.k8s.io/kubebuilder/v3/hack/docs/internal/component-config-tutorial"
 	cronjob "sigs.k8s.io/kubebuilder/v3/hack/docs/internal/cronjob-tutorial"
 )
 
@@ -30,27 +29,9 @@ func main() {
 	log.SetFormatter(&log.TextFormatter{DisableTimestamp: true})
 	log.Println("Generating documents...")
 
-	log.Println("Generating component-config tutorial...")
-	UpdateComponentConfigTutorial()
-
 	log.Println("Generating cronjob tutorial...")
 	UpdateCronjobTutorial()
 	// TODO: Generate multiversion-tutorial
-}
-
-func UpdateComponentConfigTutorial() {
-	binaryPath := KubebuilderBinName
-	samplePath := "docs/book/src/component-config-tutorial/testdata/project/"
-
-	sp := componentconfig.NewSample(binaryPath, samplePath)
-
-	sp.Prepare()
-
-	sp.GenerateSampleProject()
-
-	sp.UpdateTutorial()
-
-	sp.CodeGen()
 }
 
 func UpdateCronjobTutorial() {

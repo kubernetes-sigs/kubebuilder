@@ -74,15 +74,6 @@ func (t *templateWithMultiGroup) InjectMultiGroup(multiGroup bool) {
 	t.multiGroup = multiGroup
 }
 
-type templateWithComponentConfig struct {
-	templateBase
-	componentConfig bool
-}
-
-func (t *templateWithComponentConfig) InjectComponentConfig(componentConfig bool) {
-	t.componentConfig = componentConfig
-}
-
 type templateWithBoilerplate struct {
 	templateBase
 	boilerplate string
@@ -215,31 +206,6 @@ var _ = Describe("injector", func() {
 
 					injector{config: c}.injectInto(template)
 					Expect(template.multiGroup).To(BeTrue())
-				})
-			})
-
-			Context("Component config", func() {
-				var template *templateWithComponentConfig
-
-				BeforeEach(func() {
-					template = &templateWithComponentConfig{templateBase: tmp}
-				})
-
-				It("should not inject anything if the config is nil", func() {
-					injector{}.injectInto(template)
-					Expect(template.componentConfig).To(BeFalse())
-				})
-
-				It("should not set the flag if the config doesn't have the component config flag set", func() {
-					injector{config: c}.injectInto(template)
-					Expect(template.componentConfig).To(BeFalse())
-				})
-
-				It("should set the flag if the config has the component config flag set", func() {
-					Expect(c.SetComponentConfig()).To(Succeed())
-
-					injector{config: c}.injectInto(template)
-					Expect(template.componentConfig).To(BeTrue())
 				})
 			})
 		})

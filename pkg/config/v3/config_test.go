@@ -134,28 +134,6 @@ var _ = Describe("Cfg", func() {
 		})
 	})
 
-	Context("Component config", func() {
-		It("IsComponentConfig should return false if not set", func() {
-			Expect(c.IsComponentConfig()).To(BeFalse())
-		})
-
-		It("IsComponentConfig should return true if set", func() {
-			c.ComponentConfig = true
-			Expect(c.IsComponentConfig()).To(BeTrue())
-		})
-
-		It("SetComponentConfig should fail to enable component config support", func() {
-			Expect(c.SetComponentConfig()).To(Succeed())
-			Expect(c.ComponentConfig).To(BeTrue())
-		})
-
-		It("ClearComponentConfig should fail to disable component config support", func() {
-			c.ComponentConfig = false
-			Expect(c.ClearComponentConfig()).To(Succeed())
-			Expect(c.ComponentConfig).To(BeFalse())
-		})
-	})
-
 	Context("Resources", func() {
 		var (
 			res = resource.Resource{
@@ -463,13 +441,12 @@ var _ = Describe("Cfg", func() {
 				PluginChain: pluginChain,
 			}
 			c2 = Cfg{
-				Version:         Version,
-				Domain:          otherDomain,
-				Repository:      otherRepo,
-				Name:            otherName,
-				PluginChain:     otherPluginChain,
-				MultiGroup:      true,
-				ComponentConfig: true,
+				Version:     Version,
+				Domain:      otherDomain,
+				Repository:  otherRepo,
+				Name:        otherName,
+				PluginChain: otherPluginChain,
+				MultiGroup:  true,
 				Resources: []resource.Resource{
 					{
 						GVK: resource.GVK{
@@ -542,8 +519,7 @@ projectName: ProjectName
 repo: myrepo
 version: "3"
 `
-			s2 = `componentConfig: true
-domain: other.domain
+			s2 = `domain: other.domain
 layout:
 - go.kubebuilder.io/v3
 multigroup: true
@@ -610,7 +586,6 @@ version: "3"
 				Expect(unmarshalled.Name).To(Equal(c.Name))
 				Expect(unmarshalled.PluginChain).To(Equal(c.PluginChain))
 				Expect(unmarshalled.MultiGroup).To(Equal(c.MultiGroup))
-				Expect(unmarshalled.ComponentConfig).To(Equal(c.ComponentConfig))
 				Expect(unmarshalled.Resources).To(Equal(c.Resources))
 				Expect(unmarshalled.Plugins).To(HaveLen(len(c.Plugins)))
 				// TODO: fully test Plugins field and not on its length

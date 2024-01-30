@@ -27,7 +27,6 @@ var _ machinery.Template = &ManagerAuthProxyPatch{}
 // ManagerAuthProxyPatch scaffolds a file that defines the patch that enables prometheus metrics for the manager
 type ManagerAuthProxyPatch struct {
 	machinery.TemplateMixin
-	machinery.ComponentConfigMixin
 }
 
 // SetTemplateDefaults implements file.Template
@@ -77,11 +76,9 @@ spec:
           requests:
             cpu: 5m
             memory: 64Mi
-{{- if not .ComponentConfig }}
       - name: manager
         args:
         - "--health-probe-bind-address=:8081"
         - "--metrics-bind-address=127.0.0.1:8080"
         - "--leader-elect"
-{{- end }}
 `

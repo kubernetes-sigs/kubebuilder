@@ -40,7 +40,7 @@ Projects scaffolded with Kubebuilder v3 will use the `go.kubebuilder.io/v3` plug
 - Code changes:
   * The manager flags `--metrics-addr` and `enable-leader-election` now are named `--metrics-bind-address` and `--leader-elect` to be more aligned with core Kubernetes Components. More info: [#1839][issue-1893] 
   * Liveness and Readiness probes are now added by default using [`healthz.Ping`][healthz-ping].
-  * A new option to create the projects using ComponentConfig is introduced. For more info see its [enhancement proposal][enhancement proposal] and the [Component config tutorial][component-config-tutorial]
+  * A new option to create the projects using ComponentConfig is introduced. For more info see its [enhancement proposal][enhancement proposal]
   * Manager manifests now use `SecurityContext` to address security concerns. More info: [#1637][issue-1637] 
 - Misc:
   * Support for [controller-tools][controller-tools] `v0.9.0` (for `go/v2` it is `v0.3.0` and previously it was `v0.2.5`) 
@@ -92,7 +92,6 @@ You will check that you can still using the previous layout by using the `go/v2`
 [plugins-phase2-design-doc]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/designs/extensible-cli-and-scaffolding-plugins-phase-2.md
 [plugins-section]: ./../../plugins/plugins.md
 [manually-upgrade]: manually_migration_guide_v2_v3.md
-[component-config-tutorial]: ../../component-config-tutorial/tutorial.md
 [issue-1893]: https://github.com/kubernetes-sigs/kubebuilder/issues/1839
 [migration-guide-v2-to-v3]: migration_guide_v2tov3.md
 [healthz-ping]: https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/healthz#CheckHandler 

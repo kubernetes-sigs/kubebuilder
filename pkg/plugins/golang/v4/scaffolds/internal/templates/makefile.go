@@ -25,7 +25,6 @@ var _ machinery.Template = &Makefile{}
 // Makefile scaffolds a file that defines project management CLI commands
 type Makefile struct {
 	machinery.TemplateMixin
-	machinery.ComponentConfigMixin
 	machinery.ProjectNameMixin
 
 	// Image is controller manager image name

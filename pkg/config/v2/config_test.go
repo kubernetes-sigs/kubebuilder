@@ -120,20 +120,6 @@ var _ = Describe("cfg", func() {
 		})
 	})
 
-	Context("Component config", func() {
-		It("IsComponentConfig should return false", func() {
-			Expect(c.IsComponentConfig()).To(BeFalse())
-		})
-
-		It("SetComponentConfig should fail to enable component config support", func() {
-			Expect(c.SetComponentConfig()).NotTo(Succeed())
-		})
-
-		It("ClearComponentConfig should fail to disable component config support", func() {
-			Expect(c.ClearComponentConfig()).NotTo(Succeed())
-		})
-	})
-
 	Context("Resources", func() {
 		res := resource.Resource{
 			GVK: resource.GVK{
