@@ -37,9 +37,8 @@ type initSubcommand struct {
 	config config.Config
 
 	// config options
-	domain          string
-	name            string
-	componentConfig bool
+	domain string
+	name   string
 }
 
 func (p *initSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
@@ -60,13 +59,6 @@ NOTE: This plugin requires kustomize version v5 and kubectl >= 1.22.
 func (p *initSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&p.domain, "domain", "my.domain", "domain for groups")
 	fs.StringVar(&p.name, "project-name", "", "name of this project")
-	fs.BoolVar(&p.componentConfig, "component-config", false,
-		"create a versioned ComponentConfig file, may be 'true' or 'false'")
-	_ = fs.MarkDeprecated("component-config", "the ComponentConfig has been deprecated in the "+
-		"Controller-Runtime since its version 0.15.0. Moreover, it has undergone breaking changes and is no longer "+
-		"functioning as intended. As a result, this tool, which heavily relies on the Controller Runtime, "+
-		"has also deprecated this feature, no longer guaranteeing its functionality from version 3.11.0 onwards. "+
-		"You can find additional details on https://github.com/kubernetes-sigs/controller-runtime/issues/895.")
 }
 
 func (p *initSubcommand) InjectConfig(c config.Config) error {
@@ -90,12 +82,6 @@ func (p *initSubcommand) InjectConfig(c config.Config) error {
 	}
 	if err := p.config.SetProjectName(p.name); err != nil {
 		return err
-	}
-
-	if p.componentConfig {
-		if err := p.config.SetComponentConfig(); err != nil {
-			return err
-		}
 	}
 
 	return nil

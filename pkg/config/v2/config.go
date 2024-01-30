@@ -123,27 +123,6 @@ func (c *cfg) ClearMultiGroup() error {
 	return nil
 }
 
-// IsComponentConfig implements config.Config
-func (c cfg) IsComponentConfig() bool {
-	return false
-}
-
-// SetComponentConfig implements config.Config
-func (c *cfg) SetComponentConfig() error {
-	return config.UnsupportedFieldError{
-		Version: Version,
-		Field:   "component config",
-	}
-}
-
-// ClearComponentConfig implements config.Config
-func (c *cfg) ClearComponentConfig() error {
-	return config.UnsupportedFieldError{
-		Version: Version,
-		Field:   "component config",
-	}
-}
-
 // ResourcesLength implements config.Config
 func (c cfg) ResourcesLength() int {
 	return len(c.Gvks)

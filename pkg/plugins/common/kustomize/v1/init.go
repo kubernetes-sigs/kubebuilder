@@ -45,9 +45,8 @@ type initSubcommand struct {
 	config config.Config
 
 	// config options
-	domain          string
-	name            string
-	componentConfig bool
+	domain string
+	name   string
 }
 
 func (p *initSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
@@ -73,8 +72,6 @@ More info: https://github.com/kubernetes-sigs/kustomize/issues/4612.
 func (p *initSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&p.domain, "domain", "my.domain", "domain for groups")
 	fs.StringVar(&p.name, "project-name", "", "name of this project")
-	fs.BoolVar(&p.componentConfig, "component-config", false,
-		"create a versioned ComponentConfig file, may be 'true' or 'false'")
 }
 
 func (p *initSubcommand) InjectConfig(c config.Config) error {
@@ -98,12 +95,6 @@ func (p *initSubcommand) InjectConfig(c config.Config) error {
 	}
 	if err := p.config.SetProjectName(p.name); err != nil {
 		return err
-	}
-
-	if p.componentConfig {
-		if err := p.config.SetComponentConfig(); err != nil {
-			return err
-		}
 	}
 
 	return nil
