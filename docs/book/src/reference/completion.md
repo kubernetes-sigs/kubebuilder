@@ -27,7 +27,7 @@ if [ -f /usr/local/share/bash-completion/bash_completion ]; then
 fi
 . <(kubebuilder completion bash)
 ```
-- Restart terminal for the changes to be reflected.
+- Restart terminal for the changes to be reflected or `source` the changed bash file.
 
 <aside class="note">
 <h1>Zsh</h1>

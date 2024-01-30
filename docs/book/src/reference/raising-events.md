@@ -76,7 +76,6 @@ type MyKindReconciler struct {
 	Recorder record.EventRecorder
 }
 ```
-
 ### Passing the EventRecorder to the Controller
 
 Events are published from a Controller using an [EventRecorder]`type CorrelatorOptions struct`,
@@ -105,7 +104,7 @@ You must also grant the RBAC rules permissions to allow your project to create E
 func (r *MyKindReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 ```
 
-And then, run `$ make manifests` to update the rules under `config/rbac/rule.yaml`.
+And then, run `$ make manifests` to update the rules under `config/rbac/role.yaml`.
   
 [Events]: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#events 
 [Event-Example]: https://github.com/kubernetes/api/blob/6c11c9e4685cc62e4ddc8d4aaa824c46150c9148/core/v1/types.go#L6019-L6024

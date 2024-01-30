@@ -7,7 +7,7 @@
 ## Getting Started
 
 ### Prerequisites
-- go version v1.20.0+
+- go version v1.21.0+
 - docker version 17.03+.
 - kubectl version v1.11.3+.
 - Access to a Kubernetes v1.11.3+ cluster.
@@ -66,16 +66,39 @@ make uninstall
 make undeploy
 ```
 
+## Project Distribution
+
+Following are the steps to build the installer and distribute this project to users.
+
+1. Build the installer for the image built and published in the registry:
+
+```sh
+make build-installer IMG=<some-registry>/project-v4-with-grafana:tag
+```
+
+NOTE: The makefile target mentioned above generates an 'install.yaml'
+file in the dist directory. This file contains all the resources built
+with Kustomize, which are necessary to install this project without
+its dependencies.
+
+2. Using the installer
+
+Users can just run kubectl apply -f <URL for YAML BUNDLE> to install the project, i.e.:
+
+```sh
+kubectl apply -f https://raw.githubusercontent.com/<org>/project-v4-with-grafana/<tag or branch>/dist/install.yaml
+```
+
 ## Contributing
 // TODO(user): Add detailed information on how you would like others to contribute to this project
 
-**NOTE:** Run `make --help` for more information on all potential `make` targets
+**NOTE:** Run `make help` for more information on all potential `make` targets
 
 More information can be found via the [Kubebuilder Documentation](https://book.kubebuilder.io/introduction.html)
 
 ## License
 
-Copyright 2023 The Kubernetes authors.
+Copyright 2024 The Kubernetes authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

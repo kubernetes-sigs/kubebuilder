@@ -87,6 +87,7 @@ func (s *webhookScaffolder) Scaffold() error {
 	if err := scaffold.Execute(
 		&api.Webhook{Force: s.force},
 		&templates.MainUpdater{WireWebhook: true},
+		&api.WebhookTest{Force: s.force},
 	); err != nil {
 		return err
 	}

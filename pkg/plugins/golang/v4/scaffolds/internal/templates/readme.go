@@ -51,7 +51,11 @@ func (f *Readme) SetTemplateDefaults() error {
 		codeFence("kubectl apply -k config/samples/"),
 		codeFence("kubectl delete -k config/samples/"),
 		codeFence("make uninstall"),
-		codeFence("make undeploy"))
+		codeFence("make undeploy"),
+		codeFence("make build-installer IMG=<some-registry>/{{ .ProjectName }}:tag"),
+		codeFence("kubectl apply -f https://raw.githubusercontent.com/<org>/{{ .ProjectName }}/"+
+			"<tag or branch>/dist/install.yaml"),
+	)
 
 	return nil
 }
@@ -66,7 +70,7 @@ const readmeFileTemplate = `# {{ .ProjectName }}
 ## Getting Started
 
 ### Prerequisites
-- go version v1.20.0+
+- go version v1.21.0+
 - docker version 17.03+.
 - kubectl version v1.11.3+.
 - Access to a Kubernetes v1.11.3+ cluster.
@@ -111,10 +115,29 @@ You can apply the samples (examples) from the config/sample:
 
 %s
 
+## Project Distribution
+
+Following are the steps to build the installer and distribute this project to users.
+
+1. Build the installer for the image built and published in the registry:
+
+%s
+
+NOTE: The makefile target mentioned above generates an 'install.yaml'
+file in the dist directory. This file contains all the resources built
+with Kustomize, which are necessary to install this project without
+its dependencies.
+
+2. Using the installer
+
+Users can just run kubectl apply -f <URL for YAML BUNDLE> to install the project, i.e.:
+
+%s
+
 ## Contributing
 // TODO(user): Add detailed information on how you would like others to contribute to this project
 
-**NOTE:** Run ` + "`make --help`" + ` for more information on all potential ` + "`make`" + ` targets
+**NOTE:** Run ` + "`make help`" + ` for more information on all potential ` + "`make`" + ` targets
 
 More information can be found via the [Kubebuilder Documentation](https://book.kubebuilder.io/introduction.html)
 

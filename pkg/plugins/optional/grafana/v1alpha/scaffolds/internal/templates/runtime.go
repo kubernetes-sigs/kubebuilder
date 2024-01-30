@@ -107,6 +107,62 @@ const controllerRuntimeTemplate = `{
     },
     {
       "datasource": "${DS_PROMETHEUS}",
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "percentage",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 70
+              },
+              {
+                "color": "red",
+                "value": 85
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 3,
+        "x": 0,
+        "y": 1
+      },
+      "id": 24,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "9.5.3",
+      "targets": [
+        {
+          "datasource": "${DS_PROMETHEUS}",
+          "exemplar": true,
+          "expr": "controller_runtime_active_workers{job=\"$job\", namespace=\"$namespace\"}",
+          "interval": "",
+          "legendFormat": "{{controller}} {{instance}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Number of workers in use",
+      "type": "gauge"
+    },
+    {
+      "datasource": "${DS_PROMETHEUS}",
       "description": "Total number of reconciliations per controller",
       "fieldConfig": {
         "defaults": {
@@ -114,6 +170,8 @@ const controllerRuntimeTemplate = `{
             "mode": "continuous-GrYlRd"
           },
           "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
@@ -160,17 +218,18 @@ const controllerRuntimeTemplate = `{
         "overrides": []
       },
       "gridPos": {
-        "h": 7,
-        "w": 12,
-        "x": 0,
+        "h": 8,
+        "w": 11,
+        "x": 3,
         "y": 1
       },
       "id": 7,
       "options": {
         "legend": {
           "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom"
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "single",
@@ -201,6 +260,8 @@ const controllerRuntimeTemplate = `{
             "mode": "continuous-GrYlRd"
           },
           "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
@@ -247,17 +308,18 @@ const controllerRuntimeTemplate = `{
         "overrides": []
       },
       "gridPos": {
-        "h": 7,
-        "w": 12,
-        "x": 12,
+        "h": 8,
+        "w": 10,
+        "x": 14,
         "y": 1
       },
       "id": 6,
       "options": {
         "legend": {
           "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom"
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "single",
@@ -285,12 +347,68 @@ const controllerRuntimeTemplate = `{
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 8
+        "y": 9
       },
       "id": 11,
       "panels": [],
       "title": "Work Queue Metrics",
       "type": "row"
+    },
+    {
+      "datasource": "${DS_PROMETHEUS}",
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "percentage",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 70
+              },
+              {
+                "color": "red",
+                "value": 85
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 3,
+        "x": 0,
+        "y": 10
+      },
+      "id": 22,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "9.5.3",
+      "targets": [
+        {
+          "datasource": "${DS_PROMETHEUS}",
+          "exemplar": true,
+          "expr": "workqueue_depth{job=\"$job\", namespace=\"$namespace\"}",
+          "interval": "",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "title": "WorkQueue Depth",
+      "type": "gauge"
     },
     {
       "datasource": "${DS_PROMETHEUS}",
@@ -301,6 +419,8 @@ const controllerRuntimeTemplate = `{
             "mode": "palette-classic"
           },
           "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
@@ -347,10 +467,10 @@ const controllerRuntimeTemplate = `{
         "overrides": []
       },
       "gridPos": {
-        "h": 7,
-        "w": 12,
-        "x": 0,
-        "y": 9
+        "h": 8,
+        "w": 11,
+        "x": 3,
+        "y": 10
       },
       "id": 13,
       "options": {
@@ -359,8 +479,9 @@ const controllerRuntimeTemplate = `{
             "max",
             "mean"
           ],
-          "displayMode": "list",
-          "placement": "right"
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "single",
@@ -406,6 +527,8 @@ const controllerRuntimeTemplate = `{
             "mode": "continuous-GrYlRd"
           },
           "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
@@ -452,17 +575,18 @@ const controllerRuntimeTemplate = `{
         "overrides": []
       },
       "gridPos": {
-        "h": 7,
-        "w": 12,
-        "x": 12,
-        "y": 9
+        "h": 8,
+        "w": 10,
+        "x": 14,
+        "y": 10
       },
       "id": 15,
       "options": {
         "legend": {
           "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom"
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "single",
@@ -485,6 +609,64 @@ const controllerRuntimeTemplate = `{
     },
     {
       "datasource": "${DS_PROMETHEUS}",
+      "description": "How many seconds of work has done that is in progress and hasn't been observed by work_duration.\nLarge values indicate stuck threads.\nOne can deduce the number of stuck threads by observing the rate at which this increases.",
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "percentage",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 70
+              },
+              {
+                "color": "red",
+                "value": 85
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 3,
+        "x": 0,
+        "y": 18
+      },
+      "id": 23,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["lastNotNull"],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "9.5.3",
+      "targets": [
+        {
+          "datasource": "${DS_PROMETHEUS}",
+          "exemplar": true,
+          "expr": "rate(workqueue_unfinished_work_seconds{job=\"$job\", namespace=\"$namespace\"}[5m])",
+          "interval": "",
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "title": "Unfinished Seconds",
+      "type": "gauge"
+    },
+    {
+      "datasource": "${DS_PROMETHEUS}",
       "description": "How long in seconds processing an item from workqueue takes.",
       "fieldConfig": {
         "defaults": {
@@ -492,6 +674,8 @@ const controllerRuntimeTemplate = `{
             "mode": "palette-classic"
           },
           "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
@@ -538,10 +722,10 @@ const controllerRuntimeTemplate = `{
         "overrides": []
       },
       "gridPos": {
-        "h": 7,
-        "w": 12,
-        "x": 0,
-        "y": 16
+        "h": 9,
+        "w": 11,
+        "x": 3,
+        "y": 18
       },
       "id": 19,
       "options": {
@@ -551,7 +735,8 @@ const controllerRuntimeTemplate = `{
             "mean"
           ],
           "displayMode": "table",
-          "placement": "right"
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "single",
@@ -598,6 +783,8 @@ const controllerRuntimeTemplate = `{
             "mode": "continuous-GrYlRd"
           },
           "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
@@ -644,17 +831,18 @@ const controllerRuntimeTemplate = `{
         "overrides": []
       },
       "gridPos": {
-        "h": 7,
-        "w": 12,
-        "x": 12,
-        "y": 16
+        "h": 9,
+        "w": 10,
+        "x": 14,
+        "y": 18
       },
       "id": 17,
       "options": {
         "legend": {
           "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom"
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
           "mode": "single",

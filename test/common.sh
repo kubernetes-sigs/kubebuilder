@@ -23,14 +23,14 @@ function convert_to_tools_ver {
   # 1.14-1.19 work with the 1.19 server bins and kubectl.
   "1.14"|"1.15"|"1.16"|"1.17"|"1.18"|"1.19") echo "1.19.2";;
   # Tests in 1.20 and 1.21 with their counterpart version's apiserver.
-  "1.20"|"1.21") echo "1.19.2";;
+  "1.20"|"1.21") echo "1.21.5";;
   "1.22") echo "1.22.1";;
   "1.23") echo "1.23.3";;
   "1.24") echo "1.24.1";;
   "1.25") echo "1.25.0";;
   "1.26") echo "1.26.0";;
   "1.27") echo "1.27.1";;
-  "1.28") echo "1.28.0";;
+  "1.28") echo "1.28.3";;
   *)
     echo "k8s version $k8s_ver not supported"
     exit 1
@@ -52,7 +52,7 @@ fi
 
 export KIND_K8S_VERSION="${KIND_K8S_VERSION:-"v1.28.0"}"
 tools_k8s_version=$(convert_to_tools_ver "${KIND_K8S_VERSION#v*}")
-kind_version=0.15.0
+kind_version=0.20.0
 goarch=amd64
 
 if [[ "$OSTYPE" == "linux-gnu" ]]; then

@@ -1,5 +1,5 @@
 /*
-Copyright 2023 The Kubernetes authors.
+Copyright 2024 The Kubernetes authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -95,7 +95,7 @@ var (
 // the user.
 //
 // For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.16.3/pkg/reconcile
+// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.17.0/pkg/reconcile
 func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 
@@ -217,9 +217,7 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			continue
 		}
 		if scheduledTimeForJob != nil {
-			if mostRecentTime == nil {
-				mostRecentTime = scheduledTimeForJob
-			} else if mostRecentTime.Before(*scheduledTimeForJob) {
+			if mostRecentTime == nil || mostRecentTime.Before(*scheduledTimeForJob) {
 				mostRecentTime = scheduledTimeForJob
 			}
 		}
@@ -304,7 +302,7 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			if int32(i) >= int32(len(successfulJobs))-*cronJob.Spec.SuccessfulJobsHistoryLimit {
 				break
 			}
-			if err := r.Delete(ctx, job, client.PropagationPolicy(metav1.DeletePropagationBackground)); (err) != nil {
+			if err := r.Delete(ctx, job, client.PropagationPolicy(metav1.DeletePropagationBackground)); err != nil {
 				log.Error(err, "unable to delete old successful job", "job", job)
 			} else {
 				log.V(0).Info("deleted old successful job", "job", job)

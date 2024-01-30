@@ -23,4 +23,4 @@ export KIND_CLUSTER="kind"
 create_cluster ${KIND_K8S_VERSION}
 trap delete_cluster EXIT
 
-test_cluster
+test_cluster -v -ginkgo.vv

@@ -59,9 +59,9 @@ See an example of how to use the plugin in your project:
 1. Copy the JSON file
 2. Visit `<your-grafana-url>/dashboard/import` to [import a new dashboard](https://grafana.com/docs/grafana/latest/dashboards/export-import/#import-dashboard).
 3. Paste the JSON content to `Import via panel json`, then press `Load` button
-   <img width="644" alt="Screen Shot 2022-06-28 at 3 40 22 AM" src="https://user-images.githubusercontent.com/18136486/176121955-1c4aec9c-0ba4-4271-9767-e8d1726d9d9a.png">
+   <img width="644" src="https://user-images.githubusercontent.com/18136486/176121955-1c4aec9c-0ba4-4271-9767-e8d1726d9d9a.png">
 4. Select the data source for Prometheus metrics
-   <img width="633" alt="Screen Shot 2022-06-28 at 3 41 26 AM" src="https://user-images.githubusercontent.com/18136486/176122261-e3eab5b0-9fc4-45fc-a68c-d9ce1cfe96ee.png">
+   <img width="633" src="https://user-images.githubusercontent.com/18136486/176122261-e3eab5b0-9fc4-45fc-a68c-d9ce1cfe96ee.png">
 5. Once the json is imported in Grafana, the dashboard is ready.
 
 ### Grafana Dashboard
@@ -77,7 +77,7 @@ See an example of how to use the plugin in your project:
 - Description:
   - Per-second rate of total reconciliation as measured over the last 5 minutes
   - Per-second rate of reconciliation errors as measured over the last 5 minutes
-- Sample: <img width="1430" src="https://user-images.githubusercontent.com/18136486/176122555-f3493658-6c99-4ad6-a9b7-63d85620d370.png">
+- Sample: <img width="912" src="https://user-images.githubusercontent.com/18136486/176122555-f3493658-6c99-4ad6-a9b7-63d85620d370.png">
 
 #### Controller CPU & Memory Usage
 
@@ -90,7 +90,7 @@ See an example of how to use the plugin in your project:
 - Description:
   - Per-second rate of CPU usage as measured over the last 5 minutes
   - Allocated Memory for the running controller
-- Sample: <img width="1381" src="https://user-images.githubusercontent.com/18136486/177239808-7d94b17d-692c-4166-8875-6d9332e05bcb.png">
+- Sample: <img width="912" src="https://user-images.githubusercontent.com/18136486/177239808-7d94b17d-692c-4166-8875-6d9332e05bcb.png">
 
 #### Seconds of P50/90/99 Items Stay in Work Queue
 
@@ -100,7 +100,7 @@ See an example of how to use the plugin in your project:
   - histogram_quantile(0.50, sum(rate(workqueue_queue_duration_seconds_bucket{job="$job", namespace="$namespace"}[5m])) by (instance, name, le))
 - Description
   - Seconds an item stays in workqueue before being requested.
-- Sample: <img width="920" src="https://user-images.githubusercontent.com/18136486/180359126-452b2a0f-a511-4ae3-844f-231d13cd27f8.png">
+- Sample: <img width="912" src="https://user-images.githubusercontent.com/18136486/180359126-452b2a0f-a511-4ae3-844f-231d13cd27f8.png">
 
 #### Seconds of P50/90/99 Items Processed in Work Queue
 
@@ -120,7 +120,7 @@ See an example of how to use the plugin in your project:
   - sum(rate(workqueue_adds_total{job="$job", namespace="$namespace"}[5m])) by (instance, name)
 - Description
   - Per-second rate of items added to work queue
-- Sample: <img width="913" src="https://user-images.githubusercontent.com/18136486/180360073-698b6f77-a2c4-4a95-8313-fd8745ad472f.png">
+- Sample: <img width="912" src="https://user-images.githubusercontent.com/18136486/180360073-698b6f77-a2c4-4a95-8313-fd8745ad472f.png">
 
 #### Retries Rate in Work Queue
 
@@ -130,7 +130,37 @@ See an example of how to use the plugin in your project:
   - sum(rate(workqueue_retries_total{job="$job", namespace="$namespace"}[5m])) by (instance, name)
 - Description
   - Per-second rate of retries handled by workqueue
-- Sample: <img width="914" src="https://user-images.githubusercontent.com/18136486/180360101-411c81e9-d54e-4b21-bbb0-e3f94fcf48cb.png">
+- Sample: <img width="912" src="https://user-images.githubusercontent.com/18136486/180360101-411c81e9-d54e-4b21-bbb0-e3f94fcf48cb.png">
+
+#### Number of Workers in Use
+
+- Metrics
+  - controller_runtime_active_workers
+- Query:
+  - controller_runtime_active_workers{job="$job", namespace="$namespace"}
+- Description
+  - The number of active controller workers
+- Sample: <img width="912" src="https://github.com/kubernetes-sigs/kubebuilder/assets/18136486/288db1b5-e2d8-48ea-9aae-30de7eeca277">
+
+#### WorkQueue Depth
+
+- Metrics
+  - workqueue_depth
+- Query:
+  - workqueue_depth{job="$job", namespace="$namespace"}
+- Description
+  - Current depth of workqueue
+- Sample: <img width="912" src="https://github.com/kubernetes-sigs/kubebuilder/assets/18136486/34f14df4-0428-460e-9658-01dd3d34aade">
+
+#### Unfinished Seconds
+
+- Metrics
+  - workqueue_unfinished_work_seconds
+- Query:
+  - rate(workqueue_unfinished_work_seconds{job="$job", namespace="$namespace"}[5m])
+- Description
+  - How many seconds of work has done that is in progress and hasn't been observed by work_duration.
+- Sample: <img width="912" src="https://github.com/kubernetes-sigs/kubebuilder/assets/18136486/081727c0-9531-4f7a-9649-87723ebc773f">
 
 ### Visualize Custom Metrics
 

@@ -56,11 +56,11 @@ function delete_cluster {
 function test_cluster {
   local flags="$@"
 
-  docker pull memcached:1.4.36-alpine
-  kind load docker-image --name $KIND_CLUSTER memcached:1.4.36-alpine
+  docker pull memcached:1.6.23-alpine
+  kind load docker-image --name $KIND_CLUSTER memcached:1.6.23-alpine
 
-  docker pull busybox:1.28
-  kind load docker-image --name $KIND_CLUSTER busybox:1.28
+  docker pull busybox:1.36.1
+  kind load docker-image --name $KIND_CLUSTER busybox:1.36.1
 
   go test $(dirname "$0")/grafana $flags -timeout 30m
   go test $(dirname "$0")/deployimage $flags -timeout 30m
@@ -70,11 +70,12 @@ function test_cluster {
 }
 
 function build_sample_external_plugin {
-  # TODO: Dynamically set exteranl plugin destination based on OS platform
-  # EXTERNAL_PLUGIN_DESTINATION_PREFIX="${HOME}/Library/Application Support/kubebuilder/plugins"
-  # For Linux:
-  XDG_CONFIG_HOME="${HOME}/.config"
-  EXTERNAL_PLUGIN_DESTINATION_PREFIX="$XDG_CONFIG_HOME/kubebuilder/plugins"
+  if [ "$(uname -s)" == "Darwin" ]; then
+    EXTERNAL_PLUGIN_DESTINATION_PREFIX="${HOME}/Library/Application Support/kubebuilder/plugins"
+  else
+    XDG_CONFIG_HOME="${HOME}/.config"
+    EXTERNAL_PLUGIN_DESTINATION_PREFIX="$XDG_CONFIG_HOME/kubebuilder/plugins"
+  fi
 
   PLUGIN_NAME="sampleexternalplugin"
   PLUGIN_VERSION="v1"

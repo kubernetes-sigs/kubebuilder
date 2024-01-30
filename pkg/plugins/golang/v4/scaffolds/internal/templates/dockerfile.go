@@ -39,7 +39,7 @@ func (f *Dockerfile) SetTemplateDefaults() error {
 }
 
 const dockerfileTemplate = `# Build the manager binary
-FROM golang:1.20 as builder
+FROM golang:1.21 AS builder
 ARG TARGETOS
 ARG TARGETARCH
 
