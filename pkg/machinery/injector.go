@@ -49,9 +49,6 @@ func (i injector) injectInto(builder Builder) {
 		if builderWithMultiGroup, hasMultiGroup := builder.(HasMultiGroup); hasMultiGroup {
 			builderWithMultiGroup.InjectMultiGroup(i.config.IsMultiGroup())
 		}
-		if builderWithComponentConfig, hasComponentConfig := builder.(HasComponentConfig); hasComponentConfig {
-			builderWithComponentConfig.InjectComponentConfig(i.config.IsComponentConfig())
-		}
 	}
 	// Inject boilerplate
 	if builderWithBoilerplate, hasBoilerplate := builder.(HasBoilerplate); hasBoilerplate {

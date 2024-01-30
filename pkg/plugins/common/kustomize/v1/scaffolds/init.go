@@ -81,9 +81,5 @@ func (s *initScaffolder) Scaffold() error {
 		&prometheus.Monitor{},
 	}
 
-	if s.config.IsComponentConfig() {
-		templates = append(templates, &manager.ControllerManagerConfig{})
-	}
-
 	return scaffold.Execute(templates...)
 }

@@ -27,7 +27,6 @@ var _ machinery.Template = &Config{}
 // Config scaffolds a file that defines the namespace and the manager deployment
 type Config struct {
 	machinery.TemplateMixin
-	machinery.ComponentConfigMixin
 	machinery.ProjectNameMixin
 
 	// Image is controller manager image name
@@ -115,10 +114,8 @@ spec:
       containers:
       - command:
         - /manager
-{{- if not .ComponentConfig }}
         args:
         - --leader-elect
-{{- end }}
         image: {{ .Image }}
         name: manager
         securityContext:

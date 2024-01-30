@@ -27,7 +27,6 @@ var _ machinery.Template = &ManagerMetricsPatch{}
 // ManagerMetricsPatch scaffolds a file that defines the patch that enables prometheus metrics for the manager
 type ManagerMetricsPatch struct {
 	machinery.TemplateMixin
-	machinery.ComponentConfigMixin
 }
 
 // SetTemplateDefaults implements file.Template

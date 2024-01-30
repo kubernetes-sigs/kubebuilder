@@ -33,7 +33,6 @@ type Main struct {
 	machinery.BoilerplateMixin
 	machinery.DomainMixin
 	machinery.RepositoryMixin
-	machinery.ComponentConfigMixin
 }
 
 // SetTemplateDefaults implements file.Template
@@ -218,7 +217,6 @@ func init() {
 }
 
 func main() {
-{{- if not .ComponentConfig }}
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string
@@ -233,13 +231,6 @@ func main() {
 		"If set the metrics endpoint is served securely")
 	flag.BoolVar(&enableHTTP2, "enable-http2", false, 
 		"If set, HTTP/2 will be enabled for the metrics and webhook servers")
-{{- else }}
-  var configFile string
-	flag.StringVar(&configFile, "config", "", 
-		"The controller will load its initial configuration from this file. " +
-		"Omit this flag to use the default configuration values. " +
-		"Command-line flags override configuration from this file.")
-{{- end }}
 	opts := zap.Options{
 		Development: true,
 	}
@@ -248,7 +239,6 @@ func main() {
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
-{{ if not .ComponentConfig }}
 	// if the enable-http2 flag is false (the default), http/2 should be disabled
 	// due to its vulnerabilities. More specifically, disabling http/2 will
 	// prevent from being vulnerable to the HTTP/2 Stream Cancellation and 
@@ -296,19 +286,6 @@ func main() {
 		// after the manager stops then its usage might be unsafe.
 		// LeaderElectionReleaseOnCancel: true,
 	})
-{{- else }}
-	var err error
-	options := ctrl.Options{Scheme: scheme}
-	if configFile != "" {
-		options, err = options.AndFrom(ctrl.ConfigFile().AtPath(configFile))
-		if err != nil {
-			setupLog.Error(err, "unable to load the config file")
-			os.Exit(1)
-		}
-	}
-
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), options)
-{{- end }}
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)

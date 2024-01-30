@@ -28,7 +28,6 @@ var _ machinery.Template = &Kustomization{}
 type Kustomization struct {
 	machinery.TemplateMixin
 	machinery.ProjectNameMixin
-	machinery.ComponentConfigMixin
 }
 
 // SetTemplateDefaults implements file.Template
@@ -77,13 +76,6 @@ patches:
 # More info: https://book.kubebuilder.io/reference/metrics
 # If you want to expose the metric endpoint of your controller-manager uncomment the following line.
 #- path: manager_metrics_patch.yaml
-
-{{ if .ComponentConfig -}}
-# Mount the controller config file for loading manager configurations
-# through a ComponentConfig type
-- path: manager_config_patch.yaml
-
-{{ end -}}
 
 # [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix including the one in
 # crd/kustomization.yaml
