@@ -36,10 +36,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	examplecomv1alpha1 "sigs.k8s.io/kubebuilder/testdata/project-v4-with-deploy-image/api/v1alpha1"
+	cachev1alpha1 "example.com/memcached/api/v1alpha1"
 )
 
-const memcachedFinalizer = "example.com.testproject.org/finalizer"
+const memcachedFinalizer = "cache.example.com/finalizer"
 
 // Definitions to manage status conditions
 const (
@@ -60,9 +60,9 @@ type MemcachedReconciler struct {
 // when the command <make manifests> is executed.
 // To know more about markers see: https://book.kubebuilder.io/reference/markers.html
 
-//+kubebuilder:rbac:groups=example.com.testproject.org,resources=memcacheds,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=example.com.testproject.org,resources=memcacheds/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=example.com.testproject.org,resources=memcacheds/finalizers,verbs=update
+//+kubebuilder:rbac:groups=cache.example.com,resources=memcacheds,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=cache.example.com,resources=memcacheds/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=cache.example.com,resources=memcacheds/finalizers,verbs=update
 //+kubebuilder:rbac:groups=core,resources=events,verbs=create;patch
 //+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch
@@ -84,7 +84,7 @@ func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	// Fetch the Memcached instance
 	// The purpose is check if the Custom Resource for the Kind Memcached
 	// is applied on the cluster if not we return nil to stop the reconciliation
-	memcached := &examplecomv1alpha1.Memcached{}
+	memcached := &cachev1alpha1.Memcached{}
 	err := r.Get(ctx, req.NamespacedName, memcached)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
@@ -283,7 +283,7 @@ func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 }
 
 // finalizeMemcached will perform the required operations before delete the CR.
-func (r *MemcachedReconciler) doFinalizerOperationsForMemcached(cr *examplecomv1alpha1.Memcached) {
+func (r *MemcachedReconciler) doFinalizerOperationsForMemcached(cr *cachev1alpha1.Memcached) {
 	// TODO(user): Add the cleanup steps that the operator
 	// needs to do before the CR can be deleted. Examples
 	// of finalizers include performing backups and deleting
@@ -304,7 +304,7 @@ func (r *MemcachedReconciler) doFinalizerOperationsForMemcached(cr *examplecomv1
 
 // deploymentForMemcached returns a Memcached Deployment object
 func (r *MemcachedReconciler) deploymentForMemcached(
-	memcached *examplecomv1alpha1.Memcached) (*appsv1.Deployment, error) {
+	memcached *cachev1alpha1.Memcached) (*appsv1.Deployment, error) {
 	ls := labelsForMemcached(memcached.Name)
 	replicas := memcached.Spec.Size
 
@@ -412,7 +412,7 @@ func labelsForMemcached(name string) map[string]string {
 	return map[string]string{"app.kubernetes.io/name": "Memcached",
 		"app.kubernetes.io/instance":   name,
 		"app.kubernetes.io/version":    imageTag,
-		"app.kubernetes.io/part-of":    "project-v4-with-deploy-image",
+		"app.kubernetes.io/part-of":    "project",
 		"app.kubernetes.io/created-by": "controller-manager",
 	}
 }
@@ -433,7 +433,7 @@ func imageForMemcached() (string, error) {
 // desirable state on the cluster
 func (r *MemcachedReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&examplecomv1alpha1.Memcached{}).
+		For(&cachev1alpha1.Memcached{}).
 		Owns(&appsv1.Deployment{}).
 		Complete(r)
 }

@@ -16,7 +16,7 @@ We will create a sample project to let you know how it works. This sample will:
 - Not allow more instances than the size defined in the CR which will be applied
 - Update the Memcached CR status
 
-Following the steps.
+Use the following steps.
 
 ## Create a project
 
@@ -33,7 +33,7 @@ kubebuilder init --domain=example.com
 Next, we'll create a new API responsible for deploying and managing our Memcached solution. In this instance, we will utilize the [Deploy Image Plugin][deploy-image] to get a comprehensive code implementation for our solution.
 
 ```
-kubebuilder create api --group example.com --version v1alpha1 --kind Memcached --image=memcached:1.4.36-alpine --image-container-command="memcached,-m=64,-o,modern,-v" --image-container-port="11211" --run-as-user="1001" --plugins="deploy-image/v1-alpha" --make=false
+kubebuilder create api --group cache --version v1alpha1 --kind Memcached --image=memcached:1.4.36-alpine --image-container-command="memcached,-m=64,-o,modern,-v" --image-container-port="11211" --run-as-user="1001" --plugins="deploy-image/v1-alpha" --make=false
 ```
 
 ### Understanding APIs
@@ -45,7 +45,7 @@ This command's primary aim is to produce the Custom Resource (CR) and Custom Res
 
 Consider a typical scenario where the objective is to run an application and its database on a Kubernetes platform. In this context, one object might represent the Frontend App, while another denotes the backend Data Base. If we define one CRD for the App and another for the DB, we uphold essential concepts like encapsulation, the single responsibility principle, and cohesion. Breaching these principles might lead to complications, making extension, reuse, or maintenance challenging.
 
-In essence, the App CRD and the DB CRD will have their controller. Let's say, for instance, that the application requires a Deployment and Service to run. In this example, the App’s Controller will cater to these needs. Similarly, the DB’s controller will manage the business logic of its items.
+In essence, the App CRD and the DB CRD will each have their own controller. Let's say, for instance, that the application requires a Deployment and Service to run. In this example, the App’s Controller will cater to these needs. Similarly, the DB’s controller will manage the business logic of its items.
 
 Therefore, for each CRD, there should be one distinct controller, adhering to the design outlined by the [controller-runtime][controller-runtime]. For further information see [Groups and Versions and Kinds, oh my!][group-kind-oh-my].
 
@@ -94,32 +94,32 @@ type MemcachedStatus struct {
 }
 ```
 
-Thus, when we introduce new specifications to this file and execute the `make generate` command, we utilize [controller-gen][controller-gen] to generate the CRD manifest, which is located under the `config/crds` directory.
+Thus, when we introduce new specifications to this file and execute the `make generate` command, we utilize [controller-gen][controller-gen] to generate the CRD manifest, which is located under the `config/crd/bases` directory.
 
 #### Markers and validations
 
-Moreover, it's important to note that we're employing `markers`, such as `+kubebuilder:validation:Minimum=1`. These markers help in defining validations and criteria, ensuring that data provided by users—when they create or edit a Custom Resource for the Memcached Kind—is properly validated. For a comprehensive list and details of available markers, refer [here][markers].
+Moreover, it's important to note that we're employing `markers`, such as `+kubebuilder:validation:Minimum=1`. These markers help in defining validations and criteria, ensuring that data provided by users — when they create or edit a Custom Resource for the Memcached Kind — is properly validated. For a comprehensive list and details of available markers, refer [the Markers documentation][markers].
 Observe the validation schema within the CRD; this schema ensures that the Kubernetes API properly validates the Custom Resources (CRs) that are applied:
 
-From: `config/crd/bases/example.com.testproject.org_memcacheds.yaml`
-```yaml
-            description: MemcachedSpec defines the desired state of Memcached
-            properties:
-              containerPort:
-                description: Port defines the port that will be used to init the container
-                  with the image
-                format: int32
-                type: integer
-              size:
-                description: 'Size defines the number of Memcached instances The following
-                  markers will use OpenAPI v3 schema to validate the value More info:
-                  https://book.kubebuilder.io/reference/markers/crd-validation.html'
-                format: int32
-                maximum: 3 ## See here from the marker +kubebuilder:validation:Maximum=3
-                minimum: 1 ## See here from the marker +kubebuilder:validation:Minimum=1
-                type: integer
-            type: object
+From: [config/crd/bases/cache.example.com_memcacheds.yaml](https://github.com/kubernetes-sigs/kubebuilder/tree/master/docs/book/src/getting-started/testdata/project/config/crd/bases/cache.example.com_memcacheds.yaml)
 
+```yaml
+description: MemcachedSpec defines the desired state of Memcached
+properties:
+  containerPort:
+    description: Port defines the port that will be used to init the container
+      with the image
+    format: int32
+    type: integer
+  size:
+    description: 'Size defines the number of Memcached instances The following
+      markers will use OpenAPI v3 schema to validate the value More info:
+      https://book.kubebuilder.io/reference/markers/crd-validation.html'
+    format: int32
+    maximum: 3 ## Generated from the marker +kubebuilder:validation:Maximum=3
+    minimum: 1 ## Generated from the marker +kubebuilder:validation:Minimum=1
+    type: integer
+type: object
 ```
 
 #### Sample of Custom Resources
@@ -127,24 +127,15 @@ From: `config/crd/bases/example.com.testproject.org_memcacheds.yaml`
 The manifests located under the "config/samples" directory serve as examples of Custom Resources that can be applied to the cluster.
 In this particular example, by applying the given resource to the cluster, we would generate a Deployment with a single instance size (see `size: 1`).
 
-From: `config/samples/example.com_v1alpha1_memcached.yaml`
+From: [config/samples/cache_v1alpha1_memcached.yaml](https://github.com/kubernetes-sigs/kubebuilder/tree/master/docs/book/src/getting-started/testdata/project/config/samples/cache_v1alpha1_memcached.yaml)
 
-```shell
-apiVersion: example.com.testproject.org/v1alpha1
-kind: Memcached
-metadata:
-  name: memcached-sample
-spec:
-  # TODO(user): edit the following value to ensure the number
-  # of Pods/Instances your Operand must have on cluster
-  size: 1
-# TODO(user): edit the following value to ensure the container has the right port to be initialized
-  containerPort: 11211
+```yaml
+{{#include ./getting-started/testdata/project/config/samples/cache_v1alpha1_memcached.yaml}}
 ```
 
 ### Reconciliation Process
 
-The reconciliation function plays a pivotal role in ensuring synchronization between resources and their specifications based on the business logic embedded within them. Essentially, it operates like a loop, continuously checking conditions and performing actions until all conditions align with its implementation. Here's a pseudo-code to illustrate this:
+The reconciliation function plays a pivotal role in ensuring synchronization between resources and their specifications based on the business logic embedded within them. Essentially, it operates like a loop, continuously checking conditions and performing actions until all conditions align with its implementation. Here's pseudo-code to illustrate this:
 
 ```go
 reconcile App {
@@ -206,9 +197,9 @@ return ctrl.Result{RequeueAfter: nextRun.Sub(r.Now())}, nil
 
 #### In the context of our example
 
-When a Custom Resource is applied to the cluster, there's a designated controller to manage the Memcached Kind. You can check its reconciliation implemented:
+When a Custom Resource is applied to the cluster, there's a designated controller to manage the Memcached Kind. You can check how its reconciliation is implemented:
 
-From `testdata/project-v4-with-deploy-image/internal/controller/memcached_controller.go`:
+From: [internal/controller/memcached_controller.go](https://github.com/kubernetes-sigs/kubebuilder/tree/master/docs/book/src/getting-started/testdata/project/internal/controller/memcached_controller.go)
 
 ```go
 func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -221,7 +212,7 @@ func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	err := r.Get(ctx, req.NamespacedName, memcached)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			// If the custom resource is not found then, it usually means that it was deleted or not created
+			// If the custom resource is not found then it usually means that it was deleted or not created
 			// In this way, we will stop the reconciliation
 			log.Info("memcached resource not found. Ignoring since object must be deleted")
 			return ctrl.Result{}, nil
@@ -231,7 +222,7 @@ func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, err
 	}
 
-	// Let's just set the status as Unknown when no status are available
+	// Let's just set the status as Unknown when no status is available
 	if memcached.Status.Conditions == nil || len(memcached.Status.Conditions) == 0 {
 		meta.SetStatusCondition(&memcached.Status.Conditions, metav1.Condition{Type: typeAvailableMemcached, Status: metav1.ConditionUnknown, Reason: "Reconciling", Message: "Starting reconciliation"})
 		if err = r.Status().Update(ctx, memcached); err != nil {
@@ -239,9 +230,9 @@ func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			return ctrl.Result{}, err
 		}
 
-		// Let's re-fetch the memcached Custom Resource after update the status
+		// Let's re-fetch the memcached Custom Resource after updating the status
 		// so that we have the latest state of the resource on the cluster and we will avoid
-		// raise the issue "the object has been modified, please apply
+		// raising the error "the object has been modified, please apply
 		// your changes to the latest version and try again" which would re-trigger the reconciliation
 		// if we try to update it again in the following operations
 		if err := r.Get(ctx, req.NamespacedName, memcached); err != nil {
@@ -251,7 +242,7 @@ func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 
 	// Let's add a finalizer. Then, we can define some operations which should
-	// occurs before the custom resource to be deleted.
+	// occur before the custom resource to be deleted.
 	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers
 	if !controllerutil.ContainsFinalizer(memcached, memcachedFinalizer) {
 		log.Info("Adding Finalizer for Memcached")
@@ -273,7 +264,7 @@ func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		if controllerutil.ContainsFinalizer(memcached, memcachedFinalizer) {
 			log.Info("Performing Finalizer Operations for Memcached before delete CR")
 
-			// Let's add here an status "Downgrade" to define that this resource begin its process to be terminated.
+			// Let's add here a status "Downgrade" to reflect that this resource began its process to be terminated.
 			meta.SetStatusCondition(&memcached.Status.Conditions, metav1.Condition{Type: typeDegradedMemcached,
 				Status: metav1.ConditionUnknown, Reason: "Finalizing",
 				Message: fmt.Sprintf("Performing finalizer operations for the custom resource: %s ", memcached.Name)})
@@ -283,7 +274,7 @@ func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 				return ctrl.Result{}, err
 			}
 
-			// Perform all operations required before remove the finalizer and allow
+			// Perform all operations required before removing the finalizer and allow
 			// the Kubernetes API to remove the custom resource.
 			r.doFinalizerOperationsForMemcached(memcached)
 
@@ -291,9 +282,9 @@ func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			// then you need to ensure that all worked fine before deleting and updating the Downgrade status
 			// otherwise, you should requeue here.
 
-			// Re-fetch the memcached Custom Resource before update the status
+			// Re-fetch the memcached Custom Resource before updating the status
 			// so that we have the latest state of the resource on the cluster and we will avoid
-			// raise the issue "the object has been modified, please apply
+			// raising the error "the object has been modified, please apply
 			// your changes to the latest version and try again" which would re-trigger the reconciliation
 			if err := r.Get(ctx, req.NamespacedName, memcached); err != nil {
 				log.Error(err, "Failed to re-fetch memcached")
@@ -374,9 +365,9 @@ func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			log.Error(err, "Failed to update Deployment",
 				"Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
 
-			// Re-fetch the memcached Custom Resource before update the status
+			// Re-fetch the memcached Custom Resource before updating the status
 			// so that we have the latest state of the resource on the cluster and we will avoid
-			// raise the issue "the object has been modified, please apply
+			// raising the error "the object has been modified, please apply
 			// your changes to the latest version and try again" which would re-trigger the reconciliation
 			if err := r.Get(ctx, req.NamespacedName, memcached); err != nil {
 				log.Error(err, "Failed to re-fetch memcached")
@@ -458,13 +449,12 @@ manifest files present in `config/rbac/`. These markers can be found (and should
 how it is implemented in our example:
 
 ```go
-//+kubebuilder:rbac:groups=example.com.testproject.org,resources=memcacheds,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=example.com.testproject.org,resources=memcacheds/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=example.com.testproject.org,resources=memcacheds/finalizers,verbs=update
+//+kubebuilder:rbac:groups=cache.example.com,resources=memcacheds,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=cache.example.com,resources=memcacheds/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=cache.example.com,resources=memcacheds/finalizers,verbs=update
 //+kubebuilder:rbac:groups=core,resources=events,verbs=create;patch
 //+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch
-
 ```
 
 It's important to highlight that if you wish to add or modify RBAC rules, you can do so by updating or adding the respective markers in the controller.
@@ -473,9 +463,9 @@ After making the necessary changes, run the `make generate` command. This will p
 <aside class="note">
 <h1>RBAC generate under config/rbac</h1>
 
-For each Kind generate Kubebuilder will either scaffold rules with view and edit permissions. (i.e. `memcached_editor_role.yaml` and `memcached_viewer_role.yaml`)
+For each Kind, Kubebuilder will generate scaffold rules with view and edit permissions. (i.e. `memcached_editor_role.yaml` and `memcached_viewer_role.yaml`)
 Those rules are not applied on the cluster when you deploy your solution with `make deploy IMG=myregistery/example:1.0.0`.
-Those rules are aimed to help our system admins to allow them grant permissions to group of users.
+Those rules are aimed to help system admins know what to allow when granting permissions to a group of users.
 
 </aside>
 
@@ -495,12 +485,12 @@ If you inspect the `cmd/main.go` file, you'll come across the following:
         // LeaderElectionReleaseOnCancel defines if the leader should step down voluntarily
         // when the Manager ends. This requires the binary to immediately end when the
         // Manager is stopped, otherwise, this setting is unsafe. Setting this significantly
-        // speeds up voluntary leader transitions as the new leader don't have to wait
-        // LeaseDuration time first.
+        // speeds up voluntary leader transitions as the new leader doesn't have to wait
+        // the LeaseDuration time first.
         //
         // In the default scaffold provided, the program ends immediately after
-        // the manager stops, so would be fine to enable this option. However,
-        // if you are doing or is intended to do any operation such as perform cleanups
+        // the manager stops, so it would be fine to enable this option. However,
+        // if you are doing, or are intending to do, any operation such as perform cleanups
         // after the manager stops then its usage might be unsafe.
         // LeaderElectionReleaseOnCancel: true,
     })
@@ -516,7 +506,7 @@ that are produced for your operator's APIs.
 
 ### Checking the Project running in the cluster
 
-At this point, you can primarily execute the commands highlighted in the [quick-start][quick-start].
+At this point, you can execute the commands highlighted in the [quick-start][quick-start].
 By executing `make build IMG=myregistry/example:1.0.0`, you'll build the image for your project. For testing purposes, it's recommended to publish this image to a
 public registry. This ensures easy accessibility, eliminating the need for additional configurations. Once that's done, you can deploy the image
 to the cluster using the `make deploy IMG=myregistry/example:1.0.0` command.
