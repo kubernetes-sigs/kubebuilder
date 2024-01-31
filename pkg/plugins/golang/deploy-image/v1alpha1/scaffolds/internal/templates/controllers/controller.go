@@ -113,7 +113,7 @@ const {{ lower .Resource.Kind }}Finalizer = "{{ .Resource.Group }}.{{ .Resource.
 const (
 	// typeAvailable{{ .Resource.Kind }} represents the status of the Deployment reconciliation
 	typeAvailable{{ .Resource.Kind }} = "Available"
-	// typeDegraded{{ .Resource.Kind }} represents the status used when the custom resource is deleted and the finalizer operations are must to occur. 
+	// typeDegraded{{ .Resource.Kind }} represents the status used when the custom resource is deleted and the finalizer operations are yet to occur.
 	typeDegraded{{ .Resource.Kind }} = "Degraded"
 )
 
@@ -125,7 +125,7 @@ type {{ .Resource.Kind }}Reconciler struct {
 }
 
 // The following markers are used to generate the rules permissions (RBAC) on config/rbac using controller-gen
-// when the command <make manifests> is executed. 
+// when the command <make manifests> is executed.
 // To know more about markers see: https://book.kubebuilder.io/reference/markers.html
 
 //+kubebuilder:rbac:groups={{ .Resource.QualifiedGroup }},resources={{ .Resource.Plural }},verbs=get;list;watch;create;update;patch;delete
@@ -137,10 +137,10 @@ type {{ .Resource.Kind }}Reconciler struct {
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
-// It is essential for the controller's reconciliation loop to be idempotent. By following the Operator 
+// It is essential for the controller's reconciliation loop to be idempotent. By following the Operator
 // pattern you will create Controllers which provide a reconcile function
-// responsible for synchronizing resources until the desired state is reached on the cluster. 
-// Breaking this recommendation goes against the design principles of controller-runtime. 
+// responsible for synchronizing resources until the desired state is reached on the cluster.
+// Breaking this recommendation goes against the design principles of controller-runtime.
 // and may lead to unforeseen consequences such as resources becoming stuck and requiring manual intervention.
 // For further info:
 // - About Operator Pattern: https://kubernetes.io/docs/concepts/extend-kubernetes/operator/
@@ -156,8 +156,8 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 	err := r.Get(ctx, req.NamespacedName, {{ lower .Resource.Kind }})
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			// If the custom resource is not found then, it usually means that it was deleted or not created
-			// In this way, we will stop the reconciliation 
+			// If the custom resource is not found then it usually means that it was deleted or not created
+			// In this way, we will stop the reconciliation
 			log.Info("{{ lower .Resource.Kind }} resource not found. Ignoring since object must be deleted")
 			return ctrl.Result{}, nil
 		}
@@ -166,7 +166,7 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 		return ctrl.Result{}, err
 	}
 
-	// Let's just set the status as Unknown when no status are available
+	// Let's just set the status as Unknown when no status is available
 	if {{ lower .Resource.Kind }}.Status.Conditions == nil || len({{ lower .Resource.Kind }}.Status.Conditions) == 0 {
 		meta.SetStatusCondition(&{{ lower .Resource.Kind }}.Status.Conditions, metav1.Condition{Type: typeAvailable{{ .Resource.Kind }}, Status: metav1.ConditionUnknown, Reason: "Reconciling", Message: "Starting reconciliation"})
 		if err = r.Status().Update(ctx, {{ lower .Resource.Kind }}); err != nil {
@@ -174,9 +174,9 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 			return ctrl.Result{}, err
 		}
 
-		// Let's re-fetch the {{ lower .Resource.Kind }} Custom Resource after update the status 
+		// Let's re-fetch the {{ lower .Resource.Kind }} Custom Resource after updating the status
 		// so that we have the latest state of the resource on the cluster and we will avoid
-		// raise the issue "the object has been modified, please apply
+		// raising the error "the object has been modified, please apply
 		// your changes to the latest version and try again" which would re-trigger the reconciliation
 		// if we try to update it again in the following operations
 		if err := r.Get(ctx, req.NamespacedName, {{ lower .Resource.Kind }}); err != nil {
@@ -186,7 +186,7 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 	}
 
 	// Let's add a finalizer. Then, we can define some operations which should
-	// occurs before the custom resource to be deleted.
+	// occur before the custom resource is deleted.
 	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers
 	if !controllerutil.ContainsFinalizer({{ lower .Resource.Kind }}, {{ lower .Resource.Kind }}Finalizer) {
 		log.Info("Adding Finalizer for {{ .Resource.Kind }}")
@@ -208,7 +208,7 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 		if controllerutil.ContainsFinalizer({{ lower .Resource.Kind }}, {{ lower .Resource.Kind }}Finalizer) {
 			log.Info("Performing Finalizer Operations for {{ .Resource.Kind }} before delete CR")
 
-			// Let's add here an status "Downgrade" to define that this resource begin its process to be terminated.
+			// Let's add here a status "Downgrade" to reflect that this resource began its process to be terminated.
 			meta.SetStatusCondition(&{{ lower .Resource.Kind }}.Status.Conditions, metav1.Condition{Type: typeDegraded{{ .Resource.Kind }},
 				Status: metav1.ConditionUnknown, Reason: "Finalizing",
 				Message: fmt.Sprintf("Performing finalizer operations for the custom resource: %s ", {{ lower .Resource.Kind }}.Name)})
@@ -218,17 +218,17 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 				return ctrl.Result{}, err
 			}
 
-			// Perform all operations required before remove the finalizer and allow
+			// Perform all operations required before removing the finalizer and allow
 			// the Kubernetes API to remove the custom resource.
 			r.doFinalizerOperationsFor{{ .Resource.Kind }}({{ lower .Resource.Kind }})
 
-			// TODO(user): If you add operations to the doFinalizerOperationsFor{{ .Resource.Kind }} method 
+			// TODO(user): If you add operations to the doFinalizerOperationsFor{{ .Resource.Kind }} method
 			// then you need to ensure that all worked fine before deleting and updating the Downgrade status
 			// otherwise, you should requeue here.
 
-			// Re-fetch the {{ lower .Resource.Kind }} Custom Resource before update the status 
+			// Re-fetch the {{ lower .Resource.Kind }} Custom Resource before updating the status
 			// so that we have the latest state of the resource on the cluster and we will avoid
-			// raise the issue "the object has been modified, please apply
+			// raising the error "the object has been modified, please apply
 			// your changes to the latest version and try again" which would re-trigger the reconciliation
 			if err := r.Get(ctx, req.NamespacedName, {{ lower .Resource.Kind }}); err != nil {
 				log.Error(err, "Failed to re-fetch {{ lower .Resource.Kind }}")
@@ -280,7 +280,7 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 			return ctrl.Result{}, err
 		}
 
-		log.Info("Creating a new Deployment", 
+		log.Info("Creating a new Deployment",
 			"Deployment.Namespace", dep.Namespace, "Deployment.Name", dep.Name)
 		if err = r.Create(ctx, dep); err != nil {
 			log.Error(err, "Failed to create new Deployment",
@@ -288,30 +288,30 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 			return ctrl.Result{}, err
 		}
 
-		// Deployment created successfully 
+		// Deployment created successfully
 		// We will requeue the reconciliation so that we can ensure the state
 		// and move forward for the next operations
 		return ctrl.Result{RequeueAfter: time.Minute}, nil
 	} else if err != nil {
 		log.Error(err, "Failed to get Deployment")
-		// Let's return the error for the reconciliation be re-trigged again 
+		// Let's return the error for the reconciliation be re-trigged again
 		return ctrl.Result{}, err
 	}
 
-	// The CRD API is defining that the {{ .Resource.Kind }} type, have a {{ .Resource.Kind }}Spec.Size field 
-	// to set the quantity of Deployment instances is the desired state on the cluster. 
-	// Therefore, the following code will ensure the Deployment size is the same as defined 
+	// The CRD API defines that the {{ .Resource.Kind }} type have a {{ .Resource.Kind }}Spec.Size field
+	// to set the quantity of Deployment instances to the desired state on the cluster.
+	// Therefore, the following code will ensure the Deployment size is the same as defined
 	// via the Size spec of the Custom Resource which we are reconciling.
 	size := {{ lower .Resource.Kind }}.Spec.Size
 	if *found.Spec.Replicas != size {
 		found.Spec.Replicas = &size
 		if err = r.Update(ctx, found); err != nil {
-			log.Error(err, "Failed to update Deployment", 
+			log.Error(err, "Failed to update Deployment",
 				"Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
 
-			// Re-fetch the {{ lower .Resource.Kind }} Custom Resource before update the status 
+			// Re-fetch the {{ lower .Resource.Kind }} Custom Resource before updating the status
 			// so that we have the latest state of the resource on the cluster and we will avoid
-			// raise the issue "the object has been modified, please apply
+			// raising the error "the object has been modified, please apply
 			// your changes to the latest version and try again" which would re-trigger the reconciliation
 			if err := r.Get(ctx, req.NamespacedName, {{ lower .Resource.Kind }}); err != nil {
 				log.Error(err, "Failed to re-fetch {{ lower .Resource.Kind }}")
@@ -357,9 +357,9 @@ func (r *{{ .Resource.Kind }}Reconciler) doFinalizerOperationsFor{{ .Resource.Ki
 	// of finalizers include performing backups and deleting
 	// resources that are not owned by this CR, like a PVC.
 
-	// Note: It is not recommended to use finalizers with the purpose of delete resources which are
-	// created and managed in the reconciliation. These ones, such as the Deployment created on this reconcile, 
-	// are defined as depended of the custom resource. See that we use the method ctrl.SetControllerReference.
+	// Note: It is not recommended to use finalizers with the purpose of deleting resources which are
+	// created and managed in the reconciliation. These ones, such as the Deployment created on this reconcile,
+	// are defined as dependent of the custom resource. See that we use the method ctrl.SetControllerReference.
 	// to set the ownerRef which means that the Deployment will be deleted by the Kubernetes API.
 	// More info: https://kubernetes.io/docs/tasks/administer-cluster/use-cascading-deletion/
 
@@ -476,7 +476,7 @@ func imageFor{{ .Resource.Kind }}() (string, error) {
 }
 
 // SetupWithManager sets up the controller with the Manager.
-// Note that the Deployment will be also watched in order to ensure its 
+// Note that the Deployment will be also watched in order to ensure its
 // desirable state on the cluster
 func (r *{{ .Resource.Kind }}Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).

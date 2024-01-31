@@ -123,6 +123,11 @@ func (sp *Sample) UpdateTutorial() {
 	addControllerTest(sp)
 }
 
+// CodeGen is a noop for this sample, just to make generation of all samples
+// more efficient. We may want to refactor `UpdateTutorial` some day to take
+// advantage of a separate call, but it is not necessary.
+func (sp *Sample) CodeGen() {}
+
 func codeGen(sp *Sample) {
 	cmd := exec.Command("go", "get", "github.com/robfig/cron")
 	_, err := sp.ctx.Run(cmd)
