@@ -170,7 +170,8 @@ separately.
 
 The docs are published off of three branches:
 
-- `book-v3`: [book.kubebuilder.io](https://book.kubebuilder.io) -- current docs
+- `book-v4`: [book.kubebuilder.io](https://book.kubebuilder.io) -- current docs
+- `book-v3`: [book-v3.book.kubebuilder.io](https://book-v3.book.kubebuilder.io) -- legacy docs
 - `book-v2`: [book-v2.book.kubebuilder.io](https://book-v2.book.kubebuilder.io) -- legacy docs
 - `book-v1`: [book-v1.book.kubebuilder.io](https://book-v1.book.kubebuilder.io) -- legacy docs
 - `master`: [master.book.kubebuilder.io](https://master.book.kubebuilder.io) -- "nightly" docs
