@@ -100,4 +100,4 @@ While certain edge scenarios might allow a mutating webhook to seamlessly modify
 universally acclaimed or recommended strategy. Entrusting the controller logic with status updates remains the 
 most advocated approach.
 
-k8s-doc-admission-webhooks: https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#what-are-admission-webhooks
+[k8s-doc-admission-webhooks]: https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#what-are-admission-webhooks
