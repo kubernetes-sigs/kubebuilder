@@ -115,10 +115,7 @@ var _ = Describe("CronJob controller", func() {
 			// We'll need to retry getting this newly created CronJob, given that creation may not immediately happen.
 			Eventually(func() bool {
 				err := k8sClient.Get(ctx, cronjobLookupKey, createdCronjob)
-				if err != nil {
-					return false
-				}
-				return true
+				return err == nil
 			}, timeout, interval).Should(BeTrue())
 			// Let's make sure our Schedule string value was properly converted/handled.
 			Expect(createdCronjob.Spec.Schedule).Should(Equal("1 * * * *"))
