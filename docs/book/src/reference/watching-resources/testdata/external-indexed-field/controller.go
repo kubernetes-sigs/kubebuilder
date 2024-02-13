@@ -184,13 +184,13 @@ func (r *ConfigDeploymentReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	we just need to loop through the list and create a reconcile request for each one.
 	If an error occurs fetching the list, or no `ConfigDeployments` are found, then no reconcile requests will be returned.
 */
-func (r *ConfigDeploymentReconciler) findObjectsForConfigMap(configMap client.Object) []reconcile.Request {
+func (r *ConfigDeploymentReconciler) findObjectsForConfigMap(ctx context.Context, configMap client.Object) []reconcile.Request {
 	attachedConfigDeployments := &appsv1.ConfigDeploymentList{}
 	listOps := &client.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector(configMapField, configMap.GetName()),
 		Namespace:     configMap.GetNamespace(),
 	}
-	err := r.List(context.TODO(), attachedConfigDeployments, listOps)
+	err := r.List(ctx, attachedConfigDeployments, listOps)
 	if err != nil {
 		return []reconcile.Request{}
 	}
