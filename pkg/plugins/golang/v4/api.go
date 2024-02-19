@@ -164,7 +164,7 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 func (p *createAPISubcommand) PreScaffold(machinery.Filesystem) error {
 	// check if main.go is present in the root directory
 	if _, err := os.Stat(DefaultMainPath); os.IsNotExist(err) {
-		return fmt.Errorf("%s file should present in the root directory", DefaultMainPath)
+		return fmt.Errorf("%s file should be present in the root directory", DefaultMainPath)
 	}
 
 	return nil
