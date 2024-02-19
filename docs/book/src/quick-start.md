@@ -168,7 +168,7 @@ Install the CRDs into the cluster:
 make install
 ```
 
-Run your controller (this will run in the foreground, so switch to a new
+For quick feedback and code-level debugging, run your controller (this will run in the foreground, so switch to a new
 terminal if you want to leave it running):
 ```bash
 make run
@@ -184,6 +184,7 @@ kubectl apply -k config/samples/
 ```
 
 ## Run It On the Cluster
+When your controller is ready to be packaged and tested in other clusters.
 
 Build and push your image to the location specified by `IMG`:
 
