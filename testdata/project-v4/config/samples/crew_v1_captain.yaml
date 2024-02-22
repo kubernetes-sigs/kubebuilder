@@ -2,11 +2,8 @@ apiVersion: crew.testproject.org/v1
 kind: Captain
 metadata:
   labels:
-    app.kubernetes.io/name: captain
-    app.kubernetes.io/instance: captain-sample
-    app.kubernetes.io/part-of: project-v4
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/created-by: project-v4
+    app.kubernetes.io/name: project-v4
+	app.kubernetes.io/managed-by: kustomize
   name: captain-sample
 spec:
   # TODO(user): Add fields here
