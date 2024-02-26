@@ -48,11 +48,7 @@ const serviceTemplate = `apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app.kubernetes.io/name: service
-    app.kubernetes.io/instance: webhook-service
-    app.kubernetes.io/component: webhook
-    app.kubernetes.io/created-by: {{ .ProjectName }}
-    app.kubernetes.io/part-of: {{ .ProjectName }}
+    app.kubernetes.io/name: {{ .ProjectName }}
     app.kubernetes.io/managed-by: kustomize
   name: webhook-service
   namespace: system

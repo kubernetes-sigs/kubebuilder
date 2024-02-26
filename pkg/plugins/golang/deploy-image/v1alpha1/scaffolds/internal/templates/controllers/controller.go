@@ -456,11 +456,9 @@ func labelsFor{{ .Resource.Kind }}(name string) map[string]string {
 	if err == nil {
 		imageTag = strings.Split(image, ":")[1]
 	}
-	return map[string]string{"app.kubernetes.io/name": "{{ .Resource.Kind }}",
-		"app.kubernetes.io/instance": name,
+	return map[string]string{"app.kubernetes.io/name": "{{ .ProjectName }}",
 		"app.kubernetes.io/version": imageTag,
-		"app.kubernetes.io/part-of": "{{ .ProjectName }}",
-		"app.kubernetes.io/created-by": "controller-manager",
+		"app.kubernetes.io/managed-by": "{{ .Resource.Kind }}Controller",
 	}
 }
 
