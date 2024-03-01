@@ -16,3 +16,10 @@ resources:
 - auth_proxy_role.yaml
 - auth_proxy_role_binding.yaml
 - auth_proxy_client_clusterrole.yaml
+# Editor and Viewer roles for each CRD to be used by end users.
+- admiral_editor_role.yaml
+- admiral_viewer_role.yaml
+- firstmate_editor_role.yaml
+- firstmate_viewer_role.yaml
+- captain_editor_role.yaml
+- captain_viewer_role.yaml
