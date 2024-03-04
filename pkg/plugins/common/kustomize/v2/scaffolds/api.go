@@ -18,6 +18,7 @@ package scaffolds
 
 import (
 	"fmt"
+	"strings"
 
 	pluginutil "sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/crd"
@@ -97,6 +98,16 @@ func (s *apiScaffolder) Scaffold() error {
 				log.Errorf("Unable to find the target #- ../crd to uncomment in the file "+
 					"%s.", kustomizeFilePath)
 			}
+		}
+
+		rbacKustomizeFilePath := "config/rbac/kustomization.yaml"
+		crdKind := strings.ToLower(s.resource.Kind)
+		err = pluginutil.InsertCodeIfNotExist(rbacKustomizeFilePath,
+			"# Editor and Viewer roles for each CRD to be used by end users.",
+			fmt.Sprintf("\n- %[1]s_editor_role.yaml\n- %[1]s_viewer_role.yaml", crdKind))
+		if err != nil {
+			log.Errorf("Unable to add Editor and Viewer roles in the file "+
+				"%s.", rbacKustomizeFilePath)
 		}
 	}
 

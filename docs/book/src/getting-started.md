@@ -2,8 +2,8 @@
 
 ## Overview
 
-By following the [Operator Pattern][k8s-operator-pattern], it’s possible not only to provide all expected resources 
-but also to manage them dynamically, programmatically, and at execution time. To illustrate this idea, imagine if 
+By following the [Operator Pattern][k8s-operator-pattern], it’s possible not only to provide all expected resources
+but also to manage them dynamically, programmatically, and at execution time. To illustrate this idea, imagine if
 someone accidentally changed a configuration or removed a resource by mistake; in this case, the operator could fix it
 without any human intervention.
 
@@ -146,13 +146,13 @@ reconcile App {
     return reconcile.Result{}, err
   }
 
-  // Check if a Service for the app exists, if not, create one 
+  // Check if a Service for the app exists, if not, create one
   // If there's an error, then restart from the beginning of the reconcile
   if err != nil {
     return reconcile.Result{}, err
   }
 
-  // Look for Database CR/CRD 
+  // Look for Database CR/CRD
   // Check the Database Deployment's replicas size
   // If deployment.replicas size doesn't match cr.size, then update it
   // Then, restart from the beginning of the reconcile. For example, by returning `reconcile.Result{Requeue: true}, nil`.
@@ -162,7 +162,7 @@ reconcile App {
   ...
 
   // If at the end of the loop:
-  // Everything was executed successfully, and the reconcile can stop  
+  // Everything was executed successfully, and the reconcile can stop
   return reconcile.Result{}, nil
 
 }
@@ -181,7 +181,7 @@ return ctrl.Result{}, err
 
 ```go
 return ctrl.Result{Requeue: true}, nil
-``` 
+```
 
 - Therefore, to stop the Reconcile, use:
 
@@ -464,7 +464,6 @@ After making the necessary changes, run the `make generate` command. This will p
 <h1>RBAC generate under config/rbac</h1>
 
 For each Kind, Kubebuilder will generate scaffold rules with view and edit permissions. (i.e. `memcached_editor_role.yaml` and `memcached_viewer_role.yaml`)
-Those rules are not applied on the cluster when you deploy your solution with `make deploy IMG=myregistery/example:1.0.0`.
 Those rules are aimed to help system admins know what to allow when granting permissions to a group of users.
 
 </aside>

@@ -16,3 +16,22 @@ resources:
 - auth_proxy_role.yaml
 - auth_proxy_role_binding.yaml
 - auth_proxy_client_clusterrole.yaml
+# Editor and Viewer roles for each CRD to be used by end users.
+- lakers_editor_role.yaml
+- lakers_viewer_role.yaml
+- bar_editor_role.yaml
+- bar_viewer_role.yaml
+- healthcheckpolicy_editor_role.yaml
+- healthcheckpolicy_viewer_role.yaml
+- leviathan_editor_role.yaml
+- leviathan_viewer_role.yaml
+- kraken_editor_role.yaml
+- kraken_viewer_role.yaml
+- cruiser_editor_role.yaml
+- cruiser_viewer_role.yaml
+- destroyer_editor_role.yaml
+- destroyer_viewer_role.yaml
+- frigate_editor_role.yaml
+- frigate_viewer_role.yaml
+- captain_editor_role.yaml
+- captain_viewer_role.yaml
