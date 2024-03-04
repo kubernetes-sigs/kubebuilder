@@ -17,8 +17,13 @@ limitations under the License.
 package external
 
 import (
+	"os"
+
+	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
 
+	"sigs.k8s.io/kubebuilder/v3/pkg/config"
+	"sigs.k8s.io/kubebuilder/v3/pkg/config/store/yaml"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/external"
@@ -27,8 +32,9 @@ import (
 var _ plugin.InitSubcommand = &initSubcommand{}
 
 type initSubcommand struct {
-	Path string
-	Args []string
+	Path   string
+	Args   []string
+	config config.Config
 }
 
 func (p *initSubcommand) UpdateMetadata(_ plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
@@ -40,16 +46,51 @@ func (p *initSubcommand) BindFlags(fs *pflag.FlagSet) {
 }
 
 func (p *initSubcommand) Scaffold(fs machinery.Filesystem) error {
+	fileName := "PROJECT"
+
+	if _, err := os.Stat(fileName); os.IsNotExist(err) {
+		file, err := os.Create(fileName)
+		if err != nil {
+			return err
+		}
+		defer func() {
+			if cerr := file.Close(); cerr != nil {
+				if err == nil {
+					err = cerr
+				}
+			}
+		}()
+	}
+
+	cfg := yaml.New(machinery.Filesystem{FS: afero.NewOsFs()})
+	if err := cfg.New(config.Version{Number: 3}); err != nil {
+		return err
+	}
+
+	if err := cfg.Load(); err != nil {
+		return err
+	}
+
 	req := external.PluginRequest{
 		APIVersion: defaultAPIVersion,
 		Command:    "init",
 		Args:       p.Args,
+		Config:     cfg.Config(),
 	}
 
-	err := handlePluginResponse(fs, req, p.Path)
+	err := handlePluginResponse(fs, req, p.Path, p)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (p *initSubcommand) InjectConfig(c config.Config) error {
+	p.config = c
+	return nil
+}
+
+func (p *initSubcommand) GetConfig() config.Config {
+	return p.config
 }

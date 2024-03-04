@@ -5,6 +5,7 @@ go 1.21
 require (
 	github.com/spf13/pflag v1.0.5
 	sigs.k8s.io/kubebuilder/v3 v3.14.0
+	sigs.k8s.io/yaml v1.4.0
 )
 
 require (
@@ -14,3 +15,5 @@ require (
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/tools v0.17.0 // indirect
 )
+
+replace sigs.k8s.io/kubebuilder/v3 => ../../../../../../../
