@@ -561,12 +561,8 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   labels:
-    app.kubernetes.io/component: rbac
-    app.kubernetes.io/created-by: project-v4-with-deploy-image
-    app.kubernetes.io/instance: controller-manager-sa
     app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: serviceaccount
-    app.kubernetes.io/part-of: project-v4-with-deploy-image
+    app.kubernetes.io/name: project-v4-with-deploy-image
   name: project-v4-with-deploy-image-controller-manager
   namespace: project-v4-with-deploy-image-system
 ---
@@ -829,12 +825,8 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app.kubernetes.io/component: webhook
-    app.kubernetes.io/created-by: project-v4-with-deploy-image
-    app.kubernetes.io/instance: webhook-service
     app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: service
-    app.kubernetes.io/part-of: project-v4-with-deploy-image
+    app.kubernetes.io/name: project-v4-with-deploy-image
   name: project-v4-with-deploy-image-webhook-service
   namespace: project-v4-with-deploy-image-system
 spec:

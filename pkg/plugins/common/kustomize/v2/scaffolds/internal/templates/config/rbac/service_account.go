@@ -45,11 +45,7 @@ const serviceAccountTemplate = `apiVersion: v1
 kind: ServiceAccount
 metadata:
   labels:
-    app.kubernetes.io/name: serviceaccount
-    app.kubernetes.io/instance: controller-manager-sa
-    app.kubernetes.io/component: rbac
-    app.kubernetes.io/created-by: {{ .ProjectName }}
-    app.kubernetes.io/part-of: {{ .ProjectName }}
+    app.kubernetes.io/name: {{ .ProjectName }}
     app.kubernetes.io/managed-by: kustomize
   name: controller-manager
   namespace: system
