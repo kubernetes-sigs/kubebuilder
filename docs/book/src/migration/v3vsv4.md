@@ -67,7 +67,7 @@ This way is more complex, susceptible to errors, and success cannot be assured. 
 [go/v4-doc]: ./../plugins/go-v4-plugin.md
 [migration-guide-gov3-to-gov4]: migration_guide_gov3_to_gov4.md
 [manually-upgrade]: manually_migration_guide_gov3_to_gov4.md
-[basic-project-doc] ./../cronjob-tutorial/basic-project.md
+[basic-project-doc]: ./../cronjob-tutorial/basic-project.md
 [standard-go-project]: https://github.com/golang-standards/project-layout
 [controller-runtime]: https://github.com/kubernetes-sigs/controller-runtime
 [controller-tools]: https://github.com/kubernetes-sigs/controller-tools
