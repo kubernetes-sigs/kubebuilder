@@ -23,7 +23,6 @@ import (
 	. "github.com/onsi/gomega"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	cfgv2 "sigs.k8s.io/kubebuilder/v3/pkg/config/v2"
 	cfgv3 "sigs.k8s.io/kubebuilder/v3/pkg/config/v3"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 )
@@ -156,7 +155,7 @@ var _ = Describe("Options", func() {
 			// the `HasAPI` method of the resource obtained with `GetResource` will always return false.
 			// Instead, the existence of a resource in the list means the API was scaffolded.
 			func(group, qualified string) {
-				cfg = cfgv2.New()
+				cfg = cfgv3.New()
 				_ = cfg.SetRepository("test")
 
 				options := Options{}
