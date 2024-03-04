@@ -17,6 +17,9 @@ limitations under the License.
 package v1
 
 import (
+	"context"
+
+	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -29,6 +32,7 @@ var admirallog = logf.Log.WithName("admiral-resource")
 func (r *Admiral) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
+		WithDefaulter(r).
 		Complete()
 }
 
@@ -36,11 +40,12 @@ func (r *Admiral) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 //+kubebuilder:webhook:path=/mutate-crew-testproject-org-v1-admiral,mutating=true,failurePolicy=fail,sideEffects=None,groups=crew.testproject.org,resources=admirales,verbs=create;update,versions=v1,name=madmiral.kb.io,admissionReviewVersions=v1
 
-var _ webhook.Defaulter = &Admiral{}
+var _ webhook.CustomDefaulter = &Admiral{}
 
-// Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *Admiral) Default() {
+// Default implements webhook.CustomDefaulter so a webhook will be registered for the type
+func (r *Admiral) Default(ctx context.Context, obj runtime.Object) error {
 	admirallog.Info("default", "name", r.Name)
 
 	// TODO(user): fill in your defaulting logic.
+	return nil
 }

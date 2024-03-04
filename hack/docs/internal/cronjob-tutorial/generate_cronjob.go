@@ -382,6 +382,8 @@ func updateWebhook(sp *Sample) {
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_webhook.go"),
 		`import (
+	"context"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -427,6 +429,7 @@ Then, we set up the webhook with the manager.
 		`cronjoblog.Info("default", "name", r.Name)
 
 	// TODO(user): fill in your defaulting logic.
+	return nil
 `, WebhookValidate)
 	CheckError("fixing cronjob_webhook.go by adding logic", err)
 
@@ -448,7 +451,7 @@ Then, we set up the webhook with the manager.
 
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_webhook.go"),
-		`func (r *CronJob) ValidateDelete() (admission.Warnings, error) {
+		`func (r *CronJob) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	cronjoblog.Info("validate delete", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.
@@ -596,8 +599,8 @@ func updateExample(sp *Sample) {
 }
 
 func addControllerTest(sp *Sample) {
-	var fs = afero.NewOsFs()
-	err := afero.WriteFile(fs, filepath.Join(sp.ctx.Dir, "internal/controller/cronjob_controller_test.go"), []byte(ControllerTest), 0600)
+	fs := afero.NewOsFs()
+	err := afero.WriteFile(fs, filepath.Join(sp.ctx.Dir, "internal/controller/cronjob_controller_test.go"), []byte(ControllerTest), 0o600)
 	CheckError("adding cronjob_controller_test", err)
 }
 
