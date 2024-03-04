@@ -76,7 +76,7 @@ some changes.
 
 Most controllers need a logging handle and a context, so we set them up here.
 
-The [context](https://golang.org/pkg/context/) is used to allow cancelation of
+The [context](https://golang.org/pkg/context/) is used to allow cancellation of
 requests, and potentially things like tracing.  It's the first argument to all
 client methods.  The `Background` context is just a basic context without any
 extra data or timing restrictions.
