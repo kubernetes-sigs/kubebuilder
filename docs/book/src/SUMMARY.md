@@ -107,6 +107,9 @@
   - [Artifacts](./reference/artifacts.md)
   - [Platform Support](./reference/platform.md)
 
+  - [Operator Scope](./reference/operator-scope.md)
+  - [CRD Scope](./reference/crd-scope.md)
+
   - [Sub-Module Layouts](./reference/submodule-layouts.md)
   - [Using an external Type / API](./reference/using_an_external_type.md)
 
