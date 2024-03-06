@@ -19,8 +19,8 @@
 make docker-build docker-push IMG=<some-registry>/project-v4-multigroup:tag
 ```
 
-**NOTE:** This image ought to be published in the personal registry you specified. 
-And it is required to have access to pull the image from the working environment. 
+**NOTE:** This image ought to be published in the personal registry you specified.
+And it is required to have access to pull the image from the working environment.
 Make sure you have the proper permission to the registry if the above commands don’t work.
 
 **Install the CRDs into the cluster:**
@@ -35,7 +35,7 @@ make install
 make deploy IMG=<some-registry>/project-v4-multigroup:tag
 ```
 
-> **NOTE**: If you encounter RBAC errors, you may need to grant yourself cluster-admin 
+> **NOTE**: If you encounter RBAC errors, you may need to grant yourself cluster-admin
 privileges or be logged in as admin.
 
 **Create instances of your solution**
