@@ -38,8 +38,7 @@ func (f *GitIgnore) SetTemplateDefaults() error {
 	return nil
 }
 
-const gitignoreTemplate = `
-# Binaries for programs and plugins
+const gitignoreTemplate = `# Binaries for programs and plugins
 *.exe
 *.exe~
 *.dll

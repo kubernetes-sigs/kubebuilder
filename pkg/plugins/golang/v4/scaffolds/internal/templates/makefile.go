@@ -68,8 +68,7 @@ func (f *Makefile) SetTemplateDefaults() error {
 }
 
 //nolint:lll
-const makefileTemplate = `
-# Image URL to use all building/pushing image targets
+const makefileTemplate = `# Image URL to use all building/pushing image targets
 IMG ?= {{ .Image }}
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.29.0
