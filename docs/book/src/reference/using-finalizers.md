@@ -8,7 +8,7 @@ on object's deletion from Kubernetes, you can use a finalizer to do that.
 You can read more about the finalizers in the [Kubernetes reference docs](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#finalizers). The section below demonstrates how to register and trigger pre-delete hooks
 in the `Reconcile` method of a controller.
 
-The key point to note is that a finalizer causes "delete" on the object to become 
+The key point to note is that a finalizer causes "delete" on the object to become
 an "update" to set deletion timestamp. Presence of deletion timestamp on the object
 indicates that it is being deleted. Otherwise, without finalizers, a delete
 shows up as a reconcile where the object is missing from the cache.

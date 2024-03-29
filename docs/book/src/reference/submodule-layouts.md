@@ -9,7 +9,7 @@ Sub-Module Layouts (in a way you could call them a special form of [Monorepo's][
 
 If you are looking to do operations and reconcile via a controller a Type(CRD) which are owned by another project then, please see [Using an external Type](/reference/using_an_external_type.md) for more info.
 
-</aside> 
+</aside>
 
 ## Overview
 
@@ -41,7 +41,7 @@ You may also lose the ability to use some of the CLI features and helpers. For f
 
 ## Adjusting your Project
 
-For a proper Sub-Module layout, we will use the generated APIs as a starting point. 
+For a proper Sub-Module layout, we will use the generated APIs as a starting point.
 
 For the steps below, we will assume you created your project in your `GOPATH` with
 
@@ -105,7 +105,7 @@ go mod tidy
 go: finding module for package YOUR_GO_PATH/test-operator/api/v1alpha1
 YOUR_GO_PATH/test-operator imports
 	YOUR_GO_PATH/test-operator/api/v1alpha1: cannot find module providing package YOUR_GO_PATH/test-operator/api/v1alpha1: module YOUR_GO_PATH/test-operator/api/v1alpha1: git ls-remote -q origin in LOCALVCSPATH: exit status 128:
-	remote: Repository not found.	
+	remote: Repository not found.
 	fatal: repository 'https://YOUR_GO_PATH/test-operator/' not found
 ```
 

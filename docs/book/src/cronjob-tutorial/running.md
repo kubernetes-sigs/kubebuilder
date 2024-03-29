@@ -2,7 +2,7 @@
 
 ### Optional
 If opting to make any changes to the API definitions, then before proceeding,
-generate the manifests like CRs or CRDs with 
+generate the manifests like CRs or CRDs with
 ```bash
 make manifests
 ```
@@ -20,7 +20,7 @@ Now that we've installed our CRDs, we can run the controller against our
 cluster.  This will use whatever credentials that we connect to the
 cluster with, so we don't need to worry about RBAC just yet.
 
-<aside class="note"> 
+<aside class="note">
 
 <h1>Running webhooks locally</h1>
 
@@ -76,7 +76,7 @@ make deploy IMG=<some-registry>/<project-name>:tag
 <aside class="note">
 <h1>registry permission</h1>
 
-This image ought to be published in the personal registry you specified. And it is required to have access to pull the image from the working environment. 
+This image ought to be published in the personal registry you specified. And it is required to have access to pull the image from the working environment.
 Make sure you have the proper permission to the registry if the above commands don't work.
 
 </aside>

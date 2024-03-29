@@ -230,7 +230,7 @@ make undeploy
 ## Next Step
 
 Now, see the [architecture concept diagram][architecture-concept-diagram] for a better overview and follow up the
-[CronJob tutorial][cronjob-tutorial] to better understand how it works by developing a 
+[CronJob tutorial][cronjob-tutorial] to better understand how it works by developing a
 demo example project.
 
 <aside class="note">

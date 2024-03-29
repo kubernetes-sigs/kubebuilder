@@ -12,9 +12,9 @@ For further information check the [Migration guide](../migration/migration_guide
 </aside>
 
 
-Kubebuilder tool will scaffold the go/v3 plugin by default. This plugin is a composition of the plugins ` kustomize.common.kubebuilder.io/v1` and `base.go.kubebuilder.io/v3`. By using you can scaffold the default project which is a helper to construct sets of [controllers][controller-runtime]. 
+Kubebuilder tool will scaffold the go/v3 plugin by default. This plugin is a composition of the plugins ` kustomize.common.kubebuilder.io/v1` and `base.go.kubebuilder.io/v3`. By using you can scaffold the default project which is a helper to construct sets of [controllers][controller-runtime].
 
-It basically scaffolds all the boilerplate code required to create and design controllers. Note that by following the [quickstart][quickstart] you will be using this plugin. 
+It basically scaffolds all the boilerplate code required to create and design controllers. Note that by following the [quickstart][quickstart] you will be using this plugin.
 
 <aside class="note">
 
@@ -30,7 +30,7 @@ If you are looking to scaffold Golang projects to develop projects using [contro
 
 ## How to use it ?
 
-As `go/v3` is the default plugin there is no need to explicitly mention to Kubebuilder to use this plugin. 
+As `go/v3` is the default plugin there is no need to explicitly mention to Kubebuilder to use this plugin.
 
 To create a new project with the `go/v3` plugin the following command can be used:
 
@@ -46,7 +46,7 @@ All the other subcommands supported by the go/v3 plugin can be executed similarl
 
 Also, if you need you can explicitly inform the plugin via the option provided `--plugins=go/v3`.
 
-</aside> 
+</aside>
 
 ## Subcommands supported by the plugin
 

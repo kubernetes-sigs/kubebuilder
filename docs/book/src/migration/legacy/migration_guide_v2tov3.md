@@ -10,7 +10,7 @@ The recommended way to migrate a v2 project is to create a new v3 project and
 copy over the API and the reconciliation code. The conversion will end up with a
 project that looks like a native v3 project. However, in some cases, it's
 possible to do an in-place upgrade (i.e. reuse the v2 project layout, upgrading
-[controller-runtime][controller-runtime] and [controller-tools][controller-tools]).  
+[controller-runtime][controller-runtime] and [controller-tools][controller-tools]).
 
 ## Initialize a v3 Project
 
@@ -22,7 +22,7 @@ For the rest of this document, we are going to use `migration-project` as the pr
 </aside>
 
 Create a new directory with the name of your project. Note that
-this name is used in the scaffolds to create the name of your manager Pod and of the Namespace where the Manager is deployed by default.  
+this name is used in the scaffolds to create the name of your manager Pod and of the Namespace where the Manager is deployed by default.
 
 ```bash
 $ mkdir migration-project-name
@@ -80,7 +80,7 @@ kubebuilder create api --group batch --version v1 --kind CronJob
 <aside class="note">
 <h1>How to still keep `apiextensions.k8s.io/v1beta1` for CRDs?</h1>
 
-From now on, the CRDs that will be created by controller-gen will be using the Kubernetes API version `apiextensions.k8s.io/v1`  by default, instead of `apiextensions.k8s.io/v1beta1`. 
+From now on, the CRDs that will be created by controller-gen will be using the Kubernetes API version `apiextensions.k8s.io/v1`  by default, instead of `apiextensions.k8s.io/v1beta1`.
 
 The `apiextensions.k8s.io/v1beta1` was deprecated in Kubernetes `1.16` and was removed in Kubernetes `1.22`.
 
@@ -108,15 +108,15 @@ Now, let's migrate the controller code from `controllers/cronjob_controller.go` 
 
 The new `Reconcile` method receives the context as an argument now, instead of having to create it with `context.Background()`. You can copy the rest of the code in your old controller to the scaffolded methods replacing:
 
-```go 
+```go
 func (r *CronJobReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-    ctx := context.Background() 
+    ctx := context.Background()
     log := r.Log.WithValues("cronjob", req.NamespacedName)
 ```
 
 With:
 
-```go 
+```go
 func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("cronjob", req.NamespacedName)
 ```
@@ -148,17 +148,17 @@ kubebuilder create webhook --group batch --version v1 --kind CronJob --defaultin
 <aside class="note">
 <h1>How to keep using `apiextensions.k8s.io/v1beta1` for Webhooks?</h1>
 
-From now on, the Webhooks that will be created by Kubebuilder using by default the Kubernetes API version `admissionregistration.k8s.io/v1` instead of `admissionregistration.k8s.io/v1beta1` and the `cert-manager.io/v1` to replace `cert-manager.io/v1alpha2`. 
+From now on, the Webhooks that will be created by Kubebuilder using by default the Kubernetes API version `admissionregistration.k8s.io/v1` instead of `admissionregistration.k8s.io/v1beta1` and the `cert-manager.io/v1` to replace `cert-manager.io/v1alpha2`.
 
-Note that `apiextensions/v1beta1` and `admissionregistration.k8s.io/v1beta1` were deprecated in Kubernetes `1.16` and will be removed  in Kubernetes `1.22`. If you use `apiextensions/v1` and `admissionregistration.k8s.io/v1` then you need to use `cert-manager.io/v1` which will be the API adopted per Kubebuilder CLI by default in this case.  
+Note that `apiextensions/v1beta1` and `admissionregistration.k8s.io/v1beta1` were deprecated in Kubernetes `1.16` and will be removed  in Kubernetes `1.22`. If you use `apiextensions/v1` and `admissionregistration.k8s.io/v1` then you need to use `cert-manager.io/v1` which will be the API adopted per Kubebuilder CLI by default in this case.
 
-The API `cert-manager.io/v1alpha2` is not compatible with the latest Kubernetes API versions. 
+The API `cert-manager.io/v1alpha2` is not compatible with the latest Kubernetes API versions.
 
 So, if you would like to keep using the previous version use the flag `--webhook-version=v1beta1` in the above command which is only needed if you want your operator to support Kubernetes `1.15` and earlier.
 
 </aside>
 
-Now, let's copy the webhook definition from `api/v1/<kind>_webhook.go` from our old project to the new one. 
+Now, let's copy the webhook definition from `api/v1/<kind>_webhook.go` from our old project to the new one.
 
 ## Others
 

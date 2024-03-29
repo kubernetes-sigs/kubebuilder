@@ -1,4 +1,4 @@
-# [Default Scaffold] Kustomize v2 
+# [Default Scaffold] Kustomize v2
 
 The kustomize plugin allows you to scaffold all kustomize manifests used to work with the language base plugin `base.go.kubebuilder.io/v4`.
 This plugin is used to generate the manifest under `config/` directory for the projects build within the go/v4 plugin (default scaffold).
@@ -44,7 +44,7 @@ import (
 	// Bundle plugin which built the golang projects scaffold by Kubebuilder go/v3
 	// The follow code is creating a new plugin with its name and version via composition
 	// You can define that one plugin is composite by 1 or Many others plugins
-	gov3Bundle, _ := plugin.NewBundle(plugin.WithName(golang.DefaultNameQualifier), 
+	gov3Bundle, _ := plugin.NewBundle(plugin.WithName(golang.DefaultNameQualifier),
 		plugin.WithVersion(plugin.Version{Number: 3}),
         plugin.WithPlugins(kustomizecommonv2.Plugin{}, golangv3.Plugin{}), // scaffold the config/ directory and all kustomize files
 		// Scaffold the Golang files and all that specific for the language e.g. go.mod, apis, controllers
