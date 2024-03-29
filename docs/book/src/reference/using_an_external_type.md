@@ -11,7 +11,7 @@ Currently, kubebuilder handles the first two, CRDs and Core Resources, seamlessl
 In order to use a Kubernetes Custom Resource that has been defined in another project
 you will need to have several items of information.
 * The Domain of the CR
-* The Group under the Domain 
+* The Group under the Domain
 * The Go import path of the CR Type definition
 * The Custom Resource Type you want to depend on.
 
@@ -114,7 +114,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(theirgroupv1alpha1.AddToScheme(scheme)) // this contains the external API types
 	//+kubebuilder:scaffold:scheme
-} 
+}
 ```
 
 ## Edit the Controller `SetupWithManager` function
@@ -169,7 +169,7 @@ go mod tidy
 
 ```
 make manifests
-``` 
+```
 
 ## Prepare for testing
 
@@ -216,7 +216,7 @@ var _ = BeforeSuite(func() {
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths:     []string{
-			// if you are using vendoring and rely on a kubebuilder based project, you can simply rely on the vendored config directory 
+			// if you are using vendoring and rely on a kubebuilder based project, you can simply rely on the vendored config directory
 			filepath.Join("..", "..", "..", "vendor", "github.com", "theiruser", "theirproject", "config", "crds"),
 			// otherwise you can simply download the CRD from any source and place it within the config/crd/bases directory,
 			filepath.Join("..", "..", "config", "crd", "bases"),
@@ -231,7 +231,7 @@ var _ = BeforeSuite(func() {
 		BinaryAssetsDirectory: filepath.Join("..", "..", "bin", "k8s",
 			fmt.Sprintf("1.28.3-%s-%s", runtime.GOOS, runtime.GOARCH)),
 	}
-	
+
 	var err error
 	// cfg is defined in this file globally.
 	cfg, err = testEnv.Start()

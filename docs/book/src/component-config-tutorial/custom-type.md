@@ -28,4 +28,4 @@ configurations, e.g. `ClusterName`, `Region` or anything serializable into
 updating your `main.go` to setup the new type for parsing.
 
 The rest of this tutorial will walk through implementing a custom component
-config type. 
+config type.
