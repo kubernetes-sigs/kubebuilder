@@ -243,6 +243,7 @@ go get YOUR_GO_PATH/test-operator/api@v1.0.0
 
 and then use it as explained in the guide.
 
+[basic-project-doc]: ./../cronjob-tutorial/basic-project.md
 [monorepo]: https://en.wikipedia.org/wiki/Monorepo
 [replace-directives]: https://go.dev/ref/mod#go-mod-file-replace
 [multi-module-repositories]: https://github.com/golang/go/wiki/Modules#faqs--multi-module-repositories
