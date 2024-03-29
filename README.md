@@ -52,7 +52,7 @@ Check out the Kubebuilder [book](https://book.kubebuilder.io).
 
 - Kubebuilder Book: [book.kubebuilder.io](https://book.kubebuilder.io)
 - GitHub Repo: [kubernetes-sigs/kubebuilder](https://github.com/kubernetes-sigs/kubebuilder)
-- Slack channel: [#kubebuilder](https://slack.k8s.io/#kubebuilder)
+- Slack channel: [#kubebuilder](https://kubernetes.slack.com/messages/#kubebuilder)
 - Google Group: [kubebuilder@googlegroups.com](https://groups.google.com/forum/#!forum/kubebuilder)
 - Design Documents: [designs](designs/)
 - Plugin: [plugins][plugin-section]
