@@ -13,3 +13,21 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
+package v1
+
+import (
+	. "github.com/onsi/ginkgo/v2"
+)
+
+var _ = Describe("CronJob Webhook", func() {
+
+	Context("When creating CronJob under Conversion Webhook", func() {
+		It("Should get the converted version of CronJob", func() {
+
+			// TODO(user): Add your logic here
+
+		})
+	})
+
+})

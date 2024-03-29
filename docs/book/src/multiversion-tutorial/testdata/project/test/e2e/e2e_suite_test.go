@@ -13,3 +13,20 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
+package e2e
+
+import (
+	"fmt"
+	"testing"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+)
+
+// Run e2e tests using the Ginkgo runner.
+func TestE2E(t *testing.T) {
+	RegisterFailHandler(Fail)
+	fmt.Fprintf(GinkgoWriter, "Starting project suite\n")
+	RunSpecs(t, "e2e suite")
+}
