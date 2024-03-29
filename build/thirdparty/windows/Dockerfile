@@ -21,7 +21,7 @@ FROM golang:1.21 as builder
 
 # Version and platform args.
 ARG KUBERNETES_VERSION
-ARG ETCD_VERSION=v3.5.11
+ARG ETCD_VERSION=v3.5.13
 ARG OS=windows
 ARG ARCH
 
