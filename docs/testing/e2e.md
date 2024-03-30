@@ -13,7 +13,7 @@ import (
     ......
 )
 
-// Specify kubeconfig file 
+// Specify kubeconfig file
 func getClientConfig() (*rest.Config, error) {
     return clientcmd.BuildConfigFromFlags("", path.Join(os.Getenv("HOME"), "<file-path>"))
 }
@@ -46,7 +46,7 @@ var _ = Describe("<some-controller-name> should work", func() {
 
     AfterEach(func() {
         // Delete all test-specific resources
-        ......		
+        ......
 
         // Delete all environment-specific resources
         ......
@@ -57,7 +57,7 @@ var _ = Describe("<some-controller-name> should work", func() {
     It("should do something", func() {
         testDoSomething(k8sClient, roClient)
     })
-    
+
     ......
 ```
 2.  Write some controller-specific e2e tests

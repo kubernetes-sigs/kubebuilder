@@ -45,7 +45,7 @@ const busyboxFinalizer = "example.com.testproject.org/finalizer"
 const (
 	// typeAvailableBusybox represents the status of the Deployment reconciliation
 	typeAvailableBusybox = "Available"
-	// typeDegradedBusybox represents the status used when the custom resource is deleted and the finalizer operations are must to occur.
+	// typeDegradedBusybox represents the status used when the custom resource is deleted and the finalizer operations are yet to occur.
 	typeDegradedBusybox = "Degraded"
 )
 
@@ -77,7 +77,7 @@ type BusyboxReconciler struct {
 // For further info:
 // - About Operator Pattern: https://kubernetes.io/docs/concepts/extend-kubernetes/operator/
 // - About Controllers: https://kubernetes.io/docs/concepts/architecture/controller/
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.17.0/pkg/reconcile
+// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.17.2/pkg/reconcile
 func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 
@@ -88,7 +88,7 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	err := r.Get(ctx, req.NamespacedName, busybox)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			// If the custom resource is not found then, it usually means that it was deleted or not created
+			// If the custom resource is not found then it usually means that it was deleted or not created
 			// In this way, we will stop the reconciliation
 			log.Info("busybox resource not found. Ignoring since object must be deleted")
 			return ctrl.Result{}, nil
@@ -98,7 +98,7 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, err
 	}
 
-	// Let's just set the status as Unknown when no status are available
+	// Let's just set the status as Unknown when no status is available
 	if busybox.Status.Conditions == nil || len(busybox.Status.Conditions) == 0 {
 		meta.SetStatusCondition(&busybox.Status.Conditions, metav1.Condition{Type: typeAvailableBusybox, Status: metav1.ConditionUnknown, Reason: "Reconciling", Message: "Starting reconciliation"})
 		if err = r.Status().Update(ctx, busybox); err != nil {
@@ -106,9 +106,9 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			return ctrl.Result{}, err
 		}
 
-		// Let's re-fetch the busybox Custom Resource after update the status
+		// Let's re-fetch the busybox Custom Resource after updating the status
 		// so that we have the latest state of the resource on the cluster and we will avoid
-		// raise the issue "the object has been modified, please apply
+		// raising the error "the object has been modified, please apply
 		// your changes to the latest version and try again" which would re-trigger the reconciliation
 		// if we try to update it again in the following operations
 		if err := r.Get(ctx, req.NamespacedName, busybox); err != nil {
@@ -118,7 +118,7 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	// Let's add a finalizer. Then, we can define some operations which should
-	// occurs before the custom resource to be deleted.
+	// occur before the custom resource is deleted.
 	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers
 	if !controllerutil.ContainsFinalizer(busybox, busyboxFinalizer) {
 		log.Info("Adding Finalizer for Busybox")
@@ -140,7 +140,7 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		if controllerutil.ContainsFinalizer(busybox, busyboxFinalizer) {
 			log.Info("Performing Finalizer Operations for Busybox before delete CR")
 
-			// Let's add here an status "Downgrade" to define that this resource begin its process to be terminated.
+			// Let's add here a status "Downgrade" to reflect that this resource began its process to be terminated.
 			meta.SetStatusCondition(&busybox.Status.Conditions, metav1.Condition{Type: typeDegradedBusybox,
 				Status: metav1.ConditionUnknown, Reason: "Finalizing",
 				Message: fmt.Sprintf("Performing finalizer operations for the custom resource: %s ", busybox.Name)})
@@ -150,7 +150,7 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				return ctrl.Result{}, err
 			}
 
-			// Perform all operations required before remove the finalizer and allow
+			// Perform all operations required before removing the finalizer and allow
 			// the Kubernetes API to remove the custom resource.
 			r.doFinalizerOperationsForBusybox(busybox)
 
@@ -158,9 +158,9 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			// then you need to ensure that all worked fine before deleting and updating the Downgrade status
 			// otherwise, you should requeue here.
 
-			// Re-fetch the busybox Custom Resource before update the status
+			// Re-fetch the busybox Custom Resource before updating the status
 			// so that we have the latest state of the resource on the cluster and we will avoid
-			// raise the issue "the object has been modified, please apply
+			// raising the error "the object has been modified, please apply
 			// your changes to the latest version and try again" which would re-trigger the reconciliation
 			if err := r.Get(ctx, req.NamespacedName, busybox); err != nil {
 				log.Error(err, "Failed to re-fetch busybox")
@@ -230,8 +230,8 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, err
 	}
 
-	// The CRD API is defining that the Busybox type, have a BusyboxSpec.Size field
-	// to set the quantity of Deployment instances is the desired state on the cluster.
+	// The CRD API defines that the Busybox type have a BusyboxSpec.Size field
+	// to set the quantity of Deployment instances to the desired state on the cluster.
 	// Therefore, the following code will ensure the Deployment size is the same as defined
 	// via the Size spec of the Custom Resource which we are reconciling.
 	size := busybox.Spec.Size
@@ -241,9 +241,9 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			log.Error(err, "Failed to update Deployment",
 				"Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
 
-			// Re-fetch the busybox Custom Resource before update the status
+			// Re-fetch the busybox Custom Resource before updating the status
 			// so that we have the latest state of the resource on the cluster and we will avoid
-			// raise the issue "the object has been modified, please apply
+			// raising the error "the object has been modified, please apply
 			// your changes to the latest version and try again" which would re-trigger the reconciliation
 			if err := r.Get(ctx, req.NamespacedName, busybox); err != nil {
 				log.Error(err, "Failed to re-fetch busybox")
@@ -289,9 +289,9 @@ func (r *BusyboxReconciler) doFinalizerOperationsForBusybox(cr *examplecomv1alph
 	// of finalizers include performing backups and deleting
 	// resources that are not owned by this CR, like a PVC.
 
-	// Note: It is not recommended to use finalizers with the purpose of delete resources which are
+	// Note: It is not recommended to use finalizers with the purpose of deleting resources which are
 	// created and managed in the reconciliation. These ones, such as the Deployment created on this reconcile,
-	// are defined as depended of the custom resource. See that we use the method ctrl.SetControllerReference.
+	// are defined as dependent of the custom resource. See that we use the method ctrl.SetControllerReference.
 	// to set the ownerRef which means that the Deployment will be deleted by the Kubernetes API.
 	// More info: https://kubernetes.io/docs/tasks/administer-cluster/use-cascading-deletion/
 
@@ -403,11 +403,9 @@ func labelsForBusybox(name string) map[string]string {
 	if err == nil {
 		imageTag = strings.Split(image, ":")[1]
 	}
-	return map[string]string{"app.kubernetes.io/name": "Busybox",
-		"app.kubernetes.io/instance":   name,
+	return map[string]string{"app.kubernetes.io/name": "project-v4-with-deploy-image",
 		"app.kubernetes.io/version":    imageTag,
-		"app.kubernetes.io/part-of":    "project-v4-with-deploy-image",
-		"app.kubernetes.io/created-by": "controller-manager",
+		"app.kubernetes.io/managed-by": "BusyboxController",
 	}
 }
 

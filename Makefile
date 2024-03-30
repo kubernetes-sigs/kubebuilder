@@ -66,6 +66,12 @@ install: build ## Build and install the binary with the current source code. Use
 .PHONY: generate
 generate: generate-testdata generate-docs ## Update/generate all mock data. You should run this commands to update the mock data after your changes.
 	go mod tidy
+	remove-spaces
+
+.PHONY: remove-spaces
+remove-spaces:
+	@echo "Removing trailing spaces"
+	@find . -type f -name "*.md" -exec sed -i '' 's/[[:space:]]*$$//' {} +
 
 .PHONY: generate-testdata
 generate-testdata: ## Update/generate the testdata in $GOPATH/src/sigs.k8s.io/kubebuilder
@@ -160,3 +166,7 @@ test-book: ## Run the cronjob tutorial's unit tests to make sure we don't break 
 .PHONY: test-license
 test-license:  ## Run the license check
 	./test/check-license.sh
+
+.PHONY: test-spaces
+test-spaces:  ## Run the trailing spaces check
+	./test/check_spaces.sh

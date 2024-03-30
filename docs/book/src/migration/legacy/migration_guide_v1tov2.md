@@ -10,7 +10,7 @@ The recommended way to migrate a v1 project is to create a new v2 project and
 copy over the API and the reconciliation code. The conversion will end up with a
 project that looks like a native v2 project. However, in some cases, it's
 possible to do an in-place upgrade (i.e. reuse the v1 project layout, upgrading
-controller-runtime and controller-tools.  
+controller-runtime and controller-tools.
 
 Let's take as example an V1 project and migrate it to Kubebuilder
 v2. At the end, we should have something that looks like the

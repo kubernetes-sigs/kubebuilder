@@ -21,47 +21,62 @@ import (
 
 	componentconfig "sigs.k8s.io/kubebuilder/v3/hack/docs/internal/component-config-tutorial"
 	cronjob "sigs.k8s.io/kubebuilder/v3/hack/docs/internal/cronjob-tutorial"
+	gettingstarted "sigs.k8s.io/kubebuilder/v3/hack/docs/internal/getting-started"
 )
 
 // Make sure executing `build_kb` to generate kb executable from the source code
 const KubebuilderBinName = "/tmp/kubebuilder/bin/kubebuilder"
 
+type tutorial_generator interface {
+	Prepare()
+	GenerateSampleProject()
+	UpdateTutorial()
+	CodeGen()
+}
+
 func main() {
+	type generator func()
+
+	// TODO: Generate multiversion-tutorial
+	tutorials := map[string]generator{
+		"component-config": UpdateComponentConfigTutorial,
+		"cronjob":          UpdateCronjobTutorial,
+		"getting-started":  UpdateGettingStarted,
+	}
+
 	log.SetFormatter(&log.TextFormatter{DisableTimestamp: true})
 	log.Println("Generating documents...")
 
-	log.Println("Generating component-config tutorial...")
-	UpdateComponentConfigTutorial()
+	for tutorial, updater := range tutorials {
+		log.Printf("Generating %s tutorial\n", tutorial)
+		updater()
+	}
+}
 
-	log.Println("Generating cronjob tutorial...")
-	UpdateCronjobTutorial()
-	// TODO: Generate multiversion-tutorial
+func updateTutorial(generator tutorial_generator) {
+	generator.Prepare()
+
+	generator.GenerateSampleProject()
+
+	generator.UpdateTutorial()
+
+	generator.CodeGen()
 }
 
 func UpdateComponentConfigTutorial() {
-	binaryPath := KubebuilderBinName
 	samplePath := "docs/book/src/component-config-tutorial/testdata/project/"
-
-	sp := componentconfig.NewSample(binaryPath, samplePath)
-
-	sp.Prepare()
-
-	sp.GenerateSampleProject()
-
-	sp.UpdateTutorial()
-
-	sp.CodeGen()
+	sp := componentconfig.NewSample(KubebuilderBinName, samplePath)
+	updateTutorial(&sp)
 }
 
 func UpdateCronjobTutorial() {
-	binaryPath := KubebuilderBinName
 	samplePath := "docs/book/src/cronjob-tutorial/testdata/project/"
+	sp := cronjob.NewSample(KubebuilderBinName, samplePath)
+	updateTutorial(&sp)
+}
 
-	sp := cronjob.NewSample(binaryPath, samplePath)
-
-	sp.Prepare()
-
-	sp.GenerateSampleProject()
-
-	sp.UpdateTutorial()
+func UpdateGettingStarted() {
+	samplePath := "docs/book/src/getting-started/testdata/project/"
+	sp := gettingstarted.NewSample(KubebuilderBinName, samplePath)
+	updateTutorial(&sp)
 }

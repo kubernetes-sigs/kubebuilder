@@ -14,9 +14,9 @@ project that looks like a native go/v4 project layout (latest version).
 <h1>Your Upgrade Assistant: The `alpha generate` command</h1>
 
 To upgrade your project you might want to use the command `kubebuilder alpha generate [OPTIONS]`.
-This command will re-scaffold the project using the current Kubebuilder version. 
-You can run `kubebuilder alpha generate --plugins=go/v4` to regenerate your project using `go/v4` 
-based in your [PROJECT][project-file] file config. 
+This command will re-scaffold the project using the current Kubebuilder version.
+You can run `kubebuilder alpha generate --plugins=go/v4` to regenerate your project using `go/v4`
+based in your [PROJECT][project-file] file config.
 
 </aside>
 
@@ -133,7 +133,7 @@ the new version go/v4 uses Kustomize v5x and no longer Kustomize v4. Therefore, 
 implementations in the config you need to ensure that them can work with Kustomize v5 and/if not
 update/upgrade any breaking change that you might face.
 
-In v4, installation of Kustomize has been changed from bash script to `go get`. Change the `kustomize` dependency in Makefile to 
+In v4, installation of Kustomize has been changed from bash script to `go get`. Change the `kustomize` dependency in Makefile to
 ```
 .PHONY: kustomize
 kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary. If wrong version is installed, it will be removed before downloading.

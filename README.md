@@ -23,10 +23,10 @@ Kubebuilder is developed on top of the [controller-runtime][controller-runtime] 
 ### Kubebuilder is also a library
 
 Kubebuilder is extensible and can be used as a library in other projects.
-[Operator-SDK][operator-sdk] is a good example of a project that uses Kubebuilder as a library. 
+[Operator-SDK][operator-sdk] is a good example of a project that uses Kubebuilder as a library.
 [Operator-SDK][operator-sdk] uses the plugin feature to include non-Go operators _e.g. operator-sdk's Ansible and Helm-based language Operators_.
 
-To learn more see [how to create your own plugins][your-own-plugins]. 
+To learn more see [how to create your own plugins][your-own-plugins].
 
 ### Installation
 
@@ -39,9 +39,9 @@ See the [Getting Started](https://book.kubebuilder.io/quick-start.html) document
 
 ![Quick Start](docs/gif/kb-demo.v3.11.1.svg)
 
-Also, ensure that you check out the [Deploy Image](https://book.kubebuilder.io/plugins/deploy-image-plugin-v1-alpha.html) 
-Plugin. This plugin allows users to scaffold API/Controllers to deploy and manage an 
-Operand (image) on the cluster following the guidelines and best practices. It abstracts the 
+Also, ensure that you check out the [Deploy Image](https://book.kubebuilder.io/plugins/deploy-image-plugin-v1-alpha.html)
+Plugin. This plugin allows users to scaffold API/Controllers to deploy and manage an
+Operand (image) on the cluster following the guidelines and best practices. It abstracts the
 complexities of achieving this goal while allowing users to customize the generated code.
 
 ## Documentation
@@ -52,7 +52,7 @@ Check out the Kubebuilder [book](https://book.kubebuilder.io).
 
 - Kubebuilder Book: [book.kubebuilder.io](https://book.kubebuilder.io)
 - GitHub Repo: [kubernetes-sigs/kubebuilder](https://github.com/kubernetes-sigs/kubebuilder)
-- Slack channel: [#kubebuilder](https://slack.k8s.io/#kubebuilder)
+- Slack channel: [#kubebuilder](https://kubernetes.slack.com/messages/#kubebuilder)
 - Google Group: [kubebuilder@googlegroups.com](https://groups.google.com/forum/#!forum/kubebuilder)
 - Design Documents: [designs](designs/)
 - Plugin: [plugins][plugin-section]
@@ -121,8 +121,8 @@ Before starting any work, please either comment on an existing issue, or file a 
 
 ## Supportability
 
-Currently, Kubebuilder officially supports OSX and Linux platforms. 
-So, if you are using a Windows OS you may find issues. Contributions towards 
+Currently, Kubebuilder officially supports OSX and Linux platforms.
+So, if you are using a Windows OS you may find issues. Contributions towards
 supporting Windows are welcome.
 
 ### Apple Silicon
@@ -130,9 +130,9 @@ supporting Windows are welcome.
 Apple Silicon (`darwin/arm64`) support begins with the `go/v4` plugin.
 
 ## Community Meetings
- 
+
 The following meetings happen biweekly:
-  
+
 - Kubebuilder Meeting
 
 You are more than welcome to attend. For further info join to [kubebuilder@googlegroups.com](https://groups.google.com/g/kubebuilder).

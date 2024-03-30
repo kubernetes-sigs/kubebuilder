@@ -13,7 +13,7 @@ Please, be aware that it will force Kubebuilder remove this option soon in futur
 </aside>
 
 Now that you have a component config base project we need to customize the
-values that are passed into the controller, to do this we can take a look at 
+values that are passed into the controller, to do this we can take a look at
 `config/manager/controller_manager_config.yaml`.
 
 {{#literatego ./testdata/controller_manager_config.yaml}}

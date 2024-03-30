@@ -9,7 +9,7 @@ Tutorial](/multiversion-tutorial/tutorial.md) to learn how to add new API
 versions to a project.
 
 Additionally, you can try the following steps on your own -- we'll have
-a tutorial section on them Soon™: 
+a tutorial section on them Soon™:
 
 - adding [additional printer columns][printer-columns] `kubectl get`
 

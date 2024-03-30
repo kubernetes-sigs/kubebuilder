@@ -12,7 +12,7 @@ Please, be aware that it will force Kubebuilder remove this option soon in futur
 
 </aside>
 
-Now that you have a custom component config we change the 
+Now that you have a custom component config we change the
 `config/manager/controller_manager_config.yaml` to use the new GVK you defined.
 
 {{#literatego ./testdata/project/config/manager/controller_manager_config.yaml}}

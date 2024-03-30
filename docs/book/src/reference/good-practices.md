@@ -4,11 +4,11 @@
 
 When you create a project using Kubebuilder, see the scaffolded code generated under `cmd/main.go`. This code initializes a [Manager][controller-runtime-manager], and the project relies on the [controller-runtime][controller-runtime] framework. The Manager manages [Controllers][controllers], which offer a reconcile function that synchronizes resources until the desired state is achieved within the cluster.
 
-Reconciliation is an ongoing loop that executes necessary operations to maintain the desired state, adhering to Kubernetes principles, such as the [control loop][k8s-control-loop]. For further information, check out the [Operator patterns][k8s-operator-pattern] documentation from Kubernetes to better understand those concepts. 
+Reconciliation is an ongoing loop that executes necessary operations to maintain the desired state, adhering to Kubernetes principles, such as the [control loop][k8s-control-loop]. For further information, check out the [Operator patterns][k8s-operator-pattern] documentation from Kubernetes to better understand those concepts.
 
 ## Why should reconciliations be idempotent?
 
-When developing operators, the controller’s reconciliation loop needs to be idempotent. By following the [Operator pattern][operator-pattern] we create [controllers][controllers] that provide a reconcile function responsible for synchronizing resources until the desired state is reached on the cluster. Developing idempotent solutions will allow the reconciler to correctly respond to generic or unexpected events, easily deal with application startup or upgrade. More explanation on this is available [here][controller-runtime-topic]. 
+When developing operators, the controller’s reconciliation loop needs to be idempotent. By following the [Operator pattern][operator-pattern] we create [controllers][controllers] that provide a reconcile function responsible for synchronizing resources until the desired state is reached on the cluster. Developing idempotent solutions will allow the reconciler to correctly respond to generic or unexpected events, easily deal with application startup or upgrade. More explanation on this is available [here][controller-runtime-topic].
 
 Writing reconciliation logic according to specific events, breaks the recommendation of operator pattern and goes against the design principles of [controller-runtime][controller-runtime]. This may lead to unforeseen consequences, such as resources becoming stuck and requiring manual intervention.
 
@@ -47,7 +47,7 @@ In conclusion, while it might seem efficient to have a single controller manage 
 
 ## Why is it recommended to avoid a scenario where multiple controllers are updating the same Custom Resource (CR)?
 
-Managing a single Custom Resource (CR) with multiple controllers can lead to several challenges: 
+Managing a single Custom Resource (CR) with multiple controllers can lead to several challenges:
 - **Race conditions**: When multiple controllers attempt to reconcile the same CR concurrently, race conditions can emerge. These conditions can produce inconsistent or unpredictable outcomes. For example, if we try to update the CR to add a status condition, we may encounter a range of errors such as “the object has been modified; please apply your changes to the latest version and try again”, triggering a repetitive reconciliation process.
 - **Concurrency issues**: When controllers have different interpretations of the CR’s state, they may constantly overwrite each other’s changes. This conflict can create a loop, with the controllers ceaselessly disputing the CR’s state.
 - **Maintenance and support difficulties**: Coordinating the logic for multiple controllers operating on the same CR can increase system complexity, making it more challenging to understand or troubleshoot. Typically, a system’s behavior is easier to comprehend when each CR is managed by a single controller.
@@ -71,7 +71,7 @@ We recommend you manage your solutions using Status Conditionals following the [
 Check out the [Deploy Image Plugin][deploy-image]. This plugin allows users to scaffold API/Controllers to deploy and manage an Operand (image) on the cluster following the guidelines and best practices. It abstracts the
 complexities of achieving this goal while allowing users to customize the generated code.
 
-Therefore, you can check an example of Status Conditional usage by looking at its API(s) scaffolded and code implemented under the Reconciliation into its Controllers. 
+Therefore, you can check an example of Status Conditional usage by looking at its API(s) scaffolded and code implemented under the Reconciliation into its Controllers.
 
 </aside>
 

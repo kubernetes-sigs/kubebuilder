@@ -129,7 +129,7 @@ Example `PROJECT` file:
 ```yaml
 version: "3"
 domain: testproject.org
-layout: 
+layout:
 - go.kubebuilder.io/v3
 - myexternalplugin/v2
 plugins:
@@ -278,7 +278,7 @@ What happens when the above is invoked?
 `PluginRequest JSON`:
 
 ```JSON
-{ 
+{
   "command":"init",
   "args":["--domain","example.com"],
   "universe":{}
