@@ -60,7 +60,7 @@ type realClock struct{}
 
 func (_ realClock) Now() time.Time { return time.Now() }
 
-// clock knows how to get the current time.
+// Clock knows how to get the current time.
 // It can be used to fake out timing for testing.
 type Clock interface {
 	Now() time.Time
@@ -95,7 +95,7 @@ var (
 // the user.
 //
 // For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.17.0/pkg/reconcile
+// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.17.2/pkg/reconcile
 func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 

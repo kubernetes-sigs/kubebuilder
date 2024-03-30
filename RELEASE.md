@@ -25,14 +25,14 @@ process was done to ensure that we have an aligned process under the org (simila
 > **Note**
 > - You will need to have checkout locally from the remote repository the previous branch
 > - Also, ensure that you fetch all tags from the remote `git fetch --all --tags`
-> - Also, if you face issues to generate the release notes you might want to able to sort it out by running i.e.: 
+> - Also, if you face issues to generate the release notes you might want to able to sort it out by running i.e.:
 > `go run sigs.k8s.io/kubebuilder-release-tools/notes --use-upstream=false --from=v3.11.0 --branch=release-X`
 
 
 ### Draft a new release from GitHub
 
 1. Create a new tag with the correct version from the new `release-<MAJOR.MINOR>` branch
-2. Verify the Release Github Action. It should build the assets and publish in the draft release 
+2. Verify the Release Github Action. It should build the assets and publish in the draft release
 3. You also need to manually add the changelog generated above on the release page and publish it. Now, the code source is released !
 
 ### Update the website docs (https://book.kubebuilder.io/quick-start.html)
@@ -75,7 +75,7 @@ This action will caall the job [./build/.goreleaser.yml](./build/.goreleaser.yml
 Kubebuilder projects requires artifacts which are used to do test with ENV TEST (when we call `make test` target)
 These artifacts can be checked in the service page: https://storage.googleapis.com/kubebuilder-tools
 
-The build is made from the branch [tools-releases](https://github.com/kubernetes-sigs/kubebuilder/tree/tools-releases) and the trigger will call the `build/cloudbuild_tools.yaml` passing 
+The build is made from the branch [tools-releases](https://github.com/kubernetes-sigs/kubebuilder/tree/tools-releases) and the trigger will call the `build/cloudbuild_tools.yaml` passing
 as argument the architecture and the SO that should be used, e.g:
 
 <img width="553" alt="Screenshot 2022-04-30 at 10 15 41" src="https://user-images.githubusercontent.com/7708031/166099666-ae9cd2df-73fe-47f6-a987-464f63df9a19.png">
@@ -91,7 +91,7 @@ These images are can be checked in the consolse, see [here](https://console.clou
 
 The project `kube-rbac-proxy` is in the process to be donated to the k8s org. However, it is going on for a long time and then,
 we have no ETA for that to occur. When that occurs we can automate this process. But until there we need to generate these images
-by bumping the versions/tags released by `kube-rbac-proxy` on the branch 
+by bumping the versions/tags released by `kube-rbac-proxy` on the branch
 [kube-rbac-proxy-releases](https://github.com/kubernetes-sigs/kubebuilder/tree/kube-rbac-proxy-releases)
 then the `build/cloudbuild_kube-rbac-proxy.yaml` will generate the images.
 
@@ -118,8 +118,8 @@ and not the image, see:
         github_token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-However, the image should still be built and maintained since other projects under the org might be using them. 
+However, the image should still be built and maintained since other projects under the org might be using them.
 
 [kubebuilder-release-tools]: https://github.com/kubernetes-sigs/kubebuilder-release-tools
 [release-notes-generation]: https://github.com/kubernetes-sigs/kubebuilder-release-tools/blob/master/README.md#release-notes-generation
-[release-process]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/VERSIONING.md#releasing 
+[release-process]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/VERSIONING.md#releasing

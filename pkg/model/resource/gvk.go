@@ -18,15 +18,22 @@ package resource
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/internal/validation"
 )
 
 const (
+	versionPattern = "^v\\d+(?:alpha\\d+|beta\\d+)?$"
+
 	groupRequired   = "group cannot be empty if the domain is empty"
 	versionRequired = "version cannot be empty"
 	kindRequired    = "kind cannot be empty"
+)
+
+var (
+	versionRegex = regexp.MustCompile(versionPattern)
 )
 
 // GVK stores the Group - Version - Kind triplet that uniquely identifies a resource.
@@ -53,9 +60,8 @@ func (gvk GVK) Validate() error {
 	if gvk.Version == "" {
 		return fmt.Errorf(versionRequired)
 	}
-	if err := validation.IsDNS1035Label(gvk.Version); err != nil {
-		// NOTE: IsDNS1035Label returns a slice of strings instead of an error, so no wrapping
-		return fmt.Errorf("invalid Version: %#v", err)
+	if !versionRegex.MatchString(gvk.Version) {
+		return fmt.Errorf("Version must match %s (was %s)", versionPattern, gvk.Version)
 	}
 
 	// Check if kind has a valid DNS1035 label value

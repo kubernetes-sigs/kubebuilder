@@ -31,10 +31,12 @@
   - [completion](completion.md)
   - [Artifacts](artifacts.md)
   - [Platform Support](platform.md)
-  - [Writing controller tests](writing-tests.md)
-  - [Metrics](metrics.md)
 
+  - [Sub-Module Layouts](submodule-layouts.md)
+  - [Using an external Type / API](using_an_external_type.md)
+
+  - [Metrics](metrics.md)
       - [Reference](metrics-reference.md)
 
   - [Makefile Helpers](makefile-helpers.md)
-  - [CLI plugins](../plugins/cli-plugins.md)
+  - [CLI plugins](../plugins/plugins.md)

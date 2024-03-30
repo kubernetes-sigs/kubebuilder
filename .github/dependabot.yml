@@ -22,6 +22,8 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    commit-message:
+      prefix: ":seedling:"
     labels:
       - "ok-to-test"
 
@@ -31,26 +33,36 @@ updates:
     target-branch: "tools-releases"
     schedule:
       interval: daily
+    commit-message:
+      prefix: ":seedling:"
   - package-ecosystem: docker
     directory: "/build/thirdparty/linux"
     target-branch: "tools-releases"
     schedule:
       interval: "weekly"
+    commit-message:
+      prefix: ":seedling:"
 
   # Maintain dependencies for dockerfile scaffold in the projects
   - package-ecosystem: docker
     directory: "testdata/project-v3"
     schedule:
       interval: daily
+    commit-message:
+      prefix: ":seedling:"
   - package-ecosystem: docker
     directory: "testdata/project-v4"
     schedule:
       interval: "weekly"
+    commit-message:
+      prefix: ":seedling:"
 
   # Maintain dependencies for go in external plugin sample
   - package-ecosystem: "gomod"
     directory: "docs/book/src/simple-external-plugin-tutorial/testdata/sampleexternalplugin/v1"
     schedule:
       interval: "weekly"
+    commit-message:
+      prefix: ":seedling:"
     labels:
       - "ok-to-test"

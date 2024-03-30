@@ -1,4 +1,5 @@
 /*
+
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -27,7 +28,7 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/conversion"
 
-	"tutorial.kubebuilder.io/project/api/v1"
+	v1 "tutorial.kubebuilder.io/project/api/v1"
 )
 
 // +kubebuilder:docs-gen:collapse=Imports

@@ -1,6 +1,6 @@
 # Deployment and Testing
 
-Before we can test out our conversion, we'll need to enable them conversion in our CRD:
+Before we can test out our conversion, we'll need to enable them in our CRD:
 
 Kubebuilder generates Kubernetes manifests under the `config` directory with webhook
 bits disabled. To enable them, we need to:

@@ -56,11 +56,15 @@ func (f *Makefile) SetTemplateDefaults() error {
 		f.Image = "controller:latest"
 	}
 
-	// TODO: Looking for ways to tag the controller-runtime
-	// release using tag versions. Note that we cannot
-	// relay upon the branch since we cannot ensure that
-	// it will be generated for all releases. We must be
-	// able to use the tag.
+	// TODO: Current workaround for setup-envtest compatibility
+	// Due to past instances where controller-runtime maintainers released
+	// versions without corresponding branches, directly relying on branches
+	// poses a risk of breaking the Kubebuilder chain. Such practices may
+	// change over time, potentially leading to compatibility issues. This
+	// approach, although not ideal, remains the best solution for ensuring
+	// compatibility with controller-runtime releases as of now. For more
+	// details on the quest for a more robust solution, refer to the issue
+	// raised in the controller-runtime repository: https://github.com/kubernetes-sigs/controller-runtime/issues/2744
 	if f.EnvtestVersion == "" {
 		f.EnvtestVersion = "latest"
 	}
@@ -68,8 +72,7 @@ func (f *Makefile) SetTemplateDefaults() error {
 }
 
 //nolint:lll
-const makefileTemplate = `
-# Image URL to use all building/pushing image targets
+const makefileTemplate = `# Image URL to use all building/pushing image targets
 IMG ?= {{ .Image }}
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.29.0
@@ -192,12 +195,8 @@ docker-buildx: ## Build and push docker image for the manager for cross-platform
 .PHONY: build-installer
 build-installer: manifests generate kustomize ## Generate a consolidated YAML with CRDs and deployment.
 	mkdir -p dist
-	@if [ -d "config/crd" ]; then \
-		$(KUSTOMIZE) build config/crd > dist/install.yaml; \
-	fi
-	echo "---" >> dist/install.yaml  # Add a document separator before appending
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
-	$(KUSTOMIZE) build config/default >> dist/install.yaml
+	$(KUSTOMIZE) build config/default > dist/install.yaml
 
 ##@ Deployment
 
