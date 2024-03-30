@@ -116,15 +116,7 @@ function scaffold_test_project {
   fi
   
   make generate manifests
-  # TODO fix the error with multigroup layout and allow it be generated
-  # with this one.
-  # Error: trouble configuring builtin PatchTransformer with config: `
-  # path: patches/webhook_in_sea-creatures_krakens.yaml
-  # `: failed to get the patch file from path(patches/webhook_in_sea-creatures_krakens.yaml): evalsymlink failure on '/Users/camiladeomacedo/go/src/sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/config/crd/patches/webhook_in_sea-creatures_krakens.yaml' : lstat go/src/sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/config/crd/patches/webhook_in_sea-creatures_krakens.yaml: no such file or directory
-  if [[ $project =~ v4 && ! $project =~ multigroup ]]; then
-    make build-installer
-  fi
-
+  
   rm -f go.sum
   go mod tidy
   popd
