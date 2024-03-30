@@ -1,12 +1,12 @@
 # Platforms Supported
 
-Kubebuilder produces solutions that by default can work on multiple platforms or specific ones, depending on how you 
+Kubebuilder produces solutions that by default can work on multiple platforms or specific ones, depending on how you
 build and configure your workloads. This guide aims to help you properly configure your projects according to your needs.
 
 ## Overview
 
-To provide support on specific or multiple platforms, you must ensure that all images used in workloads are built to 
-support the desired platforms. Note that they may not be the same as the platform where you develop your solutions and use KubeBuilder, but instead the platform(s) where your solution should run and be distributed. 
+To provide support on specific or multiple platforms, you must ensure that all images used in workloads are built to
+support the desired platforms. Note that they may not be the same as the platform where you develop your solutions and use KubeBuilder, but instead the platform(s) where your solution should run and be distributed.
 It is recommended to build solutions that work on multiple platforms so that your project works
 on any Kubernetes cluster regardless of the underlying operating system and architecture.
 
@@ -16,8 +16,8 @@ The following covers what you need to do to provide the support for one or more 
 
 ### 1) Build workload images to provide the support for other platform(s)
 
-The images used in workloads such as in your Pods/Deployments will need to provide the support for this other platform. 
-You can inspect the images using a ManifestList of supported platforms using the command 
+The images used in workloads such as in your Pods/Deployments will need to provide the support for this other platform.
+You can inspect the images using a ManifestList of supported platforms using the command
 [docker manifest inspect <image>][docker-manifest], i.e.:
 
 ```shell
@@ -68,8 +68,8 @@ $ docker manifest inspect myresgystry/example/myimage:v0.0.1
 
 ### 2) (Recommended as a Best Practice) Ensure that node affinity expressions are set to match the supported platforms
 
-Kubernetes provides a mechanism called [nodeAffinity][node-affinity] which can be used to limit the possible node 
-targets where a pod can be scheduled. This is especially important to ensure correct scheduling behavior in clusters 
+Kubernetes provides a mechanism called [nodeAffinity][node-affinity] which can be used to limit the possible node
+targets where a pod can be scheduled. This is especially important to ensure correct scheduling behavior in clusters
 with nodes that span across multiple platforms (i.e. heterogeneous clusters).
 
 **Kubernetes manifest example**
@@ -95,7 +95,7 @@ affinity:
 
 **Golang Example**
 
-```go 
+```go
 Template: corev1.PodTemplateSpec{
     ...
     Spec: corev1.PodSpec{
@@ -133,7 +133,7 @@ Template: corev1.PodTemplateSpec{
 <aside class="note">
 <h1> Example(s) </h1>
 
-You can look for some code examples by checking the code which is generated via the Deploy 
+You can look for some code examples by checking the code which is generated via the Deploy
 Image plugin. ([More info](../plugins/deploy-image-plugin-v1-alpha.md))
 
 </aside>
@@ -149,7 +149,7 @@ See that projects scaffold with the latest versions of Kubebuilder have the Make
 $ make docker-buildx IMG=myregistry/myoperator:v0.0.1
 ```
 
-Note that you need to ensure that all images and workloads required and used by your project will provide the same 
+Note that you need to ensure that all images and workloads required and used by your project will provide the same
 support as recommended above, and that you properly configure the [nodeAffinity][node-affinity] for all your workloads.
 Therefore, ensure that you uncomment the following code in the `config/manager/manager.yaml` file
 
@@ -180,17 +180,17 @@ Therefore, ensure that you uncomment the following code in the `config/manager/m
 <h1>Building images for releases</h1>
 
 
-You will probably want to automate the releases of your projects to ensure that the images are always built for the 
+You will probably want to automate the releases of your projects to ensure that the images are always built for the
 same platforms. Note that Goreleaser also supports [docker buildx][buildx]. See its [documentation][goreleaser-buildx] for more detail.
 
-Also, you may want to configure GitHub Actions, Prow jobs, or any other solution that you use to build images to 
-provide multi-platform support. Note that you can also use other options like `docker manifest create` to customize 
+Also, you may want to configure GitHub Actions, Prow jobs, or any other solution that you use to build images to
+provide multi-platform support. Note that you can also use other options like `docker manifest create` to customize
 your solutions to achieve the same goals with other tools.
 
 By using Docker and the target provided by default you should NOT change the Dockerfile to use
 any specific GOOS and GOARCH to build the manager binary. However, if you are looking for to
 customize the default scaffold and create your own implementations you might want to give
-a look in the Golang [doc](https://go.dev/doc/install/source#environment) to knows 
+a look in the Golang [doc](https://go.dev/doc/install/source#environment) to knows
 its available options.
 
 </aside>
@@ -201,12 +201,12 @@ Projects created with the Kubebuilder CLI have two workloads which are:
 
 ### Manager
 
-The container to run the manager implementation is configured in the `config/manager/manager.yaml` file. 
+The container to run the manager implementation is configured in the `config/manager/manager.yaml` file.
 This image is built with the Dockerfile file scaffolded by default and contains the binary of the project \
 which will be built via the command `go build -a -o manager main.go`.
 
-Note that when you run `make docker-build` OR `make docker-build IMG=myregistry/myprojectname:<tag>` 
-an image will be built from the client host (local environment) and produce an image for 
+Note that when you run `make docker-build` OR `make docker-build IMG=myregistry/myprojectname:<tag>`
+an image will be built from the client host (local environment) and produce an image for
 the client os/arch, which is commonly linux/amd64 or linux/arm64.
 
 <aside class="note">
@@ -220,14 +220,14 @@ end up labeled with ` kubernetes.io/os=linux`
 
 ### Kube RBAC Proxy
 
-A workload will be created to run the image [gcr.io/kubebuilder/kube-rbac-proxy:<tag>][proxy-images] which is 
-configured in the `config/default/manager_auth_proxy_patch.yaml` manifest. It is a side-car proxy whose purpose 
-is to protect the manager from malicious attacks. You can learn more about its motivations by looking at 
+A workload will be created to run the image [gcr.io/kubebuilder/kube-rbac-proxy:<tag>][proxy-images] which is
+configured in the `config/default/manager_auth_proxy_patch.yaml` manifest. It is a side-car proxy whose purpose
+is to protect the manager from malicious attacks. You can learn more about its motivations by looking at
 the README of this project [github.com/brancz/kube-rbac-proxy](https://github.com/brancz/kube-rbac-proxy).
 
-Kubebuilder has been building this image with support for multiple architectures by default.( Check it [here][proxy-images] ). 
-If you need to address any edge case scenario where you want to produce a project that 
-only provides support for a specific architecture platform, you can customize your 
+Kubebuilder has been building this image with support for multiple architectures by default.( Check it [here][proxy-images] ).
+If you need to address any edge case scenario where you want to produce a project that
+only provides support for a specific architecture platform, you can customize your
 configuration manifests to use the specific architecture types built for this image.
 
 [node-affinity]: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity

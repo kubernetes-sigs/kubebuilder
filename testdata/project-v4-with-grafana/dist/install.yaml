@@ -1,4 +1,3 @@
----
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -16,12 +15,8 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   labels:
-    app.kubernetes.io/component: rbac
-    app.kubernetes.io/created-by: project-v4-with-grafana
-    app.kubernetes.io/instance: controller-manager-sa
     app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: serviceaccount
-    app.kubernetes.io/part-of: project-v4-with-grafana
+    app.kubernetes.io/name: project-v4-with-grafana
   name: project-v4-with-grafana-controller-manager
   namespace: project-v4-with-grafana-system
 ---

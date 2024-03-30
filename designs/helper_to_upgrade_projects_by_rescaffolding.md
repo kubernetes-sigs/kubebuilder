@@ -94,8 +94,8 @@ in the example section above, see:
 
 ```shell
 kubebuilder alpha generate \
-    --input-dir=<path where the PROJECT file can be found> 
-    --output-dir=<path where the project should be re-scaffold> 
+    --input-dir=<path where the PROJECT file can be found>
+    --output-dir=<path where the project should be re-scaffold>
     --no-backup
     --backup-path=<path-where the current version of the project should be copied as backup>
     --plugins=<chain of plugins key that can be used to create the layout with init sub-command>
@@ -105,10 +105,10 @@ kubebuilder alpha generate \
 
 - input-dir: [Optional] If not informed, then, by default, it is the current directory (project directory). If the `PROJECT` file does not exist, it will fail.
 - output-dir: [Optional] If not informed then, it should be the current repository.
-- no-backup: [Optional] If not informed then, the current directory should be copied to the path `.backup/project-name` 
-- backup: [Optional] If not informed then, the backup will be copied to the path `.backup/project-name` 
+- no-backup: [Optional] If not informed then, the current directory should be copied to the path `.backup/project-name`
+- backup: [Optional] If not informed then, the backup will be copied to the path `.backup/project-name`
 - plugins:  [Optional] If not informed then, it is the same plugin chain available in the layout field
-- binary: [Optional] If not informed then, the command will use KubeBuilder binary installed globaly. 
+- binary: [Optional] If not informed then, the command will use KubeBuilder binary installed globaly.
 
 > Note that the backup created in the current directory must be prefixed with `.`. Otherwise the tool
 will not able to perform the scaffold to create a new project from the scratch.
@@ -118,26 +118,26 @@ This command would mainly perform the following operations:
 - 1. Check the flags
 - 2. If the backup flag be used, then check if is a valid path and make a backup of the current project
 - 3. Copy the whole current directory to `.backup/project-name`
-- 4. Ensure that the output path is clean. By default it is the current directory project where the project was scaffolded previously and it should be cleaned up before to do the re-scaffold. 
+- 4. Ensure that the output path is clean. By default it is the current directory project where the project was scaffolded previously and it should be cleaned up before to do the re-scaffold.
 Only the content under `.backup/project-name` should be kept.
 - 4. Read the [PROJECT config][project-config]
 - 5. Re-run all commands using the KubeBuilder binary to recreate the project in the output directory
 
-The command should also provide a comprensive help with examples of the proposed workflows. So that, users 
+The command should also provide a comprensive help with examples of the proposed workflows. So that, users
 are able to understand how to use it when run `--help`.
 
 ### User Stories
 
 **As an Operator author:**
 
-- I can re-generate my project from scratch based on the proposed helper, which executes all the 
-commands according to my previous input to the project. That way, I can easily migrate my project to the new layout 
+- I can re-generate my project from scratch based on the proposed helper, which executes all the
+commands according to my previous input to the project. That way, I can easily migrate my project to the new layout
 using the newer CLI/plugin versions, which support the latest changes, bug fixes, and features.
 - I can regenerate my project from the scratch based on all commands that I used the tool to build
 my project previously but informing a new init plugin chain, so that I could upgrade my current project to new
 layout versions and experiment alpha ones.
 - I would like to re-generate the project from the scratch using the same config provide in the PROJECT file and inform
-a path to do a backup of my current directory so that I can also use the backup to compare with the new scaffold and add my custom code 
+a path to do a backup of my current directory so that I can also use the backup to compare with the new scaffold and add my custom code
 on top again without the need to compare my local directory and new scaffold with any outside source.
 
 **As a Kubebuiler maintainer:**

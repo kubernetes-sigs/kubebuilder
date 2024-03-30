@@ -54,7 +54,7 @@ Here is a sample JSON representation of the `PluginResponse` type:
 }
 ```
 
-In this example, the `init` command of the plugin has created a new file called `initFile`. 
+In this example, the `init` command of the plugin has created a new file called `initFile`.
 
 The content of this file is: `A simple file created with the init subcommand`, which is recorded in the `universe` field of the response.
 
@@ -63,7 +63,7 @@ This output is then sent back to Kubebuilder, allowing it to incorporate the cha
 <aside class="note">
 <h1>Caution</h1>
 
-When writing your own external plugin, you **should not** directly echo or print anything to the stdout. 
+When writing your own external plugin, you **should not** directly echo or print anything to the stdout.
 
 This is because Kubebuilder and your plugin are communicating with each other via `stdin` and `stdout` using structured `JSON` data.
 Any additional information sent to stdout (such as debug messages or logs) that's not part of the expected PluginResponse JSON structure may cause parsing errors when Kubebuilder tries to read and decode the response from your plugin.
@@ -105,14 +105,14 @@ The external plugin supports the same subcommands as kubebuilder already provide
 - `edit`: update the project configuration.
 
 Also, there are **Optional** subcommands for a better user experience:
-- `metadata`: add customized plugin description and examples when a `--help` flag is specified. 
+- `metadata`: add customized plugin description and examples when a `--help` flag is specified.
 - `flags`: specify valid flags for Kubebuilder to pass to the external plugin.
 
 <aside class="note">
 <h1>More about `flags` subcommand</h1>
 
-The `flags` subcommand in an external plugin allows for early error detection by informing Kubebuilder about the flags the plugin supports. If an unsupported flag is identified, Kubebuilder can issue an error before the plugin is called to execute. 
-If a plugin does not implement the `flags` subcommand, Kubebuilder will pass all flags to the plugin, making it the external plugin's responsibility to handle any invalid flags. 
+The `flags` subcommand in an external plugin allows for early error detection by informing Kubebuilder about the flags the plugin supports. If an unsupported flag is identified, Kubebuilder can issue an error before the plugin is called to execute.
+If a plugin does not implement the `flags` subcommand, Kubebuilder will pass all flags to the plugin, making it the external plugin's responsibility to handle any invalid flags.
 
 </aside>
 
@@ -152,7 +152,7 @@ kubebuilder create api --plugins go/v4,sampleplugin/v1
 
 ## Further resources
 
-- Check the [design proposal of the external plugin](https://github.com/kubernetes-sigs/kubebuilder/blob/master/designs/extensible-cli-and-scaffolding-plugins-phase-2.md) 
+- Check the [design proposal of the external plugin](https://github.com/kubernetes-sigs/kubebuilder/blob/master/designs/extensible-cli-and-scaffolding-plugins-phase-2.md)
 - Check the [plugin implementation](https://github.com/kubernetes-sigs/kubebuilder/pull/2338)
 - A [sample external plugin written in Go](https://github.com/kubernetes-sigs/kubebuilder/tree/master/docs/book/src/simple-external-plugin-tutorial/testdata/sampleexternalplugin/v1)
 - A [sample external plugin written in Python](https://github.com/rashmigottipati/POC-Phase2-Plugins)

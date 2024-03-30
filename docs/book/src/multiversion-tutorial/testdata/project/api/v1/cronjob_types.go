@@ -1,5 +1,5 @@
 /*
-Copyright 2023 The Kubernetes authors.
+Copyright 2024 The Kubernetes authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,10 +17,12 @@ limitations under the License.
 
 /*
  */
+
 package v1
 
 /*
  */
+
 import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -34,12 +36,12 @@ import (
 
 // CronJobSpec defines the desired state of CronJob
 type CronJobSpec struct {
-	// +kubebuilder:validation:MinLength=0
+	//+kubebuilder:validation:MinLength=0
 
 	// The schedule in Cron format, see https://en.wikipedia.org/wiki/Cron.
 	Schedule string `json:"schedule"`
 
-	// +kubebuilder:validation:Minimum=0
+	//+kubebuilder:validation:Minimum=0
 
 	// Optional deadline in seconds for starting the job if it misses scheduled
 	// time for any reason.  Missed jobs executions will be counted as failed ones.
@@ -62,14 +64,14 @@ type CronJobSpec struct {
 	// Specifies the job that will be created when executing a CronJob.
 	JobTemplate batchv1.JobTemplateSpec `json:"jobTemplate"`
 
-	// +kubebuilder:validation:Minimum=0
+	//+kubebuilder:validation:Minimum=0
 
 	// The number of successful finished jobs to retain.
 	// This is a pointer to distinguish between explicit zero and not specified.
 	// +optional
 	SuccessfulJobsHistoryLimit *int32 `json:"successfulJobsHistoryLimit,omitempty"`
 
-	// +kubebuilder:validation:Minimum=0
+	//+kubebuilder:validation:Minimum=0
 
 	// The number of failed finished jobs to retain.
 	// This is a pointer to distinguish between explicit zero and not specified.
@@ -153,4 +155,4 @@ func init() {
 	SchemeBuilder.Register(&CronJob{}, &CronJobList{})
 }
 
-// +kubebuilder:docs-gen:collapse=old stuff
+//+kubebuilder:docs-gen:collapse=old stuff

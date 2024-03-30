@@ -17,6 +17,9 @@ limitations under the License.
 package scaffolds
 
 import (
+	"fmt"
+	"strings"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
@@ -33,7 +36,7 @@ import (
 
 const (
 	// ControllerRuntimeVersion is the kubernetes-sigs/controller-runtime version to be used in the project
-	ControllerRuntimeVersion = "v0.17.0"
+	ControllerRuntimeVersion = "v0.17.2"
 	// ControllerToolsVersion is the kubernetes-sigs/controller-tools version to be used in the project
 	ControllerToolsVersion = "v0.14.0"
 	// EnvtestK8SVersion is the k8s version used to do the scaffold
@@ -69,6 +72,20 @@ func NewInitScaffolder(config config.Config, license, owner string) plugins.Scaf
 // InjectFS implements cmdutil.Scaffolder
 func (s *initScaffolder) InjectFS(fs machinery.Filesystem) {
 	s.fs = fs
+}
+
+// getControllerRuntimeReleaseBranch converts the ControllerRuntime semantic versioning string to a
+// release branch string. Example input: "v0.17.0" -> Output: "release-0.17"
+func getControllerRuntimeReleaseBranch() string {
+	v := strings.TrimPrefix(ControllerRuntimeVersion, "v")
+	tmp := strings.Split(v, ".")
+
+	if len(tmp) < 2 {
+		fmt.Println("Invalid version format. Expected at least major and minor version numbers.")
+		return ""
+	}
+	releaseBranch := fmt.Sprintf("release-%s.%s", tmp[0], tmp[1])
+	return releaseBranch
 }
 
 // Scaffold implements cmdutil.Scaffolder
@@ -136,6 +153,7 @@ func (s *initScaffolder) Scaffold() error {
 			ControllerToolsVersion:   ControllerToolsVersion,
 			KustomizeVersion:         kustomizeVersion,
 			ControllerRuntimeVersion: ControllerRuntimeVersion,
+			EnvtestVersion:           getControllerRuntimeReleaseBranch(),
 		},
 		&templates.Dockerfile{},
 		&templates.DockerIgnore{},

@@ -42,7 +42,7 @@ var (
 // GetPluginsCLI returns the plugins based CLI configured to be used in your CLI binary
 func GetPluginsCLI() (*cli.CLI) {
 	// Bundle plugin which built the golang projects scaffold by Kubebuilder go/v3
-	gov3Bundle, _ := plugin.NewBundleWithOptions(plugin.WithName(golang.DefaultNameQualifier), 
+	gov3Bundle, _ := plugin.NewBundleWithOptions(plugin.WithName(golang.DefaultNameQualifier),
 		plugin.WithVersion(plugin.Version{Number: 3}),
 		plugin.WithPlugins(kustomizecommonv1.Plugin{}, golangv3.Plugin{}),
 	)
@@ -51,28 +51,28 @@ func GetPluginsCLI() (*cli.CLI) {
 	c, err := cli.New(
 		// Add the name of your CLI binary
 		cli.WithCommandName("example-cli"),
-		
+
 		// Add the version of your CLI binary
 		cli.WithVersion(versionString()),
-		
+
 		// Register the plugins options which can be used to do the scaffolds via your CLI tool. See that we are using as example here the plugins which are implemented and provided by Kubebuilder
 		cli.WithPlugins(
 			gov3Bundle,
 			&declarativev1.Plugin{},
 		),
-		
+
 		// Defines what will be the default plugin used by your binary. It means that will be the plugin used if no info be provided such as when the user runs `kubebuilder init`
 		cli.WithDefaultPlugins(cfgv3.Version, gov3Bundle),
-		
+
 		// Define the default project configuration version which will be used by the CLI when none is informed by --project-version flag.
 		cli.WithDefaultProjectVersion(cfgv3.Version),
-		
+
 		// Adds your own commands to the CLI
 		cli.WithExtraCommands(commands...),
-		
+
 		// Add your own alpha commands to the CLI
 		cli.WithExtraAlphaCommands(alphaCommands...),
-		
+
 		// Adds the completion option for your CLI
 		cli.WithCompletion(),
 	)
@@ -121,7 +121,7 @@ The CLI is responsible for managing the [PROJECT file config][project-file-confi
 
 ## Plugins
 
-Kubebuilder provides scaffolding options via plugins. Plugins are responsible for implementing the code that will be executed when the sub-commands are called. You can create a new plugin by implementing the [Plugin interface][plugin-interface]. 
+Kubebuilder provides scaffolding options via plugins. Plugins are responsible for implementing the code that will be executed when the sub-commands are called. You can create a new plugin by implementing the [Plugin interface][plugin-interface].
 
 On top of being a `Base`, a plugin should also implement the [`SubcommandMetadata`][plugin-subc] interface so it can be run with a CLI. It optionally to set custom help text for the target  command; this method can be a no-op, which will preserve the default help text set by the [cobra][cobra] command constructors.
 
@@ -137,8 +137,8 @@ Plugins are identified by a key of the form `<name>/<version>`. There are two wa
 
 - Setting `kubebuilder init --plugins=<plugin key>`, which will initialize a project configured for plugin with key
  `<plugin key>`.
- 
-- A `layout: <plugin key>` in the scaffolded [PROJECT configuration file][project-file]. Commands (except for `init`, which scaffolds this file) will look at this value before running to choose which plugin to run. 
+
+- A `layout: <plugin key>` in the scaffolded [PROJECT configuration file][project-file]. Commands (except for `init`, which scaffolds this file) will look at this value before running to choose which plugin to run.
 
 By default, `<plugin key>` will be `go.kubebuilder.io/vX`, where `X` is some integer.
 
@@ -165,7 +165,7 @@ string denotes plugin stability:
 
 Any change that will break a project scaffolded by the previous plugin version is a breaking change.
 
-### Plugins Deprecation 
+### Plugins Deprecation
 
 Once a plugin is deprecated, have it implement a [Deprecated][deprecate-plugin-doc] interface so a deprecation warning will be printed when it is used.
 
@@ -174,7 +174,7 @@ Once a plugin is deprecated, have it implement a [Deprecated][deprecate-plugin-d
 [Bundle Plugins][bundle-plugin-doc] allow you to create a plugin that is a composition of many plugins:
 
 ```go
-   // see that will be like myplugin.example/v1`  
+   // see that will be like myplugin.example/v1`
   myPluginBundle, _ := plugin.NewBundle(plugin.WithName(`<plugin-name>`),
   		plugin.WithVersion(`<plugin-version>`),
 		plugin.WithPlugins(pluginA.Plugin{}, pluginB.Plugin{}, pluginC.Plugin{}),
@@ -190,12 +190,12 @@ Note that it means that when a user of your CLI calls this plugin, the execution
 Then, to initialize using this "Plugin Bundle" which will run the chain of plugins:
 
 ```
-kubebuider init --plugins=myplugin.example/v1 
-```   
+kubebuider init --plugins=myplugin.example/v1
+```
 
 - Runs init `sub-command` of the plugin A
 - And then, runs init `sub-command` of the plugin B
-- And then, runs init `sub-command` of the plugin C 
+- And then, runs init `sub-command` of the plugin C
 
 [project-file-config]: ../reference/project-config.md
 [plugin-interface]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v3/pkg/plugin#Plugin

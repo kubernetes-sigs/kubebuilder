@@ -1,16 +1,16 @@
-# [Default Scaffold] go/v4 (go.kubebuilder.io/v4) 
+# [Default Scaffold] go/v4 (go.kubebuilder.io/v4)
 
-Kubebuilder will scaffold using the `go/v4` plugin only if specified when initializing the project. 
-This plugin is a composition of the plugins ` kustomize.common.kubebuilder.io/v2` and `base.go.kubebuilder.io/v4`. 
-It scaffolds a project template that helps in constructing sets of [controllers][controller-runtime]. 
+Kubebuilder will scaffold using the `go/v4` plugin only if specified when initializing the project.
+This plugin is a composition of the plugins ` kustomize.common.kubebuilder.io/v2` and `base.go.kubebuilder.io/v4`.
+It scaffolds a project template that helps in constructing sets of [controllers][controller-runtime].
 
-It scaffolds boilerplate code to create and design controllers. 
+It scaffolds boilerplate code to create and design controllers.
 Note that by following the [quickstart][quickstart] you will be using this plugin.
 <aside class="note">
 
 <h1>Examples</h1>
 
-You can check samples using this plugin by looking at the `project-v4-<options>` projects 
+You can check samples using this plugin by looking at the `project-v4-<options>` projects
 under the [testdata][testdata] directory on the root directory of the Kubebuilder project.
 
 </aside>
