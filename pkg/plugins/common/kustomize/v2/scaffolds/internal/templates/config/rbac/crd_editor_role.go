@@ -35,7 +35,7 @@ type CRDEditorRole struct {
 // SetTemplateDefaults implements file.Template
 func (f *CRDEditorRole) SetTemplateDefaults() error {
 	if f.Path == "" {
-		if f.MultiGroup {
+		if f.MultiGroup && f.Resource.Group != "" {
 			f.Path = filepath.Join("config", "rbac", "%[group]_%[kind]_editor_role.yaml")
 		} else {
 			f.Path = filepath.Join("config", "rbac", "%[kind]_editor_role.yaml")
