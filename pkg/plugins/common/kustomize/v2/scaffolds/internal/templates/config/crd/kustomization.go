@@ -85,7 +85,7 @@ func (f *Kustomization) GetCodeFragments() machinery.CodeFragmentsMap {
 	res = append(res, fmt.Sprintf(resourceCodeFragment, f.Resource.QualifiedGroup(), f.Resource.Plural))
 
 	suffix := f.Resource.Plural
-	if f.MultiGroup {
+	if f.MultiGroup && f.Resource.Group != "" {
 		suffix = f.Resource.Group + "_" + f.Resource.Plural
 	}
 	// Generate resource code fragments
