@@ -17,8 +17,11 @@ limitations under the License.
 package external
 
 import (
+	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
 
+	"sigs.k8s.io/kubebuilder/v3/pkg/config"
+	"sigs.k8s.io/kubebuilder/v3/pkg/config/store/yaml"
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
@@ -32,8 +35,9 @@ const (
 )
 
 type createAPISubcommand struct {
-	Path string
-	Args []string
+	Path   string
+	Args   []string
+	config config.Config
 }
 
 func (p *createAPISubcommand) InjectResource(*resource.Resource) error {
@@ -50,16 +54,31 @@ func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 }
 
 func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
+	cfg := yaml.New(machinery.Filesystem{FS: afero.NewOsFs()})
+	if err := cfg.Load(); err != nil {
+		return err
+	}
+
 	req := external.PluginRequest{
 		APIVersion: defaultAPIVersion,
 		Command:    "create api",
 		Args:       p.Args,
+		Config:     cfg.Config(),
 	}
 
-	err := handlePluginResponse(fs, req, p.Path)
+	err := handlePluginResponse(fs, req, p.Path, p)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (p *createAPISubcommand) InjectConfig(c config.Config) error {
+	p.config = c
+	return nil
+}
+
+func (p *createAPISubcommand) GetConfig() config.Config {
+	return p.config
 }
