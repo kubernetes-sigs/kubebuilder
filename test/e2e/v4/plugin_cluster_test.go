@@ -60,43 +60,30 @@ var _ = Describe("kubebuilder", func() {
 			kbc, err = utils.NewTestContext(util.KubebuilderBinName, "GO111MODULE=on")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(kbc.Prepare()).To(Succeed())
-
-			By("installing the cert-manager bundle")
-			Expect(kbc.InstallCertManager()).To(Succeed())
-
-			By("installing the Prometheus operator")
-			Expect(kbc.InstallPrometheusOperManager()).To(Succeed())
 		})
 
 		AfterEach(func() {
 			By("clean up API objects created during the test")
 			kbc.CleanupManifests(filepath.Join("config", "default"))
 
-			By("uninstalling the Prometheus manager bundle")
-			kbc.UninstallPrometheusOperManager()
-
-			By("uninstalling the cert-manager bundle")
-			kbc.UninstallCertManager()
-
 			By("removing controller image and working dir")
 			kbc.Destroy()
 		})
-		It("should generate a runnable project"+
-			" with restricted pods", func() {
-			kbc.IsRestricted = true
+		It("should generate a runnable project", func() {
+			kbc.IsRestricted = false
 			GenerateV4(kbc)
 			Run(kbc, true, false)
 		})
-		It("should generate a runnable project without webhooks"+
-			" with restricted pods", func() {
+		It("should generate a runnable project with the Installer", func() {
+			kbc.IsRestricted = false
+			GenerateV4(kbc)
+			Run(kbc, false, true)
+		})
+		It("should generate a runnable project with the manager running "+
+			"as restricted and without webhooks", func() {
 			kbc.IsRestricted = true
 			GenerateV4WithoutWebhooks(kbc)
 			Run(kbc, false, false)
-		})
-		It("should generate a runnable project"+
-			" with the Installer", func() {
-			GenerateV4(kbc)
-			Run(kbc, false, true)
 		})
 	})
 })
@@ -162,7 +149,7 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller bool) {
 		ExpectWithOffset(1, err).NotTo(HaveOccurred())
 	}
 
-	if kbc.IsRestricted && !isToUseInstaller {
+	if kbc.IsRestricted {
 		By("validating that manager Pod/container(s) are restricted")
 		ExpectWithOffset(1, output).NotTo(ContainSubstring("Warning: would violate PodSecurity"))
 	}

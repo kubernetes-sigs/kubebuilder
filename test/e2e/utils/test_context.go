@@ -31,7 +31,7 @@ import (
 )
 
 const (
-	certmanagerVersion        = "v1.5.3"
+	certmanagerVersion        = "v1.14.4"
 	certmanagerURLTmpl        = "https://github.com/cert-manager/cert-manager/releases/download/%s/cert-manager.yaml"
 	prometheusOperatorVersion = "0.51"
 	prometheusOperatorURL     = "https://raw.githubusercontent.com/prometheus-operator/" +
@@ -274,8 +274,6 @@ func (t *TestContext) CreateManagerNamespace() error {
 // if a warning with `Warning: would violate PodSecurity` will be raised when the manifests are applied
 func (t *TestContext) LabelAllNamespacesToWarnAboutRestricted() error {
 	_, err := t.Kubectl.Command("label", "--overwrite", "ns", "--all",
-		"pod-security.kubernetes.io/audit=restricted",
-		"pod-security.kubernetes.io/enforce-version=v1.24",
 		"pod-security.kubernetes.io/warn=restricted")
 	return err
 }
