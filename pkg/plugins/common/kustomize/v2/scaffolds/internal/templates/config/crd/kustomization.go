@@ -88,9 +88,11 @@ func (f *Kustomization) GetCodeFragments() machinery.CodeFragmentsMap {
 	if f.MultiGroup && f.Resource.Group != "" {
 		suffix = f.Resource.Group + "_" + f.Resource.Plural
 	}
-	// Generate resource code fragments
-	webhookPatch := make([]string, 0)
-	webhookPatch = append(webhookPatch, fmt.Sprintf(webhookPatchCodeFragment, suffix))
+
+	if !f.Resource.Webhooks.IsEmpty() {
+		webhookPatch := fmt.Sprintf(webhookPatchCodeFragment, suffix)
+		fragments[machinery.NewMarkerFor(f.Path, webhookPatchMarker)] = []string{webhookPatch}
+	}
 
 	// Generate resource code fragments
 	caInjectionPatch := make([]string, 0)
@@ -100,9 +102,7 @@ func (f *Kustomization) GetCodeFragments() machinery.CodeFragmentsMap {
 	if len(res) != 0 {
 		fragments[machinery.NewMarkerFor(f.Path, resourceMarker)] = res
 	}
-	if len(webhookPatch) != 0 {
-		fragments[machinery.NewMarkerFor(f.Path, webhookPatchMarker)] = webhookPatch
-	}
+
 	if len(caInjectionPatch) != 0 {
 		fragments[machinery.NewMarkerFor(f.Path, caInjectionPatchMarker)] = caInjectionPatch
 	}

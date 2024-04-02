@@ -1,0 +1,1320 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    app.kubernetes.io/component: manager
+    app.kubernetes.io/created-by: project-v4-multigroup
+    app.kubernetes.io/instance: system
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: namespace
+    app.kubernetes.io/part-of: project-v4-multigroup
+    control-plane: controller-manager
+  name: project-v4-multigroup-system
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.14.0
+  name: bars.fiz.testproject.org
+spec:
+  group: fiz.testproject.org
+  names:
+    kind: Bar
+    listKind: BarList
+    plural: bars
+    singular: bar
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: Bar is the Schema for the bars API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: BarSpec defines the desired state of Bar
+            properties:
+              foo:
+                description: Foo is an example field of Bar. Edit bar_types.go to
+                  remove/update
+                type: string
+            type: object
+          status:
+            description: BarStatus defines the observed state of Bar
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.14.0
+  name: bars.foo.testproject.org
+spec:
+  group: foo.testproject.org
+  names:
+    kind: Bar
+    listKind: BarList
+    plural: bars
+    singular: bar
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: Bar is the Schema for the bars API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: BarSpec defines the desired state of Bar
+            properties:
+              foo:
+                description: Foo is an example field of Bar. Edit bar_types.go to
+                  remove/update
+                type: string
+            type: object
+          status:
+            description: BarStatus defines the observed state of Bar
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.14.0
+  name: captains.crew.testproject.org
+spec:
+  conversion:
+    strategy: Webhook
+    webhook:
+      clientConfig:
+        service:
+          name: project-v4-multigroup-webhook-service
+          namespace: project-v4-multigroup-system
+          path: /convert
+      conversionReviewVersions:
+      - v1
+  group: crew.testproject.org
+  names:
+    kind: Captain
+    listKind: CaptainList
+    plural: captains
+    singular: captain
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: Captain is the Schema for the captains API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: CaptainSpec defines the desired state of Captain
+            properties:
+              foo:
+                description: Foo is an example field of Captain. Edit captain_types.go
+                  to remove/update
+                type: string
+            type: object
+          status:
+            description: CaptainStatus defines the observed state of Captain
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.14.0
+  name: cruisers.ship.testproject.org
+spec:
+  conversion:
+    strategy: Webhook
+    webhook:
+      clientConfig:
+        service:
+          name: project-v4-multigroup-webhook-service
+          namespace: project-v4-multigroup-system
+          path: /convert
+      conversionReviewVersions:
+      - v1
+  group: ship.testproject.org
+  names:
+    kind: Cruiser
+    listKind: CruiserList
+    plural: cruisers
+    singular: cruiser
+  scope: Cluster
+  versions:
+  - name: v2alpha1
+    schema:
+      openAPIV3Schema:
+        description: Cruiser is the Schema for the cruisers API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: CruiserSpec defines the desired state of Cruiser
+            properties:
+              foo:
+                description: Foo is an example field of Cruiser. Edit cruiser_types.go
+                  to remove/update
+                type: string
+            type: object
+          status:
+            description: CruiserStatus defines the observed state of Cruiser
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.14.0
+  name: destroyers.ship.testproject.org
+spec:
+  conversion:
+    strategy: Webhook
+    webhook:
+      clientConfig:
+        service:
+          name: project-v4-multigroup-webhook-service
+          namespace: project-v4-multigroup-system
+          path: /convert
+      conversionReviewVersions:
+      - v1
+  group: ship.testproject.org
+  names:
+    kind: Destroyer
+    listKind: DestroyerList
+    plural: destroyers
+    singular: destroyer
+  scope: Cluster
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: Destroyer is the Schema for the destroyers API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: DestroyerSpec defines the desired state of Destroyer
+            properties:
+              foo:
+                description: Foo is an example field of Destroyer. Edit destroyer_types.go
+                  to remove/update
+                type: string
+            type: object
+          status:
+            description: DestroyerStatus defines the observed state of Destroyer
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.14.0
+  name: frigates.ship.testproject.org
+spec:
+  conversion:
+    strategy: Webhook
+    webhook:
+      clientConfig:
+        service:
+          name: project-v4-multigroup-webhook-service
+          namespace: project-v4-multigroup-system
+          path: /convert
+      conversionReviewVersions:
+      - v1
+  group: ship.testproject.org
+  names:
+    kind: Frigate
+    listKind: FrigateList
+    plural: frigates
+    singular: frigate
+  scope: Namespaced
+  versions:
+  - name: v1beta1
+    schema:
+      openAPIV3Schema:
+        description: Frigate is the Schema for the frigates API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: FrigateSpec defines the desired state of Frigate
+            properties:
+              foo:
+                description: Foo is an example field of Frigate. Edit frigate_types.go
+                  to remove/update
+                type: string
+            type: object
+          status:
+            description: FrigateStatus defines the observed state of Frigate
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.14.0
+  name: healthcheckpolicies.foo.policy.testproject.org
+spec:
+  group: foo.policy.testproject.org
+  names:
+    kind: HealthCheckPolicy
+    listKind: HealthCheckPolicyList
+    plural: healthcheckpolicies
+    singular: healthcheckpolicy
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: HealthCheckPolicy is the Schema for the healthcheckpolicies API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: HealthCheckPolicySpec defines the desired state of HealthCheckPolicy
+            properties:
+              foo:
+                description: Foo is an example field of HealthCheckPolicy. Edit healthcheckpolicy_types.go
+                  to remove/update
+                type: string
+            type: object
+          status:
+            description: HealthCheckPolicyStatus defines the observed state of HealthCheckPolicy
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.14.0
+  name: krakens.sea-creatures.testproject.org
+spec:
+  group: sea-creatures.testproject.org
+  names:
+    kind: Kraken
+    listKind: KrakenList
+    plural: krakens
+    singular: kraken
+  scope: Namespaced
+  versions:
+  - name: v1beta1
+    schema:
+      openAPIV3Schema:
+        description: Kraken is the Schema for the krakens API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: KrakenSpec defines the desired state of Kraken
+            properties:
+              foo:
+                description: Foo is an example field of Kraken. Edit kraken_types.go
+                  to remove/update
+                type: string
+            type: object
+          status:
+            description: KrakenStatus defines the observed state of Kraken
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.14.0
+  name: lakers.testproject.org
+spec:
+  conversion:
+    strategy: Webhook
+    webhook:
+      clientConfig:
+        service:
+          name: project-v4-multigroup-webhook-service
+          namespace: project-v4-multigroup-system
+          path: /convert
+      conversionReviewVersions:
+      - v1
+  group: testproject.org
+  names:
+    kind: Lakers
+    listKind: LakersList
+    plural: lakers
+    singular: lakers
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: Lakers is the Schema for the lakers API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: LakersSpec defines the desired state of Lakers
+            properties:
+              foo:
+                description: Foo is an example field of Lakers. Edit lakers_types.go
+                  to remove/update
+                type: string
+            type: object
+          status:
+            description: LakersStatus defines the observed state of Lakers
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.14.0
+  name: leviathans.sea-creatures.testproject.org
+spec:
+  group: sea-creatures.testproject.org
+  names:
+    kind: Leviathan
+    listKind: LeviathanList
+    plural: leviathans
+    singular: leviathan
+  scope: Namespaced
+  versions:
+  - name: v1beta2
+    schema:
+      openAPIV3Schema:
+        description: Leviathan is the Schema for the leviathans API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: LeviathanSpec defines the desired state of Leviathan
+            properties:
+              foo:
+                description: Foo is an example field of Leviathan. Edit leviathan_types.go
+                  to remove/update
+                type: string
+            type: object
+          status:
+            description: LeviathanStatus defines the observed state of Leviathan
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: project-v4-multigroup
+  name: project-v4-multigroup-controller-manager
+  namespace: project-v4-multigroup-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: project-v4-multigroup
+    app.kubernetes.io/instance: leader-election-role
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: role
+    app.kubernetes.io/part-of: project-v4-multigroup
+  name: project-v4-multigroup-leader-election-role
+  namespace: project-v4-multigroup-system
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: project-v4-multigroup-manager-role
+rules:
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - apps
+  resources:
+  - deployments/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - crew.testproject.org
+  resources:
+  - captains
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - crew.testproject.org
+  resources:
+  - captains/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - crew.testproject.org
+  resources:
+  - captains/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - fiz.testproject.org
+  resources:
+  - bars
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - fiz.testproject.org
+  resources:
+  - bars/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - fiz.testproject.org
+  resources:
+  - bars/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - foo.policy.testproject.org
+  resources:
+  - healthcheckpolicies
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - foo.policy.testproject.org
+  resources:
+  - healthcheckpolicies/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - foo.policy.testproject.org
+  resources:
+  - healthcheckpolicies/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - foo.testproject.org
+  resources:
+  - bars
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - foo.testproject.org
+  resources:
+  - bars/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - foo.testproject.org
+  resources:
+  - bars/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - sea-creatures.testproject.org
+  resources:
+  - krakens
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - sea-creatures.testproject.org
+  resources:
+  - krakens/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - sea-creatures.testproject.org
+  resources:
+  - krakens/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - sea-creatures.testproject.org
+  resources:
+  - leviathans
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - sea-creatures.testproject.org
+  resources:
+  - leviathans/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - sea-creatures.testproject.org
+  resources:
+  - leviathans/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ship.testproject.org
+  resources:
+  - cruisers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ship.testproject.org
+  resources:
+  - cruisers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - ship.testproject.org
+  resources:
+  - cruisers/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ship.testproject.org
+  resources:
+  - destroyers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ship.testproject.org
+  resources:
+  - destroyers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - ship.testproject.org
+  resources:
+  - destroyers/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ship.testproject.org
+  resources:
+  - frigates
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ship.testproject.org
+  resources:
+  - frigates/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - ship.testproject.org
+  resources:
+  - frigates/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - testproject.org
+  resources:
+  - lakers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - testproject.org
+  resources:
+  - lakers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - testproject.org
+  resources:
+  - lakers/status
+  verbs:
+  - get
+  - patch
+  - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/component: kube-rbac-proxy
+    app.kubernetes.io/created-by: project-v4-multigroup
+    app.kubernetes.io/instance: metrics-reader
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/part-of: project-v4-multigroup
+  name: project-v4-multigroup-metrics-reader
+rules:
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/component: kube-rbac-proxy
+    app.kubernetes.io/created-by: project-v4-multigroup
+    app.kubernetes.io/instance: proxy-role
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/part-of: project-v4-multigroup
+  name: project-v4-multigroup-proxy-role
+rules:
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: project-v4-multigroup
+    app.kubernetes.io/instance: leader-election-rolebinding
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: rolebinding
+    app.kubernetes.io/part-of: project-v4-multigroup
+  name: project-v4-multigroup-leader-election-rolebinding
+  namespace: project-v4-multigroup-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: project-v4-multigroup-leader-election-role
+subjects:
+- kind: ServiceAccount
+  name: project-v4-multigroup-controller-manager
+  namespace: project-v4-multigroup-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: project-v4-multigroup
+    app.kubernetes.io/instance: manager-rolebinding
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: clusterrolebinding
+    app.kubernetes.io/part-of: project-v4-multigroup
+  name: project-v4-multigroup-manager-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: project-v4-multigroup-manager-role
+subjects:
+- kind: ServiceAccount
+  name: project-v4-multigroup-controller-manager
+  namespace: project-v4-multigroup-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/component: kube-rbac-proxy
+    app.kubernetes.io/created-by: project-v4-multigroup
+    app.kubernetes.io/instance: proxy-rolebinding
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: clusterrolebinding
+    app.kubernetes.io/part-of: project-v4-multigroup
+  name: project-v4-multigroup-proxy-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: project-v4-multigroup-proxy-role
+subjects:
+- kind: ServiceAccount
+  name: project-v4-multigroup-controller-manager
+  namespace: project-v4-multigroup-system
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: kube-rbac-proxy
+    app.kubernetes.io/created-by: project-v4-multigroup
+    app.kubernetes.io/instance: controller-manager-metrics-service
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: service
+    app.kubernetes.io/part-of: project-v4-multigroup
+    control-plane: controller-manager
+  name: project-v4-multigroup-controller-manager-metrics-service
+  namespace: project-v4-multigroup-system
+spec:
+  ports:
+  - name: https
+    port: 8443
+    protocol: TCP
+    targetPort: https
+  selector:
+    control-plane: controller-manager
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: project-v4-multigroup
+  name: project-v4-multigroup-webhook-service
+  namespace: project-v4-multigroup-system
+spec:
+  ports:
+  - port: 443
+    protocol: TCP
+    targetPort: 9443
+  selector:
+    control-plane: controller-manager
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: manager
+    app.kubernetes.io/created-by: project-v4-multigroup
+    app.kubernetes.io/instance: controller-manager
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: deployment
+    app.kubernetes.io/part-of: project-v4-multigroup
+    control-plane: controller-manager
+  name: project-v4-multigroup-controller-manager
+  namespace: project-v4-multigroup-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+      labels:
+        control-plane: controller-manager
+    spec:
+      containers:
+      - args:
+        - --health-probe-bind-address=:8081
+        - --metrics-bind-address=127.0.0.1:8080
+        - --leader-elect
+        command:
+        - /manager
+        image: controller:latest
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        name: manager
+        ports:
+        - containerPort: 9443
+          name: webhook-server
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - mountPath: /tmp/k8s-webhook-server/serving-certs
+          name: cert
+          readOnly: true
+      - args:
+        - --secure-listen-address=0.0.0.0:8443
+        - --upstream=http://127.0.0.1:8080/
+        - --logtostderr=true
+        - --v=0
+        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.16.0
+        name: kube-rbac-proxy
+        ports:
+        - containerPort: 8443
+          name: https
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 5m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+      securityContext:
+        runAsNonRoot: true
+      serviceAccountName: project-v4-multigroup-controller-manager
+      terminationGracePeriodSeconds: 10
+      volumes:
+      - name: cert
+        secret:
+          defaultMode: 420
+          secretName: webhook-server-cert
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: project-v4-multigroup-mutating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: project-v4-multigroup-webhook-service
+      namespace: project-v4-multigroup-system
+      path: /mutate-crew-testproject-org-v1-captain
+  failurePolicy: Fail
+  name: mcaptain.kb.io
+  rules:
+  - apiGroups:
+    - crew.testproject.org
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - captains
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: project-v4-multigroup-webhook-service
+      namespace: project-v4-multigroup-system
+      path: /mutate-ship-testproject-org-v1-destroyer
+  failurePolicy: Fail
+  name: mdestroyer.kb.io
+  rules:
+  - apiGroups:
+    - ship.testproject.org
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - destroyers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: project-v4-multigroup-webhook-service
+      namespace: project-v4-multigroup-system
+      path: /mutate-testproject-org-v1-lakers
+  failurePolicy: Fail
+  name: mlakers.kb.io
+  rules:
+  - apiGroups:
+    - testproject.org
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - lakers
+  sideEffects: None
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: project-v4-multigroup-validating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: project-v4-multigroup-webhook-service
+      namespace: project-v4-multigroup-system
+      path: /validate-crew-testproject-org-v1-captain
+  failurePolicy: Fail
+  name: vcaptain.kb.io
+  rules:
+  - apiGroups:
+    - crew.testproject.org
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - captains
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: project-v4-multigroup-webhook-service
+      namespace: project-v4-multigroup-system
+      path: /validate-ship-testproject-org-v2alpha1-cruiser
+  failurePolicy: Fail
+  name: vcruiser.kb.io
+  rules:
+  - apiGroups:
+    - ship.testproject.org
+    apiVersions:
+    - v2alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - cruisers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: project-v4-multigroup-webhook-service
+      namespace: project-v4-multigroup-system
+      path: /validate-testproject-org-v1-lakers
+  failurePolicy: Fail
+  name: vlakers.kb.io
+  rules:
+  - apiGroups:
+    - testproject.org
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - lakers
+  sideEffects: None
