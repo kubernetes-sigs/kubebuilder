@@ -22,7 +22,7 @@
 set -eu
 
 SOURCE_IMAGE_TAG="quay.io/brancz/kube-rbac-proxy:${KUBE_RBAC_PROXY_VERSION}"
-TARGET_IMAGE_TAG="gcr.io/kubebuilder/kube-rbac-proxy:${KUBE_RBAC_PROXY_VERSION}"
+TARGET_IMAGE_TAG="registry.k8s.io/kubebuilder/kube-rbac-proxy:${KUBE_RBAC_PROXY_VERSION}"
 
 # Each arch to pull an image for.
 declare ARCHES

@@ -21,4 +21,4 @@ steps:
   - "KUBE_RBAC_PROXY_VERSION=${_KUBE_RBAC_PROXY_VERSION}"
   entrypoint: "/usr/bin/env"
   args: ["bash", "-c", "./build-legacy/build.sh"]
-images: ["gcr.io/kubebuilder/kube-rbac-proxy:${_KUBE_RBAC_PROXY_VERSION}"]
+images: ["registry.k8s.io/kubebuilder/kube-rbac-proxy:${_KUBE_RBAC_PROXY_VERSION}"]
