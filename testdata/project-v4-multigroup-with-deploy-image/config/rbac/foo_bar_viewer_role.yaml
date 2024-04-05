@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/created-by: project-v4-multigroup-with-deploy-image
     app.kubernetes.io/part-of: project-v4-multigroup-with-deploy-image
     app.kubernetes.io/managed-by: kustomize
-  name: bar-viewer-role
+  name: foo-bar-viewer-role
 rules:
 - apiGroups:
   - foo.testproject.org

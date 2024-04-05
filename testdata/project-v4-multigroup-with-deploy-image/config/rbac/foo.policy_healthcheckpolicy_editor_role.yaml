@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/created-by: project-v4-multigroup-with-deploy-image
     app.kubernetes.io/part-of: project-v4-multigroup-with-deploy-image
     app.kubernetes.io/managed-by: kustomize
-  name: healthcheckpolicy-editor-role
+  name: foo.policy-healthcheckpolicy-editor-role
 rules:
 - apiGroups:
   - foo.policy.testproject.org

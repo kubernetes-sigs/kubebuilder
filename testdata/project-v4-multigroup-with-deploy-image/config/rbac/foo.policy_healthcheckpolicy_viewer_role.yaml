@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/created-by: project-v4-multigroup-with-deploy-image
     app.kubernetes.io/part-of: project-v4-multigroup-with-deploy-image
     app.kubernetes.io/managed-by: kustomize
-  name: healthcheckpolicy-viewer-role
+  name: foo.policy-healthcheckpolicy-viewer-role
 rules:
 - apiGroups:
   - foo.policy.testproject.org
