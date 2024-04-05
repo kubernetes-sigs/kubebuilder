@@ -21,7 +21,9 @@ import (
 	"os/exec"
 	"time"
 
+	// nolint:revive
 	. "github.com/onsi/ginkgo/v2"
+	// nolint:revive
 	. "github.com/onsi/gomega"
 
 	"tutorial.kubebuilder.io/project/test/utils"

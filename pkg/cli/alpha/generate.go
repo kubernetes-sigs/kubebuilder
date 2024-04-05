@@ -32,10 +32,10 @@ using the current version of KubeBuilder binary available.
 $ kubebuilder alpha generate --input-dir="./test" --output-dir="./my-output"
 Then we will re-scaffold the project by Kubebuilder in the directory specified by 'output-dir'.
 		`,
-		PreRunE: func(cmd *cobra.Command, _ []string) error {
+		PreRunE: func(_ *cobra.Command, _ []string) error {
 			return opts.Validate()
 		},
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, _ []string) {
 			if err := opts.Rescaffold(); err != nil {
 				log.Fatalf("Failed to rescaffold %s", err)
 			}

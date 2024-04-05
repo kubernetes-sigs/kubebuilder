@@ -27,7 +27,8 @@ import (
 	log "github.com/sirupsen/logrus"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
 
-	. "github.com/onsi/ginkgo/v2" //nolint:golint,revive
+	// nolint:revive
+	. "github.com/onsi/ginkgo/v2"
 )
 
 const (
