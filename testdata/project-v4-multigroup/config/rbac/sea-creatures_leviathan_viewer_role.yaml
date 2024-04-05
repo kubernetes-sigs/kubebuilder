@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/created-by: project-v4-multigroup
     app.kubernetes.io/part-of: project-v4-multigroup
     app.kubernetes.io/managed-by: kustomize
-  name: leviathan-viewer-role
+  name: sea-creatures-leviathan-viewer-role
 rules:
 - apiGroups:
   - sea-creatures.testproject.org

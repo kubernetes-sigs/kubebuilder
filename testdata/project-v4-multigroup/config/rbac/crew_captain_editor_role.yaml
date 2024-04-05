@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/created-by: project-v4-multigroup
     app.kubernetes.io/part-of: project-v4-multigroup
     app.kubernetes.io/managed-by: kustomize
-  name: captain-editor-role
+  name: crew-captain-editor-role
 rules:
 - apiGroups:
   - crew.testproject.org

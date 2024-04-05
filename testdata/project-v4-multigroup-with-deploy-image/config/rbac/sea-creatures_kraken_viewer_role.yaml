@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/created-by: project-v4-multigroup-with-deploy-image
     app.kubernetes.io/part-of: project-v4-multigroup-with-deploy-image
     app.kubernetes.io/managed-by: kustomize
-  name: kraken-viewer-role
+  name: sea-creatures-kraken-viewer-role
 rules:
 - apiGroups:
   - sea-creatures.testproject.org
