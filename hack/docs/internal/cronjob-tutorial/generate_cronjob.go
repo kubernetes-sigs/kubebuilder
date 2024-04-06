@@ -67,7 +67,6 @@ func (sp *Sample) GenerateSampleProject() {
 	log.Infof("Initializing the cronjob project")
 
 	err := sp.ctx.Init(
-		"--plugins", "go/v4",
 		"--domain", "tutorial.kubebuilder.io",
 		"--repo", "tutorial.kubebuilder.io/project",
 		"--license", "apache2",
