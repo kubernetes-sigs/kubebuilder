@@ -21,15 +21,17 @@ import (
 	"path/filepath"
 	"strings"
 
+	// nolint:revive
 	. "github.com/onsi/ginkgo/v2"
+	// nolint:revive
 	. "github.com/onsi/gomega"
 
 	pluginutil "sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
 
 	//nolint:golint
-	//nolint:revive
+	// nolint:revive
 	//nolint:golint
-	//nolint:revive
+	// nolint:revive
 	"sigs.k8s.io/kubebuilder/v3/test/e2e/utils"
 )
 

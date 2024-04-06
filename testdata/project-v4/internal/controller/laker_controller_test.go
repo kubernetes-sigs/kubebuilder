@@ -17,6 +17,8 @@ limitations under the License.
 package controller
 
 import (
+
+	// nolint:revive
 	. "github.com/onsi/ginkgo/v2"
 )
 

@@ -19,7 +19,9 @@ package golang
 import (
 	"sort"
 
+	// nolint:revive
 	. "github.com/onsi/ginkgo/v2"
+	// nolint:revive
 	. "github.com/onsi/gomega"
 )
 

@@ -26,7 +26,9 @@ import (
 	"testing"
 	"time"
 
+	// nolint:revive
 	. "github.com/onsi/ginkgo/v2"
+	// nolint:revive
 	. "github.com/onsi/gomega"
 
 	admissionv1 "k8s.io/api/admission/v1"

@@ -26,10 +26,12 @@ import (
 	"testing"
 	"time"
 
+	// nolint:revive
 	. "github.com/onsi/ginkgo/v2"
+	// nolint:revive
 	. "github.com/onsi/gomega"
-
 	admissionv1 "k8s.io/api/admission/v1"
+
 	//+kubebuilder:scaffold:imports
 	apimachineryruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"

@@ -141,7 +141,9 @@ import (
 	"runtime"
 	"testing"
 
+	// nolint:revive
 	. "github.com/onsi/ginkgo/v2"
+	// nolint:revive
 	. "github.com/onsi/gomega"
 
 	"k8s.io/client-go/kubernetes/scheme"

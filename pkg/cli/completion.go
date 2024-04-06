@@ -36,7 +36,7 @@ Linux:
 MacOS:
   $ %[1]s completion bash > /usr/local/etc/bash_completion.d/%[1]s
 `, c.commandName),
-		RunE: func(cmd *cobra.Command, cmdArgs []string) error {
+		RunE: func(cmd *cobra.Command, _ []string) error {
 			return cmd.Root().GenBashCompletion(os.Stdout)
 		},
 	}
@@ -55,7 +55,7 @@ $ %[1]s completion zsh > "${fpath[1]}/_%[1]s"
 
 # You will need to start a new shell for this setup to take effect.
 `, c.commandName),
-		RunE: func(cmd *cobra.Command, cmdArgs []string) error {
+		RunE: func(cmd *cobra.Command, _ []string) error {
 			return cmd.Root().GenZshCompletion(os.Stdout)
 		},
 	}
@@ -71,7 +71,7 @@ $ %[1]s completion fish | source
 # To load completions for each session, execute once:
 $ %[1]s completion fish > ~/.config/fish/completions/%[1]s.fish
 `, c.commandName),
-		RunE: func(cmd *cobra.Command, cmdArgs []string) error {
+		RunE: func(cmd *cobra.Command, _ []string) error {
 			return cmd.Root().GenFishCompletion(os.Stdout, true)
 		},
 	}
@@ -81,7 +81,7 @@ func (CLI) newPowerShellCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "powershell",
 		Short: "Load powershell completions",
-		RunE: func(cmd *cobra.Command, cmdArgs []string) error {
+		RunE: func(cmd *cobra.Command, _ []string) error {
 			return cmd.Root().GenPowerShellCompletion(os.Stdout)
 		},
 	}

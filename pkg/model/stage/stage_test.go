@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	g "github.com/onsi/ginkgo/v2" // An alias is required because Context is defined elsewhere in this package.
+	// nolint:revive
 	. "github.com/onsi/gomega"
 )
 

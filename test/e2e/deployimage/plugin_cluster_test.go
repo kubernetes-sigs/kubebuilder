@@ -26,12 +26,9 @@ import (
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
 
-	//nolint:golint
-	//nolint:revive
+	// nolint:revive
 	. "github.com/onsi/ginkgo/v2"
-
-	//nolint:golint
-	//nolint:revive
+	// nolint:revive
 	. "github.com/onsi/gomega"
 
 	"sigs.k8s.io/kubebuilder/v3/test/e2e/utils"
