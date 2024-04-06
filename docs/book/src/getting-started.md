@@ -464,7 +464,6 @@ After making the necessary changes, run the `make generate` command. This will p
 <h1>RBAC generate under config/rbac</h1>
 
 For each Kind, Kubebuilder will generate scaffold rules with view and edit permissions. (i.e. `memcached_editor_role.yaml` and `memcached_viewer_role.yaml`)
-Those rules are not applied on the cluster when you deploy your solution with `make deploy IMG=myregistery/example:1.0.0`.
 Those rules are aimed to help system admins know what to allow when granting permissions to a group of users.
 
 </aside>

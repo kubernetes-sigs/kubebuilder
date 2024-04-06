@@ -269,21 +269,6 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller bool) {
 		return err
 	}, time.Minute, time.Second).Should(Succeed())
 
-	By("applying the CRD Editor Role")
-	crdEditorRole := filepath.Join("config", "rbac",
-		fmt.Sprintf("%s_editor_role.yaml", strings.ToLower(kbc.Kind)))
-	EventuallyWithOffset(1, func() error {
-		_, err = kbc.Kubectl.Apply(true, "-f", crdEditorRole)
-		return err
-	}, time.Minute, time.Second).Should(Succeed())
-
-	By("applying the CRD Viewer Role")
-	crdViewerRole := filepath.Join("config", "rbac", fmt.Sprintf("%s_viewer_role.yaml", strings.ToLower(kbc.Kind)))
-	EventuallyWithOffset(1, func() error {
-		_, err = kbc.Kubectl.Apply(true, "-f", crdViewerRole)
-		return err
-	}, time.Minute, time.Second).Should(Succeed())
-
 	By("validating that the created resource object gets reconciled in the controller")
 	metricsOutput := curlMetrics(kbc)
 	ExpectWithOffset(1, metricsOutput).To(ContainSubstring(fmt.Sprintf(
