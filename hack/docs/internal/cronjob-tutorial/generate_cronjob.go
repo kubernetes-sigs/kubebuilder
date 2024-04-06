@@ -34,9 +34,7 @@ type Sample struct {
 
 func NewSample(binaryPath, samplePath string) Sample {
 	log.Infof("Generating the sample context of Cronjob...")
-
 	ctx := newSampleContext(binaryPath, samplePath, "GO111MODULE=on")
-
 	return Sample{&ctx}
 }
 
