@@ -11,7 +11,7 @@ jobs:
     env:
       KIND_K8S_VERSION: v1.29.0
       tools_k8s_version: 1.29.0
-      kind_version: 0.20.0
+      kind_version: 0.22.0
     steps:
       - name: Clone the code
         uses: actions/checkout@v4
