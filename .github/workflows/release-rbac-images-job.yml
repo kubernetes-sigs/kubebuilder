@@ -12,8 +12,8 @@ on:
   pull_request:
     branches:
       - master
-    paths:
-      - 'release-rbac-images-versions.yaml'
+#    paths:
+#      - 'hack/release/kube-rbac-proxy/images-versions.yaml'
 
 permissions:
   contents: read
@@ -39,25 +39,24 @@ jobs:
       - name: Install yq for YAML processing
         run: sudo snap install yq
 
-      - name: Read versions from YAML and check for existing images
+      - name: Read versions from YAML and push images for each architecture
         run: |
-          VERSIONS=$(yq e '.versions[]' release-rbac-images-versions.yaml)
+          VERSIONS=$(yq e '.versions[]' hack/release/kube-rbac-proxy/images-versions.yaml)
+          ARCHES=("amd64" "arm64" "ppc64le" "s390x")
           for VERSION in $VERSIONS; do
-            EXISTS=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://ghcr.io/v2/${{ github.repository_owner }}/kube-rbac-proxy/manifests/$VERSION)
-            if [ "$EXISTS" -ne 200 ]; then
-              echo "Version $VERSION does not exist. Proceeding with build and push."
-          
-              BASE_IMAGE_TAG="quay.io/brancz/kube-rbac-proxy:$VERSION"
-              docker pull $BASE_IMAGE_TAG
-          
-              # Use docker buildx to rebuild for all architectures and push
-              TARGET_IMAGE_TAG="ghcr.io/${{ github.repository_owner }}/kube-rbac-proxy:$VERSION"
-              docker buildx build --push --tag $TARGET_IMAGE_TAG \
-                --platform linux/amd64,linux/arm64,linux/ppc64le,linux/s390x \
-                --build-arg BASE_IMAGE_TAG=$BASE_IMAGE_TAG .
-            else
-              echo "Version $VERSION already exists. Skipping."
-            fi
-          done
+            for ARCH in "${ARCHES[@]}"; do
+              SOURCE_IMAGE_TAG="quay.io/brancz/kube-rbac-proxy:$VERSION"
+              TARGET_IMAGE_TAG="ghcr.io/${{ github.repository_owner }}/kube-rbac-proxy:$VERSION-$ARCH"
+              docker pull $SOURCE_IMAGE_TAG
+              docker tag $SOURCE_IMAGE_TAG $TARGET_IMAGE_TAG
+              docker push $TARGET_IMAGE_TAG
+            done
+            # Create and push a multi-architecture manifest
+            TARGET_IMAGE_TAG="ghcr.io/${{ github.repository_owner }}/kube-rbac-proxy:$VERSION"
+            docker manifest create $TARGET_IMAGE_TAG $(printf "ghcr.io/${{ github.repository_owner }}/kube-rbac-proxy:$VERSION-%s " "${ARCHES[@]}")
+            for ARCH in "${ARCHES[@]}"; do
+              docker manifest annotate $TARGET_IMAGE_TAG "ghcr.io/${{ github.repository_owner }}/kube-rbac-proxy:$VERSION-$ARCH" --arch $ARCH
+            done
+            docker manifest push $TARGET_IMAGE_TAG
         env:
           DOCKER_CLI_EXPERIMENTAL: enabled
