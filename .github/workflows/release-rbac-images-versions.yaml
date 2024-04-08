@@ -1,0 +1,4 @@
+# Update this file to build new releases for the images
+# of the project https://github.com/brancz/kube-rbac-proxy
+versions:
+  - v0.16.0

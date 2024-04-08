@@ -1,0 +1,63 @@
+# This workflow updates kube-rbac-proxy images in GHCR by retagging images from quay.io/brancz/kube-rbac-proxy.
+# Steps:
+# 1. Checks if specified version images already exist in GHCR to avoid redundancy.
+# 2. For new versions, pulls the base image from quay.io/brancz/kube-rbac-proxy without considering architecture.
+# 3. Pushes this image to GHCR, ensuring it's available for all required architectures (amd64, arm64, ppc64le, s390x).
+# 4. Creates and pushes a multi-architecture manifest for each version in GHCR, enabling architecture-agnostic pulls.
+name: Build and Push Kube RBAC Proxy Image
+on:
+  # push:
+  #   branches:
+  #     - master
+  pull_request:
+    branches:
+      - master
+    paths:
+      - 'release-rbac-images-versions.yaml'
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  check-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU and Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install yq for YAML processing
+        run: sudo snap install yq
+
+      - name: Read versions from YAML and check for existing images
+        run: |
+          VERSIONS=$(yq e '.versions[]' release-rbac-images-versions.yaml)
+          for VERSION in $VERSIONS; do
+            EXISTS=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" https://ghcr.io/v2/${{ github.repository_owner }}/kube-rbac-proxy/manifests/$VERSION)
+            if [ "$EXISTS" -ne 200 ]; then
+              echo "Version $VERSION does not exist. Proceeding with build and push."
+          
+              BASE_IMAGE_TAG="quay.io/brancz/kube-rbac-proxy:$VERSION"
+              docker pull $BASE_IMAGE_TAG
+          
+              # Use docker buildx to rebuild for all architectures and push
+              TARGET_IMAGE_TAG="ghcr.io/${{ github.repository_owner }}/kube-rbac-proxy:$VERSION"
+              docker buildx build --push --tag $TARGET_IMAGE_TAG \
+                --platform linux/amd64,linux/arm64,linux/ppc64le,linux/s390x \
+                --build-arg BASE_IMAGE_TAG=$BASE_IMAGE_TAG .
+            else
+              echo "Version $VERSION already exists. Skipping."
+            fi
+          done
+        env:
+          DOCKER_CLI_EXPERIMENTAL: enabled
