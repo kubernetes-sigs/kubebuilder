@@ -50,7 +50,7 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	log := r.Log.WithValues("cronjob", req.NamespacedName)
 
 	cronJob := &batchv1.CronJob{}
-	if err := r.Get(ctx, req.NamespacedName, cronJob); err != nil {
+	if err := r.Client.Get(ctx, req.NamespacedName, cronJob); err != nil {
 		log.Error(err, "unable to fetch CronJob")
 		// we'll ignore not-found errors, since they can't be fixed by an immediate
 		// requeue (we'll need to wait for a new notification), and we can get them
@@ -68,7 +68,7 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		// to registering our finalizer.
 		if !controllerutil.ContainsFinalizer(cronJob, myFinalizerName) {
 			controllerutil.AddFinalizer(cronJob, myFinalizerName)
-			if err := r.Update(ctx, cronJob); err != nil {
+			if err := r.Client.Update(ctx, cronJob); err != nil {
 				return ctrl.Result{}, err
 			}
 		}
@@ -84,7 +84,7 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 			// remove our finalizer from the list and update it.
 			controllerutil.RemoveFinalizer(cronJob, myFinalizerName)
-			if err := r.Update(ctx, cronJob); err != nil {
+			if err := r.Client.Update(ctx, cronJob); err != nil {
 				return ctrl.Result{}, err
 			}
 		}

@@ -27,7 +27,7 @@ import (
 
 // LakerReconciler reconciles a Laker object
 type LakerReconciler struct {
-	client.Client
+	Client client.Client
 	Scheme *runtime.Scheme
 }
 

@@ -29,7 +29,7 @@ import (
 
 // FirstMateReconciler reconciles a FirstMate object
 type FirstMateReconciler struct {
-	client.Client
+	Client client.Client
 	Log    logr.Logger
 	Scheme *runtime.Scheme
 }

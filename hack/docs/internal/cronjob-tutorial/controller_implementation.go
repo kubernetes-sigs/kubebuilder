@@ -99,7 +99,7 @@ const ControllerReconcileLogic = `log := log.FromContext(ctx)
 		Many client methods also take variadic options at the end.
 	*/
 	var cronJob batchv1.CronJob
-	if err := r.Get(ctx, req.NamespacedName, &cronJob); err != nil {
+	if err := r.Client.Get(ctx, req.NamespacedName, &cronJob); err != nil {
 		log.Error(err, "unable to fetch CronJob")
 		// we'll ignore not-found errors, since they can't be fixed by an immediate
 		// requeue (we'll need to wait for a new notification), and we can get them
@@ -115,7 +115,7 @@ const ControllerReconcileLogic = `log := log.FromContext(ctx)
 		set the namespace and field match (which is actually an index lookup that we set up below).
 	*/
 	var childJobs kbatch.JobList
-	if err := r.List(ctx, &childJobs, client.InNamespace(req.Namespace), client.MatchingFields{jobOwnerKey: req.Name}); err != nil {
+	if err := r.Client.List(ctx, &childJobs, client.InNamespace(req.Namespace), client.MatchingFields{jobOwnerKey: req.Name}); err != nil {
 		log.Error(err, "unable to list child Jobs")
 		return ctrl.Result{}, err
 	}
@@ -242,7 +242,7 @@ const ControllerReconcileLogic = `log := log.FromContext(ctx)
 		The status subresource ignores changes to spec, so it's less likely to conflict
 		with any other updates, and can have separate permissions.
 	*/
-	if err := r.Status().Update(ctx, &cronJob); err != nil {
+	if err := r.Client.Status().Update(ctx, &cronJob); err != nil {
 		log.Error(err, "unable to update CronJob status")
 		return ctrl.Result{}, err
 	}
@@ -270,7 +270,7 @@ const ControllerReconcileLogic = `log := log.FromContext(ctx)
 			if int32(i) >= int32(len(failedJobs))-*cronJob.Spec.FailedJobsHistoryLimit {
 				break
 			}
-			if err := r.Delete(ctx, job, client.PropagationPolicy(metav1.DeletePropagationBackground)); client.IgnoreNotFound(err) != nil {
+			if err := r.Client.Delete(ctx, job, client.PropagationPolicy(metav1.DeletePropagationBackground)); client.IgnoreNotFound(err) != nil {
 				log.Error(err, "unable to delete old failed job", "job", job)
 			} else {
 				log.V(0).Info("deleted old failed job", "job", job)
@@ -289,7 +289,7 @@ const ControllerReconcileLogic = `log := log.FromContext(ctx)
 			if int32(i) >= int32(len(successfulJobs))-*cronJob.Spec.SuccessfulJobsHistoryLimit {
 				break
 			}
-			if err := r.Delete(ctx, job, client.PropagationPolicy(metav1.DeletePropagationBackground)); err != nil {
+			if err := r.Client.Delete(ctx, job, client.PropagationPolicy(metav1.DeletePropagationBackground)); err != nil {
 				log.Error(err, "unable to delete old successful job", "job", job)
 			} else {
 				log.V(0).Info("deleted old successful job", "job", job)
@@ -436,7 +436,7 @@ const ControllerReconcileLogic = `log := log.FromContext(ctx)
 	if cronJob.Spec.ConcurrencyPolicy == batchv1.ReplaceConcurrent {
 		for _, activeJob := range activeJobs {
 			// we don't care if the job was already deleted
-			if err := r.Delete(ctx, activeJob, client.PropagationPolicy(metav1.DeletePropagationBackground)); client.IgnoreNotFound(err) != nil {
+			if err := r.Client.Delete(ctx, activeJob, client.PropagationPolicy(metav1.DeletePropagationBackground)); client.IgnoreNotFound(err) != nil {
 				log.Error(err, "unable to delete active job", "job", activeJob)
 				return ctrl.Result{}, err
 			}
@@ -495,7 +495,7 @@ const ControllerReconcileLogic = `log := log.FromContext(ctx)
 	}
 
 	// ...and create it on the cluster
-	if err := r.Create(ctx, job); err != nil {
+	if err := r.Client.Create(ctx, job); err != nil {
 		log.Error(err, "unable to create Job for CronJob", "job", job)
 		return ctrl.Result{}, err
 	}

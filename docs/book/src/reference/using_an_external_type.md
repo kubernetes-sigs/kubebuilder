@@ -79,7 +79,7 @@ file: internal/controller/externaltype_controller.go
 ```go
 // ExternalTypeReconciler reconciles a ExternalType object
 type ExternalTypeReconciler struct {
-	client.Client
+	Client client.Client
 	Scheme *runtime.Scheme
 }
 

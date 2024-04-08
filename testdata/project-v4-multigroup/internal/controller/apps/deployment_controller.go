@@ -28,7 +28,7 @@ import (
 
 // DeploymentReconciler reconciles a Deployment object
 type DeploymentReconciler struct {
-	client.Client
+	Client client.Client
 	Scheme *runtime.Scheme
 }
 

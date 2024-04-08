@@ -29,7 +29,7 @@ import (
 
 // CruiserReconciler reconciles a Cruiser object
 type CruiserReconciler struct {
-	client.Client
+	Client client.Client
 	Scheme *runtime.Scheme
 }
 

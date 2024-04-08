@@ -29,7 +29,7 @@ import (
 
 // DestroyerReconciler reconciles a Destroyer object
 type DestroyerReconciler struct {
-	client.Client
+	Client client.Client
 	Scheme *runtime.Scheme
 }
 

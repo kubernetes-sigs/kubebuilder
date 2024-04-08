@@ -29,7 +29,7 @@ import (
 
 // KrakenReconciler reconciles a Kraken object
 type KrakenReconciler struct {
-	client.Client
+	Client client.Client
 	Scheme *runtime.Scheme
 }
 

@@ -468,7 +468,7 @@ import (
 )
 
 type MyKindReconciler struct {
-	client.Client
+	Client client.Client
 	log logr.Logger
 }
 

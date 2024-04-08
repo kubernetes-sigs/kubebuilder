@@ -51,7 +51,7 @@ const (
 
 // BusyboxReconciler reconciles a Busybox object
 type BusyboxReconciler struct {
-	client.Client
+	Client   client.Client
 	Scheme   *runtime.Scheme
 	Recorder record.EventRecorder
 }
@@ -85,7 +85,7 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	// The purpose is check if the Custom Resource for the Kind Busybox
 	// is applied on the cluster if not we return nil to stop the reconciliation
 	busybox := &examplecomv1alpha1.Busybox{}
-	err := r.Get(ctx, req.NamespacedName, busybox)
+	err := r.Client.Get(ctx, req.NamespacedName, busybox)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			// If the custom resource is not found then it usually means that it was deleted or not created
@@ -101,7 +101,7 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	// Let's just set the status as Unknown when no status is available
 	if busybox.Status.Conditions == nil || len(busybox.Status.Conditions) == 0 {
 		meta.SetStatusCondition(&busybox.Status.Conditions, metav1.Condition{Type: typeAvailableBusybox, Status: metav1.ConditionUnknown, Reason: "Reconciling", Message: "Starting reconciliation"})
-		if err = r.Status().Update(ctx, busybox); err != nil {
+		if err = r.Client.Status().Update(ctx, busybox); err != nil {
 			log.Error(err, "Failed to update Busybox status")
 			return ctrl.Result{}, err
 		}
@@ -111,7 +111,7 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		// raising the error "the object has been modified, please apply
 		// your changes to the latest version and try again" which would re-trigger the reconciliation
 		// if we try to update it again in the following operations
-		if err := r.Get(ctx, req.NamespacedName, busybox); err != nil {
+		if err := r.Client.Get(ctx, req.NamespacedName, busybox); err != nil {
 			log.Error(err, "Failed to re-fetch busybox")
 			return ctrl.Result{}, err
 		}
@@ -127,7 +127,7 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			return ctrl.Result{Requeue: true}, nil
 		}
 
-		if err = r.Update(ctx, busybox); err != nil {
+		if err = r.Client.Update(ctx, busybox); err != nil {
 			log.Error(err, "Failed to update custom resource to add finalizer")
 			return ctrl.Result{}, err
 		}
@@ -145,7 +145,7 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				Status: metav1.ConditionUnknown, Reason: "Finalizing",
 				Message: fmt.Sprintf("Performing finalizer operations for the custom resource: %s ", busybox.Name)})
 
-			if err := r.Status().Update(ctx, busybox); err != nil {
+			if err := r.Client.Status().Update(ctx, busybox); err != nil {
 				log.Error(err, "Failed to update Busybox status")
 				return ctrl.Result{}, err
 			}
@@ -162,7 +162,7 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			// so that we have the latest state of the resource on the cluster and we will avoid
 			// raising the error "the object has been modified, please apply
 			// your changes to the latest version and try again" which would re-trigger the reconciliation
-			if err := r.Get(ctx, req.NamespacedName, busybox); err != nil {
+			if err := r.Client.Get(ctx, req.NamespacedName, busybox); err != nil {
 				log.Error(err, "Failed to re-fetch busybox")
 				return ctrl.Result{}, err
 			}
@@ -171,7 +171,7 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				Status: metav1.ConditionTrue, Reason: "Finalizing",
 				Message: fmt.Sprintf("Finalizer operations for custom resource %s name were successfully accomplished", busybox.Name)})
 
-			if err := r.Status().Update(ctx, busybox); err != nil {
+			if err := r.Client.Status().Update(ctx, busybox); err != nil {
 				log.Error(err, "Failed to update Busybox status")
 				return ctrl.Result{}, err
 			}
@@ -182,7 +182,7 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				return ctrl.Result{Requeue: true}, nil
 			}
 
-			if err := r.Update(ctx, busybox); err != nil {
+			if err := r.Client.Update(ctx, busybox); err != nil {
 				log.Error(err, "Failed to remove finalizer for Busybox")
 				return ctrl.Result{}, err
 			}
@@ -192,7 +192,7 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	// Check if the deployment already exists, if not create a new one
 	found := &appsv1.Deployment{}
-	err = r.Get(ctx, types.NamespacedName{Name: busybox.Name, Namespace: busybox.Namespace}, found)
+	err = r.Client.Get(ctx, types.NamespacedName{Name: busybox.Name, Namespace: busybox.Namespace}, found)
 	if err != nil && apierrors.IsNotFound(err) {
 		// Define a new deployment
 		dep, err := r.deploymentForBusybox(busybox)
@@ -204,7 +204,7 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				Status: metav1.ConditionFalse, Reason: "Reconciling",
 				Message: fmt.Sprintf("Failed to create Deployment for the custom resource (%s): (%s)", busybox.Name, err)})
 
-			if err := r.Status().Update(ctx, busybox); err != nil {
+			if err := r.Client.Status().Update(ctx, busybox); err != nil {
 				log.Error(err, "Failed to update Busybox status")
 				return ctrl.Result{}, err
 			}
@@ -214,7 +214,7 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 		log.Info("Creating a new Deployment",
 			"Deployment.Namespace", dep.Namespace, "Deployment.Name", dep.Name)
-		if err = r.Create(ctx, dep); err != nil {
+		if err = r.Client.Create(ctx, dep); err != nil {
 			log.Error(err, "Failed to create new Deployment",
 				"Deployment.Namespace", dep.Namespace, "Deployment.Name", dep.Name)
 			return ctrl.Result{}, err
@@ -237,7 +237,7 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	size := busybox.Spec.Size
 	if *found.Spec.Replicas != size {
 		found.Spec.Replicas = &size
-		if err = r.Update(ctx, found); err != nil {
+		if err = r.Client.Update(ctx, found); err != nil {
 			log.Error(err, "Failed to update Deployment",
 				"Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
 
@@ -245,7 +245,7 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			// so that we have the latest state of the resource on the cluster and we will avoid
 			// raising the error "the object has been modified, please apply
 			// your changes to the latest version and try again" which would re-trigger the reconciliation
-			if err := r.Get(ctx, req.NamespacedName, busybox); err != nil {
+			if err := r.Client.Get(ctx, req.NamespacedName, busybox); err != nil {
 				log.Error(err, "Failed to re-fetch busybox")
 				return ctrl.Result{}, err
 			}
@@ -255,7 +255,7 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				Status: metav1.ConditionFalse, Reason: "Resizing",
 				Message: fmt.Sprintf("Failed to update the size for the custom resource (%s): (%s)", busybox.Name, err)})
 
-			if err := r.Status().Update(ctx, busybox); err != nil {
+			if err := r.Client.Status().Update(ctx, busybox); err != nil {
 				log.Error(err, "Failed to update Busybox status")
 				return ctrl.Result{}, err
 			}
@@ -274,7 +274,7 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		Status: metav1.ConditionTrue, Reason: "Reconciling",
 		Message: fmt.Sprintf("Deployment for custom resource (%s) with %d replicas created successfully", busybox.Name, size)})
 
-	if err := r.Status().Update(ctx, busybox); err != nil {
+	if err := r.Client.Status().Update(ctx, busybox); err != nil {
 		log.Error(err, "Failed to update Busybox status")
 		return ctrl.Result{}, err
 	}

@@ -194,7 +194,7 @@ To overcome this limitation you can create a new namespace for each test. Even s
 
 ```go
 type MyCoolReconciler struct {
-	client.Client
+	Client client.Client
 	...
 	Namespace     string  // restrict namespaces to reconcile
 }

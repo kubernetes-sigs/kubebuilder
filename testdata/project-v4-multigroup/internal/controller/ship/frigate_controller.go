@@ -29,7 +29,7 @@ import (
 
 // FrigateReconciler reconciles a Frigate object
 type FrigateReconciler struct {
-	client.Client
+	Client client.Client
 	Scheme *runtime.Scheme
 }
 

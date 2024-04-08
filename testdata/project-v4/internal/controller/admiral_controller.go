@@ -29,7 +29,7 @@ import (
 
 // AdmiralReconciler reconciles a Admiral object
 type AdmiralReconciler struct {
-	client.Client
+	Client client.Client
 	Scheme *runtime.Scheme
 }
 

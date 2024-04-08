@@ -29,7 +29,7 @@ import (
 
 // LakersReconciler reconciles a Lakers object
 type LakersReconciler struct {
-	client.Client
+	Client client.Client
 	Scheme *runtime.Scheme
 }
 

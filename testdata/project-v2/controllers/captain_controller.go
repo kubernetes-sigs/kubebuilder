@@ -29,7 +29,7 @@ import (
 
 // CaptainReconciler reconciles a Captain object
 type CaptainReconciler struct {
-	client.Client
+	Client client.Client
 	Log    logr.Logger
 	Scheme *runtime.Scheme
 }

@@ -32,10 +32,10 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder" // Required for Watching
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/handler" // Required for Watching
+	"sigs.k8s.io/controller-runtime/pkg/handler"   // Required for Watching
 	"sigs.k8s.io/controller-runtime/pkg/predicate" // Required for Watching
 	"sigs.k8s.io/controller-runtime/pkg/reconcile" // Required for Watching
-	"sigs.k8s.io/controller-runtime/pkg/source" // Required for Watching
+	"sigs.k8s.io/controller-runtime/pkg/source"    // Required for Watching
 
 	appsv1 "tutorial.kubebuilder.io/project/api/v1"
 )
@@ -49,14 +49,15 @@ const (
 )
 
 /*
-*/
+ */
 
 // ConfigDeploymentReconciler reconciles a ConfigDeployment object
 type ConfigDeploymentReconciler struct {
-	client.Client
+	Client client.Client
 	Log    logr.Logger
 	Scheme *runtime.Scheme
 }
+
 // +kubebuilder:docs-gen:collapse=Reconciler Declaration
 
 /*
@@ -91,7 +92,7 @@ func (r *ConfigDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	log := r.Log.WithValues("configDeployment", req.NamespacedName)
 
 	var configDeployment appsv1.ConfigDeployment
-	if err := r.Get(ctx, req.NamespacedName, &configDeployment); err != nil {
+	if err := r.Client.Get(ctx, req.NamespacedName, &configDeployment); err != nil {
 		log.Error(err, "unable to fetch ConfigDeployment")
 		// we'll ignore not-found errors, since they can't be fixed by an immediate
 		// requeue (we'll need to wait for a new notification), and we can get them
@@ -106,7 +107,7 @@ func (r *ConfigDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	if configDeployment.Spec.ConfigMap != "" {
 		configMapName := configDeployment.Spec.ConfigMap
 		foundConfigMap := &corev1.ConfigMap{}
-		err := r.Get(ctx, types.NamespacedName{Name: configMapName, Namespace: configDeployment.Namespace}, foundConfigMap)
+		err := r.Client.Get(ctx, types.NamespacedName{Name: configMapName, Namespace: configDeployment.Namespace}, foundConfigMap)
 		if err != nil {
 			// If a configMap name is provided, then it must exist
 			// You will likely want to create an Event for the user to understand why their reconcile is failing.
@@ -153,16 +154,16 @@ func (r *ConfigDeploymentReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	/*
-	As explained in the CronJob tutorial, the controller will first register the Type that it manages, as well as the types of subresources that it controls.
-	Since we also want to watch ConfigMaps that are not controlled or managed by the controller, we will need to use the `Watches()` functionality as well.
+		As explained in the CronJob tutorial, the controller will first register the Type that it manages, as well as the types of subresources that it controls.
+		Since we also want to watch ConfigMaps that are not controlled or managed by the controller, we will need to use the `Watches()` functionality as well.
 
-	The `Watches()` function is a controller-runtime API that takes:
-	- A Kind (i.e. `ConfigMap`)
-	- A mapping function that converts a `ConfigMap` object to a list of reconcile requests for `ConfigDeployments`.
-	We have separated this out into a separate function.
-	- A list of options for watching the `ConfigMaps`
-	  - In our case, we only want the watch to be triggered when the ResourceVersion of the ConfigMap is changed.
-	 */
+		The `Watches()` function is a controller-runtime API that takes:
+		- A Kind (i.e. `ConfigMap`)
+		- A mapping function that converts a `ConfigMap` object to a list of reconcile requests for `ConfigDeployments`.
+		We have separated this out into a separate function.
+		- A list of options for watching the `ConfigMaps`
+		  - In our case, we only want the watch to be triggered when the ResourceVersion of the ConfigMap is changed.
+	*/
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&appsv1.ConfigDeployment{}).
@@ -176,13 +177,13 @@ func (r *ConfigDeploymentReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 /*
-	Because we have already created an index on the `configMap` reference field, this mapping function is quite straight forward.
-	We first need to list out all `ConfigDeployments` that use `ConfigMap` given in the mapping function.
-	This is done by merely submitting a List request using our indexed field as the field selector.
+Because we have already created an index on the `configMap` reference field, this mapping function is quite straight forward.
+We first need to list out all `ConfigDeployments` that use `ConfigMap` given in the mapping function.
+This is done by merely submitting a List request using our indexed field as the field selector.
 
-	When the list of `ConfigDeployments` that reference the `ConfigMap` is found,
-	we just need to loop through the list and create a reconcile request for each one.
-	If an error occurs fetching the list, or no `ConfigDeployments` are found, then no reconcile requests will be returned.
+When the list of `ConfigDeployments` that reference the `ConfigMap` is found,
+we just need to loop through the list and create a reconcile request for each one.
+If an error occurs fetching the list, or no `ConfigDeployments` are found, then no reconcile requests will be returned.
 */
 func (r *ConfigDeploymentReconciler) findObjectsForConfigMap(ctx context.Context, configMap client.Object) []reconcile.Request {
 	attachedConfigDeployments := &appsv1.ConfigDeploymentList{}
@@ -190,7 +191,7 @@ func (r *ConfigDeploymentReconciler) findObjectsForConfigMap(ctx context.Context
 		FieldSelector: fields.OneTermEqualSelector(configMapField, configMap.GetName()),
 		Namespace:     configMap.GetNamespace(),
 	}
-	err := r.List(ctx, attachedConfigDeployments, listOps)
+	err := r.Client.List(ctx, attachedConfigDeployments, listOps)
 	if err != nil {
 		return []reconcile.Request{}
 	}

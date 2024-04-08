@@ -29,7 +29,7 @@ import (
 
 // BarReconciler reconciles a Bar object
 type BarReconciler struct {
-	client.Client
+	Client client.Client
 	Scheme *runtime.Scheme
 }
 

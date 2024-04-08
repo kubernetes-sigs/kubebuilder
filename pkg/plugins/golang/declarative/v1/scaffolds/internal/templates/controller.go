@@ -96,7 +96,7 @@ var _ reconcile.Reconciler = &{{ .Resource.Kind }}Reconciler{}
 
 // {{ .Resource.Kind }}Reconciler reconciles a {{ .Resource.Kind }} object
 type {{ .Resource.Kind }}Reconciler struct {
-	client.Client
+	Client client.Client
 	Log    logr.Logger
 	Scheme *runtime.Scheme
 

@@ -292,7 +292,7 @@ var _ = Describe("Resource", func() {
 					Kind:    "OtherKind",
 				},
 			}
-			Expect(r.Update(other)).NotTo(Succeed())
+			Expect(r.Client.Update(other)).NotTo(Succeed())
 		})
 
 		It("should fail for different Plurals", func() {
@@ -304,7 +304,7 @@ var _ = Describe("Resource", func() {
 				GVK:    gvk,
 				Plural: "types",
 			}
-			Expect(r.Update(other)).NotTo(Succeed())
+			Expect(r.Client.Update(other)).NotTo(Succeed())
 		})
 
 		It("should work for a new path", func() {
@@ -314,7 +314,7 @@ var _ = Describe("Resource", func() {
 				GVK:  gvk,
 				Path: path,
 			}
-			Expect(r.Update(other)).To(Succeed())
+			Expect(r.Client.Update(other)).To(Succeed())
 			Expect(r.Path).To(Equal(path))
 		})
 
@@ -327,7 +327,7 @@ var _ = Describe("Resource", func() {
 				GVK:  gvk,
 				Path: "apis/group/v1",
 			}
-			Expect(r.Update(other)).NotTo(Succeed())
+			Expect(r.Client.Update(other)).NotTo(Succeed())
 		})
 
 		Context("API", func() {
@@ -337,7 +337,7 @@ var _ = Describe("Resource", func() {
 					GVK: gvk,
 					API: &API{CRDVersion: v1},
 				}
-				Expect(r.Update(other)).To(Succeed())
+				Expect(r.Client.Update(other)).To(Succeed())
 				Expect(r.API).NotTo(BeNil())
 				Expect(r.API.CRDVersion).To(Equal(v1))
 			})
@@ -351,7 +351,7 @@ var _ = Describe("Resource", func() {
 					GVK: gvk,
 					API: &API{CRDVersion: v1beta1},
 				}
-				Expect(r.Update(other)).NotTo(Succeed())
+				Expect(r.Client.Update(other)).NotTo(Succeed())
 			})
 
 			// The rest of the cases are tested in API.Update
@@ -364,7 +364,7 @@ var _ = Describe("Resource", func() {
 					GVK:        gvk,
 					Controller: true,
 				}
-				Expect(r.Update(other)).To(Succeed())
+				Expect(r.Client.Update(other)).To(Succeed())
 				Expect(r.Controller).To(BeTrue())
 			})
 
@@ -376,7 +376,7 @@ var _ = Describe("Resource", func() {
 
 				By("not providing it")
 				other = Resource{GVK: gvk}
-				Expect(r.Update(other)).To(Succeed())
+				Expect(r.Client.Update(other)).To(Succeed())
 				Expect(r.Controller).To(BeTrue())
 
 				By("providing it")
@@ -384,14 +384,14 @@ var _ = Describe("Resource", func() {
 					GVK:        gvk,
 					Controller: true,
 				}
-				Expect(r.Update(other)).To(Succeed())
+				Expect(r.Client.Update(other)).To(Succeed())
 				Expect(r.Controller).To(BeTrue())
 			})
 
 			It("should not set the controller flag if not provided and not previously set", func() {
 				r = Resource{GVK: gvk}
 				other = Resource{GVK: gvk}
-				Expect(r.Update(other)).To(Succeed())
+				Expect(r.Client.Update(other)).To(Succeed())
 				Expect(r.Controller).To(BeFalse())
 			})
 		})
@@ -403,7 +403,7 @@ var _ = Describe("Resource", func() {
 					GVK:      gvk,
 					Webhooks: &Webhooks{WebhookVersion: v1},
 				}
-				Expect(r.Update(other)).To(Succeed())
+				Expect(r.Client.Update(other)).To(Succeed())
 				Expect(r.Webhooks).NotTo(BeNil())
 				Expect(r.Webhooks.WebhookVersion).To(Equal(v1))
 			})
@@ -417,7 +417,7 @@ var _ = Describe("Resource", func() {
 					GVK:      gvk,
 					Webhooks: &Webhooks{WebhookVersion: v1beta1},
 				}
-				Expect(r.Update(other)).NotTo(Succeed())
+				Expect(r.Client.Update(other)).NotTo(Succeed())
 			})
 
 			// The rest of the cases are tested in Webhooks.Update

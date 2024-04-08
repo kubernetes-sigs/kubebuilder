@@ -29,7 +29,7 @@ import (
 
 // LeviathanReconciler reconciles a Leviathan object
 type LeviathanReconciler struct {
-	client.Client
+	Client client.Client
 	Scheme *runtime.Scheme
 }
 

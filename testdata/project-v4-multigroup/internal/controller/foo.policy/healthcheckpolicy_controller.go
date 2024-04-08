@@ -29,7 +29,7 @@ import (
 
 // HealthCheckPolicyReconciler reconciles a HealthCheckPolicy object
 type HealthCheckPolicyReconciler struct {
-	client.Client
+	Client client.Client
 	Scheme *runtime.Scheme
 }
 

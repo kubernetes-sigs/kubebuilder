@@ -56,7 +56,7 @@ Add the new plugin code generate which will scaffold code implementation to depl
 	size := {{ resource }}.Spec.Size
 	if *found.Spec.Replicas != size {
 		found.Spec.Replicas = &size
-		err = r.Update(ctx, found)
+		err = r.Client.Update(ctx, found)
 		if err != nil {
 			log.Error(err, "Failed to update Deployment", "Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
 			return ctrl.Result{}, err
@@ -115,7 +115,7 @@ func (r *{{ resource }}.Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, er
 
 	// Fetch the {{ resource }} instance
 	{{ resource }} := &{{ apiimportalias }}.{{ resource }}{}
-	err := r.Get(ctx, req.NamespacedName, {{ resource }})
+	err := r.Client.Get(ctx, req.NamespacedName, {{ resource }})
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
@@ -131,12 +131,12 @@ func (r *{{ resource }}.Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, er
 
 	// Check if the deployment already exists, if not create a new one
 	found := &appsv1.Deployment{}
-	err = r.Get(ctx, types.NamespacedName{Name: {{ resource }}.Name, Namespace: {{ resource }}.Namespace}, found)
+	err = r.Client.Get(ctx, types.NamespacedName{Name: {{ resource }}.Name, Namespace: {{ resource }}.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new deployment
 		dep := r.deploymentFor{{ resource }}({{ resource }})
 		log.Info("Creating a new Deployment", "Deployment.Namespace", dep.Namespace, "Deployment.Name", dep.Name)
-		err = r.Create(ctx, dep)
+		err = r.Client.Create(ctx, dep)
 		if err != nil {
 			log.Error(err, "Failed to create new Deployment", "Deployment.Namespace", dep.Namespace, "Deployment.Name", dep.Name)
 			return ctrl.Result{}, err
@@ -152,7 +152,7 @@ func (r *{{ resource }}.Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, er
 	size := {{ resource }}.Spec.Size
 	if *found.Spec.Replicas != size {
 		found.Spec.Replicas = &size
-		err = r.Update(ctx, found)
+		err = r.Client.Update(ctx, found)
 		if err != nil {
 			log.Error(err, "Failed to update Deployment", "Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
 			return ctrl.Result{}, err

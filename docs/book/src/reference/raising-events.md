@@ -70,7 +70,7 @@ import (
 )
 // MyKindReconciler reconciles a MyKind object
 type MyKindReconciler struct {
-	client.Client
+	Client client.Client
 	Scheme   *runtime.Scheme
 	// See that we added the following code to allow us to pass the record.EventRecorder
 	Recorder record.EventRecorder

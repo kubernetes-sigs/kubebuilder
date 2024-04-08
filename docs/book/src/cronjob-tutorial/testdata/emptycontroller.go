@@ -41,7 +41,7 @@ objects, so these are added out of the box.
 
 // CronJobReconciler reconciles a CronJob object
 type CronJobReconciler struct {
-	client.Client
+	Client client.Client
 	Scheme *runtime.Scheme
 }
 

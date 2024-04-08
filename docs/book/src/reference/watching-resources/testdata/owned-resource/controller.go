@@ -40,7 +40,7 @@ import (
 
 // SimpleDeploymentReconciler reconciles a SimpleDeployment object
 type SimpleDeploymentReconciler struct {
-	client.Client
+	Client client.Client
 	Log    logr.Logger
 	Scheme *runtime.Scheme
 }
@@ -70,7 +70,7 @@ func (r *SimpleDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	log := r.Log.WithValues("simpleDeployment", req.NamespacedName)
 
 	var simpleDeployment appsv1.SimpleDeployment
-	if err := r.Get(ctx, req.NamespacedName, &simpleDeployment); err != nil {
+	if err := r.Client.Get(ctx, req.NamespacedName, &simpleDeployment); err != nil {
 		log.Error(err, "unable to fetch SimpleDeployment")
 		// we'll ignore not-found errors, since they can't be fixed by an immediate
 		// requeue (we'll need to wait for a new notification), and we can get them
@@ -104,15 +104,15 @@ func (r *SimpleDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		- Update it if it is configured incorrectly.
 	*/
 	foundDeployment := &kapps.Deployment{}
-	err := r.Get(ctx, types.NamespacedName{Name: deployment.Name, Namespace: deployment.Namespace}, foundDeployment)
+	err := r.Client.Get(ctx, types.NamespacedName{Name: deployment.Name, Namespace: deployment.Namespace}, foundDeployment)
 	if err != nil && errors.IsNotFound(err) {
 		log.V(1).Info("Creating Deployment", "deployment", deployment.Name)
-		err = r.Create(ctx, deployment)
+		err = r.Client.Create(ctx, deployment)
 	} else if err == nil {
 		if foundDeployment.Spec.Replicas != deployment.Spec.Replicas {
 			foundDeployment.Spec.Replicas = deployment.Spec.Replicas
 			log.V(1).Info("Updating Deployment", "deployment", deployment.Name)
-			err = r.Update(ctx, foundDeployment)
+			err = r.Client.Update(ctx, foundDeployment)
 		}
 	}
 
