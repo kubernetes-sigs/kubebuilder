@@ -51,11 +51,7 @@ apiVersion: admissionregistration.k8s.io/{{ .Resource.Webhooks.WebhookVersion }}
 kind: MutatingWebhookConfiguration
 metadata:
   labels:
-    app.kubernetes.io/name: mutatingwebhookconfiguration
-    app.kubernetes.io/instance: mutating-webhook-configuration
-    app.kubernetes.io/component: webhook
-    app.kubernetes.io/created-by: {{ .ProjectName }}
-    app.kubernetes.io/part-of: {{ .ProjectName }}
+    app.kubernetes.io/name: {{ .ProjectName }}
     app.kubernetes.io/managed-by: kustomize
   name: mutating-webhook-configuration
   annotations:
