@@ -1,5 +1,5 @@
 run:
-  deadline: 5m
+  timeout: 5m
   allow-parallel-runners: true
 
 issues:
