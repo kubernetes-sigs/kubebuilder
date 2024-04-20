@@ -27,7 +27,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
 
-	// nolint:revive
 	. "github.com/onsi/ginkgo/v2"
 )
 

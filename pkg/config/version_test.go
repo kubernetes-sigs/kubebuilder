@@ -19,9 +19,7 @@ package config
 import (
 	"sort"
 
-	// nolint:revive
 	. "github.com/onsi/ginkgo/v2"
-	// nolint:revive
 	. "github.com/onsi/gomega"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/model/stage"

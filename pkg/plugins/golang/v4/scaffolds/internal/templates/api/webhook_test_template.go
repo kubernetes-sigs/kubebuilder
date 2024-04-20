@@ -75,7 +75,6 @@ const webhookTestTemplate = `{{ .Boilerplate }}
 package {{ .Resource.Version }}
 
 import (
-	// nolint:revive
 	. "github.com/onsi/ginkgo/v2"
 )
 

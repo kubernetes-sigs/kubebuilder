@@ -21,9 +21,7 @@ import (
 	"os/exec"
 	"time"
 
-	// nolint:revive
 	. "github.com/onsi/ginkgo/v2"
-	// nolint:revive
 	. "github.com/onsi/gomega"
 
 	"example.com/memcached/test/utils"

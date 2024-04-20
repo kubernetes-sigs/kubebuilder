@@ -21,8 +21,6 @@ import (
 	"testing"
 
 	. "github.com/onsi/ginkgo"
-
-	// nolint:revive
 	. "github.com/onsi/gomega"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
