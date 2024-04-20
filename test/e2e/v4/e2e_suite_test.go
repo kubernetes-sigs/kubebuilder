@@ -23,9 +23,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
 	"sigs.k8s.io/kubebuilder/v3/test/e2e/utils"
 
-	// nolint:revive
 	. "github.com/onsi/ginkgo/v2"
-	// nolint:revive
 	. "github.com/onsi/gomega"
 )
 

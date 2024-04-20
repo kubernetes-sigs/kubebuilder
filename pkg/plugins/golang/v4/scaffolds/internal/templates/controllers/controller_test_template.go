@@ -73,11 +73,9 @@ import (
 	{{ if .DoAPI -}}
 	"context"
 	{{- end }}
-	// nolint:revive
 	. "github.com/onsi/ginkgo/v2"
 	{{ if .DoAPI -}}
 
-	// nolint:revive
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"

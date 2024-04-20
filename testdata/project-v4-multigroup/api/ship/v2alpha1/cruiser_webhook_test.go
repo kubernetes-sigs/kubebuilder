@@ -17,7 +17,6 @@ limitations under the License.
 package v2alpha1
 
 import (
-	// nolint:revive
 	. "github.com/onsi/ginkgo/v2"
 )
 
