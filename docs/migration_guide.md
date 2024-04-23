@@ -9,7 +9,7 @@ Find project's domain name from the old project's pkg/apis/doc.go and use it to 
 `kubebuilder init --project-version v1 --domain <domain>`
 
 ## Create api
-Find the group/version/kind names from the project's pkg/apis. The group and version names are directory names while the kind name can be found from *_types.go. Note that the kind name should be capitalized. 
+Find the group/version/kind names from the project's pkg/apis. The group and version names are directory names while the kind name can be found from *_types.go. Note that the kind name should be capitalized.
 
 Create api in the new project with
 `kubebuilder create api --group <group> --version <version> --kind <kind>`

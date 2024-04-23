@@ -104,8 +104,8 @@ function scaffold_test_project {
     fi
   elif [[ $project =~ deploy-image ]]; then
       header_text 'Creating Memcached API with deploy-image plugin ...'
-      $kb create api --group example.com --version v1alpha1 --kind Memcached --image=memcached:1.4.36-alpine --image-container-command="memcached,-m=64,-o,modern,-v" --image-container-port="11211" --run-as-user="1001" --plugins="deploy-image/v1-alpha" --make=false
-      $kb create api --group example.com --version v1alpha1 --kind Busybox --image=busybox:1.28 --plugins="deploy-image/v1-alpha" --make=false
+      $kb create api --group example.com --version v1alpha1 --kind Memcached --image=memcached:memcached:1.6.26-alpine3.19 --image-container-command="memcached,-m=64,-o,modern,-v" --image-container-port="11211" --run-as-user="1001" --plugins="deploy-image/v1-alpha" --make=false
+      $kb create api --group example.com --version v1alpha1 --kind Busybox --image=busybox:1.36.1 --plugins="deploy-image/v1-alpha" --make=false
       header_text 'Creating Memcached webhook ...'
       $kb create webhook --group example.com --version v1alpha1 --kind Memcached --programmatic-validation
   fi
@@ -116,12 +116,7 @@ function scaffold_test_project {
   fi
   
   make generate manifests
-  # TODO fix the error with multigroup layout and allow it be generated
-  # with this one.
-  # Error: trouble configuring builtin PatchTransformer with config: `
-  # path: patches/webhook_in_sea-creatures_krakens.yaml
-  # `: failed to get the patch file from path(patches/webhook_in_sea-creatures_krakens.yaml): evalsymlink failure on '/Users/camiladeomacedo/go/src/sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/config/crd/patches/webhook_in_sea-creatures_krakens.yaml' : lstat go/src/sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/config/crd/patches/webhook_in_sea-creatures_krakens.yaml: no such file or directory
-  if [[ $project =~ v4 && ! $project =~ multigroup ]]; then
+  if [[ $project =~ v4 ]]; then
     make build-installer
   fi
 

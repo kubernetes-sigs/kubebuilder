@@ -77,7 +77,7 @@ type BusyboxReconciler struct {
 // For further info:
 // - About Operator Pattern: https://kubernetes.io/docs/concepts/extend-kubernetes/operator/
 // - About Controllers: https://kubernetes.io/docs/concepts/architecture/controller/
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.17.0/pkg/reconcile
+// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.17.2/pkg/reconcile
 func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
 
@@ -403,11 +403,9 @@ func labelsForBusybox(name string) map[string]string {
 	if err == nil {
 		imageTag = strings.Split(image, ":")[1]
 	}
-	return map[string]string{"app.kubernetes.io/name": "Busybox",
-		"app.kubernetes.io/instance":   name,
+	return map[string]string{"app.kubernetes.io/name": "project-v4-with-deploy-image",
 		"app.kubernetes.io/version":    imageTag,
-		"app.kubernetes.io/part-of":    "project-v4-with-deploy-image",
-		"app.kubernetes.io/created-by": "controller-manager",
+		"app.kubernetes.io/managed-by": "BusyboxController",
 	}
 }
 

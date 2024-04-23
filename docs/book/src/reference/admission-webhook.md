@@ -25,7 +25,7 @@ You can find detailed steps
 <aside class="note">
 <H1>Execution Order</H1>
 
-**Validating webhooks run after all mutating webhooks**, so you don't need to worry about another webhook changing an 
+**Validating webhooks run after all mutating webhooks**, so you don't need to worry about another webhook changing an
 object after your validation has accepted it.
 
 </aside>
@@ -35,7 +35,7 @@ object after your validation has accepted it.
 <aside class="warning">
 <H1>Modify status</H1>
 
-**You cannot modify or default the status of a resource using a mutating admission webhook**. 
+**You cannot modify or default the status of a resource using a mutating admission webhook**.
 Set initial status in your controller when you first see a new object.
 
 </aside>
@@ -44,9 +44,9 @@ Set initial status in your controller when you first see a new object.
 
 #### Mutating Admission Webhooks
 
-Mutating Admission Webhooks are primarily designed to intercept and modify requests concerning the creation, 
-modification, or deletion of objects. Though they possess the capability to modify an object's specification, 
-directly altering its status isn't deemed a standard practice, 
+Mutating Admission Webhooks are primarily designed to intercept and modify requests concerning the creation,
+modification, or deletion of objects. Though they possess the capability to modify an object's specification,
+directly altering its status isn't deemed a standard practice,
 often leading to unintended results.
 
 ```go
@@ -59,15 +59,15 @@ type MutatingWebhookConfiguration struct {
 
 #### Setting Initial Status
 
-For those diving into custom controllers for custom resources, it's imperative to grasp the concept of setting an 
-initial status. This initialization typically takes place within the controller itself. The moment the controller 
-identifies a new instance of its managed resource, primarily through a watch mechanism, it holds the authority 
+For those diving into custom controllers for custom resources, it's imperative to grasp the concept of setting an
+initial status. This initialization typically takes place within the controller itself. The moment the controller
+identifies a new instance of its managed resource, primarily through a watch mechanism, it holds the authority
 to assign an initial status to that resource.
 
 ```go
 // Custom controller's reconcile function might look something like this:
 func (r *ReconcileMyResource) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-    // ... 
+    // ...
     // Upon discovering a new instance, set the initial status
     instance.Status = SomeInitialStatus
     // ...
@@ -76,11 +76,11 @@ func (r *ReconcileMyResource) Reconcile(request reconcile.Request) (reconcile.Re
 
 #### Status Subresource
 
-Delving into Kubernetes custom resources, a clear demarcation exists between the spec (depicting the desired state) 
-and the status (illustrating the observed state). Activating the /status subresource for a custom resource definition 
-(CRD) bifurcates the `status` and `spec`, each assigned to its respective API endpoint. 
-This separation ensures that changes introduced by users, such as modifying the spec, and system-driven updates, 
-like status alterations, remain distinct. Leveraging a mutating webhook to tweak the status during a spec-modifying 
+Delving into Kubernetes custom resources, a clear demarcation exists between the spec (depicting the desired state)
+and the status (illustrating the observed state). Activating the /status subresource for a custom resource definition
+(CRD) bifurcates the `status` and `spec`, each assigned to its respective API endpoint.
+This separation ensures that changes introduced by users, such as modifying the spec, and system-driven updates,
+like status alterations, remain distinct. Leveraging a mutating webhook to tweak the status during a spec-modifying
 operation might not pan out as expected, courtesy of this isolation.
 
 ```yaml
@@ -96,6 +96,6 @@ spec:
 
 #### Conclusion
 
-While certain edge scenarios might allow a mutating webhook to seamlessly modify the status, treading this path isn't a 
-universally acclaimed or recommended strategy. Entrusting the controller logic with status updates remains the 
+While certain edge scenarios might allow a mutating webhook to seamlessly modify the status, treading this path isn't a
+universally acclaimed or recommended strategy. Entrusting the controller logic with status updates remains the
 most advocated approach.

@@ -21,15 +21,13 @@ import (
 
 	pluginutil "sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
 
-	//nolint:golint
-	//nolint:revive
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	//nolint:golint
-	//nolint:revive
+	// nolint:revive
 	//nolint:golint
-	//nolint:revive
+	// nolint:revive
 	"sigs.k8s.io/kubebuilder/v3/test/e2e/utils"
 )
 

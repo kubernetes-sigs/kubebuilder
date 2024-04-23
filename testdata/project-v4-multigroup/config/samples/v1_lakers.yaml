@@ -1,0 +1,9 @@
+apiVersion: testproject.org/v1
+kind: Lakers
+metadata:
+  labels:
+    app.kubernetes.io/name: project-v4-multigroup
+    app.kubernetes.io/managed-by: kustomize
+  name: lakers-sample
+spec:
+  # TODO(user): Add fields here

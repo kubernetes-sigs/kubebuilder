@@ -14,8 +14,8 @@ Please, be aware that it will force Kubebuilder remove this option soon in futur
 
 This tutorial will show you how to create a custom configuration file for your
 project by modifying a project generated with the `--component-config` flag
-passed to the `init` command. The full tutorial's source can be found 
-[here][tutorial-source]. Make sure you've gone through the [installation 
+passed to the `init` command. The full tutorial's source can be found
+[here][tutorial-source]. Make sure you've gone through the [installation
 steps](/quick-start.md#installation) before continuing.
 
 ## New project:
@@ -63,7 +63,7 @@ if configFile != "" {
 
 <h1>Your Options may have defaults from flags.</h1>
 
-If you have previously allowed other `flags` like `--metrics-bind-addr` or 
+If you have previously allowed other `flags` like `--metrics-bind-addr` or
 `--enable-leader-election`, you'll want to set those on the `Options` before
 loading the config from the file.
 

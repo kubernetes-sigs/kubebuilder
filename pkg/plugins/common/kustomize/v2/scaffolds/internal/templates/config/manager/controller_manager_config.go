@@ -49,11 +49,7 @@ const controllerManagerConfigTemplate = `apiVersion: controller-runtime.sigs.k8s
 kind: ControllerManagerConfig
 metadata:
   labels:
-    app.kubernetes.io/name: controllermanagerconfig
-    app.kubernetes.io/instance: controller-manager-configuration
-    app.kubernetes.io/component: manager
-    app.kubernetes.io/created-by: {{ .ProjectName }}
-    app.kubernetes.io/part-of: {{ .ProjectName }}
+    app.kubernetes.io/name: {{ .ProjectName }}
     app.kubernetes.io/managed-by: kustomize
 health:
   healthProbeBindAddress: :8081

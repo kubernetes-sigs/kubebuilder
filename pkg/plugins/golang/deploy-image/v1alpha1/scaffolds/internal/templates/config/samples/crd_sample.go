@@ -35,7 +35,11 @@ type CRDSample struct {
 // SetTemplateDefaults implements file.Template
 func (f *CRDSample) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = filepath.Join("config", "samples", "%[group]_%[version]_%[kind].yaml")
+		if f.Resource.Group != "" {
+			f.Path = filepath.Join("config", "samples", "%[group]_%[version]_%[kind].yaml")
+		} else {
+			f.Path = filepath.Join("config", "samples", "%[version]_%[kind].yaml")
+		}
 	}
 	f.Path = f.Resource.Replacer().Replace(f.Path)
 	log.Println(f.Path)

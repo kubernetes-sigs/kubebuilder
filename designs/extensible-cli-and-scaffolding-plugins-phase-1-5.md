@@ -88,7 +88,7 @@ therefore, use this error to tell the CLI that no further execution step should 
 ### Initialization hooks
 
 #### Update metadata
-This hook will be used for two purposes. It provides CLI-related metadata to the Subcommand (e.g., 
+This hook will be used for two purposes. It provides CLI-related metadata to the Subcommand (e.g.,
 command name) and update the subcommands metadata such as the description or examples.
 
 - Required/optional
@@ -184,7 +184,7 @@ configuration at this hook will not be persisted.
   - [x] Edit
   - [x] Create API
   - [x] Create webhook
-  
+
 ### Override plugins for single subcommand calls
 
 Defining plugins at initialization and using them for every command call will solve most of the cases.

@@ -34,7 +34,7 @@ type EnableWebhookPatch struct {
 // SetTemplateDefaults implements file.Template
 func (f *EnableWebhookPatch) SetTemplateDefaults() error {
 	if f.Path == "" {
-		if f.MultiGroup {
+		if f.MultiGroup && f.Resource.Group != "" {
 			f.Path = filepath.Join("config", "crd", "patches", "webhook_in_%[group]_%[plural].yaml")
 		} else {
 			f.Path = filepath.Join("config", "crd", "patches", "webhook_in_%[plural].yaml")

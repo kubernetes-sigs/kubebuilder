@@ -1,5 +1,5 @@
 run:
-  deadline: 5m
+  timeout: 5m
   allow-parallel-runners: true
 
 issues:
@@ -26,6 +26,11 @@ linters-settings:
       - name: context-as-argument
       - name: context-keys-type
       - name: dot-imports
+        arguments:
+          # dot import should be ONLY allowed for ginkgo testing packages
+          allowedPackages:
+            - "github.com/onsi/ginkgo/v2"
+            - "github.com/onsi/gomega"
       - name: error-return
       - name: error-strings
       - name: error-naming

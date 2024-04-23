@@ -1,5 +1,5 @@
 /*
-Copyright 2023 The Kubernetes authors.
+Copyright 2024 The Kubernetes authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ limitations under the License.
 We'll start out with some imports.  You'll see below that we'll need a few more imports
 than those scaffolded for us.  We'll talk about each one when we use it.
 */
+
 package controller
 
 import (
@@ -59,7 +60,7 @@ type realClock struct{}
 
 func (_ realClock) Now() time.Time { return time.Now() }
 
-// clock knows how to get the current time.
+// Clock knows how to get the current time.
 // It can be used to fake out timing for testing.
 type Clock interface {
 	Now() time.Time
@@ -207,9 +208,7 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			continue
 		}
 		if scheduledTimeForJob != nil {
-			if mostRecentTime == nil {
-				mostRecentTime = scheduledTimeForJob
-			} else if mostRecentTime.Before(*scheduledTimeForJob) {
+			if mostRecentTime == nil || mostRecentTime.Before(*scheduledTimeForJob) {
 				mostRecentTime = scheduledTimeForJob
 			}
 		}
@@ -262,7 +261,7 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		around.
 	*/
 
-	// NB: deleting these is "best effort" -- if we fail on a particular one,
+	// NB: deleting these are "best effort" -- if we fail on a particular one,
 	// we won't requeue just to finish the deleting.
 	if cronJob.Spec.FailedJobsHistoryLimit != nil {
 		sort.Slice(failedJobs, func(i, j int) bool {
@@ -294,7 +293,7 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			if int32(i) >= int32(len(successfulJobs))-*cronJob.Spec.SuccessfulJobsHistoryLimit {
 				break
 			}
-			if err := r.Delete(ctx, job, client.PropagationPolicy(metav1.DeletePropagationBackground)); (err) != nil {
+			if err := r.Delete(ctx, job, client.PropagationPolicy(metav1.DeletePropagationBackground)); err != nil {
 				log.Error(err, "unable to delete old successful job", "job", job)
 			} else {
 				log.V(0).Info("deleted old successful job", "job", job)

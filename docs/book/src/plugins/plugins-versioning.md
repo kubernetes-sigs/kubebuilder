@@ -1,7 +1,7 @@
 # Plugins Versioning
 
 | Name | Example | Description |
-|----------|-------------|--------| 
+|----------|-------------|--------|
 | Kubebuilder version | `v2.2.0`, `v2.3.0`, `v2.3.1` | Tagged versions of the Kubebuilder project, representing changes to the source code in this repository. See the [releases][kb-releases] page for binary releases. |
 | Project version |  `"1"`, `"2"`, `"3"` | Project version defines the scheme of a `PROJECT` configuration file. This version is defined in a `PROJECT` file's `version`. |
 | Plugin version | `v2`, `v3` | Represents the version of an individual plugin, as well as the corresponding scaffolding that it generates. This version is defined in a plugin key, ex. `go.kubebuilder.io/v2`. See the [design doc][cli-plugins-versioning] for more details. |
