@@ -34,9 +34,7 @@ type Sample struct {
 
 func NewSample(binaryPath, samplePath string) Sample {
 	log.Infof("Generating the sample context of Cronjob...")
-
 	ctx := newSampleContext(binaryPath, samplePath, "GO111MODULE=on")
-
 	return Sample{&ctx}
 }
 
@@ -69,7 +67,6 @@ func (sp *Sample) GenerateSampleProject() {
 	log.Infof("Initializing the cronjob project")
 
 	err := sp.ctx.Init(
-		"--plugins", "go/v4",
 		"--domain", "tutorial.kubebuilder.io",
 		"--repo", "tutorial.kubebuilder.io/project",
 		"--license", "apache2",

@@ -14,10 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+//nolint:dupl
 package rbac
 
 import (
+	"fmt"
 	"path/filepath"
+	"strings"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
@@ -30,12 +33,14 @@ type CRDEditorRole struct {
 	machinery.MultiGroupMixin
 	machinery.ResourceMixin
 	machinery.ProjectNameMixin
+
+	RoleName string
 }
 
 // SetTemplateDefaults implements file.Template
 func (f *CRDEditorRole) SetTemplateDefaults() error {
 	if f.Path == "" {
-		if f.MultiGroup {
+		if f.MultiGroup && f.Resource.Group != "" {
 			f.Path = filepath.Join("config", "rbac", "%[group]_%[kind]_editor_role.yaml")
 		} else {
 			f.Path = filepath.Join("config", "rbac", "%[kind]_editor_role.yaml")
@@ -43,6 +48,17 @@ func (f *CRDEditorRole) SetTemplateDefaults() error {
 
 	}
 	f.Path = f.Resource.Replacer().Replace(f.Path)
+
+	if f.RoleName == "" {
+		if f.MultiGroup && f.Resource.Group != "" {
+			f.RoleName = fmt.Sprintf("%s-%s-editor-role",
+				strings.ToLower(f.Resource.Group),
+				strings.ToLower(f.Resource.Kind))
+		} else {
+			f.RoleName = fmt.Sprintf("%s-editor-role",
+				strings.ToLower(f.Resource.Kind))
+		}
+	}
 
 	f.TemplateBody = crdRoleEditorTemplate
 
@@ -54,13 +70,9 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    app.kubernetes.io/name: clusterrole
-    app.kubernetes.io/instance: {{ lower .Resource.Kind }}-editor-role
-    app.kubernetes.io/component: rbac
-    app.kubernetes.io/created-by: {{ .ProjectName }}
-    app.kubernetes.io/part-of: {{ .ProjectName }}
+    app.kubernetes.io/name: {{ .ProjectName }}
     app.kubernetes.io/managed-by: kustomize
-  name: {{ lower .Resource.Kind }}-editor-role
+  name: {{ .RoleName }}
 rules:
 - apiGroups:
   - {{ .Resource.QualifiedGroup }}

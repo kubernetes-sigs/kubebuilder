@@ -2,12 +2,8 @@ apiVersion: v1
 kind: Namespace
 metadata:
   labels:
-    app.kubernetes.io/component: manager
-    app.kubernetes.io/created-by: project-v4-with-deploy-image
-    app.kubernetes.io/instance: system
     app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: namespace
-    app.kubernetes.io/part-of: project-v4-with-deploy-image
+    app.kubernetes.io/name: project-v4-with-deploy-image
     control-plane: controller-manager
   name: project-v4-with-deploy-image-system
 ---
@@ -297,12 +293,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   labels:
-    app.kubernetes.io/component: rbac
-    app.kubernetes.io/created-by: project-v4-with-deploy-image
-    app.kubernetes.io/instance: leader-election-role
     app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: role
-    app.kubernetes.io/part-of: project-v4-with-deploy-image
+    app.kubernetes.io/name: project-v4-with-deploy-image
   name: project-v4-with-deploy-image-leader-election-role
   namespace: project-v4-with-deploy-image-system
 rules:
@@ -337,6 +329,56 @@ rules:
   verbs:
   - create
   - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: project-v4-with-deploy-image
+  name: project-v4-with-deploy-image-busybox-editor-role
+rules:
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - busyboxes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - busyboxes/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: project-v4-with-deploy-image
+  name: project-v4-with-deploy-image-busybox-viewer-role
+rules:
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - busyboxes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - busyboxes/status
+  verbs:
+  - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -427,12 +469,58 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    app.kubernetes.io/component: kube-rbac-proxy
-    app.kubernetes.io/created-by: project-v4-with-deploy-image
-    app.kubernetes.io/instance: metrics-reader
     app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: clusterrole
-    app.kubernetes.io/part-of: project-v4-with-deploy-image
+    app.kubernetes.io/name: project-v4-with-deploy-image
+  name: project-v4-with-deploy-image-memcached-editor-role
+rules:
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - memcacheds
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - memcacheds/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: project-v4-with-deploy-image
+  name: project-v4-with-deploy-image-memcached-viewer-role
+rules:
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - memcacheds
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - memcacheds/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: project-v4-with-deploy-image
   name: project-v4-with-deploy-image-metrics-reader
 rules:
 - nonResourceURLs:
@@ -444,12 +532,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    app.kubernetes.io/component: kube-rbac-proxy
-    app.kubernetes.io/created-by: project-v4-with-deploy-image
-    app.kubernetes.io/instance: proxy-role
     app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: clusterrole
-    app.kubernetes.io/part-of: project-v4-with-deploy-image
+    app.kubernetes.io/name: project-v4-with-deploy-image
   name: project-v4-with-deploy-image-proxy-role
 rules:
 - apiGroups:
@@ -469,12 +553,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   labels:
-    app.kubernetes.io/component: rbac
-    app.kubernetes.io/created-by: project-v4-with-deploy-image
-    app.kubernetes.io/instance: leader-election-rolebinding
     app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: rolebinding
-    app.kubernetes.io/part-of: project-v4-with-deploy-image
+    app.kubernetes.io/name: project-v4-with-deploy-image
   name: project-v4-with-deploy-image-leader-election-rolebinding
   namespace: project-v4-with-deploy-image-system
 roleRef:
@@ -490,12 +570,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   labels:
-    app.kubernetes.io/component: rbac
-    app.kubernetes.io/created-by: project-v4-with-deploy-image
-    app.kubernetes.io/instance: manager-rolebinding
     app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: clusterrolebinding
-    app.kubernetes.io/part-of: project-v4-with-deploy-image
+    app.kubernetes.io/name: project-v4-with-deploy-image
   name: project-v4-with-deploy-image-manager-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -510,12 +586,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   labels:
-    app.kubernetes.io/component: kube-rbac-proxy
-    app.kubernetes.io/created-by: project-v4-with-deploy-image
-    app.kubernetes.io/instance: proxy-rolebinding
     app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: clusterrolebinding
-    app.kubernetes.io/part-of: project-v4-with-deploy-image
+    app.kubernetes.io/name: project-v4-with-deploy-image
   name: project-v4-with-deploy-image-proxy-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -530,12 +602,8 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app.kubernetes.io/component: kube-rbac-proxy
-    app.kubernetes.io/created-by: project-v4-with-deploy-image
-    app.kubernetes.io/instance: controller-manager-metrics-service
     app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: service
-    app.kubernetes.io/part-of: project-v4-with-deploy-image
+    app.kubernetes.io/name: project-v4-with-deploy-image
     control-plane: controller-manager
   name: project-v4-with-deploy-image-controller-manager-metrics-service
   namespace: project-v4-with-deploy-image-system
@@ -568,12 +636,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app.kubernetes.io/component: manager
-    app.kubernetes.io/created-by: project-v4-with-deploy-image
-    app.kubernetes.io/instance: controller-manager
     app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: deployment
-    app.kubernetes.io/part-of: project-v4-with-deploy-image
+    app.kubernetes.io/name: project-v4-with-deploy-image
     control-plane: controller-manager
   name: project-v4-with-deploy-image-controller-manager
   namespace: project-v4-with-deploy-image-system
@@ -598,9 +662,9 @@ spec:
         - /manager
         env:
         - name: BUSYBOX_IMAGE
-          value: busybox:1.28
+          value: busybox:1.36.1
         - name: MEMCACHED_IMAGE
-          value: memcached:1.4.36-alpine
+          value: memcached:memcached:1.6.26-alpine3.19
         image: controller:latest
         livenessProbe:
           httpGet:
@@ -640,7 +704,7 @@ spec:
         - --upstream=http://127.0.0.1:8080/
         - --logtostderr=true
         - --v=0
-        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.15.0
+        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.16.0
         name: kube-rbac-proxy
         ports:
         - containerPort: 8443

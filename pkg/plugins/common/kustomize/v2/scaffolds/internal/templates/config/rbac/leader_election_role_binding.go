@@ -45,11 +45,7 @@ const leaderElectionRoleBindingTemplate = `apiVersion: rbac.authorization.k8s.io
 kind: RoleBinding
 metadata:
   labels:
-    app.kubernetes.io/name: rolebinding
-    app.kubernetes.io/instance: leader-election-rolebinding
-    app.kubernetes.io/component: rbac
-    app.kubernetes.io/created-by: {{ .ProjectName }}
-    app.kubernetes.io/part-of: {{ .ProjectName }}
+    app.kubernetes.io/name: {{ .ProjectName }}
     app.kubernetes.io/managed-by: kustomize
   name: leader-election-rolebinding
 roleRef:

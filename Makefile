@@ -66,12 +66,12 @@ install: build ## Build and install the binary with the current source code. Use
 .PHONY: generate
 generate: generate-testdata generate-docs ## Update/generate all mock data. You should run this commands to update the mock data after your changes.
 	go mod tidy
-	remove-spaces
+	make remove-spaces
 
 .PHONY: remove-spaces
 remove-spaces:
 	@echo "Removing trailing spaces"
-	@find . -type f -name "*.md" -exec sed -i '' 's/[[:space:]]*$$//' {} +
+	@find . -type f -name "*.md" -exec sed -i '' 's/[[:space:]]*$$//' {} + || true
 
 .PHONY: generate-testdata
 generate-testdata: ## Update/generate the testdata in $GOPATH/src/sigs.k8s.io/kubebuilder
@@ -104,7 +104,7 @@ GOLANGCI_LINT = $(shell pwd)/bin/golangci-lint
 golangci-lint:
 	@[ -f $(GOLANGCI_LINT) ] || { \
 	set -e ;\
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell dirname $(GOLANGCI_LINT)) v1.54.2 ;\
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell dirname $(GOLANGCI_LINT)) v1.57.2 ;\
 	}
 
 .PHONY: apidiff

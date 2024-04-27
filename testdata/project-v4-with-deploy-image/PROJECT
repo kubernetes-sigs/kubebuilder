@@ -14,14 +14,14 @@ plugins:
       options:
         containerCommand: memcached,-m=64,-o,modern,-v
         containerPort: "11211"
-        image: memcached:1.4.36-alpine
+        image: memcached:memcached:1.6.26-alpine3.19
         runAsUser: "1001"
       version: v1alpha1
     - domain: testproject.org
       group: example.com
       kind: Busybox
       options:
-        image: busybox:1.28
+        image: busybox:1.36.1
       version: v1alpha1
 projectName: project-v4-with-deploy-image
 repo: sigs.k8s.io/kubebuilder/testdata/project-v4-with-deploy-image

@@ -383,7 +383,7 @@ var _ = Describe("Discover external plugins", func() {
 
 			It("should fail if pluginsroot is empty", func() {
 				errPluginsRoot := errors.New("could not retrieve plugins root")
-				retrievePluginsRoot = func(host string) (string, error) {
+				retrievePluginsRoot = func(_ string) (string, error) {
 					return "", errPluginsRoot
 				}
 
@@ -394,7 +394,7 @@ var _ = Describe("Discover external plugins", func() {
 			})
 
 			It("should skip parsing of directories if plugins root is not a directory", func() {
-				retrievePluginsRoot = func(host string) (string, error) {
+				retrievePluginsRoot = func(_ string) (string, error) {
 					return "externalplugin.sh", nil
 				}
 
