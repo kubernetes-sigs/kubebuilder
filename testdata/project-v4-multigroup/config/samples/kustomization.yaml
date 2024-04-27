@@ -9,5 +9,5 @@ resources:
 - foo.policy_v1_healthcheckpolicy.yaml
 - foo_v1_bar.yaml
 - fiz_v1_bar.yaml
-- _v1_lakers.yaml
+- v1_lakers.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

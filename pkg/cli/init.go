@@ -39,7 +39,7 @@ func (c CLI) newInitCmd() *cobra.Command {
 For further help about a specific plugin, set --plugins.
 `,
 		Example: c.getInitHelpExamples(),
-		Run:     func(cmd *cobra.Command, args []string) {},
+		Run:     func(_ *cobra.Command, _ []string) {},
 	}
 
 	// Register --project-version on the dynamically created command

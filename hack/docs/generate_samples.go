@@ -55,11 +55,8 @@ func main() {
 
 func updateTutorial(generator tutorial_generator) {
 	generator.Prepare()
-
 	generator.GenerateSampleProject()
-
 	generator.UpdateTutorial()
-
 	generator.CodeGen()
 }
 
@@ -76,7 +73,7 @@ func UpdateCronjobTutorial() {
 }
 
 func UpdateGettingStarted() {
-	samplePath := "docs/book/src/getting-started/testdata/project/"
+	samplePath := "docs/book/src/getting-started/testdata/project"
 	sp := gettingstarted.NewSample(KubebuilderBinName, samplePath)
 	updateTutorial(&sp)
 }

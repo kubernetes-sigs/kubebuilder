@@ -26,12 +26,7 @@ import (
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
 
-	//nolint:golint
-	//nolint:revive
 	. "github.com/onsi/ginkgo/v2"
-
-	//nolint:golint
-	//nolint:revive
 	. "github.com/onsi/gomega"
 
 	"sigs.k8s.io/kubebuilder/v3/test/e2e/utils"
@@ -94,7 +89,7 @@ var _ = Describe("kubebuilder", func() {
 				"--version", kbc.Version,
 				"--kind", kbc.Kind,
 				"--plugins", "deploy-image/v1-alpha",
-				"--image", "memcached:1.4.36-alpine",
+				"--image", "memcached:1.6.26-alpine3.19",
 				"--image-container-port", "11211",
 				"--image-container-command", "memcached,-m=64,-o,modern,-v",
 				"--run-as-user", "1001",
@@ -131,7 +126,7 @@ var _ = Describe("kubebuilder", func() {
 				"--version", kbc.Version,
 				"--kind", kbc.Kind,
 				"--plugins", "deploy-image/v1-alpha",
-				"--image", "busybox:1.28",
+				"--image", "busybox:1.36.1",
 				"--make=false",
 				"--manifests=false",
 			)

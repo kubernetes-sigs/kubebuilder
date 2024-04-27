@@ -34,7 +34,7 @@ type EnableCAInjectionPatch struct {
 // SetTemplateDefaults implements file.Template
 func (f *EnableCAInjectionPatch) SetTemplateDefaults() error {
 	if f.Path == "" {
-		if f.MultiGroup {
+		if f.MultiGroup && f.Resource.Group != "" {
 			f.Path = filepath.Join("config", "crd", "patches", "cainjection_in_%[group]_%[plural].yaml")
 		} else {
 			f.Path = filepath.Join("config", "crd", "patches", "cainjection_in_%[plural].yaml")

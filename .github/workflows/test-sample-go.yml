@@ -1,4 +1,4 @@
-name: project-v4-sample
+name: run-test-e2e-for-project-v4-sample
 
 on:
   push:
@@ -8,10 +8,6 @@ jobs:
   test:
     name: Run on Ubuntu
     runs-on: ubuntu-latest
-    env:
-      KIND_K8S_VERSION: v1.29.0
-      tools_k8s_version: 1.29.0
-      kind_version: 0.20.0
     steps:
       - name: Clone the code
         uses: actions/checkout@v4
@@ -20,16 +16,6 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '~1.21'
-
-      - name: Install Kind
-        run: go install sigs.k8s.io/kind@v$kind_version
-  
-
-      - name: Install setup-envtest
-        run: go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
-
-      - name: Install e2e tools with setup-envtest
-        run: setup-envtest use $tools_k8s_version
 
       - name: Create kind cluster
         run: kind create cluster
@@ -45,7 +31,5 @@ jobs:
       - name: Test
         run: |
           cd testdata/project-v4
-          go get -u ./...
           go mod tidy
           make test-e2e
-          

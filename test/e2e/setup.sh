@@ -56,8 +56,8 @@ function delete_cluster {
 function test_cluster {
   local flags="$@"
 
-  docker pull memcached:1.6.23-alpine
-  kind load docker-image --name $KIND_CLUSTER memcached:1.6.23-alpine
+  docker pull memcached:1.6.26-alpine3.19
+  kind load docker-image --name $KIND_CLUSTER memcached:1.6.26-alpine3.19
 
   docker pull busybox:1.36.1
   kind load docker-image --name $KIND_CLUSTER busybox:1.36.1

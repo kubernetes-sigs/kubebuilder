@@ -7,7 +7,7 @@ It is often useful to publish *Event* objects from the controller Reconcile func
 <aside class="warning">
 <h1>Events should be raised in certain circumstances only</h1>
 
-Be aware that it is **not** recommended to emit Events for all operations. If authors raise too many events, it brings bad UX experiences for those consuming the solutions on the cluster, and they may find it difficult to filter an actionable event from the clutter. For more information, please take a look at the [Kubernetes APIs convention][Events].
+Be aware that it is **not** recommended to emit Events for all operations. If authors raise too many events, it brings bad UX experiences for those consuming the solutions on the cluster, and they may find it difficult to filter an actionable event from the cluster. For more information, please take a look at the [Kubernetes APIs convention][Events].
 
 </aside>
 
