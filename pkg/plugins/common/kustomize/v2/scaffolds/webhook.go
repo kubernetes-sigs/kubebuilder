@@ -21,6 +21,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	pluginutil "sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
+	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/crd"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/crd/patches"
 
 	"sigs.k8s.io/kubebuilder/v3/pkg/config"
@@ -82,6 +83,7 @@ func (s *webhookScaffolder) Scaffold() error {
 		&certmanager.KustomizeConfig{},
 		&patches.EnableWebhookPatch{},
 		&patches.EnableCAInjectionPatch{},
+		&crd.Kustomization{},
 	); err != nil {
 		return fmt.Errorf("error scaffolding kustomize webhook manifests: %v", err)
 	}

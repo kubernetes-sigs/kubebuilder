@@ -59,7 +59,11 @@ const samplesCodeFragment = `- %s
 // makeCRFileName returns a Custom Resource example file name in the same format
 // as kubebuilder's CreateAPI plugin for a gvk.
 func (f Kustomization) makeCRFileName() string {
-	return f.Resource.Replacer().Replace("%[group]_%[version]_%[kind].yaml")
+	if f.Resource.Group != "" {
+		return f.Resource.Replacer().Replace("%[group]_%[version]_%[kind].yaml")
+	}
+	return f.Resource.Replacer().Replace("%[version]_%[kind].yaml")
+
 }
 
 // GetCodeFragments implements file.Inserter

@@ -140,8 +140,8 @@ import (
 	"testing"
 	"fmt"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+    . "github.com/onsi/ginkgo/v2"
+    . "github.com/onsi/gomega"
 	%s
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"

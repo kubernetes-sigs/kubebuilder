@@ -45,11 +45,7 @@ const proxyRoleTemplate = `apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    app.kubernetes.io/name: clusterrole
-    app.kubernetes.io/instance: proxy-role
-    app.kubernetes.io/component: kube-rbac-proxy
-    app.kubernetes.io/created-by: {{ .ProjectName }}
-    app.kubernetes.io/part-of: {{ .ProjectName }}
+    app.kubernetes.io/name: {{ .ProjectName }}
     app.kubernetes.io/managed-by: kustomize
   name: proxy-role
 rules:
