@@ -19,5 +19,3 @@ rules:
   - crew.testproject.org
   resources:
   - firstmates/status
-  verbs:
-  - get

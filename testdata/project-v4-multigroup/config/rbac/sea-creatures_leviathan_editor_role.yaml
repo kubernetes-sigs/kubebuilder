@@ -23,5 +23,3 @@ rules:
   - sea-creatures.testproject.org
   resources:
   - leviathans/status
-  verbs:
-  - get

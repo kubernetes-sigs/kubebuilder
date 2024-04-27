@@ -273,8 +273,6 @@ rules:
   - crew.testproject.org
   resources:
   - admirales/status
-  verbs:
-  - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -296,8 +294,6 @@ rules:
   - crew.testproject.org
   resources:
   - admirales/status
-  verbs:
-  - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -323,8 +319,6 @@ rules:
   - crew.testproject.org
   resources:
   - captains/status
-  verbs:
-  - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -346,8 +340,6 @@ rules:
   - crew.testproject.org
   resources:
   - captains/status
-  verbs:
-  - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -373,8 +365,6 @@ rules:
   - crew.testproject.org
   resources:
   - firstmates/status
-  verbs:
-  - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -396,8 +386,6 @@ rules:
   - crew.testproject.org
   resources:
   - firstmates/status
-  verbs:
-  - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole

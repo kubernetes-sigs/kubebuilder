@@ -23,5 +23,3 @@ rules:
   - ship.testproject.org
   resources:
   - destroyers/status
-  verbs:
-  - get

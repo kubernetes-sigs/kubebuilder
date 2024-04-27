@@ -23,5 +23,3 @@ rules:
   - ship.testproject.org
   resources:
   - cruisers/status
-  verbs:
-  - get

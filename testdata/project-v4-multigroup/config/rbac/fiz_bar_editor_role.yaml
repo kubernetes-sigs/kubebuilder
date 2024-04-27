@@ -23,5 +23,3 @@ rules:
   - fiz.testproject.org
   resources:
   - bars/status
-  verbs:
-  - get

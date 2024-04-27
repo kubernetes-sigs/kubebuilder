@@ -23,5 +23,3 @@ rules:
   - cache.example.com
   resources:
   - memcacheds/status
-  verbs:
-  - get

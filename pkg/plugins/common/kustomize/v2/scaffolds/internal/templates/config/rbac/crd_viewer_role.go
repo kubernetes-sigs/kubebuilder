@@ -86,6 +86,4 @@ rules:
   - {{ .Resource.QualifiedGroup }}
   resources:
   - {{ .Resource.Plural }}/status
-  verbs:
-  - get
 `

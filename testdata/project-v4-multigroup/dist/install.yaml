@@ -671,8 +671,6 @@ rules:
   - crew.testproject.org
   resources:
   - captains/status
-  verbs:
-  - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -694,8 +692,6 @@ rules:
   - crew.testproject.org
   resources:
   - captains/status
-  verbs:
-  - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -721,8 +717,6 @@ rules:
   - fiz.testproject.org
   resources:
   - bars/status
-  verbs:
-  - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -744,8 +738,6 @@ rules:
   - fiz.testproject.org
   resources:
   - bars/status
-  verbs:
-  - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -771,8 +763,6 @@ rules:
   - foo.testproject.org
   resources:
   - bars/status
-  verbs:
-  - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -794,8 +784,6 @@ rules:
   - foo.testproject.org
   resources:
   - bars/status
-  verbs:
-  - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -821,8 +809,6 @@ rules:
   - foo.policy.testproject.org
   resources:
   - healthcheckpolicies/status
-  verbs:
-  - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -844,8 +830,6 @@ rules:
   - foo.policy.testproject.org
   resources:
   - healthcheckpolicies/status
-  verbs:
-  - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -871,8 +855,6 @@ rules:
   - testproject.org
   resources:
   - lakers/status
-  verbs:
-  - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -894,8 +876,6 @@ rules:
   - testproject.org
   resources:
   - lakers/status
-  verbs:
-  - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -1247,8 +1227,6 @@ rules:
   - sea-creatures.testproject.org
   resources:
   - krakens/status
-  verbs:
-  - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -1270,8 +1248,6 @@ rules:
   - sea-creatures.testproject.org
   resources:
   - krakens/status
-  verbs:
-  - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -1297,8 +1273,6 @@ rules:
   - sea-creatures.testproject.org
   resources:
   - leviathans/status
-  verbs:
-  - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -1320,8 +1294,6 @@ rules:
   - sea-creatures.testproject.org
   resources:
   - leviathans/status
-  verbs:
-  - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -1347,8 +1319,6 @@ rules:
   - ship.testproject.org
   resources:
   - cruisers/status
-  verbs:
-  - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -1370,8 +1340,6 @@ rules:
   - ship.testproject.org
   resources:
   - cruisers/status
-  verbs:
-  - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -1397,8 +1365,6 @@ rules:
   - ship.testproject.org
   resources:
   - destroyers/status
-  verbs:
-  - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -1420,8 +1386,6 @@ rules:
   - ship.testproject.org
   resources:
   - destroyers/status
-  verbs:
-  - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -1447,8 +1411,6 @@ rules:
   - ship.testproject.org
   resources:
   - frigates/status
-  verbs:
-  - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -1470,8 +1432,6 @@ rules:
   - ship.testproject.org
   resources:
   - frigates/status
-  verbs:
-  - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding

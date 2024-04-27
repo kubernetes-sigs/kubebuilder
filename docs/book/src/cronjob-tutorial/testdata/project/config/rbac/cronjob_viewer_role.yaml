@@ -19,5 +19,3 @@ rules:
   - batch.tutorial.kubebuilder.io
   resources:
   - cronjobs/status
-  verbs:
-  - get

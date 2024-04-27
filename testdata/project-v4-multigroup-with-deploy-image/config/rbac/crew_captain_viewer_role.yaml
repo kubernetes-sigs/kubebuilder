@@ -19,5 +19,3 @@ rules:
   - crew.testproject.org
   resources:
   - captains/status
-  verbs:
-  - get

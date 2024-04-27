@@ -23,5 +23,3 @@ rules:
   - config.tutorial.kubebuilder.io
   resources:
   - projectconfigs/status
-  verbs:
-  - get

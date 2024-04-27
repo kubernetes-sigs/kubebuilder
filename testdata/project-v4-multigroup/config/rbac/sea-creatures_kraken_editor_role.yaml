@@ -23,5 +23,3 @@ rules:
   - sea-creatures.testproject.org
   resources:
   - krakens/status
-  verbs:
-  - get

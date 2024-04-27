@@ -354,8 +354,6 @@ rules:
   - example.com.testproject.org
   resources:
   - busyboxes/status
-  verbs:
-  - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -377,8 +375,6 @@ rules:
   - example.com.testproject.org
   resources:
   - busyboxes/status
-  verbs:
-  - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -489,8 +485,6 @@ rules:
   - example.com.testproject.org
   resources:
   - memcacheds/status
-  verbs:
-  - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -512,8 +506,6 @@ rules:
   - example.com.testproject.org
   resources:
   - memcacheds/status
-  verbs:
-  - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole

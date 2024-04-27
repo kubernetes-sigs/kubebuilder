@@ -23,5 +23,3 @@ rules:
   - foo.policy.testproject.org
   resources:
   - healthcheckpolicies/status
-  verbs:
-  - get

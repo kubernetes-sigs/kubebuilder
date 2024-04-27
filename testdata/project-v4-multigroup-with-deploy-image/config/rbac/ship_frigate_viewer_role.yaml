@@ -19,5 +19,3 @@ rules:
   - ship.testproject.org
   resources:
   - frigates/status
-  verbs:
-  - get

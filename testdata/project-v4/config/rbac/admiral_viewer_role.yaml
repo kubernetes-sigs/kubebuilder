@@ -19,5 +19,3 @@ rules:
   - crew.testproject.org
   resources:
   - admirales/status
-  verbs:
-  - get

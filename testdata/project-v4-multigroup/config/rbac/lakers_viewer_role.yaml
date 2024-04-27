@@ -19,5 +19,3 @@ rules:
   - testproject.org
   resources:
   - lakers/status
-  verbs:
-  - get

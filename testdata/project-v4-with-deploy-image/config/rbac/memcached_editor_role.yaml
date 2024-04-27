@@ -23,5 +23,3 @@ rules:
   - example.com.testproject.org
   resources:
   - memcacheds/status
-  verbs:
-  - get
