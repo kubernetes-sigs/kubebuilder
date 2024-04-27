@@ -115,6 +115,9 @@ Here, however, we just use the same shared validation for `ValidateCreate` and
 validate anything on deletion.
 */
 
+// NOTE: The 'path' attribute must follow a specific pattern and should not be modified directly here.
+// Modifying the path for an invalid path can cause API server errors; failing to locate the webhook.
+
 var _ webhook.Validator = &CronJob{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
