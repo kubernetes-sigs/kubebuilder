@@ -6,7 +6,7 @@
 
 Kubebuilder is developed on top of the [controller-runtime](https://github.com/kubernetes-sigs/controller-runtime)
 and [controller-tools](https://github.com/kubernetes-sigs/controller-tools) libraries. We recommend you also check
-the [Controller-Runtime FAQ page](https://github.com/kubernetes-sigs/kubebuilder/issues/3873).
+the [Controller-Runtime FAQ page](https://github.com/kubernetes-sigs/controller-runtime/blob/main/FAQ.md).
 </aside>
 
 
