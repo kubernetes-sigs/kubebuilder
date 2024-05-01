@@ -19,7 +19,7 @@ jobs:
       - name: Clone the code
         uses: actions/checkout@v4
       - name: Run linter
-        uses: golangci/golangci-lint-action@v4
+        uses: golangci/golangci-lint-action@v5
         with:
           version: v1.57
 
