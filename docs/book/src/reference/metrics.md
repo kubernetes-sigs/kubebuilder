@@ -188,11 +188,19 @@ enhance the controller-runtime and address these considerations.
 </aside>
 
 
-### By using Network Policy
+### By using Network Policy (You can optionally enable)
 
 NetworkPolicy acts as a basic firewall for pods within a Kubernetes cluster, controlling traffic
-flow at the IP address or port level. However, it doesn't handle authentication (authn), authorization (authz),
-or encryption directly like [kube-rbac-proxy](https://github.com/brancz/kube-rbac-proxy) solution.
+flow at the IP address or port level. However, it doesn't handle `authn/authz`.
+
+Uncomment the following line in the `config/default/kustomization.yaml`:
+
+```
+# [NETWORK POLICY] Protect the /metrics endpoint and Webhook Server with NetworkPolicy.
+# Only Pod(s) running a namespace labeled with 'metrics: enabled' will be able to gather the metrics.
+# Only CR(s) which uses webhooks and applied on namespaces labeled 'webhooks: enabled' will be able to work properly.
+#- ../network-policy
+```
 
 ### By exposing the metrics endpoint using HTTPS and CertManager
 
