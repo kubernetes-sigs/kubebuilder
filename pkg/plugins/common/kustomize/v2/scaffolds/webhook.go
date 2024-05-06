@@ -30,6 +30,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/certmanager"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/kdefault"
+	network_policy "sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/network-policy"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/webhook"
 )
 
@@ -83,13 +84,22 @@ func (s *webhookScaffolder) Scaffold() error {
 		&certmanager.KustomizeConfig{},
 		&patches.EnableWebhookPatch{},
 		&patches.EnableCAInjectionPatch{},
+		&network_policy.NetworkPolicyAllowWebhooks{},
 		&crd.Kustomization{},
 	); err != nil {
 		return fmt.Errorf("error scaffolding kustomize webhook manifests: %v", err)
 	}
 
+	policyKustomizeFilePath := "config/network-policy/kustomization.yaml"
+	err := pluginutil.InsertCodeIfNotExist(policyKustomizeFilePath,
+		"resources:", allowWebhookTrafficFragment)
+	if err != nil {
+		log.Errorf("Unable to add the line '- allow-webhook-traffic.yaml' at the end of the file"+
+			"%s to allow webhook traffic.", policyKustomizeFilePath)
+	}
+
 	kustomizeFilePath := "config/default/kustomization.yaml"
-	err := pluginutil.UncommentCode(kustomizeFilePath, "#- ../webhook", `#`)
+	err = pluginutil.UncommentCode(kustomizeFilePath, "#- ../webhook", `#`)
 	if err != nil {
 		hasWebHookUncommented, err := pluginutil.HasFragment(kustomizeFilePath, "- ../webhook")
 		if !hasWebHookUncommented || err != nil {
@@ -137,3 +147,6 @@ func (s *webhookScaffolder) Scaffold() error {
 
 	return nil
 }
+
+const allowWebhookTrafficFragment = `
+- allow-webhook-traffic.yaml`
