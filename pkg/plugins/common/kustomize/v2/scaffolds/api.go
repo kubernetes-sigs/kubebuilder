@@ -102,28 +102,37 @@ func (s *apiScaffolder) Scaffold() error {
 
 		// Add scaffolded CRD Editor and Viewer roles in config/rbac/kustomization.yaml
 		rbacKustomizeFilePath := "config/rbac/kustomization.yaml"
-		comment := `
-# For each CRD, "Editor" and "Viewer" roles are scaffolded by
-# default, aiding admins in cluster management. Those roles are
-# not used by the Project itself. You can comment the following lines
-# if you do not want those helpers be installed with your Project.`
-		err = pluginutil.InsertCodeIfNotExist(rbacKustomizeFilePath,
-			"- auth_proxy_client_clusterrole.yaml", comment)
+		err = pluginutil.AppendCodeIfNotExist(rbacKustomizeFilePath,
+			editViewRulesCommentFragment)
 		if err != nil {
-			log.Errorf("Unable to add a comment in the file "+
+			log.Errorf("Unable to append the edit/view roles comment in the file "+
 				"%s.", rbacKustomizeFilePath)
 		}
 		crdName := strings.ToLower(s.resource.Kind)
 		if s.config.IsMultiGroup() && s.resource.Group != "" {
 			crdName = strings.ToLower(s.resource.Group) + "_" + crdName
 		}
-		err = pluginutil.InsertCodeIfNotExist(rbacKustomizeFilePath, comment,
+		err = pluginutil.InsertCodeIfNotExist(rbacKustomizeFilePath, editViewRulesCommentFragment,
 			fmt.Sprintf("\n- %[1]s_editor_role.yaml\n- %[1]s_viewer_role.yaml", crdName))
 		if err != nil {
 			log.Errorf("Unable to add Editor and Viewer roles in the file "+
+				"%s.", rbacKustomizeFilePath)
+		}
+		// Add an empty line at the end of the file
+		err = pluginutil.AppendCodeIfNotExist(rbacKustomizeFilePath,
+			`
+
+`)
+		if err != nil {
+			log.Errorf("Unable to append empty line at the end of the file"+
 				"%s.", rbacKustomizeFilePath)
 		}
 	}
 
 	return nil
 }
+
+const editViewRulesCommentFragment = `# For each CRD, "Editor" and "Viewer" roles are scaffolded by
+# default, aiding admins in cluster management. Those roles are
+# not used by the Project itself. You can comment the following lines
+# if you do not want those helpers be installed with your Project.`
