@@ -97,6 +97,36 @@ func InsertCodeIfNotExist(filename, target, code string) error {
 	return InsertCode(filename, target, code)
 }
 
+// AppendCodeIfNotExist checks if the code does not already exist in the file, and if not, appends it to the end.
+func AppendCodeIfNotExist(filename, code string) error {
+	contents, err := os.ReadFile(filename)
+	if err != nil {
+		return err
+	}
+
+	if strings.Contains(string(contents), code) {
+		return nil // Code already exists, no need to append.
+	}
+
+	return AppendCodeAtTheEnd(filename, code)
+}
+
+// AppendCodeAtTheEnd appends the given code at the end of the file.
+func AppendCodeAtTheEnd(filename, code string) error {
+	f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := f.Close(); err != nil {
+			return
+		}
+	}()
+
+	_, err = f.WriteString(code)
+	return err
+}
+
 // UncommentCode searches for target in the file and remove the comment prefix
 // of the target content. The target content may span multiple lines.
 func UncommentCode(filename, target, prefix string) error {

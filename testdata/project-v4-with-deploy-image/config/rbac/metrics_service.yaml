@@ -3,15 +3,15 @@ kind: Service
 metadata:
   labels:
     control-plane: controller-manager
-    app.kubernetes.io/name: project
+    app.kubernetes.io/name: project-v4-with-deploy-image
     app.kubernetes.io/managed-by: kustomize
   name: controller-manager-metrics-service
   namespace: system
 spec:
   ports:
-  - name: https
-    port: 8443
+  - name: http
+    port: 8080
     protocol: TCP
-    targetPort: https
+    targetPort: 8080
   selector:
     control-plane: controller-manager
