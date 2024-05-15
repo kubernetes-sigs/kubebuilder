@@ -52,7 +52,6 @@ Following is a general workflow to create a sample by the plugin `go/v3`: (`kbc`
   	"--project-version", "3",
   	"--domain", kbc.Domain,
   	"--fetch-deps=false",
-  	"--component-config=true",
   )
   ExpectWithOffset(1, err).NotTo(HaveOccurred())
   ```

@@ -62,16 +62,6 @@ type Config interface {
 	// ClearMultiGroup disables multi-group.
 	ClearMultiGroup() error
 
-	// IsComponentConfig checks if component config is enabled.
-	// This method was introduced in project version 3.
-	IsComponentConfig() bool
-	// SetComponentConfig enables component config.
-	// This method was introduced in project version 3.
-	SetComponentConfig() error
-	// ClearComponentConfig disables component config.
-	// This method was introduced in project version 3.
-	ClearComponentConfig() error
-
 	/* Resources */
 
 	// ResourcesLength returns the number of tracked resources.

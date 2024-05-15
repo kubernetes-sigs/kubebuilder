@@ -29,7 +29,6 @@ type mockTemplate struct {
 	RepositoryMixin
 	ProjectNameMixin
 	MultiGroupMixin
-	ComponentConfigMixin
 	BoilerplateMixin
 	ResourceMixin
 }
@@ -141,17 +140,6 @@ var _ = Describe("MultiGroupMixin", func() {
 		It("should inject the provided multi group flag", func() {
 			tmp.InjectMultiGroup(true)
 			Expect(tmp.MultiGroup).To(BeTrue())
-		})
-	})
-})
-
-var _ = Describe("ComponentConfigMixin", func() {
-	tmp := mockTemplate{}
-
-	Context("InjectComponentConfig", func() {
-		It("should inject the provided component config flag", func() {
-			tmp.InjectComponentConfig(true)
-			Expect(tmp.ComponentConfig).To(BeTrue())
 		})
 	})
 })
