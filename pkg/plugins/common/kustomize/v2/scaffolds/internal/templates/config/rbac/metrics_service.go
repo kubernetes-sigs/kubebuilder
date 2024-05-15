@@ -22,26 +22,26 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
-var _ machinery.Template = &AuthProxyService{}
+var _ machinery.Template = &MetricsService{}
 
-// AuthProxyService scaffolds a file that defines the service for the auth proxy
-type AuthProxyService struct {
+// MetricsService scaffolds a file that defines the service for the auth proxy
+type MetricsService struct {
 	machinery.TemplateMixin
 	machinery.ProjectNameMixin
 }
 
 // SetTemplateDefaults implements file.Template
-func (f *AuthProxyService) SetTemplateDefaults() error {
+func (f *MetricsService) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = filepath.Join("config", "rbac", "auth_proxy_service.yaml")
+		f.Path = filepath.Join("config", "rbac", "metrics_service.yaml")
 	}
 
-	f.TemplateBody = authProxyServiceTemplate
+	f.TemplateBody = metricsServiceTemplate
 
 	return nil
 }
 
-const authProxyServiceTemplate = `apiVersion: v1
+const metricsServiceTemplate = `apiVersion: v1
 kind: Service
 metadata:
   labels:
@@ -52,10 +52,10 @@ metadata:
   namespace: system
 spec:
   ports:
-  - name: https
-    port: 8443
+  - name: http
+    port: 8080
     protocol: TCP
-    targetPort: https
+    targetPort: 8080
   selector:
     control-plane: controller-manager
 `

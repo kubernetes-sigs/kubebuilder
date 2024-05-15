@@ -3,45 +3,98 @@
 By default, controller-runtime builds a global prometheus registry and
 publishes [a collection of performance metrics](/reference/metrics-reference.md) for each controller.
 
+<aside class="note warning">
+<h1>IMPORTANT: If you are using `kube-rbac-proxy`</h1>
+
+**Images provided under `gcr.io/kubebuilder/` will be unavailable from March 18, 2025.**
+
+Projects initialized with Kubebuilder versions `v3.14` or lower utilize [kube-rbac-proxy](https://github.com/brancz/kube-rbac-proxy) to protect the metrics endpoint. Therefore, you might want to continue using kube-rbac-proxy by simply replacing the image or changing how the metrics endpoint is protected in your project.
+
+- Check the usage in the file `config/default/manager_auth_proxy_patch.yaml` where the [kube-rbac-proxy](https://github.com/brancz/kube-rbac-proxy) container is patched. ([example](https://github.com/kubernetes-sigs/kubebuilder/blob/94a5ab8e52cf416a11428b15ef0f40e4aabbc6ab/testdata/project-v4/config/default/manager_auth_proxy_patch.yaml#L11-L23))
+- See the file `/config/default/kustomization.yaml` where the [kube-rbac-proxy](https://github.com/brancz/kube-rbac-proxy) was patched by default previously. ([example](https://github.com/kubernetes-sigs/kubebuilder/blob/94a5ab8e52cf416a11428b15ef0f40e4aabbc6ab/testdata/project-v4/config/default/kustomization.yaml#L29-L33))
+
+> Please ensure that you update your configurations accordingly to avoid any disruptions.
+
+### If you are using OR wish to continue using [kube-rbac-proxy](https://github.com/brancz/kube-rbac-proxy):
+
+In this case, you must replace the image `gcr.io/kubebuilder/kube-rbac-proxy` for the image provided by the kube-rbac-proxy maintainers ([quay.io/brancz/kube-rbac-proxy](https://quay.io/repository/brancz/kube-rbac-proxy)), which is **not support or promoted by Kubebuilder**, or from any other registry/source that please you.
+
+### ❓ Why is this happening?
+
+Kubebuilder has been rebuilding and re-tagging these images for several years. However, due to recent infrastructure changes for projects under the Kubernetes umbrella, we now require the use of shared infrastructure. But as [kube-rbac-proxy](https://github.com/brancz/kube-rbac-proxy) is in a process to be a part of it, but not yet, sadly we cannot build and promote these images using the new k8s infrastructure. To follow up the ongoing process and changes required for the project be accepted by, see: https://github.com/brancz/kube-rbac-proxy/issues/238
+
+Moreover, Google Cloud Platform has [deprecated the Container Registry](https://cloud.google.com/artifact-registry/docs/transition/transition-from-gcr), which has been used to promote these images.
+
+Additionally, ongoing changes and the phase-out of the previous GCP infrastructure mean that **Kubebuilder maintainers are no longer able to support, build, or ensure the promotion of these images.** For further information, please check the proposal for this change and its motivations [here](https://github.com/kubernetes-sigs/kubebuilder/pull/2345).
+
+### How the metrics endpoint can be protected ?
+
+- By still using [kube-rbac-proxy](https://github.com/brancz/kube-rbac-proxy) and the image provided by the project ([quay.io/brancz/kube-rbac-proxy](https://quay.io/repository/brancz/kube-rbac-proxy)) or from any other source - _(**Not support or promoted by Kubebuilder**)_
+- By using NetworkPolicies. ([example](https://github.com/prometheus-operator/kube-prometheus/discussions/1907#discussioncomment-3896712))
+- By integrating cert-manager with your metrics service you can secure the endpoint via TLS encryption
+- By using Controller-Runtime's new feature added in the [PR](https://github.com/kubernetes-sigs/controller-runtime/pull/1457) which can handle authentication (`authn`), authorization (`authz`) similar to `kube-rbac-proxy`. Also, be aware of the [issue](https://github.com/kubernetes-sigs/controller-runtime/issues/2781).
+
+Further information can be found bellow in this document.
+
+> Note that we plan use the above options to protect the metrics endpoint in the Kubebuilder scaffold in the future. For further information, please check the [proposal](https://github.com/kubernetes-sigs/kubebuilder/pull/2345).
+
+</aside>
+
+## Enabling the Metrics
+
+First, you will need enable the Metrics by uncommenting the following line
+in the file `config/default/kustomization.yaml`, see:
+
+```sh
+# [Metrics] The following patch will enable the metrics endpoint.
+# Ensure that you also protect this endpoint.
+#- path: manager_metrics_patch.yaml
+```
+
+Note that projects are scaffolded by default passing the flag `--metrics-bind-address=0`
+to the manager to ensure that metrics are disabled. See the [controller-runtime
+implementation](https://github.com/kubernetes-sigs/controller-runtime/blob/834905b07c7b5a78e86d21d764f7c2fdaa9602e0/pkg/metrics/server/server.go#L119-L122)
+where the server creation will be skipped in this case.
+
 ## Protecting the Metrics
 
-These metrics are protected by [kube-rbac-proxy](https://github.com/brancz/kube-rbac-proxy)
-by default if using kubebuilder. Kubebuilder v2.2.0+ scaffold a clusterrole which
-can be found at `config/rbac/auth_proxy_client_clusterrole.yaml`.
+Unprotected metrics endpoints can expose valuable data to unauthorized users,
+such as system performance, application behavior, and potentially confidential
+operational metrics. This exposure can lead to security vulnerabilities
+where an attacker could gain insights into the system's operation
+and exploit weaknesses.
 
-You will need to grant permissions to your Prometheus server so that it can
-scrape the protected metrics. To achieve that, you can create a
-`clusterRoleBinding` to bind the `clusterRole` to the service account that your
-Prometheus server uses. If you are using [kube-prometheus](https://github.com/prometheus-operator/kube-prometheus),
-this cluster binding already exists.
+### By using Network Policy
 
-You can either run the following command, or apply the example yaml file provided below to create `clusterRoleBinding`.
+NetworkPolicy acts as a basic firewall for pods within a Kubernetes cluster, controlling traffic
+flow at the IP address or port level. However, it doesn't handle authentication (authn), authorization (authz),
+or encryption directly like [kube-rbac-proxy](https://github.com/brancz/kube-rbac-proxy) solution.
 
-If using kubebuilder
-`<project-prefix>` is the `namePrefix` field in `config/default/kustomization.yaml`.
+### By exposing the metrics endpoint using HTTPS and CertManager
 
-```bash
-kubectl create clusterrolebinding metrics --clusterrole=<project-prefix>-metrics-reader --serviceaccount=<namespace>:<service-account-name>
-```
+Integrating `cert-manager` with your metrics service can secure the endpoint via TLS encryption.
 
-You can also apply the following `ClusterRoleBinding`:
+To modify your project setup to expose metrics using HTTPS with
+the help of cert-manager, you'll need to change the configuration of both
+the `Service` under `config/rbac/metrics_service.yaml` and
+the `ServiceMonitor` under `config/prometheus/monitor.yaml` to use a secure HTTPS port
+and ensure the necessary certificate is applied.
 
-```yaml
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: prometheus-k8s-rolebinding
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: prometheus-k8s-role
-subjects:
-  - kind: ServiceAccount
-    name: <prometheus-service-account>
-    namespace: <prometheus-service-account-namespace>
-```
+### By using Controller-Runtime new feature
 
-The `prometheus-k8s-role` referenced here should provide the necessary permissions to allow prometheus scrape metrics from operator pods.
+Also, you might want to check the new feature added in Controller-Runtime via
+the [pr](https://github.com/kubernetes-sigs/controller-runtime/pull/2407) which can handle authentication (`authn`),
+authorization (`authz`) similar to [kube-rbac-proxy](https://github.com/brancz/kube-rbac-proxy) has been doing.
+
+<aside class="note">
+<h1>Changes required</h1>
+
+After the [issue](https://github.com/kubernetes-sigs/controller-runtime/issues/2781) opened
+for controller-runtime enhance this new feature to address the concerns raised we plan add an option
+to use it in the default scaffold combined with cert-manager. For further information, please check the
+[proposal](../../../../designs/discontinue_usage_of_kube_rbac_proxy.md).
+
+</aside>
 
 ## Exporting Metrics for Prometheus
 
@@ -90,6 +143,14 @@ for the metrics exported from the namespace where the project is running
 `{namespace="<project>-system"}`. See an example:
 
 <img width="1680" alt="Screenshot 2019-10-02 at 13 07 13" src="https://user-images.githubusercontent.com/7708031/66042888-a497da80-e515-11e9-9d77-d8a9fc1159a5.png">
+
+## Consuming the Metrics from other Pods.
+
+Then, see an example to create a Pod using Curl to reach out the metrics:
+
+```sh
+kubectl run curl --restart=Never -n <namespace-name> --image=curlimages/curl:7.78.0 -- /bin/sh -c "curl -v http://<my-project>-controller-manager-metrics-service.<my-project-system>.svc.cluster.local:8080/metrics"
+```
 
 ## Publishing Additional Metrics
 
