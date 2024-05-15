@@ -38,14 +38,14 @@ jobs:
       - name: Clone the code
         uses: actions/checkout@v4
       - name: Run linter
-        uses: golangci/golangci-lint-action@v4
+        uses: golangci/golangci-lint-action@v6
         with:
           version: v1.57
           working-directory: testdata/project-v4-with-deploy-image
           args: --config .golangci.yml ./...
           skip-cache: true  # first lint action will handle
       - name: Run linter
-        uses: golangci/golangci-lint-action@v4
+        uses: golangci/golangci-lint-action@v6
         with:
           version: v1.57
           working-directory: testdata/project-v4-multigroup-with-deploy-image

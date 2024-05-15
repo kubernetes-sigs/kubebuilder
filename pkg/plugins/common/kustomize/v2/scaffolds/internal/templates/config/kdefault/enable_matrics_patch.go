@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package rbac
+package kdefault
 
 import (
 	"path/filepath"
@@ -22,38 +22,38 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
-var _ machinery.Template = &AuthProxyRoleBinding{}
+var _ machinery.Template = &ManagerMetricsPatch{}
 
-// AuthProxyRoleBinding scaffolds a file that defines the role binding for the auth proxy
-type AuthProxyRoleBinding struct {
+// ManagerMetricsPatch scaffolds a file that defines the patch that enables prometheus metrics for the manager
+type ManagerMetricsPatch struct {
 	machinery.TemplateMixin
-	machinery.ProjectNameMixin
+	machinery.ComponentConfigMixin
 }
 
 // SetTemplateDefaults implements file.Template
-func (f *AuthProxyRoleBinding) SetTemplateDefaults() error {
+func (f *ManagerMetricsPatch) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = filepath.Join("config", "rbac", "auth_proxy_role_binding.yaml")
+		f.Path = filepath.Join("config", "default", "manager_metrics_patch.yaml")
 	}
 
-	f.TemplateBody = proxyRoleBindinggTemplate
+	f.TemplateBody = kustomizeMetricsPatchTemplate
+
+	f.IfExistsAction = machinery.Error
 
 	return nil
 }
 
-const proxyRoleBindinggTemplate = `apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
+const kustomizeMetricsPatchTemplate = `# This patch adds the args to allow exposing the metrics endpoint securely
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  labels:
-    app.kubernetes.io/name: {{ .ProjectName }}
-    app.kubernetes.io/managed-by: kustomize
-  name: proxy-rolebinding
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: proxy-role
-subjects:
-- kind: ServiceAccount
   name: controller-manager
   namespace: system
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        args:
+        - "--metrics-bind-address=0.0.0.0:8080"
 `

@@ -64,10 +64,7 @@ func (s *initScaffolder) Scaffold() error {
 
 	templates := []machinery.Builder{
 		&rbac.Kustomization{},
-		&rbac.AuthProxyRole{},
-		&rbac.AuthProxyRoleBinding{},
-		&rbac.AuthProxyService{},
-		&rbac.AuthProxyClientRole{},
+		&rbac.MetricsService{},
 		&rbac.RoleBinding{},
 		// We need to create a Role because if the project
 		// has not CRD define the controller-gen will not generate this file
@@ -76,9 +73,9 @@ func (s *initScaffolder) Scaffold() error {
 		&rbac.LeaderElectionRoleBinding{},
 		&rbac.ServiceAccount{},
 		&manager.Kustomization{},
+		&kdefault.ManagerMetricsPatch{},
 		&manager.Config{Image: imageName},
 		&kdefault.Kustomization{},
-		&kdefault.ManagerAuthProxyPatch{},
 		&kdefault.ManagerConfigPatch{},
 		&prometheus.Kustomization{},
 		&prometheus.Monitor{},

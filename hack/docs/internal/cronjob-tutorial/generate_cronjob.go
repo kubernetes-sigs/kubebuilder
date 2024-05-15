@@ -583,13 +583,6 @@ func updateExample(sp *Sample) {
 		filepath.Join(sp.ctx.Dir, "config/samples/batch_v1_cronjob.yaml"),
 		`# TODO(user): Add fields here`, "")
 	CheckError("fixing samples/batch_v1_cronjob.yaml", err)
-
-	// update default/manager_auth_proxy_patch.yaml
-	err = pluginutil.InsertCode(
-		filepath.Join(sp.ctx.Dir, "config/default/manager_auth_proxy_patch.yaml"),
-		` template:
-    spec:`, ManagerAuthProxySample)
-	CheckError("fixing default/manager_auth_proxy_patch.yaml", err)
 }
 
 func addControllerTest(sp *Sample) {

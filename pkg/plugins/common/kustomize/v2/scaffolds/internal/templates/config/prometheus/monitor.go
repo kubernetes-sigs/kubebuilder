@@ -54,11 +54,8 @@ metadata:
 spec:
   endpoints:
     - path: /metrics
-      port: https
-      scheme: https
-      bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
-      tlsConfig:
-        insecureSkipVerify: true
+      port: http # Ensure this is the name of the port that exposes HTTP metrics
+      scheme: http
   selector:
     matchLabels:
       control-plane: controller-manager

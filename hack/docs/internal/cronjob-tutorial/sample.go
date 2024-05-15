@@ -130,21 +130,3 @@ const DefaultKustomization = `#replacements:
 #          delimiter: '.'
 #          index: 1
 #          create: true`
-
-const ManagerAuthProxySample = `
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-              - matchExpressions:
-                - key: kubernetes.io/arch
-                  operator: In
-                  values:
-                    - amd64
-                    - arm64
-                    - ppc64le
-                    - s390x
-                - key: kubernetes.io/os
-                  operator: In
-                  values:
-                    - linux`

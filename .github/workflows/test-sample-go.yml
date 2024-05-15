@@ -26,7 +26,7 @@ jobs:
           sed -i '25s/^#//' $KUSTOMIZATION_FILE_PATH
           sed -i '27s/^#//' $KUSTOMIZATION_FILE_PATH
           sed -i '42s/^#//' $KUSTOMIZATION_FILE_PATH
-          sed -i '46,143s/^#//' $KUSTOMIZATION_FILE_PATH
+          sed -i '46,142s/^#//' $KUSTOMIZATION_FILE_PATH
       
       - name: Test
         run: |

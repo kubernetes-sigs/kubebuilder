@@ -17,7 +17,6 @@ limitations under the License.
 package v4
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -34,18 +33,6 @@ import (
 
 	"sigs.k8s.io/kubebuilder/v3/test/e2e/utils"
 )
-
-const (
-	tokenRequestRawString = `{"apiVersion": "authentication.k8s.io/v1", "kind": "TokenRequest"}`
-)
-
-// tokenRequest is a trimmed down version of the authentication.k8s.io/v1/TokenRequest Type
-// that we want to use for extracting the token.
-type tokenRequest struct {
-	Status struct {
-		Token string `json:"token"`
-	} `json:"status"`
-}
 
 var _ = Describe("kubebuilder", func() {
 	Context("plugin go/v4", func() {
@@ -68,24 +55,29 @@ var _ = Describe("kubebuilder", func() {
 		It("should generate a runnable project", func() {
 			kbc.IsRestricted = false
 			GenerateV4(kbc)
-			Run(kbc, true, false)
+			Run(kbc, true, false, true)
 		})
 		It("should generate a runnable project with the Installer", func() {
 			kbc.IsRestricted = false
 			GenerateV4(kbc)
-			Run(kbc, false, true)
+			Run(kbc, false, true, true)
+		})
+		It("should generate a runnable project without metrics exposed", func() {
+			kbc.IsRestricted = false
+			GenerateV4WithoutMetrics(kbc)
+			Run(kbc, true, false, false)
 		})
 		It("should generate a runnable project with the manager running "+
 			"as restricted and without webhooks", func() {
 			kbc.IsRestricted = true
 			GenerateV4WithoutWebhooks(kbc)
-			Run(kbc, false, false)
+			Run(kbc, false, false, true)
 		})
 	})
 })
 
 // Run runs a set of e2e tests for a scaffolded project defined by a TestContext.
-func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller bool) {
+func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, hasMetrics bool) {
 	var controllerPodName string
 	var err error
 
@@ -119,13 +111,7 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller bool) {
 
 	var output []byte
 	if !isToUseInstaller {
-		// NOTE: If you want to run the test against a GKE cluster, you will need to grant yourself permission.
-		// Otherwise, you may see "... is forbidden: attempt to grant extra privileges"
-		// $ kubectl create clusterrolebinding myname-cluster-admin-binding \
-		// --clusterrole=cluster-admin --user=myname@mycompany.com
-		// https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control
 		By("deploying the controller-manager")
-
 		cmd := exec.Command("make", "deploy", "IMG="+kbc.ImageName)
 		output, err = kbc.Run(cmd)
 		ExpectWithOffset(1, err).NotTo(HaveOccurred())
@@ -134,13 +120,7 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller bool) {
 		err = kbc.Make("build-installer", "IMG="+kbc.ImageName)
 		ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
-		// NOTE: If you want to run the test against a GKE cluster, you will need to grant yourself permission.
-		// Otherwise, you may see "... is forbidden: attempt to grant extra privileges"
-		// $ kubectl create clusterrolebinding myname-cluster-admin-binding \
-		// --clusterrole=cluster-admin --user=myname@mycompany.com
-		// https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control
 		By("deploying the controller-manager with the installer")
-
 		_, err = kbc.Kubectl.Apply(true, "-f", "dist/install.yaml")
 		ExpectWithOffset(1, err).NotTo(HaveOccurred())
 	}
@@ -183,14 +163,8 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller bool) {
 	}()
 	EventuallyWithOffset(1, verifyControllerUp, time.Minute, time.Second).Should(Succeed())
 
-	By("granting permissions to access the metrics")
-	_, err = kbc.Kubectl.Command(
-		"create", "clusterrolebinding", fmt.Sprintf("metrics-%s", kbc.TestSuffix),
-		fmt.Sprintf("--clusterrole=e2e-%s-metrics-reader", kbc.TestSuffix),
-		fmt.Sprintf("--serviceaccount=%s:%s", kbc.Kubectl.Namespace, kbc.Kubectl.ServiceAccount))
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
-
-	_ = curlMetrics(kbc)
+	By("validating the metrics endpoint")
+	_ = curlMetrics(kbc, hasMetrics)
 
 	if hasWebhook {
 		By("validating that cert-manager has provisioned the certificate Secret")
@@ -267,12 +241,14 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller bool) {
 		return err
 	}, time.Minute, time.Second).Should(Succeed())
 
-	By("validating that the created resource object gets reconciled in the controller")
-	metricsOutput := curlMetrics(kbc)
-	ExpectWithOffset(1, metricsOutput).To(ContainSubstring(fmt.Sprintf(
-		`controller_runtime_reconcile_total{controller="%s",result="success"} 1`,
-		strings.ToLower(kbc.Kind),
-	)))
+	if hasMetrics {
+		By("checking the metrics values to validate that the created resource object gets reconciled")
+		metricsOutput := curlMetrics(kbc, hasMetrics)
+		ExpectWithOffset(1, metricsOutput).To(ContainSubstring(fmt.Sprintf(
+			`controller_runtime_reconcile_total{controller="%s",result="success"} 1`,
+			strings.ToLower(kbc.Kind),
+		)))
+	}
 
 	if hasWebhook {
 		By("validating that mutating and validating webhooks are working fine")
@@ -285,92 +261,117 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller bool) {
 		ExpectWithOffset(1, err).NotTo(HaveOccurred())
 		ExpectWithOffset(1, count).To(BeNumerically("==", 5))
 	}
+
 }
 
 // curlMetrics curl's the /metrics endpoint, returning all logs once a 200 status is returned.
-func curlMetrics(kbc *utils.TestContext) string {
-	By("reading the metrics token")
-	// Filter token query by service account in case more than one exists in a namespace.
-	token, err := ServiceAccountToken(kbc)
-	ExpectWithOffset(2, err).NotTo(HaveOccurred())
-	ExpectWithOffset(2, len(token)).To(BeNumerically(">", 0))
+func curlMetrics(kbc *utils.TestContext, hasMetrics bool) string {
+	By("validating that the controller-manager service is available")
+	_, err := kbc.Kubectl.Get(
+		true,
+		"service", fmt.Sprintf("e2e-%s-controller-manager-metrics-service", kbc.TestSuffix),
+	)
+	ExpectWithOffset(2, err).NotTo(HaveOccurred(), "Controller-manager service should exist")
 
-	By("creating a curl pod")
+	By("validating that the controller-manager deployment is ready")
+	verifyDeploymentReady := func() error {
+		output, err := kbc.Kubectl.Get(
+			true,
+			"deployment", fmt.Sprintf("e2e-%s-controller-manager", kbc.TestSuffix),
+			"-o", "jsonpath={.status.readyReplicas}",
+		)
+		if err != nil {
+			return err
+		}
+		readyReplicas, _ := strconv.Atoi(output)
+		if readyReplicas < 1 {
+			return fmt.Errorf("expected at least 1 ready replica, got %d", readyReplicas)
+		}
+		return nil
+	}
+	EventuallyWithOffset(2, verifyDeploymentReady, 240*time.Second, time.Second).Should(Succeed(),
+		"Deployment is not ready")
+
+	By("ensuring the service endpoint is ready")
+	eventuallyCheckServiceEndpoint := func() error {
+		output, err := kbc.Kubectl.Get(
+			true,
+			"endpoints", fmt.Sprintf("e2e-%s-controller-manager-metrics-service", kbc.TestSuffix),
+			"-o", "jsonpath={.subsets[*].addresses[*].ip}",
+		)
+		if err != nil {
+			return err
+		}
+		if output == "" {
+			return fmt.Errorf("no endpoints found")
+		}
+		return nil
+	}
+	EventuallyWithOffset(2, eventuallyCheckServiceEndpoint, 2*time.Minute, time.Second).Should(Succeed(),
+		"Service endpoint should be ready")
+
+	By("creating a curl pod to access the metrics endpoint")
+	// nolint:lll
 	cmdOpts := []string{
-		"run", "curl", "--image=curlimages/curl:7.68.0", "--restart=OnFailure", "--",
-		"curl", "-v", "-k", "-H", fmt.Sprintf(`Authorization: Bearer %s`, strings.TrimSpace(token)),
-		fmt.Sprintf("https://e2e-%s-controller-manager-metrics-service.%s.svc:8443/metrics",
+		"run", "curl",
+		"--restart=Never",
+		"--namespace", kbc.Kubectl.Namespace,
+		"--image=curlimages/curl:7.78.0",
+		"--",
+		"/bin/sh", "-c", fmt.Sprintf("curl -v -k http://e2e-%s-controller-manager-metrics-service.%s.svc.cluster.local:8080/metrics",
 			kbc.TestSuffix, kbc.Kubectl.Namespace),
 	}
 	_, err = kbc.Kubectl.CommandInNamespace(cmdOpts...)
 	ExpectWithOffset(2, err).NotTo(HaveOccurred())
 
-	By("validating that the curl pod is running as expected")
-	verifyCurlUp := func() error {
-		// Validate pod status
-		status, err := kbc.Kubectl.Get(
-			true,
-			"pods", "curl", "-o", "jsonpath={.status.phase}")
-		ExpectWithOffset(3, err).NotTo(HaveOccurred())
-		if status != "Completed" && status != "Succeeded" {
-			return fmt.Errorf("curl pod in %s status", status)
-		}
-		return nil
-	}
-	EventuallyWithOffset(2, verifyCurlUp, 240*time.Second, time.Second).Should(Succeed())
-
-	By("validating that the metrics endpoint is serving as expected")
 	var metricsOutput string
-	getCurlLogs := func() string {
-		metricsOutput, err = kbc.Kubectl.Logs("curl")
-		ExpectWithOffset(3, err).NotTo(HaveOccurred())
-		return metricsOutput
-	}
-	EventuallyWithOffset(2, getCurlLogs, 10*time.Second, time.Second).Should(ContainSubstring("< HTTP/2 200"))
+	if hasMetrics {
+		By("validating that the curl pod is running as expected")
+		verifyCurlUp := func() error {
+			status, err := kbc.Kubectl.Get(
+				true,
+				"pods", "curl", "-o", "jsonpath={.status.phase}")
+			ExpectWithOffset(3, err).NotTo(HaveOccurred())
+			if status != "Succeeded" {
+				return fmt.Errorf("curl pod in %s status", status)
+			}
+			return nil
+		}
+		EventuallyWithOffset(2, verifyCurlUp, 240*time.Second, time.Second).Should(Succeed())
 
+		By("validating that the metrics endpoint is serving as expected")
+		getCurlLogs := func() string {
+			metricsOutput, err = kbc.Kubectl.Logs("curl")
+			ExpectWithOffset(3, err).NotTo(HaveOccurred())
+			return metricsOutput
+		}
+		EventuallyWithOffset(2, getCurlLogs, 10*time.Second, time.Second).Should(ContainSubstring("< HTTP/1.1 200 OK"))
+	} else {
+		By("validating that the curl pod fail as expected")
+		verifyCurlUp := func() error {
+			status, err := kbc.Kubectl.Get(
+				true,
+				"pods", "curl", "-o", "jsonpath={.status.phase}")
+			ExpectWithOffset(3, err).NotTo(HaveOccurred())
+			if status != "Failed" {
+				return fmt.Errorf(
+					"curl pod in %s status when should fail with an error", status)
+			}
+			return nil
+		}
+		EventuallyWithOffset(2, verifyCurlUp, 240*time.Second, time.Second).Should(Succeed())
+
+		By("validating that the metrics endpoint is not working as expected")
+		getCurlLogs := func() string {
+			metricsOutput, err = kbc.Kubectl.Logs("curl")
+			ExpectWithOffset(3, err).NotTo(HaveOccurred())
+			return metricsOutput
+		}
+		EventuallyWithOffset(2, getCurlLogs, 10*time.Second, time.Second).Should(ContainSubstring("Connection refused"))
+	}
 	By("cleaning up the curl pod")
 	_, err = kbc.Kubectl.Delete(true, "pods/curl")
 	ExpectWithOffset(3, err).NotTo(HaveOccurred())
 
 	return metricsOutput
-}
-
-// ServiceAccountToken provides a helper function that can provide you with a service account
-// token that you can use to interact with the service. This function leverages the k8s'
-// TokenRequest API in raw format in order to make it generic for all version of the k8s that
-// is currently being supported in kubebuilder test infra.
-// TokenRequest API returns the token in raw JWT format itself. There is no conversion required.
-func ServiceAccountToken(kbc *utils.TestContext) (out string, err error) {
-	By("Creating the ServiceAccount token")
-	secretName := fmt.Sprintf("%s-token-request", kbc.Kubectl.ServiceAccount)
-	tokenRequestFile := filepath.Join(kbc.Dir, secretName)
-	err = os.WriteFile(tokenRequestFile, []byte(tokenRequestRawString), os.FileMode(0o755))
-	if err != nil {
-		return out, err
-	}
-	var rawJson string
-	Eventually(func() error {
-		// Output of this is already a valid JWT token. No need to covert this from base64 to string format
-		rawJson, err = kbc.Kubectl.Command(
-			"create",
-			"--raw", fmt.Sprintf(
-				"/api/v1/namespaces/%s/serviceaccounts/%s/token",
-				kbc.Kubectl.Namespace,
-				kbc.Kubectl.ServiceAccount,
-			),
-			"-f", tokenRequestFile,
-		)
-		if err != nil {
-			return err
-		}
-		var token tokenRequest
-		err = json.Unmarshal([]byte(rawJson), &token)
-		if err != nil {
-			return err
-		}
-		out = token.Status.Token
-		return nil
-	}, time.Minute, time.Second).Should(Succeed())
-
-	return out, err
 }
