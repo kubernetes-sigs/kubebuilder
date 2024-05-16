@@ -37,36 +37,22 @@ type Controller struct {
 
 	ControllerRuntimeVersion string
 
-	// IsLegacyLayout is added to ensure backwards compatibility and should
-	// be removed when we remove the go/v3 plugin
-	IsLegacyLayout bool
-	PackageName    string
+	PackageName string
 }
 
 // SetTemplateDefaults implements file.Template
 func (f *Controller) SetTemplateDefaults() error {
 	if f.Path == "" {
 		if f.MultiGroup && f.Resource.Group != "" {
-			if f.IsLegacyLayout {
-				f.Path = filepath.Join("controllers", "%[group]", "%[kind]_controller.go")
-			} else {
-				f.Path = filepath.Join("internal", "controller", "%[group]", "%[kind]_controller.go")
-			}
+			f.Path = filepath.Join("internal", "controller", "%[group]", "%[kind]_controller.go")
 		} else {
-			if f.IsLegacyLayout {
-				f.Path = filepath.Join("controllers", "%[kind]_controller.go")
-			} else {
-				f.Path = filepath.Join("internal", "controller", "%[kind]_controller.go")
-			}
+			f.Path = filepath.Join("internal", "controller", "%[kind]_controller.go")
 		}
 	}
 	f.Path = f.Resource.Replacer().Replace(f.Path)
 	log.Println(f.Path)
 
 	f.PackageName = "controller"
-	if f.IsLegacyLayout {
-		f.PackageName = "controllers"
-	}
 
 	log.Println("creating import for %", f.Resource.Path)
 	f.TemplateBody = controllerTemplate
