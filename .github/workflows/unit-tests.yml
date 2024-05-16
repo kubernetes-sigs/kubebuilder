@@ -22,7 +22,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '~1.21'
+          go-version: '~1.22'
       # This step is needed as the following one tries to remove
       # kustomize for each test but has no permission to do so
       - name: Remove pre-installed kustomize
@@ -52,7 +52,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.21"
+          go-version: "1.22"
       - name: Generate the coverage output
         run: make test-coverage
       - name: Send the coverage output
