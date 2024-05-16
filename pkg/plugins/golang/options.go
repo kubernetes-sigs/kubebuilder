@@ -57,11 +57,6 @@ type Options struct {
 	// Plural is the resource's kind plural form.
 	Plural string
 
-	// CRDVersion is the CustomResourceDefinition API version that will be used for the resource.
-	CRDVersion string
-	// WebhookVersion is the {Validating,Mutating}WebhookConfiguration API version that will be used for the resource.
-	WebhookVersion string
-
 	// Namespaced is true if the resource should be namespaced.
 	Namespaced bool
 
@@ -88,7 +83,7 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 		}
 
 		res.API = &resource.API{
-			CRDVersion: opts.CRDVersion,
+			CRDVersion: "v1",
 			Namespaced: opts.Namespaced,
 		}
 
@@ -107,7 +102,7 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 		} else {
 			res.Path = resource.APIPackagePath(c.GetRepository(), res.Group, res.Version, c.IsMultiGroup())
 		}
-		res.Webhooks.WebhookVersion = opts.WebhookVersion
+		res.Webhooks.WebhookVersion = "v1"
 		if opts.DoDefaulting {
 			res.Webhooks.Defaulting = true
 		}

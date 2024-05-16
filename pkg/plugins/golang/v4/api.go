@@ -34,11 +34,6 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v4/scaffolds"
 )
 
-const (
-	// defaultCRDVersion is the default CRD API version to scaffold.
-	defaultCRDVersion = "v1"
-)
-
 // DefaultMainPath is default file path of main.go
 const DefaultMainPath = "cmd/main.go"
 
@@ -117,8 +112,6 @@ func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 
 func (p *createAPISubcommand) InjectConfig(c config.Config) error {
 	p.config = c
-	// go/v4 no longer supports v1beta1 option
-	p.options.CRDVersion = defaultCRDVersion
 	return nil
 }
 
