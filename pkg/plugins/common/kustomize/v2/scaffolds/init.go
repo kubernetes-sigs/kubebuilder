@@ -76,7 +76,6 @@ func (s *initScaffolder) Scaffold() error {
 		&kdefault.ManagerMetricsPatch{},
 		&manager.Config{Image: imageName},
 		&kdefault.Kustomization{},
-		&kdefault.ManagerConfigPatch{},
 		&prometheus.Kustomization{},
 		&prometheus.Monitor{},
 	}
