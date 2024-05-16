@@ -82,7 +82,10 @@ as argument the architecture and the SO that should be used, e.g:
 
 For further information see the [README](https://github.com/kubernetes-sigs/kubebuilder/blob/tools-releases/README.md).
 
-### To build the `kube-rbac-proxy` images:
+### (Deprecated) - To build the `kube-rbac-proxy` images:
+
+**Note:** We no longer build and promote those images. For more info
+see: https://github.com/kubernetes-sigs/kubebuilder/discussions/3907
 
 These images are built from the project [brancz/kube-rbac-proxy](https://github.com/brancz/kube-rbac-proxy).
 The projects built with Kubebuilder creates a side container with `kube-rbac-proxy` to protect the Manager.
