@@ -1,6 +1,6 @@
 module sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup-with-deploy-image
 
-go 1.21
+go 1.22
 
 require (
 	github.com/onsi/ginkgo/v2 v2.14.0
