@@ -86,7 +86,6 @@ var _ = Describe("Options", func() {
 					}
 					Expect(res.API).NotTo(BeNil())
 					if options.DoAPI {
-						Expect(res.API.CRDVersion).To(Equal(options.CRDVersion))
 						Expect(res.API.Namespaced).To(Equal(options.Namespaced))
 						Expect(res.API.IsEmpty()).To(BeFalse())
 					} else {
@@ -95,7 +94,6 @@ var _ = Describe("Options", func() {
 					Expect(res.Controller).To(Equal(options.DoController))
 					Expect(res.Webhooks).NotTo(BeNil())
 					if options.DoDefaulting || options.DoValidation || options.DoConversion {
-						Expect(res.Webhooks.WebhookVersion).To(Equal(options.WebhookVersion))
 						Expect(res.Webhooks.Defaulting).To(Equal(options.DoDefaulting))
 						Expect(res.Webhooks.Validation).To(Equal(options.DoValidation))
 						Expect(res.Webhooks.Conversion).To(Equal(options.DoConversion))
@@ -110,10 +108,7 @@ var _ = Describe("Options", func() {
 			},
 			Entry("when updating nothing", Options{}),
 			Entry("when updating the plural", Options{Plural: "mates"}),
-			Entry("when updating the API", Options{DoAPI: true, CRDVersion: "v1", Namespaced: true}),
 			Entry("when updating the Controller", Options{DoController: true}),
-			Entry("when updating Webhooks",
-				Options{WebhookVersion: "v1", DoDefaulting: true, DoValidation: true, DoConversion: true}),
 		)
 
 		DescribeTable("should use core apis",

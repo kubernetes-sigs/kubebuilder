@@ -30,9 +30,6 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v4/scaffolds"
 )
 
-// defaultWebhookVersion is the default mutating/validating webhook config API version to scaffold.
-const defaultWebhookVersion = "v1"
-
 var _ plugin.CreateWebhookSubcommand = &createWebhookSubcommand{}
 
 type createWebhookSubcommand struct {
@@ -82,8 +79,6 @@ func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
 
 func (p *createWebhookSubcommand) InjectConfig(c config.Config) error {
 	p.config = c
-	// go/v4 no longer supports v1beta1 option
-	p.options.WebhookVersion = defaultWebhookVersion
 	return nil
 }
 
