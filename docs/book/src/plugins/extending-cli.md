@@ -21,10 +21,10 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/cli"
 	cfgv3 "sigs.k8s.io/kubebuilder/v3/pkg/config/v3"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
-	kustomizecommonv1 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v1"
+	kustomizecommonv2 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v2"
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang"
 	declarativev1 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/declarative/v1"
-	golangv3 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3"
+	golangv4 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v4"
 
 )
 
@@ -44,7 +44,7 @@ func GetPluginsCLI() (*cli.CLI) {
 	// Bundle plugin which built the golang projects scaffold by Kubebuilder go/v3
 	gov3Bundle, _ := plugin.NewBundleWithOptions(plugin.WithName(golang.DefaultNameQualifier),
 		plugin.WithVersion(plugin.Version{Number: 3}),
-		plugin.WithPlugins(kustomizecommonv1.Plugin{}, golangv3.Plugin{}),
+		plugin.WithPlugins(kustomizecommonv2.Plugin{}, golangv3.Plugin{}),
 	)
 
 
