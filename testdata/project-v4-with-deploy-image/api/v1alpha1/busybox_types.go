@@ -51,8 +51,8 @@ type BusyboxStatus struct {
 	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"`
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 
 // Busybox is the Schema for the busyboxes API
 type Busybox struct {
@@ -63,7 +63,7 @@ type Busybox struct {
 	Status BusyboxStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
+// +kubebuilder:object:root=true
 
 // BusyboxList contains a list of Busybox
 type BusyboxList struct {

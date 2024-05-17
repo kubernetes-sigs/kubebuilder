@@ -52,11 +52,11 @@ In addition to the `SimpleDeployment` permissions, we will also need permissions
 In order to fully manage the workflow of deployments, our app will need to be able to use all verbs on a deployment as well as "get" it's status.
 */
 
-//+kubebuilder:rbac:groups=apps.tutorial.kubebuilder.io,resources=simpledeployments,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=apps.tutorial.kubebuilder.io,resources=simpledeployments/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=apps.tutorial.kubebuilder.io,resources=simpledeployments/finalizers,verbs=update
-//+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=apps,resources=deployments/status,verbs=get
+// +kubebuilder:rbac:groups=apps.tutorial.kubebuilder.io,resources=simpledeployments,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=apps.tutorial.kubebuilder.io,resources=simpledeployments/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=apps.tutorial.kubebuilder.io,resources=simpledeployments/finalizers,verbs=update
+// +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=apps,resources=deployments/status,verbs=get
 
 /*
 `Reconcile` will be in charge of reconciling the state of `SimpleDeployments`.

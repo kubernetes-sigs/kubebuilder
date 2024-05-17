@@ -62,7 +62,7 @@ const SuiteTestAddSchema = `
 		This marker is what allows new schemas to be added here automatically when a new API is added to the project.
 	*/
 
-	//+kubebuilder:scaffold:scheme
+	// +kubebuilder:scaffold:scheme
 
 	/*
 		A client is created for our test CRUD operations.
