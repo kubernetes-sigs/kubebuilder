@@ -155,7 +155,7 @@ plugins:
 
 		When("having multiple plugins in the layout field", func() {
 			It("should succeed", func() {
-				pluginChain := []string{"go.kubebuilder.io/v2", "declarative.kubebuilder.io/v1"}
+				pluginChain := []string{"go.kubebuilder.io/v2", "deploy-image.go.kubebuilder.io/v1-alpha"}
 
 				projectConfig := cfgv3.New()
 				Expect(projectConfig.SetPluginChain(pluginChain)).To(Succeed())

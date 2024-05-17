@@ -21,7 +21,6 @@ helpers on top, such as [Operator-SDK][sdk] does to add their features to integr
 | `base.go.kubebuilder.io/v4`                                 | `base/v4`      | Responsible for scaffolding all files which specifically requires Golang. This plugin is used in the composition to create the plugin (`go/v4`)                                                                                     |
 
 [create-plugins]: creating-plugins.md
-[kubebuilder-declarative-pattern]: https://github.com/kubernetes-sigs/kubebuilder-declarative-pattern
 [kustomize]: https://kustomize.io/
 [sdk]: https://github.com/operator-framework/operator-sdk
 [olm]: https://olm.operatorframework.io/

@@ -82,30 +82,50 @@ The `PROJECT` version `3` layout looks like:
 ```yaml
 domain: testproject.org
 layout:
-  - go.kubebuilder.io/v3
+  - go.kubebuilder.io/v4
 plugins:
-  declarative.go.kubebuilder.io/v1:
+  deploy-image.go.kubebuilder.io/v1-alpha:
     resources:
       - domain: testproject.org
-        group: crew
-        kind: FirstMate
-        version: v1
-projectName: example
-repo: sigs.k8s.io/kubebuilder/example
+        group: example.com
+        kind: Memcached
+        options:
+          containerCommand: memcached,-m=64,-o,modern,-v
+          containerPort: "11211"
+          image: memcached:memcached:1.6.26-alpine3.19
+          runAsUser: "1001"
+        version: v1alpha1
+      - domain: testproject.org
+        group: example.com
+        kind: Busybox
+        options:
+          image: busybox:1.36.1
+        version: v1alpha1
+projectName: project-v4-with-deploy-image
+repo: sigs.k8s.io/kubebuilder/testdata/project-v4-with-deploy-image
 resources:
   - api:
       crdVersion: v1
       namespaced: true
     controller: true
     domain: testproject.org
-    group: crew
-    kind: Captain
-    path: sigs.k8s.io/kubebuilder/example/api/v1
-    version: v1
+    group: example.com
+    kind: Memcached
+    path: sigs.k8s.io/kubebuilder/testdata/project-v4-with-deploy-image/api/v1alpha1
+    version: v1alpha1
     webhooks:
-      defaulting: true
       validation: true
       webhookVersion: v1
+  - api:
+      crdVersion: v1
+      namespaced: true
+    controller: true
+    domain: testproject.org
+    group: example.com
+    kind: Busybox
+    path: sigs.k8s.io/kubebuilder/testdata/project-v4-with-deploy-image/api/v1alpha1
+    version: v1alpha1
+version: "3"
 ```
 
 Now let's check its layout fields definition:

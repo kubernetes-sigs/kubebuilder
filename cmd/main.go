@@ -27,7 +27,6 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang"
 
 	//nolint:staticcheck
-	declarativev1 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/declarative/v1"
 	deployimagev1alpha1 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/deploy-image/v1alpha1"
 	golangv4 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v4"
 	grafanav1alpha1 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/optional/grafana/v1alpha"
@@ -60,7 +59,6 @@ func main() {
 			golangv4.Plugin{},
 			gov4Bundle,
 			&kustomizecommonv2.Plugin{},
-			&declarativev1.Plugin{},
 			&deployimagev1alpha1.Plugin{},
 			&grafanav1alpha1.Plugin{},
 		),
