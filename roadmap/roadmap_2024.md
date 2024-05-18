@@ -3,6 +3,8 @@
 ### **(Major Release for Kubebuilder CLI 4.x)** Removing Deprecated Plugins for Enhanced Maintainability and User Experience
 
 **Status:** :construction: Work in Progress
+  - **Remove Deprecations**:https://github.com/kubernetes-sigs/kubebuilder/issues/3603
+  - **Bump Module**: https://github.com/kubernetes-sigs/kubebuilder/pull/3924
 
 **Objective:** To remove all deprecated plugins from Kubebuilder to improve project maintainability and
 enhance user experience. This initiative also includes updating the project documentation to provide clear
@@ -15,7 +17,12 @@ Clear and updated documentation will further assist in making development workfl
 ---
 ### Proposal Pending: Seeking Feedbacks for kube-rbac-proxy's Role in Default Scaffold
 
-**Status:** :construction: Work in Progress. See: https://github.com/kubernetes-sigs/kubebuilder/pull/3860
+**Status:** :white_check_mark: Complete but Seek Contributors and help with the next steps, see: https://github.com/kubernetes-sigs/kubebuilder/issues/3871
+
+- **Resolution**: The usage of kube-rbac-proxy has been discontinued from the default scaffold. We plan to provide other helpers to protect the metrics endpoint. Furthermore, once the project is accepted under kubernetes-sig or kubernetes-auth, we may contribute to its maintainer in developing an external plugin for use with projects built with Kubebuilder.
+   - **Proposal**: [https://github.com/kubernetes-sigs/kubebuilder/blob/master/designs/discontinue_usage_of_kube_rbac_proxy.md](https://github.com/kubernetes-sigs/kubebuilder/blob/master/designs/discontinue_usage_of_kube_rbac_proxy.md)
+   - **PR**: [https://github.com/kubernetes-sigs/kubebuilder/pull/3899](https://github.com/kubernetes-sigs/kubebuilder/pull/3899)
+   - **Communication**: [https://github.com/kubernetes-sigs/kubebuilder/discussions/3907](https://github.com/kubernetes-sigs/kubebuilder/discussions/3907)
 
 **Objective:** Evaluate potential modifications or the exclusion of [kube-rbac-proxy](https://github.com/brancz/kube-rbac-proxy)
 from the default Kubebuilder scaffold in response to deprecations and evolving user requirements.
@@ -42,19 +49,6 @@ burden on Kubebuilder maintainers.
     - [Issue #1885 - use a NetworkPolicy instead of kube-rbac-proxy](https://github.com/kubernetes-sigs/kubebuilder/issues/1885)
     - [Issue #3230 - Migrate away from google.com gcp project kubebuilder](https://github.com/kubernetes-sigs/kubebuilder/issues/3230)
 
-**Proposed Solutions:**
-
-- **Making kube-rbac-proxy Optional:** Offering users the option to include kube-rbac-proxy caters to diverse project
-  requirements and simplifies the transition towards its potential externalization or removal,
-  reducing future maintenance efforts.
-
-- **Leveraging NetworkPolicies:** This alternative focuses on minimizing external dependencies by
-  utilizing Kubernetes-native solutions like NetworkPolicies, in line with our maintenance reduction goals.
-
-- **Default Enablement of cert-manager:** While not directly addressing the maintenance concerns related to
-  kube-rbac-proxy, defaulting to cert-manager responds to community feedback and navigates the upcoming deprecations.
-  This strategy also acknowledges cert-manager's existing role as a prerequisite for webhooks.
-
 ---
 ### Providing Helpers for Project Distribution
 
@@ -62,16 +56,11 @@ burden on Kubebuilder maintainers.
 
 **Status:** :white_check_mark: Complete
 
-As of release ([v3.14.0](https://github.com/kubernetes-sigs/kubebuilder/releases/tag/v3.14.0)),
-Kubebuilder includes enhanced support for project distribution.
-Users can now scaffold projects with a `build-installer` makefile target.
-This improvement enables the straightforward deployment of solutions directly to Kubernetes clusters.
-Users can deploy their projects using commands like:
+- **Resolution**: As of release ([v3.14.0](https://github.com/kubernetes-sigs/kubebuilder/releases/tag/v3.14.0)), Kubebuilder includes enhanced support for project distribution. Users can now scaffold projects with a `build-installer` makefile target. This improvement enables the straightforward deployment of solutions directly to Kubernetes clusters. Users can deploy their projects using commands like:
 
 ```shell
 kubectl apply -f https://raw.githubusercontent.com/<org>/my-project/<tag or branch>/dist/install.yaml
 ```
-
 This enhancement streamlines the process of getting Kubebuilder projects running on clusters, providing a seamless deployment experience.
 
 #### (New Optional Plugin) Helm Chart Packaging
@@ -111,10 +100,12 @@ samples, and documentation.
 
 **Status:** :construction: Seeking Feedbacks and Contributions
 - **Kubebuilder CLI**: :white_check_mark: Complete. It has been building using go releaser. [More info](./../build/.goreleaser.yml)
-- **kube-rbac-proxy Images:**  :raised_hands: Seeking Feedback, see: https://github.com/kubernetes-sigs/kubebuilder/pull/3860
+- **kube-rbac-proxy Images:**  :white_check_mark: Complete. ([More info](https://github.com/kubernetes-sigs/kubebuilder/discussions/3907))
 - **EnvTest binaries:** :construction: Controller-Runtime maintainers are working in a solution to build them out and take the ownership over this one. More info:
   - https://kubernetes.slack.com/archives/C02MRBMN00Z/p1712457941924299
   - https://kubernetes.slack.com/archives/CCK68P2Q2/p1713174342482079
+  - Also, see the PR: https://github.com/kubernetes-sigs/controller-runtime/pull/2811
+- **PR Check image:** See that the images used to check the PR titles are also build and promoted by the Kubebuilder project in GCP but are from the project: https://github.com/kubernetes-sigs/kubebuilder-release-tools. The plan in this case is to use the e2e shared infrastructure. [More info](https://github.com/kubernetes/k8s.io/issues/2647#issuecomment-2111182864)
 
 **Objective:** Shift Kubernetes (k8s) project infrastructure from GCP to shared infrastructures.
 Furthermore, move away from the registry `k8s.gcr.io` to `registry.k8s.io`.
