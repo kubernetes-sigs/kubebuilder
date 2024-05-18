@@ -19,17 +19,17 @@ package main
 import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
-	"sigs.k8s.io/kubebuilder/v3/pkg/cli"
-	cfgv3 "sigs.k8s.io/kubebuilder/v3/pkg/config/v3"
-	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
-	kustomizecommonv2 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v2"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang"
+	"sigs.k8s.io/kubebuilder/v4/pkg/cli"
+	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
+	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
+	kustomizecommonv2 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang"
 
 	//nolint:staticcheck
-	deployimagev1alpha1 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/deploy-image/v1alpha1"
-	golangv4 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v4"
-	grafanav1alpha1 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/optional/grafana/v1alpha"
+	deployimagev1alpha1 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/deploy-image/v1alpha1"
+	golangv4 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4"
+	grafanav1alpha1 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/grafana/v1alpha"
 )
 
 func init() {

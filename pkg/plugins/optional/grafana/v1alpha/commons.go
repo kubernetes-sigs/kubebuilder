@@ -19,7 +19,7 @@ package v1alpha
 import (
 	"errors"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/config"
+	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 )
 
 func InsertPluginMetaToConfig(target config.Config, cfg pluginConfig) error {

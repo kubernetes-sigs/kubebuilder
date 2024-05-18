@@ -44,6 +44,7 @@ gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8
 gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
 gopkg.in/yaml.v3 v3.0.1 h1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=
 gopkg.in/yaml.v3 v3.0.1/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
+sigs.k8s.io/kubebuilder/v3 v3.14.2/go.mod h1:gEZM8SUkewOQnpRDiewh4gmbQ1FMkT/CDlMddOg053M=
 sigs.k8s.io/kubebuilder/v3 v3.14.2 h1:LMZW8Y5eItnP4kh9tpp4Gs2Gd5V3DgLgzbNnXfMAShY=
 sigs.k8s.io/kubebuilder/v3 v3.14.2/go.mod h1:gEZM8SUkewOQnpRDiewh4gmbQ1FMkT/CDlMddOg053M=
 sigs.k8s.io/yaml v1.4.0 h1:Mk1wCc2gy/F0THH0TAp1QYyJNzRm2KCLy3o5ASXVI5E=

@@ -17,7 +17,7 @@ limitations under the License.
 package plugins
 
 import (
-	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 )
 
 // Scaffolder interface creates files to set up a controller manager

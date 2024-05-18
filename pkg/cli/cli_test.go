@@ -27,12 +27,12 @@ import (
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	cfgv3 "sigs.k8s.io/kubebuilder/v3/pkg/config/v3"
-	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/stage"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
-	goPluginV4 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v4"
+	"sigs.k8s.io/kubebuilder/v4/pkg/config"
+	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
+	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/stage"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
+	goPluginV4 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4"
 )
 
 func makeMockPluginsFor(projectVersion config.Version, pluginKeys ...string) []plugin.Plugin {

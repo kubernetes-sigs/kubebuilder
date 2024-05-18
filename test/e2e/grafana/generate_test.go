@@ -19,13 +19,13 @@ package grafana
 import (
 	"path/filepath"
 
-	pluginutil "sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
+	pluginutil "sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
 
 	. "github.com/onsi/ginkgo/v2"
 
 	. "github.com/onsi/gomega"
 
-	"sigs.k8s.io/kubebuilder/v3/test/e2e/utils"
+	"sigs.k8s.io/kubebuilder/v4/test/e2e/utils"
 )
 
 var _ = Describe("kubebuilder", func() {

@@ -24,13 +24,13 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	pluginutil "sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
+	pluginutil "sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
 
 	//nolint:golint
 	// nolint:revive
 	//nolint:golint
 	// nolint:revive
-	"sigs.k8s.io/kubebuilder/v3/test/e2e/utils"
+	"sigs.k8s.io/kubebuilder/v4/test/e2e/utils"
 )
 
 // GenerateV4 implements a go/v4 plugin project defined by a TestContext.

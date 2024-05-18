@@ -22,8 +22,8 @@ import (
 	"sort"
 	"strings"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	"sigs.k8s.io/kubebuilder/v3/pkg/internal/validation"
+	"sigs.k8s.io/kubebuilder/v4/pkg/config"
+	"sigs.k8s.io/kubebuilder/v4/pkg/internal/validation"
 )
 
 // KeyFor returns a Plugin's unique identifying string.

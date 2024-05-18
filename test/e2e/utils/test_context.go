@@ -25,7 +25,7 @@ import (
 	"strings"
 
 	log "github.com/sirupsen/logrus"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
 
 	. "github.com/onsi/ginkgo/v2"
 )

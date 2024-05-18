@@ -23,7 +23,7 @@ import (
 	"strconv"
 	"strings"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/stage"
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/stage"
 )
 
 var (
