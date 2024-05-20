@@ -67,7 +67,10 @@ var _ = Describe("Bundle", func() {
 				{p1, p2, p3},
 				{p1, p3, p4},
 			} {
-				b, err := NewBundle(name, version, "", plugins...)
+
+				b, err := NewBundleWithOptions(WithName(name),
+					WithVersion(version),
+					WithPlugins(plugins...))
 				Expect(err).NotTo(HaveOccurred())
 				Expect(b.Name()).To(Equal(name))
 				Expect(b.Version().Compare(version)).To(Equal(0))
@@ -88,9 +91,13 @@ var _ = Describe("Bundle", func() {
 			var a, b Bundle
 			var err error
 			plugins := []Plugin{p1, p2, p3}
-			a, err = NewBundle("a", version, "", p1, p2)
+			a, err = NewBundleWithOptions(WithName("a"),
+				WithVersion(version),
+				WithPlugins(p1, p2))
 			Expect(err).NotTo(HaveOccurred())
-			b, err = NewBundle("b", version, "", a, p3)
+			b, err = NewBundleWithOptions(WithName("b"),
+				WithVersion(version),
+				WithPlugins(a, p3))
 			Expect(err).NotTo(HaveOccurred())
 			versions := b.SupportedProjectVersions()
 			sort.Slice(versions, func(i int, j int) bool {
@@ -113,7 +120,10 @@ var _ = Describe("Bundle", func() {
 
 				{p1, p2, p3, p4},
 			} {
-				_, err := NewBundle(name, version, "", plugins...)
+				_, err := NewBundleWithOptions(WithName(name),
+					WithVersion(version),
+					WithPlugins(plugins...))
+
 				Expect(err).To(HaveOccurred())
 			}
 		})
