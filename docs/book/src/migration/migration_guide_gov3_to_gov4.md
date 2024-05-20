@@ -16,7 +16,7 @@ project that looks like a native go/v4 project layout (latest version).
 To upgrade your project you might want to use the command `kubebuilder alpha generate [OPTIONS]`.
 This command will re-scaffold the project using the current Kubebuilder version.
 You can run `kubebuilder alpha generate --plugins=go/v4` to regenerate your project using `go/v4`
-based in your [PROJECT][project-file] file config.
+based in your [PROJECT][project-file] file config. ([More info](./../reference/rescaffold.md))
 
 </aside>
 
