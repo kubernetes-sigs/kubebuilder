@@ -10,4 +10,9 @@ spec:
       containers:
       - name: manager
         args:
-        - "--metrics-bind-address=0.0.0.0:8080"
+          # Ensure that the the patch has the args
+          # provided in the config/manager/manager.yaml
+          # More info: https://github.com/kubernetes-sigs/kubebuilder/issues/3934
+          - "--metrics-bind-address=0.0.0.0:8080"
+          - "--leader-elect"
+          - "--health-probe-bind-address=:8081"
