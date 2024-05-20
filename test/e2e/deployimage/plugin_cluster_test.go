@@ -75,7 +75,7 @@ var _ = Describe("kubebuilder", func() {
 		It("should generate a runnable project with deploy-image/v1-alpha options ", func() {
 			var err error
 
-			By("initializing a project with go/v3")
+			By("initializing a project with go/v4")
 			err = kbc.Init(
 				"--plugins", "go/v4",
 				"--project-version", "3",
