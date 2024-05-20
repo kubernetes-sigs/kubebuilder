@@ -64,12 +64,6 @@ var _ = Describe("SplitKey", func() {
 	})
 })
 
-var _ = Describe("GetShortName", func() {
-	It("should extract base names from domains", func() {
-		Expect(GetShortName(name)).To(Equal(short))
-	})
-})
-
 var _ = Describe("Validate", func() {
 	It("should succeed for valid plugins", func() {
 		plugin := mockPlugin{
