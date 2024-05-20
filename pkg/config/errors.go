@@ -19,7 +19,7 @@ package config
 import (
 	"fmt"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 )
 
 // UnsupportedVersionError is returned by New when a project configuration version is not supported.

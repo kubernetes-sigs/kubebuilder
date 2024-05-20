@@ -19,8 +19,8 @@ package main
 import (
 	log "github.com/sirupsen/logrus"
 
-	cronjob "sigs.k8s.io/kubebuilder/v3/hack/docs/internal/cronjob-tutorial"
-	gettingstarted "sigs.k8s.io/kubebuilder/v3/hack/docs/internal/getting-started"
+	cronjob "sigs.k8s.io/kubebuilder/v4/hack/docs/internal/cronjob-tutorial"
+	gettingstarted "sigs.k8s.io/kubebuilder/v4/hack/docs/internal/getting-started"
 )
 
 // Make sure executing `build_kb` to generate kb executable from the source code

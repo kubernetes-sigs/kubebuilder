@@ -17,7 +17,7 @@ limitations under the License.
 package config
 
 import (
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 )
 
 // Config defines the interface that project configuration types must follow.

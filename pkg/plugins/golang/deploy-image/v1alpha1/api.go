@@ -25,13 +25,13 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/spf13/pflag"
-	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
-	goPlugin "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/deploy-image/v1alpha1/scaffolds"
+	"sigs.k8s.io/kubebuilder/v4/pkg/config"
+	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
+	goPlugin "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/deploy-image/v1alpha1/scaffolds"
 )
 
 var _ plugin.CreateAPISubcommand = &createAPISubcommand{}

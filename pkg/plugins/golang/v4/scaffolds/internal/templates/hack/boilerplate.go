@@ -21,7 +21,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 )
 
 // DefaultBoilerplatePath is the default path to the boilerplate file

@@ -24,8 +24,8 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 
-	pluginutil "sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
-	"sigs.k8s.io/kubebuilder/v3/test/e2e/utils"
+	pluginutil "sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
+	"sigs.k8s.io/kubebuilder/v4/test/e2e/utils"
 )
 
 type Sample struct {

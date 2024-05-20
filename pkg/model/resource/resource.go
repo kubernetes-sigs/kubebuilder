@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"strings"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/internal/validation"
+	"sigs.k8s.io/kubebuilder/v4/pkg/internal/validation"
 )
 
 // Resource contains the information required to scaffold files for a resource.

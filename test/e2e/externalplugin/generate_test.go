@@ -19,7 +19,7 @@ package externalplugin
 import (
 	"path/filepath"
 
-	pluginutil "sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
+	pluginutil "sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -28,7 +28,7 @@ import (
 	// nolint:revive
 	//nolint:golint
 	// nolint:revive
-	"sigs.k8s.io/kubebuilder/v3/test/e2e/utils"
+	"sigs.k8s.io/kubebuilder/v4/test/e2e/utils"
 )
 
 var _ = Describe("kubebuilder", func() {

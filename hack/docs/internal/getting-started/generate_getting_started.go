@@ -21,7 +21,7 @@ import (
 	"os/exec"
 
 	log "github.com/sirupsen/logrus"
-	"sigs.k8s.io/kubebuilder/v3/test/e2e/utils"
+	"sigs.k8s.io/kubebuilder/v4/test/e2e/utils"
 )
 
 type Sample struct {

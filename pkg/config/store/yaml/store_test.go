@@ -21,15 +21,15 @@ import (
 	"os"
 	"testing"
 
-	cfgv3 "sigs.k8s.io/kubebuilder/v3/pkg/config/v3"
+	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	"sigs.k8s.io/kubebuilder/v3/pkg/config/store"
-	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/config"
+	"sigs.k8s.io/kubebuilder/v4/pkg/config/store"
+	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 )
 
 func TestConfigStoreYaml(t *testing.T) {

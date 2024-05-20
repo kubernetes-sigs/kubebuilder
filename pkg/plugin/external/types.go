@@ -16,7 +16,7 @@ limitations under the License.
 
 package external
 
-import "sigs.k8s.io/kubebuilder/v3/pkg/plugin"
+import "sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 
 // PluginRequest contains all information kubebuilder received from the CLI
 // and plugins executed before it.

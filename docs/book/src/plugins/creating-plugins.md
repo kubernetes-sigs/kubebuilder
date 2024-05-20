@@ -150,7 +150,7 @@ Such object that implements the machinery interface will later pass to the [exec
 Similar, you may also design your code of plugin implementation by such reference.
 You can also view the other parts of the code file given by the links above.
 
-If your plugin is expected to modify part of the existing files with its scaffold, you may use functions provided by [sigs.k8s.io/kubebuilder/v3/pkg/plugin/util][kb-util].
+If your plugin is expected to modify part of the existing files with its scaffold, you may use functions provided by [sigs.k8s.io/kubebuilder/v4/pkg/plugin/util][kb-util].
 See [example of deploy-image][example-of-deploy-image-2].
 In brief, the util package helps you customize your scaffold in a lower level.
 
@@ -203,7 +203,7 @@ Alternatively, you can create a plugin bundle to include the target plugins. For
 [deploy-image]: https://github.com/kubernetes-sigs/kubebuilder/tree/v3.7.0/pkg/plugins/golang/deploy-image/v1alpha1
 [grafana]: https://github.com/kubernetes-sigs/kubebuilder/tree/v3.7.0/pkg/plugins/optional/grafana/v1alpha
 [extending-cli]: ./extending-cli.md
-[kb-util]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v3/pkg/plugin/util
+[kb-util]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v4/pkg/plugin/util
 [example-of-deploy-image-1]: https://github.com/kubernetes-sigs/kubebuilder/blob/df1ed6ccf19df40bd929157a91eaae6a9215bfc6/pkg/plugins/golang/deploy-image/v1alpha1/scaffolds/internal/templates/api/types.go#L58
 [example-of-deploy-image-2]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/pkg/plugins/golang/deploy-image/v1alpha1/scaffolds/api.go#L170-L266
 [example-of-deploy-image-3]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/pkg/plugins/golang/deploy-image/v1alpha1/scaffolds/api.go#L77-L98
@@ -219,4 +219,4 @@ Alternatively, you can create a plugin bundle to include the target plugins. For
 [kubebuilder-machinery]: https://github.com/kubernetes-sigs/kubebuilder/blob/3bfc84ec8767fa760d1771ce7a0cb05a9a8f6286/pkg/plugins/golang/v3/scaffolds/internal/templates/main.go#L28
 [go-v3-settemplatedefault]: https://github.com/kubernetes-sigs/kubebuilder/blob/3bfc84ec8767fa760d1771ce7a0cb05a9a8f6286/pkg/plugins/golang/v3/scaffolds/internal/templates/main.go#L40
 [go-v3-scaffold-execute]: https://github.com/kubernetes-sigs/kubebuilder/blob/3bfc84ec8767fa760d1771ce7a0cb05a9a8f6286/pkg/plugins/golang/v3/scaffolds/init.go#L120
-[kubebuilder-machinery-pkg]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v3/pkg/machinery#section-documentation
+[kubebuilder-machinery-pkg]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v4/pkg/machinery#section-documentation

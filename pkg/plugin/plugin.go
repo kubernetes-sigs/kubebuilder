@@ -17,7 +17,7 @@ limitations under the License.
 package plugin
 
 import (
-	"sigs.k8s.io/kubebuilder/v3/pkg/config"
+	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 )
 
 // Plugin is an interface that defines the common base for all plugins.

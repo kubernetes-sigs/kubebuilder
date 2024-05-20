@@ -26,11 +26,11 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	yamlstore "sigs.k8s.io/kubebuilder/v3/pkg/config/store/yaml"
-	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/stage"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
+	"sigs.k8s.io/kubebuilder/v4/pkg/config"
+	yamlstore "sigs.k8s.io/kubebuilder/v4/pkg/config/store/yaml"
+	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/stage"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 )
 
 const (
