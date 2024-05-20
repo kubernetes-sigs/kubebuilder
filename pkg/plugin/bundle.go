@@ -58,42 +58,6 @@ func WithDeprecationMessage(msg string) BundleOption {
 
 }
 
-// NewBundle creates a new Bundle with the provided name and version, and that wraps the provided plugins.
-// The list of supported project versions is computed from the provided plugins.
-//
-// Deprecated: Use the NewBundle informing the options from now one. Replace its use for as the
-// following example. Example:
-//
-//	 mylanguagev1Bundle, _ := plugin.NewBundle(plugin.WithName(language.DefaultNameQualifier),
-//	   plugin.WithVersion(plugin.Version{Number: 1}),
-//		  plugin.WithPlugins(kustomizecommonv1.Plugin{}, mylanguagev1.Plugin{}),
-func NewBundle(name string, version Version, deprecateWarning string, plugins ...Plugin) (Bundle, error) {
-	supportedProjectVersions := CommonSupportedProjectVersions(plugins...)
-	if len(supportedProjectVersions) == 0 {
-		return nil, fmt.Errorf("in order to bundle plugins, they must all support at least one common project version")
-	}
-
-	// Plugins may be bundles themselves, so unbundle here
-	// NOTE(Adirio): unbundling here ensures that Bundle.Plugin always returns a flat list of Plugins instead of also
-	//               including Bundles, and therefore we don't have to use a recursive algorithm when resolving.
-	allPlugins := make([]Plugin, 0, len(plugins))
-	for _, plugin := range plugins {
-		if pluginBundle, isBundle := plugin.(Bundle); isBundle {
-			allPlugins = append(allPlugins, pluginBundle.Plugins()...)
-		} else {
-			allPlugins = append(allPlugins, plugin)
-		}
-	}
-
-	return bundle{
-		name:                     name,
-		version:                  version,
-		plugins:                  allPlugins,
-		supportedProjectVersions: supportedProjectVersions,
-		deprecateWarning:         deprecateWarning,
-	}, nil
-}
-
 // NewBundleWithOptions creates a new Bundle with the provided BundleOptions.
 // The list of supported project versions is computed from the provided plugins in options.
 func NewBundleWithOptions(opts ...BundleOption) (Bundle, error) {
@@ -149,7 +113,7 @@ func (b bundle) Plugins() []Plugin {
 	return b.plugins
 }
 
-// Plugins implements Bundle
+// DeprecationWarning return the warning message
 func (b bundle) DeprecationWarning() string {
 	return b.deprecateWarning
 }
