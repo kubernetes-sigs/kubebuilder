@@ -13,7 +13,7 @@ By using this plugin you will have:
 <aside class="note">
 <h1>Examples</h1>
 
-See the "project-v3-with-deploy-image" directory under the [testdata][testdata] directory of the Kubebuilder project to check an example of a scaffolding created using this plugin.
+See the "project-v4-with-deploy-image" directory under the [testdata][testdata] directory of the Kubebuilder project to check an example of a scaffolding created using this plugin.
 
 </aside>
 
