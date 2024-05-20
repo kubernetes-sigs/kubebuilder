@@ -163,6 +163,18 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, hasMetrics bool) 
 	}()
 	EventuallyWithOffset(1, verifyControllerUp, time.Minute, time.Second).Should(Succeed())
 
+	By("Checking if all flags are applied to the manager pod")
+	podOutput, err := kbc.Kubectl.Get(
+		true,
+		"pod", controllerPodName,
+		"-o", "jsonpath={.spec.containers[0].args}",
+	)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	ExpectWithOffset(1, podOutput).To(ContainSubstring("leader-elect"),
+		"Expected manager pod to have --leader-elect flag")
+	ExpectWithOffset(1, podOutput).To(ContainSubstring("health-probe-bind-address"),
+		"Expected manager pod to have --health-probe-bind-address flag")
+
 	By("validating the metrics endpoint")
 	_ = curlMetrics(kbc, hasMetrics)
 
