@@ -42,13 +42,13 @@ For example, Kubebuilder generate [sample projects](https://github.com/kubernete
 Simply, you can also use `TextContext` to generate folders of scaffolded projects from your plugin.
 The commands are very similar as mentioned in [creating-plugins](creating-plugins.md#write-e2e-tests).
 
-Following is a general workflow to create a sample by the plugin `go/v3`: (`kbc` is an instance of `TextContext`)
+Following is a general workflow to create a sample by the plugin `go/v4`: (`kbc` is an instance of `TextContext`)
 
 - To initialized a project:
   ```go
   By("initializing a project")
   err = kbc.Init(
-  	"--plugins", "go/v3",
+  	"--plugins", "go/v4",
   	"--project-version", "3",
   	"--domain", kbc.Domain,
   	"--fetch-deps=false",

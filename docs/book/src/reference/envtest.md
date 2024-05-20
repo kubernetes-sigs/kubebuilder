@@ -322,5 +322,5 @@ testEnv = &envtest.Environment{
 [envtest]: https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/envtest
 [setup-envtest]: https://pkg.go.dev/sigs.k8s.io/controller-runtime/tools/setup-envtest
 [cert-manager]: https://book.kubebuilder.io/cronjob-tutorial/cert-manager.html
-[sdk-e2e-sample-example]: https://github.com/operator-framework/operator-sdk/tree/master/testdata/go/v3/memcached-operator/test/e2e
+[sdk-e2e-sample-example]: https://github.com/operator-framework/operator-sdk/tree/master/testdata/go/v4/memcached-operator/test/e2e
 [sdk]: https://github.com/operator-framework/operator-sdk

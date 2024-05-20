@@ -41,10 +41,10 @@ var (
 
 // GetPluginsCLI returns the plugins based CLI configured to be used in your CLI binary
 func GetPluginsCLI() (*cli.CLI) {
-	// Bundle plugin which built the golang projects scaffold by Kubebuilder go/v3
+	// Bundle plugin which built the golang projects scaffold by Kubebuilder go/v4
 	gov3Bundle, _ := plugin.NewBundleWithOptions(plugin.WithName(golang.DefaultNameQualifier),
 		plugin.WithVersion(plugin.Version{Number: 3}),
-		plugin.WithPlugins(kustomizecommonv2.Plugin{}, golangv3.Plugin{}),
+		plugin.WithPlugins(kustomizecommonv2.Plugin{}, golangv4.Plugin{}),
 	)
 
 

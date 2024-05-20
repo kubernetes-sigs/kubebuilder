@@ -143,7 +143,7 @@ This is common as you may expect your plugin to:
 
 The Kubebuilder internal plugins use boilerplates to generate the files of code.
 
-For instance, the go/v3 scaffolds the `main.go` file by defining an object that [implements the machinery interface][kubebuilder-machinery].
+For instance, the go/v4 scaffolds the `main.go` file by defining an object that [implements the machinery interface][kubebuilder-machinery].
 In the [implementation][go-v3-settemplatedefault] of `Template.SetTemplateDefaults`, the [raw template][go-v3-main-template] is set to the body.
 Such object that implements the machinery interface will later pass to the [execution of scaffold][go-v3-scaffold-execute].
 
