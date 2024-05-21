@@ -31,13 +31,6 @@ function scaffold_test_project {
   rm -rf $testdata_dir/$project/*
   pushd $testdata_dir/$project
 
-  # Remove tool binaries for projects of version 2, which don't have locally-configured binaries,
-  # so the correct versions are used. Also, webhooks in version 2 don't have --make flag
-  if [[ $init_flags =~ --project-version=2 ]]; then
-    rm -f "$(command -v controller-gen)"
-    rm -f "$(command -v kustomize)"
-  fi
-
   header_text "Generating project ${project} with flags: ${init_flags}"
 
   go mod init sigs.k8s.io/kubebuilder/testdata/$project  # our repo autodetection will traverse up to the kb module if we don't do this
@@ -45,23 +38,15 @@ function scaffold_test_project {
   header_text "Initializing project ..."
   $kb init $init_flags --domain testproject.org --license apache2 --owner "The Kubernetes authors"
 
-  if [ $project == "project-v2" ] || [ $project == "project-v3" ] || [ $project == "project-v3-config" ] || [ $project == "project-v4" ] || [ $project == "project-v4-config" ]; then
+  if [ $project == "project-v4" ] || [ $project == "project-v4-config" ]; then
     header_text 'Creating APIs ...'
     $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false
     $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false --force
     $kb create webhook --group crew --version v1 --kind Captain --defaulting --programmatic-validation
-    if [ $project == "project-v3" ]; then
-      $kb create webhook --group crew --version v1 --kind Captain --defaulting --programmatic-validation --force
-    fi
-
-    if [ $project == "project-v2" ]; then
-      $kb create api --group crew --version v1 --kind FirstMate --controller=true --resource=true --make=false
-    else
-      $kb create api --group crew --version v1 --kind FirstMate --controller=true --resource=true --make=false
-    fi
+    $kb create api --group crew --version v1 --kind FirstMate --controller=true --resource=true --make=false
     $kb create webhook --group crew --version v1 --kind FirstMate --conversion
 
-    if [ $project == "project-v3" ] || [ $project == "project-v4" ]; then
+    if [ $project == "project-v4" ]; then
       $kb create api --group crew --version v1 --kind Admiral --plural=admirales --controller=true --resource=true --namespaced=false --make=false
       $kb create webhook --group crew --version v1 --kind Admiral --plural=admirales --defaulting
     else
@@ -127,7 +112,6 @@ function scaffold_test_project {
 
 build_kb
 
-# [Currently, default CLI plugin] - [Next version, alpha] Project version v4-alpha
 scaffold_test_project project-v4 --plugins="go/v4"
 scaffold_test_project project-v4-multigroup --plugins="go/v4"
 scaffold_test_project project-v4-multigroup-with-deploy-image --plugins="go/v4"
