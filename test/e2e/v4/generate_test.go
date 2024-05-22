@@ -65,7 +65,7 @@ func GenerateV4(kbc *utils.TestContext) {
 		"#- path: webhookcainjection_patch.yaml", "#")).To(Succeed())
 	ExpectWithOffset(1, pluginutil.UncommentCode(
 		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
-		"#- path: manager_metrics_patch.yaml", "#")).To(Succeed())
+		metricsTarget, "#")).To(Succeed())
 
 	ExpectWithOffset(1, pluginutil.UncommentCode(filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 		certManagerTarget, "#")).To(Succeed())
@@ -125,7 +125,7 @@ func GenerateV4WithoutWebhooks(kbc *utils.TestContext) {
 		"#- ../prometheus", "#")).To(Succeed())
 	ExpectWithOffset(1, pluginutil.UncommentCode(
 		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
-		"#- path: manager_metrics_patch.yaml", "#")).To(Succeed())
+		metricsTarget, "#")).To(Succeed())
 
 	if kbc.IsRestricted {
 		By("uncomment kustomize files to ensure that pods are restricted")
@@ -165,6 +165,10 @@ func initingTheProject(kbc *utils.TestContext) {
 	)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 }
+
+const metricsTarget = `#- path: manager_metrics_patch.yaml
+#  target:
+#    kind: Deployment`
 
 //nolint:lll
 const certManagerTarget = `#replacements:

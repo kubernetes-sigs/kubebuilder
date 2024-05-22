@@ -109,7 +109,6 @@ spec:
         args:
           - --leader-elect
           - --health-probe-bind-address=:8081
-          - --metrics-bind-address=0
         image: {{ .Image }}
         name: manager
         securityContext:
