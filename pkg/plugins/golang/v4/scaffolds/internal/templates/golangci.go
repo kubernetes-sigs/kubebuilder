@@ -66,6 +66,7 @@ linters:
     - dupl
     - errcheck
     - exportloopref
+    - ginkgolinter
     - goconst
     - gocyclo
     - gofmt

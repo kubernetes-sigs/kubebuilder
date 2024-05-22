@@ -372,7 +372,7 @@ plugins:
 				c.projectVersion = projectVersion
 
 				Expect(c.resolvePlugins()).To(Succeed())
-				Expect(len(c.resolvedPlugins)).To(Equal(1))
+				Expect(c.resolvedPlugins).To(HaveLen(1))
 				Expect(plugin.KeyFor(c.resolvedPlugins[0])).To(Equal(qualified))
 			},
 			Entry("fully qualified plugin", "foo.example.com/v1", "foo.example.com/v1"),
