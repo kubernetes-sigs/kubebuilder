@@ -64,7 +64,7 @@ func (s *initScaffolder) Scaffold() error {
 
 	templates := []machinery.Builder{
 		&rbac.Kustomization{},
-		&rbac.MetricsService{},
+		&kdefault.MetricsService{},
 		&rbac.RoleBinding{},
 		// We need to create a Role because if the project
 		// has not CRD define the controller-gen will not generate this file
