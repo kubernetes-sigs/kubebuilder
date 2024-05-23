@@ -77,6 +77,8 @@ patches:
 # More info: https://book.kubebuilder.io/reference/metrics
 # If you want to expose the metric endpoint of your controller-manager uncomment the following line.
 #- path: manager_metrics_patch.yaml
+#  target:
+#    kind: Deployment
 
 {{ if .ComponentConfig -}}
 # Mount the controller config file for loading manager configurations

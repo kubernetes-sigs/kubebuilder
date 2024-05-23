@@ -46,9 +46,12 @@ First, you will need enable the Metrics by uncommenting the following line
 in the file `config/default/kustomization.yaml`, see:
 
 ```sh
-# [Metrics] The following patch will enable the metrics endpoint.
-# Ensure that you also protect this endpoint.
+# [METRICS] The following patch will enable the metrics endpoint. Ensure that you also protect this endpoint.
+# More info: https://book.kubebuilder.io/reference/metrics
+# If you want to expose the metric endpoint of your controller-manager uncomment the following line.
 #- path: manager_metrics_patch.yaml
+#  target:
+#    kind: Deployment
 ```
 
 Note that projects are scaffolded by default passing the flag `--metrics-bind-address=0`
