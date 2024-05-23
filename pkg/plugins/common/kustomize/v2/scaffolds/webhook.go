@@ -98,6 +98,15 @@ func (s *webhookScaffolder) Scaffold() error {
 		}
 	}
 
+	err = pluginutil.UncommentCode(kustomizeFilePath, "#patches:", `#`)
+	if err != nil {
+		hasWebHookUncommented, err := pluginutil.HasFragment(kustomizeFilePath, "patches:")
+		if !hasWebHookUncommented || err != nil {
+			log.Errorf("Unable to find the line '#patches:' to uncomment in the file "+
+				"%s.", kustomizeFilePath)
+		}
+	}
+
 	err = pluginutil.UncommentCode(kustomizeFilePath, "#- path: manager_webhook_patch.yaml", `#`)
 	if err != nil {
 		hasWebHookUncommented, err := pluginutil.HasFragment(kustomizeFilePath, "- path: manager_webhook_patch.yaml")

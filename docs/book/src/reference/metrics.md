@@ -45,7 +45,12 @@ Further information can be found bellow in this document.
 First, you will need enable the Metrics by uncommenting the following line
 in the file `config/default/kustomization.yaml`, see:
 
-```sh
+```yaml
+# [METRICS] To enable the controller manager metrics service, uncomment the following line.
+#- metrics_service.yaml
+```
+
+```yaml
 # [METRICS] The following patch will enable the metrics endpoint. Ensure that you also protect this endpoint.
 # More info: https://book.kubebuilder.io/reference/metrics
 # If you want to expose the metric endpoint of your controller-manager uncomment the following line.
@@ -79,7 +84,7 @@ Integrating `cert-manager` with your metrics service can secure the endpoint via
 
 To modify your project setup to expose metrics using HTTPS with
 the help of cert-manager, you'll need to change the configuration of both
-the `Service` under `config/rbac/metrics_service.yaml` and
+the `Service` under `config/default/metrics_service.yaml` and
 the `ServiceMonitor` under `config/prometheus/monitor.yaml` to use a secure HTTPS port
 and ensure the necessary certificate is applied.
 

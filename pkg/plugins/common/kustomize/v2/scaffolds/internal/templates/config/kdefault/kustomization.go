@@ -70,8 +70,11 @@ resources:
 #- ../certmanager
 # [PROMETHEUS] To enable prometheus monitor, uncomment all sections with 'PROMETHEUS'.
 #- ../prometheus
+# [METRICS] To enable the controller manager metrics service, uncomment the following line.
+#- metrics_service.yaml
 
-patches:
+# Uncomment the patches line if you enable Metrics, and/or are using webhooks and cert-manager
+#patches:
 # [METRICS] The following patch will enable the metrics endpoint. Ensure that you also protect this endpoint.
 # More info: https://book.kubebuilder.io/reference/metrics
 # If you want to expose the metric endpoint of your controller-manager uncomment the following line.
