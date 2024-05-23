@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package rbac
+package kdefault
 
 import (
 	"path/filepath"
@@ -33,7 +33,7 @@ type MetricsService struct {
 // SetTemplateDefaults implements file.Template
 func (f *MetricsService) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = filepath.Join("config", "rbac", "metrics_service.yaml")
+		f.Path = filepath.Join("config", "default", "metrics_service.yaml")
 	}
 
 	f.TemplateBody = metricsServiceTemplate
