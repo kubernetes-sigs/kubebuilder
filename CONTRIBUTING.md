@@ -172,7 +172,6 @@ The docs are published off of three branches:
 
 - `book-v4`: [book.kubebuilder.io](https://book.kubebuilder.io) -- current docs
 - `book-v3`: [book-v3.book.kubebuilder.io](https://book-v3.book.kubebuilder.io) -- legacy docs
-> The above one is not working. We have been looking forward to sort it out, see: https://github.com/kubernetes-sigs/kubebuilder/issues/3931. However, you can check the content under the `docs/` dir of the branch book-v3.
 - `book-v2`: [book-v2.book.kubebuilder.io](https://book-v2.book.kubebuilder.io) -- legacy docs
 - `book-v1`: [book-v1.book.kubebuilder.io](https://book-v1.book.kubebuilder.io) -- legacy docs
 - `master`: [master.book.kubebuilder.io](https://master.book.kubebuilder.io) -- "nightly" docs
