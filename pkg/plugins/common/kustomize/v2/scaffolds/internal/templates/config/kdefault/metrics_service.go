@@ -22,38 +22,40 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
-var _ machinery.Template = &ManagerMetricsPatch{}
+var _ machinery.Template = &MetricsService{}
 
-// ManagerMetricsPatch scaffolds a file that defines the patch that enables prometheus metrics for the manager
-type ManagerMetricsPatch struct {
+// MetricsService scaffolds a file that defines the service for the auth proxy
+type MetricsService struct {
 	machinery.TemplateMixin
-	machinery.ComponentConfigMixin
+	machinery.ProjectNameMixin
 }
 
 // SetTemplateDefaults implements file.Template
-func (f *ManagerMetricsPatch) SetTemplateDefaults() error {
+func (f *MetricsService) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = filepath.Join("config", "default", "manager_metrics_patch.yaml")
+		f.Path = filepath.Join("config", "default", "metrics_service.yaml")
 	}
 
-	f.TemplateBody = kustomizeMetricsPatchTemplate
-
-	f.IfExistsAction = machinery.Error
+	f.TemplateBody = metricsServiceTemplate
 
 	return nil
 }
 
-const kustomizeMetricsPatchTemplate = `# This patch adds the args to allow exposing the metrics endpoint securely
-apiVersion: apps/v1
-kind: Deployment
+const metricsServiceTemplate = `apiVersion: v1
+kind: Service
 metadata:
-  name: controller-manager
+  labels:
+    control-plane: controller-manager
+    app.kubernetes.io/name: {{ .ProjectName }}
+    app.kubernetes.io/managed-by: kustomize
+  name: controller-manager-metrics-service
   namespace: system
 spec:
-  template:
-    spec:
-      containers:
-      - name: manager
-        args:
-        - "--metrics-bind-address=0.0.0.0:8080"
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    control-plane: controller-manager
 `

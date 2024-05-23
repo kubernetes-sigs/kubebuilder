@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package rbac
+package kdefault
 
 import (
 	"path/filepath"
@@ -22,40 +22,29 @@ import (
 	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
 )
 
-var _ machinery.Template = &MetricsService{}
+var _ machinery.Template = &ManagerMetricsPatch{}
 
-// MetricsService scaffolds a file that defines the service for the auth proxy
-type MetricsService struct {
+// ManagerMetricsPatch scaffolds a file that defines the patch that enables prometheus metrics for the manager
+type ManagerMetricsPatch struct {
 	machinery.TemplateMixin
-	machinery.ProjectNameMixin
+	machinery.ComponentConfigMixin
 }
 
 // SetTemplateDefaults implements file.Template
-func (f *MetricsService) SetTemplateDefaults() error {
+func (f *ManagerMetricsPatch) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = filepath.Join("config", "rbac", "metrics_service.yaml")
+		f.Path = filepath.Join("config", "default", "manager_metrics_patch.yaml")
 	}
 
-	f.TemplateBody = metricsServiceTemplate
+	f.TemplateBody = kustomizeMetricsPatchTemplate
+
+	f.IfExistsAction = machinery.Error
 
 	return nil
 }
 
-const metricsServiceTemplate = `apiVersion: v1
-kind: Service
-metadata:
-  labels:
-    control-plane: controller-manager
-    app.kubernetes.io/name: {{ .ProjectName }}
-    app.kubernetes.io/managed-by: kustomize
-  name: controller-manager-metrics-service
-  namespace: system
-spec:
-  ports:
-  - name: http
-    port: 8080
-    protocol: TCP
-    targetPort: 8080
-  selector:
-    control-plane: controller-manager
+const kustomizeMetricsPatchTemplate = `# This patch adds the args to allow exposing the metrics endpoint securely
+- op: add
+  path: /spec/template/spec/containers/0/args/0
+  value: --metrics-bind-address=:8080
 `

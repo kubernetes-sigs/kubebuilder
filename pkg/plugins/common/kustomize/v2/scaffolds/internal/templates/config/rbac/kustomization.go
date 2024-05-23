@@ -53,5 +53,4 @@ const kustomizeRBACTemplate = `resources:
 - role_binding.yaml
 - leader_election_role.yaml
 - leader_election_role_binding.yaml
-- metrics_service.yaml
 `

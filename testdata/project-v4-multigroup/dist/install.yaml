@@ -1478,24 +1478,6 @@ metadata:
   labels:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: project-v4-multigroup
-    control-plane: controller-manager
-  name: project-v4-multigroup-controller-manager-metrics-service
-  namespace: project-v4-multigroup-system
-spec:
-  ports:
-  - name: http
-    port: 8080
-    protocol: TCP
-    targetPort: 8080
-  selector:
-    control-plane: controller-manager
----
-apiVersion: v1
-kind: Service
-metadata:
-  labels:
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: project-v4-multigroup
   name: project-v4-multigroup-webhook-service
   namespace: project-v4-multigroup-system
 spec:
@@ -1531,7 +1513,6 @@ spec:
       - args:
         - --leader-elect
         - --health-probe-bind-address=:8081
-        - --metrics-bind-address=0
         command:
         - /manager
         image: controller:latest
