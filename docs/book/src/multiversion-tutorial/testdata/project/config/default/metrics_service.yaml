@@ -9,9 +9,9 @@ metadata:
   namespace: system
 spec:
   ports:
-  - name: https
-    port: 8443
+  - name: http
+    port: 8080
     protocol: TCP
-    targetPort: https
+    targetPort: 8080
   selector:
     control-plane: controller-manager

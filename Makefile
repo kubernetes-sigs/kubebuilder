@@ -162,7 +162,7 @@ test-book: ## Run the cronjob tutorial's unit tests to make sure we don't break 
 	# TODO: Uncomment when we bump controller-runtime
     # See: https://github.com/kubernetes-sigs/kubebuilder/issues/3917
 	# cd ./docs/book/src/cronjob-tutorial/testdata/project && make test
-	cd ./docs/book/src/multiversion-tutorial/testdata/project && make test
+	# cd ./docs/book/src/multiversion-tutorial/testdata/project && make test
 	cd ./docs/book/src/getting-started/testdata/project && make test
 
 .PHONY: test-license

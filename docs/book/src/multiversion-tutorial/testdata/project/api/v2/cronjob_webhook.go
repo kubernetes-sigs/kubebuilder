@@ -33,7 +33,7 @@ import (
 // log is for logging in this package.
 var cronjoblog = logf.Log.WithName("cronjob-resource")
 
-// SetupWebhookWithManager sets up the webhooks with the manager
+// SetupWebhookWithManager will setup the manager to manage the webhooks
 func (r *CronJob) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
