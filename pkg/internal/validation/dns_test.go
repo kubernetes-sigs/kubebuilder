@@ -38,7 +38,7 @@ var _ = Describe("IsDNS1123Label", func() {
 			strings.Repeat("a", 56),
 		} {
 			By(fmt.Sprintf("for %s", value))
-			Expect(len(IsDNS1123Label(value))).To(Equal(0))
+			Expect(IsDNS1123Label(value)).To(BeEmpty())
 		}
 	})
 
@@ -52,7 +52,7 @@ var _ = Describe("IsDNS1123Label", func() {
 			strings.Repeat("a", 57),
 		} {
 			By(fmt.Sprintf("for %s", value))
-			Expect(len(IsDNS1123Label(value))).NotTo(Equal(0))
+			Expect(IsDNS1123Label(value)).NotTo(BeEmpty())
 		}
 	})
 })
@@ -70,7 +70,7 @@ var _ = Describe("IsDNS1123Subdomain", func() {
 			strings.Repeat("a", 253),
 		} {
 			By(fmt.Sprintf("for %s", value))
-			Expect(len(IsDNS1123Subdomain(value))).To(Equal(0))
+			Expect(IsDNS1123Subdomain(value)).To(BeEmpty())
 		}
 	})
 
@@ -90,7 +90,7 @@ var _ = Describe("IsDNS1123Subdomain", func() {
 			strings.Repeat("a", 254),
 		} {
 			By(fmt.Sprintf("for %s", value))
-			Expect(len(IsDNS1123Subdomain(value))).NotTo(Equal(0))
+			Expect(IsDNS1123Subdomain(value)).NotTo(BeEmpty())
 		}
 	})
 })
@@ -102,7 +102,7 @@ var _ = Describe("IsDNS1035Label", func() {
 			strings.Repeat("a", 63),
 		} {
 			By(fmt.Sprintf("for %s", value))
-			Expect(len(IsDNS1035Label(value))).To(Equal(0))
+			Expect(IsDNS1035Label(value)).To(BeEmpty())
 		}
 	})
 
@@ -117,7 +117,7 @@ var _ = Describe("IsDNS1035Label", func() {
 			strings.Repeat("a", 64),
 		} {
 			By(fmt.Sprintf("for %s", value))
-			Expect(len(IsDNS1035Label(value))).NotTo(Equal(0))
+			Expect(IsDNS1035Label(value)).NotTo(BeEmpty())
 		}
 	})
 })

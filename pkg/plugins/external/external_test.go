@@ -128,14 +128,14 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 			pluginFilePath := filepath.Join("tmp", "externalPlugin", pluginFileName)
 
 			err = fs.FS.MkdirAll(filepath.Dir(pluginFilePath), filePerm)
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 
 			f, err = fs.FS.Create(pluginFilePath)
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(f).ToNot(BeNil())
 
 			_, err = fs.FS.Stat(pluginFilePath)
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 
 			args = []string{"--domain", "example.com"}
 		})
@@ -143,7 +143,7 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 		AfterEach(func() {
 			filename := filepath.Join("tmp", "externalPlugin", "LICENSE")
 			fileInfo, err := fs.FS.Stat(filename)
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 			Expect(fileInfo).NotTo(BeNil())
 		})
 
@@ -154,7 +154,7 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 			}
 
 			err = i.Scaffold(fs)
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should successfully run edit subcommand on the external plugin", func() {
@@ -164,7 +164,7 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 			}
 
 			err = e.Scaffold(fs)
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should successfully run create api subcommand on the external plugin", func() {
@@ -174,7 +174,7 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 			}
 
 			err = c.Scaffold(fs)
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should successfully run create webhook subcommand on the external plugin", func() {
@@ -184,7 +184,7 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 			}
 
 			err = c.Scaffold(fs)
-			Expect(err).To(BeNil())
+			Expect(err).ToNot(HaveOccurred())
 		})
 	})
 
@@ -213,14 +213,14 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 			}
 
 			err = i.Scaffold(fs)
-			Expect(err).NotTo(BeNil())
+			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("error getting exec command output"))
 
 			outputGetter = &mockValidOutputGetter{}
 			currentDirGetter = &mockInValidOsWdGetter{}
 
 			err = i.Scaffold(fs)
-			Expect(err).NotTo(BeNil())
+			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("error getting current directory"))
 		})
 
@@ -231,14 +231,14 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 			}
 
 			err = e.Scaffold(fs)
-			Expect(err).NotTo(BeNil())
+			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("error getting exec command output"))
 
 			outputGetter = &mockValidOutputGetter{}
 			currentDirGetter = &mockInValidOsWdGetter{}
 
 			err = e.Scaffold(fs)
-			Expect(err).NotTo(BeNil())
+			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("error getting current directory"))
 		})
 
@@ -249,14 +249,14 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 			}
 
 			err = c.Scaffold(fs)
-			Expect(err).NotTo(BeNil())
+			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("error getting exec command output"))
 
 			outputGetter = &mockValidOutputGetter{}
 			currentDirGetter = &mockInValidOsWdGetter{}
 
 			err = c.Scaffold(fs)
-			Expect(err).NotTo(BeNil())
+			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("error getting current directory"))
 		})
 
@@ -267,14 +267,14 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 			}
 
 			err = c.Scaffold(fs)
-			Expect(err).NotTo(BeNil())
+			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("error getting exec command output"))
 
 			outputGetter = &mockValidOutputGetter{}
 			currentDirGetter = &mockInValidOsWdGetter{}
 
 			err = c.Scaffold(fs)
-			Expect(err).NotTo(BeNil())
+			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("error getting current directory"))
 		})
 	})
@@ -726,7 +726,7 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 			universe, err := getUniverseMap(fs)
 
 			Expect(err).ToNot(HaveOccurred())
-			Expect(len(universe)).To(Equal(len(files)))
+			Expect(universe).To(HaveLen(len(files)))
 
 			for _, file := range files {
 				content := universe[filepath.Join(file.path, file.name)]

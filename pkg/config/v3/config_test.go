@@ -231,7 +231,7 @@ var _ = Describe("Cfg", func() {
 		It("AddResource should add the provided resource if non-existent", func() {
 			l := len(c.Resources)
 			Expect(c.AddResource(res)).To(Succeed())
-			Expect(len(c.Resources)).To(Equal(l + 1))
+			Expect(c.Resources).To(HaveLen(l + 1))
 
 			checkResource(c.Resources[0], resWithoutPlural)
 		})
@@ -240,13 +240,13 @@ var _ = Describe("Cfg", func() {
 			c.Resources = append(c.Resources, res)
 			l := len(c.Resources)
 			Expect(c.AddResource(res)).To(Succeed())
-			Expect(len(c.Resources)).To(Equal(l))
+			Expect(c.Resources).To(HaveLen(l))
 		})
 
 		It("UpdateResource should add the provided resource if non-existent", func() {
 			l := len(c.Resources)
 			Expect(c.UpdateResource(res)).To(Succeed())
-			Expect(len(c.Resources)).To(Equal(l + 1))
+			Expect(c.Resources).To(HaveLen(l + 1))
 
 			checkResource(c.Resources[0], resWithoutPlural)
 		})
@@ -265,7 +265,7 @@ var _ = Describe("Cfg", func() {
 			checkResource(c.Resources[0], r)
 
 			Expect(c.UpdateResource(res)).To(Succeed())
-			Expect(len(c.Resources)).To(Equal(l))
+			Expect(c.Resources).To(HaveLen(l))
 
 			checkResource(c.Resources[0], resWithoutPlural)
 		})
