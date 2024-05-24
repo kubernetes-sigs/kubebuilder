@@ -32,10 +32,10 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder" // Required for Watching
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/handler" // Required for Watching
+	"sigs.k8s.io/controller-runtime/pkg/handler"   // Required for Watching
 	"sigs.k8s.io/controller-runtime/pkg/predicate" // Required for Watching
 	"sigs.k8s.io/controller-runtime/pkg/reconcile" // Required for Watching
-	"sigs.k8s.io/controller-runtime/pkg/source" // Required for Watching
+	"sigs.k8s.io/controller-runtime/pkg/source"    // Required for Watching
 
 	appsv1 "tutorial.kubebuilder.io/project/api/v1"
 )
@@ -49,7 +49,7 @@ const (
 )
 
 /*
-*/
+ */
 
 // ConfigDeploymentReconciler reconciles a ConfigDeployment object
 type ConfigDeploymentReconciler struct {
@@ -57,6 +57,7 @@ type ConfigDeploymentReconciler struct {
 	Log    logr.Logger
 	Scheme *runtime.Scheme
 }
+
 // +kubebuilder:docs-gen:collapse=Reconciler Declaration
 
 /*
@@ -66,12 +67,12 @@ There are two additional resources that the controller needs to have access to, 
 All 3 of these are important, and you will see usages of each below.
 */
 
-//+kubebuilder:rbac:groups=apps.tutorial.kubebuilder.io,resources=configdeployments,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=apps.tutorial.kubebuilder.io,resources=configdeployments/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=apps.tutorial.kubebuilder.io,resources=configdeployments/finalizers,verbs=update
-//+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=apps,resources=deployments/status,verbs=get
-//+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch
+// +kubebuilder:rbac:groups=apps.tutorial.kubebuilder.io,resources=configdeployments,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=apps.tutorial.kubebuilder.io,resources=configdeployments/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=apps.tutorial.kubebuilder.io,resources=configdeployments/finalizers,verbs=update
+// +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=apps,resources=deployments/status,verbs=get
+// +kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch
 
 /*
 `Reconcile` will be in charge of reconciling the state of ConfigDeployments.
@@ -153,16 +154,16 @@ func (r *ConfigDeploymentReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	/*
-	As explained in the CronJob tutorial, the controller will first register the Type that it manages, as well as the types of subresources that it controls.
-	Since we also want to watch ConfigMaps that are not controlled or managed by the controller, we will need to use the `Watches()` functionality as well.
+		As explained in the CronJob tutorial, the controller will first register the Type that it manages, as well as the types of subresources that it controls.
+		Since we also want to watch ConfigMaps that are not controlled or managed by the controller, we will need to use the `Watches()` functionality as well.
 
-	The `Watches()` function is a controller-runtime API that takes:
-	- A Kind (i.e. `ConfigMap`)
-	- A mapping function that converts a `ConfigMap` object to a list of reconcile requests for `ConfigDeployments`.
-	We have separated this out into a separate function.
-	- A list of options for watching the `ConfigMaps`
-	  - In our case, we only want the watch to be triggered when the ResourceVersion of the ConfigMap is changed.
-	 */
+		The `Watches()` function is a controller-runtime API that takes:
+		- A Kind (i.e. `ConfigMap`)
+		- A mapping function that converts a `ConfigMap` object to a list of reconcile requests for `ConfigDeployments`.
+		We have separated this out into a separate function.
+		- A list of options for watching the `ConfigMaps`
+		  - In our case, we only want the watch to be triggered when the ResourceVersion of the ConfigMap is changed.
+	*/
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&appsv1.ConfigDeployment{}).
@@ -176,13 +177,13 @@ func (r *ConfigDeploymentReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 /*
-	Because we have already created an index on the `configMap` reference field, this mapping function is quite straight forward.
-	We first need to list out all `ConfigDeployments` that use `ConfigMap` given in the mapping function.
-	This is done by merely submitting a List request using our indexed field as the field selector.
+Because we have already created an index on the `configMap` reference field, this mapping function is quite straight forward.
+We first need to list out all `ConfigDeployments` that use `ConfigMap` given in the mapping function.
+This is done by merely submitting a List request using our indexed field as the field selector.
 
-	When the list of `ConfigDeployments` that reference the `ConfigMap` is found,
-	we just need to loop through the list and create a reconcile request for each one.
-	If an error occurs fetching the list, or no `ConfigDeployments` are found, then no reconcile requests will be returned.
+When the list of `ConfigDeployments` that reference the `ConfigMap` is found,
+we just need to loop through the list and create a reconcile request for each one.
+If an error occurs fetching the list, or no `ConfigDeployments` are found, then no reconcile requests will be returned.
 */
 func (r *ConfigDeploymentReconciler) findObjectsForConfigMap(ctx context.Context, configMap client.Object) []reconcile.Request {
 	attachedConfigDeployments := &appsv1.ConfigDeploymentList{}

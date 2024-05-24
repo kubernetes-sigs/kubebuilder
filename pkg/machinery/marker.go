@@ -54,7 +54,7 @@ func NewMarkerFor(path string, value string) Marker {
 
 // String implements Stringer
 func (m Marker) String() string {
-	return m.comment + prefix + m.value
+	return m.comment + " " + prefix + m.value
 }
 
 // EqualsLine compares a marker with a string representation to check if they are the same marker

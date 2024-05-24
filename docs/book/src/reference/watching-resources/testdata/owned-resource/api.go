@@ -19,6 +19,7 @@ package owned_resource
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
 // +kubebuilder:docs-gen:collapse=Imports
 
 /*
@@ -48,8 +49,8 @@ type SimpleDeploymentStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 
 // SimpleDeployment is the Schema for the simpledeployments API
 type SimpleDeployment struct {
@@ -60,7 +61,7 @@ type SimpleDeployment struct {
 	Status SimpleDeploymentStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
+// +kubebuilder:object:root=true
 
 // SimpleDeploymentList contains a list of SimpleDeployment
 type SimpleDeploymentList struct {
@@ -72,4 +73,5 @@ type SimpleDeploymentList struct {
 func init() {
 	SchemeBuilder.Register(&SimpleDeployment{}, &SimpleDeploymentList{})
 }
+
 // +kubebuilder:docs-gen:collapse=Remaining API Code

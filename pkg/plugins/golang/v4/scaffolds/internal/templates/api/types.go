@@ -87,14 +87,14 @@ type {{ .Resource.Kind }}Status struct {
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 {{- if and (not .Resource.API.Namespaced) (not .Resource.IsRegularPlural) }}
-//+kubebuilder:resource:path={{ .Resource.Plural }},scope=Cluster
+// +kubebuilder:resource:path={{ .Resource.Plural }},scope=Cluster
 {{- else if not .Resource.API.Namespaced }}
-//+kubebuilder:resource:scope=Cluster
+// +kubebuilder:resource:scope=Cluster
 {{- else if not .Resource.IsRegularPlural }}
-//+kubebuilder:resource:path={{ .Resource.Plural }}
+// +kubebuilder:resource:path={{ .Resource.Plural }}
 {{- end }}
 
 // {{ .Resource.Kind }} is the Schema for the {{ .Resource.Plural }} API
@@ -106,7 +106,7 @@ type {{ .Resource.Kind }} struct {
 	Status {{ .Resource.Kind }}Status ` + "`" + `json:"status,omitempty"` + "`" + `
 }
 
-//+kubebuilder:object:root=true
+// +kubebuilder:object:root=true
 
 // {{ .Resource.Kind }}List contains a list of {{ .Resource.Kind }}
 type {{ .Resource.Kind }}List struct {

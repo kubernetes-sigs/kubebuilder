@@ -84,13 +84,13 @@ type ExternalTypeReconciler struct {
 }
 
 // external types can be added like this
-//+kubebuilder:rbac:groups=theirgroup.theirs.com,resources=externaltypes,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=theirgroup.theirs.com,resources=externaltypes/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=theirgroup.theirs.com,resources=externaltypes/finalizers,verbs=update
+// +kubebuilder:rbac:groups=theirgroup.theirs.com,resources=externaltypes,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=theirgroup.theirs.com,resources=externaltypes/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=theirgroup.theirs.com,resources=externaltypes/finalizers,verbs=update
 // core types can be added like this
-//+kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=core,resources=pods/status,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=core,resources=pods/finalizers,verbs=update
+// +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=core,resources=pods/status,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=core,resources=pods/finalizers,verbs=update
 ```
 
 ### Register your Types
@@ -113,7 +113,7 @@ import (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(theirgroupv1alpha1.AddToScheme(scheme)) // this contains the external API types
-	//+kubebuilder:scaffold:scheme
+	// +kubebuilder:scaffold:scheme
 }
 ```
 
@@ -196,7 +196,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	//+kubebuilder:scaffold:imports
+	// +kubebuilder:scaffold:imports
 	theirgroupv1alpha1 "github.com/theiruser/theirproject/apis/theirgroup/v1alpha1"
 )
 
@@ -238,7 +238,7 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
-	//+kubebuilder:scaffold:scheme
+	// +kubebuilder:scaffold:scheme
     Expect(theirgroupv1alpha1.AddToScheme(scheme.Scheme)).To(Succeed())
 
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})

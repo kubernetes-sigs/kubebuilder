@@ -39,8 +39,8 @@ var _ = Describe("Marker", func() {
 	Context("String", func() {
 		DescribeTable("should return the right string representation",
 			func(marker Marker, str string) { Expect(marker.String()).To(Equal(str)) },
-			Entry("for go files", Marker{comment: "//", value: "test"}, "//+kubebuilder:scaffold:test"),
-			Entry("for yaml files", Marker{comment: "#", value: "test"}, "#+kubebuilder:scaffold:test"),
+			Entry("for go files", Marker{comment: "//", value: "test"}, "// +kubebuilder:scaffold:test"),
+			Entry("for yaml files", Marker{comment: "#", value: "test"}, "# +kubebuilder:scaffold:test"),
 		)
 	})
 })

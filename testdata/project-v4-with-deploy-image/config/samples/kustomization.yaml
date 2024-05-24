@@ -2,4 +2,4 @@
 resources:
 - example.com_v1alpha1_memcached.yaml
 - example.com_v1alpha1_busybox.yaml
-#+kubebuilder:scaffold:manifestskustomizesamples
+# +kubebuilder:scaffold:manifestskustomizesamples

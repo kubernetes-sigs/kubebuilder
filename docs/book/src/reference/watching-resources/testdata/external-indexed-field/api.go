@@ -19,6 +19,7 @@ package external_indexed_field
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
 // +kubebuilder:docs-gen:collapse=Imports
 
 /*
@@ -50,8 +51,8 @@ type ConfigDeploymentStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 
 // ConfigDeployment is the Schema for the configdeployments API
 type ConfigDeployment struct {
@@ -62,7 +63,7 @@ type ConfigDeployment struct {
 	Status ConfigDeploymentStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
+// +kubebuilder:object:root=true
 
 // ConfigDeploymentList contains a list of ConfigDeployment
 type ConfigDeploymentList struct {
@@ -74,4 +75,5 @@ type ConfigDeploymentList struct {
 func init() {
 	SchemeBuilder.Register(&ConfigDeployment{}, &ConfigDeploymentList{})
 }
+
 // +kubebuilder:docs-gen:collapse=Remaining API Code

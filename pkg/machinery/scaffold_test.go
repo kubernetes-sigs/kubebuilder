@@ -224,14 +224,14 @@ var _ = Describe("Scaffold", func() {
 				pathGo,
 				`package test
 
-//+kubebuilder:scaffold:-
+// +kubebuilder:scaffold:-
 `,
 				`package test
 
 var a int
 var b int
 
-//+kubebuilder:scaffold:-
+// +kubebuilder:scaffold:-
 `,
 				fakeInserter{
 					fakeBuilder: fakeBuilder{path: pathGo},
@@ -243,12 +243,12 @@ var b int
 			Entry("should insert lines for yaml files",
 				pathYaml,
 				`
-#+kubebuilder:scaffold:-
+# +kubebuilder:scaffold:-
 `,
 				`
 1
 2
-#+kubebuilder:scaffold:-
+# +kubebuilder:scaffold:-
 `,
 				fakeInserter{
 					fakeBuilder: fakeBuilder{path: pathYaml},
@@ -263,10 +263,10 @@ var b int
 				`
 1
 2
-#+kubebuilder:scaffold:-
+# +kubebuilder:scaffold:-
 `,
 				&fakeTemplate{fakeBuilder: fakeBuilder{path: pathYaml, ifExistsAction: OverwriteFile}, body: `
-#+kubebuilder:scaffold:-
+# +kubebuilder:scaffold:-
 `},
 				fakeInserter{
 					fakeBuilder: fakeBuilder{path: pathYaml},
@@ -281,10 +281,10 @@ var b int
 				`
 1
 2
-#+kubebuilder:scaffold:-
+# +kubebuilder:scaffold:-
 `,
 				&fakeTemplate{fakeBuilder: fakeBuilder{path: pathYaml, ifExistsAction: OverwriteFile}, body: `
-#+kubebuilder:scaffold:-
+# +kubebuilder:scaffold:-
 `},
 				fakeInserter{
 					fakeBuilder: fakeBuilder{path: pathYaml},
@@ -296,12 +296,12 @@ var b int
 			Entry("should use files over optional models",
 				pathYaml,
 				`
-#+kubebuilder:scaffold:-
+# +kubebuilder:scaffold:-
 `,
 				`
 1
 2
-#+kubebuilder:scaffold:-
+# +kubebuilder:scaffold:-
 `,
 				&fakeTemplate{fakeBuilder: fakeBuilder{path: pathYaml}, body: content},
 				fakeInserter{
@@ -314,14 +314,14 @@ var b int
 			Entry("should filter invalid markers",
 				pathYaml,
 				`
-#+kubebuilder:scaffold:-
-#+kubebuilder:scaffold:*
+# +kubebuilder:scaffold:-
+# +kubebuilder:scaffold:*
 `,
 				`
 1
 2
-#+kubebuilder:scaffold:-
-#+kubebuilder:scaffold:*
+# +kubebuilder:scaffold:-
+# +kubebuilder:scaffold:*
 `,
 				fakeInserter{
 					fakeBuilder: fakeBuilder{path: pathYaml},
@@ -336,18 +336,18 @@ var b int
 				pathYaml,
 				`
 1
-#+kubebuilder:scaffold:-
+# +kubebuilder:scaffold:-
 3
 4
-#+kubebuilder:scaffold:*
+# +kubebuilder:scaffold:*
 `,
 				`
 1
 2
-#+kubebuilder:scaffold:-
+# +kubebuilder:scaffold:-
 3
 4
-#+kubebuilder:scaffold:*
+# +kubebuilder:scaffold:*
 `,
 				fakeInserter{
 					fakeBuilder: fakeBuilder{path: pathYaml},
@@ -366,7 +366,7 @@ func init() {
 		return err
 	}
 	
-	//+kubebuilder:scaffold:-
+	// +kubebuilder:scaffold:-
 }
 `,
 				`package test
@@ -376,7 +376,7 @@ func init() {
 		return err
 	}
 	
-	//+kubebuilder:scaffold:-
+	// +kubebuilder:scaffold:-
 }
 `,
 				fakeInserter{
@@ -389,10 +389,10 @@ func init() {
 			Entry("should not insert anything if no code fragment",
 				pathYaml,
 				`
-#+kubebuilder:scaffold:-
+# +kubebuilder:scaffold:-
 `,
 				`
-#+kubebuilder:scaffold:-
+# +kubebuilder:scaffold:-
 `,
 				fakeInserter{
 					fakeBuilder: fakeBuilder{path: pathYaml},
