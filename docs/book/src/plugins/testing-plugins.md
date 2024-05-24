@@ -7,12 +7,12 @@ You can test your plugin in two dimension:
 
 ## Write E2E Tests
 
-You can check [Kubebuilder/v3/test/e2e/utils](https://pkg.go.dev/sigs.k8s.io/kubebuilder/v3/test/e2e/utils) package that offers `TestContext` of rich methods:
+You can check [Kubebuilder/v3/test/e2e/utils](https://pkg.go.dev/sigs.k8s.io/kubebuilder/v4/test/e2e/utils) package that offers `TestContext` of rich methods:
 
 - [NewTestContext](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.7.0/test/e2e/utils/test_context.go#L51) helps define:
   - Temporary folder for testing projects
   - Temporary controller-manager image
-  - [Kubectl execution method](https://pkg.go.dev/sigs.k8s.io/kubebuilder/v3/test/e2e/utils#Kubectl)
+  - [Kubectl execution method](https://pkg.go.dev/sigs.k8s.io/kubebuilder/v4/test/e2e/utils#Kubectl)
   - The cli executable (`kubebuilder`, `operator-sdk`, OR your extended-cli)
 
 Once defined, you can use `TestContext` to:
@@ -22,11 +22,11 @@ Once defined, you can use `TestContext` to:
    - Install prerequisites CRDs: See [InstallCertManager](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.7.0/test/e2e/utils/test_context.go#L138), [InstallPrometheusManager](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.6.0/test/e2e/utils/test_context.go#L171)
 2. Validate the plugin behavior, e.g:
    - Trigger the plugin's bound subcommands. See [Init](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.7.0/test/e2e/utils/test_context.go#L213), [CreateAPI](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.6.0/test/e2e/utils/test_context.go#L222)
-   - Use [PluginUtil](https://pkg.go.dev/sigs.k8s.io/kubebuilder/v3/pkg/plugin/util) to verify the scaffolded outputs. See [InsertCode](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.7.0/pkg/plugin/util/util.go#L67), [ReplaceInFile](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.6.0/pkg/plugin/util/util.go#L196), [UncommendCode](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.6.0/pkg/plugin/util/util.go#L86)
+   - Use [PluginUtil](https://pkg.go.dev/sigs.k8s.io/kubebuilder/v4/pkg/plugin/util) to verify the scaffolded outputs. See [InsertCode](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.7.0/pkg/plugin/util/util.go#L67), [ReplaceInFile](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.6.0/pkg/plugin/util/util.go#L196), [UncommendCode](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.6.0/pkg/plugin/util/util.go#L86)
 3. Further make sure the scaffolded output works, e.g:
    - Execute commands in your `Makefile`. See [Make](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.7.0/test/e2e/utils/test_context.go#L240)
    - Temporary load image of the testing controller. See [LoadImageToKindCluster](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.7.0/test/e2e/utils/test_context.go#L283)
-   - Call Kubectl to validate running resources. See [utils.Kubectl](https://pkg.go.dev/sigs.k8s.io/kubebuilder/v3/test/e2e/utils#Kubectl)
+   - Call Kubectl to validate running resources. See [utils.Kubectl](https://pkg.go.dev/sigs.k8s.io/kubebuilder/v4/test/e2e/utils#Kubectl)
 4. Delete temporary resources after testing exited, e.g:
    - Uninstall prerequisites CRDs: See [UninstallPrometheusOperManager](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.7.0/test/e2e/utils/test_context.go#L183)
    - Delete temp dir. See [Destroy](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.7.0/test/e2e/utils/test_context.go#L255)
@@ -42,17 +42,16 @@ For example, Kubebuilder generate [sample projects](https://github.com/kubernete
 Simply, you can also use `TextContext` to generate folders of scaffolded projects from your plugin.
 The commands are very similar as mentioned in [creating-plugins](creating-plugins.md#write-e2e-tests).
 
-Following is a general workflow to create a sample by the plugin `go/v3`: (`kbc` is an instance of `TextContext`)
+Following is a general workflow to create a sample by the plugin `go/v4`: (`kbc` is an instance of `TextContext`)
 
 - To initialized a project:
   ```go
   By("initializing a project")
   err = kbc.Init(
-  	"--plugins", "go/v3",
+  	"--plugins", "go/v4",
   	"--project-version", "3",
   	"--domain", kbc.Domain,
   	"--fetch-deps=false",
-  	"--component-config=true",
   )
   ExpectWithOffset(1, err).NotTo(HaveOccurred())
   ```

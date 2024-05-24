@@ -21,7 +21,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 )
 
 var _ machinery.Template = &Types{}
@@ -36,30 +36,15 @@ type Types struct {
 
 	// Port if informed we will create the scaffold with this spec
 	Port string
-
-	IsLegacyLayout bool
 }
 
 // SetTemplateDefaults implements file.Template
 func (f *Types) SetTemplateDefaults() error {
 	if f.Path == "" {
-
-		if f.IsLegacyLayout {
-			if f.MultiGroup {
-				if f.Resource.Group != "" {
-					f.Path = filepath.Join("apis", "%[group]", "%[version]", "%[kind]_types.go")
-				} else {
-					f.Path = filepath.Join("apis", "%[version]", "%[kind]_types.go")
-				}
-			} else {
-				f.Path = filepath.Join("api", "%[version]", "%[kind]_types.go")
-			}
+		if f.MultiGroup && f.Resource.Group != "" {
+			f.Path = filepath.Join("api", "%[group]", "%[version]", "%[kind]_types.go")
 		} else {
-			if f.MultiGroup && f.Resource.Group != "" {
-				f.Path = filepath.Join("api", "%[group]", "%[version]", "%[kind]_types.go")
-			} else {
-				f.Path = filepath.Join("api", "%[version]", "%[kind]_types.go")
-			}
+			f.Path = filepath.Join("api", "%[version]", "%[kind]_types.go")
 		}
 	}
 
@@ -118,14 +103,14 @@ type {{ .Resource.Kind }}Status struct {
 	Conditions []metav1.Condition ` + "`" + `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"` + "`" + `
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 {{- if and (not .Resource.API.Namespaced) (not .Resource.IsRegularPlural) }}
-//+kubebuilder:resource:path={{ .Resource.Plural }},scope=Cluster
+// +kubebuilder:resource:path={{ .Resource.Plural }},scope=Cluster
 {{- else if not .Resource.API.Namespaced }}
-//+kubebuilder:resource:scope=Cluster
+// +kubebuilder:resource:scope=Cluster
 {{- else if not .Resource.IsRegularPlural }}
-//+kubebuilder:resource:path={{ .Resource.Plural }}
+// +kubebuilder:resource:path={{ .Resource.Plural }}
 {{- end }}
 
 // {{ .Resource.Kind }} is the Schema for the {{ .Resource.Plural }} API
@@ -137,7 +122,7 @@ type {{ .Resource.Kind }} struct {
 	Status {{ .Resource.Kind }}Status ` + "`" + `json:"status,omitempty"` + "`" + `
 }
 
-//+kubebuilder:object:root=true
+// +kubebuilder:object:root=true
 
 // {{ .Resource.Kind }}List contains a list of {{ .Resource.Kind }}
 type {{ .Resource.Kind }}List struct {

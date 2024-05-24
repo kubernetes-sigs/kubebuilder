@@ -23,12 +23,12 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	"sigs.k8s.io/kubebuilder/v3/pkg/config/store"
-	yamlstore "sigs.k8s.io/kubebuilder/v3/pkg/config/store/yaml"
-	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
+	"sigs.k8s.io/kubebuilder/v4/pkg/config"
+	"sigs.k8s.io/kubebuilder/v4/pkg/config/store"
+	yamlstore "sigs.k8s.io/kubebuilder/v4/pkg/config/store/yaml"
+	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 )
 
 // noResolvedPluginError is returned by subcommands that require a plugin when none was resolved.

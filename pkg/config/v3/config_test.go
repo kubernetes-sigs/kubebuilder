@@ -24,8 +24,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v4/pkg/config"
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 )
 
 func TestConfigV3(t *testing.T) {
@@ -134,28 +134,6 @@ var _ = Describe("Cfg", func() {
 		})
 	})
 
-	Context("Component config", func() {
-		It("IsComponentConfig should return false if not set", func() {
-			Expect(c.IsComponentConfig()).To(BeFalse())
-		})
-
-		It("IsComponentConfig should return true if set", func() {
-			c.ComponentConfig = true
-			Expect(c.IsComponentConfig()).To(BeTrue())
-		})
-
-		It("SetComponentConfig should fail to enable component config support", func() {
-			Expect(c.SetComponentConfig()).To(Succeed())
-			Expect(c.ComponentConfig).To(BeTrue())
-		})
-
-		It("ClearComponentConfig should fail to disable component config support", func() {
-			c.ComponentConfig = false
-			Expect(c.ClearComponentConfig()).To(Succeed())
-			Expect(c.ComponentConfig).To(BeFalse())
-		})
-	})
-
 	Context("Resources", func() {
 		var (
 			res = resource.Resource{
@@ -253,7 +231,7 @@ var _ = Describe("Cfg", func() {
 		It("AddResource should add the provided resource if non-existent", func() {
 			l := len(c.Resources)
 			Expect(c.AddResource(res)).To(Succeed())
-			Expect(len(c.Resources)).To(Equal(l + 1))
+			Expect(c.Resources).To(HaveLen(l + 1))
 
 			checkResource(c.Resources[0], resWithoutPlural)
 		})
@@ -262,13 +240,13 @@ var _ = Describe("Cfg", func() {
 			c.Resources = append(c.Resources, res)
 			l := len(c.Resources)
 			Expect(c.AddResource(res)).To(Succeed())
-			Expect(len(c.Resources)).To(Equal(l))
+			Expect(c.Resources).To(HaveLen(l))
 		})
 
 		It("UpdateResource should add the provided resource if non-existent", func() {
 			l := len(c.Resources)
 			Expect(c.UpdateResource(res)).To(Succeed())
-			Expect(len(c.Resources)).To(Equal(l + 1))
+			Expect(c.Resources).To(HaveLen(l + 1))
 
 			checkResource(c.Resources[0], resWithoutPlural)
 		})
@@ -287,7 +265,7 @@ var _ = Describe("Cfg", func() {
 			checkResource(c.Resources[0], r)
 
 			Expect(c.UpdateResource(res)).To(Succeed())
-			Expect(len(c.Resources)).To(Equal(l))
+			Expect(c.Resources).To(HaveLen(l))
 
 			checkResource(c.Resources[0], resWithoutPlural)
 		})
@@ -463,13 +441,12 @@ var _ = Describe("Cfg", func() {
 				PluginChain: pluginChain,
 			}
 			c2 = Cfg{
-				Version:         Version,
-				Domain:          otherDomain,
-				Repository:      otherRepo,
-				Name:            otherName,
-				PluginChain:     otherPluginChain,
-				MultiGroup:      true,
-				ComponentConfig: true,
+				Version:     Version,
+				Domain:      otherDomain,
+				Repository:  otherRepo,
+				Name:        otherName,
+				PluginChain: otherPluginChain,
+				MultiGroup:  true,
 				Resources: []resource.Resource{
 					{
 						GVK: resource.GVK{
@@ -542,8 +519,7 @@ projectName: ProjectName
 repo: myrepo
 version: "3"
 `
-			s2 = `componentConfig: true
-domain: other.domain
+			s2 = `domain: other.domain
 layout:
 - go.kubebuilder.io/v3
 multigroup: true
@@ -610,7 +586,6 @@ version: "3"
 				Expect(unmarshalled.Name).To(Equal(c.Name))
 				Expect(unmarshalled.PluginChain).To(Equal(c.PluginChain))
 				Expect(unmarshalled.MultiGroup).To(Equal(c.MultiGroup))
-				Expect(unmarshalled.ComponentConfig).To(Equal(c.ComponentConfig))
 				Expect(unmarshalled.Resources).To(Equal(c.Resources))
 				Expect(unmarshalled.Plugins).To(HaveLen(len(c.Plugins)))
 				// TODO: fully test Plugins field and not on its length

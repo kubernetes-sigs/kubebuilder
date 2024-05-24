@@ -29,11 +29,10 @@ import (
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	cfgv2 "sigs.k8s.io/kubebuilder/v3/pkg/config/v2"
-	cfgv3 "sigs.k8s.io/kubebuilder/v3/pkg/config/v3"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/external"
+	"sigs.k8s.io/kubebuilder/v4/pkg/config"
+	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/external"
 )
 
 var retrievePluginsRoot = getPluginsRoot
@@ -294,7 +293,7 @@ func DiscoverExternalPlugins(fs afero.Fs) (ps []plugin.Plugin, err error) {
 					ep := external.Plugin{
 						PName:                     pluginInfo.Name(),
 						Path:                      filepath.Join(pluginsRoot, pluginInfo.Name(), version.Name(), pluginFile.Name()),
-						PSupportedProjectVersions: []config.Version{cfgv2.Version, cfgv3.Version},
+						PSupportedProjectVersions: []config.Version{cfgv3.Version},
 						Args:                      parseExternalPluginArgs(),
 					}
 

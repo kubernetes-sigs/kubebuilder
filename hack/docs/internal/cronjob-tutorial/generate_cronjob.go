@@ -24,8 +24,8 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 
-	pluginutil "sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
-	"sigs.k8s.io/kubebuilder/v3/test/e2e/utils"
+	pluginutil "sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
+	"sigs.k8s.io/kubebuilder/v4/test/e2e/utils"
 )
 
 type Sample struct {
@@ -201,7 +201,7 @@ func updateSpec(sp *Sample) {
 		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_types.go"),
 		`SchemeBuilder.Register(&CronJob{}, &CronJobList{})
 }`, `
-//+kubebuilder:docs-gen:collapse=Root Object Definitions`)
+// +kubebuilder:docs-gen:collapse=Root Object Definitions`)
 	CheckError("fixing cronjob_types.go", err)
 
 	err = pluginutil.ReplaceInFile(
@@ -282,7 +282,7 @@ func updateController(sp *Sample) {
 
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "internal/controller/cronjob_controller.go"),
-		`//+kubebuilder:rbac:groups=batch.tutorial.kubebuilder.io,resources=cronjobs/finalizers,verbs=update`, ControllerReconcile)
+		`// +kubebuilder:rbac:groups=batch.tutorial.kubebuilder.io,resources=cronjobs/finalizers,verbs=update`, ControllerReconcile)
 	CheckError("fixing cronjob_controller.go", err)
 
 	err = pluginutil.ReplaceInFile(
@@ -319,13 +319,13 @@ func updateMain(sp *Sample) {
 
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "cmd/main.go"),
-		`//+kubebuilder:scaffold:imports
+		`// +kubebuilder:scaffold:imports
 )`, MainBatch)
 	CheckError("fixing main.go", err)
 
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "cmd/main.go"),
-		`//+kubebuilder:scaffold:scheme
+		`// +kubebuilder:scaffold:scheme
 }`, `
 /*
 The other thing that's changed is that kubebuilder has added a block calling our
@@ -411,12 +411,12 @@ Then, we set up the webhook with the manager.
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_webhook.go"),
-		`//+kubebuilder:webhook:path=/mutate-batch-tutorial-kubebuilder-io-v1-cronjob,mutating=true,failurePolicy=fail,sideEffects=None,groups=batch.tutorial.kubebuilder.io,resources=cronjobs,verbs=create;update,versions=v1,name=mcronjob.kb.io,admissionReviewVersions=v1`, "")
+		`// +kubebuilder:webhook:path=/mutate-batch-tutorial-kubebuilder-io-v1-cronjob,mutating=true,failurePolicy=fail,sideEffects=None,groups=batch.tutorial.kubebuilder.io,resources=cronjobs,verbs=create;update,versions=v1,name=mcronjob.kb.io,admissionReviewVersions=v1`, "")
 	CheckError("fixing cronjob_webhook.go by replacing marker", err)
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_webhook.go"),
-		`//+kubebuilder:webhook:path=/validate-batch-tutorial-kubebuilder-io-v1-cronjob,mutating=false,failurePolicy=fail,sideEffects=None,groups=batch.tutorial.kubebuilder.io,resources=cronjobs,verbs=create;update,versions=v1,name=vcronjob.kb.io,admissionReviewVersions=v1`, "")
+		`// +kubebuilder:webhook:path=/validate-batch-tutorial-kubebuilder-io-v1-cronjob,mutating=false,failurePolicy=fail,sideEffects=None,groups=batch.tutorial.kubebuilder.io,resources=cronjobs,verbs=create;update,versions=v1,name=vcronjob.kb.io,admissionReviewVersions=v1`, "")
 	CheckError("fixing cronjob_webhook.go validate batch marker", err)
 
 	err = pluginutil.ReplaceInFile(
@@ -517,7 +517,7 @@ var testEnv *envtest.Environment
 	err = batchv1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
-	//+kubebuilder:scaffold:scheme
+	// +kubebuilder:scaffold:scheme
 `, SuiteTestAddSchema)
 	CheckError("updating suite_test.go to add schema", err)
 

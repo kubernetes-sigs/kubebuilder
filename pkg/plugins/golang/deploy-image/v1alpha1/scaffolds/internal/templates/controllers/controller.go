@@ -21,7 +21,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 )
 
 var _ machinery.Template = &Controller{}
@@ -37,36 +37,22 @@ type Controller struct {
 
 	ControllerRuntimeVersion string
 
-	// IsLegacyLayout is added to ensure backwards compatibility and should
-	// be removed when we remove the go/v3 plugin
-	IsLegacyLayout bool
-	PackageName    string
+	PackageName string
 }
 
 // SetTemplateDefaults implements file.Template
 func (f *Controller) SetTemplateDefaults() error {
 	if f.Path == "" {
 		if f.MultiGroup && f.Resource.Group != "" {
-			if f.IsLegacyLayout {
-				f.Path = filepath.Join("controllers", "%[group]", "%[kind]_controller.go")
-			} else {
-				f.Path = filepath.Join("internal", "controller", "%[group]", "%[kind]_controller.go")
-			}
+			f.Path = filepath.Join("internal", "controller", "%[group]", "%[kind]_controller.go")
 		} else {
-			if f.IsLegacyLayout {
-				f.Path = filepath.Join("controllers", "%[kind]_controller.go")
-			} else {
-				f.Path = filepath.Join("internal", "controller", "%[kind]_controller.go")
-			}
+			f.Path = filepath.Join("internal", "controller", "%[kind]_controller.go")
 		}
 	}
 	f.Path = f.Resource.Replacer().Replace(f.Path)
 	log.Println(f.Path)
 
 	f.PackageName = "controller"
-	if f.IsLegacyLayout {
-		f.PackageName = "controllers"
-	}
 
 	log.Println("creating import for %", f.Resource.Path)
 	f.TemplateBody = controllerTemplate
@@ -128,12 +114,12 @@ type {{ .Resource.Kind }}Reconciler struct {
 // when the command <make manifests> is executed.
 // To know more about markers see: https://book.kubebuilder.io/reference/markers.html
 
-//+kubebuilder:rbac:groups={{ .Resource.QualifiedGroup }},resources={{ .Resource.Plural }},verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups={{ .Resource.QualifiedGroup }},resources={{ .Resource.Plural }}/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups={{ .Resource.QualifiedGroup }},resources={{ .Resource.Plural }}/finalizers,verbs=update
-//+kubebuilder:rbac:groups=core,resources=events,verbs=create;patch
-//+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch
+// +kubebuilder:rbac:groups={{ .Resource.QualifiedGroup }},resources={{ .Resource.Plural }},verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups={{ .Resource.QualifiedGroup }},resources={{ .Resource.Plural }}/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups={{ .Resource.QualifiedGroup }},resources={{ .Resource.Plural }}/finalizers,verbs=update
+// +kubebuilder:rbac:groups=core,resources=events,verbs=create;patch
+// +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.

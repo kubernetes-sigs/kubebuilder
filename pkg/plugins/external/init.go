@@ -19,9 +19,9 @@ package external
 import (
 	"github.com/spf13/pflag"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/external"
+	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/external"
 )
 
 var _ plugin.InitSubcommand = &initSubcommand{}

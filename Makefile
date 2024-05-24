@@ -159,9 +159,11 @@ test-e2e-ci: ## Run the end-to-end tests (used in the CI)`
 
 .PHONY: test-book
 test-book: ## Run the cronjob tutorial's unit tests to make sure we don't break it
-	cd ./docs/book/src/cronjob-tutorial/testdata/project && make test
-	cd ./docs/book/src/component-config-tutorial/testdata/project && make test
-	cd ./docs/book/src/multiversion-tutorial/testdata/project && make test
+	# TODO: Uncomment when we bump controller-runtime
+    # See: https://github.com/kubernetes-sigs/kubebuilder/issues/3917
+	# cd ./docs/book/src/cronjob-tutorial/testdata/project && make test
+	# cd ./docs/book/src/multiversion-tutorial/testdata/project && make test
+	cd ./docs/book/src/getting-started/testdata/project && make test
 
 .PHONY: test-license
 test-license:  ## Run the license check

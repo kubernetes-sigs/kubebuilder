@@ -97,7 +97,7 @@ Provide clean library abstractions with clear and well exampled godocs.
   - Start minimal and provide progressive discovery of functionality
   - Provide sane defaults and allow users to override when they exist
 - Provide code generators to maintain common boilerplate that can't be addressed by interfaces
-  - Driven off of `//+` comments
+  - Driven off of `// +` comments
 - Provide bootstrapping commands to initialize new packages
 
 ## Versioning and Releasing

@@ -22,10 +22,9 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	cfgv2 "sigs.k8s.io/kubebuilder/v3/pkg/config/v2"
-	cfgv3 "sigs.k8s.io/kubebuilder/v3/pkg/config/v3"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v4/pkg/config"
+	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 )
 
 var _ = Describe("Options", func() {
@@ -87,7 +86,6 @@ var _ = Describe("Options", func() {
 					}
 					Expect(res.API).NotTo(BeNil())
 					if options.DoAPI {
-						Expect(res.API.CRDVersion).To(Equal(options.CRDVersion))
 						Expect(res.API.Namespaced).To(Equal(options.Namespaced))
 						Expect(res.API.IsEmpty()).To(BeFalse())
 					} else {
@@ -96,7 +94,6 @@ var _ = Describe("Options", func() {
 					Expect(res.Controller).To(Equal(options.DoController))
 					Expect(res.Webhooks).NotTo(BeNil())
 					if options.DoDefaulting || options.DoValidation || options.DoConversion {
-						Expect(res.Webhooks.WebhookVersion).To(Equal(options.WebhookVersion))
 						Expect(res.Webhooks.Defaulting).To(Equal(options.DoDefaulting))
 						Expect(res.Webhooks.Validation).To(Equal(options.DoValidation))
 						Expect(res.Webhooks.Conversion).To(Equal(options.DoConversion))
@@ -111,10 +108,7 @@ var _ = Describe("Options", func() {
 			},
 			Entry("when updating nothing", Options{}),
 			Entry("when updating the plural", Options{Plural: "mates"}),
-			Entry("when updating the API", Options{DoAPI: true, CRDVersion: "v1", Namespaced: true}),
 			Entry("when updating the Controller", Options{DoController: true}),
-			Entry("when updating Webhooks",
-				Options{WebhookVersion: "v1", DoDefaulting: true, DoValidation: true, DoConversion: true}),
 		)
 
 		DescribeTable("should use core apis",
@@ -156,7 +150,7 @@ var _ = Describe("Options", func() {
 			// the `HasAPI` method of the resource obtained with `GetResource` will always return false.
 			// Instead, the existence of a resource in the list means the API was scaffolded.
 			func(group, qualified string) {
-				cfg = cfgv2.New()
+				cfg = cfgv3.New()
 				_ = cfg.SetRepository("test")
 
 				options := Options{}

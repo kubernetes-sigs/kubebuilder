@@ -36,17 +36,17 @@ all that is language specific and kustomize for its configuration, see:
 ```go
 import (
 ...
-   kustomizecommonv2alpha "sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v2"
+   kustomizecommonv2 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v2"
    golangv4 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v4"
 ...
 )
 
-	// Bundle plugin which built the golang projects scaffold by Kubebuilder go/v3
+	// Bundle plugin which built the golang projects scaffold by Kubebuilder go/v4
 	// The follow code is creating a new plugin with its name and version via composition
 	// You can define that one plugin is composite by 1 or Many others plugins
 	gov3Bundle, _ := plugin.NewBundle(plugin.WithName(golang.DefaultNameQualifier),
 		plugin.WithVersion(plugin.Version{Number: 3}),
-        plugin.WithPlugins(kustomizecommonv2.Plugin{}, golangv3.Plugin{}), // scaffold the config/ directory and all kustomize files
+        plugin.WithPlugins(kustomizecommonv2.Plugin{}, golangv4.Plugin{}), // scaffold the config/ directory and all kustomize files
 		// Scaffold the Golang files and all that specific for the language e.g. go.mod, apis, controllers
 	)
 ```
@@ -68,7 +68,7 @@ drwx------   6 camilamacedo86  staff  192 31 Mar 09:56 config
 Or combined with the base language plugins:
 
 ```sh
-# Provides the same scaffold of go/v3 plugin which is composition but with kustomize/v2
+# Provides the same scaffold of go/v4 plugin which is composition but with kustomize/v2
 kubebuilder init --plugins=kustomize/v2,base.go.kubebuilder.io/v4 --domain example.org --repo example.org/guestbook-operator
 ```
 

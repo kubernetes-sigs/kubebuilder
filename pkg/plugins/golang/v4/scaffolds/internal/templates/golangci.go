@@ -17,7 +17,7 @@ limitations under the License.
 package templates
 
 import (
-	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 )
 
 var _ machinery.Template = &Golangci{}
@@ -66,6 +66,7 @@ linters:
     - dupl
     - errcheck
     - exportloopref
+    - ginkgolinter
     - goconst
     - gocyclo
     - gofmt

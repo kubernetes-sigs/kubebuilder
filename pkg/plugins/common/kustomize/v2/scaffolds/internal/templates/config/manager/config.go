@@ -19,7 +19,7 @@ package manager
 import (
 	"path/filepath"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 )
 
 var _ machinery.Template = &Config{}
@@ -27,7 +27,6 @@ var _ machinery.Template = &Config{}
 // Config scaffolds a file that defines the namespace and the manager deployment
 type Config struct {
 	machinery.TemplateMixin
-	machinery.ComponentConfigMixin
 	machinery.ProjectNameMixin
 
 	// Image is controller manager image name
@@ -107,12 +106,9 @@ spec:
       containers:
       - command:
         - /manager
-{{- if not .ComponentConfig }}
         args:
           - --leader-elect
           - --health-probe-bind-address=:8081
-          - --metrics-bind-address=0
-{{- end }}
         image: {{ .Image }}
         name: manager
         securityContext:

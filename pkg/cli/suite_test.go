@@ -22,8 +22,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
+	"sigs.k8s.io/kubebuilder/v4/pkg/config"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 )
 
 func TestCLI(t *testing.T) {

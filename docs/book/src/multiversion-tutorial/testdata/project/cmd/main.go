@@ -38,7 +38,7 @@ import (
 	batchv1 "tutorial.kubebuilder.io/project/api/v1"
 	batchv2 "tutorial.kubebuilder.io/project/api/v2"
 	"tutorial.kubebuilder.io/project/internal/controller"
-	//+kubebuilder:scaffold:imports
+	// +kubebuilder:scaffold:imports
 )
 
 // +kubebuilder:docs-gen:collapse=Imports
@@ -56,7 +56,7 @@ func init() {
 	utilruntime.Must(kbatchv1.AddToScheme(scheme)) // we've added this ourselves
 	utilruntime.Must(batchv1.AddToScheme(scheme))
 	utilruntime.Must(batchv2.AddToScheme(scheme))
-	//+kubebuilder:scaffold:scheme
+	// +kubebuilder:scaffold:scheme
 }
 
 // +kubebuilder:docs-gen:collapse=existing setup
@@ -71,7 +71,8 @@ func main() {
 	var probeAddr string
 	var secureMetrics bool
 	var enableHTTP2 bool
-	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
+	flag.StringVar(&metricsAddr, "metrics-bind-address", "0", "The address the metric endpoint binds to. "+
+		"Use the port :8080. If not set, it will be 0 in order to disable the metrics server")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
@@ -160,7 +161,7 @@ func main() {
 		}
 	}
 
-	//+kubebuilder:scaffold:builder
+	// +kubebuilder:scaffold:builder
 
 	/*
 	 */

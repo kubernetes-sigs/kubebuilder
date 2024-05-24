@@ -17,8 +17,8 @@ limitations under the License.
 package external
 
 import (
-	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
+	"sigs.k8s.io/kubebuilder/v4/pkg/config"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 )
 
 var _ plugin.Full = Plugin{}

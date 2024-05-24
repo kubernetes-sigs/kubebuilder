@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package webhook
+package kdefault
 
 import (
 	"path/filepath"
@@ -22,41 +22,40 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 )
 
-var _ machinery.Template = &Service{}
+var _ machinery.Template = &MetricsService{}
 
-// Service scaffolds a file that defines the webhook service
-type Service struct {
+// MetricsService scaffolds a file that defines the service for the auth proxy
+type MetricsService struct {
 	machinery.TemplateMixin
 	machinery.ProjectNameMixin
 }
 
 // SetTemplateDefaults implements file.Template
-func (f *Service) SetTemplateDefaults() error {
+func (f *MetricsService) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = filepath.Join("config", "webhook", "service.yaml")
+		f.Path = filepath.Join("config", "default", "metrics_service.yaml")
 	}
 
-	f.TemplateBody = serviceTemplate
-
-	// If file exists (ex. because a webhook was already created), skip creation.
-	f.IfExistsAction = machinery.SkipFile
+	f.TemplateBody = metricsServiceTemplate
 
 	return nil
 }
 
-const serviceTemplate = `apiVersion: v1
+const metricsServiceTemplate = `apiVersion: v1
 kind: Service
 metadata:
   labels:
+    control-plane: controller-manager
     app.kubernetes.io/name: {{ .ProjectName }}
     app.kubernetes.io/managed-by: kustomize
-  name: webhook-service
+  name: controller-manager-metrics-service
   namespace: system
 spec:
   ports:
-    - port: 443
-      protocol: TCP
-      targetPort: 9443
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
   selector:
     control-plane: controller-manager
 `

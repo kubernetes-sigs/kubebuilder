@@ -17,8 +17,8 @@ limitations under the License.
 package machinery
 
 import (
-	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v4/pkg/config"
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 )
 
 // injector is used to inject certain fields to file templates.
@@ -48,9 +48,6 @@ func (i injector) injectInto(builder Builder) {
 		}
 		if builderWithMultiGroup, hasMultiGroup := builder.(HasMultiGroup); hasMultiGroup {
 			builderWithMultiGroup.InjectMultiGroup(i.config.IsMultiGroup())
-		}
-		if builderWithComponentConfig, hasComponentConfig := builder.(HasComponentConfig); hasComponentConfig {
-			builderWithComponentConfig.InjectComponentConfig(i.config.IsComponentConfig())
 		}
 	}
 	// Inject boilerplate

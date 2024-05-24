@@ -19,10 +19,8 @@ package golang
 import (
 	"path"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	cfgv2 "sigs.k8s.io/kubebuilder/v3/pkg/config/v2"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
+	"sigs.k8s.io/kubebuilder/v4/pkg/config"
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 )
 
 var (
@@ -58,11 +56,6 @@ type Options struct {
 	// Plural is the resource's kind plural form.
 	Plural string
 
-	// CRDVersion is the CustomResourceDefinition API version that will be used for the resource.
-	CRDVersion string
-	// WebhookVersion is the {Validating,Mutating}WebhookConfiguration API version that will be used for the resource.
-	WebhookVersion string
-
 	// Namespaced is true if the resource should be namespaced.
 	Namespaced bool
 
@@ -82,14 +75,10 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 
 	if opts.DoAPI {
 		//nolint:staticcheck
-		if plugin.IsLegacyLayout(c) {
-			res.Path = resource.APIPackagePathLegacy(c.GetRepository(), res.Group, res.Version, c.IsMultiGroup())
-		} else {
-			res.Path = resource.APIPackagePath(c.GetRepository(), res.Group, res.Version, c.IsMultiGroup())
-		}
+		res.Path = resource.APIPackagePath(c.GetRepository(), res.Group, res.Version, c.IsMultiGroup())
 
 		res.API = &resource.API{
-			CRDVersion: opts.CRDVersion,
+			CRDVersion: "v1",
 			Namespaced: opts.Namespaced,
 		}
 
@@ -100,15 +89,10 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 	}
 
 	if opts.DoDefaulting || opts.DoValidation || opts.DoConversion {
-		// IsLegacyLayout is added to ensure backwards compatibility and should
-		// be removed when we remove the go/v3 plugin
 		//nolint:staticcheck
-		if plugin.IsLegacyLayout(c) {
-			res.Path = resource.APIPackagePathLegacy(c.GetRepository(), res.Group, res.Version, c.IsMultiGroup())
-		} else {
-			res.Path = resource.APIPackagePath(c.GetRepository(), res.Group, res.Version, c.IsMultiGroup())
-		}
-		res.Webhooks.WebhookVersion = opts.WebhookVersion
+		res.Path = resource.APIPackagePath(c.GetRepository(), res.Group, res.Version, c.IsMultiGroup())
+
+		res.Webhooks.WebhookVersion = "v1"
 		if opts.DoDefaulting {
 			res.Webhooks.Defaulting = true
 		}
@@ -128,12 +112,8 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 	// TODO: need to support '--resource-pkg-path' flag for specifying resourcePath
 	if !opts.DoAPI {
 		var alreadyHasAPI bool
-		if c.GetVersion().Compare(cfgv2.Version) == 0 {
-			alreadyHasAPI = c.HasResource(res.GVK)
-		} else {
-			loadedRes, err := c.GetResource(res.GVK)
-			alreadyHasAPI = err == nil && loadedRes.HasAPI()
-		}
+		loadedRes, err := c.GetResource(res.GVK)
+		alreadyHasAPI = err == nil && loadedRes.HasAPI()
 		if !alreadyHasAPI {
 			if domain, found := coreGroups[res.Group]; found {
 				res.Domain = domain

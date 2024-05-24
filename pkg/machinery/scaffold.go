@@ -28,8 +28,8 @@ import (
 	"github.com/spf13/afero"
 	"golang.org/x/tools/imports"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v4/pkg/config"
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 )
 
 const (

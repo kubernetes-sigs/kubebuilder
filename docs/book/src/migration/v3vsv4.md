@@ -1,6 +1,6 @@
 # go/v3 vs go/v4
 
-This document covers all breaking changes when migrating from projects built using the plugin go/v3 (default for any scaffold done since `28 Apr 2021`) to the next alpha version of the Golang plugin `go/v4`.
+This document covers all breaking changes when migrating from projects built using the plugin go/v3 (default for any scaffold done since `28 Apr 2021`) to the next version of the Golang plugin `go/v4`.
 
 The details of all changes (breaking or otherwise) can be found in:
 

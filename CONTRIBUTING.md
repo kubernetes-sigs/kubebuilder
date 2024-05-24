@@ -10,7 +10,7 @@ Please see https://git.k8s.io/community/CLA.md for more info.
 
 ## Prerequisites
 
-- [go](https://golang.org/dl/) version v1.21+.
+- [go](https://golang.org/dl/) version v1.22+.
 - [docker](https://docs.docker.com/install/) version 17.03+.
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) version v1.11.3+.
 - [kustomize](https://github.com/kubernetes-sigs/kustomize/blob/master/site/content/en/docs/Getting%20started/installation.md) v3.1.0+
@@ -89,7 +89,7 @@ To fully test the proposed plugin:
 3. Create `generate_test.go` ([ref](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.7.0/test/e2e/v4/generate_test.go)). That should:
    - Introduce/Receive a `TextContext` instance
    - Trigger the plugin's bound subcommands. See [Init](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.7.0/test/e2e/utils/test_context.go#L213), [CreateAPI](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.6.0/test/e2e/utils/test_context.go#L222)
-   - Use [PluginUtil](https://pkg.go.dev/sigs.k8s.io/kubebuilder/v3/pkg/plugin/util) to verify the scaffolded outputs. See [InsertCode](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.7.0/pkg/plugin/util/util.go#L67), [ReplaceInFile](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.6.0/pkg/plugin/util/util.go#L196), [UncommendCode](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.6.0/pkg/plugin/util/util.go#L86)
+   - Use [PluginUtil](https://pkg.go.dev/sigs.k8s.io/kubebuilder/v4/pkg/plugin/util) to verify the scaffolded outputs. See [InsertCode](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.7.0/pkg/plugin/util/util.go#L67), [ReplaceInFile](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.6.0/pkg/plugin/util/util.go#L196), [UncommendCode](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.6.0/pkg/plugin/util/util.go#L86)
 4. Create `plugin_cluster_test.go` ([ref](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.7.0/test/e2e/v4/plugin_cluster_test.go)). That should:
 
    - 4.1. Setup testing environment, e.g:
@@ -103,7 +103,7 @@ To fully test the proposed plugin:
 
      - Execute commands in your `Makefile`. See [Make](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.7.0/test/e2e/utils/test_context.go#L240)
      - Temporary load image of the testing controller. See [LoadImageToKindCluster](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.7.0/test/e2e/utils/test_context.go#L283)
-     - Call Kubectl to validate running resources. See [utils.Kubectl](https://pkg.go.dev/sigs.k8s.io/kubebuilder/v3/test/e2e/utils#Kubectl)
+     - Call Kubectl to validate running resources. See [utils.Kubectl](https://pkg.go.dev/sigs.k8s.io/kubebuilder/v4/test/e2e/utils#Kubectl)
 
    - 4.4. Delete temporary resources after testing exited, e.g:
      - Uninstall prerequisites CRDs: See [UninstallPrometheusOperManager](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.7.0/test/e2e/utils/test_context.go#L183)

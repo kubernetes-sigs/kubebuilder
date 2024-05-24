@@ -17,7 +17,7 @@ limitations under the License.
 package templates
 
 import (
-	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 )
 
 var _ machinery.Template = &Makefile{}
@@ -25,7 +25,6 @@ var _ machinery.Template = &Makefile{}
 // Makefile scaffolds a file that defines project management CLI commands
 type Makefile struct {
 	machinery.TemplateMixin
-	machinery.ComponentConfigMixin
 	machinery.ProjectNameMixin
 
 	// Image is controller manager image name
@@ -75,7 +74,7 @@ func (f *Makefile) SetTemplateDefaults() error {
 const makefileTemplate = `# Image URL to use all building/pushing image targets
 IMG ?= {{ .Image }}
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
-ENVTEST_K8S_VERSION = 1.29.0
+ENVTEST_K8S_VERSION = 1.30.0
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -147,7 +146,7 @@ test-e2e:
 	go test ./test/e2e/ -v -ginkgo.v
 
 .PHONY: lint
-lint: golangci-lint ## Run golangci-lint linter & yamllint
+lint: golangci-lint ## Run golangci-lint linter
 	$(GOLANGCI_LINT) run
 
 .PHONY: lint-fix
@@ -186,10 +185,10 @@ PLATFORMS ?= linux/arm64,linux/amd64,linux/s390x,linux/ppc64le
 docker-buildx: ## Build and push docker image for the manager for cross-platform support
 	# copy existing Dockerfile and insert --platform=${BUILDPLATFORM} into Dockerfile.cross, and preserve the original Dockerfile
 	sed -e '1 s/\(^FROM\)/FROM --platform=\$$\{BUILDPLATFORM\}/; t' -e ' 1,// s//FROM --platform=\$$\{BUILDPLATFORM\}/' Dockerfile > Dockerfile.cross
-	- $(CONTAINER_TOOL) buildx create --name project-v3-builder
-	$(CONTAINER_TOOL) buildx use project-v3-builder
+	- $(CONTAINER_TOOL) buildx create --name {{ .ProjectName }}-builder
+	$(CONTAINER_TOOL) buildx use {{ .ProjectName }}-builder
 	- $(CONTAINER_TOOL) buildx build --push --platform=$(PLATFORMS) --tag ${IMG} -f Dockerfile.cross .
-	- $(CONTAINER_TOOL) buildx rm project-v3-builder
+	- $(CONTAINER_TOOL) buildx rm {{ .ProjectName }}-builder
 	rm Dockerfile.cross
 
 .PHONY: build-installer

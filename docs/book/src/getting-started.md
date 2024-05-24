@@ -449,12 +449,12 @@ manifest files present in `config/rbac/`. These markers can be found (and should
 how it is implemented in our example:
 
 ```go
-//+kubebuilder:rbac:groups=cache.example.com,resources=memcacheds,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=cache.example.com,resources=memcacheds/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=cache.example.com,resources=memcacheds/finalizers,verbs=update
-//+kubebuilder:rbac:groups=core,resources=events,verbs=create;patch
-//+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch
+// +kubebuilder:rbac:groups=cache.example.com,resources=memcacheds,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=cache.example.com,resources=memcacheds/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=cache.example.com,resources=memcacheds/finalizers,verbs=update
+// +kubebuilder:rbac:groups=core,resources=events,verbs=create;patch
+// +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch
 ```
 
 It's important to highlight that if you wish to add or modify RBAC rules, you can do so by updating or adding the respective markers in the controller.

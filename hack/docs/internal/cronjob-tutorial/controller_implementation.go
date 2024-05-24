@@ -73,8 +73,8 @@ a couple more [markers](/reference/markers/rbac.md).
 `
 
 const ControllerReconcile = `
-//+kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=batch,resources=jobs/status,verbs=get
+// +kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=batch,resources=jobs/status,verbs=get
 
 /*
 Now, we get to the heart of the controller -- the reconciler logic.

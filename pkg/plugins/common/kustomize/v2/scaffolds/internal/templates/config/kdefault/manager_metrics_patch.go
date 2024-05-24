@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Kubernetes Authors.
+Copyright 2020 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,31 +14,36 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package templates
+package kdefault
 
 import (
+	"path/filepath"
+
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 )
 
-var _ machinery.Template = &DockerIgnore{}
+var _ machinery.Template = &ManagerMetricsPatch{}
 
-// DockerIgnore scaffolds a file that defines which files should be ignored by the containerized build process
-type DockerIgnore struct {
+// ManagerMetricsPatch scaffolds a file that defines the patch that enables prometheus metrics for the manager
+type ManagerMetricsPatch struct {
 	machinery.TemplateMixin
 }
 
 // SetTemplateDefaults implements file.Template
-func (f *DockerIgnore) SetTemplateDefaults() error {
+func (f *ManagerMetricsPatch) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = ".dockerignore"
+		f.Path = filepath.Join("config", "default", "manager_metrics_patch.yaml")
 	}
 
-	f.TemplateBody = dockerignorefileTemplate
+	f.TemplateBody = kustomizeMetricsPatchTemplate
+
+	f.IfExistsAction = machinery.Error
 
 	return nil
 }
 
-const dockerignorefileTemplate = `# More info: https://docs.docker.com/engine/reference/builder/#dockerignore-file
-# Ignore build and test binaries.
-bin/
+const kustomizeMetricsPatchTemplate = `# This patch adds the args to allow exposing the metrics endpoint securely
+- op: add
+  path: /spec/template/spec/containers/0/args/0
+  value: --metrics-bind-address=:8080
 `

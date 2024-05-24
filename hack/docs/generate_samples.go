@@ -19,9 +19,8 @@ package main
 import (
 	log "github.com/sirupsen/logrus"
 
-	componentconfig "sigs.k8s.io/kubebuilder/v3/hack/docs/internal/component-config-tutorial"
-	cronjob "sigs.k8s.io/kubebuilder/v3/hack/docs/internal/cronjob-tutorial"
-	gettingstarted "sigs.k8s.io/kubebuilder/v3/hack/docs/internal/getting-started"
+	cronjob "sigs.k8s.io/kubebuilder/v4/hack/docs/internal/cronjob-tutorial"
+	gettingstarted "sigs.k8s.io/kubebuilder/v4/hack/docs/internal/getting-started"
 )
 
 // Make sure executing `build_kb` to generate kb executable from the source code
@@ -39,9 +38,8 @@ func main() {
 
 	// TODO: Generate multiversion-tutorial
 	tutorials := map[string]generator{
-		"component-config": UpdateComponentConfigTutorial,
-		"cronjob":          UpdateCronjobTutorial,
-		"getting-started":  UpdateGettingStarted,
+		"cronjob":         UpdateCronjobTutorial,
+		"getting-started": UpdateGettingStarted,
 	}
 
 	log.SetFormatter(&log.TextFormatter{DisableTimestamp: true})
@@ -58,12 +56,6 @@ func updateTutorial(generator tutorial_generator) {
 	generator.GenerateSampleProject()
 	generator.UpdateTutorial()
 	generator.CodeGen()
-}
-
-func UpdateComponentConfigTutorial() {
-	samplePath := "docs/book/src/component-config-tutorial/testdata/project/"
-	sp := componentconfig.NewSample(KubebuilderBinName, samplePath)
-	updateTutorial(&sp)
 }
 
 func UpdateCronjobTutorial() {

@@ -23,14 +23,14 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v4/scaffolds/internal/templates"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v4/scaffolds/internal/templates/api"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v4/scaffolds/internal/templates/controllers"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v4/scaffolds/internal/templates/hack"
+	"sigs.k8s.io/kubebuilder/v4/pkg/config"
+	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds/internal/templates"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds/internal/templates/api"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds/internal/templates/controllers"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds/internal/templates/hack"
 )
 
 var _ plugins.Scaffolder = &apiScaffolder{}

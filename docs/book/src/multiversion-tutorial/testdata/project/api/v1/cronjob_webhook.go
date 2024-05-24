@@ -30,7 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-//+kubebuilder:docs-gen:collapse=Go imports
+// +kubebuilder:docs-gen:collapse=Go imports
 
 // log is for logging in this package.
 var cronjoblog = logf.Log.WithName("cronjob-resource")
@@ -53,7 +53,7 @@ func (r *CronJob) SetupWebhookWithManager(mgr ctrl.Manager) error {
 /*
  */
 
-//+kubebuilder:webhook:path=/mutate-batch-tutorial-kubebuilder-io-v1-cronjob,mutating=true,failurePolicy=fail,groups=batch.tutorial.kubebuilder.io,resources=cronjobs,verbs=create;update,versions=v1,name=mcronjob.kb.io,sideEffects=None,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=/mutate-batch-tutorial-kubebuilder-io-v1-cronjob,mutating=true,failurePolicy=fail,groups=batch.tutorial.kubebuilder.io,resources=cronjobs,verbs=create;update,versions=v1,name=mcronjob.kb.io,sideEffects=None,admissionReviewVersions=v1
 
 var _ webhook.Defaulter = &CronJob{}
 

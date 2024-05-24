@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"strings"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 )
 
 var _ machinery.Template = &Readme{}
@@ -70,7 +70,7 @@ const readmeFileTemplate = `# {{ .ProjectName }}
 ## Getting Started
 
 ### Prerequisites
-- go version v1.21.0+
+- go version v1.22.0+
 - docker version 17.03+.
 - kubectl version v1.11.3+.
 - Access to a Kubernetes v1.11.3+ cluster.

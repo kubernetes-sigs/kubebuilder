@@ -33,9 +33,9 @@ type LeviathanReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=sea-creatures.testproject.org,resources=leviathans,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=sea-creatures.testproject.org,resources=leviathans/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=sea-creatures.testproject.org,resources=leviathans/finalizers,verbs=update
+// +kubebuilder:rbac:groups=sea-creatures.testproject.org,resources=leviathans,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=sea-creatures.testproject.org,resources=leviathans/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=sea-creatures.testproject.org,resources=leviathans/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -45,7 +45,7 @@ type LeviathanReconciler struct {
 // the user.
 //
 // For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.17.3/pkg/reconcile
+// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.18.2/pkg/reconcile
 func (r *LeviathanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
 

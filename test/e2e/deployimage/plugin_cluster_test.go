@@ -24,12 +24,12 @@ import (
 	"strings"
 	"time"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"sigs.k8s.io/kubebuilder/v3/test/e2e/utils"
+	"sigs.k8s.io/kubebuilder/v4/test/e2e/utils"
 )
 
 var _ = Describe("kubebuilder", func() {
@@ -75,7 +75,7 @@ var _ = Describe("kubebuilder", func() {
 		It("should generate a runnable project with deploy-image/v1-alpha options ", func() {
 			var err error
 
-			By("initializing a project with go/v3")
+			By("initializing a project with go/v4")
 			err = kbc.Init(
 				"--plugins", "go/v4",
 				"--project-version", "3",

@@ -22,8 +22,8 @@ import (
 
 	"sigs.k8s.io/yaml"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v4/pkg/config"
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 )
 
 // Version is the config.Version for project configuration 3
@@ -63,8 +63,7 @@ type Cfg struct {
 	PluginChain stringSlice `json:"layout,omitempty"`
 
 	// Boolean fields
-	MultiGroup      bool `json:"multigroup,omitempty"`
-	ComponentConfig bool `json:"componentConfig,omitempty"`
+	MultiGroup bool `json:"multigroup,omitempty"`
 
 	// Resources
 	Resources []resource.Resource `json:"resources,omitempty"`
@@ -151,23 +150,6 @@ func (c *Cfg) SetMultiGroup() error {
 // ClearMultiGroup implements config.Config
 func (c *Cfg) ClearMultiGroup() error {
 	c.MultiGroup = false
-	return nil
-}
-
-// IsComponentConfig implements config.Config
-func (c Cfg) IsComponentConfig() bool {
-	return c.ComponentConfig
-}
-
-// SetComponentConfig implements config.Config
-func (c *Cfg) SetComponentConfig() error {
-	c.ComponentConfig = true
-	return nil
-}
-
-// ClearComponentConfig implements config.Config
-func (c *Cfg) ClearComponentConfig() error {
-	c.ComponentConfig = false
 	return nil
 }
 

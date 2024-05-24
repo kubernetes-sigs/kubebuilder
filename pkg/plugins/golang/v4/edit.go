@@ -21,10 +21,10 @@ import (
 
 	"github.com/spf13/pflag"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v4/scaffolds"
+	"sigs.k8s.io/kubebuilder/v4/pkg/config"
+	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds"
 )
 
 var _ plugin.EditSubcommand = &editSubcommand{}

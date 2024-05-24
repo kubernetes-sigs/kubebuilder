@@ -19,9 +19,9 @@ package scaffolds
 import (
 	"github.com/spf13/afero"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins"
+	"sigs.k8s.io/kubebuilder/v4/pkg/config"
+	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins"
 )
 
 var _ plugins.Scaffolder = &editScaffolder{}

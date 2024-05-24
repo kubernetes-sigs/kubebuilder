@@ -22,8 +22,8 @@ import (
 	"sort"
 	"strings"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	"sigs.k8s.io/kubebuilder/v3/pkg/internal/validation"
+	"sigs.k8s.io/kubebuilder/v4/pkg/config"
+	"sigs.k8s.io/kubebuilder/v4/pkg/internal/validation"
 )
 
 // KeyFor returns a Plugin's unique identifying string.
@@ -38,26 +38,6 @@ func SplitKey(key string) (string, string) {
 	}
 	keyParts := strings.SplitN(key, "/", 2)
 	return keyParts[0], keyParts[1]
-}
-
-// GetShortName returns plugin's short name (name before domain) if name
-// is fully qualified (has a domain suffix), otherwise GetShortName returns name.
-// Deprecated
-func GetShortName(name string) string {
-	return strings.SplitN(name, ".", 2)[0]
-}
-
-// Deprecated: it was added to ensure backwards compatibility and should
-// be removed when we remove the go/v3 plugin
-// IsLegacyLayout returns true when is possible to identify that the project
-// was scaffolded with the previous layout
-func IsLegacyLayout(config config.Config) bool {
-	for _, pluginKey := range config.GetPluginChain() {
-		if strings.Contains(pluginKey, "go.kubebuilder.io/v3") || strings.Contains(pluginKey, "go.kubebuilder.io/v2") {
-			return true
-		}
-	}
-	return false
 }
 
 // Validate ensures a Plugin is valid.

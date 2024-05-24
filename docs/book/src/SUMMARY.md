@@ -45,17 +45,6 @@
 
   - [Deployment and Testing](./multiversion-tutorial/deployment.md)
 
-- [Tutorial: Component Config](./component-config-tutorial/tutorial.md)
-
-  - [Changing things up](./component-config-tutorial/api-changes.md)
-  - [Defining your Config](./component-config-tutorial/define-config.md)
-
-  - [Using a custom type](./component-config-tutorial/custom-type.md)
-
-    - [Adding a new Config Type](./component-config-tutorial/config-type.md)
-    - [Updating main](./component-config-tutorial/updating-main.md)
-    - [Defining your Custom Config](./component-config-tutorial/define-custom-config.md)
-
 ---
 
 - [Migrations](./migrations.md)
@@ -125,16 +114,12 @@
 
   - [Available Plugins](./plugins/available-plugins.md)
     - [To scaffold a project](./plugins/to-scaffold-project.md)
-      - [go/v2 (Deprecated)](./plugins/go-v2-plugin.md)
-      - [go/v3 (Deprecated)](./plugins/go-v3-plugin.md)
       - [go/v4 (Default init scaffold)](./plugins/go-v4-plugin.md)
     - [To add optional features](./plugins/to-add-optional-features.md)
-      - [declarative/v1 (Deprecated)](./plugins/declarative-v1.md)
       - [grafana/v1-alpha](./plugins/grafana-v1-alpha.md)
       - [deploy-image/v1-alpha](./plugins/deploy-image-plugin-v1-alpha.md)
     - [To be extended for others tools](./plugins/to-be-extended.md)
-      - [kustomize/v1 (Deprecated)](./plugins/kustomize-v1.md)
-      - [kustomize/v2](./plugins/kustomize-v2.md)
+      - [kustomize/v2 (Default init scaffold with go/v4)](./plugins/kustomize-v2.md)
   - [Extending the CLI](./plugins/extending-cli.md)
   - [Creating your own plugins](./plugins/creating-plugins.md)
   - [Testing your own plugins](./plugins/testing-plugins.md)

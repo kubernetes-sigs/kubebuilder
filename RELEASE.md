@@ -70,7 +70,9 @@ The releases occur in an account in the Google Cloud (See [here](https://console
 A trigger GitHub action [release](.github/workflows/release.yml) is trigged when a new tag is pushed.
 This action will caall the job [./build/.goreleaser.yml](./build/.goreleaser.yml).
 
-### To build the Kubebuilder-tools: (Artifacts required to use ENV TEST)
+###  (Deprecated) - To build the Kubebuilder-tools: (Artifacts required to use ENV TEST)
+
+> We are working on to move all out from GCP Kubebuilder project. As it fits as part of Controller-Runtime domain of responsability it is under a ongoing work to change the build of those binaries to controller-tools and how it is implemented in controller-runtime. For further information see the PR: https://github.com/kubernetes-sigs/controller-runtime/pull/2811
 
 Kubebuilder projects requires artifacts which are used to do test with ENV TEST (when we call `make test` target)
 These artifacts can be checked in the service page: https://storage.googleapis.com/kubebuilder-tools
@@ -82,7 +84,10 @@ as argument the architecture and the SO that should be used, e.g:
 
 For further information see the [README](https://github.com/kubernetes-sigs/kubebuilder/blob/tools-releases/README.md).
 
-### To build the `kube-rbac-proxy` images:
+### (Deprecated) - To build the `kube-rbac-proxy` images:
+
+> We no longer build and promote those images. For more info
+see: https://github.com/kubernetes-sigs/kubebuilder/discussions/3907
 
 These images are built from the project [brancz/kube-rbac-proxy](https://github.com/brancz/kube-rbac-proxy).
 The projects built with Kubebuilder creates a side container with `kube-rbac-proxy` to protect the Manager.
@@ -100,7 +105,9 @@ To check an example, see the pull request [#2578](https://github.com/kubernetes-
 **Note**: we cannot use the images produced by the project `kube-rbac-proxy` because we need to ensure
 to Kubebuilder users that these images will be available.
 
-### To build the `gcr.io/kubebuilder/pr-verifier` images:
+### (Deprecated) - To build the `gcr.io/kubebuilder/pr-verifier` images:
+
+> We are working on to move all out from GCP Kubebuilder project. For further information see: https://github.com/kubernetes/k8s.io/issues/2647#issuecomment-2111182864
 
 These images are used to verify the PR title and description. They are built from [kubernetes-sigs/kubebuilder-release-tools](https://github.com/kubernetes-sigs/kubebuilder-release-tools/).
 In Kubebuilder, we have been using this project via the GitHub action [.github/workflows/verify.yml](.github/workflows/verify.yml)

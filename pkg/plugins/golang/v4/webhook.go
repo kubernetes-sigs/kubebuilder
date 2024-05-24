@@ -21,17 +21,14 @@ import (
 
 	"github.com/spf13/pflag"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
-	pluginutil "sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
-	goPlugin "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v4/scaffolds"
+	"sigs.k8s.io/kubebuilder/v4/pkg/config"
+	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
+	pluginutil "sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
+	goPlugin "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds"
 )
-
-// defaultWebhookVersion is the default mutating/validating webhook config API version to scaffold.
-const defaultWebhookVersion = "v1"
 
 var _ plugin.CreateWebhookSubcommand = &createWebhookSubcommand{}
 
@@ -82,8 +79,6 @@ func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
 
 func (p *createWebhookSubcommand) InjectConfig(c config.Config) error {
 	p.config = c
-	// go/v4 no longer supports v1beta1 option
-	p.options.WebhookVersion = defaultWebhookVersion
 	return nil
 }
 

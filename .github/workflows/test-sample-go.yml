@@ -15,7 +15,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '~1.21'
+          go-version: '~1.22'
 
       - name: Create kind cluster
         run: kind create cluster
@@ -24,9 +24,9 @@ jobs:
         run: |
           KUSTOMIZATION_FILE_PATH="testdata/project-v4/config/default/kustomization.yaml"
           sed -i '25s/^#//' $KUSTOMIZATION_FILE_PATH
-          sed -i '27s/^#//' $KUSTOMIZATION_FILE_PATH
-          sed -i '42s/^#//' $KUSTOMIZATION_FILE_PATH
-          sed -i '46,142s/^#//' $KUSTOMIZATION_FILE_PATH
+          sed -i '32s/^#//' $KUSTOMIZATION_FILE_PATH
+          sed -i '47s/^#//' $KUSTOMIZATION_FILE_PATH
+          sed -i '51,147s/^#//' $KUSTOMIZATION_FILE_PATH
       
       - name: Test
         run: |

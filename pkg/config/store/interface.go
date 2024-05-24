@@ -17,7 +17,7 @@ limitations under the License.
 package store
 
 import (
-	"sigs.k8s.io/kubebuilder/v3/pkg/config"
+	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 )
 
 // Store represents a persistence backend for config.Config

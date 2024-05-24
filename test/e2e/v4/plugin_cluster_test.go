@@ -25,13 +25,13 @@ import (
 	"strings"
 	"time"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
 
 	. "github.com/onsi/ginkgo/v2"
 
 	. "github.com/onsi/gomega"
 
-	"sigs.k8s.io/kubebuilder/v3/test/e2e/utils"
+	"sigs.k8s.io/kubebuilder/v4/test/e2e/utils"
 )
 
 var _ = Describe("kubebuilder", func() {
@@ -163,6 +163,18 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, hasMetrics bool) 
 	}()
 	EventuallyWithOffset(1, verifyControllerUp, time.Minute, time.Second).Should(Succeed())
 
+	By("Checking if all flags are applied to the manager pod")
+	podOutput, err := kbc.Kubectl.Get(
+		true,
+		"pod", controllerPodName,
+		"-o", "jsonpath={.spec.containers[0].args}",
+	)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	ExpectWithOffset(1, podOutput).To(ContainSubstring("leader-elect"),
+		"Expected manager pod to have --leader-elect flag")
+	ExpectWithOffset(1, podOutput).To(ContainSubstring("health-probe-bind-address"),
+		"Expected manager pod to have --health-probe-bind-address flag")
+
 	By("validating the metrics endpoint")
 	_ = curlMetrics(kbc, hasMetrics)
 
@@ -266,66 +278,47 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, hasMetrics bool) 
 
 // curlMetrics curl's the /metrics endpoint, returning all logs once a 200 status is returned.
 func curlMetrics(kbc *utils.TestContext, hasMetrics bool) string {
-	By("validating that the controller-manager service is available")
-	_, err := kbc.Kubectl.Get(
-		true,
-		"service", fmt.Sprintf("e2e-%s-controller-manager-metrics-service", kbc.TestSuffix),
-	)
-	ExpectWithOffset(2, err).NotTo(HaveOccurred(), "Controller-manager service should exist")
-
-	By("validating that the controller-manager deployment is ready")
-	verifyDeploymentReady := func() error {
-		output, err := kbc.Kubectl.Get(
-			true,
-			"deployment", fmt.Sprintf("e2e-%s-controller-manager", kbc.TestSuffix),
-			"-o", "jsonpath={.status.readyReplicas}",
-		)
-		if err != nil {
-			return err
-		}
-		readyReplicas, _ := strconv.Atoi(output)
-		if readyReplicas < 1 {
-			return fmt.Errorf("expected at least 1 ready replica, got %d", readyReplicas)
-		}
-		return nil
-	}
-	EventuallyWithOffset(2, verifyDeploymentReady, 240*time.Second, time.Second).Should(Succeed(),
-		"Deployment is not ready")
-
-	By("ensuring the service endpoint is ready")
-	eventuallyCheckServiceEndpoint := func() error {
-		output, err := kbc.Kubectl.Get(
-			true,
-			"endpoints", fmt.Sprintf("e2e-%s-controller-manager-metrics-service", kbc.TestSuffix),
-			"-o", "jsonpath={.subsets[*].addresses[*].ip}",
-		)
-		if err != nil {
-			return err
-		}
-		if output == "" {
-			return fmt.Errorf("no endpoints found")
-		}
-		return nil
-	}
-	EventuallyWithOffset(2, eventuallyCheckServiceEndpoint, 2*time.Minute, time.Second).Should(Succeed(),
-		"Service endpoint should be ready")
-
-	By("creating a curl pod to access the metrics endpoint")
-	// nolint:lll
-	cmdOpts := []string{
-		"run", "curl",
-		"--restart=Never",
-		"--namespace", kbc.Kubectl.Namespace,
-		"--image=curlimages/curl:7.78.0",
-		"--",
-		"/bin/sh", "-c", fmt.Sprintf("curl -v -k http://e2e-%s-controller-manager-metrics-service.%s.svc.cluster.local:8080/metrics",
-			kbc.TestSuffix, kbc.Kubectl.Namespace),
-	}
-	_, err = kbc.Kubectl.CommandInNamespace(cmdOpts...)
-	ExpectWithOffset(2, err).NotTo(HaveOccurred())
-
 	var metricsOutput string
 	if hasMetrics {
+		By("validating that the controller-manager service is available")
+		_, err := kbc.Kubectl.Get(
+			true,
+			"service", fmt.Sprintf("e2e-%s-controller-manager-metrics-service", kbc.TestSuffix),
+		)
+		ExpectWithOffset(2, err).NotTo(HaveOccurred(), "Controller-manager service should exist")
+
+		By("ensuring the service endpoint is ready")
+		eventuallyCheckServiceEndpoint := func() error {
+			output, err := kbc.Kubectl.Get(
+				true,
+				"endpoints", fmt.Sprintf("e2e-%s-controller-manager-metrics-service", kbc.TestSuffix),
+				"-o", "jsonpath={.subsets[*].addresses[*].ip}",
+			)
+			if err != nil {
+				return err
+			}
+			if output == "" {
+				return fmt.Errorf("no endpoints found")
+			}
+			return nil
+		}
+		EventuallyWithOffset(2, eventuallyCheckServiceEndpoint, 2*time.Minute, time.Second).Should(Succeed(),
+			"Service endpoint should be ready")
+
+		By("creating a curl pod to access the metrics endpoint")
+		// nolint:lll
+		cmdOpts := []string{
+			"run", "curl",
+			"--restart=Never",
+			"--namespace", kbc.Kubectl.Namespace,
+			"--image=curlimages/curl:7.78.0",
+			"--",
+			"/bin/sh", "-c", fmt.Sprintf("curl -v -k http://e2e-%s-controller-manager-metrics-service.%s.svc.cluster.local:8080/metrics",
+				kbc.TestSuffix, kbc.Kubectl.Namespace),
+		}
+		_, err = kbc.Kubectl.CommandInNamespace(cmdOpts...)
+		ExpectWithOffset(2, err).NotTo(HaveOccurred())
+
 		By("validating that the curl pod is running as expected")
 		verifyCurlUp := func() error {
 			status, err := kbc.Kubectl.Get(
@@ -347,6 +340,20 @@ func curlMetrics(kbc *utils.TestContext, hasMetrics bool) string {
 		}
 		EventuallyWithOffset(2, getCurlLogs, 10*time.Second, time.Second).Should(ContainSubstring("< HTTP/1.1 200 OK"))
 	} else {
+		By("creating a curl pod to access the metrics endpoint")
+		// nolint:lll
+		cmdOpts := []string{
+			"run", "curl",
+			"--restart=Never",
+			"--namespace", kbc.Kubectl.Namespace,
+			"--image=curlimages/curl:7.78.0",
+			"--",
+			"/bin/sh", "-c", fmt.Sprintf("curl -v -k http://e2e-%s-controller-manager-metrics-service.%s.svc.cluster.local:8080/metrics",
+				kbc.TestSuffix, kbc.Kubectl.Namespace),
+		}
+		_, err := kbc.Kubectl.CommandInNamespace(cmdOpts...)
+		ExpectWithOffset(2, err).NotTo(HaveOccurred())
+
 		By("validating that the curl pod fail as expected")
 		verifyCurlUp := func() error {
 			status, err := kbc.Kubectl.Get(
@@ -363,14 +370,14 @@ func curlMetrics(kbc *utils.TestContext, hasMetrics bool) string {
 
 		By("validating that the metrics endpoint is not working as expected")
 		getCurlLogs := func() string {
-			metricsOutput, err = kbc.Kubectl.Logs("curl")
+			metricsOutput, err := kbc.Kubectl.Logs("curl")
 			ExpectWithOffset(3, err).NotTo(HaveOccurred())
 			return metricsOutput
 		}
-		EventuallyWithOffset(2, getCurlLogs, 10*time.Second, time.Second).Should(ContainSubstring("Connection refused"))
+		EventuallyWithOffset(2, getCurlLogs, 10*time.Second, time.Second).Should(ContainSubstring("Could not resolve host"))
 	}
 	By("cleaning up the curl pod")
-	_, err = kbc.Kubectl.Delete(true, "pods/curl")
+	_, err := kbc.Kubectl.Delete(true, "pods/curl")
 	ExpectWithOffset(3, err).NotTo(HaveOccurred())
 
 	return metricsOutput

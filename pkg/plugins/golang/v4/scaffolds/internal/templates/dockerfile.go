@@ -17,7 +17,7 @@ limitations under the License.
 package templates
 
 import (
-	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 )
 
 var _ machinery.Template = &Dockerfile{}
@@ -39,7 +39,7 @@ func (f *Dockerfile) SetTemplateDefaults() error {
 }
 
 const dockerfileTemplate = `# Build the manager binary
-FROM golang:1.21 AS builder
+FROM golang:1.22 AS builder
 ARG TARGETOS
 ARG TARGETARCH
 

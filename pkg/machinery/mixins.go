@@ -17,7 +17,7 @@ limitations under the License.
 package machinery
 
 import (
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 )
 
 // PathMixin provides file builders with a path field
@@ -127,25 +127,6 @@ type MultiGroupMixin struct {
 // InjectMultiGroup implements HasMultiGroup
 func (m *MultiGroupMixin) InjectMultiGroup(flag bool) {
 	m.MultiGroup = flag
-}
-
-// Deprecated: The ComponentConfig has been deprecated in the Controller-Runtime since its version 0.15.0.
-// Fur further information see: https://github.com/kubernetes-sigs/controller-runtime/issues/895
-// Moreover, it has undergone breaking changes and is no longer functioning as intended.
-// As a result, Kubebuilder, which heavily relies on the Controller Runtime, has also deprecated this feature,
-// no longer guaranteeing its functionality from version 3.11.0 onwards.
-//
-// Please, be aware that it will force Kubebuilder remove this option soon in future release.
-//
-// ComponentConfigMixin provides templates with a injectable component-config flag field
-type ComponentConfigMixin struct {
-	// ComponentConfig is the component-config flag
-	ComponentConfig bool
-}
-
-// InjectComponentConfig implements HasComponentConfig
-func (m *ComponentConfigMixin) InjectComponentConfig(flag bool) {
-	m.ComponentConfig = flag
 }
 
 // BoilerplateMixin provides templates with a injectable boilerplate field

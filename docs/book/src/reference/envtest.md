@@ -81,7 +81,7 @@ Logs from the test runs are prefixed with `test-env`.
 
 You can use the plugin [DeployImage](https://book.kubebuilder.io/plugins/deploy-image-plugin-v1-alpha.html) to check examples. This plugin allows users to scaffold API/Controllers to deploy and manage an Operand (image) on the cluster following the guidelines and best practices. It abstracts the complexities of achieving this goal while allowing users to customize the generated code.
 
-Therefore, you can check that a test using ENV TEST will be generated for the controller which has the purpose to ensure that the Deployment is created successfully. You can see an example of its code implementation under the `testdata` directory with the [DeployImage](https://book.kubebuilder.io/plugins/deploy-image-plugin-v1-alpha.html) samples [here](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.7.0/testdata/project-v3-with-deploy-image/controllers/busybox_controller_test.go).
+Therefore, you can check that a test using ENV TEST will be generated for the controller which has the purpose to ensure that the Deployment is created successfully. You can see an example of its code implementation under the `testdata` directory with the [DeployImage](https://book.kubebuilder.io/plugins/deploy-image-plugin-v1-alpha.html) samples [here](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.7.0/testdata/project-v4-with-deploy-image/controllers/busybox_controller_test.go).
 
 </aside>
 
@@ -322,5 +322,5 @@ testEnv = &envtest.Environment{
 [envtest]: https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/envtest
 [setup-envtest]: https://pkg.go.dev/sigs.k8s.io/controller-runtime/tools/setup-envtest
 [cert-manager]: https://book.kubebuilder.io/cronjob-tutorial/cert-manager.html
-[sdk-e2e-sample-example]: https://github.com/operator-framework/operator-sdk/tree/master/testdata/go/v3/memcached-operator/test/e2e
+[sdk-e2e-sample-example]: https://github.com/operator-framework/operator-sdk/tree/master/testdata/go/v4/memcached-operator/test/e2e
 [sdk]: https://github.com/operator-framework/operator-sdk

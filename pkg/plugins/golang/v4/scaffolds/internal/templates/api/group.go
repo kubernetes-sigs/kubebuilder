@@ -21,7 +21,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 )
 
 var _ machinery.Template = &Group{}
@@ -55,8 +55,8 @@ func (f *Group) SetTemplateDefaults() error {
 const groupTemplate = `{{ .Boilerplate }}
 
 // Package {{ .Resource.Version }} contains API Schema definitions for the {{ .Resource.Group }} {{ .Resource.Version }} API group
-//+kubebuilder:object:generate=true
-//+groupName={{ .Resource.QualifiedGroup }}
+// +kubebuilder:object:generate=true
+// +groupName={{ .Resource.QualifiedGroup }}
 package {{ .Resource.Version }}
 
 import (

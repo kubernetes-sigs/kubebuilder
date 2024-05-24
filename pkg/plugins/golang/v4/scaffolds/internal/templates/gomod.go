@@ -17,7 +17,7 @@ limitations under the License.
 package templates
 
 import (
-	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 )
 
 var _ machinery.Template = &GoMod{}
@@ -45,7 +45,7 @@ func (f *GoMod) SetTemplateDefaults() error {
 
 const goModTemplate = `module {{ .Repo }}
 
-go 1.21
+go 1.22
 
 require (
 	sigs.k8s.io/controller-runtime {{ .ControllerRuntimeVersion }}

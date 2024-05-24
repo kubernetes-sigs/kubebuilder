@@ -83,8 +83,6 @@ make less painful this process. Examples:
 - Deal with customizations or deviations from the proposed layout
 - Be able to perform the project upgrade to the latest changes without human interactions
 - Deal and support external plugins
-- Provides support to [declarative](https://book.kubebuilder.io/plugins/declarative-v1.html) plugin
-  since it is desired and planned to decouple this solution and donate this plugin to its own authors [More info](https://github.com/kubernetes-sigs/kubebuilder/issues/3186)
 - Provide support to older version before having the Project config (Kubebuilder < 3x) and the go/v2 layout which exists to ensure  a backwards compatibility with legacy layout provided by Kubebuilder 2x
 
 ## Proposal

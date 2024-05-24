@@ -38,8 +38,8 @@ type BarStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 
 // Bar is the Schema for the bars API
 type Bar struct {
@@ -50,7 +50,7 @@ type Bar struct {
 	Status BarStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
+// +kubebuilder:object:root=true
 
 // BarList contains a list of Bar
 type BarList struct {

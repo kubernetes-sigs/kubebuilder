@@ -17,7 +17,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/spf13/cobra"
-	"sigs.k8s.io/kubebuilder/v3/pkg/rescaffold"
+	"sigs.k8s.io/kubebuilder/v4/pkg/rescaffold"
 )
 
 // NewScaffoldCommand return a new scaffold command

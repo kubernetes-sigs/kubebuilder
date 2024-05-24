@@ -19,13 +19,13 @@ package scaffolds
 import (
 	log "github.com/sirupsen/logrus"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/kdefault"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/manager"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/prometheus"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/rbac"
+	"sigs.k8s.io/kubebuilder/v4/pkg/config"
+	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/kdefault"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/manager"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/prometheus"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/rbac"
 )
 
 const (
@@ -64,7 +64,7 @@ func (s *initScaffolder) Scaffold() error {
 
 	templates := []machinery.Builder{
 		&rbac.Kustomization{},
-		&rbac.MetricsService{},
+		&kdefault.MetricsService{},
 		&rbac.RoleBinding{},
 		// We need to create a Role because if the project
 		// has not CRD define the controller-gen will not generate this file
@@ -76,13 +76,8 @@ func (s *initScaffolder) Scaffold() error {
 		&kdefault.ManagerMetricsPatch{},
 		&manager.Config{Image: imageName},
 		&kdefault.Kustomization{},
-		&kdefault.ManagerConfigPatch{},
 		&prometheus.Kustomization{},
 		&prometheus.Monitor{},
-	}
-
-	if s.config.IsComponentConfig() {
-		templates = append(templates, &manager.ControllerManagerConfig{})
 	}
 
 	return scaffold.Execute(templates...)

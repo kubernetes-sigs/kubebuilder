@@ -24,9 +24,9 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/optional/grafana/v1alpha/scaffolds/internal/templates"
+	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/grafana/v1alpha/scaffolds/internal/templates"
 
 	"sigs.k8s.io/yaml"
 )

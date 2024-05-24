@@ -22,7 +22,7 @@ import (
 
 	"github.com/spf13/pflag"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 )
 
 const (

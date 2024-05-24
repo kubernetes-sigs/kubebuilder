@@ -17,15 +17,15 @@ limitations under the License.
 package v2
 
 import (
-	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	cfgv3 "sigs.k8s.io/kubebuilder/v3/pkg/config/v3"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/stage"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins"
+	"sigs.k8s.io/kubebuilder/v4/pkg/config"
+	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/stage"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins"
 )
 
 // KustomizeVersion is the kubernetes-sigs/kustomize version to be used in the project
-const KustomizeVersion = "v5.3.0"
+const KustomizeVersion = "v5.4.1"
 
 const pluginName = "kustomize.common." + plugins.DefaultNameQualifier
 

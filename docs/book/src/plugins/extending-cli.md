@@ -18,13 +18,13 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/cli"
-	cfgv3 "sigs.k8s.io/kubebuilder/v3/pkg/config/v3"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
-	kustomizecommonv1 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v1"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang"
-	declarativev1 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/declarative/v1"
-	golangv3 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3"
+	"sigs.k8s.io/kubebuilder/v4/pkg/cli"
+	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
+	kustomizecommonv2 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang"
+	deployimage "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/deploy-image/v1alpha1"
+    golangv4 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4"
 
 )
 
@@ -41,10 +41,10 @@ var (
 
 // GetPluginsCLI returns the plugins based CLI configured to be used in your CLI binary
 func GetPluginsCLI() (*cli.CLI) {
-	// Bundle plugin which built the golang projects scaffold by Kubebuilder go/v3
+	// Bundle plugin which built the golang projects scaffold by Kubebuilder go/v4
 	gov3Bundle, _ := plugin.NewBundleWithOptions(plugin.WithName(golang.DefaultNameQualifier),
 		plugin.WithVersion(plugin.Version{Number: 3}),
-		plugin.WithPlugins(kustomizecommonv1.Plugin{}, golangv3.Plugin{}),
+		plugin.WithPlugins(kustomizecommonv2.Plugin{}, golangv4.Plugin{}),
 	)
 
 
@@ -58,7 +58,7 @@ func GetPluginsCLI() (*cli.CLI) {
 		// Register the plugins options which can be used to do the scaffolds via your CLI tool. See that we are using as example here the plugins which are implemented and provided by Kubebuilder
 		cli.WithPlugins(
 			gov3Bundle,
-			&declarativev1.Plugin{},
+			&deployimage.Plugin{},
 		),
 
 		// Defines what will be the default plugin used by your binary. It means that will be the plugin used if no info be provided such as when the user runs `kubebuilder init`
@@ -198,15 +198,15 @@ kubebuider init --plugins=myplugin.example/v1
 - And then, runs init `sub-command` of the plugin C
 
 [project-file-config]: ../reference/project-config.md
-[plugin-interface]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v3/pkg/plugin#Plugin
-[go-dev-doc]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v3
-[plugin-sub-command]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v3/pkg/plugin#Subcommand
+[plugin-interface]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v4/pkg/plugin#Plugin
+[go-dev-doc]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v4
+[plugin-sub-command]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v4/pkg/plugin#Subcommand
 [project-file]: ../reference/project-config.md
-[plugin-subc]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v3/pkg/plugin#Subcommand
+[plugin-subc]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v4/pkg/plugin#Subcommand
 [cobra]:https://pkg.go.dev/github.com/spf13/cobra
-[kb-go-plugin]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3
-[bundle-plugin-doc]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v3/pkg/plugin#Bundle
-[deprecate-plugin-doc]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v3/pkg/plugin#Deprecated
-[plugin-update-meta]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v3/pkg/plugin#UpdatesMetadata
-[cli]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v3/pkg/cli
-[plugin-version-type]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v3/pkg/plugin#Version
+[kb-go-plugin]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v3
+[bundle-plugin-doc]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v4/pkg/plugin#Bundle
+[deprecate-plugin-doc]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v4/pkg/plugin#Deprecated
+[plugin-update-meta]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v4/pkg/plugin#UpdatesMetadata
+[cli]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v4/pkg/cli
+[plugin-version-type]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v4/pkg/plugin#Version

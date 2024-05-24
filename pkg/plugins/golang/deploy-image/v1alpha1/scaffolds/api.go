@@ -24,19 +24,16 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins"
-	kustomizev1scaffolds "sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v1/scaffolds"
-	kustomizev2scaffolds "sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v2/scaffolds"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/deploy-image/v1alpha1/scaffolds/internal/templates/api"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/deploy-image/v1alpha1/scaffolds/internal/templates/config/samples"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/deploy-image/v1alpha1/scaffolds/internal/templates/controllers"
-	golangv3scaffolds "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v3/scaffolds"
-	golangv4scaffolds "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v4/scaffolds"
+	"sigs.k8s.io/kubebuilder/v4/pkg/config"
+	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins"
+	kustomizev2scaffolds "sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2/scaffolds"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/deploy-image/v1alpha1/scaffolds/internal/templates/api"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/deploy-image/v1alpha1/scaffolds/internal/templates/config/samples"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/deploy-image/v1alpha1/scaffolds/internal/templates/controllers"
+	golangv4scaffolds "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds"
 )
 
 var _ plugins.Scaffolder = &apiScaffolder{}
@@ -79,10 +76,7 @@ func (s *apiScaffolder) InjectFS(fs machinery.Filesystem) {
 func (s *apiScaffolder) Scaffold() error {
 	log.Println("Writing scaffold for you to edit...")
 
-	//nolint: staticcheck
-	isGoV3 := plugin.IsLegacyLayout(s.config)
-
-	if err := s.scaffoldCreateAPIFromPlugins(isGoV3); err != nil {
+	if err := s.scaffoldCreateAPI(); err != nil {
 		return err
 	}
 
@@ -100,7 +94,7 @@ func (s *apiScaffolder) Scaffold() error {
 	)
 
 	if err := scaffold.Execute(
-		&api.Types{Port: s.port, IsLegacyLayout: isGoV3},
+		&api.Types{Port: s.port},
 	); err != nil {
 		return fmt.Errorf("error updating APIs: %v", err)
 	}
@@ -112,12 +106,7 @@ func (s *apiScaffolder) Scaffold() error {
 	}
 
 	controller := &controllers.Controller{
-		ControllerRuntimeVersion: golangv3scaffolds.ControllerRuntimeVersion,
-		IsLegacyLayout:           isGoV3,
-	}
-
-	if !isGoV3 {
-		controller.ControllerRuntimeVersion = golangv4scaffolds.ControllerRuntimeVersion
+		ControllerRuntimeVersion: golangv4scaffolds.ControllerRuntimeVersion,
 	}
 
 	if err := scaffold.Execute(
@@ -131,15 +120,12 @@ func (s *apiScaffolder) Scaffold() error {
 	}
 
 	defaultMainPath := "cmd/main.go"
-	if isGoV3 {
-		defaultMainPath = "main.go"
-	}
 	if err := s.updateMainByAddingEventRecorder(defaultMainPath); err != nil {
 		return fmt.Errorf("error updating main.go: %v", err)
 	}
 
 	if err := scaffold.Execute(
-		&controllers.ControllerTest{Port: s.port, IsLegacyLayout: isGoV3},
+		&controllers.ControllerTest{Port: s.port},
 	); err != nil {
 		return fmt.Errorf("error creating controller/**_controller_test.go: %v", err)
 	}
@@ -172,14 +158,14 @@ func (s *apiScaffolder) addEnvVarIntoManager() error {
 	return nil
 }
 
-// scaffoldCreateAPIFromPlugins will reuse the code from the kustomize and base golang
+// scaffoldCreateAPI will reuse the code from the kustomize and base golang
 // plugins to do the default scaffolds which an API is created
-func (s *apiScaffolder) scaffoldCreateAPIFromPlugins(isLegacyLayout bool) error {
-	if err := s.scaffoldCreateAPIFromGolang(isLegacyLayout); err != nil {
+func (s *apiScaffolder) scaffoldCreateAPI() error {
+	if err := s.scaffoldCreateAPIFromGolang(); err != nil {
 		return fmt.Errorf("error scaffolding golang files for the new API: %v", err)
 	}
 
-	if err := s.scaffoldCreateAPIFromKustomize(isLegacyLayout); err != nil {
+	if err := s.scaffoldCreateAPIFromKustomize(); err != nil {
 		return fmt.Errorf("error scaffolding kustomize manifests for the new API: %v", err)
 	}
 	return nil
@@ -281,25 +267,12 @@ func (s *apiScaffolder) updateControllerCode(controller controllers.Controller) 
 	return nil
 }
 
-func (s *apiScaffolder) scaffoldCreateAPIFromKustomize(isLegacyLayout bool) error {
-	// Now we need call the kustomize/v1 plugin to do its scaffolds when we create a new API
-	// todo: when we have the go/v4 plugin we will also need to check what is the plugin used
-	// in the Project layout to know if we should use kustomize/v1 OR kustomize/v2-alpha
-	var kustomizeScaffolder plugins.Scaffolder
-
-	if isLegacyLayout {
-		kustomizeScaffolder = kustomizev1scaffolds.NewAPIScaffolder(
-			s.config,
-			s.resource,
-			true,
-		)
-	} else {
-		kustomizeScaffolder = kustomizev2scaffolds.NewAPIScaffolder(
-			s.config,
-			s.resource,
-			true,
-		)
-	}
+func (s *apiScaffolder) scaffoldCreateAPIFromKustomize() error {
+	kustomizeScaffolder := kustomizev2scaffolds.NewAPIScaffolder(
+		s.config,
+		s.resource,
+		true,
+	)
 
 	kustomizeScaffolder.InjectFS(s.fs)
 
@@ -310,16 +283,7 @@ func (s *apiScaffolder) scaffoldCreateAPIFromKustomize(isLegacyLayout bool) erro
 	return nil
 }
 
-func (s *apiScaffolder) scaffoldCreateAPIFromGolang(isLegacyLayout bool) error {
-	// Now we need call the kustomize/v1 plugin to do its scaffolds when we create a new API
-	// todo: when we have the go/v4 plugin we will also need to check what is the plugin used
-	// in the Project layout to know if we should use kustomize/v1 OR kustomize/v2-alpha
-	if isLegacyLayout {
-		golangV3Scaffolder := golangv3scaffolds.NewAPIScaffolder(s.config,
-			s.resource, true)
-		golangV3Scaffolder.InjectFS(s.fs)
-		return golangV3Scaffolder.Scaffold()
-	}
+func (s *apiScaffolder) scaffoldCreateAPIFromGolang() error {
 	golangV4Scaffolder := golangv4scaffolds.NewAPIScaffolder(s.config,
 		s.resource, true)
 	golangV4Scaffolder.InjectFS(s.fs)

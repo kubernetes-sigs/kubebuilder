@@ -24,13 +24,13 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	pluginutil "sigs.k8s.io/kubebuilder/v3/pkg/plugin/util"
+	pluginutil "sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
 
 	//nolint:golint
 	// nolint:revive
 	//nolint:golint
 	// nolint:revive
-	"sigs.k8s.io/kubebuilder/v3/test/e2e/utils"
+	"sigs.k8s.io/kubebuilder/v4/test/e2e/utils"
 )
 
 // GenerateV4 implements a go/v4 plugin project defined by a TestContext.
@@ -65,7 +65,10 @@ func GenerateV4(kbc *utils.TestContext) {
 		"#- path: webhookcainjection_patch.yaml", "#")).To(Succeed())
 	ExpectWithOffset(1, pluginutil.UncommentCode(
 		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
-		"#- path: manager_metrics_patch.yaml", "#")).To(Succeed())
+		"#- metrics_service.yaml", "#")).To(Succeed())
+	ExpectWithOffset(1, pluginutil.UncommentCode(
+		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+		metricsTarget, "#")).To(Succeed())
 
 	ExpectWithOffset(1, pluginutil.UncommentCode(filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 		certManagerTarget, "#")).To(Succeed())
@@ -122,10 +125,16 @@ func GenerateV4WithoutWebhooks(kbc *utils.TestContext) {
 
 	ExpectWithOffset(1, pluginutil.UncommentCode(
 		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+		"#patches:", "#")).To(Succeed())
+	ExpectWithOffset(1, pluginutil.UncommentCode(
+		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 		"#- ../prometheus", "#")).To(Succeed())
 	ExpectWithOffset(1, pluginutil.UncommentCode(
 		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
-		"#- path: manager_metrics_patch.yaml", "#")).To(Succeed())
+		"#- metrics_service.yaml", "#")).To(Succeed())
+	ExpectWithOffset(1, pluginutil.UncommentCode(
+		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+		metricsTarget, "#")).To(Succeed())
 
 	if kbc.IsRestricted {
 		By("uncomment kustomize files to ensure that pods are restricted")
@@ -165,6 +174,10 @@ func initingTheProject(kbc *utils.TestContext) {
 	)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 }
+
+const metricsTarget = `#- path: manager_metrics_patch.yaml
+#  target:
+#    kind: Deployment`
 
 //nolint:lll
 const certManagerTarget = `#replacements:

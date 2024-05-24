@@ -99,7 +99,7 @@ You must also grant the RBAC rules permissions to allow your project to create E
 
 ```go
 ...
-//+kubebuilder:rbac:groups=core,resources=events,verbs=create;patch
+// +kubebuilder:rbac:groups=core,resources=events,verbs=create;patch
 ...
 func (r *MyKindReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 ```
