@@ -69,6 +69,26 @@ Following the targets that can be used to test your changes locally.
 
 **NOTE** To use the `make lint` is required to install `golangci-lint` locally. More info: https://github.com/golangci/golangci-lint#install
 
+### Running e2e tests locally
+
+See that you can run `test-e2e-local` to setup Kind and run e2e tests locally.
+Another option is by manually starting up Kind and configuring it and then,
+you can for example via your IDEA debug the e2e tests.
+
+To manually setup run:
+
+```shell
+# To generate an Kubebuilder local binary with your changes
+make install
+# To create the cluster and configure a CNI which supports NetworkPolicy
+kind create cluster --config ./test/e2e/kind-config.yaml
+kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
+```
+
+Now, you can for example, run in debug mode the `test/e2e/v4/e2e_suite_test.go`:
+
+![example](https://github.com/kubernetes-sigs/kubebuilder/assets/7708031/277d26d5-c94d-41f0-8f02-1381458ef750)
+
 ### Test Plugin
 
 If your intended PR creates a new plugin, make sure the PR also provides test cases. Testing should include:
