@@ -78,9 +78,15 @@ linters:
     - misspell
     - nakedret
     - prealloc
+    - revive
     - staticcheck
     - typecheck
     - unconvert
     - unparam
     - unused
+
+linters-settings:
+  revive:
+    rules:
+      - name: comment-spacings
 `
