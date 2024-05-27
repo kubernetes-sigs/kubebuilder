@@ -19,7 +19,13 @@ jobs:
 
       - name: Create kind cluster
         run: kind create cluster
-        
+
+      - name: Prepare the environment
+        run: |
+          KUSTOMIZATION_FILE_PATH="testdata/project-v4/config/default/kustomization.yaml"
+          sed -i '25s/^#//' $KUSTOMIZATION_FILE_PATH
+          sed -i '47s/^#//' $KUSTOMIZATION_FILE_PATH
+
       - name: Test
         run: |
           cd testdata/project-v4
