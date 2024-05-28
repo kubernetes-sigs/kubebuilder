@@ -4,7 +4,7 @@ go 1.22
 
 require (
 	github.com/gobuffalo/flect v1.0.2
-	github.com/onsi/ginkgo/v2 v2.17.3
+	github.com/onsi/ginkgo/v2 v2.19.0
 	github.com/onsi/gomega v1.33.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/afero v1.11.0
