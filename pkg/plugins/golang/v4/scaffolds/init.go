@@ -140,7 +140,9 @@ func (s *initScaffolder) Scaffold() error {
 	}
 
 	return scaffold.Execute(
-		&templates.Main{},
+		&templates.Main{
+			ControllerRuntimeVersion: ControllerRuntimeVersion,
+		},
 		&templates.GoMod{
 			ControllerRuntimeVersion: ControllerRuntimeVersion,
 		},

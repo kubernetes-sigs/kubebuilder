@@ -45,7 +45,7 @@ var _ = Describe("kubebuilder", func() {
 
 		AfterEach(func() {
 			By("clean up API objects created during the test")
-			kbc.CleanupManifests(filepath.Join("config", "default"))
+			Expect(kbc.Make("undeploy")).To(Succeed())
 
 			By("removing controller image and working dir")
 			kbc.Destroy()

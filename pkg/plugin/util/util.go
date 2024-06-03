@@ -176,6 +176,48 @@ func UncommentCode(filename, target, prefix string) error {
 	return os.WriteFile(filename, out.Bytes(), 0644)
 }
 
+// CommentCode searches for target in the file and adds the comment prefix
+// to the target content. The target content may span multiple lines.
+func CommentCode(filename, target, prefix string) error {
+	// Read the file content
+	content, err := os.ReadFile(filename)
+	if err != nil {
+		return err
+	}
+	strContent := string(content)
+
+	// Find the target code to be commented
+	idx := strings.Index(strContent, target)
+	if idx < 0 {
+		return fmt.Errorf("unable to find the code %s to be commented", target)
+	}
+
+	// Create a buffer to hold the modified content
+	out := new(bytes.Buffer)
+	_, err = out.Write(content[:idx])
+	if err != nil {
+		return err
+	}
+
+	// Add the comment prefix to each line of the target code
+	scanner := bufio.NewScanner(bytes.NewBufferString(target))
+	for scanner.Scan() {
+		_, err := out.WriteString(prefix + scanner.Text() + "\n")
+		if err != nil {
+			return err
+		}
+	}
+
+	// Write the rest of the file content
+	_, err = out.Write(content[idx+len(target):])
+	if err != nil {
+		return err
+	}
+
+	// Write the modified content back to the file
+	return os.WriteFile(filename, out.Bytes(), 0644)
+}
+
 // ImplementWebhooks will mock an webhook data
 func ImplementWebhooks(filename string) error {
 	// false positive

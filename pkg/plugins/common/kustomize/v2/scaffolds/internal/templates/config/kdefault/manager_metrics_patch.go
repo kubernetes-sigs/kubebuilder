@@ -42,8 +42,8 @@ func (f *ManagerMetricsPatch) SetTemplateDefaults() error {
 	return nil
 }
 
-const kustomizeMetricsPatchTemplate = `# This patch adds the args to allow exposing the metrics endpoint securely
+const kustomizeMetricsPatchTemplate = `# This patch adds the args to allow exposing the metrics endpoint using HTTPS
 - op: add
   path: /spec/template/spec/containers/0/args/0
-  value: --metrics-bind-address=:8080
+  value: --metrics-bind-address=:8443
 `

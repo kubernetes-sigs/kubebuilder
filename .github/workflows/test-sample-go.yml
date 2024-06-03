@@ -24,7 +24,7 @@ jobs:
         run: |
           KUSTOMIZATION_FILE_PATH="testdata/project-v4/config/default/kustomization.yaml"
           sed -i '25s/^#//' $KUSTOMIZATION_FILE_PATH
-          sed -i '47s/^#//' $KUSTOMIZATION_FILE_PATH
+          sed -i '46s/^#//' $KUSTOMIZATION_FILE_PATH
 
       - name: Test
         run: |
