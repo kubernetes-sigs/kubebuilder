@@ -200,6 +200,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
+	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	%s
@@ -220,16 +221,13 @@ func main() {
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string
-	var secureMetrics bool
 	var enableHTTP2 bool
-	flag.StringVar(&metricsAddr, "metrics-bind-address", "0", "The address the metric endpoint binds to. " +
-		"Use the port :8080. If not set, it will be 0 in order to disable the metrics server")
+	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8443", "The address the metric endpoint binds to. " +
+		"Use 0 in order to disable the metrics server")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. " +
 		"Enabling this will ensure there is only one active controller manager.")
-	flag.BoolVar(&secureMetrics, "metrics-secure", false, 
-		"If set the metrics endpoint is served securely")
 	flag.BoolVar(&enableHTTP2, "enable-http2", false, 
 		"If set, HTTP/2 will be enabled for the metrics and webhook servers")
 	opts := zap.Options{
@@ -264,7 +262,8 @@ func main() {
 		Scheme:                 scheme,
 		Metrics:                metricsserver.Options{
 			BindAddress: metricsAddr,
-			SecureServing: secureMetrics,
+			FilterProvider: filters.WithAuthenticationAndAuthorization,
+			SecureServing: true,
 			TLSOpts: tlsOpts,
 		},
 		WebhookServer: webhookServer,

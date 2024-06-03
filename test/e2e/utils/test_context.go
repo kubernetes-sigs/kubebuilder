@@ -166,23 +166,6 @@ func (t *TestContext) UninstallPrometheusOperManager() {
 	}
 }
 
-// CleanupManifests is a helper func to run kustomize build and pipe the output to kubectl delete -f -
-func (t *TestContext) CleanupManifests(dir string) {
-	kustomizePath := filepath.Join(t.Dir, "bin", "kustomize")
-	if _, err := os.Stat(kustomizePath); err != nil {
-		// Just fail below with an error about kustomize not being installed globally.
-		kustomizePath = "kustomize"
-	}
-	cmd := exec.Command(kustomizePath, "build", dir)
-	output, err := t.Run(cmd)
-	if err != nil {
-		warnError(err)
-	}
-	if _, err := t.Kubectl.WithInput(string(output)).Command("delete", "-f", "-"); err != nil {
-		warnError(err)
-	}
-}
-
 // Init is for running `kubebuilder init`
 func (t *TestContext) Init(initOptions ...string) error {
 	initOptions = append([]string{"init"}, initOptions...)

@@ -69,11 +69,13 @@ func (s *initScaffolder) Scaffold() error {
 		// We need to create a Role because if the project
 		// has not CRD define the controller-gen will not generate this file
 		&rbac.Role{},
+		&rbac.MetricsAuthRole{},
+		&rbac.MetricsAuthRoleBinding{},
+		&rbac.MetricsReaderRole{},
 		&rbac.LeaderElectionRole{},
 		&rbac.LeaderElectionRoleBinding{},
 		&rbac.ServiceAccount{},
 		&manager.Kustomization{},
-		&kdefault.ManagerMetricsPatch{},
 		&manager.Config{Image: imageName},
 		&kdefault.Kustomization{},
 		&prometheus.Kustomization{},
