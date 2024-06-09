@@ -123,6 +123,17 @@ func ReGenerateProject(kbc *utils.TestContext) {
 	)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
+	By("create APIs non namespaced with resource and controller")
+	err = kbc.CreateAPI(
+		"--group", "crew",
+		"--version", "v1",
+		"--kind", "Admiral",
+		"--namespaced=false",
+		"--resource",
+		"--controller",
+	)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+
 	By("create APIs with deploy-image plugin")
 	err = kbc.CreateAPI(
 		"--group", "crew",
@@ -209,6 +220,18 @@ func ReGenerateProject(kbc *utils.TestContext) {
 		filepath.Join(kbc.Dir, "testdir2", "PROJECT"), webhook)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 	ExpectWithOffset(1, fileContainsExpr).To(BeTrue())
+
+	By("checking if the project file was generated without namespace: true")
+	var nonNamespacedFields = fmt.Sprintf(`api:
+    crdVersion: v1
+  controller: true
+  domain: %s
+  group: crew
+  kind: Admiral`, kbc.Domain)
+	fileContainsExpr, err = pluginutil.HasFileContentWith(
+		filepath.Join(kbc.Dir, "testdir2", "PROJECT"), nonNamespacedFields)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	Expect(fileContainsExpr).To(BeTrue())
 
 	By("checking if the project file was generated with the expected deploy-image plugin fields")
 	var deployImagePlugin = "deploy-image.go.kubebuilder.io/v1-alpha"

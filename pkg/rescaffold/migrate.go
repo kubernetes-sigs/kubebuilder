@@ -287,6 +287,8 @@ func getAPIResourceFlags(resource resource.Resource) []string {
 		args = append(args, "--resource")
 		if resource.API.Namespaced {
 			args = append(args, "--namespaced")
+		} else {
+			args = append(args, "--namespaced=false")
 		}
 	}
 
