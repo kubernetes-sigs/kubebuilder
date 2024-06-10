@@ -169,7 +169,7 @@ func (r *ConfigDeploymentReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&appsv1.ConfigDeployment{}).
 		Owns(&kapps.Deployment{}).
 		Watches(
-			&source.Kind{Type: &corev1.ConfigMap{}},
+			&corev1.ConfigMap{},
 			handler.EnqueueRequestsFromMapFunc(r.findObjectsForConfigMap),
 			builder.WithPredicates(predicate.ResourceVersionChangedPredicate{}),
 		).
