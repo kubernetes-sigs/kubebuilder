@@ -44,106 +44,101 @@ var TestTemplate = `{{ .Boilerplate }}
 package e2e
 
 import (
+	"context"
 	"fmt"
+	"github.com/go-resty/resty/v2"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"net/http"
 	"os/exec"
+	"strconv"
 	"time"
 
-    . "github.com/onsi/ginkgo/v2"
-    . "github.com/onsi/gomega"
-	
 	"{{ .Repo }}/test/utils"
 )
 
 const namespace = "{{ .ProjectName }}-system"
+const deploymentName = "{{ .ProjectName }}-controller-manager"
 
 var _ = Describe("controller", Ordered, func() {
 	BeforeAll(func() {
-		By("installing prometheus operator")
-		Expect(utils.InstallPrometheusOperator()).To(Succeed())
+		var err error
+		By("prepare kind environment", func() {
+			cmd := exec.Command("make", "kind-prepare")
+			_, err = utils.Run(cmd)
+			ExpectWithOffset(1, err).NotTo(HaveOccurred())
+		})
 
-		By("installing the cert-manager")
-		Expect(utils.InstallCertManager()).To(Succeed())
+		By("upload latest image to kind cluster", func() {
+			cmd := exec.Command("make", "kind-load")
+			_, err = utils.Run(cmd)
+			ExpectWithOffset(1, err).NotTo(HaveOccurred())
+		})
 
-		By("creating manager namespace")
-		cmd := exec.Command("kubectl", "create", "ns", namespace)
-		_, _ = utils.Run(cmd)
+		By("deploy controller-manager", func() {
+			cmd := exec.Command("make", "deploy")
+			_, err = utils.Run(cmd)
+			ExpectWithOffset(1, err).NotTo(HaveOccurred())
+		})
+
 	})
 
 	AfterAll(func() {
-		By("uninstalling the Prometheus manager bundle")
-		utils.UninstallPrometheusOperator()
-
-		By("uninstalling the cert-manager bundle")
-		utils.UninstallCertManager()
-
-		By("removing manager namespace")
-		cmd := exec.Command("kubectl", "delete", "ns", namespace)
-		_, _ = utils.Run(cmd)
+		var err error
+		By("delete kind environment", func() {
+			cmd := exec.Command("make", "kind-delete")
+			_, err = utils.Run(cmd)
+			ExpectWithOffset(1, err).NotTo(HaveOccurred())
+		})
 	})
 
 	Context("Operator", func() {
 		It("should run successfully", func() {
-			var controllerPodName string
-			var err error
+			config, err := utils.GetConfig()
+			clientset, err := utils.GetClientset(config)
 
-			// projectimage stores the name of the image used in the example
-			var projectimage = "example.com/{{ .ProjectName }}:v0.0.1"
-
-			By("building the manager(Operator) image")
-			cmd := exec.Command("make", "docker-build", fmt.Sprintf("IMG=%s", projectimage))
-			_, err = utils.Run(cmd)
-			ExpectWithOffset(1, err).NotTo(HaveOccurred())
-
-			By("loading the the manager(Operator) image on Kind")
-			err = utils.LoadImageToKindClusterWithName(projectimage)
-			ExpectWithOffset(1, err).NotTo(HaveOccurred())
-
-			By("installing CRDs")
-			cmd = exec.Command("make", "install")
-			_, err = utils.Run(cmd)
-			ExpectWithOffset(1, err).NotTo(HaveOccurred())
-
-			By("deploying the controller-manager")
-			cmd = exec.Command("make", "deploy", fmt.Sprintf("IMG=%s", projectimage))
-			_, err = utils.Run(cmd)
-			ExpectWithOffset(1, err).NotTo(HaveOccurred())
-
-			By("validating that the controller-manager pod is running as expected")
-			verifyControllerUp := func() error {
-				// Get pod name
-				
-				cmd = exec.Command("kubectl", "get",
-					"pods", "-l", "control-plane=controller-manager",
-					"-o", "go-template={{"{{"}} range .items {{"}}"}}" +
-					"{{"{{"}} if not .metadata.deletionTimestamp {{"}}"}}" + 
-					"{{"{{"}} .metadata.name {{"}}"}}"+
-					"{{"{{"}} \"\\n\" {{"}}"}}{{"{{"}} end {{"}}"}}{{"{{"}} end {{"}}"}}",
-					"-n", namespace,
-				)
-
-				podOutput, err := utils.Run(cmd)
-				ExpectWithOffset(2, err).NotTo(HaveOccurred())
-				podNames := utils.GetNonEmptyLines(string(podOutput))
-				if len(podNames) != 1 {
-					return fmt.Errorf("expect 1 controller pods running, but got %d", len(podNames))
-				}
-				controllerPodName = podNames[0]
-				ExpectWithOffset(2, controllerPodName).Should(ContainSubstring("controller-manager"))
-
-				// Validate pod status
-				cmd = exec.Command("kubectl", "get",
-					"pods", controllerPodName, "-o", "jsonpath={.status.phase}",
-					"-n", namespace,
-				)
-				status, err := utils.Run(cmd)
-				ExpectWithOffset(2, err).NotTo(HaveOccurred())
-				if string(status) != "Running" {
-					return fmt.Errorf("controller pod in %s status", status)
-				}
-				return nil
+			deployment, err := clientset.AppsV1().Deployments(namespace).Get(context.TODO(), deploymentName, metav1.GetOptions{})
+			if err != nil {
+				panic(err.Error())
 			}
-			EventuallyWithOffset(1, verifyControllerUp, time.Minute, time.Second).Should(Succeed())
 
+			// Get the pods under the deployment
+			selector := deployment.Spec.Selector.MatchLabels
+			labelSelector := metav1.LabelSelector{MatchLabels: selector}
+
+			pods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{
+				LabelSelector: metav1.FormatLabelSelector(&labelSelector),
+			})
+
+			if err != nil {
+				panic(err.Error())
+			}
+
+			stopCh := make(chan struct{}, 1)
+			readyCh := make(chan struct{})
+			localPort, err := utils.GetFreePort()
+			localPortStr := strconv.Itoa(localPort)
+
+			// Call the function to run port forward
+			err = utils.RunPortForward(config, namespace, pods.Items[0].Name, []string{fmt.Sprintf("%s:8081", localPortStr)}, stopCh, readyCh)
+			if err != nil {
+				panic(err.Error())
+			}
+			<-readyCh
+
+			readyzURL := fmt.Sprintf("http://localhost:%s/readyz", localPortStr)
+			client := resty.New().SetTimeout(5 * time.Second)
+			resp, err := client.R().Get(readyzURL)
+			if err != nil {
+				panic(err.Error())
+			}
+
+			Expect(resp.StatusCode()).To(Equal(http.StatusOK))
+			Expect(resp.Body()).To(Equal([]uint8{'o', 'k'}))
+
+			close(stopCh)
+			<-stopCh
 		})
 	})
 })
