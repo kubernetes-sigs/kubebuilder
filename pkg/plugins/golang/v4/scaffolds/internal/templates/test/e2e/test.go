@@ -46,14 +46,15 @@ package e2e
 import (
 	"context"
 	"fmt"
-	"github.com/go-resty/resty/v2"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
 	"os/exec"
 	"strconv"
 	"time"
+
+	"github.com/go-resty/resty/v2"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"{{ .Repo }}/test/utils"
 )
