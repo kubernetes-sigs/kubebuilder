@@ -87,8 +87,8 @@ var _ = Describe("controller", Ordered, func() {
 
 	AfterAll(func() {
 		var err error
-		By("delete kind environment", func() {
-			cmd := exec.Command("make", "kind-delete")
+		By("cleanup", func() {
+			cmd := exec.Command("make", "undeploy")
 			_, err = utils.Run(cmd)
 			ExpectWithOffset(1, err).NotTo(HaveOccurred())
 		})
