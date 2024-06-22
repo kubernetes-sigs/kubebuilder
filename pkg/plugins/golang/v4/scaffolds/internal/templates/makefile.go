@@ -74,7 +74,7 @@ func (f *Makefile) SetTemplateDefaults() error {
 const makefileTemplate = `# Image URL to use all building/pushing image targets
 IMG ?= {{ .Image }}
 # K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
-# Also it refers to the version of Kubernetes that Kind set up.
+# It also refers to the version of Kubernetes that is deployed by Kind.
 K8S_VERSION = v1.30.0
 K8S_VERSION_TRIMMED_V = $(subst v,,$(K8S_VERSION))
 
@@ -205,6 +205,7 @@ build-installer: manifests generate kustomize ## Generate a consolidated YAML wi
 
 KIND_CLUSTER_NAME ?= {{ .ProjectName }}-kind
 NAMESPACE ?= {{ .ProjectName }}-system
+KIND_IMAGE ?= kindest/node:$(K8S_VERSION)
 
 PROMETHEUS_OPERATOR_VERSION = v0.74.0
 CERT_MANAGER_VERSION = v1.15.0
@@ -242,11 +243,11 @@ kind-load: docker-build kind ## Build and upload docker image to the local Kind 
 .PHONY: kind-create
 kind-create: kind yq ## Create kubernetes cluster using Kind.
 	@if ! $(KIND) get clusters | grep -q $(KIND_CLUSTER_NAME); then \
-		$(KIND) create cluster --name $(KIND_CLUSTER_NAME) --image kindest/node:$(K8S_VERSION); \
+		$(KIND) create cluster --name $(KIND_CLUSTER_NAME) --image $(KIND_IMAGE); \
 	fi
-	@if ! $(CONTAINER_TOOL) ps --format json | grep $(KIND_CLUSTER_NAME)-control-plane | $(YQ) e '.Image' | grep -q $(K8S_VERSION); then \
+	@if ! $(CONTAINER_TOOL) ps --format json | $(YQ) -P -pj e 'select(.Names == "$(KIND_CLUSTER_NAME)-control-plane") | .Image' | grep -q $(KIND_IMAGE); then \
   		$(KIND) delete cluster --name $(KIND_CLUSTER_NAME); \
-		$(KIND) create cluster --name $(KIND_CLUSTER_NAME) --image kindest/node:$(K8S_VERSION); \
+		$(KIND) create cluster --name $(KIND_CLUSTER_NAME) --image $(KIND_IMAGE); \
 	fi
 
 .PHONY: kind-delete
