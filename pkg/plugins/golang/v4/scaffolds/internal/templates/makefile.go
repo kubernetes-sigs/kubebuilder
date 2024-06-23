@@ -73,10 +73,11 @@ func (f *Makefile) SetTemplateDefaults() error {
 //nolint:lll
 const makefileTemplate = `# Image URL to use all building/pushing image targets
 IMG ?= {{ .Image }}
-# K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
-# It also refers to the version of Kubernetes that is deployed by Kind.
-K8S_VERSION = v1.30.0
-K8S_VERSION_TRIMMED_V = $(subst v,,$(K8S_VERSION))
+# ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
+ENVTEST_K8S_VERSION = 1.30.0
+
+# KIND_K8S_VERSION refers to the version of Kubernetes that is deployed by Kind.
+KIND_K8S_VERSION = v1.30.0
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -140,7 +141,7 @@ vet: ## Run go vet against code.
 
 .PHONY: test
 test: manifests generate fmt vet envtest ## Run tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(K8S_VERSION_TRIMMED_V) --bin-dir $(LOCALBIN) -p path)" && \
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" && \
 		test $? && \
 		go test $$(go list ./... | grep -v /e2e) -coverprofile cover.out
 
@@ -205,7 +206,7 @@ build-installer: manifests generate kustomize ## Generate a consolidated YAML wi
 
 KIND_CLUSTER_NAME ?= {{ .ProjectName }}-kind
 NAMESPACE ?= {{ .ProjectName }}-system
-KIND_IMAGE ?= kindest/node:$(K8S_VERSION)
+KIND_IMAGE ?= kindest/node:$(KIND_K8S_VERSION)
 
 PROMETHEUS_OPERATOR_VERSION = v0.74.0
 CERT_MANAGER_VERSION = v1.15.0
