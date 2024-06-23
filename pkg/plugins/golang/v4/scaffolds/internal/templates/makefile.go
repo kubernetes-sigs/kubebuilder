@@ -237,6 +237,18 @@ undeploy: kustomize ## Undeploy controller from the K8s cluster specified in ~/.
 redeploy: deploy ## Redeploy controller with new docker image.
 	$(KUBECTL) rollout restart --namespace $(NAMESPACE) deploy/{{ .ProjectName }}-controller-manager
 
+.PHONY: k8s-prepare
+k8s-prepare: ## Install required dependencies in the Kubernetes cluster.
+	# Install prometheus operator
+	$(KUBECTL) apply --server-side -f "https://github.com/prometheus-operator/prometheus-operator/releases/download/$(PROMETHEUS_OPERATOR_VERSION)/bundle.yaml"
+	$(KUBECTL) wait deployment.apps/prometheus-operator --for condition=Available --namespace default --timeout 5m
+	# Install cert-manager operator
+	$(KUBECTL) apply --server-side -f "https://github.com/jetstack/cert-manager/releases/download/$(CERT_MANAGER_VERSION)/cert-manager.yaml"
+	$(KUBECTL) wait deployment.apps/cert-manager-webhook --for condition=Available --namespace cert-manager --timeout 5m
+
+
+##@ Kind operations (optional)
+
 .PHONY: kind-load
 kind-load: docker-build kind ## Build and upload docker image to the local Kind cluster.
 	$(KIND) load docker-image ${IMG} --name $(KIND_CLUSTER_NAME)
@@ -257,14 +269,6 @@ kind-delete: kind ## Create kubernetes cluster using Kind.
 		$(KIND) delete cluster --name $(KIND_CLUSTER_NAME); \
 	fi
 
-.PHONY: kind-prepare
-kind-prepare: kind-create
-	# Install prometheus operator
-	$(KUBECTL) apply --server-side -f "https://github.com/prometheus-operator/prometheus-operator/releases/download/$(PROMETHEUS_OPERATOR_VERSION)/bundle.yaml"
-	$(KUBECTL) wait deployment.apps/prometheus-operator --for condition=Available --namespace default --timeout 5m
-	# Install cert-manager operator
-	$(KUBECTL) apply --server-side -f "https://github.com/jetstack/cert-manager/releases/download/$(CERT_MANAGER_VERSION)/cert-manager.yaml"
-	$(KUBECTL) wait deployment.apps/cert-manager-webhook --for condition=Available --namespace cert-manager --timeout 5m
 
 ##@ Dependencies
 

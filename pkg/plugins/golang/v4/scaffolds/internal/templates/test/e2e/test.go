@@ -65,14 +65,20 @@ const deploymentName = "{{ .ProjectName }}-controller-manager"
 var _ = Describe("controller", Ordered, func() {
 	BeforeAll(func() {
 		var err error
-		By("prepare kind environment", func() {
-			cmd := exec.Command("make", "kind-prepare")
+		By("create kind environment", func() {
+			cmd := exec.Command("make", "kind-create")
 			_, err = utils.Run(cmd)
 			ExpectWithOffset(1, err).NotTo(HaveOccurred())
 		})
 
 		By("upload latest image to kind cluster", func() {
 			cmd := exec.Command("make", "kind-load")
+			_, err = utils.Run(cmd)
+			ExpectWithOffset(1, err).NotTo(HaveOccurred())
+		})
+
+		By("prepare k8s", func() {
+			cmd := exec.Command("make", "k8s-prepare")
 			_, err = utils.Run(cmd)
 			ExpectWithOffset(1, err).NotTo(HaveOccurred())
 		})
