@@ -43,22 +43,19 @@ package utils
 
 import (
 	"context"
-	"flag"
 	"fmt"
-	. "github.com/onsi/ginkgo/v2" //nolint:golint,revive
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/tools/portforward"
-	"k8s.io/client-go/transport/spdy"
-	"k8s.io/client-go/util/homedir"
 	"net"
 	"net/http"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
+
+	. "github.com/onsi/ginkgo/v2" //nolint:golint,revive
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/portforward"
+	"k8s.io/client-go/transport/spdy"
 )
 
 // Run executes the provided command within this context
@@ -89,23 +86,6 @@ func GetProjectDir() (string, error) {
 	}
 	wd = strings.Replace(wd, "/test/e2e", "", -1)
 	return wd, nil
-}
-
-// GetConfig retrieves the Kubernetes configuration file.
-func GetConfig() (*rest.Config, error) {
-	var kubeconfig *string
-	if home := homedir.HomeDir(); home != "" {
-		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
-	} else {
-		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
-	}
-	flag.Parse()
-
-	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
-	if err != nil {
-		panic(err)
-	}
-	return config, nil
 }
 
 // GetClientset returns a kubernetes Clientset.

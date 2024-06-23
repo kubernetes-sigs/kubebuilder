@@ -48,6 +48,7 @@ import (
 	"fmt"
 	"net/http"
 	"os/exec"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"strconv"
 	"time"
 
@@ -102,8 +103,8 @@ var _ = Describe("controller", Ordered, func() {
 
 	Context("Operator", func() {
 		It("should run successfully", func() {
-			config, err := utils.GetConfig()
-			clientset, err := utils.GetClientset(config)
+			kubeconfig := config.GetConfigOrDie()
+			clientset, err := utils.GetClientset(kubeconfig)
 
 			deployment, err := clientset.AppsV1().Deployments(namespace).Get(context.TODO(), deploymentName, metav1.GetOptions{})
 			if err != nil {
