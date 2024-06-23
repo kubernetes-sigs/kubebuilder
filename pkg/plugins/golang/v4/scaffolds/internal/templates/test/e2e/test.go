@@ -129,7 +129,7 @@ var _ = Describe("controller", Ordered, func() {
 			localPortStr := strconv.Itoa(localPort)
 
 			// Call the function to run port forward
-			err = utils.RunPortForward(config, namespace, pods.Items[0].Name, []string{fmt.Sprintf("%s:8081", localPortStr)}, stopCh, readyCh)
+			err = utils.RunPortForward(kubeconfig, namespace, pods.Items[0].Name, []string{fmt.Sprintf("%s:8081", localPortStr)}, stopCh, readyCh)
 			if err != nil {
 				panic(err.Error())
 			}
