@@ -24,7 +24,7 @@ You can check the existing design proposal docs at [Extensible CLI and Scaffoldi
 </aside>
 
 <aside class="note">
-<h1>What is about to came next?</h1>
+<h1>What is about to come next?</h1>
 
 To know more about Kubebuilder's future vision of the Plugins architecture, see the section [Future vision for Kubebuilder Plugins][section-future-vision-plugins].
 
