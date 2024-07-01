@@ -24,7 +24,7 @@ This document uses `my` and `their` prefixes as a naming convention for repos, g
 In our example we will assume the following external API Type:
 
 `github.com/theiruser/theirproject` is another kubebuilder project on whose CRD we want to depend and extend on.
-Thus, it contains a `go.mod` in its repository root. The import path for the go types would be `github.com/theiruser/theirproject/api/theirgroup/v1alpha1`.
+Thus, it contains a `go.mod` in its repository root. The import path for the go types would be `github.com/theiruser/theirproject/apis/theirgroup/v1alpha1`.
 
 The Domain of the CR is `theirs.com`, the Group is `theirgroup` and the kind and go type would be `ExternalType`.
 
