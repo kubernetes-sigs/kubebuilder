@@ -121,7 +121,7 @@ func init() {
 
 ### Use the correct imports for your API and uncomment the controlled resource
 
-file: internal/controllers/externaltype_controllers.go
+file: internal/controllers/externaltype_controller.go
 ```go
 package controllers
 
@@ -142,7 +142,7 @@ func (r *ExternalTypeReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 Note that core resources may simply be imported by depending on the API's from upstream Kubernetes and do not need additional `AddToScheme` registrations:
 
-file: internal/controllers/externaltype_controllers.go
+file: internal/controllers/externaltype_controller.go
 ```go
 package controllers
 // contains core resources like Deployment
