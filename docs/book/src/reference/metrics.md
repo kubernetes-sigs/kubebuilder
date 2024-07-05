@@ -40,37 +40,162 @@ Further information can be found bellow in this document.
 
 </aside>
 
-## Enabling the Metrics
+## Metrics Configuration
 
-First, you will need enable the Metrics by uncommenting the following line
-in the file `config/default/kustomization.yaml`, see:
+By looking at the file `config/default/kustomization.yaml` you can
+check the metrics are exposed by default:
 
 ```yaml
-# [METRICS] To enable the controller manager metrics service, uncomment the following line.
-#- metrics_service.yaml
+# [METRICS] Expose the controller manager metrics service.
+- metrics_service.yaml
 ```
 
 ```yaml
-# [METRICS] The following patch will enable the metrics endpoint. Ensure that you also protect this endpoint.
-# More info: https://book.kubebuilder.io/reference/metrics
-# If you want to expose the metric endpoint of your controller-manager uncomment the following line.
-#- path: manager_metrics_patch.yaml
-#  target:
-#    kind: Deployment
+patches:
+   # [METRICS] The following patch will enable the metrics endpoint using HTTPS and the port :8443.
+   # More info: https://book.kubebuilder.io/reference/metrics
+   - path: manager_metrics_patch.yaml
+     target:
+        kind: Deployment
 ```
 
-Note that projects are scaffolded by default passing the flag `--metrics-bind-address=0`
-to the manager to ensure that metrics are disabled. See the [controller-runtime
-implementation](https://github.com/kubernetes-sigs/controller-runtime/blob/834905b07c7b5a78e86d21d764f7c2fdaa9602e0/pkg/metrics/server/server.go#L119-L122)
-where the server creation will be skipped in this case.
+Then, you can check in the `cmd/main.go` where metrics server
+is configured:
 
-## Protecting the Metrics
+```go
+// Metrics endpoint is enabled in 'config/default/kustomization.yaml'. The Metrics options configure the server.
+// For more info: https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/metrics/server
+Metrics: metricsserver.Options{
+   ...
+},
+```
+
+## Metrics Protection
 
 Unprotected metrics endpoints can expose valuable data to unauthorized users,
 such as system performance, application behavior, and potentially confidential
 operational metrics. This exposure can lead to security vulnerabilities
 where an attacker could gain insights into the system's operation
 and exploit weaknesses.
+
+### By using authn/authz (Enabled by default)
+
+To mitigate these risks, Kubebuilder projects utilize authentication (authn) and authorization (authz) to protect the
+metrics endpoint. This approach ensures that only authorized users and service accounts can access sensitive metrics
+data, enhancing the overall security of the system.
+
+In the past, the [kube-rbac-proxy](https://github.com/brancz/kube-rbac-proxy) was employed to provide this protection.
+However, its usage has been discontinued in recent versions. Since the release of `v4.1.0`, projects have had the
+metrics endpoint enabled and protected by default using the [WithAuthenticationAndAuthorization](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/metrics/server)
+feature provided by controller-runtime.
+
+Therefore, you will find the following configuration:
+
+- In the `cmd/main.go`:
+
+```go
+Metrics: metricsserver.Options{
+   ...
+   FilterProvider: filters.WithAuthenticationAndAuthorization,
+   ...
+}
+```
+
+This configuration leverages the FilterProvider to enforce authentication and authorization on the metrics endpoint.
+By using this method, you ensure that the endpoint is accessible only to those with the appropriate permissions.
+
+- In the `config/rbac/kustomization.yaml`:
+
+```yaml
+# The following RBAC configurations are used to protect
+# the metrics endpoint with authn/authz. These configurations
+# ensure that only authorized users and service accounts
+# can access the metrics endpoint.
+- metrics_auth_role.yaml
+- metrics_auth_role_binding.yaml
+- metrics_reader_role.yaml
+```
+
+In this way, only Pods using the `ServiceAccount` token are authorized to read the metrics endpoint. For example:
+
+```ymal
+apiVersion: v1
+kind: Pod
+metadata:
+  name: metrics-consumer
+  namespace: system
+spec:
+  # Use the scaffolded service account name to allow authn/authz
+  serviceAccountName: controller-manager
+  containers:
+  - name: metrics-consumer
+    image: curlimages/curl:7.78.0
+    command: ["/bin/sh"]
+    args:
+      - "-c"
+      - >
+        while true;
+        do
+          # Note here that we are passing the token obtained from the ServiceAccount to curl the metrics endpoint
+          curl -s -k -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
+          https://controller-manager-metrics-service.system.svc.cluster.local:8443/metrics;
+          sleep 60;
+        done
+```
+<aside class="warning">
+<h1>Changes Recommended for Production</h1>
+
+The default scaffold to configure the metrics server in `cmd/main.go` uses `TLSOpts` that rely on self-signed certificates
+(SelfCerts), which are generated automatically. However, self-signed certificates are **not** recommended for production
+environments as they do not offer the same level of trust and security as certificates issued by a trusted
+Certificate Authority (CA).
+
+While self-signed certificates are convenient for development and testing, they are unsuitable for production
+because they do not establish a chain of trust, making them vulnerable to security threats.
+
+Furthermore, check the configuration file located at `config/prometheus/monitor.yaml` to
+ensure secure integration with Prometheus. If the `insecureSkipVerify: true` option is enabled,
+it means that certificate verification is turned off. This is **not** recommended for production as
+it poses a significant security risk by making the system vulnerable to man-in-the-middle attacks,
+where an attacker could intercept and manipulate the communication between Prometheus and the monitored services.
+This could lead to unauthorized access to metrics data, compromising the integrity and confidentiality of the information.
+
+**In both cases, the primary risk is potentially allowing unauthorized access to sensitive metrics data.**
+
+### Recommended Actions for a Secure Production Setup
+
+1. **Replace Self-Signed Certificates:**
+   - Instead of using `TLSOpts`, configure the `CertDir`, `CertName`, and `KeyName` options to use your own certificates.
+   This ensures that your server communicates using trusted and secure certificates.
+
+2. **Configure Prometheus Monitoring Securely:**
+   - Check and update your Prometheus configuration file (`config/prometheus/monitor.yaml`) to ensure secure settings.
+   - Replace `insecureSkipVerify: true` with the following secure options:
+
+     ```yaml
+     caFile: The path to the CA certificate file, e.g., /etc/metrics-certs/ca.crt.
+     certFile: The path to the client certificate file, e.g., /etc/metrics-certs/tls.crt.
+     keyFile: The path to the client key file, e.g., /etc/metrics-certs/tls.key.
+     ```
+
+   These settings ensure encrypted and authenticated communication between Prometheus and the monitored services, providing a secure monitoring setup.
+</aside>
+
+<aside class="note">
+<h1>Controller-Runtime Auth/Authz Feature Current Known Limitations and Considerations</h1>
+
+Some known limitations and considerations have been identified. The settings for `cache TTL`, `anonymous access`, and
+`timeouts` are currently hardcoded, which may lead to performance and security concerns due to the inability to
+fine-tune these parameters. Additionally, the current implementation lacks support for configurations like
+`alwaysAllow` for critical paths (e.g., `/healthz`) and `alwaysAllowGroups` (e.g., `system:masters`), potentially
+causing operational challenges. Furthermore, the system heavily relies on stable connectivity to the `kube-apiserver`,
+making it vulnerable to metrics outages during network instability. This can result in the loss of crucial metrics data,
+particularly during critical periods when monitoring and diagnosing issues in real-time is essential.
+
+An [issue](https://github.com/kubernetes-sigs/controller-runtime/issues/2781) has been opened to
+enhance the controller-runtime and address these considerations.
+</aside>
+
 
 ### By using Network Policy
 
@@ -87,22 +212,6 @@ the help of cert-manager, you'll need to change the configuration of both
 the `Service` under `config/default/metrics_service.yaml` and
 the `ServiceMonitor` under `config/prometheus/monitor.yaml` to use a secure HTTPS port
 and ensure the necessary certificate is applied.
-
-### By using Controller-Runtime new feature
-
-Also, you might want to check the new feature added in Controller-Runtime via
-the [pr](https://github.com/kubernetes-sigs/controller-runtime/pull/2407) which can handle authentication (`authn`),
-authorization (`authz`) similar to [kube-rbac-proxy](https://github.com/brancz/kube-rbac-proxy) has been doing.
-
-<aside class="note">
-<h1>Changes required</h1>
-
-After the [issue](https://github.com/kubernetes-sigs/controller-runtime/issues/2781) opened
-for controller-runtime enhance this new feature to address the concerns raised we plan add an option
-to use it in the default scaffold combined with cert-manager. For further information, please check the
-[proposal](../../../../designs/discontinue_usage_of_kube_rbac_proxy.md).
-
-</aside>
 
 ## Exporting Metrics for Prometheus
 
@@ -151,14 +260,6 @@ for the metrics exported from the namespace where the project is running
 `{namespace="<project>-system"}`. See an example:
 
 <img width="1680" alt="Screenshot 2019-10-02 at 13 07 13" src="https://user-images.githubusercontent.com/7708031/66042888-a497da80-e515-11e9-9d77-d8a9fc1159a5.png">
-
-## Consuming the Metrics from other Pods.
-
-Then, see an example to create a Pod using Curl to reach out the metrics:
-
-```sh
-kubectl run curl --restart=Never -n <namespace-name> --image=curlimages/curl:7.78.0 -- /bin/sh -c "curl -v http://<my-project>-controller-manager-metrics-service.<my-project-system>.svc.cluster.local:8080/metrics"
-```
 
 ## Publishing Additional Metrics
 

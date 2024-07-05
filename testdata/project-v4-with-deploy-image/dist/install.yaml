@@ -516,6 +516,34 @@ rules:
   - get
 ---
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: project-v4-with-deploy-image-metrics-auth-role
+rules:
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: project-v4-with-deploy-image-metrics-reader
+rules:
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   labels:
@@ -547,6 +575,37 @@ subjects:
 - kind: ServiceAccount
   name: project-v4-with-deploy-image-controller-manager
   namespace: project-v4-with-deploy-image-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: project-v4-with-deploy-image-metrics-auth-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: project-v4-with-deploy-image-metrics-auth-role
+subjects:
+- kind: ServiceAccount
+  name: project-v4-with-deploy-image-controller-manager
+  namespace: project-v4-with-deploy-image-system
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: project-v4-with-deploy-image
+    control-plane: controller-manager
+  name: project-v4-with-deploy-image-controller-manager-metrics-service
+  namespace: project-v4-with-deploy-image-system
+spec:
+  ports:
+  - name: https
+    port: 8443
+    protocol: TCP
+    targetPort: 8443
+  selector:
+    control-plane: controller-manager
 ---
 apiVersion: v1
 kind: Service
@@ -587,6 +646,7 @@ spec:
     spec:
       containers:
       - args:
+        - --metrics-bind-address=:8443
         - --leader-elect
         - --health-probe-bind-address=:8081
         command:

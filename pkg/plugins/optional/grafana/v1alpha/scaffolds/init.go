@@ -53,4 +53,5 @@ func (s *initScaffolder) Scaffold() error {
 		&templates.ResourcesManifest{},
 		&templates.CustomMetricsConfigManifest{ConfigPath: string(configFilePath)},
 	)
+
 }
