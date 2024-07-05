@@ -287,6 +287,8 @@ func getAPIResourceFlags(resource resource.Resource) []string {
 		args = append(args, "--resource")
 		if resource.API.Namespaced {
 			args = append(args, "--namespaced")
+		} else {
+			args = append(args, "--namespaced=false")
 		}
 	}
 
@@ -330,7 +332,7 @@ func copyFile(src, des string) error {
 	if err != nil {
 		return fmt.Errorf("Source file path: %s does not exist. %v", src, err)
 	}
-	//Copy all the contents to the desitination file
+	// Copy all the contents to the desitination file
 	// nolint:gosec
 	return os.WriteFile(des, bytesRead, 0755)
 }

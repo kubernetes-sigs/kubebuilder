@@ -24,7 +24,7 @@ This document uses `my` and `their` prefixes as a naming convention for repos, g
 In our example we will assume the following external API Type:
 
 `github.com/theiruser/theirproject` is another kubebuilder project on whose CRD we want to depend and extend on.
-Thus, it contains a `go.mod` in its repository root. The import path for the go types would be `github.com/theiruser/theirproject/api/theirgroup/v1alpha1`.
+Thus, it contains a `go.mod` in its repository root. The import path for the go types would be `github.com/theiruser/theirproject/apis/theirgroup/v1alpha1`.
 
 The Domain of the CR is `theirs.com`, the Group is `theirgroup` and the kind and go type would be `ExternalType`.
 
@@ -121,7 +121,7 @@ func init() {
 
 ### Use the correct imports for your API and uncomment the controlled resource
 
-file: internal/controllers/externaltype_controllers.go
+file: internal/controllers/externaltype_controller.go
 ```go
 package controllers
 
@@ -142,7 +142,7 @@ func (r *ExternalTypeReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 Note that core resources may simply be imported by depending on the API's from upstream Kubernetes and do not need additional `AddToScheme` registrations:
 
-file: internal/controllers/externaltype_controllers.go
+file: internal/controllers/externaltype_controller.go
 ```go
 package controllers
 // contains core resources like Deployment

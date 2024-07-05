@@ -41,105 +41,23 @@ var _ = Describe("kubebuilder", func() {
 			kbc, err = utils.NewTestContext(util.KubebuilderBinName, "GO111MODULE=on")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(kbc.Prepare()).To(Succeed())
-
-			By("installing prometheus operator")
-			Expect(kbc.InstallPrometheusOperManager()).To(Succeed())
-
-			By("creating manager namespace")
-			err = kbc.CreateManagerNamespace()
-			ExpectWithOffset(1, err).NotTo(HaveOccurred())
-
-			By("labeling all namespaces to warn about restricted")
-			err = kbc.LabelAllNamespacesToWarnAboutRestricted()
-			ExpectWithOffset(1, err).NotTo(HaveOccurred())
-
-			By("enforce that namespace where the sample will be applied can only run restricted containers")
-			_, err = kbc.Kubectl.Command("label", "--overwrite", "ns", kbc.Kubectl.Namespace,
-				"pod-security.kubernetes.io/audit=restricted",
-				"pod-security.kubernetes.io/enforce-version=v1.24",
-				"pod-security.kubernetes.io/enforce=restricted")
-			Expect(err).To(Not(HaveOccurred()))
 		})
 
 		AfterEach(func() {
 			By("clean up API objects created during the test")
-			kbc.CleanupManifests(filepath.Join("config", "default"))
-
-			By("uninstalling the Prometheus manager bundle")
-			kbc.UninstallPrometheusOperManager()
+			Expect(kbc.Make("undeploy")).To(Succeed())
 
 			By("removing controller image and working dir")
 			kbc.Destroy()
 		})
 
 		It("should generate a runnable project with deploy-image/v1-alpha options ", func() {
-			var err error
-
-			By("initializing a project with go/v4")
-			err = kbc.Init(
-				"--plugins", "go/v4",
-				"--project-version", "3",
-				"--domain", kbc.Domain,
-			)
-			ExpectWithOffset(1, err).NotTo(HaveOccurred())
-
-			By("creating API definition with deploy-image/v1-alpha plugin")
-			err = kbc.CreateAPI(
-				"--group", kbc.Group,
-				"--version", kbc.Version,
-				"--kind", kbc.Kind,
-				"--plugins", "deploy-image/v1-alpha",
-				"--image", "memcached:1.6.26-alpine3.19",
-				"--image-container-port", "11211",
-				"--image-container-command", "memcached,-m=64,-o,modern,-v",
-				"--run-as-user", "1001",
-				"--make=false",
-				"--manifests=false",
-			)
-			ExpectWithOffset(1, err).NotTo(HaveOccurred())
-
-			By("uncomment kustomization.yaml to enable prometheus")
-			ExpectWithOffset(1, util.UncommentCode(
-				filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
-				"#- ../prometheus", "#")).To(Succeed())
-
-			By("uncomment kustomize files to ensure that pods are restricted")
-			uncommentPodStandards(kbc)
-
+			GenerateDeployImageWithOptions(kbc)
 			Run(kbc)
 		})
 
 		It("should generate a runnable project with deploy-image/v1-alpha without options ", func() {
-			var err error
-
-			By("initializing a project with go/v4")
-			err = kbc.Init(
-				"--plugins", "go/v4",
-				"--project-version", "3",
-				"--domain", kbc.Domain,
-			)
-			ExpectWithOffset(1, err).NotTo(HaveOccurred())
-
-			By("creating API definition with deploy-image/v1-alpha plugin")
-			err = kbc.CreateAPI(
-				"--group", kbc.Group,
-				"--version", kbc.Version,
-				"--kind", kbc.Kind,
-				"--plugins", "deploy-image/v1-alpha",
-				"--image", "busybox:1.36.1",
-				"--make=false",
-				"--manifests=false",
-			)
-			ExpectWithOffset(1, err).NotTo(HaveOccurred())
-
-			By("uncomment kustomization.yaml to enable prometheus")
-			ExpectWithOffset(1, util.UncommentCode(
-				filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
-				"#- ../prometheus", "#")).To(Succeed())
-
-			By("uncomment kustomize files to ensure that pods are restricted")
-			uncommentPodStandards(kbc)
-
+			GenerateDeployImage(kbc)
 			Run(kbc)
 		})
 	})
@@ -258,7 +176,7 @@ func Run(kbc *utils.TestContext) {
 	}
 	Eventually(getStatus, time.Minute, time.Second).Should(Succeed())
 
-	// Testing the finalizer
+	By("validating the finalizer")
 	EventuallyWithOffset(1, func() error {
 		_, err = kbc.Kubectl.Delete(true, "-f", sampleFilePath)
 		return err
@@ -274,20 +192,4 @@ func Run(kbc *utils.TestContext) {
 		}
 		return nil
 	}, time.Minute, time.Second).Should(Succeed())
-}
-
-func uncommentPodStandards(kbc *utils.TestContext) {
-	configManager := filepath.Join(kbc.Dir, "config", "manager", "manager.yaml")
-
-	//nolint:lll
-	if err := util.ReplaceInFile(configManager, `# TODO(user): For common cases that do not require escalating privileges
-        # it is recommended to ensure that all your Pods/Containers are restrictive.
-        # More info: https://kubernetes.io/docs/concepts/security/pod-security-standards/#restricted
-        # Please uncomment the following code if your project does NOT have to work on old Kubernetes
-        # versions < 1.19 or on vendors versions which do NOT support this field by default (i.e. Openshift < 4.11 ).
-        # seccompProfile:
-        #   type: RuntimeDefault`, `seccompProfile:
-          type: RuntimeDefault`); err == nil {
-		ExpectWithOffset(1, err).NotTo(HaveOccurred())
-	}
 }

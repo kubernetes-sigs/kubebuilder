@@ -1,7 +1,7 @@
 **Note:** Impatient readers may head straight to [Quick Start](quick-start.md).
 
 **Using previous version of Kubebuilder v1 or v2?**
-**Check the legacy documentation for [v1](https://book-v1.book.kubebuilder.io), [v2](https://book-v2.book.kubebuilder.io) or [v3](https://book-v2.book.kubebuilder.io)**
+**Check the legacy documentation for [v1](https://book-v1.book.kubebuilder.io), [v2](https://book-v2.book.kubebuilder.io) or [v3](https://book-v3.book.kubebuilder.io)**
 
 ## Who is this for
 

@@ -53,7 +53,7 @@ $ git clone git@github.com:<user>/kubebuilder.git $GOPATH/src/sigs.k8s.io/kubebu
 
 - e2e tests use [`kind`][kind] and [`setup-envtest`][setup-envtest]. If you want to bring your own binaries, place them in `$(go env GOPATH)/bin`.
 
-**IMPORTANT:** The `make generate` is very helpful. By using it, you can check if good part of the commands still working successfully after the changes. Also, note that its usage is a pre-requirement to submit a PR.
+**IMPORTANT:** The `make generate` is very helpful. By using it, you can check if good part of the commands still working successfully after the changes. Also, note that its usage is a prerequisite to submit a PR.
 
 Following the targets that can be used to test your changes locally.
 
@@ -67,7 +67,27 @@ Following the targets that can be used to test your changes locally.
 | make check-testdata | Checks if the testdata dir is updated with the latest changes | yes                  |
 | make test-e2e-local | Runs the CI e2e tests locally                                 | no                   |
 
-**NOTE** To use the `make lint` is required to install `golangci-lint` locally. More info: https://github.com/golangci/golangci-lint#install
+**NOTE** `make lint` requires a local installation of `golangci-lint`. More info: https://github.com/golangci/golangci-lint#install
+
+### Running e2e tests locally
+
+See that you can run `test-e2e-local` to setup Kind and run e2e tests locally.
+Another option is by manually starting up Kind and configuring it and then,
+you can for example via your IDEA debug the e2e tests.
+
+To manually setup run:
+
+```shell
+# To generate an Kubebuilder local binary with your changes
+make install
+# To create the cluster and configure a CNI which supports NetworkPolicy
+kind create cluster --config ./test/e2e/kind-config.yaml
+kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
+```
+
+Now, you can for example, run in debug mode the `test/e2e/v4/e2e_suite_test.go`:
+
+![example](https://github.com/kubernetes-sigs/kubebuilder/assets/7708031/277d26d5-c94d-41f0-8f02-1381458ef750)
 
 ### Test Plugin
 

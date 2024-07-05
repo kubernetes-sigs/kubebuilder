@@ -35,7 +35,7 @@ var alphaCommands = []*cobra.Command{
 
 func newAlphaCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		//TODO: If we need to create alpha commands please add a new file for each command
+		// TODO: If we need to create alpha commands please add a new file for each command
 	}
 	return cmd
 }

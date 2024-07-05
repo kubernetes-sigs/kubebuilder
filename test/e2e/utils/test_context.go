@@ -166,23 +166,6 @@ func (t *TestContext) UninstallPrometheusOperManager() {
 	}
 }
 
-// CleanupManifests is a helper func to run kustomize build and pipe the output to kubectl delete -f -
-func (t *TestContext) CleanupManifests(dir string) {
-	kustomizePath := filepath.Join(t.Dir, "bin", "kustomize")
-	if _, err := os.Stat(kustomizePath); err != nil {
-		// Just fail below with an error about kustomize not being installed globally.
-		kustomizePath = "kustomize"
-	}
-	cmd := exec.Command(kustomizePath, "build", dir)
-	output, err := t.Run(cmd)
-	if err != nil {
-		warnError(err)
-	}
-	if _, err := t.Kubectl.WithInput(string(output)).Command("delete", "-f", "-"); err != nil {
-		warnError(err)
-	}
-}
-
 // Init is for running `kubebuilder init`
 func (t *TestContext) Init(initOptions ...string) error {
 	initOptions = append([]string{"init"}, initOptions...)
@@ -270,11 +253,18 @@ func (t *TestContext) CreateManagerNamespace() error {
 	return err
 }
 
-// LabelAllNamespacesToWarnAboutRestricted will label all namespaces so that we can verify
+// LabelNamespacesToWarnAboutRestricted will label all namespaces so that we can verify
 // if a warning with `Warning: would violate PodSecurity` will be raised when the manifests are applied
-func (t *TestContext) LabelAllNamespacesToWarnAboutRestricted() error {
-	_, err := t.Kubectl.Command("label", "--overwrite", "ns", "--all",
+func (t *TestContext) LabelNamespacesToWarnAboutRestricted() error {
+	_, err := t.Kubectl.Command("label", "--overwrite", "ns", t.Kubectl.Namespace,
 		"pod-security.kubernetes.io/warn=restricted")
+	return err
+}
+
+// RemoveNamespaceLabelToWarnAboutRestricted will remove the `pod-security.kubernetes.io/warn` label
+// from the specified namespace
+func (t *TestContext) RemoveNamespaceLabelToWarnAboutRestricted() error {
+	_, err := t.Kubectl.Command("label", "ns", t.Kubectl.Namespace, "pod-security.kubernetes.io/warn-")
 	return err
 }
 

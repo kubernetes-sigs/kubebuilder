@@ -39,8 +39,47 @@ var _ = Describe("Marker", func() {
 	Context("String", func() {
 		DescribeTable("should return the right string representation",
 			func(marker Marker, str string) { Expect(marker.String()).To(Equal(str)) },
-			Entry("for go files", Marker{comment: "//", value: "test"}, "// +kubebuilder:scaffold:test"),
-			Entry("for yaml files", Marker{comment: "#", value: "test"}, "# +kubebuilder:scaffold:test"),
+			Entry("for go files", Marker{prefix: kbPrefix, comment: "//", value: "test"}, "// +kubebuilder:scaffold:test"),
+			Entry("for yaml files", Marker{prefix: kbPrefix, comment: "#", value: "test"}, "# +kubebuilder:scaffold:test"),
+		)
+	})
+})
+
+var _ = Describe("NewMarkerFor", func() {
+	Context("String", func() {
+		DescribeTable("should return the right string representation",
+			func(marker Marker, str string) { Expect(marker.String()).To(Equal(str)) },
+			Entry("for yaml files", NewMarkerFor("test.yaml", "test"), "# +kubebuilder:scaffold:test"),
+		)
+	})
+})
+
+var _ = Describe("NewMarkerWithPrefixFor", func() {
+	Context("String", func() {
+		DescribeTable("should return the right string representation",
+			func(marker Marker, str string) { Expect(marker.String()).To(Equal(str)) },
+
+			Entry("for yaml files",
+				NewMarkerWithPrefixFor("custom:scaffold", "test.yaml", "test"), "# +custom:scaffold:test"),
+			Entry("for yaml files",
+				NewMarkerWithPrefixFor("+custom:scaffold", "test.yaml", "test"), "# +custom:scaffold:test"),
+			Entry("for yaml files",
+				NewMarkerWithPrefixFor("custom:scaffold:", "test.yaml", "test"), "# +custom:scaffold:test"),
+			Entry("for yaml files",
+				NewMarkerWithPrefixFor("+custom:scaffold:", "test.yaml", "test"), "# +custom:scaffold:test"),
+			Entry("for yaml files",
+				NewMarkerWithPrefixFor(" +custom:scaffold: ", "test.yaml", "test"), "# +custom:scaffold:test"),
+
+			Entry("for go files",
+				NewMarkerWithPrefixFor("custom:scaffold", "test.go", "test"), "// +custom:scaffold:test"),
+			Entry("for go files",
+				NewMarkerWithPrefixFor("+custom:scaffold", "test.go", "test"), "// +custom:scaffold:test"),
+			Entry("for go files",
+				NewMarkerWithPrefixFor("custom:scaffold:", "test.go", "test"), "// +custom:scaffold:test"),
+			Entry("for go files",
+				NewMarkerWithPrefixFor("+custom:scaffold:", "test.go", "test"), "// +custom:scaffold:test"),
+			Entry("for go files",
+				NewMarkerWithPrefixFor(" +custom:scaffold: ", "test.go", "test"), "// +custom:scaffold:test"),
 		)
 	})
 })
