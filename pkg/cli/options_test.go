@@ -717,4 +717,27 @@ var _ = Describe("CLI options", func() {
 			Expect(c.completionCommand).To(BeTrue())
 		})
 	})
+
+	Context("WithFilesystem", func() {
+		When("providing a valid filesystem", func() {
+			It("should use the provided filesystem", func() {
+				fs := machinery.Filesystem{
+					FS: afero.NewMemMapFs(),
+				}
+				c, err = newCLI(WithFilesystem(fs))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(c).NotTo(BeNil())
+				Expect(c.fs).To(Equal(fs))
+			})
+		})
+
+		When("providing a invalid filesystem", func() {
+			It("should return an error", func() {
+				fs := machinery.Filesystem{}
+				c, err = newCLI(WithFilesystem(fs))
+				Expect(err).To(HaveOccurred())
+				Expect(c).To(BeNil())
+			})
+		})
+	})
 })

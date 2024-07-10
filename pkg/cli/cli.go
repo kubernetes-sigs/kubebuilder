@@ -462,3 +462,8 @@ func (c CLI) metadata() plugin.CLIMetadata {
 func (c CLI) Run() error {
 	return c.cmd.Execute()
 }
+
+// Command returns the underlying root command.
+func (c CLI) Command() *cobra.Command {
+	return c.cmd
+}

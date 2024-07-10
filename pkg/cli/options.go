@@ -31,6 +31,7 @@ import (
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
+	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/external"
 )
@@ -148,6 +149,18 @@ func WithExtraAlphaCommands(cmds ...*cobra.Command) Option {
 func WithCompletion() Option {
 	return func(c *CLI) error {
 		c.completionCommand = true
+		return nil
+	}
+}
+
+// WithFilesystem is an Option that allows to set the filesystem used in the CLI.
+func WithFilesystem(fs machinery.Filesystem) Option {
+	return func(c *CLI) error {
+		if fs.FS == nil {
+			return errors.New("invalid filesystem")
+		}
+
+		c.fs = fs
 		return nil
 	}
 }
