@@ -2,8 +2,6 @@ module sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup
 
 go 1.22.0
 
-toolchain go1.22.3
-
 require (
 	github.com/onsi/ginkgo/v2 v2.17.1
 	github.com/onsi/gomega v1.32.0
