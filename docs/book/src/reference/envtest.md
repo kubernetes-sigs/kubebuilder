@@ -318,9 +318,17 @@ testEnv = &envtest.Environment{
 }
 ```
 
+<aside class="note">
+<h1>Setup ENV TEST tool</h1>
+To know more about the tooling used to configure ENVTEST which is used in the setup-envtest target in the Makefile
+of the projects build with Kubebuilder see the [README][readme]
+of its tooling.
+</aside>
+
 [metrics]: https://book.kubebuilder.io/reference/metrics.html
 [envtest]: https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/envtest
 [setup-envtest]: https://pkg.go.dev/sigs.k8s.io/controller-runtime/tools/setup-envtest
 [cert-manager]: https://book.kubebuilder.io/cronjob-tutorial/cert-manager.html
 [sdk-e2e-sample-example]: https://github.com/operator-framework/operator-sdk/tree/master/testdata/go/v4/memcached-operator/test/e2e
 [sdk]: https://github.com/operator-framework/operator-sdk
+[readme]: https://github.com/kubernetes-sigs/controller-runtime/blob/main/tools/setup-envtest/README.md
