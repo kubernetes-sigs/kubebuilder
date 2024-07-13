@@ -130,7 +130,7 @@ If there are any manual updates in `main.go` in v3, we need to port the changes 
 
 If there are additional manifests added under config directory, port them as well. Please, be aware that
 the new version go/v4 uses Kustomize v5x and no longer Kustomize v4. Therefore, if added customized
-implementations in the config you need to ensure that them can work with Kustomize v5 and/if not
+implementations in the config you need to ensure that they can work with Kustomize v5 and if not
 update/upgrade any breaking change that you might face.
 
 In v4, installation of Kustomize has been changed from bash script to `go get`. Change the `kustomize` dependency in Makefile to
