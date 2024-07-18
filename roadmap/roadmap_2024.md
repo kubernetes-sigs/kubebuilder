@@ -1,23 +1,85 @@
 # Kubebuilder Project Roadmap 2024
 
-### **(Major Release for Kubebuilder CLI 4.x)** Removing Deprecated Plugins for Enhanced Maintainability and User Experience
+### Updating Scaffolding to Align with the Latest changes of controller-runtime
 
-**Status:** :construction: Work in Progress
-  - **Remove Deprecations**:https://github.com/kubernetes-sigs/kubebuilder/issues/3603
-  - **Bump Module**: https://github.com/kubernetes-sigs/kubebuilder/pull/3924
+**Status:** :raised_hands: Seeking help from the contributors
 
-**Objective:** To remove all deprecated plugins from Kubebuilder to improve project maintainability and
-enhance user experience. This initiative also includes updating the project documentation to provide clear
-and concise information, eliminating any confusion for users. **More Info:** [GitHub Discussion #3622](https://github.com/kubernetes-sigs/kubebuilder/discussions/3622)
+**Objective:** Update Kubebuilder's controller scaffolding to align with the latest changes
+in controller-runtime, focusing on compatibility and addressing recent updates and deprecations
+mainly related to webhooks.
 
-**Motivation:** By focusing on removing deprecated plugins—specifically, versions or kinds that can no
-longer be supported—we aim to streamline the development process and ensure a higher quality user experience.
-Clear and updated documentation will further assist in making development workflows more efficient and less prone to errors.
+**Context:** Kubebuilder's plugin system is designed for stability, yet it depends on controller-runtime,
+which is evolving rapidly with versions still under 1.0.0. Notable changes and deprecations,
+especially around webhooks, necessitate Kubebuilder's alignment with the latest practices
+and functionalities of controller-runtime. We need update the Kubebuilder scaffolding,
+samples, and documentation.
+
+**References:**
+- [Issue - Deprecations in Controller-Runtime and Impact on Webhooks](https://github.com/kubernetes-sigs/kubebuilder/issues/3721) - An issue detailing the deprecations in controller-runtime that affect Kubebuilder's approach to webhooks.
+- [PR - Update to Align with Latest Controller-Runtime Webhook Interface](https://github.com/kubernetes-sigs/kubebuilder/pull/3399) - A pull request aimed at updating Kubebuilder to match controller-runtime's latest webhook interface.
+- [PR - Enhancements to Controller Scaffolding for Upcoming Controller-Runtime Changes](https://github.com/kubernetes-sigs/kubebuilder/pull/3723) - A pull request proposing enhancements to Kubebuilder's controller scaffolding in anticipation of upcoming changes in controller-runtime.
+  
+
+#### (New Optional Plugin) Helm Chart Packaging
+
+**Status:** :raised_hands: Proposal in Progress; Seeking Contributions
+
+**Objective:** We aim to introduce a new plugin for Kubebuilder that packages projects as Helm charts,
+facilitating easier distribution and integration of solutions within the Kubernetes ecosystem. For details on this proposal and how to contribute,
+see [GitHub Pull Request #3632](https://github.com/kubernetes-sigs/kubebuilder/pull/3632).
+
+**Motivation:** The growth of the Kubernetes ecosystem underscores the need for flexible and
+accessible distribution methods. A Helm chart packaging plugin would simplify the distribution of the solutions
+and allow easily integrations with common applications used by administrators.
+
+
+
+---
+### Transition from Google Cloud Platform (GCP) to build and promote binaries and images
+
+**Status:**
+- **Kubebuilder CLI**: :white_check_mark: Complete. It has been building using go releaser. [More info](./../build/.goreleaser.yml)
+- **kube-rbac-proxy Images:**  :white_check_mark: Complete. ([More info](https://github.com/kubernetes-sigs/kubebuilder/discussions/3907))
+- **EnvTest binaries:** :white_check_mark: Complete Controller-Runtime maintainers are working in a solution to build them out and take the ownership over this one. More info:
+  - https://kubernetes.slack.com/archives/C02MRBMN00Z/p1712457941924299
+  - https://kubernetes.slack.com/archives/CCK68P2Q2/p1713174342482079
+  - Also, see the PR: https://github.com/kubernetes-sigs/controller-runtime/pull/2811
+  - It will be available from the next release v0.19. 
+- **PR Check image:**  🙌 Seeking Contributions to do the required changes - See that the images used to check the PR titles are also build and promoted by the Kubebuilder project in GCP but are from the project: https://github.com/kubernetes-sigs/kubebuilder-release-tools. The plan in this case is to use the e2e shared infrastructure. [More info](https://github.com/kubernetes/k8s.io/issues/2647#issuecomment-2111182864)
+
+**Objective:** Shift Kubernetes (k8s) project infrastructure from GCP to shared infrastructures.
+Furthermore, move away from the registry `k8s.gcr.io` to `registry.k8s.io`.
+
+**Motivation:** The initiative to move away from GCP aligns with the broader k8s project's
+goal of utilizing shared infrastructures. This transition is crucial for ensure the availability
+of the artifacts in the long run and align complience with other projects under the kubernetes-sig org.
+[Issue #2647](https://github.com/kubernetes/k8s.io/issues/2647) provides more details on the move.
+
+**Context:** Currently, Google Cloud is used only for:
+
+- **Rebuild and provide the images for kube-rbac-proxy:**
+
+A particular challenge has been the necessity to rebuild images for the
+[kube-rbac-proxy](https://github.com/brancz/kube-rbac-proxy), which is in the process of being
+donated to kubernetes-sig. This transition was expected to eliminate the need for
+continuous re-tagging and rebuilding of its images to ensure their availability to users.
+The configuration for building these images is outlined
+[here](https://github.com/kubernetes-sigs/kubebuilder/blob/master/RELEASE.md#to-build-the-kube-rbac-proxy-images).
+
+- **Build and Promote EnvTest binaries**:
+
+The development of Kubebuilder Tools and EnvTest binaries,
+essential for controller tests, represents another area reliant on k8s binaries
+traditionally built within GCP environments. Our documentation on building these artifacts is
+available [here](https://github.com/kubernetes-sigs/kubebuilder/blob/master/RELEASE.md#to-build-the-kubebuilder-tools-artifacts-required-to-use-env-test).
+
+**We encourage the Kubebuilder community to participate in this discussion, offering feedback and contributing ideas
+to refine these proposals. Your involvement is crucial in shaping the future of secure and efficient project scaffolding in Kubebuilder.**
 
 ---
 ### Proposal Pending: Seeking Feedbacks for kube-rbac-proxy's Role in Default Scaffold
 
-**Status:** :white_check_mark: Complete but Seek Contributors and help with the next steps, see: https://github.com/kubernetes-sigs/kubebuilder/issues/3871
+**Status:** :white_check_mark: Complete but :raised_hands: Seek Contributors and help with the next steps, see: https://github.com/kubernetes-sigs/kubebuilder/issues/3871
 
 - **Resolution**: The usage of kube-rbac-proxy has been discontinued from the default scaffold. We plan to provide other helpers to protect the metrics endpoint. Furthermore, once the project is accepted under kubernetes-sig or kubernetes-auth, we may contribute to its maintainer in developing an external plugin for use with projects built with Kubebuilder.
    - **Proposal**: [https://github.com/kubernetes-sigs/kubebuilder/blob/master/designs/discontinue_usage_of_kube_rbac_proxy.md](https://github.com/kubernetes-sigs/kubebuilder/blob/master/designs/discontinue_usage_of_kube_rbac_proxy.md)
@@ -63,75 +125,18 @@ kubectl apply -f https://raw.githubusercontent.com/<org>/my-project/<tag or bran
 ```
 This enhancement streamlines the process of getting Kubebuilder projects running on clusters, providing a seamless deployment experience.
 
-#### (New Optional Plugin) Helm Chart Packaging
-
-**Status:** :raised_hands: Proposal in Progress; Seeking Contributions
-
-**Objective:** We aim to introduce a new plugin for Kubebuilder that packages projects as Helm charts,
-facilitating easier distribution and integration of solutions within the Kubernetes ecosystem. For details on this proposal and how to contribute,
-see [GitHub Pull Request #3632](https://github.com/kubernetes-sigs/kubebuilder/pull/3632).
-
-**Motivation:** The growth of the Kubernetes ecosystem underscores the need for flexible and
-accessible distribution methods. A Helm chart packaging plugin would simplify the distribution of the solutions
-and allow easily integrations with common applications used by administrators.
-
 ---
-### Updating Scaffolding to Align with the Latest changes of controller-runtime
+### **(Major Release for Kubebuilder CLI 4.x)** Removing Deprecated Plugins for Enhanced Maintainability and User Experience
 
-**Status:** :raised_hands: Seeking help from the contributors
+**Status:** : ✅ Complete - Release was done
+  - **Remove Deprecations**:https://github.com/kubernetes-sigs/kubebuilder/issues/3603
+  - **Bump Module**: https://github.com/kubernetes-sigs/kubebuilder/pull/3924
 
-**Objective:** Update Kubebuilder's controller scaffolding to align with the latest changes
-in controller-runtime, focusing on compatibility and addressing recent updates and deprecations
-mainly related to webhooks.
+**Objective:** To remove all deprecated plugins from Kubebuilder to improve project maintainability and
+enhance user experience. This initiative also includes updating the project documentation to provide clear
+and concise information, eliminating any confusion for users. **More Info:** [GitHub Discussion #3622](https://github.com/kubernetes-sigs/kubebuilder/discussions/3622)
 
-**Context:** Kubebuilder's plugin system is designed for stability, yet it depends on controller-runtime,
-which is evolving rapidly with versions still under 1.0.0. Notable changes and deprecations,
-especially around webhooks, necessitate Kubebuilder's alignment with the latest practices
-and functionalities of controller-runtime. We need update the Kubebuilder scaffolding,
-samples, and documentation.
+**Motivation:** By focusing on removing deprecated plugins—specifically, versions or kinds that can no
+longer be supported—we aim to streamline the development process and ensure a higher quality user experience.
+Clear and updated documentation will further assist in making development workflows more efficient and less prone to errors.
 
-**References:**
-- [Issue - Deprecations in Controller-Runtime and Impact on Webhooks](https://github.com/kubernetes-sigs/kubebuilder/issues/3721) - An issue detailing the deprecations in controller-runtime that affect Kubebuilder's approach to webhooks.
-- [PR - Update to Align with Latest Controller-Runtime Webhook Interface](https://github.com/kubernetes-sigs/kubebuilder/pull/3399) - A pull request aimed at updating Kubebuilder to match controller-runtime's latest webhook interface.
-- [PR - Enhancements to Controller Scaffolding for Upcoming Controller-Runtime Changes](https://github.com/kubernetes-sigs/kubebuilder/pull/3723) - A pull request proposing enhancements to Kubebuilder's controller scaffolding in anticipation of upcoming changes in controller-runtime.
-
----
-### Transition from Google Cloud Platform (GCP) to build and promote binaries and images
-
-**Status:** :construction: Seeking Feedbacks and Contributions
-- **Kubebuilder CLI**: :white_check_mark: Complete. It has been building using go releaser. [More info](./../build/.goreleaser.yml)
-- **kube-rbac-proxy Images:**  :white_check_mark: Complete. ([More info](https://github.com/kubernetes-sigs/kubebuilder/discussions/3907))
-- **EnvTest binaries:** :construction: Controller-Runtime maintainers are working in a solution to build them out and take the ownership over this one. More info:
-  - https://kubernetes.slack.com/archives/C02MRBMN00Z/p1712457941924299
-  - https://kubernetes.slack.com/archives/CCK68P2Q2/p1713174342482079
-  - Also, see the PR: https://github.com/kubernetes-sigs/controller-runtime/pull/2811
-- **PR Check image:** See that the images used to check the PR titles are also build and promoted by the Kubebuilder project in GCP but are from the project: https://github.com/kubernetes-sigs/kubebuilder-release-tools. The plan in this case is to use the e2e shared infrastructure. [More info](https://github.com/kubernetes/k8s.io/issues/2647#issuecomment-2111182864)
-
-**Objective:** Shift Kubernetes (k8s) project infrastructure from GCP to shared infrastructures.
-Furthermore, move away from the registry `k8s.gcr.io` to `registry.k8s.io`.
-
-**Motivation:** The initiative to move away from GCP aligns with the broader k8s project's
-goal of utilizing shared infrastructures. This transition is crucial for ensure the availability
-of the artifacts in the long run and align complience with other projects under the kubernetes-sig org.
-[Issue #2647](https://github.com/kubernetes/k8s.io/issues/2647) provides more details on the move.
-
-**Context:** Currently, Google Cloud is used only for:
-
-- **Rebuild and provide the images for kube-rbac-proxy:**
-
-A particular challenge has been the necessity to rebuild images for the
-[kube-rbac-proxy](https://github.com/brancz/kube-rbac-proxy), which is in the process of being
-donated to kubernetes-sig. This transition was expected to eliminate the need for
-continuous re-tagging and rebuilding of its images to ensure their availability to users.
-The configuration for building these images is outlined
-[here](https://github.com/kubernetes-sigs/kubebuilder/blob/master/RELEASE.md#to-build-the-kube-rbac-proxy-images).
-
-- **Build and Promote EnvTest binaries**:
-
-The development of Kubebuilder Tools and EnvTest binaries,
-essential for controller tests, represents another area reliant on k8s binaries
-traditionally built within GCP environments. Our documentation on building these artifacts is
-available [here](https://github.com/kubernetes-sigs/kubebuilder/blob/master/RELEASE.md#to-build-the-kubebuilder-tools-artifacts-required-to-use-env-test).
-
-**We encourage the Kubebuilder community to participate in this discussion, offering feedback and contributing ideas
-to refine these proposals. Your involvement is crucial in shaping the future of secure and efficient project scaffolding in Kubebuilder.**
