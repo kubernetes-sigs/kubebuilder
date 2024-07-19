@@ -3,6 +3,9 @@ kind: Deployment
 metadata:
   name: controller-manager
   namespace: system
+  labels:
+    app.kubernetes.io/name: project-v4
+    app.kubernetes.io/managed-by: kustomize
 spec:
   template:
     spec:
