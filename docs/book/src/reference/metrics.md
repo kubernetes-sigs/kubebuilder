@@ -8,19 +8,12 @@ publishes [a collection of performance metrics](/reference/metrics-reference.md)
 
 **Images provided under `gcr.io/kubebuilder/` will be unavailable from March 18, 2025.**
 
-**Projects initialized with Kubebuilder versions `v3.14` or lower** utilize [kube-rbac-proxy](https://github.com/brancz/kube-rbac-proxy) to protect the metrics endpoint. Therefore, you might want to continue using kube-rbac-proxy by simply replacing the image or changing how the metrics endpoint is protected in your project.
+- **Projects initialized with Kubebuilder versions `v3.14` or lower** utilize [kube-rbac-proxy](https://github.com/brancz/kube-rbac-proxy) to protect the metrics endpoint. Therefore, you might want to continue using kube-rbac-proxy by simply replacing the image or changing how the metrics endpoint is protected in your project.
 
-**However, projects initialized with Kubebuilder versions `v4.1.0` or higher** have a similar protection using authn/authz enabled by default via Controller-Runtime's feature [WithAuthenticationAndAuthorization](https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.18.4/pkg/metrics/filters#WithAuthenticationAndAuthorization).
+- **However, projects initialized with Kubebuilder versions `v4.1.0` or higher** have a similar protection using authn/authz enabled by default via Controller-Runtime's feature [WithAuthenticationAndAuthorization](https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.18.4/pkg/metrics/filters#WithAuthenticationAndAuthorization).
 In this case, you might want to upgrade your project or simply ensure that you have applied the same code changes to it.
 
-- Check the usage in the file `config/default/manager_auth_proxy_patch.yaml` where the [kube-rbac-proxy](https://github.com/brancz/kube-rbac-proxy) container is patched. ([example](https://github.com/kubernetes-sigs/kubebuilder/blob/94a5ab8e52cf416a11428b15ef0f40e4aabbc6ab/testdata/project-v4/config/default/manager_auth_proxy_patch.yaml#L11-L23))
-- See the file `/config/default/kustomization.yaml` where the [kube-rbac-proxy](https://github.com/brancz/kube-rbac-proxy) was patched by default previously. ([example](https://github.com/kubernetes-sigs/kubebuilder/blob/94a5ab8e52cf416a11428b15ef0f40e4aabbc6ab/testdata/project-v4/config/default/kustomization.yaml#L29-L33))
-
 > Please ensure that you update your configurations accordingly to avoid any disruptions.
-
-### If you are using OR wish to continue using [kube-rbac-proxy](https://github.com/brancz/kube-rbac-proxy):
-
-In this case, you must replace the image `gcr.io/kubebuilder/kube-rbac-proxy` for the image provided by the kube-rbac-proxy maintainers ([quay.io/brancz/kube-rbac-proxy](https://quay.io/repository/brancz/kube-rbac-proxy)), which is **not support or promoted by Kubebuilder**, or from any other registry/source that please you.
 
 ### ❓ Why is this happening?
 
@@ -33,13 +26,9 @@ Additionally, ongoing changes and the phase-out of the previous GCP infrastructu
 ### How the metrics endpoint can be protected ?
 
 - **(Protection enabled by default from release `v4.1.0`)** By using Controller-Runtime's feature [WithAuthenticationAndAuthorization](https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.18.4/pkg/metrics/filters#WithAuthenticationAndAuthorization) which can handle `authn/authz` similar what was provided via `kube-rbac-proxy`.
-- By still using [kube-rbac-proxy](https://github.com/brancz/kube-rbac-proxy) and the image provided by the project ([quay.io/brancz/kube-rbac-proxy](https://quay.io/repository/brancz/kube-rbac-proxy)) or from any other source - _(**Not support or promoted by Kubebuilder**)_
 - By using NetworkPolicies. ([example](https://github.com/prometheus-operator/kube-prometheus/discussions/1907#discussioncomment-3896712))
 - By integrating cert-manager with your metrics service you can secure the endpoint via TLS encryption
-
-Further information can be found bellow in this document.
-
-> Note that we plan use the above options to protect the metrics endpoint in the Kubebuilder scaffold in the future. For further information, please check the [proposal](https://github.com/kubernetes-sigs/kubebuilder/pull/2345).
+- **(Not support or promoted by Kubebuilder)** By still using [kube-rbac-proxy](https://github.com/brancz/kube-rbac-proxy) and the image provided by the project ([quay.io/brancz/kube-rbac-proxy](https://quay.io/repository/brancz/kube-rbac-proxy)) or from any other source
 
 </aside>
 
