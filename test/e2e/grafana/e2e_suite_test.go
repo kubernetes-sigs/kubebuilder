@@ -27,6 +27,6 @@ import (
 // Run e2e tests using the Ginkgo runner.
 func TestE2E(t *testing.T) {
 	RegisterFailHandler(Fail)
-	fmt.Fprintf(GinkgoWriter, "Starting grafana plugin kubebuilder suite\n")
+	_, _ = fmt.Fprintf(GinkgoWriter, "Starting grafana plugin kubebuilder suite\n")
 	RunSpecs(t, "Kubebuilder grafana plugin e2e suite")
 }
