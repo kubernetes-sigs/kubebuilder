@@ -98,13 +98,13 @@ func NewTestContext(binaryName string, env ...string) (*TestContext, error) {
 }
 
 func warnError(err error) {
-	fmt.Fprintf(GinkgoWriter, "warning: %v\n", err)
+	_, _ = fmt.Fprintf(GinkgoWriter, "warning: %v\n", err)
 }
 
 // Prepare prepares the test environment.
 func (t *TestContext) Prepare() error {
 	// Remove tools used by projects in the environment so the correct version is downloaded for each test.
-	fmt.Fprintln(GinkgoWriter, "cleaning up tools")
+	_, _ = fmt.Fprintln(GinkgoWriter, "cleaning up tools")
 	for _, toolName := range []string{"controller-gen", "kustomize"} {
 		if toolPath, err := exec.LookPath(toolName); err == nil {
 			if err := os.RemoveAll(toolPath); err != nil {
@@ -113,7 +113,7 @@ func (t *TestContext) Prepare() error {
 		}
 	}
 
-	fmt.Fprintf(GinkgoWriter, "preparing testing directory: %s\n", t.Dir)
+	_, _ = fmt.Fprintf(GinkgoWriter, "preparing testing directory: %s\n", t.Dir)
 	return os.MkdirAll(t.Dir, 0o755)
 }
 
@@ -306,7 +306,7 @@ func (cc *CmdContext) Run(cmd *exec.Cmd) ([]byte, error) {
 	cmd.Env = append(os.Environ(), cc.Env...)
 	cmd.Stdin = cc.Stdin
 	command := strings.Join(cmd.Args, " ")
-	fmt.Fprintf(GinkgoWriter, "running: %s\n", command)
+	_, _ = fmt.Fprintf(GinkgoWriter, "running: %s\n", command)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return output, fmt.Errorf("%s failed with error: (%v) %s", command, err, string(output))

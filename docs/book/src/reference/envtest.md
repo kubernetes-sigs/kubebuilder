@@ -248,7 +248,7 @@ const (
 )
 
 func warnError(err error) {
-	fmt.Fprintf(GinkgoWriter, "warning: %v\n", err)
+	_, _ = fmt.Fprintf(GinkgoWriter, "warning: %v\n", err)
 }
 
 // InstallPrometheusOperator installs the prometheus Operator to be used to export the enabled metrics.
