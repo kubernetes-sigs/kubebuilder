@@ -2,7 +2,6 @@
 
 This section dives into the two crucial concepts of Custom Resource Definitions (CRDs) and Operators, specifically their respective scope and how both impact resource management in your Kubernetes environment.
 
-# Overview
 
 In the world of Kubernetes solutions, scope defines the reach of an projects's management capabilities. This essentially means deciding which resources across your Kubernetes cluster the manager can watch and manage. Here's a breakdown of the two main options:
 
