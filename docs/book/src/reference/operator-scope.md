@@ -1,4 +1,4 @@
-# Operator Scope
+# Manager Scope
 
 
 
