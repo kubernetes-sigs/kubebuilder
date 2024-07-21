@@ -1,6 +1,5 @@
 # CRD Scope
 
-This section dives into the Custom Resource Definitions (CRDs), specifically focusing on their scope and how it impacts their behavior. While we'll be exploring CRD scope in detail, for managing an operator's scope (like which namespaces it monitors), refer to the dedicated operator scope documentation.
 
 ## Overview
 
