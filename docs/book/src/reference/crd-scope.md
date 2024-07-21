@@ -1,7 +1,6 @@
 # CRD Scope
 
 
-## Overview
 
 CRDs come with a built-in scope field that plays a crucial role in determining the visibility and accessibility of the resulting Custom Resources (CRs). This field essentially dictates whether your CRs are cluster-wide or restricted to specific namespaces.
 
@@ -13,7 +12,7 @@ CRDs come with a built-in scope field that plays a crucial role in determining t
 
 ## Setting the Scope
 
-CRD manifests are usually generated using the `operator-sdk create api` command. These manifests reside in the `config/crd/bases` directory. Within a CRD's manifest, the `spec.scope` field controls its API scope. This field accepts two valid values:
+CRD manifests are usually generated using the `kubebuilder create api` command. These manifests reside in the `config/crd/bases` directory. Within a CRD's manifest, the `spec.scope` field controls its API scope. This field accepts two valid values:
 
 - **Cluster**: This makes the CR accessible and manageable from all namespaces within the cluster.
 
@@ -27,7 +26,7 @@ For projects employing the Operator SDK in Go, the `operator-sdk create api` com
 When creating a new API, the `--namespaced` flag controls whether the resulting CRD will be cluster or namespace scoped. By default, `--namespaced` is set to true which sets the scope to Namespaced. An example command to create a cluster-scoped API would be:
 
 ```shell
-$ operator-sdk create api --group cache --version v1alpha1 --kind Memcached --resource=true --controller=true --namespaced=false
+$ kubebuilder create api --group cache --version v1alpha1 --kind Memcached --resource=true --controller=true --namespaced=false
 ```
 
 ## Set Scope Marker in types.go
@@ -55,23 +54,20 @@ To set the scope to namespaced, the marker would be set to `//+kubebuilder:resou
 The scope can be manually set directly in the CRD’s Kind YAML file, normally located in `config/crd/bases/<group>.<domain>_<kind>.yaml`. An example YAML file for a namespace-scoped CRD is shown below:
 
 ```yaml
-apiVersion: apiextensions.k8s.io/v1beta1
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.2.5
-  creationTimestamp: null
-  name: memcacheds.cache.example.com
+    controller-gen.kubebuilder.io/version: v0.14.0
+  name: firstmates.crew.testproject.org
 spec:
-  group: cache.example.com
+  group: crew.testproject.org
   names:
-    kind: Memcached
-    listKind: MemcachedList
-    plural: memcacheds
-    singular: memcached
+    kind: FirstMate
+    listKind: FirstMateList
+    plural: firstmates
+    singular: firstmate
   scope: Namespaced
-  subresources:
-    status: {}
 ... 
 ```
 
