@@ -4,7 +4,7 @@ This section dives into the two crucial concepts of Custom Resource Definitions 
 
 # Overview
 
-In the world of Kubernetes operators, scope defines the reach of an operator's management capabilities. This essentially means deciding which resources across your Kubernetes cluster the operator can watch and manage. Here's a breakdown of the two main options:
+In the world of Kubernetes solutions, scope defines the reach of an projects's management capabilities. This essentially means deciding which resources across your Kubernetes cluster the manager can watch and manage. Here's a breakdown of the two main options:
 
 - **Namespace-scoped**: Only watches and manages resources within a single namespace.
 - **Cluster-scoped**: Watches and manages resources across the entire cluster.
