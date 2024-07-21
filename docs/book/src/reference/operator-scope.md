@@ -18,7 +18,7 @@ In the world of Kubernetes operators, scope defines the reach of an operator's m
 
 ## Defaults and Considerations:
 
-- The operator-sdk init command by default creates a cluster-scoped operator.
+- The kubebuilder init command by default creates a cluster-scoped project.
 - This document outlines steps to convert a cluster-scoped operator to a namespace-scoped one, but emphasizes that a cluster-scoped approach might be more suitable in certain situations.
 - Important Note: When creating a Manager instance in the main.go file, the watched and cached namespaces are set using Manager Options. Remember, only clients provided by cluster-scoped Managers can manage cluster-scoped CRDs.
 
