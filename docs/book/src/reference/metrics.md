@@ -86,10 +86,9 @@ Therefore, you will find the following configuration:
 - In the `cmd/main.go`:
 
 ```go
-Metrics: metricsserver.Options{
-   ...
-   FilterProvider: filters.WithAuthenticationAndAuthorization,
-   ...
+if secureMetrics {
+  ...
+  metricsServerOptions.FilterProvider = filters.WithAuthenticationAndAuthorization
 }
 ```
 
