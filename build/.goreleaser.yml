@@ -16,6 +16,8 @@
 # Make sure to check the documentation at http://goreleaser.com
 
 # Global environment variables that are needed for hooks and builds.
+version: 2
+
 env:
   - GO111MODULE=on
 
@@ -45,7 +47,7 @@ builds:
       - darwin_amd64
       - darwin_arm64
     env:
-      - KUBERNETES_VERSION=1.27.1
+      - KUBERNETES_VERSION=1.30.0
       - CGO_ENABLED=0
 
 # Only binaries of the form "kubebuilder_${goos}_${goarch}" will be released.
