@@ -16,6 +16,8 @@
 # Make sure to check the documentation at http://goreleaser.com
 
 # Global environment variables that are needed for hooks and builds.
+version: 2
+
 env:
   - GO111MODULE=on
 
