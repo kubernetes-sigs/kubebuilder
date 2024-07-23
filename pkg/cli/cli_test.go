@@ -600,5 +600,14 @@ plugins:
 					fmt.Sprintf(noticeColor, fmt.Sprintf(deprecationFmt, deprecationWarning))))
 			})
 		})
+
+		When("new succeeds", func() {
+			It("should return the underlying command", func() {
+				c, err = New()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(c.Command()).NotTo(BeNil())
+				Expect(c.Command()).To(Equal(c.cmd))
+			})
+		})
 	})
 })

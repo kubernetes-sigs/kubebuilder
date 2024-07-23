@@ -53,7 +53,7 @@ import (
 // Run e2e tests using the Ginkgo runner.
 func TestE2E(t *testing.T) {
 	RegisterFailHandler(Fail)
-	fmt.Fprintf(GinkgoWriter, "Starting {{ .ProjectName }} suite\n")
+	_, _ = fmt.Fprintf(GinkgoWriter, "Starting {{ .ProjectName }} suite\n")
 	RunSpecs(t, "e2e suite")
 }
 `
