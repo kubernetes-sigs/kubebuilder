@@ -104,7 +104,7 @@ GOLANGCI_LINT = $(shell pwd)/bin/golangci-lint
 golangci-lint:
 	@[ -f $(GOLANGCI_LINT) ] || { \
 	set -e ;\
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell dirname $(GOLANGCI_LINT)) v1.57.2 ;\
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell dirname $(GOLANGCI_LINT)) v1.59.1 ;\
 	}
 
 .PHONY: apidiff
@@ -141,12 +141,6 @@ check-testdata: ## Run the script to ensure that the testdata is updated
 .PHONY: test-testdata
 test-testdata: ## Run the tests of the testdata directory
 	./test/testdata/test.sh
-
-#todo(remove the test-legacy whne the go/v2 be removed from kubebuilder)
-
-.PHONY: test-legacy
-test-legacy: ## Run the legacy tests (go/v2) of the testdata directory
-	./test/testdata/test_legacy.sh
 
 .PHONY: test-e2e-local
 test-e2e-local: ## Run the end-to-end tests locally

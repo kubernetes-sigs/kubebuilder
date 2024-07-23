@@ -27,6 +27,7 @@ var _ machinery.Template = &ManagerWebhookPatch{}
 // ManagerWebhookPatch scaffolds a file that defines the patch that enables webhooks on the manager
 type ManagerWebhookPatch struct {
 	machinery.TemplateMixin
+	machinery.ProjectNameMixin
 
 	Force bool
 }
@@ -54,6 +55,9 @@ kind: Deployment
 metadata:
   name: controller-manager
   namespace: system
+  labels:
+    app.kubernetes.io/name: {{ .ProjectName }}
+    app.kubernetes.io/managed-by: kustomize
 spec:
   template:
     spec:

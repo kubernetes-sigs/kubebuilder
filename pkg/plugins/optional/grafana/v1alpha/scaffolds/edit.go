@@ -179,7 +179,7 @@ func (s *editScaffolder) Scaffold() error {
 	if err == nil && len(configItems) > 0 {
 		templatesBuilder = append(templatesBuilder, &templates.CustomMetricsDashManifest{Items: configItems})
 	} else if err != nil {
-		fmt.Fprintf(os.Stderr, "Error on scaffolding manifest for custom metris:\n%v", err)
+		_, _ = fmt.Fprintf(os.Stderr, "Error on scaffolding manifest for custom metris:\n%v", err)
 	}
 
 	return scaffold.Execute(templatesBuilder...)

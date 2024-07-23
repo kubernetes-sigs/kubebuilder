@@ -21,7 +21,7 @@ jobs:
       - name: Run linter
         uses: golangci/golangci-lint-action@v6
         with:
-          version: v1.57
+          version: v1.59
 
   yamllint:
     runs-on: ubuntu-latest

@@ -444,7 +444,7 @@ func (c *CLI) addExtraCommands() error {
 func (c CLI) printDeprecationWarnings() {
 	for _, p := range c.resolvedPlugins {
 		if p != nil && p.(plugin.Deprecated) != nil && len(p.(plugin.Deprecated).DeprecationWarning()) > 0 {
-			fmt.Fprintf(os.Stderr, noticeColor, fmt.Sprintf(deprecationFmt, p.(plugin.Deprecated).DeprecationWarning()))
+			_, _ = fmt.Fprintf(os.Stderr, noticeColor, fmt.Sprintf(deprecationFmt, p.(plugin.Deprecated).DeprecationWarning()))
 		}
 	}
 }
@@ -461,4 +461,9 @@ func (c CLI) metadata() plugin.CLIMetadata {
 // If an error is found, command help and examples will be printed.
 func (c CLI) Run() error {
 	return c.cmd.Execute()
+}
+
+// Command returns the underlying root command.
+func (c CLI) Command() *cobra.Command {
+	return c.cmd
 }
