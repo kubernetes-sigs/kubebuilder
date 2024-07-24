@@ -69,29 +69,39 @@ var _ = Describe("kubebuilder", func() {
 		It("should generate a runnable project", func() {
 			kbc.IsRestricted = false
 			GenerateV4(kbc)
-			Run(kbc, true, false, true)
+			Run(kbc, true, false, true, false)
 		})
 		It("should generate a runnable project with the Installer", func() {
 			kbc.IsRestricted = false
 			GenerateV4(kbc)
-			Run(kbc, false, true, true)
+			Run(kbc, false, true, true, false)
 		})
 		It("should generate a runnable project without metrics exposed", func() {
 			kbc.IsRestricted = false
 			GenerateV4WithoutMetrics(kbc)
-			Run(kbc, true, false, false)
+			Run(kbc, true, false, false, false)
+		})
+		It("should generate a runnable project with metrics protected by network policies", func() {
+			kbc.IsRestricted = false
+			GenerateV4WithNetworkPoliciesWithoutWebhooks(kbc)
+			Run(kbc, false, false, true, true)
+		})
+		It("should generate a runnable project with webhooks and metrics protected by network policies", func() {
+			kbc.IsRestricted = false
+			GenerateV4WithNetworkPolicies(kbc)
+			Run(kbc, true, false, true, true)
 		})
 		It("should generate a runnable project with the manager running "+
 			"as restricted and without webhooks", func() {
 			kbc.IsRestricted = true
 			GenerateV4WithoutWebhooks(kbc)
-			Run(kbc, false, false, true)
+			Run(kbc, false, false, true, false)
 		})
 	})
 })
 
 // Run runs a set of e2e tests for a scaffolded project defined by a TestContext.
-func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, hasMetrics bool) {
+func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, hasMetrics bool, hasNetworkPolicies bool) {
 	var controllerPodName string
 	var err error
 	var output []byte
@@ -159,16 +169,6 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, hasMetrics bool) 
 	ExpectWithOffset(1, podOutput).To(ContainSubstring("health-probe-bind-address"),
 		"Expected manager pod to have --health-probe-bind-address flag")
 
-	if hasWebhook {
-		By("validating that cert-manager has provisioned the certificate Secret")
-		EventuallyWithOffset(1, func() error {
-			_, err := kbc.Kubectl.Get(
-				true,
-				"secrets", "webhook-server-cert")
-			return err
-		}, time.Minute, time.Second).Should(Succeed())
-	}
-
 	By("validating that the Prometheus manager has provisioned the Service")
 	EventuallyWithOffset(1, func() error {
 		_, err := kbc.Kubectl.Get(
@@ -183,7 +183,62 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, hasMetrics bool) 
 		"ServiceMonitor")
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
+	if hasNetworkPolicies {
+		By("Checking for Calico pods")
+		outputGet, err := kbc.Kubectl.Get(
+			false,
+			"pods",
+			"-n", "kube-system",
+			"-l", "k8s-app=calico-node",
+			"-o", "jsonpath={.items[*].status.phase}",
+		)
+		Expect(err).NotTo(HaveOccurred(), "Failed to get Calico pods")
+		Expect(outputGet).To(ContainSubstring("Running"), "All Calico pods should be in Running state")
+
+		if hasMetrics {
+			By("labeling the namespace to allow consume the metrics")
+			_, err = kbc.Kubectl.Command("label", "namespaces", kbc.Kubectl.Namespace,
+				"metrics=enabled")
+			ExpectWithOffset(2, err).NotTo(HaveOccurred())
+
+			By("Ensuring the Allow Metrics Traffic NetworkPolicy exists", func() {
+				output, err := kbc.Kubectl.Get(
+					true,
+					"networkpolicy", fmt.Sprintf("e2e-%s-allow-metrics-traffic", kbc.TestSuffix),
+				)
+				Expect(err).NotTo(HaveOccurred(), "NetworkPolicy allow-metrics-traffic should exist in the namespace")
+				Expect(output).To(ContainSubstring("allow-metrics-traffic"), "NetworkPolicy allow-metrics-traffic "+
+					"should be present in the output")
+			})
+		}
+
+		if hasWebhook {
+			By("labeling the namespace to allow webhooks traffic")
+			_, err = kbc.Kubectl.Command("label", "namespaces", kbc.Kubectl.Namespace,
+				"webhook=enabled")
+			ExpectWithOffset(2, err).NotTo(HaveOccurred())
+
+			By("Ensuring the allow-webhook-traffic NetworkPolicy exists", func() {
+				output, err := kbc.Kubectl.Get(
+					true,
+					"networkpolicy", fmt.Sprintf("e2e-%s-allow-webhook-traffic", kbc.TestSuffix),
+				)
+				Expect(err).NotTo(HaveOccurred(), "NetworkPolicy allow-webhook-traffic should exist in the namespace")
+				Expect(output).To(ContainSubstring("allow-webhook-traffic"), "NetworkPolicy allow-webhook-traffic "+
+					"should be present in the output")
+			})
+		}
+	}
+
 	if hasWebhook {
+		By("validating that cert-manager has provisioned the certificate Secret")
+		EventuallyWithOffset(1, func() error {
+			_, err := kbc.Kubectl.Get(
+				true,
+				"secrets", "webhook-server-cert")
+			return err
+		}, time.Minute, time.Second).Should(Succeed())
+
 		By("validating that the mutating|validating webhooks have the CA injected")
 		verifyCAInjection := func() error {
 			mwhOutput, err := kbc.Kubectl.Get(
@@ -255,6 +310,31 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, hasMetrics bool) 
 		count, err := strconv.Atoi(cnt)
 		ExpectWithOffset(1, err).NotTo(HaveOccurred())
 		ExpectWithOffset(1, count).To(BeNumerically("==", 5))
+	}
+
+	if hasWebhook && hasNetworkPolicies {
+		By("validating that webhooks from namespace without the label will fail")
+
+		// Define the namespace name and CR sample file path
+		namespace := "test-namespace-without-webhook-label"
+		sampleFile := "path/to/your/sample-file.yaml"
+
+		// Create the namespace
+		By("creating a namespace without the webhook: enabled label")
+		_, err := kbc.Kubectl.Command("create", "namespace", namespace)
+		Expect(err).NotTo(HaveOccurred(), "namespace should be created successfully")
+
+		// Apply the Custom Resource in the new namespace and expect it to fail
+		By("applying the CR in the namespace without the webhook: enabled label and expecting it to fail")
+		EventuallyWithOffset(1, func() error {
+			_, err = kbc.Kubectl.Apply(false, "-n", namespace, "-f", sampleFile)
+			return err
+		}, time.Minute, time.Second).Should(HaveOccurred(), "applying the CR should fail due to webhook call timeout")
+
+		// Cleanup: Remove the namespace
+		By("removing the namespace")
+		_, err = kbc.Kubectl.Command("delete", "namespace", namespace)
+		Expect(err).NotTo(HaveOccurred(), "namespace should be removed successfully")
 	}
 }
 
