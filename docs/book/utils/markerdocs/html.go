@@ -77,8 +77,7 @@ func (t Tag) WriteHTML(w io.Writer) error {
 	if t.Attrs != nil {
 		attrsOut = t.Attrs.ToAttrs()
 	}
-	if _, err := fmt.Fprintf((w, "<%s %s>", t.Name, attrsOut)
-	err != nil{
+	if _, err := fmt.Fprintf(w, "<%s %s>", t.Name, attrsOut); err != nil {
 		return err
 	}
 
@@ -88,8 +87,7 @@ func (t Tag) WriteHTML(w io.Writer) error {
 		}
 	}
 
-	if _, err := fmt.Fprintf((w, "</%s>", t.Name)
-	err != nil{
+	if _, err := fmt.Fprintf(w, "</%s>", t.Name); err != nil {
 		return err
 	}
 
