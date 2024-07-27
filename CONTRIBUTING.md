@@ -18,11 +18,11 @@ Please see https://git.k8s.io/community/CLA.md for more info.
 
 ## Contributing steps
 
-1. Submit an issue describing your proposed change to the repo in question.
-1. The [repo owners](OWNERS) will respond to your issue promptly.
-1. If your proposed change is accepted, and you haven't already done so, sign a Contributor License Agreement (see details above).
-1. Fork the desired repo, develop and test your code changes.
-1. Submit a pull request.
+1. Submit an issue describing your proposed change to the repo in question. 
+2. The [repo owners](OWNERS) will respond to your issue promptly. 
+3. If your proposed change is accepted, and you haven't already done so, sign a Contributor License Agreement (see details above). 
+4. Fork the desired repo, develop and test your code changes. 
+5. Submit a pull request.
 
 In addition to the above steps, we adhere to the following best practices to maintain consistency and efficiency in our project:
 
@@ -42,14 +42,14 @@ $ git clone git@github.com:<user>/kubebuilder.git $GOPATH/src/sigs.k8s.io/kubebu
 ```
 
 1. Ensure you activate module support before continue (`$ export GO111MODULE=on`)
-1. Run the command `make install` to create a bin with the source code
+2. Run the command `make install` to create a bin with the source code
 
 **NOTE** In order to check the local environment run `make test-unit`.
 
 ## What to do before submitting a pull request
 
 1. Run the script `make generate` to update/generate the mock data used in the e2e test in `$GOPATH/src/sigs.k8s.io/kubebuilder/testdata/`
-1. Run `make test-unit test-e2e-local`
+2. Run `make test-unit test-e2e-local`
 
 - e2e tests use [`kind`][kind] and [`setup-envtest`][setup-envtest]. If you want to bring your own binaries, place them in `$(go env GOPATH)/bin`.
 
