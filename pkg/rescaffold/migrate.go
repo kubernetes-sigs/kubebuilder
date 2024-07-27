@@ -23,6 +23,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/spf13/afero"
+
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	"sigs.k8s.io/kubebuilder/v4/pkg/config/store"
 	"sigs.k8s.io/kubebuilder/v4/pkg/config/store/yaml"
@@ -285,18 +286,10 @@ func getAPIResourceFlags(resource resource.Resource) []string {
 		args = append(args, "--resource=false")
 	} else {
 		args = append(args, "--resource")
-		if resource.API.Namespaced {
-			args = append(args, "--namespaced")
-		} else {
-			args = append(args, "--namespaced=false")
-		}
+		args = append(args, fmt.Sprintf("--namespaced=%t", resource.API.Namespaced))
 	}
 
-	if resource.Controller {
-		args = append(args, "--controller")
-	} else {
-		args = append(args, "--controller=false")
-	}
+	args = append(args, fmt.Sprintf("--controller=%t", resource.Controller))
 	return args
 }
 
