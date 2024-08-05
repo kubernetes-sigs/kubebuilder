@@ -1,6 +1,6 @@
 | Authors                                | Creation Date | Status      | Extra |
 |----------------------------------------|---------------|-------------|---|
-| @dashanji,@camilamacedo86,@LCaparelli  | Sep, 2023 | Implementeble | - |
+| @dashanji,@camilamacedo86,@LCaparelli  | Sep, 2023 | Implementable | - |
 
 # New Plugin to allow project distribution via helm charts
 
