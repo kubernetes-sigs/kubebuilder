@@ -17,6 +17,10 @@ limitations under the License.
 package v1
 
 import (
+	"context"
+	"fmt"
+
+	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -30,6 +34,7 @@ var destroyerlog = logf.Log.WithName("destroyer-resource")
 func (r *Destroyer) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
+		WithDefaulter(&DestroyerCustomDefaulter{}).
 		Complete()
 }
 
@@ -37,11 +42,27 @@ func (r *Destroyer) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // +kubebuilder:webhook:path=/mutate-ship-testproject-org-v1-destroyer,mutating=true,failurePolicy=fail,sideEffects=None,groups=ship.testproject.org,resources=destroyers,verbs=create;update,versions=v1,name=mdestroyer.kb.io,admissionReviewVersions=v1
 
-var _ webhook.Defaulter = &Destroyer{}
+// +kubebuilder:object:generate=false
+// DestroyerCustomDefaulter struct is responsible for setting default values on the custom resource of the
+// Kind Destroyer when those are created or updated.
+//
+// NOTE: The +kubebuilder:object:generate=false marker prevents controller-gen from generating DeepCopy methods,
+// as it is used only for temporary operations and does not need to be deeply copied.
+type DestroyerCustomDefaulter struct {
+	// TODO(user): Add more fields as needed for defaulting
+}
 
-// Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *Destroyer) Default() {
-	destroyerlog.Info("default", "name", r.Name)
+var _ webhook.CustomDefaulter = &DestroyerCustomDefaulter{}
+
+// Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind Destroyer
+func (d *DestroyerCustomDefaulter) Default(ctx context.Context, obj runtime.Object) error {
+	destroyer, ok := obj.(*Destroyer)
+	if !ok {
+		return fmt.Errorf("expected an Destroyer object but got %T", obj)
+	}
+	destroyerlog.Info("Defaulting for Destroyer", "name", destroyer.GetName())
 
 	// TODO(user): fill in your defaulting logic.
+
+	return nil
 }
