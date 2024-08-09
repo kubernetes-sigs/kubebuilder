@@ -17,6 +17,9 @@ limitations under the License.
 package v2alpha1
 
 import (
+	"context"
+	"fmt"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -31,6 +34,7 @@ var cruiserlog = logf.Log.WithName("cruiser-resource")
 func (r *Cruiser) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
+		WithValidator(&CruiserCustomValidator{}).
 		Complete()
 }
 
@@ -41,28 +45,70 @@ func (r *Cruiser) SetupWebhookWithManager(mgr ctrl.Manager) error {
 // Modifying the path for an invalid path can cause API server errors; failing to locate the webhook.
 // +kubebuilder:webhook:path=/validate-ship-testproject-org-v2alpha1-cruiser,mutating=false,failurePolicy=fail,sideEffects=None,groups=ship.testproject.org,resources=cruisers,verbs=create;update,versions=v2alpha1,name=vcruiser.kb.io,admissionReviewVersions=v1
 
-var _ webhook.Validator = &Cruiser{}
+type CruiserCustomValidator struct{}
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *Cruiser) ValidateCreate() (admission.Warnings, error) {
-	cruiserlog.Info("validate create", "name", r.Name)
+var _ webhook.CustomValidator = &CruiserCustomValidator{}
+
+// ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type
+func (v *CruiserCustomValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	cruiserlog.Info("Creation Validation for Cruiser")
+
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("expected admission.Request in ctx: %w", err)
+	}
+	if req.Kind.Kind != "Cruiser" {
+		return nil, fmt.Errorf("expected Kind Cruiser got %q", req.Kind.Kind)
+	}
+	castedObj, ok := obj.(*Cruiser)
+	if !ok {
+		return nil, fmt.Errorf("expected a Cruiser object but got %T", obj)
+	}
+	cruiserlog.Info("default", "name", castedObj.GetName())
 
 	// TODO(user): fill in your validation logic upon object creation.
+
 	return nil, nil
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *Cruiser) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
-	cruiserlog.Info("validate update", "name", r.Name)
+// ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type
+func (v *CruiserCustomValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+	cruiserlog.Info("Update Validation for Cruiser")
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("expected admission.Request in ctx: %w", err)
+	}
+	if req.Kind.Kind != "Cruiser" {
+		return nil, fmt.Errorf("expected Kind Cruiser got %q", req.Kind.Kind)
+	}
+	castedObj, ok := newObj.(*Cruiser)
+	if !ok {
+		return nil, fmt.Errorf("expected a Cruiser object but got %T", newObj)
+	}
+	cruiserlog.Info("default", "name", castedObj.GetName())
 
 	// TODO(user): fill in your validation logic upon object update.
+
 	return nil, nil
 }
 
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *Cruiser) ValidateDelete() (admission.Warnings, error) {
-	cruiserlog.Info("validate delete", "name", r.Name)
+// ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type
+func (v *CruiserCustomValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	cruiserlog.Info("Deletion Validation for Cruiser")
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("expected admission.Request in ctx: %w", err)
+	}
+	if req.Kind.Kind != "Cruiser" {
+		return nil, fmt.Errorf("expected Kind Cruiser got %q", req.Kind.Kind)
+	}
+	castedObj, ok := obj.(*Cruiser)
+	if !ok {
+		return nil, fmt.Errorf("expected a Cruiser object but got %T", obj)
+	}
+	cruiserlog.Info("default", "name", castedObj.GetName())
 
 	// TODO(user): fill in your validation logic upon object deletion.
+
 	return nil, nil
 }

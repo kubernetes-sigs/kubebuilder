@@ -17,6 +17,9 @@ limitations under the License.
 package v1
 
 import (
+	"context"
+	"fmt"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -31,6 +34,8 @@ var captainlog = logf.Log.WithName("captain-resource")
 func (r *Captain) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
+		WithValidator(&CaptainCustomValidator{}).
+		WithDefaulter(&CaptainCustomDefaulter{}).
 		Complete()
 }
 
@@ -38,13 +43,29 @@ func (r *Captain) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // +kubebuilder:webhook:path=/mutate-crew-testproject-org-v1-captain,mutating=true,failurePolicy=fail,sideEffects=None,groups=crew.testproject.org,resources=captains,verbs=create;update,versions=v1,name=mcaptain.kb.io,admissionReviewVersions=v1
 
-var _ webhook.Defaulter = &Captain{}
+type CaptainCustomDefaulter struct{}
 
-// Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *Captain) Default() {
-	captainlog.Info("default", "name", r.Name)
+var _ webhook.CustomDefaulter = &CaptainCustomDefaulter{}
+
+// Default implements webhook.CustomDefaulter so a webhook will be registered for the type
+func (d *CaptainCustomDefaulter) Default(ctx context.Context, obj runtime.Object) error {
+	captainlog.Info("CustomDefaulter for Admiral")
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		return fmt.Errorf("expected admission.Request in ctx: %w", err)
+	}
+	if req.Kind.Kind != "Captain" {
+		return fmt.Errorf("expected Kind Admiral got %q", req.Kind.Kind)
+	}
+	castedObj, ok := obj.(*Captain)
+	if !ok {
+		return fmt.Errorf("expected an Captain object but got %T", obj)
+	}
+	captainlog.Info("default", "name", castedObj.GetName())
 
 	// TODO(user): fill in your defaulting logic.
+
+	return nil
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
@@ -52,28 +73,70 @@ func (r *Captain) Default() {
 // Modifying the path for an invalid path can cause API server errors; failing to locate the webhook.
 // +kubebuilder:webhook:path=/validate-crew-testproject-org-v1-captain,mutating=false,failurePolicy=fail,sideEffects=None,groups=crew.testproject.org,resources=captains,verbs=create;update,versions=v1,name=vcaptain.kb.io,admissionReviewVersions=v1
 
-var _ webhook.Validator = &Captain{}
+type CaptainCustomValidator struct{}
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *Captain) ValidateCreate() (admission.Warnings, error) {
-	captainlog.Info("validate create", "name", r.Name)
+var _ webhook.CustomValidator = &CaptainCustomValidator{}
+
+// ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type
+func (v *CaptainCustomValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	captainlog.Info("Creation Validation for Captain")
+
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("expected admission.Request in ctx: %w", err)
+	}
+	if req.Kind.Kind != "Captain" {
+		return nil, fmt.Errorf("expected Kind Captain got %q", req.Kind.Kind)
+	}
+	castedObj, ok := obj.(*Captain)
+	if !ok {
+		return nil, fmt.Errorf("expected a Captain object but got %T", obj)
+	}
+	captainlog.Info("default", "name", castedObj.GetName())
 
 	// TODO(user): fill in your validation logic upon object creation.
+
 	return nil, nil
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *Captain) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
-	captainlog.Info("validate update", "name", r.Name)
+// ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type
+func (v *CaptainCustomValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+	captainlog.Info("Update Validation for Captain")
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("expected admission.Request in ctx: %w", err)
+	}
+	if req.Kind.Kind != "Captain" {
+		return nil, fmt.Errorf("expected Kind Captain got %q", req.Kind.Kind)
+	}
+	castedObj, ok := newObj.(*Captain)
+	if !ok {
+		return nil, fmt.Errorf("expected a Captain object but got %T", newObj)
+	}
+	captainlog.Info("default", "name", castedObj.GetName())
 
 	// TODO(user): fill in your validation logic upon object update.
+
 	return nil, nil
 }
 
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *Captain) ValidateDelete() (admission.Warnings, error) {
-	captainlog.Info("validate delete", "name", r.Name)
+// ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type
+func (v *CaptainCustomValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	captainlog.Info("Deletion Validation for Captain")
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("expected admission.Request in ctx: %w", err)
+	}
+	if req.Kind.Kind != "Captain" {
+		return nil, fmt.Errorf("expected Kind Captain got %q", req.Kind.Kind)
+	}
+	castedObj, ok := obj.(*Captain)
+	if !ok {
+		return nil, fmt.Errorf("expected a Captain object but got %T", obj)
+	}
+	captainlog.Info("default", "name", castedObj.GetName())
 
 	// TODO(user): fill in your validation logic upon object deletion.
+
 	return nil, nil
 }

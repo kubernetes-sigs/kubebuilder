@@ -241,8 +241,8 @@ func ImplementWebhooks(filename string) error {
 	str, err = EnsureExistAndReplace(
 		str,
 		"// TODO(user): fill in your defaulting logic.",
-		`if r.Spec.Count == 0 {
-		r.Spec.Count = 5
+		`if castedObj.Spec.Count == 0 {
+		castedObj.Spec.Count = 5
 	}`)
 	if err != nil {
 		return err
@@ -252,7 +252,7 @@ func ImplementWebhooks(filename string) error {
 	str, err = EnsureExistAndReplace(
 		str,
 		"// TODO(user): fill in your validation logic upon object creation.",
-		`if r.Spec.Count < 0 {
+		`if castedObj.Spec.Count < 0 {
 		return nil, errors.New(".spec.count must >= 0")
 	}`)
 	if err != nil {
@@ -261,7 +261,7 @@ func ImplementWebhooks(filename string) error {
 	str, err = EnsureExistAndReplace(
 		str,
 		"// TODO(user): fill in your validation logic upon object update.",
-		`if r.Spec.Count < 0 {
+		`if castedObj.Spec.Count < 0 {
 		return nil, errors.New(".spec.count must >= 0")
 	}`)
 	if err != nil {

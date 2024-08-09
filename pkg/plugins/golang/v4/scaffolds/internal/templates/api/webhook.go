@@ -83,16 +83,18 @@ const (
 package {{ .Resource.Version }}
 
 import (
-	ctrl "sigs.k8s.io/controller-runtime"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	{{- if .Resource.HasValidationWebhook }}
-	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
-	{{- end }}
 	{{- if or .Resource.HasValidationWebhook .Resource.HasDefaultingWebhook }}
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"context"
+	"fmt"
 	{{- end }}
 
+	ctrl "sigs.k8s.io/controller-runtime"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	{{- if or .Resource.HasValidationWebhook .Resource.HasDefaultingWebhook }}
+	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	{{- end }}
 )
 
 // log is for logging in this package.
@@ -102,6 +104,12 @@ var {{ lower .Resource.Kind }}log = logf.Log.WithName("{{ lower .Resource.Kind }
 func (r *{{ .Resource.Kind }}) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
+		{{- if .Resource.HasValidationWebhook }}
+		WithValidator(&{{ .Resource.Kind }}CustomValidator{}).
+		{{- end }}
+		{{- if .Resource.HasDefaultingWebhook }}
+		WithDefaulter(&{{ .Resource.Kind }}CustomDefaulter{}).
+		{{- end }}
 		Complete()
 }
 
@@ -112,13 +120,29 @@ func (r *{{ .Resource.Kind }}) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	defaultingWebhookTemplate = `
 // +kubebuilder:webhook:{{ if ne .Resource.Webhooks.WebhookVersion "v1" }}webhookVersions={{"{"}}{{ .Resource.Webhooks.WebhookVersion }}{{"}"}},{{ end }}path=/mutate-{{ .QualifiedGroupWithDash }}-{{ .Resource.Version }}-{{ lower .Resource.Kind }},mutating=true,failurePolicy=fail,sideEffects=None,groups={{ .Resource.QualifiedGroup }},resources={{ .Resource.Plural }},verbs=create;update,versions={{ .Resource.Version }},name=m{{ lower .Resource.Kind }}.kb.io,admissionReviewVersions={{ .AdmissionReviewVersions }}
 
-var _ webhook.Defaulter = &{{ .Resource.Kind }}{}
+type {{ .Resource.Kind }}CustomDefaulter struct{}
 
-// Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *{{ .Resource.Kind }}) Default() {
-	{{ lower .Resource.Kind }}log.Info("default", "name", r.Name)
+var _ webhook.CustomDefaulter = &{{ .Resource.Kind }}CustomDefaulter{}
+
+// Default implements webhook.CustomDefaulter so a webhook will be registered for the type
+func (d *{{ .Resource.Kind }}CustomDefaulter) Default(ctx context.Context, obj runtime.Object) error {
+	{{ lower .Resource.Kind }}log.Info("CustomDefaulter for Admiral")
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		return fmt.Errorf("expected admission.Request in ctx: %w", err)
+	}
+	if req.Kind.Kind != "{{ .Resource.Kind }}" {
+		return fmt.Errorf("expected Kind Admiral got %q", req.Kind.Kind)
+	}
+	castedObj, ok := obj.(*{{ .Resource.Kind }})
+	if !ok {
+		return fmt.Errorf("expected an {{ .Resource.Kind }} object but got %T", obj)
+	}
+	{{ lower .Resource.Kind }}log.Info("default", "name", castedObj.GetName())
 
 	// TODO(user): fill in your defaulting logic.
+
+	return nil
 }
 `
 
@@ -129,30 +153,72 @@ func (r *{{ .Resource.Kind }}) Default() {
 // Modifying the path for an invalid path can cause API server errors; failing to locate the webhook.
 // +kubebuilder:webhook:{{ if ne .Resource.Webhooks.WebhookVersion "v1" }}webhookVersions={{"{"}}{{ .Resource.Webhooks.WebhookVersion }}{{"}"}},{{ end }}path=/validate-{{ .QualifiedGroupWithDash }}-{{ .Resource.Version }}-{{ lower .Resource.Kind }},mutating=false,failurePolicy=fail,sideEffects=None,groups={{ .Resource.QualifiedGroup }},resources={{ .Resource.Plural }},verbs=create;update,versions={{ .Resource.Version }},name=v{{ lower .Resource.Kind }}.kb.io,admissionReviewVersions={{ .AdmissionReviewVersions }}
 
-var _ webhook.Validator = &{{ .Resource.Kind }}{}
+type {{ .Resource.Kind }}CustomValidator struct{}
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *{{ .Resource.Kind }}) ValidateCreate() (admission.Warnings, error) {
-	{{ lower .Resource.Kind }}log.Info("validate create", "name", r.Name)
+var _ webhook.CustomValidator = &{{ .Resource.Kind }}CustomValidator{}
+
+// ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type
+func (v *{{ .Resource.Kind }}CustomValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	{{ lower .Resource.Kind }}log.Info("Creation Validation for {{ .Resource.Kind }}")
+
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("expected admission.Request in ctx: %w", err)
+	}
+	if req.Kind.Kind != "{{ .Resource.Kind }}" {
+		return nil, fmt.Errorf("expected Kind {{ .Resource.Kind }} got %q", req.Kind.Kind)
+	}
+	castedObj, ok := obj.(*{{ .Resource.Kind }})
+	if !ok {
+		return nil, fmt.Errorf("expected a {{ .Resource.Kind }} object but got %T", obj)
+	}
+	{{ lower .Resource.Kind }}log.Info("default", "name", castedObj.GetName())
 
 	// TODO(user): fill in your validation logic upon object creation.
+
 	return nil, nil
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *{{ .Resource.Kind }}) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
-	{{ lower .Resource.Kind }}log.Info("validate update", "name", r.Name)
+// ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type
+func (v *{{ .Resource.Kind }}CustomValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+	{{ lower .Resource.Kind }}log.Info("Update Validation for {{ .Resource.Kind }}")
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("expected admission.Request in ctx: %w", err)
+	}
+	if req.Kind.Kind != "{{ .Resource.Kind }}" {
+		return nil, fmt.Errorf("expected Kind {{ .Resource.Kind }} got %q", req.Kind.Kind)
+	}
+	castedObj, ok := newObj.(*{{ .Resource.Kind }})
+	if !ok {
+		return nil, fmt.Errorf("expected a {{ .Resource.Kind }} object but got %T", newObj)
+	}
+	{{ lower .Resource.Kind }}log.Info("default", "name", castedObj.GetName())
 
 	// TODO(user): fill in your validation logic upon object update.
+
 	return nil, nil
 }
 
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *{{ .Resource.Kind }}) ValidateDelete() (admission.Warnings, error) {
-	{{ lower .Resource.Kind }}log.Info("validate delete", "name", r.Name)
+// ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type
+func (v *{{ .Resource.Kind }}CustomValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	{{ lower .Resource.Kind }}log.Info("Deletion Validation for {{ .Resource.Kind }}")
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("expected admission.Request in ctx: %w", err)
+	}
+	if req.Kind.Kind != "{{ .Resource.Kind }}" {
+		return nil, fmt.Errorf("expected Kind {{ .Resource.Kind }} got %q", req.Kind.Kind)
+	}
+	castedObj, ok := obj.(*{{ .Resource.Kind }})
+	if !ok {
+		return nil, fmt.Errorf("expected a {{ .Resource.Kind }} object but got %T", obj)
+	}
+	{{ lower .Resource.Kind }}log.Info("default", "name", castedObj.GetName())
 
 	// TODO(user): fill in your validation logic upon object deletion.
-	return nil,nil
+
+	return nil, nil
 }
 `
 )

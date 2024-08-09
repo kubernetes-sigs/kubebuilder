@@ -17,6 +17,9 @@ limitations under the License.
 package v1
 
 import (
+	"context"
+	"fmt"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -31,6 +34,8 @@ var lakerslog = logf.Log.WithName("lakers-resource")
 func (r *Lakers) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
+		WithValidator(&LakersCustomValidator{}).
+		WithDefaulter(&LakersCustomDefaulter{}).
 		Complete()
 }
 
@@ -38,13 +43,29 @@ func (r *Lakers) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // +kubebuilder:webhook:path=/mutate-testproject-org-v1-lakers,mutating=true,failurePolicy=fail,sideEffects=None,groups=testproject.org,resources=lakers,verbs=create;update,versions=v1,name=mlakers.kb.io,admissionReviewVersions=v1
 
-var _ webhook.Defaulter = &Lakers{}
+type LakersCustomDefaulter struct{}
 
-// Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *Lakers) Default() {
-	lakerslog.Info("default", "name", r.Name)
+var _ webhook.CustomDefaulter = &LakersCustomDefaulter{}
+
+// Default implements webhook.CustomDefaulter so a webhook will be registered for the type
+func (d *LakersCustomDefaulter) Default(ctx context.Context, obj runtime.Object) error {
+	lakerslog.Info("CustomDefaulter for Admiral")
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		return fmt.Errorf("expected admission.Request in ctx: %w", err)
+	}
+	if req.Kind.Kind != "Lakers" {
+		return fmt.Errorf("expected Kind Admiral got %q", req.Kind.Kind)
+	}
+	castedObj, ok := obj.(*Lakers)
+	if !ok {
+		return fmt.Errorf("expected an Lakers object but got %T", obj)
+	}
+	lakerslog.Info("default", "name", castedObj.GetName())
 
 	// TODO(user): fill in your defaulting logic.
+
+	return nil
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
@@ -52,28 +73,70 @@ func (r *Lakers) Default() {
 // Modifying the path for an invalid path can cause API server errors; failing to locate the webhook.
 // +kubebuilder:webhook:path=/validate-testproject-org-v1-lakers,mutating=false,failurePolicy=fail,sideEffects=None,groups=testproject.org,resources=lakers,verbs=create;update,versions=v1,name=vlakers.kb.io,admissionReviewVersions=v1
 
-var _ webhook.Validator = &Lakers{}
+type LakersCustomValidator struct{}
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *Lakers) ValidateCreate() (admission.Warnings, error) {
-	lakerslog.Info("validate create", "name", r.Name)
+var _ webhook.CustomValidator = &LakersCustomValidator{}
+
+// ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type
+func (v *LakersCustomValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	lakerslog.Info("Creation Validation for Lakers")
+
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("expected admission.Request in ctx: %w", err)
+	}
+	if req.Kind.Kind != "Lakers" {
+		return nil, fmt.Errorf("expected Kind Lakers got %q", req.Kind.Kind)
+	}
+	castedObj, ok := obj.(*Lakers)
+	if !ok {
+		return nil, fmt.Errorf("expected a Lakers object but got %T", obj)
+	}
+	lakerslog.Info("default", "name", castedObj.GetName())
 
 	// TODO(user): fill in your validation logic upon object creation.
+
 	return nil, nil
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *Lakers) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
-	lakerslog.Info("validate update", "name", r.Name)
+// ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type
+func (v *LakersCustomValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+	lakerslog.Info("Update Validation for Lakers")
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("expected admission.Request in ctx: %w", err)
+	}
+	if req.Kind.Kind != "Lakers" {
+		return nil, fmt.Errorf("expected Kind Lakers got %q", req.Kind.Kind)
+	}
+	castedObj, ok := newObj.(*Lakers)
+	if !ok {
+		return nil, fmt.Errorf("expected a Lakers object but got %T", newObj)
+	}
+	lakerslog.Info("default", "name", castedObj.GetName())
 
 	// TODO(user): fill in your validation logic upon object update.
+
 	return nil, nil
 }
 
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *Lakers) ValidateDelete() (admission.Warnings, error) {
-	lakerslog.Info("validate delete", "name", r.Name)
+// ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type
+func (v *LakersCustomValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	lakerslog.Info("Deletion Validation for Lakers")
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("expected admission.Request in ctx: %w", err)
+	}
+	if req.Kind.Kind != "Lakers" {
+		return nil, fmt.Errorf("expected Kind Lakers got %q", req.Kind.Kind)
+	}
+	castedObj, ok := obj.(*Lakers)
+	if !ok {
+		return nil, fmt.Errorf("expected a Lakers object but got %T", obj)
+	}
+	lakerslog.Info("default", "name", castedObj.GetName())
 
 	// TODO(user): fill in your validation logic upon object deletion.
+
 	return nil, nil
 }

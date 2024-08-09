@@ -18,12 +18,15 @@ limitations under the License.
 package v1
 
 import (
+	"context"
+	"fmt"
 	"github.com/robfig/cron"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	validationutils "k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
+
+	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -46,6 +49,8 @@ Then, we set up the webhook with the manager.
 func (r *CronJob) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
+		WithValidator(&CronJobCustomValidator{}).
+		WithDefaulter(&CronJobCustomDefaulter{}).
 		Complete()
 }
 
@@ -65,26 +70,42 @@ A webhook will automatically be served that calls this defaulting.
 The `Default` method is expected to mutate the receiver, setting the defaults.
 */
 
-var _ webhook.Defaulter = &CronJob{}
+type CronJobCustomDefaulter struct{}
 
-// Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *CronJob) Default() {
-	cronjoblog.Info("default", "name", r.Name)
+var _ webhook.CustomDefaulter = &CronJobCustomDefaulter{}
 
-	if r.Spec.ConcurrencyPolicy == "" {
-		r.Spec.ConcurrencyPolicy = AllowConcurrent
+// Default implements webhook.CustomDefaulter so a webhook will be registered for the type
+func (d *CronJobCustomDefaulter) Default(ctx context.Context, obj runtime.Object) error {
+	cronjoblog.Info("CustomDefaulter for Admiral")
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		return fmt.Errorf("expected admission.Request in ctx: %w", err)
 	}
-	if r.Spec.Suspend == nil {
-		r.Spec.Suspend = new(bool)
+	if req.Kind.Kind != "CronJob" {
+		return fmt.Errorf("expected Kind Admiral got %q", req.Kind.Kind)
 	}
-	if r.Spec.SuccessfulJobsHistoryLimit == nil {
-		r.Spec.SuccessfulJobsHistoryLimit = new(int32)
-		*r.Spec.SuccessfulJobsHistoryLimit = 3
+	castedObj, ok := obj.(*CronJob)
+	if !ok {
+		return fmt.Errorf("expected an CronJob object but got %T", obj)
 	}
-	if r.Spec.FailedJobsHistoryLimit == nil {
-		r.Spec.FailedJobsHistoryLimit = new(int32)
-		*r.Spec.FailedJobsHistoryLimit = 1
+	cronjoblog.Info("default", "name", castedObj.GetName())
+
+	if castedObj.Spec.ConcurrencyPolicy == "" {
+		castedObj.Spec.ConcurrencyPolicy = AllowConcurrent
 	}
+	if castedObj.Spec.Suspend == nil {
+		castedObj.Spec.Suspend = new(bool)
+	}
+	if castedObj.Spec.SuccessfulJobsHistoryLimit == nil {
+		castedObj.Spec.SuccessfulJobsHistoryLimit = new(int32)
+		*castedObj.Spec.SuccessfulJobsHistoryLimit = 3
+	}
+	if castedObj.Spec.FailedJobsHistoryLimit == nil {
+		castedObj.Spec.FailedJobsHistoryLimit = new(int32)
+		*castedObj.Spec.FailedJobsHistoryLimit = 1
+	}
+
+	return nil
 }
 
 /*
@@ -118,27 +139,67 @@ validate anything on deletion.
 // NOTE: The 'path' attribute must follow a specific pattern and should not be modified directly here.
 // Modifying the path for an invalid path can cause API server errors; failing to locate the webhook.
 
-var _ webhook.Validator = &CronJob{}
+type CronJobCustomValidator struct{}
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *CronJob) ValidateCreate() (admission.Warnings, error) {
-	cronjoblog.Info("validate create", "name", r.Name)
+var _ webhook.CustomValidator = &CronJobCustomValidator{}
 
-	return nil, r.validateCronJob()
+// ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type
+func (v *CronJobCustomValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	cronjoblog.Info("Creation Validation for CronJob")
+
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("expected admission.Request in ctx: %w", err)
+	}
+	if req.Kind.Kind != "CronJob" {
+		return nil, fmt.Errorf("expected Kind CronJob got %q", req.Kind.Kind)
+	}
+	castedObj, ok := obj.(*CronJob)
+	if !ok {
+		return nil, fmt.Errorf("expected a CronJob object but got %T", obj)
+	}
+	cronjoblog.Info("default", "name", castedObj.GetName())
+
+	return nil, v.validateCronJob(castedObj)
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *CronJob) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
-	cronjoblog.Info("validate update", "name", r.Name)
+// ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type
+func (v *CronJobCustomValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+	cronjoblog.Info("Update Validation for CronJob")
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("expected admission.Request in ctx: %w", err)
+	}
+	if req.Kind.Kind != "CronJob" {
+		return nil, fmt.Errorf("expected Kind CronJob got %q", req.Kind.Kind)
+	}
+	castedObj, ok := newObj.(*CronJob)
+	if !ok {
+		return nil, fmt.Errorf("expected a CronJob object but got %T", newObj)
+	}
+	cronjoblog.Info("default", "name", castedObj.GetName())
 
-	return nil, r.validateCronJob()
+	return nil, v.validateCronJob(castedObj)
 }
 
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *CronJob) ValidateDelete() (admission.Warnings, error) {
-	cronjoblog.Info("validate delete", "name", r.Name)
+// ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type
+func (v *CronJobCustomValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	cronjoblog.Info("Deletion Validation for CronJob")
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("expected admission.Request in ctx: %w", err)
+	}
+	if req.Kind.Kind != "CronJob" {
+		return nil, fmt.Errorf("expected Kind CronJob got %q", req.Kind.Kind)
+	}
+	castedObj, ok := obj.(*CronJob)
+	if !ok {
+		return nil, fmt.Errorf("expected a CronJob object but got %T", obj)
+	}
+	cronjoblog.Info("default", "name", castedObj.GetName())
 
 	// TODO(user): fill in your validation logic upon object deletion.
+
 	return nil, nil
 }
 
@@ -146,12 +207,12 @@ func (r *CronJob) ValidateDelete() (admission.Warnings, error) {
 We validate the name and the spec of the CronJob.
 */
 
-func (r *CronJob) validateCronJob() error {
+func (v *CronJobCustomValidator) validateCronJob(castedObj *CronJob) error {
 	var allErrs field.ErrorList
-	if err := r.validateCronJobName(); err != nil {
+	if err := v.validateCronJobName(castedObj); err != nil {
 		allErrs = append(allErrs, err)
 	}
-	if err := r.validateCronJobSpec(); err != nil {
+	if err := v.validateCronJobSpec(castedObj); err != nil {
 		allErrs = append(allErrs, err)
 	}
 	if len(allErrs) == 0 {
@@ -160,7 +221,7 @@ func (r *CronJob) validateCronJob() error {
 
 	return apierrors.NewInvalid(
 		schema.GroupKind{Group: "batch.tutorial.kubebuilder.io", Kind: "CronJob"},
-		r.Name, allErrs)
+		castedObj.Name, allErrs)
 }
 
 /*
@@ -173,11 +234,11 @@ declaring validation by running `controller-gen crd -w`,
 or [here](/reference/markers/crd-validation.md).
 */
 
-func (r *CronJob) validateCronJobSpec() *field.Error {
+func (v *CronJobCustomValidator) validateCronJobSpec(castedObj *CronJob) *field.Error {
 	// The field helpers from the kubernetes API machinery help us return nicely
 	// structured validation errors.
 	return validateScheduleFormat(
-		r.Spec.Schedule,
+		castedObj.Spec.Schedule,
 		field.NewPath("spec").Child("schedule"))
 }
 
@@ -202,15 +263,15 @@ the apimachinery repo, so we can't declaratively validate it using
 the validation schema.
 */
 
-func (r *CronJob) validateCronJobName() *field.Error {
-	if len(r.ObjectMeta.Name) > validationutils.DNS1035LabelMaxLength-11 {
-		// The job name length is 63 character like all Kubernetes objects
+func (v *CronJobCustomValidator) validateCronJobName(castedObj *CronJob) *field.Error {
+	if len(castedObj.ObjectMeta.Name) > validationutils.DNS1035LabelMaxLength-11 {
+		// The job name length is 63 characters like all Kubernetes objects
 		// (which must fit in a DNS subdomain). The cronjob controller appends
 		// a 11-character suffix to the cronjob (`-$TIMESTAMP`) when creating
 		// a job. The job name length limit is 63 characters. Therefore cronjob
 		// names must have length <= 63-11=52. If we don't validate this here,
 		// then job creation will fail later.
-		return field.Invalid(field.NewPath("metadata").Child("name"), r.Name, "must be no more than 52 characters")
+		return field.Invalid(field.NewPath("metadata").Child("name"), castedObj.Name, "must be no more than 52 characters")
 	}
 	return nil
 }
