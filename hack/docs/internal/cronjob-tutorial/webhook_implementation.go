@@ -16,17 +16,7 @@ limitations under the License.
 
 package cronjob
 
-const WebhookIntro = `import (
-	"github.com/robfig/cron"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	validationutils "k8s.io/apimachinery/pkg/util/validation"
-	"k8s.io/apimachinery/pkg/util/validation/field"
-	ctrl "sigs.k8s.io/controller-runtime"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+const WebhookIntro = `"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // +kubebuilder:docs-gen:collapse=Go imports
@@ -54,22 +44,24 @@ The` + " `" + `Default` + "`" + ` method is expected to mutate the receiver, set
 */
 `
 
-const WebhookValidate = `	cronjoblog.Info("default", "name", r.Name)
+const WebhookValidate = `
 
-	if r.Spec.ConcurrencyPolicy == "" {
-		r.Spec.ConcurrencyPolicy = AllowConcurrent
+	if castedObj.Spec.ConcurrencyPolicy == "" {
+		castedObj.Spec.ConcurrencyPolicy = AllowConcurrent
 	}
-	if r.Spec.Suspend == nil {
-		r.Spec.Suspend = new(bool)
+	if castedObj.Spec.Suspend == nil {
+		castedObj.Spec.Suspend = new(bool)
 	}
-	if r.Spec.SuccessfulJobsHistoryLimit == nil {
-		r.Spec.SuccessfulJobsHistoryLimit = new(int32)
-		*r.Spec.SuccessfulJobsHistoryLimit = 3
+	if castedObj.Spec.SuccessfulJobsHistoryLimit == nil {
+		castedObj.Spec.SuccessfulJobsHistoryLimit = new(int32)
+		*castedObj.Spec.SuccessfulJobsHistoryLimit = 3
 	}
-	if r.Spec.FailedJobsHistoryLimit == nil {
-		r.Spec.FailedJobsHistoryLimit = new(int32)
-		*r.Spec.FailedJobsHistoryLimit = 1
+	if castedObj.Spec.FailedJobsHistoryLimit == nil {
+		castedObj.Spec.FailedJobsHistoryLimit = new(int32)
+		*castedObj.Spec.FailedJobsHistoryLimit = 1
 	}
+
+	return nil
 }
 
 /*
@@ -100,18 +92,17 @@ Here, however, we just use the same shared validation for` + " `" + `ValidateCre
 validate anything on deletion.
 */
 `
-
 const WebhookValidateSpec = `
 /*
 We validate the name and the spec of the CronJob.
 */
 
-func (r *CronJob) validateCronJob() error {
+func (v *CronJobCustomValidator) validateCronJob(castedObj *CronJob) error {
 	var allErrs field.ErrorList
-	if err := r.validateCronJobName(); err != nil {
+	if err := v.validateCronJobName(castedObj); err != nil {
 		allErrs = append(allErrs, err)
 	}
-	if err := r.validateCronJobSpec(); err != nil {
+	if err := v.validateCronJobSpec(castedObj); err != nil {
 		allErrs = append(allErrs, err)
 	}
 	if len(allErrs) == 0 {
@@ -120,24 +111,24 @@ func (r *CronJob) validateCronJob() error {
 
 	return apierrors.NewInvalid(
 		schema.GroupKind{Group: "batch.tutorial.kubebuilder.io", Kind: "CronJob"},
-		r.Name, allErrs)
+		castedObj.Name, allErrs)
 }
 
 /*
 Some fields are declaratively validated by OpenAPI schema.
 You can find kubebuilder validation markers (prefixed
-with` + " `" + `// +kubebuilder:validation` + "`" + `) in the
+with ` + "`" + `// +kubebuilder:validation` + "`" + `) in the
 [Designing an API](api-design.md) section.
 You can find all of the kubebuilder supported markers for
-declaring validation by running` + " `" + `controller-gen crd -w` + "`" + `,
+declaring validation by running ` + "`" + `controller-gen crd -w` + "`" + `,
 or [here](/reference/markers/crd-validation.md).
 */
 
-func (r *CronJob) validateCronJobSpec() *field.Error {
+func (v *CronJobCustomValidator) validateCronJobSpec(castedObj *CronJob) *field.Error {
 	// The field helpers from the kubernetes API machinery help us return nicely
 	// structured validation errors.
 	return validateScheduleFormat(
-		r.Spec.Schedule,
+		castedObj.Spec.Schedule,
 		field.NewPath("spec").Child("schedule"))
 }
 
@@ -157,20 +148,20 @@ func validateScheduleFormat(schedule string, fldPath *field.Path) *field.Error {
 Validating the length of a string field can be done declaratively by
 the validation schema.
 
-But the` + " `" + `ObjectMeta.Name` + "`" + ` field is defined in a shared package under
+But the ` + "`" + `ObjectMeta.Name` + "`" + ` field is defined in a shared package under
 the apimachinery repo, so we can't declaratively validate it using
 the validation schema.
 */
 
-func (r *CronJob) validateCronJobName() *field.Error {
-	if len(r.ObjectMeta.Name) > validationutils.DNS1035LabelMaxLength-11 {
-		// The job name length is 63 character like all Kubernetes objects
+func (v *CronJobCustomValidator) validateCronJobName(castedObj *CronJob) *field.Error {
+	if len(castedObj.ObjectMeta.Name) > validationutils.DNS1035LabelMaxLength-11 {
+		// The job name length is 63 characters like all Kubernetes objects
 		// (which must fit in a DNS subdomain). The cronjob controller appends
 		// a 11-character suffix to the cronjob (` + "`" + `-$TIMESTAMP` + "`" + `) when creating
 		// a job. The job name length limit is 63 characters. Therefore cronjob
 		// names must have length <= 63-11=52. If we don't validate this here,
 		// then job creation will fail later.
-		return field.Invalid(field.NewPath("metadata").Child("name"), r.Name, "must be no more than 52 characters")
+		return field.Invalid(field.NewPath("metadata").Child("name"), castedObj.Name, "must be no more than 52 characters")
 	}
 	return nil
 }

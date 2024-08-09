@@ -17,6 +17,9 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"context"
+	"fmt"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -31,6 +34,7 @@ var memcachedlog = logf.Log.WithName("memcached-resource")
 func (r *Memcached) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
+		WithValidator(&MemcachedCustomValidator{}).
 		Complete()
 }
 
@@ -41,28 +45,70 @@ func (r *Memcached) SetupWebhookWithManager(mgr ctrl.Manager) error {
 // Modifying the path for an invalid path can cause API server errors; failing to locate the webhook.
 // +kubebuilder:webhook:path=/validate-example-com-testproject-org-v1alpha1-memcached,mutating=false,failurePolicy=fail,sideEffects=None,groups=example.com.testproject.org,resources=memcacheds,verbs=create;update,versions=v1alpha1,name=vmemcached.kb.io,admissionReviewVersions=v1
 
-var _ webhook.Validator = &Memcached{}
+type MemcachedCustomValidator struct{}
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *Memcached) ValidateCreate() (admission.Warnings, error) {
-	memcachedlog.Info("validate create", "name", r.Name)
+var _ webhook.CustomValidator = &MemcachedCustomValidator{}
+
+// ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type
+func (v *MemcachedCustomValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	memcachedlog.Info("Creation Validation for Memcached")
+
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("expected admission.Request in ctx: %w", err)
+	}
+	if req.Kind.Kind != "Memcached" {
+		return nil, fmt.Errorf("expected Kind Memcached got %q", req.Kind.Kind)
+	}
+	castedObj, ok := obj.(*Memcached)
+	if !ok {
+		return nil, fmt.Errorf("expected a Memcached object but got %T", obj)
+	}
+	memcachedlog.Info("default", "name", castedObj.GetName())
 
 	// TODO(user): fill in your validation logic upon object creation.
+
 	return nil, nil
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *Memcached) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
-	memcachedlog.Info("validate update", "name", r.Name)
+// ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type
+func (v *MemcachedCustomValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+	memcachedlog.Info("Update Validation for Memcached")
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("expected admission.Request in ctx: %w", err)
+	}
+	if req.Kind.Kind != "Memcached" {
+		return nil, fmt.Errorf("expected Kind Memcached got %q", req.Kind.Kind)
+	}
+	castedObj, ok := newObj.(*Memcached)
+	if !ok {
+		return nil, fmt.Errorf("expected a Memcached object but got %T", newObj)
+	}
+	memcachedlog.Info("default", "name", castedObj.GetName())
 
 	// TODO(user): fill in your validation logic upon object update.
+
 	return nil, nil
 }
 
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *Memcached) ValidateDelete() (admission.Warnings, error) {
-	memcachedlog.Info("validate delete", "name", r.Name)
+// ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type
+func (v *MemcachedCustomValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	memcachedlog.Info("Deletion Validation for Memcached")
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("expected admission.Request in ctx: %w", err)
+	}
+	if req.Kind.Kind != "Memcached" {
+		return nil, fmt.Errorf("expected Kind Memcached got %q", req.Kind.Kind)
+	}
+	castedObj, ok := obj.(*Memcached)
+	if !ok {
+		return nil, fmt.Errorf("expected a Memcached object but got %T", obj)
+	}
+	memcachedlog.Info("default", "name", castedObj.GetName())
 
 	// TODO(user): fill in your validation logic upon object deletion.
+
 	return nil, nil
 }
