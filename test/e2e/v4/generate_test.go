@@ -49,7 +49,7 @@ func GenerateV4(kbc *utils.TestContext) {
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
 	By("implementing the mutating and validating webhooks")
-	err = pluginutil.ImplementWebhooks(filepath.Join(
+	err = utils.ImplementWebhooks(filepath.Join(
 		kbc.Dir, "api", kbc.Version,
 		fmt.Sprintf("%s_webhook.go", strings.ToLower(kbc.Kind))))
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
@@ -89,7 +89,7 @@ func GenerateV4WithoutMetrics(kbc *utils.TestContext) {
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
 	By("implementing the mutating and validating webhooks")
-	err = pluginutil.ImplementWebhooks(filepath.Join(
+	err = utils.ImplementWebhooks(filepath.Join(
 		kbc.Dir, "api", kbc.Version,
 		fmt.Sprintf("%s_webhook.go", strings.ToLower(kbc.Kind))))
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
@@ -152,7 +152,7 @@ func GenerateV4WithNetworkPolicies(kbc *utils.TestContext) {
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
 	By("implementing the mutating and validating webhooks")
-	err = pluginutil.ImplementWebhooks(filepath.Join(
+	err = utils.ImplementWebhooks(filepath.Join(
 		kbc.Dir, "api", kbc.Version,
 		fmt.Sprintf("%s_webhook.go", strings.ToLower(kbc.Kind))))
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
