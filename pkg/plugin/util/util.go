@@ -218,60 +218,6 @@ func CommentCode(filename, target, prefix string) error {
 	return os.WriteFile(filename, out.Bytes(), 0644)
 }
 
-// ImplementWebhooks will mock an webhook data
-func ImplementWebhooks(filename string) error {
-	// false positive
-	// nolint:gosec
-	bs, err := os.ReadFile(filename)
-	if err != nil {
-		return err
-	}
-	str := string(bs)
-
-	str, err = EnsureExistAndReplace(
-		str,
-		"import (",
-		`import (
-	"errors"`)
-	if err != nil {
-		return err
-	}
-
-	// implement defaulting webhook logic
-	str, err = EnsureExistAndReplace(
-		str,
-		"// TODO(user): fill in your defaulting logic.",
-		`if r.Spec.Count == 0 {
-		r.Spec.Count = 5
-	}`)
-	if err != nil {
-		return err
-	}
-
-	// implement validation webhook logic
-	str, err = EnsureExistAndReplace(
-		str,
-		"// TODO(user): fill in your validation logic upon object creation.",
-		`if r.Spec.Count < 0 {
-		return nil, errors.New(".spec.count must >= 0")
-	}`)
-	if err != nil {
-		return err
-	}
-	str, err = EnsureExistAndReplace(
-		str,
-		"// TODO(user): fill in your validation logic upon object update.",
-		`if r.Spec.Count < 0 {
-		return nil, errors.New(".spec.count must >= 0")
-	}`)
-	if err != nil {
-		return err
-	}
-	// false positive
-	// nolint:gosec
-	return os.WriteFile(filename, []byte(str), 0644)
-}
-
 // EnsureExistAndReplace check if the content exists and then do the replace
 func EnsureExistAndReplace(input, match, replace string) (string, error) {
 	if !strings.Contains(input, match) {
