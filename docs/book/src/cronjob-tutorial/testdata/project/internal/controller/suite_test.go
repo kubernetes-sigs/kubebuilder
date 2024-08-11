@@ -61,9 +61,9 @@ var (
 	cfg       *rest.Config
 	k8sClient client.Client // You'll be using this client in your tests.
 	testEnv   *envtest.Environment
-	ctx       context.Context
-	cancel    context.CancelFunc
 )
+var ctx context.Context
+var cancel context.CancelFunc
 
 func TestControllers(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -169,8 +169,8 @@ You won't need to touch these.
 */
 
 var _ = AfterSuite(func() {
-	cancel()
 	By("tearing down the test environment")
+	cancel()
 	err := testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
 })

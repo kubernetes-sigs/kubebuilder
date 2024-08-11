@@ -38,14 +38,10 @@ var (
 	cfg       *rest.Config
 	k8sClient client.Client // You'll be using this client in your tests.
 	testEnv   *envtest.Environment
-	ctx       context.Context
-	cancel    context.CancelFunc
 )
 `
 
 const SuiteTestReadCRD = `
-	ctx, cancel = context.WithCancel(context.TODO())
-
 	/*
 		First, the envtest cluster is configured to read CRDs from the CRD directory Kubebuilder scaffolds for you.
 	*/`
@@ -116,8 +112,8 @@ You won't need to touch these.
 */
 
 var _ = AfterSuite(func() {
-	cancel()
 	By("tearing down the test environment")
+	cancel()
 	err := testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
 })
