@@ -23,16 +23,26 @@ import (
 
 var _ = Describe("InsertCode", Ordered, func() {
 	path := filepath.Join("testdata", "exampleFile.txt")
-	var originalContent []byte
+	var content []byte
 
 	BeforeAll(func() {
-		var err error
-		originalContent, err = os.ReadFile(path)
+		err := os.MkdirAll("testdata", 0755)
+		Expect(err).NotTo(HaveOccurred())
+
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			err = os.WriteFile(path, []byte("exampleTarget"), 0644)
+			Expect(err).NotTo(HaveOccurred())
+		}
+
+		content, err = os.ReadFile(path)
 		Expect(err).NotTo(HaveOccurred())
 	})
 
 	AfterAll(func() {
-		err := os.WriteFile(path, originalContent, 0644)
+		err := os.WriteFile(path, content, 0644)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = os.RemoveAll("testdata")
 		Expect(err).NotTo(HaveOccurred())
 	})
 
