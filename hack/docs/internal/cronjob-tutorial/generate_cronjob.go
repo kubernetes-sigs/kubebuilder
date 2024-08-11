@@ -472,12 +472,6 @@ func updateSuiteTest(sp *Sample) {
 
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "internal/controller/suite_test.go"),
-		`import (`, `
-	"context"`)
-	CheckError("updating suite_test.go to add context", err)
-
-	err = pluginutil.InsertCode(
-		filepath.Join(sp.ctx.Dir, "internal/controller/suite_test.go"),
 		`
 	"testing"
 `, `
@@ -496,8 +490,7 @@ var testEnv *envtest.Environment
 
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "internal/controller/suite_test.go"),
-		`
-	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
+		`ctx, cancel = context.WithCancel(context.TODO())
 `, SuiteTestReadCRD)
 	CheckError("updating suite_test.go to add text about CRD", err)
 
@@ -535,6 +528,7 @@ var testEnv *envtest.Environment
 		`
 var _ = AfterSuite(func() {
 	By("tearing down the test environment")
+	cancel()
 	err := testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
 })
