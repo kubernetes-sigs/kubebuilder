@@ -34,6 +34,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ref "k8s.io/client-go/tools/reference"
+	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -87,6 +88,7 @@ var (
 	scheduledTimeAnnotation = "batch.tutorial.kubebuilder.io/scheduled-at"
 )
 
+// nolint: gocyclo
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 // TODO(user): Modify the Reconcile function to compare the state specified by
@@ -124,11 +126,14 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		### 2: List all active jobs, and update the status
 
 		To fully update our status, we'll need to list all child jobs in this namespace that belong to this CronJob.
-		Similarly to Get, we can use the List method to list the child jobs.  Notice that we use variadic options to
+		Similarly to Get, we can use the List method to list the child jobs. Notice that we use variadic options to
 		set the namespace and field match (which is actually an index lookup that we set up below).
+
+		After listing the jobs and determining their status, we'll update the CronJob's status. We use a retry mechanism
+		to handle potential conflicts that can arise due to concurrent updates in the cluster.
 	*/
 	var childJobs kbatch.JobList
-	if err := r.List(ctx, &childJobs, client.InNamespace(req.Namespace), client.MatchingFields{jobOwnerKey: req.Name}); err != nil {
+	if err := r.List(ctx, &childJobs, client.InNamespace(req.Namespace), client.MatchingLabels{jobOwnerKey: req.Name}); err != nil {
 		log.Error(err, "unable to list child Jobs")
 		return ctrl.Result{}, err
 	}
@@ -223,28 +228,36 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		}
 	}
 
-	if mostRecentTime != nil {
-		cronJob.Status.LastScheduleTime = &metav1.Time{Time: *mostRecentTime}
-	} else {
-		cronJob.Status.LastScheduleTime = nil
-	}
-	cronJob.Status.Active = nil
-	for _, activeJob := range activeJobs {
-		jobRef, err := ref.GetReference(r.Scheme, activeJob)
-		if err != nil {
-			log.Error(err, "unable to make reference to active job", "job", activeJob)
-			continue
+	// Retry loop for updating status
+	updateErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		// Fetch the latest version of the CronJob
+		if err := r.Get(ctx, req.NamespacedName, &cronJob); err != nil {
+			return err
 		}
-		cronJob.Status.Active = append(cronJob.Status.Active, *jobRef)
-	}
 
-	/*
-		Here, we'll log how many jobs we observed at a slightly higher logging level,
-		for debugging.  Notice how instead of using a format string, we use a fixed message,
-		and attach key-value pairs with the extra information.  This makes it easier to
-		filter and query log lines.
-	*/
-	log.V(1).Info("job count", "active jobs", len(activeJobs), "successful jobs", len(successfulJobs), "failed jobs", len(failedJobs))
+		// Update the status
+		if mostRecentTime != nil {
+			cronJob.Status.LastScheduleTime = &metav1.Time{Time: *mostRecentTime}
+		} else {
+			cronJob.Status.LastScheduleTime = nil
+		}
+
+		cronJob.Status.Active = nil
+		for _, activeJob := range activeJobs {
+			jobRef, err := ref.GetReference(r.Scheme, activeJob)
+			if err != nil {
+				log.Error(err, "unable to make reference to active job", "job", activeJob)
+				continue
+			}
+			cronJob.Status.Active = append(cronJob.Status.Active, *jobRef)
+		}
+
+		if err := r.Status().Update(ctx, &cronJob); err != nil {
+			log.Error(err, "unable to update CronJob status")
+			return err
+		}
+		return nil
+	})
 
 	/*
 		Using the data we've gathered, we'll update the status of our CRD.
@@ -255,9 +268,9 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		The status subresource ignores changes to spec, so it's less likely to conflict
 		with any other updates, and can have separate permissions.
 	*/
-	if err := r.Status().Update(ctx, &cronJob); err != nil {
-		log.Error(err, "unable to update CronJob status")
-		return ctrl.Result{}, err
+	if updateErr != nil {
+		log.Error(updateErr, "failed to update CronJob status after retrying")
+		return ctrl.Result{}, updateErr
 	}
 
 	/*
@@ -414,7 +427,7 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	/*
 		### 6: Run a new job if it's on schedule, not past the deadline, and not blocked by our concurrency policy
 
-		If we've missed a run, and we're still within the deadline to start it, we'll need to run a job.
+		If we've missed a run, and we're still within the deadline to start it, we'll need to run a job. Ensure that the concurrency policy is respected, blocking or replacing jobs as necessary. This integrates smoothly with the retry logic in place, ensuring consistent and reliable job scheduling.
 	*/
 	if missedRun.IsZero() {
 		log.V(1).Info("no upcoming scheduled times, sleeping until next")
@@ -508,7 +521,7 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	// ...and create it on the cluster
-	if err := r.Create(ctx, job); err != nil {
+	if err := r.Create(ctx, job, client.FieldOwner("cronjob-controller")); err != nil {
 		log.Error(err, "unable to create Job for CronJob", "job", job)
 		return ctrl.Result{}, err
 	}
@@ -542,7 +555,7 @@ will automatically call Reconcile on the underlying CronJob when a Job changes, 
 deleted, etc.
 */
 var (
-	jobOwnerKey = ".metadata.controller"
+	jobOwnerKey = "owner-key"
 	apiGVStr    = batchv1.GroupVersion.String()
 )
 
@@ -555,7 +568,10 @@ func (r *CronJobReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &kbatch.Job{}, jobOwnerKey, func(rawObj client.Object) []string {
 		// grab the job object, extract the owner...
-		job := rawObj.(*kbatch.Job)
+		job, ok := rawObj.(*kbatch.Job)
+		if !ok {
+			return nil
+		}
 		owner := metav1.GetControllerOf(job)
 		if owner == nil {
 			return nil
