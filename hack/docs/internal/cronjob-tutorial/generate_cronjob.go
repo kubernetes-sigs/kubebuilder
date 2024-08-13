@@ -99,24 +99,26 @@ func (sp *Sample) UpdateTutorial() {
 	updateSpec(sp)
 	// 2. update webhook
 	updateWebhook(sp)
-	// 3. generate extra files
+	// 3. update makefile
+	updateMakefile(sp)
+	// 4. generate extra files
 	codeGen(sp)
-	// 4. compensate other intro in API
+	// 5. compensate other intro in API
 	updateAPIStuff(sp)
-	// 5. update reconciliation and main.go
-	// 5.1 update controller
+	// 6. update reconciliation and main.go
+	// 6.1 update controller
 	updateController(sp)
-	// 5.2 update main.go
+	// 6.2 update main.go
 	updateMain(sp)
-	// 6. generate extra files
+	// 7. generate extra files
 	codeGen(sp)
-	// 7. update suite_test explanation
+	// 8. update suite_test explanation
 	updateSuiteTest(sp)
-	// 8. uncomment kustomization
+	// 9. uncomment kustomization
 	updateKustomization(sp)
-	// 9. add example
+	// 10. add example
 	updateExample(sp)
-	// 10. add test
+	// 11. add test
 	addControllerTest(sp)
 }
 
@@ -364,6 +366,25 @@ CronJob controller's`+" `"+`SetupWithManager`+"`"+` method.
 	}`, `
 	// +kubebuilder:docs-gen:collapse=old stuff`)
 	CheckError("fixing main.go", err)
+}
+
+func updateMakefile(sp *Sample) {
+	const originalManifestTarget = `.PHONY: manifests
+manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
+	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+`
+	const changedManifestTarget = `.PHONY: manifests
+manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
+	# Note that the option maxDescLen=0 was added in the default scaffold in order to sort out the issue
+	# Too long: must have at most 262144 bytes. By using kubectl apply to create / update resources an annotation
+	# is created by K8s API to store the latest version of the resource ( kubectl.kubernetes.io/last-applied-configuration).
+	# However, it has a size limit and if the CRD is too big with so many long descriptions as this one it will cause the failure.
+	$(CONTROLLER_GEN) rbac:roleName=manager-role crd:maxDescLen=0 webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+`
+
+	err := pluginutil.ReplaceInFile(filepath.Join(sp.ctx.Dir, "Makefile"), originalManifestTarget, changedManifestTarget)
+	CheckError("updating makefile to use maxDescLen=0 in make manifest target", err)
+
 }
 
 func updateWebhook(sp *Sample) {
