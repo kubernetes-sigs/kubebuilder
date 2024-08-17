@@ -72,7 +72,8 @@ This action will caall the job [./build/.goreleaser.yml](./build/.goreleaser.yml
 
 ###  (Deprecated) - To build the Kubebuilder-tools: (Artifacts required to use ENV TEST)
 
-> We are working on to move all out from GCP Kubebuilder project. As it fits as part of Controller-Runtime domain of responsability it is under a ongoing work to change the build of those binaries to controller-tools and how it is implemented in controller-runtime. For further information see the PR: https://github.com/kubernetes-sigs/controller-runtime/pull/2811
+> We no longer build the artifacts and the promotion of those is deprecated. For more info
+see: https://github.com/kubernetes-sigs/kubebuilder/discussions/4082
 
 Kubebuilder projects requires artifacts which are used to do test with ENV TEST (when we call `make test` target)
 These artifacts can be checked in the service page: https://storage.googleapis.com/kubebuilder-tools
@@ -86,7 +87,7 @@ For further information see the [README](https://github.com/kubernetes-sigs/kube
 
 ### (Deprecated) - To build the `kube-rbac-proxy` images:
 
-> We no longer build and promote those images. For more info
+> We no longer build the images and the promotion of those images is deprecated. For more info
 see: https://github.com/kubernetes-sigs/kubebuilder/discussions/3907
 
 These images are built from the project [brancz/kube-rbac-proxy](https://github.com/brancz/kube-rbac-proxy).
