@@ -8,83 +8,8 @@ rules:
   - crew.testproject.org
   resources:
   - admirales
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - crew.testproject.org
-  resources:
-  - admirales/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - crew.testproject.org
-  resources:
-  - admirales/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - crew.testproject.org
-  resources:
   - captains
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - crew.testproject.org
-  resources:
-  - captains/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - crew.testproject.org
-  resources:
-  - captains/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - crew.testproject.org
-  resources:
   - firstmates
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - crew.testproject.org
-  resources:
-  - firstmates/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - crew.testproject.org
-  resources:
-  - firstmates/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - crew.testproject.org
-  resources:
   - lakers
   verbs:
   - create
@@ -97,12 +22,18 @@ rules:
 - apiGroups:
   - crew.testproject.org
   resources:
+  - admirales/finalizers
+  - captains/finalizers
+  - firstmates/finalizers
   - lakers/finalizers
   verbs:
   - update
 - apiGroups:
   - crew.testproject.org
   resources:
+  - admirales/status
+  - captains/status
+  - firstmates/status
   - lakers/status
   verbs:
   - get
