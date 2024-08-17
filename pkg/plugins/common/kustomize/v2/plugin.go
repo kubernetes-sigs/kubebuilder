@@ -25,7 +25,7 @@ import (
 )
 
 // KustomizeVersion is the kubernetes-sigs/kustomize version to be used in the project
-const KustomizeVersion = "v5.4.2"
+const KustomizeVersion = "v5.4.3"
 
 const pluginName = "kustomize.common." + plugins.DefaultNameQualifier
 
