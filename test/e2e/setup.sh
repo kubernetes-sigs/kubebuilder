@@ -27,6 +27,7 @@ install_kind
 #   export KIND_CLUSTER=<kind cluster name>
 #   create_cluster <k8s version>
 function create_cluster {
+  echo "Getting kind config..."
   KIND_VERSION=$1
   : ${KIND_CLUSTER:?"KIND_CLUSTER must be set"}
   : ${1:?"k8s version must be set as arg 1"}
@@ -36,7 +37,10 @@ function create_cluster {
     if test -f $(dirname "$0")/kind-config-${version_prefix}.yaml; then
       kind_config=$(dirname "$0")/kind-config-${version_prefix}.yaml
     fi
+    echo "Creating cluster..."
     kind create cluster -v 4 --name $KIND_CLUSTER --retain --wait=1m --config ${kind_config} --image=kindest/node:$1
+    echo "Installing Calico..."
+    kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
   fi
 }
 

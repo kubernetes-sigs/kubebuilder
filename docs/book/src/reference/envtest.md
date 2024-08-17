@@ -8,7 +8,18 @@ Kubernetes API server, without kubelet, controller-manager or other components.
 Installing the binaries is as a simple as running `make envtest`. `envtest` will download the Kubernetes API server binaries to the `bin/` folder in your project
 by default. `make test` is the one-stop shop for downloading the binaries, setting up the test environment, and running the tests.
 
-The make targets require `bash` to run.
+
+You can refer to the Makefile of the Kubebuilder scaffold and observe that the envtest setup is consistently aligned across all controller-runtime releases. Starting from `release-0.19`, it is configured to automatically download the artefact from the correct location, **ensuring that kubebuilder users are not impacted.**
+
+```shell
+ENVTEST_K8S_VERSION = 1.31.0
+ENVTEST_VERSION ?= release-0.19
+...
+.PHONY: envtest
+envtest: $(ENVTEST) ## Download setup-envtest locally if necessary.
+$(ENVTEST): $(LOCALBIN)
+	$(call go-install-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest,$(ENVTEST_VERSION))
+```
 
 ## Installation in Air Gapped/disconnected environments
 If you would like to download the tarball containing the binaries, to use in a disconnected environment you can use
@@ -25,7 +36,7 @@ make envtest
 Installing the binaries using `setup-envtest` stores the binary in OS specific locations, you can read more about them
 [here](https://github.com/kubernetes-sigs/controller-runtime/tree/master/tools/setup-envtest#where-does-it-put-all-those-binaries)
 ```sh
-./bin/setup-envtest use 1.21.2
+./bin/setup-envtest use 1.31.0
 ```
 
 ### Update the test make target
@@ -41,15 +52,6 @@ NOTE: The `ENVTEST_K8S_VERSION` needs to match the `setup-envtest` you downloade
 ```sh
 no such version (1.24.5) exists on disk for this architecture (darwin/amd64) -- try running `list -i` to see what's on disk
 ```
-
-## Kubernetes 1.20 and 1.21 binary issues
-
-There have been many reports of the `kube-apiserver` or `etcd` binary [hanging during cleanup][cr-1571]
-or misbehaving in other ways. We recommend using the 1.19.2 tools version to circumvent such issues,
-which do not seem to arise in 1.22+. This is likely NOT the cause of a `fork/exec: permission denied`
-or `fork/exec: not found` error, which is caused by improper tools installation.
-
-[cr-1571]:https://github.com/kubernetes-sigs/controller-runtime/issues/1571
 
 ## Writing tests
 
@@ -97,8 +99,6 @@ Ie,
     ├── etcd
     ├── kube-apiserver
     └── kubectl
-
-1 directory, 3 files
 ```
 
 You can use environment variables and/or flags to specify the `kubectl`,`api-server` and `etcd` setup within your integration tests.

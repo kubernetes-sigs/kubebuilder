@@ -17,8 +17,9 @@ limitations under the License.
 package gettingstarted
 
 import (
-	"os"
 	"os/exec"
+
+	hackutils "sigs.k8s.io/kubebuilder/v4/hack/docs/utils"
 
 	log "github.com/sirupsen/logrus"
 	"sigs.k8s.io/kubebuilder/v4/test/e2e/utils"
@@ -30,26 +31,12 @@ type Sample struct {
 
 func NewSample(binaryPath, samplePath string) Sample {
 	log.Infof("Generating the sample context of getting-started...")
-	ctx := newSampleContext(binaryPath, samplePath, "GO111MODULE=on")
+	ctx := hackutils.NewSampleContext(binaryPath, samplePath, "GO111MODULE=on")
 	return Sample{&ctx}
 }
 
 func (sp *Sample) UpdateTutorial() {
 	log.Println("TODO: update tutorial")
-}
-
-func newSampleContext(binaryPath string, samplePath string, env ...string) utils.TestContext {
-	cmdContext := &utils.CmdContext{
-		Env: env,
-		Dir: samplePath,
-	}
-
-	testContext := utils.TestContext{
-		CmdContext: cmdContext,
-		BinaryName: binaryPath,
-	}
-
-	return testContext
 }
 
 // Prepare the Context for the sample project
@@ -60,7 +47,7 @@ func (sp *Sample) Prepare() {
 	log.Infof("Refreshing tools and creating directory...")
 	err := sp.ctx.Prepare()
 
-	CheckError("Creating directory for sample project", err)
+	hackutils.CheckError("Creating directory for sample project", err)
 }
 
 func (sp *Sample) GenerateSampleProject() {
@@ -71,7 +58,7 @@ func (sp *Sample) GenerateSampleProject() {
 		"--license", "apache2",
 		"--owner", "The Kubernetes authors",
 	)
-	CheckError("Initializing the getting started project", err)
+	hackutils.CheckError("Initializing the getting started project", err)
 
 	log.Infof("Adding a new config type")
 	err = sp.ctx.CreateAPI(
@@ -85,27 +72,19 @@ func (sp *Sample) GenerateSampleProject() {
 		"--plugins", "deploy-image/v1-alpha",
 		"--make=false",
 	)
-	CheckError("Creating the API", err)
+	hackutils.CheckError("Creating the API", err)
 }
 
 func (sp *Sample) CodeGen() {
 	cmd := exec.Command("make", "manifests")
 	_, err := sp.ctx.Run(cmd)
-	CheckError("Failed to run make manifests for getting started tutorial", err)
+	hackutils.CheckError("Failed to run make manifests for getting started tutorial", err)
 
 	cmd = exec.Command("make", "all")
 	_, err = sp.ctx.Run(cmd)
-	CheckError("Failed to run make all for getting started tutorial", err)
+	hackutils.CheckError("Failed to run make all for getting started tutorial", err)
 
 	cmd = exec.Command("go", "mod", "tidy")
 	_, err = sp.ctx.Run(cmd)
-	CheckError("Failed to run go mod tidy all for getting started tutorial", err)
-}
-
-// CheckError will exit with exit code 1 when err is not nil.
-func CheckError(msg string, err error) {
-	if err != nil {
-		log.Errorf("error %s: %s", msg, err)
-		os.Exit(1)
-	}
+	hackutils.CheckError("Failed to run go mod tidy all for getting started tutorial", err)
 }

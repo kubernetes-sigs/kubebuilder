@@ -18,11 +18,13 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '~1.22'
+      - name: Clean dist directory
+        run: rm -rf dist || true
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
           version: v2.1.0
-          args: release -f ./build/.goreleaser.yml --rm-dist
+          args: release -f ./build/.goreleaser.yml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Upload assets

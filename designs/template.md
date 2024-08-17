@@ -1,6 +1,6 @@
 | Authors       | Creation Date | Status      | Extra |
 |---------------|---------------|-------------|---|
-| @name | date | Implementeble | - |
+| @name | date | Implementable | - |
 
 Title of the Design/Proposal
 ===================
