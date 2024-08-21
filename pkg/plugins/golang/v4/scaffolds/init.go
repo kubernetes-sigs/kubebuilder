@@ -162,5 +162,7 @@ func (s *initScaffolder) Scaffold() error {
 		&e2e.Test{},
 		&e2e.SuiteTest{},
 		&utils.Utils{},
+		&templates.DevContainer{},
+		&templates.DevContainerPostInstallScript{},
 	)
 }

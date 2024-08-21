@@ -1,0 +1,41 @@
+name: Test DevContainer Image
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test-devcontainer:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Go 1.22.x
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22.x"
+
+      - name: Setup NodeJS 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+
+      - name: Setup Devcontainer CLI
+        run: |
+          npm install -g @devcontainers/cli
+
+      - name: Build and Validate DevContainer
+        run: |
+          cd testdata/project-v4
+
+          OUTPUT=$(devcontainer up --workspace-folder=./)
+          STATUS=$(echo "$OUTPUT" | jq -r '.outcome')
+
+          if [[ "$STATUS" == "success" ]]; then
+            echo "Devcontainer setup was successful."
+            exit 0
+          else
+            echo "Devcontainer setup failed."
+            exit 1
+          fi

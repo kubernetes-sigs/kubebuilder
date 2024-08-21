@@ -21,7 +21,7 @@ set -o pipefail
 source $(dirname "$0")/common.sh
 
 echo "Checking for license header..."
-allfiles=$(listFiles|grep -v ./internal/bindata/...)
+allfiles=$(listFiles | grep -v -e './internal/bindata/...' -e '.devcontainer/post-install.sh')
 licRes=""
 for file in $allfiles; do
   if ! head -n4 "${file}" | grep -Eq "(Copyright|generated|GENERATED|Licensed)" ; then
