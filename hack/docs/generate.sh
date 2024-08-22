@@ -19,6 +19,7 @@ source "$(dirname "$0")/../../test/common.sh"
 build_kb
 
 # ensure that destroy succeed
+chmod -R +w docs/book/src/multiversion-tutorial/testdata/project/
 chmod -R +w docs/book/src/cronjob-tutorial/testdata/project/
 chmod -R +w docs/book/src/getting-started/testdata/project/
 

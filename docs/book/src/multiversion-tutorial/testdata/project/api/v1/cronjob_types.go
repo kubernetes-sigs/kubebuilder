@@ -19,7 +19,6 @@ limitations under the License.
  */
 
 package v1
-
 /*
  */
 
@@ -31,8 +30,10 @@ import (
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // +kubebuilder:docs-gen:collapse=Imports
+
+// CronJobSpec defines the desired state of CronJob
+
 
 // CronJobSpec defines the desired state of CronJob
 type CronJobSpec struct {
@@ -98,6 +99,7 @@ const (
 	ReplaceConcurrent ConcurrencyPolicy = "Replace"
 )
 
+
 // CronJobStatus defines the observed state of CronJob
 type CronJobStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
@@ -119,7 +121,7 @@ type CronJobStatus struct {
  This is the version that the Kubernetes API server uses to store our data.
  We'll chose the v1 version for our project.
 
- We'll use the [`+kubebuilder:storageversion`](/reference/markers/crd.md) to do this.
+ We'll use the `[+kubebuilder:storageversion]`(/reference/markers/crd.md) to do this.
 
  Note that multiple versions may exist in storage if they were written before
  the storage version changes -- changing the storage version only affects how
@@ -130,17 +132,21 @@ type CronJobStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:storageversion
 
+}
+
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+
 // CronJob is the Schema for the cronjobs API
 type CronJob struct {
+	/*
+	 */
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec   CronJobSpec   `json:"spec,omitempty"`
 	Status CronJobStatus `json:"status,omitempty"`
 }
-
-/*
- */
 
 // +kubebuilder:object:root=true
 
@@ -154,5 +160,4 @@ type CronJobList struct {
 func init() {
 	SchemeBuilder.Register(&CronJob{}, &CronJobList{})
 }
-
-// +kubebuilder:docs-gen:collapse=old stuff
+// +kubebuilder:docs-gen:collapse=Root Object Definitions

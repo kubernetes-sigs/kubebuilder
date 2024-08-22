@@ -1,4 +1,5 @@
 /*
+Copyright 2024 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -12,16 +13,18 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-// +kubebuilder:docs-gen:collapse=Apache License
 
-package v1
+package multiversion
+
+const MainBatch = `
+// +kubebuilder:docs-gen:collapse=Imports
 
 /*
-Implementing the hub method is pretty easy -- we just have to add an empty
-method called `Hub()` to serve as a
-[marker](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/conversion?tab=doc#Hub).
-We could also just put this inline in our `cronjob_types.go` file.
-*/
+*/`
 
-// Hub marks this type as a conversion hub.
-func (*CronJob) Hub() {}
+const MainEnableWebhook = `
+
+	/*
+		Our existing call to SetupWebhookWithManager registers our conversion webhooks with the manager, too.
+		
+	*/`
