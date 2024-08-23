@@ -220,10 +220,20 @@ make deploy IMG=<some-registry>/<project-name>:tag
 ```
 
 <aside class="note">
-<h1>registry permission</h1>
+<h1>Registry permission</h1>
 
 This image ought to be published in the personal registry you specified. And it is required to have access to pull the image from the working environment.
 Make sure you have the proper permission to the registry if the above commands don't work.
+
+Consider incorporating Kind into your workflow for a faster, more efficient local development and CI experience.
+Note that, if you're using a Kind cluster, there's no need to push your image to a remote container registry.
+You can directly load your local image into your specified Kind cluster:
+
+```bash
+kind load docker-image <your-image-name>:tag --name <your-kind-cluster-name>
+```
+
+To now more see: [Kind for Dev & CI](./reference/kind.md)
 
 <h1>RBAC errors</h1>
 
