@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+// +kubebuilder:docs-gen:collapse=Apache License
 
 package v1alpha1
 
@@ -22,6 +23,8 @@ import (
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+
+// +kubebuilder:docs-gen:collapse=Imports
 
 // MemcachedSpec defines the desired state of Memcached
 type MemcachedSpec struct {
@@ -35,9 +38,6 @@ type MemcachedSpec struct {
 	// +kubebuilder:validation:Maximum=3
 	// +kubebuilder:validation:ExclusiveMaximum=false
 	Size int32 `json:"size,omitempty"`
-
-	// Port defines the port that will be used to init the container with the image
-	ContainerPort int32 `json:"containerPort,omitempty"`
 }
 
 // MemcachedStatus defines the observed state of Memcached

@@ -19,27 +19,21 @@ package controller
 import (
 	"context"
 	"fmt"
-	"os"
-	"strings"
-	"time"
-
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
+	"time"
+
+	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	cachev1alpha1 "example.com/memcached/api/v1alpha1"
 )
-
-const memcachedFinalizer = "cache.example.com/finalizer"
 
 // Definitions to manage status conditions
 const (
@@ -52,13 +46,8 @@ const (
 // MemcachedReconciler reconciles a Memcached object
 type MemcachedReconciler struct {
 	client.Client
-	Scheme   *runtime.Scheme
-	Recorder record.EventRecorder
+	Scheme *runtime.Scheme
 }
-
-// The following markers are used to generate the rules permissions (RBAC) on config/rbac using controller-gen
-// when the command <make manifests> is executed.
-// To know more about markers see: https://book.kubebuilder.io/reference/markers.html
 
 // +kubebuilder:rbac:groups=cache.example.com,resources=memcacheds,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=cache.example.com,resources=memcacheds/status,verbs=get;update;patch
@@ -77,6 +66,8 @@ type MemcachedReconciler struct {
 // For further info:
 // - About Operator Pattern: https://kubernetes.io/docs/concepts/extend-kubernetes/operator/
 // - About Controllers: https://kubernetes.io/docs/concepts/architecture/controller/
+//
+// For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.19.0/pkg/reconcile
 func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
@@ -115,79 +106,6 @@ func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			log.Error(err, "Failed to re-fetch memcached")
 			return ctrl.Result{}, err
 		}
-	}
-
-	// Let's add a finalizer. Then, we can define some operations which should
-	// occur before the custom resource is deleted.
-	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers
-	if !controllerutil.ContainsFinalizer(memcached, memcachedFinalizer) {
-		log.Info("Adding Finalizer for Memcached")
-		if ok := controllerutil.AddFinalizer(memcached, memcachedFinalizer); !ok {
-			log.Error(err, "Failed to add finalizer into the custom resource")
-			return ctrl.Result{Requeue: true}, nil
-		}
-
-		if err = r.Update(ctx, memcached); err != nil {
-			log.Error(err, "Failed to update custom resource to add finalizer")
-			return ctrl.Result{}, err
-		}
-	}
-
-	// Check if the Memcached instance is marked to be deleted, which is
-	// indicated by the deletion timestamp being set.
-	isMemcachedMarkedToBeDeleted := memcached.GetDeletionTimestamp() != nil
-	if isMemcachedMarkedToBeDeleted {
-		if controllerutil.ContainsFinalizer(memcached, memcachedFinalizer) {
-			log.Info("Performing Finalizer Operations for Memcached before delete CR")
-
-			// Let's add here a status "Downgrade" to reflect that this resource began its process to be terminated.
-			meta.SetStatusCondition(&memcached.Status.Conditions, metav1.Condition{Type: typeDegradedMemcached,
-				Status: metav1.ConditionUnknown, Reason: "Finalizing",
-				Message: fmt.Sprintf("Performing finalizer operations for the custom resource: %s ", memcached.Name)})
-
-			if err := r.Status().Update(ctx, memcached); err != nil {
-				log.Error(err, "Failed to update Memcached status")
-				return ctrl.Result{}, err
-			}
-
-			// Perform all operations required before removing the finalizer and allow
-			// the Kubernetes API to remove the custom resource.
-			r.doFinalizerOperationsForMemcached(memcached)
-
-			// TODO(user): If you add operations to the doFinalizerOperationsForMemcached method
-			// then you need to ensure that all worked fine before deleting and updating the Downgrade status
-			// otherwise, you should requeue here.
-
-			// Re-fetch the memcached Custom Resource before updating the status
-			// so that we have the latest state of the resource on the cluster and we will avoid
-			// raising the error "the object has been modified, please apply
-			// your changes to the latest version and try again" which would re-trigger the reconciliation
-			if err := r.Get(ctx, req.NamespacedName, memcached); err != nil {
-				log.Error(err, "Failed to re-fetch memcached")
-				return ctrl.Result{}, err
-			}
-
-			meta.SetStatusCondition(&memcached.Status.Conditions, metav1.Condition{Type: typeDegradedMemcached,
-				Status: metav1.ConditionTrue, Reason: "Finalizing",
-				Message: fmt.Sprintf("Finalizer operations for custom resource %s name were successfully accomplished", memcached.Name)})
-
-			if err := r.Status().Update(ctx, memcached); err != nil {
-				log.Error(err, "Failed to update Memcached status")
-				return ctrl.Result{}, err
-			}
-
-			log.Info("Removing Finalizer for Memcached after successfully perform the operations")
-			if ok := controllerutil.RemoveFinalizer(memcached, memcachedFinalizer); !ok {
-				log.Error(err, "Failed to remove finalizer for Memcached")
-				return ctrl.Result{Requeue: true}, nil
-			}
-
-			if err := r.Update(ctx, memcached); err != nil {
-				log.Error(err, "Failed to remove finalizer for Memcached")
-				return ctrl.Result{}, err
-			}
-		}
-		return ctrl.Result{}, nil
 	}
 
 	// Check if the deployment already exists, if not create a new one
@@ -282,37 +200,19 @@ func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	return ctrl.Result{}, nil
 }
 
-// finalizeMemcached will perform the required operations before delete the CR.
-func (r *MemcachedReconciler) doFinalizerOperationsForMemcached(cr *cachev1alpha1.Memcached) {
-	// TODO(user): Add the cleanup steps that the operator
-	// needs to do before the CR can be deleted. Examples
-	// of finalizers include performing backups and deleting
-	// resources that are not owned by this CR, like a PVC.
-
-	// Note: It is not recommended to use finalizers with the purpose of deleting resources which are
-	// created and managed in the reconciliation. These ones, such as the Deployment created on this reconcile,
-	// are defined as dependent of the custom resource. See that we use the method ctrl.SetControllerReference.
-	// to set the ownerRef which means that the Deployment will be deleted by the Kubernetes API.
-	// More info: https://kubernetes.io/docs/tasks/administer-cluster/use-cascading-deletion/
-
-	// The following implementation will raise an event
-	r.Recorder.Event(cr, "Warning", "Deleting",
-		fmt.Sprintf("Custom Resource %s is being deleted from the namespace %s",
-			cr.Name,
-			cr.Namespace))
+// SetupWithManager sets up the controller with the Manager.
+func (r *MemcachedReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	return ctrl.NewControllerManagedBy(mgr).
+		For(&cachev1alpha1.Memcached{}).
+		Owns(&appsv1.Deployment{}).
+		Complete(r)
 }
 
 // deploymentForMemcached returns a Memcached Deployment object
 func (r *MemcachedReconciler) deploymentForMemcached(
 	memcached *cachev1alpha1.Memcached) (*appsv1.Deployment, error) {
-	ls := labelsForMemcached()
 	replicas := memcached.Spec.Size
-
-	// Get the Operand image
-	image, err := imageForMemcached()
-	if err != nil {
-		return nil, err
-	}
+	image := "memcached:1.6.26-alpine3.19"
 
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -322,46 +222,15 @@ func (r *MemcachedReconciler) deploymentForMemcached(
 		Spec: appsv1.DeploymentSpec{
 			Replicas: &replicas,
 			Selector: &metav1.LabelSelector{
-				MatchLabels: ls,
+				MatchLabels: map[string]string{"app.kubernetes.io/name": "project"},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: ls,
+					Labels: map[string]string{"app.kubernetes.io/name": "project"},
 				},
 				Spec: corev1.PodSpec{
-					// TODO(user): Uncomment the following code to configure the nodeAffinity expression
-					// according to the platforms which are supported by your solution. It is considered
-					// best practice to support multiple architectures. build your manager image using the
-					// makefile target docker-buildx. Also, you can use docker manifest inspect <image>
-					// to check what are the platforms supported.
-					// More info: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity
-					// Affinity: &corev1.Affinity{
-					//	 NodeAffinity: &corev1.NodeAffinity{
-					//		 RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-					//			 NodeSelectorTerms: []corev1.NodeSelectorTerm{
-					//				 {
-					//					 MatchExpressions: []corev1.NodeSelectorRequirement{
-					//						 {
-					//							 Key:      "kubernetes.io/arch",
-					//							 Operator: "In",
-					//							 Values:   []string{"amd64", "arm64", "ppc64le", "s390x"},
-					//						 },
-					//						 {
-					//							 Key:      "kubernetes.io/os",
-					//							 Operator: "In",
-					//							 Values:   []string{"linux"},
-					//						 },
-					//					 },
-					//				 },
-					//		 	 },
-					//		 },
-					//	 },
-					// },
 					SecurityContext: &corev1.PodSecurityContext{
 						RunAsNonRoot: &[]bool{true}[0],
-						// IMPORTANT: seccomProfile was introduced with Kubernetes 1.19
-						// If you are looking for to produce solutions to be supported
-						// on lower versions you must remove this option.
 						SeccompProfile: &corev1.SeccompProfile{
 							Type: corev1.SeccompProfileTypeRuntimeDefault,
 						},
@@ -383,7 +252,7 @@ func (r *MemcachedReconciler) deploymentForMemcached(
 							},
 						},
 						Ports: []corev1.ContainerPort{{
-							ContainerPort: memcached.Spec.ContainerPort,
+							ContainerPort: 11211,
 							Name:          "memcached",
 						}},
 						Command: []string{"memcached", "-m=64", "-o", "modern", "-v"},
@@ -399,50 +268,4 @@ func (r *MemcachedReconciler) deploymentForMemcached(
 		return nil, err
 	}
 	return dep, nil
-}
-
-// labelsForMemcached returns the labels for selecting the resources
-// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/
-func labelsForMemcached() map[string]string {
-	var imageTag string
-	image, err := imageForMemcached()
-	if err == nil {
-		imageTag = strings.Split(image, ":")[1]
-	}
-	return map[string]string{"app.kubernetes.io/name": "project",
-		"app.kubernetes.io/version":    imageTag,
-		"app.kubernetes.io/managed-by": "MemcachedController",
-	}
-}
-
-// imageForMemcached gets the Operand image which is managed by this controller
-// from the MEMCACHED_IMAGE environment variable defined in the config/manager/manager.yaml
-func imageForMemcached() (string, error) {
-	var imageEnvVar = "MEMCACHED_IMAGE"
-	image, found := os.LookupEnv(imageEnvVar)
-	if !found {
-		return "", fmt.Errorf("Unable to find %s environment variable with the image", imageEnvVar)
-	}
-	return image, nil
-}
-
-// SetupWithManager sets up the controller with the Manager.
-// The whole idea is to be watching the resources that matter for the controller.
-// When a resource that the controller is interested in changes, the Watch triggers
-// the controller’s reconciliation loop, ensuring that the actual state of the resource
-// matches the desired state as defined in the controller’s logic.
-//
-// Notice how we configured the Manager to monitor events such as the creation, update,
-// or deletion of a Custom Resource (CR) of the Memcached kind, as well as any changes
-// to the Deployment that the controller manages and owns.
-func (r *MemcachedReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		// Watch the Memcached CR(s) and trigger reconciliation whenever it
-		// is created, updated, or deleted
-		For(&cachev1alpha1.Memcached{}).
-		// Watch the Deployment managed by the MemcachedReconciler. If any changes occur to the Deployment
-		// owned and managed by this controller, it will trigger reconciliation, ensuring that the cluster
-		// state aligns with the desired state. See that the ownerRef was set when the Deployment was created.
-		Owns(&appsv1.Deployment{}).
-		Complete(r)
 }
