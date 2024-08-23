@@ -220,7 +220,7 @@ make deploy IMG=<some-registry>/<project-name>:tag
 ```
 
 <aside class="note">
-<h1>Registry permission</h1>
+<h1>Registry Permission</h1>
 
 This image ought to be published in the personal registry you specified. And it is required to have access to pull the image from the working environment.
 Make sure you have the proper permission to the registry if the above commands don't work.
@@ -233,7 +233,7 @@ You can directly load your local image into your specified Kind cluster:
 kind load docker-image <your-image-name>:tag --name <your-kind-cluster-name>
 ```
 
-To now more see: [Kind for Dev & CI](./reference/kind.md)
+To know more, see: [Using Kind For Development Purposes and CI](./reference/kind.md)
 
 <h1>RBAC errors</h1>
 
@@ -260,8 +260,8 @@ make undeploy
 
 ## Next Step
 
-Now, take a look at the [Architecture Concept Diagram][architecture-concept-diagram] for a clearer overview.
-Next, proceed with the [Getting Started Guide][getting-started], which should take no more than 30 minutes and will
+- Now, take a look at the [Architecture Concept Diagram][architecture-concept-diagram] for a clearer overview.
+- Next, proceed with the [Getting Started Guide][getting-started], which should take no more than 30 minutes and will
 provide a solid foundation. Afterward, dive into the [CronJob Tutorial][cronjob-tutorial] to deepen your
 understanding by developing a demo project.
 
