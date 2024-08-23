@@ -512,7 +512,7 @@ to the cluster using the `make deploy IMG=myregistry/example:1.0.0` command.
 
 ## Next Steps
 
-- To delve deeper into developing your solution, consider going through the provided tutorials.
+- To delve deeper into developing your solution, consider going through the [CronJob Tutorial][cronjob-tutorial]
 - For insights on optimizing your approach, refer to the [Best Practices][best-practices] documentation.
 
 [k8s-operator-pattern]: https://kubernetes.io/docs/concepts/extend-kubernetes/operator/
@@ -527,3 +527,4 @@ to the cluster using the `make deploy IMG=myregistry/example:1.0.0` command.
 [options-manager]: https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/manager#Options
 [quick-start]: ./quick-start.md
 [best-practices]: ./reference/good-practices.md
+[cronjob-tutorial]: https://book.kubebuilder.io/cronjob-tutorial/cronjob-tutorial.html
