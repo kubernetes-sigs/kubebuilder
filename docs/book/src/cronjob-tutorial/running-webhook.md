@@ -23,7 +23,7 @@ You can directly load your local image into your specified Kind cluster:
 kind load docker-image <your-image-name>:tag --name <your-kind-cluster-name>
 ```
 
-To now more see: [Kind for Dev & CI](./../reference/kind.md)
+To know more, see: [Using Kind For Development Purposes and CI](./../reference/kind.md)
 
 </aside>
 
