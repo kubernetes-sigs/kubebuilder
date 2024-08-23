@@ -510,10 +510,39 @@ By executing `make build IMG=myregistry/example:1.0.0`, you'll build the image f
 public registry. This ensures easy accessibility, eliminating the need for additional configurations. Once that's done, you can deploy the image
 to the cluster using the `make deploy IMG=myregistry/example:1.0.0` command.
 
+<aside class="note">
+<h1>Consider use Kind</h1>
+
+This image ought to be published in the personal registry you specified. And it is required to have access to pull the image
+from the working environment. Make sure you have the proper permission
+to the registry if the above commands don't work.
+
+Consider incorporating Kind into your workflow for a faster, more efficient local development and CI experience.
+Note that, if you're using a Kind cluster, there's no need to push your image to a remote container registry.
+You can directly load your local image into your specified Kind cluster:
+
+```bash
+kind load docker-image <your-image-name>:tag --name <your-kind-cluster-name>
+```
+
+For further information, see: [Using Kind For Development Purposes and CI](./reference/kind.md)
+
+</aside>
+
 ## Next Steps
 
-- To delve deeper into developing your solution, consider going through the provided tutorials.
+- To delve deeper into developing your solution, consider going through the [CronJob Tutorial][cronjob-tutorial]
 - For insights on optimizing your approach, refer to the [Best Practices][best-practices] documentation.
+
+<aside class="note">
+<h1> Using Deploy Image plugin to generate APIs and source code </h1>
+
+Now that you have a better understanding, you might want to check out the [Deploy Image][deploy-image] Plugin.
+This plugin allows users to scaffold APIs/Controllers to deploy and manage an Operand (image) on the cluster.
+It will provide scaffolds similar to the ones in this guide, along with additional features such as tests
+implemented for your controller.
+
+</aside>
 
 [k8s-operator-pattern]: https://kubernetes.io/docs/concepts/extend-kubernetes/operator/
 [controller-runtime]: https://github.com/kubernetes-sigs/controller-runtime
@@ -527,3 +556,5 @@ to the cluster using the `make deploy IMG=myregistry/example:1.0.0` command.
 [options-manager]: https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/manager#Options
 [quick-start]: ./quick-start.md
 [best-practices]: ./reference/good-practices.md
+[cronjob-tutorial]: https://book.kubebuilder.io/cronjob-tutorial/cronjob-tutorial.html
+[deploy-image]: ./plugins/deploy-image-plugin-v1-alpha.md
