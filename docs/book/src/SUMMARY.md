@@ -78,7 +78,7 @@
   - [Watching Resources](./reference/watching-resources.md)
     - [Resources Managed by the Operator](./reference/watching-resources/operator-managed.md)
     - [Externally Managed Resources](./reference/watching-resources/externally-managed.md)
-  - [Kind cluster](reference/kind.md)
+  - [Kind for Dev & CI](reference/kind.md)
   - [What's a webhook?](reference/webhook-overview.md)
     - [Admission webhook](reference/admission-webhook.md)
     - [Webhooks for Core Types](reference/webhook-for-core-types.md)

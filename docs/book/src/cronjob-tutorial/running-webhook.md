@@ -1,15 +1,5 @@
 # Deploying Admission Webhooks
 
-## Kind Cluster
-
-It is recommended to develop your webhook with a
-[kind](../reference/kind.md) cluster for faster iteration.
-Why?
-
-- You can bring up a multi-node cluster locally within 1 minute.
-- You can tear it down in seconds.
-- You don't need to push your images to remote registry.
-
 ## cert-manager
 
 You need to follow [this](./cert-manager.md) to install the cert-manager bundle.
@@ -22,12 +12,21 @@ Run the following command to build your image locally.
 make docker-build docker-push IMG=<some-registry>/<project-name>:tag
 ```
 
-You don't need to push the image to a remote container registry if you are using
-a kind cluster. You can directly load your local image to your specified kind cluster:
+<aside class="note">
+<h1> Using Kind </h1>
+
+Consider incorporating Kind into your workflow for a faster, more efficient local development and CI experience.
+Note that, if you're using a Kind cluster, there's no need to push your image to a remote container registry.
+You can directly load your local image into your specified Kind cluster:
 
 ```bash
 kind load docker-image <your-image-name>:tag --name <your-kind-cluster-name>
 ```
+
+To now more see: [Kind for Dev & CI](./../reference/kind.md)
+
+</aside>
+
 
 ## Deploy Webhooks
 
