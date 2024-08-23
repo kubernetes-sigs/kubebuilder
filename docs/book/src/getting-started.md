@@ -534,6 +534,16 @@ For further information, see: [Using Kind For Development Purposes and CI](./ref
 - To delve deeper into developing your solution, consider going through the [CronJob Tutorial][cronjob-tutorial]
 - For insights on optimizing your approach, refer to the [Best Practices][best-practices] documentation.
 
+<aside class="note">
+<h1> Using Deploy Image plugin to generate APIs and source code </h1>
+
+Now that you have a better understanding, you might want to check out the [Deploy Image][deploy-image] Plugin.
+This plugin allows users to scaffold APIs/Controllers to deploy and manage an Operand (image) on the cluster.
+It will provide scaffolds similar to the ones in this guide, along with additional features such as tests
+implemented for your controller.
+
+</aside>
+
 [k8s-operator-pattern]: https://kubernetes.io/docs/concepts/extend-kubernetes/operator/
 [controller-runtime]: https://github.com/kubernetes-sigs/controller-runtime
 [group-kind-oh-my]: ./cronjob-tutorial/gvks.md
@@ -547,3 +557,4 @@ For further information, see: [Using Kind For Development Purposes and CI](./ref
 [quick-start]: ./quick-start.md
 [best-practices]: ./reference/good-practices.md
 [cronjob-tutorial]: https://book.kubebuilder.io/cronjob-tutorial/cronjob-tutorial.html
+[deploy-image]: ./plugins/deploy-image-plugin-v1-alpha.md
