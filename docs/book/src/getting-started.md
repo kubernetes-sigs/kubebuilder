@@ -510,6 +510,25 @@ By executing `make build IMG=myregistry/example:1.0.0`, you'll build the image f
 public registry. This ensures easy accessibility, eliminating the need for additional configurations. Once that's done, you can deploy the image
 to the cluster using the `make deploy IMG=myregistry/example:1.0.0` command.
 
+<aside class="note">
+<h1>Consider use Kind</h1>
+
+This image ought to be published in the personal registry you specified. And it is required to have access to pull the image
+from the working environment. Make sure you have the proper permission
+to the registry if the above commands don't work.
+
+Consider incorporating Kind into your workflow for a faster, more efficient local development and CI experience.
+Note that, if you're using a Kind cluster, there's no need to push your image to a remote container registry.
+You can directly load your local image into your specified Kind cluster:
+
+```bash
+kind load docker-image <your-image-name>:tag --name <your-kind-cluster-name>
+```
+
+For further information, see: [Using Kind For Development Purposes and CI](./reference/kind.md)
+
+</aside>
+
 ## Next Steps
 
 - To delve deeper into developing your solution, consider going through the [CronJob Tutorial][cronjob-tutorial]
