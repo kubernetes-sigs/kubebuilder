@@ -250,19 +250,10 @@ make undeploy
 
 ## Next Step
 
-Now, see the [architecture concept diagram][architecture-concept-diagram] for a better overview and follow up the
-[CronJob tutorial][cronjob-tutorial] to better understand how it works by developing a
-demo example project.
-
-<aside class="note">
-<h1> Using Deploy Image plugin to generate APIs and controllers code </h1>
-
-Ensure that you check out the [Deploy Image](https://book.kubebuilder.io/plugins/deploy-image-plugin-v1-alpha.html)
-Plugin. This plugin allows users to scaffold API/Controllers to deploy and manage an
-Operand (image) on the cluster following the guidelines and best practices. It abstracts the
-complexities of achieving this goal while allowing users to customize the generated code.
-
-</aside>
+Now, take a look at the [Architecture Concept Diagram][architecture-concept-diagram] for a clearer overview.
+Next, proceed with the [Getting Started Guide][getting-started], which should take no more than 30 minutes and will
+provide a solid foundation. Afterward, dive into the [CronJob Tutorial][cronjob-tutorial] to deepen your
+understanding by developing a demo project.
 
 [pre-rbc-gke]: https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#iam-rolebinding-bootstrap
 [cronjob-tutorial]: https://book.kubebuilder.io/cronjob-tutorial/cronjob-tutorial.html
@@ -271,3 +262,4 @@ complexities of achieving this goal while allowing users to customize the genera
 [envtest]: https://book.kubebuilder.io/reference/testing/envtest.html
 [architecture-concept-diagram]: architecture.md
 [kustomize]: https://github.com/kubernetes-sigs/kustomize
+[getting-started]: getting-started.md
