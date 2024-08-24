@@ -22,6 +22,14 @@ PR_TITLE="$1"
 # Trim WIP and tags from title
 trimmed_title=$(echo "$PR_TITLE" | sed -E "s/$WIP_REGEX//" | sed -E "s/$TAG_REGEX//" | xargs)
 
+# Normalize common emojis in text form to actual emojis
+trimmed_title=$(echo "$trimmed_title" | sed -E "s/:warning:/⚠/g")
+trimmed_title=$(echo "$trimmed_title" | sed -E "s/:sparkles:/✨/g")
+trimmed_title=$(echo "$trimmed_title" | sed -E "s/:bug:/🐛/g")
+trimmed_title=$(echo "$trimmed_title" | sed -E "s/:book:/📖/g")
+trimmed_title=$(echo "$trimmed_title" | sed -E "s/:rocket:/🚀/g")
+trimmed_title=$(echo "$trimmed_title" | sed -E "s/:seedling:/🌱/g")
+
 # Check PR type prefix
 if [[ "$trimmed_title" =~ ^⚠ ]] || [[ "$trimmed_title" =~ ^✨ ]] || [[ "$trimmed_title" =~ ^🐛 ]] || [[ "$trimmed_title" =~ ^📖 ]] || [[ "$trimmed_title" =~ ^🚀 ]] || [[ "$trimmed_title" =~ ^🌱 ]]; then
     echo "PR title is valid: $trimmed_title"
