@@ -19,4 +19,4 @@ jobs:
       - name: Run PR Title Checker
         id: check_title
         run: |
-          ./hack/ci/pr_title_checker.sh "${{ env.title }}"
+          ./test/pr-title-checker.sh "${{ env.title }}"
