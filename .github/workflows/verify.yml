@@ -1,18 +1,22 @@
-name: PR Verifier
+name: "PR Title Verifier"
 
 on:
-  pull_request_target:
-    types: [opened, edited, reopened]
-
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
 
 jobs:
-
   verify:
-    name: Verify PR contents
     runs-on: ubuntu-latest
+
     steps:
-    - name: Verifier action
-      id: verifier
-      uses: kubernetes-sigs/kubebuilder-release-tools@v0.4.3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get PR title
+        id: get_title
+        run: echo "title=${{ github.event.pull_request.title }}" >> $GITHUB_ENV
+
+      - name: Run PR Title Checker
+        id: check_title
+        run: |
+          ./hack/ci/pr_title_checker.sh "${{ env.title }}"
