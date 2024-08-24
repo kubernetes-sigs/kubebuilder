@@ -261,9 +261,8 @@ make undeploy
 ## Next Step
 
 - Now, take a look at the [Architecture Concept Diagram][architecture-concept-diagram] for a clearer overview.
-- Next, proceed with the [Getting Started Guide][getting-started], which should take no more than 30 minutes and will
-provide a solid foundation. Afterward, dive into the [CronJob Tutorial][cronjob-tutorial] to deepen your
-understanding by developing a demo project.
+- Next, proceed with the [Getting Started Guide][getting-started], which offers a solid foundation with comprehensive, yet concise, information.
+- Afterward, explore the [CronJob Tutorial][cronjob-tutorial] to deepen your understanding by developing a demo project.
 
 [pre-rbc-gke]: https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#iam-rolebinding-bootstrap
 [cronjob-tutorial]: https://book.kubebuilder.io/cronjob-tutorial/cronjob-tutorial.html
