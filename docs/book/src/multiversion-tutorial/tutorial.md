@@ -23,22 +23,4 @@ form a runnable project, and live in the book source directory:
 
 </aside>
 
-<aside class="note warning">
-
-<h1>Minimum Kubernetes Versions Incoming!</h1>
-
-CRD conversion support was introduced as an alpha feature in Kubernetes
-1.13 (which means it's not on by default, and needs to be enabled via
-a [feature gate][kube-feature-gates]), and became beta in Kubernetes 1.15
-(which means it's on by default).
-
-If you're on Kubernetes 1.13-1.14, make sure to enable the feature gate.
-If you're on Kubernetes 1.12 or below, you'll need a new cluster to use
-conversion. Check out the [kind instructions](/reference/kind.md) for
-instructions on how to set up a all-in-one cluster.
-
-</aside>
-
 Next, let's figure out what changes we want to make...
-
-[kube-feature-gates]: https://kubernetes.io/docs/reference/command-line-tools-reference/feature-gates/ "Kubernetes Feature Gates"
