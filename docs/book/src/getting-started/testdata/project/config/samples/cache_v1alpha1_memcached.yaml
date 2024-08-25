@@ -1,6 +1,9 @@
 apiVersion: cache.example.com/v1alpha1
 kind: Memcached
 metadata:
+  labels:
+    app.kubernetes.io/name: project
+    app.kubernetes.io/managed-by: kustomize
   name: memcached-sample
 spec:
   # TODO(user): edit the following value to ensure the number
