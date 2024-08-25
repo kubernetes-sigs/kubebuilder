@@ -77,18 +77,6 @@ For this example, we are going to consider that we need to scaffold both the API
 kubebuilder create api --group batch --version v1 --kind CronJob
 ```
 
-<aside class="note">
-<h1>How to still keep `apiextensions.k8s.io/v1beta1` for CRDs?</h1>
-
-From now on, the CRDs that will be created by controller-gen will be using the Kubernetes API version `apiextensions.k8s.io/v1`  by default, instead of `apiextensions.k8s.io/v1beta1`.
-
-The `apiextensions.k8s.io/v1beta1` was deprecated in Kubernetes `1.16` and was removed in Kubernetes `1.22`.
-
-So, if you would like to keep using the previous version use the flag `--crd-version=v1beta1` in the above command which is only needed if you want your operator to support Kubernetes `1.15` and earlier.
-However, it is no longer recommended.
-
-</aside>
-
 ### Migrate the APIs
 
 <aside class="note">
@@ -144,19 +132,6 @@ following command with the `--defaulting` and `--programmatic-validation` flags
 ```bash
 kubebuilder create webhook --group batch --version v1 --kind CronJob --defaulting --programmatic-validation
 ```
-
-<aside class="note">
-<h1>How to keep using `apiextensions.k8s.io/v1beta1` for Webhooks?</h1>
-
-From now on, the Webhooks that will be created by Kubebuilder using by default the Kubernetes API version `admissionregistration.k8s.io/v1` instead of `admissionregistration.k8s.io/v1beta1` and the `cert-manager.io/v1` to replace `cert-manager.io/v1alpha2`.
-
-Note that `apiextensions/v1beta1` and `admissionregistration.k8s.io/v1beta1` were deprecated in Kubernetes `1.16` and will be removed  in Kubernetes `1.22`. If you use `apiextensions/v1` and `admissionregistration.k8s.io/v1` then you need to use `cert-manager.io/v1` which will be the API adopted per Kubebuilder CLI by default in this case.
-
-The API `cert-manager.io/v1alpha2` is not compatible with the latest Kubernetes API versions.
-
-So, if you would like to keep using the previous version use the flag `--webhook-version=v1beta1` in the above command which is only needed if you want your operator to support Kubernetes `1.15` and earlier.
-
-</aside>
 
 Now, let's copy the webhook definition from `api/v1/<kind>_webhook.go` from our old project to the new one.
 
