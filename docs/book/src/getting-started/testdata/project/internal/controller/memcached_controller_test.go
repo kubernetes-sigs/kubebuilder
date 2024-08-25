@@ -49,7 +49,7 @@ var _ = Describe("Memcached controller", func() {
 			},
 		}
 
-		typeNamespaceName := types.NamespacedName{
+		typeNamespacedName := types.NamespacedName{
 			Name:      MemcachedName,
 			Namespace: MemcachedName,
 		}
@@ -65,7 +65,7 @@ var _ = Describe("Memcached controller", func() {
 			Expect(err).To(Not(HaveOccurred()))
 
 			By("creating the custom resource for the Kind Memcached")
-			err = k8sClient.Get(ctx, typeNamespaceName, memcached)
+			err = k8sClient.Get(ctx, typeNamespacedName, memcached)
 			if err != nil && errors.IsNotFound(err) {
 				// Let's mock our custom resource at the same way that we would
 				// apply on the cluster the manifest under config/samples
@@ -88,7 +88,7 @@ var _ = Describe("Memcached controller", func() {
 		AfterEach(func() {
 			By("removing the custom resource for the Kind Memcached")
 			found := &cachev1alpha1.Memcached{}
-			err := k8sClient.Get(ctx, typeNamespaceName, found)
+			err := k8sClient.Get(ctx, typeNamespacedName, found)
 			Expect(err).To(Not(HaveOccurred()))
 
 			Eventually(func() error {
@@ -109,7 +109,7 @@ var _ = Describe("Memcached controller", func() {
 			By("Checking if the custom resource was successfully created")
 			Eventually(func() error {
 				found := &cachev1alpha1.Memcached{}
-				return k8sClient.Get(ctx, typeNamespaceName, found)
+				return k8sClient.Get(ctx, typeNamespacedName, found)
 			}, time.Minute, time.Second).Should(Succeed())
 
 			By("Reconciling the custom resource created")
@@ -119,14 +119,14 @@ var _ = Describe("Memcached controller", func() {
 			}
 
 			_, err := memcachedReconciler.Reconcile(ctx, reconcile.Request{
-				NamespacedName: typeNamespaceName,
+				NamespacedName: typeNamespacedName,
 			})
 			Expect(err).To(Not(HaveOccurred()))
 
 			By("Checking if Deployment was successfully created in the reconciliation")
 			Eventually(func() error {
 				found := &appsv1.Deployment{}
-				return k8sClient.Get(ctx, typeNamespaceName, found)
+				return k8sClient.Get(ctx, typeNamespacedName, found)
 			}, time.Minute, time.Second).Should(Succeed())
 
 			By("Checking the latest Status Condition added to the Memcached instance")

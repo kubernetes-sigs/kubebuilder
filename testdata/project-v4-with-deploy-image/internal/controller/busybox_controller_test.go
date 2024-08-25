@@ -49,7 +49,7 @@ var _ = Describe("Busybox controller", func() {
 			},
 		}
 
-		typeNamespaceName := types.NamespacedName{
+		typeNamespacedName := types.NamespacedName{
 			Name:      BusyboxName,
 			Namespace: BusyboxName,
 		}
@@ -65,7 +65,7 @@ var _ = Describe("Busybox controller", func() {
 			Expect(err).To(Not(HaveOccurred()))
 
 			By("creating the custom resource for the Kind Busybox")
-			err = k8sClient.Get(ctx, typeNamespaceName, busybox)
+			err = k8sClient.Get(ctx, typeNamespacedName, busybox)
 			if err != nil && errors.IsNotFound(err) {
 				// Let's mock our custom resource at the same way that we would
 				// apply on the cluster the manifest under config/samples
@@ -87,7 +87,7 @@ var _ = Describe("Busybox controller", func() {
 		AfterEach(func() {
 			By("removing the custom resource for the Kind Busybox")
 			found := &examplecomv1alpha1.Busybox{}
-			err := k8sClient.Get(ctx, typeNamespaceName, found)
+			err := k8sClient.Get(ctx, typeNamespacedName, found)
 			Expect(err).To(Not(HaveOccurred()))
 
 			Eventually(func() error {
@@ -108,7 +108,7 @@ var _ = Describe("Busybox controller", func() {
 			By("Checking if the custom resource was successfully created")
 			Eventually(func() error {
 				found := &examplecomv1alpha1.Busybox{}
-				return k8sClient.Get(ctx, typeNamespaceName, found)
+				return k8sClient.Get(ctx, typeNamespacedName, found)
 			}, time.Minute, time.Second).Should(Succeed())
 
 			By("Reconciling the custom resource created")
@@ -118,14 +118,14 @@ var _ = Describe("Busybox controller", func() {
 			}
 
 			_, err := busyboxReconciler.Reconcile(ctx, reconcile.Request{
-				NamespacedName: typeNamespaceName,
+				NamespacedName: typeNamespacedName,
 			})
 			Expect(err).To(Not(HaveOccurred()))
 
 			By("Checking if Deployment was successfully created in the reconciliation")
 			Eventually(func() error {
 				found := &appsv1.Deployment{}
-				return k8sClient.Get(ctx, typeNamespaceName, found)
+				return k8sClient.Get(ctx, typeNamespacedName, found)
 			}, time.Minute, time.Second).Should(Succeed())
 
 			By("Checking the latest Status Condition added to the Busybox instance")
