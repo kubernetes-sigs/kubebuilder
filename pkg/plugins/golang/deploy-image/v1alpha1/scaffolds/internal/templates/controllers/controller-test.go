@@ -99,7 +99,7 @@ var _ = Describe("{{ .Resource.Kind }} controller", func() {
 			},
 		}
 
-		typeNamespaceName := types.NamespacedName{
+		typeNamespacedName := types.NamespacedName{
 			Name:      {{ .Resource.Kind }}Name,
 			Namespace: {{ .Resource.Kind }}Name,
 		}
@@ -115,7 +115,7 @@ var _ = Describe("{{ .Resource.Kind }} controller", func() {
 			Expect(err).To(Not(HaveOccurred()))
 
 			By("creating the custom resource for the Kind {{ .Resource.Kind }}")
-			err = k8sClient.Get(ctx, typeNamespaceName, {{ lower .Resource.Kind }})
+			err = k8sClient.Get(ctx, typeNamespacedName, {{ lower .Resource.Kind }})
 			if err != nil && errors.IsNotFound(err) {
 				// Let's mock our custom resource at the same way that we would
 				// apply on the cluster the manifest under config/samples
@@ -140,7 +140,7 @@ var _ = Describe("{{ .Resource.Kind }} controller", func() {
 		AfterEach(func() {
 			By("removing the custom resource for the Kind {{ .Resource.Kind }}")
 			found := &{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{}
-			err := k8sClient.Get(ctx, typeNamespaceName, found)
+			err := k8sClient.Get(ctx, typeNamespacedName, found)
 			Expect(err).To(Not(HaveOccurred()))
 
 			Eventually(func() error {
@@ -161,7 +161,7 @@ var _ = Describe("{{ .Resource.Kind }} controller", func() {
 			By("Checking if the custom resource was successfully created")
 			Eventually(func() error {
 				found := &{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{}
-				return k8sClient.Get(ctx, typeNamespaceName, found)
+				return k8sClient.Get(ctx, typeNamespacedName, found)
 			}, time.Minute, time.Second).Should(Succeed())
 
 			By("Reconciling the custom resource created")
@@ -171,14 +171,14 @@ var _ = Describe("{{ .Resource.Kind }} controller", func() {
 			}
 
 			_, err := {{ lower .Resource.Kind }}Reconciler.Reconcile(ctx, reconcile.Request{
-				NamespacedName: typeNamespaceName,
+				NamespacedName: typeNamespacedName,
 			})
 			Expect(err).To(Not(HaveOccurred()))
 
 			By("Checking if Deployment was successfully created in the reconciliation")
 			Eventually(func() error {
 				found := &appsv1.Deployment{}
-				return k8sClient.Get(ctx, typeNamespaceName, found)
+				return k8sClient.Get(ctx, typeNamespacedName, found)
 			}, time.Minute, time.Second).Should(Succeed())
 
 			By("Checking the latest Status Condition added to the {{ .Resource.Kind }} instance")
