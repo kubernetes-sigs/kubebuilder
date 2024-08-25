@@ -96,7 +96,7 @@
   - [Artifacts](./reference/artifacts.md)
   - [Platform Support](./reference/platform.md)
 
-  - [Manager and CRDs Scope](./reference/scopes)
+  - [Manager and CRDs Scope](./reference/scopes.md)
 
   - [Sub-Module Layouts](./reference/submodule-layouts.md)
   - [Using an external Type / API](./reference/using_an_external_type.md)
