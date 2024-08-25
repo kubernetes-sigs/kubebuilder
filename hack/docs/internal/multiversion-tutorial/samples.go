@@ -1,58 +1,39 @@
-# Adds namespace to all resources.
-namespace: project-system
+/*
+Copyright 2024 The Kubernetes Authors.
 
-# Value of this field is prepended to the
-# names of all resources, e.g. a deployment named
-# "wordpress" becomes "alices-wordpress".
-# Note that it should also match with the prefix (text before '-') of the namespace
-# field above.
-namePrefix: project-
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-# Labels to add to all resources and selectors.
-#labels:
-#- includeSelectors: true
-#  pairs:
-#    someName: someValue
+    http://www.apache.org/licenses/LICENSE-2.0
 
-resources:
-- ../crd
-- ../rbac
-- ../manager
-# [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix including the one in
-# crd/kustomization.yaml
-- ../webhook
-# [CERTMANAGER] To enable cert-manager, uncomment all sections with 'CERTMANAGER'. 'WEBHOOK' components are required.
-#- ../certmanager
-# [PROMETHEUS] To enable prometheus monitor, uncomment all sections with 'PROMETHEUS'.
-#- ../prometheus
-# [METRICS] Expose the controller manager metrics service.
-- metrics_service.yaml
-# [NETWORK POLICY] Protect the /metrics endpoint and Webhook Server with NetworkPolicy.
-# Only Pod(s) running a namespace labeled with 'metrics: enabled' will be able to gather the metrics.
-# Only CR(s) which requires webhooks and are applied on namespaces labeled with 'webhooks: enabled' will
-# be able to communicate with the Webhook Server.
-#- ../network-policy
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
 
-# Uncomment the patches line if you enable Metrics, and/or are using webhooks and cert-manager
-patches:
-# [METRICS] The following patch will enable the metrics endpoint using HTTPS and the port :8443.
-# More info: https://book.kubebuilder.io/reference/metrics
-- path: manager_metrics_patch.yaml
-  target:
-    kind: Deployment
+package multiversion
 
-# [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix including the one in
-# crd/kustomization.yaml
-- path: manager_webhook_patch.yaml
+const CronjobSample = `
+  schedule: "*/1 * * * *"
+  startingDeadlineSeconds: 60
+  concurrencyPolicy: Allow # explicitly specify, but Allow is also default.
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: hello
+            image: busybox
+            args:
+            - /bin/sh
+            - -c
+            - date; echo Hello from the Kubernetes cluster
+          restartPolicy: OnFailure`
 
-# [CERTMANAGER] To enable cert-manager, uncomment all sections with 'CERTMANAGER'.
-# Uncomment 'CERTMANAGER' sections in crd/kustomization.yaml to enable the CA injection in the admission webhooks.
-# 'CERTMANAGER' needs to be enabled to use ca injection
-#- path: webhookcainjection_patch.yaml
-
-# [CERTMANAGER] To enable cert-manager, uncomment all sections with 'CERTMANAGER' prefix.
-# Uncomment the following replacements to add the cert-manager CA injection annotations
-#replacements:
+const DefaultKustomization = `#replacements:
 #  - source: # Add cert-manager annotation to ValidatingWebhookConfiguration, MutatingWebhookConfiguration and CRDs
 #      kind: Certificate
 #      group: cert-manager.io
@@ -148,4 +129,4 @@ patches:
 #        options:
 #          delimiter: '.'
 #          index: 1
-#          create: true
+#          create: true`

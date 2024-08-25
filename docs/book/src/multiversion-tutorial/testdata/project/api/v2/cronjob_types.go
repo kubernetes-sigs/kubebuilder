@@ -16,14 +16,12 @@ limitations under the License.
 // +kubebuilder:docs-gen:collapse=Apache License
 
 /*
-Since we're in a v2 package, controller-gen will assume this is for the v2
-version automatically.  We could override that with the [`+versionName`
-marker](/reference/markers/crd.md).
-*/
-package v2
+ */
 
+package v2
 /*
  */
+
 import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -32,19 +30,16 @@ import (
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // +kubebuilder:docs-gen:collapse=Imports
+// CronJobSpec defines the desired state of CronJob
 
-/*
-We'll leave our spec largely unchanged, except to change the schedule field to a new type.
-*/
+
 // CronJobSpec defines the desired state of CronJob
 type CronJobSpec struct {
-	// The schedule in Cron format, see https://en.wikipedia.org/wiki/Cron.
-	Schedule CronSchedule `json:"schedule"`
+	// +kubebuilder:validation:MinLength=0
 
-	/*
-	 */
+	// The schedule in Cron format, see https://en.wikipedia.org/wiki/Cron.
+	Schedule string `json:"schedule"`
 
 	// +kubebuilder:validation:Minimum=0
 
@@ -82,47 +77,7 @@ type CronJobSpec struct {
 	// This is a pointer to distinguish between explicit zero and not specified.
 	// +optional
 	FailedJobsHistoryLimit *int32 `json:"failedJobsHistoryLimit,omitempty"`
-
-	// +kubebuilder:docs-gen:collapse=The rest of Spec
 }
-
-/*
-Next, we'll need to define a type to hold our schedule.
-Based on our proposed YAML above, it'll have a field for
-each corresponding Cron "field".
-*/
-
-// describes a Cron schedule.
-type CronSchedule struct {
-	// specifies the minute during which the job executes.
-	// +optional
-	Minute *CronField `json:"minute,omitempty"`
-	// specifies the hour during which the job executes.
-	// +optional
-	Hour *CronField `json:"hour,omitempty"`
-	// specifies the day of the month during which the job executes.
-	// +optional
-	DayOfMonth *CronField `json:"dayOfMonth,omitempty"`
-	// specifies the month during which the job executes.
-	// +optional
-	Month *CronField `json:"month,omitempty"`
-	// specifies the day of the week during which the job executes.
-	// +optional
-	DayOfWeek *CronField `json:"dayOfWeek,omitempty"`
-}
-
-/*
-Finally, we'll define a wrapper type to represent a field.
-We could attach additional validation to this field,
-but for now we'll just use it for documentation purposes.
-*/
-
-// represents a Cron field specifier.
-type CronField string
-
-/*
-All the other types will stay the same as before.
-*/
 
 // ConcurrencyPolicy describes how the job will be handled.
 // Only one of the following concurrent policies may be specified.
@@ -143,6 +98,15 @@ const (
 	ReplaceConcurrent ConcurrencyPolicy = "Replace"
 )
 
+/*
+ Next, let's design our status, which holds observed state.  It contains any information
+ we want users or other controllers to be able to easily obtain.
+
+ We'll keep a list of actively running jobs, as well as the last time that we successfully
+ ran our job.  Notice that we use `metav1.Time` instead of `time.Time` to get the stable
+ serialization, as mentioned above.
+*/
+
 // CronJobStatus defines the observed state of CronJob
 type CronJobStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
@@ -157,11 +121,29 @@ type CronJobStatus struct {
 	LastScheduleTime *metav1.Time `json:"lastScheduleTime,omitempty"`
 }
 
+/*
+ Since we'll have more than one version, we'll need to mark a storage version.
+ This is the version that the Kubernetes API server uses to store our data.
+ We'll chose the v1 version for our project.
+
+ We'll use the `[+kubebuilder:storageversion]`(/reference/markers/crd.md) to do this.
+
+ Note that multiple versions may exist in storage if they were written before
+ the storage version changes -- changing the storage version only affects how
+ objects are created/updated after the change.
+*/
+
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:storageversion
+
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
 // CronJob is the Schema for the cronjobs API
 type CronJob struct {
+	/*
+	 */
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
@@ -181,5 +163,4 @@ type CronJobList struct {
 func init() {
 	SchemeBuilder.Register(&CronJob{}, &CronJobList{})
 }
-
-// +kubebuilder:docs-gen:collapse=Other Types
+// +kubebuilder:docs-gen:collapse=Root Object Definitions

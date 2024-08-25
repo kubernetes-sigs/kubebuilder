@@ -18,14 +18,15 @@ package controller
 
 import (
 	"context"
-	kbatch "k8s.io/api/batch/v1"
-	corev1 "k8s.io/api/core/v1"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	batchv1 "tutorial.kubebuilder.io/project/api/v1"
 )
 
@@ -50,25 +51,7 @@ var _ = Describe("CronJob Controller", func() {
 						Name:      resourceName,
 						Namespace: "default",
 					},
-					Spec: batchv1.CronJobSpec{
-						Schedule: "*/1 * * * *", // Example: runs every minute
-						JobTemplate: kbatch.JobTemplateSpec{
-							Spec: kbatch.JobSpec{
-								Template: corev1.PodTemplateSpec{
-									Spec: corev1.PodSpec{
-										Containers: []corev1.Container{
-											{
-												Name:    "example-container",
-												Image:   "example-image",
-												Command: []string{"echo", "Hello World"},
-											},
-										},
-										RestartPolicy: corev1.RestartPolicyOnFailure,
-									},
-								},
-							},
-						},
-					},
+					// TODO(user): Specify other spec details if needed.
 				}
 				Expect(k8sClient.Create(ctx, resource)).To(Succeed())
 			}
@@ -83,21 +66,19 @@ var _ = Describe("CronJob Controller", func() {
 			By("Cleanup the specific resource instance CronJob")
 			Expect(k8sClient.Delete(ctx, resource)).To(Succeed())
 		})
-		// TODO: Fix me. We need to implement the tests and ensure
-		// that the controller implementation of multi-version tutorial is accurate
-		//It("should successfully reconcile the resource", func() {
-		//	By("Reconciling the created resource")
-		//	controllerReconciler := &CronJobReconciler{
-		//		Client: k8sClient,
-		//		Scheme: k8sClient.Scheme(),
-		//	}
-		//
-		//	_, err := controllerReconciler.Reconcile(ctx, reconcile.Request{
-		//		NamespacedName: typeNamespacedName,
-		//	})
-		//	Expect(err).NotTo(HaveOccurred())
-		//	// TODO(user): Add more specific assertions depending on your controller's reconciliation logic.
-		//	// Example: If you expect a certain status condition after reconciliation, verify it here.
-		//})
+		It("should successfully reconcile the resource", func() {
+			By("Reconciling the created resource")
+			controllerReconciler := &CronJobReconciler{
+				Client: k8sClient,
+				Scheme: k8sClient.Scheme(),
+			}
+
+			_, err := controllerReconciler.Reconcile(ctx, reconcile.Request{
+				NamespacedName: typeNamespacedName,
+			})
+			Expect(err).NotTo(HaveOccurred())
+			// TODO(user): Add more specific assertions depending on your controller's reconciliation logic.
+			// Example: If you expect a certain status condition after reconciliation, verify it here.
+		})
 	})
 })
