@@ -45,15 +45,71 @@ package e2e
 import (
 	"fmt"
 	"testing"
+	"os"
+	"os/exec"
 
     . "github.com/onsi/ginkgo/v2"
     . "github.com/onsi/gomega"
+
+	"{{ .Repo }}/test/utils"
 )
 
-// Run e2e tests using the Ginkgo runner.
+var (
+	// Optional Environment Variables:
+	// - PROMETHEUS_INSTALL_SKIP=true: Skips Prometheus Operator installation during test setup.
+	// - CERT_MANAGER_INSTALL_SKIP=true: Skips CertManager installation during test setup.
+	// These variables are useful if Prometheus or CertManager is already installed, avoiding 
+	// re-installation and conflicts.
+	skipPrometheusInstall   = os.Getenv("PROMETHEUS_INSTALL_SKIP") == "true"
+	skipCertManagerInstall  = os.Getenv("CERT_MANAGER_INSTALL_SKIP") == "true"
+
+	// projectImage is the name of the image which will be build and loaded 
+	// with the code source changes to be tested.
+	projectImage = "example.com/{{ .ProjectName }}:v0.0.1"
+)
+
+// TestE2E runs the end-to-end (e2e) test suite for the project. These tests execute in an isolated,
+// temporary environment to validate project changes with the the purposed to be used in CI jobs.
+// The default setup requires Kind, builds/loads the Manager Docker image locally, and installs
+// CertManager and Prometheus.
 func TestE2E(t *testing.T) {
 	RegisterFailHandler(Fail)
-	_, _ = fmt.Fprintf(GinkgoWriter, "Starting {{ .ProjectName }} suite\n")
+	_, _ = fmt.Fprintf(GinkgoWriter, "Starting {{ .ProjectName }} integration test suite\n")
 	RunSpecs(t, "e2e suite")
 }
+
+var _ = BeforeSuite(func() {
+	By("building the manager(Operator) image")
+	cmd := exec.Command("make", "docker-build", fmt.Sprintf("IMG=%s", projectImage))
+	_, err := utils.Run(cmd)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred(), "Failed to build the manager(Operator) image")
+	
+	// TODO(user): If you want to change the e2e test vendor from Kind, ensure the image is 
+	// built and available before running the tests. Also, remove the following block.
+	By("loading the manager(Operator) image on Kind")
+	err = utils.LoadImageToKindClusterWithName(projectImage)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred(), "Failed to load the manager(Operator) image into Kind")
+
+	// Setup Prometheus and CertManager before the suite if not skipped
+	if !skipPrometheusInstall {
+		_, _ = fmt.Fprintf(GinkgoWriter, "Installing Prometheus Operator...\n")
+		Expect(utils.InstallPrometheusOperator()).To(Succeed(), "Failed to install Prometheus Operator")
+	}
+	if !skipCertManagerInstall {
+		_, _ = fmt.Fprintf(GinkgoWriter, "Installing CertManager...\n")
+		Expect(utils.InstallCertManager()).To(Succeed(), "Failed to install CertManager")
+	}
+})
+
+var _ = AfterSuite(func() {
+	// Teardown Prometheus and CertManager after the suite if not skipped
+	if !skipPrometheusInstall {
+		_, _ = fmt.Fprintf(GinkgoWriter, "Uninstalling Prometheus Operator...\n")
+		utils.UninstallPrometheusOperator()
+	}
+	if !skipCertManagerInstall {
+		_, _ = fmt.Fprintf(GinkgoWriter, "Uninstalling CertManager...\n")
+		utils.UninstallCertManager()
+	}
+})
 `
