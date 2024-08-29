@@ -176,6 +176,7 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Captain")
 		os.Exit(1)
 	}
+	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		if err = (&crewv1.Captain{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Captain")
@@ -189,6 +190,7 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Frigate")
 		os.Exit(1)
 	}
+	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		if err = (&shipv1beta1.Frigate{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Frigate")
@@ -202,6 +204,7 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Destroyer")
 		os.Exit(1)
 	}
+	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		if err = (&shipv1.Destroyer{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Destroyer")
@@ -215,6 +218,7 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Cruiser")
 		os.Exit(1)
 	}
+	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		if err = (&shipv2alpha1.Cruiser{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Cruiser")
@@ -270,6 +274,7 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Lakers")
 		os.Exit(1)
 	}
+	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		if err = (&testprojectorgv1.Lakers{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Lakers")

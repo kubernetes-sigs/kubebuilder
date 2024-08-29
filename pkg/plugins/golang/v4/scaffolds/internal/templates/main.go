@@ -114,7 +114,8 @@ const (
 		os.Exit(1)
 	}
 `
-	webhookSetupCodeFragment = `if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+	webhookSetupCodeFragment = `// nolint:goconst
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		if err = (&%s.%s{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "%s")
 			os.Exit(1)

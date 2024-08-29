@@ -22,6 +22,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
+// nolint:unused
 // log is for logging in this package.
 var destroyerlog = logf.Log.WithName("destroyer-resource")
 
