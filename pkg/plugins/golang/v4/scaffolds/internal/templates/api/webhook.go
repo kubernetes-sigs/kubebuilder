@@ -95,6 +95,7 @@ import (
 
 )
 
+// nolint:unused
 // log is for logging in this package.
 var {{ lower .Resource.Kind }}log = logf.Log.WithName("{{ lower .Resource.Kind }}-resource")
 

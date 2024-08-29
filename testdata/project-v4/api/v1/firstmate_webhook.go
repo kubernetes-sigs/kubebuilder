@@ -21,6 +21,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
+// nolint:unused
 // log is for logging in this package.
 var firstmatelog = logf.Log.WithName("firstmate-resource")
 
