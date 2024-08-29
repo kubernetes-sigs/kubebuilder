@@ -36,6 +36,10 @@ var (
 	// re-installation and conflicts.
 	skipPrometheusInstall  = os.Getenv("PROMETHEUS_INSTALL_SKIP") == "true"
 	skipCertManagerInstall = os.Getenv("CERT_MANAGER_INSTALL_SKIP") == "true"
+	// isPrometheusOperatorAlreadyInstalled will be set true when prometheus CRDs be found on the cluster
+	isPrometheusOperatorAlreadyInstalled = false
+	// isCertManagerAlreadyInstalled will be set true when CertManager CRDs be found on the cluster
+	isCertManagerAlreadyInstalled = false
 
 	// projectImage is the name of the image which will be build and loaded
 	// with the code source changes to be tested.
@@ -64,24 +68,39 @@ var _ = BeforeSuite(func() {
 	err = utils.LoadImageToKindClusterWithName(projectImage)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred(), "Failed to load the manager(Operator) image into Kind")
 
-	// Setup Prometheus and CertManager before the suite if not skipped
+	// The tests-e2e are intended to run on a temporary cluster that is created and destroyed for testing.
+	// To prevent errors when tests run in environments with Prometheus or CertManager already installed,
+	// we check for their presence before execution.
+	// Setup Prometheus and CertManager before the suite if not skipped and if not already installed
 	if !skipPrometheusInstall {
-		_, _ = fmt.Fprintf(GinkgoWriter, "Installing Prometheus Operator...\n")
-		Expect(utils.InstallPrometheusOperator()).To(Succeed(), "Failed to install Prometheus Operator")
+		By("checking if prometheus is installed already")
+		isPrometheusOperatorAlreadyInstalled = utils.IsPrometheusCRDsInstalled()
+		if !isPrometheusOperatorAlreadyInstalled {
+			_, _ = fmt.Fprintf(GinkgoWriter, "Installing Prometheus Operator...\n")
+			Expect(utils.InstallPrometheusOperator()).To(Succeed(), "Failed to install Prometheus Operator")
+		} else {
+			_, _ = fmt.Fprintf(GinkgoWriter, "WARNING: Prometheus Operator is already installed. Skipping installation...\n")
+		}
 	}
 	if !skipCertManagerInstall {
-		_, _ = fmt.Fprintf(GinkgoWriter, "Installing CertManager...\n")
-		Expect(utils.InstallCertManager()).To(Succeed(), "Failed to install CertManager")
+		By("checking if cert manager is installed already")
+		isCertManagerAlreadyInstalled = utils.IsCertManagerCRDsInstalled()
+		if !isCertManagerAlreadyInstalled {
+			_, _ = fmt.Fprintf(GinkgoWriter, "Installing CertManager...\n")
+			Expect(utils.InstallCertManager()).To(Succeed(), "Failed to install CertManager")
+		} else {
+			_, _ = fmt.Fprintf(GinkgoWriter, "WARNING: CertManager is already installed. Skipping installation...\n")
+		}
 	}
 })
 
 var _ = AfterSuite(func() {
-	// Teardown Prometheus and CertManager after the suite if not skipped
-	if !skipPrometheusInstall {
+	// Teardown Prometheus and CertManager after the suite if not skipped and if they were not already installed
+	if !skipPrometheusInstall && !isPrometheusOperatorAlreadyInstalled {
 		_, _ = fmt.Fprintf(GinkgoWriter, "Uninstalling Prometheus Operator...\n")
 		utils.UninstallPrometheusOperator()
 	}
-	if !skipCertManagerInstall {
+	if !skipCertManagerInstall && !isCertManagerAlreadyInstalled {
 		_, _ = fmt.Fprintf(GinkgoWriter, "Uninstalling CertManager...\n")
 		utils.UninstallCertManager()
 	}
