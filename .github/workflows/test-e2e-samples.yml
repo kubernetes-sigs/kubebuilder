@@ -1,0 +1,67 @@
+name: Testing E2E Sample
+
+on:
+  push:
+    paths-ignore:
+      - '**/*.md'
+  pull_request:
+    paths-ignore:
+      - '**/*.md'
+
+jobs:
+  e2e-tests:
+    runs-on: ubuntu-latest
+    # Pull requests from the same repository won't trigger this checks as they were already triggered by the push
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '~1.22'
+
+      - name: Install the latest version of kind
+        run: |
+          curl -Lo ./kind https://kind.sigs.k8s.io/dl/latest/kind-linux-amd64
+          chmod +x ./kind
+          sudo mv ./kind /usr/local/bin/kind
+
+      - name: Verify kind installation
+        run: kind version
+
+      - name: Create kind cluster
+        run: kind create cluster
+
+      - name: Prepare project-v4
+        run: |
+          KUSTOMIZATION_FILE_PATH="testdata/project-v4/config/default/kustomization.yaml"
+          sed -i '25s/^#//' $KUSTOMIZATION_FILE_PATH
+          sed -i '51s/^#//' $KUSTOMIZATION_FILE_PATH
+          cd testdata/project-v4/
+          go mod tidy
+          make generate
+          make manifests
+
+      - name: Testing make test-e2e for project-v4
+        working-directory: testdata/project-v4/
+        run: |
+          make test-e2e
+
+      - name: Prepare project-v4-with-deploy-image
+        run: |
+          KUSTOMIZATION_FILE_PATH="testdata/project-v4-with-deploy-image/config/default/kustomization.yaml"
+          sed -i '25s/^#//' $KUSTOMIZATION_FILE_PATH
+          sed -i '51s/^#//' $KUSTOMIZATION_FILE_PATH
+          cd testdata/project-v4-with-deploy-image/
+          go mod tidy
+          make generate
+          make manifests
+
+# Fixme: The e2e tests for deploy image are failing and we
+# need to fix in a follow up
+#      - name: Testing make test-e2e for project-v4-with-deploy-image
+#        working-directory: testdata/project-v4-with-deploy-image
+#        run: |
+#          make test-e2e
