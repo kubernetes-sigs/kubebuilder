@@ -1,6 +1,5 @@
 name: Trailing
 
-# Trigger the workflow on pull requests and direct pushes to any branch
 on:
   push:
     paths:
