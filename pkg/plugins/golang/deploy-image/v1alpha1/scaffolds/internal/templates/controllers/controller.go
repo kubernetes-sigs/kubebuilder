@@ -359,7 +359,7 @@ func (r *{{ .Resource.Kind }}Reconciler) doFinalizerOperationsFor{{ .Resource.Ki
 // deploymentFor{{ .Resource.Kind }} returns a {{ .Resource.Kind }} Deployment object
 func (r *{{ .Resource.Kind }}Reconciler) deploymentFor{{ .Resource.Kind }}(
 	{{ lower .Resource.Kind }} *{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}) (*appsv1.Deployment, error) {
-	ls := labelsFor{{ .Resource.Kind }}({{ lower .Resource.Kind }}.Name)
+	ls := labelsFor{{ .Resource.Kind }}()
 	replicas := {{ lower .Resource.Kind }}.Spec.Size
 	
 	// Get the Operand image
@@ -389,28 +389,28 @@ func (r *{{ .Resource.Kind }}Reconciler) deploymentFor{{ .Resource.Kind }}(
 					// makefile target docker-buildx. Also, you can use docker manifest inspect <image>
 					// to check what are the platforms supported.
 					// More info: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity
-					//Affinity: &corev1.Affinity{
-					//	NodeAffinity: &corev1.NodeAffinity{
-					//		RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-					//			NodeSelectorTerms: []corev1.NodeSelectorTerm{
-					//				{
-					//					MatchExpressions: []corev1.NodeSelectorRequirement{
-					//						{
-					//							Key:      "kubernetes.io/arch",
-					//							Operator: "In",
-					//							Values:   []string{"amd64", "arm64", "ppc64le", "s390x"},
-					//						},
-					//						{
-					//							Key:      "kubernetes.io/os",
-					//							Operator: "In",
-					//							Values:   []string{"linux"},
-					//						},
-					//					},
-					//				},
-					//			},
-					//		},
-					//	},
-					//},
+					// Affinity: &corev1.Affinity{
+					//	 NodeAffinity: &corev1.NodeAffinity{
+					//		 RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+					//			 NodeSelectorTerms: []corev1.NodeSelectorTerm{
+					//				 {
+					//					 MatchExpressions: []corev1.NodeSelectorRequirement{
+					//						 {
+					//							 Key:      "kubernetes.io/arch",
+					//							 Operator: "In",
+					//							 Values:   []string{"amd64", "arm64", "ppc64le", "s390x"},
+					//						 },
+					//						 {
+					//							 Key:      "kubernetes.io/os",
+					//							 Operator: "In",
+					//							 Values:   []string{"linux"},
+					//						 },
+					//					 },
+					//				 },
+					//		 	 },
+					//		 },
+					//	 },
+					// },
 					SecurityContext: &corev1.PodSecurityContext{
 						RunAsNonRoot: &[]bool{true}[0],
 						// IMPORTANT: seccomProfile was introduced with Kubernetes 1.19
@@ -436,7 +436,7 @@ func (r *{{ .Resource.Kind }}Reconciler) deploymentFor{{ .Resource.Kind }}(
 
 // labelsFor{{ .Resource.Kind }} returns the labels for selecting the resources
 // More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/
-func labelsFor{{ .Resource.Kind }}(name string) map[string]string {
+func labelsFor{{ .Resource.Kind }}() map[string]string {
 	var imageTag string
 	image, err := imageFor{{ .Resource.Kind }}()
 	if err == nil {
