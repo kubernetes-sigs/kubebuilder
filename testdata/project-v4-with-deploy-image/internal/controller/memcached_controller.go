@@ -305,7 +305,7 @@ func (r *MemcachedReconciler) doFinalizerOperationsForMemcached(cr *examplecomv1
 // deploymentForMemcached returns a Memcached Deployment object
 func (r *MemcachedReconciler) deploymentForMemcached(
 	memcached *examplecomv1alpha1.Memcached) (*appsv1.Deployment, error) {
-	ls := labelsForMemcached(memcached.Name)
+	ls := labelsForMemcached()
 	replicas := memcached.Spec.Size
 
 	// Get the Operand image
@@ -335,28 +335,28 @@ func (r *MemcachedReconciler) deploymentForMemcached(
 					// makefile target docker-buildx. Also, you can use docker manifest inspect <image>
 					// to check what are the platforms supported.
 					// More info: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity
-					//Affinity: &corev1.Affinity{
-					//	NodeAffinity: &corev1.NodeAffinity{
-					//		RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-					//			NodeSelectorTerms: []corev1.NodeSelectorTerm{
-					//				{
-					//					MatchExpressions: []corev1.NodeSelectorRequirement{
-					//						{
-					//							Key:      "kubernetes.io/arch",
-					//							Operator: "In",
-					//							Values:   []string{"amd64", "arm64", "ppc64le", "s390x"},
-					//						},
-					//						{
-					//							Key:      "kubernetes.io/os",
-					//							Operator: "In",
-					//							Values:   []string{"linux"},
-					//						},
-					//					},
-					//				},
-					//			},
-					//		},
-					//	},
-					//},
+					// Affinity: &corev1.Affinity{
+					//	 NodeAffinity: &corev1.NodeAffinity{
+					//		 RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+					//			 NodeSelectorTerms: []corev1.NodeSelectorTerm{
+					//				 {
+					//					 MatchExpressions: []corev1.NodeSelectorRequirement{
+					//						 {
+					//							 Key:      "kubernetes.io/arch",
+					//							 Operator: "In",
+					//							 Values:   []string{"amd64", "arm64", "ppc64le", "s390x"},
+					//						 },
+					//						 {
+					//							 Key:      "kubernetes.io/os",
+					//							 Operator: "In",
+					//							 Values:   []string{"linux"},
+					//						 },
+					//					 },
+					//				 },
+					//		 	 },
+					//		 },
+					//	 },
+					// },
 					SecurityContext: &corev1.PodSecurityContext{
 						RunAsNonRoot: &[]bool{true}[0],
 						// IMPORTANT: seccomProfile was introduced with Kubernetes 1.19
@@ -403,7 +403,7 @@ func (r *MemcachedReconciler) deploymentForMemcached(
 
 // labelsForMemcached returns the labels for selecting the resources
 // More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/
-func labelsForMemcached(name string) map[string]string {
+func labelsForMemcached() map[string]string {
 	var imageTag string
 	image, err := imageForMemcached()
 	if err == nil {
