@@ -17,11 +17,18 @@ limitations under the License.
 package e2e
 
 import (
+	"fmt"
+	"path/filepath"
+
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 )
 
-var _ machinery.Template = &SuiteTest{}
+var _ machinery.Template = &Test{}
+var _ machinery.Inserter = &WebhookTestUpdater{}
 
+const webhookChecksMarker = "e2e-webhooks-checks"
+
+// Test defines the basic setup for the e2e test
 type Test struct {
 	machinery.TemplateMixin
 	machinery.BoilerplateMixin
@@ -31,12 +38,114 @@ type Test struct {
 
 func (f *Test) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = "test/e2e/e2e_test.go"
+		f.Path = filepath.Join("test", "e2e", "e2e_test.go")
 	}
 
+	// This is where the template body is defined with markers
 	f.TemplateBody = TestTemplate
+
 	return nil
 }
+
+// WebhookTestUpdater updates e2e_test.go to insert additional webhook validation tests
+type WebhookTestUpdater struct {
+	machinery.RepositoryMixin
+	machinery.ProjectNameMixin
+	machinery.ResourceMixin
+	WireWebhook bool
+}
+
+// GetPath implements file.Builder
+func (*WebhookTestUpdater) GetPath() string {
+	return filepath.Join("test", "e2e", "e2e_test.go")
+}
+
+// GetIfExistsAction implements file.Builder
+func (*WebhookTestUpdater) GetIfExistsAction() machinery.IfExistsAction {
+	return machinery.OverwriteFile // Ensures only the marker is replaced
+}
+
+// GetMarkers implements file.Inserter
+func (f *WebhookTestUpdater) GetMarkers() []machinery.Marker {
+	return []machinery.Marker{
+		machinery.NewMarkerFor(f.GetPath(), webhookChecksMarker),
+	}
+}
+
+// GetCodeFragments implements file.Inserter
+func (f *WebhookTestUpdater) GetCodeFragments() machinery.CodeFragmentsMap {
+	codeFragments := machinery.CodeFragmentsMap{}
+	if !f.WireWebhook {
+		return nil
+	}
+	codeFragments[machinery.NewMarkerFor(f.GetPath(), webhookChecksMarker)] = append(
+		codeFragments[machinery.NewMarkerFor(f.GetPath(), webhookChecksMarker)],
+		webhookChecksFragment,
+	)
+
+	if f.Resource != nil && f.Resource.HasDefaultingWebhook() {
+		mutatingWebhookCode := fmt.Sprintf(mutatingWebhookChecksFragment, f.ProjectName)
+		codeFragments[machinery.NewMarkerFor(f.GetPath(), webhookChecksMarker)] = append(
+			codeFragments[machinery.NewMarkerFor(f.GetPath(), webhookChecksMarker)],
+			mutatingWebhookCode,
+		)
+	}
+
+	if f.Resource.HasValidationWebhook() {
+		validatingWebhookCode := fmt.Sprintf(validatingWebhookChecksFragment, f.ProjectName)
+		codeFragments[machinery.NewMarkerFor(f.GetPath(), webhookChecksMarker)] = append(
+			codeFragments[machinery.NewMarkerFor(f.GetPath(), webhookChecksMarker)],
+			validatingWebhookCode,
+		)
+	}
+
+	return codeFragments
+}
+
+const webhookChecksFragment = `It("should provisioned cert-manager", func() {
+	By("validating that cert-manager has the certificate Secret")
+	verifyCertManager := func(g Gomega) {
+		cmd := exec.Command("kubectl", "get", "secrets", "webhook-server-cert", "-n", namespace)
+		_, err := utils.Run(cmd)
+		g.Expect(err).NotTo(HaveOccurred())
+	}
+	Eventually(verifyCertManager).Should(Succeed())
+})
+
+`
+
+const mutatingWebhookChecksFragment = `It("should have CA injection for mutating webhooks", func() {
+	By("checking CA injection for mutating webhooks")
+	verifyCAInjection := func(g Gomega) {
+		cmd := exec.Command("kubectl", "get",
+			"mutatingwebhookconfigurations.admissionregistration.k8s.io",
+			"%s-mutating-webhook-configuration",
+			"-o", "go-template={{ range .webhooks }}{{ .clientConfig.caBundle }}{{ end }}")
+		mwhOutput, err := utils.Run(cmd)
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(len(mwhOutput)).To(BeNumerically(">", 10))
+	}
+	Eventually(verifyCAInjection).Should(Succeed())
+})
+
+`
+
+// nolint:lll
+const validatingWebhookChecksFragment = `It("should have CA injection for validating webhooks", func() {
+	By("checking CA injection for validating webhooks")
+	verifyCAInjection := func(g Gomega) {
+		cmd := exec.Command("kubectl", "get",
+			"validatingwebhookconfigurations.admissionregistration.k8s.io",
+			"%s-validating-webhook-configuration",
+			"-o", "go-template={{ range .webhooks }}{{ .clientConfig.caBundle }}{{ end }}")
+		vwhOutput, err := utils.Run(cmd)
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(len(vwhOutput)).To(BeNumerically(">", 10))
+	}
+	Eventually(verifyCAInjection).Should(Succeed())
+})
+
+`
 
 var TestTemplate = `{{ .Boilerplate }}
 
@@ -207,6 +316,8 @@ var _ = Describe("Manager", Ordered, func() {
 				"controller_runtime_reconcile_total",
 			))
 		})
+
+		// +kubebuilder:scaffold:e2e-webhooks-checks
 
 		// TODO: Customize the e2e test suite with scenarios specific to your project. 
 		// Consider applying sample/CR(s) and check their status and/or verifying 
