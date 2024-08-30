@@ -39,10 +39,9 @@ jobs:
           KUSTOMIZATION_FILE_PATH="testdata/project-v4/config/default/kustomization.yaml"
           sed -i '25s/^#//' $KUSTOMIZATION_FILE_PATH
           sed -i '51s/^#//' $KUSTOMIZATION_FILE_PATH
+          sed -i '55,151s/^#//' $KUSTOMIZATION_FILE_PATH
           cd testdata/project-v4/
           go mod tidy
-          make generate
-          make manifests
 
       - name: Testing make test-e2e for project-v4
         working-directory: testdata/project-v4/
@@ -56,8 +55,6 @@ jobs:
           sed -i '51s/^#//' $KUSTOMIZATION_FILE_PATH
           cd testdata/project-v4-with-deploy-image/
           go mod tidy
-          make generate
-          make manifests
 
 # Fixme: The e2e tests for deploy image are failing and we
 # need to fix in a follow up
