@@ -39,6 +39,7 @@ jobs:
           KUSTOMIZATION_FILE_PATH="testdata/project-v4/config/default/kustomization.yaml"
           sed -i '25s/^#//' $KUSTOMIZATION_FILE_PATH
           sed -i '51s/^#//' $KUSTOMIZATION_FILE_PATH
+          sed -i '55,151s/^#//' $KUSTOMIZATION_FILE_PATH
           cd testdata/project-v4/
           go mod tidy
           make generate
@@ -49,19 +50,34 @@ jobs:
         run: |
           make test-e2e
 
+      - name: Teardown kind cluster
+        run: kind delete cluster
+
+      - name: Create kind cluster
+        run: kind create cluster
+
       - name: Prepare project-v4-with-deploy-image
         run: |
           KUSTOMIZATION_FILE_PATH="testdata/project-v4-with-deploy-image/config/default/kustomization.yaml"
           sed -i '25s/^#//' $KUSTOMIZATION_FILE_PATH
           sed -i '51s/^#//' $KUSTOMIZATION_FILE_PATH
+          # Uncomment only ValidatingWebhookConfiguration
+          # from cert-manager replaces
+          sed -i '55,70s/^#//' $KUSTOMIZATION_FILE_PATH
+          sed -i '55,70s/^#//' $KUSTOMIZATION_FILE_PATH
+          sed -i '79,101s/^#//' $KUSTOMIZATION_FILE_PATH
+          sed -i '110,151s/^#//' $KUSTOMIZATION_FILE_PATH
+          # Comment the injection for MutatingWebhookConfiguration
+          # Fixme: We should not scaffold or it should be commented
+          # by default when only validation webhooks are scaffolded
+          WEBHOOK_INJECTION_FILE_PATH="testdata/project-v4-with-deploy-image/config/default/webhookcainjection_patch.yaml"
+          sed -i '3,11s/^/#/' $WEBHOOK_INJECTION_FILE_PATH
           cd testdata/project-v4-with-deploy-image/
           go mod tidy
           make generate
           make manifests
 
-# Fixme: The e2e tests for deploy image are failing and we
-# need to fix in a follow up
-#      - name: Testing make test-e2e for project-v4-with-deploy-image
-#        working-directory: testdata/project-v4-with-deploy-image
-#        run: |
-#          make test-e2e
+      - name: Testing make test-e2e for project-v4-with-deploy-image
+        working-directory: testdata/project-v4-with-deploy-image
+        run: |
+          make test-e2e
