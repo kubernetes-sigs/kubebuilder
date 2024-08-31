@@ -57,6 +57,9 @@ func TestE2E(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
+	By("Ensure that Prometheus is enabled")
+	_ = utils.UncommentCode("config/default/kustomization.yaml", "#- ../prometheus", "#")
+
 	By("generating files")
 	cmd := exec.Command("make", "generate")
 	_, err := utils.Run(cmd)
