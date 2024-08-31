@@ -74,7 +74,6 @@ func (s *webhookScaffolder) Scaffold() error {
 	}
 
 	if err := scaffold.Execute(
-		&kdefault.WebhookCAInjectionPatch{},
 		&kdefault.ManagerWebhookPatch{},
 		&webhook.Kustomization{Force: s.force},
 		&webhook.KustomizeConfig{},

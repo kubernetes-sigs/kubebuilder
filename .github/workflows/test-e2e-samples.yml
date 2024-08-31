@@ -41,8 +41,7 @@ jobs:
         run: |
           KUSTOMIZATION_FILE_PATH="testdata/project-v4/config/default/kustomization.yaml"
           sed -i '25s/^#//' $KUSTOMIZATION_FILE_PATH
-          sed -i '51s/^#//' $KUSTOMIZATION_FILE_PATH
-          sed -i '55,151s/^#//' $KUSTOMIZATION_FILE_PATH
+          sed -i '50,177s/^#//' $KUSTOMIZATION_FILE_PATH
           cd testdata/project-v4/
           go mod tidy
 
@@ -81,17 +80,10 @@ jobs:
         run: |
           KUSTOMIZATION_FILE_PATH="testdata/project-v4-with-plugins/config/default/kustomization.yaml"
           sed -i '25s/^#//' $KUSTOMIZATION_FILE_PATH
-          sed -i '51s/^#//' $KUSTOMIZATION_FILE_PATH
           # Uncomment only ValidatingWebhookConfiguration
           # from cert-manager replaces
-          sed -i '55,70s/^#//' $KUSTOMIZATION_FILE_PATH
-          sed -i '79,101s/^#//' $KUSTOMIZATION_FILE_PATH
-          sed -i '110,151s/^#//' $KUSTOMIZATION_FILE_PATH
-          # Comment the injection for MutatingWebhookConfiguration
-          # Fixme: We should not scaffold or it should be commented
-          # by default when only validation webhooks are scaffolded
-          WEBHOOK_INJECTION_FILE_PATH="testdata/project-v4-with-plugins/config/default/webhookcainjection_patch.yaml"
-          sed -i '3,11s/^/#/' $WEBHOOK_INJECTION_FILE_PATH
+          sed -i '50,80s/^#//' $KUSTOMIZATION_FILE_PATH
+          sed -i '144,177s/^#//' $KUSTOMIZATION_FILE_PATH
           cd testdata/project-v4-with-plugins/
           go mod tidy
 
@@ -130,8 +122,7 @@ jobs:
         run: |
           KUSTOMIZATION_FILE_PATH="testdata/project-v4-multigroup/config/default/kustomization.yaml"
           sed -i '25s/^#//' $KUSTOMIZATION_FILE_PATH
-          sed -i '51s/^#//' $KUSTOMIZATION_FILE_PATH
-          sed -i '55,151s/^#//' $KUSTOMIZATION_FILE_PATH
+          sed -i '50,177s/^#//' $KUSTOMIZATION_FILE_PATH
           cd testdata/project-v4-multigroup
           go mod tidy
 
