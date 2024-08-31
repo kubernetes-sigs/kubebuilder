@@ -587,11 +587,6 @@ func (sp *Sample) updateKustomization() {
 
 	err = pluginutil.UncommentCode(
 		filepath.Join(sp.ctx.Dir, "config/default/kustomization.yaml"),
-		`#- path: webhookcainjection`, `#`)
-	hackutils.CheckError("fixing default/kustomization", err)
-
-	err = pluginutil.UncommentCode(
-		filepath.Join(sp.ctx.Dir, "config/default/kustomization.yaml"),
 		`#- ../prometheus`, `#`)
 	hackutils.CheckError("fixing default/kustomization", err)
 
