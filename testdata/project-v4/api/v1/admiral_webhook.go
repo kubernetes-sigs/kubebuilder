@@ -17,6 +17,10 @@ limitations under the License.
 package v1
 
 import (
+	"context"
+	"fmt"
+
+	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -30,6 +34,7 @@ var admirallog = logf.Log.WithName("admiral-resource")
 func (r *Admiral) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
+		WithDefaulter(&AdmiralCustomDefaulter{}).
 		Complete()
 }
 
@@ -37,11 +42,27 @@ func (r *Admiral) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // +kubebuilder:webhook:path=/mutate-crew-testproject-org-v1-admiral,mutating=true,failurePolicy=fail,sideEffects=None,groups=crew.testproject.org,resources=admirales,verbs=create;update,versions=v1,name=madmiral.kb.io,admissionReviewVersions=v1
 
-var _ webhook.Defaulter = &Admiral{}
+// +kubebuilder:object:generate=false
+// AdmiralCustomDefaulter struct is responsible for setting default values on the custom resource of the
+// Kind Admiral when those are created or updated.
+//
+// NOTE: The +kubebuilder:object:generate=false marker prevents controller-gen from generating DeepCopy methods,
+// as it is used only for temporary operations and does not need to be deeply copied.
+type AdmiralCustomDefaulter struct {
+	// TODO(user): Add more fields as needed for defaulting
+}
 
-// Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *Admiral) Default() {
-	admirallog.Info("default", "name", r.Name)
+var _ webhook.CustomDefaulter = &AdmiralCustomDefaulter{}
+
+// Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind Admiral
+func (d *AdmiralCustomDefaulter) Default(ctx context.Context, obj runtime.Object) error {
+	admiral, ok := obj.(*Admiral)
+	if !ok {
+		return fmt.Errorf("expected an Admiral object but got %T", obj)
+	}
+	admirallog.Info("Defaulting for Admiral", "name", admiral.GetName())
 
 	// TODO(user): fill in your defaulting logic.
+
+	return nil
 }
