@@ -410,7 +410,6 @@ rules:
   - admirales
   - captains
   - firstmates
-  - lakers
   verbs:
   - create
   - delete
@@ -425,7 +424,6 @@ rules:
   - admirales/finalizers
   - captains/finalizers
   - firstmates/finalizers
-  - lakers/finalizers
   verbs:
   - update
 - apiGroups:
@@ -434,7 +432,6 @@ rules:
   - admirales/status
   - captains/status
   - firstmates/status
-  - lakers/status
   verbs:
   - get
   - patch
