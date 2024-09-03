@@ -18,15 +18,34 @@ package v1beta1
 
 import (
 	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	// TODO (user): Add any additional imports if needed
 )
 
 var _ = Describe("Frigate Webhook", func() {
+	var (
+		obj *Frigate
+	)
+
+	BeforeEach(func() {
+		obj = &Frigate{}
+		Expect(obj).NotTo(BeNil(), "Expected obj to be initialized")
+
+		// TODO (user): Add any setup logic common to all tests
+	})
+
+	AfterEach(func() {
+		// TODO (user): Add any teardown logic common to all tests
+	})
 
 	Context("When creating Frigate under Conversion Webhook", func() {
-		It("Should get the converted version of Frigate", func() {
-
-			// TODO(user): Add your logic here
-
+		It("Should convert the object correctly", func() {
+			// TODO (user): Add logic to convert the object to the desired version and verify the conversion
+			// Example:
+			// convertedObj := &Frigate{}
+			// err := obj.ConvertTo(convertedObj)
+			// Expect(err).NotTo(HaveOccurred())
+			// Expect(convertedObj).ToNot(BeNil())
 		})
 	})
 
