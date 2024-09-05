@@ -31,7 +31,7 @@ import (
 // log is for logging in this package.
 var captainlog = logf.Log.WithName("captain-resource")
 
-// SetupWebhookWithManager will setup the manager to manage the webhooks
+// SetupWebhookWithManager will setup the manager to manage the webhooks.
 func (r *Captain) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
@@ -56,7 +56,7 @@ type CaptainCustomDefaulter struct {
 
 var _ webhook.CustomDefaulter = &CaptainCustomDefaulter{}
 
-// Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind Captain
+// Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind Captain.
 func (d *CaptainCustomDefaulter) Default(ctx context.Context, obj runtime.Object) error {
 	captain, ok := obj.(*Captain)
 	if !ok {
@@ -86,7 +86,7 @@ type CaptainCustomValidator struct {
 
 var _ webhook.CustomValidator = &CaptainCustomValidator{}
 
-// ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type Captain
+// ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type Captain.
 func (v *CaptainCustomValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	captain, ok := obj.(*Captain)
 	if !ok {
@@ -99,7 +99,7 @@ func (v *CaptainCustomValidator) ValidateCreate(ctx context.Context, obj runtime
 	return nil, nil
 }
 
-// ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type Captain
+// ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type Captain.
 func (v *CaptainCustomValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
 	captain, ok := newObj.(*Captain)
 	if !ok {
@@ -112,7 +112,7 @@ func (v *CaptainCustomValidator) ValidateUpdate(ctx context.Context, oldObj, new
 	return nil, nil
 }
 
-// ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type Captain
+// ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type Captain.
 func (v *CaptainCustomValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	captain, ok := obj.(*Captain)
 	if !ok {

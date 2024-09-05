@@ -25,7 +25,7 @@ spec:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: Bar is the Schema for the bars API
+        description: Bar is the Schema for the bars API.
         properties:
           apiVersion:
             description: |-
@@ -45,7 +45,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: BarSpec defines the desired state of Bar
+            description: BarSpec defines the desired state of Bar.
             properties:
               foo:
                 description: Foo is an example field of Bar. Edit bar_types.go to
@@ -53,7 +53,7 @@ spec:
                 type: string
             type: object
           status:
-            description: BarStatus defines the observed state of Bar
+            description: BarStatus defines the observed state of Bar.
             type: object
         type: object
     served: true
@@ -79,7 +79,7 @@ spec:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: Bar is the Schema for the bars API
+        description: Bar is the Schema for the bars API.
         properties:
           apiVersion:
             description: |-
@@ -99,7 +99,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: BarSpec defines the desired state of Bar
+            description: BarSpec defines the desired state of Bar.
             properties:
               foo:
                 description: Foo is an example field of Bar. Edit bar_types.go to
@@ -107,7 +107,7 @@ spec:
                 type: string
             type: object
           status:
-            description: BarStatus defines the observed state of Bar
+            description: BarStatus defines the observed state of Bar.
             type: object
         type: object
     served: true
@@ -143,7 +143,7 @@ spec:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: Captain is the Schema for the captains API
+        description: Captain is the Schema for the captains API.
         properties:
           apiVersion:
             description: |-
@@ -163,7 +163,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: CaptainSpec defines the desired state of Captain
+            description: CaptainSpec defines the desired state of Captain.
             properties:
               foo:
                 description: Foo is an example field of Captain. Edit captain_types.go
@@ -171,7 +171,7 @@ spec:
                 type: string
             type: object
           status:
-            description: CaptainStatus defines the observed state of Captain
+            description: CaptainStatus defines the observed state of Captain.
             type: object
         type: object
     served: true
@@ -207,7 +207,7 @@ spec:
   - name: v2alpha1
     schema:
       openAPIV3Schema:
-        description: Cruiser is the Schema for the cruisers API
+        description: Cruiser is the Schema for the cruisers API.
         properties:
           apiVersion:
             description: |-
@@ -227,7 +227,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: CruiserSpec defines the desired state of Cruiser
+            description: CruiserSpec defines the desired state of Cruiser.
             properties:
               foo:
                 description: Foo is an example field of Cruiser. Edit cruiser_types.go
@@ -235,7 +235,7 @@ spec:
                 type: string
             type: object
           status:
-            description: CruiserStatus defines the observed state of Cruiser
+            description: CruiserStatus defines the observed state of Cruiser.
             type: object
         type: object
     served: true
@@ -271,7 +271,7 @@ spec:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: Destroyer is the Schema for the destroyers API
+        description: Destroyer is the Schema for the destroyers API.
         properties:
           apiVersion:
             description: |-
@@ -291,7 +291,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: DestroyerSpec defines the desired state of Destroyer
+            description: DestroyerSpec defines the desired state of Destroyer.
             properties:
               foo:
                 description: Foo is an example field of Destroyer. Edit destroyer_types.go
@@ -299,7 +299,7 @@ spec:
                 type: string
             type: object
           status:
-            description: DestroyerStatus defines the observed state of Destroyer
+            description: DestroyerStatus defines the observed state of Destroyer.
             type: object
         type: object
     served: true
@@ -335,7 +335,7 @@ spec:
   - name: v1beta1
     schema:
       openAPIV3Schema:
-        description: Frigate is the Schema for the frigates API
+        description: Frigate is the Schema for the frigates API.
         properties:
           apiVersion:
             description: |-
@@ -355,7 +355,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: FrigateSpec defines the desired state of Frigate
+            description: FrigateSpec defines the desired state of Frigate.
             properties:
               foo:
                 description: Foo is an example field of Frigate. Edit frigate_types.go
@@ -363,7 +363,7 @@ spec:
                 type: string
             type: object
           status:
-            description: FrigateStatus defines the observed state of Frigate
+            description: FrigateStatus defines the observed state of Frigate.
             type: object
         type: object
     served: true
@@ -389,7 +389,7 @@ spec:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: HealthCheckPolicy is the Schema for the healthcheckpolicies API
+        description: HealthCheckPolicy is the Schema for the healthcheckpolicies API.
         properties:
           apiVersion:
             description: |-
@@ -409,7 +409,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: HealthCheckPolicySpec defines the desired state of HealthCheckPolicy
+            description: HealthCheckPolicySpec defines the desired state of HealthCheckPolicy.
             properties:
               foo:
                 description: Foo is an example field of HealthCheckPolicy. Edit healthcheckpolicy_types.go
@@ -417,7 +417,7 @@ spec:
                 type: string
             type: object
           status:
-            description: HealthCheckPolicyStatus defines the observed state of HealthCheckPolicy
+            description: HealthCheckPolicyStatus defines the observed state of HealthCheckPolicy.
             type: object
         type: object
     served: true
@@ -443,7 +443,7 @@ spec:
   - name: v1beta1
     schema:
       openAPIV3Schema:
-        description: Kraken is the Schema for the krakens API
+        description: Kraken is the Schema for the krakens API.
         properties:
           apiVersion:
             description: |-
@@ -463,7 +463,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: KrakenSpec defines the desired state of Kraken
+            description: KrakenSpec defines the desired state of Kraken.
             properties:
               foo:
                 description: Foo is an example field of Kraken. Edit kraken_types.go
@@ -471,7 +471,7 @@ spec:
                 type: string
             type: object
           status:
-            description: KrakenStatus defines the observed state of Kraken
+            description: KrakenStatus defines the observed state of Kraken.
             type: object
         type: object
     served: true
@@ -507,7 +507,7 @@ spec:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: Lakers is the Schema for the lakers API
+        description: Lakers is the Schema for the lakers API.
         properties:
           apiVersion:
             description: |-
@@ -527,7 +527,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: LakersSpec defines the desired state of Lakers
+            description: LakersSpec defines the desired state of Lakers.
             properties:
               foo:
                 description: Foo is an example field of Lakers. Edit lakers_types.go
@@ -535,7 +535,7 @@ spec:
                 type: string
             type: object
           status:
-            description: LakersStatus defines the observed state of Lakers
+            description: LakersStatus defines the observed state of Lakers.
             type: object
         type: object
     served: true
@@ -561,7 +561,7 @@ spec:
   - name: v1beta2
     schema:
       openAPIV3Schema:
-        description: Leviathan is the Schema for the leviathans API
+        description: Leviathan is the Schema for the leviathans API.
         properties:
           apiVersion:
             description: |-
@@ -581,7 +581,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: LeviathanSpec defines the desired state of Leviathan
+            description: LeviathanSpec defines the desired state of Leviathan.
             properties:
               foo:
                 description: Foo is an example field of Leviathan. Edit leviathan_types.go
@@ -589,7 +589,7 @@ spec:
                 type: string
             type: object
           status:
-            description: LeviathanStatus defines the observed state of Leviathan
+            description: LeviathanStatus defines the observed state of Leviathan.
             type: object
         type: object
     served: true

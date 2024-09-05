@@ -23,7 +23,7 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// KrakenSpec defines the desired state of Kraken
+// KrakenSpec defines the desired state of Kraken.
 type KrakenSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
@@ -32,7 +32,7 @@ type KrakenSpec struct {
 	Foo string `json:"foo,omitempty"`
 }
 
-// KrakenStatus defines the observed state of Kraken
+// KrakenStatus defines the observed state of Kraken.
 type KrakenStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
@@ -41,7 +41,7 @@ type KrakenStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// Kraken is the Schema for the krakens API
+// Kraken is the Schema for the krakens API.
 type Kraken struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -52,7 +52,7 @@ type Kraken struct {
 
 // +kubebuilder:object:root=true
 
-// KrakenList contains a list of Kraken
+// KrakenList contains a list of Kraken.
 type KrakenList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

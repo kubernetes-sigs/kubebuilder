@@ -30,7 +30,7 @@ import (
 // log is for logging in this package.
 var admirallog = logf.Log.WithName("admiral-resource")
 
-// SetupWebhookWithManager will setup the manager to manage the webhooks
+// SetupWebhookWithManager will setup the manager to manage the webhooks.
 func (r *Admiral) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
@@ -54,7 +54,7 @@ type AdmiralCustomDefaulter struct {
 
 var _ webhook.CustomDefaulter = &AdmiralCustomDefaulter{}
 
-// Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind Admiral
+// Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind Admiral.
 func (d *AdmiralCustomDefaulter) Default(ctx context.Context, obj runtime.Object) error {
 	admiral, ok := obj.(*Admiral)
 	if !ok {
