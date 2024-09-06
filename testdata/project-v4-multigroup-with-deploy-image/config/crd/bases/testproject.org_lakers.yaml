@@ -17,7 +17,7 @@ spec:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: Lakers is the Schema for the lakers API
+        description: Lakers is the Schema for the lakers API.
         properties:
           apiVersion:
             description: |-
@@ -37,7 +37,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: LakersSpec defines the desired state of Lakers
+            description: LakersSpec defines the desired state of Lakers.
             properties:
               foo:
                 description: Foo is an example field of Lakers. Edit lakers_types.go
@@ -45,7 +45,7 @@ spec:
                 type: string
             type: object
           status:
-            description: LakersStatus defines the observed state of Lakers
+            description: LakersStatus defines the observed state of Lakers.
             type: object
         type: object
     served: true

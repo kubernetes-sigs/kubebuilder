@@ -17,7 +17,7 @@ spec:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: Admiral is the Schema for the admirales API
+        description: Admiral is the Schema for the admirales API.
         properties:
           apiVersion:
             description: |-
@@ -37,7 +37,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: AdmiralSpec defines the desired state of Admiral
+            description: AdmiralSpec defines the desired state of Admiral.
             properties:
               foo:
                 description: Foo is an example field of Admiral. Edit admiral_types.go
@@ -45,7 +45,7 @@ spec:
                 type: string
             type: object
           status:
-            description: AdmiralStatus defines the observed state of Admiral
+            description: AdmiralStatus defines the observed state of Admiral.
             type: object
         type: object
     served: true

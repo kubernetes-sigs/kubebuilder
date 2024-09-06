@@ -31,7 +31,7 @@ import (
 // log is for logging in this package.
 var memcachedlog = logf.Log.WithName("memcached-resource")
 
-// SetupWebhookWithManager will setup the manager to manage the webhooks
+// SetupWebhookWithManager will setup the manager to manage the webhooks.
 func (r *Memcached) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
@@ -58,7 +58,7 @@ type MemcachedCustomValidator struct {
 
 var _ webhook.CustomValidator = &MemcachedCustomValidator{}
 
-// ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type Memcached
+// ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type Memcached.
 func (v *MemcachedCustomValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	memcached, ok := obj.(*Memcached)
 	if !ok {
@@ -71,7 +71,7 @@ func (v *MemcachedCustomValidator) ValidateCreate(ctx context.Context, obj runti
 	return nil, nil
 }
 
-// ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type Memcached
+// ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type Memcached.
 func (v *MemcachedCustomValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
 	memcached, ok := newObj.(*Memcached)
 	if !ok {
@@ -84,7 +84,7 @@ func (v *MemcachedCustomValidator) ValidateUpdate(ctx context.Context, oldObj, n
 	return nil, nil
 }
 
-// ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type Memcached
+// ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type Memcached.
 func (v *MemcachedCustomValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	memcached, ok := obj.(*Memcached)
 	if !ok {

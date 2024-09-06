@@ -17,7 +17,7 @@ spec:
   - name: v2alpha1
     schema:
       openAPIV3Schema:
-        description: Cruiser is the Schema for the cruisers API
+        description: Cruiser is the Schema for the cruisers API.
         properties:
           apiVersion:
             description: |-
@@ -37,7 +37,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: CruiserSpec defines the desired state of Cruiser
+            description: CruiserSpec defines the desired state of Cruiser.
             properties:
               foo:
                 description: Foo is an example field of Cruiser. Edit cruiser_types.go
@@ -45,7 +45,7 @@ spec:
                 type: string
             type: object
           status:
-            description: CruiserStatus defines the observed state of Cruiser
+            description: CruiserStatus defines the observed state of Cruiser.
             type: object
         type: object
     served: true

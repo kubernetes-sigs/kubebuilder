@@ -26,7 +26,7 @@ import (
 
 // +kubebuilder:docs-gen:collapse=Imports
 
-// MemcachedSpec defines the desired state of Memcached
+// MemcachedSpec defines the desired state of Memcached.
 type MemcachedSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
@@ -40,7 +40,7 @@ type MemcachedSpec struct {
 	Size int32 `json:"size,omitempty"`
 }
 
-// MemcachedStatus defines the observed state of Memcached
+// MemcachedStatus defines the observed state of Memcached.
 type MemcachedStatus struct {
 	// Represents the observations of a Memcached's current state.
 	// Memcached.status.conditions.type are: "Available", "Progressing", and "Degraded"
@@ -57,7 +57,7 @@ type MemcachedStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// Memcached is the Schema for the memcacheds API
+// Memcached is the Schema for the memcacheds API.
 type Memcached struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -68,7 +68,7 @@ type Memcached struct {
 
 // +kubebuilder:object:root=true
 
-// MemcachedList contains a list of Memcached
+// MemcachedList contains a list of Memcached.
 type MemcachedList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

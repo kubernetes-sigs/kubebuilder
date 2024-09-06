@@ -31,7 +31,7 @@ import (
 // log is for logging in this package.
 var lakerslog = logf.Log.WithName("lakers-resource")
 
-// SetupWebhookWithManager will setup the manager to manage the webhooks
+// SetupWebhookWithManager will setup the manager to manage the webhooks.
 func (r *Lakers) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
@@ -56,7 +56,7 @@ type LakersCustomDefaulter struct {
 
 var _ webhook.CustomDefaulter = &LakersCustomDefaulter{}
 
-// Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind Lakers
+// Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind Lakers.
 func (d *LakersCustomDefaulter) Default(ctx context.Context, obj runtime.Object) error {
 	lakers, ok := obj.(*Lakers)
 	if !ok {
@@ -86,7 +86,7 @@ type LakersCustomValidator struct {
 
 var _ webhook.CustomValidator = &LakersCustomValidator{}
 
-// ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type Lakers
+// ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type Lakers.
 func (v *LakersCustomValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	lakers, ok := obj.(*Lakers)
 	if !ok {
@@ -99,7 +99,7 @@ func (v *LakersCustomValidator) ValidateCreate(ctx context.Context, obj runtime.
 	return nil, nil
 }
 
-// ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type Lakers
+// ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type Lakers.
 func (v *LakersCustomValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
 	lakers, ok := newObj.(*Lakers)
 	if !ok {
@@ -112,7 +112,7 @@ func (v *LakersCustomValidator) ValidateUpdate(ctx context.Context, oldObj, newO
 	return nil, nil
 }
 
-// ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type Lakers
+// ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type Lakers.
 func (v *LakersCustomValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	lakers, ok := obj.(*Lakers)
 	if !ok {

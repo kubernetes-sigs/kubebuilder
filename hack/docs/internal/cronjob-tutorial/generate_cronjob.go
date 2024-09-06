@@ -194,8 +194,8 @@ func (sp *Sample) updateSpec() {
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_types.go"),
-		`// CronJob is the Schema for the cronjobs API
-type CronJob struct {`, `// CronJob is the Schema for the cronjobs API
+		`// CronJob is the Schema for the cronjobs API.
+type CronJob struct {`, `// CronJob is the Schema for the cronjobs API.
 type CronJob struct {`+`
 	/*
 	 */`)

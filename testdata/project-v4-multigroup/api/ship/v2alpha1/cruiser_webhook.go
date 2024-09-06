@@ -31,7 +31,7 @@ import (
 // log is for logging in this package.
 var cruiserlog = logf.Log.WithName("cruiser-resource")
 
-// SetupWebhookWithManager will setup the manager to manage the webhooks
+// SetupWebhookWithManager will setup the manager to manage the webhooks.
 func (r *Cruiser) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
@@ -58,7 +58,7 @@ type CruiserCustomValidator struct {
 
 var _ webhook.CustomValidator = &CruiserCustomValidator{}
 
-// ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type Cruiser
+// ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type Cruiser.
 func (v *CruiserCustomValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	cruiser, ok := obj.(*Cruiser)
 	if !ok {
@@ -71,7 +71,7 @@ func (v *CruiserCustomValidator) ValidateCreate(ctx context.Context, obj runtime
 	return nil, nil
 }
 
-// ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type Cruiser
+// ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type Cruiser.
 func (v *CruiserCustomValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
 	cruiser, ok := newObj.(*Cruiser)
 	if !ok {
@@ -84,7 +84,7 @@ func (v *CruiserCustomValidator) ValidateUpdate(ctx context.Context, oldObj, new
 	return nil, nil
 }
 
-// ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type Cruiser
+// ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type Cruiser.
 func (v *CruiserCustomValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	cruiser, ok := obj.(*Cruiser)
 	if !ok {

@@ -30,7 +30,7 @@ import (
 // log is for logging in this package.
 var destroyerlog = logf.Log.WithName("destroyer-resource")
 
-// SetupWebhookWithManager will setup the manager to manage the webhooks
+// SetupWebhookWithManager will setup the manager to manage the webhooks.
 func (r *Destroyer) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
@@ -54,7 +54,7 @@ type DestroyerCustomDefaulter struct {
 
 var _ webhook.CustomDefaulter = &DestroyerCustomDefaulter{}
 
-// Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind Destroyer
+// Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind Destroyer.
 func (d *DestroyerCustomDefaulter) Default(ctx context.Context, obj runtime.Object) error {
 	destroyer, ok := obj.(*Destroyer)
 	if !ok {

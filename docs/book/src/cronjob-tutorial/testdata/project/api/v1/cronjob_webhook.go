@@ -45,7 +45,7 @@ var cronjoblog = logf.Log.WithName("cronjob-resource")
 Then, we set up the webhook with the manager.
 */
 
-// SetupWebhookWithManager will setup the manager to manage the webhooks
+// SetupWebhookWithManager will setup the manager to manage the webhooks.
 func (r *CronJob) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
@@ -92,7 +92,7 @@ type CronJobCustomDefaulter struct {
 
 var _ webhook.CustomDefaulter = &CronJobCustomDefaulter{}
 
-// Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind CronJob
+// Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind CronJob.
 func (d *CronJobCustomDefaulter) Default(ctx context.Context, obj runtime.Object) error {
 	cronjob, ok := obj.(*CronJob)
 	if !ok {
@@ -161,7 +161,7 @@ type CronJobCustomValidator struct {
 
 var _ webhook.CustomValidator = &CronJobCustomValidator{}
 
-// ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type CronJob
+// ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type CronJob.
 func (v *CronJobCustomValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	cronjob, ok := obj.(*CronJob)
 	if !ok {
@@ -172,7 +172,7 @@ func (v *CronJobCustomValidator) ValidateCreate(ctx context.Context, obj runtime
 	return nil, cronjob.validateCronJob()
 }
 
-// ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type CronJob
+// ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type CronJob.
 func (v *CronJobCustomValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
 	cronjob, ok := newObj.(*CronJob)
 	if !ok {
@@ -183,7 +183,7 @@ func (v *CronJobCustomValidator) ValidateUpdate(ctx context.Context, oldObj, new
 	return nil, cronjob.validateCronJob()
 }
 
-// ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type CronJob
+// ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type CronJob.
 func (v *CronJobCustomValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	cronjob, ok := obj.(*CronJob)
 	if !ok {

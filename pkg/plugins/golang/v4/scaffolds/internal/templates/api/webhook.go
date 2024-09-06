@@ -103,7 +103,7 @@ import (
 // log is for logging in this package.
 var {{ lower .Resource.Kind }}log = logf.Log.WithName("{{ lower .Resource.Kind }}-resource")
 
-// SetupWebhookWithManager will setup the manager to manage the webhooks
+// SetupWebhookWithManager will setup the manager to manage the webhooks.
 func (r *{{ .Resource.Kind }}) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
@@ -135,7 +135,7 @@ type {{ .Resource.Kind }}CustomDefaulter struct {
 
 var _ webhook.CustomDefaulter = &{{ .Resource.Kind }}CustomDefaulter{}
 
-// Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind {{ .Resource.Kind }}
+// Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind {{ .Resource.Kind }}.
 func (d *{{ .Resource.Kind }}CustomDefaulter) Default(ctx context.Context, obj runtime.Object) error {
 	{{ lower .Resource.Kind }}, ok := obj.(*{{ .Resource.Kind }})
 	if !ok {
@@ -168,7 +168,7 @@ type {{ .Resource.Kind }}CustomValidator struct{
 
 var _ webhook.CustomValidator = &{{ .Resource.Kind }}CustomValidator{}
 
-// ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type {{ .Resource.Kind }}
+// ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type {{ .Resource.Kind }}.
 func (v *{{ .Resource.Kind }}CustomValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	{{ lower .Resource.Kind }}, ok := obj.(*{{ .Resource.Kind }})
 	if !ok {
@@ -181,7 +181,7 @@ func (v *{{ .Resource.Kind }}CustomValidator) ValidateCreate(ctx context.Context
 	return nil, nil
 }
 
-// ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type {{ .Resource.Kind }}
+// ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type {{ .Resource.Kind }}.
 func (v *{{ .Resource.Kind }}CustomValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
 	{{ lower .Resource.Kind }}, ok := newObj.(*{{ .Resource.Kind }})
 	if !ok {
@@ -194,7 +194,7 @@ func (v *{{ .Resource.Kind }}CustomValidator) ValidateUpdate(ctx context.Context
 	return nil, nil
 }
 
-// ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type {{ .Resource.Kind }}
+// ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type {{ .Resource.Kind }}.
 func (v *{{ .Resource.Kind }}CustomValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	{{ lower .Resource.Kind }}, ok := obj.(*{{ .Resource.Kind }})
 	if !ok {
