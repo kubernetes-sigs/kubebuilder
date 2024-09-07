@@ -160,6 +160,7 @@ func (s *initScaffolder) Scaffold() error {
 		&templates.Readme{},
 		&templates.Golangci{},
 		&e2e.Test{},
+		&e2e.WebhookTestUpdater{WireWebhook: false},
 		&e2e.SuiteTest{},
 		&utils.Utils{},
 		&templates.DevContainer{},
