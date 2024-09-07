@@ -85,26 +85,28 @@ func (sp *Sample) UpdateTutorial() {
 	sp.updateSpec()
 	// 2. update webhook
 	sp.updateWebhook()
-	// 3. update makefile
+	// 3. update webhookTests
+	sp.updateWebhookTests()
+	// 4. update makefile
 	sp.updateMakefile()
-	// 4. generate extra files
+	// 5. generate extra files
 	sp.codeGen()
-	// 5. compensate other intro in API
+	// 6. compensate other intro in API
 	sp.updateAPIStuff()
-	// 6. update reconciliation and main.go
-	// 6.1 update controller
+	// 7. update reconciliation and main.go
+	// 7.1 update controller
 	sp.updateController()
-	// 6.2 update main.go
+	// 7.2 update main.go
 	sp.updateMain()
-	// 7. generate extra files
+	// 8. generate extra files
 	sp.codeGen()
-	// 8. update suite_test explanation
+	// 9. update suite_test explanation
 	sp.updateSuiteTest()
-	// 9. uncomment kustomization
+	// 10. uncomment kustomization
 	sp.updateKustomization()
-	// 10. add example
+	// 11. add example
 	sp.updateExample()
-	// 11. add test
+	// 12. add test
 	sp.addControllerTest()
 }
 
@@ -370,6 +372,34 @@ manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and Cust
 	err := pluginutil.ReplaceInFile(filepath.Join(sp.ctx.Dir, "Makefile"), originalManifestTarget, changedManifestTarget)
 	hackutils.CheckError("updating makefile to use maxDescLen=0 in make manifest target", err)
 
+}
+
+func (sp *Sample) updateWebhookTests() {
+	file := filepath.Join(sp.ctx.Dir, "api/v1/cronjob_webhook_test.go")
+
+	err := pluginutil.InsertCode(file,
+		`var _ = Describe("CronJob Webhook", func() {
+	var (
+		obj *CronJob`,
+		`
+		oldObj    *CronJob
+		validator CronJobCustomValidator`)
+	hackutils.CheckError("insert global vars", err)
+
+	err = pluginutil.ReplaceInFile(file,
+		webhookTestCreateDefaultingFragment,
+		webhookTestCreateDefaultingReplaceFragment)
+	hackutils.CheckError("replace create defaulting test", err)
+
+	err = pluginutil.ReplaceInFile(file,
+		webhookTestingValidatingTodoFragment,
+		webhookTestingValidatingExampleFragment)
+	hackutils.CheckError("replace validating defaulting test", err)
+
+	err = pluginutil.ReplaceInFile(file,
+		webhookTestsBeforeEachOriginal,
+		webhookTestsBeforeEachChanged)
+	hackutils.CheckError("replace validating defaulting test", err)
 }
 
 func (sp *Sample) updateWebhook() {

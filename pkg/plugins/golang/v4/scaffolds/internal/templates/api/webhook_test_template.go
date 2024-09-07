@@ -76,45 +76,85 @@ package {{ .Resource.Version }}
 
 import (
 	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+
+	// TODO (user): Add any additional imports if needed
 )
 
 var _ = Describe("{{ .Resource.Kind }} Webhook", func() {
+	var (
+		obj *{{ .Resource.Kind }}
+	)
+
+	BeforeEach(func() {
+		obj = &{{ .Resource.Kind }}{}
+		Expect(obj).NotTo(BeNil(), "Expected obj to be initialized")
+		
+		// TODO (user): Add any setup logic common to all tests
+	})
+
+	AfterEach(func() {
+		// TODO (user): Add any teardown logic common to all tests
+	})
+
 	%s
 })
 `
 
 const conversionWebhookTestTemplate = `
 Context("When creating {{ .Resource.Kind }} under Conversion Webhook", func() {
-	It("Should get the converted version of {{ .Resource.Kind }}" , func() {
-
-		// TODO(user): Add your logic here
-
+	It("Should convert the object correctly", func() {
+		// TODO (user): Add logic to convert the object to the desired version and verify the conversion
+		// Example:
+		// convertedObj := &{{ .Resource.Kind }}{}
+		// err := obj.ConvertTo(convertedObj)
+		// Expect(err).NotTo(HaveOccurred())
+		// Expect(convertedObj).ToNot(BeNil())
 	})
 })
 `
 
 const validateWebhookTestTemplate = `
-Context("When creating {{ .Resource.Kind }} under Validating Webhook", func() {
-	It("Should deny if a required field is empty", func() {
-
-		// TODO(user): Add your logic here
-
-	})
-
-	It("Should admit if all required fields are provided", func() {
-
-		// TODO(user): Add your logic here
-
-	})
+Context("When creating or updating {{ .Resource.Kind }} under Validating Webhook", func() {
+	// TODO (user): Add logic for validating webhooks
+	// Example:
+	// It("Should deny creation if a required field is missing", func() {
+	// 	   By("simulating an invalid creation scenario")
+	//     obj.SomeRequiredField = ""
+	//     warnings, err := obj.ValidateCreate(ctx)
+	//     Expect(err).To(HaveOccurred())
+	//     Expect(warnings).To(BeNil())
+	// })
+	//
+	// It("Should admit creation if all required fields are present", func() {
+	// 	   By("simulating an invalid creation scenario")
+	//     obj.SomeRequiredField = "valid_value"
+	//	   warnings, err := obj.ValidateCreate(ctx)
+	//	   Expect(err).NotTo(HaveOccurred())
+	//	   Expect(warnings).To(BeNil())
+	// })
+	//
+	// It("Should validate updates correctly", func() {
+	//     By("simulating a valid update scenario")
+	//	   oldObj := &Captain{SomeRequiredField: "valid_value"}
+	//	   obj.SomeRequiredField = "updated_value"
+	//	   warnings, err := obj.ValidateUpdate(ctx, oldObj)
+	//	   Expect(err).NotTo(HaveOccurred())
+	//	   Expect(warnings).To(BeNil())
+	// })
 })
 `
 
 const defaultWebhookTestTemplate = `
 Context("When creating {{ .Resource.Kind }} under Defaulting Webhook", func() {
-	It("Should fill in the default value if a required field is empty", func() {
-
-		// TODO(user): Add your logic here
-
-	})
+	// TODO (user): Add logic for defaulting webhooks
+	// Example:
+	// It("Should apply defaults when a required field is empty", func() {
+	//     By("simulating a scenario where defaults should be applied")
+	// 	   obj.SomeFieldWithDefault = ""
+	//	   err := obj.Default(ctx)
+	//	   Expect(err).NotTo(HaveOccurred())
+	//     Expect(obj.SomeFieldWithDefault).To(Equal("default_value"))
+	// })
 })
 `

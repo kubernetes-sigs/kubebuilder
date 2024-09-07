@@ -100,22 +100,27 @@ func (d *CronJobCustomDefaulter) Default(ctx context.Context, obj runtime.Object
 	}
 	cronjoblog.Info("Defaulting for CronJob", "name", cronjob.GetName())
 
-	if cronjob.Spec.ConcurrencyPolicy == "" {
-		cronjob.Spec.ConcurrencyPolicy = AllowConcurrent
-	}
-	if cronjob.Spec.Suspend == nil {
-		cronjob.Spec.Suspend = new(bool)
-	}
-	if cronjob.Spec.SuccessfulJobsHistoryLimit == nil {
-		cronjob.Spec.SuccessfulJobsHistoryLimit = new(int32)
-		*cronjob.Spec.SuccessfulJobsHistoryLimit = 3
-	}
-	if cronjob.Spec.FailedJobsHistoryLimit == nil {
-		cronjob.Spec.FailedJobsHistoryLimit = new(int32)
-		*cronjob.Spec.FailedJobsHistoryLimit = 1
-	}
+	// Set default values
+	cronjob.Default()
 
 	return nil
+}
+
+func (r *CronJob) Default() {
+	if r.Spec.ConcurrencyPolicy == "" {
+		r.Spec.ConcurrencyPolicy = AllowConcurrent
+	}
+	if r.Spec.Suspend == nil {
+		r.Spec.Suspend = new(bool)
+	}
+	if r.Spec.SuccessfulJobsHistoryLimit == nil {
+		r.Spec.SuccessfulJobsHistoryLimit = new(int32)
+		*r.Spec.SuccessfulJobsHistoryLimit = 3
+	}
+	if r.Spec.FailedJobsHistoryLimit == nil {
+		r.Spec.FailedJobsHistoryLimit = new(int32)
+		*r.Spec.FailedJobsHistoryLimit = 1
+	}
 }
 
 /*
