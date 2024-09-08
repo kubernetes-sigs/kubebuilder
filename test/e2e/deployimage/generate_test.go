@@ -47,6 +47,7 @@ func creatingAPI(kbc *utils.TestContext) {
 		"--kind", kbc.Kind,
 		"--plugins", "deploy-image/v1-alpha",
 		"--image", "busybox:1.36.1",
+		"--run-as-user", "1001",
 		"--make=false",
 		"--manifests=false",
 	)
