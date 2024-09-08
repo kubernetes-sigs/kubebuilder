@@ -80,7 +80,7 @@ func (sp *Sample) GenerateSampleProject() {
 }
 
 func (sp *Sample) UpdateTutorial() {
-	log.Println("TODO: update tutorial")
+	log.Println("Update tutorial with cronjob code")
 	// 1. update specs
 	sp.updateSpec()
 	// 2. update webhook

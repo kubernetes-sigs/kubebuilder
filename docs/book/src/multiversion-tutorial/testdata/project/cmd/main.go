@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+// +kubebuilder:docs-gen:collapse=Apache License
 
 package main
 
@@ -46,6 +47,7 @@ import (
 
 /*
  */
+
 var (
 	scheme   = runtime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup")
@@ -64,6 +66,7 @@ func init() {
 
 /*
  */
+
 func main() {
 	/*
 	 */
@@ -170,19 +173,20 @@ func main() {
 	/*
 		Our existing call to SetupWebhookWithManager registers our conversion webhooks with the manager, too.
 	*/
-
 	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		if err = (&batchv1.CronJob{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "CronJob")
 			os.Exit(1)
 		}
+	}
+	// nolint:goconst
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		if err = (&batchv2.CronJob{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "CronJob")
 			os.Exit(1)
 		}
 	}
-
 	// +kubebuilder:scaffold:builder
 
 	/*
