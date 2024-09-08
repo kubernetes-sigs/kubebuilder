@@ -140,7 +140,7 @@ func ReGenerateProject(kbc *utils.TestContext) {
 		"--version", "v1",
 		"--kind", "Memcached",
 		"--image=memcached:1.6.15-alpine",
-		"--image-container-command=memcached,-m=64,modern,-v",
+		"--image-container-command=memcached,--memory-limit=64,modern,-v",
 		"--image-container-port=11211",
 		"--run-as-user=1001",
 		"--plugins=\"deploy-image/v1-alpha\"",
@@ -241,7 +241,7 @@ func ReGenerateProject(kbc *utils.TestContext) {
 	Expect(fileContainsExpr).To(BeTrue())
 	var deployImagePluginFields = `kind: Memcached
       options:
-        containerCommand: memcached,-m=64,modern,-v
+        containerCommand: memcached,--memory-limit=64,modern,-v
         containerPort: "11211"
         image: memcached:1.6.15-alpine
         runAsUser: "1001"`

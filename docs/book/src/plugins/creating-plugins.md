@@ -112,7 +112,7 @@ Note that users are also able to use plugins to customize their scaffolds and ad
 See that Kubebuilder provides the [`deploy-image`][deploy-image] plugin that allows the user to create the controller & CRs which will deploy and manage an image on the cluster:
 
 ```sh
-kubebuilder create api --group example.com --version v1alpha1 --kind Memcached --image=memcached:1.6.15-alpine --image-container-command="memcached,-m=64,modern,-v" --image-container-port="11211" --run-as-user="1001" --plugins="deploy-image/v1-alpha"
+kubebuilder create api --group example.com --version v1alpha1 --kind Memcached --image=memcached:1.6.15-alpine --image-container-command="memcached,--memory-limit=64,modern,-v" --image-container-port="11211" --run-as-user="1001" --plugins="deploy-image/v1-alpha"
 ```
 
 This plugin will perform a custom scaffold following the [Operator Pattern][operator-pattern].

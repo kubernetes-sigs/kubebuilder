@@ -261,7 +261,7 @@ specifications, as demonstrated in the following example:
 							ContainerPort: 11211,
 							Name:          "memcached",
 						}},
-						Command: []string{"memcached", "-m=64", "-o", "modern", "-v"},
+						Command: []string{"memcached", "--memory-limit=64", "-o", "modern", "-v"},
 					}},
 				},
 			},
