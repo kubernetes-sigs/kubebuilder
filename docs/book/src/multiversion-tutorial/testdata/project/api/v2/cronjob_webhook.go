@@ -17,7 +17,11 @@ limitations under the License.
 package v2
 
 import (
+	"context"
+	"fmt"
 	"github.com/robfig/cron"
+	"strings"
+
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -27,25 +31,53 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
-	"strings"
 )
 
+// nolint:unused
 // log is for logging in this package.
 var cronjoblog = logf.Log.WithName("cronjob-resource")
 
-// SetupWebhookWithManager will setup the manager to manage the webhooks
+// SetupWebhookWithManager will setup the manager to manage the webhooks.
 func (r *CronJob) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
+		WithValidator(&CronJobCustomValidator{}).
+		WithDefaulter(&CronJobCustomDefaulter{
+			DefaultConcurrencyPolicy:          AllowConcurrent,
+			DefaultSuspend:                    false,
+			DefaultSuccessfulJobsHistoryLimit: 3,
+			DefaultFailedJobsHistoryLimit:     1,
+		}).
 		Complete()
 }
 
-// +kubebuilder:webhook:path=/mutate-batch-tutorial-kubebuilder-io-v1-cronjob,mutating=true,failurePolicy=fail,groups=batch.tutorial.kubebuilder.io,resources=cronjobs,verbs=create;update,versions=v1,name=mcronjob.kb.io,sideEffects=None,admissionReviewVersions=v1
-var _ webhook.Defaulter = &CronJob{}
+// +kubebuilder:object:generate=false
+// CronJobCustomDefaulter struct is responsible for setting default values on the custom resource of the
+// Kind CronJob when those are created or updated.
+type CronJobCustomDefaulter struct {
+	// Default values for various CronJob fields
+	DefaultConcurrencyPolicy          ConcurrencyPolicy
+	DefaultSuspend                    bool
+	DefaultSuccessfulJobsHistoryLimit int32
+	DefaultFailedJobsHistoryLimit     int32
+}
 
-// Default implements webhook.Defaulter so a webhook will be registered for the type
+var _ webhook.CustomDefaulter = &CronJobCustomDefaulter{}
+
+// Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind CronJob.
+func (d *CronJobCustomDefaulter) Default(ctx context.Context, obj runtime.Object) error {
+	cronjob, ok := obj.(*CronJob)
+	if !ok {
+		return fmt.Errorf("expected a CronJob object but got %T", obj)
+	}
+	cronjoblog.Info("Defaulting for CronJob", "name", cronjob.GetName())
+
+	// Set default values
+	cronjob.Default()
+	return nil
+}
+
 func (r *CronJob) Default() {
-	cronjoblog.Info("default", "name", r.Name)
 	if r.Spec.ConcurrencyPolicy == "" {
 		r.Spec.ConcurrencyPolicy = AllowConcurrent
 	}
@@ -62,24 +94,40 @@ func (r *CronJob) Default() {
 	}
 }
 
-// +kubebuilder:webhook:verbs=create;update;delete,path=/validate-batch-tutorial-kubebuilder-io-v1-cronjob,mutating=false,failurePolicy=fail,groups=batch.tutorial.kubebuilder.io,resources=cronjobs,versions=v1,name=vcronjob.kb.io,sideEffects=None,admissionReviewVersions=v1
-var _ webhook.Validator = &CronJob{}
+// +kubebuilder:object:generate=false
+// CronJobCustomValidator struct is responsible for validating the CronJob resource
+// when it is created, updated, or deleted.
+type CronJobCustomValidator struct{}
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *CronJob) ValidateCreate() (admission.Warnings, error) {
-	cronjoblog.Info("validate create", "name", r.Name)
-	return nil, r.validateCronJob()
+var _ webhook.CustomValidator = &CronJobCustomValidator{}
+
+// ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type CronJob.
+func (v *CronJobCustomValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	cronjob, ok := obj.(*CronJob)
+	if !ok {
+		return nil, fmt.Errorf("expected a CronJob object but got %T", obj)
+	}
+	cronjoblog.Info("Validation for CronJob upon creation", "name", cronjob.GetName())
+	return nil, cronjob.validateCronJob()
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *CronJob) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
-	cronjoblog.Info("validate update", "name", r.Name)
-	return nil, r.validateCronJob()
+// ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type CronJob.
+func (v *CronJobCustomValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+	cronjob, ok := newObj.(*CronJob)
+	if !ok {
+		return nil, fmt.Errorf("expected a CronJob object but got %T", newObj)
+	}
+	cronjoblog.Info("Validation for CronJob upon update", "name", cronjob.GetName())
+	return nil, cronjob.validateCronJob()
 }
 
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *CronJob) ValidateDelete() (admission.Warnings, error) {
-	cronjoblog.Info("validate delete", "name", r.Name)
+// ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type CronJob.
+func (v *CronJobCustomValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	cronjob, ok := obj.(*CronJob)
+	if !ok {
+		return nil, fmt.Errorf("expected a CronJob object but got %T", obj)
+	}
+	cronjoblog.Info("Validation for CronJob upon deletion", "name", cronjob.GetName())
 	return nil, nil
 }
 
@@ -107,6 +155,7 @@ func (r *CronJob) validateCronJobName() *field.Error {
 	return nil
 }
 
+// validateCronJobSpec validates the schedule format of the custom CronSchedule type
 func (r *CronJob) validateCronJobSpec() *field.Error {
 	// Build cron expression from the parts
 	parts := []string{"*", "*", "*", "*", "*"} // default parts for minute, hour, day of month, month, day of week
