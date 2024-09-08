@@ -386,7 +386,7 @@ func (r *MemcachedReconciler) deploymentForMemcached(
 							ContainerPort: memcached.Spec.ContainerPort,
 							Name:          "memcached",
 						}},
-						Command: []string{"memcached", "-m=64", "-o", "modern", "-v"},
+						Command: []string{"memcached", "--memory-limit=64", "-o", "modern", "-v"},
 					}},
 				},
 			},
