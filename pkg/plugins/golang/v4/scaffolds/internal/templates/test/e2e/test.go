@@ -255,18 +255,15 @@ var _ = Describe("Manager", Ordered, func() {
 				"--clusterrole={{ .ProjectName}}-metrics-reader",
 				fmt.Sprintf("--serviceaccount=%s:%s", namespace, serviceAccountName),
 			)
-			_, err := utils.Run(cmd)
-			Expect(err).NotTo(HaveOccurred(), "Failed to create ClusterRoleBinding")
+			Expect(utils.Run(cmd)).Error().NotTo(HaveOccurred(), "Failed to create ClusterRoleBinding")
 
 			By("validating that the metrics service is available")
 			cmd = exec.Command("kubectl", "get", "service", metricsServiceName, "-n", namespace)
-			_, err = utils.Run(cmd)
-			Expect(err).NotTo(HaveOccurred(), "Metrics service should exist")
+			Expect(utils.Run(cmd)).Error().NotTo(HaveOccurred(), "Metrics service should exist")
 
 			By("validating that the ServiceMonitor for Prometheus is applied in the namespace")
 			cmd = exec.Command("kubectl", "get", "ServiceMonitor", "-n", namespace)
-			_, err = utils.Run(cmd)
-			Expect(err).NotTo(HaveOccurred(), "ServiceMonitor should exist")
+			Expect(utils.Run(cmd)).Error().NotTo(HaveOccurred(), "ServiceMonitor should exist")
 
 			By("getting the service account token")
 			token, err := serviceAccountToken()
@@ -276,18 +273,14 @@ var _ = Describe("Manager", Ordered, func() {
 			By("waiting for the metrics endpoint to be ready")
 			verifyMetricsEndpointReady := func(g Gomega) {
 				cmd := exec.Command("kubectl", "get", "endpoints", metricsServiceName, "-n", namespace)
-				output, err := utils.Run(cmd)
-				g.Expect(err).NotTo(HaveOccurred(), "Failed to retrieve endpoints information")
-				g.Expect(string(output)).To(ContainSubstring("8443"), "Metrics endpoint is not ready")
+				g.Expect(utils.Run(cmd)).To(ContainSubstring("8443"), "Metrics endpoint is not ready")
 			}
 			Eventually(verifyMetricsEndpointReady).Should(Succeed())
 
 			By("verifying that the controller manager is serving the metrics server")
 			verifyMetricsServerStarted := func(g Gomega) {
 				cmd := exec.Command("kubectl", "logs", controllerPodName, "-n", namespace)
-				logs, err := utils.Run(cmd)
-				g.Expect(err).NotTo(HaveOccurred(), "Failed to retrieve controller manager logs")
-				g.Expect(string(logs)).To(ContainSubstring("controller-runtime.metrics\tServing metrics server"),
+				g.Expect(utils.Run(cmd)).To(ContainSubstring("controller-runtime.metrics\tServing metrics server"),
  					"Metrics server not yet started")
 			}
 			Eventually(verifyMetricsServerStarted).Should(Succeed())
