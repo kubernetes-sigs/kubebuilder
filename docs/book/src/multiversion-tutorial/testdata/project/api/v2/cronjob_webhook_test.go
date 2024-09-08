@@ -18,15 +18,34 @@ package v2
 
 import (
 	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	// TODO (user): Add any additional imports if needed
 )
 
 var _ = Describe("CronJob Webhook", func() {
+	var (
+		obj *CronJob
+	)
+
+	BeforeEach(func() {
+		obj = &CronJob{}
+		Expect(obj).NotTo(BeNil(), "Expected obj to be initialized")
+
+		// TODO (user): Add any setup logic common to all tests
+	})
+
+	AfterEach(func() {
+		// TODO (user): Add any teardown logic common to all tests
+	})
 
 	Context("When creating CronJob under Conversion Webhook", func() {
-		It("Should get the converted version of CronJob", func() {
-
-			// TODO(user): Add your logic here
-
+		It("Should convert the object correctly", func() {
+			// TODO (user): Add logic to convert the object to the desired version and verify the conversion
+			// Example:
+			// convertedObj := &CronJob{}
+			// err := obj.ConvertTo(convertedObj)
+			// Expect(err).NotTo(HaveOccurred())
+			// Expect(convertedObj).ToNot(BeNil())
 		})
 	})
 
