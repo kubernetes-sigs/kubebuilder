@@ -79,6 +79,8 @@ A webhook will automatically be served that calls this defaulting.
 The `Default` method is expected to mutate the receiver, setting the defaults.
 */
 
+// +kubebuilder:webhook:path=/mutate-batch-tutorial-kubebuilder-io-v1-cronjob,mutating=true,failurePolicy=fail,sideEffects=None,groups=batch.tutorial.kubebuilder.io,resources=cronjobs,verbs=create;update,versions=v1,name=mcronjob-v1.kb.io,admissionReviewVersions=v1
+
 // +kubebuilder:object:generate=false
 // CronJobCustomDefaulter struct is responsible for setting default values on the custom resource of the
 // Kind CronJob when those are created or updated.
@@ -157,6 +159,7 @@ validate anything on deletion.
 
 // NOTE: The 'path' attribute must follow a specific pattern and should not be modified directly here.
 // Modifying the path for an invalid path can cause API server errors; failing to locate the webhook.
+// +kubebuilder:webhook:path=/validate-batch-tutorial-kubebuilder-io-v1-cronjob,mutating=false,failurePolicy=fail,sideEffects=None,groups=batch.tutorial.kubebuilder.io,resources=cronjobs,verbs=create;update,versions=v1,name=vcronjob-v1.kb.io,admissionReviewVersions=v1
 
 // +kubebuilder:object:generate=false
 // CronJobCustomValidator struct is responsible for validating the CronJob resource

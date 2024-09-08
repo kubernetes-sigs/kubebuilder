@@ -457,16 +457,6 @@ Then, we set up the webhook with the manager.
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_webhook.go"),
-		`// +kubebuilder:webhook:path=/mutate-batch-tutorial-kubebuilder-io-v1-cronjob,mutating=true,failurePolicy=fail,sideEffects=None,groups=batch.tutorial.kubebuilder.io,resources=cronjobs,verbs=create;update,versions=v1,name=mcronjob.kb.io,admissionReviewVersions=v1`, "")
-	hackutils.CheckError("fixing cronjob_webhook.go by replacing marker", err)
-
-	err = pluginutil.ReplaceInFile(
-		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_webhook.go"),
-		`// +kubebuilder:webhook:path=/validate-batch-tutorial-kubebuilder-io-v1-cronjob,mutating=false,failurePolicy=fail,sideEffects=None,groups=batch.tutorial.kubebuilder.io,resources=cronjobs,verbs=create;update,versions=v1,name=vcronjob.kb.io,admissionReviewVersions=v1`, "")
-	hackutils.CheckError("fixing cronjob_webhook.go validate batch marker", err)
-
-	err = pluginutil.ReplaceInFile(
-		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_webhook.go"),
 		`// TODO(user): Add more fields as needed for defaulting`, fragmentForDefaultFields)
 	hackutils.CheckError("fixing cronjob_webhook.go by replacing TODO in Defaulter", err)
 

@@ -12,6 +12,26 @@ webhooks:
       namespace: system
       path: /mutate-batch-tutorial-kubebuilder-io-v1-cronjob
   failurePolicy: Fail
+  name: mcronjob-v1.kb.io
+  rules:
+  - apiGroups:
+    - batch.tutorial.kubebuilder.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - cronjobs
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-batch-tutorial-kubebuilder-io-v1-cronjob
+  failurePolicy: Fail
   name: mcronjob.kb.io
   rules:
   - apiGroups:
@@ -30,6 +50,26 @@ kind: ValidatingWebhookConfiguration
 metadata:
   name: validating-webhook-configuration
 webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-batch-tutorial-kubebuilder-io-v1-cronjob
+  failurePolicy: Fail
+  name: vcronjob-v1.kb.io
+  rules:
+  - apiGroups:
+    - batch.tutorial.kubebuilder.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - cronjobs
+  sideEffects: None
 - admissionReviewVersions:
   - v1
   clientConfig:
