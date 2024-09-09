@@ -31,7 +31,10 @@ import (
 )
 
 // +kubebuilder:docs-gen:collapse=Go imports
+
+// log is for logging in this package.
 var cronjoblog = logf.Log.WithName("cronjob-resource")
+
 /*
 This setup doubles as setup for our conversion webhooks: as long as our
 types implement the
@@ -39,7 +42,6 @@ types implement the
 [Convertible](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/conversion?tab=doc#Convertible)
 interfaces, a conversion webhook will be registered.
 */
-
 
 // SetupWebhookWithManager will setup the manager to manage the webhooks
 func (r *CronJob) SetupWebhookWithManager(mgr ctrl.Manager) error {
@@ -49,8 +51,7 @@ func (r *CronJob) SetupWebhookWithManager(mgr ctrl.Manager) error {
 }
 
 /*
-
-*/
+ */
 
 // +kubebuilder:webhook:path=/mutate-batch-tutorial-kubebuilder-io-v1-cronjob,mutating=true,failurePolicy=fail,groups=batch.tutorial.kubebuilder.io,resources=cronjobs,verbs=create;update,versions=v1,name=mcronjob.kb.io,sideEffects=None,admissionReviewVersions=v1
 
@@ -138,7 +139,7 @@ func (r *CronJob) validateCronJobName() *field.Error {
 	if len(r.ObjectMeta.Name) > validationutils.DNS1035LabelMaxLength-11 {
 		// The job name length is 63 character like all Kubernetes objects
 		// (which must fit in a DNS subdomain). The cronjob controller appends
-		// a 11-character suffix to the cronjob when creating
+		// a 11-character suffix to the cronjob (`-$TIMESTAMP`) when creating
 		// a job. The job name length limit is 63 characters. Therefore cronjob
 		// names must have length <= 63-11=52. If we don't validate this here,
 		// then job creation will fail later.
@@ -148,5 +149,3 @@ func (r *CronJob) validateCronJobName() *field.Error {
 }
 
 // +kubebuilder:docs-gen:collapse=Existing Defaulting and Validation
-
-

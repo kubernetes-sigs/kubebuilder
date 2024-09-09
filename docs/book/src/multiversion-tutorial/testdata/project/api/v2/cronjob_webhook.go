@@ -13,7 +13,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-// +kubebuilder:docs-gen:collapse=Apache License
 
 package v2
 
@@ -41,12 +40,7 @@ func (r *CronJob) SetupWebhookWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
-/*
-
-*/
-
 // +kubebuilder:webhook:path=/mutate-batch-tutorial-kubebuilder-io-v1-cronjob,mutating=true,failurePolicy=fail,groups=batch.tutorial.kubebuilder.io,resources=cronjobs,verbs=create;update,versions=v1,name=mcronjob.kb.io,sideEffects=None,admissionReviewVersions=v1
-
 var _ webhook.Defaulter = &CronJob{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
@@ -146,5 +140,3 @@ func validateScheduleFormat(schedule string, fldPath *field.Path) *field.Error {
 	}
 	return nil
 }
-
-

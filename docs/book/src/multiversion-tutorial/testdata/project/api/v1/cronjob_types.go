@@ -19,6 +19,7 @@ limitations under the License.
  */
 
 package v1
+
 /*
  */
 
@@ -30,9 +31,8 @@ import (
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-// +kubebuilder:docs-gen:collapse=Imports
-// CronJobSpec defines the desired state of CronJob
 
+// +kubebuilder:docs-gen:collapse=Imports
 
 // CronJobSpec defines the desired state of CronJob
 type CronJobSpec struct {
@@ -98,15 +98,6 @@ const (
 	ReplaceConcurrent ConcurrencyPolicy = "Replace"
 )
 
-/*
- Next, let's design our status, which holds observed state.  It contains any information
- we want users or other controllers to be able to easily obtain.
-
- We'll keep a list of actively running jobs, as well as the last time that we successfully
- ran our job.  Notice that we use `metav1.Time` instead of `time.Time` to get the stable
- serialization, as mentioned above.
-*/
-
 // CronJobStatus defines the observed state of CronJob
 type CronJobStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
@@ -121,12 +112,14 @@ type CronJobStatus struct {
 	LastScheduleTime *metav1.Time `json:"lastScheduleTime,omitempty"`
 }
 
+// +kubebuilder:docs-gen:collapse=old stuff
+
 /*
  Since we'll have more than one version, we'll need to mark a storage version.
  This is the version that the Kubernetes API server uses to store our data.
  We'll chose the v1 version for our project.
 
- We'll use the `[+kubebuilder:storageversion]`(/reference/markers/crd.md) to do this.
+ We'll use the [`+kubebuilder:storageversion`](/reference/markers/crd.md) to do this.
 
  Note that multiple versions may exist in storage if they were written before
  the storage version changes -- changing the storage version only affects how
@@ -137,19 +130,17 @@ type CronJobStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:storageversion
 
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
-
 // CronJob is the Schema for the cronjobs API
 type CronJob struct {
-	/*
-	 */
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec   CronJobSpec   `json:"spec,omitempty"`
 	Status CronJobStatus `json:"status,omitempty"`
 }
+
+/*
+ */
 
 // +kubebuilder:object:root=true
 
@@ -163,4 +154,5 @@ type CronJobList struct {
 func init() {
 	SchemeBuilder.Register(&CronJob{}, &CronJobList{})
 }
-// +kubebuilder:docs-gen:collapse=Root Object Definitions
+
+// +kubebuilder:docs-gen:collapse=old stuff
