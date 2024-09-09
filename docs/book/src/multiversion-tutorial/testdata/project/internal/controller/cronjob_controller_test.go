@@ -1,5 +1,4 @@
 /*
-Copyright 2024 The Kubernetes authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -97,14 +96,14 @@ var _ = Describe("CronJob controller", func() {
 					},
 				},
 			}
-			Expect(k8sClient.Create(ctx, cronJob)).Should(Succeed())
+			Expect(k8sClient.Create(ctx, cronJob)).To(Succeed())
 
 			/*
 				After creating this CronJob, let's check that the CronJob's Spec fields match what we passed in.
 				Note that, because the k8s apiserver may not have finished creating a CronJob after our `Create()` call from earlier, we will use Gomega’s Eventually() testing function instead of Expect() to give the apiserver an opportunity to finish creating our CronJob.
 
 				`Eventually()` will repeatedly run the function provided as an argument every interval seconds until
-				(a) the function’s output matches what’s expected in the subsequent `Should()` call, or
+				(a) the assertions done by the passed-in `Gomega` succeed, or
 				(b) the number of attempts * interval period exceed the provided timeout value.
 
 				In the examples below, timeout and interval are Go Duration values of our choosing.
@@ -114,12 +113,11 @@ var _ = Describe("CronJob controller", func() {
 			createdCronjob := &cronjobv1.CronJob{}
 
 			// We'll need to retry getting this newly created CronJob, given that creation may not immediately happen.
-			Eventually(func() bool {
-				err := k8sClient.Get(ctx, cronjobLookupKey, createdCronjob)
-				return err == nil
-			}, timeout, interval).Should(BeTrue())
+			Eventually(func(g Gomega) {
+				g.Expect(k8sClient.Get(ctx, cronjobLookupKey, createdCronjob)).To(Succeed())
+			}, timeout, interval).Should(Succeed())
 			// Let's make sure our Schedule string value was properly converted/handled.
-			Expect(createdCronjob.Spec.Schedule).Should(Equal("1 * * * *"))
+			Expect(createdCronjob.Spec.Schedule).To(Equal("1 * * * *"))
 			/*
 				Now that we've created a CronJob in our test cluster, the next step is to write a test that actually tests our CronJob controller’s behavior.
 				Let’s test the CronJob controller’s logic responsible for updating CronJob.Status.Active with actively running jobs.
@@ -129,13 +127,10 @@ var _ = Describe("CronJob controller", func() {
 				We use Gomega's `Consistently()` check here to ensure that the active job count remains 0 over a duration of time.
 			*/
 			By("By checking the CronJob has zero active Jobs")
-			Consistently(func() (int, error) {
-				err := k8sClient.Get(ctx, cronjobLookupKey, createdCronjob)
-				if err != nil {
-					return -1, err
-				}
-				return len(createdCronjob.Status.Active), nil
-			}, duration, interval).Should(Equal(0))
+			Consistently(func(g Gomega) {
+				g.Expect(k8sClient.Get(ctx, cronjobLookupKey, createdCronjob)).To(Succeed())
+				g.Expect(createdCronjob.Status.Active).To(HaveLen(0))
+			}, duration, interval).Should(Succeed())
 			/*
 				Next, we actually create a stubbed Job that will belong to our CronJob, as well as its downstream template specs.
 				We set the Job's status's "Active" count to 2 to simulate the Job running two pods, which means the Job is actively running.
@@ -172,31 +167,24 @@ var _ = Describe("CronJob controller", func() {
 
 			controllerRef := metav1.NewControllerRef(createdCronjob, gvk)
 			testJob.SetOwnerReferences([]metav1.OwnerReference{*controllerRef})
-			Expect(k8sClient.Create(ctx, testJob)).Should(Succeed())
+			Expect(k8sClient.Create(ctx, testJob)).To(Succeed())
 			// Note that you can not manage the status values while creating the resource.
 			// The status field is managed separately to reflect the current state of the resource.
 			// Therefore, it should be updated using a PATCH or PUT operation after the resource has been created.
 			// Additionally, it is recommended to use StatusConditions to manage the status. For further information see:
 			// https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
 			testJob.Status.Active = 2
-			Expect(k8sClient.Status().Update(ctx, testJob)).Should(Succeed())
+			Expect(k8sClient.Status().Update(ctx, testJob)).To(Succeed())
 			/*
 				Adding this Job to our test CronJob should trigger our controller’s reconciler logic.
 				After that, we can write a test that evaluates whether our controller eventually updates our CronJob’s Status field as expected!
 			*/
 			By("By checking that the CronJob has one active Job")
-			Eventually(func() ([]string, error) {
-				err := k8sClient.Get(ctx, cronjobLookupKey, createdCronjob)
-				if err != nil {
-					return nil, err
-				}
-
-				names := []string{}
-				for _, job := range createdCronjob.Status.Active {
-					names = append(names, job.Name)
-				}
-				return names, nil
-			}, timeout, interval).Should(ConsistOf(JobName), "should list our active job %s in the active jobs list in status", JobName)
+			Eventually(func(g Gomega) {
+				g.Expect(k8sClient.Get(ctx, cronjobLookupKey, createdCronjob)).To(Succeed(), "should GET the CronJob")
+				g.Expect(createdCronjob.Status.Active).To(HaveLen(1), "should have exactly one active job")
+				g.Expect(createdCronjob.Status.Active[0].Name).To(Equal(JobName), "the wrong job is active")
+			}, timeout, interval).Should(Succeed(), "should list our active job %s in the active jobs list in status", JobName)
 		})
 	})
 

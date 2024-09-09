@@ -49,7 +49,7 @@ types implement the
 interfaces, a conversion webhook will be registered.
 */
 
-// SetupWebhookWithManager will setup the manager to manage the webhooks
+// SetupWebhookWithManager will setup the manager to manage the webhooks.
 func (r *CronJob) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).

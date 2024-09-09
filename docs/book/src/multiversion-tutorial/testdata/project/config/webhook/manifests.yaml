@@ -12,12 +12,52 @@ webhooks:
       namespace: system
       path: /mutate-batch-tutorial-kubebuilder-io-v1-cronjob
   failurePolicy: Fail
+  name: mcronjob-v1.kb.io
+  rules:
+  - apiGroups:
+    - batch.tutorial.kubebuilder.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - cronjobs
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-batch-tutorial-kubebuilder-io-v1-cronjob
+  failurePolicy: Fail
   name: mcronjob.kb.io
   rules:
   - apiGroups:
     - batch.tutorial.kubebuilder.io
     apiVersions:
     - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - cronjobs
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-batch-tutorial-kubebuilder-io-v2-cronjob
+  failurePolicy: Fail
+  name: mcronjob-v2.kb.io
+  rules:
+  - apiGroups:
+    - batch.tutorial.kubebuilder.io
+    apiVersions:
+    - v2
     operations:
     - CREATE
     - UPDATE
@@ -38,6 +78,26 @@ webhooks:
       namespace: system
       path: /validate-batch-tutorial-kubebuilder-io-v1-cronjob
   failurePolicy: Fail
+  name: vcronjob-v1.kb.io
+  rules:
+  - apiGroups:
+    - batch.tutorial.kubebuilder.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - cronjobs
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-batch-tutorial-kubebuilder-io-v1-cronjob
+  failurePolicy: Fail
   name: vcronjob.kb.io
   rules:
   - apiGroups:
@@ -48,6 +108,26 @@ webhooks:
     - CREATE
     - UPDATE
     - DELETE
+    resources:
+    - cronjobs
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-batch-tutorial-kubebuilder-io-v2-cronjob
+  failurePolicy: Fail
+  name: vcronjob-v2.kb.io
+  rules:
+  - apiGroups:
+    - batch.tutorial.kubebuilder.io
+    apiVersions:
+    - v2
+    operations:
+    - CREATE
+    - UPDATE
     resources:
     - cronjobs
   sideEffects: None

@@ -17,10 +17,12 @@ limitations under the License.
 
 /*
  */
+
 package v1
 
 /*
  */
+
 import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -126,8 +128,8 @@ type CronJobStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:storageversion
 // +versionName=v1
+// +kubebuilder:storageversion
 // CronJob is the Schema for the cronjobs API.
 type CronJob struct {
 	metav1.TypeMeta   `json:",inline"`

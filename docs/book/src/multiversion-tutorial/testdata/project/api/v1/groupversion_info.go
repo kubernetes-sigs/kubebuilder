@@ -23,7 +23,7 @@ former, while the latter is used by the CRD generator to generate the right
 metadata for the CRDs it creates from this package.
 */
 
-// Package v1 contains API Schema definitions for the batch v1 API group
+// Package v1 contains API Schema definitions for the batch v1 API group.
 // +kubebuilder:object:generate=true
 // +groupName=batch.tutorial.kubebuilder.io
 package v1
