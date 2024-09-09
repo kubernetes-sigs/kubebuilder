@@ -39,14 +39,13 @@ var _ = Describe("Frigate Webhook", func() {
 	})
 
 	Context("When creating Frigate under Conversion Webhook", func() {
-		It("Should convert the object correctly", func() {
-			// TODO (user): Add logic to convert the object to the desired version and verify the conversion
-			// Example:
-			// convertedObj := &Frigate{}
-			// err := obj.ConvertTo(convertedObj)
-			// Expect(err).NotTo(HaveOccurred())
-			// Expect(convertedObj).ToNot(BeNil())
-		})
+		// TODO (user): Add logic to convert the object to the desired version and verify the conversion
+		// Example:
+		// It("Should convert the object correctly", func() {
+		//     convertedObj := &Frigate{}
+		//     Expect(obj.ConvertTo(convertedObj)).To(Succeed())
+		//     Expect(convertedObj).ToNot(BeNil())
+		// })
 	})
 
 })
