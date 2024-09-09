@@ -21,6 +21,7 @@ import (
 
 	cronjob "sigs.k8s.io/kubebuilder/v4/hack/docs/internal/cronjob-tutorial"
 	gettingstarted "sigs.k8s.io/kubebuilder/v4/hack/docs/internal/getting-started"
+	multiversion "sigs.k8s.io/kubebuilder/v4/hack/docs/internal/multiversion-tutorial"
 )
 
 // Make sure executing `build_kb` to generate kb executable from the source code
@@ -36,8 +37,8 @@ type tutorial_generator interface {
 func main() {
 	type generator func()
 
-	// TODO: Generate multiversion-tutorial
 	tutorials := map[string]generator{
+		"multiversion":    UpdateMultiversionTutorial,
 		"cronjob":         UpdateCronjobTutorial,
 		"getting-started": UpdateGettingStarted,
 	}
@@ -56,6 +57,14 @@ func updateTutorial(generator tutorial_generator) {
 	generator.GenerateSampleProject()
 	generator.UpdateTutorial()
 	generator.CodeGen()
+}
+
+func UpdateMultiversionTutorial() {
+	samplePath := "docs/book/src/multiversion-tutorial/testdata/project"
+	sp := cronjob.NewSample(KubebuilderBinName, samplePath)
+	updateTutorial(&sp)
+	multi := multiversion.NewSample(KubebuilderBinName, samplePath)
+	updateTutorial(&multi)
 }
 
 func UpdateCronjobTutorial() {
