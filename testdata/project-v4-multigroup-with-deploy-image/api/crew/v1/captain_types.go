@@ -23,7 +23,7 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// CaptainSpec defines the desired state of Captain
+// CaptainSpec defines the desired state of Captain.
 type CaptainSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
@@ -32,7 +32,7 @@ type CaptainSpec struct {
 	Foo string `json:"foo,omitempty"`
 }
 
-// CaptainStatus defines the observed state of Captain
+// CaptainStatus defines the observed state of Captain.
 type CaptainStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
@@ -41,7 +41,7 @@ type CaptainStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// Captain is the Schema for the captains API
+// Captain is the Schema for the captains API.
 type Captain struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -52,7 +52,7 @@ type Captain struct {
 
 // +kubebuilder:object:root=true
 
-// CaptainList contains a list of Captain
+// CaptainList contains a list of Captain.
 type CaptainList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

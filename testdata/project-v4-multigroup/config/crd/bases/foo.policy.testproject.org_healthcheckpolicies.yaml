@@ -17,7 +17,7 @@ spec:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: HealthCheckPolicy is the Schema for the healthcheckpolicies API
+        description: HealthCheckPolicy is the Schema for the healthcheckpolicies API.
         properties:
           apiVersion:
             description: |-
@@ -37,7 +37,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: HealthCheckPolicySpec defines the desired state of HealthCheckPolicy
+            description: HealthCheckPolicySpec defines the desired state of HealthCheckPolicy.
             properties:
               foo:
                 description: Foo is an example field of HealthCheckPolicy. Edit healthcheckpolicy_types.go
@@ -45,7 +45,7 @@ spec:
                 type: string
             type: object
           status:
-            description: HealthCheckPolicyStatus defines the observed state of HealthCheckPolicy
+            description: HealthCheckPolicyStatus defines the observed state of HealthCheckPolicy.
             type: object
         type: object
     served: true

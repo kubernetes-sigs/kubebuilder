@@ -1,14 +1,5 @@
 # Getting Started
 
-## Overview
-
-By following the [Operator Pattern][k8s-operator-pattern], it’s possible not only to provide all expected resources
-but also to manage them dynamically, programmatically, and at execution time. To illustrate this idea, imagine if
-someone accidentally changed a configuration or removed a resource by mistake; in this case, the operator could fix it
-without any human intervention.
-
-## Sample Project
-
 We will create a sample project to let you know how it works. This sample will:
 
 - Reconcile a Memcached CR - which represents an instance of a Memcached deployed/managed on cluster
@@ -16,7 +7,26 @@ We will create a sample project to let you know how it works. This sample will:
 - Not allow more instances than the size defined in the CR which will be applied
 - Update the Memcached CR status
 
-Use the following steps.
+<aside class="note">
+<h1>Why Operators?</h1>
+
+By following the [Operator Pattern][k8s-operator-pattern], it’s possible not only to provide all expected resources
+but also to manage them dynamically, programmatically, and at execution time. To illustrate this idea, imagine if
+someone accidentally changed a configuration or removed a resource by mistake; in this case, the operator could fix it
+without any human intervention.
+
+</aside>
+
+<aside class="note">
+<h1>Following Along vs Jumping Ahead</h1>
+
+Note that most of this tutorial is generated from literate Go files that
+form a runnable project, and live in the book source directory:
+[docs/book/src/getting-started/testdata/project][tutorial-source].
+
+[tutorial-source]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/docs/book/src/cronjob-tutorial/testdata/project
+
+</aside>
 
 ## Create a project
 
@@ -28,106 +38,109 @@ cd $GOPATH/memcached-operator
 kubebuilder init --domain=example.com
 ```
 
+<aside class="note">
+<h1>Developing in $GOPATH</h1>
+
+If your project is initialized within [`GOPATH`][GOPATH-golang-docs], the implicitly called `go mod init` will interpolate the module path for you.
+Otherwise `--repo=<module path>` must be set.
+
+Read the [Go modules blogpost][go-modules-blogpost] if unfamiliar with the module system.
+
+</aside>
+
 ## Create the Memcached API (CRD):
 
-Next, we'll create a new API responsible for deploying and managing our Memcached solution. In this instance, we will utilize the [Deploy Image Plugin][deploy-image] to get a comprehensive code implementation for our solution.
+Next, we'll create the API which will be responsible for deploying and
+managing Memcached(s) instances on the cluster.
 
-```
-kubebuilder create api --group cache --version v1alpha1 --kind Memcached --image=memcached:1.4.36-alpine --image-container-command="memcached,-m=64,-o,modern,-v" --image-container-port="11211" --run-as-user="1001" --plugins="deploy-image/v1-alpha" --make=false
+```shell
+kubebuilder create api --group cache --version v1alpha1 --kind Memcached
 ```
 
 ### Understanding APIs
 
-This command's primary aim is to produce the Custom Resource (CR) and Custom Resource Definition (CRD) for the Memcached Kind. It creates the API with the group `cache.example.com` and version `v1alpha1`, uniquely identifying the new CRD of the Memcached Kind. By leveraging the Kubebuilder tool, we can define our APIs and objects representing our solutions for these platforms. While we've added only one Kind of resource in this example, you can have as many `Groups` and `Kinds` as necessary. Simply put, think of CRDs as the definition of our custom Objects, while CRs are instances of them.
+This command's primary aim is to produce the Custom Resource (CR) and Custom Resource Definition (CRD) for the Memcached Kind.
+It creates the API with the group `cache.example.com` and version `v1alpha1`, uniquely identifying the new CRD of the Memcached Kind.
+By leveraging the Kubebuilder tool, we can define our APIs and objects representing our solutions for these platforms.
+
+While we've added only one Kind of resource in this example, we can have as many `Groups` and `Kinds` as necessary.
+To make it easier to understand, think of CRDs as the definition of our custom Objects, while CRs are instances of them.
 
 <aside class="note">
-<h1>Getting a better idea</h1>
+<h1> Please ensure that you check </h1>
 
-Consider a typical scenario where the objective is to run an application and its database on a Kubernetes platform. In this context, one object might represent the Frontend App, while another denotes the backend Data Base. If we define one CRD for the App and another for the DB, we uphold essential concepts like encapsulation, the single responsibility principle, and cohesion. Breaching these principles might lead to complications, making extension, reuse, or maintenance challenging.
-
-In essence, the App CRD and the DB CRD will each have their own controller. Let's say, for instance, that the application requires a Deployment and Service to run. In this example, the App’s Controller will cater to these needs. Similarly, the DB’s controller will manage the business logic of its items.
-
-Therefore, for each CRD, there should be one distinct controller, adhering to the design outlined by the [controller-runtime][controller-runtime]. For further information see [Groups and Versions and Kinds, oh my!][group-kind-oh-my].
+[Groups and Versions and Kinds, oh my!][group-kind-oh-my].
 
 </aside>
 
-### Define your API
+### Defining our API
 
-In this example, observe that the Memcached Kind (CRD) possesses certain specifications. These were scaffolded by the Deploy Image plugin, building upon the default scaffold for management purposes:
+#### Defining the Specs
 
-#### Status and Specs
-
-The `MemcachedSpec` section is where we encapsulate all the available specifications and configurations for our Custom Resource (CR). Furthermore, it's worth noting that we employ Status Conditions. This ensures proficient management of the Memcached CR. When any change transpires, these conditions equip us with the necessary data to discern the current status of this resource within the Kubernetes cluster. This is akin to the status insights we obtain for a Deployment resource.
-
-From: `api/v1alpha1/memcached_types.go`
+Now, we will define the values that each instance of your Memcached resource on the cluster can assume. In this example,
+we will allow configuring the number of instances with the following:
 
 ```go
-// MemcachedSpec defines the desired state of Memcached
 type MemcachedSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// Size defines the number of Memcached instances
-	// The following markers will use OpenAPI v3 schema to validate the value
-	// More info: https://book.kubebuilder.io/reference/markers/crd-validation.html
-	// +kubebuilder:validation:Minimum=1
-	// +kubebuilder:validation:Maximum=3
-	// +kubebuilder:validation:ExclusiveMaximum=false
+	...
 	Size int32 `json:"size,omitempty"`
-
-	// Port defines the port that will be used to init the container with the image
-	ContainerPort int32 `json:"containerPort,omitempty"`
 }
+```
 
+#### Creating Status definitions
+
+We also want to track the status of our Operations which will be done to manage the Memcached CR(s).
+This allows us to verify the Custom Resource's description of our own API and determine if everything
+occurred successfully or if any errors were encountered,
+similar to how we do with any resource from the Kubernetes API.
+
+```go
 // MemcachedStatus defines the observed state of Memcached
 type MemcachedStatus struct {
-	// Represents the observations of a Memcached's current state.
-	// Memcached.status.conditions.type are: "Available", "Progressing", and "Degraded"
-	// Memcached.status.conditions.status are one of True, False, Unknown.
-	// Memcached.status.conditions.reason the value should be a CamelCase string and producers of specific
-	// condition types may define expected values and meanings for this field, and whether the values
-	// are considered a guaranteed API.
-	// Memcached.status.conditions.Message is a human readable message indicating details about the transition.
-	// For further information see: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#typical-status-properties
-
 	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"`
 }
 ```
 
-Thus, when we introduce new specifications to this file and execute the `make generate` command, we utilize [controller-gen][controller-gen] to generate the CRD manifest, which is located under the `config/crd/bases` directory.
+<aside class="note">
+<h1> Status Conditions </h1>
+
+Kubernetes has established conventions, and because of this, we use
+Status Conditions here. We want our custom APIs and controllers to behave
+like Kubernetes resources and their controllers, following these standards
+to ensure a consistent and intuitive experience.
+
+Please ensure that you review: [Kubernetes API Conventions](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#typical-status-properties)
+</aside>
+
 
 #### Markers and validations
 
-Moreover, it's important to note that we're employing `markers`, such as `+kubebuilder:validation:Minimum=1`. These markers help in defining validations and criteria, ensuring that data provided by users — when they create or edit a Custom Resource for the Memcached Kind — is properly validated. For a comprehensive list and details of available markers, refer [the Markers documentation][markers].
-Observe the validation schema within the CRD; this schema ensures that the Kubernetes API properly validates the Custom Resources (CRs) that are applied:
+Furthermore, we want to validate the values added in our CustomResource
+to ensure that those are valid. To do it we are will use refer [markers][markers],
+such as `+kubebuilder:validation:Minimum=1`.
 
-From: [config/crd/bases/cache.example.com_memcacheds.yaml](https://github.com/kubernetes-sigs/kubebuilder/tree/master/docs/book/src/getting-started/testdata/project/config/crd/bases/cache.example.com_memcacheds.yaml)
+Now, see our example fully completed.
+
+{{#literatego ./getting-started/testdata/project/api/v1alpha1/memcached_types.go}}
+
+#### Generating manifests with the specs and validations
+
+To generate the required CRDs we will run `make generate` command, which will call [controller-gen][controller-gen]
+to generate the CRD manifest, which is located under the `config/crd/bases` directory.
+
+<details><summary><code>config/crd/bases/cache.example.com_memcacheds.yam</code>: Our Memcached CRD</summary>
 
 ```yaml
-description: MemcachedSpec defines the desired state of Memcached
-properties:
-  containerPort:
-    description: Port defines the port that will be used to init the container
-      with the image
-    format: int32
-    type: integer
-  size:
-    description: 'Size defines the number of Memcached instances The following
-      markers will use OpenAPI v3 schema to validate the value More info:
-      https://book.kubebuilder.io/reference/markers/crd-validation.html'
-    format: int32
-    maximum: 3 ## Generated from the marker +kubebuilder:validation:Maximum=3
-    minimum: 1 ## Generated from the marker +kubebuilder:validation:Minimum=1
-    type: integer
-type: object
+{{#include ./getting-started/testdata/project/config/crd/bases/cache.example.com_memcacheds.yaml}}
 ```
+
+</details>
 
 #### Sample of Custom Resources
 
-The manifests located under the "config/samples" directory serve as examples of Custom Resources that can be applied to the cluster.
-In this particular example, by applying the given resource to the cluster, we would generate a Deployment with a single instance size (see `size: 1`).
-
-From: [config/samples/cache_v1alpha1_memcached.yaml](https://github.com/kubernetes-sigs/kubebuilder/tree/master/docs/book/src/getting-started/testdata/project/config/samples/cache_v1alpha1_memcached.yaml)
+The manifests located under the `config/samples` directory serve as examples of Custom Resources that can be applied to the cluster.
+In this particular example, by applying the given resource to the cluster, we would generate
+a Deployment with a single instance size (see `size: 1`).
 
 ```yaml
 {{#include ./getting-started/testdata/project/config/samples/cache_v1alpha1_memcached.yaml}}
@@ -135,7 +148,13 @@ From: [config/samples/cache_v1alpha1_memcached.yaml](https://github.com/kubernet
 
 ### Reconciliation Process
 
-The reconciliation function plays a pivotal role in ensuring synchronization between resources and their specifications based on the business logic embedded within them. Essentially, it operates like a loop, continuously checking conditions and performing actions until all conditions align with its implementation. Here's pseudo-code to illustrate this:
+In a simplified way, Kubernetes works by allowing us to declare the desired state of our system, and then its controllers continuously observe the cluster and take actions to ensure that the actual state matches the desired state. For our custom APIs and controllers, the process is similar. Remember, we are extending Kubernetes' behaviors and its APIs to fit our specific needs.
+
+In our controller, we will implement a reconciliation process.
+
+Essentially, the reconciliation process functions as a loop, continuously checking conditions and performing necessary actions until the desired state is achieved. This process will keep running until all conditions in the system align with the desired state defined in our implementation.
+
+Here's a pseudo-code example to illustrate this:
 
 ```go
 reconcile App {
@@ -168,7 +187,8 @@ reconcile App {
 }
 ```
 
-#### Return Options
+<aside class="note">
+<h1> Return Options </h1>
 
 The following are a few possible return options to restart the Reconcile:
 
@@ -195,254 +215,157 @@ return ctrl.Result{}, nil
 return ctrl.Result{RequeueAfter: nextRun.Sub(r.Now())}, nil
 ```
 
+</aside>
+
 #### In the context of our example
 
-When a Custom Resource is applied to the cluster, there's a designated controller to manage the Memcached Kind. You can check how its reconciliation is implemented:
+When our sample Custom Resource (CR) is applied to the cluster (i.e. `kubectl apply -f config/sample/cache_v1alpha1_memcached.yaml`),
+we want to ensure that a Deployment is created for our Memcached image and that it matches the number of replicas defined in the CR.
 
-From: [internal/controller/memcached_controller.go](https://github.com/kubernetes-sigs/kubebuilder/tree/master/docs/book/src/getting-started/testdata/project/internal/controller/memcached_controller.go)
+To achieve this, we need to first implement an operation that checks whether the Deployment for our Memcached instance already exists on the cluster.
+If it does not, the controller will create the Deployment accordingly. Therefore, our reconciliation process must include an operation to ensure that
+this desired state is consistently maintained. This operation would involve:
 
 ```go
-func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
-
-	// Fetch the Memcached instance
-	// The purpose is check if the Custom Resource for the Kind Memcached
-	// is applied on the cluster if not we return nil to stop the reconciliation
-	memcached := &examplecomv1alpha1.Memcached{}
-	err := r.Get(ctx, req.NamespacedName, memcached)
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			// If the custom resource is not found then it usually means that it was deleted or not created
-			// In this way, we will stop the reconciliation
-			log.Info("memcached resource not found. Ignoring since object must be deleted")
-			return ctrl.Result{}, nil
-		}
-		// Error reading the object - requeue the request.
-		log.Error(err, "Failed to get memcached")
-		return ctrl.Result{}, err
-	}
-
-	// Let's just set the status as Unknown when no status is available
-	if memcached.Status.Conditions == nil || len(memcached.Status.Conditions) == 0 {
-		meta.SetStatusCondition(&memcached.Status.Conditions, metav1.Condition{Type: typeAvailableMemcached, Status: metav1.ConditionUnknown, Reason: "Reconciling", Message: "Starting reconciliation"})
-		if err = r.Status().Update(ctx, memcached); err != nil {
-			log.Error(err, "Failed to update Memcached status")
-			return ctrl.Result{}, err
-		}
-
-		// Let's re-fetch the memcached Custom Resource after updating the status
-		// so that we have the latest state of the resource on the cluster and we will avoid
-		// raising the error "the object has been modified, please apply
-		// your changes to the latest version and try again" which would re-trigger the reconciliation
-		// if we try to update it again in the following operations
-		if err := r.Get(ctx, req.NamespacedName, memcached); err != nil {
-			log.Error(err, "Failed to re-fetch memcached")
-			return ctrl.Result{}, err
-		}
-	}
-
-	// Let's add a finalizer. Then, we can define some operations which should
-	// occur before the custom resource to be deleted.
-	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers
-	if !controllerutil.ContainsFinalizer(memcached, memcachedFinalizer) {
-		log.Info("Adding Finalizer for Memcached")
-		if ok := controllerutil.AddFinalizer(memcached, memcachedFinalizer); !ok {
-			log.Error(err, "Failed to add finalizer into the custom resource")
-			return ctrl.Result{Requeue: true}, nil
-		}
-
-		if err = r.Update(ctx, memcached); err != nil {
-			log.Error(err, "Failed to update custom resource to add finalizer")
-			return ctrl.Result{}, err
-		}
-	}
-
-	// Check if the Memcached instance is marked to be deleted, which is
-	// indicated by the deletion timestamp being set.
-	isMemcachedMarkedToBeDeleted := memcached.GetDeletionTimestamp() != nil
-	if isMemcachedMarkedToBeDeleted {
-		if controllerutil.ContainsFinalizer(memcached, memcachedFinalizer) {
-			log.Info("Performing Finalizer Operations for Memcached before delete CR")
-
-			// Let's add here a status "Downgrade" to reflect that this resource began its process to be terminated.
-			meta.SetStatusCondition(&memcached.Status.Conditions, metav1.Condition{Type: typeDegradedMemcached,
-				Status: metav1.ConditionUnknown, Reason: "Finalizing",
-				Message: fmt.Sprintf("Performing finalizer operations for the custom resource: %s ", memcached.Name)})
-
-			if err := r.Status().Update(ctx, memcached); err != nil {
-				log.Error(err, "Failed to update Memcached status")
-				return ctrl.Result{}, err
-			}
-
-			// Perform all operations required before removing the finalizer and allow
-			// the Kubernetes API to remove the custom resource.
-			r.doFinalizerOperationsForMemcached(memcached)
-
-			// TODO(user): If you add operations to the doFinalizerOperationsForMemcached method
-			// then you need to ensure that all worked fine before deleting and updating the Downgrade status
-			// otherwise, you should requeue here.
-
-			// Re-fetch the memcached Custom Resource before updating the status
-			// so that we have the latest state of the resource on the cluster and we will avoid
-			// raising the error "the object has been modified, please apply
-			// your changes to the latest version and try again" which would re-trigger the reconciliation
-			if err := r.Get(ctx, req.NamespacedName, memcached); err != nil {
-				log.Error(err, "Failed to re-fetch memcached")
-				return ctrl.Result{}, err
-			}
-
-			meta.SetStatusCondition(&memcached.Status.Conditions, metav1.Condition{Type: typeDegradedMemcached,
-				Status: metav1.ConditionTrue, Reason: "Finalizing",
-				Message: fmt.Sprintf("Finalizer operations for custom resource %s name were successfully accomplished", memcached.Name)})
-
-			if err := r.Status().Update(ctx, memcached); err != nil {
-				log.Error(err, "Failed to update Memcached status")
-				return ctrl.Result{}, err
-			}
-
-			log.Info("Removing Finalizer for Memcached after successfully perform the operations")
-			if ok := controllerutil.RemoveFinalizer(memcached, memcachedFinalizer); !ok {
-				log.Error(err, "Failed to remove finalizer for Memcached")
-				return ctrl.Result{Requeue: true}, nil
-			}
-
-			if err := r.Update(ctx, memcached); err != nil {
-				log.Error(err, "Failed to remove finalizer for Memcached")
-				return ctrl.Result{}, err
-			}
-		}
-		return ctrl.Result{}, nil
-	}
-
 	// Check if the deployment already exists, if not create a new one
 	found := &appsv1.Deployment{}
 	err = r.Get(ctx, types.NamespacedName{Name: memcached.Name, Namespace: memcached.Namespace}, found)
 	if err != nil && apierrors.IsNotFound(err) {
 		// Define a new deployment
-		dep, err := r.deploymentForMemcached(memcached)
-		if err != nil {
-			log.Error(err, "Failed to define new Deployment resource for Memcached")
-
-			// The following implementation will update the status
-			meta.SetStatusCondition(&memcached.Status.Conditions, metav1.Condition{Type: typeAvailableMemcached,
-				Status: metav1.ConditionFalse, Reason: "Reconciling",
-				Message: fmt.Sprintf("Failed to create Deployment for the custom resource (%s): (%s)", memcached.Name, err)})
-
-			if err := r.Status().Update(ctx, memcached); err != nil {
-				log.Error(err, "Failed to update Memcached status")
-				return ctrl.Result{}, err
-			}
-
-			return ctrl.Result{}, err
-		}
-
-		log.Info("Creating a new Deployment",
-			"Deployment.Namespace", dep.Namespace, "Deployment.Name", dep.Name)
+		dep := r.deploymentForMemcached()
+		// Create the Deployment on the cluster
 		if err = r.Create(ctx, dep); err != nil {
-			log.Error(err, "Failed to create new Deployment",
-				"Deployment.Namespace", dep.Namespace, "Deployment.Name", dep.Name)
-			return ctrl.Result{}, err
-		}
-
-		// Deployment created successfully
-		// We will requeue the reconciliation so that we can ensure the state
-		// and move forward for the next operations
-		return ctrl.Result{RequeueAfter: time.Minute}, nil
-	} else if err != nil {
-		log.Error(err, "Failed to get Deployment")
-		// Let's return the error for the reconciliation be re-trigged again
-		return ctrl.Result{}, err
+            log.Error(err, "Failed to create new Deployment",
+            "Deployment.Namespace", dep.Namespace, "Deployment.Name", dep.Name)
+            return ctrl.Result{}, err
+        }
+		...
 	}
+```
 
-	// The CRD API is defining that the Memcached type, have a MemcachedSpec.Size field
-	// to set the quantity of Deployment instances is the desired state on the cluster.
-	// Therefore, the following code will ensure the Deployment size is the same as defined
-	// via the Size spec of the Custom Resource which we are reconciling.
+Next, note that the `deploymentForMemcached()` function will need to define and return the Deployment that should be
+created on the cluster. This function should construct the Deployment object with the necessary
+specifications, as demonstrated in the following example:
+
+```go
+    dep := &appsv1.Deployment{
+		Spec: appsv1.DeploymentSpec{
+			Replicas: &replicas,
+			Template: corev1.PodTemplateSpec{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{{
+						Image:           "memcached:1.6.26-alpine3.19",
+						Name:            "memcached",
+						ImagePullPolicy: corev1.PullIfNotPresent,
+						Ports: []corev1.ContainerPort{{
+							ContainerPort: 11211,
+							Name:          "memcached",
+						}},
+						Command: []string{"memcached", "--memory-limit=64", "-o", "modern", "-v"},
+					}},
+				},
+			},
+		},
+	}
+```
+
+Additionally, we need to implement a mechanism to verify that the number of Memcached replicas
+on the cluster matches the desired count specified in the Custom Resource (CR). If there is a
+discrepancy, the reconciliation must update the cluster to ensure consistency. This means that
+whenever a CR of the Memcached Kind is created or updated on the cluster, the controller will
+continuously reconcile the state until the actual number of replicas matches the desired count.
+The following example illustrates this process:
+
+```go
+	...
 	size := memcached.Spec.Size
 	if *found.Spec.Replicas != size {
 		found.Spec.Replicas = &size
 		if err = r.Update(ctx, found); err != nil {
 			log.Error(err, "Failed to update Deployment",
 				"Deployment.Namespace", found.Namespace, "Deployment.Name", found.Name)
-
-			// Re-fetch the memcached Custom Resource before updating the status
-			// so that we have the latest state of the resource on the cluster and we will avoid
-			// raising the error "the object has been modified, please apply
-			// your changes to the latest version and try again" which would re-trigger the reconciliation
-			if err := r.Get(ctx, req.NamespacedName, memcached); err != nil {
-				log.Error(err, "Failed to re-fetch memcached")
-				return ctrl.Result{}, err
-			}
-
-			// The following implementation will update the status
-			meta.SetStatusCondition(&memcached.Status.Conditions, metav1.Condition{Type: typeAvailableMemcached,
-				Status: metav1.ConditionFalse, Reason: "Resizing",
-				Message: fmt.Sprintf("Failed to update the size for the custom resource (%s): (%s)", memcached.Name, err)})
-
-			if err := r.Status().Update(ctx, memcached); err != nil {
-				log.Error(err, "Failed to update Memcached status")
-				return ctrl.Result{}, err
-			}
-
-			return ctrl.Result{}, err
-		}
-
-		// Now, that we update the size we want to requeue the reconciliation
-		// so that we can ensure that we have the latest state of the resource before
-		// update. Also, it will help ensure the desired state on the cluster
-		return ctrl.Result{Requeue: true}, nil
-	}
-
-	// The following implementation will update the status
-	meta.SetStatusCondition(&memcached.Status.Conditions, metav1.Condition{Type: typeAvailableMemcached,
-		Status: metav1.ConditionTrue, Reason: "Reconciling",
-		Message: fmt.Sprintf("Deployment for custom resource (%s) with %d replicas created successfully", memcached.Name, size)})
-
-	if err := r.Status().Update(ctx, memcached); err != nil {
-		log.Error(err, "Failed to update Memcached status")
-		return ctrl.Result{}, err
-	}
-
-	return ctrl.Result{}, nil
-}
+            return ctrl.Result{}, err
+        }
+    ...
 ```
 
-#### Observing changes on cluster
+Now, you can review the complete controller responsible for managing Custom Resources of the
+Memcached Kind. This controller ensures that the desired state is maintained in the cluster,
+making sure that our Memcached instance continues running with the number of replicas specified
+by the users.
 
-This controller is persistently observant, monitoring any events associated with this Kind. As a result, pertinent changes
-instantly set off the controller's reconciliation process. It's worth noting that we have implemented the `watches` feature. [(More info)][watches].
-This allows us to monitor events related to creating, updating, or deleting a Custom Resource of the Memcached kind, as well as the Deployment
-which is orchestrated and owned by its respective controller. Observe:
+<details><summary><code>internal/controller/memcached_controller.go</code>: Our Controller Implementation </summary>
+
+```go
+{{#include ./getting-started/testdata/project/internal/controller/memcached_controller.go}}
+```
+</details>
+
+### Diving Into the Controller Implementation
+
+#### Setting Manager to Watching Resources
+
+The whole idea is to be [Watching][watching-resources] the resources that matter for the controller.
+When a resource that the controller is interested in changes, the Watch triggers the controller's
+reconciliation loop, ensuring that the actual state of the resource matches the desired state
+as defined in the controller's logic.
+
+Notice how we configured the Manager to monitor events such as the creation, update, or deletion of a Custom Resource (CR) of the Memcached kind,
+as well as any changes to the Deployment that the controller manages and owns:
 
 ```go
 // SetupWithManager sets up the controller with the Manager.
-// Note that the Deployment will be also watched in order to ensure its
-// desirable state on the cluster
+// The Deployment is also watched to ensure its
+// desired state in the cluster.
 func (r *MemcachedReconciler) SetupWithManager(mgr ctrl.Manager) error {
     return ctrl.NewControllerManagedBy(mgr).
-    For(&examplecomv1alpha1.Memcached{}). ## Create watches for the Memcached Kind
-    Owns(&appsv1.Deployment{}). ## Create watches for the Deployment which has its controller owned reference
-    Complete(r)
+		// Watch the Memcached Custom Resource and trigger reconciliation whenever it
+		//is created, updated, or deleted
+		For(&cachev1alpha1.Memcached{}).
+		// Watch the Deployment managed by the Memcached controller. If any changes occur to the Deployment
+        // owned and managed by this controller, it will trigger reconciliation, ensuring that the cluster
+        // state aligns with the desired state.
+		Owns(&appsv1.Deployment{}).
+		Complete(r)
+    }
+```
+
+#### But, How Does the Manager Know Which Resources Are Owned by It?
+
+We do not want our Controller to watch any Deployment on the cluster and trigger our
+reconciliation loop. Instead, we only want to trigger reconciliation when the specific
+Deployment running our Memcached instance is changed. For example,
+if someone accidentally deletes our Deployment or changes the number of replicas, we want
+to trigger the reconciliation to ensure that it returns to the desired state.
+
+The Manager knows which Deployment to observe because we set the `ownerRef` (Owner Reference):
+
+```go
+if err := ctrl.SetControllerReference(memcached, dep, r.Scheme); err != nil {
+    return nil, err
 }
 ```
 
 <aside class="note">
-<h1>Set the ownerRef for the Deployment</h1>
 
-See that when we create the Deployment to run the Memcached image we are setting the reference:
+<h1>`ownerRef` and  cascading event</h1>
 
-```go
-// Set the ownerRef for the Deployment
-// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/owners-dependents/
-if err := ctrl.SetControllerReference(memcached, dep, r.Scheme); err != nil {
-    return nil, err
-}
+The ownerRef is crucial not only for allowing us to observe changes on the specific resource but also because,
+if we delete the Memcached Custom Resource (CR) from the cluster, we want all resources owned by it to be automatically
+deleted as well, in a cascading event.
 
-```
+This ensures that when the parent resource (Memcached CR) is removed, all associated resources
+(like Deployments, Services, etc.) are also cleaned up, maintaining
+a tidy and consistent cluster state.
+
+For more information, see the Kubernetes documentation on [Owners and Dependents](https://kubernetes.io/docs/concepts/overview/working-with-objects/owners-dependents/).
 
 </aside>
 
-### Setting the RBAC permissions
+### Granting Permissions
+
+It's important to ensure that the Controller has the necessary permissions(i.e. to create, get, update, and list)
+the resources it manages.
 
 The [RBAC permissions][k8s-rbac] are now configured via [RBAC markers][rbac-markers], which are used to generate and update the
 manifest files present in `config/rbac/`. These markers can be found (and should be defined) on the `Reconcile()` method of each controller, see
@@ -457,58 +380,32 @@ how it is implemented in our example:
 // +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch
 ```
 
-It's important to highlight that if you wish to add or modify RBAC rules, you can do so by updating or adding the respective markers in the controller.
-After making the necessary changes, run the `make generate` command. This will prompt [controller-gen][controller-gen] to refresh the files located under `config/rbac`.
+After making changes to the controller, run the make generate command. This will prompt [controller-gen][controller-gen]
+to refresh the files located under `config/rbac`.
 
-<aside class="note">
-<h1>RBAC generate under config/rbac</h1>
+<details><summary><code>config/rbac/role.yaml</code>: Our RBAC Role generated </summary>
 
-For each Kind, Kubebuilder will generate scaffold rules with view and edit permissions. (i.e. `memcached_editor_role.yaml` and `memcached_viewer_role.yaml`)
-Those rules are aimed to help system admins know what to allow when granting permissions to a group of users.
-
-</aside>
+```yaml
+{{#include ./getting-started/testdata/project/config/rbac/role.yaml}}
+```
+</details>
 
 ### Manager (main.go)
 
-The [Manager][manager] plays a crucial role in overseeing Controllers, which in turn enable operations on the cluster side.
-If you inspect the `cmd/main.go` file, you'll come across the following:
+The [Manager][manager] in the `cmd/main.go` file is responsible for managing the controllers in your application.
+
+<details><summary><code>cmd/main.gol</code>: Our main.go </summary>
 
 ```go
-...
-    mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-        Scheme:                 scheme,
-        Metrics:                metricsserver.Options{BindAddress: metricsAddr},
-        HealthProbeBindAddress: probeAddr,
-        LeaderElection:         enableLeaderElection,
-        LeaderElectionID:       "1836d577.testproject.org",
-        // LeaderElectionReleaseOnCancel defines if the leader should step down voluntarily
-        // when the Manager ends. This requires the binary to immediately end when the
-        // Manager is stopped, otherwise, this setting is unsafe. Setting this significantly
-        // speeds up voluntary leader transitions as the new leader doesn't have to wait
-        // the LeaseDuration time first.
-        //
-        // In the default scaffold provided, the program ends immediately after
-        // the manager stops, so it would be fine to enable this option. However,
-        // if you are doing, or are intending to do, any operation such as perform cleanups
-        // after the manager stops then its usage might be unsafe.
-        // LeaderElectionReleaseOnCancel: true,
-    })
-    if err != nil {
-        setupLog.Error(err, "unable to start manager")
-        os.Exit(1)
-    }
+{{#include ./getting-started/testdata/project/cmd/main.go}}
 ```
-
-The code snippet above outlines the configuration [options][options-manager] for the Manager. While we won't be altering this in our current example,
-it's crucial to understand its location and the initialization process of your operator-based image. The Manager is responsible for overseeing the controllers
-that are produced for your operator's APIs.
+</details>
 
 ### Checking the Project running in the cluster
 
-At this point, you can execute the commands highlighted in the [quick-start][quick-start].
-By executing `make build IMG=myregistry/example:1.0.0`, you'll build the image for your project. For testing purposes, it's recommended to publish this image to a
-public registry. This ensures easy accessibility, eliminating the need for additional configurations. Once that's done, you can deploy the image
-to the cluster using the `make deploy IMG=myregistry/example:1.0.0` command.
+At this point you can check the steps to validate the project
+on the cluster by looking the steps defined in the Quick Start,
+see: [Run It On the Cluster](./quick-start#run-it-on-the-cluster)
 
 <aside class="note">
 <h1>Consider use Kind</h1>
@@ -558,3 +455,7 @@ implemented for your controller.
 [best-practices]: ./reference/good-practices.md
 [cronjob-tutorial]: https://book.kubebuilder.io/cronjob-tutorial/cronjob-tutorial.html
 [deploy-image]: ./plugins/deploy-image-plugin-v1-alpha.md
+[GOPATH-golang-docs]: https://golang.org/doc/code.html#GOPATH
+[go-modules-blogpost]: https://blog.golang.org/using-go-modules
+[watching-resources]: ./reference/watching-resources
+

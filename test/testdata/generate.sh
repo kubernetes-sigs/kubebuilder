@@ -53,8 +53,6 @@ function scaffold_test_project {
       $kb create api --group crew --version v1 --kind Admiral --controller=true --resource=true --namespaced=false --make=false
       $kb create webhook --group crew --version v1 --kind Admiral --defaulting
     fi
-
-    $kb create api --group crew --version v1 --kind Laker --controller=true --resource=false --make=false
   elif [[ $project =~ multigroup ]]; then
     header_text 'Switching to multigroup layout ...'
     $kb edit --multigroup=true
@@ -89,7 +87,7 @@ function scaffold_test_project {
     fi
   elif [[ $project =~ deploy-image ]]; then
       header_text 'Creating Memcached API with deploy-image plugin ...'
-      $kb create api --group example.com --version v1alpha1 --kind Memcached --image=memcached:memcached:1.6.26-alpine3.19 --image-container-command="memcached,-m=64,-o,modern,-v" --image-container-port="11211" --run-as-user="1001" --plugins="deploy-image/v1-alpha" --make=false
+      $kb create api --group example.com --version v1alpha1 --kind Memcached --image=memcached:memcached:1.6.26-alpine3.19 --image-container-command="memcached,--memory-limit=64,-o,modern,-v" --image-container-port="11211" --run-as-user="1001" --plugins="deploy-image/v1-alpha" --make=false
       $kb create api --group example.com --version v1alpha1 --kind Busybox --image=busybox:1.36.1 --plugins="deploy-image/v1-alpha" --make=false
       header_text 'Creating Memcached webhook ...'
       $kb create webhook --group example.com --version v1alpha1 --kind Memcached --programmatic-validation

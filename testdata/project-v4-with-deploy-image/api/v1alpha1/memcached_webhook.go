@@ -17,6 +17,9 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"context"
+	"fmt"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -24,13 +27,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
+// nolint:unused
 // log is for logging in this package.
 var memcachedlog = logf.Log.WithName("memcached-resource")
 
-// SetupWebhookWithManager will setup the manager to manage the webhooks
+// SetupWebhookWithManager will setup the manager to manage the webhooks.
 func (r *Memcached) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
+		WithValidator(&MemcachedCustomValidator{}).
 		Complete()
 }
 
@@ -41,28 +46,53 @@ func (r *Memcached) SetupWebhookWithManager(mgr ctrl.Manager) error {
 // Modifying the path for an invalid path can cause API server errors; failing to locate the webhook.
 // +kubebuilder:webhook:path=/validate-example-com-testproject-org-v1alpha1-memcached,mutating=false,failurePolicy=fail,sideEffects=None,groups=example.com.testproject.org,resources=memcacheds,verbs=create;update,versions=v1alpha1,name=vmemcached.kb.io,admissionReviewVersions=v1
 
-var _ webhook.Validator = &Memcached{}
+// +kubebuilder:object:generate=false
+// MemcachedCustomValidator struct is responsible for validating the Memcached resource
+// when it is created, updated, or deleted.
+//
+// NOTE: The +kubebuilder:object:generate=false marker prevents controller-gen from generating DeepCopy methods,
+// as this struct is used only for temporary operations and does not need to be deeply copied.
+type MemcachedCustomValidator struct {
+	//TODO(user): Add more fields as needed for validation
+}
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *Memcached) ValidateCreate() (admission.Warnings, error) {
-	memcachedlog.Info("validate create", "name", r.Name)
+var _ webhook.CustomValidator = &MemcachedCustomValidator{}
+
+// ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type Memcached.
+func (v *MemcachedCustomValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	memcached, ok := obj.(*Memcached)
+	if !ok {
+		return nil, fmt.Errorf("expected a Memcached object but got %T", obj)
+	}
+	memcachedlog.Info("Validation for Memcached upon creation", "name", memcached.GetName())
 
 	// TODO(user): fill in your validation logic upon object creation.
+
 	return nil, nil
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *Memcached) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
-	memcachedlog.Info("validate update", "name", r.Name)
+// ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type Memcached.
+func (v *MemcachedCustomValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+	memcached, ok := newObj.(*Memcached)
+	if !ok {
+		return nil, fmt.Errorf("expected a Memcached object but got %T", newObj)
+	}
+	memcachedlog.Info("Validation for Memcached upon update", "name", memcached.GetName())
 
 	// TODO(user): fill in your validation logic upon object update.
+
 	return nil, nil
 }
 
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *Memcached) ValidateDelete() (admission.Warnings, error) {
-	memcachedlog.Info("validate delete", "name", r.Name)
+// ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type Memcached.
+func (v *MemcachedCustomValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	memcached, ok := obj.(*Memcached)
+	if !ok {
+		return nil, fmt.Errorf("expected a Memcached object but got %T", obj)
+	}
+	memcachedlog.Info("Validation for Memcached upon deletion", "name", memcached.GetName())
 
 	// TODO(user): fill in your validation logic upon object deletion.
+
 	return nil, nil
 }

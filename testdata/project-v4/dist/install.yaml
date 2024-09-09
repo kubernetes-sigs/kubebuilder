@@ -35,7 +35,7 @@ spec:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: Admiral is the Schema for the admirales API
+        description: Admiral is the Schema for the admirales API.
         properties:
           apiVersion:
             description: |-
@@ -55,7 +55,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: AdmiralSpec defines the desired state of Admiral
+            description: AdmiralSpec defines the desired state of Admiral.
             properties:
               foo:
                 description: Foo is an example field of Admiral. Edit admiral_types.go
@@ -63,7 +63,7 @@ spec:
                 type: string
             type: object
           status:
-            description: AdmiralStatus defines the observed state of Admiral
+            description: AdmiralStatus defines the observed state of Admiral.
             type: object
         type: object
     served: true
@@ -99,7 +99,7 @@ spec:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: Captain is the Schema for the captains API
+        description: Captain is the Schema for the captains API.
         properties:
           apiVersion:
             description: |-
@@ -119,7 +119,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: CaptainSpec defines the desired state of Captain
+            description: CaptainSpec defines the desired state of Captain.
             properties:
               foo:
                 description: Foo is an example field of Captain. Edit captain_types.go
@@ -127,7 +127,7 @@ spec:
                 type: string
             type: object
           status:
-            description: CaptainStatus defines the observed state of Captain
+            description: CaptainStatus defines the observed state of Captain.
             type: object
         type: object
     served: true
@@ -163,7 +163,7 @@ spec:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: FirstMate is the Schema for the firstmates API
+        description: FirstMate is the Schema for the firstmates API.
         properties:
           apiVersion:
             description: |-
@@ -183,7 +183,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: FirstMateSpec defines the desired state of FirstMate
+            description: FirstMateSpec defines the desired state of FirstMate.
             properties:
               foo:
                 description: Foo is an example field of FirstMate. Edit firstmate_types.go
@@ -191,7 +191,7 @@ spec:
                 type: string
             type: object
           status:
-            description: FirstMateStatus defines the observed state of FirstMate
+            description: FirstMateStatus defines the observed state of FirstMate.
             type: object
         type: object
     served: true
@@ -410,7 +410,6 @@ rules:
   - admirales
   - captains
   - firstmates
-  - lakers
   verbs:
   - create
   - delete
@@ -425,7 +424,6 @@ rules:
   - admirales/finalizers
   - captains/finalizers
   - firstmates/finalizers
-  - lakers/finalizers
   verbs:
   - update
 - apiGroups:
@@ -434,7 +432,6 @@ rules:
   - admirales/status
   - captains/status
   - firstmates/status
-  - lakers/status
   verbs:
   - get
   - patch

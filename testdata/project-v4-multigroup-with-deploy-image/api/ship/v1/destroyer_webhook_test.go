@@ -18,16 +18,36 @@ package v1
 
 import (
 	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	// TODO (user): Add any additional imports if needed
 )
 
 var _ = Describe("Destroyer Webhook", func() {
+	var (
+		obj *Destroyer
+	)
+
+	BeforeEach(func() {
+		obj = &Destroyer{}
+		Expect(obj).NotTo(BeNil(), "Expected obj to be initialized")
+
+		// TODO (user): Add any setup logic common to all tests
+	})
+
+	AfterEach(func() {
+		// TODO (user): Add any teardown logic common to all tests
+	})
 
 	Context("When creating Destroyer under Defaulting Webhook", func() {
-		It("Should fill in the default value if a required field is empty", func() {
-
-			// TODO(user): Add your logic here
-
-		})
+		// TODO (user): Add logic for defaulting webhooks
+		// Example:
+		// It("Should apply defaults when a required field is empty", func() {
+		//     By("simulating a scenario where defaults should be applied")
+		// 	   obj.SomeFieldWithDefault = ""
+		//	   err := obj.Default(ctx)
+		//	   Expect(err).NotTo(HaveOccurred())
+		//     Expect(obj.SomeFieldWithDefault).To(Equal("default_value"))
+		// })
 	})
 
 })

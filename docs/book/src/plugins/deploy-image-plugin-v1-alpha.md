@@ -31,7 +31,7 @@ After you create a new project with `kubebuilder init` you can create APIs using
 Then, by using this plugin you can [create APIs](https://book.kubebuilder.io/cronjob-tutorial/gvks.html) informing the image (Operand) that you would like to deploy on the cluster. Note that you can optionally specify the command that could be used to initialize this container via the flag `--image-container-command` and the port with `--image-container-port` flag. You can also specify the `RunAsUser` value for the Security Context of the container via the flag `--run-as-user`., i.e:
 
 ```sh
-kubebuilder create api --group example.com --version v1alpha1 --kind Memcached --image=memcached:1.6.15-alpine --image-container-command="memcached,-m=64,modern,-v" --image-container-port="11211" --run-as-user="1001" --plugins="deploy-image/v1-alpha"
+kubebuilder create api --group example.com --version v1alpha1 --kind Memcached --image=memcached:1.6.15-alpine --image-container-command="memcached,--memory-limit=64,modern,-v" --image-container-port="11211" --run-as-user="1001" --plugins="deploy-image/v1-alpha"
 ```
 
 <aside class="warning">

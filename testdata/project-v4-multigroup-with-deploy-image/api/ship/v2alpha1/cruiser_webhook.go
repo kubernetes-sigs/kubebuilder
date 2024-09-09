@@ -17,6 +17,9 @@ limitations under the License.
 package v2alpha1
 
 import (
+	"context"
+	"fmt"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -24,13 +27,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
+// nolint:unused
 // log is for logging in this package.
 var cruiserlog = logf.Log.WithName("cruiser-resource")
 
-// SetupWebhookWithManager will setup the manager to manage the webhooks
+// SetupWebhookWithManager will setup the manager to manage the webhooks.
 func (r *Cruiser) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
+		WithValidator(&CruiserCustomValidator{}).
 		Complete()
 }
 
@@ -41,28 +46,53 @@ func (r *Cruiser) SetupWebhookWithManager(mgr ctrl.Manager) error {
 // Modifying the path for an invalid path can cause API server errors; failing to locate the webhook.
 // +kubebuilder:webhook:path=/validate-ship-testproject-org-v2alpha1-cruiser,mutating=false,failurePolicy=fail,sideEffects=None,groups=ship.testproject.org,resources=cruisers,verbs=create;update,versions=v2alpha1,name=vcruiser.kb.io,admissionReviewVersions=v1
 
-var _ webhook.Validator = &Cruiser{}
+// +kubebuilder:object:generate=false
+// CruiserCustomValidator struct is responsible for validating the Cruiser resource
+// when it is created, updated, or deleted.
+//
+// NOTE: The +kubebuilder:object:generate=false marker prevents controller-gen from generating DeepCopy methods,
+// as this struct is used only for temporary operations and does not need to be deeply copied.
+type CruiserCustomValidator struct {
+	//TODO(user): Add more fields as needed for validation
+}
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *Cruiser) ValidateCreate() (admission.Warnings, error) {
-	cruiserlog.Info("validate create", "name", r.Name)
+var _ webhook.CustomValidator = &CruiserCustomValidator{}
+
+// ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type Cruiser.
+func (v *CruiserCustomValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	cruiser, ok := obj.(*Cruiser)
+	if !ok {
+		return nil, fmt.Errorf("expected a Cruiser object but got %T", obj)
+	}
+	cruiserlog.Info("Validation for Cruiser upon creation", "name", cruiser.GetName())
 
 	// TODO(user): fill in your validation logic upon object creation.
+
 	return nil, nil
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *Cruiser) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
-	cruiserlog.Info("validate update", "name", r.Name)
+// ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type Cruiser.
+func (v *CruiserCustomValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+	cruiser, ok := newObj.(*Cruiser)
+	if !ok {
+		return nil, fmt.Errorf("expected a Cruiser object but got %T", newObj)
+	}
+	cruiserlog.Info("Validation for Cruiser upon update", "name", cruiser.GetName())
 
 	// TODO(user): fill in your validation logic upon object update.
+
 	return nil, nil
 }
 
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *Cruiser) ValidateDelete() (admission.Warnings, error) {
-	cruiserlog.Info("validate delete", "name", r.Name)
+// ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type Cruiser.
+func (v *CruiserCustomValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	cruiser, ok := obj.(*Cruiser)
+	if !ok {
+		return nil, fmt.Errorf("expected a Cruiser object but got %T", obj)
+	}
+	cruiserlog.Info("Validation for Cruiser upon deletion", "name", cruiser.GetName())
 
 	// TODO(user): fill in your validation logic upon object deletion.
+
 	return nil, nil
 }

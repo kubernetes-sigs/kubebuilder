@@ -23,7 +23,7 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// FirstMateSpec defines the desired state of FirstMate
+// FirstMateSpec defines the desired state of FirstMate.
 type FirstMateSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
@@ -32,7 +32,7 @@ type FirstMateSpec struct {
 	Foo string `json:"foo,omitempty"`
 }
 
-// FirstMateStatus defines the observed state of FirstMate
+// FirstMateStatus defines the observed state of FirstMate.
 type FirstMateStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
@@ -41,7 +41,7 @@ type FirstMateStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// FirstMate is the Schema for the firstmates API
+// FirstMate is the Schema for the firstmates API.
 type FirstMate struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -52,7 +52,7 @@ type FirstMate struct {
 
 // +kubebuilder:object:root=true
 
-// FirstMateList contains a list of FirstMate
+// FirstMateList contains a list of FirstMate.
 type FirstMateList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

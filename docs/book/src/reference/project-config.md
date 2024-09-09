@@ -23,7 +23,7 @@ plugins:
         group: example.com
         kind: Memcached
         options:
-          containerCommand: memcached,-m=64,-o,modern,-v
+          containerCommand: memcached,--memory-limit=64,-o,modern,-v
           containerPort: "11211"
           image: memcached:1.4.36-alpine
           runAsUser: "1001"
@@ -90,7 +90,7 @@ plugins:
         group: example.com
         kind: Memcached
         options:
-          containerCommand: memcached,-m=64,-o,modern,-v
+          containerCommand: memcached,--memory-limit=64,-o,modern,-v
           containerPort: "11211"
           image: memcached:memcached:1.6.26-alpine3.19
           runAsUser: "1001"

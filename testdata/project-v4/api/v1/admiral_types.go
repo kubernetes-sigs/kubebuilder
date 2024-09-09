@@ -23,7 +23,7 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// AdmiralSpec defines the desired state of Admiral
+// AdmiralSpec defines the desired state of Admiral.
 type AdmiralSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
@@ -32,7 +32,7 @@ type AdmiralSpec struct {
 	Foo string `json:"foo,omitempty"`
 }
 
-// AdmiralStatus defines the observed state of Admiral
+// AdmiralStatus defines the observed state of Admiral.
 type AdmiralStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
@@ -42,7 +42,7 @@ type AdmiralStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=admirales,scope=Cluster
 
-// Admiral is the Schema for the admirales API
+// Admiral is the Schema for the admirales API.
 type Admiral struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -53,7 +53,7 @@ type Admiral struct {
 
 // +kubebuilder:object:root=true
 
-// AdmiralList contains a list of Admiral
+// AdmiralList contains a list of Admiral.
 type AdmiralList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

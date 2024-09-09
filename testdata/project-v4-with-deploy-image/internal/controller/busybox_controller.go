@@ -305,7 +305,7 @@ func (r *BusyboxReconciler) doFinalizerOperationsForBusybox(cr *examplecomv1alph
 // deploymentForBusybox returns a Busybox Deployment object
 func (r *BusyboxReconciler) deploymentForBusybox(
 	busybox *examplecomv1alpha1.Busybox) (*appsv1.Deployment, error) {
-	ls := labelsForBusybox(busybox.Name)
+	ls := labelsForBusybox()
 	replicas := busybox.Spec.Size
 
 	// Get the Operand image
@@ -335,28 +335,28 @@ func (r *BusyboxReconciler) deploymentForBusybox(
 					// makefile target docker-buildx. Also, you can use docker manifest inspect <image>
 					// to check what are the platforms supported.
 					// More info: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity
-					//Affinity: &corev1.Affinity{
-					//	NodeAffinity: &corev1.NodeAffinity{
-					//		RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-					//			NodeSelectorTerms: []corev1.NodeSelectorTerm{
-					//				{
-					//					MatchExpressions: []corev1.NodeSelectorRequirement{
-					//						{
-					//							Key:      "kubernetes.io/arch",
-					//							Operator: "In",
-					//							Values:   []string{"amd64", "arm64", "ppc64le", "s390x"},
-					//						},
-					//						{
-					//							Key:      "kubernetes.io/os",
-					//							Operator: "In",
-					//							Values:   []string{"linux"},
-					//						},
-					//					},
-					//				},
-					//			},
-					//		},
-					//	},
-					//},
+					// Affinity: &corev1.Affinity{
+					//	 NodeAffinity: &corev1.NodeAffinity{
+					//		 RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+					//			 NodeSelectorTerms: []corev1.NodeSelectorTerm{
+					//				 {
+					//					 MatchExpressions: []corev1.NodeSelectorRequirement{
+					//						 {
+					//							 Key:      "kubernetes.io/arch",
+					//							 Operator: "In",
+					//							 Values:   []string{"amd64", "arm64", "ppc64le", "s390x"},
+					//						 },
+					//						 {
+					//							 Key:      "kubernetes.io/os",
+					//							 Operator: "In",
+					//							 Values:   []string{"linux"},
+					//						 },
+					//					 },
+					//				 },
+					//		 	 },
+					//		 },
+					//	 },
+					// },
 					SecurityContext: &corev1.PodSecurityContext{
 						RunAsNonRoot: &[]bool{true}[0],
 						// IMPORTANT: seccomProfile was introduced with Kubernetes 1.19
@@ -397,7 +397,7 @@ func (r *BusyboxReconciler) deploymentForBusybox(
 
 // labelsForBusybox returns the labels for selecting the resources
 // More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/
-func labelsForBusybox(name string) map[string]string {
+func labelsForBusybox() map[string]string {
 	var imageTag string
 	image, err := imageForBusybox()
 	if err == nil {
@@ -421,11 +421,22 @@ func imageForBusybox() (string, error) {
 }
 
 // SetupWithManager sets up the controller with the Manager.
-// Note that the Deployment will be also watched in order to ensure its
-// desirable state on the cluster
+// The whole idea is to be watching the resources that matter for the controller.
+// When a resource that the controller is interested in changes, the Watch triggers
+// the controller’s reconciliation loop, ensuring that the actual state of the resource
+// matches the desired state as defined in the controller’s logic.
+//
+// Notice how we configured the Manager to monitor events such as the creation, update,
+// or deletion of a Custom Resource (CR) of the Busybox kind, as well as any changes
+// to the Deployment that the controller manages and owns.
 func (r *BusyboxReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
+		// Watch the Busybox CR(s) and trigger reconciliation whenever it
+		// is created, updated, or deleted
 		For(&examplecomv1alpha1.Busybox{}).
+		// Watch the Deployment managed by the BusyboxReconciler. If any changes occur to the Deployment
+		// owned and managed by this controller, it will trigger reconciliation, ensuring that the cluster
+		// state aligns with the desired state. See that the ownerRef was set when the Deployment was created.
 		Owns(&appsv1.Deployment{}).
 		Complete(r)
 }

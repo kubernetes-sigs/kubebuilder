@@ -1,6 +1,5 @@
 name: Testdata verification
 
-# Trigger the workflow on pull requests and direct pushes to any branch
 on:
   push:
   pull_request:

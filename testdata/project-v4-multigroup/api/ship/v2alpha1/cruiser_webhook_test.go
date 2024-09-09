@@ -18,22 +18,53 @@ package v2alpha1
 
 import (
 	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	// TODO (user): Add any additional imports if needed
 )
 
 var _ = Describe("Cruiser Webhook", func() {
+	var (
+		obj *Cruiser
+	)
 
-	Context("When creating Cruiser under Validating Webhook", func() {
-		It("Should deny if a required field is empty", func() {
+	BeforeEach(func() {
+		obj = &Cruiser{}
+		Expect(obj).NotTo(BeNil(), "Expected obj to be initialized")
 
-			// TODO(user): Add your logic here
+		// TODO (user): Add any setup logic common to all tests
+	})
 
-		})
+	AfterEach(func() {
+		// TODO (user): Add any teardown logic common to all tests
+	})
 
-		It("Should admit if all required fields are provided", func() {
-
-			// TODO(user): Add your logic here
-
-		})
+	Context("When creating or updating Cruiser under Validating Webhook", func() {
+		// TODO (user): Add logic for validating webhooks
+		// Example:
+		// It("Should deny creation if a required field is missing", func() {
+		// 	   By("simulating an invalid creation scenario")
+		//     obj.SomeRequiredField = ""
+		//     warnings, err := obj.ValidateCreate(ctx)
+		//     Expect(err).To(HaveOccurred())
+		//     Expect(warnings).To(BeNil())
+		// })
+		//
+		// It("Should admit creation if all required fields are present", func() {
+		// 	   By("simulating an invalid creation scenario")
+		//     obj.SomeRequiredField = "valid_value"
+		//	   warnings, err := obj.ValidateCreate(ctx)
+		//	   Expect(err).NotTo(HaveOccurred())
+		//	   Expect(warnings).To(BeNil())
+		// })
+		//
+		// It("Should validate updates correctly", func() {
+		//     By("simulating a valid update scenario")
+		//	   oldObj := &Captain{SomeRequiredField: "valid_value"}
+		//	   obj.SomeRequiredField = "updated_value"
+		//	   warnings, err := obj.ValidateUpdate(ctx, oldObj)
+		//	   Expect(err).NotTo(HaveOccurred())
+		//	   Expect(warnings).To(BeNil())
+		// })
 	})
 
 })

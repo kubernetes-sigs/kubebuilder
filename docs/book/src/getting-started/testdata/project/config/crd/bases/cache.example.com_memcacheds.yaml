@@ -17,7 +17,7 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Memcached is the Schema for the memcacheds API
+        description: Memcached is the Schema for the memcacheds API.
         properties:
           apiVersion:
             description: |-
@@ -37,13 +37,8 @@ spec:
           metadata:
             type: object
           spec:
-            description: MemcachedSpec defines the desired state of Memcached
+            description: MemcachedSpec defines the desired state of Memcached.
             properties:
-              containerPort:
-                description: Port defines the port that will be used to init the container
-                  with the image
-                format: int32
-                type: integer
               size:
                 description: |-
                   Size defines the number of Memcached instances
@@ -55,7 +50,7 @@ spec:
                 type: integer
             type: object
           status:
-            description: MemcachedStatus defines the observed state of Memcached
+            description: MemcachedStatus defines the observed state of Memcached.
             properties:
               conditions:
                 items:

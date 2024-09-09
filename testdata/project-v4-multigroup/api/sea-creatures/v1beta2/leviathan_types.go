@@ -23,7 +23,7 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// LeviathanSpec defines the desired state of Leviathan
+// LeviathanSpec defines the desired state of Leviathan.
 type LeviathanSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
@@ -32,7 +32,7 @@ type LeviathanSpec struct {
 	Foo string `json:"foo,omitempty"`
 }
 
-// LeviathanStatus defines the observed state of Leviathan
+// LeviathanStatus defines the observed state of Leviathan.
 type LeviathanStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
@@ -41,7 +41,7 @@ type LeviathanStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// Leviathan is the Schema for the leviathans API
+// Leviathan is the Schema for the leviathans API.
 type Leviathan struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -52,7 +52,7 @@ type Leviathan struct {
 
 // +kubebuilder:object:root=true
 
-// LeviathanList contains a list of Leviathan
+// LeviathanList contains a list of Leviathan.
 type LeviathanList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

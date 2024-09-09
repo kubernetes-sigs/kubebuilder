@@ -3,7 +3,11 @@ name: Unit tests
 # Trigger the workflow on pull requests and direct pushes to any branch
 on:
   push:
+    paths-ignore:
+      - '**/*.md'
   pull_request:
+    paths-ignore:
+      - '**/*.md'
 
 jobs:
   test:

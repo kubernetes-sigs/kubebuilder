@@ -23,7 +23,7 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// LakersSpec defines the desired state of Lakers
+// LakersSpec defines the desired state of Lakers.
 type LakersSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
@@ -32,7 +32,7 @@ type LakersSpec struct {
 	Foo string `json:"foo,omitempty"`
 }
 
-// LakersStatus defines the observed state of Lakers
+// LakersStatus defines the observed state of Lakers.
 type LakersStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
@@ -41,7 +41,7 @@ type LakersStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// Lakers is the Schema for the lakers API
+// Lakers is the Schema for the lakers API.
 type Lakers struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -52,7 +52,7 @@ type Lakers struct {
 
 // +kubebuilder:object:root=true
 
-// LakersList contains a list of Lakers
+// LakersList contains a list of Lakers.
 type LakersList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

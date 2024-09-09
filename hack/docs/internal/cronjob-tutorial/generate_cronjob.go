@@ -85,26 +85,28 @@ func (sp *Sample) UpdateTutorial() {
 	sp.updateSpec()
 	// 2. update webhook
 	sp.updateWebhook()
-	// 3. update makefile
+	// 3. update webhookTests
+	sp.updateWebhookTests()
+	// 4. update makefile
 	sp.updateMakefile()
-	// 4. generate extra files
+	// 5. generate extra files
 	sp.codeGen()
-	// 5. compensate other intro in API
+	// 6. compensate other intro in API
 	sp.updateAPIStuff()
-	// 6. update reconciliation and main.go
-	// 6.1 update controller
+	// 7. update reconciliation and main.go
+	// 7.1 update controller
 	sp.updateController()
-	// 6.2 update main.go
+	// 7.2 update main.go
 	sp.updateMain()
-	// 7. generate extra files
+	// 8. generate extra files
 	sp.codeGen()
-	// 8. update suite_test explanation
+	// 9. update suite_test explanation
 	sp.updateSuiteTest()
-	// 9. uncomment kustomization
+	// 10. uncomment kustomization
 	sp.updateKustomization()
-	// 10. add example
+	// 11. add example
 	sp.updateExample()
-	// 11. add test
+	// 12. add test
 	sp.addControllerTest()
 }
 
@@ -194,8 +196,8 @@ func (sp *Sample) updateSpec() {
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_types.go"),
-		`// CronJob is the Schema for the cronjobs API
-type CronJob struct {`, `// CronJob is the Schema for the cronjobs API
+		`// CronJob is the Schema for the cronjobs API.
+type CronJob struct {`, `// CronJob is the Schema for the cronjobs API.
 type CronJob struct {`+`
 	/*
 	 */`)
@@ -372,6 +374,34 @@ manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and Cust
 
 }
 
+func (sp *Sample) updateWebhookTests() {
+	file := filepath.Join(sp.ctx.Dir, "api/v1/cronjob_webhook_test.go")
+
+	err := pluginutil.InsertCode(file,
+		`var _ = Describe("CronJob Webhook", func() {
+	var (
+		obj *CronJob`,
+		`
+		oldObj    *CronJob
+		validator CronJobCustomValidator`)
+	hackutils.CheckError("insert global vars", err)
+
+	err = pluginutil.ReplaceInFile(file,
+		webhookTestCreateDefaultingFragment,
+		webhookTestCreateDefaultingReplaceFragment)
+	hackutils.CheckError("replace create defaulting test", err)
+
+	err = pluginutil.ReplaceInFile(file,
+		webhookTestingValidatingTodoFragment,
+		webhookTestingValidatingExampleFragment)
+	hackutils.CheckError("replace validating defaulting test", err)
+
+	err = pluginutil.ReplaceInFile(file,
+		webhookTestsBeforeEachOriginal,
+		webhookTestsBeforeEachChanged)
+	hackutils.CheckError("replace validating defaulting test", err)
+}
+
 func (sp *Sample) updateWebhook() {
 	var err error
 	err = pluginutil.InsertCode(
@@ -385,13 +415,23 @@ func (sp *Sample) updateWebhook() {
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_webhook.go"),
 		`import (
-	"k8s.io/apimachinery/pkg/runtime"
-	ctrl "sigs.k8s.io/controller-runtime"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+	"context"
+	"fmt"`, `import (
+	"context"
+	"fmt"
+	"github.com/robfig/cron"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	validationutils "k8s.io/apimachinery/pkg/util/validation"
+	"k8s.io/apimachinery/pkg/util/validation/field"`)
+	hackutils.CheckError("add extra imports to cronjob_webhook.go", err)
+
+	err = pluginutil.ReplaceInFile(
+		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_webhook.go"),
+		`"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
+// nolint:unused
 // log is for logging in this package.
 `, WebhookIntro)
 	hackutils.CheckError("fixing cronjob_webhook.go", err)
@@ -427,45 +467,65 @@ Then, we set up the webhook with the manager.
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_webhook.go"),
-		`cronjoblog.Info("default", "name", r.Name)
+		`// TODO(user): Add more fields as needed for defaulting`, fragmentForDefaultFields)
+	hackutils.CheckError("fixing cronjob_webhook.go by replacing TODO in Defaulter", err)
 
-	// TODO(user): fill in your defaulting logic.
-`, WebhookValidate)
+	err = pluginutil.ReplaceInFile(
+		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_webhook.go"),
+		`WithDefaulter(&CronJobCustomDefaulter{}).`,
+		`WithDefaulter(&CronJobCustomDefaulter{
+        DefaultConcurrencyPolicy:      AllowConcurrent,
+        DefaultSuspend:                false,
+        DefaultSuccessfulJobsHistoryLimit: 3,
+        DefaultFailedJobsHistoryLimit: 1,
+    }).`)
+	hackutils.CheckError("replacing WithDefaulter call in cronjob_webhook.go", err)
+
+	err = pluginutil.ReplaceInFile(
+		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_webhook.go"),
+		`// TODO(user): fill in your defaulting logic.
+`, WebhookDefaultingSettings)
 	hackutils.CheckError("fixing cronjob_webhook.go by adding logic", err)
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_webhook.go"),
 		`// TODO(user): fill in your validation logic upon object creation.
+
 	return nil, nil`,
 		`
-	return nil, r.validateCronJob()`)
+	return nil, cronjob.validateCronJob()`)
 	hackutils.CheckError("fixing cronjob_webhook.go by fill in your validation", err)
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_webhook.go"),
 		`// TODO(user): fill in your validation logic upon object update.
+
 	return nil, nil`,
 		`
-	return nil, r.validateCronJob()`)
+	return nil, cronjob.validateCronJob()`)
 	hackutils.CheckError("fixing cronjob_webhook.go by adding validation logic upon object update", err)
 
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_webhook.go"),
-		`func (r *CronJob) ValidateDelete() (admission.Warnings, error) {
-	cronjoblog.Info("validate delete", "name", r.Name)
+		`// TODO(user): fill in your validation logic upon object deletion.
 
-	// TODO(user): fill in your validation logic upon object deletion.
 	return nil, nil
 }`, WebhookValidateSpec)
-	hackutils.CheckError("fixing cronjob_webhook.go", err)
+
+	hackutils.CheckError("fixing cronjob_webhook.go upon object deletion", err)
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_webhook.go"),
 		`validate anything on deletion.
 */
+
+	return nil
 }`, `validate anything on deletion.
-*/`)
-	hackutils.CheckError("fixing cronjob_webhook.go by adding comments to validate on deletion", err)
+*/
+
+`)
+	hackutils.CheckError("fixing cronjob_webhook.go by removing wrong return nil", err)
+
 }
 
 func (sp *Sample) updateSuiteTest() {

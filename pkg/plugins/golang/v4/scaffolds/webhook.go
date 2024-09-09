@@ -29,6 +29,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds/internal/templates"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds/internal/templates/api"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds/internal/templates/hack"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds/internal/templates/test/e2e"
 )
 
 var _ plugins.Scaffolder = &webhookScaffolder{}
@@ -86,6 +87,7 @@ func (s *webhookScaffolder) Scaffold() error {
 
 	if err := scaffold.Execute(
 		&api.Webhook{Force: s.force},
+		&e2e.WebhookTestUpdater{WireWebhook: true},
 		&templates.MainUpdater{WireWebhook: true},
 		&api.WebhookTest{Force: s.force},
 	); err != nil {
