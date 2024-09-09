@@ -40,7 +40,7 @@ func (r *Admiral) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // TODO(user): EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
-// +kubebuilder:webhook:path=/mutate-crew-testproject-org-v1-admiral,mutating=true,failurePolicy=fail,sideEffects=None,groups=crew.testproject.org,resources=admirales,verbs=create;update,versions=v1,name=madmiral.kb.io,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=/mutate-crew-testproject-org-v1-admiral,mutating=true,failurePolicy=fail,sideEffects=None,groups=crew.testproject.org,resources=admirales,verbs=create;update,versions=v1,name=madmiral-v1.kb.io,admissionReviewVersions=v1
 
 // +kubebuilder:object:generate=false
 // AdmiralCustomDefaulter struct is responsible for setting default values on the custom resource of the

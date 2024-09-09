@@ -12,7 +12,7 @@ webhooks:
       namespace: system
       path: /mutate-crew-testproject-org-v1-admiral
   failurePolicy: Fail
-  name: madmiral.kb.io
+  name: madmiral-v1.kb.io
   rules:
   - apiGroups:
     - crew.testproject.org
@@ -32,7 +32,7 @@ webhooks:
       namespace: system
       path: /mutate-crew-testproject-org-v1-captain
   failurePolicy: Fail
-  name: mcaptain.kb.io
+  name: mcaptain-v1.kb.io
   rules:
   - apiGroups:
     - crew.testproject.org
@@ -58,7 +58,7 @@ webhooks:
       namespace: system
       path: /validate-crew-testproject-org-v1-captain
   failurePolicy: Fail
-  name: vcaptain.kb.io
+  name: vcaptain-v1.kb.io
   rules:
   - apiGroups:
     - crew.testproject.org

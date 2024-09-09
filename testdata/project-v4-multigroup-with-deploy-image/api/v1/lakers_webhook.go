@@ -42,7 +42,7 @@ func (r *Lakers) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 // TODO(user): EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
-// +kubebuilder:webhook:path=/mutate-testproject-org-v1-lakers,mutating=true,failurePolicy=fail,sideEffects=None,groups=testproject.org,resources=lakers,verbs=create;update,versions=v1,name=mlakers.kb.io,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=/mutate-testproject-org-v1-lakers,mutating=true,failurePolicy=fail,sideEffects=None,groups=testproject.org,resources=lakers,verbs=create;update,versions=v1,name=mlakers-v1.kb.io,admissionReviewVersions=v1
 
 // +kubebuilder:object:generate=false
 // LakersCustomDefaulter struct is responsible for setting default values on the custom resource of the
@@ -72,7 +72,7 @@ func (d *LakersCustomDefaulter) Default(ctx context.Context, obj runtime.Object)
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
 // NOTE: The 'path' attribute must follow a specific pattern and should not be modified directly here.
 // Modifying the path for an invalid path can cause API server errors; failing to locate the webhook.
-// +kubebuilder:webhook:path=/validate-testproject-org-v1-lakers,mutating=false,failurePolicy=fail,sideEffects=None,groups=testproject.org,resources=lakers,verbs=create;update,versions=v1,name=vlakers.kb.io,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=/validate-testproject-org-v1-lakers,mutating=false,failurePolicy=fail,sideEffects=None,groups=testproject.org,resources=lakers,verbs=create;update,versions=v1,name=vlakers-v1.kb.io,admissionReviewVersions=v1
 
 // +kubebuilder:object:generate=false
 // LakersCustomValidator struct is responsible for validating the Lakers resource

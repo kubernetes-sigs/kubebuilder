@@ -664,7 +664,7 @@ webhooks:
       namespace: project-v4-with-deploy-image-system
       path: /validate-example-com-testproject-org-v1alpha1-memcached
   failurePolicy: Fail
-  name: vmemcached.kb.io
+  name: vmemcached-v1alpha1.kb.io
   rules:
   - apiGroups:
     - example.com.testproject.org

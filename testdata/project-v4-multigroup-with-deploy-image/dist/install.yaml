@@ -1540,7 +1540,7 @@ webhooks:
       namespace: project-v4-multigroup-with-deploy-image-system
       path: /mutate-crew-testproject-org-v1-captain
   failurePolicy: Fail
-  name: mcaptain.kb.io
+  name: mcaptain-v1.kb.io
   rules:
   - apiGroups:
     - crew.testproject.org
@@ -1560,7 +1560,7 @@ webhooks:
       namespace: project-v4-multigroup-with-deploy-image-system
       path: /mutate-ship-testproject-org-v1-destroyer
   failurePolicy: Fail
-  name: mdestroyer.kb.io
+  name: mdestroyer-v1.kb.io
   rules:
   - apiGroups:
     - ship.testproject.org
@@ -1580,7 +1580,7 @@ webhooks:
       namespace: project-v4-multigroup-with-deploy-image-system
       path: /mutate-testproject-org-v1-lakers
   failurePolicy: Fail
-  name: mlakers.kb.io
+  name: mlakers-v1.kb.io
   rules:
   - apiGroups:
     - testproject.org
@@ -1606,7 +1606,7 @@ webhooks:
       namespace: project-v4-multigroup-with-deploy-image-system
       path: /validate-crew-testproject-org-v1-captain
   failurePolicy: Fail
-  name: vcaptain.kb.io
+  name: vcaptain-v1.kb.io
   rules:
   - apiGroups:
     - crew.testproject.org
@@ -1626,7 +1626,7 @@ webhooks:
       namespace: project-v4-multigroup-with-deploy-image-system
       path: /validate-ship-testproject-org-v2alpha1-cruiser
   failurePolicy: Fail
-  name: vcruiser.kb.io
+  name: vcruiser-v2alpha1.kb.io
   rules:
   - apiGroups:
     - ship.testproject.org
@@ -1646,7 +1646,7 @@ webhooks:
       namespace: project-v4-multigroup-with-deploy-image-system
       path: /validate-testproject-org-v1-lakers
   failurePolicy: Fail
-  name: vlakers.kb.io
+  name: vlakers-v1.kb.io
   rules:
   - apiGroups:
     - testproject.org
