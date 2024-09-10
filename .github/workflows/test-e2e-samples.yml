@@ -1,17 +1,20 @@
-name: Testing E2E Sample
+name: E2E Testdata Sample
 
 on:
   push:
-    paths-ignore:
-      - '**/*.md'
+    paths:
+      - 'testdata/**'
+      - '.github/workflows/test-e2e-samples.yml'
   pull_request:
-    paths-ignore:
-      - '**/*.md'
+    paths:
+      - 'testdata/**'
+      - '.github/workflows/test-e2e-samples.yml'
 
 jobs:
-  e2e-tests:
+  e2e-tests-project-v4:
     runs-on: ubuntu-latest
-    # Pull requests from the same repository won't trigger this checks as they were already triggered by the push
+    strategy:
+      fail-fast: true
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
     steps:
       - name: Checkout repository
@@ -48,8 +51,28 @@ jobs:
         run: |
           make test-e2e
 
-      - name: Teardown kind cluster
-        run: kind delete cluster
+  e2e-tests-project-v4-with-plugins:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '~1.22'
+
+      - name: Install the latest version of kind
+        run: |
+          curl -Lo ./kind https://kind.sigs.k8s.io/dl/latest/kind-linux-amd64
+          chmod +x ./kind
+          sudo mv ./kind /usr/local/bin/kind
+
+      - name: Verify kind installation
+        run: kind version
 
       - name: Create kind cluster
         run: kind create cluster
@@ -62,7 +85,6 @@ jobs:
           # Uncomment only ValidatingWebhookConfiguration
           # from cert-manager replaces
           sed -i '55,70s/^#//' $KUSTOMIZATION_FILE_PATH
-          sed -i '55,70s/^#//' $KUSTOMIZATION_FILE_PATH
           sed -i '79,101s/^#//' $KUSTOMIZATION_FILE_PATH
           sed -i '110,151s/^#//' $KUSTOMIZATION_FILE_PATH
           # Comment the injection for MutatingWebhookConfiguration
@@ -74,6 +96,46 @@ jobs:
           go mod tidy
 
       - name: Testing make test-e2e for project-v4-with-plugins
-        working-directory: testdata/project-v4-with-plugins
+        working-directory: testdata/project-v4-with-plugins/
         run: |
           make test-e2e
+
+  e2e-tests-project-v4-multigroup:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '~1.22'
+
+      - name: Install the latest version of kind
+        run: |
+          curl -Lo ./kind https://kind.sigs.k8s.io/dl/latest/kind-linux-amd64
+          chmod +x ./kind
+          sudo mv ./kind /usr/local/bin/kind
+
+      - name: Verify kind installation
+        run: kind version
+
+      - name: Create kind cluster
+        run: kind create cluster
+
+      - name: Prepare project-v4-multigroup
+        run: |
+          KUSTOMIZATION_FILE_PATH="testdata/project-v4-multigroup/config/default/kustomization.yaml"
+          sed -i '25s/^#//' $KUSTOMIZATION_FILE_PATH
+          sed -i '51s/^#//' $KUSTOMIZATION_FILE_PATH
+          sed -i '55,151s/^#//' $KUSTOMIZATION_FILE_PATH
+          cd testdata/project-v4-multigroup
+          go mod tidy
+
+      - name: Testing make test-e2e for project-v4-multigroup
+        working-directory: testdata/project-v4-multigroup/
+        run: |
+          make test-e2e          

@@ -1,9 +1,0 @@
-apiVersion: sea-creatures.testproject.org/v1beta2
-kind: Leviathan
-metadata:
-  labels:
-    app.kubernetes.io/name: project-v4-multigroup-with-plugins
-    app.kubernetes.io/managed-by: kustomize
-  name: leviathan-sample
-spec:
-  # TODO(user): Add fields here

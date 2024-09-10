@@ -80,7 +80,9 @@ function scaffold_test_project {
     $kb edit --plugins=grafana.kubebuilder.io/v1-alpha
   fi
 
+  make all
   make build-installer
+  # To avoid conflicts
   rm -f go.sum
   go mod tidy
   popd
@@ -89,5 +91,5 @@ function scaffold_test_project {
 build_kb
 
 scaffold_test_project project-v4 --plugins="go/v4"
-scaffold_test_project project-v4-multigroup-with-plugins --plugins="go/v4"
+scaffold_test_project project-v4-multigroup --plugins="go/v4"
 scaffold_test_project project-v4-with-plugins --plugins="go/v4"
