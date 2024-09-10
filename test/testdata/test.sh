@@ -32,7 +32,5 @@ build_kb
 
 # Project version v4-alpha
 test_project project-v4
-test_project project-v4-multigroup
-test_project project-v4-multigroup-with-deploy-image
-test_project project-v4-with-deploy-image
-test_project project-v4-with-grafana
+test_project project-v4-multigroup-with-plugins
+test_project project-v4-with-plugins
