@@ -14,7 +14,7 @@ setup, from when we built our defaulting and validating webhooks!
 
 ## Webhook setup...
 
-{{#literatego ./testdata/project/api/v1/cronjob_webhook.go}}
+{{#literatego ./testdata/project/internal/webhook/v1/cronjob_webhook.go}}
 
 ## ...and `main.go`
 

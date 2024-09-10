@@ -27,3 +27,4 @@ docs/book/src/docs
 # different result depending on go version
 /testdata/**/go.sum
 /docs/book/src/simple-external-plugin-tutorial/testdata/sampleexternalplugin/v1/bin
+/testdata/**legacy**

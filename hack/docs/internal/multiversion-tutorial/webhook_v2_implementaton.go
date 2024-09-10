@@ -16,81 +16,80 @@ limitations under the License.
 
 package multiversion
 
-const cronJobFieldsForDefaulting = `
-// Default values for various CronJob fields
-DefaultConcurrencyPolicy          ConcurrencyPolicy
-DefaultSuspend                    bool
-DefaultSuccessfulJobsHistoryLimit int32
-DefaultFailedJobsHistoryLimit     int32
+const cronJobFieldsForDefaulting = `	// Default values for various CronJob fields
+	DefaultConcurrencyPolicy          batchv2.ConcurrencyPolicy
+	DefaultSuspend                    bool
+	DefaultSuccessfulJobsHistoryLimit int32
+	DefaultFailedJobsHistoryLimit     int32
 `
 
-const cronJobDefaultingLogic = `
-// Set default values
-cronjob.Default()
+const cronJobDefaultingLogic = `// Set default values
+	d.applyDefaults(cronjob)
+	return nil
 `
 
 const cronJobDefaultFunction = `
-func (r *CronJob) Default() {
-	if r.Spec.ConcurrencyPolicy == "" {
-		r.Spec.ConcurrencyPolicy = AllowConcurrent
+// applyDefaults applies default values to CronJob fields.
+func (d *CronJobCustomDefaulter) applyDefaults(cronJob *batchv2.CronJob) {
+	if cronJob.Spec.ConcurrencyPolicy == "" {
+		cronJob.Spec.ConcurrencyPolicy = d.DefaultConcurrencyPolicy
 	}
-	if r.Spec.Suspend == nil {
-		r.Spec.Suspend = new(bool)
+	if cronJob.Spec.Suspend == nil {
+		cronJob.Spec.Suspend = new(bool)
+		*cronJob.Spec.Suspend = d.DefaultSuspend
 	}
-	if r.Spec.SuccessfulJobsHistoryLimit == nil {
-		r.Spec.SuccessfulJobsHistoryLimit = new(int32)
-		*r.Spec.SuccessfulJobsHistoryLimit = 3
+	if cronJob.Spec.SuccessfulJobsHistoryLimit == nil {
+		cronJob.Spec.SuccessfulJobsHistoryLimit = new(int32)
+		*cronJob.Spec.SuccessfulJobsHistoryLimit = d.DefaultSuccessfulJobsHistoryLimit
 	}
-	if r.Spec.FailedJobsHistoryLimit == nil {
-		r.Spec.FailedJobsHistoryLimit = new(int32)
-		*r.Spec.FailedJobsHistoryLimit = 1
+	if cronJob.Spec.FailedJobsHistoryLimit == nil {
+		cronJob.Spec.FailedJobsHistoryLimit = new(int32)
+		*cronJob.Spec.FailedJobsHistoryLimit = d.DefaultFailedJobsHistoryLimit
 	}
 }
 `
 
 const cronJobValidationFunction = `
-func (r *CronJob) validateCronJob() error {
+// validateCronJob validates the fields of a CronJob object.
+func validateCronJob(cronjob *batchv2.CronJob) error {
 	var allErrs field.ErrorList
-	if err := r.validateCronJobName(); err != nil {
+	if err := validateCronJobName(cronjob); err != nil {
 		allErrs = append(allErrs, err)
 	}
-	if err := r.validateCronJobSpec(); err != nil {
+	if err := validateCronJobSpec(cronjob); err != nil {
 		allErrs = append(allErrs, err)
 	}
 	if len(allErrs) == 0 {
 		return nil
 	}
-
-	return apierrors.NewInvalid(
-		schema.GroupKind{Group: "batch.tutorial.kubebuilder.io", Kind: "CronJob"},
-		r.Name, allErrs)
+	return apierrors.NewInvalid(schema.GroupKind{Group: "batch.tutorial.kubebuilder.io", Kind: "CronJob"}, cronjob.Name, allErrs)
 }
 
-func (r *CronJob) validateCronJobName() *field.Error {
-	if len(r.ObjectMeta.Name) > validationutils.DNS1035LabelMaxLength-11 {
-		return field.Invalid(field.NewPath("metadata").Child("name"), r.Name, "must be no more than 52 characters")
+func validateCronJobName(cronjob *batchv2.CronJob) *field.Error {
+	if len(cronjob.ObjectMeta.Name) > validationutils.DNS1035LabelMaxLength-11 {
+		return field.Invalid(field.NewPath("metadata").Child("name"), cronjob.ObjectMeta.Name, "must be no more than 52 characters")
 	}
 	return nil
 }
 
 // validateCronJobSpec validates the schedule format of the custom CronSchedule type
-func (r *CronJob) validateCronJobSpec() *field.Error {
+func validateCronJobSpec(cronjob *batchv2.CronJob) *field.Error {
 	// Build cron expression from the parts
 	parts := []string{"*", "*", "*", "*", "*"} // default parts for minute, hour, day of month, month, day of week
-	if r.Spec.Schedule.Minute != nil {
-		parts[0] = string(*r.Spec.Schedule.Minute)  // Directly cast CronField (which is an alias of string) to string
+	if cronjob.Spec.Schedule.Minute != nil {
+		parts[0] = string(*cronjob.Spec.Schedule.Minute)  // Directly cast CronField (which is an alias of string) to string
 	}
-	if r.Spec.Schedule.Hour != nil {
-		parts[1] = string(*r.Spec.Schedule.Hour)
+	if cronjob.Spec.Schedule.Hour != nil {
+		parts[1] = string(*cronjob.Spec.Schedule.Hour)
 	}
-	if r.Spec.Schedule.DayOfMonth != nil {
-		parts[2] = string(*r.Spec.Schedule.DayOfMonth)
+	if cronjob.Spec.Schedule.DayOfMonth != nil {
+		parts[2] = string(*cronjob.Spec.Schedule.DayOfMonth)
 	}
-	if r.Spec.Schedule.Month != nil {
-		parts[3] = string(*r.Spec.Schedule.Month)
+	if cronjob.Spec.Schedule.Month != nil {
+		parts[3] = string(*cronjob.Spec.Schedule.Month)
 	}
-	if r.Spec.Schedule.DayOfWeek != nil {
-		parts[4] = string(*r.Spec.Schedule.DayOfWeek)
+	if cronjob.Spec.Schedule.DayOfWeek != nil {
+		parts[4] = string(*cronjob.Spec.Schedule.DayOfWeek)
 	}
 
 	// Join parts to form the full cron expression
@@ -108,3 +107,24 @@ func validateScheduleFormat(schedule string, fldPath *field.Path) *field.Error {
 	return nil
 }
 `
+
+const originalSetupManager = `// SetupCronJobWebhookWithManager registers the webhook for CronJob in the manager.
+func SetupCronJobWebhookWithManager(mgr ctrl.Manager) error {
+	return ctrl.NewWebhookManagedBy(mgr).For(&batchv2.CronJob{}).
+		WithValidator(&CronJobCustomValidator{}).
+		WithDefaulter(&CronJobCustomDefaulter{}).
+		Complete()
+}`
+
+const replaceSetupManager = `// SetupCronJobWebhookWithManager registers the webhook for CronJob in the manager.
+func SetupCronJobWebhookWithManager(mgr ctrl.Manager) error {
+	return ctrl.NewWebhookManagedBy(mgr).For(&batchv2.CronJob{}).
+		WithValidator(&CronJobCustomValidator{}).
+		WithDefaulter(&CronJobCustomDefaulter{
+			DefaultConcurrencyPolicy:          batchv2.AllowConcurrent,
+			DefaultSuspend:                    false,
+			DefaultSuccessfulJobsHistoryLimit: 3,
+			DefaultFailedJobsHistoryLimit:     1,
+		}).
+		Complete()
+}`
