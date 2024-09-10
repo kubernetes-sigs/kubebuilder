@@ -29,5 +29,5 @@ jobs:
         uses: golangci/golangci-lint-action@v6
         with:
           version: v1.59
-          working-directory: testdata/project-v4-with-deploy-image
+          working-directory: testdata/project-v4-with-plugins
           args: --config .golangci.yml ./...

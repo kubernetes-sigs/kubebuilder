@@ -49,5 +49,5 @@ This way, you can easily overlay your project's code changes atop the new scaffo
 - Check out [video to show how it works](https://youtu.be/7997RIbx8kw?si=ODYMud5lLycz7osp)
 - See the [desing proposal documentation](../../../../designs/helper_to_upgrade_projects_by_rescaffolding.md)
 
-[example]: ./../../../../testdata/project-v4-with-deploy-image/PROJECT
+[example]: ./../../../../testdata/project-v4-with-plugins/PROJECT
 [more-info]: ./../reference/project-config.md
