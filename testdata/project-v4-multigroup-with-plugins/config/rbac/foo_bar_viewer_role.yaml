@@ -1,0 +1,23 @@
+# permissions for end users to view bars.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: project-v4-multigroup-with-plugins
+    app.kubernetes.io/managed-by: kustomize
+  name: foo-bar-viewer-role
+rules:
+- apiGroups:
+  - foo.testproject.org
+  resources:
+  - bars
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - foo.testproject.org
+  resources:
+  - bars/status
+  verbs:
+  - get

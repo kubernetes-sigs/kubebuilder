@@ -1,0 +1,15 @@
+---
+customMetrics:
+#  - metric: # Raw custom metric (required)
+#    type:   # Metric type: counter/gauge/histogram (required)
+#    expr:   # Prom_ql for the metric (optional)
+#    unit:   # Unit of measurement, examples: s,none,bytes,percent,etc. (optional)
+#
+#
+# Example:
+# ---
+# customMetrics:
+#   - metric: foo_bar
+#     unit: none
+#     type: histogram
+#   	expr: histogram_quantile(0.90, sum by(instance, le) (rate(foo_bar{job=\"$job\", namespace=\"$namespace\"}[5m])))

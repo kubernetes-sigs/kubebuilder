@@ -54,9 +54,9 @@ jobs:
       - name: Create kind cluster
         run: kind create cluster
 
-      - name: Prepare project-v4-with-deploy-image
+      - name: Prepare project-v4-with-plugins
         run: |
-          KUSTOMIZATION_FILE_PATH="testdata/project-v4-with-deploy-image/config/default/kustomization.yaml"
+          KUSTOMIZATION_FILE_PATH="testdata/project-v4-with-plugins/config/default/kustomization.yaml"
           sed -i '25s/^#//' $KUSTOMIZATION_FILE_PATH
           sed -i '51s/^#//' $KUSTOMIZATION_FILE_PATH
           # Uncomment only ValidatingWebhookConfiguration
@@ -68,12 +68,12 @@ jobs:
           # Comment the injection for MutatingWebhookConfiguration
           # Fixme: We should not scaffold or it should be commented
           # by default when only validation webhooks are scaffolded
-          WEBHOOK_INJECTION_FILE_PATH="testdata/project-v4-with-deploy-image/config/default/webhookcainjection_patch.yaml"
+          WEBHOOK_INJECTION_FILE_PATH="testdata/project-v4-with-plugins/config/default/webhookcainjection_patch.yaml"
           sed -i '3,11s/^/#/' $WEBHOOK_INJECTION_FILE_PATH
-          cd testdata/project-v4-with-deploy-image/
+          cd testdata/project-v4-with-plugins/
           go mod tidy
 
-      - name: Testing make test-e2e for project-v4-with-deploy-image
-        working-directory: testdata/project-v4-with-deploy-image
+      - name: Testing make test-e2e for project-v4-with-plugins
+        working-directory: testdata/project-v4-with-plugins
         run: |
           make test-e2e
