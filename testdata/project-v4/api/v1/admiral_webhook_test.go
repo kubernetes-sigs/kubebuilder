@@ -43,9 +43,8 @@ var _ = Describe("Admiral Webhook", func() {
 		// Example:
 		// It("Should apply defaults when a required field is empty", func() {
 		//     By("simulating a scenario where defaults should be applied")
-		// 	   obj.SomeFieldWithDefault = ""
-		//	   err := obj.Default(ctx)
-		//	   Expect(err).NotTo(HaveOccurred())
+		//     obj.SomeFieldWithDefault = ""
+		//     Expect(obj.Default(ctx)).To(Succeed())
 		//     Expect(obj.SomeFieldWithDefault).To(Equal("default_value"))
 		// })
 	})

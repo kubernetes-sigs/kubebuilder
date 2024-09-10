@@ -39,14 +39,13 @@ var _ = Describe("FirstMate Webhook", func() {
 	})
 
 	Context("When creating FirstMate under Conversion Webhook", func() {
-		It("Should convert the object correctly", func() {
-			// TODO (user): Add logic to convert the object to the desired version and verify the conversion
-			// Example:
-			// convertedObj := &FirstMate{}
-			// err := obj.ConvertTo(convertedObj)
-			// Expect(err).NotTo(HaveOccurred())
-			// Expect(convertedObj).ToNot(BeNil())
-		})
+		// TODO (user): Add logic to convert the object to the desired version and verify the conversion
+		// Example:
+		// It("Should convert the object correctly", func() {
+		//     convertedObj := &FirstMate{}
+		//     Expect(obj.ConvertTo(convertedObj)).To(Succeed())
+		//     Expect(convertedObj).ToNot(BeNil())
+		// })
 	})
 
 })

@@ -43,9 +43,8 @@ var _ = Describe("Lakers Webhook", func() {
 		// Example:
 		// It("Should apply defaults when a required field is empty", func() {
 		//     By("simulating a scenario where defaults should be applied")
-		// 	   obj.SomeFieldWithDefault = ""
-		//	   err := obj.Default(ctx)
-		//	   Expect(err).NotTo(HaveOccurred())
+		//     obj.SomeFieldWithDefault = ""
+		//     Expect(obj.Default(ctx)).To(Succeed())
 		//     Expect(obj.SomeFieldWithDefault).To(Equal("default_value"))
 		// })
 	})
@@ -54,28 +53,22 @@ var _ = Describe("Lakers Webhook", func() {
 		// TODO (user): Add logic for validating webhooks
 		// Example:
 		// It("Should deny creation if a required field is missing", func() {
-		// 	   By("simulating an invalid creation scenario")
+		//     By("simulating an invalid creation scenario")
 		//     obj.SomeRequiredField = ""
-		//     warnings, err := obj.ValidateCreate(ctx)
-		//     Expect(err).To(HaveOccurred())
-		//     Expect(warnings).To(BeNil())
+		//     Expect(obj.ValidateCreate(ctx)).Error().To(HaveOccurred())
 		// })
 		//
 		// It("Should admit creation if all required fields are present", func() {
-		// 	   By("simulating an invalid creation scenario")
+		//     By("simulating an invalid creation scenario")
 		//     obj.SomeRequiredField = "valid_value"
-		//	   warnings, err := obj.ValidateCreate(ctx)
-		//	   Expect(err).NotTo(HaveOccurred())
-		//	   Expect(warnings).To(BeNil())
+		//     Expect(obj.ValidateCreate(ctx)).To(BeNil())
 		// })
 		//
 		// It("Should validate updates correctly", func() {
 		//     By("simulating a valid update scenario")
-		//	   oldObj := &Captain{SomeRequiredField: "valid_value"}
-		//	   obj.SomeRequiredField = "updated_value"
-		//	   warnings, err := obj.ValidateUpdate(ctx, oldObj)
-		//	   Expect(err).NotTo(HaveOccurred())
-		//	   Expect(warnings).To(BeNil())
+		//     oldObj := &Captain{SomeRequiredField: "valid_value"}
+		//     obj.SomeRequiredField = "updated_value"
+		//     Expect(obj.ValidateUpdate(ctx, oldObj)).To(BeNil())
 		// })
 	})
 

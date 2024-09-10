@@ -185,9 +185,8 @@ const webhookTestCreateDefaultingFragment = `// TODO (user): Add logic for defau
 		// Example:
 		// It("Should apply defaults when a required field is empty", func() {
 		//     By("simulating a scenario where defaults should be applied")
-		// 	   obj.SomeFieldWithDefault = ""
-		//	   err := obj.Default(ctx)
-		//	   Expect(err).NotTo(HaveOccurred())
+		//     obj.SomeFieldWithDefault = ""
+		//     Expect(obj.Default(ctx)).To(Succeed())
 		//     Expect(obj.SomeFieldWithDefault).To(Equal("default_value"))
 		// })`
 
@@ -231,58 +230,48 @@ const webhookTestCreateDefaultingReplaceFragment = `It("Should apply defaults wh
 const webhookTestingValidatingTodoFragment = `// TODO (user): Add logic for validating webhooks
 		// Example:
 		// It("Should deny creation if a required field is missing", func() {
-		// 	   By("simulating an invalid creation scenario")
+		//     By("simulating an invalid creation scenario")
 		//     obj.SomeRequiredField = ""
-		//     warnings, err := obj.ValidateCreate(ctx)
-		//     Expect(err).To(HaveOccurred())
-		//     Expect(warnings).To(BeNil())
+		//     Expect(obj.ValidateCreate(ctx)).Error().To(HaveOccurred())
 		// })
 		//
 		// It("Should admit creation if all required fields are present", func() {
-		// 	   By("simulating an invalid creation scenario")
+		//     By("simulating an invalid creation scenario")
 		//     obj.SomeRequiredField = "valid_value"
-		//	   warnings, err := obj.ValidateCreate(ctx)
-		//	   Expect(err).NotTo(HaveOccurred())
-		//	   Expect(warnings).To(BeNil())
+		//     Expect(obj.ValidateCreate(ctx)).To(BeNil())
 		// })
 		//
 		// It("Should validate updates correctly", func() {
 		//     By("simulating a valid update scenario")
-		//	   oldObj := &Captain{SomeRequiredField: "valid_value"}
-		//	   obj.SomeRequiredField = "updated_value"
-		//	   warnings, err := obj.ValidateUpdate(ctx, oldObj)
-		//	   Expect(err).NotTo(HaveOccurred())
-		//	   Expect(warnings).To(BeNil())
+		//     oldObj := &Captain{SomeRequiredField: "valid_value"}
+		//     obj.SomeRequiredField = "updated_value"
+		//     Expect(obj.ValidateUpdate(ctx, oldObj)).To(BeNil())
 		// })`
 
 const webhookTestingValidatingExampleFragment = `It("Should deny creation if the name is too long", func() {
 			obj.ObjectMeta.Name = "this-name-is-way-too-long-and-should-fail-validation-because-it-is-way-too-long"
-			warnings, err := validator.ValidateCreate(ctx, obj)
-			Expect(err).To(HaveOccurred(), "Expected name validation to fail for a too-long name")
-			Expect(warnings).To(BeNil())
-			Expect(err.Error()).To(ContainSubstring("must be no more than 52 characters"))
+			Expect(validator.ValidateCreate(ctx, obj)).Error().To(
+				MatchError(ContainSubstring("must be no more than 52 characters")),
+				"Expected name validation to fail for a too-long name")
 		})
 
 		It("Should admit creation if the name is valid", func() {
 			obj.ObjectMeta.Name = "valid-cronjob-name"
-			warnings, err := validator.ValidateCreate(ctx, obj)
-			Expect(err).NotTo(HaveOccurred(), "Expected name validation to pass for a valid name")
-			Expect(warnings).To(BeNil())
+			Expect(validator.ValidateCreate(ctx, obj)).To(BeNil(),
+				"Expected name validation to pass for a valid name")
 		})
 
 		It("Should deny creation if the schedule is invalid", func() {
 			obj.Spec.Schedule = "invalid-cron-schedule"
-			warnings, err := validator.ValidateCreate(ctx, obj)
-			Expect(err).To(HaveOccurred(), "Expected spec validation to fail for an invalid schedule")
-			Expect(warnings).To(BeNil())
-			Expect(err.Error()).To(ContainSubstring("Expected exactly 5 fields, found 1: invalid-cron-schedule"))
+			Expect(validator.ValidateCreate(ctx, obj)).Error().To(
+				MatchError(ContainSubstring("Expected exactly 5 fields, found 1: invalid-cron-schedule")),
+				"Expected spec validation to fail for an invalid schedule")
 		})
 
 		It("Should admit creation if the schedule is valid", func() {
 			obj.Spec.Schedule = "*/5 * * * *"
-			warnings, err := validator.ValidateCreate(ctx, obj)
-			Expect(err).NotTo(HaveOccurred(), "Expected spec validation to pass for a valid schedule")
-			Expect(warnings).To(BeNil())
+			Expect(validator.ValidateCreate(ctx, obj)).To(BeNil(),
+				"Expected spec validation to pass for a valid schedule")
 		})
 
 		It("Should deny update if both name and spec are invalid", func() {
@@ -294,9 +283,8 @@ const webhookTestingValidatingExampleFragment = `It("Should deny creation if the
 			obj.Spec.Schedule = "invalid-cron-schedule"
 
 			By("validating an update")
-			warnings, err := validator.ValidateUpdate(ctx, oldObj, obj)
-			Expect(err).To(HaveOccurred(), "Expected validation to fail for both name and spec")
-			Expect(warnings).To(BeNil())
+			Expect(validator.ValidateUpdate(ctx, oldObj, obj)).Error().To(HaveOccurred(),
+				"Expected validation to fail for both name and spec")
 		})
 
 		It("Should admit update if both name and spec are valid", func() {
@@ -308,9 +296,8 @@ const webhookTestingValidatingExampleFragment = `It("Should deny creation if the
 			obj.Spec.Schedule = "0 0 * * *"
 
 			By("validating an update")
-			warnings, err := validator.ValidateUpdate(ctx, oldObj, obj)
-			Expect(err).NotTo(HaveOccurred(), "Expected validation to pass for a valid update")
-			Expect(warnings).To(BeNil())
+			Expect(validator.ValidateUpdate(ctx, oldObj, obj)).To(BeNil(),
+				"Expected validation to pass for a valid update")
 		})`
 
 const webhookTestsBeforeEachOriginal = `obj = &CronJob{}

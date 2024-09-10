@@ -104,32 +104,28 @@ var _ = Describe("CronJob Webhook", func() {
 	Context("When creating or updating CronJob under Validating Webhook", func() {
 		It("Should deny creation if the name is too long", func() {
 			obj.ObjectMeta.Name = "this-name-is-way-too-long-and-should-fail-validation-because-it-is-way-too-long"
-			warnings, err := validator.ValidateCreate(ctx, obj)
-			Expect(err).To(HaveOccurred(), "Expected name validation to fail for a too-long name")
-			Expect(warnings).To(BeNil())
-			Expect(err.Error()).To(ContainSubstring("must be no more than 52 characters"))
+			Expect(validator.ValidateCreate(ctx, obj)).Error().To(
+				MatchError(ContainSubstring("must be no more than 52 characters")),
+				"Expected name validation to fail for a too-long name")
 		})
 
 		It("Should admit creation if the name is valid", func() {
 			obj.ObjectMeta.Name = "valid-cronjob-name"
-			warnings, err := validator.ValidateCreate(ctx, obj)
-			Expect(err).NotTo(HaveOccurred(), "Expected name validation to pass for a valid name")
-			Expect(warnings).To(BeNil())
+			Expect(validator.ValidateCreate(ctx, obj)).To(BeNil(),
+				"Expected name validation to pass for a valid name")
 		})
 
 		It("Should deny creation if the schedule is invalid", func() {
 			obj.Spec.Schedule = "invalid-cron-schedule"
-			warnings, err := validator.ValidateCreate(ctx, obj)
-			Expect(err).To(HaveOccurred(), "Expected spec validation to fail for an invalid schedule")
-			Expect(warnings).To(BeNil())
-			Expect(err.Error()).To(ContainSubstring("Expected exactly 5 fields, found 1: invalid-cron-schedule"))
+			Expect(validator.ValidateCreate(ctx, obj)).Error().To(
+				MatchError(ContainSubstring("Expected exactly 5 fields, found 1: invalid-cron-schedule")),
+				"Expected spec validation to fail for an invalid schedule")
 		})
 
 		It("Should admit creation if the schedule is valid", func() {
 			obj.Spec.Schedule = "*/5 * * * *"
-			warnings, err := validator.ValidateCreate(ctx, obj)
-			Expect(err).NotTo(HaveOccurred(), "Expected spec validation to pass for a valid schedule")
-			Expect(warnings).To(BeNil())
+			Expect(validator.ValidateCreate(ctx, obj)).To(BeNil(),
+				"Expected spec validation to pass for a valid schedule")
 		})
 
 		It("Should deny update if both name and spec are invalid", func() {
@@ -141,9 +137,8 @@ var _ = Describe("CronJob Webhook", func() {
 			obj.Spec.Schedule = "invalid-cron-schedule"
 
 			By("validating an update")
-			warnings, err := validator.ValidateUpdate(ctx, oldObj, obj)
-			Expect(err).To(HaveOccurred(), "Expected validation to fail for both name and spec")
-			Expect(warnings).To(BeNil())
+			Expect(validator.ValidateUpdate(ctx, oldObj, obj)).Error().To(HaveOccurred(),
+				"Expected validation to fail for both name and spec")
 		})
 
 		It("Should admit update if both name and spec are valid", func() {
@@ -155,9 +150,8 @@ var _ = Describe("CronJob Webhook", func() {
 			obj.Spec.Schedule = "0 0 * * *"
 
 			By("validating an update")
-			warnings, err := validator.ValidateUpdate(ctx, oldObj, obj)
-			Expect(err).NotTo(HaveOccurred(), "Expected validation to pass for a valid update")
-			Expect(warnings).To(BeNil())
+			Expect(validator.ValidateUpdate(ctx, oldObj, obj)).To(BeNil(),
+				"Expected validation to pass for a valid update")
 		})
 	})
 
