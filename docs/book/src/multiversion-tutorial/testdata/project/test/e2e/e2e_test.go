@@ -100,7 +100,7 @@ var _ = Describe("Manager", Ordered, func() {
 
 				podOutput, err := utils.Run(cmd)
 				g.Expect(err).NotTo(HaveOccurred(), "Failed to retrieve controller-manager pod information")
-				podNames := utils.GetNonEmptyLines(string(podOutput))
+				podNames := utils.GetNonEmptyLines(podOutput)
 				g.Expect(podNames).To(HaveLen(1), "expected 1 controller pod running")
 				controllerPodName = podNames[0]
 				g.Expect(controllerPodName).To(ContainSubstring("controller-manager"))
@@ -110,7 +110,7 @@ var _ = Describe("Manager", Ordered, func() {
 					"pods", controllerPodName, "-o", "jsonpath={.status.phase}",
 					"-n", namespace,
 				)
-				g.Expect(utils.Run(cmd)).To(BeEquivalentTo("Running"), "Incorrect controller-manager pod status")
+				g.Expect(utils.Run(cmd)).To(Equal("Running"), "Incorrect controller-manager pod status")
 			}
 			// Repeatedly check if the controller-manager pod is running until it succeeds or times out.
 			Eventually(verifyControllerUp).Should(Succeed())
@@ -166,7 +166,7 @@ var _ = Describe("Manager", Ordered, func() {
 				cmd := exec.Command("kubectl", "get", "pods", "curl-metrics",
 					"-o", "jsonpath={.status.phase}",
 					"-n", namespace)
-				g.Expect(utils.Run(cmd)).To(BeEquivalentTo("Succeeded"), "curl pod in wrong status")
+				g.Expect(utils.Run(cmd)).To(Equal("Succeeded"), "curl pod in wrong status")
 			}
 			Eventually(verifyCurlUp, 5*time.Minute).Should(Succeed())
 
@@ -278,9 +278,9 @@ func getMetricsOutput() string {
 	cmd := exec.Command("kubectl", "logs", "curl-metrics", "-n", namespace)
 	metricsOutput, err := utils.Run(cmd)
 	Expect(err).NotTo(HaveOccurred(), "Failed to retrieve logs from curl pod")
-	metricsOutputStr := string(metricsOutput)
-	Expect(metricsOutputStr).To(ContainSubstring("< HTTP/1.1 200 OK"))
-	return metricsOutputStr
+
+	Expect(metricsOutput).To(ContainSubstring("< HTTP/1.1 200 OK"))
+	return metricsOutput
 }
 
 // tokenRequest is a simplified representation of the Kubernetes TokenRequest API response,

@@ -301,7 +301,7 @@ type CmdContext struct {
 }
 
 // Run executes the provided command within this context
-func (cc *CmdContext) Run(cmd *exec.Cmd) ([]byte, error) {
+func (cc *CmdContext) Run(cmd *exec.Cmd) (string, error) {
 	cmd.Dir = cc.Dir
 	cmd.Env = append(os.Environ(), cc.Env...)
 	cmd.Stdin = cc.Stdin
@@ -309,10 +309,10 @@ func (cc *CmdContext) Run(cmd *exec.Cmd) ([]byte, error) {
 	_, _ = fmt.Fprintf(GinkgoWriter, "running: %s\n", command)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return output, fmt.Errorf("%s failed with error: (%v) %s", command, err, string(output))
+		return "", fmt.Errorf("%s failed with error: (%v) %s", command, err, string(output))
 	}
 
-	return output, nil
+	return string(output), nil
 }
 
 // AllowProjectBeMultiGroup will update the PROJECT file with the information to allow we scaffold

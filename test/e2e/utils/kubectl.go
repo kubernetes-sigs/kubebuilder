@@ -35,7 +35,7 @@ type Kubectl struct {
 func (k *Kubectl) Command(cmdOptions ...string) (string, error) {
 	cmd := exec.Command("kubectl", cmdOptions...)
 	output, err := k.Run(cmd)
-	return string(output), err
+	return output, err
 }
 
 // WithInput is a general func to run kubectl commands with input

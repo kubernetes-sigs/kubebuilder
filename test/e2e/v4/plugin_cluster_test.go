@@ -104,7 +104,7 @@ var _ = Describe("kubebuilder", func() {
 func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, hasMetrics bool, hasNetworkPolicies bool) {
 	var controllerPodName string
 	var err error
-	var output []byte
+	var output string
 
 	By("creating manager namespace")
 	err = kbc.CreateManagerNamespace()
