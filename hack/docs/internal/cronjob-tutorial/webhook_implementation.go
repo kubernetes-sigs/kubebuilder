@@ -16,7 +16,7 @@ limitations under the License.
 
 package cronjob
 
-const WebhookIntro = `"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+const webhookIntro = `"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // +kubebuilder:docs-gen:collapse=Go imports
@@ -27,26 +27,7 @@ Next, we'll setup a logger for the webhooks.
 
 `
 
-const WebhookMarker = `/*
-Notice that we use kubebuilder markers to generate webhook manifests.
-This marker is responsible for generating a mutating webhook manifest.
-
-The meaning of each marker can be found [here](/reference/markers/webhook.md).
-*/
-
-// +kubebuilder:webhook:path=/mutate-batch-tutorial-kubebuilder-io-v1-cronjob,mutating=true,failurePolicy=fail,groups=batch.tutorial.kubebuilder.io,resources=cronjobs,verbs=create;update,versions=v1,name=mcronjob.kb.io,sideEffects=None,admissionReviewVersions=v1
-
-/*
-We use the` + " `" + `webhook.CustomDefaulter` + "`" + ` interface to set defaults to our CRD.
-A webhook will automatically be served that calls this defaulting.
-
-The` + " `" + `Default` + "`" + ` method is expected to mutate the receiver, setting the defaults.
-*/
-`
-
-const WebhookDefaultingSettings = `
-
-	// Set default values
+const webhookDefaultingSettings = `// Set default values
 	cronjob.Default()
 	
 	return nil
@@ -68,13 +49,22 @@ func (r *CronJob) Default() {
 		*r.Spec.FailedJobsHistoryLimit = 1
 	}
 }
+`
 
+const webhooksNoticeMarker = `
 /*
-This marker is responsible for generating a validating webhook manifest.
+Notice that we use kubebuilder markers to generate webhook manifests.
+This marker is responsible for generating a mutating webhook manifest.
+
+The meaning of each marker can be found [here](/reference/markers/webhook.md).
 */
 
-// +kubebuilder:webhook:verbs=create;update;delete,path=/validate-batch-tutorial-kubebuilder-io-v1-cronjob,mutating=false,failurePolicy=fail,groups=batch.tutorial.kubebuilder.io,resources=cronjobs,versions=v1,name=vcronjob.kb.io,sideEffects=None,admissionReviewVersions=v1
+/*
+This marker is responsible for generating a mutation webhook manifest.
+*/
+`
 
+const explanationValidateCRD = `
 /*
 We can validate our CRD beyond what's possible with declarative
 validation. Generally, declarative validation should be sufficient, but
@@ -96,8 +86,21 @@ Here, however, we just use the same shared validation for` + " `" + `ValidateCre
 ` + "`" + `ValidateUpdate` + "`" + `. And we do nothing in` + " `" + `ValidateDelete` + "`" + `, since we don't need to
 validate anything on deletion.
 */
-`
-const WebhookValidateSpec = `
+
+/*
+This marker is responsible for generating a validation webhook manifest.
+*/`
+
+const customInterfaceDefaultInfo = `/*
+We use the ` + "`" + `webhook.CustomDefaulter` + "`" + `interface to set defaults to our CRD.
+A webhook will automatically be served that calls this defaulting.
+
+The ` + "`" + `Default` + "`" + `method is expected to mutate the receiver, setting the defaults.
+*/
+
+// Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind CronJob.`
+
+const webhookValidateSpecMethods = `
 /*
 We validate the name and the spec of the CronJob.
 */

@@ -70,13 +70,8 @@ This marker is responsible for generating a mutating webhook manifest.
 The meaning of each marker can be found [here](/reference/markers/webhook.md).
 */
 
-// +kubebuilder:webhook:path=/mutate-batch-tutorial-kubebuilder-io-v1-cronjob,mutating=true,failurePolicy=fail,groups=batch.tutorial.kubebuilder.io,resources=cronjobs,verbs=create;update,versions=v1,name=mcronjob.kb.io,sideEffects=None,admissionReviewVersions=v1
-
 /*
-We use the `webhook.CustomDefaulter` interface to set defaults to our CRD.
-A webhook will automatically be served that calls this defaulting.
-
-The `Default` method is expected to mutate the receiver, setting the defaults.
+This marker is responsible for generating a mutation webhook manifest.
 */
 
 // +kubebuilder:webhook:path=/mutate-batch-tutorial-kubebuilder-io-v1-cronjob,mutating=true,failurePolicy=fail,sideEffects=None,groups=batch.tutorial.kubebuilder.io,resources=cronjobs,verbs=create;update,versions=v1,name=mcronjob-v1.kb.io,admissionReviewVersions=v1
@@ -97,6 +92,13 @@ type CronJobCustomDefaulter struct {
 }
 
 var _ webhook.CustomDefaulter = &CronJobCustomDefaulter{}
+
+/*
+We use the `webhook.CustomDefaulter`interface to set defaults to our CRD.
+A webhook will automatically be served that calls this defaulting.
+
+The `Default`method is expected to mutate the receiver, setting the defaults.
+*/
 
 // Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind CronJob.
 func (d *CronJobCustomDefaulter) Default(ctx context.Context, obj runtime.Object) error {
@@ -130,12 +132,6 @@ func (r *CronJob) Default() {
 }
 
 /*
-This marker is responsible for generating a validating webhook manifest.
-*/
-
-// +kubebuilder:webhook:verbs=create;update;delete,path=/validate-batch-tutorial-kubebuilder-io-v1-cronjob,mutating=false,failurePolicy=fail,groups=batch.tutorial.kubebuilder.io,resources=cronjobs,versions=v1,name=vcronjob.kb.io,sideEffects=None,admissionReviewVersions=v1
-
-/*
 We can validate our CRD beyond what's possible with declarative
 validation. Generally, declarative validation should be sufficient, but
 sometimes more advanced use cases call for complex validation.
@@ -157,8 +153,9 @@ Here, however, we just use the same shared validation for `ValidateCreate` and
 validate anything on deletion.
 */
 
-// NOTE: The 'path' attribute must follow a specific pattern and should not be modified directly here.
-// Modifying the path for an invalid path can cause API server errors; failing to locate the webhook.
+/*
+This marker is responsible for generating a validation webhook manifest.
+*/
 // +kubebuilder:webhook:path=/validate-batch-tutorial-kubebuilder-io-v1-cronjob,mutating=false,failurePolicy=fail,sideEffects=None,groups=batch.tutorial.kubebuilder.io,resources=cronjobs,verbs=create;update,versions=v1,name=vcronjob-v1.kb.io,admissionReviewVersions=v1
 
 // +kubebuilder:object:generate=false
