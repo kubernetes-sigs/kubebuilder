@@ -58,5 +58,6 @@ func (r *HealthCheckPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Re
 func (r *HealthCheckPolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&foopolicyv1.HealthCheckPolicy{}).
+		Named("foo.policy-healthcheckpolicy").
 		Complete(r)
 }

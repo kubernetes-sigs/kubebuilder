@@ -434,6 +434,7 @@ func (r *BusyboxReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		// Watch the Busybox CR(s) and trigger reconciliation whenever it
 		// is created, updated, or deleted
 		For(&examplecomv1alpha1.Busybox{}).
+		Named("example.com-busybox").
 		// Watch the Deployment managed by the BusyboxReconciler. If any changes occur to the Deployment
 		// owned and managed by this controller, it will trigger reconciliation, ensuring that the cluster
 		// state aligns with the desired state. See that the ownerRef was set when the Deployment was created.

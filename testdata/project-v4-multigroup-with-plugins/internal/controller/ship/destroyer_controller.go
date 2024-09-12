@@ -58,5 +58,6 @@ func (r *DestroyerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 func (r *DestroyerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&shipv1.Destroyer{}).
+		Named("ship-destroyer").
 		Complete(r)
 }

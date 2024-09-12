@@ -58,5 +58,6 @@ func (r *BarReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 func (r *BarReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&foov1.Bar{}).
+		Named("foo-bar").
 		Complete(r)
 }

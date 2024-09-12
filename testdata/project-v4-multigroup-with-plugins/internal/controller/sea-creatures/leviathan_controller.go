@@ -58,5 +58,6 @@ func (r *LeviathanReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 func (r *LeviathanReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&seacreaturesv1beta2.Leviathan{}).
+		Named("sea-creatures-leviathan").
 		Complete(r)
 }
