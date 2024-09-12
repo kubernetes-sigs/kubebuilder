@@ -27,6 +27,7 @@
       - [Object/DeepCopy](markers/object.md)
       - [RBAC](markers/rbac.md)
 
+  - [Monitoring with Pprof](pprof-tutorial.md)
   - [controller-gen CLI](controller-gen.md)
   - [completion](completion.md)
   - [Artifacts](artifacts.md)
