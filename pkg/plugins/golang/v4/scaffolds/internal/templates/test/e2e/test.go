@@ -243,7 +243,9 @@ var _ = Describe("Manager", Ordered, func() {
 					"pods", controllerPodName, "-o", "jsonpath={.status.phase}",
 					"-n", namespace,
 				)
-				g.Expect(utils.Run(cmd)).To(BeEquivalentTo("Running"), "Incorrect controller-manager pod status")
+				output, err := utils.Run(cmd)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(string(output)).To(BeEquivalentTo("Running"), "Incorrect controller-manager pod status")
 			}
 			// Repeatedly check if the controller-manager pod is running until it succeeds or times out.
 			Eventually(verifyControllerUp).Should(Succeed())
@@ -255,15 +257,18 @@ var _ = Describe("Manager", Ordered, func() {
 				"--clusterrole={{ .ProjectName}}-metrics-reader",
 				fmt.Sprintf("--serviceaccount=%s:%s", namespace, serviceAccountName),
 			)
-			Expect(utils.Run(cmd)).Error().NotTo(HaveOccurred(), "Failed to create ClusterRoleBinding")
+			_, err := utils.Run(cmd)
+			Expect(err).NotTo(HaveOccurred(), "Failed to create ClusterRoleBinding")
 
 			By("validating that the metrics service is available")
 			cmd = exec.Command("kubectl", "get", "service", metricsServiceName, "-n", namespace)
-			Expect(utils.Run(cmd)).Error().NotTo(HaveOccurred(), "Metrics service should exist")
+			_, err = utils.Run(cmd)
+			Expect(err).NotTo(HaveOccurred(), "Metrics service should exist")
 
 			By("validating that the ServiceMonitor for Prometheus is applied in the namespace")
 			cmd = exec.Command("kubectl", "get", "ServiceMonitor", "-n", namespace)
-			Expect(utils.Run(cmd)).Error().NotTo(HaveOccurred(), "ServiceMonitor should exist")
+			_, err = utils.Run(cmd)
+			Expect(err).NotTo(HaveOccurred(), "ServiceMonitor should exist")
 
 			By("getting the service account token")
 			token, err := serviceAccountToken()
@@ -273,14 +278,18 @@ var _ = Describe("Manager", Ordered, func() {
 			By("waiting for the metrics endpoint to be ready")
 			verifyMetricsEndpointReady := func(g Gomega) {
 				cmd := exec.Command("kubectl", "get", "endpoints", metricsServiceName, "-n", namespace)
-				g.Expect(utils.Run(cmd)).To(ContainSubstring("8443"), "Metrics endpoint is not ready")
+				output, err := utils.Run(cmd)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(string(output)).To(ContainSubstring("8443"), "Metrics endpoint is not ready")
 			}
 			Eventually(verifyMetricsEndpointReady).Should(Succeed())
 
 			By("verifying that the controller manager is serving the metrics server")
 			verifyMetricsServerStarted := func(g Gomega) {
 				cmd := exec.Command("kubectl", "logs", controllerPodName, "-n", namespace)
-				g.Expect(utils.Run(cmd)).To(ContainSubstring("controller-runtime.metrics\tServing metrics server"),
+				output, err := utils.Run(cmd)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(string(output)).To(ContainSubstring("controller-runtime.metrics\tServing metrics server"),
  					"Metrics server not yet started")
 			}
 			Eventually(verifyMetricsServerStarted).Should(Succeed())
@@ -292,14 +301,17 @@ var _ = Describe("Manager", Ordered, func() {
 				"--", "/bin/sh", "-c", fmt.Sprintf(
 					"curl -v -k -H 'Authorization: Bearer %s' https://%s.%s.svc.cluster.local:8443/metrics",
 					token, metricsServiceName, namespace))
-			Expect(utils.Run(cmd)).Error().NotTo(HaveOccurred(), "Failed to create curl-metrics pod")
+			_, err = utils.Run(cmd)
+			Expect(err).NotTo(HaveOccurred(), "Failed to create curl-metrics pod")
 
 			By("waiting for the curl-metrics pod to complete.")
 			verifyCurlUp := func(g Gomega) {
 				cmd := exec.Command("kubectl", "get", "pods", "curl-metrics",
 					"-o", "jsonpath={.status.phase}",
 					"-n", namespace)
-				g.Expect(utils.Run(cmd)).To(BeEquivalentTo("Succeeded"), "curl pod in wrong status")
+				output, err := utils.Run(cmd)
+				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(string(output)).To(Equal("Succeeded"), "curl pod in wrong status")
 			}
 			Eventually(verifyCurlUp, 5 * time.Minute).Should(Succeed())
 
