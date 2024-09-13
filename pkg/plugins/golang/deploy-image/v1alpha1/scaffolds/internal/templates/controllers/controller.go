@@ -478,6 +478,11 @@ func (r *{{ .Resource.Kind }}Reconciler) SetupWithManager(mgr ctrl.Manager) erro
 		// Uncomment the following line adding a pointer to an instance of the controlled resource as an argument
 		// For().
 		{{- end }}
+		{{- if and (.MultiGroup) (not (isEmptyStr .Resource.Group)) }}
+		Named("{{ lower .Resource.Group }}-{{ lower .Resource.Kind }}").
+		{{- else }}
+		Named("{{ lower .Resource.Kind }}").
+		{{- end }}
 		// Watch the Deployment managed by the {{ .Resource.Kind }}Reconciler. If any changes occur to the Deployment
 		// owned and managed by this controller, it will trigger reconciliation, ensuring that the cluster
 		// state aligns with the desired state. See that the ownerRef was set when the Deployment was created.

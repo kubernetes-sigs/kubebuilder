@@ -574,5 +574,6 @@ func (r *CronJobReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&batchv1.CronJob{}).
 		Owns(&kbatch.Job{}).
+		Named("cronjob").
 		Complete(r)
 }

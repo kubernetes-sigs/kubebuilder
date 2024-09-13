@@ -115,6 +115,11 @@ func (r *{{ .Resource.Kind }}Reconciler) SetupWithManager(mgr ctrl.Manager) erro
 		// Uncomment the following line adding a pointer to an instance of the controlled resource as an argument
 		// For().
 		{{- end }}
+		{{- if and (.MultiGroup) (not (isEmptyStr .Resource.Group)) }}
+		Named("{{ lower .Resource.Group }}-{{ lower .Resource.Kind }}").
+		{{- else }}
+		Named("{{ lower .Resource.Kind }}").
+		{{- end }}
 		Complete(r)
 }
 `

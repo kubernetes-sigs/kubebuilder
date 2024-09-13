@@ -58,5 +58,6 @@ func (r *FirstMateReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 func (r *FirstMateReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&crewv1.FirstMate{}).
+		Named("firstmate").
 		Complete(r)
 }
