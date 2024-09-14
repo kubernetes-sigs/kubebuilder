@@ -48,15 +48,18 @@ var _ = Describe("Manager", Ordered, func() {
 	BeforeAll(func() {
 		By("creating manager namespace")
 		cmd := exec.Command("kubectl", "create", "ns", namespace)
-		Expect(utils.Run(cmd)).Error().NotTo(HaveOccurred(), "Failed to create namespace")
+		_, err := utils.Run(cmd)
+		Expect(err).NotTo(HaveOccurred(), "Failed to create namespace")
 
 		By("installing CRDs")
 		cmd = exec.Command("make", "install")
-		Expect(utils.Run(cmd)).Error().NotTo(HaveOccurred(), "Failed to install CRDs")
+		_, err = utils.Run(cmd)
+		Expect(err).NotTo(HaveOccurred(), "Failed to install CRDs")
 
 		By("deploying the controller-manager")
 		cmd = exec.Command("make", "deploy", fmt.Sprintf("IMG=%s", projectImage))
-		Expect(utils.Run(cmd)).Error().NotTo(HaveOccurred(), "Failed to deploy the controller-manager")
+		_, err = utils.Run(cmd)
+		Expect(err).NotTo(HaveOccurred(), "Failed to deploy the controller-manager")
 	})
 
 	// After all tests have been executed, clean up by undeploying the controller, uninstalling CRDs,
