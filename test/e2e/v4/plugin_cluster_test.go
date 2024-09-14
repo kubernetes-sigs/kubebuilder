@@ -312,26 +312,32 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, hasMetrics bool, 
 		ExpectWithOffset(1, count).To(BeNumerically("==", 5))
 	}
 
-	if hasWebhook && hasNetworkPolicies {
-		By("validating that webhooks from namespace without the label will fail")
-
-		// Define the namespace name and CR sample file path
-		namespace := "test-namespace-without-webhook-label"
-		sampleFile := "path/to/your/sample-file.yaml"
-
-		// Create the namespace
-		By("creating a namespace without the webhook: enabled label")
+	if hasWebhook {
+		By("creating a namespace")
+		namespace := "test-webhooks"
 		_, err := kbc.Kubectl.Command("create", "namespace", namespace)
 		Expect(err).NotTo(HaveOccurred(), "namespace should be created successfully")
 
-		// Apply the Custom Resource in the new namespace and expect it to fail
-		By("applying the CR in the namespace without the webhook: enabled label and expecting it to fail")
+		By("applying the CR in the created namespace")
 		EventuallyWithOffset(1, func() error {
-			_, err = kbc.Kubectl.Apply(false, "-n", namespace, "-f", sampleFile)
+			_, err := kbc.Kubectl.Apply(false, "-n", namespace, "-f", sampleFile)
 			return err
-		}, time.Minute, time.Second).Should(HaveOccurred(), "applying the CR should fail due to webhook call timeout")
+		}, 2*time.Minute, time.Second).ShouldNot(HaveOccurred(),
+			"apply in test-webhooks ns should not fail")
 
-		// Cleanup: Remove the namespace
+		By("validating that mutating webhooks are working fine outside of the manager's namespace")
+		cnt, err := kbc.Kubectl.Get(
+			false,
+			"-n", namespace,
+			"-f", sampleFile,
+			"-o", "go-template={{ .spec.count }}")
+		ExpectWithOffset(1, err).NotTo(HaveOccurred())
+
+		count, err := strconv.Atoi(cnt)
+		ExpectWithOffset(1, err).NotTo(HaveOccurred())
+		ExpectWithOffset(1, count).To(BeNumerically("==", 5),
+			"the mutating webhook should set the count to 5")
+
 		By("removing the namespace")
 		_, err = kbc.Kubectl.Command("delete", "namespace", namespace)
 		Expect(err).NotTo(HaveOccurred(), "namespace should be removed successfully")
