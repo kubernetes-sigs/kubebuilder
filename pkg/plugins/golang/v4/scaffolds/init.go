@@ -28,6 +28,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins"
 	kustomizecommonv2 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds/internal/templates"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds/internal/templates/github"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds/internal/templates/hack"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds/internal/templates/test/e2e"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds/internal/templates/test/utils"
@@ -162,6 +163,9 @@ func (s *initScaffolder) Scaffold() error {
 		&e2e.Test{},
 		&e2e.WebhookTestUpdater{WireWebhook: false},
 		&e2e.SuiteTest{},
+		&github.E2eTestCi{},
+		&github.TestCi{},
+		&github.LintCi{},
 		&utils.Utils{},
 		&templates.DevContainer{},
 		&templates.DevContainerPostInstallScript{},
