@@ -95,6 +95,7 @@
   - [completion](./reference/completion.md)
   - [Artifacts](./reference/artifacts.md)
   - [Platform Support](./reference/platform.md)
+  - [Monitoring with Pprof](./reference/pprof-tutorial.md)
 
   - [Manager and CRDs Scope](./reference/scopes.md)
 
