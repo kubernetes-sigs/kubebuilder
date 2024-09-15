@@ -135,6 +135,15 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 	p.options.DoController = true
 	p.options.Namespaced = true
 
+	// These options are not valid when scaffold resources for the DeployImage.
+	// Notice that we are not binding the flags, so they will not appear for the end users.
+	// However, to make it explicit, we are adding the validation check here.
+	// p.options.ExternalAPIPath and p.options.ExternalAPIDomain should be empty for the Deploy Image plugin.
+	if len(p.options.ExternalAPIPath) != 0 || len(p.options.ExternalAPIDomain) != 0 {
+		return errors.New("The options '--external-api-path' and '--external-api-domain' are " +
+			"invalid for this plugin.")
+	}
+
 	p.options.UpdateResource(p.resource, p.config)
 
 	if err := p.resource.Validate(); err != nil {

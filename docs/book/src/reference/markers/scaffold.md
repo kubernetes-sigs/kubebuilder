@@ -95,17 +95,19 @@ properly registered with the manager, so that the controller can reconcile the r
 
 ## List of `+kubebuilder:scaffold` Markers
 
-| Marker                                     | Usual Location               | Function                                                                        |
-|--------------------------------------------|------------------------------|---------------------------------------------------------------------------------|
-| `+kubebuilder:scaffold:imports`            | `main.go`                    | Marks where imports for new controllers, webhooks, or APIs should be injected.   |
-| `+kubebuilder:scaffold:scheme`             | `init()` in `main.go`         | Used to add API versions to the scheme for runtime.                             |
-| `+kubebuilder:scaffold:builder`            | `main.go`                    | Marks where new controllers should be registered with the manager.              |
-| `+kubebuilder:scaffold:webhook`            | `webhooks suite tests` files  | Marks where webhook setup functions are added.                                  |
-| `+kubebuilder:scaffold:crdkustomizeresource`| `config/crd`                 | Marks where CRD custom resource patches are added.                              |
-| `+kubebuilder:scaffold:crdkustomizewebhookpatch` | `config/crd`              | Marks where CRD webhook patches are added.                                      |
-| `+kubebuilder:scaffold:crdkustomizecainjectionpatch` | `config/crd`           | Marks where CA injection patches are added for the webhook.                     |
-| `+kubebuilder:scaffold:manifestskustomizesamples` | `config/samples`           | Marks where Kustomize sample manifests are injected.                            |
-| `+kubebuilder:scaffold:e2e-webhooks-checks` | `test/e2e`                   | Adds e2e checks for webhooks depending on the types of webhooks scaffolded.      |
+| Marker                                     | Usual Location               | Function                                                                                                                                                          |
+|--------------------------------------------|------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `+kubebuilder:scaffold:imports`            | `main.go`                    | Marks where imports for new controllers, webhooks, or APIs should be injected.                                                                                    |
+| `+kubebuilder:scaffold:scheme`             | `init()` in `main.go`        | Used to add API versions to the scheme for runtime.                                                                                                               |
+| `+kubebuilder:scaffold:builder`            | `main.go`                    | Marks where new controllers should be registered with the manager.                                                                                                |
+| `+kubebuilder:scaffold:webhook`            | `webhooks suite tests` files | Marks where webhook setup functions are added.                                                                                                                    |
+| `+kubebuilder:scaffold:crdkustomizeresource`| `config/crd`                 | Marks where CRD custom resource patches are added.                                                                                                                |
+| `+kubebuilder:scaffold:crdkustomizewebhookpatch` | `config/crd`                 | Marks where CRD webhook patches are added.                                                                                                                        |
+| `+kubebuilder:scaffold:crdkustomizecainjectionpatch` | `config/crd`                 | Marks where CA injection patches are added for the webhook.                                                                                                       |
+| `+kubebuilder:scaffold:manifestskustomizesamples` | `config/samples`             | Marks where Kustomize sample manifests are injected.                                                                                                              |
+| `+kubebuilder:scaffold:e2e-webhooks-checks` | `test/e2e`                   | Adds e2e checks for webhooks depending on the types of webhooks scaffolded.                                                                                       |
+| `+kubebuilder:scaffold:check-external-api` | `main.go`                    | If a controller is scaffolded for an External Type then, adds a new check for the API to ensure that the API/CRD exist on cluster since it become a prerequisite. |
+| `+kubebuilder:scaffold:add-method-check-external-api` | `main.go`                    | If a controller is scaffolded for an External Type then, adds the method to do verify if the API/version exist on the cluster since it become a prerequisite.                                   |
 
 <aside class="note">
 <h1>Creating Your Own Markers</h1>

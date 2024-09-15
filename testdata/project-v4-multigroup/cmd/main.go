@@ -19,6 +19,7 @@ package main
 import (
 	"crypto/tls"
 	"flag"
+	"fmt"
 	"os"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -35,8 +36,9 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
+	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+
 	crewv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/crew/v1"
-	examplecomv1alpha1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/example.com/v1alpha1"
 	fizv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/fiz/v1"
 	foopolicyv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/foo.policy/v1"
 	foov1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/foo/v1"
@@ -46,13 +48,19 @@ import (
 	shipv1beta1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/ship/v1beta1"
 	shipv2alpha1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/ship/v2alpha1"
 	appscontroller "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/controller/apps"
+	certmanagercontroller "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/controller/certmanager"
 	crewcontroller "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/controller/crew"
-	examplecomcontroller "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/controller/example.com"
 	fizcontroller "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/controller/fiz"
 	foocontroller "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/controller/foo"
 	foopolicycontroller "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/controller/foo.policy"
 	seacreaturescontroller "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/controller/sea-creatures"
 	shipcontroller "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/controller/ship"
+
+	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/rest"
+
+	examplecomv1alpha1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/example.com/v1alpha1"
+	examplecomcontroller "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/controller/example.com"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -73,6 +81,7 @@ func init() {
 	utilruntime.Must(foopolicyv1.AddToScheme(scheme))
 	utilruntime.Must(foov1.AddToScheme(scheme))
 	utilruntime.Must(fizv1.AddToScheme(scheme))
+	utilruntime.Must(certmanagerv1.AddToScheme(scheme))
 	utilruntime.Must(examplecomv1alpha1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
@@ -267,6 +276,13 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Bar")
 		os.Exit(1)
 	}
+	if err = (&certmanagercontroller.CertificateReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Certificate")
+		os.Exit(1)
+	}
 	if err = (&examplecomcontroller.MemcachedReconciler{
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
@@ -292,6 +308,9 @@ func main() {
 	}
 	// +kubebuilder:scaffold:builder
 
+	checkAPIKindExists("Certificate")
+	// +kubebuilder:scaffold:check-external-api
+
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up health check")
 		os.Exit(1)
@@ -306,4 +325,40 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+// checkAPIKindExists checks if a specific kind is available on the cluster across all groups and versions.
+func checkAPIKindExists(kind string) {
+	cfg, err := rest.InClusterConfig() // If running outside the cluster, use ctrl.GetConfigOrDie()
+	if err != nil {
+		setupLog.Error(err, "Unable to get Kubernetes config")
+		os.Exit(1)
+	}
+
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(cfg)
+	if err != nil {
+		setupLog.Error(err, "Unable to create discovery client")
+		os.Exit(1)
+	}
+
+	// Discover API groups and resources available on the cluster
+	_, resources, err := discoveryClient.ServerGroupsAndResources()
+	if err != nil {
+		setupLog.Error(err, "Unable to discover API groups and resources")
+		os.Exit(1)
+	}
+
+	// Check if the kind exists across all groups and versions
+	for _, resourceList := range resources {
+		for _, resource := range resourceList.APIResources {
+			if resource.Kind == kind {
+				setupLog.Info("API kind is installed on the cluster", "kind", kind)
+				return
+			}
+		}
+	}
+
+	// Log an error if the kind is not found
+	setupLog.Error(nil, fmt.Sprintf("API kind is not available on the cluster (kind: %s)", kind))
+	os.Exit(1)
 }

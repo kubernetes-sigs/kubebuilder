@@ -19,6 +19,7 @@ package main
 import (
 	"crypto/tls"
 	"flag"
+	"fmt"
 	"os"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -35,8 +36,13 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
+	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+
 	crewv1 "sigs.k8s.io/kubebuilder/testdata/project-v4/api/v1"
 	"sigs.k8s.io/kubebuilder/testdata/project-v4/internal/controller"
+
+	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/rest"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -49,6 +55,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(crewv1.AddToScheme(scheme))
+	utilruntime.Must(certmanagerv1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -186,7 +193,17 @@ func main() {
 			os.Exit(1)
 		}
 	}
+	if err = (&controller.CertificateReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Certificate")
+		os.Exit(1)
+	}
 	// +kubebuilder:scaffold:builder
+
+	checkAPIKindExists("Certificate")
+	// +kubebuilder:scaffold:check-external-api
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up health check")
@@ -202,4 +219,40 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+// checkAPIKindExists checks if a specific kind is available on the cluster across all groups and versions.
+func checkAPIKindExists(kind string) {
+	cfg, err := rest.InClusterConfig() // If running outside the cluster, use ctrl.GetConfigOrDie()
+	if err != nil {
+		setupLog.Error(err, "Unable to get Kubernetes config")
+		os.Exit(1)
+	}
+
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(cfg)
+	if err != nil {
+		setupLog.Error(err, "Unable to create discovery client")
+		os.Exit(1)
+	}
+
+	// Discover API groups and resources available on the cluster
+	_, resources, err := discoveryClient.ServerGroupsAndResources()
+	if err != nil {
+		setupLog.Error(err, "Unable to discover API groups and resources")
+		os.Exit(1)
+	}
+
+	// Check if the kind exists across all groups and versions
+	for _, resourceList := range resources {
+		for _, resource := range resourceList.APIResources {
+			if resource.Kind == kind {
+				setupLog.Info("API kind is installed on the cluster", "kind", kind)
+				return
+			}
+		}
+	}
+
+	// Log an error if the kind is not found
+	setupLog.Error(nil, fmt.Sprintf("API kind is not available on the cluster (kind: %s)", kind))
+	os.Exit(1)
 }

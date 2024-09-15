@@ -275,11 +275,18 @@ func createAPI(resource resource.Resource) error {
 	args = append(args, "api")
 	args = append(args, getGVKFlags(resource)...)
 	args = append(args, getAPIResourceFlags(resource)...)
+
+	// Add the external API path flag if the resource is external
+	if resource.IsExternal() {
+		args = append(args, "--external-api-path", resource.Path)
+	}
+
 	return util.RunCmd("kubebuilder create api", "kubebuilder", args...)
 }
 
 func getAPIResourceFlags(resource resource.Resource) []string {
 	var args []string
+
 	if resource.API == nil || resource.API.IsEmpty() {
 		// create API without creating resource
 		args = append(args, "--resource=false")

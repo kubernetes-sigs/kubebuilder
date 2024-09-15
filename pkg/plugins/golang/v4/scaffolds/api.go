@@ -20,6 +20,8 @@ import (
 	"errors"
 	"fmt"
 
+	pluginutil "sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 
@@ -86,6 +88,7 @@ func (s *apiScaffolder) Scaffold() error {
 	// Keep track of these values before the update
 	doAPI := s.resource.HasAPI()
 	doController := s.resource.HasController()
+	doExternal := s.resource.IsExternal()
 
 	if err := s.config.UpdateResource(s.resource); err != nil {
 		return fmt.Errorf("error updating resource: %w", err)
@@ -116,5 +119,9 @@ func (s *apiScaffolder) Scaffold() error {
 		return fmt.Errorf("error updating cmd/main.go: %v", err)
 	}
 
+	if doExternal {
+		_ = pluginutil.ReplaceInFile("cmd/main.go",
+			"// +kubebuilder:scaffold:add-method-check-external-api", "")
+	}
 	return nil
 }

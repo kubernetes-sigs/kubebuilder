@@ -47,6 +47,8 @@ func (f *Main) SetTemplateDefaults() error {
 		machinery.NewMarkerFor(f.Path, importMarker),
 		machinery.NewMarkerFor(f.Path, addSchemeMarker),
 		machinery.NewMarkerFor(f.Path, setupMarker),
+		machinery.NewMarkerFor(f.Path, checkExternalAPIMarker),
+		machinery.NewMarkerFor(f.Path, addMethodCheckExternalAPIMarker),
 	)
 
 	return nil
@@ -75,9 +77,11 @@ func (*MainUpdater) GetIfExistsAction() machinery.IfExistsAction {
 }
 
 const (
-	importMarker    = "imports"
-	addSchemeMarker = "scheme"
-	setupMarker     = "builder"
+	importMarker                    = "imports"
+	addSchemeMarker                 = "scheme"
+	setupMarker                     = "builder"
+	checkExternalAPIMarker          = "check-external-api"
+	addMethodCheckExternalAPIMarker = "add-method-check-external-api"
 )
 
 // GetMarkers implements file.Inserter
@@ -86,6 +90,8 @@ func (f *MainUpdater) GetMarkers() []machinery.Marker {
 		machinery.NewMarkerFor(defaultMainPath, importMarker),
 		machinery.NewMarkerFor(defaultMainPath, addSchemeMarker),
 		machinery.NewMarkerFor(defaultMainPath, setupMarker),
+		machinery.NewMarkerFor(defaultMainPath, checkExternalAPIMarker),
+		machinery.NewMarkerFor(defaultMainPath, addMethodCheckExternalAPIMarker),
 	}
 }
 
@@ -122,11 +128,53 @@ const (
 		}
 	}
 `
+
+	checkAPIKindExistsCodeFragment = `checkAPIKindExists("%s")
+`
+
+	// nolint:lll
+	checkAPIKindExistsMethodCodeFragment = `// checkAPIKindExists checks if a specific kind is available on the cluster across all groups and versions.
+func checkAPIKindExists(kind string) {
+    cfg, err := rest.InClusterConfig() // If running outside the cluster, use ctrl.GetConfigOrDie()
+    if err != nil {
+        setupLog.Error(err, "Unable to get Kubernetes config")
+        os.Exit(1)
+    }
+
+    discoveryClient, err := discovery.NewDiscoveryClientForConfig(cfg)
+    if err != nil {
+        setupLog.Error(err, "Unable to create discovery client")
+        os.Exit(1)
+    }
+
+    // Discover API groups and resources available on the cluster
+    _, resources, err := discoveryClient.ServerGroupsAndResources()
+    if err != nil {
+        setupLog.Error(err, "Unable to discover API groups and resources")
+        os.Exit(1)
+    }
+
+    // Check if the kind exists across all groups and versions
+    for _, resourceList := range resources {
+        for _, resource := range resourceList.APIResources {
+            if resource.Kind == kind {
+                setupLog.Info("API kind is installed on the cluster", "kind", kind)
+                return
+            }
+        }
+    }
+
+    // Log an error if the kind is not found
+    setupLog.Error(nil, fmt.Sprintf("API kind is not available on the cluster (kind: %s)", kind))
+    os.Exit(1)
+}
+
+`
 )
 
 // GetCodeFragments implements file.Inserter
 func (f *MainUpdater) GetCodeFragments() machinery.CodeFragmentsMap {
-	fragments := make(machinery.CodeFragmentsMap, 3)
+	fragments := make(machinery.CodeFragmentsMap, 5)
 
 	// If resource is not being provided we are creating the file, not updating it
 	if f.Resource == nil {
@@ -135,7 +183,7 @@ func (f *MainUpdater) GetCodeFragments() machinery.CodeFragmentsMap {
 
 	// Generate import code fragments
 	imports := make([]string, 0)
-	if f.WireResource {
+	if f.WireResource || f.Resource.IsExternal() {
 		imports = append(imports, fmt.Sprintf(apiImportCodeFragment, f.Resource.ImportAlias(), f.Resource.Path))
 	}
 
@@ -148,9 +196,17 @@ func (f *MainUpdater) GetCodeFragments() machinery.CodeFragmentsMap {
 		}
 	}
 
+	// Append necessary imports for discovery and rest clients for external types
+	if f.Resource.IsExternal() {
+		imports = append(imports, `
+        "k8s.io/client-go/discovery"
+        "k8s.io/client-go/rest"
+        `)
+	}
+
 	// Generate add scheme code fragments
 	addScheme := make([]string, 0)
-	if f.WireResource {
+	if f.WireResource || f.Resource.IsExternal() {
 		addScheme = append(addScheme, fmt.Sprintf(addschemeCodeFragment, f.Resource.ImportAlias()))
 	}
 
@@ -170,6 +226,11 @@ func (f *MainUpdater) GetCodeFragments() machinery.CodeFragmentsMap {
 			f.Resource.ImportAlias(), f.Resource.Kind, f.Resource.Kind))
 	}
 
+	externalCheck := make([]string, 0)
+	if f.Resource.IsExternal() {
+		externalCheck = append(externalCheck, fmt.Sprintf(checkAPIKindExistsCodeFragment, f.Resource.Kind))
+	}
+
 	// Only store code fragments in the map if the slices are non-empty
 	if len(imports) != 0 {
 		fragments[machinery.NewMarkerFor(defaultMainPath, importMarker)] = imports
@@ -179,6 +240,11 @@ func (f *MainUpdater) GetCodeFragments() machinery.CodeFragmentsMap {
 	}
 	if len(setup) != 0 {
 		fragments[machinery.NewMarkerFor(defaultMainPath, setupMarker)] = setup
+	}
+	if len(externalCheck) != 0 {
+		fragments[machinery.NewMarkerFor(defaultMainPath, checkExternalAPIMarker)] = externalCheck
+		fragments[machinery.NewMarkerFor(defaultMainPath,
+			addMethodCheckExternalAPIMarker)] = []string{checkAPIKindExistsMethodCodeFragment}
 	}
 
 	return fragments
@@ -319,6 +385,8 @@ func main() {
 
 	%s
 
+	%s
+
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up health check")
 		os.Exit(1)
@@ -334,4 +402,7 @@ func main() {
 		os.Exit(1)
 	}
 }
+
+%s
+
 `

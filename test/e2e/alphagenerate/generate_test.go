@@ -147,6 +147,18 @@ func ReGenerateProject(kbc *utils.TestContext) {
 	)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
+	By("creating an external API with cert-manager")
+	err = kbc.CreateAPI(
+		"--group", "certmanager",
+		"--version", "v1",
+		"--kind", "Certificate",
+		"--controller=true",
+		"--resource=false",
+		"--make=false",
+		"--external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1",
+	)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+
 	By("Enable grafana plugin to an existing project")
 	err = kbc.Edit(
 		"--plugins", "grafana.kubebuilder.io/v1-alpha",
@@ -267,4 +279,16 @@ func ReGenerateProject(kbc *utils.TestContext) {
 	bytesAfter, err := os.ReadFile(generatedGrafanaConfigPath)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(bytesBefore).Should(Equal(bytesAfter))
+
+	By("checking if the project file was generated with the expected external API path")
+	var externalAPI = `- controller: true
+  domain: ` + kbc.Domain + `
+  external: true
+  group: certmanager
+  kind: Certificate
+  path: github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1`
+	fileContainsExpr, err = pluginutil.HasFileContentWith(
+		filepath.Join(kbc.Dir, "testdir2", "PROJECT"), externalAPI)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	ExpectWithOffset(1, fileContainsExpr).To(BeTrue())
 }

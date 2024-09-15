@@ -192,6 +192,8 @@ func main() {
 	/*
 	 */
 
+	// +kubebuilder:scaffold:check-external-api
+
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up health check")
 		os.Exit(1)
@@ -208,3 +210,5 @@ func main() {
 	}
 	// +kubebuilder:docs-gen:collapse=existing setup
 }
+
+// +kubebuilder:scaffold:add-method-check-external-api

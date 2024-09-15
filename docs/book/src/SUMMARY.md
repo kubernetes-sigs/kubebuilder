@@ -102,7 +102,7 @@
   - [Manager and CRDs Scope](./reference/scopes.md)
 
   - [Sub-Module Layouts](./reference/submodule-layouts.md)
-  - [Using an external Type / API](./reference/using_an_external_type.md)
+  - [Using an external Resource / API](./reference/using_an_external_resource.md)
 
   - [Configuring EnvTest](./reference/envtest.md)
 
