@@ -160,6 +160,8 @@ The following meetings happen biweekly:
 
 You are more than welcome to attend. For further info join to [kubebuilder@googlegroups.com](https://groups.google.com/g/kubebuilder).
 Every month, our team meets on the first Thursday at 11:00 PT (Pacific Time) to discuss our progress and plan for the upcoming weeks.
+Please note that we have been syncing more frequently offline via Slack lately. However, if you add a topic to the agenda, we will hold the meeting as scheduled.
+Additionally, we can use this channel to demonstrate new features.
 
 [operator-sdk]: https://github.com/operator-framework/operator-sdk
 [plugin-section]: https://book.kubebuilder.io/plugins/plugins.html
