@@ -305,7 +305,7 @@ by the users.
 
 #### Setting Manager to Watching Resources
 
-The whole idea is to be [Watching][watching-resources] the resources that matter for the controller.
+The whole idea is to be Watching the resources that matter for the controller.
 When a resource that the controller is interested in changes, the Watch triggers the controller's
 reconciliation loop, ensuring that the actual state of the resource matches the desired state
 as defined in the controller's logic.
@@ -427,7 +427,6 @@ implemented for your controller.
 [group-kind-oh-my]: ./cronjob-tutorial/gvks.md
 [controller-gen]: ./reference/controller-gen.md
 [markers]: ./reference/markers.md
-[watches]: ./reference/watching-resources.md
 [rbac-markers]: ./reference/markers/rbac.md
 [k8s-rbac]: https://kubernetes.io/docs/reference/access-authn-authz/rbac/
 [manager]: https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/manager
@@ -438,4 +437,3 @@ implemented for your controller.
 [deploy-image]: ./plugins/deploy-image-plugin-v1-alpha.md
 [GOPATH-golang-docs]: https://golang.org/doc/code.html#GOPATH
 [go-modules-blogpost]: https://blog.golang.org/using-go-modules
-[watching-resources]: ./reference/watching-resources
