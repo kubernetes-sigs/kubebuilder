@@ -5,9 +5,11 @@ This part describes how to modify a scaffolded project for use with multiple `go
 Sub-Module Layouts (in a way you could call them a special form of [Monorepo's][monorepo]) are a special use case and can help in scenarios that involve reuse of APIs without introducing indirect dependencies that should not be available in the project consuming the API externally.
 
 <aside class="note">
-<h1>Using external Types</h1>
+<h1>Using External Resources/APIs</h1>
 
-If you are looking to do operations and reconcile via a controller a Type(CRD) which are owned by another project then, please see [Using an external Type](/reference/using_an_external_type.md) for more info.
+If you are looking to do operations and reconcile via a controller a Type(CRD) which are owned by another project
+or By Kubernetes API then, please see [Using an external Resources/API](/reference/using_an_external_type.md)
+for more info.
 
 </aside>
 

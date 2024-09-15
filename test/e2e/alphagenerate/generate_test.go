@@ -152,6 +152,18 @@ func generateProject(kbc *utils.TestContext) {
 	)
 	Expect(err).NotTo(HaveOccurred(), "Failed to scaffold API with namespaced true")
 
+	By("creating an external API with cert-manager")
+	err = kbc.CreateAPI(
+		"--group", "certmanager",
+		"--version", "v1",
+		"--kind", "Certificate",
+		"--controller=true",
+		"--resource=false",
+		"--make=false",
+		"--external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1",
+		"--external-api-domain=cert-manager.io",
+	)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 }
 
 func regenerateProject(kbc *utils.TestContext, projectOutputDir string) {
@@ -247,6 +259,23 @@ func validateProjectFile(kbc *utils.TestContext, projectFile string) {
 	Expect(captainResource.Controller).To(BeTrue(), "Captain API should have a controller")
 	Expect(captainResource.API.Namespaced).To(BeTrue(), "Captain API should be namespaced")
 	Expect(captainResource.Webhooks).To(BeNil(), "Capitan API should not have webhooks")
+
+	By("validating the External API with kind Certificate from certManager")
+	certmanagerGVK := resource.GVK{
+		Group:   "certmanager",
+		Domain:  "cert-manager.io",
+		Version: "v1",
+		Kind:    "Certificate",
+	}
+	Expect(projectConfig.HasResource(certmanagerGVK)).To(BeTrue(),
+		"Certificate Resource should be present in the PROJECT file")
+	certmanagerResource, err := projectConfig.GetResource(certmanagerGVK)
+	Expect(err).NotTo(HaveOccurred(), "Captain API should be retrievable")
+	Expect(certmanagerResource.Controller).To(BeTrue(), "Certificate API should have a controller")
+	Expect(certmanagerResource.API).To(BeNil(), "Certificate API should not have API scaffold")
+	Expect(certmanagerResource.Webhooks).To(BeNil(), "Certificate API should not have webhooks")
+	Expect(certmanagerResource.Path).To(Equal("github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"),
+		"Certificate API should have expected path")
 }
 
 func getConfigFromProjectFile(projectFilePath string) config.Config {

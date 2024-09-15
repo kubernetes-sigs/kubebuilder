@@ -125,6 +125,13 @@ resources:
   kind: Bar
   path: sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/fiz/v1
   version: v1
+- controller: true
+  domain: cert-manager.io
+  external: true
+  group: certmanager
+  kind: Certificate
+  path: github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1
+  version: v1
 - api:
     crdVersion: v1
     namespaced: true

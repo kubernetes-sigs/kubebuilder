@@ -35,7 +35,7 @@
   - [Platform Support](platform.md)
 
   - [Sub-Module Layouts](submodule-layouts.md)
-  - [Using an external Type / API](using_an_external_type.md)
+  - [Using an external Resource / API](using_an_external_resource.md)
 
   - [Metrics](metrics.md)
       - [Reference](metrics-reference.md)
