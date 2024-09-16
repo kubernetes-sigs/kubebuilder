@@ -44,6 +44,8 @@ type WebhookSuite struct { //nolint:maligned
 
 	// BaseDirectoryRelativePath define the Path for the base directory when it is multigroup
 	BaseDirectoryRelativePath string
+
+	ExternalAPI bool
 }
 
 // SetTemplateDefaults implements file.Template
@@ -102,6 +104,11 @@ const (
 Expect(err).NotTo(HaveOccurred())
 
 `
+
+	addWebhookExternalManagerCodeFragment = `err = SetupWebhookFor%sWithManager(mgr)
+Expect(err).NotTo(HaveOccurred())
+
+`
 )
 
 // GetCodeFragments implements file.Inserter
@@ -117,7 +124,11 @@ func (f *WebhookSuite) GetCodeFragments() machinery.CodeFragmentsMap {
 
 	// Generate add webhookManager code fragments
 	addWebhookManager := make([]string, 0)
-	addWebhookManager = append(addWebhookManager, fmt.Sprintf(addWebhookManagerCodeFragment, f.Resource.Kind))
+	if f.ExternalAPI {
+		addWebhookManager = append(addWebhookManager, fmt.Sprintf(addWebhookExternalManagerCodeFragment, f.Resource.Kind))
+	} else {
+		addWebhookManager = append(addWebhookManager, fmt.Sprintf(addWebhookManagerCodeFragment, f.Resource.Kind))
+	}
 
 	// Only store code fragments in the map if the slices are non-empty
 	if len(addWebhookManager) != 0 {
@@ -159,6 +170,9 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	{{- if .ExternalAPI }}
+	{{ .Resource.ImportAlias }} "{{ .Resource.Path }}"
+	{{- end }}
 )
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
@@ -208,7 +222,11 @@ var _ = BeforeSuite(func() {
 	Expect(cfg).NotTo(BeNil())
 
 	scheme := apimachineryruntime.NewScheme()
+	{{- if .ExternalAPI }}
+	err = {{- .Resource.ImportAlias }}.AddToScheme(scheme)
+	{{- else }}
 	err = AddToScheme(scheme)
+	{{- end }}
 	Expect(err).NotTo(HaveOccurred())
 
 	err = %s.AddToScheme(scheme)

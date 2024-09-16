@@ -35,6 +35,8 @@ type WebhookTest struct { // nolint:maligned
 	machinery.BoilerplateMixin
 	machinery.ResourceMixin
 
+	ExternalAPI bool
+
 	Force bool
 }
 
@@ -77,17 +79,28 @@ package {{ .Resource.Version }}
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	{{- if .ExternalAPI }}
+	{{ .Resource.ImportAlias }} "{{ .Resource.Path }}"
+	{{- end }}
 
 	// TODO (user): Add any additional imports if needed
 )
 
 var _ = Describe("{{ .Resource.Kind }} Webhook", func() {
 	var (
+		{{- if .ExternalAPI }}
+		obj *{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}
+		{{- else }}
 		obj *{{ .Resource.Kind }}
+		{{- end }}
 	)
 
 	BeforeEach(func() {
+		{{- if .ExternalAPI }}
+		obj = &{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{}
+		{{- else }}
 		obj = &{{ .Resource.Kind }}{}
+		{{- end }}
 		Expect(obj).NotTo(BeNil(), "Expected obj to be initialized")
 
 		// TODO (user): Add any setup logic common to all tests
@@ -106,7 +119,11 @@ Context("When creating {{ .Resource.Kind }} under Conversion Webhook", func() {
 	// TODO (user): Add logic to convert the object to the desired version and verify the conversion
 	// Example:
 	// It("Should convert the object correctly", func() {
+	{{- if .ExternalAPI }}
+	//     convertedObj := &{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{}
+	{{- else }}
 	//     convertedObj := &{{ .Resource.Kind }}{}
+	{{- end }}
 	//     Expect(obj.ConvertTo(convertedObj)).To(Succeed())
 	//     Expect(convertedObj).ToNot(BeNil())
 	// })

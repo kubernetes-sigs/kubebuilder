@@ -90,7 +90,8 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 
 	if opts.DoDefaulting || opts.DoValidation || opts.DoConversion {
 		//nolint:staticcheck
-		res.Path = resource.APIPackagePath(c.GetRepository(), res.Group, res.Version, c.IsMultiGroup())
+		loadedRes, _ := c.GetResource(res.GVK)
+		res.Path = loadedRes.Path
 
 		res.Webhooks.WebhookVersion = "v1"
 		if opts.DoDefaulting {

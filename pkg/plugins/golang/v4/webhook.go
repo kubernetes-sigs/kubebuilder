@@ -96,11 +96,16 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 			" --programmatic-validation and --conversion to be true", p.commandName)
 	}
 
-	// check if resource exist to create webhook
-	if r, err := p.config.GetResource(p.resource.GVK); err != nil {
-		return fmt.Errorf("%s create webhook requires a previously created API ", p.commandName)
-	} else if r.Webhooks != nil && !r.Webhooks.IsEmpty() && !p.force {
+	if p.force {
+		return nil
+	}
+
+	r, err := p.config.GetResource(p.resource.GVK)
+	if err == nil && r.Webhooks != nil && !r.Webhooks.IsEmpty() {
 		return fmt.Errorf("webhook resource already exists")
+	}
+	if err == nil && r.API == nil || err != nil && res.Path == "" {
+		return fmt.Errorf("%s create webhook requires a previously created API or a core API", p.commandName)
 	}
 
 	return nil

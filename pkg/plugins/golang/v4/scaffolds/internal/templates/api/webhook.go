@@ -40,6 +40,10 @@ type Webhook struct { // nolint:maligned
 	// Define value for AdmissionReviewVersions marker
 	AdmissionReviewVersions string
 
+	// If the webhook is for an external resource. External resources need to be
+	// imported.
+	ExternalAPI bool
+
 	Force bool
 }
 
@@ -97,6 +101,9 @@ import (
 	{{- if .Resource.HasValidationWebhook }}
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 	{{- end }}
+	{{- if .ExternalAPI }}
+	{{ .Resource.ImportAlias }} "{{ .Resource.Path }}"
+	{{- end }}
 )
 
 // nolint:unused
@@ -104,9 +111,17 @@ import (
 var {{ lower .Resource.Kind }}log = logf.Log.WithName("{{ lower .Resource.Kind }}-resource")
 
 // SetupWebhookWithManager will setup the manager to manage the webhooks.
+{{- if .ExternalAPI }}
+func SetupWebhookFor{{ .Resource.Kind }}WithManager(mgr ctrl.Manager) error {
+{{- else }}
 func (r *{{ .Resource.Kind }}) SetupWebhookWithManager(mgr ctrl.Manager) error {
+{{- end }}
 	return ctrl.NewWebhookManagedBy(mgr).
+		{{- if .ExternalAPI }}
+		For(&{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{}).
+		{{- else }}
 		For(r).
+		{{- end }}
 		{{- if .Resource.HasValidationWebhook }}
 		WithValidator(&{{ .Resource.Kind }}CustomValidator{}).
 		{{- end }}
@@ -137,7 +152,11 @@ var _ webhook.CustomDefaulter = &{{ .Resource.Kind }}CustomDefaulter{}
 
 // Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind {{ .Resource.Kind }}.
 func (d *{{ .Resource.Kind }}CustomDefaulter) Default(ctx context.Context, obj runtime.Object) error {
+	{{- if .ExternalAPI }}
+	{{ lower .Resource.Kind }}, ok := obj.(*{{ .Resource.ImportAlias }}.{{ .Resource.Kind }})
+	{{- else }}
 	{{ lower .Resource.Kind }}, ok := obj.(*{{ .Resource.Kind }})
+	{{- end }}
 	if !ok {
 		return fmt.Errorf("expected an {{ .Resource.Kind }} object but got %T", obj)
 	}	
@@ -170,7 +189,11 @@ var _ webhook.CustomValidator = &{{ .Resource.Kind }}CustomValidator{}
 
 // ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type {{ .Resource.Kind }}.
 func (v *{{ .Resource.Kind }}CustomValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	{{- if .ExternalAPI }}
+	{{ lower .Resource.Kind }}, ok := obj.(*{{ .Resource.ImportAlias }}.{{ .Resource.Kind }})
+	{{- else }}
 	{{ lower .Resource.Kind }}, ok := obj.(*{{ .Resource.Kind }})
+	{{- end }}
 	if !ok {
 		return nil, fmt.Errorf("expected a {{ .Resource.Kind }} object but got %T", obj)
 	}
@@ -183,7 +206,11 @@ func (v *{{ .Resource.Kind }}CustomValidator) ValidateCreate(ctx context.Context
 
 // ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type {{ .Resource.Kind }}.
 func (v *{{ .Resource.Kind }}CustomValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+	{{- if .ExternalAPI }}
+	{{ lower .Resource.Kind }}, ok := newObj.(*{{ .Resource.ImportAlias }}.{{ .Resource.Kind }})
+	{{- else }}
 	{{ lower .Resource.Kind }}, ok := newObj.(*{{ .Resource.Kind }})
+	{{- end }}
 	if !ok {
 		return nil, fmt.Errorf("expected a {{ .Resource.Kind }} object but got %T", newObj)
 	}
@@ -196,7 +223,11 @@ func (v *{{ .Resource.Kind }}CustomValidator) ValidateUpdate(ctx context.Context
 
 // ValidateDelete implements webhook.CustomValidator so a webhook will be registered for the type {{ .Resource.Kind }}.
 func (v *{{ .Resource.Kind }}CustomValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	{{- if .ExternalAPI }}
+	{{ lower .Resource.Kind }}, ok := obj.(*{{ .Resource.ImportAlias }}.{{ .Resource.Kind }})
+	{{- else }}
 	{{ lower .Resource.Kind }}, ok := obj.(*{{ .Resource.Kind }})
+	{{- end }}
 	if !ok {
 		return nil, fmt.Errorf("expected a {{ .Resource.Kind }} object but got %T", obj)
 	}

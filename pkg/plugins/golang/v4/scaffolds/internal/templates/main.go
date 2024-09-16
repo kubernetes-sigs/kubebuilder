@@ -21,6 +21,7 @@ import (
 	"path/filepath"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 )
 
 const defaultMainPath = "cmd/main.go"
@@ -62,6 +63,7 @@ type MainUpdater struct { //nolint:maligned
 
 	// Flags to indicate which parts need to be included when updating the file
 	WireResource, WireController, WireWebhook bool
+	ExternalAPI                               bool
 }
 
 // GetPath implements file.Builder
@@ -122,6 +124,15 @@ const (
 		}
 	}
 `
+
+	webhookExternalSetupCodeFragment = `// nolint:goconst
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err = %s.SetupWebhookFor%sWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "%s")
+			os.Exit(1)
+		}
+	}
+`
 )
 
 // GetCodeFragments implements file.Inserter
@@ -165,8 +176,14 @@ func (f *MainUpdater) GetCodeFragments() machinery.CodeFragmentsMap {
 				f.Resource.PackageName(), f.Resource.Kind, f.Resource.Kind))
 		}
 	}
-	if f.WireWebhook {
+	if f.WireWebhook && !f.ExternalAPI {
 		setup = append(setup, fmt.Sprintf(webhookSetupCodeFragment,
+			f.Resource.ImportAlias(), f.Resource.Kind, f.Resource.Kind))
+	}
+	if f.WireWebhook && f.ExternalAPI {
+		path := resource.APIPackagePath(f.Repo, f.Resource.Group, f.Resource.Version, f.MultiGroup)
+		imports = append(imports, fmt.Sprintf(apiImportCodeFragment, f.Resource.ImportAlias(), path))
+		setup = append(setup, fmt.Sprintf(webhookExternalSetupCodeFragment,
 			f.Resource.ImportAlias(), f.Resource.Kind, f.Resource.Kind))
 	}
 

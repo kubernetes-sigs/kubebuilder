@@ -18,6 +18,7 @@ package scaffolds
 
 import (
 	"fmt"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
@@ -85,11 +86,13 @@ func (s *webhookScaffolder) Scaffold() error {
 		return fmt.Errorf("error updating resource: %w", err)
 	}
 
+	externalAPI := !strings.HasPrefix(s.resource.Path, s.config.GetRepository())
+
 	if err := scaffold.Execute(
-		&api.Webhook{Force: s.force},
+		&api.Webhook{Force: s.force, ExternalAPI: externalAPI},
 		&e2e.WebhookTestUpdater{WireWebhook: true},
-		&templates.MainUpdater{WireWebhook: true},
-		&api.WebhookTest{Force: s.force},
+		&templates.MainUpdater{WireWebhook: true, ExternalAPI: externalAPI},
+		&api.WebhookTest{Force: s.force, ExternalAPI: externalAPI},
 	); err != nil {
 		return err
 	}
@@ -102,7 +105,7 @@ You need to implement the conversion.Hub and conversion.Convertible interfaces f
 	// TODO: Add test suite for conversion webhook after #1664 has been merged & conversion tests supported in envtest.
 	if doDefaulting || doValidation {
 		if err := scaffold.Execute(
-			&api.WebhookSuite{K8SVersion: EnvtestK8SVersion},
+			&api.WebhookSuite{K8SVersion: EnvtestK8SVersion, ExternalAPI: externalAPI},
 		); err != nil {
 			return err
 		}
