@@ -43,6 +43,8 @@ const metricsServiceName = "project-controller-manager-metrics-service"
 const metricsRoleBindingName = "project-metrics-binding"
 
 var _ = Describe("Manager", Ordered, func() {
+	var controllerPodName string
+
 	// Before running the tests, set up the environment by creating the namespace,
 	// installing CRDs, and deploying the controller.
 	BeforeAll(func() {
@@ -82,12 +84,53 @@ var _ = Describe("Manager", Ordered, func() {
 		_, _ = utils.Run(cmd)
 	})
 
+	// After each test, check for failures and collect logs, events,
+	// and pod descriptions for debugging.
+	AfterEach(func() {
+		specReport := CurrentSpecReport()
+		if specReport.Failed() {
+			By("Fetching controller manager pod logs")
+			cmd := exec.Command("kubectl", "logs", controllerPodName, "-n", namespace)
+			controllerLogs, err := utils.Run(cmd)
+			if err == nil {
+				_, _ = fmt.Fprintf(GinkgoWriter, fmt.Sprintf("Controller logs:\n %s", controllerLogs))
+			} else {
+				_, _ = fmt.Fprintf(GinkgoWriter, fmt.Sprintf("Failed to get Controller logs: %s", err))
+			}
+
+			By("Fetching Kubernetes events")
+			cmd = exec.Command("kubectl", "get", "events", "-n", namespace, "--sort-by=.lastTimestamp")
+			eventsOutput, err := utils.Run(cmd)
+			if err == nil {
+				_, _ = fmt.Fprintf(GinkgoWriter, fmt.Sprintf("Kubernetes events:\n%s", eventsOutput))
+			} else {
+				_, _ = fmt.Fprintf(GinkgoWriter, fmt.Sprintf("Failed to get Kubernetes events: %s", err))
+			}
+
+			By("Fetching curl-metrics logs")
+			cmd = exec.Command("kubectl", "logs", "curl-metrics", "-n", namespace)
+			metricsOutput, err := utils.Run(cmd)
+			if err == nil {
+				_, _ = fmt.Fprintf(GinkgoWriter, fmt.Sprintf("Metrics logs:\n %s", metricsOutput))
+			} else {
+				_, _ = fmt.Fprintf(GinkgoWriter, fmt.Sprintf("Failed to get curl-metrics logs: %s", err))
+			}
+
+			By("Fetching controller manager pod description")
+			cmd = exec.Command("kubectl", "describe", "pod", controllerPodName, "-n", namespace)
+			podDescription, err := utils.Run(cmd)
+			if err == nil {
+				fmt.Println("Pod description:\n", podDescription)
+			} else {
+				fmt.Println("Failed to describe controller pod")
+			}
+		}
+	})
+
 	SetDefaultEventuallyTimeout(2 * time.Minute)
 	SetDefaultEventuallyPollingInterval(time.Second)
 
-	// The Context block contains the actual tests that validate the manager's behavior.
 	Context("Manager", func() {
-		var controllerPodName string
 		It("should run successfully", func() {
 			By("validating that the controller-manager pod is running as expected")
 			verifyControllerUp := func(g Gomega) {
@@ -103,7 +146,7 @@ var _ = Describe("Manager", Ordered, func() {
 
 				podOutput, err := utils.Run(cmd)
 				g.Expect(err).NotTo(HaveOccurred(), "Failed to retrieve controller-manager pod information")
-				podNames := utils.GetNonEmptyLines(string(podOutput))
+				podNames := utils.GetNonEmptyLines(podOutput)
 				g.Expect(podNames).To(HaveLen(1), "expected 1 controller pod running")
 				controllerPodName = podNames[0]
 				g.Expect(controllerPodName).To(ContainSubstring("controller-manager"))
@@ -115,9 +158,8 @@ var _ = Describe("Manager", Ordered, func() {
 				)
 				output, err := utils.Run(cmd)
 				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(string(output)).To(BeEquivalentTo("Running"), "Incorrect controller-manager pod status")
+				g.Expect(output).To(Equal("Running"), "Incorrect controller-manager pod status")
 			}
-			// Repeatedly check if the controller-manager pod is running until it succeeds or times out.
 			Eventually(verifyControllerUp).Should(Succeed())
 		})
 
@@ -150,7 +192,7 @@ var _ = Describe("Manager", Ordered, func() {
 				cmd := exec.Command("kubectl", "get", "endpoints", metricsServiceName, "-n", namespace)
 				output, err := utils.Run(cmd)
 				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(string(output)).To(ContainSubstring("8443"), "Metrics endpoint is not ready")
+				g.Expect(output).To(ContainSubstring("8443"), "Metrics endpoint is not ready")
 			}
 			Eventually(verifyMetricsEndpointReady).Should(Succeed())
 
@@ -159,7 +201,7 @@ var _ = Describe("Manager", Ordered, func() {
 				cmd := exec.Command("kubectl", "logs", controllerPodName, "-n", namespace)
 				output, err := utils.Run(cmd)
 				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(string(output)).To(ContainSubstring("controller-runtime.metrics\tServing metrics server"),
+				g.Expect(output).To(ContainSubstring("controller-runtime.metrics\tServing metrics server"),
 					"Metrics server not yet started")
 			}
 			Eventually(verifyMetricsServerStarted).Should(Succeed())
@@ -181,7 +223,7 @@ var _ = Describe("Manager", Ordered, func() {
 					"-n", namespace)
 				output, err := utils.Run(cmd)
 				g.Expect(err).NotTo(HaveOccurred())
-				g.Expect(string(output)).To(Equal("Succeeded"), "curl pod in wrong status")
+				g.Expect(output).To(Equal("Succeeded"), "curl pod in wrong status")
 			}
 			Eventually(verifyCurlUp, 5*time.Minute).Should(Succeed())
 
@@ -223,7 +265,6 @@ func serviceAccountToken() (string, error) {
 	}
 
 	var out string
-	var rawJson string
 	verifyTokenCreation := func(g Gomega) {
 		// Execute kubectl command to create the token
 		cmd := exec.Command("kubectl", "create", "--raw", fmt.Sprintf(
@@ -235,11 +276,9 @@ func serviceAccountToken() (string, error) {
 		output, err := cmd.CombinedOutput()
 		g.Expect(err).NotTo(HaveOccurred())
 
-		rawJson = string(output)
-
 		// Parse the JSON output to extract the token
 		var token tokenRequest
-		err = json.Unmarshal([]byte(rawJson), &token)
+		err = json.Unmarshal([]byte(output), &token)
 		g.Expect(err).NotTo(HaveOccurred())
 
 		out = token.Status.Token
@@ -255,9 +294,8 @@ func getMetricsOutput() string {
 	cmd := exec.Command("kubectl", "logs", "curl-metrics", "-n", namespace)
 	metricsOutput, err := utils.Run(cmd)
 	Expect(err).NotTo(HaveOccurred(), "Failed to retrieve logs from curl pod")
-	metricsOutputStr := string(metricsOutput)
-	Expect(metricsOutputStr).To(ContainSubstring("< HTTP/1.1 200 OK"))
-	return metricsOutputStr
+	Expect(metricsOutput).To(ContainSubstring("< HTTP/1.1 200 OK"))
+	return metricsOutput
 }
 
 // tokenRequest is a simplified representation of the Kubernetes TokenRequest API response,
