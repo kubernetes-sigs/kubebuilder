@@ -26,6 +26,7 @@
       - [Webhook](markers/webhook.md)
       - [Object/DeepCopy](markers/object.md)
       - [RBAC](markers/rbac.md)
+      - [Scaffold](markers/scaffold.md)
 
   - [Monitoring with Pprof](pprof-tutorial.md)
   - [controller-gen CLI](controller-gen.md)
