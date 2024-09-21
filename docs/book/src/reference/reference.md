@@ -7,9 +7,9 @@
     Kubernetes cluster.
   - [Watching Resources](watching-resources.md)
     Watch resources in the Kubernetes cluster to be informed and take actions on changes.
-      - [Resources Managed by the Operator](watching-resources/operator-managed.md)
-      - [Externally Managed Resources](watching-resources/externally-managed.md)
-        Controller Runtime provides the ability to watch additional resources relevant to the controlled ones.
+      - [Watching Secondary Resources that are `Owned` ](watching-resources/secondary-owned-resources.md)
+      - [Watching Secondary Resources that are NOT `Owned`](watching-resources/secondary-resources-not-owned)
+      - [Using Predicates to Refine Watches](watching-resources/predicates-with-watch.md)
   - [Kind cluster](kind.md)
   - [What's a webhook?](webhook-overview.md)
     Webhooks are HTTP callbacks, there are 3
