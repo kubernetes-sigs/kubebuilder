@@ -15,14 +15,13 @@ package alpha
 
 import (
 	log "github.com/sirupsen/logrus"
-
 	"github.com/spf13/cobra"
-	"sigs.k8s.io/kubebuilder/v4/pkg/rescaffold"
+	"sigs.k8s.io/kubebuilder/v4/pkg/cli/alpha/internal"
 )
 
 // NewScaffoldCommand return a new scaffold command
 func NewScaffoldCommand() *cobra.Command {
-	opts := rescaffold.MigrateOptions{}
+	opts := internal.Generate{}
 	scaffoldCmd := &cobra.Command{
 		Use:   "generate",
 		Short: "Re-scaffold an existing Kuberbuilder project",
@@ -36,8 +35,8 @@ Then we will re-scaffold the project by Kubebuilder in the directory specified b
 			return opts.Validate()
 		},
 		Run: func(_ *cobra.Command, _ []string) {
-			if err := opts.Rescaffold(); err != nil {
-				log.Fatalf("Failed to rescaffold %s", err)
+			if err := opts.Generate(); err != nil {
+				log.Fatalf("Failed to command %s", err)
 			}
 		},
 	}
