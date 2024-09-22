@@ -1,25 +1,24 @@
-## To help projects using Kubebuilder as Lib to composite new solutions and plugins
+## To be extended
 
-<aside class="note">
+The following plugins are useful for other tools and [External Plugins][external-plugins] which are looking to extend the
+Kubebuilder functionality.
 
-<h1>You can also create your own plugins, see:</h1>
+You can use the kustomize plugin, which is responsible for scaffolding the
+kustomize files under `config/`. The base language plugins are responsible
+for scaffolding the necessary Golang files, allowing you to create your
+own plugins for other languages (e.g., [Operator-SDK][sdk] enables
+users to work with Ansible/Helm) or add additional functionality.
 
-- [Creating your own plugins][create-plugins].
+For example, [Operator-SDK][sdk] has a plugin which integrates the
+projects with [OLM][olm] by adding its own features on top.
 
-</aside>
+| Plugin                                                 | Key                         | Description                                                                                                                                     |
+|--------------------------------------------------------|-----------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
+| [kustomize.common.kubebuilder.io/v2][kustomize-plugin] | `kustomize/v2` | Responsible for scaffolding all [kustomize][kustomize] files under the `config/` directory                                                      |
+| `base.go.kubebuilder.io/v4`                            | `base/v4`      | Responsible for scaffolding all files which specifically requires Golang. This plugin is used in the composition to create the plugin (`go/v4`) |
 
-Then, see that you can use the kustomize plugin, which is responsible for to scaffold the kustomize files under `config/`, as
-the base language plugins which are responsible for to scaffold the Golang files to create your own plugins to work with
-another languages (i.e. [Operator-SDK][sdk] does to allow users work with Ansible/Helm) or to add
-helpers on top, such as [Operator-SDK][sdk] does to add their features to integrate the projects with [OLM][olm].
-
-| Plugin                                                                             | Key                         | Description                                                                                                                                     |
-| ---------------------------------------------------------------------------------- |-----------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
-| [kustomize.common.kubebuilder.io/v2](kustomize-v2.md)                  | `kustomize/v2` | Responsible for scaffolding all [kustomize][kustomize] files under the `config/` directory                                                      |
-| `base.go.kubebuilder.io/v4`                                 | `base/v4`      | Responsible for scaffolding all files which specifically requires Golang. This plugin is used in the composition to create the plugin (`go/v4`) |
-
-[create-plugins]: creating-plugins.md
 [kustomize]: https://kustomize.io/
 [sdk]: https://github.com/operator-framework/operator-sdk
 [olm]: https://olm.operatorframework.io/
-
+[kustomize-plugin]: ./available/kustomize-v2.md
+[external-plugins]: ./extending/external-plugins.md

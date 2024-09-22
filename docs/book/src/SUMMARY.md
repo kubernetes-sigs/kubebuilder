@@ -117,18 +117,16 @@
 - [Plugins][plugins]
 
   - [Available Plugins](./plugins/available-plugins.md)
-    - [To scaffold a project](./plugins/to-scaffold-project.md)
-      - [go/v4 (Default init scaffold)](./plugins/go-v4-plugin.md)
-    - [To add optional features](./plugins/to-add-optional-features.md)
-      - [grafana/v1-alpha](./plugins/grafana-v1-alpha.md)
-      - [deploy-image/v1-alpha](./plugins/deploy-image-plugin-v1-alpha.md)
-    - [To be extended for others tools](./plugins/to-be-extended.md)
-      - [kustomize/v2 (Default init scaffold with go/v4)](./plugins/kustomize-v2.md)
-  - [Extending the CLI](./plugins/extending-cli.md)
-  - [Creating your own plugins](./plugins/creating-plugins.md)
-  - [Testing your own plugins](./plugins/testing-plugins.md)
+    - [go/v4](./plugins/available/go-v4-plugin.md)
+    - [grafana/v1-alpha](./plugins/available/grafana-v1-alpha.md)
+    - [deploy-image/v1-alpha](./plugins/available/deploy-image-plugin-v1-alpha.md)
+    - [kustomize/v2](./plugins/available/kustomize-v2.md)
+  - [Extending](./plugins/extending.md)
+    - [CLI and Plugins](./plugins/extending/extending_cli_features_and_plugins.md)
+    - [External Plugins](./plugins/extending/external-plugins.md)
+    - [E2E Tests](./plugins/extending/testing-plugins.md)
   - [Plugins Versioning](./plugins/plugins-versioning.md)
-  - [Creating external plugins](./plugins/external-plugins.md)
+
 
 ---
 

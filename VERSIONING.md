@@ -59,4 +59,4 @@ take care of building and publishing the artifacts.
 [envtest-ref]: https://book.kubebuilder.io/reference/artifacts.html
 [tools-branch]: https://github.com/kubernetes-sigs/kubebuilder/tree/tools-releases
 [kb-releases]:https://github.com/kubernetes-sigs/kubebuilder/releases
-[cli-plugins-versioning]:docs/book/src/plugins/extending-cli.md#plugin-versioning
+[cli-plugins-versioning]:docs/book/src/plugins/extending#plugin-versioning
