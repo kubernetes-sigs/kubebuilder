@@ -56,17 +56,6 @@ func APIPackagePath(repo, group, version string, multiGroup bool) string {
 	return path.Join(repo, "api", version)
 }
 
-// APIPackagePathLegacy returns the default path
-func APIPackagePathLegacy(repo, group, version string, multiGroup bool) string {
-	if multiGroup {
-		if group != "" {
-			return path.Join(repo, "apis", group, version)
-		}
-		return path.Join(repo, "apis", version)
-	}
-	return path.Join(repo, "api", version)
-}
-
 // RegularPlural returns a default plural form when none was specified
 func RegularPlural(singular string) string {
 	return flect.Pluralize(strings.ToLower(singular))

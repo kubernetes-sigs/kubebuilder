@@ -126,8 +126,7 @@ func (t *TestContext) makePrometheusOperatorURL() string {
 	return fmt.Sprintf(prometheusOperatorURL, prometheusOperatorVersion)
 }
 
-// InstallCertManager installs the cert manager bundle. If hasv1beta1CRs is true,
-// the legacy version (which uses v1alpha2 CRs) is installed.
+// InstallCertManager installs the cert manager bundle.
 func (t *TestContext) InstallCertManager() error {
 	url := t.makeCertManagerURL()
 	if _, err := t.Kubectl.Apply(false, "-f", url, "--validate=false"); err != nil {

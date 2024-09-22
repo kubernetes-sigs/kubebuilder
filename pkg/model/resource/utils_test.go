@@ -50,23 +50,6 @@ var _ = Describe("APIPackagePath", func() {
 	)
 })
 
-var _ = Describe("APIPackagePathLegacy", func() {
-	const (
-		repo    = "github.com/kubernetes-sigs/kubebuilder"
-		group   = "group"
-		version = "v1"
-	)
-
-	DescribeTable("should work",
-		func(repo, group, version string, multiGroup bool, p string) {
-			Expect(APIPackagePathLegacy(repo, group, version, multiGroup)).To(Equal(p))
-		},
-		Entry("single group setup", repo, group, version, false, path.Join(repo, "api", version)),
-		Entry("multiple group setup", repo, group, version, true, path.Join(repo, "apis", group, version)),
-		Entry("multiple group setup with empty group", repo, "", version, true, path.Join(repo, "apis", version)),
-	)
-})
-
 var _ = DescribeTable("RegularPlural should return the regular plural form",
 	func(singular, plural string) { Expect(RegularPlural(singular)).To(Equal(plural)) },
 	Entry("basic singular", "firstmate", "firstmates"),
