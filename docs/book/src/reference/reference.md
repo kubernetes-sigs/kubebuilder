@@ -40,5 +40,4 @@
   - [Metrics](metrics.md)
       - [Reference](metrics-reference.md)
 
-  - [Makefile Helpers](makefile-helpers.md)
   - [CLI plugins](../plugins/plugins.md)

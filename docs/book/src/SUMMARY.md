@@ -110,7 +110,6 @@
 
     - [Reference](./reference/metrics-reference.md)
 
-  - [Makefile Helpers](./reference/makefile-helpers.md)
   - [Project config](./reference/project-config.md)
 
 ---
