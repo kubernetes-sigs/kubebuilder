@@ -135,6 +135,4 @@
 
 [FAQ](./faq.md)
 
-[Appendix: The TODO Landing Page](./TODO.md)
-
 [plugins]: ./plugins/plugins.md
