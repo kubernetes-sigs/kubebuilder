@@ -160,13 +160,15 @@ func (c Cfg) ResourcesLength() int {
 
 // HasResource implements config.Config
 func (c Cfg) HasResource(gvk resource.GVK) bool {
+	found := false
 	for _, res := range c.Resources {
 		if gvk.IsEqualTo(res.GVK) {
-			return true
+			found = true
+			break
 		}
 	}
 
-	return false
+	return found
 }
 
 // GetResource implements config.Config
