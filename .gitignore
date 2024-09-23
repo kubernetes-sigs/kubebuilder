@@ -1,6 +1,7 @@
 .idea/
 .vscode/
 WORKSPACE
+.DS_Store
 # don't check in the build output of the book
 docs/book/book/
 
