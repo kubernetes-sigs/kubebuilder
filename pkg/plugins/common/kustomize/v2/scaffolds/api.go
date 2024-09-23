@@ -93,7 +93,7 @@ func (s *apiScaffolder) Scaffold() error {
 		kustomizeFilePath := "config/default/kustomization.yaml"
 		err := pluginutil.UncommentCode(kustomizeFilePath, "#- ../crd", `#`)
 		if err != nil {
-			hasCRUncommented, err := pluginutil.HasFragment(kustomizeFilePath, "- ../crd")
+			hasCRUncommented, err := pluginutil.HasFileContentWith(kustomizeFilePath, "- ../crd")
 			if !hasCRUncommented || err != nil {
 				log.Errorf("Unable to find the target #- ../crd to uncomment in the file "+
 					"%s.", kustomizeFilePath)
