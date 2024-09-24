@@ -40,24 +40,6 @@ Following is an example of a code implementation that raises an Event.
 
 </aside>
 
-### How to be able to raise Events?
-
-Following are the steps with examples to help you raise events in your controller's reconciliations.
-Events are published from a Controller using an [EventRecorder][Events]`type CorrelatorOptions struct`,
-which can be created for a Controller by calling `GetRecorder(name string)` on a Manager. See that we will change the implementation scaffolded in `cmd/main.go`:
-
-```go
-	if err = (&controller.MyKindReconciler{
-		Client:   mgr.GetClient(),
-		Scheme:   mgr.GetScheme(),
-		// Note that we added the following line:
-		Recorder: mgr.GetEventRecorderFor("mykind-controller"),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "MyKind")
-		os.Exit(1)
-	}
-```
-
 ### Allowing usage of EventRecorder on the Controller
 
 To raise an event, you must have access to `record.EventRecorder` in the Controller.  Therefore, firstly let's update the controller implementation:
@@ -77,7 +59,7 @@ type MyKindReconciler struct {
 ```
 ### Passing the EventRecorder to the Controller
 
-Events are published from a Controller using an [EventRecorder]`type CorrelatorOptions struct`,
+Events are published from a Controller using an [EventRecorder][Events]`type CorrelatorOptions struct`,
 which can be created for a Controller by calling `GetRecorder(name string)` on a Manager. See that we will change the implementation scaffolded in `cmd/main.go`:
 
 ```go
