@@ -18,8 +18,6 @@ package controller
 
 import (
 	"context"
-	"fmt"
-	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -83,31 +81,25 @@ var _ = Describe("Memcached Controller", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 			By("Checking if Deployment was successfully created in the reconciliation")
-			Eventually(func() error {
+			Eventually(func(g Gomega) {
 				found := &appsv1.Deployment{}
-				return k8sClient.Get(ctx, typeNamespacedName, found)
-			}, time.Minute, time.Second).Should(Succeed())
+				g.Expect(k8sClient.Get(ctx, typeNamespacedName, found)).To(Succeed())
+			}).Should(Succeed())
+
+			By("Reconciling the custom resource again")
+			_, err = controllerReconciler.Reconcile(ctx, reconcile.Request{
+				NamespacedName: typeNamespacedName,
+			})
+			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking the latest Status Condition added to the Memcached instance")
-			Eventually(func() error {
-				if memcached.Status.Conditions != nil &&
-					len(memcached.Status.Conditions) != 0 {
-					latestStatusCondition := memcached.Status.Conditions[len(memcached.Status.Conditions)-1]
-					expectedLatestStatusCondition := metav1.Condition{
-						Type:   typeAvailableMemcached,
-						Status: metav1.ConditionTrue,
-						Reason: "Reconciling",
-						Message: fmt.Sprintf(
-							"Deployment for custom resource (%s) with %d replicas created successfully",
-							memcached.Name,
-							memcached.Spec.Size),
-					}
-					if latestStatusCondition != expectedLatestStatusCondition {
-						return fmt.Errorf("The latest status condition added to the Memcached instance is not as expected")
-					}
-				}
-				return nil
-			}, time.Minute, time.Second).Should(Succeed())
+			Expect(k8sClient.Get(ctx, typeNamespacedName, memcached)).To(Succeed())
+			conditions := []metav1.Condition{}
+			Expect(memcached.Status.Conditions).To(ContainElement(
+				HaveField("Type", Equal(typeAvailableMemcached)), &conditions))
+			Expect(conditions).To(HaveLen(1), "Multiple conditions of type %s", typeAvailableMemcached)
+			Expect(conditions[0].Status).To(Equal(metav1.ConditionTrue), "condition %s", typeAvailableMemcached)
+			Expect(conditions[0].Reason).To(Equal("Reconciling"), "condition %s", typeAvailableMemcached)
 		})
 	})
 })
