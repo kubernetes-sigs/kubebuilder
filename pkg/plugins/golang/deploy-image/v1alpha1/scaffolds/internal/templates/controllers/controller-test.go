@@ -68,7 +68,6 @@ import (
 	"context"
 	"os"
 	"time"
-	"fmt"
 
 	//nolint:golint
     . "github.com/onsi/ginkgo/v2"
@@ -105,14 +104,17 @@ var _ = Describe("{{ .Resource.Kind }} controller", func() {
 		}
 		{{ lower .Resource.Kind }} := &{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{}
 
+		SetDefaultEventuallyTimeout(2 * time.Minute)
+		SetDefaultEventuallyPollingInterval(time.Second)
+
 		BeforeEach(func() {
 			By("Creating the Namespace to perform the tests")
 			err := k8sClient.Create(ctx, namespace);
-			Expect(err).To(Not(HaveOccurred()))
+			Expect(err).NotTo(HaveOccurred())
 
 			By("Setting the Image ENV VAR which stores the Operand image")
 			err= os.Setenv("{{ upper .Resource.Kind }}_IMAGE", "example.com/image:test")
-			Expect(err).To(Not(HaveOccurred()))
+			Expect(err).NotTo(HaveOccurred())
 
 			By("creating the custom resource for the Kind {{ .Resource.Kind }}")
 			err = k8sClient.Get(ctx, typeNamespacedName, {{ lower .Resource.Kind }})
@@ -133,7 +135,7 @@ var _ = Describe("{{ .Resource.Kind }} controller", func() {
 				}
 				
 				err = k8sClient.Create(ctx, {{ lower .Resource.Kind }})
-				Expect(err).To(Not(HaveOccurred()))
+				Expect(err).NotTo(HaveOccurred())
 			}
 		})
 
@@ -141,11 +143,11 @@ var _ = Describe("{{ .Resource.Kind }} controller", func() {
 			By("removing the custom resource for the Kind {{ .Resource.Kind }}")
 			found := &{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{}
 			err := k8sClient.Get(ctx, typeNamespacedName, found)
-			Expect(err).To(Not(HaveOccurred()))
+			Expect(err).NotTo(HaveOccurred())
 
-			Eventually(func() error {
-				return k8sClient.Delete(context.TODO(), found)
-			}, 2*time.Minute, time.Second).Should(Succeed())
+			Eventually(func(g Gomega) {
+				g.Expect(k8sClient.Delete(context.TODO(), found)).To(Succeed())
+			}).Should(Succeed())
 
 			// TODO(user): Attention if you improve this code by adding other context test you MUST
 			// be aware of the current delete namespace limitations. 
@@ -159,10 +161,10 @@ var _ = Describe("{{ .Resource.Kind }} controller", func() {
 
 		It("should successfully reconcile a custom resource for {{ .Resource.Kind }}", func() {
 			By("Checking if the custom resource was successfully created")
-			Eventually(func() error {
+			Eventually(func(g Gomega) {
 				found := &{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}{}
-				return k8sClient.Get(ctx, typeNamespacedName, found)
-			}, time.Minute, time.Second).Should(Succeed())
+				Expect(k8sClient.Get(ctx, typeNamespacedName, found)).To(Succeed())
+			}).Should(Succeed())
 
 			By("Reconciling the custom resource created")
 			{{ lower .Resource.Kind }}Reconciler := &{{ .Resource.Kind }}Reconciler{
@@ -173,34 +175,28 @@ var _ = Describe("{{ .Resource.Kind }} controller", func() {
 			_, err := {{ lower .Resource.Kind }}Reconciler.Reconcile(ctx, reconcile.Request{
 				NamespacedName: typeNamespacedName,
 			})
-			Expect(err).To(Not(HaveOccurred()))
+			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking if Deployment was successfully created in the reconciliation")
-			Eventually(func() error {
+			Eventually(func(g Gomega) {
 				found := &appsv1.Deployment{}
-				return k8sClient.Get(ctx, typeNamespacedName, found)
-			}, time.Minute, time.Second).Should(Succeed())
+				g.Expect(k8sClient.Get(ctx, typeNamespacedName, found)).To(Succeed())
+			}).Should(Succeed())
+
+			By("Reconciling the custom resource again")
+			_, err = {{ lower .Resource.Kind }}Reconciler.Reconcile(ctx, reconcile.Request{
+				NamespacedName: typeNamespacedName,
+			})
+			Expect(err).NotTo(HaveOccurred())
 
 			By("Checking the latest Status Condition added to the {{ .Resource.Kind }} instance")
-			Eventually(func() error {
-				if {{ lower .Resource.Kind }}.Status.Conditions != nil &&
-					len({{ lower .Resource.Kind }}.Status.Conditions) != 0 {
-					latestStatusCondition := {{ lower .Resource.Kind }}.Status.Conditions[len({{ lower .Resource.Kind }}.Status.Conditions)-1]
-					expectedLatestStatusCondition := metav1.Condition{
-						Type:    typeAvailable{{ .Resource.Kind }},
-						Status:  metav1.ConditionTrue,
-						Reason:  "Reconciling",
-						Message: fmt.Sprintf(
-							"Deployment for custom resource (%s) with %d replicas created successfully", 
-							{{ lower .Resource.Kind }}.Name,
-							{{ lower .Resource.Kind }}.Spec.Size),
-					}
-					if latestStatusCondition != expectedLatestStatusCondition {
-						return fmt.Errorf("The latest status condition added to the {{ .Resource.Kind }} instance is not as expected")
-					}
-				}
-				return nil
-			}, time.Minute, time.Second).Should(Succeed())
+			Expect(k8sClient.Get(ctx, typeNamespacedName, {{ lower .Resource.Kind }})).To(Succeed())
+			conditions := []metav1.Condition{}
+			Expect({{ lower .Resource.Kind }}.Status.Conditions).To(ContainElement(
+				HaveField("Type", Equal(typeAvailable{{ .Resource.Kind }})), &conditions))
+			Expect(conditions).To(HaveLen(1), "Multiple conditions of type %s", typeAvailable{{ .Resource.Kind }})
+			Expect(conditions[0].Status).To(Equal(metav1.ConditionTrue), "condition %s", typeAvailable{{ .Resource.Kind }})
+			Expect(conditions[0].Reason).To(Equal("Reconciling"), "condition %s", typeAvailable{{ .Resource.Kind }})
 		})
 	})
 })
