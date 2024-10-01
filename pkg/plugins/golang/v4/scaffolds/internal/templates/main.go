@@ -154,7 +154,7 @@ func (f *MainUpdater) GetCodeFragments() machinery.CodeFragmentsMap {
 
 	// Generate import code fragments
 	imports := make([]string, 0)
-	if f.WireResource {
+	if f.WireResource || f.Resource.IsExternal() {
 		imports = append(imports, fmt.Sprintf(apiImportCodeFragment, f.Resource.ImportAlias(), f.Resource.Path))
 	}
 	if f.WireWebhook && !f.IsLegacyPath {
@@ -178,7 +178,7 @@ func (f *MainUpdater) GetCodeFragments() machinery.CodeFragmentsMap {
 
 	// Generate add scheme code fragments
 	addScheme := make([]string, 0)
-	if f.WireResource {
+	if f.WireResource || f.Resource.IsExternal() {
 		addScheme = append(addScheme, fmt.Sprintf(addschemeCodeFragment, f.Resource.ImportAlias()))
 	}
 

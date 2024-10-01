@@ -35,6 +35,8 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
+	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+
 	crewv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/crew/v1"
 	examplecomv1alpha1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/example.com/v1alpha1"
 	fizv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/fiz/v1"
@@ -46,6 +48,7 @@ import (
 	shipv1beta1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/ship/v1beta1"
 	shipv2alpha1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/ship/v2alpha1"
 	appscontroller "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/controller/apps"
+	certmanagercontroller "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/controller/certmanager"
 	crewcontroller "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/controller/crew"
 	examplecomcontroller "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/controller/example.com"
 	fizcontroller "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/controller/fiz"
@@ -78,6 +81,7 @@ func init() {
 	utilruntime.Must(foopolicyv1.AddToScheme(scheme))
 	utilruntime.Must(foov1.AddToScheme(scheme))
 	utilruntime.Must(fizv1.AddToScheme(scheme))
+	utilruntime.Must(certmanagerv1.AddToScheme(scheme))
 	utilruntime.Must(examplecomv1alpha1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
@@ -270,6 +274,13 @@ func main() {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Bar")
+		os.Exit(1)
+	}
+	if err = (&certmanagercontroller.CertificateReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Certificate")
 		os.Exit(1)
 	}
 	if err = (&examplecomcontroller.MemcachedReconciler{

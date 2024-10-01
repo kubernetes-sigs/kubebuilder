@@ -56,6 +56,13 @@ type Options struct {
 	// Plural is the resource's kind plural form.
 	Plural string
 
+	// ExternalAPIPath allows to inform a path for APIs not defined in the project
+	ExternalAPIPath string
+
+	// ExternalAPIPath allows to inform the resource domain to build the Qualified Group
+	// to generate the RBAC markers
+	ExternalAPIDomain string
+
 	// Namespaced is true if the resource should be namespaced.
 	Namespaced bool
 
@@ -104,20 +111,29 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 		}
 	}
 
+	if len(opts.ExternalAPIPath) > 0 {
+		res.External = true
+	}
+
 	// domain and path may need to be changed in case we are referring to a builtin core resource:
 	//  - Check if we are scaffolding the resource now           => project resource
 	//  - Check if we already scaffolded the resource            => project resource
 	//  - Check if the resource group is a well-known core group => builtin core resource
 	//  - In any other case, default to                          => project resource
-	// TODO: need to support '--resource-pkg-path' flag for specifying resourcePath
 	if !opts.DoAPI {
 		var alreadyHasAPI bool
 		loadedRes, err := c.GetResource(res.GVK)
 		alreadyHasAPI = err == nil && loadedRes.HasAPI()
 		if !alreadyHasAPI {
-			if domain, found := coreGroups[res.Group]; found {
-				res.Domain = domain
-				res.Path = path.Join("k8s.io", "api", res.Group, res.Version)
+			if res.External {
+				res.Path = opts.ExternalAPIPath
+				res.Domain = opts.ExternalAPIDomain
+			} else {
+				// Handle core types
+				if domain, found := coreGroups[res.Group]; found {
+					res.Domain = domain
+					res.Path = path.Join("k8s.io", "api", res.Group, res.Version)
+				}
 			}
 		}
 	}

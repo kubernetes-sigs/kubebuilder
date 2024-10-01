@@ -45,6 +45,8 @@ function scaffold_test_project {
     $kb create webhook --group crew --version v1 --kind FirstMate --conversion
     $kb create api --group crew --version v1 --kind Admiral --plural=admirales --controller=true --resource=true --namespaced=false --make=false
     $kb create webhook --group crew --version v1 --kind Admiral --plural=admirales --defaulting
+    # Controller for External types
+    $kb create api --group certmanager --version v1 --kind Certificate --controller=true --resource=false --make=false --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=cert-manager.io
   fi
 
   if [[ $project =~ multigroup ]]; then
@@ -65,9 +67,12 @@ function scaffold_test_project {
     $kb create api --group sea-creatures --version v1beta1 --kind Kraken --controller=true --resource=true --make=false
     $kb create api --group sea-creatures --version v1beta2 --kind Leviathan --controller=true --resource=true --make=false
     $kb create api --group foo.policy --version v1 --kind HealthCheckPolicy --controller=true --resource=true --make=false
+    # Controller for Core types
     $kb create api --group apps --version v1 --kind Deployment --controller=true --resource=false --make=false
     $kb create api --group foo --version v1 --kind Bar --controller=true --resource=true --make=false
     $kb create api --group fiz --version v1 --kind Bar --controller=true --resource=true --make=false
+    # Controller for External types
+    $kb create api --group certmanager --version v1 --kind Certificate --controller=true --resource=false --make=false --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=cert-manager.io
   fi
 
   if [[ $project =~ multigroup ]] || [[ $project =~ with-plugins ]] ; then
