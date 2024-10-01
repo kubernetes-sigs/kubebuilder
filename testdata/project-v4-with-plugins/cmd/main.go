@@ -37,6 +37,7 @@ import (
 
 	examplecomv1alpha1 "sigs.k8s.io/kubebuilder/testdata/project-v4-with-plugins/api/v1alpha1"
 	"sigs.k8s.io/kubebuilder/testdata/project-v4-with-plugins/internal/controller"
+	webhookexamplecomv1alpha1 "sigs.k8s.io/kubebuilder/testdata/project-v4-with-plugins/internal/webhook/v1alpha1"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -162,7 +163,7 @@ func main() {
 	}
 	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = (&examplecomv1alpha1.Memcached{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = webhookexamplecomv1alpha1.SetupMemcachedWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Memcached")
 			os.Exit(1)
 		}

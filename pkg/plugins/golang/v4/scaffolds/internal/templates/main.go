@@ -62,6 +62,12 @@ type MainUpdater struct { //nolint:maligned
 
 	// Flags to indicate which parts need to be included when updating the file
 	WireResource, WireController, WireWebhook bool
+
+	// Deprecated - The flag should be removed from go/v5
+	// IsLegacyPath indicates if webhooks should be scaffolded under the API.
+	// Webhooks are now decoupled from APIs based on controller-runtime updates and community feedback.
+	// This flag ensures backward compatibility by allowing scaffolding in the legacy/deprecated path.
+	IsLegacyPath bool
 }
 
 // GetPath implements file.Builder
@@ -94,6 +100,10 @@ const (
 `
 	controllerImportCodeFragment = `"%s/internal/controller"
 `
+	webhookImportCodeFragment = `%s "%s/internal/webhook/%s"
+`
+	multiGroupWebhookImportCodeFragment = `%s "%s/internal/webhook/%s/%s"
+`
 	multiGroupControllerImportCodeFragment = `%scontroller "%s/internal/controller/%s"
 `
 	addschemeCodeFragment = `utilruntime.Must(%s.AddToScheme(scheme))
@@ -114,9 +124,18 @@ const (
 		os.Exit(1)
 	}
 `
-	webhookSetupCodeFragment = `// nolint:goconst
+	webhookSetupCodeFragmentLegacy = `// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		if err = (&%s.%s{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "%s")
+			os.Exit(1)
+		}
+	}
+`
+
+	webhookSetupCodeFragment = `// nolint:goconst
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err = %s.Setup%sWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "%s")
 			os.Exit(1)
 		}
@@ -137,6 +156,15 @@ func (f *MainUpdater) GetCodeFragments() machinery.CodeFragmentsMap {
 	imports := make([]string, 0)
 	if f.WireResource {
 		imports = append(imports, fmt.Sprintf(apiImportCodeFragment, f.Resource.ImportAlias(), f.Resource.Path))
+	}
+	if f.WireWebhook && !f.IsLegacyPath {
+		importPath := fmt.Sprintf("webhook%s", f.Resource.ImportAlias())
+		if !f.MultiGroup || f.Resource.Group == "" {
+			imports = append(imports, fmt.Sprintf(webhookImportCodeFragment, importPath, f.Repo, f.Resource.Version))
+		} else {
+			imports = append(imports, fmt.Sprintf(multiGroupWebhookImportCodeFragment, importPath,
+				f.Repo, f.Resource.Group, f.Resource.Version))
+		}
 	}
 
 	if f.WireController {
@@ -166,8 +194,13 @@ func (f *MainUpdater) GetCodeFragments() machinery.CodeFragmentsMap {
 		}
 	}
 	if f.WireWebhook {
-		setup = append(setup, fmt.Sprintf(webhookSetupCodeFragment,
-			f.Resource.ImportAlias(), f.Resource.Kind, f.Resource.Kind))
+		if f.IsLegacyPath {
+			setup = append(setup, fmt.Sprintf(webhookSetupCodeFragmentLegacy,
+				f.Resource.ImportAlias(), f.Resource.Kind, f.Resource.Kind))
+		} else {
+			setup = append(setup, fmt.Sprintf(webhookSetupCodeFragment,
+				"webhook"+f.Resource.ImportAlias(), f.Resource.Kind, f.Resource.Kind))
+		}
 	}
 
 	// Only store code fragments in the map if the slices are non-empty

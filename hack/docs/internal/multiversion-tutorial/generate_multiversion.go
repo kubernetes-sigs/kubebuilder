@@ -84,7 +84,7 @@ func (sp *Sample) UpdateTutorial() {
 
 func (sp *Sample) updateWebhookV1() {
 	err := pluginutil.ReplaceInFile(
-		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_webhook.go"),
+		filepath.Join(sp.ctx.Dir, "internal/webhook/v1/cronjob_webhook.go"),
 		"Then, we set up the webhook with the manager.",
 		`This setup doubles as setup for our conversion webhooks: as long as our
 types implement the
@@ -202,36 +202,21 @@ func (sp *Sample) updateApiV1() {
 }
 
 func (sp *Sample) updateWebhookV2() {
-	path := "api/v2/cronjob_webhook.go"
+	path := "internal/webhook/v2/cronjob_webhook.go"
 
-	err := pluginutil.ReplaceInFile(
+	err := pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, path),
 		`import (
 	"context"
-	"fmt"
-
-	"k8s.io/apimachinery/pkg/runtime"
-	ctrl "sigs.k8s.io/controller-runtime"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
-)`,
-		`import (
-	"context"
-	"fmt"
-	"github.com/robfig/cron"
+	"fmt"`,
+		`
 	"strings"
-
+	
+	"github.com/robfig/cron"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	validationutils "k8s.io/apimachinery/pkg/util/validation"
-	"k8s.io/apimachinery/pkg/util/validation/field"
-	ctrl "sigs.k8s.io/controller-runtime"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
-)`,
+	"k8s.io/apimachinery/pkg/util/validation/field"`,
 	)
 	hackutils.CheckError("replacing imports in v2", err)
 
@@ -244,57 +229,35 @@ func (sp *Sample) updateWebhookV2() {
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, path),
-		`// TODO(user): fill in your defaulting logic.`,
+		`// TODO(user): fill in your defaulting logic.
+
+	return nil`,
 		cronJobDefaultingLogic,
 	)
 	hackutils.CheckError("replacing defaulting logic in v2", err)
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, path),
-		`// TODO(user): fill in your validation logic upon object creation.`,
-		`return nil, cronjob.validateCronJob()`,
+		`// TODO(user): fill in your validation logic upon object creation.
+
+	return nil, nil`,
+		`return nil, validateCronJob(cronjob)`,
 	)
 	hackutils.CheckError("replacing validation logic for creation in v2", err)
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, path),
-		`// TODO(user): fill in your validation logic upon object update.`,
-		`return nil, cronjob.validateCronJob()`,
+		`// TODO(user): fill in your validation logic upon object update.
+
+	return nil, nil`,
+		`return nil, validateCronJob(cronjob)`,
 	)
 	hackutils.CheckError("replacing validation logic for update in v2", err)
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, path),
-		`return nil, cronjob.validateCronJob()
-
-	return nil, nil`,
-		`return nil, cronjob.validateCronJob()`,
-	)
-	hackutils.CheckError("fixing ValidateCreate in v2", err)
-
-	err = pluginutil.ReplaceInFile(
-		filepath.Join(sp.ctx.Dir, path),
-		`// SetupWebhookWithManager will setup the manager to manage the webhooks.
-func (r *CronJob) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
-		WithValidator(&CronJobCustomValidator{}).
-		WithDefaulter(&CronJobCustomDefaulter{}).
-		Complete()
-}`,
-		`// SetupWebhookWithManager will setup the manager to manage the webhooks.
-func (r *CronJob) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
-		WithValidator(&CronJobCustomValidator{}).
-		WithDefaulter(&CronJobCustomDefaulter{
-			DefaultConcurrencyPolicy:          AllowConcurrent,
-			DefaultSuspend:                    false,
-			DefaultSuccessfulJobsHistoryLimit: 3,
-			DefaultFailedJobsHistoryLimit:     1,
-		}).
-		Complete()
-}`,
+		originalSetupManager,
+		replaceSetupManager,
 	)
 	hackutils.CheckError("replacing SetupWebhookWithManager in v2", err)
 

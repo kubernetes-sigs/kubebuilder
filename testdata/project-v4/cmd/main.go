@@ -37,6 +37,7 @@ import (
 
 	crewv1 "sigs.k8s.io/kubebuilder/testdata/project-v4/api/v1"
 	"sigs.k8s.io/kubebuilder/testdata/project-v4/internal/controller"
+	webhookcrewv1 "sigs.k8s.io/kubebuilder/testdata/project-v4/internal/webhook/v1"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -153,7 +154,7 @@ func main() {
 	}
 	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = (&crewv1.Captain{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = webhookcrewv1.SetupCaptainWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Captain")
 			os.Exit(1)
 		}
@@ -167,7 +168,7 @@ func main() {
 	}
 	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = (&crewv1.FirstMate{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = webhookcrewv1.SetupFirstMateWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "FirstMate")
 			os.Exit(1)
 		}
@@ -181,7 +182,7 @@ func main() {
 	}
 	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = (&crewv1.Admiral{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = webhookcrewv1.SetupAdmiralWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Admiral")
 			os.Exit(1)
 		}

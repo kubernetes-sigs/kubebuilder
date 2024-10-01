@@ -53,6 +53,11 @@ import (
 	foopolicycontroller "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/controller/foo.policy"
 	seacreaturescontroller "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/controller/sea-creatures"
 	shipcontroller "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/controller/ship"
+	webhookcrewv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/webhook/crew/v1"
+	webhookexamplecomv1alpha1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/webhook/example.com/v1alpha1"
+	webhookshipv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/webhook/ship/v1"
+	webhookshipv1beta1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/webhook/ship/v1beta1"
+	webhookshipv2alpha1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/webhook/ship/v2alpha1"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -178,7 +183,7 @@ func main() {
 	}
 	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = (&crewv1.Captain{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = webhookcrewv1.SetupCaptainWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Captain")
 			os.Exit(1)
 		}
@@ -192,7 +197,7 @@ func main() {
 	}
 	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = (&shipv1beta1.Frigate{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = webhookshipv1beta1.SetupFrigateWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Frigate")
 			os.Exit(1)
 		}
@@ -206,7 +211,7 @@ func main() {
 	}
 	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = (&shipv1.Destroyer{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = webhookshipv1.SetupDestroyerWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Destroyer")
 			os.Exit(1)
 		}
@@ -220,7 +225,7 @@ func main() {
 	}
 	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = (&shipv2alpha1.Cruiser{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = webhookshipv2alpha1.SetupCruiserWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Cruiser")
 			os.Exit(1)
 		}
@@ -285,7 +290,7 @@ func main() {
 	}
 	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = (&examplecomv1alpha1.Memcached{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = webhookexamplecomv1alpha1.SetupMemcachedWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Memcached")
 			os.Exit(1)
 		}

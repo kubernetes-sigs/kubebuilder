@@ -43,6 +43,10 @@ type createWebhookSubcommand struct {
 
 	// force indicates that the resource should be created even if it already exists
 	force bool
+
+	// Deprecated - TODO: remove it for go/v5
+	// isLegacyPath indicates that the resource should be created in the legacy path under the api
+	isLegacyPath bool
 }
 
 func (p *createWebhookSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
@@ -72,6 +76,11 @@ func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
 		"if set, scaffold the validating webhook")
 	fs.BoolVar(&p.options.DoConversion, "conversion", false,
 		"if set, scaffold the conversion webhook")
+
+	// TODO: remove for go/v5
+	fs.BoolVar(&p.isLegacyPath, "legacy", false,
+		"[DEPRECATED] Attempts to create resource under the API directory (legacy path). "+
+			"This option will be removed in future versions.")
 
 	fs.BoolVar(&p.force, "force", false,
 		"attempt to create resource even if it already exists")
@@ -107,7 +116,7 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 }
 
 func (p *createWebhookSubcommand) Scaffold(fs machinery.Filesystem) error {
-	scaffolder := scaffolds.NewWebhookScaffolder(p.config, *p.resource, p.force)
+	scaffolder := scaffolds.NewWebhookScaffolder(p.config, *p.resource, p.force, p.isLegacyPath)
 	scaffolder.InjectFS(fs)
 	return scaffolder.Scaffold()
 }

@@ -50,7 +50,7 @@ func GenerateV4(kbc *utils.TestContext) {
 
 	By("implementing the mutating and validating webhooks")
 	webhookFilePath := filepath.Join(
-		kbc.Dir, "api", kbc.Version,
+		kbc.Dir, "internal/webhook", kbc.Version,
 		fmt.Sprintf("%s_webhook.go", strings.ToLower(kbc.Kind)))
 	err = utils.ImplementWebhooks(webhookFilePath, strings.ToLower(kbc.Kind))
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
@@ -91,7 +91,7 @@ func GenerateV4WithoutMetrics(kbc *utils.TestContext) {
 
 	By("implementing the mutating and validating webhooks")
 	webhookFilePath := filepath.Join(
-		kbc.Dir, "api", kbc.Version,
+		kbc.Dir, "internal/webhook", kbc.Version,
 		fmt.Sprintf("%s_webhook.go", strings.ToLower(kbc.Kind)))
 	err = utils.ImplementWebhooks(webhookFilePath, strings.ToLower(kbc.Kind))
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
@@ -155,7 +155,7 @@ func GenerateV4WithNetworkPolicies(kbc *utils.TestContext) {
 
 	By("implementing the mutating and validating webhooks")
 	webhookFilePath := filepath.Join(
-		kbc.Dir, "api", kbc.Version,
+		kbc.Dir, "internal/webhook", kbc.Version,
 		fmt.Sprintf("%s_webhook.go", strings.ToLower(kbc.Kind)))
 	err = utils.ImplementWebhooks(webhookFilePath, strings.ToLower(kbc.Kind))
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())

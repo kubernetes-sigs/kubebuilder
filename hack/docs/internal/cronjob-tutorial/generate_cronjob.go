@@ -375,18 +375,9 @@ manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and Cust
 }
 
 func (sp *Sample) updateWebhookTests() {
-	file := filepath.Join(sp.ctx.Dir, "api/v1/cronjob_webhook_test.go")
+	file := filepath.Join(sp.ctx.Dir, "internal/webhook/v1/cronjob_webhook_test.go")
 
-	err := pluginutil.InsertCode(file,
-		`var _ = Describe("CronJob Webhook", func() {
-	var (
-		obj *CronJob`,
-		`
-		oldObj    *CronJob
-		validator CronJobCustomValidator`)
-	hackutils.CheckError("insert global vars", err)
-
-	err = pluginutil.ReplaceInFile(file,
+	err := pluginutil.ReplaceInFile(file,
 		webhookTestCreateDefaultingFragment,
 		webhookTestCreateDefaultingReplaceFragment)
 	hackutils.CheckError("replace create defaulting test", err)
@@ -399,36 +390,36 @@ func (sp *Sample) updateWebhookTests() {
 	err = pluginutil.ReplaceInFile(file,
 		webhookTestsBeforeEachOriginal,
 		webhookTestsBeforeEachChanged)
-	hackutils.CheckError("replace validating defaulting test", err)
+	hackutils.CheckError("replace before each webhook test ", err)
 }
 
 func (sp *Sample) updateWebhook() {
 	var err error
 	err = pluginutil.InsertCode(
-		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_webhook.go"),
+		filepath.Join(sp.ctx.Dir, "internal/webhook/v1/cronjob_webhook.go"),
 		`limitations under the License.
 */`,
 		`
 // +kubebuilder:docs-gen:collapse=Apache License`)
 	hackutils.CheckError("fixing cronjob_webhook.go by adding collapse", err)
 
-	err = pluginutil.ReplaceInFile(
-		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_webhook.go"),
+	err = pluginutil.InsertCode(
+		filepath.Join(sp.ctx.Dir, "internal/webhook/v1/cronjob_webhook.go"),
 		`import (
 	"context"
-	"fmt"`, `import (
-	"context"
-	"fmt"
+	"fmt"`,
+		`
 	"github.com/robfig/cron"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	validationutils "k8s.io/apimachinery/pkg/util/validation"
-	"k8s.io/apimachinery/pkg/util/validation/field"`)
+	"k8s.io/apimachinery/pkg/util/validation/field"`,
+	)
 	hackutils.CheckError("add extra imports to cronjob_webhook.go", err)
 
 	err = pluginutil.ReplaceInFile(
-		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_webhook.go"),
-		`"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+		filepath.Join(sp.ctx.Dir, "internal/webhook/v1/cronjob_webhook.go"),
+		`batchv1 "tutorial.kubebuilder.io/project/api/v1"
 )
 
 // nolint:unused
@@ -437,7 +428,7 @@ func (sp *Sample) updateWebhook() {
 	hackutils.CheckError("fixing cronjob_webhook.go", err)
 
 	err = pluginutil.InsertCode(
-		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_webhook.go"),
+		filepath.Join(sp.ctx.Dir, "internal/webhook/v1/cronjob_webhook.go"),
 		`var cronjoblog = logf.Log.WithName("cronjob-resource")`,
 		`
 /*
@@ -446,31 +437,31 @@ Then, we set up the webhook with the manager.
 	hackutils.CheckError("fixing cronjob_webhook.go by setting webhook with manager comment", err)
 
 	err = pluginutil.ReplaceInFile(
-		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_webhook.go"),
+		filepath.Join(sp.ctx.Dir, "internal/webhook/v1/cronjob_webhook.go"),
 		`// TODO(user): EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!`, webhooksNoticeMarker)
 	hackutils.CheckError("fixing cronjob_webhook.go by replacing note about path attribute", err)
 
 	err = pluginutil.ReplaceInFile(
-		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_webhook.go"),
+		filepath.Join(sp.ctx.Dir, "internal/webhook/v1/cronjob_webhook.go"),
 		`// NOTE: The 'path' attribute must follow a specific pattern and should not be modified directly here.
 // Modifying the path for an invalid path can cause API server errors; failing to locate the webhook.`, explanationValidateCRD)
 	hackutils.CheckError("fixing cronjob_webhook.go by replacing note about path attribute", err)
 
 	err = pluginutil.ReplaceInFile(
-		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_webhook.go"),
+		filepath.Join(sp.ctx.Dir, "internal/webhook/v1/cronjob_webhook.go"),
 		`// TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.`, "")
 	hackutils.CheckError("fixing cronjob_webhook.go by replace TODO to change verbs", err)
 
 	err = pluginutil.ReplaceInFile(
-		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_webhook.go"),
+		filepath.Join(sp.ctx.Dir, "internal/webhook/v1/cronjob_webhook.go"),
 		`// TODO(user): Add more fields as needed for defaulting`, fragmentForDefaultFields)
 	hackutils.CheckError("fixing cronjob_webhook.go by replacing TODO in Defaulter", err)
 
 	err = pluginutil.ReplaceInFile(
-		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_webhook.go"),
+		filepath.Join(sp.ctx.Dir, "internal/webhook/v1/cronjob_webhook.go"),
 		`WithDefaulter(&CronJobCustomDefaulter{}).`,
 		`WithDefaulter(&CronJobCustomDefaulter{
-        DefaultConcurrencyPolicy:      AllowConcurrent,
+        DefaultConcurrencyPolicy:      batchv1.AllowConcurrent,
         DefaultSuspend:                false,
         DefaultSuccessfulJobsHistoryLimit: 3,
         DefaultFailedJobsHistoryLimit: 1,
@@ -478,7 +469,7 @@ Then, we set up the webhook with the manager.
 	hackutils.CheckError("replacing WithDefaulter call in cronjob_webhook.go", err)
 
 	err = pluginutil.ReplaceInFile(
-		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_webhook.go"),
+		filepath.Join(sp.ctx.Dir, "internal/webhook/v1/cronjob_webhook.go"),
 		`// TODO(user): fill in your defaulting logic.
 
 	return nil
@@ -486,29 +477,29 @@ Then, we set up the webhook with the manager.
 	hackutils.CheckError("fixing cronjob_webhook.go by adding logic", err)
 
 	err = pluginutil.ReplaceInFile(
-		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_webhook.go"),
+		filepath.Join(sp.ctx.Dir, "internal/webhook/v1/cronjob_webhook.go"),
 		`// TODO(user): fill in your validation logic upon object creation.
 
 	return nil, nil`,
-		`return nil, cronjob.validateCronJob()`)
+		`return nil, validateCronJob(cronjob)`)
 	hackutils.CheckError("fixing cronjob_webhook.go by fill in your validation", err)
 
 	err = pluginutil.ReplaceInFile(
-		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_webhook.go"),
+		filepath.Join(sp.ctx.Dir, "internal/webhook/v1/cronjob_webhook.go"),
 		`// TODO(user): fill in your validation logic upon object update.
 
 	return nil, nil`,
-		`return nil, cronjob.validateCronJob()`)
+		`return nil, validateCronJob(cronjob)`)
 	hackutils.CheckError("fixing cronjob_webhook.go by adding validation logic upon object update", err)
 
 	err = pluginutil.ReplaceInFile(
-		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_webhook.go"),
+		filepath.Join(sp.ctx.Dir, "internal/webhook/v1/cronjob_webhook.go"),
 		`// Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind CronJob.`,
 		customInterfaceDefaultInfo)
 	hackutils.CheckError("fixing cronjob_webhook.go by adding validation logic upon object update", err)
 
 	err = pluginutil.AppendCodeAtTheEnd(
-		filepath.Join(sp.ctx.Dir, "api/v1/cronjob_webhook.go"),
+		filepath.Join(sp.ctx.Dir, "internal/webhook/v1/cronjob_webhook.go"),
 		webhookValidateSpecMethods)
 	hackutils.CheckError("adding validation spec methods at the end", err)
 }

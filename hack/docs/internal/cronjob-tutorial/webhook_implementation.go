@@ -16,7 +16,7 @@ limitations under the License.
 
 package cronjob
 
-const webhookIntro = `"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+const webhookIntro = `batchv1 "tutorial.kubebuilder.io/project/api/v1"
 )
 
 // +kubebuilder:docs-gen:collapse=Go imports
@@ -28,25 +28,26 @@ Next, we'll setup a logger for the webhooks.
 `
 
 const webhookDefaultingSettings = `// Set default values
-	cronjob.Default()
-	
+	d.applyDefaults(cronjob)
 	return nil
 }
 
-func (r *CronJob) Default() {
-	if r.Spec.ConcurrencyPolicy == "" {
-		r.Spec.ConcurrencyPolicy = AllowConcurrent
+// applyDefaults applies default values to CronJob fields.
+func (d *CronJobCustomDefaulter) applyDefaults(cronJob *batchv1.CronJob) {
+	if cronJob.Spec.ConcurrencyPolicy == "" {
+		cronJob.Spec.ConcurrencyPolicy = d.DefaultConcurrencyPolicy
 	}
-	if r.Spec.Suspend == nil {
-		r.Spec.Suspend = new(bool)
+	if cronJob.Spec.Suspend == nil {
+		cronJob.Spec.Suspend = new(bool)
+		*cronJob.Spec.Suspend = d.DefaultSuspend
 	}
-	if r.Spec.SuccessfulJobsHistoryLimit == nil {
-		r.Spec.SuccessfulJobsHistoryLimit = new(int32)
-		*r.Spec.SuccessfulJobsHistoryLimit = 3
+	if cronJob.Spec.SuccessfulJobsHistoryLimit == nil {
+		cronJob.Spec.SuccessfulJobsHistoryLimit = new(int32)
+		*cronJob.Spec.SuccessfulJobsHistoryLimit = d.DefaultSuccessfulJobsHistoryLimit
 	}
-	if r.Spec.FailedJobsHistoryLimit == nil {
-		r.Spec.FailedJobsHistoryLimit = new(int32)
-		*r.Spec.FailedJobsHistoryLimit = 1
+	if cronJob.Spec.FailedJobsHistoryLimit == nil {
+		cronJob.Spec.FailedJobsHistoryLimit = new(int32)
+		*cronJob.Spec.FailedJobsHistoryLimit = d.DefaultFailedJobsHistoryLimit
 	}
 }
 `
@@ -105,12 +106,13 @@ const webhookValidateSpecMethods = `
 We validate the name and the spec of the CronJob.
 */
 
-func (r *CronJob) validateCronJob() error {
+// validateCronJob validates the fields of a CronJob object.
+func validateCronJob(cronjob *batchv1.CronJob) error {
 	var allErrs field.ErrorList
-	if err := r.validateCronJobName(); err != nil {
+	if err := validateCronJobName(cronjob); err != nil {
 		allErrs = append(allErrs, err)
 	}
-	if err := r.validateCronJobSpec(); err != nil {
+	if err := validateCronJobSpec(cronjob); err != nil {
 		allErrs = append(allErrs, err)
 	}
 	if len(allErrs) == 0 {
@@ -119,7 +121,7 @@ func (r *CronJob) validateCronJob() error {
 
 	return apierrors.NewInvalid(
 		schema.GroupKind{Group: "batch.tutorial.kubebuilder.io", Kind: "CronJob"},
-		r.Name, allErrs)
+		cronjob.Name, allErrs)
 }
 
 /*
@@ -132,11 +134,11 @@ declaring validation by running ` + "`" + `controller-gen crd -w` + "`" + `,
 or [here](/reference/markers/crd-validation.md).
 */
 
-func (r *CronJob) validateCronJobSpec() *field.Error {
+func validateCronJobSpec(cronjob *batchv1.CronJob) *field.Error {
 	// The field helpers from the kubernetes API machinery help us return nicely
 	// structured validation errors.
 	return validateScheduleFormat(
-		r.Spec.Schedule,
+		cronjob.Spec.Schedule,
 		field.NewPath("spec").Child("schedule"))
 }
 
@@ -161,15 +163,15 @@ the apimachinery repo, so we can't declaratively validate it using
 the validation schema.
 */
 
-func (r *CronJob) validateCronJobName() *field.Error {
-	if len(r.ObjectMeta.Name) > validationutils.DNS1035LabelMaxLength-11 {
+func validateCronJobName(cronjob *batchv1.CronJob) *field.Error {
+	if len(cronjob.ObjectMeta.Name) > validationutils.DNS1035LabelMaxLength-11 {
 		// The job name length is 63 characters like all Kubernetes objects
 		// (which must fit in a DNS subdomain). The cronjob controller appends
 		// a 11-character suffix to the cronjob (` + "`" + `-$TIMESTAMP` + "`" + `) when creating
 		// a job. The job name length limit is 63 characters. Therefore cronjob
 		// names must have length <= 63-11=52. If we don't validate this here,
 		// then job creation will fail later.
-		return field.Invalid(field.NewPath("metadata").Child("name"), r.ObjectMeta.Name, "must be no more than 52 characters")
+		return field.Invalid(field.NewPath("metadata").Child("name"), cronjob.ObjectMeta.Name, "must be no more than 52 characters")
 	}
 	return nil
 }
@@ -178,7 +180,7 @@ func (r *CronJob) validateCronJobName() *field.Error {
 
 const fragmentForDefaultFields = `
 	// Default values for various CronJob fields
-	DefaultConcurrencyPolicy      ConcurrencyPolicy
+	DefaultConcurrencyPolicy      batchv1.ConcurrencyPolicy
 	DefaultSuspend                bool
 	DefaultSuccessfulJobsHistoryLimit int32
 	DefaultFailedJobsHistoryLimit int32
@@ -189,7 +191,9 @@ const webhookTestCreateDefaultingFragment = `// TODO (user): Add logic for defau
 		// It("Should apply defaults when a required field is empty", func() {
 		//     By("simulating a scenario where defaults should be applied")
 		//     obj.SomeFieldWithDefault = ""
-		//     Expect(obj.Default(ctx)).To(Succeed())
+		//     By("calling the Default method to apply defaults")
+		//     defaulter.Default(ctx, obj)
+		//     By("checking that the default values are set")
 		//     Expect(obj.SomeFieldWithDefault).To(Equal("default_value"))
 		// })`
 
@@ -201,10 +205,10 @@ const webhookTestCreateDefaultingReplaceFragment = `It("Should apply defaults wh
 			obj.Spec.FailedJobsHistoryLimit = nil     // This should default to 1
 
 			By("calling the Default method to apply defaults")
-			obj.Default()
+			defaulter.Default(ctx, obj)
 
 			By("checking that the default values are set")
-			Expect(obj.Spec.ConcurrencyPolicy).To(Equal(AllowConcurrent), "Expected ConcurrencyPolicy to default to AllowConcurrent")
+			Expect(obj.Spec.ConcurrencyPolicy).To(Equal(batchv1.AllowConcurrent), "Expected ConcurrencyPolicy to default to AllowConcurrent")
 			Expect(*obj.Spec.Suspend).To(BeFalse(), "Expected Suspend to default to false")
 			Expect(*obj.Spec.SuccessfulJobsHistoryLimit).To(Equal(int32(3)), "Expected SuccessfulJobsHistoryLimit to default to 3")
 			Expect(*obj.Spec.FailedJobsHistoryLimit).To(Equal(int32(1)), "Expected FailedJobsHistoryLimit to default to 1")
@@ -212,7 +216,7 @@ const webhookTestCreateDefaultingReplaceFragment = `It("Should apply defaults wh
 
 		It("Should not overwrite fields that are already set", func() {
 			By("setting fields that would normally get a default")
-			obj.Spec.ConcurrencyPolicy = ForbidConcurrent
+			obj.Spec.ConcurrencyPolicy = batchv1.ForbidConcurrent
 			obj.Spec.Suspend = new(bool)
 			*obj.Spec.Suspend = true
 			obj.Spec.SuccessfulJobsHistoryLimit = new(int32)
@@ -221,10 +225,10 @@ const webhookTestCreateDefaultingReplaceFragment = `It("Should apply defaults wh
 			*obj.Spec.FailedJobsHistoryLimit = 2
 
 			By("calling the Default method to apply defaults")
-			obj.Default()
+			defaulter.Default(ctx, obj)
 			
 			By("checking that the fields were not overwritten")
-			Expect(obj.Spec.ConcurrencyPolicy).To(Equal(ForbidConcurrent), "Expected ConcurrencyPolicy to retain its set value")
+			Expect(obj.Spec.ConcurrencyPolicy).To(Equal(batchv1.ForbidConcurrent), "Expected ConcurrencyPolicy to retain its set value")
 			Expect(*obj.Spec.Suspend).To(BeTrue(), "Expected Suspend to retain its set value")
 			Expect(*obj.Spec.SuccessfulJobsHistoryLimit).To(Equal(int32(5)), "Expected SuccessfulJobsHistoryLimit to retain its set value")
 			Expect(*obj.Spec.FailedJobsHistoryLimit).To(Equal(int32(2)), "Expected FailedJobsHistoryLimit to retain its set value")
@@ -235,20 +239,20 @@ const webhookTestingValidatingTodoFragment = `// TODO (user): Add logic for vali
 		// It("Should deny creation if a required field is missing", func() {
 		//     By("simulating an invalid creation scenario")
 		//     obj.SomeRequiredField = ""
-		//     Expect(obj.ValidateCreate(ctx)).Error().To(HaveOccurred())
+		//     Expect(validator.ValidateCreate(ctx, obj)).Error().To(HaveOccurred())
 		// })
 		//
 		// It("Should admit creation if all required fields are present", func() {
 		//     By("simulating an invalid creation scenario")
 		//     obj.SomeRequiredField = "valid_value"
-		//     Expect(obj.ValidateCreate(ctx)).To(BeNil())
+		//     Expect(validator.ValidateCreate(ctx, obj)).To(BeNil())
 		// })
 		//
 		// It("Should validate updates correctly", func() {
 		//     By("simulating a valid update scenario")
-		//     oldObj := &Captain{SomeRequiredField: "valid_value"}
+		//     oldObj.SomeRequiredField = "updated_value"
 		//     obj.SomeRequiredField = "updated_value"
-		//     Expect(obj.ValidateUpdate(ctx, oldObj)).To(BeNil())
+		//     Expect(validator.ValidateUpdate(ctx, oldObj, obj)).To(BeNil())
 		// })`
 
 const webhookTestingValidatingExampleFragment = `It("Should deny creation if the name is too long", func() {
@@ -303,15 +307,20 @@ const webhookTestingValidatingExampleFragment = `It("Should deny creation if the
 				"Expected validation to pass for a valid update")
 		})`
 
-const webhookTestsBeforeEachOriginal = `obj = &CronJob{}
+const webhookTestsBeforeEachOriginal = `obj = &batchv1.CronJob{}
+		oldObj = &batchv1.CronJob{}
+		validator = CronJobCustomValidator{}
+		Expect(validator).NotTo(BeNil(), "Expected validator to be initialized")
+		defaulter = CronJobCustomDefaulter{}
+		Expect(defaulter).NotTo(BeNil(), "Expected defaulter to be initialized")
+		Expect(oldObj).NotTo(BeNil(), "Expected oldObj to be initialized")
 		Expect(obj).NotTo(BeNil(), "Expected obj to be initialized")
-
 		// TODO (user): Add any setup logic common to all tests`
 
-const webhookTestsBeforeEachChanged = `obj = &CronJob{
-			Spec: CronJobSpec{
+const webhookTestsBeforeEachChanged = `obj = &batchv1.CronJob{
+			Spec: batchv1.CronJobSpec{
 				Schedule:                   "*/5 * * * *",
-				ConcurrencyPolicy:          AllowConcurrent,
+				ConcurrencyPolicy:          batchv1.AllowConcurrent,
 				SuccessfulJobsHistoryLimit: new(int32),
 				FailedJobsHistoryLimit:     new(int32),
 			},
@@ -319,10 +328,10 @@ const webhookTestsBeforeEachChanged = `obj = &CronJob{
 		*obj.Spec.SuccessfulJobsHistoryLimit = 3
 		*obj.Spec.FailedJobsHistoryLimit = 1
 
-		oldObj = &CronJob{
-			Spec: CronJobSpec{
+		oldObj = &batchv1.CronJob{
+			Spec: batchv1.CronJobSpec{
 				Schedule:                   "*/5 * * * *",
-				ConcurrencyPolicy:          AllowConcurrent,
+				ConcurrencyPolicy:          batchv1.AllowConcurrent,
 				SuccessfulJobsHistoryLimit: new(int32),
 				FailedJobsHistoryLimit:     new(int32),
 			},
@@ -331,6 +340,12 @@ const webhookTestsBeforeEachChanged = `obj = &CronJob{
 		*oldObj.Spec.FailedJobsHistoryLimit = 1
 
 		validator = CronJobCustomValidator{}
+		defaulter = CronJobCustomDefaulter{
+			DefaultConcurrencyPolicy:          batchv1.AllowConcurrent,
+			DefaultSuspend:                    false,
+			DefaultSuccessfulJobsHistoryLimit: 3,
+			DefaultFailedJobsHistoryLimit:     1,
+		}
 
 		Expect(obj).NotTo(BeNil(), "Expected obj to be initialized")
 		Expect(oldObj).NotTo(BeNil(), "Expected oldObj to be initialized")`

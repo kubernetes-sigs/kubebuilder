@@ -19,4 +19,4 @@ kubebuilder create webhook --group batch --version v1 --kind CronJob --defaultin
 
 This will scaffold the webhook functions and register your webhook with the manager in your `main.go` for you.
 
-{{#literatego ./testdata/project/api/v1/cronjob_webhook.go}}
+{{#literatego ./testdata/project/internal/webhook/v1/cronjob_webhook.go}}

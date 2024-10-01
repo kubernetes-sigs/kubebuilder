@@ -36,13 +36,14 @@ package v1
 
 /*
 Implementing the hub method is pretty easy -- we just have to add an empty
-method called ` + "`Hub()`" + ` to serve as a
+method called ` + "`" + `Hub()` + "`" + `to serve as a
 [marker](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/conversion?tab=doc#Hub).
-We could also just put this inline in our ` + "`cronjob_types.go`" + ` file.
+We could also just put this inline in our cronjob_types.go file.
 */
 
 // Hub marks this type as a conversion hub.
-func (*CronJob) Hub() {}`
+func (*CronJob) Hub() {}
+`
 
 const hubV2Code = `/*
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -81,8 +82,8 @@ import (
 /*
 Our "spoke" versions need to implement the
 [` + "`" + `Convertible` + "`" + `](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/conversion?tab=doc#Convertible)
-interface. Namely, they'll need ` + "`ConvertTo()`" + ` and ` + "`ConvertFrom()`" + ` methods to convert to/from
-the hub version.
+interface. Namely, they'll need ` + "`" + `ConvertTo()` + "`" + ` and ` + "`" + `ConvertFrom()` + "`" + `
+methods to convert to/from the hub version.
 */
 
 /*

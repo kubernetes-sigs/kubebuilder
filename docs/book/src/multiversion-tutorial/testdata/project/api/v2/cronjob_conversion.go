@@ -35,8 +35,8 @@ import (
 /*
 Our "spoke" versions need to implement the
 [`Convertible`](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/conversion?tab=doc#Convertible)
-interface. Namely, they'll need `ConvertTo()` and `ConvertFrom()` methods to convert to/from
-the hub version.
+interface. Namely, they'll need `ConvertTo()` and `ConvertFrom()`
+methods to convert to/from the hub version.
 */
 
 /*

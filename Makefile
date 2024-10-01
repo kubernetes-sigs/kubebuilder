@@ -164,3 +164,10 @@ test-license:  ## Run the license check
 .PHONY: test-spaces
 test-spaces:  ## Run the trailing spaces check
 	./test/check_spaces.sh
+
+## TODO: Remove me when go/v4 plugin be removed
+## Deprecated
+.PHONY: test-legacy
+test-legacy:  ## Run the tests to validate legacy path for webhooks
+	rm -rf  ./testdata/**legacy**/
+	./test/testdata/legacy-webhook-path.sh
