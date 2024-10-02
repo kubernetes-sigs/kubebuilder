@@ -73,7 +73,7 @@ func (s *webhookScaffolder) Scaffold() error {
 		return fmt.Errorf("error updating resource: %w", err)
 	}
 
-	if err := scaffold.Execute(
+	buildScaffold := []machinery.Builder{
 		&kdefault.ManagerWebhookPatch{},
 		&webhook.Kustomization{Force: s.force},
 		&webhook.KustomizeConfig{},
@@ -84,8 +84,13 @@ func (s *webhookScaffolder) Scaffold() error {
 		&patches.EnableWebhookPatch{},
 		&patches.EnableCAInjectionPatch{},
 		&network_policy.NetworkPolicyAllowWebhooks{},
-		&crd.Kustomization{},
-	); err != nil {
+	}
+
+	if !s.resource.External {
+		buildScaffold = append(buildScaffold, &crd.Kustomization{})
+	}
+
+	if err := scaffold.Execute(buildScaffold...); err != nil {
 		return fmt.Errorf("error scaffolding kustomize webhook manifests: %v", err)
 	}
 

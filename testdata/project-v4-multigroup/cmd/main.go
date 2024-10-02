@@ -56,6 +56,7 @@ import (
 	foopolicycontroller "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/controller/foo.policy"
 	seacreaturescontroller "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/controller/sea-creatures"
 	shipcontroller "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/controller/ship"
+	webhookcertmanagerv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/webhook/certmanager/v1"
 	webhookcrewv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/webhook/crew/v1"
 	webhookexamplecomv1alpha1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/webhook/example.com/v1alpha1"
 	webhookshipv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/webhook/ship/v1"
@@ -282,6 +283,13 @@ func main() {
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Certificate")
 		os.Exit(1)
+	}
+	// nolint:goconst
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err = webhookcertmanagerv1.SetupIssuerWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Issuer")
+			os.Exit(1)
+		}
 	}
 	if err = (&examplecomcontroller.MemcachedReconciler{
 		Client:   mgr.GetClient(),

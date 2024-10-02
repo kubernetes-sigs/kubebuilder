@@ -73,6 +73,14 @@ Also, the RBAC role:
 This scaffolds a controller for the external type but skips creating new resource
 definitions since the type is defined in an external project.
 
+### Creating a Webhook to Manage an External Type
+
+Following an example:
+
+```shell
+kubebuilder create webhook --group certmanager --version v1 --kind Issuer --defaulting --programmatic-validation --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=cert-manager.io
+```
+
 ## Managing Core Types
 
 Core Kubernetes API types, such as `Pods`, `Services`, and `Deployments`, are predefined by Kubernetes.

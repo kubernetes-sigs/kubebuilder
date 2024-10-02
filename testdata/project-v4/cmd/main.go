@@ -39,6 +39,7 @@ import (
 
 	crewv1 "sigs.k8s.io/kubebuilder/testdata/project-v4/api/v1"
 	"sigs.k8s.io/kubebuilder/testdata/project-v4/internal/controller"
+	webhookcertmanagerv1 "sigs.k8s.io/kubebuilder/testdata/project-v4/internal/webhook/v1"
 	webhookcrewv1 "sigs.k8s.io/kubebuilder/testdata/project-v4/internal/webhook/v1"
 	// +kubebuilder:scaffold:imports
 )
@@ -196,6 +197,13 @@ func main() {
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Certificate")
 		os.Exit(1)
+	}
+	// nolint:goconst
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err = webhookcertmanagerv1.SetupIssuerWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Issuer")
+			os.Exit(1)
+		}
 	}
 	// +kubebuilder:scaffold:builder
 
