@@ -45,6 +45,9 @@ type Resource struct {
 
 	// External specifies if the resource is defined externally.
 	External bool `json:"external,omitempty"`
+
+	// Core specifies if the resource is from Kubernetes API.
+	Core bool `json:"core,omitempty"`
 }
 
 // Validate checks that the Resource is valid.
