@@ -86,7 +86,7 @@ func (s *webhookScaffolder) Scaffold() error {
 		&network_policy.NetworkPolicyAllowWebhooks{},
 	}
 
-	if !s.resource.External {
+	if !s.resource.External && !s.resource.Core {
 		buildScaffold = append(buildScaffold, &crd.Kustomization{})
 	}
 

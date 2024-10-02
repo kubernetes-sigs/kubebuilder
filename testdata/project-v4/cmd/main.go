@@ -40,6 +40,7 @@ import (
 	crewv1 "sigs.k8s.io/kubebuilder/testdata/project-v4/api/v1"
 	"sigs.k8s.io/kubebuilder/testdata/project-v4/internal/controller"
 	webhookcertmanagerv1 "sigs.k8s.io/kubebuilder/testdata/project-v4/internal/webhook/v1"
+	webhookcorev1 "sigs.k8s.io/kubebuilder/testdata/project-v4/internal/webhook/v1"
 	webhookcrewv1 "sigs.k8s.io/kubebuilder/testdata/project-v4/internal/webhook/v1"
 	// +kubebuilder:scaffold:imports
 )
@@ -202,6 +203,13 @@ func main() {
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		if err = webhookcertmanagerv1.SetupIssuerWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Issuer")
+			os.Exit(1)
+		}
+	}
+	// nolint:goconst
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err = webhookcorev1.SetupPodWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Pod")
 			os.Exit(1)
 		}
 	}
