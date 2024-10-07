@@ -19,7 +19,7 @@ import (
 	"v1/scaffolds"
 
 	"github.com/spf13/pflag"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/external"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/external"
 )
 
 // flagsCmd handles all the logic for the `flags` subcommand of the sample external plugin.

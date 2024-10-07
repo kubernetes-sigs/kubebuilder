@@ -36,8 +36,8 @@ all that is language specific and kustomize for its configuration, see:
 ```go
 import (
 ...
-   kustomizecommonv2 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/common/kustomize/v2"
-   golangv4 "sigs.k8s.io/kubebuilder/v3/pkg/plugins/golang/v4"
+   kustomizecommonv2 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2"
+   golangv4 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4"
 ...
 )
 
