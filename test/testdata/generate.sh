@@ -47,6 +47,8 @@ function scaffold_test_project {
     $kb create webhook --group crew --version v1 --kind Admiral --plural=admirales --defaulting
     # Controller for External types
     $kb create api --group certmanager --version v1 --kind Certificate --controller=true --resource=false --make=false --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=cert-manager.io
+    # Webhook for Core type
+    $kb create webhook --group core --version v1 --kind Pod --defaulting
   fi
 
   if [[ $project =~ multigroup ]]; then
@@ -73,6 +75,9 @@ function scaffold_test_project {
     $kb create api --group fiz --version v1 --kind Bar --controller=true --resource=true --make=false
     # Controller for External types
     $kb create api --group certmanager --version v1 --kind Certificate --controller=true --resource=false --make=false --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=cert-manager.io
+
+    # Webhook for Core type
+    $kb create webhook --group core --version v1 --kind Pod --programmatic-validation
   fi
 
   if [[ $project =~ multigroup ]] || [[ $project =~ with-plugins ]] ; then

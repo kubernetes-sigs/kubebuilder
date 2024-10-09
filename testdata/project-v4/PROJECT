@@ -52,4 +52,12 @@ resources:
   kind: Certificate
   path: github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1
   version: v1
+- core: true
+  group: core
+  kind: Pod
+  path: k8s.io/api/core/v1
+  version: v1
+  webhooks:
+    defaulting: true
+    webhookVersion: v1
 version: "3"
