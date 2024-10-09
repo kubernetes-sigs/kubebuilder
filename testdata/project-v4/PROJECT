@@ -52,4 +52,13 @@ resources:
   kind: Certificate
   path: github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1
   version: v1
+- domain: cert-manager.io
+  external: true
+  group: certmanager
+  kind: Issuer
+  path: github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1
+  version: v1
+  webhooks:
+    defaulting: true
+    webhookVersion: v1
 version: "3"

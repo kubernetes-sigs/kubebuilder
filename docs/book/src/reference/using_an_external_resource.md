@@ -75,15 +75,11 @@ definitions since the type is defined in an external project.
 
 ### Creating a Webhook to Manage an External Type
 
-<aside>
-<H1> Support </H1>
+Following an example:
 
-Webhook support for external types is not currently automated by the tool.
-However, you can still use the tool to scaffold the webhook setup and make
-manual adjustments as needed. For guidance, you can follow a similar approach as
-described in the section [Webhooks for Core Types][webhook-for-core-types].
-
-</aside>
+```shell
+kubebuilder create webhook --group certmanager --version v1 --kind Issuer --defaulting --programmatic-validation --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=cert-manager.io
+```
 
 ## Managing Core Types
 
@@ -167,8 +163,6 @@ Also, the RBAC for the above markers:
   - get
   - patch
   - update
-```
-
 ```
 
 This scaffolds a controller for the Core type `corev1.Pod` but skips creating new resource
