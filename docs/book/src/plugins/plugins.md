@@ -1,40 +1,47 @@
 # Plugins
 
-Since the `3.0.0` Kubebuilder version, preliminary support for plugins was added. You can [Extend the CLI and Scaffolds][extending-cli] as well. See that when users run the CLI commands to perform the scaffolds, the plugins are used:
+Kubebuilder's architecture is fundamentally plugin-based.
+This design enables the Kubebuilder CLI to evolve while maintaining
+backward compatibility with older versions, allowing users to opt-in or
+opt-out of specific features, and enabling seamless integration
+with external tools.
 
-- To initialize a project with a chain of global plugins:
+By leveraging plugins, projects can extend Kubebuilder and use it as a
+library to support new functionalities or implement custom scaffolding
+tailored to their users' needs. This flexibility allows maintainers
+to build on top of Kubebuilder’s foundation, adapting it to specific
+use cases while benefiting from its powerful scaffolding engine.
+
+Plugins offer several key advantages:
+
+- **Backward compatibility**: Ensures older layouts and project structures remain functional with newer versions.
+- **Customization**: Allows users to opt-in or opt-out for specific features (i.e. [Grafana][grafana-plugin] and [Deploy Image][deploy-image] plugins)
+- **Extensibility**: Facilitates integration with third-party tools and projects that wish to provide their own [External Plugins][external-plugins], which can be used alongside Kubebuilder to modify and enhance project scaffolding or introduce new features.
+
+**For example, to initialize a project with multiple global plugins:**
 
 ```sh
-kubebuilder init --plugins=pluginA,pluginB
+kubebuilder init --plugins=pluginA,pluginB,pluginC
 ```
 
-- To perform an optional scaffold using custom plugins:
+**For example, to apply custom scaffolding using specific plugins:**
 
 ```sh
-kubebuilder create api --plugins=pluginA,pluginB
+kubebuilder create api --plugins=pluginA,pluginB,pluginC
+OR
+kubebuilder create webhook --plugins=pluginA,pluginB,pluginC
+OR
+kubebuilder edit --plugins=pluginA,pluginB,pluginC
 ```
 
-This section details how to extend Kubebuilder and create your plugins following the same layout structures.
+This section details the available plugins, how to extend Kubebuilder,
+and how to create your own plugins while following the same layout structures.
 
-<aside class="note">
-<h1>Note</h1>
+- [Available Plugins](./available-plugins.md)
+- [Extending](./extending.md)
+- [Plugins Versioning](./plugins-versioning.md)
 
-You can check the existing design proposal docs at [Extensible CLI and Scaffolding Plugins: phase 1][plugins-phase1-design-doc] and [Extensible CLI and Scaffolding Plugins: phase 1.5][plugins-phase1-design-doc-1.5] to know more on what is provided by Kubebuilder CLI and API currently.
-
-</aside>
-
-<aside class="note">
-<h1>What is about to come next?</h1>
-
-To know more about Kubebuilder's future vision of the Plugins architecture, see the section [Future vision for Kubebuilder Plugins][section-future-vision-plugins].
-
-</aside>
-
-- [Extending the CLI and Scaffolds](extending-cli.md)
-- [Creating your own plugins](creating-plugins.md)
-- [Testing your plugins](testing-plugins.md)
-
-[plugins-phase1-design-doc]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/designs/extensible-cli-and-scaffolding-plugins-phase-1.md
-[plugins-phase1-design-doc-1.5]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/designs/extensible-cli-and-scaffolding-plugins-phase-1-5.md
-[extending-cli]: extending-cli.md
-[section-future-vision-plugins]: https://book.kubebuilder.io/plugins/creating-plugins.html#future-vision-for-kubebuilder-plugins
+[extending-cli]: extending.md
+[grafana-plugin]: ./available/grafana-v1-alpha.md
+[deploy-image]: ./available/deploy-image-plugin-v1-alpha.md
+[external-plugins]: ./extending/external-plugins.md

@@ -1,17 +1,23 @@
 # Grafana Plugin (`grafana/v1-alpha`)
 
-The Grafana plugin is an optional plugin that can be used to scaffold Grafana Dashboards to allow you to check out the default metrics which are exported by projects using [controller-runtime][controller-runtime].
+The Grafana plugin is an optional plugin that can be used to
+scaffold Grafana Dashboards to allow you to check out the
+default metrics which are exported by projects
+using [controller-runtime][controller-runtime].
 
 <aside class="note">
 <h1>Examples</h1>
 
-You can check its default scaffold by looking at the `project-v3-with-metrics` projects under the [testdata][testdata] directory on the root directory of the Kubebuilder project.
+You can check its default scaffold by looking at the `project-v4-with-plugins` projects
+under the [testdata][testdata] directory on the root directory of the Kubebuilder project.
 
 </aside>
 
 ## When to use it ?
 
-- If you are looking to observe the metrics exported by [controller metrics][controller-metrics] and collected by Prometheus via [Grafana][grafana].
+- If you are looking to observe the metrics
+exported by [controller metrics][controller-metrics] and
+collected by Prometheus via [Grafana][grafana].
 
 ## How to use it ?
 
@@ -21,10 +27,10 @@ You can check its default scaffold by looking at the `project-v3-with-metrics` p
 - Access to [Prometheus][prometheus].
   - Prometheus should have an endpoint exposed. (For `prometheus-operator`, this is similar as: http://prometheus-k8s.monitoring.svc:9090 )
   - The endpoint is ready to/already become the datasource of your Grafana. See [Add a data source](https://grafana.com/docs/grafana/latest/datasources/add-a-data-source/)
-- Access to [Grafana](https://grafana.com/docs/grafana/latest/setup-grafana/installation/). Make sure you have:
-  - [Dashboard edit permission](https://grafana.com/docs/grafana/next/administration/roles-and-permissions/#dashboard-permissions)
+- Access to [Grafana][grafana-install]. Make sure you have:
+  - [Dashboard edit permission][grafana-permissions]
   - Prometheus Data source
-    ![pre](https://user-images.githubusercontent.com/18136486/176119794-f6d69b0b-93f0-4f9e-a53c-daf9f77dadae.gif)
+    ![pre][prometheus-data-source]
 
 <aside class="note">
 
@@ -204,7 +210,7 @@ This time, the plugin will generate `grafana/custom-metrics/custom-metrics-dashb
 
 See an example of how to visualize your custom metrics:
 
-![output2](https://user-images.githubusercontent.com/18136486/186933170-d2e0de71-e079-4d1b-906a-99a549d66ebf.gif)
+![output2][show-case]
 
 ## Subcommands
 
@@ -222,22 +228,29 @@ The following scaffolds will be created or updated by this plugin:
 
 ## Further resources
 
-- Check out [video to show how it works](https://youtu.be/-w_JjcV8jXc)
-- Checkout the [video to show how the custom metrics feature works](https://youtu.be/x_0FHta2HXc)
-- Refer to a sample of `servicemonitor` provided by [kustomize plugin][kustomize-plugin]
+- Check out [video to show how it works][video]
+- Checkout the [video to show how the custom metrics feature works][video-custom-metrics]
+- Refer to a sample of `serviceMonitor` provided by [kustomize plugin][kustomize-plugin]
 - Check the [plugin implementation][plugin-implementation]
 - [Grafana Docs][grafana-docs] of importing JSON file
-- The usage of servicemonitor by [Prometheus Operator][servicemonitor]
+- The usage of serviceMonitor by [Prometheus Operator][servicemonitor]
 
-[controller-metrics]: https://book.kubebuilder.io/reference/metrics-reference.html
 [controller-runtime]: https://github.com/kubernetes-sigs/controller-runtime
 [grafana]: https://grafana.com/docs/grafana/next/
 [grafana-docs]: https://grafana.com/docs/grafana/latest/dashboards/export-import/#import-dashboard
-[kustomize-plugin]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/testdata/project-v3/config/prometheus/monitor.yaml
 [kube-prometheus]: https://github.com/prometheus-operator/kube-prometheus
-[plugin-implementation]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/pkg/plugins/optional/grafana/alphav1
 [prometheus]: https://prometheus.io/docs/introduction/overview/
 [prom-operator]: https://prometheus-operator.dev/docs/prologue/introduction/
-[reference-metrics-doc]: https://book.kubebuilder.io/reference/metrics.html#exporting-metrics-for-prometheus
 [servicemonitor]: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/user-guides/getting-started.md#related-resources
-[testdata]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/testdata
+[grafana-install]: https://grafana.com/docs/grafana/latest/setup-grafana/installation/
+[grafana-permissions]: https://grafana.com/docs/grafana/next/administration/roles-and-permissions/#dashboard-permissions
+[prometheus-data-source]: https://user-images.githubusercontent.com/18136486/176119794-f6d69b0b-93f0-4f9e-a53c-daf9f77dadae.gif
+[video]: https://youtu.be/-w_JjcV8jXc
+[video-custom-metrics]: https://youtu.be/x_0FHta2HXc
+[show-case]: https://user-images.githubusercontent.com/18136486/186933170-d2e0de71-e079-4d1b-906a-99a549d66ebf.gif
+[controller-metrics]: ./../../reference/metrics-reference.md
+[kustomize-plugin]: ./../../../../../testdata/project-v4-with-plugins/config/prometheus/monitor.yaml
+[plugin-implementation]: ./../../../../../pkg/plugins/optional/grafana/
+[reference-metrics-doc]: ./../../reference/metrics.md#exporting-metrics-for-prometheus
+[testdata]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/testdata/project-v4-with-plugins
+
