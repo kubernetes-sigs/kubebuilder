@@ -73,18 +73,6 @@ Also, the RBAC role:
 This scaffolds a controller for the external type but skips creating new resource
 definitions since the type is defined in an external project.
 
-### Creating a Webhook to Manage an External Type
-
-<aside>
-<H1> Support </H1>
-
-Webhook support for external types is not currently automated by the tool.
-However, you can still use the tool to scaffold the webhook setup and make
-manual adjustments as needed. For guidance, you can follow a similar approach as
-described in the section [Webhooks for Core Types][webhook-for-core-types].
-
-</aside>
-
 ## Managing Core Types
 
 Core Kubernetes API types, such as `Pods`, `Services`, and `Deployments`, are predefined by Kubernetes.
@@ -167,8 +155,6 @@ Also, the RBAC for the above markers:
   - get
   - patch
   - update
-```
-
 ```
 
 This scaffolds a controller for the Core type `corev1.Pod` but skips creating new resource
