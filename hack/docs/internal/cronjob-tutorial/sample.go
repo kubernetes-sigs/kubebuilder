@@ -34,99 +34,130 @@ const CronjobSample = `
           restartPolicy: OnFailure`
 
 const DefaultKustomization = `#replacements:
-#  - source: # Add cert-manager annotation to ValidatingWebhookConfiguration, MutatingWebhookConfiguration and CRDs
-#      kind: Certificate
-#      group: cert-manager.io
-#      version: v1
-#      name: serving-cert # this name should match the one in certificate.yaml
-#      fieldPath: .metadata.namespace # namespace of the certificate CR
-#    targets:
-#      - select:
-#          kind: ValidatingWebhookConfiguration
-#        fieldPaths:
-#          - .metadata.annotations.[cert-manager.io/inject-ca-from]
-#        options:
-#          delimiter: '/'
-#          index: 0
-#          create: true
-#      - select:
-#          kind: MutatingWebhookConfiguration
-#        fieldPaths:
-#          - .metadata.annotations.[cert-manager.io/inject-ca-from]
-#        options:
-#          delimiter: '/'
-#          index: 0
-#          create: true
-#      - select:
-#          kind: CustomResourceDefinition
-#        fieldPaths:
-#          - .metadata.annotations.[cert-manager.io/inject-ca-from]
-#        options:
-#          delimiter: '/'
-#          index: 0
-#          create: true
-#  - source:
-#      kind: Certificate
-#      group: cert-manager.io
-#      version: v1
-#      name: serving-cert # this name should match the one in certificate.yaml
-#      fieldPath: .metadata.name
-#    targets:
-#      - select:
-#          kind: ValidatingWebhookConfiguration
-#        fieldPaths:
-#          - .metadata.annotations.[cert-manager.io/inject-ca-from]
-#        options:
-#          delimiter: '/'
-#          index: 1
-#          create: true
-#      - select:
-#          kind: MutatingWebhookConfiguration
-#        fieldPaths:
-#          - .metadata.annotations.[cert-manager.io/inject-ca-from]
-#        options:
-#          delimiter: '/'
-#          index: 1
-#          create: true
-#      - select:
-#          kind: CustomResourceDefinition
-#        fieldPaths:
-#          - .metadata.annotations.[cert-manager.io/inject-ca-from]
-#        options:
-#          delimiter: '/'
-#          index: 1
-#          create: true
-#  - source: # Add cert-manager annotation to the webhook Service
-#      kind: Service
-#      version: v1
-#      name: webhook-service
-#      fieldPath: .metadata.name # namespace of the service
-#    targets:
-#      - select:
-#          kind: Certificate
-#          group: cert-manager.io
-#          version: v1
-#        fieldPaths:
-#          - .spec.dnsNames.0
-#          - .spec.dnsNames.1
-#        options:
-#          delimiter: '.'
-#          index: 0
-#          create: true
-#  - source:
-#      kind: Service
-#      version: v1
-#      name: webhook-service
-#      fieldPath: .metadata.namespace # namespace of the service
-#    targets:
-#      - select:
-#          kind: Certificate
-#          group: cert-manager.io
-#          version: v1
-#        fieldPaths:
-#          - .spec.dnsNames.0
-#          - .spec.dnsNames.1
-#        options:
-#          delimiter: '.'
-#          index: 1
-#          create: true`
+# - source: # Uncomment the following block if you have a ValidatingWebhook (--programmatic-validation)
+#     kind: Certificate
+#     group: cert-manager.io
+#     version: v1
+#     name: serving-cert # This name should match the one in certificate.yaml
+#     fieldPath: .metadata.namespace # Namespace of the certificate CR
+#   targets:
+#     - select:
+#         kind: ValidatingWebhookConfiguration
+#       fieldPaths:
+#         - .metadata.annotations.[cert-manager.io/inject-ca-from]
+#       options:
+#         delimiter: '/'
+#         index: 0
+#         create: true
+# - source:
+#     kind: Certificate
+#     group: cert-manager.io
+#     version: v1
+#     name: serving-cert # This name should match the one in certificate.yaml
+#     fieldPath: .metadata.name
+#   targets:
+#     - select:
+#         kind: ValidatingWebhookConfiguration
+#       fieldPaths:
+#         - .metadata.annotations.[cert-manager.io/inject-ca-from]
+#       options:
+#         delimiter: '/'
+#         index: 1
+#         create: true
+#
+# - source: # Uncomment the following block if you have a DefaultingWebhook (--defaulting )
+#     kind: Certificate
+#     group: cert-manager.io
+#     version: v1
+#     name: serving-cert # This name should match the one in certificate.yaml
+#     fieldPath: .metadata.namespace # Namespace of the certificate CR
+#   targets:
+#     - select:
+#         kind: MutatingWebhookConfiguration
+#       fieldPaths:
+#         - .metadata.annotations.[cert-manager.io/inject-ca-from]
+#       options:
+#         delimiter: '/'
+#         index: 0
+#         create: true
+# - source:
+#     kind: Certificate
+#     group: cert-manager.io
+#     version: v1
+#     name: serving-cert # This name should match the one in certificate.yaml
+#     fieldPath: .metadata.name
+#   targets:
+#     - select:
+#         kind: MutatingWebhookConfiguration
+#       fieldPaths:
+#         - .metadata.annotations.[cert-manager.io/inject-ca-from]
+#       options:
+#         delimiter: '/'
+#         index: 1
+#         create: true
+#
+# - source: # Uncomment the following block if you have a ConversionWebhook (--conversion)
+#     kind: Certificate
+#     group: cert-manager.io
+#     version: v1
+#     name: serving-cert # This name should match the one in certificate.yaml
+#     fieldPath: .metadata.namespace # Namespace of the certificate CR
+#   targets:
+#     - select:
+#         kind: CustomResourceDefinition
+#       fieldPaths:
+#         - .metadata.annotations.[cert-manager.io/inject-ca-from]
+#       options:
+#         delimiter: '/'
+#         index: 0
+#         create: true
+# - source:
+#     kind: Certificate
+#     group: cert-manager.io
+#     version: v1
+#     name: serving-cert # This name should match the one in certificate.yaml
+#     fieldPath: .metadata.name
+#   targets:
+#     - select:
+#         kind: CustomResourceDefinition
+#       fieldPaths:
+#         - .metadata.annotations.[cert-manager.io/inject-ca-from]
+#       options:
+#         delimiter: '/'
+#         index: 1
+#         create: true
+#
+# - source: # Uncomment the following block if you enable cert-manager
+#     kind: Service
+#     version: v1
+#     name: webhook-service
+#     fieldPath: .metadata.name # Name of the service
+#   targets:
+#     - select:
+#         kind: Certificate
+#         group: cert-manager.io
+#         version: v1
+#       fieldPaths:
+#         - .spec.dnsNames.0
+#         - .spec.dnsNames.1
+#       options:
+#         delimiter: '.'
+#         index: 0
+#         create: true
+# - source:
+#     kind: Service
+#     version: v1
+#     name: webhook-service
+#     fieldPath: .metadata.namespace # Namespace of the service
+#   targets:
+#     - select:
+#         kind: Certificate
+#         group: cert-manager.io
+#         version: v1
+#       fieldPaths:
+#         - .spec.dnsNames.0
+#         - .spec.dnsNames.1
+#       options:
+#         delimiter: '.'
+#         index: 1
+#         create: true`
