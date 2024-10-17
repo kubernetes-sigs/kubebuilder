@@ -1866,6 +1866,26 @@ webhooks:
     service:
       name: project-v4-multigroup-webhook-service
       namespace: project-v4-multigroup-system
+      path: /validate--v1-pod
+  failurePolicy: Fail
+  name: vpod-v1.kb.io
+  rules:
+  - apiGroups:
+    - ""
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - pods
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: project-v4-multigroup-webhook-service
+      namespace: project-v4-multigroup-system
       path: /validate-crew-testproject-org-v1-captain
   failurePolicy: Fail
   name: vcaptain-v1.kb.io
