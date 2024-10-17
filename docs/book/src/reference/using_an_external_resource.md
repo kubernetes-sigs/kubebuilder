@@ -28,22 +28,22 @@ kubebuilder create api --group <theirgroup> --version <theirversion> --kind <the
 For example, if you're managing Certificates from Cert Manager:
 
 ```shell
-kubebuilder create api --group certmanager --version v1 --kind Certificate --controller=true --resource=false --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=cert-manager.io
+kubebuilder create api --group cert-manager.io --version v1 --kind Certificate --controller=true --resource=false --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1
 ```
 
-See the RBAC markers generated for this:
+See the RBAC [markers][markers-rbac] generated for this:
 
 ```go
-// +kubebuilder:rbac:groups=certmanager.cert-manager.io,resources=certificates,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=certmanager.cert-manager.io,resources=certificates/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=certmanager.cert-manager.io,resources=certificates/finalizers,verbs=update
+// +kubebuilder:rbac:groups=cert-manager.io,resources=certificates,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=cert-manager.io,resources=certificates/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=cert-manager.io,resources=certificates/finalizers,verbs=update
 ```
 
 Also, the RBAC role:
 
 ```ymal
 - apiGroups:
-  - certmanager.cert-manager.io
+  - cert-manager.io
   resources:
   - certificates
   verbs:
@@ -55,7 +55,7 @@ Also, the RBAC role:
   - update
   - watch
 - apiGroups:
-  - certmanager.cert-manager.io
+  - cert-manager.io
   resources:
   - certificates/finalizers
   verbs:
@@ -64,6 +64,50 @@ Also, the RBAC role:
   - certmanager.cert-manager.io
   resources:
   - certificates/status
+  verbs:
+  - get
+  - patch
+  - update
+```
+
+However, if we are scaffolding an API that has a domain defined, we need to explicitly set the domain using the `--external-api-domain`
+flag in the Kubebuilder command. For example, if we want to scaffold a controller for the ServiceMonitor
+API provided and defined in the [Prometheus Operator][prometheus-operator], we would scaffold it as follows:
+
+```shell
+kubebuilder create api --group "monitoring" --version v1 --kind ServiceMonitor --controller=true --resource=false --make=false --external-api-path=github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1 --external-api-domain=coreos.com
+```
+
+In this case:
+
+- The **group** is `"monitoring"`.
+- The **domain** is `"coreos.com"`, as indicated by `--external-api-domain=coreos.com`.
+
+This structure ensures that the API group and domain are correctly applied to generate the
+[markers][markers-rbac] and scaffolds accordingly.
+
+In this scenario, the [markers][markers-rbac] scaffolded in the controller will look like this:
+
+```go
+// +kubebuilder:rbac:groups=monitoring.coreos.com,resources=servicemonitors,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=monitoring.coreos.com,resources=servicemonitors/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=monitoring.coreos.com,resources=servicemonitors/finalizers,verbs=update
+
+```
+
+These [markers][markers-rbac] will generate the corresponding permissions under config/rbac/, such as:
+
+```ymal
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - servicemonitors/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - servicemonitors/status
   verbs:
   - get
   - patch
@@ -118,7 +162,7 @@ For instance, to create a controller to manage Deployment the command would be l
 create api --group apps --version v1 --kind Deployment --controller=true --resource=false
 ```
 
-See the RBAC markers generated for this:
+See the RBAC [markers][markers-rbac] generated for this:
 
 ```go
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
@@ -126,7 +170,7 @@ See the RBAC markers generated for this:
 // +kubebuilder:rbac:groups=apps,resources=deployments/finalizers,verbs=update
 ```
 
-Also, the RBAC for the above markers:
+Also, the RBAC for the above [markers][markers-rbac]:
 
 ```yaml
 - apiGroups:
@@ -170,3 +214,5 @@ Webhook support for Core Types is not currently automated by the tool. However, 
 </aside>
 
 [webhook-for-core-types]: ./webhook-for-core-types.md
+[prometheus-operator]: https://github.com/prometheus-operator/prometheus-operator
+[markers-rbac]: ./markers/rbac.md
