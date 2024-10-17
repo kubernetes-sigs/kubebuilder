@@ -392,3 +392,44 @@ func kubebuilderGrafanaEdit() error {
 	}
 	return nil
 }
+
+func RunGenerate(opts *Generate) error {
+	if err := opts.Validate(); err != nil {
+		return fmt.Errorf("validation failed: %w", err)
+	}
+
+	config, err := loadProjectConfig(opts.InputDir)
+	if err != nil {
+		return fmt.Errorf("failed to load project config: %w", err)
+	}
+
+	if err := createDirectory(opts.OutputDir); err != nil {
+		return fmt.Errorf("failed to create output directory: %w", err)
+	}
+
+	if err := changeWorkingDirectory(opts.OutputDir); err != nil {
+		return fmt.Errorf("failed to change working directory: %w", err)
+	}
+
+	if err := kubebuilderInit(config); err != nil {
+		return fmt.Errorf("failed to initialize kubebuilder: %w", err)
+	}
+
+	if err := kubebuilderEdit(config); err != nil {
+		return fmt.Errorf("failed to edit Kubebuilder config: %w", err)
+	}
+
+	if err := kubebuilderCreate(config); err != nil {
+		return fmt.Errorf("failed to create Kubebuilder resources: %w", err)
+	}
+
+	if err := migrateGrafanaPlugin(config, opts.InputDir, opts.OutputDir); err != nil {
+		return fmt.Errorf("failed to migrate Grafana plugin: %w", err)
+	}
+
+	if err := migrateDeployImagePlugin(config); err != nil {
+		return fmt.Errorf("failed to migrate Deploy Image plugin: %w", err)
+	}
+
+	return nil
+}
