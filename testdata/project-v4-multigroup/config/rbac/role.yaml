@@ -46,7 +46,7 @@ rules:
   - patch
   - update
 - apiGroups:
-  - certmanager.cert-manager.io
+  - cert-manager.io
   resources:
   - certificates
   verbs:
@@ -58,13 +58,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - certmanager.cert-manager.io
+  - cert-manager.io
   resources:
   - certificates/finalizers
   verbs:
   - update
 - apiGroups:
-  - certmanager.cert-manager.io
+  - cert-manager.io
   resources:
   - certificates/status
   verbs:
