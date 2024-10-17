@@ -29,9 +29,8 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	admissionv1 "k8s.io/api/admission/v1"
-
-	crewv1 "sigs.k8s.io/kubebuilder/testdata/project-v4/api/v1"
 
 	// +kubebuilder:scaffold:imports
 	apimachineryruntime "k8s.io/apimachinery/pkg/runtime"
@@ -69,7 +68,7 @@ var _ = BeforeSuite(func() {
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "..", "config", "crd", "bases")},
+		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "..", "..", "config", "crd", "bases")},
 		ErrorIfCRDPathMissing: false,
 
 		// The BinaryAssetsDirectory is only required if you want to run the tests directly
@@ -77,11 +76,11 @@ var _ = BeforeSuite(func() {
 		// default path defined in controller-runtime which is /usr/local/kubebuilder/.
 		// Note that you must have the required binaries setup under the bin directory to perform
 		// the tests directly. When we run make test it will be setup and used automatically.
-		BinaryAssetsDirectory: filepath.Join("..", "..", "..", "bin", "k8s",
+		BinaryAssetsDirectory: filepath.Join("..", "..", "..", "..", "bin", "k8s",
 			fmt.Sprintf("1.31.0-%s-%s", runtime.GOOS, runtime.GOARCH)),
 
 		WebhookInstallOptions: envtest.WebhookInstallOptions{
-			Paths: []string{filepath.Join("..", "..", "..", "config", "webhook")},
+			Paths: []string{filepath.Join("..", "..", "..", "..", "config", "webhook")},
 		},
 	}
 
@@ -92,7 +91,7 @@ var _ = BeforeSuite(func() {
 	Expect(cfg).NotTo(BeNil())
 
 	scheme := apimachineryruntime.NewScheme()
-	err = crewv1.AddToScheme(scheme)
+	err = certmanagerv1.AddToScheme(scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	err = admissionv1.AddToScheme(scheme)
@@ -116,12 +115,6 @@ var _ = BeforeSuite(func() {
 		LeaderElection: false,
 		Metrics:        metricsserver.Options{BindAddress: "0"},
 	})
-	Expect(err).NotTo(HaveOccurred())
-
-	err = SetupCaptainWebhookWithManager(mgr)
-	Expect(err).NotTo(HaveOccurred())
-
-	err = SetupAdmiralWebhookWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred())
 
 	err = SetupIssuerWebhookWithManager(mgr)

@@ -10,6 +10,26 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
+      path: /mutate-certmanager-cert-manager-io-v1-issuer
+  failurePolicy: Fail
+  name: missuer-v1.kb.io
+  rules:
+  - apiGroups:
+    - certmanager.cert-manager.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - issuers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
       path: /mutate-crew-testproject-org-v1-captain
   failurePolicy: Fail
   name: mcaptain-v1.kb.io
@@ -50,6 +70,26 @@ kind: ValidatingWebhookConfiguration
 metadata:
   name: validating-webhook-configuration
 webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-certmanager-cert-manager-io-v1-issuer
+  failurePolicy: Fail
+  name: vissuer-v1.kb.io
+  rules:
+  - apiGroups:
+    - certmanager.cert-manager.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - issuers
+  sideEffects: None
 - admissionReviewVersions:
   - v1
   clientConfig:

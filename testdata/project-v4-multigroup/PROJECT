@@ -132,6 +132,16 @@ resources:
   kind: Certificate
   path: github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1
   version: v1
+- domain: cert-manager.io
+  external: true
+  group: certmanager
+  kind: Issuer
+  path: github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1
+  version: v1
+  webhooks:
+    defaulting: true
+    validation: true
+    webhookVersion: v1
 - api:
     crdVersion: v1
     namespaced: true
