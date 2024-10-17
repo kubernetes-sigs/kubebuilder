@@ -91,7 +91,11 @@ func (f *Kustomization) GetCodeFragments() machinery.CodeFragmentsMap {
 
 	if !f.Resource.Webhooks.IsEmpty() {
 		webhookPatch := fmt.Sprintf(webhookPatchCodeFragment, suffix)
-		fragments[machinery.NewMarkerFor(f.Path, webhookPatchMarker)] = []string{webhookPatch}
+
+		marker := machinery.NewMarkerFor(f.Path, webhookPatchMarker)
+		if _, exists := fragments[marker]; !exists {
+			fragments[marker] = []string{webhookPatch}
+		}
 	}
 
 	// Generate resource code fragments
