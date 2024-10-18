@@ -10,12 +10,12 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-certmanager-cert-manager-io-v1-issuer
+      path: /mutate-cert-manager-io-v1-issuer
   failurePolicy: Fail
   name: missuer-v1.kb.io
   rules:
   - apiGroups:
-    - certmanager.cert-manager.io
+    - cert-manager.io
     apiVersions:
     - v1
     operations:

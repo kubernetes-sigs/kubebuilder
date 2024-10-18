@@ -1177,7 +1177,7 @@ rules:
   - patch
   - update
 - apiGroups:
-  - certmanager.cert-manager.io
+  - cert-manager.io
   resources:
   - certificates
   verbs:
@@ -1189,13 +1189,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - certmanager.cert-manager.io
+  - cert-manager.io
   resources:
   - certificates/finalizers
   verbs:
   - update
 - apiGroups:
-  - certmanager.cert-manager.io
+  - cert-manager.io
   resources:
   - certificates/status
   verbs:
@@ -1820,12 +1820,12 @@ webhooks:
     service:
       name: project-v4-multigroup-webhook-service
       namespace: project-v4-multigroup-system
-      path: /mutate-certmanager-cert-manager-io-v1-issuer
+      path: /mutate-cert-manager-io-v1-issuer
   failurePolicy: Fail
   name: missuer-v1.kb.io
   rules:
   - apiGroups:
-    - certmanager.cert-manager.io
+    - cert-manager.io
     apiVersions:
     - v1
     operations:

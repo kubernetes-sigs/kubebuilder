@@ -40,7 +40,7 @@ func SetupIssuerWebhookWithManager(mgr ctrl.Manager) error {
 
 // TODO(user): EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
-// +kubebuilder:webhook:path=/mutate-certmanager-cert-manager-io-v1-issuer,mutating=true,failurePolicy=fail,sideEffects=None,groups=certmanager.cert-manager.io,resources=issuers,verbs=create;update,versions=v1,name=missuer-v1.kb.io,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=/mutate-cert-manager-io-v1-issuer,mutating=true,failurePolicy=fail,sideEffects=None,groups=cert-manager.io,resources=issuers,verbs=create;update,versions=v1,name=missuer-v1.kb.io,admissionReviewVersions=v1
 
 // IssuerCustomDefaulter struct is responsible for setting default values on the custom resource of the
 // Kind Issuer when those are created or updated.

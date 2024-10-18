@@ -108,6 +108,14 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 			"using the legacy path")
 	}
 
+	// Ensure that if any external API flag is set, both must be provided.
+	if len(p.options.ExternalAPIPath) != 0 || len(p.options.ExternalAPIDomain) != 0 {
+		if len(p.options.ExternalAPIPath) == 0 || len(p.options.ExternalAPIDomain) == 0 {
+			return errors.New("Both '--external-api-path' and '--external-api-domain' must be " +
+				"specified together when referencing an external API.")
+		}
+	}
+
 	p.options.UpdateResource(p.resource, p.config)
 
 	if err := p.resource.Validate(); err != nil {
