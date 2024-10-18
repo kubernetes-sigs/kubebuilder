@@ -31,12 +31,9 @@ using the current version of KubeBuilder binary available.
 $ kubebuilder alpha generate --input-dir="./test" --output-dir="./my-output"
 Then we will re-scaffold the project by Kubebuilder in the directory specified by 'output-dir'.
 		`,
-		PreRunE: func(_ *cobra.Command, _ []string) error {
-			return opts.Validate()
-		},
 		Run: func(_ *cobra.Command, _ []string) {
-			if err := opts.Generate(); err != nil {
-				log.Fatalf("Failed to command %s", err)
+			if err := internal.RunGenerate(&opts); err != nil {
+				log.Fatalf("Failed to generate: %v", err)
 			}
 		},
 	}
