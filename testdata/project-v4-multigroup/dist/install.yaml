@@ -1886,19 +1886,19 @@ webhooks:
     service:
       name: project-v4-multigroup-webhook-service
       namespace: project-v4-multigroup-system
-      path: /validate-certmanager-cert-manager-io-v1-issuer
+      path: /validate--v1-pod
   failurePolicy: Fail
-  name: vissuer-v1.kb.io
+  name: vpod-v1.kb.io
   rules:
   - apiGroups:
-    - certmanager.cert-manager.io
+    - ""
     apiVersions:
     - v1
     operations:
     - CREATE
     - UPDATE
     resources:
-    - issuers
+    - pods
   sideEffects: None
 - admissionReviewVersions:
   - v1

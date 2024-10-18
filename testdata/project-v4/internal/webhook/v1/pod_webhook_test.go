@@ -20,21 +20,21 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+	corev1 "k8s.io/api/core/v1"
 	// TODO (user): Add any additional imports if needed
 )
 
-var _ = Describe("Issuer Webhook", func() {
+var _ = Describe("Pod Webhook", func() {
 	var (
-		obj       *certmanagerv1.Issuer
-		oldObj    *certmanagerv1.Issuer
-		defaulter IssuerCustomDefaulter
+		obj       *corev1.Pod
+		oldObj    *corev1.Pod
+		defaulter PodCustomDefaulter
 	)
 
 	BeforeEach(func() {
-		obj = &certmanagerv1.Issuer{}
-		oldObj = &certmanagerv1.Issuer{}
-		defaulter = IssuerCustomDefaulter{}
+		obj = &corev1.Pod{}
+		oldObj = &corev1.Pod{}
+		defaulter = PodCustomDefaulter{}
 		Expect(defaulter).NotTo(BeNil(), "Expected defaulter to be initialized")
 		Expect(oldObj).NotTo(BeNil(), "Expected oldObj to be initialized")
 		Expect(obj).NotTo(BeNil(), "Expected obj to be initialized")
@@ -45,7 +45,7 @@ var _ = Describe("Issuer Webhook", func() {
 		// TODO (user): Add any teardown logic common to all tests
 	})
 
-	Context("When creating Issuer under Defaulting Webhook", func() {
+	Context("When creating Pod under Defaulting Webhook", func() {
 		// TODO (user): Add logic for defaulting webhooks
 		// Example:
 		// It("Should apply defaults when a required field is empty", func() {

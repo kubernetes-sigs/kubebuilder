@@ -103,14 +103,6 @@ func (p *createWebhookSubcommand) InjectConfig(c config.Config) error {
 func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 	p.resource = res
 
-	// Ensure that if any external API flag is set, both must be provided.
-	if len(p.options.ExternalAPIPath) != 0 || len(p.options.ExternalAPIDomain) != 0 {
-		if len(p.options.ExternalAPIPath) == 0 || len(p.options.ExternalAPIDomain) == 0 {
-			return errors.New("Both '--external-api-path' and '--external-api-domain' must be " +
-				"specified together when referencing an external API.")
-		}
-	}
-
 	if len(p.options.ExternalAPIPath) != 0 && len(p.options.ExternalAPIDomain) != 0 && p.isLegacyPath {
 		return errors.New("You cannot scaffold webhooks for external types " +
 			"using the legacy path")
@@ -131,7 +123,7 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 	resValue, err := p.config.GetResource(p.resource.GVK)
 	res = &resValue
 	if err != nil {
-		if !p.resource.External {
+		if !p.resource.External && !p.resource.Core {
 			return fmt.Errorf("%s create webhook requires a previously created API ", p.commandName)
 		}
 	} else if res.Webhooks != nil && !res.Webhooks.IsEmpty() && !p.force {

@@ -131,6 +131,7 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 			} else {
 				// Handle core types
 				if domain, found := coreGroups[res.Group]; found {
+					res.Core = true
 					res.Domain = domain
 					res.Path = path.Join("k8s.io", "api", res.Group, res.Version)
 				}

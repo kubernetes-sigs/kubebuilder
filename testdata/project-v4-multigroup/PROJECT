@@ -103,6 +103,7 @@ resources:
   path: sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/foo.policy/v1
   version: v1
 - controller: true
+  core: true
   group: apps
   kind: Deployment
   path: k8s.io/api/apps/v1
@@ -140,6 +141,13 @@ resources:
   version: v1
   webhooks:
     defaulting: true
+    webhookVersion: v1
+- core: true
+  group: core
+  kind: Pod
+  path: k8s.io/api/core/v1
+  version: v1
+  webhooks:
     validation: true
     webhookVersion: v1
 - api:
