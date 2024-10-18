@@ -28,22 +28,22 @@ kubebuilder create api --group <theirgroup> --version <theirversion> --kind <the
 For example, if you're managing Certificates from Cert Manager:
 
 ```shell
-kubebuilder create api --group certmanager --version v1 --kind Certificate --controller=true --resource=false --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=cert-manager.io
+kubebuilder create api --group certmanager --version v1 --kind Certificate --controller=true --resource=false --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io
 ```
 
-See the RBAC markers generated for this:
+See the RBAC [markers][markers-rbac] generated for this:
 
 ```go
-// +kubebuilder:rbac:groups=certmanager.cert-manager.io,resources=certificates,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=certmanager.cert-manager.io,resources=certificates/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=certmanager.cert-manager.io,resources=certificates/finalizers,verbs=update
+// +kubebuilder:rbac:groups=cert-manager.io,resources=certificates,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=cert-manager.io,resources=certificates/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=cert-manager.io,resources=certificates/finalizers,verbs=update
 ```
 
 Also, the RBAC role:
 
 ```ymal
 - apiGroups:
-  - certmanager.cert-manager.io
+  - cert-manager.io
   resources:
   - certificates
   verbs:
@@ -55,13 +55,13 @@ Also, the RBAC role:
   - update
   - watch
 - apiGroups:
-  - certmanager.cert-manager.io
+  - cert-manager.io
   resources:
   - certificates/finalizers
   verbs:
   - update
 - apiGroups:
-  - certmanager.cert-manager.io
+  - cert-manager.io
   resources:
   - certificates/status
   verbs:
@@ -126,7 +126,7 @@ For instance, to create a controller to manage Deployment the command would be l
 create api --group apps --version v1 --kind Deployment --controller=true --resource=false
 ```
 
-See the RBAC markers generated for this:
+See the RBAC [markers][markers-rbac] generated for this:
 
 ```go
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
@@ -134,7 +134,7 @@ See the RBAC markers generated for this:
 // +kubebuilder:rbac:groups=apps,resources=deployments/finalizers,verbs=update
 ```
 
-Also, the RBAC for the above markers:
+Also, the RBAC for the above [markers][markers-rbac]:
 
 ```yaml
 - apiGroups:
@@ -176,4 +176,4 @@ See an example:
 ```go
 kubebuilder create webhook --group core --version v1 --kind Pod --programmatic-validation
 ```
-
+[markers-rbac]: ./markers/rbac.md
