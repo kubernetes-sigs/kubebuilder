@@ -57,9 +57,10 @@ chmod +x kubebuilder && sudo mv kubebuilder /usr/local/bin/
 ```
 
 <aside class="note">
-<h1>Using master branch</h1>
+<h1>Using the Master Branch</h1>
 
-You can work with a master snapshot by installing from `https://go.kubebuilder.io/dl/master/$(go env GOOS)/$(go env GOARCH)`.
+You can work with the master branch by cloning the repository and running `make install` to generate the binary.
+Please follow the steps in the section **How to Build Kubebuilder Locally** from the [Contributing Guide](https://github.com/kubernetes-sigs/kubebuilder/blob/master/CONTRIBUTING.md#how-to-build-kubebuilder-locally).
 
 </aside>
 
