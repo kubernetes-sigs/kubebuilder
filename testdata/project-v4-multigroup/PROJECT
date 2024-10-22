@@ -127,15 +127,15 @@ resources:
   path: sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/fiz/v1
   version: v1
 - controller: true
-  domain: cert-manager.io
+  domain: io
   external: true
-  group: certmanager
+  group: cert-manager
   kind: Certificate
   path: github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1
   version: v1
-- domain: cert-manager.io
+- domain: io
   external: true
-  group: certmanager
+  group: cert-manager
   kind: Issuer
   path: github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1
   version: v1
