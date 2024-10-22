@@ -33,10 +33,9 @@ Following is an example of a code implementation that raises an Event.
 
 ```go
 	// The following implementation will raise an event
-	r.Recorder.Event(cr, "Warning", "Deleting",
-		fmt.Sprintf("Custom Resource %s is being deleted from the namespace %s",
-			cr.Name,
-			cr.Namespace))
+	r.Recorder.Eventf(cr, "Warning", "Deleting",
+		"Custom Resource %s is being deleted from the namespace %s",
+		cr.Name, cr.Namespace)
 ```
 
 </aside>

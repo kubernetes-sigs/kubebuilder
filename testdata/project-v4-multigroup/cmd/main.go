@@ -35,7 +35,10 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
+	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+
 	crewv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/crew/v1"
+	examplecomv1alpha1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/example.com/v1alpha1"
 	fizv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/fiz/v1"
 	foopolicyv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/foo.policy/v1"
 	foov1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/foo/v1"
@@ -44,15 +47,22 @@ import (
 	shipv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/ship/v1"
 	shipv1beta1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/ship/v1beta1"
 	shipv2alpha1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/ship/v2alpha1"
-	testprojectorgv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/v1"
-	"sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/controller"
 	appscontroller "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/controller/apps"
+	certmanagercontroller "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/controller/cert-manager"
 	crewcontroller "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/controller/crew"
+	examplecomcontroller "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/controller/example.com"
 	fizcontroller "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/controller/fiz"
 	foocontroller "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/controller/foo"
 	foopolicycontroller "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/controller/foo.policy"
 	seacreaturescontroller "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/controller/sea-creatures"
 	shipcontroller "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/controller/ship"
+	webhookcertmanagerv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/webhook/cert-manager/v1"
+	webhookcorev1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/webhook/core/v1"
+	webhookcrewv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/webhook/crew/v1"
+	webhookexamplecomv1alpha1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/webhook/example.com/v1alpha1"
+	webhookshipv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/webhook/ship/v1"
+	webhookshipv1beta1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/webhook/ship/v1beta1"
+	webhookshipv2alpha1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/webhook/ship/v2alpha1"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -73,7 +83,8 @@ func init() {
 	utilruntime.Must(foopolicyv1.AddToScheme(scheme))
 	utilruntime.Must(foov1.AddToScheme(scheme))
 	utilruntime.Must(fizv1.AddToScheme(scheme))
-	utilruntime.Must(testprojectorgv1.AddToScheme(scheme))
+	utilruntime.Must(certmanagerv1.AddToScheme(scheme))
+	utilruntime.Must(examplecomv1alpha1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -176,8 +187,9 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Captain")
 		os.Exit(1)
 	}
+	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = (&crewv1.Captain{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = webhookcrewv1.SetupCaptainWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Captain")
 			os.Exit(1)
 		}
@@ -189,8 +201,9 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Frigate")
 		os.Exit(1)
 	}
+	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = (&shipv1beta1.Frigate{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = webhookshipv1beta1.SetupFrigateWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Frigate")
 			os.Exit(1)
 		}
@@ -202,8 +215,9 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Destroyer")
 		os.Exit(1)
 	}
+	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = (&shipv1.Destroyer{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = webhookshipv1.SetupDestroyerWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Destroyer")
 			os.Exit(1)
 		}
@@ -215,8 +229,9 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Cruiser")
 		os.Exit(1)
 	}
+	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = (&shipv2alpha1.Cruiser{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = webhookshipv2alpha1.SetupCruiserWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Cruiser")
 			os.Exit(1)
 		}
@@ -263,16 +278,47 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Bar")
 		os.Exit(1)
 	}
-	if err = (&controller.LakersReconciler{
+	if err = (&certmanagercontroller.CertificateReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Lakers")
+		setupLog.Error(err, "unable to create controller", "controller", "Certificate")
 		os.Exit(1)
 	}
+	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = (&testprojectorgv1.Lakers{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Lakers")
+		if err = webhookcertmanagerv1.SetupIssuerWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Issuer")
+			os.Exit(1)
+		}
+	}
+	// nolint:goconst
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err = webhookcorev1.SetupPodWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Pod")
+			os.Exit(1)
+		}
+	}
+	if err = (&examplecomcontroller.MemcachedReconciler{
+		Client:   mgr.GetClient(),
+		Scheme:   mgr.GetScheme(),
+		Recorder: mgr.GetEventRecorderFor("memcached-controller"),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Memcached")
+		os.Exit(1)
+	}
+	if err = (&examplecomcontroller.BusyboxReconciler{
+		Client:   mgr.GetClient(),
+		Scheme:   mgr.GetScheme(),
+		Recorder: mgr.GetEventRecorderFor("busybox-controller"),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Busybox")
+		os.Exit(1)
+	}
+	// nolint:goconst
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err = webhookexamplecomv1alpha1.SetupMemcachedWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Memcached")
 			os.Exit(1)
 		}
 	}

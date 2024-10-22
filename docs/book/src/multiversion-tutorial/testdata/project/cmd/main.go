@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+// +kubebuilder:docs-gen:collapse=Apache License
 
 package main
 
@@ -39,6 +40,8 @@ import (
 	batchv1 "tutorial.kubebuilder.io/project/api/v1"
 	batchv2 "tutorial.kubebuilder.io/project/api/v2"
 	"tutorial.kubebuilder.io/project/internal/controller"
+	webhookbatchv1 "tutorial.kubebuilder.io/project/internal/webhook/v1"
+	webhookbatchv2 "tutorial.kubebuilder.io/project/internal/webhook/v2"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -46,6 +49,7 @@ import (
 
 /*
  */
+
 var (
 	scheme   = runtime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup")
@@ -64,6 +68,7 @@ func init() {
 
 /*
  */
+
 func main() {
 	/*
 	 */
@@ -112,7 +117,7 @@ func main() {
 
 	// Metrics endpoint is enabled in 'config/default/kustomization.yaml'. The Metrics options configure the server.
 	// More info:
-	// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.18.4/pkg/metrics/server
+	// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.19.0/pkg/metrics/server
 	// - https://book.kubebuilder.io/reference/metrics.html
 	metricsServerOptions := metricsserver.Options{
 		BindAddress:   metricsAddr,
@@ -130,7 +135,7 @@ func main() {
 		// FilterProvider is used to protect the metrics endpoint with authn/authz.
 		// These configurations ensure that only authorized users and service accounts
 		// can access the metrics endpoint. The RBAC are configured in 'config/rbac/kustomization.yaml'. More info:
-		// https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.18.4/pkg/metrics/filters#WithAuthenticationAndAuthorization
+		// https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.19.0/pkg/metrics/filters#WithAuthenticationAndAuthorization
 		metricsServerOptions.FilterProvider = filters.WithAuthenticationAndAuthorization
 	}
 
@@ -165,23 +170,25 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "CronJob")
 		os.Exit(1)
 	}
-
 	// +kubebuilder:docs-gen:collapse=existing setup
 
 	/*
 		Our existing call to SetupWebhookWithManager registers our conversion webhooks with the manager, too.
 	*/
+	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = (&batchv1.CronJob{}).SetupWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "CronJob")
-			os.Exit(1)
-		}
-		if err = (&batchv2.CronJob{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = webhookbatchv1.SetupCronJobWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "CronJob")
 			os.Exit(1)
 		}
 	}
-
+	// nolint:goconst
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err = webhookbatchv2.SetupCronJobWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "CronJob")
+			os.Exit(1)
+		}
+	}
 	// +kubebuilder:scaffold:builder
 
 	/*

@@ -47,6 +47,7 @@ func creatingAPI(kbc *utils.TestContext) {
 		"--kind", kbc.Kind,
 		"--plugins", "deploy-image/v1-alpha",
 		"--image", "busybox:1.36.1",
+		"--run-as-user", "1001",
 		"--make=false",
 		"--manifests=false",
 	)
@@ -63,7 +64,7 @@ func creatingAPIWithOptions(kbc *utils.TestContext) {
 		"--plugins", "deploy-image/v1-alpha",
 		"--image", "memcached:1.6.26-alpine3.19",
 		"--image-container-port", "11211",
-		"--image-container-command", "memcached,-m=64,-o,modern,-v",
+		"--image-container-command", "memcached,--memory-limit=64,-o,modern,-v",
 		"--run-as-user", "1001",
 		"--make=false",
 		"--manifests=false",

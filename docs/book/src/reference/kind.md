@@ -1,4 +1,11 @@
-# Kind Cluster
+# Using Kind For Development Purposes and CI
+
+## Why Use Kind
+
+- **Fast Setup:** Launch a multi-node Kubernetes cluster locally in under a minute.
+- **Quick Teardown:** Dismantle the cluster in just a few seconds, streamlining your development workflow.
+- **Local Image Usage:** Deploy your container images directly without the need to push to a remote registry.
+- **Lightweight and Efficient:** Kind is a minimalistic Kubernetes distribution, making it perfect for local development and CI/CD pipelines.
 
 This only cover the basics to use a kind cluster. You can find more details at
 [kind documentation](https://kind.sigs.k8s.io/).

@@ -1,8 +1,8 @@
 # Implementing defaulting/validating webhooks
 
 If you want to implement [admission webhooks](../reference/admission-webhook.md)
-for your CRD, the only thing you need to do is to implement the `Defaulter`
-and (or) the `Validator` interface.
+for your CRD, the only thing you need to do is to implement the `CustomDefaulter`
+and (or) the `CustomValidator` interface.
 
 Kubebuilder takes care of the rest for you, such as
 
@@ -19,17 +19,4 @@ kubebuilder create webhook --group batch --version v1 --kind CronJob --defaultin
 
 This will scaffold the webhook functions and register your webhook with the manager in your `main.go` for you.
 
-<aside class="note">
-
-<h1>Supporting older cluster versions</h1>
-
-The default WebhookConfiguration manifests created alongside your Go webhook implementation
-use API version `v1`. If your project intends to support Kubernetes cluster versions older
-than v1.16, set `--webhook-version v1beta1`. See the [webhook reference][webhook-reference]
-for more information.
-
-[webhook-reference]: /reference/webhook-overview.md#supporting-older-cluster-versions
-
-</aside>
-
-{{#literatego ./testdata/project/api/v1/cronjob_webhook.go}}
+{{#literatego ./testdata/project/internal/webhook/v1/cronjob_webhook.go}}

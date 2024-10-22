@@ -58,5 +58,6 @@ func (r *CaptainReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 func (r *CaptainReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&crewv1.Captain{}).
+		Named("captain").
 		Complete(r)
 }

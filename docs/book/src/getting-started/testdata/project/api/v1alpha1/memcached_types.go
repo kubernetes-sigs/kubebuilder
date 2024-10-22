@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+// +kubebuilder:docs-gen:collapse=Apache License
 
 package v1alpha1
 
@@ -23,7 +24,9 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// MemcachedSpec defines the desired state of Memcached
+// +kubebuilder:docs-gen:collapse=Imports
+
+// MemcachedSpec defines the desired state of Memcached.
 type MemcachedSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
@@ -35,12 +38,9 @@ type MemcachedSpec struct {
 	// +kubebuilder:validation:Maximum=3
 	// +kubebuilder:validation:ExclusiveMaximum=false
 	Size int32 `json:"size,omitempty"`
-
-	// Port defines the port that will be used to init the container with the image
-	ContainerPort int32 `json:"containerPort,omitempty"`
 }
 
-// MemcachedStatus defines the observed state of Memcached
+// MemcachedStatus defines the observed state of Memcached.
 type MemcachedStatus struct {
 	// Represents the observations of a Memcached's current state.
 	// Memcached.status.conditions.type are: "Available", "Progressing", and "Degraded"
@@ -57,7 +57,7 @@ type MemcachedStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// Memcached is the Schema for the memcacheds API
+// Memcached is the Schema for the memcacheds API.
 type Memcached struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -68,7 +68,7 @@ type Memcached struct {
 
 // +kubebuilder:object:root=true
 
-// MemcachedList contains a list of Memcached
+// MemcachedList contains a list of Memcached.
 type MemcachedList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

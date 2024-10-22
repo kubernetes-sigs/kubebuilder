@@ -6,6 +6,25 @@ domain: testproject.org
 layout:
 - go.kubebuilder.io/v4
 multigroup: true
+plugins:
+  deploy-image.go.kubebuilder.io/v1-alpha:
+    resources:
+    - domain: testproject.org
+      group: example.com
+      kind: Memcached
+      options:
+        containerCommand: memcached,--memory-limit=64,-o,modern,-v
+        containerPort: "11211"
+        image: memcached:memcached:1.6.26-alpine3.19
+        runAsUser: "1001"
+      version: v1alpha1
+    - domain: testproject.org
+      group: example.com
+      kind: Busybox
+      options:
+        image: busybox:1.36.1
+      version: v1alpha1
+  grafana.kubebuilder.io/v1-alpha: {}
 projectName: project-v4-multigroup
 repo: sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup
 resources:
@@ -84,6 +103,7 @@ resources:
   path: sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/foo.policy/v1
   version: v1
 - controller: true
+  core: true
   group: apps
   kind: Deployment
   path: k8s.io/api/apps/v1
@@ -106,16 +126,49 @@ resources:
   kind: Bar
   path: sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/fiz/v1
   version: v1
+- controller: true
+  domain: io
+  external: true
+  group: cert-manager
+  kind: Certificate
+  path: github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1
+  version: v1
+- domain: io
+  external: true
+  group: cert-manager
+  kind: Issuer
+  path: github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1
+  version: v1
+  webhooks:
+    defaulting: true
+    webhookVersion: v1
+- core: true
+  group: core
+  kind: Pod
+  path: k8s.io/api/core/v1
+  version: v1
+  webhooks:
+    validation: true
+    webhookVersion: v1
 - api:
     crdVersion: v1
     namespaced: true
   controller: true
   domain: testproject.org
-  kind: Lakers
-  path: sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/v1
-  version: v1
+  group: example.com
+  kind: Memcached
+  path: sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/example.com/v1alpha1
+  version: v1alpha1
   webhooks:
-    defaulting: true
     validation: true
     webhookVersion: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: testproject.org
+  group: example.com
+  kind: Busybox
+  path: sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/example.com/v1alpha1
+  version: v1alpha1
 version: "3"

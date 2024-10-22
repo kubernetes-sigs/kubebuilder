@@ -28,6 +28,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins"
 	kustomizecommonv2 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds/internal/templates"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds/internal/templates/github"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds/internal/templates/hack"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds/internal/templates/test/e2e"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds/internal/templates/test/utils"
@@ -37,7 +38,7 @@ const (
 	// ControllerRuntimeVersion is the kubernetes-sigs/controller-runtime version to be used in the project
 	ControllerRuntimeVersion = "v0.19.0"
 	// ControllerToolsVersion is the kubernetes-sigs/controller-tools version to be used in the project
-	ControllerToolsVersion = "v0.16.1"
+	ControllerToolsVersion = "v0.16.4"
 	// EnvtestK8SVersion is the k8s version used to do the scaffold
 	EnvtestK8SVersion = "1.31.0"
 
@@ -160,7 +161,13 @@ func (s *initScaffolder) Scaffold() error {
 		&templates.Readme{},
 		&templates.Golangci{},
 		&e2e.Test{},
+		&e2e.WebhookTestUpdater{WireWebhook: false},
 		&e2e.SuiteTest{},
+		&github.E2eTestCi{},
+		&github.TestCi{},
+		&github.LintCi{},
 		&utils.Utils{},
+		&templates.DevContainer{},
+		&templates.DevContainerPostInstallScript{},
 	)
 }

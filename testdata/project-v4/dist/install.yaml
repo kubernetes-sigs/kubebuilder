@@ -11,7 +11,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
+    controller-gen.kubebuilder.io/version: v0.16.4
   name: admirales.crew.testproject.org
 spec:
   conversion:
@@ -35,7 +35,7 @@ spec:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: Admiral is the Schema for the admirales API
+        description: Admiral is the Schema for the admirales API.
         properties:
           apiVersion:
             description: |-
@@ -55,7 +55,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: AdmiralSpec defines the desired state of Admiral
+            description: AdmiralSpec defines the desired state of Admiral.
             properties:
               foo:
                 description: Foo is an example field of Admiral. Edit admiral_types.go
@@ -63,7 +63,7 @@ spec:
                 type: string
             type: object
           status:
-            description: AdmiralStatus defines the observed state of Admiral
+            description: AdmiralStatus defines the observed state of Admiral.
             type: object
         type: object
     served: true
@@ -75,7 +75,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
+    controller-gen.kubebuilder.io/version: v0.16.4
   name: captains.crew.testproject.org
 spec:
   conversion:
@@ -99,7 +99,7 @@ spec:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: Captain is the Schema for the captains API
+        description: Captain is the Schema for the captains API.
         properties:
           apiVersion:
             description: |-
@@ -119,7 +119,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: CaptainSpec defines the desired state of Captain
+            description: CaptainSpec defines the desired state of Captain.
             properties:
               foo:
                 description: Foo is an example field of Captain. Edit captain_types.go
@@ -127,7 +127,7 @@ spec:
                 type: string
             type: object
           status:
-            description: CaptainStatus defines the observed state of Captain
+            description: CaptainStatus defines the observed state of Captain.
             type: object
         type: object
     served: true
@@ -139,7 +139,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
+    controller-gen.kubebuilder.io/version: v0.16.4
   name: firstmates.crew.testproject.org
 spec:
   conversion:
@@ -163,7 +163,7 @@ spec:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: FirstMate is the Schema for the firstmates API
+        description: FirstMate is the Schema for the firstmates API.
         properties:
           apiVersion:
             description: |-
@@ -183,7 +183,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: FirstMateSpec defines the desired state of FirstMate
+            description: FirstMateSpec defines the desired state of FirstMate.
             properties:
               foo:
                 description: Foo is an example field of FirstMate. Edit firstmate_types.go
@@ -191,7 +191,7 @@ spec:
                 type: string
             type: object
           status:
-            description: FirstMateStatus defines the observed state of FirstMate
+            description: FirstMateStatus defines the observed state of FirstMate.
             type: object
         type: object
     served: true
@@ -405,12 +405,37 @@ metadata:
   name: project-v4-manager-role
 rules:
 - apiGroups:
+  - cert-manager.io
+  resources:
+  - certificates
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cert-manager.io
+  resources:
+  - certificates/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - cert-manager.io
+  resources:
+  - certificates/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - crew.testproject.org
   resources:
   - admirales
   - captains
   - firstmates
-  - lakers
   verbs:
   - create
   - delete
@@ -425,7 +450,6 @@ rules:
   - admirales/finalizers
   - captains/finalizers
   - firstmates/finalizers
-  - lakers/finalizers
   verbs:
   - update
 - apiGroups:
@@ -434,7 +458,6 @@ rules:
   - admirales/status
   - captains/status
   - firstmates/status
-  - lakers/status
   verbs:
   - get
   - patch
@@ -633,7 +656,7 @@ webhooks:
       namespace: project-v4-system
       path: /mutate-crew-testproject-org-v1-admiral
   failurePolicy: Fail
-  name: madmiral.kb.io
+  name: madmiral-v1.kb.io
   rules:
   - apiGroups:
     - crew.testproject.org
@@ -653,7 +676,7 @@ webhooks:
       namespace: project-v4-system
       path: /mutate-crew-testproject-org-v1-captain
   failurePolicy: Fail
-  name: mcaptain.kb.io
+  name: mcaptain-v1.kb.io
   rules:
   - apiGroups:
     - crew.testproject.org
@@ -664,6 +687,46 @@ webhooks:
     - UPDATE
     resources:
     - captains
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: project-v4-webhook-service
+      namespace: project-v4-system
+      path: /mutate-cert-manager-io-v1-issuer
+  failurePolicy: Fail
+  name: missuer-v1.kb.io
+  rules:
+  - apiGroups:
+    - cert-manager.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - issuers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: project-v4-webhook-service
+      namespace: project-v4-system
+      path: /mutate--v1-pod
+  failurePolicy: Fail
+  name: mpod-v1.kb.io
+  rules:
+  - apiGroups:
+    - ""
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - pods
   sideEffects: None
 ---
 apiVersion: admissionregistration.k8s.io/v1
@@ -679,7 +742,7 @@ webhooks:
       namespace: project-v4-system
       path: /validate-crew-testproject-org-v1-captain
   failurePolicy: Fail
-  name: vcaptain.kb.io
+  name: vcaptain-v1.kb.io
   rules:
   - apiGroups:
     - crew.testproject.org

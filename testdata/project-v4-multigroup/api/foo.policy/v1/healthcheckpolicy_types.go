@@ -23,7 +23,7 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// HealthCheckPolicySpec defines the desired state of HealthCheckPolicy
+// HealthCheckPolicySpec defines the desired state of HealthCheckPolicy.
 type HealthCheckPolicySpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
@@ -32,7 +32,7 @@ type HealthCheckPolicySpec struct {
 	Foo string `json:"foo,omitempty"`
 }
 
-// HealthCheckPolicyStatus defines the observed state of HealthCheckPolicy
+// HealthCheckPolicyStatus defines the observed state of HealthCheckPolicy.
 type HealthCheckPolicyStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
@@ -41,7 +41,7 @@ type HealthCheckPolicyStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// HealthCheckPolicy is the Schema for the healthcheckpolicies API
+// HealthCheckPolicy is the Schema for the healthcheckpolicies API.
 type HealthCheckPolicy struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -52,7 +52,7 @@ type HealthCheckPolicy struct {
 
 // +kubebuilder:object:root=true
 
-// HealthCheckPolicyList contains a list of HealthCheckPolicy
+// HealthCheckPolicyList contains a list of HealthCheckPolicy.
 type HealthCheckPolicyList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

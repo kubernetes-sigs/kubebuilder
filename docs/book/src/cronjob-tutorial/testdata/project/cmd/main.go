@@ -38,6 +38,7 @@ import (
 
 	batchv1 "tutorial.kubebuilder.io/project/api/v1"
 	"tutorial.kubebuilder.io/project/internal/controller"
+	webhookbatchv1 "tutorial.kubebuilder.io/project/internal/webhook/v1"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -181,8 +182,9 @@ func main() {
 
 		We'll just make sure to set `ENABLE_WEBHOOKS=false` when we run locally.
 	*/
+	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = (&batchv1.CronJob{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = webhookbatchv1.SetupCronJobWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "CronJob")
 			os.Exit(1)
 		}

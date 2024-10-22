@@ -20,6 +20,7 @@ Since we're in a v2 package, controller-gen will assume this is for the v2
 version automatically.  We could override that with the [`+versionName`
 marker](/reference/markers/crd.md).
 */
+
 package v2
 
 /*
@@ -38,7 +39,7 @@ import (
 /*
 We'll leave our spec largely unchanged, except to change the schedule field to a new type.
 */
-// CronJobSpec defines the desired state of CronJob
+// CronJobSpec defines the desired state of CronJob.
 type CronJobSpec struct {
 	// The schedule in Cron format, see https://en.wikipedia.org/wiki/Cron.
 	Schedule CronSchedule `json:"schedule"`
@@ -84,6 +85,7 @@ type CronJobSpec struct {
 	FailedJobsHistoryLimit *int32 `json:"failedJobsHistoryLimit,omitempty"`
 
 	// +kubebuilder:docs-gen:collapse=The rest of Spec
+
 }
 
 /*
@@ -159,8 +161,8 @@ type CronJobStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-
-// CronJob is the Schema for the cronjobs API
+// +versionName=v2
+// CronJob is the Schema for the cronjobs API.
 type CronJob struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -171,7 +173,7 @@ type CronJob struct {
 
 // +kubebuilder:object:root=true
 
-// CronJobList contains a list of CronJob
+// CronJobList contains a list of CronJob.
 type CronJobList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

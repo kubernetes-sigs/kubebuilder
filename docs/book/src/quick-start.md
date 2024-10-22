@@ -15,13 +15,34 @@ This Quick Start guide will cover:
 - Access to a Kubernetes v1.11.3+ cluster.
 
 <aside class="note">
-<h1>Versions and Supportability</h1>
+<h1>Versions Compatibility and Supportability</h1>
 
-Projects created by Kubebuilder contain a Makefile that will install tools at versions defined at creation time. Those tools are:
+Projects created by Kubebuilder contain a `Makefile` that installs tools at versions defined during project creation.
+The main tools included are:
+
 - [kustomize](https://github.com/kubernetes-sigs/kustomize)
 - [controller-gen](https://github.com/kubernetes-sigs/controller-tools)
+- [setup-envtest](https://github.com/kubernetes-sigs/controller-runtime/tree/main/tools/setup-envtest)
 
-The versions which are defined in the `Makefile` and `go.mod` files are the versions tested and therefore is recommended to use the specified versions.
+Additionally, these projects include a `go.mod` file specifying dependency versions.
+Kubebuilder relies on [controller-runtime](https://github.com/kubernetes-sigs/controller-runtime) and its Go and Kubernetes dependencies.
+Therefore, the versions defined in the `Makefile` and `go.mod` files are the ones that have been tested, supported, and recommended.
+
+Each minor version of Kubebuilder is tested with a specific minor version of client-go.
+While a Kubebuilder minor version *may* be compatible with other client-go minor versions,
+or other tools this compatibility is not guaranteed, supported, or tested.
+
+The minimum Go version required by Kubebuilder is determined by the highest minimum
+Go version required by its dependencies. This is usually aligned with the minimum
+Go version required by the corresponding `k8s.io/*` dependencies.
+
+Compatible `k8s.io/*` versions, client-go versions, and minimum Go versions can be found in the `go.mod`
+file scaffolded for each project for each [tag release](https://github.com/kubernetes-sigs/kubebuilder/tags).
+
+**Example:** For the `4.1.1` release, the minimum Go version compatibility is `1.22`.
+You can refer to the samples in the testdata directory of the tag released [v4.1.1](https://github.com/kubernetes-sigs/kubebuilder/tree/v4.1.1/testdata),
+such as the [go.mod](https://github.com/kubernetes-sigs/kubebuilder/blob/v4.1.1/testdata/project-v4/go.mod#L3) file for `project-v4`. You can also check the tools versions supported and
+tested for this release by examining the [Makefile](https://github.com/kubernetes-sigs/kubebuilder/blob/v4.1.1/testdata/project-v4/Makefile#L160-L165).
 
 </aside>
 
@@ -199,10 +220,20 @@ make deploy IMG=<some-registry>/<project-name>:tag
 ```
 
 <aside class="note">
-<h1>registry permission</h1>
+<h1>Registry Permission</h1>
 
 This image ought to be published in the personal registry you specified. And it is required to have access to pull the image from the working environment.
 Make sure you have the proper permission to the registry if the above commands don't work.
+
+Consider incorporating Kind into your workflow for a faster, more efficient local development and CI experience.
+Note that, if you're using a Kind cluster, there's no need to push your image to a remote container registry.
+You can directly load your local image into your specified Kind cluster:
+
+```bash
+kind load docker-image <your-image-name>:tag --name <your-kind-cluster-name>
+```
+
+To know more, see: [Using Kind For Development Purposes and CI](./reference/kind.md)
 
 <h1>RBAC errors</h1>
 
@@ -229,19 +260,10 @@ make undeploy
 
 ## Next Step
 
-Now, see the [architecture concept diagram][architecture-concept-diagram] for a better overview and follow up the
-[CronJob tutorial][cronjob-tutorial] to better understand how it works by developing a
-demo example project.
-
-<aside class="note">
-<h1> Using Deploy Image plugin to generate APIs and controllers code </h1>
-
-Ensure that you check out the [Deploy Image](https://book.kubebuilder.io/plugins/deploy-image-plugin-v1-alpha.html)
-Plugin. This plugin allows users to scaffold API/Controllers to deploy and manage an
-Operand (image) on the cluster following the guidelines and best practices. It abstracts the
-complexities of achieving this goal while allowing users to customize the generated code.
-
-</aside>
+- Now, take a look at the [Architecture Concept Diagram][architecture-concept-diagram] for a clearer overview.
+- Next, proceed with the [Getting Started Guide][getting-started], which should take no more than 30 minutes and will
+provide a solid foundation. Afterward, dive into the [CronJob Tutorial][cronjob-tutorial] to deepen your
+understanding by developing a demo project.
 
 [pre-rbc-gke]: https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#iam-rolebinding-bootstrap
 [cronjob-tutorial]: https://book.kubebuilder.io/cronjob-tutorial/cronjob-tutorial.html
@@ -250,3 +272,4 @@ complexities of achieving this goal while allowing users to customize the genera
 [envtest]: https://book.kubebuilder.io/reference/testing/envtest.html
 [architecture-concept-diagram]: architecture.md
 [kustomize]: https://github.com/kubernetes-sigs/kustomize
+[getting-started]: getting-started.md

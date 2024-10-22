@@ -65,6 +65,11 @@ spec:
           - --health-probe-bind-address=:8081
         image: controller:latest
         name: manager
+        env:
+        - name: BUSYBOX_IMAGE
+          value: busybox:1.36.1
+        - name: MEMCACHED_IMAGE
+          value: memcached:memcached:1.6.26-alpine3.19
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:

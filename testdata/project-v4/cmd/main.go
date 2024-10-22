@@ -35,8 +35,13 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
+	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+
 	crewv1 "sigs.k8s.io/kubebuilder/testdata/project-v4/api/v1"
 	"sigs.k8s.io/kubebuilder/testdata/project-v4/internal/controller"
+	webhookcertmanagerv1 "sigs.k8s.io/kubebuilder/testdata/project-v4/internal/webhook/v1"
+	webhookcorev1 "sigs.k8s.io/kubebuilder/testdata/project-v4/internal/webhook/v1"
+	webhookcrewv1 "sigs.k8s.io/kubebuilder/testdata/project-v4/internal/webhook/v1"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -49,6 +54,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(crewv1.AddToScheme(scheme))
+	utilruntime.Must(certmanagerv1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -151,8 +157,9 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Captain")
 		os.Exit(1)
 	}
+	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = (&crewv1.Captain{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = webhookcrewv1.SetupCaptainWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Captain")
 			os.Exit(1)
 		}
@@ -164,8 +171,9 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "FirstMate")
 		os.Exit(1)
 	}
+	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = (&crewv1.FirstMate{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = webhookcrewv1.SetupFirstMateWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "FirstMate")
 			os.Exit(1)
 		}
@@ -177,18 +185,33 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Admiral")
 		os.Exit(1)
 	}
+	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = (&crewv1.Admiral{}).SetupWebhookWithManager(mgr); err != nil {
+		if err = webhookcrewv1.SetupAdmiralWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Admiral")
 			os.Exit(1)
 		}
 	}
-	if err = (&controller.LakerReconciler{
+	if err = (&controller.CertificateReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Laker")
+		setupLog.Error(err, "unable to create controller", "controller", "Certificate")
 		os.Exit(1)
+	}
+	// nolint:goconst
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err = webhookcertmanagerv1.SetupIssuerWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Issuer")
+			os.Exit(1)
+		}
+	}
+	// nolint:goconst
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err = webhookcorev1.SetupPodWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Pod")
+			os.Exit(1)
+		}
 	}
 	// +kubebuilder:scaffold:builder
 

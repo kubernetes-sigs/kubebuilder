@@ -31,11 +31,11 @@ import (
 )
 
 const (
-	certmanagerVersion        = "v1.14.4"
+	certmanagerVersion        = "v1.16.0"
 	certmanagerURLTmpl        = "https://github.com/cert-manager/cert-manager/releases/download/%s/cert-manager.yaml"
-	prometheusOperatorVersion = "0.51"
-	prometheusOperatorURL     = "https://raw.githubusercontent.com/prometheus-operator/" +
-		"prometheus-operator/release-%s/bundle.yaml"
+	prometheusOperatorVersion = "v0.77.1"
+	prometheusOperatorURL     = "https://github.com/prometheus-operator/prometheus-operator/" +
+		"releases/download/%s/bundle.yaml"
 )
 
 // TestContext specified to run e2e tests
@@ -126,8 +126,7 @@ func (t *TestContext) makePrometheusOperatorURL() string {
 	return fmt.Sprintf(prometheusOperatorURL, prometheusOperatorVersion)
 }
 
-// InstallCertManager installs the cert manager bundle. If hasv1beta1CRs is true,
-// the legacy version (which uses v1alpha2 CRs) is installed.
+// InstallCertManager installs the cert manager bundle.
 func (t *TestContext) InstallCertManager() error {
 	url := t.makeCertManagerURL()
 	if _, err := t.Kubectl.Apply(false, "-f", url, "--validate=false"); err != nil {
@@ -154,7 +153,7 @@ func (t *TestContext) UninstallCertManager() {
 // InstallPrometheusOperManager installs the prometheus manager bundle.
 func (t *TestContext) InstallPrometheusOperManager() error {
 	url := t.makePrometheusOperatorURL()
-	_, err := t.Kubectl.Apply(false, "-f", url)
+	_, err := t.Kubectl.Command("create", "-f", url)
 	return err
 }
 

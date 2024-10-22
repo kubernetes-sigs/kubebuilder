@@ -1,5 +1,4 @@
 /*
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -36,8 +35,8 @@ import (
 /*
 Our "spoke" versions need to implement the
 [`Convertible`](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/conversion?tab=doc#Convertible)
-interface.  Namely, they'll need `ConvertTo` and `ConvertFrom` methods to convert to/from
-the hub version.
+interface. Namely, they'll need `ConvertTo()` and `ConvertFrom()`
+methods to convert to/from the hub version.
 */
 
 /*

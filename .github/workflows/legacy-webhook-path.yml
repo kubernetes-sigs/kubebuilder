@@ -1,0 +1,32 @@
+# This test ensure that the legacy webhook path
+# still working. The option is deprecated
+# and should be removed when we no longer need
+# to support go/v4 plugin.
+name: Legacy Webhook Path
+
+on:
+  push:
+    paths:
+      - 'testdata/**'
+      - '.github/workflows/legacy-webhook-path.yml'
+  pull_request:
+    paths:
+      - 'testdata/**'
+      - '.github/workflows/legacy-webhook-path.yml'
+
+jobs:
+  webhook-legacy-path:
+    name: Verify Legacy Webhook Path
+    runs-on: ubuntu-latest
+    # Pull requests from the same repository won't trigger this checks as they were already triggered by the push
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    steps:
+      - name: Clone the code
+        uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22.3'
+      - name: Run make test-legacy
+        run: make test-legacy
+

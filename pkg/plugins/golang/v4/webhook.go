@@ -17,6 +17,7 @@ limitations under the License.
 package v4
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/spf13/pflag"
@@ -43,6 +44,10 @@ type createWebhookSubcommand struct {
 
 	// force indicates that the resource should be created even if it already exists
 	force bool
+
+	// Deprecated - TODO: remove it for go/v5
+	// isLegacyPath indicates that the resource should be created in the legacy path under the api
+	isLegacyPath bool
 }
 
 func (p *createWebhookSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
@@ -73,6 +78,19 @@ func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.options.DoConversion, "conversion", false,
 		"if set, scaffold the conversion webhook")
 
+	// TODO: remove for go/v5
+	fs.BoolVar(&p.isLegacyPath, "legacy", false,
+		"[DEPRECATED] Attempts to create resource under the API directory (legacy path). "+
+			"This option will be removed in future versions.")
+
+	fs.StringVar(&p.options.ExternalAPIPath, "external-api-path", "",
+		"Specify the Go package import path for the external API. This is used to scaffold controllers for resources "+
+			"defined outside this project (e.g., github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1).")
+
+	fs.StringVar(&p.options.ExternalAPIDomain, "external-api-domain", "",
+		"Specify the domain name for the external API. This domain is used to generate accurate RBAC "+
+			"markers and permissions for the external resources (e.g., cert-manager.io).")
+
 	fs.BoolVar(&p.force, "force", false,
 		"attempt to create resource even if it already exists")
 }
@@ -84,6 +102,11 @@ func (p *createWebhookSubcommand) InjectConfig(c config.Config) error {
 
 func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 	p.resource = res
+
+	if len(p.options.ExternalAPIPath) != 0 && len(p.options.ExternalAPIDomain) != 0 && p.isLegacyPath {
+		return errors.New("You cannot scaffold webhooks for external types " +
+			"using the legacy path")
+	}
 
 	p.options.UpdateResource(p.resource, p.config)
 
@@ -97,9 +120,13 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 	}
 
 	// check if resource exist to create webhook
-	if r, err := p.config.GetResource(p.resource.GVK); err != nil {
-		return fmt.Errorf("%s create webhook requires a previously created API ", p.commandName)
-	} else if r.Webhooks != nil && !r.Webhooks.IsEmpty() && !p.force {
+	resValue, err := p.config.GetResource(p.resource.GVK)
+	res = &resValue
+	if err != nil {
+		if !p.resource.External && !p.resource.Core {
+			return fmt.Errorf("%s create webhook requires a previously created API ", p.commandName)
+		}
+	} else if res.Webhooks != nil && !res.Webhooks.IsEmpty() && !p.force {
 		return fmt.Errorf("webhook resource already exists")
 	}
 
@@ -107,7 +134,7 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 }
 
 func (p *createWebhookSubcommand) Scaffold(fs machinery.Filesystem) error {
-	scaffolder := scaffolds.NewWebhookScaffolder(p.config, *p.resource, p.force)
+	scaffolder := scaffolds.NewWebhookScaffolder(p.config, *p.resource, p.force, p.isLegacyPath)
 	scaffolder.InjectFS(fs)
 	return scaffolder.Scaffold()
 }

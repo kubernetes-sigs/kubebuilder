@@ -58,5 +58,6 @@ func (r *FrigateReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 func (r *FrigateReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&shipv1beta1.Frigate{}).
+		Named("ship-frigate").
 		Complete(r)
 }

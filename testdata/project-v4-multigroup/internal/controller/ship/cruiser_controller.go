@@ -58,5 +58,6 @@ func (r *CruiserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 func (r *CruiserReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&shipv2alpha1.Cruiser{}).
+		Named("ship-cruiser").
 		Complete(r)
 }

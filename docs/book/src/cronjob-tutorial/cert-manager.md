@@ -24,6 +24,3 @@ This is the [kustomize](https://github.com/kubernetes-sigs/kustomize) patch we
 used for annotating the [`MutatingWebhookConfiguration`](https://pkg.go.dev/k8s.io/api/admissionregistration/v1#MutatingWebhookConfiguration)
 / [`ValidatingWebhookConfiguration`](https://pkg.go.dev/k8s.io/api/admissionregistration/v1#ValidatingWebhookConfiguration) objects.
 
-```yaml
-{{#include ./testdata/project/config/default/webhookcainjection_patch.yaml}}
-```

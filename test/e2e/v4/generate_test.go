@@ -49,9 +49,10 @@ func GenerateV4(kbc *utils.TestContext) {
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
 	By("implementing the mutating and validating webhooks")
-	err = utils.ImplementWebhooks(filepath.Join(
-		kbc.Dir, "api", kbc.Version,
-		fmt.Sprintf("%s_webhook.go", strings.ToLower(kbc.Kind))))
+	webhookFilePath := filepath.Join(
+		kbc.Dir, "internal/webhook", kbc.Version,
+		fmt.Sprintf("%s_webhook.go", strings.ToLower(kbc.Kind)))
+	err = utils.ImplementWebhooks(webhookFilePath, strings.ToLower(kbc.Kind))
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
 	ExpectWithOffset(1, pluginutil.UncommentCode(
@@ -60,10 +61,6 @@ func GenerateV4(kbc *utils.TestContext) {
 	ExpectWithOffset(1, pluginutil.UncommentCode(
 		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 		"#- ../prometheus", "#")).To(Succeed())
-	ExpectWithOffset(1, pluginutil.UncommentCode(
-		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
-		"#- path: webhookcainjection_patch.yaml", "#")).To(Succeed())
-
 	ExpectWithOffset(1, pluginutil.UncommentCode(filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 		certManagerTarget, "#")).To(Succeed())
 
@@ -89,9 +86,10 @@ func GenerateV4WithoutMetrics(kbc *utils.TestContext) {
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
 	By("implementing the mutating and validating webhooks")
-	err = utils.ImplementWebhooks(filepath.Join(
-		kbc.Dir, "api", kbc.Version,
-		fmt.Sprintf("%s_webhook.go", strings.ToLower(kbc.Kind))))
+	webhookFilePath := filepath.Join(
+		kbc.Dir, "internal/webhook", kbc.Version,
+		fmt.Sprintf("%s_webhook.go", strings.ToLower(kbc.Kind)))
+	err = utils.ImplementWebhooks(webhookFilePath, strings.ToLower(kbc.Kind))
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
 	ExpectWithOffset(1, pluginutil.UncommentCode(
@@ -100,9 +98,6 @@ func GenerateV4WithoutMetrics(kbc *utils.TestContext) {
 	ExpectWithOffset(1, pluginutil.UncommentCode(
 		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 		"#- ../prometheus", "#")).To(Succeed())
-	ExpectWithOffset(1, pluginutil.UncommentCode(
-		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
-		"#- path: webhookcainjection_patch.yaml", "#")).To(Succeed())
 	ExpectWithOffset(1, pluginutil.UncommentCode(filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 		certManagerTarget, "#")).To(Succeed())
 	// Disable metrics
@@ -152,9 +147,10 @@ func GenerateV4WithNetworkPolicies(kbc *utils.TestContext) {
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
 	By("implementing the mutating and validating webhooks")
-	err = utils.ImplementWebhooks(filepath.Join(
-		kbc.Dir, "api", kbc.Version,
-		fmt.Sprintf("%s_webhook.go", strings.ToLower(kbc.Kind))))
+	webhookFilePath := filepath.Join(
+		kbc.Dir, "internal/webhook", kbc.Version,
+		fmt.Sprintf("%s_webhook.go", strings.ToLower(kbc.Kind)))
+	err = utils.ImplementWebhooks(webhookFilePath, strings.ToLower(kbc.Kind))
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
 	ExpectWithOffset(1, pluginutil.UncommentCode(
@@ -163,9 +159,6 @@ func GenerateV4WithNetworkPolicies(kbc *utils.TestContext) {
 	ExpectWithOffset(1, pluginutil.UncommentCode(
 		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 		"#- ../prometheus", "#")).To(Succeed())
-	ExpectWithOffset(1, pluginutil.UncommentCode(
-		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
-		"#- path: webhookcainjection_patch.yaml", "#")).To(Succeed())
 	ExpectWithOffset(1, pluginutil.UncommentCode(
 		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 		metricsTarget, "#")).To(Succeed())
@@ -232,102 +225,133 @@ const metricsTarget = `- path: manager_metrics_patch.yaml
 
 //nolint:lll
 const certManagerTarget = `#replacements:
-#  - source: # Add cert-manager annotation to ValidatingWebhookConfiguration, MutatingWebhookConfiguration and CRDs
-#      kind: Certificate
-#      group: cert-manager.io
-#      version: v1
-#      name: serving-cert # this name should match the one in certificate.yaml
-#      fieldPath: .metadata.namespace # namespace of the certificate CR
-#    targets:
-#      - select:
-#          kind: ValidatingWebhookConfiguration
-#        fieldPaths:
-#          - .metadata.annotations.[cert-manager.io/inject-ca-from]
-#        options:
-#          delimiter: '/'
-#          index: 0
-#          create: true
-#      - select:
-#          kind: MutatingWebhookConfiguration
-#        fieldPaths:
-#          - .metadata.annotations.[cert-manager.io/inject-ca-from]
-#        options:
-#          delimiter: '/'
-#          index: 0
-#          create: true
-#      - select:
-#          kind: CustomResourceDefinition
-#        fieldPaths:
-#          - .metadata.annotations.[cert-manager.io/inject-ca-from]
-#        options:
-#          delimiter: '/'
-#          index: 0
-#          create: true
-#  - source:
-#      kind: Certificate
-#      group: cert-manager.io
-#      version: v1
-#      name: serving-cert # this name should match the one in certificate.yaml
-#      fieldPath: .metadata.name
-#    targets:
-#      - select:
-#          kind: ValidatingWebhookConfiguration
-#        fieldPaths:
-#          - .metadata.annotations.[cert-manager.io/inject-ca-from]
-#        options:
-#          delimiter: '/'
-#          index: 1
-#          create: true
-#      - select:
-#          kind: MutatingWebhookConfiguration
-#        fieldPaths:
-#          - .metadata.annotations.[cert-manager.io/inject-ca-from]
-#        options:
-#          delimiter: '/'
-#          index: 1
-#          create: true
-#      - select:
-#          kind: CustomResourceDefinition
-#        fieldPaths:
-#          - .metadata.annotations.[cert-manager.io/inject-ca-from]
-#        options:
-#          delimiter: '/'
-#          index: 1
-#          create: true
-#  - source: # Add cert-manager annotation to the webhook Service
-#      kind: Service
-#      version: v1
-#      name: webhook-service
-#      fieldPath: .metadata.name # namespace of the service
-#    targets:
-#      - select:
-#          kind: Certificate
-#          group: cert-manager.io
-#          version: v1
-#        fieldPaths:
-#          - .spec.dnsNames.0
-#          - .spec.dnsNames.1
-#        options:
-#          delimiter: '.'
-#          index: 0
-#          create: true
-#  - source:
-#      kind: Service
-#      version: v1
-#      name: webhook-service
-#      fieldPath: .metadata.namespace # namespace of the service
-#    targets:
-#      - select:
-#          kind: Certificate
-#          group: cert-manager.io
-#          version: v1
-#        fieldPaths:
-#          - .spec.dnsNames.0
-#          - .spec.dnsNames.1
-#        options:
-#          delimiter: '.'
-#          index: 1
-#          create: true`
+# - source: # Uncomment the following block if you have a ValidatingWebhook (--programmatic-validation)
+#     kind: Certificate
+#     group: cert-manager.io
+#     version: v1
+#     name: serving-cert # This name should match the one in certificate.yaml
+#     fieldPath: .metadata.namespace # Namespace of the certificate CR
+#   targets:
+#     - select:
+#         kind: ValidatingWebhookConfiguration
+#       fieldPaths:
+#         - .metadata.annotations.[cert-manager.io/inject-ca-from]
+#       options:
+#         delimiter: '/'
+#         index: 0
+#         create: true
+# - source:
+#     kind: Certificate
+#     group: cert-manager.io
+#     version: v1
+#     name: serving-cert # This name should match the one in certificate.yaml
+#     fieldPath: .metadata.name
+#   targets:
+#     - select:
+#         kind: ValidatingWebhookConfiguration
+#       fieldPaths:
+#         - .metadata.annotations.[cert-manager.io/inject-ca-from]
+#       options:
+#         delimiter: '/'
+#         index: 1
+#         create: true
+#
+# - source: # Uncomment the following block if you have a DefaultingWebhook (--defaulting )
+#     kind: Certificate
+#     group: cert-manager.io
+#     version: v1
+#     name: serving-cert # This name should match the one in certificate.yaml
+#     fieldPath: .metadata.namespace # Namespace of the certificate CR
+#   targets:
+#     - select:
+#         kind: MutatingWebhookConfiguration
+#       fieldPaths:
+#         - .metadata.annotations.[cert-manager.io/inject-ca-from]
+#       options:
+#         delimiter: '/'
+#         index: 0
+#         create: true
+# - source:
+#     kind: Certificate
+#     group: cert-manager.io
+#     version: v1
+#     name: serving-cert # This name should match the one in certificate.yaml
+#     fieldPath: .metadata.name
+#   targets:
+#     - select:
+#         kind: MutatingWebhookConfiguration
+#       fieldPaths:
+#         - .metadata.annotations.[cert-manager.io/inject-ca-from]
+#       options:
+#         delimiter: '/'
+#         index: 1
+#         create: true
+#
+# - source: # Uncomment the following block if you have a ConversionWebhook (--conversion)
+#     kind: Certificate
+#     group: cert-manager.io
+#     version: v1
+#     name: serving-cert # This name should match the one in certificate.yaml
+#     fieldPath: .metadata.namespace # Namespace of the certificate CR
+#   targets:
+#     - select:
+#         kind: CustomResourceDefinition
+#       fieldPaths:
+#         - .metadata.annotations.[cert-manager.io/inject-ca-from]
+#       options:
+#         delimiter: '/'
+#         index: 0
+#         create: true
+# - source:
+#     kind: Certificate
+#     group: cert-manager.io
+#     version: v1
+#     name: serving-cert # This name should match the one in certificate.yaml
+#     fieldPath: .metadata.name
+#   targets:
+#     - select:
+#         kind: CustomResourceDefinition
+#       fieldPaths:
+#         - .metadata.annotations.[cert-manager.io/inject-ca-from]
+#       options:
+#         delimiter: '/'
+#         index: 1
+#         create: true
+#
+# - source: # Uncomment the following block if you enable cert-manager
+#     kind: Service
+#     version: v1
+#     name: webhook-service
+#     fieldPath: .metadata.name # Name of the service
+#   targets:
+#     - select:
+#         kind: Certificate
+#         group: cert-manager.io
+#         version: v1
+#       fieldPaths:
+#         - .spec.dnsNames.0
+#         - .spec.dnsNames.1
+#       options:
+#         delimiter: '.'
+#         index: 0
+#         create: true
+# - source:
+#     kind: Service
+#     version: v1
+#     name: webhook-service
+#     fieldPath: .metadata.namespace # Namespace of the service
+#   targets:
+#     - select:
+#         kind: Certificate
+#         group: cert-manager.io
+#         version: v1
+#       fieldPaths:
+#         - .spec.dnsNames.0
+#         - .spec.dnsNames.1
+#       options:
+#         delimiter: '.'
+#         index: 1
+#         create: true`
 
 func uncommentPodStandards(kbc *utils.TestContext) {
 	configManager := filepath.Join(kbc.Dir, "config", "manager", "manager.yaml")

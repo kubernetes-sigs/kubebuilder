@@ -17,7 +17,6 @@ limitations under the License.
 package deployimage
 
 import (
-	"errors"
 	"fmt"
 	"os/exec"
 	"path/filepath"
@@ -68,74 +67,58 @@ func Run(kbc *utils.TestContext) {
 	var controllerPodName string
 	var err error
 
+	SetDefaultEventuallyPollingInterval(time.Second)
+	SetDefaultEventuallyTimeout(time.Minute)
+
 	By("updating the go.mod")
-	err = kbc.Tidy()
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	Expect(kbc.Tidy()).To(Succeed())
 
 	By("run make manifests")
-	err = kbc.Make("manifests")
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	Expect(kbc.Make("manifests")).To(Succeed())
 
 	By("run make generate")
-	err = kbc.Make("generate")
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	Expect(kbc.Make("generate")).To(Succeed())
 
 	By("run make all")
-	err = kbc.Make("all")
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	Expect(kbc.Make("all")).To(Succeed())
 
 	By("run make install")
-	err = kbc.Make("install")
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	Expect(kbc.Make("install")).To(Succeed())
 
 	By("building the controller image")
-	err = kbc.Make("docker-build", "IMG="+kbc.ImageName)
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	Expect(kbc.Make("docker-build", "IMG="+kbc.ImageName)).To(Succeed())
 
 	By("loading the controller docker image into the kind cluster")
-	err = kbc.LoadImageToKindCluster()
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	Expect(kbc.LoadImageToKindCluster()).To(Succeed())
 
 	By("deploying the controller-manager")
 	cmd := exec.Command("make", "deploy", "IMG="+kbc.ImageName)
-	outputMake, err := kbc.Run(cmd)
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
-
-	By("validating that manager Pod/container(s) are restricted")
-	ExpectWithOffset(1, outputMake).NotTo(ContainSubstring("Warning: would violate PodSecurity"))
+	Expect(kbc.Run(cmd)).NotTo(ContainSubstring("Warning: would violate PodSecurity"))
 
 	By("validating that the controller-manager pod is running as expected")
-	verifyControllerUp := func() error {
+	verifyControllerUp := func(g Gomega) {
 		// Get pod name
 		podOutput, err := kbc.Kubectl.Get(
 			true,
 			"pods", "-l", "control-plane=controller-manager",
 			"-o", "go-template={{ range .items }}{{ if not .metadata.deletionTimestamp }}{{ .metadata.name }}"+
 				"{{ \"\\n\" }}{{ end }}{{ end }}")
-		ExpectWithOffset(2, err).NotTo(HaveOccurred())
+		g.Expect(err).NotTo(HaveOccurred())
 		podNames := util.GetNonEmptyLines(podOutput)
-		if len(podNames) != 1 {
-			return fmt.Errorf("expect 1 controller pods running, but got %d", len(podNames))
-		}
+		g.Expect(podNames).To(HaveLen(1), "wrong number of controller-manager pods")
 		controllerPodName = podNames[0]
-		ExpectWithOffset(2, controllerPodName).Should(ContainSubstring("controller-manager"))
+		g.Expect(controllerPodName).To(ContainSubstring("controller-manager"))
 
 		// Validate pod status
-		status, err := kbc.Kubectl.Get(
-			true,
-			"pods", controllerPodName, "-o", "jsonpath={.status.phase}")
-		ExpectWithOffset(2, err).NotTo(HaveOccurred())
-		if status != "Running" {
-			return fmt.Errorf("controller pod in %s status", status)
-		}
-		return nil
+		g.Expect(kbc.Kubectl.Get(true, "pods", controllerPodName, "-o", "jsonpath={.status.phase}")).
+			To(Equal("Running"), "incorrect controller pod status")
 	}
 	defer func() {
 		out, err := kbc.Kubectl.CommandInNamespace("describe", "all")
-		ExpectWithOffset(1, err).NotTo(HaveOccurred())
+		Expect(err).NotTo(HaveOccurred())
 		_, _ = fmt.Fprintln(GinkgoWriter, out)
 	}()
-	EventuallyWithOffset(1, verifyControllerUp, time.Minute, time.Second).Should(Succeed())
+	Eventually(verifyControllerUp).Should(Succeed())
 	By("creating an instance of the CR")
 	sampleFile := filepath.Join("config", "samples",
 		fmt.Sprintf("%s_%s_%s.yaml", kbc.Group, kbc.Version, strings.ToLower(kbc.Kind)))
@@ -143,53 +126,36 @@ func Run(kbc *utils.TestContext) {
 	sampleFilePath, err := filepath.Abs(filepath.Join(fmt.Sprintf("e2e-%s", kbc.TestSuffix), sampleFile))
 	Expect(err).To(Not(HaveOccurred()))
 
-	EventuallyWithOffset(1, func() error {
-		_, err = kbc.Kubectl.Apply(true, "-f", sampleFilePath)
-		return err
-	}, time.Minute, time.Second).Should(Succeed())
+	Eventually(func(g Gomega) {
+		g.Expect(kbc.Kubectl.Apply(true, "-f", sampleFilePath)).Error().NotTo(HaveOccurred())
+	}).Should(Succeed())
 
 	By("validating that pod(s) status.phase=Running")
-	getMemcachedPodStatus := func() error {
-		status, err := kbc.Kubectl.Get(true, "pods", "-l",
-			fmt.Sprintf("app.kubernetes.io/name=%s", kbc.Kind),
+	verifyMemcachedPodStatus := func(g Gomega) {
+		g.Expect(kbc.Kubectl.Get(true, "pods", "-l",
+			fmt.Sprintf("app.kubernetes.io/name=e2e-%s", kbc.TestSuffix),
 			"-o", "jsonpath={.items[*].status}",
-		)
-		ExpectWithOffset(2, err).NotTo(HaveOccurred())
-		if !strings.Contains(status, "\"phase\":\"Running\"") {
-			return err
-		}
-		return nil
+		)).To(ContainSubstring("\"phase\":\"Running\""))
 	}
-	EventuallyWithOffset(1, getMemcachedPodStatus, time.Minute, time.Second).Should(Succeed())
+	Eventually(verifyMemcachedPodStatus).Should(Succeed())
 
 	By("validating that the status of the custom resource created is updated or not")
-	var status string
-	getStatus := func() error {
-		status, err = kbc.Kubectl.Get(true, strings.ToLower(kbc.Kind),
+	verifyAvailableStatus := func(g Gomega) {
+		g.Expect(kbc.Kubectl.Get(true, strings.ToLower(kbc.Kind),
 			strings.ToLower(kbc.Kind)+"-sample",
-			"-o", "jsonpath={.status.conditions}")
-		ExpectWithOffset(2, err).NotTo(HaveOccurred())
-		if !strings.Contains(status, "Available") {
-			return errors.New(`status condition with type "Available" should be set`)
-		}
-		return nil
+			"-o", "jsonpath={.status.conditions}")).To(ContainSubstring("Available"),
+			`status condition with type "Available" should be set`)
 	}
-	Eventually(getStatus, time.Minute, time.Second).Should(Succeed())
+	Eventually(verifyAvailableStatus).Should(Succeed())
 
 	By("validating the finalizer")
-	EventuallyWithOffset(1, func() error {
-		_, err = kbc.Kubectl.Delete(true, "-f", sampleFilePath)
-		return err
-	}, time.Minute, time.Second).Should(Succeed())
+	Eventually(func(g Gomega) {
+		g.Expect(kbc.Kubectl.Delete(true, "-f", sampleFilePath)).Error().NotTo(HaveOccurred())
+	}).Should(Succeed())
 
-	EventuallyWithOffset(1, func() error {
-		events, err := kbc.Kubectl.Get(true, "events", "--field-selector=type=Warning",
+	Eventually(func(g Gomega) {
+		g.Expect(kbc.Kubectl.Get(true, "events", "--field-selector=type=Warning",
 			"-o", "jsonpath={.items[*].message}",
-		)
-		ExpectWithOffset(2, err).NotTo(HaveOccurred())
-		if !strings.Contains(events, "is being deleted from the namespace") {
-			return err
-		}
-		return nil
-	}, time.Minute, time.Second).Should(Succeed())
+		)).To(ContainSubstring("is being deleted from the namespace"))
+	}).Should(Succeed())
 }

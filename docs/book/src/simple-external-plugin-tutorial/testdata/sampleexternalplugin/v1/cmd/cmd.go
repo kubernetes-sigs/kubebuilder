@@ -24,7 +24,7 @@ import (
 
 	"v1/scaffolds"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/external"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/external"
 )
 
 // Run will run the actual steps of the plugin

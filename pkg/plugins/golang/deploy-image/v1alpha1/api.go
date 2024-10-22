@@ -76,9 +76,9 @@ func (p *createAPISubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdM
 	
 	Note that in the following example we are also adding the optional options to let you inform the command which should be used to create the container and initialize itvia the flag --image-container-command as the Port that should be used
 
-	- By informing the command (--image-container-command="memcached,-m=64,-o,modern,-v") your deployment will be scaffold with, i.e.:
+	- By informing the command (--image-container-command="memcached,--memory-limit=64,-o,modern,-v") your deployment will be scaffold with, i.e.:
 
-		Command: []string{"memcached","-m=64","-o","modern","-v"},
+		Command: []string{"memcached","--memory-limit=64","-o","modern","-v"},
 
 	- By informing the Port (--image-container-port) will deployment will be scaffold with, i.e: 
 
@@ -89,7 +89,7 @@ func (p *createAPISubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdM
 
 	Therefore, the default values informed will be used to scaffold specs for the API. 
 
-  %[1]s create api --group example.com --version v1alpha1 --kind Memcached --image=memcached:1.6.15-alpine --image-container-command="memcached -m=64 modern -v" --image-container-port="11211" --plugins="deploy-image/v1-alpha" --make=false --namespaced=false
+  %[1]s create api --group example.com --version v1alpha1 --kind Memcached --image=memcached:1.6.15-alpine --image-container-command="memcached --memory-limit=64 modern -v" --image-container-port="11211" --plugins="deploy-image/v1-alpha" --make=false --namespaced=false
 
   # Generate the manifests
   make manifests
@@ -108,7 +108,8 @@ func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 
 	fs.StringVar(&p.imageContainerCommand, "image-container-command", "", "[Optional] if informed, "+
 		"will be used to scaffold the container command that should be used to init a container to run the image in "+
-		"the controller and its spec in the API (CRD/CR). (i.e. --image-container-command=\"memcached,-m=64,modern,-o,-v\")")
+		"the controller and its spec in the API (CRD/CR). (i.e. "+
+		"--image-container-command=\"memcached,--memory-limit=64,modern,-o,-v\")")
 	fs.StringVar(&p.imageContainerPort, "image-container-port", "", "[Optional] if informed, "+
 		"will be used to scaffold the container port that should be used by container image in "+
 		"the controller and its spec in the API (CRD/CR). (i.e --image-container-port=\"11211\") ")

@@ -141,7 +141,7 @@ var _ = BeforeSuite(func() {
 		and it'd be easy to make mistakes.
 
 		Note that we keep the reconciler running against the manager's cache client, though -- we want our controller to
-		behave as it would in production, and we use features of the cache (like indicies) in our controller which aren't
+		behave as it would in production, and we use features of the cache (like indices) in our controller which aren't
 		available when talking directly to the API server.
 	*/
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{

@@ -72,7 +72,7 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// {{ .Resource.Kind }}Spec defines the desired state of {{ .Resource.Kind }}
+// {{ .Resource.Kind }}Spec defines the desired state of {{ .Resource.Kind }}.
 type {{ .Resource.Kind }}Spec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
@@ -81,7 +81,7 @@ type {{ .Resource.Kind }}Spec struct {
 	Foo string ` + "`" + `json:"foo,omitempty"` + "`" + `
 }
 
-// {{ .Resource.Kind }}Status defines the observed state of {{ .Resource.Kind }}
+// {{ .Resource.Kind }}Status defines the observed state of {{ .Resource.Kind }}.
 type {{ .Resource.Kind }}Status struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
@@ -97,7 +97,7 @@ type {{ .Resource.Kind }}Status struct {
 // +kubebuilder:resource:path={{ .Resource.Plural }}
 {{- end }}
 
-// {{ .Resource.Kind }} is the Schema for the {{ .Resource.Plural }} API
+// {{ .Resource.Kind }} is the Schema for the {{ .Resource.Plural }} API.
 type {{ .Resource.Kind }} struct {
 	metav1.TypeMeta   ` + "`" + `json:",inline"` + "`" + `
 	metav1.ObjectMeta ` + "`" + `json:"metadata,omitempty"` + "`" + `
@@ -108,7 +108,7 @@ type {{ .Resource.Kind }} struct {
 
 // +kubebuilder:object:root=true
 
-// {{ .Resource.Kind }}List contains a list of {{ .Resource.Kind }}
+// {{ .Resource.Kind }}List contains a list of {{ .Resource.Kind }}.
 type {{ .Resource.Kind }}List struct {
 	metav1.TypeMeta ` + "`" + `json:",inline"` + "`" + `
 	metav1.ListMeta ` + "`" + `json:"metadata,omitempty"` + "`" + `

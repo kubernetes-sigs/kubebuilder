@@ -21,7 +21,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("NerMarkerFor", func() {
+var _ = Describe("NewMarkerFor", func() {
 	DescribeTable("should create valid markers for known extensions",
 		func(path, comment string) { Expect(NewMarkerFor(path, "").comment).To(Equal(comment)) },
 		Entry("for go files", "file.go", "//"),
@@ -39,8 +39,10 @@ var _ = Describe("Marker", func() {
 	Context("String", func() {
 		DescribeTable("should return the right string representation",
 			func(marker Marker, str string) { Expect(marker.String()).To(Equal(str)) },
-			Entry("for go files", Marker{prefix: kbPrefix, comment: "//", value: "test"}, "// +kubebuilder:scaffold:test"),
-			Entry("for yaml files", Marker{prefix: kbPrefix, comment: "#", value: "test"}, "# +kubebuilder:scaffold:test"),
+			Entry("for go files", Marker{prefix: kbPrefix, comment: "//", value: "test"},
+				"// +kubebuilder:scaffold:test"),
+			Entry("for yaml files", Marker{prefix: kbPrefix, comment: "#", value: "test"},
+				"# +kubebuilder:scaffold:test"),
 		)
 	})
 })
@@ -49,8 +51,80 @@ var _ = Describe("NewMarkerFor", func() {
 	Context("String", func() {
 		DescribeTable("should return the right string representation",
 			func(marker Marker, str string) { Expect(marker.String()).To(Equal(str)) },
-			Entry("for yaml files", NewMarkerFor("test.yaml", "test"), "# +kubebuilder:scaffold:test"),
+			Entry("for yaml files", NewMarkerFor("test.yaml", "test"),
+				"# +kubebuilder:scaffold:test"),
 		)
+	})
+})
+
+var _ = Describe("NewMarkerForImports", func() {
+	Context("String", func() {
+		DescribeTable("should return the correct string representation for import markers",
+			func(marker Marker, str string) { Expect(marker.String()).To(Equal(str)) },
+			Entry("for go import marker", NewMarkerFor("test.go", "import \"my/package\""),
+				"// +kubebuilder:scaffold:import \"my/package\""),
+			Entry("for go import marker with alias", NewMarkerFor("test.go",
+				"import alias \"my/package\""), "// +kubebuilder:scaffold:import alias \"my/package\""),
+			Entry("for multiline go import marker", NewMarkerFor("test.go",
+				"import (\n\"my/package\"\n)"), "// +kubebuilder:scaffold:import (\n\"my/package\"\n)"),
+			Entry("for multiline go import marker with alias", NewMarkerFor("test.go",
+				"import (\nalias \"my/package\"\n)"), "// +kubebuilder:scaffold:import (\nalias \"my/package\"\n)"),
+		)
+	})
+
+	It("should detect import in Go file", func() {
+		line := "// +kubebuilder:scaffold:import \"my/package\""
+		marker := NewMarkerFor("test.go", "import \"my/package\"")
+		Expect(marker.EqualsLine(line)).To(BeTrue())
+	})
+
+	It("should detect import with alias in Go file", func() {
+		line := "// +kubebuilder:scaffold:import alias \"my/package\""
+		marker := NewMarkerFor("test.go", "import alias \"my/package\"")
+		Expect(marker.EqualsLine(line)).To(BeTrue())
+	})
+
+	It("should detect multiline import in Go file", func() {
+		line := "// +kubebuilder:scaffold:import (\n\"my/package\"\n)"
+		marker := NewMarkerFor("test.go", "import (\n\"my/package\"\n)")
+		Expect(marker.EqualsLine(line)).To(BeTrue())
+	})
+
+	It("should detect multiline import with alias in Go file", func() {
+		line := "// +kubebuilder:scaffold:import (\nalias \"my/package\"\n)"
+		marker := NewMarkerFor("test.go",
+			"import (\nalias \"my/package\"\n)")
+		Expect(marker.EqualsLine(line)).To(BeTrue())
+	})
+})
+
+var _ = Describe("NewMarkerForImports with different formatting", func() {
+	Context("String", func() {
+		DescribeTable("should handle variations in spacing and formatting for import markers",
+			func(marker Marker, str string) { Expect(marker.String()).To(Equal(str)) },
+			Entry("go import marker with extra spaces",
+				NewMarkerFor("test.go", "import  \"my/package\""),
+				"// +kubebuilder:scaffold:import  \"my/package\""),
+			Entry("go import marker with spaces around alias",
+				NewMarkerFor("test.go", "import  alias   \"my/package\""),
+				"// +kubebuilder:scaffold:import  alias   \"my/package\""),
+			Entry("go import marker with newline",
+				NewMarkerFor("test.go", "import \n\"my/package\""),
+				"// +kubebuilder:scaffold:import \n\"my/package\""),
+		)
+	})
+
+	It("should detect import with spaces in Go file", func() {
+		line := "// +kubebuilder:scaffold:import  \"my/package\""
+		marker := NewMarkerFor("test.go", "import  \"my/package\"")
+		Expect(marker.EqualsLine(line)).To(BeTrue())
+	})
+
+	It("should detect import with alias and spaces in Go file", func() {
+		line := "// +kubebuilder:scaffold:import  alias   \"my/package\""
+		marker := NewMarkerFor("test.go",
+			"import  alias   \"my/package\"")
+		Expect(marker.EqualsLine(line)).To(BeTrue())
 	})
 })
 
@@ -60,26 +134,43 @@ var _ = Describe("NewMarkerWithPrefixFor", func() {
 			func(marker Marker, str string) { Expect(marker.String()).To(Equal(str)) },
 
 			Entry("for yaml files",
-				NewMarkerWithPrefixFor("custom:scaffold", "test.yaml", "test"), "# +custom:scaffold:test"),
+				NewMarkerWithPrefixFor("custom:scaffold",
+					"test.yaml", "test"), "# +custom:scaffold:test"),
 			Entry("for yaml files",
-				NewMarkerWithPrefixFor("+custom:scaffold", "test.yaml", "test"), "# +custom:scaffold:test"),
+				NewMarkerWithPrefixFor("+custom:scaffold",
+					"test.yaml", "test"), "# +custom:scaffold:test"),
 			Entry("for yaml files",
-				NewMarkerWithPrefixFor("custom:scaffold:", "test.yaml", "test"), "# +custom:scaffold:test"),
+				NewMarkerWithPrefixFor("custom:scaffold:",
+					"test.yaml", "test"), "# +custom:scaffold:test"),
 			Entry("for yaml files",
-				NewMarkerWithPrefixFor("+custom:scaffold:", "test.yaml", "test"), "# +custom:scaffold:test"),
+				NewMarkerWithPrefixFor("+custom:scaffold:",
+					"test.yaml", "test"), "# +custom:scaffold:test"),
 			Entry("for yaml files",
-				NewMarkerWithPrefixFor(" +custom:scaffold: ", "test.yaml", "test"), "# +custom:scaffold:test"),
+				NewMarkerWithPrefixFor(" +custom:scaffold: ",
+					"test.yaml", "test"), "# +custom:scaffold:test"),
 
 			Entry("for go files",
-				NewMarkerWithPrefixFor("custom:scaffold", "test.go", "test"), "// +custom:scaffold:test"),
+				NewMarkerWithPrefixFor("custom:scaffold",
+					"test.go", "test"), "// +custom:scaffold:test"),
 			Entry("for go files",
-				NewMarkerWithPrefixFor("+custom:scaffold", "test.go", "test"), "// +custom:scaffold:test"),
+				NewMarkerWithPrefixFor("+custom:scaffold",
+					"test.go", "test"), "// +custom:scaffold:test"),
 			Entry("for go files",
-				NewMarkerWithPrefixFor("custom:scaffold:", "test.go", "test"), "// +custom:scaffold:test"),
+				NewMarkerWithPrefixFor("custom:scaffold:",
+					"test.go", "test"), "// +custom:scaffold:test"),
 			Entry("for go files",
-				NewMarkerWithPrefixFor("+custom:scaffold:", "test.go", "test"), "// +custom:scaffold:test"),
+				NewMarkerWithPrefixFor("+custom:scaffold:",
+					"test.go", "test"), "// +custom:scaffold:test"),
 			Entry("for go files",
-				NewMarkerWithPrefixFor(" +custom:scaffold: ", "test.go", "test"), "// +custom:scaffold:test"),
+				NewMarkerWithPrefixFor(" +custom:scaffold: ",
+					"test.go", "test"), "// +custom:scaffold:test"),
 		)
+	})
+})
+
+var _ = Describe("NewMarkerFor with unsupported extensions", func() {
+	It("should panic for unsupported extensions", func() {
+		Expect(func() { NewMarkerFor("file.txt", "test") }).To(Panic())
+		Expect(func() { NewMarkerFor("file.md", "test") }).To(Panic())
 	})
 })

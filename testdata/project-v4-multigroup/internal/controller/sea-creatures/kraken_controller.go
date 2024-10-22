@@ -58,5 +58,6 @@ func (r *KrakenReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 func (r *KrakenReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&seacreaturesv1beta1.Kraken{}).
+		Named("sea-creatures-kraken").
 		Complete(r)
 }

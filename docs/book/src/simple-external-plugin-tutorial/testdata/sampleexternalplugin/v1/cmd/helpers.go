@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"log"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/external"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/external"
 )
 
 // returnError is a helper function to return a JSON

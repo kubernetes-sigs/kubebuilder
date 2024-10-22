@@ -22,8 +22,10 @@ resources:
 # default, aiding admins in cluster management. Those roles are
 # not used by the Project itself. You can comment the following lines
 # if you do not want those helpers be installed with your Project.
-- lakers_editor_role.yaml
-- lakers_viewer_role.yaml
+- example.com_busybox_editor_role.yaml
+- example.com_busybox_viewer_role.yaml
+- example.com_memcached_editor_role.yaml
+- example.com_memcached_viewer_role.yaml
 - fiz_bar_editor_role.yaml
 - fiz_bar_viewer_role.yaml
 - foo_bar_editor_role.yaml

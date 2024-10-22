@@ -1,0 +1,107 @@
+name: E2E Book Samples
+
+on:
+  push:
+    paths:
+      - 'docs/book/src/getting-started/testdata/project/**'
+      - 'docs/book/src/cronjob-tutorial/testdata/project/**'
+      - 'docs/book/src/multiversion-tutorial/testdata/project/**'
+      - '.github/workflows/test-e2e-book.yml'
+  pull_request:
+    paths:
+      - 'docs/book/src/getting-started/testdata/project/**'
+      - 'docs/book/src/cronjob-tutorial/testdata/project/**'
+      - 'docs/book/src/multiversion-tutorial/testdata/project/**'
+      - '.github/workflows/test-e2e-book.yml'
+
+jobs:
+  e2e-getting-started:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '~1.22'
+
+      - name: Install the latest version of kind
+        run: |
+          curl -Lo ./kind https://kind.sigs.k8s.io/dl/latest/kind-linux-amd64
+          chmod +x ./kind
+          sudo mv ./kind /usr/local/bin/kind
+
+      - name: Verify kind installation
+        run: kind version
+
+      - name: Create kind cluster
+        run: kind create cluster
+
+      - name: Running make test-e2e for Getting Started tutorial sample
+        working-directory: docs/book/src/getting-started/testdata/project
+        run: make test-e2e
+
+  e2e-cronjob-tutorial:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '~1.22'
+
+      - name: Install the latest version of kind
+        run: |
+          curl -Lo ./kind https://kind.sigs.k8s.io/dl/latest/kind-linux-amd64
+          chmod +x ./kind
+          sudo mv ./kind /usr/local/bin/kind
+
+      - name: Verify kind installation
+        run: kind version
+
+      - name: Create kind cluster
+        run: kind create cluster
+
+      - name: Running make test-e2e for Cronjob tutorial sample
+        working-directory: docs/book/src/cronjob-tutorial/testdata/project
+        run: make test-e2e
+
+  e2e-multiversion-tutorial:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '~1.22'
+
+      - name: Install the latest version of kind
+        run: |
+          curl -Lo ./kind https://kind.sigs.k8s.io/dl/latest/kind-linux-amd64
+          chmod +x ./kind
+          sudo mv ./kind /usr/local/bin/kind
+
+      - name: Verify kind installation
+        run: kind version
+
+      - name: Create kind cluster
+        run: kind create cluster
+
+      - name: Running make test-e2e for Multiversion tutorial sample
+        working-directory: docs/book/src/multiversion-tutorial/testdata/project
+        run: make test-e2e
+

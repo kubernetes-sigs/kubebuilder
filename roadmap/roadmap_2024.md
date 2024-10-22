@@ -2,7 +2,7 @@
 
 ### Updating Scaffolding to Align with the Latest changes of controller-runtime
 
-**Status:** :raised_hands: Seeking help from the contributors
+**Status:** ✅ Complete (Changes available from release `4.3.0`)
 
 **Objective:** Update Kubebuilder's controller scaffolding to align with the latest changes
 in controller-runtime, focusing on compatibility and addressing recent updates and deprecations

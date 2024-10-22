@@ -19,7 +19,7 @@ import (
 	"v1/scaffolds"
 
 	"github.com/spf13/pflag"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugin/external"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/external"
 )
 
 // metadataCmd handles all the logic for the `metadata` subcommand of the sample external plugin.

@@ -12,7 +12,7 @@ webhooks:
       namespace: system
       path: /mutate-crew-testproject-org-v1-admiral
   failurePolicy: Fail
-  name: madmiral.kb.io
+  name: madmiral-v1.kb.io
   rules:
   - apiGroups:
     - crew.testproject.org
@@ -32,7 +32,7 @@ webhooks:
       namespace: system
       path: /mutate-crew-testproject-org-v1-captain
   failurePolicy: Fail
-  name: mcaptain.kb.io
+  name: mcaptain-v1.kb.io
   rules:
   - apiGroups:
     - crew.testproject.org
@@ -43,6 +43,46 @@ webhooks:
     - UPDATE
     resources:
     - captains
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-cert-manager-io-v1-issuer
+  failurePolicy: Fail
+  name: missuer-v1.kb.io
+  rules:
+  - apiGroups:
+    - cert-manager.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - issuers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate--v1-pod
+  failurePolicy: Fail
+  name: mpod-v1.kb.io
+  rules:
+  - apiGroups:
+    - ""
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - pods
   sideEffects: None
 ---
 apiVersion: admissionregistration.k8s.io/v1
@@ -58,7 +98,7 @@ webhooks:
       namespace: system
       path: /validate-crew-testproject-org-v1-captain
   failurePolicy: Fail
-  name: vcaptain.kb.io
+  name: vcaptain-v1.kb.io
   rules:
   - apiGroups:
     - crew.testproject.org

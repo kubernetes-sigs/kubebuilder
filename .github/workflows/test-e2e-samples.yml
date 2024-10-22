@@ -1,0 +1,132 @@
+name: E2E Testdata Sample
+
+on:
+  push:
+    paths:
+      - 'testdata/**'
+      - '.github/workflows/test-e2e-samples.yml'
+  pull_request:
+    paths:
+      - 'testdata/**'
+      - '.github/workflows/test-e2e-samples.yml'
+
+jobs:
+  e2e-tests-project-v4:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '~1.22'
+
+      - name: Install the latest version of kind
+        run: |
+          curl -Lo ./kind https://kind.sigs.k8s.io/dl/latest/kind-linux-amd64
+          chmod +x ./kind
+          sudo mv ./kind /usr/local/bin/kind
+
+      - name: Verify kind installation
+        run: kind version
+
+      - name: Create kind cluster
+        run: kind create cluster
+
+      - name: Prepare project-v4
+        run: |
+          KUSTOMIZATION_FILE_PATH="testdata/project-v4/config/default/kustomization.yaml"
+          sed -i '25s/^#//' $KUSTOMIZATION_FILE_PATH
+          sed -i '50,177s/^#//' $KUSTOMIZATION_FILE_PATH
+          cd testdata/project-v4/
+          go mod tidy
+
+      - name: Testing make test-e2e for project-v4
+        working-directory: testdata/project-v4/
+        run: |
+          make test-e2e
+
+  e2e-tests-project-v4-with-plugins:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '~1.22'
+
+      - name: Install the latest version of kind
+        run: |
+          curl -Lo ./kind https://kind.sigs.k8s.io/dl/latest/kind-linux-amd64
+          chmod +x ./kind
+          sudo mv ./kind /usr/local/bin/kind
+
+      - name: Verify kind installation
+        run: kind version
+
+      - name: Create kind cluster
+        run: kind create cluster
+
+      - name: Prepare project-v4-with-plugins
+        run: |
+          KUSTOMIZATION_FILE_PATH="testdata/project-v4-with-plugins/config/default/kustomization.yaml"
+          sed -i '25s/^#//' $KUSTOMIZATION_FILE_PATH
+          # Uncomment only ValidatingWebhookConfiguration
+          # from cert-manager replaces
+          sed -i '50,80s/^#//' $KUSTOMIZATION_FILE_PATH
+          sed -i '144,177s/^#//' $KUSTOMIZATION_FILE_PATH
+          cd testdata/project-v4-with-plugins/
+          go mod tidy
+
+      - name: Testing make test-e2e for project-v4-with-plugins
+        working-directory: testdata/project-v4-with-plugins/
+        run: |
+          make test-e2e
+
+  e2e-tests-project-v4-multigroup:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '~1.22'
+
+      - name: Install the latest version of kind
+        run: |
+          curl -Lo ./kind https://kind.sigs.k8s.io/dl/latest/kind-linux-amd64
+          chmod +x ./kind
+          sudo mv ./kind /usr/local/bin/kind
+
+      - name: Verify kind installation
+        run: kind version
+
+      - name: Create kind cluster
+        run: kind create cluster
+
+      - name: Prepare project-v4-multigroup
+        run: |
+          KUSTOMIZATION_FILE_PATH="testdata/project-v4-multigroup/config/default/kustomization.yaml"
+          sed -i '25s/^#//' $KUSTOMIZATION_FILE_PATH
+          sed -i '50,177s/^#//' $KUSTOMIZATION_FILE_PATH
+          cd testdata/project-v4-multigroup
+          go mod tidy
+
+      - name: Testing make test-e2e for project-v4-multigroup
+        working-directory: testdata/project-v4-multigroup/
+        run: |
+          make test-e2e          

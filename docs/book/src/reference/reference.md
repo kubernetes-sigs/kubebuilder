@@ -7,9 +7,9 @@
     Kubernetes cluster.
   - [Watching Resources](watching-resources.md)
     Watch resources in the Kubernetes cluster to be informed and take actions on changes.
-      - [Resources Managed by the Operator](watching-resources/operator-managed.md)
-      - [Externally Managed Resources](watching-resources/externally-managed.md)
-        Controller Runtime provides the ability to watch additional resources relevant to the controlled ones.
+      - [Watching Secondary Resources that are `Owned` ](watching-resources/secondary-owned-resources.md)
+      - [Watching Secondary Resources that are NOT `Owned`](watching-resources/secondary-resources-not-owned)
+      - [Using Predicates to Refine Watches](watching-resources/predicates-with-watch.md)
   - [Kind cluster](kind.md)
   - [What's a webhook?](webhook-overview.md)
     Webhooks are HTTP callbacks, there are 3
@@ -26,17 +26,18 @@
       - [Webhook](markers/webhook.md)
       - [Object/DeepCopy](markers/object.md)
       - [RBAC](markers/rbac.md)
+      - [Scaffold](markers/scaffold.md)
 
+  - [Monitoring with Pprof](pprof-tutorial.md)
   - [controller-gen CLI](controller-gen.md)
   - [completion](completion.md)
   - [Artifacts](artifacts.md)
   - [Platform Support](platform.md)
 
   - [Sub-Module Layouts](submodule-layouts.md)
-  - [Using an external Type / API](using_an_external_type.md)
+  - [Using an external Resource / API](using_an_external_resource.md)
 
   - [Metrics](metrics.md)
       - [Reference](metrics-reference.md)
 
-  - [Makefile Helpers](makefile-helpers.md)
   - [CLI plugins](../plugins/plugins.md)

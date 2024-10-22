@@ -5,12 +5,37 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
+  - cert-manager.io
+  resources:
+  - certificates
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cert-manager.io
+  resources:
+  - certificates/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - cert-manager.io
+  resources:
+  - certificates/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - crew.testproject.org
   resources:
   - admirales
   - captains
   - firstmates
-  - lakers
   verbs:
   - create
   - delete
@@ -25,7 +50,6 @@ rules:
   - admirales/finalizers
   - captains/finalizers
   - firstmates/finalizers
-  - lakers/finalizers
   verbs:
   - update
 - apiGroups:
@@ -34,7 +58,6 @@ rules:
   - admirales/status
   - captains/status
   - firstmates/status
-  - lakers/status
   verbs:
   - get
   - patch

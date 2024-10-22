@@ -76,12 +76,12 @@
   - [Good Practices](./reference/good-practices.md)
   - [Raising Events](./reference/raising-events.md)
   - [Watching Resources](./reference/watching-resources.md)
-    - [Resources Managed by the Operator](./reference/watching-resources/operator-managed.md)
-    - [Externally Managed Resources](./reference/watching-resources/externally-managed.md)
-  - [Kind cluster](reference/kind.md)
+    - [Owned Resources](./reference/watching-resources/secondary-owned-resources.md)
+    - [Not Owned Resources](./reference/watching-resources/secondary-resources-not-owned.md)
+    - [Using Predicates](./reference/watching-resources/predicates-with-watch.md)
+  - [Kind for Dev & CI](reference/kind.md)
   - [What's a webhook?](reference/webhook-overview.md)
     - [Admission webhook](reference/admission-webhook.md)
-    - [Webhooks for Core Types](reference/webhook-for-core-types.md)
   - [Markers for Config/Code Generation](./reference/markers.md)
 
     - [CRD Generation](./reference/markers/crd.md)
@@ -90,16 +90,18 @@
     - [Webhook](./reference/markers/webhook.md)
     - [Object/DeepCopy](./reference/markers/object.md)
     - [RBAC](./reference/markers/rbac.md)
+    - [Scaffold](./reference/markers/scaffold.md)
 
   - [controller-gen CLI](./reference/controller-gen.md)
   - [completion](./reference/completion.md)
   - [Artifacts](./reference/artifacts.md)
   - [Platform Support](./reference/platform.md)
+  - [Monitoring with Pprof](./reference/pprof-tutorial.md)
 
-  - [Manager and CRDs Scope](./reference/scopes)
+  - [Manager and CRDs Scope](./reference/scopes.md)
 
   - [Sub-Module Layouts](./reference/submodule-layouts.md)
-  - [Using an external Type / API](./reference/using_an_external_type.md)
+  - [Using an external Resource / API](./reference/using_an_external_resource.md)
 
   - [Configuring EnvTest](./reference/envtest.md)
 
@@ -107,7 +109,6 @@
 
     - [Reference](./reference/metrics-reference.md)
 
-  - [Makefile Helpers](./reference/makefile-helpers.md)
   - [Project config](./reference/project-config.md)
 
 ---
@@ -115,23 +116,19 @@
 - [Plugins][plugins]
 
   - [Available Plugins](./plugins/available-plugins.md)
-    - [To scaffold a project](./plugins/to-scaffold-project.md)
-      - [go/v4 (Default init scaffold)](./plugins/go-v4-plugin.md)
-    - [To add optional features](./plugins/to-add-optional-features.md)
-      - [grafana/v1-alpha](./plugins/grafana-v1-alpha.md)
-      - [deploy-image/v1-alpha](./plugins/deploy-image-plugin-v1-alpha.md)
-    - [To be extended for others tools](./plugins/to-be-extended.md)
-      - [kustomize/v2 (Default init scaffold with go/v4)](./plugins/kustomize-v2.md)
-  - [Extending the CLI](./plugins/extending-cli.md)
-  - [Creating your own plugins](./plugins/creating-plugins.md)
-  - [Testing your own plugins](./plugins/testing-plugins.md)
+    - [go/v4](./plugins/available/go-v4-plugin.md)
+    - [grafana/v1-alpha](./plugins/available/grafana-v1-alpha.md)
+    - [deploy-image/v1-alpha](./plugins/available/deploy-image-plugin-v1-alpha.md)
+    - [kustomize/v2](./plugins/available/kustomize-v2.md)
+  - [Extending](./plugins/extending.md)
+    - [CLI and Plugins](./plugins/extending/extending_cli_features_and_plugins.md)
+    - [External Plugins](./plugins/extending/external-plugins.md)
+    - [E2E Tests](./plugins/extending/testing-plugins.md)
   - [Plugins Versioning](./plugins/plugins-versioning.md)
-  - [Creating external plugins](./plugins/external-plugins.md)
+
 
 ---
 
 [FAQ](./faq.md)
-
-[Appendix: The TODO Landing Page](./TODO.md)
 
 [plugins]: ./plugins/plugins.md

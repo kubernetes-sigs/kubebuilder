@@ -34,7 +34,7 @@ import (
 
 // +kubebuilder:docs-gen:collapse=Imports
 
-// CronJobSpec defines the desired state of CronJob
+// CronJobSpec defines the desired state of CronJob.
 type CronJobSpec struct {
 	// +kubebuilder:validation:MinLength=0
 
@@ -98,7 +98,7 @@ const (
 	ReplaceConcurrent ConcurrencyPolicy = "Replace"
 )
 
-// CronJobStatus defines the observed state of CronJob
+// CronJobStatus defines the observed state of CronJob.
 type CronJobStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
@@ -128,9 +128,9 @@ type CronJobStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +versionName=v1
 // +kubebuilder:storageversion
-
-// CronJob is the Schema for the cronjobs API
+// CronJob is the Schema for the cronjobs API.
 type CronJob struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -144,7 +144,7 @@ type CronJob struct {
 
 // +kubebuilder:object:root=true
 
-// CronJobList contains a list of CronJob
+// CronJobList contains a list of CronJob.
 type CronJobList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

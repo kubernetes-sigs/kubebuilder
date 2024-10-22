@@ -11,7 +11,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
+    controller-gen.kubebuilder.io/version: v0.16.4
   name: bars.fiz.testproject.org
 spec:
   group: fiz.testproject.org
@@ -25,7 +25,7 @@ spec:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: Bar is the Schema for the bars API
+        description: Bar is the Schema for the bars API.
         properties:
           apiVersion:
             description: |-
@@ -45,7 +45,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: BarSpec defines the desired state of Bar
+            description: BarSpec defines the desired state of Bar.
             properties:
               foo:
                 description: Foo is an example field of Bar. Edit bar_types.go to
@@ -53,7 +53,7 @@ spec:
                 type: string
             type: object
           status:
-            description: BarStatus defines the observed state of Bar
+            description: BarStatus defines the observed state of Bar.
             type: object
         type: object
     served: true
@@ -65,7 +65,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
+    controller-gen.kubebuilder.io/version: v0.16.4
   name: bars.foo.testproject.org
 spec:
   group: foo.testproject.org
@@ -79,7 +79,7 @@ spec:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: Bar is the Schema for the bars API
+        description: Bar is the Schema for the bars API.
         properties:
           apiVersion:
             description: |-
@@ -99,7 +99,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: BarSpec defines the desired state of Bar
+            description: BarSpec defines the desired state of Bar.
             properties:
               foo:
                 description: Foo is an example field of Bar. Edit bar_types.go to
@@ -107,7 +107,7 @@ spec:
                 type: string
             type: object
           status:
-            description: BarStatus defines the observed state of Bar
+            description: BarStatus defines the observed state of Bar.
             type: object
         type: object
     served: true
@@ -119,7 +119,123 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
+    controller-gen.kubebuilder.io/version: v0.16.4
+  name: busyboxes.example.com.testproject.org
+spec:
+  group: example.com.testproject.org
+  names:
+    kind: Busybox
+    listKind: BusyboxList
+    plural: busyboxes
+    singular: busybox
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Busybox is the Schema for the busyboxes API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: BusyboxSpec defines the desired state of Busybox
+            properties:
+              size:
+                description: |-
+                  Size defines the number of Busybox instances
+                  The following markers will use OpenAPI v3 schema to validate the value
+                  More info: https://book.kubebuilder.io/reference/markers/crd-validation.html
+                format: int32
+                maximum: 3
+                minimum: 1
+                type: integer
+            type: object
+          status:
+            description: BusyboxStatus defines the observed state of Busybox
+            properties:
+              conditions:
+                items:
+                  description: Condition contains details for one aspect of the current
+                    state of this API Resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        observedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: |-
+                        reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.16.4
   name: captains.crew.testproject.org
 spec:
   conversion:
@@ -143,7 +259,7 @@ spec:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: Captain is the Schema for the captains API
+        description: Captain is the Schema for the captains API.
         properties:
           apiVersion:
             description: |-
@@ -163,7 +279,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: CaptainSpec defines the desired state of Captain
+            description: CaptainSpec defines the desired state of Captain.
             properties:
               foo:
                 description: Foo is an example field of Captain. Edit captain_types.go
@@ -171,7 +287,7 @@ spec:
                 type: string
             type: object
           status:
-            description: CaptainStatus defines the observed state of Captain
+            description: CaptainStatus defines the observed state of Captain.
             type: object
         type: object
     served: true
@@ -183,7 +299,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
+    controller-gen.kubebuilder.io/version: v0.16.4
   name: cruisers.ship.testproject.org
 spec:
   conversion:
@@ -207,7 +323,7 @@ spec:
   - name: v2alpha1
     schema:
       openAPIV3Schema:
-        description: Cruiser is the Schema for the cruisers API
+        description: Cruiser is the Schema for the cruisers API.
         properties:
           apiVersion:
             description: |-
@@ -227,7 +343,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: CruiserSpec defines the desired state of Cruiser
+            description: CruiserSpec defines the desired state of Cruiser.
             properties:
               foo:
                 description: Foo is an example field of Cruiser. Edit cruiser_types.go
@@ -235,7 +351,7 @@ spec:
                 type: string
             type: object
           status:
-            description: CruiserStatus defines the observed state of Cruiser
+            description: CruiserStatus defines the observed state of Cruiser.
             type: object
         type: object
     served: true
@@ -247,7 +363,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
+    controller-gen.kubebuilder.io/version: v0.16.4
   name: destroyers.ship.testproject.org
 spec:
   conversion:
@@ -271,7 +387,7 @@ spec:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: Destroyer is the Schema for the destroyers API
+        description: Destroyer is the Schema for the destroyers API.
         properties:
           apiVersion:
             description: |-
@@ -291,7 +407,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: DestroyerSpec defines the desired state of Destroyer
+            description: DestroyerSpec defines the desired state of Destroyer.
             properties:
               foo:
                 description: Foo is an example field of Destroyer. Edit destroyer_types.go
@@ -299,7 +415,7 @@ spec:
                 type: string
             type: object
           status:
-            description: DestroyerStatus defines the observed state of Destroyer
+            description: DestroyerStatus defines the observed state of Destroyer.
             type: object
         type: object
     served: true
@@ -311,7 +427,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
+    controller-gen.kubebuilder.io/version: v0.16.4
   name: frigates.ship.testproject.org
 spec:
   conversion:
@@ -335,7 +451,7 @@ spec:
   - name: v1beta1
     schema:
       openAPIV3Schema:
-        description: Frigate is the Schema for the frigates API
+        description: Frigate is the Schema for the frigates API.
         properties:
           apiVersion:
             description: |-
@@ -355,7 +471,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: FrigateSpec defines the desired state of Frigate
+            description: FrigateSpec defines the desired state of Frigate.
             properties:
               foo:
                 description: Foo is an example field of Frigate. Edit frigate_types.go
@@ -363,7 +479,7 @@ spec:
                 type: string
             type: object
           status:
-            description: FrigateStatus defines the observed state of Frigate
+            description: FrigateStatus defines the observed state of Frigate.
             type: object
         type: object
     served: true
@@ -375,7 +491,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
+    controller-gen.kubebuilder.io/version: v0.16.4
   name: healthcheckpolicies.foo.policy.testproject.org
 spec:
   group: foo.policy.testproject.org
@@ -389,7 +505,7 @@ spec:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: HealthCheckPolicy is the Schema for the healthcheckpolicies API
+        description: HealthCheckPolicy is the Schema for the healthcheckpolicies API.
         properties:
           apiVersion:
             description: |-
@@ -409,7 +525,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: HealthCheckPolicySpec defines the desired state of HealthCheckPolicy
+            description: HealthCheckPolicySpec defines the desired state of HealthCheckPolicy.
             properties:
               foo:
                 description: Foo is an example field of HealthCheckPolicy. Edit healthcheckpolicy_types.go
@@ -417,7 +533,7 @@ spec:
                 type: string
             type: object
           status:
-            description: HealthCheckPolicyStatus defines the observed state of HealthCheckPolicy
+            description: HealthCheckPolicyStatus defines the observed state of HealthCheckPolicy.
             type: object
         type: object
     served: true
@@ -429,7 +545,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
+    controller-gen.kubebuilder.io/version: v0.16.4
   name: krakens.sea-creatures.testproject.org
 spec:
   group: sea-creatures.testproject.org
@@ -443,7 +559,7 @@ spec:
   - name: v1beta1
     schema:
       openAPIV3Schema:
-        description: Kraken is the Schema for the krakens API
+        description: Kraken is the Schema for the krakens API.
         properties:
           apiVersion:
             description: |-
@@ -463,7 +579,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: KrakenSpec defines the desired state of Kraken
+            description: KrakenSpec defines the desired state of Kraken.
             properties:
               foo:
                 description: Foo is an example field of Kraken. Edit kraken_types.go
@@ -471,7 +587,7 @@ spec:
                 type: string
             type: object
           status:
-            description: KrakenStatus defines the observed state of Kraken
+            description: KrakenStatus defines the observed state of Kraken.
             type: object
         type: object
     served: true
@@ -483,71 +599,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
-  name: lakers.testproject.org
-spec:
-  conversion:
-    strategy: Webhook
-    webhook:
-      clientConfig:
-        service:
-          name: project-v4-multigroup-webhook-service
-          namespace: project-v4-multigroup-system
-          path: /convert
-      conversionReviewVersions:
-      - v1
-  group: testproject.org
-  names:
-    kind: Lakers
-    listKind: LakersList
-    plural: lakers
-    singular: lakers
-  scope: Namespaced
-  versions:
-  - name: v1
-    schema:
-      openAPIV3Schema:
-        description: Lakers is the Schema for the lakers API
-        properties:
-          apiVersion:
-            description: |-
-              APIVersion defines the versioned schema of this representation of an object.
-              Servers should convert recognized schemas to the latest internal value, and
-              may reject unrecognized values.
-              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
-            type: string
-          kind:
-            description: |-
-              Kind is a string value representing the REST resource this object represents.
-              Servers may infer this from the endpoint the client submits requests to.
-              Cannot be updated.
-              In CamelCase.
-              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
-            type: string
-          metadata:
-            type: object
-          spec:
-            description: LakersSpec defines the desired state of Lakers
-            properties:
-              foo:
-                description: Foo is an example field of Lakers. Edit lakers_types.go
-                  to remove/update
-                type: string
-            type: object
-          status:
-            description: LakersStatus defines the observed state of Lakers
-            type: object
-        type: object
-    served: true
-    storage: true
-    subresources:
-      status: {}
----
-apiVersion: apiextensions.k8s.io/v1
-kind: CustomResourceDefinition
-metadata:
-  annotations:
-    controller-gen.kubebuilder.io/version: v0.16.1
+    controller-gen.kubebuilder.io/version: v0.16.4
   name: leviathans.sea-creatures.testproject.org
 spec:
   group: sea-creatures.testproject.org
@@ -561,7 +613,7 @@ spec:
   - name: v1beta2
     schema:
       openAPIV3Schema:
-        description: Leviathan is the Schema for the leviathans API
+        description: Leviathan is the Schema for the leviathans API.
         properties:
           apiVersion:
             description: |-
@@ -581,7 +633,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: LeviathanSpec defines the desired state of Leviathan
+            description: LeviathanSpec defines the desired state of Leviathan.
             properties:
               foo:
                 description: Foo is an example field of Leviathan. Edit leviathan_types.go
@@ -589,7 +641,138 @@ spec:
                 type: string
             type: object
           status:
-            description: LeviathanStatus defines the observed state of Leviathan
+            description: LeviathanStatus defines the observed state of Leviathan.
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.16.4
+  name: memcacheds.example.com.testproject.org
+spec:
+  conversion:
+    strategy: Webhook
+    webhook:
+      clientConfig:
+        service:
+          name: project-v4-multigroup-webhook-service
+          namespace: project-v4-multigroup-system
+          path: /convert
+      conversionReviewVersions:
+      - v1
+  group: example.com.testproject.org
+  names:
+    kind: Memcached
+    listKind: MemcachedList
+    plural: memcacheds
+    singular: memcached
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Memcached is the Schema for the memcacheds API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: MemcachedSpec defines the desired state of Memcached
+            properties:
+              containerPort:
+                description: Port defines the port that will be used to init the container
+                  with the image
+                format: int32
+                type: integer
+              size:
+                description: |-
+                  Size defines the number of Memcached instances
+                  The following markers will use OpenAPI v3 schema to validate the value
+                  More info: https://book.kubebuilder.io/reference/markers/crd-validation.html
+                format: int32
+                maximum: 3
+                minimum: 1
+                type: integer
+            type: object
+          status:
+            description: MemcachedStatus defines the observed state of Memcached
+            properties:
+              conditions:
+                items:
+                  description: Condition contains details for one aspect of the current
+                    state of this API Resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        observedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: |-
+                        reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
             type: object
         type: object
     served: true
@@ -694,6 +877,106 @@ rules:
   - crew.testproject.org
   resources:
   - captains/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: project-v4-multigroup
+  name: project-v4-multigroup-example.com-busybox-editor-role
+rules:
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - busyboxes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - busyboxes/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: project-v4-multigroup
+  name: project-v4-multigroup-example.com-busybox-viewer-role
+rules:
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - busyboxes
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - busyboxes/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: project-v4-multigroup
+  name: project-v4-multigroup-example.com-memcached-editor-role
+rules:
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - memcacheds
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - memcacheds/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: project-v4-multigroup
+  name: project-v4-multigroup-example.com-memcached-viewer-role
+rules:
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - memcacheds
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - memcacheds/status
   verbs:
   - get
 ---
@@ -850,58 +1133,23 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  labels:
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: project-v4-multigroup
-  name: project-v4-multigroup-lakers-editor-role
-rules:
-- apiGroups:
-  - testproject.org
-  resources:
-  - lakers
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - testproject.org
-  resources:
-  - lakers/status
-  verbs:
-  - get
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  labels:
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: project-v4-multigroup
-  name: project-v4-multigroup-lakers-viewer-role
-rules:
-- apiGroups:
-  - testproject.org
-  resources:
-  - lakers
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - testproject.org
-  resources:
-  - lakers/status
-  verbs:
-  - get
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
   name: project-v4-multigroup-manager-role
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -929,6 +1177,32 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cert-manager.io
+  resources:
+  - certificates
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cert-manager.io
+  resources:
+  - certificates/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - cert-manager.io
+  resources:
+  - certificates/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - crew.testproject.org
   resources:
   - captains
@@ -950,6 +1224,35 @@ rules:
   - crew.testproject.org
   resources:
   - captains/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - busyboxes
+  - memcacheds
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - busyboxes/finalizers
+  - memcacheds/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - busyboxes/status
+  - memcacheds/status
   verbs:
   - get
   - patch
@@ -1066,32 +1369,6 @@ rules:
   - cruisers/status
   - destroyers/status
   - frigates/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - testproject.org
-  resources:
-  - lakers
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - testproject.org
-  resources:
-  - lakers/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - testproject.org
-  resources:
-  - lakers/status
   verbs:
   - get
   - patch
@@ -1483,6 +1760,11 @@ spec:
         - --health-probe-bind-address=:8081
         command:
         - /manager
+        env:
+        - name: BUSYBOX_IMAGE
+          value: busybox:1.36.1
+        - name: MEMCACHED_IMAGE
+          value: memcached:memcached:1.6.26-alpine3.19
         image: controller:latest
         livenessProbe:
           httpGet:
@@ -1538,9 +1820,29 @@ webhooks:
     service:
       name: project-v4-multigroup-webhook-service
       namespace: project-v4-multigroup-system
+      path: /mutate-cert-manager-io-v1-issuer
+  failurePolicy: Fail
+  name: missuer-v1.kb.io
+  rules:
+  - apiGroups:
+    - cert-manager.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - issuers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: project-v4-multigroup-webhook-service
+      namespace: project-v4-multigroup-system
       path: /mutate-crew-testproject-org-v1-captain
   failurePolicy: Fail
-  name: mcaptain.kb.io
+  name: mcaptain-v1.kb.io
   rules:
   - apiGroups:
     - crew.testproject.org
@@ -1560,7 +1862,7 @@ webhooks:
       namespace: project-v4-multigroup-system
       path: /mutate-ship-testproject-org-v1-destroyer
   failurePolicy: Fail
-  name: mdestroyer.kb.io
+  name: mdestroyer-v1.kb.io
   rules:
   - apiGroups:
     - ship.testproject.org
@@ -1571,26 +1873,6 @@ webhooks:
     - UPDATE
     resources:
     - destroyers
-  sideEffects: None
-- admissionReviewVersions:
-  - v1
-  clientConfig:
-    service:
-      name: project-v4-multigroup-webhook-service
-      namespace: project-v4-multigroup-system
-      path: /mutate-testproject-org-v1-lakers
-  failurePolicy: Fail
-  name: mlakers.kb.io
-  rules:
-  - apiGroups:
-    - testproject.org
-    apiVersions:
-    - v1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - lakers
   sideEffects: None
 ---
 apiVersion: admissionregistration.k8s.io/v1
@@ -1604,9 +1886,29 @@ webhooks:
     service:
       name: project-v4-multigroup-webhook-service
       namespace: project-v4-multigroup-system
+      path: /validate--v1-pod
+  failurePolicy: Fail
+  name: vpod-v1.kb.io
+  rules:
+  - apiGroups:
+    - ""
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - pods
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: project-v4-multigroup-webhook-service
+      namespace: project-v4-multigroup-system
       path: /validate-crew-testproject-org-v1-captain
   failurePolicy: Fail
-  name: vcaptain.kb.io
+  name: vcaptain-v1.kb.io
   rules:
   - apiGroups:
     - crew.testproject.org
@@ -1624,9 +1926,29 @@ webhooks:
     service:
       name: project-v4-multigroup-webhook-service
       namespace: project-v4-multigroup-system
+      path: /validate-example-com-testproject-org-v1alpha1-memcached
+  failurePolicy: Fail
+  name: vmemcached-v1alpha1.kb.io
+  rules:
+  - apiGroups:
+    - example.com.testproject.org
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - memcacheds
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: project-v4-multigroup-webhook-service
+      namespace: project-v4-multigroup-system
       path: /validate-ship-testproject-org-v2alpha1-cruiser
   failurePolicy: Fail
-  name: vcruiser.kb.io
+  name: vcruiser-v2alpha1.kb.io
   rules:
   - apiGroups:
     - ship.testproject.org
@@ -1637,24 +1959,4 @@ webhooks:
     - UPDATE
     resources:
     - cruisers
-  sideEffects: None
-- admissionReviewVersions:
-  - v1
-  clientConfig:
-    service:
-      name: project-v4-multigroup-webhook-service
-      namespace: project-v4-multigroup-system
-      path: /validate-testproject-org-v1-lakers
-  failurePolicy: Fail
-  name: vlakers.kb.io
-  rules:
-  - apiGroups:
-    - testproject.org
-    apiVersions:
-    - v1
-    operations:
-    - CREATE
-    - UPDATE
-    resources:
-    - lakers
   sideEffects: None

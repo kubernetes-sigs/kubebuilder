@@ -108,6 +108,15 @@ func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.options.DoController, "controller", true,
 		"if set, generate the controller without prompting the user")
 	p.controllerFlag = fs.Lookup("controller")
+
+	fs.StringVar(&p.options.ExternalAPIPath, "external-api-path", "",
+		"Specify the Go package import path for the external API. This is used to scaffold controllers for resources "+
+			"defined outside this project (e.g., github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1).")
+
+	fs.StringVar(&p.options.ExternalAPIDomain, "external-api-domain", "",
+		"Specify the domain name for the external API. This domain is used to generate accurate RBAC "+
+			"markers and permissions for the external resources (e.g., cert-manager.io).")
+
 }
 
 func (p *createAPISubcommand) InjectConfig(c config.Config) error {
@@ -118,9 +127,6 @@ func (p *createAPISubcommand) InjectConfig(c config.Config) error {
 func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 	p.resource = res
 
-	// TODO: re-evaluate whether y/n input still makes sense. We should probably always
-	//       scaffold the resource and controller.
-	// Ask for API and Controller if not specified
 	reader := bufio.NewReader(os.Stdin)
 	if !p.resourceFlag.Changed {
 		log.Println("Create Resource [y/n]")
@@ -129,6 +135,15 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 	if !p.controllerFlag.Changed {
 		log.Println("Create Controller [y/n]")
 		p.options.DoController = util.YesNo(reader)
+	}
+
+	// Ensure that external API options cannot be used when creating an API in the project.
+	if p.options.DoAPI {
+		if len(p.options.ExternalAPIPath) != 0 || len(p.options.ExternalAPIDomain) != 0 {
+			return errors.New("Cannot use '--external-api-path' or '--external-api-domain' " +
+				"when creating an API in the project with '--resource=true'. " +
+				"Use '--resource=false' when referencing an external API.")
+		}
 	}
 
 	p.options.UpdateResource(p.resource, p.config)

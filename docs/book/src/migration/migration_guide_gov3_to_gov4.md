@@ -103,7 +103,7 @@ These files have not been modified by the new plugin, so you should be able to r
 
 ### Migrate the Controllers
 
-Now, let's migrate the controller code from `controllers/cronjob_controller.go` in our old project to the new one.
+Now, let's migrate the controller code from `controllers/cronjob_controller.go` in our old project to `internal/controller/cronjob_controller.go` in the new one.
 
 ## Migrate the Webhooks
 

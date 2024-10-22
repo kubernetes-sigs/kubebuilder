@@ -32,30 +32,28 @@ function scaffold_test_project {
   pushd $testdata_dir/$project
 
   header_text "Generating project ${project} with flags: ${init_flags}"
-
   go mod init sigs.k8s.io/kubebuilder/testdata/$project  # our repo autodetection will traverse up to the kb module if we don't do this
-
   header_text "Initializing project ..."
   $kb init $init_flags --domain testproject.org --license apache2 --owner "The Kubernetes authors"
 
-  if [ $project == "project-v4" ] || [ $project == "project-v4-config" ]; then
+  if [ $project == "project-v4" ] ; then
     header_text 'Creating APIs ...'
     $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false
     $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false --force
     $kb create webhook --group crew --version v1 --kind Captain --defaulting --programmatic-validation
     $kb create api --group crew --version v1 --kind FirstMate --controller=true --resource=true --make=false
     $kb create webhook --group crew --version v1 --kind FirstMate --conversion
+    $kb create api --group crew --version v1 --kind Admiral --plural=admirales --controller=true --resource=true --namespaced=false --make=false
+    $kb create webhook --group crew --version v1 --kind Admiral --plural=admirales --defaulting
+    # Controller for External types
+    $kb create api --group "cert-manager" --version v1 --kind Certificate --controller=true --resource=false --make=false --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io
+    # Webhook for External types
+    $kb create webhook --group "cert-manager" --version v1 --kind Issuer --defaulting --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io
+    # Webhook for Core type
+    $kb create webhook --group core --version v1 --kind Pod --defaulting
+  fi
 
-    if [ $project == "project-v4" ]; then
-      $kb create api --group crew --version v1 --kind Admiral --plural=admirales --controller=true --resource=true --namespaced=false --make=false
-      $kb create webhook --group crew --version v1 --kind Admiral --plural=admirales --defaulting
-    else
-      $kb create api --group crew --version v1 --kind Admiral --controller=true --resource=true --namespaced=false --make=false
-      $kb create webhook --group crew --version v1 --kind Admiral --defaulting
-    fi
-
-    $kb create api --group crew --version v1 --kind Laker --controller=true --resource=false --make=false
-  elif [[ $project =~ multigroup ]]; then
+  if [[ $project =~ multigroup ]]; then
     header_text 'Switching to multigroup layout ...'
     $kb edit --multigroup=true
 
@@ -65,46 +63,39 @@ function scaffold_test_project {
 
     $kb create api --group ship --version v1beta1 --kind Frigate --controller=true --resource=true --make=false
     $kb create webhook --group ship --version v1beta1 --kind Frigate --conversion
-
     $kb create api --group ship --version v1 --kind Destroyer --controller=true --resource=true --namespaced=false --make=false
     $kb create webhook --group ship --version v1 --kind Destroyer --defaulting
-
     $kb create api --group ship --version v2alpha1 --kind Cruiser --controller=true --resource=true --namespaced=false --make=false
     $kb create webhook --group ship --version v2alpha1 --kind Cruiser --programmatic-validation
 
     $kb create api --group sea-creatures --version v1beta1 --kind Kraken --controller=true --resource=true --make=false
-
     $kb create api --group sea-creatures --version v1beta2 --kind Leviathan --controller=true --resource=true --make=false
-
     $kb create api --group foo.policy --version v1 --kind HealthCheckPolicy --controller=true --resource=true --make=false
-
+    # Controller for Core types
     $kb create api --group apps --version v1 --kind Deployment --controller=true --resource=false --make=false
-
     $kb create api --group foo --version v1 --kind Bar --controller=true --resource=true --make=false
     $kb create api --group fiz --version v1 --kind Bar --controller=true --resource=true --make=false
-
-    if [ $project == "project-v4-multigroup" ] || [ $project == "project-v4-multigroup-with-deploy-image" ] ; then
-      $kb create api --version v1 --kind Lakers --controller=true --resource=true --make=false
-      $kb create webhook --version v1 --kind Lakers --defaulting --programmatic-validation
-    fi
-  elif [[ $project =~ deploy-image ]]; then
-      header_text 'Creating Memcached API with deploy-image plugin ...'
-      $kb create api --group example.com --version v1alpha1 --kind Memcached --image=memcached:memcached:1.6.26-alpine3.19 --image-container-command="memcached,-m=64,-o,modern,-v" --image-container-port="11211" --run-as-user="1001" --plugins="deploy-image/v1-alpha" --make=false
-      $kb create api --group example.com --version v1alpha1 --kind Busybox --image=busybox:1.36.1 --plugins="deploy-image/v1-alpha" --make=false
-      header_text 'Creating Memcached webhook ...'
-      $kb create webhook --group example.com --version v1alpha1 --kind Memcached --programmatic-validation
+    # Controller for External types
+    $kb create api --group "cert-manager" --version v1 --kind Certificate --controller=true --resource=false --make=false --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io
+    # Webhook for External types
+    $kb create webhook --group "cert-manager" --version v1 --kind Issuer --defaulting --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io
+    # Webhook for Core type
+    $kb create webhook --group core --version v1 --kind Pod --programmatic-validation
   fi
 
-  if [[ $project == project-v4-with-grafana ]]; then
-      header_text 'Editing project with Grafana plugin ...'
-      $kb edit --plugins=grafana.kubebuilder.io/v1-alpha
-  fi
-  
-  make generate manifests
-  if [[ $project =~ v4 ]]; then
-    make build-installer
+  if [[ $project =~ multigroup ]] || [[ $project =~ with-plugins ]] ; then
+    header_text 'With Optional Plugins ...'
+    header_text 'Creating APIs with deploy-image plugin ...'
+    $kb create api --group example.com --version v1alpha1 --kind Memcached --image=memcached:memcached:1.6.26-alpine3.19 --image-container-command="memcached,--memory-limit=64,-o,modern,-v" --image-container-port="11211" --run-as-user="1001" --plugins="deploy-image/v1-alpha" --make=false
+    $kb create api --group example.com --version v1alpha1 --kind Busybox --image=busybox:1.36.1 --plugins="deploy-image/v1-alpha" --make=false
+    $kb create webhook --group example.com --version v1alpha1 --kind Memcached --programmatic-validation
+    header_text 'Editing project with Grafana plugin ...'
+    $kb edit --plugins=grafana.kubebuilder.io/v1-alpha
   fi
 
+  make all
+  make build-installer
+  # To avoid conflicts
   rm -f go.sum
   go mod tidy
   popd
@@ -114,6 +105,4 @@ build_kb
 
 scaffold_test_project project-v4 --plugins="go/v4"
 scaffold_test_project project-v4-multigroup --plugins="go/v4"
-scaffold_test_project project-v4-multigroup-with-deploy-image --plugins="go/v4"
-scaffold_test_project project-v4-with-deploy-image --plugins="go/v4"
-scaffold_test_project project-v4-with-grafana --plugins="go/v4"
+scaffold_test_project project-v4-with-plugins --plugins="go/v4"

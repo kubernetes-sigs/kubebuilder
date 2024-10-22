@@ -5,6 +5,21 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
   - apps
   resources:
   - deployments
@@ -31,6 +46,32 @@ rules:
   - patch
   - update
 - apiGroups:
+  - cert-manager.io
+  resources:
+  - certificates
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cert-manager.io
+  resources:
+  - certificates/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - cert-manager.io
+  resources:
+  - certificates/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - crew.testproject.org
   resources:
   - captains
@@ -52,6 +93,35 @@ rules:
   - crew.testproject.org
   resources:
   - captains/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - busyboxes
+  - memcacheds
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - busyboxes/finalizers
+  - memcacheds/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - busyboxes/status
+  - memcacheds/status
   verbs:
   - get
   - patch
@@ -168,32 +238,6 @@ rules:
   - cruisers/status
   - destroyers/status
   - frigates/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - testproject.org
-  resources:
-  - lakers
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - testproject.org
-  resources:
-  - lakers/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - testproject.org
-  resources:
-  - lakers/status
   verbs:
   - get
   - patch

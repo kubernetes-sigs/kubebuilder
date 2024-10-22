@@ -11,7 +11,8 @@ resources:
 - bases/foo.policy.testproject.org_healthcheckpolicies.yaml
 - bases/foo.testproject.org_bars.yaml
 - bases/fiz.testproject.org_bars.yaml
-- bases/testproject.org_lakers.yaml
+- bases/example.com.testproject.org_memcacheds.yaml
+- bases/example.com.testproject.org_busyboxes.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
 patches:
@@ -21,7 +22,7 @@ patches:
 - path: patches/webhook_in_ship_frigates.yaml
 - path: patches/webhook_in_ship_destroyers.yaml
 - path: patches/webhook_in_ship_cruisers.yaml
-- path: patches/webhook_in_lakers.yaml
+- path: patches/webhook_in_example.com_memcacheds.yaml
 # +kubebuilder:scaffold:crdkustomizewebhookpatch
 
 # [CERTMANAGER] To enable cert-manager, uncomment all the sections with [CERTMANAGER] prefix.
@@ -35,7 +36,8 @@ patches:
 #- path: patches/cainjection_in_foo.policy_healthcheckpolicies.yaml
 #- path: patches/cainjection_in_foo_bars.yaml
 #- path: patches/cainjection_in_fiz_bars.yaml
-#- path: patches/cainjection_in_lakers.yaml
+#- path: patches/cainjection_in_example.com_memcacheds.yaml
+#- path: patches/cainjection_in_example.com_busyboxes.yaml
 # +kubebuilder:scaffold:crdkustomizecainjectionpatch
 
 # [WEBHOOK] To enable webhook, uncomment the following section

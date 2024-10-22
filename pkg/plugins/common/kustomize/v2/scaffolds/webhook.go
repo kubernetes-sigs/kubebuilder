@@ -73,8 +73,7 @@ func (s *webhookScaffolder) Scaffold() error {
 		return fmt.Errorf("error updating resource: %w", err)
 	}
 
-	if err := scaffold.Execute(
-		&kdefault.WebhookCAInjectionPatch{},
+	buildScaffold := []machinery.Builder{
 		&kdefault.ManagerWebhookPatch{},
 		&webhook.Kustomization{Force: s.force},
 		&webhook.KustomizeConfig{},
@@ -85,8 +84,13 @@ func (s *webhookScaffolder) Scaffold() error {
 		&patches.EnableWebhookPatch{},
 		&patches.EnableCAInjectionPatch{},
 		&network_policy.NetworkPolicyAllowWebhooks{},
-		&crd.Kustomization{},
-	); err != nil {
+	}
+
+	if !s.resource.External && !s.resource.Core {
+		buildScaffold = append(buildScaffold, &crd.Kustomization{})
+	}
+
+	if err := scaffold.Execute(buildScaffold...); err != nil {
 		return fmt.Errorf("error scaffolding kustomize webhook manifests: %v", err)
 	}
 
@@ -101,7 +105,7 @@ func (s *webhookScaffolder) Scaffold() error {
 	kustomizeFilePath := "config/default/kustomization.yaml"
 	err = pluginutil.UncommentCode(kustomizeFilePath, "#- ../webhook", `#`)
 	if err != nil {
-		hasWebHookUncommented, err := pluginutil.HasFragment(kustomizeFilePath, "- ../webhook")
+		hasWebHookUncommented, err := pluginutil.HasFileContentWith(kustomizeFilePath, "- ../webhook")
 		if !hasWebHookUncommented || err != nil {
 			log.Errorf("Unable to find the target #- ../webhook to uncomment in the file "+
 				"%s.", kustomizeFilePath)
@@ -110,7 +114,7 @@ func (s *webhookScaffolder) Scaffold() error {
 
 	err = pluginutil.UncommentCode(kustomizeFilePath, "#patches:", `#`)
 	if err != nil {
-		hasWebHookUncommented, err := pluginutil.HasFragment(kustomizeFilePath, "patches:")
+		hasWebHookUncommented, err := pluginutil.HasFileContentWith(kustomizeFilePath, "patches:")
 		if !hasWebHookUncommented || err != nil {
 			log.Errorf("Unable to find the line '#patches:' to uncomment in the file "+
 				"%s.", kustomizeFilePath)
@@ -119,7 +123,7 @@ func (s *webhookScaffolder) Scaffold() error {
 
 	err = pluginutil.UncommentCode(kustomizeFilePath, "#- path: manager_webhook_patch.yaml", `#`)
 	if err != nil {
-		hasWebHookUncommented, err := pluginutil.HasFragment(kustomizeFilePath, "- path: manager_webhook_patch.yaml")
+		hasWebHookUncommented, err := pluginutil.HasFileContentWith(kustomizeFilePath, "- path: manager_webhook_patch.yaml")
 		if !hasWebHookUncommented || err != nil {
 			log.Errorf("Unable to find the target #- path: manager_webhook_patch.yaml to uncomment in the file "+
 				"%s.", kustomizeFilePath)
@@ -129,7 +133,7 @@ func (s *webhookScaffolder) Scaffold() error {
 	crdKustomizationsFilePath := "config/crd/kustomization.yaml"
 	err = pluginutil.UncommentCode(crdKustomizationsFilePath, "#- path: patches/webhook", `#`)
 	if err != nil {
-		hasWebHookUncommented, err := pluginutil.HasFragment(crdKustomizationsFilePath, "- path: patches/webhook")
+		hasWebHookUncommented, err := pluginutil.HasFileContentWith(crdKustomizationsFilePath, "- path: patches/webhook")
 		if !hasWebHookUncommented || err != nil {
 			log.Errorf("Unable to find the target(s) #- path: patches/webhook/* to uncomment in the file "+
 				"%s.", crdKustomizationsFilePath)
@@ -138,7 +142,7 @@ func (s *webhookScaffolder) Scaffold() error {
 
 	err = pluginutil.UncommentCode(crdKustomizationsFilePath, "#configurations:\n#- kustomizeconfig.yaml", `#`)
 	if err != nil {
-		hasWebHookUncommented, err := pluginutil.HasFragment(crdKustomizationsFilePath, "- kustomizeconfig.yaml")
+		hasWebHookUncommented, err := pluginutil.HasFileContentWith(crdKustomizationsFilePath, "- kustomizeconfig.yaml")
 		if !hasWebHookUncommented || err != nil {
 			log.Errorf("Unable to find the target(s) #configurations:\n#- kustomizeconfig.yaml to uncomment in the file "+
 				"%s.", crdKustomizationsFilePath)
