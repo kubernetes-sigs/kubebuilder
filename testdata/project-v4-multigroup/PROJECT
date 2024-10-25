@@ -15,7 +15,7 @@ plugins:
       options:
         containerCommand: memcached,--memory-limit=64,-o,modern,-v
         containerPort: "11211"
-        image: memcached:memcached:1.6.26-alpine3.19
+        image: memcached:1.6.26-alpine3.19
         runAsUser: "1001"
       version: v1alpha1
     - domain: testproject.org

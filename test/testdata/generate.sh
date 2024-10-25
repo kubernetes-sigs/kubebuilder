@@ -86,7 +86,7 @@ function scaffold_test_project {
   if [[ $project =~ multigroup ]] || [[ $project =~ with-plugins ]] ; then
     header_text 'With Optional Plugins ...'
     header_text 'Creating APIs with deploy-image plugin ...'
-    $kb create api --group example.com --version v1alpha1 --kind Memcached --image=memcached:memcached:1.6.26-alpine3.19 --image-container-command="memcached,--memory-limit=64,-o,modern,-v" --image-container-port="11211" --run-as-user="1001" --plugins="deploy-image/v1-alpha" --make=false
+    $kb create api --group example.com --version v1alpha1 --kind Memcached --image=memcached:1.6.26-alpine3.19 --image-container-command="memcached,--memory-limit=64,-o,modern,-v" --image-container-port="11211" --run-as-user="1001" --plugins="deploy-image/v1-alpha" --make=false
     $kb create api --group example.com --version v1alpha1 --kind Busybox --image=busybox:1.36.1 --plugins="deploy-image/v1-alpha" --make=false
     $kb create webhook --group example.com --version v1alpha1 --kind Memcached --programmatic-validation
     header_text 'Editing project with Grafana plugin ...'
