@@ -74,7 +74,7 @@ var _ = Describe("kubebuilder", func() {
 		It("should generate a runnable project with the Installer", func() {
 			kbc.IsRestricted = false
 			GenerateV4(kbc)
-			Run(kbc, false, true, true, false)
+			Run(kbc, true, true, true, false)
 		})
 		It("should generate a runnable project without metrics exposed", func() {
 			kbc.IsRestricted = false
