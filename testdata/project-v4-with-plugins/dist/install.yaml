@@ -606,7 +606,7 @@ spec:
         - name: BUSYBOX_IMAGE
           value: busybox:1.36.1
         - name: MEMCACHED_IMAGE
-          value: memcached:memcached:1.6.26-alpine3.19
+          value: memcached:1.6.26-alpine3.19
         image: controller:latest
         livenessProbe:
           httpGet:
