@@ -1,3 +1,13 @@
 .menu-title img {
     vertical-align: bottom;
 }
+
+/* Set navigation bar width */
+.nav {
+    width: 250px; /* Adjust width as preferred */
+}
+
+/* Ensure content area aligns with the new nav width */
+.content {
+    margin-left: 250px; /* Match this with .nav width */
+}
