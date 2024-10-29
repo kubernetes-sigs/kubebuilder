@@ -78,12 +78,14 @@ func (s *initScaffolder) Scaffold() error {
 		&rbac.ServiceAccount{},
 		&manager.Kustomization{},
 		&kdefault.ManagerMetricsPatch{},
+		&kdefault.CertManagerMetricsPatch{},
 		&manager.Config{Image: imageName},
 		&kdefault.Kustomization{},
 		&network_policy.Kustomization{},
 		&network_policy.NetworkPolicyAllowMetrics{},
 		&prometheus.Kustomization{},
 		&prometheus.Monitor{},
+		&prometheus.ServiceMonitorPatch{},
 	}
 
 	return scaffold.Execute(templates...)

@@ -42,4 +42,13 @@ func (f *Kustomization) SetTemplateDefaults() error {
 
 const kustomizationTemplate = `resources:
 - monitor.yaml
+
+# [PROMETHEUS WITH CERTMANAGER] The following patch configures the ServiceMonitor in ../prometheus
+# to securely reference certificates created and managed by cert-manager.
+# Additionally, ensure that you uncomment the [METRICS WITH CERTMANAGER] patch under config/default/kustomization.yaml
+# to mount the "metrics-server-cert" secret in the Manager Deployment.
+#patches:
+#  - path: monitor_tls_patch.yaml
+#    target:
+#      kind: ServiceMonitor
 `
