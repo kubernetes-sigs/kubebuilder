@@ -1,0 +1,74 @@
+name: External Plugin
+
+on:
+  push:
+    paths:
+      - 'pkg/'
+      - 'docs/book/src/simple-external-plugin-tutorial/testdata/sampleexternalplugin'
+      - '.github/workflows/external-plugin.yml'
+  pull_request:
+    paths:
+      - 'pkg/'
+      - 'docs/book/src/simple-external-plugin-tutorial/testdata/sampleexternalplugin'
+      - '.github/workflows/external-plugin.yml'
+
+jobs:
+  external:
+    name: Verify external plugin
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    steps:
+      - name: Clone the code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1  # Minimal history to avoid .git permissions issues
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22.3'
+
+      - name: Build Sample External Plugin
+        working-directory: docs/book/src/simple-external-plugin-tutorial/testdata/sampleexternalplugin/v1
+        run: |
+          mkdir -p ./bin
+          make build
+
+      - name: Move Plugin Binary to Plugin Path
+        run: |
+          # Define the plugin destination for Linux (XDG_CONFIG_HOME path)
+          XDG_CONFIG_HOME="${HOME}/.config"
+          PLUGIN_DEST="$XDG_CONFIG_HOME/kubebuilder/plugins/sampleexternalplugin/v1"
+
+          # Ensure destination exists and move the built binary
+          mkdir -p "$PLUGIN_DEST"
+          mv docs/book/src/simple-external-plugin-tutorial/testdata/sampleexternalplugin/v1/bin/sampleexternalplugin "$PLUGIN_DEST/sampleexternalplugin"
+          chmod +x "$PLUGIN_DEST/sampleexternalplugin"  # Ensure the binary is executable
+
+      - name: Build Kubebuilder Binary and Setup Environment
+        env:
+          KUBEBUILDER_ASSETS: $GITHUB_WORKSPACE/bin
+        run: |
+          # Build Kubebuilder Binary
+          export kb_root_dir=$(pwd)
+          go build -o "${kb_root_dir}/bin/kubebuilder" ./cmd
+          chmod +x "${kb_root_dir}/bin/kubebuilder"  # Ensure kubebuilder binary is executable
+          echo "${kb_root_dir}/bin" >> $GITHUB_PATH  # Add to PATH
+
+      - name: Create Directory, Run Kubebuilder Commands, and Validate Results
+        env:
+          KUBEBUILDER_ASSETS: $GITHUB_WORKSPACE/bin
+        run: |
+          # Create a directory named testplugin for running kubebuilder commands
+          mkdir testplugin
+          cd testplugin
+          
+          # Run Kubebuilder commands inside the testplugin directory
+          kubebuilder init --plugins sampleexternalplugin/v1 --domain sample.domain.com
+          kubebuilder create api --plugins sampleexternalplugin/v1 --number=2 --group=example --version=v1alpha1 --kind=ExampleKind
+          kubebuilder create webhook --plugins sampleexternalplugin/v1 --hooked --group=example --version=v1alpha1 --kind=ExampleKind
+
+          # Validate generated file contents
+          grep "DOMAIN: sample.domain.com" ./initFile.txt || exit 1
+          grep "NUMBER: 2" ./apiFile.txt || exit 1
+          grep "HOOKED!" ./webhookFile.txt || exit 1
