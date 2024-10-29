@@ -149,7 +149,7 @@ if secureMetrics {
 	...
 
     // Specify the path where the certificate is mounted
-    metricsServerOptions.CertDir = "/tmp/k8s-metrics-server/serving-certs"
+    metricsServerOptions.CertDir = "/tmp/k8s-metrics-server/metrics-certs"
     metricsServerOptions.CertName = "tls.crt"
     metricsServerOptions.KeyName = "tls.key"
 }
@@ -179,6 +179,47 @@ An [issue](https://github.com/kubernetes-sigs/controller-runtime/issues/2781) ha
 enhance the controller-runtime and address these considerations.
 </aside>
 
+### By exposing the metrics endpoint using HTTPS and Cert-Manager
+
+Integrating `cert-manager` with your metrics service enables secure
+HTTPS access via TLS encryption. Follow the steps below to configure
+your project to expose the metrics endpoint using HTTPS with cert-manager.
+
+1. **Enable Cert-Manager in `config/default/kustomization.yaml`:**
+    - Uncomment the cert-manager resource to include it in your project:
+
+      ```yaml
+      - ../certmanager
+      ```
+
+2. **Enable the Patch for the `ServiceMonitor` to Use the Cert-Manager-Managed Secret `config/prometheus/kustomization.yaml`:**
+    - Add or uncomment the `ServiceMonitor` patch to securely reference the cert-manager-managed secret, replacing insecure configurations with secure certificate verification:
+
+      ```yaml
+      - path: monitor_tls_patch.yaml
+        target:
+          kind: ServiceMonitor
+      ```
+
+3. **Enable the Patch to Mount the Cert-Manager-Managed Secret in the Controller Deployment in `config/default/kustomization.yaml`:**
+    - Use the `manager_webhook_patch.yaml` (or create a custom metrics patch) to mount the `serving-cert` secret in the Manager Deployment.
+
+      ```yaml
+      - path: manager_webhook_patch.yaml
+      ```
+
+4. **Update `cmd/main.go` to Use the Certificate Managed by Cert-Manager:**
+    - Modify `cmd/main.go` to configure the metrics server to use the cert-manager-managed certificates.
+   Uncomment the lines for `CertDir`, `CertName`, and `KeyName`:
+
+      ```go
+      if secureMetrics {
+		...
+        metricsServerOptions.CertDir = "/tmp/k8s-metrics-server/metrics-certs"
+		metricsServerOptions.CertName = "tls.crt"
+		metricsServerOptions.KeyName = "tls.key"
+      }
+      ```
 
 ### By using Network Policy (You can optionally enable)
 
@@ -193,16 +234,6 @@ Uncomment the following line in the `config/default/kustomization.yaml`:
 # Only CR(s) which uses webhooks and applied on namespaces labeled 'webhooks: enabled' will be able to work properly.
 #- ../network-policy
 ```
-
-### By exposing the metrics endpoint using HTTPS and CertManager
-
-Integrating `cert-manager` with your metrics service can secure the endpoint via TLS encryption.
-
-To modify your project setup to expose metrics using HTTPS with
-the help of cert-manager, you'll need to change the configuration of both
-the `Service` under `config/default/metrics_service.yaml` and
-the `ServiceMonitor` under `config/prometheus/monitor.yaml` to use a secure HTTPS port
-and ensure the necessary certificate is applied.
 
 ## Exporting Metrics for Prometheus
 

@@ -79,4 +79,26 @@ spec:
     kind: Issuer
     name: selfsigned-issuer
   secretName: webhook-server-cert # this secret will not be prefixed, since it's not managed by kustomize
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  labels:
+    app.kubernetes.io/name: certificate
+    app.kubernetes.io/instance: metrics-certs
+    app.kubernetes.io/component: certificate
+    app.kubernetes.io/created-by: {{ .ProjectName }}
+    app.kubernetes.io/part-of: {{ .ProjectName }}
+    app.kubernetes.io/managed-by: kustomize
+  name: metrics-certs  # this name should match the one appeared in kustomizeconfig.yaml
+  namespace: system
+spec:
+  # SERVICE_NAME and SERVICE_NAMESPACE will be substituted by kustomize
+  dnsNames:
+  - controller-manager-metrics-service.system.svc
+  - controller-manager-metrics-service.system.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: selfsigned-issuer
+  secretName: metrics-server-cert # this secret will not be prefixed, since it's not managed by kustomize
 `
