@@ -65,7 +65,7 @@ linters:
   enable:
     - dupl
     - errcheck
-    - exportloopref
+    - copyloopvar
     - ginkgolinter
     - goconst
     - gocyclo
