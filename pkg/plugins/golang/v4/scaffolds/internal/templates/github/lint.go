@@ -63,5 +63,5 @@ jobs:
       - name: Run linter
         uses: golangci/golangci-lint-action@v6
         with:
-          version: v1.59
+          version: v1.61
 `

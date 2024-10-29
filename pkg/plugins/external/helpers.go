@@ -99,7 +99,7 @@ func makePluginRequest(req external.PluginRequest, path string) (*external.Plugi
 
 	// Error if the plugin failed.
 	if res.Error {
-		return nil, fmt.Errorf(strings.Join(res.ErrorMsgs, "\n"))
+		return nil, fmt.Errorf("%s", strings.Join(res.ErrorMsgs, "\n"))
 	}
 
 	return &res, nil
