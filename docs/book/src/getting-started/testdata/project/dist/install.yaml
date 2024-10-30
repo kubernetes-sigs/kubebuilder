@@ -451,6 +451,8 @@ spec:
             - ALL
       securityContext:
         runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       serviceAccountName: project-controller-manager
       terminationGracePeriodSeconds: 10
 ---
