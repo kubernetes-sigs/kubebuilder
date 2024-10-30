@@ -653,6 +653,8 @@ spec:
           readOnly: true
       securityContext:
         runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       serviceAccountName: project-v4-controller-manager
       terminationGracePeriodSeconds: 10
       volumes:

@@ -75,11 +75,6 @@ func GenerateV4(kbc *utils.TestContext) {
 	ExpectWithOffset(1, pluginutil.UncommentCode(
 		filepath.Join(kbc.Dir, "cmd", "main.go"),
 		tlsConfigManager, "// ")).To(Succeed())
-
-	if kbc.IsRestricted {
-		By("uncomment kustomize files to ensure that pods are restricted")
-		uncommentPodStandards(kbc)
-	}
 }
 
 // GenerateV4WithoutMetrics implements a go/v4 plugin project defined by a TestContext.
@@ -121,11 +116,6 @@ func GenerateV4WithoutMetrics(kbc *utils.TestContext) {
 	ExpectWithOffset(1, pluginutil.CommentCode(
 		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 		metricsTarget, "#")).To(Succeed())
-
-	if kbc.IsRestricted {
-		By("uncomment kustomize files to ensure that pods are restricted")
-		uncommentPodStandards(kbc)
-	}
 }
 
 // GenerateV4WithoutMetrics implements a go/v4 plugin project defined by a TestContext.
@@ -204,11 +194,6 @@ func GenerateV4WithoutWebhooks(kbc *utils.TestContext) {
 	ExpectWithOffset(1, pluginutil.UncommentCode(
 		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 		"#- ../prometheus", "#")).To(Succeed())
-
-	if kbc.IsRestricted {
-		By("uncomment kustomize files to ensure that pods are restricted")
-		uncommentPodStandards(kbc)
-	}
 }
 
 func creatingAPI(kbc *utils.TestContext) {
@@ -377,22 +362,6 @@ const certManagerTarget = `#replacements:
 #         delimiter: '/'
 #         index: 1
 #         create: true`
-
-func uncommentPodStandards(kbc *utils.TestContext) {
-	configManager := filepath.Join(kbc.Dir, "config", "manager", "manager.yaml")
-
-	//nolint:lll
-	if err := pluginutil.ReplaceInFile(configManager, `# TODO(user): For common cases that do not require escalating privileges
-        # it is recommended to ensure that all your Pods/Containers are restrictive.
-        # More info: https://kubernetes.io/docs/concepts/security/pod-security-standards/#restricted
-        # Please uncomment the following code if your project does NOT have to work on old Kubernetes
-        # versions < 1.19 or on vendors versions which do NOT support this field by default (i.e. Openshift < 4.11 ).
-        # seccompProfile:
-        #   type: RuntimeDefault`, `seccompProfile:
-          type: RuntimeDefault`); err == nil {
-		ExpectWithOffset(1, err).NotTo(HaveOccurred())
-	}
-}
 
 // scaffoldConversionWebhook sets up conversion webhooks for testing the ConversionTest API
 func scaffoldConversionWebhook(kbc *utils.TestContext) {
