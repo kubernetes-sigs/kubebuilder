@@ -37,26 +37,6 @@ updates:
     labels:
       - "ok-to-test"
 
-  # Maintain dependencies for go
-  - package-ecosystem: "gomod"
-    directory: "/testdata/project-v4-with-plugins"
-    schedule:
-      interval: "daily"
-    commit-message:
-      prefix: ":seedling:"
-    labels:
-      - "ok-to-test"
-
-  # Maintain dependencies for go
-  - package-ecosystem: "gomod"
-    directory: "/testdata/project-v4-multigroup"
-    schedule:
-      interval: "daily"
-    commit-message:
-      prefix: ":seedling:"
-    labels:
-      - "ok-to-test"
-
   # Maintain dependencies for dockerfile scaffold in the projects
   - package-ecosystem: docker
     directory: "testdata/project-v4"
