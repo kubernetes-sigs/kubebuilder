@@ -28,6 +28,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins"
 	kustomizecommonv2 "sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds/internal/templates"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds/internal/templates/cmd"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds/internal/templates/github"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds/internal/templates/hack"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds/internal/templates/test/e2e"
@@ -141,7 +142,7 @@ func (s *initScaffolder) Scaffold() error {
 	}
 
 	return scaffold.Execute(
-		&templates.Main{
+		&cmd.Main{
 			ControllerRuntimeVersion: ControllerRuntimeVersion,
 		},
 		&templates.GoMod{

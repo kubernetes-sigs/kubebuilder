@@ -27,7 +27,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 	pluginutil "sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins"
-	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds/internal/templates"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds/internal/templates/cmd"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds/internal/templates/hack"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds/internal/templates/test/e2e"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds/internal/templates/webhooks"
@@ -95,7 +95,7 @@ func (s *webhookScaffolder) Scaffold() error {
 	if err := scaffold.Execute(
 		&webhooks.Webhook{Force: s.force, IsLegacyPath: s.isLegacy},
 		&e2e.WebhookTestUpdater{WireWebhook: true},
-		&templates.MainUpdater{WireWebhook: true, IsLegacyPath: s.isLegacy},
+		&cmd.MainUpdater{WireWebhook: true, IsLegacyPath: s.isLegacy},
 		&webhooks.WebhookTest{Force: s.force, IsLegacyPath: s.isLegacy},
 	); err != nil {
 		return err
