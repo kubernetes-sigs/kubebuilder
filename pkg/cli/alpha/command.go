@@ -19,7 +19,21 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/cli/alpha/internal"
 )
 
-// NewScaffoldCommand return a new scaffold command
+// NewScaffoldCommand returns a new scaffold command, providing the `kubebuilder alpha generate`
+// feature to re-scaffold projects and assist users with updates.
+//
+// IMPORTANT: This command is intended solely for Kubebuilder's use, as it is designed to work
+// specifically within Kubebuilder's project configuration, key mappings, and plugin initialization.
+// Its implementation includes fixed values and logic tailored to Kubebuilder’s unique setup, which may
+// not apply to other projects. Consequently, importing and using this command directly in other projects
+// will likely result in unexpected behavior, as external projects may have different supported plugin
+// structures, configurations, and requirements.
+//
+// For other projects using Kubebuilder as a library, replicating similar functionality would require
+// a custom implementation to ensure compatibility with the specific configurations and plugins of that project.
+//
+// Technically, implementing functions that allow re-scaffolding with the exact plugins and project-specific
+// code of external projects is not feasible within Kubebuilder’s current design.
 func NewScaffoldCommand() *cobra.Command {
 	opts := internal.Generate{}
 	scaffoldCmd := &cobra.Command{
