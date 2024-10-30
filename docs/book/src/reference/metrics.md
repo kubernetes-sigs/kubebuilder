@@ -136,41 +136,18 @@ spec:
 <aside class="warning">
 <h1>Changes Recommended for Production</h1>
 
-The default scaffold to configure the metrics server in `cmd/main.go` uses `TLSOpts` that rely on self-signed certificates
-(SelfCerts), which are generated automatically. However, self-signed certificates are **not** recommended for production
-environments as they do not offer the same level of trust and security as certificates issued by a trusted
-Certificate Authority (CA).
+The default scaffold in `cmd/main.go` uses a **controller-runtime feature**
+to generate a certificate for securing the metrics server. While convenient
+for development and testing, this setup is **not recommended for production**.
 
-While self-signed certificates are convenient for development and testing, they are unsuitable for production
-because they do not establish a chain of trust, making them vulnerable to security threats.
+Additionally, review the configuration file at `config/prometheus/monitor.yaml`
+to ensure secure integration with Prometheus. If `insecureSkipVerify: true` is
+enabled, certificate verification is turned off. **This is not recommended for production**
+as it exposes the system to man-in-the-middle attacks, potentially allowing
+unauthorized access to metrics data.
 
-Furthermore, check the configuration file located at `config/prometheus/monitor.yaml` to
-ensure secure integration with Prometheus. If the `insecureSkipVerify: true` option is enabled,
-it means that certificate verification is turned off. This is **not** recommended for production as
-it poses a significant security risk by making the system vulnerable to man-in-the-middle attacks,
-where an attacker could intercept and manipulate the communication between Prometheus and the monitored services.
-This could lead to unauthorized access to metrics data, compromising the integrity and confidentiality of the information.
-
-**In both cases, the primary risk is potentially allowing unauthorized access to sensitive metrics data.**
-
-### Recommended Actions for a Secure Production Setup
-
-1. **Replace Self-Signed Certificates:**
-   - Instead of using `TLSOpts`, configure the `CertDir`, `CertName`, and `KeyName` options to use your own certificates.
-   This ensures that your server communicates using trusted and secure certificates.
-
-2. **Configure Prometheus Monitoring Securely:**
-   - Check and update your Prometheus configuration file (`config/prometheus/monitor.yaml`) to ensure secure settings.
-   - Replace `insecureSkipVerify: true` with the following secure options:
-
-     ```yaml
-     caFile: The path to the CA certificate file, e.g., /etc/metrics-certs/ca.crt.
-     certFile: The path to the client certificate file, e.g., /etc/metrics-certs/tls.crt.
-     keyFile: The path to the client key file, e.g., /etc/metrics-certs/tls.key.
-     ```
-
-   These settings ensure encrypted and authenticated communication between Prometheus and the monitored services, providing a secure monitoring setup.
 </aside>
+
 
 <aside class="note">
 <h1>Controller-Runtime Auth/Authz Feature Current Known Limitations and Considerations</h1>
