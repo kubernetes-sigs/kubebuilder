@@ -35,8 +35,11 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
+	examplecomv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-with-plugins/api/v1"
 	examplecomv1alpha1 "sigs.k8s.io/kubebuilder/testdata/project-v4-with-plugins/api/v1alpha1"
+	examplecomv2 "sigs.k8s.io/kubebuilder/testdata/project-v4-with-plugins/api/v2"
 	"sigs.k8s.io/kubebuilder/testdata/project-v4-with-plugins/internal/controller"
+	webhookexamplecomv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-with-plugins/internal/webhook/v1"
 	webhookexamplecomv1alpha1 "sigs.k8s.io/kubebuilder/testdata/project-v4-with-plugins/internal/webhook/v1alpha1"
 	// +kubebuilder:scaffold:imports
 )
@@ -50,6 +53,8 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(examplecomv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(examplecomv1.AddToScheme(scheme))
+	utilruntime.Must(examplecomv2.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -163,6 +168,20 @@ func main() {
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		if err = webhookexamplecomv1alpha1.SetupMemcachedWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Memcached")
+			os.Exit(1)
+		}
+	}
+	if err = (&controller.WordpressReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Wordpress")
+		os.Exit(1)
+	}
+	// nolint:goconst
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err = webhookexamplecomv1.SetupWordpressWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Wordpress")
 			os.Exit(1)
 		}
 	}

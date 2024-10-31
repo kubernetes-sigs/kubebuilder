@@ -14,25 +14,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1beta1
+package v1
 
 import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	shipv1beta1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/ship/v1beta1"
+	examplecomv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-with-plugins/api/v1"
 	// TODO (user): Add any additional imports if needed
 )
 
-var _ = Describe("Frigate Webhook", func() {
+var _ = Describe("Wordpress Webhook", func() {
 	var (
-		obj    *shipv1beta1.Frigate
-		oldObj *shipv1beta1.Frigate
+		obj    *examplecomv1.Wordpress
+		oldObj *examplecomv1.Wordpress
 	)
 
 	BeforeEach(func() {
-		obj = &shipv1beta1.Frigate{}
-		oldObj = &shipv1beta1.Frigate{}
+		obj = &examplecomv1.Wordpress{}
+		oldObj = &examplecomv1.Wordpress{}
 		Expect(oldObj).NotTo(BeNil(), "Expected oldObj to be initialized")
 		Expect(obj).NotTo(BeNil(), "Expected obj to be initialized")
 		// TODO (user): Add any setup logic common to all tests
@@ -42,11 +42,11 @@ var _ = Describe("Frigate Webhook", func() {
 		// TODO (user): Add any teardown logic common to all tests
 	})
 
-	Context("When creating Frigate under Conversion Webhook", func() {
+	Context("When creating Wordpress under Conversion Webhook", func() {
 		// TODO (user): Add logic to convert the object to the desired version and verify the conversion
 		// Example:
 		// It("Should convert the object correctly", func() {
-		//     convertedObj := &shipv1beta1.Frigate{}
+		//     convertedObj := &examplecomv1.Wordpress{}
 		//     Expect(obj.ConvertTo(convertedObj)).To(Succeed())
 		//     Expect(convertedObj).ToNot(BeNil())
 		// })

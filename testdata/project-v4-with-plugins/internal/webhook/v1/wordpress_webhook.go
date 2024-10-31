@@ -14,22 +14,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1beta1
+package v1
 
 import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
-	shipv1beta1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/ship/v1beta1"
+	examplecomv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-with-plugins/api/v1"
 )
 
 // nolint:unused
 // log is for logging in this package.
-var frigatelog = logf.Log.WithName("frigate-resource")
+var wordpresslog = logf.Log.WithName("wordpress-resource")
 
-// SetupFrigateWebhookWithManager registers the webhook for Frigate in the manager.
-func SetupFrigateWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).For(&shipv1beta1.Frigate{}).
+// SetupWordpressWebhookWithManager registers the webhook for Wordpress in the manager.
+func SetupWordpressWebhookWithManager(mgr ctrl.Manager) error {
+	return ctrl.NewWebhookManagedBy(mgr).For(&examplecomv1.Wordpress{}).
 		Complete()
 }
 

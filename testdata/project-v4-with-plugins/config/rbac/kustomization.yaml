@@ -22,6 +22,8 @@ resources:
 # default, aiding admins in cluster management. Those roles are
 # not used by the Project itself. You can comment the following lines
 # if you do not want those helpers be installed with your Project.
+- wordpress_editor_role.yaml
+- wordpress_viewer_role.yaml
 - busybox_editor_role.yaml
 - busybox_viewer_role.yaml
 - memcached_editor_role.yaml

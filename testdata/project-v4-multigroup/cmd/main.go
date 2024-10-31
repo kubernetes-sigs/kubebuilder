@@ -38,7 +38,9 @@ import (
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 
 	crewv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/crew/v1"
+	examplecomv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/example.com/v1"
 	examplecomv1alpha1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/example.com/v1alpha1"
+	examplecomv2 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/example.com/v2"
 	fizv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/fiz/v1"
 	foopolicyv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/foo.policy/v1"
 	foov1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/foo/v1"
@@ -59,9 +61,9 @@ import (
 	webhookcertmanagerv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/webhook/cert-manager/v1"
 	webhookcorev1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/webhook/core/v1"
 	webhookcrewv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/webhook/crew/v1"
+	webhookexamplecomv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/webhook/example.com/v1"
 	webhookexamplecomv1alpha1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/webhook/example.com/v1alpha1"
 	webhookshipv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/webhook/ship/v1"
-	webhookshipv1beta1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/webhook/ship/v1beta1"
 	webhookshipv2alpha1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/webhook/ship/v2alpha1"
 	// +kubebuilder:scaffold:imports
 )
@@ -85,6 +87,8 @@ func init() {
 	utilruntime.Must(fizv1.AddToScheme(scheme))
 	utilruntime.Must(certmanagerv1.AddToScheme(scheme))
 	utilruntime.Must(examplecomv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(examplecomv1.AddToScheme(scheme))
+	utilruntime.Must(examplecomv2.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -199,13 +203,6 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Frigate")
 		os.Exit(1)
 	}
-	// nolint:goconst
-	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = webhookshipv1beta1.SetupFrigateWebhookWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create webhook", "webhook", "Frigate")
-			os.Exit(1)
-		}
-	}
 	if err = (&shipcontroller.DestroyerReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
@@ -317,6 +314,20 @@ func main() {
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		if err = webhookexamplecomv1alpha1.SetupMemcachedWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Memcached")
+			os.Exit(1)
+		}
+	}
+	if err = (&examplecomcontroller.WordpressReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Wordpress")
+		os.Exit(1)
+	}
+	// nolint:goconst
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err = webhookexamplecomv1.SetupWordpressWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Wordpress")
 			os.Exit(1)
 		}
 	}

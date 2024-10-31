@@ -1,0 +1,9 @@
+apiVersion: example.com.testproject.org/v1
+kind: Wordpress
+metadata:
+  labels:
+    app.kubernetes.io/name: project-v4-with-plugins
+    app.kubernetes.io/managed-by: kustomize
+  name: wordpress-sample
+spec:
+  # TODO(user): Add fields here
