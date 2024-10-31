@@ -136,13 +136,28 @@ spec:
 <aside class="warning">
 <h1>Changes Recommended for Production</h1>
 
-The default scaffold in `cmd/main.go` uses a **controller-runtime feature**
-to generate a certificate for securing the metrics server. While convenient
-for development and testing, this setup is **not recommended for production**.
+The default scaffold in `cmd/main.go` uses a **controller-runtime feature** to
+automatically generate a self-signed certificate to secure the metrics server.
+While this is convenient for development and testing, it is not recommended
+for production.
+
+You can mount a certificate into the Manager Deployment and configure the
+metrics server to use it, as shown below:
+
+```go
+if secureMetrics {
+	...
+
+    // Specify the path where the certificate is mounted
+    metricsServerOptions.CertDir = "/tmp/k8s-metrics-server/serving-certs"
+    metricsServerOptions.CertName = "tls.crt"
+    metricsServerOptions.KeyName = "tls.key"
+}
+```
 
 Additionally, review the configuration file at `config/prometheus/monitor.yaml`
-to ensure secure integration with Prometheus. If `insecureSkipVerify: true` is
-enabled, certificate verification is turned off. **This is not recommended for production**
+to ensure secure integration with Prometheus. **If `insecureSkipVerify: true` is
+enabled, certificate verification is turned off. This is not recommended for production**
 as it exposes the system to man-in-the-middle attacks, potentially allowing
 unauthorized access to metrics data.
 
