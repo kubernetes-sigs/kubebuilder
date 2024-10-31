@@ -83,7 +83,7 @@ jobs:
           # Uncomment only ValidatingWebhookConfiguration
           # from cert-manager replaces
           sed -i '50,80s/^#//' $KUSTOMIZATION_FILE_PATH
-          sed -i '144,177s/^#//' $KUSTOMIZATION_FILE_PATH
+          sed -i '113,146s/^#//' $KUSTOMIZATION_FILE_PATH
           cd testdata/project-v4-with-plugins/
           go mod tidy
 
@@ -122,11 +122,11 @@ jobs:
         run: |
           KUSTOMIZATION_FILE_PATH="testdata/project-v4-multigroup/config/default/kustomization.yaml"
           sed -i '25s/^#//' $KUSTOMIZATION_FILE_PATH
-          sed -i '50,177s/^#//' $KUSTOMIZATION_FILE_PATH
+          sed -i '50,146s/^#//' $KUSTOMIZATION_FILE_PATH
           cd testdata/project-v4-multigroup
           go mod tidy
 
       - name: Testing make test-e2e for project-v4-multigroup
         working-directory: testdata/project-v4-multigroup/
         run: |
-          make test-e2e          
+          make test-e2e         
