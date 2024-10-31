@@ -5,10 +5,6 @@ on:
   # - `master` represents the latest development work.
   # - `book-v4` is the latest stable release branch, which contains the latest published code,
   #   ensuring that any issues in production are identified and addressed promptly.
-  push:
-    branches: ["master", "book-v4"]
-  pull_request:
-    branches: ["master", "book-v4"]
   schedule:
     - cron: '30 20 * * 1'  # Runs every Monday at 8:30 PM
 
