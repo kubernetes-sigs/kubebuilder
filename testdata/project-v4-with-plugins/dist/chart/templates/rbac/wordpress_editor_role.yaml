@@ -1,0 +1,34 @@
+{{- if .Values.rbac.enable }}
+# This rule is not used by the project project-v4-with-plugins itself.
+# It is provided to allow the cluster admin to help manage permissions for users.
+#
+# Grants permissions to create, update, and delete resources within the example.com.testproject.org.
+# This role is intended for users who need to manage these resources
+# but should not control RBAC or manage permissions for others.
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+  name: wordpress-editor-role
+rules:
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - wordpresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - wordpresses/status
+  verbs:
+  - get
+{{- end -}}

@@ -1,0 +1,38 @@
+# To integrate with Prometheus.
+{{- if .Values.prometheus.enable }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+	{{- include "chart.labels" . | nindent 4 }}
+  name: project-v4-with-plugins-controller-manager-metrics-monitor
+  namespace: {{ .Release.Namespace }}
+spec:
+  endpoints:
+    - path: /metrics
+      port: https
+      scheme: https
+      bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+      tlsConfig:
+        {{- if .Values.certmanager.enable }}
+        # Apply secure TLS configuration with cert-manager
+        insecureSkipVerify: false
+        ca:
+          secret:
+            name: metrics-server-cert
+            key: ca.crt
+        cert:
+          secret:
+            name: metrics-server-cert
+            key: tls.crt
+        keySecret:
+          name: metrics-server-cert
+          key: tls.key
+        {{- else }}
+        # Development/Test mode (insecure configuration)
+        insecureSkipVerify: true
+        {{- end }}
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+{{- end }}

@@ -24,6 +24,7 @@ plugins:
         image: busybox:1.36.1
       version: v1alpha1
   grafana.kubebuilder.io/v1-alpha: {}
+  helm.kubebuilder.io/v1-alpha: {}
 projectName: project-v4-with-plugins
 repo: sigs.k8s.io/kubebuilder/testdata/project-v4-with-plugins
 resources:

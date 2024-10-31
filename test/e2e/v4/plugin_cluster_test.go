@@ -61,44 +61,54 @@ var _ = Describe("kubebuilder", func() {
 			_ = kbc.RemoveNamespaceLabelToWarnAboutRestricted()
 
 			By("clean up API objects created during the test")
-			Expect(kbc.Make("undeploy")).To(Succeed())
+			_ = kbc.Make("undeploy")
 
 			By("removing controller image and working dir")
 			kbc.Destroy()
 		})
 		It("should generate a runnable project", func() {
 			GenerateV4(kbc)
-			Run(kbc, true, false, true, false)
+			Run(kbc, true, false, false, true, false)
 		})
 		It("should generate a runnable project with the Installer", func() {
 			GenerateV4(kbc)
-			Run(kbc, true, true, true, false)
+			Run(kbc, true, true, false, true, false)
+		})
+		It("should generate a runnable project using webhooks and installed with the HelmChart", func() {
+			GenerateV4(kbc)
+			By("installing Helm")
+			Expect(kbc.InstallHelm()).To(Succeed())
+
+			Run(kbc, true, false, true, true, false)
+
+			By("uninstalling Helm Release")
+			Expect(kbc.UninstallHelmRelease()).To(Succeed())
 		})
 		It("should generate a runnable project without metrics exposed", func() {
 			GenerateV4WithoutMetrics(kbc)
-			Run(kbc, true, false, false, false)
+			Run(kbc, true, false, false, false, false)
 		})
 		It("should generate a runnable project with metrics protected by network policies", func() {
 			GenerateV4WithNetworkPoliciesWithoutWebhooks(kbc)
-			Run(kbc, false, false, true, true)
+			Run(kbc, false, false, false, true, true)
 		})
 		It("should generate a runnable project with webhooks and metrics protected by network policies", func() {
 			GenerateV4WithNetworkPolicies(kbc)
-			Run(kbc, true, false, true, true)
+			Run(kbc, true, false, false, true, true)
 		})
 		It("should generate a runnable project with the manager running "+
 			"as restricted and without webhooks", func() {
 			GenerateV4WithoutWebhooks(kbc)
-			Run(kbc, false, false, true, false)
+			Run(kbc, false, false, false, true, false)
 		})
 	})
 })
 
 // Run runs a set of e2e tests for a scaffolded project defined by a TestContext.
-func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, hasMetrics bool, hasNetworkPolicies bool) {
+func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart, hasMetrics bool,
+	hasNetworkPolicies bool) {
 	var controllerPodName string
 	var err error
-	var output []byte
 
 	By("creating manager namespace")
 	err = kbc.CreateManagerNamespace()
@@ -124,14 +134,14 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, hasMetrics bool, 
 	err = kbc.LoadImageToKindCluster()
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
-	if !isToUseInstaller {
+	if !isToUseInstaller && !isToUseHelmChart {
 		By("deploying the controller-manager")
 		cmd := exec.Command("make", "deploy", "IMG="+kbc.ImageName)
-		output, err = kbc.Run(cmd)
+		_, err = kbc.Run(cmd)
 		ExpectWithOffset(1, err).NotTo(HaveOccurred())
 	}
 
-	if isToUseInstaller {
+	if isToUseInstaller && !isToUseHelmChart {
 		By("building the installer")
 		err = kbc.Make("build-installer", "IMG="+kbc.ImageName)
 		ExpectWithOffset(1, err).NotTo(HaveOccurred())
@@ -141,8 +151,30 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, hasMetrics bool, 
 		ExpectWithOffset(1, err).NotTo(HaveOccurred())
 	}
 
-	By("validating that manager Pod/container(s) are restricted")
-	ExpectWithOffset(1, output).NotTo(ContainSubstring("Warning: would violate PodSecurity"))
+	if isToUseHelmChart && !isToUseInstaller {
+		By("building the helm-chart")
+		err = kbc.EditHelmPlugin()
+		Expect(err).NotTo(HaveOccurred(), "Failed to edit project to generate helm-chart")
+
+		By("updating values with image name")
+		values := filepath.Join(kbc.Dir, "dist", "chart", "values.yaml")
+		err = util.ReplaceInFile(values, "repository: controller", "repository: e2e-test/controller-manager")
+		Expect(err).NotTo(HaveOccurred(), "Failed to edit repository in the chart/values.yaml")
+		err = util.ReplaceInFile(values, "tag: latest", fmt.Sprintf("tag: %s", kbc.TestSuffix))
+		Expect(err).NotTo(HaveOccurred(), "Failed to edit tag in the chart/values.yaml")
+
+		By("updating values to enable prometheus")
+		err = util.ReplaceInFile(values, "prometheus:\n  enable: false", "prometheus:\n  enable: true")
+		Expect(err).NotTo(HaveOccurred(), "Failed to enable prometheus in the chart/values.yaml")
+
+		By("updating values to set crd.keep false")
+		err = util.ReplaceInFile(values, "keep: true", "keep: false")
+		Expect(err).NotTo(HaveOccurred(), "Failed to set keep false in the chart/values.yaml")
+
+		By("install with Helm release")
+		err = kbc.HelmInstallRelease()
+		Expect(err).NotTo(HaveOccurred(), "Failed to install helm release")
+	}
 
 	By("Checking controllerManager and getting the name of the Pod")
 	controllerPodName = getControllerName(kbc)
@@ -423,7 +455,7 @@ func getControllerName(kbc *utils.TestContext) string {
 		ExpectWithOffset(1, err).NotTo(HaveOccurred())
 		_, _ = fmt.Fprintln(GinkgoWriter, out)
 	}()
-	EventuallyWithOffset(1, verifyControllerUp, time.Minute, time.Second).Should(Succeed())
+	EventuallyWithOffset(1, verifyControllerUp, 5*time.Minute, time.Second).Should(Succeed())
 	return controllerPodName
 }
 

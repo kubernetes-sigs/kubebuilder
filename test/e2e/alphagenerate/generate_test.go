@@ -85,6 +85,12 @@ var _ = Describe("kubebuilder", func() {
 			regenerateProject(kbc, projectOutputDir)
 			validateDeployImagePlugin(projectFilePath)
 		})
+
+		It("should regenerate project with helm plugin with success", func() {
+			generateProjectWithHelmPlugin(kbc)
+			regenerateProject(kbc, projectOutputDir)
+			validateHelmPlugin(projectFilePath)
+		})
 	})
 })
 
@@ -179,6 +185,12 @@ func generateProjectWithGrafanaPlugin(kbc *utils.TestContext) {
 	By("editing project to enable Grafana plugin")
 	err := kbc.Edit("--plugins", "grafana.kubebuilder.io/v1-alpha")
 	Expect(err).NotTo(HaveOccurred(), "Failed to edit project to enable Grafana Plugin")
+}
+
+func generateProjectWithHelmPlugin(kbc *utils.TestContext) {
+	By("editing project to enable Helm plugin")
+	err := kbc.Edit("--plugins", "helm.kubebuilder.io/v1-alpha")
+	Expect(err).NotTo(HaveOccurred(), "Failed to edit project to enable Helm Plugin")
 }
 
 func generateProjectWithDeployImagePlugin(kbc *utils.TestContext) {
@@ -322,4 +334,14 @@ func validateDeployImagePlugin(projectFile string) {
 		"Expected container command to match")
 	Expect(options.ContainerPort).To(Equal("11211"), "Expected container port to match")
 	Expect(options.RunAsUser).To(Equal("1001"), "Expected runAsUser to match")
+}
+
+func validateHelmPlugin(projectFile string) {
+	projectConfig := getConfigFromProjectFile(projectFile)
+
+	By("checking the Helm plugin in the PROJECT file")
+	var helmPluginConfig map[string]interface{}
+	err := projectConfig.DecodePluginConfig("helm.kubebuilder.io/v1-alpha", &helmPluginConfig)
+	Expect(err).NotTo(HaveOccurred(), "Failed to decode Helm plugin configuration")
+	Expect(helmPluginConfig).NotTo(BeNil(), "Expected Helm plugin configuration to be present in the PROJECT file")
 }
