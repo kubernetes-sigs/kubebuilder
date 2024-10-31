@@ -38,6 +38,7 @@ import (
 	certmanagerv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 
 	crewv1 "sigs.k8s.io/kubebuilder/testdata/project-v4/api/v1"
+	crewv2 "sigs.k8s.io/kubebuilder/testdata/project-v4/api/v2"
 	"sigs.k8s.io/kubebuilder/testdata/project-v4/internal/controller"
 	webhookcertmanagerv1 "sigs.k8s.io/kubebuilder/testdata/project-v4/internal/webhook/v1"
 	webhookcorev1 "sigs.k8s.io/kubebuilder/testdata/project-v4/internal/webhook/v1"
@@ -54,6 +55,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(crewv1.AddToScheme(scheme))
+	utilruntime.Must(crewv2.AddToScheme(scheme))
 	utilruntime.Must(certmanagerv1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }

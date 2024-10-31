@@ -4,20 +4,20 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.16.4
-  name: firstmates.crew.testproject.org
+  name: wordpresses.example.com.testproject.org
 spec:
-  group: crew.testproject.org
+  group: example.com.testproject.org
   names:
-    kind: FirstMate
-    listKind: FirstMateList
-    plural: firstmates
-    singular: firstmate
+    kind: Wordpress
+    listKind: WordpressList
+    plural: wordpresses
+    singular: wordpress
   scope: Namespaced
   versions:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: FirstMate is the Schema for the firstmates API.
+        description: Wordpress is the Schema for the wordpresses API.
         properties:
           apiVersion:
             description: |-
@@ -37,15 +37,15 @@ spec:
           metadata:
             type: object
           spec:
-            description: FirstMateSpec defines the desired state of FirstMate.
+            description: WordpressSpec defines the desired state of Wordpress.
             properties:
               foo:
-                description: Foo is an example field of FirstMate. Edit firstmate_types.go
+                description: Foo is an example field of Wordpress. Edit wordpress_types.go
                   to remove/update
                 type: string
             type: object
           status:
-            description: FirstMateStatus defines the observed state of FirstMate.
+            description: WordpressStatus defines the observed state of Wordpress.
             type: object
         type: object
     served: true
@@ -55,7 +55,7 @@ spec:
   - name: v2
     schema:
       openAPIV3Schema:
-        description: FirstMate is the Schema for the firstmates API.
+        description: Wordpress is the Schema for the wordpresses API.
         properties:
           apiVersion:
             description: |-
@@ -75,15 +75,15 @@ spec:
           metadata:
             type: object
           spec:
-            description: FirstMateSpec defines the desired state of FirstMate.
+            description: WordpressSpec defines the desired state of Wordpress.
             properties:
               foo:
-                description: Foo is an example field of FirstMate. Edit firstmate_types.go
+                description: Foo is an example field of Wordpress. Edit wordpress_types.go
                   to remove/update
                 type: string
             type: object
           status:
-            description: FirstMateStatus defines the observed state of FirstMate.
+            description: WordpressStatus defines the observed state of Wordpress.
             type: object
         type: object
     served: true

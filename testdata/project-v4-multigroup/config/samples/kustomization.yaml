@@ -11,4 +11,6 @@ resources:
 - fiz_v1_bar.yaml
 - example.com_v1alpha1_memcached.yaml
 - example.com_v1alpha1_busybox.yaml
+- example.com_v1_wordpress.yaml
+- example.com_v2_wordpress.yaml
 # +kubebuilder:scaffold:manifestskustomizesamples

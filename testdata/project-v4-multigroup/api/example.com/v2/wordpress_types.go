@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1
+package v2
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -23,44 +23,42 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// FirstMateSpec defines the desired state of FirstMate.
-type FirstMateSpec struct {
+// WordpressSpec defines the desired state of Wordpress.
+type WordpressSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of FirstMate. Edit firstmate_types.go to remove/update
+	// Foo is an example field of Wordpress. Edit wordpress_types.go to remove/update
 	Foo string `json:"foo,omitempty"`
 }
 
-// FirstMateStatus defines the observed state of FirstMate.
-type FirstMateStatus struct {
+// WordpressStatus defines the observed state of Wordpress.
+type WordpressStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
-// +kubebuilder:storageversion
-// +kubebuilder:conversion:hub
 
-// FirstMate is the Schema for the firstmates API.
-type FirstMate struct {
+// Wordpress is the Schema for the wordpresses API.
+type Wordpress struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   FirstMateSpec   `json:"spec,omitempty"`
-	Status FirstMateStatus `json:"status,omitempty"`
+	Spec   WordpressSpec   `json:"spec,omitempty"`
+	Status WordpressStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// FirstMateList contains a list of FirstMate.
-type FirstMateList struct {
+// WordpressList contains a list of Wordpress.
+type WordpressList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []FirstMate `json:"items"`
+	Items           []Wordpress `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&FirstMate{}, &FirstMateList{})
+	SchemeBuilder.Register(&Wordpress{}, &WordpressList{})
 }
