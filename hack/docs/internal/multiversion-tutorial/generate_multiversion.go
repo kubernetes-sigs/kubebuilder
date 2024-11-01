@@ -80,6 +80,15 @@ func (sp *Sample) UpdateTutorial() {
 	sp.createHubFiles()
 	sp.updateSampleV2()
 	sp.updateMain()
+	sp.updateDefaultKustomize()
+}
+
+func (sp *Sample) updateDefaultKustomize() {
+	// Enable CA for Conversion Webhook
+	err := pluginutil.UncommentCode(
+		filepath.Join(sp.ctx.Dir, "config/default/kustomization.yaml"),
+		caConversionCRDDefaultKustomize, `#`)
+	hackutils.CheckError("fixing default/kustomization", err)
 }
 
 func (sp *Sample) updateWebhookV1() {
@@ -487,19 +496,11 @@ type CronJobStatus struct {
 }
 
 func (sp *Sample) CodeGen() {
-	cmd := exec.Command("go", "get", "github.com/robfig/cron")
+	cmd := exec.Command("make", "all")
 	_, err := sp.ctx.Run(cmd)
-	hackutils.CheckError("Failed to get package robfig/cron", err)
-
-	cmd = exec.Command("make", "manifests")
-	_, err = sp.ctx.Run(cmd)
-	hackutils.CheckError("Failed to run make manifests for cronjob tutorial", err)
-
-	cmd = exec.Command("make", "all")
-	_, err = sp.ctx.Run(cmd)
 	hackutils.CheckError("Failed to run make all for cronjob tutorial", err)
 
-	cmd = exec.Command("go", "mod", "tidy")
+	cmd = exec.Command("make", "build-installer")
 	_, err = sp.ctx.Run(cmd)
-	hackutils.CheckError("Failed to run go mod tidy for cronjob tutorial", err)
+	hackutils.CheckError("Failed to run make build-installer for  multiversion cronjob tutorial", err)
 }

@@ -33,7 +33,7 @@ const CronjobSample = `
             - date; echo Hello from the Kubernetes cluster
           restartPolicy: OnFailure`
 
-const DefaultKustomization = `#replacements:
+const certmanagerForWebhooks = `#replacements:
 # - source: # Uncomment the following block if you have a ValidatingWebhook (--programmatic-validation)
 #     kind: Certificate
 #     group: cert-manager.io
@@ -95,39 +95,9 @@ const DefaultKustomization = `#replacements:
 #         delimiter: '/'
 #         index: 1
 #         create: true
-#
-# - source: # Uncomment the following block if you have a ConversionWebhook (--conversion)
-#     kind: Certificate
-#     group: cert-manager.io
-#     version: v1
-#     name: serving-cert # This name should match the one in certificate.yaml
-#     fieldPath: .metadata.namespace # Namespace of the certificate CR
-#   targets:
-#     - select:
-#         kind: CustomResourceDefinition
-#       fieldPaths:
-#         - .metadata.annotations.[cert-manager.io/inject-ca-from]
-#       options:
-#         delimiter: '/'
-#         index: 0
-#         create: true
-# - source:
-#     kind: Certificate
-#     group: cert-manager.io
-#     version: v1
-#     name: serving-cert # This name should match the one in certificate.yaml
-#     fieldPath: .metadata.name
-#   targets:
-#     - select:
-#         kind: CustomResourceDefinition
-#       fieldPaths:
-#         - .metadata.annotations.[cert-manager.io/inject-ca-from]
-#       options:
-#         delimiter: '/'
-#         index: 1
-#         create: true
-#
-# - source: # Uncomment the following block if you enable cert-manager
+#`
+
+const webhookServiceDefaultKustomize = `# - source: # Uncomment the following block if you enable cert-manager
 #     kind: Service
 #     version: v1
 #     name: webhook-service
