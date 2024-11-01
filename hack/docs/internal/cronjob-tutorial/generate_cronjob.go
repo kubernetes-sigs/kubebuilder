@@ -116,21 +116,22 @@ func (sp *Sample) UpdateTutorial() {
 func (sp *Sample) CodeGen() {}
 
 func (sp *Sample) codeGen() {
-	cmd := exec.Command("go", "get", "github.com/robfig/cron")
+	cmd := exec.Command("go", "mod", "tidy")
 	_, err := sp.ctx.Run(cmd)
-	hackutils.CheckError("Failed to get package robfig/cron", err)
+	hackutils.CheckError("Failed to run go mod tidy for cronjob tutorial", err)
 
-	cmd = exec.Command("make", "manifests")
+	cmd = exec.Command("go", "get", "github.com/robfig/cron")
 	_, err = sp.ctx.Run(cmd)
-	hackutils.CheckError("Failed to run make manifests for cronjob tutorial", err)
+	hackutils.CheckError("Failed to get package robfig/cron", err)
 
 	cmd = exec.Command("make", "all")
 	_, err = sp.ctx.Run(cmd)
 	hackutils.CheckError("Failed to run make all for cronjob tutorial", err)
 
-	cmd = exec.Command("go", "mod", "tidy")
+	cmd = exec.Command("make", "build-installer")
 	_, err = sp.ctx.Run(cmd)
-	hackutils.CheckError("Failed to run go mod tidy for cronjob tutorial", err)
+	hackutils.CheckError("Failed to run make build-installer for cronjob tutorial", err)
+
 }
 
 // insert code to fix docs
@@ -592,7 +593,12 @@ func (sp *Sample) updateKustomization() {
 
 	err = pluginutil.UncommentCode(
 		filepath.Join(sp.ctx.Dir, "config/default/kustomization.yaml"),
-		DefaultKustomization, `#`)
+		certmanagerForWebhooks, `#`)
+	hackutils.CheckError("fixing default/kustomization", err)
+
+	err = pluginutil.UncommentCode(
+		filepath.Join(sp.ctx.Dir, "config/default/kustomization.yaml"),
+		webhookServiceDefaultKustomize, `#`)
 	hackutils.CheckError("fixing default/kustomization", err)
 
 	err = pluginutil.UncommentCode(

@@ -43,6 +43,14 @@ func (sp *Sample) UpdateTutorial() {
 	sp.updateSample()
 	sp.updateController()
 	sp.updateControllerTest()
+	sp.updateDefaultKustomize()
+}
+
+func (sp *Sample) updateDefaultKustomize() {
+	err := pluginutil.UncommentCode(
+		filepath.Join(sp.ctx.Dir, "config/default/kustomization.yaml"),
+		`#- ../prometheus`, `#`)
+	hackutils.CheckError("fixing default/kustomization", err)
 }
 
 func (sp *Sample) updateControllerTest() {
@@ -221,17 +229,17 @@ func (sp *Sample) GenerateSampleProject() {
 }
 
 func (sp *Sample) CodeGen() {
-	cmd := exec.Command("make", "manifests")
+	cmd := exec.Command("go", "mod", "tidy")
 	_, err := sp.ctx.Run(cmd)
-	hackutils.CheckError("Failed to run make manifests for getting started tutorial", err)
+	hackutils.CheckError("Failed to run go mod tidy all for getting started tutorial", err)
 
 	cmd = exec.Command("make", "all")
 	_, err = sp.ctx.Run(cmd)
 	hackutils.CheckError("Failed to run make all for getting started tutorial", err)
 
-	cmd = exec.Command("go", "mod", "tidy")
+	cmd = exec.Command("make", "build-installer")
 	_, err = sp.ctx.Run(cmd)
-	hackutils.CheckError("Failed to run go mod tidy all for getting started tutorial", err)
+	hackutils.CheckError("Failed to run make build-installer for getting started tutorial", err)
 }
 
 const oldSpecApi = "// Foo is an example field of Memcached. Edit memcached_types.go to remove/update\n\tFoo string `json:\"foo,omitempty\"`"
