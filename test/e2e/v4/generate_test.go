@@ -75,6 +75,9 @@ func GenerateV4(kbc *utils.TestContext) {
 	ExpectWithOffset(1, pluginutil.UncommentCode(
 		filepath.Join(kbc.Dir, "cmd", "main.go"),
 		tlsConfigManager, "// ")).To(Succeed())
+
+	uncommentKustomizeCoversion(kbc)
+
 }
 
 // GenerateV4WithoutMetrics implements a go/v4 plugin project defined by a TestContext.
@@ -117,6 +120,8 @@ func GenerateV4WithoutMetrics(kbc *utils.TestContext) {
 	ExpectWithOffset(1, pluginutil.CommentCode(
 		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 		metricsTarget, "#")).To(Succeed())
+
+	uncommentKustomizeCoversion(kbc)
 }
 
 // GenerateV4WithoutMetrics implements a go/v4 plugin project defined by a TestContext.
@@ -186,6 +191,8 @@ func GenerateV4WithNetworkPolicies(kbc *utils.TestContext) {
 
 	ExpectWithOffset(1, pluginutil.UncommentCode(filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 		certManagerTarget, "#")).To(Succeed())
+
+	uncommentKustomizeCoversion(kbc)
 }
 
 // GenerateV4WithoutWebhooks implements a go/v4 plugin with APIs and enable Prometheus and CertManager
@@ -332,32 +339,35 @@ const certManagerTarget = `#replacements:
 #       options:
 #         delimiter: '/'
 #         index: 1
-#         create: true
-#
-# - source: # Uncomment the following block if you have a ConversionWebhook (--conversion)
+#         create: true`
+
+const certNamespace = `# - source: # Uncomment the following block if you have a ConversionWebhook (--conversion)
 #     kind: Certificate
 #     group: cert-manager.io
 #     version: v1
 #     name: serving-cert # This name should match the one in certificate.yaml
 #     fieldPath: .metadata.namespace # Namespace of the certificate CR
-#   targets:
+#   targets: # Do not remove or uncomment the following scaffold marker; required to generate code for target CRD.
 #     - select:
 #         kind: CustomResourceDefinition
+#         name: conversiontests.%s.%s
 #       fieldPaths:
 #         - .metadata.annotations.[cert-manager.io/inject-ca-from]
 #       options:
 #         delimiter: '/'
 #         index: 0
-#         create: true
-# - source:
+#         create: true`
+
+const certName = `# - source:
 #     kind: Certificate
 #     group: cert-manager.io
 #     version: v1
 #     name: serving-cert # This name should match the one in certificate.yaml
 #     fieldPath: .metadata.name
-#   targets:
+#   targets: # Do not remove or uncomment the following scaffold marker; required to generate code for target CRD.
 #     - select:
 #         kind: CustomResourceDefinition
+#         name: conversiontests.%s.%s
 #       fieldPaths:
 #         - .metadata.annotations.[cert-manager.io/inject-ca-from]
 #       options:
@@ -428,6 +438,13 @@ func scaffoldConversionWebhook(kbc *utils.TestContext) {
 		"// TODO(user): Implement conversion logic from v2 to v1",
 		`src.Spec.Replicas = dst.Spec.Size`)
 	Expect(err).NotTo(HaveOccurred(), "failed to implement conversion logic from v2 to v1")
+}
+
+func uncommentKustomizeCoversion(kbc *utils.TestContext) {
+	ExpectWithOffset(1, pluginutil.UncommentCode(filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+		fmt.Sprintf(certNamespace, kbc.Group, kbc.Domain), "#")).To(Succeed())
+	ExpectWithOffset(1, pluginutil.UncommentCode(filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+		fmt.Sprintf(certName, kbc.Group, kbc.Domain), "#")).To(Succeed())
 }
 
 const monitorTlsPatch = `#patches:
