@@ -14,16 +14,6 @@ metadata:
     controller-gen.kubebuilder.io/version: v0.16.4
   name: admirales.crew.testproject.org
 spec:
-  conversion:
-    strategy: Webhook
-    webhook:
-      clientConfig:
-        service:
-          name: project-v4-webhook-service
-          namespace: project-v4-system
-          path: /convert
-      conversionReviewVersions:
-      - v1
   group: crew.testproject.org
   names:
     kind: Admiral
@@ -78,16 +68,6 @@ metadata:
     controller-gen.kubebuilder.io/version: v0.16.4
   name: captains.crew.testproject.org
 spec:
-  conversion:
-    strategy: Webhook
-    webhook:
-      clientConfig:
-        service:
-          name: project-v4-webhook-service
-          namespace: project-v4-system
-          path: /convert
-      conversionReviewVersions:
-      - v1
   group: crew.testproject.org
   names:
     kind: Captain

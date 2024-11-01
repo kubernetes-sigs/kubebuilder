@@ -238,16 +238,6 @@ metadata:
     controller-gen.kubebuilder.io/version: v0.16.4
   name: captains.crew.testproject.org
 spec:
-  conversion:
-    strategy: Webhook
-    webhook:
-      clientConfig:
-        service:
-          name: project-v4-multigroup-webhook-service
-          namespace: project-v4-multigroup-system
-          path: /convert
-      conversionReviewVersions:
-      - v1
   group: crew.testproject.org
   names:
     kind: Captain
@@ -302,16 +292,6 @@ metadata:
     controller-gen.kubebuilder.io/version: v0.16.4
   name: cruisers.ship.testproject.org
 spec:
-  conversion:
-    strategy: Webhook
-    webhook:
-      clientConfig:
-        service:
-          name: project-v4-multigroup-webhook-service
-          namespace: project-v4-multigroup-system
-          path: /convert
-      conversionReviewVersions:
-      - v1
   group: ship.testproject.org
   names:
     kind: Cruiser
@@ -366,16 +346,6 @@ metadata:
     controller-gen.kubebuilder.io/version: v0.16.4
   name: destroyers.ship.testproject.org
 spec:
-  conversion:
-    strategy: Webhook
-    webhook:
-      clientConfig:
-        service:
-          name: project-v4-multigroup-webhook-service
-          namespace: project-v4-multigroup-system
-          path: /convert
-      conversionReviewVersions:
-      - v1
   group: ship.testproject.org
   names:
     kind: Destroyer
@@ -646,16 +616,6 @@ metadata:
     controller-gen.kubebuilder.io/version: v0.16.4
   name: memcacheds.example.com.testproject.org
 spec:
-  conversion:
-    strategy: Webhook
-    webhook:
-      clientConfig:
-        service:
-          name: project-v4-multigroup-webhook-service
-          namespace: project-v4-multigroup-system
-          path: /convert
-      conversionReviewVersions:
-      - v1
   group: example.com.testproject.org
   names:
     kind: Memcached
