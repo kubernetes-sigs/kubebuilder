@@ -16,7 +16,8 @@ limitations under the License.
 
 package multiversion
 
-const caConversionCRDDefaultKustomize = `# - source: # Uncomment the following block if you have a ConversionWebhook (--conversion)
+const caConversionCRDDefaultKustomize = `#
+# - source: # Uncomment the following block if you have a ConversionWebhook (--conversion)
 #     kind: Certificate
 #     group: cert-manager.io
 #     version: v1
@@ -45,5 +46,4 @@ const caConversionCRDDefaultKustomize = `# - source: # Uncomment the following b
 #       options:
 #         delimiter: '/'
 #         index: 1
-#         create: true
-#`
+#         create: true`
