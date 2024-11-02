@@ -84,14 +84,4 @@ var _ = Describe("CronJob Webhook", func() {
 		// })
 	})
 
-	Context("When creating CronJob under Conversion Webhook", func() {
-		// TODO (user): Add logic to convert the object to the desired version and verify the conversion
-		// Example:
-		// It("Should convert the object correctly", func() {
-		//     convertedObj := &batchv2.CronJob{}
-		//     Expect(obj.ConvertTo(convertedObj)).To(Succeed())
-		//     Expect(convertedObj).ToNot(BeNil())
-		// })
-	})
-
 })

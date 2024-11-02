@@ -47,7 +47,8 @@ function scaffold_test_project {
     $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false --force
     $kb create webhook --group crew --version v1 --kind Captain --defaulting --programmatic-validation --legacy=true
     $kb create api --group crew --version v1 --kind FirstMate --controller=true --resource=true --make=false
-    $kb create webhook --group crew --version v1 --kind FirstMate --conversion --legacy=true
+    $kb create api --group crew --version v2 --kind FirstMate --controller=false --resource=true --make=false
+    $kb create webhook --group crew --version v1 --kind FirstMate --conversion --spoke v2 --legacy=true --make=false
     $kb create api --group crew --version v1 --kind Admiral --plural=admirales --controller=true --resource=true --namespaced=false --make=false
     $kb create webhook --group crew --version v1 --kind Admiral --plural=admirales --defaulting --legacy=true
   fi
@@ -61,7 +62,9 @@ function scaffold_test_project {
     $kb create webhook --group crew --version v1 --kind Captain --defaulting --programmatic-validation --legacy=true
 
     $kb create api --group ship --version v1beta1 --kind Frigate --controller=true --resource=true --make=false
-    $kb create webhook --group ship --version v1beta1 --kind Frigate --conversion --legacy=true
+    $kb create api --group ship --version v1 --kind Frigate --controller=false --resource=true --make=false
+    $kb create webhook --group ship --version v1beta1 --kind Frigate --conversion --spoke v1 --legacy=true
+
     $kb create api --group ship --version v1 --kind Destroyer --controller=true --resource=true --namespaced=false --make=false
     $kb create webhook --group ship --version v1 --kind Destroyer --defaulting --legacy=true
     $kb create api --group ship --version v2alpha1 --kind Cruiser --controller=true --resource=true --namespaced=false --make=false

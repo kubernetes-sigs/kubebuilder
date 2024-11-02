@@ -49,6 +49,7 @@ types implement the
 [Hub](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/conversion?tab=doc#Hub) and
 [Convertible](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/conversion?tab=doc#Convertible)
 interfaces, a conversion webhook will be registered.
+
 */
 
 // SetupCronJobWebhookWithManager registers the webhook for CronJob in the manager.

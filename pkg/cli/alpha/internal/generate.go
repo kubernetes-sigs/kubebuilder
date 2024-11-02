@@ -163,12 +163,18 @@ func kubebuilderCreate(store store.Store) error {
 		return fmt.Errorf("failed to get resources: %w", err)
 	}
 
+	// First, scaffold all APIs
 	for _, r := range resources {
 		if err := createAPI(r); err != nil {
-			return fmt.Errorf("failed to create API: %w", err)
+			return fmt.Errorf("failed to create API for %s/%s/%s: %w", r.Group, r.Version, r.Kind, err)
 		}
+	}
+
+	// Then, scaffold all webhooks
+	// We cannot create a webhook for an API that does not exist
+	for _, r := range resources {
 		if err := createWebhook(r); err != nil {
-			return fmt.Errorf("failed to create webhook: %w", err)
+			return fmt.Errorf("failed to create webhook for %s/%s/%s: %w", r.Group, r.Version, r.Kind, err)
 		}
 	}
 
@@ -361,14 +367,19 @@ func createWebhook(resource resource.Resource) error {
 // Gets flags for webhook creation.
 func getWebhookResourceFlags(resource resource.Resource) []string {
 	var args []string
-	if resource.HasConversionWebhook() {
-		args = append(args, "--conversion")
-	}
 	if resource.HasValidationWebhook() {
 		args = append(args, "--programmatic-validation")
 	}
 	if resource.HasDefaultingWebhook() {
 		args = append(args, "--defaulting")
+	}
+	if resource.HasConversionWebhook() {
+		args = append(args, "--conversion")
+		if len(resource.Webhooks.Spoke) > 0 {
+			for _, spoke := range resource.Webhooks.Spoke {
+				args = append(args, "--spoke", spoke)
+			}
+		}
 	}
 	return args
 }

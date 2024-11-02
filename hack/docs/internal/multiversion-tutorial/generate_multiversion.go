@@ -17,7 +17,6 @@ limitations under the License.
 package multiversion
 
 import (
-	"os"
 	"os/exec"
 	"path/filepath"
 
@@ -57,6 +56,27 @@ func (sp *Sample) GenerateSampleProject() {
 	)
 	hackutils.CheckError("Creating the v2 API without controller", err)
 
+	log.Infof("Creating conversion webhook for v1")
+	err = sp.ctx.CreateWebhook(
+		"--group", "batch",
+		"--version", "v1",
+		"--kind", "CronJob",
+		"--conversion",
+		"--spoke", "v2",
+		"--force",
+	)
+	hackutils.CheckError("Creating conversion webhook for v1", err)
+
+	log.Infof("Workaround to fix the issue with the conversion webhook")
+	// FIXME: This is a workaround to fix the issue with the conversion webhook
+	// We should be able to inject the code when we create webhooks with different
+	// types of webhooks. However, currently, we are not able to do that and we need to
+	// force. So, we are copying the code from cronjob tutorial to have the code
+	// implemented.
+	cmd := exec.Command("cp", "./../../../cronjob-tutorial/testdata/project/internal/webhook/v1/cronjob_webhook.go", "./internal/webhook/v1/cronjob_webhook.go")
+	_, err = sp.ctx.Run(cmd)
+	hackutils.CheckError("Copying the code from cronjob tutorial", err)
+
 	log.Infof("Creating defaulting and validation webhook for v2")
 	err = sp.ctx.CreateWebhook(
 		"--group", "batch",
@@ -64,7 +84,6 @@ func (sp *Sample) GenerateSampleProject() {
 		"--kind", "CronJob",
 		"--defaulting",
 		"--programmatic-validation",
-		"--conversion",
 	)
 	hackutils.CheckError("Creating defaulting and validation webhook for v2", err)
 }
@@ -73,14 +92,187 @@ func (sp *Sample) UpdateTutorial() {
 	log.Println("Update tutorial with multiversion code")
 
 	// Update files according to the multiversion
+	sp.updateCronjobV1DueForce()
 	sp.updateApiV1()
 	sp.updateApiV2()
-	sp.updateWebhookV1()
 	sp.updateWebhookV2()
-	sp.createHubFiles()
+	sp.updateConversionFiles()
 	sp.updateSampleV2()
 	sp.updateMain()
 	sp.updateDefaultKustomize()
+}
+
+func (sp *Sample) updateCronjobV1DueForce() {
+	// FIXME : This is a workaround to fix the issue with the conversion webhook
+	path := "internal/webhook/v1/cronjob_webhook.go"
+	err := pluginutil.ReplaceInFile(filepath.Join(sp.ctx.Dir, path),
+		"Then, we set up the webhook with the manager.",
+		`This setup doubles as setup for our conversion webhooks: as long as our
+types implement the
+[Hub](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/conversion?tab=doc#Hub) and
+[Convertible](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/conversion?tab=doc#Convertible)
+interfaces, a conversion webhook will be registered.
+`)
+	hackutils.CheckError("manager fix doc comment", err)
+
+	path = "internal/webhook/v1/cronjob_webhook_test.go"
+	err = pluginutil.ReplaceInFile(filepath.Join(sp.ctx.Dir, path),
+		`var (
+		obj    *batchv1.CronJob
+		oldObj *batchv1.CronJob
+	)
+
+	BeforeEach(func() {
+		obj = &batchv1.CronJob{}
+		oldObj = &batchv1.CronJob{}
+		Expect(oldObj).NotTo(BeNil(), "Expected oldObj to be initialized")
+		Expect(obj).NotTo(BeNil(), "Expected obj to be initialized")
+		// TODO (user): Add any setup logic common to all tests
+	})`,
+		`var (
+		obj       *batchv1.CronJob
+		oldObj    *batchv1.CronJob
+		validator CronJobCustomValidator
+		defaulter CronJobCustomDefaulter
+	)
+
+	BeforeEach(func() {
+		obj = &batchv1.CronJob{
+			Spec: batchv1.CronJobSpec{
+				Schedule:                   "*/5 * * * *",
+				ConcurrencyPolicy:          batchv1.AllowConcurrent,
+				SuccessfulJobsHistoryLimit: new(int32),
+				FailedJobsHistoryLimit:     new(int32),
+			},
+		}
+		*obj.Spec.SuccessfulJobsHistoryLimit = 3
+		*obj.Spec.FailedJobsHistoryLimit = 1
+
+		oldObj = &batchv1.CronJob{
+			Spec: batchv1.CronJobSpec{
+				Schedule:                   "*/5 * * * *",
+				ConcurrencyPolicy:          batchv1.AllowConcurrent,
+				SuccessfulJobsHistoryLimit: new(int32),
+				FailedJobsHistoryLimit:     new(int32),
+			},
+		}
+		*oldObj.Spec.SuccessfulJobsHistoryLimit = 3
+		*oldObj.Spec.FailedJobsHistoryLimit = 1
+
+		validator = CronJobCustomValidator{}
+		defaulter = CronJobCustomDefaulter{
+			DefaultConcurrencyPolicy:          batchv1.AllowConcurrent,
+			DefaultSuspend:                    false,
+			DefaultSuccessfulJobsHistoryLimit: 3,
+			DefaultFailedJobsHistoryLimit:     1,
+		}
+
+		Expect(obj).NotTo(BeNil(), "Expected obj to be initialized")
+		Expect(oldObj).NotTo(BeNil(), "Expected oldObj to be initialized")
+	})`)
+	hackutils.CheckError("fix cronjob v1 tests", err)
+
+	err = pluginutil.InsertCode(filepath.Join(sp.ctx.Dir, path),
+		`AfterEach(func() {
+		// TODO (user): Add any teardown logic common to all tests
+	})
+
+	`,
+		`Context("When creating CronJob under Defaulting Webhook", func() {
+		It("Should apply defaults when a required field is empty", func() {
+			By("simulating a scenario where defaults should be applied")
+			obj.Spec.ConcurrencyPolicy = ""           // This should default to AllowConcurrent
+			obj.Spec.Suspend = nil                    // This should default to false
+			obj.Spec.SuccessfulJobsHistoryLimit = nil // This should default to 3
+			obj.Spec.FailedJobsHistoryLimit = nil     // This should default to 1
+
+			By("calling the Default method to apply defaults")
+			defaulter.Default(ctx, obj)
+
+			By("checking that the default values are set")
+			Expect(obj.Spec.ConcurrencyPolicy).To(Equal(batchv1.AllowConcurrent), "Expected ConcurrencyPolicy to default to AllowConcurrent")
+			Expect(*obj.Spec.Suspend).To(BeFalse(), "Expected Suspend to default to false")
+			Expect(*obj.Spec.SuccessfulJobsHistoryLimit).To(Equal(int32(3)), "Expected SuccessfulJobsHistoryLimit to default to 3")
+			Expect(*obj.Spec.FailedJobsHistoryLimit).To(Equal(int32(1)), "Expected FailedJobsHistoryLimit to default to 1")
+		})
+
+		It("Should not overwrite fields that are already set", func() {
+			By("setting fields that would normally get a default")
+			obj.Spec.ConcurrencyPolicy = batchv1.ForbidConcurrent
+			obj.Spec.Suspend = new(bool)
+			*obj.Spec.Suspend = true
+			obj.Spec.SuccessfulJobsHistoryLimit = new(int32)
+			*obj.Spec.SuccessfulJobsHistoryLimit = 5
+			obj.Spec.FailedJobsHistoryLimit = new(int32)
+			*obj.Spec.FailedJobsHistoryLimit = 2
+
+			By("calling the Default method to apply defaults")
+			defaulter.Default(ctx, obj)
+
+			By("checking that the fields were not overwritten")
+			Expect(obj.Spec.ConcurrencyPolicy).To(Equal(batchv1.ForbidConcurrent), "Expected ConcurrencyPolicy to retain its set value")
+			Expect(*obj.Spec.Suspend).To(BeTrue(), "Expected Suspend to retain its set value")
+			Expect(*obj.Spec.SuccessfulJobsHistoryLimit).To(Equal(int32(5)), "Expected SuccessfulJobsHistoryLimit to retain its set value")
+			Expect(*obj.Spec.FailedJobsHistoryLimit).To(Equal(int32(2)), "Expected FailedJobsHistoryLimit to retain its set value")
+		})
+	})
+
+	Context("When creating or updating CronJob under Validating Webhook", func() {
+		It("Should deny creation if the name is too long", func() {
+			obj.ObjectMeta.Name = "this-name-is-way-too-long-and-should-fail-validation-because-it-is-way-too-long"
+			Expect(validator.ValidateCreate(ctx, obj)).Error().To(
+				MatchError(ContainSubstring("must be no more than 52 characters")),
+				"Expected name validation to fail for a too-long name")
+		})
+
+		It("Should admit creation if the name is valid", func() {
+			obj.ObjectMeta.Name = "valid-cronjob-name"
+			Expect(validator.ValidateCreate(ctx, obj)).To(BeNil(),
+				"Expected name validation to pass for a valid name")
+		})
+
+		It("Should deny creation if the schedule is invalid", func() {
+			obj.Spec.Schedule = "invalid-cron-schedule"
+			Expect(validator.ValidateCreate(ctx, obj)).Error().To(
+				MatchError(ContainSubstring("Expected exactly 5 fields, found 1: invalid-cron-schedule")),
+				"Expected spec validation to fail for an invalid schedule")
+		})
+
+		It("Should admit creation if the schedule is valid", func() {
+			obj.Spec.Schedule = "*/5 * * * *"
+			Expect(validator.ValidateCreate(ctx, obj)).To(BeNil(),
+				"Expected spec validation to pass for a valid schedule")
+		})
+
+		It("Should deny update if both name and spec are invalid", func() {
+			oldObj.ObjectMeta.Name = "valid-cronjob-name"
+			oldObj.Spec.Schedule = "*/5 * * * *"
+
+			By("simulating an update")
+			obj.ObjectMeta.Name = "this-name-is-way-too-long-and-should-fail-validation-because-it-is-way-too-long"
+			obj.Spec.Schedule = "invalid-cron-schedule"
+
+			By("validating an update")
+			Expect(validator.ValidateUpdate(ctx, oldObj, obj)).Error().To(HaveOccurred(),
+				"Expected validation to fail for both name and spec")
+		})
+
+		It("Should admit update if both name and spec are valid", func() {
+			oldObj.ObjectMeta.Name = "valid-cronjob-name"
+			oldObj.Spec.Schedule = "*/5 * * * *"
+
+			By("simulating an update")
+			obj.ObjectMeta.Name = "valid-cronjob-name-updated"
+			obj.Spec.Schedule = "0 0 * * *"
+
+			By("validating an update")
+			Expect(validator.ValidateUpdate(ctx, oldObj, obj)).To(BeNil(),
+				"Expected validation to pass for a valid update")
+		})
+	})
+	
+	`)
+	hackutils.CheckError("fix cronjob v1 tests after each", err)
 }
 
 func (sp *Sample) updateDefaultKustomize() {
@@ -91,18 +283,6 @@ func (sp *Sample) updateDefaultKustomize() {
 	hackutils.CheckError("fixing default/kustomization", err)
 }
 
-func (sp *Sample) updateWebhookV1() {
-	err := pluginutil.ReplaceInFile(
-		filepath.Join(sp.ctx.Dir, "internal/webhook/v1/cronjob_webhook.go"),
-		"Then, we set up the webhook with the manager.",
-		`This setup doubles as setup for our conversion webhooks: as long as our
-types implement the
-[Hub](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/conversion?tab=doc#Hub) and
-[Convertible](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/conversion?tab=doc#Convertible)
-interfaces, a conversion webhook will be registered.`,
-	)
-	hackutils.CheckError("replace webhook setup text", err)
-}
 func (sp *Sample) updateSampleV2() {
 	path := filepath.Join(sp.ctx.Dir, "config/samples/batch_v2_cronjob.yaml")
 	oldText := `# TODO(user): Add fields here`
@@ -115,29 +295,82 @@ func (sp *Sample) updateSampleV2() {
 	hackutils.CheckError("replacing TODO with sampleV2Code in batch_v2_cronjob.yaml", err)
 }
 
-func (sp *Sample) createHubFiles() {
+func (sp *Sample) updateConversionFiles() {
 	path := filepath.Join(sp.ctx.Dir, "api/v1/cronjob_conversion.go")
 
-	_, err := os.Create(path)
-	hackutils.CheckError("creating conversion file v1", err)
+	err := pluginutil.InsertCodeIfNotExist(path,
+		"limitations under the License.\n*/",
+		"\n// +kubebuilder:docs-gen:collapse=Apache License")
+	hackutils.CheckError("appending into hub v1 collapse docs", err)
 
-	err = pluginutil.AppendCodeAtTheEnd(path, "")
-	hackutils.CheckError("creating empty conversion file v1", err)
-
-	err = pluginutil.AppendCodeAtTheEnd(path, hubV1Code)
-	hackutils.CheckError("appending hubV1Code to cronjob_conversion.go", err)
+	err = pluginutil.ReplaceInFile(path,
+		"// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!",
+		hubV1CodeComment)
+	hackutils.CheckError("adding comment to hub v1", err)
 
 	path = filepath.Join(sp.ctx.Dir, "api/v2/cronjob_conversion.go")
 
-	_, err = os.Create(path)
-	hackutils.CheckError("creating conversion file v2", err)
+	err = pluginutil.InsertCodeIfNotExist(path,
+		"limitations under the License.\n*/",
+		"\n// +kubebuilder:docs-gen:collapse=Apache License")
+	hackutils.CheckError("appending into hub v2 collapse docs", err)
 
-	err = pluginutil.AppendCodeAtTheEnd(path, "")
-	hackutils.CheckError("creating empty conversion file v2", err)
+	err = pluginutil.InsertCode(path,
+		"import (",
+		`
+	"fmt"
+	"strings"
 
-	err = pluginutil.AppendCodeAtTheEnd(path, hubV2Code)
-	hackutils.CheckError("appending hubV2Code to cronjob_conversion.go", err)
+`)
+	hackutils.CheckError("adding imports to hub v2", err)
 
+	err = pluginutil.InsertCodeIfNotExist(path,
+		"batchv1 \"tutorial.kubebuilder.io/project/api/v1\"\n)",
+		`// +kubebuilder:docs-gen:collapse=Imports
+
+/*
+Our "spoke" versions need to implement the
+[`+"`"+`Convertible`+"`"+`](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/conversion?tab=doc#Convertible)
+interface. Namely, they'll need `+"`"+`ConvertTo()`+"`"+` and `+"`"+`ConvertFrom()`+"`"+`
+methods to convert to/from the hub version.
+*/
+`)
+	hackutils.CheckError("appending into hub v2 collapse docs", err)
+
+	err = pluginutil.ReplaceInFile(path,
+		"package v2",
+		hubV2CodeComment)
+	hackutils.CheckError("adding comment to hub v2", err)
+
+	err = pluginutil.ReplaceInFile(path,
+		"// TODO(user): Implement conversion logic from v2 to v1",
+		hubV2CovertTo)
+	hackutils.CheckError("replace covertTo at hub v2", err)
+
+	err = pluginutil.ReplaceInFile(path,
+		"// TODO(user): Implement conversion logic from v1 to v2",
+		hubV2ConvertFromCode)
+	hackutils.CheckError("replace covert from at hub v2", err)
+
+	err = pluginutil.ReplaceInFile(path,
+		"// ConvertFrom converts the Hub version (v1) to this CronJob (v2).",
+		`/*
+ConvertFrom is expected to modify its receiver to contain the converted object.
+Most of the conversion is straightforward copying, except for converting our changed field.
+*/
+
+// ConvertFrom converts the Hub version (v1) to this CronJob (v2).`)
+	hackutils.CheckError("replace covert from info at hub v2", err)
+
+	err = pluginutil.ReplaceInFile(path,
+		"// ConvertTo converts this CronJob (v2) to the Hub version (v1).",
+		`/*
+ConvertTo is expected to modify its argument to contain the converted object.
+Most of the conversion is straightforward copying, except for converting our changed field.
+*/
+
+// ConvertTo converts this CronJob (v2) to the Hub version (v1).`)
+	hackutils.CheckError("replace covert info at hub v2", err)
 }
 
 func (sp *Sample) updateApiV1() {

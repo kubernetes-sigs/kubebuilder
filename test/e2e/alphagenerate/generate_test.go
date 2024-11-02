@@ -123,6 +123,18 @@ func generateProject(kbc *utils.TestContext) {
 	)
 	Expect(err).NotTo(HaveOccurred(), "Failed to scaffold API with resource and controller")
 
+	By("creating API definition with controller and resource")
+	err = kbc.CreateAPI(
+		"--group", "crew",
+		"--version", "v2",
+		"--kind", "Memcached",
+		"--namespaced",
+		"--resource=true",
+		"--controller=false",
+		"--make=false",
+	)
+	Expect(err).NotTo(HaveOccurred(), "Failed to scaffold API with resource and controller")
+
 	By("creating Webhook for Memcached API")
 	err = kbc.CreateWebhook(
 		"--group", "crew",
@@ -131,6 +143,7 @@ func generateProject(kbc *utils.TestContext) {
 		"--defaulting",
 		"--programmatic-validation",
 		"--conversion",
+		"--spoke", "v2",
 	)
 	Expect(err).NotTo(HaveOccurred(), "Failed to scaffold webhook for Memcached API")
 

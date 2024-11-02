@@ -97,6 +97,7 @@ var _ = Describe("Options", func() {
 						Expect(res.Webhooks.Defaulting).To(Equal(options.DoDefaulting))
 						Expect(res.Webhooks.Validation).To(Equal(options.DoValidation))
 						Expect(res.Webhooks.Conversion).To(Equal(options.DoConversion))
+						Expect(res.Webhooks.Spoke).To(Equal(options.Spoke))
 						Expect(res.Webhooks.IsEmpty()).To(BeFalse())
 					} else {
 						Expect(res.Webhooks.IsEmpty()).To(BeTrue())

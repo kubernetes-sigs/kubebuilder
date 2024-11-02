@@ -72,6 +72,9 @@ type Options struct {
 	DoDefaulting bool
 	DoValidation bool
 	DoConversion bool
+
+	// Spoke versions for conversion webhook
+	Spoke []string
 }
 
 // UpdateResource updates the provided resource with the options
@@ -108,6 +111,7 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 		}
 		if opts.DoConversion {
 			res.Webhooks.Conversion = true
+			res.Webhooks.Spoke = opts.Spoke
 		}
 	}
 

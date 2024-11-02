@@ -1,8 +1,16 @@
 # Implementing conversion
 
 With our model for conversion in place, it's time to actually implement
-the conversion functions.  We'll put them in a file called
-`cronjob_conversion.go` next to our `cronjob_types.go` file, to avoid
+the conversion functions.  We'll create a conversion webhook
+for our CronJob API version `v1` (Hub) to Spoke our CronJob API version
+`v2` see:
+
+```go
+kubebuilder create webhook --group batch --version v1 --kind CronJob --conversion --spoke v2
+```
+
+The above command will generate the `cronjob_conversion.go` next to our
+`cronjob_types.go` file, to avoid
 cluttering up our main types file with extra functions.
 
 ## Hub...

@@ -17,50 +17,16 @@ limitations under the License.
 
 package multiversion
 
-const hubV1Code = `/*
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-// +kubebuilder:docs-gen:collapse=Apache License
-
-package v1
-
+const hubV1CodeComment = `
 /*
 Implementing the hub method is pretty easy -- we just have to add an empty
 method called ` + "`" + `Hub()` + "`" + `to serve as a
 [marker](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/conversion?tab=doc#Hub).
 We could also just put this inline in our cronjob_types.go file.
 */
-
-// Hub marks this type as a conversion hub.
-func (*CronJob) Hub() {}
 `
 
-const hubV2Code = `/*
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-// +kubebuilder:docs-gen:collapse=Apache License
-
-package v2
+const hubV2CodeComment = `package v2
 
 /*
 For imports, we'll need the controller-runtime
@@ -68,33 +34,9 @@ For imports, we'll need the controller-runtime
 package, plus the API version for our hub type (v1), and finally some of the
 standard packages.
 */
-import (
-	"fmt"
-	"strings"
+`
 
-	"sigs.k8s.io/controller-runtime/pkg/conversion"
-
-	v1 "tutorial.kubebuilder.io/project/api/v1"
-)
-
-// +kubebuilder:docs-gen:collapse=Imports
-
-/*
-Our "spoke" versions need to implement the
-[` + "`" + `Convertible` + "`" + `](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/conversion?tab=doc#Convertible)
-interface. Namely, they'll need ` + "`" + `ConvertTo()` + "`" + ` and ` + "`" + `ConvertFrom()` + "`" + `
-methods to convert to/from the hub version.
-*/
-
-/*
-ConvertTo is expected to modify its argument to contain the converted object.
-Most of the conversion is straightforward copying, except for converting our changed field.
-*/
-// ConvertTo converts this CronJob to the Hub version (v1).
-func (src *CronJob) ConvertTo(dstRaw conversion.Hub) error {
-	dst := dstRaw.(*v1.CronJob)
-
-	sched := src.Spec.Schedule
+const hubV2CovertTo = `sched := src.Spec.Schedule
 	scheduleParts := []string{"*", "*", "*", "*", "*"}
 	if sched.Minute != nil {
 		scheduleParts[0] = string(*sched.Minute)
@@ -121,7 +63,7 @@ func (src *CronJob) ConvertTo(dstRaw conversion.Hub) error {
 
 	// Spec
 	dst.Spec.StartingDeadlineSeconds = src.Spec.StartingDeadlineSeconds
-	dst.Spec.ConcurrencyPolicy = v1.ConcurrencyPolicy(src.Spec.ConcurrencyPolicy)
+	dst.Spec.ConcurrencyPolicy = batchv1.ConcurrencyPolicy(src.Spec.ConcurrencyPolicy)
 	dst.Spec.Suspend = src.Spec.Suspend
 	dst.Spec.JobTemplate = src.Spec.JobTemplate
 	dst.Spec.SuccessfulJobsHistoryLimit = src.Spec.SuccessfulJobsHistoryLimit
@@ -131,20 +73,9 @@ func (src *CronJob) ConvertTo(dstRaw conversion.Hub) error {
 	dst.Status.Active = src.Status.Active
 	dst.Status.LastScheduleTime = src.Status.LastScheduleTime
 
-	// +kubebuilder:docs-gen:collapse=rote conversion
-	return nil
-}
+	// +kubebuilder:docs-gen:collapse=rote conversion`
 
-/*
-ConvertFrom is expected to modify its receiver to contain the converted object.
-Most of the conversion is straightforward copying, except for converting our changed field.
-*/
-
-// ConvertFrom converts from the Hub version (v1) to this version.
-func (dst *CronJob) ConvertFrom(srcRaw conversion.Hub) error {
-	src := srcRaw.(*v1.CronJob)
-
-	schedParts := strings.Split(src.Spec.Schedule, " ")
+const hubV2ConvertFromCode = `schedParts := strings.Split(src.Spec.Schedule, " ")
 	if len(schedParts) != 5 {
 		return fmt.Errorf("invalid schedule: not a standard 5-field schedule")
 	}
@@ -179,6 +110,4 @@ func (dst *CronJob) ConvertFrom(srcRaw conversion.Hub) error {
 	dst.Status.Active = src.Status.Active
 	dst.Status.LastScheduleTime = src.Status.LastScheduleTime
 
-	// +kubebuilder:docs-gen:collapse=rote conversion
-	return nil
-}`
+	// +kubebuilder:docs-gen:collapse=rote conversion`

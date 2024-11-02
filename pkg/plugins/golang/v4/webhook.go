@@ -19,6 +19,7 @@ package v4
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/spf13/pflag"
 
@@ -65,7 +66,7 @@ validating and/or conversion webhooks.
 
   # Create conversion webhook for Group: ship, Version: v1beta1
   # and Kind: Frigate
-  %[1]s create webhook --group ship --version v1beta1 --kind Frigate --conversion
+  %[1]s create webhook --group ship --version v1beta1 --kind Frigate --conversion --spoke v1
 `, cliMeta.CommandName)
 }
 
@@ -82,6 +83,10 @@ func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
 		"if set, scaffold the validating webhook")
 	fs.BoolVar(&p.options.DoConversion, "conversion", false,
 		"if set, scaffold the conversion webhook")
+
+	fs.StringSliceVar(&p.options.Spoke, "spoke",
+		nil,
+		"Comma-separated list of spoke versions to be added to the conversion webhook (e.g., --spoke v1,v2)")
 
 	// TODO: remove for go/v5
 	fs.BoolVar(&p.isLegacyPath, "legacy", false,
@@ -113,6 +118,14 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 			"using the legacy path")
 	}
 
+	for _, spoke := range p.options.Spoke {
+		spoke = strings.TrimSpace(spoke)
+		if !isValidVersion(spoke, res, p.config) {
+			return fmt.Errorf("invalid spoke version: %s", spoke)
+		}
+		res.Webhooks.Spoke = append(res.Webhooks.Spoke, spoke)
+	}
+
 	p.options.UpdateResource(p.resource, p.config)
 
 	if err := p.resource.Validate(); err != nil {
@@ -132,6 +145,9 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 			return fmt.Errorf("%s create webhook requires a previously created API ", p.commandName)
 		}
 	} else if res.Webhooks != nil && !res.Webhooks.IsEmpty() && !p.force {
+		// FIXME: This is a temporary fix to allow we move forward
+		// However, users should be able to call the command to create an webhook
+		// even if the resource already has one when the webhook is not of the same type.
 		return fmt.Errorf("webhook resource already exists")
 	}
 
@@ -160,4 +176,23 @@ func (p *createWebhookSubcommand) PostScaffold() error {
 	fmt.Print("Next: implement your new Webhook and generate the manifests with:\n$ make manifests\n")
 
 	return nil
+}
+
+// Helper function to validate spoke versions
+func isValidVersion(version string, res *resource.Resource, config config.Config) bool {
+	// Fetch all resources in the config
+	resources, err := config.GetResources()
+	if err != nil {
+		return false
+	}
+
+	// Iterate through resources and validate if the given version exists for the same Group and Kind
+	for _, r := range resources {
+		if r.Group == res.Group && r.Kind == res.Kind && r.Version == version {
+			return true
+		}
+	}
+
+	// If no matching version is found, return false
+	return false
 }

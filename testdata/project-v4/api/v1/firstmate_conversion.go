@@ -13,16 +13,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-// +kubebuilder:docs-gen:collapse=Apache License
 
 package v1
 
-/*
-Implementing the hub method is pretty easy -- we just have to add an empty
-method called `Hub()`to serve as a
-[marker](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/conversion?tab=doc#Hub).
-We could also just put this inline in our cronjob_types.go file.
-*/
+// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
 // Hub marks this type as a conversion hub.
-func (*CronJob) Hub() {}
+func (*FirstMate) Hub() {}

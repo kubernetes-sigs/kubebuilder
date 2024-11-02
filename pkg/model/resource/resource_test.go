@@ -234,6 +234,7 @@ var _ = Describe("Resource", func() {
 			Expect(other.Webhooks.Defaulting).To(Equal(res.Webhooks.Defaulting))
 			Expect(other.Webhooks.Validation).To(Equal(res.Webhooks.Validation))
 			Expect(other.Webhooks.Conversion).To(Equal(res.Webhooks.Conversion))
+			Expect(other.Webhooks.Spoke).To(Equal(res.Webhooks.Spoke))
 		})
 
 		It("modifying the copy should not affect the original", func() {

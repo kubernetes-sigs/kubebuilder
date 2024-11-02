@@ -18,7 +18,6 @@ package v4
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -46,6 +45,7 @@ func GenerateV4(kbc *utils.TestContext) {
 		"--kind", kbc.Kind,
 		"--defaulting",
 		"--programmatic-validation",
+		"--make=false",
 	)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
@@ -89,6 +89,7 @@ func GenerateV4WithoutMetrics(kbc *utils.TestContext) {
 		"--kind", kbc.Kind,
 		"--defaulting",
 		"--programmatic-validation",
+		"--make=false",
 	)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
@@ -147,6 +148,7 @@ func GenerateV4WithNetworkPolicies(kbc *utils.TestContext) {
 		"--kind", kbc.Kind,
 		"--defaulting",
 		"--programmatic-validation",
+		"--make=false",
 	)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
@@ -396,6 +398,7 @@ func scaffoldConversionWebhook(kbc *utils.TestContext) {
 		"--version", "v1",
 		"--kind", "ConversionTest",
 		"--conversion",
+		"--spoke", "v2",
 		"--make=false",
 	)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred(), "failed to create conversion webhook for v1")
@@ -414,64 +417,17 @@ func scaffoldConversionWebhook(kbc *utils.TestContext) {
 		filepath.Join(kbc.Dir, "api", "v2", "conversiontest_types.go"),
 		"Foo string `json:\"foo,omitempty\"`",
 		"\n\tReplicas int `json:\"replicas,omitempty\"` // Number of replicas",
-	)).NotTo(HaveOccurred(), "failed to add replicas spec to conversiontest_types v2")
+	)).NotTo(HaveOccurred(), "failed to add replicas spec to conversiontest_conversion.go v2")
 
-	// TODO: Remove the code bellow when we have hub and spoke scaffolded by
-	// Kubebuilder. Intead of create the file we will replace the TODO(user)
-	// with the code implementation.
-	By("implementing markers")
-	ExpectWithOffset(1, pluginutil.InsertCode(
-		filepath.Join(kbc.Dir, "api", "v1", "conversiontest_types.go"),
-		"// +kubebuilder:object:root=true\n// +kubebuilder:subresource:status",
-		"\n// +kubebuilder:storageversion\n// +kubebuilder:conversion:hub\n",
-	)).NotTo(HaveOccurred(), "failed to add markers to conversiontest_types v1")
+	err = pluginutil.ReplaceInFile(filepath.Join(kbc.Dir, "api/v2/conversiontest_conversion.go"),
+		"// TODO(user): Implement conversion logic from v1 to v2",
+		`src.Spec.Size = dst.Spec.Replicas`)
+	Expect(err).NotTo(HaveOccurred(), "failed to implement conversion logic from v1 to v2")
 
-	// Create the hub conversion file in v1
-	By("creating the conversion implementation in v1 as hub")
-	err = os.WriteFile(filepath.Join(kbc.Dir, "api", "v1", "conversiontest_conversion.go"), []byte(`
-package v1
-
-// ConversionTest defines the hub conversion logic.
-// Implement the Hub interface to signal that v1 is the hub version.
-func (*ConversionTest) Hub() {}
-`), 0644)
-	ExpectWithOffset(1, err).NotTo(HaveOccurred(), "failed to create hub conversion file in v1")
-
-	// Create the conversion file in v2
-	By("creating the conversion implementation in v2")
-	err = os.WriteFile(filepath.Join(kbc.Dir, "api", "v2", "conversiontest_conversion.go"), []byte(`
-package v2
-
-import (
-	"log"
-
-	"sigs.k8s.io/controller-runtime/pkg/conversion"
-	v1 "sigs.k8s.io/kubebuilder/v4/api/v1"
-)
-
-// ConvertTo converts this ConversionTest to the Hub version (v1).
-func (src *ConversionTest) ConvertTo(dstRaw conversion.Hub) error {
-	dst := dstRaw.(*v1.ConversionTest)
-	log.Printf("Converting from %T to %T", src.APIVersion, dst.APIVersion)
-
-	// Implement conversion logic from v2 to v1
-	dst.Spec.Size = src.Spec.Replicas // Convert replicas in v2 to size in v1
-
-	return nil
-}
-
-// ConvertFrom converts the Hub version (v1) to this ConversionTest (v2).
-func (dst *ConversionTest) ConvertFrom(srcRaw conversion.Hub) error {
-	src := srcRaw.(*v1.ConversionTest)
-	log.Printf("Converting from %T to %T", src.APIVersion, dst.APIVersion)
-
-	// Implement conversion logic from v1 to v2
-	dst.Spec.Replicas = src.Spec.Size // Convert size in v1 to replicas in v2
-
-	return nil
-}
-`), 0644)
-	ExpectWithOffset(1, err).NotTo(HaveOccurred(), "failed to create conversion file in v2")
+	err = pluginutil.ReplaceInFile(filepath.Join(kbc.Dir, "api/v2/conversiontest_conversion.go"),
+		"// TODO(user): Implement conversion logic from v2 to v1",
+		`src.Spec.Replicas = dst.Spec.Size`)
+	Expect(err).NotTo(HaveOccurred(), "failed to implement conversion logic from v2 to v1")
 }
 
 const monitorTlsPatch = `#patches:
