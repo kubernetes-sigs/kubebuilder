@@ -19,31 +19,15 @@ resources:
 patches:
 # [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix.
 # patches here are for enabling the conversion webhook for each CRD
-- path: patches/webhook_in_crew_captains.yaml
-- path: patches/webhook_in_ship_destroyers.yaml
-- path: patches/webhook_in_ship_cruisers.yaml
-- path: patches/webhook_in_example.com_memcacheds.yaml
 - path: patches/webhook_in_example.com_wordpresses.yaml
 # +kubebuilder:scaffold:crdkustomizewebhookpatch
 
 # [CERTMANAGER] To enable cert-manager, uncomment all the sections with [CERTMANAGER] prefix.
 # patches here are for enabling the CA injection for each CRD
-#- path: patches/cainjection_in_crew_captains.yaml
-#- path: patches/cainjection_in_ship_frigates.yaml
-#- path: patches/cainjection_in_ship_destroyers.yaml
-#- path: patches/cainjection_in_ship_cruisers.yaml
-#- path: patches/cainjection_in_sea-creatures_krakens.yaml
-#- path: patches/cainjection_in_sea-creatures_leviathans.yaml
-#- path: patches/cainjection_in_foo.policy_healthcheckpolicies.yaml
-#- path: patches/cainjection_in_foo_bars.yaml
-#- path: patches/cainjection_in_fiz_bars.yaml
-#- path: patches/cainjection_in_example.com_memcacheds.yaml
-#- path: patches/cainjection_in_example.com_busyboxes.yaml
 #- path: patches/cainjection_in_example.com_wordpresses.yaml
 # +kubebuilder:scaffold:crdkustomizecainjectionpatch
 
 # [WEBHOOK] To enable webhook, uncomment the following section
 # the following config is for teaching kustomize how to do kustomization for CRDs.
-
 configurations:
 - kustomizeconfig.yaml

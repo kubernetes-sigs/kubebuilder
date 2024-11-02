@@ -130,16 +130,6 @@ metadata:
     controller-gen.kubebuilder.io/version: v0.16.4
   name: memcacheds.example.com.testproject.org
 spec:
-  conversion:
-    strategy: Webhook
-    webhook:
-      clientConfig:
-        service:
-          name: project-v4-with-plugins-webhook-service
-          namespace: project-v4-with-plugins-system
-          path: /convert
-      conversionReviewVersions:
-      - v1
   group: example.com.testproject.org
   names:
     kind: Memcached

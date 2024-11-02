@@ -14,16 +14,6 @@ metadata:
     controller-gen.kubebuilder.io/version: v0.16.4
   name: cronjobs.batch.tutorial.kubebuilder.io
 spec:
-  conversion:
-    strategy: Webhook
-    webhook:
-      clientConfig:
-        service:
-          name: project-webhook-service
-          namespace: project-system
-          path: /convert
-      conversionReviewVersions:
-      - v1
   group: batch.tutorial.kubebuilder.io
   names:
     kind: CronJob
