@@ -225,6 +225,41 @@ const metricsTarget = `- path: manager_metrics_patch.yaml
 
 //nolint:lll
 const certManagerTarget = `#replacements:
+# - source: # Uncomment the following block if you have any webhook
+#     kind: Service
+#     version: v1
+#     name: webhook-service
+#     fieldPath: .metadata.name # Name of the service
+#   targets:
+#     - select:
+#         kind: Certificate
+#         group: cert-manager.io
+#         version: v1
+#       fieldPaths:
+#         - .spec.dnsNames.0
+#         - .spec.dnsNames.1
+#       options:
+#         delimiter: '.'
+#         index: 0
+#         create: true
+# - source:
+#     kind: Service
+#     version: v1
+#     name: webhook-service
+#     fieldPath: .metadata.namespace # Namespace of the service
+#   targets:
+#     - select:
+#         kind: Certificate
+#         group: cert-manager.io
+#         version: v1
+#       fieldPaths:
+#         - .spec.dnsNames.0
+#         - .spec.dnsNames.1
+#       options:
+#         delimiter: '.'
+#         index: 1
+#         create: true
+#
 # - source: # Uncomment the following block if you have a ValidatingWebhook (--programmatic-validation)
 #     kind: Certificate
 #     group: cert-manager.io
@@ -315,41 +350,6 @@ const certManagerTarget = `#replacements:
 #         - .metadata.annotations.[cert-manager.io/inject-ca-from]
 #       options:
 #         delimiter: '/'
-#         index: 1
-#         create: true
-#
-# - source: # Uncomment the following block if you enable cert-manager
-#     kind: Service
-#     version: v1
-#     name: webhook-service
-#     fieldPath: .metadata.name # Name of the service
-#   targets:
-#     - select:
-#         kind: Certificate
-#         group: cert-manager.io
-#         version: v1
-#       fieldPaths:
-#         - .spec.dnsNames.0
-#         - .spec.dnsNames.1
-#       options:
-#         delimiter: '.'
-#         index: 0
-#         create: true
-# - source:
-#     kind: Service
-#     version: v1
-#     name: webhook-service
-#     fieldPath: .metadata.namespace # Namespace of the service
-#   targets:
-#     - select:
-#         kind: Certificate
-#         group: cert-manager.io
-#         version: v1
-#       fieldPaths:
-#         - .spec.dnsNames.0
-#         - .spec.dnsNames.1
-#       options:
-#         delimiter: '.'
 #         index: 1
 #         create: true`
 

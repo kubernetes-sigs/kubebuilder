@@ -597,11 +597,6 @@ func (sp *Sample) updateKustomization() {
 	hackutils.CheckError("fixing default/kustomization", err)
 
 	err = pluginutil.UncommentCode(
-		filepath.Join(sp.ctx.Dir, "config/default/kustomization.yaml"),
-		webhookServiceDefaultKustomize, `#`)
-	hackutils.CheckError("fixing default/kustomization", err)
-
-	err = pluginutil.UncommentCode(
 		filepath.Join(sp.ctx.Dir, "config/crd/kustomization.yaml"),
 		`#- path: patches/cainjection_in_cronjobs.yaml`, `#`)
 	hackutils.CheckError("fixing crd/kustomization", err)
