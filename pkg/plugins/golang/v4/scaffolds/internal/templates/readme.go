@@ -45,7 +45,7 @@ func (f *Readme) SetTemplateDefaults() error {
 		"*/", "", 1)
 
 	f.TemplateBody = fmt.Sprintf(readmeFileTemplate,
-		codeFence("make docker-build docker-push IMG=<some-registry>/{{ .ProjectName }}:tag"),
+		codeFence("make container-build container-push IMG=<some-registry>/{{ .ProjectName }}:tag"),
 		codeFence("make install"),
 		codeFence("make deploy IMG=<some-registry>/{{ .ProjectName }}:tag"),
 		codeFence("kubectl apply -k config/samples/"),
@@ -71,9 +71,9 @@ const readmeFileTemplate = `# {{ .ProjectName }}
 
 ### Prerequisites
 - go version v1.22.0+
-- docker version 17.03+.
-- kubectl version v1.11.3+.
-- Access to a Kubernetes v1.11.3+ cluster.
+- a container tool (Docker, Podman, Buildah, etc)
+- kubectl version v1.11.3+
+- Access to a Kubernetes v1.11.3+ cluster
 
 ### To Deploy on the cluster
 **Build and push your image to the location specified by ` + "`IMG`" + `:**
