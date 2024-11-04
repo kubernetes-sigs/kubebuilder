@@ -45,7 +45,6 @@ const gitignoreTemplate = `# Binaries for programs and plugins
 *.so
 *.dylib
 bin/*
-Dockerfile.cross
 
 # Test binary, built with ` + "`go test -c`" + `
 *.test
