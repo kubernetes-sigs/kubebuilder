@@ -387,8 +387,37 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, hasMetrics bool, 
 		_, err = kbc.Kubectl.Apply(true, "-f", conversionCRPath)
 		ExpectWithOffset(1, err).NotTo(HaveOccurred(), "failed to apply modified ConversionTest CR")
 
-		// TODO: Add validation to check the conversion
-		// the v2 should have spec.replicas == 3
+		// Verify the conversion by checking that spec.replicas == 3 in the v2 CR
+		verifyConversion := func() error {
+			// Retrieve the v2 version of the ConversionTest CR with the specific name from the cluster
+			crOutput, err := kbc.Kubectl.Get(
+				true,
+				"ConversionTest",
+				"conversiontest-sample",
+				"-o", "jsonpath={.spec.replicas}",
+			)
+			if err != nil {
+				return err
+			}
+
+			// Convert the output to an integer for comparison
+			replicas, err := strconv.Atoi(crOutput)
+			if err != nil {
+				return fmt.Errorf("failed to parse replicas from CR output: %v", err)
+			}
+
+			// Verify that spec.replicas was correctly converted to 3
+			if replicas != 3 {
+				return fmt.Errorf("conversion failed: expected spec.replicas to be 3, but got %d", replicas)
+			}
+
+			return nil
+		}
+
+		// Run the conversion validation
+		By("validating that the conversion webhook correctly set spec.replicas = 3 in the v2 CR")
+		EventuallyWithOffset(1, verifyConversion, 2*time.Minute, time.Second).Should(Succeed(),
+			"Conversion webhook did not correctly convert spec.size to spec.replicas = 3")
 
 		if hasMetrics {
 			By("validating conversion metrics to confirm conversion operations")
