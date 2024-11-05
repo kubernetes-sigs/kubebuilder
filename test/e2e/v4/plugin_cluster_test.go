@@ -262,6 +262,27 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, hasMetrics bool, 
 			return nil
 		}
 		EventuallyWithOffset(1, verifyCAInjection, time.Minute, time.Second).Should(Succeed())
+
+		By("validating that the CA injection is applied for CRD conversion")
+		crdKind := "ConversionTest"
+		verifyCAInjection = func() error {
+			crdOutput, err := kbc.Kubectl.Get(
+				false,
+				"customresourcedefinition.apiextensions.k8s.io",
+				"-o", fmt.Sprintf(
+					"jsonpath={.items[?(@.spec.names.kind=='%s')].spec.conversion.webhook.clientConfig.caBundle}",
+					crdKind),
+			)
+			ExpectWithOffset(1, err).NotTo(HaveOccurred(),
+				"failed to get CRD conversion webhook configuration")
+
+			// Check if the CA bundle is populated (length > 10 to avoid placeholder values)
+			ExpectWithOffset(1, len(crdOutput)).To(BeNumerically(">", 10),
+				"CA bundle should be injected into the CRD")
+			return nil
+		}
+		EventuallyWithOffset(1, verifyCAInjection, time.Minute, time.Second).Should(Succeed(),
+			"CA injection validation failed")
 	}
 
 	By("creating an instance of the CR")
@@ -341,6 +362,41 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, hasMetrics bool, 
 		By("removing the namespace")
 		_, err = kbc.Kubectl.Command("delete", "namespace", namespace)
 		Expect(err).NotTo(HaveOccurred(), "namespace should be removed successfully")
+
+		By("validating the conversion")
+
+		// Update the ConversionTest CR sample in v1 to set a specific `size`
+		By("modifying the ConversionTest CR sample to set `size` for conversion testing")
+		conversionCRFile := filepath.Join("config", "samples",
+			fmt.Sprintf("%s_v1_conversiontest.yaml", kbc.Group))
+		conversionCRPath, err := filepath.Abs(filepath.Join(fmt.Sprintf("e2e-%s", kbc.TestSuffix), conversionCRFile))
+		Expect(err).To(Not(HaveOccurred()))
+
+		// Edit the file to include `size` in the spec field for v1
+		f, err := os.OpenFile(conversionCRPath, os.O_APPEND|os.O_WRONLY, 0o644)
+		Expect(err).To(Not(HaveOccurred()))
+		defer func() {
+			err = f.Close()
+			Expect(err).To(Not(HaveOccurred()))
+		}()
+		_, err = f.WriteString("\nspec:\n  size: 3")
+		Expect(err).To(Not(HaveOccurred()))
+
+		// Apply the ConversionTest Custom Resource in v1
+		By("applying the modified ConversionTest CR in v1 for conversion")
+		_, err = kbc.Kubectl.Apply(true, "-f", conversionCRPath)
+		ExpectWithOffset(1, err).NotTo(HaveOccurred(), "failed to apply modified ConversionTest CR")
+
+		// TODO: Add validation to check the conversion
+		// the v2 should have spec.replicas == 3
+
+		if hasMetrics {
+			By("validating conversion metrics to confirm conversion operations")
+			metricsOutput := getMetricsOutput(kbc)
+			conversionMetric := `controller_runtime_reconcile_total{controller="conversiontest",result="success"} 1`
+			ExpectWithOffset(1, metricsOutput).To(ContainSubstring(conversionMetric),
+				"Expected metric for successful ConversionTest reconciliation")
+		}
 	}
 }
 
@@ -384,10 +440,19 @@ func getControllerName(kbc *utils.TestContext) string {
 // getMetricsOutput return the metrics output from curl pod
 func getMetricsOutput(kbc *utils.TestContext) string {
 	_, err := kbc.Kubectl.Command(
-		"create", "clusterrolebinding", fmt.Sprintf("metrics-%s", kbc.TestSuffix),
-		fmt.Sprintf("--clusterrole=e2e-%s-metrics-reader", kbc.TestSuffix),
-		fmt.Sprintf("--serviceaccount=%s:%s", kbc.Kubectl.Namespace, kbc.Kubectl.ServiceAccount))
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+		"get", "clusterrolebinding", fmt.Sprintf("metrics-%s", kbc.TestSuffix),
+	)
+	if err != nil && strings.Contains(err.Error(), "NotFound") {
+		// Create the clusterrolebinding only if it doesn't exist
+		_, err = kbc.Kubectl.Command(
+			"create", "clusterrolebinding", fmt.Sprintf("metrics-%s", kbc.TestSuffix),
+			fmt.Sprintf("--clusterrole=e2e-%s-metrics-reader", kbc.TestSuffix),
+			fmt.Sprintf("--serviceaccount=%s:%s", kbc.Kubectl.Namespace, kbc.Kubectl.ServiceAccount),
+		)
+		ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	} else {
+		ExpectWithOffset(1, err).NotTo(HaveOccurred(), "Failed to check clusterrolebinding existence")
+	}
 
 	token, err := serviceAccountToken(kbc)
 	ExpectWithOffset(2, err).NotTo(HaveOccurred())
