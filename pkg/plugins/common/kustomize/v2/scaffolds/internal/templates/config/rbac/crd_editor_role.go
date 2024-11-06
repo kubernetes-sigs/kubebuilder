@@ -65,7 +65,13 @@ func (f *CRDEditorRole) SetTemplateDefaults() error {
 	return nil
 }
 
-const crdRoleEditorTemplate = `# permissions for end users to edit {{ .Resource.Plural }}.
+const crdRoleEditorTemplate = `# This rule is not used by the project {{ .ProjectName }} itself.
+# It is provided to allow the cluster admin to help manage permissions for users.
+#
+# Grants permissions to create, update, and delete resources within the {{ .Resource.QualifiedGroup }}.
+# This role is intended for users who need to manage these resources
+# but should not control RBAC or manage permissions for others.
+
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
