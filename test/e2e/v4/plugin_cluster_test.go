@@ -369,23 +369,20 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, hasMetrics bool, 
 		By("modifying the ConversionTest CR sample to set `size` for conversion testing")
 		conversionCRFile := filepath.Join("config", "samples",
 			fmt.Sprintf("%s_v1_conversiontest.yaml", kbc.Group))
-		conversionCRPath, err := filepath.Abs(filepath.Join(fmt.Sprintf("e2e-%s", kbc.TestSuffix), conversionCRFile))
+		conversionCRPath, err := filepath.Abs(filepath.Join(kbc.Dir, conversionCRFile))
 		Expect(err).To(Not(HaveOccurred()))
 
-		// Edit the file to include `size` in the spec field for v1
-		f, err := os.OpenFile(conversionCRPath, os.O_APPEND|os.O_WRONLY, 0o644)
-		Expect(err).To(Not(HaveOccurred()))
-		defer func() {
-			err = f.Close()
-			Expect(err).To(Not(HaveOccurred()))
-		}()
-		_, err = f.WriteString("\nspec:\n  size: 3")
-		Expect(err).To(Not(HaveOccurred()))
+		err = util.ReplaceInFile(conversionCRPath,
+			"# TODO(user): Add fields here",
+			"size: 3")
+		Expect(err).To(Not(HaveOccurred()),
+			fmt.Sprintf("unable to add size spec to %s", conversionCRPath))
 
 		// Apply the ConversionTest Custom Resource in v1
 		By("applying the modified ConversionTest CR in v1 for conversion")
-		_, err = kbc.Kubectl.Apply(true, "-f", conversionCRPath)
-		ExpectWithOffset(1, err).NotTo(HaveOccurred(), "failed to apply modified ConversionTest CR")
+		output, err := kbc.Kubectl.Apply(true, "-f", conversionCRPath)
+		ExpectWithOffset(1, err).NotTo(HaveOccurred(),
+			fmt.Sprintf("failed to apply modified ConversionTest CR \n %s \n %s", output, err))
 
 		// Verify the conversion by checking that spec.replicas == 3 in the v2 CR
 		verifyConversion := func() error {
@@ -397,17 +394,30 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, hasMetrics bool, 
 				"-o", "jsonpath={.spec.replicas}",
 			)
 			if err != nil {
+				By("Get Manager Logs")
+				output, _ := kbc.Kubectl.Logs(controllerPodName)
+				_, _ = fmt.Fprintf(GinkgoWriter, "logs from container: %s\n", output)
+
 				return err
 			}
 
 			// Convert the output to an integer for comparison
 			replicas, err := strconv.Atoi(crOutput)
 			if err != nil {
-				return fmt.Errorf("failed to parse replicas from CR output: %v", err)
+
+				By("Get Manager Logs")
+				output, _ := kbc.Kubectl.Logs(controllerPodName)
+				_, _ = fmt.Fprintf(GinkgoWriter, "logs from container: %s\n", output)
+
+				return fmt.Errorf("failed to parse replicas from CR output (%s): %v", crOutput, err)
 			}
 
 			// Verify that spec.replicas was correctly converted to 3
 			if replicas != 3 {
+				By("Get Manager Logs")
+				output, _ := kbc.Kubectl.Logs(controllerPodName)
+				_, _ = fmt.Fprintf(GinkgoWriter, "logs from container: %s\n", output)
+
 				return fmt.Errorf("conversion failed: expected spec.replicas to be 3, but got %d", replicas)
 			}
 
@@ -417,7 +427,7 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, hasMetrics bool, 
 		// Run the conversion validation
 		By("validating that the conversion webhook correctly set spec.replicas = 3 in the v2 CR")
 		EventuallyWithOffset(1, verifyConversion, 2*time.Minute, time.Second).Should(Succeed(),
-			"Conversion webhook did not correctly convert spec.size to spec.replicas = 3")
+			"Conversion webhook did not correctly convert spec.size to spec.replicas = 3 \n error : %s", err)
 
 		if hasMetrics {
 			By("validating conversion metrics to confirm conversion operations")
