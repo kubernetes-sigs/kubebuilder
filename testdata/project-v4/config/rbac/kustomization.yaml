@@ -18,14 +18,17 @@ resources:
 - metrics_auth_role.yaml
 - metrics_auth_role_binding.yaml
 - metrics_reader_role.yaml
-# For each CRD, "Editor" and "Viewer" roles are scaffolded by
+# For each CRD, "Admin", "Editor" and "Viewer" roles are scaffolded by
 # default, aiding admins in cluster management. Those roles are
-# not used by the Project itself. You can comment the following lines
+# not used by the {{ .ProjectName }} itself. You can comment the following lines
 # if you do not want those helpers be installed with your Project.
+- admiral_admin_role.yaml
 - admiral_editor_role.yaml
 - admiral_viewer_role.yaml
+- firstmate_admin_role.yaml
 - firstmate_editor_role.yaml
 - firstmate_viewer_role.yaml
+- captain_admin_role.yaml
 - captain_editor_role.yaml
 - captain_viewer_role.yaml
 

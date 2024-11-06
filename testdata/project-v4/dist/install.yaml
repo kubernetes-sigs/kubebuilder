@@ -273,6 +273,27 @@ metadata:
   labels:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: project-v4
+  name: project-v4-admiral-admin-role
+rules:
+- apiGroups:
+  - crew.testproject.org
+  resources:
+  - admirales
+  verbs:
+  - '*'
+- apiGroups:
+  - crew.testproject.org
+  resources:
+  - admirales/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: project-v4
   name: project-v4-admiral-editor-role
 rules:
 - apiGroups:
@@ -323,6 +344,27 @@ metadata:
   labels:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: project-v4
+  name: project-v4-captain-admin-role
+rules:
+- apiGroups:
+  - crew.testproject.org
+  resources:
+  - captains
+  verbs:
+  - '*'
+- apiGroups:
+  - crew.testproject.org
+  resources:
+  - captains/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: project-v4
   name: project-v4-captain-editor-role
 rules:
 - apiGroups:
@@ -364,6 +406,27 @@ rules:
   - crew.testproject.org
   resources:
   - captains/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: project-v4
+  name: project-v4-firstmate-admin-role
+rules:
+- apiGroups:
+  - crew.testproject.org
+  resources:
+  - firstmates
+  verbs:
+  - '*'
+- apiGroups:
+  - crew.testproject.org
+  resources:
+  - firstmates/status
   verbs:
   - get
 ---

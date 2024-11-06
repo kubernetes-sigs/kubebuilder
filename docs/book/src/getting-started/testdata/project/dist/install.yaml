@@ -238,6 +238,27 @@ metadata:
   labels:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: project
+  name: project-memcached-admin-role
+rules:
+- apiGroups:
+  - cache.example.com
+  resources:
+  - memcacheds
+  verbs:
+  - '*'
+- apiGroups:
+  - cache.example.com
+  resources:
+  - memcacheds/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: project
   name: project-memcached-editor-role
 rules:
 - apiGroups:
