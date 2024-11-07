@@ -105,6 +105,10 @@ resources:
   kind: Deployment
   path: k8s.io/api/apps/v1
   version: v1
+  webhooks:
+    defaulting: true
+    validation: true
+    webhookVersion: v1
 - api:
     crdVersion: v1
     namespaced: true

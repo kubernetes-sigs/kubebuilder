@@ -1925,6 +1925,26 @@ webhooks:
     service:
       name: project-v4-multigroup-webhook-service
       namespace: project-v4-multigroup-system
+      path: /mutate-apps-v1-deployment
+  failurePolicy: Fail
+  name: mdeployment-v1.kb.io
+  rules:
+  - apiGroups:
+    - apps
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - deployments
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: project-v4-multigroup-webhook-service
+      namespace: project-v4-multigroup-system
       path: /mutate-cert-manager-io-v1-issuer
   failurePolicy: Fail
   name: missuer-v1.kb.io
@@ -1985,6 +2005,26 @@ kind: ValidatingWebhookConfiguration
 metadata:
   name: project-v4-multigroup-validating-webhook-configuration
 webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: project-v4-multigroup-webhook-service
+      namespace: project-v4-multigroup-system
+      path: /validate-apps-v1-deployment
+  failurePolicy: Fail
+  name: vdeployment-v1.kb.io
+  rules:
+  - apiGroups:
+    - apps
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - deployments
+  sideEffects: None
 - admissionReviewVersions:
   - v1
   clientConfig:

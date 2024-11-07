@@ -58,6 +58,7 @@ import (
 	foopolicycontroller "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/controller/foo.policy"
 	seacreaturescontroller "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/controller/sea-creatures"
 	shipcontroller "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/controller/ship"
+	webhookappsv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/webhook/apps/v1"
 	webhookcertmanagerv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/webhook/cert-manager/v1"
 	webhookcorev1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/webhook/core/v1"
 	webhookcrewv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/internal/webhook/crew/v1"
@@ -291,6 +292,13 @@ func main() {
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		if err = webhookcorev1.SetupPodWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Pod")
+			os.Exit(1)
+		}
+	}
+	// nolint:goconst
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err = webhookappsv1.SetupDeploymentWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "Deployment")
 			os.Exit(1)
 		}
 	}
