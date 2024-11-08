@@ -125,10 +125,15 @@ Now, see our example fully completed.
 
 #### Generating manifests with the specs and validations
 
-To generate the required CRDs we will run `make generate` command, which will call [controller-gen][controller-gen]
-to generate the CRD manifest, which is located under the `config/crd/bases` directory.
+To generate all required files:
 
-<details><summary><code>config/crd/bases/cache.example.com_memcacheds.yam</code>: Our Memcached CRD</summary>
+1. Run `make generate` to create the DeepCopy implementations in `api/v1alpha1/zz_generated.deepcopy.go`.
+
+2. Then, run `make manifests` to generate the CRD manifests under `config/crd/bases` and a sample for it under `config/crd/samples`.
+
+Both commands use [controller-gen][controller-gen] with different flags for code and manifest generation, respectively.
+
+<details><summary><code>config/crd/bases/cache.example.com_memcacheds.yaml</code>: Our Memcached CRD</summary>
 
 ```yaml
 {{#include ./getting-started/testdata/project/config/crd/bases/cache.example.com_memcacheds.yaml}}
