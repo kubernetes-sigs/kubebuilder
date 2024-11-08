@@ -98,3 +98,5 @@ privileges or be logged in as admin. See [Prerequisites for using Kubernetes RBA
 
 If we list cronjobs again like we did before, we should see the controller
 functioning again!
+
+[pre-rbc-gke]: https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#iam-rolebinding-bootstrap
