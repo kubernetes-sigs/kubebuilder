@@ -77,4 +77,13 @@ resources:
   webhooks:
     defaulting: true
     webhookVersion: v1
+- core: true
+  group: apps
+  kind: Deployment
+  path: k8s.io/api/apps/v1
+  version: v1
+  webhooks:
+    defaulting: true
+    validation: true
+    webhookVersion: v1
 version: "3"

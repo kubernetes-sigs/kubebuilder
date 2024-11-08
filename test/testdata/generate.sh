@@ -59,6 +59,8 @@ function scaffold_test_project {
     $kb create webhook --group "cert-manager" --version v1 --kind Issuer --defaulting --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io
     # Webhook for Core type
     $kb create webhook --group core --version v1 --kind Pod --defaulting
+    # Webhook for kubernetes Core type that is part of an api group
+    $kb create webhook --group apps --version v1 --kind Deployment --defaulting --programmatic-validation
   fi
 
   if [[ $project =~ multigroup ]]; then
@@ -88,6 +90,8 @@ function scaffold_test_project {
     $kb create webhook --group "cert-manager" --version v1 --kind Issuer --defaulting --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io
     # Webhook for Core type
     $kb create webhook --group core --version v1 --kind Pod --programmatic-validation --make=false
+    # Webhook for kubernetes Core type that is part of an api group
+    $kb create webhook --group apps --version v1 --kind Deployment --defaulting --programmatic-validation --make=false
   fi
 
   if [[ $project =~ multigroup ]] || [[ $project =~ with-plugins ]] ; then
