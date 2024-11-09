@@ -355,6 +355,15 @@ CronJob controller's`+" `"+`SetupWithManager`+"`"+` method.
 	}`, `
 	// +kubebuilder:docs-gen:collapse=old stuff`)
 	hackutils.CheckError("fixing main.go", err)
+
+	// Enabling metrics with certs
+	err = pluginutil.UncommentCode(
+		filepath.Join(sp.ctx.Dir, "cmd/main.go"),
+		`// metricsServerOptions.CertDir = "/tmp/k8s-metrics-server/metrics-certs"
+		// metricsServerOptions.CertName = "tls.crt"
+		// metricsServerOptions.KeyName = "tls.key"`, `
+	// `)
+	hackutils.CheckError("enabling metrics service options into main.go", err)
 }
 
 func (sp *Sample) updateMakefile() {
@@ -590,6 +599,19 @@ func (sp *Sample) updateKustomization() {
 		filepath.Join(sp.ctx.Dir, "config/default/kustomization.yaml"),
 		`#- ../prometheus`, `#`)
 	hackutils.CheckError("fixing default/kustomization", err)
+
+	err = pluginutil.UncommentCode(
+		filepath.Join(sp.ctx.Dir, "config/default/kustomization.yaml"),
+		`#- path: certmanager_metrics_manager_patch.yaml`, `#`)
+	hackutils.CheckError("enabling certmanager_metrics_manager_patch.yaml", err)
+
+	err = pluginutil.UncommentCode(
+		filepath.Join(sp.ctx.Dir, "config/prometheus/kustomization.yaml"),
+		`#patches:
+#  - path: monitor_tls_patch.yaml
+#    target:
+#      kind: ServiceMonitor`, `#`)
+	hackutils.CheckError("enabling certmanager_metrics_manager_patch.yaml", err)
 
 	err = pluginutil.UncommentCode(
 		filepath.Join(sp.ctx.Dir, "config/default/kustomization.yaml"),

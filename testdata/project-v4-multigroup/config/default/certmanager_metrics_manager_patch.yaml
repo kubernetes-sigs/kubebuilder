@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: controller-manager
+  namespace: system
+  labels:
+    app.kubernetes.io/name: project-v4-multigroup
+    app.kubernetes.io/managed-by: kustomize
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        volumeMounts:
+        - mountPath: /tmp/k8s-metrics-server/metrics-certs
+          name: metrics-certs
+          readOnly: true
+      volumes:
+      - name: metrics-certs
+        secret:
+          defaultMode: 420
+          secretName: metrics-server-cert

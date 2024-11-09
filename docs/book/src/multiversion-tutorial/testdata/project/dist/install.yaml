@@ -7944,6 +7944,9 @@ spec:
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
           readOnly: true
+        - mountPath: /tmp/k8s-metrics-server/metrics-certs
+          name: metrics-certs
+          readOnly: true
       securityContext:
         runAsNonRoot: true
       serviceAccountName: project-controller-manager
@@ -7953,6 +7956,31 @@ spec:
         secret:
           defaultMode: 420
           secretName: webhook-server-cert
+      - name: metrics-certs
+        secret:
+          defaultMode: 420
+          secretName: metrics-server-cert
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  labels:
+    app.kubernetes.io/component: certificate
+    app.kubernetes.io/created-by: project
+    app.kubernetes.io/instance: metrics-certs
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: certificate
+    app.kubernetes.io/part-of: project
+  name: project-metrics-certs
+  namespace: project-system
+spec:
+  dnsNames:
+  - project-webhook-service.project-system.svc
+  - project-webhook-service.project-system.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: project-selfsigned-issuer
+  secretName: metrics-server-cert
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
@@ -7997,12 +8025,19 @@ metadata:
   namespace: project-system
 spec:
   endpoints:
-  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
-    path: /metrics
-    port: https
-    scheme: https
-    tlsConfig:
-      insecureSkipVerify: true
+  - tlsConfig:
+      ca:
+        secret:
+          key: ca.crt
+          name: metrics-server-cert
+      cert:
+        secret:
+          key: tls.crt
+          name: metrics-server-cert
+      insecureSkipVerify: false
+      keySecret:
+        key: tls.key
+        name: metrics-server-cert
   selector:
     matchLabels:
       control-plane: controller-manager
