@@ -119,12 +119,9 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 		return err
 	}
 
-	// Ensure at least one webhook type is specified
-	if !p.resource.HasDefaultingWebhook() &&
-		!p.resource.HasValidationWebhook() &&
-		!p.resource.HasConversionWebhook() {
-		return fmt.Errorf("%s create webhook requires at least one of --defaulting, --programmatic-validation, "+
-			"and --conversion to be true", p.commandName)
+	if !p.resource.HasDefaultingWebhook() && !p.resource.HasValidationWebhook() && !p.resource.HasConversionWebhook() {
+		return fmt.Errorf("%s create webhook requires at least one of --defaulting,"+
+			" --programmatic-validation and --conversion to be true", p.commandName)
 	}
 
 	// check if resource exist to create webhook
