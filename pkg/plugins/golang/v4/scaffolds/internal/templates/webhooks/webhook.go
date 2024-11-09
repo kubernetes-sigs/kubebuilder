@@ -81,7 +81,7 @@ func (f *Webhook) SetTemplateDefaults() error {
 	if f.Force {
 		f.IfExistsAction = machinery.OverwriteFile
 	} else {
-		f.IfExistsAction = machinery.SkipFile
+		f.IfExistsAction = machinery.Error
 	}
 
 	f.AdmissionReviewVersions = "v1"
