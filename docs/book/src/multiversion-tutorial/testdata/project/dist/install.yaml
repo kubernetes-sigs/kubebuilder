@@ -7970,6 +7970,8 @@ spec:
           readOnly: true
       securityContext:
         runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       serviceAccountName: project-controller-manager
       terminationGracePeriodSeconds: 10
       volumes:

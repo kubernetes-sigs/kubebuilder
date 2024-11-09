@@ -67,33 +67,27 @@ var _ = Describe("kubebuilder", func() {
 			kbc.Destroy()
 		})
 		It("should generate a runnable project", func() {
-			kbc.IsRestricted = false
 			GenerateV4(kbc)
 			Run(kbc, true, false, true, false)
 		})
 		It("should generate a runnable project with the Installer", func() {
-			kbc.IsRestricted = false
 			GenerateV4(kbc)
 			Run(kbc, true, true, true, false)
 		})
 		It("should generate a runnable project without metrics exposed", func() {
-			kbc.IsRestricted = false
 			GenerateV4WithoutMetrics(kbc)
 			Run(kbc, true, false, false, false)
 		})
 		It("should generate a runnable project with metrics protected by network policies", func() {
-			kbc.IsRestricted = false
 			GenerateV4WithNetworkPoliciesWithoutWebhooks(kbc)
 			Run(kbc, false, false, true, true)
 		})
 		It("should generate a runnable project with webhooks and metrics protected by network policies", func() {
-			kbc.IsRestricted = false
 			GenerateV4WithNetworkPolicies(kbc)
 			Run(kbc, true, false, true, true)
 		})
 		It("should generate a runnable project with the manager running "+
 			"as restricted and without webhooks", func() {
-			kbc.IsRestricted = true
 			GenerateV4WithoutWebhooks(kbc)
 			Run(kbc, false, false, true, false)
 		})
@@ -110,11 +104,9 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, hasMetrics bool, 
 	err = kbc.CreateManagerNamespace()
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
-	if kbc.IsRestricted {
-		By("labeling all namespaces to warn about restricted")
-		err = kbc.LabelNamespacesToWarnAboutRestricted()
-		ExpectWithOffset(1, err).NotTo(HaveOccurred())
-	}
+	By("labeling all namespaces to warn about restricted")
+	err = kbc.LabelNamespacesToWarnAboutRestricted()
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
 	By("updating the go.mod")
 	err = kbc.Tidy()
@@ -149,10 +141,8 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, hasMetrics bool, 
 		ExpectWithOffset(1, err).NotTo(HaveOccurred())
 	}
 
-	if kbc.IsRestricted {
-		By("validating that manager Pod/container(s) are restricted")
-		ExpectWithOffset(1, output).NotTo(ContainSubstring("Warning: would violate PodSecurity"))
-	}
+	By("validating that manager Pod/container(s) are restricted")
+	ExpectWithOffset(1, output).NotTo(ContainSubstring("Warning: would violate PodSecurity"))
 
 	By("Checking controllerManager and getting the name of the Pod")
 	controllerPodName = getControllerName(kbc)
