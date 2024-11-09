@@ -402,6 +402,27 @@ metadata:
   labels:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: project-v4-with-plugins
+  name: project-v4-with-plugins-busybox-admin-role
+rules:
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - busyboxes
+  verbs:
+  - '*'
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - busyboxes/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: project-v4-with-plugins
   name: project-v4-with-plugins-busybox-editor-role
 rules:
 - apiGroups:
@@ -517,6 +538,27 @@ metadata:
   labels:
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/name: project-v4-with-plugins
+  name: project-v4-with-plugins-memcached-admin-role
+rules:
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - memcacheds
+  verbs:
+  - '*'
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - memcacheds/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: project-v4-with-plugins
   name: project-v4-with-plugins-memcached-editor-role
 rules:
 - apiGroups:
@@ -586,6 +628,27 @@ metadata:
 rules:
 - nonResourceURLs:
   - /metrics
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: project-v4-with-plugins
+  name: project-v4-with-plugins-wordpress-admin-role
+rules:
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - wordpresses
+  verbs:
+  - '*'
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - wordpresses/status
   verbs:
   - get
 ---

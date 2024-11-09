@@ -18,32 +18,44 @@ resources:
 - metrics_auth_role.yaml
 - metrics_auth_role_binding.yaml
 - metrics_reader_role.yaml
-# For each CRD, "Editor" and "Viewer" roles are scaffolded by
+# For each CRD, "Admin", "Editor" and "Viewer" roles are scaffolded by
 # default, aiding admins in cluster management. Those roles are
-# not used by the Project itself. You can comment the following lines
+# not used by the {{ .ProjectName }} itself. You can comment the following lines
 # if you do not want those helpers be installed with your Project.
+- example.com_wordpress_admin_role.yaml
 - example.com_wordpress_editor_role.yaml
 - example.com_wordpress_viewer_role.yaml
+- example.com_busybox_admin_role.yaml
 - example.com_busybox_editor_role.yaml
 - example.com_busybox_viewer_role.yaml
+- example.com_memcached_admin_role.yaml
 - example.com_memcached_editor_role.yaml
 - example.com_memcached_viewer_role.yaml
+- fiz_bar_admin_role.yaml
 - fiz_bar_editor_role.yaml
 - fiz_bar_viewer_role.yaml
+- foo_bar_admin_role.yaml
 - foo_bar_editor_role.yaml
 - foo_bar_viewer_role.yaml
+- foo.policy_healthcheckpolicy_admin_role.yaml
 - foo.policy_healthcheckpolicy_editor_role.yaml
 - foo.policy_healthcheckpolicy_viewer_role.yaml
+- sea-creatures_leviathan_admin_role.yaml
 - sea-creatures_leviathan_editor_role.yaml
 - sea-creatures_leviathan_viewer_role.yaml
+- sea-creatures_kraken_admin_role.yaml
 - sea-creatures_kraken_editor_role.yaml
 - sea-creatures_kraken_viewer_role.yaml
+- ship_cruiser_admin_role.yaml
 - ship_cruiser_editor_role.yaml
 - ship_cruiser_viewer_role.yaml
+- ship_destroyer_admin_role.yaml
 - ship_destroyer_editor_role.yaml
 - ship_destroyer_viewer_role.yaml
+- ship_frigate_admin_role.yaml
 - ship_frigate_editor_role.yaml
 - ship_frigate_viewer_role.yaml
+- crew_captain_admin_role.yaml
 - crew_captain_editor_role.yaml
 - crew_captain_viewer_role.yaml
 
