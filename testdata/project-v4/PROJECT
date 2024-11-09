@@ -35,6 +35,14 @@ resources:
     webhookVersion: v1
 - api:
     crdVersion: v1
+    namespaced: true
+  domain: testproject.org
+  group: crew
+  kind: FirstMate
+  path: sigs.k8s.io/kubebuilder/testdata/project-v4/api/v2
+  version: v2
+- api:
+    crdVersion: v1
   controller: true
   domain: testproject.org
   group: crew
@@ -68,5 +76,14 @@ resources:
   version: v1
   webhooks:
     defaulting: true
+    webhookVersion: v1
+- core: true
+  group: apps
+  kind: Deployment
+  path: k8s.io/api/apps/v1
+  version: v1
+  webhooks:
+    defaulting: true
+    validation: true
     webhookVersion: v1
 version: "3"

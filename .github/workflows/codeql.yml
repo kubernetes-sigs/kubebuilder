@@ -1,0 +1,54 @@
+name: "CodeQL Advanced"
+
+on:
+  # We are checking both `master` and `book-v4` branches:
+  # - `master` represents the latest development work.
+  # - `book-v4` is the latest stable release branch, which contains the latest published code,
+  #   ensuring that any issues in production are identified and addressed promptly.
+  schedule:
+    - cron: '30 20 * * 1'  # Runs every Monday at 8:30 PM
+
+jobs:
+  analyze:
+    name: Analyze Go
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      packages: read
+      actions: read
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Build and install Kubebuilder CLI
+        run: make install
+
+      # Preparing the project-v4 sample for CodeQL analysis:
+      # - `go mod tidy` ensures dependencies are fully resolved.
+      # - `make manifests` generates required manifests for a complete project structure.
+      # - `make build` builds the project code, ensuring all components are ready for CodeQL analysis.
+      - name: Build project-v4 sample project
+        run: |
+          cd testdata/project-v4
+          go mod tidy
+          echo 'Running build commands for Go in project-v4'
+          make manifests
+          make build
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: go
+          build-mode: autobuild
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:go"

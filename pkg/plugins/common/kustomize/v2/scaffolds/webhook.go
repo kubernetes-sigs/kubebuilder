@@ -19,16 +19,16 @@ package scaffolds
 import (
 	"fmt"
 
-	log "github.com/sirupsen/logrus"
-	pluginutil "sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
-	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/crd"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/crd/patches"
 
+	log "github.com/sirupsen/logrus"
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
+	pluginutil "sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/certmanager"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/crd"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/kdefault"
 	network_policy "sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/network-policy"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/webhook"
@@ -81,9 +81,13 @@ func (s *webhookScaffolder) Scaffold() error {
 		&certmanager.Certificate{},
 		&certmanager.Kustomization{},
 		&certmanager.KustomizeConfig{},
-		&patches.EnableWebhookPatch{},
-		&patches.EnableCAInjectionPatch{},
 		&network_policy.NetworkPolicyAllowWebhooks{},
+	}
+
+	// Only scaffold the following patches if is a conversion webhook
+	if s.resource.Webhooks.Conversion {
+		buildScaffold = append(buildScaffold, &patches.EnableWebhookPatch{})
+		buildScaffold = append(buildScaffold, &patches.EnableCAInjectionPatch{})
 	}
 
 	if !s.resource.External && !s.resource.Core {
@@ -130,22 +134,17 @@ func (s *webhookScaffolder) Scaffold() error {
 		}
 	}
 
-	crdKustomizationsFilePath := "config/crd/kustomization.yaml"
-	err = pluginutil.UncommentCode(crdKustomizationsFilePath, "#- path: patches/webhook", `#`)
-	if err != nil {
-		hasWebHookUncommented, err := pluginutil.HasFileContentWith(crdKustomizationsFilePath, "- path: patches/webhook")
-		if !hasWebHookUncommented || err != nil {
-			log.Errorf("Unable to find the target(s) #- path: patches/webhook/* to uncomment in the file "+
-				"%s.", crdKustomizationsFilePath)
-		}
-	}
-
-	err = pluginutil.UncommentCode(crdKustomizationsFilePath, "#configurations:\n#- kustomizeconfig.yaml", `#`)
-	if err != nil {
-		hasWebHookUncommented, err := pluginutil.HasFileContentWith(crdKustomizationsFilePath, "- kustomizeconfig.yaml")
-		if !hasWebHookUncommented || err != nil {
-			log.Errorf("Unable to find the target(s) #configurations:\n#- kustomizeconfig.yaml to uncomment in the file "+
-				"%s.", crdKustomizationsFilePath)
+	if s.resource.Webhooks.Conversion {
+		crdKustomizationsFilePath := "config/crd/kustomization.yaml"
+		err = pluginutil.UncommentCode(crdKustomizationsFilePath, "#configurations:\n#- kustomizeconfig.yaml", `#`)
+		if err != nil {
+			hasWebHookUncommented, err := pluginutil.HasFileContentWith(crdKustomizationsFilePath,
+				"configurations:\n- kustomizeconfig.yaml")
+			if !hasWebHookUncommented || err != nil {
+				log.Warningf("Unable to find the target(s) configurations.kustomizeconfig.yaml "+
+					"to uncomment in the file "+
+					"%s.", crdKustomizationsFilePath)
+			}
 		}
 	}
 

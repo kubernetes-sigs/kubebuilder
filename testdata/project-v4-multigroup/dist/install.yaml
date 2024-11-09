@@ -238,16 +238,6 @@ metadata:
     controller-gen.kubebuilder.io/version: v0.16.4
   name: captains.crew.testproject.org
 spec:
-  conversion:
-    strategy: Webhook
-    webhook:
-      clientConfig:
-        service:
-          name: project-v4-multigroup-webhook-service
-          namespace: project-v4-multigroup-system
-          path: /convert
-      conversionReviewVersions:
-      - v1
   group: crew.testproject.org
   names:
     kind: Captain
@@ -302,16 +292,6 @@ metadata:
     controller-gen.kubebuilder.io/version: v0.16.4
   name: cruisers.ship.testproject.org
 spec:
-  conversion:
-    strategy: Webhook
-    webhook:
-      clientConfig:
-        service:
-          name: project-v4-multigroup-webhook-service
-          namespace: project-v4-multigroup-system
-          path: /convert
-      conversionReviewVersions:
-      - v1
   group: ship.testproject.org
   names:
     kind: Cruiser
@@ -366,16 +346,6 @@ metadata:
     controller-gen.kubebuilder.io/version: v0.16.4
   name: destroyers.ship.testproject.org
 spec:
-  conversion:
-    strategy: Webhook
-    webhook:
-      clientConfig:
-        service:
-          name: project-v4-multigroup-webhook-service
-          namespace: project-v4-multigroup-system
-          path: /convert
-      conversionReviewVersions:
-      - v1
   group: ship.testproject.org
   names:
     kind: Destroyer
@@ -430,16 +400,6 @@ metadata:
     controller-gen.kubebuilder.io/version: v0.16.4
   name: frigates.ship.testproject.org
 spec:
-  conversion:
-    strategy: Webhook
-    webhook:
-      clientConfig:
-        service:
-          name: project-v4-multigroup-webhook-service
-          namespace: project-v4-multigroup-system
-          path: /convert
-      conversionReviewVersions:
-      - v1
   group: ship.testproject.org
   names:
     kind: Frigate
@@ -656,16 +616,6 @@ metadata:
     controller-gen.kubebuilder.io/version: v0.16.4
   name: memcacheds.example.com.testproject.org
 spec:
-  conversion:
-    strategy: Webhook
-    webhook:
-      clientConfig:
-        service:
-          name: project-v4-multigroup-webhook-service
-          namespace: project-v4-multigroup-system
-          path: /convert
-      conversionReviewVersions:
-      - v1
   group: example.com.testproject.org
   names:
     kind: Memcached
@@ -777,6 +727,108 @@ spec:
         type: object
     served: true
     storage: true
+    subresources:
+      status: {}
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.16.4
+  name: wordpresses.example.com.testproject.org
+spec:
+  conversion:
+    strategy: Webhook
+    webhook:
+      clientConfig:
+        service:
+          name: project-v4-multigroup-webhook-service
+          namespace: project-v4-multigroup-system
+          path: /convert
+      conversionReviewVersions:
+      - v1
+  group: example.com.testproject.org
+  names:
+    kind: Wordpress
+    listKind: WordpressList
+    plural: wordpresses
+    singular: wordpress
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: Wordpress is the Schema for the wordpresses API.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: WordpressSpec defines the desired state of Wordpress.
+            properties:
+              foo:
+                description: Foo is an example field of Wordpress. Edit wordpress_types.go
+                  to remove/update
+                type: string
+            type: object
+          status:
+            description: WordpressStatus defines the observed state of Wordpress.
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+  - name: v2
+    schema:
+      openAPIV3Schema:
+        description: Wordpress is the Schema for the wordpresses API.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: WordpressSpec defines the desired state of Wordpress.
+            properties:
+              foo:
+                description: Foo is an example field of Wordpress. Edit wordpress_types.go
+                  to remove/update
+                type: string
+            type: object
+          status:
+            description: WordpressStatus defines the observed state of Wordpress.
+            type: object
+        type: object
+    served: true
+    storage: false
     subresources:
       status: {}
 ---
@@ -977,6 +1029,56 @@ rules:
   - example.com.testproject.org
   resources:
   - memcacheds/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: project-v4-multigroup
+  name: project-v4-multigroup-example.com-wordpress-editor-role
+rules:
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - wordpresses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - wordpresses/status
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: project-v4-multigroup
+  name: project-v4-multigroup-example.com-wordpress-viewer-role
+rules:
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - wordpresses
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - example.com.testproject.org
+  resources:
+  - wordpresses/status
   verbs:
   - get
 ---
@@ -1233,6 +1335,7 @@ rules:
   resources:
   - busyboxes
   - memcacheds
+  - wordpresses
   verbs:
   - create
   - delete
@@ -1246,6 +1349,7 @@ rules:
   resources:
   - busyboxes/finalizers
   - memcacheds/finalizers
+  - wordpresses/finalizers
   verbs:
   - update
 - apiGroups:
@@ -1253,6 +1357,7 @@ rules:
   resources:
   - busyboxes/status
   - memcacheds/status
+  - wordpresses/status
   verbs:
   - get
   - patch
@@ -1764,7 +1869,7 @@ spec:
         - name: BUSYBOX_IMAGE
           value: busybox:1.36.1
         - name: MEMCACHED_IMAGE
-          value: memcached:memcached:1.6.26-alpine3.19
+          value: memcached:1.6.26-alpine3.19
         image: controller:latest
         livenessProbe:
           httpGet:
@@ -1814,6 +1919,26 @@ kind: MutatingWebhookConfiguration
 metadata:
   name: project-v4-multigroup-mutating-webhook-configuration
 webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: project-v4-multigroup-webhook-service
+      namespace: project-v4-multigroup-system
+      path: /mutate-apps-v1-deployment
+  failurePolicy: Fail
+  name: mdeployment-v1.kb.io
+  rules:
+  - apiGroups:
+    - apps
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - deployments
+  sideEffects: None
 - admissionReviewVersions:
   - v1
   clientConfig:
@@ -1880,6 +2005,26 @@ kind: ValidatingWebhookConfiguration
 metadata:
   name: project-v4-multigroup-validating-webhook-configuration
 webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: project-v4-multigroup-webhook-service
+      namespace: project-v4-multigroup-system
+      path: /validate-apps-v1-deployment
+  failurePolicy: Fail
+  name: vdeployment-v1.kb.io
+  rules:
+  - apiGroups:
+    - apps
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - deployments
+  sideEffects: None
 - admissionReviewVersions:
   - v1
   clientConfig:

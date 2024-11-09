@@ -11,7 +11,7 @@ updates:
     # default location of `.github/workflows`
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "daily"
     commit-message:
       prefix: ":seedling:"
     labels:
@@ -21,39 +21,27 @@ updates:
   - package-ecosystem: "gomod"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "daily"
     commit-message:
       prefix: ":seedling:"
     labels:
       - "ok-to-test"
 
-  # Maintain dependencies for dockerfile in the branches
-  - package-ecosystem: docker
-    directory: "/build/thirdparty/darwin"
-    target-branch: "tools-releases"
+  # Maintain dependencies for go
+  - package-ecosystem: "gomod"
+    directory: "/testdata/project-v4"
     schedule:
-      interval: daily
+      interval: "daily"
     commit-message:
       prefix: ":seedling:"
-  - package-ecosystem: docker
-    directory: "/build/thirdparty/linux"
-    target-branch: "tools-releases"
-    schedule:
-      interval: "weekly"
-    commit-message:
-      prefix: ":seedling:"
+    labels:
+      - "ok-to-test"
 
   # Maintain dependencies for dockerfile scaffold in the projects
   - package-ecosystem: docker
-    directory: "testdata/project-v3"
-    schedule:
-      interval: daily
-    commit-message:
-      prefix: ":seedling:"
-  - package-ecosystem: docker
     directory: "testdata/project-v4"
     schedule:
-      interval: "weekly"
+      interval: daily
     commit-message:
       prefix: ":seedling:"
 
@@ -61,8 +49,8 @@ updates:
   - package-ecosystem: "gomod"
     directory: "docs/book/src/simple-external-plugin-tutorial/testdata/sampleexternalplugin/v1"
     schedule:
-      interval: "weekly"
+      interval: "daily"
     commit-message:
-      prefix: ":seedling:"
+      prefix: ":book:"
     labels:
       - "ok-to-test"

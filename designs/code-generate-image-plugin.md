@@ -1,6 +1,6 @@
 | Authors       | Creation Date | Status      | Extra |
 |---------------|---------------|-------------|---|
-| @camilamacedo86 | 2021-02-14 | Implemented | [deploy-image-plugin-v1-alpha](https://book.kubebuilder.io/plugins/deploy-image-plugin-v1-alpha.html) |
+| @camilamacedo86 | 2021-02-14 | Implemented | [deploy-image-plugin-v1-alpha](../docs/book/src/plugins/available/deploy-image-plugin-v1-alpha.md) |
 
 # New Plugin (`deploy-image.go.kubebuilder.io/v1beta1`) to generate code
 
