@@ -15,7 +15,7 @@ plugins:
       options:
         containerCommand: memcached,--memory-limit=64,-o,modern,-v
         containerPort: "11211"
-        image: memcached:memcached:1.6.26-alpine3.19
+        image: memcached:1.6.26-alpine3.19
         runAsUser: "1001"
       version: v1alpha1
     - domain: testproject.org
@@ -50,9 +50,6 @@ resources:
   kind: Frigate
   path: sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/ship/v1beta1
   version: v1beta1
-  webhooks:
-    conversion: true
-    webhookVersion: v1
 - api:
     crdVersion: v1
   controller: true
@@ -108,6 +105,10 @@ resources:
   kind: Deployment
   path: k8s.io/api/apps/v1
   version: v1
+  webhooks:
+    defaulting: true
+    validation: true
+    webhookVersion: v1
 - api:
     crdVersion: v1
     namespaced: true
@@ -171,4 +172,24 @@ resources:
   kind: Busybox
   path: sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/example.com/v1alpha1
   version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: testproject.org
+  group: example.com
+  kind: Wordpress
+  path: sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/example.com/v1
+  version: v1
+  webhooks:
+    conversion: true
+    webhookVersion: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: testproject.org
+  group: example.com
+  kind: Wordpress
+  path: sigs.k8s.io/kubebuilder/testdata/project-v4-multigroup/api/example.com/v2
+  version: v2
 version: "3"

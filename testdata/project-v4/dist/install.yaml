@@ -14,16 +14,6 @@ metadata:
     controller-gen.kubebuilder.io/version: v0.16.4
   name: admirales.crew.testproject.org
 spec:
-  conversion:
-    strategy: Webhook
-    webhook:
-      clientConfig:
-        service:
-          name: project-v4-webhook-service
-          namespace: project-v4-system
-          path: /convert
-      conversionReviewVersions:
-      - v1
   group: crew.testproject.org
   names:
     kind: Admiral
@@ -78,16 +68,6 @@ metadata:
     controller-gen.kubebuilder.io/version: v0.16.4
   name: captains.crew.testproject.org
 spec:
-  conversion:
-    strategy: Webhook
-    webhook:
-      clientConfig:
-        service:
-          name: project-v4-webhook-service
-          namespace: project-v4-system
-          path: /convert
-      conversionReviewVersions:
-      - v1
   group: crew.testproject.org
   names:
     kind: Captain
@@ -196,6 +176,44 @@ spec:
         type: object
     served: true
     storage: true
+    subresources:
+      status: {}
+  - name: v2
+    schema:
+      openAPIV3Schema:
+        description: FirstMate is the Schema for the firstmates API.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: FirstMateSpec defines the desired state of FirstMate.
+            properties:
+              foo:
+                description: Foo is an example field of FirstMate. Edit firstmate_types.go
+                  to remove/update
+                type: string
+            type: object
+          status:
+            description: FirstMateStatus defines the observed state of FirstMate.
+            type: object
+        type: object
+    served: true
+    storage: false
     subresources:
       status: {}
 ---
@@ -694,6 +712,26 @@ webhooks:
     service:
       name: project-v4-webhook-service
       namespace: project-v4-system
+      path: /mutate-apps-v1-deployment
+  failurePolicy: Fail
+  name: mdeployment-v1.kb.io
+  rules:
+  - apiGroups:
+    - apps
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - deployments
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: project-v4-webhook-service
+      namespace: project-v4-system
       path: /mutate-cert-manager-io-v1-issuer
   failurePolicy: Fail
   name: missuer-v1.kb.io
@@ -753,4 +791,24 @@ webhooks:
     - UPDATE
     resources:
     - captains
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: project-v4-webhook-service
+      namespace: project-v4-system
+      path: /validate-apps-v1-deployment
+  failurePolicy: Fail
+  name: vdeployment-v1.kb.io
+  rules:
+  - apiGroups:
+    - apps
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - deployments
   sideEffects: None

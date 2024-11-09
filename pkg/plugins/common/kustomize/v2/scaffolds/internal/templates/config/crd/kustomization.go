@@ -70,7 +70,7 @@ func (f *Kustomization) GetMarkers() []machinery.Marker {
 const (
 	resourceCodeFragment = `- bases/%s_%s.yaml
 `
-	webhookPatchCodeFragment = `#- path: patches/webhook_in_%s.yaml
+	webhookPatchCodeFragment = `- path: patches/webhook_in_%s.yaml
 `
 	caInjectionPatchCodeFragment = `#- path: patches/cainjection_in_%s.yaml
 `
@@ -89,7 +89,7 @@ func (f *Kustomization) GetCodeFragments() machinery.CodeFragmentsMap {
 		suffix = f.Resource.Group + "_" + f.Resource.Plural
 	}
 
-	if !f.Resource.Webhooks.IsEmpty() {
+	if !f.Resource.Webhooks.IsEmpty() && f.Resource.Webhooks.Conversion {
 		webhookPatch := fmt.Sprintf(webhookPatchCodeFragment, suffix)
 
 		marker := machinery.NewMarkerFor(f.Path, webhookPatchMarker)
@@ -100,7 +100,9 @@ func (f *Kustomization) GetCodeFragments() machinery.CodeFragmentsMap {
 
 	// Generate resource code fragments
 	caInjectionPatch := make([]string, 0)
-	caInjectionPatch = append(caInjectionPatch, fmt.Sprintf(caInjectionPatchCodeFragment, suffix))
+	if !f.Resource.Webhooks.IsEmpty() && f.Resource.Webhooks.Conversion {
+		caInjectionPatch = append(caInjectionPatch, fmt.Sprintf(caInjectionPatchCodeFragment, suffix))
+	}
 
 	// Only store code fragments in the map if the slices are non-empty
 	if len(res) != 0 {
@@ -131,7 +133,6 @@ patches:
 
 # [WEBHOOK] To enable webhook, uncomment the following section
 # the following config is for teaching kustomize how to do kustomization for CRDs.
-
 #configurations:
 #- kustomizeconfig.yaml
 `

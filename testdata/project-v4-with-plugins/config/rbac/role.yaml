@@ -36,6 +36,7 @@ rules:
   resources:
   - busyboxes
   - memcacheds
+  - wordpresses
   verbs:
   - create
   - delete
@@ -49,6 +50,7 @@ rules:
   resources:
   - busyboxes/finalizers
   - memcacheds/finalizers
+  - wordpresses/finalizers
   verbs:
   - update
 - apiGroups:
@@ -56,6 +58,7 @@ rules:
   resources:
   - busyboxes/status
   - memcacheds/status
+  - wordpresses/status
   verbs:
   - get
   - patch

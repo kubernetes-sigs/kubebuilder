@@ -17,7 +17,7 @@ limitations under the License.
 package cli
 
 import (
-	"fmt"
+	"errors"
 	"strings"
 
 	"github.com/spf13/pflag"
@@ -53,13 +53,13 @@ func (opts resourceOptions) validate() error {
 	// NOTE: We must do this for all the required flags first or we may output the wrong
 	// error as flags may seem to be missing because Cobra assigned them to another flag.
 	if strings.HasPrefix(opts.Group, "-") {
-		return fmt.Errorf(groupPresent)
+		return errors.New(groupPresent)
 	}
 	if strings.HasPrefix(opts.Version, "-") {
-		return fmt.Errorf(versionPresent)
+		return errors.New(versionPresent)
 	}
 	if strings.HasPrefix(opts.Kind, "-") {
-		return fmt.Errorf(kindPresent)
+		return errors.New(kindPresent)
 	}
 
 	// We do not check here if the GVK values are empty because that would

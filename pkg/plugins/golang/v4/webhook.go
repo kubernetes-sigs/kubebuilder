@@ -48,6 +48,9 @@ type createWebhookSubcommand struct {
 	// Deprecated - TODO: remove it for go/v5
 	// isLegacyPath indicates that the resource should be created in the legacy path under the api
 	isLegacyPath bool
+
+	// runMake indicates whether to run make or not after scaffolding APIs
+	runMake bool
 }
 
 func (p *createWebhookSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
@@ -68,6 +71,8 @@ validating and/or conversion webhooks.
 
 func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
 	p.options = &goPlugin.Options{}
+
+	fs.BoolVar(&p.runMake, "make", true, "if true, run `make generate` after generating files")
 
 	fs.StringVar(&p.options.Plural, "plural", "", "resource irregular plural form")
 
@@ -145,10 +150,13 @@ func (p *createWebhookSubcommand) PostScaffold() error {
 		return err
 	}
 
-	err = pluginutil.RunCmd("Running make", "make", "generate")
-	if err != nil {
-		return err
+	if p.runMake {
+		err = pluginutil.RunCmd("Running make", "make", "generate")
+		if err != nil {
+			return err
+		}
 	}
+
 	fmt.Print("Next: implement your new Webhook and generate the manifests with:\n$ make manifests\n")
 
 	return nil

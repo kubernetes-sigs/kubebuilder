@@ -1,3 +1,7 @@
 .menu-title img {
     vertical-align: bottom;
 }
+
+#sidebar-toggle-anchor:checked .page-wrapper {
+    margin-inline-start: calc(var(--sidebar-width) + var(--sidebar-resize-indicator-width));
+}

@@ -68,3 +68,12 @@ release:
   github:
     owner: kubernetes-sigs
     name: kubebuilder
+
+# Add the SBOM configuration at the end to generate SBOM files
+sboms:
+  - id: kubebuilder-sbom
+    artifacts: binary
+    cmd: syft
+    args: ["$artifact", "--output", "cyclonedx-json=$document"]
+    documents:
+      - "{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}.cyclonedx.sbom.json"
