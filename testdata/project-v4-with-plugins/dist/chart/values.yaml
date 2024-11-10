@@ -60,6 +60,10 @@ crd:
   # (Certificates, Issuers, ...) due to garbage collection.
   keep: true
 
+# [SAMPLES]: To apply the sample(s) manifests set true
+samples:
+  enable: false
+
 # [METRICS]: Set to true to generate manifests for exporting metrics.
 # To disable metrics export set false, and ensure that the
 # ControllerManager argument "--metrics-bind-address=:8443" is removed.

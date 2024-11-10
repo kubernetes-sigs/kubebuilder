@@ -1,0 +1,10 @@
+{{- if .Values.samples.enable }}
+apiVersion: example.com.testproject.org/v1
+kind: Wordpress
+metadata:
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+  name: wordpress-sample
+spec:
+  # TODO(user): Add fields here
+{{- end -}}

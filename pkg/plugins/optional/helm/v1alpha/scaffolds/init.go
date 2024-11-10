@@ -236,6 +236,7 @@ func (s *initScaffolder) copyConfigFiles() error {
 	}{
 		{"config/rbac", "dist/chart/templates/rbac", "rbac"},
 		{"config/crd/bases", "dist/chart/templates/crd", "crd"},
+		{"config/samples", "dist/chart/templates/samples", "samples"},
 		{"config/network-policy", "dist/chart/templates/network-policy", "networkPolicy"},
 	}
 
