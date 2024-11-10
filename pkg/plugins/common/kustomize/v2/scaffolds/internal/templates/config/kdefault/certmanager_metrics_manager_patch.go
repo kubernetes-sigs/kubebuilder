@@ -70,6 +70,5 @@ spec:
       volumes:
       - name: metrics-certs
         secret:
-          defaultMode: 420
           secretName: metrics-server-cert
 `

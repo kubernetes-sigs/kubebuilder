@@ -7981,7 +7981,6 @@ spec:
           secretName: webhook-server-cert
       - name: metrics-certs
         secret:
-          defaultMode: 420
           secretName: metrics-server-cert
 ---
 apiVersion: cert-manager.io/v1
