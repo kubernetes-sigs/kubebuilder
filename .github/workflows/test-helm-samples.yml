@@ -1,0 +1,76 @@
+name: Helm Testdata Sample
+
+on:
+  push:
+    paths:
+      - 'testdata/project-v4-with-plugins/**'
+      - '.github/workflows/test-helm-samples.yml'
+  pull_request:
+    paths:
+      - 'testdata/project-v4-with-plugins/**'
+      - '.github/workflows/test-helm-samples.yml'
+
+jobs:
+  helm-test-project-v4-with-plugins:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '~1.22'
+
+      - name: Install the latest version of kind
+        run: |
+          curl -Lo ./kind https://kind.sigs.k8s.io/dl/latest/kind-linux-amd64
+          chmod +x ./kind
+          sudo mv ./kind /usr/local/bin/kind
+
+      - name: Verify kind installation
+        run: kind version
+
+      - name: Create kind cluster
+        run: kind create cluster
+
+      - name: Prepare project-v4-with-plugins
+        run: |
+          cd testdata/project-v4-with-plugins/
+          go mod tidy
+          make docker-build IMG=project-v4-with-plugins:v0.1.0
+          kind load docker-image project-v4-with-plugins:v0.1.0
+
+      - name: Install Helm
+        run: |
+          curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+      - name: Verify Helm installation
+        run: helm version
+
+      - name: Lint Helm chart for project-v4-with-plugins
+        run: |
+          helm lint testdata/project-v4-with-plugins/dist/chart
+
+      - name: Install cert-manager via Helm
+        run: |
+          helm repo add jetstack https://charts.jetstack.io
+          helm repo update
+          helm install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --set installCRDs=true
+
+      - name: Wait for cert-manager to be ready
+        run: |
+          kubectl wait --namespace cert-manager --for=condition=available --timeout=300s deployment/cert-manager
+          kubectl wait --namespace cert-manager --for=condition=available --timeout=300s deployment/cert-manager-cainjector
+          kubectl wait --namespace cert-manager --for=condition=available --timeout=300s deployment/cert-manager-webhook
+
+      - name: Install Helm chart for project-v4-with-plugins
+        run: |
+          helm install my-release testdata/project-v4-with-plugins/dist/chart --create-namespace --namespace project-v4-with-plugins-system
+
+      - name: Check Helm release status
+        run: |
+          helm status my-release --namespace project-v4-with-plugins-system

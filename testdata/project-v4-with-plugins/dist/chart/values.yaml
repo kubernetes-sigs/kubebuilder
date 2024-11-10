@@ -1,0 +1,93 @@
+# [MANAGER]: Manager Deployment Configurations
+controllerManager:
+  container:
+    image:
+      repository: controller
+      tag: latest
+    replicas: 1
+    args:
+      - "--leader-elect"
+      - "--metrics-bind-address=:8443"
+      - "--health-probe-bind-address=:8081"
+    resources:
+      limits:
+        cpu: 500m
+        memory: 128Mi
+      requests:
+        cpu: 10m
+        memory: 64Mi
+    livenessProbe:
+      initialDelaySeconds: 15
+      periodSeconds: 20
+      httpGet:
+        path: /healthz
+        port: 8081
+    readinessProbe:
+      initialDelaySeconds: 5
+      periodSeconds: 10
+      httpGet:
+        path: /readyz
+        port: 8081
+    env:
+      BUSYBOX_IMAGE: busybox:1.36.1
+      MEMCACHED_IMAGE: memcached:1.6.26-alpine3.19
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - "ALL"
+  securityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  terminationGracePeriodSeconds: 10
+  serviceAccountName: project-v4-with-plugins-controller-manager
+
+# [RBAC]: To enable RBAC (Permissions) configurations
+rbac:
+  enable: true
+
+# [CRDs]: To enable the CRDs
+crd:
+  enable: true
+  keep: true
+
+# [METRICS]: Set to true to generate manifests for exporting metrics
+metrics:
+  enable: true
+
+
+# [WEBHOOKS]: Webhooks configuration
+webhook:
+  enable: true
+  services:
+    - name: vmemcached-v1alpha1.kb.io
+      type: validating
+      path: /validate-example-com-testproject-org-v1alpha1-memcached
+      failurePolicy: Fail
+      sideEffects: None
+      admissionReviewVersions:
+        - v1
+      rules:
+        - operations:
+            - CREATE
+            - UPDATE
+          apiGroups:
+            - example.com.testproject.org
+          apiVersions:
+            - v1alpha1
+          resources:
+            - memcacheds
+
+
+# [PROMETHEUS]: To enable a ServiceMonitor to export metrics to Prometheus set true
+prometheus:
+  enable: false
+
+# [CERT-MANAGER]: To enable cert-manager injection to webhooks set true
+certmanager:
+  enable: true
+
+# [NETWORK POLICIES]: To enable NetworkPolicies set true
+networkPolicy:
+  enable: false
