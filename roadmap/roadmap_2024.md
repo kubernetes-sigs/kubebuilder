@@ -22,7 +22,7 @@ samples, and documentation.
 
 #### (New Optional Plugin) Helm Chart Packaging
 
-**Status:** :raised_hands: Proposal in Progress; Seeking Contributions
+**Status:** ✅ Complete ( Initial version merged https://github.com/kubernetes-sigs/kubebuilder/pull/4227 - further improvements and contributions are welcome)
 
 **Objective:** We aim to introduce a new plugin for Kubebuilder that packages projects as Helm charts,
 facilitating easier distribution and integration of solutions within the Kubernetes ecosystem. For details on this proposal and how to contribute,
@@ -31,8 +31,6 @@ see [GitHub Pull Request #3632](https://github.com/kubernetes-sigs/kubebuilder/p
 **Motivation:** The growth of the Kubernetes ecosystem underscores the need for flexible and
 accessible distribution methods. A Helm chart packaging plugin would simplify the distribution of the solutions
 and allow easily integrations with common applications used by administrators.
-
-
 
 ---
 ### Transition from Google Cloud Platform (GCP) to build and promote binaries and images
