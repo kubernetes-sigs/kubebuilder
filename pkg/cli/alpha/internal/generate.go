@@ -44,6 +44,7 @@ const (
 	defaultOutputDir     = "output-dir"
 	grafanaPluginKey     = "grafana.kubebuilder.io/v1-alpha"
 	deployImagePluginKey = "deploy-image.go.kubebuilder.io/v1-alpha"
+	helmPluginKey        = "helm.kubebuilder.io/v1-alpha"
 )
 
 // Generate handles the migration and scaffolding process.
@@ -75,6 +76,12 @@ func (opts *Generate) Generate() error {
 
 	if err := migrateGrafanaPlugin(config, opts.InputDir, opts.OutputDir); err != nil {
 		return err
+	}
+
+	if hasHelmPlugin(config) {
+		if err := kubebuilderHelmEdit(); err != nil {
+			return err
+		}
 	}
 
 	if err := migrateDeployImagePlugin(config); err != nil {
@@ -391,4 +398,33 @@ func kubebuilderGrafanaEdit() error {
 		return fmt.Errorf("failed to run edit subcommand for Grafana plugin: %w", err)
 	}
 	return nil
+}
+
+// Edits the project to include the Helm plugin.
+func kubebuilderHelmEdit() error {
+	args := []string{"edit", "--plugins", helmPluginKey}
+	if err := util.RunCmd("kubebuilder edit", "kubebuilder", args...); err != nil {
+		return fmt.Errorf("failed to run edit subcommand for Helm plugin: %w", err)
+	}
+	return nil
+}
+
+// hasHelmPlugin checks if the Helm plugin is present by inspecting the plugin chain or configuration.
+func hasHelmPlugin(cfg store.Store) bool {
+	var pluginConfig map[string]interface{}
+
+	// Decode the Helm plugin configuration to check if it's present
+	err := cfg.Config().DecodePluginConfig(helmPluginKey, &pluginConfig)
+	if err != nil {
+		// If the Helm plugin is not found, return false
+		if errors.As(err, &config.PluginKeyNotFoundError{}) {
+			return false
+		}
+		// Log other errors if needed
+		log.Errorf("Error decoding Helm plugin config: %v", err)
+		return false
+	}
+
+	// Helm plugin is present
+	return true
 }

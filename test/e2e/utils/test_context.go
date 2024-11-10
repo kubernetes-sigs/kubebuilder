@@ -331,3 +331,55 @@ func (t *TestContext) AllowProjectBeMultiGroup() error {
 	}
 	return nil
 }
+
+// InstallHelm installs Helm in the e2e server.
+func (t *TestContext) InstallHelm() error {
+	helmInstallScript := "https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3"
+	cmd := exec.Command("bash", "-c", fmt.Sprintf("curl -fsSL %s | bash", helmInstallScript))
+	_, err := t.Run(cmd)
+	if err != nil {
+		return err
+	}
+
+	verifyCmd := exec.Command("helm", "version")
+	_, err = t.Run(verifyCmd)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// UninstallHelmRelease removes the specified Helm release from the cluster.
+func (t *TestContext) UninstallHelmRelease() error {
+	ns := fmt.Sprintf("e2e-%s-system", t.TestSuffix)
+	cmd := exec.Command("helm", "uninstall",
+		fmt.Sprintf("release-%s", t.TestSuffix),
+		"--namespace", ns)
+
+	_, err := t.Run(cmd)
+	if err != nil {
+		return err
+	}
+
+	if _, err := t.Kubectl.Wait(false, "namespace", ns, "--for=delete", "--timeout=2m"); err != nil {
+		log.Printf("failed to wait for namespace deletion: %s", err)
+	}
+
+	return nil
+}
+
+// EditHelmPlugin is for running `kubebuilder edit --plugins=helm.kubebuilder.io/v1-alpha`
+func (t *TestContext) EditHelmPlugin() error {
+	cmd := exec.Command(t.BinaryName, "edit", "--plugins=helm/v1-alpha")
+	_, err := t.Run(cmd)
+	return err
+}
+
+// HelmInstallRelease is for running `helm install`
+func (t *TestContext) HelmInstallRelease() error {
+	cmd := exec.Command("helm", "install", fmt.Sprintf("release-%s", t.TestSuffix), "dist/chart",
+		"--namespace", fmt.Sprintf("e2e-%s-system", t.TestSuffix))
+	_, err := t.Run(cmd)
+	return err
+}

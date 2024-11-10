@@ -55,18 +55,20 @@ type initScaffolder struct {
 	boilerplatePath string
 	license         string
 	owner           string
+	commandName     string
 
 	// fs is the filesystem that will be used by the scaffolder
 	fs machinery.Filesystem
 }
 
 // NewInitScaffolder returns a new Scaffolder for project initialization operations
-func NewInitScaffolder(config config.Config, license, owner string) plugins.Scaffolder {
+func NewInitScaffolder(config config.Config, license, owner, commandName string) plugins.Scaffolder {
 	return &initScaffolder{
 		config:          config,
 		boilerplatePath: hack.DefaultBoilerplatePath,
 		license:         license,
 		owner:           owner,
+		commandName:     commandName,
 	}
 }
 
@@ -159,7 +161,7 @@ func (s *initScaffolder) Scaffold() error {
 		},
 		&templates.Dockerfile{},
 		&templates.DockerIgnore{},
-		&templates.Readme{},
+		&templates.Readme{CommandName: s.commandName},
 		&templates.Golangci{},
 		&e2e.Test{},
 		&e2e.WebhookTestUpdater{WireWebhook: false},

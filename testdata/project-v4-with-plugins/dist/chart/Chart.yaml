@@ -1,0 +1,7 @@
+apiVersion: v2
+name: project-v4-with-plugins
+description: A Helm chart to distribute the project project-v4-with-plugins
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+icon: "https://example.com/icon.png"
