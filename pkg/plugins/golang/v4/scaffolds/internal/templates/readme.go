@@ -58,7 +58,7 @@ func (f *Readme) SetTemplateDefaults() error {
 		codeFence("make build-installer IMG=<some-registry>/{{ .ProjectName }}:tag"),
 		codeFence("kubectl apply -f https://raw.githubusercontent.com/<org>/{{ .ProjectName }}/"+
 			"<tag or branch>/dist/install.yaml"),
-		codeFence(fmt.Sprintf("%s edit --plugins=helm/v1-alpha", f.CommandName)),
+		codeFence(fmt.Sprintf("%s edit --plugins=helm.kubebuilder.io/v1-alpha", f.CommandName)),
 	)
 
 	return nil

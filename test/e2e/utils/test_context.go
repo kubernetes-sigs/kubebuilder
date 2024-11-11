@@ -371,7 +371,7 @@ func (t *TestContext) UninstallHelmRelease() error {
 
 // EditHelmPlugin is for running `kubebuilder edit --plugins=helm.kubebuilder.io/v1-alpha`
 func (t *TestContext) EditHelmPlugin() error {
-	cmd := exec.Command(t.BinaryName, "edit", "--plugins=helm/v1-alpha")
+	cmd := exec.Command(t.BinaryName, "edit", "--plugins=helm.kubebuilder.io/v1-alpha")
 	_, err := t.Run(cmd)
 	return err
 }

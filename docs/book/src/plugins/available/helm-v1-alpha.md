@@ -1,4 +1,4 @@
-# Helm Plugin (`helm/v1-alpha`)
+# Helm Plugin (`helm.kubebuilder.io/v1-alpha`)
 
 The Helm plugin is an optional plugin that can be used to scaffold a Helm chart, allowing you to distribute the project using Helm.
 
@@ -46,18 +46,18 @@ The Helm plugin is attached to the `init` subcommand and the `edit` subcommand:
 ```sh
 
 # Initialize a new project with helm chart
-kubebuilder init --plugins=helm/v1-alpha
+kubebuilder init --plugins=helm.kubebuilder.io/v1-alpha
 
 # Enable or Update the helm chart via the helm plugin to an existing project
 # Before run the edit command, run `make manifests` to generate the manifest under `config/`
 make manifests
-kubebuilder edit --plugins=helm/v1-alpha
+kubebuilder edit --plugins=helm.kubebuilder.io/v1-alpha
 ```
 <aside class="note">
   <h1>Use the edit command to update the Helm Chart with the latest changes</h1>
 
   After making changes to your project, ensure that you run `make manifests` and then
-  use the command `kubebuilder edit --plugins=helm/v1-alpha` to update the Helm Chart.
+  use the command `kubebuilder edit --plugins=helm.kubebuilder.io/v1-alpha` to update the Helm Chart.
 
   Note that the following files will **not** be updated unless you use the `--force` flag:
 

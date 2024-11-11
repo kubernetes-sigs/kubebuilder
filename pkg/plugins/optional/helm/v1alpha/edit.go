@@ -41,10 +41,10 @@ func (p *editSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *
 the latest Helm chart with your most recent changes.`
 
 	subcmdMeta.Examples = fmt.Sprintf(`# Initialize or update a Helm chart to distribute the project under the dist/ directory
-  %[1]s edit --plugins=helm/v1-alpha
+  %[1]s edit --plugins=helm.kubebuilder.io/v1-alpha
 
 # Update the Helm chart under the dist/ directory and overwrite all files
-  %[1]s edit --plugins=helm/v1-alpha --force
+  %[1]s edit --plugins=helm.kubebuilder.io/v1-alpha --force
 
 **IMPORTANT**: If the "--force" flag is not used, the following files will not be updated to preserve your customizations:
 dist/chart/
