@@ -39,8 +39,6 @@ import (
 const (
 	// typeAvailableMemcached represents the status of the Deployment reconciliation
 	typeAvailableMemcached = "Available"
-	// typeDegradedMemcached represents the status used when the custom resource is deleted and the finalizer operations are yet to occur.
-	typeDegradedMemcached = "Degraded"
 )
 
 // MemcachedReconciler reconciles a Memcached object
