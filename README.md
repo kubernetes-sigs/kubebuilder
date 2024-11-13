@@ -166,5 +166,5 @@ Additionally, we can use this channel to demonstrate new features.
 [operator-sdk]: https://github.com/operator-framework/operator-sdk
 [plugin-section]: https://book.kubebuilder.io/plugins/plugins.html
 [controller-runtime]: https://github.com/kubernetes-sigs/controller-runtime
-[your-own-plugins]: https://book.kubebuilder.io/plugins/creating-plugins.html
+[your-own-plugins]: https://book.kubebuilder.io/plugins/extending
 [controller-tools]: https://github.com/kubernetes-sigs/controller-tools
