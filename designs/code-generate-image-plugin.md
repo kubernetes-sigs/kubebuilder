@@ -251,7 +251,7 @@ type {{ resource }}Spec struct {
 
 ### Test Plan
 
-To ensure this implementation a new project example should be generated in the [testdata](../testdata/) directory of the project. See the [test/testadata/generate.sh](../test/testadata/generate.sh). Also, we should use this scaffold in the [integration tests](../test/e2e/) to ensure that the data scaffolded with works on the cluster as expected.
+To ensure this implementation a new project example should be generated in the [testdata](../testdata/) directory of the project. See the [test/testdata/generate.sh](../test/testadata/generate.sh). Also, we should use this scaffold in the [integration tests](../test/e2e/) to ensure that the data scaffolded with works on the cluster as expected.
 
 ### Graduation Criteria
 
