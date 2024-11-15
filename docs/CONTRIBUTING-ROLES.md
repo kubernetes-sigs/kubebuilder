@@ -86,7 +86,7 @@ Things to look for:
 - Does it expose a new type from `k8s.io/XYZ`, and, if so, is it worth it?
   Is that piece well-designed?
 
-**For large changes, approvers are responsible for getting reasonble
+**For large changes, approvers are responsible for getting reasonable
 consensus**.  With the power to approve such changes comes the
 responsibility of ensuring that the project as a whole has time to discuss
 them.
