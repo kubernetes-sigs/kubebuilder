@@ -12,7 +12,7 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     cert-manager.io/inject-ca-from: project-system/project-serving-cert
-    controller-gen.kubebuilder.io/version: v0.16.4
+    controller-gen.kubebuilder.io/version: v0.16.5
   name: cronjobs.batch.tutorial.kubebuilder.io
 spec:
   conversion:
