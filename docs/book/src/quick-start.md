@@ -9,7 +9,7 @@ This Quick Start guide will cover:
 
 ## Prerequisites
 
-- [go](https://golang.org/dl/) version v1.22.0+
+- [go](https://go.dev/dl/) version v1.22.0+
 - [docker](https://docs.docker.com/install/) version 17.03+.
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) version v1.11.3+.
 - Access to a Kubernetes v1.11.3+ cluster.
@@ -243,8 +243,8 @@ understanding by developing a demo project.
 
 [pre-rbc-gke]: https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#iam-rolebinding-bootstrap
 [cronjob-tutorial]: https://book.kubebuilder.io/cronjob-tutorial/cronjob-tutorial.html
-[GOPATH-golang-docs]: https://golang.org/doc/code.html#GOPATH
-[go-modules-blogpost]: https://blog.golang.org/using-go-modules
+[GOPATH-golang-docs]: https://go.dev/doc/code.html#GOPATH
+[go-modules-blogpost]: https://blog.go.dev/using-go-modules
 [envtest]: https://book.kubebuilder.io/reference/testing/envtest.html
 [architecture-concept-diagram]: architecture.md
 [kustomize]: https://github.com/kubernetes-sigs/kustomize
