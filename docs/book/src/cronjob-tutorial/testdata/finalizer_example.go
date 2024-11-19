@@ -67,7 +67,12 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		// then lets add the finalizer and update the object. This is equivalent
 		// to registering our finalizer.
 		if !controllerutil.ContainsFinalizer(cronJob, myFinalizerName) {
-			controllerutil.AddFinalizer(cronJob, myFinalizerName)
+			log.Info("Adding Finalizer for CronJob")
+			if ok := controllerutil.AddFinalizer(cronJob, myFinalizerName); !ok {
+				log.Error(err, "Failed to add finalizer into the custom resource")
+				return ctrl.Result{Requeue: true}, nil
+			}
+
 			if err := r.Update(ctx, cronJob); err != nil {
 				return ctrl.Result{}, err
 			}
