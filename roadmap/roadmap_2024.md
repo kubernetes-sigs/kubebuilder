@@ -30,13 +30,13 @@ see [GitHub Pull Request #3632](https://github.com/kubernetes-sigs/kubebuilder/p
 
 **Motivation:** The growth of the Kubernetes ecosystem underscores the need for flexible and
 accessible distribution methods. A Helm chart packaging plugin would simplify the distribution of the solutions
-and allow easily integrations with common applications used by administrators.
+and allow easy integrations with common applications used by administrators.
 
 ---
 ### Transition from Google Cloud Platform (GCP) to build and promote binaries and images
 
 **Status:**
-- **Kubebuilder CLI**: :white_check_mark: Complete. It has been building using go releaser. [More info](./../build/.goreleaser.yml)
+- **Kubebuilder CLI**: :white_check_mark: Complete. It has been built using Go releaser. [More info](./../build/.goreleaser.yml)
 - **kube-rbac-proxy Images:**  :white_check_mark: Complete. ([More info](https://github.com/kubernetes-sigs/kubebuilder/discussions/3907))
 - **EnvTest binaries:** :white_check_mark: Complete Controller-Runtime maintainers are working in a solution to build them out and take the ownership over this one. More info:
   - https://kubernetes.slack.com/archives/C02MRBMN00Z/p1712457941924299
@@ -46,11 +46,11 @@ and allow easily integrations with common applications used by administrators.
 - **PR Check image:**  🙌 Seeking Contributions to do the required changes - See that the images used to check the PR titles are also build and promoted by the Kubebuilder project in GCP but are from the project: https://github.com/kubernetes-sigs/kubebuilder-release-tools. The plan in this case is to use the e2e shared infrastructure. [More info](https://github.com/kubernetes/k8s.io/issues/2647#issuecomment-2111182864)
 
 **Objective:** Shift Kubernetes (k8s) project infrastructure from GCP to shared infrastructures.
-Furthermore, move away from the registry `k8s.gcr.io` to `registry.k8s.io`.
+Furthermore, move from the registry `k8s.gcr.io` to `registry.k8s.io`.
 
 **Motivation:** The initiative to move away from GCP aligns with the broader k8s project's
-goal of utilizing shared infrastructures. This transition is crucial for ensure the availability
-of the artifacts in the long run and align complience with other projects under the kubernetes-sig org.
+goal of utilizing shared infrastructures. This transition is crucial for ensuring the availability
+of the artifacts in the long run and aligning compliance with other projects under the kubernetes-sig org.
 [Issue #2647](https://github.com/kubernetes/k8s.io/issues/2647) provides more details on the move.
 
 **Context:** Currently, Google Cloud is used only for:
@@ -75,7 +75,7 @@ available [here](https://github.com/kubernetes-sigs/kubebuilder/blob/master/RELE
 to refine these proposals. Your involvement is crucial in shaping the future of secure and efficient project scaffolding in Kubebuilder.**
 
 ---
-### Proposal Pending: Seeking Feedbacks for kube-rbac-proxy's Role in Default Scaffold
+### kube-rbac-proxy's Role in Default Scaffold
 
 **Status:** :white_check_mark: Complete
 
