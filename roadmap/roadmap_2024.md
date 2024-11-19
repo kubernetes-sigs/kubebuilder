@@ -77,7 +77,7 @@ to refine these proposals. Your involvement is crucial in shaping the future of 
 ---
 ### Proposal Pending: Seeking Feedbacks for kube-rbac-proxy's Role in Default Scaffold
 
-**Status:** :white_check_mark: Complete but :raised_hands: Seek Contributors and help with the next steps, see: https://github.com/kubernetes-sigs/kubebuilder/issues/3871
+**Status:** :white_check_mark: Complete
 
 - **Resolution**: The usage of kube-rbac-proxy has been discontinued from the default scaffold. We plan to provide other helpers to protect the metrics endpoint. Furthermore, once the project is accepted under kubernetes-sig or kubernetes-auth, we may contribute to its maintainer in developing an external plugin for use with projects built with Kubebuilder.
    - **Proposal**: [https://github.com/kubernetes-sigs/kubebuilder/blob/master/designs/discontinue_usage_of_kube_rbac_proxy.md](https://github.com/kubernetes-sigs/kubebuilder/blob/master/designs/discontinue_usage_of_kube_rbac_proxy.md)
