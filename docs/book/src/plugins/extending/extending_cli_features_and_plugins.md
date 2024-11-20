@@ -80,7 +80,7 @@ There are two ways to specify a plugin to run:
 - Setting `kubebuilder init --plugins=<plugin key>`, which will initialize a project configured for plugin with key
   `<plugin key>`.
 
-- A `layout: <plugin key>` in the scaffolded [PROJECT configuration file][project-file]. Commands (except for `init`, which scaffolds this file) will look at this value before running to choose which plugin to run.
+- A `layout: <plugin key>` in the scaffolded [PROJECT configuration file][project-file-config]. Commands (except for `init`, which scaffolds this file) will look at this value before running to choose which plugin to run.
 
 By default, `<plugin key>` will be `go.kubebuilder.io/vX`, where `X` is some integer.
 
