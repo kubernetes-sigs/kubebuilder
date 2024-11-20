@@ -17,7 +17,7 @@ manage any changes within their domain of responsibility.
 
 If you are interested in this type of integration, collaborating with the
 maintainers of the third-party solution is recommended. Kubebuilder's maintainers
-is always willing to provide support in extending its capabilities.
+are always willing to provide support in extending its capabilities.
 
 ## How to Write an External Plugin
 
