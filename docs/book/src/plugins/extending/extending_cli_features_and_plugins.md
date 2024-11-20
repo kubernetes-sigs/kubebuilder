@@ -405,7 +405,7 @@ creating features or plugins that can rely on this information.
 [kb-utils]: ./../../../../../pkg/plugin/util/util.go
 [project-file-config]: ./../../reference/project-config.md
 [cli]: ./../../../../../pkg/cli
-[kb-go-plugin]: ./../../../../../pkg/plugins/golang/v4
+[kb-go-plugin]: https://github.com/kubernetes-sigs/kubebuilder/tree/book-v4/pkg/plugins/golang/v4
 [cobra]: https://github.com/spf13/cobra
 [external-plugin]: external-plugins.md
 [deploy-image]: ./../available/deploy-image-plugin-v1-alpha.md
