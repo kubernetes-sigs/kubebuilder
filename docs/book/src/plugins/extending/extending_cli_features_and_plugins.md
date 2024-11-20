@@ -184,10 +184,10 @@ These utilities allow you to:
 ### Example
 
 If you need to insert custom content into a scaffolded file,
-you can use the `Insert` function provided by the plugin utilities:
+you can use the `InsertCode` function provided by the plugin utilities:
 
 ```go
-pluginutil.Insert(file, location, content)
+pluginutil.InsertCode(filename, target, code)
 ```
 
 This approach enables you to extend and modify the generated
@@ -402,7 +402,7 @@ creating features or plugins that can rely on this information.
 [plugin-sub-command]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v4/pkg/plugin#Subcommand
 [plugin-update-meta]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v4/pkg/plugin#UpdatesMetadata
 [markers-scaffold]: ./../../reference/markers/scaffold.md
-[kb-utils]: ./../../../../../pkg/plugin/util/util.go
+[kb-utils]: https://github.com/kubernetes-sigs/kubebuilder/blob/book-v4/pkg/plugin/util/util.go
 [project-file-config]: ./../../reference/project-config.md
 [cli]: ./../../../../../pkg/cli
 [kb-go-plugin]: ./../../../../../pkg/plugins/golang/v4
