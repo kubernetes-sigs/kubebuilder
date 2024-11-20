@@ -120,10 +120,10 @@ This library allows you to:
 - Add [markers][markers-scaffold] to the scaffolded files.
 - Specify templates for your scaffolds.
 
-#### Example: Bollerplate
+#### Example: Boilerplate
 
-For instance, the go/v4 scaffolds the `cmd/go.mod` file by defining an object that [implements the machinery interface][machinery].
-The `Template.SetTemplateDefaults`, the `raw template is set to the body:
+For instance, the go/v4 scaffolds the `go.mod` file by defining an object that [implements the machinery interface][machinery].
+The raw template is set to the `TemplateBody` field on the `Template.SetTemplateDefaults` method:
 
 ```go
 {{#include ./../../../../../pkg/plugins/golang/v4/scaffolds/internal/templates/gomod.go}}
