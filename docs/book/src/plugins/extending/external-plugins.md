@@ -148,4 +148,4 @@ kubebuilder create api --plugins go/v4,sampleplugin/v1
 - A [sample external plugin written in Python](https://github.com/rashmigottipati/POC-Phase2-Plugins)
 - A [sample external plugin written in JavaScript](https://github.com/Eileen-Yu/kb-js-plugin)
 
-[code-plugin-external]: ./../../../../../pkg/plugin/external/types.go
+[code-plugin-external]: https://github.com/kubernetes-sigs/kubebuilder/blob/book-v4/pkg/plugin/external/types.go
