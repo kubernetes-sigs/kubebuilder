@@ -285,8 +285,6 @@ const controllerStatusTypes = `
 const (
 	// typeAvailableMemcached represents the status of the Deployment reconciliation
 	typeAvailableMemcached = "Available"
-	// typeDegradedMemcached represents the status used when the custom resource is deleted and the finalizer operations are yet to occur.
-	typeDegradedMemcached = "Degraded"
 )`
 
 const controllerInfoReconcileOld = `// TODO(user): Modify the Reconcile function to compare the state specified by
