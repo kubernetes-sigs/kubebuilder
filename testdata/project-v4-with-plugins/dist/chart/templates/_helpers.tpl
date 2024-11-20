@@ -1,7 +1,7 @@
 {{- define "chart.name" -}}
 {{- if .Chart }}
   {{- if .Chart.Name }}
-    {{ .Chart.Name | trunc 63 | trimSuffix "-" }}
+    {{- .Chart.Name | trunc 63 | trimSuffix "-" }}
   {{- else if .Values.nameOverride }}
     {{ .Values.nameOverride | trunc 63 | trimSuffix "-" }}
   {{- else }}
