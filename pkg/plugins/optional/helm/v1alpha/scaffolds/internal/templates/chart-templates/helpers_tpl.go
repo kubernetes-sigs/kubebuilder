@@ -62,7 +62,7 @@ const helmHelpersTemplate = `{{` + "`" + `{{- define "chart.name" -}}` + "`" + `
 Common labels for the chart.
 */}}
 {{` + "`" + `{{- define "chart.labels" -}}` + "`" + `}}
-{{` + "`" + `{{- if .Chart.AppVersion }}` + "`" + `}}
+{{` + "`" + `{{- if .Chart.AppVersion -}}` + "`" + `}}
 app.kubernetes.io/version: {{` + "`" + `{{ .Chart.AppVersion | quote }}` + "`" + `}}
 {{` + "`" + `{{- end }}` + "`" + `}}
 {{` + "`" + `{{- if .Chart.Version }}` + "`" + `}}
