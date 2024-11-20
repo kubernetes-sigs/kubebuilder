@@ -30,7 +30,7 @@ why things changed.  For example:
 
 # Out of Date
 
-This change is out of date.  It turns out curly braces a frustrating to
+This change is out of date.  It turns out curly braces are frustrating to
 type, so we had to abandon functions entirely, and have users specify
 custom functionality using strings of Common LISP instead.  See #000 for
 more information.
