@@ -117,7 +117,7 @@ Otherwise, Kubebuilder would search for the plugins in a default path based on y
 
 ### Example CLI Commands
 
-Now, you can using it by calling the CLI commands:
+You can now use it by calling the CLI commands:
 
 ```sh
 # Initialize a new project with the external plugin named `sampleplugin`
