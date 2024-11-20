@@ -401,6 +401,7 @@ creating features or plugins that can rely on this information.
 [deprecate-plugin-doc]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v4/pkg/plugin#Deprecated
 [plugin-sub-command]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v4/pkg/plugin#Subcommand
 [plugin-update-meta]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v4/pkg/plugin#UpdatesMetadata
+[plugin-utils]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v4/pkg/plugin/util
 [markers-scaffold]: ./../../reference/markers/scaffold.md
 [kb-utils]: ./../../../../../pkg/plugin/util/util.go
 [project-file-config]: ./../../reference/project-config.md
