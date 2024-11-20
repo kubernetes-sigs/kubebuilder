@@ -49,9 +49,9 @@ the `create api` and `create webhook` subcommands.
 Plugins are responsible for implementing the code that will be executed when the sub-commands are called.
 You can create a new plugin by implementing the [Plugin interface][plugin-interface].
 
-On top of being a `Base`, a plugin should also implement the [`SubcommandMetadata`][plugin-subc]
-interface so it can be run with a CLI. It optionally to set custom help
-text for the target  command; this method can be a no-op, which will
+On top of being a `Base`, a plugin should also implement the [`SubcommandMetadata`][plugin-subc-metadata]
+interface so it can be run with a CLI. Optionally, a custom help
+text for the target  command can be set; this method can be a no-op, which will
 preserve the default help text set by the [cobra][cobra] command
 constructors.
 
@@ -395,6 +395,7 @@ creating features or plugins that can rely on this information.
 [plugin-interface]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v4/pkg/plugin
 [machinery]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/pkg/machinery
 [plugin-subc]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v4/pkg/plugin#Subcommand
+[plugin-subc-metadata]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v4/pkg/plugin#SubcommandMetadata
 [plugin-version-type]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v4/pkg/plugin#Version
 [bundle-plugin-doc]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v4/pkg/plugin#Bundle
 [deprecate-plugin-doc]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v4/pkg/plugin#Deprecated
