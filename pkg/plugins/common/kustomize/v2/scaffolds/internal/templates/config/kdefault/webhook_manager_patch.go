@@ -32,7 +32,7 @@ type ManagerWebhookPatch struct {
 	Force bool
 }
 
-// SetTemplateDefaults implements file.Template
+// SetTemplateDefaults implements machinery.Template
 func (f *ManagerWebhookPatch) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "default", "manager_webhook_patch.yaml")

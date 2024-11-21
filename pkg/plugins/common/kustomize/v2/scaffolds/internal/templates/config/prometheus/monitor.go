@@ -30,7 +30,7 @@ type Monitor struct {
 	machinery.ProjectNameMixin
 }
 
-// SetTemplateDefaults implements file.Template
+// SetTemplateDefaults implements machinery.Template
 func (f *Monitor) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "prometheus", "monitor.yaml")

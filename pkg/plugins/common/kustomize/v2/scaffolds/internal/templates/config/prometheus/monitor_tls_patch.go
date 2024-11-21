@@ -31,7 +31,7 @@ type ServiceMonitorPatch struct {
 	machinery.ProjectNameMixin
 }
 
-// SetTemplateDefaults implements file.Template
+// SetTemplateDefaults implements machinery.Template
 func (f *ServiceMonitorPatch) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "prometheus", "monitor_tls_patch.yaml")

@@ -41,7 +41,7 @@ type Makefile struct {
 	EnvtestVersion string
 }
 
-// SetTemplateDefaults implements file.Template
+// SetTemplateDefaults implements machinery.Template
 func (f *Makefile) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = "Makefile"

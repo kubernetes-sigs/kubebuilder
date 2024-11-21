@@ -28,7 +28,7 @@ type CustomMetricsConfigManifest struct {
 	ConfigPath string
 }
 
-// SetTemplateDefaults implements file.Template
+// SetTemplateDefaults implements machinery.Template
 func (f *CustomMetricsConfigManifest) SetTemplateDefaults() error {
 	f.Path = f.ConfigPath
 

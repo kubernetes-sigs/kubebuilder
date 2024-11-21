@@ -29,7 +29,7 @@ type HelmIgnore struct {
 	machinery.TemplateMixin
 }
 
-// SetTemplateDefaults implements file.Template
+// SetTemplateDefaults implements machinery.Template
 func (f *HelmIgnore) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("dist", "chart", ".helmignore")

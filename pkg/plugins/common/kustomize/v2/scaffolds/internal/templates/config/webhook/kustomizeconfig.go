@@ -29,7 +29,7 @@ type KustomizeConfig struct {
 	machinery.TemplateMixin
 }
 
-// SetTemplateDefaults implements file.Template
+// SetTemplateDefaults implements machinery.Template
 func (f *KustomizeConfig) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "webhook", "kustomizeconfig.yaml")

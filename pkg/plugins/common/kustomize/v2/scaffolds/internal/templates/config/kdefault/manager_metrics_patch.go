@@ -29,7 +29,7 @@ type ManagerMetricsPatch struct {
 	machinery.TemplateMixin
 }
 
-// SetTemplateDefaults implements file.Template
+// SetTemplateDefaults implements machinery.Template
 func (f *ManagerMetricsPatch) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "default", "manager_metrics_patch.yaml")

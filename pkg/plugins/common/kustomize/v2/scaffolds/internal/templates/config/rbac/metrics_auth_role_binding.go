@@ -27,7 +27,7 @@ type MetricsAuthRoleBinding struct {
 	machinery.ProjectNameMixin
 }
 
-// SetTemplateDefaults implements file.Template
+// SetTemplateDefaults implements machinery.Template
 func (f *MetricsAuthRoleBinding) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "rbac", "metrics_auth_role_binding.yaml")

@@ -33,7 +33,7 @@ type CRDSample struct {
 	Force bool
 }
 
-// SetTemplateDefaults implements file.Template
+// SetTemplateDefaults implements machinery.Template
 func (f *CRDSample) SetTemplateDefaults() error {
 	if f.Path == "" {
 		if f.Resource.Group != "" {

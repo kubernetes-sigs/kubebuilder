@@ -29,7 +29,7 @@ type Kustomization struct {
 	machinery.TemplateMixin
 }
 
-// SetTemplateDefaults implements file.Template
+// SetTemplateDefaults implements machinery.Template
 func (f *Kustomization) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "rbac", "kustomization.yaml")

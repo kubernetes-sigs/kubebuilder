@@ -33,7 +33,7 @@ type Config struct {
 	Image string
 }
 
-// SetTemplateDefaults implements file.Template
+// SetTemplateDefaults implements machinery.Template
 func (f *Config) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "manager", "manager.yaml")

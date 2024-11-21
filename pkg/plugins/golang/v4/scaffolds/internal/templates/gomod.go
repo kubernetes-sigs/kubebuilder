@@ -30,7 +30,7 @@ type GoMod struct {
 	ControllerRuntimeVersion string
 }
 
-// SetTemplateDefaults implements file.Template
+// SetTemplateDefaults implements machinery.Template
 func (f *GoMod) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = "go.mod"

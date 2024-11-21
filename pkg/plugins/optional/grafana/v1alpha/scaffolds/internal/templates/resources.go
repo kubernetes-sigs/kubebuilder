@@ -29,7 +29,7 @@ type ResourcesManifest struct {
 	machinery.TemplateMixin
 }
 
-// SetTemplateDefaults implements file.Template
+// SetTemplateDefaults implements machinery.Template
 func (f *ResourcesManifest) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("grafana", "controller-resources-metrics.json")

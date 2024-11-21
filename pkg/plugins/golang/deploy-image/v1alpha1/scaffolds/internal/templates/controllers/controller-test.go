@@ -38,7 +38,7 @@ type ControllerTest struct {
 	PackageName string
 }
 
-// SetTemplateDefaults implements file.Template
+// SetTemplateDefaults implements machinery.Template
 func (f *ControllerTest) SetTemplateDefaults() error {
 	if f.Path == "" {
 		if f.MultiGroup && f.Resource.Group != "" {
@@ -78,7 +78,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	
+
 	{{ if not (isEmptyStr .Resource.Path) -}}
 	{{ .Resource.ImportAlias }} "{{ .Resource.Path }}"
 	{{- end }}
@@ -133,7 +133,7 @@ var _ = Describe("{{ .Resource.Kind }} controller", func() {
 						{{- end }}
 					},
 				}
-				
+
 				err = k8sClient.Create(ctx, {{ lower .Resource.Kind }})
 				Expect(err).NotTo(HaveOccurred())
 			}
@@ -150,11 +150,11 @@ var _ = Describe("{{ .Resource.Kind }} controller", func() {
 			}).Should(Succeed())
 
 			// TODO(user): Attention if you improve this code by adding other context test you MUST
-			// be aware of the current delete namespace limitations. 
+			// be aware of the current delete namespace limitations.
 			// More info: https://book.kubebuilder.io/reference/envtest.html#testing-considerations
 			By("Deleting the Namespace to perform the tests")
 			_ = k8sClient.Delete(ctx, namespace);
-	
+
 			By("Removing the Image ENV VAR which stores the Operand image")
 			_ = os.Unsetenv("{{ upper .Resource.Kind }}_IMAGE")
 		})

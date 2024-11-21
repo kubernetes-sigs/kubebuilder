@@ -30,7 +30,7 @@ type LintCi struct {
 	machinery.BoilerplateMixin
 }
 
-// SetTemplateDefaults implements file.Template
+// SetTemplateDefaults implements machinery.Template
 func (f *LintCi) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join(".github", "workflows", "lint.yml")

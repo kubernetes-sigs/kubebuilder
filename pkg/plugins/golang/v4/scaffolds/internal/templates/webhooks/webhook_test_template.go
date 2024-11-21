@@ -44,7 +44,7 @@ type WebhookTest struct { // nolint:maligned
 	IsLegacyPath bool
 }
 
-// SetTemplateDefaults implements file.Template
+// SetTemplateDefaults implements machinery.Template
 func (f *WebhookTest) SetTemplateDefaults() error {
 	if f.Path == "" {
 		// Deprecated: Remove me when remove go/v4
