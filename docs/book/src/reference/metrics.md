@@ -1,36 +1,30 @@
 # Metrics
 
-By default, controller-runtime builds a global prometheus registry and
+By default, controller-runtime builds a global Prometheus registry and
 publishes [a collection of performance metrics](/reference/metrics-reference.md) for each controller.
 
 <aside class="note warning">
 <h1>IMPORTANT: If you are using `kube-rbac-proxy`</h1>
 
-**Images provided under `gcr.io/kubebuilder/` will be unavailable from March 18, 2025.**
+Please stop using the image `gcr.io/kubebuilder/kube-rbac-proxy` as soon as possible.
+Your projects will be affected and may fail to work if the image cannot be pulled.
 
-- **Projects initialized with Kubebuilder versions `v3.14` or lower** utilize [kube-rbac-proxy](https://github.com/brancz/kube-rbac-proxy) to protect the metrics endpoint. Therefore, you might want to continue using kube-rbac-proxy by simply replacing the image or changing how the metrics endpoint is protected in your project.
+**Images provided under `gcr.io/kubebuilder/` will be unavailable from early 2025.**
 
-- **However, projects initialized with Kubebuilder versions `v4.1.0` or higher** have a similar protection using authn/authz enabled by default via Controller-Runtime's feature [WithAuthenticationAndAuthorization](https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.18.4/pkg/metrics/filters#WithAuthenticationAndAuthorization).
-In this case, you might want to upgrade your project or simply ensure that you have applied the same code changes to it.
+- **Projects initialized with Kubebuilder versions `v3.14` or lower** utilize [kube-rbac-proxy](https://github.com/brancz/kube-rbac-proxy) to protect the metrics endpoint.
+In this case, you might want to upgrade your project to the latest release or ensure that you have applied the same or similar code changes.
 
-> Please ensure that you update your configurations accordingly to avoid any disruptions.
+- **However, projects initialized with Kubebuilder versions `v4.1.0` or higher** have similar protection using `authn/authz`
+enabled by default via Controller-Runtime's feature [WithAuthenticationAndAuthorization](https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.18.4/pkg/metrics/filters#WithAuthenticationAndAuthorization).
 
-### ❓ Why is this happening?
+If you want to continue using [kube-rbac-proxy](https://github.com/brancz/kube-rbac-proxy) then you MUST change
+your project to use the image from another source.
 
-Kubebuilder has been rebuilding and re-tagging these images for several years. However, due to recent infrastructure changes for projects under the Kubernetes umbrella, we now require the use of shared infrastructure. But as [kube-rbac-proxy](https://github.com/brancz/kube-rbac-proxy) is in a process to be a part of it, but not yet, sadly we cannot build and promote these images using the new k8s infrastructure. To follow up the ongoing process and changes required for the project be accepted by, see: https://github.com/brancz/kube-rbac-proxy/issues/238
-
-Moreover, Google Cloud Platform has [deprecated the Container Registry](https://cloud.google.com/artifact-registry/docs/transition/transition-from-gcr), which has been used to promote these images.
-
-Additionally, ongoing changes and the phase-out of the previous GCP infrastructure mean that **Kubebuilder maintainers are no longer able to support, build, or ensure the promotion of these images.** For further information, please check the proposal for this change and its motivations [here](https://github.com/kubernetes-sigs/kubebuilder/pull/2345).
-
-### How the metrics endpoint can be protected ?
-
-- **(Protection enabled by default from release `v4.1.0`)** By using Controller-Runtime's feature [WithAuthenticationAndAuthorization](https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.18.4/pkg/metrics/filters#WithAuthenticationAndAuthorization) which can handle `authn/authz` similar what was provided via `kube-rbac-proxy`.
-- By using NetworkPolicies. ([example](https://github.com/prometheus-operator/kube-prometheus/discussions/1907#discussioncomment-3896712))
-- By integrating cert-manager with your metrics service you can secure the endpoint via TLS encryption
-- **(Not support or promoted by Kubebuilder)** By still using [kube-rbac-proxy](https://github.com/brancz/kube-rbac-proxy) and the image provided by the project ([quay.io/brancz/kube-rbac-proxy](https://quay.io/repository/brancz/kube-rbac-proxy)) or from any other source
+> This infrastructure is outside of our control, we cannot guarantee any timeline or any extensions.
+> For further information, see: [kubebuilder/discussions/3907](https://github.com/kubernetes-sigs/kubebuilder/discussions/3907)
 
 </aside>
+
 
 ## Metrics Configuration
 
