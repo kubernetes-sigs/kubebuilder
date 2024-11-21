@@ -63,6 +63,7 @@ metadata:
     {{ "{{- include \"chart.labels\" . | nindent 4 }}" }}
     control-plane: controller-manager
 spec:
+  replicas:  {{ "{{ .Values.controllerManager.replicas }}" }}
   selector:
     matchLabels:
       {{ "{{- include \"chart.selectorLabels\" . | nindent 6 }}" }}
