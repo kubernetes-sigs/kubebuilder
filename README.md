@@ -1,3 +1,12 @@
+> ⚠️ **IMPORTANT NOTICE:** Images under `gcr.io/kubebuilder/` Will Be Unavailable Soon
+>
+> 🚨  The image `gcr.io/kubebuilder/kube-rbac-proxy,` will become unavailable.
+> Your projects will be affected and may fail to work if the image cannot be pulled.
+> You must move as soon as possible, sometime in 2025, the GCR will go away. 🚨 
+>
+> For more information and guidance see the discussion https://github.com/kubernetes-sigs/kubebuilder/discussions/3907
+ 
+
 [![Lint](https://github.com/kubernetes-sigs/kubebuilder/actions/workflows/lint.yml/badge.svg)](https://github.com/kubernetes-sigs/kubebuilder/actions/workflows/lint.yml)
 [![Unit tests](https://github.com/kubernetes-sigs/kubebuilder/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/kubernetes-sigs/kubebuilder/actions/workflows/unit-tests.yml)
 [![Go Report Card](https://goreportcard.com/badge/sigs.k8s.io/kubebuilder)](https://goreportcard.com/report/sigs.k8s.io/kubebuilder)
