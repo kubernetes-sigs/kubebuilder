@@ -292,6 +292,20 @@ func copyFileWithHelmLogic(srcFile, destFile, subDir, projectName string) error 
 		contentStr = strings.Replace(contentStr,
 			"name: metrics-reader",
 			fmt.Sprintf("name: %s-metrics-reader", projectName), 1)
+		contentStr = strings.Replace(contentStr,
+			"name: leader-election-role",
+			fmt.Sprintf("name: %s-leader-election-role", projectName), -1)
+		contentStr = strings.Replace(contentStr,
+			"name: leader-election-rolebinding",
+			fmt.Sprintf("name: %s-leader-election-rolebinding", projectName), 1)
+
+		// The generated files do not include the namespace
+		if strings.Contains(contentStr, "leader-election-rolebinding") ||
+			strings.Contains(contentStr, "leader-election-role") {
+			namespace := `
+  namespace: {{ .Release.Namespace }}`
+			contentStr = strings.Replace(contentStr, "metadata:", "metadata:"+namespace, 1)
+		}
 	}
 
 	// Conditionally handle CRD patches and annotations for CRDs
