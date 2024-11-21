@@ -13,10 +13,10 @@ Your projects will be affected and may fail to work if the image cannot be pulle
 **Images provided under `gcr.io/kubebuilder/` will be unavailable from early 2025.**
 
 - **Projects initialized with Kubebuilder versions `v3.14` or lower** utilize [kube-rbac-proxy](https://github.com/brancz/kube-rbac-proxy) to protect the metrics endpoint.
-In this case, you might want to upgrade your project to the latest release or ensure that you have applied the same or similar code changes.
+  In this case, you might want to upgrade your project to the latest release or ensure that you have applied the same or similar code changes.
 
 - **However, projects initialized with Kubebuilder versions `v4.1.0` or higher** have similar protection using `authn/authz`
-enabled by default via Controller-Runtime's feature [WithAuthenticationAndAuthorization](https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.18.4/pkg/metrics/filters#WithAuthenticationAndAuthorization).
+  enabled by default via Controller-Runtime's feature [WithAuthenticationAndAuthorization](https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.18.4/pkg/metrics/filters#WithAuthenticationAndAuthorization).
 
 If you want to continue using [kube-rbac-proxy](https://github.com/brancz/kube-rbac-proxy) then you MUST change
 your project to use the image from another source.
@@ -51,7 +51,7 @@ is configured:
 // Metrics endpoint is enabled in 'config/default/kustomization.yaml'. The Metrics options configure the server.
 // For more info: https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/metrics/server
 Metrics: metricsserver.Options{
-   ...
+...
 },
 ```
 
@@ -80,8 +80,8 @@ Therefore, you will find the following configuration:
 
 ```go
 if secureMetrics {
-  ...
-  metricsServerOptions.FilterProvider = filters.WithAuthenticationAndAuthorization
+...
+metricsServerOptions.FilterProvider = filters.WithAuthenticationAndAuthorization
 }
 ```
 
@@ -159,88 +159,88 @@ for securing the metrics server. Following the steps below, you can configure yo
 project to use certificates managed by CertManager.
 
 1. **Enable Cert-Manager in `config/default/kustomization.yaml`:**
-    - Uncomment the cert-manager resource to include it in your project:
+   - Uncomment the cert-manager resource to include it in your project:
 
-      ```yaml
-      - ../certmanager
-      ```
+     ```yaml
+     - ../certmanager
+     ```
 
 2. **Enable the Patch to configure the usage of the certs in the Controller Deployment in `config/default/kustomization.yaml`:**
-    - Uncomment the `cert_metrics_manager_patch.yaml` to mount the `serving-cert` secret in the Manager Deployment.
+   - Uncomment the `cert_metrics_manager_patch.yaml` to mount the `serving-cert` secret in the Manager Deployment.
 
-      ```yaml
-      # Uncomment the patches line if you enable Metrics and CertManager
-      # [METRICS-WITH-CERTS] To enable metrics protected with certManager, uncomment the following line.
-      # This patch will protect the metrics with certManager self-signed certs.
-      - path: cert_metrics_manager_patch.yaml
-        target:
-          kind: Deployment
-      ```
+     ```yaml
+     # Uncomment the patches line if you enable Metrics and CertManager
+     # [METRICS-WITH-CERTS] To enable metrics protected with certManager, uncomment the following line.
+     # This patch will protect the metrics with certManager self-signed certs.
+     - path: cert_metrics_manager_patch.yaml
+       target:
+         kind: Deployment
+     ```
 3. **Enable the CertManager replaces for the Metrics Server certificates in `config/default/kustomization.yaml`:**
-    - Uncomment the replacements block bellow. It is required to properly set the DNS names for the certificates configured under `config/certmanager`.
+   - Uncomment the replacements block bellow. It is required to properly set the DNS names for the certificates configured under `config/certmanager`.
 
-      ```yaml
-      # [CERTMANAGER] To enable cert-manager, uncomment all sections with 'CERTMANAGER' prefix.
-      # Uncomment the following replacements to add the cert-manager CA injection annotations
-      #replacements:
-      # - source: # Uncomment the following block to enable certificates for metrics
-      #     kind: Service
-      #     version: v1
-      #     name: controller-manager-metrics-service
-      #     fieldPath: metadata.name
-      #   targets:
-      #     - select:
-      #         kind: Certificate
-      #         group: cert-manager.io
-      #         version: v1
-      #         name: metrics-certs
-      #       fieldPaths:
-      #         - spec.dnsNames.0
-      #         - spec.dnsNames.1
-      #       options:
-      #         delimiter: '.'
-      #         index: 0
-      #         create: true
-      #
-      # - source:
-      #     kind: Service
-      #     version: v1
-      #     name: controller-manager-metrics-service
-      #     fieldPath: metadata.namespace
-      #   targets:
-      #     - select:
-      #         kind: Certificate
-      #         group: cert-manager.io
-      #         version: v1
-      #         name: metrics-certs
-      #       fieldPaths:
-      #         - spec.dnsNames.0
-      #         - spec.dnsNames.1
-      #       options:
-      #         delimiter: '.'
-      #         index: 1
-      #         create: true
-      #
-      ```
+     ```yaml
+     # [CERTMANAGER] To enable cert-manager, uncomment all sections with 'CERTMANAGER' prefix.
+     # Uncomment the following replacements to add the cert-manager CA injection annotations
+     #replacements:
+     # - source: # Uncomment the following block to enable certificates for metrics
+     #     kind: Service
+     #     version: v1
+     #     name: controller-manager-metrics-service
+     #     fieldPath: metadata.name
+     #   targets:
+     #     - select:
+     #         kind: Certificate
+     #         group: cert-manager.io
+     #         version: v1
+     #         name: metrics-certs
+     #       fieldPaths:
+     #         - spec.dnsNames.0
+     #         - spec.dnsNames.1
+     #       options:
+     #         delimiter: '.'
+     #         index: 0
+     #         create: true
+     #
+     # - source:
+     #     kind: Service
+     #     version: v1
+     #     name: controller-manager-metrics-service
+     #     fieldPath: metadata.namespace
+     #   targets:
+     #     - select:
+     #         kind: Certificate
+     #         group: cert-manager.io
+     #         version: v1
+     #         name: metrics-certs
+     #       fieldPaths:
+     #         - spec.dnsNames.0
+     #         - spec.dnsNames.1
+     #       options:
+     #         delimiter: '.'
+     #         index: 1
+     #         create: true
+     #
+     ```
 
 4. **Enable the Patch for the `ServiceMonitor` to Use the Cert-Manager-Managed Secret `config/prometheus/kustomization.yaml`:**
-    - Add or uncomment the `ServiceMonitor` patch to securely reference the cert-manager-managed secret, replacing insecure configurations with secure certificate verification:
+   - Add or uncomment the `ServiceMonitor` patch to securely reference the cert-manager-managed secret, replacing insecure configurations with secure certificate verification:
 
-      ```yaml
-      # [PROMETHEUS-WITH-CERTS] The following patch configures the ServiceMonitor in ../prometheus
-      # to securely reference certificates created and managed by cert-manager.
-      # Additionally, ensure that you uncomment the [METRICS WITH CERTMANAGER] patch under config/default/kustomization.yaml
-      # to mount the "metrics-server-cert" secret in the Manager Deployment.
-      patches:
-        - path: monitor_tls_patch.yaml
-          target:
-            kind: ServiceMonitor
-      ```
+     ```yaml
+     # [PROMETHEUS-WITH-CERTS] The following patch configures the ServiceMonitor in ../prometheus
+     # to securely reference certificates created and managed by cert-manager.
+     # Additionally, ensure that you uncomment the [METRICS WITH CERTMANAGER] patch under config/default/kustomization.yaml
+     # to mount the "metrics-server-cert" secret in the Manager Deployment.
+     patches:
+       - path: monitor_tls_patch.yaml
+         target:
+           kind: ServiceMonitor
+     ```
 
-    > **NOTE** that the `ServiceMonitor` patch above will ensure that if you enable the Prometheus integration,
-    it will securely reference the certificates created and managed by CertManager. But it will **not** enable the
-    integration with Prometheus. To enable the integration with Prometheus, you need uncomment the `#- ../certmanager`
-    in the `config/default/kustomization.yaml`. For more information, see [Exporting Metrics for Prometheus](#exporting-metrics-for-prometheus).
+   > **NOTE** that the `ServiceMonitor` patch above will ensure that if you enable the Prometheus integration,
+   it will securely reference the certificates created and managed by CertManager. But it will **not** enable the
+   integration with Prometheus. To enable the integration with Prometheus, you need uncomment the `#- ../certmanager`
+   in the `config/default/kustomization.yaml`. For more information, see [Exporting Metrics for Prometheus](#exporting-metrics-for-prometheus).
 
 ### **(Optional)** By using Network Policy (Disabled by default)
 
@@ -316,28 +316,28 @@ For example:
 
 ```go
 import (
-    "github.com/prometheus/client_golang/prometheus"
-    "sigs.k8s.io/controller-runtime/pkg/metrics"
+"github.com/prometheus/client_golang/prometheus"
+"sigs.k8s.io/controller-runtime/pkg/metrics"
 )
 
 var (
-    goobers = prometheus.NewCounter(
-        prometheus.CounterOpts{
-            Name: "goobers_total",
-            Help: "Number of goobers proccessed",
-        },
-    )
-    gooberFailures = prometheus.NewCounter(
-        prometheus.CounterOpts{
-            Name: "goober_failures_total",
-            Help: "Number of failed goobers",
-        },
-    )
+goobers = prometheus.NewCounter(
+prometheus.CounterOpts{
+Name: "goobers_total",
+Help: "Number of goobers proccessed",
+},
+)
+gooberFailures = prometheus.NewCounter(
+prometheus.CounterOpts{
+Name: "goober_failures_total",
+Help: "Number of failed goobers",
+},
+)
 )
 
 func init() {
-    // Register custom metrics with the global prometheus registry
-    metrics.Registry.MustRegister(goobers, gooberFailures)
+// Register custom metrics with the global prometheus registry
+metrics.Registry.MustRegister(goobers, gooberFailures)
 }
 ```
 
