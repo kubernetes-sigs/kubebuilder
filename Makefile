@@ -71,7 +71,12 @@ generate: generate-testdata generate-docs ## Update/generate all mock data. You 
 .PHONY: remove-spaces
 remove-spaces:
 	@echo "Removing trailing spaces"
-	@find . -type f -name "*.md" -exec sed -i '' 's/[[:space:]]*$$//' {} + || true
+	@bash -c ' \
+		if [[ "$$(uname)" == "Linux" ]]; then \
+			find . -type f -name "*.md" -exec sed -i "s/[[:space:]]*$$//" {} + || true; \
+		else \
+			find . -type f -name "*.md" -exec sed -i "" "s/[[:space:]]*$$//" {} + || true; \
+		fi'
 
 .PHONY: generate-testdata
 generate-testdata: ## Update/generate the testdata in $GOPATH/src/sigs.k8s.io/kubebuilder
