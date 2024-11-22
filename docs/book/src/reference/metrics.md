@@ -20,7 +20,6 @@ enabled by default via Controller-Runtime's feature [WithAuthenticationAndAuthor
 If you want to continue using [kube-rbac-proxy](https://github.com/brancz/kube-rbac-proxy) then you MUST change
 your project to use the image from another source.
 
-> This infrastructure is outside of our control, we cannot guarantee any timeline or any extensions.
 > For further information, see: [kubebuilder/discussions/3907](https://github.com/kubernetes-sigs/kubebuilder/discussions/3907)
 
 </aside>
