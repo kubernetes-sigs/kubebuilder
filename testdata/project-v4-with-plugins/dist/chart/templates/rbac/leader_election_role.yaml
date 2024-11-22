@@ -5,7 +5,8 @@ kind: Role
 metadata:
   labels:
     {{- include "chart.labels" . | nindent 4 }}
-  name: leader-election-role
+  namespace: {{ .Release.Namespace }}
+  name: project-v4-with-plugins-leader-election-role
 rules:
 - apiGroups:
   - ""
