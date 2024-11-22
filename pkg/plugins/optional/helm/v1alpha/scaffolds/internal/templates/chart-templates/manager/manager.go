@@ -84,13 +84,13 @@ spec:
           command:
             - /manager
           image: {{ "{{ .Values.controllerManager.container.image.repository }}" }}:{{ "{{ .Values.controllerManager.container.image.tag }}" }}
-{{- if .DeployImages }}
+          {{ "{{- if .Values.controllerManager.container.env }}" }}
           env:
             {{ "{{- range $key, $value := .Values.controllerManager.container.env }}" }}
             - name: {{ "{{ $key }}" }}
               value: {{ "{{ $value }}" }}
             {{ "{{- end }}" }}
-{{- end }}
+          {{ "{{- end }}" }}
           livenessProbe:
             {{ "{{- toYaml .Values.controllerManager.container.livenessProbe | nindent 12 }}" }}
           readinessProbe:
