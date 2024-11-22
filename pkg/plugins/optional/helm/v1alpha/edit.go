@@ -65,7 +65,7 @@ manifests in the chart align with the latest changes.
 }
 
 func (p *editSubcommand) BindFlags(fs *pflag.FlagSet) {
-	fs.BoolVar(&p.force, "force", true, "if true, regenerates all the files")
+	fs.BoolVar(&p.force, "force", false, "if true, regenerates all the files")
 }
 
 func (p *editSubcommand) InjectConfig(c config.Config) error {
