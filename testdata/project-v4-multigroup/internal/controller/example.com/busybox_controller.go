@@ -99,7 +99,7 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	// Let's just set the status as Unknown when no status is available
-	if busybox.Status.Conditions == nil || len(busybox.Status.Conditions) == 0 {
+	if len(busybox.Status.Conditions) == 0 {
 		meta.SetStatusCondition(&busybox.Status.Conditions, metav1.Condition{Type: typeAvailableBusybox, Status: metav1.ConditionUnknown, Reason: "Reconciling", Message: "Starting reconciliation"})
 		if err = r.Status().Update(ctx, busybox); err != nil {
 			log.Error(err, "Failed to update Busybox status")
