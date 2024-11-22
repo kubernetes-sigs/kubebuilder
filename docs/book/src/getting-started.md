@@ -439,6 +439,6 @@ implemented for your controller.
 [quick-start]: ./quick-start.md
 [best-practices]: ./reference/good-practices.md
 [cronjob-tutorial]: https://book.kubebuilder.io/cronjob-tutorial/cronjob-tutorial.html
-[deploy-image]: ./plugins/deploy-image-plugin-v1-alpha.md
+[deploy-image]: ./plugins/available/deploy-image-plugin-v1-alpha.md
 [GOPATH-golang-docs]: https://golang.org/doc/code.html#GOPATH
 [go-modules-blogpost]: https://blog.golang.org/using-go-modules
