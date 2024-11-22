@@ -23,8 +23,6 @@ import (
 	"regexp"
 	"strings"
 
-	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha/scaffolds/internal/templates/chart-templates/prometheus"
-
 	"sigs.k8s.io/yaml"
 
 	log "github.com/sirupsen/logrus"
@@ -38,7 +36,9 @@ import (
 	templatescertmanager "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha/scaffolds/internal/templates/chart-templates/cert-manager"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha/scaffolds/internal/templates/chart-templates/manager"
 	templatesmetrics "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha/scaffolds/internal/templates/chart-templates/metrics"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha/scaffolds/internal/templates/chart-templates/prometheus"
 	templateswebhooks "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha/scaffolds/internal/templates/chart-templates/webhook"
+	github "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha/scaffolds/internal/templates/github"
 )
 
 var _ plugins.Scaffolder = &initScaffolder{}
@@ -82,6 +82,7 @@ func (s *initScaffolder) Scaffold() error {
 	)
 
 	buildScaffold := []machinery.Builder{
+		&github.HelmChartCI{},
 		&templates.HelmChart{},
 		&templates.HelmValues{
 			HasWebhooks:  len(webhooks) > 0,
