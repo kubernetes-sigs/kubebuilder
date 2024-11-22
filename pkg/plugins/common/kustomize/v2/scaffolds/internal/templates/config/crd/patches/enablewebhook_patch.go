@@ -31,7 +31,7 @@ type EnableWebhookPatch struct {
 	machinery.ResourceMixin
 }
 
-// SetTemplateDefaults implements file.Template
+// SetTemplateDefaults implements machinery.Template
 func (f *EnableWebhookPatch) SetTemplateDefaults() error {
 	if f.Path == "" {
 		if f.MultiGroup && f.Resource.Group != "" {

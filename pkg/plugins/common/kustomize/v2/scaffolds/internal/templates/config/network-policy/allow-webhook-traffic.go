@@ -31,7 +31,7 @@ type NetworkPolicyAllowWebhooks struct {
 	machinery.ProjectNameMixin
 }
 
-// SetTemplateDefaults implements file.Template
+// SetTemplateDefaults implements machinery.Template
 func (f *NetworkPolicyAllowWebhooks) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "network-policy", "allow-webhook-traffic.yaml")

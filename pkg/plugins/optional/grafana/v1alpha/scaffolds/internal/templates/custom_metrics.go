@@ -46,7 +46,7 @@ type CustomMetricsDashManifest struct {
 	Items []CustomMetricItem
 }
 
-// SetTemplateDefaults implements file.Template
+// SetTemplateDefaults implements machinery.Template
 func (f *CustomMetricsDashManifest) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("grafana", "custom-metrics", "custom-metrics-dashboard.json")

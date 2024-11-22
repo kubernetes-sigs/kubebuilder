@@ -30,7 +30,7 @@ type ServiceAccount struct {
 	machinery.ProjectNameMixin
 }
 
-// SetTemplateDefaults implements file.Template
+// SetTemplateDefaults implements machinery.Template
 func (f *ServiceAccount) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "rbac", "service_account.yaml")

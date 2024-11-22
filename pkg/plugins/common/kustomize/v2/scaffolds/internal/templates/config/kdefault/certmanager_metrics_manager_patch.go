@@ -32,7 +32,7 @@ type CertManagerMetricsPatch struct {
 	Force bool
 }
 
-// SetTemplateDefaults implements file.Template
+// SetTemplateDefaults implements machinery.Template
 func (f *CertManagerMetricsPatch) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("config", "default", "certmanager_metrics_manager_patch.yaml")

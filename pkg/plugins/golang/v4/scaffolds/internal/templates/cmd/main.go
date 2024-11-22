@@ -37,7 +37,7 @@ type Main struct {
 	ControllerRuntimeVersion string
 }
 
-// SetTemplateDefaults implements file.Template
+// SetTemplateDefaults implements machinery.Template
 func (f *Main) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join(defaultMainPath)
@@ -281,7 +281,7 @@ func main() {
 
 	// if the enable-http2 flag is false (the default), http/2 should be disabled
 	// due to its vulnerabilities. More specifically, disabling http/2 will
-	// prevent from being vulnerable to the HTTP/2 Stream Cancellation and 
+	// prevent from being vulnerable to the HTTP/2 Stream Cancellation and
 	// Rapid Reset CVEs. For more information see:
 	// - https://github.com/advisories/GHSA-qppj-fm5r-hxr3
 	// - https://github.com/advisories/GHSA-4374-p667-p6c8
@@ -316,7 +316,7 @@ func main() {
 		metricsServerOptions.FilterProvider = filters.WithAuthenticationAndAuthorization
 
 		// TODO(user): If CertDir, CertName, and KeyName are not specified, controller-runtime will automatically
-		// generate self-signed certificates for the metrics server. While convenient for development and testing, 
+		// generate self-signed certificates for the metrics server. While convenient for development and testing,
 		// this setup is not recommended for production.
 
 		// TODO(user): If cert-manager is enabled in config/default/kustomization.yaml,

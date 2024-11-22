@@ -30,7 +30,7 @@ type E2eTestCi struct {
 	machinery.BoilerplateMixin
 }
 
-// SetTemplateDefaults implements file.Template
+// SetTemplateDefaults implements machinery.Template
 func (f *E2eTestCi) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join(".github", "workflows", "test-e2e.yml")

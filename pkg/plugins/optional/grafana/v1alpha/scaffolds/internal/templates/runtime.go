@@ -29,7 +29,7 @@ type RuntimeManifest struct {
 	machinery.TemplateMixin
 }
 
-// SetTemplateDefaults implements file.Template
+// SetTemplateDefaults implements machinery.Template
 func (f *RuntimeManifest) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("grafana", "controller-runtime-metrics.json")

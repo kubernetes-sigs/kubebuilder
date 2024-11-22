@@ -40,7 +40,7 @@ type Controller struct {
 	PackageName string
 }
 
-// SetTemplateDefaults implements file.Template
+// SetTemplateDefaults implements machinery.Template
 func (f *Controller) SetTemplateDefaults() error {
 	if f.Path == "" {
 		if f.MultiGroup && f.Resource.Group != "" {
@@ -87,7 +87,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	
+
 	{{ if not (isEmptyStr .Resource.Path) -}}
 	{{ .Resource.ImportAlias }} "{{ .Resource.Path }}"
 	{{- end }}
@@ -180,7 +180,7 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 			log.Error(err, "Failed to add finalizer into the custom resource")
 			return ctrl.Result{Requeue: true}, nil
 		}
-		
+
 		if err = r.Update(ctx, {{ lower .Resource.Kind }}); err != nil {
 			log.Error(err, "Failed to update custom resource to add finalizer")
 			return ctrl.Result{}, err
@@ -224,7 +224,7 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 			meta.SetStatusCondition(&{{ lower .Resource.Kind }}.Status.Conditions, metav1.Condition{Type: typeDegraded{{ .Resource.Kind }},
 				Status: metav1.ConditionTrue, Reason: "Finalizing",
 				Message: fmt.Sprintf("Finalizer operations for custom resource %s name were successfully accomplished", {{ lower .Resource.Kind }}.Name)})
-			
+
 			if err := r.Status().Update(ctx, {{ lower .Resource.Kind }}); err != nil {
 				log.Error(err, "Failed to update {{ .Resource.Kind }} status")
 				return ctrl.Result{}, err
@@ -361,7 +361,7 @@ func (r *{{ .Resource.Kind }}Reconciler) deploymentFor{{ .Resource.Kind }}(
 	{{ lower .Resource.Kind }} *{{ .Resource.ImportAlias }}.{{ .Resource.Kind }}) (*appsv1.Deployment, error) {
 	ls := labelsFor{{ .Resource.Kind }}()
 	replicas := {{ lower .Resource.Kind }}.Spec.Size
-	
+
 	// Get the Operand image
 	image, err := imageFor{{ .Resource.Kind }}()
 	if err != nil {
@@ -425,7 +425,7 @@ func (r *{{ .Resource.Kind }}Reconciler) deploymentFor{{ .Resource.Kind }}(
 			},
 		},
 	}
-	
+
 	// Set the ownerRef for the Deployment
 	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/owners-dependents/
 	if err := ctrl.SetControllerReference({{ lower .Resource.Kind }}, dep, r.Scheme); err != nil {
@@ -466,7 +466,7 @@ func imageFor{{ .Resource.Kind }}() (string, error) {
 // matches the desired state as defined in the controller’s logic.
 //
 // Notice how we configured the Manager to monitor events such as the creation, update,
-// or deletion of a Custom Resource (CR) of the {{ .Resource.Kind }} kind, as well as any changes 
+// or deletion of a Custom Resource (CR) of the {{ .Resource.Kind }} kind, as well as any changes
 // to the Deployment that the controller manages and owns.
 func (r *{{ .Resource.Kind }}Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).

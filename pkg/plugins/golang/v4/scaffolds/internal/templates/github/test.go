@@ -30,7 +30,7 @@ type TestCi struct {
 	machinery.BoilerplateMixin
 }
 
-// SetTemplateDefaults implements file.Template
+// SetTemplateDefaults implements machinery.Template
 func (f *TestCi) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join(".github", "workflows", "test.yml")

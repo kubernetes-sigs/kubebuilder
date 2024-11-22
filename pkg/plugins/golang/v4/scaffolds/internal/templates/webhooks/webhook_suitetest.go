@@ -52,7 +52,7 @@ type WebhookSuite struct { //nolint:maligned
 	IsLegacyPath bool
 }
 
-// SetTemplateDefaults implements file.Template
+// SetTemplateDefaults implements machinery.Template
 func (f *WebhookSuite) SetTemplateDefaults() error {
 	if f.Path == "" {
 		// Deprecated: Remove me when remove go/v4

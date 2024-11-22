@@ -37,7 +37,7 @@ type Readme struct {
 	CommandName string
 }
 
-// SetTemplateDefaults implements file.Template
+// SetTemplateDefaults implements machinery.Template
 func (f *Readme) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = "README.md"

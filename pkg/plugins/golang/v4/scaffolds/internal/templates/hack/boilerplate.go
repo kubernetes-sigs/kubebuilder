@@ -62,7 +62,7 @@ func (f Boilerplate) Validate() error {
 	return nil
 }
 
-// SetTemplateDefaults implements file.Template
+// SetTemplateDefaults implements machinery.Template
 func (f *Boilerplate) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = DefaultBoilerplatePath

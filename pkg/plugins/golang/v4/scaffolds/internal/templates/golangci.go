@@ -28,7 +28,7 @@ type Golangci struct {
 	machinery.ProjectNameMixin
 }
 
-// SetTemplateDefaults implements file.Template
+// SetTemplateDefaults implements machinery.Template
 func (f *Golangci) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = ".golangci.yml"
