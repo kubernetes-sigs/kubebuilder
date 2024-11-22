@@ -38,6 +38,8 @@ func (f *TestCi) SetTemplateDefaults() error {
 
 	f.TemplateBody = testCiTemplate
 
+	f.IfExistsAction = machinery.SkipFile
+
 	return nil
 }
 

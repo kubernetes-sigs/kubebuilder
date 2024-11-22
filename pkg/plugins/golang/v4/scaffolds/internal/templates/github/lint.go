@@ -38,6 +38,8 @@ func (f *LintCi) SetTemplateDefaults() error {
 
 	f.TemplateBody = lintCiTemplate
 
+	f.IfExistsAction = machinery.SkipFile
+
 	return nil
 }
 
