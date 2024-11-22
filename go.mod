@@ -6,7 +6,7 @@ toolchain go1.22.3
 
 require (
 	github.com/gobuffalo/flect v1.0.3
-	github.com/onsi/ginkgo/v2 v2.21.0
+	github.com/onsi/ginkgo/v2 v2.22.0
 	github.com/onsi/gomega v1.35.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/afero v1.11.0
