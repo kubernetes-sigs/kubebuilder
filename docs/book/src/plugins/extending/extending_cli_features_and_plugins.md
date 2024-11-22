@@ -394,7 +394,6 @@ creating features or plugins that can rely on this information.
 [sdk]: https://github.com/operator-framework/operator-sdk
 [plugin-interface]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v4/pkg/plugin
 [machinery]: https://github.com/kubernetes-sigs/kubebuilder/tree/master/pkg/machinery
-[plugin-subc]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v4/pkg/plugin#Subcommand
 [plugin-subc-metadata]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v4/pkg/plugin#SubcommandMetadata
 [plugin-version-type]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v4/pkg/plugin#Version
 [bundle-plugin-doc]: https://pkg.go.dev/sigs.k8s.io/kubebuilder/v4/pkg/plugin#Bundle
