@@ -57,11 +57,11 @@ func (f *HelmValues) SetTemplateDefaults() error {
 
 const helmValuesTemplate = `# [MANAGER]: Manager Deployment Configurations
 controllerManager:
+  replicas: 1
   container:
     image:
       repository: controller
       tag: latest
-    replicas: 1
     args:
       - "--leader-elect"
       - "--metrics-bind-address=:8443"
