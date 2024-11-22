@@ -44,7 +44,7 @@ kubebuilder init --domain tutorial.kubebuilder.io --repo tutorial.kubebuilder.io
 [quickstart]: ./../../quick-start.md
 [testdata]: ./../../../../../testdata
 [plugins-main]: ./../../../../../cmd/main.go
-[kustomize-plugin]: ./../../plugins/avaialable/kustomize-v2.md
+[kustomize-plugin]: ./../../plugins/available/kustomize-v2.md
 [kustomize]: https://github.com/kubernetes-sigs/kustomize
 [standard-go-project]: https://github.com/golang-standards/project-layout
 [v4-plugin]: ./../../../../../pkg/plugins/golang/v4
