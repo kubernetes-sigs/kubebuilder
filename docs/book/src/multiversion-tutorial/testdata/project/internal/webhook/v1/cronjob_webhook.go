@@ -166,7 +166,7 @@ This marker is responsible for generating a validation webhook manifest.
 // NOTE: The +kubebuilder:object:generate=false marker prevents controller-gen from generating DeepCopy methods,
 // as this struct is used only for temporary operations and does not need to be deeply copied.
 type CronJobCustomValidator struct {
-	//TODO(user): Add more fields as needed for validation
+	// TODO(user): Add more fields as needed for validation
 }
 
 var _ webhook.CustomValidator = &CronJobCustomValidator{}

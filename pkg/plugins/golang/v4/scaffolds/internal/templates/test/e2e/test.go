@@ -177,8 +177,8 @@ const metricsRoleBindingName = "{{ .ProjectName }}-metrics-binding"
 
 var _ = Describe("Manager", Ordered, func() {
 	var controllerPodName string
-	
-	// Before running the tests, set up the environment by creating the namespace, 
+
+	// Before running the tests, set up the environment by creating the namespace,
 	// installing CRDs, and deploying the controller.
 	BeforeAll(func() {
 		By("creating manager namespace")
@@ -197,7 +197,7 @@ var _ = Describe("Manager", Ordered, func() {
 		Expect(err).NotTo(HaveOccurred(), "Failed to deploy the controller-manager")
 	})
 
-	// After all tests have been executed, clean up by undeploying the controller, uninstalling CRDs, 
+	// After all tests have been executed, clean up by undeploying the controller, uninstalling CRDs,
 	// and deleting the namespace.
 	AfterAll(func() {
 		By("cleaning up the curl pod for metrics")
@@ -226,27 +226,27 @@ var _ = Describe("Manager", Ordered, func() {
 			cmd := exec.Command("kubectl", "logs", controllerPodName, "-n", namespace)
 			controllerLogs, err := utils.Run(cmd)
 			if err == nil {
-				_, _ = fmt.Fprintf(GinkgoWriter, fmt.Sprintf("Controller logs:\n %s", controllerLogs))
+				_, _ = fmt.Fprintf(GinkgoWriter, "Controller logs:\n %s", controllerLogs)
 			} else {
-				_, _ = fmt.Fprintf(GinkgoWriter, fmt.Sprintf("Failed to get Controller logs: %s", err))
+				_, _ = fmt.Fprintf(GinkgoWriter, "Failed to get Controller logs: %s", err)
 			}
 
 			By("Fetching Kubernetes events")
 			cmd = exec.Command("kubectl", "get", "events", "-n", namespace, "--sort-by=.lastTimestamp")
 			eventsOutput, err := utils.Run(cmd)
 			if err == nil {
-				_, _ = fmt.Fprintf(GinkgoWriter, fmt.Sprintf("Kubernetes events:\n%s", eventsOutput))
+				_, _ = fmt.Fprintf(GinkgoWriter, "Kubernetes events:\n%s", eventsOutput)
 			} else {
-				_, _ = fmt.Fprintf(GinkgoWriter, fmt.Sprintf("Failed to get Kubernetes events: %s", err))
+				_, _ = fmt.Fprintf(GinkgoWriter, "Failed to get Kubernetes events: %s", err)
 			}
 
 			By("Fetching curl-metrics logs")
 			cmd = exec.Command("kubectl", "logs", "curl-metrics", "-n", namespace)
 			metricsOutput, err := utils.Run(cmd)
 			if err == nil {
-				_, _ = fmt.Fprintf(GinkgoWriter, fmt.Sprintf("Metrics logs:\n %s", metricsOutput))
+				_, _ = fmt.Fprintf(GinkgoWriter, "Metrics logs:\n %s", metricsOutput)
 			} else {
-				_, _ = fmt.Fprintf(GinkgoWriter, fmt.Sprintf("Failed to get curl-metrics logs: %s", err))
+				_, _ = fmt.Fprintf(GinkgoWriter, "Failed to get curl-metrics logs: %s", err)
 			}
 
 			By("Fetching controller manager pod description")
@@ -271,7 +271,7 @@ var _ = Describe("Manager", Ordered, func() {
 				cmd := exec.Command("kubectl", "get",
 					"pods", "-l", "control-plane=controller-manager",
 					"-o", "go-template={{"{{"}} range .items {{"}}"}}" +
-					"{{"{{"}} if not .metadata.deletionTimestamp {{"}}"}}" + 
+					"{{"{{"}} if not .metadata.deletionTimestamp {{"}}"}}" +
 					"{{"{{"}} .metadata.name {{"}}"}}"+
 					"{{"{{"}} \"\\n\" {{"}}"}}{{"{{"}} end {{"}}"}}{{"{{"}} end {{"}}"}}",
 					"-n", namespace,
@@ -369,10 +369,10 @@ var _ = Describe("Manager", Ordered, func() {
 
 		// +kubebuilder:scaffold:e2e-webhooks-checks
 
-		// TODO: Customize the e2e test suite with scenarios specific to your project. 
-		// Consider applying sample/CR(s) and check their status and/or verifying 
+		// TODO: Customize the e2e test suite with scenarios specific to your project.
+		// Consider applying sample/CR(s) and check their status and/or verifying
 		// the reconciliation by using the metrics, i.e.:
-		// metricsOutput := getMetricsOutput()		
+		// metricsOutput := getMetricsOutput()
 		// Expect(metricsOutput).To(ContainSubstring(
 		//    fmt.Sprintf(` + "`controller_runtime_reconcile_total{controller=\"%s\",result=\"success\"} 1`" + `,
 		//    strings.ToLower(<Kind>),
@@ -381,7 +381,7 @@ var _ = Describe("Manager", Ordered, func() {
 })
 
 // serviceAccountToken returns a token for the specified service account in the given namespace.
-// It uses the Kubernetes TokenRequest API to generate a token by directly sending a request 
+// It uses the Kubernetes TokenRequest API to generate a token by directly sending a request
 // and parsing the resulting token from the API response.
 func serviceAccountToken() (string, error) {
 	const tokenRequestRawString = ` + "`" + `{
@@ -411,7 +411,7 @@ func serviceAccountToken() (string, error) {
 
 		// Parse the JSON output to extract the token
 		var token tokenRequest
-		err = json.Unmarshal([]byte(output), &token)
+		err = json.Unmarshal(output, &token)
 		g.Expect(err).NotTo(HaveOccurred())
 
 		out = token.Status.Token
