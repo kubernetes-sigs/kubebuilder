@@ -38,6 +38,8 @@ func (f *E2eTestCi) SetTemplateDefaults() error {
 
 	f.TemplateBody = e2eTestCiTemplate
 
+	f.IfExistsAction = machinery.SkipFile
+
 	return nil
 }
 
