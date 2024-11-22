@@ -1,0 +1,39 @@
+name: Container Check
+
+on:
+  push:
+    paths-ignore:
+      - '**/*.md'
+  pull_request:
+    paths-ignore:
+      - '**/*.md'
+
+jobs:
+  container-check:
+    runs-on: ubuntu-latest
+    if: (github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository)
+    steps:
+      - name: Clone the code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '~1.22'
+
+      - name: Prepare project-v4
+        working-directory: testdata/project-v4
+        run: go mod tidy
+
+      - name: Build and push container image
+        working-directory: testdata/project-v4
+        run: IMG=ttl.sh/kubebuilder-container-check-$(git rev-parse --short HEAD):5m make docker-build docker-push
+
+      - name: Build and push container image with buildx
+        working-directory: testdata/project-v4
+        run: IMG=ttl.sh/kubebuilder-container-buildx-check-$(git rev-parse --short HEAD):5m make docker-buildx
+
+      - name: Container file linter
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: testdata/project-v4/Dockerfile
