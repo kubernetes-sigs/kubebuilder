@@ -405,7 +405,7 @@ creating features or plugins that can rely on this information.
 [markers-scaffold]: ./../../reference/markers/scaffold.md
 [kb-utils]: https://github.com/kubernetes-sigs/kubebuilder/blob/book-v4/pkg/plugin/util/util.go
 [project-file-config]: ./../../reference/project-config.md
-[cli]: ./../../../../../pkg/cli
+[cli]: https://github.com/kubernetes-sigs/kubebuilder/tree/book-v4/pkg/cli
 [kb-go-plugin]: https://github.com/kubernetes-sigs/kubebuilder/tree/book-v4/pkg/plugins/golang/v4
 [cobra]: https://github.com/spf13/cobra
 [external-plugin]: external-plugins.md
