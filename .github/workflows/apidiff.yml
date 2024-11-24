@@ -22,7 +22,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: "~1.22"
+          go-version-file: go.mod
       - name: Execute go-apidiff
         uses: joelanford/go-apidiff@v0.8.2
         with:
