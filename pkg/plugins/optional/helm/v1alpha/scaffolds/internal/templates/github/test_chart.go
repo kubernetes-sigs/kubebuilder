@@ -83,7 +83,7 @@ jobs:
 
       - name: Install Helm
         run: |
-          curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash          
+          curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
       - name: Verify Helm installation
         run: helm version
@@ -106,6 +106,12 @@ jobs:
 #          kubectl wait --namespace cert-manager --for=condition=available --timeout=300s deployment/cert-manager-webhook
 
 # TODO: Uncomment if Prometheus is enabled
+#      - name: Install Prometheus Operator CRDs
+#        run: |
+#          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+#          helm repo update
+#          helm install prometheus-crds prometheus-community/prometheus-operator-crds
+#
 #      - name: Install Prometheus via Helm
 #        run: |
 #          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
@@ -123,4 +129,9 @@ jobs:
       - name: Check Helm release status
         run: |
           helm status my-release --namespace {{ .ProjectName }}-system
+
+# TODO: Uncomment if prometheus.enabled is set to true to confirm that the ServiceMonitor gets created
+#      - name: Check Presence of ServiceMonitor
+#        run: |
+#          kubectl wait --namespace {{ .ProjectName }}-system --for=jsonpath='{.kind}'=ServiceMonitor servicemonitor/{{ .ProjectName }}-controller-manager-metrics-monitor
 `
