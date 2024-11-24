@@ -75,6 +75,11 @@ spec:
       labels:
         {{ "{{- include \"chart.labels\" . | nindent 8 }}" }}
         control-plane: controller-manager
+        {{ "{{- if and .Values.controllerManager.pod .Values.controllerManager.pod.labels }}" }}
+        {{ "{{- range $key, $value := .Values.controllerManager.pod.labels }}" }}
+        {{ "{{ $key }}" }}: {{ "{{ $value }}" }}
+        {{ "{{- end }}" }}
+        {{ "{{- end }}" }}
     spec:
       containers:
         - name: manager
