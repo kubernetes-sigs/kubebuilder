@@ -293,6 +293,19 @@ func copyFileWithHelmLogic(srcFile, destFile, subDir, projectName string) error 
 		contentStr = strings.Replace(contentStr,
 			"name: metrics-reader",
 			fmt.Sprintf("name: %s-metrics-reader", projectName), 1)
+		if strings.Contains(contentStr, "-controller-manager") &&
+			strings.Contains(contentStr, "kind: ServiceAccount") &&
+			!strings.Contains(contentStr, "RoleBinding") {
+			// The generated Service Account does not have the annotations field so we must add it.
+			contentStr = strings.Replace(contentStr,
+				"metadata:", `metadata:
+  {{- if and .Values.controllerManager.serviceAccount .Values.controllerManager.serviceAccount.annotations }}
+  annotations:
+    {{- range $key, $value := .Values.controllerManager.serviceAccount.annotations }}
+    {{ $key }}: {{ $value }}
+    {{- end }}
+  {{- end }}`, 1)
+		}
 		contentStr = strings.Replace(contentStr,
 			"name: leader-election-role",
 			fmt.Sprintf("name: %s-leader-election-role", projectName), -1)
