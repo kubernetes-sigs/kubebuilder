@@ -73,6 +73,10 @@ jobs:
           kubectl wait --namespace cert-manager --for=condition=available --timeout=300s deployment/cert-manager-cainjector
           kubectl wait --namespace cert-manager --for=condition=available --timeout=300s deployment/cert-manager-webhook
 
+      - name: Render Helm chart for project-v4-with-plugins
+        run: |
+          helm template testdata/project-v4-with-plugins/dist/chart --namespace=project-v4-with-plugins-system
+
       - name: Install Helm chart for project-v4-with-plugins
         run: |
           helm install my-release testdata/project-v4-with-plugins/dist/chart --create-namespace --namespace project-v4-with-plugins-system --set prometheus.enable=true
