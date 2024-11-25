@@ -76,6 +76,14 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			if err := r.Update(ctx, cronJob); err != nil {
 				return ctrl.Result{}, err
 			}
+
+			// we re-fetch after having updated the CronJob, so that we have the latest
+			// state of the resource, and avoid the error "the object has been modified,
+			// please apply your changes to the latest version and try again".
+			if err := r.Get(ctx, req.NamespacedName, cronJob); err != nil {
+				log.Error(err, "unable to fetch CronJob")
+				return ctrl.Result{}, client.IgnoreNotFound(err)
+			}
 		}
 	} else {
 		// The object is being deleted
