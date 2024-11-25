@@ -29,7 +29,9 @@ import (
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/deploy-image/v1alpha1"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha/scaffolds/internal/templates"
 	chart_templates "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha/scaffolds/internal/templates/chart-templates"
@@ -132,8 +134,7 @@ func (s *initScaffolder) getDeployImagesEnvVars() map[string]string {
 		} `json:"resources"`
 	}{}
 
-	const deployImageKey = "deploy-image.go.kubebuilder.io/v1-alpha"
-	err := s.config.DecodePluginConfig(deployImageKey, &pluginConfig)
+	err := s.config.DecodePluginConfig(plugin.KeyFor(v1alpha1.Plugin{}), &pluginConfig)
 	if err == nil {
 		for _, res := range pluginConfig.Resources {
 			image, ok := res.Options["image"]

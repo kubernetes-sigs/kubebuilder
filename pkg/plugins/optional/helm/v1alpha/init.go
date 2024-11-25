@@ -35,10 +35,10 @@ func (p *initSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *
 	subcmdMeta.Description = `Initialize a helm chart to distribute the project under dist/
 `
 	subcmdMeta.Examples = fmt.Sprintf(`# Initialize a helm chart to distribute the project under dist/
-  %[1]s init --plugins=helm/v1-alpha
+  %[1]s init --plugins=%[2]s
 
-**IMPORTANT** You must use %[1]s edit --plugins=helm/v1-alpha to update the chart when changes are made.
-`, cliMeta.CommandName)
+**IMPORTANT** You must use %[1]s edit --plugins=%[2]s to update the chart when changes are made.
+`, cliMeta.CommandName, plugin.KeyFor(Plugin{}))
 }
 
 func (p *initSubcommand) InjectConfig(c config.Config) error {
