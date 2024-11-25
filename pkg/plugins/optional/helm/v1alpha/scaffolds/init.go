@@ -293,6 +293,14 @@ func copyFileWithHelmLogic(srcFile, destFile, subDir, projectName string) error 
 		contentStr = strings.Replace(contentStr,
 			"name: metrics-reader",
 			fmt.Sprintf("name: %s-metrics-reader", projectName), 1)
+
+		contentStr = strings.Replace(contentStr,
+			"name: metrics-auth-role",
+			fmt.Sprintf("name: %s-metrics-auth-role", projectName), -1)
+		contentStr = strings.Replace(contentStr,
+			"name: metrics-auth-rolebinding",
+			fmt.Sprintf("name: %s-metrics-auth-rolebinding", projectName), 1)
+
 		if strings.Contains(contentStr, "-controller-manager") &&
 			strings.Contains(contentStr, "kind: ServiceAccount") &&
 			!strings.Contains(contentStr, "RoleBinding") {
@@ -312,6 +320,12 @@ func copyFileWithHelmLogic(srcFile, destFile, subDir, projectName string) error 
 		contentStr = strings.Replace(contentStr,
 			"name: leader-election-rolebinding",
 			fmt.Sprintf("name: %s-leader-election-rolebinding", projectName), 1)
+		contentStr = strings.Replace(contentStr,
+			"name: manager-role",
+			fmt.Sprintf("name: %s-manager-role", projectName), -1)
+		contentStr = strings.Replace(contentStr,
+			"name: manager-rolebinding",
+			fmt.Sprintf("name: %s-manager-rolebinding", projectName), 1)
 
 		// The generated files do not include the namespace
 		if strings.Contains(contentStr, "leader-election-rolebinding") ||

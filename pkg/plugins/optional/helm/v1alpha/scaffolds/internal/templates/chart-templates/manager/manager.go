@@ -27,6 +27,7 @@ var _ machinery.Template = &ManagerDeployment{}
 // ManagerDeployment scaffolds the manager Deployment for the Helm chart
 type ManagerDeployment struct {
 	machinery.TemplateMixin
+	machinery.ProjectNameMixin
 
 	// DeployImages if true will scaffold the env with the images
 	DeployImages bool
@@ -57,7 +58,7 @@ func (f *ManagerDeployment) SetTemplateDefaults() error {
 const managerDeploymentTemplate = `apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: controller-manager
+  name: {{ .ProjectName }}-controller-manager
   namespace: {{ "{{ .Release.Namespace }}" }}
   labels:
     {{ "{{- include \"chart.labels\" . | nindent 4 }}" }}
