@@ -15,7 +15,6 @@ aliases:
   # approvers & admins -- those count too via the OWNERS file)
   kubebuilder-reviewers:
     - rashmigottipati
-    - everettraven
 
   # folks who may have context on ancient history,
   # but are no longer directly involved
@@ -28,3 +27,6 @@ aliases:
   - joelanford
   - mengqiy
   - pwittrock
+
+  kubebuilder-emeritus-reviewers:
+  - everettraven
