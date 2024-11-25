@@ -4,7 +4,7 @@ kind: ClusterRole
 metadata:
   labels:
     {{- include "chart.labels" . | nindent 4 }}
-  name: metrics-auth-role
+  name: project-v4-with-plugins-metrics-auth-role
 rules:
 - apiGroups:
   - authentication.k8s.io
