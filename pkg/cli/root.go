@@ -44,7 +44,7 @@ func (c CLI) newRootCmd() *cobra.Command {
 	}
 
 	// Global flags for all subcommands.
-	cmd.PersistentFlags().StringSlice(pluginsFlag, nil, "plugin keys to be used for this subcommand execution")
+	cmd.PersistentFlags().StringSlice(pluginsFlag, c.defaultPlugins[c.defaultProjectVersion], "plugin keys to be used for this subcommand execution")
 
 	// Register --project-version on the root command so that it shows up in help.
 	cmd.Flags().String(projectVersionFlag, c.defaultProjectVersion.String(), "project version")
@@ -58,7 +58,7 @@ func (c CLI) newRootCmd() *cobra.Command {
 
 // rootExamples builds the examples string for the root command before resolving plugins
 func (c CLI) rootExamples() string {
-	str := fmt.Sprintf(`The first step is to initialize your project:
+	return fmt.Sprintf(`The first step is to initialize your project:
     %[1]s init [--plugins=<PLUGIN KEYS> [--project-version=<PROJECT VERSION>]]
 
 <PLUGIN KEYS> is a comma-separated list of plugin keys from the following table
@@ -68,21 +68,8 @@ and <PROJECT VERSION> a supported project version for these plugins.
 
 For more specific help for the init command of a certain plugins and project version
 configuration please run:
-    %[1]s init --help --plugins=<PLUGIN KEYS> [--project-version=<PROJECT VERSION>]
-`,
+    %[1]s init --help --plugins=<PLUGIN KEYS> [--project-version=<PROJECT VERSION>]`,
 		c.commandName, c.getPluginTable())
-
-	if len(c.defaultPlugins) != 0 {
-		if defaultPlugins, found := c.defaultPlugins[c.defaultProjectVersion]; found {
-			str += fmt.Sprintf("\nDefault plugin keys: %q\n", strings.Join(defaultPlugins, ","))
-		}
-	}
-
-	if c.defaultProjectVersion.Validate() == nil {
-		str += fmt.Sprintf("Default project version: %q\n", c.defaultProjectVersion)
-	}
-
-	return str
 }
 
 // getPluginTable returns an ASCII table of the available plugins and their supported project versions.
