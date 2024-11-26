@@ -127,6 +127,36 @@ Your CRDs are generated using [controller-gen][controller-gen]. By using the opt
 
 You can review the design of your APIs and see if it has not more specs than should be by hurting single responsibility principle for example. So that you might to re-design them.
 
+## How can I validate and parse fields in CRDs effectively?
+
+To enhance user experience, it is recommended to use [OpenAPI v3 schema](https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.0.0.md#schemaObject) validation when writing your CRDs. However, this approach can sometimes require an additional parsing step.
+For example, consider this code
+```go
+type StructName struct {
+	// +kubebuilder:validation:Format=date-time
+	TimeField string `json:"timeField,omitempty"`
+}
+```
+
+### What happens in this scenario?
+
+- Users will receive an error notification from the Kubernetes API if they attempt to create a CRD with an invalid timeField value.
+- On the developer side, the string value needs to be parsed manually before use.
+
+### Is there a better approach?
+
+To provide both a better user experience and a streamlined developer experience, it is advisable to use predefined types like [`metav1.Time`](https://pkg.go.dev/k8s.io/apimachinery@v0.31.1/pkg/apis/meta/v1#Time)
+For example, consider this code
+```go
+type StructName struct {
+	TimeField metav1.Time `json:"timeField,omitempty"`
+}
+```
+
+### What happens in this scenario?
+
+- Users still receive error notifications from the Kubernetes API for invalid `timeField` values.
+- Developers can directly use the parsed TimeField in their code without additional parsing, reducing errors and improving efficiency.
 
 
 
