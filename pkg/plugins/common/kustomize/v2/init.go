@@ -49,11 +49,11 @@ func (p *initSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *
 NOTE: This plugin requires kustomize version v5 and kubectl >= 1.22.
 `
 	subcmdMeta.Examples = fmt.Sprintf(`  # Initialize a common project with your domain and name in copyright
-  %[1]s init --plugins common/v3 --domain example.org
+  %[1]s init --plugins %[2]s --domain example.org
 
   # Initialize a common project defining a specific project version
-  %[1]s init --plugins common/v3 --project-version 3
-`, cliMeta.CommandName)
+  %[1]s init --plugins %[2]s --project-version 3
+`, cliMeta.CommandName, plugin.KeyFor(Plugin{}))
 }
 
 func (p *initSubcommand) BindFlags(fs *pflag.FlagSet) {
