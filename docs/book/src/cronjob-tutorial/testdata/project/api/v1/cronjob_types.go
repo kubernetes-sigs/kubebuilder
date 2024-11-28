@@ -144,8 +144,11 @@ const (
 
 // CronJobStatus defines the observed state of CronJob.
 type CronJobStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+
+	// Represents the observations of a CronJob's current state.
+	// For further information see: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#typical-status-properties
+	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"`
 
 	// A list of pointers to currently running jobs.
 	// +optional
