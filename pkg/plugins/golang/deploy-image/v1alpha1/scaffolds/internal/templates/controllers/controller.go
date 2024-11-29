@@ -83,6 +83,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -177,8 +178,9 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 	if !controllerutil.ContainsFinalizer({{ lower .Resource.Kind }}, {{ lower .Resource.Kind }}Finalizer) {
 		log.Info("Adding Finalizer for {{ .Resource.Kind }}")
 		if ok := controllerutil.AddFinalizer({{ lower .Resource.Kind }}, {{ lower .Resource.Kind }}Finalizer); !ok {
-			log.Error(err, "Failed to add finalizer into the custom resource")
-			return ctrl.Result{Requeue: true}, nil
+			err = fmt.Errorf("finalizer for {{ .Resource.Kind }} was not added")
+			log.Error(err, "Failed to add finalizer for {{ .Resource.Kind }}")
+			return ctrl.Result{}, err
 		}
 
 		if err = r.Update(ctx, {{ lower .Resource.Kind }}); err != nil {
@@ -232,8 +234,9 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 
 			log.Info("Removing Finalizer for {{ .Resource.Kind }} after successfully perform the operations")
 			if ok:= controllerutil.RemoveFinalizer({{ lower .Resource.Kind }}, {{ lower .Resource.Kind }}Finalizer); !ok{
+				err = fmt.Errorf("finalizer for {{ .Resource.Kind }} was not removed")
 				log.Error(err, "Failed to remove finalizer for {{ .Resource.Kind }}")
-				return ctrl.Result{Requeue: true}, nil
+				return ctrl.Result{}, err
 			}
 
 			if err := r.Update(ctx, {{ lower .Resource.Kind }}); err != nil {
@@ -280,7 +283,7 @@ func (r *{{ .Resource.Kind }}Reconciler) Reconcile(ctx context.Context, req ctrl
 		return ctrl.Result{RequeueAfter: time.Minute}, nil
 	} else if err != nil {
 		log.Error(err, "Failed to get Deployment")
-		// Let's return the error for the reconciliation be re-trigged again
+		// Let's return the error for the reconciliation be re-triggered again
 		return ctrl.Result{}, err
 	}
 
@@ -412,7 +415,7 @@ func (r *{{ .Resource.Kind }}Reconciler) deploymentFor{{ .Resource.Kind }}(
 					//	 },
 					// },
 					SecurityContext: &corev1.PodSecurityContext{
-						RunAsNonRoot: &[]bool{true}[0],
+						RunAsNonRoot: ptr.To(true),
 						// IMPORTANT: seccomProfile was introduced with Kubernetes 1.19
 						// If you are looking for to produce solutions to be supported
 						// on lower versions you must remove this option.
@@ -442,7 +445,8 @@ func labelsFor{{ .Resource.Kind }}() map[string]string {
 	if err == nil {
 		imageTag = strings.Split(image, ":")[1]
 	}
-	return map[string]string{"app.kubernetes.io/name": "{{ .ProjectName }}",
+	return map[string]string{
+		"app.kubernetes.io/name": "{{ .ProjectName }}",
 		"app.kubernetes.io/version": imageTag,
 		"app.kubernetes.io/managed-by": "{{ .Resource.Kind }}Controller",
 	}
