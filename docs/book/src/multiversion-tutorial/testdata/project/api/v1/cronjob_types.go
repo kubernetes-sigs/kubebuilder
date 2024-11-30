@@ -127,6 +127,8 @@ type CronJobStatus struct {
 */
 
 // +kubebuilder:object:root=true
+// +kubebuilder:storageversion
+// +kubebuilder:conversion:hub
 // +kubebuilder:subresource:status
 // +versionName=v1
 // +kubebuilder:storageversion

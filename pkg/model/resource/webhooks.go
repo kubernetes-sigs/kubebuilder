@@ -33,6 +33,8 @@ type Webhooks struct {
 
 	// Conversion specifies if a conversion webhook is associated to the resource.
 	Conversion bool `json:"conversion,omitempty"`
+
+	Spoke []string `json:"spoke,omitempty"`
 }
 
 // Validate checks that the Webhooks is valid.
@@ -42,14 +44,36 @@ func (webhooks Webhooks) Validate() error {
 		return fmt.Errorf("invalid Webhook version: %w", err)
 	}
 
+	// Validate that Spoke versions are unique
+	seen := map[string]bool{}
+	for _, version := range webhooks.Spoke {
+		if seen[version] {
+			return fmt.Errorf("duplicate spoke version: %s", version)
+		}
+		seen[version] = true
+	}
+
 	return nil
 }
 
 // Copy returns a deep copy of the API that can be safely modified without affecting the original.
 func (webhooks Webhooks) Copy() Webhooks {
-	// As this function doesn't use a pointer receiver, webhooks is already a shallow copy.
-	// Any field that is a pointer, slice or map needs to be deep copied.
-	return webhooks
+	// Deep copy the Spoke slice
+	var spokeCopy []string
+	if len(webhooks.Spoke) > 0 {
+		spokeCopy = make([]string, len(webhooks.Spoke))
+		copy(spokeCopy, webhooks.Spoke)
+	} else {
+		spokeCopy = nil
+	}
+
+	return Webhooks{
+		WebhookVersion: webhooks.WebhookVersion,
+		Defaulting:     webhooks.Defaulting,
+		Validation:     webhooks.Validation,
+		Conversion:     webhooks.Conversion,
+		Spoke:          spokeCopy,
+	}
 }
 
 // Update combines fields of the webhooks of two resources.
@@ -77,10 +101,36 @@ func (webhooks *Webhooks) Update(other *Webhooks) error {
 	// Update conversion.
 	webhooks.Conversion = webhooks.Conversion || other.Conversion
 
+	// Update Spoke (merge without duplicates)
+	if len(other.Spoke) > 0 {
+		existingSpokes := make(map[string]struct{})
+		for _, spoke := range webhooks.Spoke {
+			existingSpokes[spoke] = struct{}{}
+		}
+		for _, spoke := range other.Spoke {
+			if _, exists := existingSpokes[spoke]; !exists {
+				webhooks.Spoke = append(webhooks.Spoke, spoke)
+			}
+		}
+	}
+
 	return nil
 }
 
 // IsEmpty returns if the Webhooks' fields all contain zero-values.
 func (webhooks Webhooks) IsEmpty() bool {
-	return webhooks.WebhookVersion == "" && !webhooks.Defaulting && !webhooks.Validation && !webhooks.Conversion
+	return webhooks.WebhookVersion == "" &&
+		!webhooks.Defaulting && !webhooks.Validation &&
+		!webhooks.Conversion && len(webhooks.Spoke) == 0
+}
+
+// AddSpoke adds a new spoke version to the Webhooks configuration.
+func (webhooks *Webhooks) AddSpoke(version string) {
+	// Ensure the version is not already present
+	for _, v := range webhooks.Spoke {
+		if v == version {
+			return
+		}
+	}
+	webhooks.Spoke = append(webhooks.Spoke, version)
 }

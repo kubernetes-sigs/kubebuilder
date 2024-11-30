@@ -41,16 +41,12 @@ function scaffold_test_project {
     $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false
     $kb create api --group crew --version v1 --kind Captain --controller=true --resource=true --make=false --force
     $kb create webhook --group crew --version v1 --kind Captain --defaulting --programmatic-validation --make=false
-    
+
     # Create API to test conversion from v1 to v2
     $kb create api --group crew --version v1 --kind FirstMate --controller=true --resource=true --make=false
     $kb create api --group crew --version v2 --kind FirstMate --controller=false --resource=true --make=false
-    $kb create webhook --group crew --version v1 --kind FirstMate --conversion --make=false
+    $kb create webhook --group crew --version v1 --kind FirstMate --conversion --make=false --spoke v2
 
-    # TODO: Remove it when we have the hub and spoke scaffolded by Kubebuilder
-    # Apply the sed command based on project type
-    insert_kubebuilder_annotations "api/v1/firstmate_types.go"
-    
     $kb create api --group crew --version v1 --kind Admiral --plural=admirales --controller=true --resource=true --namespaced=false --make=false
     $kb create webhook --group crew --version v1 --kind Admiral --plural=admirales --defaulting
     # Controller for External types
@@ -104,16 +100,7 @@ function scaffold_test_project {
     # Create API to check webhook --conversion from v1 to v2
     $kb create api --group example.com --version v1 --kind Wordpress --controller=true --resource=true  --make=false
     $kb create api --group example.com --version v2 --kind Wordpress --controller=false --resource=true  --make=false
-    $kb create webhook --group example.com --version v1 --kind Wordpress --conversion --make=false
-    
-    # TODO: Remove it when we have the hub and spoke scaffolded by Kubebuilder
-    # Apply the sed command based on project type
-    if [[ $project =~ multigroup ]]; then
-      insert_kubebuilder_annotations "api/example.com/v1/wordpress_types.go"
-    fi
-    if [[ $project =~ with-plugins ]]; then
-      insert_kubebuilder_annotations "api/v1/wordpress_types.go"
-    fi
+    $kb create webhook --group example.com --version v1 --kind Wordpress --conversion --make=false --spoke v2
     
     header_text 'Editing project with Grafana plugin ...'
     $kb edit --plugins=grafana.kubebuilder.io/v1-alpha
@@ -131,16 +118,6 @@ function scaffold_test_project {
   rm -f go.sum
   go mod tidy
   popd
-}
-
-# TODO: Remove when hub and spoke be scaffolded by Kubebuilder
-function insert_kubebuilder_annotations {
-  local file=$1
-  local line=43  # The target line to insert text before
-  local annotations="// +kubebuilder:storageversion\n// +kubebuilder:conversion:hub"
-
-  # Create a temporary file to avoid using -i flag, which varies between macOS and Linux
-  awk -v insert="$annotations" -v line=$line 'NR==line{print insert} 1' "$file" > "$file.tmp" && mv "$file.tmp" "$file"
 }
 
 build_kb

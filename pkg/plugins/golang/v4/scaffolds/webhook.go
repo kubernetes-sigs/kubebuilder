@@ -18,6 +18,9 @@ package scaffolds
 
 import (
 	"fmt"
+	"strings"
+
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds/internal/templates/api"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
@@ -102,6 +105,38 @@ func (s *webhookScaffolder) Scaffold() error {
 	}
 
 	if doConversion {
+		resourceFilePath := fmt.Sprintf("api/%s/%s_types.go",
+			s.resource.Version, strings.ToLower(s.resource.Kind))
+		if s.config.IsMultiGroup() {
+			resourceFilePath = fmt.Sprintf("api/%s/%s/%s_types.go",
+				s.resource.Group, s.resource.Version,
+				strings.ToLower(s.resource.Kind))
+		}
+
+		err = pluginutil.InsertCodeIfNotExist(resourceFilePath,
+			"// +kubebuilder:object:root=true",
+			"\n// +kubebuilder:storageversion\n// +kubebuilder:conversion:hub")
+		if err != nil {
+			log.Errorf("Unable to insert storage version marker "+
+				"(// +kubebuilder:storageversion) and the hub conversion (// +kubebuilder:conversion:hub) "+
+				"in file %s: %v", resourceFilePath, err)
+		}
+
+		if err := scaffold.Execute(
+			&api.Hub{Force: s.force},
+		); err != nil {
+			return err
+		}
+
+		for _, spoke := range s.resource.Webhooks.Spoke {
+			log.Printf("Scaffolding for spoke version: %s\n", spoke)
+			if err := scaffold.Execute(
+				&api.Spoke{Force: s.force, SpokeVersion: spoke},
+			); err != nil {
+				return fmt.Errorf("failed to scaffold spoke %s: %w", spoke, err)
+			}
+		}
+
 		log.Println(`Webhook server has been set up for you.
 You need to implement the conversion.Hub and conversion.Convertible interfaces for your CRD types.`)
 	}

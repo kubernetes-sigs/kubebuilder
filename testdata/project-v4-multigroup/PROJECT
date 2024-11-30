@@ -183,6 +183,8 @@ resources:
   version: v1
   webhooks:
     conversion: true
+    spoke:
+    - v2
     webhookVersion: v1
 - api:
     crdVersion: v1
