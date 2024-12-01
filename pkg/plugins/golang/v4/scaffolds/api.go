@@ -102,7 +102,7 @@ func (s *apiScaffolder) Scaffold() error {
 
 	if doController {
 		if err := scaffold.Execute(
-			&controllers.SuiteTest{Force: s.force, K8SVersion: EnvtestK8SVersion},
+			&controllers.SuiteTest{Force: s.force},
 			&controllers.Controller{ControllerRuntimeVersion: ControllerRuntimeVersion, Force: s.force},
 			&controllers.ControllerTest{Force: s.force, DoAPI: doAPI},
 		); err != nil {
