@@ -44,7 +44,9 @@ func (f *Kustomization) SetTemplateDefaults() error {
 }
 
 const kustomizationTemplate = `resources:
-- certificate.yaml
+- issuer.yaml
+- certificate-webhook.yaml
+- certificate-metrics.yaml
 
 configurations:
 - kustomizeconfig.yaml

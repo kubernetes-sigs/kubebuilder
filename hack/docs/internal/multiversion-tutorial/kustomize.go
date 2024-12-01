@@ -21,7 +21,7 @@ const caInjectionNamespace = `#
 #     kind: Certificate
 #     group: cert-manager.io
 #     version: v1
-#     name: serving-cert # This name should match the one in certificate.yaml
+#     name: serving-cert
 #     fieldPath: .metadata.namespace # Namespace of the certificate CR
 #   targets: # Do not remove or uncomment the following scaffold marker; required to generate code for target CRD.
 #     - select:
@@ -38,7 +38,7 @@ const caInjectionCert = `# - source:
 #     kind: Certificate
 #     group: cert-manager.io
 #     version: v1
-#     name: serving-cert # This name should match the one in certificate.yaml
+#     name: serving-cert
 #     fieldPath: .metadata.name
 #   targets: # Do not remove or uncomment the following scaffold marker; required to generate code for target CRD.
 #     - select:

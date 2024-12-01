@@ -90,7 +90,18 @@ func (sp *Sample) UpdateTutorial() {
 	// 4. update makefile
 	sp.updateMakefile()
 	// 5. generate extra files
-	sp.codeGen()
+	cmd := exec.Command("go", "mod", "tidy")
+	_, err := sp.ctx.Run(cmd)
+	hackutils.CheckError("Failed to run go mod tidy for cronjob tutorial", err)
+
+	cmd = exec.Command("go", "get", "github.com/robfig/cron")
+	_, err = sp.ctx.Run(cmd)
+	hackutils.CheckError("Failed to get package robfig/cron", err)
+
+	cmd = exec.Command("make", "generate", "manifests")
+	_, err = sp.ctx.Run(cmd)
+	hackutils.CheckError("run make generate and manifests", err)
+
 	// 6. compensate other intro in API
 	sp.updateAPIStuff()
 	// 7. update reconciliation and main.go
@@ -99,7 +110,9 @@ func (sp *Sample) UpdateTutorial() {
 	// 7.2 update main.go
 	sp.updateMain()
 	// 8. generate extra files
-	sp.codeGen()
+	cmd = exec.Command("make", "generate", "manifests")
+	_, err = sp.ctx.Run(cmd)
+	hackutils.CheckError("run make generate and manifests", err)
 	// 9. update suite_test explanation
 	sp.updateSuiteTest()
 	// 10. uncomment kustomization
@@ -113,25 +126,14 @@ func (sp *Sample) UpdateTutorial() {
 // CodeGen is a noop for this sample, just to make generation of all samples
 // more efficient. We may want to refactor `UpdateTutorial` some day to take
 // advantage of a separate call, but it is not necessary.
-func (sp *Sample) CodeGen() {}
-
-func (sp *Sample) codeGen() {
-	cmd := exec.Command("go", "mod", "tidy")
+func (sp *Sample) CodeGen() {
+	cmd := exec.Command("make", "all")
 	_, err := sp.ctx.Run(cmd)
-	hackutils.CheckError("Failed to run go mod tidy for cronjob tutorial", err)
-
-	cmd = exec.Command("go", "get", "github.com/robfig/cron")
-	_, err = sp.ctx.Run(cmd)
-	hackutils.CheckError("Failed to get package robfig/cron", err)
-
-	cmd = exec.Command("make", "all")
-	_, err = sp.ctx.Run(cmd)
 	hackutils.CheckError("Failed to run make all for cronjob tutorial", err)
 
 	cmd = exec.Command("make", "build-installer")
 	_, err = sp.ctx.Run(cmd)
 	hackutils.CheckError("Failed to run make build-installer for cronjob tutorial", err)
-
 }
 
 // insert code to fix docs
@@ -355,15 +357,6 @@ CronJob controller's`+" `"+`SetupWithManager`+"`"+` method.
 	}`, `
 	// +kubebuilder:docs-gen:collapse=old stuff`)
 	hackutils.CheckError("fixing main.go", err)
-
-	// Enabling metrics with certs
-	err = pluginutil.UncommentCode(
-		filepath.Join(sp.ctx.Dir, "cmd/main.go"),
-		`// metricsServerOptions.CertDir = "/tmp/k8s-metrics-server/metrics-certs"
-		// metricsServerOptions.CertName = "tls.crt"
-		// metricsServerOptions.KeyName = "tls.key"`, `
-	// `)
-	hackutils.CheckError("enabling metrics service options into main.go", err)
 }
 
 func (sp *Sample) updateMakefile() {
@@ -601,8 +594,10 @@ func (sp *Sample) updateKustomization() {
 
 	err = pluginutil.UncommentCode(
 		filepath.Join(sp.ctx.Dir, "config/default/kustomization.yaml"),
-		`#- path: certmanager_metrics_manager_patch.yaml`, `#`)
-	hackutils.CheckError("enabling certmanager_metrics_manager_patch.yaml", err)
+		`#- path: cert_metrics_manager_patch.yaml
+#  target:
+#    kind: Deployment`, `#`)
+	hackutils.CheckError("enabling cert_metrics_manager_patch.yaml", err)
 
 	err = pluginutil.UncommentCode(
 		filepath.Join(sp.ctx.Dir, "config/prometheus/kustomization.yaml"),
@@ -610,11 +605,11 @@ func (sp *Sample) updateKustomization() {
 #  - path: monitor_tls_patch.yaml
 #    target:
 #      kind: ServiceMonitor`, `#`)
-	hackutils.CheckError("enabling certmanager_metrics_manager_patch.yaml", err)
+	hackutils.CheckError("enabling monitor tls patch", err)
 
 	err = pluginutil.UncommentCode(
 		filepath.Join(sp.ctx.Dir, "config/default/kustomization.yaml"),
-		certmanagerForWebhooks, `#`)
+		certManagerForMetricsAndWebhooks, `#`)
 	hackutils.CheckError("fixing default/kustomization", err)
 }
 
