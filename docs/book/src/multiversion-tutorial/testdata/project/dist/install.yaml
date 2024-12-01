@@ -7926,9 +7926,11 @@ spec:
     spec:
       containers:
       - args:
+        - --metrics-secure=true
         - --metrics-bind-address=:8443
         - --leader-elect
         - --health-probe-bind-address=:8081
+        - --cert-dir=/tmp/k8s-metrics-server/serving-certs
         command:
         - /manager
         image: controller:latest
@@ -7965,7 +7967,7 @@ spec:
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
           readOnly: true
-        - mountPath: /tmp/k8s-metrics-server/metrics-certs
+        - mountPath: /tmp/k8s-metrics-server/serving-certs
           name: metrics-certs
           readOnly: true
       securityContext:
@@ -7981,6 +7983,14 @@ spec:
           secretName: webhook-server-cert
       - name: metrics-certs
         secret:
+          items:
+          - key: ca.crt
+            path: ca.crt
+          - key: tls.crt
+            path: tls.crt
+          - key: tls.key
+            path: tls.key
+          optional: false
           secretName: metrics-server-cert
 ---
 apiVersion: cert-manager.io/v1

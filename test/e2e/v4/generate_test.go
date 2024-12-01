@@ -71,10 +71,9 @@ func GenerateV4(kbc *utils.TestContext) {
 		monitorTlsPatch, "#")).To(Succeed())
 	ExpectWithOffset(1, pluginutil.UncommentCode(
 		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
-		`#- path: certmanager_metrics_manager_patch.yaml`, "#")).To(Succeed())
-	ExpectWithOffset(1, pluginutil.UncommentCode(
-		filepath.Join(kbc.Dir, "cmd", "main.go"),
-		tlsConfigManager, "// ")).To(Succeed())
+		`#- path: cert_metrics_manager_patch.yaml
+#  target:
+#    kind: Deployment`, "#")).To(Succeed())
 }
 
 // GenerateV4WithoutMetrics implements a go/v4 plugin project defined by a TestContext.
@@ -172,13 +171,12 @@ func GenerateV4WithNetworkPolicies(kbc *utils.TestContext) {
 		metricsTarget, "#")).To(Succeed())
 	ExpectWithOffset(1, pluginutil.UncommentCode(
 		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
-		`#- path: certmanager_metrics_manager_patch.yaml`, "#")).To(Succeed())
+		`#- path: cert_metrics_manager_patch.yaml
+#  target:
+#    kind: Deployment`, "#")).To(Succeed())
 	ExpectWithOffset(1, pluginutil.UncommentCode(
 		filepath.Join(kbc.Dir, "config", "prometheus", "kustomization.yaml"),
 		monitorTlsPatch, "#")).To(Succeed())
-	ExpectWithOffset(1, pluginutil.UncommentCode(
-		filepath.Join(kbc.Dir, "cmd", "main.go"),
-		tlsConfigManager, "// ")).To(Succeed())
 	By("uncomment kustomization.yaml to enable network policy")
 	ExpectWithOffset(1, pluginutil.UncommentCode(
 		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
@@ -434,7 +432,3 @@ const monitorTlsPatch = `#patches:
 #  - path: monitor_tls_patch.yaml
 #    target:
 #      kind: ServiceMonitor`
-
-const tlsConfigManager = `// metricsServerOptions.CertDir = "/tmp/k8s-metrics-server/metrics-certs"
-		// metricsServerOptions.CertName = "tls.crt"
-		// metricsServerOptions.KeyName = "tls.key"`

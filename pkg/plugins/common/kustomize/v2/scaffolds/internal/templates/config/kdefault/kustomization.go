@@ -87,9 +87,11 @@ patches:
     kind: Deployment
 
 # Uncomment the patches line if you enable Metrics and CertManager
-# [METRICS WITH CERTMANGER] To enable metrics protected with certmanager, uncomment the following line.
-# This patch will protect the metrics with certmanager self-signed certs.
-#- path: certmanager_metrics_manager_patch.yaml
+# [METRICS-WITH-CERTS] To enable metrics protected with certManager, uncomment the following line.
+# This patch will protect the metrics with certManager self-signed certs.
+#- path: cert_metrics_manager_patch.yaml
+#  target:
+#    kind: Deployment
 
 # [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix including the one in
 # crd/kustomization.yaml

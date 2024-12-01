@@ -46,4 +46,7 @@ const kustomizeMetricsPatchTemplate = `# This patch adds the args to allow expos
 - op: add
   path: /spec/template/spec/containers/0/args/0
   value: --metrics-bind-address=:8443
+- op: add
+  path: /spec/template/spec/containers/0/args/0
+  value: --metrics-secure=true
 `

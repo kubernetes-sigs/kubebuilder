@@ -35,7 +35,7 @@ type CertManagerMetricsPatch struct {
 // SetTemplateDefaults implements machinery.Template
 func (f *CertManagerMetricsPatch) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = filepath.Join("config", "default", "certmanager_metrics_manager_patch.yaml")
+		f.Path = filepath.Join("config", "default", "cert_metrics_manager_patch.yaml")
 	}
 
 	f.TemplateBody = metricsManagerPatchTemplate
@@ -50,25 +50,40 @@ func (f *CertManagerMetricsPatch) SetTemplateDefaults() error {
 	return nil
 }
 
-const metricsManagerPatchTemplate = `apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: controller-manager
-  namespace: system
-  labels:
-    app.kubernetes.io/name: {{ .ProjectName }}
-    app.kubernetes.io/managed-by: kustomize
-spec:
-  template:
-    spec:
-      containers:
-      - name: manager
-        volumeMounts:
-        - mountPath: /tmp/k8s-metrics-server/metrics-certs
-          name: metrics-certs
-          readOnly: true
-      volumes:
-      - name: metrics-certs
-        secret:
-          secretName: metrics-server-cert
+// nolint:lll
+const metricsManagerPatchTemplate = `# This patch adds the args and volumes to allow the manager to use the metrics-server certs
+# Ensure the volumeMounts field exists by creating it if missing
+- op: add
+  path: /spec/template/spec/containers/0/volumeMounts
+  value: []
+# Add the volume mount for the serving certificates
+- op: add
+  path: /spec/template/spec/containers/0/volumeMounts/-
+  value:
+    mountPath: /tmp/k8s-metrics-server/serving-certs
+    name: metrics-certs
+    readOnly: true
+# Add the cert-dir argument
+- op: add
+  path: /spec/template/spec/containers/0/args/-
+  value: --cert-dir=/tmp/k8s-metrics-server/serving-certs
+# Ensure the volumes field exists by creating it if missing
+- op: add
+  path: /spec/template/spec/volumes
+  value: []
+# Add the volume for the serving certificates
+- op: add
+  path: /spec/template/spec/volumes/-
+  value:
+    name: metrics-certs
+    secret:
+      secretName: metrics-server-cert
+      optional: false
+      items:
+        - key: ca.crt
+          path: ca.crt
+        - key: tls.crt
+          path: tls.crt
+        - key: tls.key
+          path: tls.key
 `
