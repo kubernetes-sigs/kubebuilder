@@ -99,6 +99,18 @@ func (f *WebhookTestUpdater) GetCodeFragments() machinery.CodeFragmentsMap {
 		)
 	}
 
+	if f.Resource.HasConversionWebhook() {
+		conversionWebhookCode := fmt.Sprintf(
+			conversionWebhookChecksFragment,
+			f.Resource.Kind,
+			f.Resource.Plural+"."+f.Resource.Group+"."+f.Resource.Domain,
+		)
+		codeFragments[machinery.NewMarkerFor(f.GetPath(), webhookChecksMarker)] = append(
+			codeFragments[machinery.NewMarkerFor(f.GetPath(), webhookChecksMarker)],
+			conversionWebhookCode,
+		)
+	}
+
 	return codeFragments
 }
 
@@ -138,6 +150,22 @@ const validatingWebhookChecksFragment = `It("should have CA injection for valida
 			"validatingwebhookconfigurations.admissionregistration.k8s.io",
 			"%s-validating-webhook-configuration",
 			"-o", "go-template={{ range .webhooks }}{{ .clientConfig.caBundle }}{{ end }}")
+		vwhOutput, err := utils.Run(cmd)
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(len(vwhOutput)).To(BeNumerically(">", 10))
+	}
+	Eventually(verifyCAInjection).Should(Succeed())
+})
+
+`
+
+const conversionWebhookChecksFragment = `It("should have CA injection for %[1]s conversion webhook", func() {
+	By("checking CA injection for %[1]s conversion webhook")
+	verifyCAInjection := func(g Gomega) {
+		cmd := exec.Command("kubectl", "get",
+			"customresourcedefinitions.apiextensions.k8s.io",
+			"%[2]s",
+			"-o", "go-template={{ .spec.conversion.webhook.clientConfig.caBundle }}")
 		vwhOutput, err := utils.Run(cmd)
 		g.Expect(err).NotTo(HaveOccurred())
 		g.Expect(len(vwhOutput)).To(BeNumerically(">", 10))
