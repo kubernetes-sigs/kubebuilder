@@ -290,7 +290,7 @@ func copyFileWithHelmLogic(srcFile, destFile, subDir, projectName string) error 
 	if subDir == "rbac" {
 		contentStr = strings.Replace(contentStr,
 			"name: controller-manager",
-			fmt.Sprintf("name: %s-controller-manager", projectName), -1)
+			"name: {{ .Values.controllerManager.serviceAccountName }}", -1)
 		contentStr = strings.Replace(contentStr,
 			"name: metrics-reader",
 			fmt.Sprintf("name: %s-metrics-reader", projectName), 1)
@@ -302,7 +302,7 @@ func copyFileWithHelmLogic(srcFile, destFile, subDir, projectName string) error 
 			"name: metrics-auth-rolebinding",
 			fmt.Sprintf("name: %s-metrics-auth-rolebinding", projectName), 1)
 
-		if strings.Contains(contentStr, "-controller-manager") &&
+		if strings.Contains(contentStr, ".Values.controllerManager.serviceAccountName") &&
 			strings.Contains(contentStr, "kind: ServiceAccount") &&
 			!strings.Contains(contentStr, "RoleBinding") {
 			// The generated Service Account does not have the annotations field so we must add it.
