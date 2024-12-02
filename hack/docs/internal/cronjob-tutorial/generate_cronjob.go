@@ -548,9 +548,8 @@ var testEnv *envtest.Environment
 
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "internal/controller/suite_test.go"),
-		`, runtime.GOOS, runtime.GOARCH)),
-	}
-`, `
+		`testEnv.BinaryAssetsDirectory = getFirstFoundEnvTestBinaryDir()
+	}`, `
 	/*
 		Then, we start the envtest cluster.
 	*/`)

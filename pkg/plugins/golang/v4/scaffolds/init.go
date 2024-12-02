@@ -40,8 +40,6 @@ const (
 	ControllerRuntimeVersion = "v0.19.1"
 	// ControllerToolsVersion is the kubernetes-sigs/controller-tools version to be used in the project
 	ControllerToolsVersion = "v0.16.5"
-	// EnvtestK8SVersion is the k8s version used to do the scaffold
-	EnvtestK8SVersion = "1.31.0"
 
 	imageName = "controller:latest"
 )
