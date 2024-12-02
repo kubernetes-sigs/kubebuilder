@@ -11,6 +11,6 @@ roleRef:
   name: project-v4-with-plugins-manager-role
 subjects:
 - kind: ServiceAccount
-  name: project-v4-with-plugins-controller-manager
+  name: {{ .Values.controllerManager.serviceAccountName }}
   namespace: {{ .Release.Namespace }}
 {{- end -}}
