@@ -31,6 +31,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -123,8 +124,9 @@ func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	if !controllerutil.ContainsFinalizer(memcached, memcachedFinalizer) {
 		log.Info("Adding Finalizer for Memcached")
 		if ok := controllerutil.AddFinalizer(memcached, memcachedFinalizer); !ok {
-			log.Error(err, "Failed to add finalizer into the custom resource")
-			return ctrl.Result{Requeue: true}, nil
+			err = fmt.Errorf("finalizer for Memcached was not added")
+			log.Error(err, "Failed to add finalizer for Memcached")
+			return ctrl.Result{}, err
 		}
 
 		if err = r.Update(ctx, memcached); err != nil {
@@ -178,8 +180,9 @@ func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 			log.Info("Removing Finalizer for Memcached after successfully perform the operations")
 			if ok := controllerutil.RemoveFinalizer(memcached, memcachedFinalizer); !ok {
+				err = fmt.Errorf("finalizer for Memcached was not removed")
 				log.Error(err, "Failed to remove finalizer for Memcached")
-				return ctrl.Result{Requeue: true}, nil
+				return ctrl.Result{}, err
 			}
 
 			if err := r.Update(ctx, memcached); err != nil {
@@ -226,7 +229,7 @@ func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{RequeueAfter: time.Minute}, nil
 	} else if err != nil {
 		log.Error(err, "Failed to get Deployment")
-		// Let's return the error for the reconciliation be re-trigged again
+		// Let's return the error for the reconciliation be re-triggered again
 		return ctrl.Result{}, err
 	}
 
@@ -358,7 +361,7 @@ func (r *MemcachedReconciler) deploymentForMemcached(
 					//	 },
 					// },
 					SecurityContext: &corev1.PodSecurityContext{
-						RunAsNonRoot: &[]bool{true}[0],
+						RunAsNonRoot: ptr.To(true),
 						// IMPORTANT: seccomProfile was introduced with Kubernetes 1.19
 						// If you are looking for to produce solutions to be supported
 						// on lower versions you must remove this option.
@@ -373,9 +376,9 @@ func (r *MemcachedReconciler) deploymentForMemcached(
 						// Ensure restrictive context for the container
 						// More info: https://kubernetes.io/docs/concepts/security/pod-security-standards/#restricted
 						SecurityContext: &corev1.SecurityContext{
-							RunAsNonRoot:             &[]bool{true}[0],
-							RunAsUser:                &[]int64{1001}[0],
-							AllowPrivilegeEscalation: &[]bool{false}[0],
+							RunAsNonRoot:             ptr.To(true),
+							RunAsUser:                ptr.To(int64(1001)),
+							AllowPrivilegeEscalation: ptr.To(false),
 							Capabilities: &corev1.Capabilities{
 								Drop: []corev1.Capability{
 									"ALL",
@@ -409,7 +412,8 @@ func labelsForMemcached() map[string]string {
 	if err == nil {
 		imageTag = strings.Split(image, ":")[1]
 	}
-	return map[string]string{"app.kubernetes.io/name": "project-v4-with-plugins",
+	return map[string]string{
+		"app.kubernetes.io/name":       "project-v4-with-plugins",
 		"app.kubernetes.io/version":    imageTag,
 		"app.kubernetes.io/managed-by": "MemcachedController",
 	}
