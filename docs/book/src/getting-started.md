@@ -399,7 +399,7 @@ to refresh the files located under `config/rbac`.
 
 The [Manager][manager] in the `cmd/main.go` file is responsible for managing the controllers in your application.
 
-<details><summary><code>cmd/main.gol</code>: Our main.go </summary>
+<details><summary><code>cmd/main.go</code>: Our main.go </summary>
 
 ```go
 {{#include ./getting-started/testdata/project/cmd/main.go}}
