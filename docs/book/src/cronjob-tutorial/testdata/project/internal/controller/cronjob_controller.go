@@ -31,6 +31,8 @@ import (
 	"github.com/robfig/cron"
 	kbatch "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ref "k8s.io/client-go/tools/reference"
@@ -65,6 +67,14 @@ func (_ realClock) Now() time.Time { return time.Now() }
 type Clock interface {
 	Now() time.Time
 }
+
+/*
+Definitions to manage status conditions of the CronJob
+*/
+const (
+	typeAvailableCronJob = "AvailableCronJob"
+	typeDegradedCronJob  = "DegradedCronJob"
+)
 
 // +kubebuilder:docs-gen:collapse=Clock
 
@@ -111,14 +121,40 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 		Many client methods also take variadic options at the end.
 	*/
-	var cronJob batchv1.CronJob
-	if err := r.Get(ctx, req.NamespacedName, &cronJob); err != nil {
-		log.Error(err, "unable to fetch CronJob")
-		// we'll ignore not-found errors, since they can't be fixed by an immediate
-		// requeue (we'll need to wait for a new notification), and we can get them
-		// on deleted requests.
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+	cronJob := &batchv1.CronJob{}
+	if err := r.Get(ctx, req.NamespacedName, cronJob); err != nil {
+		if apierrors.IsNotFound(err) {
+			// we'll ignore not-found errors, since they can't be fixed by an immediate
+			// requeue (we'll need to wait for a new notification), and we can get them
+			// on deleted requests.
+			// If the CronJob is not found then it usually means that it was deleted or
+			// not created. In this way we will stop the reconciliation
+			log.Info("CronJob resource not found. Ignoring since object must be deleted")
+			return ctrl.Result{}, nil
+		}
+		// Error reading the object - requeue the request.
+		log.Error(err, "Failed to fetch CronJob")
+		return ctrl.Result{}, err
 	}
+
+	// Let's just set the status as Unknown when no status is available
+	if cronJob.Status.Conditions == nil || len(cronJob.Status.Conditions) == 0 {
+		meta.SetStatusCondition(&cronJob.Status.Conditions, metav1.Condition{Type: typeAvailableCronJob, Status: metav1.ConditionUnknown, Reason: "Reconciling", Message: "Starting reconciliation"})
+		if err := r.Status().Update(ctx, cronJob); err != nil {
+			log.Error(err, "Failed to update CronJob status")
+			return ctrl.Result{}, err
+		}
+
+		// Re-fetch the CronJob after updating the status so that we have
+		// the latest state of the resource on the cluster and avoid raising
+		// an error should we try to update it again in the following operations
+		if err := r.Get(ctx, req.NamespacedName, cronJob); err != nil {
+			log.Error(err, "Failed to re-fetch CronJob")
+			return ctrl.Result{}, err
+		}
+	}
+
+	// TODO(dev): add finalizer logic
 
 	/*
 		### 2: List all active jobs, and update the status
