@@ -116,7 +116,7 @@ Please ensure that you review: [Kubernetes API Conventions](https://github.com/k
 #### Markers and validations
 
 Furthermore, we want to validate the values added in our CustomResource
-to ensure that those are valid. To do it we are will use refer [markers][markers],
+to ensure that those are valid. To achieve this, we will use [markers][markers],
 such as `+kubebuilder:validation:Minimum=1`.
 
 Now, see our example fully completed.
