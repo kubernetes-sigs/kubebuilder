@@ -62,6 +62,12 @@ func (s *webhookScaffolder) InjectFS(fs machinery.Filesystem) { s.fs = fs }
 func (s *webhookScaffolder) Scaffold() error {
 	log.Println("Writing kustomize manifests for you to edit...")
 
+	// Will validate the scaffold
+	// Users that scaffolded the project previously
+	// with the bugs will receive a message to help
+	// them out fix their scaffold.
+	validateScaffoldedProject()
+
 	// Initialize the machinery.Scaffold that will write the files to disk
 	scaffold := machinery.NewScaffold(s.fs,
 		machinery.WithConfig(s.config),
@@ -86,7 +92,7 @@ func (s *webhookScaffolder) Scaffold() error {
 	// Only scaffold the following patches if is a conversion webhook
 	if s.resource.Webhooks.Conversion {
 		buildScaffold = append(buildScaffold, &patches.EnableWebhookPatch{})
-		buildScaffold = append(buildScaffold, &patches.EnableCAInjectionPatch{})
+		buildScaffold = append(buildScaffold, &kdefault.KustomizationCAConversionUpdater{})
 	}
 
 	if !s.resource.External && !s.resource.Core {
@@ -105,6 +111,7 @@ func (s *webhookScaffolder) Scaffold() error {
 			"%s to allow webhook traffic.", policyKustomizeFilePath)
 	}
 
+	// nolint:goconst
 	kustomizeFilePath := "config/default/kustomization.yaml"
 	err = pluginutil.UncommentCode(kustomizeFilePath, "#- ../webhook", `#`)
 	if err != nil {
@@ -148,6 +155,70 @@ func (s *webhookScaffolder) Scaffold() error {
 	}
 
 	return nil
+}
+
+// Deprecated: remove it when go/v4 and/or kustomize/v2 be removed
+// validateScaffoldedProject will output a message to help users fix their scaffold
+func validateScaffoldedProject() {
+	// nolint:goconst
+	kustomizeFilePath := "config/default/kustomization.yaml"
+	hasCertManagerPatch, _ := pluginutil.HasFileContentWith(kustomizeFilePath,
+		"crdkustomizecainjectionpatch")
+
+	if hasCertManagerPatch {
+		log.Warning(`
+
+1. **Remove the CERTMANAGER Section from config/crd/kustomization.yaml:**
+
+   Delete the CERTMANAGER section to prevent unintended CA injection patches for CRDs.
+   Ensure the following lines are removed or commented out:
+
+   # [CERTMANAGER] To enable cert-manager, uncomment all the sections with [CERTMANAGER] prefix.
+   # patches here are for enabling the CA injection for each CRD
+   #- path: patches/cainjection_in_firstmates.yaml
+   # +kubebuilder:scaffold:crdkustomizecainjectionpatch
+
+2. **Ensure CA Injection Configuration in config/default/kustomization.yaml:**
+
+   Under the [CERTMANAGER] replacement in config/default/kustomization.yaml,
+   add the following code for proper CA injection generation:
+
+   **NOTE:** You must ensure that the code contains the following target markers:
+   - +kubebuilder:scaffold:crdkustomizecainjectionns
+   - +kubebuilder:scaffold:crdkustomizecainjectioname
+
+   # - source: # Uncomment the following block if you have a ConversionWebhook (--conversion)
+   #     kind: Certificate
+   #     group: cert-manager.io
+   #     version: v1
+   #     name: serving-cert # This name should match the one in certificate.yaml
+   #     fieldPath: .metadata.namespace # Namespace of the certificate CR
+   #   targets: # Do not remove or uncomment the following scaffold marker; required to generate code for target CRD.
+   # +kubebuilder:scaffold:crdkustomizecainjectionns
+   # - source:
+   #     kind: Certificate
+   #     group: cert-manager.io
+   #     version: v1
+   #     name: serving-cert # This name should match the one in certificate.yaml
+   #     fieldPath: .metadata.name
+   #   targets: # Do not remove or uncomment the following scaffold marker; required to generate code for target CRD.
+   # +kubebuilder:scaffold:crdkustomizecainjectioname
+
+3. **Ensure Only Conversion Webhook Patches in config/crd/patches:**
+
+   The config/crd/patches directory and the corresponding entries in config/crd/kustomization.yaml should only 
+   contain files for conversion webhooks. Previously, a bug caused the patch file to be generated for any webhook, 
+   but only patches for webhooks created with the --conversion option should be included.
+
+For further guidance, you can refer to examples in the testdata/ directory in the Kubebuilder repository.
+
+**Alternatively**: You can use the 'alpha generate' command to re-generate the project from scratch using the latest
+release available. Afterward, you can re-add only your code implementation on top to ensure your project includes all
+the latest bug fixes and enhancements.
+
+`)
+
+	}
 }
 
 const allowWebhookTrafficFragment = `

@@ -103,9 +103,66 @@ properly registered with the manager, so that the controller can reconcile the r
 | `+kubebuilder:scaffold:webhook`            | `webhooks suite tests` files  | Marks where webhook setup functions are added.                                  |
 | `+kubebuilder:scaffold:crdkustomizeresource`| `config/crd`                 | Marks where CRD custom resource patches are added.                              |
 | `+kubebuilder:scaffold:crdkustomizewebhookpatch` | `config/crd`              | Marks where CRD webhook patches are added.                                      |
-| `+kubebuilder:scaffold:crdkustomizecainjectionpatch` | `config/crd`           | Marks where CA injection patches are added for the webhook.                     |
+| `+kubebuilder:scaffold:crdkustomizecainjectionns`                            | `config/default`             | Marks where CA injection patches are added for the conversion webhooks.                                                                                                                |
+| `+kubebuilder:scaffold:crdkustomizecainjectioname`                           | `config/default`             | Marks where CA injection patches are added for the conversion webhooks.                                                                                                                |
+| **(No longer supported)** `+kubebuilder:scaffold:crdkustomizecainjectionpatch` | `config/crd`                 | Marks where CA injection patches are added for the webhooks. Replaced by `+kubebuilder:scaffold:crdkustomizecainjectionns` and `+kubebuilder:scaffold:crdkustomizecainjectioname`  |
 | `+kubebuilder:scaffold:manifestskustomizesamples` | `config/samples`           | Marks where Kustomize sample manifests are injected.                            |
 | `+kubebuilder:scaffold:e2e-webhooks-checks` | `test/e2e`                   | Adds e2e checks for webhooks depending on the types of webhooks scaffolded.      |
+
+<aside class="note warning">
+<h1> **(No longer supported)** `+kubebuilder:scaffold:crdkustomizecainjectionpatch` </h1>
+
+If you find this marker in your code please:
+
+1. **Remove the CERTMANAGER Section from `config/crd/kustomization.yaml`:**
+
+   Delete the `CERTMANAGER` section to prevent unintended CA injection patches for CRDs. Ensure the following lines are removed or commented out:
+
+   ```yaml
+   # [CERTMANAGER] To enable cert-manager, uncomment all the sections with [CERTMANAGER] prefix.
+   # patches here are for enabling the CA injection for each CRD
+   #- path: patches/cainjection_in_firstmates.yaml
+   # +kubebuilder:scaffold:crdkustomizecainjectionpatch
+   ```
+
+2. **Ensure CA Injection Configuration in `config/default/kustomization.yaml`:**
+
+   Under the `[CERTMANAGER]` replacement in `config/default/kustomization.yaml`, add the following code for proper CA injection generation:
+
+   **NOTE:** You must ensure that the code contains the following target markers:
+    - `+kubebuilder:scaffold:crdkustomizecainjectionns`
+    - `+kubebuilder:scaffold:crdkustomizecainjectioname`
+
+   ```yaml
+   # - source: # Uncomment the following block if you have a ConversionWebhook (--conversion)
+   #     kind: Certificate
+   #     group: cert-manager.io
+   #     version: v1
+   #     name: serving-cert # This name should match the one in certificate.yaml
+   #     fieldPath: .metadata.namespace # Namespace of the certificate CR
+   #   targets: # Do not remove or uncomment the following scaffold marker; required to generate code for target CRD.
+   # +kubebuilder:scaffold:crdkustomizecainjectionns
+   # - source:
+   #     kind: Certificate
+   #     group: cert-manager.io
+   #     version: v1
+   #     name: serving-cert # This name should match the one in certificate.yaml
+   #     fieldPath: .metadata.name
+   #   targets: # Do not remove or uncomment the following scaffold marker; required to generate code for target CRD.
+   # +kubebuilder:scaffold:crdkustomizecainjectioname
+   ```
+
+3. **Ensure Only Conversion Webhook Patches in `config/crd/patches`:**
+
+   The `config/crd/patches` directory and the corresponding entries in `config/crd/kustomization.yaml` should only contain files for conversion webhooks. Previously, a bug caused the patch file to be generated for any webhook, but only patches for webhooks scaffolded with the `--conversion` option should be included.
+
+For further guidance, you can refer to examples in the `testdata/` directory in the Kubebuilder repository.
+
+> **Alternatively**: You can use the [`alpha generate`](./../rescaffold.md) command to re-generate the project from scratch
+> using the latest release available. Afterward, you can re-add only your code implementation on top to ensure your project
+> includes all the latest bug fixes and enhancements.
+
+</aside>
 
 <aside class="note">
 <h1>Creating Your Own Markers</h1>

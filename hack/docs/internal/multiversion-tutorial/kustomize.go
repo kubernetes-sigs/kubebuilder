@@ -16,31 +16,34 @@ limitations under the License.
 
 package multiversion
 
-const caConversionCRDDefaultKustomize = `#
+const caInjectionNamespace = `#
 # - source: # Uncomment the following block if you have a ConversionWebhook (--conversion)
 #     kind: Certificate
 #     group: cert-manager.io
 #     version: v1
 #     name: serving-cert # This name should match the one in certificate.yaml
 #     fieldPath: .metadata.namespace # Namespace of the certificate CR
-#   targets:
+#   targets: # Do not remove or uncomment the following scaffold marker; required to generate code for target CRD.
 #     - select:
 #         kind: CustomResourceDefinition
+#         name: cronjobs.batch.tutorial.kubebuilder.io
 #       fieldPaths:
 #         - .metadata.annotations.[cert-manager.io/inject-ca-from]
 #       options:
 #         delimiter: '/'
 #         index: 0
-#         create: true
-# - source:
+#         create: true`
+
+const caInjectionCert = `# - source:
 #     kind: Certificate
 #     group: cert-manager.io
 #     version: v1
 #     name: serving-cert # This name should match the one in certificate.yaml
 #     fieldPath: .metadata.name
-#   targets:
+#   targets: # Do not remove or uncomment the following scaffold marker; required to generate code for target CRD.
 #     - select:
 #         kind: CustomResourceDefinition
+#         name: cronjobs.batch.tutorial.kubebuilder.io
 #       fieldPaths:
 #         - .metadata.annotations.[cert-manager.io/inject-ca-from]
 #       options:

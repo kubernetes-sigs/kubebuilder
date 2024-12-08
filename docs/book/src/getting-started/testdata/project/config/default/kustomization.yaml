@@ -156,27 +156,13 @@ patches:
 #     version: v1
 #     name: serving-cert # This name should match the one in certificate.yaml
 #     fieldPath: .metadata.namespace # Namespace of the certificate CR
-#   targets:
-#     - select:
-#         kind: CustomResourceDefinition
-#       fieldPaths:
-#         - .metadata.annotations.[cert-manager.io/inject-ca-from]
-#       options:
-#         delimiter: '/'
-#         index: 0
-#         create: true
+#   targets: # Do not remove or uncomment the following scaffold marker; required to generate code for target CRD.
+# +kubebuilder:scaffold:crdkustomizecainjectionns
 # - source:
 #     kind: Certificate
 #     group: cert-manager.io
 #     version: v1
 #     name: serving-cert # This name should match the one in certificate.yaml
 #     fieldPath: .metadata.name
-#   targets:
-#     - select:
-#         kind: CustomResourceDefinition
-#       fieldPaths:
-#         - .metadata.annotations.[cert-manager.io/inject-ca-from]
-#       options:
-#         delimiter: '/'
-#         index: 1
-#         create: true
+#   targets: # Do not remove or uncomment the following scaffold marker; required to generate code for target CRD.
+# +kubebuilder:scaffold:crdkustomizecainjectionname

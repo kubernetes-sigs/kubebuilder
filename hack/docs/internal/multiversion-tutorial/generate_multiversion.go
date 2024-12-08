@@ -279,7 +279,13 @@ func (sp *Sample) updateDefaultKustomize() {
 	// Enable CA for Conversion Webhook
 	err := pluginutil.UncommentCode(
 		filepath.Join(sp.ctx.Dir, "config/default/kustomization.yaml"),
-		caConversionCRDDefaultKustomize, `#`)
+		caInjectionNamespace, `#`)
+	hackutils.CheckError("fixing default/kustomization", err)
+
+	// Enable CA for Conversion Webhook
+	err = pluginutil.UncommentCode(
+		filepath.Join(sp.ctx.Dir, "config/default/kustomization.yaml"),
+		caInjectionCert, `#`)
 	hackutils.CheckError("fixing default/kustomization", err)
 }
 
