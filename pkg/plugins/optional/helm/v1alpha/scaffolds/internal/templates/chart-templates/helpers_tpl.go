@@ -88,9 +88,9 @@ Helper to check if mutating webhooks exist in the services.
 {{` + "`" + `{{- $hasMutating := false }}` + "`" + `}}
 {{` + "`" + `{{- range . }}` + "`" + `}}
   {{` + "`" + `{{- if eq .type "mutating" }}` + "`" + `}}
-    {{` + "`" + `$hasMutating = true }}{{- end }}` + "`" + `}}
+    {{` + "`" + `{{- $hasMutating = true }}{{- end }}` + "`" + `}}
 {{` + "`" + `{{- end }}` + "`" + `}}
-{{` + "`" + `{{ $hasMutating }}}}{{- end }}` + "`" + `}}
+{{` + "`" + `{{ $hasMutating }}{{- end }}` + "`" + `}}
 
 {{/*
 Helper to check if validating webhooks exist in the services.
@@ -99,7 +99,7 @@ Helper to check if validating webhooks exist in the services.
 {{` + "`" + `{{- $hasValidating := false }}` + "`" + `}}
 {{` + "`" + `{{- range . }}` + "`" + `}}
   {{` + "`" + `{{- if eq .type "validating" }}` + "`" + `}}
-    {{` + "`" + `$hasValidating = true }}{{- end }}` + "`" + `}}
+    {{` + "`" + `{{- $hasValidating = true }}{{- end }}` + "`" + `}}
 {{` + "`" + `{{- end }}` + "`" + `}}
-{{` + "`" + `{{ $hasValidating }}}}{{- end }}` + "`" + `}}
+{{` + "`" + `{{ $hasValidating }}{{- end }}` + "`" + `}}
 `
