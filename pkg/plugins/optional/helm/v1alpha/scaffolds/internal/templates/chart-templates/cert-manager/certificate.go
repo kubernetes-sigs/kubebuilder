@@ -77,7 +77,7 @@ spec:
     name: selfsigned-issuer
   secretName: webhook-server-cert
 {{` + "`" + `{{- end }}` + "`" + `}}
-{{ "{{- if and .Values.metrics.enable .Values.certmanager.enable }}" }}
+{{ "{{- if .Values.metrics.enable }}" }}
 ---
 # Certificate for the metrics
 apiVersion: cert-manager.io/v1
