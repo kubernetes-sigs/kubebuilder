@@ -143,7 +143,7 @@ func main() {
 		The above example will change the scope of your project to a single `Namespace`. In this scenario,
 		it is also suggested to restrict the provided authorization to this namespace by replacing the default
 		`ClusterRole` and `ClusterRoleBinding` to `Role` and `RoleBinding` respectively.
-		For further information see the Kubernetes documentation about Using [RBAC Authorization](https://kubernetes.io/docs/reference/access-authn-authz/rbac/).
+		For further information see the Kubernetes documentation about [Using RBAC Authorization](https://kubernetes.io/docs/reference/access-authn-authz/rbac/).
 
 		Also, it is possible to use the [`DefaultNamespaces`](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/cache#Options)
 		from `cache.Options{}` to cache objects in a specific set of namespaces:
