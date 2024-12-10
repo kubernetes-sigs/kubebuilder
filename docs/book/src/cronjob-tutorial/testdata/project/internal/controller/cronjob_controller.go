@@ -291,7 +291,7 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		The status subresource ignores changes to spec, so it's less likely to conflict
 		with any other updates, and can have separate permissions.
 	*/
-	if err := r.Status().Update(ctx, &cronJob); err != nil {
+	if err := r.Status().Update(ctx, cronJob); err != nil {
 		log.Error(err, "unable to update CronJob status")
 		return ctrl.Result{}, err
 	}
@@ -432,7 +432,7 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	// figure out the next times that we need to create
 	// jobs at (or anything we missed).
-	missedRun, nextRun, err := getNextSchedule(&cronJob, r.Now())
+	missedRun, nextRun, err := getNextSchedule(cronJob, r.Now())
 	if err != nil {
 		log.Error(err, "unable to figure out CronJob schedule")
 		// we don't really care about requeuing until we get an update that
@@ -536,7 +536,7 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	// +kubebuilder:docs-gen:collapse=constructJobForCronJob
 
 	// actually make the job...
-	job, err := constructJobForCronJob(&cronJob, missedRun)
+	job, err := constructJobForCronJob(cronJob, missedRun)
 	if err != nil {
 		log.Error(err, "unable to construct job from template")
 		// don't bother requeuing until we get a change to the spec
