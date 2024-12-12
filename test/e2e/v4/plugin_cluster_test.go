@@ -68,45 +68,45 @@ var _ = Describe("kubebuilder", func() {
 		})
 		It("should generate a runnable project", func() {
 			GenerateV4(kbc)
-			Run(kbc, true, false, false, true, false)
+			Run(kbc, true, false, false, true, false, true)
 		})
 		It("should generate a runnable project with the Installer", func() {
 			GenerateV4(kbc)
-			Run(kbc, true, true, false, true, false)
+			Run(kbc, true, true, false, true, false, true)
 		})
 		It("should generate a runnable project using webhooks and installed with the HelmChart", func() {
 			GenerateV4(kbc)
 			By("installing Helm")
 			Expect(kbc.InstallHelm()).To(Succeed())
 
-			Run(kbc, true, false, true, true, false)
+			Run(kbc, true, false, true, true, false, false)
 
 			By("uninstalling Helm Release")
 			Expect(kbc.UninstallHelmRelease()).To(Succeed())
 		})
 		It("should generate a runnable project without metrics exposed", func() {
 			GenerateV4WithoutMetrics(kbc)
-			Run(kbc, true, false, false, false, false)
+			Run(kbc, true, false, false, false, false, false)
 		})
 		It("should generate a runnable project with metrics protected by network policies", func() {
 			GenerateV4WithNetworkPoliciesWithoutWebhooks(kbc)
-			Run(kbc, false, false, false, true, true)
+			Run(kbc, false, false, false, true, true, false)
 		})
 		It("should generate a runnable project with webhooks and metrics protected by network policies", func() {
 			GenerateV4WithNetworkPolicies(kbc)
-			Run(kbc, true, false, false, true, true)
+			Run(kbc, true, false, false, true, true, true)
 		})
 		It("should generate a runnable project with the manager running "+
 			"as restricted and without webhooks", func() {
 			GenerateV4WithoutWebhooks(kbc)
-			Run(kbc, false, false, false, true, false)
+			Run(kbc, false, false, false, true, false, false)
 		})
 	})
 })
 
 // Run runs a set of e2e tests for a scaffolded project defined by a TestContext.
 func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart, hasMetrics bool,
-	hasNetworkPolicies bool) {
+	hasNetworkPolicies, hasMetricsCert bool) {
 	var controllerPodName string
 	var err error
 
@@ -336,6 +336,12 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 			`controller_runtime_reconcile_total{controller="%s",result="success"} 1`,
 			strings.ToLower(kbc.Kind),
 		)))
+
+		if hasMetricsCert {
+			By("validating the metrics endpoint works with cert-manager generated certificates", func() {
+				checkMetricsWithCert(kbc)
+			})
+		}
 	}
 
 	if !hasMetrics {
@@ -533,6 +539,87 @@ func getMetricsOutput(kbc *utils.TestContext) string {
 	EventuallyWithOffset(2, getCurlLogs, 10*time.Second, time.Second).Should(ContainSubstring("< HTTP/1.1 200 OK"))
 	removeCurlPod(kbc)
 	return metricsOutput
+}
+
+// checkMetricsWithCert validates the metrics endpoint using cert-manager generated certificates.
+func checkMetricsWithCert(kbc *utils.TestContext) {
+	By("validating that the controller-manager service is available")
+	_, err := kbc.Kubectl.Get(
+		true,
+		"service", fmt.Sprintf("e2e-%s-controller-manager-metrics-service", kbc.TestSuffix),
+	)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred(), "Controller-manager service should exist")
+
+	By("creating a curl pod to access the metrics endpoint using cert-manager certificates")
+	curlPodYAML := `
+apiVersion: v1
+kind: Pod
+metadata:
+  name: curl
+  namespace: %s
+spec:
+  containers:
+  - name: curl
+    image: curlimages/curl:7.85.0
+    command:
+    - sh
+    - -c
+    - sleep infinity
+    volumeMounts:
+    - mountPath: /tmp/cert
+      name: cert-volume
+      readOnly: true
+  volumes:
+  - name: cert-volume
+    secret:
+      secretName: metrics-server-cert
+  restartPolicy: Never
+`
+	// Write the pod manifest to a temporary file
+	curlPodFile := filepath.Join(kbc.Dir, "curl-pod.yaml")
+	err = os.WriteFile(curlPodFile, []byte(fmt.Sprintf(curlPodYAML, kbc.Kubectl.Namespace)), 0644)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred(), "Failed to write curl pod YAML to file")
+
+	// Apply the curl pod manifest
+	_, err = kbc.Kubectl.Apply(true, "-f", curlPodFile)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred(), "Failed to create curl pod")
+
+	By("validating that the curl pod is running as expected")
+	verifyCurlPodUp := func() error {
+		status, err := kbc.Kubectl.Get(
+			true,
+			"pods", "curl", "-o", "jsonpath={.status.phase}",
+		)
+		if err != nil {
+			return err
+		}
+		if status != "Running" {
+			return fmt.Errorf("curl pod in %s status", status)
+		}
+		return nil
+	}
+	EventuallyWithOffset(1, verifyCurlPodUp, 2*time.Minute, time.Second).Should(Succeed(),
+		"Curl pod should be running")
+
+	By("validating that the metrics endpoint is serving as expected using the certificate and token")
+
+	// Construct the curl command to fetch the token and call the metrics endpoint
+	// nolint:lll
+	cmd := `curl -v -k --cert /tmp/cert/tls.crt --key /tmp/cert/tls.key -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" https://e2e-%s-controller-manager-metrics-service.%s.svc.cluster.local:8443/metrics`
+	cmd = fmt.Sprintf(cmd, kbc.TestSuffix, kbc.Kubectl.Namespace)
+
+	// Execute the curl command inside the pod
+	curlOutput, err := kbc.Kubectl.Command("exec", "curl", "--namespace", kbc.Kubectl.Namespace, "--", "sh", "-c", cmd)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred(), "Failed to curl the metrics endpoint with certificate and token")
+	ExpectWithOffset(1, curlOutput).To(ContainSubstring("200 OK"),
+		"Metrics endpoint did not respond with 200 OK")
+
+	By("cleaning up the curl pod")
+	removeCurlPod(kbc)
+
+	// Remove the temporary YAML file
+	err = os.Remove(curlPodFile)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred(), "Failed to delete temporary curl pod YAML file")
 }
 
 func metricsShouldBeUnavailable(kbc *utils.TestContext) {

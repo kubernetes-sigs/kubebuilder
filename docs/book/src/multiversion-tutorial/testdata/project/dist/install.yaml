@@ -7929,6 +7929,7 @@ spec:
         - --metrics-bind-address=:8443
         - --leader-elect
         - --health-probe-bind-address=:8081
+        - --cert-dir=/tmp/k8s-metrics-server/metrics-certs
         command:
         - /manager
         image: controller:latest
@@ -7981,24 +7982,28 @@ spec:
           secretName: webhook-server-cert
       - name: metrics-certs
         secret:
+          items:
+          - key: ca.crt
+            path: ca.crt
+          - key: tls.crt
+            path: tls.crt
+          - key: tls.key
+            path: tls.key
+          optional: false
           secretName: metrics-server-cert
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   labels:
-    app.kubernetes.io/component: certificate
-    app.kubernetes.io/created-by: project
-    app.kubernetes.io/instance: metrics-certs
     app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: certificate
-    app.kubernetes.io/part-of: project
+    app.kubernetes.io/name: project
   name: project-metrics-certs
   namespace: project-system
 spec:
   dnsNames:
-  - project-webhook-service.project-system.svc
-  - project-webhook-service.project-system.svc.cluster.local
+  - project-controller-manager-metrics-service.project-system.svc
+  - project-controller-manager-metrics-service.project-system.svc.cluster.local
   issuerRef:
     kind: Issuer
     name: project-selfsigned-issuer
@@ -8008,12 +8013,8 @@ apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   labels:
-    app.kubernetes.io/component: certificate
-    app.kubernetes.io/created-by: project
-    app.kubernetes.io/instance: serving-cert
     app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: certificate
-    app.kubernetes.io/part-of: project
+    app.kubernetes.io/name: project
   name: project-serving-cert
   namespace: project-system
 spec:

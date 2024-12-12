@@ -84,6 +84,8 @@ func (s *webhookScaffolder) Scaffold() error {
 		&webhook.KustomizeConfig{},
 		&webhook.Service{},
 		&certmanager.Certificate{},
+		&certmanager.Issuer{},
+		&certmanager.MetricsCertificate{},
 		&certmanager.Kustomization{},
 		&certmanager.KustomizeConfig{},
 		&network_policy.NetworkPolicyAllowWebhooks{},

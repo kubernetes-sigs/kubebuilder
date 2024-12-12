@@ -20,6 +20,7 @@ import (
 	"crypto/tls"
 	"flag"
 	"os"
+	"path/filepath"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -29,6 +30,7 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/certwatcher"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/filters"
@@ -41,8 +43,9 @@ import (
 )
 
 var (
-	scheme   = runtime.NewScheme()
-	setupLog = ctrl.Log.WithName("setup")
+	scheme      = runtime.NewScheme()
+	setupLog    = ctrl.Log.WithName("setup")
+	certWatcher *certwatcher.CertWatcher
 )
 
 func init() {
@@ -54,6 +57,9 @@ func init() {
 
 func main() {
 	var metricsAddr string
+	var certDir string
+	var certName string
+	var certKey string
 	var enableLeaderElection bool
 	var probeAddr string
 	var secureMetrics bool
@@ -67,6 +73,10 @@ func main() {
 			"Enabling this will ensure there is only one active controller manager.")
 	flag.BoolVar(&secureMetrics, "metrics-secure", true,
 		"If set, the metrics endpoint is served securely via HTTPS. Use --metrics-secure=false to use HTTP instead.")
+	flag.StringVar(&certDir, "cert-dir", "",
+		"The directory that contains the server key and certificate. If set, the metrics server will serve using the provided key and certificate.")
+	flag.StringVar(&certName, "cert-name", "tls.crt", "CertName is the server certificate name. Defaults to tls.crt")
+	flag.StringVar(&certKey, "cert-key", "tls.key", "KeyName is the server key name. Defaults to tls.key")
 	flag.BoolVar(&enableHTTP2, "enable-http2", false,
 		"If set, HTTP/2 will be enabled for the metrics and webhook servers")
 	opts := zap.Options{
@@ -113,16 +123,27 @@ func main() {
 		// https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.19.1/pkg/metrics/filters#WithAuthenticationAndAuthorization
 		metricsServerOptions.FilterProvider = filters.WithAuthenticationAndAuthorization
 
-		// TODO(user): If CertDir, CertName, and KeyName are not specified, controller-runtime will automatically
+		// If cert-name, cert-key, and cert-name are not specified, controller-runtime will automatically
 		// generate self-signed certificates for the metrics server. While convenient for development and testing,
 		// this setup is not recommended for production.
+		//
+		// TODO(user): If you are using cert-manager, enable [METRICS-WITH-CERTS] at config/default/kustomization.yaml"
+		// to generate and use certificates managed by cert-manager for the metrics server.
+		if len(certDir) > 0 {
+			setupLog.Info("using certificates for the metrics server",
+				"cert-dir", certDir, "cert-name", certName, "cert-key", certKey)
 
-		// TODO(user): If cert-manager is enabled in config/default/kustomization.yaml,
-		// you can uncomment the following lines to use the certificate managed by cert-manager.
-		// metricsServerOptions.CertDir = "/tmp/k8s-metrics-server/metrics-certs"
-		// metricsServerOptions.CertName = "tls.crt"
-		// metricsServerOptions.KeyName = "tls.key"
+			var err error
+			certWatcher, err = certwatcher.New(filepath.Join(certDir, certName), filepath.Join(certDir, certKey))
+			if err != nil {
+				setupLog.Error(err, "to initialize certificate watcher", "error", err)
+				os.Exit(1)
+			}
 
+			metricsServerOptions.TLSOpts = append(metricsServerOptions.TLSOpts, func(config *tls.Config) {
+				config.GetCertificate = certWatcher.GetCertificate
+			})
+		}
 	}
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
@@ -157,6 +178,14 @@ func main() {
 		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder
+
+	if secureMetrics && certWatcher != nil {
+		setupLog.Info("Adding certificate watcher to manager")
+		if err := mgr.Add(certWatcher); err != nil {
+			setupLog.Error(err, "unable to add certificate watcher to manager")
+			os.Exit(1)
+		}
+	}
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up health check")
