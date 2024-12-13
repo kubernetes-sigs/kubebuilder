@@ -26,12 +26,9 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-      - name: Run linter
-        uses: golangci/golangci-lint-action@v6
-        with:
-          version: v1.61.0
-          working-directory: ${{ matrix.folder }}
-          args: --config .golangci.yml ./...
       - name: Check linter configuration
         working-directory: ${{ matrix.folder }}
         run: make lint-config
+      - name: Run linter
+        working-directory: ${{ matrix.folder }}
+        run: make lint
