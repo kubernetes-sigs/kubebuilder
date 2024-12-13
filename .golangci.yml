@@ -18,7 +18,7 @@ issues:
 
 linters-settings:
   govet:
-    enable=fieldalignment: true
+    enable-all: true
   revive:
     rules:
       # The following rules are recommended https://github.com/mgechev/revive#recommended-configuration
@@ -28,7 +28,7 @@ linters-settings:
       - name: dot-imports
         arguments:
           # dot import should be ONLY allowed for ginkgo testing packages
-          allowedPackages:
+          - allowedPackages:
             - "github.com/onsi/ginkgo/v2"
             - "github.com/onsi/gomega"
       - name: error-return
@@ -66,9 +66,9 @@ linters-settings:
 linters:
   disable-all: true
   enable:
+    - copyloopvar
     - dupl
     - errcheck
-    - copyloopvar
     - ginkgolinter
     - goconst
     - gocyclo
