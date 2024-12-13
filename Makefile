@@ -89,9 +89,9 @@ generate-docs: ## Update/generate the docs
 	./hack/docs/generate.sh
 
 .PHONY: generate-charts
-generate-charts: ## Re-generate the helm chart testdata only
+generate-charts: build ## Re-generate the helm chart testdata only
 	rm -rf testdata/project-v4-with-plugins/dist/chart
-	(cd testdata/project-v4-with-plugins && kubebuilder edit --plugins=helm/v1-alpha)
+	(cd testdata/project-v4-with-plugins && ../../bin/kubebuilder edit --plugins=helm/v1-alpha)
 
 .PHONY: check-docs
 check-docs: ## Run the script to ensure that the docs are updated
