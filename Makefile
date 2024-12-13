@@ -97,6 +97,10 @@ generate-charts: build ## Re-generate the helm chart testdata only
 check-docs: ## Run the script to ensure that the docs are updated
 	./hack/docs/check.sh
 
+.PHONY: lint-config
+lint-config: golangci-lint ## Verify golangci-lint linter configuration
+	$(GOLANGCI_LINT) config verify
+
 .PHONY: lint
 lint: golangci-lint yamllint ## Run golangci-lint linter & yamllint
 	$(GOLANGCI_LINT) run
