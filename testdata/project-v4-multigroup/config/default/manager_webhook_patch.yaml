@@ -1,26 +1,32 @@
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: controller-manager
-  namespace: system
-  labels:
-    app.kubernetes.io/name: project-v4-multigroup
-    app.kubernetes.io/managed-by: kustomize
-spec:
-  template:
-    spec:
-      containers:
-      - name: manager
-        ports:
-        - containerPort: 9443
-          name: webhook-server
-          protocol: TCP
-        volumeMounts:
-        - mountPath: /tmp/k8s-webhook-server/serving-certs
-          name: cert
-          readOnly: true
-      volumes:
-      - name: cert
-        secret:
-          defaultMode: 420
-          secretName: webhook-server-cert
+# This patch ensures the webhook certificates are properly mounted in the manager container.
+# It configures the necessary volume, volume mounts, and container ports.
+- op: add
+  path: /spec/template/spec/containers/0/args/-
+  value: --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
+- op: add
+  path: /spec/template/spec/containers/0/volumeMounts
+  value: []
+- op: add
+  path: /spec/template/spec/containers/0/volumeMounts/-
+  value:
+    mountPath: /tmp/k8s-webhook-server/serving-certs
+    name: webhook-certs
+    readOnly: true
+- op: add
+  path: /spec/template/spec/containers/0/ports
+  value: []
+- op: add
+  path: /spec/template/spec/containers/0/ports/-
+  value:
+    containerPort: 9443
+    name: webhook-server
+    protocol: TCP
+- op: add
+  path: /spec/template/spec/volumes
+  value: []
+- op: add
+  path: /spec/template/spec/volumes/-
+  value:
+    name: webhook-certs
+    secret:
+      secretName: webhook-server-cert

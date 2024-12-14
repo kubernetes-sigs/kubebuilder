@@ -131,7 +131,9 @@ func (s *webhookScaffolder) Scaffold() error {
 		}
 	}
 
-	err = pluginutil.UncommentCode(kustomizeFilePath, "#- path: manager_webhook_patch.yaml", `#`)
+	err = pluginutil.UncommentCode(kustomizeFilePath, `#- path: manager_webhook_patch.yaml
+#  target:
+#    kind: Deployment`, `#`)
 	if err != nil {
 		hasWebHookUncommented, err := pluginutil.HasFileContentWith(kustomizeFilePath, "- path: manager_webhook_patch.yaml")
 		if !hasWebHookUncommented || err != nil {

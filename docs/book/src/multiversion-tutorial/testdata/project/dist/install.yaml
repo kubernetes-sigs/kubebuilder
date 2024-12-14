@@ -7929,6 +7929,7 @@ spec:
         - --metrics-bind-address=:8443
         - --leader-elect
         - --health-probe-bind-address=:8081
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         command:
         - /manager
         image: controller:latest
@@ -7963,10 +7964,7 @@ spec:
             - ALL
         volumeMounts:
         - mountPath: /tmp/k8s-webhook-server/serving-certs
-          name: cert
-          readOnly: true
-        - mountPath: /tmp/k8s-metrics-server/metrics-certs
-          name: metrics-certs
+          name: webhook-certs
           readOnly: true
       securityContext:
         runAsNonRoot: true
@@ -7975,13 +7973,9 @@ spec:
       serviceAccountName: project-controller-manager
       terminationGracePeriodSeconds: 10
       volumes:
-      - name: cert
+      - name: webhook-certs
         secret:
-          defaultMode: 420
           secretName: webhook-server-cert
-      - name: metrics-certs
-        secret:
-          secretName: metrics-server-cert
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate

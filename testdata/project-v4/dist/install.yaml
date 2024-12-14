@@ -678,6 +678,7 @@ spec:
         - --metrics-bind-address=:8443
         - --leader-elect
         - --health-probe-bind-address=:8081
+        - --webhook-cert-path=/tmp/k8s-webhook-server/serving-certs
         command:
         - /manager
         image: controller:latest
@@ -712,7 +713,7 @@ spec:
             - ALL
         volumeMounts:
         - mountPath: /tmp/k8s-webhook-server/serving-certs
-          name: cert
+          name: webhook-certs
           readOnly: true
       securityContext:
         runAsNonRoot: true
@@ -721,9 +722,8 @@ spec:
       serviceAccountName: project-v4-controller-manager
       terminationGracePeriodSeconds: 10
       volumes:
-      - name: cert
+      - name: webhook-certs
         secret:
-          defaultMode: 420
           secretName: webhook-server-cert
 ---
 apiVersion: admissionregistration.k8s.io/v1
