@@ -254,40 +254,40 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 
 	if hasWebhook {
 		By("validating that cert-manager has provisioned the certificate Secret")
-		EventuallyWithOffset(1, func() error {
-			_, err := kbc.Kubectl.Get(
+		EventuallyWithOffset(1, func(g Gomega) {
+			output, err := kbc.Kubectl.Get(
 				true,
 				"secrets", "webhook-server-cert")
-			return err
+			g.Expect(err).ToNot(HaveOccurred(), "webhook-server-cert should exist in the namespace")
+			g.Expect(output).To(ContainSubstring("webhook-server-cert"))
 		}, time.Minute, time.Second).Should(Succeed())
 
 		By("validating that the mutating|validating webhooks have the CA injected")
-		verifyCAInjection := func() error {
+		verifyCAInjection := func(g Gomega) {
 			mwhOutput, err := kbc.Kubectl.Get(
 				false,
 				"mutatingwebhookconfigurations.admissionregistration.k8s.io",
 				fmt.Sprintf("e2e-%s-mutating-webhook-configuration", kbc.TestSuffix),
 				"-o", "go-template={{ range .webhooks }}{{ .clientConfig.caBundle }}{{ end }}")
-			ExpectWithOffset(2, err).NotTo(HaveOccurred())
+			g.ExpectWithOffset(2, err).NotTo(HaveOccurred())
 			// check that ca should be long enough, because there may be a place holder "\n"
-			ExpectWithOffset(2, len(mwhOutput)).To(BeNumerically(">", 10))
+			g.ExpectWithOffset(2, len(mwhOutput)).To(BeNumerically(">", 10))
 
 			vwhOutput, err := kbc.Kubectl.Get(
 				false,
 				"validatingwebhookconfigurations.admissionregistration.k8s.io",
 				fmt.Sprintf("e2e-%s-validating-webhook-configuration", kbc.TestSuffix),
 				"-o", "go-template={{ range .webhooks }}{{ .clientConfig.caBundle }}{{ end }}")
-			ExpectWithOffset(2, err).NotTo(HaveOccurred())
+			g.ExpectWithOffset(2, err).NotTo(HaveOccurred())
 			// check that ca should be long enough, because there may be a place holder "\n"
-			ExpectWithOffset(2, len(vwhOutput)).To(BeNumerically(">", 10))
-
-			return nil
+			g.ExpectWithOffset(2, len(vwhOutput)).To(BeNumerically(">", 10))
 		}
+
 		EventuallyWithOffset(1, verifyCAInjection, time.Minute, time.Second).Should(Succeed())
 
 		By("validating that the CA injection is applied for CRD conversion")
 		crdKind := "ConversionTest"
-		verifyCAInjection = func() error {
+		verifyCAInjection = func(g Gomega) {
 			crdOutput, err := kbc.Kubectl.Get(
 				false,
 				"customresourcedefinition.apiextensions.k8s.io",
@@ -295,13 +295,12 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 					"jsonpath={.items[?(@.spec.names.kind=='%s')].spec.conversion.webhook.clientConfig.caBundle}",
 					crdKind),
 			)
-			ExpectWithOffset(1, err).NotTo(HaveOccurred(),
+			g.ExpectWithOffset(1, err).NotTo(HaveOccurred(),
 				"failed to get CRD conversion webhook configuration")
 
 			// Check if the CA bundle is populated (length > 10 to avoid placeholder values)
-			ExpectWithOffset(1, len(crdOutput)).To(BeNumerically(">", 10),
+			g.ExpectWithOffset(1, len(crdOutput)).To(BeNumerically(">", 10),
 				"CA bundle should be injected into the CRD")
-			return nil
 		}
 		EventuallyWithOffset(1, verifyCAInjection, time.Minute, time.Second).Should(Succeed(),
 			"CA injection validation failed")
@@ -324,9 +323,8 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 	_, err = f.WriteString("  foo: bar")
 	Expect(err).To(Not(HaveOccurred()))
 
-	EventuallyWithOffset(1, func() error {
-		_, err = kbc.Kubectl.Apply(true, "-f", sampleFile)
-		return err
+	EventuallyWithOffset(1, func(g Gomega) {
+		g.Expect(kbc.Kubectl.Apply(true, "-f", sampleFile)).Error().ToNot(HaveOccurred())
 	}, time.Minute, time.Second).Should(Succeed())
 
 	if hasMetrics {
@@ -359,14 +357,13 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 		By("creating a namespace")
 		namespace := "test-webhooks"
 		_, err := kbc.Kubectl.Command("create", "namespace", namespace)
-		Expect(err).NotTo(HaveOccurred(), "namespace should be created successfully")
+		Expect(err).To(Not(HaveOccurred()), "namespace should be created successfully")
 
 		By("applying the CR in the created namespace")
-		EventuallyWithOffset(1, func() error {
+		EventuallyWithOffset(1, func(g Gomega) {
 			_, err := kbc.Kubectl.Apply(false, "-n", namespace, "-f", sampleFile)
-			return err
-		}, 2*time.Minute, time.Second).ShouldNot(HaveOccurred(),
-			"apply in test-webhooks ns should not fail")
+			g.Expect(err).NotTo(HaveOccurred())
+		}, 2*time.Minute, time.Second).Should(Succeed())
 
 		By("validating that mutating webhooks are working fine outside of the manager's namespace")
 		cnt, err := kbc.Kubectl.Get(
