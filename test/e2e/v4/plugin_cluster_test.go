@@ -112,43 +112,43 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 
 	By("creating manager namespace")
 	err = kbc.CreateManagerNamespace()
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 
 	By("labeling the namespace to enforce the restricted security policy")
 	err = kbc.LabelNamespacesToEnforceRestricted()
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 
 	By("updating the go.mod")
 	err = kbc.Tidy()
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 
 	By("run make all")
 	err = kbc.Make("all")
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 
 	By("building the controller image")
 	err = kbc.Make("docker-build", "IMG="+kbc.ImageName)
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 
 	By("loading the controller docker image into the kind cluster")
 	err = kbc.LoadImageToKindCluster()
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 
 	if !isToUseInstaller && !isToUseHelmChart {
 		By("deploying the controller-manager")
 		cmd := exec.Command("make", "deploy", "IMG="+kbc.ImageName)
 		_, err = kbc.Run(cmd)
-		ExpectWithOffset(1, err).NotTo(HaveOccurred())
+		Expect(err).NotTo(HaveOccurred())
 	}
 
 	if isToUseInstaller && !isToUseHelmChart {
 		By("building the installer")
 		err = kbc.Make("build-installer", "IMG="+kbc.ImageName)
-		ExpectWithOffset(1, err).NotTo(HaveOccurred())
+		Expect(err).NotTo(HaveOccurred())
 
 		By("deploying the controller-manager with the installer")
 		_, err = kbc.Kubectl.Apply(true, "-f", "dist/install.yaml")
-		ExpectWithOffset(1, err).NotTo(HaveOccurred())
+		Expect(err).NotTo(HaveOccurred())
 	}
 
 	if isToUseHelmChart && !isToUseInstaller {
@@ -185,25 +185,25 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 		"pod", controllerPodName,
 		"-o", "jsonpath={.spec.containers[0].args}",
 	)
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
-	ExpectWithOffset(1, podOutput).To(ContainSubstring("leader-elect"),
+	Expect(err).NotTo(HaveOccurred())
+	Expect(podOutput).To(ContainSubstring("leader-elect"),
 		"Expected manager pod to have --leader-elect flag")
-	ExpectWithOffset(1, podOutput).To(ContainSubstring("health-probe-bind-address"),
+	Expect(podOutput).To(ContainSubstring("health-probe-bind-address"),
 		"Expected manager pod to have --health-probe-bind-address flag")
 
 	By("validating that the Prometheus manager has provisioned the Service")
-	EventuallyWithOffset(1, func() error {
+	Eventually(func(g Gomega) {
 		_, err := kbc.Kubectl.Get(
 			false,
 			"Service", "prometheus-operator")
-		return err
+		g.Expect(err).NotTo(HaveOccurred())
 	}, time.Minute, time.Second).Should(Succeed())
 
 	By("validating that the ServiceMonitor for Prometheus is applied in the namespace")
 	_, err = kbc.Kubectl.Get(
 		true,
 		"ServiceMonitor")
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 
 	if hasNetworkPolicies {
 		By("Checking for Calico pods")
@@ -219,9 +219,8 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 
 		if hasMetrics {
 			By("labeling the namespace to allow consume the metrics")
-			_, err = kbc.Kubectl.Command("label", "namespaces", kbc.Kubectl.Namespace,
-				"metrics=enabled")
-			ExpectWithOffset(2, err).NotTo(HaveOccurred())
+			Expect(kbc.Kubectl.Command("label", "namespaces", kbc.Kubectl.Namespace,
+				"metrics=enabled")).Error().NotTo(HaveOccurred())
 
 			By("Ensuring the Allow Metrics Traffic NetworkPolicy exists", func() {
 				output, err := kbc.Kubectl.Get(
@@ -238,7 +237,7 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 			By("labeling the namespace to allow webhooks traffic")
 			_, err = kbc.Kubectl.Command("label", "namespaces", kbc.Kubectl.Namespace,
 				"webhook=enabled")
-			ExpectWithOffset(2, err).NotTo(HaveOccurred())
+			Expect(err).NotTo(HaveOccurred())
 
 			By("Ensuring the allow-webhook-traffic NetworkPolicy exists", func() {
 				output, err := kbc.Kubectl.Get(
@@ -254,40 +253,43 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 
 	if hasWebhook {
 		By("validating that cert-manager has provisioned the certificate Secret")
-		EventuallyWithOffset(1, func() error {
-			_, err := kbc.Kubectl.Get(
+
+		verifyWebhookCert := func(g Gomega) {
+			output, err := kbc.Kubectl.Get(
 				true,
 				"secrets", "webhook-server-cert")
-			return err
-		}, time.Minute, time.Second).Should(Succeed())
+			g.Expect(err).ToNot(HaveOccurred(), "webhook-server-cert should exist in the namespace")
+			g.Expect(output).To(ContainSubstring("webhook-server-cert"))
+		}
+
+		Eventually(verifyWebhookCert, time.Minute, time.Second).Should(Succeed())
 
 		By("validating that the mutating|validating webhooks have the CA injected")
-		verifyCAInjection := func() error {
+		verifyCAInjection := func(g Gomega) {
 			mwhOutput, err := kbc.Kubectl.Get(
 				false,
 				"mutatingwebhookconfigurations.admissionregistration.k8s.io",
 				fmt.Sprintf("e2e-%s-mutating-webhook-configuration", kbc.TestSuffix),
 				"-o", "go-template={{ range .webhooks }}{{ .clientConfig.caBundle }}{{ end }}")
-			ExpectWithOffset(2, err).NotTo(HaveOccurred())
+			g.Expect(err).NotTo(HaveOccurred())
 			// check that ca should be long enough, because there may be a place holder "\n"
-			ExpectWithOffset(2, len(mwhOutput)).To(BeNumerically(">", 10))
+			g.Expect(len(mwhOutput)).To(BeNumerically(">", 10))
 
 			vwhOutput, err := kbc.Kubectl.Get(
 				false,
 				"validatingwebhookconfigurations.admissionregistration.k8s.io",
 				fmt.Sprintf("e2e-%s-validating-webhook-configuration", kbc.TestSuffix),
 				"-o", "go-template={{ range .webhooks }}{{ .clientConfig.caBundle }}{{ end }}")
-			ExpectWithOffset(2, err).NotTo(HaveOccurred())
+			g.Expect(err).NotTo(HaveOccurred())
 			// check that ca should be long enough, because there may be a place holder "\n"
-			ExpectWithOffset(2, len(vwhOutput)).To(BeNumerically(">", 10))
-
-			return nil
+			g.Expect(len(vwhOutput)).To(BeNumerically(">", 10))
 		}
-		EventuallyWithOffset(1, verifyCAInjection, time.Minute, time.Second).Should(Succeed())
+
+		Eventually(verifyCAInjection, time.Minute, time.Second).Should(Succeed())
 
 		By("validating that the CA injection is applied for CRD conversion")
 		crdKind := "ConversionTest"
-		verifyCAInjection = func() error {
+		verifyCAInjection = func(g Gomega) {
 			crdOutput, err := kbc.Kubectl.Get(
 				false,
 				"customresourcedefinition.apiextensions.k8s.io",
@@ -295,15 +297,14 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 					"jsonpath={.items[?(@.spec.names.kind=='%s')].spec.conversion.webhook.clientConfig.caBundle}",
 					crdKind),
 			)
-			ExpectWithOffset(1, err).NotTo(HaveOccurred(),
+			g.Expect(err).NotTo(HaveOccurred(),
 				"failed to get CRD conversion webhook configuration")
 
 			// Check if the CA bundle is populated (length > 10 to avoid placeholder values)
-			ExpectWithOffset(1, len(crdOutput)).To(BeNumerically(">", 10),
+			g.Expect(len(crdOutput)).To(BeNumerically(">", 10),
 				"CA bundle should be injected into the CRD")
-			return nil
 		}
-		EventuallyWithOffset(1, verifyCAInjection, time.Minute, time.Second).Should(Succeed(),
+		Eventually(verifyCAInjection, time.Minute, time.Second).Should(Succeed(),
 			"CA injection validation failed")
 	}
 
@@ -324,15 +325,16 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 	_, err = f.WriteString("  foo: bar")
 	Expect(err).To(Not(HaveOccurred()))
 
-	EventuallyWithOffset(1, func() error {
-		_, err = kbc.Kubectl.Apply(true, "-f", sampleFile)
-		return err
-	}, time.Minute, time.Second).Should(Succeed())
+	applySample := func(g Gomega) {
+		g.Expect(kbc.Kubectl.Apply(true, "-f", sampleFile)).
+			Error().NotTo(HaveOccurred())
+	}
+	Eventually(applySample, time.Minute, time.Second).Should(Succeed())
 
 	if hasMetrics {
 		By("checking the metrics values to validate that the created resource object gets reconciled")
 		metricsOutput := getMetricsOutput(kbc)
-		ExpectWithOffset(1, metricsOutput).To(ContainSubstring(fmt.Sprintf(
+		Expect(metricsOutput).To(ContainSubstring(fmt.Sprintf(
 			`controller_runtime_reconcile_total{controller="%s",result="success"} 1`,
 			strings.ToLower(kbc.Kind),
 		)))
@@ -349,24 +351,25 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 			true,
 			"-f", sampleFile,
 			"-o", "go-template={{ .spec.count }}")
-		ExpectWithOffset(1, err).NotTo(HaveOccurred())
+		Expect(err).NotTo(HaveOccurred())
 		count, err := strconv.Atoi(cnt)
-		ExpectWithOffset(1, err).NotTo(HaveOccurred())
-		ExpectWithOffset(1, count).To(BeNumerically("==", 5))
+		Expect(err).NotTo(HaveOccurred())
+		Expect(count).To(BeNumerically("==", 5))
 	}
 
 	if hasWebhook {
 		By("creating a namespace")
 		namespace := "test-webhooks"
 		_, err := kbc.Kubectl.Command("create", "namespace", namespace)
-		Expect(err).NotTo(HaveOccurred(), "namespace should be created successfully")
+		Expect(err).To(Not(HaveOccurred()), "namespace should be created successfully")
 
 		By("applying the CR in the created namespace")
-		EventuallyWithOffset(1, func() error {
+
+		applySampleNamespaced := func(g Gomega) {
 			_, err := kbc.Kubectl.Apply(false, "-n", namespace, "-f", sampleFile)
-			return err
-		}, 2*time.Minute, time.Second).ShouldNot(HaveOccurred(),
-			"apply in test-webhooks ns should not fail")
+			g.Expect(err).To(Not(HaveOccurred()))
+		}
+		Eventually(applySampleNamespaced, 2*time.Minute, time.Second).Should(Succeed())
 
 		By("validating that mutating webhooks are working fine outside of the manager's namespace")
 		cnt, err := kbc.Kubectl.Get(
@@ -374,16 +377,16 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 			"-n", namespace,
 			"-f", sampleFile,
 			"-o", "go-template={{ .spec.count }}")
-		ExpectWithOffset(1, err).NotTo(HaveOccurred())
+		Expect(err).NotTo(HaveOccurred())
 
 		count, err := strconv.Atoi(cnt)
-		ExpectWithOffset(1, err).NotTo(HaveOccurred())
-		ExpectWithOffset(1, count).To(BeNumerically("==", 5),
+		Expect(err).NotTo(HaveOccurred())
+		Expect(count).To(BeNumerically("==", 5),
 			"the mutating webhook should set the count to 5")
 
 		By("removing the namespace")
-		_, err = kbc.Kubectl.Command("delete", "namespace", namespace)
-		Expect(err).NotTo(HaveOccurred(), "namespace should be removed successfully")
+		Expect(kbc.Kubectl.Command("delete", "namespace", namespace)).
+			Error().NotTo(HaveOccurred(), "namespace should be removed successfully")
 
 		By("validating the conversion")
 
@@ -407,7 +410,7 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 		// Apply the ConversionTest Custom Resource in v1
 		By("applying the modified ConversionTest CR in v1 for conversion")
 		_, err = kbc.Kubectl.Apply(true, "-f", conversionCRPath)
-		ExpectWithOffset(1, err).NotTo(HaveOccurred(), "failed to apply modified ConversionTest CR")
+		Expect(err).NotTo(HaveOccurred(), "failed to apply modified ConversionTest CR")
 
 		// TODO: Add validation to check the conversion
 		// the v2 should have spec.replicas == 3
@@ -416,7 +419,7 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 			By("validating conversion metrics to confirm conversion operations")
 			metricsOutput := getMetricsOutput(kbc)
 			conversionMetric := `controller_runtime_reconcile_total{controller="conversiontest",result="success"} 1`
-			ExpectWithOffset(1, metricsOutput).To(ContainSubstring(conversionMetric),
+			Expect(metricsOutput).To(ContainSubstring(conversionMetric),
 				"Expected metric for successful ConversionTest reconciliation")
 		}
 	}
@@ -425,26 +428,26 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 func getControllerName(kbc *utils.TestContext) string {
 	By("validating that the controller-manager pod is running as expected")
 	var controllerPodName string
-	verifyControllerUp := func() error {
+	verifyControllerUp := func(g Gomega) error {
 		// Get pod name
 		podOutput, err := kbc.Kubectl.Get(
 			true,
 			"pods", "-l", "control-plane=controller-manager",
 			"-o", "go-template={{ range .items }}{{ if not .metadata.deletionTimestamp }}{{ .metadata.name }}"+
 				"{{ \"\\n\" }}{{ end }}{{ end }}")
-		ExpectWithOffset(2, err).NotTo(HaveOccurred())
+		g.Expect(err).NotTo(HaveOccurred())
 		podNames := util.GetNonEmptyLines(podOutput)
 		if len(podNames) != 1 {
 			return fmt.Errorf("expect 1 controller pods running, but got %d", len(podNames))
 		}
 		controllerPodName = podNames[0]
-		ExpectWithOffset(2, controllerPodName).Should(ContainSubstring("controller-manager"))
+		g.Expect(controllerPodName).Should(ContainSubstring("controller-manager"))
 
 		// Validate pod status
 		status, err := kbc.Kubectl.Get(
 			true,
 			"pods", controllerPodName, "-o", "jsonpath={.status.phase}")
-		ExpectWithOffset(2, err).NotTo(HaveOccurred())
+		g.Expect(err).NotTo(HaveOccurred())
 		if status != "Running" {
 			return fmt.Errorf("controller pod in %s status", status)
 		}
@@ -452,10 +455,10 @@ func getControllerName(kbc *utils.TestContext) string {
 	}
 	defer func() {
 		out, err := kbc.Kubectl.CommandInNamespace("describe", "all")
-		ExpectWithOffset(1, err).NotTo(HaveOccurred())
+		Expect(err).NotTo(HaveOccurred())
 		_, _ = fmt.Fprintln(GinkgoWriter, out)
 	}()
-	EventuallyWithOffset(1, verifyControllerUp, 5*time.Minute, time.Second).Should(Succeed())
+	Eventually(verifyControllerUp, 5*time.Minute, time.Second).Should(Succeed())
 	return controllerPodName
 }
 
@@ -471,14 +474,14 @@ func getMetricsOutput(kbc *utils.TestContext) string {
 			fmt.Sprintf("--clusterrole=e2e-%s-metrics-reader", kbc.TestSuffix),
 			fmt.Sprintf("--serviceaccount=%s:%s", kbc.Kubectl.Namespace, kbc.Kubectl.ServiceAccount),
 		)
-		ExpectWithOffset(1, err).NotTo(HaveOccurred())
+		Expect(err).NotTo(HaveOccurred())
 	} else {
-		ExpectWithOffset(1, err).NotTo(HaveOccurred(), "Failed to check clusterrolebinding existence")
+		Expect(err).NotTo(HaveOccurred(), "Failed to check clusterrolebinding existence")
 	}
 
 	token, err := serviceAccountToken(kbc)
-	ExpectWithOffset(2, err).NotTo(HaveOccurred())
-	ExpectWithOffset(2, token).NotTo(BeEmpty())
+	Expect(err).NotTo(HaveOccurred())
+	Expect(token).NotTo(BeEmpty())
 
 	var metricsOutput string
 	By("validating that the controller-manager service is available")
@@ -486,51 +489,43 @@ func getMetricsOutput(kbc *utils.TestContext) string {
 		true,
 		"service", fmt.Sprintf("e2e-%s-controller-manager-metrics-service", kbc.TestSuffix),
 	)
-	ExpectWithOffset(2, err).NotTo(HaveOccurred(), "Controller-manager service should exist")
+	Expect(err).NotTo(HaveOccurred(), "Controller-manager service should exist")
 
 	By("ensuring the service endpoint is ready")
-	eventuallyCheckServiceEndpoint := func() error {
+	checkServiceEndpoint := func(g Gomega) {
 		output, err := kbc.Kubectl.Get(
 			true,
 			"endpoints", fmt.Sprintf("e2e-%s-controller-manager-metrics-service", kbc.TestSuffix),
 			"-o", "jsonpath={.subsets[*].addresses[*].ip}",
 		)
-		if err != nil {
-			return err
-		}
-		if output == "" {
-			return fmt.Errorf("no endpoints found")
-		}
-		return nil
+		g.Expect(err).NotTo(HaveOccurred(), "endpoints should exist")
+		g.Expect(output).ShouldNot(BeEmpty(), "no endpoints found")
 	}
-	EventuallyWithOffset(2, eventuallyCheckServiceEndpoint, 2*time.Minute, time.Second).Should(Succeed(),
+	Eventually(checkServiceEndpoint, 2*time.Minute, time.Second).Should(Succeed(),
 		"Service endpoint should be ready")
 
 	By("creating a curl pod to access the metrics endpoint")
 	cmdOpts := cmdOptsToCreateCurlPod(kbc, token)
 	_, err = kbc.Kubectl.CommandInNamespace(cmdOpts...)
-	ExpectWithOffset(2, err).NotTo(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 
 	By("validating that the curl pod is running as expected")
-	verifyCurlUp := func() error {
+	verifyCurlUp := func(g Gomega) {
 		status, err := kbc.Kubectl.Get(
 			true,
 			"pods", "curl", "-o", "jsonpath={.status.phase}")
-		ExpectWithOffset(3, err).NotTo(HaveOccurred())
-		if status != "Succeeded" {
-			return fmt.Errorf("curl pod in %s status", status)
-		}
-		return nil
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(status).To(Equal("Succeeded"), fmt.Sprintf("curl pod in %s status", status))
 	}
-	EventuallyWithOffset(2, verifyCurlUp, 240*time.Second, time.Second).Should(Succeed())
+	Eventually(verifyCurlUp, 240*time.Second, time.Second).Should(Succeed())
 
 	By("validating that the metrics endpoint is serving as expected")
-	getCurlLogs := func() string {
+	getCurlLogs := func(g Gomega) {
 		metricsOutput, err = kbc.Kubectl.Logs("curl")
-		ExpectWithOffset(3, err).NotTo(HaveOccurred())
-		return metricsOutput
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(metricsOutput).Should(ContainSubstring("< HTTP/1.1 200 OK"))
 	}
-	EventuallyWithOffset(2, getCurlLogs, 10*time.Second, time.Second).Should(ContainSubstring("< HTTP/1.1 200 OK"))
+	Eventually(getCurlLogs, 10*time.Second, time.Second).Should(Succeed())
 	removeCurlPod(kbc)
 	return metricsOutput
 }
@@ -540,38 +535,35 @@ func metricsShouldBeUnavailable(kbc *utils.TestContext) {
 		"create", "clusterrolebinding", fmt.Sprintf("metrics-%s", kbc.TestSuffix),
 		fmt.Sprintf("--clusterrole=e2e-%s-metrics-reader", kbc.TestSuffix),
 		fmt.Sprintf("--serviceaccount=%s:%s", kbc.Kubectl.Namespace, kbc.Kubectl.ServiceAccount))
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 
 	token, err := serviceAccountToken(kbc)
-	ExpectWithOffset(2, err).NotTo(HaveOccurred())
-	ExpectWithOffset(2, token).NotTo(BeEmpty())
+	Expect(err).NotTo(HaveOccurred())
+	Expect(token).NotTo(BeEmpty())
 
 	By("creating a curl pod to access the metrics endpoint")
 	cmdOpts := cmdOptsToCreateCurlPod(kbc, token)
 	_, err = kbc.Kubectl.CommandInNamespace(cmdOpts...)
-	ExpectWithOffset(2, err).NotTo(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 
 	By("validating that the curl pod fail as expected")
-	verifyCurlUp := func() error {
+	verifyCurlUp := func(g Gomega) {
 		status, err := kbc.Kubectl.Get(
 			true,
 			"pods", "curl", "-o", "jsonpath={.status.phase}")
-		ExpectWithOffset(3, err).NotTo(HaveOccurred())
-		if status != "Failed" {
-			return fmt.Errorf(
-				"curl pod in %s status when should fail with an error", status)
-		}
-		return nil
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(status).NotTo(Equal("Failed"),
+			fmt.Sprintf("curl pod in %s status when should fail with an error", status))
 	}
-	EventuallyWithOffset(2, verifyCurlUp, 240*time.Second, time.Second).Should(Succeed())
+	Eventually(verifyCurlUp, 240*time.Second, time.Second).Should(Succeed())
 
 	By("validating that the metrics endpoint is not working as expected")
-	getCurlLogs := func() string {
+	getCurlLogs := func(g Gomega) {
 		metricsOutput, err := kbc.Kubectl.Logs("curl")
-		ExpectWithOffset(3, err).NotTo(HaveOccurred())
-		return metricsOutput
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(metricsOutput).Should(ContainSubstring("Could not resolve host"))
 	}
-	EventuallyWithOffset(2, getCurlLogs, 10*time.Second, time.Second).Should(ContainSubstring("Could not resolve host"))
+	Eventually(getCurlLogs, 10*time.Second, time.Second).Should(Succeed())
 	removeCurlPod(kbc)
 }
 
@@ -612,7 +604,7 @@ func cmdOptsToCreateCurlPod(kbc *utils.TestContext, token string) []string {
 func removeCurlPod(kbc *utils.TestContext) {
 	By("cleaning up the curl pod")
 	_, err := kbc.Kubectl.Delete(true, "pods/curl")
-	ExpectWithOffset(3, err).NotTo(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred())
 }
 
 // serviceAccountToken provides a helper function that can provide you with a service account
@@ -628,7 +620,7 @@ func serviceAccountToken(kbc *utils.TestContext) (out string, err error) {
 		return out, err
 	}
 	var rawJson string
-	Eventually(func() error {
+	getToken := func(g Gomega) {
 		// Output of this is already a valid JWT token. No need to covert this from base64 to string format
 		rawJson, err = kbc.Kubectl.Command(
 			"create",
@@ -639,17 +631,15 @@ func serviceAccountToken(kbc *utils.TestContext) (out string, err error) {
 			),
 			"-f", tokenRequestFile,
 		)
-		if err != nil {
-			return err
-		}
+
+		g.Expect(err).NotTo(HaveOccurred())
 		var token tokenRequest
 		err = json.Unmarshal([]byte(rawJson), &token)
-		if err != nil {
-			return err
-		}
+		g.Expect(err).NotTo(HaveOccurred())
+
 		out = token.Status.Token
-		return nil
-	}, time.Minute, time.Second).Should(Succeed())
+	}
+	Eventually(getToken, time.Minute, time.Second).Should(Succeed())
 
 	return out, err
 }
