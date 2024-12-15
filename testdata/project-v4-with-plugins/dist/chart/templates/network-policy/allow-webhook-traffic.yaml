@@ -12,6 +12,10 @@ metadata:
 spec:
   podSelector:
     matchLabels:
+      {{- include "chart.selectorLabels" . | nindent 6 }}
+      {{- with .Values.controllerManager.pod.labels }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
       control-plane: controller-manager
   policyTypes:
     - Ingress

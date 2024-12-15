@@ -76,10 +76,8 @@ spec:
       labels:
         {{ "{{- include \"chart.labels\" . | nindent 8 }}" }}
         control-plane: controller-manager
-        {{ "{{- if and .Values.controllerManager.pod .Values.controllerManager.pod.labels }}" }}
-        {{ "{{- range $key, $value := .Values.controllerManager.pod.labels }}" }}
-        {{ "{{ $key }}" }}: {{ "{{ $value }}" }}
-        {{ "{{- end }}" }}
+        {{ "{{- with .Values.controllerManager.pod.labels }}" }}
+        {{ "{{- toYaml . | indent 8 }}" }}
         {{ "{{- end }}" }}
     spec:
       containers:

@@ -359,6 +359,17 @@ func copyFileWithHelmLogic(srcFile, destFile, subDir, projectName string) error 
 		contentStr = injectAnnotations(contentStr, hasWebhookPatch)
 	}
 
+	// Apply NetworkPolicy-specific replacements
+	if subDir == "networkPolicy" {
+		contentStr = strings.Replace(contentStr,
+			"matchLabels:",
+			`matchLabels:
+      {{- include "chart.selectorLabels" . | nindent 6 }}
+      {{- with .Values.controllerManager.pod.labels }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}`, 1)
+	}
+
 	// Remove existing labels if necessary
 	contentStr = removeLabels(contentStr)
 
