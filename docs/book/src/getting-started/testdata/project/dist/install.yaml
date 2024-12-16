@@ -431,6 +431,7 @@ spec:
           initialDelaySeconds: 15
           periodSeconds: 20
         name: manager
+        ports: []
         readinessProbe:
           httpGet:
             path: /readyz
@@ -449,12 +450,14 @@ spec:
           capabilities:
             drop:
             - ALL
+        volumeMounts: []
       securityContext:
         runAsNonRoot: true
         seccompProfile:
           type: RuntimeDefault
       serviceAccountName: project-controller-manager
       terminationGracePeriodSeconds: 10
+      volumes: []
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor

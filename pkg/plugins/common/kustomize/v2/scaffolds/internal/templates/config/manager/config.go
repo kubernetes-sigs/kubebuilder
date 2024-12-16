@@ -109,6 +109,7 @@ spec:
           - --health-probe-bind-address=:8081
         image: {{ .Image }}
         name: manager
+        ports: []
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -135,6 +136,8 @@ spec:
           requests:
             cpu: 10m
             memory: 64Mi
+        volumeMounts: []
+      volumes: []
       serviceAccountName: controller-manager
       terminationGracePeriodSeconds: 10
 `

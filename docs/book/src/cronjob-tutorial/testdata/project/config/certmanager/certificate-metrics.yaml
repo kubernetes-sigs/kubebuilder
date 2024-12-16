@@ -1,0 +1,20 @@
+# The following manifests contain a self-signed issuer CR and a metrics certificate CR.
+# More document can be found at https://docs.cert-manager.io
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  labels:
+    app.kubernetes.io/name: project
+    app.kubernetes.io/managed-by: kustomize
+  name: metrics-certs  # this name should match the one appeared in kustomizeconfig.yaml
+  namespace: system
+spec:
+  dnsNames:
+  # SERVICE_NAME and SERVICE_NAMESPACE will be substituted by kustomize
+  # replacements in the config/default/kustomization.yaml file.
+  - SERVICE_NAME.SERVICE_NAMESPACE.svc
+  - SERVICE_NAME.SERVICE_NAMESPACE.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: selfsigned-issuer
+  secretName: metrics-server-cert
