@@ -720,7 +720,7 @@ Now, re-create the APIS(CRDs) and Webhooks manifests by running the  `kubebuilde
 [controller-releases]: https://github.com/kubernetes-sigs/controller-runtime/releases
 [issue-1893]: https://github.com/kubernetes-sigs/kubebuilder/issues/1839
 [plugins-doc]: /reference/cli-plugins.md
-[migration-v2vsv3]: /migration/v2vsv3.md
+[migration-v2vsv3]: v2vsv3.md
 [custom-resource-definition-versioning]: https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definition-versioning/
 [issue-1999]: https://github.com/kubernetes-sigs/kubebuilder/issues/1999
 [project-customizations]: v2vsv3.md#project-customizations
