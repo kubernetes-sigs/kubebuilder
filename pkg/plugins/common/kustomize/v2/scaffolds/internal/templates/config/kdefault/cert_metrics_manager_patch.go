@@ -35,7 +35,7 @@ type CertManagerMetricsPatch struct {
 // SetTemplateDefaults implements machinery.Template
 func (f *CertManagerMetricsPatch) SetTemplateDefaults() error {
 	if f.Path == "" {
-		f.Path = filepath.Join("config", "default", "certmanager_metrics_manager_patch.yaml")
+		f.Path = filepath.Join("config", "default", "cert_metrics_manager_patch.yaml")
 	}
 
 	f.TemplateBody = metricsManagerPatchTemplate
@@ -50,25 +50,35 @@ func (f *CertManagerMetricsPatch) SetTemplateDefaults() error {
 	return nil
 }
 
-const metricsManagerPatchTemplate = `apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: controller-manager
-  namespace: system
-  labels:
-    app.kubernetes.io/name: {{ .ProjectName }}
-    app.kubernetes.io/managed-by: kustomize
-spec:
-  template:
-    spec:
-      containers:
-      - name: manager
-        volumeMounts:
-        - mountPath: /tmp/k8s-metrics-server/metrics-certs
-          name: metrics-certs
-          readOnly: true
-      volumes:
-      - name: metrics-certs
-        secret:
-          secretName: metrics-server-cert
+// nolint:lll
+const metricsManagerPatchTemplate = `# This patch adds the args, volumes, and ports to allow the manager to use the metrics-server certs.
+
+# Add the volumeMount for the metrics-server certs
+- op: add
+  path: /spec/template/spec/containers/0/volumeMounts/-
+  value:
+    mountPath: /tmp/k8s-metrics-server/metrics-certs
+    name: metrics-certs
+    readOnly: true
+
+# Add the --metrics-cert-path argument for the metrics server
+- op: add
+  path: /spec/template/spec/containers/0/args/-
+  value: --metrics-cert-path=/tmp/k8s-metrics-server/metrics-certs
+
+# Add the metrics-server certs volume configuration
+- op: add
+  path: /spec/template/spec/volumes/-
+  value:
+    name: metrics-certs
+    secret:
+      secretName: metrics-server-cert
+      optional: false
+      items:
+        - key: ca.crt
+          path: ca.crt
+        - key: tls.crt
+          path: tls.crt
+        - key: tls.key
+          path: tls.key
 `

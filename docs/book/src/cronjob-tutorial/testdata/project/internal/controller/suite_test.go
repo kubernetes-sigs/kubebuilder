@@ -22,7 +22,6 @@ Kubebuilder scaffolded a `internal/controller/suite_test.go` file that does the 
 First, it will contain the necessary imports.
 */
 
-
 package controller
 
 import (

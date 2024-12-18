@@ -33,7 +33,45 @@ const CronjobSample = `
             - date; echo Hello from the Kubernetes cluster
           restartPolicy: OnFailure`
 
-const certmanagerForWebhooks = `#replacements:
+const certManagerForMetricsAndWebhooks = `#replacements:
+# - source: # Uncomment the following block to enable certificates for metrics
+#     kind: Service
+#     version: v1
+#     name: controller-manager-metrics-service
+#     fieldPath: metadata.name
+#   targets:
+#     - select:
+#         kind: Certificate
+#         group: cert-manager.io
+#         version: v1
+#         name: metrics-certs
+#       fieldPaths:
+#         - spec.dnsNames.0
+#         - spec.dnsNames.1
+#       options:
+#         delimiter: '.'
+#         index: 0
+#         create: true
+#
+# - source:
+#     kind: Service
+#     version: v1
+#     name: controller-manager-metrics-service
+#     fieldPath: metadata.namespace
+#   targets:
+#     - select:
+#         kind: Certificate
+#         group: cert-manager.io
+#         version: v1
+#         name: metrics-certs
+#       fieldPaths:
+#         - spec.dnsNames.0
+#         - spec.dnsNames.1
+#       options:
+#         delimiter: '.'
+#         index: 1
+#         create: true
+#
 # - source: # Uncomment the following block if you have any webhook
 #     kind: Service
 #     version: v1
@@ -44,6 +82,7 @@ const certmanagerForWebhooks = `#replacements:
 #         kind: Certificate
 #         group: cert-manager.io
 #         version: v1
+#         name: serving-cert
 #       fieldPaths:
 #         - .spec.dnsNames.0
 #         - .spec.dnsNames.1
@@ -61,6 +100,7 @@ const certmanagerForWebhooks = `#replacements:
 #         kind: Certificate
 #         group: cert-manager.io
 #         version: v1
+#         name: serving-cert
 #       fieldPaths:
 #         - .spec.dnsNames.0
 #         - .spec.dnsNames.1
@@ -88,7 +128,7 @@ const certmanagerForWebhooks = `#replacements:
 #     kind: Certificate
 #     group: cert-manager.io
 #     version: v1
-#     name: serving-cert # This name should match the one in certificate.yaml
+#     name: serving-cert
 #     fieldPath: .metadata.name
 #   targets:
 #     - select:
@@ -104,7 +144,7 @@ const certmanagerForWebhooks = `#replacements:
 #     kind: Certificate
 #     group: cert-manager.io
 #     version: v1
-#     name: serving-cert # This name should match the one in certificate.yaml
+#     name: serving-cert
 #     fieldPath: .metadata.namespace # Namespace of the certificate CR
 #   targets:
 #     - select:
@@ -119,7 +159,7 @@ const certmanagerForWebhooks = `#replacements:
 #     kind: Certificate
 #     group: cert-manager.io
 #     version: v1
-#     name: serving-cert # This name should match the one in certificate.yaml
+#     name: serving-cert
 #     fieldPath: .metadata.name
 #   targets:
 #     - select:
