@@ -36,6 +36,8 @@ import (
 )
 
 const (
+	// GolangciLintVersion is the golangci-lint version to be used in the project
+	GolangciLintVersion = "v1.61.0"
 	// ControllerRuntimeVersion is the kubernetes-sigs/controller-runtime version to be used in the project
 	ControllerRuntimeVersion = "v0.19.1"
 	// ControllerToolsVersion is the kubernetes-sigs/controller-tools version to be used in the project
@@ -154,6 +156,7 @@ func (s *initScaffolder) Scaffold() error {
 			BoilerplatePath:          s.boilerplatePath,
 			ControllerToolsVersion:   ControllerToolsVersion,
 			KustomizeVersion:         kustomizeVersion,
+			GolangciLintVersion:      GolangciLintVersion,
 			ControllerRuntimeVersion: ControllerRuntimeVersion,
 			EnvtestVersion:           getControllerRuntimeReleaseBranch(),
 		},
@@ -166,7 +169,9 @@ func (s *initScaffolder) Scaffold() error {
 		&e2e.SuiteTest{},
 		&github.E2eTestCi{},
 		&github.TestCi{},
-		&github.LintCi{},
+		&github.LintCi{
+			GolangciLintVersion: GolangciLintVersion,
+		},
 		&utils.Utils{},
 		&templates.DevContainer{},
 		&templates.DevContainerPostInstallScript{},

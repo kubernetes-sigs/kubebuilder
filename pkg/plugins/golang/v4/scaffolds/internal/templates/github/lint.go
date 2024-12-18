@@ -28,6 +28,9 @@ var _ machinery.Template = &TestCi{}
 type LintCi struct {
 	machinery.TemplateMixin
 	machinery.BoilerplateMixin
+
+	// golangci-lint version to use in the project
+	GolangciLintVersion string
 }
 
 // SetTemplateDefaults implements machinery.Template
@@ -65,5 +68,5 @@ jobs:
       - name: Run linter
         uses: golangci/golangci-lint-action@v6
         with:
-          version: v1.61
+          version: {{ .GolangciLintVersion }}
 `
