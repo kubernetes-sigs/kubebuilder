@@ -252,18 +252,18 @@ func (t *TestContext) CreateManagerNamespace() error {
 	return err
 }
 
-// LabelNamespacesToWarnAboutRestricted will label all namespaces so that we can verify
-// if a warning with `Warning: would violate PodSecurity` will be raised when the manifests are applied
-func (t *TestContext) LabelNamespacesToWarnAboutRestricted() error {
+// LabelNamespacesToEnforceRestricted will label specified namespaces so that we can verify
+// if the manifests can be applied in restricted environments with strict security policy enforced
+func (t *TestContext) LabelNamespacesToEnforceRestricted() error {
 	_, err := t.Kubectl.Command("label", "--overwrite", "ns", t.Kubectl.Namespace,
-		"pod-security.kubernetes.io/warn=restricted")
+		"pod-security.kubernetes.io/enforce=restricted")
 	return err
 }
 
-// RemoveNamespaceLabelToWarnAboutRestricted will remove the `pod-security.kubernetes.io/warn` label
+// RemoveNamespaceLabelToEnforceRestricted will remove the `pod-security.kubernetes.io/enforce` label
 // from the specified namespace
-func (t *TestContext) RemoveNamespaceLabelToWarnAboutRestricted() error {
-	_, err := t.Kubectl.Command("label", "ns", t.Kubectl.Namespace, "pod-security.kubernetes.io/warn-")
+func (t *TestContext) RemoveNamespaceLabelToEnforceRestricted() error {
+	_, err := t.Kubectl.Command("label", "ns", t.Kubectl.Namespace, "pod-security.kubernetes.io/enforce-")
 	return err
 }
 
