@@ -58,7 +58,7 @@ var _ = Describe("kubebuilder", func() {
 
 		AfterEach(func() {
 			By("By removing restricted namespace label")
-			_ = kbc.RemoveNamespaceLabelToWarnAboutRestricted()
+			_ = kbc.RemoveNamespaceLabelToEnforceRestricted()
 
 			By("clean up API objects created during the test")
 			_ = kbc.Make("undeploy")
@@ -114,8 +114,8 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 	err = kbc.CreateManagerNamespace()
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
-	By("labeling all namespaces to warn about restricted")
-	err = kbc.LabelNamespacesToWarnAboutRestricted()
+	By("labeling the namespace to enforce the restricted security policy")
+	err = kbc.LabelNamespacesToEnforceRestricted()
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 
 	By("updating the go.mod")
@@ -581,10 +581,30 @@ func cmdOptsToCreateCurlPod(kbc *utils.TestContext, token string) []string {
 		"run", "curl",
 		"--restart=Never",
 		"--namespace", kbc.Kubectl.Namespace,
-		"--image=curlimages/curl:7.78.0",
-		"--",
-		"/bin/sh", "-c", fmt.Sprintf("curl -v -k -H 'Authorization: Bearer %s' https://e2e-%s-controller-manager-metrics-service.%s.svc.cluster.local:8443/metrics",
-			token, kbc.TestSuffix, kbc.Kubectl.Namespace),
+		"--image=curlimages/curl:latest",
+		"--overrides",
+		fmt.Sprintf(`{
+			"spec": {
+				"containers": [{
+					"name": "curl",
+					"image": "curlimages/curl:latest",
+					"command": ["/bin/sh", "-c"],
+					"args": ["curl -v -k -H 'Authorization: Bearer %s' https://e2e-%s-controller-manager-metrics-service.%s.svc.cluster.local:8443/metrics"],
+					"securityContext": {
+						"allowPrivilegeEscalation": false,
+						"capabilities": {
+							"drop": ["ALL"]
+						},
+						"runAsNonRoot": true,
+						"runAsUser": 1000,
+						"seccompProfile": {
+							"type": "RuntimeDefault"
+						}
+					}
+				}],
+				"serviceAccount": "%s"
+			}
+    }`, token, kbc.TestSuffix, kbc.Kubectl.Namespace, kbc.Kubectl.ServiceAccount),
 	}
 	return cmdOpts
 }
