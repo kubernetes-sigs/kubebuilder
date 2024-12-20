@@ -113,7 +113,7 @@ spec:
   serviceAccountName: controller-manager
   containers:
   - name: metrics-consumer
-    image: curlimages/curl:7.78.0
+    image: curlimages/curl:latest
     command: ["/bin/sh"]
     args:
       - "-c"
