@@ -66,6 +66,7 @@ spec:
   selector:
     matchLabels:
       control-plane: controller-manager
+      app.kubernetes.io/name: {{ .ProjectName }}
   replicas: 1
   template:
     metadata:
@@ -73,6 +74,7 @@ spec:
         kubectl.kubernetes.io/default-container: manager
       labels:
         control-plane: controller-manager
+        app.kubernetes.io/name: {{ .ProjectName }}
     spec:
       # TODO(user): Uncomment the following code to configure the nodeAffinity expression
       # according to the platforms which are supported by your solution.

@@ -2071,6 +2071,7 @@ spec:
     protocol: TCP
     targetPort: 8443
   selector:
+    app.kubernetes.io/name: project-v4-multigroup
     control-plane: controller-manager
 ---
 apiVersion: v1
@@ -2087,6 +2088,7 @@ spec:
     protocol: TCP
     targetPort: 9443
   selector:
+    app.kubernetes.io/name: project-v4-multigroup
     control-plane: controller-manager
 ---
 apiVersion: apps/v1
@@ -2102,12 +2104,14 @@ spec:
   replicas: 1
   selector:
     matchLabels:
+      app.kubernetes.io/name: project-v4-multigroup
       control-plane: controller-manager
   template:
     metadata:
       annotations:
         kubectl.kubernetes.io/default-container: manager
       labels:
+        app.kubernetes.io/name: project-v4-multigroup
         control-plane: controller-manager
     spec:
       containers:
