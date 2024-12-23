@@ -93,7 +93,8 @@ func Run(kbc *utils.TestContext) {
 
 	By("deploying the controller-manager")
 	cmd := exec.Command("make", "deploy", "IMG="+kbc.ImageName)
-	Expect(kbc.Run(cmd)).NotTo(ContainSubstring("Warning: would violate PodSecurity"))
+	out, _ := kbc.Run(cmd)
+	Expect(string(out)).NotTo(ContainSubstring("Warning: would violate PodSecurity"))
 
 	By("validating that the controller-manager pod is running as expected")
 	verifyControllerUp := func(g Gomega) {
