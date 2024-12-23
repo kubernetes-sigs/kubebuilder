@@ -58,6 +58,8 @@ func (f *HelmValues) SetTemplateDefaults() error {
 const helmValuesTemplate = `# [MANAGER]: Manager Deployment Configurations
 controllerManager:
   replicas: 1
+  pod:
+    labels: {}
   container:
     image:
       repository: controller
