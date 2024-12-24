@@ -95,8 +95,8 @@ type Config interface {
 
 	/* Persistence */
 
-	// Marshal returns the YAML representation of the Config.
+	// MarshalYAML Marshal returns the YAML representation of the Config.
 	MarshalYAML() ([]byte, error)
-	// Unmarshal loads the Config fields from its YAML representation.
+	// UnmarshalYAML Unmarshal loads the Config fields from its YAML representation.
 	UnmarshalYAML([]byte) error
 }
