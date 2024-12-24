@@ -57,6 +57,7 @@ spec:
   podSelector:
     matchLabels:
       control-plane: controller-manager
+      app.kubernetes.io/name: {{ .ProjectName }}
   policyTypes:
     - Ingress
   ingress:
