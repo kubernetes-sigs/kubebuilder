@@ -59,4 +59,5 @@ spec:
       targetPort: 9443
   selector:
     control-plane: controller-manager
+    app.kubernetes.io/name: {{ .ProjectName }}
 `
