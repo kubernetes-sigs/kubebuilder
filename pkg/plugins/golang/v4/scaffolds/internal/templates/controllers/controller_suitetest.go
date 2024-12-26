@@ -152,11 +152,13 @@ import (
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
 
-var cfg *rest.Config
-var k8sClient client.Client
-var testEnv *envtest.Environment
-var ctx context.Context
-var cancel context.CancelFunc
+var (
+	ctx context.Context
+	cancel context.CancelFunc
+	testEnv *envtest.Environment
+	cfg *rest.Config
+	k8sClient client.Client
+)
 
 func TestControllers(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -207,7 +209,7 @@ var _ = AfterSuite(func() {
 // Makefile targets, the 'BinaryAssetsDirectory' must be explicitly configured.
 //
 // This function streamlines the process by finding the required binaries, similar to
-// setting the 'KUBEBUILDER_ASSETS' environment variable. To ensure the binaries are 
+// setting the 'KUBEBUILDER_ASSETS' environment variable. To ensure the binaries are
 // properly set up, run 'make setup-envtest' beforehand.
 func getFirstFoundEnvTestBinaryDir() string {
 	basePath := filepath.Join({{ .CRDDirectoryRelativePath }}, "bin", "k8s")
