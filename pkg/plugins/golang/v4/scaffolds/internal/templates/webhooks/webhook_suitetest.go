@@ -195,26 +195,27 @@ import (
 
     . "github.com/onsi/ginkgo/v2"
     . "github.com/onsi/gomega"
-	%s
+
+	apimachineryruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
-	apimachineryruntime "k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	%s
 )
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
 
 var (
-	cancel context.CancelFunc
-	cfg *rest.Config
 	ctx context.Context
+	cancel context.CancelFunc
 	k8sClient client.Client
+	cfg *rest.Config
 	testEnv *envtest.Environment
 )
 

@@ -35,9 +35,11 @@ Now, let's go through the code generated.
 */
 
 var (
+	ctx       context.Context
+	cancel    context.CancelFunc
+	testEnv   *envtest.Environment
 	cfg       *rest.Config
 	k8sClient client.Client // You'll be using this client in your tests.
-	testEnv   *envtest.Environment
 )
 `
 
