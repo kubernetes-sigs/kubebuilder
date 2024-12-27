@@ -229,8 +229,18 @@ var _ = BeforeSuite(func() {
 
 	ctx, cancel = context.WithCancel(context.TODO())
 
+	var err error
+	err = %s.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+
+	err = %s.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+
+	%s
+
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
+		CRDInstallOptions:     envtest.CRDInstallOptions{Scheme: scheme.Scheme},
 		CRDDirectoryPaths:     []string{filepath.Join({{ .BaseDirectoryRelativePath }}, "config", "crd", "bases")},
 		ErrorIfCRDPathMissing: {{ .WireResource }},
 
@@ -244,19 +254,10 @@ var _ = BeforeSuite(func() {
 		testEnv.BinaryAssetsDirectory = getFirstFoundEnvTestBinaryDir()
 	}
 
-	var err error
 	// cfg is defined in this file globally.
 	cfg, err = testEnv.Start()
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
-
-	err = %s.AddToScheme(scheme.Scheme)
-	Expect(err).NotTo(HaveOccurred())
-
-	err = %s.AddToScheme(scheme.Scheme)
-	Expect(err).NotTo(HaveOccurred())
-
-	%s
 
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
 	Expect(err).NotTo(HaveOccurred())

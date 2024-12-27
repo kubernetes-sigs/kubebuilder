@@ -60,23 +60,7 @@ var _ = BeforeSuite(func() {
 
 	ctx, cancel = context.WithCancel(context.TODO())
 
-	By("bootstrapping test environment")
-	testEnv = &envtest.Environment{
-		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "..", "config", "crd", "bases")},
-		ErrorIfCRDPathMissing: true,
-	}
-
-	// Retrieve the first found binary directory to allow running tests from IDEs
-	if getFirstFoundEnvTestBinaryDir() != "" {
-		testEnv.BinaryAssetsDirectory = getFirstFoundEnvTestBinaryDir()
-	}
-
 	var err error
-	// cfg is defined in this file globally.
-	cfg, err = testEnv.Start()
-	Expect(err).NotTo(HaveOccurred())
-	Expect(cfg).NotTo(BeNil())
-
 	err = shipv1beta1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
@@ -88,10 +72,26 @@ var _ = BeforeSuite(func() {
 
 	// +kubebuilder:scaffold:scheme
 
+	By("bootstrapping test environment")
+	testEnv = &envtest.Environment{
+		CRDInstallOptions:     envtest.CRDInstallOptions{Scheme: scheme.Scheme},
+		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "..", "config", "crd", "bases")},
+		ErrorIfCRDPathMissing: true,
+	}
+
+	// Retrieve the first found binary directory to allow running tests from IDEs
+	if getFirstFoundEnvTestBinaryDir() != "" {
+		testEnv.BinaryAssetsDirectory = getFirstFoundEnvTestBinaryDir()
+	}
+
+	// cfg is defined in this file globally.
+	cfg, err = testEnv.Start()
+	Expect(err).NotTo(HaveOccurred())
+	Expect(cfg).NotTo(BeNil())
+
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
-
 })
 
 var _ = AfterSuite(func() {

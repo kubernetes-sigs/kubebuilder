@@ -537,11 +537,15 @@ var (
 `, SuiteTestEnv)
 	hackutils.CheckError("updating suite_test.go to add more variables", err)
 
-	err = pluginutil.InsertCode(
+	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, "internal/controller/suite_test.go"),
-		`ctx, cancel = context.WithCancel(context.TODO())
-`, SuiteTestReadCRD)
-	hackutils.CheckError("updating suite_test.go to add text about CRD", err)
+		`
+	err = batchv1.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+
+	// +kubebuilder:scaffold:scheme
+`, SuiteTestAddSchema)
+	hackutils.CheckError("updating suite_test.go to add schema", err)
 
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "internal/controller/suite_test.go"),
@@ -552,15 +556,14 @@ var (
 	*/`)
 	hackutils.CheckError("updating suite_test.go to add text to show where envtest cluster start", err)
 
-	err = pluginutil.ReplaceInFile(
+	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "internal/controller/suite_test.go"),
 		`
-	err = batchv1.AddToScheme(scheme.Scheme)
+	cfg, err = testEnv.Start()
 	Expect(err).NotTo(HaveOccurred())
-
-	// +kubebuilder:scaffold:scheme
-`, SuiteTestAddSchema)
-	hackutils.CheckError("updating suite_test.go to add schema", err)
+	Expect(cfg).NotTo(BeNil())
+`, SuiteTestClient)
+	hackutils.CheckError("updating suite_test.go to add text about test client", err)
 
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "internal/controller/suite_test.go"),
