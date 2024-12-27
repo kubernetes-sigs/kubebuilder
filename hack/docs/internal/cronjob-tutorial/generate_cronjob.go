@@ -527,9 +527,13 @@ func (sp *Sample) updateSuiteTest() {
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, "internal/controller/suite_test.go"),
 		`
-var cfg *rest.Config
-var k8sClient client.Client
-var testEnv *envtest.Environment
+var (
+	ctx       context.Context
+	cancel    context.CancelFunc
+	testEnv   *envtest.Environment
+	cfg       *rest.Config
+	k8sClient client.Client
+)
 `, SuiteTestEnv)
 	hackutils.CheckError("updating suite_test.go to add more variables", err)
 

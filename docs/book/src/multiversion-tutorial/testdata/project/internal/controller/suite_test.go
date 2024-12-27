@@ -56,12 +56,12 @@ Now, let's go through the code generated.
 */
 
 var (
+	ctx       context.Context
+	cancel    context.CancelFunc
+	testEnv   *envtest.Environment
 	cfg       *rest.Config
 	k8sClient client.Client // You'll be using this client in your tests.
-	testEnv   *envtest.Environment
 )
-var ctx context.Context
-var cancel context.CancelFunc
 
 func TestControllers(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -156,7 +156,6 @@ var _ = BeforeSuite(func() {
 		err = k8sManager.Start(ctx)
 		Expect(err).ToNot(HaveOccurred(), "failed to run manager")
 	}()
-
 })
 
 /*
