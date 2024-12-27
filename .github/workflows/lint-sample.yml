@@ -11,6 +11,13 @@ on:
 jobs:
   lint-samples:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        folder: [
+          "testdata/project-v4",
+          "testdata/project-v4-with-plugins",
+          "testdata/project-v4-multigroup"
+        ]
     if: (github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository)
     steps:
       - name: Clone the code
@@ -19,15 +26,16 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
+      - name: Prepare ${{ matrix.folder }}
+        working-directory: ${{ matrix.folder }}
+        run: go mod tidy
       - name: Run linter
         uses: golangci/golangci-lint-action@v6
         with:
-          version: v1.59
-          working-directory: testdata/project-v4
+          version: v1.61.0
+          working-directory: ${{ matrix.folder }}
           args: --config .golangci.yml ./...
-      - name: Run linter
-        uses: golangci/golangci-lint-action@v6
-        with:
-          version: v1.59
-          working-directory: testdata/project-v4-with-plugins
-          args: --config .golangci.yml ./...
+      - name: Run linter via makefile target
+        working-directory: ${{ matrix.folder }}
+        run: make lint
+
