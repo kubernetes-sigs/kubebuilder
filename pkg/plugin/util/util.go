@@ -227,7 +227,7 @@ func EnsureExistAndReplace(input, match, replace string) (string, error) {
 }
 
 // ReplaceInFile replaces all instances of old with new in the file at path.
-func ReplaceInFile(path, old, new string) error {
+func ReplaceInFile(path, oldValue, newValue string) error {
 	info, err := os.Stat(path)
 	if err != nil {
 		return err
@@ -238,10 +238,10 @@ func ReplaceInFile(path, old, new string) error {
 	if err != nil {
 		return err
 	}
-	if !strings.Contains(string(b), old) {
+	if !strings.Contains(string(b), oldValue) {
 		return errors.New("unable to find the content to be replaced")
 	}
-	s := strings.Replace(string(b), old, new, -1)
+	s := strings.Replace(string(b), oldValue, newValue, -1)
 	err = os.WriteFile(path, []byte(s), info.Mode())
 	if err != nil {
 		return err
