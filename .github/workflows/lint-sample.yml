@@ -32,7 +32,7 @@ jobs:
       - name: Run linter
         uses: golangci/golangci-lint-action@v6
         with:
-          version: v1.61.0
+          version: v1.62.2
           working-directory: ${{ matrix.folder }}
           args: --config .golangci.yml ./...
       - name: Run linter via makefile target
