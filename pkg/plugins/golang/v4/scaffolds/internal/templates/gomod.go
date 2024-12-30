@@ -45,7 +45,9 @@ func (f *GoMod) SetTemplateDefaults() error {
 
 const goModTemplate = `module {{ .Repo }}
 
-go 1.22.0
+go 1.23.0
+
+godebug default=go1.23
 
 require (
 	sigs.k8s.io/controller-runtime {{ .ControllerRuntimeVersion }}
