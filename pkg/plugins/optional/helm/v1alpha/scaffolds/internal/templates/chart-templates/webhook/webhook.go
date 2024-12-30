@@ -27,6 +27,9 @@ var _ machinery.Template = &Template{}
 type Template struct {
 	machinery.TemplateMixin
 	machinery.ProjectNameMixin
+
+	MutatingWebhooks   []DataWebhook
+	ValidatingWebhooks []DataWebhook
 }
 
 // SetTemplateDefaults sets default configuration for the webhook template
@@ -36,14 +39,33 @@ func (f *Template) SetTemplateDefaults() error {
 	}
 
 	f.TemplateBody = webhookTemplate
-
 	f.IfExistsAction = machinery.OverwriteFile
-
 	return nil
+}
+
+// DataWebhook helps generate manifests based on the data gathered from the kustomize files
+type DataWebhook struct {
+	ServiceName             string
+	Name                    string
+	Path                    string
+	Type                    string
+	FailurePolicy           string
+	SideEffects             string
+	AdmissionReviewVersions []string
+	Rules                   []DataWebhookRule
+}
+
+// DataWebhookRule helps generate manifests based on the data gathered from the kustomize files
+type DataWebhookRule struct {
+	Operations  []string
+	APIGroups   []string
+	APIVersions []string
+	Resources   []string
 }
 
 const webhookTemplate = `{{` + "`" + `{{- if .Values.webhook.enable }}` + "`" + `}}
 
+{{- if .MutatingWebhooks }}
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
@@ -56,42 +78,44 @@ metadata:
   labels:
     {{ "{{- include \"chart.labels\" . | nindent 4 }}" }}
 webhooks:
-  {{` + "`" + `{{- range .Values.webhook.services }}` + "`" + `}}
-  {{` + "`" + `{{- if eq .type "mutating" }}` + "`" + `}}
-  - name: {{` + "`" + `{{ .name }}` + "`" + `}}
+  {{- range .MutatingWebhooks }}
+  - name: {{ .Name }}
     clientConfig:
       service:
-        name: {{ .ProjectName }}-webhook-service
-        namespace: {{` + "`" + `{{ $.Release.Namespace }}` + "`" + `}}
-        path: {{` + "`" + `{{ .path }}` + "`" + `}}
-    failurePolicy: {{` + "`" + `{{ .failurePolicy }}` + "`" + `}}
-    sideEffects: {{` + "`" + `{{ .sideEffects }}` + "`" + `}}
+        name: {{ .ServiceName }}
+        namespace: {{ "{{ .Release.Namespace }}" }}
+        path: {{ .Path }}
+    failurePolicy: {{ .FailurePolicy }}
+    sideEffects: {{ .SideEffects }}
     admissionReviewVersions:
-      {{` + "`" + `{{- range .admissionReviewVersions }}` + "`" + `}}
-      - {{` + "`" + `{{ . }}` + "`" + `}}
-      {{` + "`" + `{{- end }}` + "`" + `}}
+      {{- range .AdmissionReviewVersions }}
+      - {{ . }}
+      {{- end }}
     rules:
-      {{` + "`" + `{{- range .rules }}` + "`" + `}}
+      {{- range .Rules }}
       - operations:
-          {{` + "`" + `{{- range .operations }}` + "`" + `}}
-          - {{` + "`" + `{{ . }}` + "`" + `}}
-          {{` + "`" + `{{- end }}` + "`" + `}}
+          {{- range .Operations }}
+          - {{ . }}
+          {{- end }}
         apiGroups:
-          {{` + "`" + `{{- range .apiGroups }}` + "`" + `}}
-          - {{` + "`" + `{{ . }}` + "`" + `}}
-          {{` + "`" + `{{- end }}` + "`" + `}}
+          {{- range .APIGroups }}
+          - {{ . }}
+          {{- end }}
         apiVersions:
-          {{` + "`" + `{{- range .apiVersions }}` + "`" + `}}
-          - {{` + "`" + `{{ . }}` + "`" + `}}
-          {{` + "`" + `{{- end }}` + "`" + `}}
+          {{- range .APIVersions }}
+          - {{ . }}
+          {{- end }}
         resources:
-          {{` + "`" + `{{- range .resources }}` + "`" + `}}
-          - {{` + "`" + `{{ . }}` + "`" + `}}
-          {{` + "`" + `{{- end }}` + "`" + `}}
-      {{` + "`" + `{{- end }}` + "`" + `}}
-  {{` + "`" + `{{- end }}` + "`" + `}}
-  {{` + "`" + `{{- end }}` + "`" + `}}
+          {{- range .Resources }}
+          - {{ . }}
+          {{- end }}
+      {{- end -}}
+  {{- end }}
+{{- end }}
+{{- if and .MutatingWebhooks .ValidatingWebhooks }}
 ---
+{{- end }}
+{{- if .ValidatingWebhooks }}
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
@@ -101,42 +125,42 @@ metadata:
     {{` + "`" + `{{- if .Values.certmanager.enable }}` + "`" + `}}
     cert-manager.io/inject-ca-from: "{{` + "`" + `{{ $.Release.Namespace }}` + "`" + `}}/serving-cert"
     {{` + "`" + `{{- end }}` + "`" + `}}
+  labels:
+    {{ "{{- include \"chart.labels\" . | nindent 4 }}" }}
 webhooks:
-  {{` + "`" + `{{- range .Values.webhook.services }}` + "`" + `}}
-  {{` + "`" + `{{- if eq .type "validating" }}` + "`" + `}}
-  - name: {{` + "`" + `{{ .name }}` + "`" + `}}
+  {{- range .ValidatingWebhooks }}
+  - name: {{ .Name }}
     clientConfig:
       service:
-        name: {{ .ProjectName }}-webhook-service
-        namespace: {{` + "`" + `{{ $.Release.Namespace }}` + "`" + `}}
-        path: {{` + "`" + `{{ .path }}` + "`" + `}}
-    failurePolicy: {{` + "`" + `{{ .failurePolicy }}` + "`" + `}}
-    sideEffects: {{` + "`" + `{{ .sideEffects }}` + "`" + `}}
+        name: {{ .ServiceName }}
+        namespace: {{ "{{ .Release.Namespace }}" }}
+        path: {{ .Path }}
+    failurePolicy: {{ .FailurePolicy }}
+    sideEffects: {{ .SideEffects }}
     admissionReviewVersions:
-      {{` + "`" + `{{- range .admissionReviewVersions }}` + "`" + `}}
-      - {{` + "`" + `{{ . }}` + "`" + `}}
-      {{` + "`" + `{{- end }}` + "`" + `}}
+      {{- range .AdmissionReviewVersions }}
+      - {{ . }}
+      {{- end }}
     rules:
-      {{` + "`" + `{{- range .rules }}` + "`" + `}}
+      {{- range .Rules }}
       - operations:
-          {{` + "`" + `{{- range .operations }}` + "`" + `}}
-          - {{` + "`" + `{{ . }}` + "`" + `}}
-          {{` + "`" + `{{- end }}` + "`" + `}}
+          {{- range .Operations }}
+          - {{ . }}
+          {{- end }}
         apiGroups:
-          {{` + "`" + `{{- range .apiGroups }}` + "`" + `}}
-          - {{` + "`" + `{{ . }}` + "`" + `}}
-          {{` + "`" + `{{- end }}` + "`" + `}}
+          {{- range .APIGroups }}
+          - {{ . }}
+          {{- end }}
         apiVersions:
-          {{` + "`" + `{{- range .apiVersions }}` + "`" + `}}
-          - {{` + "`" + `{{ . }}` + "`" + `}}
-          {{` + "`" + `{{- end }}` + "`" + `}}
+          {{- range .APIVersions }}
+          - {{ . }}
+          {{- end }}
         resources:
-          {{` + "`" + `{{- range .resources }}` + "`" + `}}
-          - {{` + "`" + `{{ . }}` + "`" + `}}
-          {{` + "`" + `{{- end }}` + "`" + `}}
-      {{` + "`" + `{{- end }}` + "`" + `}}
-  {{` + "`" + `{{- end }}` + "`" + `}}
-  {{` + "`" + `{{- end }}` + "`" + `}}
----
+          {{- range .Resources }}
+          - {{ . }}
+          {{- end }}
+      {{- end }}
+  {{- end }}
+{{- end }}
 {{` + "`" + `{{- end }}` + "`" + `}}
 `
