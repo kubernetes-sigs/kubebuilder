@@ -192,29 +192,28 @@ func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
 	// Track the resources following a declarative approach
 	cfg := PluginConfig{}
 	if err := p.config.DecodePluginConfig(pluginKey, &cfg); errors.As(err, &config.UnsupportedFieldError{}) {
-		// Config doesn't support per-plugin configuration, so we can't track them
-	} else {
-		// Fail unless they key wasn't found, which just means it is the first resource tracked
-		if err != nil && !errors.As(err, &config.PluginKeyNotFoundError{}) {
-			return err
-		}
-		configDataOptions := options{
-			Image:            p.image,
-			ContainerCommand: p.imageContainerCommand,
-			ContainerPort:    p.imageContainerPort,
-			RunAsUser:        p.runAsUser,
-		}
-		cfg.Resources = append(cfg.Resources, ResourceData{
-			Group:   p.resource.GVK.Group,
-			Domain:  p.resource.GVK.Domain,
-			Version: p.resource.GVK.Version,
-			Kind:    p.resource.GVK.Kind,
-			Options: configDataOptions,
-		},
-		)
-		if err := p.config.EncodePluginConfig(pluginKey, cfg); err != nil {
-			return err
-		}
+		// Skip tracking as the config doesn't support per-plugin configuration
+		return nil
+	} else if err != nil && !errors.As(err, &config.PluginKeyNotFoundError{}) {
+		// Fail unless the key wasn't found, which just means it is the first resource tracked
+		return err
+	}
+
+	configDataOptions := options{
+		Image:            p.image,
+		ContainerCommand: p.imageContainerCommand,
+		ContainerPort:    p.imageContainerPort,
+		RunAsUser:        p.runAsUser,
+	}
+	cfg.Resources = append(cfg.Resources, ResourceData{
+		Group:   p.resource.GVK.Group,
+		Domain:  p.resource.GVK.Domain,
+		Version: p.resource.GVK.Version,
+		Kind:    p.resource.GVK.Kind,
+		Options: configDataOptions,
+	})
+	if err := p.config.EncodePluginConfig(pluginKey, cfg); err != nil {
+		return err
 	}
 
 	return nil

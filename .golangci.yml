@@ -49,7 +49,6 @@ linters-settings:
       - name: indent-error-flow
       - name: errorf
       - name: empty-block
-        disabled: true  # TODO: Investigate if it should be enabled. Disabled for now due to many findings.
       - name: superfluous-else
       - name: unused-parameter
       - name: unreachable-code
@@ -85,3 +84,4 @@ linters:
     - unconvert
     - unparam
     - unused
+
