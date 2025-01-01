@@ -86,6 +86,10 @@ lint: golangci-lint ## Run golangci-lint linter
 lint-fix: golangci-lint ## Run golangci-lint linter and perform fixes
 	$(GOLANGCI_LINT) run --fix
 
+.PHONY: lint-config
+lint-config: golangci-lint ## Verify golangci-lint linter configuration
+	$(GOLANGCI_LINT) config verify
+
 ##@ Build
 
 .PHONY: build

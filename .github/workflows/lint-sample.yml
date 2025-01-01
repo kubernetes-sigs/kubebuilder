@@ -29,6 +29,9 @@ jobs:
       - name: Prepare ${{ matrix.folder }}
         working-directory: ${{ matrix.folder }}
         run: go mod tidy
+      - name: Check linter configuration
+        working-directory: ${{ matrix.folder }}
+        run: make lint-config
       - name: Run linter
         uses: golangci/golangci-lint-action@v6
         with:
