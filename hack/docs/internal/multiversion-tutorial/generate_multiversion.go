@@ -93,8 +93,8 @@ func (sp *Sample) UpdateTutorial() {
 
 	// Update files according to the multiversion
 	sp.updateCronjobV1DueForce()
-	sp.updateApiV1()
-	sp.updateApiV2()
+	sp.updateAPIV1()
+	sp.updateAPIV2()
 	sp.updateWebhookV2()
 	sp.updateConversionFiles()
 	sp.updateSampleV2()
@@ -379,7 +379,7 @@ Most of the conversion is straightforward copying, except for converting our cha
 	hackutils.CheckError("replace covert info at hub v2", err)
 }
 
-func (sp *Sample) updateApiV1() {
+func (sp *Sample) updateAPIV1() {
 	path := "api/v1/cronjob_types.go"
 	err := pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, path),
@@ -655,7 +655,7 @@ CronJob controller's `+"`SetupWithManager`"+` method.
 
 }
 
-func (sp *Sample) updateApiV2() {
+func (sp *Sample) updateAPIV2() {
 	path := "api/v2/cronjob_types.go"
 	err := pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, path),

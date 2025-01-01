@@ -39,7 +39,7 @@ func NewSample(binaryPath, samplePath string) Sample {
 }
 
 func (sp *Sample) UpdateTutorial() {
-	sp.updateApi()
+	sp.updateAPI()
 	sp.updateSample()
 	sp.updateController()
 	sp.updateControllerTest()
@@ -100,7 +100,7 @@ func (sp *Sample) updateControllerTest() {
 	hackutils.CheckError("add spec apis", err)
 }
 
-func (sp *Sample) updateApi() {
+func (sp *Sample) updateAPI() {
 	var err error
 	path := "api/v1alpha1/memcached_types.go"
 	err = pluginutil.InsertCode(
@@ -122,10 +122,10 @@ func (sp *Sample) updateApi() {
 `)
 	hackutils.CheckError("collapse imports in memcached api", err)
 
-	err = pluginutil.ReplaceInFile(filepath.Join(sp.ctx.Dir, path), oldSpecApi, newSpecApi)
+	err = pluginutil.ReplaceInFile(filepath.Join(sp.ctx.Dir, path), oldSpecAPI, newSpecAPI)
 	hackutils.CheckError("replace spec api", err)
 
-	err = pluginutil.ReplaceInFile(filepath.Join(sp.ctx.Dir, path), oldStatusApi, newStatusApi)
+	err = pluginutil.ReplaceInFile(filepath.Join(sp.ctx.Dir, path), oldStatusAPI, newStatusAPI)
 	hackutils.CheckError("replace status api", err)
 }
 
@@ -242,8 +242,8 @@ func (sp *Sample) CodeGen() {
 	hackutils.CheckError("Failed to run make build-installer for getting started tutorial", err)
 }
 
-const oldSpecApi = "// Foo is an example field of Memcached. Edit memcached_types.go to remove/update\n\tFoo string `json:\"foo,omitempty\"`"
-const newSpecApi = `// Size defines the number of Memcached instances
+const oldSpecAPI = "// Foo is an example field of Memcached. Edit memcached_types.go to remove/update\n\tFoo string `json:\"foo,omitempty\"`"
+const newSpecAPI = `// Size defines the number of Memcached instances
 	// The following markers will use OpenAPI v3 schema to validate the value
 	// More info: https://book.kubebuilder.io/reference/markers/crd-validation.html
 	// +kubebuilder:validation:Minimum=1
@@ -251,10 +251,10 @@ const newSpecApi = `// Size defines the number of Memcached instances
 	// +kubebuilder:validation:ExclusiveMaximum=false
 	Size int32 ` + "`json:\"size,omitempty\"`"
 
-const oldStatusApi = `// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
+const oldStatusAPI = `// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file`
 
-const newStatusApi = `// Represents the observations of a Memcached's current state.
+const newStatusAPI = `// Represents the observations of a Memcached's current state.
 	// Memcached.status.conditions.type are: "Available", "Progressing", and "Degraded"
 	// Memcached.status.conditions.status are one of True, False, Unknown.
 	// Memcached.status.conditions.reason the value should be a CamelCase string and producers of specific

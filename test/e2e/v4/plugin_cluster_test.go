@@ -619,10 +619,10 @@ func serviceAccountToken(kbc *utils.TestContext) (out string, err error) {
 	if err != nil {
 		return out, err
 	}
-	var rawJson string
+	var rawJSON string
 	getToken := func(g Gomega) {
 		// Output of this is already a valid JWT token. No need to covert this from base64 to string format
-		rawJson, err = kbc.Kubectl.Command(
+		rawJSON, err = kbc.Kubectl.Command(
 			"create",
 			"--raw", fmt.Sprintf(
 				"/api/v1/namespaces/%s/serviceaccounts/%s/token",
@@ -634,7 +634,7 @@ func serviceAccountToken(kbc *utils.TestContext) (out string, err error) {
 
 		g.Expect(err).NotTo(HaveOccurred())
 		var token tokenRequest
-		err = json.Unmarshal([]byte(rawJson), &token)
+		err = json.Unmarshal([]byte(rawJSON), &token)
 		g.Expect(err).NotTo(HaveOccurred())
 
 		out = token.Status.Token

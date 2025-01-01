@@ -70,7 +70,7 @@ func GenerateV4(kbc *utils.TestContext) {
 		certManagerTarget, "#")).To(Succeed())
 	ExpectWithOffset(1, pluginutil.UncommentCode(
 		filepath.Join(kbc.Dir, "config", "prometheus", "kustomization.yaml"),
-		monitorTlsPatch, "#")).To(Succeed())
+		monitorTLSPatch, "#")).To(Succeed())
 	ExpectWithOffset(1, pluginutil.UncommentCode(
 		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 		metricsCertPatch, "#")).To(Succeed())
@@ -186,7 +186,7 @@ func GenerateV4WithNetworkPolicies(kbc *utils.TestContext) {
 		metricsCertReplaces, "#")).To(Succeed())
 	ExpectWithOffset(1, pluginutil.UncommentCode(
 		filepath.Join(kbc.Dir, "config", "prometheus", "kustomization.yaml"),
-		monitorTlsPatch, "#")).To(Succeed())
+		monitorTLSPatch, "#")).To(Succeed())
 
 	By("uncomment kustomization.yaml to enable network policy")
 	ExpectWithOffset(1, pluginutil.UncommentCode(
@@ -454,7 +454,7 @@ func uncommentKustomizeCoversion(kbc *utils.TestContext) {
 		fmt.Sprintf(certName, kbc.Group, kbc.Domain), "#")).To(Succeed())
 }
 
-const monitorTlsPatch = `#patches:
+const monitorTLSPatch = `#patches:
 #  - path: monitor_tls_patch.yaml
 #    target:
 #      kind: ServiceMonitor`
