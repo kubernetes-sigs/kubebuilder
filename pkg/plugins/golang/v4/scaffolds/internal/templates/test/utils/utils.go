@@ -22,11 +22,13 @@ import (
 
 var _ machinery.Template = &Utils{}
 
+// Utils define the template for the utils file
 type Utils struct {
 	machinery.TemplateMixin
 	machinery.BoilerplateMixin
 }
 
+// SetTemplateDefaults set the defaults for its template
 func (f *Utils) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = "test/utils/utils.go"

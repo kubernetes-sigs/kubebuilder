@@ -22,10 +22,10 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 )
 
-var _ machinery.Template = &ManagerDeployment{}
+var _ machinery.Template = &Deployment{}
 
-// ManagerDeployment scaffolds the manager Deployment for the Helm chart
-type ManagerDeployment struct {
+// Deployment scaffolds the manager Deployment for the Helm chart
+type Deployment struct {
 	machinery.TemplateMixin
 	machinery.ProjectNameMixin
 
@@ -38,7 +38,7 @@ type ManagerDeployment struct {
 }
 
 // SetTemplateDefaults sets the default template configuration
-func (f *ManagerDeployment) SetTemplateDefaults() error {
+func (f *Deployment) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("dist", "chart", "templates", "manager", "manager.yaml")
 	}

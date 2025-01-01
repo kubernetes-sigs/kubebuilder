@@ -16,7 +16,7 @@ limitations under the License.
 
 package cronjob
 
-const CronjobSpecExplaination = `
+const cronjobSpecExplaination = `
 
 // +kubebuilder:docs-gen:collapse=Imports
 
@@ -49,7 +49,7 @@ const CronjobSpecExplaination = `
 */
 `
 
-const CronjobSpecStruct = `
+const cronjobSpecStruct = `
 	// +kubebuilder:validation:MinLength=0
 
 	// The schedule in Cron format, see https://en.wikipedia.org/wiki/Cron.
@@ -128,7 +128,7 @@ const (
  serialization, as mentioned above.
 */`
 
-const CronjobList = `
+const cronjobList = `
 
 	// A list of pointers to currently running jobs.
 	// +optional

@@ -88,7 +88,7 @@ func (s *webhookScaffolder) Scaffold() error {
 		&certmanager.MetricsCertificate{},
 		&certmanager.Kustomization{},
 		&certmanager.KustomizeConfig{},
-		&network_policy.NetworkPolicyAllowWebhooks{},
+		&network_policy.PolicyAllowWebhooks{},
 	}
 
 	// Only scaffold the following patches if is a conversion webhook

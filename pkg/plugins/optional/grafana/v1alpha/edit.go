@@ -32,7 +32,7 @@ type editSubcommand struct {
 }
 
 func (p *editSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
-	subcmdMeta.Description = MetaDataDescription
+	subcmdMeta.Description = metaDataDescription
 
 	subcmdMeta.Examples = fmt.Sprintf(`  # Edit a common project with this plugin
   %[1]s edit --plugins=%[2]s

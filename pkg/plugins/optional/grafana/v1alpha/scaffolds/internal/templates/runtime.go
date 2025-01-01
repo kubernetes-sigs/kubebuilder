@@ -24,7 +24,7 @@ import (
 
 var _ machinery.Template = &RuntimeManifest{}
 
-// Kustomization scaffolds a file that defines the kustomization scheme for the prometheus folder
+// RuntimeManifest scaffolds a file that defines the kustomization scheme for the prometheus folder
 type RuntimeManifest struct {
 	machinery.TemplateMixin
 }

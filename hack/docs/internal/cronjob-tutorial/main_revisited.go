@@ -16,7 +16,7 @@ limitations under the License.
 
 package cronjob
 
-const MainBatch = `
+const mainBatch = `
 // +kubebuilder:docs-gen:collapse=Imports
 
 /*
@@ -28,7 +28,7 @@ If we would be using any other CRD we would have to add their scheme the same wa
 Builtin types such as Job have their scheme added by` + " `" + `clientgoscheme` + "`" + `.
 */`
 
-const MainEnableWebhook = `
+const mainEnableWebhook = `
 
 	/*
 		We'll also set up webhooks for our type, which we'll talk about next.

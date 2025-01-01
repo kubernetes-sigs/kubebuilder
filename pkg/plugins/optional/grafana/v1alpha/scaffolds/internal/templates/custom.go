@@ -22,7 +22,7 @@ import (
 
 var _ machinery.Template = &CustomMetricsConfigManifest{}
 
-// Kustomization scaffolds a file that defines the kustomization scheme for the prometheus folder
+// CustomMetricsConfigManifest scaffolds a file that defines the kustomization scheme for the prometheus folder
 type CustomMetricsConfigManifest struct {
 	machinery.TemplateMixin
 	ConfigPath string

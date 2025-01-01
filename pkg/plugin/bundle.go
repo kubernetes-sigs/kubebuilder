@@ -31,26 +31,31 @@ type bundle struct {
 	deprecateWarning         string
 }
 
+// BundleOption define the options to create the bundle
 type BundleOption func(*bundle)
 
+// WithName allow set the name of the Bundle Plugin
 func WithName(name string) BundleOption {
 	return func(opts *bundle) {
 		opts.name = name
 	}
 }
 
+// WithVersion allow set the version of the Bundle Plugin
 func WithVersion(version Version) BundleOption {
 	return func(opts *bundle) {
 		opts.version = version
 	}
 }
 
+// WithPlugins allow set the plugins which will be used in the composition for the Bundle Plugin
 func WithPlugins(plugins ...Plugin) BundleOption {
 	return func(opts *bundle) {
 		opts.plugins = plugins
 	}
 }
 
+// WithDeprecationMessage allow set a deprecate message when needed
 func WithDeprecationMessage(msg string) BundleOption {
 	return func(opts *bundle) {
 		opts.deprecateWarning = msg

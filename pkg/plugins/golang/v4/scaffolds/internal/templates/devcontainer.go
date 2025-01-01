@@ -75,16 +75,17 @@ kubectl version --client
 var _ machinery.Template = &DevContainer{}
 var _ machinery.Template = &DevContainerPostInstallScript{}
 
-// DevCotaniner scaffoldds a `devcontainer.json` configurations file for
-// creating Kubebuilder & Kind based DevContainer.
+// DevContainer scaffoldds a `devcontainer.json` configurations file for creating Kubebuilder & Kind based DevContainer.
 type DevContainer struct {
 	machinery.TemplateMixin
 }
 
+// DevContainerPostInstallScript defines the scaffold that will be done with the post install script
 type DevContainerPostInstallScript struct {
 	machinery.TemplateMixin
 }
 
+// SetTemplateDefaults set defaults for this template
 func (f *DevContainer) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = ".devcontainer/devcontainer.json"
@@ -95,6 +96,7 @@ func (f *DevContainer) SetTemplateDefaults() error {
 	return nil
 }
 
+// SetTemplateDefaults set the defaults of this template
 func (f *DevContainerPostInstallScript) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = ".devcontainer/post-install.sh"

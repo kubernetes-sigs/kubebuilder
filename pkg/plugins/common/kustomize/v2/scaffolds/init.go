@@ -82,7 +82,7 @@ func (s *initScaffolder) Scaffold() error {
 		&manager.Config{Image: imageName},
 		&kdefault.Kustomization{},
 		&network_policy.Kustomization{},
-		&network_policy.NetworkPolicyAllowMetrics{},
+		&network_policy.PolicyAllowMetrics{},
 		&prometheus.Kustomization{},
 		&prometheus.Monitor{},
 		&prometheus.ServiceMonitorPatch{},

@@ -21,16 +21,16 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 )
 
-var _ machinery.Template = &WebhookTemplate{}
+var _ machinery.Template = &Template{}
 
-// WebhookTemplate scaffolds both MutatingWebhookConfiguration and ValidatingWebhookConfiguration for the Helm chart
-type WebhookTemplate struct {
+// Template scaffolds both MutatingWebhookConfiguration and ValidatingWebhookConfiguration for the Helm chart
+type Template struct {
 	machinery.TemplateMixin
 	machinery.ProjectNameMixin
 }
 
 // SetTemplateDefaults sets default configuration for the webhook template
-func (f *WebhookTemplate) SetTemplateDefaults() error {
+func (f *Template) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("dist", "chart", "templates", "webhook", "webhooks.yaml")
 	}
