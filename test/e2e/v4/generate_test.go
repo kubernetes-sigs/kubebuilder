@@ -47,14 +47,14 @@ func GenerateV4(kbc *utils.TestContext) {
 		"--programmatic-validation",
 		"--make=false",
 	)
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred(), "Failed to scaffolding mutating webhook")
 
 	By("implementing the mutating and validating webhooks")
 	webhookFilePath := filepath.Join(
 		kbc.Dir, "internal/webhook", kbc.Version,
 		fmt.Sprintf("%s_webhook.go", strings.ToLower(kbc.Kind)))
 	err = utils.ImplementWebhooks(webhookFilePath, strings.ToLower(kbc.Kind))
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred(), "Failed to implement webhooks")
 
 	scaffoldConversionWebhook(kbc)
 
@@ -95,14 +95,14 @@ func GenerateV4WithoutMetrics(kbc *utils.TestContext) {
 		"--programmatic-validation",
 		"--make=false",
 	)
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred(), "Failed to scaffolding mutating webhook")
 
 	By("implementing the mutating and validating webhooks")
 	webhookFilePath := filepath.Join(
 		kbc.Dir, "internal/webhook", kbc.Version,
 		fmt.Sprintf("%s_webhook.go", strings.ToLower(kbc.Kind)))
 	err = utils.ImplementWebhooks(webhookFilePath, strings.ToLower(kbc.Kind))
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred(), "Failed to implement webhooks")
 
 	scaffoldConversionWebhook(kbc)
 
@@ -158,14 +158,14 @@ func GenerateV4WithNetworkPolicies(kbc *utils.TestContext) {
 		"--programmatic-validation",
 		"--make=false",
 	)
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred(), "Failed to scaffolding mutating webhook")
 
 	By("implementing the mutating and validating webhooks")
 	webhookFilePath := filepath.Join(
 		kbc.Dir, "internal/webhook", kbc.Version,
 		fmt.Sprintf("%s_webhook.go", strings.ToLower(kbc.Kind)))
 	err = utils.ImplementWebhooks(webhookFilePath, strings.ToLower(kbc.Kind))
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred(), "Failed to implement webhooks")
 
 	scaffoldConversionWebhook(kbc)
 
@@ -222,7 +222,7 @@ func creatingAPI(kbc *utils.TestContext) {
 		"--controller",
 		"--make=false",
 	)
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred(), "Failed to create API")
 
 	By("implementing the API")
 	ExpectWithOffset(1, pluginutil.InsertCode(
@@ -241,7 +241,7 @@ func initingTheProject(kbc *utils.TestContext) {
 		"--project-version", "3",
 		"--domain", kbc.Domain,
 	)
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred(), "Failed to initialize project")
 }
 
 const metricsTarget = `- path: manager_metrics_patch.yaml

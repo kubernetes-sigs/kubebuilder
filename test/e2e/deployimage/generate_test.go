@@ -51,7 +51,7 @@ func creatingAPI(kbc *utils.TestContext) {
 		"--make=false",
 		"--manifests=false",
 	)
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred(), "Failed to create API definition")
 }
 
 func creatingAPIWithOptions(kbc *utils.TestContext) {
@@ -69,7 +69,7 @@ func creatingAPIWithOptions(kbc *utils.TestContext) {
 		"--make=false",
 		"--manifests=false",
 	)
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred(), "Failed to create API definition with deploy-image/v1-alpha")
 }
 
 func initTheProject(kbc *utils.TestContext) {
@@ -79,5 +79,5 @@ func initTheProject(kbc *utils.TestContext) {
 		"--project-version", "3",
 		"--domain", kbc.Domain,
 	)
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred(), "Failed to initialize project")
 }

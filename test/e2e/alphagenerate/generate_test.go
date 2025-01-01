@@ -182,7 +182,7 @@ func generateProject(kbc *utils.TestContext) {
 		"--external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1",
 		"--external-api-domain=cert-manager.io",
 	)
-	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	Expect(err).NotTo(HaveOccurred(), "Failed to scaffold API with external API")
 }
 
 func regenerateProject(kbc *utils.TestContext, projectOutputDir string) {
