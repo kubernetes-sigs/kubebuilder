@@ -74,6 +74,20 @@ var _ = BeforeSuite(func() {
 
 	ctx, cancel = context.WithCancel(context.TODO())
 
+	var err error
+	/*
+		The CronJob Kind is added to the runtime scheme used by the test environment.
+		This ensures that the CronJob API is registered with the scheme, allowing the test controller to recognize and interact with CronJob resources.
+	*/
+	err = batchv1.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+	/*
+		After the schemas, you will see the following marker.
+		This marker is what allows new schemas to be added here automatically when a new API is added to the project.
+	*/
+
+	// +kubebuilder:scaffold:scheme
+
 	/*
 		The envtest environment is configured to load Custom Resource Definitions (CRDs) from the specified directory.
 		This setup enables the test environment to recognize and interact with the custom resources defined by these CRDs.
@@ -92,24 +106,10 @@ var _ = BeforeSuite(func() {
 		Then, we start the envtest cluster.
 	*/
 
-	var err error
 	// cfg is defined in this file globally.
 	cfg, err = testEnv.Start()
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
-
-	/*
-		The CronJob Kind is added to the runtime scheme used by the test environment.
-		This ensures that the CronJob API is registered with the scheme, allowing the test controller to recognize and interact with CronJob resources.
-	*/
-	err = batchv1.AddToScheme(scheme.Scheme)
-	Expect(err).NotTo(HaveOccurred())
-	/*
-		After the schemas, you will see the following marker.
-		This marker is what allows new schemas to be added here automatically when a new API is added to the project.
-	*/
-
-	// +kubebuilder:scaffold:scheme
 
 	/*
 		A client is created for our test CRUD operations.

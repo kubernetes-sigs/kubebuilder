@@ -43,12 +43,6 @@ var (
 )
 `
 
-const suiteTestReadCRD = `
-	/*
-		The envtest environment is configured to load Custom Resource Definitions (CRDs) from the specified directory.
-		This setup enables the test environment to recognize and interact with the custom resources defined by these CRDs.
-	*/`
-
 const suiteTestAddSchema = `
 	/*
 		The CronJob Kind is added to the runtime scheme used by the test environment.
@@ -63,6 +57,12 @@ const suiteTestAddSchema = `
 
 	// +kubebuilder:scaffold:scheme
 
+	/*
+		The envtest environment is configured to load Custom Resource Definitions (CRDs) from the specified directory.
+		This setup enables the test environment to recognize and interact with the custom resources defined by these CRDs.
+	*/`
+
+const suiteTestClient = `
 	/*
 		A client is created for our test CRUD operations.
 	*/`
