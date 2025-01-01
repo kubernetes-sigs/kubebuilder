@@ -27,7 +27,7 @@ import (
 // Make sure executing `build_kb` to generate kb executable from the source code
 const KubebuilderBinName = "/tmp/kubebuilder/bin/kubebuilder"
 
-type tutorial_generator interface {
+type tutorialGenerator interface {
 	Prepare()
 	GenerateSampleProject()
 	UpdateTutorial()
@@ -52,7 +52,7 @@ func main() {
 	}
 }
 
-func updateTutorial(generator tutorial_generator) {
+func updateTutorial(generator tutorialGenerator) {
 	generator.Prepare()
 	generator.GenerateSampleProject()
 	generator.UpdateTutorial()
