@@ -135,10 +135,7 @@ func (v *KubernetesVersion) prepare() error {
 	if err := v.ClientVersion.parseVersionInts(); err != nil {
 		return err
 	}
-	if err := v.ServerVersion.parseVersionInts(); err != nil {
-		return err
-	}
-	return nil
+	return v.ServerVersion.parseVersionInts()
 }
 
 // Version is a func to run kubectl version command
@@ -158,8 +155,5 @@ func (v *KubernetesVersion) decode(out string) (err error) {
 	if err := dec.Decode(&v); err != nil {
 		return err
 	}
-	if err := v.prepare(); err != nil {
-		return err
-	}
-	return nil
+	return v.prepare()
 }

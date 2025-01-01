@@ -80,11 +80,7 @@ func (p *initSubcommand) InjectConfig(c config.Config) error {
 	if err := validation.IsDNS1123Label(p.name); err != nil {
 		return fmt.Errorf("project name (%s) is invalid: %v", p.name, err)
 	}
-	if err := p.config.SetProjectName(p.name); err != nil {
-		return err
-	}
-
-	return nil
+	return p.config.SetProjectName(p.name)
 }
 
 func (p *initSubcommand) Scaffold(fs machinery.Filesystem) error {

@@ -81,12 +81,7 @@ func (opts *Generate) Generate() error {
 			return err
 		}
 	}
-
-	if err := migrateDeployImagePlugin(config); err != nil {
-		return err
-	}
-
-	return nil
+	return migrateDeployImagePlugin(config)
 }
 
 // Validate ensures the options are valid and kubebuilder is installed.

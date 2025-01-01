@@ -212,11 +212,7 @@ func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
 		Kind:    p.resource.GVK.Kind,
 		Options: configDataOptions,
 	})
-	if err := p.config.EncodePluginConfig(pluginKey, cfg); err != nil {
-		return err
-	}
-
-	return nil
+	return p.config.EncodePluginConfig(pluginKey, cfg)
 }
 
 func (p *createAPISubcommand) PostScaffold() error {
