@@ -17,8 +17,6 @@ issues:
         - gosec
 
 linters-settings:
-  govet:
-    enable=fieldalignment: true
   revive:
     rules:
       # The following rules are recommended https://github.com/mgechev/revive#recommended-configuration
@@ -28,9 +26,9 @@ linters-settings:
       - name: dot-imports
         arguments:
           # dot import should be ONLY allowed for ginkgo testing packages
-          allowedPackages:
-            - "github.com/onsi/ginkgo/v2"
-            - "github.com/onsi/gomega"
+          - allowedPackages:
+              - "github.com/onsi/ginkgo/v2"
+              - "github.com/onsi/gomega"
       - name: error-return
       - name: error-strings
       - name: error-naming
