@@ -16,7 +16,7 @@ limitations under the License.
 
 package cronjob
 
-const GroupversionIntro = `
+const groupVersionIntro = `
 // +kubebuilder:docs-gen:collapse=Apache License
 
 /*
@@ -28,7 +28,7 @@ metadata for the CRDs it creates from this package.
 */
 `
 
-const GroupversionSchema = `
+const groupVersionSchema = `
 /*
 Then, we have the commonly useful variables that help us set up our Scheme.
 Since we need to use all the types in this package in our controller, it's

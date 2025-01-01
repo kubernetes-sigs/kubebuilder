@@ -22,6 +22,7 @@ import (
 
 var _ machinery.Template = &SuiteTest{}
 
+// SuiteTest scaffolds the files for the e2e tests
 type SuiteTest struct {
 	machinery.TemplateMixin
 	machinery.BoilerplateMixin
@@ -29,6 +30,7 @@ type SuiteTest struct {
 	machinery.ProjectNameMixin
 }
 
+// SetTemplateDefaults implements machinery.Template
 func (f *SuiteTest) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = "test/e2e/e2e_suite_test.go"

@@ -28,16 +28,19 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/test/e2e/utils"
 )
 
+// Sample define the sample which will be scaffolded
 type Sample struct {
 	ctx *utils.TestContext
 }
 
+// NewSample create a new instance of the getting started sample and configure the KB CLI that will be used
 func NewSample(binaryPath, samplePath string) Sample {
 	log.Infof("Generating the sample context of getting-started...")
 	ctx := hackutils.NewSampleContext(binaryPath, samplePath, "GO111MODULE=on")
 	return Sample{&ctx}
 }
 
+// UpdateTutorial the getting started sample tutorial with the scaffold changes
 func (sp *Sample) UpdateTutorial() {
 	sp.updateAPI()
 	sp.updateSample()
@@ -208,6 +211,7 @@ func (sp *Sample) Prepare() {
 	hackutils.CheckError("Creating directory for sample project", err)
 }
 
+// GenerateSampleProject will generate the sample
 func (sp *Sample) GenerateSampleProject() {
 	log.Infof("Initializing the getting started project")
 	err := sp.ctx.Init(
@@ -228,6 +232,7 @@ func (sp *Sample) GenerateSampleProject() {
 	hackutils.CheckError("Creating the API", err)
 }
 
+// CodeGen will call targets to generate code
 func (sp *Sample) CodeGen() {
 	cmd := exec.Command("go", "mod", "tidy")
 	_, err := sp.ctx.Run(cmd)

@@ -52,6 +52,7 @@ func (ss *stringSlice) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// Cfg defines the Project Config (PROJECT file)
 type Cfg struct {
 	// Version
 	Version config.Version `json:"version"`
@@ -330,7 +331,7 @@ func (c *Cfg) EncodePluginConfig(key string, configObj interface{}) error {
 	return nil
 }
 
-// Marshal implements config.Config
+// MarshalYAML implements config.Config
 func (c Cfg) MarshalYAML() ([]byte, error) {
 	for i, r := range c.Resources {
 		// If API is empty, omit it (prevents `api: {}`).
@@ -351,7 +352,7 @@ func (c Cfg) MarshalYAML() ([]byte, error) {
 	return content, nil
 }
 
-// Unmarshal implements config.Config
+// UnmarshalYAML implements config.Config
 func (c *Cfg) UnmarshalYAML(b []byte) error {
 	if err := yaml.UnmarshalStrict(b, c); err != nil {
 		return config.UnmarshalError{Err: err}

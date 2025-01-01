@@ -18,13 +18,12 @@ package main
 
 import (
 	log "github.com/sirupsen/logrus"
-
 	cronjob "sigs.k8s.io/kubebuilder/v4/hack/docs/internal/cronjob-tutorial"
 	gettingstarted "sigs.k8s.io/kubebuilder/v4/hack/docs/internal/getting-started"
 	multiversion "sigs.k8s.io/kubebuilder/v4/hack/docs/internal/multiversion-tutorial"
 )
 
-// Make sure executing `build_kb` to generate kb executable from the source code
+// KubebuilderBinName make sure executing `build_kb` to generate kb executable from the source code
 const KubebuilderBinName = "/tmp/kubebuilder/bin/kubebuilder"
 
 type tutorialGenerator interface {
@@ -38,9 +37,9 @@ func main() {
 	type generator func()
 
 	tutorials := map[string]generator{
-		"cronjob":         UpdateCronjobTutorial,
-		"getting-started": UpdateGettingStarted,
-		"multiversion":    UpdateMultiversionTutorial,
+		"cronjob":         updateCronjobTutorial,
+		"getting-started": updateGettingStarted,
+		"multiversion":    updateMultiversionTutorial,
 	}
 
 	log.SetFormatter(&log.TextFormatter{DisableTimestamp: true})
@@ -59,19 +58,19 @@ func updateTutorial(generator tutorialGenerator) {
 	generator.CodeGen()
 }
 
-func UpdateCronjobTutorial() {
+func updateCronjobTutorial() {
 	samplePath := "docs/book/src/cronjob-tutorial/testdata/project/"
 	sp := cronjob.NewSample(KubebuilderBinName, samplePath)
 	updateTutorial(&sp)
 }
 
-func UpdateGettingStarted() {
+func updateGettingStarted() {
 	samplePath := "docs/book/src/getting-started/testdata/project"
 	sp := gettingstarted.NewSample(KubebuilderBinName, samplePath)
 	updateTutorial(&sp)
 }
 
-func UpdateMultiversionTutorial() {
+func updateMultiversionTutorial() {
 	samplePath := "docs/book/src/multiversion-tutorial/testdata/project"
 	sp := cronjob.NewSample(KubebuilderBinName, samplePath)
 	updateTutorial(&sp)

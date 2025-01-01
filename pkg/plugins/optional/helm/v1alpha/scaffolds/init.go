@@ -94,19 +94,19 @@ func (s *initScaffolder) Scaffold() error {
 		},
 		&templates.HelmIgnore{},
 		&charttemplates.HelmHelpers{},
-		&manager.ManagerDeployment{
+		&manager.Deployment{
 			Force:        s.force,
 			DeployImages: len(imagesEnvVars) > 0,
 			HasWebhooks:  len(webhooks) > 0,
 		},
 		&templatescertmanager.Certificate{},
-		&templatesmetrics.MetricsService{},
+		&templatesmetrics.Service{},
 		&prometheus.Monitor{},
 	}
 
 	if len(webhooks) > 0 {
-		buildScaffold = append(buildScaffold, &templateswebhooks.WebhookTemplate{})
-		buildScaffold = append(buildScaffold, &templateswebhooks.WebhookService{})
+		buildScaffold = append(buildScaffold, &templateswebhooks.Template{})
+		buildScaffold = append(buildScaffold, &templateswebhooks.Service{})
 	}
 
 	if err := scaffold.Execute(buildScaffold...); err != nil {

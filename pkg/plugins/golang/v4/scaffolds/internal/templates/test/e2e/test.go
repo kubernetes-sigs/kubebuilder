@@ -36,13 +36,14 @@ type Test struct {
 	machinery.ProjectNameMixin
 }
 
+// SetTemplateDefaults set defaults for this template
 func (f *Test) SetTemplateDefaults() error {
 	if f.Path == "" {
 		f.Path = filepath.Join("test", "e2e", "e2e_test.go")
 	}
 
 	// This is where the template body is defined with markers
-	f.TemplateBody = TestTemplate
+	f.TemplateBody = testCodeTemplate
 
 	return nil
 }
@@ -175,7 +176,7 @@ const conversionWebhookChecksFragment = `It("should have CA injection for %[1]s 
 
 `
 
-var TestTemplate = `{{ .Boilerplate }}
+var testCodeTemplate = `{{ .Boilerplate }}
 
 
 package e2e

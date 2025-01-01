@@ -38,6 +38,7 @@ import (
 	hemlv1alpha "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha"
 )
 
+// Generate store the required info for the command
 type Generate struct {
 	InputDir  string
 	OutputDir string
