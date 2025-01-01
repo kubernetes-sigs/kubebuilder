@@ -82,9 +82,5 @@ func (p *editSubcommand) Scaffold(fs machinery.Filesystem) error {
 	}
 
 	// Track the resources following a declarative approach
-	if err := insertPluginMetaToConfig(p.config, pluginConfig{}); err != nil {
-		return err
-	}
-
-	return nil
+	return insertPluginMetaToConfig(p.config, pluginConfig{})
 }

@@ -130,11 +130,7 @@ func (s *apiScaffolder) Scaffold() error {
 		return fmt.Errorf("error creating controller/**_controller_test.go: %v", err)
 	}
 
-	if err := s.addEnvVarIntoManager(); err != nil {
-		return err
-	}
-
-	return nil
+	return s.addEnvVarIntoManager()
 }
 
 // addEnvVarIntoManager will update the config/manager/manager.yaml by adding
