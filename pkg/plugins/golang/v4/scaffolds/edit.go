@@ -56,11 +56,6 @@ func (s *editScaffolder) Scaffold() error {
 	}
 	str := string(bs)
 
-	// Ignore the error encountered, if the file is already in desired format.
-	if err != nil && s.multigroup != s.config.IsMultiGroup() {
-		return err
-	}
-
 	if s.multigroup {
 		_ = s.config.SetMultiGroup()
 	} else {
