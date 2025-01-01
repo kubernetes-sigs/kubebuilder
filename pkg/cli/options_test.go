@@ -432,15 +432,13 @@ var _ = Describe("Discover external plugins", func() {
 
 			It("should return error when home directory is set to empty", func() {
 				_, ok := os.LookupEnv("XDG_CONFIG_HOME")
-				if !ok {
-				} else {
+				if ok {
 					err = os.Setenv("XDG_CONFIG_HOME", "")
 					Expect(err).ToNot(HaveOccurred())
 				}
 
 				_, ok = os.LookupEnv("HOME")
-				if !ok {
-				} else {
+				if ok {
 					err = os.Setenv("HOME", "")
 					Expect(err).ToNot(HaveOccurred())
 				}
