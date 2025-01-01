@@ -80,7 +80,7 @@ var _ = Describe("CronJob Webhook", func() {
 			obj.Spec.FailedJobsHistoryLimit = nil     // This should default to 1
 
 			By("calling the Default method to apply defaults")
-			defaulter.Default(ctx, obj)
+			defaulter.Default(ctx, obj) // nolint:errcheck
 
 			By("checking that the default values are set")
 			Expect(obj.Spec.ConcurrencyPolicy).To(Equal(batchv1.AllowConcurrent), "Expected ConcurrencyPolicy to default to AllowConcurrent")
@@ -100,7 +100,7 @@ var _ = Describe("CronJob Webhook", func() {
 			*obj.Spec.FailedJobsHistoryLimit = 2
 
 			By("calling the Default method to apply defaults")
-			defaulter.Default(ctx, obj)
+			defaulter.Default(ctx, obj) // nolint:errcheck
 
 			By("checking that the fields were not overwritten")
 			Expect(obj.Spec.ConcurrencyPolicy).To(Equal(batchv1.ForbidConcurrent), "Expected ConcurrencyPolicy to retain its set value")
@@ -119,7 +119,7 @@ var _ = Describe("CronJob Webhook", func() {
 		})
 
 		It("Should admit creation if the name is valid", func() {
-			obj.ObjectMeta.Name = "valid-cronjob-name"
+			obj.ObjectMeta.Name = "valid-cronjob-name" // nolint:goconst
 			Expect(validator.ValidateCreate(ctx, obj)).To(BeNil(),
 				"Expected name validation to pass for a valid name")
 		})
@@ -132,7 +132,7 @@ var _ = Describe("CronJob Webhook", func() {
 		})
 
 		It("Should admit creation if the schedule is valid", func() {
-			obj.Spec.Schedule = "*/5 * * * *"
+			obj.Spec.Schedule = "*/5 * * * *" // nolint:goconst
 			Expect(validator.ValidateCreate(ctx, obj)).To(BeNil(),
 				"Expected spec validation to pass for a valid schedule")
 		})
