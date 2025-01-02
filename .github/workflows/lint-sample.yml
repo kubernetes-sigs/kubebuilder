@@ -16,7 +16,10 @@ jobs:
         folder: [
           "testdata/project-v4",
           "testdata/project-v4-with-plugins",
-          "testdata/project-v4-multigroup"
+          "testdata/project-v4-multigroup",
+          "docs/book/src/cronjob-tutorial/testdata/project",
+          "docs/book/src/getting-started/testdata/project",
+          "docs/book/src/multiversion-tutorial/testdata/project"
         ]
     if: (github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository)
     steps:
