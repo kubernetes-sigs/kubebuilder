@@ -26,6 +26,7 @@ var _ machinery.Template = &Service{}
 // Service scaffolds the Service for webhooks in the Helm chart
 type Service struct {
 	machinery.TemplateMixin
+	machinery.ProjectNameMixin
 
 	// Force if true allows overwriting the scaffolded file
 	Force bool
@@ -48,7 +49,7 @@ const webhookServiceTemplate = `{{` + "`" + `{{- if .Values.webhook.enable }}` +
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ "{{ include \"chart.name\" . }}" }}-webhook-service
+  name: {{ .ProjectName }}-webhook-service
   namespace: {{ "{{ .Release.Namespace }}" }}
   labels:
     {{ "{{- include \"chart.labels\" . | nindent 4 }}" }}
