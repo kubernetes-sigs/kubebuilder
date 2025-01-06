@@ -89,9 +89,16 @@ generate-docs: ## Update/generate the docs
 	./hack/docs/generate.sh
 
 .PHONY: generate-charts
-generate-charts: build ## Re-generate the helm chart testdata only
+generate-charts: build ## Re-generate the helm chart testdata and docs samples
 	rm -rf testdata/project-v4-with-plugins/dist/chart
+	rm -rf docs/book/src/getting-started/testdata/project/dist/chart
+	rm -rf docs/book/src/cronjob-tutorial/testdata/project/dist/chart
+	rm -rf docs/book/src/multiversion-tutorial/testdata/project/dist/chart
+
 	(cd testdata/project-v4-with-plugins && ../../bin/kubebuilder edit --plugins=helm/v1-alpha)
+	(cd docs/book/src/getting-started/testdata/project && ../../../../../../bin/kubebuilder edit --plugins=helm/v1-alpha)
+	(cd docs/book/src/cronjob-tutorial/testdata/project && ../../../../../../bin/kubebuilder edit --plugins=helm/v1-alpha)
+	(cd docs/book/src/multiversion-tutorial/testdata/project && ../../../../../../bin/kubebuilder edit --plugins=helm/v1-alpha)
 
 .PHONY: check-docs
 check-docs: ## Run the script to ensure that the docs are updated

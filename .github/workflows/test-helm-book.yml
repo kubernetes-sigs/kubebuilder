@@ -1,0 +1,101 @@
+name: Helm Docs Tutorials
+
+on:
+  push:
+    paths:
+      - "docs/book/src/cronjob-tutorial/testdata/project/**"
+      - "docs/book/src/getting-started/testdata/project/**"
+      - "docs/book/src/multiversion-tutorial/testdata/project/**"
+      - ".github/workflows/test-helm-book.yml"
+  pull_request:
+    paths:
+      - "docs/book/src/cronjob-tutorial/testdata/project/** "
+      - "docs/book/src/getting-started/testdata/project/**"
+      - "docs/book/src/multiversion-tutorial/testdata/project/**"
+      - ".github/workflows/test-helm-book.yml"
+
+jobs:
+  helm-test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        folder: [
+          "docs/book/src/getting-started/testdata/project",
+          "docs/book/src/cronjob-tutorial/testdata/project",
+          "docs/book/src/multiversion-tutorial/testdata/project"
+        ]
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    steps:
+      - name: Set project name
+        id: project
+        run: echo "name=$(basename ${{ matrix.folder }})" >> $GITHUB_OUTPUT
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Install the latest version of kind
+        run: |
+          curl -Lo ./kind https://kind.sigs.k8s.io/dl/latest/kind-linux-amd64
+          chmod +x ./kind
+          sudo mv ./kind /usr/local/bin/kind
+
+      - name: Verify kind installation
+        run: kind version
+
+      - name: Create kind cluster
+        run: kind create cluster
+
+      - name: Prepare project
+        run: |
+          cd ${{ matrix.folder }}
+          go mod tidy
+          make docker-build IMG=${{ steps.project.outputs.name}}:v0.1.0
+          kind load docker-image ${{ steps.project.outputs.name}}:v0.1.0
+
+      - name: Install Helm
+        run: |
+          curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+      - name: Verify Helm installation
+        run: helm version
+
+      - name: Lint Helm chart
+        run: |
+          helm lint ${{ matrix.folder }}/dist/chart
+
+      - name: Install Prometheus Operator CRDs
+        run: |
+          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+          helm repo update
+          helm install prometheus-crds prometheus-community/prometheus-operator-crds
+
+      - name: Install cert-manager via Helm
+        run: |
+          helm repo add jetstack https://charts.jetstack.io
+          helm repo update
+          helm install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --set installCRDs=true
+
+      - name: Wait for cert-manager to be ready
+        run: |
+          kubectl wait --namespace cert-manager --for=condition=available --timeout=300s deployment/cert-manager
+          kubectl wait --namespace cert-manager --for=condition=available --timeout=300s deployment/cert-manager-cainjector
+          kubectl wait --namespace cert-manager --for=condition=available --timeout=300s deployment/cert-manager-webhook
+
+      - name: Render Helm chart
+        run: |
+          helm template ${{ matrix.folder }}/dist/chart --namespace=${{ steps.project.outputs.name }}-system
+
+      - name: Install Helm chart
+        run: |
+          helm install my-release ${{ matrix.folder }}/dist/chart --create-namespace --namespace ${{ steps.project.outputs.name}}-system
+
+      - name: Check Helm release status
+        run: |
+          helm status my-release --namespace ${{ steps.project.outputs.name}}-system
+

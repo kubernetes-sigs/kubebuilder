@@ -25,3 +25,4 @@ chmod -R +w docs/book/src/getting-started/testdata/project/
 docs_gen_directory="$(dirname "$0")/../../hack/docs/generate_samples.go"
 go run ${docs_gen_directory}
 
+

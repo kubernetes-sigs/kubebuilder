@@ -137,6 +137,9 @@ func (sp *Sample) CodeGen() {
 	cmd = exec.Command("make", "build-installer")
 	_, err = sp.ctx.Run(cmd)
 	hackutils.CheckError("Failed to run make build-installer for cronjob tutorial", err)
+
+	err = sp.ctx.EditHelmPlugin()
+	hackutils.CheckError("Failed to enable helm plugin", err)
 }
 
 // insert code to fix docs

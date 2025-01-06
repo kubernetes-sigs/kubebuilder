@@ -1,0 +1,30 @@
+{{- if .Values.rbac.enable }}
+# This rule is not used by the project project itself.
+# It is provided to allow the cluster admin to help manage permissions for users.
+#
+# Grants read-only access to batch.tutorial.kubebuilder.io resources.
+# This role is intended for users who need visibility into these resources
+# without permissions to modify them. It is ideal for monitoring purposes and limited-access viewing.
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+  name: cronjob-viewer-role
+rules:
+- apiGroups:
+  - batch.tutorial.kubebuilder.io
+  resources:
+  - cronjobs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - batch.tutorial.kubebuilder.io
+  resources:
+  - cronjobs/status
+  verbs:
+  - get
+{{- end -}}

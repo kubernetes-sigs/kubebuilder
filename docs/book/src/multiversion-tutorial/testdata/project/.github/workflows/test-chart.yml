@@ -1,0 +1,90 @@
+name: Test Chart
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test-e2e:
+    name: Run on Ubuntu
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone the code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Install the latest version of kind
+        run: |
+          curl -Lo ./kind https://kind.sigs.k8s.io/dl/latest/kind-linux-amd64
+          chmod +x ./kind
+          sudo mv ./kind /usr/local/bin/kind
+
+      - name: Verify kind installation
+        run: kind version
+
+      - name: Create kind cluster
+        run: kind create cluster
+
+      - name: Prepare project
+        run: |
+          go mod tidy
+          make docker-build IMG=project:v0.1.0
+          kind load docker-image project:v0.1.0
+
+      - name: Install Helm
+        run: |
+          curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+      - name: Verify Helm installation
+        run: helm version
+
+      - name: Lint Helm Chart
+        run: |
+          helm lint ./dist/chart
+
+# TODO: Uncomment if cert-manager is enabled
+#      - name: Install cert-manager via Helm
+#        run: |
+#          helm repo add jetstack https://charts.jetstack.io
+#          helm repo update
+#          helm install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --set installCRDs=true
+#
+#      - name: Wait for cert-manager to be ready
+#        run: |
+#          kubectl wait --namespace cert-manager --for=condition=available --timeout=300s deployment/cert-manager
+#          kubectl wait --namespace cert-manager --for=condition=available --timeout=300s deployment/cert-manager-cainjector
+#          kubectl wait --namespace cert-manager --for=condition=available --timeout=300s deployment/cert-manager-webhook
+
+# TODO: Uncomment if Prometheus is enabled
+#      - name: Install Prometheus Operator CRDs
+#        run: |
+#          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+#          helm repo update
+#          helm install prometheus-crds prometheus-community/prometheus-operator-crds
+#
+#      - name: Install Prometheus via Helm
+#        run: |
+#          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+#          helm repo update
+#          helm install prometheus prometheus-community/prometheus --namespace monitoring --create-namespace
+#
+#      - name: Wait for Prometheus to be ready
+#        run: |
+#          kubectl wait --namespace monitoring --for=condition=available --timeout=300s deployment/prometheus-server
+
+      - name: Install Helm chart for project
+        run: |
+          helm install my-release ./dist/chart --create-namespace --namespace project-system
+
+      - name: Check Helm release status
+        run: |
+          helm status my-release --namespace project-system
+
+# TODO: Uncomment if prometheus.enabled is set to true to confirm that the ServiceMonitor gets created
+#      - name: Check Presence of ServiceMonitor
+#        run: |
+#          kubectl wait --namespace project-system --for=jsonpath='{.kind}'=ServiceMonitor servicemonitor/project-controller-manager-metrics-monitor

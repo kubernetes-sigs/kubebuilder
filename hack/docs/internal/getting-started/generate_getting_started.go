@@ -245,6 +245,9 @@ func (sp *Sample) CodeGen() {
 	cmd = exec.Command("make", "build-installer")
 	_, err = sp.ctx.Run(cmd)
 	hackutils.CheckError("Failed to run make build-installer for getting started tutorial", err)
+
+	err = sp.ctx.EditHelmPlugin()
+	hackutils.CheckError("Failed to enable helm plugin", err)
 }
 
 const oldSpecAPI = "// Foo is an example field of Memcached. Edit memcached_types.go to remove/update\n\tFoo string `json:\"foo,omitempty\"`"
