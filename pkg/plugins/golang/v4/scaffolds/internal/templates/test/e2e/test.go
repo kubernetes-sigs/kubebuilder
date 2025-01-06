@@ -143,7 +143,6 @@ const mutatingWebhookChecksFragment = `It("should have CA injection for mutating
 
 `
 
-// nolint:lll
 const validatingWebhookChecksFragment = `It("should have CA injection for validating webhooks", func() {
 	By("checking CA injection for validating webhooks")
 	verifyCAInjection := func(g Gomega) {

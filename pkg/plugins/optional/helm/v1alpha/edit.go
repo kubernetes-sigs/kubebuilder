@@ -33,7 +33,7 @@ type editSubcommand struct {
 	force  bool
 }
 
-// nolint:lll
+//nolint:lll
 func (p *editSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
 	subcmdMeta.Description = `Initialize or update a Helm chart to distribute the project under the dist/ directory.
 

@@ -54,7 +54,7 @@ func (f *Deployment) SetTemplateDefaults() error {
 	return nil
 }
 
-// nolint:lll
+//nolint:lll
 const managerDeploymentTemplate = `apiVersion: apps/v1
 kind: Deployment
 metadata:

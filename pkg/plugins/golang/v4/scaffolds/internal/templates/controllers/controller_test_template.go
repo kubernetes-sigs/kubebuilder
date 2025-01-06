@@ -27,7 +27,8 @@ import (
 var _ machinery.Template = &ControllerTest{}
 
 // ControllerTest scaffolds the file that sets up the controller unit tests
-// nolint:maligned
+//
+//nolint:maligned
 type ControllerTest struct {
 	machinery.TemplateMixin
 	machinery.MultiGroupMixin

@@ -27,7 +27,8 @@ import (
 var _ machinery.Template = &Types{}
 
 // Types scaffolds the file that defines the schema for a CRD
-// nolint:maligned
+//
+//nolint:maligned
 type Types struct {
 	machinery.TemplateMixin
 	machinery.MultiGroupMixin

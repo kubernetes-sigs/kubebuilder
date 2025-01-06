@@ -29,7 +29,7 @@ import (
 var _ machinery.Template = &WebhookTest{}
 
 // WebhookTest scaffolds the file that sets up the webhook unit tests
-type WebhookTest struct { // nolint:maligned
+type WebhookTest struct { //nolint:maligned
 	machinery.TemplateMixin
 	machinery.MultiGroupMixin
 	machinery.BoilerplateMixin
@@ -48,7 +48,6 @@ type WebhookTest struct { // nolint:maligned
 func (f *WebhookTest) SetTemplateDefaults() error {
 	if f.Path == "" {
 		// Deprecated: Remove me when remove go/v4
-		// nolint:goconst
 		baseDir := "api"
 		if !f.IsLegacyPath {
 			baseDir = filepath.Join("internal", "webhook")

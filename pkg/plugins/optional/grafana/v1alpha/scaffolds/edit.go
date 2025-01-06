@@ -62,7 +62,7 @@ func loadConfig(configPath string) ([]templates.CustomMetricItem, error) {
 		return nil, nil
 	}
 
-	// nolint:gosec
+	//nolint:gosec
 	f, err := os.Open(configPath)
 	if err != nil {
 		return nil, fmt.Errorf("error loading plugin config: %w", err)
@@ -136,7 +136,7 @@ func fillMissingExpr(item templates.CustomMetricItem) templates.CustomMetricItem
 		case "counter":
 			item.Expr = "sum(rate(" + item.Metric + `{job=\"$job\", namespace=\"$namespace\"}[5m])) by (instance, pod)`
 		case "histogram":
-			// nolint: lll
+			//nolint:lll
 			item.Expr = "histogram_quantile(0.90, sum by(instance, le) (rate(" + item.Metric + `{job=\"$job\", namespace=\"$namespace\"}[5m])))`
 		default: // gauge
 			item.Expr = item.Metric

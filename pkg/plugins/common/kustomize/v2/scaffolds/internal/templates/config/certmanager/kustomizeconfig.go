@@ -43,7 +43,6 @@ func (f *KustomizeConfig) SetTemplateDefaults() error {
 	return nil
 }
 
-//nolint:lll
 const kustomizeConfigTemplate = `# This configuration is for teaching kustomize how to update name ref substitution
 nameReference:
 - kind: Issuer

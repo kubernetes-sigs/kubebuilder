@@ -50,7 +50,7 @@ func (f *CertManagerMetricsPatch) SetTemplateDefaults() error {
 	return nil
 }
 
-// nolint:lll
+//nolint:lll
 const metricsManagerPatchTemplate = `# This patch adds the args, volumes, and ports to allow the manager to use the metrics-server certs.
 
 # Add the volumeMount for the metrics-server certs

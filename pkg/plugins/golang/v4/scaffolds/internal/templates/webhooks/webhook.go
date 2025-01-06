@@ -28,7 +28,7 @@ import (
 var _ machinery.Template = &Webhook{}
 
 // Webhook scaffolds the file that defines a webhook for a CRD or a builtin resource
-type Webhook struct { // nolint:maligned
+type Webhook struct { //nolint:maligned
 	machinery.TemplateMixin
 	machinery.MultiGroupMixin
 	machinery.BoilerplateMixin
@@ -53,7 +53,7 @@ type Webhook struct { // nolint:maligned
 func (f *Webhook) SetTemplateDefaults() error {
 	if f.Path == "" {
 		// Deprecated: Remove me when remove go/v4
-		// nolint:goconst
+		//nolint:goconst
 		baseDir := "api"
 		if !f.IsLegacyPath {
 			baseDir = filepath.Join("internal", "webhook")

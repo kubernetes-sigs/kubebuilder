@@ -47,7 +47,6 @@ func (f *EnableCAInjectionPatch) SetTemplateDefaults() error {
 	return nil
 }
 
-//nolint:lll
 const enableCAInjectionPatchTemplate = `# The following patch adds a directive for certmanager to inject CA into the CRD
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition

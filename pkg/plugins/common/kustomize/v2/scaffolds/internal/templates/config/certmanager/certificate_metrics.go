@@ -44,7 +44,7 @@ func (f *MetricsCertificate) SetTemplateDefaults() error {
 	return nil
 }
 
-// nolint:lll
+//nolint:lll
 const metricsCertManagerTemplate = `# The following manifests contain a self-signed issuer CR and a metrics certificate CR.
 # More document can be found at https://docs.cert-manager.io
 apiVersion: cert-manager.io/v1

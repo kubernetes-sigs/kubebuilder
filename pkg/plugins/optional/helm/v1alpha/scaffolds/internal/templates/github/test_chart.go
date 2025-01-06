@@ -43,7 +43,7 @@ func (f *HelmChartCI) SetTemplateDefaults() error {
 	return nil
 }
 
-// nolint:lll
+//nolint:lll
 const testChartTemplate = `name: Test Chart
 
 on:

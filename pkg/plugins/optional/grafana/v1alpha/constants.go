@@ -16,7 +16,7 @@ limitations under the License.
 
 package v1alpha
 
-// nolint: lll
+//nolint:lll
 const metaDataDescription = `This command will add Grafana manifests to the project:
   - A JSON file includes dashboard manifest that can be directly copied to Grafana Web UI.
 	('grafana/controller-runtime-metrics.json')

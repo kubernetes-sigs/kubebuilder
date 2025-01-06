@@ -39,7 +39,6 @@ func (f *CustomMetricsConfigManifest) SetTemplateDefaults() error {
 	return nil
 }
 
-// nolint: lll
 const customMetricsConfigTemplate = `---
 customMetrics:
 #  - metric: # Raw custom metric (required)

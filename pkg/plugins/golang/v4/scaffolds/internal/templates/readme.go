@@ -64,7 +64,6 @@ func (f *Readme) SetTemplateDefaults() error {
 	return nil
 }
 
-//nolint:lll
 const readmeFileTemplate = `# {{ .ProjectName }}
 // TODO(user): Add simple overview of use/purpose
 

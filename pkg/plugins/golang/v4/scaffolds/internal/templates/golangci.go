@@ -41,7 +41,6 @@ func (f *Golangci) SetTemplateDefaults() error {
 	return nil
 }
 
-//nolint:lll
 const golangciTemplate = `run:
   timeout: 5m
   allow-parallel-runners: true

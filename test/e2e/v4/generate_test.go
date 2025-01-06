@@ -25,11 +25,6 @@ import (
 	. "github.com/onsi/gomega"
 
 	pluginutil "sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
-
-	//nolint:golint
-	// nolint:revive
-	//nolint:golint
-	// nolint:revive
 	"sigs.k8s.io/kubebuilder/v4/test/e2e/utils"
 )
 
@@ -248,7 +243,6 @@ const metricsTarget = `- path: manager_metrics_patch.yaml
   target:
     kind: Deployment`
 
-//nolint:lll
 const certManagerTarget = `# - source: # Uncomment the following block if you have any webhook
 #     kind: Service
 #     version: v1

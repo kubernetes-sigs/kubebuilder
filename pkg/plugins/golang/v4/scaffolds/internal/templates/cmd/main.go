@@ -217,7 +217,7 @@ func (f *MainUpdater) GetCodeFragments() machinery.CodeFragmentsMap {
 	return fragments
 }
 
-// nolint:lll
+//nolint:lll
 var mainTemplate = `{{ .Boilerplate }}
 
 package main
