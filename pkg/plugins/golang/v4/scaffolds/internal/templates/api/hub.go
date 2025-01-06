@@ -27,7 +27,8 @@ import (
 var _ machinery.Template = &Hub{}
 
 // Hub scaffolds the file that defines hub
-// nolint:maligned
+//
+//nolint:maligned
 type Hub struct {
 	machinery.TemplateMixin
 	machinery.MultiGroupMixin

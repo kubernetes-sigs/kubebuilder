@@ -84,7 +84,6 @@ func (f *CustomMetricsDashManifest) createTemplate() (string, error) {
 	return outputTmpl.String(), nil
 }
 
-// nolint: lll
 const customMetricsDashTemplate = `{
   "__inputs": [
     {

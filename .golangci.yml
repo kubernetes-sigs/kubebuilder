@@ -22,6 +22,8 @@ linters-settings:
     disable:
       - fieldalignment
       - shadow
+  nolintlint:
+    allow-unused: false
   revive:
     rules:
       # The following rules are recommended https://github.com/mgechev/revive#recommended-configuration
@@ -78,6 +80,7 @@ linters:
     - ineffassign
     - lll
     - misspell
+    - nolintlint
     - nakedret
     - prealloc
     - revive

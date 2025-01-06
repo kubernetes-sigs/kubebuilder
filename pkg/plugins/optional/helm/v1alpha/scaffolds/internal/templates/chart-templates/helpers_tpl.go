@@ -43,7 +43,6 @@ func (f *HelmHelpers) SetTemplateDefaults() error {
 	return nil
 }
 
-// nolint:lll
 const helmHelpersTemplate = `{{` + "`" + `{{- define "chart.name" -}}` + "`" + `}}
 {{` + "`" + `{{- if .Chart }}` + "`" + `}}
   {{` + "`" + `{{- if .Chart.Name }}` + "`" + `}}

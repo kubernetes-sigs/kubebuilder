@@ -25,8 +25,7 @@ import (
 
 // ImplementWebhooks will mock an webhook data
 func ImplementWebhooks(filename, lowerKind string) error {
-	// false positive
-	// nolint:gosec
+	//nolint:gosec // false positive
 	bs, err := os.ReadFile(filename)
 	if err != nil {
 		return err
@@ -74,7 +73,6 @@ func ImplementWebhooks(filename, lowerKind string) error {
 	if err != nil {
 		return err
 	}
-	// false positive
-	// nolint:gosec
+	//nolint:gosec // false positive
 	return os.WriteFile(filename, []byte(str), 0644)
 }

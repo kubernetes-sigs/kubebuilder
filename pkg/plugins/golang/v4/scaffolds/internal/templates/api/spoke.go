@@ -62,7 +62,7 @@ func (f *Spoke) SetTemplateDefaults() error {
 	return nil
 }
 
-// nolint:lll
+//nolint:lll
 const spokeTemplate = `{{ .Boilerplate }}
 
 package {{ .SpokeVersion }}

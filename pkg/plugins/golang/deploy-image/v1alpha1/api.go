@@ -63,14 +63,14 @@ type createAPISubcommand struct {
 }
 
 func (p *createAPISubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
-	// nolint: lll
+	//nolint:lll
 	subcmdMeta.Description = `Scaffold the code implementation to deploy and manage your Operand which is represented by the API informed and will be reconciled by its controller. This plugin will generate the code implementation to help you out.
 
 	Note: In general, it’s recommended to have one controller responsible for managing each API created for the project to properly follow the design goals set by Controller Runtime(https://github.com/kubernetes-sigs/controller-runtime).
 
 	This plugin will work as the common behaviour of the flag --force and will scaffold the API and controller always. Use core types or external APIs is not officially support by default with.
 `
-	// nolint: lll
+	//nolint:lll
 	subcmdMeta.Examples = fmt.Sprintf(`  # Create a frigates API with Group: ship, Version: v1beta1, Kind: Frigate to represent the
 	Image: example.com/frigate:v0.0.1 and its controller with a code to deploy and manage this Operand.
 

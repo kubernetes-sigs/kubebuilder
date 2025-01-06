@@ -568,7 +568,7 @@ func metricsShouldBeUnavailable(kbc *utils.TestContext) {
 }
 
 func cmdOptsToCreateCurlPod(kbc *utils.TestContext, token string) []string {
-	// nolint:lll
+	//nolint:lll
 	cmdOpts := []string{
 		"run", "curl",
 		"--restart=Never",

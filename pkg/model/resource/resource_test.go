@@ -21,7 +21,6 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-//nolint:dupl
 var _ = Describe("Resource", func() {
 	const (
 		group   = "group"

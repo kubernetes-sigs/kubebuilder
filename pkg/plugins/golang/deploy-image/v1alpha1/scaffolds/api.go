@@ -53,7 +53,6 @@ type apiScaffolder struct {
 }
 
 // NewDeployImageScaffolder returns a new Scaffolder for declarative
-// nolint: lll
 func NewDeployImageScaffolder(config config.Config, res resource.Resource, image,
 	command, port, runAsUser string,
 ) plugins.Scaffolder {

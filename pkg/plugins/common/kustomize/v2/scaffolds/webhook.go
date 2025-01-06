@@ -113,7 +113,6 @@ func (s *webhookScaffolder) Scaffold() error {
 			"%s to allow webhook traffic.", policyKustomizeFilePath)
 	}
 
-	// nolint:goconst
 	kustomizeFilePath := "config/default/kustomization.yaml"
 	err = pluginutil.UncommentCode(kustomizeFilePath, "#- ../webhook", `#`)
 	if err != nil {
@@ -164,7 +163,6 @@ func (s *webhookScaffolder) Scaffold() error {
 // Deprecated: remove it when go/v4 and/or kustomize/v2 be removed
 // validateScaffoldedProject will output a message to help users fix their scaffold
 func validateScaffoldedProject() {
-	// nolint:goconst
 	kustomizeFilePath := "config/default/kustomization.yaml"
 	hasCertManagerPatch, _ := pluginutil.HasFileContentWith(kustomizeFilePath,
 		"crdkustomizecainjectionpatch")

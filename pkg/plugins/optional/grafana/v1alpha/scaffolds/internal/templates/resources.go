@@ -45,7 +45,6 @@ func (f *ResourcesManifest) SetTemplateDefaults() error {
 	return nil
 }
 
-// nolint: lll
 const controllerResourcesTemplate = `{
   "__inputs": [
     {

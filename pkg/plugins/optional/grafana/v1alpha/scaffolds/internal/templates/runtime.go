@@ -44,7 +44,7 @@ func (f *RuntimeManifest) SetTemplateDefaults() error {
 	return nil
 }
 
-// nolint: lll
+//nolint:lll
 const controllerRuntimeTemplate = `{
   "__inputs": [
     {

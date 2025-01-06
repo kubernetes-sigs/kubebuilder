@@ -60,7 +60,6 @@ func setBoolFlag(flag string) {
 	os.Args = append(os.Args, "subcommand", "--"+flag)
 }
 
-// nolint:unparam
 func setProjectVersionFlag(value string) {
 	setFlag(projectVersionFlag, value)
 }

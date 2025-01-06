@@ -64,8 +64,7 @@ func GetNonEmptyLines(output string) []string {
 
 // InsertCode searches target content in the file and insert `toInsert` after the target.
 func InsertCode(filename, target, code string) error {
-	// false positive
-	// nolint:gosec
+	//nolint:gosec // false positive
 	contents, err := os.ReadFile(filename)
 	if err != nil {
 		return err
@@ -75,15 +74,13 @@ func InsertCode(filename, target, code string) error {
 		return fmt.Errorf("string %s not found in %s", target, string(contents))
 	}
 	out := string(contents[:idx+len(target)]) + code + string(contents[idx+len(target):])
-	// false positive
-	// nolint:gosec
+	//nolint:gosec // false positive
 	return os.WriteFile(filename, []byte(out), 0644)
 }
 
 // InsertCodeIfNotExist insert code if it does not already exists
 func InsertCodeIfNotExist(filename, target, code string) error {
-	// false positive
-	// nolint:gosec
+	//nolint:gosec // false positive
 	contents, err := os.ReadFile(filename)
 	if err != nil {
 		return err
@@ -130,8 +127,7 @@ func AppendCodeAtTheEnd(filename, code string) error {
 // UncommentCode searches for target in the file and remove the comment prefix
 // of the target content. The target content may span multiple lines.
 func UncommentCode(filename, target, prefix string) error {
-	// false positive
-	// nolint:gosec
+	//nolint:gosec // false positive
 	content, err := os.ReadFile(filename)
 	if err != nil {
 		return err
@@ -171,8 +167,7 @@ func UncommentCode(filename, target, prefix string) error {
 	if err != nil {
 		return err
 	}
-	// false positive
-	// nolint:gosec
+	//nolint:gosec // false positive
 	return os.WriteFile(filename, out.Bytes(), 0644)
 }
 
@@ -232,8 +227,7 @@ func ReplaceInFile(path, oldValue, newValue string) error {
 	if err != nil {
 		return err
 	}
-	// false positive
-	// nolint:gosec
+	//nolint:gosec // false positive
 	b, err := os.ReadFile(path)
 	if err != nil {
 		return err
@@ -260,8 +254,7 @@ func ReplaceRegexInFile(path, match, replace string) error {
 	if err != nil {
 		return err
 	}
-	// false positive
-	// nolint:gosec
+	//nolint:gosec // false positive
 	b, err := os.ReadFile(path)
 	if err != nil {
 		return err
@@ -279,7 +272,7 @@ func ReplaceRegexInFile(path, match, replace string) error {
 
 // HasFileContentWith check if given `text` can be found in file
 func HasFileContentWith(path, text string) (bool, error) {
-	// nolint:gosec
+	//nolint:gosec
 	contents, err := os.ReadFile(path)
 	if err != nil {
 		return false, err

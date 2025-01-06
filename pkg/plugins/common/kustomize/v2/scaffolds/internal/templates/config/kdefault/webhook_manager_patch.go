@@ -50,8 +50,7 @@ func (f *ManagerWebhookPatch) SetTemplateDefaults() error {
 	return nil
 }
 
-// nolint:lll
-// nolint:lll
+//nolint:lll
 const managerWebhookPatchTemplate = `# This patch ensures the webhook certificates are properly mounted in the manager container.
 # It configures the necessary arguments, volumes, volume mounts, and container ports.
 

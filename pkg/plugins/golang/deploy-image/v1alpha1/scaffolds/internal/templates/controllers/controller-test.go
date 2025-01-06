@@ -27,7 +27,8 @@ import (
 var _ machinery.Template = &ControllerTest{}
 
 // ControllerTest scaffolds the file that defines tests for the controller for a CRD or a builtin resource
-// nolint:maligned
+//
+//nolint:maligned
 type ControllerTest struct {
 	machinery.TemplateMixin
 	machinery.MultiGroupMixin
@@ -59,7 +60,6 @@ func (f *ControllerTest) SetTemplateDefaults() error {
 	return nil
 }
 
-//nolint:lll
 const controllerTestTemplate = `{{ .Boilerplate }}
 
 package {{ if and .MultiGroup .Resource.Group }}{{ .Resource.PackageName }}{{ else }}{{ .PackageName }}{{ end }}
