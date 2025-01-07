@@ -16,5 +16,4 @@ kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 networking:
   disableDefaultCNI: true  # Disable the default CNI so that we can test NetworkPolicies
-nodes:
-  - role: control-plane
+
