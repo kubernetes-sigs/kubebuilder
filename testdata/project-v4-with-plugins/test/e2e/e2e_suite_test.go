@@ -60,19 +60,9 @@ var _ = BeforeSuite(func() {
 	By("Ensure that Prometheus is enabled")
 	_ = utils.UncommentCode("config/default/kustomization.yaml", "#- ../prometheus", "#")
 
-	By("generating files")
-	cmd := exec.Command("make", "generate")
-	_, err := utils.Run(cmd)
-	ExpectWithOffset(1, err).NotTo(HaveOccurred(), "Failed to run make generate")
-
-	By("generating manifests")
-	cmd = exec.Command("make", "manifests")
-	_, err = utils.Run(cmd)
-	ExpectWithOffset(1, err).NotTo(HaveOccurred(), "Failed to run make manifests")
-
 	By("building the manager(Operator) image")
-	cmd = exec.Command("make", "docker-build", fmt.Sprintf("IMG=%s", projectImage))
-	_, err = utils.Run(cmd)
+	cmd := exec.Command("make", "docker-build", fmt.Sprintf("IMG=%s", projectImage))
+	_, err := utils.Run(cmd)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred(), "Failed to build the manager(Operator) image")
 
 	// TODO(user): If you want to change the e2e test vendor from Kind, ensure the image is
