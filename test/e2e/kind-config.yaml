@@ -11,9 +11,16 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 networking:
-  disableDefaultCNI: true  # Disable the default CNI so that we can test NetworkPolicies
-
+  disableDefaultCNI: true
+nodes:
+  - role: control-plane
+    extraMounts:
+      - hostPath: /etc/sysctl.conf
+        containerPath: /etc/sysctl.conf
+    extraConfig: |
+      sysctl:
+        net.ipv6.conf.all.disable_ipv6: "1"
+        net.ipv6.conf.default.disable_ipv6: "1"
