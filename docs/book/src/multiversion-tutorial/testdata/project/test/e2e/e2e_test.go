@@ -313,6 +313,24 @@ var _ = Describe("Manager", Ordered, func() {
 			Eventually(verifyCAInjection).Should(Succeed())
 		})
 
+		It("should convert CronJob v1 to v2", func() {
+			By("creating CronJob v1 resource")
+			cmd := exec.Command(
+				"kubectl", "create",
+				"-f", filepath.Join("config", "samples", "batch_v1_cronjob.yaml"),
+			)
+			_, err := utils.Run(cmd)
+			Expect(err).NotTo(HaveOccurred(), "Failed to create CronJob v1 resource")
+
+			By("fetching CronJob v2 resource")
+			cmd = exec.Command(
+				"kubectl", "get",
+				"cronjobs.v2.batch.tutorial.kubebuilder.io", "cronjob-sample",
+			)
+			_, err = utils.Run(cmd)
+			Expect(err).NotTo(HaveOccurred(), "Failed to get CronJob v2 resource")
+		})
+
 		// +kubebuilder:scaffold:e2e-webhooks-checks
 
 		// TODO: Customize the e2e test suite with scenarios specific to your project.

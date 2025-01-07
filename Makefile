@@ -162,7 +162,7 @@ test-e2e-local: ## Run the end-to-end tests locally
 	./test/e2e/local.sh
 
 .PHONY: test-e2e-ci
-test-e2e-ci: ## Run the end-to-end tests (used in the CI)`
+test-e2e-ci: ## Run the end-to-end tests (used in the CI)
 	./test/e2e/ci.sh
 
 .PHONY: test-book
