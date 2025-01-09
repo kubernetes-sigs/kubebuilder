@@ -29,7 +29,7 @@ Currently, it supports two optional params, `input-dir` and `output-dir`.
 
 `input-dir` is the path to the existing project that you want to re-scaffold. Default is the current working directory.
 
-`output-dir` is the path to the directory where you want to generate the new project. Default is a subdirectory in the current working directory.
+`output-dir` is the path to the directory where you want to generate the new project. Default is a directory named "output-dir" in the current working directory.
 
 ```sh
 kubebuilder alpha generate --input-dir=/path/to/existing/project --output-dir=/path/to/new/project
@@ -39,7 +39,7 @@ kubebuilder alpha generate --input-dir=/path/to/existing/project --output-dir=/p
 <h1>Regarding `input-dir` and `output-dir`:</h1>
 
 If neither `input-dir` nor `output-dir` are specified, the project will be regenerated in the current directory.
-This approach facilitates comparison between your current local branch and the version stored upstream (e.g., GitHub main branch).
+This approach facilitates comparison between your code and regenerated files in `output-dir`.
 This way, you can easily overlay your project's code changes atop the new scaffold.
 
 </aside>

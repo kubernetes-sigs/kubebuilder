@@ -16,6 +16,7 @@ package alpha
 import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+
 	"sigs.k8s.io/kubebuilder/v4/pkg/cli/alpha/internal"
 )
 
@@ -57,7 +58,7 @@ Then we will re-scaffold the project by Kubebuilder in the directory specified b
 	scaffoldCmd.Flags().StringVar(&opts.InputDir, "input-dir", "",
 		"path to a Kubebuilder project file if not in the current working directory")
 	scaffoldCmd.Flags().StringVar(&opts.OutputDir, "output-dir", "",
-		"path to output the scaffolding. defaults a directory in the current working directory")
+		"path to output the scaffolding. defaults to a directory named `output-dir` in the current working directory")
 
 	return scaffoldCmd
 }
