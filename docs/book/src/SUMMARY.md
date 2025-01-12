@@ -120,6 +120,7 @@
     - [go/v4](./plugins/available/go-v4-plugin.md)
     - [grafana/v1-alpha](./plugins/available/grafana-v1-alpha.md)
     - [deploy-image/v1-alpha](./plugins/available/deploy-image-plugin-v1-alpha.md)
+    - [helm/v1-alpha](./plugins/available/helm-v1-alpha.md)
     - [kustomize/v2](./plugins/available/kustomize-v2.md)
   - [Extending](./plugins/extending.md)
     - [CLI and Plugins](./plugins/extending/extending_cli_features_and_plugins.md)
