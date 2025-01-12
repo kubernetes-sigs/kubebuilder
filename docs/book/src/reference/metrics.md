@@ -1,6 +1,6 @@
 # Metrics
 
-By default, controller-runtime builds a global prometheus registry and
+By default, controller-runtime builds a global Prometheus registry and
 publishes [a collection of performance metrics](/reference/metrics-reference.md) for each controller.
 
 
@@ -24,6 +24,7 @@ your project to use the image from another source.
 > For further information, see: [kubebuilder/discussions/3907](https://github.com/kubernetes-sigs/kubebuilder/discussions/3907)
 
 </aside>
+
 
 ## Metrics Configuration
 
