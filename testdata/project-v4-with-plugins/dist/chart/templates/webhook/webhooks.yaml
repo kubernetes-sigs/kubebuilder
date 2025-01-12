@@ -1,53 +1,4 @@
 {{- if .Values.webhook.enable }}
-
-apiVersion: admissionregistration.k8s.io/v1
-kind: MutatingWebhookConfiguration
-metadata:
-  name: project-v4-with-plugins-mutating-webhook-configuration
-  namespace: {{ .Release.Namespace }}
-  annotations:
-    {{- if .Values.certmanager.enable }}
-    cert-manager.io/inject-ca-from: "{{ $.Release.Namespace }}/serving-cert"
-    {{- end }}
-  labels:
-    {{- include "chart.labels" . | nindent 4 }}
-webhooks:
-  {{- range .Values.webhook.services }}
-  {{- if eq .type "mutating" }}
-  - name: {{ .name }}
-    clientConfig:
-      service:
-        name: project-v4-with-plugins-webhook-service
-        namespace: {{ $.Release.Namespace }}
-        path: {{ .path }}
-    failurePolicy: {{ .failurePolicy }}
-    sideEffects: {{ .sideEffects }}
-    admissionReviewVersions:
-      {{- range .admissionReviewVersions }}
-      - {{ . }}
-      {{- end }}
-    rules:
-      {{- range .rules }}
-      - operations:
-          {{- range .operations }}
-          - {{ . }}
-          {{- end }}
-        apiGroups:
-          {{- range .apiGroups }}
-          - {{ . }}
-          {{- end }}
-        apiVersions:
-          {{- range .apiVersions }}
-          - {{ . }}
-          {{- end }}
-        resources:
-          {{- range .resources }}
-          - {{ . }}
-          {{- end }}
-      {{- end }}
-  {{- end }}
-  {{- end }}
----
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
@@ -57,41 +8,27 @@ metadata:
     {{- if .Values.certmanager.enable }}
     cert-manager.io/inject-ca-from: "{{ $.Release.Namespace }}/serving-cert"
     {{- end }}
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
 webhooks:
-  {{- range .Values.webhook.services }}
-  {{- if eq .type "validating" }}
-  - name: {{ .name }}
+  - name: vmemcached-v1alpha1.kb.io
     clientConfig:
       service:
         name: project-v4-with-plugins-webhook-service
-        namespace: {{ $.Release.Namespace }}
-        path: {{ .path }}
-    failurePolicy: {{ .failurePolicy }}
-    sideEffects: {{ .sideEffects }}
+        namespace: {{ .Release.Namespace }}
+        path: /validate-example-com-testproject-org-v1alpha1-memcached
+    failurePolicy: Fail
+    sideEffects: None
     admissionReviewVersions:
-      {{- range .admissionReviewVersions }}
-      - {{ . }}
-      {{- end }}
+      - v1
     rules:
-      {{- range .rules }}
       - operations:
-          {{- range .operations }}
-          - {{ . }}
-          {{- end }}
+          - CREATE
+          - UPDATE
         apiGroups:
-          {{- range .apiGroups }}
-          - {{ . }}
-          {{- end }}
+          - example.com.testproject.org
         apiVersions:
-          {{- range .apiVersions }}
-          - {{ . }}
-          {{- end }}
+          - v1alpha1
         resources:
-          {{- range .resources }}
-          - {{ . }}
-          {{- end }}
-      {{- end }}
-  {{- end }}
-  {{- end }}
----
+          - memcacheds
 {{- end }}
