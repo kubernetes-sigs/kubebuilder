@@ -1,6 +1,6 @@
 # Metrics
 
-By default, controller-runtime builds a global prometheus registry and
+By default, controller-runtime builds a global Prometheus registry and
 publishes [a collection of performance metrics](/reference/metrics-reference.md) for each controller.
 
 
@@ -13,10 +13,10 @@ Your projects will be affected and may fail to work if the image cannot be pulle
 **Images provided under `gcr.io/kubebuilder/` will be unavailable from early 2025.**
 
 - **Projects initialized with Kubebuilder versions `v3.14` or lower** utilize [kube-rbac-proxy](https://github.com/brancz/kube-rbac-proxy) to protect the metrics endpoint.
-  In this case, you might want to upgrade your project to the latest release or ensure that you have applied the same or similar code changes.
+In this case, you might want to upgrade your project to the latest release or ensure that you have applied the same or similar code changes.
 
 - **However, projects initialized with Kubebuilder versions `v4.1.0` or higher** have similar protection using `authn/authz`
-  enabled by default via Controller-Runtime's feature [WithAuthenticationAndAuthorization](https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.18.4/pkg/metrics/filters#WithAuthenticationAndAuthorization).
+enabled by default via Controller-Runtime's feature [WithAuthenticationAndAuthorization](https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.18.4/pkg/metrics/filters#WithAuthenticationAndAuthorization).
 
 If you want to continue using [kube-rbac-proxy](https://github.com/brancz/kube-rbac-proxy) then you MUST change
 your project to use the image from another source.
@@ -24,6 +24,7 @@ your project to use the image from another source.
 > For further information, see: [kubebuilder/discussions/3907](https://github.com/kubernetes-sigs/kubebuilder/discussions/3907)
 
 </aside>
+
 
 ## Metrics Configuration
 
