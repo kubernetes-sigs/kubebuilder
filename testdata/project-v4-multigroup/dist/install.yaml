@@ -11,7 +11,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.0
+    controller-gen.kubebuilder.io/version: v0.17.1
   name: bars.fiz.testproject.org
 spec:
   group: fiz.testproject.org
@@ -65,7 +65,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.0
+    controller-gen.kubebuilder.io/version: v0.17.1
   name: bars.foo.testproject.org
 spec:
   group: foo.testproject.org
@@ -119,7 +119,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.0
+    controller-gen.kubebuilder.io/version: v0.17.1
   name: busyboxes.example.com.testproject.org
 spec:
   group: example.com.testproject.org
@@ -235,7 +235,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.0
+    controller-gen.kubebuilder.io/version: v0.17.1
   name: captains.crew.testproject.org
 spec:
   group: crew.testproject.org
@@ -289,7 +289,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.0
+    controller-gen.kubebuilder.io/version: v0.17.1
   name: cruisers.ship.testproject.org
 spec:
   group: ship.testproject.org
@@ -343,7 +343,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.0
+    controller-gen.kubebuilder.io/version: v0.17.1
   name: destroyers.ship.testproject.org
 spec:
   group: ship.testproject.org
@@ -397,7 +397,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.0
+    controller-gen.kubebuilder.io/version: v0.17.1
   name: frigates.ship.testproject.org
 spec:
   group: ship.testproject.org
@@ -451,7 +451,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.0
+    controller-gen.kubebuilder.io/version: v0.17.1
   name: healthcheckpolicies.foo.policy.testproject.org
 spec:
   group: foo.policy.testproject.org
@@ -505,7 +505,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.0
+    controller-gen.kubebuilder.io/version: v0.17.1
   name: krakens.sea-creatures.testproject.org
 spec:
   group: sea-creatures.testproject.org
@@ -559,7 +559,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.0
+    controller-gen.kubebuilder.io/version: v0.17.1
   name: leviathans.sea-creatures.testproject.org
 spec:
   group: sea-creatures.testproject.org
@@ -613,7 +613,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.0
+    controller-gen.kubebuilder.io/version: v0.17.1
   name: memcacheds.example.com.testproject.org
 spec:
   group: example.com.testproject.org
@@ -734,7 +734,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.17.0
+    controller-gen.kubebuilder.io/version: v0.17.1
   name: wordpresses.example.com.testproject.org
 spec:
   conversion:
