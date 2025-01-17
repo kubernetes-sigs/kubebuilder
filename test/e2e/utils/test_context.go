@@ -31,7 +31,7 @@ import (
 )
 
 const (
-	certmanagerVersion        = "v1.16.0"
+	certmanagerVersion        = "v1.16.3"
 	certmanagerURLTmpl        = "https://github.com/cert-manager/cert-manager/releases/download/%s/cert-manager.yaml"
 	prometheusOperatorVersion = "v0.77.1"
 	prometheusOperatorURL     = "https://github.com/prometheus-operator/prometheus-operator/" +
