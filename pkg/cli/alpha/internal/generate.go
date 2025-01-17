@@ -44,13 +44,34 @@ type Generate struct {
 	OutputDir string
 }
 
-const defaultOutputDir = "output-dir"
-
 // Generate handles the migration and scaffolding process.
 func (opts *Generate) Generate() error {
 	config, err := loadProjectConfig(opts.InputDir)
 	if err != nil {
 		return err
+	}
+
+	if opts.OutputDir == "" {
+		cwd, err := os.Getwd()
+		if err != nil {
+			return fmt.Errorf("failed to get working directory: %w", err)
+		}
+		opts.OutputDir = cwd
+		if _, err := os.Stat(opts.OutputDir); err == nil {
+			log.Warn("Using current working directory to re-scaffold the project")
+			log.Warn("This directory will be cleaned up and all files removed before the re-generation")
+
+			// Ensure we clean the correct directory
+			log.Info("Cleaning directory:", opts.OutputDir)
+
+			// Use an absolute path to target files directly
+			cleanupCmd := fmt.Sprintf("rm -rf %s/*", opts.OutputDir)
+			err = util.RunCmd("Running cleanup", "sh", "-c", cleanupCmd)
+			if err != nil {
+				log.Error("Cleanup failed:", err)
+				return err
+			}
+		}
 	}
 
 	if err := createDirectory(opts.OutputDir); err != nil {
@@ -87,17 +108,8 @@ func (opts *Generate) Generate() error {
 
 // Validate ensures the options are valid and kubebuilder is installed.
 func (opts *Generate) Validate() error {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return fmt.Errorf("failed to get working directory: %w", err)
-	}
-
-	opts.InputDir, err = getInputPath(cwd, opts.InputDir)
-	if err != nil {
-		return err
-	}
-
-	opts.OutputDir, err = getOutputPath(cwd, opts.OutputDir)
+	var err error
+	opts.InputDir, err = getInputPath(opts.InputDir)
 	if err != nil {
 		return err
 	}
@@ -225,26 +237,19 @@ func createAPIWithDeployImage(resource v1alpha1.ResourceData) error {
 }
 
 // Helper function to get input path.
-func getInputPath(currentWorkingDirectory, inputPath string) (string, error) {
+func getInputPath(inputPath string) (string, error) {
 	if inputPath == "" {
-		inputPath = currentWorkingDirectory
+		cwd, err := os.Getwd()
+		if err != nil {
+			return "", fmt.Errorf("failed to get working directory: %w", err)
+		}
+		inputPath = cwd
 	}
 	projectPath := fmt.Sprintf("%s/%s", inputPath, yaml.DefaultPath)
 	if _, err := os.Stat(projectPath); os.IsNotExist(err) {
 		return "", fmt.Errorf("project path %s does not exist: %w", projectPath, err)
 	}
 	return inputPath, nil
-}
-
-// Helper function to get output path.
-func getOutputPath(currentWorkingDirectory, outputPath string) (string, error) {
-	if outputPath == "" {
-		outputPath = fmt.Sprintf("%s/%s", currentWorkingDirectory, defaultOutputDir)
-	}
-	if _, err := os.Stat(outputPath); err == nil {
-		return "", fmt.Errorf("output path %s already exists", outputPath)
-	}
-	return outputPath, nil
 }
 
 // Helper function to get Init arguments for Kubebuilder.

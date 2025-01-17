@@ -68,27 +68,28 @@ var _ = Describe("kubebuilder", func() {
 			kbc.Destroy()
 		})
 
-		It("should regenerate the project with success", func() {
+		It("should regenerate the project in current directory with success", func() {
 			generateProject(kbc)
-			regenerateProject(kbc, projectOutputDir)
-			validateProjectFile(kbc, projectFilePath)
+			regenerateProject(kbc)
+			By("checking that the project file was generated in the current directory")
+			validateProjectFile(kbc, filepath.Join(kbc.Dir, "PROJECT"))
 		})
 
 		It("should regenerate project with grafana plugin with success", func() {
 			generateProjectWithGrafanaPlugin(kbc)
-			regenerateProject(kbc, projectOutputDir)
+			regenerateProjectWith(kbc, projectOutputDir)
 			validateGrafanaPlugin(projectFilePath)
 		})
 
 		It("should regenerate project with DeployImage plugin with success", func() {
 			generateProjectWithDeployImagePlugin(kbc)
-			regenerateProject(kbc, projectOutputDir)
+			regenerateProjectWith(kbc, projectOutputDir)
 			validateDeployImagePlugin(projectFilePath)
 		})
 
 		It("should regenerate project with helm plugin with success", func() {
 			generateProjectWithHelmPlugin(kbc)
-			regenerateProject(kbc, projectOutputDir)
+			regenerateProjectWith(kbc, projectOutputDir)
 			validateHelmPlugin(projectFilePath)
 		})
 	})
@@ -185,7 +186,13 @@ func generateProject(kbc *utils.TestContext) {
 	Expect(err).NotTo(HaveOccurred(), "Failed to scaffold API with external API")
 }
 
-func regenerateProject(kbc *utils.TestContext, projectOutputDir string) {
+func regenerateProject(kbc *utils.TestContext) {
+	By("regenerating the project")
+	err := kbc.Regenerate()
+	Expect(err).NotTo(HaveOccurred(), "Failed to regenerate project")
+}
+
+func regenerateProjectWith(kbc *utils.TestContext, projectOutputDir string) {
 	By("regenerating the project")
 	err := kbc.Regenerate(
 		fmt.Sprintf("--input-dir=%s", kbc.Dir),
