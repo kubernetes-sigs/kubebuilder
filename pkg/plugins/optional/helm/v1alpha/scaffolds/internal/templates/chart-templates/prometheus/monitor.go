@@ -48,7 +48,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   labels:
-	{{ "{{- include \"chart.labels\" . | nindent 4 }}" }}
+    {{ "{{- include \"chart.labels\" . | nindent 4 }}" }}
   name: {{ .ProjectName }}-controller-manager-metrics-monitor
   namespace: {{ "{{ .Release.Namespace }}" }}
 spec:
