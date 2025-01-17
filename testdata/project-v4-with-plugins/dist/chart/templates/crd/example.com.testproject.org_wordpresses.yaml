@@ -12,7 +12,7 @@ metadata:
     {{- if .Values.crd.keep }}
     "helm.sh/resource-policy": keep
     {{- end }}
-    controller-gen.kubebuilder.io/version: v0.17.0
+    controller-gen.kubebuilder.io/version: v0.17.1
   name: wordpresses.example.com.testproject.org
 spec:
   {{- if .Values.webhook.enable }}
