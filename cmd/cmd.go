@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package cmd
 
 import (
 	"github.com/sirupsen/logrus"
@@ -36,7 +36,8 @@ func init() {
 	logrus.SetFormatter(&logrus.TextFormatter{DisableTimestamp: true})
 }
 
-func main() {
+// Run bootstraps & runs the CLI
+func Run() {
 	// Bundle plugin which built the golang projects scaffold with base.go/v4 and kustomize/v2 plugins
 	gov4Bundle, _ := plugin.NewBundleWithOptions(plugin.WithName(golang.DefaultNameQualifier),
 		plugin.WithVersion(plugin.Version{Number: 4}),
