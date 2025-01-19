@@ -60,7 +60,7 @@ const (
 		"releases/download/%s/bundle.yaml"
 
 	certmanagerVersion = "v1.16.3"
-	certmanagerURLTmpl = "https://github.com/jetstack/cert-manager/releases/download/%s/cert-manager.yaml"
+	certmanagerURLTmpl = "https://github.com/cert-manager/cert-manager/releases/download/%s/cert-manager.yaml"
 )
 
 func warnError(err error) {
