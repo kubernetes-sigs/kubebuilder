@@ -361,6 +361,10 @@ func createWebhook(resource resource.Resource) error {
 // Gets flags for webhook creation.
 func getWebhookResourceFlags(resource resource.Resource) []string {
 	var args []string
+	if resource.IsExternal() {
+		args = append(args, "--external-api-path", resource.Path)
+		args = append(args, "--external-api-domain", resource.Domain)
+	}
 	if resource.HasValidationWebhook() {
 		args = append(args, "--programmatic-validation")
 	}
