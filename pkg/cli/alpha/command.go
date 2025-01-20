@@ -55,9 +55,11 @@ Then we will re-scaffold the project by Kubebuilder in the directory specified b
 		},
 	}
 	scaffoldCmd.Flags().StringVar(&opts.InputDir, "input-dir", "",
-		"path to a Kubebuilder project file if not in the current working directory")
+		"Specifies the full path to a Kubebuilder project file. If not provided, "+
+			"the current working directory is used.")
 	scaffoldCmd.Flags().StringVar(&opts.OutputDir, "output-dir", "",
-		"path to output the scaffolding. defaults a directory in the current working directory")
+		"Specifies the full path where the scaffolded files will be output. "+
+			"Defaults to a directory within the current working directory.")
 
 	return scaffoldCmd
 }
