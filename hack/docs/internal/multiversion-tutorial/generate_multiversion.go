@@ -742,9 +742,12 @@ type CronJobStatus struct {
 func (sp *Sample) CodeGen() {
 	cmd := exec.Command("make", "all")
 	_, err := sp.ctx.Run(cmd)
-	hackutils.CheckError("Failed to run make all for cronjob tutorial", err)
+	hackutils.CheckError("Failed to run make all for multiversion tutorial", err)
 
 	cmd = exec.Command("make", "build-installer")
 	_, err = sp.ctx.Run(cmd)
-	hackutils.CheckError("Failed to run make build-installer for  multiversion cronjob tutorial", err)
+	hackutils.CheckError("Failed to run make build-installer for  multiversion tutorial", err)
+
+	err = sp.ctx.EditHelmPlugin()
+	hackutils.CheckError("Failed to enable helm plugin", err)
 }

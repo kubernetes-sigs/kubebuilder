@@ -1,0 +1,107 @@
+{{- if .Values.webhook.enable }}
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: project-mutating-webhook-configuration
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    {{- if .Values.certmanager.enable }}
+    cert-manager.io/inject-ca-from: "{{ $.Release.Namespace }}/serving-cert"
+    {{- end }}
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+webhooks:
+  - name: mcronjob-v1.kb.io
+    clientConfig:
+      service:
+        name: project-webhook-service
+        namespace: {{ .Release.Namespace }}
+        path: /mutate-batch-tutorial-kubebuilder-io-v1-cronjob
+    failurePolicy: Fail
+    sideEffects: None
+    admissionReviewVersions:
+      - v1
+    rules:
+      - operations:
+          - CREATE
+          - UPDATE
+        apiGroups:
+          - batch.tutorial.kubebuilder.io
+        apiVersions:
+          - v1
+        resources:
+          - cronjobs
+  - name: mcronjob-v2.kb.io
+    clientConfig:
+      service:
+        name: project-webhook-service
+        namespace: {{ .Release.Namespace }}
+        path: /mutate-batch-tutorial-kubebuilder-io-v2-cronjob
+    failurePolicy: Fail
+    sideEffects: None
+    admissionReviewVersions:
+      - v1
+    rules:
+      - operations:
+          - CREATE
+          - UPDATE
+        apiGroups:
+          - batch.tutorial.kubebuilder.io
+        apiVersions:
+          - v2
+        resources:
+          - cronjobs
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: project-validating-webhook-configuration
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    {{- if .Values.certmanager.enable }}
+    cert-manager.io/inject-ca-from: "{{ $.Release.Namespace }}/serving-cert"
+    {{- end }}
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+webhooks:
+  - name: vcronjob-v1.kb.io
+    clientConfig:
+      service:
+        name: project-webhook-service
+        namespace: {{ .Release.Namespace }}
+        path: /validate-batch-tutorial-kubebuilder-io-v1-cronjob
+    failurePolicy: Fail
+    sideEffects: None
+    admissionReviewVersions:
+      - v1
+    rules:
+      - operations:
+          - CREATE
+          - UPDATE
+        apiGroups:
+          - batch.tutorial.kubebuilder.io
+        apiVersions:
+          - v1
+        resources:
+          - cronjobs
+  - name: vcronjob-v2.kb.io
+    clientConfig:
+      service:
+        name: project-webhook-service
+        namespace: {{ .Release.Namespace }}
+        path: /validate-batch-tutorial-kubebuilder-io-v2-cronjob
+    failurePolicy: Fail
+    sideEffects: None
+    admissionReviewVersions:
+      - v1
+    rules:
+      - operations:
+          - CREATE
+          - UPDATE
+        apiGroups:
+          - batch.tutorial.kubebuilder.io
+        apiVersions:
+          - v2
+        resources:
+          - cronjobs
+{{- end }}

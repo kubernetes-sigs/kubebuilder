@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: project-controller-manager
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+    control-plane: controller-manager
+spec:
+  replicas:  {{ .Values.controllerManager.replicas }}
+  selector:
+    matchLabels:
+      {{- include "chart.selectorLabels" . | nindent 6 }}
+      control-plane: controller-manager
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+      labels:
+        {{- include "chart.labels" . | nindent 8 }}
+        control-plane: controller-manager
+        {{- if and .Values.controllerManager.pod .Values.controllerManager.pod.labels }}
+        {{- range $key, $value := .Values.controllerManager.pod.labels }}
+        {{ $key }}: {{ $value }}
+        {{- end }}
+        {{- end }}
+    spec:
+      containers:
+        - name: manager
+          args:
+            {{- range .Values.controllerManager.container.args }}
+            - {{ . }}
+            {{- end }}
+          command:
+            - /manager
+          image: {{ .Values.controllerManager.container.image.repository }}:{{ .Values.controllerManager.container.image.tag }}
+          {{- if .Values.controllerManager.container.env }}
+          env:
+            {{- range $key, $value := .Values.controllerManager.container.env }}
+            - name: {{ $key }}
+              value: {{ $value }}
+            {{- end }}
+          {{- end }}
+          livenessProbe:
+            {{- toYaml .Values.controllerManager.container.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.controllerManager.container.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.controllerManager.container.resources | nindent 12 }}
+          securityContext:
+            {{- toYaml .Values.controllerManager.container.securityContext | nindent 12 }}
+          {{- if and .Values.certmanager.enable (or .Values.webhook.enable .Values.metrics.enable) }}
+          volumeMounts:
+            {{- if and .Values.metrics.enable .Values.certmanager.enable }}
+            - name: metrics-certs
+              mountPath: /tmp/k8s-metrics-server/metrics-certs
+              readOnly: true
+            {{- end }}
+          {{- end }}
+      securityContext:
+        {{- toYaml .Values.controllerManager.securityContext | nindent 8 }}
+      serviceAccountName: {{ .Values.controllerManager.serviceAccountName }}
+      terminationGracePeriodSeconds: {{ .Values.controllerManager.terminationGracePeriodSeconds }}
+      {{- if and .Values.certmanager.enable (or .Values.webhook.enable .Values.metrics.enable) }}
+      volumes:
+        {{- if and .Values.metrics.enable .Values.certmanager.enable }}
+        - name: metrics-certs
+          secret:
+            secretName: metrics-server-cert
+        {{- end }}
+      {{- end }}

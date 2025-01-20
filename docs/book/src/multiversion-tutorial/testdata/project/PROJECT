@@ -5,6 +5,8 @@
 domain: tutorial.kubebuilder.io
 layout:
 - go.kubebuilder.io/v4
+plugins:
+  helm.kubebuilder.io/v1-alpha: {}
 projectName: project
 repo: tutorial.kubebuilder.io/project
 resources:
