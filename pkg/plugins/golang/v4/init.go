@@ -187,21 +187,23 @@ func checkDir() error {
 			if isCapitalized && info.Name() != "PROJECT" {
 				return nil
 			}
-			// Allow files in the following list
-			allowedFiles := []string{
-				"go.mod", // user might run `go mod init` instead of providing the `--flag` at init
-				"go.sum", // auto-generated file related to go.mod
+			disallowedExtensions := []string{
+				".go",
+				".yaml",
+				".mod",
+				".sum",
 			}
-			for _, allowedFile := range allowedFiles {
-				if info.Name() == allowedFile {
+			// Deny files with .go or .yaml or .mod or .sum extensions
+			for _, ext := range disallowedExtensions {
+				if strings.HasSuffix(info.Name(), ext) {
 					return nil
 				}
 			}
 			// Do not allow any other file
 			return fmt.Errorf(
-				"target directory is not empty (only %s, files and directories with the prefix \".\", "+
-					"files with the suffix \".md\" or capitalized files name are allowed); "+
-					"found existing file %q", strings.Join(allowedFiles, ", "), path)
+				"target directory is not empty and contains a disallowed file %q. "+
+					"files with the following extensions [%s] are not allowed to avoid conflicts with the tooling.",
+				path, strings.Join(disallowedExtensions, ", "))
 		})
 	if err != nil {
 		return err
