@@ -47,7 +47,7 @@ gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8
 gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
 gopkg.in/yaml.v3 v3.0.1 h1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=
 gopkg.in/yaml.v3 v3.0.1/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
-sigs.k8s.io/kubebuilder/v4 v4.4.0 h1:dpQmer0WV7ZViZ4DPmyhr9OZ/sjKK/8ixaZS3x5MekY=
-sigs.k8s.io/kubebuilder/v4 v4.4.0/go.mod h1:z/MgqYL4TipMpckp1D9lfzdyQ3algqziMctu8FLGFMA=
+sigs.k8s.io/kubebuilder/v4 v4.5.0 h1:yqIoe2akM2oMSQ7mujGxl188IiDp1RkqT2gk0eBgxdM=
+sigs.k8s.io/kubebuilder/v4 v4.5.0/go.mod h1:z/MgqYL4TipMpckp1D9lfzdyQ3algqziMctu8FLGFMA=
 sigs.k8s.io/yaml v1.4.0 h1:Mk1wCc2gy/F0THH0TAp1QYyJNzRm2KCLy3o5ASXVI5E=
 sigs.k8s.io/yaml v1.4.0/go.mod h1:Ejl7/uTz7PSA4eKMyQCUTnhZYNmLIl+5c2lQPGR2BPY=
