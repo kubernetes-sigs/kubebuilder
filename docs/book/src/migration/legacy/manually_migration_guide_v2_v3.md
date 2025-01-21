@@ -372,13 +372,13 @@ In the Dockerfile, replace:
 
 ```
 # Build the manager binary
-FROM golang:1.13 as builder
+FROM docker.io/golang:1.13 as builder
 ```
 
 With:
 ```
 # Build the manager binary
-FROM golang:1.16 as builder
+FROM docker.io/golang:1.16 as builder
 ```
 
 ####  Update your Makefile
