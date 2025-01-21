@@ -22,7 +22,7 @@ import (
 
 const devContainerTemplate = `{
   "name": "Kubebuilder DevContainer",
-  "image": "golang:1.23",
+  "image": "docker.io/golang:1.23",
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:2": {},
     "ghcr.io/devcontainers/features/git:1": {}

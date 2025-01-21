@@ -179,7 +179,7 @@ You will have to manually add the new API module into the download of dependenci
 
 ```dockerfile
 # Build the manager binary
-FROM golang:1.20 as builder
+FROM docker.io/golang:1.20 as builder
 ARG TARGETOS
 ARG TARGETARCH
 
