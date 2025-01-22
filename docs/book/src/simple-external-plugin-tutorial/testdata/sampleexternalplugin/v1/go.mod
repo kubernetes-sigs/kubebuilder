@@ -6,7 +6,7 @@ godebug default=go1.23
 
 require (
 	github.com/spf13/pflag v1.0.5
-	sigs.k8s.io/kubebuilder/v4 v4.4.0
+	sigs.k8s.io/kubebuilder/v4 v4.5.0
 )
 
 require (
