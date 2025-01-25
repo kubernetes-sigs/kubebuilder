@@ -4,7 +4,6 @@ ARG TARGETOS
 ARG TARGETARCH
 
 WORKDIR /workspace
-
 # Copy the go source
 COPY . .
 
