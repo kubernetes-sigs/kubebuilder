@@ -68,7 +68,7 @@ The releases occur in an account in the Google Cloud (See [here](https://console
 ### To build the Kubebuilder CLI binaries:
 
 A trigger GitHub action [release](.github/workflows/release.yml) is trigged when a new tag is pushed.
-This action will caall the job [./build/.goreleaser.yml](./build/.goreleaser.yml).
+This action will call the job [./build/.goreleaser.yml](./build/.goreleaser.yml).
 
 ###  (Deprecated) - To build the Kubebuilder-tools: (Artifacts required to use ENV TEST)
 
@@ -93,7 +93,7 @@ see: https://github.com/kubernetes-sigs/kubebuilder/discussions/3907
 These images are built from the project [brancz/kube-rbac-proxy](https://github.com/brancz/kube-rbac-proxy).
 The projects built with Kubebuilder creates a side container with `kube-rbac-proxy` to protect the Manager.
 
-These images are can be checked in the consolse, see [here](https://console.cloud.google.com/gcr/images/kubebuilder/GLOBAL/kube-rbac-proxy).
+These images can be checked in the console, see [here](https://console.cloud.google.com/gcr/images/kubebuilder/GLOBAL/kube-rbac-proxy).
 
 The project `kube-rbac-proxy` is in the process to be donated to the k8s org. However, it is going on for a long time and then,
 we have no ETA for that to occur. When that occurs we can automate this process. But until there we need to generate these images

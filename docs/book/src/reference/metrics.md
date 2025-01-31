@@ -102,7 +102,7 @@ By using this method, you ensure that the endpoint is accessible only to those w
 
 In this way, only Pods using the `ServiceAccount` token are authorized to read the metrics endpoint. For example:
 
-```ymal
+```yaml
 apiVersion: v1
 kind: Pod
 metadata:
@@ -324,7 +324,7 @@ var (
     goobers = prometheus.NewCounter(
         prometheus.CounterOpts{
             Name: "goobers_total",
-            Help: "Number of goobers proccessed",
+            Help: "Number of goobers processed",
         },
     )
     gooberFailures = prometheus.NewCounter(

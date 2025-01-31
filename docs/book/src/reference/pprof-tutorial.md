@@ -52,7 +52,7 @@ While [Pprof][github] is an excellent tool for profiling and debugging, it is no
     go tool pprof -http=:8080 ./cpu-profile.out
     ```
 
-    Visualizaion results will vary depending on the deployed workload, and the Controller's behavior.
+    Visualization results will vary depending on the deployed workload, and the Controller's behavior.
     However, you'll see the result on your browser similar to this one:
 
     ![pprof-result-visualization](./images/pprof-result-visualization.png)
