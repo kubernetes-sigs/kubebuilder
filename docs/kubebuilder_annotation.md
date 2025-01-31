@@ -30,7 +30,7 @@ Delimiter symbols are distinguished to work in different levels from top-down fo
 
 - **Equal sign**
 
-  Equal sign `=` is the 3rd level delimiter (to annotation) for identifying key and value. Since the `key=value` parts are splitted from single token (2nd level), its inner delimiter `=` works for next level (3rd level)
+  Equal sign `=` is the 3rd level delimiter (to annotation) for identifying key and value. Since the `key=value` parts are split from single token (2nd level), its inner delimiter `=` works for next level (3rd level)
 
 - **Semicolon sign**
 

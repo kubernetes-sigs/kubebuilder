@@ -170,7 +170,7 @@ go.work
 go.work.sum
 ```
 
-When releasing with a present `go.work` file, make sure to set the environment variable `GOWORK=off` (verifiable with `go env GOWORK`) to make sure the release process does not get impeded by a potentially commited `go.work` file.
+When releasing with a present `go.work` file, make sure to set the environment variable `GOWORK=off` (verifiable with `go env GOWORK`) to make sure the release process does not get impeded by a potentially committed `go.work` file.
 
 #### Adjusting the Dockerfile
 
@@ -231,7 +231,7 @@ go mod edit -dropreplace YOUR_GO_PATH/test-operator/api/v1alpha1 # this will dro
 git push origin main v1.0.0 api/v1.0.0
 ```
 
-After this, your modules will be available in VCS and you do not need a local replacement anymore. However if youre making local changes,
+After this, your modules will be available in VCS and you do not need a local replacement anymore. However if you're making local changes,
 make sure to adopt your behavior with `replace` directives accordingly.
 
 ### Reusing your extracted API module
