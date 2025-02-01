@@ -124,6 +124,8 @@ func (sp *Sample) UpdateTutorial() {
 	sp.updateExample()
 	// 12. add test
 	sp.addControllerTest()
+	// 13. update e2e tests
+	sp.updateE2E()
 }
 
 // CodeGen is a noop for this sample, just to make generation of all samples
@@ -645,4 +647,27 @@ func (sp *Sample) addControllerTest() {
 	var fs = afero.NewOsFs()
 	err := afero.WriteFile(fs, filepath.Join(sp.ctx.Dir, "internal/controller/cronjob_controller_test.go"), []byte(controllerTest), 0600)
 	hackutils.CheckError("adding cronjob_controller_test", err)
+}
+
+func (sp *Sample) updateE2E() {
+	cronjobE2ESuite := filepath.Join(sp.ctx.Dir, "test", "e2e", "e2e_suite_test.go")
+	cronjobE2ETest := filepath.Join(sp.ctx.Dir, "test", "e2e", "e2e_test.go")
+	var err error
+
+	err = pluginutil.InsertCode(cronjobE2ESuite, `isCertManagerAlreadyInstalled = false`, isPrometheusInstalledVar)
+	hackutils.CheckError("fixing test/e2e/e2e_suite_test.go", err)
+
+	err = pluginutil.InsertCode(cronjobE2ESuite, `var _ = BeforeSuite(func() {`, beforeSuitePrometheus)
+	hackutils.CheckError("fixing test/e2e/e2e_suite_test.go", err)
+
+	err = pluginutil.InsertCode(cronjobE2ESuite,
+		`// The tests-e2e are intended to run on a temporary cluster that is created and destroyed for testing.`,
+		checkPrometheusInstalled)
+	hackutils.CheckError("fixing test/e2e/e2e_suite_test.go", err)
+
+	err = pluginutil.InsertCode(cronjobE2ESuite, `var _ = AfterSuite(func() {`, afterSuitePrometheus)
+	hackutils.CheckError("fixing test/e2e/e2e_suite_test.go", err)
+
+	err = pluginutil.InsertCode(cronjobE2ETest, `Expect(err).NotTo(HaveOccurred(), "Metrics service should exist")`, serviceMonitorE2e)
+	hackutils.CheckError("fixing test/e2e/e2e_test.go", err)
 }

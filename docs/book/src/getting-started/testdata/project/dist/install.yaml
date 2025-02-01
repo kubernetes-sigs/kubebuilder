@@ -461,25 +461,3 @@ spec:
       serviceAccountName: project-controller-manager
       terminationGracePeriodSeconds: 10
       volumes: []
----
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  labels:
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/name: project
-    control-plane: controller-manager
-  name: project-controller-manager-metrics-monitor
-  namespace: project-system
-spec:
-  endpoints:
-  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
-    path: /metrics
-    port: https
-    scheme: https
-    tlsConfig:
-      insecureSkipVerify: true
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: project
-      control-plane: controller-manager

@@ -46,14 +46,6 @@ func (sp *Sample) UpdateTutorial() {
 	sp.updateSample()
 	sp.updateController()
 	sp.updateControllerTest()
-	sp.updateDefaultKustomize()
-}
-
-func (sp *Sample) updateDefaultKustomize() {
-	err := pluginutil.UncommentCode(
-		filepath.Join(sp.ctx.Dir, "config/default/kustomization.yaml"),
-		`#- ../prometheus`, `#`)
-	hackutils.CheckError("fixing default/kustomization", err)
 }
 
 func (sp *Sample) updateControllerTest() {
