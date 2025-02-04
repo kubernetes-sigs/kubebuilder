@@ -40,7 +40,7 @@ func (r *BackupBusyboxReconciler) SetupWithManager(mgr ctrl.Manager) error {
         For(&examplecomv1alpha1.BackupBusybox{}).  // Watch the primary resource (BackupBusybox)
         Watches(
             &source.Kind{Type: &examplecomv1alpha1.Busybox{}},  // Watch the Busybox CR
-            handler.EnqueueRequestsFromMapFunc(func(obj client.Object) []reconcile.Request {
+            handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, obj client.Object) []reconcile.Request {
                 // Trigger reconciliation for the BackupBusybox in the same namespace
                 return []reconcile.Request{
                     {
@@ -67,7 +67,7 @@ func (r *BackupBusyboxReconciler) SetupWithManager(mgr ctrl.Manager) error {
         For(&examplecomv1alpha1.BackupBusybox{}).  // Watch the primary resource (BackupBusybox)
         Watches(
             &source.Kind{Type: &examplecomv1alpha1.Busybox{}},  // Watch the Busybox CR
-            handler.EnqueueRequestsFromMapFunc(func(obj client.Object) []reconcile.Request {
+            handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, obj client.Object) []reconcile.Request {
                 // Check if the Busybox resource has the label 'backup-needed: "true"'
                 if val, ok := obj.GetLabels()["backup-enable"]; ok && val == "true" {
                     // If the label is present and set to "true", trigger reconciliation for BackupBusybox
