@@ -64,7 +64,7 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	// examine DeletionTimestamp to determine if object is under deletion
 	if cronJob.ObjectMeta.DeletionTimestamp.IsZero() {
 		// The object is not being deleted, so if it does not have our finalizer,
-		// then lets add the finalizer and update the object. This is equivalent
+		// then let's add the finalizer and update the object. This is equivalent
 		// to registering our finalizer.
 		if !controllerutil.ContainsFinalizer(cronJob, myFinalizerName) {
 			controllerutil.AddFinalizer(cronJob, myFinalizerName)
@@ -75,7 +75,7 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	} else {
 		// The object is being deleted
 		if controllerutil.ContainsFinalizer(cronJob, myFinalizerName) {
-			// our finalizer is present, so lets handle any external dependency
+			// our finalizer is present, so let's handle any external dependency
 			if err := r.deleteExternalResources(cronJob); err != nil {
 				// if fail to delete the external dependency here, return with error
 				// so that it can be retried.
