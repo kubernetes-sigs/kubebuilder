@@ -19,6 +19,7 @@ package v4
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/spf13/pflag"
@@ -103,6 +104,12 @@ func (p *createWebhookSubcommand) BindFlags(fs *pflag.FlagSet) {
 
 	fs.BoolVar(&p.force, "force", false,
 		"attempt to create resource even if it already exists")
+
+	fs.StringVar(&p.options.ValidatingWebhookCustomPath, "validating-custom-path", "",
+		"if set, use the defined custom path for the validating webhook")
+
+	fs.StringVar(&p.options.DefaultingWebhookCustomPath, "defaulting-custom-path", "",
+		"if set, use the defined custom path for the defaulting webhook")
 }
 
 func (p *createWebhookSubcommand) InjectConfig(c config.Config) error {
@@ -123,6 +130,26 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 			return fmt.Errorf("invalid spoke version %q", spoke)
 		}
 		res.Webhooks.Spoke = append(res.Webhooks.Spoke, spoke)
+	}
+
+	const webhookPathStringValidation = `^((/[a-zA-Z0-9-_]+)+|/)$`
+	// Check if the validating custom webhook path respect the regex
+	if p.options.ValidatingWebhookCustomPath != "" {
+		validWebhookPathRegex := regexp.MustCompile(webhookPathStringValidation)
+		if !validWebhookPathRegex.MatchString(p.options.ValidatingWebhookCustomPath) {
+			return errors.New(
+				"validatingCustomPath \"" + p.options.ValidatingWebhookCustomPath + "\" does not match this regex: " +
+					webhookPathStringValidation)
+		}
+	}
+	// Check if the defaulting custom webhook path respect the regex
+	if p.options.DefaultingWebhookCustomPath != "" {
+		validWebhookPathRegex := regexp.MustCompile(webhookPathStringValidation)
+		if !validWebhookPathRegex.MatchString(p.options.DefaultingWebhookCustomPath) {
+			return errors.New(
+				"defaultingCustomPath \"" + p.options.DefaultingWebhookCustomPath + "\" does not match this regex: " +
+					webhookPathStringValidation)
+		}
 	}
 
 	p.options.UpdateResource(p.resource, p.config)

@@ -71,6 +71,12 @@ type Options struct {
 	DoValidation bool
 	DoConversion bool
 
+	// ValidatingWebhookCustomPath defines the custom path that will be used by the scaffolded validating webhooks
+	ValidatingWebhookCustomPath string
+
+	// DefaultingWebhookCustomPath defines the custom path that will be used by the scaffolded defaulting webhooks
+	DefaultingWebhookCustomPath string
+
 	// Spoke versions for conversion webhook
 	Spoke []string
 }
@@ -108,6 +114,14 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 			res.Webhooks.Conversion = true
 			res.Webhooks.Spoke = opts.Spoke
 		}
+	}
+
+	if opts.ValidatingWebhookCustomPath != "" {
+		res.Webhooks.ValidatingCustomPath = opts.ValidatingWebhookCustomPath
+	}
+
+	if opts.DefaultingWebhookCustomPath != "" {
+		res.Webhooks.DefaultingCustomPath = opts.DefaultingWebhookCustomPath
 	}
 
 	if len(opts.ExternalAPIPath) > 0 {

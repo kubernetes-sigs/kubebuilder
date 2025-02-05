@@ -195,6 +195,55 @@ func GenerateV4WithNetworkPolicies(kbc *utils.TestContext) {
 	uncommentKustomizeCoversion(kbc)
 }
 
+// GenerateV4WithWebhookCustomPath implements a go/v4 plugin project defined by a TestContext.
+func GenerateV4WithWebhookCustomPath(kbc *utils.TestContext) {
+	initingTheProject(kbc)
+	creatingAPI(kbc)
+
+	By("scaffolding defaulting and validating webhooks")
+	err := kbc.CreateWebhook(
+		"--group", kbc.Group,
+		"--version", kbc.Version,
+		"--kind", kbc.Kind,
+		"--defaulting",
+		"--programmatic-validation",
+		"--validating-custom-path", "/my-validating-custom-path/my-webhook-handler",
+		"--defaulting-custom-path", "/my-defaulting-custom-path/my-webhook-handler",
+		"--make=false",
+	)
+	Expect(err).NotTo(HaveOccurred(), "Failed to scaffold webhooks")
+
+	By("implementing the defaulting and validating webhooks")
+	webhookFilePath := filepath.Join(
+		kbc.Dir, "internal/webhook", kbc.Version,
+		fmt.Sprintf("%s_webhook.go", strings.ToLower(kbc.Kind)))
+	err = utils.ImplementWebhooks(webhookFilePath, strings.ToLower(kbc.Kind))
+	Expect(err).NotTo(HaveOccurred(), "Failed to implement webhooks")
+
+	scaffoldConversionWebhook(kbc)
+
+	ExpectWithOffset(1, pluginutil.UncommentCode(
+		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+		"#- ../certmanager", "#")).To(Succeed())
+	ExpectWithOffset(1, pluginutil.UncommentCode(
+		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+		"#- ../prometheus", "#")).To(Succeed())
+	ExpectWithOffset(1, pluginutil.UncommentCode(filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+		`#replacements:`, "#")).To(Succeed())
+	ExpectWithOffset(1, pluginutil.UncommentCode(filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+		certManagerTarget, "#")).To(Succeed())
+	ExpectWithOffset(1, pluginutil.UncommentCode(
+		filepath.Join(kbc.Dir, "config", "prometheus", "kustomization.yaml"),
+		monitorTLSPatch, "#")).To(Succeed())
+	ExpectWithOffset(1, pluginutil.UncommentCode(
+		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+		metricsCertPatch, "#")).To(Succeed())
+	ExpectWithOffset(1, pluginutil.UncommentCode(
+		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
+		metricsCertReplaces, "#")).To(Succeed())
+	uncommentKustomizeCoversion(kbc)
+}
+
 // GenerateV4WithoutWebhooks implements a go/v4 plugin with APIs and enable Prometheus and CertManager
 func GenerateV4WithoutWebhooks(kbc *utils.TestContext) {
 	initingTheProject(kbc)
