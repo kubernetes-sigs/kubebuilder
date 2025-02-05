@@ -17,6 +17,7 @@ limitations under the License.
 package scaffolds
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -79,10 +80,22 @@ func (s *apiScaffolder) Scaffold() error {
 		return err
 	}
 
+	// Define the boilerplate file path
+	boilerplatePath := filepath.Join("hack", "boilerplate.go.txt")
+
 	// Load the boilerplate
-	boilerplate, err := afero.ReadFile(s.fs.FS, filepath.Join("hack", "boilerplate.go.txt"))
+	boilerplate, err := afero.ReadFile(s.fs.FS, boilerplatePath)
 	if err != nil {
-		return fmt.Errorf("error scaffolding API/controller: unable to load boilerplate: %w", err)
+		if errors.Is(err, afero.ErrFileNotFound) {
+			log.Warnf("Unable to find %s : %s .\n"+
+				"This file is used to generate the license header in the project.\n"+
+				"Note that controller-gen will also use this. Therefore, ensure that you "+
+				"add the license file or configure your project accordingly.",
+				boilerplatePath, err)
+			boilerplate = []byte("")
+		} else {
+			return fmt.Errorf("error scaffolding API/controller: unable to load boilerplate: %w", err)
+		}
 	}
 
 	// Initialize the machinery.Scaffold that will write the files to disk
