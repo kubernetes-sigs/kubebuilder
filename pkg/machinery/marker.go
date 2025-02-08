@@ -28,6 +28,7 @@ var commentsByExt = map[string]string{
 	".go":   "//",
 	".yaml": "#",
 	".yml":  "#",
+	".rst":  "//",
 	// When adding additional file extensions, update also the NewMarkerFor documentation and error
 }
 
