@@ -55,13 +55,12 @@ func maybeDetails(help *DetailedHelp) toHTML {
 
 // markerTemplate returns HTML describing the documentation for a given marker.
 func markerTemplate(marker *MarkerDoc) toHTML {
-
 	// the marker name
 	term := dt(classes{"literal", "name"},
 		Text("// +"+marker.Name))
 
 	// the args summary (displayed in summary mode)
-	var fields []toHTML
+	fields := make([]toHTML, 0, len(marker.Fields)) // Pre-allocate with the length of marker.Fields
 	for _, field := range marker.Fields {
 		fields = append(fields, Fragment{
 			dt(optionalClasses{"argument": true, "optional": field.Optional, "literal": true},
@@ -149,41 +148,45 @@ func (p MarkerDocs) Process(input *plugin.Input) error {
 
 	// ...then, go through the book, finding all instances of `{{#markerdocs <category>}}` and replacing them
 	// with the appropriate docs ...
-	err = plugin.EachCommand(&input.Book, "markerdocs", func(chapter *plugin.BookChapter, category string) (string, error) {
-		category = strings.TrimSpace(category)
-		markers, knownCategory := markersByCategory[category]
-		if !knownCategory {
-			return "", fmt.Errorf("unknown category %q", category)
-		}
-
-		// HTML5 says that any characters are valid in ID except for space,
-		// but may not be empty (which we prevent by skipping un-named categories):
-		// https://www.w3.org/TR/html52/dom.html#element-attrdef-global-id
-		categoryAlias := strings.ReplaceAll(category, " ", "-")
-
-		content := new(strings.Builder)
-
-		// NB(directxman12): wrap this in a div to prevent the markdown processor from inserting extra paragraphs
-		_, err := fmt.Fprintf(content, "<div><input checked type=\"checkbox\" class=\"markers-summarize\" id=\"markers-summarize-%[1]s\"></input><label class=\"markers-summarize\" for=\"markers-summarize-%[1]s\">Show Detailed Argument Help</label><dl class=\"markers\">", categoryAlias)
-		if err != nil {
-			return "", fmt.Errorf("unable to render marker documentation summary: %v", err)
-		}
-
-		// write the markers
-		for _, marker := range markers {
-			if err := markerTemplate(&marker).WriteHTML(content); err != nil {
-				return "", fmt.Errorf("unable to render documentation for marker %q: %v", marker.Name, err)
+	err = plugin.EachCommand(&input.Book, "markerdocs",
+		func(chapter *plugin.BookChapter, category string) (string, error) {
+			category = strings.TrimSpace(category)
+			markers, knownCategory := markersByCategory[category]
+			if !knownCategory {
+				return "", fmt.Errorf("unknown category %q", category)
 			}
-		}
 
-		if _, err = fmt.Fprintf(content, "</dl></div>"); err != nil {
-			return "", fmt.Errorf("unable to render marker documentation: %v", err)
-		}
+			// HTML5 says that any characters are valid in ID except for space,
+			// but may not be empty (which we prevent by skipping un-named categories):
+			// https://www.w3.org/TR/html52/dom.html#element-attrdef-global-id
+			categoryAlias := strings.ReplaceAll(category, " ", "-")
 
-		usedCategories[category] = struct{}{}
+			content := new(strings.Builder)
 
-		return content.String(), nil
-	})
+			// NB(directxman12): wrap this in a div to prevent the markdown processor from inserting extra paragraphs
+			_, err := fmt.Fprintf(content,
+				`<div><input checked type="checkbox" class="markers-summarize" id="markers-summarize-%[1]s"></input>`+
+					`<label class="markers-summarize" for="markers-summarize-%[1]s">Show Detailed Argument Help</label>`+
+					`<dl class="markers">`, categoryAlias)
+			if err != nil {
+				return "", fmt.Errorf("unable to render marker documentation summary: %v", err)
+			}
+
+			// write the markers
+			for _, marker := range markers {
+				if err := markerTemplate(&marker).WriteHTML(content); err != nil {
+					return "", fmt.Errorf("unable to render documentation for marker %q: %v", marker.Name, err)
+				}
+			}
+
+			if _, err = fmt.Fprintf(content, "</dl></div>"); err != nil {
+				return "", fmt.Errorf("unable to render marker documentation: %v", err)
+			}
+
+			usedCategories[category] = struct{}{}
+
+			return content.String(), nil
+		})
 	if err != nil {
 		return err
 	}
@@ -256,7 +259,14 @@ func main() {
 	if err := plugin.Run(MarkerDocs{
 		Args: map[string][]string{
 			// marker args
-			"": {"-wwww", "crd", "webhook", "rbac:roleName=cheddar" /* role name doesn't mean anything here */, "object", "schemapatch:manifests=."},
+			"": {
+				"-wwww",
+				"crd",
+				"webhook",
+				"rbac:roleName=cheddar", /* role name doesn't mean anything here */
+				"object",
+				"schemapatch:manifests=.",
+			},
 			// cli options args
 			"CLI: ": {"-hhhh"},
 		},

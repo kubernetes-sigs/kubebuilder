@@ -50,23 +50,24 @@ func (Literate) SupportsOutput(_ string) bool { return true }
 // Process implements plugin.Plugin
 func (l Literate) Process(input *plugin.Input) error {
 	bookSrcDir := filepath.Join(input.Context.Root, input.Context.Config.Book.Src)
-	return plugin.EachCommand(&input.Book, "literatego", func(chapter *plugin.BookChapter, relPath string) (string, error) {
-		chapterDir := filepath.Dir(chapter.Path)
-		pathInfo := filePathInfo{
-			chapterRelativePath: relPath,
-			chapterDir:          chapterDir,
-			bookSrcDir:          bookSrcDir,
-		}
-		path := pathInfo.FullPath()
+	return plugin.EachCommand(&input.Book, "literatego",
+		func(chapter *plugin.BookChapter, relPath string) (string, error) {
+			chapterDir := filepath.Dir(chapter.Path)
+			pathInfo := filePathInfo{
+				chapterRelativePath: relPath,
+				chapterDir:          chapterDir,
+				bookSrcDir:          bookSrcDir,
+			}
+			path := pathInfo.FullPath()
 
-		// TODO(directxman12): don't escape root?
-		contents, err := os.ReadFile(path)
-		if err != nil {
-			return "", fmt.Errorf("unable to import %q: %v", path, err)
-		}
+			// TODO(directxman12): don't escape root?
+			contents, err := os.ReadFile(path)
+			if err != nil {
+				return "", fmt.Errorf("unable to import %q: %v", path, err)
+			}
 
-		return l.extractContents(contents, pathInfo)
-	})
+			return l.extractContents(contents, pathInfo)
+		})
 }
 
 // filePathInfo stores different paths to a file, to allow for nicely
@@ -170,7 +171,7 @@ func extractPairs(contents []byte, path string) ([]commentCodePair, error) {
 	file := fileSet.AddFile(path, -1, len(contents))
 	scan := scanner.Scanner{}
 	var errs []error
-	scan.Init(file, []byte(contents), func(pos token.Position, msg string) {
+	scan.Init(file, contents, func(pos token.Position, msg string) {
 		errs = append(errs, fmt.Errorf("error parsing file %s: %s", pos, msg))
 	}, scanner.ScanComments)
 
@@ -245,7 +246,9 @@ func (l Literate) extractContents(contents []byte, pathInfo filePathInfo) (strin
 			// NB(directxman12): we add the hljs class to "cheat" and get the
 			// right background with theming, since hljs doesn't use CSS
 			// variables.
-			out.WriteString("<details class=\"collapse-code\"><summary class=\"hljs\"><pre class=\"hljs\"><span class=\"hljs-comment\">")
+			out.WriteString(
+				`<details class="collapse-code">
+				<summary class="hljs"><pre class="hljs"><span class="hljs-comment">`)
 			out.WriteString(pair.collapse)
 			out.WriteString("</span></pre></summary>")
 		}

@@ -43,7 +43,7 @@ func flagsCmd(pr *external.PluginRequest) external.PluginResponse {
 	flagsToParse.Bool("api", false, "sets the api flag to true")
 	flagsToParse.Bool("webhook", false, "sets the webhook flag to true")
 
-	flagsToParse.Parse(pr.Args)
+	_ = flagsToParse.Parse(pr.Args)
 
 	initFlag, _ := flagsToParse.GetBool("init")
 	apiFlag, _ := flagsToParse.GetBool("api")

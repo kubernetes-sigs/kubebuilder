@@ -31,7 +31,8 @@ var WebhookFlags = []external.Flag{
 }
 
 var WebhookMeta = plugin.SubcommandMetadata{
-	Description: "The `create webhook` subcommand of the sampleexternalplugin is meant to create a webhook for a project via Kubebuilder. It scaffolds a single file: `webhookFile.txt`",
+	Description: `The "create webhook" subcommand of the sampleexternalplugin is meant to create a webhook for a
+	project via Kubebuilder. It scaffolds a single file: "webhookFile.txt"`,
 	Examples: `
 	Scaffold with the defaults:
 	$ kubebuilder create webhook --plugins sampleexternalplugin/v1
@@ -52,7 +53,7 @@ func WebhookCmd(pr *external.PluginRequest) external.PluginResponse {
 	// Here is an example of parsing a flag from a Kubebuilder external plugin request
 	flags := pflag.NewFlagSet("apiFlags", pflag.ContinueOnError)
 	flags.Bool("hooked", false, "add the word `hooked` to the end of the scaffolded webhookFile.txt")
-	flags.Parse(pr.Args)
+	_ = flags.Parse(pr.Args)
 	hooked, _ := flags.GetBool("hooked")
 
 	msg := "A simple text file created with the `create webhook` subcommand"

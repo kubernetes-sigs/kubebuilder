@@ -54,7 +54,7 @@ func ApiCmd(pr *external.PluginRequest) external.PluginResponse {
 	// Here is an example of parsing a flag from a Kubebuilder external plugin request
 	flags := pflag.NewFlagSet("apiFlags", pflag.ContinueOnError)
 	flags.Int("number", 1, "set a number to be added in the scaffolded apiFile.txt")
-	flags.Parse(pr.Args)
+	_ = flags.Parse(pr.Args)
 	number, _ := flags.GetInt("number")
 
 	apiFile := api.NewApiFile(api.WithNumber(number))

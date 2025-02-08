@@ -34,7 +34,8 @@ var InitFlags = []external.Flag{
 }
 
 var InitMeta = plugin.SubcommandMetadata{
-	Description: "The `init` subcommand of the sampleexternalplugin is meant to initialize a project via Kubebuilder. It scaffolds a single file: `initFile.txt`",
+	Description: `The "init" subcommand of the sampleexternalplugin is meant to initialize a project via Kubebuilder.
+It scaffolds a single file: "initFile.txt".`,
 	Examples: `
 	Scaffold with the defaults:
 	$ kubebuilder init --plugins sampleexternalplugin/v1
@@ -55,7 +56,7 @@ func InitCmd(pr *external.PluginRequest) external.PluginResponse {
 	// Here is an example of parsing a flag from a Kubebuilder external plugin request
 	flags := pflag.NewFlagSet("initFlags", pflag.ContinueOnError)
 	flags.String("domain", "example.domain.com", "sets the domain added in the scaffolded initFile.txt")
-	flags.Parse(pr.Args)
+	_ = flags.Parse(pr.Args)
 	domain, _ := flags.GetString("domain")
 
 	initFile := templates.NewInitFile(templates.WithDomain(domain))
