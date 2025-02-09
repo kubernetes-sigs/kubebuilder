@@ -14,22 +14,24 @@ is hindered by limitations such as the inability to add additional webhooks for 
 and losing their existing customizations on top.
 
 ### Goals and Needs
-- **CA Injection**: Ensure that CA injection for conversion webhooks is limited to the relevant Custom Resource (CR) conversions.
+- **CA Injection**: ✅ Complete (Changes available from release `4.4.0`) Ensure that CA injection for conversion webhooks is limited to the relevant Custom Resource (CR) conversions.
     - [GitHub Issue](https://github.com/kubernetes-sigs/kubebuilder/issues/4285)
     - [Pull Request](https://github.com/kubernetes-sigs/kubebuilder/pull/4282)
 
 - **Scaffolding Multiple Webhooks**: Allow adding additional webhooks without requiring forced re-scaffolding.
     - [GitHub Issue](https://github.com/kubernetes-sigs/kubebuilder/issues/4146)
 
-- **Hub and Spoke Model**: Integrate a hub-and-spoke model for conversion webhooks to streamline implementation.
+- **Hub and Spoke Model**: ✅ Complete (Changes available from release `4.4.0`) Integrate a hub-and-spoke model for conversion webhooks to streamline implementation.
     - [GitHub Issue](https://github.com/kubernetes-sigs/kubebuilder/issues/2589)
     - [Pull Request](https://github.com/kubernetes-sigs/kubebuilder/pull/4254)
 
 - **Comprehensive E2E Testing**: Expand end-to-end tests for conversion webhooks to validate not only CA injection but also the conversion process itself.
-
+    - [GitHub Issue](https://github.com/kubernetes-sigs/kubebuilder/issues/4297)
+      
 - **E2E Test Scaffolding**: Improve the E2E test scaffolds under `test/e2e` to validate conversion behavior beyond CA injection for conversion webhooks.
 
 - **Enhanced Multiversion Tutorial**: Add E2E tests for conversion webhooks in the multiversion tutorial to support comprehensive user guidance.
+    - [GitHub Issue](https://github.com/kubernetes-sigs/kubebuilder/issues/4255)
 
 ---
 # Roadmap Document
