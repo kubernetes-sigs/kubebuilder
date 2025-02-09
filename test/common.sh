@@ -127,7 +127,7 @@ function fetch_tools {
     # compatibility with controller-runtime releases as of now. For more
     # details on the quest for a more robust solution, refer to the issue
     # raised in the controller-runtime repository: https://github.com/kubernetes-sigs/controller-runtime/issues/2744
-    go install sigs.k8s.io/controller-runtime/tools/setup-envtest@release-0.19
+    go install sigs.k8s.io/controller-runtime/tools/setup-envtest@release-0.20
   fi
 
   if [ -z "$SKIP_FETCH_TOOLS" ]; then
