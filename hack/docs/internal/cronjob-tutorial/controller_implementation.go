@@ -84,6 +84,9 @@ var (
 )
 `
 
+const skipGoCycloLint = `
+// nolint:gocyclo`
+
 const controllerReconcileLogic = `log := log.FromContext(ctx)
 
 	/*
