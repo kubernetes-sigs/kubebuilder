@@ -246,6 +246,29 @@ func (t *TestContext) Destroy() {
 	}
 }
 
+// DestroyOutputDir is written separately to ensure the deletion
+// of the output directory in case of scaffolded projects
+func (t *TestContext) DestroyOutputDir() {
+	//nolint:gosec
+	// if image name is not present or not provided skip execution of docker command
+	if t.ImageName != "" {
+		// Check white space from image name
+		if len(strings.TrimSpace(t.ImageName)) == 0 {
+			log.Println("Image not set, skip cleaning up of docker image")
+		} else {
+			cmd := exec.Command("docker", "rmi", "-f", t.ImageName)
+			if _, err := t.Run(cmd); err != nil {
+				warnError(err)
+			}
+		}
+
+	}
+	outputDir := filepath.Join(t.Dir, "output")
+	if err := os.RemoveAll(outputDir); err != nil {
+		warnError(err)
+	}
+}
+
 // CreateManagerNamespace will create the namespace where the manager is deployed
 func (t *TestContext) CreateManagerNamespace() error {
 	_, err := t.Kubectl.Command("create", "ns", t.Kubectl.Namespace)
