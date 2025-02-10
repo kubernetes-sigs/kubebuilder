@@ -8122,11 +8122,7 @@ metadata:
   namespace: project-system
 spec:
   endpoints:
-  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
-    path: /metrics
-    port: https
-    scheme: https
-    tlsConfig:
+  - tlsConfig:
       ca:
         secret:
           key: ca.crt
@@ -8139,7 +8135,6 @@ spec:
       keySecret:
         key: tls.key
         name: metrics-server-cert
-      serverName: project-controller-manager-metrics-service.project-system.svc
   selector:
     matchLabels:
       app.kubernetes.io/name: project
