@@ -475,17 +475,6 @@ const metricsCertReplaces = `# - source: # Uncomment the following block to enab
 #         delimiter: '.'
 #         index: 0
 #         create: true
-#     - select:
-#         kind: ServiceMonitor
-#         group: monitoring.coreos.com
-#         version: v1
-#         name: controller-manager-metrics-monitor
-#       fieldPaths:
-#         - spec.endpoints.0.tlsConfig.serverName
-#       options:
-#         delimiter: '.'
-#         index: 0
-#         create: true
 #
 # - source:
 #     kind: Service
@@ -501,17 +490,6 @@ const metricsCertReplaces = `# - source: # Uncomment the following block to enab
 #       fieldPaths:
 #         - spec.dnsNames.0
 #         - spec.dnsNames.1
-#       options:
-#         delimiter: '.'
-#         index: 1
-#         create: true
-#     - select:
-#         kind: ServiceMonitor
-#         group: monitoring.coreos.com
-#         version: v1
-#         name: controller-manager-metrics-monitor
-#       fieldPaths:
-#         - spec.endpoints.0.tlsConfig.serverName
 #       options:
 #         delimiter: '.'
 #         index: 1
