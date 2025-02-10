@@ -12,9 +12,6 @@ However, as these tools evolve to keep up with ecosystem changes and new feature
 
 This project proposes an **automated solution for Kubebuilder**, with potential applications for similar tools or those built on its foundation. By streamlining maintenance, projects remain modern, secure, and adaptable, fostering growth and innovation across the ecosystem. The automation lets developers focus on what matters most: **building great solutions**.
 
-### Initial Approach
-The initial approach to solving this problem is through **three-way Git merges**, ensuring updates are applied 
-while maintaining customizations. In the future, **AI-assisted conflict resolution** may be explored to further enhance the process.
 
 ## Problem Statement
 
