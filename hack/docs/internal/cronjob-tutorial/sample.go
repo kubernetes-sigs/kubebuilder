@@ -52,6 +52,17 @@ const certManagerForMetricsAndWebhooks = `#replacements:
 #         delimiter: '.'
 #         index: 0
 #         create: true
+#     - select: # Uncomment the following to set the Service name for TLS config in Prometheus ServiceMonitor
+#         kind: ServiceMonitor
+#         group: monitoring.coreos.com
+#         version: v1
+#         name: controller-manager-metrics-monitor
+#       fieldPaths:
+#         - spec.endpoints.0.tlsConfig.serverName
+#       options:
+#         delimiter: '.'
+#         index: 0
+#         create: true
 #
 # - source:
 #     kind: Service
@@ -67,6 +78,17 @@ const certManagerForMetricsAndWebhooks = `#replacements:
 #       fieldPaths:
 #         - spec.dnsNames.0
 #         - spec.dnsNames.1
+#       options:
+#         delimiter: '.'
+#         index: 1
+#         create: true
+#     - select: # Uncomment the following to set the Service namespace for TLS in Prometheus ServiceMonitor
+#         kind: ServiceMonitor
+#         group: monitoring.coreos.com
+#         version: v1
+#         name: controller-manager-metrics-monitor
+#       fieldPaths:
+#         - spec.endpoints.0.tlsConfig.serverName
 #       options:
 #         delimiter: '.'
 #         index: 1
