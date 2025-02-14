@@ -286,6 +286,11 @@ func (sp *Sample) updateController() {
 		`// +kubebuilder:rbac:groups=batch.tutorial.kubebuilder.io,resources=cronjobs/finalizers,verbs=update`, controllerReconcile)
 	hackutils.CheckError("fixing cronjob_controller.go", err)
 
+	err = pluginutil.InsertCode(
+		filepath.Join(sp.ctx.Dir, "internal/controller/cronjob_controller.go"),
+		`// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.20.1/pkg/reconcile`, skipGoCycloLint)
+	hackutils.CheckError("fixing cronjob_controller.go", err)
+
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, "internal/controller/cronjob_controller.go"),
 		`	_ = log.FromContext(ctx)
@@ -399,6 +404,11 @@ func (sp *Sample) updateWebhookTests() {
 	hackutils.CheckError("replace validating defaulting test", err)
 
 	err = pluginutil.ReplaceInFile(file,
+		webhookTestsVars,
+		webhookTestsConstants)
+	hackutils.CheckError("replace before each webhook test ", err)
+
+	err = pluginutil.ReplaceInFile(file,
 		webhookTestsBeforeEachOriginal,
 		webhookTestsBeforeEachChanged)
 	hackutils.CheckError("replace before each webhook test ", err)
@@ -420,6 +430,7 @@ func (sp *Sample) updateWebhook() {
 	"context"
 	"fmt"`,
 		`
+	
 	"github.com/robfig/cron"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"

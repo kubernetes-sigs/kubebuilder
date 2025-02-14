@@ -271,7 +271,9 @@ const sampleSizeFragment = `# TODO(user): edit the following value to ensure the
 
 const controllerImports = `"context"
 	"fmt"
+
 	"time"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -320,7 +322,7 @@ const controllerReconcileImplementation = `// Fetch the Memcached instance
 	}
 
 	// Let's just set the status as Unknown when no status is available
-	if memcached.Status.Conditions == nil || len(memcached.Status.Conditions) == 0 {
+	if len(memcached.Status.Conditions) == 0 {
 		meta.SetStatusCondition(&memcached.Status.Conditions, metav1.Condition{Type: typeAvailableMemcached, Status: metav1.ConditionUnknown, Reason: "Reconciling", Message: "Starting reconciliation"})
 		if err = r.Status().Update(ctx, memcached); err != nil {
 			log.Error(err, "Failed to update Memcached status")
