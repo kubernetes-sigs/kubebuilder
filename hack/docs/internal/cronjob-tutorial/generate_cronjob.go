@@ -288,7 +288,7 @@ func (sp *Sample) updateController() {
 
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "internal/controller/cronjob_controller.go"),
-		`// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.20.1/pkg/reconcile`, skipGoCycloLint)
+		`// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.20.2/pkg/reconcile`, skipGoCycloLint)
 	hackutils.CheckError("fixing cronjob_controller.go", err)
 
 	err = pluginutil.ReplaceInFile(
