@@ -29,15 +29,16 @@ before:
 # Build a binary for each target in targets.
 builds:
   - id: kubebuilder
+    main: ./cmd
     binary: kubebuilder
     mod_timestamp: "{{ .CommitTimestamp }}"
     ldflags:
-      - -X cmd.kubeBuilderVersion={{ .Version }}
-      - -X cmd.goos={{ .Os }}
-      - -X cmd.goarch={{ .Arch }}
-      - -X cmd.gitCommit={{ .Commit }}
-      - -X cmd.buildDate={{ .Date }}
-      - -X cmd.kubernetesVendorVersion={{ .Env.KUBERNETES_VERSION }}
+      - -X main.kubeBuilderVersion={{ .Version }}
+      - -X main.goos={{ .Os }}
+      - -X main.goarch={{ .Arch }}
+      - -X main.gitCommit={{ .Commit }}
+      - -X main.buildDate={{ .Date }}
+      - -X main.kubernetesVendorVersion={{ .Env.KUBERNETES_VERSION }}
     targets:
       - linux_amd64
       - linux_arm64
