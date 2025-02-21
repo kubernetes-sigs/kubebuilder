@@ -256,6 +256,22 @@ func getInputPath(inputPath string) (string, error) {
 func getInitArgs(store store.Store) []string {
 	var args []string
 	plugins := store.Config().GetPluginChain()
+
+	// Define outdated plugin versions that need replacement
+	outdatedPlugins := map[string]string{
+		"go.kubebuilder.io/v3":       "go.kubebuilder.io/v4",
+		"go.kubebuilder.io/v3-alpha": "go.kubebuilder.io/v4",
+		"go.kubebuilder.io/v2":       "go.kubebuilder.io/v4",
+	}
+
+	// Replace outdated plugins and exit after the first replacement
+	for i, plugin := range plugins {
+		if newPlugin, exists := outdatedPlugins[plugin]; exists {
+			plugins[i] = newPlugin
+			break
+		}
+	}
+
 	if len(plugins) > 0 {
 		args = append(args, "--plugins", strings.Join(plugins, ","))
 	}

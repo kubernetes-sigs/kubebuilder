@@ -28,10 +28,13 @@ const (
 	alphaCommand = "alpha"
 )
 
-var alphaCommands = []*cobra.Command{
-	newAlphaCommand(),
-	alpha.NewScaffoldCommand(),
-}
+var (
+	alphaCommands = []*cobra.Command{
+		newAlphaCommand(),
+		alpha.NewScaffoldCommand(),
+	}
+	forceUpdate bool
+)
 
 func newAlphaCommand() *cobra.Command {
 	cmd := &cobra.Command{
@@ -52,6 +55,13 @@ Alpha subcommands are for unstable features.
 - No backwards compatibility is provided for any alpha subcommands.
 `),
 	}
+
+	// Register `--force` flag
+	alpha.PersistentFlags().BoolVar(
+		&forceUpdate, "force", false,
+		"automatically update PROJECT file",
+	)
+
 	// TODO: Add alpha commands here if we need to have them
 	for i := range alphaCommands {
 		alpha.AddCommand(alphaCommands[i])

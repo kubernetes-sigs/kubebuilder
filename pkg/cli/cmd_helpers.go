@@ -17,18 +17,20 @@ limitations under the License.
 package cli
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
-
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	"sigs.k8s.io/kubebuilder/v4/pkg/config/store"
 	yamlstore "sigs.k8s.io/kubebuilder/v4/pkg/config/store/yaml"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
 )
 
 // noResolvedPluginError is returned by subcommands that require a plugin when none was resolved.
@@ -335,4 +337,55 @@ func (factory *executionHooksFactory) postRunEFunc() func(*cobra.Command, []stri
 
 		return nil
 	}
+}
+
+// updateProjectFileForAlphaGenerate updates the PROJECT file to replace unsupported
+// plugins with a supported version before running `kubebuilder alpha generate`.
+func updateProjectFileForAlphaGenerate(force bool) error {
+	projectFilePath := "PROJECT"
+
+	content, err := os.ReadFile(projectFilePath)
+	if err != nil {
+		return fmt.Errorf("failed to read PROJECT file: %w", err)
+	}
+
+	// Define outdated plugin versions that need replacement
+	outdatedPlugins := []string{"go.kubebuilder.io/v3", "go.kubebuilder.io/v3-alpha", "go.kubebuilder.io/v2"}
+	updatedContent := string(content)
+	updated := false
+
+	for _, oldPlugin := range outdatedPlugins {
+		if strings.Contains(updatedContent, oldPlugin) {
+			fmt.Printf("Detected '%s' in PROJECT file.\n", oldPlugin)
+			fmt.Println("Kubebuilder v4 no longer supports this. It will be replaced with 'go.kubebuilder.io/v4'.")
+
+			// If --force is not enabled, ask for user confirmation
+			if !force {
+				fmt.Print("Do you want to proceed? (y/n): ")
+				reader := bufio.NewReader(os.Stdin)
+				if !util.YesNo(reader) {
+					fmt.Println("Operation cancelled.")
+					return nil
+				}
+			}
+
+			updatedContent = strings.ReplaceAll(updatedContent, oldPlugin, "go.kubebuilder.io/v4")
+			updated = true
+		}
+	}
+
+	// If no changes were made, exit early
+	if !updated {
+		fmt.Println("No changes needed in PROJECT file.")
+		return nil
+	}
+
+	// Write changes to the PROJECT file
+	err = os.WriteFile(projectFilePath, []byte(updatedContent), 0644)
+	if err != nil {
+		return fmt.Errorf("failed to write updated PROJECT file: %w", err)
+	}
+
+	fmt.Println("PROJECT file updated successfully.")
+	return nil
 }
