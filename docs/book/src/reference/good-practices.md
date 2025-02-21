@@ -45,16 +45,6 @@ Having one controller manage many Custom Resources (CRs) in an Operator can lead
 
 In conclusion, while it might seem efficient to have a single controller manage multiple CRs, it often leads to higher complexity, lower scalability, and potential stability issues. It's generally better to adhere to the single responsibility principle, where each CR is managed by its own controller.
 
-## Why is it recommended to avoid a scenario where multiple controllers are updating the same Custom Resource (CR)?
-
-Managing a single Custom Resource (CR) with multiple controllers can lead to several challenges:
-- **Race conditions**: When multiple controllers attempt to reconcile the same CR concurrently, race conditions can emerge. These conditions can produce inconsistent or unpredictable outcomes. For example, if we try to update the CR to add a status condition, we may encounter a range of errors such as “the object has been modified; please apply your changes to the latest version and try again”, triggering a repetitive reconciliation process.
-- **Concurrency issues**: When controllers have different interpretations of the CR’s state, they may constantly overwrite each other’s changes. This conflict can create a loop, with the controllers ceaselessly disputing the CR’s state.
-- **Maintenance and support difficulties**: Coordinating the logic for multiple controllers operating on the same CR can increase system complexity, making it more challenging to understand or troubleshoot. Typically, a system’s behavior is easier to comprehend when each CR is managed by a single controller.
-- **Status tracking complications**: We may struggle to work adequately with status conditions to accurately track the state of each component managed by the Installer.
-- **Performance issues**: If multiple controllers are watching and reconciling the Installer Kind, redundant operations may occur, leading to unnecessary resource usage.
-These challenges underline the importance of assigning each controller the single responsibility of managing its own CR. This will streamline our processes and ensure a more reliable system.
-
 ## Why You Should Adopt Status Conditions
 
 We recommend you manage your solutions using Status Conditionals following the [K8s Api conventions][k8s-api-conventions] because:

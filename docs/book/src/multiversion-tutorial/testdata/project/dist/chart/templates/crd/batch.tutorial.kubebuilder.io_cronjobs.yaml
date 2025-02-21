@@ -12,7 +12,7 @@ metadata:
     {{- if .Values.crd.keep }}
     "helm.sh/resource-policy": keep
     {{- end }}
-    controller-gen.kubebuilder.io/version: v0.17.1
+    controller-gen.kubebuilder.io/version: v0.17.2
   name: cronjobs.batch.tutorial.kubebuilder.io
 spec:
   {{- if .Values.webhook.enable }}

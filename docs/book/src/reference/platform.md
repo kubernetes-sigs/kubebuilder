@@ -21,7 +21,7 @@ You can inspect the images using a ManifestList of supported platforms using the
 [docker manifest inspect <image>][docker-manifest], i.e.:
 
 ```shell
-$ docker manifest inspect myresgystry/example/myimage:v0.0.1
+$ docker manifest inspect myregistry/example/myimage:v0.0.1
 {
    "schemaVersion": 2,
    "mediaType": "application/vnd.docker.distribution.manifest.list.v2+json",

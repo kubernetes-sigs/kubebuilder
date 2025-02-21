@@ -139,11 +139,13 @@ interfaces, a conversion webhook will be registered.
 		validator CronJobCustomValidator
 		defaulter CronJobCustomDefaulter
 	)
+	const validCronJobName = "valid-cronjob-name"
+	const schedule =  "*/5 * * * *"
 
 	BeforeEach(func() {
 		obj = &batchv1.CronJob{
 			Spec: batchv1.CronJobSpec{
-				Schedule:                   "*/5 * * * *",
+				Schedule:                   schedule,
 				ConcurrencyPolicy:          batchv1.AllowConcurrent,
 				SuccessfulJobsHistoryLimit: new(int32),
 				FailedJobsHistoryLimit:     new(int32),
@@ -154,7 +156,7 @@ interfaces, a conversion webhook will be registered.
 
 		oldObj = &batchv1.CronJob{
 			Spec: batchv1.CronJobSpec{
-				Schedule:                   "*/5 * * * *",
+				Schedule:                   schedule,
 				ConcurrencyPolicy:          batchv1.AllowConcurrent,
 				SuccessfulJobsHistoryLimit: new(int32),
 				FailedJobsHistoryLimit:     new(int32),
@@ -191,7 +193,7 @@ interfaces, a conversion webhook will be registered.
 			obj.Spec.FailedJobsHistoryLimit = nil     // This should default to 1
 
 			By("calling the Default method to apply defaults")
-			defaulter.Default(ctx, obj)
+			_ = defaulter.Default(ctx, obj)
 
 			By("checking that the default values are set")
 			Expect(obj.Spec.ConcurrencyPolicy).To(Equal(batchv1.AllowConcurrent), "Expected ConcurrencyPolicy to default to AllowConcurrent")
@@ -211,7 +213,7 @@ interfaces, a conversion webhook will be registered.
 			*obj.Spec.FailedJobsHistoryLimit = 2
 
 			By("calling the Default method to apply defaults")
-			defaulter.Default(ctx, obj)
+			_ = defaulter.Default(ctx, obj)
 
 			By("checking that the fields were not overwritten")
 			Expect(obj.Spec.ConcurrencyPolicy).To(Equal(batchv1.ForbidConcurrent), "Expected ConcurrencyPolicy to retain its set value")
@@ -230,7 +232,7 @@ interfaces, a conversion webhook will be registered.
 		})
 
 		It("Should admit creation if the name is valid", func() {
-			obj.ObjectMeta.Name = "valid-cronjob-name"
+			obj.ObjectMeta.Name = validCronJobName
 			Expect(validator.ValidateCreate(ctx, obj)).To(BeNil(),
 				"Expected name validation to pass for a valid name")
 		})
@@ -243,14 +245,14 @@ interfaces, a conversion webhook will be registered.
 		})
 
 		It("Should admit creation if the schedule is valid", func() {
-			obj.Spec.Schedule = "*/5 * * * *"
+			obj.Spec.Schedule = schedule
 			Expect(validator.ValidateCreate(ctx, obj)).To(BeNil(),
 				"Expected spec validation to pass for a valid schedule")
 		})
 
 		It("Should deny update if both name and spec are invalid", func() {
-			oldObj.ObjectMeta.Name = "valid-cronjob-name"
-			oldObj.Spec.Schedule = "*/5 * * * *"
+			oldObj.ObjectMeta.Name = validCronJobName
+			oldObj.Spec.Schedule = schedule
 
 			By("simulating an update")
 			obj.ObjectMeta.Name = "this-name-is-way-too-long-and-should-fail-validation-because-it-is-way-too-long"
@@ -262,8 +264,8 @@ interfaces, a conversion webhook will be registered.
 		})
 
 		It("Should admit update if both name and spec are valid", func() {
-			oldObj.ObjectMeta.Name = "valid-cronjob-name"
-			oldObj.Spec.Schedule = "*/5 * * * *"
+			oldObj.ObjectMeta.Name = validCronJobName
+			oldObj.Spec.Schedule = schedule
 
 			By("simulating an update")
 			obj.ObjectMeta.Name = "valid-cronjob-name-updated"

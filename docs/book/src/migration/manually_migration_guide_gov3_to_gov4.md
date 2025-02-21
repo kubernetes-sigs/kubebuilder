@@ -198,7 +198,7 @@ controller(s), and webhook(s) in order to compare the generated configuration wi
 
 Also, after all updates you would run the following commands:
 
-- `make manifests` (to re-generate the files using the latest version of the contrller-gen after you update the Makefile)
+- `make manifests` (to re-generate the files using the latest version of the controller-gen after you update the Makefile)
 - `make all` (to ensure that you are able to build and perform all operations)
 
 [v3vsv4]: v3vsv4.md
