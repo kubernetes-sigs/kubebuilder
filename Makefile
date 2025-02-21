@@ -46,15 +46,15 @@ help: ## Display this help
 ##@ Build
 
 LD_FLAGS=-ldflags " \
-    -X cmd.kubeBuilderVersion=$(shell git describe --tags --dirty --broken) \
-    -X cmd.goos=$(shell go env GOOS) \
-    -X cmd.goarch=$(shell go env GOARCH) \
-    -X cmd.gitCommit=$(shell git rev-parse HEAD) \
-    -X cmd.buildDate=$(shell date -u +'%Y-%m-%dT%H:%M:%SZ') \
+    -X main.kubeBuilderVersion=$(shell git describe --tags --dirty --broken) \
+    -X main.goos=$(shell go env GOOS) \
+    -X main.goarch=$(shell go env GOARCH) \
+    -X main.gitCommit=$(shell git rev-parse HEAD) \
+    -X main.buildDate=$(shell date -u +'%Y-%m-%dT%H:%M:%SZ') \
     "
 .PHONY: build
 build: ## Build the project locally
-	go build $(LD_FLAGS) -o bin/kubebuilder
+	go build $(LD_FLAGS) -o bin/kubebuilder ./cmd
 
 .PHONY: install
 install: build ## Build and install the binary with the current source code. Use it to test your changes locally.
