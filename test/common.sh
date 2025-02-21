@@ -109,7 +109,7 @@ SKIP_FETCH_TOOLS=${SKIP_FETCH_TOOLS:-""}
 function build_kb {
   header_text "Building kubebuilder"
 
-  go build -o "${kb_root_dir}/bin/kubebuilder"
+  go build -o "${kb_root_dir}/bin/kubebuilder" ./cmd
   kb="${kb_root_dir}/bin/kubebuilder"
 }
 
