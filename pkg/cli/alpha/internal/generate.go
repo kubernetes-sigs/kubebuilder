@@ -262,6 +262,9 @@ func getInitArgs(store store.Store) []string {
 	if domain := store.Config().GetDomain(); domain != "" {
 		args = append(args, "--domain", domain)
 	}
+	if repo := store.Config().GetRepository(); repo != "" {
+		args = append(args, "--repo", repo)
+	}
 	return args
 }
 

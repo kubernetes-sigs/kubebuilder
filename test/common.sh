@@ -34,6 +34,7 @@ function convert_to_tools_ver {
   "1.29") echo "1.29.0";;
   "1.30") echo "1.30.0";;
   "1.31") echo "1.31.0";;
+  "1.32") echo "1.32.0";;
   *)
     echo "k8s version $k8s_ver not supported"
     exit 1
@@ -108,7 +109,7 @@ SKIP_FETCH_TOOLS=${SKIP_FETCH_TOOLS:-""}
 function build_kb {
   header_text "Building kubebuilder"
 
-  go build -o "${kb_root_dir}/bin/kubebuilder" ./cmd
+  go build -o "${kb_root_dir}/bin/kubebuilder"
   kb="${kb_root_dir}/bin/kubebuilder"
 }
 
@@ -126,7 +127,7 @@ function fetch_tools {
     # compatibility with controller-runtime releases as of now. For more
     # details on the quest for a more robust solution, refer to the issue
     # raised in the controller-runtime repository: https://github.com/kubernetes-sigs/controller-runtime/issues/2744
-    go install sigs.k8s.io/controller-runtime/tools/setup-envtest@release-0.19
+    go install sigs.k8s.io/controller-runtime/tools/setup-envtest@release-0.20
   fi
 
   if [ -z "$SKIP_FETCH_TOOLS" ]; then

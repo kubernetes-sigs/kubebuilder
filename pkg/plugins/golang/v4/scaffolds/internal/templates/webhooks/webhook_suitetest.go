@@ -83,7 +83,7 @@ func (f *WebhookSuite) SetTemplateDefaults() error {
 	} else {
 		f.TemplateBody = fmt.Sprintf(webhookTestSuiteTemplate,
 			machinery.NewMarkerFor(f.Path, importMarker),
-			f.Resource.ImportAlias(), admissionImportAlias,
+			f.Resource.ImportAlias(),
 			machinery.NewMarkerFor(f.Path, addSchemeMarker),
 			machinery.NewMarkerFor(f.Path, addWebhookManagerMarker),
 			"%s",
@@ -148,10 +148,6 @@ func (f *WebhookSuite) GetCodeFragments() machinery.CodeFragmentsMap {
 
 	// Generate import code fragments
 	imports := make([]string, 0)
-	if !f.IsLegacyPath {
-		imports = append(imports, fmt.Sprintf(apiImportCodeFragment, f.Resource.ImportAlias(), f.Resource.Path))
-	}
-	imports = append(imports, fmt.Sprintf(apiImportCodeFragment, admissionImportAlias, admissionPath))
 
 	// Generate add scheme code fragments
 	addScheme := make([]string, 0)
@@ -159,8 +155,10 @@ func (f *WebhookSuite) GetCodeFragments() machinery.CodeFragmentsMap {
 	// Generate add webhookManager code fragments
 	addWebhookManager := make([]string, 0)
 	if f.IsLegacyPath {
+		imports = append(imports, fmt.Sprintf(apiImportCodeFragment, admissionImportAlias, admissionPath))
 		addWebhookManager = append(addWebhookManager, fmt.Sprintf(addWebhookManagerCodeFragmentLegacy, f.Resource.Kind))
 	} else {
+		imports = append(imports, fmt.Sprintf(apiImportCodeFragment, f.Resource.ImportAlias(), f.Resource.Path))
 		addWebhookManager = append(addWebhookManager, fmt.Sprintf(addWebhookManagerCodeFragment, f.Resource.Kind))
 	}
 
@@ -195,7 +193,6 @@ import (
     . "github.com/onsi/ginkgo/v2"
     . "github.com/onsi/gomega"
 
-	apimachineryruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -230,11 +227,7 @@ var _ = BeforeSuite(func() {
 	ctx, cancel = context.WithCancel(context.TODO())
 
 	var err error
-	scheme := apimachineryruntime.NewScheme()
-	err = %s.AddToScheme(scheme)
-	Expect(err).NotTo(HaveOccurred())
-
-	err = %s.AddToScheme(scheme)
+	err = %s.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	%s
@@ -259,14 +252,14 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
-	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme})
+	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
 	// start webhook server using Manager.
 	webhookInstallOptions := &testEnv.WebhookInstallOptions
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme:             scheme,
+		Scheme:             scheme.Scheme,
 		WebhookServer: webhook.NewServer(webhook.Options{
 			Host:               webhookInstallOptions.LocalServingHost,
 			Port:               webhookInstallOptions.LocalServingPort,

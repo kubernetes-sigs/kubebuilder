@@ -59,6 +59,7 @@ spec:
       bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
       tlsConfig:
         {{ "{{- if .Values.certmanager.enable }}" }}
+        serverName: {{ .ProjectName }}-controller-manager-metrics-service.{{ "{{ .Release.Namespace }}" }}.svc
         # Apply secure TLS configuration with cert-manager
         insecureSkipVerify: false
         ca:
