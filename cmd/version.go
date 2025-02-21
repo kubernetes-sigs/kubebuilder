@@ -18,7 +18,10 @@ package cmd
 
 import (
 	"fmt"
+	"runtime"
 	"runtime/debug"
+	"strings"
+	"time"
 )
 
 const unknown = "unknown"
@@ -27,12 +30,11 @@ const unknown = "unknown"
 // information in the release process
 var (
 	kubeBuilderVersion      = unknown
-	kubernetesVendorVersion = unknown
+	kubernetesVendorVersion = "1.31.0"
 	goos                    = unknown
 	goarch                  = unknown
-	gitCommit               = "$Format:%H$" // sha1 from git, output of $(git rev-parse HEAD)
-
-	buildDate = "1970-01-01T00:00:00Z" // build date in ISO8601 format, output of $(date -u +'%Y-%m-%dT%H:%M:%SZ')
+	gitCommit               = unknown // "$Format:%H$" sha1 from git, output of $(git rev-parse HEAD)
+	buildDate               = unknown // "1970-01-01T00:00:00Z" build date in ISO8601 format, output of $(date -u +'%Y-%m-%dT%H:%M:%SZ')
 )
 
 // version contains all the information related to the CLI version
@@ -47,9 +49,53 @@ type version struct {
 
 // versionString returns the CLI version
 func versionString() string {
-	if kubeBuilderVersion == unknown {
-		if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "" {
+	info, ok := debug.ReadBuildInfo()
+
+	if ok && info.Main.Version != "" {
+		if kubeBuilderVersion == unknown {
 			kubeBuilderVersion = info.Main.Version
+		}
+
+		if goos == unknown {
+			goos = runtime.GOOS
+		}
+
+		if goarch == unknown {
+			goarch = runtime.GOARCH
+		}
+
+		if gitCommit == unknown && info.Main.Version != "" {
+			mainVersionSplit := strings.Split(info.Main.Version, "-")
+
+			// For released semvers like "v4.5.0"
+			// Result: info.Main.Version == "semver"
+			if len(mainVersionSplit) == 1 {
+				gitCommit = info.Main.Version
+			}
+
+			// For unreleased refs like "<commit-hash>"
+			// Result (go install): info.Main.Version == "<semver>-<build-date>-<commit-hash>" E.g "v4.5.1-0.20250121092837-7ee23df2b97c"
+			if len(mainVersionSplit) == 3 {
+				gitCommit = mainVersionSplit[2]
+
+				buildDateFromVersion := func() string {
+					buildDatesplit := strings.Split(
+						mainVersionSplit[1],
+						".",
+					)
+
+					if len(buildDatesplit) == 2 {
+						return buildDatesplit[1]
+					}
+
+					return buildDatesplit[0]
+				}()
+
+				// format build date
+				if t, err := time.Parse("20060102150405", buildDateFromVersion); err == nil {
+					buildDate = t.Format(time.RFC3339)
+				}
+			}
 		}
 	}
 
