@@ -124,6 +124,29 @@ func (s *initScaffolder) Scaffold() error {
 	return nil
 }
 
+// getNamePrefix will return the value from kustomize config so that we can append
+// in the RBAC rules manifests. If we be unable to find this value we will use
+// the projectName instead.
+func (s *initScaffolder) getNamePrefix() string {
+	filePath := "config/default/kustomization.yaml"
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		log.Fatalf("failed to read config/default/kustomization.yaml: %s", err)
+	}
+
+	var defaultConfig struct {
+		NamePrefix string `yaml:"namePrefix"`
+	}
+
+	if err := yaml.Unmarshal(content, &defaultConfig); err != nil {
+		log.Warnf("failed to parse kustomization.yaml to get namePrefix: %s", err)
+		log.Warnf("using the project name as a prefix of RBAC and manifests")
+		return s.config.GetProjectName()
+	}
+
+	return strings.TrimSpace(defaultConfig.NamePrefix)
+}
+
 // getDeployImagesEnvVars will return the values to append the envvars for projects
 // which has the APIs scaffolded with DeployImage plugin
 func (s *initScaffolder) getDeployImagesEnvVars() map[string]string {
@@ -243,7 +266,7 @@ func (s *initScaffolder) copyConfigFiles() error {
 
 		for _, srcFile := range files {
 			destFile := filepath.Join(dir.DestDir, filepath.Base(srcFile))
-			err := copyFileWithHelmLogic(srcFile, destFile, dir.SubDir, s.config.GetProjectName())
+			err = copyFileWithHelmLogic(srcFile, destFile, dir.SubDir, s.getNamePrefix())
 			if err != nil {
 				return err
 			}
@@ -255,7 +278,7 @@ func (s *initScaffolder) copyConfigFiles() error {
 
 // copyFileWithHelmLogic reads the source file, modifies the content for Helm, applies patches
 // to spec.conversion if applicable, and writes it to the destination
-func copyFileWithHelmLogic(srcFile, destFile, subDir, projectName string) error {
+func copyFileWithHelmLogic(srcFile, destFile, subDir, namePrefix string) error {
 	if _, err := os.Stat(srcFile); os.IsNotExist(err) {
 		log.Printf("Source file does not exist: %s", srcFile)
 		return err
@@ -282,14 +305,14 @@ func copyFileWithHelmLogic(srcFile, destFile, subDir, projectName string) error 
 			"name: {{ .Values.controllerManager.serviceAccountName }}", -1)
 		contentStr = strings.Replace(contentStr,
 			"name: metrics-reader",
-			fmt.Sprintf("name: %s-metrics-reader", projectName), 1)
+			fmt.Sprintf("name: %smetrics-reader", namePrefix), 1)
 
 		contentStr = strings.Replace(contentStr,
 			"name: metrics-auth-role",
-			fmt.Sprintf("name: %s-metrics-auth-role", projectName), -1)
+			fmt.Sprintf("name: %smetrics-auth-role", namePrefix), -1)
 		contentStr = strings.Replace(contentStr,
 			"name: metrics-auth-rolebinding",
-			fmt.Sprintf("name: %s-metrics-auth-rolebinding", projectName), 1)
+			fmt.Sprintf("name: %smetrics-auth-rolebinding", namePrefix), 1)
 
 		if strings.Contains(contentStr, ".Values.controllerManager.serviceAccountName") &&
 			strings.Contains(contentStr, "kind: ServiceAccount") &&
@@ -306,16 +329,16 @@ func copyFileWithHelmLogic(srcFile, destFile, subDir, projectName string) error 
 		}
 		contentStr = strings.Replace(contentStr,
 			"name: leader-election-role",
-			fmt.Sprintf("name: %s-leader-election-role", projectName), -1)
+			fmt.Sprintf("name: %sleader-election-role", namePrefix), -1)
 		contentStr = strings.Replace(contentStr,
 			"name: leader-election-rolebinding",
-			fmt.Sprintf("name: %s-leader-election-rolebinding", projectName), 1)
+			fmt.Sprintf("name: %sleader-election-rolebinding", namePrefix), 1)
 		contentStr = strings.Replace(contentStr,
 			"name: manager-role",
-			fmt.Sprintf("name: %s-manager-role", projectName), -1)
+			fmt.Sprintf("name: %smanager-role", namePrefix), -1)
 		contentStr = strings.Replace(contentStr,
 			"name: manager-rolebinding",
-			fmt.Sprintf("name: %s-manager-rolebinding", projectName), 1)
+			fmt.Sprintf("name: %smanager-rolebinding", namePrefix), 1)
 
 		// The generated files do not include the namespace
 		if strings.Contains(contentStr, "leader-election-rolebinding") ||
