@@ -147,6 +147,14 @@ func (c *CLI) buildCmd() error {
 
 	var uve config.UnsupportedVersionError
 
+	// Workaround for kubebuilder alpha generate
+	if len(os.Args) > 2 && os.Args[1] == "alpha" && os.Args[2] == "generate" {
+		err := updateProjectFileForAlphaGenerate()
+		if err != nil {
+			return fmt.Errorf("failed to update PROJECT file: %w", err)
+		}
+	}
+
 	// Get project version and plugin keys.
 	switch err := c.getInfo(); {
 	case err == nil:
