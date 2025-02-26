@@ -1,0 +1,40 @@
+name: Test Alpha Generate
+
+on:
+  push:
+    paths:
+      - 'pkg/cli/alpha/**'
+      - '.github/workflows/test-alpha-generate.yml'
+  pull_request:
+    paths:
+      - 'pkg/cli/alpha/**'
+      - '.github/workflows/test-alpha-generate.yml'
+      
+jobs:
+  unsupported:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Install dependencies and generate binary
+        run: make install
+
+      - name: Navigate to testdata/project-v4
+        run: cd testdata/project-v4
+
+      - name: Update PROJECT file
+        run: |
+          sed -i 's#go.kubebuilder.io/v4#go.kubebuilder.io/v3#g' testdata/project-v4/PROJECT
+
+      - name: Run kubebuilder alpha generate
+        run: |
+          cd testdata/project-v4 && kubebuilder alpha generate
