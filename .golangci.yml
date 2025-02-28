@@ -15,10 +15,6 @@ issues:
       linters:
         - lll
         - gosec
-    - path: _test\.go|test_context.go
-      linters:
-        - revive
-      text: "dot-imports: should not use dot imports"
 
 linters-settings:
   govet:
