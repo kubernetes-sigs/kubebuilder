@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"testing"
 
-	_ "github.com/onsi/ginkgo/v2"
-	_ "github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
 func TestConfigStore(t *testing.T) {
