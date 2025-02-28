@@ -12,11 +12,35 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Get PR title
-        id: get_title
-        run: echo "title=${{ github.event.pull_request.title }}" >> $GITHUB_ENV
-
-      - name: Run PR Title Checker
-        id: check_title
+      - name: Validate PR Title Format
         run: |
-          ./test/pr-title-checker.sh "${{ env.title }}"
+          # Extract raw PR title
+          RAW_TITLE="${{ github.event.pull_request.title }}"
+
+          # Ensure title is not empty
+          if [[ -z "$RAW_TITLE" ]]; then
+            echo "❌ Error: PR title cannot be empty."
+            exit 1
+          fi
+
+          # Enforce strict format (must start with one of the required emojis)
+          if ! [[ "$RAW_TITLE" =~ ^(⚠|✨|🐛|📖|🚀|🌱) ]]; then
+            echo "❌ Error: Invalid PR title format."
+            echo "Your PR title must start with one of the following indicators:"
+            echo "- Breaking change: ⚠ (:warning:)"
+            echo "- Non-breaking feature: ✨ (:sparkles:)"
+            echo "- Patch fix: 🐛 (:bug:)"
+            echo "- Docs: 📖 (:book:)"
+            echo "- Release: 🚀 (:rocket:)"
+            echo "- Infra/Tests/Other: 🌱 (:seedling:)"
+            exit 1
+          fi
+
+          # Ensure title does not exceed 100 characters
+          if [[ ${#RAW_TITLE} -gt 100 ]]; then
+            echo "❌ Error: PR title is too long (max 100 characters)."
+            exit 1
+          fi
+
+          # Confirm PR title is valid
+          echo "✅ PR title is valid: '$RAW_TITLE'"
