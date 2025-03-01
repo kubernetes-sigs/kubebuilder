@@ -51,7 +51,7 @@ builds:
 
 # Only binaries of the form "kubebuilder_${goos}_${goarch}" will be released.
 archives:
-  - format: binary
+  - formats: ['binary']
     # Setting name_template correctly maps checksums to binary names.
     name_template: "{{ .Binary }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}"
 
