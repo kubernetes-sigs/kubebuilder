@@ -231,14 +231,25 @@ func (s *initScaffolder) copyConfigFiles() error {
 	}
 
 	for _, dir := range configDirs {
-		// Ensure destination directory exists
-		if err := os.MkdirAll(dir.DestDir, os.ModePerm); err != nil {
-			return fmt.Errorf("failed to create directory %s: %v", dir.DestDir, err)
+		// Check if the source directory exists
+		if _, err := os.Stat(dir.SrcDir); os.IsNotExist(err) {
+			// Skip if the source directory does not exist
+			continue
 		}
 
 		files, err := filepath.Glob(filepath.Join(dir.SrcDir, "*.yaml"))
 		if err != nil {
 			return err
+		}
+
+		// Skip processing if the directory is empty (no matching files)
+		if len(files) == 0 {
+			continue
+		}
+
+		// Ensure destination directory exists
+		if err := os.MkdirAll(dir.DestDir, os.ModePerm); err != nil {
+			return fmt.Errorf("failed to create directory %s: %v", dir.DestDir, err)
 		}
 
 		for _, srcFile := range files {
