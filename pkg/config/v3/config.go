@@ -172,6 +172,23 @@ func (c Cfg) HasResource(gvk resource.GVK) bool {
 	return found
 }
 
+// HasWebhooks checks if any stored resource has associated webhooks.
+func (c Cfg) HasWebhooks() bool {
+	// Get the list of resources
+	resources, err := c.GetResources()
+	if err != nil {
+		return false // If there's an error getting resources, assume no webhooks
+	}
+
+	for _, res := range resources {
+		if res.HasDefaultingWebhook() || res.HasValidationWebhook() || res.HasConversionWebhook() {
+			return true
+		}
+	}
+
+	return false
+}
+
 // GetResource implements config.Config
 func (c Cfg) GetResource(gvk resource.GVK) (resource.Resource, error) {
 	for _, res := range c.Resources {
