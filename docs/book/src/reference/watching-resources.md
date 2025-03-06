@@ -130,6 +130,8 @@ Here are the key reasons why it's important to watch them:
     - Watching non-owned secondary resources lets the controller respond to lifecycle events (create, update, delete)
     that might affect the primary resource, ensuring consistent behavior across the system.
 
+See [Watching Secondary Resources That Are Not Owned](./watching-resources/secondary-resources-not-owned.md#configuration-example) for an example.
+
 ## Why not use `RequeueAfter X` for all scenarios instead of watching resources?
 
 Kubernetes controllers are fundamentally **event-driven**. When creating a controller,
