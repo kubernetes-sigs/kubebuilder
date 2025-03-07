@@ -76,6 +76,8 @@ type Config interface {
 	AddResource(res resource.Resource) error
 	// UpdateResource adds the provided resource if it was not present, modifies it if it was already present.
 	UpdateResource(res resource.Resource) error
+	// HasWebhooks returns true if any stored resource has webhooks.
+	HasWebhooks() bool
 
 	// HasGroup checks if the provided group is the same as any of the tracked resources.
 	HasGroup(group string) bool
