@@ -412,8 +412,23 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 		_, err = kbc.Kubectl.Apply(true, "-f", conversionCRPath)
 		Expect(err).NotTo(HaveOccurred(), "failed to apply modified ConversionTest CR")
 
-		// TODO: Add validation to check the conversion
+		// Apply validation to check the conversion
 		// the v2 should have spec.replicas == 3
+		By("validating that v2 spec.replicas is set to 3 via conversion")
+		Eventually(func(g Gomega) {
+			output, err := kbc.Kubectl.Get(
+				true,
+				"-n", "test-ns",
+				"conversiontest.v2."+kbc.Group,
+				"conversion-test",
+				"-o", "jsonpath={.spec.replicas}",
+			)
+			g.Expect(err).NotTo(HaveOccurred(), "failed to fetch v2 conversiontest")
+
+			replicas, err := strconv.Atoi(output)
+			g.Expect(err).NotTo(HaveOccurred(), "invalid replicas value")
+			g.Expect(replicas).To(Equal(3), "expected v2.spec.replicas == 3")
+		}, time.Minute, time.Second).Should(Succeed())
 
 		if hasMetrics {
 			By("validating conversion metrics to confirm conversion operations")
