@@ -134,7 +134,7 @@ Template: corev1.PodTemplateSpec{
 <h1> Example(s) </h1>
 
 You can look for some code examples by checking the code which is generated via the Deploy
-Image plugin. ([More info](../plugins/deploy-image-plugin-v1-alpha.md))
+Image plugin. ([More info](../plugins/available/deploy-image-plugin-v1-alpha.md))
 
 </aside>
 
@@ -154,31 +154,30 @@ support as recommended above, and that you properly configure the [nodeAffinity]
 Therefore, ensure that you uncomment the following code in the `config/manager/manager.yaml` file
 
 ```yaml
-      # TODO(user): Uncomment the following code to configure the nodeAffinity expression
-      # according to the platforms which are supported by your solution.
-      # It is considered best practice to support multiple architectures. You can
-      # build your manager image using the makefile target docker-buildx.
-      # affinity:
-      #   nodeAffinity:
-      #     requiredDuringSchedulingIgnoredDuringExecution:
-      #       nodeSelectorTerms:
-      #         - matchExpressions:
-      #           - key: kubernetes.io/arch
-      #             operator: In
-      #             values:
-      #               - amd64
-      #               - arm64
-      #               - ppc64le
-      #               - s390x
-      #           - key: kubernetes.io/os
-      #             operator: In
-      #             values:
-      #               - linux
+# TODO(user): Uncomment the following code to configure the nodeAffinity expression
+# according to the platforms which are supported by your solution.
+# It is considered best practice to support multiple architectures. You can
+# build your manager image using the makefile target docker-buildx.
+# affinity:
+#   nodeAffinity:
+#     requiredDuringSchedulingIgnoredDuringExecution:
+#       nodeSelectorTerms:
+#         - matchExpressions:
+#           - key: kubernetes.io/arch
+#             operator: In
+#             values:
+#               - amd64
+#               - arm64
+#               - ppc64le
+#               - s390x
+#           - key: kubernetes.io/os
+#             operator: In
+#             values:
+#               - linux
 ```
 
 <aside class="note">
 <h1>Building images for releases</h1>
-
 
 You will probably want to automate the releases of your projects to ensure that the images are always built for the
 same platforms. Note that Goreleaser also supports [docker buildx][buildx]. See its [documentation][goreleaser-buildx] for more detail.
