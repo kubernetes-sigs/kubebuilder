@@ -114,7 +114,11 @@ spec:
             {{ "{{- toYaml .Values.controllerManager.container.resources | nindent 12 }}" }}
           securityContext:
             {{ "{{- toYaml .Values.controllerManager.container.securityContext | nindent 12 }}" }}
+{{- if .HasWebhooks }}
           {{ "{{- if and .Values.certmanager.enable (or .Values.webhook.enable .Values.metrics.enable) }}" }}
+{{- else }}
+          {{ "{{- if and .Values.certmanager.enable .Values.metrics.enable }}" }}
+{{- end }}
           volumeMounts:
 {{- if .HasWebhooks }}
             {{ "{{- if and .Values.webhook.enable .Values.certmanager.enable }}" }}
@@ -133,7 +137,11 @@ spec:
         {{ "{{- toYaml .Values.controllerManager.securityContext | nindent 8 }}" }}
       serviceAccountName: {{ "{{ .Values.controllerManager.serviceAccountName }}" }}
       terminationGracePeriodSeconds: {{ "{{ .Values.controllerManager.terminationGracePeriodSeconds }}" }}
+{{- if .HasWebhooks }}
       {{ "{{- if and .Values.certmanager.enable (or .Values.webhook.enable .Values.metrics.enable) }}" }}
+{{- else }}
+      {{ "{{- if and .Values.certmanager.enable .Values.metrics.enable }}" }}
+{{- end }}
       volumes:
 {{- if .HasWebhooks }}
         {{ "{{- if and .Values.webhook.enable .Values.certmanager.enable }}" }}
