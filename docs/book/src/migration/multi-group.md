@@ -38,7 +38,7 @@ can check `api/v1/groupversion_info.go` to find that out:
 package v1
 ```
 
-Then, we'll rename move our existing APIs into a new subdirectory, "batch":
+Then, we'll move our existing APIs into a new subdirectory named after the group. Considering the [CronJob example][cronjob-tutorial], subdirectory name is "batch":
 
 ```bash
 mkdir api/batch
@@ -51,6 +51,13 @@ After moving the APIs to a new directory, the same needs to be applied to the co
 mkdir internal/controller/batch
 mv internal/controller/* internal/controller/batch/
 ```
+
+The same needs to be applied for any pre-existing [webhooks][webhooks]:
+```bash
+mkdir internal/webhook/batch
+mv internal/webhook/* internal/webhook/batch/
+```
+For any new webhook created for a new group, the respective functions will be created under subdirectory `internal/webhook/<group>/`.
 
 <aside class="note">
 <h1>If you are using the deprecated layout go/v3</h1>
@@ -122,3 +129,4 @@ single-group projects).
 [multi-group-issue]: https://github.com/kubernetes-sigs/kubebuilder/issues/923 "Kubebuilder Issue #923"
 [cronjob-tutorial]: /cronjob-tutorial/cronjob-tutorial.md "Tutorial: Building CronJob"
 [migration-guide]: /migration/migration_guide_gov3_to_gov4.md "Migration from go/v3 to go/v4"
+[webhooks]: /cronjob-tutorial/webhook-implementation.md "Implementing defaulting/validating webhooks"
