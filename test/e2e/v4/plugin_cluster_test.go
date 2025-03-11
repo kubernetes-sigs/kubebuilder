@@ -417,8 +417,7 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 		By("validating that v2 spec.replicas is set to 3 via conversion")
 		Eventually(func(g Gomega) {
 			output, err := kbc.Kubectl.Get(
-				true,
-				"-n", "test-ns",
+				false,
 				"conversiontest.v2."+kbc.Group,
 				"conversion-test",
 				"-o", "jsonpath={.spec.replicas}",
