@@ -70,7 +70,7 @@ Therefore, you can check an example of Status Conditional usage by looking at it
 [controllers]: https://kubernetes.io/docs/concepts/architecture/controller/
 [controller-runtime-topic]: https://github.com/kubernetes-sigs/controller-runtime/blob/main/FAQ.md#q-how-do-i-have-different-logic-in-my-reconciler-for-different-types-of-events-eg-create-update-delete
 [controller-runtime]: https://github.com/kubernetes-sigs/controller-runtime
-[deploy-image]: /plugins/deploy-image-plugin-v1-alpha.md
+[deploy-image]: /plugins/available/deploy-image-plugin-v1-alpha.md
 [controller-runtime-manager]: https://github.com/kubernetes-sigs/controller-runtime/blob/304027bcbe4b3f6d582180aec5759eb4db3f17fd/pkg/manager/manager.go#L53
 [k8s-api-conventions]: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md
 [k8s-control-loop]: https://kubernetes.io/docs/concepts/architecture/controller/
