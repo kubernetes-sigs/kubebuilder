@@ -14,7 +14,7 @@ project, or the project as a whole.  We follow a similar set of
 definitions to the [main Kubernetes project itself][kube-ladder], with
 slightly looser requirements.
 
-As much as possible, we want people to help take on responsibility in the
+As much as possible, we want people to help take on responsibility for the
 project -- these guidelines are attempts to make it *easier* for this to
 happen, *not harder*.  If you've got any questions, just reach out on
 Slack to one of the [subproject leads][kb-leads] (called
@@ -24,7 +24,7 @@ kubebuilder-admins in the `OWNERS_ALIASES` file).
 
 Anyone who wants to become a reviewer or approver must first be a [member
 of the Kubernetes project][kube-member].  The aforementioned doc has more
-details, but the gist is that you must have made a couple contributions to
+details, but the gist is that you must have made a couple of contributions to
 some part of the Kubernetes project -- *this includes Kubebuilder and
 related repos*.  Then, you need two existing members to sponsor you.
 
@@ -34,22 +34,22 @@ sponsor you, just ping us on Slack :-)**
 ## Reviewers
 
 Reviewers are recognized as able to provide code reviews for parts of the
-codebase, and are entered into the `reviewers` section of one or more
+codebase and are entered into the `reviewers` section of one or more
 `OWNERS` files.  You'll get auto-assigned reviews for your area of the
-codebase, and are generally expected to review for both correctness,
+codebase and are generally expected to review for correctness,
 testing, general code organization, etc.  Reviewers may review for design
 as well, but approvers have the final say on that.
 
 Things to look for:
 
-- does this code work, and is it written performantly and idomatically?
+- does this code work, and is it written performantly and idiomatically?
 - is it tested?
 - is it organized nicely?  Is it maintainable?
 - is it documented?
 - does it need to be threadsafe?  Is it?
 - Take a glance at the stuff for approvers, if you can.
 
-Reviewers' `/lgtm` marks are generally trusted by approvers to mean that
+Reviewers' `/lgtm` marks are generally trusted by approvers to means that
 the code is ready for one last look-over before merging.
 
 ### Becoming a Reviewer
@@ -65,7 +65,7 @@ worked on a cross-cutting feature, it's ok to count PRs across
 repositories.
 
 Once you meet those criteria, submit yourself as a reviewer in the
-`OWNERS` file or files that you feel represent your areas of knowlege via
+`OWNERS` file or files that you feel represent your areas of knowledge via
 a PR to the relevant repository.
 
 ## Approvers
@@ -75,14 +75,14 @@ Once approvals (`/approve`) are given for each piece of the affected code
 (and a reviewer or approver has added `/lgtm`), the code will merge.
 
 Approvers are responsible for giving the code a final once-over before
-merge, and doing an overall design/API review.
+merge, and do an overall design/API review.
 
 Things to look for:
 
 - Does the API exposed to the user make sense, and is it easy to use?
-- Is it backwards compatible?
+- Is it backward compatible?
 - Will it accommodate new changes in the future?
-- Is it extesnible/layerable (see [DESIGN.md](../DESIGN.md))?
+- Is it extensible/layer-able (see [DESIGN.md](../DESIGN.md))?
 - Does it expose a new type from `k8s.io/XYZ`, and, if so, is it worth it?
   Is that piece well-designed?
 
@@ -93,16 +93,16 @@ them.
 
 ### Becoming an Approver
 
-All approvers need to start out as reviewers.  The criteria for becoming
-an approver are:
+All approvers need to start as reviewers.  The criteria for becoming
+an approver is:
 
-- Be a reviewer in the area for a couple months
+- Be a reviewer in the area for a couple of months
 - Be the "main" reviewer or contributor for 5-10 substantial (bugfixes,
   features, etc) PRs where approvers did not need to leave substantial
   additional comments (i.e. where you were acting as a defacto approver).
 
 Once you've met those criteria, you can submit yourself as an approver
-using a PR that edits the revelant `OWNERS` files appropriately.  The
+using a PR that edits the relevant `OWNERS` files appropriately.  The
 existing approvers will then approve the change with lazy consensus.  If
 you feel more comfortable asking before submitting the PR, feel free to
 ping one of the [subproject leads][kb-leads] (called kubebuilder-admins in
@@ -110,7 +110,7 @@ the `OWNERS_ALIASES` file) on Slack.
 
 ## Indirectly Code-Related/Non-Code Roles
 
-We're always looking help with other areas of the project as well, such
+We're always looking for help with other areas of the project as well, such
 as:
 
 ### Docs
@@ -120,15 +120,15 @@ reviewers/approvers for the book by following the same process above.
 
 ### Triage
 
-Help triaging our issues is also welcome.  Folks doing triage are
+Help to triage our issues is also welcome.  Folks doing triage are
 responsible for using the following commands to mark PRs and issues with
 one or more labels, and should also feel free to help answer questions:
 
 - `/kind {bug|feature|documentation}`: things that are broken/new
-  things/things with lots of words, repsectively
+  things/things with lots of words, respectively
 
 - `/triage support`: questions, and things that might be bugs but might
-  just be confusion of how to use something
+  just be confused about how to use something
 
 - `/priority {backlog|important-longterm|important-soon|critical-urgent}`:
   how soon we need to deal with the thing (if someone wants
