@@ -173,6 +173,10 @@ Every month, our team meets on the first Thursday at 11:00 PT (Pacific Time) to 
 Please note that we have been syncing more frequently offline via Slack lately. However, if you add a topic to the agenda, we will hold the meeting as scheduled.
 Additionally, we can use this channel to demonstrate new features.
 
+## Demo
+
+[![asciicast](https://asciinema.org/a/YOUR_CAST_ID.svg)](https://asciinema.org/a/YOUR_CAST_ID)
+
 [operator-sdk]: https://github.com/operator-framework/operator-sdk
 [plugin-section]: https://book.kubebuilder.io/plugins/plugins.html
 [controller-runtime]: https://github.com/kubernetes-sigs/controller-runtime
