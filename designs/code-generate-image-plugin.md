@@ -6,7 +6,7 @@
 
 ## Summary
 
-This proposal defines a new plugin which allow users get the scaffold with the
+This proposal defines a new plugin that allows users to get the scaffold with the
  required code to have a project that will deploy and manage an image on the cluster following the guidelines and what have been considered as good practices.
 
 ## Motivation
@@ -18,24 +18,24 @@ The biggest part of the Kubebuilder users looking for to create a project that w
 ### Goals
 
 - Add a new plugin to generate the code required to deploy and manage an image on the cluster
-- Promote the best practices as give example of common implementations
-- Make the process to develop  operators projects easier and more agil.
+- Promote the best practices by giving examples of common implementations
+- Make the process of developing  operator's projects easier and more agile.
 - Give flexibility to the users and allow them to change the code according to their needs
-- Provide examples of code implementations and of the most common features usage and reduce the learning curve
+- Provide examples of code implementations and of the usage of the most common features and reduce the learning curve
 
 ### Non-Goals
 
-The idea of this proposal is provide a facility for the users. This plugin can be improved
+The idea of this proposal is to provide a facility for the users. This plugin can be improved
 in the future, however, this proposal just covers the basic requirements. In this way, is a non-goal
-allow extra configurations such as; scaffold the project using webhooks and the controller covered by tests.
+allow extra configurations such as; scaffolding the project using webhooks and the controller covered by tests.
 
 ## Proposal
 
-Add the new plugin code generate which will scaffold code implementation to deploy the image informed which would like such as; `kubebuilder create api --group=crew --version=v1 --image=myexample:0.0.1 --kind=App --plugins=deploy-image.go.kubebuilder.io/v1beta1` which will:
+Add the new plugin code generated which will scaffold code implementation to deploy the image informed which would like such as; `kubebuilder create api --group=crew --version=v1 --image=myexample:0.0.1 --kind=App --plugins=deploy-image.go.kubebuilder.io/v1beta1` which will:
 
-- Add a code implementation which will do the Custom Resource reconciliation and create a Deployment resource for the `--image`;
+- Add a code implementation that will do the Custom Resource reconciliation and create a Deployment resource for the `--image`;
 
-- Add an EnvVar on the manager manifest (`config/manager/manager.yaml`) which will store the image informed and shows its possibility to users:
+- Add an EnvVar on the manager manifest (`config/manager/manager.yaml`) which will store the image informed and show its possibility to users:
 
 ```yaml
     ..
@@ -49,7 +49,7 @@ Add the new plugin code generate which will scaffold code implementation to depl
       ...
 ```
 
-- Add a check into reconcile to ensure that the replicas of the deployment on cluster are equals the size defined in the CR:
+- Add a check into reconcile to ensure that the replicas of the deployment on the cluster are equal the size defined in the CR:
 
 ```go
 	// Ensure the deployment size is the same as the spec
@@ -83,7 +83,7 @@ func (r *{{ resource }}Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 ```
 
-- A status [conditions][conditions] to allow users check that if the deployment occurred successfully or its errors
+- A status [conditions][conditions] to allow users to check if the deployment occurred successfully or if its errors
 
 - Add a [marker][markers] in the spec definition to demonstrate how to use OpenAPI schemas validation such as `+kubebuilder:validation:Minimum=1`
 
@@ -93,9 +93,9 @@ func (r *{{ resource }}Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 ### User Stories
 
-- I am as user, would like to use a command to scaffold my common need which is deploy an image of my application, so that I do not need to know exactly how to implement it
+- I am a user, who would like to use a command to scaffold my common need which is to deploy an image of my application, so that I do not need to know exactly how to implement it
 
-- I am as user, would like to have a good example code base which uses the common features, so that I can easily learn its concepts and have a good start point to address my needs.
+- I am a user, would like to have a good example code base that uses the common features so that I can easily learn its concepts and have a good starting point to address my needs.
 
 - I am as maintainer, would like to have a good example to address the common questions, so that I can easily describe how to implement the projects and/or use the common features.
 
@@ -251,12 +251,12 @@ type {{ resource }}Spec struct {
 
 ### Test Plan
 
-To ensure this implementation a new project example should be generated in the [testdata](../testdata/) directory of the project. See the [test/testdata/generate.sh](../test/testadata/generate.sh). Also, we should use this scaffold in the [integration tests](../test/e2e/) to ensure that the data scaffolded with works on the cluster as expected.
+To ensure this implementation a new project example should be generated in the [testdata](../testdata/) directory of the project. See the [test/testdata/generate.sh](../test/testadata/generate.sh). Also, we should use this scaffold in the [integration tests](../test/e2e/) to ensure that the data scaffold works on the cluster as expected.
 
 ### Graduation Criteria
 
-- The new plugin will only be support `project-version=3`
-- The attribute image with the value informed should be added to the resources model in the PROJECT file to let the tool know that the Resource get done with the common basic code implementation:
+- The new plugin will only support `project-version=3`
+- The attribute image with the value informed should be added to the resources model in the PROJECT file to let the tool know that the Resource gets done with the common basic code implementation:
 
 ```yaml
 plugins:
@@ -279,21 +279,21 @@ No, at least in the first moment to keep the simplicity.
 2. Should we support StatefulSet and Deployments?
 The idea is we start it by using a Deployment. However, we can improve the feature in follow-ups to support more default types of scaffolds which could be like `kubebuilder create api --group=crew --version=v1 --image=myexample:0.0.1 --kind=App --plugins=deploy-image.go.kubebuilder.io/v1beta1 --type=[deployment|statefulset|webhook]`
 
-3. Could this feature be useful to other languages or is it just valid to Go based operators?
+3. Could this feature be useful to other languages or is it just valid to Go-based operators?
 
 This plugin would is reponsable to scaffold content and files for Go-based operators. In a future, if other language-based operators starts to be supported (either officially or by the community) this plugin could be used as reference to create an equivalent one for their languages. Therefore, it should probably not to be a `subdomain` of `go.kubebuilder.io.`
 
-For its integration with SDK, it might be valid for the Ansible-based operators where a new `playbook/role` could be generated as well. However, for example, for the Helm plugin it might to be useless. E.g `deploy-image.ansible.sdk.operatorframework.io/v1beta1`
+For its integration with SDK, it might be valid for the Ansible-based operators where a new `playbook/role` could be generated as well. However, for example,for  the Helm plugin, it might be useless. E.g `deploy-image.ansible.sdk.operatorframework.io/v1beta1`
 
-4. Should we consider create a separate repo for plugins?
+4. Should we consider creating a separate repo for plugins?
 
-In the long term yes. However, see that currently, Kubebuilder has not too many plugins yet. And then, and the preliminary support for plugins did not indeed release. For more info see the [Extensible CLI and Scaffolding Plugins][plugins-phase1-design-doc].
+In the long term yes. However, see that currently, Kubebuilder does not have too many plugins yet. And then, the preliminary support for plugins was not indeed released. For more info see the [Extensible CLI and Scaffolding Plugins][plugins-phase1-design-doc].
 
 In this way, at this moment, it shows to be a little Premature Optimization. Note that the issue [#2016](https://github.com/kubernetes-sigs/kubebuilder/issues/1378) will check the possibility of the plugins be as separate binaries that can be discovered by the Kubebuilder CLI binary via user-specified plugin file paths. Then, the discussion over the best approach to dealing with many plugins and if they should or not leave in the Kubebuilder repository would be better addressed after that.
 
 5. Is Kubebuilder prepared to receive this implementation already?
 
-The [Extensible CLI and Scaffolding Plugins - Phase 1.5](extensible-cli-and-scaffolding-plugins-phase-1-5.md) and the issue #1941 requires to be implemented before this proposal. Also, to have a better idea over the proposed solutions made so for the Plugin Ecosystem see the meta issue [#2016](https://github.com/kubernetes-sigs/kubebuilder/issues/2016)
+The [Extensible CLI and Scaffolding Plugins - Phase 1.5](extensible-cli-and-scaffolding-plugins-phase-1-5.md) and issue #1941 are required to be implemented before this proposal. Also, to have a better idea of the proposed solutions made so for the Plugin Ecosystem see the meta issue [#2016](https://github.com/kubernetes-sigs/kubebuilder/issues/2016)
 
 [markers]: ../docs/book/src/reference/markers.md
 [conditions]: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#typical-status-properties
