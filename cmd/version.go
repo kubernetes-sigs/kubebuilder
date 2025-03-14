@@ -18,6 +18,7 @@ package cmd
 
 import (
 	"fmt"
+	"runtime"
 	"runtime/debug"
 )
 
@@ -27,38 +28,69 @@ const unknown = "unknown"
 // information in the release process
 var (
 	kubeBuilderVersion      = unknown
-	kubernetesVendorVersion = unknown
-	goos                    = unknown
-	goarch                  = unknown
-	gitCommit               = "$Format:%H$" // sha1 from git, output of $(git rev-parse HEAD)
+	kubernetesVendorVersion = "1.32.1"
+	goVersion               = unknown
+	goOs                    = unknown
+	goArch                  = unknown
+	gitCommit               = unknown // "$Format:%H$" sha1 from git, output of $(git rev-parse HEAD)
 
-	buildDate = "1970-01-01T00:00:00Z" // build date in ISO8601 format, output of $(date -u +'%Y-%m-%dT%H:%M:%SZ')
+	// "1970-01-01T00:00:00Z" build date in ISO8601 format
+	// Output of $(date -u +'%Y-%m-%dT%H:%M:%SZ')
+	buildDate = unknown
 )
 
 // version contains all the information related to the CLI version
 type version struct {
 	KubeBuilderVersion string `json:"kubeBuilderVersion"`
 	KubernetesVendor   string `json:"kubernetesVendor"`
-	GitCommit          string `json:"gitCommit"`
-	BuildDate          string `json:"buildDate"`
+	GoVersion          string `json:"goVersion"`
 	GoOs               string `json:"goOs"`
 	GoArch             string `json:"goArch"`
+	GitCommit          string `json:"gitCommit"`
+	BuildDate          string `json:"buildDate"`
 }
 
 // versionString returns the CLI version
 func versionString() string {
-	if kubeBuilderVersion == unknown {
-		if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "" {
-			kubeBuilderVersion = info.Main.Version
+	if goVersion == unknown {
+		goVersion = runtime.Version()
+	}
+
+	if goOs == unknown {
+		goOs = runtime.GOOS
+	}
+
+	if goArch == unknown {
+		goArch = runtime.GOARCH
+	}
+
+	info, ok := debug.ReadBuildInfo()
+
+	if ok {
+		if info.Main.Version != "" {
+			if kubeBuilderVersion == unknown {
+				kubeBuilderVersion = info.Main.Version
+			}
+		}
+
+		for _, setting := range info.Settings {
+			if buildDate == unknown && setting.Key == "vcs.revision" {
+				buildDate = setting.Value
+			}
+
+			if gitCommit == unknown && setting.Key == "vcs.revision" {
+				gitCommit = setting.Value
+			}
 		}
 	}
 
 	return fmt.Sprintf("Version: %#v", version{
 		kubeBuilderVersion,
 		kubernetesVendorVersion,
+		goVersion,
+		goOs,
+		goArch,
 		gitCommit,
 		buildDate,
-		goos,
-		goarch,
 	})
 }
