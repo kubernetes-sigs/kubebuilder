@@ -10,7 +10,7 @@ the [Controller-Runtime FAQ page](https://github.com/kubernetes-sigs/controller-
 </aside>
 
 
-## How does the value informed via the domain flag (i.e. `kubebuilder init --domain example.com`) when we init a project?
+## How is the value informed via the domain flag (i.e. `kubebuilder init --domain example.com`) when we init a project?
 
 After creating a project, usually you will want to extend the Kubernetes APIs and define new APIs which will be owned by your project. Therefore, the domain value is tracked in the [PROJECT][project-file-def] file which defines the config of your project and will be used as a domain to create the endpoints of your API(s). Please, ensure that you understand the [Groups and Versions and Kinds, oh my!][gvk].
 
@@ -22,7 +22,7 @@ kubebuilder create api --group mygroup --version v1beta1 --kind Mykind
 ```
 Then the result resource group will be `mygroup.example.com`.
 
-> If domain field not set, the default value is `my.domain`.
+> If the domain field is not set, the default value is `my.domain`.
 
 ## I'd like to customize my project to use [klog][klog] instead of the [zap][zap] provided by controller-runtime. How to use `klog` or other loggers as the project logger?
 
@@ -58,8 +58,8 @@ mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		LeaderElectionNamespace: "<project-name>-system",
 ```
 
-If you are running the project on the cluster with `make deploy` target
-then, you might not want to add this option. So, you might want to customize this behaviour using
+If you are running the project on the cluster with the `make deploy` target
+then, you might not want to add this option. So, you might want to customize this behavior using
 environment variables to only add this option for development purposes, such as:
 
 ```go
@@ -91,7 +91,7 @@ main.main
 runtime.main
         /usr/local/go/src/runtime/proc.go:250
 ```
-when you are running the project against a Kubernetes old version (maybe <= 1.21) , it might be caused by the [issue][permission-issue] , the reason is the mounted token file set to `0600`, see [solution][permission-PR] here. Then, the workaround is:
+When you are running the project against a Kubernetes old version (maybe <= 1.21), it might be caused by the [issue][permission-issue], the reason is the mounted token file set to `0600`, see [solution][permission-PR] here. Then, the workaround is:
 
 Add `fsGroup` in the manager.yaml
 ```yaml
@@ -105,9 +105,9 @@ However, note that this problem is fixed and will not occur if you deploy the pr
 
 When attempting to run `make install` to apply the CRD manifests, the error `Too long: must have at most 262144 bytes may be encountered.` This error arises due to a size limit enforced by the Kubernetes API. Note that the `make install` target will apply the CRD manifest under `config/crd` using `kubectl apply -f -`. Therefore, when the apply command is used, the API annotates the object with the `last-applied-configuration` which contains the entire previous configuration. If this configuration is too large, it will exceed the allowed byte size. ([More info][k8s-obj-creation])
 
-In ideal approach might use client-side apply might seem like the perfect solution since with the entire object configuration doesn't have to be stored as an annotation (last-applied-configuration) on the server. However, it's worth noting that as of now, it isn't supported by controller-gen or kubebuilder. For more on this, refer to: [Controller-tool-discussion][controller-tool-pr].
+In an ideal approach using a client-side application might seem like the perfect solution since the entire object configuration doesn't have to be stored as an annotation (last-applied-configuration) on the server. However, it's worth noting that as of now, it isn't supported by controller-gen or kubebuilder. For more on this, refer to: [Controller-tool-discussion][controller-tool-pr].
 
-Therefore, you have a few options to workround this scenario such as:
+Therefore, you have a few options to work around this scenario such as:
 
 **By removing the descriptions from CRDs:**
 
@@ -125,7 +125,7 @@ Your CRDs are generated using [controller-gen][controller-gen]. By using the opt
 ```
 **By re-design your APIs:**
 
-You can review the design of your APIs and see if it has not more specs than should be by hurting single responsibility principle for example. So that you might to re-design them.
+You can review the design of your APIs and see if it does not have more specs than should by hurting the single responsibility principle for example. So that you might re-design them.
 
 ## How can I validate and parse fields in CRDs effectively?
 
