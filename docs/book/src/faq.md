@@ -10,7 +10,7 @@ the [Controller-Runtime FAQ page](https://github.com/kubernetes-sigs/controller-
 </aside>
 
 
-## How is the value informed via the domain flag (i.e. `kubebuilder init --domain example.com`) when we init a project?
+## How is the value set via the domain flag (`kubebuilder init --domain example.com`) used when initialising a project?
 
 After creating a project, usually you will want to extend the Kubernetes APIs and define new APIs which will be owned by your project. Therefore, the domain value is tracked in the [PROJECT][project-file-def] file which defines the config of your project and will be used as a domain to create the endpoints of your API(s). Please, ensure that you understand the [Groups and Versions and Kinds, oh my!][gvk].
 
