@@ -155,6 +155,28 @@ func (d *CronJobCustomDefaulter) applyDefaults(cronJob *batchv2.CronJob) {
 		cronJob.Spec.FailedJobsHistoryLimit = new(int32)
 		*cronJob.Spec.FailedJobsHistoryLimit = d.DefaultFailedJobsHistoryLimit
 	}
+        // Default the CronSchedule fields if they are nil
+	if cronJob.Spec.Schedule.Minute == nil {
+		cronJob.Spec.Schedule.Minute = new(batchv2.CronField)
+		*cronJob.Spec.Schedule.Minute = "*"
+	}
+	if cronJob.Spec.Schedule.Hour == nil { 
+		cronJob.Spec.Schedule.Hour = new(batchv2.CronField)
+		*cronJob.Spec.Schedule.Hour = "*"
+	}
+	if cronJob.Spec.Schedule.DayOfMonth == nil {
+		cronJob.Spec.Schedule.DayOfMonth = new(batchv2.CronField)
+		*cronJob.Spec.Schedule.DayOfMonth = "*"
+	}
+	if cronJob.Spec.Schedule.Month == nil {
+		cronJob.Spec.Schedule.Month = new(batchv2.CronField)
+		*cronJob.Spec.Schedule.Month = "*"
+	}
+	if cronJob.Spec.Schedule.DayOfWeek == nil {
+		cronJob.Spec.Schedule.DayOfWeek = new(batchv2.CronField)
+		*cronJob.Spec.Schedule.DayOfWeek = "*"
+	}
+		
 }
 
 // validateCronJob validates the fields of a CronJob object.
