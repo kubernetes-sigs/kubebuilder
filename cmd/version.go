@@ -27,7 +27,7 @@ const unknown = "unknown"
 // information in the release process
 var (
 	kubeBuilderVersion      = unknown
-	kubernetesVendorVersion = unknown
+	kubernetesVendorVersion = "1.32.1"
 	goos                    = unknown
 	goarch                  = unknown
 	gitCommit               = "$Format:%H$" // sha1 from git, output of $(git rev-parse HEAD)
