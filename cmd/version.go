@@ -26,7 +26,7 @@ const unknown = "unknown"
 // var needs to be used instead of const as ldflags is used to fill this
 // information in the release process
 var (
-	kubeBuilderVersion      = unknown
+	cliVersion      		= unknown
 	kubernetesVendorVersion = unknown
 	goos                    = unknown
 	goarch                  = unknown
@@ -37,7 +37,7 @@ var (
 
 // version contains all the information related to the CLI version
 type version struct {
-	KubeBuilderVersion string `json:"kubeBuilderVersion"`
+	CliVersion 	       string `json:"cliVersion"`
 	KubernetesVendor   string `json:"kubernetesVendor"`
 	GitCommit          string `json:"gitCommit"`
 	BuildDate          string `json:"buildDate"`
@@ -45,20 +45,30 @@ type version struct {
 	GoArch             string `json:"goArch"`
 }
 
-// versionString returns the CLI version
+// versionString returns the Full CLI version
 func versionString() string {
-	if kubeBuilderVersion == unknown {
+	if cliVersion == unknown {
 		if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "" {
-			kubeBuilderVersion = info.Main.Version
+			cliVersion = info.Main.Version
 		}
 	}
 
 	return fmt.Sprintf("Version: %#v", version{
-		kubeBuilderVersion,
+		cliVersion,
 		kubernetesVendorVersion,
 		gitCommit,
 		buildDate,
 		goos,
 		goarch,
 	})
+}
+
+// CliVersionString returns only the CLI version string
+func CliVersionString() string {
+	if cliVersion == unknown {
+		if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "" {
+			cliVersion = info.Main.Version
+		}
+	}
+	return cliVersion
 }

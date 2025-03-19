@@ -27,6 +27,14 @@ type Config interface {
 	// GetVersion returns the current project version.
 	GetVersion() Version
 
+	// GetCliVersion returns the kubebuilder version used to initialize the project.
+	// This method was introduced in project version 3.
+	GetCliVersion() string
+
+	// SetCliVersion sets the kubebuilder version used to initialize the project.
+	//This method was introduced in project version 3.
+	SetCliVersion(version string) error
+
 	/* String fields */
 
 	// GetDomain returns the project domain.

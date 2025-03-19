@@ -32,7 +32,7 @@ builds:
     binary: kubebuilder
     mod_timestamp: "{{ .CommitTimestamp }}"
     ldflags:
-      - -X sigs.k8s.io/kubebuilder/v4/cmd.kubeBuilderVersion={{ .Version }}
+      - -X sigs.k8s.io/kubebuilder/v4/cmd.cliVersion={{ .Version }}
       - -X sigs.k8s.io/kubebuilder/v4/cmd.goos={{ .Os }}
       - -X sigs.k8s.io/kubebuilder/v4/cmd.goarch={{ .Arch }}
       - -X sigs.k8s.io/kubebuilder/v4/cmd.gitCommit={{ .Commit }}
