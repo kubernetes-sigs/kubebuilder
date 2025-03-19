@@ -57,6 +57,14 @@ func WithVersion(version string) Option {
 	}
 }
 
+// WithCleanVersion is an Option that defines the clean version string of the CLI.
+func WithCliVersion(version string) Option {
+	return func(c *CLI) error {
+		c.cliVersion = version
+		return nil
+	}
+}
+
 // WithDescription is an Option that sets the CLI's root description.
 func WithDescription(description string) Option {
 	return func(c *CLI) error {

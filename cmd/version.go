@@ -62,3 +62,13 @@ func versionString() string {
 		goarch,
 	})
 }
+
+// KubeBuilderVersionString returns just the KubeBuilder version string
+func CliVersionString() string {
+	if kubeBuilderVersion == unknown {
+		if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "" {
+			kubeBuilderVersion = info.Main.Version
+		}
+	}
+	return kubeBuilderVersion
+}

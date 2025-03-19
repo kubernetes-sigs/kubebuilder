@@ -3,6 +3,7 @@
 # and allow the plugins properly work.
 # More info: https://book.kubebuilder.io/reference/project-config.html
 domain: tutorial.kubebuilder.io
+kubebuilderVersion: (devel)
 layout:
 - go.kubebuilder.io/v4
 plugins:
