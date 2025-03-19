@@ -27,6 +27,12 @@ type Config interface {
 	// GetVersion returns the current project version.
 	GetVersion() Version
 
+	// GetCliVersion returns the CLI binary version that was used to scaffold or initialize the project.
+	GetCliVersion() string
+
+	// SetCliVersion sets the binary version used to initialize the project.
+	SetCliVersion(version string) error
+
 	/* String fields */
 
 	// GetDomain returns the project domain.
