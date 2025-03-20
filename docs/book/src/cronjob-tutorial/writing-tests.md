@@ -23,11 +23,11 @@ This Status update example above demonstrates a general testing strategy for a c
 * Writing stubs for creating test objects
 * Isolating changes to an object to test specific controller behavior
 
-## Advanced Examples
+<aside class="note">
+<h1>Examples</h1>
 
-There are more involved examples of using envtest to rigorously test controller behavior. Examples include:
+You can use the plugin [DeployImage](../plugins/available/deploy-image-plugin-v1-alpha.md) to check examples. This plugin allows users to scaffold API/Controllers to deploy and manage an Operand (image) on the cluster following the guidelines and best practices. It abstracts the complexities of achieving this goal while allowing users to customize the generated code.
 
-* Azure Databricks Operator: see their fully fleshed-out
-  [`suite_test.go`](https://github.com/microsoft/azure-databricks-operator/blob/0f722a710fea06b86ecdccd9455336ca712bf775/controllers/suite_test.go)
-  as well as any `*_test.go` file in that directory [like this
-  one](https://github.com/microsoft/azure-databricks-operator/blob/0f722a710fea06b86ecdccd9455336ca712bf775/controllers/secretscope_controller_test.go).
+Therefore, you can check that a test using ENV TEST will be generated for the controller which has the purpose to ensure that the Deployment is created successfully. You can see an example of its code implementation under the `testdata` directory with the [DeployImage](../plugins/available/deploy-image-plugin-v1-alpha.md) samples [here](https://github.com/kubernetes-sigs/kubebuilder/blob/v3.7.0/testdata/project-v4-with-plugins/controllers/busybox_controller_test.go).
+
+</aside>
