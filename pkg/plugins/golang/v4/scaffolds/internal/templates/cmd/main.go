@@ -108,7 +108,7 @@ const (
 `
 	addschemeCodeFragment = `utilruntime.Must(%s.AddToScheme(scheme))
 `
-	reconcilerSetupCodeFragment = `if err = (&controller.%sReconciler{
+	reconcilerSetupCodeFragment = `if err := (&controller.%sReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
@@ -116,7 +116,7 @@ const (
 		os.Exit(1)
 	}
 `
-	multiGroupReconcilerSetupCodeFragment = `if err = (&%scontroller.%sReconciler{
+	multiGroupReconcilerSetupCodeFragment = `if err := (&%scontroller.%sReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
@@ -126,7 +126,7 @@ const (
 `
 	webhookSetupCodeFragmentLegacy = `// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = (&%s.%s{}).SetupWebhookWithManager(mgr); err != nil {
+		if err := (&%s.%s{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "%s")
 			os.Exit(1)
 		}
@@ -135,7 +135,7 @@ const (
 
 	webhookSetupCodeFragment = `// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = %s.Setup%sWebhookWithManager(mgr); err != nil {
+		if err := %s.Setup%sWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "%s")
 			os.Exit(1)
 		}
@@ -277,7 +277,7 @@ func main() {
 	flag.StringVar(&webhookCertPath, "webhook-cert-path", "", "The directory that contains the webhook certificate.")
 	flag.StringVar(&webhookCertName, "webhook-cert-name", "tls.crt", "The name of the webhook certificate file.")
 	flag.StringVar(&webhookCertKey, "webhook-cert-key", "tls.key", "The name of the webhook key file.")
-	flag.StringVar(&metricsCertPath, "metrics-cert-path", "", 
+	flag.StringVar(&metricsCertPath, "metrics-cert-path", "",
 		"The directory that contains the metrics server certificate.")
 	flag.StringVar(&metricsCertName, "metrics-cert-name", "tls.crt", "The name of the metrics server certificate file.")
 	flag.StringVar(&metricsCertKey, "metrics-cert-key", "tls.key", "The name of the metrics server key file.")
@@ -315,7 +315,7 @@ func main() {
 	if len(webhookCertPath) > 0 {
 		setupLog.Info("Initializing webhook certificate watcher using provided certificates",
 			"webhook-cert-path", webhookCertPath, "webhook-cert-name", webhookCertName, "webhook-cert-key", webhookCertKey)
-	
+
 		var err error
 		webhookCertWatcher, err = certwatcher.New(
 			filepath.Join(webhookCertPath, webhookCertName),
@@ -325,7 +325,7 @@ func main() {
 			setupLog.Error(err, "Failed to initialize webhook certificate watcher")
 			os.Exit(1)
 		}
-	
+
 		webhookTLSOpts = append(webhookTLSOpts, func(config *tls.Config) {
 			config.GetCertificate = webhookCertWatcher.GetCertificate
 		})

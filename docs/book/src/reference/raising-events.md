@@ -47,7 +47,7 @@ Events are published from a Controller using an [EventRecorder][Events]`type Cor
 which can be created for a Controller by calling `GetRecorder(name string)` on a Manager. See that we will change the implementation scaffolded in `cmd/main.go`:
 
 ```go
-	if err = (&controller.MyKindReconciler{
+	if err := (&controller.MyKindReconciler{
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
 		// Note that we added the following line:
@@ -81,7 +81,7 @@ Events are published from a Controller using an [EventRecorder]`type CorrelatorO
 which can be created for a Controller by calling `GetRecorder(name string)` on a Manager. See that we will change the implementation scaffolded in `cmd/main.go`:
 
 ```go
-	if err = (&controller.MyKindReconciler{
+	if err := (&controller.MyKindReconciler{
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
 		// Note that we added the following line:
