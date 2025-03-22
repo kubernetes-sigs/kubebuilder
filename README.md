@@ -47,6 +47,7 @@ Follow the [instructions](https://book.kubebuilder.io/quick-start.html#installat
 
 See the [Getting Started](https://book.kubebuilder.io/quick-start.html) documentation.
 
+<!-- [![asciicast](https://asciinema.org/a/YOUR_CAST_ID.svg)](https://asciinema.org/a/YOUR_CAST_ID) -->
 ![Quick Start](docs/gif/kb-demo.v3.11.1.svg)
 
 Also, ensure that you check out the [Deploy Image](./docs/book/src/plugins/available/deploy-image-plugin-v1-alpha.md)

@@ -212,3 +212,8 @@ update-k8s-version: ## Update Kubernetes API version in version.go and .goreleas
 	@sed -i.bak 's/KUBERNETES_VERSION=.*/KUBERNETES_VERSION=$(K8S_VERSION)/' build/.goreleaser.yml
 	@# Clean up backup files
 	@find . -name "*.bak" -type f -delete
+
+.PHONY: demo-generate
+demo-generate: ## Generate a new demo recording
+	@chmod +x scripts/record-demo.sh
+	@./scripts/record-demo.sh
