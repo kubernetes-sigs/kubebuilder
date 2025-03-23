@@ -118,23 +118,23 @@ files, 6 are Kubebuilder-specific glue code, 4 are test setup, and
 user-edited code.
 
 This proliferation of files makes it difficult for users to understand how
-their code relates to the library, posing some barrier for initial adoption
+their code relates to the library, posing some barriers to initial adoption
 and moving beyond a basic knowledge of functionality to actual
 understanding of the structure.  A common line of questioning amongst
-newcomers to Kubebuilder includes "where should I put my code that adds
+newcomers to Kubebuilder include "Where should I put my code that adds
 new types to a scheme" (and similar questions), which indicates that it's
-not immediately obvious to these users why the project is structured the
-way it is.
+not immediately obvious to these users why the project is structured in the
+the ay it is.
 
 Additionally, we scaffold out API "tests" that test that the API server is
 able to receive create requests for the objects, but don't encourage
 modification beyond that.  An informal survey seems to indicate that most
-users don't actually modify these tests (many repositories continue to
+users don't modify these tests (many repositories continue to
 look like
 [this](https://github.com/replicatedhq/gatekeeper/blob/3bfe0f7213b6d41abf2df2a6746f3351e709e6ff/pkg/apis/policies/v1alpha2/admissionpolicy_types_test.go)).
 If we want to help users test that their object's structure is the way
 they think it is, we're probably better served coming up with a standard
-"can I create this example YAML file".
+"Can I create this example YAML file".
 
 Furthermore, since the structure is quite convoluted, it makes it more
 difficult to write examples, since the actual code we care about ends up
@@ -145,7 +145,7 @@ scattered deep in a folder structure.
 We introduced the builder pattern for controller construction in
 controller-runtime
 ([GoDoc](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/builder?tab=doc#ControllerManagedBy))
-as a way to simplify construction of controllers and reduce boilerplate
+as a way to simplify the construction of controllers and reduce boilerplate
 for the common cases of controller construction.  Informal feedback from
 this has been positive, and it enables fairly rapid, clear, and concise
 construction of controllers (e.g. this [one file
@@ -158,15 +158,15 @@ understanding of the internals of controller-runtime to comprehend.
 
 ### Dependency Passing Woes
 
-Another common line of questioning amongst Kubebuilder users is "how to
-I pass dependencies to my controllers?".  This ranges from "how to I pass
-custom clients for the software I'm running" to "how to I pass
+Another common line of questioning amongst Kubebuilder users is "How to
+I pass dependencies to my controllers?".  This ranges from "How do I pass
+custom clients for the software I'm running" to "How to I pass
 configuration from files and flags down to my controllers" (e.g.
 [kubernete-sigs/kubebuilder#611](https://github.com/kubernetes-sigs/kubebuilder/issues/611)
 
 Since reconciler implementations are initialized in `Add` methods with
 standard signatures, dependencies cannot be passed directly to
-reconcilers.  This has lead to requests for dependency injection in
+reconcilers.  This has led to requests for dependency injection in
 controller-runtime (e.g.
 [kubernetes-sigs/controller-runtime#102](https://github.com/kubernetes-sigs/controller-runtime/issues/102)),
 but in most cases, a structure more amicable to passing in the
@@ -176,7 +176,7 @@ dependencies directly would solve the issue (as noted in
 ## Revised Structure
 
 In the revised structure, we use the builder pattern to focus on the
-"code-refactor-code-refactor" cycle: start out with a simple structure,
+"code-refactor-code-refactor" cycle: start with a simple structure,
 refactor out as your project becomes more complicated.
 
 Users receive a simply scaffolded structure to start. Simple projects can
@@ -229,8 +229,8 @@ func (r *MyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 This makes it abundantly clear where to start looking at the code
 (`main.go` is the defacto standard entry-point for many go programs), and
 simplifies the levels of hierarchy.  Furthermore, since `main.go` actually
-instantiates an instance of the reconciler, users are able to add custom
-logic having to do with flags.
+instantiates an instance of the reconciler, users can add custom
+logic has to do with flags.
 
 Notice that we explicitly construct the reconciler in `main.go`, but put
 the setup logic for the controller details in `mykind_controller.go`. This
@@ -245,8 +245,8 @@ to pass in dependencies from `main`.
 While this is an attractive pattern from a prototyping perspective, it
 makes it harder to write integration tests, since you can't easily say
 "run this controller with all its setup in processes".  With a separate
-`SetupWithManager` method associated with reconcile, it becomes fairly
-easy to setup with a manager.
+`SetupWithManager` method associated with reconciliation becomes fairly
+easy to set up with a manager.
 
 #### Put the types directly under api/, or not have groupversion_info.go
 
@@ -266,7 +266,7 @@ core Kubernetes).  Splitting out by "major" Kind (`Deployment`,
 
 #### Change the current scaffold to just make Add a method on the reconciler
 
-While this solves the dependency issues (mostly, since you might want to
+While this solves the dependency issues (mostly since you might want to
 further pass configuration to the setup logic and not just the runtime
 logic), it does not solve the underlying pedagogical issues around the
 initial structure burying key logic amidst a sprawl of generated files and
@@ -278,7 +278,7 @@ directories.
 
 Most projects will eventually grow multiple API versions.  The only
 wrinkle here is making sure API versions get added to a scheme.  This can
-be solved by adding a specially-marked init function that registration
+be solved by adding a specially marked init function that registration
 functions get added to (see the example).
 
 #### Groups
@@ -300,7 +300,7 @@ $ tree ./test/project/api
 There are three options here:
 
 1. Scaffold with the more complex API structure (this looks pretty close
-   to what we do today).  It doesn't add a ton of complexity, but does
+   to what we do today).  It doesn't add a ton of complexity but does
    bury types deeper in a directory structure.
 
 2. Try to move things and rename references.  This takes a lot more effort
@@ -312,17 +312,17 @@ There are three options here:
    This is fairly messy for the user.
 
 Since growing to multiple API groups seems to be fairly uncommon, it's
-mostly like safe to take a hybrid approach here -- allow manually
+mostly safe to take a hybrid approach here -- allowing manually
 specifying the output path, and, when not specified, asking the user to
-first restructure before running the command.
+first, restructure before running the command.
 
 #### Controllers
 
-Multiple controllers don't need their own package, but we'd want to
+Multiple controllers don't need their package, but we'd want to
 scaffold out the builder.  We have two options here:
 
 1. Looking for a particular code comment, and appending a new builder
-   after it.  This is a bit more complicated for us, but perhaps provides
+   after it.  This is a bit more complicated for us but perhaps provides
    a nicer UX.
 
 2. Simply adding a new controller, and reminding the user to add the
@@ -331,7 +331,7 @@ scaffold out the builder.  We have two options here:
    hand is significantly less complex than adding a controller by hand in
    the current structure.
 
-Option 1 should be fairly simple, since the logic is already needed for
+Option 1 should be fairly simple since the logic is already needed for
 registering types to the scheme, and we can always fall back to emitting
 code for the user to place in manually if we can't find the correct
 comment.
@@ -343,16 +343,16 @@ store information about project settings.  We can make use of this to
 store a "scaffolding version", where we increment versions when making
 incompatible changes to how the scaffolding works.
 
-A missing scaffolding version field implies the version `1`, which uses
+A missing scaffolding version field implies version `1`, which uses
 our current scaffolding semantics.  Version `2` uses the semantics
 proposed here.  New projects are scaffolded with `2`, and existing
-projects check the scaffold version before attempting to add addition API
+projects check the scaffold version before attempting to add additional API
 versions, controllers, etc
 
 ### Teaching more complicated project structures
 
 Some controllers may eventually want more complicated project structures.
-We should have a section of the book recommending options for when you
+We should have a section of the book recommending options for when your
 project gets very complicated.
 
 ### Additional Tooling Work
@@ -366,7 +366,7 @@ project gets very complicated.
 ## Example
 
 See #000 for an example with multiple stages of code generation
-(representing the examples is this form is rather complicated, since it
+(representing the examples this form is rather complicated, since it
 involves multiple files).
 
 ```shell
