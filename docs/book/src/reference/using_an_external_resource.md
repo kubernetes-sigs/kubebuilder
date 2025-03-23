@@ -28,7 +28,7 @@ kubebuilder create api --group <theirgroup> --version <theirversion> --kind <the
 For example, if you're managing Certificates from Cert Manager:
 
 ```shell
-kubebuilder create api --group certmanager --version v1 --kind Certificate --controller=true --resource=false --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io
+kubebuilder create api --group cert-manager --version v1 --kind Certificate --controller=true --resource=false --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io
 ```
 
 See the RBAC [markers][markers-rbac] generated for this:
@@ -78,7 +78,7 @@ definitions since the type is defined in an external project.
 Following an example:
 
 ```shell
-kubebuilder create webhook --group certmanager --version v1 --kind Issuer --defaulting --programmatic-validation --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=cert-manager.io
+kubebuilder create webhook --group cert-manager --version v1 --kind Issuer --defaulting --programmatic-validation --external-api-path=github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1 --external-api-domain=io
 ```
 
 ## Managing Core Types
