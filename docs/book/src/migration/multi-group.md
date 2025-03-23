@@ -98,12 +98,12 @@ resources:
   domain: tutorial.kubebuilder.io
   group: batch
   kind: CronJob
-  path: tutorial.kubebuilder.io/project/api/v1beta1
-  version: v1beta1
+  path: tutorial.kubebuilder.io/project/api/batch/v1
+  version: v1
 version: "3"
 ```
 
-Replace `path: tutorial.kubebuilder.io/project/api/v1beta1` for
+Replace `path: tutorial.kubebuilder.io/project/api/batch/v1` for
 `path: tutorial.kubebuilder.io/project/api/batch/v1beta1`
 
 In this process, if the project is not new and has previous implemented APIs they would still need to be modified as needed.
