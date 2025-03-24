@@ -75,7 +75,7 @@ func InsertCode(filename, target, code string) error {
 	}
 	out := string(contents[:idx+len(target)]) + code + string(contents[idx+len(target):])
 	//nolint:gosec // false positive
-	return os.WriteFile(filename, []byte(out), 0644)
+	return os.WriteFile(filename, []byte(out), 0o644)
 }
 
 // InsertCodeIfNotExist insert code if it does not already exists
@@ -110,12 +110,12 @@ func AppendCodeIfNotExist(filename, code string) error {
 
 // AppendCodeAtTheEnd appends the given code at the end of the file.
 func AppendCodeAtTheEnd(filename, code string) error {
-	f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0o644)
 	if err != nil {
 		return err
 	}
 	defer func() {
-		if err := f.Close(); err != nil {
+		if err = f.Close(); err != nil {
 			return
 		}
 	}()
@@ -150,15 +150,14 @@ func UncommentCode(filename, target, prefix string) error {
 		return nil
 	}
 	for {
-		_, err := out.WriteString(strings.TrimPrefix(scanner.Text(), prefix))
-		if err != nil {
+		if _, err = out.WriteString(strings.TrimPrefix(scanner.Text(), prefix)); err != nil {
 			return err
 		}
 		// Avoid writing a newline in case the previous line was the last in target.
 		if !scanner.Scan() {
 			break
 		}
-		if _, err := out.WriteString("\n"); err != nil {
+		if _, err = out.WriteString("\n"); err != nil {
 			return err
 		}
 	}
@@ -168,7 +167,7 @@ func UncommentCode(filename, target, prefix string) error {
 		return err
 	}
 	//nolint:gosec // false positive
-	return os.WriteFile(filename, out.Bytes(), 0644)
+	return os.WriteFile(filename, out.Bytes(), 0o644)
 }
 
 // CommentCode searches for target in the file and adds the comment prefix
@@ -197,8 +196,7 @@ func CommentCode(filename, target, prefix string) error {
 	// Add the comment prefix to each line of the target code
 	scanner := bufio.NewScanner(bytes.NewBufferString(target))
 	for scanner.Scan() {
-		_, err := out.WriteString(prefix + scanner.Text() + "\n")
-		if err != nil {
+		if _, err = out.WriteString(prefix + scanner.Text() + "\n"); err != nil {
 			return err
 		}
 	}
@@ -210,7 +208,7 @@ func CommentCode(filename, target, prefix string) error {
 	}
 
 	// Write the modified content back to the file
-	return os.WriteFile(filename, out.Bytes(), 0644)
+	return os.WriteFile(filename, out.Bytes(), 0o644)
 }
 
 // EnsureExistAndReplace check if the content exists and then do the replace
@@ -245,6 +243,9 @@ func ReplaceInFile(path, oldValue, newValue string) error {
 
 // ReplaceRegexInFile finds all strings that match `match` and replaces them
 // with `replace` in the file at path.
+//
+// This function is currently unused in the Kubebuilder codebase,
+// but is used by other projects and may be used in Kubebuilder in the future.
 func ReplaceRegexInFile(path, match, replace string) error {
 	matcher, err := regexp.Compile(match)
 	if err != nil {

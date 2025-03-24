@@ -299,8 +299,8 @@ func (c Cfg) DecodePluginConfig(key string, configObj interface{}) error {
 	}
 
 	// Get the object blob by key and unmarshal into the object.
-	if pluginConfig, hasKey := c.Plugins[key]; hasKey {
-		b, err := yaml.Marshal(pluginConfig)
+	if pluginCfg, hasKey := c.Plugins[key]; hasKey {
+		b, err := yaml.Marshal(pluginCfg)
 		if err != nil {
 			return fmt.Errorf("failed to convert extra fields object to bytes: %w", err)
 		}
@@ -318,11 +318,11 @@ func (c *Cfg) EncodePluginConfig(key string, configObj interface{}) error {
 	// Get object's bytes and set them under key in extra fields.
 	b, err := yaml.Marshal(configObj)
 	if err != nil {
-		return fmt.Errorf("failed to convert %T object to bytes: %s", configObj, err)
+		return fmt.Errorf("failed to convert %T object to bytes: %w", configObj, err)
 	}
 	var fields map[string]interface{}
 	if err := yaml.Unmarshal(b, &fields); err != nil {
-		return fmt.Errorf("failed to unmarshal %T object bytes: %s", configObj, err)
+		return fmt.Errorf("failed to unmarshal %T object bytes: %w", configObj, err)
 	}
 	if c.Plugins == nil {
 		c.Plugins = make(map[string]pluginConfig)

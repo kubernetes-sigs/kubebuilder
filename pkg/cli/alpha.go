@@ -41,7 +41,7 @@ func newAlphaCommand() *cobra.Command {
 }
 
 func (c *CLI) newAlphaCmd() *cobra.Command {
-	alpha := &cobra.Command{
+	cmd := &cobra.Command{
 		Use:        alphaCommand,
 		SuggestFor: []string{"experimental"},
 		Short:      "Alpha-stage subcommands",
@@ -54,9 +54,9 @@ Alpha subcommands are for unstable features.
 	}
 	// TODO: Add alpha commands here if we need to have them
 	for i := range alphaCommands {
-		alpha.AddCommand(alphaCommands[i])
+		cmd.AddCommand(alphaCommands[i])
 	}
-	return alpha
+	return cmd
 }
 
 func (c *CLI) addAlphaCmd() {
@@ -67,24 +67,24 @@ func (c *CLI) addAlphaCmd() {
 
 func (c *CLI) addExtraAlphaCommands() error {
 	// Search for the alpha subcommand
-	var alpha *cobra.Command
+	var cmds *cobra.Command
 	for _, subCmd := range c.cmd.Commands() {
 		if subCmd.Name() == alphaCommand {
-			alpha = subCmd
+			cmds = subCmd
 			break
 		}
 	}
-	if alpha == nil {
+	if cmds == nil {
 		return fmt.Errorf("no %q command found", alphaCommand)
 	}
 
 	for _, cmd := range c.extraAlphaCommands {
-		for _, subCmd := range alpha.Commands() {
+		for _, subCmd := range cmds.Commands() {
 			if cmd.Name() == subCmd.Name() {
 				return fmt.Errorf("command %q already exists", fmt.Sprintf("%s %s", alphaCommand, cmd.Name()))
 			}
 		}
-		alpha.AddCommand(cmd)
+		cmds.AddCommand(cmd)
 	}
 	return nil
 }

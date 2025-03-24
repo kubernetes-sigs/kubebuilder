@@ -105,7 +105,7 @@ However, note that this problem is fixed and will not occur if you deploy the pr
 
 When attempting to run `make install` to apply the CRD manifests, the error `Too long: must have at most 262144 bytes may be encountered.` This error arises due to a size limit enforced by the Kubernetes API. Note that the `make install` target will apply the CRD manifest under `config/crd` using `kubectl apply -f -`. Therefore, when the apply command is used, the API annotates the object with the `last-applied-configuration` which contains the entire previous configuration. If this configuration is too large, it will exceed the allowed byte size. ([More info][k8s-obj-creation])
 
-In ideal approach might use client-side apply might seem like the perfect solution since with the entire object configuration doesn't have to be stored as an annotation (last-applied-configuration) on the server. However, it's worth noting that as of now, it isn't supported by controller-gen or kubebuilder. For more on this, refer to: [Controller-tool-discussion][controller-tool-pr].
+In ideal approach might use client-side apply might seem like the perfect solution since with the entire object configuration doesn't have to be stored as an annotation (last-applied-configuration) on the server. However, it's worth noting that as of now, it isn't supported by controller-gen or kubebuilder. For more on this, refer to: [Controller-tools-discussion][controller-tools-pr].
 
 Therefore, you have a few options to workround this scenario such as:
 
@@ -168,4 +168,4 @@ type StructName struct {
 [permission-issue]: https://github.com/kubernetes/kubernetes/issues/82573
 [permission-PR]: https://github.com/kubernetes/kubernetes/pull/89193
 [controller-gen]: ./reference/controller-gen.html
-[controller-tool-pr]: https://github.com/kubernetes-sigs/controller-tools/pull/536
+[controller-tools-pr]: https://github.com/kubernetes-sigs/controller-tools/pull/536

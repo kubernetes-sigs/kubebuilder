@@ -32,7 +32,6 @@ const testProjectDomain = "testproject.org"
 
 var _ = Describe("kubebuilder", func() {
 	Context("alpha generate", func() {
-
 		var (
 			kbc              *utils.TestContext
 			projectOutputDir string
@@ -67,7 +66,6 @@ var _ = Describe("kubebuilder", func() {
 			By("checking that the project file was generated in the current directory")
 			validateV4MultigroupProjectFile(kbc, projectFilePath)
 		})
-
 	})
 })
 
@@ -436,5 +434,4 @@ func validateV4MultigroupProjectFile(kbc *utils.TestContext, projectFile string)
 
 	// Validate the resource configuration
 	Expect(grafanaConfig.Resources).To(BeEmpty(), "Expected zero resource for the Grafana plugin")
-
 }

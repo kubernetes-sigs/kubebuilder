@@ -89,7 +89,7 @@ func (s *yamlStore) LoadFrom(path string) error {
 
 	// Check the file version
 	var versioned versionedConfig
-	if err := yaml.Unmarshal(in, &versioned); err != nil {
+	if err = yaml.Unmarshal(in, &versioned); err != nil {
 		return store.LoadError{Err: fmt.Errorf("unable to determine config version: %w", err)}
 	}
 
@@ -144,7 +144,7 @@ func (s yamlStore) SaveTo(path string) error {
 	content = append([]byte(commentStr), content...)
 
 	// Write the marshalled configuration
-	err = afero.WriteFile(s.fs, path, content, 0600)
+	err = afero.WriteFile(s.fs, path, content, 0o600)
 	if err != nil {
 		return store.SaveError{Err: fmt.Errorf("failed to save configuration to %q: %w", path, err)}
 	}

@@ -263,7 +263,7 @@ func (sp *Sample) updateController() {
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	batchv1 "tutorial.kubebuilder.io/project/api/v1"
 )`, controllerImport)
@@ -288,12 +288,12 @@ func (sp *Sample) updateController() {
 
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "internal/controller/cronjob_controller.go"),
-		`// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.20.3/pkg/reconcile`, skipGoCycloLint)
+		`// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.20.4/pkg/reconcile`, skipGoCycloLint)
 	hackutils.CheckError("fixing cronjob_controller.go", err)
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, "internal/controller/cronjob_controller.go"),
-		`	_ = log.FromContext(ctx)
+		`	_ = logf.FromContext(ctx)
 
 	// TODO(user): your logic here
 
@@ -387,7 +387,6 @@ manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and Cust
 `
 	err := pluginutil.ReplaceInFile(filepath.Join(sp.ctx.Dir, "Makefile"), originalManifestTarget, changedManifestTarget)
 	hackutils.CheckError("updating makefile to use maxDescLen=0 in make manifest target", err)
-
 }
 
 func (sp *Sample) updateWebhookTests() {
@@ -655,8 +654,8 @@ func (sp *Sample) updateExample() {
 }
 
 func (sp *Sample) addControllerTest() {
-	var fs = afero.NewOsFs()
-	err := afero.WriteFile(fs, filepath.Join(sp.ctx.Dir, "internal/controller/cronjob_controller_test.go"), []byte(controllerTest), 0600)
+	fs := afero.NewOsFs()
+	err := afero.WriteFile(fs, filepath.Join(sp.ctx.Dir, "internal/controller/cronjob_controller_test.go"), []byte(controllerTest), 0o600)
 	hackutils.CheckError("adding cronjob_controller_test", err)
 }
 

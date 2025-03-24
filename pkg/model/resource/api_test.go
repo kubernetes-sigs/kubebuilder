@@ -116,7 +116,13 @@ var _ = Describe("API", func() {
 
 	Context("IsEmpty", func() {
 		var (
-			none    = API{}
+			none       API
+			cluster    API
+			namespaced API
+		)
+
+		BeforeEach(func() {
+			none = API{}
 			cluster = API{
 				CRDVersion: v1,
 			}
@@ -124,16 +130,18 @@ var _ = Describe("API", func() {
 				CRDVersion: v1,
 				Namespaced: true,
 			}
-		)
+		})
 
 		It("should return true fo an empty object", func() {
 			Expect(none.IsEmpty()).To(BeTrue())
 		})
 
 		DescribeTable("should return false for non-empty objects",
-			func(api API) { Expect(api.IsEmpty()).To(BeFalse()) },
-			Entry("cluster-scope", cluster),
-			Entry("namespace-scope", namespaced),
+			func(getAPI func() API) {
+				Expect(getAPI().IsEmpty()).To(BeFalse())
+			},
+			Entry("cluster-scope", func() API { return cluster }),
+			Entry("namespace-scope", func() API { return namespaced }),
 		)
 	})
 })

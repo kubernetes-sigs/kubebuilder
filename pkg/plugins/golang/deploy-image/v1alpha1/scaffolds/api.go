@@ -54,11 +54,11 @@ type apiScaffolder struct {
 }
 
 // NewDeployImageScaffolder returns a new Scaffolder for declarative
-func NewDeployImageScaffolder(config config.Config, res resource.Resource, image,
+func NewDeployImageScaffolder(cfg config.Config, res resource.Resource, image,
 	command, port, runAsUser string,
 ) plugins.Scaffolder {
 	return &apiScaffolder{
-		config:    config,
+		config:    cfg,
 		resource:  res,
 		image:     image,
 		command:   command,
@@ -152,8 +152,7 @@ func (s *apiScaffolder) addEnvVarIntoManager() error {
 	managerPath := filepath.Join("config", "manager", "manager.yaml")
 	err := util.ReplaceInFile(managerPath, `env:`, `env:`)
 	if err != nil {
-		if err := util.InsertCode(managerPath, `name: manager`, `
-        env:`); err != nil {
+		if err = util.InsertCode(managerPath, `name: manager`, "\n        env:"); err != nil {
 			return fmt.Errorf("error scaffolding env key in config/manager/manager.yaml")
 		}
 	}

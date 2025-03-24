@@ -22,10 +22,14 @@ import (
 )
 
 var _ = Describe("PluginKeyNotFoundError", func() {
-	err := ExitError{
-		Plugin: "go.kubebuilder.io/v1",
-		Reason: "skipping plugin",
-	}
+	var err ExitError
+
+	BeforeEach(func() {
+		err = ExitError{
+			Plugin: "go.kubebuilder.io/v1",
+			Reason: "skipping plugin",
+		}
+	})
 
 	Context("Error", func() {
 		It("should return the correct error message", func() {

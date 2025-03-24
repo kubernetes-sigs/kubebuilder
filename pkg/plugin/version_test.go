@@ -121,6 +121,11 @@ var _ = Describe("Version", func() {
 	Context("Compare", func() {
 		// Test Compare() by sorting a list.
 		var (
+			versions       []Version
+			sortedVersions []Version
+		)
+
+		BeforeEach(func() {
 			versions = []Version{
 				{Number: 2, Stage: stage.Alpha},
 				{Number: 44, Stage: stage.Alpha},
@@ -146,7 +151,7 @@ var _ = Describe("Version", func() {
 				{Number: 44, Stage: stage.Alpha},
 				{Number: 44, Stage: stage.Alpha},
 			}
-		)
+		})
 
 		It("sorts a valid list of versions correctly", func() {
 			sort.Slice(versions, func(i int, j int) bool {

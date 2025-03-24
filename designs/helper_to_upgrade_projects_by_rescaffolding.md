@@ -121,7 +121,7 @@ Only the content under `.backup/project-name` should be kept.
 - 4. Read the [PROJECT config][project-config]
 - 5. Re-run all commands using the KubeBuilder binary to recreate the project in the output directory
 
-The command should also provide a comprensive help with examples of the proposed workflows. So that, users
+The command should also provide a comprehensive help with examples of the proposed workflows. So that, users
 are able to understand how to use it when run `--help`.
 
 ### User Stories

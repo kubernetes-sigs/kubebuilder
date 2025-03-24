@@ -46,7 +46,7 @@ type Generate struct {
 
 // Generate handles the migration and scaffolding process.
 func (opts *Generate) Generate() error {
-	config, err := loadProjectConfig(opts.InputDir)
+	projectConfig, err := loadProjectConfig(opts.InputDir)
 	if err != nil {
 		return err
 	}
@@ -82,28 +82,28 @@ func (opts *Generate) Generate() error {
 		return err
 	}
 
-	if err := kubebuilderInit(config); err != nil {
+	if err := kubebuilderInit(projectConfig); err != nil {
 		return err
 	}
 
-	if err := kubebuilderEdit(config); err != nil {
+	if err := kubebuilderEdit(projectConfig); err != nil {
 		return err
 	}
 
-	if err := kubebuilderCreate(config); err != nil {
+	if err := kubebuilderCreate(projectConfig); err != nil {
 		return err
 	}
 
-	if err := migrateGrafanaPlugin(config, opts.InputDir, opts.OutputDir); err != nil {
+	if err := migrateGrafanaPlugin(projectConfig, opts.InputDir, opts.OutputDir); err != nil {
 		return err
 	}
 
-	if hasHelmPlugin(config) {
+	if hasHelmPlugin(projectConfig) {
 		if err := kubebuilderHelmEdit(); err != nil {
 			return err
 		}
 	}
-	return migrateDeployImagePlugin(config)
+	return migrateDeployImagePlugin(projectConfig)
 }
 
 // Validate ensures the options are valid and kubebuilder is installed.
@@ -124,16 +124,16 @@ func (opts *Generate) Validate() error {
 
 // Helper function to load the project configuration.
 func loadProjectConfig(inputDir string) (store.Store, error) {
-	config := yaml.New(machinery.Filesystem{FS: afero.NewOsFs()})
-	if err := config.LoadFrom(fmt.Sprintf("%s/%s", inputDir, yaml.DefaultPath)); err != nil {
+	projectConfig := yaml.New(machinery.Filesystem{FS: afero.NewOsFs()})
+	if err := projectConfig.LoadFrom(fmt.Sprintf("%s/%s", inputDir, yaml.DefaultPath)); err != nil {
 		return nil, fmt.Errorf("failed to load PROJECT file: %w", err)
 	}
-	return config, nil
+	return projectConfig, nil
 }
 
 // Helper function to create the output directory.
 func createDirectory(outputDir string) error {
-	if err := os.MkdirAll(outputDir, 0755); err != nil {
+	if err := os.MkdirAll(outputDir, 0o755); err != nil {
 		return fmt.Errorf("failed to create output directory %s: %w", outputDir, err)
 	}
 	return nil
@@ -148,14 +148,14 @@ func changeWorkingDirectory(outputDir string) error {
 }
 
 // Initializes the project with Kubebuilder.
-func kubebuilderInit(store store.Store) error {
-	args := append([]string{"init"}, getInitArgs(store)...)
+func kubebuilderInit(s store.Store) error {
+	args := append([]string{"init"}, getInitArgs(s)...)
 	return util.RunCmd("kubebuilder init", "kubebuilder", args...)
 }
 
 // Edits the project to enable or disable multigroup layout.
-func kubebuilderEdit(store store.Store) error {
-	if store.Config().IsMultiGroup() {
+func kubebuilderEdit(s store.Store) error {
+	if s.Config().IsMultiGroup() {
 		args := []string{"edit", "--multigroup"}
 		return util.RunCmd("kubebuilder edit", "kubebuilder", args...)
 	}
@@ -163,8 +163,8 @@ func kubebuilderEdit(store store.Store) error {
 }
 
 // Creates APIs and Webhooks for the project.
-func kubebuilderCreate(store store.Store) error {
-	resources, err := store.Config().GetResources()
+func kubebuilderCreate(s store.Store) error {
+	resources, err := s.Config().GetResources()
 	if err != nil {
 		return fmt.Errorf("failed to get resources: %w", err)
 	}
@@ -188,9 +188,9 @@ func kubebuilderCreate(store store.Store) error {
 }
 
 // Migrates the Grafana plugin.
-func migrateGrafanaPlugin(store store.Store, src, des string) error {
+func migrateGrafanaPlugin(s store.Store, src, des string) error {
 	var grafanaPlugin struct{}
-	err := store.Config().DecodePluginConfig(plugin.KeyFor(v1alpha.Plugin{}), grafanaPlugin)
+	err := s.Config().DecodePluginConfig(plugin.KeyFor(v1alpha.Plugin{}), grafanaPlugin)
 	if errors.As(err, &config.PluginKeyNotFoundError{}) {
 		log.Info("Grafana plugin not found, skipping migration")
 		return nil
@@ -210,9 +210,9 @@ func migrateGrafanaPlugin(store store.Store, src, des string) error {
 }
 
 // Migrates the Deploy Image plugin.
-func migrateDeployImagePlugin(store store.Store) error {
+func migrateDeployImagePlugin(s store.Store) error {
 	var deployImagePlugin v1alpha1.PluginConfig
-	err := store.Config().DecodePluginConfig(plugin.KeyFor(v1alpha1.Plugin{}), &deployImagePlugin)
+	err := s.Config().DecodePluginConfig(plugin.KeyFor(v1alpha1.Plugin{}), &deployImagePlugin)
 	if errors.As(err, &config.PluginKeyNotFoundError{}) {
 		log.Info("Deploy-image plugin not found, skipping migration")
 		return nil
@@ -230,9 +230,9 @@ func migrateDeployImagePlugin(store store.Store) error {
 }
 
 // Creates an API with Deploy Image plugin.
-func createAPIWithDeployImage(resource v1alpha1.ResourceData) error {
-	args := append([]string{"create", "api"}, getGVKFlagsFromDeployImage(resource)...)
-	args = append(args, getDeployImageOptions(resource)...)
+func createAPIWithDeployImage(resourceData v1alpha1.ResourceData) error {
+	args := append([]string{"create", "api"}, getGVKFlagsFromDeployImage(resourceData)...)
+	args = append(args, getDeployImageOptions(resourceData)...)
 	return util.RunCmd("kubebuilder create api", "kubebuilder", args...)
 }
 
@@ -253,9 +253,9 @@ func getInputPath(inputPath string) (string, error) {
 }
 
 // Helper function to get Init arguments for Kubebuilder.
-func getInitArgs(store store.Store) []string {
+func getInitArgs(s store.Store) []string {
 	var args []string
-	plugins := store.Config().GetPluginChain()
+	plugins := s.Config().GetPluginChain()
 
 	// Define outdated plugin versions that need replacement
 	outdatedPlugins := map[string]string{
@@ -265,10 +265,10 @@ func getInitArgs(store store.Store) []string {
 	}
 
 	// Replace outdated plugins and exit after the first replacement
-	for i, plugin := range plugins {
-		if newPlugin, exists := outdatedPlugins[plugin]; exists {
+	for i, plg := range plugins {
+		if newPlugin, exists := outdatedPlugins[plg]; exists {
 			log.Warnf("We checked that your PROJECT file is configured with the layout '%s', which is no longer supported.\n"+
-				"However, we will try our best to re-generate the project using '%s'.", plugin, newPlugin)
+				"However, we will try our best to re-generate the project using '%s'.", plg, newPlugin)
 			plugins[i] = newPlugin
 			break
 		}
@@ -277,96 +277,96 @@ func getInitArgs(store store.Store) []string {
 	if len(plugins) > 0 {
 		args = append(args, "--plugins", strings.Join(plugins, ","))
 	}
-	if domain := store.Config().GetDomain(); domain != "" {
+	if domain := s.Config().GetDomain(); domain != "" {
 		args = append(args, "--domain", domain)
 	}
-	if repo := store.Config().GetRepository(); repo != "" {
+	if repo := s.Config().GetRepository(); repo != "" {
 		args = append(args, "--repo", repo)
 	}
 	return args
 }
 
 // Gets the GVK flags for a resource.
-func getGVKFlags(resource resource.Resource) []string {
+func getGVKFlags(res resource.Resource) []string {
 	var args []string
-	if resource.Plural != "" {
-		args = append(args, "--plural", resource.Plural)
+	if res.Plural != "" {
+		args = append(args, "--plural", res.Plural)
 	}
-	if resource.Group != "" {
-		args = append(args, "--group", resource.Group)
+	if res.Group != "" {
+		args = append(args, "--group", res.Group)
 	}
-	if resource.Version != "" {
-		args = append(args, "--version", resource.Version)
+	if res.Version != "" {
+		args = append(args, "--version", res.Version)
 	}
-	if resource.Kind != "" {
-		args = append(args, "--kind", resource.Kind)
+	if res.Kind != "" {
+		args = append(args, "--kind", res.Kind)
 	}
 	return args
 }
 
 // Gets the GVK flags for a Deploy Image resource.
-func getGVKFlagsFromDeployImage(resource v1alpha1.ResourceData) []string {
+func getGVKFlagsFromDeployImage(resourceData v1alpha1.ResourceData) []string {
 	var args []string
-	if resource.Group != "" {
-		args = append(args, "--group", resource.Group)
+	if resourceData.Group != "" {
+		args = append(args, "--group", resourceData.Group)
 	}
-	if resource.Version != "" {
-		args = append(args, "--version", resource.Version)
+	if resourceData.Version != "" {
+		args = append(args, "--version", resourceData.Version)
 	}
-	if resource.Kind != "" {
-		args = append(args, "--kind", resource.Kind)
+	if resourceData.Kind != "" {
+		args = append(args, "--kind", resourceData.Kind)
 	}
 	return args
 }
 
 // Gets the options for a Deploy Image resource.
-func getDeployImageOptions(resource v1alpha1.ResourceData) []string {
+func getDeployImageOptions(resourceData v1alpha1.ResourceData) []string {
 	var args []string
-	if resource.Options.Image != "" {
-		args = append(args, fmt.Sprintf("--image=%s", resource.Options.Image))
+	if resourceData.Options.Image != "" {
+		args = append(args, fmt.Sprintf("--image=%s", resourceData.Options.Image))
 	}
-	if resource.Options.ContainerCommand != "" {
-		args = append(args, fmt.Sprintf("--image-container-command=%s", resource.Options.ContainerCommand))
+	if resourceData.Options.ContainerCommand != "" {
+		args = append(args, fmt.Sprintf("--image-container-command=%s", resourceData.Options.ContainerCommand))
 	}
-	if resource.Options.ContainerPort != "" {
-		args = append(args, fmt.Sprintf("--image-container-port=%s", resource.Options.ContainerPort))
+	if resourceData.Options.ContainerPort != "" {
+		args = append(args, fmt.Sprintf("--image-container-port=%s", resourceData.Options.ContainerPort))
 	}
-	if resource.Options.RunAsUser != "" {
-		args = append(args, fmt.Sprintf("--run-as-user=%s", resource.Options.RunAsUser))
+	if resourceData.Options.RunAsUser != "" {
+		args = append(args, fmt.Sprintf("--run-as-user=%s", resourceData.Options.RunAsUser))
 	}
 	args = append(args, fmt.Sprintf("--plugins=%s", plugin.KeyFor(v1alpha1.Plugin{})))
 	return args
 }
 
 // Creates an API resource.
-func createAPI(resource resource.Resource) error {
-	args := append([]string{"create", "api"}, getGVKFlags(resource)...)
-	args = append(args, getAPIResourceFlags(resource)...)
+func createAPI(res resource.Resource) error {
+	args := append([]string{"create", "api"}, getGVKFlags(res)...)
+	args = append(args, getAPIResourceFlags(res)...)
 
 	// Add the external API path flag if the resource is external
-	if resource.IsExternal() {
-		args = append(args, "--external-api-path", resource.Path)
-		args = append(args, "--external-api-domain", resource.Domain)
+	if res.IsExternal() {
+		args = append(args, "--external-api-path", res.Path)
+		args = append(args, "--external-api-domain", res.Domain)
 	}
 
 	return util.RunCmd("kubebuilder create api", "kubebuilder", args...)
 }
 
 // Gets flags for API resource creation.
-func getAPIResourceFlags(resource resource.Resource) []string {
+func getAPIResourceFlags(res resource.Resource) []string {
 	var args []string
 
-	if resource.API == nil || resource.API.IsEmpty() {
+	if res.API == nil || res.API.IsEmpty() {
 		args = append(args, "--resource=false")
 	} else {
 		args = append(args, "--resource")
-		if resource.API.Namespaced {
+		if res.API.Namespaced {
 			args = append(args, "--namespaced")
 		} else {
 			args = append(args, "--namespaced=false")
 		}
 	}
-	if resource.Controller {
+	if res.Controller {
 		args = append(args, "--controller")
 	} else {
 		args = append(args, "--controller=false")
@@ -375,32 +375,32 @@ func getAPIResourceFlags(resource resource.Resource) []string {
 }
 
 // Creates a webhook resource.
-func createWebhook(resource resource.Resource) error {
-	if resource.Webhooks == nil || resource.Webhooks.IsEmpty() {
+func createWebhook(res resource.Resource) error {
+	if res.Webhooks == nil || res.Webhooks.IsEmpty() {
 		return nil
 	}
-	args := append([]string{"create", "webhook"}, getGVKFlags(resource)...)
-	args = append(args, getWebhookResourceFlags(resource)...)
+	args := append([]string{"create", "webhook"}, getGVKFlags(res)...)
+	args = append(args, getWebhookResourceFlags(res)...)
 	return util.RunCmd("kubebuilder create webhook", "kubebuilder", args...)
 }
 
 // Gets flags for webhook creation.
-func getWebhookResourceFlags(resource resource.Resource) []string {
+func getWebhookResourceFlags(res resource.Resource) []string {
 	var args []string
-	if resource.IsExternal() {
-		args = append(args, "--external-api-path", resource.Path)
-		args = append(args, "--external-api-domain", resource.Domain)
+	if res.IsExternal() {
+		args = append(args, "--external-api-path", res.Path)
+		args = append(args, "--external-api-domain", res.Domain)
 	}
-	if resource.HasValidationWebhook() {
+	if res.HasValidationWebhook() {
 		args = append(args, "--programmatic-validation")
 	}
-	if resource.HasDefaultingWebhook() {
+	if res.HasDefaultingWebhook() {
 		args = append(args, "--defaulting")
 	}
-	if resource.HasConversionWebhook() {
+	if res.HasConversionWebhook() {
 		args = append(args, "--conversion")
-		if len(resource.Webhooks.Spoke) > 0 {
-			for _, spoke := range resource.Webhooks.Spoke {
+		if len(res.Webhooks.Spoke) > 0 {
+			for _, spoke := range res.Webhooks.Spoke {
 				args = append(args, "--spoke", spoke)
 			}
 		}
@@ -414,14 +414,14 @@ func copyFile(src, des string) error {
 	if err != nil {
 		return fmt.Errorf("source file path %s does not exist: %w", src, err)
 	}
-	return os.WriteFile(des, bytesRead, 0755)
+	return os.WriteFile(des, bytesRead, 0o755)
 }
 
 // Migrates Grafana configuration files.
 func grafanaConfigMigrate(src, des string) error {
 	grafanaConfig := fmt.Sprintf("%s/grafana/custom-metrics/config.yaml", src)
 	if _, err := os.Stat(grafanaConfig); os.IsNotExist(err) {
-		return fmt.Errorf("Grafana config path %s does not exist: %w", grafanaConfig, err)
+		return fmt.Errorf("grafana config path %s does not exist: %w", grafanaConfig, err)
 	}
 	return copyFile(grafanaConfig, fmt.Sprintf("%s/grafana/custom-metrics/config.yaml", des))
 }
@@ -456,7 +456,7 @@ func hasHelmPlugin(cfg store.Store) bool {
 			return false
 		}
 		// Log other errors if needed
-		log.Errorf("Error decoding Helm plugin config: %v", err)
+		log.Errorf("error decoding Helm plugin config: %v", err)
 		return false
 	}
 

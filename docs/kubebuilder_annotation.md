@@ -1,6 +1,6 @@
 # Kubebuilder Annotation
 
-If you have been using Kubebuilder, you must have seen comments such as `// +kubebuilder:rbac: ....` , `// +kubebuilder:resource:...` in the scaffolder Go files. These special comments are used by kubebuilder tools (controller tools) to generate CRD, RBAC, and webhook manifests. In kubebuilder, these special comments are `Kubebuilder Annotation`, a.k.a `annotation`. It is designed for this kind of use case: To use kubebuilder tools, all you have to do is focus on writing your code, and put instructions with parameters as annotations along with your code, so that everything will be handled based on these annotations instructions by kubebuilder. This document illustrates the syntax of these annotations.
+If you have been using Kubebuilder, you must have seen comments such as `// +kubebuilder:rbac: ....` , `// +kubebuilder:resource:...` in the scaffolded Go files. These special comments are used by kubebuilder tools (controller tools) to generate CRD, RBAC, and webhook manifests. In kubebuilder, these special comments are `Kubebuilder Annotation`, a.k.a `annotation`. It is designed for this kind of use case: To use kubebuilder tools, all you have to do is focus on writing your code, and put instructions with parameters as annotations along with your code, so that everything will be handled based on these annotations instructions by kubebuilder. This document illustrates the syntax of these annotations.
 
 ## Kubebuilder Annotation Syntax
 
@@ -58,7 +58,7 @@ Delimiter symbols are distinguished to work in different levels from top-down fo
 
 1. Separate two `submodule` (categories) under `webhook`: 1) `admission`and 2) `serveroption`, handling webhookTags and serverTags separately.
 2. For each submodule, all key values should put in the same comment line.
-3. using `|` for splitting key value of `lables`
+3. using `|` for splitting key value of `labels`
 
 #### RBAC Annotation examples
 

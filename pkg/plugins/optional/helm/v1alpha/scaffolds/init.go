@@ -39,7 +39,7 @@ import (
 	templatesmetrics "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha/scaffolds/internal/templates/chart-templates/metrics"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha/scaffolds/internal/templates/chart-templates/prometheus"
 	templateswebhooks "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha/scaffolds/internal/templates/chart-templates/webhook"
-	github "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha/scaffolds/internal/templates/github"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha/scaffolds/internal/templates/github"
 )
 
 var _ plugins.Scaffolder = &initScaffolder{}
@@ -53,9 +53,9 @@ type initScaffolder struct {
 }
 
 // NewInitHelmScaffolder returns a new Scaffolder for HelmPlugin
-func NewInitHelmScaffolder(config config.Config, force bool) plugins.Scaffolder {
+func NewInitHelmScaffolder(cfg config.Config, force bool) plugins.Scaffolder {
 	return &initScaffolder{
-		config: config,
+		config: cfg,
 		force:  force,
 	}
 }
@@ -71,16 +71,17 @@ func (s *initScaffolder) Scaffold() error {
 
 	imagesEnvVars := s.getDeployImagesEnvVars()
 
-	mutatingWebhooks, validatingWebhooks, err := s.extractWebhooksFromGeneratedFiles()
-	if err != nil {
-		return fmt.Errorf("failed to extract webhooks: %w", err)
-	}
-
 	scaffold := machinery.NewScaffold(s.fs,
 		machinery.WithConfig(s.config),
 	)
 
-	hasWebhooks := len(mutatingWebhooks) > 0 || len(validatingWebhooks) > 0
+	// Found webhooks by looking at the config our scaffolds files
+	mutatingWebhooks, validatingWebhooks, err := s.extractWebhooksFromGeneratedFiles()
+	if err != nil {
+		return fmt.Errorf("failed to extract webhooks: %w", err)
+	}
+	hasWebhooks := hasWebhooksWith(s.config) || (len(mutatingWebhooks) > 0 && len(validatingWebhooks) > 0)
+
 	buildScaffold := []machinery.Builder{
 		&github.HelmChartCI{},
 		&templates.HelmChart{},
@@ -96,7 +97,7 @@ func (s *initScaffolder) Scaffold() error {
 			DeployImages: len(imagesEnvVars) > 0,
 			HasWebhooks:  hasWebhooks,
 		},
-		&templatescertmanager.Certificate{},
+		&templatescertmanager.Certificate{HasWebhooks: hasWebhooks},
 		&templatesmetrics.Service{},
 		&prometheus.Monitor{},
 	}
@@ -107,18 +108,23 @@ func (s *initScaffolder) Scaffold() error {
 				MutatingWebhooks:   mutatingWebhooks,
 				ValidatingWebhooks: validatingWebhooks,
 			},
+		)
+	}
+
+	if hasWebhooks {
+		buildScaffold = append(buildScaffold,
 			&templateswebhooks.Service{},
 		)
 	}
 
-	if err := scaffold.Execute(buildScaffold...); err != nil {
-		return fmt.Errorf("error scaffolding helm-chart manifests: %v", err)
+	if err = scaffold.Execute(buildScaffold...); err != nil {
+		return fmt.Errorf("error scaffolding helm-chart manifests: %w", err)
 	}
 
 	// Copy relevant files from config/ to dist/chart/templates/
 	err = s.copyConfigFiles()
 	if err != nil {
-		return fmt.Errorf("failed to copy manifests from config to dist/chart/templates/: %v", err)
+		return fmt.Errorf("failed to copy manifests from config to dist/chart/templates/: %w", err)
 	}
 
 	return nil
@@ -152,10 +158,11 @@ func (s *initScaffolder) getDeployImagesEnvVars() map[string]string {
 // config/webhooks and created Mutating and Validating helper structures to
 // generate the webhook manifest for the helm-chart
 func (s *initScaffolder) extractWebhooksFromGeneratedFiles() (mutatingWebhooks []templateswebhooks.DataWebhook,
-	validatingWebhooks []templateswebhooks.DataWebhook, err error) {
+	validatingWebhooks []templateswebhooks.DataWebhook, err error,
+) {
 	manifestFile := "config/webhook/manifests.yaml"
 
-	if _, err := os.Stat(manifestFile); os.IsNotExist(err) {
+	if _, err = os.Stat(manifestFile); os.IsNotExist(err) {
 		log.Printf("webhook manifests were not found at %s", manifestFile)
 		return nil, nil, nil
 	}
@@ -163,7 +170,7 @@ func (s *initScaffolder) extractWebhooksFromGeneratedFiles() (mutatingWebhooks [
 	content, err := os.ReadFile(manifestFile)
 	if err != nil {
 		return nil, nil,
-			fmt.Errorf("failed to read %s: %w", manifestFile, err)
+			fmt.Errorf("failed to read %q: %w", manifestFile, err)
 	}
 
 	docs := strings.Split(string(content), "---")
@@ -249,12 +256,27 @@ func (s *initScaffolder) copyConfigFiles() error {
 
 		// Ensure destination directory exists
 		if err := os.MkdirAll(dir.DestDir, os.ModePerm); err != nil {
-			return fmt.Errorf("failed to create directory %s: %v", dir.DestDir, err)
+			return fmt.Errorf("failed to create directory %q: %w", dir.DestDir, err)
 		}
 
 		for _, srcFile := range files {
 			destFile := filepath.Join(dir.DestDir, filepath.Base(srcFile))
-			err := copyFileWithHelmLogic(srcFile, destFile, dir.SubDir, s.config.GetProjectName())
+
+			hasConvertionalWebhook := false
+			if hasWebhooksWith(s.config) {
+				resources, err := s.config.GetResources()
+				if err != nil {
+					break
+				}
+				for _, res := range resources {
+					if res.HasConversionWebhook() {
+						hasConvertionalWebhook = true
+						break
+					}
+				}
+			}
+
+			err := copyFileWithHelmLogic(srcFile, destFile, dir.SubDir, s.config.GetProjectName(), hasConvertionalWebhook)
 			if err != nil {
 				return err
 			}
@@ -266,7 +288,7 @@ func (s *initScaffolder) copyConfigFiles() error {
 
 // copyFileWithHelmLogic reads the source file, modifies the content for Helm, applies patches
 // to spec.conversion if applicable, and writes it to the destination
-func copyFileWithHelmLogic(srcFile, destFile, subDir, projectName string) error {
+func copyFileWithHelmLogic(srcFile, destFile, subDir, projectName string, hasConvertionalWebhook bool) error {
 	if _, err := os.Stat(srcFile); os.IsNotExist(err) {
 		log.Printf("Source file does not exist: %s", srcFile)
 		return err
@@ -343,16 +365,48 @@ func copyFileWithHelmLogic(srcFile, destFile, subDir, projectName string) error 
 		hasWebhookPatch := false
 
 		// Retrieve patch content for the CRD's spec.conversion, if it exists
-		patchContent, patchExists, err := getCRDPatchContent(kind, group)
-		if err != nil {
-			return err
+		patchContent, patchExists, errPatch := getCRDPatchContent(kind, group)
+		if errPatch != nil {
+			return errPatch
 		}
 
 		// If patch content exists, inject it under spec.conversion with Helm conditional
 		if patchExists {
 			conversionSpec := extractConversionSpec(patchContent)
-			contentStr = injectConversionSpecWithCondition(contentStr, conversionSpec)
-			hasWebhookPatch = true
+			// Projects scaffolded with old Kubebuilder versions does not have the conversion
+			// webhook properly generated because before 4.4.0 this feature was not fully addressed.
+			// The patch was added by default when should not. See the related fixes:
+			//
+			// Issue fixed in release 4.3.1: (which will cause the injection of webhook conditionals for projects without
+			// conversion webhooks)
+			// (kustomize/v2, go/v4): Corrected the generation of manifests under config/crd/patches
+			// to ensure the /convert service patch is only created for webhooks configured with --conversion. (#4280)
+			//
+			// Conversion webhook fully fixed in release 4.4.0:
+			// (kustomize/v2, go/v4): Fixed CA injection for conversion webhooks. Previously, the CA injection
+			// was applied incorrectly to all CRDs instead of only conversion types. The issue dates back to release 3.5.0
+			// due to kustomize/v2-alpha changes. Now, conversion webhooks are properly generated. (#4254, #4282)
+			if len(conversionSpec) > 0 && !hasConvertionalWebhook {
+				log.Warn("\n" +
+					"============================================================\n" +
+					"| [WARNING] Webhook Patch Issue Detected                   |\n" +
+					"============================================================\n" +
+					"Webhook patch found, but no conversion webhook is configured for this project.\n\n" +
+					"Note: Older scaffolds have an issue where the conversion webhook patch was \n" +
+					"      scaffolded by default, and conversion webhook injection was not properly limited \n" +
+					"      to specific CRDs.\n\n" +
+					"Recommended Action:\n" +
+					"   - Upgrade your project to the latest available version.\n" +
+					"   - Consider using the 'alpha generate' command.\n\n" +
+					"The cert-manager injection and webhook conversion patch found for CRDs will\n" +
+					"be skipped and NOT added to the Helm chart.\n" +
+					"============================================================")
+
+				hasWebhookPatch = false
+			} else {
+				contentStr = injectConversionSpecWithCondition(contentStr, conversionSpec)
+				hasWebhookPatch = true
+			}
 		}
 
 		// Inject annotations after "annotations:" in a single block without extra spaces
@@ -378,7 +432,7 @@ func copyFileWithHelmLogic(srcFile, destFile, subDir, projectName string) error 
 			"{{- if .Values.%s.enable }}\n%s{{- end -}}\n", subDir, contentStr)
 	}
 
-	if err := os.MkdirAll(filepath.Dir(destFile), os.ModePerm); err != nil {
+	if err = os.MkdirAll(filepath.Dir(destFile), os.ModePerm); err != nil {
 		return err
 	}
 
@@ -408,7 +462,7 @@ func getCRDPatchContent(kind, group string) (string, bool, error) {
 	groupKindPattern := fmt.Sprintf("config/crd/patches/webhook_*%s*%s*.yaml", group, kind)
 	patchFiles, err := filepath.Glob(groupKindPattern)
 	if err != nil {
-		return "", false, fmt.Errorf("failed to list patches: %v", err)
+		return "", false, fmt.Errorf("failed to list patches: %w", err)
 	}
 
 	// If no group-specific patch found, search for patches that contain only "webhook" and the kind
@@ -416,7 +470,7 @@ func getCRDPatchContent(kind, group string) (string, bool, error) {
 		kindOnlyPattern := fmt.Sprintf("config/crd/patches/webhook_*%s*.yaml", kind)
 		patchFiles, err = filepath.Glob(kindOnlyPattern)
 		if err != nil {
-			return "", false, fmt.Errorf("failed to list patches: %v", err)
+			return "", false, fmt.Errorf("failed to list patches: %w", err)
 		}
 	}
 
@@ -424,7 +478,7 @@ func getCRDPatchContent(kind, group string) (string, bool, error) {
 	if len(patchFiles) > 0 {
 		patchContent, err := os.ReadFile(patchFiles[0])
 		if err != nil {
-			return "", false, fmt.Errorf("failed to read patch file %s: %v", patchFiles[0], err)
+			return "", false, fmt.Errorf("failed to read patch file %q: %w", patchFiles[0], err)
 		}
 		return string(patchContent), true, nil
 	}
@@ -488,4 +542,20 @@ func removeLabels(content string) string {
 	re := regexp.MustCompile(labelRegex)
 
 	return re.ReplaceAllString(content, "")
+}
+
+func hasWebhooksWith(c config.Config) bool {
+	// Get the list of resources
+	resources, err := c.GetResources()
+	if err != nil {
+		return false // If there's an error getting resources, assume no webhooks
+	}
+
+	for _, res := range resources {
+		if res.HasDefaultingWebhook() || res.HasValidationWebhook() || res.HasConversionWebhook() {
+			return true
+		}
+	}
+
+	return false
 }

@@ -29,7 +29,6 @@ import (
 
 var _ = Describe("kubebuilder", func() {
 	Context("alpha generate", func() {
-
 		var (
 			kbc              *utils.TestContext
 			projectOutputDir string
@@ -51,7 +50,6 @@ var _ = Describe("kubebuilder", func() {
 
 			projectOutputDir = filepath.Join(kbc.Dir, outputDir)
 			projectFilePath = filepath.Join(projectOutputDir, "PROJECT")
-
 		})
 
 		AfterEach(func() {
@@ -63,7 +61,6 @@ var _ = Describe("kubebuilder", func() {
 		It("should regenerate the project in project-v4 directory with success", func() {
 			regenerateAndValidate(kbc, projectOutputDir, projectFilePath)
 		})
-
 	})
 })
 
@@ -237,5 +234,4 @@ func validateV4ProjectFile(kbc *utils.TestContext, projectFile string) {
 	Expect(deploymentResource.Webhooks.Defaulting).To(BeTrue(), "Deployment API should have a defaulting webhook")
 	Expect(deploymentResource.Webhooks.Validation).To(BeTrue(), "Deployment API should have a defaulting webhook")
 	Expect(deploymentResource.Webhooks.WebhookVersion).To(Equal("v1"), "Deployment API should have webhook version v1")
-
 }

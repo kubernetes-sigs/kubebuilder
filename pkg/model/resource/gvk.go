@@ -56,18 +56,17 @@ func (gvk GVK) Validate() error {
 	if gvk.Version == "" {
 		return errors.New(versionRequired)
 	}
-	errs := validation.IsDNS1123Subdomain(gvk.Version)
-	if len(errs) > 0 && gvk.Version != versionInternal {
-		return fmt.Errorf("Version must respect DNS-1123 (was %s)", gvk.Version)
+	if errs := validation.IsDNS1123Subdomain(gvk.Version); len(errs) > 0 && gvk.Version != versionInternal {
+		return fmt.Errorf("version must respect DNS-1123 (was %q)", gvk.Version)
 	}
 
 	// Check if kind has a valid DNS1035 label value
 	if gvk.Kind == "" {
 		return errors.New(kindRequired)
 	}
-	if errors := validation.IsDNS1035Label(strings.ToLower(gvk.Kind)); len(errors) != 0 {
+	if errs := validation.IsDNS1035Label(strings.ToLower(gvk.Kind)); len(errs) != 0 {
 		// NOTE: IsDNS1035Label returns a slice of strings instead of an error, so no wrapping
-		return fmt.Errorf("invalid Kind: %#v", errors)
+		return fmt.Errorf("invalid Kind: %#v", errs)
 	}
 
 	// Require kind to start with an uppercase character

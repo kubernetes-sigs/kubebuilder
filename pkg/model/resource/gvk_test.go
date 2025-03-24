@@ -32,13 +32,21 @@ var _ = Describe("GVK", func() {
 		internalVersion = "__internal"
 	)
 
-	gvk := GVK{Group: group, Domain: domain, Version: version, Kind: kind}
+	var gvk GVK
+
+	BeforeEach(func() {
+		gvk = GVK{Group: group, Domain: domain, Version: version, Kind: kind}
+	})
 
 	Context("Validate", func() {
 		DescribeTable("should pass valid GVKs",
-			func(gvk GVK) { Expect(gvk.Validate()).To(Succeed()) },
-			Entry("Standard GVK", gvk),
-			Entry("Version (__internal)", GVK{Group: group, Domain: domain, Version: internalVersion, Kind: kind}),
+			func(get func() GVK) {
+				Expect(get().Validate()).To(Succeed())
+			},
+			Entry("Standard GVK", func() GVK { return gvk }),
+			Entry("Version (__internal)", func() GVK {
+				return GVK{Group: group, Domain: domain, Version: internalVersion, Kind: kind}
+			}),
 		)
 
 		DescribeTable("should fail for invalid GVKs",
@@ -68,10 +76,16 @@ var _ = Describe("GVK", func() {
 
 	Context("QualifiedGroup", func() {
 		DescribeTable("should return the correct string",
-			func(gvk GVK, qualifiedGroup string) { Expect(gvk.QualifiedGroup()).To(Equal(qualifiedGroup)) },
-			Entry("fully qualified resource", gvk, group+"."+domain),
-			Entry("empty group name", GVK{Domain: domain, Version: version, Kind: kind}, domain),
-			Entry("empty domain", GVK{Group: group, Version: version, Kind: kind}, group),
+			func(get func() GVK, qualifiedGroup string) {
+				Expect(get().QualifiedGroup()).To(Equal(qualifiedGroup))
+			},
+			Entry("fully qualified resource", func() GVK { return gvk }, group+"."+domain),
+			Entry("empty group name", func() GVK {
+				return GVK{Domain: domain, Version: version, Kind: kind}
+			}, domain),
+			Entry("empty domain", func() GVK {
+				return GVK{Group: group, Version: version, Kind: kind}
+			}, group),
 		)
 	})
 
@@ -81,11 +95,21 @@ var _ = Describe("GVK", func() {
 		})
 
 		DescribeTable("should return false for different resources",
-			func(other GVK) { Expect(gvk.IsEqualTo(other)).To(BeFalse()) },
-			Entry("different kind", GVK{Group: group, Domain: domain, Version: version, Kind: "Kind2"}),
-			Entry("different version", GVK{Group: group, Domain: domain, Version: "v2", Kind: kind}),
-			Entry("different domain", GVK{Group: group, Domain: "other.domain", Version: version, Kind: kind}),
-			Entry("different group", GVK{Group: "group2", Domain: domain, Version: version, Kind: kind}),
+			func(get func() GVK) {
+				Expect(gvk.IsEqualTo(get())).To(BeFalse())
+			},
+			Entry("different kind", func() GVK {
+				return GVK{Group: group, Domain: domain, Version: version, Kind: "Kind2"}
+			}),
+			Entry("different version", func() GVK {
+				return GVK{Group: group, Domain: domain, Version: "v2", Kind: kind}
+			}),
+			Entry("different domain", func() GVK {
+				return GVK{Group: group, Domain: "other.domain", Version: version, Kind: kind}
+			}),
+			Entry("different group", func() GVK {
+				return GVK{Group: "group2", Domain: domain, Version: version, Kind: kind}
+			}),
 		)
 	})
 })

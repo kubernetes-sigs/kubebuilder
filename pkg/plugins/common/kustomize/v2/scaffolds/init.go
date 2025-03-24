@@ -24,7 +24,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/kdefault"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/manager"
-	network_policy "sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/network-policy"
+	networkpolicy "sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/network-policy"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/prometheus"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/rbac"
 )
@@ -43,9 +43,9 @@ type initScaffolder struct {
 }
 
 // NewInitScaffolder returns a new Scaffolder for project initialization operations
-func NewInitScaffolder(config config.Config) plugins.Scaffolder {
+func NewInitScaffolder(cfg config.Config) plugins.Scaffolder {
 	return &initScaffolder{
-		config: config,
+		config: cfg,
 	}
 }
 
@@ -81,8 +81,8 @@ func (s *initScaffolder) Scaffold() error {
 		&kdefault.CertManagerMetricsPatch{},
 		&manager.Config{Image: imageName},
 		&kdefault.Kustomization{},
-		&network_policy.Kustomization{},
-		&network_policy.PolicyAllowMetrics{},
+		&networkpolicy.Kustomization{},
+		&networkpolicy.PolicyAllowMetrics{},
 		&prometheus.Kustomization{},
 		&prometheus.Monitor{},
 		&prometheus.ServiceMonitorPatch{},

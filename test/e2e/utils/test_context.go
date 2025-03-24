@@ -239,7 +239,6 @@ func (t *TestContext) Destroy() {
 				warnError(err)
 			}
 		}
-
 	}
 	if err := os.RemoveAll(t.Dir); err != nil {
 		warnError(err)
@@ -308,7 +307,7 @@ func (cc *CmdContext) Run(cmd *exec.Cmd) ([]byte, error) {
 	_, _ = fmt.Fprintf(GinkgoWriter, "running: %s\n", command)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return output, fmt.Errorf("%s failed with error: (%v) %s", command, err, string(output))
+		return output, fmt.Errorf("%q failed with error %q: %w", command, string(output), err)
 	}
 
 	return output, nil

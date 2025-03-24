@@ -115,12 +115,12 @@ var _ = Describe("Scaffold", func() {
 		)
 
 		var (
-			testErr = errors.New("error text")
-
-			s *Scaffold
+			testErr error
+			s       *Scaffold
 		)
 
 		BeforeEach(func() {
+			testErr = errors.New("error text")
 			s = &Scaffold{fs: afero.NewMemMapFs()}
 		})
 
@@ -158,35 +158,46 @@ var _ = Describe("Scaffold", func() {
 
 			Entry("should render actions with alternative delimiters correctly",
 				path, "package testValue",
-				&fakeTemplate{fakeBuilder: fakeBuilder{path: path, TestField: "testValue"},
-					body: "package [[.TestField]]", parseDelimLeft: "[[", parseDelimRight: "]]"},
+				&fakeTemplate{
+					fakeBuilder:     fakeBuilder{path: path, TestField: "testValue"},
+					body:            "package [[.TestField]]",
+					parseDelimLeft:  "[[",
+					parseDelimRight: "]]",
+				},
 			),
 		)
 
 		DescribeTable("file builders related errors",
-			func(errType interface{}, files ...Builder) {
+			func(setup func() (interface{}, []Builder)) {
+				errType, files := setup()
+
 				err := s.Execute(files...)
+
 				Expect(err).To(HaveOccurred())
-				Expect(errors.As(err, errType)).To(BeTrue())
+				Expect(errors.As(err, &errType)).To(BeTrue())
 			},
-			Entry("should fail if unable to validate a file builder",
-				&ValidateError{},
-				fakeRequiresValidation{validateErr: testErr},
-			),
-			Entry("should fail if unable to set default values for a template",
-				&SetTemplateDefaultsError{},
-				&fakeTemplate{err: testErr},
-			),
-			Entry("should fail if an unexpected previous model is found",
-				&ModelAlreadyExistsError{},
-				&fakeTemplate{fakeBuilder: fakeBuilder{path: path}},
-				&fakeTemplate{fakeBuilder: fakeBuilder{path: path, ifExistsAction: Error}},
-			),
-			Entry("should fail if behavior if-exists-action is not defined",
-				&UnknownIfExistsActionError{},
-				&fakeTemplate{fakeBuilder: fakeBuilder{path: path}},
-				&fakeTemplate{fakeBuilder: fakeBuilder{path: path, ifExistsAction: -1}},
-			),
+			Entry("should fail if unable to validate a file builder", func() (interface{}, []Builder) {
+				return &ValidateError{}, []Builder{
+					fakeRequiresValidation{validateErr: testErr},
+				}
+			}),
+			Entry("should fail if unable to set default values for a template", func() (interface{}, []Builder) {
+				return &SetTemplateDefaultsError{}, []Builder{
+					&fakeTemplate{err: testErr},
+				}
+			}),
+			Entry("should fail if an unexpected previous model is found", func() (interface{}, []Builder) {
+				return &ModelAlreadyExistsError{}, []Builder{
+					&fakeTemplate{fakeBuilder: fakeBuilder{path: path}},
+					&fakeTemplate{fakeBuilder: fakeBuilder{path: path, ifExistsAction: Error}},
+				}
+			}),
+			Entry("should fail if behavior if-exists-action is not defined", func() (interface{}, []Builder) {
+				return &UnknownIfExistsActionError{}, []Builder{
+					&fakeTemplate{fakeBuilder: fakeBuilder{path: path}},
+					&fakeTemplate{fakeBuilder: fakeBuilder{path: path, ifExistsAction: -1}},
+				}
+			}),
 		)
 
 		// Following errors are unwrapped, so we need to check for substrings
@@ -409,7 +420,7 @@ func init() {
 
 				err := s.Execute(files...)
 				Expect(err).To(HaveOccurred())
-				Expect(errors.As(err, errType)).To(BeTrue())
+				Expect(errors.As(err, &errType)).To(BeTrue())
 			},
 			Entry("should fail if inserting into a model that fails when a file exists and it does exist",
 				&FileAlreadyExistsError{},
