@@ -26,6 +26,7 @@ var _ machinery.Template = &Utils{}
 type Utils struct {
 	machinery.TemplateMixin
 	machinery.BoilerplateMixin
+	machinery.ProjectNameMixin
 }
 
 // SetTemplateDefaults set the defaults for its template
