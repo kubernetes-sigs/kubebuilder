@@ -52,7 +52,7 @@ Projects scaffolded with Kubebuilder v3 will use the `go.kubebuilder.io/v3` plug
 <aside class="note warning">
 <h1>Project customizations</h1>
 
-After using the CLI to create your project, you are free to customise how you see fit. Bear in mind, that it is not recommended to deviate from the proposed layout unless you know what you are doing.
+After using the CLI to create your project, you are free to customize how you see fit. Bear in mind, that it is not recommended to deviate from the proposed layout unless you know what you are doing.
 
 For example, you should refrain from moving the scaffolded files, doing so will make it difficult in upgrading your project in the future. You may also lose the ability to use some of the CLI features and helpers. For further information on the project layout, see the doc [What's in a basic project?][basic-project-doc]
 
@@ -83,7 +83,7 @@ So you want to use the latest version of Kubebuilder CLI without changing your s
 
 This way is more complex, susceptible to errors, and success cannot be assured. Also, by following these steps you will not get the improvements and bug fixes in the default generated project files.
 
-You will check that you can still using the previous layout by using the `go/v2` plugin which will not upgrade the [controller-runtime][controller-runtime] and [controller-tools][controller-tools] to the latest version used with `go/v3` becuase of its breaking changes. By checking this guide you know also how to manually change the files to use the `go/v3` plugin and its dependencies versions.
+You will check that you can still using the previous layout by using the `go/v2` plugin which will not upgrade the [controller-runtime][controller-runtime] and [controller-tools][controller-tools] to the latest version used with `go/v3` because of its breaking changes. By checking this guide you know also how to manually change the files to use the `go/v3` plugin and its dependencies versions.
 
 - [Migrating to Kubebuilder v3 by updating the files manually][manually-upgrade]
 

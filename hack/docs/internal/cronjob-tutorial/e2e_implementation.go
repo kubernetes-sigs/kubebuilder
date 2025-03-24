@@ -36,7 +36,7 @@ if !isPrometheusOperatorAlreadyInstalled {
 
 const checkPrometheusInstalled = `
 // To prevent errors when tests run in environments with Prometheus already installed,
-// we check for it's presence before execution.
+// we check for its presence before execution.
 // Setup Prometheus before the suite if not already installed
 By("checking if prometheus is installed already")
 isPrometheusOperatorAlreadyInstalled = utils.IsPrometheusCRDsInstalled()
