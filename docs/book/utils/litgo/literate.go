@@ -57,12 +57,12 @@ func (l Literate) Process(input *plugin.Input) error {
 			chapterDir:          chapterDir,
 			bookSrcDir:          bookSrcDir,
 		}
-		path := pathInfo.FullPath()
+		fullPath := pathInfo.FullPath()
 
 		// TODO(directxman12): don't escape root?
-		contents, err := os.ReadFile(path)
+		contents, err := os.ReadFile(fullPath)
 		if err != nil {
-			return "", fmt.Errorf("unable to import %q: %v", path, err)
+			return "", fmt.Errorf("unable to import %q: %v", fullPath, err)
 		}
 
 		return l.extractContents(contents, pathInfo)
