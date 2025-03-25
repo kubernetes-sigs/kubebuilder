@@ -38,7 +38,7 @@ const controllerImport = `import (
 	ref "k8s.io/client-go/tools/reference"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	batchv1 "tutorial.kubebuilder.io/project/api/v1"
 )
@@ -87,7 +87,7 @@ var (
 const skipGoCycloLint = `
 // nolint:gocyclo`
 
-const controllerReconcileLogic = `log := log.FromContext(ctx)
+const controllerReconcileLogic = `log := logf.FromContext(ctx)
 
 	/*
 		### 1: Load the CronJob by name
