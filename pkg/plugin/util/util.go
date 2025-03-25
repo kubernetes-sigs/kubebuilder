@@ -245,6 +245,9 @@ func ReplaceInFile(path, oldValue, newValue string) error {
 
 // ReplaceRegexInFile finds all strings that match `match` and replaces them
 // with `replace` in the file at path.
+//
+// This function is currently unused in the Kubebuilder codebase,
+// but is used by other projects and may be used in Kubebuilder in the future.
 func ReplaceRegexInFile(path, match, replace string) error {
 	matcher, err := regexp.Compile(match)
 	if err != nil {
