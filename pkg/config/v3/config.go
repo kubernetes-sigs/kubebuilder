@@ -299,8 +299,8 @@ func (c Cfg) DecodePluginConfig(key string, configObj interface{}) error {
 	}
 
 	// Get the object blob by key and unmarshal into the object.
-	if pluginConfig, hasKey := c.Plugins[key]; hasKey {
-		b, err := yaml.Marshal(pluginConfig)
+	if pluginCfg, hasKey := c.Plugins[key]; hasKey {
+		b, err := yaml.Marshal(pluginCfg)
 		if err != nil {
 			return fmt.Errorf("failed to convert extra fields object to bytes: %w", err)
 		}
