@@ -51,7 +51,7 @@ func (v *Version) Parse(version string) error {
 	var err error
 	if v.Number, err = strconv.Atoi(substrings[0]); err != nil {
 		// Let's check if the `-` belonged to a negative number
-		if n, err := strconv.Atoi(version); err == nil && n < 0 {
+		if n, errParse := strconv.Atoi(version); errParse == nil && n < 0 {
 			return errNegative
 		}
 		return err
