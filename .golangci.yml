@@ -21,7 +21,6 @@ linters-settings:
     enable-all: true
     disable:
       - fieldalignment
-      - shadow
   nolintlint:
     allow-unused: false
   revive:
@@ -41,6 +40,7 @@ linters-settings:
       - name: error-naming
       - name: exported
       - name: if-return
+      - name: import-shadowing
       - name: increment-decrement
       - name: var-naming
       - name: var-declaration
