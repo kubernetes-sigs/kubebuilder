@@ -47,10 +47,10 @@ type webhookScaffolder struct {
 }
 
 // NewWebhookScaffolder returns a new Scaffolder for v2 webhook creation operations
-func NewWebhookScaffolder(config config.Config, resource resource.Resource, force bool) plugins.Scaffolder {
+func NewWebhookScaffolder(cfg config.Config, res resource.Resource, force bool) plugins.Scaffolder {
 	return &webhookScaffolder{
-		config:   config,
-		resource: resource,
+		config:   cfg,
+		resource: res,
 		force:    force,
 	}
 }
@@ -116,8 +116,8 @@ func (s *webhookScaffolder) Scaffold() error {
 	kustomizeFilePath := "config/default/kustomization.yaml"
 	err = pluginutil.UncommentCode(kustomizeFilePath, "#- ../webhook", `#`)
 	if err != nil {
-		hasWebHookUncommented, err := pluginutil.HasFileContentWith(kustomizeFilePath, "- ../webhook")
-		if !hasWebHookUncommented || err != nil {
+		hasWebHookUncommented, errCheck := pluginutil.HasFileContentWith(kustomizeFilePath, "- ../webhook")
+		if !hasWebHookUncommented || errCheck != nil {
 			log.Errorf("Unable to find the target #- ../webhook to uncomment in the file "+
 				"%s.", kustomizeFilePath)
 		}
@@ -125,8 +125,8 @@ func (s *webhookScaffolder) Scaffold() error {
 
 	err = pluginutil.UncommentCode(kustomizeFilePath, "#patches:", `#`)
 	if err != nil {
-		hasWebHookUncommented, err := pluginutil.HasFileContentWith(kustomizeFilePath, "patches:")
-		if !hasWebHookUncommented || err != nil {
+		hasWebHookUncommented, errCheck := pluginutil.HasFileContentWith(kustomizeFilePath, "patches:")
+		if !hasWebHookUncommented || errCheck != nil {
 			log.Errorf("Unable to find the line '#patches:' to uncomment in the file "+
 				"%s.", kustomizeFilePath)
 		}
@@ -136,8 +136,9 @@ func (s *webhookScaffolder) Scaffold() error {
 #  target:
 #    kind: Deployment`, `#`)
 	if err != nil {
-		hasWebHookUncommented, err := pluginutil.HasFileContentWith(kustomizeFilePath, "- path: manager_webhook_patch.yaml")
-		if !hasWebHookUncommented || err != nil {
+		hasWebHookUncommented, errCheck := pluginutil.HasFileContentWith(kustomizeFilePath,
+			"- path: manager_webhook_patch.yaml")
+		if !hasWebHookUncommented || errCheck != nil {
 			log.Errorf("Unable to find the target #- path: manager_webhook_patch.yaml to uncomment in the file "+
 				"%s.", kustomizeFilePath)
 		}

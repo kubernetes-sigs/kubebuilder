@@ -48,9 +48,9 @@ type apiScaffolder struct {
 }
 
 // NewAPIScaffolder returns a new Scaffolder for API/controller creation operations
-func NewAPIScaffolder(config config.Config, res resource.Resource, force bool) plugins.Scaffolder {
+func NewAPIScaffolder(cfg config.Config, res resource.Resource, force bool) plugins.Scaffolder {
 	return &apiScaffolder{
-		config:   config,
+		config:   cfg,
 		resource: res,
 		force:    force,
 	}
@@ -95,8 +95,8 @@ func (s *apiScaffolder) Scaffold() error {
 		kustomizeFilePath := "config/default/kustomization.yaml"
 		err := pluginutil.UncommentCode(kustomizeFilePath, "#- ../crd", `#`)
 		if err != nil {
-			hasCRUncommented, err := pluginutil.HasFileContentWith(kustomizeFilePath, "- ../crd")
-			if !hasCRUncommented || err != nil {
+			hasCRUncommented, errCheck := pluginutil.HasFileContentWith(kustomizeFilePath, "- ../crd")
+			if !hasCRUncommented || errCheck != nil {
 				log.Errorf("Unable to find the target #- ../crd to uncomment in the file "+
 					"%s.", kustomizeFilePath)
 			}
