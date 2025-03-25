@@ -393,24 +393,24 @@ var _ = Describe("Cfg", func() {
 		)
 
 		It("DecodePluginConfig should fail for no plugin config object", func() {
-			var pluginConfig PluginConfig
-			err := c0.DecodePluginConfig(key, &pluginConfig)
+			var pluginCfg PluginConfig
+			err := c0.DecodePluginConfig(key, &pluginCfg)
 			Expect(err).To(HaveOccurred())
 			Expect(errors.As(err, &config.PluginKeyNotFoundError{})).To(BeTrue())
 		})
 
 		It("DecodePluginConfig should fail to retrieve data from a non-existent plugin", func() {
-			var pluginConfig PluginConfig
-			err := c1.DecodePluginConfig("plugin-y", &pluginConfig)
+			var pluginCfg PluginConfig
+			err := c1.DecodePluginConfig("plugin-y", &pluginCfg)
 			Expect(err).To(HaveOccurred())
 			Expect(errors.As(err, &config.PluginKeyNotFoundError{})).To(BeTrue())
 		})
 
 		DescribeTable("DecodePluginConfig should retrieve the plugin data correctly",
 			func(inputConfig Cfg, expectedPluginConfig PluginConfig) {
-				var pluginConfig PluginConfig
-				Expect(inputConfig.DecodePluginConfig(key, &pluginConfig)).To(Succeed())
-				Expect(pluginConfig).To(Equal(expectedPluginConfig))
+				var pluginCfg PluginConfig
+				Expect(inputConfig.DecodePluginConfig(key, &pluginCfg)).To(Succeed())
+				Expect(pluginCfg).To(Equal(expectedPluginConfig))
 			},
 			Entry("for an empty plugin config object", c1, PluginConfig{}),
 			Entry("for a full plugin config object", c2, pluginConfig),
