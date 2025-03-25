@@ -63,9 +63,9 @@ type initScaffolder struct {
 }
 
 // NewInitScaffolder returns a new Scaffolder for project initialization operations
-func NewInitScaffolder(config config.Config, license, owner, commandName string) plugins.Scaffolder {
+func NewInitScaffolder(cfg config.Config, license, owner, commandName string) plugins.Scaffolder {
 	return &initScaffolder{
-		config:          config,
+		config:          cfg,
 		boilerplatePath: hack.DefaultBoilerplatePath,
 		license:         license,
 		owner:           owner,

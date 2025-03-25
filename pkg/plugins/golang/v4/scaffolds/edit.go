@@ -35,9 +35,9 @@ type editScaffolder struct {
 }
 
 // NewEditScaffolder returns a new Scaffolder for configuration edit operations
-func NewEditScaffolder(config config.Config, multigroup bool) plugins.Scaffolder {
+func NewEditScaffolder(cfg config.Config, multigroup bool) plugins.Scaffolder {
 	return &editScaffolder{
-		config:     config,
+		config:     cfg,
 		multigroup: multigroup,
 	}
 }
