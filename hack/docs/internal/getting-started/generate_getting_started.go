@@ -165,8 +165,8 @@ func (sp *Sample) updateController() {
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, pathFile),
-		"_ = log.FromContext(ctx)",
-		"log := log.FromContext(ctx)",
+		"_ = logf.FromContext(ctx)",
+		"log := logf.FromContext(ctx)",
 	)
 	hackutils.CheckError("add log var", err)
 
