@@ -179,9 +179,9 @@ func (p *createWebhookSubcommand) PostScaffold() error {
 }
 
 // Helper function to validate spoke versions
-func isValidVersion(version string, res *resource.Resource, config config.Config) bool {
+func isValidVersion(version string, res *resource.Resource, cfg config.Config) bool {
 	// Fetch all resources in the config
-	resources, err := config.GetResources()
+	resources, err := cfg.GetResources()
 	if err != nil {
 		return false
 	}
