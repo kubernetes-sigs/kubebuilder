@@ -115,7 +115,7 @@ func AppendCodeAtTheEnd(filename, code string) error {
 		return err
 	}
 	defer func() {
-		if err := f.Close(); err != nil {
+		if err = f.Close(); err != nil {
 			return
 		}
 	}()
@@ -150,15 +150,14 @@ func UncommentCode(filename, target, prefix string) error {
 		return nil
 	}
 	for {
-		_, err := out.WriteString(strings.TrimPrefix(scanner.Text(), prefix))
-		if err != nil {
+		if _, err = out.WriteString(strings.TrimPrefix(scanner.Text(), prefix)); err != nil {
 			return err
 		}
 		// Avoid writing a newline in case the previous line was the last in target.
 		if !scanner.Scan() {
 			break
 		}
-		if _, err := out.WriteString("\n"); err != nil {
+		if _, err = out.WriteString("\n"); err != nil {
 			return err
 		}
 	}
@@ -197,8 +196,7 @@ func CommentCode(filename, target, prefix string) error {
 	// Add the comment prefix to each line of the target code
 	scanner := bufio.NewScanner(bytes.NewBufferString(target))
 	for scanner.Scan() {
-		_, err := out.WriteString(prefix + scanner.Text() + "\n")
-		if err != nil {
+		if _, err = out.WriteString(prefix + scanner.Text() + "\n"); err != nil {
 			return err
 		}
 	}
