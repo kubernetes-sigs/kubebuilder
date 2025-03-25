@@ -265,10 +265,10 @@ func getInitArgs(store store.Store) []string {
 	}
 
 	// Replace outdated plugins and exit after the first replacement
-	for i, plugin := range plugins {
-		if newPlugin, exists := outdatedPlugins[plugin]; exists {
+	for i, plg := range plugins {
+		if newPlugin, exists := outdatedPlugins[plg]; exists {
 			log.Warnf("We checked that your PROJECT file is configured with the layout '%s', which is no longer supported.\n"+
-				"However, we will try our best to re-generate the project using '%s'.", plugin, newPlugin)
+				"However, we will try our best to re-generate the project using '%s'.", plg, newPlugin)
 			plugins[i] = newPlugin
 			break
 		}
