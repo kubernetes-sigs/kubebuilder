@@ -30,11 +30,11 @@ var _ = Describe("Cover plugin util helpers", func() {
 		var content []byte
 
 		BeforeAll(func() {
-			err := os.MkdirAll("testdata", 0755)
+			err := os.MkdirAll("testdata", 0o755)
 			Expect(err).NotTo(HaveOccurred())
 
 			if _, err := os.Stat(path); os.IsNotExist(err) {
-				err = os.WriteFile(path, []byte("exampleTarget"), 0644)
+				err = os.WriteFile(path, []byte("exampleTarget"), 0o644)
 				Expect(err).NotTo(HaveOccurred())
 			}
 
@@ -43,7 +43,7 @@ var _ = Describe("Cover plugin util helpers", func() {
 		})
 
 		AfterAll(func() {
-			err := os.WriteFile(path, content, 0644)
+			err := os.WriteFile(path, content, 0o644)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = os.RemoveAll("testdata")

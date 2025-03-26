@@ -74,5 +74,5 @@ func ImplementWebhooks(filename, lowerKind string) error {
 		return err
 	}
 	//nolint:gosec // false positive
-	return os.WriteFile(filename, []byte(str), 0644)
+	return os.WriteFile(filename, []byte(str), 0o644)
 }
