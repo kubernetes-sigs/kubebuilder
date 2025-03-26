@@ -66,7 +66,7 @@ func (s *editScaffolder) Scaffold() error {
 	// because there is nothing to replace.
 	if str != "" {
 		// TODO: instead of writing it directly, we should use the scaffolding machinery for consistency
-		return afero.WriteFile(s.fs.FS, filename, []byte(str), 0644)
+		return afero.WriteFile(s.fs.FS, filename, []byte(str), 0o644)
 	}
 
 	return nil
