@@ -23,8 +23,10 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 )
 
-const caNamespace = "crdkustomizecainjectionns"
-const caName = "crdkustomizecainjectionname"
+const (
+	caNamespace = "crdkustomizecainjectionns"
+	caName      = "crdkustomizecainjectionname"
+)
 
 // KustomizationCAConversionUpdater appends CA injection targets for CRDs with --conversion
 type KustomizationCAConversionUpdater struct {
