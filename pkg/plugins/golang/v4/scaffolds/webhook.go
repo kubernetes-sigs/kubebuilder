@@ -56,7 +56,8 @@ type webhookScaffolder struct {
 
 // NewWebhookScaffolder returns a new Scaffolder for v2 webhook creation operations
 func NewWebhookScaffolder(config config.Config, resource resource.Resource,
-	force bool, isLegacy bool) plugins.Scaffolder {
+	force bool, isLegacy bool,
+) plugins.Scaffolder {
 	return &webhookScaffolder{
 		config:   config,
 		resource: resource,

@@ -152,7 +152,8 @@ func (s *initScaffolder) getDeployImagesEnvVars() map[string]string {
 // config/webhooks and created Mutating and Validating helper structures to
 // generate the webhook manifest for the helm-chart
 func (s *initScaffolder) extractWebhooksFromGeneratedFiles() (mutatingWebhooks []templateswebhooks.DataWebhook,
-	validatingWebhooks []templateswebhooks.DataWebhook, err error) {
+	validatingWebhooks []templateswebhooks.DataWebhook, err error,
+) {
 	manifestFile := "config/webhook/manifests.yaml"
 
 	if _, err := os.Stat(manifestFile); os.IsNotExist(err) {
