@@ -158,8 +158,12 @@ var _ = Describe("Scaffold", func() {
 
 			Entry("should render actions with alternative delimiters correctly",
 				path, "package testValue",
-				&fakeTemplate{fakeBuilder: fakeBuilder{path: path, TestField: "testValue"},
-					body: "package [[.TestField]]", parseDelimLeft: "[[", parseDelimRight: "]]"},
+				&fakeTemplate{
+					fakeBuilder:     fakeBuilder{path: path, TestField: "testValue"},
+					body:            "package [[.TestField]]",
+					parseDelimLeft:  "[[",
+					parseDelimRight: "]]",
+				},
 			),
 		)
 
