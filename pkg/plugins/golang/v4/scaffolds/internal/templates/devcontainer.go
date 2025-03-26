@@ -72,8 +72,10 @@ go version
 kubectl version --client
 `
 
-var _ machinery.Template = &DevContainer{}
-var _ machinery.Template = &DevContainerPostInstallScript{}
+var (
+	_ machinery.Template = &DevContainer{}
+	_ machinery.Template = &DevContainerPostInstallScript{}
+)
 
 // DevContainer scaffoldds a `devcontainer.json` configurations file for creating Kubebuilder & Kind based DevContainer.
 type DevContainer struct {
