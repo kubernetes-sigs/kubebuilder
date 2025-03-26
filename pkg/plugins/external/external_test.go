@@ -142,7 +142,8 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 
 		AfterEach(func() {
 			filename := filepath.Join("tmp", "externalPlugin", "LICENSE")
-			fileInfo, err := fs.FS.Stat(filename)
+			var fileInfo os.FileInfo
+			fileInfo, err = fs.FS.Stat(filename)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(fileInfo).NotTo(BeNil())
 		})
