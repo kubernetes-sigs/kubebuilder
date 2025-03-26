@@ -39,7 +39,7 @@ import (
 	templatesmetrics "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha/scaffolds/internal/templates/chart-templates/metrics"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha/scaffolds/internal/templates/chart-templates/prometheus"
 	templateswebhooks "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha/scaffolds/internal/templates/chart-templates/webhook"
-	github "sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha/scaffolds/internal/templates/github"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/helm/v1alpha/scaffolds/internal/templates/github"
 )
 
 var _ plugins.Scaffolder = &initScaffolder{}
@@ -53,9 +53,9 @@ type initScaffolder struct {
 }
 
 // NewInitHelmScaffolder returns a new Scaffolder for HelmPlugin
-func NewInitHelmScaffolder(config config.Config, force bool) plugins.Scaffolder {
+func NewInitHelmScaffolder(cfg config.Config, force bool) plugins.Scaffolder {
 	return &initScaffolder{
-		config: config,
+		config: cfg,
 		force:  force,
 	}
 }
@@ -111,7 +111,7 @@ func (s *initScaffolder) Scaffold() error {
 		)
 	}
 
-	if err := scaffold.Execute(buildScaffold...); err != nil {
+	if err = scaffold.Execute(buildScaffold...); err != nil {
 		return fmt.Errorf("error scaffolding helm-chart manifests: %v", err)
 	}
 
@@ -155,7 +155,7 @@ func (s *initScaffolder) extractWebhooksFromGeneratedFiles() (mutatingWebhooks [
 	validatingWebhooks []templateswebhooks.DataWebhook, err error) {
 	manifestFile := "config/webhook/manifests.yaml"
 
-	if _, err := os.Stat(manifestFile); os.IsNotExist(err) {
+	if _, err = os.Stat(manifestFile); os.IsNotExist(err) {
 		log.Printf("webhook manifests were not found at %s", manifestFile)
 		return nil, nil, nil
 	}
@@ -343,9 +343,9 @@ func copyFileWithHelmLogic(srcFile, destFile, subDir, projectName string) error 
 		hasWebhookPatch := false
 
 		// Retrieve patch content for the CRD's spec.conversion, if it exists
-		patchContent, patchExists, err := getCRDPatchContent(kind, group)
-		if err != nil {
-			return err
+		patchContent, patchExists, errPatch := getCRDPatchContent(kind, group)
+		if errPatch != nil {
+			return errPatch
 		}
 
 		// If patch content exists, inject it under spec.conversion with Helm conditional
@@ -378,7 +378,7 @@ func copyFileWithHelmLogic(srcFile, destFile, subDir, projectName string) error 
 			"{{- if .Values.%s.enable }}\n%s{{- end -}}\n", subDir, contentStr)
 	}
 
-	if err := os.MkdirAll(filepath.Dir(destFile), os.ModePerm); err != nil {
+	if err = os.MkdirAll(filepath.Dir(destFile), os.ModePerm); err != nil {
 		return err
 	}
 
