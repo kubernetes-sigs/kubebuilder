@@ -169,7 +169,7 @@ func (s *editScaffolder) Scaffold() error {
 
 	configPath := string(configFilePath)
 
-	var templatesBuilder = []machinery.Builder{
+	templatesBuilder := []machinery.Builder{
 		&templates.RuntimeManifest{},
 		&templates.ResourcesManifest{},
 		&templates.CustomMetricsConfigManifest{ConfigPath: configPath},
