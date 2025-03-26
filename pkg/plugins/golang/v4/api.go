@@ -116,7 +116,6 @@ func (p *createAPISubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&p.options.ExternalAPIDomain, "external-api-domain", "",
 		"Specify the domain name for the external API. This domain is used to generate accurate RBAC "+
 			"markers and permissions for the external resources (e.g., cert-manager.io).")
-
 }
 
 func (p *createAPISubcommand) InjectConfig(c config.Config) error {

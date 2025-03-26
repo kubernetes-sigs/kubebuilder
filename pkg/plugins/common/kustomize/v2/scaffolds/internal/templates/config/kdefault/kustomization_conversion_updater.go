@@ -45,7 +45,6 @@ func (f *KustomizationCAConversionUpdater) SetTemplateDefaults() error {
 
 // GetMarkers provides the markers where the CA injection targets will be appended
 func (f *KustomizationCAConversionUpdater) GetMarkers() []machinery.Marker {
-
 	return []machinery.Marker{
 		machinery.NewMarkerFor(f.Path, caNamespace),
 		machinery.NewMarkerFor(f.Path, caName),

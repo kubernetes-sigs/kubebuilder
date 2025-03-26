@@ -430,6 +430,7 @@ const controllerReconcileImplementation = `// Fetch the Memcached instance
 		log.Error(err, "Failed to update Memcached status")
 		return ctrl.Result{}, err
 	}`
+
 const controllerDeploymentFunc = `// deploymentForMemcached returns a Memcached Deployment object
 func (r *MemcachedReconciler) deploymentForMemcached(
 	memcached *cachev1alpha1.Memcached) (*appsv1.Deployment, error) {

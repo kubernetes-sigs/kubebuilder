@@ -30,7 +30,6 @@ import (
 
 var _ = Describe("kubebuilder", func() {
 	Context("alpha generate", func() {
-
 		var (
 			kbc              *utils.TestContext
 			projectOutputDir string
@@ -65,7 +64,6 @@ var _ = Describe("kubebuilder", func() {
 			By("checking that the project file was generated in the current directory")
 			validateV4WithPluginsProjectFile(kbc, projectFilePath)
 		})
-
 	})
 })
 
@@ -196,5 +194,4 @@ func validateV4WithPluginsProjectFile(kbc *utils.TestContext, projectFile string
 
 	// Validate the resource configuration
 	Expect(helmConfig.Resources).To(BeEmpty(), "Expected zero resource for the Helm plugin")
-
 }
