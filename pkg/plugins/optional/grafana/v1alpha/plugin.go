@@ -38,9 +38,7 @@ type Plugin struct {
 	editSubcommand
 }
 
-var (
-	_ plugin.Init = Plugin{}
-)
+var _ plugin.Init = Plugin{}
 
 // Name returns the name of the plugin
 func (Plugin) Name() string { return pluginName }
