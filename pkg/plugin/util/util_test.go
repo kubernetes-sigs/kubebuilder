@@ -33,7 +33,7 @@ var _ = Describe("Cover plugin util helpers", func() {
 			err := os.MkdirAll("testdata", 0o755)
 			Expect(err).NotTo(HaveOccurred())
 
-			if _, err := os.Stat(path); os.IsNotExist(err) {
+			if _, err = os.Stat(path); os.IsNotExist(err) {
 				err = os.WriteFile(path, []byte("exampleTarget"), 0o644)
 				Expect(err).NotTo(HaveOccurred())
 			}
