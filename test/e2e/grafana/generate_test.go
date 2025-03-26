@@ -30,9 +30,7 @@ import (
 
 var _ = Describe("kubebuilder", func() {
 	Context("plugin grafana/v1-alpha", func() {
-		var (
-			kbc *utils.TestContext
-		)
+		var kbc *utils.TestContext
 
 		BeforeEach(func() {
 			var err error
