@@ -45,7 +45,6 @@ func (f *CRDViewerRole) SetTemplateDefaults() error {
 		} else {
 			f.Path = filepath.Join("config", "rbac", "%[kind]_viewer_role.yaml")
 		}
-
 	}
 	f.Path = f.Resource.Replacer().Replace(f.Path)
 

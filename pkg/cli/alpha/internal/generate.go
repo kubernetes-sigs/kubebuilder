@@ -133,7 +133,7 @@ func loadProjectConfig(inputDir string) (store.Store, error) {
 
 // Helper function to create the output directory.
 func createDirectory(outputDir string) error {
-	if err := os.MkdirAll(outputDir, 0755); err != nil {
+	if err := os.MkdirAll(outputDir, 0o755); err != nil {
 		return fmt.Errorf("failed to create output directory %s: %w", outputDir, err)
 	}
 	return nil
@@ -414,7 +414,7 @@ func copyFile(src, des string) error {
 	if err != nil {
 		return fmt.Errorf("source file path %s does not exist: %w", src, err)
 	}
-	return os.WriteFile(des, bytesRead, 0755)
+	return os.WriteFile(des, bytesRead, 0o755)
 }
 
 // Migrates Grafana configuration files.

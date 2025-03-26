@@ -23,8 +23,10 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 )
 
-var _ machinery.Template = &Test{}
-var _ machinery.Inserter = &WebhookTestUpdater{}
+var (
+	_ machinery.Template = &Test{}
+	_ machinery.Inserter = &WebhookTestUpdater{}
+)
 
 const webhookChecksMarker = "e2e-webhooks-checks"
 

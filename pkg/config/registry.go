@@ -16,9 +16,7 @@ limitations under the License.
 
 package config
 
-var (
-	registry = make(map[Version]func() Config)
-)
+var registry = make(map[Version]func() Config)
 
 // Register allows implementations of Config to register themselves so that they can be created with New
 func Register(version Version, constructor func() Config) {

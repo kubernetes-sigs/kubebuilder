@@ -73,7 +73,6 @@ func GenerateV4(kbc *utils.TestContext) {
 		filepath.Join(kbc.Dir, "config", "default", "kustomization.yaml"),
 		metricsCertReplaces, "#")).To(Succeed())
 	uncommentKustomizeCoversion(kbc)
-
 }
 
 // GenerateV4WithoutMetrics implements a go/v4 plugin project defined by a TestContext.
