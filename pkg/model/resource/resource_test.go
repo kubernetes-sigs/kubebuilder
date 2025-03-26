@@ -199,7 +199,7 @@ var _ = Describe("Resource", func() {
 			webhookVersion = "v1"
 		)
 
-		res := Resource{
+		res = Resource{
 			GVK:    gvk,
 			Plural: plural,
 			Path:   path,
