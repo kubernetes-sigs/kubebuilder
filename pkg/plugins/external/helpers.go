@@ -127,7 +127,7 @@ func getUniverseMap(fs machinery.Filesystem) (map[string]string, error) {
 		}
 
 		defer func() {
-			if err := file.Close(); err != nil {
+			if err = file.Close(); err != nil {
 				return
 			}
 		}()
