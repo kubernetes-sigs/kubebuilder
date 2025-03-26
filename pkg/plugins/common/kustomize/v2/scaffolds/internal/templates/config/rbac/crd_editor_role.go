@@ -45,7 +45,6 @@ func (f *CRDEditorRole) SetTemplateDefaults() error {
 		} else {
 			f.Path = filepath.Join("config", "rbac", "%[kind]_editor_role.yaml")
 		}
-
 	}
 	f.Path = f.Resource.Replacer().Replace(f.Path)
 

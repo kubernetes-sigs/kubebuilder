@@ -536,6 +536,7 @@ var (
 	apiGVStr    = batchv1.GroupVersion.String()
 )
 `
+
 const controllerSetupWithManager = `
 	// set up a real clock, since we're not in a test
 	if r.Clock == nil {

@@ -467,7 +467,6 @@ plugins:
 				printed, _ := io.ReadAll(r)
 				Expect(string(printed)).To(Equal(
 					fmt.Sprintf("%s\n", version)))
-
 			})
 		})
 

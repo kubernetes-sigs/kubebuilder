@@ -239,7 +239,6 @@ func (t *TestContext) Destroy() {
 				warnError(err)
 			}
 		}
-
 	}
 	if err := os.RemoveAll(t.Dir); err != nil {
 		warnError(err)

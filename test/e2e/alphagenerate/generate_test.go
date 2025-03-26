@@ -36,7 +36,6 @@ import (
 
 var _ = Describe("kubebuilder", func() {
 	Context("alpha generate", func() {
-
 		var (
 			kbc              *utils.TestContext
 			projectOutputDir string

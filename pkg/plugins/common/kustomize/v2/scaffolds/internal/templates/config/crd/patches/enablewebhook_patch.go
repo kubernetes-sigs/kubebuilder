@@ -39,7 +39,6 @@ func (f *EnableWebhookPatch) SetTemplateDefaults() error {
 		} else {
 			f.Path = filepath.Join("config", "crd", "patches", "webhook_in_%[plural].yaml")
 		}
-
 	}
 	f.Path = f.Resource.Replacer().Replace(f.Path)
 

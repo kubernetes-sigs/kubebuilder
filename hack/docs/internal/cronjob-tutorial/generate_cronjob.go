@@ -387,7 +387,6 @@ manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and Cust
 `
 	err := pluginutil.ReplaceInFile(filepath.Join(sp.ctx.Dir, "Makefile"), originalManifestTarget, changedManifestTarget)
 	hackutils.CheckError("updating makefile to use maxDescLen=0 in make manifest target", err)
-
 }
 
 func (sp *Sample) updateWebhookTests() {

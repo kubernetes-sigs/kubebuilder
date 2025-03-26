@@ -78,6 +78,5 @@ var _ = Describe("Completion", func() {
 			Expect(cmd.Short).NotTo(Equal(""))
 			Expect(cmd.Short).To(ContainSubstring("Load powershell completions"))
 		})
-
 	})
 })

@@ -313,6 +313,7 @@ const webhookTestsVars = `var (
 		validator CronJobCustomValidator
 		defaulter CronJobCustomDefaulter
 	)`
+
 const webhookTestsConstants = `	var (
 		obj       *batchv1.CronJob
 		oldObj    *batchv1.CronJob
@@ -322,6 +323,7 @@ const webhookTestsConstants = `	var (
 
 	const validCronJobName = "valid-cronjob-name"
 	const schedule = "*/5 * * * *"`
+
 const webhookTestsBeforeEachOriginal = `obj = &batchv1.CronJob{}
 		oldObj = &batchv1.CronJob{}
 		validator = CronJobCustomValidator{}
