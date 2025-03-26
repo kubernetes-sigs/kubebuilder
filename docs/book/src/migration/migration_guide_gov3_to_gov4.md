@@ -126,7 +126,7 @@ Now, let's copy the webhook definition from `api/v1/<kind>_webhook.go` from our 
 
 ## Others
 
-If there are any manual updates in `main.go` in v3, we need to port the changes to the new `main.go`. We’ll also need to ensure all of needed controller-runtime `schemes` have been registered.
+If there are any manual updates in `main.go` in v3, we need to port the changes to the new `main.go`. We'll also need to ensure all of needed controller-runtime `schemes` have been registered.
 
 If there are additional manifests added under config directory, port them as well. Please, be aware that
 the new version go/v4 uses Kustomize v5x and no longer Kustomize v4. Therefore, if added customized
