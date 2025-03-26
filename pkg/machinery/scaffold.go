@@ -35,8 +35,8 @@ import (
 const (
 	createOrUpdate = os.O_WRONLY | os.O_CREATE | os.O_TRUNC
 
-	defaultDirectoryPermission os.FileMode = 0700
-	defaultFilePermission      os.FileMode = 0600
+	defaultDirectoryPermission os.FileMode = 0o700
+	defaultFilePermission      os.FileMode = 0o600
 )
 
 var options = imports.Options{

@@ -329,5 +329,5 @@ func DiscoverExternalPlugins(fs afero.Fs) (ps []plugin.Plugin, err error) {
 
 // isPluginExectuable checks if a plugin is an executable based on the bitmask and returns true or false.
 func isPluginExectuable(mode fs.FileMode) bool {
-	return mode&0111 != 0
+	return mode&0o111 != 0
 }
