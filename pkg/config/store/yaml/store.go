@@ -89,7 +89,7 @@ func (s *yamlStore) LoadFrom(path string) error {
 
 	// Check the file version
 	var versioned versionedConfig
-	if err := yaml.Unmarshal(in, &versioned); err != nil {
+	if err = yaml.Unmarshal(in, &versioned); err != nil {
 		return store.LoadError{Err: fmt.Errorf("unable to determine config version: %w", err)}
 	}
 
