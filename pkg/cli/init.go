@@ -30,7 +30,7 @@ import (
 
 const initErrorMsg = "failed to initialize project"
 
-func (c CLI) newInitCmd() *cobra.Command {
+func (c *CLI) newInitCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "init",
 		Short: "Initialize a new project",
@@ -75,7 +75,7 @@ For further help about a specific plugin, set --plugins.
 	return cmd
 }
 
-func (c CLI) getInitHelpExamples() string {
+func (c *CLI) getInitHelpExamples() string {
 	var sb strings.Builder
 	for _, version := range c.getAvailableProjectVersions() {
 		rendered := fmt.Sprintf(`  # Help for initializing a project with version %[2]s
@@ -88,7 +88,7 @@ func (c CLI) getInitHelpExamples() string {
 	return strings.TrimSuffix(sb.String(), "\n\n")
 }
 
-func (c CLI) getAvailableProjectVersions() (projectVersions []string) {
+func (c *CLI) getAvailableProjectVersions() (projectVersions []string) {
 	versionSet := make(map[config.Version]struct{})
 	for _, p := range c.plugins {
 		// Only return versions of non-deprecated plugins.

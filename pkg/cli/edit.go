@@ -26,7 +26,7 @@ import (
 
 const editErrorMsg = "failed to edit project"
 
-func (c CLI) newEditCmd() *cobra.Command {
+func (c *CLI) newEditCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "edit",
 		Short: "Update the project configuration",
