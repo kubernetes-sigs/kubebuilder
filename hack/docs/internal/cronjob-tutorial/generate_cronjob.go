@@ -654,7 +654,7 @@ func (sp *Sample) updateExample() {
 }
 
 func (sp *Sample) addControllerTest() {
-	var fs = afero.NewOsFs()
+	fs := afero.NewOsFs()
 	err := afero.WriteFile(fs, filepath.Join(sp.ctx.Dir, "internal/controller/cronjob_controller_test.go"), []byte(controllerTest), 0o600)
 	hackutils.CheckError("adding cronjob_controller_test", err)
 }
