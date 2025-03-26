@@ -28,9 +28,7 @@ const (
 	goVerPattern = `^go(?P<major>[0-9]+)\.(?P<minor>[0-9]+)(?:\.(?P<patch>[0-9]+)|(?P<pre>(?:alpha|beta|rc)[0-9]+))?$`
 )
 
-var (
-	goVerRegexp = regexp.MustCompile(goVerPattern)
-)
+var goVerRegexp = regexp.MustCompile(goVerPattern)
 
 // GoVersion describes a Go version.
 type GoVersion struct {

@@ -219,7 +219,6 @@ release available. Afterward, you can re-add only your code implementation on to
 the latest bug fixes and enhancements.
 
 `)
-
 	}
 }
 

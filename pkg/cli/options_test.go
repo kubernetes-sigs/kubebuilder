@@ -127,7 +127,7 @@ var _ = Describe("Discover external plugins", func() {
 
 		When("using the custom path", func() {
 			BeforeEach(func() {
-				err := os.MkdirAll(customPath, 0750)
+				err := os.MkdirAll(customPath, 0o750)
 				Expect(err).ToNot(HaveOccurred())
 
 				// store and set the EXTERNAL_PLUGINS_PATH

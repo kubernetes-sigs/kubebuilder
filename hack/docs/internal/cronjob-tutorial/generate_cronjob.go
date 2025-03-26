@@ -387,7 +387,6 @@ manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and Cust
 `
 	err := pluginutil.ReplaceInFile(filepath.Join(sp.ctx.Dir, "Makefile"), originalManifestTarget, changedManifestTarget)
 	hackutils.CheckError("updating makefile to use maxDescLen=0 in make manifest target", err)
-
 }
 
 func (sp *Sample) updateWebhookTests() {
@@ -656,7 +655,7 @@ func (sp *Sample) updateExample() {
 
 func (sp *Sample) addControllerTest() {
 	var fs = afero.NewOsFs()
-	err := afero.WriteFile(fs, filepath.Join(sp.ctx.Dir, "internal/controller/cronjob_controller_test.go"), []byte(controllerTest), 0600)
+	err := afero.WriteFile(fs, filepath.Join(sp.ctx.Dir, "internal/controller/cronjob_controller_test.go"), []byte(controllerTest), 0o600)
 	hackutils.CheckError("adding cronjob_controller_test", err)
 }
 

@@ -46,7 +46,7 @@ type Generate struct {
 
 // Generate handles the migration and scaffolding process.
 func (opts *Generate) Generate() error {
-	config, err := loadProjectConfig(opts.InputDir)
+	projectConfig, err := loadProjectConfig(opts.InputDir)
 	if err != nil {
 		return err
 	}
@@ -82,28 +82,28 @@ func (opts *Generate) Generate() error {
 		return err
 	}
 
-	if err := kubebuilderInit(config); err != nil {
+	if err := kubebuilderInit(projectConfig); err != nil {
 		return err
 	}
 
-	if err := kubebuilderEdit(config); err != nil {
+	if err := kubebuilderEdit(projectConfig); err != nil {
 		return err
 	}
 
-	if err := kubebuilderCreate(config); err != nil {
+	if err := kubebuilderCreate(projectConfig); err != nil {
 		return err
 	}
 
-	if err := migrateGrafanaPlugin(config, opts.InputDir, opts.OutputDir); err != nil {
+	if err := migrateGrafanaPlugin(projectConfig, opts.InputDir, opts.OutputDir); err != nil {
 		return err
 	}
 
-	if hasHelmPlugin(config) {
+	if hasHelmPlugin(projectConfig) {
 		if err := kubebuilderHelmEdit(); err != nil {
 			return err
 		}
 	}
-	return migrateDeployImagePlugin(config)
+	return migrateDeployImagePlugin(projectConfig)
 }
 
 // Validate ensures the options are valid and kubebuilder is installed.
@@ -124,16 +124,16 @@ func (opts *Generate) Validate() error {
 
 // Helper function to load the project configuration.
 func loadProjectConfig(inputDir string) (store.Store, error) {
-	config := yaml.New(machinery.Filesystem{FS: afero.NewOsFs()})
-	if err := config.LoadFrom(fmt.Sprintf("%s/%s", inputDir, yaml.DefaultPath)); err != nil {
+	projectConfig := yaml.New(machinery.Filesystem{FS: afero.NewOsFs()})
+	if err := projectConfig.LoadFrom(fmt.Sprintf("%s/%s", inputDir, yaml.DefaultPath)); err != nil {
 		return nil, fmt.Errorf("failed to load PROJECT file: %w", err)
 	}
-	return config, nil
+	return projectConfig, nil
 }
 
 // Helper function to create the output directory.
 func createDirectory(outputDir string) error {
-	if err := os.MkdirAll(outputDir, 0755); err != nil {
+	if err := os.MkdirAll(outputDir, 0o755); err != nil {
 		return fmt.Errorf("failed to create output directory %s: %w", outputDir, err)
 	}
 	return nil
@@ -414,7 +414,7 @@ func copyFile(src, des string) error {
 	if err != nil {
 		return fmt.Errorf("source file path %s does not exist: %w", src, err)
 	}
-	return os.WriteFile(des, bytesRead, 0755)
+	return os.WriteFile(des, bytesRead, 0o755)
 }
 
 // Migrates Grafana configuration files.

@@ -75,7 +75,7 @@ func InsertCode(filename, target, code string) error {
 	}
 	out := string(contents[:idx+len(target)]) + code + string(contents[idx+len(target):])
 	//nolint:gosec // false positive
-	return os.WriteFile(filename, []byte(out), 0644)
+	return os.WriteFile(filename, []byte(out), 0o644)
 }
 
 // InsertCodeIfNotExist insert code if it does not already exists
@@ -110,7 +110,7 @@ func AppendCodeIfNotExist(filename, code string) error {
 
 // AppendCodeAtTheEnd appends the given code at the end of the file.
 func AppendCodeAtTheEnd(filename, code string) error {
-	f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0o644)
 	if err != nil {
 		return err
 	}
@@ -168,7 +168,7 @@ func UncommentCode(filename, target, prefix string) error {
 		return err
 	}
 	//nolint:gosec // false positive
-	return os.WriteFile(filename, out.Bytes(), 0644)
+	return os.WriteFile(filename, out.Bytes(), 0o644)
 }
 
 // CommentCode searches for target in the file and adds the comment prefix
@@ -210,7 +210,7 @@ func CommentCode(filename, target, prefix string) error {
 	}
 
 	// Write the modified content back to the file
-	return os.WriteFile(filename, out.Bytes(), 0644)
+	return os.WriteFile(filename, out.Bytes(), 0o644)
 }
 
 // EnsureExistAndReplace check if the content exists and then do the replace
