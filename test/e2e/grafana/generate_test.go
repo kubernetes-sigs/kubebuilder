@@ -48,7 +48,6 @@ var _ = Describe("kubebuilder", func() {
 		It("should generate a runnable project with grafana plugin", func() {
 			GenerateProject(kbc)
 		})
-
 	})
 })
 
