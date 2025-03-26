@@ -106,7 +106,8 @@ var _ = Describe("kubebuilder", func() {
 
 // Run runs a set of e2e tests for a scaffolded project defined by a TestContext.
 func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart, hasMetrics bool,
-	hasNetworkPolicies bool) {
+	hasNetworkPolicies bool,
+) {
 	var controllerPodName string
 	var err error
 
