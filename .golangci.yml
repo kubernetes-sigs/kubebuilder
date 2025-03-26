@@ -74,6 +74,7 @@ linters:
     - goconst
     - gocyclo
     - gofmt
+    - gofumpt
     - goimports
     - gosimple
     - govet
