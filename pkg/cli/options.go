@@ -203,7 +203,7 @@ func getPluginsRoot(host string) (pluginsRoot string, err error) {
 	// if user provides specific path, return
 	if pluginsPath := os.Getenv("EXTERNAL_PLUGINS_PATH"); pluginsPath != "" {
 		// verify if the path actually exists
-		if _, err := os.Stat(pluginsPath); err != nil {
+		if _, err = os.Stat(pluginsPath); err != nil {
 			if os.IsNotExist(err) {
 				// the path does not exist
 				return "", fmt.Errorf("the specified path %s does not exist", pluginsPath)
