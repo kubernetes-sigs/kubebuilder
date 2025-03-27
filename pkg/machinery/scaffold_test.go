@@ -171,7 +171,7 @@ var _ = Describe("Scaffold", func() {
 			func(errType interface{}, files ...Builder) {
 				err := s.Execute(files...)
 				Expect(err).To(HaveOccurred())
-				Expect(errors.As(err, errType)).To(BeTrue())
+				Expect(errors.As(err, &errType)).To(BeTrue())
 			},
 			Entry("should fail if unable to validate a file builder",
 				&ValidateError{},
@@ -413,7 +413,7 @@ func init() {
 
 				err := s.Execute(files...)
 				Expect(err).To(HaveOccurred())
-				Expect(errors.As(err, errType)).To(BeTrue())
+				Expect(errors.As(err, &errType)).To(BeTrue())
 			},
 			Entry("should fail if inserting into a model that fails when a file exists and it does exist",
 				&FileAlreadyExistsError{},
