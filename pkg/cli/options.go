@@ -317,11 +317,9 @@ func DiscoverExternalPlugins(filesystem afero.Fs) (ps []plugin.Plugin, err error
 					logrus.Printf("Adding external plugin: %s", ep.Name())
 
 					ps = append(ps, ep)
-
 				}
 			}
 		}
-
 	}
 
 	return ps, nil

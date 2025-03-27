@@ -26,7 +26,6 @@ import (
 func InsertPluginMetaToConfig(target config.Config, cfg pluginConfig) error {
 	err := target.DecodePluginConfig(pluginKey, cfg)
 	if !errors.As(err, &config.UnsupportedFieldError{}) {
-
 		if err != nil && !errors.As(err, &config.PluginKeyNotFoundError{}) {
 			return err
 		}
@@ -34,7 +33,6 @@ func InsertPluginMetaToConfig(target config.Config, cfg pluginConfig) error {
 		if err = target.EncodePluginConfig(pluginKey, cfg); err != nil {
 			return err
 		}
-
 	}
 
 	return nil

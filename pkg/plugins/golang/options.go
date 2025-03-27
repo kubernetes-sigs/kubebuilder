@@ -88,7 +88,6 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 			CRDVersion: "v1",
 			Namespaced: opts.Namespaced,
 		}
-
 	}
 
 	if opts.DoController {
