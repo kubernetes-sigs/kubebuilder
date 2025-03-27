@@ -37,5 +37,5 @@ type mockPlugin struct {
 }
 
 func (p mockPlugin) Name() string                               { return p.name }
-func (p mockPlugin) Version() Version                           { return p.version }
+func (p mockPlugin) Version() *Version                          { return &p.version }
 func (p mockPlugin) SupportedProjectVersions() []config.Version { return p.supportedProjectVersions }

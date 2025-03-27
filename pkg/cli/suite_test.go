@@ -52,7 +52,7 @@ func newMockPlugin(name, version string, projVers ...config.Version) plugin.Plug
 }
 
 func (p mockPlugin) Name() string                               { return p.name }
-func (p mockPlugin) Version() plugin.Version                    { return p.version }
+func (p mockPlugin) Version() *plugin.Version                   { return &p.version }
 func (p mockPlugin) SupportedProjectVersions() []config.Version { return p.projectVersions }
 
 type mockDeprecatedPlugin struct { //nolint:maligned

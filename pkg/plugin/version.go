@@ -67,7 +67,7 @@ func (v *Version) Parse(version string) error {
 }
 
 // String returns the string representation of v.
-func (v Version) String() string {
+func (v *Version) String() string {
 	stageStr := v.Stage.String()
 	if len(stageStr) == 0 {
 		return fmt.Sprintf("v%d", v.Number)
@@ -76,7 +76,7 @@ func (v Version) String() string {
 }
 
 // Validate ensures that the version number is positive and the stage is one of the valid stages.
-func (v Version) Validate() error {
+func (v *Version) Validate() error {
 	if v.Number < 0 {
 		return errNegative
 	}
@@ -85,7 +85,7 @@ func (v Version) Validate() error {
 }
 
 // Compare returns -1 if v < other, 0 if v == other, and 1 if v > other.
-func (v Version) Compare(other Version) int {
+func (v *Version) Compare(other Version) int {
 	if v.Number > other.Number {
 		return 1
 	} else if v.Number < other.Number {
@@ -96,7 +96,7 @@ func (v Version) Compare(other Version) int {
 }
 
 // IsStable returns true if v is stable.
-func (v Version) IsStable() bool {
+func (v *Version) IsStable() bool {
 	// Plugin version 0 is not considered stable
 	if v.Number == 0 {
 		return false
