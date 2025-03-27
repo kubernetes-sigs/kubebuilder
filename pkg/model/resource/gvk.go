@@ -57,7 +57,7 @@ func (gvk GVK) Validate() error {
 		return errors.New(versionRequired)
 	}
 	if errs := validation.IsDNS1123Subdomain(gvk.Version); len(errs) > 0 && gvk.Version != versionInternal {
-		return fmt.Errorf("Version must respect DNS-1123 (was %s)", gvk.Version)
+		return fmt.Errorf("version must respect DNS-1123 (was %q)", gvk.Version)
 	}
 
 	// Check if kind has a valid DNS1035 label value
