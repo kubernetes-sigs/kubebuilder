@@ -29,7 +29,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/crd"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/crd/patches"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/kdefault"
-	network_policy "sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/network-policy"
+	networkpolicy "sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/network-policy"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/webhook"
 )
 
@@ -88,7 +88,7 @@ func (s *webhookScaffolder) Scaffold() error {
 		&certmanager.MetricsCertificate{},
 		&certmanager.Kustomization{},
 		&certmanager.KustomizeConfig{},
-		&network_policy.PolicyAllowWebhooks{},
+		&networkpolicy.PolicyAllowWebhooks{},
 	}
 
 	// Only scaffold the following patches if is a conversion webhook
