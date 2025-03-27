@@ -76,7 +76,7 @@ func WithPlugins(plugins ...plugin.Plugin) Option {
 				return fmt.Errorf("two plugins have the same key: %q", key)
 			}
 			if err := plugin.Validate(p); err != nil {
-				return fmt.Errorf("broken pre-set plugin %q: %v", key, err)
+				return fmt.Errorf("broken pre-set plugin %q: %w", key, err)
 			}
 			c.plugins[key] = p
 		}
@@ -97,7 +97,7 @@ func WithDefaultPlugins(projectVersion config.Version, plugins ...plugin.Plugin)
 		}
 		for _, p := range plugins {
 			if err := plugin.Validate(p); err != nil {
-				return fmt.Errorf("broken pre-set default plugin %q: %v", plugin.KeyFor(p), err)
+				return fmt.Errorf("broken pre-set default plugin %q: %w", plugin.KeyFor(p), err)
 			}
 			if !plugin.SupportsVersion(p, projectVersion) {
 				return fmt.Errorf("default plugin %q doesn't support version %q", plugin.KeyFor(p), projectVersion)
@@ -114,7 +114,7 @@ func WithDefaultPlugins(projectVersion config.Version, plugins ...plugin.Plugin)
 func WithDefaultProjectVersion(version config.Version) Option {
 	return func(c *CLI) error {
 		if err := version.Validate(); err != nil {
-			return fmt.Errorf("broken pre-set default project version %q: %v", version, err)
+			return fmt.Errorf("broken pre-set default project version %q: %w", version, err)
 		}
 		c.defaultProjectVersion = version
 		return nil
@@ -209,7 +209,7 @@ func getPluginsRoot(host string) (pluginsRoot string, err error) {
 				return "", fmt.Errorf("the specified path %s does not exist", pluginsPath)
 			}
 			// some other error
-			return "", fmt.Errorf("error checking the path: %v", err)
+			return "", fmt.Errorf("error checking the path: %w", err)
 		}
 		// the path exists
 		return pluginsPath, nil
@@ -232,7 +232,7 @@ func getPluginsRoot(host string) (pluginsRoot string, err error) {
 
 	userHomeDir, err := os.UserHomeDir()
 	if err != nil {
-		return "", fmt.Errorf("error retrieving home dir: %v", err)
+		return "", fmt.Errorf("error retrieving home dir: %w", err)
 	}
 
 	return filepath.Join(userHomeDir, pluginsRoot), nil
@@ -294,13 +294,13 @@ func DiscoverExternalPlugins(filesystem afero.Fs) (ps []plugin.Plugin, err error
 				// for example: sample.sh --> sample, externalplugin.py --> externalplugin
 				trimmedPluginName := strings.Split(pluginFile.Name(), ".")
 				if trimmedPluginName[0] == "" {
-					return nil, fmt.Errorf("Invalid plugin name found %q", pluginFile.Name())
+					return nil, fmt.Errorf("invalid plugin name found %q", pluginFile.Name())
 				}
 
 				if pluginFile.Name() == pluginInfo.Name() || trimmedPluginName[0] == pluginInfo.Name() {
 					// check whether the external plugin is an executable.
 					if !isPluginExecutable(pluginFile.Mode()) {
-						return nil, fmt.Errorf("External plugin %q found in path is not an executable", pluginFile.Name())
+						return nil, fmt.Errorf("external plugin %q found in path is not an executable", pluginFile.Name())
 					}
 
 					ep := external.Plugin{
