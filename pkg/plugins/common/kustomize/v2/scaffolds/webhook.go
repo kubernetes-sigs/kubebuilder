@@ -102,7 +102,7 @@ func (s *webhookScaffolder) Scaffold() error {
 	}
 
 	if err := scaffold.Execute(buildScaffold...); err != nil {
-		return fmt.Errorf("error scaffolding kustomize webhook manifests: %v", err)
+		return fmt.Errorf("error scaffolding kustomize webhook manifests: %w", err)
 	}
 
 	policyKustomizeFilePath := "config/network-policy/kustomization.yaml"
