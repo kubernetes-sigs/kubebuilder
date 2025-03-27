@@ -352,7 +352,7 @@ func (c *CLI) resolvePlugins() error {
 		if _, version := plugin.SplitKey(pluginKey); version != "" {
 			var ver plugin.Version
 			if err := ver.Parse(version); err != nil {
-				return fmt.Errorf("error parsing input plugin version from key %q: %v", pluginKey, err)
+				return fmt.Errorf("error parsing input plugin version from key %q: %w", pluginKey, err)
 			}
 			if !ver.IsStable() {
 				extraErrMsg += unstablePluginMsg
