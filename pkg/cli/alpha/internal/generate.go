@@ -421,7 +421,7 @@ func copyFile(src, des string) error {
 func grafanaConfigMigrate(src, des string) error {
 	grafanaConfig := fmt.Sprintf("%s/grafana/custom-metrics/config.yaml", src)
 	if _, err := os.Stat(grafanaConfig); os.IsNotExist(err) {
-		return fmt.Errorf("Grafana config path %s does not exist: %w", grafanaConfig, err)
+		return fmt.Errorf("grafana config path %s does not exist: %w", grafanaConfig, err)
 	}
 	return copyFile(grafanaConfig, fmt.Sprintf("%s/grafana/custom-metrics/config.yaml", des))
 }
@@ -456,7 +456,7 @@ func hasHelmPlugin(cfg store.Store) bool {
 			return false
 		}
 		// Log other errors if needed
-		log.Errorf("Error decoding Helm plugin config: %v", err)
+		log.Errorf("error decoding Helm plugin config: %v", err)
 		return false
 	}
 

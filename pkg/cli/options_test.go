@@ -351,7 +351,7 @@ var _ = Describe("Discover external plugins", func() {
 
 				plugins, err = DiscoverExternalPlugins(filesystem.FS)
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("Invalid plugin name found"))
+				Expect(err.Error()).To(ContainSubstring("invalid plugin name found"))
 				Expect(plugins).To(BeEmpty())
 			})
 		})
