@@ -67,6 +67,8 @@ linters-settings:
 linters:
   disable-all: true
   enable:
+    - asciicheck
+    - bidichk
     - dupl
     - errcheck
     - copyloopvar
