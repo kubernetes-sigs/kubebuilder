@@ -118,13 +118,13 @@ func (s *initScaffolder) Scaffold() error {
 	}
 
 	if err = scaffold.Execute(buildScaffold...); err != nil {
-		return fmt.Errorf("error scaffolding helm-chart manifests: %v", err)
+		return fmt.Errorf("error scaffolding helm-chart manifests: %w", err)
 	}
 
 	// Copy relevant files from config/ to dist/chart/templates/
 	err = s.copyConfigFiles()
 	if err != nil {
-		return fmt.Errorf("failed to copy manifests from config to dist/chart/templates/: %v", err)
+		return fmt.Errorf("failed to copy manifests from config to dist/chart/templates/: %w", err)
 	}
 
 	return nil
@@ -170,7 +170,7 @@ func (s *initScaffolder) extractWebhooksFromGeneratedFiles() (mutatingWebhooks [
 	content, err := os.ReadFile(manifestFile)
 	if err != nil {
 		return nil, nil,
-			fmt.Errorf("failed to read %s: %w", manifestFile, err)
+			fmt.Errorf("failed to read %q: %w", manifestFile, err)
 	}
 
 	docs := strings.Split(string(content), "---")
@@ -256,7 +256,7 @@ func (s *initScaffolder) copyConfigFiles() error {
 
 		// Ensure destination directory exists
 		if err := os.MkdirAll(dir.DestDir, os.ModePerm); err != nil {
-			return fmt.Errorf("failed to create directory %s: %v", dir.DestDir, err)
+			return fmt.Errorf("failed to create directory %q: %w", dir.DestDir, err)
 		}
 
 		for _, srcFile := range files {
@@ -462,7 +462,7 @@ func getCRDPatchContent(kind, group string) (string, bool, error) {
 	groupKindPattern := fmt.Sprintf("config/crd/patches/webhook_*%s*%s*.yaml", group, kind)
 	patchFiles, err := filepath.Glob(groupKindPattern)
 	if err != nil {
-		return "", false, fmt.Errorf("failed to list patches: %v", err)
+		return "", false, fmt.Errorf("failed to list patches: %w", err)
 	}
 
 	// If no group-specific patch found, search for patches that contain only "webhook" and the kind
@@ -470,7 +470,7 @@ func getCRDPatchContent(kind, group string) (string, bool, error) {
 		kindOnlyPattern := fmt.Sprintf("config/crd/patches/webhook_*%s*.yaml", kind)
 		patchFiles, err = filepath.Glob(kindOnlyPattern)
 		if err != nil {
-			return "", false, fmt.Errorf("failed to list patches: %v", err)
+			return "", false, fmt.Errorf("failed to list patches: %w", err)
 		}
 	}
 
@@ -478,7 +478,7 @@ func getCRDPatchContent(kind, group string) (string, bool, error) {
 	if len(patchFiles) > 0 {
 		patchContent, err := os.ReadFile(patchFiles[0])
 		if err != nil {
-			return "", false, fmt.Errorf("failed to read patch file %s: %v", patchFiles[0], err)
+			return "", false, fmt.Errorf("failed to read patch file %q: %w", patchFiles[0], err)
 		}
 		return string(patchContent), true, nil
 	}
