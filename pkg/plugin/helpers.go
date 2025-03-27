@@ -43,17 +43,17 @@ func SplitKey(key string) (string, string) {
 // Validate ensures a Plugin is valid.
 func Validate(p Plugin) error {
 	if err := validateName(p.Name()); err != nil {
-		return fmt.Errorf("invalid plugin name %q: %v", p.Name(), err)
+		return fmt.Errorf("invalid plugin name %q: %w", p.Name(), err)
 	}
 	if err := p.Version().Validate(); err != nil {
-		return fmt.Errorf("invalid plugin version %q: %v", p.Version(), err)
+		return fmt.Errorf("invalid plugin version %q: %w", p.Version(), err)
 	}
 	if len(p.SupportedProjectVersions()) == 0 {
 		return fmt.Errorf("plugin %q must support at least one project version", KeyFor(p))
 	}
 	for _, projectVersion := range p.SupportedProjectVersions() {
 		if err := projectVersion.Validate(); err != nil {
-			return fmt.Errorf("plugin %q supports an invalid project version %q: %v", KeyFor(p), projectVersion, err)
+			return fmt.Errorf("plugin %q supports an invalid project version %q: %w", KeyFor(p), projectVersion, err)
 		}
 	}
 	return nil
@@ -63,13 +63,13 @@ func Validate(p Plugin) error {
 func ValidateKey(key string) error {
 	name, version := SplitKey(key)
 	if err := validateName(name); err != nil {
-		return fmt.Errorf("invalid plugin name %q: %v", name, err)
+		return fmt.Errorf("invalid plugin name %q: %w", name, err)
 	}
 	// CLI-set plugins do not have to contain a version.
 	if version != "" {
 		var v Version
 		if err := v.Parse(version); err != nil {
-			return fmt.Errorf("invalid plugin version %q: %v", version, err)
+			return fmt.Errorf("invalid plugin version %q: %w", version, err)
 		}
 	}
 	return nil
