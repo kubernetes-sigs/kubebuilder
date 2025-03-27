@@ -16,6 +16,8 @@ limitations under the License.
 package scaffolds
 
 import (
+	"fmt"
+
 	"github.com/spf13/pflag"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/external"
@@ -52,7 +54,13 @@ func WebhookCmd(pr *external.PluginRequest) external.PluginResponse {
 	// Here is an example of parsing a flag from a Kubebuilder external plugin request
 	flags := pflag.NewFlagSet("apiFlags", pflag.ContinueOnError)
 	flags.Bool("hooked", false, "add the word `hooked` to the end of the scaffolded webhookFile.txt")
-	flags.Parse(pr.Args)
+	if err := flags.Parse(pr.Args); err != nil {
+		pluginResponse.Error = true
+		pluginResponse.ErrorMsgs = []string{
+			fmt.Sprintf("failed to parse flags: %s", err.Error()),
+		}
+		return pluginResponse
+	}
 	hooked, _ := flags.GetBool("hooked")
 
 	msg := "A simple text file created with the `create webhook` subcommand"
