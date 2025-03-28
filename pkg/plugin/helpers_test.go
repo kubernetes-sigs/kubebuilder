@@ -116,9 +116,13 @@ var _ = Describe("ValidateKey", func() {
 })
 
 var _ = Describe("SupportsVersion", func() {
-	plugin := mockPlugin{
-		supportedProjectVersions: supportedProjectVersions,
-	}
+	var plugin mockPlugin
+
+	BeforeEach(func() {
+		plugin = mockPlugin{
+			supportedProjectVersions: supportedProjectVersions,
+		}
+	})
 
 	It("should return true for supported versions", func() {
 		Expect(SupportsVersion(plugin, config.Version{Number: 2})).To(BeTrue())

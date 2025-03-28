@@ -26,10 +26,14 @@ import (
 
 var _ = Describe("Cover plugin util helpers", func() {
 	Describe("InsertCode", Ordered, func() {
-		path := filepath.Join("testdata", "exampleFile.txt")
-		var content []byte
+		var (
+			content []byte
+			path    string
+		)
 
 		BeforeAll(func() {
+			path = filepath.Join("testdata", "exampleFile.txt")
+
 			err := os.MkdirAll("testdata", 0o755)
 			Expect(err).NotTo(HaveOccurred())
 
