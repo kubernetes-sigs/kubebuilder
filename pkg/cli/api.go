@@ -26,7 +26,7 @@ import (
 
 const apiErrorMsg = "failed to create API"
 
-func (c CLI) newCreateAPICmd() *cobra.Command {
+func (c *CLI) newCreateAPICmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "api",
 		Short: "Scaffold a Kubernetes API",

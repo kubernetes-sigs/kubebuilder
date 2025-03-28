@@ -23,7 +23,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func (c CLI) newBashCmd() *cobra.Command {
+func (c *CLI) newBashCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "bash",
 		Short: "Load bash completions",
@@ -42,7 +42,7 @@ MacOS:
 	}
 }
 
-func (c CLI) newZshCmd() *cobra.Command {
+func (c *CLI) newZshCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "zsh",
 		Short: "Load zsh completions",
@@ -61,7 +61,7 @@ $ %[1]s completion zsh > "${fpath[1]}/_%[1]s"
 	}
 }
 
-func (c CLI) newFishCmd() *cobra.Command {
+func (c *CLI) newFishCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "fish",
 		Short: "Load fish completions",
@@ -77,7 +77,7 @@ $ %[1]s completion fish > ~/.config/fish/completions/%[1]s.fish
 	}
 }
 
-func (CLI) newPowerShellCmd() *cobra.Command {
+func (c *CLI) newPowerShellCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "powershell",
 		Short: "Load powershell completions",
@@ -87,7 +87,7 @@ func (CLI) newPowerShellCmd() *cobra.Command {
 	}
 }
 
-func (c CLI) newCompletionCmd() *cobra.Command {
+func (c *CLI) newCompletionCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "completion",
 		Short: "Load completions for the specified shell",
