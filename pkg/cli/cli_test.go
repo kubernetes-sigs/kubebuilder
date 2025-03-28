@@ -80,13 +80,15 @@ func hasSubCommand(cmd *cobra.Command, name string) bool {
 var _ = Describe("CLI", func() {
 	var (
 		c              *CLI
-		projectVersion = config.Version{Number: 3}
+		projectVersion config.Version
 	)
 
 	BeforeEach(func() {
 		c = &CLI{
 			fs: machinery.Filesystem{FS: afero.NewMemMapFs()},
 		}
+
+		projectVersion = config.Version{Number: 3}
 	})
 
 	Context("buildCmd", func() {
@@ -297,7 +299,11 @@ plugins:
 	})
 
 	Context("getInfoFromDefaults", func() {
-		pluginKeys := []string{"go.kubebuilder.io/v2"}
+		var pluginKeys []string
+
+		BeforeEach(func() {
+			pluginKeys = []string{"go.kubebuilder.io/v2"}
+		})
 
 		It("should be a no-op if already have plugin keys", func() {
 			c.pluginKeys = pluginKeys
@@ -335,33 +341,33 @@ plugins:
 	})
 
 	Context("resolvePlugins", func() {
-		pluginKeys := []string{
-			"foo.example.com/v1",
-			"bar.example.com/v1",
-			"baz.example.com/v1",
-			"foo.kubebuilder.io/v1",
-			"foo.kubebuilder.io/v2",
-			"bar.kubebuilder.io/v1",
-			"bar.kubebuilder.io/v2",
-		}
-
-		plugins := makeMockPluginsFor(projectVersion, pluginKeys...)
-		plugins = append(plugins,
-			newMockPlugin("invalid.kubebuilder.io", "v1"),
-			newMockPlugin("only1.kubebuilder.io", "v1",
-				config.Version{Number: 1}),
-			newMockPlugin("only2.kubebuilder.io", "v1",
-				config.Version{Number: 2}),
-			newMockPlugin("1and2.kubebuilder.io", "v1",
-				config.Version{Number: 1}, config.Version{Number: 2}),
-			newMockPlugin("2and3.kubebuilder.io", "v1",
-				config.Version{Number: 2}, config.Version{Number: 3}),
-			newMockPlugin("1-2and3.kubebuilder.io", "v1",
-				config.Version{Number: 1}, config.Version{Number: 2}, config.Version{Number: 3}),
-		)
-		pluginMap := makeMapFor(plugins...)
-
 		BeforeEach(func() {
+			pluginKeys := []string{
+				"foo.example.com/v1",
+				"bar.example.com/v1",
+				"baz.example.com/v1",
+				"foo.kubebuilder.io/v1",
+				"foo.kubebuilder.io/v2",
+				"bar.kubebuilder.io/v1",
+				"bar.kubebuilder.io/v2",
+			}
+
+			plugins := makeMockPluginsFor(projectVersion, pluginKeys...)
+			plugins = append(plugins,
+				newMockPlugin("invalid.kubebuilder.io", "v1"),
+				newMockPlugin("only1.kubebuilder.io", "v1",
+					config.Version{Number: 1}),
+				newMockPlugin("only2.kubebuilder.io", "v1",
+					config.Version{Number: 2}),
+				newMockPlugin("1and2.kubebuilder.io", "v1",
+					config.Version{Number: 1}, config.Version{Number: 2}),
+				newMockPlugin("2and3.kubebuilder.io", "v1",
+					config.Version{Number: 2}, config.Version{Number: 3}),
+				newMockPlugin("1-2and3.kubebuilder.io", "v1",
+					config.Version{Number: 1}, config.Version{Number: 2}, config.Version{Number: 3}),
+			)
+			pluginMap := makeMapFor(plugins...)
+
 			c.plugins = pluginMap
 		})
 
