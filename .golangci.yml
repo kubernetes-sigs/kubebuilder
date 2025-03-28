@@ -17,6 +17,8 @@ issues:
         - gosec
 
 linters-settings:
+  ginkgolinter:
+    forbid-spec-pollution: true
   govet:
     enable-all: true
     disable:
