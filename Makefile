@@ -45,8 +45,11 @@ help: ## Display this help
 
 ##@ Build
 
+K8S_VERSION ?= $(shell go list -m -modfile=./testdata/project-v4/go.mod -f "{{ .Version }}" k8s.io/api | awk -F'[v.]' '{printf "1.%d.%d", $$3, $$4}')
+
 LD_FLAGS=-ldflags " \
     -X sigs.k8s.io/kubebuilder/v4/cmd.kubeBuilderVersion=$(shell git describe --tags --dirty --broken) \
+    -X sigs.k8s.io/kubebuilder/v4/cmd.kubernetesVendorVersion=$(K8S_VERSION) \
     -X sigs.k8s.io/kubebuilder/v4/cmd.goos=$(shell go env GOOS) \
     -X sigs.k8s.io/kubebuilder/v4/cmd.goarch=$(shell go env GOARCH) \
     -X sigs.k8s.io/kubebuilder/v4/cmd.gitCommit=$(shell git rev-parse HEAD) \
@@ -201,13 +204,10 @@ install-helm: ## Install the latest version of Helm locally
 helm-lint: install-helm ## Lint the Helm chart in testdata
 	helm lint testdata/project-v4-with-plugins/dist/chart
 
-K8S_VERSION ?= $(shell go list -m -modfile=./testdata/project-v4/go.mod -f "{{ .Version }}" k8s.io/api | awk -F'[v.]' '{printf "1.%d.%d", $$3, $$4}')
 .PHONY: update-k8s-version
-update-k8s-version: ## Update Kubernetes API version in version.go and .goreleaser.yml
+update-k8s-version: ## Update Kubernetes API version in .goreleaser.yml
 	@if [ -z "$(K8S_VERSION)" ]; then echo "Error: K8S_VERSION is empty"; exit 1; fi
-	@echo "Updating Kubernetes version to $(K8S_VERSION)"
-	@# Update version.go
-	@sed -i.bak 's/kubernetesVendorVersion = .*/kubernetesVendorVersion = "$(K8S_VERSION)"/' cmd/version.go
+	@echo "Updating Kubernetes version to $(K8S_VERSION) in .goreleaser.yml"
 	@# Update .goreleaser.yml
 	@sed -i.bak 's/KUBERNETES_VERSION=.*/KUBERNETES_VERSION=$(K8S_VERSION)/' build/.goreleaser.yml
 	@# Clean up backup files
