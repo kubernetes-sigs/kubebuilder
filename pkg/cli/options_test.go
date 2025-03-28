@@ -38,14 +38,19 @@ import (
 var _ = Describe("Discover external plugins", func() {
 	Context("with valid plugins root path", func() {
 		var (
-			homePath   string = os.Getenv("HOME")
-			customPath string = "/tmp/myplugins"
+			homePath   string
+			customPath string
 			// store user's original EXTERNAL_PLUGINS_PATH
 			originalPluginPath string
 			xdghome            string
 			// store user's original XDG_CONFIG_HOME
 			originalXdghome string
 		)
+
+		BeforeEach(func() {
+			homePath = os.Getenv("HOME")
+			customPath = "/tmp/myplugins"
+		})
 
 		When("XDG_CONFIG_HOME is not set and using the $HOME environment variable", func() {
 			// store and unset the XDG_CONFIG_HOME
@@ -504,14 +509,24 @@ var _ = Describe("CLI options", func() {
 		c   *CLI
 		err error
 
+		projectVersion config.Version
+
+		p   plugin.Plugin
+		np1 plugin.Plugin
+		np2 mockPlugin
+		np3 plugin.Plugin
+		np4 plugin.Plugin
+	)
+
+	BeforeEach(func() {
 		projectVersion = config.Version{Number: 1}
 
-		p   = newMockPlugin(pluginName, pluginVersion, projectVersion)
+		p = newMockPlugin(pluginName, pluginVersion, projectVersion)
 		np1 = newMockPlugin("Plugin", pluginVersion, projectVersion)
 		np2 = mockPlugin{pluginName, plugin.Version{Number: -1}, []config.Version{projectVersion}}
 		np3 = newMockPlugin(pluginName, pluginVersion)
 		np4 = newMockPlugin(pluginName, pluginVersion, config.Version{})
-	)
+	})
 
 	Context("WithCommandName", func() {
 		It("should use provided command name", func() {
