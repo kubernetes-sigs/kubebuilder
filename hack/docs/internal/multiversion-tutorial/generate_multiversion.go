@@ -276,7 +276,7 @@ interfaces, a conversion webhook will be registered.
 				"Expected validation to pass for a valid update")
 		})
 	})
-	
+
 	`)
 	hackutils.CheckError("fix cronjob v1 tests after each", err)
 }
@@ -465,7 +465,7 @@ func (sp *Sample) updateWebhookV2() {
 	"fmt"`,
 		`
 	"strings"
-	
+
 	"github.com/robfig/cron"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -613,7 +613,7 @@ CronJob controller's `+"`SetupWithManager`"+` method.
 
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, path),
-		`if err = (&controller.CronJobReconciler{
+		`if err := (&controller.CronJobReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
