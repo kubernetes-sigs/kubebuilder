@@ -93,10 +93,14 @@ func (t *templateWithResource) InjectResource(res *resource.Resource) {
 }
 
 var _ = Describe("injector", func() {
-	tmp := templateBase{
-		path:           "my/path/to/file",
-		ifExistsAction: Error,
-	}
+	var tmp templateBase
+
+	BeforeEach(func() {
+		tmp = templateBase{
+			path:           "my/path/to/file",
+			ifExistsAction: Error,
+		}
+	})
 
 	Context("injectInto", func() {
 		Context("Config", func() {
