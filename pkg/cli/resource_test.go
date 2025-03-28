@@ -32,6 +32,12 @@ var _ = Describe("resourceOptions", func() {
 	)
 
 	var (
+		fullGVK     resource.GVK
+		noDomainGVK resource.GVK
+		noGroupGVK  resource.GVK
+	)
+
+	BeforeEach(func() {
 		fullGVK = resource.GVK{
 			Group:   group,
 			Domain:  domain,
@@ -48,7 +54,7 @@ var _ = Describe("resourceOptions", func() {
 			Version: version,
 			Kind:    kind,
 		}
-	)
+	})
 
 	Context("validate", func() {
 		DescribeTable("should succeed for valid options",
@@ -68,13 +74,14 @@ var _ = Describe("resourceOptions", func() {
 
 	Context("newResource", func() {
 		DescribeTable("should succeed if the Resource is valid",
-			func(options resourceOptions) {
+			func(getOpts func() resourceOptions) {
+				options := getOpts()
+
 				Expect(options.validate()).To(Succeed())
 
 				resource := options.newResource()
 				Expect(resource.Validate()).To(Succeed())
 				Expect(resource.GVK.IsEqualTo(options.GVK)).To(BeTrue())
-				// Plural is checked in the next test
 				Expect(resource.Path).To(Equal(""))
 				Expect(resource.API).NotTo(BeNil())
 				Expect(resource.API.CRDVersion).To(Equal(""))
@@ -86,9 +93,9 @@ var _ = Describe("resourceOptions", func() {
 				Expect(resource.Webhooks.Validation).To(BeFalse())
 				Expect(resource.Webhooks.Conversion).To(BeFalse())
 			},
-			Entry("full GVK", resourceOptions{GVK: fullGVK}),
-			Entry("missing domain", resourceOptions{GVK: noDomainGVK}),
-			Entry("missing group", resourceOptions{GVK: noGroupGVK}),
+			Entry("full GVK", func() resourceOptions { return resourceOptions{GVK: fullGVK} }),
+			Entry("missing domain", func() resourceOptions { return resourceOptions{GVK: noDomainGVK} }),
+			Entry("missing group", func() resourceOptions { return resourceOptions{GVK: noGroupGVK} }),
 		)
 
 		DescribeTable("should default the Plural by pluralizing the Kind",
