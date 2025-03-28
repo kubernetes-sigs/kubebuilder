@@ -62,13 +62,13 @@ layout: ""
 	)
 
 	var (
-		s *yamlStore
-
-		path = DefaultPath + "2"
+		s    *yamlStore
+		path string
 	)
 
 	BeforeEach(func() {
 		s = New(machinery.Filesystem{FS: afero.NewMemMapFs()}).(*yamlStore)
+		path = DefaultPath + "2"
 	})
 
 	Context("New", func() {
