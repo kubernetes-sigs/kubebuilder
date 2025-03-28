@@ -35,7 +35,13 @@ var _ = Describe("Options", func() {
 			version = "v1"
 			kind    = "FirstMate"
 		)
+
 		var (
+			gvk resource.GVK
+			cfg config.Config
+		)
+
+		BeforeEach(func() {
 			gvk = resource.GVK{
 				Group:   group,
 				Domain:  domain,
@@ -43,10 +49,6 @@ var _ = Describe("Options", func() {
 				Kind:    kind,
 			}
 
-			cfg config.Config
-		)
-
-		BeforeEach(func() {
 			cfg = cfgv3.New()
 			_ = cfg.SetRepository("test")
 		})
