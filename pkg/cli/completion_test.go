@@ -22,9 +22,7 @@ import (
 )
 
 var _ = Describe("Completion", func() {
-	var (
-		c *CLI
-	)
+	var c *CLI
 
 	BeforeEach(func() {
 		c = &CLI{}
@@ -78,6 +76,5 @@ var _ = Describe("Completion", func() {
 			Expect(cmd.Short).NotTo(Equal(""))
 			Expect(cmd.Short).To(ContainSubstring("Load powershell completions"))
 		})
-
 	})
 })

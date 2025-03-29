@@ -29,8 +29,13 @@ var _ = Describe("Version", func() {
 	// Parse, String and Validate are tested by MarshalJSON and UnmarshalJSON
 
 	Context("Compare", func() {
-		// Test Compare() by sorting a list.
 		var (
+			versions       []Version
+			sortedVersions []Version
+		)
+
+		BeforeEach(func() {
+			// Test Compare() by sorting a list.
 			versions = []Version{
 				{Number: 2, Stage: stage.Alpha},
 				{Number: 44, Stage: stage.Alpha},
@@ -56,7 +61,7 @@ var _ = Describe("Version", func() {
 				{Number: 44, Stage: stage.Alpha},
 				{Number: 44, Stage: stage.Alpha},
 			}
-		)
+		})
 
 		It("sorts a valid list of versions correctly", func() {
 			sort.Slice(versions, func(i int, j int) bool {

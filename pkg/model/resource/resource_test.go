@@ -17,6 +17,8 @@ limitations under the License.
 package resource
 
 import (
+	"strings"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -32,6 +34,11 @@ var _ = Describe("Resource", func() {
 	)
 
 	var (
+		gvk GVK
+		res Resource
+	)
+
+	BeforeEach(func() {
 		gvk = GVK{
 			Group:   group,
 			Domain:  domain,
@@ -42,7 +49,7 @@ var _ = Describe("Resource", func() {
 			GVK:    gvk,
 			Plural: plural,
 		}
-	)
+	})
 
 	Context("Validate", func() {
 		It("should succeed for a valid Resource", func() {
@@ -69,6 +76,13 @@ var _ = Describe("Resource", func() {
 		)
 
 		var (
+			resNoGroup     Resource
+			resNoDomain    Resource
+			resHyphenGroup Resource
+			resDotGroup    Resource
+		)
+
+		BeforeEach(func() {
 			resNoGroup = Resource{
 				GVK: GVK{
 					// Empty group
@@ -101,24 +115,28 @@ var _ = Describe("Resource", func() {
 					Kind:    kind,
 				},
 			}
-		)
+		})
 
 		DescribeTable("PackageName should return the correct string",
-			func(res Resource, packageName string) { Expect(res.PackageName()).To(Equal(packageName)) },
-			Entry("fully qualified resource", res, group),
-			Entry("empty group name", resNoGroup, safeDomain),
-			Entry("empty domain", resNoDomain, group),
-			Entry("hyphen-containing group", resHyphenGroup, safeGroup),
-			Entry("dot-containing group", resDotGroup, safeGroup),
+			func(getRes func() Resource, expected string) {
+				Expect(getRes().PackageName()).To(Equal(expected))
+			},
+			Entry("fully qualified resource", func() Resource { return res }, group),
+			Entry("empty group name", func() Resource { return resNoGroup }, safeDomain),
+			Entry("empty domain", func() Resource { return resNoDomain }, group),
+			Entry("hyphen-containing group", func() Resource { return resHyphenGroup }, safeGroup),
+			Entry("dot-containing group", func() Resource { return resDotGroup }, safeGroup),
 		)
 
 		DescribeTable("ImportAlias",
-			func(res Resource, importAlias string) { Expect(res.ImportAlias()).To(Equal(importAlias)) },
-			Entry("fully qualified resource", res, groupVersion),
-			Entry("empty group name", resNoGroup, domainVersion),
-			Entry("empty domain", resNoDomain, groupVersion),
-			Entry("hyphen-containing group", resHyphenGroup, safeAlias),
-			Entry("dot-containing group", resDotGroup, safeAlias),
+			func(getRes func() Resource, expected string) {
+				Expect(getRes().ImportAlias()).To(Equal(expected))
+			},
+			Entry("fully qualified resource", func() Resource { return res }, groupVersion),
+			Entry("empty group name", func() Resource { return resNoGroup }, domainVersion),
+			Entry("empty domain", func() Resource { return resNoDomain }, groupVersion),
+			Entry("hyphen-containing group", func() Resource { return resHyphenGroup }, safeAlias),
+			Entry("dot-containing group", func() Resource { return resDotGroup }, safeAlias),
 		)
 	})
 
@@ -199,22 +217,24 @@ var _ = Describe("Resource", func() {
 			webhookVersion = "v1"
 		)
 
-		res := Resource{
-			GVK:    gvk,
-			Plural: plural,
-			Path:   path,
-			API: &API{
-				CRDVersion: crdVersion,
-				Namespaced: true,
-			},
-			Controller: true,
-			Webhooks: &Webhooks{
-				WebhookVersion: webhookVersion,
-				Defaulting:     true,
-				Validation:     true,
-				Conversion:     true,
-			},
-		}
+		BeforeEach(func() {
+			res = Resource{
+				GVK:    gvk,
+				Plural: plural,
+				Path:   path,
+				API: &API{
+					CRDVersion: crdVersion,
+					Namespaced: true,
+				},
+				Controller: true,
+				Webhooks: &Webhooks{
+					WebhookVersion: webhookVersion,
+					Defaulting:     true,
+					Validation:     true,
+					Conversion:     true,
+				},
+			}
+		})
 
 		It("should return an exact copy", func() {
 			other := res.Copy()
@@ -423,16 +443,22 @@ var _ = Describe("Resource", func() {
 	})
 
 	Context("Replacer", func() {
-		replacer := res.Replacer()
+		var replacer *strings.Replacer
+
+		BeforeEach(func() {
+			replacer = res.Replacer()
+		})
 
 		DescribeTable("should replace the following strings",
-			func(pattern, result string) { Expect(replacer.Replace(pattern)).To(Equal(result)) },
-			Entry("no pattern", "version", "version"),
-			Entry("pattern `%[group]`", "%[group]", res.Group),
-			Entry("pattern `%[version]`", "%[version]", res.Version),
-			Entry("pattern `%[kind]`", "%[kind]", "kind"),
-			Entry("pattern `%[plural]`", "%[plural]", res.Plural),
-			Entry("pattern `%[package-name]`", "%[package-name]", res.PackageName()),
+			func(pattern string, expected func() string) {
+				Expect(replacer.Replace(pattern)).To(Equal(expected()))
+			},
+			Entry("no pattern", "version", func() string { return "version" }),
+			Entry("pattern `%[group]`", "%[group]", func() string { return res.Group }),
+			Entry("pattern `%[version]`", "%[version]", func() string { return res.Version }),
+			Entry("pattern `%[kind]`", "%[kind]", func() string { return "kind" }),
+			Entry("pattern `%[plural]`", "%[plural]", func() string { return res.Plural }),
+			Entry("pattern `%[package-name]`", "%[package-name]", func() string { return res.PackageName() }),
 		)
 	})
 })

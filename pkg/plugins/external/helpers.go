@@ -75,7 +75,7 @@ type osWdGetter struct{}
 func (o *osWdGetter) GetCurrentDir() (string, error) {
 	currentDir, err := os.Getwd()
 	if err != nil {
-		return "", fmt.Errorf("error getting current directory: %v", err)
+		return "", fmt.Errorf("error getting current directory: %w", err)
 	}
 
 	return currentDir, nil
@@ -127,7 +127,7 @@ func getUniverseMap(fs machinery.Filesystem) (map[string]string, error) {
 		}
 
 		defer func() {
-			if err := file.Close(); err != nil {
+			if err = file.Close(); err != nil {
 				return
 			}
 		}()
@@ -141,7 +141,6 @@ func getUniverseMap(fs machinery.Filesystem) (map[string]string, error) {
 
 		return nil
 	})
-
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +163,7 @@ func handlePluginResponse(fs machinery.Filesystem, req external.PluginRequest, p
 
 	currentDir, err := currentDirGetter.GetCurrentDir()
 	if err != nil {
-		return fmt.Errorf("error getting current directory: %v", err)
+		return fmt.Errorf("error getting current directory: %w", err)
 	}
 
 	for filename, data := range res.Universe {
@@ -173,7 +172,7 @@ func handlePluginResponse(fs machinery.Filesystem, req external.PluginRequest, p
 
 		// create the directory if it does not exist
 		if err := os.MkdirAll(dir, 0o750); err != nil {
-			return fmt.Errorf("error creating the directory: %v", err)
+			return fmt.Errorf("error creating the directory: %w", err)
 		}
 
 		f, err := fs.FS.Create(path)

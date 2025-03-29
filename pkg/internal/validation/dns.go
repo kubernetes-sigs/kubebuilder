@@ -99,9 +99,9 @@ func maxLenError(length int) string {
 }
 
 // regexError returns a string explanation of a regex validation failure.
-func regexError(msg string, fmt string, examples ...string) string {
+func regexError(msg string, pattern string, examples ...string) string {
 	if len(examples) == 0 {
-		return msg + " (regex used for validation is '" + fmt + "')"
+		return msg + " (regex used for validation is '" + pattern + "')"
 	}
 	msg += " (e.g. "
 	for i := range examples {
@@ -110,6 +110,6 @@ func regexError(msg string, fmt string, examples ...string) string {
 		}
 		msg += "'" + examples[i] + "', "
 	}
-	msg += "regex used for validation is '" + fmt + "')"
+	msg += "regex used for validation is '" + pattern + "')"
 	return msg
 }

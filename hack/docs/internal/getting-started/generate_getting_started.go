@@ -165,8 +165,8 @@ func (sp *Sample) updateController() {
 
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, pathFile),
-		"_ = log.FromContext(ctx)",
-		"log := log.FromContext(ctx)",
+		"_ = logf.FromContext(ctx)",
+		"log := logf.FromContext(ctx)",
 	)
 	hackutils.CheckError("add log var", err)
 
@@ -242,14 +242,16 @@ func (sp *Sample) CodeGen() {
 	hackutils.CheckError("Failed to enable helm plugin", err)
 }
 
-const oldSpecAPI = "// Foo is an example field of Memcached. Edit memcached_types.go to remove/update\n\tFoo string `json:\"foo,omitempty\"`"
-const newSpecAPI = `// Size defines the number of Memcached instances
+const (
+	oldSpecAPI = "// Foo is an example field of Memcached. Edit memcached_types.go to remove/update\n\tFoo string `json:\"foo,omitempty\"`"
+	newSpecAPI = `// Size defines the number of Memcached instances
 	// The following markers will use OpenAPI v3 schema to validate the value
 	// More info: https://book.kubebuilder.io/reference/markers/crd-validation.html
 	// +kubebuilder:validation:Minimum=1
 	// +kubebuilder:validation:Maximum=3
 	// +kubebuilder:validation:ExclusiveMaximum=false
 	Size int32 ` + "`json:\"size,omitempty\"`"
+)
 
 const oldStatusAPI = `// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file`
@@ -428,6 +430,7 @@ const controllerReconcileImplementation = `// Fetch the Memcached instance
 		log.Error(err, "Failed to update Memcached status")
 		return ctrl.Result{}, err
 	}`
+
 const controllerDeploymentFunc = `// deploymentForMemcached returns a Memcached Deployment object
 func (r *MemcachedReconciler) deploymentForMemcached(
 	memcached *cachev1alpha1.Memcached) (*appsv1.Deployment, error) {

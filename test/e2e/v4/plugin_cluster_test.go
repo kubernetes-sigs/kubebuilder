@@ -106,7 +106,8 @@ var _ = Describe("kubebuilder", func() {
 
 // Run runs a set of e2e tests for a scaffolded project defined by a TestContext.
 func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart, hasMetrics bool,
-	hasNetworkPolicies bool) {
+	hasNetworkPolicies bool,
+) {
 	var controllerPodName string
 	var err error
 
@@ -193,7 +194,7 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 
 	By("validating that the Prometheus manager has provisioned the Service")
 	Eventually(func(g Gomega) {
-		_, err := kbc.Kubectl.Get(
+		_, err = kbc.Kubectl.Get(
 			false,
 			"Service", "prometheus-operator")
 		g.Expect(err).NotTo(HaveOccurred())
@@ -207,7 +208,8 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 
 	if hasNetworkPolicies {
 		By("Checking for Calico pods")
-		outputGet, err := kbc.Kubectl.Get(
+		var outputGet string
+		outputGet, err = kbc.Kubectl.Get(
 			false,
 			"pods",
 			"-n", "kube-system",
@@ -223,7 +225,8 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 				"metrics=enabled")).Error().NotTo(HaveOccurred())
 
 			By("Ensuring the Allow Metrics Traffic NetworkPolicy exists", func() {
-				output, err := kbc.Kubectl.Get(
+				var output string
+				output, err = kbc.Kubectl.Get(
 					true,
 					"networkpolicy", fmt.Sprintf("e2e-%s-allow-metrics-traffic", kbc.TestSuffix),
 				)
@@ -240,7 +243,8 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 			Expect(err).NotTo(HaveOccurred())
 
 			By("Ensuring the allow-webhook-traffic NetworkPolicy exists", func() {
-				output, err := kbc.Kubectl.Get(
+				var output string
+				output, err = kbc.Kubectl.Get(
 					true,
 					"networkpolicy", fmt.Sprintf("e2e-%s-allow-webhook-traffic", kbc.TestSuffix),
 				)
@@ -255,7 +259,8 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 		By("validating that cert-manager has provisioned the certificate Secret")
 
 		verifyWebhookCert := func(g Gomega) {
-			output, err := kbc.Kubectl.Get(
+			var output string
+			output, err = kbc.Kubectl.Get(
 				true,
 				"secrets", "webhook-server-cert")
 			g.Expect(err).ToNot(HaveOccurred(), "webhook-server-cert should exist in the namespace")
@@ -266,7 +271,8 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 
 		By("validating that the mutating|validating webhooks have the CA injected")
 		verifyCAInjection := func(g Gomega) {
-			mwhOutput, err := kbc.Kubectl.Get(
+			var mwhOutput, vwhOutput string
+			mwhOutput, err = kbc.Kubectl.Get(
 				false,
 				"mutatingwebhookconfigurations.admissionregistration.k8s.io",
 				fmt.Sprintf("e2e-%s-mutating-webhook-configuration", kbc.TestSuffix),
@@ -275,7 +281,7 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 			// check that ca should be long enough, because there may be a place holder "\n"
 			g.Expect(len(mwhOutput)).To(BeNumerically(">", 10))
 
-			vwhOutput, err := kbc.Kubectl.Get(
+			vwhOutput, err = kbc.Kubectl.Get(
 				false,
 				"validatingwebhookconfigurations.admissionregistration.k8s.io",
 				fmt.Sprintf("e2e-%s-validating-webhook-configuration", kbc.TestSuffix),
@@ -290,7 +296,8 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 		By("validating that the CA injection is applied for CRD conversion")
 		crdKind := "ConversionTest"
 		verifyCAInjection = func(g Gomega) {
-			crdOutput, err := kbc.Kubectl.Get(
+			var crdOutput string
+			crdOutput, err = kbc.Kubectl.Get(
 				false,
 				"customresourcedefinition.apiextensions.k8s.io",
 				"-o", fmt.Sprintf(
@@ -366,7 +373,7 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 		By("applying the CR in the created namespace")
 
 		applySampleNamespaced := func(g Gomega) {
-			_, err := kbc.Kubectl.Apply(false, "-n", namespace, "-f", sampleFile)
+			_, err = kbc.Kubectl.Apply(false, "-n", namespace, "-f", sampleFile)
 			g.Expect(err).To(Not(HaveOccurred()))
 		}
 		Eventually(applySampleNamespaced, 2*time.Minute, time.Second).Should(Succeed())
@@ -493,7 +500,8 @@ func getMetricsOutput(kbc *utils.TestContext) string {
 
 	By("ensuring the service endpoint is ready")
 	checkServiceEndpoint := func(g Gomega) {
-		output, err := kbc.Kubectl.Get(
+		var output string
+		output, err = kbc.Kubectl.Get(
 			true,
 			"endpoints", fmt.Sprintf("e2e-%s-controller-manager-metrics-service", kbc.TestSuffix),
 			"-o", "jsonpath={.subsets[*].addresses[*].ip}",
@@ -511,7 +519,8 @@ func getMetricsOutput(kbc *utils.TestContext) string {
 
 	By("validating that the curl pod is running as expected")
 	verifyCurlUp := func(g Gomega) {
-		status, err := kbc.Kubectl.Get(
+		var status string
+		status, err = kbc.Kubectl.Get(
 			true,
 			"pods", "curl", "-o", "jsonpath={.status.phase}")
 		g.Expect(err).NotTo(HaveOccurred())

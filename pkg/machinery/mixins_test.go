@@ -45,13 +45,17 @@ var _ = Describe("TemplateMixin", func() {
 		body           = "content"
 	)
 
-	tmp := mockTemplate{
-		TemplateMixin: TemplateMixin{
-			PathMixin:           PathMixin{path},
-			IfExistsActionMixin: IfExistsActionMixin{ifExistsAction},
-			TemplateBody:        body,
-		},
-	}
+	var tmp mockTemplate
+
+	BeforeEach(func() {
+		tmp = mockTemplate{
+			TemplateMixin: TemplateMixin{
+				PathMixin:           PathMixin{path},
+				IfExistsActionMixin: IfExistsActionMixin{ifExistsAction},
+				TemplateBody:        body,
+			},
+		}
+	})
 
 	Context("GetPath", func() {
 		It("should return the path", func() {
@@ -75,11 +79,15 @@ var _ = Describe("TemplateMixin", func() {
 var _ = Describe("InserterMixin", func() {
 	const path = "path/to/file.go"
 
-	tmp := mockInserter{
-		InserterMixin: InserterMixin{
-			PathMixin: PathMixin{path},
-		},
-	}
+	var tmp mockInserter
+
+	BeforeEach(func() {
+		tmp = mockInserter{
+			InserterMixin: InserterMixin{
+				PathMixin: PathMixin{path},
+			},
+		}
+	})
 
 	Context("GetPath", func() {
 		It("should return the path", func() {
@@ -97,7 +105,11 @@ var _ = Describe("InserterMixin", func() {
 var _ = Describe("DomainMixin", func() {
 	const domain = "my.domain"
 
-	tmp := mockTemplate{}
+	var tmp mockTemplate
+
+	BeforeEach(func() {
+		tmp = mockTemplate{}
+	})
 
 	Context("InjectDomain", func() {
 		It("should inject the provided domain", func() {
@@ -110,7 +122,11 @@ var _ = Describe("DomainMixin", func() {
 var _ = Describe("RepositoryMixin", func() {
 	const repo = "test"
 
-	tmp := mockTemplate{}
+	var tmp mockTemplate
+
+	BeforeEach(func() {
+		tmp = mockTemplate{}
+	})
 
 	Context("InjectRepository", func() {
 		It("should inject the provided repository", func() {
@@ -123,7 +139,11 @@ var _ = Describe("RepositoryMixin", func() {
 var _ = Describe("ProjectNameMixin", func() {
 	const name = "my project"
 
-	tmp := mockTemplate{}
+	var tmp mockTemplate
+
+	BeforeEach(func() {
+		tmp = mockTemplate{}
+	})
 
 	Context("InjectProjectName", func() {
 		It("should inject the provided project name", func() {
@@ -134,7 +154,11 @@ var _ = Describe("ProjectNameMixin", func() {
 })
 
 var _ = Describe("MultiGroupMixin", func() {
-	tmp := mockTemplate{}
+	var tmp mockTemplate
+
+	BeforeEach(func() {
+		tmp = mockTemplate{}
+	})
 
 	Context("InjectMultiGroup", func() {
 		It("should inject the provided multi group flag", func() {
@@ -147,7 +171,11 @@ var _ = Describe("MultiGroupMixin", func() {
 var _ = Describe("BoilerplateMixin", func() {
 	const boilerplate = "Copyright"
 
-	tmp := mockTemplate{}
+	var tmp mockTemplate
+
+	BeforeEach(func() {
+		tmp = mockTemplate{}
+	})
 
 	Context("InjectBoilerplate", func() {
 		It("should inject the provided boilerplate", func() {
@@ -158,14 +186,21 @@ var _ = Describe("BoilerplateMixin", func() {
 })
 
 var _ = Describe("ResourceMixin", func() {
-	res := &resource.Resource{GVK: resource.GVK{
-		Group:   "group",
-		Domain:  "my.domain",
-		Version: "v1",
-		Kind:    "Kind",
-	}}
+	var (
+		res *resource.Resource
+		tmp mockTemplate
+	)
 
-	tmp := mockTemplate{}
+	BeforeEach(func() {
+		res = &resource.Resource{GVK: resource.GVK{
+			Group:   "group",
+			Domain:  "my.domain",
+			Version: "v1",
+			Kind:    "Kind",
+		}}
+
+		tmp = mockTemplate{}
+	})
 
 	Context("InjectResource", func() {
 		It("should inject the provided resource", func() {

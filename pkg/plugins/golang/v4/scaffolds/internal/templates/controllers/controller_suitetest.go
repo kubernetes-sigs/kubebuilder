@@ -25,8 +25,10 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 )
 
-var _ machinery.Template = &SuiteTest{}
-var _ machinery.Inserter = &SuiteTest{}
+var (
+	_ machinery.Template = &SuiteTest{}
+	_ machinery.Inserter = &SuiteTest{}
+)
 
 // SuiteTest scaffolds the file that sets up the controller tests
 //

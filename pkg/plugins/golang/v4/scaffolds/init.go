@@ -40,7 +40,7 @@ const (
 	// GolangciLintVersion is the golangci-lint version to be used in the project
 	GolangciLintVersion = "v1.63.4"
 	// ControllerRuntimeVersion is the kubernetes-sigs/controller-runtime version to be used in the project
-	ControllerRuntimeVersion = "v0.20.3"
+	ControllerRuntimeVersion = "v0.20.4"
 	// ControllerToolsVersion is the kubernetes-sigs/controller-tools version to be used in the project
 	ControllerToolsVersion = "v0.17.2"
 
@@ -63,9 +63,9 @@ type initScaffolder struct {
 }
 
 // NewInitScaffolder returns a new Scaffolder for project initialization operations
-func NewInitScaffolder(config config.Config, license, owner, commandName string) plugins.Scaffolder {
+func NewInitScaffolder(cfg config.Config, license, owner, commandName string) plugins.Scaffolder {
 	return &initScaffolder{
-		config:          config,
+		config:          cfg,
 		boilerplatePath: hack.DefaultBoilerplatePath,
 		license:         license,
 		owner:           owner,

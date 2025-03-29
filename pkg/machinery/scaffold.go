@@ -35,8 +35,8 @@ import (
 const (
 	createOrUpdate = os.O_WRONLY | os.O_CREATE | os.O_TRUNC
 
-	defaultDirectoryPermission os.FileMode = 0700
-	defaultFilePermission      os.FileMode = 0600
+	defaultDirectoryPermission os.FileMode = 0o700
+	defaultFilePermission      os.FileMode = 0o600
 )
 
 var options = imports.Options{
@@ -110,9 +110,9 @@ func WithBoilerplate(boilerplate string) ScaffoldOption {
 }
 
 // WithResource provides the resource to the Scaffold
-func WithResource(resource *resource.Resource) ScaffoldOption {
+func WithResource(res *resource.Resource) ScaffoldOption {
 	return func(s *Scaffold) {
-		s.injector.resource = resource
+		s.injector.resource = res
 	}
 }
 
@@ -492,7 +492,7 @@ func (s Scaffold) writeFile(f *File) (err error) {
 	}
 
 	// Create the directory if needed
-	if err := s.fs.MkdirAll(filepath.Dir(f.Path), s.dirPerm); err != nil {
+	if err = s.fs.MkdirAll(filepath.Dir(f.Path), s.dirPerm); err != nil {
 		return CreateDirectoryError{err}
 	}
 

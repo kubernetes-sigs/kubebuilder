@@ -76,7 +76,7 @@ func WithPlugins(plugins ...plugin.Plugin) Option {
 				return fmt.Errorf("two plugins have the same key: %q", key)
 			}
 			if err := plugin.Validate(p); err != nil {
-				return fmt.Errorf("broken pre-set plugin %q: %v", key, err)
+				return fmt.Errorf("broken pre-set plugin %q: %w", key, err)
 			}
 			c.plugins[key] = p
 		}
@@ -97,7 +97,7 @@ func WithDefaultPlugins(projectVersion config.Version, plugins ...plugin.Plugin)
 		}
 		for _, p := range plugins {
 			if err := plugin.Validate(p); err != nil {
-				return fmt.Errorf("broken pre-set default plugin %q: %v", plugin.KeyFor(p), err)
+				return fmt.Errorf("broken pre-set default plugin %q: %w", plugin.KeyFor(p), err)
 			}
 			if !plugin.SupportsVersion(p, projectVersion) {
 				return fmt.Errorf("default plugin %q doesn't support version %q", plugin.KeyFor(p), projectVersion)
@@ -114,7 +114,7 @@ func WithDefaultPlugins(projectVersion config.Version, plugins ...plugin.Plugin)
 func WithDefaultProjectVersion(version config.Version) Option {
 	return func(c *CLI) error {
 		if err := version.Validate(); err != nil {
-			return fmt.Errorf("broken pre-set default project version %q: %v", version, err)
+			return fmt.Errorf("broken pre-set default project version %q: %w", version, err)
 		}
 		c.defaultProjectVersion = version
 		return nil
@@ -154,13 +154,13 @@ func WithCompletion() Option {
 }
 
 // WithFilesystem is an Option that allows to set the filesystem used in the CLI.
-func WithFilesystem(fs machinery.Filesystem) Option {
+func WithFilesystem(filesystem machinery.Filesystem) Option {
 	return func(c *CLI) error {
-		if fs.FS == nil {
+		if filesystem.FS == nil {
 			return errors.New("invalid filesystem")
 		}
 
-		c.fs = fs
+		c.fs = filesystem
 		return nil
 	}
 }
@@ -203,13 +203,13 @@ func getPluginsRoot(host string) (pluginsRoot string, err error) {
 	// if user provides specific path, return
 	if pluginsPath := os.Getenv("EXTERNAL_PLUGINS_PATH"); pluginsPath != "" {
 		// verify if the path actually exists
-		if _, err := os.Stat(pluginsPath); err != nil {
+		if _, err = os.Stat(pluginsPath); err != nil {
 			if os.IsNotExist(err) {
 				// the path does not exist
 				return "", fmt.Errorf("the specified path %s does not exist", pluginsPath)
 			}
 			// some other error
-			return "", fmt.Errorf("error checking the path: %v", err)
+			return "", fmt.Errorf("error checking the path: %w", err)
 		}
 		// the path exists
 		return pluginsPath, nil
@@ -232,7 +232,7 @@ func getPluginsRoot(host string) (pluginsRoot string, err error) {
 
 	userHomeDir, err := os.UserHomeDir()
 	if err != nil {
-		return "", fmt.Errorf("error retrieving home dir: %v", err)
+		return "", fmt.Errorf("error retrieving home dir: %w", err)
 	}
 
 	return filepath.Join(userHomeDir, pluginsRoot), nil
@@ -240,14 +240,14 @@ func getPluginsRoot(host string) (pluginsRoot string, err error) {
 
 // DiscoverExternalPlugins discovers the external plugins in the plugins root directory
 // and adds them to external.Plugin.
-func DiscoverExternalPlugins(fs afero.Fs) (ps []plugin.Plugin, err error) {
+func DiscoverExternalPlugins(filesystem afero.Fs) (ps []plugin.Plugin, err error) {
 	pluginsRoot, err := retrievePluginsRoot(runtime.GOOS)
 	if err != nil {
 		logrus.Errorf("could not get plugins root: %v", err)
 		return nil, err
 	}
 
-	rootInfo, err := fs.Stat(pluginsRoot)
+	rootInfo, err := filesystem.Stat(pluginsRoot)
 	if err != nil {
 		if errors.Is(err, afero.ErrFileNotFound) {
 			logrus.Debugf("External plugins dir %q does not exist, skipping external plugin parsing", pluginsRoot)
@@ -260,7 +260,7 @@ func DiscoverExternalPlugins(fs afero.Fs) (ps []plugin.Plugin, err error) {
 		return nil, nil
 	}
 
-	pluginInfos, err := afero.ReadDir(fs, pluginsRoot)
+	pluginInfos, err := afero.ReadDir(filesystem, pluginsRoot)
 	if err != nil {
 		return nil, err
 	}
@@ -271,7 +271,7 @@ func DiscoverExternalPlugins(fs afero.Fs) (ps []plugin.Plugin, err error) {
 			continue
 		}
 
-		versions, err := afero.ReadDir(fs, filepath.Join(pluginsRoot, pluginInfo.Name()))
+		versions, err := afero.ReadDir(filesystem, filepath.Join(pluginsRoot, pluginInfo.Name()))
 		if err != nil {
 			return nil, err
 		}
@@ -282,7 +282,7 @@ func DiscoverExternalPlugins(fs afero.Fs) (ps []plugin.Plugin, err error) {
 				continue
 			}
 
-			pluginFiles, err := afero.ReadDir(fs, filepath.Join(pluginsRoot, pluginInfo.Name(), version.Name()))
+			pluginFiles, err := afero.ReadDir(filesystem, filepath.Join(pluginsRoot, pluginInfo.Name(), version.Name()))
 			if err != nil {
 				return nil, err
 			}
@@ -294,13 +294,13 @@ func DiscoverExternalPlugins(fs afero.Fs) (ps []plugin.Plugin, err error) {
 				// for example: sample.sh --> sample, externalplugin.py --> externalplugin
 				trimmedPluginName := strings.Split(pluginFile.Name(), ".")
 				if trimmedPluginName[0] == "" {
-					return nil, fmt.Errorf("Invalid plugin name found %q", pluginFile.Name())
+					return nil, fmt.Errorf("invalid plugin name found %q", pluginFile.Name())
 				}
 
 				if pluginFile.Name() == pluginInfo.Name() || trimmedPluginName[0] == pluginInfo.Name() {
 					// check whether the external plugin is an executable.
-					if !isPluginExectuable(pluginFile.Mode()) {
-						return nil, fmt.Errorf("External plugin %q found in path is not an executable", pluginFile.Name())
+					if !isPluginExecutable(pluginFile.Mode()) {
+						return nil, fmt.Errorf("external plugin %q found in path is not an executable", pluginFile.Name())
 					}
 
 					ep := external.Plugin{
@@ -317,17 +317,15 @@ func DiscoverExternalPlugins(fs afero.Fs) (ps []plugin.Plugin, err error) {
 					logrus.Printf("Adding external plugin: %s", ep.Name())
 
 					ps = append(ps, ep)
-
 				}
 			}
 		}
-
 	}
 
 	return ps, nil
 }
 
-// isPluginExectuable checks if a plugin is an executable based on the bitmask and returns true or false.
-func isPluginExectuable(mode fs.FileMode) bool {
-	return mode&0111 != 0
+// isPluginExecutable checks if a plugin is an executable based on the bitmask and returns true or false.
+func isPluginExecutable(mode fs.FileMode) bool {
+	return mode&0o111 != 0
 }

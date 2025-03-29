@@ -88,4 +88,5 @@ linters-settings:
   revive:
     rules:
       - name: comment-spacings
+      - name: import-shadowing
 `

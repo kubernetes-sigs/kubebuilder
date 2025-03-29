@@ -658,7 +658,6 @@ CronJob controller's `+"`SetupWithManager`"+` method.
 		`// +kubebuilder:docs-gen:collapse=existing setup`,
 	)
 	hackutils.CheckError("replace +kubebuilder:docs-gen:collapse=old stuff main.go", err)
-
 }
 
 func (sp *Sample) updateAPIV2() {

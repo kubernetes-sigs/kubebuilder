@@ -49,9 +49,9 @@ type apiScaffolder struct {
 }
 
 // NewAPIScaffolder returns a new Scaffolder for API/controller creation operations
-func NewAPIScaffolder(config config.Config, res resource.Resource, force bool) plugins.Scaffolder {
+func NewAPIScaffolder(cfg config.Config, res resource.Resource, force bool) plugins.Scaffolder {
 	return &apiScaffolder{
-		config:   config,
+		config:   cfg,
 		resource: res,
 		force:    force,
 	}

@@ -47,6 +47,7 @@ if !isPrometheusOperatorAlreadyInstalled {
 	_, _ = fmt.Fprintf(GinkgoWriter, "WARNING: Prometheus Operator is already installed. Skipping installation...\n")
 }
 `
+
 const serviceMonitorE2e = `
 
 By("validating that the ServiceMonitor for Prometheus is applied in the namespace")

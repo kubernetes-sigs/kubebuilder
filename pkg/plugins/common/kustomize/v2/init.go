@@ -72,13 +72,13 @@ func (p *initSubcommand) InjectConfig(c config.Config) error {
 	if p.name == "" {
 		dir, err := os.Getwd()
 		if err != nil {
-			return fmt.Errorf("error getting current directory: %v", err)
+			return fmt.Errorf("error getting current directory: %w", err)
 		}
 		p.name = strings.ToLower(filepath.Base(dir))
 	}
 	// Check if the project name is a valid k8s namespace (DNS 1123 label).
 	if err := validation.IsDNS1123Label(p.name); err != nil {
-		return fmt.Errorf("project name (%s) is invalid: %v", p.name, err)
+		return fmt.Errorf("project name %q is invalid: %v", p.name, err)
 	}
 	return p.config.SetProjectName(p.name)
 }

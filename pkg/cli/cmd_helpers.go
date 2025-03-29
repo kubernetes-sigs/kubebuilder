@@ -366,7 +366,7 @@ func updateProjectFileForAlphaGenerate() error {
 
 	// Only update the file if changes were made
 	if updated {
-		err = os.WriteFile(projectFilePath, []byte(projectStr), 0644)
+		err = os.WriteFile(projectFilePath, []byte(projectStr), 0o644)
 		if err != nil {
 			return fmt.Errorf("failed to update PROJECT file: %w", err)
 		}

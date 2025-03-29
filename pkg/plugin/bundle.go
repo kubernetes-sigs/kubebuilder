@@ -60,7 +60,6 @@ func WithDeprecationMessage(msg string) BundleOption {
 	return func(opts *bundle) {
 		opts.deprecateWarning = msg
 	}
-
 }
 
 // NewBundleWithOptions creates a new Bundle with the provided BundleOptions.

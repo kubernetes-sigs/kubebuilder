@@ -26,23 +26,30 @@ import (
 
 var _ = Describe("Errors", func() {
 	var (
-		path    = filepath.Join("path", "to", "file")
-		testErr = errors.New("test error")
+		path    string
+		testErr error
 	)
 
+	BeforeEach(func() {
+		path = filepath.Join("path", "to", "file")
+		testErr = errors.New("test error")
+	})
+
 	DescribeTable("should contain the wrapped error",
-		func(err error) {
+		func(getErr func() error) {
+			err := getErr()
+			Expect(err).To(HaveOccurred())
 			Expect(errors.Is(err, testErr)).To(BeTrue())
 		},
-		Entry("for validate errors", ValidateError{testErr}),
-		Entry("for set template defaults errors", SetTemplateDefaultsError{testErr}),
-		Entry("for file existence errors", ExistsFileError{testErr}),
-		Entry("for file opening errors", OpenFileError{testErr}),
-		Entry("for directory creation errors", CreateDirectoryError{testErr}),
-		Entry("for file creation errors", CreateFileError{testErr}),
-		Entry("for file reading errors", ReadFileError{testErr}),
-		Entry("for file writing errors", WriteFileError{testErr}),
-		Entry("for file closing errors", CloseFileError{testErr}),
+		Entry("for validate errors", func() error { return ValidateError{testErr} }),
+		Entry("for set template defaults errors", func() error { return SetTemplateDefaultsError{testErr} }),
+		Entry("for file existence errors", func() error { return ExistsFileError{testErr} }),
+		Entry("for file opening errors", func() error { return OpenFileError{testErr} }),
+		Entry("for directory creation errors", func() error { return CreateDirectoryError{testErr} }),
+		Entry("for file creation errors", func() error { return CreateFileError{testErr} }),
+		Entry("for file reading errors", func() error { return ReadFileError{testErr} }),
+		Entry("for file writing errors", func() error { return WriteFileError{testErr} }),
+		Entry("for file closing errors", func() error { return CloseFileError{testErr} }),
 	)
 
 	// NOTE: the following test increases coverage

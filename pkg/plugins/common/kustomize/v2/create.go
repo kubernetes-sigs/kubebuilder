@@ -52,7 +52,6 @@ func (p *createSubcommand) configure() (err error) {
 		if p.force, err = strconv.ParseBool(forceFlag.Value.String()); err != nil {
 			return err
 		}
-
 	}
 	return nil
 }
