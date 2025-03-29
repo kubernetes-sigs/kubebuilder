@@ -63,7 +63,8 @@ linters-settings:
       - name: bool-literal-in-expr
       - name: constant-logical-expr
       - name: comment-spacings
-
+  ginkgolinter:
+    forbid-focus-container: true
 linters:
   disable-all: true
   enable:
