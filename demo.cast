@@ -1,0 +1,7 @@
+{"version": 2, "width": 120, "height": 30, "timestamp": 1742471351, "env": {"SHELL": "/bin/bash", "TERM": "xterm-256color"}}
+[0.011902, "o", "\u001b[?2004h\u001b]0;chethan@chethan: ~/mygo/src/github.com/kubernetes-sigs/kubebuilder/tmp-demo\u0007\u001b[01;32mchethan@chethan\u001b[00m:\u001b[01;34m~/mygo/src/github.com/kubernetes-sigs/kubebuilder/tmp-demo\u001b[00m$ "]
+[3.948812, "o", "\r\n\u001b[?2004l\r"]
+[3.949392, "o", "\u001b[?2004h\u001b]0;chethan@chethan: ~/mygo/src/github.com/kubernetes-sigs/kubebuilder/tmp-demo\u0007\u001b[01;32mchethan@chethan\u001b[00m:\u001b[01;34m~/mygo/src/github.com/kubernetes-sigs/kubebuilder/tmp-demo\u001b[00m$ "]
+[5.084461, "o", "\r\n\u001b[?2004l\r"]
+[5.084761, "o", "\u001b[?2004h\u001b]0;chethan@chethan: ~/mygo/src/github.com/kubernetes-sigs/kubebuilder/tmp-demo\u0007\u001b[01;32mchethan@chethan\u001b[00m:\u001b[01;34m~/mygo/src/github.com/kubernetes-sigs/kubebuilder/tmp-demo\u001b[00m$ "]
+[9.575507, "o", "\u001b[?2004l\r\r\nexit\r\n"]

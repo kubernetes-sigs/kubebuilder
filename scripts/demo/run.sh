@@ -1,43 +1,62 @@
 #!/bin/bash
-# Copyright 2016 The Kubernetes Authors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 
-clear
-. $(dirname ${BASH_SOURCE})/util.sh
+# Determine the path to the Kubebuilder root directory
+kubebuilder_root=$(git rev-parse --show-toplevel)
 
-desc "Initialize Go modules"
-run "go mod init demo.kubebuilder.io"
+# Define the temporary directory
+tmpdir="$kubebuilder_root/tmp-demo"
 
-desc "Let's initialize the project"
-run "kubebuilder init --domain tutorial.kubebuilder.io"
-clear
+# Remove the temporary directory if it exists
+rm -rf -f "$tmpdir"
 
-desc "Examine scaffolded files..."
-run "tree ."
-clear
+# Create the temporary directory
+mkdir -p "$tmpdir"
+echo "Creating temporary directory: $tmpdir"
+cd "$tmpdir"
 
-desc "Create our custom cronjob api"
-run "kubebuilder create api --group batch --version v1 --kind CronJob"
-clear
+# Set GOPATH to the Kubebuilder root directory
+export GOPATH="$kubebuilder_root"
+export PATH="$PATH:$kubebuilder_root/bin"
 
-desc "Let's take a look at the API and Controller files"
-run "tree ./api ./internal/controller"
+# Source util.sh *before* starting Asciinema
+# . "$kubebuilder_root/scripts/demo/util.sh"
+
+# Start recording
+asciinema rec --overwrite demo.cast
+
+# Run the commands directly
+echo "Initialize Go modules"
+go mod init demo.kubebuilder.io
+
+echo "Let's initialize the project"
+kubebuilder init --domain tutorial.kubebuilder.io
 clear
 
-desc "Install CRDs in Kubernetes cluster"
-run "make install"
+echo "Examine scaffolded files..."
+tree .
 clear
 
-desc "Run controller manager locally"
-run "make run"
+echo "Create our custom cronjob api"
+kubebuilder create api --group batch --version v1 --kind CronJob
+clear
+
+echo "Let's take a look at the API and Controller files"
+tree ./api ./internal/controller
+clear
+
+# Stop recording
+echo "Recording finished. File saved as demo.cast"
+
+# Copy the recording to the current directory
+cp demo.cast "$kubebuilder_root/scripts/demo/demo.cast"
+
+# Optionally upload to asciinema.org
+# asciinema upload demo.cast
+
+# Clean up the temporary directory
+echo "Cleaning up temporary directory: $tmpdir"
+cd "$kubebuilder_root/scripts/demo"  # Go back to the original directory
+rm -rf -f "$tmpdir"
+
+echo "Asciinema recording saved to: scripts/demo/demo.cast"
+

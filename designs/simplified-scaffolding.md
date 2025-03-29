@@ -118,10 +118,10 @@ files, 6 are Kubebuilder-specific glue code, 4 are test setup, and
 user-edited code.
 
 This proliferation of files makes it difficult for users to understand how
-their code relates to the library, posing some barrier for initial adoption
+their code relates to the library, posing some barriers for initial adoption
 and moving beyond a basic knowledge of functionality to actual
 understanding of the structure.  A common line of questioning amongst
-newcomers to Kubebuilder includes "where should I put my code that adds
+newcomers to Kubebuilder include "where should I put my code that adds
 new types to a scheme" (and similar questions), which indicates that it's
 not immediately obvious to these users why the project is structured the
 way it is.
