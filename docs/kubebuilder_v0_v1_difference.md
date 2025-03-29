@@ -1,4 +1,4 @@
-# Kubebuilder v0 v.s. v1
+# Kubebuilder v0 vs v1
 
 Kubebuilder 1.0 adds a new flag `--project-version`, it accepts two different values, `v0` and `v1`. When `v0` is used, the kubebuilder behavior and workflow are the same as kubebuilder 0.*. When `v1` is specified, the generated v1 project layout is architecturally different from v0 project. v1 project uses [controller-runtime](https://github.com/kubernetes-sigs/controller-runtime) set of libraries for controller implementation and used tools under [controller-tools](https://github.com/kubernetes-sigs/controller-tools) for scaffolding and generation.
 

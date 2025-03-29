@@ -5,7 +5,7 @@ Kubernetes API server, without kubelet, controller-manager or other components.
 
 ## Installation
 
-Installing the binaries is as a simple as running `make envtest`. `envtest` will download the Kubernetes API server binaries to the `bin/` folder in your project
+Installing the binaries is as simple as running `make envtest`. `envtest` will download the Kubernetes API server binaries to the `bin/` folder in your project
 by default. `make test` is the one-stop shop for downloading the binaries, setting up the test environment, and running the tests.
 
 
@@ -106,7 +106,7 @@ Therefore, you can check that a test using ENV TEST will be generated for the co
 
 ### Configuring your test control plane
 
-Controller-runtime’s [envtest][envtest] framework requires `kubectl`, `kube-apiserver`, and `etcd` binaries be present locally to simulate the API portions of a real cluster.
+Controller-runtime's [envtest][envtest] framework requires `kubectl`, `kube-apiserver`, and `etcd` binaries be present locally to simulate the API portions of a real cluster.
 
 The `make test` command will install these binaries to the `bin/` directory and use them when running tests that use `envtest`.
 Ie,
