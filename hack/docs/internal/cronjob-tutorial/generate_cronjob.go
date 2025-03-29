@@ -17,6 +17,7 @@ limitations under the License.
 package cronjob
 
 import (
+	"fmt"
 	"os/exec"
 	"path/filepath"
 
@@ -24,6 +25,7 @@ import (
 	"github.com/spf13/afero"
 	hackutils "sigs.k8s.io/kubebuilder/v4/hack/docs/utils"
 	pluginutil "sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/golang/v4/scaffolds"
 	"sigs.k8s.io/kubebuilder/v4/test/e2e/utils"
 )
 
@@ -288,7 +290,8 @@ func (sp *Sample) updateController() {
 
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, "internal/controller/cronjob_controller.go"),
-		`// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.20.4/pkg/reconcile`, skipGoCycloLint)
+		fmt.Sprintf(`// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@%s/pkg/reconcile`,
+			scaffolds.ControllerRuntimeVersion), skipGoCycloLint)
 	hackutils.CheckError("fixing cronjob_controller.go", err)
 
 	err = pluginutil.ReplaceInFile(
