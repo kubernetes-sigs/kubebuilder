@@ -61,6 +61,7 @@ type Cfg struct {
 	Domain      string      `json:"domain,omitempty"`
 	Repository  string      `json:"repo,omitempty"`
 	Name        string      `json:"projectName,omitempty"`
+	CliVersion  string      `json:"cliVersion,omitempty"`
 	PluginChain stringSlice `json:"layout,omitempty"`
 
 	// Boolean fields
@@ -91,6 +92,17 @@ func init() {
 // GetVersion implements config.Config
 func (c Cfg) GetVersion() config.Version {
 	return c.Version
+}
+
+// GetCliVersion implements config.Config
+func (c Cfg) GetCliVersion() string {
+	return c.CliVersion
+}
+
+// SetCliVersion implements config.Config
+func (c *Cfg) SetCliVersion(version string) error {
+	c.CliVersion = version
+	return nil
 }
 
 // GetDomain implements config.Config
