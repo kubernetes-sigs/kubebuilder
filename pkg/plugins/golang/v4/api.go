@@ -17,12 +17,12 @@ limitations under the License.
 package v4
 
 import (
-	"bufio"
+	// "bufio"
 	"errors"
 	"fmt"
 	"os"
 
-	log "github.com/sirupsen/logrus"
+	// log "github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
@@ -126,14 +126,12 @@ func (p *createAPISubcommand) InjectConfig(c config.Config) error {
 func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 	p.resource = res
 
-	reader := bufio.NewReader(os.Stdin)
 	if !p.resourceFlag.Changed {
-		log.Println("Create Resource [y/n]")
-		p.options.DoAPI = util.YesNo(reader)
+		p.options.DoAPI = util.BubbleTeaYesNo("Create Resource")
 	}
+
 	if !p.controllerFlag.Changed {
-		log.Println("Create Controller [y/n]")
-		p.options.DoController = util.YesNo(reader)
+		p.options.DoController = util.BubbleTeaYesNo("Create Controller")
 	}
 
 	// Ensure that external API options cannot be used when creating an API in the project.
