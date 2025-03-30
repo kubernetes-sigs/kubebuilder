@@ -38,7 +38,7 @@ import (
 
 const (
 	// GolangciLintVersion is the golangci-lint version to be used in the project
-	GolangciLintVersion = "v1.63.4"
+	GolangciLintVersion = "2.0.2"
 	// ControllerRuntimeVersion is the kubernetes-sigs/controller-runtime version to be used in the project
 	ControllerRuntimeVersion = "v0.20.4"
 	// ControllerToolsVersion is the kubernetes-sigs/controller-tools version to be used in the project
@@ -110,7 +110,7 @@ func (s *initScaffolder) Scaffold() error {
 		}
 		bpFile.Path = s.boilerplatePath
 		if err := scaffold.Execute(bpFile); err != nil {
-			return err
+			return fmt.Errorf("failed to execute boilerplate: %w", err)
 		}
 
 		boilerplate, err := afero.ReadFile(s.fs.FS, s.boilerplatePath)
@@ -152,7 +152,7 @@ func (s *initScaffolder) Scaffold() error {
 		}
 	}
 
-	return scaffold.Execute(
+	err := scaffold.Execute(
 		&cmd.Main{
 			ControllerRuntimeVersion: ControllerRuntimeVersion,
 		},
@@ -185,4 +185,9 @@ func (s *initScaffolder) Scaffold() error {
 		&templates.DevContainer{},
 		&templates.DevContainerPostInstallScript{},
 	)
+	if err != nil {
+		return fmt.Errorf("failed to execute init scaffold: %w", err)
+	}
+
+	return nil
 }

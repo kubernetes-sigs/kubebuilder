@@ -244,7 +244,7 @@ func DiscoverExternalPlugins(filesystem afero.Fs) (ps []plugin.Plugin, err error
 	pluginsRoot, err := retrievePluginsRoot(runtime.GOOS)
 	if err != nil {
 		logrus.Errorf("could not get plugins root: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("could not get plugins root: %w", err)
 	}
 
 	rootInfo, err := filesystem.Stat(pluginsRoot)
@@ -253,7 +253,7 @@ func DiscoverExternalPlugins(filesystem afero.Fs) (ps []plugin.Plugin, err error
 			logrus.Debugf("External plugins dir %q does not exist, skipping external plugin parsing", pluginsRoot)
 			return nil, nil
 		}
-		return nil, err
+		return nil, fmt.Errorf("error getting stats for plugins %s: %w", pluginsRoot, err)
 	}
 	if !rootInfo.IsDir() {
 		logrus.Debugf("External plugins path %q is not a directory, skipping external plugin parsing", pluginsRoot)
@@ -262,7 +262,7 @@ func DiscoverExternalPlugins(filesystem afero.Fs) (ps []plugin.Plugin, err error
 
 	pluginInfos, err := afero.ReadDir(filesystem, pluginsRoot)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error reading plugins directory %q: %w", pluginsRoot, err)
 	}
 
 	for _, pluginInfo := range pluginInfos {
@@ -273,7 +273,8 @@ func DiscoverExternalPlugins(filesystem afero.Fs) (ps []plugin.Plugin, err error
 
 		versions, err := afero.ReadDir(filesystem, filepath.Join(pluginsRoot, pluginInfo.Name()))
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error reading plugin directory %s: %w",
+				filepath.Join(pluginsRoot, pluginInfo.Name()), err)
 		}
 
 		for _, version := range versions {
@@ -284,7 +285,8 @@ func DiscoverExternalPlugins(filesystem afero.Fs) (ps []plugin.Plugin, err error
 
 			pluginFiles, err := afero.ReadDir(filesystem, filepath.Join(pluginsRoot, pluginInfo.Name(), version.Name()))
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("error reading plugion version directory %q: %w",
+					filepath.Join(pluginsRoot, pluginInfo.Name(), version.Name()), err)
 			}
 
 			for _, pluginFile := range pluginFiles {
@@ -310,8 +312,8 @@ func DiscoverExternalPlugins(filesystem afero.Fs) (ps []plugin.Plugin, err error
 						Args:                      parseExternalPluginArgs(),
 					}
 
-					if err := ep.PVersion.Parse(version.Name()); err != nil {
-						return nil, err
+					if err = ep.PVersion.Parse(version.Name()); err != nil {
+						return nil, fmt.Errorf("error parsing external plugin version %q: %w", version.Name(), err)
 					}
 
 					logrus.Printf("Adding external plugin: %s", ep.Name())

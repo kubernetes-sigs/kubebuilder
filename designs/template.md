@@ -2,8 +2,7 @@
 |---------------|---------------|-------------|---|
 | @name | date | Implementable | - |
 
-Title of the Design/Proposal
-===================
+# Title of the Design/Proposal
 
 <!-- Describe your change here.  This is purposefully freeform: we want
 enough information to evaluate the design, but not so much that you're

@@ -51,7 +51,7 @@ func (p *initSubcommand) Scaffold(fs machinery.Filesystem) error {
 	scaffolder.InjectFS(fs)
 	err := scaffolder.Scaffold()
 	if err != nil {
-		return err
+		return fmt.Errorf("error scaffolding helm chart: %w", err)
 	}
 
 	// Track the resources following a declarative approach

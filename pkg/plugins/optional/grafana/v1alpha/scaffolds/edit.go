@@ -100,7 +100,7 @@ func configReader(reader io.Reader) ([]templates.CustomMetricItem, error) {
 
 func validateCustomMetricItems(rawItems []templates.CustomMetricItem) []templates.CustomMetricItem {
 	// 1. Filter items of missing `Metric` or `Type`
-	filterResult := []templates.CustomMetricItem{}
+	var filterResult []templates.CustomMetricItem
 	for _, item := range rawItems {
 		if hasFields(item) {
 			filterResult = append(filterResult, item)
@@ -170,7 +170,7 @@ func (s *editScaffolder) Scaffold() error {
 	// Initialize the machinery.Scaffold that will write the files to disk
 	scaffold := machinery.NewScaffold(s.fs)
 
-	configPath := string(configFilePath)
+	configPath := configFilePath
 
 	templatesBuilder := []machinery.Builder{
 		&templates.RuntimeManifest{},

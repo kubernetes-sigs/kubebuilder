@@ -191,7 +191,7 @@ var _ = Describe("{{ .Resource.Kind }} controller", func() {
 
 			By("Checking the latest Status Condition added to the {{ .Resource.Kind }} instance")
 			Expect(k8sClient.Get(ctx, typeNamespacedName, {{ lower .Resource.Kind }})).To(Succeed())
-			conditions := []metav1.Condition{}
+			var conditions []metav1.Condition
 			Expect({{ lower .Resource.Kind }}.Status.Conditions).To(ContainElement(
 				HaveField("Type", Equal(typeAvailable{{ .Resource.Kind }})), &conditions))
 			Expect(conditions).To(HaveLen(1), "Multiple conditions of type %s", typeAvailable{{ .Resource.Kind }})

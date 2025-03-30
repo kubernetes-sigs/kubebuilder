@@ -246,7 +246,7 @@ func (s *initScaffolder) copyConfigFiles() error {
 
 		files, err := filepath.Glob(filepath.Join(dir.SrcDir, "*.yaml"))
 		if err != nil {
-			return err
+			return fmt.Errorf("failed finding files in %q: %w", dir.SrcDir, err)
 		}
 
 		// Skip processing if the directory is empty (no matching files)
@@ -291,13 +291,13 @@ func (s *initScaffolder) copyConfigFiles() error {
 func copyFileWithHelmLogic(srcFile, destFile, subDir, projectName string, hasConvertionalWebhook bool) error {
 	if _, err := os.Stat(srcFile); os.IsNotExist(err) {
 		log.Printf("Source file does not exist: %s", srcFile)
-		return err
+		return fmt.Errorf("source file does not exist %q: %w", srcFile, err)
 	}
 
 	content, err := os.ReadFile(srcFile)
 	if err != nil {
 		log.Printf("Error reading source file: %s", srcFile)
-		return err
+		return fmt.Errorf("failed to read file %q: %w", srcFile, err)
 	}
 
 	contentStr := string(content)
@@ -433,13 +433,13 @@ func copyFileWithHelmLogic(srcFile, destFile, subDir, projectName string, hasCon
 	}
 
 	if err = os.MkdirAll(filepath.Dir(destFile), os.ModePerm); err != nil {
-		return err
+		return fmt.Errorf("error creating directory %q: %w", filepath.Dir(destFile), err)
 	}
 
 	err = os.WriteFile(destFile, []byte(wrappedContent), os.ModePerm)
 	if err != nil {
 		log.Printf("Error writing destination file: %s", destFile)
-		return err
+		return fmt.Errorf("error writing destination file %q: %w", destFile, err)
 	}
 
 	log.Printf("Successfully copied %s to %s", srcFile, destFile)

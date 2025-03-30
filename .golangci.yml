@@ -1,96 +1,87 @@
+version: "2"
 run:
-  timeout: 5m
   allow-parallel-runners: true
-
-issues:
-  # don't skip warning about doc comments
-  # don't exclude the default set of lint
-  exclude-use-default: false
-  # restore some of the defaults
-  # (fill in the rest as needed)
-  exclude-rules:
-    - linters: [gosec]
-      path: "test/e2e/*"
-    - path: "hack/docs/*"
-      linters:
-        - lll
-        - gosec
-
-linters-settings:
-  govet:
-    enable-all: true
-    disable:
-      - fieldalignment
-  nolintlint:
-    allow-unused: false
-  revive:
-    rules:
-      # The following rules are recommended https://github.com/mgechev/revive#recommended-configuration
-      - name: blank-imports
-      - name: context-as-argument
-      - name: context-keys-type
-      - name: dot-imports
-        arguments:
-          # dot import should be ONLY allowed for ginkgo testing packages
-          - allowedPackages:
-              - "github.com/onsi/ginkgo/v2"
-              - "github.com/onsi/gomega"
-      - name: error-return
-      - name: error-strings
-      - name: error-naming
-      - name: exported
-      - name: if-return
-      - name: import-shadowing
-      - name: increment-decrement
-      - name: var-naming
-      - name: var-declaration
-      - name: package-comments
-        disabled: true  # TODO: Investigate if it should be enabled. Disabled for now due to many findings.
-      - name: range
-      - name: receiver-naming
-      - name: time-naming
-      - name: unexported-return
-      - name: indent-error-flow
-      - name: errorf
-      - name: empty-block
-      - name: superfluous-else
-      - name: unused-parameter
-      - name: unreachable-code
-      - name: redefines-builtin-id
-      #
-      # Rules in addition to the recommended configuration above.
-      #
-      - name: bool-literal-in-expr
-      - name: constant-logical-expr
-      - name: comment-spacings
-
 linters:
-  disable-all: true
   enable:
     - asciicheck
     - bidichk
-    - dupl
-    - errcheck
     - copyloopvar
+    - dupl
     - ginkgolinter
     - goconst
     - gocyclo
-    - gofmt
-    - gofumpt
-    - goimports
-    - gosimple
-    - govet
-    - ineffassign
     - lll
     - misspell
-    - nolintlint
     - nakedret
+    - nolintlint
     - prealloc
     - revive
-    - staticcheck
-    - typecheck
     - unconvert
     - unparam
-    - unused
     - whitespace
-
+  settings:
+    ginkgolinter:
+      forbid-focus-container: true
+      forbid-spec-pollution: true
+    govet:
+      disable:
+        - fieldalignment
+      enable-all: true
+    nolintlint:
+      allow-unused: false
+    revive:
+      rules:
+        - name: blank-imports
+        - name: context-as-argument
+        - name: context-keys-type
+        - name: dot-imports
+          arguments:
+            - allowedPackages:
+                - github.com/onsi/ginkgo/v2
+                - github.com/onsi/gomega
+        - name: error-return
+        - name: error-strings
+        - name: error-naming
+        - name: exported
+        - name: if-return
+        - name: import-shadowing
+        - name: increment-decrement
+        - name: var-naming
+        - name: var-declaration
+        - name: package-comments
+          disabled: true
+        - name: range
+        - name: receiver-naming
+        - name: time-naming
+        - name: unexported-return
+        - name: indent-error-flow
+        - name: errorf
+        - name: empty-block
+        - name: superfluous-else
+        - name: unused-parameter
+        - name: unreachable-code
+        - name: redefines-builtin-id
+        - name: bool-literal-in-expr
+        - name: constant-logical-expr
+        - name: comment-spacings
+  exclusions:
+    generated: lax
+    rules:
+      - linters:
+          - gosec
+        path: test/e2e/*
+      - linters:
+          - gosec
+          - lll
+        path: hack/docs/*
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

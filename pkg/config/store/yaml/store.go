@@ -60,7 +60,7 @@ func New(fs machinery.Filesystem) store.Store {
 func (s *yamlStore) New(version config.Version) error {
 	cfg, err := config.New(version)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not create config: %w", err)
 	}
 
 	s.cfg = cfg

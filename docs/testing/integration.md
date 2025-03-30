@@ -75,7 +75,7 @@ func TestReconcile(t *testing.T) {
 }
 ```
 
-`SetupTestReconcile` function above brings up an API server and etcd instance. Note that there is no any node creation for integration testing environment. If you want to test your controller on a real node, you should write end-to-end tests.
+`SetupTestReconcile` function above brings up an API server and etcd instance. Note that there are no nodes created for the integration testing environment. If you want to test your controller on a real node, you should write end-to-end tests.
 
 The manager is started as part of the test itself (`StartTestManager` function).
 
