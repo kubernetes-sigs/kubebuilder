@@ -55,6 +55,21 @@ function create_cluster {
 function delete_cluster {
   : ${KIND_CLUSTER:?"KIND_CLUSTER must be set"}
   kind delete cluster --name $KIND_CLUSTER
+  echo "Deleting cert-manager resources..."
+  kubectl delete --ignore-not-found=true -n kube-system deployment cert-manager-cainjector
+  kubectl delete --ignore-not-found=true -n kube-system deployment cert-manager-controller
+  kubectl delete --ignore-not-found=true -n kube-system deployment cert-manager-webhook
+
+  # Delete the cert-manager namespace itself (if it exists)
+  kubectl delete --ignore-not-found=true namespace cert-manager
+
+   # Delete Calico
+  echo "Deleting Calico..."
+  kubectl delete --ignore-not-found=true -f https://docs.projectcalico.org/manifests/calico.yaml
+
+  # Finally, delete the Kind cluster
+  echo "Deleting Kind cluster..."
+  kind delete cluster --name $KIND_CLUSTER
 }
 
 function test_cluster {
