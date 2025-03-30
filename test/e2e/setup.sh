@@ -54,7 +54,6 @@ function create_cluster {
 #   delete_cluster
 function delete_cluster {
   : ${KIND_CLUSTER:?"KIND_CLUSTER must be set"}
-  kind delete cluster --name $KIND_CLUSTER
   echo "Deleting cert-manager resources..."
   kubectl delete --ignore-not-found=true -n kube-system deployment cert-manager-cainjector
   kubectl delete --ignore-not-found=true -n kube-system deployment cert-manager-controller
