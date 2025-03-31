@@ -17,7 +17,6 @@ limitations under the License.
 package v3
 
 import (
-	"errors"
 	"sort"
 	"testing"
 
@@ -407,13 +406,13 @@ var _ = Describe("Cfg", func() {
 		It("DecodePluginConfig should fail for no plugin config object", func() {
 			err := c0.DecodePluginConfig(key, &pluginCfg)
 			Expect(err).To(HaveOccurred())
-			Expect(errors.As(err, &config.PluginKeyNotFoundError{})).To(BeTrue())
+			Expect(err).To(MatchError(config.PluginKeyNotFoundError{Key: key}))
 		})
 
 		It("DecodePluginConfig should fail to retrieve data from a non-existent plugin", func() {
 			err := c1.DecodePluginConfig("plugin-y", &pluginCfg)
 			Expect(err).To(HaveOccurred())
-			Expect(errors.As(err, &config.PluginKeyNotFoundError{})).To(BeTrue())
+			Expect(err).To(MatchError(config.PluginKeyNotFoundError{Key: "plugin-y"}))
 		})
 
 		DescribeTable("DecodePluginConfig should retrieve the plugin data correctly",
