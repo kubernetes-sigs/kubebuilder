@@ -405,14 +405,12 @@ var _ = Describe("Cfg", func() {
 		})
 
 		It("DecodePluginConfig should fail for no plugin config object", func() {
-			var pluginCfg PluginConfig
 			err := c0.DecodePluginConfig(key, &pluginCfg)
 			Expect(err).To(HaveOccurred())
 			Expect(errors.As(err, &config.PluginKeyNotFoundError{})).To(BeTrue())
 		})
 
 		It("DecodePluginConfig should fail to retrieve data from a non-existent plugin", func() {
-			var pluginCfg PluginConfig
 			err := c1.DecodePluginConfig("plugin-y", &pluginCfg)
 			Expect(err).To(HaveOccurred())
 			Expect(errors.As(err, &config.PluginKeyNotFoundError{})).To(BeTrue())
@@ -420,7 +418,7 @@ var _ = Describe("Cfg", func() {
 
 		DescribeTable("DecodePluginConfig should retrieve the plugin data correctly",
 			func(getCfg func() Cfg, expected func() PluginConfig) {
-				var pluginCfg PluginConfig
+				pluginCfg = PluginConfig{} // reset to not reuse values
 				Expect(getCfg().DecodePluginConfig(key, &pluginCfg)).To(Succeed())
 				Expect(pluginCfg).To(Equal(expected()))
 			},
