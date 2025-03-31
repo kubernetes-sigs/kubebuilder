@@ -60,7 +60,7 @@ import (
 // +kubebuilder:docs-gen:collapse=Imports
 
 /*
-The first step to writing a simple integration test is to actually create an instance of CronJob you can run tests against.
+The first step to writing a simple integration test is to create an instance of CronJob you can run tests against.
 Note that to create a CronJob, you’ll need to create a stub CronJob struct that contains your CronJob’s specifications.
 
 Note that when we create a stub CronJob, the CronJob also needs stubs of its required downstream objects.
@@ -123,7 +123,7 @@ var _ = Describe("CronJob controller", func() {
 				` +
 	"`" + `Eventually()` + "`" + ` will repeatedly run the function provided as an argument every interval seconds until
 				(a) the assertions done by the passed-in ` + "`" + `Gomega` + "`" + ` succeed, or
-				(b) the number of attempts * interval period exceed the provided timeout value.
+				(b) the number of attempts * interval period exceeds the provided timeout value.
 
 				In the examples below, timeout and interval are Go Duration values of our choosing.
 			*/
