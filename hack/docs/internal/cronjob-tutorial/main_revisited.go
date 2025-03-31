@@ -25,7 +25,7 @@ group's package (` + "`" + `batchv1` + "`" + `) to our scheme.  This means that 
 objects in our controller.
 
 If we would be using any other CRD we would have to add their scheme the same way.
-Builtin types such as Job have their scheme added by` + " `" + `clientgoscheme` + "`" + `.
+Built-in types such as Job have their scheme added by` + " `" + `clientgoscheme` + "`" + `.
 */`
 
 const mainEnableWebhook = `

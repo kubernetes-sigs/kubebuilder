@@ -60,7 +60,7 @@ import (
 // +kubebuilder:docs-gen:collapse=Imports
 
 /*
-The first step to writing a simple integration test is to actually create an instance of CronJob you can run tests against.
+The first step to writing a simple integration test is to create an instance of CronJob you can run tests against.
 Note that to create a CronJob, you’ll need to create a stub CronJob struct that contains your CronJob’s specifications.
 
 Note that when we create a stub CronJob, the CronJob also needs stubs of its required downstream objects.
@@ -123,7 +123,7 @@ var _ = Describe("CronJob controller", func() {
 				` +
 	"`" + `Eventually()` + "`" + ` will repeatedly run the function provided as an argument every interval seconds until
 				(a) the assertions done by the passed-in ` + "`" + `Gomega` + "`" + ` succeed, or
-				(b) the number of attempts * interval period exceed the provided timeout value.
+				(b) the number of attempts * interval period exceeds the provided timeout value.
 
 				In the examples below, timeout and interval are Go Duration values of our choosing.
 			*/
@@ -140,7 +140,7 @@ var _ = Describe("CronJob controller", func() {
 			/*
 				Now that we've created a CronJob in our test cluster, the next step is to write a test that actually tests our CronJob controller’s behavior.
 				Let’s test the CronJob controller’s logic responsible for updating CronJob.Status.Active with actively running jobs.
-				We’ll verify that when a CronJob has a single active downstream Job, its CronJob.Status.Active field contains a reference to this Job.
+				We’ll verify that when a CronJob has a single active downstream Job, it's CronJob.Status.The active field contains a reference to this Job.
 
 				First, we should get the test CronJob we created earlier, and verify that it currently does not have any active jobs.
 				We use Gomega's` + " `" + `Consistently()` + "`" + ` check here to ensure that the active job count remains 0 over a duration of time.
@@ -151,7 +151,7 @@ var _ = Describe("CronJob controller", func() {
 				g.Expect(createdCronjob.Status.Active).To(BeEmpty())
 			}, duration, interval).Should(Succeed())
 			/*
-				Next, we actually create a stubbed Job that will belong to our CronJob, as well as its downstream template specs.
+				Next, we create a stubbed Job that will belong to our CronJob, as well as its downstream template specs.
 				We set the Job's status's "Active" count to 2 to simulate the Job running two pods, which means the Job is actively running.
 
 				We then take the stubbed Job and set its owner reference to point to our test CronJob.
