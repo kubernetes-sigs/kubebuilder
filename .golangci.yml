@@ -94,5 +94,6 @@ linters:
     - unconvert
     - unparam
     - unused
+    - wrapcheck
     - whitespace
 
