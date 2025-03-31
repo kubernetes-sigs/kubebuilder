@@ -128,8 +128,8 @@ func (sp *Sample) UpdateTutorial() {
 	sp.updateE2E()
 }
 
-// CodeGen is a noop for this sample, just to make generation of all samples
-// more efficient. We may want to refactor `UpdateTutorial` some day to take
+// CodeGen will generate the code for the sample project by running make targets.
+// We may want to refactor `UpdateTutorial` some day to take
 // advantage of a separate call, but it is not necessary.
 func (sp *Sample) CodeGen() {
 	cmd := exec.Command("make", "all")
@@ -602,7 +602,7 @@ var _ = AfterSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 })
 `, suiteTestCleanup)
-	hackutils.CheckError("updating suite_test.go to cleanup tests", err)
+	hackutils.CheckError("updating suite_test.go to clean up tests", err)
 }
 
 func (sp *Sample) updateKustomization() {

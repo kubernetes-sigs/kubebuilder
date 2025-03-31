@@ -17,7 +17,7 @@ limitations under the License.
 package cronjob
 
 const isPrometheusInstalledVar = `
-// isPrometheusOperatorAlreadyInstalled will be set true when prometheus CRDs be found on the cluster
+// isPrometheusOperatorAlreadyInstalled will be set to be true when prometheus CRDs are found on the cluster
 isPrometheusOperatorAlreadyInstalled = false
 `
 
@@ -36,7 +36,7 @@ if !isPrometheusOperatorAlreadyInstalled {
 
 const checkPrometheusInstalled = `
 // To prevent errors when tests run in environments with Prometheus already installed,
-// we check for its presence before execution.
+// We check for its presence before execution.
 // Setup Prometheus before the suite if not already installed
 By("checking if prometheus is installed already")
 isPrometheusOperatorAlreadyInstalled = utils.IsPrometheusCRDsInstalled()

@@ -36,7 +36,7 @@ var (
 	skipCertManagerInstall = os.Getenv("CERT_MANAGER_INSTALL_SKIP") == "true"
 	// isCertManagerAlreadyInstalled will be set true when CertManager CRDs be found on the cluster
 	isCertManagerAlreadyInstalled = false
-	// isPrometheusOperatorAlreadyInstalled will be set true when prometheus CRDs be found on the cluster
+	// isPrometheusOperatorAlreadyInstalled will be set to be true when prometheus CRDs are found on the cluster
 	isPrometheusOperatorAlreadyInstalled = false
 
 	// projectImage is the name of the image which will be build and loaded
@@ -71,7 +71,7 @@ var _ = BeforeSuite(func() {
 
 	// The tests-e2e are intended to run on a temporary cluster that is created and destroyed for testing.
 	// To prevent errors when tests run in environments with Prometheus already installed,
-	// we check for its presence before execution.
+	// We check for its presence before execution.
 	// Setup Prometheus before the suite if not already installed
 	By("checking if prometheus is installed already")
 	isPrometheusOperatorAlreadyInstalled = utils.IsPrometheusCRDsInstalled()
