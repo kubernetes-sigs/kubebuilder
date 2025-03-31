@@ -128,8 +128,8 @@ func (sp *Sample) UpdateTutorial() {
 	sp.updateE2E()
 }
 
-// CodeGen is a noop for this sample, just to make generation of all samples
-// more efficient. We may want to refactor `UpdateTutorial` some day to take
+// CodeGen will generate the code for the sample project by running make targets.
+// We may want to refactor `UpdateTutorial` some day to take
 // advantage of a separate call, but it is not necessary.
 func (sp *Sample) CodeGen() {
 	cmd := exec.Command("make", "all")
@@ -379,8 +379,8 @@ manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and Cust
 `
 	const changedManifestTarget = `.PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
-	# Note that the option maxDescLen=0 was added in the default scaffold in order to sort out the issue
-	# Too long: must have at most 262144 bytes. By using kubectl apply to create / update resources an annotation
+	# Note that the option maxDescLen=0 was added in the default scaffold to sort out the issue
+	# Too long: must have at most 262144 bytes. By using kubectl to create/update resources an annotation
 	# is created by K8s API to store the latest version of the resource ( kubectl.kubernetes.io/last-applied-configuration).
 	# However, it has a size limit and if the CRD is too big with so many long descriptions as this one it will cause the failure.
 	$(CONTROLLER_GEN) rbac:roleName=manager-role crd:maxDescLen=0 webhook paths="./..." output:crd:artifacts:config=config/crd/bases
@@ -602,7 +602,7 @@ var _ = AfterSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 })
 `, suiteTestCleanup)
-	hackutils.CheckError("updating suite_test.go to cleanup tests", err)
+	hackutils.CheckError("updating suite_test.go to clean up tests", err)
 }
 
 func (sp *Sample) updateKustomization() {
