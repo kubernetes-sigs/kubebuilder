@@ -24,6 +24,7 @@ linters:
     - unconvert
     - unparam
     - unused
+    - wrapcheck
     - whitespace
   settings:
     ginkgolinter:
