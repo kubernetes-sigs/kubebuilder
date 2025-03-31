@@ -17,12 +17,10 @@ limitations under the License.
 package v4
 
 import (
-	// "bufio"
 	"errors"
 	"fmt"
 	"os"
 
-	// log "github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
