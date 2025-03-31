@@ -137,8 +137,8 @@ they think it is, we're probably better served coming up with a standard
 "can I create this example YAML file".
 
 Furthermore, since the structure is quite convoluted, it makes it more
-difficult to write examples, since the actual code we care about ends up
-scattered deep in a folder structure.
+difficult to write examples, as the actual code we care about ends up
+scattered deep in the folder structure.
 
 ### Lack of Builder
 
