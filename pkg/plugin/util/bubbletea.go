@@ -6,35 +6,41 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// YesNoModel is a Bubbletea model for yes/no prompts
+// Color constants
+const (
+	HighlightColor = "#FF4D8B"
+	HelpTextColor  = "#626262"
+)
+
+// YesNoModel represents a simple yes/no selection prompt.
+// It implements the tea.Model interface for use with Bubble Tea.
 type YesNoModel struct {
+	// Question is the prompt text shown to the user
 	Question string
-	Cursor   int
-	Selected bool
+	// Choice tracks the selection (true = Yes, false = No)
+	Choice bool
+	// Done indicates whether the selection has been confirmed
+	Done bool
 }
 
+// Init fulfills the tea.Model interface but doesn't need to do anything
+// for this simple model.
 func (m YesNoModel) Init() tea.Cmd {
 	return nil
 }
 
+// Update handles user input and updates the model state accordingly.
+// It processes keystrokes to navigate between options and confirm selections.
 func (m YesNoModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "left", "h", "up", "k":
-			m.Cursor = 0 // Yes
-		case "right", "l", "down", "j":
-			m.Cursor = 1 // No
-		case "y", "Y":
-			m.Cursor = 0
-			m.Selected = true
-			return m, tea.Quit
-		case "n", "N":
-			m.Cursor = 1
-			m.Selected = true
-			return m, tea.Quit
+		case "y", "Y", "left", "up":
+			m.Choice = true
+		case "n", "N", "right", "down":
+			m.Choice = false
 		case "enter", " ":
-			m.Selected = true
+			m.Done = true
 			return m, tea.Quit
 		case "q", "ctrl+c", "esc":
 			return m, tea.Quit
@@ -43,37 +49,63 @@ func (m YesNoModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+// View renders the current state of the model as a string.
+// When done, it shows the final selection instead of clearing the screen.
 func (m YesNoModel) View() string {
-	if m.Selected {
-		return ""
+	if m.Done {
+		result := "No"
+		if m.Choice {
+			result = "Yes"
+		}
+		return fmt.Sprintf("%s: %s", m.Question, result)
 	}
 
-	question := lipgloss.NewStyle().Bold(true).Render(m.Question)
+	// Style definitions
+	highlightStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(HighlightColor))
+	boldStyle := lipgloss.NewStyle().Bold(true)
+	helpStyle := lipgloss.NewStyle().Foreground(lipgloss.Color(HelpTextColor))
+
+	// Prepare options based on current selection
 	yes := "[ ] Yes"
 	no := "[ ] No"
-	
-	// Mark selected option
-	if m.Cursor == 0 {
-		yes = "[x] " + lipgloss.NewStyle().Foreground(lipgloss.Color("#FF4D8B")).Render("Yes")
+	if m.Choice {
+		yes = "[x] " + highlightStyle.Render("Yes")
 	} else {
-		no = "[x] " + lipgloss.NewStyle().Foreground(lipgloss.Color("#FF4D8B")).Render("No")
+		no = "[x] " + highlightStyle.Render("No")
 	}
-	
-	return fmt.Sprintf("\n  %s\n\n  › %s\n  › %s\n\n  %s\n", 
-		question, yes, no,
-		lipgloss.NewStyle().Foreground(lipgloss.Color("#626262")).Render("← →: select • enter: choose • y/n: quick select"))
+
+	// Render the full prompt
+	return fmt.Sprintf("\n  %s\n\n  › %s\n  › %s\n\n  %s\n",
+		boldStyle.Render(m.Question),
+		yes, no,
+		helpStyle.Render("y/n: select • enter: confirm"))
 }
 
-// BubbleTeaYesNo prompts the user with a yes/no question using Bubbletea UI
+// BubbleTeaYesNo presents a user with a yes/no prompt using Bubble Tea UI.
+//
+// It displays an interactive prompt with the given question and returns
+// the user's selection as a boolean (true = Yes, false = No).
+//
+// If Bubble Tea encounters an error, it falls back to a simple terminal prompt.
+//
+// Example usage:
+//
+//	if util.BubbleTeaYesNo("Create Resource?") {
+//	    // User selected "Yes"
+//	} else {
+//	    // User selected "No"
+//	}
 func BubbleTeaYesNo(question string) bool {
 	model := YesNoModel{
 		Question: question,
-		Cursor:   0, // Default to Yes
+		Choice:   true, // Default to Yes
 	}
 
-	p := tea.NewProgram(model)
+    p := tea.NewProgram(model)
 	finalModel, err := p.Run()
+
 	if err != nil {
+		// Fallback to simple prompt if error
 		fmt.Printf("%s [y/n] ", question)
 		var response string
 		fmt.Scanln(&response)
@@ -81,9 +113,18 @@ func BubbleTeaYesNo(question string) bool {
 	}
 
 	m, ok := finalModel.(YesNoModel)
-	if !ok || !m.Selected {
+	if !ok || !m.Done {
+		// User quit without confirming - print the result
+		fmt.Printf("%s: No (cancelled)\n", question)
 		return false
 	}
 
-	return m.Cursor == 0 // Return true if Yes (index 0) was selected
+	// User made a selection - print the result
+	result := "No"
+	if m.Choice {
+		result = "Yes"
+	}
+	fmt.Printf("%s: %s\n", question, result)
+
+	return m.Choice
 }
