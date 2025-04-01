@@ -170,7 +170,7 @@ func (s *editScaffolder) Scaffold() error {
 	// Initialize the machinery.Scaffold that will write the files to disk
 	scaffold := machinery.NewScaffold(s.fs)
 
-	configPath := string(configFilePath)
+	configPath := configFilePath
 
 	templatesBuilder := []machinery.Builder{
 		&templates.RuntimeManifest{},
