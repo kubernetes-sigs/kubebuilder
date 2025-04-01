@@ -42,6 +42,9 @@ linters:
     - unused
 
 linters-settings:
+  ginkgolinter:
+    forbid-focus-container: true
+    forbid-spec-pollution: true
   revive:
     rules:
       - name: comment-spacings
