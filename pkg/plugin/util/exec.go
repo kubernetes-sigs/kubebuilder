@@ -17,6 +17,7 @@ limitations under the License.
 package util
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"strings"
@@ -30,5 +31,10 @@ func RunCmd(msg, cmd string, args ...string) error {
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
 	log.Println(msg + ":\n$ " + strings.Join(c.Args, " "))
-	return c.Run()
+
+	if err := c.Run(); err != nil {
+		return fmt.Errorf("error running %q: %w", cmd, err)
+	}
+
+	return nil
 }
