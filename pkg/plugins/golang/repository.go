@@ -45,8 +45,8 @@ func findGoModulePath() (string, error) {
 		return "", err
 	}
 	mod := goMod{}
-	if err := json.Unmarshal(out, &mod); err != nil {
-		return "", err
+	if err = json.Unmarshal(out, &mod); err != nil {
+		return "", fmt.Errorf("failed to unmarshal go.mod: %w", err)
 	}
 	return mod.Module.Path, nil
 }
