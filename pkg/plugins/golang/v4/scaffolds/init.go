@@ -110,7 +110,7 @@ func (s *initScaffolder) Scaffold() error {
 		}
 		bpFile.Path = s.boilerplatePath
 		if err := scaffold.Execute(bpFile); err != nil {
-			return err
+			return fmt.Errorf("failed to execute boilerplate: %w", err)
 		}
 
 		boilerplate, err := afero.ReadFile(s.fs.FS, s.boilerplatePath)
@@ -152,7 +152,7 @@ func (s *initScaffolder) Scaffold() error {
 		}
 	}
 
-	return scaffold.Execute(
+	err := scaffold.Execute(
 		&cmd.Main{
 			ControllerRuntimeVersion: ControllerRuntimeVersion,
 		},
@@ -185,4 +185,9 @@ func (s *initScaffolder) Scaffold() error {
 		&templates.DevContainer{},
 		&templates.DevContainerPostInstallScript{},
 	)
+	if err != nil {
+		return fmt.Errorf("failed to execute init scaffold: %w", err)
+	}
+
+	return nil
 }
