@@ -18,6 +18,7 @@ issues:
 
 linters-settings:
   ginkgolinter:
+    forbid-focus-container: true
     forbid-spec-pollution: true
   govet:
     enable-all: true
@@ -65,8 +66,6 @@ linters-settings:
       - name: bool-literal-in-expr
       - name: constant-logical-expr
       - name: comment-spacings
-  ginkgolinter:
-    forbid-focus-container: true
 linters:
   disable-all: true
   enable:
