@@ -77,20 +77,20 @@ func loadConfig(configPath string) ([]templates.CustomMetricItem, error) {
 		return nil, fmt.Errorf("could not close config.yaml: %w", err)
 	}
 
-	return items, err
+	return items, nil
 }
 
 func configReader(reader io.Reader) ([]templates.CustomMetricItem, error) {
 	yamlFile, err := io.ReadAll(reader)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error reading config.yaml: %w", err)
 	}
 
 	config := templates.CustomMetricsConfig{}
 
 	err = yaml.Unmarshal(yamlFile, &config)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error parsing config.yaml: %w", err)
 	}
 
 	validatedMetricItems := validateCustomMetricItems(config.CustomMetrics)
@@ -185,5 +185,9 @@ func (s *editScaffolder) Scaffold() error {
 		_, _ = fmt.Fprintf(os.Stderr, "Error on scaffolding manifest for custom metris:\n%v", err)
 	}
 
-	return scaffold.Execute(templatesBuilder...)
+	if err = scaffold.Execute(templatesBuilder...); err != nil {
+		return fmt.Errorf("error scaffolding Grafana manifests: %w", err)
+	}
+
+	return nil
 }
