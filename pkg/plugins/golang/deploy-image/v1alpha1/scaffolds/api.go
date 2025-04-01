@@ -294,7 +294,11 @@ func (s *apiScaffolder) scaffoldCreateAPIFromGolang() error {
 	golangV4Scaffolder := golangv4scaffolds.NewAPIScaffolder(s.config,
 		s.resource, true)
 	golangV4Scaffolder.InjectFS(s.fs)
-	return golangV4Scaffolder.Scaffold()
+	if err := golangV4Scaffolder.Scaffold(); err != nil {
+		return fmt.Errorf("error scaffolding golang files for the APIs: %v", err)
+	}
+
+	return nil
 }
 
 const containerTemplate = `Containers: []corev1.Container{{
