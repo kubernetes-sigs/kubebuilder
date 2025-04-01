@@ -84,7 +84,12 @@ func (m *mockValidFlagOutputGetter) GetExecOutput(_ []byte, _ string) ([]byte, e
 		Universe: nil,
 		Flags:    getFlags(),
 	}
-	return json.Marshal(response)
+	marshaledResponse, err := json.Marshal(response)
+	if err != nil {
+		return nil, fmt.Errorf("error marshalling response: %w", err)
+	}
+
+	return marshaledResponse, nil
 }
 
 type mockValidMEOutputGetter struct{}
@@ -97,7 +102,12 @@ func (m *mockValidMEOutputGetter) GetExecOutput(_ []byte, _ string) ([]byte, err
 		Metadata: getMetadata(),
 	}
 
-	return json.Marshal(response)
+	marshaledResponse, err := json.Marshal(response)
+	if err != nil {
+		return nil, fmt.Errorf("error marshalling response: %w", err)
+	}
+
+	return marshaledResponse, nil
 }
 
 const (
