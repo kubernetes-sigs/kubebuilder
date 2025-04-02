@@ -254,7 +254,7 @@ func bindSpecificFlags(fs *pflag.FlagSet, flags []external.Flag) {
 }
 
 func filterFlags(flags []external.Flag, externalFlagFilters []externalFlagFilterFunc) []external.Flag {
-	filteredFlags := []external.Flag{}
+	var filteredFlags []external.Flag
 	for _, flag := range flags {
 		ok := true
 		for _, filter := range externalFlagFilters {
@@ -271,7 +271,7 @@ func filterFlags(flags []external.Flag, externalFlagFilters []externalFlagFilter
 }
 
 func filterArgs(args []string, argFilters []argFilterFunc) []string {
-	filteredArgs := []string{}
+	var filteredArgs []string
 	for _, arg := range args {
 		ok := true
 		for _, filter := range argFilters {
