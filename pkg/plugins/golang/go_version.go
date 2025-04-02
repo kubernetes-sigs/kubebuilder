@@ -64,18 +64,18 @@ func (v *GoVersion) parse(verStr string) error {
 
 	v.major, err = strconv.Atoi(m[1])
 	if err != nil {
-		return fmt.Errorf("error parsing major version '%s': %s", m[1], err)
+		return fmt.Errorf("error parsing major version %q: %w", m[1], err)
 	}
 
 	v.minor, err = strconv.Atoi(m[2])
 	if err != nil {
-		return fmt.Errorf("error parsing minor version '%s': %s", m[2], err)
+		return fmt.Errorf("error parsing minor version %q: %w", m[2], err)
 	}
 
 	if m[3] != "" {
 		v.patch, err = strconv.Atoi(m[3])
 		if err != nil {
-			return fmt.Errorf("error parsing patch version '%s': %s", m[2], err)
+			return fmt.Errorf("error parsing patch version %q: %w", m[2], err)
 		}
 	}
 
@@ -126,7 +126,7 @@ func (v GoVersion) Compare(other GoVersion) int {
 func ValidateGoVersion(minVersion, maxVersion GoVersion) error {
 	err := fetchAndCheckGoVersion(minVersion, maxVersion)
 	if err != nil {
-		return fmt.Errorf("%s. You can skip this check using the --skip-go-version-check flag", err)
+		return fmt.Errorf("you can skip this check using the --skip-go-version-check flag: %w", err)
 	}
 	return nil
 }
@@ -144,7 +144,7 @@ func fetchAndCheckGoVersion(minVersion, maxVersion GoVersion) error {
 	}
 	goVer := split[2]
 	if err := checkGoVersion(goVer, minVersion, maxVersion); err != nil {
-		return fmt.Errorf("go version '%s' is incompatible because '%s'", goVer, err)
+		return fmt.Errorf("go version %q is incompatible: %w", goVer, err)
 	}
 	return nil
 }
@@ -156,7 +156,7 @@ func checkGoVersion(verStr string, minVersion, maxVersion GoVersion) error {
 	}
 
 	if version.Compare(minVersion) < 0 || version.Compare(maxVersion) >= 0 {
-		return fmt.Errorf("plugin requires %s <= version < %s", minVersion, maxVersion)
+		return fmt.Errorf("plugin requires %q <= version < %q", minVersion, maxVersion)
 	}
 
 	return nil

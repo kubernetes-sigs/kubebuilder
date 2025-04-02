@@ -101,7 +101,7 @@ func (p *initSubcommand) InjectConfig(c config.Config) error {
 	if p.repo == "" {
 		repoPath, err := golang.FindCurrentRepo()
 		if err != nil {
-			return fmt.Errorf("error finding current repository: %v", err)
+			return fmt.Errorf("error finding current repository: %w", err)
 		}
 		p.repo = repoPath
 	}
