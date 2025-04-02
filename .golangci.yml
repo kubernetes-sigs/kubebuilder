@@ -1,3 +1,5 @@
+version: 2
+
 run:
   timeout: 5m
   allow-parallel-runners: true
@@ -77,10 +79,6 @@ linters:
     - ginkgolinter
     - goconst
     - gocyclo
-    - gofmt
-    - gofumpt
-    - goimports
-    - gosimple
     - govet
     - ineffassign
     - lll
@@ -90,9 +88,13 @@ linters:
     - prealloc
     - revive
     - staticcheck
-    - typecheck
     - unconvert
     - unparam
     - unused
     - whitespace
 
+formatters:
+  enable:
+    - gofmt
+    - goimports
+    - gofumpt
