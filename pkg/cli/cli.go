@@ -449,7 +449,7 @@ func (c *CLI) addExtraCommands() error {
 }
 
 // printDeprecationWarnings prints the deprecation warnings of the resolved plugins.
-func (c CLI) printDeprecationWarnings() {
+func (c *CLI) printDeprecationWarnings() {
 	for _, p := range c.resolvedPlugins {
 		if p != nil && p.(plugin.Deprecated) != nil && len(p.(plugin.Deprecated).DeprecationWarning()) > 0 {
 			_, _ = fmt.Fprintf(os.Stderr, noticeColor, fmt.Sprintf(deprecationFmt, p.(plugin.Deprecated).DeprecationWarning()))
@@ -458,7 +458,7 @@ func (c CLI) printDeprecationWarnings() {
 }
 
 // metadata returns CLI's metadata.
-func (c CLI) metadata() plugin.CLIMetadata {
+func (c *CLI) metadata() plugin.CLIMetadata {
 	return plugin.CLIMetadata{
 		CommandName: c.commandName,
 	}
@@ -467,11 +467,18 @@ func (c CLI) metadata() plugin.CLIMetadata {
 // Run executes the CLI utility.
 //
 // If an error is found, command help and examples will be printed.
-func (c CLI) Run() error {
+func (c *CLI) Run() error {
 	return c.cmd.Execute()
 }
 
 // Command returns the underlying root command.
+//
+// Deprecated: Use (c *CLI).CommandPtr() instead.
 func (c CLI) Command() *cobra.Command {
+	return (&c).CommandPtr()
+}
+
+// CommandPtr returns the underlying root command.
+func (c *CLI) CommandPtr() *cobra.Command {
 	return c.cmd
 }

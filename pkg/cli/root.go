@@ -31,7 +31,7 @@ const (
 
 var supportedPlatforms = []string{"darwin", "linux"}
 
-func (c CLI) newRootCmd() *cobra.Command {
+func (c *CLI) newRootCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     c.commandName,
 		Long:    c.description,
@@ -55,7 +55,7 @@ func (c CLI) newRootCmd() *cobra.Command {
 }
 
 // rootExamples builds the examples string for the root command before resolving plugins
-func (c CLI) rootExamples() string {
+func (c *CLI) rootExamples() string {
 	str := fmt.Sprintf(`The first step is to initialize your project:
     %[1]s init [--plugins=<PLUGIN KEYS> [--project-version=<PROJECT VERSION>]]
 
@@ -84,7 +84,7 @@ configuration please run:
 }
 
 // getPluginTable returns an ASCII table of the available plugins and their supported project versions.
-func (c CLI) getPluginTable() string {
+func (c *CLI) getPluginTable() string {
 	var (
 		maxPluginKeyLength      = len(pluginKeysHeader)
 		pluginKeys              = make([]string, 0, len(c.plugins))

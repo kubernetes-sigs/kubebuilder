@@ -26,7 +26,7 @@ import (
 
 const webhookErrorMsg = "failed to create webhook"
 
-func (c CLI) newCreateWebhookCmd() *cobra.Command {
+func (c *CLI) newCreateWebhookCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "webhook",
 		Short: "Scaffold a webhook for an API resource",
