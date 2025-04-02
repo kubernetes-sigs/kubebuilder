@@ -216,7 +216,7 @@ func (c *CLI) getInfoFromConfigFile() error {
 	// Read the project configuration file
 	cfg := yamlstore.New(c.fs)
 	if err := cfg.Load(); err != nil {
-		return err
+		return fmt.Errorf("error loading configuration: %w", err)
 	}
 
 	return c.getInfoFromConfig(cfg.Config())
@@ -260,12 +260,12 @@ func (c *CLI) getInfoFromFlags(hasConfigFile bool) error {
 
 	// Parse the arguments
 	if err := fs.Parse(os.Args[1:]); err != nil {
-		return err
+		return fmt.Errorf("could not parse flags: %w", err)
 	}
 
 	// If any plugin key was provided, replace those from the project configuration file
 	if pluginKeys, err := fs.GetStringSlice(pluginsFlag); err != nil {
-		return err
+		return fmt.Errorf("invalid flag %q: %w", pluginsFlag, err)
 	} else if len(pluginKeys) != 0 {
 		// Remove leading and trailing spaces and validate the plugin keys
 		for i, key := range pluginKeys {
@@ -468,7 +468,11 @@ func (c CLI) metadata() plugin.CLIMetadata {
 //
 // If an error is found, command help and examples will be printed.
 func (c CLI) Run() error {
-	return c.cmd.Execute()
+	if err := c.cmd.Execute(); err != nil {
+		return fmt.Errorf("error executing command: %w", err)
+	}
+
+	return nil
 }
 
 // Command returns the underlying root command.
