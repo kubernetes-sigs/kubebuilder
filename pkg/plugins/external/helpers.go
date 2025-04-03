@@ -318,7 +318,7 @@ var (
 	// helpArgFilter filters out any flag named "help" as its already bound
 	helpArgFilter = func(arg string) bool {
 		arg = strings.Replace(arg, "--", "", 1)
-		return !(arg == "help")
+		return arg != "help"
 	}
 )
 

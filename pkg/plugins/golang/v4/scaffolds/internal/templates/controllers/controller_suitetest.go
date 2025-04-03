@@ -32,7 +32,7 @@ var (
 
 // SuiteTest scaffolds the file that sets up the controller tests
 //
-//nolint:maligned
+
 type SuiteTest struct {
 	machinery.TemplateMixin
 	machinery.MultiGroupMixin
