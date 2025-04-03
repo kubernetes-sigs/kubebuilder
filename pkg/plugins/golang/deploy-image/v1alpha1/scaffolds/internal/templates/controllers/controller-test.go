@@ -28,7 +28,7 @@ var _ machinery.Template = &ControllerTest{}
 
 // ControllerTest scaffolds the file that defines tests for the controller for a CRD or a builtin resource
 //
-//nolint:maligned
+
 type ControllerTest struct {
 	machinery.TemplateMixin
 	machinery.MultiGroupMixin

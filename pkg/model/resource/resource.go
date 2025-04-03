@@ -158,7 +158,7 @@ func (r *Resource) Update(other Resource) error {
 	}
 
 	// Make sure we are not merging resources for different GVKs.
-	if !r.GVK.IsEqualTo(other.GVK) {
+	if !r.IsEqualTo(other.GVK) {
 		return fmt.Errorf("unable to update a Resource (GVK %+v) with another with non-matching GVK %+v", r.GVK, other.GVK)
 	}
 
