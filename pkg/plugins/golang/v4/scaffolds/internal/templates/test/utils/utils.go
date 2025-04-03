@@ -222,12 +222,11 @@ func GetNonEmptyLines(output string) []string {
 func GetProjectDir() (string, error) {
 	wd, err := os.Getwd()
 	if err != nil {
-		return wd, err
+		return wd, fmt.Errorf("failed to get current working directory: %w", err)
 	}
 	wd = strings.Replace(wd, "/test/e2e", "", -1)
 	return wd, nil
 }
-
 
 // UncommentCode searches for target in the file and remove the comment prefix
 // of the target content. The target content may span multiple lines.
@@ -236,7 +235,7 @@ func UncommentCode(filename, target, prefix string) error {
 	// nolint:gosec
 	content, err := os.ReadFile(filename)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to read file %q: %w", filename, err)
 	}
 	strContent := string(content)
 
@@ -248,7 +247,7 @@ func UncommentCode(filename, target, prefix string) error {
 	out := new(bytes.Buffer)
 	_, err = out.Write(content[:idx])
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to write to output: %w", err)
 	}
 
 	scanner := bufio.NewScanner(bytes.NewBufferString(target))
@@ -256,25 +255,28 @@ func UncommentCode(filename, target, prefix string) error {
 		return nil
 	}
 	for {
-		_, err := out.WriteString(strings.TrimPrefix(scanner.Text(), prefix))
-		if err != nil {
-			return err
+		if _, err = out.WriteString(strings.TrimPrefix(scanner.Text(), prefix)); err != nil {
+			return fmt.Errorf("failed to write to output: %w", err)
 		}
 		// Avoid writing a newline in case the previous line was the last in target.
 		if !scanner.Scan() {
 			break
 		}
-		if _, err := out.WriteString("\n"); err != nil {
-			return err
+		if _, err = out.WriteString("\n"); err != nil {
+			return fmt.Errorf("failed to write to output: %w", err)
 		}
 	}
 
-	_, err = out.Write(content[idx+len(target):])
-	if err != nil {
-		return err
+	if _, err = out.Write(content[idx+len(target):]); err != nil {
+		return fmt.Errorf("failed to write to output: %w", err)
 	}
+
 	// false positive
 	// nolint:gosec
-	return os.WriteFile(filename, out.Bytes(), 0644)
+	if err = os.WriteFile(filename, out.Bytes(), 0644); err != nil {
+		return fmt.Errorf("failed to write file %q: %w", filename, err)
+	}
+
+	return nil
 }
 `
