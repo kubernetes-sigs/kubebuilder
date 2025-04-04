@@ -46,10 +46,14 @@ func (p *editSubcommand) InjectConfig(c config.Config) error {
 
 func (p *editSubcommand) Scaffold(fs machinery.Filesystem) error {
 	if err := InsertPluginMetaToConfig(p.config, pluginConfig{}); err != nil {
-		return err
+		return fmt.Errorf("error inserting project plugin meta to configuration: %w", err)
 	}
 
 	scaffolder := scaffolds.NewEditScaffolder()
 	scaffolder.InjectFS(fs)
-	return scaffolder.Scaffold()
+	if err := scaffolder.Scaffold(); err != nil {
+		return fmt.Errorf("error scaffolding edit subcommand: %w", err)
+	}
+
+	return nil
 }
