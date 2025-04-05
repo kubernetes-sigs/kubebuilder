@@ -19,7 +19,7 @@ package cronjob
 const cronjobSample = `
   schedule: "*/1 * * * *"
   startingDeadlineSeconds: 60
-  concurrencyPolicy: Allow # explicitly specify, but Allow is also default.
+  concurrencyPolicy: Allow # explicitly specify, but Allow is also the default.
   jobTemplate:
     spec:
       template:

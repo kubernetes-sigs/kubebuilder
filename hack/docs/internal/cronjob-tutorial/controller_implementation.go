@@ -20,7 +20,7 @@ const controllerIntro = `
 // +kubebuilder:docs-gen:collapse=Apache License
 
 /*
-We'll start out with some imports.  You'll see below that we'll need a few more imports
+We'll start with some imports.  You'll see below that we'll need a few more imports
 than those scaffolded for us.  We'll talk about each one when we use it.
 */`
 
@@ -104,7 +104,7 @@ const controllerReconcileLogic = `log := logf.FromContext(ctx)
 	var cronJob batchv1.CronJob
 	if err := r.Get(ctx, req.NamespacedName, &cronJob); err != nil {
 		log.Error(err, "unable to fetch CronJob")
-		// we'll ignore not-found errors, since they can't be fixed by an immediate
+		// We'll ignore not-found errors, since they can't be fixed by an immediate
 		// requeue (we'll need to wait for a new notification), and we can get them
 		// on deleted requests.
 		return ctrl.Result{}, client.IgnoreNotFound(err)
@@ -115,7 +115,7 @@ const controllerReconcileLogic = `log := logf.FromContext(ctx)
 
 		To fully update our status, we'll need to list all child jobs in this namespace that belong to this CronJob.
 		Similarly to Get, we can use the List method to list the child jobs.  Notice that we use variadic options to
-		set the namespace and field match (which is actually an index lookup that we set up below).
+		set the namespace and field match (which is an index lookup that we set up below).
 	*/
 	var childJobs kbatch.JobList
 	if err := r.List(ctx, &childJobs, client.InNamespace(req.Namespace), client.MatchingFields{jobOwnerKey: req.Name}); err != nil {
@@ -133,7 +133,7 @@ const controllerReconcileLogic = `log := logf.FromContext(ctx)
 		looking these up can become quite slow as we have to filter through all of them. For a more efficient lookup,
 		these jobs will be indexed locally on the controller's name. A jobOwnerKey field is added to the
 		cached job objects. This key references the owning controller and functions as the index. Later in this
-		document we will configure the manager to actually index this field.</p>
+		document we will configure the manager to index this field.</p>
 
 		</aside>
 
@@ -148,7 +148,7 @@ const controllerReconcileLogic = `log := logf.FromContext(ctx)
 		conditions.  We'll put that logic in a helper to make our code cleaner.
 	*/
 
-	// find the active list of jobs
+	// Find the active list of jobs
 	var activeJobs []*kbatch.Job
 	var successfulJobs []*kbatch.Job
 	var failedJobs []*kbatch.Job
@@ -242,7 +242,7 @@ const controllerReconcileLogic = `log := logf.FromContext(ctx)
 		subresource, we'll use the` + " `" + `Status` + "`" + ` part of the client, with the` + " `" + `Update` + "`" + `
 		method.
 
-		The status subresource ignores changes to spec, so it's less likely to conflict
+		The status subresource ignores changes to the spec, so it's less likely to conflict
 		with any other updates, and can have separate permissions.
 	*/
 	if err := r.Status().Update(ctx, &cronJob); err != nil {
@@ -368,7 +368,7 @@ const controllerReconcileLogic = `log := logf.FromContext(ctx)
 			// all start running with no further intervention (if the scheduledJob
 			// allows concurrency and late starts).
 			//
-			// However, if there is a bug somewhere, or incorrect clock
+			// However, if there is a bug somewhere, or an incorrect clock
 			// on controller's server or apiservers (for setting creationTimestamp)
 			// then there could be so many missed start times (it could be off
 			// by decades or more), that it would eat up all the CPU and memory
@@ -384,19 +384,19 @@ const controllerReconcileLogic = `log := logf.FromContext(ctx)
 	}
 	// +kubebuilder:docs-gen:collapse=getNextSchedule
 
-	// figure out the next times that we need to create
+	// Figure out the next times that we need to create
 	// jobs at (or anything we missed).
 	missedRun, nextRun, err := getNextSchedule(&cronJob, r.Now())
 	if err != nil {
 		log.Error(err, "unable to figure out CronJob schedule")
-		// we don't really care about requeuing until we get an update that
+		// we don't care about requeuing until we get an update that
 		// fixes the schedule, so don't return an error
 		return ctrl.Result{}, nil
 	}
 
 	/*
 		We'll prep our eventual request to requeue until the next job, and then figure
-		out if we actually need to run.
+		out if we need to run.
 	*/
 	scheduledResult := ctrl.Result{RequeueAfter: nextRun.Sub(r.Now())} // save this so we can re-use it elsewhere
 	log = log.WithValues("now", r.Now(), "next run", nextRun)
@@ -424,7 +424,7 @@ const controllerReconcileLogic = `log := logf.FromContext(ctx)
 	}
 
 	/*
-		If we actually have to run a job, we'll need to either wait till existing ones finish,
+		If we have to run a job, we'll need to either wait till existing ones finish,
 		replace the existing ones, or just add new ones.  If our information is out of date due
 		to cache delay, we'll get a requeue when we get up-to-date information.
 	*/
@@ -447,7 +447,7 @@ const controllerReconcileLogic = `log := logf.FromContext(ctx)
 	}
 
 	/*
-		Once we've figured out what to do with existing jobs, we'll actually create our desired job
+		Once we've figured out what to do with existing jobs, we'll create our desired job
 	*/
 
 	/*
@@ -489,7 +489,7 @@ const controllerReconcileLogic = `log := logf.FromContext(ctx)
 	}
 	// +kubebuilder:docs-gen:collapse=constructJobForCronJob
 
-	// actually make the job...
+	// make the job...
 	job, err := constructJobForCronJob(&cronJob, missedRun)
 	if err != nil {
 		log.Error(err, "unable to construct job from template")
@@ -520,11 +520,11 @@ const controllerReconcileLogic = `log := logf.FromContext(ctx)
 /*
 ### Setup
 
-Finally, we'll update our setup.  In order to allow our reconciler to quickly
-look up Jobs by their owner, we'll need an index.  We declare an index key that
+Finally, we'll update our setup. To allow our reconciler to quickly
+lookup Jobs by their owner, we'll need an index.  We declare an index key that
 we can later use with the client as a pseudo-field name, and then describe how to
 extract the indexed value from the Job object.  The indexer will automatically take
-care of namespaces for us, so we just have to extract the owner name if the Job has
+care of namespaces for us, so we just have to extract the owner's name if the Job has
 a CronJob owner.
 
 Additionally, we'll inform the manager that this controller owns some Jobs, so that it
