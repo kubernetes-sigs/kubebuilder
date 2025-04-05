@@ -206,10 +206,10 @@ func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
 		RunAsUser:        p.runAsUser,
 	}
 	cfg.Resources = append(cfg.Resources, ResourceData{
-		Group:   p.resource.GVK.Group,
-		Domain:  p.resource.GVK.Domain,
-		Version: p.resource.GVK.Version,
-		Kind:    p.resource.GVK.Kind,
+		Group:   p.resource.Group,
+		Domain:  p.resource.Domain,
+		Version: p.resource.Version,
+		Kind:    p.resource.Kind,
 		Options: configDataOptions,
 	})
 

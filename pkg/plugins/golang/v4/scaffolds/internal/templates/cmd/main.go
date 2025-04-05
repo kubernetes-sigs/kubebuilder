@@ -55,7 +55,7 @@ func (f *Main) SetTemplateDefaults() error {
 var _ machinery.Inserter = &MainUpdater{}
 
 // MainUpdater updates cmd/main.go to run Controllers
-type MainUpdater struct { //nolint:maligned
+type MainUpdater struct {
 	machinery.RepositoryMixin
 	machinery.MultiGroupMixin
 	machinery.ResourceMixin

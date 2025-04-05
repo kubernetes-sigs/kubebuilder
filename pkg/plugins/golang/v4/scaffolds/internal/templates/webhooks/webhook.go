@@ -28,7 +28,7 @@ import (
 var _ machinery.Template = &Webhook{}
 
 // Webhook scaffolds the file that defines a webhook for a CRD or a builtin resource
-type Webhook struct { //nolint:maligned
+type Webhook struct {
 	machinery.TemplateMixin
 	machinery.MultiGroupMixin
 	machinery.BoilerplateMixin
@@ -85,7 +85,7 @@ func (f *Webhook) SetTemplateDefaults() error {
 	}
 
 	f.AdmissionReviewVersions = "v1"
-	f.QualifiedGroupWithDash = strings.Replace(f.Resource.QualifiedGroup(), ".", "-", -1)
+	f.QualifiedGroupWithDash = strings.ReplaceAll(f.Resource.QualifiedGroup(), ".", "-")
 
 	return nil
 }

@@ -42,7 +42,7 @@ const (
 )
 
 // CLI is the command line utility that is used to scaffold kubebuilder project files.
-type CLI struct { //nolint:maligned
+type CLI struct {
 	/* Fields set by Option */
 
 	// Root command name. It is injected downstream to provide correct help, usage, examples and errors.

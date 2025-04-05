@@ -214,9 +214,10 @@ func (s *initScaffolder) extractWebhooksFromGeneratedFiles() (mutatingWebhooks [
 				Rules:                   w.Rules,
 			}
 
-			if webhookConfig.Kind == "MutatingWebhookConfiguration" {
+			switch webhookConfig.Kind {
+			case "MutatingWebhookConfiguration":
 				mutatingWebhooks = append(mutatingWebhooks, webhook)
-			} else if webhookConfig.Kind == "ValidatingWebhookConfiguration" {
+			case "ValidatingWebhookConfiguration":
 				validatingWebhooks = append(validatingWebhooks, webhook)
 			}
 		}
@@ -310,16 +311,16 @@ func copyFileWithHelmLogic(srcFile, destFile, subDir, projectName string, hasCon
 
 	// Apply RBAC-specific replacements
 	if subDir == "rbac" {
-		contentStr = strings.Replace(contentStr,
+		contentStr = strings.ReplaceAll(contentStr,
 			"name: controller-manager",
-			"name: {{ .Values.controllerManager.serviceAccountName }}", -1)
+			"name: {{ .Values.controllerManager.serviceAccountName }}")
 		contentStr = strings.Replace(contentStr,
 			"name: metrics-reader",
 			fmt.Sprintf("name: %s-metrics-reader", projectName), 1)
 
-		contentStr = strings.Replace(contentStr,
+		contentStr = strings.ReplaceAll(contentStr,
 			"name: metrics-auth-role",
-			fmt.Sprintf("name: %s-metrics-auth-role", projectName), -1)
+			fmt.Sprintf("name: %s-metrics-auth-role", projectName))
 		contentStr = strings.Replace(contentStr,
 			"name: metrics-auth-rolebinding",
 			fmt.Sprintf("name: %s-metrics-auth-rolebinding", projectName), 1)
@@ -337,15 +338,15 @@ func copyFileWithHelmLogic(srcFile, destFile, subDir, projectName string, hasCon
     {{- end }}
   {{- end }}`, 1)
 		}
-		contentStr = strings.Replace(contentStr,
+		contentStr = strings.ReplaceAll(contentStr,
 			"name: leader-election-role",
-			fmt.Sprintf("name: %s-leader-election-role", projectName), -1)
+			fmt.Sprintf("name: %s-leader-election-role", projectName))
 		contentStr = strings.Replace(contentStr,
 			"name: leader-election-rolebinding",
 			fmt.Sprintf("name: %s-leader-election-rolebinding", projectName), 1)
-		contentStr = strings.Replace(contentStr,
+		contentStr = strings.ReplaceAll(contentStr,
 			"name: manager-role",
-			fmt.Sprintf("name: %s-manager-role", projectName), -1)
+			fmt.Sprintf("name: %s-manager-role", projectName))
 		contentStr = strings.Replace(contentStr,
 			"name: manager-rolebinding",
 			fmt.Sprintf("name: %s-manager-rolebinding", projectName), 1)
