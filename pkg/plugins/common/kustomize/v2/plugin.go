@@ -51,7 +51,7 @@ type Plugin struct {
 func (Plugin) Name() string { return pluginName }
 
 // Version returns the version of the plugin
-func (Plugin) Version() plugin.Version { return pluginVersion }
+func (Plugin) Version() *plugin.Version { return &pluginVersion }
 
 // SupportedProjectVersions returns an array with all project versions supported by the plugin
 func (Plugin) SupportedProjectVersions() []config.Version { return supportedProjectVersions }

@@ -29,7 +29,7 @@ type Plugin interface {
 	// Version returns the plugin's version.
 	//
 	// NOTE: this version is different from config version.
-	Version() Version
+	Version() *Version
 	// SupportedProjectVersions lists all project configuration versions this plugin supports.
 	// The returned slice cannot be empty.
 	SupportedProjectVersions() []config.Version

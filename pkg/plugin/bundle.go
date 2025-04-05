@@ -103,8 +103,8 @@ func (b bundle) Name() string {
 }
 
 // Version implements Plugin
-func (b bundle) Version() Version {
-	return b.version
+func (b bundle) Version() *Version {
+	return &b.version
 }
 
 // SupportedProjectVersions implements Plugin

@@ -22,7 +22,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 )
 
-// FilterPluginsByKey returns the set of plugins that match the provided key (may be not-fully qualified)
+// FilterPluginsByKey returns the set of plugins that match the provided key (maybe not-fully qualified)
 func FilterPluginsByKey(plugins []Plugin, key string) ([]Plugin, error) {
 	name, ver := SplitKey(key)
 	hasVersion := ver != ""
