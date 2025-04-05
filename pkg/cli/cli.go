@@ -47,8 +47,10 @@ type CLI struct { //nolint:maligned
 
 	// Root command name. It is injected downstream to provide correct help, usage, examples and errors.
 	commandName string
-	// CLI version string.
+	// Full CLI version string.
 	version string
+	// CLI version string (just the CLI version number, no extra information).
+	cliVersion string
 	// CLI root's command description.
 	description string
 	// Plugins registered in the CLI.
