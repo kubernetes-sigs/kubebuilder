@@ -16,6 +16,8 @@ limitations under the License.
 package cmd
 
 import (
+	"fmt"
+
 	"v1/scaffolds"
 
 	"github.com/spf13/pflag"
@@ -41,7 +43,13 @@ func metadataCmd(pr *external.PluginRequest) external.PluginResponse {
 	flagsToParse.Bool("api", false, "sets the api flag to true")
 	flagsToParse.Bool("webhook", false, "sets the webhook flag to true")
 
-	flagsToParse.Parse(pr.Args)
+	if err := flagsToParse.Parse(pr.Args); err != nil {
+		pluginResponse.Error = true
+		pluginResponse.ErrorMsgs = []string{
+			fmt.Sprintf("failed to parse flags: %s", err.Error()),
+		}
+		return pluginResponse
+	}
 
 	initFlag, _ := flagsToParse.GetBool("init")
 	apiFlag, _ := flagsToParse.GetBool("api")

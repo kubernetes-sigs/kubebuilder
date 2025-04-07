@@ -1,13 +1,12 @@
 module sigs.k8s.io/kubebuilder/v4
 
 go 1.24.0
-
 godebug default=go1.24
 
 require (
 	github.com/gobuffalo/flect v1.0.3
 	github.com/onsi/ginkgo/v2 v2.23.3
-	github.com/onsi/gomega v1.36.3
+	github.com/onsi/gomega v1.37.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/afero v1.14.0
 	github.com/spf13/cobra v1.9.1

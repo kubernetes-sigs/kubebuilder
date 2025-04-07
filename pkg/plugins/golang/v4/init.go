@@ -203,9 +203,8 @@ func checkDir() error {
 				}
 			}
 			// Do not allow any other file
-			return fmt.Errorf(
-				"target directory is not empty and contains a disallowed file %q. "+
-					"files with the following extensions [%s] are not allowed to avoid conflicts with the tooling",
+			return fmt.Errorf("target directory is not empty and contains a disallowed file %q. "+
+				"files with the following extensions [%s] are not allowed to avoid conflicts with the tooling",
 				path, strings.Join(disallowedExtensions, ", "))
 		})
 	if err != nil {
