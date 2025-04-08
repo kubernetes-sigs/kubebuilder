@@ -167,35 +167,37 @@ var _ = Describe("Scaffold", func() {
 		)
 
 		DescribeTable("file builders related errors",
-			func(setup func() (error, []Builder)) {
-				errType, files := setup()
+			func(setup func() ([]Builder, error)) {
+				files, errType := setup()
 
 				err := s.Execute(files...)
 
 				Expect(err).To(HaveOccurred())
 				Expect(err).To(MatchError(errType))
 			},
-			Entry("should fail if unable to validate a file builder", func() (error, []Builder) {
-				return ValidateError{testErr}, []Builder{
+			Entry("should fail if unable to validate a file builder", func() ([]Builder, error) {
+				return []Builder{
 					fakeRequiresValidation{validateErr: testErr},
-				}
+				}, ValidateError{testErr}
 			}),
-			Entry("should fail if unable to set default values for a template", func() (error, []Builder) {
-				return SetTemplateDefaultsError{testErr}, []Builder{
+
+			Entry("should fail if unable to set default values for a template", func() ([]Builder, error) {
+				return []Builder{
 					&fakeTemplate{err: testErr},
-				}
+				}, SetTemplateDefaultsError{testErr}
 			}),
-			Entry("should fail if an unexpected previous model is found", func() (error, []Builder) {
-				return ModelAlreadyExistsError{path: path}, []Builder{
+
+			Entry("should fail if an unexpected previous model is found", func() ([]Builder, error) {
+				return []Builder{
 					&fakeTemplate{fakeBuilder: fakeBuilder{path: path}},
 					&fakeTemplate{fakeBuilder: fakeBuilder{path: path, ifExistsAction: Error}},
-				}
+				}, ModelAlreadyExistsError{path: path}
 			}),
-			Entry("should fail if behavior if-exists-action is not defined", func() (error, []Builder) {
-				return UnknownIfExistsActionError{path: path, ifExistsAction: -1}, []Builder{
+			Entry("should fail if behavior if-exists-action is not defined", func() ([]Builder, error) {
+				return []Builder{
 					&fakeTemplate{fakeBuilder: fakeBuilder{path: path}},
 					&fakeTemplate{fakeBuilder: fakeBuilder{path: path, ifExistsAction: -1}},
-				}
+				}, UnknownIfExistsActionError{path: path, ifExistsAction: -1}
 			}),
 		)
 
