@@ -1,6 +1,7 @@
 module sigs.k8s.io/kubebuilder/v4
 
 go 1.24.0
+
 godebug default=go1.24
 
 require (
