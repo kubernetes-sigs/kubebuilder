@@ -81,12 +81,6 @@ linters:
           - lll
         path: hack/docs/*
       - linters:
-          - staticcheck
-        text: "ST1008:"
-      - linters:
-          - staticcheck
-        text: "ST1001:"
-      - linters:
           - revive
         text: 'should have comment or be unexported'
     paths:
