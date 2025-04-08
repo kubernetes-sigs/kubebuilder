@@ -246,7 +246,7 @@ func (c *Cfg) UpdateResource(res resource.Resource) error {
 	}
 
 	for i, r := range c.Resources {
-		if res.GVK.IsEqualTo(r.GVK) {
+		if res.IsEqualTo(r.GVK) {
 			if err := c.Resources[i].Update(res); err != nil {
 				return fmt.Errorf("failed to update resource %q: %w", res.GVK, err)
 			}

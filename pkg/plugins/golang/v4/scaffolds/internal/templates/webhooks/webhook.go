@@ -85,7 +85,7 @@ func (f *Webhook) SetTemplateDefaults() error {
 	}
 
 	f.AdmissionReviewVersions = "v1"
-	f.QualifiedGroupWithDash = strings.Replace(f.Resource.QualifiedGroup(), ".", "-", -1)
+	f.QualifiedGroupWithDash = strings.ReplaceAll(f.Resource.QualifiedGroup(), ".", "-")
 
 	return nil
 }
