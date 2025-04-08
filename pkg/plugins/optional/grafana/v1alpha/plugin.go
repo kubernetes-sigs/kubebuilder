@@ -22,6 +22,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/stage"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/grafana/v1alpha/scaffolds"
 )
 
 const pluginName = "grafana." + plugins.DefaultNameQualifier
@@ -29,35 +30,55 @@ const pluginName = "grafana." + plugins.DefaultNameQualifier
 var (
 	pluginVersion            = plugin.Version{Number: 1, Stage: stage.Alpha}
 	supportedProjectVersions = []config.Version{cfgv3.Version}
-	pluginKey                = plugin.KeyFor(Plugin{})
+	pluginKey                = plugin.KeyFor(&Plugin{})
 )
 
 // Plugin implements the plugin.Full interface
 type Plugin struct {
-	initSubcommand
-	editSubcommand
+	initSubcommand *subcommand
+	editSubcommand *subcommand
 }
 
-var _ plugin.Init = Plugin{}
+var _ plugin.Init = &Plugin{}
 
 // Name returns the name of the plugin
-func (Plugin) Name() string { return pluginName }
+func (p *Plugin) Name() string { return pluginName }
 
 // Version returns the version of the grafana plugin
-func (Plugin) Version() plugin.Version { return pluginVersion }
+func (p *Plugin) Version() plugin.Version { return pluginVersion }
 
 // SupportedProjectVersions returns an array with all project versions supported by the plugin
-func (Plugin) SupportedProjectVersions() []config.Version { return supportedProjectVersions }
+func (p *Plugin) SupportedProjectVersions() []config.Version { return supportedProjectVersions }
 
 // GetInitSubcommand will return the subcommand which is responsible for initializing and scaffolding grafana manifests
-func (p Plugin) GetInitSubcommand() plugin.InitSubcommand { return &p.initSubcommand }
+func (p *Plugin) GetInitSubcommand() plugin.InitSubcommand {
+	if p.initSubcommand == nil {
+		p.initSubcommand = &subcommand{
+			cmd:                "init",
+			exampleDescription: "# Initialize a common project with this plugin",
+			scaffolder:         scaffolds.NewInitScaffolder(),
+		}
+	}
+
+	return p.initSubcommand
+}
 
 // GetEditSubcommand will return the subcommand which is responsible for adding grafana manifests
-func (p Plugin) GetEditSubcommand() plugin.EditSubcommand { return &p.editSubcommand }
+func (p *Plugin) GetEditSubcommand() plugin.EditSubcommand {
+	if p.editSubcommand == nil {
+		p.editSubcommand = &subcommand{
+			cmd:                "edit",
+			exampleDescription: "# Edit a common project with this plugin",
+			scaffolder:         scaffolds.NewEditScaffolder(),
+		}
+	}
+
+	return p.editSubcommand
+}
 
 type pluginConfig struct{}
 
 // DeprecationWarning define the deprecation message or return empty when plugin is not deprecated
-func (p Plugin) DeprecationWarning() string {
+func (p *Plugin) DeprecationWarning() string {
 	return ""
 }
