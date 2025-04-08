@@ -31,7 +31,7 @@ var (
 )
 
 // WebhookSuite scaffolds the file that sets up the webhook tests
-type WebhookSuite struct { //nolint:maligned
+type WebhookSuite struct {
 	machinery.TemplateMixin
 	machinery.MultiGroupMixin
 	machinery.BoilerplateMixin
