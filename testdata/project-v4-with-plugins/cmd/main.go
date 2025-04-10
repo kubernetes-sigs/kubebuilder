@@ -41,8 +41,8 @@ import (
 	examplecomv1alpha1 "sigs.k8s.io/kubebuilder/testdata/project-v4-with-plugins/api/v1alpha1"
 	examplecomv2 "sigs.k8s.io/kubebuilder/testdata/project-v4-with-plugins/api/v2"
 	"sigs.k8s.io/kubebuilder/testdata/project-v4-with-plugins/internal/controller"
-	webhookexamplecomv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-with-plugins/internal/webhook/v1"
-	webhookexamplecomv1alpha1 "sigs.k8s.io/kubebuilder/testdata/project-v4-with-plugins/internal/webhook/v1alpha1"
+	webhookexamplecomv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-with-plugins/internal/webhook/v1"             //nolint:staticcheck
+	webhookexamplecomv1alpha1 "sigs.k8s.io/kubebuilder/testdata/project-v4-with-plugins/internal/webhook/v1alpha1" //nolint:staticcheck
 	// +kubebuilder:scaffold:imports
 )
 

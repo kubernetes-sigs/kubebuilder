@@ -42,8 +42,8 @@ import (
 	batchv1 "tutorial.kubebuilder.io/project/api/v1"
 	batchv2 "tutorial.kubebuilder.io/project/api/v2"
 	"tutorial.kubebuilder.io/project/internal/controller"
-	webhookbatchv1 "tutorial.kubebuilder.io/project/internal/webhook/v1"
-	webhookbatchv2 "tutorial.kubebuilder.io/project/internal/webhook/v2"
+	webhookbatchv1 "tutorial.kubebuilder.io/project/internal/webhook/v1" //nolint:staticcheck
+	webhookbatchv2 "tutorial.kubebuilder.io/project/internal/webhook/v2" //nolint:staticcheck
 	// +kubebuilder:scaffold:imports
 )
 

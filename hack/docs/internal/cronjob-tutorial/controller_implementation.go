@@ -343,6 +343,7 @@ const controllerReconcileLogic = `log := logf.FromContext(ctx)
 		if cronJob.Status.LastScheduleTime != nil {
 			earliestTime = cronJob.Status.LastScheduleTime.Time
 		} else {
+			// nolint:staticcheck
 			earliestTime = cronJob.ObjectMeta.CreationTimestamp.Time
 		}
 		if cronJob.Spec.StartingDeadlineSeconds != nil {

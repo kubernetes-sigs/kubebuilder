@@ -459,6 +459,7 @@ func imageFor{{ .Resource.Kind }}() (string, error) {
 	var imageEnvVar = "{{ upper .Resource.Kind }}_IMAGE"
     image, found := os.LookupEnv(imageEnvVar)
     if !found {
+        //nolint:staticcheck
         return "", fmt.Errorf("Unable to find %s environment variable with the image", imageEnvVar)
     }
     return image, nil

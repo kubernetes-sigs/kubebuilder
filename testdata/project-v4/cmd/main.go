@@ -42,10 +42,10 @@ import (
 	crewv1 "sigs.k8s.io/kubebuilder/testdata/project-v4/api/v1"
 	crewv2 "sigs.k8s.io/kubebuilder/testdata/project-v4/api/v2"
 	"sigs.k8s.io/kubebuilder/testdata/project-v4/internal/controller"
-	webhookappsv1 "sigs.k8s.io/kubebuilder/testdata/project-v4/internal/webhook/v1"
-	webhookcertmanagerv1 "sigs.k8s.io/kubebuilder/testdata/project-v4/internal/webhook/v1"
-	webhookcorev1 "sigs.k8s.io/kubebuilder/testdata/project-v4/internal/webhook/v1"
-	webhookcrewv1 "sigs.k8s.io/kubebuilder/testdata/project-v4/internal/webhook/v1"
+	webhookappsv1 "sigs.k8s.io/kubebuilder/testdata/project-v4/internal/webhook/v1"        //nolint:staticcheck
+	webhookcertmanagerv1 "sigs.k8s.io/kubebuilder/testdata/project-v4/internal/webhook/v1" //nolint:staticcheck
+	webhookcorev1 "sigs.k8s.io/kubebuilder/testdata/project-v4/internal/webhook/v1"        //nolint:staticcheck
+	webhookcrewv1 "sigs.k8s.io/kubebuilder/testdata/project-v4/internal/webhook/v1"        //nolint:staticcheck
 	// +kubebuilder:scaffold:imports
 )
 

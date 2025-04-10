@@ -100,9 +100,9 @@ const (
 `
 	controllerImportCodeFragment = `"%s/internal/controller"
 `
-	webhookImportCodeFragment = `%s "%s/internal/webhook/%s"
+	webhookImportCodeFragment = `%s "%s/internal/webhook/%s" //nolint:staticcheck
 `
-	multiGroupWebhookImportCodeFragment = `%s "%s/internal/webhook/%s/%s"
+	multiGroupWebhookImportCodeFragment = `%s "%s/internal/webhook/%s/%s" //nolint:staticcheck
 `
 	multiGroupControllerImportCodeFragment = `%scontroller "%s/internal/controller/%s"
 `

@@ -265,6 +265,7 @@ the validation schema.
 */
 
 func validateCronJobName(cronjob *batchv1.CronJob) *field.Error {
+	// nolint:staticcheck
 	if len(cronjob.ObjectMeta.Name) > validationutils.DNS1035LabelMaxLength-11 {
 		// The job name length is 63 characters like all Kubernetes objects
 		// (which must fit in a DNS subdomain). The cronjob controller appends
@@ -272,6 +273,8 @@ func validateCronJobName(cronjob *batchv1.CronJob) *field.Error {
 		// a job. The job name length limit is 63 characters. Therefore cronjob
 		// names must have length <= 63-11=52. If we don't validate this here,
 		// then job creation will fail later.
+		//
+		// nolint:staticcheck
 		return field.Invalid(field.NewPath("metadata").Child("name"), cronjob.ObjectMeta.Name, "must be no more than 52 characters")
 	}
 	return nil
