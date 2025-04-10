@@ -75,7 +75,7 @@ generate: generate-testdata generate-docs update-k8s-version ## Update/generate 
 remove-spaces:
 	@echo "Removing trailing spaces"
 	@bash -c ' \
-		if [[ "$$(uname)" == "Linux" ]]; then \
+		if sed --version 2>&1 | grep -q "GNU"; then \
 			find . -type f -name "*.md" -exec sed -i "s/[[:space:]]*$$//" {} + || true; \
 		else \
 			find . -type f -name "*.md" -exec sed -i "" "s/[[:space:]]*$$//" {} + || true; \
