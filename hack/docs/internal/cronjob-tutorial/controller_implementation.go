@@ -343,7 +343,7 @@ const controllerReconcileLogic = `log := logf.FromContext(ctx)
 		if cronJob.Status.LastScheduleTime != nil {
 			earliestTime = cronJob.Status.LastScheduleTime.Time
 		} else {
-			earliestTime = cronJob.ObjectMeta.CreationTimestamp.Time
+			earliestTime = cronJob.CreationTimestamp.Time
 		}
 		if cronJob.Spec.StartingDeadlineSeconds != nil {
 			// controller is not going to schedule anything below this point

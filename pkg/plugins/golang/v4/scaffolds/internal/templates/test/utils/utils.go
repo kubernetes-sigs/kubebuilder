@@ -52,7 +52,7 @@ import (
 	"os/exec"
 	"strings"
 
-	. "github.com/onsi/ginkgo/v2" //nolint:golint,revive,staticcheck
+	. "github.com/onsi/ginkgo/v2" // nolint:revive,staticcheck
 )
 
 const (

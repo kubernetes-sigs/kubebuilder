@@ -164,14 +164,14 @@ the validation schema.
 */
 
 func validateCronJobName(cronjob *batchv1.CronJob) *field.Error {
-	if len(cronjob.ObjectMeta.Name) > validationutils.DNS1035LabelMaxLength-11 {
+	if len(cronjob.Name) > validationutils.DNS1035LabelMaxLength-11 {
 		// The job name length is 63 characters like all Kubernetes objects
 		// (which must fit in a DNS subdomain). The cronjob controller appends
 		// a 11-character suffix to the cronjob (` + "`" + `-$TIMESTAMP` + "`" + `) when creating
 		// a job. The job name length limit is 63 characters. Therefore cronjob
 		// names must have length <= 63-11=52. If we don't validate this here,
 		// then job creation will fail later.
-		return field.Invalid(field.NewPath("metadata").Child("name"), cronjob.ObjectMeta.Name, "must be no more than 52 characters")
+		return field.Invalid(field.NewPath("metadata").Child("name"), cronjob.Name, "must be no more than 52 characters")
 	}
 	return nil
 }
@@ -256,14 +256,14 @@ const webhookTestingValidatingTodoFragment = `// TODO (user): Add logic for vali
 		// })`
 
 const webhookTestingValidatingExampleFragment = `It("Should deny creation if the name is too long", func() {
-			obj.ObjectMeta.Name = "this-name-is-way-too-long-and-should-fail-validation-because-it-is-way-too-long"
+			obj.Name = "this-name-is-way-too-long-and-should-fail-validation-because-it-is-way-too-long"
 			Expect(validator.ValidateCreate(ctx, obj)).Error().To(
 				MatchError(ContainSubstring("must be no more than 52 characters")),
 				"Expected name validation to fail for a too-long name")
 		})
 
 		It("Should admit creation if the name is valid", func() {
-			obj.ObjectMeta.Name = validCronJobName
+			obj.Name = validCronJobName
 			Expect(validator.ValidateCreate(ctx, obj)).To(BeNil(),
 				"Expected name validation to pass for a valid name")
 		})
@@ -282,11 +282,11 @@ const webhookTestingValidatingExampleFragment = `It("Should deny creation if the
 		})
 
 		It("Should deny update if both name and spec are invalid", func() {
-			oldObj.ObjectMeta.Name = validCronJobName
+			oldObj.Name = validCronJobName
 			oldObj.Spec.Schedule = schedule
 
 			By("simulating an update")
-			obj.ObjectMeta.Name = "this-name-is-way-too-long-and-should-fail-validation-because-it-is-way-too-long"
+			obj.Name = "this-name-is-way-too-long-and-should-fail-validation-because-it-is-way-too-long"
 			obj.Spec.Schedule = "invalid-cron-schedule"
 
 			By("validating an update")
@@ -295,11 +295,11 @@ const webhookTestingValidatingExampleFragment = `It("Should deny creation if the
 		})
 
 		It("Should admit update if both name and spec are valid", func() {
-			oldObj.ObjectMeta.Name = validCronJobName
+			oldObj.Name = validCronJobName
 			oldObj.Spec.Schedule = schedule
 
 			By("simulating an update")
-			obj.ObjectMeta.Name = "valid-cronjob-name-updated"
+			obj.Name = "valid-cronjob-name-updated"
 			obj.Spec.Schedule = "0 0 * * *"
 
 			By("validating an update")
