@@ -50,6 +50,7 @@ metadata:
   namespace: {{ "{{ .Release.Namespace }}" }}
   labels:
     {{ "{{- include \"chart.labels\" . | nindent 4 }}" }}
+    control-plane: controller-manager
 spec:
   ports:
     - port: 8443

@@ -49,6 +49,7 @@ kind: ServiceMonitor
 metadata:
   labels:
     {{ "{{- include \"chart.labels\" . | nindent 4 }}" }}
+    control-plane: controller-manager
   name: {{ .ProjectName }}-controller-manager-metrics-monitor
   namespace: {{ "{{ .Release.Namespace }}" }}
 spec:
