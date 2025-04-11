@@ -82,12 +82,6 @@ linters:
       - linters:
           - staticcheck
         text: "ST1019"
-      - linters:
-          - staticcheck
-        text: "ST1005"
-      - linters:
-          - staticcheck
-        text: "QF1008"
     paths:
       - third_party$
       - builtin$
