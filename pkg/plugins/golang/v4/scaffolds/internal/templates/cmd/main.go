@@ -158,10 +158,11 @@ func (f *MainUpdater) GetCodeFragments() machinery.CodeFragmentsMap {
 		imports = append(imports, fmt.Sprintf(apiImportCodeFragment, f.Resource.ImportAlias(), f.Resource.Path))
 	}
 	if f.WireWebhook && !f.IsLegacyPath {
-		importPath := fmt.Sprintf("webhook%s", f.Resource.ImportAlias())
 		if !f.MultiGroup || f.Resource.Group == "" {
+			importPath := fmt.Sprintf("webhook%s", f.Resource.Version)
 			imports = append(imports, fmt.Sprintf(webhookImportCodeFragment, importPath, f.Repo, f.Resource.Version))
 		} else {
+			importPath := fmt.Sprintf("webhook%s", f.Resource.ImportAlias())
 			imports = append(imports, fmt.Sprintf(multiGroupWebhookImportCodeFragment, importPath,
 				f.Repo, f.Resource.Group, f.Resource.Version))
 		}
@@ -198,8 +199,13 @@ func (f *MainUpdater) GetCodeFragments() machinery.CodeFragmentsMap {
 			setup = append(setup, fmt.Sprintf(webhookSetupCodeFragmentLegacy,
 				f.Resource.ImportAlias(), f.Resource.Kind, f.Resource.Kind))
 		} else {
-			setup = append(setup, fmt.Sprintf(webhookSetupCodeFragment,
-				"webhook"+f.Resource.ImportAlias(), f.Resource.Kind, f.Resource.Kind))
+			if !f.MultiGroup || f.Resource.Group == "" {
+				setup = append(setup, fmt.Sprintf(webhookSetupCodeFragment,
+					"webhook"+f.Resource.Version, f.Resource.Kind, f.Resource.Kind))
+			} else {
+				setup = append(setup, fmt.Sprintf(webhookSetupCodeFragment,
+					"webhook"+f.Resource.ImportAlias(), f.Resource.Kind, f.Resource.Kind))
+			}
 		}
 	}
 
