@@ -39,7 +39,9 @@ const cronjobSpecComment = `/*
  this.
 
  We'll use several markers (` + "`// +comment`" + `) to specify additional metadata.  These
- will be used by [controller-tools](https://github.com/kubernetes-sigs/controller-tools) when generating our CRD manifest.
+ will be used by [controller-tools](https://github.com/kubernetes-sigs/controller-tools)
+ when generating our CRD manifest.
+
  As we'll see in a bit, controller-tools will also use GoDoc to form descriptions for
  the fields.
 */`

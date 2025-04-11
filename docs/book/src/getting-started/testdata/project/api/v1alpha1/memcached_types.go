@@ -42,6 +42,7 @@ type MemcachedSpec struct {
 
 // MemcachedStatus defines the observed state of Memcached.
 type MemcachedStatus struct {
+	// nolint:lll
 	// Represents the observations of a Memcached's current state.
 	// Memcached.status.conditions.type are: "Available", "Progressing", and "Degraded"
 	// Memcached.status.conditions.status are one of True, False, Unknown.
@@ -50,7 +51,6 @@ type MemcachedStatus struct {
 	// are considered a guaranteed API.
 	// Memcached.status.conditions.Message is a human readable message indicating details about the transition.
 	// For further information see: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#typical-status-properties
-
 	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"`
 }
 

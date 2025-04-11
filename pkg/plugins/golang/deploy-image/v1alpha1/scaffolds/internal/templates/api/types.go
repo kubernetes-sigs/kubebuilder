@@ -100,7 +100,6 @@ type {{ .Resource.Kind }}Status struct {
 	// are considered a guaranteed API.
 	// {{ .Resource.Kind }}.status.conditions.Message is a human readable message indicating details about the transition.
 	// For further information see: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#typical-status-properties
-
 	Conditions []metav1.Condition ` + "`" + `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"` + "`" + `
 }
 

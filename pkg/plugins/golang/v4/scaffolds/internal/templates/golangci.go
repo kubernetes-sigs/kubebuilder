@@ -73,9 +73,6 @@ linters:
     generated: lax
     rules:
       - linters:
-          - lll
-        path: api/*
-      - linters:
           - dupl
           - lll
         path: internal/*
