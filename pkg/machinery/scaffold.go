@@ -210,13 +210,13 @@ func doTemplate(t Template) ([]byte, error) {
 
 	// Set the template body
 	if _, err := temp.Parse(t.GetBody()); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse template: %w", err)
 	}
 
 	// Execute the template
 	out := &bytes.Buffer{}
 	if err := temp.Execute(out, t); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to execute template: %w", err)
 	}
 	b := out.Bytes()
 
@@ -225,7 +225,7 @@ func doTemplate(t Template) ([]byte, error) {
 	if filepath.Ext(t.GetPath()) == ".go" {
 		var err error
 		if b, err = imports.Process(t.GetPath(), b, &options); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to process template: %w", err)
 		}
 	}
 
@@ -236,7 +236,7 @@ func doTemplate(t Template) ([]byte, error) {
 func (s Scaffold) updateFileModel(i Inserter, models map[string]*File) error {
 	m, err := s.loadPreviousModel(i, models)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to load previous model: %w", err)
 	}
 
 	// Get valid code fragments
@@ -245,7 +245,7 @@ func (s Scaffold) updateFileModel(i Inserter, models map[string]*File) error {
 	// Remove code fragments that already were applied
 	err = filterExistingValues(m.Contents, codeFragments)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to filter existing values: %w", err)
 	}
 
 	// If no code fragment to insert, we are done
@@ -255,7 +255,7 @@ func (s Scaffold) updateFileModel(i Inserter, models map[string]*File) error {
 
 	content, err := insertStrings(m.Contents, codeFragments)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to insert values: %w", err)
 	}
 
 	// TODO(adirio): move go-formatting to write step
@@ -263,7 +263,7 @@ func (s Scaffold) updateFileModel(i Inserter, models map[string]*File) error {
 	if ext := filepath.Ext(i.GetPath()); ext == ".go" {
 		formattedContent, err = imports.Process(i.GetPath(), content, nil)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to process formatted content: %w", err)
 		}
 	}
 
@@ -277,9 +277,9 @@ func (s Scaffold) updateFileModel(i Inserter, models map[string]*File) error {
 func (s Scaffold) loadPreviousModel(i Inserter, models map[string]*File) (*File, error) {
 	path := i.GetPath()
 
-	// Lets see if we already have a model for this file
+	// Let's see if we already have a model for this file
 	if m, found := models[path]; found {
-		// Check if there is already an scaffolded file
+		// Check if there is already a scaffolded file
 		exists, err := afero.Exists(s.fs, path)
 		if err != nil {
 			return nil, ExistsFileError{err}
@@ -365,7 +365,7 @@ func filterExistingValues(content string, codeFragmentsMap CodeFragmentsMap) err
 		for _, codeFragment := range codeFragments {
 			exists, err := codeFragmentExists(content, codeFragment)
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to check if code fragment exists: %w", err)
 			}
 			if !exists {
 				codeFragmentsOut = append(codeFragmentsOut, codeFragment)
@@ -401,8 +401,8 @@ func codeFragmentExists(content, codeFragment string) (exists bool, err error) {
 		return true
 	}
 
-	if err := scanMultiline(content, scanLines, scanFunc); err != nil {
-		return false, err
+	if scanMultilineErr := scanMultiline(content, scanLines, scanFunc); scanMultilineErr != nil {
+		return false, scanMultilineErr
 	}
 
 	return exists, nil
@@ -418,10 +418,19 @@ func scanMultiline(content string, scanLines int, scanFunc func(contentGroup str
 	if scanLines == 1 {
 		for scanner.Scan() {
 			if !scanFunc(strings.TrimSpace(scanner.Text())) {
-				return scanner.Err()
+				if err := scanner.Err(); err != nil {
+					return fmt.Errorf("failed to scan content: %w", err)
+				}
+
+				return nil
 			}
 		}
-		return scanner.Err()
+
+		if err := scanner.Err(); err != nil {
+			return fmt.Errorf("failed to scan content: %w", err)
+		}
+
+		return nil
 	}
 
 	// Complex case.
@@ -441,11 +450,19 @@ func scanMultiline(content string, scanLines int, scanFunc func(contentGroup str
 		}
 
 		if !scanFunc(strings.TrimSpace(sb.String())) {
-			return scanner.Err()
+			if err := scanner.Err(); err != nil {
+				return fmt.Errorf("failed to scan content: %w", err)
+			}
+
+			return nil
 		}
 	}
 
-	return scanner.Err()
+	if err := scanner.Err(); err != nil {
+		return fmt.Errorf("failed to scan content: %w", err)
+	}
+
+	return nil
 }
 
 func insertStrings(content string, codeFragmentsMap CodeFragmentsMap) ([]byte, error) {
@@ -466,13 +483,13 @@ func insertStrings(content string, codeFragmentsMap CodeFragmentsMap) ([]byte, e
 		_, _ = out.WriteString(line + "\n") // bytes.Buffer.WriteString always returns nil errors
 	}
 	if err := scanner.Err(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to scan content: %w", err)
 	}
 
 	return out.Bytes(), nil
 }
 
-func (s Scaffold) writeFile(f *File) (err error) {
+func (s Scaffold) writeFile(f *File) error {
 	// Check if the file to write already exists
 	exists, err := afero.Exists(s.fs, f.Path)
 	if err != nil {
@@ -507,8 +524,8 @@ func (s Scaffold) writeFile(f *File) (err error) {
 		}
 	}()
 
-	if _, err := writer.Write([]byte(f.Contents)); err != nil {
-		return WriteFileError{err}
+	if _, writeErr := writer.Write([]byte(f.Contents)); writeErr != nil {
+		return WriteFileError{writeErr}
 	}
 
 	return nil

@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+//nolint:dupl
 package v1alpha
 
 import (
@@ -46,10 +47,14 @@ func (p *initSubcommand) InjectConfig(c config.Config) error {
 
 func (p *initSubcommand) Scaffold(fs machinery.Filesystem) error {
 	if err := InsertPluginMetaToConfig(p.config, pluginConfig{}); err != nil {
-		return err
+		return fmt.Errorf("error inserting project plugin meta to configuration: %w", err)
 	}
 
 	scaffolder := scaffolds.NewInitScaffolder()
 	scaffolder.InjectFS(fs)
-	return scaffolder.Scaffold()
+	if err := scaffolder.Scaffold(); err != nil {
+		return fmt.Errorf("error scaffolding init subcommand: %w", err)
+	}
+
+	return nil
 }

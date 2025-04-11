@@ -17,6 +17,8 @@ limitations under the License.
 package scaffolds
 
 import (
+	"fmt"
+
 	"github.com/spf13/afero"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
@@ -52,7 +54,7 @@ func (s *editScaffolder) Scaffold() error {
 	filename := "Dockerfile"
 	bs, err := afero.ReadFile(s.fs.FS, filename)
 	if err != nil {
-		return err
+		return fmt.Errorf("error reading %q: %w", filename, err)
 	}
 	str := string(bs)
 
@@ -66,7 +68,9 @@ func (s *editScaffolder) Scaffold() error {
 	// because there is nothing to replace.
 	if str != "" {
 		// TODO: instead of writing it directly, we should use the scaffolding machinery for consistency
-		return afero.WriteFile(s.fs.FS, filename, []byte(str), 0o644)
+		if err = afero.WriteFile(s.fs.FS, filename, []byte(str), 0o644); err != nil {
+			return fmt.Errorf("error writing %q: %w", filename, err)
+		}
 	}
 
 	return nil

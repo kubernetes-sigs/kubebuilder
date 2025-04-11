@@ -66,8 +66,8 @@ func validateCronJob(cronjob *batchv2.CronJob) error {
 }
 
 func validateCronJobName(cronjob *batchv2.CronJob) *field.Error {
-	if len(cronjob.ObjectMeta.Name) > validationutils.DNS1035LabelMaxLength-11 {
-		return field.Invalid(field.NewPath("metadata").Child("name"), cronjob.ObjectMeta.Name, "must be no more than 52 characters")
+	if len(cronjob.Name) > validationutils.DNS1035LabelMaxLength-11 {
+		return field.Invalid(field.NewPath("metadata").Child("name"), cronjob.Name, "must be no more than 52 characters")
 	}
 	return nil
 }

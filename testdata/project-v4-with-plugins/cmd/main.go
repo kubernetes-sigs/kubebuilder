@@ -41,8 +41,8 @@ import (
 	examplecomv1alpha1 "sigs.k8s.io/kubebuilder/testdata/project-v4-with-plugins/api/v1alpha1"
 	examplecomv2 "sigs.k8s.io/kubebuilder/testdata/project-v4-with-plugins/api/v2"
 	"sigs.k8s.io/kubebuilder/testdata/project-v4-with-plugins/internal/controller"
-	webhookexamplecomv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-with-plugins/internal/webhook/v1"
-	webhookexamplecomv1alpha1 "sigs.k8s.io/kubebuilder/testdata/project-v4-with-plugins/internal/webhook/v1alpha1"
+	webhookv1 "sigs.k8s.io/kubebuilder/testdata/project-v4-with-plugins/internal/webhook/v1"
+	webhookv1alpha1 "sigs.k8s.io/kubebuilder/testdata/project-v4-with-plugins/internal/webhook/v1alpha1"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -208,7 +208,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controller.MemcachedReconciler{
+	if err := (&controller.MemcachedReconciler{
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
 		Recorder: mgr.GetEventRecorderFor("memcached-controller"),
@@ -216,7 +216,7 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Memcached")
 		os.Exit(1)
 	}
-	if err = (&controller.BusyboxReconciler{
+	if err := (&controller.BusyboxReconciler{
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
 		Recorder: mgr.GetEventRecorderFor("busybox-controller"),
@@ -226,12 +226,12 @@ func main() {
 	}
 	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = webhookexamplecomv1alpha1.SetupMemcachedWebhookWithManager(mgr); err != nil {
+		if err := webhookv1alpha1.SetupMemcachedWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Memcached")
 			os.Exit(1)
 		}
 	}
-	if err = (&controller.WordpressReconciler{
+	if err := (&controller.WordpressReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
@@ -240,7 +240,7 @@ func main() {
 	}
 	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = webhookexamplecomv1.SetupWordpressWebhookWithManager(mgr); err != nil {
+		if err := webhookv1.SetupWordpressWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Wordpress")
 			os.Exit(1)
 		}

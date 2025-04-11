@@ -19,6 +19,7 @@ package utils
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -114,12 +115,12 @@ func (vi VersionInfo) GetMinorInt() uint64 { return vi.minor }
 func (vi *VersionInfo) parseVersionInts() (err error) {
 	if vi.Major != "" {
 		if vi.major, err = strconv.ParseUint(vi.Major, 10, 64); err != nil {
-			return err
+			return fmt.Errorf("error parsing major version %q: %w", vi.Major, err)
 		}
 	}
 	if vi.Minor != "" {
 		if vi.minor, err = strconv.ParseUint(vi.Minor, 10, 64); err != nil {
-			return err
+			return fmt.Errorf("error parsing minor version %q: %w", vi.Minor, err)
 		}
 	}
 	return nil
@@ -142,18 +143,18 @@ func (v *KubernetesVersion) prepare() error {
 func (k *Kubectl) Version() (ver KubernetesVersion, err error) {
 	out, err := k.Command("version", "-o", "json")
 	if err != nil {
-		return KubernetesVersion{}, err
+		return KubernetesVersion{}, fmt.Errorf("error getting kubernetes version: %w", err)
 	}
-	if err := ver.decode(out); err != nil {
-		return KubernetesVersion{}, err
+	if decodeErr := ver.decode(out); decodeErr != nil {
+		return KubernetesVersion{}, fmt.Errorf("error parsing kubernetes version: %w", decodeErr)
 	}
 	return ver, nil
 }
 
-func (v *KubernetesVersion) decode(out string) (err error) {
+func (v *KubernetesVersion) decode(out string) error {
 	dec := json.NewDecoder(strings.NewReader(out))
 	if err := dec.Decode(&v); err != nil {
-		return err
+		return fmt.Errorf("error decoding kubernetes version: %w", err)
 	}
 	return v.prepare()
 }

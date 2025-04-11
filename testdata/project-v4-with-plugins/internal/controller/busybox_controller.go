@@ -419,7 +419,7 @@ func imageForBusybox() (string, error) {
 	var imageEnvVar = "BUSYBOX_IMAGE"
 	image, found := os.LookupEnv(imageEnvVar)
 	if !found {
-		return "", fmt.Errorf("Unable to find %s environment variable with the image", imageEnvVar)
+		return "", fmt.Errorf("unable to find %s environment variable with the image", imageEnvVar)
 	}
 	return image, nil
 }

@@ -2,12 +2,11 @@
 |---------------|---------------|-------------|-------|
 | @joelanford |  Sep 6, 2019  | implemented | -     |
 
-Integrating Kubebuilder and Operator SDK
-========================================
+# Integrating Kubebuilder and Operator SDK
 
 ## Goal
 
-To unite Kubebuilder and Operator SDK around Kubebuilder’s project scaffolding, to move Operator SDK’s Go operator features upstream, where appropriate, and to join forces on maintaining Kubebuilder so that both Kubebuilder and Operator SDK support the same project structure and command line interface for Go-based operators.
+To unite Kubebuilder and Operator SDK around Kubebuilder's project scaffolding, to move Operator SDK's Go operator features upstream, where appropriate, and to join forces on maintaining Kubebuilder so that both Kubebuilder and Operator SDK support the same project structure and command line interface for Go-based operators.
 
 ## Background
 
@@ -26,9 +25,9 @@ The Kubebuilder and Operator SDK contributors created a [GitHub project][kb-osdk
 ### Upstream code from Operator SDK
 
 The Operator SDK project contains various features that can be used by Go operator developers regardless of whether the project is based on Kubebuilder or Operator SDK. These features will be upstreamed into `kubebuilder`, `controller-runtime`, and `controller-tools`, where appropriate. These include:
-* a `DynamicRESTMapper` that enables an operator to dynamically and automatically discover new CRDs added to the cluster after the operator has started
-* a `GenerationChangedPredicate` that can trigger reconciliation events when a resource's `metadata.generation` field has changed.
-* flags and helpers that can be used to provide more fine-grained configuration when constructing the default `zap`-based logger.
+* A `DynamicRESTMapper` that enables an operator to dynamically and automatically discover new CRDs added to the cluster after the operator has started
+* A `GenerationChangedPredicate` that can trigger reconciliation events when a resource's `metadata.generation` field has changed
+* Flags and helpers that can be used to provide more fine-grained configuration when constructing the default `zap`-based logger
 
 The Operator SDK contributors plan to begin conducting all development of Go operator related code in upstream Kubebuilder (and related projects) and to spend more time helping the Kubebuilder contributors maintain these projects.
 
@@ -36,7 +35,7 @@ The Operator SDK contributors plan to begin conducting all development of Go ope
 
 To make Kubebuilder more extensible, the community has been discussing a proposal to add extension points to Kubebuilder to support different operator patterns. One example of an operator pattern is the [addon pattern][addon-pattern-pr] that uses an existing library to instantiate an opinionated API and controller.
 
-More broadly, the idea is to add support for executable plugin-based extensions that can modify Kubebuilder’s base scaffolding before files are written to disk so that the project (e.g. Go code, kustomize templates, the project Makefile and Dockerfile) can have customized content provided by an extension.
+More broadly, the idea is to add support for executable plugin-based extensions that can modify Kubebuilder's base scaffolding before files are written to disk so that the project (e.g. Go code, kustomize templates, the project Makefile and Dockerfile) can have customized content provided by an extension.
 
 ### Documentation
 

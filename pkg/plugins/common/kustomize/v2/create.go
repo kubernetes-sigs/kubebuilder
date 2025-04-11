@@ -17,6 +17,7 @@ limitations under the License.
 package v2
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/spf13/pflag"
@@ -50,7 +51,7 @@ func (p *createSubcommand) InjectResource(res *resource.Resource) error {
 func (p *createSubcommand) configure() (err error) {
 	if forceFlag := p.flagSet.Lookup("force"); forceFlag != nil {
 		if p.force, err = strconv.ParseBool(forceFlag.Value.String()); err != nil {
-			return err
+			return fmt.Errorf("invalid value for --force %s: %w", forceFlag.Value.String(), err)
 		}
 	}
 	return nil

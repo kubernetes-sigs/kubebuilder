@@ -40,7 +40,7 @@ import (
 
 	batchv1 "tutorial.kubebuilder.io/project/api/v1"
 	"tutorial.kubebuilder.io/project/internal/controller"
-	webhookbatchv1 "tutorial.kubebuilder.io/project/internal/webhook/v1"
+	webhookv1 "tutorial.kubebuilder.io/project/internal/webhook/v1"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -224,7 +224,7 @@ func main() {
 
 	// +kubebuilder:docs-gen:collapse=old stuff
 
-	if err = (&controller.CronJobReconciler{
+	if err := (&controller.CronJobReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
@@ -242,7 +242,7 @@ func main() {
 	*/
 	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = webhookbatchv1.SetupCronJobWebhookWithManager(mgr); err != nil {
+		if err := webhookv1.SetupCronJobWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "CronJob")
 			os.Exit(1)
 		}

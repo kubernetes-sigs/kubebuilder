@@ -6,6 +6,3 @@ since `28 Apr 2021`.
 
 Therefore, you can check here how to migrate the projects built from Kubebuilder 3.x with
 the plugin go/v3 to the latest.
-
-
-

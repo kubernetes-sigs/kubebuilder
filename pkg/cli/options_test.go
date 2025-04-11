@@ -400,7 +400,7 @@ var _ = Describe("Discover external plugins", func() {
 				_, err = DiscoverExternalPlugins(filesystem.FS)
 				Expect(err).To(HaveOccurred())
 
-				Expect(err).To(Equal(errPluginsRoot))
+				Expect(errors.Unwrap(err)).To(MatchError(errPluginsRoot))
 			})
 
 			It("should skip parsing of directories if plugins root is not a directory", func() {

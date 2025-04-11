@@ -138,7 +138,7 @@ func (p *createAPISubcommand) InjectResource(res *resource.Resource) error {
 	p.options.UpdateResource(p.resource, p.config)
 
 	if err := p.resource.Validate(); err != nil {
-		return err
+		return fmt.Errorf("error validating resource: %w", err)
 	}
 
 	// Check that the provided group can be added to the project
@@ -186,17 +186,17 @@ func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
 	scaffolder.InjectFS(fs)
 	err := scaffolder.Scaffold()
 	if err != nil {
-		return err
+		return fmt.Errorf("error scaffolding deploy-image plugin: %w", err)
 	}
 
 	// Track the resources following a declarative approach
 	cfg := PluginConfig{}
-	if err := p.config.DecodePluginConfig(pluginKey, &cfg); errors.As(err, &config.UnsupportedFieldError{}) {
+	if err = p.config.DecodePluginConfig(pluginKey, &cfg); errors.As(err, &config.UnsupportedFieldError{}) {
 		// Skip tracking as the config doesn't support per-plugin configuration
 		return nil
 	} else if err != nil && !errors.As(err, &config.PluginKeyNotFoundError{}) {
 		// Fail unless the key wasn't found, which just means it is the first resource tracked
-		return err
+		return fmt.Errorf("error decoding plugin configuration: %w", err)
 	}
 
 	configDataOptions := options{
@@ -206,31 +206,36 @@ func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
 		RunAsUser:        p.runAsUser,
 	}
 	cfg.Resources = append(cfg.Resources, ResourceData{
-		Group:   p.resource.GVK.Group,
-		Domain:  p.resource.GVK.Domain,
-		Version: p.resource.GVK.Version,
-		Kind:    p.resource.GVK.Kind,
+		Group:   p.resource.Group,
+		Domain:  p.resource.Domain,
+		Version: p.resource.Version,
+		Kind:    p.resource.Kind,
 		Options: configDataOptions,
 	})
-	return p.config.EncodePluginConfig(pluginKey, cfg)
+
+	if err = p.config.EncodePluginConfig(pluginKey, cfg); err != nil {
+		return fmt.Errorf("error encoding plugin configuration: %w", err)
+	}
+
+	return nil
 }
 
 func (p *createAPISubcommand) PostScaffold() error {
 	err := util.RunCmd("Update dependencies", "go", "mod", "tidy")
 	if err != nil {
-		return err
+		return fmt.Errorf("error updating go dependencies: %w", err)
 	}
 	if p.runMake && p.resource.HasAPI() {
 		err = util.RunCmd("Running make", "make", "generate")
 		if err != nil {
-			return err
+			return fmt.Errorf("ailed running make generate: %w", err)
 		}
 	}
 
 	if p.runManifests && p.resource.HasAPI() {
 		err = util.RunCmd("Running make", "make", "manifests")
 		if err != nil {
-			return err
+			return fmt.Errorf("failed running make manifests: %w", err)
 		}
 	}
 

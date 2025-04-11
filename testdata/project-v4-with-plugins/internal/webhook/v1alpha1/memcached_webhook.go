@@ -59,7 +59,7 @@ type MemcachedCustomValidator struct {
 var _ webhook.CustomValidator = &MemcachedCustomValidator{}
 
 // ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type Memcached.
-func (v *MemcachedCustomValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (v *MemcachedCustomValidator) ValidateCreate(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
 	memcached, ok := obj.(*examplecomv1alpha1.Memcached)
 	if !ok {
 		return nil, fmt.Errorf("expected a Memcached object but got %T", obj)
@@ -72,7 +72,7 @@ func (v *MemcachedCustomValidator) ValidateCreate(ctx context.Context, obj runti
 }
 
 // ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type Memcached.
-func (v *MemcachedCustomValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+func (v *MemcachedCustomValidator) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
 	memcached, ok := newObj.(*examplecomv1alpha1.Memcached)
 	if !ok {
 		return nil, fmt.Errorf("expected a Memcached object for the newObj but got %T", newObj)

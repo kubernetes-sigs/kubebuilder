@@ -57,7 +57,7 @@ type CaptainCustomDefaulter struct {
 var _ webhook.CustomDefaulter = &CaptainCustomDefaulter{}
 
 // Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind Captain.
-func (d *CaptainCustomDefaulter) Default(ctx context.Context, obj runtime.Object) error {
+func (d *CaptainCustomDefaulter) Default(_ context.Context, obj runtime.Object) error {
 	captain, ok := obj.(*crewv1.Captain)
 
 	if !ok {
@@ -87,7 +87,7 @@ type CaptainCustomValidator struct {
 var _ webhook.CustomValidator = &CaptainCustomValidator{}
 
 // ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type Captain.
-func (v *CaptainCustomValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (v *CaptainCustomValidator) ValidateCreate(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
 	captain, ok := obj.(*crewv1.Captain)
 	if !ok {
 		return nil, fmt.Errorf("expected a Captain object but got %T", obj)
@@ -100,7 +100,7 @@ func (v *CaptainCustomValidator) ValidateCreate(ctx context.Context, obj runtime
 }
 
 // ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type Captain.
-func (v *CaptainCustomValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+func (v *CaptainCustomValidator) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
 	captain, ok := newObj.(*crewv1.Captain)
 	if !ok {
 		return nil, fmt.Errorf("expected a Captain object for the newObj but got %T", newObj)

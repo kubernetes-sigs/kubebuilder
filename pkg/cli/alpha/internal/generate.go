@@ -52,12 +52,12 @@ func (opts *Generate) Generate() error {
 	}
 
 	if opts.OutputDir == "" {
-		cwd, err := os.Getwd()
-		if err != nil {
-			return fmt.Errorf("failed to get working directory: %w", err)
+		cwd, getWdErr := os.Getwd()
+		if getWdErr != nil {
+			return fmt.Errorf("failed to get working directory: %w", getWdErr)
 		}
 		opts.OutputDir = cwd
-		if _, err := os.Stat(opts.OutputDir); err == nil {
+		if _, err = os.Stat(opts.OutputDir); err == nil {
 			log.Warn("Using current working directory to re-scaffold the project")
 			log.Warn("This directory will be cleaned up and all files removed before the re-generation")
 
@@ -69,40 +69,41 @@ func (opts *Generate) Generate() error {
 			err = util.RunCmd("Running cleanup", "sh", "-c", cleanupCmd)
 			if err != nil {
 				log.Error("Cleanup failed:", err)
-				return err
+				return fmt.Errorf("cleanup failed: %w", err)
 			}
 		}
 	}
 
-	if err := createDirectory(opts.OutputDir); err != nil {
-		return err
+	if err = createDirectory(opts.OutputDir); err != nil {
+		return fmt.Errorf("error creating output directory %q: %w", opts.OutputDir, err)
 	}
 
-	if err := changeWorkingDirectory(opts.OutputDir); err != nil {
-		return err
+	if err = changeWorkingDirectory(opts.OutputDir); err != nil {
+		return fmt.Errorf("error changing working directory %q: %w", opts.OutputDir, err)
 	}
 
-	if err := kubebuilderInit(projectConfig); err != nil {
-		return err
+	if err = kubebuilderInit(projectConfig); err != nil {
+		return fmt.Errorf("error initializing project config: %w", err)
 	}
 
-	if err := kubebuilderEdit(projectConfig); err != nil {
-		return err
+	if err = kubebuilderEdit(projectConfig); err != nil {
+		return fmt.Errorf("error editing project config: %w", err)
 	}
 
-	if err := kubebuilderCreate(projectConfig); err != nil {
-		return err
+	if err = kubebuilderCreate(projectConfig); err != nil {
+		return fmt.Errorf("error creating project config: %w", err)
 	}
 
-	if err := migrateGrafanaPlugin(projectConfig, opts.InputDir, opts.OutputDir); err != nil {
-		return err
+	if err = migrateGrafanaPlugin(projectConfig, opts.InputDir, opts.OutputDir); err != nil {
+		return fmt.Errorf("error migrating Grafana plugin: %w", err)
 	}
 
 	if hasHelmPlugin(projectConfig) {
-		if err := kubebuilderHelmEdit(); err != nil {
-			return err
+		if err = kubebuilderHelmEdit(); err != nil {
+			return fmt.Errorf("error editing Helm plugin: %w", err)
 		}
 	}
+
 	return migrateDeployImagePlugin(projectConfig)
 }
 
@@ -111,7 +112,7 @@ func (opts *Generate) Validate() error {
 	var err error
 	opts.InputDir, err = getInputPath(opts.InputDir)
 	if err != nil {
-		return err
+		return fmt.Errorf("error getting input path %q: %w", opts.InputDir, err)
 	}
 
 	_, err = exec.LookPath("kubebuilder")
@@ -134,7 +135,7 @@ func loadProjectConfig(inputDir string) (store.Store, error) {
 // Helper function to create the output directory.
 func createDirectory(outputDir string) error {
 	if err := os.MkdirAll(outputDir, 0o755); err != nil {
-		return fmt.Errorf("failed to create output directory %s: %w", outputDir, err)
+		return fmt.Errorf("failed to create output directory %q: %w", outputDir, err)
 	}
 	return nil
 }
@@ -142,7 +143,7 @@ func createDirectory(outputDir string) error {
 // Helper function to change the current working directory.
 func changeWorkingDirectory(outputDir string) error {
 	if err := os.Chdir(outputDir); err != nil {
-		return fmt.Errorf("failed to change the working directory to %s: %w", outputDir, err)
+		return fmt.Errorf("failed to change the working directory to %q: %w", outputDir, err)
 	}
 	return nil
 }
@@ -150,15 +151,22 @@ func changeWorkingDirectory(outputDir string) error {
 // Initializes the project with Kubebuilder.
 func kubebuilderInit(s store.Store) error {
 	args := append([]string{"init"}, getInitArgs(s)...)
-	return util.RunCmd("kubebuilder init", "kubebuilder", args...)
+	if err := util.RunCmd("kubebuilder init", "kubebuilder", args...); err != nil {
+		return fmt.Errorf("failed to run kubebuilder init command: %w", err)
+	}
+
+	return nil
 }
 
 // Edits the project to enable or disable multigroup layout.
 func kubebuilderEdit(s store.Store) error {
 	if s.Config().IsMultiGroup() {
 		args := []string{"edit", "--multigroup"}
-		return util.RunCmd("kubebuilder edit", "kubebuilder", args...)
+		if err := util.RunCmd("kubebuilder edit", "kubebuilder", args...); err != nil {
+			return fmt.Errorf("failed to run kubebuilder edit command: %w", err)
+		}
 	}
+
 	return nil
 }
 
@@ -171,7 +179,7 @@ func kubebuilderCreate(s store.Store) error {
 
 	// First, scaffold all APIs
 	for _, r := range resources {
-		if err := createAPI(r); err != nil {
+		if err = createAPI(r); err != nil {
 			return fmt.Errorf("failed to create API for %s/%s/%s: %w", r.Group, r.Version, r.Kind, err)
 		}
 	}
@@ -179,7 +187,7 @@ func kubebuilderCreate(s store.Store) error {
 	// Then, scaffold all webhooks
 	// We cannot create a webhook for an API that does not exist
 	for _, r := range resources {
-		if err := createWebhook(r); err != nil {
+		if err = createWebhook(r); err != nil {
 			return fmt.Errorf("failed to create webhook for %s/%s/%s: %w", r.Group, r.Version, r.Kind, err)
 		}
 	}
@@ -198,12 +206,12 @@ func migrateGrafanaPlugin(s store.Store, src, des string) error {
 		return fmt.Errorf("failed to decode grafana plugin config: %w", err)
 	}
 
-	if err := kubebuilderGrafanaEdit(); err != nil {
-		return err
+	if err = kubebuilderGrafanaEdit(); err != nil {
+		return fmt.Errorf("error editing Grafana plugin: %w", err)
 	}
 
-	if err := grafanaConfigMigrate(src, des); err != nil {
-		return err
+	if err = grafanaConfigMigrate(src, des); err != nil {
+		return fmt.Errorf("error migrating Grafana config: %w", err)
 	}
 
 	return kubebuilderGrafanaEdit()
@@ -233,7 +241,11 @@ func migrateDeployImagePlugin(s store.Store) error {
 func createAPIWithDeployImage(resourceData v1alpha1.ResourceData) error {
 	args := append([]string{"create", "api"}, getGVKFlagsFromDeployImage(resourceData)...)
 	args = append(args, getDeployImageOptions(resourceData)...)
-	return util.RunCmd("kubebuilder create api", "kubebuilder", args...)
+	if err := util.RunCmd("kubebuilder create api", "kubebuilder", args...); err != nil {
+		return fmt.Errorf("failed to run kubebuilder create api command: %w", err)
+	}
+
+	return nil
 }
 
 // Helper function to get input path.
@@ -247,7 +259,7 @@ func getInputPath(inputPath string) (string, error) {
 	}
 	projectPath := fmt.Sprintf("%s/%s", inputPath, yaml.DefaultPath)
 	if _, err := os.Stat(projectPath); os.IsNotExist(err) {
-		return "", fmt.Errorf("project path %s does not exist: %w", projectPath, err)
+		return "", fmt.Errorf("project path %q does not exist: %w", projectPath, err)
 	}
 	return inputPath, nil
 }
@@ -349,7 +361,11 @@ func createAPI(res resource.Resource) error {
 		args = append(args, "--external-api-domain", res.Domain)
 	}
 
-	return util.RunCmd("kubebuilder create api", "kubebuilder", args...)
+	if err := util.RunCmd("kubebuilder create api", "kubebuilder", args...); err != nil {
+		return fmt.Errorf("failed to run kubebuilder create api command: %w", err)
+	}
+
+	return nil
 }
 
 // Gets flags for API resource creation.
@@ -381,7 +397,12 @@ func createWebhook(res resource.Resource) error {
 	}
 	args := append([]string{"create", "webhook"}, getGVKFlags(res)...)
 	args = append(args, getWebhookResourceFlags(res)...)
-	return util.RunCmd("kubebuilder create webhook", "kubebuilder", args...)
+
+	if err := util.RunCmd("kubebuilder create webhook", "kubebuilder", args...); err != nil {
+		return fmt.Errorf("failed to run kubebuilder create webhook command: %w", err)
+	}
+
+	return nil
 }
 
 // Gets flags for webhook creation.
@@ -412,9 +433,13 @@ func getWebhookResourceFlags(res resource.Resource) []string {
 func copyFile(src, des string) error {
 	bytesRead, err := os.ReadFile(src)
 	if err != nil {
-		return fmt.Errorf("source file path %s does not exist: %w", src, err)
+		return fmt.Errorf("source file path %q does not exist: %w", src, err)
 	}
-	return os.WriteFile(des, bytesRead, 0o755)
+	if err = os.WriteFile(des, bytesRead, 0o755); err != nil {
+		return fmt.Errorf("failed to write file %q: %w", des, err)
+	}
+
+	return nil
 }
 
 // Migrates Grafana configuration files.

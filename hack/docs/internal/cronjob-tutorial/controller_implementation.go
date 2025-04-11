@@ -55,7 +55,7 @@ the "real" clock just calls` + " `" + `time.Now` + "`" + `.
 */
 type realClock struct{}
 
-func (_ realClock) Now() time.Time { return time.Now() }
+func (_ realClock) Now() time.Time { return time.Now() } //nolint:staticcheck
 
 // Clock knows how to get the current time.
 // It can be used to fake out timing for testing.
@@ -343,7 +343,7 @@ const controllerReconcileLogic = `log := logf.FromContext(ctx)
 		if cronJob.Status.LastScheduleTime != nil {
 			earliestTime = cronJob.Status.LastScheduleTime.Time
 		} else {
-			earliestTime = cronJob.ObjectMeta.CreationTimestamp.Time
+			earliestTime = cronJob.CreationTimestamp.Time
 		}
 		if cronJob.Spec.StartingDeadlineSeconds != nil {
 			// controller is not going to schedule anything below this point
@@ -377,7 +377,7 @@ const controllerReconcileLogic = `log := logf.FromContext(ctx)
 			starts++
 			if starts > 100 {
 				// We can't get the most recent times so just return an empty slice
-				return time.Time{}, time.Time{}, fmt.Errorf("Too many missed start times (> 100). Set or decrease .spec.startingDeadlineSeconds or check clock skew.")
+				return time.Time{}, time.Time{}, fmt.Errorf("Too many missed start times (> 100). Set or decrease .spec.startingDeadlineSeconds or check clock skew.") //nolint:staticcheck
 			}
 		}
 		return lastMissed, sched.Next(now), nil

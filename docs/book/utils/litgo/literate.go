@@ -170,7 +170,7 @@ func extractPairs(contents []byte, path string) ([]commentCodePair, error) {
 	file := fileSet.AddFile(path, -1, len(contents))
 	scan := scanner.Scanner{}
 	var errs []error
-	scan.Init(file, []byte(contents), func(pos token.Position, msg string) {
+	scan.Init(file, contents, func(pos token.Position, msg string) {
 		errs = append(errs, fmt.Errorf("error parsing file %s: %s", pos, msg))
 	}, scanner.ScanComments)
 

@@ -48,9 +48,9 @@ type Boilerplate struct {
 }
 
 // Validate implements file.RequiresValidation
-func (f Boilerplate) Validate() error {
+func (f *Boilerplate) Validate() error {
 	if f.License != "" {
-		if _, found := knownLicenses[f.License]; !found {
+		if _, foundKnown := knownLicenses[f.License]; !foundKnown {
 			if _, found := f.Licenses[f.License]; !found {
 				return fmt.Errorf("unknown specified license %s", f.License)
 			}

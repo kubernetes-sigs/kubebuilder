@@ -110,7 +110,7 @@ func (s *webhookScaffolder) Scaffold() error {
 		&cmd.MainUpdater{WireWebhook: true, IsLegacyPath: s.isLegacy},
 		&webhooks.WebhookTest{Force: s.force, IsLegacyPath: s.isLegacy},
 	); err != nil {
-		return err
+		return fmt.Errorf("error updating webhook: %w", err)
 	}
 
 	if doConversion {
@@ -131,17 +131,13 @@ func (s *webhookScaffolder) Scaffold() error {
 				"in file %s: %v", resourceFilePath, err)
 		}
 
-		if err := scaffold.Execute(
-			&api.Hub{Force: s.force},
-		); err != nil {
-			return err
+		if err = scaffold.Execute(&api.Hub{Force: s.force}); err != nil {
+			return fmt.Errorf("error scaffold resource with hub: %w", err)
 		}
 
 		for _, spoke := range s.resource.Webhooks.Spoke {
 			log.Printf("Scaffolding for spoke version: %s\n", spoke)
-			if err := scaffold.Execute(
-				&api.Spoke{Force: s.force, SpokeVersion: spoke},
-			); err != nil {
+			if err = scaffold.Execute(&api.Spoke{Force: s.force, SpokeVersion: spoke}); err != nil {
 				return fmt.Errorf("failed to scaffold spoke %s: %w", spoke, err)
 			}
 		}
@@ -152,10 +148,8 @@ You need to implement the conversion.Hub and conversion.Convertible interfaces f
 
 	// TODO: Add test suite for conversion webhook after #1664 has been merged & conversion tests supported in envtest.
 	if doDefaulting || doValidation {
-		if err := scaffold.Execute(
-			&webhooks.WebhookSuite{IsLegacyPath: s.isLegacy},
-		); err != nil {
-			return err
+		if err = scaffold.Execute(&webhooks.WebhookSuite{IsLegacyPath: s.isLegacy}); err != nil {
+			return fmt.Errorf("error scaffold webhook suite: %w", err)
 		}
 	}
 
@@ -167,7 +161,7 @@ You need to implement the conversion.Hub and conversion.Convertible interfaces f
 			log.Warning("Dockerfile is copying internal/controller. To allow copying webhooks, " +
 				"it will be edited, and `internal/controller` will be replaced by `internal/`.")
 
-			if err := pluginutil.ReplaceInFile("Dockerfile", "internal/controller", "internal/"); err != nil {
+			if err = pluginutil.ReplaceInFile("Dockerfile", "internal/controller", "internal/"); err != nil {
 				log.Error("Unable to replace \"internal/controller\" with \"internal/\" in the Dockerfile: ", err)
 			}
 		}

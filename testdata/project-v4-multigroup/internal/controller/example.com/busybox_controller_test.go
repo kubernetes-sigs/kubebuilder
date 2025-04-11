@@ -138,7 +138,7 @@ var _ = Describe("Busybox controller", func() {
 
 			By("Checking the latest Status Condition added to the Busybox instance")
 			Expect(k8sClient.Get(ctx, typeNamespacedName, busybox)).To(Succeed())
-			conditions := []metav1.Condition{}
+			var conditions []metav1.Condition
 			Expect(busybox.Status.Conditions).To(ContainElement(
 				HaveField("Type", Equal(typeAvailableBusybox)), &conditions))
 			Expect(conditions).To(HaveLen(1), "Multiple conditions of type %s", typeAvailableBusybox)

@@ -55,7 +55,7 @@ type AdmiralCustomDefaulter struct {
 var _ webhook.CustomDefaulter = &AdmiralCustomDefaulter{}
 
 // Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind Admiral.
-func (d *AdmiralCustomDefaulter) Default(ctx context.Context, obj runtime.Object) error {
+func (d *AdmiralCustomDefaulter) Default(_ context.Context, obj runtime.Object) error {
 	admiral, ok := obj.(*crewv1.Admiral)
 
 	if !ok {

@@ -103,14 +103,14 @@ Note: If the name is ambiguous, then the qualified name `myexternalplugin.my.dom
 
 ### What Plugin system should we use
 
-I propose we use our own plugin system that passes JSON blobs back and forth across `stdin/stdout/stderr` and make this the only option for now as it’s a language-agnostic medium and it is easy to work with in most languages.
+I propose we use our own plugin system that passes JSON blobs back and forth across `stdin/stdout/stderr` and make this the only option for now as it's a language-agnostic medium and it is easy to work with in most languages.
 
-We came to the conclusion that a kubebuilder-specific plugin library should be written after evaluating plugin libraries such as the [built-in go-plugin library](https://golang.org/pkg/plugin/) and [Hashicorp’s plugin library](https://github.com/hashicorp/go-plugin):
+We came to the conclusion that a kubebuilder-specific plugin library should be written after evaluating plugin libraries such as the [built-in go-plugin library](https://golang.org/pkg/plugin/) and [Hashicorp's plugin library](https://github.com/hashicorp/go-plugin):
 
-* The built-in plugin library seems to be more suitable for in-tree plugins rather than out-of-tree plugins and it doesn’t offer cross-language support, thereby making it a non-starter.
-* Hashicorp’s go plugin system is more suitable than the built-in go-plugin library as it enables cross language/platform support. However, it is more suited for long running plugins as opposed to short lived plugins and the usage of protobuf could be overkill as we will not be handling 10s of 1000s of deserializations.
+* The built-in plugin library seems to be more suitable for in-tree plugins rather than out-of-tree plugins and it doesn't offer cross-language support, thereby making it a non-starter.
+* Hashicorp's go plugin system is more suitable than the built-in go-plugin library as it enables cross-language/platform support. However, it is more suited for long-running plugins as opposed to short-lived plugins and the usage of protobuf could be overkill as we will not be handling 10s of 1000s of deserializations.
 
-In the future, if a need arises (for example, users are hitting performance issues), we can then explore the possibility of using the Hashicorp’s go plugin library. From a design standpoint, to leave it architecturally open, I propose using a `type` field in the PROJECT file to potentially allow other plugin libraries in the future and make this a seperate field in the PROJECT file per plugin; and this field determines how the `universe` will be passed for a given plugin. However, for the sake of simplicity in initial design and not to introduce any breaking changes as Project version 3 would suffice for our needs, this option is out of scope in this proposal.
+In the future, if a need arises (for example, users are hitting performance issues), we can then explore the possibility of using the Hashicorp's go plugin library. From a design standpoint, to leave it architecturally open, I propose using a `type` field in the PROJECT file to potentially allow other plugin libraries in the future and make this a separate field in the PROJECT file per plugin; and this field determines how the `universe` will be passed for a given plugin. However, for the sake of simplicity in initial design and not to introduce any breaking changes as Project version 3 would suffice for our needs, this option is out of scope in this proposal.
 
 ### Project configuration
 
@@ -165,14 +165,14 @@ resources:
 
 ![Kubebuilder to external plugins sequence diagram](https://github.com/rashmigottipati/POC-Phase2-Plugins/blob/main/docs/externalplugins-sequence-diagram.png)
 
-* What to pass between `kubebuilder` and an external plugin?
+* What should be passed between `kubebuilder` and an external plugin?
 
 Message passing between `kubebuilder` and the external plugin will occur through a request / response mechanism. The `PluginRequest` will contain information that `kubebuilder` sends *to* the external plugin. The `PluginResponse` will contain information that `kubebuilder` receives *from* the external plugin.
 
-The following scenarios shows what `kubebuilder` will send/receive to the external plugin:
+The following scenarios show what `kubebuilder` will send/receive to the external plugin:
 
 * `kubebuilder` to external plugin:
-  * `kubebuilder` constructs a `PluginRequest` that contains the `Command` (such as `init`, `create api`, or `create webhook`), `Args` containing all the raw flags from the CLI request and license boilerplate without comment delimiters, and an empty `Universe` that contains the current virtual state of file contents that is not written to the disk yet. `kubebuilder` writes the `PluginRequest` through `stdin`.
+  * `kubebuilder` constructs a `PluginRequest` that contains the `Command` (such as `init`, `create api`, or `create webhook`), `Args` containing all the raw flags from the CLI request and license boilerplate without comment delimiters, and an empty `Universe` that contains the current virtual state of file contents that are not written to disk yet. `kubebuilder` writes the `PluginRequest` through `stdin`.
 
 * External plugin to `kubebuilder`:
   * The plugin reads the `PluginRequest` through its `stdin` and processes the request based on the `Command` that was sent. If the `Command` doesn't match what the plugin supports, it writes back an error immediately without any further processing. If the `Command` matches what the plugin supports, it constructs a `PluginResponse` containing the `Command` that was executed by the plugin, and modified `Universe` based on the new files that were scaffolded by the external plugin, `Error` and `ErrorMsg` that add any error information, and writes the `PluginResponse` back to `kubebuilder` through `stdout`.
@@ -314,7 +314,7 @@ What happens when the above is invoked?
 
 #### User specified file paths
 
-A user will provide a list of file paths for `kubebuilder` to discover the plugins in. We will define a variable `KUBEBUILDER_PLUGINS_DIRS` that will take a list of file paths to search for the plugin name. It will also have a default value to search in, in case no file paths are provided. It will search for the plugin name that was provided to the `--plugins` flag in the CLI. `kubebuilder` will recursively search for all file paths until the plugin name is found and returns the successful match, and if it doesn’t exist, it returns an error message that the plugin is not found in the provided file paths. Also use the host system mechanism for PATH separation.
+A user will provide a list of file paths for `kubebuilder` to discover the plugins in. We will define a variable `KUBEBUILDER_PLUGINS_DIRS` that will take a list of file paths to search for the plugin name. It will also have a default value to search in, in case no file paths are provided. It will search for the plugin name that was provided to the `--plugins` flag in the CLI. `kubebuilder` will recursively search for all file paths until the plugin name is found and returns the successful match, and if it doesn't exist, it returns an error message that the plugin is not found in the provided file paths. Also use the host system mechanism for PATH separation.
 
 * Alternatively, this could be handled in a way that [helm kustomize plugin](https://helm.sh/docs/topics/advanced/#post-rendering) discovers the plugin based on the non-existence of a separator in the path provided, in which case `kubebuilder` will search in `$PATH`, otherwise resolve any relative paths to a fully qualified path.
 
@@ -330,9 +330,9 @@ A user will provide a list of file paths for `kubebuilder` to discover the plugi
 Another approach is adding plugin executables with a prefix `kubebuilder-` followed by the plugin name to the PATH variable. This will enable `kubebuilder` to traverse through the PATH looking for the plugin executables starting with the prefix `kubebuilder-` and matching by the plugin name that was provided in the CLI. Furthermore, a check should be added to verify that the match is an executable or not and return an error if it's not an executable. This approach provides a lot of flexibility in terms of plugin discovery as all the user needs to do is to add the plugin executable to the PATH and `kubebuilder` will discover it.
 
 * Pros
-  * `kubectl` and `git` follow the same approach for discovering plugins, so there’s prior art.
+  * `kubectl` and `git` follow the same approach for discovering plugins, so there's prior art.
 
-  * There’s a lot of flexibility in just dropping plugin binaries to PATH variable and enabling the discovery without having to enforce any other constraints on the placements of the plugins.
+  * There's a lot of flexibility in just dropping plugin binaries to PATH variable and enabling the discovery without having to enforce any other constraints on the placements of the plugins.
 
 * Cons
   * Enumerating the list of all available plugins might be a bit tough compared to having a single folder with the list of available plugins and having to enumerate those.

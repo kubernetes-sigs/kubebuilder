@@ -65,7 +65,7 @@ func (p *initSubcommand) InjectConfig(c config.Config) error {
 	p.config = c
 
 	if err := p.config.SetDomain(p.domain); err != nil {
-		return err
+		return fmt.Errorf("error setting domain: %w", err)
 	}
 
 	// Assign a default project name
@@ -80,11 +80,20 @@ func (p *initSubcommand) InjectConfig(c config.Config) error {
 	if err := validation.IsDNS1123Label(p.name); err != nil {
 		return fmt.Errorf("project name %q is invalid: %v", p.name, err)
 	}
-	return p.config.SetProjectName(p.name)
+
+	if err := p.config.SetProjectName(p.name); err != nil {
+		return fmt.Errorf("error setting project name: %w", err)
+	}
+
+	return nil
 }
 
 func (p *initSubcommand) Scaffold(fs machinery.Filesystem) error {
 	scaffolder := scaffolds.NewInitScaffolder(p.config)
 	scaffolder.InjectFS(fs)
-	return scaffolder.Scaffold()
+	if err := scaffolder.Scaffold(); err != nil {
+		return fmt.Errorf("failed to scaffold init subcommand: %w", err)
+	}
+
+	return nil
 }

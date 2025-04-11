@@ -101,32 +101,35 @@ func (p *initSubcommand) InjectConfig(c config.Config) error {
 	if p.repo == "" {
 		repoPath, err := golang.FindCurrentRepo()
 		if err != nil {
-			return fmt.Errorf("error finding current repository: %v", err)
+			return fmt.Errorf("error finding current repository: %w", err)
 		}
 		p.repo = repoPath
 	}
 
-	return p.config.SetRepository(p.repo)
+	if err := p.config.SetRepository(p.repo); err != nil {
+		return fmt.Errorf("error setting repository: %w", err)
+	}
+
+	return nil
 }
 
 func (p *initSubcommand) PreScaffold(machinery.Filesystem) error {
 	// Ensure Go version is in the allowed range if check not turned off.
 	if !p.skipGoVersionCheck {
 		if err := golang.ValidateGoVersion(goVerMin, goVerMax); err != nil {
-			return err
+			return fmt.Errorf("error validating go version: %w", err)
 		}
 	}
 
-	// Check if the current directory has not files or directories which does not allow to init the project
+	// Check if the current directory has no files or directories which does not allow to init the project
 	return checkDir()
 }
 
 func (p *initSubcommand) Scaffold(fs machinery.Filesystem) error {
 	scaffolder := scaffolds.NewInitScaffolder(p.config, p.license, p.owner, p.commandName)
 	scaffolder.InjectFS(fs)
-	err := scaffolder.Scaffold()
-	if err != nil {
-		return err
+	if err := scaffolder.Scaffold(); err != nil {
+		return fmt.Errorf("error scaffolding init plugin: %w", err)
 	}
 
 	if !p.fetchDeps {
@@ -136,10 +139,10 @@ func (p *initSubcommand) Scaffold(fs machinery.Filesystem) error {
 
 	// Ensure that we are pinning controller-runtime version
 	// xref: https://github.com/kubernetes-sigs/kubebuilder/issues/997
-	err = util.RunCmd("Get controller runtime", "go", "get",
+	err := util.RunCmd("Get controller runtime", "go", "get",
 		"sigs.k8s.io/controller-runtime@"+scaffolds.ControllerRuntimeVersion)
 	if err != nil {
-		return err
+		return fmt.Errorf("error getting controller-runtime version: %w", err)
 	}
 
 	return nil
@@ -148,7 +151,7 @@ func (p *initSubcommand) Scaffold(fs machinery.Filesystem) error {
 func (p *initSubcommand) PostScaffold() error {
 	err := util.RunCmd("Update dependencies", "go", "mod", "tidy")
 	if err != nil {
-		return err
+		return fmt.Errorf("error updating go dependencies: %w", err)
 	}
 
 	fmt.Printf("Next: define a resource with:\n$ %s create api\n", p.commandName)
@@ -162,7 +165,7 @@ func checkDir() error {
 	err := filepath.Walk(".",
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
-				return err
+				return fmt.Errorf("error walking path %q: %w", path, err)
 			}
 			// Allow directory trees starting with '.'
 			if info.IsDir() && strings.HasPrefix(info.Name(), ".") && info.Name() != "." {
@@ -200,13 +203,12 @@ func checkDir() error {
 				}
 			}
 			// Do not allow any other file
-			return fmt.Errorf(
-				"target directory is not empty and contains a disallowed file %q. "+
-					"files with the following extensions [%s] are not allowed to avoid conflicts with the tooling.",
+			return fmt.Errorf("target directory is not empty and contains a disallowed file %q. "+
+				"files with the following extensions [%s] are not allowed to avoid conflicts with the tooling",
 				path, strings.Join(disallowedExtensions, ", "))
 		})
 	if err != nil {
-		return err
+		return fmt.Errorf("error walking directory: %w", err)
 	}
 	return nil
 }

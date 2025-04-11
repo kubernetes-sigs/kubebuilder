@@ -24,7 +24,7 @@ The details of all changes (breaking or otherwise) can be found in:
 by moving the api(s) under a new directory called `api`, controller(s) under a new directory called `internal` and the `main.go` under a new directory named `cmd`
 
 <aside class="note">
-<H1> TL;DR of the New `go/v4` Plugin </H1>
+<H1> Details of go/v4 Plugin </H1>
 
 Further details can be found in the [go/v4 plugin section][go/v4-doc]
 

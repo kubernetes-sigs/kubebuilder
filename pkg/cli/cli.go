@@ -42,13 +42,15 @@ const (
 )
 
 // CLI is the command line utility that is used to scaffold kubebuilder project files.
-type CLI struct { //nolint:maligned
+type CLI struct {
 	/* Fields set by Option */
 
 	// Root command name. It is injected downstream to provide correct help, usage, examples and errors.
 	commandName string
-	// CLI version string.
+	// Full CLI version string.
 	version string
+	// CLI version string (just the CLI version number, no extra information).
+	cliVersion string
 	// CLI root's command description.
 	description string
 	// Plugins registered in the CLI.
@@ -216,7 +218,7 @@ func (c *CLI) getInfoFromConfigFile() error {
 	// Read the project configuration file
 	cfg := yamlstore.New(c.fs)
 	if err := cfg.Load(); err != nil {
-		return err
+		return fmt.Errorf("error loading configuration: %w", err)
 	}
 
 	return c.getInfoFromConfig(cfg.Config())
@@ -260,12 +262,12 @@ func (c *CLI) getInfoFromFlags(hasConfigFile bool) error {
 
 	// Parse the arguments
 	if err := fs.Parse(os.Args[1:]); err != nil {
-		return err
+		return fmt.Errorf("could not parse flags: %w", err)
 	}
 
 	// If any plugin key was provided, replace those from the project configuration file
 	if pluginKeys, err := fs.GetStringSlice(pluginsFlag); err != nil {
-		return err
+		return fmt.Errorf("invalid flag %q: %w", pluginsFlag, err)
 	} else if len(pluginKeys) != 0 {
 		// Remove leading and trailing spaces and validate the plugin keys
 		for i, key := range pluginKeys {
@@ -468,7 +470,11 @@ func (c CLI) metadata() plugin.CLIMetadata {
 //
 // If an error is found, command help and examples will be printed.
 func (c CLI) Run() error {
-	return c.cmd.Execute()
+	if err := c.cmd.Execute(); err != nil {
+		return fmt.Errorf("error executing command: %w", err)
+	}
+
+	return nil
 }
 
 // Command returns the underlying root command.

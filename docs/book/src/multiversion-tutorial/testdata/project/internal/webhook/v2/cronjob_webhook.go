@@ -73,7 +73,7 @@ type CronJobCustomDefaulter struct {
 var _ webhook.CustomDefaulter = &CronJobCustomDefaulter{}
 
 // Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind CronJob.
-func (d *CronJobCustomDefaulter) Default(ctx context.Context, obj runtime.Object) error {
+func (d *CronJobCustomDefaulter) Default(_ context.Context, obj runtime.Object) error {
 	cronjob, ok := obj.(*batchv2.CronJob)
 
 	if !ok {
@@ -104,7 +104,7 @@ type CronJobCustomValidator struct {
 var _ webhook.CustomValidator = &CronJobCustomValidator{}
 
 // ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type CronJob.
-func (v *CronJobCustomValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (v *CronJobCustomValidator) ValidateCreate(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
 	cronjob, ok := obj.(*batchv2.CronJob)
 	if !ok {
 		return nil, fmt.Errorf("expected a CronJob object but got %T", obj)
@@ -115,7 +115,7 @@ func (v *CronJobCustomValidator) ValidateCreate(ctx context.Context, obj runtime
 }
 
 // ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type CronJob.
-func (v *CronJobCustomValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+func (v *CronJobCustomValidator) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
 	cronjob, ok := newObj.(*batchv2.CronJob)
 	if !ok {
 		return nil, fmt.Errorf("expected a CronJob object for the newObj but got %T", newObj)
@@ -173,8 +173,8 @@ func validateCronJob(cronjob *batchv2.CronJob) error {
 }
 
 func validateCronJobName(cronjob *batchv2.CronJob) *field.Error {
-	if len(cronjob.ObjectMeta.Name) > validationutils.DNS1035LabelMaxLength-11 {
-		return field.Invalid(field.NewPath("metadata").Child("name"), cronjob.ObjectMeta.Name, "must be no more than 52 characters")
+	if len(cronjob.Name) > validationutils.DNS1035LabelMaxLength-11 {
+		return field.Invalid(field.NewPath("metadata").Child("name"), cronjob.Name, "must be no more than 52 characters")
 	}
 	return nil
 }

@@ -54,7 +54,7 @@ type PodCustomDefaulter struct {
 var _ webhook.CustomDefaulter = &PodCustomDefaulter{}
 
 // Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind Pod.
-func (d *PodCustomDefaulter) Default(ctx context.Context, obj runtime.Object) error {
+func (d *PodCustomDefaulter) Default(_ context.Context, obj runtime.Object) error {
 	pod, ok := obj.(*corev1.Pod)
 
 	if !ok {

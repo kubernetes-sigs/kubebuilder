@@ -55,7 +55,7 @@ type DestroyerCustomDefaulter struct {
 var _ webhook.CustomDefaulter = &DestroyerCustomDefaulter{}
 
 // Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind Destroyer.
-func (d *DestroyerCustomDefaulter) Default(ctx context.Context, obj runtime.Object) error {
+func (d *DestroyerCustomDefaulter) Default(_ context.Context, obj runtime.Object) error {
 	destroyer, ok := obj.(*shipv1.Destroyer)
 
 	if !ok {

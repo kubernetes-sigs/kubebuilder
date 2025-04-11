@@ -17,6 +17,8 @@ limitations under the License.
 package v2
 
 import (
+	"fmt"
+
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2/scaffolds"
@@ -34,5 +36,9 @@ func (p *createAPISubcommand) Scaffold(fs machinery.Filesystem) error {
 	}
 	scaffolder := scaffolds.NewAPIScaffolder(p.config, *p.resource, p.force)
 	scaffolder.InjectFS(fs)
-	return scaffolder.Scaffold()
+	if err := scaffolder.Scaffold(); err != nil {
+		return fmt.Errorf("failed to scaffold api subcommand: %w", err)
+	}
+
+	return nil
 }

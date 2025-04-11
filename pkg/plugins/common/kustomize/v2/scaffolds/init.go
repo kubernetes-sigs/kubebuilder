@@ -17,6 +17,8 @@ limitations under the License.
 package scaffolds
 
 import (
+	"fmt"
+
 	log "github.com/sirupsen/logrus"
 
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
@@ -88,5 +90,9 @@ func (s *initScaffolder) Scaffold() error {
 		&prometheus.ServiceMonitorPatch{},
 	}
 
-	return scaffold.Execute(templates...)
+	if err := scaffold.Execute(templates...); err != nil {
+		return fmt.Errorf("failed to scaffold kustomize manifests: %w", err)
+	}
+
+	return nil
 }

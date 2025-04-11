@@ -49,7 +49,7 @@ func EachCommand(book *Book, cmd string, callback func(chapter *BookChapter, arg
 			if err != nil {
 				return err
 			}
-			res = append(res, string(newContents))
+			res = append(res, newContents)
 			res = append(res, part[endDelim+2:])
 		}
 

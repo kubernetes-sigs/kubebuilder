@@ -214,9 +214,10 @@ func (s *initScaffolder) extractWebhooksFromGeneratedFiles() (mutatingWebhooks [
 				Rules:                   w.Rules,
 			}
 
-			if webhookConfig.Kind == "MutatingWebhookConfiguration" {
+			switch webhookConfig.Kind {
+			case "MutatingWebhookConfiguration":
 				mutatingWebhooks = append(mutatingWebhooks, webhook)
-			} else if webhookConfig.Kind == "ValidatingWebhookConfiguration" {
+			case "ValidatingWebhookConfiguration":
 				validatingWebhooks = append(validatingWebhooks, webhook)
 			}
 		}
@@ -246,7 +247,7 @@ func (s *initScaffolder) copyConfigFiles() error {
 
 		files, err := filepath.Glob(filepath.Join(dir.SrcDir, "*.yaml"))
 		if err != nil {
-			return err
+			return fmt.Errorf("failed finding files in %q: %w", dir.SrcDir, err)
 		}
 
 		// Skip processing if the directory is empty (no matching files)
@@ -291,13 +292,13 @@ func (s *initScaffolder) copyConfigFiles() error {
 func copyFileWithHelmLogic(srcFile, destFile, subDir, projectName string, hasConvertionalWebhook bool) error {
 	if _, err := os.Stat(srcFile); os.IsNotExist(err) {
 		log.Printf("Source file does not exist: %s", srcFile)
-		return err
+		return fmt.Errorf("source file does not exist %q: %w", srcFile, err)
 	}
 
 	content, err := os.ReadFile(srcFile)
 	if err != nil {
 		log.Printf("Error reading source file: %s", srcFile)
-		return err
+		return fmt.Errorf("failed to read file %q: %w", srcFile, err)
 	}
 
 	contentStr := string(content)
@@ -310,16 +311,16 @@ func copyFileWithHelmLogic(srcFile, destFile, subDir, projectName string, hasCon
 
 	// Apply RBAC-specific replacements
 	if subDir == "rbac" {
-		contentStr = strings.Replace(contentStr,
+		contentStr = strings.ReplaceAll(contentStr,
 			"name: controller-manager",
-			"name: {{ .Values.controllerManager.serviceAccountName }}", -1)
+			"name: {{ .Values.controllerManager.serviceAccountName }}")
 		contentStr = strings.Replace(contentStr,
 			"name: metrics-reader",
 			fmt.Sprintf("name: %s-metrics-reader", projectName), 1)
 
-		contentStr = strings.Replace(contentStr,
+		contentStr = strings.ReplaceAll(contentStr,
 			"name: metrics-auth-role",
-			fmt.Sprintf("name: %s-metrics-auth-role", projectName), -1)
+			fmt.Sprintf("name: %s-metrics-auth-role", projectName))
 		contentStr = strings.Replace(contentStr,
 			"name: metrics-auth-rolebinding",
 			fmt.Sprintf("name: %s-metrics-auth-rolebinding", projectName), 1)
@@ -337,15 +338,15 @@ func copyFileWithHelmLogic(srcFile, destFile, subDir, projectName string, hasCon
     {{- end }}
   {{- end }}`, 1)
 		}
-		contentStr = strings.Replace(contentStr,
+		contentStr = strings.ReplaceAll(contentStr,
 			"name: leader-election-role",
-			fmt.Sprintf("name: %s-leader-election-role", projectName), -1)
+			fmt.Sprintf("name: %s-leader-election-role", projectName))
 		contentStr = strings.Replace(contentStr,
 			"name: leader-election-rolebinding",
 			fmt.Sprintf("name: %s-leader-election-rolebinding", projectName), 1)
-		contentStr = strings.Replace(contentStr,
+		contentStr = strings.ReplaceAll(contentStr,
 			"name: manager-role",
-			fmt.Sprintf("name: %s-manager-role", projectName), -1)
+			fmt.Sprintf("name: %s-manager-role", projectName))
 		contentStr = strings.Replace(contentStr,
 			"name: manager-rolebinding",
 			fmt.Sprintf("name: %s-manager-rolebinding", projectName), 1)
@@ -433,13 +434,13 @@ func copyFileWithHelmLogic(srcFile, destFile, subDir, projectName string, hasCon
 	}
 
 	if err = os.MkdirAll(filepath.Dir(destFile), os.ModePerm); err != nil {
-		return err
+		return fmt.Errorf("error creating directory %q: %w", filepath.Dir(destFile), err)
 	}
 
 	err = os.WriteFile(destFile, []byte(wrappedContent), os.ModePerm)
 	if err != nil {
 		log.Printf("Error writing destination file: %s", destFile)
-		return err
+		return fmt.Errorf("error writing destination file %q: %w", destFile, err)
 	}
 
 	log.Printf("Successfully copied %s to %s", srcFile, destFile)

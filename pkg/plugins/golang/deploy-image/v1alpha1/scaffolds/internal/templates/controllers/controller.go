@@ -28,7 +28,7 @@ var _ machinery.Template = &Controller{}
 
 // Controller scaffolds the file that defines the controller for a CRD or a builtin resource
 //
-//nolint:maligned
+
 type Controller struct {
 	machinery.TemplateMixin
 	machinery.MultiGroupMixin
@@ -459,7 +459,7 @@ func imageFor{{ .Resource.Kind }}() (string, error) {
 	var imageEnvVar = "{{ upper .Resource.Kind }}_IMAGE"
     image, found := os.LookupEnv(imageEnvVar)
     if !found {
-        return "", fmt.Errorf("Unable to find %s environment variable with the image", imageEnvVar)
+        return "", fmt.Errorf("unable to find %s environment variable with the image", imageEnvVar)
     }
     return image, nil
 }

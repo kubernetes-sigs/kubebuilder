@@ -425,7 +425,7 @@ func imageForMemcached() (string, error) {
 	var imageEnvVar = "MEMCACHED_IMAGE"
 	image, found := os.LookupEnv(imageEnvVar)
 	if !found {
-		return "", fmt.Errorf("Unable to find %s environment variable with the image", imageEnvVar)
+		return "", fmt.Errorf("unable to find %s environment variable with the image", imageEnvVar)
 	}
 	return image, nil
 }
