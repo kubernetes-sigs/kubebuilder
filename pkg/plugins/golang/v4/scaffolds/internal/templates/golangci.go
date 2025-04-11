@@ -79,9 +79,6 @@ linters:
           - dupl
           - lll
         path: internal/*
-      - linters:
-          - staticcheck
-        text: "ST1019"
     paths:
       - third_party$
       - builtin$
