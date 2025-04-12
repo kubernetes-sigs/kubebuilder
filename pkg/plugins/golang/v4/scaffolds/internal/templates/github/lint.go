@@ -68,6 +68,5 @@ jobs:
       - name: Run linter
         uses: golangci/golangci-lint-action@v7
         with:
-          install-mode: goinstall
           version: {{ .GolangciLintVersion }}
 `
