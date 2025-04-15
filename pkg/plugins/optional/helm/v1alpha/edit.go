@@ -53,6 +53,10 @@ dist/chart/
     └── manager/
         └── manager.yaml
 
+When the "--force" flag is used, values.yaml will be updated with values from the Kustomize manager 
+configuration (such as replicas, resource limits, etc.) ensuring the Helm chart accurately reflects 
+your latest resource configurations.
+
 The following files are never updated after their initial creation:
   - chart/Chart.yaml
   - chart/templates/_helpers.tpl

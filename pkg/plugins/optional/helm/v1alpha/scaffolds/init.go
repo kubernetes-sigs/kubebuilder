@@ -19,6 +19,7 @@ package scaffolds
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -52,6 +53,13 @@ type initScaffolder struct {
 	force bool
 }
 
+// Define constants for repeated strings
+const (
+	deploymentKind        = "Deployment"
+	managerContainerName  = "manager"
+	controllerManagerName = "controller-manager"
+)
+
 // NewInitHelmScaffolder returns a new Scaffolder for HelmPlugin
 func NewInitHelmScaffolder(cfg config.Config, force bool) plugins.Scaffolder {
 	return &initScaffolder{
@@ -71,6 +79,29 @@ func (s *initScaffolder) Scaffold() error {
 
 	imagesEnvVars := s.getDeployImagesEnvVars()
 
+	// Extract manager values when --force flag is used
+	var managerValues map[string]interface{}
+	var extractErr error
+	if s.force {
+		// First try to get values directly from manager.yaml
+		managerValues, extractErr = s.extractManagerValues()
+		if extractErr != nil {
+			log.Warnf("Failed to extract manager values from manager.yaml: %v", extractErr)
+
+			// If that fails, try to get values from kustomization patches
+			managerValues, extractErr = s.extractManagerValuesFromKustomization()
+			if extractErr != nil {
+				log.Warnf("Failed to extract manager values from kustomization: %v", extractErr)
+
+				// As a last resort, try to build the manifests using kustomize
+				managerValues, extractErr = s.extractManagerValuesUsingKustomize()
+				if extractErr != nil {
+					log.Warnf("Failed to extract manager values using kustomize: %v", extractErr)
+				}
+			}
+		}
+	}
+
 	scaffold := machinery.NewScaffold(s.fs,
 		machinery.WithConfig(s.config),
 	)
@@ -86,9 +117,10 @@ func (s *initScaffolder) Scaffold() error {
 		&github.HelmChartCI{},
 		&templates.HelmChart{},
 		&templates.HelmValues{
-			HasWebhooks:  hasWebhooks,
-			DeployImages: imagesEnvVars,
-			Force:        s.force,
+			HasWebhooks:   hasWebhooks,
+			DeployImages:  imagesEnvVars,
+			Force:         s.force,
+			ManagerValues: managerValues,
 		},
 		&templates.HelmIgnore{},
 		&charttemplates.HelmHelpers{},
@@ -559,4 +591,401 @@ func hasWebhooksWith(c config.Config) bool {
 	}
 
 	return false
+}
+
+// findManagerFile attempts to locate the manager.yaml file in common locations
+func (s *initScaffolder) findManagerFile() (string, []byte, error) {
+	managerLocations := []string{
+		"config/manager/manager.yaml",
+		"config/default/manager_auth_proxy_patch.yaml",
+		"kustomization/manager/manager.yaml",
+	}
+
+	for _, location := range managerLocations {
+		if _, statErr := os.Stat(location); statErr == nil {
+			content, err := os.ReadFile(location)
+			if err == nil {
+				return location, content, nil
+			}
+		}
+	}
+
+	return "", nil, fmt.Errorf("manager file not found in any of the expected locations")
+}
+
+// findDeploymentInYAML looks through YAML documents to find a Deployment
+func (s *initScaffolder) findDeploymentInYAML(content []byte) (map[string]interface{}, error) {
+	docs := strings.Split(string(content), "---")
+
+	for _, doc := range docs {
+		doc = strings.TrimSpace(doc)
+		if doc == "" {
+			continue
+		}
+
+		var docMap map[string]interface{}
+		if err := yaml.Unmarshal([]byte(doc), &docMap); err != nil {
+			continue
+		}
+
+		kind, found := docMap["kind"].(string)
+		if found && kind == deploymentKind {
+			return docMap, nil
+		}
+	}
+
+	return nil, fmt.Errorf("deployment not found in YAML content")
+}
+
+// extractDeploymentValues extracts configuration values from a deployment map
+func (s *initScaffolder) extractDeploymentValues(deployment map[string]interface{}) map[string]interface{} {
+	values := make(map[string]interface{})
+
+	// Extract spec
+	spec, found := deployment["spec"].(map[string]interface{})
+	if !found {
+		return values
+	}
+
+	// Extract replicas
+	s.extractReplicasFromSpec(spec, values)
+
+	// Get template.spec
+	template, found := spec["template"].(map[string]interface{})
+	if !found {
+		return values
+	}
+
+	templateSpec, found := template["spec"].(map[string]interface{})
+	if !found {
+		return values
+	}
+
+	// Extract security context and termination grace period
+	s.extractPodSettings(templateSpec, values)
+
+	// Extract container values
+	s.extractContainerValues(templateSpec, values)
+
+	return values
+}
+
+// extractReplicasFromSpec extracts replica count from the spec
+func (s *initScaffolder) extractReplicasFromSpec(spec map[string]interface{}, values map[string]interface{}) {
+	if replicas, found := spec["replicas"].(int); found {
+		values["replicas"] = replicas
+	} else if replicas, found := spec["replicas"].(float64); found {
+		values["replicas"] = int(replicas)
+	}
+}
+
+// extractPodSettings extracts pod-level settings from the template.spec
+func (s *initScaffolder) extractPodSettings(templateSpec map[string]interface{}, values map[string]interface{}) {
+	// Extract termination grace period
+	if terminationGracePeriod, found := templateSpec["terminationGracePeriodSeconds"].(int); found {
+		values["terminationGracePeriodSeconds"] = terminationGracePeriod
+	} else if terminationGracePeriod, found := templateSpec["terminationGracePeriodSeconds"].(float64); found {
+		values["terminationGracePeriodSeconds"] = int(terminationGracePeriod)
+	}
+
+	// Extract security context
+	if securityContext, found := templateSpec["securityContext"].(map[string]interface{}); found {
+		values["securityContext"] = securityContext
+	}
+}
+
+// extractContainerValues extracts values from the manager container
+func (s *initScaffolder) extractContainerValues(templateSpec map[string]interface{}, values map[string]interface{}) {
+	containers, found := templateSpec["containers"].([]interface{})
+	if !found || len(containers) == 0 {
+		return
+	}
+
+	for _, c := range containers {
+		container, found := c.(map[string]interface{})
+		if !found {
+			continue
+		}
+
+		containerName, found := container["name"].(string)
+		if !found || (containerName != managerContainerName && containerName != controllerManagerName) {
+			continue
+		}
+
+		// Extract container settings
+		s.extractContainerSettings(container, values)
+		break
+	}
+}
+
+// extractContainerSettings extracts settings from a container
+func (s *initScaffolder) extractContainerSettings(container map[string]interface{}, values map[string]interface{}) {
+	// Extract args
+	if args, found := container["args"].([]interface{}); found && len(args) > 0 {
+		stringArgs := make([]string, len(args))
+		for i, arg := range args {
+			if strArg, found := arg.(string); found {
+				stringArgs[i] = strArg
+			}
+		}
+		values["args"] = stringArgs
+	}
+
+	// Extract resources
+	if resources, found := container["resources"].(map[string]interface{}); found {
+		values["resources"] = resources
+	}
+
+	// Extract probes
+	if livenessProbe, found := container["livenessProbe"].(map[string]interface{}); found {
+		values["livenessProbe"] = livenessProbe
+	}
+
+	if readinessProbe, found := container["readinessProbe"].(map[string]interface{}); found {
+		values["readinessProbe"] = readinessProbe
+	}
+}
+
+// extractManagerValues reads the manager.yaml file and extracts values needed for the Helm values.yaml
+func (s *initScaffolder) extractManagerValues() (map[string]interface{}, error) {
+	// Find manager file
+	_, content, err := s.findManagerFile()
+	if err != nil {
+		return nil, err
+	}
+
+	// Find deployment in YAML
+	deployment, err := s.findDeploymentInYAML(content)
+	if err != nil {
+		s.dumpYAMLContent(content)
+		return nil, err
+	}
+
+	// Extract values from deployment
+	return s.extractDeploymentValues(deployment), nil
+}
+
+// extractManagerValuesFromKustomization attempts to extract manager values from kustomization.yaml patches
+func (s *initScaffolder) extractManagerValuesFromKustomization() (map[string]interface{}, error) {
+	patches, err := s.findKustomizationPatches()
+	if err != nil {
+		return nil, err
+	}
+
+	values := make(map[string]interface{})
+
+	// Process each patch
+	for _, patch := range patches {
+		patchValues, err := s.extractValuesFromPatchFile(patch)
+		if err == nil {
+			// Merge patch values into the main values map
+			for k, v := range patchValues {
+				values[k] = v
+			}
+		}
+	}
+
+	if len(values) == 0 {
+		return nil, fmt.Errorf("no manager values found in kustomization patches")
+	}
+
+	return values, nil
+}
+
+// findKustomizationPatches finds and returns all manager-related patches from kustomization.yaml
+func (s *initScaffolder) findKustomizationPatches() ([]string, error) {
+	kustomizationFile := "config/default/kustomization.yaml"
+
+	// Check if kustomization file exists
+	if _, err := os.Stat(kustomizationFile); os.IsNotExist(err) {
+		return nil, fmt.Errorf("kustomization file not found at %s", kustomizationFile)
+	}
+
+	content, err := os.ReadFile(kustomizationFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read kustomization file: %w", err)
+	}
+
+	patches, err := s.parseKustomizationPatches(content, kustomizationFile)
+	if err != nil {
+		return nil, err
+	}
+
+	return patches, nil
+}
+
+// parseKustomizationPatches parses a kustomization.yaml file and returns a list of manager-related patches
+func (s *initScaffolder) parseKustomizationPatches(content []byte, kustomizationFile string) ([]string, error) {
+	// Parse kustomization.yaml
+	var kustomization struct {
+		Patches []struct {
+			Path   string `yaml:"path"`
+			Target struct {
+				Kind string `yaml:"kind"`
+				Name string `yaml:"name"`
+			} `yaml:"target"`
+		} `yaml:"patches"`
+		PatchesStrategicMerge []string `yaml:"patchesStrategicMerge"`
+	}
+
+	if err := yaml.Unmarshal(content, &kustomization); err != nil {
+		return nil, fmt.Errorf("failed to parse kustomization YAML: %w", err)
+	}
+
+	var patches []string
+
+	// Check new-style patches
+	for _, patch := range kustomization.Patches {
+		if patch.Target.Kind == deploymentKind &&
+			(patch.Target.Name == controllerManagerName || patch.Target.Name == managerContainerName) {
+			patches = append(patches, patch.Path)
+		}
+	}
+
+	// Check old-style patchesStrategicMerge
+	for _, patchPath := range kustomization.PatchesStrategicMerge {
+		// Only process patches that might be related to the manager deployment
+		if strings.Contains(patchPath, "manager") {
+			patches = append(patches, filepath.Join(filepath.Dir(kustomizationFile), patchPath))
+		}
+	}
+
+	return patches, nil
+}
+
+// extractValuesFromPatchFile extracts values from a patch file
+func (s *initScaffolder) extractValuesFromPatchFile(patchPath string) (map[string]interface{}, error) {
+	if _, err := os.Stat(patchPath); os.IsNotExist(err) {
+		return nil, fmt.Errorf("patch file not found: %s", patchPath)
+	}
+
+	content, err := os.ReadFile(patchPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read patch file: %w", err)
+	}
+
+	var patch map[string]interface{}
+	if err := yaml.Unmarshal(content, &patch); err != nil {
+		return nil, fmt.Errorf("failed to parse patch YAML: %w", err)
+	}
+
+	// Check if this is a Deployment
+	kind, ok := patch["kind"].(string)
+	if !ok || kind != "Deployment" {
+		return nil, fmt.Errorf("patch is not for a Deployment")
+	}
+
+	// Extract values similar to extractManagerValues
+	values := make(map[string]interface{})
+	spec, ok := patch["spec"].(map[string]interface{})
+	if !ok {
+		return values, nil
+	}
+
+	// Extract replicas
+	if replicas, ok := spec["replicas"].(int); ok {
+		values["replicas"] = replicas
+	} else if replicas, ok := spec["replicas"].(float64); ok {
+		values["replicas"] = int(replicas)
+	}
+
+	// Extract more values if needed...
+	// This is simplified, but you could extract other values similar to extractManagerValues
+
+	return values, nil
+}
+
+// extractManagerValuesUsingKustomize attempts to extract manager values by running kustomize build
+func (s *initScaffolder) extractManagerValuesUsingKustomize() (map[string]interface{}, error) {
+	// Check if kustomize is available
+	_, err := exec.LookPath("kustomize")
+	if err != nil {
+		return nil, fmt.Errorf("kustomize command not found: %w", err)
+	}
+
+	// Get manifests from kustomize
+	output, err := s.runKustomizeBuild()
+	if err != nil {
+		return nil, err
+	}
+
+	// Find manager deployment in manifests
+	managerYAML, err := s.findManagerDeploymentInManifests(output)
+	if err != nil {
+		return nil, err
+	}
+
+	// Extract values from deployment
+	return s.extractDeploymentValues(managerYAML), nil
+}
+
+// runKustomizeBuild runs kustomize build in various directories and returns the output
+func (s *initScaffolder) runKustomizeBuild() ([]byte, error) {
+	kustomizeDirs := []string{
+		"config/default",
+		"config/manager",
+		"config",
+	}
+
+	for _, dir := range kustomizeDirs {
+		if _, err := os.Stat(dir); os.IsNotExist(err) {
+			continue
+		}
+
+		cmd := exec.Command("kustomize", "build", dir)
+		output, err := cmd.Output()
+		if err == nil && len(output) > 0 {
+			return output, nil
+		}
+	}
+
+	return nil, fmt.Errorf("failed to build manifests using kustomize")
+}
+
+// findManagerDeploymentInManifests searches for the manager deployment in kustomize output
+func (s *initScaffolder) findManagerDeploymentInManifests(output []byte) (map[string]interface{}, error) {
+	docs := strings.Split(string(output), "---")
+	for _, doc := range docs {
+		doc = strings.TrimSpace(doc)
+		if doc == "" {
+			continue
+		}
+
+		var manifest map[string]interface{}
+		if err := yaml.Unmarshal([]byte(doc), &manifest); err != nil {
+			continue
+		}
+
+		// Look for the manager deployment
+		kind, _ := manifest["kind"].(string)
+		if kind != deploymentKind {
+			continue
+		}
+
+		metadata, found := manifest["metadata"].(map[string]interface{})
+		if !found {
+			continue
+		}
+
+		name, found := metadata["name"].(string)
+		if !found {
+			continue
+		}
+
+		if name == controllerManagerName || strings.Contains(name, "manager") {
+			return manifest, nil
+		}
+	}
+
+	return nil, fmt.Errorf("manager deployment not found in generated manifests")
+}
+
+// dumpYAMLContent is a helper function to print the YAML content in a readable format
+func (s *initScaffolder) dumpYAMLContent(content []byte) {
+	// Convert content to string and print each line with line number for debugging
+	lines := strings.Split(string(content), "\n")
+	log.Warn("YAML content that failed to parse:")
+	for i, line := range lines {
+		log.Warnf("%3d: %s", i+1, line)
+	}
 }
