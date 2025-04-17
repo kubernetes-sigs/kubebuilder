@@ -51,8 +51,8 @@ type CronJobSpec struct {
 	// Specifies how to treat concurrent executions of a Job.
 	// Valid values are:
 	// - "Allow" (default): allows CronJobs to run concurrently;
-	// - "Forbid": forbids concurrent runs, skipping next run if previous run hasn't finished yet;
-	// - "Replace": cancels currently running job and replaces it with a new one
+	// - "Forbid": forbids concurrent runs, skipping the next run if the previous run hasn't finished yet;
+	// - "Replace": cancels the currently running job and replaces it with a new one
 	// +optional
 	ConcurrencyPolicy ConcurrencyPolicy `json:"concurrencyPolicy,omitempty"`
 
@@ -66,15 +66,15 @@ type CronJobSpec struct {
 
 	// +kubebuilder:validation:Minimum=0
 
-	// The number of successful finished jobs to retain.
-	// This is a pointer to distinguish between explicit zero and not specified.
+	// The number of successfully finished jobs to retain.
+	// This pointer distinguishes between explicit zero and not specified.
 	// +optional
 	SuccessfulJobsHistoryLimit *int32 `json:"successfulJobsHistoryLimit,omitempty"`
 
 	// +kubebuilder:validation:Minimum=0
 
 	// The number of failed finished jobs to retain.
-	// This is a pointer to distinguish between explicit zero and not specified.
+	// This pointer distinguishes between explicit zero and not specified.
 	// +optional
 	FailedJobsHistoryLimit *int32 `json:"failedJobsHistoryLimit,omitempty"`
 }
@@ -90,11 +90,11 @@ const (
 	// AllowConcurrent allows CronJobs to run concurrently.
 	AllowConcurrent ConcurrencyPolicy = "Allow"
 
-	// ForbidConcurrent forbids concurrent runs, skipping next run if previous
+	// ForbidConcurrent forbids concurrent runs, skipping the next run if the previous
 	// hasn't finished yet.
 	ForbidConcurrent ConcurrencyPolicy = "Forbid"
 
-	// ReplaceConcurrent cancels currently running job and replaces it with a new one.
+	// ReplaceConcurrent cancels the currently running job and replaces it with a new one.
 	ReplaceConcurrent ConcurrencyPolicy = "Replace"
 )
 
@@ -107,7 +107,7 @@ type CronJobStatus struct {
 	// +optional
 	Active []corev1.ObjectReference `json:"active,omitempty"`
 
-	// Information when was the last time the job was successfully scheduled.
+	// Information when was the last time the job was successfully scheduled ?
 	// +optional
 	LastScheduleTime *metav1.Time `json:"lastScheduleTime,omitempty"`
 }

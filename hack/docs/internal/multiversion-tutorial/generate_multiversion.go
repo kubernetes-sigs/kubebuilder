@@ -394,13 +394,14 @@ func (sp *Sample) updateAPIV1() {
 		`// +versionName=v1
 // +kubebuilder:storageversion`,
 	)
-	hackutils.CheckError("add version and marker for storage version", err)
 
+	hackutils.CheckError("add version and marker for storage version", err)
 	err = pluginutil.ReplaceInFile(
 		filepath.Join(sp.ctx.Dir, path),
 		cronjobSpecComment,
 		"",
 	)
+
 	hackutils.CheckError("removing spec explanation", err)
 
 	err = pluginutil.ReplaceInFile(
@@ -584,7 +585,7 @@ group's package (`+"`batchv1`"+`) to our scheme.  This means that we can use tho
 objects in our controller.
 
 If we would be using any other CRD we would have to add their scheme the same way.
-Builtin types such as Job have their scheme added by `+"`clientgoscheme`"+`.
+Built-in types such as Job have their scheme added by `+"`clientgoscheme`"+`.
 */`,
 		"",
 	)
