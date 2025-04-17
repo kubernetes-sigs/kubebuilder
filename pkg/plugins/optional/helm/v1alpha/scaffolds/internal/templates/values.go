@@ -34,6 +34,8 @@ type HelmValues struct {
 	Force bool
 	// HasWebhooks is true when webhooks were found in the config
 	HasWebhooks bool
+	// ManagerValues contains values extracted from the manager.yaml file
+	ManagerValues map[string]interface{}
 }
 
 // SetTemplateDefaults implements machinery.Template
@@ -54,34 +56,67 @@ func (f *HelmValues) SetTemplateDefaults() error {
 
 const helmValuesTemplate = `# [MANAGER]: Manager Deployment Configurations
 controllerManager:
-  replicas: 1
+  replicas: {{ if and .ManagerValues (index .ManagerValues "replicas") -}}
+    {{ index .ManagerValues "replicas" -}}
+    {{ else -}}
+    1
+    {{- end }}
   container:
     image:
       repository: controller
       tag: latest
     args:
+      {{- if and .ManagerValues (index .ManagerValues "args") }}
+      {{- range $arg := index .ManagerValues "args" }}
+      - "{{ $arg }}"
+      {{- end }}
+      {{- else }}
       - "--leader-elect"
       - "--metrics-bind-address=:8443"
       - "--health-probe-bind-address=:8081"
+      {{- end }}
     resources:
+      {{- if and .ManagerValues (index .ManagerValues "resources") }}
+      limits:
+        {{- range $key, $value := index (index .ManagerValues "resources") "limits" }}
+        {{ $key }}: {{ $value }}
+        {{- end }}
+      requests:
+        {{- range $key, $value := index (index .ManagerValues "resources") "requests" }}
+        {{ $key }}: {{ $value }}
+        {{- end }}
+      {{- else }}
       limits:
         cpu: 500m
         memory: 128Mi
       requests:
         cpu: 10m
         memory: 64Mi
+      {{- end }}
     livenessProbe:
+      {{- if and .ManagerValues (index .ManagerValues "livenessProbe") }}
+      {{- range $key, $value := index .ManagerValues "livenessProbe" }}
+      {{ $key }}: {{ $value }}
+      {{- end }}
+      {{- else }}
       initialDelaySeconds: 15
       periodSeconds: 20
       httpGet:
         path: /healthz
         port: 8081
+      {{- end }}
     readinessProbe:
+      {{- if and .ManagerValues (index .ManagerValues "readinessProbe") }}
+      {{- range $key, $value := index .ManagerValues "readinessProbe" }}
+      {{ $key }}: {{ $value }}
+      {{- end }}
+      {{- else }}
       initialDelaySeconds: 5
       periodSeconds: 10
       httpGet:
         path: /readyz
         port: 8081
+      {{- end }}
     {{- if .DeployImages }}
     env:
     {{- range $kind, $image := .DeployImages }}
@@ -94,10 +129,20 @@ controllerManager:
         drop:
           - "ALL"
   securityContext:
+    {{- if and .ManagerValues (index .ManagerValues "securityContext") }}
+    {{- range $key, $value := index .ManagerValues "securityContext" }}
+    {{ $key }}: {{ $value }}
+    {{- end }}
+    {{- else }}
     runAsNonRoot: true
     seccompProfile:
       type: RuntimeDefault
-  terminationGracePeriodSeconds: 10
+    {{- end }}
+  terminationGracePeriodSeconds: {{ if and .ManagerValues (index .ManagerValues "terminationGracePeriodSeconds") -}}
+    {{ index .ManagerValues "terminationGracePeriodSeconds" -}}
+    {{ else -}}
+    10
+    {{- end }}
   serviceAccountName: {{ .ProjectName }}-controller-manager
 
 # [RBAC]: To enable RBAC (Permissions) configurations
