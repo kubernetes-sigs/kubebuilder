@@ -138,6 +138,13 @@ apidiff: go-apidiff ## Run the go-apidiff to verify any API differences compared
 go-apidiff:
 	go install github.com/joelanford/go-apidiff@v0.6.1
 
+# Demo Generation
+.PHONY: update-demo
+update-demo: ## Update README with the latest demo/tooling version using Asciinema
+	asciinema rec -c './scripts/demo/run.sh' demo.cast
+	@sed -i.bak 's/docs\/gif\/kb-demo.v3.11.1.svg/docs\/gif\/dummy-asciinema.svg/' README.md
+	@rm README.md.bak
+
 ##@ Tests
 
 .PHONY: test
