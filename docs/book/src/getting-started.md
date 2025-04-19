@@ -180,7 +180,7 @@ reconcile App {
   // Check the Database Deployment's replicas size
   // If deployment.replicas size doesn't match cr.size, then update it
   // Then, restart from the beginning of the reconcile. For example, by returning `reconcile.Result{Requeue: true}, nil`.
-  if err != nil {
+  if needRequeue {
     return reconcile.Result{Requeue: true}, nil
   }
   ...
