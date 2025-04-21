@@ -5,7 +5,7 @@ controller-runtime about our conversion.
 
 ## Webhook setup...
 
-{{#literatego ./testdata/project/internal/webhook/v1/cronjob_webhook.go}}
+{{#literatego ./testdata/project/internal/webhook/v2/cronjob_webhook.go}}
 
 ## ...and `main.go`
 
