@@ -65,26 +65,35 @@ func (p *initSubcommand) InjectConfig(c config.Config) error {
 	p.config = c
 
 	if err := p.config.SetDomain(p.domain); err != nil {
-		return err
+		return fmt.Errorf("error setting domain: %w", err)
 	}
 
 	// Assign a default project name
 	if p.name == "" {
 		dir, err := os.Getwd()
 		if err != nil {
-			return fmt.Errorf("error getting current directory: %v", err)
+			return fmt.Errorf("error getting current directory: %w", err)
 		}
 		p.name = strings.ToLower(filepath.Base(dir))
 	}
 	// Check if the project name is a valid k8s namespace (DNS 1123 label).
 	if err := validation.IsDNS1123Label(p.name); err != nil {
-		return fmt.Errorf("project name (%s) is invalid: %v", p.name, err)
+		return fmt.Errorf("project name %q is invalid: %v", p.name, err)
 	}
-	return p.config.SetProjectName(p.name)
+
+	if err := p.config.SetProjectName(p.name); err != nil {
+		return fmt.Errorf("error setting project name: %w", err)
+	}
+
+	return nil
 }
 
 func (p *initSubcommand) Scaffold(fs machinery.Filesystem) error {
 	scaffolder := scaffolds.NewInitScaffolder(p.config)
 	scaffolder.InjectFS(fs)
-	return scaffolder.Scaffold()
+	if err := scaffolder.Scaffold(); err != nil {
+		return fmt.Errorf("failed to scaffold init subcommand: %w", err)
+	}
+
+	return nil
 }

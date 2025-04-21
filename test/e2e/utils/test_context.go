@@ -27,6 +27,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin/util"
 
+	//nolint:staticcheck
 	. "github.com/onsi/ginkgo/v2"
 )
 
@@ -59,7 +60,7 @@ type TestContext struct {
 func NewTestContext(binaryName string, env ...string) (*TestContext, error) {
 	testSuffix, err := util.RandomSuffix()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to generate random suffix: %w", err)
 	}
 
 	cc := &CmdContext{
@@ -74,12 +75,12 @@ func NewTestContext(binaryName string, env ...string) (*TestContext, error) {
 	}
 	k8sVersion, err := kubectl.Version()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get kubernetes version: %w", err)
 	}
 
 	// Set CmdContext.Dir after running Kubectl.Version() because dir does not exist yet.
 	if cc.Dir, err = filepath.Abs("e2e-" + testSuffix); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to determine absolute path to %q: %w", "e2e-"+testSuffix, err)
 	}
 
 	return &TestContext{
@@ -108,13 +109,17 @@ func (t *TestContext) Prepare() error {
 	for _, toolName := range []string{"controller-gen", "kustomize"} {
 		if toolPath, err := exec.LookPath(toolName); err == nil {
 			if err := os.RemoveAll(toolPath); err != nil {
-				return err
+				return fmt.Errorf("failed to remove %q: %w", toolName, err)
 			}
 		}
 	}
 
 	_, _ = fmt.Fprintf(GinkgoWriter, "preparing testing directory: %s\n", t.Dir)
-	return os.MkdirAll(t.Dir, 0o755)
+	if err := os.MkdirAll(t.Dir, 0o755); err != nil {
+		return fmt.Errorf("error creating test directory %q: %w", t.Dir, err)
+	}
+
+	return nil
 }
 
 // makeCertManagerURL returns a kubectl-able URL for the cert-manager bundle.
@@ -239,7 +244,6 @@ func (t *TestContext) Destroy() {
 				warnError(err)
 			}
 		}
-
 	}
 	if err := os.RemoveAll(t.Dir); err != nil {
 		warnError(err)
@@ -308,7 +312,7 @@ func (cc *CmdContext) Run(cmd *exec.Cmd) ([]byte, error) {
 	_, _ = fmt.Fprintf(GinkgoWriter, "running: %s\n", command)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return output, fmt.Errorf("%s failed with error: (%v) %s", command, err, string(output))
+		return output, fmt.Errorf("%q failed with error %q: %w", command, string(output), err)
 	}
 
 	return output, nil
@@ -321,13 +325,13 @@ func (t *TestContext) AllowProjectBeMultiGroup() error {
 `
 	projectBytes, err := os.ReadFile(filepath.Join(t.Dir, "PROJECT"))
 	if err != nil {
-		return err
+		return fmt.Errorf("cannot read project file: %w", err)
 	}
 
 	projectBytes = append([]byte(multiGroup), projectBytes...)
 	err = os.WriteFile(filepath.Join(t.Dir, "PROJECT"), projectBytes, 0o644)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not write to project file: %w", err)
 	}
 	return nil
 }

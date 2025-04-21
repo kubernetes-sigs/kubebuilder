@@ -18,6 +18,7 @@ package golang
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -39,14 +40,15 @@ func findGoModulePath() (string, error) {
 	cmd.Env = append(cmd.Env, os.Environ()...)
 	out, err := cmd.Output()
 	if err != nil {
-		if exitErr, isExitErr := err.(*exec.ExitError); isExitErr {
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) {
 			err = fmt.Errorf("%s", string(exitErr.Stderr))
 		}
 		return "", err
 	}
 	mod := goMod{}
-	if err := json.Unmarshal(out, &mod); err != nil {
-		return "", err
+	if err = json.Unmarshal(out, &mod); err != nil {
+		return "", fmt.Errorf("failed to unmarshal go.mod: %w", err)
 	}
 	return mod.Module.Path, nil
 }
@@ -77,12 +79,13 @@ func FindCurrentRepo() (string, error) {
 	cmd := exec.Command("go", "mod", "init")
 	cmd.Env = append(cmd.Env, os.Environ()...)
 	if _, err := cmd.Output(); err != nil {
-		if exitErr, isExitErr := err.(*exec.ExitError); isExitErr {
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) {
 			err = fmt.Errorf("%s", string(exitErr.Stderr))
 		}
 		// give up, let the user figure it out
 		return "", fmt.Errorf("could not determine repository path from module data, "+
-			"package data, or by initializing a module: %v", err)
+			"package data, or by initializing a module: %w", err)
 	}
 	//nolint:errcheck
 	defer os.Remove("go.mod") // clean up after ourselves

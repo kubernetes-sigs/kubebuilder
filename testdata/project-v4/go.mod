@@ -1,8 +1,8 @@
 module sigs.k8s.io/kubebuilder/testdata/project-v4
 
-go 1.23.0
+go 1.24.0
 
-godebug default=go1.23
+godebug default=go1.24
 
 require (
 	github.com/cert-manager/cert-manager v1.17.1
@@ -11,7 +11,7 @@ require (
 	k8s.io/api v0.32.1
 	k8s.io/apimachinery v0.32.1
 	k8s.io/client-go v0.32.1
-	sigs.k8s.io/controller-runtime v0.20.2
+	sigs.k8s.io/controller-runtime v0.20.4
 )
 
 require (

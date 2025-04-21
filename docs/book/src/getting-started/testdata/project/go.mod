@@ -1,8 +1,8 @@
 module example.com/memcached
 
-go 1.23.0
+go 1.24.0
 
-godebug default=go1.23
+godebug default=go1.24
 
 require (
 	github.com/onsi/ginkgo/v2 v2.22.0
@@ -11,7 +11,7 @@ require (
 	k8s.io/apimachinery v0.32.1
 	k8s.io/client-go v0.32.1
 	k8s.io/utils v0.0.0-20241104100929-3ea5e8cea738
-	sigs.k8s.io/controller-runtime v0.20.2
+	sigs.k8s.io/controller-runtime v0.20.4
 )
 
 require (

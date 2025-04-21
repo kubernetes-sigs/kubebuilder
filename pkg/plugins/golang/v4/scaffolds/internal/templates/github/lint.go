@@ -66,7 +66,7 @@ jobs:
           go-version-file: go.mod
 
       - name: Run linter
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v7
         with:
           version: {{ .GolangciLintVersion }}
 `

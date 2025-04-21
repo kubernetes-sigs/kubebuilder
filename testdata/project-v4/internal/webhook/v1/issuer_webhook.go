@@ -54,7 +54,7 @@ type IssuerCustomDefaulter struct {
 var _ webhook.CustomDefaulter = &IssuerCustomDefaulter{}
 
 // Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind Issuer.
-func (d *IssuerCustomDefaulter) Default(ctx context.Context, obj runtime.Object) error {
+func (d *IssuerCustomDefaulter) Default(_ context.Context, obj runtime.Object) error {
 	issuer, ok := obj.(*certmanagerv1.Issuer)
 
 	if !ok {

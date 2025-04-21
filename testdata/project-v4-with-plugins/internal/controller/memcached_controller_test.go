@@ -21,9 +21,9 @@ import (
 	"os"
 	"time"
 
-	//nolint:golint
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -139,7 +139,7 @@ var _ = Describe("Memcached controller", func() {
 
 			By("Checking the latest Status Condition added to the Memcached instance")
 			Expect(k8sClient.Get(ctx, typeNamespacedName, memcached)).To(Succeed())
-			conditions := []metav1.Condition{}
+			var conditions []metav1.Condition
 			Expect(memcached.Status.Conditions).To(ContainElement(
 				HaveField("Type", Equal(typeAvailableMemcached)), &conditions))
 			Expect(conditions).To(HaveLen(1), "Multiple conditions of type %s", typeAvailableMemcached)

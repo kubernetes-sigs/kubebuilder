@@ -26,15 +26,19 @@ import (
 
 var _ = Describe("Cover plugin util helpers", func() {
 	Describe("InsertCode", Ordered, func() {
-		path := filepath.Join("testdata", "exampleFile.txt")
-		var content []byte
+		var (
+			content []byte
+			path    string
+		)
 
 		BeforeAll(func() {
-			err := os.MkdirAll("testdata", 0755)
+			path = filepath.Join("testdata", "exampleFile.txt")
+
+			err := os.MkdirAll("testdata", 0o755)
 			Expect(err).NotTo(HaveOccurred())
 
-			if _, err := os.Stat(path); os.IsNotExist(err) {
-				err = os.WriteFile(path, []byte("exampleTarget"), 0644)
+			if _, err = os.Stat(path); os.IsNotExist(err) {
+				err = os.WriteFile(path, []byte("exampleTarget"), 0o644)
 				Expect(err).NotTo(HaveOccurred())
 			}
 
@@ -43,7 +47,7 @@ var _ = Describe("Cover plugin util helpers", func() {
 		})
 
 		AfterAll(func() {
-			err := os.WriteFile(path, content, 0644)
+			err := os.WriteFile(path, content, 0o644)
 			Expect(err).NotTo(HaveOccurred())
 
 			err = os.RemoveAll("testdata")

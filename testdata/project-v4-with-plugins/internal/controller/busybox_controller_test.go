@@ -21,9 +21,9 @@ import (
 	"os"
 	"time"
 
-	//nolint:golint
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -138,7 +138,7 @@ var _ = Describe("Busybox controller", func() {
 
 			By("Checking the latest Status Condition added to the Busybox instance")
 			Expect(k8sClient.Get(ctx, typeNamespacedName, busybox)).To(Succeed())
-			conditions := []metav1.Condition{}
+			var conditions []metav1.Condition
 			Expect(busybox.Status.Conditions).To(ContainElement(
 				HaveField("Type", Equal(typeAvailableBusybox)), &conditions))
 			Expect(conditions).To(HaveLen(1), "Multiple conditions of type %s", typeAvailableBusybox)

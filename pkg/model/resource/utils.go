@@ -39,8 +39,8 @@ func safeImport(unsafe string) string {
 	safe := unsafe
 
 	// Remove dashes and dots
-	safe = strings.Replace(safe, "-", "", -1)
-	safe = strings.Replace(safe, ".", "", -1)
+	safe = strings.ReplaceAll(safe, "-", "")
+	safe = strings.ReplaceAll(safe, ".", "")
 
 	return safe
 }

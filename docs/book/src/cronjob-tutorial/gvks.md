@@ -1,6 +1,6 @@
 # Groups and Versions and Kinds, oh my!
 
-Actually, before we get started with our API, we should talk terminology
+Before we get started with our API, we should talk about terminology
 a bit.
 
 When we talk about APIs in Kubernetes, we often use 4 terms: *groups*,
@@ -38,7 +38,7 @@ lowercase form of the Kind.
 
 ## So, how does that correspond to Go?
 
-When we refer to a kind in a particular group-version, we'll call it
+When we refer to a kind in a particular group version, we'll call it
 a *GroupVersionKind*, or GVK for short.  Same with resources and GVR. As
 we'll see shortly, each GVK corresponds to a given root Go type in
 a package.
@@ -51,7 +51,7 @@ API!
 In the next section, [Adding a new API](../cronjob-tutorial/new-api.html), we will check how the tool helps us to
 create our own APIs with the command `kubebuilder create api`.
 
-The goal of this command is to create Custom Resource (CR) and Custom Resource Definition (CRD) for our Kind(s). To check it further see; [Extend the Kubernetes API with CustomResourceDefinitions][kubernetes-extend-api].
+The goal of this command is to create a Custom Resource (CR) and Custom Resource Definition (CRD) for our Kind(s). To check it further see; [Extend the Kubernetes API with CustomResourceDefinitions][kubernetes-extend-api].
 
 ## But, why create APIs at all?
 
@@ -87,7 +87,7 @@ API server that says
 }
 ```
 
-or properly look up the group-version when we go to submit a `&CronJob{}`
+or properly look up the group version when we go to submit a `&CronJob{}`
 in an update.
 
 [kubernetes-extend-api]: https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/

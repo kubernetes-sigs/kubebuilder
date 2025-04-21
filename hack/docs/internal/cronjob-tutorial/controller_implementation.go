@@ -38,7 +38,7 @@ const controllerImport = `import (
 	ref "k8s.io/client-go/tools/reference"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	batchv1 "tutorial.kubebuilder.io/project/api/v1"
 )
@@ -55,7 +55,7 @@ the "real" clock just calls` + " `" + `time.Now` + "`" + `.
 */
 type realClock struct{}
 
-func (_ realClock) Now() time.Time { return time.Now() }
+func (_ realClock) Now() time.Time { return time.Now() } //nolint:staticcheck
 
 // Clock knows how to get the current time.
 // It can be used to fake out timing for testing.
@@ -87,7 +87,7 @@ var (
 const skipGoCycloLint = `
 // nolint:gocyclo`
 
-const controllerReconcileLogic = `log := log.FromContext(ctx)
+const controllerReconcileLogic = `log := logf.FromContext(ctx)
 
 	/*
 		### 1: Load the CronJob by name
@@ -333,7 +333,7 @@ const controllerReconcileLogic = `log := log.FromContext(ctx)
 	getNextSchedule := func(cronJob *batchv1.CronJob, now time.Time) (lastMissed time.Time, next time.Time, err error) {
 		sched, err := cron.ParseStandard(cronJob.Spec.Schedule)
 		if err != nil {
-			return time.Time{}, time.Time{}, fmt.Errorf("Unparseable schedule %q: %v", cronJob.Spec.Schedule, err)
+			return time.Time{}, time.Time{}, fmt.Errorf("unparseable schedule %q: %w", cronJob.Spec.Schedule, err)
 		}
 
 		// for optimization purposes, cheat a bit and start from our last observed run time
@@ -343,7 +343,7 @@ const controllerReconcileLogic = `log := log.FromContext(ctx)
 		if cronJob.Status.LastScheduleTime != nil {
 			earliestTime = cronJob.Status.LastScheduleTime.Time
 		} else {
-			earliestTime = cronJob.ObjectMeta.CreationTimestamp.Time
+			earliestTime = cronJob.CreationTimestamp.Time
 		}
 		if cronJob.Spec.StartingDeadlineSeconds != nil {
 			// controller is not going to schedule anything below this point
@@ -377,7 +377,7 @@ const controllerReconcileLogic = `log := log.FromContext(ctx)
 			starts++
 			if starts > 100 {
 				// We can't get the most recent times so just return an empty slice
-				return time.Time{}, time.Time{}, fmt.Errorf("Too many missed start times (> 100). Set or decrease .spec.startingDeadlineSeconds or check clock skew.")
+				return time.Time{}, time.Time{}, fmt.Errorf("Too many missed start times (> 100). Set or decrease .spec.startingDeadlineSeconds or check clock skew.") //nolint:staticcheck
 			}
 		}
 		return lastMissed, sched.Next(now), nil
@@ -536,6 +536,7 @@ var (
 	apiGVStr    = batchv1.GroupVersion.String()
 )
 `
+
 const controllerSetupWithManager = `
 	// set up a real clock, since we're not in a test
 	if r.Clock == nil {

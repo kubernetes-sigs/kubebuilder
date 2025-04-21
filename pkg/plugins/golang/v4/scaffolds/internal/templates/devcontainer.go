@@ -22,7 +22,7 @@ import (
 
 const devContainerTemplate = `{
   "name": "Kubebuilder DevContainer",
-  "image": "docker.io/golang:1.23",
+  "image": "docker.io/golang:1.24",
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:2": {},
     "ghcr.io/devcontainers/features/git:1": {}
@@ -72,8 +72,10 @@ go version
 kubectl version --client
 `
 
-var _ machinery.Template = &DevContainer{}
-var _ machinery.Template = &DevContainerPostInstallScript{}
+var (
+	_ machinery.Template = &DevContainer{}
+	_ machinery.Template = &DevContainerPostInstallScript{}
+)
 
 // DevContainer scaffoldds a `devcontainer.json` configurations file for creating Kubebuilder & Kind based DevContainer.
 type DevContainer struct {

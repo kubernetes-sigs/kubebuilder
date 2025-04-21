@@ -100,7 +100,8 @@ func Run(kbc *utils.TestContext) {
 	By("validating that the controller-manager pod is running as expected")
 	verifyControllerUp := func(g Gomega) {
 		// Get pod name
-		podOutput, err := kbc.Kubectl.Get(
+		var podOutput string
+		podOutput, err = kbc.Kubectl.Get(
 			true,
 			"pods", "-l", "control-plane=controller-manager",
 			"-o", "go-template={{ range .items }}{{ if not .metadata.deletionTimestamp }}{{ .metadata.name }}"+
@@ -116,8 +117,8 @@ func Run(kbc *utils.TestContext) {
 			To(Equal("Running"), "incorrect controller pod status")
 	}
 	defer func() {
-		out, err := kbc.Kubectl.CommandInNamespace("describe", "all")
-		Expect(err).NotTo(HaveOccurred())
+		out, errDescribe := kbc.Kubectl.CommandInNamespace("describe", "all")
+		Expect(errDescribe).NotTo(HaveOccurred())
 		_, _ = fmt.Fprintln(GinkgoWriter, out)
 	}()
 	Eventually(verifyControllerUp).Should(Succeed())

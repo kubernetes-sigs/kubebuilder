@@ -49,9 +49,9 @@ type apiScaffolder struct {
 }
 
 // NewAPIScaffolder returns a new Scaffolder for API/controller creation operations
-func NewAPIScaffolder(config config.Config, res resource.Resource, force bool) plugins.Scaffolder {
+func NewAPIScaffolder(cfg config.Config, res resource.Resource, force bool) plugins.Scaffolder {
 	return &apiScaffolder{
-		config:   config,
+		config:   cfg,
 		resource: res,
 		force:    force,
 	}
@@ -101,7 +101,7 @@ func (s *apiScaffolder) Scaffold() error {
 			&api.Types{Force: s.force},
 			&api.Group{},
 		); err != nil {
-			return fmt.Errorf("error scaffolding APIs: %v", err)
+			return fmt.Errorf("error scaffolding APIs: %w", err)
 		}
 	}
 
@@ -111,14 +111,14 @@ func (s *apiScaffolder) Scaffold() error {
 			&controllers.Controller{ControllerRuntimeVersion: ControllerRuntimeVersion, Force: s.force},
 			&controllers.ControllerTest{Force: s.force, DoAPI: doAPI},
 		); err != nil {
-			return fmt.Errorf("error scaffolding controller: %v", err)
+			return fmt.Errorf("error scaffolding controller: %w", err)
 		}
 	}
 
 	if err := scaffold.Execute(
 		&cmd.MainUpdater{WireResource: doAPI, WireController: doController},
 	); err != nil {
-		return fmt.Errorf("error updating cmd/main.go: %v", err)
+		return fmt.Errorf("error updating cmd/main.go: %w", err)
 	}
 
 	return nil

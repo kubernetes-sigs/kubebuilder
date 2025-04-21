@@ -28,7 +28,7 @@ var _ machinery.Template = &Hub{}
 
 // Hub scaffolds the file that defines hub
 //
-//nolint:maligned
+
 type Hub struct {
 	machinery.TemplateMixin
 	machinery.MultiGroupMixin

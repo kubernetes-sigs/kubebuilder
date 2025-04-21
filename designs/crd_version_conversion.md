@@ -158,12 +158,12 @@ func (ch *conversionHandler) convertObject(src, dst runtime.Object) error {
 
     err = src.(conversion.Convertible).ConvertTo(hub)
     if err != nil {
-        return fmt.Errorf("%T failed to convert to hub version %T : %v", src, hub, err)
+        return fmt.Errorf("%T failed to convert to hub version %T : %w", src, hub, err)
     }
 
     err = dst.(conversion.Convertible).ConvertFrom(hub)
     if err != nil {
-        return fmt.Errorf("%T failed to convert from hub version %T : %v", dst, hub, err)
+        return fmt.Errorf("%T failed to convert from hub version %T : %w", dst, hub, err)
     }
     return nil
 }

@@ -103,7 +103,7 @@ The `Default`method is expected to mutate the receiver, setting the defaults.
 */
 
 // Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind CronJob.
-func (d *CronJobCustomDefaulter) Default(ctx context.Context, obj runtime.Object) error {
+func (d *CronJobCustomDefaulter) Default(_ context.Context, obj runtime.Object) error {
 	cronjob, ok := obj.(*batchv1.CronJob)
 
 	if !ok {
@@ -174,7 +174,7 @@ type CronJobCustomValidator struct {
 var _ webhook.CustomValidator = &CronJobCustomValidator{}
 
 // ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type CronJob.
-func (v *CronJobCustomValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (v *CronJobCustomValidator) ValidateCreate(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
 	cronjob, ok := obj.(*batchv1.CronJob)
 	if !ok {
 		return nil, fmt.Errorf("expected a CronJob object but got %T", obj)
@@ -185,7 +185,7 @@ func (v *CronJobCustomValidator) ValidateCreate(ctx context.Context, obj runtime
 }
 
 // ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type CronJob.
-func (v *CronJobCustomValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+func (v *CronJobCustomValidator) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
 	cronjob, ok := newObj.(*batchv1.CronJob)
 	if !ok {
 		return nil, fmt.Errorf("expected a CronJob object for the newObj but got %T", newObj)
@@ -270,14 +270,14 @@ the validation schema.
 */
 
 func validateCronJobName(cronjob *batchv1.CronJob) *field.Error {
-	if len(cronjob.ObjectMeta.Name) > validationutils.DNS1035LabelMaxLength-11 {
+	if len(cronjob.Name) > validationutils.DNS1035LabelMaxLength-11 {
 		// The job name length is 63 characters like all Kubernetes objects
 		// (which must fit in a DNS subdomain). The cronjob controller appends
 		// a 11-character suffix to the cronjob (`-$TIMESTAMP`) when creating
 		// a job. The job name length limit is 63 characters. Therefore cronjob
 		// names must have length <= 63-11=52. If we don't validate this here,
 		// then job creation will fail later.
-		return field.Invalid(field.NewPath("metadata").Child("name"), cronjob.ObjectMeta.Name, "must be no more than 52 characters")
+		return field.Invalid(field.NewPath("metadata").Child("name"), cronjob.Name, "must be no more than 52 characters")
 	}
 	return nil
 }

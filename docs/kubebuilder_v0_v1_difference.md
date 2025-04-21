@@ -1,6 +1,6 @@
-# Kubebuilder v0 v.s. v1
+# Kubebuilder v0 vs. v1
 
-Kubebuilder 1.0 adds a new flag `--project-version`, it accepts two different values, `v0` and `v1`. When `v0` is used, the kubebuilder behavior and workflow is the same as kubebuilder 0.*. When `v1` is specified, the generated v1 project layout is architecturally different from v0 project. v1 project uses [controller-runtime](https://github.com/kubernetes-sigs/controller-runtime) set of libraries for controller implementation and used tools under [controller-tools](https://github.com/kubernetes-sigs/controller-tools) for scaffolding and generation.
+Kubebuilder 1.0 adds a new flag `--project-version`, it accepts two different values, `v0` and `v1`. When `v0` is used, the kubebuilder behavior and workflow are the same as kubebuilder 0.*. When `v1` is specified, the generated v1 project layout is architecturally different from v0 project. v1 project use [controller-runtime](https://github.com/kubernetes-sigs/controller-runtime) set of libraries for controller implementation and used tools under [controller-tools](https://github.com/kubernetes-sigs/controller-tools) for scaffolding and generation.
 
 
 ## Command difference
@@ -35,7 +35,7 @@ Kubebuilder 1.0 adds a new flag `--project-version`, it accepts two different va
 
 - v0 project contains a directory `pkg/client` while v1 project doesn't
 - v0 project contains a directory `inject` while v1 project doesn't
-- v0 project layout follows predefined directory layout `pkg/apis` and `pkg/controller` while v1 project accepts user specified path
+- v0 project layout follows predefined directory layout `pkg/apis` and `pkg/controller` while v1 project accepts user-specified path
 - In v1 project, there is a `init()` function for every api and controller.
 
 ## Library difference
@@ -51,6 +51,6 @@ Kubebuilder 1.0 adds a new flag `--project-version`, it accepts two different va
   - v1 projects import the dynamic client library from controller-runtime `controller-runtime/pkg/client`.
 
 ## Wiring difference
-Wiring refers to the mechanics of integrating controllers to controller-manager and injecting the dependencies in them.
-  - v0 projects have a `inject` package and it provides functions for adding the controller to controller-manager as well as registering CRDs.
-  - v1 projects don't have a `inject` package, the controller is added to controller-manager by a `init` function inside add_<type>.go file inside the controller directory. The types are registered by a `init` function inside <type>_types.go file inside the apis directory.
+Wiring refers to the mechanics of integrating controllers into controller-managers and injecting the dependencies in them.
+  - v0 projects have an `inject` package and it provides functions for adding the controller to controller-manager as well as registering CRDs.
+  - v1 projects don't have a `inject` package, the controller is added to controller-manager by a `init` function inside add_<type>.go file inside the controller directory. The types are registered by an `init` function inside <type>_types.go file inside the apis directory.

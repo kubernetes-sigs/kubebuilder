@@ -51,15 +51,15 @@ func (v *Version) Parse(version string) error {
 	var err error
 	if v.Number, err = strconv.Atoi(substrings[0]); err != nil {
 		// Let's check if the `-` belonged to a negative number
-		if n, err := strconv.Atoi(version); err == nil && n < 0 {
+		if n, errParse := strconv.Atoi(version); errParse == nil && n < 0 {
 			return errNegative
 		}
-		return err
+		return fmt.Errorf("error converting version number %q: %w", substrings[0], err)
 	}
 
 	if len(substrings) > 1 {
 		if err = v.Stage.Parse(substrings[1]); err != nil {
-			return err
+			return fmt.Errorf("error parsing stage %q: %w", substrings[1], err)
 		}
 	}
 
@@ -81,7 +81,11 @@ func (v Version) Validate() error {
 		return errNegative
 	}
 
-	return v.Stage.Validate()
+	if err := v.Stage.Validate(); err != nil {
+		return fmt.Errorf("error validating stage %q: %w", v.Stage, err)
+	}
+
+	return nil
 }
 
 // Compare returns -1 if v < other, 0 if v == other, and 1 if v > other.

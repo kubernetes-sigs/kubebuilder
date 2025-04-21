@@ -114,14 +114,13 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 	p.resource = res
 
 	if len(p.options.ExternalAPIPath) != 0 && len(p.options.ExternalAPIDomain) != 0 && p.isLegacyPath {
-		return errors.New("You cannot scaffold webhooks for external types " +
-			"using the legacy path")
+		return errors.New("you cannot scaffold webhooks for external types using the legacy path")
 	}
 
 	for _, spoke := range p.options.Spoke {
 		spoke = strings.TrimSpace(spoke)
 		if !isValidVersion(spoke, res, p.config) {
-			return fmt.Errorf("invalid spoke version: %s", spoke)
+			return fmt.Errorf("invalid spoke version %q", spoke)
 		}
 		res.Webhooks.Spoke = append(res.Webhooks.Spoke, spoke)
 	}
@@ -129,7 +128,7 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 	p.options.UpdateResource(p.resource, p.config)
 
 	if err := p.resource.Validate(); err != nil {
-		return err
+		return fmt.Errorf("error validating resource: %w", err)
 	}
 
 	if !p.resource.HasDefaultingWebhook() && !p.resource.HasValidationWebhook() && !p.resource.HasConversionWebhook() {
@@ -157,19 +156,23 @@ func (p *createWebhookSubcommand) InjectResource(res *resource.Resource) error {
 func (p *createWebhookSubcommand) Scaffold(fs machinery.Filesystem) error {
 	scaffolder := scaffolds.NewWebhookScaffolder(p.config, *p.resource, p.force, p.isLegacyPath)
 	scaffolder.InjectFS(fs)
-	return scaffolder.Scaffold()
+	if err := scaffolder.Scaffold(); err != nil {
+		return fmt.Errorf("failed to scaffold webhook: %w", err)
+	}
+
+	return nil
 }
 
 func (p *createWebhookSubcommand) PostScaffold() error {
 	err := pluginutil.RunCmd("Update dependencies", "go", "mod", "tidy")
 	if err != nil {
-		return err
+		return fmt.Errorf("error updating go dependencies: %w", err)
 	}
 
 	if p.runMake {
 		err = pluginutil.RunCmd("Running make", "make", "generate")
 		if err != nil {
-			return err
+			return fmt.Errorf("error running make generate: %w", err)
 		}
 	}
 
@@ -179,9 +182,9 @@ func (p *createWebhookSubcommand) PostScaffold() error {
 }
 
 // Helper function to validate spoke versions
-func isValidVersion(version string, res *resource.Resource, config config.Config) bool {
+func isValidVersion(version string, res *resource.Resource, cfg config.Config) bool {
 	// Fetch all resources in the config
-	resources, err := config.GetResources()
+	resources, err := cfg.GetResources()
 	if err != nil {
 		return false
 	}

@@ -28,7 +28,7 @@ import (
 var _ machinery.Template = &Webhook{}
 
 // Webhook scaffolds the file that defines a webhook for a CRD or a builtin resource
-type Webhook struct { //nolint:maligned
+type Webhook struct {
 	machinery.TemplateMixin
 	machinery.MultiGroupMixin
 	machinery.BoilerplateMixin
@@ -85,7 +85,7 @@ func (f *Webhook) SetTemplateDefaults() error {
 	}
 
 	f.AdmissionReviewVersions = "v1"
-	f.QualifiedGroupWithDash = strings.Replace(f.Resource.QualifiedGroup(), ".", "-", -1)
+	f.QualifiedGroupWithDash = strings.ReplaceAll(f.Resource.QualifiedGroup(), ".", "-")
 
 	return nil
 }
@@ -175,7 +175,7 @@ type {{ .Resource.Kind }}CustomDefaulter struct {
 var _ webhook.CustomDefaulter = &{{ .Resource.Kind }}CustomDefaulter{}
 
 // Default implements webhook.CustomDefaulter so a webhook will be registered for the Kind {{ .Resource.Kind }}.
-func (d *{{ .Resource.Kind }}CustomDefaulter) Default(ctx context.Context, obj runtime.Object) error {
+func (d *{{ .Resource.Kind }}CustomDefaulter) Default(_ context.Context, obj runtime.Object) error {
 	{{- if .IsLegacyPath -}}
 	{{ lower .Resource.Kind }}, ok := obj.(*{{ .Resource.Kind }})
 	{{- else }}
@@ -215,7 +215,7 @@ type {{ .Resource.Kind }}CustomValidator struct{
 var _ webhook.CustomValidator = &{{ .Resource.Kind }}CustomValidator{}
 
 // ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type {{ .Resource.Kind }}.
-func (v *{{ .Resource.Kind }}CustomValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (v *{{ .Resource.Kind }}CustomValidator) ValidateCreate(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
 	{{- if .IsLegacyPath -}}
 	{{ lower .Resource.Kind }}, ok := obj.(*{{ .Resource.Kind }})
 	{{- else }}
@@ -232,7 +232,7 @@ func (v *{{ .Resource.Kind }}CustomValidator) ValidateCreate(ctx context.Context
 }
 
 // ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type {{ .Resource.Kind }}.
-func (v *{{ .Resource.Kind }}CustomValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+func (v *{{ .Resource.Kind }}CustomValidator) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
 	{{- if .IsLegacyPath -}}
 	{{ lower .Resource.Kind }}, ok := newObj.(*{{ .Resource.Kind }})
 	{{- else }}

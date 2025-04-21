@@ -84,7 +84,12 @@ func (m *mockValidFlagOutputGetter) GetExecOutput(_ []byte, _ string) ([]byte, e
 		Universe: nil,
 		Flags:    getFlags(),
 	}
-	return json.Marshal(response)
+	marshaledResponse, err := json.Marshal(response)
+	if err != nil {
+		return nil, fmt.Errorf("error marshalling response: %w", err)
+	}
+
+	return marshaledResponse, nil
 }
 
 type mockValidMEOutputGetter struct{}
@@ -97,7 +102,12 @@ func (m *mockValidMEOutputGetter) GetExecOutput(_ []byte, _ string) ([]byte, err
 		Metadata: getMetadata(),
 	}
 
-	return json.Marshal(response)
+	marshaledResponse, err := json.Marshal(response)
+	if err != nil {
+		return nil, fmt.Errorf("error marshalling response: %w", err)
+	}
+
+	return marshaledResponse, nil
 }
 
 const (
@@ -142,7 +152,8 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 
 		AfterEach(func() {
 			filename := filepath.Join("tmp", "externalPlugin", "LICENSE")
-			fileInfo, err := fs.FS.Stat(filename)
+			var fileInfo os.FileInfo
+			fileInfo, err = fs.FS.Stat(filename)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(fileInfo).NotTo(BeNil())
 		})
@@ -286,10 +297,11 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 			flagset        *pflag.FlagSet
 
 			// Make an array of flags to represent the ones that should be returned in these tests
-			flags = getFlags()
+			flags []external.Flag
 
 			checkFlagset func()
 		)
+
 		BeforeEach(func() {
 			outputGetter = &mockValidFlagOutputGetter{}
 			currentDirGetter = &mockValidOsWdGetter{}
@@ -297,6 +309,8 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 			pluginFileName = externalPlugin
 			args = []string{"--captain", "black-beard", "--sail"}
 			flagset = pflag.NewFlagSet("test", pflag.ContinueOnError)
+
+			flags = getFlags()
 
 			checkFlagset = func() {
 				Expect(flagset.HasFlags()).To(BeTrue())
@@ -368,6 +382,7 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 			usage          string
 			checkFlagset   func()
 		)
+
 		BeforeEach(func() {
 			outputGetter = &mockInValidOutputGetter{}
 			currentDirGetter = &mockValidOsWdGetter{}
@@ -462,7 +477,15 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 
 	Context("Flag Parsing Helper Functions", func() {
 		var (
-			fs   *pflag.FlagSet
+			fs                  *pflag.FlagSet
+			args                []string
+			forbidden           []string
+			flags               []external.Flag
+			argFilters          []argFilterFunc
+			externalFlagFilters []externalFlagFilterFunc
+		)
+
+		BeforeEach(func() {
 			args = []string{
 				"--domain", "something.com",
 				"--boolean",
@@ -475,12 +498,7 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 			forbidden = []string{
 				"help", "group", "kind", "version",
 			}
-			flags               []external.Flag
-			argFilters          []argFilterFunc
-			externalFlagFilters []externalFlagFilterFunc
-		)
 
-		BeforeEach(func() {
 			fs = pflag.NewFlagSet("test", pflag.ContinueOnError)
 
 			flagsToAppend := getFlags()
@@ -558,6 +576,7 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 			metadata       *plugin.SubcommandMetadata
 			checkMetadata  func()
 		)
+
 		BeforeEach(func() {
 			outputGetter = &mockValidMEOutputGetter{}
 			currentDirGetter = &mockValidOsWdGetter{}
@@ -622,6 +641,7 @@ var _ = Describe("Run external plugin using Scaffold", func() {
 			metadata       *plugin.SubcommandMetadata
 			checkMetadata  func()
 		)
+
 		BeforeEach(func() {
 			outputGetter = &mockInValidOutputGetter{}
 			currentDirGetter = &mockValidOsWdGetter{}

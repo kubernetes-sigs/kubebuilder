@@ -5,7 +5,7 @@ This document describes how to migrate a project created by kubebuilder v0 to a 
 The recommended way of migrating a v0 project to a v1 project is to create a new v1 project and copy/modify the code from v0 project to it.
 
 ## Init a v1 project
-Find project's domain name from the old project's pkg/apis/doc.go and use it to initiate a new project with
+Find the project's domain name from the old project's pkg/apis/doc.go and use it to initiate a new project with
 `kubebuilder init --project-version v1 --domain <domain>`
 
 ## Create api
@@ -18,7 +18,7 @@ If there are several resources in the old project, repeat the `kubebuilder creat
 
 ## Copy types.go
 Copy the content of `<type>_types.go` from the old project into the file `<type>_types.go` in the new project.
-Note that in the v1 project, there is a section containing `<type>List` and `init` function. Please keep this section.
+Note that in the v1 project, there is a section containing `<type>List` and `init` functions. Please keep this section.
 ```
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +genclient:nonNamespaced
@@ -90,7 +90,7 @@ err = r.Client.List(context.TODO(), &client.ListOptions{LabelSelector: labelSele
 
 ### update add function
 
-In a v0 project controller file, there is a `ProvideController` function creating a controller and adding some watches. In v1 projects, the corresponding function is `add`. For this part, you don't need to copy any code from v0 project to v1 project. You need to add some watchers in v1 project's `add` function based on what `watch` functions are called in v0 project's `ProvideController` function.
+In a v0 project controller file, there is a `ProvideController` function creating a controller and adding some watches. In v1 projects, the corresponding function is `add`. For this part, you don't need to copy any code from the v0 project to v1 project. You need to add some watchers in the v1 project's `add` function based on what `watch` functions are called in the v0 project's `ProvideController` function.
 
 Here are several examples:
 
@@ -112,14 +112,14 @@ c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwne
 ```
 
 ### copy other functions
-If `reconcile` function depends on some other user defined functions, copy those function as well into the v1 project.
+If the `reconcile` function depends on some other user-defined functions, copy those functions as well into the v1 project.
 
 ## Copy user libraries
-If there are some user defined libraries in the old project, make sure to copy them as well into the new project.
+If there are some user-defined libraries in the old project, make sure to copy them as well into the new project.
 
 ## Update dependency
 
-Open the Gopkg.toml file in the old project and find if there is user defined dependency in this block:
+Open the Gopkg.toml file in the old project and find if there is user-defined dependency in this block:
 
 ```
 # Users add deps lines here
@@ -139,8 +139,8 @@ Copy those dependencies into the new project's Gopkg.toml file **before** the li
 ```
 
 ## Copy other user files
-If there are other user created files in the old project, such as any build scripts, README.md files. Copy those files into the new project.
+If there are other user-created files in the old project, such as any build scripts, or README.md files. Copy those files into the new project.
 
 ## Confirmation
-Run `make` to make sure the new project can build and pass all the tests.
+Run `make` to make sure the new project can be built and pass all the tests.
 Run `make install` and `make run` to make sure the api and controller work well on cluster.

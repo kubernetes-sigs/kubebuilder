@@ -195,7 +195,20 @@ var _ = Describe("Webhooks", func() {
 
 	Context("IsEmpty", func() {
 		var (
-			none       = Webhooks{}
+			none       Webhooks
+			defaulting Webhooks
+			validation Webhooks
+			conversion Webhooks
+
+			defaultingAndValidation Webhooks
+			defaultingAndConversion Webhooks
+			validationAndConversion Webhooks
+
+			all Webhooks
+		)
+
+		BeforeEach(func() {
+			none = Webhooks{}
 			defaulting = Webhooks{
 				WebhookVersion: "v1",
 				Defaulting:     true,
@@ -238,21 +251,23 @@ var _ = Describe("Webhooks", func() {
 				Validation:     true,
 				Conversion:     true,
 			}
-		)
+		})
 
 		It("should return true fo an empty object", func() {
 			Expect(none.IsEmpty()).To(BeTrue())
 		})
 
 		DescribeTable("should return false for non-empty objects",
-			func(webhooks Webhooks) { Expect(webhooks.IsEmpty()).To(BeFalse()) },
-			Entry("defaulting", defaulting),
-			Entry("validation", validation),
-			Entry("conversion", conversion),
-			Entry("defaulting and validation", defaultingAndValidation),
-			Entry("defaulting and conversion", defaultingAndConversion),
-			Entry("validation and conversion", validationAndConversion),
-			Entry("defaulting and validation and conversion", all),
+			func(get func() Webhooks) {
+				Expect(get().IsEmpty()).To(BeFalse())
+			},
+			Entry("defaulting", func() Webhooks { return defaulting }),
+			Entry("validation", func() Webhooks { return validation }),
+			Entry("conversion", func() Webhooks { return conversion }),
+			Entry("defaulting and validation", func() Webhooks { return defaultingAndValidation }),
+			Entry("defaulting and conversion", func() Webhooks { return defaultingAndConversion }),
+			Entry("validation and conversion", func() Webhooks { return validationAndConversion }),
+			Entry("defaulting and validation and conversion", func() Webhooks { return all }),
 		)
 	})
 })

@@ -80,6 +80,11 @@ var _ = Describe("GoVersion", func() {
 	Context("Compare", func() {
 		// Test Compare() by sorting a list.
 		var (
+			versions       []GoVersion
+			sortedVersions []GoVersion
+		)
+
+		BeforeEach(func() {
 			versions = []GoVersion{
 				{major: 1, minor: 15, prerelease: "rc2"},
 				{major: 1, minor: 15, patch: 1},
@@ -113,7 +118,7 @@ var _ = Describe("GoVersion", func() {
 				{major: 1, minor: 16},
 				{major: 2, minor: 0},
 			}
-		)
+		})
 
 		It("sorts a valid list of versions correctly", func() {
 			sort.Slice(versions, func(i int, j int) bool {
@@ -125,8 +130,15 @@ var _ = Describe("GoVersion", func() {
 })
 
 var _ = Describe("checkGoVersion", func() {
-	goVerMin := MustParse("go1.13")
-	goVerMax := MustParse("go2.0alpha1")
+	var (
+		goVerMin GoVersion
+		goVerMax GoVersion
+	)
+
+	BeforeEach(func() {
+		goVerMin = MustParse("go1.13")
+		goVerMax = MustParse("go2.0alpha1")
+	})
 
 	DescribeTable("should return no error for supported go versions",
 		func(version string) { Expect(checkGoVersion(version, goVerMin, goVerMax)).To(Succeed()) },
@@ -201,6 +213,7 @@ var _ = Describe("checkGoVersion", func() {
 		Entry("for go.1.21", "go1.21"),
 		Entry("for go.1.22", "go1.22"),
 		Entry("for go.1.23", "go1.23"),
+		Entry("for go.1.24", "go1.24"),
 	)
 
 	DescribeTable("should return an error for non-supported go versions",

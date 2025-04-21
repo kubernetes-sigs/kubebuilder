@@ -29,7 +29,7 @@ import (
 var _ machinery.Template = &WebhookTest{}
 
 // WebhookTest scaffolds the file that sets up the webhook unit tests
-type WebhookTest struct { //nolint:maligned
+type WebhookTest struct {
 	machinery.TemplateMixin
 	machinery.MultiGroupMixin
 	machinery.BoilerplateMixin

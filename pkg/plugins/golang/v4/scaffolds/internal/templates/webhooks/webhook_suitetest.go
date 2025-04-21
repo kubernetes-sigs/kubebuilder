@@ -25,11 +25,13 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 )
 
-var _ machinery.Template = &WebhookSuite{}
-var _ machinery.Inserter = &WebhookSuite{}
+var (
+	_ machinery.Template = &WebhookSuite{}
+	_ machinery.Inserter = &WebhookSuite{}
+)
 
 // WebhookSuite scaffolds the file that sets up the webhook tests
-type WebhookSuite struct { //nolint:maligned
+type WebhookSuite struct {
 	machinery.TemplateMixin
 	machinery.MultiGroupMixin
 	machinery.BoilerplateMixin
@@ -190,8 +192,8 @@ import (
 	"testing"
 	"time"
 
-    . "github.com/onsi/ginkgo/v2"
-    . "github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"

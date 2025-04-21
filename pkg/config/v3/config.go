@@ -38,7 +38,7 @@ func (ss *stringSlice) UnmarshalJSON(b []byte) error {
 	if b[0] == '[' {
 		var sl []string
 		if err := yaml.Unmarshal(b, &sl); err != nil {
-			return err
+			return fmt.Errorf("error unmarshalling string slice %q: %w", sl, err)
 		}
 		*ss = sl
 		return nil
@@ -46,7 +46,7 @@ func (ss *stringSlice) UnmarshalJSON(b []byte) error {
 
 	var st string
 	if err := yaml.Unmarshal(b, &st); err != nil {
-		return err
+		return fmt.Errorf("error unmarshalling string %q: %w", st, err)
 	}
 	*ss = stringSlice{st}
 	return nil
@@ -61,6 +61,7 @@ type Cfg struct {
 	Domain      string      `json:"domain,omitempty"`
 	Repository  string      `json:"repo,omitempty"`
 	Name        string      `json:"projectName,omitempty"`
+	CliVersion  string      `json:"cliVersion,omitempty"`
 	PluginChain stringSlice `json:"layout,omitempty"`
 
 	// Boolean fields
@@ -91,6 +92,17 @@ func init() {
 // GetVersion implements config.Config
 func (c Cfg) GetVersion() config.Version {
 	return c.Version
+}
+
+// GetCliVersion implements config.Config
+func (c Cfg) GetCliVersion() string {
+	return c.CliVersion
+}
+
+// SetCliVersion implements config.Config
+func (c *Cfg) SetCliVersion(version string) error {
+	c.CliVersion = version
+	return nil
 }
 
 // GetDomain implements config.Config
@@ -234,8 +246,12 @@ func (c *Cfg) UpdateResource(res resource.Resource) error {
 	}
 
 	for i, r := range c.Resources {
-		if res.GVK.IsEqualTo(r.GVK) {
-			return c.Resources[i].Update(res)
+		if res.IsEqualTo(r.GVK) {
+			if err := c.Resources[i].Update(res); err != nil {
+				return fmt.Errorf("failed to update resource %q: %w", res.GVK, err)
+			}
+
+			return nil
 		}
 	}
 
@@ -299,8 +315,8 @@ func (c Cfg) DecodePluginConfig(key string, configObj interface{}) error {
 	}
 
 	// Get the object blob by key and unmarshal into the object.
-	if pluginConfig, hasKey := c.Plugins[key]; hasKey {
-		b, err := yaml.Marshal(pluginConfig)
+	if pluginCfg, hasKey := c.Plugins[key]; hasKey {
+		b, err := yaml.Marshal(pluginCfg)
 		if err != nil {
 			return fmt.Errorf("failed to convert extra fields object to bytes: %w", err)
 		}
@@ -318,11 +334,11 @@ func (c *Cfg) EncodePluginConfig(key string, configObj interface{}) error {
 	// Get object's bytes and set them under key in extra fields.
 	b, err := yaml.Marshal(configObj)
 	if err != nil {
-		return fmt.Errorf("failed to convert %T object to bytes: %s", configObj, err)
+		return fmt.Errorf("failed to convert %T object to bytes: %w", configObj, err)
 	}
 	var fields map[string]interface{}
 	if err := yaml.Unmarshal(b, &fields); err != nil {
-		return fmt.Errorf("failed to unmarshal %T object bytes: %s", configObj, err)
+		return fmt.Errorf("failed to unmarshal %T object bytes: %w", configObj, err)
 	}
 	if c.Plugins == nil {
 		c.Plugins = make(map[string]pluginConfig)

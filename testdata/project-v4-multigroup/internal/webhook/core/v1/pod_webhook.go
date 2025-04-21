@@ -58,7 +58,7 @@ type PodCustomValidator struct {
 var _ webhook.CustomValidator = &PodCustomValidator{}
 
 // ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type Pod.
-func (v *PodCustomValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+func (v *PodCustomValidator) ValidateCreate(_ context.Context, obj runtime.Object) (admission.Warnings, error) {
 	pod, ok := obj.(*corev1.Pod)
 	if !ok {
 		return nil, fmt.Errorf("expected a Pod object but got %T", obj)
@@ -71,7 +71,7 @@ func (v *PodCustomValidator) ValidateCreate(ctx context.Context, obj runtime.Obj
 }
 
 // ValidateUpdate implements webhook.CustomValidator so a webhook will be registered for the type Pod.
-func (v *PodCustomValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
+func (v *PodCustomValidator) ValidateUpdate(_ context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
 	pod, ok := newObj.(*corev1.Pod)
 	if !ok {
 		return nil, fmt.Errorf("expected a Pod object for the newObj but got %T", newObj)

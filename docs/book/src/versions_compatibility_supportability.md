@@ -46,4 +46,4 @@ For further information on the project layout, see the doc [What's in a basic pr
 
 </aside>
 
-[basic-project-doc]: ./reference/project-config.md
+[basic-project-doc]: ./cronjob-tutorial/basic-project.md

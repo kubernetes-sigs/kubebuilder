@@ -14,6 +14,7 @@ Following is an example of a PROJECT config file which is the result of a projec
 # and allow the plugins properly work.
 # More info: https://book.kubebuilder.io/reference/project-config.html
 domain: testproject.org
+cliVersion: v4.6.0
 layout:
   - go.kubebuilder.io/v4
 plugins:
@@ -81,6 +82,7 @@ The `PROJECT` version `3` layout looks like:
 
 ```yaml
 domain: testproject.org
+cliVersion: v4.6.0
 layout:
   - go.kubebuilder.io/v4
 plugins:
@@ -132,6 +134,7 @@ Now let's check its layout fields definition:
 
 | Field                               | Description                                                                                                                                                                                                                                                                     |
 |-------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `cliVersion`                | Used to record the specific CLI version used during project scaffolding with `init`. Helps identifying the version of the tooling employed, aiding in troubleshooting and ensuring compatibility with updates.                                           |
 | `layout`                            | Defines the global plugins, e.g. a project `init` with `--plugins="go/v4,deploy-image/v1-alpha"` means that any sub-command used will always call its implementation for both plugins in a chain.                                                                               |
 | `domain`                            | Store the domain of the project. This information can be provided by the user when the project is generate with the `init` sub-command and the `domain` flag.                                                                                                                   |
 | `plugins`                           | Defines the plugins used to do custom scaffolding, e.g. to use the optional `deploy-image/v1-alpha` plugin to do scaffolding for just a specific api via the command `kubebuider create api [options] --plugins=deploy-image/v1-alpha`.                                         |
@@ -159,7 +162,7 @@ Now let's check its layout fields definition:
 [project]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/testdata/project-v3/PROJECT
 [versioning]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/VERSIONING.md#Versioning
 [core-types]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/pkg/plugins/golang/options.go
-[deploy-image-plugin]: ../plugins/deploy-image-plugin-v1-alpha.md
+[deploy-image-plugin]: ../plugins/available/deploy-image-plugin-v1-alpha.md
 [olm]: https://olm.operatorframework.io/
 [plugins-doc]: ../plugins/creating-plugins.html#why-use-the-kubebuilder-style
 [doc-design-helper]: https://github.com/kubernetes-sigs/kubebuilder/blob/master/designs/helper_to_upgrade_projects_by_rescaffolding.md

@@ -29,7 +29,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/crd"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/crd/patches"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/kdefault"
-	network_policy "sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/network-policy"
+	networkpolicy "sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/network-policy"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/common/kustomize/v2/scaffolds/internal/templates/config/webhook"
 )
 
@@ -47,10 +47,10 @@ type webhookScaffolder struct {
 }
 
 // NewWebhookScaffolder returns a new Scaffolder for v2 webhook creation operations
-func NewWebhookScaffolder(config config.Config, resource resource.Resource, force bool) plugins.Scaffolder {
+func NewWebhookScaffolder(cfg config.Config, res resource.Resource, force bool) plugins.Scaffolder {
 	return &webhookScaffolder{
-		config:   config,
-		resource: resource,
+		config:   cfg,
+		resource: res,
 		force:    force,
 	}
 }
@@ -88,7 +88,7 @@ func (s *webhookScaffolder) Scaffold() error {
 		&certmanager.MetricsCertificate{},
 		&certmanager.Kustomization{},
 		&certmanager.KustomizeConfig{},
-		&network_policy.PolicyAllowWebhooks{},
+		&networkpolicy.PolicyAllowWebhooks{},
 	}
 
 	// Only scaffold the following patches if is a conversion webhook
@@ -102,7 +102,7 @@ func (s *webhookScaffolder) Scaffold() error {
 	}
 
 	if err := scaffold.Execute(buildScaffold...); err != nil {
-		return fmt.Errorf("error scaffolding kustomize webhook manifests: %v", err)
+		return fmt.Errorf("error scaffolding kustomize webhook manifests: %w", err)
 	}
 
 	policyKustomizeFilePath := "config/network-policy/kustomization.yaml"
@@ -116,8 +116,8 @@ func (s *webhookScaffolder) Scaffold() error {
 	kustomizeFilePath := "config/default/kustomization.yaml"
 	err = pluginutil.UncommentCode(kustomizeFilePath, "#- ../webhook", `#`)
 	if err != nil {
-		hasWebHookUncommented, err := pluginutil.HasFileContentWith(kustomizeFilePath, "- ../webhook")
-		if !hasWebHookUncommented || err != nil {
+		hasWebHookUncommented, errCheck := pluginutil.HasFileContentWith(kustomizeFilePath, "- ../webhook")
+		if !hasWebHookUncommented || errCheck != nil {
 			log.Errorf("Unable to find the target #- ../webhook to uncomment in the file "+
 				"%s.", kustomizeFilePath)
 		}
@@ -125,8 +125,8 @@ func (s *webhookScaffolder) Scaffold() error {
 
 	err = pluginutil.UncommentCode(kustomizeFilePath, "#patches:", `#`)
 	if err != nil {
-		hasWebHookUncommented, err := pluginutil.HasFileContentWith(kustomizeFilePath, "patches:")
-		if !hasWebHookUncommented || err != nil {
+		hasWebHookUncommented, errCheck := pluginutil.HasFileContentWith(kustomizeFilePath, "patches:")
+		if !hasWebHookUncommented || errCheck != nil {
 			log.Errorf("Unable to find the line '#patches:' to uncomment in the file "+
 				"%s.", kustomizeFilePath)
 		}
@@ -136,8 +136,9 @@ func (s *webhookScaffolder) Scaffold() error {
 #  target:
 #    kind: Deployment`, `#`)
 	if err != nil {
-		hasWebHookUncommented, err := pluginutil.HasFileContentWith(kustomizeFilePath, "- path: manager_webhook_patch.yaml")
-		if !hasWebHookUncommented || err != nil {
+		hasWebHookUncommented, errCheck := pluginutil.HasFileContentWith(kustomizeFilePath,
+			"- path: manager_webhook_patch.yaml")
+		if !hasWebHookUncommented || errCheck != nil {
 			log.Errorf("Unable to find the target #- path: manager_webhook_patch.yaml to uncomment in the file "+
 				"%s.", kustomizeFilePath)
 		}
@@ -219,7 +220,6 @@ release available. Afterward, you can re-add only your code implementation on to
 the latest bug fixes and enhancements.
 
 `)
-
 	}
 }
 

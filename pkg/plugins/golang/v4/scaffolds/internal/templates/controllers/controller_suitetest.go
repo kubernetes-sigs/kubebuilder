@@ -25,12 +25,14 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 )
 
-var _ machinery.Template = &SuiteTest{}
-var _ machinery.Inserter = &SuiteTest{}
+var (
+	_ machinery.Template = &SuiteTest{}
+	_ machinery.Inserter = &SuiteTest{}
+)
 
 // SuiteTest scaffolds the file that sets up the controller tests
 //
-//nolint:maligned
+
 type SuiteTest struct {
 	machinery.TemplateMixin
 	machinery.MultiGroupMixin
@@ -138,8 +140,8 @@ import (
 	"path/filepath"
 	"testing"
 
-    . "github.com/onsi/ginkgo/v2"
-    . "github.com/onsi/gomega"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"

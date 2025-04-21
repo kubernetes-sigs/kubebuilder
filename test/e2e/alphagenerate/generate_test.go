@@ -36,7 +36,6 @@ import (
 
 var _ = Describe("kubebuilder", func() {
 	Context("alpha generate", func() {
-
 		var (
 			kbc              *utils.TestContext
 			projectOutputDir string
@@ -344,11 +343,11 @@ func validateDeployImagePlugin(projectFile string) {
 	// Validate the resource configuration
 	Expect(deployImageConfig.Resources).ToNot(BeEmpty(), "Expected at least one resource for the DeployImage plugin")
 
-	resource := deployImageConfig.Resources[0]
-	Expect(resource.Group).To(Equal("crew"), "Expected group to be 'crew'")
-	Expect(resource.Kind).To(Equal("Memcached"), "Expected kind to be 'Memcached'")
+	resourceData := deployImageConfig.Resources[0]
+	Expect(resourceData.Group).To(Equal("crew"), "Expected group to be 'crew'")
+	Expect(resourceData.Kind).To(Equal("Memcached"), "Expected kind to be 'Memcached'")
 
-	options := resource.Options
+	options := resourceData.Options
 	Expect(options.Image).To(Equal("memcached:1.6.15-alpine"), "Expected image to match")
 	Expect(options.ContainerCommand).To(Equal("memcached,--memory-limit=64,modern,-v"),
 		"Expected container command to match")

@@ -27,6 +27,9 @@ var _ machinery.Template = &Certificate{}
 type Certificate struct {
 	machinery.TemplateMixin
 	machinery.ProjectNameMixin
+
+	// HasWebhooks is true when webhooks were found in the config
+	HasWebhooks bool
 }
 
 // SetTemplateDefaults sets the default template configuration
@@ -53,6 +56,7 @@ metadata:
   namespace: {{ "{{ .Release.Namespace }}" }}
 spec:
   selfSigned: {}
+{{- if .HasWebhooks }}
 {{ "{{- if .Values.webhook.enable }}" }}
 ---
 # Certificate for the webhook
@@ -77,6 +81,7 @@ spec:
     name: selfsigned-issuer
   secretName: webhook-server-cert
 {{` + "`" + `{{- end }}` + "`" + `}}
+{{- end }}
 {{ "{{- if .Values.metrics.enable }}" }}
 ---
 # Certificate for the metrics

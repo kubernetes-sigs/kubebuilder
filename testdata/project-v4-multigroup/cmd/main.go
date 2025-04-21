@@ -176,7 +176,7 @@ func main() {
 
 	// Metrics endpoint is enabled in 'config/default/kustomization.yaml'. The Metrics options configure the server.
 	// More info:
-	// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.20.2/pkg/metrics/server
+	// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.20.4/pkg/metrics/server
 	// - https://book.kubebuilder.io/reference/metrics.html
 	metricsServerOptions := metricsserver.Options{
 		BindAddress:   metricsAddr,
@@ -188,7 +188,7 @@ func main() {
 		// FilterProvider is used to protect the metrics endpoint with authn/authz.
 		// These configurations ensure that only authorized users and service accounts
 		// can access the metrics endpoint. The RBAC are configured in 'config/rbac/kustomization.yaml'. More info:
-		// https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.20.2/pkg/metrics/filters#WithAuthenticationAndAuthorization
+		// https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.20.4/pkg/metrics/filters#WithAuthenticationAndAuthorization
 		metricsServerOptions.FilterProvider = filters.WithAuthenticationAndAuthorization
 	}
 
@@ -243,7 +243,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&crewcontroller.CaptainReconciler{
+	if err := (&crewcontroller.CaptainReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
@@ -252,19 +252,19 @@ func main() {
 	}
 	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = webhookcrewv1.SetupCaptainWebhookWithManager(mgr); err != nil {
+		if err := webhookcrewv1.SetupCaptainWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Captain")
 			os.Exit(1)
 		}
 	}
-	if err = (&shipcontroller.FrigateReconciler{
+	if err := (&shipcontroller.FrigateReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Frigate")
 		os.Exit(1)
 	}
-	if err = (&shipcontroller.DestroyerReconciler{
+	if err := (&shipcontroller.DestroyerReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
@@ -273,12 +273,12 @@ func main() {
 	}
 	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = webhookshipv1.SetupDestroyerWebhookWithManager(mgr); err != nil {
+		if err := webhookshipv1.SetupDestroyerWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Destroyer")
 			os.Exit(1)
 		}
 	}
-	if err = (&shipcontroller.CruiserReconciler{
+	if err := (&shipcontroller.CruiserReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
@@ -287,54 +287,54 @@ func main() {
 	}
 	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = webhookshipv2alpha1.SetupCruiserWebhookWithManager(mgr); err != nil {
+		if err := webhookshipv2alpha1.SetupCruiserWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Cruiser")
 			os.Exit(1)
 		}
 	}
-	if err = (&seacreaturescontroller.KrakenReconciler{
+	if err := (&seacreaturescontroller.KrakenReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Kraken")
 		os.Exit(1)
 	}
-	if err = (&seacreaturescontroller.LeviathanReconciler{
+	if err := (&seacreaturescontroller.LeviathanReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Leviathan")
 		os.Exit(1)
 	}
-	if err = (&foopolicycontroller.HealthCheckPolicyReconciler{
+	if err := (&foopolicycontroller.HealthCheckPolicyReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "HealthCheckPolicy")
 		os.Exit(1)
 	}
-	if err = (&appscontroller.DeploymentReconciler{
+	if err := (&appscontroller.DeploymentReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Deployment")
 		os.Exit(1)
 	}
-	if err = (&foocontroller.BarReconciler{
+	if err := (&foocontroller.BarReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Bar")
 		os.Exit(1)
 	}
-	if err = (&fizcontroller.BarReconciler{
+	if err := (&fizcontroller.BarReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Bar")
 		os.Exit(1)
 	}
-	if err = (&certmanagercontroller.CertificateReconciler{
+	if err := (&certmanagercontroller.CertificateReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
@@ -343,26 +343,26 @@ func main() {
 	}
 	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = webhookcertmanagerv1.SetupIssuerWebhookWithManager(mgr); err != nil {
+		if err := webhookcertmanagerv1.SetupIssuerWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Issuer")
 			os.Exit(1)
 		}
 	}
 	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = webhookcorev1.SetupPodWebhookWithManager(mgr); err != nil {
+		if err := webhookcorev1.SetupPodWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Pod")
 			os.Exit(1)
 		}
 	}
 	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = webhookappsv1.SetupDeploymentWebhookWithManager(mgr); err != nil {
+		if err := webhookappsv1.SetupDeploymentWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Deployment")
 			os.Exit(1)
 		}
 	}
-	if err = (&examplecomcontroller.MemcachedReconciler{
+	if err := (&examplecomcontroller.MemcachedReconciler{
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
 		Recorder: mgr.GetEventRecorderFor("memcached-controller"),
@@ -370,7 +370,7 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Memcached")
 		os.Exit(1)
 	}
-	if err = (&examplecomcontroller.BusyboxReconciler{
+	if err := (&examplecomcontroller.BusyboxReconciler{
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
 		Recorder: mgr.GetEventRecorderFor("busybox-controller"),
@@ -380,12 +380,12 @@ func main() {
 	}
 	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = webhookexamplecomv1alpha1.SetupMemcachedWebhookWithManager(mgr); err != nil {
+		if err := webhookexamplecomv1alpha1.SetupMemcachedWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Memcached")
 			os.Exit(1)
 		}
 	}
-	if err = (&examplecomcontroller.WordpressReconciler{
+	if err := (&examplecomcontroller.WordpressReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
@@ -394,7 +394,7 @@ func main() {
 	}
 	// nolint:goconst
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		if err = webhookexamplecomv1.SetupWordpressWebhookWithManager(mgr); err != nil {
+		if err := webhookexamplecomv1.SetupWordpressWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "Wordpress")
 			os.Exit(1)
 		}

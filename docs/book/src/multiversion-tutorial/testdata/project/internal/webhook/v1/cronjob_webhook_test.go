@@ -114,14 +114,14 @@ var _ = Describe("CronJob Webhook", func() {
 
 	Context("When creating or updating CronJob under Validating Webhook", func() {
 		It("Should deny creation if the name is too long", func() {
-			obj.ObjectMeta.Name = "this-name-is-way-too-long-and-should-fail-validation-because-it-is-way-too-long"
+			obj.Name = "this-name-is-way-too-long-and-should-fail-validation-because-it-is-way-too-long"
 			Expect(validator.ValidateCreate(ctx, obj)).Error().To(
 				MatchError(ContainSubstring("must be no more than 52 characters")),
 				"Expected name validation to fail for a too-long name")
 		})
 
 		It("Should admit creation if the name is valid", func() {
-			obj.ObjectMeta.Name = validCronJobName
+			obj.Name = validCronJobName
 			Expect(validator.ValidateCreate(ctx, obj)).To(BeNil(),
 				"Expected name validation to pass for a valid name")
 		})
@@ -140,11 +140,11 @@ var _ = Describe("CronJob Webhook", func() {
 		})
 
 		It("Should deny update if both name and spec are invalid", func() {
-			oldObj.ObjectMeta.Name = validCronJobName
+			oldObj.Name = validCronJobName
 			oldObj.Spec.Schedule = schedule
 
 			By("simulating an update")
-			obj.ObjectMeta.Name = "this-name-is-way-too-long-and-should-fail-validation-because-it-is-way-too-long"
+			obj.Name = "this-name-is-way-too-long-and-should-fail-validation-because-it-is-way-too-long"
 			obj.Spec.Schedule = "invalid-cron-schedule"
 
 			By("validating an update")
@@ -153,11 +153,11 @@ var _ = Describe("CronJob Webhook", func() {
 		})
 
 		It("Should admit update if both name and spec are valid", func() {
-			oldObj.ObjectMeta.Name = validCronJobName
+			oldObj.Name = validCronJobName
 			oldObj.Spec.Schedule = schedule
 
 			By("simulating an update")
-			obj.ObjectMeta.Name = "valid-cronjob-name-updated"
+			obj.Name = "valid-cronjob-name-updated"
 			obj.Spec.Schedule = "0 0 * * *"
 
 			By("validating an update")

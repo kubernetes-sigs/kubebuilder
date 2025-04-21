@@ -225,14 +225,14 @@ interfaces, a conversion webhook will be registered.
 
 	Context("When creating or updating CronJob under Validating Webhook", func() {
 		It("Should deny creation if the name is too long", func() {
-			obj.ObjectMeta.Name = "this-name-is-way-too-long-and-should-fail-validation-because-it-is-way-too-long"
+			obj.Name = "this-name-is-way-too-long-and-should-fail-validation-because-it-is-way-too-long"
 			Expect(validator.ValidateCreate(ctx, obj)).Error().To(
 				MatchError(ContainSubstring("must be no more than 52 characters")),
 				"Expected name validation to fail for a too-long name")
 		})
 
 		It("Should admit creation if the name is valid", func() {
-			obj.ObjectMeta.Name = validCronJobName
+			obj.Name = validCronJobName
 			Expect(validator.ValidateCreate(ctx, obj)).To(BeNil(),
 				"Expected name validation to pass for a valid name")
 		})
@@ -251,11 +251,11 @@ interfaces, a conversion webhook will be registered.
 		})
 
 		It("Should deny update if both name and spec are invalid", func() {
-			oldObj.ObjectMeta.Name = validCronJobName
+			oldObj.Name = validCronJobName
 			oldObj.Spec.Schedule = schedule
 
 			By("simulating an update")
-			obj.ObjectMeta.Name = "this-name-is-way-too-long-and-should-fail-validation-because-it-is-way-too-long"
+			obj.Name = "this-name-is-way-too-long-and-should-fail-validation-because-it-is-way-too-long"
 			obj.Spec.Schedule = "invalid-cron-schedule"
 
 			By("validating an update")
@@ -264,11 +264,11 @@ interfaces, a conversion webhook will be registered.
 		})
 
 		It("Should admit update if both name and spec are valid", func() {
-			oldObj.ObjectMeta.Name = validCronJobName
+			oldObj.Name = validCronJobName
 			oldObj.Spec.Schedule = schedule
 
 			By("simulating an update")
-			obj.ObjectMeta.Name = "valid-cronjob-name-updated"
+			obj.Name = "valid-cronjob-name-updated"
 			obj.Spec.Schedule = "0 0 * * *"
 
 			By("validating an update")
@@ -276,7 +276,7 @@ interfaces, a conversion webhook will be registered.
 				"Expected validation to pass for a valid update")
 		})
 	})
-	
+
 	`)
 	hackutils.CheckError("fix cronjob v1 tests after each", err)
 }
@@ -465,7 +465,7 @@ func (sp *Sample) updateWebhookV2() {
 	"fmt"`,
 		`
 	"strings"
-	
+
 	"github.com/robfig/cron"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -613,7 +613,7 @@ CronJob controller's `+"`SetupWithManager`"+` method.
 
 	err = pluginutil.InsertCode(
 		filepath.Join(sp.ctx.Dir, path),
-		`if err = (&controller.CronJobReconciler{
+		`if err := (&controller.CronJobReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
@@ -658,7 +658,6 @@ CronJob controller's `+"`SetupWithManager`"+` method.
 		`// +kubebuilder:docs-gen:collapse=existing setup`,
 	)
 	hackutils.CheckError("replace +kubebuilder:docs-gen:collapse=old stuff main.go", err)
-
 }
 
 func (sp *Sample) updateAPIV2() {

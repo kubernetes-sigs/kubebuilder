@@ -57,7 +57,7 @@ func (e *execOutputGetter) GetExecOutput(request []byte, path string) ([]byte, e
 	cmd.Stderr = os.Stderr
 	out, err := cmd.Output()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error getting output for cmd %q: %w", cmd, err)
 	}
 
 	return out, nil
@@ -75,7 +75,7 @@ type osWdGetter struct{}
 func (o *osWdGetter) GetCurrentDir() (string, error) {
 	currentDir, err := os.Getwd()
 	if err != nil {
-		return "", fmt.Errorf("error getting current directory: %v", err)
+		return "", fmt.Errorf("error getting current directory: %w", err)
 	}
 
 	return currentDir, nil
@@ -84,17 +84,17 @@ func (o *osWdGetter) GetCurrentDir() (string, error) {
 func makePluginRequest(req external.PluginRequest, path string) (*external.PluginResponse, error) {
 	reqBytes, err := json.Marshal(req)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error marshalling plugin request: %w", err)
 	}
 
 	out, err := outputGetter.GetExecOutput(reqBytes, path)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error executing plugin request: %w", err)
 	}
 
 	res := external.PluginResponse{}
-	if err := json.Unmarshal(out, &res); err != nil {
-		return nil, err
+	if err = json.Unmarshal(out, &res); err != nil {
+		return nil, fmt.Errorf("error unmarshalling plugin response: %w", err)
 	}
 
 	// Error if the plugin failed.
@@ -114,7 +114,7 @@ func getUniverseMap(fs machinery.Filesystem) (map[string]string, error) {
 
 	err := afero.Walk(fs.FS, ".", func(path string, info iofs.FileInfo, err error) error {
 		if err != nil {
-			return err
+			return fmt.Errorf("error walking path %q: %w", path, err)
 		}
 
 		if info.IsDir() {
@@ -123,27 +123,26 @@ func getUniverseMap(fs machinery.Filesystem) (map[string]string, error) {
 
 		file, err := fs.FS.Open(path)
 		if err != nil {
-			return err
+			return fmt.Errorf("error opening file %q: %w", path, err)
 		}
 
 		defer func() {
-			if err := file.Close(); err != nil {
+			if err = file.Close(); err != nil {
 				return
 			}
 		}()
 
 		content, err := io.ReadAll(file)
 		if err != nil {
-			return err
+			return fmt.Errorf("error reading file %q: %w", path, err)
 		}
 
 		universe[path] = string(content)
 
 		return nil
 	})
-
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error walking the directory: %w", err)
 	}
 
 	return universe, nil
@@ -154,7 +153,7 @@ func handlePluginResponse(fs machinery.Filesystem, req external.PluginRequest, p
 
 	req.Universe, err = getUniverseMap(fs)
 	if err != nil {
-		return err
+		return fmt.Errorf("error getting universe map: %w", err)
 	}
 
 	res, err := makePluginRequest(req, path)
@@ -164,31 +163,31 @@ func handlePluginResponse(fs machinery.Filesystem, req external.PluginRequest, p
 
 	currentDir, err := currentDirGetter.GetCurrentDir()
 	if err != nil {
-		return fmt.Errorf("error getting current directory: %v", err)
+		return fmt.Errorf("error getting current directory: %w", err)
 	}
 
 	for filename, data := range res.Universe {
-		path := filepath.Join(currentDir, filename)
-		dir := filepath.Dir(path)
+		file := filepath.Join(currentDir, filename)
+		dir := filepath.Dir(file)
 
 		// create the directory if it does not exist
-		if err := os.MkdirAll(dir, 0o750); err != nil {
-			return fmt.Errorf("error creating the directory: %v", err)
+		if err = os.MkdirAll(dir, 0o750); err != nil {
+			return fmt.Errorf("error creating the directory: %w", err)
 		}
 
-		f, err := fs.FS.Create(path)
-		if err != nil {
-			return err
+		f, createErr := fs.FS.Create(file)
+		if createErr != nil {
+			return fmt.Errorf("error creating file %q: %w", file, createErr)
 		}
 
 		defer func() {
-			if err := f.Close(); err != nil {
+			if err = f.Close(); err != nil {
 				return
 			}
 		}()
 
-		if _, err := f.Write([]byte(data)); err != nil {
-			return err
+		if _, err = f.Write([]byte(data)); err != nil {
+			return fmt.Errorf("error writing file %q: %w", file, err)
 		}
 	}
 
@@ -255,7 +254,7 @@ func bindSpecificFlags(fs *pflag.FlagSet, flags []external.Flag) {
 }
 
 func filterFlags(flags []external.Flag, externalFlagFilters []externalFlagFilterFunc) []external.Flag {
-	filteredFlags := []external.Flag{}
+	var filteredFlags []external.Flag
 	for _, flag := range flags {
 		ok := true
 		for _, filter := range externalFlagFilters {
@@ -272,7 +271,7 @@ func filterFlags(flags []external.Flag, externalFlagFilters []externalFlagFilter
 }
 
 func filterArgs(args []string, argFilters []argFilterFunc) []string {
-	filteredArgs := []string{}
+	var filteredArgs []string
 	for _, arg := range args {
 		ok := true
 		for _, filter := range argFilters {
@@ -319,7 +318,7 @@ var (
 	// helpArgFilter filters out any flag named "help" as its already bound
 	helpArgFilter = func(arg string) bool {
 		arg = strings.Replace(arg, "--", "", 1)
-		return !(arg == "help")
+		return arg != "help"
 	}
 )
 

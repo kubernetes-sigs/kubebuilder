@@ -129,7 +129,7 @@ To generate all required files:
 
 1. Run `make generate` to create the DeepCopy implementations in `api/v1alpha1/zz_generated.deepcopy.go`.
 
-2. Then, run `make manifests` to generate the CRD manifests under `config/crd/bases` and a sample for it under `config/crd/samples`.
+2. Then, run `make manifests` to generate the CRD manifests under `config/crd/bases` and a sample for it under `config/samples`.
 
 Both commands use [controller-gen][controller-gen] with different flags for code and manifest generation, respectively.
 

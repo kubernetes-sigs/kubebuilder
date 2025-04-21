@@ -21,7 +21,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/spf13/afero"
-
 	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
 	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 )
@@ -115,12 +114,12 @@ var _ = Describe("Scaffold", func() {
 		)
 
 		var (
-			testErr = errors.New("error text")
-
-			s *Scaffold
+			testErr error
+			s       *Scaffold
 		)
 
 		BeforeEach(func() {
+			testErr = errors.New("error text")
 			s = &Scaffold{fs: afero.NewMemMapFs()}
 		})
 
@@ -158,35 +157,48 @@ var _ = Describe("Scaffold", func() {
 
 			Entry("should render actions with alternative delimiters correctly",
 				path, "package testValue",
-				&fakeTemplate{fakeBuilder: fakeBuilder{path: path, TestField: "testValue"},
-					body: "package [[.TestField]]", parseDelimLeft: "[[", parseDelimRight: "]]"},
+				&fakeTemplate{
+					fakeBuilder:     fakeBuilder{path: path, TestField: "testValue"},
+					body:            "package [[.TestField]]",
+					parseDelimLeft:  "[[",
+					parseDelimRight: "]]",
+				},
 			),
 		)
 
 		DescribeTable("file builders related errors",
-			func(errType interface{}, files ...Builder) {
+			func(setup func() ([]Builder, error)) {
+				files, errType := setup()
+
 				err := s.Execute(files...)
+
 				Expect(err).To(HaveOccurred())
-				Expect(errors.As(err, errType)).To(BeTrue())
+				Expect(err).To(MatchError(errType))
 			},
-			Entry("should fail if unable to validate a file builder",
-				&ValidateError{},
-				fakeRequiresValidation{validateErr: testErr},
-			),
-			Entry("should fail if unable to set default values for a template",
-				&SetTemplateDefaultsError{},
-				&fakeTemplate{err: testErr},
-			),
-			Entry("should fail if an unexpected previous model is found",
-				&ModelAlreadyExistsError{},
-				&fakeTemplate{fakeBuilder: fakeBuilder{path: path}},
-				&fakeTemplate{fakeBuilder: fakeBuilder{path: path, ifExistsAction: Error}},
-			),
-			Entry("should fail if behavior if-exists-action is not defined",
-				&UnknownIfExistsActionError{},
-				&fakeTemplate{fakeBuilder: fakeBuilder{path: path}},
-				&fakeTemplate{fakeBuilder: fakeBuilder{path: path, ifExistsAction: -1}},
-			),
+			Entry("should fail if unable to validate a file builder", func() ([]Builder, error) {
+				return []Builder{
+					fakeRequiresValidation{validateErr: testErr},
+				}, ValidateError{testErr}
+			}),
+
+			Entry("should fail if unable to set default values for a template", func() ([]Builder, error) {
+				return []Builder{
+					&fakeTemplate{err: testErr},
+				}, SetTemplateDefaultsError{testErr}
+			}),
+
+			Entry("should fail if an unexpected previous model is found", func() ([]Builder, error) {
+				return []Builder{
+					&fakeTemplate{fakeBuilder: fakeBuilder{path: path}},
+					&fakeTemplate{fakeBuilder: fakeBuilder{path: path, ifExistsAction: Error}},
+				}, ModelAlreadyExistsError{path: path}
+			}),
+			Entry("should fail if behavior if-exists-action is not defined", func() ([]Builder, error) {
+				return []Builder{
+					&fakeTemplate{fakeBuilder: fakeBuilder{path: path}},
+					&fakeTemplate{fakeBuilder: fakeBuilder{path: path, ifExistsAction: -1}},
+				}, UnknownIfExistsActionError{path: path, ifExistsAction: -1}
+			}),
 		)
 
 		// Following errors are unwrapped, so we need to check for substrings
@@ -404,20 +416,20 @@ func init() {
 		)
 
 		DescribeTable("insert strings related errors",
-			func(errType interface{}, files ...Builder) {
+			func(errType error, files ...Builder) {
 				Expect(afero.WriteFile(s.fs, path, []byte{}, 0o666)).To(Succeed())
 
 				err := s.Execute(files...)
 				Expect(err).To(HaveOccurred())
-				Expect(errors.As(err, errType)).To(BeTrue())
+				Expect(err).To(MatchError(errType))
 			},
 			Entry("should fail if inserting into a model that fails when a file exists and it does exist",
-				&FileAlreadyExistsError{},
+				FileAlreadyExistsError{path: "filename"},
 				&fakeTemplate{fakeBuilder: fakeBuilder{path: "filename", ifExistsAction: Error}},
 				fakeInserter{fakeBuilder: fakeBuilder{path: "filename"}},
 			),
 			Entry("should fail if inserting into a model with unknown behavior if the file exists and it does exist",
-				&UnknownIfExistsActionError{},
+				UnknownIfExistsActionError{path: "filename", ifExistsAction: -1},
 				&fakeTemplate{fakeBuilder: fakeBuilder{path: "filename", ifExistsAction: -1}},
 				fakeInserter{fakeBuilder: fakeBuilder{path: "filename"}},
 			),
@@ -456,7 +468,7 @@ func init() {
 					body:        content,
 				})
 				Expect(err).To(HaveOccurred())
-				Expect(errors.As(err, &FileAlreadyExistsError{})).To(BeTrue())
+				Expect(err).To(MatchError(FileAlreadyExistsError{path: path}))
 			})
 		})
 	})

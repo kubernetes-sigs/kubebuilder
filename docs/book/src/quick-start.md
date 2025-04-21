@@ -66,7 +66,6 @@ Read the [Go modules blogpost][go-modules-blogpost] if unfamiliar with the modul
 
 </aside>
 
-
 ## Create an API
 
 Run the following command to create a new API (group/version) as `webapp/v1` and the new Kind(CRD) `Guestbook` on it:
@@ -83,12 +82,12 @@ and the `internal/controllers/guestbook_controller.go` where the reconciliation 
 
 </aside>
 
-
 **OPTIONAL:** Edit the API definition and the reconciliation business
 logic. For more info see [Designing an API](/cronjob-tutorial/api-design.md) and [What's in
 a Controller](cronjob-tutorial/controller-overview.md).
 
 If you are editing the API definitions, generate the manifests such as Custom Resources (CRs) or Custom Resource Definitions (CRDs) using
+
 ```bash
 make manifests
 ```
@@ -113,7 +112,7 @@ type GuestbookSpec struct {
 	ConfigMapName string `json:"configMapName"`
 
 	// +kubebuilder:validation:Enum=Phone;Address;Name
-	Type string `json:"alias,omitempty"`
+	Type string `json:"type,omitempty"`
 }
 
 // GuestbookStatus defines the observed state of Guestbook
@@ -145,10 +144,9 @@ type Guestbook struct {
 </p>
 </details>
 
-
 ## Test It Out
 
-You'll need a Kubernetes cluster to run against.  You can use
+You'll need a Kubernetes cluster to run against. You can use
 [KIND](https://sigs.k8s.io/kind) to get a local cluster for testing, or
 run against a remote cluster.
 
@@ -161,12 +159,14 @@ kubeconfig file (i.e. whatever cluster `kubectl cluster-info` shows).
 </aside>
 
 Install the CRDs into the cluster:
+
 ```bash
 make install
 ```
 
 For quick feedback and code-level debugging, run your controller (this will run in the foreground, so switch to a new
 terminal if you want to leave it running):
+
 ```bash
 make run
 ```
@@ -181,6 +181,7 @@ kubectl apply -k config/samples/
 ```
 
 ## Run It On the Cluster
+
 When your controller is ready to be packaged and tested in other clusters.
 
 Build and push your image to the location specified by `IMG`:
@@ -238,8 +239,8 @@ make undeploy
 
 - Now, take a look at the [Architecture Concept Diagram][architecture-concept-diagram] for a clearer overview.
 - Next, proceed with the [Getting Started Guide][getting-started], which should take no more than 30 minutes and will
-provide a solid foundation. Afterward, dive into the [CronJob Tutorial][cronjob-tutorial] to deepen your
-understanding by developing a demo project.
+  provide a solid foundation. Afterward, dive into the [CronJob Tutorial][cronjob-tutorial] to deepen your
+  understanding by developing a demo project.
 
 [pre-rbc-gke]: https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#iam-rolebinding-bootstrap
 [cronjob-tutorial]: https://book.kubebuilder.io/cronjob-tutorial/cronjob-tutorial.html
