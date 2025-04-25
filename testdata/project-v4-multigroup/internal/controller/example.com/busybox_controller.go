@@ -121,14 +121,8 @@ func (r *BusyboxReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	// Let's add a finalizer. Then, we can define some operations which should
 	// occur before the custom resource is deleted.
 	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers
-	if !controllerutil.ContainsFinalizer(busybox, busyboxFinalizer) {
-		log.Info("Adding Finalizer for Busybox")
-		if ok := controllerutil.AddFinalizer(busybox, busyboxFinalizer); !ok {
-			err = fmt.Errorf("finalizer for Busybox was not added")
-			log.Error(err, "Failed to add finalizer for Busybox")
-			return ctrl.Result{}, err
-		}
-
+	if added := controllerutil.AddFinalizer(busybox, busyboxFinalizer); added {
+		log.Info("Finalizer added for Busybox")
 		if err = r.Update(ctx, busybox); err != nil {
 			log.Error(err, "Failed to update custom resource to add finalizer")
 			return ctrl.Result{}, err
