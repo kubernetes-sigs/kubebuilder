@@ -39,8 +39,6 @@ function create_cluster {
     fi
     echo "Creating cluster..."
     kind create cluster -v 4 --name $KIND_CLUSTER --retain --wait=1m --config ${kind_config} --image=kindest/node:$1
-    echo "Installing Calico..."
-    kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
   fi
 }
 
