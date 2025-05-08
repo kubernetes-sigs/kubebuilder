@@ -30,12 +30,12 @@ const cronjobSpecComment = `/*
 
  - A deadline for starting jobs (if we miss this deadline, we'll just wait till
    the next scheduled time)
- - What to do if multiple jobs would run at once (do we wait? stop the old one? run both?)
+ - What to do if multiple jobs would run at once (do we wait? stop the old one? or run both?)
  - A way to pause the running of a CronJob, in case something's wrong with it
  - Limits on old job history
 
- Remember, since we never read our own status, we need to have some other way to
- keep track of whether a job has run.  We can use at least one old job to do
+ Remember, since we never read our status, we need to have some other way to 
+ keep track whether a job has run.  We can use at least one old job to do
  this.
 
  We'll use several markers (` + "`// +comment`" + `) to specify additional metadata.  These
@@ -52,7 +52,7 @@ const concurrencyPolicyComment = `/*
 */`
 
 const statusDesignComment = `/*
- Next, let's design our status, which holds observed state.  It contains any information
+ Next, let's design our status, which holds the observed state.  It contains any information
  we want users or other controllers to be able to easily obtain.
 
  We'll keep a list of actively running jobs, as well as the last time that we successfully

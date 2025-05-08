@@ -48,12 +48,12 @@ import (
 
  - A deadline for starting jobs (if we miss this deadline, we'll just wait till
    the next scheduled time)
- - What to do if multiple jobs would run at once (do we wait? stop the old one? run both?)
+ - What to do if multiple jobs would run at once (do we wait? stop the old one? or run both?)
  - A way to pause the running of a CronJob, in case something's wrong with it
  - Limits on old job history
 
  Remember, since we never read our own status, we need to have some other way to
- keep track of whether a job has run.  We can use at least one old job to do
+ keep track whether a job has run.  We can use at least one old job to do
  this.
 
  We'll use several markers (`// +comment`) to specify additional metadata.  These
@@ -79,8 +79,8 @@ type CronJobSpec struct {
 	// Specifies how to treat concurrent executions of a Job.
 	// Valid values are:
 	// - "Allow" (default): allows CronJobs to run concurrently;
-	// - "Forbid": forbids concurrent runs, skipping next run if previous run hasn't finished yet;
-	// - "Replace": cancels currently running job and replaces it with a new one
+	// - "Forbid": forbids concurrent runs, skipping the next run if the previous run hasn't finished yet;
+	// - "Replace": cancels the currently running job and replaces it with a new one
 	// +optional
 	ConcurrencyPolicy ConcurrencyPolicy `json:"concurrencyPolicy,omitempty"`
 
@@ -94,7 +94,7 @@ type CronJobSpec struct {
 
 	// +kubebuilder:validation:Minimum=0
 
-	// The number of successful finished jobs to retain.
+	// The number of successfull finished jobs to retain.
 	// This is a pointer to distinguish between explicit zero and not specified.
 	// +optional
 	SuccessfulJobsHistoryLimit *int32 `json:"successfulJobsHistoryLimit,omitempty"`
@@ -102,7 +102,7 @@ type CronJobSpec struct {
 	// +kubebuilder:validation:Minimum=0
 
 	// The number of failed finished jobs to retain.
-	// This is a pointer to distinguish between explicit zero and not specified.
+	// This pointer distinguishes between explicit zero and not specified.
 	// +optional
 	FailedJobsHistoryLimit *int32 `json:"failedJobsHistoryLimit,omitempty"`
 }
@@ -125,16 +125,16 @@ const (
 	// AllowConcurrent allows CronJobs to run concurrently.
 	AllowConcurrent ConcurrencyPolicy = "Allow"
 
-	// ForbidConcurrent forbids concurrent runs, skipping next run if previous
+	// ForbidConcurrent forbids concurrent runs, skipping the next run if the previous
 	// hasn't finished yet.
 	ForbidConcurrent ConcurrencyPolicy = "Forbid"
 
-	// ReplaceConcurrent cancels currently running job and replaces it with a new one.
+	// ReplaceConcurrent cancels the currently running job and replaces it with a new one.
 	ReplaceConcurrent ConcurrencyPolicy = "Replace"
 )
 
 /*
- Next, let's design our status, which holds observed state.  It contains any information
+ Next, let's design our status, which holds the observed state.  It contains any information
  we want users or other controllers to be able to easily obtain.
 
  We'll keep a list of actively running jobs, as well as the last time that we successfully

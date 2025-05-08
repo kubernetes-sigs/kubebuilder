@@ -43,7 +43,7 @@ help: ## Display this help.
 
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
-	# Note that the option maxDescLen=0 was added in the default scaffold in order to sort out the issue
+	# Note that the option maxDescLen=0 was added in the default scaffold to sort out the issue
 	# Too long: must have at most 262144 bytes. By using kubectl apply to create / update resources an annotation
 	# is created by K8s API to store the latest version of the resource ( kubectl.kubernetes.io/last-applied-configuration).
 	# However, it has a size limit and if the CRD is too big with so many long descriptions as this one it will cause the failure.
