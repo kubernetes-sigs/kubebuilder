@@ -121,14 +121,8 @@ func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	// Let's add a finalizer. Then, we can define some operations which should
 	// occur before the custom resource is deleted.
 	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers
-	if !controllerutil.ContainsFinalizer(memcached, memcachedFinalizer) {
-		log.Info("Adding Finalizer for Memcached")
-		if ok := controllerutil.AddFinalizer(memcached, memcachedFinalizer); !ok {
-			err = fmt.Errorf("finalizer for Memcached was not added")
-			log.Error(err, "Failed to add finalizer for Memcached")
-			return ctrl.Result{}, err
-		}
-
+	if added := controllerutil.AddFinalizer(memcached, memcachedFinalizer); added {
+		log.Info("Finalizer added for Memcached")
 		if err = r.Update(ctx, memcached); err != nil {
 			log.Error(err, "Failed to update custom resource to add finalizer")
 			return ctrl.Result{}, err
