@@ -36,9 +36,9 @@ jobs:
         working-directory: ${{ matrix.folder }}
         run: make lint-config
       - name: Run linter
-        uses: golangci/golangci-lint-action@v7
+        uses: golangci/golangci-lint-action@v8
         with:
-          version: v2.0.2
+          version: v2.1.0
           working-directory: ${{ matrix.folder }}
           args: --config .golangci.yml ./...
       - name: Run linter via makefile target
