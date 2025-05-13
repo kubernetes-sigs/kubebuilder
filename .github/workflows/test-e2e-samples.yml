@@ -39,12 +39,6 @@ jobs:
 
       - name: Prepare project-v4
         run: |
-          KUSTOMIZATION_FILE_PATH="testdata/project-v4/config/default/kustomization.yaml"
-          sed -i '25s/^#//' $KUSTOMIZATION_FILE_PATH
-          sed -i '47,49s/^#//' $KUSTOMIZATION_FILE_PATH
-          # Uncomment all cert-manager injections
-          sed -i '59,234s/^#//' $KUSTOMIZATION_FILE_PATH
-          sed -i '236,251s/^#//' $KUSTOMIZATION_FILE_PATH
           cd testdata/project-v4/
           go mod tidy
 
@@ -81,17 +75,6 @@ jobs:
 
       - name: Prepare project-v4-with-plugins
         run: |
-          KUSTOMIZATION_FILE_PATH="testdata/project-v4-with-plugins/config/default/kustomization.yaml"
-          sed -i '25s/^#//' $KUSTOMIZATION_FILE_PATH
-          # Uncomment only ValidatingWebhookConfiguration
-          # from cert-manager replaces; we are leaving defaulting uncommented
-          # since this sample has no defaulting webhooks
-          sed -i '59,77s/^#//' $KUSTOMIZATION_FILE_PATH
-          sed -i '90,107s/^#//' $KUSTOMIZATION_FILE_PATH
-          sed -i '120,186s/^#//' $KUSTOMIZATION_FILE_PATH
-          # Uncomment only --conversion webhooks CA injection
-          sed -i '219,234s/^#//' $KUSTOMIZATION_FILE_PATH
-          sed -i '236,251s/^#//' $KUSTOMIZATION_FILE_PATH
           cd testdata/project-v4-with-plugins/
           go mod tidy
 
@@ -128,13 +111,6 @@ jobs:
 
       - name: Prepare project-v4-multigroup
         run: |
-          KUSTOMIZATION_FILE_PATH="testdata/project-v4-multigroup/config/default/kustomization.yaml"
-          sed -i '25s/^#//' $KUSTOMIZATION_FILE_PATH
-          # Uncomment all cert-manager injections for webhooks only
-          sed -i '59,77s/^#//' $KUSTOMIZATION_FILE_PATH
-          sed -i '90,107s/^#//' $KUSTOMIZATION_FILE_PATH
-          sed -i '120,234s/^#//' $KUSTOMIZATION_FILE_PATH
-          sed -i '236,251s/^#//' $KUSTOMIZATION_FILE_PATH
           cd testdata/project-v4-multigroup
           go mod tidy
 
