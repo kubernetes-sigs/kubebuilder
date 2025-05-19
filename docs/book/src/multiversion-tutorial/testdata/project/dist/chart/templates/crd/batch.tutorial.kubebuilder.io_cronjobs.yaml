@@ -22,7 +22,7 @@ spec:
       clientConfig:
         service:
           namespace: {{ .Release.Namespace }}
-          name: webhook-service
+          name: project-webhook-service
           path: /convert
       conversionReviewVersions:
       - v1
