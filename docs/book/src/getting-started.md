@@ -353,7 +353,7 @@ if err := ctrl.SetControllerReference(memcached, dep, r.Scheme); err != nil {
 
 <aside class="note">
 
-<h1>`ownerRef` and  cascading event</h1>
+<h1><code>ownerRef</code> and Cascading Events</h1>
 
 The ownerRef is crucial not only for allowing us to observe changes on the specific resource but also because,
 if we delete the Memcached Custom Resource (CR) from the cluster, we want all resources owned by it to be automatically
@@ -385,7 +385,7 @@ how it is implemented in our example:
 // +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch
 ```
 
-After making changes to the controller, run the make generate command. This will prompt [controller-gen][controller-gen]
+After making changes to the controller, run the make manifests command. This will prompt [controller-gen][controller-gen]
 to refresh the files located under `config/rbac`.
 
 <details><summary><code>config/rbac/role.yaml</code>: Our RBAC Role generated </summary>
