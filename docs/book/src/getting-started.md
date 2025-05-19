@@ -385,7 +385,7 @@ how it is implemented in our example:
 // +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch
 ```
 
-After making changes to the controller, run the make generate command. This will prompt [controller-gen][controller-gen]
+After making changes to the controller, run the make manifests command. This will prompt [controller-gen][controller-gen]
 to refresh the files located under `config/rbac`.
 
 <details><summary><code>config/rbac/role.yaml</code>: Our RBAC Role generated </summary>
