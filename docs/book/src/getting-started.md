@@ -353,7 +353,7 @@ if err := ctrl.SetControllerReference(memcached, dep, r.Scheme); err != nil {
 
 <aside class="note">
 
-<h1>`ownerRef` and  cascading event</h1>
+<h1><code>ownerRef</code> and Cascading Events</h1>
 
 The ownerRef is crucial not only for allowing us to observe changes on the specific resource but also because,
 if we delete the Memcached Custom Resource (CR) from the cluster, we want all resources owned by it to be automatically
