@@ -48,6 +48,7 @@ type WebhookTest struct {
 func (f *WebhookTest) SetTemplateDefaults() error {
 	if f.Path == "" {
 		// Deprecated: Remove me when remove go/v4
+		//nolint:goconst
 		baseDir := "api"
 		if !f.IsLegacyPath {
 			baseDir = filepath.Join("internal", "webhook")

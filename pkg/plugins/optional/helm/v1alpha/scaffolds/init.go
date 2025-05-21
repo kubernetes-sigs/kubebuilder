@@ -424,6 +424,9 @@ func copyFileWithHelmLogic(srcFile, destFile, subDir, projectName string, hasCon
   labels:
     {{- include "chart.labels" . | nindent 4 }}`, 1)
 
+	// Append project name to webhook service name
+	contentStr = strings.ReplaceAll(contentStr, "name: webhook-service", "name: "+projectName+"-webhook-service")
+
 	var wrappedContent string
 	if isMetricRBACFile(subDir, srcFile) {
 		wrappedContent = fmt.Sprintf(

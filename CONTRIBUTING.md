@@ -80,9 +80,8 @@ To manually setup run:
 ```shell
 # To generate an Kubebuilder local binary with your changes
 make install
-# To create the cluster and configure a CNI which supports NetworkPolicy
+# To create the cluster
 kind create cluster --config ./test/e2e/kind-config.yaml
-kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
 ```
 
 Now, you can for example, run in debug mode the `test/e2e/v4/e2e_suite_test.go`:

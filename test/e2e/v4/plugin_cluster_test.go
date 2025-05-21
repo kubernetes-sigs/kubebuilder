@@ -207,18 +207,6 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 	Expect(err).NotTo(HaveOccurred())
 
 	if hasNetworkPolicies {
-		By("Checking for Calico pods")
-		var outputGet string
-		outputGet, err = kbc.Kubectl.Get(
-			false,
-			"pods",
-			"-n", "kube-system",
-			"-l", "k8s-app=calico-node",
-			"-o", "jsonpath={.items[*].status.phase}",
-		)
-		Expect(err).NotTo(HaveOccurred(), "Failed to get Calico pods")
-		Expect(outputGet).To(ContainSubstring("Running"), "All Calico pods should be in Running state")
-
 		if hasMetrics {
 			By("labeling the namespace to allow consume the metrics")
 			Expect(kbc.Kubectl.Command("label", "namespaces", kbc.Kubectl.Namespace,

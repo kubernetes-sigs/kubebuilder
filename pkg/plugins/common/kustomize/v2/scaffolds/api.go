@@ -91,8 +91,6 @@ func (s *apiScaffolder) Scaffold() error {
 			}
 		}
 
-		//nolint:goconst
-		kustomizeFilePath := "config/default/kustomization.yaml"
 		err := pluginutil.UncommentCode(kustomizeFilePath, "#- ../crd", `#`)
 		if err != nil {
 			hasCRUncommented, errCheck := pluginutil.HasFileContentWith(kustomizeFilePath, "- ../crd")
