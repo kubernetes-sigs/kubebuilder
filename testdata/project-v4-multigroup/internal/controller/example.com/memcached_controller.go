@@ -123,12 +123,7 @@ func (r *MemcachedReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	// More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers
 	if !controllerutil.ContainsFinalizer(memcached, memcachedFinalizer) {
 		log.Info("Adding Finalizer for Memcached")
-		if ok := controllerutil.AddFinalizer(memcached, memcachedFinalizer); !ok {
-			err = fmt.Errorf("finalizer for Memcached was not added")
-			log.Error(err, "Failed to add finalizer for Memcached")
-			return ctrl.Result{}, err
-		}
-
+		controllerutil.AddFinalizer(memcached, memcachedFinalizer)
 		if err = r.Update(ctx, memcached); err != nil {
 			log.Error(err, "Failed to update custom resource to add finalizer")
 			return ctrl.Result{}, err
