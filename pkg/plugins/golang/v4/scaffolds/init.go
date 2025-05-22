@@ -40,7 +40,7 @@ const (
 	// GolangciLintVersion is the golangci-lint version to be used in the project
 	GolangciLintVersion = "v2.1.0"
 	// ControllerRuntimeVersion is the kubernetes-sigs/controller-runtime version to be used in the project
-	ControllerRuntimeVersion = "v0.20.4"
+	ControllerRuntimeVersion = "v0.21.0"
 	// ControllerToolsVersion is the kubernetes-sigs/controller-tools version to be used in the project
 	ControllerToolsVersion = "v0.18.0"
 
