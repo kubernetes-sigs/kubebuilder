@@ -35,6 +35,7 @@ function convert_to_tools_ver {
   "1.30") echo "1.30.0";;
   "1.31") echo "1.31.0";;
   "1.32") echo "1.32.0";;
+  "1.33") echo "1.33.0";;
   *)
     echo "k8s version $k8s_ver not supported"
     exit 1
