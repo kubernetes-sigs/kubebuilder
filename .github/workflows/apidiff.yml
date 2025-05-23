@@ -24,7 +24,7 @@ jobs:
         with:
           go-version-file: go.mod
       - name: Execute go-apidiff
-        uses: joelanford/go-apidiff@v0.8.2
+        uses: joelanford/go-apidiff@v0.8.3
         with:
           compare-imports: true
           print-compatible: true
