@@ -63,8 +63,8 @@ func versionString() string {
 	})
 }
 
-// GetKubebuilderVersion returns only the CLI version string
-func GetKubebuilderVersion() string {
+// getKubebuilderVersion returns only the CLI version string
+func getKubebuilderVersion() string {
 	if kubeBuilderVersion == unknown {
 		if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "" {
 			kubeBuilderVersion = info.Main.Version
