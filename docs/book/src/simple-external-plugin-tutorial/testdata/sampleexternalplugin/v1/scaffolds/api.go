@@ -32,16 +32,34 @@ var ApiFlags = []external.Flag{
 		Type:    "int",
 		Usage:   "set a number to be added to the scaffolded apiFile.txt",
 	},
+	{
+		Name:    "group",
+		Default: "",
+		Type:    "string",
+		Usage:   "API group name (e.g., 'example')",
+	},
+	{
+		Name:    "version",
+		Default: "",
+		Type:    "string",
+		Usage:   "API version (e.g., 'v1alpha1')",
+	},
+	{
+		Name:    "kind",
+		Default: "",
+		Type:    "string",
+		Usage:   "API kind (e.g., 'ExampleKind')",
+	},
 }
 
 var ApiMeta = plugin.SubcommandMetadata{
 	Description: "The `create api` subcommand of the sampleexternalplugin is meant to create an api for a project via Kubebuilder. It scaffolds a single file: `apiFile.txt`",
 	Examples: `
 	Scaffold with the defaults:
-	$ kubebuilder create api --plugins sampleexternalplugin/v1
+	$ kubebuilder create api --plugins sampleexternalplugin/v1 --group samplegroup --version v1 --kind SampleKind
 
 	Scaffold with a specific number in the apiFile.txt file:
-	$ kubebuilder create api --plugins sampleexternalplugin/v1 --number 2
+	$ kubebuilder create api --plugins sampleexternalplugin/v1 --number 2 --group samplegroup --version v1 --kind SampleKind
 	`,
 }
 
@@ -53,9 +71,12 @@ func ApiCmd(pr *external.PluginRequest) external.PluginResponse {
 		Universe:   pr.Universe,
 	}
 
-	// Here is an example of parsing a flag from a Kubebuilder external plugin request
 	flags := pflag.NewFlagSet("apiFlags", pflag.ContinueOnError)
 	flags.Int("number", 1, "set a number to be added in the scaffolded apiFile.txt")
+	flags.String("group", "", "API group name")
+	flags.String("version", "", "API version")
+	flags.String("kind", "", "API kind")
+
 	if err := flags.Parse(pr.Args); err != nil {
 		pluginResponse.Error = true
 		pluginResponse.ErrorMsgs = []string{
@@ -63,15 +84,33 @@ func ApiCmd(pr *external.PluginRequest) external.PluginResponse {
 		}
 		return pluginResponse
 	}
-	number, _ := flags.GetInt("number")
 
-	apiFile := api.NewApiFile(api.WithNumber(number))
+	number, _ := flags.GetInt("number")
+	group, _ := flags.GetString("group")
+	version, _ := flags.GetString("version")
+	kind, _ := flags.GetString("kind")
+
+	// Validate GVK inputs
+	if group == "" || version == "" || kind == "" {
+		pluginResponse.Error = true
+		pluginResponse.ErrorMsgs = []string{
+			"--group, --version, and --kind are required flags",
+		}
+		return pluginResponse
+	}
+
+	// Scaffold API file using all values
+	apiFile := api.NewApiFile(
+		api.WithNumber(number),
+		api.WithGroup(group),
+		api.WithVersion(version),
+		api.WithKind(kind),
+	)
 
 	// Phase 2 Plugins uses the concept of a "universe" to represent the filesystem for a plugin.
 	// This universe is a key:value mapping of filename:contents. Here we are adding the file
 	// "apiFile.txt" to the universe with some content. When this is returned Kubebuilder will
 	// take all values within the "universe" and write them to the user's filesystem.
 	pluginResponse.Universe[apiFile.Name] = apiFile.Contents
-
 	return pluginResponse
 }

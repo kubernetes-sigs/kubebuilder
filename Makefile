@@ -184,6 +184,11 @@ test-book: ## Run the cronjob tutorial's unit tests to make sure we don't break 
 test-license:  ## Run the license check
 	./test/check-license.sh
 
+.PHONY: test-external-plugin
+test-external-plugin: install  ## Run tests for external plugin
+	make -C docs/book/src/simple-external-plugin-tutorial/testdata/sampleexternalplugin/v1 install
+	make -C docs/book/src/simple-external-plugin-tutorial/testdata/sampleexternalplugin/v1 test-plugin
+
 .PHONY: test-spaces
 test-spaces:  ## Run the trailing spaces check
 	./test/check_spaces.sh

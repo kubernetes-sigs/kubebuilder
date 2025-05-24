@@ -35,6 +35,10 @@ help: ## Display this help.
 
 ##@ Development
 
+.PHONY: tidy
+tidy: ## Run go mod tidy against code.
+	go mod tidy
+
 .PHONY: fmt
 fmt: ## Run go fmt against code.
 	go fmt ./...
@@ -46,5 +50,16 @@ vet: ## Run go vet against code.
 ##@ Build
 
 .PHONY: build
-build: fmt vet ## Build manager binary.
+build: tidy fmt vet ## Build manager binary.
 	go build -o ./bin/sampleexternalplugin
+
+.PHONY: install
+install: build ## Build and install the binary with the current source code. Use it to test your changes locally.
+	rm -f $(GOBIN)/sampleexternalplugin
+	cp ./bin/sampleexternalplugin $(GOBIN)/sampleexternalplugin
+	# Make the binary discoverable for kubebuilder
+	./install.sh
+
+.PHONY: test-plugin
+test-plugin: ## Run the plugin test.
+	./test/test.sh
