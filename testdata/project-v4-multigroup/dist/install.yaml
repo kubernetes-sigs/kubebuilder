@@ -734,6 +734,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
+    cert-manager.io/inject-ca-from: project-v4-multigroup-system/project-v4-multigroup-serving-cert
     controller-gen.kubebuilder.io/version: v0.18.0
   name: wordpresses.example.com.testproject.org
 spec:
@@ -2172,9 +2173,56 @@ spec:
         secret:
           secretName: webhook-server-cert
 ---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: project-v4-multigroup
+  name: project-v4-multigroup-metrics-certs
+  namespace: project-v4-multigroup-system
+spec:
+  dnsNames:
+  - SERVICE_NAME.SERVICE_NAMESPACE.svc
+  - SERVICE_NAME.SERVICE_NAMESPACE.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: project-v4-multigroup-selfsigned-issuer
+  secretName: metrics-server-cert
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: project-v4-multigroup
+  name: project-v4-multigroup-serving-cert
+  namespace: project-v4-multigroup-system
+spec:
+  dnsNames:
+  - project-v4-multigroup-webhook-service.project-v4-multigroup-system.svc
+  - project-v4-multigroup-webhook-service.project-v4-multigroup-system.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: project-v4-multigroup-selfsigned-issuer
+  secretName: webhook-server-cert
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: project-v4-multigroup
+  name: project-v4-multigroup-selfsigned-issuer
+  namespace: project-v4-multigroup-system
+spec:
+  selfSigned: {}
+---
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: project-v4-multigroup-system/project-v4-multigroup-serving-cert
   name: project-v4-multigroup-mutating-webhook-configuration
 webhooks:
 - admissionReviewVersions:
@@ -2261,6 +2309,8 @@ webhooks:
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: project-v4-multigroup-system/project-v4-multigroup-serving-cert
   name: project-v4-multigroup-validating-webhook-configuration
 webhooks:
 - admissionReviewVersions:

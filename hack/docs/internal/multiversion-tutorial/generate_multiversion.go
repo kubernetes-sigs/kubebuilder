@@ -103,7 +103,6 @@ func (sp *Sample) UpdateTutorial() {
 	sp.updateConversionFiles()
 	sp.updateSampleV2()
 	sp.updateMain()
-	sp.updateDefaultKustomize()
 }
 
 func (sp *Sample) updateCronjobV1DueForce() {
@@ -279,20 +278,6 @@ interfaces, a conversion webhook will be registered.
 
 	`)
 	hackutils.CheckError("fix cronjob v1 tests after each", err)
-}
-
-func (sp *Sample) updateDefaultKustomize() {
-	// Enable CA for Conversion Webhook
-	err := pluginutil.UncommentCode(
-		filepath.Join(sp.ctx.Dir, "config/default/kustomization.yaml"),
-		caInjectionNamespace, `#`)
-	hackutils.CheckError("fixing default/kustomization", err)
-
-	// Enable CA for Conversion Webhook
-	err = pluginutil.UncommentCode(
-		filepath.Join(sp.ctx.Dir, "config/default/kustomization.yaml"),
-		caInjectionCert, `#`)
-	hackutils.CheckError("fixing default/kustomization", err)
 }
 
 func (sp *Sample) updateSampleV2() {
