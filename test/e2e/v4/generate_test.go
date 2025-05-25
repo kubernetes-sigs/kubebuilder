@@ -430,13 +430,13 @@ func scaffoldConversionWebhook(kbc *utils.TestContext) {
 	)).NotTo(HaveOccurred(), "failed to add replicas spec to conversiontest_conversion.go v2")
 
 	err = pluginutil.ReplaceInFile(filepath.Join(kbc.Dir, "api/v2/conversiontest_conversion.go"),
-		"// TODO(user): Implement conversion logic from v1 to v2",
-		`src.Spec.Size = dst.Spec.Replicas`)
+		"// dst.Spec.Size = src.Spec.Replicas",
+		"dst.Spec.Size = src.Spec.Replicas")
 	Expect(err).NotTo(HaveOccurred(), "failed to implement conversion logic from v1 to v2")
 
 	err = pluginutil.ReplaceInFile(filepath.Join(kbc.Dir, "api/v2/conversiontest_conversion.go"),
-		"// TODO(user): Implement conversion logic from v2 to v1",
-		`src.Spec.Replicas = dst.Spec.Size`)
+		"// dst.Spec.Replicas = src.Spec.Size",
+		"dst.Spec.Replicas = src.Spec.Size")
 	Expect(err).NotTo(HaveOccurred(), "failed to implement conversion logic from v2 to v1")
 }
 
