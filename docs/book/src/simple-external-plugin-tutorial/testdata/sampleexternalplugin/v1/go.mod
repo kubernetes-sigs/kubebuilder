@@ -4,7 +4,7 @@ go 1.24.0
 
 require (
 	github.com/spf13/pflag v1.0.6
-	sigs.k8s.io/kubebuilder/v4 v4.5.2
+	sigs.k8s.io/kubebuilder/v4 v4.6.0
 )
 
 require (
