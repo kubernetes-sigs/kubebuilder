@@ -256,7 +256,7 @@ func (s *initScaffolder) copyConfigFiles() error {
 		}
 
 		// Ensure destination directory exists
-		if err := os.MkdirAll(dir.DestDir, os.ModePerm); err != nil {
+		if err := os.MkdirAll(dir.DestDir, 0o755); err != nil {
 			return fmt.Errorf("failed to create directory %q: %w", dir.DestDir, err)
 		}
 
@@ -436,11 +436,11 @@ func copyFileWithHelmLogic(srcFile, destFile, subDir, projectName string, hasCon
 			"{{- if .Values.%s.enable }}\n%s{{- end -}}\n", subDir, contentStr)
 	}
 
-	if err = os.MkdirAll(filepath.Dir(destFile), os.ModePerm); err != nil {
+	if err = os.MkdirAll(filepath.Dir(destFile), 0o755); err != nil {
 		return fmt.Errorf("error creating directory %q: %w", filepath.Dir(destFile), err)
 	}
 
-	err = os.WriteFile(destFile, []byte(wrappedContent), os.ModePerm)
+	err = os.WriteFile(destFile, []byte(wrappedContent), 0o644)
 	if err != nil {
 		log.Printf("Error writing destination file: %s", destFile)
 		return fmt.Errorf("error writing destination file %q: %w", destFile, err)
