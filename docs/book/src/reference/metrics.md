@@ -55,7 +55,118 @@ Metrics: metricsserver.Options{
 },
 ```
 
-## Metrics Protection
+## Consuming Controller Metrics in Kubebuilder
+
+You can consume the metrics exposed by the controller using the `curl`
+command or any other HTTP client such as Prometheus.
+
+However, before doing so, ensure that your client has the
+**required RBAC permissions** to access the `/metrics` endpoint.
+
+### Granting Permissions to Access Metrics
+
+Kubebuilder scaffolds a `ClusterRole` with the necessary read permissions under:
+
+```
+config/rbac/metrics_reader_role.yaml
+```
+
+This file contains the required RBAC rules to allow access to the metrics endpoint.
+
+<aside class="note">
+<H1>This ClusterRole is only a helper </H1>
+
+Kubebuilder **does not scaffold a RoleBinding or ClusterRoleBinding by default.**
+This is an intentional design choice to avoid:
+
+- Accidentally binding to the wrong service account,
+- Granting access in restricted environments,
+- Creating conflicts in multi-team or multi-tenant clusters.
+
+</aside>
+
+#### Create a ClusterRoleBinding
+
+You can create the binding via `kubectl`:
+
+```bash
+kubectl create clusterrolebinding metrics \
+  --clusterrole=<project-prefix>-metrics-reader \
+  --serviceaccount=<namespace>:<service-account-name>
+```
+
+Or with a manifest:
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: allow-metrics-access
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: metrics-reader
+subjects:
+- kind: ServiceAccount
+  name: controller-manager
+  namespace: system # Replace 'system' with your controller-manager's namespace
+```
+
+<aside class="note">
+<H1>Why this is manual:</H1>
+
+Kubebuilder avoids scaffolding RoleBindings by default because it might:
+ - Bind to the wrong ServiceAccount
+ - Grant access unnecessarily
+ - Cause problems in restricted or multi-tenant clusters
+    - This design provides safety and flexibility, but requires manual binding.
+</aside>
+
+### Testing the Metrics Endpoint (via Curl Pod)
+
+If you'd like to manually test access to the metrics endpoint, follow these steps:
+
+- Create Role Binding
+
+```bash
+kubectl create clusterrolebinding <project-name>-metrics-binding \
+  --clusterrole=<project-name>-metrics-reader \
+  --serviceaccount=<project-name>-system:<project-name>-controller-manager
+```
+
+- Generate a Token
+
+```bash
+export TOKEN=$(kubectl create token <project-name>-controller-manager -n <project-name>-system)
+echo $TOKEN
+```
+
+- Launch Curl Pod
+
+```bash
+kubectl run curl-metrics --rm -it --restart=Never \
+  --image=curlimages/curl:7.87.0 -n <project-name>-system -- /bin/sh
+```
+
+- Call Metrics Endpoint
+
+Inside the pod, use:
+
+```bash
+curl -v -k -H "Authorization: Bearer $TOKEN" \
+  https://<project-name>-controller-manager-metrics-service.<project-name>-system.svc.cluster.local:8443/metrics
+```
+
+<aside class="note">
+<H1>Notes</H1>
+
+- Replace `<project-name>`, `<namespace>`, and `<service-account-name>` accordingly.
+- Ensure TLS is enabled and certificates are valid if not skipping verification (`-k`).
+
+Check the options to protect your metrics endpoint in the next sections.
+</aside>
+
+## Metrics Protection and available options
 
 Unprotected metrics endpoints can expose valuable data to unauthorized users,
 such as system performance, application behavior, and potentially confidential
