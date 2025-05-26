@@ -48,16 +48,17 @@ type WebhookTest struct {
 func (f *WebhookTest) SetTemplateDefaults() error {
 	if f.Path == "" {
 		// Deprecated: Remove me when remove go/v4
-		//nolint:goconst
-		baseDir := "api"
+
+		const baseDir = "api"
+		pathAPI := baseDir
 		if !f.IsLegacyPath {
-			baseDir = filepath.Join("internal", "webhook")
+			pathAPI = filepath.Join("internal", "webhook")
 		}
 
 		if f.MultiGroup && f.Resource.Group != "" {
-			f.Path = filepath.Join(baseDir, "%[group]", "%[version]", "%[kind]_webhook_test.go")
+			f.Path = filepath.Join(pathAPI, "%[group]", "%[version]", "%[kind]_webhook_test.go")
 		} else {
-			f.Path = filepath.Join(baseDir, "%[version]", "%[kind]_webhook_test.go")
+			f.Path = filepath.Join(pathAPI, "%[version]", "%[kind]_webhook_test.go")
 		}
 	}
 	f.Path = f.Resource.Replacer().Replace(f.Path)
