@@ -389,26 +389,35 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 		By("modifying the ConversionTest CR sample to set `size` for conversion testing")
 		conversionCRFile := filepath.Join("config", "samples",
 			fmt.Sprintf("%s_v1_conversiontest.yaml", kbc.Group))
-		conversionCRPath, err := filepath.Abs(filepath.Join(fmt.Sprintf("e2e-%s", kbc.TestSuffix), conversionCRFile))
-		Expect(err).To(Not(HaveOccurred()))
+		conversionCRPath := filepath.Join(kbc.Dir, conversionCRFile)
 
 		// Edit the file to include `size` in the spec field for v1
-		f, err := os.OpenFile(conversionCRPath, os.O_APPEND|os.O_WRONLY, 0o644)
-		Expect(err).To(Not(HaveOccurred()))
-		defer func() {
-			err = f.Close()
-			Expect(err).To(Not(HaveOccurred()))
-		}()
-		_, err = f.WriteString("\nspec:\n  size: 3")
-		Expect(err).To(Not(HaveOccurred()))
+		err = util.ReplaceInFile(conversionCRPath, "# TODO(user): Add fields here", `size: 3`)
+		Expect(err).NotTo(HaveOccurred(), "failed to replace spec in ConversionTest CR sample")
 
 		// Apply the ConversionTest Custom Resource in v1
 		By("applying the modified ConversionTest CR in v1 for conversion")
 		_, err = kbc.Kubectl.Apply(true, "-f", conversionCRPath)
 		Expect(err).NotTo(HaveOccurred(), "failed to apply modified ConversionTest CR")
 
-		// TODO: Add validation to check the conversion
-		// the v2 should have spec.replicas == 3
+		By("waiting for the ConversionTest CR to appear")
+		Eventually(func(g Gomega) {
+			_, err := kbc.Kubectl.Get(true, "conversiontest", "conversiontest-sample")
+			g.Expect(err).NotTo(HaveOccurred(), "expected the ConversionTest CR to exist")
+		}, time.Minute, time.Second).Should(Succeed())
+
+		By("validating that the converted resource in v2 has replicas == 3")
+		Eventually(func(g Gomega) {
+			out, err := kbc.Kubectl.Get(
+				true,
+				"conversiontest", "conversiontest-sample",
+				"-o", "jsonpath={.spec.replicas}",
+			)
+			g.Expect(err).NotTo(HaveOccurred(), "failed to get converted resource in v2")
+			replicas, err := strconv.Atoi(out)
+			g.Expect(err).NotTo(HaveOccurred(), "replicas field is not an integer")
+			g.Expect(replicas).To(Equal(3), "expected replicas to be 3 after conversion")
+		}, time.Minute, time.Second).Should(Succeed())
 
 		if hasMetrics {
 			By("validating conversion metrics to confirm conversion operations")

@@ -355,12 +355,22 @@ methods to convert to/from the hub version.
 	hackutils.CheckError("adding comment to hub v2", err)
 
 	err = pluginutil.ReplaceInFile(path,
-		"// TODO(user): Implement conversion logic from v2 to v1",
+		`// TODO(user): Implement conversion logic from v2 to v1
+	// Example: Copying Spec fields
+	// dst.Spec.Size = src.Spec.Replicas
+
+	// Copy ObjectMeta to preserve name, namespace, labels, etc.
+	dst.ObjectMeta = src.ObjectMeta`,
 		hubV2CovertTo)
 	hackutils.CheckError("replace covertTo at hub v2", err)
 
 	err = pluginutil.ReplaceInFile(path,
-		"// TODO(user): Implement conversion logic from v1 to v2",
+		`// TODO(user): Implement conversion logic from v1 to v2
+	// Example: Copying Spec fields
+	// dst.Spec.Replicas = src.Spec.Size
+
+	// Copy ObjectMeta to preserve name, namespace, labels, etc.
+	dst.ObjectMeta = src.ObjectMeta`,
 		hubV2ConvertFromCode)
 	hackutils.CheckError("replace covert from at hub v2", err)
 

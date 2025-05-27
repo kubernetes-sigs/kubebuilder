@@ -79,8 +79,14 @@ func (src *{{ .Resource.Kind }}) ConvertTo(dstRaw conversion.Hub) error {
 	dst := dstRaw.(*{{ .Resource.ImportAlias }}.{{ .Resource.Kind }})
 	log.Printf("ConvertTo: Converting {{ .Resource.Kind }} from Spoke version {{ .SpokeVersion }} to Hub version {{ .Resource.Version }};" +
 		"source: %s/%s, target: %s/%s", src.Namespace, src.Name, dst.Namespace, dst.Name)
-
+	
 	// TODO(user): Implement conversion logic from {{ .SpokeVersion }} to {{ .Resource.Version }}
+	// Example: Copying Spec fields
+	// dst.Spec.Size = src.Spec.Replicas
+
+	// Copy ObjectMeta to preserve name, namespace, labels, etc.
+	dst.ObjectMeta = src.ObjectMeta
+
 	return nil
 }
 
@@ -91,6 +97,12 @@ func (dst *{{ .Resource.Kind }}) ConvertFrom(srcRaw conversion.Hub) error {
 		"source: %s/%s, target: %s/%s", src.Namespace, src.Name, dst.Namespace, dst.Name)
 
 	// TODO(user): Implement conversion logic from {{ .Resource.Version }} to {{ .SpokeVersion }}
+	// Example: Copying Spec fields
+	// dst.Spec.Replicas = src.Spec.Size
+
+	// Copy ObjectMeta to preserve name, namespace, labels, etc.
+	dst.ObjectMeta = src.ObjectMeta
+
 	return nil
 }
 `
