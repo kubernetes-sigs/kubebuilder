@@ -329,7 +329,7 @@ seems to be very promising.
 
 - **Manual Update Workflow**: Continue with manual updates where users regenerate
 and merge changes independently, though this is time-consuming and error-prone.
-- **Use alpha generate command**: Continue with updates partial automated provided
+- **Use alpha generate command**: Continue with partially automated updates provided
 by the alpha generate command.
 - **Dependabot Integration**: Leverage Dependabot for dependency updates, though this
 doesn’t fully support scaffold updates and could lead to incomplete upgrades.
