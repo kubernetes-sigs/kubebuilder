@@ -87,7 +87,7 @@ func (r *BackupBusyboxReconciler) SetupWithManager(mgr ctrl.Manager) error {
     return ctrl.NewControllerManagedBy(mgr).
         For(&examplecomv1alpha1.BackupBusybox{}).  // Watch the primary resource (BackupBusybox)
         Watches(
-            &source.Kind{Type: &examplecomv1alpha1.Busybox{}},  // Watch the Busybox CR
+            &examplecomv1alpha1.Busybox{},  // Watch the Busybox CR
             handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, obj client.Object) []reconcile.Request {
                 return []reconcile.Request{
                     {
