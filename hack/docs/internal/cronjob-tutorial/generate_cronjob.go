@@ -612,11 +612,6 @@ func (sp *Sample) updateKustomization() {
 	var err error
 	err = pluginutil.UncommentCode(
 		filepath.Join(sp.ctx.Dir, "config/default/kustomization.yaml"),
-		`#- ../certmanager`, `#`)
-	hackutils.CheckError("fixing default/kustomization", err)
-
-	err = pluginutil.UncommentCode(
-		filepath.Join(sp.ctx.Dir, "config/default/kustomization.yaml"),
 		`#- ../prometheus`, `#`)
 	hackutils.CheckError("fixing default/kustomization", err)
 
@@ -637,7 +632,7 @@ func (sp *Sample) updateKustomization() {
 
 	err = pluginutil.UncommentCode(
 		filepath.Join(sp.ctx.Dir, "config/default/kustomization.yaml"),
-		certManagerForMetricsAndWebhooks, `#`)
+		certManagerForMetrics, `#`)
 	hackutils.CheckError("fixing default/kustomization", err)
 }
 
