@@ -79,7 +79,7 @@ log := log.FromContext(ctx)
 
 > Furthermore, branches allows a better resolution strategy,
 > since allows us use kubebuilder alpha generate to-rescaffold the projects
-> using the same name directory and provide a better hsitory for the PRs
+> using the same name directory and provide a better history for the PRs
 > allowing users to see the changes and have better insights for conflicts
 > resolution.
 
