@@ -71,6 +71,17 @@ func (opts *Generate) Generate() error {
 				log.Error("Cleanup failed:", err)
 				return fmt.Errorf("cleanup failed: %w", err)
 			}
+
+			// Note that we should remove ALL files except the PROJECT file and .git directory
+			cleanupCmd = fmt.Sprintf(
+				`find %q -mindepth 1 -maxdepth 1 ! -name '.git' ! -name 'PROJECT' -exec rm -rf {} +`,
+				opts.OutputDir,
+			)
+			err = util.RunCmd("Running cleanup", "sh", "-c", cleanupCmd)
+			if err != nil {
+				log.Error("Cleanup failed:", err)
+				return fmt.Errorf("cleanup failed: %w", err)
+			}
 		}
 	}
 
