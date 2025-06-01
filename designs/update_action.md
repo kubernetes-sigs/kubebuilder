@@ -55,7 +55,7 @@ them before completing the update.
 **GitHub Actions Workflow**:
 
 If conflicts arise during the merge, the action will create a pull request and
-the conflicst will be highlighted in the PR. Developers can then review and resolve
+the conflicts will be highlighted in the PR. Developers can then review and resolve
 them. The PR will contains the default markers:
 
 **Example**
