@@ -136,7 +136,7 @@ We can define an `--output` directory and a configuration for the GitHub Action 
 ### 6. How could AI help us solve conflicts? Are there any available solutions?
 
 While AI tools like GitHub Copilot can assist in code generation and provide suggestions,
-however, it might be risky be 100% dependent on AI for conflict resolution, especially in complex scenarios.
+however, it might be risky to be 100% dependent on AI for conflict resolution, especially in complex scenarios.
 Therefore, we might want to use AI as a complementary tool rather than a primary solution.
 
 AI can help by:
