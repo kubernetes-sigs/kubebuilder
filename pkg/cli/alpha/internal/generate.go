@@ -104,7 +104,18 @@ func (opts *Generate) Generate() error {
 		}
 	}
 
-	return migrateDeployImagePlugin(projectConfig)
+	if err = migrateDeployImagePlugin(projectConfig); err != nil {
+		return fmt.Errorf("error migrating deploy-image plugin: %w", err)
+	}
+
+	log.Info("Running: make manifests generate fmt vet lint-fix")
+	err = util.RunCmd("Running make targets", "make", "manifests", "generate", "fmt", "vet", "lint-fix")
+	if err != nil {
+		log.Error("Post-scaffold make commands failed:", err)
+		return fmt.Errorf("post-scaffold make commands failed: %w", err)
+	}
+
+	return nil
 }
 
 // Validate ensures the options are valid and kubebuilder is installed.
