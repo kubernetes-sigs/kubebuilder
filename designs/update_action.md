@@ -70,7 +70,7 @@ log := log.FromContext(ctx)
 
 ## Open Questions
 
-### 1. Do we need to create branches to perform the three-way merge,or can we use local temporary directories?
+### 1. Do we need to create branches to perform the three-way merge, or can we use local temporary directories?
 
 > While temporary directories are sufficient for simple three-way merges, branches are better suited for complex scenarios.
 > They provide history tracking, support collaboration, integrate with CI/CD workflows, and offer more advanced
