@@ -77,7 +77,7 @@ log := log.FromContext(ctx)
 > conflict resolution through Git’s merge command. For these reasons, it seems more appropriate to use branches to ensure
 > flexibility and maintainability in the merging process.
 
-> Furthermore, branches allows a better resolution strategy,
+> Furthermore, branches allow a better resolution strategy,
 > since allows us use kubebuilder alpha generate to-rescaffold the projects
 > using the same name directory and provide a better history for the PRs
 > allowing users to see the changes and have better insights for conflicts
