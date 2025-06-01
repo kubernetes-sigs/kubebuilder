@@ -40,7 +40,6 @@ type WordpressStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:storageversion
-// +kubebuilder:conversion:hub
 // +kubebuilder:subresource:status
 
 // Wordpress is the Schema for the wordpresses API.
