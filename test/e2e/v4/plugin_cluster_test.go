@@ -600,7 +600,7 @@ func cmdOptsToCreateCurlPod(kbc *utils.TestContext, token string) []string {
 						}
 					}
 				}],
-				"serviceAccount": "%s"
+				"serviceAccountName": "%s"
 			}
     }`, token, kbc.TestSuffix, kbc.Kubectl.Namespace, kbc.Kubectl.ServiceAccount),
 	}

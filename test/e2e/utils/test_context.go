@@ -336,19 +336,31 @@ func (t *TestContext) AllowProjectBeMultiGroup() error {
 	return nil
 }
 
-// InstallHelm installs Helm in the e2e server.
 func (t *TestContext) InstallHelm() error {
-	helmInstallScript := "https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3"
-	cmd := exec.Command("bash", "-c", fmt.Sprintf("curl -fsSL %s | bash", helmInstallScript))
-	_, err := t.Run(cmd)
-	if err != nil {
-		return err
+	scriptURL := "https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3"
+	scriptPath := filepath.Join(t.Dir, "get_helm.sh")
+
+	// Download script
+	cmd := exec.Command("curl", "-fsSL", "-o", scriptPath, scriptURL)
+	if _, err := t.Run(cmd); err != nil {
+		return fmt.Errorf("failed to download Helm install script: %w", err)
 	}
 
-	verifyCmd := exec.Command("helm", "version")
-	_, err = t.Run(verifyCmd)
-	if err != nil {
-		return err
+	// Make executable
+	if err := os.Chmod(scriptPath, 0700); err != nil {
+		return fmt.Errorf("failed to chmod Helm install script: %w", err)
+	}
+
+	// Execute install
+	cmd = exec.Command(scriptPath)
+	if _, err := t.Run(cmd); err != nil {
+		return fmt.Errorf("failed to run Helm install script: %w", err)
+	}
+
+	// Verify installation
+	cmd = exec.Command("helm", "version")
+	if _, err := t.Run(cmd); err != nil {
+		return fmt.Errorf("helm installation verification failed: %w", err)
 	}
 
 	return nil
