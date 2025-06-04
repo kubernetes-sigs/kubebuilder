@@ -115,7 +115,7 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 	err = kbc.CreateManagerNamespace()
 	Expect(err).NotTo(HaveOccurred())
 
-	By("labeling the namespace to enforce the restricted security policy")
+	By("test labeling the namespace to enforce the restricted security policy")
 	err = kbc.LabelNamespacesToEnforceRestricted()
 	Expect(err).NotTo(HaveOccurred())
 
