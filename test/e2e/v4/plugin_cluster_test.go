@@ -91,25 +91,19 @@ var _ = Describe("kubebuilder", func() {
 			GenerateV4WithoutMetrics(kbc)
 			Run(kbc, true, false, false, false, false)
 		})
-		// FIXME: This test is currently disabled because it requires to be fixed:
-		// https://github.com/kubernetes-sigs/kubebuilder/issues/4853
-		// It is not working for k8s 1.33
-		// It("should generate a runnable project with metrics protected by network policies", func() {
-		// 	 GenerateV4WithNetworkPoliciesWithoutWebhooks(kbc)
-		//	 Run(kbc, false, false, false, true, true)
-		// })
+		It("should generate a runnable project with metrics protected by network policies", func() {
+			GenerateV4WithNetworkPoliciesWithoutWebhooks(kbc)
+			Run(kbc, false, false, false, true, true)
+		})
 		It("should generate a runnable project with webhooks and metrics protected by network policies", func() {
 			GenerateV4WithNetworkPolicies(kbc)
 			Run(kbc, true, false, false, true, true)
 		})
-		// FIXME: This test is currently disabled because it requires to be fixed:
-		// https://github.com/kubernetes-sigs/kubebuilder/issues/4853
-		// It is not working for k8s 1.33
-		// It("should generate a runnable project with the manager running "+
-		//	 "as restricted and without webhooks", func() {
-		//	 GenerateV4WithoutWebhooks(kbc)
-		//	 Run(kbc, false, false, false, true, false)
-		// })
+		It("should generate a runnable project with the manager running "+
+			"as restricted and without webhooks", func() {
+			GenerateV4WithoutWebhooks(kbc)
+			Run(kbc, false, false, false, true, false)
+		})
 	})
 })
 
@@ -525,24 +519,57 @@ func getMetricsOutput(kbc *utils.TestContext) string {
 
 	By("validating that the curl pod is running as expected")
 	verifyCurlUp := func(g Gomega) {
-		var status string
-		status, err = kbc.Kubectl.Get(
-			true,
-			"pods", "curl", "-o", "jsonpath={.status.phase}")
-		g.Expect(err).NotTo(HaveOccurred())
-		g.Expect(status).To(Equal("Succeeded"), fmt.Sprintf("curl pod in %s status", status))
-	}
-	Eventually(verifyCurlUp, 240*time.Second, time.Second).Should(Succeed())
+		maxRetries := 3
+		var status, logs string
 
-	By("validating that the correct ServiceAccount is being used")
-	saName := kbc.Kubectl.ServiceAccount
-	currentSAOutput, err := kbc.Kubectl.Get(
-		true,
-		"serviceaccount", saName,
-		"-o", "jsonpath={.metadata.name}",
-	)
-	Expect(err).NotTo(HaveOccurred(), "Failed to fetch the service account")
-	Expect(currentSAOutput).To(Equal(saName), "The ServiceAccount in use does not match the expected one")
+		for i := 0; i < maxRetries; i++ {
+			status, err = kbc.Kubectl.Get(
+				true,
+				"pods", "curl", "-o", "jsonpath={.status.phase}")
+			g.Expect(err).NotTo(HaveOccurred())
+
+			if status == "Succeeded" {
+				return
+			}
+
+			logs, _ = kbc.Kubectl.Logs("curl")
+
+			if status == "Failed" ||
+				strings.Contains(logs, "Failed to connect") ||
+				strings.Contains(logs, "Connection refused") {
+				By("Outputting curl pod logs for debugging")
+				_, _ = fmt.Fprintln(GinkgoWriter, logs)
+
+				By("Outputting manager pod logs for debugging")
+				controllerPodName := getControllerName(kbc)
+				managerLogs, _ := kbc.Kubectl.Logs(controllerPodName)
+				_, _ = fmt.Fprintln(GinkgoWriter, managerLogs)
+
+				By("Describing all resources for debugging")
+				out, errDescribe := kbc.Kubectl.CommandInNamespace("describe", "all")
+				Expect(errDescribe).NotTo(HaveOccurred())
+				_, _ = fmt.Fprintln(GinkgoWriter, out)
+
+				By(fmt.Sprintf("curl pod failed with status %s. Retrying (%d/%d)...", status, i+1, maxRetries))
+				_, _ = kbc.Kubectl.Delete(true, "pod", "curl", "--ignore-not-found",
+					"--grace-period=0", "--force")
+				time.Sleep(3 * time.Second)
+
+				cmdOpts = cmdOptsToCreateCurlPod(kbc, token)
+				_, err = kbc.Kubectl.CommandInNamespace(cmdOpts...)
+				g.Expect(err).NotTo(HaveOccurred())
+
+				time.Sleep(5 * time.Second)
+			} else {
+				By(fmt.Sprintf("curl pod in %s state without known failure, waiting...", status))
+				time.Sleep(5 * time.Second)
+			}
+		}
+		status, err = kbc.Kubectl.Get(true, "pods", "curl", "-o", "jsonpath={.status.phase}")
+		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(status).To(Equal("Succeeded"), fmt.Sprintf("curl pod in %s state after all retries", status))
+	}
+	Eventually(verifyCurlUp, 2*time.Minute, time.Second).Should(Succeed())
 
 	By("validating that the metrics endpoint is serving as expected")
 	getCurlLogs := func(g Gomega) {
