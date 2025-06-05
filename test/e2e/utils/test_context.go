@@ -271,6 +271,13 @@ func (t *TestContext) RemoveNamespaceLabelToEnforceRestricted() error {
 	return err
 }
 
+// DeleteTestNamespace deletes the test namespace created for the e2e tests
+func (t *TestContext) DeleteTestNamespace() error {
+	By(fmt.Sprintf("deleting test namespace %s", t.Kubectl.Namespace))
+	_, err := t.Kubectl.Command("delete", "namespace", t.Kubectl.Namespace)
+	return err
+}
+
 // LoadImageToKindCluster loads a local docker image to the kind cluster
 func (t *TestContext) LoadImageToKindCluster() error {
 	cluster := "kind"
