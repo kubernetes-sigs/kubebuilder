@@ -215,7 +215,7 @@ replacements:
          delimiter: '/'
          index: 1
          create: true
-#
+
 # - source: # Uncomment the following block if you have a ConversionWebhook (--conversion)
 #     kind: Certificate
 #     group: cert-manager.io

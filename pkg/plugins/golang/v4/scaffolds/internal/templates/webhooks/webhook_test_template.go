@@ -48,7 +48,6 @@ type WebhookTest struct {
 func (f *WebhookTest) SetTemplateDefaults() error {
 	if f.Path == "" {
 		// Deprecated: Remove me when remove go/v4
-
 		const baseDir = "api"
 		pathAPI := baseDir
 		if !f.IsLegacyPath {
