@@ -66,6 +66,10 @@ var _ = Describe("kubebuilder", func() {
 			By("removing controller image and working dir")
 			kbc.Destroy()
 		})
+		It("should generate a runnable project using the custom path for the webhooks", func() {
+			GenerateV4WithWebhookCustomPath(kbc)
+			Run(kbc, true, false, false, true, false)
+		})
 		It("should generate a runnable project", func() {
 			GenerateV4(kbc)
 			Run(kbc, true, false, false, true, false)
