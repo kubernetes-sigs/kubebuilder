@@ -63,8 +63,13 @@ var _ = Describe("kubebuilder", func() {
 			By("clean up API objects created during the test")
 			_ = kbc.Make("undeploy")
 
+			By("clean up API objects created during the test")
+			_ = kbc.Make("uninstall")
+
 			By("removing controller image and working dir")
 			kbc.Destroy()
+
+			_ = kbc.DeleteTestNamespace()
 		})
 		It("should generate a runnable project", func() {
 			GenerateV4(kbc)
@@ -88,25 +93,19 @@ var _ = Describe("kubebuilder", func() {
 			GenerateV4WithoutMetrics(kbc)
 			Run(kbc, true, false, false, false, false)
 		})
-		// FIXME: This test is currently disabled because it requires to be fixed:
-		// https://github.com/kubernetes-sigs/kubebuilder/issues/4853
-		// It is not working for k8s 1.33
-		// It("should generate a runnable project with metrics protected by network policies", func() {
-		// 	 GenerateV4WithNetworkPoliciesWithoutWebhooks(kbc)
-		//	 Run(kbc, false, false, false, true, true)
-		// })
+		It("should generate a runnable project with metrics protected by network policies", func() {
+			GenerateV4WithNetworkPoliciesWithoutWebhooks(kbc)
+			Run(kbc, false, false, false, true, true)
+		})
 		It("should generate a runnable project with webhooks and metrics protected by network policies", func() {
 			GenerateV4WithNetworkPolicies(kbc)
 			Run(kbc, true, false, false, true, true)
 		})
-		// FIXME: This test is currently disabled because it requires to be fixed:
-		// https://github.com/kubernetes-sigs/kubebuilder/issues/4853
-		// It is not working for k8s 1.33
-		// It("should generate a runnable project with the manager running "+
-		//	 "as restricted and without webhooks", func() {
-		//	 GenerateV4WithoutWebhooks(kbc)
-		//	 Run(kbc, false, false, false, true, false)
-		// })
+		It("should generate a runnable project with the manager running "+
+			"as restricted and without webhooks", func() {
+			GenerateV4WithoutWebhooks(kbc)
+			Run(kbc, false, false, false, true, false)
+		})
 	})
 })
 
@@ -615,8 +614,31 @@ func cmdOptsToCreateCurlPod(kbc *utils.TestContext, token string) []string {
 
 func removeCurlPod(kbc *utils.TestContext) {
 	By("cleaning up the curl pod")
-	_, err := kbc.Kubectl.Delete(true, "pods/curl")
-	Expect(err).NotTo(HaveOccurred())
+
+	// Attempt to delete the curl pod
+	_, err := kbc.Kubectl.Delete(true, "pod", "curl")
+	Expect(err).NotTo(HaveOccurred(), "Failed to delete curl pod")
+
+	// Track whether the pod was deleted in 1 minute
+	var deleted bool
+	Eventually(func() bool {
+		_, err := kbc.Kubectl.Get(true, "pod", "curl")
+		deleted = err != nil
+		return deleted
+	}, time.Minute, time.Second).Should(BeTrue(), "curl pod should be deleted within 1 minute")
+
+	// If not deleted, force delete it
+	if !deleted {
+		By("forcing deletion of the curl pod")
+		_, err := kbc.Kubectl.Command("delete", "pod", "curl", "--grace-period=0", "--force")
+		Expect(err).NotTo(HaveOccurred(), "Force delete of curl pod failed")
+
+		// Wait another minute to ensure it's fully deleted
+		Eventually(func(g Gomega) {
+			_, err := kbc.Kubectl.Get(true, "pod", "curl")
+			g.Expect(err).To(HaveOccurred()) // Expect NotFound
+		}, time.Minute, time.Second).Should(Succeed(), "curl pod should be deleted after force")
+	}
 }
 
 // serviceAccountToken provides a helper function that can provide you with a service account
