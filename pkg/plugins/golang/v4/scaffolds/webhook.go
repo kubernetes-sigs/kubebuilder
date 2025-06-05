@@ -124,10 +124,10 @@ func (s *webhookScaffolder) Scaffold() error {
 
 		err = pluginutil.InsertCodeIfNotExist(resourceFilePath,
 			"// +kubebuilder:object:root=true",
-			"\n// +kubebuilder:storageversion\n// +kubebuilder:conversion:hub")
+			"\n// +kubebuilder:storageversion")
 		if err != nil {
 			log.Errorf("Unable to insert storage version marker "+
-				"(// +kubebuilder:storageversion) and the hub conversion (// +kubebuilder:conversion:hub) "+
+				"(// +kubebuilder:storageversion)"+
 				"in file %s: %v", resourceFilePath, err)
 		}
 
