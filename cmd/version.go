@@ -53,14 +53,18 @@ func versionString() string {
 		}
 	}
 
-	return fmt.Sprintf("Version: %#v", version{
+	return fmt.Sprintf(`Kubebuilder Version: %s
+Kubernetes Vendor: %s
+OS: %s
+Arch: %s
+Git Commit: %s
+Build Date: %s`,
 		kubeBuilderVersion,
 		kubernetesVendorVersion,
-		gitCommit,
-		buildDate,
 		goos,
 		goarch,
-	})
+		gitCommit,
+		buildDate)
 }
 
 // getKubebuilderVersion returns only the CLI version string
