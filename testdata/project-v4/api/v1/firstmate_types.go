@@ -40,7 +40,6 @@ type FirstMateStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:storageversion
-// +kubebuilder:conversion:hub
 // +kubebuilder:subresource:status
 
 // FirstMate is the Schema for the firstmates API.
