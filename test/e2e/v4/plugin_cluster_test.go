@@ -560,14 +560,24 @@ func metricsShouldBeUnavailable(kbc *utils.TestContext) {
 
 	By("validating that the curl pod fail as expected")
 	verifyCurlUp := func(g Gomega) {
-		status, err := kbc.Kubectl.Get(
+		status, errCurl := kbc.Kubectl.Get(
 			true,
 			"pods", "curl", "-o", "jsonpath={.status.phase}")
-		g.Expect(err).NotTo(HaveOccurred())
+		g.Expect(errCurl).NotTo(HaveOccurred())
 		g.Expect(status).NotTo(Equal("Failed"),
 			fmt.Sprintf("curl pod in %s status when should fail with an error", status))
 	}
 	Eventually(verifyCurlUp, 240*time.Second, time.Second).Should(Succeed())
+
+	By("validating that the correct ServiceAccount is being used")
+	saName := kbc.Kubectl.ServiceAccount
+	currentSAOutput, err := kbc.Kubectl.Get(
+		true,
+		"serviceaccount", saName,
+		"-o", "jsonpath={.metadata.name}",
+	)
+	Expect(err).NotTo(HaveOccurred(), "Failed to fetch the service account")
+	Expect(currentSAOutput).To(Equal(saName), "The ServiceAccount in use does not match the expected one")
 
 	By("validating that the metrics endpoint is not working as expected")
 	getCurlLogs := func(g Gomega) {
@@ -606,7 +616,7 @@ func cmdOptsToCreateCurlPod(kbc *utils.TestContext, token string) []string {
 						}
 					}
 				}],
-				"serviceAccount": "%s"
+				"serviceAccountName": "%s"
 			}
     }`, token, kbc.TestSuffix, kbc.Kubectl.Namespace, kbc.Kubectl.ServiceAccount),
 	}
