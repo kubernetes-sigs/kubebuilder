@@ -365,11 +365,6 @@ func (t *TestContext) UninstallHelmRelease() error {
 	if err != nil {
 		return err
 	}
-
-	if _, err := t.Kubectl.Wait(false, "namespace", ns, "--for=delete", "--timeout=2m"); err != nil {
-		log.Printf("failed to wait for namespace deletion: %s", err)
-	}
-
 	return nil
 }
 
