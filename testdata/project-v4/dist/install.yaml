@@ -715,6 +715,7 @@ spec:
           capabilities:
             drop:
             - ALL
+          readOnlyRootFilesystem: true
         volumeMounts:
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: webhook-certs

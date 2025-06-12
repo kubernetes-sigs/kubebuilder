@@ -595,6 +595,7 @@ func cmdOptsToCreateCurlPod(kbc *utils.TestContext, token string) []string {
 					"command": ["/bin/sh", "-c"],
 					"args": ["curl -v -k -H 'Authorization: Bearer %s' https://e2e-%s-controller-manager-metrics-service.%s.svc.cluster.local:8443/metrics"],
 					"securityContext": {
+						"readOnlyRootFilesystem": true,
 						"allowPrivilegeEscalation": false,
 						"capabilities": {
 							"drop": ["ALL"]

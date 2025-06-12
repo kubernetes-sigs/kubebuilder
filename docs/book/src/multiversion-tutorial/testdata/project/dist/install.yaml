@@ -8049,6 +8049,7 @@ spec:
           capabilities:
             drop:
             - ALL
+          readOnlyRootFilesystem: true
         volumeMounts:
         - mountPath: /tmp/k8s-metrics-server/metrics-certs
           name: metrics-certs
