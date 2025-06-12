@@ -453,6 +453,7 @@ spec:
           capabilities:
             drop:
             - ALL
+          readOnlyRootFilesystem: true
         volumeMounts: []
       securityContext:
         runAsNonRoot: true

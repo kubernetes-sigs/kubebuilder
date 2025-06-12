@@ -113,6 +113,7 @@ spec:
         name: manager
         ports: []
         securityContext:
+          readOnlyRootFilesystem: true
           allowPrivilegeEscalation: false
           capabilities:
             drop:
