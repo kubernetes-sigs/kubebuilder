@@ -46,19 +46,18 @@ jobs:
         run: |
           helm lint ./dist/chart
 
-# TODO: Uncomment if cert-manager is enabled
-#      - name: Install cert-manager via Helm
-#        run: |
-#          helm repo add jetstack https://charts.jetstack.io
-#          helm repo update
-#          helm install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --set installCRDs=true
-#
-#      - name: Wait for cert-manager to be ready
-#        run: |
-#          kubectl wait --namespace cert-manager --for=condition=available --timeout=300s deployment/cert-manager
-#          kubectl wait --namespace cert-manager --for=condition=available --timeout=300s deployment/cert-manager-cainjector
-#          kubectl wait --namespace cert-manager --for=condition=available --timeout=300s deployment/cert-manager-webhook
 
+      - name: Install cert-manager via Helm
+        run: |
+          helm repo add jetstack https://charts.jetstack.io
+          helm repo update
+          helm install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --set installCRDs=true
+
+      - name: Wait for cert-manager to be ready
+        run: |
+          kubectl wait --namespace cert-manager --for=condition=available --timeout=300s deployment/cert-manager
+          kubectl wait --namespace cert-manager --for=condition=available --timeout=300s deployment/cert-manager-cainjector
+          kubectl wait --namespace cert-manager --for=condition=available --timeout=300s deployment/cert-manager-webhook
 # TODO: Uncomment if Prometheus is enabled
 #      - name: Install Prometheus Operator CRDs
 #        run: |
