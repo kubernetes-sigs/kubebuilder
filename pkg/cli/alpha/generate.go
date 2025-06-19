@@ -19,7 +19,7 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/cli/alpha/internal"
 )
 
-// NewScaffoldCommand returns a new scaffold command, providing the `kubebuilder alpha generate`
+// NewGenerateCommand returns a new scaffold command, providing the `kubebuilder alpha generate`
 // feature to re-scaffold projects and assist users with updates.
 //
 // IMPORTANT: This command is intended solely for Kubebuilder's use, as it is designed to work
@@ -34,9 +34,9 @@ import (
 //
 // Technically, implementing functions that allow re-scaffolding with the exact plugins and project-specific
 // code of external projects is not feasible within Kubebuilder’s current design.
-func NewScaffoldCommand() *cobra.Command {
+func NewGenerateCommand() *cobra.Command {
 	opts := internal.Generate{}
-	scaffoldCmd := &cobra.Command{
+	generateCmd := &cobra.Command{
 		Use:   "generate",
 		Short: "Re-scaffold an existing Kuberbuilder project",
 		Long: `It's an experimental feature that has the purpose of re-scaffolding the whole project from the scratch 
@@ -54,12 +54,12 @@ Then we will re-scaffold the project by Kubebuilder in the directory specified b
 			}
 		},
 	}
-	scaffoldCmd.Flags().StringVar(&opts.InputDir, "input-dir", "",
+	generateCmd.Flags().StringVar(&opts.InputDir, "input-dir", "",
 		"Specifies the full path to a Kubebuilder project file. If not provided, "+
 			"the current working directory is used.")
-	scaffoldCmd.Flags().StringVar(&opts.OutputDir, "output-dir", "",
+	generateCmd.Flags().StringVar(&opts.OutputDir, "output-dir", "",
 		"Specifies the full path where the scaffolded files will be output. "+
 			"Defaults to a directory within the current working directory.")
 
-	return scaffoldCmd
+	return generateCmd
 }
