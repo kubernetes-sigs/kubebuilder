@@ -62,6 +62,7 @@ For any new webhook created for a new group, the respective functions will be cr
 <aside class="note">
 <h1>If you are using the deprecated layout go/v3</h1>
 Then, your layout has not the internal directory. So, you will move the controller(s) under a directory with the name of the API group which it is responsible for manage.
+
 ```bash
 mkdir controller/batch
 mv controller/* controller/batch/
