@@ -57,11 +57,14 @@ var _ = Describe("kubebuilder", func() {
 		})
 
 		AfterEach(func() {
-			By("By removing restricted namespace label")
+			By("removing restricted namespace label")
 			_ = kbc.RemoveNamespaceLabelToEnforceRestricted()
 
-			By("clean up API objects created during the test")
+			By("undeploy the project")
 			_ = kbc.Make("undeploy")
+
+			By("uninstalling the project")
+			_ = kbc.Make("uninstall")
 
 			By("removing controller image and working dir")
 			kbc.Destroy()
@@ -531,6 +534,16 @@ func getMetricsOutput(kbc *utils.TestContext) string {
 	}
 	Eventually(verifyCurlUp, 240*time.Second, time.Second).Should(Succeed())
 
+	By("validating that the correct ServiceAccount is being used")
+	saName := kbc.Kubectl.ServiceAccount
+	currentSAOutput, err := kbc.Kubectl.Get(
+		true,
+		"serviceaccount", saName,
+		"-o", "jsonpath={.metadata.name}",
+	)
+	Expect(err).NotTo(HaveOccurred(), "Failed to fetch the service account")
+	Expect(currentSAOutput).To(Equal(saName), "The ServiceAccount in use does not match the expected one")
+
 	By("validating that the metrics endpoint is serving as expected")
 	getCurlLogs := func(g Gomega) {
 		metricsOutput, err = kbc.Kubectl.Logs("curl")
@@ -568,16 +581,6 @@ func metricsShouldBeUnavailable(kbc *utils.TestContext) {
 			fmt.Sprintf("curl pod in %s status when should fail with an error", status))
 	}
 	Eventually(verifyCurlUp, 240*time.Second, time.Second).Should(Succeed())
-
-	By("validating that the correct ServiceAccount is being used")
-	saName := kbc.Kubectl.ServiceAccount
-	currentSAOutput, err := kbc.Kubectl.Get(
-		true,
-		"serviceaccount", saName,
-		"-o", "jsonpath={.metadata.name}",
-	)
-	Expect(err).NotTo(HaveOccurred(), "Failed to fetch the service account")
-	Expect(currentSAOutput).To(Equal(saName), "The ServiceAccount in use does not match the expected one")
 
 	By("validating that the metrics endpoint is not working as expected")
 	getCurlLogs := func(g Gomega) {
@@ -626,7 +629,7 @@ func cmdOptsToCreateCurlPod(kbc *utils.TestContext, token string) []string {
 
 func removeCurlPod(kbc *utils.TestContext) {
 	By("cleaning up the curl pod")
-	_, err := kbc.Kubectl.Delete(true, "pods/curl")
+	_, err := kbc.Kubectl.Delete(true, "pods/curl", "--grace-period=0", "--force")
 	Expect(err).NotTo(HaveOccurred())
 }
 
