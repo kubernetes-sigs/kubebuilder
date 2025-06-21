@@ -206,7 +206,7 @@ func (s *initScaffolder) extractWebhooksFromGeneratedFiles() (mutatingWebhooks [
 			}
 			webhook := templateswebhooks.DataWebhook{
 				Name:                    w.Name,
-				ServiceName:             fmt.Sprintf("%s-webhook-service", s.config.GetProjectName()),
+				ServiceName:             fmt.Sprintf("%s-webhook-service", s.getNamePrefix()),
 				Path:                    w.ClientConfig.Service.Path,
 				FailurePolicy:           w.FailurePolicy,
 				SideEffects:             w.SideEffects,
@@ -237,6 +237,8 @@ func (s *initScaffolder) copyConfigFiles() error {
 		{"config/crd/bases", "dist/chart/templates/crd", "crd"},
 		{"config/network-policy", "dist/chart/templates/network-policy", "networkPolicy"},
 	}
+
+	namePrefix := s.getNamePrefix()
 
 	for _, dir := range configDirs {
 		// Check if the source directory exists
@@ -277,10 +279,19 @@ func (s *initScaffolder) copyConfigFiles() error {
 				}
 			}
 
-			err := copyFileWithHelmLogic(srcFile, destFile, dir.SubDir, s.config.GetProjectName(), hasConvertionalWebhook)
+			err := copyFileWithHelmLogic(srcFile, destFile, dir.SubDir, namePrefix, hasConvertionalWebhook)
 			if err != nil {
 				return err
 			}
+		}
+	}
+
+	projectName := s.config.GetProjectName()
+
+	if namePrefix != projectName {
+		err := replacePrefixedNamesInChartFiles("dist/chart", projectName, namePrefix)
+		if err != nil {
+			return fmt.Errorf("post-process to ensure customized name prefixed: %w", err)
 		}
 	}
 
@@ -289,7 +300,7 @@ func (s *initScaffolder) copyConfigFiles() error {
 
 // copyFileWithHelmLogic reads the source file, modifies the content for Helm, applies patches
 // to spec.conversion if applicable, and writes it to the destination
-func copyFileWithHelmLogic(srcFile, destFile, subDir, projectName string, hasConvertionalWebhook bool) error {
+func copyFileWithHelmLogic(srcFile, destFile, subDir, namePrefix string, hasConvertionalWebhook bool) error {
 	if _, err := os.Stat(srcFile); os.IsNotExist(err) {
 		log.Printf("Source file does not exist: %s", srcFile)
 		return fmt.Errorf("source file does not exist %q: %w", srcFile, err)
@@ -316,14 +327,14 @@ func copyFileWithHelmLogic(srcFile, destFile, subDir, projectName string, hasCon
 			"name: {{ .Values.controllerManager.serviceAccountName }}")
 		contentStr = strings.Replace(contentStr,
 			"name: metrics-reader",
-			fmt.Sprintf("name: %s-metrics-reader", projectName), 1)
+			fmt.Sprintf("name: %s-metrics-reader", namePrefix), 1)
 
 		contentStr = strings.ReplaceAll(contentStr,
 			"name: metrics-auth-role",
-			fmt.Sprintf("name: %s-metrics-auth-role", projectName))
+			fmt.Sprintf("name: %s-metrics-auth-role", namePrefix))
 		contentStr = strings.Replace(contentStr,
 			"name: metrics-auth-rolebinding",
-			fmt.Sprintf("name: %s-metrics-auth-rolebinding", projectName), 1)
+			fmt.Sprintf("name: %s-metrics-auth-rolebinding", namePrefix), 1)
 
 		if strings.Contains(contentStr, ".Values.controllerManager.serviceAccountName") &&
 			strings.Contains(contentStr, "kind: ServiceAccount") &&
@@ -340,16 +351,16 @@ func copyFileWithHelmLogic(srcFile, destFile, subDir, projectName string, hasCon
 		}
 		contentStr = strings.ReplaceAll(contentStr,
 			"name: leader-election-role",
-			fmt.Sprintf("name: %s-leader-election-role", projectName))
+			fmt.Sprintf("name: %s-leader-election-role", namePrefix))
 		contentStr = strings.Replace(contentStr,
 			"name: leader-election-rolebinding",
-			fmt.Sprintf("name: %s-leader-election-rolebinding", projectName), 1)
+			fmt.Sprintf("name: %s-leader-election-rolebinding", namePrefix), 1)
 		contentStr = strings.ReplaceAll(contentStr,
 			"name: manager-role",
-			fmt.Sprintf("name: %s-manager-role", projectName))
+			fmt.Sprintf("name: %s-manager-role", namePrefix))
 		contentStr = strings.Replace(contentStr,
 			"name: manager-rolebinding",
-			fmt.Sprintf("name: %s-manager-rolebinding", projectName), 1)
+			fmt.Sprintf("name: %s-manager-rolebinding", namePrefix), 1)
 
 		// The generated files do not include the namespace
 		if strings.Contains(contentStr, "leader-election-rolebinding") ||
@@ -425,7 +436,7 @@ func copyFileWithHelmLogic(srcFile, destFile, subDir, projectName string, hasCon
     {{- include "chart.labels" . | nindent 4 }}`, 1)
 
 	// Append project name to webhook service name
-	contentStr = strings.ReplaceAll(contentStr, "name: webhook-service", "name: "+projectName+"-webhook-service")
+	contentStr = strings.ReplaceAll(contentStr, "name: webhook-service", "name: "+namePrefix+"-webhook-service")
 
 	var wrappedContent string
 	if isMetricRBACFile(subDir, srcFile) {
@@ -562,4 +573,85 @@ func hasWebhooksWith(c config.Config) bool {
 	}
 
 	return false
+}
+
+// getNamePrefix will return the value from kustomize config so that we can append
+// in the RBAC rules manifests. If we be unable to find this value we will use
+// the projectName instead.
+func (s *initScaffolder) getNamePrefix() string {
+	filePath := "config/default/kustomization.yaml"
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		log.Fatalf("failed to read config/default/kustomization.yaml: %s", err)
+	}
+
+	var defaultConfig struct {
+		NamePrefix string `yaml:"namePrefix"`
+	}
+
+	if err := yaml.Unmarshal(content, &defaultConfig); err != nil {
+		log.Warnf("failed to parse kustomization.yaml to get namePrefix: %s", err)
+		log.Warnf("using the project name as a prefix of RBAC and manifests")
+		return s.config.GetProjectName()
+	}
+
+	cleaned := strings.TrimSuffix(strings.TrimSpace(defaultConfig.NamePrefix), "-")
+	return cleaned
+}
+
+// replacePrefixedNamesInChartFiles replaces project-prefixed in the files which are genarated
+// from the templates
+func replacePrefixedNamesInChartFiles(rootDir, oldPrefix, newPrefix string) error {
+	fieldsToCheck := []string{
+		"name:",
+		"serviceAccountName:",
+		"serverName:",
+	}
+
+	if err := filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return fmt.Errorf("error accessing path %q: %w", path, err)
+		}
+
+		// Skip directories and specifically Chart.yaml
+		if info.IsDir() || filepath.Base(path) == "Chart.yaml" {
+			return nil
+		}
+
+		// Process only YAML files
+		if !strings.HasSuffix(path, ".yaml") && !strings.HasSuffix(path, ".yml") {
+			return nil
+		}
+
+		content, err := os.ReadFile(path)
+		if err != nil {
+			return fmt.Errorf("failed to read %s: %w", path, err)
+		}
+
+		lines := strings.Split(string(content), "\n")
+		changed := false
+
+		for i, line := range lines {
+			for _, field := range fieldsToCheck {
+				trimmed := strings.TrimSpace(line)
+				if strings.HasPrefix(trimmed, field+" "+oldPrefix) {
+					lines[i] = strings.Replace(line, oldPrefix, newPrefix, 1)
+					changed = true
+					break
+				}
+			}
+		}
+
+		if changed {
+			output := strings.Join(lines, "\n")
+			if err := os.WriteFile(path, []byte(output), 0o644); err != nil {
+				return fmt.Errorf("failed to write updated file %s: %w", path, err)
+			}
+			log.Printf("Updated project-prefixed identifiers in: %s", path)
+		}
+		return nil
+	}); err != nil {
+		return fmt.Errorf("failed to walk chart directory %q: %w", rootDir, err)
+	}
+	return nil
 }
