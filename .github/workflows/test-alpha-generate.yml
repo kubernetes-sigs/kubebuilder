@@ -35,6 +35,19 @@ jobs:
         run: |
           sed -i 's#go.kubebuilder.io/v4#go.kubebuilder.io/v3#g' testdata/project-v4/PROJECT
 
+      # Validate if help output is working and workaround to
+      # update the PROJECT file in memory to allow upgrade
+      # no longer supported layouts did not break the command options
+      - name: Validate help output for alpha generate
+        run: |
+          if kubebuilder alpha generate --help | grep -q "kubebuilder alpha generate \[flags\]"; then
+            echo "Help output validated"
+          else
+            echo "Help output missing or invalid"
+            exit 1
+          fi    
+
       - name: Run kubebuilder alpha generate
         run: |
           cd testdata/project-v4 && kubebuilder alpha generate
+

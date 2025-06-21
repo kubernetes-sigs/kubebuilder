@@ -22,6 +22,8 @@ import (
 	"os"
 	"strings"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -149,14 +151,6 @@ func (c *CLI) buildCmd() error {
 
 	var uve config.UnsupportedVersionError
 
-	// Workaround for kubebuilder alpha generate
-	if len(os.Args) > 2 && os.Args[1] == "alpha" && os.Args[2] == "generate" {
-		err := updateProjectFileForAlphaGenerate()
-		if err != nil {
-			return fmt.Errorf("failed to update PROJECT file: %w", err)
-		}
-	}
-
 	// Get project version and plugin keys.
 	switch err := c.getInfo(); {
 	case err == nil:
@@ -217,11 +211,111 @@ func (c *CLI) getInfo() error {
 func (c *CLI) getInfoFromConfigFile() error {
 	// Read the project configuration file
 	cfg := yamlstore.New(c.fs)
+
+	// Workaround for https://github.com/kubernetes-sigs/kubebuilder/issues/4433
+	//
+	// This allows the `kubebuilder alpha generate` command to work with old projects
+	// that use plugin versions no longer supported (like go.kubebuilder.io/v3).
+	//
+	// We read the PROJECT file into memory and update the plugin version (e.g. from v3 to v4)
+	// before the CLI tries to load it. This avoids errors during config loading
+	// and lets users migrate their project layout from go/v3 to go/v4.
+
+	if isAlphaGenerateCommand(os.Args[1:]) {
+		// Patch raw file bytes before unmarshalling
+		if err := patchProjectFileInMemoryIfNeeded(c.fs.FS, yamlstore.DefaultPath); err != nil {
+			return err
+		}
+	}
+
 	if err := cfg.Load(); err != nil {
 		return fmt.Errorf("error loading configuration: %w", err)
 	}
 
 	return c.getInfoFromConfig(cfg.Config())
+}
+
+// isAlphaGenerateCommand checks if the command invocation is `kubebuilder alpha generate`
+// by scanning os.Args (excluding global flags). It returns true if "alpha" is followed by "generate".
+func isAlphaGenerateCommand(args []string) bool {
+	positional := []string{}
+	skip := false
+
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+
+		// Skip flags and their values
+		if strings.HasPrefix(arg, "-") {
+			// If the flag is in --flag=value format, skip only this one
+			if strings.Contains(arg, "=") {
+				continue
+			}
+			// If it's --flag value format, skip next one too
+			if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+				skip = true
+			}
+			continue
+		}
+		if skip {
+			skip = false
+			continue
+		}
+		positional = append(positional, arg)
+	}
+
+	// Check for `alpha generate` in positional arguments
+	for i := 0; i < len(positional)-1; i++ {
+		if positional[i] == "alpha" && positional[i+1] == "generate" {
+			return true
+		}
+	}
+
+	return false
+}
+
+// patchProjectFileInMemoryIfNeeded updates deprecated plugin keys in the PROJECT file in place,
+// so that users can run `kubebuilder alpha generate` even with older plugin layouts.
+//
+// See: https://github.com/kubernetes-sigs/kubebuilder/issues/4433
+//
+// This ensures the CLI can successfully load the config without failing on unsupported plugin versions.
+func patchProjectFileInMemoryIfNeeded(fs afero.Fs, path string) error {
+	type pluginReplacement struct {
+		Old string
+		New string
+	}
+
+	replacements := []pluginReplacement{
+		{"go.kubebuilder.io/v2", "go.kubebuilder.io/v4"},
+		{"go.kubebuilder.io/v3", "go.kubebuilder.io/v4"},
+		{"go.kubebuilder.io/v3-alpha", "go.kubebuilder.io/v4"},
+	}
+
+	content, err := afero.ReadFile(fs, path)
+	if err != nil {
+		return nil
+	}
+
+	original := string(content)
+	modified := original
+
+	for _, rep := range replacements {
+		if strings.Contains(modified, rep.Old) {
+			modified = strings.ReplaceAll(modified, rep.Old, rep.New)
+			log.Warnf("This project is using an old and no longer supported plugin layout %q. "+
+				"Replace in memory to %q to allow `alpha generate` to work.",
+				rep.Old, rep.New)
+		}
+	}
+
+	if modified != original {
+		err := afero.WriteFile(fs, path, []byte(modified), 0o755)
+		if err != nil {
+			return fmt.Errorf("failed to write patched PROJECT file: %w", err)
+		}
+	}
+
+	return nil
 }
 
 // getInfoFromConfig obtains the project version and plugin keys from the project config.
