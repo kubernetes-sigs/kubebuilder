@@ -131,7 +131,7 @@ patches:
 #         delimiter: '.'
 #         index: 0
 #         create: true
-#
+
 # - source:
 #     kind: Service
 #     version: v1
@@ -161,7 +161,7 @@ patches:
 #         delimiter: '.'
 #         index: 1
 #         create: true
-#
+
 # - source: # Uncomment the following block if you have any webhook
 #     kind: Service
 #     version: v1
@@ -198,7 +198,7 @@ patches:
 #         delimiter: '.'
 #         index: 1
 #         create: true
-#
+
 # - source: # Uncomment the following block if you have a ValidatingWebhook (--programmatic-validation)
 #     kind: Certificate
 #     group: cert-manager.io
@@ -229,7 +229,7 @@ patches:
 #         delimiter: '/'
 #         index: 1
 #         create: true
-#
+
 # - source: # Uncomment the following block if you have a DefaultingWebhook (--defaulting )
 #     kind: Certificate
 #     group: cert-manager.io
@@ -260,7 +260,7 @@ patches:
 #         delimiter: '/'
 #         index: 1
 #         create: true
-#
+
 # - source: # Uncomment the following block if you have a ConversionWebhook (--conversion)
 #     kind: Certificate
 #     group: cert-manager.io
