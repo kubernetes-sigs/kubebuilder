@@ -46,4 +46,13 @@ const kustomizeMetricsPatchTemplate = `# This patch adds the args to allow expos
 - op: add
   path: /spec/template/spec/containers/0/args/0
   value: --metrics-bind-address=:8443
+
+# Add the port configuration for the metrics server
+# Required for endpoint registration in Kubernetes >= 1.33
+- op: add
+  path: /spec/template/spec/containers/0/ports/-
+  value:
+    containerPort: 8443
+    name: https
+    protocol: TCP
 `

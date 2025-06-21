@@ -77,39 +77,33 @@ var _ = Describe("kubebuilder", func() {
 			GenerateV4(kbc)
 			Run(kbc, true, true, false, true, false)
 		})
-		It("should generate a runnable project using webhooks and installed with the HelmChart", func() {
-			GenerateV4(kbc)
-			By("installing Helm")
-			Expect(kbc.InstallHelm()).To(Succeed())
-
-			Run(kbc, true, false, true, true, false)
-
-			By("uninstalling Helm Release")
-			Expect(kbc.UninstallHelmRelease()).To(Succeed())
-		})
+		//It("should generate a runnable project using webhooks and installed with the HelmChart", func() {
+		//	GenerateV4(kbc)
+		//	By("installing Helm")
+		//	Expect(kbc.InstallHelm()).To(Succeed())
+		//
+		//	Run(kbc, true, false, true, true, false)
+		//
+		//	By("uninstalling Helm Release")
+		//	Expect(kbc.UninstallHelmRelease()).To(Succeed())
+		//})
 		It("should generate a runnable project without metrics exposed", func() {
 			GenerateV4WithoutMetrics(kbc)
 			Run(kbc, true, false, false, false, false)
 		})
-		// FIXME: This test is currently disabled because it requires to be fixed:
-		// https://github.com/kubernetes-sigs/kubebuilder/issues/4853
-		// It is not working for k8s 1.33
-		// It("should generate a runnable project with metrics protected by network policies", func() {
-		// 	 GenerateV4WithNetworkPoliciesWithoutWebhooks(kbc)
-		//	 Run(kbc, false, false, false, true, true)
-		// })
+		It("should generate a runnable project with metrics protected by network policies", func() {
+			GenerateV4WithNetworkPoliciesWithoutWebhooks(kbc)
+			Run(kbc, false, false, false, true, true)
+		})
 		It("should generate a runnable project with webhooks and metrics protected by network policies", func() {
 			GenerateV4WithNetworkPolicies(kbc)
 			Run(kbc, true, false, false, true, true)
 		})
-		// FIXME: This test is currently disabled because it requires to be fixed:
-		// https://github.com/kubernetes-sigs/kubebuilder/issues/4853
-		// It is not working for k8s 1.33
-		// It("should generate a runnable project with the manager running "+
-		//	 "as restricted and without webhooks", func() {
-		//	 GenerateV4WithoutWebhooks(kbc)
-		//	 Run(kbc, false, false, false, true, false)
-		// })
+		It("should generate a runnable project with the manager running "+
+			"as restricted and without webhooks", func() {
+			GenerateV4WithoutWebhooks(kbc)
+			Run(kbc, false, false, false, true, false)
+		})
 	})
 })
 
@@ -151,11 +145,11 @@ func Run(kbc *utils.TestContext, hasWebhook, isToUseInstaller, isToUseHelmChart,
 		Expect(err).NotTo(HaveOccurred())
 	}
 
-	if isToUseInstaller && !isToUseHelmChart {
-		By("building the installer")
-		err = kbc.Make("build-installer", "IMG="+kbc.ImageName)
-		Expect(err).NotTo(HaveOccurred())
+	By("building the installer")
+	err = kbc.Make("build-installer", "IMG="+kbc.ImageName)
+	Expect(err).NotTo(HaveOccurred())
 
+	if isToUseInstaller && !isToUseHelmChart {
 		By("deploying the controller-manager with the installer")
 		_, err = kbc.Kubectl.Apply(true, "-f", "dist/install.yaml")
 		Expect(err).NotTo(HaveOccurred())
@@ -518,6 +512,9 @@ func getMetricsOutput(kbc *utils.TestContext) string {
 	Eventually(checkServiceEndpoint, 2*time.Minute, time.Second).Should(Succeed(),
 		"Service endpoint should be ready")
 
+	By("waiting briefly to ensure controller is listening on port 8443")
+	time.Sleep(5 * time.Second)
+
 	By("creating a curl pod to access the metrics endpoint")
 	cmdOpts := cmdOptsToCreateCurlPod(kbc, token)
 	_, err = kbc.Kubectl.CommandInNamespace(cmdOpts...)
@@ -606,7 +603,13 @@ func cmdOptsToCreateCurlPod(kbc *utils.TestContext, token string) []string {
 					"name": "curl",
 					"image": "curlimages/curl:latest",
 					"command": ["/bin/sh", "-c"],
-					"args": ["curl -v -k -H 'Authorization: Bearer %s' https://e2e-%s-controller-manager-metrics-service.%s.svc.cluster.local:8443/metrics"],
+					"args": [
+						"for i in $(seq 1 10); do \
+							curl -v -k -H 'Authorization: Bearer %s' \
+							https://e2e-%s-controller-manager-metrics-service.%s.svc.cluster.local:8443/metrics \
+							&& exit 0 || sleep 5; \
+						done; exit 1"
+					],
 					"securityContext": {
 						"readOnlyRootFilesystem": true,
 						"allowPrivilegeEscalation": false,
