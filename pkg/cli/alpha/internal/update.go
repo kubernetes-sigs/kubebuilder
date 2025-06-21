@@ -38,6 +38,8 @@ type Update struct {
 	// FromVersion specifies which version of Kubebuilder to use for the update.
 	// If empty, the version from the PROJECT file will be used.
 	FromVersion string
+	// FromBranch specifies which branch to use as current when updating
+	FromBranch string
 	// CliVersion holds the version to be used during the upgrade process
 	CliVersion string
 }
@@ -251,7 +253,7 @@ func (opts *Update) runAlphaGenerate(tempDir, version string) error {
 }
 
 // checkoutCurrentOffAncestor creates the 'current' branch from ancestor and
-// populates it with the user's actual project content from the master branch.
+// populates it with the user's actual project content from the default branch.
 // This represents the current state of the user's project.
 func (opts *Update) checkoutCurrentOffAncestor() error {
 	// Create current branch starting from the clean ancestor state
@@ -261,10 +263,10 @@ func (opts *Update) checkoutCurrentOffAncestor() error {
 	}
 	log.Info("Successfully checked out current branch off ancestor")
 
-	// Overlay the user's actual project content from master branch
-	gitCmd = exec.Command("git", "checkout", "master", "--", ".")
+	// Overlay the user's actual project content from default branch
+	gitCmd = exec.Command("git", "checkout", opts.FromBranch, "--", ".")
 	if err := gitCmd.Run(); err != nil {
-		return fmt.Errorf("failed to checkout content from master onto current: %w", err)
+		return fmt.Errorf("failed to checkout content from default branch onto current: %w", err)
 	}
 	log.Info("Successfully checked out content from main onto current branch")
 
@@ -354,7 +356,20 @@ func (opts *Update) mergeUpgradeIntoMerge() error {
 	return nil
 }
 
+// Validate checks if the user is in a git repository and if the repository is in a clean state.
+// It also validates if the version specified by the user is in a valid format and available for
+// download as a binary.
 func (opts *Update) Validate() error {
+	// Validate git repository
+	if err := opts.validateGitRepo(); err != nil {
+		return fmt.Errorf("failed to validate git repository: %w", err)
+	}
+
+	// Validate --from-branch
+	if err := opts.validateFromBranch(); err != nil {
+		return fmt.Errorf("failed to validate --from-branch: %w", err)
+	}
+
 	// Load the PROJECT configuration file
 	projectConfigFile, err := opts.loadConfigFile()
 	if err != nil {
@@ -367,10 +382,12 @@ func (opts *Update) Validate() error {
 	// Determine which Kubebuilder version to use for the update
 	opts.defineFromVersion()
 
+	// Validate SemVer format
 	if err := opts.validateSemVerVersion(); err != nil {
 		return fmt.Errorf("failed to validate semantic version formatting: %w", err)
 	}
 
+	// Validate if the specified version is available as a binary in the releases
 	if err := opts.validateBinaryAvailability(); err != nil {
 		return fmt.Errorf("failed to validate binary availability: %w", err)
 	}
@@ -403,6 +420,8 @@ func (opts *Update) defineFromVersion() {
 	}
 }
 
+// Validate if the version passed to the --from-version is formatted
+// in a valid Semantic Version format
 func (opts *Update) validateSemVerVersion() error {
 	if !semver.IsValid(opts.CliVersion) {
 		return fmt.Errorf("invalid semantic version. Expect: X.X.X (Ex.: v4.5.0)")
@@ -410,6 +429,8 @@ func (opts *Update) validateSemVerVersion() error {
 	return nil
 }
 
+// Validate if the version specified is available as a binary for download
+// from the releases
 func (opts *Update) validateBinaryAvailability() error {
 	url := fmt.Sprintf("https://github.com/kubernetes-sigs/kubebuilder/releases/download/%s/kubebuilder_%s_%s",
 		opts.CliVersion, runtime.GOOS, runtime.GOARCH)
@@ -435,4 +456,43 @@ func (opts *Update) validateBinaryAvailability() error {
 		return fmt.Errorf("unexpected response %d when checking binary availability for version %s",
 			resp.StatusCode, opts.CliVersion)
 	}
+}
+
+// Validate if in a git repository with clean state
+func (opts *Update) validateGitRepo() error {
+	// Check if in a git repository
+	gitCmd := exec.Command("git", "rev-parse", "--git-dir")
+	if err := gitCmd.Run(); err != nil {
+		return fmt.Errorf("not in a git repository")
+	}
+
+	// Check if the branch has uncommitted changes
+	gitCmd = exec.Command("git", "status", "--porcelain")
+	output, err := gitCmd.Output()
+	if err != nil {
+		return fmt.Errorf("failed to check branch status: %w", err)
+	}
+
+	if len(strings.TrimSpace(string(output))) > 0 {
+		return fmt.Errorf("working directory has uncommitted changes. Please commit or stash them before updating")
+	}
+
+	return nil
+}
+
+// Validate the branch passed to the --from-branch flag
+func (opts *Update) validateFromBranch() error {
+	// Set default if not specified
+	if opts.FromBranch == "" {
+		opts.FromBranch = "main"
+	}
+
+	// Check if the branch exists
+	gitCmd := exec.Command("git", "rev-parse", "--verify", opts.FromBranch)
+	if err := gitCmd.Run(); err != nil {
+		return fmt.Errorf("%s branch does not exist locally. Run 'git branch -a' to see all available branches",
+			opts.FromBranch)
+	}
+
+	return nil
 }

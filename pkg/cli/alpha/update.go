@@ -73,5 +73,9 @@ Examples:
 	updateCmd.Flags().StringVar(&opts.FromVersion, "from-version", "",
 		"Kubebuilder binary release version to upgrade from. Should match the version used to init the project.")
 
+	// Flag to specify the branch to use as current state for the update
+	updateCmd.Flags().StringVar(&opts.FromBranch, "from-branch", "",
+		"Git branch to use as current state of the project for the update.")
+
 	return updateCmd
 }
