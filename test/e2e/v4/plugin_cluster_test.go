@@ -91,25 +91,19 @@ var _ = Describe("kubebuilder", func() {
 			GenerateV4WithoutMetrics(kbc)
 			Run(kbc, true, false, false, false, false)
 		})
-		// FIXME: This test is currently disabled because it requires to be fixed:
-		// https://github.com/kubernetes-sigs/kubebuilder/issues/4853
-		// It is not working for k8s 1.33
-		// It("should generate a runnable project with metrics protected by network policies", func() {
-		// 	 GenerateV4WithNetworkPoliciesWithoutWebhooks(kbc)
-		//	 Run(kbc, false, false, false, true, true)
-		// })
+		It("should generate a runnable project with metrics protected by network policies", func() {
+			GenerateV4WithNetworkPoliciesWithoutWebhooks(kbc)
+			Run(kbc, false, false, false, true, true)
+		})
 		It("should generate a runnable project with webhooks and metrics protected by network policies", func() {
 			GenerateV4WithNetworkPolicies(kbc)
 			Run(kbc, true, false, false, true, true)
 		})
-		// FIXME: This test is currently disabled because it requires to be fixed:
-		// https://github.com/kubernetes-sigs/kubebuilder/issues/4853
-		// It is not working for k8s 1.33
-		// It("should generate a runnable project with the manager running "+
-		//	 "as restricted and without webhooks", func() {
-		//	 GenerateV4WithoutWebhooks(kbc)
-		//	 Run(kbc, false, false, false, true, false)
-		// })
+		It("should generate a runnable project with the manager running "+
+			"as restricted and without webhooks", func() {
+			GenerateV4WithoutWebhooks(kbc)
+			Run(kbc, false, false, false, true, false)
+		})
 	})
 })
 
@@ -517,6 +511,16 @@ func getMetricsOutput(kbc *utils.TestContext) string {
 	}
 	Eventually(checkServiceEndpoint, 2*time.Minute, time.Second).Should(Succeed(),
 		"Service endpoint should be ready")
+
+	// NOTE: On Kubernetes 1.33+, we've observed a delay before the metrics endpoint becomes available
+	// when using controller-runtime's WithAuthenticationAndAuthorization() with self-signed certificates.
+	// This delay appears to stem from Kubernetes itself, potentially due to changes in how it initializes
+	// service account tokens or handles TLS/service readiness.
+	//
+	// Without this delay, tests that curl the /metrics endpoint using a token can fail from k8s 1.33+.
+	// As a temporary workaround, we wait briefly before attempting to access metrics.
+	By("waiting briefly to ensure that the certs are provisioned and metrics are available")
+	time.Sleep(15 * time.Second)
 
 	By("creating a curl pod to access the metrics endpoint")
 	cmdOpts := cmdOptsToCreateCurlPod(kbc, token)
