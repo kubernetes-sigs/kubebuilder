@@ -67,6 +67,9 @@ test: manifests generate fmt vet setup-envtest ## Run tests.
 # - CERT_MANAGER_INSTALL_SKIP=true
 KIND_CLUSTER ?= project-v4-multigroup-test-e2e
 
+# Optional targets to run after setting up Kind cluster and before running e2e tests
+SETUP_TEST_E2E_TARGETS ?=
+
 .PHONY: setup-test-e2e
 setup-test-e2e: ## Set up a Kind cluster for e2e tests if it does not exist
 	@command -v $(KIND) >/dev/null 2>&1 || { \
@@ -76,7 +79,7 @@ setup-test-e2e: ## Set up a Kind cluster for e2e tests if it does not exist
 	$(KIND) create cluster --name $(KIND_CLUSTER)
 
 .PHONY: test-e2e
-test-e2e: setup-test-e2e manifests generate fmt vet ## Run the e2e tests. Expected an isolated environment using Kind.
+test-e2e: $(SETUP_TEST_E2E_TARGETS) setup-test-e2e manifests generate fmt vet ## Run the e2e tests. Expected an isolated environment using Kind.
 	KIND_CLUSTER=$(KIND_CLUSTER) go test ./test/e2e/ -v -ginkgo.v
 	$(MAKE) cleanup-test-e2e
 
