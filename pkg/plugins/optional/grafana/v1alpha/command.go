@@ -23,37 +23,39 @@ import (
 	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
 	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
-	"sigs.k8s.io/kubebuilder/v4/pkg/plugins/optional/grafana/v1alpha/scaffolds"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugins"
 )
 
-var _ plugin.InitSubcommand = &initSubcommand{}
+var _ plugin.Subcommand = &subcommand{}
 
-type initSubcommand struct {
-	config config.Config
+type subcommand struct {
+	config             config.Config
+	scaffolder         plugins.Scaffolder
+	cmd                string
+	exampleDescription string
 }
 
-func (p *initSubcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
+func (p *subcommand) UpdateMetadata(cliMeta plugin.CLIMetadata, subcmdMeta *plugin.SubcommandMetadata) {
 	subcmdMeta.Description = metaDataDescription
 
-	subcmdMeta.Examples = fmt.Sprintf(`  # Initialize a common project with this plugin
-  %[1]s init --plugins=%[2]s
-`, cliMeta.CommandName, pluginKey)
+	subcmdMeta.Examples = fmt.Sprintf(`  %s
+  %[1]s %s --plugins=%[2]s
+`, p.exampleDescription, cliMeta.CommandName, p.cmd, pluginKey)
 }
 
-func (p *initSubcommand) InjectConfig(c config.Config) error {
+func (p *subcommand) InjectConfig(c config.Config) error {
 	p.config = c
 	return nil
 }
 
-func (p *initSubcommand) Scaffold(fs machinery.Filesystem) error {
+func (p *subcommand) Scaffold(fs machinery.Filesystem) error {
 	if err := InsertPluginMetaToConfig(p.config, pluginConfig{}); err != nil {
 		return fmt.Errorf("error inserting project plugin meta to configuration: %w", err)
 	}
 
-	scaffolder := scaffolds.NewInitScaffolder()
-	scaffolder.InjectFS(fs)
-	if err := scaffolder.Scaffold(); err != nil {
-		return fmt.Errorf("error scaffolding init subcommand: %w", err)
+	p.scaffolder.InjectFS(fs)
+	if err := p.scaffolder.Scaffold(); err != nil {
+		return fmt.Errorf("error scaffolding %q subcommand: %w", p.cmd, err)
 	}
 
 	return nil
