@@ -41,3 +41,4 @@
       - [Reference](metrics-reference.md)
 
   - [CLI plugins](../plugins/plugins.md)
+  - [Distributing Your Project](distributing-projects.md)
