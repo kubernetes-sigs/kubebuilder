@@ -69,6 +69,14 @@ linters:
       rules:
         - name: comment-spacings
         - name: import-shadowing
+    custom:
+      kubeapilinter:
+        path: "./bin/kube-api-linter.so"
+        description: "Kube API Linter plugin"
+        original-url: "sigs.k8s.io/kube-api-linter"
+        settings:
+          linters: { }
+          lintersConfig: { }
   exclusions:
     generated: lax
     rules:
@@ -79,6 +87,9 @@ linters:
           - dupl
           - lll
         path: internal/*
+      - path-except: "^api/"
+        linters:
+          - kubeapilinter
     paths:
       - third_party$
       - builtin$
