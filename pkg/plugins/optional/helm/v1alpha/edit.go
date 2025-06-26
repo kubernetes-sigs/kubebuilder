@@ -32,7 +32,6 @@ type editSubcommand struct {
 	config config.Config
 	force  bool
 
-	IgnoreSamples       bool
 	IgnorePrometheus    bool
 	IgnoreNetworkPolicy bool
 	IgnoreCertManager   bool
@@ -73,7 +72,6 @@ manifests in the chart align with the latest changes.
 func (p *editSubcommand) BindFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&p.force, "force", false, "if true, regenerates all the files")
 
-	fs.BoolVar(&p.IgnoreSamples, "ignore-samples", false, "ignore scaffolding of sample CRs")
 	fs.BoolVar(&p.IgnorePrometheus, "ignore-prometheus", false, "ignore scaffolding of prometheus monitor")
 	fs.BoolVar(&p.IgnoreNetworkPolicy, "ignore-networkPolicy", false, "ignore scaffolding of network policy")
 	fs.BoolVar(&p.IgnoreCertManager, "ignore-certmanager", false, "ignore scaffolding of cert-manager manifests")
@@ -87,7 +85,6 @@ func (p *editSubcommand) InjectConfig(c config.Config) error {
 
 func (p *editSubcommand) Scaffold(fs machinery.Filesystem) error {
 	ignoreFlags := map[string]bool{
-		"ignore-samples":       p.IgnoreSamples,
 		"ignore-prometheus":    p.IgnorePrometheus,
 		"ignore-networkPolicy": p.IgnoreNetworkPolicy,
 		"ignore-certmanager":   p.IgnoreCertManager,

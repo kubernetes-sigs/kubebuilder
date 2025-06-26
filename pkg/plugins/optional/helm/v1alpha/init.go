@@ -48,7 +48,6 @@ func (p *initSubcommand) InjectConfig(c config.Config) error {
 
 func (p *initSubcommand) Scaffold(fs machinery.Filesystem) error {
 	ignoreFlags := map[string]bool{
-		"ignore-samples":       false,
 		"ignore-prometheus":    false,
 		"ignore-networkPolicy": false,
 		"ignore-certmanager":   false,

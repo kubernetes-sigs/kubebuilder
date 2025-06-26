@@ -55,7 +55,6 @@ type initScaffolder struct {
 	IgnoreCertManager   bool
 	IgnoreWebhook       bool
 	IgnoreNetworkPolicy bool
-	IgnoreSamples       bool
 }
 
 // NewInitHelmScaffolder returns a new Scaffolder for HelmPlugin
@@ -67,7 +66,6 @@ func NewInitHelmScaffolder(cfg config.Config, force bool, ignoreFlags map[string
 		IgnoreCertManager:   ignoreFlags["ignore-certmanager"],
 		IgnoreWebhook:       ignoreFlags["ignore-webhook"],
 		IgnoreNetworkPolicy: ignoreFlags["ignore-networkPolicy"],
-		IgnoreSamples:       ignoreFlags["ignore-samples"],
 	}
 }
 
