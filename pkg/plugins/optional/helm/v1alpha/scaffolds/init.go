@@ -50,13 +50,24 @@ type initScaffolder struct {
 	fs machinery.Filesystem
 
 	force bool
+
+	IgnorePrometheus    bool
+	IgnoreCertManager   bool
+	IgnoreWebhook       bool
+	IgnoreNetworkPolicy bool
+	IgnoreSamples       bool
 }
 
 // NewInitHelmScaffolder returns a new Scaffolder for HelmPlugin
-func NewInitHelmScaffolder(cfg config.Config, force bool) plugins.Scaffolder {
+func NewInitHelmScaffolder(cfg config.Config, force bool, ignoreFlags map[string]bool) plugins.Scaffolder {
 	return &initScaffolder{
-		config: cfg,
-		force:  force,
+		config:              cfg,
+		force:               force,
+		IgnorePrometheus:    ignoreFlags["ignore-prometheus"],
+		IgnoreCertManager:   ignoreFlags["ignore-certmanager"],
+		IgnoreWebhook:       ignoreFlags["ignore-webhook"],
+		IgnoreNetworkPolicy: ignoreFlags["ignore-networkPolicy"],
+		IgnoreSamples:       ignoreFlags["ignore-samples"],
 	}
 }
 
@@ -92,17 +103,31 @@ func (s *initScaffolder) Scaffold() error {
 		},
 		&templates.HelmIgnore{},
 		&charttemplates.HelmHelpers{},
-		&manager.Deployment{
+	}
+
+	if !s.IgnoreWebhook {
+		buildScaffold = append(buildScaffold, &manager.Deployment{
 			Force:        s.force,
 			DeployImages: len(imagesEnvVars) > 0,
 			HasWebhooks:  hasWebhooks,
-		},
-		&templatescertmanager.Certificate{HasWebhooks: hasWebhooks},
-		&templatesmetrics.Service{},
-		&prometheus.Monitor{},
+		})
 	}
 
-	if len(mutatingWebhooks) > 0 || len(validatingWebhooks) > 0 {
+	if !s.IgnoreCertManager {
+		buildScaffold = append(buildScaffold, &templatescertmanager.Certificate{
+			HasWebhooks: hasWebhooks,
+		})
+	}
+
+	if !s.IgnoreNetworkPolicy {
+		buildScaffold = append(buildScaffold, &templatesmetrics.Service{})
+	}
+
+	if !s.IgnorePrometheus {
+		buildScaffold = append(buildScaffold, &prometheus.Monitor{})
+	}
+
+	if !s.IgnoreWebhook && len(mutatingWebhooks) > 0 || len(validatingWebhooks) > 0 {
 		buildScaffold = append(buildScaffold,
 			&templateswebhooks.Template{
 				MutatingWebhooks:   mutatingWebhooks,
@@ -111,7 +136,7 @@ func (s *initScaffolder) Scaffold() error {
 		)
 	}
 
-	if hasWebhooks {
+	if !s.IgnoreWebhook && hasWebhooks {
 		buildScaffold = append(buildScaffold,
 			&templateswebhooks.Service{},
 		)

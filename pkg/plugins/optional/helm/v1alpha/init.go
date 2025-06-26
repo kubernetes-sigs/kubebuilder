@@ -47,7 +47,15 @@ func (p *initSubcommand) InjectConfig(c config.Config) error {
 }
 
 func (p *initSubcommand) Scaffold(fs machinery.Filesystem) error {
-	scaffolder := scaffolds.NewInitHelmScaffolder(p.config, false)
+	ignoreFlags := map[string]bool{
+		"ignore-samples":       false,
+		"ignore-prometheus":    false,
+		"ignore-networkPolicy": false,
+		"ignore-certmanager":   false,
+		"ignore-webhook":       false,
+	}
+
+	scaffolder := scaffolds.NewInitHelmScaffolder(p.config, false, ignoreFlags)
 	scaffolder.InjectFS(fs)
 	err := scaffolder.Scaffold()
 	if err != nil {
