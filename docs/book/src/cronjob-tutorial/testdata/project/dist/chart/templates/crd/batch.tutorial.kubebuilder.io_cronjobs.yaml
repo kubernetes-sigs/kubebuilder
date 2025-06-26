@@ -33,6 +33,7 @@ spec:
           spec:
             properties:
               concurrencyPolicy:
+                default: Allow
                 enum:
                 - Allow
                 - Forbid

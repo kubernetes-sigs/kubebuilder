@@ -441,13 +441,17 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	*/
 	// figure out how to run this job -- concurrency policy might forbid us from running
 	// multiple at the same time...
-	if cronJob.Spec.ConcurrencyPolicy == batchv1.ForbidConcurrent && len(activeJobs) > 0 {
+	policy := batchv1.AllowConcurrent
+	if cronJob.Spec.ConcurrencyPolicy != nil {
+		policy = *cronJob.Spec.ConcurrencyPolicy
+	}
+	if policy == batchv1.ForbidConcurrent && len(activeJobs) > 0 {
 		log.V(1).Info("concurrency policy blocks concurrent runs, skipping", "num active", len(activeJobs))
 		return scheduledResult, nil
 	}
 
 	// ...or instruct us to replace existing ones...
-	if cronJob.Spec.ConcurrencyPolicy == batchv1.ReplaceConcurrent {
+	if cronJob.Spec.ConcurrencyPolicy != nil && *cronJob.Spec.ConcurrencyPolicy == batchv1.ReplaceConcurrent {
 		for _, activeJob := range activeJobs {
 			// we don't care if the job was already deleted
 			if err := r.Delete(ctx, activeJob, client.PropagationPolicy(metav1.DeletePropagationBackground)); client.IgnoreNotFound(err) != nil {
